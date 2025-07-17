@@ -66,6 +66,7 @@ REM  Streamlit-App starten
 REM ------------------------------------------------------------
 echo [INFO] Starte Streamlit-App ...
 streamlit run app.py
+REM streamlit run app.py --logger.level=debug
 
 :done
 popd
