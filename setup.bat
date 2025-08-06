@@ -65,7 +65,7 @@ REM ------------------------------------------------------------
 REM  Streamlit-App starten
 REM ------------------------------------------------------------
 echo [INFO] Starte Streamlit-App ...
-streamlit run app.py
+streamlit run app.py --server.port 8503
 REM streamlit run app.py --logger.level=debug
 
 :done
