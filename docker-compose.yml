@@ -1,0 +1,55 @@
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: hauspokal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hauspokal
+      POSTGRES_PASSWORD: hauspokal
+      POSTGRES_DB: hauspokal
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - hauspokal-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hauspokal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./api
+    container_name: hauspokal-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://hauspokal:hauspokal@postgres:5432/hauspokal
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+    volumes:
+      - ./api:/workspace/api
+      - ./data:/workspace/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    container_name: hauspokal-frontend
+    restart: unless-stopped
+    environment:
+      PORT: 1339
+      NEXT_PORT: 3000
+      API_HOST: api
+      API_PORT: 8000
+    ports:
+      - "1339:1339"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  hauspokal-pg-data:

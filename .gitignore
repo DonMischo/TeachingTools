@@ -1,4 +1,13 @@
 .venv/
-__pycache__
+__pycache__/
 data/teachers.csv
 data/housepoints.db
+
+# frontend
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/tsconfig.tsbuildinfo
+
+# env
+.env
