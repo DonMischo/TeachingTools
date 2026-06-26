@@ -1,0 +1,136 @@
+{
+  "_ai_instructions": "TÜ Mathe Klasse 5, Themen: Grundrechenarten, Einheitenumrechnung (mm↔m, €↔Cent), Fachbegriffe (Kilo/Deci), Rechteck (Umfang & Fläche). Typ: 'tue', Klassenstufe: 5, Tags: ['mathe']. Formeln mit $...$ (KaTeX), z.B. $352 - 187 =$. Einheiten: $\\text{mm}$, $\\text{m}$, $\\text{cm}$, $\\text{cm}^2$. Alle Fragen single-choice außer survey. Keine Hinweise auf die Lösung in den Antworttexten.",
+  "title": "TÜ 25 – Mathe Klasse 5",
+  "description": "Grundrechenarten · Einheitenumrechnung · Rechteck",
+  "type": "tue",
+  "grade": 5,
+  "tags": ["mathe"],
+  "max_points": 9,
+  "time_limit_default": 20,
+  "preview_time_default": 3,
+  "settings": {
+    "randomize_answer_order": true
+  },
+  "questions": [
+    {
+      "type": "single",
+      "question": "$352 - 187 =$",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$165$", "correct": true },
+        { "text": "$175$", "correct": false },
+        { "text": "$155$", "correct": false },
+        { "text": "$265$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "$728 \\div 8 =$",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$91$", "correct": true },
+        { "text": "$81$", "correct": false },
+        { "text": "$96$", "correct": false },
+        { "text": "$89$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Rechne $22022\\,\\text{mm}$ in Meter um.",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$22{,}022\\,\\text{m}$", "correct": true },
+        { "text": "$220{,}22\\,\\text{m}$", "correct": false },
+        { "text": "$2{,}2022\\,\\text{m}$", "correct": false },
+        { "text": "$2202{,}2\\,\\text{m}$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Rechne $220{,}40\\,€$ in Cent um.",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$22040\\,\\text{Cent}$", "correct": true },
+        { "text": "$2240\\,\\text{Cent}$", "correct": false },
+        { "text": "$220400\\,\\text{Cent}$", "correct": false },
+        { "text": "$2204\\,\\text{Cent}$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Kilo bedeutet:",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$1000$", "correct": true },
+        { "text": "$100$", "correct": false },
+        { "text": "$10000$", "correct": false },
+        { "text": "$\\frac{1}{10}$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Deci bedeutet:",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$\\frac{1}{10}$", "correct": true },
+        { "text": "$\\frac{1}{100}$", "correct": false },
+        { "text": "$\\frac{1}{1000}$", "correct": false },
+        { "text": "$10$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Rechne $1337\\,\\text{mm}$ in Meter um.",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$1{,}337\\,\\text{m}$", "correct": true },
+        { "text": "$13{,}37\\,\\text{m}$", "correct": false },
+        { "text": "$133{,}7\\,\\text{m}$", "correct": false },
+        { "text": "$0{,}1337\\,\\text{m}$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Berechne den Umfang des Rechtecks: $a = 5\\,\\text{cm}$, $b = 3\\,\\text{cm}$",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$16\\,\\text{cm}$", "correct": true },
+        { "text": "$15\\,\\text{cm}$", "correct": false },
+        { "text": "$8\\,\\text{cm}$", "correct": false },
+        { "text": "$30\\,\\text{cm}$", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Berechne den Flächeninhalt des Rechtecks: $a = 5\\,\\text{cm}$, $b = 3\\,\\text{cm}$",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "$15\\,\\text{cm}^2$", "correct": true },
+        { "text": "$16\\,\\text{cm}^2$", "correct": false },
+        { "text": "$8\\,\\text{cm}^2$", "correct": false },
+        { "text": "$25\\,\\text{cm}^2$", "correct": false }
+      ]
+    },
+    {
+      "type": "survey",
+      "question": "Hat dir die TÜ gefallen?",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Ja, hat Spaß gemacht!" },
+        { "text": "War okay." },
+        { "text": "Eher nicht." },
+        { "text": "Nein." }
+      ]
+    }
+  ]
+}

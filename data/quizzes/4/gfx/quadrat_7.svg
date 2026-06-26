@@ -1,0 +1,22 @@
+<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#1e293b" rx="12"/>
+
+  <!-- Square -->
+  <rect x="110" y="25" width="170" height="170" fill="#1a2e1a" stroke="#4ade80" stroke-width="2.5"/>
+
+  <!-- Right angle marks -->
+  <path d="M110,25 L110,41 L126,41" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M280,25 L264,25 L264,41" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M110,195 L110,179 L126,179" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M280,195 L264,195 L264,179" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+
+  <!-- Tick marks (equal sides) -->
+  <line x1="189" y1="25" x2="201" y2="25" stroke="#4ade80" stroke-width="2.5"/>
+  <line x1="189" y1="195" x2="201" y2="195" stroke="#4ade80" stroke-width="2.5"/>
+  <line x1="110" y1="104" x2="110" y2="116" stroke="#4ade80" stroke-width="2.5"/>
+  <line x1="280" y1="104" x2="280" y2="116" stroke="#4ade80" stroke-width="2.5"/>
+
+  <!-- Side labels -->
+  <text x="195" y="214" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-weight="bold">7 cm</text>
+  <text x="78" y="114" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-weight="bold">7 cm</text>
+</svg>

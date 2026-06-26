@@ -1,0 +1,7 @@
+<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="160" fill="#1e293b" rx="12"/>
+  <line x1="48" y1="80" x2="352" y2="80" stroke="#e2e8f0" stroke-width="2.5"/>
+  <polygon points="48,76 40,80 48,84" fill="#e2e8f0"/>
+  <polygon points="352,76 360,80 352,84" fill="#e2e8f0"/>
+  <text x="200" y="120" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">g</text>
+</svg>

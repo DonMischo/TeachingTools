@@ -1,0 +1,25 @@
+<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#1e293b" rx="12"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e2e8f0"/>
+    </marker>
+  </defs>
+
+  <!-- Strahl (top) -->
+  <text x="20" y="62" fill="#94a3b8" font-size="12" font-family="sans-serif">Strahl</text>
+  <circle cx="80" cy="75" r="6" fill="#f87171"/>
+  <line x1="80" y1="75" x2="350" y2="75" stroke="#e2e8f0" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="80" y="100" text-anchor="middle" fill="#fbbf24" font-size="13" font-family="sans-serif" font-style="italic">A</text>
+
+  <!-- divider -->
+  <line x1="30" y1="125" x2="370" y2="125" stroke="#334155" stroke-width="1"/>
+
+  <!-- Strecke (bottom) -->
+  <text x="20" y="148" fill="#94a3b8" font-size="12" font-family="sans-serif">Strecke</text>
+  <circle cx="80" cy="162" r="6" fill="#f87171"/>
+  <line x1="80" y1="162" x2="320" y2="162" stroke="#e2e8f0" stroke-width="2.5"/>
+  <circle cx="320" cy="162" r="6" fill="#f87171"/>
+  <text x="80" y="187" text-anchor="middle" fill="#fbbf24" font-size="13" font-family="sans-serif" font-style="italic">A</text>
+  <text x="320" y="187" text-anchor="middle" fill="#fbbf24" font-size="13" font-family="sans-serif" font-style="italic">B</text>
+</svg>

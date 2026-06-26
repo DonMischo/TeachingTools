@@ -1,0 +1,208 @@
+{
+  "_ai_instructions": "Quiz über die FIFA Fußball-WM 2026 in USA, Kanada und Mexiko. Typ: 'competition', Klassenstufen: 5-10, Tags: ['erdkunde', 'sport', 'fun']. Fragetypen: 'single' (1 richtige), 'multi' (mehrere richtig, Teilpunkte), 'true_false' (Wahr/Falsch), 'survey' (keine Wertung). Alle Fakten beziehen sich auf strukturelle WM-Daten (keine Live-Ergebnisse). Schwierigkeit: Mittelschule. Bilder liegen in gfx/ als SVG. Keine Hinweise auf die richtige Antwort in Fragen oder Antwortoptionen.",
+  "title": "FIFA WM 2026",
+  "description": "USA · Kanada · Mexiko — Gastgeber, Teams, Fakten & Geografie",
+  "type": "competition",
+  "grade": "5-10",
+  "tags": ["erdkunde", "sport", "fun"],
+  "max_points": 100,
+  "time_limit_default": 20,
+  "preview_time_default": 3,
+  "settings": {
+    "randomize_answer_order": false
+  },
+  "questions": [
+    {
+      "type": "survey",
+      "question": "Wer schaut die WM 2026?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Ja, jedes Spiel!" },
+        { "text": "Ein paar Spiele" },
+        { "text": "Nur das Finale" },
+        { "text": "Gar nicht" }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "In wie vielen Ländern findet die FIFA WM 2026 statt?",
+      "image": "gfx/wm2026_hosts.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "1", "correct": false },
+        { "text": "2", "correct": false },
+        { "text": "3", "correct": true },
+        { "text": "4", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welches Land ist amtierender Weltmeister und tritt als Titelverteidiger an?",
+      "image": "gfx/fi_ar.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Frankreich", "correct": false },
+        { "text": "Brasilien", "correct": false },
+        { "text": "Argentinien", "correct": true },
+        { "text": "Deutschland", "correct": false }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche dieser Länder kommen aus SÜDAMERIKA und nehmen an der WM 2026 teil?",
+      "image": "gfx/sudamerika.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Argentinien", "correct": true },
+        { "text": "Brasilien", "correct": true },
+        { "text": "Mexiko", "correct": false },
+        { "text": "Kolumbien", "correct": true }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Die WM 2026 ist die erste FIFA Weltmeisterschaft mit 48 teilnehmenden Mannschaften.",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "In welchem Stadion findet das Finale der WM 2026 statt?",
+      "image": "gfx/metlife_stadium.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wembley Stadium, London", "correct": false },
+        { "text": "MetLife Stadium, New York/NJ", "correct": true },
+        { "text": "Azteca, Mexiko-Stadt", "correct": false },
+        { "text": "Maracanã, Rio de Janeiro", "correct": false }
+      ]
+    },
+    {
+      "type": "sort",
+      "question": "Sortiere diese Länder nach der Anzahl ihrer WM-Titel — vom wenigsten zum meisten!",
+      "time_limit": 35,
+      "preview_time": 3,
+      "answers": [
+        { "text": "England", "order": 1 },
+        { "text": "Frankreich", "order": 2 },
+        { "text": "Deutschland", "order": 3 },
+        { "text": "Brasilien", "order": 4 }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Mexiko war bereits 1970 und 1986 Gastgeber der FIFA Weltmeisterschaft.",
+      "image": "gfx/fi_mx.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche dieser Länder spielen für die UEFA (Europa) bei der WM 2026?",
+      "image": "gfx/europa_flags.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Deutschland", "correct": true },
+        { "text": "Frankreich", "correct": true },
+        { "text": "Australien", "correct": false },
+        { "text": "Spanien", "correct": true }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Die Gruppenphase der WM 2026 besteht aus 12 Gruppen mit je 4 Teams.",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie viele Spiele werden bei der WM 2026 insgesamt ausgetragen?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "64", "correct": false },
+        { "text": "80", "correct": false },
+        { "text": "104", "correct": true },
+        { "text": "128", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welche dieser Städte ist KEIN Austragungsort der WM 2026?",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "New York / New Jersey", "correct": false },
+        { "text": "Dallas", "correct": false },
+        { "text": "Chicago", "correct": true },
+        { "text": "Los Angeles", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie viele Startplätze hat die UEFA (Europa) bei der WM 2026?",
+      "image": "gfx/europa_flags.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "12", "correct": false },
+        { "text": "14", "correct": false },
+        { "text": "16", "correct": true },
+        { "text": "18", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Für welches Land tritt Lionel Messi bei der WM 2026 an?",
+      "image": "gfx/messi.jpg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Brasilien", "correct": false },
+        { "text": "Argentinien", "correct": true },
+        { "text": "Spanien", "correct": false },
+        { "text": "Uruguay", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welches Land hat die meisten FIFA Weltmeistertitel gewonnen?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Deutschland (4)", "correct": false },
+        { "text": "Argentinien (3)", "correct": false },
+        { "text": "Brasilien (5)", "correct": true },
+        { "text": "Italien (4)", "correct": false }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Erling Haaland (Norwegen) spielt bei der WM 2026 mit — Norwegen hat sich qualifiziert.",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    }
+  ]
+}

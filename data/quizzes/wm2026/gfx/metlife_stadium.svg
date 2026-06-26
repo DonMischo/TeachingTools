@@ -1,0 +1,36 @@
+<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="260" fill="#1e293b"/>
+
+  <!-- Stadium silhouette -->
+  <!-- Outer bowl -->
+  <ellipse cx="200" cy="145" rx="155" ry="75" fill="#0f172a" stroke="#475569" stroke-width="2"/>
+  <!-- Inner field -->
+  <ellipse cx="200" cy="145" rx="115" ry="52" fill="#166534" stroke="#15803d" stroke-width="1.5"/>
+  <!-- Field markings -->
+  <ellipse cx="200" cy="145" rx="85" ry="38" fill="none" stroke="#22c55e" stroke-width="1"/>
+  <line x1="200" y1="107" x2="200" y2="183" stroke="#22c55e" stroke-width="1"/>
+  <circle cx="200" cy="145" r="12" fill="none" stroke="#22c55e" stroke-width="1"/>
+  <!-- Penalty arcs -->
+  <ellipse cx="130" cy="145" rx="22" ry="18" fill="none" stroke="#22c55e" stroke-width="0.8"/>
+  <ellipse cx="270" cy="145" rx="22" ry="18" fill="none" stroke="#22c55e" stroke-width="0.8"/>
+
+  <!-- Roof/structure lines -->
+  <path d="M45,145 Q50,80 200,70 Q350,80 355,145" fill="none" stroke="#64748b" stroke-width="3"/>
+
+  <!-- Lights -->
+  <circle cx="90" cy="82" r="4" fill="#fbbf24"/>
+  <circle cx="310" cy="82" r="4" fill="#fbbf24"/>
+  <circle cx="150" cy="72" r="3" fill="#fbbf24"/>
+  <circle cx="250" cy="72" r="3" fill="#fbbf24"/>
+
+  <!-- USA flag mini -->
+  <rect x="15" y="15" width="48" height="30" fill="#B22234"/>
+  <rect x="15" y="20" width="48" height="4" fill="white"/>
+  <rect x="15" y="28" width="48" height="4" fill="white"/>
+  <rect x="15" y="36" width="48" height="4" fill="white"/>
+  <rect x="15" y="15" width="18" height="16" fill="#3C3B6E"/>
+
+  <text x="200" y="28" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif" font-weight="bold">MetLife Stadium</text>
+  <text x="200" y="46" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">East Rutherford, New Jersey — WM 2026 Finale</text>
+  <text x="200" y="240" text-anchor="middle" fill="#fbbf24" font-size="11" font-family="sans-serif">19. Juli 2026 · Kapazität: 82.500</text>
+</svg>

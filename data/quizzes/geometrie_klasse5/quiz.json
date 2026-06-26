@@ -1,0 +1,267 @@
+{
+  "_ai_instructions": "Quiz für Klasse 5 Geometrie. Typ: 'classic', Klassenstufe: 5, Tags: ['mathe']. Fragetypen: 'single' (1 richtige), 'multi' (mehrere richtig, Teilpunkte), 'true_false' (Wahr/Falsch), 'survey' (keine Wertung). Jede Frage hat 'time_limit' (Sekunden zum Antworten) und 'preview_time' (Sekunden Vorschauzeit ohne Antwortoptionen). Antworten: 'correct': true für richtige, false für falsche. Bei 'multi' mind. 2 richtige setzen. Keine Hinweise auf die richtige Antwort in Fragestellung, Bild oder Antwortoptionen. Formeln: Kleinbuchstaben (u = Umfang, A = Fläche). Bilder liegen in gfx/ als SVG. Neue Fragen sollten ähnliches Niveau (Klasse 5) haben.",
+  "title": "Geometrie – Klasse 5",
+  "description": "Strecke, Strahl, Gerade, Parallel, Senkrecht, Rechteck, Quadrat, Fläche & Umfang",
+  "type": "classic",
+  "grade": 5,
+  "tags": ["mathe"],
+  "max_points": 100,
+  "time_limit_default": 20,
+  "preview_time_default": 3,
+  "settings": {
+    "randomize_answer_order": false
+  },
+  "questions": [
+    {
+      "type": "single",
+      "question": "Was beschreibt eine GERADE in der Geometrie am besten?",
+      "image": "gfx/gerade.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Sie hat einen Anfangspunkt und einen Endpunkt", "correct": false },
+        { "text": "Sie hat einen Anfangspunkt, aber kein Ende", "correct": false },
+        { "text": "Sie hat weder Anfang noch Ende und geht unendlich weit", "correct": true },
+        { "text": "Sie ist immer waagerecht", "correct": false }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Eine STRECKE hat genau zwei Endpunkte.",
+      "image": "gfx/strecke.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was ist der Unterschied zwischen einem STRAHL und einer STRECKE?",
+      "image": "gfx/strahl_strecke.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Der Strahl hat zwei Endpunkte, die Strecke nur einen", "correct": false },
+        { "text": "Der Strahl hat einen Anfangspunkt und geht dann unendlich weiter", "correct": true },
+        { "text": "Die Strecke ist länger als der Strahl", "correct": false },
+        { "text": "Es gibt keinen Unterschied", "correct": false }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche dieser Aussagen über PARALLELE Geraden sind richtig?",
+      "image": "gfx/parallel.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Sie schneiden sich niemals", "correct": true },
+        { "text": "Sie haben immer den gleichen Abstand zueinander", "correct": true },
+        { "text": "Sie bilden immer einen rechten Winkel", "correct": false },
+        { "text": "Sie laufen in dieselbe Richtung", "correct": true }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Zwei Geraden stehen SENKRECHT aufeinander. Welchen Winkel bilden sie?",
+      "image": "gfx/senkrecht.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "45°", "correct": false },
+        { "text": "90°", "correct": true },
+        { "text": "180°", "correct": false },
+        { "text": "360°", "correct": false }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Jedes QUADRAT ist auch ein RECHTECK.",
+      "image": "gfx/quadrat_rechteck.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": true },
+        { "text": "Falsch", "correct": false }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche Eigenschaften hat ein RECHTECK?",
+      "image": "gfx/rechteck_labeled.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Es hat 4 rechte Winkel", "correct": true },
+        { "text": "Alle 4 Seiten sind gleich lang", "correct": false },
+        { "text": "Gegenüberliegende Seiten sind gleich lang", "correct": true },
+        { "text": "Es hat 4 Seiten", "correct": true }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie lautet die Formel für den UMFANG eines Rechtecks mit den Seiten a und b?",
+      "image": "gfx/rechteck_labeled.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "u = a × b", "correct": false },
+        { "text": "u = 2 × (a + b)", "correct": true },
+        { "text": "u = a + b", "correct": false },
+        { "text": "u = 4 × a", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Rechteck hat die Seiten a = 8 cm und b = 3 cm. Wie groß ist der UMFANG?",
+      "image": "gfx/rechteck_8_3.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "11 cm", "correct": false },
+        { "text": "24 cm", "correct": false },
+        { "text": "22 cm", "correct": true },
+        { "text": "32 cm", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie lautet die Formel für die FLÄCHE eines Rechtecks mit den Seiten a und b?",
+      "image": "gfx/rechteck_labeled.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "A = 2 × (a + b)", "correct": false },
+        { "text": "A = a + b", "correct": false },
+        { "text": "A = a × b", "correct": true },
+        { "text": "A = 4 × a", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Rechteck hat a = 6 cm und b = 4 cm. Wie groß ist die FLÄCHE?",
+      "image": "gfx/rechteck_6_4.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "10 cm²", "correct": false },
+        { "text": "20 cm²", "correct": false },
+        { "text": "24 cm²", "correct": true },
+        { "text": "40 cm²", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was ist die BESONDERHEIT eines Quadrats gegenüber dem Rechteck?",
+      "image": "gfx/quadrat_rechteck.svg",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Ein Quadrat hat keine rechten Winkel", "correct": false },
+        { "text": "Beim Quadrat sind alle 4 Seiten gleich lang", "correct": true },
+        { "text": "Ein Quadrat hat nur 3 Seiten", "correct": false },
+        { "text": "Das Quadrat hat mehr als 4 Winkel", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Quadrat hat die Seitenlänge a = 5 cm. Wie groß ist sein UMFANG?",
+      "image": "gfx/quadrat_5.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "5 cm", "correct": false },
+        { "text": "10 cm", "correct": false },
+        { "text": "20 cm", "correct": true },
+        { "text": "25 cm", "correct": false }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Quadrat hat die Seitenlänge a = 7 cm. Wie groß ist seine FLÄCHE?",
+      "image": "gfx/quadrat_7.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "14 cm²", "correct": false },
+        { "text": "28 cm²", "correct": false },
+        { "text": "49 cm²", "correct": true },
+        { "text": "21 cm²", "correct": false }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche der folgenden Linien haben KEINEN Endpunkt?",
+      "image": "gfx/linien_typen.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Die Strecke AB", "correct": false },
+        { "text": "Die Gerade g", "correct": true },
+        { "text": "Der Strahl s", "correct": true },
+        { "text": "Die Strecke von Punkt P zu Punkt Q", "correct": false }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Parallele Geraden können sich unter bestimmten Umständen schneiden.",
+      "image": "gfx/parallel.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": false },
+        { "text": "Falsch", "correct": true }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche Eigenschaften hat ein QUADRAT?",
+      "image": "gfx/quadrat_5.svg",
+      "time_limit": 30,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Alle 4 Seiten sind gleich lang", "correct": true },
+        { "text": "Es hat 4 rechte Winkel", "correct": true },
+        { "text": "Es hat genau 3 Seiten", "correct": false },
+        { "text": "Es ist ein besonderes Rechteck", "correct": true }
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Eine Strecke kann unendlich verlängert werden.",
+      "image": "gfx/strecke.svg",
+      "time_limit": 15,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Wahr", "correct": false },
+        { "text": "Falsch", "correct": true }
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Quadrat hat Seitenlänge a = 4 cm. Wie groß ist seine FLÄCHE?",
+      "image": "gfx/quadrat_rechteck.svg",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "8 cm²", "correct": false },
+        { "text": "16 cm²", "correct": true },
+        { "text": "12 cm²", "correct": false },
+        { "text": "4 cm²", "correct": false }
+      ]
+    },
+    {
+      "type": "survey",
+      "question": "Hat es euch gefallen?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "Ja, hat Spaß gemacht!" },
+        { "text": "War okay." },
+        { "text": "Eher nicht." },
+        { "text": "Nein." }
+      ]
+    }
+  ]
+}

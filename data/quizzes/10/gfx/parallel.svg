@@ -1,0 +1,18 @@
+<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="160" fill="#1e293b" rx="12"/>
+
+  <!-- Line g -->
+  <line x1="48" y1="55" x2="352" y2="55" stroke="#60a5fa" stroke-width="2.5"/>
+  <polygon points="48,51 40,55 48,59" fill="#60a5fa"/>
+  <polygon points="352,51 360,55 352,59" fill="#60a5fa"/>
+  <text x="372" y="60" fill="#60a5fa" font-size="14" font-family="sans-serif" font-style="italic">g</text>
+
+  <!-- distance indicator -->
+  <line x1="200" y1="60" x2="200" y2="95" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Line h -->
+  <line x1="48" y1="100" x2="352" y2="100" stroke="#e2e8f0" stroke-width="2.5"/>
+  <polygon points="48,96 40,100 48,104" fill="#e2e8f0"/>
+  <polygon points="352,96 360,100 352,104" fill="#e2e8f0"/>
+  <text x="372" y="105" fill="#e2e8f0" font-size="14" font-family="sans-serif" font-style="italic">h</text>
+</svg>

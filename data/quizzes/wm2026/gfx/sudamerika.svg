@@ -1,0 +1,36 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#1e293b"/>
+
+  <!-- South America simplified outline -->
+  <polygon points="180,30 210,28 240,40 260,65 275,100 270,140 260,175 240,210 215,240 190,260 165,255 145,235 130,205 125,170 130,135 145,100 150,70 165,45" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+
+  <!-- Country highlight dots + labels -->
+  <!-- Colombia ~top-left -->
+  <circle cx="175" cy="105" r="8" fill="#fbbf24" opacity="0.9"/>
+  <text x="175" y="108" text-anchor="middle" fill="#1e293b" font-size="8" font-family="sans-serif" font-weight="bold">CO</text>
+  <text x="155" y="92" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="sans-serif">Kolumbien</text>
+
+  <!-- Brazil ~center -->
+  <circle cx="225" cy="155" r="8" fill="#22c55e" opacity="0.9"/>
+  <text x="225" y="158" text-anchor="middle" fill="#1e293b" font-size="8" font-family="sans-serif" font-weight="bold">BR</text>
+  <text x="255" y="145" text-anchor="middle" fill="#22c55e" font-size="10" font-family="sans-serif">Brasilien</text>
+
+  <!-- Ecuador -->
+  <circle cx="168" cy="128" r="6" fill="#fb923c" opacity="0.9"/>
+  <text x="168" y="131" text-anchor="middle" fill="#1e293b" font-size="7" font-family="sans-serif" font-weight="bold">EC</text>
+
+  <!-- Paraguay ~center -->
+  <circle cx="205" cy="195" r="6" fill="#a78bfa" opacity="0.9"/>
+  <text x="205" y="198" text-anchor="middle" fill="#1e293b" font-size="7" font-family="sans-serif" font-weight="bold">PY</text>
+
+  <!-- Uruguay ~south-east -->
+  <circle cx="220" cy="220" r="6" fill="#38bdf8" opacity="0.9"/>
+  <text x="220" y="223" text-anchor="middle" fill="#1e293b" font-size="7" font-family="sans-serif" font-weight="bold">UY</text>
+
+  <!-- Argentina ~south -->
+  <circle cx="192" cy="235" r="8" fill="#74ACDF" opacity="0.9"/>
+  <text x="192" y="238" text-anchor="middle" fill="#1e293b" font-size="8" font-family="sans-serif" font-weight="bold">AR</text>
+  <text x="165" y="252" text-anchor="middle" fill="#74ACDF" font-size="10" font-family="sans-serif">Argentinien</text>
+
+  <text x="200" y="285" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">6 CONMEBOL-Teams bei der WM 2026</text>
+</svg>

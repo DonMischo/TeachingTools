@@ -1,6 +1,3 @@
-streamlit>=1.38.0
-pandas>=2.2.2
-numpy>=2.0.0
-streamlit-extras>=0.4.0
-Pillow>=10.0
-st-clickable-images>=0.0.3
+# The Streamlit app has been migrated to FastAPI + Next.js.
+# Python dependencies are now in api/requirements.txt.
+# Use Docker to run the full stack: start.bat / start.sh

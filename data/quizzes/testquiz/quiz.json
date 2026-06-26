@@ -1,0 +1,50 @@
+{
+  "title": "Testquiz",
+  "description": "3 Fragen zum Testen aller Fragetypen",
+  "type": "test",
+  "tags": [],
+  "max_points": 30,
+  "time_limit_default": 20,
+  "preview_time_default": 3,
+  "settings": {
+    "randomize_answer_order": true
+  },
+  "questions": [
+    {
+      "type": "single",
+      "question": "Was ist 7 × 8?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "54", "correct": false },
+        { "text": "56", "correct": true },
+        { "text": "58", "correct": false },
+        { "text": "64", "correct": false }
+      ]
+    },
+    {
+      "type": "sort",
+      "question": "Sortiere diese Zahlen von klein nach groß!",
+      "time_limit": 25,
+      "preview_time": 3,
+      "answers": [
+        { "text": "3", "order": 1 },
+        { "text": "7", "order": 2 },
+        { "text": "12", "order": 3 },
+        { "text": "25", "order": 4 }
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche dieser Zahlen sind gerade?",
+      "time_limit": 20,
+      "preview_time": 3,
+      "answers": [
+        { "text": "4", "correct": true },
+        { "text": "7", "correct": false },
+        { "text": "12", "correct": true },
+        { "text": "9", "correct": false }
+      ]
+    }
+  ]
+}

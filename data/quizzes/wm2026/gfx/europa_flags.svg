@@ -1,0 +1,81 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="280" fill="#1e293b"/>
+  <text x="200" y="18" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">UEFA-Teams bei der WM 2026 (16 Plätze)</text>
+
+  <!-- Row 1 -->
+  <!-- Germany -->
+  <svg x="10" y="28" width="80" height="53" viewBox="0 0 640 480">
+    <path fill="#fc0" d="M0 320h640v160H0z"/>
+    <path fill="#000001" d="M0 0h640v160H0z"/>
+    <path fill="red" d="M0 160h640v160H0z"/>
+  </svg>
+  <rect x="10" y="28" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="50" y="93" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Deutschland</text>
+
+  <!-- France -->
+  <svg x="105" y="28" width="80" height="53" viewBox="0 0 640 480">
+    <path fill="#fff" d="M0 0h640v480H0z"/>
+    <path fill="#000091" d="M0 0h213.3v480H0z"/>
+    <path fill="#e1000f" d="M426.7 0H640v480H426.7z"/>
+  </svg>
+  <rect x="105" y="28" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="145" y="93" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Frankreich</text>
+
+  <!-- Spain (red-yellow-red) -->
+  <svg x="200" y="28" width="80" height="53" viewBox="0 0 3 2">
+    <rect width="3" height="2" fill="#c60b1e"/>
+    <rect y="0.5" width="3" height="1" fill="#ffc400"/>
+  </svg>
+  <rect x="200" y="28" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="240" y="93" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Spanien</text>
+
+  <!-- England (St. George's cross) -->
+  <svg x="295" y="28" width="80" height="53" viewBox="0 0 640 480">
+    <path fill="#fff" d="M0 0h640v480H0z"/>
+    <path fill="#cf142b" d="M281.3 0h77.4v480h-77.4z"/>
+    <path fill="#cf142b" d="M0 201.3h640v77.4H0z"/>
+  </svg>
+  <rect x="295" y="28" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="335" y="93" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">England</text>
+
+  <!-- Row 2 -->
+  <!-- Portugal (green-red) -->
+  <svg x="10" y="108" width="80" height="53" viewBox="0 0 640 480">
+    <path fill="#006600" d="M0 0h256v480H0z"/>
+    <path fill="red" d="M256 0h384v480H256z"/>
+    <circle fill="#ff0" cx="256" cy="240" r="64" opacity="0"/>
+  </svg>
+  <rect x="10" y="108" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="50" y="173" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Portugal</text>
+
+  <!-- Netherlands (red-white-blue) -->
+  <svg x="105" y="108" width="80" height="53" viewBox="0 0 3 2">
+    <rect width="3" height="2" fill="#21468b"/>
+    <rect width="3" height="1.33" fill="#fff"/>
+    <rect width="3" height="0.67" fill="#ae1c28"/>
+  </svg>
+  <rect x="105" y="108" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="145" y="173" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Niederlande</text>
+
+  <!-- Belgium (black-yellow-red vertical) -->
+  <svg x="200" y="108" width="80" height="53" viewBox="0 0 3 2">
+    <rect width="1" height="2" fill="#000"/>
+    <rect x="1" width="1" height="2" fill="#fae042"/>
+    <rect x="2" width="1" height="2" fill="#ef3340"/>
+  </svg>
+  <rect x="200" y="108" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="240" y="173" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Belgien</text>
+
+  <!-- Norway (red + cross) -->
+  <svg x="295" y="108" width="80" height="53" viewBox="0 0 22 16">
+    <rect width="22" height="16" fill="#ef2b2d"/>
+    <rect x="6" width="4" height="16" fill="#fff"/>
+    <rect y="6" width="22" height="4" fill="#fff"/>
+    <rect x="7" width="2" height="16" fill="#002868"/>
+    <rect y="7" width="22" height="2" fill="#002868"/>
+  </svg>
+  <rect x="295" y="108" width="80" height="53" fill="none" stroke="#475569" stroke-width="1"/>
+  <text x="335" y="173" text-anchor="middle" fill="#e2e8f0" font-size="10" font-family="sans-serif">Norwegen</text>
+
+  <text x="200" y="205" text-anchor="middle" fill="#64748b" font-size="9" font-family="sans-serif">+ Kroatien · Schweiz · Schottland · Österreich · Bosnien · Schweden · Türkiye · Tschechien</text>
+</svg>

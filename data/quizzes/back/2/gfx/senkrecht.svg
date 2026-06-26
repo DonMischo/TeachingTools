@@ -1,0 +1,33 @@
+<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#1e293b" rx="12"/>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e2e8f0"/>
+    </marker>
+    <marker id="al" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e2e8f0"/>
+    </marker>
+    <marker id="au" markerWidth="7" markerHeight="10" refX="3.5" refY="1" orient="auto-start-reverse">
+      <polygon points="0 10, 3.5 0, 7 10" fill="#e2e8f0"/>
+    </marker>
+    <marker id="ad" markerWidth="7" markerHeight="10" refX="3.5" refY="9" orient="auto">
+      <polygon points="0 0, 3.5 10, 7 0" fill="#e2e8f0"/>
+    </marker>
+  </defs>
+
+  <!-- Horizontal line g -->
+  <line x1="28" y1="110" x2="372" y2="110" stroke="#60a5fa" stroke-width="2.5"
+        marker-start="url(#al)" marker-end="url(#ar)"/>
+  <text x="358" y="103" fill="#60a5fa" font-size="14" font-family="sans-serif" font-style="italic">g</text>
+
+  <!-- Vertical line h -->
+  <line x1="200" y1="18" x2="200" y2="202" stroke="#e2e8f0" stroke-width="2.5"
+        marker-start="url(#au)" marker-end="url(#ad)"/>
+  <text x="213" y="30" fill="#e2e8f0" font-size="14" font-family="sans-serif" font-style="italic">h</text>
+
+  <!-- Right angle square -->
+  <path d="M200,110 L200,92 L218,92 L218,110" fill="none" stroke="#4ade80" stroke-width="2"/>
+
+  <!-- 90° label -->
+  <text x="228" y="105" fill="#4ade80" font-size="13" font-family="sans-serif">90°</text>
+</svg>
