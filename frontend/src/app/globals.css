@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #1a1a1a;
+  --surface: #2b2b2b;
+  --surface-hover: #3a3a3a;
+  --border: #505050;
+  --border-selected: #ffeb3b;
+  --text: #f5f5f5;
+  --text-muted: #9ca3af;
+  --accent: #ffeb3b;
+  --green: #4caf50;
+  --red: #f44336;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Modern thin scrollbar ─────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.input {
+  @apply w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)];
+}
+
+.label {
+  @apply text-xs text-[var(--text-muted)] mb-1 block;
+}
+
+.btn-primary {
+  @apply w-full rounded-lg bg-[var(--accent)] text-black font-semibold py-2 text-sm hover:opacity-90 transition-opacity;
+}
+
+.btn-secondary {
+  @apply w-full rounded-lg border border-[var(--border)] text-[var(--text)] font-semibold py-2 text-sm hover:bg-[var(--surface-hover)] transition-colors;
+}
+
+/* ── Avatar animations ─────────────────────────────────────────── */
+@keyframes toon-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes toon-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-12deg); }
+  75%       { transform: rotate(12deg); }
+}
+@keyframes toon-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes toon-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-6px) scale(1.06); }
+}
+@keyframes toon-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px) rotate(-3deg); }
+  40%       { transform: translateX(4px)  rotate(3deg); }
+  60%       { transform: translateX(-3px) rotate(-2deg); }
+  80%       { transform: translateX(3px)  rotate(2deg); }
+}
+@keyframes toon-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.15); }
+}
+@keyframes toon-nod {
+  0%, 100% { transform: scaleY(1); }
+  30%       { transform: scaleY(0.85); }
+  60%       { transform: scaleY(1.1); }
+}
+@keyframes toon-flip {
+  0%, 80%, 100% { transform: rotateY(0deg); }
+  40%            { transform: rotateY(180deg); }
+}
+
+.anim-bounce { animation: toon-bounce 0.9s ease-in-out infinite; }
+.anim-wiggle { animation: toon-wiggle 0.7s ease-in-out infinite; }
+.anim-spin   { animation: toon-spin   3s   linear      infinite; }
+.anim-float  { animation: toon-float  2s   ease-in-out infinite; }
+.anim-shake  { animation: toon-shake  0.6s ease-in-out infinite; }
+.anim-pulse  { animation: toon-pulse  1s   ease-in-out infinite; }
+.anim-nod    { animation: toon-nod    1s   ease-in-out infinite; }
+.anim-flip   { animation: toon-flip   2s   ease-in-out infinite; }
