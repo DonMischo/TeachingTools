@@ -9,11 +9,17 @@ from ..auth import get_current_teacher
 
 router = APIRouter(prefix="/api/chores", tags=["chores"])
 
+DEFAULT_CHORE_NAMES = [
+    "Tafeldienst", "Pflanzendienst", "Austeildienst",
+    "Fensterdienst", "Computerdienst",
+]
+
 
 class ChoreOut(BaseModel):
     id: int
     class_id: int
     chore_name: str
+    enabled: bool
     student_id: int | None
     student_name: str | None
 
@@ -24,6 +30,7 @@ class ChoreUpsert(BaseModel):
     class_id: int
     chore_name: str
     student_id: int | None = None
+    enabled: bool = True
 
 
 def _out(c: ClassChore) -> ChoreOut:
@@ -34,9 +41,21 @@ def _out(c: ClassChore) -> ChoreOut:
         id=c.id,
         class_id=c.class_id,
         chore_name=c.chore_name,
+        enabled=c.enabled,
         student_id=c.student_id,
         student_name=name,
     )
+
+
+@router.get("/all-names", response_model=list[str])
+def all_chore_names(db: Session = Depends(get_db)):
+    """Return all known chore names: defaults + any custom names used across all classes."""
+    custom = [row[0] for row in db.query(ClassChore.chore_name).distinct().all()]
+    all_names: list[str] = list(DEFAULT_CHORE_NAMES)
+    for name in custom:
+        if name not in all_names:
+            all_names.append(name)
+    return all_names
 
 
 @router.get("", response_model=list[ChoreOut])
@@ -53,6 +72,7 @@ def upsert_chore(
     existing = db.query(ClassChore).filter_by(class_id=body.class_id, chore_name=body.chore_name).first()
     if existing:
         existing.student_id = body.student_id
+        existing.enabled = body.enabled
         existing.assigned_by = current.id
         db.commit()
         db.refresh(existing)
@@ -60,6 +80,7 @@ def upsert_chore(
     chore = ClassChore(
         class_id=body.class_id,
         chore_name=body.chore_name,
+        enabled=body.enabled,
         student_id=body.student_id,
         assigned_by=current.id,
     )
@@ -88,7 +109,8 @@ def clear_chores(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    db.query(ClassChore).filter_by(class_id=class_id).update({"student_id": None})
+    """Clear student assignments from all enabled chores for the class."""
+    db.query(ClassChore).filter_by(class_id=class_id, enabled=True).update({"student_id": None})
     db.commit()
 
 
@@ -98,7 +120,8 @@ def random_assign(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    chores = db.query(ClassChore).filter_by(class_id=class_id).all()
+    """Randomly assign students to all enabled chores for the class."""
+    chores = db.query(ClassChore).filter_by(class_id=class_id, enabled=True).all()
     if not chores:
         return []
     students = db.query(Student).filter_by(class_id=class_id, active=True).all()

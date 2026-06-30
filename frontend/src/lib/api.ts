@@ -117,6 +117,7 @@ export type ClassChoreOut = {
   id: number;
   class_id: number;
   chore_name: string;
+  enabled: boolean;
   student_id: number | null;
   student_name: string | null;
 };
@@ -621,8 +622,9 @@ export const api = {
     remove: (id: number) => apiFetch<void>(`roles/${id}`, { method: "DELETE" }),
   },
   chores: {
+    allNames: () => apiFetch<string[]>("chores/all-names"),
     list: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores?class_id=${class_id}`),
-    upsert: (body: { class_id: number; chore_name: string; student_id?: number | null }) =>
+    upsert: (body: { class_id: number; chore_name: string; student_id?: number | null; enabled?: boolean }) =>
       apiFetch<ClassChoreOut>("chores", { method: "POST", body: JSON.stringify(body) }),
     delete: (id: number) => apiFetch<void>(`chores/${id}`, { method: "DELETE" }),
     clear: (class_id: number) => apiFetch<void>(`chores/clear?class_id=${class_id}`, { method: "POST" }),

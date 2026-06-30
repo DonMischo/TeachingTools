@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -563,14 +563,92 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
 
 // ─── Class Detail Dialog ──────────────────────────────────────────────────────
 
-const DEFAULT_CHORES = ["Tafeldienst", "Pflanzendienst", "Austeildienst", "Fensterdienst", "Computerdienst"];
 const CLASS_ROLES = ["Klassensprecher", "Schülersprecher", "Haussprecher"];
+
+function ChoreSelector({
+  allNames, chores, cls, onToggle, onAddCustom,
+}: {
+  allNames: string[];
+  chores: ClassChoreOut[];
+  cls: ClassOut;
+  onToggle: (name: string, enabled: boolean) => void;
+  onAddCustom: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const enabledNames = new Set(chores.filter(c => c.enabled).map(c => c.chore_name));
+  const activeCount = enabledNames.size;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--border)] rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] w-full"
+      >
+        <span className="flex-1 text-left text-[var(--text-muted)]">
+          🧹 Dienste auswählen
+        </span>
+        <span className="text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5">{activeCount} aktiv</span>
+        <span className="text-[var(--text-muted)]">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+          <div className="max-h-60 overflow-y-auto">
+            {allNames.map(name => {
+              const checked = enabledNames.has(name);
+              return (
+                <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggle(name, !checked)}
+                    className="accent-[var(--accent)] w-4 h-4"
+                  />
+                  <span className="text-sm">{name}</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="border-t border-[var(--border)] p-2 flex gap-2">
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Eigener Dienst…"
+              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+              onKeyDown={e => {
+                if (e.key === "Enter" && newName.trim()) {
+                  onAddCustom(newName.trim());
+                  setNewName("");
+                }
+              }}
+            />
+            <button
+              onClick={() => { if (newName.trim()) { onAddCustom(newName.trim()); setNewName(""); } }}
+              className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+            >+</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
   const [section, setSection] = useState<"rollen" | "dienste">("rollen");
   const [newRole, setNewRole] = useState("");
-  const [newChore, setNewChore] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
     queryKey: ["students", cls.id],
@@ -587,6 +665,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
     queryFn: () => api.chores.list(cls.id),
   });
 
+  const { data: allChoreNames = [] } = useQuery<string[]>({
+    queryKey: ["chores-all-names"],
+    queryFn: () => api.chores.allNames(),
+    staleTime: 30_000,
+  });
+
   const assignRole = useMutation({
     mutationFn: ({ role_type, student_id }: { role_type: string; student_id: number | null }) =>
       student_id
@@ -601,14 +685,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
   });
 
   const upsertChore = useMutation({
-    mutationFn: (body: { chore_name: string; student_id?: number | null }) =>
+    mutationFn: (body: { chore_name: string; student_id?: number | null; enabled?: boolean }) =>
       api.chores.upsert({ class_id: cls.id, ...body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
-  });
-
-  const deleteChore = useMutation({
-    mutationFn: (id: number) => api.chores.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chores", cls.id] });
+      qc.invalidateQueries({ queryKey: ["chores-all-names"] });
+    },
   });
 
   const clearChores = useMutation({
@@ -618,28 +700,29 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
   const randomAssign = useMutation({
     mutationFn: () => api.chores.randomAssign(cls.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+    onSuccess: (data) => {
+      qc.setQueryData<ClassChoreOut[]>(["chores", cls.id], prev =>
+        prev ? prev.map(c => data.find(d => d.id === c.id) ?? c) : data
+      );
+    },
   });
-
-  const activeRoleTypes = new Set(
-    [...CLASS_ROLES, ...roles.map(r => r.role_type)]
-  );
-  if (newRole.trim()) activeRoleTypes.add(newRole.trim());
-
-  const allRoleTypes = [...activeRoleTypes];
 
   function getRoleFor(role_type: string): StudentRoleOut | undefined {
     return roles.find(r => r.role_type.toLowerCase() === role_type.toLowerCase() && r.scope_id === cls.id);
   }
 
-  function getChoreFor(chore_name: string): ClassChoreOut | undefined {
-    return chores.find(c => c.chore_name === chore_name);
+  const allRoleTypes = [...new Set([...CLASS_ROLES, ...roles.map(r => r.role_type)])];
+  if (newRole.trim() && !allRoleTypes.includes(newRole.trim())) allRoleTypes.push(newRole.trim());
+
+  const enabledChores = chores.filter(c => c.enabled);
+
+  function handleToggleChore(name: string, enable: boolean) {
+    upsertChore.mutate({ chore_name: name, enabled: enable, student_id: null });
   }
 
-  const allChoreNames = new Set([
-    ...DEFAULT_CHORES,
-    ...chores.map(c => c.chore_name),
-  ]);
+  function handleAddCustom(name: string) {
+    upsertChore.mutate({ chore_name: name, enabled: true, student_id: null });
+  }
 
   return (
     <div
@@ -690,11 +773,8 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                       value={existing?.student_id ?? ""}
                       onChange={e => {
                         const sid = e.target.value ? Number(e.target.value) : null;
-                        if (existing && !sid) {
-                          removeRole.mutate(existing.id);
-                        } else if (sid) {
-                          assignRole.mutate({ role_type, student_id: sid });
-                        }
+                        if (existing && !sid) removeRole.mutate(existing.id);
+                        else if (sid) assignRole.mutate({ role_type, student_id: sid });
                       }}
                     >
                       <option value="">— niemand —</option>
@@ -702,12 +782,6 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                         <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
                       ))}
                     </select>
-                    {!CLASS_ROLES.includes(role_type) && !existing && (
-                      <button
-                        onClick={() => {/* role disappears when no one assigned — nothing to delete */}}
-                        className="text-[var(--text-muted)] text-lg leading-none hover:text-red-400"
-                      >×</button>
-                    )}
                   </div>
                 );
               })}
@@ -719,12 +793,10 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                   onChange={e => setNewRole(e.target.value)}
                   placeholder="Neue Rolle…"
                   className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && newRole.trim()) setNewRole("");
-                  }}
+                  onKeyDown={e => { if (e.key === "Enter") setNewRole(""); }}
                 />
                 <button
-                  onClick={() => { if (newRole.trim()) setNewRole(""); }}
+                  onClick={() => setNewRole("")}
                   className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
                 >
                   + Hinzufügen
@@ -736,32 +808,49 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
           {/* ── Dienste ── */}
           {section === "dienste" && (
             <>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => clearChores.mutate()}
-                  className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
-                >
-                  🗑 Zuweisungen löschen
-                </button>
-                <button
-                  onClick={() => randomAssign.mutate()}
-                  className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
-                >
-                  🎲 Zufällig zuweisen
-                </button>
-              </div>
+              {/* Chore picker dropdown */}
+              <ChoreSelector
+                allNames={allChoreNames}
+                chores={chores}
+                cls={cls}
+                onToggle={handleToggleChore}
+                onAddCustom={handleAddCustom}
+              />
 
-              {[...allChoreNames].map(chore_name => {
-                const existing = getChoreFor(chore_name);
-                return (
-                  <div key={chore_name} className="flex items-center gap-3">
-                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore_name}</div>
+              {/* Action buttons */}
+              {enabledChores.length > 0 && (
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => clearChores.mutate()}
+                    className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+                  >
+                    🗑 Zuweisungen löschen
+                  </button>
+                  <button
+                    onClick={() => randomAssign.mutate()}
+                    disabled={randomAssign.isPending}
+                    className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                  >
+                    🎲 Zufällig zuweisen
+                  </button>
+                </div>
+              )}
+
+              {/* Assignment rows — only enabled chores */}
+              {enabledChores.length === 0 ? (
+                <p className="text-sm text-[var(--text-muted)] text-center py-6">
+                  Noch keine Dienste aktiviert. Oben Dienste auswählen.
+                </p>
+              ) : (
+                enabledChores.map(chore => (
+                  <div key={chore.id} className="flex items-center gap-3">
+                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore.chore_name}</div>
                     <select
                       className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                      value={existing?.student_id ?? ""}
+                      value={chore.student_id ?? ""}
                       onChange={e => {
                         const sid = e.target.value ? Number(e.target.value) : null;
-                        upsertChore.mutate({ chore_name, student_id: sid });
+                        upsertChore.mutate({ chore_name: chore.chore_name, student_id: sid, enabled: true });
                       }}
                     >
                       <option value="">— niemand —</option>
@@ -769,42 +858,9 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                         <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
                       ))}
                     </select>
-                    {!DEFAULT_CHORES.includes(chore_name) && (
-                      <button
-                        onClick={() => existing && deleteChore.mutate(existing.id)}
-                        className="text-[var(--text-muted)] text-lg leading-none hover:text-red-400"
-                      >×</button>
-                    )}
                   </div>
-                );
-              })}
-
-              {/* Add custom chore */}
-              <div className="flex gap-2 mt-2">
-                <input
-                  value={newChore}
-                  onChange={e => setNewChore(e.target.value)}
-                  placeholder="Neuer Dienst…"
-                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && newChore.trim()) {
-                      upsertChore.mutate({ chore_name: newChore.trim(), student_id: null });
-                      setNewChore("");
-                    }
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (newChore.trim()) {
-                      upsertChore.mutate({ chore_name: newChore.trim(), student_id: null });
-                      setNewChore("");
-                    }
-                  }}
-                  className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
-                >
-                  + Hinzufügen
-                </button>
-              </div>
+                ))
+              )}
             </>
           )}
         </div>
