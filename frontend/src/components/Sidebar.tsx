@@ -17,11 +17,11 @@ const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "caputh",         label: "Caputh",           href: "/capuths" },
   { tab: "sportundspiele", label: "Sport & Spiele",   href: "/sportundspiele" },
   { tab: "haeuser",        label: "Häuser & Klassen", href: "/haeuser" },
-  { tab: "schreibraum",    label: "Schreibraum",      href: "/schreibraum" },
 ];
 
 const NAV_TOOLS: { tab: string; label: string; href: string }[] = [
-  { tab: "barometer",   label: "Meinungsbarometer", href: "/barometer" },
+  { tab: "schreibraum", label: "Schreibraum",        href: "/schreibraum" },
+  { tab: "barometer",   label: "Meinungsbarometer",  href: "/barometer" },
   { tab: "exit-ticket", label: "Exit Ticket",        href: "/exit-ticket" },
   { tab: "classroom",   label: "Classroom Screen",   href: "/classroom" },
 ];

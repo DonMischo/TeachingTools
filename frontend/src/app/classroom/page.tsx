@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // ── Widget registry ────────────────────────────────────────────────────────
 
@@ -308,6 +309,7 @@ function StopwatchWidget() {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ClassroomPage() {
+  const router = useRouter();
   const [widgets, setWidgets] = useState<SavedState>(() => loadState());
   const [showPanel, setShowPanel] = useState(false);
 
@@ -329,6 +331,14 @@ export default function ClassroomPage() {
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-[var(--bg)]">
+
+      {/* Back button */}
+      <button
+        onClick={() => router.push("/")}
+        className="absolute top-4 left-4 z-50 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+      >
+        ← Zurück
+      </button>
 
       {/* Toggle panel button */}
       <button

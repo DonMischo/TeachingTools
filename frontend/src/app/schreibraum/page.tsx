@@ -99,6 +99,9 @@ export default function SchreibraumListPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <button onClick={() => router.push("/")} className="mb-3 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+        ← Zurück
+      </button>
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <h1 className="text-2xl font-black tracking-tight">📝 Schreibraum</h1>

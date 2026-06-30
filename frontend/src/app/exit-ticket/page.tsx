@@ -42,6 +42,9 @@ export default function ExitTicketPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+      <button onClick={() => router.push("/")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+        ← Zurück
+      </button>
       <div>
         <h1 className="text-2xl font-black tracking-tight">🎫 Exit Ticket</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">
@@ -95,10 +98,10 @@ export default function ExitTicketPage() {
               </div>
               <div className="flex gap-2 shrink-0">
                 <button onClick={() => router.push(`/exit-ticket/host/${s.code}`)}
-                  className="btn-secondary text-xs py-1 px-3">Öffnen</button>
+                  className="shrink-0 w-auto rounded-lg border border-[var(--border)] text-[var(--text)] font-semibold py-1 px-3 text-xs hover:bg-[var(--surface-hover)] transition-colors">Öffnen</button>
                 {canEdit && (
                   <button onClick={() => deleteMut.mutate(s.code)}
-                    className="text-xs border border-red-400/50 text-red-400 hover:bg-red-400/10 rounded-xl px-3 py-1 transition-colors">
+                    className="shrink-0 w-auto text-xs border border-red-400/50 text-red-400 hover:bg-red-400/10 rounded-xl px-3 py-1 transition-colors">
                     Löschen
                   </button>
                 )}

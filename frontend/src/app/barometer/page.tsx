@@ -64,6 +64,9 @@ export default function BarometerPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
+      <button onClick={() => router.push("/")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+        ← Zurück
+      </button>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black tracking-tight">🌡️ Meinungsbarometer</h1>
         <button onClick={() => setShowCreate(v => !v)} className="btn-primary text-sm py-2 px-5">
@@ -155,10 +158,12 @@ export default function BarometerPage() {
                 {new Date(s.created_at).toLocaleDateString("de-DE")}
               </div>
             </div>
-            <button onClick={() => router.push(`/barometer/host/${s.code}`)}
-              className="btn-primary text-xs py-1 px-3">Öffnen</button>
-            <button onClick={() => deleteMut.mutate(s.code)}
-              className="text-red-400 hover:text-red-300 border border-red-400/40 rounded-lg px-2 py-1 text-xs transition-colors">✕</button>
+            <div className="flex gap-2 shrink-0">
+              <button onClick={() => router.push(`/barometer/host/${s.code}`)}
+                className="shrink-0 w-auto rounded-lg bg-[var(--accent)] text-black font-semibold py-1 px-3 text-xs hover:opacity-90 transition-opacity">Öffnen</button>
+              <button onClick={() => deleteMut.mutate(s.code)}
+                className="shrink-0 w-auto text-red-400 hover:text-red-300 border border-red-400/40 rounded-lg px-2 py-1 text-xs transition-colors">✕</button>
+            </div>
           </div>
         ))}
       </div>
