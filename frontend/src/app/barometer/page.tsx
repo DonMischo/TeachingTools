@@ -8,7 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 
 type QuestionDraft = { text: string; scale_min: number; scale_max: number; scale_min_label: string; scale_max_label: string };
 
-const BLANK_Q = (): QuestionDraft => ({ text: "", scale_min: 1, scale_max: 6, scale_min_label: "", scale_max_label: "" });
+const BLANK_Q = (): QuestionDraft => ({ text: "", scale_min: 1, scale_max: 6, scale_min_label: "sehr gut", scale_max_label: "schlecht" });
 
 export default function BarometerPage() {
   const { auth } = useAuth();
@@ -65,8 +65,8 @@ export default function BarometerPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black tracking-tight">📊 Meinungsbarometer</h1>
-        <button onClick={() => setShowCreate(v => !v)} className="btn-primary text-sm py-1.5 px-4">
+        <h1 className="text-2xl font-black tracking-tight">🌡️ Meinungsbarometer</h1>
+        <button onClick={() => setShowCreate(v => !v)} className="btn-primary text-sm py-2 px-5">
           + Neue Umfrage
         </button>
       </div>

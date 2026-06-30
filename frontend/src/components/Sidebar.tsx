@@ -12,14 +12,18 @@ import { NavIcon } from "@/components/icons/NavIcon";
 import { AppLogo } from "@/components/AppLogo";
 import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 
-const NAV: { tab: string; label: string; href: string }[] = [
+const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",        href: "/" },
   { tab: "caputh",         label: "Caputh",           href: "/capuths" },
   { tab: "sportundspiele", label: "Sport & Spiele",   href: "/sportundspiele" },
   { tab: "haeuser",        label: "Häuser & Klassen", href: "/haeuser" },
   { tab: "schreibraum",    label: "Schreibraum",      href: "/schreibraum" },
-  { tab: "barometer",      label: "Barometer",        href: "/barometer" },
-  { tab: "exit-ticket",   label: "Exit Ticket",      href: "/exit-ticket" },
+];
+
+const NAV_TOOLS: { tab: string; label: string; href: string }[] = [
+  { tab: "barometer",   label: "Meinungsbarometer", href: "/barometer" },
+  { tab: "exit-ticket", label: "Exit Ticket",        href: "/exit-ticket" },
+  { tab: "classroom",   label: "Classroom Screen",   href: "/classroom" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
@@ -147,8 +151,6 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
     return pathname.startsWith(href);
   }
 
-  const visibleNav = NAV;
-
   function closeAll() { setPointsOpen(false); setLoginOpen(false); }
 
   const iconStrip = (
@@ -160,7 +162,7 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
       <div className="w-7 h-px bg-[var(--border)] mb-1" />
 
       <div className="flex flex-col items-center gap-1">
-        {visibleNav.map(({ tab, label, href }) => (
+        {NAV_MAIN.map(({ tab, label, href }) => (
           <Link key={tab} href={href} title={label}
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
               ${isActive(href)
@@ -169,6 +171,20 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
             <NavIcon name={tab as any} />
           </Link>
         ))}
+
+        {/* Unterrichtstools group */}
+        <div className="w-7 h-px bg-[var(--border)] my-0.5" />
+        <span className="text-[var(--text-muted)] text-[8px] font-semibold tracking-widest uppercase leading-none mb-0.5" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", opacity: 0.45, letterSpacing: "0.15em" }}>Tools</span>
+        {NAV_TOOLS.map(({ tab, label, href }) => (
+          <Link key={tab} href={href} title={label}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
+              ${isActive(href)
+                ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
+                : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"}`}>
+            <NavIcon name={tab as any} />
+          </Link>
+        ))}
+
         <div className="w-7 h-px bg-[var(--border)] my-0.5" />
         <button
           title="Punkte vergeben"
@@ -288,23 +304,25 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
 
             {/* Award form */}
             <div className="flex flex-col gap-3 px-4 py-4">
-              <div className="flex gap-1">
-                {QUICK.map(q => (
-                  <button key={q} onClick={() => setAmt(String(q))}
-                    className={`flex-1 py-1.5 text-xs rounded-lg border transition-colors min-w-0 ${
-                      amt === String(q)
-                        ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]"
-                        : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
-                    }`}>
-                    +{q}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-5 gap-1">
+                  {QUICK.map(q => (
+                    <button key={q} onClick={() => setAmt(String(q))}
+                      className={`py-2 text-xs rounded-lg border transition-colors font-medium ${
+                        amt === String(q)
+                          ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]"
+                          : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
+                      }`}>
+                      +{q}
+                    </button>
+                  ))}
+                </div>
                 <input
                   type="number"
-                  placeholder="…"
+                  placeholder="Andere Punktzahl…"
                   value={amt}
                   onChange={e => setAmt(e.target.value)}
-                  className="input w-14 text-xs py-1.5 px-1.5 min-w-0 shrink-0"
+                  className="input text-sm py-2"
                 />
               </div>
               <input
@@ -386,29 +404,40 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
               {txLog.length === 0 ? (
                 <p className="text-sm text-[var(--text-muted)] px-4 py-6 text-center">Keine Einträge.</p>
               ) : (
-                <ul className="divide-y divide-[var(--border)]">
-                  {txLog.map(tx => (
-                    <li key={tx.id} className="px-4 py-2.5 flex items-start gap-3 text-sm group">
-                      <span className={`font-bold tabular-nums shrink-0 ${tx.points >= 0 ? "text-green-500" : "text-red-400"}`}>
-                        {tx.points >= 0 ? "+" : ""}{tx.points}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        {tx.reason && <div className="font-medium leading-snug">{tx.reason}</div>}
-                        <div className="text-xs text-[var(--text-muted)]">
-                          {tx.teacher_name} · {new Date(tx.ts).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })}
-                        </div>
-                      </div>
-                      {auth?.role === "admin" && (
-                        <button
-                          onClick={() => deleteTxMut.mutate(tx.id)}
-                          disabled={deleteTxMut.isPending}
-                          className="opacity-0 group-hover:opacity-100 shrink-0 text-xs text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded border border-red-400/40 transition-opacity"
-                          title="Eintrag löschen"
-                        >✕</button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--border)]">
+                      <th className="text-left text-xs text-[var(--text-muted)] font-semibold px-4 py-2 w-16">Pkt</th>
+                      <th className="text-left text-xs text-[var(--text-muted)] font-semibold px-2 py-2">Notiz</th>
+                      {auth?.role === "admin" && <th className="w-8" />}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {txLog.map(tx => (
+                      <tr key={tx.id} className="group hover:bg-[var(--surface-hover)]">
+                        <td className={`px-4 py-2 font-bold tabular-nums text-sm w-16 ${tx.points >= 0 ? "text-green-500" : "text-red-400"}`}>
+                          {tx.points >= 0 ? "+" : ""}{tx.points}
+                        </td>
+                        <td className="px-2 py-2 min-w-0">
+                          {tx.reason && <div className="font-medium leading-snug text-xs">{tx.reason}</div>}
+                          <div className="text-xs text-[var(--text-muted)]">
+                            {tx.teacher_name} · {new Date(tx.ts).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                          </div>
+                        </td>
+                        {auth?.role === "admin" && (
+                          <td className="pr-3 py-2">
+                            <button
+                              onClick={() => deleteTxMut.mutate(tx.id)}
+                              disabled={deleteTxMut.isPending}
+                              className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-300 px-1 py-0.5 rounded border border-red-400/40 transition-opacity"
+                              title="Eintrag löschen"
+                            >✕</button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

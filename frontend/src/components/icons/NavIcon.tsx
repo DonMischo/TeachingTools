@@ -4,7 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
-  | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket"
+  | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
   | "admin" | "punkte" | "user" | "login";
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
@@ -227,6 +227,18 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
+  // ── Classroom Screen (monitor + widgets) ─────────────────────────────
+  classroom: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      <rect x="1.5" y="3" width="17" height="11" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="3.5" y="5" width="5" height="4" rx=".7" opacity=".6"/>
+      <rect x="3.5" y="10" width="8" height="2" rx=".5" opacity=".4"/>
+      <rect x="10" y="5" width="5.5" height="7" rx=".7" opacity=".5"/>
+      <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="10" y1="14" x2="10" y2="17" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  ),
+
   // ── Gate / Portal (Login) ─────────────────────────────────────────────
   login: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -328,6 +340,14 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <line x1="7" y1="5" x2="7" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 1.5"/>
     <path d="M9.5 9.5l1.5 1.5 2.5-2.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>,
+  classroom: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="1.5" y="3" width="17" height="11" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+    <rect x="3.5" y="5" width="5" height="4" rx=".5" opacity=".6"/>
+    <rect x="3.5" y="10" width="8" height="2" rx=".5" opacity=".4"/>
+    <rect x="10" y="5" width="5.5" height="7" rx=".5" opacity=".5"/>
+    <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="10" y1="14" x2="10" y2="17" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -338,10 +358,11 @@ const EMOJI: Record<NavKey, string> = {
   haeuser:        "🛡️",
   klassen:        "🎓",
   schreibraum:    "🪶",
-  barometer:      "📊",
+  barometer:      "🌡️",
   auction:        "🏷",
   bingo:          "🎰",
   "exit-ticket":  "🎫",
+  classroom:      "🖥️",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",
