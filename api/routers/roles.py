@@ -8,7 +8,7 @@ from ..auth import get_current_teacher
 
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 
-VALID_ROLES = {"klassensprecher", "haussprecher"}
+VALID_ROLES: set[str] = set()  # empty = allow any role type
 
 
 class RoleOut(BaseModel):
@@ -59,7 +59,7 @@ def assign_role(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    if body.role_type not in VALID_ROLES:
+    if VALID_ROLES and body.role_type not in VALID_ROLES:
         raise HTTPException(400, f"Unknown role. Valid: {', '.join(sorted(VALID_ROLES))}")
     student = db.get(Student, body.student_id)
     if not student:

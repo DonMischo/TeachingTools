@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, HausOut, ClassOut } from "@/lib/api";
+import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSelectedClass } from "@/contexts/SelectedClassContext";
 import { HaeuserDiagram } from "@/components/HaeuserDiagram";
@@ -561,6 +561,258 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
   );
 }
 
+// ─── Class Detail Dialog ──────────────────────────────────────────────────────
+
+const DEFAULT_CHORES = ["Tafeldienst", "Pflanzendienst", "Austeildienst", "Fensterdienst", "Computerdienst"];
+const CLASS_ROLES = ["Klassensprecher", "Schülersprecher", "Haussprecher"];
+
+function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [section, setSection] = useState<"rollen" | "dienste">("rollen");
+  const [newRole, setNewRole] = useState("");
+  const [newChore, setNewChore] = useState("");
+
+  const { data: students = [] } = useQuery<StudentOut[]>({
+    queryKey: ["students", cls.id],
+    queryFn: () => api.students.list({ klasse: cls.code }),
+  });
+
+  const { data: roles = [] } = useQuery<StudentRoleOut[]>({
+    queryKey: ["roles", cls.id],
+    queryFn: () => api.roles.list({ scope_id: cls.id }),
+  });
+
+  const { data: chores = [] } = useQuery<ClassChoreOut[]>({
+    queryKey: ["chores", cls.id],
+    queryFn: () => api.chores.list(cls.id),
+  });
+
+  const assignRole = useMutation({
+    mutationFn: ({ role_type, student_id }: { role_type: string; student_id: number | null }) =>
+      student_id
+        ? api.roles.assign({ student_id, role_type, scope_id: cls.id })
+        : Promise.resolve(null),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles", cls.id] }),
+  });
+
+  const removeRole = useMutation({
+    mutationFn: (id: number) => api.roles.remove(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles", cls.id] }),
+  });
+
+  const upsertChore = useMutation({
+    mutationFn: (body: { chore_name: string; student_id?: number | null }) =>
+      api.chores.upsert({ class_id: cls.id, ...body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+  });
+
+  const deleteChore = useMutation({
+    mutationFn: (id: number) => api.chores.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+  });
+
+  const clearChores = useMutation({
+    mutationFn: () => api.chores.clear(cls.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+  });
+
+  const randomAssign = useMutation({
+    mutationFn: () => api.chores.randomAssign(cls.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+  });
+
+  const activeRoleTypes = new Set(
+    [...CLASS_ROLES, ...roles.map(r => r.role_type)]
+  );
+  if (newRole.trim()) activeRoleTypes.add(newRole.trim());
+
+  const allRoleTypes = [...activeRoleTypes];
+
+  function getRoleFor(role_type: string): StudentRoleOut | undefined {
+    return roles.find(r => r.role_type.toLowerCase() === role_type.toLowerCase() && r.scope_id === cls.id);
+  }
+
+  function getChoreFor(chore_name: string): ClassChoreOut | undefined {
+    return chores.find(c => c.chore_name === chore_name);
+  }
+
+  const allChoreNames = new Set([
+    ...DEFAULT_CHORES,
+    ...chores.map(c => c.chore_name),
+  ]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative w-full sm:max-w-xl max-h-[85dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+          <ClassIcon cls={cls} />
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-lg truncate">{cls.code}{cls.class_name ? ` — „${cls.class_name}"` : ""}</div>
+            <div className="text-xs text-[var(--text-muted)]">{students.length} Schüler:innen</div>
+          </div>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-2xl leading-none px-1">×</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-[var(--border)] shrink-0">
+          {(["rollen", "dienste"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSection(s)}
+              className="flex-1 py-2.5 text-sm font-semibold capitalize transition-colors"
+              style={{
+                color: section === s ? "var(--accent)" : "var(--text-muted)",
+                borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
+              }}
+            >
+              {s === "rollen" ? "👑 Rollen" : "🧹 Dienste"}
+            </button>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
+
+          {/* ── Rollen ── */}
+          {section === "rollen" && (
+            <>
+              {allRoleTypes.map(role_type => {
+                const existing = getRoleFor(role_type);
+                return (
+                  <div key={role_type} className="flex items-center gap-3">
+                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)] capitalize">{role_type}</div>
+                    <select
+                      className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                      value={existing?.student_id ?? ""}
+                      onChange={e => {
+                        const sid = e.target.value ? Number(e.target.value) : null;
+                        if (existing && !sid) {
+                          removeRole.mutate(existing.id);
+                        } else if (sid) {
+                          assignRole.mutate({ role_type, student_id: sid });
+                        }
+                      }}
+                    >
+                      <option value="">— niemand —</option>
+                      {students.map(s => (
+                        <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                      ))}
+                    </select>
+                    {!CLASS_ROLES.includes(role_type) && !existing && (
+                      <button
+                        onClick={() => {/* role disappears when no one assigned — nothing to delete */}}
+                        className="text-[var(--text-muted)] text-lg leading-none hover:text-red-400"
+                      >×</button>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Add custom role */}
+              <div className="flex gap-2 mt-2">
+                <input
+                  value={newRole}
+                  onChange={e => setNewRole(e.target.value)}
+                  placeholder="Neue Rolle…"
+                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newRole.trim()) setNewRole("");
+                  }}
+                />
+                <button
+                  onClick={() => { if (newRole.trim()) setNewRole(""); }}
+                  className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
+                >
+                  + Hinzufügen
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ── Dienste ── */}
+          {section === "dienste" && (
+            <>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => clearChores.mutate()}
+                  className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+                >
+                  🗑 Zuweisungen löschen
+                </button>
+                <button
+                  onClick={() => randomAssign.mutate()}
+                  className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+                >
+                  🎲 Zufällig zuweisen
+                </button>
+              </div>
+
+              {[...allChoreNames].map(chore_name => {
+                const existing = getChoreFor(chore_name);
+                return (
+                  <div key={chore_name} className="flex items-center gap-3">
+                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore_name}</div>
+                    <select
+                      className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                      value={existing?.student_id ?? ""}
+                      onChange={e => {
+                        const sid = e.target.value ? Number(e.target.value) : null;
+                        upsertChore.mutate({ chore_name, student_id: sid });
+                      }}
+                    >
+                      <option value="">— niemand —</option>
+                      {students.map(s => (
+                        <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                      ))}
+                    </select>
+                    {!DEFAULT_CHORES.includes(chore_name) && (
+                      <button
+                        onClick={() => existing && deleteChore.mutate(existing.id)}
+                        className="text-[var(--text-muted)] text-lg leading-none hover:text-red-400"
+                      >×</button>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Add custom chore */}
+              <div className="flex gap-2 mt-2">
+                <input
+                  value={newChore}
+                  onChange={e => setNewChore(e.target.value)}
+                  placeholder="Neuer Dienst…"
+                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newChore.trim()) {
+                      upsertChore.mutate({ chore_name: newChore.trim(), student_id: null });
+                      setNewChore("");
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (newChore.trim()) {
+                      upsertChore.mutate({ chore_name: newChore.trim(), student_id: null });
+                      setNewChore("");
+                    }
+                  }}
+                  className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
+                >
+                  + Hinzufügen
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HaeuserPage() {
@@ -569,6 +821,7 @@ export default function HaeuserPage() {
   const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
   const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
+  const [detailClass, setDetailClass] = useState<ClassOut | null>(null);
 
   const { data: haeuser = [], isLoading: hLoading } = useQuery<HausOut[]>({
     queryKey: ["haeuser"],
@@ -656,16 +909,18 @@ export default function HaeuserPage() {
               {[...classes]
                 .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
                 .map(cls => (
-                  <button
+                  <div
                     key={cls.id}
-                    onClick={() => setSelectedClass(selectedClass?.id === cls.id ? null : cls)}
-                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4
-                      cursor-pointer transition-all hover:bg-[var(--surface-hover)] text-left"
+                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all"
                     style={{
                       borderColor: selectedClass?.id === cls.id ? "var(--accent)" : "var(--border)",
                       boxShadow: selectedClass?.id === cls.id ? "0 0 0 2px var(--accent)33" : undefined,
                     }}
                   >
+                    <button
+                      className="flex items-center gap-4 flex-1 min-w-0 text-left hover:opacity-80"
+                      onClick={() => setSelectedClass(selectedClass?.id === cls.id ? null : cls)}
+                    >
                     <ClassIcon cls={cls} />
                     <div className="flex-1 min-w-0">
                       <div className="font-bold truncate">
@@ -686,7 +941,15 @@ export default function HaeuserPage() {
                       </div>
                       <div className="text-xs text-[var(--text-muted)]">Pkt</div>
                     </div>
-                  </button>
+                    </button>
+                    <button
+                      onClick={() => setDetailClass(cls)}
+                      className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text)] p-1 rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
+                      title="Klasse konfigurieren"
+                    >
+                      ⚙️
+                    </button>
+                  </div>
                 ))}
             </div>
           )}
@@ -735,6 +998,10 @@ export default function HaeuserPage() {
           classes={classes}
           onClose={() => setVerwaltenHaus(null)}
         />
+      )}
+
+      {detailClass && (
+        <ClassDetailDialog cls={detailClass} onClose={() => setDetailClass(null)} />
       )}
     </div>
   );

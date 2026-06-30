@@ -466,6 +466,25 @@ class StudentRole(Base):
 
 
 # ---------------------------------------------------------------------------
+# Class Chores (Klassendienste)
+# ---------------------------------------------------------------------------
+
+class ClassChore(Base):
+    __tablename__ = "class_chores"
+    __table_args__ = (UniqueConstraint("class_id", "chore_name", name="uq_class_chore"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True)
+    chore_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    assigned_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    student: Mapped["Student | None"] = relationship("Student")
+    assigner: Mapped["Teacher | None"] = relationship("Teacher")
+
+
+# ---------------------------------------------------------------------------
 # Meinungsbarometer
 # ---------------------------------------------------------------------------
 

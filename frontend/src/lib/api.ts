@@ -113,6 +113,14 @@ export type StudentRoleOut = {
   assigned_by: number | null;
 };
 
+export type ClassChoreOut = {
+  id: number;
+  class_id: number;
+  chore_name: string;
+  student_id: number | null;
+  student_name: string | null;
+};
+
 export type BarometerQuestionOut = {
   id: number;
   order: number;
@@ -611,6 +619,14 @@ export const api = {
     assign: (body: { student_id: number; role_type: string; scope_id?: number | null }) =>
       apiFetch<StudentRoleOut>("roles", { method: "POST", body: JSON.stringify(body) }),
     remove: (id: number) => apiFetch<void>(`roles/${id}`, { method: "DELETE" }),
+  },
+  chores: {
+    list: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores?class_id=${class_id}`),
+    upsert: (body: { class_id: number; chore_name: string; student_id?: number | null }) =>
+      apiFetch<ClassChoreOut>("chores", { method: "POST", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`chores/${id}`, { method: "DELETE" }),
+    clear: (class_id: number) => apiFetch<void>(`chores/clear?class_id=${class_id}`, { method: "POST" }),
+    randomAssign: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores/random?class_id=${class_id}`, { method: "POST" }),
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
