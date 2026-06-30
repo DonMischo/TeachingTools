@@ -43,6 +43,21 @@ def create_transaction(
     )
 
 
+@router.delete("/{tx_id}", status_code=204)
+def delete_transaction(
+    tx_id: int,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    if current.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete transactions")
+    tx = db.get(Transaction, tx_id)
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    db.delete(tx)
+    db.commit()
+
+
 @router.get("", response_model=list[TransactionOut])
 def list_transactions(
     class_id: int | None = Query(None),
