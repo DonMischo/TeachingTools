@@ -1,6 +1,6 @@
 services:
   frontend:
-    command: sh -c "npx next dev -p 1339 -H 0.0.0.0 --webpack"
+    command: sh -c "node scripts/check-shaders.mjs && node dev-server.js"
     environment:
       PORT: 1339
       NODE_ENV: development
