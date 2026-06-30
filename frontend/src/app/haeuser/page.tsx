@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -873,6 +874,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
 export default function HaeuserPage() {
   const { auth } = useAuth();
+  const router = useRouter();
   const { selectedClass, setSelectedClass } = useSelectedClass();
   const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -897,6 +899,8 @@ export default function HaeuserPage() {
   return (
     <div className="p-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
+      <div className="flex flex-col gap-1">
+        <button onClick={() => router.push("/admin")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
       <div className="flex items-center gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">🛡️ Häuser &amp; Klassen</h1>
         <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
@@ -918,6 +922,7 @@ export default function HaeuserPage() {
             </button>
           ))}
         </div>
+      </div>
       </div>
 
       {/* ── Diagramme ── */}

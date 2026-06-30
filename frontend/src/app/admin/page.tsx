@@ -37,11 +37,11 @@ export default function AdminPage() {
           <div className="font-semibold">Schülerkarten</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
         </Link>
-        <Link href="/sportfest/setup"
+        <Link href="/haeuser"
           className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🏃</div>
-          <div className="font-semibold">Sportfest Setup</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Disziplinen aktivieren</div>
+          <div className="text-2xl mb-2">🛡️</div>
+          <div className="font-semibold">Häuser &amp; Klassen</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Häuser verwalten · Klassen zuordnen · Punkte</div>
         </Link>
         <button
           onClick={() => setShowTheme(true)}

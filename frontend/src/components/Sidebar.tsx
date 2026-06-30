@@ -13,14 +13,10 @@ import { AppLogo } from "@/components/AppLogo";
 import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
-  { tab: "home",           label: "Hauspokal",        href: "/" },
-  { tab: "caputh",         label: "Caputh",           href: "/capuths" },
-  { tab: "sportundspiele", label: "Sport & Spiele",   href: "/sportundspiele" },
-  { tab: "haeuser",        label: "Häuser & Klassen", href: "/haeuser" },
-];
-
-const NAV_TOOLS: { tab: string; label: string; href: string }[] = [
-  { tab: "tools", label: "Tools", href: "/tools" },
+  { tab: "home",           label: "Hauspokal",      href: "/" },
+  { tab: "caputh",         label: "Caputh",         href: "/capuths" },
+  { tab: "sportundspiele", label: "Sport & Spiele", href: "/sportundspiele" },
+  { tab: "tools",          label: "Tools",          href: "/tools" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
@@ -160,19 +156,6 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
 
       <div className="flex flex-col items-center gap-1">
         {NAV_MAIN.map(({ tab, label, href }) => (
-          <Link key={tab} href={href} title={label}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
-              ${isActive(href)
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"}`}>
-            <NavIcon name={tab as any} />
-          </Link>
-        ))}
-
-        {/* Unterrichtstools group */}
-        <div className="w-7 h-px bg-[var(--border)] my-0.5" />
-        <span className="text-[var(--text-muted)] text-[8px] font-semibold tracking-widest uppercase leading-none mb-0.5" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", opacity: 0.45, letterSpacing: "0.15em" }}>Tools</span>
-        {NAV_TOOLS.map(({ tab, label, href }) => (
           <Link key={tab} href={href} title={label}
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
               ${isActive(href)

@@ -175,14 +175,21 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
-  // ── Barometer (scale bars) ────────────────────────────────────────────
+  // ── Speedometer / Gauge (Barometer) ──────────────────────────────────
   barometer: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-      <rect x="2" y="13" width="3" height="5" rx=".8"/>
-      <rect x="6.5" y="9" width="3" height="9" rx=".8"/>
-      <rect x="11" y="5" width="3" height="13" rx=".8"/>
-      <rect x="15.5" y="11" width="3" height="7" rx=".8"/>
-      <line x1="1" y1="2.5" x2="19" y2="2.5" stroke="currentColor" strokeWidth="1" opacity=".4" strokeLinecap="round"/>
+      {/* Outer arc (half-circle gauge face) */}
+      <path d="M2.5 14a7.5 7.5 0 0115 0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Tick marks */}
+      <line x1="2.5" y1="14" x2="4" y2="14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="4.2" y1="9.3" x2="5.3" y2="10.1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="10" y1="6.5" x2="10" y2="8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="15.8" y1="9.3" x2="14.7" y2="10.1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="17.5" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Needle pointing to ~2/3 (upper right) */}
+      <line x1="10" y1="14" x2="14.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      {/* Pivot dot */}
+      <circle cx="10" cy="14" r="1.5"/>
     </svg>
   ),
 
@@ -324,11 +331,14 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <rect x="2" y="2" width="2" height="2" opacity=".3"/>
   </svg>,
   barometer: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-    <rect x="2" y="13" width="3" height="5" rx=".5"/>
-    <rect x="6.5" y="9" width="3" height="9" rx=".5"/>
-    <rect x="11" y="5" width="3" height="13" rx=".5"/>
-    <rect x="15.5" y="11" width="3" height="7" rx=".5"/>
-    <line x1="1" y1="3" x2="19" y2="3" stroke="currentColor" strokeWidth="1.2" opacity=".5" strokeLinecap="round"/>
+    <path d="M2.5 14a7.5 7.5 0 0115 0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="2.5" y1="14" x2="4" y2="14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="4.2" y1="9.3" x2="5.3" y2="10.1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="10" y1="6.5" x2="10" y2="8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="15.8" y1="9.3" x2="14.7" y2="10.1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="17.5" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    <line x1="10" y1="14" x2="14.5" y2="8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    <circle cx="10" cy="14" r="1.5"/>
   </svg>,
   auction: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
     <rect x="10" y="2" width="7" height="4" rx="1" transform="rotate(45 13.5 4)"/>

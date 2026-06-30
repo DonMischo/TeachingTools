@@ -317,6 +317,7 @@ export default function AdminStylePage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
       <div>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🎨 Style Pack</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">Logo · Icons · Farben anpassen</p>
       </div>
