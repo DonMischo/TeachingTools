@@ -4,7 +4,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
-  | "schreibraum" | "barometer" | "admin" | "punkte" | "user" | "login";
+  | "schreibraum" | "barometer" | "auction" | "bingo"
+  | "admin" | "punkte" | "user" | "login";
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
 // home → Siegerpokal (Victory Trophy)
@@ -184,6 +185,36 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
+  // ── Hammer + Gavel (Auction / Punkte-Auktion) ───────────────────────
+  auction: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      {/* Gavel head */}
+      <rect x="10" y="2" width="7" height="4" rx="1" transform="rotate(45 13.5 4)"/>
+      {/* Handle */}
+      <line x1="12" y1="8" x2="3" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      {/* Block */}
+      <rect x="2" y="16" width="9" height="2.5" rx="1"/>
+    </svg>
+  ),
+
+  // ── Bingo Grid ────────────────────────────────────────────────────────
+  bingo: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      {/* 3×3 grid */}
+      <rect x="2" y="2" width="5" height="5" rx=".8" opacity=".85"/>
+      <rect x="7.5" y="2" width="5" height="5" rx=".8" opacity=".6"/>
+      <rect x="13" y="2" width="5" height="5" rx=".8" opacity=".85"/>
+      <rect x="2" y="7.5" width="5" height="5" rx=".8" opacity=".6"/>
+      <rect x="7.5" y="7.5" width="5" height="5" rx=".8"/>
+      <rect x="13" y="7.5" width="5" height="5" rx=".8" opacity=".6"/>
+      <rect x="2" y="13" width="5" height="5" rx=".8" opacity=".85"/>
+      <rect x="7.5" y="13" width="5" height="5" rx=".8" opacity=".6"/>
+      <rect x="13" y="13" width="5" height="5" rx=".8" opacity=".85"/>
+      {/* checkmark on center */}
+      <path d="M9.5 10.5l1 1 2-2" stroke="var(--surface)" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+
   // ── Gate / Portal (Login) ─────────────────────────────────────────────
   login: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -264,6 +295,22 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <rect x="15.5" y="11" width="3" height="7" rx=".5"/>
     <line x1="1" y1="3" x2="19" y2="3" stroke="currentColor" strokeWidth="1.2" opacity=".5" strokeLinecap="round"/>
   </svg>,
+  auction: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="10" y="2" width="7" height="4" rx="1" transform="rotate(45 13.5 4)"/>
+    <line x1="12" y1="8" x2="3" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <rect x="2" y="16" width="9" height="2.5" rx="1"/>
+  </svg>,
+  bingo: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="2" y="2" width="5" height="5" rx=".8" opacity=".85"/>
+    <rect x="7.5" y="2" width="5" height="5" rx=".8" opacity=".5"/>
+    <rect x="13" y="2" width="5" height="5" rx=".8" opacity=".85"/>
+    <rect x="2" y="7.5" width="5" height="5" rx=".8" opacity=".5"/>
+    <rect x="7.5" y="7.5" width="5" height="5" rx=".8"/>
+    <rect x="13" y="7.5" width="5" height="5" rx=".8" opacity=".5"/>
+    <rect x="2" y="13" width="5" height="5" rx=".8" opacity=".85"/>
+    <rect x="7.5" y="13" width="5" height="5" rx=".8" opacity=".5"/>
+    <rect x="13" y="13" width="5" height="5" rx=".8" opacity=".85"/>
+  </svg>,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -275,6 +322,8 @@ const EMOJI: Record<NavKey, string> = {
   klassen:        "🎓",
   schreibraum:    "🪶",
   barometer:      "📊",
+  auction:        "🏷",
+  bingo:          "🎰",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

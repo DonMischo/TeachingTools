@@ -522,6 +522,85 @@ class BarometerResponse(Base):
     question: Mapped["BarometerQuestion"] = relationship(back_populates="responses")
 
 
+# ---------------------------------------------------------------------------
+# Punkte-Auktion
+# ---------------------------------------------------------------------------
+
+class AuctionSession(Base):
+    __tablename__ = "auction_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prize_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # "waiting" | "bidding" | "closed"
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="waiting")
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    winner_house_id: Mapped[int | None] = mapped_column(ForeignKey("haeuser.id", ondelete="SET NULL"), nullable=True)
+    winning_bid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    creator: Mapped["Teacher"] = relationship()
+    bids: Mapped[list["AuctionBid"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+
+class AuctionBid(Base):
+    __tablename__ = "auction_bids"
+    __table_args__ = (UniqueConstraint("session_id", "house_id", name="uq_auction_house"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("auction_sessions.id", ondelete="CASCADE"), nullable=False)
+    house_id: Mapped[int] = mapped_column(ForeignKey("haeuser.id", ondelete="CASCADE"), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["AuctionSession"] = relationship(back_populates="bids")
+    house: Mapped["Haus"] = relationship()
+
+
+# ---------------------------------------------------------------------------
+# Bingo
+# ---------------------------------------------------------------------------
+
+class BingoSession(Base):
+    __tablename__ = "bingo_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    grid_size: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+    # [{caller: str, answer: str}, ...]
+    pairs: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # indices of pairs called so far (in order)
+    called_indices: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # "waiting" | "active" | "closed"
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="waiting")
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    creator: Mapped["Teacher"] = relationship()
+    cards: Mapped[list["BingoCard"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+
+class BingoCard(Base):
+    __tablename__ = "bingo_cards"
+    __table_args__ = (UniqueConstraint("session_id", "student_id", name="uq_bingo_student"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("bingo_sessions.id", ondelete="CASCADE"), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    student_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    # pair indices assigned to each grid cell (length = grid_size²)
+    grid_indices: Mapped[list] = mapped_column(JSON, nullable=False)
+    # 0-based cell positions that are marked
+    marked_positions: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    has_bingo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+    session: Mapped["BingoSession"] = relationship(back_populates="cards")
+
+
 class SchreibraumAccess(Base):
     """Who is allowed to join a room. Either a specific student or a whole class."""
     __tablename__ = "schreibraum_access"

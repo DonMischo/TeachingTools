@@ -384,6 +384,24 @@ export type SchreibraumActionLog = {
   ts: string;
 };
 
+export type AuctionOut = {
+  id: number; code: string; title: string;
+  description: string | null; prize_description: string | null;
+  status: string; created_at: string;
+  winner_house_id: number | null; winning_bid: number | null;
+};
+
+export type BingoOut = {
+  id: number; code: string; title: string;
+  grid_size: number; status: string; total_pairs: number; created_at: string;
+};
+
+export type BingoCardOut = {
+  id: number; grid_size: number;
+  cells: { pair_index: number; answer: string }[];
+  marked_positions: number[]; has_bingo: boolean;
+};
+
 export const api = {
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),
@@ -665,4 +683,19 @@ export const api = {
         method: "POST", body: JSON.stringify({ group }),
       }),
   },
+  auction: {
+    list: () => apiFetch<AuctionOut[]>("auction"),
+    create: (body: { title: string; description?: string | null; prize_description?: string | null }) =>
+      apiFetch<AuctionOut>("auction", { method: "POST", body: JSON.stringify(body) }),
+    delete: (code: string) => apiFetch<void>(`auction/${code}`, { method: "DELETE" }),
+  },
+  bingo: {
+    list: () => apiFetch<BingoOut[]>("bingo"),
+    create: (body: { title: string; grid_size: number; pairs: { caller: string; answer: string }[] }) =>
+      apiFetch<{ id: number; code: string }>("bingo", { method: "POST", body: JSON.stringify(body) }),
+    delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
+    getOrCreateCard: (code: string, student_id: number) =>
+      apiFetch<BingoCardOut>(`bingo/${code}/card?student_id=${student_id}`, { method: "POST" }),
+  },
+  apiFetch,
 };
