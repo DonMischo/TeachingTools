@@ -31,6 +31,7 @@ interface Props {
   roomTitle?: string;
   participant: SchreibraumParticipant;
   mode: string;
+  readOnly?: boolean;
   initialYdocState?: string | null;
   onKicked?: () => void;
   onModeChange?: (mode: string) => void;
@@ -428,7 +429,7 @@ export interface EditorHandle {
 // ── Main component ───────────────────────────────────────────────────────────
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { roomId, roomCode, roomTitle, participant, mode, initialYdocState, onKicked, onModeChange }: Props,
+  { roomId, roomCode, roomTitle, participant, mode, readOnly, initialYdocState, onKicked, onModeChange }: Props,
   ref,
 ) {
   const { toast } = useToast();
@@ -700,6 +701,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   // Store editor ref for use in markCurrentBlock
   (editorRef as any).current = editor;
+
+  // Wortstaffel: toggle editability when turn changes
+  useEffect(() => {
+    if (editor) editor.setEditable(readOnly !== true);
+  }, [editor, readOnly]);
 
   useImperativeHandle(ref, () => ({
     getHTML: () => editor?.getHTML() ?? "",

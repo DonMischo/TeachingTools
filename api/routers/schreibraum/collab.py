@@ -258,3 +258,128 @@ async def collab_ws(ws: WebSocket, room_code: str, token: str = Query(...)):
                         log.info("Cleaned up temp room %s", room_code)
             except Exception as e:
                 log.warning("Could not clean up room %s: %s", room_code, e)
+
+
+# ---------------------------------------------------------------------------
+# Wortstaffel — turn management WebSocket
+# ---------------------------------------------------------------------------
+
+# room_code → current participant_id (or None)
+_turn_state: dict[str, str | None] = {}
+# room_code → {participant_id: ws}
+_turn_clients: dict[str, dict[str, WebSocket]] = defaultdict(dict)
+# room_code → [participant_id, ...] in join order (for "next" cycling)
+_turn_order: dict[str, list[str]] = defaultdict(list)
+# room_code → teacher ws
+_turn_teacher: dict[str, WebSocket | None] = {}
+
+
+async def _broadcast_turn(room_code: str, msg: dict) -> None:
+    dead = []
+    for pid, ws in list(_turn_clients.get(room_code, {}).items()):
+        try:
+            await ws.send_json(msg)
+        except Exception:
+            dead.append(pid)
+    for pid in dead:
+        _turn_clients[room_code].pop(pid, None)
+    t = _turn_teacher.get(room_code)
+    if t:
+        try:
+            await t.send_json(msg)
+        except Exception:
+            _turn_teacher[room_code] = None
+
+
+@router.websocket("/api/schreibraum/ws/{room_code}/turns")
+async def turns_ws(ws: WebSocket, room_code: str, token: str = Query(...)):
+    await ws.accept()
+
+    # Authenticate
+    try:
+        async with AsyncSessionLocal() as db:
+            participant = (await db.execute(
+                select(SchreibraumParticipant).where(
+                    SchreibraumParticipant.session_token == token,
+                    SchreibraumParticipant.is_kicked == False,
+                )
+            )).scalar_one_or_none()
+    except Exception:
+        await ws.close(code=1011)
+        return
+
+    if not participant:
+        await ws.close(code=4001)
+        return
+
+    pid = participant.id
+    is_teacher = participant.is_teacher
+    name = participant.name
+
+    if is_teacher:
+        _turn_teacher[room_code] = ws
+    else:
+        _turn_clients[room_code][pid] = ws
+        if pid not in _turn_order[room_code]:
+            _turn_order[room_code].append(pid)
+
+    # Send current state on connect
+    current = _turn_state.get(room_code)
+    await ws.send_json({
+        "event": "state",
+        "current_participant_id": current,
+        "order": _turn_order.get(room_code, []),
+    })
+
+    try:
+        while True:
+            data = await ws.receive_json()
+            action = data.get("action")
+
+            if is_teacher:
+                if action == "set_turn":
+                    target_pid = data.get("participant_id")
+                    _turn_state[room_code] = target_pid
+                    await _broadcast_turn(room_code, {
+                        "event": "turn_changed",
+                        "participant_id": target_pid,
+                    })
+
+                elif action == "next_turn":
+                    order = _turn_order.get(room_code, [])
+                    if not order:
+                        continue
+                    current = _turn_state.get(room_code)
+                    try:
+                        idx = order.index(current) if current in order else -1
+                    except ValueError:
+                        idx = -1
+                    next_pid = order[(idx + 1) % len(order)]
+                    _turn_state[room_code] = next_pid
+                    await _broadcast_turn(room_code, {
+                        "event": "turn_changed",
+                        "participant_id": next_pid,
+                    })
+
+                elif action == "clear_turn":
+                    _turn_state[room_code] = None
+                    await _broadcast_turn(room_code, {
+                        "event": "turn_changed",
+                        "participant_id": None,
+                    })
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if is_teacher:
+            if _turn_teacher.get(room_code) is ws:
+                _turn_teacher[room_code] = None
+        else:
+            _turn_clients.get(room_code, {}).pop(pid, None)
+            order = _turn_order.get(room_code, [])
+            if pid in order:
+                order.remove(pid)
+            # If it was their turn, clear it
+            if _turn_state.get(room_code) == pid:
+                _turn_state[room_code] = None
+                await _broadcast_turn(room_code, {"event": "turn_changed", "participant_id": None})

@@ -136,6 +136,11 @@ export default function SchreibraumEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saveMsg, setSaveMsg] = useState("");
 
+  // Wortstaffel turn state
+  const turnsWsRef = useRef<WebSocket | null>(null);
+  const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
+  const [turnOrder, setTurnOrder] = useState<string[]>([]);
+
   const isTeacher = auth?.user_type === "teacher";
 
   useEffect(() => {
@@ -155,6 +160,30 @@ export default function SchreibraumEditorPage() {
     }
     init();
   }, [auth, code]);
+
+  // Wortstaffel turns WS
+  useEffect(() => {
+    if (!participant || mode !== "wortstaffel") return;
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${proto}://${window.location.host}/api/schreibraum/ws/${code.toUpperCase()}/turns?token=${participant.session_token}`);
+    turnsWsRef.current = ws;
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.event === "state") {
+          setCurrentTurnId(msg.current_participant_id ?? null);
+          setTurnOrder(msg.order ?? []);
+        } else if (msg.event === "turn_changed") {
+          setCurrentTurnId(msg.participant_id ?? null);
+        }
+      } catch {}
+    };
+    return () => { ws.close(); turnsWsRef.current = null; };
+  }, [participant, mode, code]);
+
+  function sendTurnAction(action: object) {
+    turnsWsRef.current?.readyState === WebSocket.OPEN && turnsWsRef.current.send(JSON.stringify(action));
+  }
 
   async function handleSave() {
     if (!room || !editorRef.current) return;
@@ -341,7 +370,25 @@ export default function SchreibraumEditorPage() {
         gap: 0, overflow: "hidden",
       }}>
         {/* Editor area */}
-        <div style={{ overflowY: "auto", padding: 16 }}>
+        <div style={{ overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Wortstaffel banners */}
+          {mode === "wortstaffel" && !isTeacher && (
+            currentTurnId === participant.id ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 10, background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)" }}>
+                <span style={{ fontWeight: 700, color: "#4caf50", fontSize: 15 }}>✍️ Du bist dran!</span>
+                <button
+                  onClick={() => sendTurnAction({ action: "next_turn" })}
+                  style={{ marginLeft: "auto", padding: "5px 14px", borderRadius: 8, border: "none", background: "#4caf50", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+                >
+                  Fertig →
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: "8px 14px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", fontSize: 13, color: "var(--text-muted)" }}>
+                ⏳ Bitte warten — ein anderer Schüler schreibt gerade.
+              </div>
+            )
+          )}
           <Editor
             ref={editorRef}
             roomId={room.id}
@@ -351,6 +398,7 @@ export default function SchreibraumEditorPage() {
             mode={mode}
             onKicked={() => setKicked(true)}
             onModeChange={isTeacher ? handleModeChange : (m) => setMode(m)}
+            readOnly={mode === "wortstaffel" && !isTeacher && currentTurnId !== participant.id}
           />
         </div>
 
@@ -365,6 +413,19 @@ export default function SchreibraumEditorPage() {
             <Panel title="QR-Code / Beitritt" defaultOpen={true}>
               <QRPanel roomCode={room.code} />
             </Panel>
+
+            {/* Wortstaffel turn control */}
+            {mode === "wortstaffel" && (
+              <Panel title="Wortstaffel — Reihe" defaultOpen={true}>
+                <WortstaffelPanel
+                  roomId={room.id}
+                  currentTurnId={currentTurnId}
+                  onSetTurn={(pid) => sendTurnAction({ action: "set_turn", participant_id: pid })}
+                  onNext={() => sendTurnAction({ action: "next_turn" })}
+                  onClear={() => sendTurnAction({ action: "clear_turn" })}
+                />
+              </Panel>
+            )}
 
             {/* Access / Zugang */}
             <Panel title="Zugang" defaultOpen={false}>
@@ -402,6 +463,82 @@ export default function SchreibraumEditorPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Wortstaffel teacher panel ─────────────────────────────────────────────────
+
+function WortstaffelPanel({
+  roomId,
+  currentTurnId,
+  onSetTurn,
+  onNext,
+  onClear,
+}: {
+  roomId: string;
+  currentTurnId: string | null;
+  onSetTurn(pid: string): void;
+  onNext(): void;
+  onClear(): void;
+}) {
+  const [participants, setParticipants] = useState<SchreibraumParticipant[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      try {
+        const ps = await api.schreibraum.participants(roomId);
+        if (alive) setParticipants(ps.filter((p) => !p.is_teacher && !p.is_kicked));
+      } catch {}
+    }
+    load();
+    const id = setInterval(() => { if (!document.hidden) load(); }, 3000);
+    return () => { alive = false; clearInterval(id); };
+  }, [roomId]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+        <button
+          onClick={onNext}
+          style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "none", background: "var(--accent)", color: "#111", fontWeight: 700, cursor: "pointer", fontSize: 13 }}
+        >
+          ▶ Nächste
+        </button>
+        <button
+          onClick={onClear}
+          title="Niemandem dran"
+          style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: "pointer", fontSize: 13 }}
+        >
+          ✕
+        </button>
+      </div>
+      {participants.length === 0 && (
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Noch keine Schüler</div>
+      )}
+      {participants.map((p) => {
+        const active = p.id === currentTurnId;
+        return (
+          <div
+            key={p.id}
+            style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "5px 9px", borderRadius: 8,
+              background: active ? "rgba(34,197,94,0.15)" : "var(--surface)",
+              border: active ? "1px solid rgba(34,197,94,0.4)" : "1px solid transparent",
+            }}
+          >
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 13, fontWeight: active ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+            <button
+              onClick={() => onSetTurn(p.id)}
+              style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, border: "none", cursor: "pointer", fontWeight: 600, background: active ? "#4caf50" : "var(--border)", color: active ? "#fff" : "var(--text-muted)" }}
+            >
+              {active ? "✓ Dran" : "Dran"}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
