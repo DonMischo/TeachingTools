@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 
 from api.database import Base, get_db
 from api.main import app
-from api.models import Teacher, Class, Transaction
+from api.models import Teacher, Class, Transaction, Student, RevokedToken, SportfestDiscipline, SportfestResult
 from api.auth import hash_password
 
 TEST_DB_URL = "sqlite:///:memory:"

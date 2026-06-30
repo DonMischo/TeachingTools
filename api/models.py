@@ -1,7 +1,12 @@
-from datetime import datetime
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey, func, JSON, UniqueConstraint, Float
+import uuid
+from datetime import datetime, date
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, Date, ForeignKey, func, JSON, UniqueConstraint, Float, Index, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
+
+
+def _uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class Teacher(Base):
@@ -23,6 +28,7 @@ class Class(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    class_name: Mapped[str | None] = mapped_column(String(100), nullable=True)  # e.g. "Otter"
     symbol_emoji: Mapped[str | None] = mapped_column(String(10), nullable=True)
     symbol_image: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -280,3 +286,253 @@ class WettkampfMatch(Base):
     p1: Mapped["WettkampfTeilnehmer | None"] = relationship(foreign_keys=[p1_id])
     p2: Mapped["WettkampfTeilnehmer | None"] = relationship(foreign_keys=[p2_id])
     winner: Mapped["WettkampfTeilnehmer | None"] = relationship(foreign_keys=[winner_id])
+
+
+# ---------------------------------------------------------------------------
+# Students (shared across Hauspokal + Sportfest)
+# ---------------------------------------------------------------------------
+
+class Student(Base):
+    __tablename__ = "students"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nummer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nachname: Mapped[str] = mapped_column(String(100), nullable=False)
+    vorname: Mapped[str] = mapped_column(String(100), nullable=False, server_default="")
+    klasse: Mapped[str] = mapped_column(String(10), nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    jahrgang: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    geschlecht: Mapped[str] = mapped_column(String(20), nullable=False)
+    geburtsdatum: Mapped[date | None] = mapped_column(Date, nullable=True)
+    username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pokedex_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    extra_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
+
+    class_: Mapped["Class | None"] = relationship()
+    sf_results: Mapped[list["SportfestResult"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+
+
+# ---------------------------------------------------------------------------
+# Auth security
+# ---------------------------------------------------------------------------
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+    __table_args__ = (Index("ix_revoked_tokens_expires", "expires_at"),)
+
+    jti: Mapped[str] = mapped_column(String(36), primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# Sportfest
+# ---------------------------------------------------------------------------
+
+class SportfestDiscipline(Base):
+    __tablename__ = "sportfest_disciplines"
+
+    id: Mapped[str] = mapped_column(String(30), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+
+    results: Mapped[list["SportfestResult"]] = relationship(back_populates="discipline", cascade="all, delete-orphan")
+
+
+class SportfestResult(Base):
+    __tablename__ = "sportfest_results"
+    __table_args__ = (UniqueConstraint("student_id", "discipline_id", name="uq_sf_student_disc"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    discipline_id: Mapped[str] = mapped_column(
+        String(30), ForeignKey("sportfest_disciplines.id", ondelete="CASCADE"), nullable=False
+    )
+    value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    points: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    student: Mapped["Student"] = relationship(back_populates="sf_results")
+    discipline: Mapped["SportfestDiscipline"] = relationship(back_populates="results")
+
+
+# ---------------------------------------------------------------------------
+# Schreibraum (collaborative editor, based on EtherStud4Kids)
+# ---------------------------------------------------------------------------
+
+class SchreibraumRoom(Base):
+    __tablename__ = "schreibraum_rooms"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    # "next-free-line" | "add-line"
+    mode: Mapped[str] = mapped_column(String(20), nullable=False, server_default="next-free-line")
+    is_permanent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    creator: Mapped["Teacher"] = relationship()
+    participants: Mapped[list["SchreibraumParticipant"]] = relationship(
+        back_populates="room", cascade="all, delete-orphan"
+    )
+    document: Mapped["SchreibraumDocument | None"] = relationship(
+        back_populates="room", uselist=False, cascade="all, delete-orphan"
+    )
+    action_logs: Mapped[list["SchreibraumActionLog"]] = relationship(
+        back_populates="room", cascade="all, delete-orphan"
+    )
+    access_grants: Mapped[list["SchreibraumAccess"]] = relationship(
+        back_populates="room", cascade="all, delete-orphan"
+    )
+
+
+class SchreibraumParticipant(Base):
+    __tablename__ = "schreibraum_participants"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    room_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("schreibraum_rooms.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # Link to Hauspokal identity (one of these two is set)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    color: Mapped[str] = mapped_column(String(7), nullable=False)
+    session_token: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=_uuid, index=True)
+    is_teacher: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_kicked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    kicked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejoin_allowed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    room: Mapped["SchreibraumRoom"] = relationship(back_populates="participants")
+
+
+class SchreibraumDocument(Base):
+    __tablename__ = "schreibraum_documents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    room_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("schreibraum_rooms.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    ydoc_state: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    room: Mapped["SchreibraumRoom"] = relationship(back_populates="document")
+
+
+class SchreibraumActionLog(Base):
+    __tablename__ = "schreibraum_action_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    room_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("schreibraum_rooms.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    participant_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    room: Mapped["SchreibraumRoom"] = relationship(back_populates="action_logs")
+
+
+# ---------------------------------------------------------------------------
+# Roles (Klassensprecher, Haussprecher, extendable)
+# ---------------------------------------------------------------------------
+
+class StudentRole(Base):
+    __tablename__ = "student_roles"
+    __table_args__ = (UniqueConstraint("student_id", "role_type", "scope_id", name="uq_student_role_scope"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    # "klassensprecher" | "haussprecher" | extendable
+    role_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    # class_id for klassensprecher, haus_id for haussprecher (null for global roles)
+    scope_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    assigned_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    student: Mapped["Student"] = relationship()
+    assigner: Mapped["Teacher | None"] = relationship()
+
+
+# ---------------------------------------------------------------------------
+# Meinungsbarometer
+# ---------------------------------------------------------------------------
+
+class BarometerSession(Base):
+    __tablename__ = "barometer_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    # "active" | "closed"
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="active")
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # index of currently shown question (-1 = lobby)
+    current_question_idx: Mapped[int] = mapped_column(Integer, nullable=False, server_default="-1")
+    # whether results are shown to students for current question
+    results_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+    creator: Mapped["Teacher"] = relationship()
+    questions: Mapped[list["BarometerQuestion"]] = relationship(
+        back_populates="session", order_by="BarometerQuestion.order", cascade="all, delete-orphan"
+    )
+    responses: Mapped[list["BarometerResponse"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class BarometerQuestion(Base):
+    __tablename__ = "barometer_questions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("barometer_sessions.id", ondelete="CASCADE"), nullable=False)
+    order: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    scale_min: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    scale_max: Mapped[int] = mapped_column(Integer, nullable=False, server_default="6")
+    scale_min_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    scale_max_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    session: Mapped["BarometerSession"] = relationship(back_populates="questions")
+    responses: Mapped[list["BarometerResponse"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+
+
+class BarometerResponse(Base):
+    __tablename__ = "barometer_responses"
+    __table_args__ = (UniqueConstraint("session_id", "question_id", "student_id", name="uq_baro_student_question"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("barometer_sessions.id", ondelete="CASCADE"), nullable=False)
+    question_id: Mapped[int] = mapped_column(ForeignKey("barometer_questions.id", ondelete="CASCADE"), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["BarometerSession"] = relationship(back_populates="responses")
+    question: Mapped["BarometerQuestion"] = relationship(back_populates="responses")
+
+
+class SchreibraumAccess(Base):
+    """Who is allowed to join a room. Either a specific student or a whole class."""
+    __tablename__ = "schreibraum_access"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    room_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("schreibraum_rooms.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=True)
+
+    room: Mapped["SchreibraumRoom"] = relationship(back_populates="access_grants")
+    student: Mapped["Student | None"] = relationship()
+    class_: Mapped["Class | None"] = relationship()

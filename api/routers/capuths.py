@@ -196,6 +196,7 @@ def _expire_stale_sessions(db) -> None:
             db.commit()
         _empty_since.pop(code, None)
         _phases.pop(code, None)
+        mgr._rooms.pop(code, None)
 
 
 async def _inactivity_watchdog(get_db_fn):
@@ -1427,6 +1428,7 @@ async def _finish_session(s: QuizSession, db: Session, code: str):
         "score_ratio": score_ratio,
         "is_replay": is_replay,
     })
+    _phases.pop(code, None)
 
 
 async def _handle_student_action(action: str, data: dict, s: QuizSession, db: Session, code: str, pid: int):

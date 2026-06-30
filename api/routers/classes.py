@@ -6,7 +6,7 @@ import shutil, uuid
 
 from ..database import get_db
 from ..models import Class, Transaction
-from ..schemas import ClassOut, ClassSymbolUpdate
+from ..schemas import ClassOut, ClassSymbolUpdate, ClassNameUpdate
 from ..auth import get_current_teacher
 
 router = APIRouter(prefix="/api/classes", tags=["classes"])
@@ -47,6 +47,26 @@ def update_symbol(
         raise HTTPException(status_code=404, detail="Class not found")
     cls.symbol_emoji = body.symbol_emoji
     cls.symbol_image = None
+    db.commit()
+    db.refresh(cls)
+    out = ClassOut.model_validate(cls)
+    out.total_points = db.query(func.coalesce(func.sum(Transaction.points), 0)).filter(
+        Transaction.class_id == class_id
+    ).scalar()
+    return out
+
+
+@router.patch("/{class_id}/name", response_model=ClassOut)
+def update_class_name(
+    class_id: int,
+    body: ClassNameUpdate,
+    db: Session = Depends(get_db),
+    _: object = Depends(get_current_teacher),
+):
+    cls = db.get(Class, class_id)
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+    cls.class_name = body.class_name
     db.commit()
     db.refresh(cls)
     out = ClassOut.model_validate(cls)
