@@ -169,6 +169,25 @@ function TimerWidget() {
     setFinished(false);
   }
 
+  useEffect(() => {
+    if (!finished) return;
+    try {
+      const ctx = new AudioContext();
+      const beeps = [0, 0.35, 0.7];
+      beeps.forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.5, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.3);
+      });
+    } catch {}
+  }, [finished]);
+
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   // Ring dimensions
