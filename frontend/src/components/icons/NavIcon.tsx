@@ -5,6 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
+  | "tools"
   | "admin" | "punkte" | "user" | "login";
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
@@ -239,6 +240,16 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
+  // ── Hammer (Tools) ───────────────────────────────────────────────────
+  tools: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      {/* Head */}
+      <rect x="9" y="2" width="8" height="4" rx="1" transform="rotate(45 13 4)"/>
+      {/* Handle */}
+      <line x1="11" y1="9" x2="3" y2="17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>
+  ),
+
   // ── Gate / Portal (Login) ─────────────────────────────────────────────
   login: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -348,6 +359,10 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     <line x1="10" y1="14" x2="10" y2="17" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
   </svg>,
+  tools: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="9" y="2" width="8" height="4" rx="1" transform="rotate(45 13 4)"/>
+    <line x1="11" y1="9" x2="3" y2="17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -363,6 +378,7 @@ const EMOJI: Record<NavKey, string> = {
   bingo:          "🎰",
   "exit-ticket":  "🎫",
   classroom:      "🖥️",
+  tools:          "🔨",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

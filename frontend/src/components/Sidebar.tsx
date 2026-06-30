@@ -20,10 +20,7 @@ const NAV_MAIN: { tab: string; label: string; href: string }[] = [
 ];
 
 const NAV_TOOLS: { tab: string; label: string; href: string }[] = [
-  { tab: "schreibraum", label: "Schreibraum",        href: "/schreibraum" },
-  { tab: "barometer",   label: "Meinungsbarometer",  href: "/barometer" },
-  { tab: "exit-ticket", label: "Exit Ticket",        href: "/exit-ticket" },
-  { tab: "classroom",   label: "Classroom Screen",   href: "/classroom" },
+  { tab: "tools", label: "Tools", href: "/tools" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
