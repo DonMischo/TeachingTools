@@ -343,7 +343,7 @@ export default function ClassroomPage() {
       {/* Toggle panel button */}
       <button
         onClick={() => setShowPanel(v => !v)}
-        className="absolute top-4 right-4 z-50 btn-secondary text-xs py-1.5 px-3"
+        className="absolute top-4 right-4 z-50 rounded-lg border border-[var(--border)] text-[var(--text)] text-xs py-1.5 px-3 hover:bg-[var(--surface-hover)] transition-colors"
       >
         ⚙ Widgets
       </button>

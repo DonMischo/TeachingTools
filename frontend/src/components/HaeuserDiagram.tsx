@@ -365,30 +365,44 @@ export function HaeuserDiagram({ haeuser }: { haeuser: HausOut[] }) {
           return (
             <div key={haus.id} style={{
               width: FRAME_W, height: FRAME_H,
-              flexShrink: 0, position: "relative",
+              flexShrink: 0,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 14,
+              justifyContent: "center",
+              gap: 20,
             }}>
-              {/* Image frame */}
+              {/* Card with bar */}
               <div style={{
-                width: BAR_W, flexShrink: 0,
-                border: `2px solid ${haus.color}66`,
-                borderRadius: 14,
+                position: "relative",
+                width: BAR_W, height: BAR_H, flexShrink: 0,
+                border: `2px solid ${haus.color}44`,
+                borderRadius: 20,
+                background: "rgba(0,0,0,0.2)",
                 overflow: "hidden",
-                background: "rgba(0,0,0,0.55)",
-                flex: 1,
               }}>
-                <HausVortexCanvas points={haus.total_points} color={[r, g, b]} />
+                <div style={{
+                  width: BAR_W, height: BAR_H,
+                  border: `2px solid ${haus.color}66`,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  background: "rgba(0,0,0,0.55)",
+                }}>
+                  <HausVortexCanvas points={haus.total_points} color={[r, g, b]} />
+                </div>
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0, height: 4,
+                  borderRadius: "0 0 18px 18px",
+                  background: `linear-gradient(to right, transparent, ${haus.color}, transparent)`,
+                }} />
               </div>
 
-              {/* Name + points below the frame */}
-              <div style={{ textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontWeight: "bold", fontSize: 20, color: haus.color }}>
+              {/* Name + points below the card */}
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontWeight: "bold", fontSize: 22, color: haus.color }}>
                   {haus.name}
                 </div>
-                <div style={{ fontSize: 14, marginTop: 2, color: "rgba(255,255,255,0.5)" }}>
+                <div style={{ fontSize: 15, marginTop: 4, color: "rgba(255,255,255,0.5)" }}>
                   {haus.total_points.toLocaleString()} Punkte
                 </div>
               </div>
