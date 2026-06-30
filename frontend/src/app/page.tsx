@@ -51,8 +51,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full p-6">
-      <h1 className="text-3xl font-black mb-2 tracking-tight">🏛️ Hauspokal</h1>
-      <p className="text-[var(--text-muted)] text-sm mb-8">Aktueller Punktestand</p>
       <HaeuserDiagram haeuser={haeuser} />
     </div>
   );

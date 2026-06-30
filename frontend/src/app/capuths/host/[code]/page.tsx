@@ -390,10 +390,10 @@ export default function HostPage() {
 
   const confirmModal = confirmDialog ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setConfirmDialog(null)}>
-      <div className="bg-gray-800 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
-        <p className="text-white text-base">{confirmDialog.msg}</p>
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+        <p className="text-[var(--text)] text-base">{confirmDialog.msg}</p>
         <div className="flex gap-3 justify-end">
-          <button onClick={() => setConfirmDialog(null)} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">Abbrechen</button>
+          <button onClick={() => setConfirmDialog(null)} className="btn-secondary px-4 py-2">Abbrechen</button>
           <button onClick={() => { confirmDialog.onYes(); setConfirmDialog(null); }} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 font-semibold">Ja</button>
         </div>
       </div>
@@ -540,7 +540,7 @@ export default function HostPage() {
                     onChange={e => setNewTeamName(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && addTeam()}
                   />
-                  <button onClick={addTeam} className="text-sm bg-yellow-500 text-black px-3 rounded-lg font-semibold">+</button>
+                  <button onClick={addTeam} className="btn-primary text-sm px-3 rounded-lg font-semibold">+</button>
                 </div>
               </div>
             )}
@@ -574,13 +574,13 @@ export default function HostPage() {
               <button
                 onClick={() => send("start")}
                 disabled={phase.participantCount === 0}
-                className="px-10 py-4 bg-green-500 text-white text-xl font-bold rounded-2xl hover:bg-green-400 disabled:opacity-40"
+                className="btn-primary px-10 py-4 text-xl font-bold rounded-2xl disabled:opacity-40"
               >
                 Caputh starten 🚀
               </button>
               <button
                 onClick={() => setConfirmDialog({ msg: "Session zurücksetzen? Alle Antworten werden gelöscht.", onYes: () => send("restart") })}
-                className="px-5 py-4 bg-gray-700 text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-600 hover:text-white"
+                className="btn-secondary px-5 py-4 text-sm font-medium rounded-xl"
                 title="Session zurücksetzen"
               >
                 ↺ Zurücksetzen
@@ -634,14 +634,14 @@ export default function HostPage() {
           ) : (
             <button
               onClick={() => send("show_answers")}
-              className="px-10 py-4 bg-indigo-500 text-white text-xl font-bold rounded-2xl hover:bg-indigo-400"
+              className="btn-primary px-10 py-4 text-xl font-bold rounded-2xl"
             >
               Antworten zeigen →
             </button>
           )}
           <button
             onClick={() => send("next")}
-            className="px-5 py-4 bg-gray-700 text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-600"
+            className="btn-secondary px-5 py-4 text-sm font-medium rounded-xl"
           >
             Überspringen
           </button>
@@ -820,7 +820,7 @@ export default function HostPage() {
         <div className="flex justify-center px-6 py-4 bg-gray-800 border-t border-gray-700">
           <button
             onClick={() => send("next")}
-            className="px-8 py-3 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-400 text-lg"
+            className="btn-primary px-8 py-3 font-bold rounded-xl text-lg"
           >
             Ranking zeigen 🏆
           </button>
@@ -863,7 +863,7 @@ export default function HostPage() {
         <div className="flex justify-center px-6 py-4 bg-gray-800 border-t border-gray-700">
           <button
             onClick={() => send("next")}
-            className="px-8 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-400 text-lg"
+            className="btn-primary px-8 py-3 font-bold rounded-xl text-lg"
           >
             {isLast ? "Caputh beenden 🏁" : "Nächste Frage →"}
           </button>
