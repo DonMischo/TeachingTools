@@ -239,24 +239,26 @@ describe("PlayPage – in-game phases", () => {
     expect(screen.getByText("❌")).toBeInTheDocument();
   });
 
-  it("reveal: shows rank", async () => {
+  it("reveal: shows rank after ranking event", async () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
     await userEvent.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
     act(() => { socket.fire(REVEAL_CORRECT); });
+    act(() => { socket.fire({ event: "ranking", ranking: [{ pid: 7, name: "Lena", avatar: "cat", score: 1.2, delta: 1.2, rank: 1 }] }); });
 
     expect(screen.getByText(/Platz 1/i)).toBeInTheDocument();
   });
 
-  it("reveal: shows score delta", async () => {
+  it("reveal: shows score delta after ranking event", async () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
     await userEvent.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
     act(() => { socket.fire(REVEAL_CORRECT); });
+    act(() => { socket.fire({ event: "ranking", ranking: [{ pid: 7, name: "Lena", avatar: "cat", score: 1.2, delta: 1.2, rank: 1 }] }); });
 
     expect(screen.getByText(/\+1\.20/)).toBeInTheDocument();
   });

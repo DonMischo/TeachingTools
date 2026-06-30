@@ -2,9 +2,152 @@ export type ClassOut = {
   id: number;
   code: string;
   display_name: string;
+  class_name?: string | null;
   symbol_emoji: string | null;
   symbol_image: string | null;
   total_points: number;
+};
+
+export type StudentOut = {
+  id: number;
+  nummer: number | null;
+  nachname: string;
+  vorname: string;
+  klasse: string;
+  class_id: number | null;
+  jahrgang: number | null;
+  geschlecht: string;
+  geburtsdatum: string | null;
+  username: string | null;
+  active: boolean;
+  has_credentials: boolean;
+};
+
+export type StudentCredentialRow = {
+  id: number;
+  nachname: string;
+  vorname: string;
+  klasse: string;
+  username: string;
+  password: string;
+};
+
+export type MeOut = {
+  user_type: "teacher" | "student";
+  teacher?: TeacherOut;
+  student?: StudentOut;
+};
+
+export type StudentCardData = {
+  id: number;
+  nachname: string;
+  vorname: string;
+  klasse: string;
+  username: string | null;
+  fields: Record<string, string>;
+};
+
+export type StudentDiffRow = {
+  key: string;
+  action: "new" | "update" | "unchanged";
+  csv_data: Record<string, string>;
+  db_data: Record<string, string> | null;
+  changed_fields: string[];
+};
+
+export type StudentPreviewResponse = {
+  diff: StudentDiffRow[];
+  extra_columns: string[];
+  summary: { new: number; update: number; unchanged: number };
+};
+
+export type SportfestDiscipline = {
+  id: string;
+  name: string;
+  enabled: boolean;
+};
+
+export type SportfestResult = {
+  student_id: number;
+  discipline_id: string;
+  value: number | null;
+  points: number | null;
+};
+
+export type AuswertungStudent = {
+  rank: number;
+  name: string | null;
+  klasse: string;
+  jahrgang: number | null;
+  total_points: number;
+};
+
+export type AuswertungDisciplineEntry = {
+  rank: number;
+  name: string | null;
+  klasse: string;
+  discipline_id: string;
+  value: number | null;
+  points: number | null;
+};
+
+export type KlasseEntry = {
+  klasse: string;
+  jahrgang: number | null;
+  class_id: number | null;
+  participant_count: number;
+  raw_total: number;
+};
+
+export type KlassePunkteEntry = KlasseEntry & {
+  adjusted: number;
+  awarded: number;
+};
+
+export type StudentRoleOut = {
+  id: number;
+  student_id: number;
+  student_name: string;
+  role_type: string;
+  scope_id: number | null;
+  assigned_by: number | null;
+};
+
+export type BarometerQuestionOut = {
+  id: number;
+  order: number;
+  text: string;
+  scale_min: number;
+  scale_max: number;
+  scale_min_label: string | null;
+  scale_max_label: string | null;
+};
+
+export type BarometerSessionOut = {
+  id: number;
+  code: string;
+  title: string;
+  status: string;
+  current_question_idx: number;
+  results_visible: boolean;
+  questions: BarometerQuestionOut[];
+};
+
+export type BarometerSessionSummary = {
+  id: number;
+  code: string;
+  title: string;
+  status: string;
+  question_count: number;
+  created_at: string;
+};
+
+export type BarometerQuestionIn = {
+  text: string;
+  scale_min?: number;
+  scale_max?: number;
+  scale_min_label?: string;
+  scale_max_label?: string;
 };
 
 export type TeacherOut = {
@@ -30,15 +173,11 @@ export type TokenOut = {
   teacher: TeacherOut;
 };
 
-function authHeader(): Record<string, string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("hp_token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...authHeader(), ...(init?.headers ?? {}) },
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   if (!res.ok) {
     if (res.status === 401) {
@@ -204,17 +343,60 @@ export type HausOut = {
   total_points: number;
 };
 
+export type SchreibraumAccessGrant = {
+  id: number;
+  room_id: string;
+  student_id?: number | null;
+  class_id?: number | null;
+  label: string;
+};
+
+export type SchreibraumRoom = {
+  id: string;
+  code: string;
+  title: string;
+  mode: string;
+  is_permanent: boolean;
+  created_by: number;
+  creator_name: string;
+  created_at: string;
+  access: SchreibraumAccessGrant[];
+};
+
+export type SchreibraumParticipant = {
+  id: string;
+  room_id: string;
+  name: string;
+  color: string;
+  session_token: string;
+  is_teacher: boolean;
+  is_kicked: boolean;
+  rejoin_allowed: boolean;
+  joined_at: string;
+};
+
+export type SchreibraumActionLog = {
+  id: string;
+  room_id: string;
+  participant_name: string;
+  action: string;
+  detail?: string | null;
+  ts: string;
+};
+
 export const api = {
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),
     updateSymbolEmoji: (id: number, emoji: string | null) =>
       apiFetch<ClassOut>(`classes/${id}/symbol`, { method: "PATCH", body: JSON.stringify({ symbol_emoji: emoji }) }),
+    updateClassName: (id: number, class_name: string | null) =>
+      apiFetch<ClassOut>(`classes/${id}/name`, { method: "PATCH", body: JSON.stringify({ class_name }) }),
     uploadSymbolImage: (id: number, file: File) => {
       const fd = new FormData();
       fd.append("file", file);
       return fetch(`/api/classes/${id}/symbol/image`, {
         method: "POST",
-        headers: authHeader(),
+        credentials: "include",
         body: fd,
       }).then((r) => r.json() as Promise<ClassOut>);
     },
@@ -227,6 +409,7 @@ export const api = {
       apiFetch<TransactionOut>("transactions", { method: "POST", body: JSON.stringify(data) }),
     list: (class_id?: number) =>
       apiFetch<TransactionOut[]>(`transactions${class_id != null ? `?class_id=${class_id}` : ""}`),
+    delete: (id: number) => apiFetch<void>(`transactions/${id}`, { method: "DELETE" }),
   },
   capuths: {
     list: () => apiFetch<QuizOut[]>("capuths"),
@@ -237,7 +420,7 @@ export const api = {
       fd.append("file", file);
       return fetch("/api/capuths/upload", {
         method: "POST",
-        headers: authHeader(),
+        credentials: "include",
         body: fd,
       }).then(async (r) => {
         if (!r.ok) throw new Error(await r.text());
@@ -275,6 +458,85 @@ export const api = {
   auth: {
     login: (username: string, password: string) =>
       apiFetch<TokenOut>("auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
+    logout: () => apiFetch<void>("auth/logout", { method: "POST" }),
+    me: () => apiFetch<MeOut>("auth/me"),
+  },
+  students: {
+    list: (params?: { klasse?: string; jahrgang?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.klasse) q.set("klasse", params.klasse);
+      if (params?.jahrgang != null) q.set("jahrgang", String(params.jahrgang));
+      return apiFetch<StudentOut[]>(`students${q.size ? "?" + q : ""}`);
+    },
+    import: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/students/import", { method: "POST", credentials: "include", body: fd })
+        .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json(); });
+    },
+    generateCredentials: () => apiFetch<StudentCredentialRow[]>("students/generate-credentials", { method: "POST" }),
+    downloadCredentials: () => fetch("/api/students/credentials/download", { credentials: "include" }),
+    preview: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/students/preview", { method: "POST", credentials: "include", body: fd })
+        .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<StudentPreviewResponse>; });
+    },
+    apply: (selected_keys: string[], csv_data: Record<string, Record<string, string>>) =>
+      apiFetch<{ applied: number; errors: string[] }>("students/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selected_keys, csv_data }),
+      }),
+    cardData: (klasse?: string) => {
+      const q = klasse ? `?klasse=${encodeURIComponent(klasse)}` : "";
+      return apiFetch<StudentCardData[]>(`students/card-data${q}`);
+    },
+  },
+  sportfest: {
+    disciplines: {
+      list: () => apiFetch<SportfestDiscipline[]>("sportfest/disciplines"),
+      setEnabled: (id: string, enabled: boolean) =>
+        apiFetch<SportfestDiscipline>(`sportfest/disciplines/${id}/enabled?enabled=${enabled}`, { method: "PUT" }),
+    },
+    results: {
+      list: (params?: { klasse?: string; jahrgang?: number }) => {
+        const q = new URLSearchParams();
+        if (params?.klasse) q.set("klasse", params.klasse);
+        if (params?.jahrgang != null) q.set("jahrgang", String(params.jahrgang));
+        return apiFetch<SportfestResult[]>(`sportfest/results${q.size ? "?" + q : ""}`);
+      },
+      upsert: (studentId: number, disciplineId: string, valueRaw: string) =>
+        apiFetch<SportfestResult>(`sportfest/results/${studentId}/${disciplineId}`, {
+          method: "PUT", body: JSON.stringify({ value_raw: valueRaw }),
+        }),
+      delete: (studentId: number, disciplineId: string) =>
+        apiFetch<void>(`sportfest/results/${studentId}/${disciplineId}`, { method: "DELETE" }),
+    },
+    auswertung: {
+      gesamt: (params?: { jahrgang?: number; geschlecht?: string }) => {
+        const q = new URLSearchParams();
+        if (params?.jahrgang != null) q.set("jahrgang", String(params.jahrgang));
+        if (params?.geschlecht) q.set("geschlecht", params.geschlecht);
+        return apiFetch<AuswertungStudent[]>(`sportfest/auswertung/gesamt${q.size ? "?" + q : ""}`);
+      },
+      disziplin: (params?: { overall?: boolean; jahrgang?: number }) => {
+        const q = new URLSearchParams();
+        if (params?.overall) q.set("overall", "true");
+        if (params?.jahrgang != null) q.set("jahrgang", String(params.jahrgang));
+        return apiFetch<AuswertungDisciplineEntry[]>(`sportfest/auswertung/disziplin${q.size ? "?" + q : ""}`);
+      },
+      klassen: () => apiFetch<KlasseEntry[]>("sportfest/auswertung/klassen"),
+      klassenPunktePreview: (prior_strength?: number) => {
+        const q = prior_strength != null ? `?prior_strength=${prior_strength}` : "";
+        return apiFetch<KlassePunkteEntry[]>(`sportfest/auswertung/klassen-punkte/preview${q}`);
+      },
+      klassenPunkteCommit: (body: { prior_strength?: number; reason?: string }) =>
+        apiFetch<KlassePunkteEntry[]>("sportfest/auswertung/klassen-punkte/commit", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+    },
   },
   setup: {
     status: () => apiFetch<{ needs_setup: boolean }>("setup/status"),
@@ -296,7 +558,7 @@ export const api = {
       fd.append("file", file);
       return fetch(`/api/haeuser/${id}/logo`, {
         method: "POST",
-        headers: authHeader(),
+        credentials: "include",
         body: fd,
       }).then(async (r) => {
         if (!r.ok) throw new Error(await r.text());
@@ -305,6 +567,46 @@ export const api = {
     },
     setMembers: (id: number, class_ids: number[]) =>
       apiFetch<HausOut>(`haeuser/${id}/members`, { method: "PUT", body: JSON.stringify({ class_ids }) }),
+  },
+  roles: {
+    list: (params?: { role_type?: string; scope_id?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.role_type) q.set("role_type", params.role_type);
+      if (params?.scope_id != null) q.set("scope_id", String(params.scope_id));
+      return apiFetch<StudentRoleOut[]>(`roles${q.size ? "?" + q : ""}`);
+    },
+    assign: (body: { student_id: number; role_type: string; scope_id?: number | null }) =>
+      apiFetch<StudentRoleOut>("roles", { method: "POST", body: JSON.stringify(body) }),
+    remove: (id: number) => apiFetch<void>(`roles/${id}`, { method: "DELETE" }),
+  },
+  barometer: {
+    list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
+    create: (body: { title: string; questions: BarometerQuestionIn[] }) =>
+      apiFetch<BarometerSessionOut>("barometer", { method: "POST", body: JSON.stringify(body) }),
+    get: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}`),
+    delete: (code: string) => apiFetch<void>(`barometer/${code}`, { method: "DELETE" }),
+  },
+  schreibraum: {
+    list: (created_by?: number) =>
+      apiFetch<SchreibraumRoom[]>(`schreibraum/rooms${created_by != null ? `?created_by=${created_by}` : ""}`),
+    getByCode: (code: string) => apiFetch<SchreibraumRoom>(`schreibraum/rooms/by-code/${code}`),
+    create: (body: { title: string; mode?: string; is_permanent?: boolean }) =>
+      apiFetch<SchreibraumRoom>("schreibraum/rooms", { method: "POST", body: JSON.stringify(body) }),
+    patch: (id: string, body: { title?: string; mode?: string; is_permanent?: boolean }) =>
+      apiFetch<SchreibraumRoom>(`schreibraum/rooms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    delete: (id: string) => apiFetch<void>(`schreibraum/rooms/${id}`, { method: "DELETE" }),
+    addAccess: (id: string, body: { student_id?: number; class_id?: number }) =>
+      apiFetch<SchreibraumAccessGrant>(`schreibraum/rooms/${id}/access`, { method: "POST", body: JSON.stringify(body) }),
+    removeAccess: (id: string, grantId: number) =>
+      apiFetch<void>(`schreibraum/rooms/${id}/access/${grantId}`, { method: "DELETE" }),
+    join: (id: string) =>
+      apiFetch<SchreibraumParticipant>(`schreibraum/rooms/${id}/join`, { method: "POST" }),
+    participants: (id: string) => apiFetch<SchreibraumParticipant[]>(`schreibraum/rooms/${id}/participants`),
+    kick: (id: string, pid: string) =>
+      apiFetch<void>(`schreibraum/rooms/${id}/participants/${pid}/kick`, { method: "POST" }),
+    rejoinToggle: (id: string, pid: string) =>
+      apiFetch<void>(`schreibraum/rooms/${id}/participants/${pid}/rejoin-toggle`, { method: "POST" }),
+    log: (id: string) => apiFetch<SchreibraumActionLog[]>(`schreibraum/rooms/${id}/log`),
   },
   wettkampf: {
     list: () => apiFetch<WettkampfOut[]>("wettkampf"),
@@ -337,7 +639,7 @@ export const api = {
         method: "PUT", body: JSON.stringify(body),
       }),
     finish: (id: number) =>
-      apiFetch<{ awarded: { participant: WettkampfParticipant; stage: WettkampfStageIn | null; points: number }[] }>(
+      apiFetch<{ awarded: { participant: WettkampfParticipant; stage: WettkampfStageIn | null; points: number }[]; class_awarded?: { name: string; rank: number; stats: { w: number; d: number; l: number; gf: number; ga: number; gd: number; pts: number }; points: number }[] }>(
         "wettkampf/" + id + "/finish", { method: "POST" }
       ),
     deleteMatch: (id: number, mid: number) =>
@@ -355,7 +657,7 @@ export const api = {
         "wettkampf/" + id + "/results", { method: "GET" }
       ),
     finishWithPoints: (id: number, manualPoints: { participant_id: number; points: number }[]) =>
-      apiFetch<{ awarded: { participant: WettkampfParticipant; stage: WettkampfStageIn | null; points: number }[] }>(
+      apiFetch<{ awarded: { participant: WettkampfParticipant; stage: WettkampfStageIn | null; points: number }[]; class_awarded?: { name: string; rank: number; stats: { w: number; d: number; l: number; gf: number; ga: number; gd: number; pts: number }; points: number }[] }>(
         "wettkampf/" + id + "/finish", { method: "POST", body: JSON.stringify({ manual_points: manualPoints }) }
       ),
     autoPair: (id: number, group: string | null) =>

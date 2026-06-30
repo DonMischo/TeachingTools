@@ -40,7 +40,7 @@ describe("ClassTile", () => {
   it("calls onClick when the tile is clicked", async () => {
     const handleClick = vi.fn();
     render(<ClassTile cls={makeClass()} selected={false} onClick={handleClick} />);
-    await userEvent.click(screen.getByRole("button"));
+    await userEvent.click(screen.getAllByRole("button")[0]);
     expect(handleClick).toHaveBeenCalledOnce();
   });
 

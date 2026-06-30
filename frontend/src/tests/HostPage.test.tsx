@@ -192,36 +192,39 @@ describe("HostPage – game flow", () => {
     expect(socket.send).toHaveBeenCalledWith(JSON.stringify({ action: "next" }));
   });
 
-  it("revealed phase: shows ranking after reveal event", () => {
+  it("revealed phase: shows ranking after 'ranking' server event", () => {
     render(<HostPage />);
     openSocket();
     send({ event: "state", status: "waiting", participant_count: 2 });
     send(PREVIEW);
     send(ANSWERING);
     send(REVEAL);
+    send({ event: "ranking", is_last: false, ranking: REVEAL.ranking });
 
     expect(screen.getByText("Lena")).toBeInTheDocument();
     expect(screen.getByText("Milo")).toBeInTheDocument();
   });
 
-  it("revealed phase: shows 'Nächste Frage' when not last question", () => {
+  it("revealed phase: shows 'Nächste Frage' after ranking event when not last", () => {
     render(<HostPage />);
     openSocket();
     send({ event: "state", status: "waiting", participant_count: 1 });
     send(PREVIEW);
     send(ANSWERING);
     send(REVEAL);
+    send({ event: "ranking", is_last: false, ranking: REVEAL.ranking });
 
     expect(screen.getByRole("button", { name: /Nächste Frage/i })).toBeInTheDocument();
   });
 
-  it("revealed phase: shows 'Quiz beenden' on last question", () => {
+  it("revealed phase: shows 'Quiz beenden' after ranking event when last", () => {
     render(<HostPage />);
     openSocket();
     send({ event: "state", status: "waiting", participant_count: 1 });
     send(PREVIEW);
     send(ANSWERING);
     send({ ...REVEAL, is_last: true });
+    send({ event: "ranking", is_last: true, ranking: REVEAL.ranking });
 
     expect(screen.getByRole("button", { name: /Caputh beenden/i })).toBeInTheDocument();
   });

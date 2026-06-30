@@ -1,47 +1,62 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { api, TeacherOut } from "@/lib/api";
+import { api, TeacherOut, StudentOut } from "@/lib/api";
 
-type AuthState = { teacher: TeacherOut; token: string } | null;
+export type AuthUser = {
+  user_type: "teacher" | "student";
+  role: "admin" | "teacher" | "student";
+  teacher?: TeacherOut;
+  student?: StudentOut;
+};
 
 const AuthContext = createContext<{
-  auth: AuthState;
+  auth: AuthUser | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-}>({ auth: null, login: async () => {}, logout: () => {} });
+  logout: () => Promise<void>;
+}>({ auth: null, login: async () => {}, logout: async () => {} });
+
+function _buildAuthUser(res: { user_type: string; teacher?: TeacherOut; student?: StudentOut }): AuthUser {
+  const user_type = res.user_type as "teacher" | "student";
+  const role = user_type === "student"
+    ? "student"
+    : ((res.teacher?.role ?? "teacher") as "admin" | "teacher");
+  return { user_type, role, teacher: res.teacher, student: res.student };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [auth, setAuth] = useState<AuthState>(null);
+  const [auth, setAuth] = useState<AuthUser | null>(null);
 
-  // Hydrate from localStorage after mount (client-only, avoids SSR mismatch)
+  // Hydrate from server cookie via /me on mount
   useEffect(() => {
-    const token   = localStorage.getItem("hp_token");
-    const teacher = localStorage.getItem("hp_teacher");
-    if (token && teacher) setAuth({ token, teacher: JSON.parse(teacher) });
+    api.auth.me()
+      .then(res => setAuth(_buildAuthUser(res)))
+      .catch(() => setAuth(null));
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const res = await api.auth.login(username, password);
-    localStorage.setItem("hp_token", res.access_token);
-    localStorage.setItem("hp_teacher", JSON.stringify(res.teacher));
-    setAuth({ token: res.access_token, teacher: res.teacher });
+    await api.auth.login(username, password);
+    const me = await api.auth.me();
+    setAuth(_buildAuthUser(me));
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("hp_token");
-    localStorage.removeItem("hp_teacher");
+  const logout = useCallback(async () => {
+    await api.auth.logout();
     setAuth(null);
   }, []);
 
-  // Clear auth state when apiFetch receives a 401 (token expired/invalid)
+  // Clear state on 401 events dispatched by apiFetch
   useEffect(() => {
     const handler = () => setAuth(null);
     window.addEventListener("hp:logout", handler);
     return () => window.removeEventListener("hp:logout", handler);
   }, []);
 
-  return <AuthContext.Provider value={{ auth, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ auth, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

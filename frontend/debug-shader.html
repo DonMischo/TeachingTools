@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HaeuserDiagram Debug</title>
+<style>
+  body { background: #0a0a12; color: #eee; font-family: monospace; margin: 0; padding: 12px; }
+  #status { font-size: 13px; margin-bottom: 8px; min-height: 24px; }
+  .ok  { color: #4caf50; }
+  .err { color: #f44336; }
+  #scene { position: relative; display: inline-block; }
+  canvas { display: block; }
+  #overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+  #labels  { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .lbl { position: absolute; text-align: center; font-family: sans-serif; }
+</style>
+</head>
+<body>
+<div id="status">Initialising…</div>
+<div id="scene">
+  <canvas id="gl"  width="620" height="480"></canvas>
+  <canvas id="p2d" width="620" height="480" style="position:absolute;top:0;left:0"></canvas>
+  <div   id="labels"></div>
+</div>
+
+<script>
+// ── constants (mirror HaeuserDiagram.tsx) ─────────────────────────────────────
+const MAX_PTS = 1000, CYL_W = 76, CYL_RY = 11, CYL_H = 260;
+const BASE_Y  = 370,  HEMI_R = 38, GAP = 80, PAD_L = 70;
+const CANVAS_H = BASE_Y + HEMI_R + 80;
+const FANTASY  = ["🐉","🦄","🧜‍♀️","🦋","🔮","🦅","🐺","✨"];
+const SAND_COLORS = ["#C8A96E","#B89050","#D4B070","#A07840","#E8C890"];
+
+const HAEUSER = [
+  { id:1, name:"Gryffindor", color:"#b22222", total_points: 780 },
+  { id:2, name:"Slytherin",  color:"#2e8b57", total_points: 450 },
+  { id:3, name:"Hufflepuff", color:"#daa520", total_points: 320 },
+  { id:4, name:"Ravenclaw",  color:"#4169e1", total_points: 610 },
+];
+
+// ── shaders ───────────────────────────────────────────────────────────────────
+const VERT = `
+attribute vec2 a_pos;
+varying vec2 v_px;
+uniform vec2 u_res;
+uniform vec4 u_bounds;
+void main() {
+  float t  = a_pos.x * 0.5 + 0.5;
+  float s  = a_pos.y * 0.5 + 0.5;
+  float px = u_bounds.x + (u_bounds.z - u_bounds.x) * t;
+  float py = u_bounds.y + (u_bounds.w - u_bounds.y) * s;
+  v_px = vec2(px, py);
+  float cx = px / u_res.x * 2.0 - 1.0;
+  float cy = -(py / u_res.y * 2.0 - 1.0);
+  gl_Position = vec4(cx, cy, 0.0, 1.0);
+}`;
+
+const FRAG = `
+precision highp float;
+varying vec2 v_px;
+uniform float u_time;
+uniform float u_cx;
+uniform float u_base_y;
+uniform float u_r;
+uniform float u_ry;
+uniform float u_cyl_h;
+uniform float u_fill_h;
+uniform float u_density;
+uniform vec3  u_color;
+
+float hash(vec2 p) {
+  p = fract(p * vec2(127.1, 311.7) + 0.5);
+  p += dot(p, p + 34.23);
+  return fract(p.x * p.y);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  f = f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),
+             mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+}
+
+void main() {
+  float topY    = u_base_y - u_cyl_h;
+  float sandTop = u_base_y - u_fill_h;
+  float nx      = (v_px.x - u_cx) / u_r;
+
+  bool inBody = abs(nx) <= 1.0 && v_px.y >= topY && v_px.y <= u_base_y;
+  vec2  hd      = v_px - vec2(u_cx, u_base_y);
+  float hemDist = length(hd);
+  bool  inHemi  = hemDist <= u_r && v_px.y >= u_base_y;
+  float rimDy   = (v_px.y - topY) / u_ry;
+  float rimE    = nx*nx + rimDy*rimDy;
+  bool  inRim   = rimE <= 1.0;
+
+  if (!inBody && !inHemi && !inRim) discard;
+
+  float nz_body = sqrt(max(0.0, 1.0 - nx*nx));
+  float hz_hemi = sqrt(max(0.0, u_r*u_r - dot(hd,hd))) / u_r;
+  vec3 N = vec3(0.0, 0.0, 1.0);
+  if (inHemi && !inBody) {
+    N = normalize(vec3(hd.x / u_r, hd.y / u_r * 0.4, hz_hemi));
+  } else {
+    N = normalize(vec3(nx, 0.0, nz_body));
+  }
+
+  vec3  L    = normalize(vec3(-0.45, -0.55, -0.7));
+  float diff = max(0.0, dot(N, -L));
+  float spec = pow(max(0.0, dot(reflect(L, N), vec3(0.0, 0.0, 1.0))), 52.0);
+
+  vec3  col   = vec3(0.0);
+  float alpha = 0.0;
+
+  float edgeA = 0.0;
+  if (inHemi && !inBody) {
+    edgeA = clamp((u_r - hemDist) / 1.5, 0.0, 1.0);
+  } else {
+    edgeA = clamp((u_r - abs(v_px.x - u_cx)) / 1.5, 0.0, 1.0);
+  }
+
+  bool inSand = false;
+  if (inHemi && !inBody) {
+    inSand = u_fill_h > 1.0;
+  } else {
+    inSand = v_px.y >= sandTop && u_fill_h > 1.0;
+  }
+
+  if (inBody || inHemi) {
+    alpha = edgeA;
+    if (inSand) {
+      float relH = 0.0;
+      if (inHemi && !inBody) {
+        relH = 0.9 + hemDist / u_r * 0.1;
+      } else {
+        relH = clamp((v_px.y - sandTop) / max(u_fill_h, 1.0), 0.0, 1.0);
+      }
+      vec3 cSurf = clamp(u_color * 1.15 + vec3(0.38, 0.30, 0.12), 0.0, 1.0);
+      vec3 cDeep = clamp(u_color * 0.60 + vec3(0.04, 0.02, 0.00), 0.0, 1.0);
+      vec3 sand  = mix(cSurf, cDeep, relH * relH);
+      float sc   = 7.0 + u_density * 13.0;
+      float g1   = noise(v_px / sc);
+      float g2   = noise(v_px / sc * 2.2 + vec2(3.7, 2.1));
+      sand *= 0.72 + (g1 * 0.6 + g2 * 0.4) * 0.56;
+      float glow = 0.08 + 0.06 * sin(u_time * 0.7);
+      sand += u_color * glow;
+      float lit  = 0.60 + diff * 0.38 + spec * 0.15;
+      col = clamp(sand, 0.0, 1.0) * lit;
+      float sparkle = 0.0;
+      vec2 sc2 = floor(v_px / 8.0);
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          vec2 nc    = sc2 + vec2(float(dx), float(dy));
+          float gate = step(hash(nc * 0.13 + vec2(u_cx * 0.007)), 0.042);
+          vec2 jit   = vec2(hash(nc + vec2(3.3, 5.1)), hash(nc + vec2(7.7, 2.3)));
+          vec2 sPos  = (nc + jit) * 8.0;
+          float twS  = 0.7 + hash(nc + vec2(9.1)) * 2.8;
+          float twP  = hash(nc + vec2(1.3, 4.7)) * 6.283;
+          float blink = abs(sin(u_time * twS + twP));
+          vec2 d2    = abs(v_px - sPos);
+          float cr   = max(
+            max(0.0, 1.0 - d2.x / 1.4) * max(0.0, 1.0 - d2.y / 6.5),
+            max(0.0, 1.0 - d2.x / 6.5) * max(0.0, 1.0 - d2.y / 1.4));
+          sparkle += gate * blink * cr * 2.2;
+        }
+      }
+      col = mix(col, vec3(1.0, 0.97, 0.72), clamp(sparkle, 0.0, 1.0) * 0.88);
+    } else {
+      float edgeGlass = smoothstep(0.55, 1.0, abs(nx));
+      col   = u_color * 0.08 + vec3(0.04, 0.05, 0.12) * edgeGlass;
+      alpha = (edgeGlass * 0.40 + spec * 0.35) * edgeA;
+    }
+    float streak = max(0.0, (-nx - 0.62) / 0.22);
+    streak = min(streak, 1.0) * (1.0 - abs(streak - 0.5) * 1.2);
+    float vFade  = clamp(1.0 - abs((v_px.y - (topY + u_cyl_h*0.38)) / (u_cyl_h*0.38)), 0.0, 1.0);
+    col += vec3(0.95, 0.97, 1.0) * streak * vFade * 0.42;
+    col  = clamp(col, 0.0, 1.0);
+  }
+
+  if (inRim) {
+    float rimA  = smoothstep(1.1, 0.2, rimE);
+    float hn    = (v_px.y - topY) / u_ry;
+    float hi    = max(0.0, 1.0 - length(vec2(nx + 0.3, hn + 0.3)) / 0.5);
+    vec3 rimCol = clamp(u_color * 0.6 + vec3(0.5, 0.55, 0.65) + hi * 0.3, 0.0, 1.0);
+    col   = mix(col, rimCol, rimA);
+    alpha = max(alpha, rimA);
+  }
+
+  if (u_fill_h > 2.0 && abs(nx) <= 1.0) {
+    float sRy    = u_ry * 0.55;
+    float surfDy = (v_px.y - sandTop) / sRy;
+    float surfE  = nx*nx + surfDy*surfDy;
+    if (surfE <= 1.4) {
+      float eA  = clamp((u_r - abs(v_px.x - u_cx)) / 1.5, 0.0, 1.0);
+      float sA  = smoothstep(1.4, 0.15, surfE) * eA;
+      float sl  = 0.55 + (1.0 - surfE / 1.4) * 0.45;
+      vec3 sCol = clamp(mix(u_color + vec3(0.35), vec3(0.95, 0.80, 0.40), 0.40) * sl, 0.0, 1.0);
+      col   = mix(col, sCol, sA * 0.92);
+      alpha = max(alpha, sA * 0.92);
+    }
+  }
+
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), alpha);
+}`;
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+function fillH(pts)    { return Math.min(pts / MAX_PTS, 1) * CYL_H; }
+function density(pts)  {
+  if (pts <= 0) return 0;
+  const frac = Math.min(pts / MAX_PTS, 1);
+  let d = Math.log(pts + 1) / Math.log(MAX_PTS + 1);
+  if (frac > 0.8) { const o = (frac - 0.8) / 0.2; d += (1 - d) * (Math.log(o*9+1)/Math.log(10)) * 0.75; }
+  return Math.min(d, 1);
+}
+function hexToRgb(h) {
+  const n = parseInt(h.replace('#',''), 16);
+  return [(n>>16&255)/255, (n>>8&255)/255, (n&255)/255];
+}
+function compileShader(gl, type, src, name) {
+  const sh = gl.createShader(type);
+  if (!sh) throw new Error(`createShader(${name}) returned null`);
+  gl.shaderSource(sh, src); gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    throw new Error(`${name}: ${gl.getShaderInfoLog(sh)}`);
+  return sh;
+}
+function createProgram(gl) {
+  const vs = compileShader(gl, gl.VERTEX_SHADER,   VERT, 'VERT');
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG, 'FRAG');
+  const p  = gl.createProgram();
+  gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error(`Link: ${gl.getProgramInfoLog(p)}`);
+  return p;
+}
+
+// ── main ──────────────────────────────────────────────────────────────────────
+const status  = document.getElementById('status');
+const sorted  = [...HAEUSER].sort((a,b) => b.total_points - a.total_points);
+const totalW  = Math.max(400, sorted.length * (CYL_W + GAP) - GAP + PAD_L * 2);
+
+const glCanvas  = document.getElementById('gl');
+const p2dCanvas = document.getElementById('p2d');
+glCanvas.width  = p2dCanvas.width  = totalW;
+glCanvas.height = p2dCanvas.height = CANVAS_H;
+document.getElementById('scene').style.width = totalW + 'px';
+
+// labels
+const labelsDiv = document.getElementById('labels');
+sorted.forEach((h, i) => {
+  const cx   = PAD_L + CYL_W / 2 + i * (CYL_W + GAP);
+  const topY = BASE_Y - CYL_H;
+  const animal = FANTASY[i % FANTASY.length];
+  const div = document.createElement('div');
+  div.className = 'lbl';
+  div.style.cssText = `left:${cx - 44}px;top:${topY - 36}px;width:88px;font-size:20px;filter:drop-shadow(0 0 4px rgba(255,220,100,.7))`;
+  div.textContent = animal;
+  labelsDiv.appendChild(div);
+
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'lbl';
+  nameDiv.style.cssText = `left:${cx - 44}px;top:${BASE_Y + HEMI_R + 8}px;width:88px;font-size:11px;color:#ccc;font-family:sans-serif`;
+  nameDiv.textContent = h.name;
+  labelsDiv.appendChild(nameDiv);
+
+  const ptsDiv = document.createElement('div');
+  ptsDiv.className = 'lbl';
+  ptsDiv.style.cssText = `left:${cx - 44}px;top:${BASE_Y + HEMI_R + 22}px;width:88px;font-size:10px;color:#aaa;font-family:sans-serif`;
+  ptsDiv.textContent = h.total_points + ' Pkt';
+  labelsDiv.appendChild(ptsDiv);
+});
+
+// WebGL — simulate React StrictMode double-mount (cleanup between runs)
+function mount(glCanvas, p2dCanvas, withLoseContext) {
+  const gl = glCanvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+  if (!gl) throw new Error('No WebGL context');
+  if (gl.isContextLost()) throw new Error('Context already lost at mount time');
+
+  const prog = createProgram(gl);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  gl.useProgram(prog);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  const aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes    = gl.getUniformLocation(prog, 'u_res');
+  const uBounds = gl.getUniformLocation(prog, 'u_bounds');
+  const uTime   = gl.getUniformLocation(prog, 'u_time');
+  const uCx     = gl.getUniformLocation(prog, 'u_cx');
+  const uBaseY  = gl.getUniformLocation(prog, 'u_base_y');
+  const uR      = gl.getUniformLocation(prog, 'u_r');
+  const uRy     = gl.getUniformLocation(prog, 'u_ry');
+  const uCylH   = gl.getUniformLocation(prog, 'u_cyl_h');
+  const uFillH  = gl.getUniformLocation(prog, 'u_fill_h');
+  const uDens   = gl.getUniformLocation(prog, 'u_density');
+  const uColor  = gl.getUniformLocation(prog, 'u_color');
+  gl.uniform2f(uRes, totalW, CANVAS_H);
+
+  const p2d       = p2dCanvas.getContext('2d');
+  const particles = [];
+  const startTime = performance.now();
+  let lastSpawn   = 0;
+  let rafId       = 0;
+
+  function spawnParticles() {
+    sorted.forEach((haus, i) => {
+      if (haus.total_points <= 0) return;
+      const cx    = PAD_L + CYL_W / 2 + i * (CYL_W + GAP);
+      const fh    = fillH(haus.total_points);
+      const stopY = BASE_Y - fh - CYL_RY * 0.5;
+      if (Math.random() < 0.45)
+        particles.push({ x: cx + (Math.random()-.5)*(CYL_W-14), y: BASE_Y-CYL_H-4-Math.random()*10,
+          vy:.4+Math.random()*.8, r:3.5+Math.random()*3, color:["#FFD700","#FFF9C4","#FFE57F","#C8E6FF"][Math.floor(Math.random()*4)],
+          stopY, sparkle:true, phase:Math.random()*Math.PI*2 });
+      const n = 2 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < n; j++)
+        particles.push({ x: cx+(Math.random()-.5)*(CYL_W-16), y: BASE_Y-CYL_H+Math.random()*14,
+          vy:1.6+Math.random()*2.5, r:1.5+Math.random()*1.8,
+          color:SAND_COLORS[Math.floor(Math.random()*SAND_COLORS.length)],
+          stopY, sparkle:false, phase:0 });
+    });
+  }
+
+  function frame() {
+    const t = (performance.now() - startTime) / 1000;
+    gl.useProgram(prog);
+    gl.viewport(0, 0, totalW, CANVAS_H);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(uTime, t);
+
+    sorted.forEach((haus, i) => {
+      const cx = PAD_L + CYL_W / 2 + i * (CYL_W + GAP);
+      const fh = fillH(haus.total_points);
+      const d  = density(haus.total_points);
+      const [r,g,b] = hexToRgb(haus.color);
+      const topY = BASE_Y - CYL_H;
+      gl.uniform4f(uBounds, cx-CYL_W/2-2, topY-CYL_RY-2, cx+CYL_W/2+2, BASE_Y+HEMI_R+2);
+      gl.uniform1f(uCx,    cx);
+      gl.uniform1f(uBaseY, BASE_Y);
+      gl.uniform1f(uR,     CYL_W / 2);
+      gl.uniform1f(uRy,    CYL_RY);
+      gl.uniform1f(uCylH,  CYL_H);
+      gl.uniform1f(uFillH, fh);
+      gl.uniform1f(uDens,  d);
+      gl.uniform3f(uColor, r, g, b);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    });
+
+    const now = performance.now();
+    p2d.clearRect(0, 0, totalW, CANVAS_H);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.y += p.vy; p.vy += 0.09;
+      if (p.y >= p.stopY) { particles.splice(i, 1); continue; }
+      const a = p.sparkle ? .35+.65*Math.abs(Math.sin(t*5.5+p.phase)) : Math.min(1,(p.stopY-p.y)/28);
+      p2d.globalAlpha = a;
+      if (p.sparkle) {
+        p2d.strokeStyle = p.color; p2d.lineWidth = 1.3;
+        const rr = p.r;
+        p2d.beginPath();
+        p2d.moveTo(p.x-rr,p.y); p2d.lineTo(p.x+rr,p.y);
+        p2d.moveTo(p.x,p.y-rr); p2d.lineTo(p.x,p.y+rr);
+        p2d.moveTo(p.x-rr*.7,p.y-rr*.7); p2d.lineTo(p.x+rr*.7,p.y+rr*.7);
+        p2d.moveTo(p.x+rr*.7,p.y-rr*.7); p2d.lineTo(p.x-rr*.7,p.y+rr*.7);
+        p2d.stroke();
+      } else {
+        p2d.fillStyle = p.color; p2d.beginPath(); p2d.arc(p.x,p.y,p.r,0,Math.PI*2); p2d.fill();
+      }
+    }
+    p2d.globalAlpha = 1;
+    if (now - lastSpawn > 180 && particles.length < 60) { spawnParticles(); lastSpawn = now; }
+  }
+
+  // Use setInterval instead of RAF so it runs in background/hidden iframes too
+  rafId = setInterval(frame, 16);
+  frame(); // draw first frame immediately
+
+  return () => {
+    clearInterval(rafId);
+    if (withLoseContext) gl.getExtension('WEBGL_lose_context')?.loseContext();
+  };
+}
+
+// Simulate React StrictMode: mount → cleanup (RAF only) → remount
+// The fix: cleanup cancels RAF but does NOT call loseContext().
+// loseContext() permanently kills the context — canvas.getContext('webgl') always
+// returns the same object, so a lost context can never be recovered on the same canvas.
+try {
+  status.innerHTML = 'Mount 1 (StrictMode)…';
+  const cleanup = mount(glCanvas, p2dCanvas, false); // fixed: no loseContext
+  status.innerHTML = 'Cleanup (cancelAnimationFrame only)…';
+  cleanup();
+
+  status.innerHTML = 'Mount 2 (real mount)…';
+  mount(glCanvas, p2dCanvas, false);
+  status.innerHTML = '<span class="ok">✓ Running — StrictMode double-mount OK</span>';
+} catch (e) {
+  status.innerHTML = `<span class="err">✗ ${e.message}</span>`;
+  console.error(e);
+}
+</script>
+</body>
+</html>

@@ -4,7 +4,18 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, HausOut, ClassOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSelectedClass } from "@/contexts/SelectedClassContext";
 import { HaeuserDiagram } from "@/components/HaeuserDiagram";
+
+function ClassIcon({ cls }: { cls: ClassOut }) {
+  if (cls.symbol_image) {
+    return (
+      <img src={cls.symbol_image} alt={cls.code}
+        style={{ width: "2.4rem", height: "2.4rem", objectFit: "contain", borderRadius: 4 }} />
+    );
+  }
+  return <span style={{ fontSize: "2.4rem", lineHeight: 1 }}>{cls.symbol_emoji ?? "📚"}</span>;
+}
 
 // ─── Color helpers (used by HausCard/form) ────────────────────────────────────
 
@@ -30,92 +41,275 @@ const PALETTE = [
   "#16a34a", "#9333ea", "#c2410c", "#0369a1",
 ];
 
+// ─── Siegetreppe icon ─────────────────────────────────────────────────────────
+
+function SiegetreppeIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 20" fill="currentColor" style={{ display: "inline-block", verticalAlign: "middle" }}>
+      <rect x="0"  y="13" width="7"  height="7"  rx="1" opacity="0.45"/>
+      <rect x="8"  y="7"  width="7"  height="13" rx="1" opacity="0.7"/>
+      <rect x="16" y="1"  width="8"  height="19" rx="1"/>
+    </svg>
+  );
+}
+
 // ─── Classes Bar Diagram ──────────────────────────────────────────────────────
 
 function KlassenDiagram({ classes }: { classes: ClassOut[] }) {
   const sorted = [...classes].sort((a, b) => b.total_points - a.total_points);
   const maxPts = Math.max(...sorted.map(c => c.total_points), 1);
 
-  const BAR_W = 48;
+  const BAR_W   = 48;
   const BAR_GAP = 14;
-  const MAX_H = 180;
-  const BASE_Y = 210;
-  const PAD_L = 36;
-  const SVG_H = BASE_Y + 60;
-  const totalW = sorted.length * (BAR_W + BAR_GAP) - BAR_GAP + PAD_L + 20;
-
-  const barColor = "var(--accent)";
+  const MAX_H   = 180;
+  const BASE_Y  = 210;
+  const PAD_L   = 36;
+  const ICON_H  = 28;
+  const SVG_H   = BASE_Y + ICON_H + 22;
+  const totalW  = sorted.length * (BAR_W + BAR_GAP) - BAR_GAP + PAD_L + 20;
 
   if (sorted.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <svg width={totalW} height={SVG_H} style={{ minWidth: totalW, display: "block" }}>
-        <defs>
-          <linearGradient id="kd-bar-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#4f46e5" />
-          </linearGradient>
-        </defs>
-
-        {/* Y-axis line */}
-        <line x1={PAD_L} y1={0} x2={PAD_L} y2={BASE_Y} stroke="var(--border)" strokeWidth="1" />
+    <div className="w-full">
+      <svg viewBox={`0 0 ${totalW} ${SVG_H}`} width="100%" height="auto" style={{ display: "block" }}>
+        {/* Y-axis */}
+        <line x1={PAD_L} y1={0} x2={PAD_L} y2={BASE_Y} stroke="var(--border)" strokeWidth="1"/>
         {/* Baseline */}
-        <line x1={PAD_L} y1={BASE_Y} x2={totalW} y2={BASE_Y} stroke="var(--border)" strokeWidth="1.5" />
+        <line x1={PAD_L} y1={BASE_Y} x2={totalW} y2={BASE_Y} stroke="var(--border)" strokeWidth="1.5"/>
 
         {sorted.map((cls, i) => {
-          const x = PAD_L + i * (BAR_W + BAR_GAP);
-          const pts = cls.total_points;
-          const h = pts > 0 ? Math.max(3, (pts / maxPts) * MAX_H) : 3;
+          const x    = PAD_L + i * (BAR_W + BAR_GAP);
+          const pts  = cls.total_points;
+          const h    = pts > 0 ? Math.max(3, (pts / maxPts) * MAX_H) : 3;
           const topY = BASE_Y - h;
+          const opacity = 1 - (i / Math.max(sorted.length - 1, 1)) * 0.45;
+          const hasIcon = !!(cls.symbol_image || cls.symbol_emoji);
 
           return (
             <g key={cls.id}>
               {/* Bar */}
-              <rect x={x} y={BASE_Y} width={BAR_W} height={0} fill="url(#kd-bar-grad)" rx={4} ry={4}>
-                <animate
-                  attributeName="height" from="0" to={h}
+              <rect x={x} y={BASE_Y} width={BAR_W} height={0}
+                fill="var(--accent)" rx={4} ry={4} opacity={opacity}>
+                <animate attributeName="height" from="0" to={h}
                   dur="0.7s" begin={`${i * 0.05}s`} fill="freeze"
-                  calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1"
-                />
-                <animate
-                  attributeName="y" from={BASE_Y} to={topY}
+                  calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1"/>
+                <animate attributeName="y" from={BASE_Y} to={topY}
                   dur="0.7s" begin={`${i * 0.05}s`} fill="freeze"
-                  calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1"
-                />
+                  calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1"/>
               </rect>
 
-              {/* Points label above bar (only if bar is taller than ~24px) */}
+              {/* Points above bar */}
               {pts > 0 && (
-                <text
-                  x={x + BAR_W / 2} y={topY - 5}
+                <text x={x + BAR_W / 2} y={topY - 5}
                   textAnchor="middle" fontSize="10" fontWeight="bold"
-                  fill="var(--text-muted)"
-                >
+                  fill="var(--text-muted)">
                   {pts}
                 </text>
               )}
 
-              {/* Emoji or initial below baseline */}
-              <text
-                x={x + BAR_W / 2} y={BASE_Y + 18}
-                textAnchor="middle" fontSize="18"
-              >
-                {cls.symbol_emoji ?? cls.code.slice(0, 2)}
-              </text>
+              {/* Class icon below baseline: image takes priority over emoji */}
+              {cls.symbol_image ? (
+                <image
+                  href={cls.symbol_image}
+                  x={x + (BAR_W - 24) / 2} y={BASE_Y + 4}
+                  width={24} height={24}
+                />
+              ) : cls.symbol_emoji ? (
+                <text x={x + BAR_W / 2} y={BASE_Y + 22}
+                  textAnchor="middle" fontSize="18">
+                  {cls.symbol_emoji}
+                </text>
+              ) : null}
 
               {/* Class code */}
               <text
-                x={x + BAR_W / 2} y={BASE_Y + 36}
+                x={x + BAR_W / 2}
+                y={hasIcon ? BASE_Y + ICON_H + 14 : BASE_Y + 16}
                 textAnchor="middle" fontSize="10" fontWeight="600"
-                fill="var(--text)"
-              >
+                fill="var(--text)">
                 {cls.code}
               </text>
             </g>
           );
         })}
       </svg>
+    </div>
+  );
+}
+
+// ─── Verwalten Modal (triggered from diagram) ────────────────────────────────
+
+function HausVerwaltenModal({
+  haus,
+  classes,
+  onClose,
+}: {
+  haus: HausOut;
+  classes: ClassOut[];
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const { auth } = useAuth();
+  const isAdmin = auth?.teacher?.role === "admin";
+
+  const [name, setName]       = useState(haus.name);
+  const [color, setColor]     = useState(haus.color);
+  const [memberIds, setMemberIds] = useState<Set<number>>(new Set(haus.class_ids));
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  const updateMut = useMutation({
+    mutationFn: () => api.haeuser.update(haus.id, name, color),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["haeuser"] }),
+  });
+  const memberMut = useMutation({
+    mutationFn: (ids: number[]) => api.haeuser.setMembers(haus.id, ids),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["haeuser"] }),
+  });
+  const logoMut = useMutation({
+    mutationFn: (file: File) => api.haeuser.uploadLogo(haus.id, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["haeuser"] }),
+  });
+
+  function toggleMember(cid: number) {
+    const next = new Set(memberIds);
+    if (next.has(cid)) next.delete(cid); else next.add(cid);
+    setMemberIds(next);
+    memberMut.mutate(Array.from(next));
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="h-1.5" style={{ backgroundColor: color }} />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+          <h2 className="font-bold text-base">{haus.name} verwalten</h2>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-xl leading-none">✕</button>
+        </div>
+
+        <div className="flex flex-col gap-5 p-5">
+          {isAdmin && (
+            <>
+              {/* Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Name</label>
+                <div className="flex gap-2">
+                  <input
+                    className="input flex-1 text-sm"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Hausname"
+                  />
+                  <button
+                    onClick={() => updateMut.mutate()}
+                    disabled={!name.trim() || updateMut.isPending}
+                    className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40"
+                  >
+                    Speichern
+                  </button>
+                </div>
+              </div>
+
+              {/* Color */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Farbe</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={e => setColor(e.target.value)}
+                    className="w-10 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-[var(--bg)]"
+                  />
+                  <button
+                    onClick={() => updateMut.mutate()}
+                    disabled={updateMut.isPending}
+                    className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40"
+                  >
+                    Übernehmen
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {PALETTE.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setColor(c)}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? "border-white scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Avatar / Logo */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Avatar / Logo</label>
+                <div className="flex items-center gap-3">
+                  {haus.logo_path ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={haus.logo_path} alt="" className="w-14 h-14 rounded-xl object-cover border border-[var(--border)]" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-2xl border border-[var(--border)]"
+                      style={{ background: color }}>
+                      {haus.name[0]}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <input
+                      ref={logoRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) logoMut.mutate(f); }}
+                    />
+                    <button
+                      onClick={() => logoRef.current?.click()}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                    >
+                      {logoMut.isPending ? "Lade hoch…" : "Bild hochladen"}
+                    </button>
+                    {haus.logo_path && <span className="text-xs text-green-400">✓ Logo gesetzt</span>}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Member classes — visible to all, editable only for admins */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Mitglieds-Klassen</label>
+            <div className="flex flex-wrap gap-2">
+              {classes.map(cls => (
+                <button
+                  key={cls.id}
+                  onClick={() => isAdmin && toggleMember(cls.id)}
+                  disabled={!isAdmin}
+                  className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                    memberIds.has(cls.id)
+                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                      : "border-[var(--border)] text-[var(--text-muted)]"
+                  } ${isAdmin ? "cursor-pointer hover:border-gray-500" : "cursor-default"}`}
+                >
+                  {cls.symbol_emoji ?? ""} {cls.code}
+                </button>
+              ))}
+              {classes.length === 0 && (
+                <span className="text-xs text-[var(--text-muted)]">Keine Klassen angelegt.</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 pb-5">
+          <button onClick={onClose} className="w-full py-2 text-sm rounded-xl border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors">
+            Schließen
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -167,7 +361,7 @@ function HausCard({
     memberMut.mutate(Array.from(next));
   }
 
-  const isAdmin = auth?.teacher.role === "admin";
+  const isAdmin = auth?.teacher?.role === "admin";
 
   return (
     <div className="border border-[var(--border)] rounded-2xl overflow-hidden bg-[var(--surface)]">
@@ -235,6 +429,17 @@ function HausCard({
               >
                 Speichern
               </button>
+            </div>
+            {/* Palette quick-picks */}
+            <div className="flex flex-wrap gap-1.5">
+              {PALETTE.map(c => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? "border-white scale-110" : "border-transparent"}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
             </div>
 
             {/* Logo upload */}
@@ -360,8 +565,10 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
 
 export default function HaeuserPage() {
   const { auth } = useAuth();
-  const [tab, setTab] = useState<"charts" | "manage">("charts");
+  const { selectedClass, setSelectedClass } = useSelectedClass();
+  const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
 
   const { data: haeuser = [], isLoading: hLoading } = useQuery<HausOut[]>({
     queryKey: ["haeuser"],
@@ -375,26 +582,30 @@ export default function HaeuserPage() {
     refetchInterval: 15_000,
   });
 
-  const isAdmin = auth?.teacher.role === "admin";
+  const isAdmin = auth?.teacher?.role === "admin";
   const sortedByPts = haeuser;
 
   return (
     <div className="p-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
       <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold">🏛️ Häuser</h1>
+        <h1 className="text-2xl font-bold">🛡️ Häuser &amp; Klassen</h1>
         <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
-          {(["charts", "manage"] as const).map(t => (
+          {([
+            ["charts",  "📊 Übersicht"],
+            ["klassen", "🎓 Klassen"],
+            ["manage",  "⚙️ Verwaltung"],
+          ] as const).map(([t, label]) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
                 tab === t
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text)]"
               }`}
             >
-              {t === "charts" ? "📊 Diagramme" : "⚙️ Verwaltung"}
+              {label}
             </button>
           ))}
         </div>
@@ -404,8 +615,7 @@ export default function HaeuserPage() {
       {tab === "charts" && (
         <div className="flex flex-col gap-8">
           {/* Houses 3D chart */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-            <h2 className="text-lg font-bold mb-4">🏛️ Häuser-Rangliste</h2>
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
             {hLoading ? (
               <div className="h-32 flex items-center justify-center text-[var(--text-muted)]">Laden…</div>
             ) : (
@@ -415,13 +625,71 @@ export default function HaeuserPage() {
 
           {/* Classes bar chart */}
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
-            <h2 className="text-lg font-bold mb-4">📊 Klassen-Übersicht</h2>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><SiegetreppeIcon size={22} /> Klassen-Übersicht</h2>
             {cLoading ? (
               <div className="h-32 flex items-center justify-center text-[var(--text-muted)]">Laden…</div>
             ) : (
               <KlassenDiagram classes={classes} />
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Klassen ── */}
+      {tab === "klassen" && (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            {classes.length} Klassen
+            {selectedClass && (
+              <> · <span style={{ color: "var(--accent)" }}>{selectedClass.code} ausgewählt</span></>
+            )}
+            {!selectedClass && " · Klasse auswählen für Punkte vergeben"}
+          </p>
+          {cLoading ? (
+            <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+          ) : classes.length === 0 ? (
+            <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)]">
+              Noch keine Klassen angelegt.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[...classes]
+                .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
+                .map(cls => (
+                  <button
+                    key={cls.id}
+                    onClick={() => setSelectedClass(selectedClass?.id === cls.id ? null : cls)}
+                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4
+                      cursor-pointer transition-all hover:bg-[var(--surface-hover)] text-left"
+                    style={{
+                      borderColor: selectedClass?.id === cls.id ? "var(--accent)" : "var(--border)",
+                      boxShadow: selectedClass?.id === cls.id ? "0 0 0 2px var(--accent)33" : undefined,
+                    }}
+                  >
+                    <ClassIcon cls={cls} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold truncate">
+                        {cls.code}
+                        {cls.class_name && (
+                          <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">
+                            „{cls.class_name}"
+                          </span>
+                        )}
+                      </div>
+                      {cls.display_name && (
+                        <div className="text-xs text-[var(--text-muted)] truncate">{cls.display_name}</div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
+                        {cls.total_points}
+                      </div>
+                      <div className="text-xs text-[var(--text-muted)]">Pkt</div>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -459,6 +727,14 @@ export default function HaeuserPage() {
             </div>
           )}
         </div>
+      )}
+
+      {verwaltenHaus && (
+        <HausVerwaltenModal
+          haus={verwaltenHaus}
+          classes={classes}
+          onClose={() => setVerwaltenHaus(null)}
+        />
       )}
     </div>
   );

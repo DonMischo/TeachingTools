@@ -11,7 +11,7 @@ export function makeClass(overrides = {}) {
   return {
     id: 1,
     code: "5a",
-    display_name: "Klasse 5a",
+    display_name: "",
     symbol_emoji: null,
     symbol_image: null,
     total_points: 0,

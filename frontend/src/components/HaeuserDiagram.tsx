@@ -1,306 +1,345 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { HausOut } from "@/lib/api";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const MAX_PTS  = 1000;
-const CYL_W    = 80;
-const CYL_RY   = 12;   // ellipse half-height for caps
-const CYL_H    = 260;
-const BASE_Y   = 360;
-const CANVAS_H = BASE_Y + 80;
-const GAP      = 70;
-const PAD_L    = 70;
+const FRAME_W   = 500;
+const FRAME_H   = 800;
+const BAR_W     = 150;
+const BAR_H     = 400;
+const FRAME_GAP = 32;
 
-const SAND_HEX    = [0xC8A96E, 0xB89050, 0xD4B070, 0xA07840, 0xE8C890] as const;
-const SPARKLE_HEX = [0xFFD700, 0xFFFDE7, 0xFFE57F, 0xFFFFFF, 0xC8E6FF] as const;
+const THRESHOLDS = [0, 1_000, 10_000, 100_000, 250_000, 500_000];
 
-// ─── Color helpers ────────────────────────────────────────────────────────────
-function hexStrToInt(h: string): number { return parseInt(h.replace("#", ""), 16); }
-function rC(n: number) { return (n >> 16) & 0xff; }
-function gC(n: number) { return (n >> 8)  & 0xff; }
-function bC(n: number) { return  n        & 0xff; }
-function mkRgb(r: number, g: number, b: number) { return (r << 16) | (g << 8) | b; }
-
-function lightenHex(h: string, a: number): number {
-  const n = hexStrToInt(h);
-  return mkRgb(Math.min(255, rC(n)+a), Math.min(255, gC(n)+a), Math.min(255, bC(n)+a));
-}
-function darkenHex(h: string, a: number): number {
-  const n = hexStrToInt(h);
-  return mkRgb(Math.max(0, rC(n)-a), Math.max(0, gC(n)-a), Math.max(0, bC(n)-a));
-}
-function mixHex(h: string, c2: number, t: number): number {
-  const n = hexStrToInt(h);
-  return mkRgb(
-    Math.round(rC(n) + (rC(c2)-rC(n))*t),
-    Math.round(gC(n) + (gC(c2)-gC(n))*t),
-    Math.round(bC(n) + (bC(c2)-bC(n))*t),
-  );
-}
-
-function sr(n: number): number {
-  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-function fillH(pts: number): number { return Math.min(pts / MAX_PTS, 1) * CYL_H; }
-
-function density(pts: number): number {
-  if (pts <= 0) return 0;
-  const frac = Math.min(pts / MAX_PTS, 1);
-  let d = Math.log(pts + 1) / Math.log(MAX_PTS + 1);
-  if (frac > 0.8) {
-    const over = (frac - 0.8) / 0.2;
-    d += (1 - d) * (Math.log(over * 9 + 1) / Math.log(10)) * 0.75;
+function getLevelInfo(pts: number): { level: number; progress: number } {
+  const p = Math.max(0, pts);
+  if (p === 0) return { level: 0, progress: 0 };
+  for (let i = 0; i < THRESHOLDS.length - 1; i++) {
+    if (p < THRESHOLDS[i + 1]) {
+      const raw = (p - THRESHOLDS[i]) / (THRESHOLDS[i + 1] - THRESHOLDS[i]);
+      return { level: i, progress: Math.max(0.1, raw) };
+    }
   }
-  return Math.min(d, 1);
+  return { level: THRESHOLDS.length - 2, progress: 1 };
 }
 
-interface FallEntry    { sprite: any; vy: number; stopY: number; type: "sparkle" | "grain"; }
-interface TwinkleEntry { sprite: any; speed: number; phase: number; }
+function hexToRgb(h: string): [number, number, number] {
+  const n = parseInt(h.replace("#", ""), 16);
+  return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+}
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export function HaeuserDiagram({ haeuser }: { haeuser: HausOut[] }) {
-  const mountRef = useRef<HTMLDivElement>(null);
+type Fall = { startTime: number; edgeStart: number; blobSize: number; particleCount: number };
+const MAX_FALLS = 4;
 
-  const sorted = [...haeuser].sort((a, b) => b.total_points - a.total_points);
-  const totalW = Math.max(400, sorted.length * (CYL_W + GAP) - GAP + PAD_L * 2);
-  const depKey = sorted.map(h => `${h.id}:${h.total_points}:${h.color}`).join(",") + `|${totalW}`;
+// ─── Shaders (WebGL 1 / GLSL ES 1.00) ────────────────────────────────────────
+export const VERT = `
+attribute vec2 a_pos;
+void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+`;
+
+export const FRAG = `
+precision highp float;
+uniform float u_time;
+uniform vec2  u_resolution;
+uniform float u_progress;
+uniform vec3  u_color;
+uniform float u_level;
+uniform int   u_fallCount;
+uniform float u_elapsed[4];
+uniform float u_edgeStart[4];
+uniform float u_blobSize[4];
+uniform float u_particleCount[4];
+
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  f = f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+}
+float fbm(vec2 p) {
+  float v=0.0, a=0.5;
+  for (int i=0; i<5; i++) { v+=a*noise(p); p*=2.0; a*=0.5; }
+  return v;
+}
+
+void renderFall(vec2 cpx, float elapsed, float edgeStart, float curEdge,
+                float blobSize, float pc, inout vec3 col, inout float alp) {
+  if (elapsed < 0.0 || elapsed > 6.0) return;
+  float fade = 1.0 - smoothstep(4.0, 5.5, elapsed);
+  if (fade <= 0.0) return;
+  int count = int(min(pc, 150.0));
+  for (int i = 0; i < 150; i++) {
+    if (i >= count) break;
+    float fi = float(i);
+    float seed = fi * 0.6180339887 + 131.0;
+    float fallDur = 2.5 + hash(vec2(seed, 8.0)) * 1.0;
+    float startDelay = (fi / max(pc, 1.0)) * 1.5;
+    float pe = elapsed - startDelay;
+    if (pe < 0.0) continue;
+    float fp = clamp(pe / fallDur, 0.0, 1.0);
+    float landP = clamp((startDelay + fallDur) / 4.0, 0.0, 1.0);
+    float targetY = mix(edgeStart, curEdge, landP);
+    float curY = fp >= 0.99 ? targetY : mix(1.0, targetY, fp);
+    float curX = 0.05 + hash(vec2(seed, 1.0)) * 0.9;
+    curX += sin(fp * 3.14159 + seed * 2.0) * 0.01 * (1.0 - fp);
+    vec2 pPosPx = vec2(curX * u_resolution.x, curY * u_resolution.y);
+    float pSzPx = 2.0 + blobSize * 4.0;
+    float p = smoothstep(pSzPx, 0.0, length(cpx - pPosPx));
+    float brightness = 0.9 + hash(vec2(seed, 7.0)) * 0.2;
+    col += (vec3(1.0, 0.96, 0.82) * brightness + u_color * 0.4) * p * fade;
+    alp += p * fade * 0.9;
+  }
+  if (curEdge > 0.0 && curEdge < 1.0 && elapsed > 0.8) {
+    vec2 uv2 = cpx / u_resolution;
+    float aspect = u_resolution.x / u_resolution.y;
+    for (int r = 0; r < 3; r++) {
+      float rf = float(r);
+      float ringR = 0.04 + rf * 0.05;
+      vec2 toC = (uv2 - vec2(0.5, curEdge)) * vec2(aspect, 1.0);
+      float ring = smoothstep(0.025, 0.0, abs(length(toC) - ringR))
+                 * abs(sin(u_time * 1.5 + rf * 1.1)) * fade;
+      col += vec3(1.0, 0.96, 0.8) * ring * 0.35;
+      alp += ring * 0.12;
+    }
+  }
+}
+
+void main() {
+  vec2 uv  = gl_FragCoord.xy / u_resolution;
+  vec2 cpx = gl_FragCoord.xy;
+  float fillEdge = u_progress;
+  float aspect = u_resolution.x / u_resolution.y;
+  float st = u_time * 0.4;
+  vec2 fc = (uv - vec2(0.5, fillEdge * 0.5)) * vec2(aspect, 1.0);
+  float r = length(fc);
+  float theta = atan(fc.y, fc.x);
+  float d1 = fbm(uv * 3.5 + st * 0.18) * 0.14;
+  float d2 = fbm(uv * 7.0 - st * 0.09) * 0.06;
+  float wisp = 0.0;
+  for (int s=0; s<8; s++) {
+    float sf = float(s);
+    wisp += smoothstep(0.55,0.9,sin(theta+d1+r*(6.0+sf)-st*(0.8+sf*0.15)+sf*0.7854))
+           *smoothstep(0.55,0.0,r);
+  }
+  wisp = clamp(wisp / 3.5, 0.0, 1.0);
+  float big = 0.0;
+  for (int s=0; s<3; s++) {
+    float sf = float(s);
+    big += smoothstep(0.3,0.75,sin(theta+d2+r*(3.0+sf)-st*(0.3+sf*0.1)+sf*2.09));
+  }
+  big  = clamp(big / 4.0, 0.0, 1.0);
+  float turb = fbm(uv * vec2(5.0,18.0) + st*0.12 + d2);
+
+  float lvlBright   = 1.0 + u_level * 0.12;
+  float lvlOpacity  = 0.91 + u_level * 0.025;
+  float sparkleGate = 0.06 + u_level * 0.03;
+  float sparkleMult = 1.0 + u_level * 0.4;
+
+  vec3  col   = vec3(0.0);
+  float alpha = 0.0;
+
+  if (uv.y <= fillEdge) {
+    float cg = exp(-r * 4.2);
+    col  = u_color * 0.05;
+    col += u_color * (wisp*0.9 + big*0.3 + turb*0.10);
+    col += vec3(0.85,0.75,1.0) * pow(wisp,2.5) * 0.3;
+    col += u_color * cg*0.45 + vec3(1.0)*cg*0.08;
+    col *= 1.0 - smoothstep(0.0,0.38,abs(uv.x-0.5))*0.55;
+    col *= (0.78 + (uv.y / max(fillEdge,0.001)) * 0.35) * lvlBright;
+
+    float spa = 0.0; vec3 spc = vec3(0.0);
+    vec2 sc2 = floor(cpx / 5.0);
+    for (int dx=-1; dx<=1; dx++) {
+      for (int dy=-1; dy<=1; dy++) {
+        vec2 nc = sc2 + vec2(float(dx),float(dy));
+        float gate = step(hash(nc*0.13+vec2(0.31,0.17)), sparkleGate);
+        float twS  = 0.6 + hash(nc+vec2(9.1,0.0))*3.0;
+        float twP  = hash(nc+vec2(1.3,4.7))*6.2832;
+        float blink = abs(sin(u_time*twS+twP));
+        float epoch = floor((u_time*twS+twP)/6.2832);
+        vec2 jit  = vec2(hash(nc+vec2(3.3+epoch*7.13,5.1)), hash(nc+vec2(7.7,2.3+epoch*3.71)));
+        vec2 spx2 = (nc+jit)*5.0;
+        float sy_uv = spx2.y / u_resolution.y;
+        float rim = smoothstep(fillEdge,fillEdge*0.85,sy_uv)*step(sy_uv,fillEdge);
+        vec2 d3 = abs(cpx-spx2);
+        float cr = max(max(0.0,1.0-d3.x/1.2)*max(0.0,1.0-d3.y/6.5),
+                       max(0.0,1.0-d3.x/6.5)*max(0.0,1.0-d3.y/1.2));
+        float sv = gate*blink*cr*2.5*rim*sparkleMult;
+        spa += sv;
+        spc += vec3(1.0,0.97,0.72)*sv + u_color*sv*0.45;
+      }
+    }
+    col = mix(col, col+spc, clamp(spa,0.0,1.0)*0.88);
+    alpha = lvlOpacity + cg*0.05 + spa*0.2;
+    if (fillEdge > 0.0 && fillEdge < 1.0)
+      col += u_color * smoothstep(0.03,0.0,abs(uv.y-fillEdge))*0.08;
+  }
+
+  // Unrolled fall calls (no dynamic array indexing for WebGL1 compatibility)
+  if (u_fallCount > 0) renderFall(cpx, u_elapsed[0], u_edgeStart[0], fillEdge, u_blobSize[0], u_particleCount[0], col, alpha);
+  if (u_fallCount > 1) renderFall(cpx, u_elapsed[1], u_edgeStart[1], fillEdge, u_blobSize[1], u_particleCount[1], col, alpha);
+  if (u_fallCount > 2) renderFall(cpx, u_elapsed[2], u_edgeStart[2], fillEdge, u_blobSize[2], u_particleCount[2], col, alpha);
+  if (u_fallCount > 3) renderFall(cpx, u_elapsed[3], u_edgeStart[3], fillEdge, u_blobSize[3], u_particleCount[3], col, alpha);
+
+  gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.98));
+}
+`;
+
+// ─── Per-house WebGL vortex canvas ────────────────────────────────────────────
+function HausVortexCanvas({ points, color }: {
+  points: number;
+  color: [number, number, number];
+}) {
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const stateRef   = useRef({
+    color,
+    committedPoints: points,
+    displayPoints:   points,  // start at current so no animation on first render
+    falls:           [] as Fall[],
+    lastFrameTime:   0,
+  });
+  const didMount = useRef(false);
+
+  useEffect(() => { stateRef.current.color = color; }, [color]);
 
   useEffect(() => {
-    if (sorted.length === 0 || !mountRef.current) return;
-    const mount = mountRef.current;
-    mount.innerHTML = "";
+    // Skip the initial mount — only trigger falls on subsequent changes
+    if (!didMount.current) { didMount.current = true; return; }
+    const state = stateRef.current;
+    const delta = points - state.committedPoints;
+    if (delta > 0) {
+      const edgeStart    = getLevelInfo(state.displayPoints).progress;
+      const blobSize     = Math.min(delta / 300, 1.0);
+      const particleCount = Math.max(25, Math.min(150, Math.round(delta / 5)));
+      state.falls.push({ startTime: performance.now(), edgeStart, blobSize, particleCount });
+      if (state.falls.length > MAX_FALLS) state.falls.shift();
+    }
+    state.committedPoints = points;
+  }, [points]);
 
-    let destroyed = false;
-    let pixiApp: any = null;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false });
+    if (!gl) return;
 
-    (async () => {
-      const { Application, Container, Graphics, Sprite, FillGradient } = await import("pixi.js");
-      if (destroyed) return;
+    function compile(type: number, src: string) {
+      const sh = gl!.createShader(type)!;
+      gl!.shaderSource(sh, src); gl!.compileShader(sh);
+      if (!gl!.getShaderParameter(sh, gl!.COMPILE_STATUS)) {
+        console.error(gl!.getShaderInfoLog(sh)); return null;
+      }
+      return sh;
+    }
+    const vs = compile(gl.VERTEX_SHADER, VERT);
+    const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+    if (!vs || !fs) return;
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(prog)); return;
+    }
 
-      const app = new Application();
-      await app.init({ width: totalW, height: CANVAS_H, backgroundAlpha: 0, antialias: true });
-      if (destroyed) { app.destroy(true); return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    gl.useProgram(prog);
+    const aPos = gl.getAttribLocation(prog, "a_pos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-      pixiApp = app;
-      mount.appendChild(app.canvas as HTMLCanvasElement);
+    const uTime  = gl.getUniformLocation(prog, "u_time");
+    const uRes   = gl.getUniformLocation(prog, "u_resolution");
+    const uProg  = gl.getUniformLocation(prog, "u_progress");
+    const uColor = gl.getUniformLocation(prog, "u_color");
+    const uLevel = gl.getUniformLocation(prog, "u_level");
+    const uFallCount = gl.getUniformLocation(prog, "u_fallCount");
+    // Use per-element locations for array uniforms (WebGL1 safe)
+    const uElapsed      = [0,1,2,3].map(i => gl.getUniformLocation(prog, `u_elapsed[${i}]`));
+    const uEdgeStart    = [0,1,2,3].map(i => gl.getUniformLocation(prog, `u_edgeStart[${i}]`));
+    const uBlobSize     = [0,1,2,3].map(i => gl.getUniformLocation(prog, `u_blobSize[${i}]`));
+    const uParticleCount = [0,1,2,3].map(i => gl.getUniformLocation(prog, `u_particleCount[${i}]`));
 
-      // ── Shared textures ────────────────────────────────────────────────
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = BAR_W * dpr;
+    canvas.height = BAR_H * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(uRes, canvas.width, canvas.height);
 
-      const grainGfx = new Graphics();
-      grainGfx.circle(0, 0, 2.5).fill(0xffffff);
-      const grainTex = app.renderer.generateTexture(grainGfx);
-      grainGfx.destroy();
+    const t0 = performance.now();
+    let rafId = 0;
 
-      const starGfx = new Graphics();
-      starGfx
-        .moveTo(-5, 0).lineTo(5, 0)
-        .moveTo(0, -5).lineTo(0, 5)
-        .moveTo(-3.5, -3.5).lineTo(3.5, 3.5)
-        .moveTo(3.5, -3.5).lineTo(-3.5, 3.5)
-        .stroke({ color: 0xffffff, width: 1.2 });
-      starGfx.circle(0, 0, 1.3).fill(0xffffff);
-      const starTex = app.renderer.generateTexture(starGfx);
-      starGfx.destroy();
+    function frame(now: number) {
+      const state = stateRef.current;
+      const dt = state.lastFrameTime > 0 ? (now - state.lastFrameTime) / 1000 : 0;
+      state.lastFrameTime = now;
 
-      // ── Layers ─────────────────────────────────────────────────────────
-      const shellLayer   = new Container();
-      const sandLayer    = new Container(); // per-cylinder: sand bg + masked grains
-      const rimLayer     = new Container();
-      const fallingLayer = new Container();
-      app.stage.addChild(shellLayer, sandLayer, rimLayer, fallingLayer);
-
-      const twinkles: TwinkleEntry[] = [];
-      const falling:  FallEntry[]    = [];
-      let lastSpawn = 0;
-
-      // ── Build cylinders ────────────────────────────────────────────────
-      sorted.forEach((haus, hi) => {
-        const cx      = PAD_L + CYL_W / 2 + hi * (CYL_W + GAP);
-        const r       = CYL_W / 2;
-        const topY    = BASE_Y - CYL_H;
-        const pts     = haus.total_points;
-        const fh      = fillH(pts);
-        const d       = density(pts);
-        const sandTop = BASE_Y - fh;
-        const hInt    = hexStrToInt(haus.color);
-
-        // ── Shell (dark tube) ──────────────────────────────────────────
-        const shell = new Graphics();
-
-        // Dark interior rect
-        shell.rect(cx - r, topY, CYL_W, CYL_H).fill({ color: 0x050302, alpha: 0.92 });
-
-        // Gradient side shading (left bright edge, right darker edge)
-        // Left highlight strip
-        shell.rect(cx - r, topY, 8, CYL_H).fill({ color: lightenHex(haus.color, 55), alpha: 0.18 });
-        // Right shadow strip
-        shell.rect(cx + r - 8, topY, 8, CYL_H).fill({ color: 0x000000, alpha: 0.35 });
-        // Inner wall color tint (center glow)
-        shell.rect(cx - r + 8, topY, CYL_W - 16, CYL_H).fill({ color: hInt, alpha: 0.06 });
-
-        shellLayer.addChild(shell);
-
-        // Bottom cap ellipse (closed tube look)
-        const bottomCap = new Graphics();
-        bottomCap.ellipse(cx, BASE_Y, r, CYL_RY).fill({ color: darkenHex(haus.color, 30), alpha: 0.6 });
-        shellLayer.addChild(bottomCap);
-
-        // ── Sand fill ──────────────────────────────────────────────────
-        if (fh > 0) {
-          // Gradient sand background: dark at bottom, lighter toward surface
-          const sandGfx = new Graphics();
-          const grad = new FillGradient(0, BASE_Y - fh, 0, BASE_Y);
-          grad.addColorStop(0, mixHex(haus.color, 0xD4A850, 0.45));  // top of sand (lighter)
-          grad.addColorStop(1, mixHex(haus.color, 0x5C3A10, 0.55));  // bottom (packed, darker)
-          sandGfx.rect(cx - r + 1, BASE_Y - fh, CYL_W - 2, fh).fill(grad);
-          sandLayer.addChild(sandGfx);
-
-          // Sand surface ellipse
-          const surfGfx = new Graphics();
-          surfGfx.ellipse(cx, sandTop, r - 1, CYL_RY * 0.55)
-                 .fill({ color: mixHex(haus.color, 0xC8A050, 0.5) });
-          surfGfx.ellipse(cx - r * 0.25, sandTop - CYL_RY * 0.3, r * 0.55, CYL_RY * 0.3)
-                 .fill({ color: lightenHex(haus.color, 40), alpha: 0.45 });
-          sandLayer.addChild(surfGfx);
-
-          // Masked grain container — grains clipped to this cylinder's sand rect
-          const grainMask = new Graphics();
-          grainMask.rect(cx - r + 1, sandTop, CYL_W - 2, fh).fill(0xffffff);
-
-          const grainCtr = new Container();
-          grainCtr.mask = grainMask;
-          sandLayer.addChild(grainMask, grainCtr);
-
-          // Place grain sprites at seeded positions
-          const STRIP = 5;
-          const strips = Math.ceil(fh / STRIP);
-          for (let si = 0; si < strips; si++) {
-            const stripBaseY = BASE_Y - si * STRIP;
-            const relH   = si / strips; // 0 = bottom, 1 = top
-            const localD = d * (0.6 + 0.4 * (1 - relH)); // denser at bottom
-            const grainR = Math.max(0.3, 2.0 - d * 1.2 + relH * 0.2);
-            const n = Math.round(localD * (r * 2 - 6) * STRIP / 16);
-
-            for (let gi = 0; gi < n; gi++) {
-              const seed = hi * 300000 + si * 800 + gi;
-              const gx   = (cx - r + 3) + sr(seed)     * (r * 2 - 6);
-              const gy   = stripBaseY   - sr(seed + 1) * STRIP;
-              const roll = sr(seed + 2);
-
-              if (roll < 0.022) {
-                // Twinkling embedded sparkle (2.2% of grains)
-                const sp = new Sprite(starTex);
-                sp.anchor.set(0.5);
-                sp.position.set(gx, gy);
-                sp.scale.set(grainR * 0.36);
-                sp.tint = SPARKLE_HEX[Math.floor(sr(seed + 3) * SPARKLE_HEX.length)];
-                grainCtr.addChild(sp);
-                twinkles.push({ sprite: sp, speed: 0.8 + sr(seed+4)*2.5, phase: sr(seed+5)*Math.PI*2 });
-              } else {
-                const sp = new Sprite(grainTex);
-                sp.anchor.set(0.5);
-                sp.position.set(gx, gy);
-                sp.scale.set(grainR * 0.36);
-                sp.tint = roll < 0.4
-                  ? lightenHex(haus.color, Math.floor(sr(seed + 3) * 40))
-                  : SAND_HEX[Math.floor(sr(seed + 3) * SAND_HEX.length)];
-                grainCtr.addChild(sp);
-              }
-            }
-          }
-        }
-
-        // ── Top rim ────────────────────────────────────────────────────
-        const rim = new Graphics();
-        rim.ellipse(cx, topY, r, CYL_RY).fill({ color: lightenHex(haus.color, 40) });
-        rim.ellipse(cx, topY, r, CYL_RY).stroke({ color: lightenHex(haus.color, 65), width: 1 });
-        rim.ellipse(cx - r * 0.3, topY - CYL_RY * 0.3, r * 0.6, CYL_RY * 0.5)
-           .fill({ color: lightenHex(haus.color, 90), alpha: 0.45 });
-        rimLayer.addChild(rim);
-      });
-
-      // ── Falling particles ──────────────────────────────────────────────
-      function spawnParticles(cx: number, pts: number, color: string) {
-        const r     = CYL_W / 2 - 5;
-        const fh    = fillH(pts);
-        const stopY = BASE_Y - fh - CYL_RY * 0.4;
-
-        if (Math.random() < 0.4) {
-          const sp = new Sprite(starTex);
-          sp.anchor.set(0.5);
-          sp.scale.set(0.5 + Math.random() * 0.6);
-          sp.tint = SPARKLE_HEX[Math.floor(Math.random() * SPARKLE_HEX.length)];
-          sp.position.set(
-            cx + (Math.random() - 0.5) * r * 1.6,
-            BASE_Y - CYL_H - 5 - Math.random() * 15,
-          );
-          fallingLayer.addChild(sp);
-          falling.push({ sprite: sp, vy: 0.4 + Math.random() * 0.8, stopY, type: "sparkle" });
-        }
-
-        const n = 2 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < n; i++) {
-          const sp = new Sprite(grainTex);
-          sp.anchor.set(0.5);
-          sp.scale.set(0.45 + Math.random() * 0.6);
-          sp.tint = Math.random() < 0.45
-            ? lightenHex(color, Math.floor(Math.random() * 40))
-            : SAND_HEX[Math.floor(Math.random() * SAND_HEX.length)];
-          sp.position.set(
-            cx + (Math.random() - 0.5) * r * 1.5,
-            BASE_Y - CYL_H + Math.random() * 15,
-          );
-          fallingLayer.addChild(sp);
-          falling.push({ sprite: sp, vy: 1.5 + Math.random() * 2.5, stopY, type: "grain" });
-        }
+      // Smooth displayPoints toward committedPoints (~1.2s half-life)
+      const diff = state.committedPoints - state.displayPoints;
+      if (Math.abs(diff) > 0.5) {
+        state.displayPoints += diff * Math.min(1, dt * 1.2);
+      } else {
+        state.displayPoints = state.committedPoints;
       }
 
-      // ── Ticker ─────────────────────────────────────────────────────────
-      app.ticker.add(() => {
-        const now = performance.now();
+      // Expire old falls
+      state.falls = state.falls.filter(f => (now - f.startTime) / 1000 < 6.0);
 
-        for (const tw of twinkles) {
-          tw.sprite.alpha = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.001 * tw.speed + tw.phase));
-        }
+      const info = getLevelInfo(state.displayPoints);
 
-        for (let i = falling.length - 1; i >= 0; i--) {
-          const f = falling[i];
-          f.sprite.y += f.vy;
-          f.vy += 0.08;
+      gl!.clearColor(0, 0, 0, 0);
+      gl!.clear(gl!.COLOR_BUFFER_BIT);
+      gl!.uniform1f(uTime,  (now - t0) / 1000);
+      gl!.uniform1f(uProg,  info.progress);
+      gl!.uniform1f(uLevel, info.level);
+      const [r, g, b] = state.color;
+      gl!.uniform3f(uColor, r, g, b);
 
-          if (f.type === "sparkle") {
-            f.sprite.alpha = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.008 + f.sprite.x));
-          } else {
-            f.sprite.alpha = Math.min(1, (f.stopY - f.sprite.y) / 20);
-          }
+      const fallCount = state.falls.length;
+      gl!.uniform1i(uFallCount, fallCount);
+      for (let i = 0; i < MAX_FALLS; i++) {
+        const f = i < fallCount ? state.falls[i] : null;
+        gl!.uniform1f(uElapsed[i],       f ? (now - f.startTime) / 1000 : -1);
+        gl!.uniform1f(uEdgeStart[i],     f ? f.edgeStart : 0);
+        gl!.uniform1f(uBlobSize[i],      f ? f.blobSize : 0);
+        gl!.uniform1f(uParticleCount[i], f ? f.particleCount : 0);
+      }
 
-          if (f.sprite.y >= f.stopY) {
-            fallingLayer.removeChild(f.sprite);
-            f.sprite.destroy();
-            falling.splice(i, 1);
-          }
-        }
-
-        if (now - lastSpawn > 180 && falling.length < 60) {
-          sorted.forEach((haus, i) => {
-            if (haus.total_points > 0)
-              spawnParticles(PAD_L + CYL_W / 2 + i * (CYL_W + GAP), haus.total_points, haus.color);
-          });
-          lastSpawn = now;
-        }
-      });
-    })();
-
+      gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
     return () => {
-      destroyed = true;
-      if (pixiApp) { pixiApp.destroy(true); pixiApp = null; }
+      cancelAnimationFrame(rafId);
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depKey]);
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ width: BAR_W, height: BAR_H, display: "block" }} />;
+}
+
+// ─── Main diagram ─────────────────────────────────────────────────────────────
+export function HaeuserDiagram({ haeuser }: { haeuser: HausOut[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  const sorted = [...haeuser];
+
+  useEffect(() => {
+    if (!containerRef.current || sorted.length === 0) return;
+    const naturalW = sorted.length * FRAME_W + (sorted.length - 1) * FRAME_GAP;
+    const obs = new ResizeObserver(entries => {
+      const w = entries[0].contentRect.width;
+      setScale(Math.min(1, w / naturalW));
+    });
+    obs.observe(containerRef.current);
+    return () => obs.disconnect();
+  }, [sorted.length]);
 
   if (sorted.length === 0) {
     return (
@@ -310,30 +349,56 @@ export function HaeuserDiagram({ haeuser }: { haeuser: HausOut[] }) {
     );
   }
 
-  return (
-    <div className="overflow-x-auto pb-2">
-      <div style={{ position: "relative", width: totalW, height: CANVAS_H, minWidth: totalW }}>
-        <div ref={mountRef} style={{ position: "absolute", inset: 0 }} />
+  const naturalW = sorted.length * FRAME_W + (sorted.length - 1) * FRAME_GAP;
 
-        {/* HTML overlay: crown + labels */}
-        {sorted.map((haus, i) => {
-          const cx   = PAD_L + CYL_W / 2 + i * (CYL_W + GAP);
-          const topY = BASE_Y - CYL_H;
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: FRAME_H * scale, position: "relative" }}>
+      <div style={{
+        position: "absolute", top: 0, left: 0,
+        display: "flex", gap: FRAME_GAP,
+        transformOrigin: "top left",
+        transform: `scale(${scale})`,
+        width: naturalW,
+      }}>
+        {sorted.map(haus => {
+          const [r, g, b] = hexToRgb(haus.color);
           return (
-            <div key={haus.id} style={{ position: "absolute", left: cx - 40, width: 80, textAlign: "center" }}>
-              {i === 0 && haus.total_points > 0 && (
-                <div style={{ position: "absolute", top: topY - CYL_RY - 30, width: 80, fontSize: 20 }}>
-                  👑
-                </div>
-              )}
-              <div style={{ position: "absolute", top: BASE_Y + CYL_RY + 8, width: 80 }}>
-                <div style={{ fontWeight: "bold", fontSize: 13, color: "rgba(255,255,255,0.9)" }}>
+            <div key={haus.id} style={{
+              width: FRAME_W, height: FRAME_H,
+              flexShrink: 0, position: "relative",
+              border: `2px solid ${haus.color}44`,
+              borderRadius: 20,
+              background: "rgba(0,0,0,0.2)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 20,
+            }}>
+              <div style={{
+                width: BAR_W, height: BAR_H, flexShrink: 0,
+                border: `2px solid ${haus.color}66`,
+                borderRadius: 10,
+                overflow: "hidden",
+                background: "rgba(0,0,0,0.55)",
+              }}>
+                <HausVortexCanvas points={haus.total_points} color={[r, g, b]} />
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontWeight: "bold", fontSize: 22, color: haus.color }}>
                   {haus.name}
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                  {haus.total_points} Pkt
+                <div style={{ fontSize: 15, marginTop: 4, color: "rgba(255,255,255,0.5)" }}>
+                  {haus.total_points.toLocaleString()} Punkte
                 </div>
               </div>
+
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: 4,
+                borderRadius: "0 0 18px 18px",
+                background: `linear-gradient(to right, transparent, ${haus.color}, transparent)`,
+              }} />
             </div>
           );
         })}

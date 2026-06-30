@@ -53,6 +53,10 @@ function needsBuild() {
   return Math.max(srcTime, cfgTime) > buildTime;
 }
 
+// Always sync packages so a stale node_modules volume doesn't break the build.
+console.log("Syncing node_modules...");
+execSync("npm install --legacy-peer-deps --prefer-offline", { stdio: "inherit" });
+
 if (needsBuild()) {
   console.log("Source changed — building Next.js...");
   execSync("npx next build", { stdio: "inherit" });
@@ -96,13 +100,15 @@ function getLanIp() {
 
 const server = http.createServer((req, res) => {
   if (req.url === "/server-ip") {
-    const local = getLanIp();
     const respond = (ip) => {
       res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
       res.end(JSON.stringify({ ip }));
     };
+    // Prefer HOST_IP injected by start.bat via docker-compose environment
+    if (process.env.HOST_IP) { respond(process.env.HOST_IP); return; }
+    const local = getLanIp();
     if (local) { respond(local); return; }
-    // Inside Docker: resolve the host machine's IP via host.docker.internal
+    // Last resort: resolve host.docker.internal
     dns.lookup("host.docker.internal").then(({ address }) => respond(address)).catch(() => respond(null));
     return;
   }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
 import { SessionsDrawer } from "./SessionsDrawer";
 
 export default function CaputhDetailPage() {
@@ -27,6 +28,7 @@ export default function CaputhDetailPage() {
     refetchInterval: 15_000,
   });
 
+  const { toast } = useToast();
   const [classId, setClassId] = useState<number | "">("");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function CaputhDetailPage() {
       await api.capuths.resetSession(code);
       queryClient.invalidateQueries({ queryKey: ["caputh-sessions", quizId] });
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Reset fehlgeschlagen");
+      toast(err instanceof Error ? err.message : "Reset fehlgeschlagen", "error");
     }
   }
 
