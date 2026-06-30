@@ -332,6 +332,7 @@ export type SessionOut = {
   class_id: number;
   points_awarded: number | null;
   participant_count: number;
+  team_mode: boolean;
 };
 
 export type HausOut = {
@@ -402,6 +403,11 @@ export type BingoCardOut = {
   marked_positions: number[]; has_bingo: boolean;
 };
 
+export type ExitTicketSummary = {
+  id: number; code: string; title: string; question: string;
+  rating_enabled: boolean; status: string; response_count: number; created_at: string;
+};
+
 export const api = {
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),
@@ -445,21 +451,30 @@ export const api = {
         return r.json() as Promise<QuizOut>;
       });
     },
-    createSession: (quizId: number, class_id: number, max_points: number) =>
+    createSession: (quizId: number, class_id: number, max_points: number, team_mode?: boolean) =>
       apiFetch<SessionOut>(`capuths/${quizId}/sessions`, {
         method: "POST",
-        body: JSON.stringify({ class_id, max_points }),
+        body: JSON.stringify({ class_id, max_points, team_mode: team_mode ?? false }),
       }),
     getSession: (code: string) => apiFetch<SessionOut>(`sessions/${code}`),
     listSessions: (quizId: number) =>
       apiFetch<{ join_code: string; status: string; class_id: number; participant_count: number; points_awarded: number | null; started_at: string | null; finished_at: string | null }[]>(`capuths/${quizId}/sessions`),
     resetSession: (code: string) =>
       apiFetch<{ join_code: string; status: string }>(`sessions/${code}/reset`, { method: "POST" }),
-    joinSession: (code: string, name: string, avatar: string = "cat") =>
-      apiFetch<{ participant_id: number; name: string }>(`sessions/${code}/join`, {
+    joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null) =>
+      apiFetch<{ participant_id: number; name: string; avatar: string; team_id: number | null }>(`sessions/${code}/join`, {
         method: "POST",
-        body: JSON.stringify({ name, avatar }),
+        body: JSON.stringify({ name, avatar, team_id: team_id ?? null }),
       }),
+    listTeams: (code: string) =>
+      apiFetch<{ id: number; name: string; color: string | null }[]>(`sessions/${code}/teams`),
+    createTeam: (code: string, name: string, color?: string) =>
+      apiFetch<{ id: number; name: string; color: string | null }>(`sessions/${code}/teams`, {
+        method: "POST",
+        body: JSON.stringify({ name, color }),
+      }),
+    deleteTeam: (code: string, teamId: number) =>
+      apiFetch<void>(`sessions/${code}/teams/${teamId}`, { method: "DELETE" }),
     gruppenauswertungPreview: (params: { quiz_type: string; min_sessions?: number; prior_strength?: number; tags?: string[] }) => {
       const q = new URLSearchParams({ quiz_type: params.quiz_type });
       if (params.min_sessions != null) q.set("min_sessions", String(params.min_sessions));
@@ -696,6 +711,12 @@ export const api = {
     delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
     getOrCreateCard: (code: string, student_id: number) =>
       apiFetch<BingoCardOut>(`bingo/${code}/card?student_id=${student_id}`, { method: "POST" }),
+  },
+  exitTicket: {
+    list: () => apiFetch<ExitTicketSummary[]>("exit-ticket"),
+    create: (body: { title: string; question: string; rating_enabled?: boolean }) =>
+      apiFetch<{ id: number; code: string }>("exit-ticket", { method: "POST", body: JSON.stringify(body) }),
+    delete: (code: string) => apiFetch<void>(`exit-ticket/${code}`, { method: "DELETE" }),
   },
   apiFetch,
 };

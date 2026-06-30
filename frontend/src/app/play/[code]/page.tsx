@@ -146,11 +146,21 @@ export default function PlayPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [teamMode, setTeamMode] = useState(false);
+  const [teams, setTeams] = useState<{ id: number; name: string; color: string | null }[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
 
   useEffect(() => {
     setSaved(loadSaved());
     setAvatar(AVATARS[Math.floor(Math.random() * AVATARS.length)].id);
     setMounted(true);
+    // Fetch session info to check team_mode
+    api.capuths.getSession(code).then(s => {
+      if (s.team_mode) {
+        setTeamMode(true);
+        api.capuths.listTeams(code).then(setTeams).catch(() => {});
+      }
+    }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -261,10 +271,11 @@ export default function PlayPage() {
 
   async function handleJoin() {
     if (!name.trim()) { setJoinError("Bitte gib deinen Namen ein."); return; }
+    if (teamMode && selectedTeamId === null) { setJoinError("Bitte wähle ein Team."); return; }
     setConnecting(true);
     setJoinError(null);
     try {
-      const res = await api.capuths.joinSession(code, name.trim(), avatar);
+      const res = await api.capuths.joinSession(code, name.trim(), avatar, teamMode ? selectedTeamId : null);
       const s = { participantId: res.participant_id, name: res.name, avatar };
       saveSaved(s);
       setSaved(s);
@@ -373,6 +384,24 @@ export default function PlayPage() {
           </div>
 
           <AvatarPicker selected={avatar} onSelect={(id) => setAvatar(id)} />
+
+          {teamMode && teams.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-white/70 text-sm text-center">Team wählen</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {teams.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTeamId(t.id)}
+                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 transition-all ${selectedTeamId === t.id ? "border-yellow-400 bg-yellow-400/20 text-yellow-200" : "border-white/20 text-white/70 hover:border-white/50"}`}
+                    style={t.color ? { borderColor: selectedTeamId === t.id ? undefined : t.color + "88" } : undefined}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {joinError && <p className="text-red-300 text-sm text-center">{joinError}</p>}
 

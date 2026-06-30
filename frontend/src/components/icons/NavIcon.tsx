@@ -4,7 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
-  | "schreibraum" | "barometer" | "auction" | "bingo"
+  | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket"
   | "admin" | "punkte" | "user" | "login";
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
@@ -215,6 +215,18 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
+  // ── Exit Ticket (Ticket stub) ─────────────────────────────────────────
+  "exit-ticket": (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      {/* Ticket body */}
+      <rect x="1.5" y="5" width="17" height="10" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+      {/* Perforation cut */}
+      <line x1="7" y1="5" x2="7" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 1.5"/>
+      {/* Checkmark */}
+      <path d="M9.5 9.5l1.5 1.5 2.5-2.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+
   // ── Gate / Portal (Login) ─────────────────────────────────────────────
   login: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -311,6 +323,11 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <rect x="7.5" y="13" width="5" height="5" rx=".8" opacity=".5"/>
     <rect x="13" y="13" width="5" height="5" rx=".8" opacity=".85"/>
   </svg>,
+  "exit-ticket": <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="1.5" y="5" width="17" height="10" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+    <line x1="7" y1="5" x2="7" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 1.5"/>
+    <path d="M9.5 9.5l1.5 1.5 2.5-2.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -324,6 +341,7 @@ const EMOJI: Record<NavKey, string> = {
   barometer:      "📊",
   auction:        "🏷",
   bingo:          "🎰",
+  "exit-ticket":  "🎫",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

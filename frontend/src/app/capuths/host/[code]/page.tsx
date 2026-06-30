@@ -206,8 +206,30 @@ export default function HostPage() {
   const [showJoinQR, setShowJoinQR] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmState>(null);
   const [mounted, setMounted] = useState(false);
+  const [teamMode, setTeamMode] = useState(false);
+  const [teams, setTeams] = useState<{ id: number; name: string; color: string | null }[]>([]);
+  const [newTeamName, setNewTeamName] = useState("");
 
   useEffect(() => { setMounted(true); }, []);
+
+  function reloadTeams() {
+    fetch(`/api/sessions/${code}/teams`, { credentials: "include" })
+      .then(r => r.json()).then(setTeams).catch(() => {});
+  }
+
+  function addTeam() {
+    if (!newTeamName.trim()) return;
+    fetch(`/api/sessions/${code}/teams`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newTeamName.trim() }),
+    }).then(() => { setNewTeamName(""); reloadTeams(); }).catch(() => {});
+  }
+
+  function removeTeam(teamId: number) {
+    fetch(`/api/sessions/${code}/teams/${teamId}`, { method: "DELETE", credentials: "include" })
+      .then(() => reloadTeams()).catch(() => {});
+  }
 
   // Store current question+answers across phase transitions
   const currentQ = useRef<QuestionInfo | null>(null);
@@ -238,6 +260,7 @@ export default function HostPage() {
       if (msg.event === "state") {
         // Waiting room initial state
         setPhase({ kind: "waiting", participantCount: msg.participant_count, participants: [] });
+        if (msg.team_mode) { setTeamMode(true); reloadTeams(); }
 
       } else if (msg.event === "participant_joined") {
         setPhase((prev) => {
@@ -498,6 +521,29 @@ export default function HostPage() {
 
           {/* Participants + start */}
           <div className="flex flex-col gap-4 min-w-0 flex-1 max-w-lg">
+            {teamMode && (
+              <div className="bg-gray-800 rounded-2xl p-4 flex flex-col gap-2">
+                <p className="text-yellow-400 text-sm font-semibold">👥 Team-Modus</p>
+                <div className="flex flex-wrap gap-2">
+                  {teams.map(t => (
+                    <span key={t.id} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-lg">
+                      {t.name}
+                      <button onClick={() => removeTeam(t.id)} className="text-red-400 hover:text-red-300 ml-0.5">✕</button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 outline-none"
+                    placeholder="Team-Name…"
+                    value={newTeamName}
+                    onChange={e => setNewTeamName(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && addTeam()}
+                  />
+                  <button onClick={addTeam} className="text-sm bg-yellow-500 text-black px-3 rounded-lg font-semibold">+</button>
+                </div>
+              </div>
+            )}
             <p className="text-gray-300 text-lg font-semibold">
               {phase.participantCount === 0 ? "Warte auf Teilnehmer…" : `${phase.participantCount} Teilnehmer beigetreten`}
             </p>

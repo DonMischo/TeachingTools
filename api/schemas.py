@@ -99,11 +99,13 @@ class QuizDetailOut(QuizOut):
 class SessionCreate(BaseModel):
     class_id: int
     max_points: int = 100
+    team_mode: bool = False
 
 
 class ParticipantJoin(BaseModel):
     name: str
     avatar: str = "cat"
+    team_id: int | None = None
 
 
 class SessionOut(BaseModel):
@@ -115,6 +117,7 @@ class SessionOut(BaseModel):
     class_id: int
     points_awarded: int | None
     participant_count: int = 0
+    team_mode: bool = False
 
     model_config = {"from_attributes": True}
 

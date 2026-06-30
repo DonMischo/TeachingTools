@@ -9,7 +9,7 @@ from pathlib import Path
 from .database import engine
 from .models import Base
 from .database import get_db
-from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router
+from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router
 from .routers.sportfest import disciplines as sf_disciplines, results as sf_results, auswertung as sf_auswertung
 from .routers.schreibraum import rooms as schreibraum_rooms, collab as schreibraum_collab
 from .routers.capuths import _inactivity_watchdog
@@ -44,6 +44,7 @@ app.include_router(roles_router.router)
 app.include_router(barometer_router.router)
 app.include_router(auction_router.router)
 app.include_router(bingo_router.router)
+app.include_router(exit_ticket_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -72,6 +73,8 @@ def _run_migrations(db_engine):
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS class_name VARCHAR(100)",
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS mode VARCHAR(20) NOT NULL DEFAULT 'next-free-line'",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS extra_fields JSON NOT NULL DEFAULT '{}'",
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS team_mode BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS team_id INTEGER REFERENCES quiz_teams(id) ON DELETE SET NULL",
     ]
     with db_engine.connect() as conn:
         for sql in migrations:

@@ -19,6 +19,7 @@ const NAV: { tab: string; label: string; href: string }[] = [
   { tab: "haeuser",        label: "Häuser & Klassen", href: "/haeuser" },
   { tab: "schreibraum",    label: "Schreibraum",      href: "/schreibraum" },
   { tab: "barometer",      label: "Barometer",        href: "/barometer" },
+  { tab: "exit-ticket",   label: "Exit Ticket",      href: "/exit-ticket" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];

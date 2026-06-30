@@ -30,6 +30,7 @@ export default function CaputhDetailPage() {
 
   const { toast } = useToast();
   const [classId, setClassId] = useState<number | "">("");
+  const [teamMode, setTeamMode] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -49,7 +50,7 @@ export default function CaputhDetailPage() {
     setStarting(true);
     setError(null);
     try {
-      const session = await api.capuths.createSession(quizId, Number(classId), quiz.max_points);
+      const session = await api.capuths.createSession(quizId, Number(classId), quiz.max_points, teamMode);
       router.push(`/capuths/host/${session.join_code}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Fehler beim Starten");
@@ -122,6 +123,15 @@ export default function CaputhDetailPage() {
               ))}
             </select>
           </div>
+          <label className="flex items-center gap-3 cursor-pointer text-sm">
+            <div
+              onClick={() => setTeamMode(v => !v)}
+              className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${teamMode ? "bg-[var(--accent)]" : "bg-[var(--border)]"}`}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${teamMode ? "translate-x-4" : "translate-x-0.5"}`} />
+            </div>
+            Team-Modus (Schüler wählen ein Team beim Beitreten)
+          </label>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button
             disabled={!classId || starting}

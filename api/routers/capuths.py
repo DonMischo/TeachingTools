@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import (
-    Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, Transaction, Teacher, Class
+    Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
 from ..auth import get_current_teacher
@@ -380,15 +380,46 @@ def _answer_counts(s: QuizSession, q: QuizQuestion, db: Session) -> dict:
 
 
 def _build_ranking(s: QuizSession, scores: dict, last_delta: dict) -> list:
-    result = []
-    for p in s.participants:
-        result.append({
-            "pid": p.id,
-            "name": p.name,
-            "avatar": p.avatar,
-            "score": scores.get(p.id, 0.0),
-            "delta": last_delta.get(p.id, 0.0),
-        })
+    if s.team_mode:
+        # Aggregate by team
+        team_scores: dict[int, float] = {}
+        team_deltas: dict[int, float] = {}
+        team_names: dict[int, str] = {}
+        team_colors: dict[int, str | None] = {}
+        no_team_score = 0.0
+        for p in s.participants:
+            if p.team_id is not None:
+                team_scores[p.team_id] = team_scores.get(p.team_id, 0.0) + scores.get(p.id, 0.0)
+                team_deltas[p.team_id] = team_deltas.get(p.team_id, 0.0) + last_delta.get(p.id, 0.0)
+                if p.team_id not in team_names and hasattr(p, "team") and p.team:
+                    team_names[p.team_id] = p.team.name
+                    team_colors[p.team_id] = p.team.color
+        # Fall back to DB for team names we didn't get from relationship
+        for p in s.participants:
+            if p.team_id is not None and p.team_id not in team_names:
+                team_names[p.team_id] = f"Team {p.team_id}"
+                team_colors[p.team_id] = None
+        result = []
+        for tid, score in team_scores.items():
+            result.append({
+                "pid": -tid,
+                "name": team_names.get(tid, f"Team {tid}"),
+                "avatar": "cat",
+                "color": team_colors.get(tid),
+                "score": score,
+                "delta": team_deltas.get(tid, 0.0),
+                "team_id": tid,
+            })
+    else:
+        result = []
+        for p in s.participants:
+            result.append({
+                "pid": p.id,
+                "name": p.name,
+                "avatar": p.avatar,
+                "score": scores.get(p.id, 0.0),
+                "delta": last_delta.get(p.id, 0.0),
+            })
     result.sort(key=lambda x: x["score"], reverse=True)
     for i, entry in enumerate(result):
         entry["rank"] = i + 1
@@ -402,6 +433,7 @@ def _state_msg(s: QuizSession, db: Session) -> dict:
     return {
         "event": "state",
         "status": s.status,
+        "team_mode": s.team_mode,
         "current_question_idx": s.current_question_idx,
         "total_questions": len(questions),
         "question": {
@@ -814,6 +846,7 @@ def create_session(
         class_id=body.class_id,
         teacher_id=current.id,
         join_code=_gen_code(db),
+        team_mode=body.team_mode,
     )
     db.add(session)
     db.commit()
@@ -940,6 +973,54 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
     }
 
 
+@router.get("/api/sessions/{code}/teams")
+def list_teams(code: str, db: Session = Depends(get_db)):
+    s = db.query(QuizSession).filter_by(join_code=code).first()
+    if not s:
+        raise HTTPException(404)
+    teams = db.query(QuizTeam).filter_by(session_id=s.id).all()
+    return [{"id": t.id, "name": t.name, "color": t.color} for t in teams]
+
+
+class TeamCreate(BaseModel):
+    name: str
+    color: str | None = None
+
+
+@router.post("/api/sessions/{code}/teams", status_code=201)
+def create_team(
+    code: str,
+    body: TeamCreate,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    s = db.query(QuizSession).filter_by(join_code=code).first()
+    if not s:
+        raise HTTPException(404)
+    t = QuizTeam(session_id=s.id, name=body.name.strip()[:50], color=body.color)
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "name": t.name, "color": t.color}
+
+
+@router.delete("/api/sessions/{code}/teams/{team_id}", status_code=204)
+def delete_team(
+    code: str,
+    team_id: int,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    s = db.query(QuizSession).filter_by(join_code=code).first()
+    if not s:
+        raise HTTPException(404)
+    t = db.query(QuizTeam).filter_by(id=team_id, session_id=s.id).first()
+    if not t:
+        raise HTTPException(404)
+    db.delete(t)
+    db.commit()
+
+
 @router.post("/api/sessions/{code}/join", status_code=201)
 def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)):
     s = db.query(QuizSession).filter_by(join_code=code).first()
@@ -951,12 +1032,12 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
     # Rejoin: return existing participant if same name already registered
     existing = db.query(QuizParticipant).filter_by(session_id=s.id, name=name).first()
     if existing:
-        return {"participant_id": existing.id, "name": existing.name, "rejoined": True}
-    p = QuizParticipant(session_id=s.id, name=name, avatar=body.avatar[:50])
+        return {"participant_id": existing.id, "name": existing.name, "avatar": existing.avatar, "team_id": existing.team_id, "rejoined": True}
+    p = QuizParticipant(session_id=s.id, name=name, avatar=body.avatar[:50], team_id=body.team_id)
     db.add(p)
     db.commit()
     db.refresh(p)
-    return {"participant_id": p.id, "name": p.name, "rejoined": False}
+    return {"participant_id": p.id, "name": p.name, "avatar": p.avatar, "team_id": p.team_id, "rejoined": False}
 
 
 # ---------------------------------------------------------------------------

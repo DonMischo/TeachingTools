@@ -1,0 +1,162 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+
+type SessionInfo = {
+  status: "open" | "closed";
+  title: string;
+  question: string;
+  rating_enabled: boolean;
+};
+
+const STARS = [1, 2, 3, 4, 5];
+
+export default function ExitTicketPlayPage() {
+  const { code } = useParams<{ code: string }>();
+  const { auth } = useAuth();
+  const wsRef = useRef<WebSocket | null>(null);
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [rating, setRating] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [comment, setComment] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const studentId = auth?.student?.id ?? 0;
+  const studentName = auth?.student
+    ? `${auth.student.vorname} ${auth.student.nachname}`
+    : "Anonym";
+
+  useEffect(() => {
+    if (!code) return;
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const params = new URLSearchParams({ role: "student" });
+    if (studentId) params.set("student_id", String(studentId));
+    params.set("student_name", studentName);
+    const ws = new WebSocket(
+      `${proto}://${window.location.host}/api/exit-ticket/${code}/ws?${params}`
+    );
+    wsRef.current = ws;
+
+    ws.onclose = (e) => {
+      if (e.code === 4004) setError("Exit Ticket nicht gefunden.");
+    };
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.event === "state") {
+        setSession({
+          status: msg.status,
+          title: msg.title,
+          question: msg.question,
+          rating_enabled: msg.rating_enabled,
+        });
+      } else if (msg.event === "submitted") {
+        setSubmitted(true);
+      } else if (msg.event === "closed") {
+        setSession(prev => prev ? { ...prev, status: "closed" } : prev);
+      }
+    };
+
+    return () => ws.close();
+  }, [code, studentId, studentName]);
+
+  function submit() {
+    if (!session || session.status !== "open") return;
+    if (session.rating_enabled && rating === null) return;
+    wsRef.current?.send(JSON.stringify({
+      action: "submit",
+      rating: rating,
+      comment: comment.trim() || null,
+    }));
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--bg)]">
+        <div className="text-center text-[var(--text-muted)] text-sm">{error}</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[var(--text-muted)] text-sm bg-[var(--bg)]">
+        Verbinde…
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)]">
+        <div className="text-5xl">✅</div>
+        <h2 className="text-xl font-bold">Danke für dein Feedback!</h2>
+        <p className="text-[var(--text-muted)] text-sm">Deine Antwort wurde übermittelt.</p>
+      </div>
+    );
+  }
+
+  if (session.status === "closed") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 bg-[var(--bg)]">
+        <div className="text-4xl">🔒</div>
+        <p className="text-[var(--text-muted)] text-sm">Dieses Exit Ticket wurde geschlossen.</p>
+      </div>
+    );
+  }
+
+  const activeStar = hovered ?? rating;
+  const canSubmit = !session.rating_enabled || rating !== null;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center gap-6 p-6 bg-[var(--bg)]">
+      <div className="w-full max-w-md">
+        <h1 className="text-xl font-black">{session.title}</h1>
+        <p className="text-[var(--text-muted)] text-xs mt-0.5">Exit Ticket</p>
+      </div>
+
+      <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-5">
+        <p className="text-sm font-semibold leading-snug">{session.question}</p>
+
+        {session.rating_enabled && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-[var(--text-muted)]">Deine Bewertung</span>
+            <div className="flex gap-2">
+              {STARS.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setRating(s)}
+                  onMouseEnter={() => setHovered(s)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="text-3xl transition-transform hover:scale-110"
+                  style={{ color: activeStar != null && s <= activeStar ? "#facc15" : "var(--border)" }}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <textarea
+          className="input resize-none text-sm"
+          rows={4}
+          placeholder="Dein Kommentar (optional)…"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          maxLength={2000}
+        />
+
+        <button
+          onClick={submit}
+          disabled={!canSubmit}
+          className="btn-primary"
+        >
+          Abschicken
+        </button>
+      </div>
+    </div>
+  );
+}
