@@ -414,7 +414,7 @@ export type AuctionOut = {
 
 export type BingoOut = {
   id: number; code: string; title: string;
-  grid_size: number; status: string; total_pairs: number; created_at: string;
+  grid_size: number; grid_cols: number; status: string; total_pairs: number; created_at: string;
 };
 
 export type BingoCardOut = {
@@ -744,7 +744,7 @@ export const api = {
   },
   bingo: {
     list: () => apiFetch<BingoOut[]>("bingo"),
-    create: (body: { title: string; grid_size: number; pairs: { caller: string; answer: string }[] }) =>
+    create: (body: { title: string; grid_size: number; grid_cols?: number; pairs: { caller: string; answer: string }[] }) =>
       apiFetch<{ id: number; code: string }>("bingo", { method: "POST", body: JSON.stringify(body) }),
     delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
     getOrCreateCard: (code: string, student_id: number) =>
