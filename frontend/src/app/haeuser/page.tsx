@@ -717,6 +717,98 @@ function ChoreSelector({
   );
 }
 
+function KlassenlisteSection({
+  students, roles, chores, choreStats,
+}: {
+  students: StudentOut[];
+  roles: StudentRoleOut[];
+  chores: ClassChoreOut[];
+  choreStats: import("@/lib/api").ClassChoreStats;
+}) {
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+
+  function toggle(key: string) {
+    setChecked(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  const sorted = [...students].sort(
+    (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
+  );
+
+  if (sorted.length === 0) {
+    return <p className="text-sm text-[var(--text-muted)] text-center py-6">Keine Schüler:innen in dieser Klasse.</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-0">
+      {/* Reset button */}
+      {checked.size > 0 && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => setChecked(new Set())}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)] rounded-lg px-3 py-1 transition-colors"
+          >
+            ↺ Zurücksetzen ({checked.size})
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-col divide-y divide-[var(--border)]">
+        {sorted.map(s => {
+          const studentRoles = roles.filter(r => r.student_id === s.id);
+          const studentChores = chores.filter(c => c.enabled && c.student_id === s.id);
+          const studentStats = choreStats[s.id] ?? {};
+          const totalDone = Object.values(studentStats).reduce((acc, n) => acc + n, 0);
+          const items: { key: string; label: string; type: "role" | "chore"; days?: number }[] = [
+            ...studentRoles.map(r => ({ key: `r:${s.id}:${r.role_type}`, label: r.role_type, type: "role" as const })),
+            ...studentChores.map(c => {
+              const days = c.assigned_at
+                ? Math.floor((Date.now() - new Date(c.assigned_at).getTime()) / 86_400_000)
+                : 0;
+              return { key: `c:${s.id}:${c.chore_name}`, label: c.chore_name, type: "chore" as const, days };
+            }),
+          ];
+
+          return (
+            <div key={s.id} className="py-2.5 flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold flex-1">{s.nachname}, {s.vorname}</span>
+                {totalDone > 0 && (
+                  <StudentChorePopover student={s} stats={studentStats} chores={chores} />
+                )}
+              </div>
+              {items.length > 0 && (
+                <div className="flex flex-col gap-1 pl-1">
+                  {items.map(item => (
+                    <label key={item.key} className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={checked.has(item.key)}
+                        onChange={() => toggle(item.key)}
+                        className="accent-[var(--accent)] w-3.5 h-3.5 shrink-0"
+                      />
+                      <span className={`text-xs transition-colors ${checked.has(item.key) ? "line-through text-[var(--text-muted)]" : item.type === "role" ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>
+                        {item.label}
+                        {item.type === "chore" && item.days !== undefined && item.days > 0 && (
+                          <span className="text-[var(--text-muted)] ml-1">({item.days}d)</span>
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
   const [section, setSection] = useState<"schüler" | "rollen" | "dienste">("schüler");
@@ -845,41 +937,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Schüler ── */}
           {section === "schüler" && (
-            <>
-              {students.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)] text-center py-6">Keine Schüler:innen in dieser Klasse.</p>
-              ) : (
-                <div className="flex flex-col divide-y divide-[var(--border)]">
-                  {[...students]
-                    .sort((a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname))
-                    .map(s => {
-                      const studentStats = choreStats[s.id] ?? {};
-                      const totalDone = Object.values(studentStats).reduce((acc, n) => acc + n, 0);
-                      const activeChore = chores.find(c => c.enabled && c.student_id === s.id);
-                      return (
-                        <div key={s.id} className="flex items-center gap-3 py-2.5">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold">{s.nachname}, {s.vorname}</div>
-                            {activeChore && (
-                              <div className="text-xs text-[var(--text-muted)] truncate">
-                                aktuell: {activeChore.chore_name}
-                                {activeChore.assigned_at && (() => {
-                                  const days = Math.floor((Date.now() - new Date(activeChore.assigned_at).getTime()) / 86_400_000);
-                                  return days > 0 ? ` (${days}d)` : "";
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                          {totalDone > 0 && (
-                            <span className="text-xs text-[var(--text-muted)] tabular-nums shrink-0">{totalDone}×</span>
-                          )}
-                          <StudentChorePopover student={s} stats={studentStats} chores={chores} />
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </>
+            <KlassenlisteSection
+              students={students}
+              roles={roles}
+              chores={chores}
+              choreStats={choreStats}
+            />
           )}
 
           {/* ── Rollen ── */}
