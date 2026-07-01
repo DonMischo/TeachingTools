@@ -412,7 +412,7 @@ const EMOJI: Record<NavKey, string> = {
   haeuser:        "🛡️",
   klassen:        "🎓",
   schreibraum:    "🪶",
-  barometer:      "🌡️",
+  barometer:      "🏎️",
   auction:        "🏷",
   bingo:          "🎰",
   "exit-ticket":  "🎫",

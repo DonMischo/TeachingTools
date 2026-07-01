@@ -68,7 +68,7 @@ export default function BarometerPage() {
         ← Zurück
       </button>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black tracking-tight">🌡️ Meinungsbarometer</h1>
+        <h1 className="text-2xl font-black tracking-tight">🏎️ Meinungsbarometer</h1>
         <button onClick={() => setShowCreate(v => !v)} className="btn-primary text-sm py-2 px-5">
           + Neue Umfrage
         </button>

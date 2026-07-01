@@ -10,7 +10,7 @@ const CARDS = [
   },
   {
     href: "/barometer",
-    icon: "🌡️",
+    icon: "🏎️",
     title: "Meinungsbarometer",
     description: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse durchführen.",
     color: "#f59e0b",
