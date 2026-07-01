@@ -485,6 +485,20 @@ class ClassChore(Base):
     assigner: Mapped["Teacher | None"] = relationship("Teacher")
 
 
+class ClassChoreHistory(Base):
+    """Records each completed chore assignment (held ≥ COMPLETION_DAYS days)."""
+    __tablename__ = "class_chore_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True)
+    chore_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    student: Mapped["Student"] = relationship("Student")
+
+
 # ---------------------------------------------------------------------------
 # Meinungsbarometer
 # ---------------------------------------------------------------------------

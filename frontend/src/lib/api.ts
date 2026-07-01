@@ -120,7 +120,11 @@ export type ClassChoreOut = {
   enabled: boolean;
   student_id: number | null;
   student_name: string | null;
+  assigned_at: string | null;
 };
+
+// {student_id: {chore_name: count}}
+export type ClassChoreStats = Record<number, Record<string, number>>;
 
 export type BarometerQuestionOut = {
   id: number;
@@ -623,6 +627,7 @@ export const api = {
   },
   chores: {
     allNames: () => apiFetch<string[]>("chores/all-names"),
+    stats: (class_id: number) => apiFetch<ClassChoreStats>(`chores/stats?class_id=${class_id}`),
     list: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores?class_id=${class_id}`),
     upsert: (body: { class_id: number; chore_name: string; student_id?: number | null; enabled?: boolean }) =>
       apiFetch<ClassChoreOut>("chores", { method: "POST", body: JSON.stringify(body) }),

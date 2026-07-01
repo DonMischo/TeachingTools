@@ -1,10 +1,11 @@
 import random
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import ClassChore, Student, Teacher
+from ..models import ClassChore, ClassChoreHistory, Student, Teacher
 from ..auth import get_current_teacher
 
 router = APIRouter(prefix="/api/chores", tags=["chores"])
@@ -14,6 +15,8 @@ DEFAULT_CHORE_NAMES = [
     "Fensterdienst", "Computerdienst",
 ]
 
+COMPLETION_DAYS = 4
+
 
 class ChoreOut(BaseModel):
     id: int
@@ -22,6 +25,7 @@ class ChoreOut(BaseModel):
     enabled: bool
     student_id: int | None
     student_name: str | None
+    assigned_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -44,7 +48,29 @@ def _out(c: ClassChore) -> ChoreOut:
         enabled=c.enabled,
         student_id=c.student_id,
         student_name=name,
+        assigned_at=c.assigned_at,
     )
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _maybe_complete(chore: ClassChore, db: Session) -> None:
+    """If the current student has held this chore for ≥ COMPLETION_DAYS, log it."""
+    if chore.student_id is None or chore.assigned_at is None:
+        return
+    assigned = chore.assigned_at
+    if assigned.tzinfo is None:
+        assigned = assigned.replace(tzinfo=timezone.utc)
+    if (_now() - assigned) >= timedelta(days=COMPLETION_DAYS):
+        db.add(ClassChoreHistory(
+            class_id=chore.class_id,
+            chore_name=chore.chore_name,
+            student_id=chore.student_id,
+            assigned_at=assigned,
+            completed_at=_now(),
+        ))
 
 
 @router.get("/all-names", response_model=list[str])
@@ -56,6 +82,41 @@ def all_chore_names(db: Session = Depends(get_db)):
         if name not in all_names:
             all_names.append(name)
     return all_names
+
+
+@router.get("/stats")
+def chore_stats(class_id: int, db: Session = Depends(get_db)) -> dict[int, dict[str, int]]:
+    """
+    Returns {student_id: {chore_name: count}} — number of times each student has
+    completed each chore (held ≥ COMPLETION_DAYS days).
+    Includes historical completions + currently active assignments already ≥ COMPLETION_DAYS.
+    """
+    stats: dict[int, dict[str, int]] = {}
+
+    # Logged historical completions
+    for h in db.query(ClassChoreHistory).filter_by(class_id=class_id).all():
+        stats.setdefault(h.student_id, {})
+        stats[h.student_id][h.chore_name] = stats[h.student_id].get(h.chore_name, 0) + 1
+
+    # Currently active assignments that qualify (≥ COMPLETION_DAYS days old)
+    now = _now()
+    for c in (
+        db.query(ClassChore)
+        .filter_by(class_id=class_id, enabled=True)
+        .filter(ClassChore.student_id.isnot(None))
+        .all()
+    ):
+        assigned = c.assigned_at
+        if assigned is None:
+            continue
+        if assigned.tzinfo is None:
+            assigned = assigned.replace(tzinfo=timezone.utc)
+        if (now - assigned) >= timedelta(days=COMPLETION_DAYS):
+            sid = c.student_id
+            stats.setdefault(sid, {})
+            stats[sid][c.chore_name] = stats[sid].get(c.chore_name, 0) + 1
+
+    return stats
 
 
 @router.get("", response_model=list[ChoreOut])
@@ -71,6 +132,10 @@ def upsert_chore(
 ):
     existing = db.query(ClassChore).filter_by(class_id=body.class_id, chore_name=body.chore_name).first()
     if existing:
+        # If student is changing, potentially log the old assignment
+        if existing.student_id != body.student_id:
+            _maybe_complete(existing, db)
+            existing.assigned_at = _now()  # reset clock for new student
         existing.student_id = body.student_id
         existing.enabled = body.enabled
         existing.assigned_by = current.id
@@ -99,6 +164,7 @@ def delete_chore(
     chore = db.get(ClassChore, chore_id)
     if not chore:
         raise HTTPException(404, "Chore not found")
+    _maybe_complete(chore, db)
     db.delete(chore)
     db.commit()
 
@@ -109,8 +175,12 @@ def clear_chores(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    """Clear student assignments from all enabled chores for the class."""
-    db.query(ClassChore).filter_by(class_id=class_id, enabled=True).update({"student_id": None})
+    """Clear student assignments from all enabled chores; log any that qualify."""
+    chores = db.query(ClassChore).filter_by(class_id=class_id, enabled=True).all()
+    for c in chores:
+        _maybe_complete(c, db)
+        c.student_id = None
+        c.assigned_at = _now()
     db.commit()
 
 
@@ -120,7 +190,7 @@ def random_assign(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    """Randomly assign students to all enabled chores for the class."""
+    """Randomly assign students to all enabled chores; log any qualifying old assignments."""
     chores = db.query(ClassChore).filter_by(class_id=class_id, enabled=True).all()
     if not chores:
         return []
@@ -129,7 +199,11 @@ def random_assign(
         return [_out(c) for c in chores]
     shuffled = random.sample(students, len(students))
     for i, chore in enumerate(chores):
-        chore.student_id = shuffled[i % len(shuffled)].id
+        new_sid = shuffled[i % len(shuffled)].id
+        if chore.student_id != new_sid:
+            _maybe_complete(chore, db)
+            chore.assigned_at = _now()
+        chore.student_id = new_sid
         chore.assigned_by = current.id
     db.commit()
     for c in chores:

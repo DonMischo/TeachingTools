@@ -565,6 +565,77 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
 // ─── Class Detail Dialog ──────────────────────────────────────────────────────
 
 const CLASS_ROLES = ["Klassensprecher", "Schülersprecher", "Haussprecher"];
+const COMPLETION_DAYS = 4;
+
+function StudentChorePopover({
+  student, stats, chores,
+}: {
+  student: StudentOut;
+  stats: Record<string, number>;
+  chores: ClassChoreOut[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Active assignment for this student that hasn't counted yet
+  const activeAssignments = chores.filter(c =>
+    c.enabled && c.student_id === student.id && c.assigned_at
+  ).map(c => {
+    const assigned = new Date(c.assigned_at!);
+    const daysHeld = Math.floor((Date.now() - assigned.getTime()) / 86_400_000);
+    const daysLeft = Math.max(0, COMPLETION_DAYS - daysHeld);
+    return { chore_name: c.chore_name, daysHeld, daysLeft, counted: daysLeft === 0 };
+  });
+
+  const totalCompleted = Object.values(stats).reduce((s, n) => s + n, 0);
+  const hasAny = totalCompleted > 0 || activeAssignments.length > 0;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Dienst-Verlauf"
+        className={`w-6 h-6 rounded-full border text-xs font-bold flex items-center justify-center transition-colors
+          ${open ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+      >?</button>
+
+      {open && (
+        <div className="absolute right-0 top-8 z-20 w-56 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl p-3 flex flex-col gap-2">
+          <div className="text-xs font-semibold text-[var(--text-muted)] mb-1">
+            {student.vorname} — Dienst-Verlauf
+          </div>
+          {!hasAny ? (
+            <p className="text-xs text-[var(--text-muted)]">Noch keine abgeschlossenen Dienste.</p>
+          ) : (
+            <>
+              {Object.entries(stats).map(([name, count]) => (
+                <div key={name} className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-[var(--text)]">{name}</span>
+                  <span className="text-xs font-bold tabular-nums" style={{ color: "var(--accent)" }}>×{count}</span>
+                </div>
+              ))}
+              {activeAssignments.filter(a => !a.counted).map(a => (
+                <div key={a.chore_name} className="flex items-center justify-between gap-2 opacity-50">
+                  <span className="text-xs text-[var(--text)]">{a.chore_name}</span>
+                  <span className="text-xs tabular-nums text-[var(--text-muted)]">noch {a.daysLeft}d</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ChoreSelector({
   allNames, chores, cls, onToggle, onAddCustom,
@@ -648,7 +719,7 @@ function ChoreSelector({
 
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
-  const [section, setSection] = useState<"rollen" | "dienste">("rollen");
+  const [section, setSection] = useState<"schüler" | "rollen" | "dienste">("schüler");
   const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
@@ -664,6 +735,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
   const { data: chores = [] } = useQuery<ClassChoreOut[]>({
     queryKey: ["chores", cls.id],
     queryFn: () => api.chores.list(cls.id),
+  });
+
+  const { data: choreStats = {} } = useQuery<import("@/lib/api").ClassChoreStats>({
+    queryKey: ["chore-stats", cls.id],
+    queryFn: () => api.chores.stats(cls.id),
+    staleTime: 60_000,
   });
 
   const { data: allChoreNames = [] } = useQuery<string[]>({
@@ -691,12 +768,16 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chores", cls.id] });
       qc.invalidateQueries({ queryKey: ["chores-all-names"] });
+      qc.invalidateQueries({ queryKey: ["chore-stats", cls.id] });
     },
   });
 
   const clearChores = useMutation({
     mutationFn: () => api.chores.clear(cls.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chores", cls.id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chores", cls.id] });
+      qc.invalidateQueries({ queryKey: ["chore-stats", cls.id] });
+    },
   });
 
   const randomAssign = useMutation({
@@ -705,6 +786,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
       qc.setQueryData<ClassChoreOut[]>(["chores", cls.id], prev =>
         prev ? prev.map(c => data.find(d => d.id === c.id) ?? c) : data
       );
+      qc.invalidateQueries({ queryKey: ["chore-stats", cls.id] });
     },
   });
 
@@ -743,23 +825,62 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] shrink-0">
-          {(["rollen", "dienste"] as const).map(s => (
+          {(["schüler", "rollen", "dienste"] as const).map(s => (
             <button
               key={s}
               onClick={() => setSection(s)}
-              className="flex-1 py-2.5 text-sm font-semibold capitalize transition-colors"
+              className="flex-1 py-2.5 text-sm font-semibold transition-colors"
               style={{
                 color: section === s ? "var(--accent)" : "var(--text-muted)",
                 borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
               }}
             >
-              {s === "rollen" ? "👑 Rollen" : "🧹 Dienste"}
+              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : "🧹 Dienste"}
             </button>
           ))}
         </div>
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
+
+          {/* ── Schüler ── */}
+          {section === "schüler" && (
+            <>
+              {students.length === 0 ? (
+                <p className="text-sm text-[var(--text-muted)] text-center py-6">Keine Schüler:innen in dieser Klasse.</p>
+              ) : (
+                <div className="flex flex-col divide-y divide-[var(--border)]">
+                  {[...students]
+                    .sort((a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname))
+                    .map(s => {
+                      const studentStats = choreStats[s.id] ?? {};
+                      const totalDone = Object.values(studentStats).reduce((acc, n) => acc + n, 0);
+                      const activeChore = chores.find(c => c.enabled && c.student_id === s.id);
+                      return (
+                        <div key={s.id} className="flex items-center gap-3 py-2.5">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold">{s.nachname}, {s.vorname}</div>
+                            {activeChore && (
+                              <div className="text-xs text-[var(--text-muted)] truncate">
+                                aktuell: {activeChore.chore_name}
+                                {activeChore.assigned_at && (() => {
+                                  const days = Math.floor((Date.now() - new Date(activeChore.assigned_at).getTime()) / 86_400_000);
+                                  return days > 0 ? ` (${days}d)` : "";
+                                })()}
+                              </div>
+                            )}
+                          </div>
+                          {totalDone > 0 && (
+                            <span className="text-xs text-[var(--text-muted)] tabular-nums shrink-0">{totalDone}×</span>
+                          )}
+                          <StudentChorePopover student={s} stats={studentStats} chores={chores} />
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </>
+          )}
 
           {/* ── Rollen ── */}
           {section === "rollen" && (
