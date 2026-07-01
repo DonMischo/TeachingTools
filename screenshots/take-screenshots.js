@@ -47,12 +47,13 @@ async function shot(page, name, waitFor = 800) {
 }
 
 // ── Login helper ──────────────────────────────────────────────────────────────
-// Login lives in the sidebar (not a dedicated /login page).
-// Navigate to home, open sidebar login panel, fill credentials.
+// Login is in the sidebar flyout — click the "Login" icon button to open it first.
 async function login(page, username, password) {
   await page.goto(`${BASE_URL}/`);
   await page.waitForLoadState("networkidle");
-  // Fill username (placeholder="Benutzername") and password in sidebar
+  // Click the sidebar login/user icon button (title="Login" when not authenticated)
+  await page.click('button[title="Login"]');
+  await page.waitForSelector('input[placeholder="Benutzername"]', { state: "visible" });
   await page.fill('input[placeholder="Benutzername"]', username);
   await page.fill('input[placeholder="Passwort"]', password);
   await page.keyboard.press("Enter");
