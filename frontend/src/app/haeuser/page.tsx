@@ -809,6 +809,7 @@ function TrackingSection({
 }) {
   const qc = useQueryClient();
   const [newName, setNewName] = useState("");
+  const [filter, setFilter] = useState("");
 
   const { data: trackers = [] } = useQuery<import("@/lib/api").ClassTrackerOut[]>({
     queryKey: ["trackers", cls.id],
@@ -841,10 +842,14 @@ function TrackingSection({
   const sorted = [...students].sort(
     (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
   );
+  const q = filter.toLowerCase();
+  const visible = q ? sorted.filter(s =>
+    `${s.nachname} ${s.vorname}`.toLowerCase().includes(q)
+  ) : sorted;
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Add tracker input */}
+    <div className="flex flex-col gap-3">
+      {/* Add tracker + filter */}
       <div className="flex gap-2">
         <input
           value={newName}
@@ -860,51 +865,77 @@ function TrackingSection({
         >+</button>
       </div>
 
-      {trackers.length === 0 && (
+      {trackers.length === 0 ? (
         <p className="text-sm text-[var(--text-muted)] text-center py-4">
           Noch keine Tracking-Elemente. Oben hinzufügen.
         </p>
-      )}
+      ) : (
+        <>
+          <input
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Schüler:in filtern…"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+          />
 
-      {trackers.map(tracker => {
-        const checkedIds = new Set(tracker.checked_student_ids);
-        const doneCount = checkedIds.size;
-        const total = sorted.length;
-        return (
-          <div key={tracker.id} className="flex flex-col gap-2">
-            {/* Tracker header */}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm flex-1">{tracker.name}</span>
-              <span className="text-xs text-[var(--text-muted)] tabular-nums">{doneCount}/{total}</span>
-              <button
-                onClick={() => deleteTracker.mutate(tracker.id)}
-                className="text-[var(--text-muted)] hover:text-red-400 text-sm px-1 transition-colors"
-                title="Tracker löschen"
-              >✕</button>
-            </div>
-            {/* Student checklist */}
-            <div className="flex flex-col divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] overflow-hidden">
-              {sorted.map(s => {
-                const done = checkedIds.has(s.id);
-                return (
-                  <label key={s.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[var(--surface-hover)]">
-                    <input
-                      type="checkbox"
-                      checked={done}
-                      onChange={() => toggleCheck.mutate({ tracker_id: tracker.id, student_id: s.id })}
-                      className="accent-[var(--accent)] w-4 h-4 shrink-0"
-                    />
-                    <span className={`text-sm flex-1 transition-colors ${done ? "line-through text-[var(--text-muted)]" : ""}`}>
-                      {s.nachname}, {s.vorname}
-                    </span>
-                    {done && <span className="text-xs text-[var(--accent)]">✓</span>}
-                  </label>
-                );
-              })}
-            </div>
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface)]">
+                  <th className="text-left px-3 py-2 font-semibold text-[var(--text-muted)] whitespace-nowrap">Name</th>
+                  {trackers.map(t => (
+                    <th key={t.id} className="px-3 py-2 text-center font-semibold whitespace-nowrap min-w-[6rem]">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span>{t.name}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-normal tabular-nums">
+                          {t.checked_student_ids.length}/{sorted.length}
+                        </span>
+                        <button
+                          onClick={() => deleteTracker.mutate(t.id)}
+                          className="text-[var(--text-muted)] hover:text-red-400 text-[10px] leading-none transition-colors"
+                          title="Tracker löschen"
+                        >✕ löschen</button>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((s, i) => (
+                  <tr
+                    key={s.id}
+                    className={i % 2 === 0 ? "" : "bg-[var(--surface)]"}
+                    style={{ borderBottom: "1px solid var(--border)" }}
+                  >
+                    <td className="px-3 py-2 whitespace-nowrap font-medium">{s.nachname}, {s.vorname}</td>
+                    {trackers.map(t => {
+                      const done = t.checked_student_ids.includes(s.id);
+                      return (
+                        <td key={t.id} className="px-3 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={done}
+                            onChange={() => toggleCheck.mutate({ tracker_id: t.id, student_id: s.id })}
+                            className="accent-[var(--accent)] w-4 h-4 cursor-pointer"
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={trackers.length + 1} className="text-center text-[var(--text-muted)] py-4 text-sm">
+                      Keine Treffer.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        );
-      })}
+        </>
+      )}
     </div>
   );
 }
