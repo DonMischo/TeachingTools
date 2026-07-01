@@ -2,6 +2,7 @@ import json
 import random
 import string
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -163,48 +164,13 @@ class BingoOut(BaseModel):
         from_attributes = True
 
 
-EXAMPLE_JSON = {
-    "title": "English Vocabulary — Animals",
-    "grid_size": 5,
-    "grid_cols": 4,
-    "pairs": [
-        {"caller": "the dog",       "answer": "der Hund"},
-        {"caller": "the cat",       "answer": "die Katze"},
-        {"caller": "the bird",      "answer": "der Vogel"},
-        {"caller": "the fish",      "answer": "der Fisch"},
-        {"caller": "the horse",     "answer": "das Pferd"},
-        {"caller": "the rabbit",    "answer": "das Kaninchen"},
-        {"caller": "the elephant",  "answer": "der Elefant"},
-        {"caller": "the lion",      "answer": "der Löwe"},
-        {"caller": "the tiger",     "answer": "der Tiger"},
-        {"caller": "the bear",      "answer": "der Bär"},
-        {"caller": "the wolf",      "answer": "der Wolf"},
-        {"caller": "the fox",       "answer": "der Fuchs"},
-        {"caller": "the deer",      "answer": "das Reh"},
-        {"caller": "the snake",     "answer": "die Schlange"},
-        {"caller": "the frog",      "answer": "der Frosch"},
-        {"caller": "the turtle",    "answer": "die Schildkröte"},
-        {"caller": "the monkey",    "answer": "der Affe"},
-        {"caller": "the penguin",   "answer": "der Pinguin"},
-        {"caller": "the dolphin",   "answer": "der Delfin"},
-        {"caller": "the whale",     "answer": "der Wal"},
-        {"caller": "the shark",     "answer": "der Hai"},
-        {"caller": "the eagle",     "answer": "der Adler"},
-        {"caller": "the owl",       "answer": "die Eule"},
-        {"caller": "the butterfly", "answer": "der Schmetterling"},
-        {"caller": "the bee",       "answer": "die Biene"},
-        {"caller": "the ant",       "answer": "die Ameise"},
-        {"caller": "the spider",    "answer": "die Spinne"},
-        {"caller": "the crocodile", "answer": "das Krokodil"},
-        {"caller": "the giraffe",   "answer": "die Giraffe"},
-        {"caller": "the zebra",     "answer": "das Zebra"},
-    ]
-}
+_EXAMPLES_DIR = Path(__file__).parent.parent.parent / "data" / "bingo_examples"
 
 
 @router.get("/template")
 def download_template():
-    data = json.dumps(EXAMPLE_JSON, ensure_ascii=False, indent=2)
+    example_file = _EXAMPLES_DIR / "animals_en_de.json"
+    data = example_file.read_text(encoding="utf-8") if example_file.exists() else "{}"
     return Response(
         content=data,
         media_type="application/json",
