@@ -13,7 +13,7 @@ from ..database import get_db
 from ..models import Student, Class
 from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
 from ..auth import hash_password, require_admin, get_current_teacher
-from ..pokemon import POKEMON_DE, pokemon_password
+from ..password_gen import POKEMON_DE, pokemon_password
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 

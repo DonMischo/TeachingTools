@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from api.models import Student, Class, SportfestDiscipline
 from api.auth import hash_password
-from api.pokemon import pokemon_password
+from api.password_gen import pokemon_password
 
 # ---------------------------------------------------------------------------
 # Password algorithm
