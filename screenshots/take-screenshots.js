@@ -57,8 +57,11 @@ async function login(page, username, password) {
   await page.fill('input[placeholder="Benutzername"]', username);
   await page.fill('input[placeholder="Passwort"]', password);
   await page.keyboard.press("Enter");
-  await page.waitForLoadState("networkidle");
-  await new Promise(r => setTimeout(r, 800));
+  // Wait until the login button title changes away from "Login" — cookie is set
+  await page.waitForFunction(
+    () => document.querySelector('button[title="Login"]') === null,
+    { timeout: 10000 }
+  );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
