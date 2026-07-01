@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { AvatarPicker, AvatarDisplay, AVATARS } from "@/components/AvatarPicker";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
@@ -126,6 +127,7 @@ function StudentCountdown({ seconds, stopped }: { seconds: number; stopped: bool
 export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
+  const { auth } = useAuth();
   const ws = useRef<WebSocket | null>(null);
 
   type Saved = { participantId: number; name: string; avatar: string };
@@ -143,6 +145,9 @@ export default function PlayPage() {
   const [saved, setSaved] = useState<Saved | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [name, setName] = useState("");
+  const lockedName = auth?.student
+    ? (auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`)
+    : null;
   const [avatar, setAvatar] = useState<string>(AVATARS[0].id);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -165,7 +170,12 @@ export default function PlayPage() {
       // Not a caputh code — check other game types
       fetch(`/api/bingo/info?code=${code}`)
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.game === "bingo") router.replace(`/play/bingo/${code}`); })
+        .then(d => {
+          if (d?.game === "bingo") { router.replace(`/play/bingo/${code}`); return; }
+          return fetch(`/api/auction/info?code=${code}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d2 => { if (d2?.game === "auction") router.replace(`/play/auction/${code}`); });
+        })
         .catch(() => {});
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -277,12 +287,13 @@ export default function PlayPage() {
   }
 
   async function handleJoin() {
-    if (!name.trim()) { setJoinError("Bitte gib deinen Namen ein."); return; }
+    const joinName = lockedName ?? name.trim();
+    if (!joinName) { setJoinError("Bitte gib deinen Namen ein."); return; }
     if (teamMode && selectedTeamId === null) { setJoinError("Bitte wähle ein Team."); return; }
     setConnecting(true);
     setJoinError(null);
     try {
-      const res = await api.capuths.joinSession(code, name.trim(), avatar, teamMode ? selectedTeamId : null);
+      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? selectedTeamId : null);
       const s = { participantId: res.participant_id, name: res.name, avatar };
       saveSaved(s);
       setSaved(s);
@@ -381,12 +392,12 @@ export default function PlayPage() {
           <div className="flex items-center gap-3 bg-white/10 rounded-2xl p-3">
             <AvatarDisplay avatarId={avatar} size="lg" />
             <input
-              className="flex-1 bg-transparent text-white text-lg font-semibold outline-none placeholder:text-white/40"
+              className={`flex-1 bg-transparent text-white text-lg font-semibold outline-none placeholder:text-white/40 ${lockedName ? "opacity-80" : ""}`}
               placeholder="Dein Name…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={lockedName ?? name}
+              onChange={(e) => !lockedName && setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-              disabled={connecting}
+              disabled={connecting || !!lockedName}
             />
           </div>
 

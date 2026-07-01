@@ -7,6 +7,8 @@ import QRCode from "qrcode";
 import { useLanUrl } from "@/hooks/useLanUrl";
 
 type CalledItem = { index: number; caller: string; answer: string };
+type Player = { name: string; avatar: string };
+type LineEvent = { student_name: string; line: string };
 
 type LiveState = {
   status: string;
@@ -17,6 +19,8 @@ type LiveState = {
   called_indices: number[];
   last_called: CalledItem | null;
   bingo_count: number;
+  players: Player[];
+  called_pairs: CalledItem[];
 };
 
 type BingoEvent = { student_name: string; student_id: number };
@@ -29,9 +33,10 @@ export default function BingoHostPage() {
   const joinUrl = useLanUrl(`/play/bingo/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", grid_size: 3, total_pairs: 0,
-    called_count: 0, called_indices: [], last_called: null, bingo_count: 0,
+    called_count: 0, called_indices: [], last_called: null, bingo_count: 0, players: [], called_pairs: [],
   });
   const [winners, setWinners] = useState<BingoEvent[]>([]);
+  const [lines, setLines] = useState<LineEvent[]>([]);
 
   useEffect(() => {
     if (!joinUrl) return;
@@ -50,12 +55,17 @@ export default function BingoHostPage() {
       } else if (msg.event === "started") {
         setLive(prev => ({ ...prev, status: "active" }));
       } else if (msg.event === "called") {
+        const item: CalledItem = { index: msg.index, caller: msg.caller, answer: msg.answer };
         setLive(prev => ({
           ...prev,
           called_count: msg.called_count,
           called_indices: [...prev.called_indices, msg.index],
-          last_called: { index: msg.index, caller: msg.caller, answer: msg.answer },
+          last_called: item,
+          called_pairs: [...prev.called_pairs, item],
         }));
+      } else if (msg.event === "line") {
+        setLines(prev => [...prev, { student_name: msg.student_name, line: msg.line }]);
+        toast(`📋 ${msg.student_name}: ${msg.line}`, "success");
       } else if (msg.event === "player_bingo") {
         setWinners(prev => [...prev, { student_name: msg.student_name, student_id: msg.student_id }]);
         toast(`🎉 BINGO! ${msg.student_name}`, "success");
@@ -63,6 +73,12 @@ export default function BingoHostPage() {
         setLive(prev => ({ ...prev, bingo_count: msg.count }));
       } else if (msg.event === "closed") {
         setLive(prev => ({ ...prev, status: "closed" }));
+      } else if (msg.event === "players") {
+        setLive(prev => ({ ...prev, players: msg.players ?? [] }));
+      } else if (msg.event === "reset") {
+        setWinners([]);
+        setLines([]);
+        setLive(prev => ({ ...prev, called_pairs: [] }));
       }
     };
     ws.onerror = () => toast("WebSocket-Fehler", "error");
@@ -112,7 +128,21 @@ export default function BingoHostPage() {
         )}
       </div>
 
-      {/* Winners */}
+      {/* Line completions */}
+      {lines.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <h2 className="font-semibold text-sm">📋 Reihen</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {lines.map((l, i) => (
+              <div key={i} className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/8 px-3 py-1.5 text-xs font-medium text-[var(--accent)]">
+                <span className="font-bold">{l.student_name}</span> · {l.line}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bingo winners */}
       {winners.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <h2 className="font-semibold text-sm">🎉 Bingo!</h2>
@@ -121,6 +151,31 @@ export default function BingoHostPage() {
               {w.student_name}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Lobby — player list (waiting) */}
+      {live.status === "waiting" && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+          <p className="text-sm font-semibold">
+            {live.players.length === 0
+              ? "Warte auf Schüler…"
+              : `${live.players.length} Schüler online`}
+          </p>
+          {live.players.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {live.players.map((p, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium"
+                  style={{ background: "var(--accent)18", color: "var(--accent)", border: "1px solid var(--accent)40" }}>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+                    style={{ background: "var(--accent)", color: "white" }}>
+                    {p.name[0]?.toUpperCase()}
+                  </span>
+                  {p.name}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -149,14 +204,26 @@ export default function BingoHostPage() {
         {live.status === "closed" && (
           <div className="text-[var(--text-muted)] text-sm">Spiel beendet.</div>
         )}
+        {live.status !== "waiting" && (
+          <button onClick={() => send({ action: "reset" })}
+            className="text-sm border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+            Zurücksetzen
+          </button>
+        )}
       </div>
 
-      {/* Called list */}
-      {live.called_indices.length > 0 && (
-        <div>
-          <h2 className="font-semibold text-sm mb-2">Bereits gerufen</h2>
-          <div className="text-xs text-[var(--text-muted)]">
-            (Details im Host-Panel sichtbar — Schüler sehen die Karte live)
+      {/* Already called list */}
+      {live.called_pairs.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="font-semibold text-sm">Bereits gerufen ({live.called_pairs.length})</h2>
+          <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+            {[...live.called_pairs].reverse().map((item, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm px-3 py-2 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                <span className="font-semibold min-w-0 truncate text-[var(--accent)]">{item.caller}</span>
+                <span className="text-[var(--text-muted)] shrink-0">→</span>
+                <span className="text-[var(--text)] truncate">{item.answer}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
