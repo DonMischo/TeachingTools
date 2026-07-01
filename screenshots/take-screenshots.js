@@ -41,6 +41,11 @@ const MOBILE  = { width: 390,  height: 844, isMobile: true, hasTouch: true };
 // ── Screenshot helper ─────────────────────────────────────────────────────────
 async function shot(page, name, waitFor = 800) {
   await new Promise(r => setTimeout(r, waitFor));
+  // Keep waiting (up to 8s) while any "Loading…" / "Laden…" text is visible
+  await page.waitForFunction(
+    () => !document.body?.innerText?.match(/\bLoading\b|\bLaden\b|\bLade\b/i),
+    { timeout: 8000 }
+  ).catch(() => {}); // ignore if it never clears
   const file = path.join(OUT_DIR, `${name}.png`);
   await page.screenshot({ path: file, fullPage: false });
   console.log(`  ✓ ${name}.png`);
@@ -75,8 +80,11 @@ try {
     const ctx = await browser.newContext({ viewport: DESKTOP });
     const page = await ctx.newPage();
 
-    await page.goto(`${BASE_URL}/login`);
-    await shot(page, "01-login");
+    await page.goto(`${BASE_URL}/`);
+    await page.waitForLoadState("networkidle");
+    await page.click('button[title="Login"]');
+    await page.waitForSelector('input[placeholder="Benutzername"]', { state: "visible" });
+    await shot(page, "01-login", 400);
 
     // Game join screens — join form shows without a valid code, that's fine
     await page.goto(`${BASE_URL}/play/DEMO`);
