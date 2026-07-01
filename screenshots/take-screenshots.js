@@ -135,16 +135,14 @@ try {
     }
 
     // ── 3a. Bingo host view (needs a real session) ──────────────────────────
-    // Create a bingo session via the API, then open the host view
+    // Auth is cookie-based — use credentials:"include" from the browser context.
     console.log("\n🎰 Bingo host + student views");
     try {
-      // Get auth token from localStorage after login
-      const token = await page.evaluate(() => localStorage.getItem("auth_token") ?? "");
-
-      const resp = await page.evaluate(async (t) => {
+      const resp = await page.evaluate(async () => {
         const r = await fetch("/api/bingo", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: "Screenshot Demo",
             grid_size: 3,
@@ -156,8 +154,10 @@ try {
             max_points: 0,
           }),
         });
-        return r.ok ? r.json() : null;
-      }, token);
+        const text = await r.text();
+        if (!r.ok) throw new Error(`${r.status}: ${text}`);
+        return JSON.parse(text);
+      });
 
       if (resp?.code) {
         const code = resp.code;
@@ -213,15 +213,17 @@ try {
     // ── 3b. Auction host + student ──────────────────────────────────────────
     console.log("\n🏷 Auction views");
     try {
-      const token = await page.evaluate(() => localStorage.getItem("auth_token") ?? "");
-      const resp = await page.evaluate(async (t) => {
+      const resp = await page.evaluate(async () => {
         const r = await fetch("/api/auction", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: "Screenshot Auktion", max_points: 100 }),
         });
-        return r.ok ? r.json() : null;
-      }, token);
+        const text = await r.text();
+        if (!r.ok) throw new Error(`${r.status}: ${text}`);
+        return JSON.parse(text);
+      });
 
       if (resp?.code) {
         const code = resp.code;
