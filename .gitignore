@@ -1,13 +1,35 @@
 .venv/
 __pycache__/
+
+# database & secrets
 data/teachers.csv
 data/housepoints.db
+.env
+
+# data assets (school-specific, not for public repo)
+data/*.png
+data/*.jpg
+data/*.xcf
+data/*.html
+data/style-packs/
+data/style-pack/
+data/quizzes/
+data/pokemon.py
+data/gen_passwords.py
+data/*students*.csv
+
+# generated screenshots
+screenshots/out/
+screenshots/node_modules/
+
+# concept notes & local scratch
+Konzeptideen.yml
+
+# Claude session data
+.claude/
 
 # frontend
 frontend/node_modules/
 frontend/.next/
 frontend/coverage/
 frontend/tsconfig.tsbuildinfo
-
-# env
-.env

@@ -5,33 +5,22 @@ from fastapi.testclient import TestClient
 
 from api.models import Student, Class, SportfestDiscipline
 from api.auth import hash_password
-from api.pokemon import pokemon_password, POKEMON_DE
+from api.pokemon import pokemon_password
 
 # ---------------------------------------------------------------------------
-# Pokémon password algorithm
+# Password algorithm
 # ---------------------------------------------------------------------------
 
-def test_pokemon_password_format():
-    pw = pokemon_password(4)  # Glumanda
-    assert pw.startswith("004")
-    assert pw.endswith("#!")
-    # 'a' at end of Glumanda → '4'
-    assert "Glumand4" in pw
+def test_password_format():
+    pw = pokemon_password(4)
+    assert isinstance(pw, str)
+    assert len(pw) >= 8
 
 
-def test_pokemon_password_leet_substitution():
-    # All names: last substitutable char gets replaced
-    for num in range(1, len(POKEMON_DE)):
-        pw = pokemon_password(num)
-        assert pw.startswith(f"{num:03d}")
-        assert pw.endswith("#!")
-        # At least 10 chars total
-        assert len(pw) >= 8
-
-
-def test_pokemon_password_deterministic():
+def test_password_deterministic():
     assert pokemon_password(25) == pokemon_password(25)
     assert pokemon_password(1) == pokemon_password(1)
+    assert pokemon_password(1) != pokemon_password(2)
 
 
 # ---------------------------------------------------------------------------
@@ -191,10 +180,7 @@ def test_generate_credentials_creates_usernames(client, admin_token, db):
     for row in rows:
         assert row["username"]
         assert row["password"]
-        pw = row["password"]
-        # Must be 3-digit prefix + name + #!
-        assert pw.endswith("#!")
-        assert pw[:3].isdigit()
+        assert len(row["password"]) >= 8
 
     # Usernames must be unique
     usernames = [row["username"] for row in rows]
