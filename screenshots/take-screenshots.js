@@ -41,11 +41,12 @@ const MOBILE  = { width: 390,  height: 844, isMobile: true, hasTouch: true };
 // ── Screenshot helper ─────────────────────────────────────────────────────────
 async function shot(page, name, waitFor = 800) {
   await new Promise(r => setTimeout(r, waitFor));
-  // Keep waiting (up to 8s) while any "Loading…" / "Laden…" text is visible
-  await page.waitForFunction(
-    () => !document.body?.innerText?.match(/\bLoading\b|\bLaden\b|\bLade\b/i),
-    { timeout: 8000 }
-  ).catch(() => {}); // ignore if it never clears
+  // Wait up to 10s for loading spinners to clear; if still loading after that, warn but continue
+  const cleared = await page.waitForFunction(
+    () => !document.body?.innerText?.match(/^Laden\.{0,3}$|^\s*Loading\.{0,3}\s*$/im),
+    { timeout: 10000 }
+  ).then(() => true).catch(() => false);
+  if (!cleared) console.warn(`  ⚠ ${name}: still loading after 10s`);
   const file = path.join(OUT_DIR, `${name}.png`);
   await page.screenshot({ path: file, fullPage: false });
   console.log(`  ✓ ${name}.png`);
@@ -62,11 +63,14 @@ async function login(page, username, password) {
   await page.fill('input[placeholder="Benutzername"]', username);
   await page.fill('input[placeholder="Passwort"]', password);
   await page.keyboard.press("Enter");
-  // Wait until the login button title changes away from "Login" — cookie is set
+  // Wait until the login button disappears (React state updated = cookie received)
   await page.waitForFunction(
     () => document.querySelector('button[title="Login"]') === null,
     { timeout: 10000 }
   );
+  // Extra settle time for auth context to propagate before making API calls
+  await page.waitForLoadState("networkidle");
+  await new Promise(r => setTimeout(r, 1000));
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -126,17 +130,20 @@ try {
     await login(page, TEACHER_USER, TEACHER_PASS);
 
     const teacherPages = [
-      ["20-home",         "/"],
-      ["21-games",        "/games"],
-      ["22-tools",        "/tools"],
-      ["23-bingo-list",   "/bingo"],
-      ["24-bingo-new",    "/bingo/new"],
-      ["25-klassen",      "/klassen"],
-      ["26-haeuser",      "/haeuser"],
-      ["27-barometer",    "/barometer"],
-      ["28-exit-ticket",  "/exit-ticket"],
-      ["29-schreibraum",  "/schreibraum"],
-      ["30-punkte",       "/punkte"],
+      ["20-home",           "/"],
+      ["21-games",          "/games"],
+      ["22-tools",          "/tools"],
+      ["23-bingo-list",     "/bingo"],
+      ["24-bingo-new",      "/bingo/new"],
+      ["25-klassen",        "/klassen"],
+      ["26-haeuser",        "/haeuser"],
+      ["27-barometer",      "/barometer"],
+      ["28-exit-ticket",    "/exit-ticket"],
+      ["29-schreibraum",    "/schreibraum"],
+      ["30-sportfest",      "/sportfest"],
+      ["31-sportundspiele", "/sportundspiele"],
+      ["32-admin-students", "/admin/students"],
+      ["33-admin-style",    "/admin/style"],
     ];
 
     for (const [name, url] of teacherPages) {
