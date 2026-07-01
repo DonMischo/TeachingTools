@@ -53,24 +53,43 @@ async function shot(page, name, waitFor = 800) {
 }
 
 // ── Login helper ──────────────────────────────────────────────────────────────
-// Login is in the sidebar flyout — click the "Login" icon button to open it first.
+// Call the API directly from Node to get the hp_session cookie, then inject it
+// into the browser context — avoids flaky UI interaction in headless mode.
+import { request as playwrightRequest } from "playwright";
+
 async function login(page, username, password) {
+  // POST to login API and capture the Set-Cookie header
+  const apiCtx = await playwrightRequest.newContext({ baseURL: BASE_URL });
+  const resp = await apiCtx.post("/api/auth/login", {
+    data: { username, password },
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!resp.ok()) {
+    const body = await resp.text();
+    throw new Error(`Login failed ${resp.status()}: ${body}`);
+  }
+  const cookies = resp.headers()["set-cookie"];
+  await apiCtx.dispose();
+
+  // Extract hp_session value and inject into the browser context
+  const match = cookies?.match(/hp_session=([^;]+)/);
+  if (!match) throw new Error("hp_session cookie not found in login response");
+  const token = match[1];
+
+  const url = new URL(BASE_URL);
+  await page.context().addCookies([{
+    name: "hp_session",
+    value: token,
+    domain: url.hostname,
+    path: "/",
+    httpOnly: true,
+    secure: false,
+  }]);
+
+  // Navigate to home so the React auth context hydrates from the cookie
   await page.goto(`${BASE_URL}/`);
   await page.waitForLoadState("networkidle");
-  // Click the sidebar login/user icon button (title="Login" when not authenticated)
-  await page.click('button[title="Login"]');
-  await page.waitForSelector('input[placeholder="Benutzername"]', { state: "visible" });
-  await page.fill('input[placeholder="Benutzername"]', username);
-  await page.fill('input[placeholder="Passwort"]', password);
-  await page.keyboard.press("Enter");
-  // Wait until the login button disappears (React state updated = cookie received)
-  await page.waitForFunction(
-    () => document.querySelector('button[title="Login"]') === null,
-    { timeout: 10000 }
-  );
-  // Extra settle time for auth context to propagate before making API calls
-  await page.waitForLoadState("networkidle");
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 800));
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
