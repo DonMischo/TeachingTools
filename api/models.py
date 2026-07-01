@@ -657,8 +657,10 @@ class BingoCard(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("bingo_sessions.id", ondelete="CASCADE"), nullable=False)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    # UUID token for anonymous (non-auth) participants, stored in their localStorage
+    anon_token: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     student_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    # pair indices assigned to each grid cell (length = grid_size²)
+    # pair indices assigned to each grid cell (length = rows*cols)
     grid_indices: Mapped[list] = mapped_column(JSON, nullable=False)
     # 0-based cell positions that are marked
     marked_positions: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")

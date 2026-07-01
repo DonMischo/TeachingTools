@@ -221,27 +221,46 @@ def delete_session(code: str, db: Session = Depends(get_db), current=Depends(get
     db.commit()
 
 
+def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int = 0, anon_token: str = "", name: str = "Anonym") -> BingoCard:
+    """Find or create a bingo card for either an authenticated student or an anonymous participant."""
+    rows, cols = _dims(session)
+    cells = rows * cols
+    if student_id:
+        card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
+        if not card:
+            student = db.query(Student).filter_by(id=student_id).first()
+            sname = f"{student.vorname} {student.nachname}" if student else name or "Anonym"
+            indices = random.sample(range(len(session.pairs)), cells)
+            card = BingoCard(session_id=session.id, student_id=student_id, student_name=sname, grid_indices=indices)
+            db.add(card)
+            db.commit()
+            db.refresh(card)
+    else:
+        card = db.query(BingoCard).filter_by(session_id=session.id, anon_token=anon_token).first()
+        if not card:
+            indices = random.sample(range(len(session.pairs)), cells)
+            card = BingoCard(session_id=session.id, student_id=None, anon_token=anon_token, student_name=name or "Anonym", grid_indices=indices)
+            db.add(card)
+            db.commit()
+            db.refresh(card)
+    return card
+
+
+@router.get("/info")
+def game_info(code: str, db: Session = Depends(get_db)):
+    """Resolve a code to its game type — used by the shared play lobby."""
+    s = db.query(BingoSession).filter_by(code=code).first()
+    if s:
+        return {"game": "bingo", "title": s.title, "status": s.status}
+    raise HTTPException(404, "Code not found")
+
+
 @router.post("/{code}/card")
-def get_or_create_card(code: str, student_id: int, db: Session = Depends(get_db)):
+def get_or_create_card_rest(code: str, student_id: int, db: Session = Depends(get_db)):
     session = db.query(BingoSession).filter_by(code=code).first()
     if not session:
         raise HTTPException(404)
-    student = db.query(Student).filter_by(id=student_id).first()
-    if not student:
-        raise HTTPException(404, "Schüler nicht gefunden")
-    card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
-    if not card:
-        rows, cols = _dims(session)
-        cells = rows * cols
-        indices = random.sample(range(len(session.pairs)), cells)
-        card = BingoCard(
-            session_id=session.id, student_id=student_id,
-            student_name=f"{student.vorname} {student.nachname}",
-            grid_indices=indices,
-        )
-        db.add(card)
-        db.commit()
-        db.refresh(card)
+    card = _find_or_create_card(session, db, student_id=student_id)
     return _card_dict(card, session)
 
 
@@ -250,7 +269,10 @@ def get_or_create_card(code: str, student_id: int, db: Session = Depends(get_db)
 @router.websocket("/{code}/ws")
 async def bingo_ws(
     code: str, ws: WebSocket,
-    role: str = "teacher", student_id: int = 0,
+    role: str = "teacher",
+    student_id: int = 0,
+    token: str = "",        # anon participant UUID (stored in localStorage)
+    name: str = "",         # display name for anon participants
     db: Session = Depends(get_db),
 ):
     await ws.accept()
@@ -259,15 +281,25 @@ async def bingo_ws(
         await ws.close(code=4004)
         return
 
+    card: BingoCard | None = None
+
     if role == "student":
-        _mgr.add_student(code, student_id, ws)
-        card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
+        # Create/find card on connect for anon participants
+        if token:
+            card = _find_or_create_card(session, db, anon_token=token, name=name)
+            _mgr.add_student(code, card.id, ws)  # key by card.id for anon
+        elif student_id:
+            card = _find_or_create_card(session, db, student_id=student_id)
+            _mgr.add_student(code, student_id, ws)
         await ws.send_json(_session_state(session, db))
         if card:
             await ws.send_json({"event": "card", **_card_dict(card, session)})
     else:
         _mgr.add_teacher(code, ws)
         await ws.send_json(_session_state(session, db))
+
+    # For mark actions we need a stable card lookup key
+    card_id = card.id if card else None
 
     try:
         while True:
@@ -305,8 +337,9 @@ async def bingo_ws(
             elif role == "student":
                 if action == "mark" and session.status == "active":
                     pos = int(data.get("position", -1))
-                    card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
-                    if not card or pos < 0 or pos >= session.grid_size ** 2:
+                    card = db.get(BingoCard, card_id) if card_id else None
+                    rows, cols = _dims(session)
+                    if not card or pos < 0 or pos >= rows * cols:
                         continue
                     if pos not in card.marked_positions:
                         card.marked_positions = card.marked_positions + [pos]
@@ -317,7 +350,6 @@ async def bingo_ws(
                             await ws.send_json({"event": "bingo", "marked_positions": card.marked_positions})
                             await _mgr.broadcast_teachers(code, {
                                 "event": "player_bingo",
-                                "student_id": student_id,
                                 "student_name": card.student_name,
                             })
                             await _mgr.broadcast_all(code, {
@@ -332,6 +364,7 @@ async def bingo_ws(
         pass
     finally:
         if role == "student":
-            _mgr.remove_student(code, student_id)
+            mgr_key = card_id if token else student_id
+            _mgr.remove_student(code, mgr_key)
         else:
             _mgr.remove_teacher(code, ws)

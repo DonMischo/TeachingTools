@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
 import { AvatarPicker, AvatarDisplay, AVATARS } from "@/components/AvatarPicker";
@@ -125,6 +125,7 @@ function StudentCountdown({ seconds, stopped }: { seconds: number; stopped: bool
 
 export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
+  const router = useRouter();
   const ws = useRef<WebSocket | null>(null);
 
   type Saved = { participantId: number; name: string; avatar: string };
@@ -154,13 +155,19 @@ export default function PlayPage() {
     setSaved(loadSaved());
     setAvatar(AVATARS[Math.floor(Math.random() * AVATARS.length)].id);
     setMounted(true);
-    // Fetch session info to check team_mode
+    // Fetch session info; if not a caputh session, detect game type and redirect
     api.capuths.getSession(code).then(s => {
       if (s.team_mode) {
         setTeamMode(true);
         api.capuths.listTeams(code).then(setTeams).catch(() => {});
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // Not a caputh code — check other game types
+      fetch(`/api/bingo/info?code=${code}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.game === "bingo") router.replace(`/play/bingo/${code}`); })
+        .catch(() => {});
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

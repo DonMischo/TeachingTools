@@ -13,7 +13,7 @@ export default function JoinPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-6">
-      <h1 className="text-3xl font-bold">Caputh beitreten</h1>
+      <h1 className="text-3xl font-bold">Spiel beitreten</h1>
       <input
         autoFocus
         className="w-full max-w-xs border rounded px-4 py-3 text-center text-2xl font-mono tracking-widest uppercase"

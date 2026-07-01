@@ -79,6 +79,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS team_id INTEGER REFERENCES quiz_teams(id) ON DELETE SET NULL",
         "ALTER TABLE class_chores ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS grid_cols INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE bingo_cards ADD COLUMN IF NOT EXISTS anon_token VARCHAR(36)",
     ]
     with db_engine.connect() as conn:
         for sql in migrations:
