@@ -14,7 +14,7 @@ import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",      href: "/" },
-  { tab: "caputh",         label: "Caputh",         href: "/capuths" },
+  { tab: "games",          label: "Spiele",         href: "/games" },
   { tab: "sportundspiele", label: "Sport & Spiele", href: "/sportundspiele" },
   { tab: "tools",          label: "Tools",          href: "/tools" },
 ];
