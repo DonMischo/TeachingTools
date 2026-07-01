@@ -725,15 +725,7 @@ function KlassenlisteSection({
   chores: ClassChoreOut[];
   choreStats: import("@/lib/api").ClassChoreStats;
 }) {
-  const [checked, setChecked] = useState<Set<string>>(new Set());
-
-  function toggle(key: string) {
-    setChecked(prev => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }
+  const [checked, setChecked] = useState<Set<number>>(new Set());
 
   const sorted = [...students].sort(
     (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
@@ -745,63 +737,63 @@ function KlassenlisteSection({
 
   return (
     <div className="flex flex-col gap-0">
-      {/* Reset button */}
-      {checked.size > 0 && (
-        <div className="flex justify-end mb-2">
+      {/* Reset row */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-[var(--text-muted)]">{checked.size > 0 ? `${checked.size} markiert` : ""}</span>
+        {checked.size > 0 && (
           <button
             onClick={() => setChecked(new Set())}
             className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)] rounded-lg px-3 py-1 transition-colors"
           >
-            ↺ Zurücksetzen ({checked.size})
+            ↺ Zurücksetzen
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="flex flex-col divide-y divide-[var(--border)]">
         {sorted.map(s => {
           const studentRoles = roles.filter(r => r.student_id === s.id);
           const studentChores = chores.filter(c => c.enabled && c.student_id === s.id);
           const studentStats = choreStats[s.id] ?? {};
-          const totalDone = Object.values(studentStats).reduce((acc, n) => acc + n, 0);
-          const items: { key: string; label: string; type: "role" | "chore"; days?: number }[] = [
-            ...studentRoles.map(r => ({ key: `r:${s.id}:${r.role_type}`, label: r.role_type, type: "role" as const })),
-            ...studentChores.map(c => {
-              const days = c.assigned_at
-                ? Math.floor((Date.now() - new Date(c.assigned_at).getTime()) / 86_400_000)
-                : 0;
-              return { key: `c:${s.id}:${c.chore_name}`, label: c.chore_name, type: "chore" as const, days };
-            }),
-          ];
+          const isChecked = checked.has(s.id);
 
           return (
-            <div key={s.id} className="py-2.5 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold flex-1">{s.nachname}, {s.vorname}</span>
-                {totalDone > 0 && (
-                  <StudentChorePopover student={s} stats={studentStats} chores={chores} />
-                )}
-              </div>
-              {items.length > 0 && (
-                <div className="flex flex-col gap-1 pl-1">
-                  {items.map(item => (
-                    <label key={item.key} className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={checked.has(item.key)}
-                        onChange={() => toggle(item.key)}
-                        className="accent-[var(--accent)] w-3.5 h-3.5 shrink-0"
-                      />
-                      <span className={`text-xs transition-colors ${checked.has(item.key) ? "line-through text-[var(--text-muted)]" : item.type === "role" ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>
-                        {item.label}
-                        {item.type === "chore" && item.days !== undefined && item.days > 0 && (
-                          <span className="text-[var(--text-muted)] ml-1">({item.days}d)</span>
-                        )}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+            <label key={s.id} className="flex items-center gap-3 py-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => setChecked(prev => {
+                  const next = new Set(prev);
+                  next.has(s.id) ? next.delete(s.id) : next.add(s.id);
+                  return next;
+                })}
+                className="accent-[var(--accent)] w-4 h-4 shrink-0"
+              />
+              <span className={`text-sm font-semibold shrink-0 transition-colors ${isChecked ? "line-through text-[var(--text-muted)]" : ""}`}>
+                {s.nachname}, {s.vorname}
+              </span>
+              {/* Roles in accent */}
+              {studentRoles.map(r => (
+                <span key={r.id} className="text-xs px-1.5 py-0.5 rounded-md shrink-0" style={{ background: "var(--accent)22", color: "var(--accent)" }}>
+                  {r.role_type}
+                </span>
+              ))}
+              {/* Chores in muted */}
+              {studentChores.map(c => {
+                const days = c.assigned_at
+                  ? Math.floor((Date.now() - new Date(c.assigned_at).getTime()) / 86_400_000)
+                  : 0;
+                return (
+                  <span key={c.id} className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] shrink-0">
+                    {c.chore_name}{days > 0 ? ` · ${days}d` : ""}
+                  </span>
+                );
+              })}
+              <span className="flex-1" />
+              {Object.keys(studentStats).length > 0 && (
+                <StudentChorePopover student={s} stats={studentStats} chores={chores} />
               )}
-            </div>
+            </label>
           );
         })}
       </div>
@@ -809,9 +801,117 @@ function KlassenlisteSection({
   );
 }
 
+function TrackingSection({
+  cls, students,
+}: {
+  cls: ClassOut;
+  students: StudentOut[];
+}) {
+  const qc = useQueryClient();
+  const [newName, setNewName] = useState("");
+
+  const { data: trackers = [] } = useQuery<import("@/lib/api").ClassTrackerOut[]>({
+    queryKey: ["trackers", cls.id],
+    queryFn: () => api.trackers.list(cls.id),
+  });
+
+  const createTracker = useMutation({
+    mutationFn: (name: string) => api.trackers.create({ class_id: cls.id, name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trackers", cls.id] });
+      setNewName("");
+    },
+  });
+
+  const deleteTracker = useMutation({
+    mutationFn: (id: number) => api.trackers.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["trackers", cls.id] }),
+  });
+
+  const toggleCheck = useMutation({
+    mutationFn: ({ tracker_id, student_id }: { tracker_id: number; student_id: number }) =>
+      api.trackers.toggle(tracker_id, student_id),
+    onSuccess: (updated) => {
+      qc.setQueryData<import("@/lib/api").ClassTrackerOut[]>(["trackers", cls.id], prev =>
+        prev ? prev.map(t => t.id === updated.id ? updated : t) : prev
+      );
+    },
+  });
+
+  const sorted = [...students].sort(
+    (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
+  );
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Add tracker input */}
+      <div className="flex gap-2">
+        <input
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          placeholder="Neues Tracking-Element… (z. B. Materialgeld)"
+          className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+          onKeyDown={e => { if (e.key === "Enter" && newName.trim()) createTracker.mutate(newName.trim()); }}
+        />
+        <button
+          onClick={() => { if (newName.trim()) createTracker.mutate(newName.trim()); }}
+          disabled={!newName.trim() || createTracker.isPending}
+          className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
+        >+</button>
+      </div>
+
+      {trackers.length === 0 && (
+        <p className="text-sm text-[var(--text-muted)] text-center py-4">
+          Noch keine Tracking-Elemente. Oben hinzufügen.
+        </p>
+      )}
+
+      {trackers.map(tracker => {
+        const checkedIds = new Set(tracker.checked_student_ids);
+        const doneCount = checkedIds.size;
+        const total = sorted.length;
+        return (
+          <div key={tracker.id} className="flex flex-col gap-2">
+            {/* Tracker header */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm flex-1">{tracker.name}</span>
+              <span className="text-xs text-[var(--text-muted)] tabular-nums">{doneCount}/{total}</span>
+              <button
+                onClick={() => deleteTracker.mutate(tracker.id)}
+                className="text-[var(--text-muted)] hover:text-red-400 text-sm px-1 transition-colors"
+                title="Tracker löschen"
+              >✕</button>
+            </div>
+            {/* Student checklist */}
+            <div className="flex flex-col divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] overflow-hidden">
+              {sorted.map(s => {
+                const done = checkedIds.has(s.id);
+                return (
+                  <label key={s.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[var(--surface-hover)]">
+                    <input
+                      type="checkbox"
+                      checked={done}
+                      onChange={() => toggleCheck.mutate({ tracker_id: tracker.id, student_id: s.id })}
+                      className="accent-[var(--accent)] w-4 h-4 shrink-0"
+                    />
+                    <span className={`text-sm flex-1 transition-colors ${done ? "line-through text-[var(--text-muted)]" : ""}`}>
+                      {s.nachname}, {s.vorname}
+                    </span>
+                    {done && <span className="text-xs text-[var(--accent)]">✓</span>}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
-  const [section, setSection] = useState<"schüler" | "rollen" | "dienste">("schüler");
+  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking">("schüler");
   const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
@@ -917,17 +1017,17 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] shrink-0">
-          {(["schüler", "rollen", "dienste"] as const).map(s => (
+          {(["schüler", "rollen", "dienste", "tracking"] as const).map(s => (
             <button
               key={s}
               onClick={() => setSection(s)}
-              className="flex-1 py-2.5 text-sm font-semibold transition-colors"
+              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
               style={{
                 color: section === s ? "var(--accent)" : "var(--text-muted)",
                 borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
               }}
             >
-              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : "🧹 Dienste"}
+              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "dienste" ? "🧹 Dienste" : "📋 Tracking"}
             </button>
           ))}
         </div>
@@ -1047,6 +1147,11 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 ))
               )}
             </>
+          )}
+
+          {/* ── Tracking ── */}
+          {section === "tracking" && (
+            <TrackingSection cls={cls} students={students} />
           )}
         </div>
       </div>

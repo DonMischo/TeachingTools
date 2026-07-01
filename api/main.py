@@ -9,7 +9,7 @@ from pathlib import Path
 from .database import engine
 from .models import Base
 from .database import get_db
-from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router
+from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router, trackers as trackers_router
 from .routers.sportfest import disciplines as sf_disciplines, results as sf_results, auswertung as sf_auswertung
 from .routers.schreibraum import rooms as schreibraum_rooms, collab as schreibraum_collab
 from .routers.capuths import _inactivity_watchdog
@@ -46,6 +46,7 @@ app.include_router(auction_router.router)
 app.include_router(bingo_router.router)
 app.include_router(exit_ticket_router.router)
 app.include_router(chores_router.router)
+app.include_router(trackers_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)

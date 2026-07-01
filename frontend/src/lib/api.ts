@@ -126,6 +126,13 @@ export type ClassChoreOut = {
 // {student_id: {chore_name: count}}
 export type ClassChoreStats = Record<number, Record<string, number>>;
 
+export type ClassTrackerOut = {
+  id: number;
+  class_id: number;
+  name: string;
+  checked_student_ids: number[];
+};
+
 export type BarometerQuestionOut = {
   id: number;
   order: number;
@@ -634,6 +641,14 @@ export const api = {
     delete: (id: number) => apiFetch<void>(`chores/${id}`, { method: "DELETE" }),
     clear: (class_id: number) => apiFetch<void>(`chores/clear?class_id=${class_id}`, { method: "POST" }),
     randomAssign: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores/random?class_id=${class_id}`, { method: "POST" }),
+  },
+  trackers: {
+    list: (class_id: number) => apiFetch<ClassTrackerOut[]>(`trackers?class_id=${class_id}`),
+    create: (body: { class_id: number; name: string }) =>
+      apiFetch<ClassTrackerOut>("trackers", { method: "POST", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`trackers/${id}`, { method: "DELETE" }),
+    toggle: (tracker_id: number, student_id: number) =>
+      apiFetch<ClassTrackerOut>(`trackers/${tracker_id}/toggle?student_id=${student_id}`, { method: "POST" }),
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),

@@ -500,6 +500,35 @@ class ClassChoreHistory(Base):
 
 
 # ---------------------------------------------------------------------------
+# Class Trackers (e.g. Materialgeld, Ausflug bezahlt)
+# ---------------------------------------------------------------------------
+
+class ClassTracker(Base):
+    __tablename__ = "class_trackers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    checks: Mapped[list["ClassTrackerCheck"]] = relationship(back_populates="tracker", cascade="all, delete-orphan")
+
+
+class ClassTrackerCheck(Base):
+    __tablename__ = "class_tracker_checks"
+    __table_args__ = (UniqueConstraint("tracker_id", "student_id", name="uq_tracker_student"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tracker_id: Mapped[int] = mapped_column(ForeignKey("class_trackers.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    tracker: Mapped["ClassTracker"] = relationship(back_populates="checks")
+    student: Mapped["Student"] = relationship("Student")
+
+
+# ---------------------------------------------------------------------------
 # Meinungsbarometer
 # ---------------------------------------------------------------------------
 
