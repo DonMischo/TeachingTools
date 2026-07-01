@@ -80,6 +80,10 @@ def _run_migrations(db_engine):
         "ALTER TABLE class_chores ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS grid_cols INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE bingo_cards ADD COLUMN IF NOT EXISTS anon_token VARCHAR(36)",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS subject VARCHAR(100)",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS tags JSON NOT NULL DEFAULT '[]'",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS description VARCHAR(500)",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS max_points INTEGER NOT NULL DEFAULT 0",
     ]
     with db_engine.connect() as conn:
         for sql in migrations:

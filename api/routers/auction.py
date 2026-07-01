@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
@@ -23,6 +24,7 @@ class _AuctionManager:
     def __init__(self):
         self._teachers: dict[str, list[WebSocket]] = {}
         self._haussp: dict[str, dict[int, WebSocket]] = {}
+        self._participants: dict[str, dict[WebSocket, str]] = {}  # code → {ws: name}
 
     def add_teacher(self, code: str, ws: WebSocket):
         self._teachers.setdefault(code, []).append(ws)
@@ -38,6 +40,15 @@ class _AuctionManager:
 
     def connected_houses(self, code: str) -> set[int]:
         return set(self._haussp.get(code, {}).keys())
+
+    def add_participant(self, code: str, ws: WebSocket, name: str):
+        self._participants.setdefault(code, {})[ws] = name
+
+    def remove_participant(self, code: str, ws: WebSocket):
+        self._participants.get(code, {}).pop(ws, None)
+
+    def participant_names(self, code: str) -> list[str]:
+        return list(self._participants.get(code, {}).values())
 
     async def broadcast_teachers(self, code: str, msg: dict):
         for ws in list(self._teachers.get(code, [])):
@@ -113,6 +124,13 @@ def _state_haussp(session: AuctionSession, house_id: int, db: Session) -> dict:
     }
 
 
+def _find_student_by_name(name: str, db: Session) -> "Student | None":
+    """Look up a student by full name (case-insensitive)."""
+    return db.query(Student).filter(
+        func.lower(Student.vorname + " " + Student.nachname) == name.strip().lower()
+    ).first()
+
+
 # ── REST ──────────────────────────────────────────────────────────────────────
 
 class AuctionCreate(BaseModel):
@@ -134,6 +152,15 @@ class AuctionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+@router.get("/info")
+def game_info(code: str, db: Session = Depends(get_db)):
+    """Resolve a code to its game type — used by the shared play lobby."""
+    s = db.query(AuctionSession).filter_by(code=code).first()
+    if s:
+        return {"game": "auction", "title": s.title, "status": s.status}
+    raise HTTPException(404, "Code not found")
 
 
 @router.get("", response_model=list[AuctionOut])
@@ -173,6 +200,8 @@ def delete_auction(code: str, db: Session = Depends(get_db), current=Depends(get
 async def auction_ws(
     code: str, ws: WebSocket,
     role: str = "teacher", student_id: int = 0,
+    token: str = "",   # anon join UUID (stored in localStorage)
+    name: str = "",    # display name for anon participants
     db: Session = Depends(get_db),
 ):
     await ws.accept()
@@ -182,17 +211,47 @@ async def auction_ws(
         return
 
     house_id: int | None = None
+    is_haussp = False
+    is_teacher_ctrl = False  # true only for authenticated teachers who can control the auction
 
-    if role == "haussprecher":
+    if token:
+        # Anon join: resolve role by name lookup
+        student = _find_student_by_name(name, db)
+        if student:
+            sr = db.query(StudentRole).filter_by(student_id=student.id, role_type="haussprecher").first()
+            if sr:
+                house_id = sr.scope_id
+                is_haussp = True
+
+        _mgr.add_participant(code, ws, name)
+        if is_haussp:
+            _mgr.add_haussp(code, house_id, ws)
+            state = _state_haussp(session, house_id, db)
+            state["is_haussprecher"] = True
+            state["players"] = _mgr.participant_names(code)
+            await ws.send_json(state)
+        else:
+            # Spectator: receives broadcasts but cannot control
+            _mgr.add_teacher(code, ws)
+            state = _state_teacher(session, db)
+            state["is_haussprecher"] = False
+            state["players"] = _mgr.participant_names(code)
+            await ws.send_json(state)
+        await _mgr.broadcast_all(code, {"event": "players", "players": _mgr.participant_names(code)})
+
+    elif role == "haussprecher":
         sr = db.query(StudentRole).filter_by(student_id=student_id, role_type="haussprecher").first()
         if not sr:
             await ws.send_json({"event": "error", "message": "Kein Haussprecher-Status für diesen Schüler"})
             await ws.close(code=4003)
             return
         house_id = sr.scope_id
+        is_haussp = True
         _mgr.add_haussp(code, house_id, ws)
         await ws.send_json(_state_haussp(session, house_id, db))
+
     else:
+        is_teacher_ctrl = True
         _mgr.add_teacher(code, ws)
         await ws.send_json(_state_teacher(session, db))
 
@@ -201,7 +260,7 @@ async def auction_ws(
             data = await ws.receive_json()
             action = data.get("action")
 
-            if role == "teacher":
+            if is_teacher_ctrl:
                 if action == "open_bidding" and session.status == "waiting":
                     session.status = "bidding"
                     db.commit()
@@ -240,7 +299,7 @@ async def auction_ws(
                         "winning_bid": amount,
                     })
 
-            elif role == "haussprecher" and house_id is not None:
+            elif is_haussp and house_id is not None:
                 if action == "bid" and session.status == "bidding":
                     amount = int(data.get("amount", 0))
                     if amount <= 0:
@@ -263,7 +322,10 @@ async def auction_ws(
     except WebSocketDisconnect:
         pass
     finally:
-        if role == "haussprecher" and house_id is not None:
+        if token:
+            _mgr.remove_participant(code, ws)
+            await _mgr.broadcast_all(code, {"event": "players", "players": _mgr.participant_names(code)})
+        if is_haussp and house_id is not None:
             _mgr.remove_haussp(code, house_id)
         else:
             _mgr.remove_teacher(code, ws)

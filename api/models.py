@@ -635,6 +635,10 @@ class BingoSession(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    max_points: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     grid_size: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
     grid_cols: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     # [{caller: str, answer: str}, ...]
