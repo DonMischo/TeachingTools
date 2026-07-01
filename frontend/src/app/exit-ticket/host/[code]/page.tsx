@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import QRCode from "qrcode";
+import { useLanUrl } from "@/hooks/useLanUrl";
 
 type Response = {
   id: number;
@@ -28,9 +29,7 @@ export default function ExitTicketHostPage() {
   const [state, setState] = useState<State | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
 
-  const playUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/play/exit-ticket/${code}`
-    : "";
+  const playUrl = useLanUrl(`/play/exit-ticket/${code}`);
 
   useEffect(() => {
     if (!code) return;

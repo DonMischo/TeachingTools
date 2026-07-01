@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, BarometerSessionOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import QRCode from "qrcode";
+import { useLanUrl } from "@/hooks/useLanUrl";
 
 type Distribution = Record<number, number>;
 
@@ -56,6 +57,7 @@ export default function BarometerHostPage() {
   const { toast } = useToast();
   const wsRef = useRef<WebSocket | null>(null);
   const [qrUrl, setQrUrl] = useState("");
+  const joinUrl = useLanUrl(`/play/barometer/${code}`);
 
   const { data: session } = useQuery<BarometerSessionOut>({
     queryKey: ["barometer", code],
@@ -70,9 +72,9 @@ export default function BarometerHostPage() {
 
   // Generate QR
   useEffect(() => {
-    const url = `${window.location.origin}/play/barometer/${code}`;
-    QRCode.toDataURL(url, { width: 180, margin: 1 }).then(setQrUrl).catch(() => {});
-  }, [code]);
+    if (!joinUrl) return;
+    QRCode.toDataURL(joinUrl, { width: 180, margin: 1 }).then(setQrUrl).catch(() => {});
+  }, [joinUrl]);
 
   // WebSocket
   useEffect(() => {

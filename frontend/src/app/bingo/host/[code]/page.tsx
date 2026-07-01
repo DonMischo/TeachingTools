@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
 import QRCode from "qrcode";
+import { useLanUrl } from "@/hooks/useLanUrl";
 
 type CalledItem = { index: number; caller: string; answer: string };
 
@@ -25,6 +26,7 @@ export default function BingoHostPage() {
   const { toast } = useToast();
   const wsRef = useRef<WebSocket | null>(null);
   const [qrUrl, setQrUrl] = useState("");
+  const joinUrl = useLanUrl(`/play/bingo/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", grid_size: 3, total_pairs: 0,
     called_count: 0, called_indices: [], last_called: null, bingo_count: 0,
@@ -32,9 +34,9 @@ export default function BingoHostPage() {
   const [winners, setWinners] = useState<BingoEvent[]>([]);
 
   useEffect(() => {
-    QRCode.toDataURL(`${window.location.origin}/play/bingo/${code}`, { width: 160, margin: 1 })
-      .then(setQrUrl).catch(() => {});
-  }, [code]);
+    if (!joinUrl) return;
+    QRCode.toDataURL(joinUrl, { width: 160, margin: 1 }).then(setQrUrl).catch(() => {});
+  }, [joinUrl]);
 
   useEffect(() => {
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
