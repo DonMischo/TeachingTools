@@ -1,26 +1,47 @@
+"use client";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
-const CARDS = [
+const ALL_CARDS: { href: string; icon: string; title: string; description: string; color: string; teacherOnly: boolean }[] = [
   {
     href: "/schreibraum",
     icon: "📝",
     title: "Schreibraum",
     description: "Kollaborativer Schreibraum für die Klasse — gemeinsam schreiben, Zeilen vergeben.",
     color: "#a78bfa",
+    teacherOnly: false,
   },
   {
-    href: "/barometer",
-    icon: "🏎️",
+    href: "/tools/barometer",
+    icon: "🧭",
     title: "Meinungsbarometer",
     description: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse durchführen.",
     color: "#f59e0b",
+    teacherOnly: false,
   },
   {
-    href: "/exit-ticket",
+    href: "/tools/exit-ticket",
     icon: "🎫",
     title: "Exit Ticket",
     description: "Anonymes Schnell-Feedback am Ende einer Stunde einholen.",
     color: "#34d399",
+    teacherOnly: false,
+  },
+  {
+    href: "/tools/auction",
+    icon: "🏷️",
+    title: "Auktion",
+    description: "Lehrer legt Items auf, Schüler geben Gebote ab — Wartend, offen, abgeschlossen.",
+    color: "#34d399",
+    teacherOnly: true,
+  },
+  {
+    href: "/tools/zeitstrahl",
+    icon: "📏",
+    title: "Zeitstrahl",
+    description: "Zeitleisten mit parallelen Spuren und Zahlenstrahlen — anzeigen, einsortieren, Fehler finden.",
+    color: "#f472b6",
+    teacherOnly: true,
   },
   {
     href: "/classroom",
@@ -28,10 +49,22 @@ const CARDS = [
     title: "Classroom Screen",
     description: "Uhr, Timer und Stoppuhr als frei positionierbare Widgets auf dem Beamer.",
     color: "#60a5fa",
+    teacherOnly: false,
+  },
+  {
+    href: "/stundenplaner",
+    icon: "📋",
+    title: "Stundenplaner",
+    description: "Verlaufsplanungen erstellen, Phasen strukturieren und mit Kolleg·innen teilen.",
+    color: "#a3e635",
+    teacherOnly: true,
   },
 ];
 
 export default function ToolsPage() {
+  const { auth } = useAuth();
+  const isTeacher = auth?.user_type === "teacher";
+  const CARDS = ALL_CARDS.filter(c => !c.teacherOnly || isTeacher);
   return (
     <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
       <div>

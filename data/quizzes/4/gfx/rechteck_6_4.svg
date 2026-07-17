@@ -1,16 +1,12 @@
 <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
   <rect width="400" height="200" fill="#1e293b" rx="12"/>
-
-  <!-- Rectangle proportional to 6:4 -->
   <rect x="70" y="50" width="260" height="100" fill="#1a3a2a" stroke="#4ade80" stroke-width="2.5"/>
-
-  <!-- Right angle marks -->
-  <path d="M70,50 L70,66 L86,66" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M330,50 L314,50 L314,66" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M70,150 L70,134 L86,134" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M330,150 L314,150 L314,134" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-
-  <!-- Dimension labels -->
+  <!-- right angle marks -->
+  <path d="M70,65 L85,65 L85,50" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M330,65 L315,65 L315,50" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M70,135 L85,135 L85,150" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M330,135 L315,135 L315,150" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <!-- dimension labels -->
   <text x="200" y="38" text-anchor="middle" fill="#fbbf24" font-size="14" font-family="sans-serif" font-weight="bold">6 cm</text>
   <text x="200" y="173" text-anchor="middle" fill="#fbbf24" font-size="14" font-family="sans-serif" font-weight="bold">6 cm</text>
   <text x="44" y="105" text-anchor="middle" fill="#60a5fa" font-size="14" font-family="sans-serif" font-weight="bold">4 cm</text>

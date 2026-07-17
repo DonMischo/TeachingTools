@@ -24,7 +24,20 @@ function hasMath(text: string) {
   return /\$/.test(text);
 }
 
-export function MathText({ text, className }: { text: string; className?: string }) {
+/** An inline formula that contains a relation is a full equation/inequality
+ * (e.g. $2x + 5 = 17$) rather than a bare symbol like $x$ or $5$. */
+function isEquation(v: string) {
+  return /=|<|>|\\le\b|\\ge\b|\\neq\b|\\approx\b/.test(v);
+}
+
+export function MathText({ text, className, blockEquations = false }: {
+  text: string;
+  className?: string;
+  /** Promote inline equations ($...$ containing =, <, >, …) to display mode
+   * so they stand on their own line — bare symbols stay inline. Opt-in so
+   * existing consumers (Caputh) keep their rendering. */
+  blockEquations?: boolean;
+}) {
   if (!hasMath(text)) {
     return <span className={className}>{text}</span>;
   }
@@ -35,7 +48,7 @@ export function MathText({ text, className }: { text: string; className?: string
         if (seg.kind === "text") return <span key={i}>{seg.v}</span>;
         try {
           const html = katex.renderToString(seg.v, {
-            displayMode: seg.kind === "display",
+            displayMode: seg.kind === "display" || (blockEquations && isEquation(seg.v)),
             throwOnError: false,
             strict: false,
           });

@@ -1,0 +1,279 @@
+
+// ============================================================
+// FUZZY DDA ENGINE - JSON Schema & TypeScript Architecture
+// For integration with your 2D RPG Educational Game
+// ============================================================
+
+// --- 1. TILE MAP EXTENSION (JSON) ---
+// Your existing tile maps get a "ddaTriggers" layer
+
+{
+  "mapName": "math_forest",
+  "tileSize": 32,
+  "layers": [
+    { "name": "ground", "data": [...] },
+    { "name": "objects", "data": [...] },
+    { "name": "ddaTriggers", "objects": [
+      {
+        "id": "npc_professor_oak",
+        "type": "npc",
+        "x": 120, "y": 80,
+        "properties": {
+          "dialogueTree": "oak_math_intro",
+          "minigameTrigger": "algebra_puzzle",
+          "ddaEnabled": true,           // <-- KEY FLAG
+          "ddaContext": "algebra_linear"  // <-- links to rule set
+        }
+      },
+      {
+        "id": "cave_platformer_entrance",
+        "type": "portal",
+        "x": 240, "y": 160,
+        "properties": {
+          "targetScene": "cave_platformer",
+          "ddaEnabled": true,
+          "ddaContext": "platformer_physics"
+        }
+      }
+    ]}
+  ]
+}
+
+// --- 2. FUZZY RULE SET (JSON) ---
+// Teacher-configurable rule sets per subject/topic
+
+{
+  "ruleSetId": "algebra_linear",
+  "name": "Linear Equations - Adaptive",
+  "description": "Adapts linear equation puzzles based on student performance",
+
+  "inputs": [
+    {
+      "id": "response_time",
+      "range": [0, 60],
+      "unit": "seconds",
+      "membershipFunctions": [
+        { "name": "fast",    "type": "triangular", "params": [0, 0, 15] },
+        { "name": "medium",  "type": "triangular", "params": [10, 30, 50] },
+        { "name": "slow",    "type": "triangular", "params": [40, 60, 60] }
+      ]
+    },
+    {
+      "id": "error_rate",
+      "range": [0, 100],
+      "unit": "percent",
+      "membershipFunctions": [
+        { "name": "low",     "type": "triangular", "params": [0, 0, 30] },
+        { "name": "medium",  "type": "triangular", "params": [20, 50, 80] },
+        { "name": "high",    "type": "triangular", "params": [60, 100, 100] }
+      ]
+    },
+    {
+      "id": "help_requests",
+      "range": [0, 10],
+      "unit": "count",
+      "membershipFunctions": [
+        { "name": "none",    "type": "triangular", "params": [0, 0, 2] },
+        { "name": "few",     "type": "triangular", "params": [1, 3, 5] },
+        { "name": "many",    "type": "triangular", "params": [4, 10, 10] }
+      ]
+    },
+    {
+      "id": "retry_count",
+      "range": [0, 5],
+      "unit": "count",
+      "membershipFunctions": [
+        { "name": "none",    "type": "triangular", "params": [0, 0, 1] },
+        { "name": "few",     "type": "triangular", "params": [0, 2, 3] },
+        { "name": "many",    "type": "triangular", "params": [2, 5, 5] }
+      ]
+    }
+  ],
+
+  "outputs": [
+    {
+      "id": "difficulty_level",
+      "range": [0, 100],
+      "membershipFunctions": [
+        { "name": "easy",        "type": "triangular", "params": [0, 0, 25] },
+        { "name": "normal",      "type": "triangular", "params": [20, 50, 80] },
+        { "name": "hard",        "type": "triangular", "params": [60, 80, 100] },
+        { "name": "very_hard",   "type": "triangular", "params": [80, 100, 100] }
+      ]
+    },
+    {
+      "id": "npc_helpfulness",
+      "range": [0, 100],
+      "membershipFunctions": [
+        { "name": "minimal",     "type": "triangular", "params": [0, 0, 20] },
+        { "name": "moderate",    "type": "triangular", "params": [15, 50, 85] },
+        { "name": "proactive",   "type": "triangular", "params": [70, 100, 100] }
+      ]
+    },
+    {
+      "id": "time_limit",
+      "range": [10, 120],
+      "unit": "seconds",
+      "membershipFunctions": [
+        { "name": "tight",       "type": "triangular", "params": [10, 10, 30] },
+        { "name": "comfortable", "type": "triangular", "params": [20, 60, 100] },
+        { "name": "generous",    "type": "triangular", "params": [80, 120, 120] }
+      ]
+    },
+    {
+      "id": "scaffolding_level",
+      "range": [0, 100],
+      "membershipFunctions": [
+        { "name": "none",        "type": "triangular", "params": [0, 0, 20] },
+        { "name": "hints",       "type": "triangular", "params": [10, 40, 70] },
+        { "name": "guided",      "type": "triangular", "params": [50, 80, 100] },
+        { "name": "full",        "type": "triangular", "params": [80, 100, 100] }
+      ]
+    }
+  ],
+
+  "rules": [
+    // Format: IF (input1 IS set1 AND input2 IS set2 ...) THEN (output1 IS setA, output2 IS setB, ...)
+    {
+      "id": "rule_001",
+      "antecedents": [
+        { "input": "response_time", "fuzzySet": "fast" },
+        { "input": "error_rate", "fuzzySet": "low" }
+      ],
+      "consequents": [
+        { "output": "difficulty_level", "fuzzySet": "hard" },
+        { "output": "npc_helpfulness", "fuzzySet": "minimal" },
+        { "output": "time_limit", "fuzzySet": "tight" },
+        { "output": "scaffolding_level", "fuzzySet": "none" }
+      ],
+      "weight": 1.0
+    },
+    {
+      "id": "rule_002",
+      "antecedents": [
+        { "input": "response_time", "fuzzySet": "medium" },
+        { "input": "error_rate", "fuzzySet": "high" }
+      ],
+      "consequents": [
+        { "output": "difficulty_level", "fuzzySet": "easy" },
+        { "output": "npc_helpfulness", "fuzzySet": "proactive" },
+        { "output": "time_limit", "fuzzySet": "generous" },
+        { "output": "scaffolding_level", "fuzzySet": "guided" }
+      ],
+      "weight": 1.0
+    },
+    {
+      "id": "rule_003",
+      "antecedents": [
+        { "input": "error_rate", "fuzzySet": "high" },
+        { "input": "help_requests", "fuzzySet": "many" }
+      ],
+      "consequents": [
+        { "output": "difficulty_level", "fuzzySet": "easy" },
+        { "output": "npc_helpfulness", "fuzzySet": "proactive" },
+        { "output": "time_limit", "fuzzySet": "generous" },
+        { "output": "scaffolding_level", "fuzzySet": "full" }
+      ],
+      "weight": 1.0
+    },
+    {
+      "id": "rule_004",
+      "antecedents": [
+        { "input": "error_rate", "fuzzySet": "high" },
+        { "input": "help_requests", "fuzzySet": "few" }
+      ],
+      "consequents": [
+        { "output": "difficulty_level", "fuzzySet": "normal" },
+        { "output": "npc_helpfulness", "fuzzySet": "moderate" },
+        { "output": "time_limit", "fuzzySet": "comfortable" },
+        { "output": "scaffolding_level", "fuzzySet": "hints" }
+      ],
+      "weight": 1.0
+    },
+    {
+      "id": "rule_005",
+      "antecedents": [
+        { "input": "retry_count", "fuzzySet": "many" },
+        { "input": "response_time", "fuzzySet": "slow" }
+      ],
+      "consequents": [
+        { "output": "difficulty_level", "fuzzySet": "easy" },
+        { "output": "npc_helpfulness", "fuzzySet": "proactive" },
+        { "output": "time_limit", "fuzzySet": "generous" },
+        { "output": "scaffolding_level", "fuzzySet": "full" }
+      ],
+      "weight": 1.2  // Higher weight for frustration prevention
+    }
+    // ... more rules
+  ],
+
+  "defuzzification": {
+    "method": "centroid",
+    "outputAggregation": "max"  // Mamdani: max of minima
+  }
+}
+
+// --- 3. CONTENT ADAPTATION MATRIX (JSON) ---
+// Maps fuzzy output values to concrete game content parameters
+
+{
+  "adaptationMatrix": {
+    "algebra_linear": {
+      "difficulty_level": {
+        "ranges": [
+          { "min": 0, "max": 25,  "content": {
+              "equationType": "simple_addition",
+              "maxCoefficient": 1,
+              "hasConstants": true,
+              "stepsRequired": 1,
+              "example": "x + 5 = 12"
+          }},
+          { "min": 25, "max": 50, "content": {
+              "equationType": "linear_simple",
+              "maxCoefficient": 2,
+              "hasConstants": true,
+              "stepsRequired": 2,
+              "example": "2x + 3 = 11"
+          }},
+          { "min": 50, "max": 75, "content": {
+              "equationType": "linear_standard",
+              "maxCoefficient": 5,
+              "hasConstants": true,
+              "stepsRequired": 3,
+              "example": "3x + 7 = 22"
+          }},
+          { "min": 75, "max": 100, "content": {
+              "equationType": "linear_complex",
+              "maxCoefficient": 10,
+              "hasConstants": true,
+              "hasBrackets": true,
+              "stepsRequired": 4,
+              "example": "2(3x + 4) - 5 = 21"
+          }}
+        ]
+      },
+      "npc_helpfulness": {
+        "ranges": [
+          { "min": 0, "max": 20,   "dialogueStyle": "neutral", "hints": "none" },
+          { "min": 20, "max": 70,  "dialogueStyle": "encouraging", "hints": "contextual" },
+          { "min": 70, "max": 100, "dialogueStyle": "tutorial", "hints": "step_by_step" }
+        ]
+      },
+      "time_limit": {
+        "ranges": [
+          { "min": 10, "max": 30,  "baseSeconds": 30, "stressLevel": "high" },
+          { "min": 30, "max": 80,  "baseSeconds": 60, "stressLevel": "medium" },
+          { "min": 80, "max": 120, "baseSeconds": 90, "stressLevel": "low" }
+        ]
+      },
+      "scaffolding_level": {
+        "ranges": [
+          { "min": 0, "max": 20,   "visualAids": false, "hintCount": 0, "retryPenalty": "hard" },
+          { "min": 20, "max": 50,  "visualAids": true, "hintCount": 2, "retryPenalty": "soft" },
+          { "min": 50, "max": 80,  "visualAids": true, "hintCount": 5, "retryPenalty": "none" },
+          { "min": 80, "max": 100, "visualAids": true, "hintCount": 999, "retryPenalty": "none", "showSolution": true }
+        ]
+      }
+    }
+  }
+}

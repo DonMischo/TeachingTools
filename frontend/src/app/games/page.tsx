@@ -2,25 +2,46 @@ import Link from "next/link";
 
 const CARDS = [
   {
-    href: "/capuths",
+    href: "/games/caputh",
     icon: "🎲",
     title: "Caputh",
     description: "Quiz-System mit Klassisch, TÜ, Test, Wettbewerb und mehr — Schüler treten via Code bei.",
     color: "#a78bfa",
   },
   {
-    href: "/bingo",
+    href: "/games/bingo",
     icon: "🎰",
     title: "Bingo",
     description: "Lehrer erstellt Bingo-Karten mit Caller/Antwort-Paaren — Schüler erhalten individuelle Karten.",
     color: "#f59e0b",
   },
   {
-    href: "/auction",
-    icon: "🏷️",
-    title: "Auktion",
-    description: "Lehrer legt Items auf, Schüler geben Gebote ab — Wartend, offen, abgeschlossen.",
-    color: "#34d399",
+    href: "/games/wettkampf",
+    icon: "🏆",
+    title: "Wettkämpfe",
+    description: "Turniere erstellen, Spielpläne verwalten und Ergebnisse eintragen.",
+    color: "#e8821a",
+  },
+  {
+    href: "/games/sportfest",
+    icon: "🏃",
+    title: "Sportfest",
+    description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",
+    color: "#1878a8",
+  },
+  {
+    href: "/games/exitgame",
+    icon: "🗝️",
+    title: "Exitgame",
+    description: "Selbstständiges Exit-Game: Schüler lösen Aufgaben in ihrem eigenen Tempo, Lehrer sehen live den Fortschritt.",
+    color: "#16a34a",
+  },
+  {
+    href: "/uebung",
+    icon: "📚",
+    title: "Übung",
+    description: "Aufgaben zum Trainieren — Schwierigkeit passt sich automatisch dem Können an, Fortschritt wird gezählt.",
+    color: "#0ea5e9",
   },
 ];
 

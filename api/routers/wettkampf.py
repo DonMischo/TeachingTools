@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, get_current_user
 from ..database import get_db
 from ..models import (
     Class, Teacher, Transaction,
@@ -690,7 +690,7 @@ def _get_ranking_contexts(w: Wettkampf) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 @router.get("/api/wettkampf")
-def list_wettkampf(db: Session = Depends(get_db)):
+def list_wettkampf(db: Session = Depends(get_db), _=Depends(get_current_user)):
     ws = db.query(Wettkampf).order_by(Wettkampf.created_at.desc()).all()
     return [_ser_wettkampf(w) for w in ws]
 
@@ -734,7 +734,7 @@ def create_wettkampf(
 
 
 @router.get("/api/wettkampf/{wid}")
-def get_wettkampf(wid: int, db: Session = Depends(get_db)):
+def get_wettkampf(wid: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     w = db.get(Wettkampf, wid)
     if not w:
         raise HTTPException(404, "Wettkampf nicht gefunden")
@@ -881,7 +881,7 @@ def set_stages(
 
 
 @router.get("/api/wettkampf/{wid}/suggest-stages")
-def suggest_stages(wid: int, db: Session = Depends(get_db)):
+def suggest_stages(wid: int, db: Session = Depends(get_db), _=Depends(get_current_teacher)):
     """Return auto-generated stage suggestions based on current participant count."""
     w = db.get(Wettkampf, wid)
     if not w:
@@ -904,7 +904,7 @@ def suggest_stages(wid: int, db: Session = Depends(get_db)):
 
 
 @router.get("/api/wettkampf/{wid}/suggest-placements")
-def suggest_placements(wid: int, n: int, db: Session = Depends(get_db)):
+def suggest_placements(wid: int, n: int, db: Session = Depends(get_db), _=Depends(get_current_teacher)):
     """Return suggested points for n rewarded places using the formula."""
     w = db.get(Wettkampf, wid)
     if not w:
@@ -1115,7 +1115,7 @@ def delete_match(
 # ── Finish and award points ───────────────────────────────────────────────────
 
 @router.get("/api/wettkampf/{wid}/results")
-def get_wettkampf_results(wid: int, db: Session = Depends(get_db)):
+def get_wettkampf_results(wid: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     """Dry-run recompute of awarded points for a finished wettkampf (no DB writes)."""
     w = db.get(Wettkampf, wid)
     if not w:

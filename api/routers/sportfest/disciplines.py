@@ -4,13 +4,13 @@ from sqlalchemy.orm import Session
 from ...database import get_db
 from ...models import SportfestDiscipline
 from ...schemas import SportfestDisciplineOut
-from ...auth import require_admin, get_current_teacher
+from ...auth import require_admin, get_current_user
 
 router = APIRouter(prefix="/api/sportfest/disciplines", tags=["sportfest"])
 
 
 @router.get("", response_model=list[SportfestDisciplineOut])
-def list_disciplines(db: Session = Depends(get_db)):
+def list_disciplines(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(SportfestDiscipline).order_by(SportfestDiscipline.id).all()
 
 

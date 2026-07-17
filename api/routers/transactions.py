@@ -63,6 +63,7 @@ def list_transactions(
     class_id: int | None = Query(None),
     limit: int = Query(50, le=200),
     db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
 ):
     q = db.query(Transaction).order_by(Transaction.ts.desc(), Transaction.id.desc())
     if class_id is not None:

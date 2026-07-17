@@ -7,6 +7,8 @@
  */
 
 const http = require("http");
+// Silence DEP0060: node-http-proxy calls the deprecated util._extend.
+require("util")._extend = Object.assign;
 const httpProxy = require("http-proxy");
 const { spawn } = require("child_process");
 

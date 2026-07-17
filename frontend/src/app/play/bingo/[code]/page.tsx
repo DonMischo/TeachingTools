@@ -5,6 +5,7 @@ import { wsUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { AVATARS, AvatarDisplay } from "@/components/AvatarPicker";
+import { useSavedPlayer, newAnonToken } from "@/hooks/useSavedPlayer";
 
 type Cell = { pair_index: number; answer: string };
 type CardState = { grid_size: number; grid_cols: number; cells: Cell[]; marked_positions: number[]; has_bingo: boolean };
@@ -17,22 +18,11 @@ type Phase =
   | { kind: "playing"; name: string }
   | { kind: "closed" };
 
-const STORAGE_KEY = (code: string) => `bingo_session_${code}`;
-
-function loadSaved(code: string): { token: string; name: string; avatar: string } | null {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY(code)) ?? "null"); } catch { return null; }
-}
-function saveSaved(code: string, token: string, name: string, avatar: string) {
-  try { localStorage.setItem(STORAGE_KEY(code), JSON.stringify({ token, name, avatar })); } catch {}
-}
-function newToken() {
-  return crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
 export default function BingoPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
+  const { saved, save: saveSaved, loaded: savedLoaded } = useSavedPlayer("bingo_session", code);
 
   const [phase, setPhase] = useState<Phase>({ kind: "join" });
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -51,19 +41,18 @@ export default function BingoPlayPage() {
 
   // Auto-connect when logged in (resume saved session or new)
   useEffect(() => {
-    if (!mounted || !auth?.student) return;
+    if (!mounted || !savedLoaded || !auth?.student) return;
     const name = auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`;
-    const saved = loadSaved(code);
     const avatar = saved?.avatar ?? AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
-    connect(saved?.token ?? newToken(), name, avatar);
+    connect(saved?.token ?? newAnonToken(), name, avatar);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, auth?.student?.id]);
+  }, [mounted, savedLoaded, auth?.student?.id]);
 
   function connect(token: string, name: string, avatar: string) {
     if (wsRef.current) wsRef.current.close();
     setJoinError(null);
     setConnecting(true);
-    saveSaved(code, token, name, avatar);
+    saveSaved({ token, name, avatar });
     playerNameRef.current = name;
     const url = wsUrl(`/api/bingo/${code}/ws?role=student&token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}`);
     const ws = new WebSocket(url);
@@ -134,7 +123,7 @@ export default function BingoPlayPage() {
         gameIcon="🎰"
         error={joinError}
         submitting={connecting}
-        onJoin={(name, avatar) => connect(newToken(), name, avatar)}
+        onJoin={(name, avatar) => connect(saved?.token ?? newAnonToken(), name, avatar)}
       />
     );
   }

@@ -7,6 +7,7 @@ import { SelectedClassProvider } from "@/contexts/SelectedClassContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SidebarPanelProvider } from "@/contexts/SidebarPanelContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { LessonSessionProvider } from "@/contexts/LessonSessionContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 5_000 } } }));
@@ -14,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <ToastProvider><SidebarPanelProvider><SelectedClassProvider>{children}</SelectedClassProvider></SidebarPanelProvider></ToastProvider>
+          <ToastProvider><SidebarPanelProvider><SelectedClassProvider><LessonSessionProvider>{children}</LessonSessionProvider></SelectedClassProvider></SidebarPanelProvider></ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

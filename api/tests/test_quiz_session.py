@@ -8,7 +8,7 @@ The ws_test_helper bypasses httpx/wsproto and directly exercises the ASGI interf
 import asyncio
 import pytest
 
-from api.tests.ws_test_helper import connect_ws
+from api.tests.ws_test_helper import bearer_headers, connect_ws
 import api.routers.capuths as quiz_router
 from api.database import get_db
 from api.main import app
@@ -22,11 +22,11 @@ from api.models import Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticip
 @pytest.fixture(autouse=True)
 def clear_ws_state():
     quiz_router._phases.clear()
-    quiz_router.mgr._rooms.clear()
+    quiz_router.mgr.clear()
     quiz_router._empty_since.clear()
     yield
     quiz_router._phases.clear()
-    quiz_router.mgr._rooms.clear()
+    quiz_router.mgr.clear()
     quiz_router._empty_since.clear()
 
 
@@ -92,6 +92,17 @@ def p2(db, game_session):
 # Helpers
 # ---------------------------------------------------------------------------
 
+# Set per-test by the autouse fixture below — teacher WS connections must
+# carry a verified identity since role= alone no longer grants control.
+_TEACHER_HEADERS: list[tuple[bytes, bytes]] = []
+
+
+@pytest.fixture(autouse=True)
+def _ws_teacher_auth(teacher):
+    global _TEACHER_HEADERS
+    _TEACHER_HEADERS = bearer_headers(teacher.id)
+
+
 def _scope(code: str, role: str = "student", participant_id: int = 0) -> dict:
     if role == "teacher":
         qs = b"role=teacher"
@@ -104,7 +115,7 @@ def _scope(code: str, role: str = "student", participant_id: int = 0) -> dict:
         "root_path": "",
         "scheme": "ws",
         "query_string": qs,
-        "headers": [],
+        "headers": _TEACHER_HEADERS if role == "teacher" else [],
         "client": ("127.0.0.1", 1234),
         "server": ("127.0.0.1", 8000),
         "subprotocols": [],
@@ -296,10 +307,13 @@ def test_reveal_has_ranking_and_correct_answer_ids(db, game_session, p1, two_que
                 reveal = await _drain_until(teacher_ws, "reveal")
 
                 assert "correct_answer_ids" in reveal
-                assert "ranking" in reveal
                 assert "answer_counts" in reveal
-                assert len(reveal["ranking"]) >= 1
-                entry = reveal["ranking"][0]
+
+                # Ranking now comes as its own slide after the reveal
+                await teacher_ws.send_json({"action": "next"})
+                ranking_msg = await _drain_until(teacher_ws, "ranking")
+                assert len(ranking_msg["ranking"]) >= 1
+                entry = ranking_msg["ranking"][0]
                 assert "pid" in entry
                 assert "name" in entry
                 assert "score" in entry
@@ -322,6 +336,9 @@ def test_survey_reveal_has_null_correct_answer_ids(db, game_session, p1, two_que
                 reveal1 = await _drain_until(teacher_ws, "reveal")
                 await _drain_until(student_ws, "reveal")
                 assert reveal1["is_last"] is False
+
+                await teacher_ws.send_json({"action": "next"})  # ranking slide
+                await _drain_until(teacher_ws, "ranking")
 
                 await teacher_ws.send_json({"action": "next"})
                 await _drain_until(teacher_ws, "question_preview")
@@ -364,9 +381,11 @@ def test_speed_bonus_first_correct_answerer_gets_higher_delta(db, game_session, 
                     await _drain_until(teacher_ws, "answer_update")
 
                     await teacher_ws.send_json({"action": "next"})
-                    reveal = await _drain_until(teacher_ws, "reveal")
+                    await _drain_until(teacher_ws, "reveal")
+                    await teacher_ws.send_json({"action": "next"})  # ranking slide
+                    ranking_msg = await _drain_until(teacher_ws, "ranking")
 
-                    deltas = {entry["name"]: entry["delta"] for entry in reveal["ranking"]}
+                    deltas = {entry["name"]: entry["delta"] for entry in ranking_msg["ranking"]}
                     assert deltas["Lena"] > deltas["Milo"], (
                         "First correct answerer (Lena) should get higher delta than second (Milo)"
                     )
@@ -386,6 +405,8 @@ def test_finished_event_includes_final_ranking_and_title(db, game_session, p1, t
                 await teacher_ws.send_json({"action": "next"})
                 await _drain_until(teacher_ws, "reveal")
                 await _drain_until(student_ws, "reveal")
+                await teacher_ws.send_json({"action": "next"})  # ranking slide
+                await _drain_until(teacher_ws, "ranking")
 
                 await teacher_ws.send_json({"action": "next"})
                 await _drain_until(teacher_ws, "question_preview")
@@ -397,6 +418,8 @@ def test_finished_event_includes_final_ranking_and_title(db, game_session, p1, t
                 reveal2 = await _drain_until(teacher_ws, "reveal")
                 await _drain_until(student_ws, "reveal")
                 assert reveal2["is_last"] is True
+                await teacher_ws.send_json({"action": "next"})  # ranking slide
+                await _drain_until(teacher_ws, "ranking")
 
                 await teacher_ws.send_json({"action": "next"})
                 finished = await _drain_until(teacher_ws, "finished")

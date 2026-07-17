@@ -74,7 +74,7 @@ def _maybe_complete(chore: ClassChore, db: Session) -> None:
 
 
 @router.get("/all-names", response_model=list[str])
-def all_chore_names(db: Session = Depends(get_db)):
+def all_chore_names(db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     """Return all known chore names: defaults + any custom names used across all classes."""
     custom = [row[0] for row in db.query(ClassChore.chore_name).distinct().all()]
     all_names: list[str] = list(DEFAULT_CHORE_NAMES)
@@ -85,7 +85,7 @@ def all_chore_names(db: Session = Depends(get_db)):
 
 
 @router.get("/stats")
-def chore_stats(class_id: int, db: Session = Depends(get_db)) -> dict[int, dict[str, int]]:
+def chore_stats(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)) -> dict[int, dict[str, int]]:
     """
     Returns {student_id: {chore_name: count}} — number of times each student has
     completed each chore (held ≥ COMPLETION_DAYS days).
@@ -120,7 +120,7 @@ def chore_stats(class_id: int, db: Session = Depends(get_db)) -> dict[int, dict[
 
 
 @router.get("", response_model=list[ChoreOut])
-def list_chores(class_id: int, db: Session = Depends(get_db)):
+def list_chores(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     return [_out(c) for c in db.query(ClassChore).filter_by(class_id=class_id).all()]
 
 

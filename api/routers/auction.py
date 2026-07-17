@@ -1,5 +1,3 @@
-import random
-import string
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -9,72 +7,22 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..database import get_db
-from ..models import AuctionBid, AuctionSession, Haus, HausMember, Student, StudentRole, Teacher, Transaction
+from ..models import AuctionBid, AuctionSession, AuctionSet, Haus, HausMember, Student, StudentRole, Teacher, Transaction
+from .haeuser import haus_total_points
+from ..utils import gen_code
+from ..ws_auth import ws_identity, ws_teacher
+from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/auction", tags=["auction"])
 
-
-def _code() -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
-
-
-# ── Manager ──────────────────────────────────────────────────────────────────
-
-class _AuctionManager:
-    def __init__(self):
-        self._teachers: dict[str, list[WebSocket]] = {}
-        self._haussp: dict[str, dict[int, WebSocket]] = {}
-        self._participants: dict[str, dict[WebSocket, str]] = {}  # code → {ws: name}
-
-    def add_teacher(self, code: str, ws: WebSocket):
-        self._teachers.setdefault(code, []).append(ws)
-
-    def remove_teacher(self, code: str, ws: WebSocket):
-        self._teachers[code] = [w for w in self._teachers.get(code, []) if w is not ws]
-
-    def add_haussp(self, code: str, house_id: int, ws: WebSocket):
-        self._haussp.setdefault(code, {})[house_id] = ws
-
-    def remove_haussp(self, code: str, house_id: int):
-        self._haussp.get(code, {}).pop(house_id, None)
-
-    def connected_houses(self, code: str) -> set[int]:
-        return set(self._haussp.get(code, {}).keys())
-
-    def add_participant(self, code: str, ws: WebSocket, name: str):
-        self._participants.setdefault(code, {})[ws] = name
-
-    def remove_participant(self, code: str, ws: WebSocket):
-        self._participants.get(code, {}).pop(ws, None)
-
-    def participant_names(self, code: str) -> list[str]:
-        return list(self._participants.get(code, {}).values())
-
-    async def broadcast_teachers(self, code: str, msg: dict):
-        for ws in list(self._teachers.get(code, [])):
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def broadcast_all(self, code: str, msg: dict):
-        await self.broadcast_teachers(code, msg)
-        for ws in list(self._haussp.get(code, {}).values()):
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def send_haussp(self, code: str, house_id: int, msg: dict):
-        ws = self._haussp.get(code, {}).get(house_id)
-        if ws:
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
+# Teachers + Haussprecher (keyed by house_id) live in the shared RoomManager;
+# name-only spectators are tracked separately since they never receive sends.
+_mgr = RoomManager()
+_spectators: dict[str, dict[WebSocket, str]] = {}  # code → {ws: name}
 
 
-_mgr = _AuctionManager()
+def _spectator_names(code: str) -> list[str]:
+    return list(_spectators.get(code, {}).values())
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -154,6 +102,17 @@ class AuctionOut(BaseModel):
         from_attributes = True
 
 
+class AuctionSetOut(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    prize_description: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 @router.get("/info")
 def game_info(code: str, db: Session = Depends(get_db)):
     """Resolve a code to its game type — used by the shared play lobby."""
@@ -164,23 +123,57 @@ def game_info(code: str, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=list[AuctionOut])
-def list_auctions(db: Session = Depends(get_db), current=Depends(get_current_user)):
-    return db.query(AuctionSession).order_by(AuctionSession.created_at.desc()).all()
+def list_auctions(set_id: int | None = None, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    q = db.query(AuctionSession)
+    if set_id is not None:
+        q = q.filter_by(set_id=set_id)
+    return q.order_by(AuctionSession.created_at.desc()).all()
 
 
 @router.post("", response_model=AuctionOut, status_code=201)
 def create_auction(body: AuctionCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """Creates a reusable AuctionSet from the given content, then immediately
+    starts a session from it — same request/response shape as before the
+    library split, so existing callers need no changes."""
     if current.role not in ("teacher", "admin"):
         raise HTTPException(403)
-    session = AuctionSession(
-        code=_code(), title=body.title,
-        description=body.description, prize_description=body.prize_description,
+    auction_set = AuctionSet(
+        title=body.title, description=body.description, prize_description=body.prize_description,
         created_by=current.id,
     )
+    db.add(auction_set)
+    db.flush()
+    session = AuctionSession(set_id=auction_set.id, code=gen_code(db, AuctionSession, length=8), created_by=current.id)
     db.add(session)
     db.commit()
     db.refresh(session)
     return session
+
+
+@router.get("/sets", response_model=list[AuctionSetOut])
+def list_sets(db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """The Auction content library — open to every teacher (mirrors /api/bingo/sets)."""
+    return db.query(AuctionSet).order_by(AuctionSet.created_at.desc()).all()
+
+
+def create_session_from_set(db: Session, set_id: int, created_by: int) -> AuctionSession:
+    """Start a fresh auction from a library set — shared by the REST endpoint
+    and the Stundenplaner tool registry."""
+    auction_set = db.query(AuctionSet).filter_by(id=set_id).first()
+    if not auction_set:
+        raise HTTPException(404, "Auktion nicht gefunden")
+    session = AuctionSession(set_id=auction_set.id, code=gen_code(db, AuctionSession, length=8), created_by=created_by)
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+@router.post("/sets/{set_id}/sessions", response_model=AuctionOut, status_code=201)
+def start_session_from_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    if current.role not in ("teacher", "admin"):
+        raise HTTPException(403)
+    return create_session_from_set(db, set_id, current.id)
 
 
 @router.delete("/{code}", status_code=204)
@@ -223,23 +216,31 @@ async def auction_ws(
                 house_id = sr.scope_id
                 is_haussp = True
 
-        _mgr.add_participant(code, ws, name)
+        _spectators.setdefault(code, {})[ws] = name
         if is_haussp:
-            _mgr.add_haussp(code, house_id, ws)
+            _mgr.add_student(code, house_id, ws)
             state = _state_haussp(session, house_id, db)
             state["is_haussprecher"] = True
-            state["players"] = _mgr.participant_names(code)
+            state["players"] = _spectator_names(code)
             await ws.send_json(state)
         else:
             # Spectator: receives broadcasts but cannot control
             _mgr.add_teacher(code, ws)
             state = _state_teacher(session, db)
             state["is_haussprecher"] = False
-            state["players"] = _mgr.participant_names(code)
+            state["players"] = _spectator_names(code)
             await ws.send_json(state)
-        await _mgr.broadcast_all(code, {"event": "players", "players": _mgr.participant_names(code)})
+        await _mgr.broadcast(code, {"event": "players", "players": _spectator_names(code)})
 
     elif role == "haussprecher":
+        # Identity must come from the connection's own session cookie —
+        # student_id in the query string is client-supplied and spoofable.
+        identity = ws_identity(ws, db)
+        if not identity or identity[0] != "student":
+            await ws.send_json({"event": "error", "message": "Bitte einloggen"})
+            await ws.close(code=4001)
+            return
+        student_id = identity[1]
         sr = db.query(StudentRole).filter_by(student_id=student_id, role_type="haussprecher").first()
         if not sr:
             await ws.send_json({"event": "error", "message": "Kein Haussprecher-Status für diesen Schüler"})
@@ -247,10 +248,15 @@ async def auction_ws(
             return
         house_id = sr.scope_id
         is_haussp = True
-        _mgr.add_haussp(code, house_id, ws)
+        _mgr.add_student(code, house_id, ws)
         await ws.send_json(_state_haussp(session, house_id, db))
 
     else:
+        # Auction control (open/close bidding, award) only for verified teachers.
+        if ws_teacher(ws, db) is None:
+            await ws.send_json({"event": "error", "message": "Nur für Lehrkräfte"})
+            await ws.close(code=4003)
+            return
         is_teacher_ctrl = True
         _mgr.add_teacher(code, ws)
         await ws.send_json(_state_teacher(session, db))
@@ -264,19 +270,23 @@ async def auction_ws(
                 if action == "open_bidding" and session.status == "waiting":
                     session.status = "bidding"
                     db.commit()
-                    await _mgr.broadcast_all(code, {"event": "bidding_open"})
-                    await _mgr.broadcast_teachers(code, _state_teacher(session, db))
+                    await _mgr.broadcast(code, {"event": "bidding_open"})
+                    await _mgr.send_teachers(code, _state_teacher(session, db))
 
                 elif action == "close_bidding" and session.status == "bidding":
                     session.status = "closed"
                     db.commit()
                     bids = _bids_list(session, db)
-                    await _mgr.broadcast_all(code, {"event": "bidding_closed", "bids": bids, "status": "closed"})
+                    await _mgr.broadcast(code, {"event": "bidding_closed", "bids": bids, "status": "closed"})
 
                 elif action == "award" and session.status == "closed":
                     winner_house_id = int(data.get("house_id", 0))
                     amount = int(data.get("amount", 0))
                     if not winner_house_id or not amount:
+                        continue
+                    available = haus_total_points(db, winner_house_id)
+                    if amount > available:
+                        await ws.send_json({"event": "error", "message": f"Haus hat nur {available} Punkte verfügbar"})
                         continue
                     session.winner_house_id = winner_house_id
                     session.winning_bid = amount
@@ -292,7 +302,7 @@ async def auction_ws(
                             ))
                     db.commit()
                     houses = {h.id: h.name for h in db.query(Haus).all()}
-                    await _mgr.broadcast_all(code, {
+                    await _mgr.broadcast(code, {
                         "event": "awarded",
                         "winner_house_id": winner_house_id,
                         "winner_name": houses.get(winner_house_id, "?"),
@@ -304,6 +314,10 @@ async def auction_ws(
                     amount = int(data.get("amount", 0))
                     if amount <= 0:
                         await ws.send_json({"event": "error", "message": "Gebot muss > 0 sein"})
+                        continue
+                    available = haus_total_points(db, house_id)
+                    if amount > available:
+                        await ws.send_json({"event": "error", "message": f"Euer Haus hat nur {available} Punkte verfügbar"})
                         continue
                     existing = db.query(AuctionBid).filter_by(session_id=session.id, house_id=house_id).first()
                     if existing:
@@ -317,15 +331,15 @@ async def auction_ws(
                     db.commit()
                     db.refresh(session)
                     await ws.send_json({"event": "bid_ack", "amount": amount})
-                    await _mgr.broadcast_teachers(code, {"event": "bid_update", "bids": _bids_list(session, db)})
+                    await _mgr.send_teachers(code, {"event": "bid_update", "bids": _bids_list(session, db)})
 
     except WebSocketDisconnect:
         pass
     finally:
         if token:
-            _mgr.remove_participant(code, ws)
-            await _mgr.broadcast_all(code, {"event": "players", "players": _mgr.participant_names(code)})
+            _spectators.get(code, {}).pop(ws, None)
+            await _mgr.broadcast(code, {"event": "players", "players": _spectator_names(code)})
         if is_haussp and house_id is not None:
-            _mgr.remove_haussp(code, house_id)
+            _mgr.remove_student(code, house_id)
         else:
             _mgr.remove_teacher(code, ws)

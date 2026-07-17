@@ -1,0 +1,1202 @@
+{
+  "title": "Geschichte des Lebens: Von den Trilobiten bis zum Mammut",
+  "description": "Eine umfassende Reise durch die Erdgeschichte: Über 180 Lebewesen vom Kambrium bis zum Quartär – von Trilobiten über Dinosaurier bis zu den Säugetieren der Eiszeit.",
+  "tags": [
+    "erdgeschichte",
+    "paläontologie",
+    "evolution",
+    "dinosaurier",
+    "säugetiere",
+    "fossilien"
+  ],
+  "grades": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "axis": {
+    "kind": "year",
+    "min": -541000000,
+    "max": 2025
+  },
+  "lanes": [
+    {
+      "id": "epochen",
+      "label": "Erdzeitalter",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "wirbellose",
+      "label": "Wirbellose",
+      "color": "#34d399"
+    },
+    {
+      "id": "fische",
+      "label": "Fische & frühe Wirbeltiere",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "amphibien",
+      "label": "Amphibien",
+      "color": "#f472b6"
+    },
+    {
+      "id": "reptilien",
+      "label": "Reptilien & Dinosaurier",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "saeugetiere",
+      "label": "Säugetiere & Vögel",
+      "color": "#ef4444"
+    }
+  ],
+  "events": [
+    {
+      "id": "epo-kambrium",
+      "label": "Kambrium",
+      "value": -541000000,
+      "end": -485000000,
+      "lane": "epochen",
+      "category": "Kambrium",
+      "info": "Die 'Kambrische Explosion' – innerhalb weniger Millionen Jahre entstehen nahezu alle heutigen Tierstämme."
+    },
+    {
+      "id": "epo-ordovizium",
+      "label": "Ordovizium",
+      "value": -485000000,
+      "end": -443000000,
+      "lane": "epochen",
+      "category": "Ordovizium",
+      "info": "Erste Landpflanzen, Vielfalt der Wirbellosen im Meer."
+    },
+    {
+      "id": "epo-silur",
+      "label": "Silur",
+      "value": -443000000,
+      "end": -419000000,
+      "lane": "epochen",
+      "category": "Silur",
+      "info": "Erste Kieferfische und erste Landtiere (Tausendfüßer)."
+    },
+    {
+      "id": "epo-devon",
+      "label": "Devon",
+      "value": -419000000,
+      "end": -359000000,
+      "lane": "epochen",
+      "category": "Devon",
+      "info": "Das 'Zeitalter der Fische' – erste Haie und Panzerfische. Die ersten Wälder entstehen."
+    },
+    {
+      "id": "epo-karbon",
+      "label": "Karbon",
+      "value": -359000000,
+      "end": -299000000,
+      "lane": "epochen",
+      "category": "Karbon",
+      "info": "Ausgedehnte Sumpfwälder bilden die heutigen Kohleflöze. Riesige Insekten erscheinen."
+    },
+    {
+      "id": "epo-perm",
+      "label": "Perm",
+      "value": -299000000,
+      "end": -252000000,
+      "lane": "epochen",
+      "category": "Perm",
+      "info": "Die Kontinente verschmelzen zu Pangäa. Ende des Perms: das größte Massenaussterben aller Zeiten."
+    },
+    {
+      "id": "epo-triass",
+      "label": "Trias",
+      "value": -252000000,
+      "end": -201000000,
+      "lane": "epochen",
+      "category": "Trias",
+      "info": "Die ersten Dinosaurier erscheinen (ca. -235 Mio.). Auch die ersten Säugetiere und Flugsaurier entwickeln sich."
+    },
+    {
+      "id": "epo-jura",
+      "label": "Jura",
+      "value": -201000000,
+      "end": -145000000,
+      "lane": "epochen",
+      "category": "Jura",
+      "info": "Das Zeitalter der Giganten: Dinosaurier dominieren die Erde. Die ersten Vögel (Archaeopteryx) erscheinen."
+    },
+    {
+      "id": "epo-kreide",
+      "label": "Kreide",
+      "value": -145000000,
+      "end": -66000000,
+      "lane": "epochen",
+      "category": "Kreide",
+      "info": "Höhepunkt der Dinosaurier-Vielfalt. Das Massenaussterben vor 66 Mio. Jahren beendet die Ära der Dinosaurier."
+    },
+    {
+      "id": "epo-palaeogen",
+      "label": "Paläogen",
+      "value": -66000000,
+      "end": -23000000,
+      "lane": "epochen",
+      "category": "Paläogen",
+      "info": "Das 'Zeitalter der Säugetiere' beginnt – die Säugetiere diversifizieren sich rasant."
+    },
+    {
+      "id": "epo-neogen",
+      "label": "Neogen",
+      "value": -23000000,
+      "end": -2600000,
+      "lane": "epochen",
+      "category": "Neogen",
+      "info": "Mammuts, Säbelzahnkatzen und die ersten Vorfahren des Menschen erscheinen."
+    },
+    {
+      "id": "epo-quartaer",
+      "label": "Quartär",
+      "value": -2600000,
+      "end": 2025,
+      "lane": "epochen",
+      "category": "Quartär",
+      "info": "Die Eiszeiten prägen die Landschaften. Der moderne Mensch (Homo sapiens) entwickelt sich."
+    },
+    {
+      "id": "leb-anomalocaris",
+      "label": "Anomalocaris",
+      "value": -520000000,
+      "end": -500000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Der größte bekannte Räuber des Kambriums – bis zu 2 m lang, mit facettierten Augen und einem scherenartigen Mundwerkzeug."
+    },
+    {
+      "id": "leb-trilobit",
+      "label": "Trilobiten",
+      "value": -541000000,
+      "end": -252000000,
+      "lane": "wirbellose",
+      "category": "Leitfossil",
+      "info": "Die bekanntesten Leitfossilien des Paläozoikums – extrem vielfältig und weltweit verbreitet."
+    },
+    {
+      "id": "leb-opabinia",
+      "label": "Opabinia",
+      "value": -508000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein bizarres Wesen mit fünf gestielten Augen und einem rüsselartigen, bekrallten Fortsatz."
+    },
+    {
+      "id": "leb-wiwaxia",
+      "label": "Wiwaxia",
+      "value": -515000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein gepanzertes, schneckenähnliches Tier mit zwei Reihen stachelartiger Schuppen."
+    },
+    {
+      "id": "leb-hallucigenia",
+      "label": "Hallucigenia",
+      "value": -515000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein rätselhaftes Stacheltier – lange für einen Stacheltier-Pandachter gehalten."
+    },
+    {
+      "id": "leb-marrella",
+      "label": "Marrella",
+      "value": -508000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein kleiner, gepanzerter Gliederfüßer aus dem Burgess-Schiefer – eines der häufigsten Fossilien dort."
+    },
+    {
+      "id": "leb-canadaspis",
+      "label": "Canadaspis",
+      "value": -515000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein zweischaliger Gliederfüßer mit gegliederten Beinen und einer möglichen Verwandtschaft zu Krebstieren."
+    },
+    {
+      "id": "leb-isoxys",
+      "label": "Isoxys",
+      "value": -515000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein bivalver Gliederfüßer mit großen, facettierten Augen und einem zweischaligen Panzer."
+    },
+    {
+      "id": "leb-tuzoia",
+      "label": "Tuzoia",
+      "value": -510000000,
+      "end": -505000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Ein großer zweischaliger Gliederfüßer aus dem Kambrium von Utah – bis zu 18 cm lang."
+    },
+    {
+      "id": "leb-archaeocyatha",
+      "label": "Archaeocyatha",
+      "value": -541000000,
+      "end": -485000000,
+      "lane": "wirbellose",
+      "category": "Kambrium",
+      "info": "Riffbildende Schwämme, die im Kambrium zahlreiche Riffe aufbauten, aber im Ordovizium ausstarben."
+    },
+    {
+      "id": "leb-orthoceras",
+      "label": "Orthoceras",
+      "value": -485000000,
+      "end": -419000000,
+      "lane": "wirbellose",
+      "category": "Ordovizium",
+      "info": "Ein geradschaliger Kopffüßer (nahe Verwandter der Ammoniten) – häufig in Ordovizium-Fossiliensammlungen."
+    },
+    {
+      "id": "leb-crinoid",
+      "label": "Seelilien (Crinoiden)",
+      "value": -485000000,
+      "end": 2025,
+      "lane": "wirbellose",
+      "category": "Ordovizium",
+      "info": "Stielartige Stachelhäuter, die wie Pflanzen aussehen – erstmals im Ordovizium weit verbreitet."
+    },
+    {
+      "id": "leb-graptolith",
+      "label": "Graptolithen",
+      "value": -485000000,
+      "end": -419000000,
+      "lane": "wirbellose",
+      "category": "Leitfossil",
+      "info": "Koloniebildende, wirbellose Meerestiere – hervorragende Leitfossilien für das Ordovizium und Silur."
+    },
+    {
+      "id": "leb-bryozoen",
+      "label": "Bryozoen (Moostierchen)",
+      "value": -485000000,
+      "end": 2025,
+      "lane": "wirbellose",
+      "category": "Ordovizium",
+      "info": "Koloniebildende, filtrierende Wirbellose, die im Ordovizium erstmals in großer Vielfalt auftreten."
+    },
+    {
+      "id": "leb-cyrtoceras",
+      "label": "Cyrtoceras",
+      "value": -470000000,
+      "end": -440000000,
+      "lane": "wirbellose",
+      "category": "Ordovizium",
+      "info": "Ein gebogener, nautiloidartiger Kopffüßer mit einem gekrümmten Gehäuse."
+    },
+    {
+      "id": "leb-endoceras",
+      "label": "Endoceras",
+      "value": -480000000,
+      "end": -440000000,
+      "lane": "wirbellose",
+      "category": "Ordovizium",
+      "info": "Ein riesiger, geradschaliger Nautiloid – bis zu 6 m lang, einer der größten Kopffüßer des Ordoviziums."
+    },
+    {
+      "id": "leb-eurypterid",
+      "label": "Eurypteriden (Seeskorpione)",
+      "value": -443000000,
+      "end": -359000000,
+      "lane": "wirbellose",
+      "category": "Silur",
+      "info": "Die Top-Räuber des Silurs – bis zu 2,5 m lang, mit scherenartigen Fangarmen."
+    },
+    {
+      "id": "leb-pterygotus",
+      "label": "Pterygotus",
+      "value": -428000000,
+      "end": -418000000,
+      "lane": "wirbellose",
+      "category": "Silur",
+      "info": "Ein riesiger Seeskorpion – einer der größten Gliederfüßer aller Zeiten, bis zu 2,3 m lang."
+    },
+    {
+      "id": "leb-acutiramus",
+      "label": "Acutiramus",
+      "value": -425000000,
+      "end": -415000000,
+      "lane": "wirbellose",
+      "category": "Silur",
+      "info": "Ein großer Seeskorpion mit scharfen, gezackten Scheren – lebte im Silur und frühen Devon."
+    },
+    {
+      "id": "leb-kiaeropterus",
+      "label": "Kiaeropterus",
+      "value": -430000000,
+      "end": -420000000,
+      "lane": "wirbellose",
+      "category": "Silur",
+      "info": "Ein kleinerer Seeskorpion, bekannt aus Schottland und Norwegen."
+    },
+    {
+      "id": "leb-carcinosoma",
+      "label": "Carcinosoma",
+      "value": -425000000,
+      "end": -415000000,
+      "lane": "wirbellose",
+      "category": "Silur",
+      "info": "Ein Seeskorpion mit stachelbewehrtem Panzer und kräftigen Scheren."
+    },
+    {
+      "id": "leb-dunkleosteus",
+      "label": "Dunkleosteus",
+      "value": -360000000,
+      "end": -358000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Der berühmteste Panzerfisch (Placodermi) – bis zu 9 m lang, mit einer scherenartigen Gebissstruktur."
+    },
+    {
+      "id": "leb-bothriolepis",
+      "label": "Bothriolepis",
+      "value": -387000000,
+      "end": -359000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Ein flacher, gepanzerter Fisch mit seitlichen Flossen – einer der erfolgreichsten Placodermi."
+    },
+    {
+      "id": "leb-cephalaspis",
+      "label": "Cephalaspis",
+      "value": -415000000,
+      "end": -398000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Ein früher, kieferloser Fisch mit einem charakteristischen, schildartigen Kopfpanzer."
+    },
+    {
+      "id": "leb-pteraspis",
+      "label": "Pteraspis",
+      "value": -419000000,
+      "end": -398000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Ein kieferloser Fisch mit einem stromlinienförmigen Körper und einem nach oben gerichteten Rückenstachel."
+    },
+    {
+      "id": "leb-dipterus",
+      "label": "Dipterus",
+      "value": -390000000,
+      "end": -370000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Ein früher Lungenfisch mit einem charakteristischen, zahnplattenbewehrten Kiefer."
+    },
+    {
+      "id": "leb-acanthodes",
+      "label": "Acanthodes",
+      "value": -400000000,
+      "end": -350000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Ein stachelhaiartiger Fisch (Acanthodier) – einer der ersten Knochenfische mit stachelbewehrten Flossen."
+    },
+    {
+      "id": "leb-cladoselache",
+      "label": "Cladoselache",
+      "value": -380000000,
+      "end": -360000000,
+      "lane": "fische",
+      "category": "Devon",
+      "info": "Einer der frühesten Haie – mit einem schlanken Körper und einem gegabelten Schwanz."
+    },
+    {
+      "id": "leb-ichthyostega",
+      "label": "Ichthyostega",
+      "value": -370000000,
+      "end": -365000000,
+      "lane": "amphibien",
+      "category": "Devon",
+      "info": "Eines der ersten Landwirbeltiere – ein Übergangsfossil zwischen Fisch und Amphibium."
+    },
+    {
+      "id": "leb-acanthostega",
+      "label": "Acanthostega",
+      "value": -365000000,
+      "end": -360000000,
+      "lane": "amphibien",
+      "category": "Devon",
+      "info": "Ein frühes Landwirbeltier mit acht Zehen an den Vorderfüßen – lebte teilweise im Wasser."
+    },
+    {
+      "id": "leb-tulerpeton",
+      "label": "Tulerpeton",
+      "value": -360000000,
+      "end": -358000000,
+      "lane": "amphibien",
+      "category": "Devon",
+      "info": "Ein weiteres der ersten Landwirbeltiere – mit sechs Zehen an den Hinterfüßen."
+    },
+    {
+      "id": "leb-arthropleura",
+      "label": "Arthropleura",
+      "value": -345000000,
+      "end": -290000000,
+      "lane": "wirbellose",
+      "category": "Karbon",
+      "info": "Der größte bekannte Land-Gliederfüßer – bis zu 2,5 m lang, ein Tausendfüßer aus den Kohlesümpfen."
+    },
+    {
+      "id": "leb-meganeura",
+      "label": "Meganeura",
+      "value": -305000000,
+      "end": -299000000,
+      "lane": "wirbellose",
+      "category": "Karbon",
+      "info": "Eine riesige Libelle mit einer Flügelspannweite von bis zu 70 cm – der größte bekannte Insekt."
+    },
+    {
+      "id": "leb-pulmonoscorpius",
+      "label": "Pulmonoscorpius",
+      "value": -340000000,
+      "end": -325000000,
+      "lane": "wirbellose",
+      "category": "Karbon",
+      "info": "Ein riesiger Skorpion – bis zu 70 cm lang, einer der größten Skorpione der Erdgeschichte."
+    },
+    {
+      "id": "leb-archaeothyris",
+      "label": "Archaeothyris",
+      "value": -310000000,
+      "end": -305000000,
+      "lane": "reptilien",
+      "category": "Karbon",
+      "info": "Eines der frühesten Reptilien – ein kleiner, eidechsenartiger Jäger."
+    },
+    {
+      "id": "leb-dimetrodon",
+      "label": "Dimetrodon",
+      "value": -295000000,
+      "end": -270000000,
+      "lane": "reptilien",
+      "category": "Perm",
+      "info": "Der bekannteste Pelycosaurier – mit einem großen Rückensegel, das wahrscheinlich der Wärmeregulation diente."
+    },
+    {
+      "id": "leb-edaphosaurus",
+      "label": "Edaphosaurus",
+      "value": -290000000,
+      "end": -270000000,
+      "lane": "reptilien",
+      "category": "Perm",
+      "info": "Ein pflanzenfressender Pelycosaurier mit einem Rückensegel und einem kräftigen, breiten Körper."
+    },
+    {
+      "id": "leb-lystrosaurus",
+      "label": "Lystrosaurus",
+      "value": -255000000,
+      "end": -245000000,
+      "lane": "reptilien",
+      "category": "Perm",
+      "info": "Ein pflanzenfressender Therapside, der das Perm-Trias-Massenaussterben überlebte – weltweit verbreitet."
+    },
+    {
+      "id": "leb-mesosaurus",
+      "label": "Mesosaurus",
+      "value": -280000000,
+      "end": -260000000,
+      "lane": "reptilien",
+      "category": "Perm",
+      "info": "Ein kleiner, wasserlebender Reptil mit einem langen Schwanz – eines der ersten Reptilien im Wasser."
+    },
+    {
+      "id": "leb-keichousaurus",
+      "label": "Keichousaurus",
+      "value": -245000000,
+      "end": -240000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein kleiner, wasserlebender Reptil aus der Trias – häufig in chinesischen Fossilfundstätten."
+    },
+    {
+      "id": "leb-captorhinus",
+      "label": "Captorhinus",
+      "value": -280000000,
+      "end": -260000000,
+      "lane": "reptilien",
+      "category": "Perm",
+      "info": "Ein früher Reptil mit einem kurzen Kopf und kräftigen Kiefern – ein häufiges Fossil im frühen Perm."
+    },
+    {
+      "id": "leb-herrerassaurus",
+      "label": "Herrerasaurus",
+      "value": -231000000,
+      "end": -228000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Einer der frühesten Dinosaurier – ein fleischfressender Zweibeiner aus der späten Trias in Argentinien."
+    },
+    {
+      "id": "leb-eoraptor",
+      "label": "Eoraptor",
+      "value": -231000000,
+      "end": -228000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein kleiner, früher Dinosaurier – etwa so groß wie ein Hund – der in der Trias in Südamerika lebte."
+    },
+    {
+      "id": "leb-plateosaurus",
+      "label": "Plateosaurus",
+      "value": -214000000,
+      "end": -204000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Einer der frühesten großen Dinosaurier – ein pflanzenfressender Prosauropode aus der späten Trias, zahlreiche Funde in Deutschland."
+    },
+    {
+      "id": "leb-coelophysis",
+      "label": "Coelophysis",
+      "value": -225000000,
+      "end": -200000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein eleganter, fleischfressender Theropode – berühmt für seine Massenvorkommen in New Mexico."
+    },
+    {
+      "id": "leb-procompsognathus",
+      "label": "Procompsognathus",
+      "value": -215000000,
+      "end": -210000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein kleiner, fleischfressender Dinosaurier aus der Trias – einer der frühesten Vertreter der Coelurosaurier."
+    },
+    {
+      "id": "leb-staurikosaurus",
+      "label": "Staurikosaurus",
+      "value": -225000000,
+      "end": -222000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein kleiner, fleischfressender Dinosaurier aus Brasilien – einer der ältesten bekannten Dinosaurier."
+    },
+    {
+      "id": "leb-nothosaurus",
+      "label": "Nothosaurus",
+      "value": -240000000,
+      "end": -210000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein langhalsiger, wasserlebender Reptil – lebte in den flachen Meeren der Trias."
+    },
+    {
+      "id": "leb-ichthyosaurus",
+      "label": "Ichthyosaurus",
+      "value": -201000000,
+      "end": -90000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Der bekannteste Ichthyosaurier – ein fischähnlicher Meeresreptil mit einem stromlinienförmigen Körper."
+    },
+    {
+      "id": "leb-shonisaurus",
+      "label": "Shonisaurus",
+      "value": -240000000,
+      "end": -230000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Einer der größten Ichthyosaurier – bis zu 21 m lang, lebte in den Ozeanen der Trias."
+    },
+    {
+      "id": "leb-placodus",
+      "label": "Placodus",
+      "value": -240000000,
+      "end": -235000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein pflanzenfressender Meeresreptil mit kräftigen, plattenartigen Zähnen zum Zerkleinern von Muscheln."
+    },
+    {
+      "id": "leb-cyamodus",
+      "label": "Cyamodus",
+      "value": -240000000,
+      "end": -235000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein gepanzerter Meeresreptil – ein Placodont mit einem breiten, schildkrötenähnlichen Körper."
+    },
+    {
+      "id": "leb-pistosaurus",
+      "label": "Pistosaurus",
+      "value": -240000000,
+      "end": -235000000,
+      "lane": "reptilien",
+      "category": "Trias",
+      "info": "Ein Übergangsfossil zwischen Nothosauriern und Plesiosauriern."
+    },
+    {
+      "id": "leb-allosaurus",
+      "label": "Allosaurus",
+      "value": -155000000,
+      "end": -145000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Der häufigste große Raubdinosaurier des späten Jura in Nordamerika – jagte möglicherweise in Rudeln."
+    },
+    {
+      "id": "leb-brachiosaurus",
+      "label": "Brachiosaurus",
+      "value": -154000000,
+      "end": -153000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Einer der größten Sauropoden – konnte seinen Kopf bis zu 13 m hoch heben."
+    },
+    {
+      "id": "leb-diplodocus",
+      "label": "Diplodocus",
+      "value": -154000000,
+      "end": -152000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Ein extrem langer Sauropode – bis zu 25 m lang – mit einer peitschenartigen Schwanzspitze."
+    },
+    {
+      "id": "leb-stegosaurus",
+      "label": "Stegosaurus",
+      "value": -155000000,
+      "end": -150000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Der berühmte Plattensaurier – mit großen Knochenplatten auf dem Rücken und Stacheln am Schwanz."
+    },
+    {
+      "id": "leb-apatosaurus",
+      "label": "Apatosaurus",
+      "value": -155000000,
+      "end": -150000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Ein großer Sauropode – früher als Brontosaurus bekannt – lebte in den weiten Ebenen Nordamerikas."
+    },
+    {
+      "id": "leb-camarasaurus",
+      "label": "Camarasaurus",
+      "value": -155000000,
+      "end": -145000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Ein massiver, pflanzenfressender Sauropode mit einem kurzen Kopf und einer tiefen Schnauze."
+    },
+    {
+      "id": "leb-archaeopteryx",
+      "label": "Archaeopteryx (Urvogel)",
+      "value": -150000000,
+      "end": -148000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Das berühmte 'Missing Link' zwischen Dinosauriern und Vögeln – besaß Federn, aber auch Zähne."
+    },
+    {
+      "id": "leb-compsognathus",
+      "label": "Compsognathus",
+      "value": -150000000,
+      "end": -148000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Einer der kleinsten Dinosaurier – nur etwa so groß wie ein Huhn, ein flinker Jäger in Europa."
+    },
+    {
+      "id": "leb-ornitholestes",
+      "label": "Ornitholestes",
+      "value": -154000000,
+      "end": -150000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Ein kleiner, flinker Theropode – jagte kleine Beute und hatte eine kurze, kräftige Hand."
+    },
+    {
+      "id": "leb-ceratosaurus",
+      "label": "Ceratosaurus",
+      "value": -155000000,
+      "end": -145000000,
+      "lane": "reptilien",
+      "category": "Jura",
+      "info": "Ein mittelgroßer Raubdinosaurier mit einem markanten Horn auf der Nase."
+    },
+    {
+      "id": "leb-tyrannosaurus",
+      "label": "Tyrannosaurus rex",
+      "value": -68000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der berühmteste Raubdinosaurier – einer der größten Landraubtiere aller Zeiten."
+    },
+    {
+      "id": "leb-triceratops",
+      "label": "Triceratops",
+      "value": -68000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der bekannteste Horn-Dinosaurier – lebte zur gleichen Zeit und am gleichen Ort wie der T. rex."
+    },
+    {
+      "id": "leb-velociraptor",
+      "label": "Velociraptor",
+      "value": -75000000,
+      "end": -71000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein kleiner, aber gefährlicher Raubdinosaurier mit einer großen, sichelförmigen Kralle."
+    },
+    {
+      "id": "leb-spinosaurus",
+      "label": "Spinosaurus",
+      "value": -112000000,
+      "end": -93000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der größte bekannte fleischfressende Dinosaurier – sogar größer als der T. rex, an ein Leben im Wasser angepasst."
+    },
+    {
+      "id": "leb-ankylosaurus",
+      "label": "Ankylosaurus",
+      "value": -68000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein gepanzerter Dinosaurier mit einer knöchernen Keule am Schwanz – der 'Panzerwagen' der Kreidezeit."
+    },
+    {
+      "id": "leb-iguanodon",
+      "label": "Iguanodon",
+      "value": -130000000,
+      "end": -120000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Einer der ersten wissenschaftlich beschriebenen Dinosaurier – ein großer Ornithopode mit einem stachelartigen Daumen."
+    },
+    {
+      "id": "leb-oviraptor",
+      "label": "Oviraptor",
+      "value": -75000000,
+      "end": -71000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein kleiner, flinker Theropode – irrtümlich als Eierdieb bezeichnet, brütete tatsächlich selbst seine Eier aus."
+    },
+    {
+      "id": "leb-therizinosaurus",
+      "label": "Therizinosaurus",
+      "value": -75000000,
+      "end": -70000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein pflanzenfressender Theropode mit extrem langen, sichelartigen Krallen – bis zu 1 m lang."
+    },
+    {
+      "id": "leb-deinonychus",
+      "label": "Deinonychus",
+      "value": -115000000,
+      "end": -108000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der 'schreckliche Klaue' – ein flinker, intelligenter Jäger, der das Bild der Dinosaurier revolutionierte."
+    },
+    {
+      "id": "leb-utahraptor",
+      "label": "Utahraptor",
+      "value": -130000000,
+      "end": -125000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein riesiger Dromaeosaurier – etwa 7 m lang, einer der größten seiner Gruppe."
+    },
+    {
+      "id": "leb-pachycephalosaurus",
+      "label": "Pachycephalosaurus",
+      "value": -70000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der 'Dickkopf-Echse' – mit einem bis zu 25 cm dicken Schädelknochen."
+    },
+    {
+      "id": "leb-parasaurolophus",
+      "label": "Parasaurolophus",
+      "value": -76000000,
+      "end": -73000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein Hadrosaurier mit einem auffälligen, röhrenförmigen Schädelkamm – wahrscheinlich zur Kommunikation."
+    },
+    {
+      "id": "leb-maiasaura",
+      "label": "Maiasaura",
+      "value": -80000000,
+      "end": -74000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Die 'gute Eidechsenmutter' – bekannt für ihre Brutkolonien und fürsorgliche Elternschaft."
+    },
+    {
+      "id": "leb-carnotaurus",
+      "label": "Carnotaurus",
+      "value": -72000000,
+      "end": -68000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein seltsamer Raubdinosaurier mit zwei Hörnern über den Augen und extrem kurzen Armen."
+    },
+    {
+      "id": "leb-giganotosaurus",
+      "label": "Giganotosaurus",
+      "value": -99000000,
+      "end": -95000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein riesiger Theropode aus Südamerika – etwa so groß wie der T. rex, lebte aber früher."
+    },
+    {
+      "id": "leb-carcharodontosaurus",
+      "label": "Carcharodontosaurus",
+      "value": -100000000,
+      "end": -93000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein großer, scharfzahniger Theropode aus Nordafrika – ein Spitzenprädator seiner Zeit."
+    },
+    {
+      "id": "leb-mosasaurus",
+      "label": "Mosasaurus",
+      "value": -82000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein riesiger, wasserlebender Reptil – der Top-Räuber der späten Kreidemeere."
+    },
+    {
+      "id": "leb-elasmosaurus",
+      "label": "Elasmosaurus",
+      "value": -80000000,
+      "end": -70000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Ein Plesiosaurier mit einem extrem langen Hals – bis zu 40% seiner gesamten Körperlänge."
+    },
+    {
+      "id": "leb-pteranodon",
+      "label": "Pteranodon",
+      "value": -86000000,
+      "end": -75000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der berühmteste Flugsaurier – mit einer Flügelspannweite von bis zu 7 m und einem charakteristischen Schädelkamm."
+    },
+    {
+      "id": "leb-quetzalcoatlus",
+      "label": "Quetzalcoatlus",
+      "value": -70000000,
+      "end": -66000000,
+      "lane": "reptilien",
+      "category": "Kreide",
+      "info": "Der größte bekannte Flugsaurier – eine Flügelspannweite von bis zu 12 m, so groß wie ein Kleinflugzeug."
+    },
+    {
+      "id": "leb-urpferd",
+      "label": "Urpferd (Eohippus)",
+      "value": -56000000,
+      "end": -33000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Das früheste bekannte Pferd – etwa so groß wie ein Fuchs, lebte im Eozän in Nordamerika."
+    },
+    {
+      "id": "leb-titanoboa",
+      "label": "Titanoboa",
+      "value": -60000000,
+      "end": -58000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Die größte bekannte Schlange – bis zu 13 m lang, lebte im Paläozän in den Regenwäldern Südamerikas."
+    },
+    {
+      "id": "leb-gastornis",
+      "label": "Gastornis (Diatryma)",
+      "value": -56000000,
+      "end": -40000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein riesiger, flugunfähiger Vogel – etwa 2 m hoch, ein rätselhafter Pflanzen- oder Fleischfresser."
+    },
+    {
+      "id": "leb-plesiadapis",
+      "label": "Plesiadapis",
+      "value": -60000000,
+      "end": -50000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein früher Primatenverwandter – kletterte in den Bäumen und sah eher wie ein Eichhörnchen aus."
+    },
+    {
+      "id": "leb-indricotherium",
+      "label": "Indricotherium (Baluchitherium)",
+      "value": -30000000,
+      "end": -20000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Das größte bekannte Landsäugetier – ein hornloser Nashornverwandter, bis zu 5,5 m hoch."
+    },
+    {
+      "id": "leb-andrewsarchus",
+      "label": "Andrewsarchus",
+      "value": -45000000,
+      "end": -40000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein rätselhaftes, hufartiges Raubtier – mit einem 90 cm langen Schädel, der größte fleischfressende Landsäuger seiner Zeit."
+    },
+    {
+      "id": "leb-arsinoitherium",
+      "label": "Arsinoitherium",
+      "value": -36000000,
+      "end": -30000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein seltsames, nashornähnliches Säugetier mit zwei großen Hörnern auf der Nase – lebte in Ägypten."
+    },
+    {
+      "id": "leb-mammut",
+      "label": "Mammut (Mammuthus)",
+      "value": -5000000,
+      "end": -4000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Die berühmten eiszeitlichen Elefanten – mit langen, gebogenen Stoßzähnen und dichtem Fell."
+    },
+    {
+      "id": "leb-smilodon",
+      "label": "Säbelzahnkatze (Smilodon)",
+      "value": -2500000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Der bekannteste Vertreter der Säbelzahnkatzen – mit bis zu 28 cm langen Fangzähnen."
+    },
+    {
+      "id": "leb-riesenfaultier",
+      "label": "Riesenfaultier (Megatherium)",
+      "value": -2000000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein riesiges Bodenfaultier aus Nordamerika – ebenfalls so groß wie ein Elefant."
+    },
+    {
+      "id": "leb-woolly-rhinoceros",
+      "label": "Wollnashorn (Coelodonta)",
+      "value": -2000000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein eiszeitliches Nashorn mit dichtem Fell und einem großen, flachen Horn."
+    },
+    {
+      "id": "leb-homo-sapiens",
+      "label": "Homo sapiens",
+      "value": -300000,
+      "end": 2025,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Der moderne Mensch – erscheint vor etwa 300.000 Jahren in Afrika und besiedelt die gesamte Erde."
+    },
+    {
+      "id": "leb-neandertaler",
+      "label": "Neandertaler (Homo neanderthalensis)",
+      "value": -400000,
+      "end": -40000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Der engste Verwandte des modernen Menschen – lebte in Europa und Asien, starb vor etwa 40.000 Jahren aus."
+    },
+    {
+      "id": "leb-dickhornbison",
+      "label": "Steppenbison (Bison priscus)",
+      "value": -2000000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein riesiger Bison – mit einer Spannweite von bis zu 2,5 m, lebte in den eiszeitlichen Steppen."
+    },
+    {
+      "id": "leb-rentier",
+      "label": "Rentier (Rangifer tarandus)",
+      "value": -1000000,
+      "end": 2025,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein Überlebenskünstler der Eiszeit – heute noch in der Arktis verbreitet."
+    },
+    {
+      "id": "leb-palaeoloxodon",
+      "label": "Palaeoloxodon (Gerade Stoßzahn-Elefant)",
+      "value": -800000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Einer der größten Elefanten – mit extrem langen, geraden Stoßzähnen, lebte in Europa und Asien."
+    },
+    {
+      "id": "leb-megaloceros",
+      "label": "Megaloceros (Riesenhirsch)",
+      "value": -400000,
+      "end": -8000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein prächtiger Hirsch mit einer Geweihspannweite von bis zu 3,5 m – der 'Riesenhirsch' der Eiszeit."
+    },
+    {
+      "id": "leb-cave-lion",
+      "label": "Höhlenlöwe (Panthera spelaea)",
+      "value": -500000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein großer, eiszeitlicher Löwe – etwa 25 % größer als der heutige Löwe."
+    },
+    {
+      "id": "leb-short-faced-bear",
+      "label": "Kurzschnauzenbär (Arctodus simus)",
+      "value": -800000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Einer der größten Bären aller Zeiten – konnte auf den Hinterbeinen bis zu 3,5 m hoch werden."
+    },
+    {
+      "id": "leb-homo-erectus",
+      "label": "Homo erectus",
+      "value": -1800000,
+      "end": -100000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Der erste Hominide, der Afrika verließ – war der Vorfahre der späteren Menschenarten."
+    },
+    {
+      "id": "leb-zeuglodon",
+      "label": "Basilosaurus (Zeuglodon)",
+      "value": -40000000,
+      "end": -35000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein früher, riesiger Wal – bis zu 18 m lang, mit einem schlangenartigen Körper."
+    },
+    {
+      "id": "leb-dorudon",
+      "label": "Dorudon",
+      "value": -40000000,
+      "end": -35000000,
+      "lane": "saeugetiere",
+      "category": "Paläogen",
+      "info": "Ein kleinerer, früher Wal – lebte zur gleichen Zeit wie Basilosaurus, hatte aber noch Hinterbeine."
+    },
+    {
+      "id": "leb-megalodon",
+      "label": "Megalodon",
+      "value": -23000000,
+      "end": -3600000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Der größte Hai aller Zeiten – bis zu 20 m lang, ein Spitzenprädator der Ozeane im Miozän und Pliozän."
+    },
+    {
+      "id": "leb-deinotherium",
+      "label": "Deinotherium",
+      "value": -15000000,
+      "end": -1000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Ein seltsamer Elefantenverwandter – mit nach unten gebogenen Stoßzähnen am Unterkiefer."
+    },
+    {
+      "id": "leb-platybelodon",
+      "label": "Platybelodon",
+      "value": -15000000,
+      "end": -10000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Ein elefantenähnliches Tier mit einem breiten, schaufelförmigen Unterkiefer – ernährte sich von Wasserpflanzen."
+    },
+    {
+      "id": "leb-sivatherium",
+      "label": "Sivatherium",
+      "value": -10000000,
+      "end": -1000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Ein riesiger, giraffenähnlicher Paarhufer – mit einem Geweih, das an ein Elchgeweih erinnerte."
+    },
+    {
+      "id": "leb-dinofelis",
+      "label": "Dinofelis",
+      "value": -5000000,
+      "end": -1000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Eine Säbelzahnkatze mit kürzeren, aber extrem kräftigen Fangzähnen – jagte möglicherweise Hominiden."
+    },
+    {
+      "id": "leb-homotherium",
+      "label": "Homotherium",
+      "value": -4000000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Eine weitere Säbelzahnkatze – mit einer verlängerten Schnauze und sägeartigen Zähnen."
+    },
+    {
+      "id": "leb-agriotherium",
+      "label": "Agriotherium",
+      "value": -8000000,
+      "end": -2000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Ein riesiger Kurzschnauzenbär – lebte in den offenen Landschaften Afrikas und Eurasiens."
+    },
+    {
+      "id": "leb-purussaurus",
+      "label": "Purussaurus",
+      "value": -10000000,
+      "end": -5000000,
+      "lane": "saeugetiere",
+      "category": "Neogen",
+      "info": "Ein riesiger Kaiman – bis zu 12 m lang, der größte bekannte Krokodilartige."
+    },
+    {
+      "id": "leb-glyptodon",
+      "label": "Glyptodon",
+      "value": -2000000,
+      "end": -10000,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Ein riesiges, gepanzertes Gürteltier – mit einem knöchernen Panzer wie eine Schildkröte."
+    },
+    {
+      "id": "leb-dodo",
+      "label": "Dodo (Raphus cucullatus)",
+      "value": 1598,
+      "end": 1662,
+      "lane": "saeugetiere",
+      "category": "Quartär",
+      "info": "Der berühmte flugunfähige Vogel von Mauritius – von Seefahrern entdeckt und binnen weniger Jahrzehnte ausgerottet."
+    }
+  ]
+}

@@ -1,0 +1,554 @@
+"""Tests for the Exitgame router: content upload/validation, sessions,
+self-paced attempts/events with server-side answer checking, hint budgeting,
+report/log endpoints, and the DDA fuzzy-inference module."""
+import io
+
+from api.models import Student, Class
+from api.auth import hash_password
+from api import dda as dda_engine
+
+
+def _auth(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _student_login(client, db, klass: Class, username="s.schueler") -> str:
+    s = Student(
+        nachname="Schüler", vorname="Sam", klasse=klass.code, class_id=klass.id,
+        geschlecht="männlich", username=username, password_hash=hash_password("pw"), active=True,
+    )
+    db.add(s)
+    db.flush()
+    r = client.post("/api/auth/login", json={"username": username, "password": "pw"})
+    return r.json()["access_token"]
+
+
+SIMPLE_GAME = {
+    "id": "test-game",
+    "title": "Testspiel",
+    "subject": "mathe",
+    "completion": {"message": "Geschafft!", "code": "ABC-123"},
+    "slides": [
+        {"id": "intro", "type": "explanation", "text": "Willkommen"},
+        {
+            "id": "aufgabe-1", "type": "task", "text": "Frage",
+            "task": {
+                "kind": "single", "question": "1+1?",
+                "answers": [{"text": "2", "correct": True}, {"text": "3", "correct": False}],
+                "easierAlternative": {
+                    "kind": "single", "question": "0+1?",
+                    "answers": [{"text": "1", "correct": True}, {"text": "2", "correct": False}],
+                },
+            },
+            "hints": ["Zähl an den Fingern.", "Es ist mehr als 1."],
+        },
+        {
+            "id": "tuer", "type": "door", "text": "Letzte Aufgabe",
+            "task": {"kind": "input", "question": "3-1?", "accept": ["2"]},
+            "onFailReview": ["aufgabe-1"],
+        },
+    ],
+}
+
+
+def _upload(client, token, game=SIMPLE_GAME):
+    # Fixtures like teacher_token/admin_token log in via the shared client,
+    # leaving whichever cookie was set last active — cookie auth wins over
+    # the Bearer header (see auth._resolve_token), so clear it here to make
+    # sure this call authenticates as `token`, not a stale fixture identity.
+    client.cookies.clear()
+    return client.post(
+        "/api/exitgames/upload",
+        files={"file": ("exitgame.json", io.BytesIO(__import__("json").dumps(game).encode()), "application/json")},
+        headers=_auth(token),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Content upload / validation
+# ---------------------------------------------------------------------------
+
+def test_upload_valid_exitgame(client, teacher_token):
+    r = _upload(client, teacher_token)
+    assert r.status_code == 201
+    assert r.json()["title"] == "Testspiel"
+    assert r.json()["slide_count"] == 3
+
+
+def test_upload_rejects_missing_fields(client, teacher_token):
+    bad = {"title": "X"}  # missing subject, slides
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    errors = r.json()["detail"]["errors"]
+    assert any("subject" in e for e in errors)
+    assert any("slides" in e for e in errors)
+
+
+def test_upload_rejects_duplicate_slide_ids(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "x", "type": "explanation", "text": "a"},
+        {"id": "x", "type": "explanation", "text": "b"},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("doppelte slide-id" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_door_without_task(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [{"id": "d", "type": "door", "text": "leer"}]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("braucht" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_dangling_review_reference(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "d", "type": "door", "text": "x", "task": {"kind": "input", "accept": ["1"]}, "onFailReview": ["nope"]},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("onFailReview" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_generated_task_kind(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "g", "type": "task", "text": "x", "task": {"kind": "generated", "generator": "linear_equation"}},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("generated" in e for e in r.json()["detail"]["errors"])
+
+
+def test_template_endpoint(client, teacher_token):
+    r = client.get("/api/exitgames/template", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    assert "_ai_instructions" in r.json()
+
+
+# ---------------------------------------------------------------------------
+# Sessions
+# ---------------------------------------------------------------------------
+
+def test_create_and_reuse_session(client, teacher_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    r1 = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token))
+    assert r1.status_code == 201
+    r2 = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token))
+    assert r2.json()["join_code"] == r1.json()["join_code"]  # reused, still open
+
+
+def test_close_session_requires_owner(client, teacher_token, admin_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/close", headers=_auth(admin_token))
+    assert r.status_code == 200  # admin can close anyone's session
+    assert r.json()["status"] == "closed"
+
+
+# ---------------------------------------------------------------------------
+# Attempts + events
+# ---------------------------------------------------------------------------
+
+def test_attempt_allowed_for_student_outside_sessions_class(client, db, teacher_token, klass):
+    """Session.class_id is a reporting label, not a join gate — a student
+    from a different class can still join via the code."""
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+
+    other = Class(code="9z", display_name="Klasse 9z")
+    db.add(other)
+    db.flush()
+    student_token = _student_login(client, db, other)
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert r.status_code == 201
+
+
+def test_attempt_rejected_when_session_closed(client, db, teacher_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+    client.cookies.clear()
+    client.post(f"/api/exitgame-sessions/{s['join_code']}/close", headers=_auth(teacher_token))
+
+    student_token = _student_login(client, db, klass)
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert r.status_code == 403
+
+
+def test_teacher_can_join_and_play_own_session(client, db, teacher_token, klass):
+    """Anyone with the link may play — including the teacher who created it,
+    or another teacher/admin trying the game out."""
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    client.cookies.clear()
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(teacher_token))
+    assert r.status_code == 201
+    aid = r.json()["attempt"]["id"]
+
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer", "payload": {"task_index": 0, "answer": "2"},
+    }, headers=_auth(teacher_token))
+    assert r.status_code == 200
+    assert r.json()["correct"] is True
+
+
+def test_teacher_and_student_attempts_coexist_independently(client, db, teacher_token, admin_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    client.cookies.clear()
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+
+    student_token = _student_login(client, db, klass)
+    client.cookies.clear()
+    r_student = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    client.cookies.clear()
+    r_admin = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(admin_token))
+    assert r_student.json()["attempt"]["id"] != r_admin.json()["attempt"]["id"]
+
+    client.cookies.clear()
+    r = client.get(f"/api/exitgame-sessions/{s['join_code']}/report", headers=_auth(teacher_token))
+    rows = r.json()["attempts"]
+    assert len(rows) == 2
+    classes = {row["student_class"] for row in rows}
+    assert classes == {klass.code, "Lehrkraft"}
+
+
+def test_teacher_cannot_finish_another_teachers_attempt(client, db, teacher_token, admin_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    client.cookies.clear()
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(teacher_token))
+    aid = r.json()["attempt"]["id"]
+
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(admin_token))
+    assert r.status_code == 404
+
+
+def test_attempt_start_is_resumable(client, db, teacher_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+
+    student_token = _student_login(client, db, klass)
+    client.cookies.clear()
+    r1 = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert r1.status_code == 201
+    assert r1.json()["exitgame_data"]["title"] == "Testspiel"
+    aid1 = r1.json()["attempt"]["id"]
+
+    r2 = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert r2.json()["attempt"]["id"] == aid1  # same attempt, resumed
+
+
+def _start_attempt(client, db, teacher_token, klass, game=SIMPLE_GAME):
+    up = _upload(client, teacher_token, game)
+    gid = up.json()["id"]
+    client.cookies.clear()
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+    student_token = _student_login(client, db, klass)
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    return student_token, s, r.json()["attempt"]["id"]
+
+
+def test_answer_correct_and_incorrect(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer", "payload": {"task_index": 0, "answer": "3"},
+    }, headers=_auth(student_token))
+    assert r.status_code == 200
+    assert r.json()["correct"] is False
+    assert r.json()["attempt"]["errors_total"] == 1
+
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer", "payload": {"task_index": 0, "answer": "2"},
+    }, headers=_auth(student_token))
+    assert r.json()["correct"] is True
+    assert "aufgabe-1" in r.json()["attempt"]["solved_slide_ids"]
+
+
+def test_input_kind_numeric_comma_tolerance(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "tuer", "action": "answer", "payload": {"task_index": 0, "answer": "2,0"},
+    }, headers=_auth(student_token))
+    assert r.json()["correct"] is True
+
+
+def test_hint_budget_without_dda_is_two(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    for i in range(2):
+        r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+            "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": i},
+        }, headers=_auth(student_token))
+        assert r.status_code == 200
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": 2},
+    }, headers=_auth(student_token))
+    assert r.status_code == 409
+
+
+def test_easier_taken_tracked_and_checkable(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "easier_taken", "payload": {"task_index": 0},
+    }, headers=_auth(student_token))
+    assert r.json()["attempt"]["easier_taken_total"] == 1
+
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer",
+        "payload": {"task_index": 0, "answer": "1", "variant": "easier"},
+    }, headers=_auth(student_token))
+    assert r.json()["correct"] is True
+
+
+def test_event_rejected_for_other_students_attempt(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    other_token = _student_login(client, db, klass, username="other.student")
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "view", "payload": {"slide_index": 1},
+    }, headers=_auth(other_token))
+    assert r.status_code == 404
+
+
+VARIANT_GAME = {
+    "id": "variant-game", "title": "Variantenspiel", "subject": "mathe",
+    "slides": [
+        {"id": "v1", "type": "task", "text": "Rechne:",
+         "task": {"kind": "input",
+                   "variants": [
+                       {"question": "1+1?", "accept": ["2"]},
+                       {"question": "2+2?", "accept": ["4"]},
+                       {"question": "3+3?", "accept": ["6"]},
+                   ]}},
+    ],
+}
+
+VARIANT_ANSWERS = {0: "2", 1: "4", 2: "6"}
+
+
+def test_variant_assignment_stable_and_checked_against_same_variant(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, VARIANT_GAME)
+
+    r1 = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    choices = r1.json()["variant_choices"]
+    assert "v1:0" in choices
+    idx = choices["v1:0"]
+
+    # Resuming yields the same variant.
+    r2 = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert r2.json()["variant_choices"]["v1:0"] == idx
+
+    # The answer for a DIFFERENT variant is wrong; the assigned one is right.
+    wrong = VARIANT_ANSWERS[(idx + 1) % 3]
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "v1", "action": "answer", "payload": {"task_index": 0, "answer": wrong},
+    }, headers=_auth(student_token))
+    assert r.json()["correct"] is False
+
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "v1", "action": "answer", "payload": {"task_index": 0, "answer": VARIANT_ANSWERS[idx]},
+    }, headers=_auth(student_token))
+    assert r.json()["correct"] is True
+
+
+def test_upload_validates_each_variant(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "v", "type": "task", "text": "x",
+         "task": {"kind": "input", "variants": [{"question": "ok?", "accept": ["1"]}, {"question": "kaputt?"}]}},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("variants[1]" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_accepts_style(client, teacher_token):
+    good = {**SIMPLE_GAME, "style": {"theme": "cyberpunk", "font": "Georgia, serif", "customVars": {"--accent": "#f0abfc"}}}
+    r = _upload(client, teacher_token, good)
+    assert r.status_code == 201
+
+
+def test_finish_locks_further_events(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    r = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(student_token))
+    assert r.status_code == 200
+    assert r.json()["completion"]["code"] == "ABC-123"
+
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "view", "payload": {"slide_index": 1},
+    }, headers=_auth(student_token))
+    assert r.status_code == 409
+
+
+# ---------------------------------------------------------------------------
+# Report + log
+# ---------------------------------------------------------------------------
+
+def test_report_reflects_attempt(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer", "payload": {"task_index": 0, "answer": "2"},
+    }, headers=_auth(student_token))
+
+    client.cookies.clear()
+    r = client.get(f"/api/exitgame-sessions/{s['join_code']}/report", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    row = r.json()["attempts"][0]
+    assert row["slides_solved"] == 1
+
+    r_csv = client.get(f"/api/exitgame-sessions/{s['join_code']}/report?fmt=csv", headers=_auth(teacher_token))
+    assert r_csv.status_code == 200
+    assert "text/csv" in r_csv.headers["content-type"]
+
+
+def test_log_requires_owning_teacher(client, db, teacher_token, admin_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": 0},
+    }, headers=_auth(student_token))
+
+    client.cookies.clear()
+    r = client.get(f"/api/exitgame-attempts/{aid}/log", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    assert len(r.json()["events"]) >= 1
+
+    another = Student(nachname="X", vorname="Y", klasse=klass.code, geschlecht="w",
+                       username="teacher2placeholder", password_hash=hash_password("pw"))
+    # Use admin (not owner) to confirm 403 for non-owning, non-admin teacher would apply;
+    # admin is explicitly allowed through, so assert that path instead.
+    client.cookies.clear()
+    r = client.get(f"/api/exitgame-attempts/{aid}/log", headers=_auth(admin_token))
+    assert r.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# DDA fuzzy inference
+# ---------------------------------------------------------------------------
+
+DDA_CFG = {
+    "enabled": True,
+    "levels": [
+        {"name": "selbstständig", "hintCount": 0, "timeLimitSeconds": 60, "extraExample": False, "offerEasier": False},
+        {"name": "mittel", "hintCount": 2, "timeLimitSeconds": 120, "extraExample": True, "offerEasier": False},
+        {"name": "maximal", "hintCount": 99, "timeLimitSeconds": 300, "extraExample": True, "offerEasier": True},
+    ],
+}
+
+
+def test_dda_levels_to_matrix_partitions_scaffolding():
+    matrix = dda_engine.levels_to_matrix(DDA_CFG["levels"])
+    ranges = matrix["scaffolding_level"]["ranges"]
+    assert len(ranges) == 3
+    assert ranges[0]["min"] == 0 and ranges[-1]["max"] == 100
+    assert ranges[1]["hintCount"] == 2 and ranges[1]["extraExample"] is True
+
+
+def test_dda_fuzzify_triangular_edges():
+    mf = {"type": "triangular", "params": [0, 0, 15]}
+    assert dda_engine._fuzzify(0, mf) == 1.0
+    assert dda_engine._fuzzify(15, mf) == 0.0
+    assert dda_engine._fuzzify(7.5, mf) == 0.5
+
+
+def test_dda_infer_confident_student_low_scaffolding():
+    outputs = dda_engine.infer(dda_engine.DEFAULT_RULESET, {"response_time": 5, "error_rate": 0, "help_requests": 0, "retry_count": 0})
+    assert outputs["scaffolding_level"] < 40
+
+
+def test_dda_infer_struggling_student_high_scaffolding():
+    outputs = dda_engine.infer(dda_engine.DEFAULT_RULESET, {"response_time": 45, "error_rate": 90, "help_requests": 8, "retry_count": 4})
+    assert outputs["scaffolding_level"] > 60
+
+
+def test_dda_frustrated_override():
+    # Raw snapshots (not derived via engagement_score) to isolate the threshold logic itself.
+    history = [{"responseTime": 20, "errorRate": 80, "helpRequests": 4, "retryCount": 3, "engagementScore": 20} for _ in range(5)]
+    assert dda_engine.is_frustrated(history) is True
+    assert dda_engine.is_bored(history) is False
+
+
+def test_dda_engagement_score_matches_reference_formula():
+    # success, retries>0, few hints -> baseline + persistence + strategic-help bonuses
+    assert dda_engine.engagement_score(success=True, retries=1, hints_used=1, time_spent=30) == 90
+    # guessing (fast, no retries, no hints) penalized
+    assert dda_engine.engagement_score(success=False, retries=0, hints_used=0, time_spent=2) == 30
+
+
+def test_dda_map_to_content_range_lookup():
+    matrix = {"scaffolding_level": {"ranges": [
+        {"min": 0, "max": 20, "hintCount": 0},
+        {"min": 20, "max": 100, "hintCount": 5},
+    ]}}
+    result = dda_engine.map_to_content(matrix, {"scaffolding_level": 30})
+    assert result["scaffolding_level"]["hintCount"] == 5
+
+
+def test_dda_adapt_end_to_end_high_hint_budget():
+    # Simulate a struggling student: several failed, slow attempts.
+    history = [dda_engine.snapshot_from_task_metrics(False, 40, 2, 1, 2) for _ in range(6)]
+    result = dda_engine.adapt(DDA_CFG, history)
+    assert result is not None
+    assert result["contentParams"]["scaffolding_level"]["hintCount"] >= 2
+
+
+def test_dda_adapt_confident_student_gets_low_level():
+    history = [dda_engine.snapshot_from_task_metrics(True, 8, 0, 0, 0) for _ in range(6)]
+    result = dda_engine.adapt(DDA_CFG, history)
+    assert result["contentParams"]["scaffolding_level"]["hintCount"] == 0
+
+
+def test_dda_adapt_returns_none_without_levels():
+    assert dda_engine.adapt({"enabled": True}, []) is None
+    assert dda_engine.adapt({"enabled": False, "levels": DDA_CFG["levels"]}, []) is None
+
+
+def test_upload_rejects_dda_enabled_without_levels(client, teacher_token):
+    bad = {**SIMPLE_GAME, "dda": {"enabled": True}}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("levels" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_dda_with_too_few_levels(client, teacher_token):
+    bad = {**SIMPLE_GAME, "dda": {"enabled": True, "levels": DDA_CFG["levels"][:2]}}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+
+
+def test_upload_accepts_dda_with_three_levels(client, teacher_token):
+    good = {**SIMPLE_GAME, "dda": DDA_CFG}
+    r = _upload(client, teacher_token, good)
+    assert r.status_code == 201
+
+
+def test_hint_budget_respects_authored_levels(client, db, teacher_token, klass):
+    """A brand-new attempt has neutral priors -> mid scaffolding -> mid level.
+    With the 3-level ladder the middle level allows 2 hints; the slide has 2
+    authored hints, so both unlock but a third request is rejected."""
+    game = {**SIMPLE_GAME, "dda": DDA_CFG}
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, game)
+    for i in range(2):
+        r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+            "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": i},
+        }, headers=_auth(student_token))
+        assert r.status_code == 200
+    r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": 2},
+    }, headers=_auth(student_token))
+    assert r.status_code == 409

@@ -39,8 +39,8 @@ def test_create_admin_logs_the_new_admin_in(client):
     token = r.json()["access_token"]
 
     # Token should grant access to protected endpoints
-    classes = client.get("/api/classes")
-    assert classes.status_code == 200  # classes are public, but a real protected call works too
+    classes = client.get("/api/classes", headers={"Authorization": f"Bearer {token}"})
+    assert classes.status_code == 200
 
 
 def test_create_admin_is_blocked_once_an_admin_exists(client, db):

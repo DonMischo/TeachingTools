@@ -11,7 +11,7 @@ Extended WebSocket session tests covering features added after the initial test 
 import asyncio
 import pytest
 
-from api.tests.ws_test_helper import connect_ws
+from api.tests.ws_test_helper import bearer_headers, connect_ws
 import api.routers.capuths as quiz_router
 from api.database import get_db
 from api.main import app
@@ -28,17 +28,27 @@ from api.models import (
 @pytest.fixture(autouse=True)
 def clear_ws_state():
     quiz_router._phases.clear()
-    quiz_router.mgr._rooms.clear()
+    quiz_router.mgr.clear()
     quiz_router._empty_since.clear()
     yield
     quiz_router._phases.clear()
-    quiz_router.mgr._rooms.clear()
+    quiz_router.mgr.clear()
     quiz_router._empty_since.clear()
 
 
 # ---------------------------------------------------------------------------
 # Helpers shared with existing test file
 # ---------------------------------------------------------------------------
+
+# Teacher WS connections must carry a verified identity (see test_quiz_session.py).
+_TEACHER_HEADERS: list[tuple[bytes, bytes]] = []
+
+
+@pytest.fixture(autouse=True)
+def _ws_teacher_auth(teacher):
+    global _TEACHER_HEADERS
+    _TEACHER_HEADERS = bearer_headers(teacher.id)
+
 
 def _scope(code: str, role: str = "student", participant_id: int = 0) -> dict:
     qs = b"role=teacher" if role == "teacher" else f"role=student&participant_id={participant_id}".encode()
@@ -49,7 +59,7 @@ def _scope(code: str, role: str = "student", participant_id: int = 0) -> dict:
         "root_path": "",
         "scheme": "ws",
         "query_string": qs,
-        "headers": [],
+        "headers": _TEACHER_HEADERS if role == "teacher" else [],
         "client": ("127.0.0.1", 1234),
         "server": ("127.0.0.1", 8000),
         "subprotocols": [],
@@ -712,7 +722,7 @@ class TestAnswerRandomization:
             db.flush()
 
             quiz_router._phases.clear()
-            quiz_router.mgr._rooms.clear()
+            quiz_router.mgr.clear()
 
             order_seen: tuple = ()
 
@@ -742,6 +752,11 @@ class TestAnswerRandomization:
         seen_orders: set[tuple] = set()
         for _ in range(20):
             quiz_router._phases.pop("SORT01", None)
+            # Reset the session so "start" works again on each iteration
+            sort_session.status = "waiting"
+            sort_session.current_question_idx = 0
+            db.query(QuizResponse).filter_by(session_id=sort_session.id).delete()
+            db.flush()
 
             async def run():
                 async with connect_ws(app, _scope("SORT01", role="teacher")) as tw:

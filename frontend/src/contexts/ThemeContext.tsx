@@ -5,6 +5,7 @@ import { LS_COLOR, LS_ICON } from "@/lib/theme";
 
 export interface StyleManifest {
   logo: string | null;
+  favicon: string | null;
   icons: string[];       // list of nav keys that have custom SVGs
   theme: Record<string, string>;  // CSS var overrides, e.g. { accent: "#ff0000" }
 }
@@ -18,7 +19,7 @@ interface ThemeCtx {
   reloadStyle: () => void;
 }
 
-const DEFAULT_STYLE: StyleManifest = { logo: null, icons: [], theme: {} };
+const DEFAULT_STYLE: StyleManifest = { logo: null, favicon: null, icons: [], theme: {} };
 
 const Ctx = createContext<ThemeCtx>({
   colorTheme: "default",
@@ -68,6 +69,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setStyle(m);
       if (m.theme && Object.keys(m.theme).length > 0) {
         applyCustomColors(m.theme);
+      }
+      if (m.favicon) {
+        let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
+        }
+        link.href = m.favicon + "?v=" + Date.now();
       }
     });
   }, []);

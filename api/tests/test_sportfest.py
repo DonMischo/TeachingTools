@@ -37,8 +37,10 @@ def student_female(db) -> Student:
 # Disciplines
 # ---------------------------------------------------------------------------
 
-def test_list_disciplines_public(client, disciplines):
-    r = client.get("/api/sportfest/disciplines")
+def test_list_disciplines_requires_login(client, disciplines, teacher_token):
+    client.cookies.clear()  # teacher_token login leaves a session cookie behind
+    assert client.get("/api/sportfest/disciplines").status_code == 401
+    r = client.get("/api/sportfest/disciplines", headers={"Authorization": f"Bearer {teacher_token}"})
     assert r.status_code == 200
     assert len(r.json()) == 4
 

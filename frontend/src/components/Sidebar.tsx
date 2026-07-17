@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, ClassOut, TransactionOut } from "@/lib/api";
+import { api, ClassOut, TransactionOut, StudentGroupOut, GroupType } from "@/lib/api";
 import { useSelectedClass } from "@/contexts/SelectedClassContext";
 import { NavIcon } from "@/components/icons/NavIcon";
 import { AppLogo } from "@/components/AppLogo";
@@ -15,8 +15,8 @@ import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",      href: "/" },
   { tab: "games",          label: "Spiele",         href: "/games" },
-  { tab: "sportundspiele", label: "Sport & Spiele", href: "/sportundspiele" },
   { tab: "tools",          label: "Tools",          href: "/tools" },
+  { tab: "kalender",       label: "Kalender",       href: "/kalender" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
@@ -30,6 +30,81 @@ const POINTS_GUIDE = [
   { pts: 250, label: "Ganze Klasse – Teamarbeit",detail: "Außergewöhnliche Zusammenarbeit oder Klassensieg bei einer Aktivität." },
   { pts: 500, label: "Turnier- / Wettbewerbssieg", detail: "Klasse gewinnt ein schulweites Turnier oder einen Wettbewerb." },
 ];
+
+const GROUP_TABS: { type: GroupType; label: string; icon: string }[] = [
+  { type: "kurs", label: "Kurse", icon: "📘" },
+  { type: "wahlpflicht", label: "Wahlpflicht", icon: "🎨" },
+  { type: "ab_gruppe", label: "Gruppen", icon: "🔀" },
+];
+
+function GroupAwardSection({ type, label, icon }: { type: GroupType; label: string; icon: string }) {
+  const [open, setOpen] = useState(false);
+  const [activeId, setActiveId] = useState<number | null>(null);
+  const [amt, setAmt] = useState("");
+  const qc = useQueryClient();
+
+  const { data: groups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", type],
+    queryFn: () => api.groups.list({ group_type: type }),
+    enabled: open,
+    staleTime: 15_000,
+  });
+
+  const awardMut = useMutation({
+    mutationFn: ({ id, points }: { id: number; points: number }) => api.groups.award(id, points),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["classes"] });
+      setActiveId(null);
+      setAmt("");
+    },
+  });
+
+  return (
+    <div className="border-t border-[var(--border)]">
+      <button onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors">
+        {icon} {label} {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <ul className="divide-y divide-[var(--border)]">
+          {groups.length === 0 ? (
+            <li className="px-4 py-2 text-xs text-[var(--text-muted)]">Keine {label}.</li>
+          ) : groups.map(g => (
+            <li key={g.id} className="px-4 py-2">
+              <button
+                onClick={() => { setActiveId(activeId === g.id ? null : g.id); setAmt(""); }}
+                className="w-full flex items-center justify-between text-sm"
+              >
+                <span>{g.name}</span>
+                <span className="text-xs text-[var(--text-muted)]">{g.member_ids.length} Sch. · {g.member_class_ids.length} Kl.</span>
+              </button>
+              {activeId === g.id && (
+                <div className="flex items-center gap-1 mt-2">
+                  {QUICK.map(q => (
+                    <button key={q} onClick={() => setAmt(String(q))}
+                      className="text-xs px-2 py-1 rounded border border-[var(--border)] hover:border-[var(--accent)]">+{q}</button>
+                  ))}
+                  <input
+                    type="number"
+                    value={amt}
+                    onChange={e => setAmt(e.target.value)}
+                    placeholder="Pkt"
+                    className="input text-xs py-1 w-16"
+                  />
+                  <button
+                    disabled={!amt || parseInt(amt) === 0 || awardMut.isPending}
+                    onClick={() => awardMut.mutate({ id: g.id, points: parseInt(amt) })}
+                    className="btn-primary text-xs py-1 px-2 disabled:opacity-40"
+                  >✓</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function ClassIcon({ cls, size }: { cls: ClassOut; size: string }) {
   if (cls.symbol_image) {
@@ -58,10 +133,10 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
   useEffect(() => { setPanelOpen(pointsOpen); }, [pointsOpen, setPanelOpen]);
   const [amt, setAmt] = useState("");
   const [reason, setReason] = useState("");
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
   const [showLog, setShowLog] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [classesOpen, setClassesOpen] = useState(true);
+  const [awardTarget, setAwardTarget] = useState<{ groupId: number; name: string } | null>(null);
 
   const qc = useQueryClient();
 
@@ -81,15 +156,32 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
       setLoginOpen(false);
       setAmt("");
       setReason("");
-      setEditingName(false);
       setShowLog(false);
       setShowGuide(false);
+      setAwardTarget(null);
     }
   }, [selectedClass?.id]);
+
+  const { data: abGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "ab_gruppe", selectedClass?.id],
+    queryFn: () => api.groups.list({ group_type: "ab_gruppe", class_id: selectedClass!.id }),
+    enabled: pointsOpen && !!selectedClass,
+    staleTime: 15_000,
+  });
 
   const txMut = useMutation({
     mutationFn: (v: { class_id: number; points: number }) =>
       api.transactions.create({ teacher_id: auth!.teacher!.id, reason, ...v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["haeuser"] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
+      setAmt("");
+      setReason("");
+    },
+  });
+
+  const groupAwardMut = useMutation({
+    mutationFn: (v: { id: number; points: number }) => api.groups.award(v.id, v.points, reason || undefined),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["haeuser"] });
       qc.invalidateQueries({ queryKey: ["classes"] });
@@ -114,18 +206,13 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
     },
   });
 
-  const nameMut = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string | null }) =>
-      api.classes.updateClassName(id, name),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["classes"] });
-      setEditingName(false);
-    },
-  });
-
   function award(classId: number, points: number) {
     if (!auth) return;
-    txMut.mutate({ class_id: classId, points });
+    if (awardTarget) {
+      groupAwardMut.mutate({ id: awardTarget.groupId, points });
+    } else {
+      txMut.mutate({ class_id: classId, points });
+    }
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -227,7 +314,14 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
             <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)] bg-[var(--bg)]">
               <ClassIcon cls={selectedClass} size="3rem" />
               <div className="flex-1 min-w-0">
-                <div className="font-bold">{selectedClass.code}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">{selectedClass.code}</span>
+                  <button
+                    onClick={() => setShowLog(v => !v)}
+                    className={`text-xs px-2 py-0.5 rounded border transition-colors ${showLog ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"}`}
+                    title="Punkte-Log anzeigen"
+                  >📋</button>
+                </div>
                 {selectedClass.class_name && (
                   <div className="text-xs text-[var(--text-muted)]">„{selectedClass.class_name}"</div>
                 )}
@@ -242,48 +336,23 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
               >✕</button>
             </div>
 
-            {/* Name editing */}
-            <div className="px-4 py-3 border-b border-[var(--border)]">
-              {editingName ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    className="input text-xs py-1 flex-1 min-w-0"
-                    placeholder="Klassenname (z. B. Otter)"
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") nameMut.mutate({ id: selectedClass.id, name: nameInput || null });
-                      if (e.key === "Escape") setEditingName(false);
-                    }}
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => nameMut.mutate({ id: selectedClass.id, name: nameInput || null })}
-                    disabled={nameMut.isPending}
-                    className="w-6 h-6 flex items-center justify-center rounded bg-[var(--accent)] text-[var(--accent-text,#111)] text-xs shrink-0"
-                  >✓</button>
-                  <button onClick={() => setEditingName(false)}
-                    className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] text-xs shrink-0">✕</button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setNameInput(selectedClass.class_name ?? ""); setEditingName(true); }}
-                    className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-1 flex-1"
-                  >
-                    ✏️ {selectedClass.class_name ? `„${selectedClass.class_name}" ändern` : "Klassenname festlegen"}
-                  </button>
-                  <button
-                    onClick={() => setShowLog(v => !v)}
-                    className={`text-xs px-2 py-0.5 rounded border transition-colors ${showLog ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"}`}
-                    title="Punkte-Log anzeigen"
-                  >📋</button>
-                </div>
-              )}
-            </div>
-
             {/* Award form */}
             <div className="flex flex-col gap-3 px-4 py-4">
+              {abGroups.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-[var(--text-muted)] mr-0.5">Ziel:</span>
+                  <button onClick={() => setAwardTarget(null)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      !awardTarget ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+                    }`}>Alle</button>
+                  {abGroups.map(g => (
+                    <button key={g.id} onClick={() => setAwardTarget({ groupId: g.id, name: g.name })}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        awardTarget?.groupId === g.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+                      }`}>{g.name}</button>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <div className="grid grid-cols-5 gap-1">
                   {QUICK.map(q => (
@@ -312,11 +381,11 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
                 onChange={e => setReason(e.target.value)}
               />
               <button
-                disabled={!amt || parseInt(amt) === 0 || txMut.isPending}
+                disabled={!amt || parseInt(amt) === 0 || txMut.isPending || groupAwardMut.isPending}
                 onClick={() => award(selectedClass.id, parseInt(amt))}
                 className="btn-primary text-sm py-2 disabled:opacity-40"
               >
-                {txMut.isPending ? "…" : `+${amt || "?"} Punkte für ${selectedClass.code}`}
+                {(txMut.isPending || groupAwardMut.isPending) ? "…" : `+${amt || "?"} Punkte für ${awardTarget ? `Gruppe ${awardTarget.name}` : selectedClass.code}`}
               </button>
             </div>
 
@@ -331,11 +400,14 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
                     .map(cls => (
                       <li key={cls.id}>
                         <button
-                          onClick={() => { setSelectedClass(cls); setAmt(""); setReason(""); setEditingName(false); }}
+                          onClick={() => { setSelectedClass(cls); setAmt(""); setReason(""); }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors text-left"
                         >
                           <ClassIcon cls={cls} size="1.25rem" />
-                          <span className="flex-1 text-sm font-medium">{cls.code}</span>
+                          <span className="flex-1 text-sm font-medium truncate">
+                            {cls.code}
+                            {cls.class_name && <span className="ml-1 text-[var(--text-muted)] font-normal">„{cls.class_name}"</span>}
+                          </span>
                           <span className="text-xs text-[var(--text-muted)]">{cls.total_points} Pkt</span>
                         </button>
                       </li>
@@ -347,25 +419,36 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
         ) : (
           /* ── No class selected: class list ── */
           <div className="flex-1 overflow-y-auto">
-            <p className="px-4 py-3 text-xs text-[var(--text-muted)]">Klasse auswählen:</p>
-            {classes.length === 0 ? (
-              <p className="px-4 text-sm text-[var(--text-muted)]">Keine Klassen vorhanden.</p>
-            ) : (
-              <ul className="divide-y divide-[var(--border)]">
-                {[...classes].sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code)).map(cls => (
-                  <li key={cls.id}>
-                    <button
-                      onClick={() => setSelectedClass(cls)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-hover)] transition-colors text-left"
-                    >
-                      <ClassIcon cls={cls} size="1.25rem" />
-                      <span className="flex-1 font-semibold text-sm">{cls.code}</span>
-                      <span className="text-xs text-[var(--text-muted)]">{cls.total_points} Pkt</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <button onClick={() => setClassesOpen(v => !v)}
+              className="w-full flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)] transition-colors">
+              🏫 Klassen {classesOpen ? "▲" : "▼"}
+            </button>
+            {classesOpen && (
+              classes.length === 0 ? (
+                <p className="px-4 pb-3 text-sm text-[var(--text-muted)]">Keine Klassen vorhanden.</p>
+              ) : (
+                <ul className="divide-y divide-[var(--border)]">
+                  {[...classes].sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code)).map(cls => (
+                    <li key={cls.id}>
+                      <button
+                        onClick={() => setSelectedClass(cls)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-hover)] transition-colors text-left"
+                      >
+                        <ClassIcon cls={cls} size="1.25rem" />
+                        <span className="flex-1 font-semibold text-sm truncate">
+                          {cls.code}
+                          {cls.class_name && <span className="ml-1 text-[var(--text-muted)] font-normal">„{cls.class_name}"</span>}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">{cls.total_points} Pkt</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
             )}
+            {GROUP_TABS.map(t => (
+              <GroupAwardSection key={t.type} type={t.type} label={t.label} icon={t.icon} />
+            ))}
           </div>
         )}
       </aside>

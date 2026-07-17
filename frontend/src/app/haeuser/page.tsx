@@ -3,10 +3,163 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut } from "@/lib/api";
+import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut, TransactionOut, StudentGroupOut, GroupType } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSelectedClass } from "@/contexts/SelectedClassContext";
+import { useToast } from "@/contexts/ToastContext";
 import { HaeuserDiagram } from "@/components/HaeuserDiagram";
+
+const ALLOWED_IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_IMG_DIM = 1024;
+
+async function validateClassImage(file: File): Promise<string | null> {
+  if (!ALLOWED_IMG_TYPES.includes(file.type)) return "Nur PNG, JPG und WEBP erlaubt.";
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img.width > MAX_IMG_DIM || img.height > MAX_IMG_DIM
+        ? `Zu groß (${img.width}×${img.height} px). Max. ${MAX_IMG_DIM}×${MAX_IMG_DIM} px.` : null);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve("Bild konnte nicht gelesen werden."); };
+    img.src = url;
+  });
+}
+
+// Klassenstufe aus Code wie "9a", "10b" ableiten
+function gradeOf(code: string): number | null {
+  const m = code.match(/^(\d{1,2})/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+const KURS_PRESETS = ["Kurs I", "Kurs II", "Kurs III"];
+const WAHLPFLICHT_PRESETS = ["DuG", "NaT", "Fr", "Span"];
+
+/** Kurs/Wahlpflicht level colors: I=rot, II=blau, III=grün (see legend). */
+function kursLevel(name: string): "I" | "II" | "III" | null {
+  const m = name.trim().match(/\b(III|II|I)$/);
+  return (m?.[1] as "I" | "II" | "III") ?? null;
+}
+
+function kursBadgeClasses(name: string): string {
+  switch (kursLevel(name)) {
+    case "I":   return "bg-red-500/10 text-red-400 border-red-500/20";
+    case "II":  return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+    case "III": return "bg-green-500/10 text-green-400 border-green-500/20";
+    default:    return "bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)]";
+  }
+}
+const AB_PRESETS = ["A", "B"];
+
+function GroupTabSection({
+  groupType, cls, students, presetNames,
+}: {
+  groupType: GroupType;
+  cls: ClassOut;
+  students: StudentOut[];
+  presetNames: string[];
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const scopedToClass = groupType === "ab_gruppe";
+  const listKey = ["groups", groupType, scopedToClass ? cls.id : "all"];
+
+  const { data: groups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: listKey,
+    queryFn: () => api.groups.list(scopedToClass ? { group_type: groupType, class_id: cls.id } : { group_type: groupType }),
+    staleTime: 15_000,
+  });
+
+  const createMut = useMutation({
+    mutationFn: (name: string) => api.groups.create({ group_type: groupType, name, class_id: scopedToClass ? cls.id : null }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: listKey }),
+    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: ({ groupId, studentId, member }: { groupId: number; studentId: number; member: boolean }) =>
+      member ? api.groups.removeMember(groupId, studentId) : api.groups.addMember(groupId, studentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: listKey }),
+    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+  });
+
+  const missingPresets = presetNames.filter(p => !groups.some(g => g.name === p));
+
+  return (
+    <div className="flex flex-col gap-2">
+      {groups.length === 0 && (
+        <p className="text-xs text-[var(--text-muted)]">Noch keine Gruppen.</p>
+      )}
+      {groups.map(g => (
+        <div key={g.id} className="rounded-lg border border-[var(--border)] p-2">
+          <div className="text-xs font-semibold mb-1">{g.name} <span className="text-[var(--text-muted)] font-normal">({g.member_ids.length})</span></div>
+          <div className="flex flex-wrap gap-1">
+            {students.map(s => {
+              const member = g.member_ids.includes(s.id);
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => toggleMut.mutate({ groupId: g.id, studentId: s.id, member })}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    member
+                      ? "bg-[var(--accent)]/15 border-[var(--accent)]/30 text-[var(--accent)]"
+                      : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
+                  }`}
+                >
+                  {s.vorname} {s.nachname[0]}.
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {missingPresets.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {missingPresets.map(p => (
+            <button
+              key={p}
+              onClick={() => createMut.mutate(p)}
+              disabled={createMut.isPending}
+              className="text-xs px-2 py-1 rounded-lg border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >+ {p}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupsManager({ cls, students }: { cls: ClassOut; students: StudentOut[] }) {
+  const grade = gradeOf(cls.code);
+  const showKurs = grade !== null && grade >= 9 && grade <= 10;
+  const showWahlpflicht = grade !== null && grade >= 7;
+  const tabs: { key: GroupType; label: string; presets: string[] }[] = [
+    ...(showKurs ? [{ key: "kurs" as GroupType, label: "Kurse", presets: KURS_PRESETS }] : []),
+    ...(showWahlpflicht ? [{ key: "wahlpflicht" as GroupType, label: "Wahlpflicht", presets: WAHLPFLICHT_PRESETS }] : []),
+    { key: "ab_gruppe" as GroupType, label: "Gruppen A/B", presets: AB_PRESETS },
+  ];
+  const [tab, setTab] = useState<GroupType>(tabs[0].key);
+  const active = tabs.find(t => t.key === tab) ?? tabs[0];
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-1">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
+              tab === t.key
+                ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]"
+                : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
+            }`}
+          >{t.label}</button>
+        ))}
+      </div>
+      <GroupTabSection groupType={active.key} cls={cls} students={students} presetNames={active.presets} />
+    </div>
+  );
+}
 
 function ClassIcon({ cls }: { cls: ClassOut }) {
   if (cls.symbol_image) {
@@ -564,7 +717,7 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
 
 // ─── Class Detail Dialog ──────────────────────────────────────────────────────
 
-const CLASS_ROLES = ["Klassensprecher", "Schülersprecher", "Haussprecher"];
+const CLASS_ROLES = ["Klassensprecher", "Stellvertretender Klassensprecher", "Schülersprecher", "Haussprecher"];
 const COMPLETION_DAYS = 4;
 
 function StudentChorePopover({
@@ -717,15 +870,34 @@ function ChoreSelector({
   );
 }
 
+type KlassenlisteFilter = "rollen" | "gruppen" | "dienste";
+const KLASSENLISTE_FILTERS: { key: KlassenlisteFilter; label: string }[] = [
+  { key: "rollen", label: "👑 Rollen" },
+  { key: "gruppen", label: "🧩 Gruppen" },
+  { key: "dienste", label: "🧹 Dienste" },
+];
+
 function KlassenlisteSection({
-  students, roles, chores, choreStats,
+  students, roles, chores, choreStats, groups,
 }: {
   students: StudentOut[];
   roles: StudentRoleOut[];
   chores: ClassChoreOut[];
   choreStats: import("@/lib/api").ClassChoreStats;
+  groups: StudentGroupOut[];
 }) {
   const [checked, setChecked] = useState<Set<number>>(new Set());
+  const [activeFilters, setActiveFilters] = useState<Set<KlassenlisteFilter>>(
+    new Set(["rollen", "gruppen", "dienste"])
+  );
+
+  function toggleFilter(f: KlassenlisteFilter) {
+    setActiveFilters(prev => {
+      const next = new Set(prev);
+      next.has(f) ? next.delete(f) : next.add(f);
+      return next;
+    });
+  }
 
   const sorted = [...students].sort(
     (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
@@ -737,6 +909,31 @@ function KlassenlisteSection({
 
   return (
     <div className="flex flex-col gap-0">
+      {/* Filter row */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {KLASSENLISTE_FILTERS.map(f => (
+          <button
+            key={f.key}
+            onClick={() => toggleFilter(f.key)}
+            className="text-xs px-2.5 py-1 rounded-full border transition-colors"
+            style={
+              activeFilters.has(f.key)
+                ? { background: "var(--accent)22", color: "var(--accent)", borderColor: "var(--accent)" }
+                : { color: "var(--text-muted)", borderColor: "var(--border)" }
+            }
+          >
+            {f.label}
+          </button>
+        ))}
+        {activeFilters.has("gruppen") && (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] ml-1">
+            <span className="px-1.5 py-0.5 rounded-md border bg-red-500/10 text-red-400 border-red-500/20">Kurs I</span>
+            <span className="px-1.5 py-0.5 rounded-md border bg-blue-500/10 text-blue-400 border-blue-500/20">Kurs II</span>
+            <span className="px-1.5 py-0.5 rounded-md border bg-green-500/10 text-green-400 border-green-500/20">Kurs III</span>
+          </span>
+        )}
+      </div>
+
       {/* Reset row */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-[var(--text-muted)]">{checked.size > 0 ? `${checked.size} markiert` : ""}</span>
@@ -754,11 +951,12 @@ function KlassenlisteSection({
         {sorted.map(s => {
           const studentRoles = roles.filter(r => r.student_id === s.id);
           const studentChores = chores.filter(c => c.enabled && c.student_id === s.id);
+          const studentGroups = groups.filter(g => g.member_ids.includes(s.id));
           const studentStats = choreStats[s.id] ?? {};
           const isChecked = checked.has(s.id);
 
           return (
-            <label key={s.id} className="flex items-center gap-3 py-2.5 cursor-pointer group">
+            <label key={s.id} className="flex items-center gap-3 py-2.5 cursor-pointer group flex-wrap">
               <input
                 type="checkbox"
                 checked={isChecked}
@@ -773,13 +971,19 @@ function KlassenlisteSection({
                 {s.nachname}, {s.vorname}
               </span>
               {/* Roles in accent */}
-              {studentRoles.map(r => (
+              {activeFilters.has("rollen") && studentRoles.map(r => (
                 <span key={r.id} className="text-xs px-1.5 py-0.5 rounded-md shrink-0" style={{ background: "var(--accent)22", color: "var(--accent)" }}>
                   {r.role_type}
                 </span>
               ))}
+              {/* Groups (Kurse/Wahlpflicht/A-B) — Kursstufe color-coded */}
+              {activeFilters.has("gruppen") && studentGroups.map(g => (
+                <span key={g.id} className={`text-xs px-1.5 py-0.5 rounded-md shrink-0 border ${kursBadgeClasses(g.name)}`}>
+                  {g.name}
+                </span>
+              ))}
               {/* Chores in muted */}
-              {studentChores.map(c => {
+              {activeFilters.has("dienste") && studentChores.map(c => {
                 const days = c.assigned_at
                   ? Math.floor((Date.now() - new Date(c.assigned_at).getTime()) / 86_400_000)
                   : 0;
@@ -790,7 +994,7 @@ function KlassenlisteSection({
                 );
               })}
               <span className="flex-1" />
-              {Object.keys(studentStats).length > 0 && (
+              {activeFilters.has("dienste") && Object.keys(studentStats).length > 0 && (
                 <StudentChorePopover student={s} stats={studentStats} chores={chores} />
               )}
             </label>
@@ -940,9 +1144,129 @@ function TrackingSection({
   );
 }
 
+function EinstellungenSection({ cls }: { cls: ClassOut }) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState("");
+  const [aliasInput, setAliasInput] = useState(cls.class_name ?? "");
+  const [editingAlias, setEditingAlias] = useState(false);
+  const [showLog, setShowLog] = useState(false);
+
+  const logQuery = useQuery<TransactionOut[]>({
+    queryKey: ["transactions", cls.id],
+    queryFn: () => api.transactions.list(cls.id),
+    enabled: showLog,
+    staleTime: 30_000,
+  });
+
+  const uploadMut = useMutation({
+    mutationFn: (file: File) => api.classes.uploadSymbolImage(cls.id, file),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["classes"] }); setUploadError(""); },
+    onError: () => setUploadError("Upload fehlgeschlagen."),
+  });
+
+  const nameMut = useMutation({
+    mutationFn: (name: string | null) => api.classes.updateClassName(cls.id, name),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["classes"] }); setEditingAlias(false); },
+  });
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploadError("");
+    const err = await validateClassImage(file);
+    if (err) { setUploadError(err); return; }
+    uploadMut.mutate(file);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Image upload */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploadMut.isPending}
+          className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+        >
+          {uploadMut.isPending ? "Lade hoch…" : "🖼 Bild hochladen"}
+        </button>
+        {uploadError && <span className="text-xs text-red-400">{uploadError}</span>}
+      </div>
+      <input ref={fileRef} type="file"
+        accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+        className="hidden" onChange={handleFileChange} />
+
+      {/* Alias */}
+      {editingAlias ? (
+        <div className="flex items-center gap-2">
+          <input
+            className="input text-xs py-1 flex-1"
+            placeholder="Klassenname (z. B. Otter)"
+            value={aliasInput}
+            onChange={e => setAliasInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") nameMut.mutate(aliasInput || null);
+              if (e.key === "Escape") setEditingAlias(false);
+            }}
+            autoFocus
+          />
+          <button
+            onClick={() => nameMut.mutate(aliasInput || null)}
+            disabled={nameMut.isPending}
+            className="btn-primary text-xs py-1 px-2"
+          >✓</button>
+          <button onClick={() => setEditingAlias(false)} className="text-[var(--text-muted)] text-xs">✕</button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setAliasInput(cls.class_name ?? ""); setEditingAlias(true); }}
+          className="self-start text-xs text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-1"
+        >
+          ✏️ {cls.class_name ? `„${cls.class_name}" ändern` : "Klassenname festlegen"}
+        </button>
+      )}
+
+      {/* Log */}
+      <button
+        onClick={() => setShowLog(v => !v)}
+        className="self-start text-xs text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-1"
+      >
+        📋 {showLog ? "Punkte-Log ausblenden" : "Punkte-Log anzeigen"}
+      </button>
+      {showLog && (
+        <div className="rounded-lg border border-[var(--border)] overflow-hidden text-xs max-h-60 overflow-y-auto">
+          {logQuery.isLoading ? (
+            <div className="p-3 text-[var(--text-muted)]">Laden…</div>
+          ) : !logQuery.data?.length ? (
+            <div className="p-3 text-[var(--text-muted)]">Keine Einträge.</div>
+          ) : (
+            <table className="w-full border-collapse">
+              <tbody>
+                {logQuery.data.map(tx => (
+                  <tr key={tx.id} className="border-b border-[var(--border)]/50 last:border-0">
+                    <td className="py-1.5 px-2 text-[var(--text-muted)] whitespace-nowrap">
+                      {new Date(tx.ts).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                    </td>
+                    <td className={`py-1.5 px-2 font-mono font-bold whitespace-nowrap ${tx.points >= 0 ? "text-green-400" : "text-red-400"}`}>
+                      {tx.points > 0 ? "+" : ""}{tx.points}
+                    </td>
+                    <td className="py-1.5 px-2 text-[var(--text-muted)] truncate max-w-[12rem]">{tx.reason ?? "–"}</td>
+                    <td className="py-1.5 px-2 text-[var(--text-muted)] whitespace-nowrap">{tx.teacher_name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
-  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking">("schüler");
+  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "einstellungen">("schüler");
   const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
@@ -971,6 +1295,23 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
     queryFn: () => api.chores.allNames(),
     staleTime: 30_000,
   });
+
+  const { data: kursGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "kurs"],
+    queryFn: () => api.groups.list({ group_type: "kurs" }),
+  });
+
+  const { data: wahlpflichtGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "wahlpflicht"],
+    queryFn: () => api.groups.list({ group_type: "wahlpflicht" }),
+  });
+
+  const { data: abGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "ab_gruppe", cls.id],
+    queryFn: () => api.groups.list({ group_type: "ab_gruppe", class_id: cls.id }),
+  });
+
+  const allGroups = [...kursGroups, ...wahlpflichtGroups, ...abGroups];
 
   const assignRole = useMutation({
     mutationFn: ({ role_type, student_id }: { role_type: string; student_id: number | null }) =>
@@ -1035,7 +1376,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:max-w-xl max-h-[85dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+      <div className="relative w-full sm:max-w-3xl max-h-[92dvh] sm:max-h-none sm:aspect-[4/3] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
           <ClassIcon cls={cls} />
@@ -1048,7 +1389,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] shrink-0">
-          {(["schüler", "rollen", "dienste", "tracking"] as const).map(s => (
+          {(["schüler", "rollen", "gruppen", "dienste", "tracking", "einstellungen"] as const).map(s => (
             <button
               key={s}
               onClick={() => setSection(s)}
@@ -1058,7 +1399,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
               }}
             >
-              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "dienste" ? "🧹 Dienste" : "📋 Tracking"}
+              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "gruppen" ? "🧩 Gruppen" : s === "dienste" ? "🧹 Dienste" : s === "tracking" ? "📋 Tracking" : "⚙️ Einstellungen"}
             </button>
           ))}
         </div>
@@ -1073,6 +1414,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
               roles={roles}
               chores={chores}
               choreStats={choreStats}
+              groups={allGroups}
             />
           )}
 
@@ -1184,6 +1526,16 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
           {section === "tracking" && (
             <TrackingSection cls={cls} students={students} />
           )}
+
+          {/* ── Gruppen (Kurse / Wahlpflicht / A-B) ── */}
+          {section === "gruppen" && (
+            <GroupsManager cls={cls} students={students} />
+          )}
+
+          {/* ── Einstellungen ── */}
+          {section === "einstellungen" && (
+            <EinstellungenSection cls={cls} />
+          )}
         </div>
       </div>
     </div>
@@ -1195,7 +1547,6 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 export default function HaeuserPage() {
   const { auth } = useAuth();
   const router = useRouter();
-  const { selectedClass, setSelectedClass } = useSelectedClass();
   const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
   const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
@@ -1273,11 +1624,7 @@ export default function HaeuserPage() {
       {tab === "klassen" && (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-[var(--text-muted)]">
-            {classes.length} Klassen
-            {selectedClass && (
-              <> · <span style={{ color: "var(--accent)" }}>{selectedClass.code} ausgewählt</span></>
-            )}
-            {!selectedClass && " · Klasse auswählen für Punkte vergeben"}
+            {classes.length} Klassen · Klasse anklicken zum Konfigurieren
           </p>
           {cLoading ? (
             <div className="text-[var(--text-muted)] text-sm">Laden…</div>
@@ -1290,18 +1637,12 @@ export default function HaeuserPage() {
               {[...classes]
                 .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
                 .map(cls => (
-                  <div
+                  <button
                     key={cls.id}
-                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all"
-                    style={{
-                      borderColor: selectedClass?.id === cls.id ? "var(--accent)" : "var(--border)",
-                      boxShadow: selectedClass?.id === cls.id ? "0 0 0 2px var(--accent)33" : undefined,
-                    }}
+                    onClick={() => setDetailClass(cls)}
+                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
+                    style={{ borderColor: "var(--border)" }}
                   >
-                    <button
-                      className="flex items-center gap-4 flex-1 min-w-0 text-left hover:opacity-80"
-                      onClick={() => setSelectedClass(selectedClass?.id === cls.id ? null : cls)}
-                    >
                     <ClassIcon cls={cls} />
                     <div className="flex-1 min-w-0">
                       <div className="font-bold truncate">
@@ -1322,15 +1663,7 @@ export default function HaeuserPage() {
                       </div>
                       <div className="text-xs text-[var(--text-muted)]">Pkt</div>
                     </div>
-                    </button>
-                    <button
-                      onClick={() => setDetailClass(cls)}
-                      className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text)] p-1 rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
-                      title="Klasse konfigurieren"
-                    >
-                      ⚙️
-                    </button>
-                  </div>
+                  </button>
                 ))}
             </div>
           )}

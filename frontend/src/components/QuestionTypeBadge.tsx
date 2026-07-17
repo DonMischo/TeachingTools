@@ -1,6 +1,6 @@
 // Icons and labels for each quiz question type.
 
-type QuestionType = "single" | "multi" | "true_false" | "survey" | "sort" | "umrechnung";
+type QuestionType = "single" | "multi" | "true_false" | "survey" | "sort" | "umrechnung" | "timeline";
 
 const CONFIG: Record<QuestionType, { label: string; icon: React.ReactNode; color: string }> = {
   single: {
@@ -58,6 +58,20 @@ const CONFIG: Record<QuestionType, { label: string; icon: React.ReactNode; color
         <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <line x1="4" y1="10" x2="12" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <line x1="4" y1="15" x2="8" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  timeline: {
+    label: "Zeitstrahl",
+    color: "#db2777",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" className="w-full h-full">
+        <line x1="2" y1="13" x2="18" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line x1="5" y1="11" x2="5" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="10" y1="11" x2="10" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="15" y1="11" x2="15" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="7.5" cy="6" r="2.2" />
+        <path d="M7.5 8.2V13" stroke="currentColor" strokeWidth="1.4" />
       </svg>
     ),
   },

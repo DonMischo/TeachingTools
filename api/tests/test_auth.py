@@ -55,7 +55,9 @@ def test_inactive_teacher_cannot_log_in(client, db):
     assert r.status_code == 401
 
 
-def test_token_grants_access_to_protected_endpoints(client, teacher_token, klass, teacher):
+def test_token_grants_access_to_protected_endpoints(client, db, teacher_token, klass, teacher):
+    teacher.klasse_id = klass.id  # class edits require Klassenlehrer (or admin)
+    db.flush()
     r = client.patch(
         f"/api/classes/{klass.id}/symbol",
         json={"symbol_emoji": "🦁"},

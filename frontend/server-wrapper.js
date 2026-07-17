@@ -7,6 +7,11 @@
  */
 
 const http = require("http");
+// node-http-proxy (http-proxy) is unmaintained and calls the deprecated
+// util._extend, which prints a DEP0060 warning on every start. Aliasing it to
+// Object.assign before the library loads silences the warning without any
+// behavior change (Object.assign is the documented replacement).
+require("util")._extend = Object.assign;
 const httpProxy = require("http-proxy");
 const { spawn, execSync } = require("child_process");
 const fs = require("fs");

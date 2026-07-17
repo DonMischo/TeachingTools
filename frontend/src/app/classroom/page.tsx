@@ -1,17 +1,21 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
 // ── Widget registry ────────────────────────────────────────────────────────
 
-type WidgetId = "clock" | "timer" | "stopwatch";
+type WidgetId = "clock" | "timer" | "stopwatch" | "workmode" | "notes";
 
 type WidgetMeta = { id: WidgetId; label: string; defaultPos: { x: number; y: number } };
 
 const WIDGETS: WidgetMeta[] = [
-  { id: "clock",     label: "Uhr",       defaultPos: { x: 40,  y: 40  } },
-  { id: "timer",     label: "Timer",     defaultPos: { x: 300, y: 40  } },
-  { id: "stopwatch", label: "Stoppuhr",  defaultPos: { x: 600, y: 40  } },
+  { id: "clock",     label: "Uhr",         defaultPos: { x: 40,  y: 40  } },
+  { id: "timer",     label: "Timer",       defaultPos: { x: 300, y: 40  } },
+  { id: "stopwatch", label: "Stoppuhr",    defaultPos: { x: 600, y: 40  } },
+  { id: "workmode",  label: "Arbeitsform", defaultPos: { x: 40,  y: 320 } },
+  { id: "notes",     label: "Notizen",     defaultPos: { x: 300, y: 320 } },
 ];
 
 // ── Persistence ────────────────────────────────────────────────────────────
@@ -21,14 +25,21 @@ type SavedState  = Record<WidgetId, SavedWidget>;
 
 const STORAGE_KEY = "classroom_widgets_v1";
 
-function loadState(): SavedState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
+function defaultState(): SavedState {
   return Object.fromEntries(
     WIDGETS.map(w => [w.id, { enabled: true, x: w.defaultPos.x, y: w.defaultPos.y }])
   ) as SavedState;
+}
+
+function loadState(): SavedState {
+  const defaults = defaultState();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    // Merge over defaults so widgets added after a user's last visit
+    // (e.g. workmode/notes) get sane positions instead of being undefined.
+    if (raw) return { ...defaults, ...JSON.parse(raw) };
+  } catch {}
+  return defaults;
 }
 
 function saveState(s: SavedState) {
@@ -325,6 +336,86 @@ function StopwatchWidget() {
   );
 }
 
+// ── Workmode widget ────────────────────────────────────────────────────────
+
+type WorkMode = "einzel" | "partner" | "gruppe" | "plenum";
+const WORK_MODES: { id: WorkMode; label: string; icon: string }[] = [
+  { id: "einzel",  label: "Einzelarbeit",  icon: "🧍" },
+  { id: "partner", label: "Partnerarbeit", icon: "🧑‍🤝‍🧑" },
+  { id: "gruppe",  label: "Gruppenarbeit", icon: "👨‍👩‍👧‍👦" },
+  { id: "plenum",  label: "Plenum",        icon: "🏛️" },
+];
+const WORKMODE_KEY = "classroom_workmode_v1";
+
+function WorkModeWidget() {
+  const [mode, setMode] = useState<WorkMode | null>(() => {
+    try { return (localStorage.getItem(WORKMODE_KEY) as WorkMode) || null; } catch { return null; }
+  });
+
+  function select(m: WorkMode) {
+    setMode(m);
+    try { localStorage.setItem(WORKMODE_KEY, m); } catch {}
+  }
+
+  const active = WORK_MODES.find(m => m.id === mode);
+
+  return (
+    <div className="flex flex-col items-center gap-3 min-w-[220px]">
+      {active && (
+        <div className="text-center">
+          <div className="text-5xl">{active.icon}</div>
+          <div className="text-sm font-semibold mt-1">{active.label}</div>
+        </div>
+      )}
+      <div className="grid grid-cols-4 gap-2">
+        {WORK_MODES.map(m => (
+          <button key={m.id} onClick={() => select(m.id)} title={m.label}
+            className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl transition-colors ${
+              mode === m.id ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)] hover:border-[var(--text-muted)]"
+            }`}>
+            {m.icon}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Notes widget (tiptap) ──────────────────────────────────────────────────
+
+const NOTES_KEY = "classroom_notes_v1";
+
+function NotesWidget() {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: (() => { try { return localStorage.getItem(NOTES_KEY) || ""; } catch { return ""; } })(),
+    onUpdate: ({ editor }) => {
+      try { localStorage.setItem(NOTES_KEY, editor.getHTML()); } catch {}
+    },
+    immediatelyRender: false,
+  });
+
+  if (!editor) return null;
+
+  return (
+    <div className="flex flex-col gap-2 min-w-[260px]">
+      <div className="flex gap-1">
+        <button onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`w-7 h-7 rounded border text-xs font-bold flex items-center justify-center ${editor.isActive("bold") ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>B</button>
+        <button onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`w-7 h-7 rounded border text-xs italic flex items-center justify-center ${editor.isActive("italic") ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>I</button>
+        <button onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`w-7 h-7 rounded border text-xs flex items-center justify-center ${editor.isActive("bulletList") ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>•</button>
+        <button onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={`w-7 h-7 rounded border text-xs flex items-center justify-center ${editor.isActive("orderedList") ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>1.</button>
+      </div>
+      <div className="prose-sm max-w-none text-sm min-h-[100px] max-h-[240px] overflow-y-auto rounded-lg border border-[var(--border)] p-2 bg-[var(--bg)]">
+        <EditorContent editor={editor} />
+      </div>
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ClassroomPage() {
@@ -353,10 +444,10 @@ export default function ClassroomPage() {
 
       {/* Back button */}
       <button
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/tools")}
         className="absolute top-4 left-4 z-50 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
       >
-        ← Zurück
+        ← Tools
       </button>
 
       {/* Toggle panel button */}
@@ -385,9 +476,7 @@ export default function ClassroomPage() {
           <div className="border-t border-[var(--border)] mt-1 pt-2">
             <button
               onClick={() => {
-                const reset = Object.fromEntries(
-                  WIDGETS.map(w => [w.id, { enabled: true, x: w.defaultPos.x, y: w.defaultPos.y }])
-                ) as SavedState;
+                const reset = defaultState();
                 setWidgets(reset);
                 saveState(reset);
               }}
@@ -415,9 +504,19 @@ export default function ClassroomPage() {
           <StopwatchWidget />
         </WidgetShell>
       )}
+      {widgets.workmode.enabled && (
+        <WidgetShell id="workmode" label="Arbeitsform" pos={widgets.workmode} onMove={move}>
+          <WorkModeWidget />
+        </WidgetShell>
+      )}
+      {widgets.notes.enabled && (
+        <WidgetShell id="notes" label="Notizen" pos={widgets.notes} onMove={move}>
+          <NotesWidget />
+        </WidgetShell>
+      )}
 
       {/* Empty state */}
-      {!widgets.clock.enabled && !widgets.timer.enabled && !widgets.stopwatch.enabled && (
+      {WIDGETS.every(w => !widgets[w.id].enabled) && (
         <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-sm">
           Keine Widgets aktiv — über ⚙ Widgets aktivieren.
         </div>

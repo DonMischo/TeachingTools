@@ -1,0 +1,1101 @@
+{
+  "title": "Europäische Antike – Von Sumer bis zum Ende des Römischen Reiches",
+  "description": "Eine umfassende Reise durch die Geschichte der europäischen Antike und ihrer Wurzeln im Alten Orient – von den ersten sumerischen Stadtstaaten über das Alte Ägypten, die griechische und hellenistische Welt bis zum Aufstieg und Fall des Römischen Reiches. Mit archäologischen Fundstätten, Herrscherdynastien und kulturellen Meilensteinen.",
+  "tags": [
+    "antike",
+    "sumer",
+    "ägypten",
+    "griechenland",
+    "rom",
+    "archäologie",
+    "geschichte",
+    "europa",
+    "mesopotamien"
+  ],
+  "grades": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "axis": {
+    "kind": "year",
+    "min": -5500,
+    "max": 600
+  },
+  "lanes": [
+    {
+      "id": "mesopotamien",
+      "label": "Mesopotamien & Levante",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "aegypten",
+      "label": "Ägypten",
+      "color": "#34d399"
+    },
+    {
+      "id": "anatolien",
+      "label": "Anatolien & Perserreich",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "griechenland",
+      "label": "Griechenland & Ägäis",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "rom",
+      "label": "Rom & Italien",
+      "color": "#ef4444"
+    },
+    {
+      "id": "europa",
+      "label": "Übriges Europa (Eisenzeit)",
+      "color": "#f472b6"
+    },
+    {
+      "id": "epochen",
+      "label": "Epochen",
+      "color": "#94a3b8"
+    },
+    {
+      "id": "asien",
+      "label": "Asien",
+      "color": "#22d3ee"
+    },
+    {
+      "id": "afrika",
+      "label": "Afrika",
+      "color": "#a3e635"
+    },
+    {
+      "id": "amerika",
+      "label": "Amerika",
+      "color": "#fb7185"
+    }
+  ],
+  "events": [
+    {
+      "id": "mg-evo-bandkeramik",
+      "label": "Linearbandkeramische Kultur",
+      "value": -5500,
+      "end": -4900,
+      "lane": "europa",
+      "category": "Jungsteinzeit",
+      "info": "Älteste Ackerbaukultur Mitteleuropas, benannt nach dem Verzierungsmuster der Keramik"
+    },
+    {
+      "id": "mes-eridu",
+      "label": "Eridu",
+      "value": -5400,
+      "end": -600,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Der Sage nach die älteste Stadt Sumers – früheste Siedlungsschichten ab etwa 6500 v. Chr. Hier steht einer der ältesten Tempel Mesopotamiens."
+    },
+    {
+      "id": "mg-evo-kupferzeit",
+      "label": "Kupferzeit (Chalkolithikum)",
+      "value": -4500,
+      "end": -2200,
+      "lane": "europa",
+      "category": "Kupferzeit",
+      "info": "Übergangszeit zwischen Jung- und Bronzezeit — erste Metallbearbeitung mit Kupfer"
+    },
+    {
+      "id": "mg-eur-sumer",
+      "label": "Sumer: erste Hochkultur",
+      "value": -4500,
+      "end": -1900,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Städte im Zweistromland"
+    },
+    {
+      "id": "mes-uruk",
+      "label": "Uruk",
+      "value": -4000,
+      "end": -3100,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die erste Großstadt der Welt – bis zu 50.000 Einwohner. Hier entsteht die Keilschrift und monumentale Tempelarchitektur (Weißer Tempel)."
+    },
+    {
+      "id": "mes-ur",
+      "label": "Ur",
+      "value": -3800,
+      "end": -500,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die berühmte sumerische Stadt, Heimat des biblischen Abraham. Die Königsgräber von Ur (ca. 2600–2500 v. Chr.) enthalten atemberaubenden Goldschmuck."
+    },
+    {
+      "id": "mg-evo-rad",
+      "label": "Erfindung des Rades",
+      "value": -3500,
+      "end": null,
+      "lane": "europa",
+      "category": "Jungsteinzeit",
+      "info": null
+    },
+    {
+      "id": "epo-sumer",
+      "label": "Sumerische Stadtstaaten",
+      "value": -3500,
+      "end": -2000,
+      "lane": "epochen",
+      "category": "Mesopotamien",
+      "info": "Die erste Hochkultur der Menschheit entsteht in Südmesopotamien. Erfindung der Keilschrift, monumentale Tempel (Zikkurate) und erste Gesetzessammlungen."
+    },
+    {
+      "id": "mg-evo-bronze-nahost",
+      "label": "Bronzezeit beginnt (Naher Osten)",
+      "value": -3300,
+      "end": null,
+      "lane": "europa",
+      "category": "Bronzezeit",
+      "info": "Früheste Bronzelegierungen im Zweistromland"
+    },
+    {
+      "id": "mg-ind-indus",
+      "label": "Indus-Kultur (Harappa)",
+      "value": -3300,
+      "end": -1300,
+      "lane": "asien",
+      "category": "Indien",
+      "info": "Frühe Hochkultur mit geplanten Städten"
+    },
+    {
+      "id": "mg-evo-oetzi",
+      "label": "Ötzi, der Mann aus dem Eis",
+      "value": -3300,
+      "end": null,
+      "lane": "europa",
+      "category": "Kupferzeit",
+      "info": "Gletschermumie aus den Alpen, Kupferzeit-Fund"
+    },
+    {
+      "id": "mg-eur-keilschrift",
+      "label": "Erste Keilschrift",
+      "value": -3200,
+      "end": null,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Eine der ältesten Schriften"
+    },
+    {
+      "id": "aeg-narmer",
+      "label": "Vereinigung Ägyptens (Narmer)",
+      "value": -3150,
+      "end": null,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "König Narmer (Menes) vereinigt Ober- und Unterägypten – die Narmer-Palette ist eines der ältesten historischen Dokumente der Welt."
+    },
+    {
+      "id": "epo-minoisch",
+      "label": "Minoische Kultur (Kreta)",
+      "value": -3000,
+      "end": -1450,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Die erste Hochkultur Europas auf Kreta mit Palästen wie Knossos, Phaistos und Malia – bekannt für den Stierkult und die Linear-A-Schrift."
+    },
+    {
+      "id": "mes-nippur",
+      "label": "Nippur",
+      "value": -3000,
+      "end": -800,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Das religiöse Zentrum Sumers – hier steht das Heiligtum des Gottes Enlil. Tausende Keilschrifttafeln gefunden."
+    },
+    {
+      "id": "mes-lagash",
+      "label": "Lagash",
+      "value": -2900,
+      "end": -1600,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Bedeutende sumerische Stadt mit gut erhaltenen Tempeln und Palästen – bekannt für die Stele der Geier (ca. 2500 v. Chr.)."
+    },
+    {
+      "id": "mg-eur-aegypten-altesreich",
+      "label": "Altes Ägypten: Altes Reich",
+      "value": -2700,
+      "end": -2200,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": null
+    },
+    {
+      "id": "mg-eur-minoer",
+      "label": "Minoische Kultur (Kreta)",
+      "value": -2700,
+      "end": -1450,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": null
+    },
+    {
+      "id": "aeg-djoser",
+      "label": "Djoser – Stufenpyramide von Sakkara",
+      "value": -2670,
+      "end": null,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Die erste Pyramide Ägyptens – von Imhotep für Pharao Djoser errichtet, Meilenstein der Architekturgeschichte."
+    },
+    {
+      "id": "epo-altes-reich",
+      "label": "Altes Reich (Ägypten)",
+      "value": -2613,
+      "end": -2181,
+      "lane": "epochen",
+      "category": "Ägypten",
+      "info": "Das 'Zeitalter der Pyramiden': Errichtung der Großen Pyramiden von Gizeh und der Sphinx. Die Pharaonen gelten als lebende Götter."
+    },
+    {
+      "id": "aeg-khufu",
+      "label": "Cheops – Große Pyramide von Gizeh",
+      "value": -2560,
+      "end": null,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Die größte Pyramide der Welt – erbaut für Pharao Khufu (Cheops). Bis ins 19. Jahrhundert das höchste Bauwerk der Menschheit."
+    },
+    {
+      "id": "mg-eur-pyramiden",
+      "label": "Pyramiden von Gizeh",
+      "value": -2560,
+      "end": null,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Große Pyramide des Pharaos Cheops"
+    },
+    {
+      "id": "mes-assur",
+      "label": "Assur",
+      "value": -2500,
+      "end": -614,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die religiöse Hauptstadt des assyrischen Reiches – Stadtgott Assur. Bis zur Zerstörung 614 v. Chr. eines der wichtigsten Zentren Vorderasiens."
+    },
+    {
+      "id": "aeg-sphinx",
+      "label": "Große Sphinx von Gizeh",
+      "value": -2500,
+      "end": null,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Das gewaltige Löwen-Menschen-Wesen – erbaut zur Zeit der 4. Dynastie, wahrscheinlich unter Pharao Chephren."
+    },
+    {
+      "id": "mg-mid-akkad",
+      "label": "Akkad / Sargon",
+      "value": -2334,
+      "end": -2154,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Erstes bekanntes Großreich"
+    },
+    {
+      "id": "epo-akkkad",
+      "label": "Akkadisches Reich",
+      "value": -2334,
+      "end": -2154,
+      "lane": "epochen",
+      "category": "Mesopotamien",
+      "info": "Das erste territoriale Großreich der Geschichte unter Sargon von Akkad – vereint Sumer und Akkad für gut 150 Jahre."
+    },
+    {
+      "id": "mes-babylon",
+      "label": "Babylon",
+      "value": -2300,
+      "end": -539,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die berühmteste Stadt Mesopotamiens – unter Hammurapi und Nebukadnezar II. Weltmetropole. Ischtar-Tor und hängende Gärten."
+    },
+    {
+      "id": "mg-evo-bronzezeit-mitteleuropa",
+      "label": "Bronzezeit (Mitteleuropa)",
+      "value": -2200,
+      "end": -800,
+      "lane": "europa",
+      "category": "Bronzezeit",
+      "info": "Metallzeit mit Zinnbronze-Werkzeugen, Waffen und Schmuck"
+    },
+    {
+      "id": "mg-chn-xia",
+      "label": "China: Xia-Dynastie",
+      "value": -2070,
+      "end": -1600,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "epo-mittleres-reich",
+      "label": "Mittleres Reich (Ägypten)",
+      "value": -2040,
+      "end": -1782,
+      "lane": "epochen",
+      "category": "Ägypten",
+      "info": "Wiedervereinigung Ägyptens, Blüte von Kunst und Literatur, Ausdehnung nach Nubien."
+    },
+    {
+      "id": "epo-altbabylon",
+      "label": "Altbabylonische Zeit",
+      "value": -2000,
+      "end": -1600,
+      "lane": "epochen",
+      "category": "Mesopotamien",
+      "info": "Blütezeit Babylons unter Hammurapi (ca. 1792–1750 v. Chr.), berühmt für den Codex Hammurapi, eine der ältesten vollständigen Gesetzessammlungen."
+    },
+    {
+      "id": "mg-afr-kusch",
+      "label": "Nubien / Reich von Kusch",
+      "value": -2000,
+      "end": 350,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": null
+    },
+    {
+      "id": "gri-knossos",
+      "label": "Palast von Knossos (Kreta)",
+      "value": -2000,
+      "end": -1400,
+      "lane": "griechenland",
+      "category": "Minoisch",
+      "info": "Der größte Palast der minoischen Kultur – verbunden mit dem Mythos des Labyrinths und des Minotaurus. Mehrstöckige Bauten mit aufwendigen Fresken."
+    },
+    {
+      "id": "mes-ninive",
+      "label": "Ninive",
+      "value": -1800,
+      "end": -612,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die assyrische Hauptstadt unter Sanherib – die 'Stadt der Jäger' mit der berühmten Bibliothek Assurbanipals. Zerstört 612 v. Chr."
+    },
+    {
+      "id": "mg-mid-hammurapi",
+      "label": "Hammurapi von Babylon",
+      "value": -1792,
+      "end": -1750,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Berühmter Gesetzeskodex"
+    },
+    {
+      "id": "mes-hammurapi",
+      "label": "Codex Hammurapi",
+      "value": -1754,
+      "end": null,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": "Die berühmte Gesetzesstele mit 282 Paragraphen – eines der frühesten vollständigen Rechtsdokumente der Welt."
+    },
+    {
+      "id": "epo-mykenisch",
+      "label": "Mykenische Kultur",
+      "value": -1700,
+      "end": -1100,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Die erste griechische Hochkultur auf dem Festland – Burgen in Mykene, Tiryns und Pylos, Linear-B-Schrift, Goldmasken und der Trojanische Krieg."
+    },
+    {
+      "id": "ana-hattusa",
+      "label": "Hattusa – Hauptstadt der Hethiter",
+      "value": -1650,
+      "end": -1190,
+      "lane": "anatolien",
+      "category": "Hethiter",
+      "info": "Die mächtige Hauptstadt der Hethiter in Zentralanatolien – mit gewaltigen Stadtmauern, Toren mit Löwen- und Sphingenreliefs und dem Felsheiligtum Yazılıkaya."
+    },
+    {
+      "id": "mg-chn-shang",
+      "label": "China: Shang-Dynastie",
+      "value": -1600,
+      "end": -1046,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-evo-himmelsscheibe",
+      "label": "Himmelsscheibe von Nebra entsteht",
+      "value": -1600,
+      "end": null,
+      "lane": "europa",
+      "category": "Bronzezeit",
+      "info": "Älteste bekannte konkrete Darstellung des Sternenhimmels; Fund in Sachsen-Anhalt, UNESCO-Weltdokumentenerbe"
+    },
+    {
+      "id": "gri-mykene",
+      "label": "Mykene – Palast & Löwentor",
+      "value": -1600,
+      "end": -1100,
+      "lane": "griechenland",
+      "category": "Mykenisch",
+      "info": "Die mächtigste Burg der mykenischen Welt – Heimat des Agamemnon. Schatzhaus des Atreus, Löwentor, Zyklopenmauern."
+    },
+    {
+      "id": "epo-neues-reich",
+      "label": "Neues Reich (Ägypten)",
+      "value": -1570,
+      "end": -1069,
+      "lane": "epochen",
+      "category": "Ägypten",
+      "info": "Das imperiale Ägypten: Pharaonen wie Thutmosis III., Hatschepsut, Echnaton, Tutanchamun und Ramses II. herrschen über ein Weltreich."
+    },
+    {
+      "id": "mg-ame-olmeken",
+      "label": "Olmeken",
+      "value": -1500,
+      "end": -400,
+      "lane": "amerika",
+      "category": "Amerika",
+      "info": "Erste Hochkultur Mesoamerikas"
+    },
+    {
+      "id": "mg-ind-vedisch",
+      "label": "Vedische Zeit",
+      "value": -1500,
+      "end": -500,
+      "lane": "asien",
+      "category": "Indien",
+      "info": null
+    },
+    {
+      "id": "aeg-hatschepsut",
+      "label": "Hatschepsut – Tempel in Deir el-Bahari",
+      "value": -1479,
+      "end": -1458,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Eine der wenigen weiblichen Pharaonen – ihr terrassenförmiger Totentempel ist ein architektonisches Meisterwerk."
+    },
+    {
+      "id": "gri-tiryns",
+      "label": "Tiryns",
+      "value": -1400,
+      "end": -1200,
+      "lane": "griechenland",
+      "category": "Mykenisch",
+      "info": "Die zweitwichtigste mykenische Burg – mit gewaltigen Zyklopenmauern und einem gut erhaltenen Palastkomplex."
+    },
+    {
+      "id": "aeg-echtnaton",
+      "label": "Echnaton – Amarna-Zeit",
+      "value": -1353,
+      "end": -1336,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Der 'Ketzerpharao' führt den monotheistischen Aton-Kult ein und gründet die neue Hauptstadt Achet-Aton (Amarna)."
+    },
+    {
+      "id": "gri-pylos",
+      "label": "Palast von Pylos (Nestor)",
+      "value": -1340,
+      "end": -1200,
+      "lane": "griechenland",
+      "category": "Mykenisch",
+      "info": "Der Palast des legendären Nestor – hervorragend erhalten mit tausenden Linear-B-Tafeln, die Einblicke in die mykenische Verwaltung geben."
+    },
+    {
+      "id": "aeg-tutanchamun",
+      "label": "Tutanchamun – Grab im Tal der Könige",
+      "value": -1332,
+      "end": -1323,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Der berühmte 'Pharao mit der goldenen Maske' – sein nahezu unberaubtes Grab wurde 1922 von Howard Carter entdeckt."
+    },
+    {
+      "id": "epo-assyr",
+      "label": "Assyrisches Reich",
+      "value": -1307,
+      "end": -612,
+      "lane": "epochen",
+      "category": "Mesopotamien",
+      "info": "Das mächtige assyrische Weltreich erstreckt sich von Mesopotamien bis nach Ägypten. Berühmte Könige: Assurnasirpal II., Sanherib, Assurbanipal."
+    },
+    {
+      "id": "aeg-ramses",
+      "label": "Ramses II. – Abu Simbel",
+      "value": -1279,
+      "end": -1213,
+      "lane": "aegypten",
+      "category": "Ägypten",
+      "info": "Der mächtigste Pharao des Neuen Reiches – seine Felsentempel bei Abu Simbel sind Weltkulturerbe."
+    },
+    {
+      "id": "ana-kadesch",
+      "label": "Schlacht bei Kadesch",
+      "value": -1274,
+      "end": null,
+      "lane": "anatolien",
+      "category": "Hethiter",
+      "info": "Die größte Streitwagen-Schlacht der Antike zwischen Ägyptern (Ramses II.) und Hethitern (Muwatalli II.) – endet mit dem ersten erhaltenen Friedensvertrag."
+    },
+    {
+      "id": "mg-evo-eisen-nahost",
+      "label": "Eisenzeit beginnt (Naher Osten)",
+      "value": -1200,
+      "end": null,
+      "lane": "europa",
+      "category": "Eisenzeit",
+      "info": "Verbreitung der Eisenverarbeitung im östlichen Mittelmeerraum"
+    },
+    {
+      "id": "mg-eur-troja",
+      "label": "Trojanischer Krieg (Sage)",
+      "value": -1200,
+      "end": null,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": null
+    },
+    {
+      "id": "epo-dunkle-jh",
+      "label": "Griechische Dunkle Jahrhunderte",
+      "value": -1100,
+      "end": -800,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Nach dem Zusammenbruch der mykenischen Paläste schrumpft die Bevölkerung, Schrift geht verloren – eine archäologisch arme Übergangszeit."
+    },
+    {
+      "id": "mg-chn-zhou",
+      "label": "China: Zhou-Dynastie",
+      "value": -1046,
+      "end": -256,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-mid-david",
+      "label": "König David / Jerusalem",
+      "value": -1000,
+      "end": null,
+      "lane": "anatolien",
+      "category": "Religion",
+      "info": null
+    },
+    {
+      "id": "mg-mid-assyrien",
+      "label": "Assyrisches Reich (Blüte)",
+      "value": -900,
+      "end": -609,
+      "lane": "mesopotamien",
+      "category": "Mesopotamien",
+      "info": null
+    },
+    {
+      "id": "mg-afr-karthago",
+      "label": "Gründung Karthagos",
+      "value": -814,
+      "end": null,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "Mächtige Handelsstadt Nordafrikas"
+    },
+    {
+      "id": "mg-epo-antike",
+      "label": "Antike",
+      "value": -800,
+      "end": 476,
+      "lane": "rom",
+      "category": "Antike",
+      "info": "Griechenland und Rom — endet mit dem Untergang Westroms"
+    },
+    {
+      "id": "epo-archaisch",
+      "label": "Archaik (Griechenland)",
+      "value": -800,
+      "end": -480,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Entstehung der Polis (Stadtstaat), griechische Kolonisation rund ums Mittelmeer, Homer und die ersten Olympischen Spiele."
+    },
+    {
+      "id": "mg-evo-eisenzeit-mitteleuropa",
+      "label": "Eisenzeit (Mitteleuropa)",
+      "value": -800,
+      "end": -15,
+      "lane": "europa",
+      "category": "Eisenzeit",
+      "info": "Endet mit der römischen Eroberung Galliens bzw. dem Vorrücken an den Rhein"
+    },
+    {
+      "id": "mg-eur-polis",
+      "label": "Griechische Poleis & Philosophie",
+      "value": -800,
+      "end": -323,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Stadtstaaten wie Athen und Sparta"
+    },
+    {
+      "id": "epo-hallstatt",
+      "label": "Hallstatt-Kultur (Eisenzeit)",
+      "value": -800,
+      "end": -400,
+      "lane": "epochen",
+      "category": "Europa",
+      "info": "Namensgebende Fundstelle der älteren Eisenzeit in Österreich – reiche Gräber mit Importen aus dem Mittelmeerraum belegen weitreichende Handelsnetze."
+    },
+    {
+      "id": "mg-evo-hallstattzeit",
+      "label": "Hallstattzeit (ältere Eisenzeit)",
+      "value": -800,
+      "end": -450,
+      "lane": "europa",
+      "category": "Eisenzeit",
+      "info": "Benannt nach dem Fundort in Österreich; reiche 'Fürstengräber' mit importierten Luxusgütern"
+    },
+    {
+      "id": "gri-olympia",
+      "label": "Erste Olympische Spiele",
+      "value": -776,
+      "end": null,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Das erste datierte Ereignis der griechischen Geschichte – die Olympischen Spiele werden zum wichtigsten panhellenischen Fest."
+    },
+    {
+      "id": "rom-gruendung",
+      "label": "Gründung Roms",
+      "value": -753,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Der Sage nach Gründung durch Romulus und Remus – das Datum markiert den Beginn der römischen Zeitrechnung (ab urbe condita)."
+    },
+    {
+      "id": "epo-koenigszeit",
+      "label": "Römische Königszeit",
+      "value": -753,
+      "end": -509,
+      "lane": "epochen",
+      "category": "Rom",
+      "info": "Der Sage nach Gründung Roms 753 v. Chr. durch Romulus. Sieben Könige herrschen bis zur Vertreibung des letzten Königs Tarquinius Superbus."
+    },
+    {
+      "id": "epo-neubabylon",
+      "label": "Neubabylonisches Reich",
+      "value": -626,
+      "end": -539,
+      "lane": "epochen",
+      "category": "Mesopotamien",
+      "info": "Babylon erlebt eine letzte Blüte unter Nebukadnezar II. (Hängende Gärten, Zerstörung Jerusalems 586 v. Chr.). Untergang durch die Perser 539 v. Chr."
+    },
+    {
+      "id": "mg-ind-buddha",
+      "label": "Buddha",
+      "value": -563,
+      "end": -483,
+      "lane": "asien",
+      "category": "Religion",
+      "info": "Begründer des Buddhismus"
+    },
+    {
+      "id": "mg-chn-konfuzius",
+      "label": "Konfuzius",
+      "value": -551,
+      "end": -479,
+      "lane": "asien",
+      "category": "China",
+      "info": "Bedeutendster Philosoph Chinas"
+    },
+    {
+      "id": "ana-perser",
+      "label": "Perserreich unter Kyros & Dareios",
+      "value": -550,
+      "end": -330,
+      "lane": "anatolien",
+      "category": "Perser",
+      "info": "Das mächtigste Reich der Antike – von Kyros dem Großen gegründet, erstreckt es sich vom Indus bis zum Nil. Dareios I. baut Persepolis."
+    },
+    {
+      "id": "eur-hochdorf",
+      "label": "Fürstengrab von Hochdorf (Deutschland)",
+      "value": -530,
+      "end": null,
+      "lane": "europa",
+      "category": "Europa",
+      "info": "Eines der reichsten hallstattzeitlichen Gräber – der Fürst lag auf einem bronzenen Klinen-Liege, mit goldenem Halsring und Dolch."
+    },
+    {
+      "id": "ana-persepolis",
+      "label": "Persepolis (Parsa)",
+      "value": -518,
+      "end": -330,
+      "lane": "anatolien",
+      "category": "Perser",
+      "info": "Die prächtige Zeremonialhauptstadt der Perser – erbaut unter Dareios I. und Xerxes, 330 v. Chr. von Alexander dem Großen niedergebrannt."
+    },
+    {
+      "id": "epo-republik",
+      "label": "Römische Republik",
+      "value": -509,
+      "end": -27,
+      "lane": "epochen",
+      "category": "Rom",
+      "info": "Roms Aufstieg zur Weltmacht – Eroberung Italiens, Punische Kriege, Bürgerkriege. Ende mit der Alleinherrschaft des Augustus."
+    },
+    {
+      "id": "mg-eur-perserkriege",
+      "label": "Perserkriege",
+      "value": -499,
+      "end": -449,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Griechen gegen das Perserreich"
+    },
+    {
+      "id": "gri-marathon",
+      "label": "Schlacht bei Marathon",
+      "value": -490,
+      "end": null,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Die Athener besiegen die Perser – der Legende nach läuft der Bote Pheidippides die 42 km nach Athen und bricht tot zusammen (Ursprung des Marathonlaufs)."
+    },
+    {
+      "id": "eur-vix",
+      "label": "Fürstinnengrab von Vix (Frankreich)",
+      "value": -480,
+      "end": null,
+      "lane": "europa",
+      "category": "Europa",
+      "info": "Das berühmte Grab einer keltischen Fürstin – mit dem Vix-Krater, einem 1,64 m hohen griechischen Bronzekrater, und goldener Halskette."
+    },
+    {
+      "id": "epo-klassik",
+      "label": "Klassik (Griechenland)",
+      "value": -480,
+      "end": -323,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Die Blütezeit der griechischen Kultur: Perserkriege, Perikleisches Zeitalter Athens, Parthenon, Sokrates, Platon, Aristoteles."
+    },
+    {
+      "id": "mg-eur-perikles",
+      "label": "Perikles / Blüte Athens",
+      "value": -461,
+      "end": -429,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Höhepunkt der attischen Demokratie"
+    },
+    {
+      "id": "epo-la-tene",
+      "label": "La-Tène-Kultur (Eisenzeit)",
+      "value": -450,
+      "end": -1,
+      "lane": "epochen",
+      "category": "Europa",
+      "info": "Typusfundstelle der jüngeren Eisenzeit – am Ufer des Neuenburgersees wurden Waffen, Schmuck und Werkzeuge gefunden, die der keltischen Kultur ihren Namen geben."
+    },
+    {
+      "id": "mg-evo-latenezeit",
+      "label": "Latènezeit (jüngere Eisenzeit)",
+      "value": -450,
+      "end": -15,
+      "lane": "europa",
+      "category": "Eisenzeit",
+      "info": "Geprägt von keltischer Kultur und Kunst; endet mit der römischen Expansion"
+    },
+    {
+      "id": "gri-parthenon",
+      "label": "Parthenon (Athen)",
+      "value": -447,
+      "end": -432,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Der berühmte Tempel für Athene auf der Akropolis – das Meisterwerk der klassischen griechischen Architektur unter Perikles."
+    },
+    {
+      "id": "mg-eur-peloponnes",
+      "label": "Peloponnesischer Krieg",
+      "value": -431,
+      "end": -404,
+      "lane": "griechenland",
+      "category": "Griechenland",
+      "info": "Athen gegen Sparta"
+    },
+    {
+      "id": "gri-alexander",
+      "label": "Alexander der Große",
+      "value": -356,
+      "end": -323,
+      "lane": "griechenland",
+      "category": "Hellenismus",
+      "info": "Der makedonische König erobert das Perserreich bis nach Indien – seine Eroberungen leiten die hellenistische Epoche ein."
+    },
+    {
+      "id": "epo-hellenismus",
+      "label": "Hellenismus",
+      "value": -336,
+      "end": -30,
+      "lane": "epochen",
+      "category": "Griechenland",
+      "info": "Alexander der Große erobert das Perserreich. Seine Nachfolger teilen die Welt in hellenistische Königreiche (Ptolemäer, Seleukiden, Antigoniden) auf."
+    },
+    {
+      "id": "mg-ind-maurya",
+      "label": "Maurya-Reich (Ashoka)",
+      "value": -322,
+      "end": -185,
+      "lane": "asien",
+      "category": "Indien",
+      "info": null
+    },
+    {
+      "id": "gri-bibliothek",
+      "label": "Bibliothek von Alexandria",
+      "value": -300,
+      "end": -48,
+      "lane": "griechenland",
+      "category": "Hellenismus",
+      "info": "Die berühmteste Bibliothek der Antike – gegründet von Ptolemaios I. in Alexandria. Zentrum der Gelehrsamkeit bis zu ihrer Zerstörung 48 v. Chr."
+    },
+    {
+      "id": "eur-manching",
+      "label": "Oppidum von Manching (Deutschland)",
+      "value": -300,
+      "end": -50,
+      "lane": "europa",
+      "category": "Europa",
+      "info": "Das größte keltische Oppidum nördlich der Alpen – umfangreiche Befestigungsanlagen und Handwerksviertel."
+    },
+    {
+      "id": "rom-punisch",
+      "label": "Punische Kriege",
+      "value": -264,
+      "end": -146,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Drei Kriege Roms gegen Karthago – Hannibal überquert die Alpen, Scipio besiegt ihn bei Zama. Karthago wird 146 v. Chr. dem Erdboden gleichgemacht."
+    },
+    {
+      "id": "mg-chn-mauer",
+      "label": "Bau der Chinesischen Mauer",
+      "value": -221,
+      "end": -206,
+      "lane": "asien",
+      "category": "China",
+      "info": "Große Mauer unter Qin Shihuangdi"
+    },
+    {
+      "id": "mg-chn-qin",
+      "label": "Qin-Dynastie: Einigung Chinas",
+      "value": -221,
+      "end": -206,
+      "lane": "asien",
+      "category": "China",
+      "info": "Erster Kaiser Qin Shihuangdi"
+    },
+    {
+      "id": "mg-chn-terrakotta",
+      "label": "Terrakotta-Armee",
+      "value": -210,
+      "end": null,
+      "lane": "asien",
+      "category": "China",
+      "info": "Tonsoldaten im Grab des ersten Kaisers"
+    },
+    {
+      "id": "mg-chn-han",
+      "label": "China: Han-Dynastie",
+      "value": -206,
+      "end": 220,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "rom-caesar",
+      "label": "Julius Caesar",
+      "value": -100,
+      "end": -44,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Der berühmte Feldherr und Diktator – erobert Gallien, überquert den Rubikon, wird 44 v. Chr. an den Iden des März ermordet."
+    },
+    {
+      "id": "rom-pompeji",
+      "label": "Pompeji & Herculaneum",
+      "value": -79,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Der Ausbruch des Vesuv verschüttet die beiden Städte – die hervorragende Konservierung gibt ein einmaliges Bild des römischen Alltags."
+    },
+    {
+      "id": "mg-eur-caesar-diktator",
+      "label": "Caesars Alleinherrschaft",
+      "value": -49,
+      "end": -44,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Bis zu seiner Ermordung an den Iden des März"
+    },
+    {
+      "id": "rom-augustus",
+      "label": "Augustus – Beginn der Kaiserzeit",
+      "value": -27,
+      "end": 14,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Octavian wird von Senat zum Augustus erhoben – Ende der Republik, Beginn des römischen Kaiserreiches. Pax Romana."
+    },
+    {
+      "id": "epo-kaiserzeit",
+      "label": "Römische Kaiserzeit",
+      "value": -27,
+      "end": 476,
+      "lane": "epochen",
+      "category": "Rom",
+      "info": "Die römischen Kaiser herrschen über ein Weltreich. Pax Romana, Christentum wird Staatsreligion. Untergang des Weströmischen Reiches 476 n. Chr."
+    },
+    {
+      "id": "mg-eur-zeitenwende",
+      "label": "Zeitenwende (Geburt Christi)",
+      "value": 1,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Beginn unserer Zeitrechnung"
+    },
+    {
+      "id": "mg-deu-varusschlacht",
+      "label": "Varusschlacht",
+      "value": 9,
+      "end": null,
+      "lane": "europa",
+      "category": "Germanen",
+      "info": "Arminius schlägt die Römer im Teutoburger Wald"
+    },
+    {
+      "id": "rom-colosseum",
+      "label": "Kolosseum (Rom)",
+      "value": 72,
+      "end": 80,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Das größte Amphitheater der Antike – Bau unter Vespasian und Titus, Platz für bis zu 50.000 Zuschauer."
+    },
+    {
+      "id": "mg-eur-kolosseum",
+      "label": "Kolosseum eröffnet",
+      "value": 80,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": null
+    },
+    {
+      "id": "mg-eur-trajan",
+      "label": "Kaiser Trajan",
+      "value": 98,
+      "end": 117,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Größte Ausdehnung des Reiches"
+    },
+    {
+      "id": "mg-ame-teotihuacan",
+      "label": "Teotihuacán",
+      "value": 100,
+      "end": 550,
+      "lane": "amerika",
+      "category": "Amerika",
+      "info": "Große Pyramidenstadt in Mexiko"
+    },
+    {
+      "id": "mg-eur-markaurel",
+      "label": "Kaiser Mark Aurel",
+      "value": 161,
+      "end": 180,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Der 'Philosoph auf dem Kaiserthron'"
+    },
+    {
+      "id": "rom-konstantin",
+      "label": "Konstantin der Große",
+      "value": 306,
+      "end": 337,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Erster christlicher Kaiser – erlässt das Toleranzedikt von Mailand (313 n. Chr.) und gründet Konstantinopel als 'Neues Rom' (330 n. Chr.)."
+    },
+    {
+      "id": "mg-eur-konstantin",
+      "label": "Konstantin / Toleranzedikt",
+      "value": 313,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Das Christentum wird erlaubt"
+    },
+    {
+      "id": "mg-ind-gupta",
+      "label": "Gupta-Reich (Goldenes Zeitalter)",
+      "value": 320,
+      "end": 550,
+      "lane": "asien",
+      "category": "Indien",
+      "info": null
+    },
+    {
+      "id": "mg-deu-voelkerwanderung",
+      "label": "Völkerwanderung",
+      "value": 375,
+      "end": 568,
+      "lane": "europa",
+      "category": "Frühmittelalter",
+      "info": null
+    },
+    {
+      "id": "mg-eur-teilung",
+      "label": "Teilung des Römischen Reiches",
+      "value": 395,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "In West- und Ostrom"
+    },
+    {
+      "id": "rom-untergang",
+      "label": "Untergang Westroms",
+      "value": 476,
+      "end": null,
+      "lane": "rom",
+      "category": "Rom",
+      "info": "Der letzte weströmische Kaiser Romulus Augustulus wird von Odoaker abgesetzt – traditionelles Datum für das Ende der Antike."
+    },
+    {
+      "id": "mg-deu-chlodwig",
+      "label": "Chlodwig / Frankenreich",
+      "value": 481,
+      "end": 511,
+      "lane": "europa",
+      "category": "Frankenreich",
+      "info": "Einigt die Franken, wird Christ"
+    }
+  ]
+}

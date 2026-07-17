@@ -24,6 +24,8 @@ vi.mock("@/lib/api", () => ({
   api: {
     capuths: {
       joinSession: vi.fn().mockResolvedValue({ participant_id: 7, name: "Lena" }),
+      getSession: vi.fn().mockResolvedValue({ team_mode: false }),
+      listTeams: vi.fn().mockResolvedValue([]),
     },
   },
 }));

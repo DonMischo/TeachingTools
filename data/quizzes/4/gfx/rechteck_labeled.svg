@@ -1,16 +1,12 @@
 <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
   <rect width="400" height="220" fill="#1e293b" rx="12"/>
-
-  <!-- Rectangle -->
   <rect x="80" y="55" width="240" height="110" fill="none" stroke="#e2e8f0" stroke-width="2.5"/>
-
-  <!-- Right angle marks -->
-  <path d="M80,55 L80,73 L98,73" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M320,55 L302,55 L302,73" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M80,165 L80,147 L98,147" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-  <path d="M320,165 L302,165 L302,147" fill="none" stroke="#4ade80" stroke-width="1.8"/>
-
-  <!-- Labels -->
+  <!-- right angle marks: small L inside each corner -->
+  <path d="M80,70 L95,70 L95,55" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M320,70 L305,70 L305,55" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M80,150 L95,150 L95,165" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <path d="M320,150 L305,150 L305,165" fill="none" stroke="#4ade80" stroke-width="1.8"/>
+  <!-- side labels -->
   <text x="200" y="45" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">a</text>
   <text x="200" y="192" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">a</text>
   <text x="58" y="115" text-anchor="middle" fill="#60a5fa" font-size="15" font-family="sans-serif" font-style="italic">b</text>

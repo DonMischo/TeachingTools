@@ -6,8 +6,6 @@ Flow:
   2. Students scan QR → connect WS as student and submit
   3. Teacher sees responses live via WS
 """
-import random
-import string
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -17,65 +15,18 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import ExitTicketSession, ExitTicketResponse, Student, Teacher
 from ..auth import get_current_teacher, get_current_user_optional
+from ..utils import gen_code
+from ..ws_auth import ws_teacher
+from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/exit-ticket", tags=["exit-ticket"])
 
-
-# ---------------------------------------------------------------------------
-# In-memory WS manager
-# ---------------------------------------------------------------------------
-
-class _Manager:
-    def __init__(self):
-        self._rooms: dict[str, dict] = {}
-
-    def _room(self, code: str) -> dict:
-        if code not in self._rooms:
-            self._rooms[code] = {"teacher": None, "students": {}}
-        return self._rooms[code]
-
-    def add_teacher(self, code: str, ws: WebSocket):
-        self._room(code)["teacher"] = ws
-
-    def add_student(self, code: str, sid: int, ws: WebSocket):
-        self._room(code)["students"][sid] = ws
-
-    def remove_teacher(self, code: str):
-        r = self._rooms.get(code)
-        if r:
-            r["teacher"] = None
-
-    def remove_student(self, code: str, sid: int):
-        r = self._rooms.get(code)
-        if r:
-            r["students"].pop(sid, None)
-
-    async def send_teacher(self, code: str, msg: dict):
-        r = self._rooms.get(code, {})
-        if ws := r.get("teacher"):
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    def student_count(self, code: str) -> int:
-        return len(self._rooms.get(code, {}).get("students", {}))
-
-
-mgr = _Manager()
+mgr = RoomManager()
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _gen_code(db: Session) -> str:
-    chars = string.ascii_uppercase + string.digits
-    for _ in range(20):
-        c = "".join(random.choices(chars, k=6))
-        if not db.query(ExitTicketSession).filter_by(code=c).first():
-            return c
-    raise RuntimeError("Could not generate code")
 
 
 def _response_dict(r: ExitTicketResponse) -> dict:
@@ -143,7 +94,7 @@ def create_session(
     current: Teacher = Depends(get_current_teacher),
 ):
     s = ExitTicketSession(
-        code=_gen_code(db),
+        code=gen_code(db, ExitTicketSession),
         title=body.title,
         question=body.question,
         rating_enabled=body.rating_enabled,
@@ -152,6 +103,39 @@ def create_session(
     db.add(s)
     db.commit()
     db.refresh(s)
+    return {"id": s.id, "code": s.code}
+
+
+def clone_session_impl(db: Session, code: str, teacher: Teacher) -> ExitTicketSession:
+    """Start a fresh session by copying an own exit-ticket's question — shared
+    by the REST endpoint and the Stundenplaner tool registry. Exit-tickets are
+    creator-only (no sharing), so cloning someone else's is not allowed."""
+    template = db.query(ExitTicketSession).filter_by(code=code).first()
+    if not template:
+        raise HTTPException(404, "Session not found")
+    if template.created_by != teacher.id:
+        raise HTTPException(403)
+
+    s = ExitTicketSession(
+        code=gen_code(db, ExitTicketSession),
+        title=template.title,
+        question=template.question,
+        rating_enabled=template.rating_enabled,
+        created_by=teacher.id,
+    )
+    db.add(s)
+    db.commit()
+    db.refresh(s)
+    return s
+
+
+@router.post("/{code}/clone", status_code=201)
+def clone_session(
+    code: str,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    s = clone_session_impl(db, code, current)
     return {"id": s.id, "code": s.code}
 
 
@@ -203,6 +187,11 @@ async def exit_ticket_ws(
         await websocket.close(code=4004)
         return
 
+    # Host view requires a verified teacher (responses contain student names).
+    if role == "teacher" and ws_teacher(websocket, db) is None:
+        await websocket.close(code=4003)
+        return
+
     await websocket.accept()
 
     if role == "teacher":
@@ -227,7 +216,7 @@ async def exit_ticket_ws(
             "question": s.question,
             "rating_enabled": s.rating_enabled,
         })
-        await mgr.send_teacher(code, {"event": "participant_joined", "count": mgr.student_count(code)})
+        await mgr.send_teachers(code, {"event": "participant_joined", "count": mgr.student_count(code)})
 
     try:
         while True:
@@ -243,7 +232,7 @@ async def exit_ticket_ws(
                 if action == "close":
                     s.status = "closed"
                     db.commit()
-                    await mgr.send_teacher(code, {"event": "closed"})
+                    await mgr.send_teachers(code, {"event": "closed"})
 
             else:
                 if action == "submit" and s.status == "open":
@@ -277,7 +266,7 @@ async def exit_ticket_ws(
                     db.refresh(existing)
 
                     await websocket.send_json({"event": "submitted"})
-                    await mgr.send_teacher(code, {
+                    await mgr.send_teachers(code, {
                         "event": "new_response",
                         "response": _response_dict(existing),
                         "total": db.query(ExitTicketResponse).filter_by(session_id=s.id).count(),
@@ -287,6 +276,6 @@ async def exit_ticket_ws(
         pass
     finally:
         if role == "teacher":
-            mgr.remove_teacher(code)
+            mgr.remove_teacher(code, websocket)
         else:
             mgr.remove_student(code, student_id)

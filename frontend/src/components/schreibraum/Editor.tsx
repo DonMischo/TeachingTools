@@ -423,6 +423,7 @@ function stampSlice(slice: Slice, ownerValue: string): Slice {
 export interface EditorHandle {
   getHTML(): string;
   getMarkdown(): string;
+  exportDocxTex(fmt: "docx" | "tex"): Promise<void>;
   getYdocState(): string;
 }
 
@@ -711,6 +712,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     getHTML: () => editor?.getHTML() ?? "",
     getMarkdown: () => (editor?.storage as any)?.markdown?.getMarkdown?.() ?? editor?.getHTML() ?? "",
     getYdocState: () => btoa(String.fromCharCode(...Y.encodeStateAsUpdate(ydoc))),
+    exportDocxTex: handleExport,
   }), [editor, ydoc]);
 
   async function handleSave() {
@@ -760,7 +762,6 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
             onMarkLocked={() => markCurrentBlock({ locked: true, freeBlock: false })}
             onUnmarkBlock={() => markCurrentBlock({ freeBlock: false, locked: false })}
             onUploadFile={handleUploadFile}
-            onExport={handleExport}
           />
         )}
       </div>

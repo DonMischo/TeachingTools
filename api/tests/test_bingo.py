@@ -6,10 +6,11 @@ Run with:  pytest api/tests/test_bingo.py -v
 import asyncio
 import pytest
 
-from api.tests.ws_test_helper import connect_ws
+from api.tests.ws_test_helper import bearer_headers, connect_ws
 from api.main import app
 import api.routers.bingo as bingo_router
-from api.models import BingoSession, BingoCard
+from api.models import BingoSession, BingoCard, Teacher
+from api.auth import hash_password
 from api.routers.bingo import _check_bingo, _completed_lines
 
 
@@ -17,13 +18,25 @@ from api.routers.bingo import _check_bingo, _completed_lines
 
 @pytest.fixture(autouse=True)
 def clear_bingo_state():
-    bingo_router._mgr._teachers.clear()
-    bingo_router._mgr._students.clear()
-    bingo_router._mgr._player_info.clear()
+    bingo_router._mgr.clear()
     yield
-    bingo_router._mgr._teachers.clear()
-    bingo_router._mgr._students.clear()
-    bingo_router._mgr._player_info.clear()
+    bingo_router._mgr.clear()
+
+
+@pytest.fixture()
+def teacher2(db) -> Teacher:
+    t = Teacher(first_name="Bernd", last_name="Koch", active=True,
+                password_hash=hash_password("secret2"), role="teacher")
+    db.add(t)
+    db.flush()
+    return t
+
+
+@pytest.fixture()
+def teacher2_token(client, teacher2) -> str:
+    r = client.post("/api/auth/login", json={"username": "Bernd Koch", "password": "secret2"})
+    client.cookies.clear()
+    return r.json()["access_token"]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -34,6 +47,17 @@ PAIRS_3x3 = [
 ]
 
 
+# Teacher WS connections must carry a verified identity (role= alone no
+# longer grants game control).
+_TEACHER_HEADERS: list[tuple[bytes, bytes]] = []
+
+
+@pytest.fixture(autouse=True)
+def _ws_teacher_auth(teacher):
+    global _TEACHER_HEADERS
+    _TEACHER_HEADERS = bearer_headers(teacher.id)
+
+
 def _teacher_scope(code: str) -> dict:
     return {
         "type": "websocket",
@@ -42,7 +66,7 @@ def _teacher_scope(code: str) -> dict:
         "root_path": "",
         "scheme": "ws",
         "query_string": b"role=teacher",
-        "headers": [],
+        "headers": _TEACHER_HEADERS,
         "client": ("127.0.0.1", 1234),
         "server": ("127.0.0.1", 8000),
         "subprotocols": [],
@@ -215,6 +239,145 @@ class TestRestEndpoints:
         assert client.get("/api/bingo/info?code=XXXXXXXX").status_code == 404
 
 
+class TestBingoSets:
+    """Content/session split: /api/bingo (unchanged contract) creates both a
+    reusable BingoSet and its first BingoSession; /sets exposes the library
+    (open to every teacher, like /api/capuths); /sets/{id}/sessions starts
+    an additional session from existing content."""
+
+    def test_create_also_creates_reusable_set(self, client, teacher_token):
+        code = _create_session(client, teacher_token)
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        sets = client.get("/api/bingo/sets", headers=h).json()
+        assert len(sets) == 1
+        assert sets[0]["total_pairs"] == len(PAIRS_3x3)
+
+        # The session created alongside it still reads title/pairs correctly
+        # via the BingoSet passthrough.
+        sessions = client.get("/api/bingo", headers=h).json()
+        assert next(s for s in sessions if s["code"] == code)["title"]
+
+    def test_sets_open_to_other_teachers(self, client, teacher_token, teacher2_token):
+        _create_session(client, teacher_token)
+        r = client.get("/api/bingo/sets", headers={"Authorization": f"Bearer {teacher2_token}"})
+        assert len(r.json()) == 1
+
+    def test_start_session_from_set(self, client, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        _create_session(client, teacher_token)
+        set_id = client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+
+        r = client.post(f"/api/bingo/sets/{set_id}/sessions", headers=h)
+        assert r.status_code == 201
+        assert "code" in r.json()
+
+        sessions = client.get("/api/bingo", headers=h).json()
+        assert len(sessions) == 2  # original session from create + this new one
+
+    def test_start_session_from_unknown_set_404(self, client, teacher_token):
+        r = client.post("/api/bingo/sets/999999/sessions", headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 404
+
+    def test_start_session_requires_auth(self, client, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        _create_session(client, teacher_token)
+        set_id = client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+        client.cookies.clear()
+        r = client.post(f"/api/bingo/sets/{set_id}/sessions")
+        assert r.status_code == 401
+
+    def test_close_awards_anonymous_points_to_bound_class(self, client, db, klass, teacher_token):
+        """Anonymous players' correctness points credit the session's bound
+        class; without a bound class they are dropped (previous behavior)."""
+        from api.models import Transaction
+
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        client.post("/api/bingo", json={
+            "title": "T", "max_points": 10, "grid_size": 3, "grid_cols": 3, "pairs": PAIRS_3x3,
+        }, headers=h)
+        set_id = client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+
+        r = client.post(f"/api/bingo/sets/{set_id}/sessions", json={"class_id": klass.id}, headers=h)
+        assert r.json()["class_id"] == klass.id
+        code = r.json()["code"]
+
+        session = db.query(BingoSession).filter_by(code=code).one()
+        session.called_indices = [0, 1]
+        db.add(BingoCard(session_id=session.id, student_id=None, anon_token="tokX",
+                         student_name="Gast", grid_indices=list(range(9)), marked_positions=[0, 1]))
+        db.flush()
+
+        client.post(f"/api/bingo/{code}/close", headers=h)
+        tx = db.query(Transaction).filter_by(class_id=klass.id).all()
+        assert len(tx) == 1
+        assert tx[0].points == 10  # 2/2 called cells correctly marked → full ratio
+
+    def test_close_drops_anonymous_points_without_bound_class(self, client, db, klass, teacher_token):
+        from api.models import Transaction
+
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        client.post("/api/bingo", json={
+            "title": "T", "max_points": 10, "grid_size": 3, "grid_cols": 3, "pairs": PAIRS_3x3,
+        }, headers=h)
+        code = client.get("/api/bingo", headers=h).json()[0]["code"]
+
+        session = db.query(BingoSession).filter_by(code=code).one()
+        assert session.class_id is None
+        session.called_indices = [0, 1]
+        db.add(BingoCard(session_id=session.id, student_id=None, anon_token="tokY",
+                         student_name="Gast", grid_indices=list(range(9)), marked_positions=[0, 1]))
+        db.flush()
+
+        client.post(f"/api/bingo/{code}/close", headers=h)
+        assert db.query(Transaction).count() == 0
+
+    def test_close_students_still_credit_own_class(self, client, db, klass, teacher_token):
+        from api.models import Transaction, Student, Class
+
+        other_class = Class(code="7z", display_name="Klasse 7z")
+        db.add(other_class)
+        db.flush()
+        student = Student(nachname="M", vorname="T", klasse=other_class.code,
+                          class_id=other_class.id, geschlecht="m")
+        db.add(student)
+        db.flush()
+
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        client.post("/api/bingo", json={
+            "title": "T", "max_points": 10, "grid_size": 3, "grid_cols": 3, "pairs": PAIRS_3x3,
+        }, headers=h)
+        set_id = client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+        code = client.post(f"/api/bingo/sets/{set_id}/sessions", json={"class_id": klass.id}, headers=h).json()["code"]
+
+        session = db.query(BingoSession).filter_by(code=code).one()
+        session.called_indices = [0, 1]
+        db.add(BingoCard(session_id=session.id, student_id=student.id,
+                         student_name="T M", grid_indices=list(range(9)), marked_positions=[0, 1]))
+        db.flush()
+
+        client.post(f"/api/bingo/{code}/close", headers=h)
+        # Student's own class gets the points, not the session-bound class
+        assert db.query(Transaction).filter_by(class_id=other_class.id).count() == 1
+        assert db.query(Transaction).filter_by(class_id=klass.id).count() == 0
+
+    def test_list_filters_by_set_id(self, client, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        _create_session(client, teacher_token)
+        set_id = client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+        client.post(f"/api/bingo/sets/{set_id}/sessions", headers=h)
+
+        other_code = _create_session(client, teacher_token)
+        other_set_id = next(s["id"] for s in client.get("/api/bingo/sets", headers=h).json() if s["id"] != set_id)
+
+        filtered = client.get(f"/api/bingo?set_id={set_id}", headers=h).json()
+        assert len(filtered) == 2
+        assert other_code not in [s["code"] for s in filtered]
+
+        other_filtered = client.get(f"/api/bingo?set_id={other_set_id}", headers=h).json()
+        assert len(other_filtered) == 1
+        assert other_filtered[0]["code"] == other_code
+
+
 # ── WebSocket game-flow tests ──────────────────────────────────────────────────
 
 class TestWebSocketFlow:
@@ -290,7 +453,8 @@ class TestWebSocketFlow:
         asyncio.run(run())
 
     def test_mark_called_cell_is_acknowledged(self, client, teacher_token, db):
-        code = _create_session(client, teacher_token)
+        # Exactly 9 pairs for a 3x3 card so every called pair is on the card
+        code = _create_session(client, teacher_token, pairs=PAIRS_3x3[:9])
 
         async def run():
             async with connect_ws(app, _teacher_scope(code)) as t:

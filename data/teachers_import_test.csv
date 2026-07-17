@@ -1,0 +1,11 @@
+#;Nachname;Vorname;E-Mail;Klasse;Rolle
+101;Müller;Anna;anna.mueller@schule.de;5a;Lehrer
+102;Krause;Ben;ben.krause@schule.de;5a;SPF
+103;Fischer;Clara;clara.fischer@schule.de;7b;Lehrer
+104;Wagner;David;david.wagner@schule.de;7b;Lehrer
+105;Schulz;Eva;eva.schulz@schule.de;;Lehrer
+106;Hoffmann;Felix;felix.hoffmann@schule.de;9c;
+107;Neumann;Greta;greta.neumann@schule.de;10a;spf
+108;Schwarz;Hans;hans.schwarz@schule.de;13z;Lehrer
+109;Zimmermann;Ina;ina.zimmermann@schule.de;;Hausmeister
+;Braun;Jonas;jonas.braun@schule.de;;Lehrer

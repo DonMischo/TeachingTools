@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Haus, HausMember, Class, Transaction
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, get_current_user
 
 router = APIRouter(prefix="/api/haeuser", tags=["haeuser"])
 
@@ -41,6 +41,19 @@ class HausOut(BaseModel):
 # Helper
 # ---------------------------------------------------------------------------
 
+def haus_total_points(db: Session, haus_id: int) -> int:
+    """Live sum of points across a house's member classes — a house has no
+    stored point balance of its own, this is the source of truth other
+    routers (e.g. Auction) must check before letting a house spend points."""
+    class_ids = [m.class_id for m in db.query(HausMember).filter_by(haus_id=haus_id).all()]
+    if not class_ids:
+        return 0
+    row = db.query(func.coalesce(func.sum(Transaction.points), 0)).filter(
+        Transaction.class_id.in_(class_ids)
+    ).scalar()
+    return int(row)
+
+
 def _haus_out(h: Haus, db: Session) -> HausOut:
     class_ids = [m.class_id for m in h.members]
     total_points = 0
@@ -64,7 +77,7 @@ def _haus_out(h: Haus, db: Session) -> HausOut:
 # ---------------------------------------------------------------------------
 
 @router.get("", response_model=list[HausOut])
-def list_haeuser(db: Session = Depends(get_db)):
+def list_haeuser(db: Session = Depends(get_db), _=Depends(get_current_user)):
     haeuser = db.query(Haus).order_by(Haus.id).all()
     return [_haus_out(h, db) for h in haeuser]
 

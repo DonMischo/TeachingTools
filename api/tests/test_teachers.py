@@ -7,21 +7,21 @@ from api.models import Teacher
 from api.auth import hash_password
 
 
-def test_only_active_teachers_are_listed(client, db):
+def test_only_active_teachers_are_listed(client, db, teacher_token):
     db.add(Teacher(first_name="Active", last_name="One", active=True,
                    password_hash=hash_password("pw")))
     db.add(Teacher(first_name="Inactive", last_name="Two", active=False,
                    password_hash=hash_password("pw")))
     db.flush()
 
-    r = client.get("/api/teachers")
+    r = client.get("/api/teachers", headers={"Authorization": f"Bearer {teacher_token}"})
 
     names = [t["last_name"] for t in r.json()]
     assert "One" in names
     assert "Two" not in names
 
 
-def test_teachers_are_sorted_alphabetically(client, db):
+def test_teachers_are_sorted_alphabetically(client, db, teacher_token):
     db.add_all([
         Teacher(first_name="Z", last_name="Zett", active=True),
         Teacher(first_name="A", last_name="Amann", active=True),
@@ -29,7 +29,7 @@ def test_teachers_are_sorted_alphabetically(client, db):
     ])
     db.flush()
 
-    r = client.get("/api/teachers")
+    r = client.get("/api/teachers", headers={"Authorization": f"Bearer {teacher_token}"})
 
     last_names = [t["last_name"] for t in r.json()]
     assert last_names == sorted(last_names)

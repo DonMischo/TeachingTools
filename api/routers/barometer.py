@@ -4,92 +4,33 @@ Meinungsbarometer — live scale-question sessions.
 Flow:
   1. Teacher POST /api/barometer  → session with questions, gets code
   2. Students scan QR → GET /api/barometer/{code} to verify, then connect WS
-  3. WS /api/barometer/{code}/ws?role=teacher|student&student_id=N
+  3. WS /api/barometer/{code}/ws?role=teacher|student (identity from session cookie)
   4. Teacher sends: show_question / show_results / next / close
   5. Students send: respond {question_id, value}
 """
-import random
-import string
 from collections import defaultdict
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import BarometerSession, BarometerQuestion, BarometerResponse, Student, Teacher
 from ..auth import get_current_teacher, get_current_user_optional
+from ..utils import gen_code
+from ..ws_auth import ws_identity
+from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/barometer", tags=["barometer"])
 
-
-# ---------------------------------------------------------------------------
-# In-memory WS manager
-# ---------------------------------------------------------------------------
-
-class _BarometerManager:
-    def __init__(self):
-        self._rooms: dict[str, dict] = {}
-
-    def _room(self, code: str) -> dict:
-        if code not in self._rooms:
-            self._rooms[code] = {"teacher": None, "students": {}}
-        return self._rooms[code]
-
-    def add_teacher(self, code: str, ws: WebSocket):
-        self._room(code)["teacher"] = ws
-
-    def add_student(self, code: str, sid: int, ws: WebSocket):
-        self._room(code)["students"][sid] = ws
-
-    def remove_teacher(self, code: str):
-        r = self._rooms.get(code)
-        if r:
-            r["teacher"] = None
-
-    def remove_student(self, code: str, sid: int):
-        r = self._rooms.get(code)
-        if r:
-            r["students"].pop(sid, None)
-
-    async def broadcast(self, code: str, msg: dict):
-        r = self._rooms.get(code, {})
-        targets = list(r.get("students", {}).values())
-        if t := r.get("teacher"):
-            targets.append(t)
-        for ws in targets:
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def send_teacher(self, code: str, msg: dict):
-        r = self._rooms.get(code, {})
-        if ws := r.get("teacher"):
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    def student_count(self, code: str) -> int:
-        return len(self._rooms.get(code, {}).get("students", {}))
-
-
-mgr = _BarometerManager()
+mgr = RoomManager()
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _gen_code(db: Session) -> str:
-    chars = string.ascii_uppercase + string.digits
-    for _ in range(20):
-        c = "".join(random.choices(chars, k=6))
-        if not db.query(BarometerSession).filter_by(code=c).first():
-            return c
-    raise RuntimeError("Could not generate code")
 
 
 def _distribution(session: BarometerSession, question_id: int) -> dict[int, int]:
@@ -165,6 +106,7 @@ class QuestionIn(BaseModel):
 class SessionCreate(BaseModel):
     title: str
     questions: list[QuestionIn]
+    shared: bool = False
 
 
 class QuestionOut(BaseModel):
@@ -186,6 +128,7 @@ class SessionOut(BaseModel):
     status: str
     current_question_idx: int
     results_visible: bool
+    shared: bool
     questions: list[QuestionOut]
 
     model_config = {"from_attributes": True}
@@ -198,6 +141,9 @@ class SessionSummary(BaseModel):
     status: str
     question_count: int
     created_at: datetime
+    shared: bool
+    created_by: int
+    created_by_name: str
 
     model_config = {"from_attributes": True}
 
@@ -211,16 +157,16 @@ def list_sessions(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    sessions = (
-        db.query(BarometerSession)
-        .filter_by(created_by=current.id)
-        .order_by(BarometerSession.created_at.desc())
-        .all()
-    )
+    q = db.query(BarometerSession)
+    if current.role != "admin":
+        q = q.filter(or_(BarometerSession.created_by == current.id, BarometerSession.shared == True))  # noqa: E712
+    sessions = q.order_by(BarometerSession.created_at.desc()).all()
     return [
         SessionSummary(
             id=s.id, code=s.code, title=s.title, status=s.status,
             question_count=len(s.questions), created_at=s.created_at,
+            shared=s.shared, created_by=s.created_by,
+            created_by_name=f"{s.creator.first_name} {s.creator.last_name}" if s.creator else "?",
         )
         for s in sessions
     ]
@@ -235,9 +181,10 @@ def create_session(
     if not body.questions:
         raise HTTPException(400, "At least one question required")
     session = BarometerSession(
-        code=_gen_code(db),
+        code=gen_code(db, BarometerSession),
         title=body.title,
         created_by=current.id,
+        shared=body.shared,
     )
     db.add(session)
     db.flush()
@@ -256,6 +203,48 @@ def create_session(
     return session
 
 
+def clone_session_impl(db: Session, code: str, teacher: Teacher) -> BarometerSession:
+    """Start a fresh session by copying an existing (own or shared) one's
+    questions — shared by the REST endpoint and the Stundenplaner tool
+    registry. Permission check (owner or shared) lives here."""
+    template = db.query(BarometerSession).filter_by(code=code).first()
+    if not template:
+        raise HTTPException(404, "Session not found")
+    if template.created_by != teacher.id and not template.shared:
+        raise HTTPException(403)
+
+    session = BarometerSession(
+        code=gen_code(db, BarometerSession),
+        title=template.title,
+        created_by=teacher.id,
+        shared=False,
+    )
+    db.add(session)
+    db.flush()
+    for q in template.questions:
+        db.add(BarometerQuestion(
+            session_id=session.id,
+            order=q.order,
+            text=q.text,
+            scale_min=q.scale_min,
+            scale_max=q.scale_max,
+            scale_min_label=q.scale_min_label,
+            scale_max_label=q.scale_max_label,
+        ))
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+@router.post("/{code}/clone", response_model=SessionOut, status_code=201)
+def clone_session(
+    code: str,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    return clone_session_impl(db, code, current)
+
+
 @router.get("/{code}", response_model=SessionOut)
 def get_session(
     code: str,
@@ -265,6 +254,41 @@ def get_session(
     s = db.query(BarometerSession).filter_by(code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
+    return s
+
+
+@router.patch("/{code}", response_model=SessionOut)
+def update_session(
+    code: str,
+    body: SessionCreate,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    """Replace title/questions/shared of an existing session (creator or admin only).
+    Existing responses are dropped since they're keyed to the old question rows."""
+    if not body.questions:
+        raise HTTPException(400, "At least one question required")
+    s = db.query(BarometerSession).filter_by(code=code).first()
+    if not s:
+        raise HTTPException(404, "Session not found")
+    if s.created_by != current.id and current.role != "admin":
+        raise HTTPException(403)
+
+    s.title = body.title
+    s.shared = body.shared
+    for q in list(s.questions):
+        db.delete(q)
+    db.flush()
+    for i, q in enumerate(body.questions):
+        db.add(BarometerQuestion(
+            session_id=s.id, order=i, text=q.text,
+            scale_min=q.scale_min, scale_max=q.scale_max,
+            scale_min_label=q.scale_min_label, scale_max_label=q.scale_max_label,
+        ))
+    s.current_question_idx = -1
+    s.results_visible = False
+    db.commit()
+    db.refresh(s)
     return s
 
 
@@ -292,7 +316,6 @@ async def barometer_ws(
     code: str,
     websocket: WebSocket,
     role: str = "student",
-    student_id: int = 0,
     db: Session = Depends(get_db),
 ):
     s = db.query(BarometerSession).filter_by(code=code).first()
@@ -300,16 +323,36 @@ async def barometer_ws(
         await websocket.close(code=4004)
         return
 
+    # Identity comes from the connection's own session cookie/token, never
+    # from client-supplied query params — otherwise a participant could
+    # spoof another student_id (or reuse several) to vote more than once.
+    identity = ws_identity(websocket, db)
+    if not identity:
+        await websocket.close(code=4001)
+        return
+    ident_role, ident_id = identity
+
+    if role == "teacher":
+        teacher = db.get(Teacher, ident_id) if ident_role == "teacher" else None
+        if not teacher or (s.created_by != teacher.id and teacher.role != "admin"):
+            await websocket.close(code=4003)
+            return
+        student_id = 0
+    else:
+        if ident_role != "student":
+            await websocket.close(code=4003)
+            return
+        student_id = ident_id
+
     await websocket.accept()
 
     if role == "teacher":
         mgr.add_teacher(code, websocket)
         await websocket.send_json({**_state_msg(s), "participants": mgr.student_count(code)})
     else:
-        student = db.get(Student, student_id) if student_id else None
         mgr.add_student(code, student_id, websocket)
         await websocket.send_json(_state_msg(s))
-        await mgr.send_teacher(code, {"event": "participant_joined", "count": mgr.student_count(code)})
+        await mgr.send_teachers(code, {"event": "participant_joined", "count": mgr.student_count(code)})
 
     try:
         while True:
@@ -343,6 +386,15 @@ async def barometer_ws(
                     db.commit()
                     await mgr.broadcast(code, {"event": "closed"})
 
+                elif action == "restart":
+                    s.status = "active"
+                    s.current_question_idx = -1
+                    s.results_visible = False
+                    db.query(BarometerResponse).filter_by(session_id=s.id).delete()
+                    db.commit()
+                    db.refresh(s)
+                    await mgr.broadcast(code, {**_state_msg(s), "reset": True})
+
             else:
                 if action == "respond":
                     qid = int(data.get("question_id", 0))
@@ -367,7 +419,7 @@ async def barometer_ws(
                     db.commit()
                     db.refresh(s)
                     # Notify teacher of updated distribution
-                    await mgr.send_teacher(code, {
+                    await mgr.send_teachers(code, {
                         "event": "response_update",
                         "question_id": qid,
                         "distribution": _distribution(s, qid),
@@ -379,6 +431,6 @@ async def barometer_ws(
         pass
     finally:
         if role == "teacher":
-            mgr.remove_teacher(code)
+            mgr.remove_teacher(code, websocket)
         else:
             mgr.remove_student(code, student_id)

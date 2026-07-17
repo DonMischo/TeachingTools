@@ -2,14 +2,14 @@ import Link from "next/link";
 
 const CARDS = [
   {
-    href: "/wettkampf",
+    href: "/games/wettkampf",
     icon: "🏆",
     title: "Wettkämpfe",
     description: "Turniere erstellen, Spielpläne verwalten und Ergebnisse eintragen.",
     color: "#e8821a",
   },
   {
-    href: "/sportfest",
+    href: "/games/sportfest",
     icon: "🏃",
     title: "Sportfest",
     description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",

@@ -19,6 +19,8 @@ vi.mock("@/lib/api", () => ({
   api: {
     capuths: {
       joinSession: (...args: unknown[]) => mockJoinSession(...args),
+      getSession: vi.fn().mockResolvedValue({ team_mode: false }),
+      listTeams: vi.fn().mockResolvedValue([]),
     },
   },
 }));
@@ -62,7 +64,7 @@ describe("PlayPage – join form", () => {
 
   it("renders the join form after hydration", async () => {
     await renderAndHydrate();
-    expect(screen.getByPlaceholderText("Dein Name…")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Dein Name")).toBeInTheDocument();
     expect(screen.getByText(/Beitreten/)).toBeInTheDocument();
   });
 
@@ -88,12 +90,13 @@ describe("PlayPage – join form", () => {
     expect(screen.getByTitle("cat").querySelector(".avatar-check")).toBeNull();
   });
 
-  it("shows error and does not call API when name is empty", async () => {
+  it("join button is disabled and API not called when name is empty", async () => {
     const user = userEvent.setup();
     await renderAndHydrate();
-    await user.click(screen.getByText(/Beitreten/));
+    const btn = screen.getByText(/Beitreten/).closest("button")!;
+    expect(btn).toBeDisabled();
+    await user.click(btn);
     expect(mockJoinSession).not.toHaveBeenCalled();
-    expect(screen.getByText(/Namen/)).toBeInTheDocument();
   });
 
   it("calls joinSession with name and selected avatar", async () => {
@@ -101,16 +104,16 @@ describe("PlayPage – join form", () => {
     mockJoinSession.mockResolvedValue({ participant_id: 1, name: "Test" });
     await renderAndHydrate();
     await user.click(screen.getByTitle("cat"));
-    await user.type(screen.getByPlaceholderText("Dein Name…"), "Test");
+    await user.type(screen.getByPlaceholderText("Dein Name"), "Test");
     await user.click(screen.getByText(/Beitreten/));
-    expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat");
+    expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat", null);
   });
 
   it("shows error message when joinSession fails", async () => {
     const user = userEvent.setup();
     mockJoinSession.mockRejectedValue(new Error("Session nicht gefunden"));
     await renderAndHydrate();
-    await user.type(screen.getByPlaceholderText("Dein Name…"), "Test");
+    await user.type(screen.getByPlaceholderText("Dein Name"), "Test");
     await user.click(screen.getByText(/Beitreten/));
     await waitFor(() =>
       expect(screen.getByText("Session nicht gefunden")).toBeInTheDocument()

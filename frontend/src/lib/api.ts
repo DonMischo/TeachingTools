@@ -1,3 +1,7 @@
+import type {
+  TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
+} from "@/components/timeline/types";
+
 export type ClassOut = {
   id: number;
   code: string;
@@ -113,6 +117,17 @@ export type StudentRoleOut = {
   assigned_by: number | null;
 };
 
+export type GroupType = "kurs" | "wahlpflicht" | "ab_gruppe";
+
+export type StudentGroupOut = {
+  id: number;
+  group_type: GroupType;
+  name: string;
+  class_id: number | null;
+  member_ids: number[];
+  member_class_ids: number[];
+};
+
 export type ClassChoreOut = {
   id: number;
   class_id: number;
@@ -150,6 +165,7 @@ export type BarometerSessionOut = {
   status: string;
   current_question_idx: number;
   results_visible: boolean;
+  shared: boolean;
   questions: BarometerQuestionOut[];
 };
 
@@ -160,6 +176,9 @@ export type BarometerSessionSummary = {
   status: string;
   question_count: number;
   created_at: string;
+  shared: boolean;
+  created_by: number;
+  created_by_name: string;
 };
 
 export type BarometerQuestionIn = {
@@ -170,12 +189,82 @@ export type BarometerQuestionIn = {
   scale_max_label?: string;
 };
 
+export type TeacherAssignmentOut = {
+  id: number;
+  subject: string;
+  class_id: number | null;
+  class_code: string | null;
+  group_id: number | null;
+  group_name: string | null;
+  group_type: "kurs" | "wahlpflicht" | null;
+  label: string;
+};
+
 export type TeacherOut = {
   id: number;
   first_name: string;
   last_name: string;
   active: boolean;
   role: string;
+  nummer: number | null;
+  email: string | null;
+  teacher_role: string | null;
+  klasse: string | null;
+  klasse_id: number | null;
+  assignments: TeacherAssignmentOut[];
+  korrektur: number;
+  notiz: string | null;
+  av_stunden: number | null;
+  total_ws: number;
+};
+
+export type WochenstundenOut = {
+  subject: string;
+  grade: number;
+  hours: number;
+};
+
+export type CalendarEntryOut = {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string;   // single-select audience tier: Kollegium/Primar/Sekundar/Schulgemeinschaft/Ferien
+  start_date: string;  // "YYYY-MM-DD"
+  end_date: string;
+  all_day: boolean;
+  start_time: string | null;  // "HH:MM"
+  end_time: string | null;
+  tags: string[];  // free-form, colorable descriptive labels
+  created_by: number;
+  creator_name: string;
+};
+
+export type CalendarTagOut = {
+  name: string;
+  color: string;
+};
+
+export type CalendarMeta = {
+  categories: string[];
+  tags: CalendarTagOut[];
+  bundeslaender: Record<string, string>;
+};
+
+export type SchoolSettingsOut = {
+  bundesland: string;
+};
+
+export type TeacherDiffRow = {
+  key: string;
+  action: "new" | "update" | "unchanged";
+  csv_data: Record<string, string>;
+  db_data: Record<string, string> | null;
+  changed_fields: string[];
+};
+
+export type TeacherPreviewResponse = {
+  diff: TeacherDiffRow[];
+  summary: { new: number; update: number; unchanged: number };
 };
 
 export type TransactionOut = {
@@ -412,16 +501,279 @@ export type AuctionOut = {
   winner_house_id: number | null; winning_bid: number | null;
 };
 
+export type AuctionSetOut = {
+  id: number; title: string;
+  description: string | null; prize_description: string | null;
+  created_at: string;
+};
+
+// ---------------------------------------------------------------------------
+// Stundenplaner
+// ---------------------------------------------------------------------------
+
+export type ToolLink = {
+  type: "schreibraum" | "bingo" | "barometer" | "exit-ticket" | "classroom" | "caputh" | "zeitstrahl";
+  ref_id: string | null;
+  label: string;
+};
+
+export type Phase = {
+  id?: string | null;
+  name: string;
+  dauer_min: number;
+  inhalt: string;
+  sozialform: string;
+  methode: string;
+  material: string;
+  tool_link: ToolLink | null;
+};
+
+export type LessonPlanBody = {
+  title: string;
+  fach?: string;
+  klasse?: string;
+  datum?: string | null;
+  dauer_min?: number;
+  lernziele?: string[];
+  phasen?: Phase[];
+  hausaufgaben?: string;
+  notizen?: string;
+};
+
+export type LessonPlanOut = LessonPlanBody & {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  owner_id: number;
+  owner_name: string;
+  is_owner: boolean;
+  shared_with: { teacher_id: number; name: string }[];
+  // filled by API
+  lernziele: string[];
+  phasen: Phase[];
+};
+
+export type ToolRefItem = { ref_id: string | null; label: string };
+export type ToolInfo = {
+  type: string;
+  label: string;
+  requires_ref: boolean;
+  uses_class: boolean;
+  items: ToolRefItem[];
+};
+export type ToolRefs = ToolInfo[];
+export type ToolLaunchResult = { host_url: string; join_url: string | null; code: string | null };
+
+// ── Exitgame ────────────────────────────────────────────────────────────────
+
+export type ExitGameOut = {
+  id: number;
+  title: string;
+  description: string | null;
+  subject: string;
+  grade: string | null;
+  tags: string[];
+  slide_count: number;
+  created_at: string;
+};
+
+export type ExitGameMedia = { kind: "image" | "html" | "video"; src: string; alt?: string; height?: number };
+export type ExitGameAnswer = { text: string; correct?: boolean };
+export type ExitGameTask = {
+  kind: "single" | "multi" | "true_false" | "input" | "timeline";
+  question?: string;
+  answers?: ExitGameAnswer[];
+  accept?: string[];
+  // kind "timeline": the Zeitstrahl game spec (sort/spot), checked server-side.
+  timeline?: TimelineGameSpec;
+  easierAlternative?: ExitGameTask;
+  // Pool of equivalent alternatives; the server assigns one per attempt
+  // (variant_choices) and checks answers against the same one.
+  variants?: Partial<ExitGameTask>[];
+};
+export type ExitGameSlide = {
+  id: string;
+  type: "explanation" | "example" | "task" | "door";
+  title?: string;
+  text?: string;
+  media?: ExitGameMedia;
+  task?: ExitGameTask;
+  tasks?: ExitGameTask[];
+  code?: string;
+  hints?: string[];
+  onFailReview?: string[];
+};
+export type ExitGameStyle = {
+  theme?: string;
+  font?: string;
+  customVars?: Record<string, string>;
+};
+export type ExitGameData = {
+  title: string;
+  subject: string;
+  style?: ExitGameStyle;
+  dda?: { enabled?: boolean; levels?: Record<string, unknown>[] };
+  completion?: { message?: string; code?: string };
+  slides: ExitGameSlide[];
+};
+export type ExitGameDetailOut = ExitGameOut & { data: ExitGameData };
+
+export type ExitGameSessionOut = {
+  id: number;
+  join_code: string;
+  status: "open" | "closed";
+  exitgame_id: number;
+  class_id: number;
+  attempt_count: number;
+  created_at: string;
+  closed_at: string | null;
+};
+
+export type ExitGameAttemptSummary = {
+  id: number;
+  status: "in_progress" | "finished";
+  current_slide_idx: number;
+  solved_slide_ids: string[];
+  errors_total: number;
+  hints_total: number;
+  easier_taken_total: number;
+  elapsed_seconds: number;
+  started_at: string;
+  finished_at: string | null;
+};
+
+export type DdaAdaptation = {
+  outputs: Record<string, number>;
+  contentParams: Record<string, Record<string, unknown>>;
+  frustrated: boolean;
+  bored: boolean;
+};
+
+export type ExitGameReportRow = {
+  attempt_id: number;
+  student_id: number;
+  student_name: string;
+  student_class: string;
+  status: string;
+  slides_solved: number;
+  slides_total: number;
+  errors_total: number;
+  hints_total: number;
+  easier_taken_total: number;
+  elapsed_seconds: number;
+};
+export type ExitGameReport = { session_code: string; exitgame_title: string; status: string; attempts: ExitGameReportRow[] };
+
+export type ExitGameLogEvent = { slide_id: string; event_type: string; payload: Record<string, unknown>; created_at: string };
+export type ExitGameAttemptLog = { attempt: ExitGameAttemptSummary; student_name: string; student_class: string; events: ExitGameLogEvent[] };
+
+// ── Übungsseite (practice) ──────────────────────────────────────────────────
+
+export type PracticeProgressOut = {
+  difficulty: number;
+  tasks_done: number;
+  tasks_correct: number;
+  streak_correct?: number;
+};
+export type PracticeTopicOut = {
+  id: string;
+  label: string;
+  subject: string;
+  description: string;
+  grades: number[];
+  progress: PracticeProgressOut | null;
+};
+export type PracticeTaskOut = {
+  task_id: number;
+  question: string;
+  difficulty: number;
+  hint: string | null;
+  image_svg: string | null;
+  // Interactive Zahlenstrahl board (sanitized, no solution values) — when
+  // set, the Übungsseite renders a draggable number line instead of an input.
+  board?: TimelineBoard | null;
+  progress: PracticeProgressOut;
+};
+export type PracticeAnswerOut = {
+  correct: boolean;
+  solution: string | null;
+  leveled: "up" | "down" | null;
+  progress: PracticeProgressOut;
+};
+
+// ── Task generators (built-in + admin-registered) ──────────────────────────
+
+export type GeneratorInfo = {
+  id: string;
+  label: string;
+  subject: string;
+  description: string;
+  grades: number[];
+  source: "built-in" | "custom";
+};
+export type GeneratorSampleTask = {
+  question: string;
+  accept: string[];
+  solution: string | null;
+  hint: string | null;
+  image_svg: string | null;
+  distractors: string[];
+};
+
+export type GeneratorLevel = {
+  template: string;
+  vars: Record<string, [number, number]>;
+  answer_expr: string;
+  hint?: string | null;
+};
+export type GeneratorDefOut = {
+  id: number;
+  slug: string;
+  label: string;
+  subject: string;
+  description: string;
+  levels: GeneratorLevel[];
+  created_at: string;
+};
+
+export type LessonSessionOut = {
+  id: number;
+  plan_id: number;
+  started_at: string;
+  ended_at: string | null;
+};
+
+export type LessonMaterialOut = {
+  id: number;
+  plan_id: number;
+  phase_id: string;
+  original_filename: string;
+  content_type: string;
+  url: string;
+  pdf_url: string | null;
+  size_bytes: number;
+  uploaded_at: string;
+};
+
+export type ClassShareOut = { class_id: number; code: string; display_name: string };
+
 export type BingoOut = {
   id: number; code: string; title: string;
   subject: string | null; tags: string[]; description: string | null; max_points: number;
   grid_size: number; grid_cols: number; status: string; total_pairs: number; created_at: string;
+  class_id: number | null;
 };
 
 export type BingoCardOut = {
   id: number; grid_size: number;
   cells: { pair_index: number; answer: string }[];
   marked_positions: number[]; has_bingo: boolean;
+};
+
+export type BingoSetOut = {
+  id: number; title: string;
+  subject: string | null; tags: string[]; description: string | null; max_points: number;
+  grid_size: number; grid_cols: number; total_pairs: number; created_at: string;
 };
 
 export type ExitTicketSummary = {
@@ -448,6 +800,37 @@ export const api = {
   },
   teachers: {
     list: () => apiFetch<TeacherOut[]>("teachers"),
+    setKlasse: (teacherId: number, klasse_id: number | null) =>
+      apiFetch<TeacherOut>(`teachers/${teacherId}/klasse`, {
+        method: "PATCH", body: JSON.stringify({ klasse_id }),
+      }),
+    addAssignment: (teacherId: number, body: { subject: string; class_id?: number | null; group_id?: number | null }) =>
+      apiFetch<TeacherOut>(`teachers/${teacherId}/assignments`, {
+        method: "POST", body: JSON.stringify(body),
+      }),
+    deleteAssignment: (assignmentId: number) =>
+      apiFetch<void>(`teachers/assignments/${assignmentId}`, { method: "DELETE" }),
+    setKorrektur: (teacherId: number, body: { korrektur: number; notiz?: string | null; av_stunden?: number; clear_av_stunden?: boolean }) =>
+      apiFetch<TeacherOut>(`teachers/${teacherId}/korrektur`, {
+        method: "PATCH", body: JSON.stringify(body),
+      }),
+    getWochenstunden: () => apiFetch<WochenstundenOut[]>("teachers/wochenstunden"),
+    setWochenstunden: (rows: WochenstundenOut[]) =>
+      apiFetch<WochenstundenOut[]>("teachers/wochenstunden", {
+        method: "PUT", body: JSON.stringify(rows),
+      }),
+    preview: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/teachers/preview", { method: "POST", credentials: "include", body: fd })
+        .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<TeacherPreviewResponse>; });
+    },
+    apply: (selected_keys: string[], csv_data: Record<string, Record<string, string>>) =>
+      apiFetch<{ applied: number; errors: string[] }>("teachers/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selected_keys, csv_data }),
+      }),
   },
   transactions: {
     create: (data: { teacher_id: number; class_id: number; points: number; reason: string }) =>
@@ -482,6 +865,10 @@ export const api = {
       apiFetch<{ join_code: string; status: string; class_id: number; participant_count: number; points_awarded: number | null; started_at: string | null; finished_at: string | null }[]>(`capuths/${quizId}/sessions`),
     resetSession: (code: string) =>
       apiFetch<{ join_code: string; status: string }>(`sessions/${code}/reset`, { method: "POST" }),
+    deleteSession: (code: string) =>
+      apiFetch<void>(`sessions/${code}`, { method: "DELETE" }),
+    clearSessions: (quizId: number) =>
+      apiFetch<void>(`capuths/${quizId}/sessions`, { method: "DELETE" }),
     joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null) =>
       apiFetch<{ participant_id: number; name: string; avatar: string; team_id: number | null }>(`sessions/${code}/join`, {
         method: "POST",
@@ -633,6 +1020,140 @@ export const api = {
       apiFetch<StudentRoleOut>("roles", { method: "POST", body: JSON.stringify(body) }),
     remove: (id: number) => apiFetch<void>(`roles/${id}`, { method: "DELETE" }),
   },
+  groups: {
+    list: (params?: { group_type?: GroupType; class_id?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.group_type) q.set("group_type", params.group_type);
+      if (params?.class_id != null) q.set("class_id", String(params.class_id));
+      return apiFetch<StudentGroupOut[]>(`groups${q.size ? "?" + q : ""}`);
+    },
+    create: (body: { group_type: GroupType; name: string; class_id?: number | null }) =>
+      apiFetch<StudentGroupOut>("groups", { method: "POST", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`groups/${id}`, { method: "DELETE" }),
+    addMember: (id: number, student_id: number) =>
+      apiFetch<StudentGroupOut>(`groups/${id}/members`, { method: "POST", body: JSON.stringify({ student_id }) }),
+    removeMember: (id: number, student_id: number) =>
+      apiFetch<StudentGroupOut>(`groups/${id}/members/${student_id}`, { method: "DELETE" }),
+    award: (id: number, points: number, reason?: string) =>
+      apiFetch<{ class_id: number; points: number }[]>(`groups/${id}/award`, {
+        method: "POST",
+        body: JSON.stringify({ points, reason }),
+      }),
+  },
+  calendar: {
+    meta: () => apiFetch<CalendarMeta>("calendar/meta"),
+    list: (params?: { from?: string; to?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.from) q.set("from_", params.from);
+      if (params?.to) q.set("to", params.to);
+      return apiFetch<CalendarEntryOut[]>(`calendar${q.size ? "?" + q : ""}`);
+    },
+    create: (body: { title: string; description?: string | null; category: string; start_date: string; end_date: string; all_day: boolean; start_time?: string | null; end_time?: string | null; tags: string[] }) =>
+      apiFetch<CalendarEntryOut>("calendar", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: number, body: { title: string; description?: string | null; category: string; start_date: string; end_date: string; all_day: boolean; start_time?: string | null; end_time?: string | null; tags: string[] }) =>
+      apiFetch<CalendarEntryOut>(`calendar/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`calendar/${id}`, { method: "DELETE" }),
+    tags: {
+      list: () => apiFetch<CalendarTagOut[]>("calendar/tags"),
+      create: (name: string, color: string) =>
+        apiFetch<CalendarTagOut>("calendar/tags", { method: "POST", body: JSON.stringify({ name, color }) }),
+    },
+    settings: {
+      get: () => apiFetch<SchoolSettingsOut>("calendar/settings"),
+      set: (bundesland: string) =>
+        apiFetch<SchoolSettingsOut>("calendar/settings", { method: "PUT", body: JSON.stringify({ bundesland }) }),
+    },
+    fetchHolidays: (schoolYearStart: number) =>
+      apiFetch<{ created: number; bundesland: string }>(`calendar/holidays/fetch?school_year_start=${schoolYearStart}`, { method: "POST" }),
+    exportIcsUrl: (tags: string[], categories: string[]) => {
+      const q = new URLSearchParams();
+      if (tags.length) q.set("tags", tags.join(","));
+      if (categories.length) q.set("categories", categories.join(","));
+      return `/api/calendar/export.ics${q.size ? "?" + q : ""}`;
+    },
+    importIcs: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/calendar/import.ics", { method: "POST", credentials: "include", body: fd })
+        .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<{ created: number; errors: string[] }>; });
+    },
+  },
+  timelines: {
+    list: () => apiFetch<TimelineSetOut[]>("timelines"),
+    get: (id: number) => apiFetch<TimelineSetDetail>(`timelines/${id}`),
+    create: (body: Record<string, unknown>) =>
+      apiFetch<TimelineSetDetail>("timelines", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: number, body: Record<string, unknown>) =>
+      apiFetch<TimelineSetDetail>(`timelines/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`timelines/${id}`, { method: "DELETE" }),
+    template: () => apiFetch<Record<string, unknown>>("timelines/template"),
+    importExamples: () => apiFetch<TimelineSetOut[]>("timelines/examples", { method: "POST" }),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/timelines/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<TimelineSetDetail>;
+        });
+    },
+  },
+  exitgame: {
+    list: () => apiFetch<ExitGameOut[]>("exitgames"),
+    get: (id: number) => apiFetch<ExitGameDetailOut>(`exitgames/${id}`),
+    template: () => apiFetch<Record<string, unknown>>("exitgames/template"),
+    delete: (id: number) => apiFetch<void>(`exitgames/${id}`, { method: "DELETE" }),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/exitgames/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(JSON.stringify(await r.json().catch(() => ({}))));
+          return r.json() as Promise<ExitGameOut>;
+        });
+    },
+    sessions: {
+      create: (exitgameId: number, class_id: number) =>
+        apiFetch<ExitGameSessionOut>(`exitgames/${exitgameId}/sessions`, { method: "POST", body: JSON.stringify({ class_id }) }),
+      list: (exitgameId: number) => apiFetch<ExitGameSessionOut[]>(`exitgames/${exitgameId}/sessions`),
+      get: (code: string) => apiFetch<ExitGameSessionOut>(`exitgame-sessions/${code}`),
+      close: (code: string) => apiFetch<ExitGameSessionOut>(`exitgame-sessions/${code}/close`, { method: "POST" }),
+      delete: (code: string) => apiFetch<void>(`exitgame-sessions/${code}`, { method: "DELETE" }),
+      report: (code: string) => apiFetch<ExitGameReport>(`exitgame-sessions/${code}/report`),
+      reportCsvUrl: (code: string) => `/api/exitgame-sessions/${code}/report?fmt=csv`,
+    },
+    attempts: {
+      start: (code: string) => apiFetch<{ attempt: ExitGameAttemptSummary; exitgame_data: ExitGameData; variant_choices: Record<string, number> }>(
+        `exitgame-sessions/${code}/attempts`, { method: "POST" },
+      ),
+      postEvent: (attemptId: number, slide_id: string, action: string, payload: Record<string, unknown> = {}) =>
+        apiFetch<{ correct: boolean | null; adaptation: DdaAdaptation | null; attempt: ExitGameAttemptSummary }>(
+          `exitgame-attempts/${attemptId}/events`,
+          { method: "POST", body: JSON.stringify({ slide_id, action, payload }) },
+        ),
+      finish: (attemptId: number) =>
+        apiFetch<{ attempt: ExitGameAttemptSummary; completion: { message?: string; code?: string } | null }>(
+          `exitgame-attempts/${attemptId}/finish`, { method: "POST" },
+        ),
+      log: (attemptId: number) => apiFetch<ExitGameAttemptLog>(`exitgame-attempts/${attemptId}/log`),
+    },
+  },
+  practice: {
+    topics: () => apiFetch<PracticeTopicOut[]>("practice/topics"),
+    newTask: (topic: string) => apiFetch<PracticeTaskOut>(`practice/${topic}/task`, { method: "POST" }),
+    answer: (taskId: number, answer: string) =>
+      apiFetch<PracticeAnswerOut>(`practice/tasks/${taskId}/answer`, { method: "POST", body: JSON.stringify({ answer }) }),
+  },
+  generators: {
+    list: () => apiFetch<GeneratorInfo[]>("generators"),
+    sample: (id: string, difficulty = 3, count = 5) =>
+      apiFetch<{ generator: string; difficulty: number; tasks: GeneratorSampleTask[] }>(
+        `generators/${id}/sample?difficulty=${difficulty}&count=${count}`),
+    adminList: () => apiFetch<GeneratorDefOut[]>("admin/generators"),
+    create: (body: { slug: string; label: string; subject: string; description: string; levels: GeneratorLevel[] }) =>
+      apiFetch<{ id: number; slug: string }>("admin/generators", { method: "POST", body: JSON.stringify(body) }),
+    delete: (slug: string) => apiFetch<void>(`admin/generators/${slug}`, { method: "DELETE" }),
+  },
   chores: {
     allNames: () => apiFetch<string[]>("chores/all-names"),
     stats: (class_id: number) => apiFetch<ClassChoreStats>(`chores/stats?class_id=${class_id}`),
@@ -653,10 +1174,13 @@ export const api = {
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
-    create: (body: { title: string; questions: BarometerQuestionIn[] }) =>
+    create: (body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean }) =>
       apiFetch<BarometerSessionOut>("barometer", { method: "POST", body: JSON.stringify(body) }),
+    update: (code: string, body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean }) =>
+      apiFetch<BarometerSessionOut>(`barometer/${code}`, { method: "PATCH", body: JSON.stringify(body) }),
     get: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}`),
     delete: (code: string) => apiFetch<void>(`barometer/${code}`, { method: "DELETE" }),
+    clone: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}/clone`, { method: "POST" }),
   },
   schreibraum: {
     list: (created_by?: number) =>
@@ -738,26 +1262,99 @@ export const api = {
       }),
   },
   auction: {
-    list: () => apiFetch<AuctionOut[]>("auction"),
+    list: (set_id?: number) => apiFetch<AuctionOut[]>(`auction${set_id != null ? `?set_id=${set_id}` : ""}`),
     create: (body: { title: string; description?: string | null; prize_description?: string | null }) =>
       apiFetch<AuctionOut>("auction", { method: "POST", body: JSON.stringify(body) }),
     delete: (code: string) => apiFetch<void>(`auction/${code}`, { method: "DELETE" }),
+    listSets: () => apiFetch<AuctionSetOut[]>("auction/sets"),
+    startSet: (setId: number) =>
+      apiFetch<AuctionOut>(`auction/sets/${setId}/sessions`, { method: "POST" }),
   },
   bingo: {
-    list: () => apiFetch<BingoOut[]>("bingo"),
+    list: (set_id?: number) => apiFetch<BingoOut[]>(`bingo${set_id != null ? `?set_id=${set_id}` : ""}`),
     create: (body: { title: string; subject?: string | null; tags?: string[]; description?: string | null; max_points?: number; grid_size: number; grid_cols?: number; pairs: { caller: string; answer: string }[] }) =>
       apiFetch<{ id: number; code: string }>("bingo", { method: "POST", body: JSON.stringify(body) }),
     delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
     close: (code: string) => apiFetch<void>(`bingo/${code}/close`, { method: "POST" }),
     reset: (code: string) => apiFetch<void>(`bingo/${code}/reset`, { method: "POST" }),
-    getOrCreateCard: (code: string, student_id: number) =>
-      apiFetch<BingoCardOut>(`bingo/${code}/card?student_id=${student_id}`, { method: "POST" }),
+    getOrCreateCard: (code: string) =>
+      apiFetch<BingoCardOut>(`bingo/${code}/card`, { method: "POST" }),
+    listSets: () => apiFetch<BingoSetOut[]>("bingo/sets"),
+    startSet: (setId: number, class_id?: number | null) =>
+      apiFetch<{ id: number; code: string; class_id: number | null }>(`bingo/sets/${setId}/sessions`, {
+        method: "POST", body: JSON.stringify({ class_id: class_id ?? null }),
+      }),
   },
   exitTicket: {
     list: () => apiFetch<ExitTicketSummary[]>("exit-ticket"),
     create: (body: { title: string; question: string; rating_enabled?: boolean }) =>
       apiFetch<{ id: number; code: string }>("exit-ticket", { method: "POST", body: JSON.stringify(body) }),
+    clone: (code: string) =>
+      apiFetch<{ id: number; code: string }>(`exit-ticket/${code}/clone`, { method: "POST" }),
     delete: (code: string) => apiFetch<void>(`exit-ticket/${code}`, { method: "DELETE" }),
+  },
+  stundenplaner: {
+    list: () => apiFetch<{ own: LessonPlanOut[]; shared: LessonPlanOut[] }>("stundenplaner"),
+    create: (body: LessonPlanBody) =>
+      apiFetch<LessonPlanOut>("stundenplaner", { method: "POST", body: JSON.stringify(body) }),
+    importJson: (raw: string) =>
+      fetch("/api/stundenplaner/import", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: raw,
+      }).then(async (r) => {
+        if (!r.ok) throw new Error(await r.text());
+        return r.json() as Promise<LessonPlanOut>;
+      }),
+    get: (id: number) => apiFetch<LessonPlanOut>(`stundenplaner/${id}`),
+    update: (id: number, body: LessonPlanBody) =>
+      apiFetch<LessonPlanOut>(`stundenplaner/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`stundenplaner/${id}`, { method: "DELETE" }),
+    toolRefs: () => apiFetch<ToolRefs>("stundenplaner/tool-refs"),
+    launchTool: (type: string, ref_id: string | null, klasse?: string | null) =>
+      apiFetch<ToolLaunchResult>(`stundenplaner/tools/${type}/launch`, {
+        method: "POST", body: JSON.stringify({ ref_id, klasse: klasse ?? null }),
+      }),
+    addShare: (id: number, teacher_id: number) =>
+      apiFetch<{ teacher_id: number; name: string }>(`stundenplaner/${id}/shares`, {
+        method: "POST", body: JSON.stringify({ teacher_id }),
+      }),
+    removeShare: (id: number, teacher_id: number) =>
+      apiFetch<void>(`stundenplaner/${id}/shares/${teacher_id}`, { method: "DELETE" }),
+    start: (id: number) =>
+      apiFetch<LessonSessionOut>(`stundenplaner/${id}/start`, { method: "POST" }),
+    end: (sessionId: number) =>
+      apiFetch<void>(`stundenplaner/sessions/${sessionId}/end`, { method: "POST" }),
+    active: () =>
+      apiFetch<{ session: LessonSessionOut; plan: LessonPlanOut } | null>("stundenplaner/active"),
+    materials: {
+      list: (planId: number) => apiFetch<LessonMaterialOut[]>(`stundenplaner/${planId}/materials`),
+      upload: (planId: number, phaseId: string, file: File) => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("phase_id", phaseId);
+        return fetch(`/api/stundenplaner/${planId}/materials`, {
+          method: "POST",
+          credentials: "include",
+          body: fd,
+        }).then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<LessonMaterialOut>;
+        });
+      },
+      remove: (planId: number, materialId: number) =>
+        apiFetch<void>(`stundenplaner/${planId}/materials/${materialId}`, { method: "DELETE" }),
+    },
+    classShares: {
+      list: (planId: number) => apiFetch<ClassShareOut[]>(`stundenplaner/${planId}/class-shares`),
+      add: (planId: number, class_id: number) =>
+        apiFetch<ClassShareOut>(`stundenplaner/${planId}/class-shares`, {
+          method: "POST", body: JSON.stringify({ class_id }),
+        }),
+      remove: (planId: number, class_id: number) =>
+        apiFetch<void>(`stundenplaner/${planId}/class-shares/${class_id}`, { method: "DELETE" }),
+    },
   },
   apiFetch,
 };

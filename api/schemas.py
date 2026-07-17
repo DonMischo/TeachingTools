@@ -2,14 +2,135 @@ from datetime import datetime, date
 from pydantic import BaseModel
 
 
+class TeacherAssignmentOut(BaseModel):
+    id: int
+    subject: str
+    # Exactly one of the two targets is set:
+    class_id: int | None = None      # normal Klasse+Fach assignment
+    class_code: str | None = None
+    group_id: int | None = None      # Kurs/Wahlpflicht group (Kurssystem Kl. 9/10)
+    group_name: str | None = None
+    group_type: str | None = None    # "kurs" | "wahlpflicht"
+    label: str                       # display, e.g. "7a · Ma" or "Ma I"
+
+    model_config = {"from_attributes": True}
+
+
 class TeacherOut(BaseModel):
     id: int
     first_name: str
     last_name: str
     active: bool
     role: str
+    nummer: int | None = None
+    email: str | None = None
+    teacher_role: str | None = None  # e.g. "Lehrer" / "SPF" — professional role, not auth level
+    klasse: str | None = None  # set => Klassenlehrer of this class
+    klasse_id: int | None = None
+    assignments: list[TeacherAssignmentOut] = []
+    korrektur: int = 0
+    notiz: str | None = None
+    av_stunden: int | None = None  # Stunden nach Arbeitsvertrag (AvSt), null = not set
+    total_ws: float = 0  # sum of assignment hours (via Wochenstunden table) + korrektur
 
     model_config = {"from_attributes": True}
+
+
+class WochenstundenOut(BaseModel):
+    subject: str
+    grade: int
+    hours: int
+
+    model_config = {"from_attributes": True}
+
+
+class WochenstundenSet(BaseModel):
+    subject: str
+    grade: int
+    hours: int
+
+
+class TeacherKorrekturIn(BaseModel):
+    korrektur: int = 0
+    notiz: str | None = None
+    # AvSt (Stunden nach Arbeitsvertrag): omit to leave unchanged, set
+    # clear_av_stunden=true to unset.
+    av_stunden: int | None = None
+    clear_av_stunden: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Calendar
+# ---------------------------------------------------------------------------
+
+class CalendarEntryIn(BaseModel):
+    title: str
+    description: str | None = None
+    category: str  # single-select audience tier: Kollegium/Primar/Sekundar/Schulgemeinschaft/Ferien
+    start_date: date
+    end_date: date
+    all_day: bool = True
+    start_time: str | None = None  # "HH:MM", ignored if all_day
+    end_time: str | None = None
+    tags: list[str] = []  # free-form, colorable descriptive labels
+
+
+class CalendarEntryOut(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    category: str
+    start_date: date
+    end_date: date
+    all_day: bool
+    start_time: str | None
+    end_time: str | None
+    tags: list[str]
+    created_by: int
+    creator_name: str
+
+    model_config = {"from_attributes": True}
+
+
+class CalendarTagIn(BaseModel):
+    name: str
+    color: str
+
+
+class CalendarTagOut(BaseModel):
+    id: int
+    name: str
+    color: str
+
+    model_config = {"from_attributes": True}
+
+
+class SchoolSettingsOut(BaseModel):
+    bundesland: str
+
+    model_config = {"from_attributes": True}
+
+
+class SchoolSettingsIn(BaseModel):
+    bundesland: str
+
+
+class TeacherDiffRow(BaseModel):
+    key: str
+    action: str  # "new" | "update" | "unchanged"
+    csv_data: dict[str, str]
+    db_data: dict[str, str] | None
+    changed_fields: list[str]
+
+
+class TeacherPreviewResponse(BaseModel):
+    diff: list[TeacherDiffRow]
+    summary: dict[str, int]
+
+
+class TeacherApplyRequest(BaseModel):
+    selected_keys: list[str]
+    csv_data: dict[str, dict[str, str]]
 
 
 class ClassOut(BaseModel):
@@ -19,6 +140,7 @@ class ClassOut(BaseModel):
     class_name: str | None = None
     symbol_emoji: str | None
     symbol_image: str | None
+    ak_code: str | None = None
     total_points: int = 0
 
     model_config = {"from_attributes": True}
@@ -71,6 +193,9 @@ class QuizQuestionOut(BaseModel):
     image_path: str | None
     time_limit: int | None
     answers: list[QuizAnswerOut]
+    # type "timeline": full TimelineGameSpec incl. solutions — teacher-only
+    # endpoints; students get the sanitized board over the WS instead.
+    content: dict | None = None
 
     model_config = {"from_attributes": True}
 
@@ -81,6 +206,7 @@ class QuizOut(BaseModel):
     description: str | None
     max_points: int
     time_limit_default: int
+    preview_time_default: int = 3
     randomize_answers: bool
     created_at: datetime
     question_count: int = 0
@@ -145,6 +271,7 @@ class StudentOut(BaseModel):
     klasse: str
     class_id: int | None
     jahrgang: int | None
+    ak_code: str | None = None
     geschlecht: str
     geburtsdatum: date | None
     username: str | None

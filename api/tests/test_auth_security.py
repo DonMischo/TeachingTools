@@ -88,7 +88,9 @@ def test_class_name_requires_auth(client, klass):
     assert r.status_code == 401
 
 
-def test_class_name_update(client, teacher_token, klass):
+def test_class_name_update(client, db, teacher, teacher_token, klass):
+    teacher.klasse_id = klass.id  # class edits require Klassenlehrer (or admin)
+    db.flush()
     r = client.patch(
         f"/api/classes/{klass.id}/name",
         json={"class_name": "Otter"},
@@ -98,7 +100,9 @@ def test_class_name_update(client, teacher_token, klass):
     assert r.json()["class_name"] == "Otter"
 
 
-def test_class_name_clear(client, teacher_token, klass):
+def test_class_name_clear(client, db, teacher, teacher_token, klass):
+    teacher.klasse_id = klass.id  # class edits require Klassenlehrer (or admin)
+    db.flush()
     client.patch(
         f"/api/classes/{klass.id}/name",
         json={"class_name": "Otter"},

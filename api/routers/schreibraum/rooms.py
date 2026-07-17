@@ -1,7 +1,5 @@
 import io
 import logging
-import random
-import string
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -17,6 +15,7 @@ from ...models import (
     SchreibraumActionLog, SchreibraumAccess, Teacher, Student, Class,
 )
 from ...auth import get_current_user, get_current_teacher, require_admin
+from ...utils import gen_code
 from .colors import pick_color
 from .schemas import (
     RoomCreate, RoomOut, RoomPatch, ParticipantOut,
@@ -24,10 +23,6 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/api/schreibraum", tags=["schreibraum"])
-
-
-def _gen_code() -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
 def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
@@ -72,9 +67,7 @@ def create_room(
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    code = _gen_code()
-    while db.query(SchreibraumRoom).filter_by(code=code).first():
-        code = _gen_code()
+    code = gen_code(db, SchreibraumRoom)
 
     room = SchreibraumRoom(
         code=code,
@@ -448,26 +441,7 @@ def get_document(
 # File upload
 # ---------------------------------------------------------------------------
 
-ALLOWED_MIMES = {
-    # Images
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
-    # Documents
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # docx
-    "application/vnd.oasis.opendocument.text",  # odt
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # pptx
-    "application/vnd.oasis.opendocument.presentation",  # odp
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # xlsx
-    "application/vnd.oasis.opendocument.spreadsheet",  # ods
-    # Text
-    "text/plain", "text/csv", "text/markdown",
-}
-ALLOWED_EXTENSIONS = {
-    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
-    ".pdf", ".docx", ".odt", ".pptx", ".odp", ".xlsx", ".ods",
-    ".txt", ".csv", ".md",
-}
-MAX_FILE_BYTES = 20 * 1024 * 1024  # 20 MB
+from ...upload_utils import ALLOWED_MIMES, ALLOWED_EXTENSIONS, MAX_FILE_BYTES
 
 FILES_BASE = Path(__file__).parent.parent.parent.parent / "data" / "schreibraum"
 

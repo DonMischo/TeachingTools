@@ -37,7 +37,8 @@ describe("Sidebar — navigation", () => {
   it("shows nav links", async () => {
     await act(async () => { renderSidebar(); });
     expect(screen.getByTitle("Hauspokal")).toBeInTheDocument();
-    expect(screen.getByTitle("Klassen")).toBeInTheDocument();
+    expect(screen.getByTitle("Spiele")).toBeInTheDocument();
+    expect(screen.getByTitle("Tools")).toBeInTheDocument();
   });
 
   it("hides admin link when not logged in as admin", async () => {

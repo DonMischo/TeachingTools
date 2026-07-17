@@ -5,11 +5,21 @@ from pathlib import Path
 import shutil, uuid
 
 from ..database import get_db
-from ..models import Class, Transaction
+from ..models import Class, Teacher, Transaction
 from ..schemas import ClassOut, ClassSymbolUpdate, ClassNameUpdate
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, get_current_user
 
 router = APIRouter(prefix="/api/classes", tags=["classes"])
+
+
+def assert_class_editor(teacher: Teacher, class_id: int) -> None:
+    """Class edits are allowed for admins and the class's Klassenlehrer
+    (Teacher.klasse_id — a Klassenleitungsteam of two shares one klasse_id)."""
+    if teacher.role == "admin":
+        return
+    if teacher.klasse_id == class_id:
+        return
+    raise HTTPException(status_code=403, detail="Nur Klassenlehrer dieser Klasse oder Admins")
 
 UPLOAD_DIR = Path(__file__).parent.parent / "data" / "gfx"
 
@@ -31,7 +41,7 @@ def _with_totals(db: Session) -> list[ClassOut]:
 
 
 @router.get("", response_model=list[ClassOut])
-def list_classes(db: Session = Depends(get_db)):
+def list_classes(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return _with_totals(db)
 
 
@@ -40,8 +50,9 @@ def update_symbol(
     class_id: int,
     body: ClassSymbolUpdate,
     db: Session = Depends(get_db),
-    _: object = Depends(get_current_teacher),
+    current: Teacher = Depends(get_current_teacher),
 ):
+    assert_class_editor(current, class_id)
     cls = db.get(Class, class_id)
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
@@ -61,8 +72,9 @@ def update_class_name(
     class_id: int,
     body: ClassNameUpdate,
     db: Session = Depends(get_db),
-    _: object = Depends(get_current_teacher),
+    current: Teacher = Depends(get_current_teacher),
 ):
+    assert_class_editor(current, class_id)
     cls = db.get(Class, class_id)
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")
@@ -81,8 +93,9 @@ def upload_symbol_image(
     class_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _: object = Depends(get_current_teacher),
+    current: Teacher = Depends(get_current_teacher),
 ):
+    assert_class_editor(current, class_id)
     cls = db.get(Class, class_id)
     if not cls:
         raise HTTPException(status_code=404, detail="Class not found")

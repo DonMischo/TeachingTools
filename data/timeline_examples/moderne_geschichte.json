@@ -1,0 +1,2255 @@
+{
+  "title": "Europa nach dem Römischen Reich – Detaillierte Chronologie (476–1990)",
+  "description": "Eine detaillierte Chronologie der europäischen Geschichte vom Untergang Westroms bis zum Fall der Berliner Mauer – mit aufgelösten Einzelereignissen für Kriege, Friedensschlüsse, Herrscherwechsel und kulturelle Meilensteine.",
+  "tags": [
+    "mittelalter",
+    "frühe neuzeit",
+    "deutsche geschichte",
+    "europa",
+    "kreuzzüge",
+    "reformation",
+    "weltkriege",
+    "kalter krieg",
+    "chronologie"
+  ],
+  "grades": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "axis": {
+    "kind": "year",
+    "min": 400,
+    "max": 2000
+  },
+  "lanes": [
+    {
+      "id": "epochen",
+      "label": "Epochen & Kulturen",
+      "color": "#94a3b8"
+    },
+    {
+      "id": "deutschland",
+      "label": "Deutschland & HRR",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "europa",
+      "label": "Europa (übrig)",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "kriege",
+      "label": "Kriege & Schlachten",
+      "color": "#ef4444"
+    },
+    {
+      "id": "kultur",
+      "label": "Kultur, Wissenschaft & Erfindungen",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "kirche",
+      "label": "Kirche & Religion",
+      "color": "#ec4899"
+    },
+    {
+      "id": "asien",
+      "label": "Asien",
+      "color": "#22d3ee"
+    },
+    {
+      "id": "afrika",
+      "label": "Afrika",
+      "color": "#a3e635"
+    },
+    {
+      "id": "amerika",
+      "label": "Amerika",
+      "color": "#fb7185"
+    }
+  ],
+  "events": [
+    {
+      "id": "epo-frueh-mittelalter",
+      "label": "Frühmittelalter",
+      "value": 476,
+      "end": 1000,
+      "lane": "epochen",
+      "category": "Mittelalter",
+      "info": "Vom Untergang Westroms bis etwa 1000 n. Chr. – Völkerwanderung, fränkische Reichsbildungen und die Ausbreitung des Christentums im nördlichen Europa.",
+      "exact_date": "0476-09-04",
+      "exact_date_end": "1000"
+    },
+    {
+      "id": "mg-eur-westrom",
+      "label": "Untergang Westroms",
+      "value": 476,
+      "end": null,
+      "lane": "europa",
+      "category": "Rom",
+      "info": "Ende der Antike"
+    },
+    {
+      "id": "mg-deu-chlodwig",
+      "label": "Chlodwig / Frankenreich",
+      "value": 481,
+      "end": 511,
+      "lane": "deutschland",
+      "category": "Frankenreich",
+      "info": "Einigt die Franken, wird Christ"
+    },
+    {
+      "id": "deu-tolbiac",
+      "label": "Schlacht bei Tolbiac (Zülpich)",
+      "value": 496,
+      "end": null,
+      "lane": "kriege",
+      "category": "Mittelalter",
+      "exact_date": "0496",
+      "info": "Chlodwig besiegt die Alamannen – der Legende nach gelobt er nach der Schlacht die Taufe."
+    },
+    {
+      "id": "deu-chlodwig-taufe",
+      "label": "Taufe Chlodwigs I.",
+      "value": 496,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Frankreich",
+      "exact_date": "0496",
+      "info": "Chlodwig I., König der Franken, lässt sich taufen – das Frankenreich wird zum wichtigsten christlichen Reich des frühen Mittelalters."
+    },
+    {
+      "id": "kirche-gregor",
+      "label": "Gregorianische Choräle – Papst Gregor I.",
+      "value": 590,
+      "end": 604,
+      "lane": "kirche",
+      "category": "Kirche",
+      "info": "Papst Gregor I. fördert den gregorianischen Gesang – liturgische Musik prägt das Mittelalter."
+    },
+    {
+      "id": "mg-mid-mohammed",
+      "label": "Mohammed / Beginn des Islam",
+      "value": 610,
+      "end": 632,
+      "lane": "asien",
+      "category": "Islam",
+      "info": null
+    },
+    {
+      "id": "mg-chn-tang",
+      "label": "China: Tang-Dynastie",
+      "value": 618,
+      "end": 907,
+      "lane": "asien",
+      "category": "China",
+      "info": "Kulturelle Blütezeit"
+    },
+    {
+      "id": "mg-mid-hidschra",
+      "label": "Hidschra",
+      "value": 622,
+      "end": null,
+      "lane": "asien",
+      "category": "Islam",
+      "info": "Beginn der islamischen Zeitrechnung"
+    },
+    {
+      "id": "mg-mid-kalifat",
+      "label": "Islamische Expansion / Kalifat",
+      "value": 632,
+      "end": 750,
+      "lane": "asien",
+      "category": "Islam",
+      "info": "Ausbreitung von Spanien bis Indien"
+    },
+    {
+      "id": "deu-karl-martell",
+      "label": "Karl Martell – Schlacht bei Tours & Poitiers",
+      "value": 732,
+      "end": null,
+      "lane": "kriege",
+      "category": "Frankreich",
+      "exact_date": "0732-10",
+      "info": "Karl Martell besiegt die Mauren – stoppt die muslimische Expansion nach Westeuropa."
+    },
+    {
+      "id": "mg-deu-karldergrosse",
+      "label": "Karl der Große",
+      "value": 742,
+      "end": 814,
+      "lane": "deutschland",
+      "category": "Frankenreich",
+      "info": "Größter Frankenkönig"
+    },
+    {
+      "id": "deu-pippin",
+      "label": "Pippin der Jüngere – Begründer der Karolinger-Dynastie",
+      "value": 751,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "0751",
+      "info": "Pippin lässt sich zum König der Franken salben – beginnt die Karolinger-Herrschaft."
+    },
+    {
+      "id": "mg-deu-kaiserkroenung",
+      "label": "Kaiserkrönung Karls des Großen",
+      "value": 800,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Frankenreich",
+      "info": "Erster Kaiser im Westen seit der Antike"
+    },
+    {
+      "id": "deu-karl-grosse",
+      "label": "Krönung Karls des Großen zum Kaiser",
+      "value": 800,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "0800-12-25",
+      "info": "Papst Leo III. krönt Karl den Großen in Rom zum Kaiser – die ‚Renovatio Imperii‘."
+    },
+    {
+      "id": "mg-mid-bagdad",
+      "label": "Bagdad: Haus der Weisheit",
+      "value": 830,
+      "end": 1258,
+      "lane": "asien",
+      "category": "Wissenschaft",
+      "info": "Blüte von Wissenschaft und Übersetzung"
+    },
+    {
+      "id": "deu-verdun",
+      "label": "Vertrag von Verdun – Teilung des Frankenreiches",
+      "value": 843,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "0843",
+      "info": "Das Reich Karls des Großen wird unter seinen Enkeln geteilt – Vorläufer von Frankreich, Deutschland und Italien."
+    },
+    {
+      "id": "kirche-cluny",
+      "label": "Kloster Cluny – Reformbewegung",
+      "value": 910,
+      "end": 1100,
+      "lane": "kirche",
+      "category": "Kirche",
+      "info": "Die Benediktinerabtei Cluny wird gegründet – wird zur Führungskraft der cluniacensischen Reformbewegung."
+    },
+    {
+      "id": "mg-chn-song",
+      "label": "China: Song-Dynastie",
+      "value": 960,
+      "end": 1279,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-deu-hrr",
+      "label": "Heiliges Römisches Reich",
+      "value": 962,
+      "end": 1806,
+      "lane": "deutschland",
+      "category": "HRR",
+      "info": null
+    },
+    {
+      "id": "mg-deu-otto",
+      "label": "Otto I. wird Kaiser",
+      "value": 962,
+      "end": null,
+      "lane": "deutschland",
+      "category": "HRR",
+      "info": "Beginn des Heiligen Römischen Reiches"
+    },
+    {
+      "id": "deu-otto-I",
+      "label": "Otto I. wird römisch-deutscher Kaiser",
+      "value": 962,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "0962-02-02",
+      "info": "Otto I. der Große wird in Rom zum Kaiser gekrönt – Beginn des Heiligen Römischen Reiches Deutscher Nation."
+    },
+    {
+      "id": "epo-hoch-mittelalter",
+      "label": "Hochmittelalter",
+      "value": 1000,
+      "end": 1250,
+      "lane": "epochen",
+      "category": "Mittelalter",
+      "info": "Blütezeit des Heiligen Römischen Reiches, Kreuzzüge, Romanik und Gotik, Aufstieg der Städte und des Papsttums."
+    },
+    {
+      "id": "mg-epo-hochmittelalter",
+      "label": "Hochmittelalter",
+      "value": 1050,
+      "end": 1250,
+      "lane": "epochen",
+      "category": "Mittelalter",
+      "info": "Kaiser gegen Papst, Kreuzzüge, Städtegründungen"
+    },
+    {
+      "id": "mg-deu-wartburg",
+      "label": "Gründung der Wartburg",
+      "value": 1067,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "info": "Bekannte Burg in Thüringen"
+    },
+    {
+      "id": "deu-canossa",
+      "label": "Gang nach Canossa (Heinrich IV.)",
+      "value": 1077,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "1077-01",
+      "info": "Kaiser Heinrich IV. geht nach Canossa – er demütigt sich vor Papst Gregor VII., um den Bann zu lösen."
+    },
+    {
+      "id": "eur-kreuzzug-1-beginn",
+      "label": "Erster Kreuzzug – Beginn (Clermont)",
+      "value": 1095,
+      "end": null,
+      "lane": "europa",
+      "category": "Kreuzzüge",
+      "exact_date": "1095-11-27",
+      "info": "Papst Urban II. ruft auf der Synode von Clermont zum Ersten Kreuzzug auf."
+    },
+    {
+      "id": "mg-eur-kreuzzuege",
+      "label": "Kreuzzüge",
+      "value": 1096,
+      "end": 1291,
+      "lane": "europa",
+      "category": "Mittelalter",
+      "info": null
+    },
+    {
+      "id": "eur-kreuzzug-1-ende",
+      "label": "Erster Kreuzzug – Eroberung Jerusalems",
+      "value": 1099,
+      "end": null,
+      "lane": "europa",
+      "category": "Kreuzzüge",
+      "exact_date": "1099-07-15",
+      "info": "Die Kreuzfahrer erobern Jerusalem – der Beginn der Kreuzfahrerstaaten."
+    },
+    {
+      "id": "mg-afr-simbabwe",
+      "label": "Groß-Simbabwe",
+      "value": 1100,
+      "end": 1450,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "Steinstadt im südlichen Afrika"
+    },
+    {
+      "id": "deu-wormser-konkordat",
+      "label": "Wormser Konkordat – Ende des Investiturstreits",
+      "value": 1122,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "1122-09-23",
+      "info": "Das Wormser Konkordat beendet den Investiturstreit zwischen Papst und Kaiser – die Bischofswahl wird geregelt."
+    },
+    {
+      "id": "deu-barbarossa-kaiser",
+      "label": "Friedrich I. Barbarossa – Kaiser",
+      "value": 1155,
+      "end": 1190,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "info": "Friedrich I. wird Kaiser – unternimmt Italienzüge, stirbt 1190 auf dem Dritten Kreuzzug."
+    },
+    {
+      "id": "mg-chn-samurai",
+      "label": "Japan: Samurai / Shogunat",
+      "value": 1185,
+      "end": 1333,
+      "lane": "asien",
+      "category": "Japan",
+      "info": null
+    },
+    {
+      "id": "eur-kreuzzug-3",
+      "label": "Dritter Kreuzzug",
+      "value": 1189,
+      "end": 1192,
+      "lane": "europa",
+      "category": "Kreuzzüge",
+      "info": "Dritter Kreuzzug – Richard Löwenherz, Philipp II. von Frankreich und Friedrich Barbarossa gegen Sultan Saladin."
+    },
+    {
+      "id": "eur-kreuzzug-4",
+      "label": "Vierter Kreuzzug – Eroberung Konstantinopels",
+      "value": 1204,
+      "end": null,
+      "lane": "europa",
+      "category": "Kreuzzüge",
+      "exact_date": "1204-04-13",
+      "info": "Der Vierte Kreuzzug endet mit der Eroberung Konstantinopels – eine Tragödie für die christliche Einheit."
+    },
+    {
+      "id": "mg-ind-delhi",
+      "label": "Delhi-Sultanat",
+      "value": 1206,
+      "end": 1526,
+      "lane": "asien",
+      "category": "Indien",
+      "info": null
+    },
+    {
+      "id": "mg-chn-dschingis",
+      "label": "Dschingis Khan / Mongolenreich",
+      "value": 1206,
+      "end": 1227,
+      "lane": "asien",
+      "category": "Mongolen",
+      "info": "Größtes zusammenhängendes Reich der Geschichte"
+    },
+    {
+      "id": "mg-deu-elisabeth",
+      "label": "Heilige Elisabeth auf der Wartburg",
+      "value": 1211,
+      "end": 1228,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "info": null
+    },
+    {
+      "id": "eur-magna-charta",
+      "label": "Magna Carta (England)",
+      "value": 1215,
+      "end": null,
+      "lane": "europa",
+      "category": "Mittelalter",
+      "exact_date": "1215-06-15",
+      "info": "König Johann Ohneland unterzeichnet die Magna Carta – der Beginn des englischen Parlamentarismus."
+    },
+    {
+      "id": "mg-afr-mali",
+      "label": "Mali-Reich (Mansa Musa)",
+      "value": 1235,
+      "end": 1600,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "Sagenhaft reicher Herrscher, Zentrum Timbuktu"
+    },
+    {
+      "id": "epo-spaet-mittelalter",
+      "label": "Spätmittelalter",
+      "value": 1250,
+      "end": 1500,
+      "lane": "epochen",
+      "category": "Mittelalter",
+      "info": "Krise von Kirche und Kaisertum, Pest (1346–1353), Beginn des Humanismus und der Renaissance in Italien."
+    },
+    {
+      "id": "mg-chn-yuan",
+      "label": "China: Yuan-Dynastie (Mongolen)",
+      "value": 1271,
+      "end": 1368,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-chn-marcopolo",
+      "label": "Marco Polo in China",
+      "value": 1271,
+      "end": 1295,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "eur-akon",
+      "label": "Fall von Akkon – Ende der Kreuzfahrerstaaten",
+      "value": 1291,
+      "end": null,
+      "lane": "europa",
+      "category": "Kreuzzüge",
+      "exact_date": "1291-05-18",
+      "info": "Die Mamluken erobern Akkon – das Ende der letzten Kreuzfahrerstaaten im Heiligen Land."
+    },
+    {
+      "id": "mg-mid-osmanen",
+      "label": "Osmanisches Reich",
+      "value": 1299,
+      "end": 1922,
+      "lane": "asien",
+      "category": "Osmanen",
+      "info": null
+    },
+    {
+      "id": "kirche-avignon",
+      "label": "Babylonisches Exil der Kirche in Avignon",
+      "value": 1309,
+      "end": 1377,
+      "lane": "kirche",
+      "category": "Mittelalter",
+      "info": "Die Päpste residieren in Avignon (Frankreich) – 68 Jahre wird die Kirche von Frankreich beeinflusst."
+    },
+    {
+      "id": "span-hundertjaehriger-krieg",
+      "label": "Hundertjähriger Krieg (England–Frankreich)",
+      "value": 1337,
+      "end": 1453,
+      "lane": "kriege",
+      "category": "Hundertjähriger Krieg",
+      "info": "Der längste Krieg des Mittelalters – von 1337 bis 1453. Er begann mit englischen Thronansprüchen und endete mit dem Sieg Frankreichs. Bedeutende Schlachten: Crécy (1346), Azincourt (1415), Jeanne d’Arc (1429).",
+      "exact_date": "1337",
+      "exact_date_end": "1453"
+    },
+    {
+      "id": "mg-ame-azteken",
+      "label": "Azteken",
+      "value": 1345,
+      "end": 1521,
+      "lane": "amerika",
+      "category": "Amerika",
+      "info": "Hauptstadt Tenochtitlán"
+    },
+    {
+      "id": "eur-pest",
+      "label": "Der Schwarze Tod – Pest-Epidemie in Europa",
+      "value": 1346,
+      "end": 1353,
+      "lane": "europa",
+      "category": "Mittelalter",
+      "info": "Die Pest wütet in ganz Europa – etwa ein Drittel der Bevölkerung stirbt."
+    },
+    {
+      "id": "eur-crecy",
+      "label": "Schlacht von Crécy (Hundertjähriger Krieg)",
+      "value": 1346,
+      "end": null,
+      "lane": "kriege",
+      "category": "Hundertjähriger Krieg",
+      "exact_date": "1346-08-26",
+      "info": "Die Schlacht von Crécy – der englische Langbogen besiegt das französische Ritterheer."
+    },
+    {
+      "id": "deu-prag-uni",
+      "label": "Karl IV. – Gründung der Karls-Universität Prag",
+      "value": 1348,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "1348-04-07",
+      "info": "Karl IV. gründet die erste deutsche Universität – die Karls-Universität in Prag."
+    },
+    {
+      "id": "mg-deu-hanse",
+      "label": "Hanse (Blütezeit)",
+      "value": 1350,
+      "end": 1500,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "info": "Mächtiger Städte- und Handelsbund im Norden"
+    },
+    {
+      "id": "deu-goldene-bulle",
+      "label": "Goldene Bulle – Wahlordnung für Kaiser",
+      "value": 1356,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Mittelalter",
+      "exact_date": "1356-01-10",
+      "info": "Karl IV. erlässt die Goldene Bulle – das Wahlkönigtum wird festgeschrieben, die sieben Kurfürsten erhalten das Wahlrecht."
+    },
+    {
+      "id": "mg-chn-ming",
+      "label": "China: Ming-Dynastie",
+      "value": 1368,
+      "end": 1644,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-epo-renaissance",
+      "label": "Renaissance",
+      "value": 1400,
+      "end": 1600,
+      "lane": "epochen",
+      "category": "Renaissance",
+      "info": "Wiederentdeckung der Antike, neues Menschenbild"
+    },
+    {
+      "id": "mg-chn-verbotenestadt",
+      "label": "Bau der Verbotenen Stadt",
+      "value": 1406,
+      "end": 1420,
+      "lane": "asien",
+      "category": "China",
+      "info": "Kaiserpalast in Peking"
+    },
+    {
+      "id": "kirche-konstanz",
+      "label": "Konzil von Konstanz – Ende des Abendländischen Schismas",
+      "value": 1414,
+      "end": 1418,
+      "lane": "kirche",
+      "category": "Mittelalter",
+      "info": "Das Konzil von Konstanz beendet das abendländische Schisma – drei Päpste werden abgesetzt."
+    },
+    {
+      "id": "eur-agincourt",
+      "label": "Schlacht von Azincourt (Hundertjähriger Krieg)",
+      "value": 1415,
+      "end": null,
+      "lane": "kriege",
+      "category": "Hundertjähriger Krieg",
+      "exact_date": "1415-10-25",
+      "info": "Heinrich V. von England besiegt die französische Übermacht bei Azincourt."
+    },
+    {
+      "id": "eur-jeanne-darc",
+      "label": "Jeanne d'Arc – Befreiung von Orléans",
+      "value": 1429,
+      "end": null,
+      "lane": "europa",
+      "category": "Hundertjähriger Krieg",
+      "exact_date": "1429-05-08",
+      "info": "Jeanne d'Arc befreit Orléans – der Wendepunkt im Hundertjährigen Krieg."
+    },
+    {
+      "id": "mg-ame-inka",
+      "label": "Inka-Reich",
+      "value": 1438,
+      "end": 1533,
+      "lane": "amerika",
+      "category": "Amerika",
+      "info": "Großreich in den Anden, Machu Picchu"
+    },
+    {
+      "id": "mg-deu-gutenberg",
+      "label": "Gutenberg: Buchdruck",
+      "value": 1440,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "info": "Erfindung des Buchdrucks in Mainz"
+    },
+    {
+      "id": "kultur-gutenberg",
+      "label": "Johannes Gutenberg – Erfindung des Buchdrucks",
+      "value": 1440,
+      "end": null,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Johannes Gutenberg erfindet den Buchdruck mit beweglichen Lettern – eine der wichtigsten Erfindungen der Menschheitsgeschichte."
+    },
+    {
+      "id": "mg-mid-konstantinopel",
+      "label": "Eroberung Konstantinopels",
+      "value": 1453,
+      "end": null,
+      "lane": "asien",
+      "category": "Osmanen",
+      "info": "Ende des Byzantinischen Reiches"
+    },
+    {
+      "id": "kultur-gutenberg-bibel",
+      "label": "Gutenberg-Bibel wird gedruckt",
+      "value": 1455,
+      "end": null,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Die Gutenberg-Bibel wird gedruckt – das erste in Europa mit beweglichen Lettern gedruckte Buch."
+    },
+    {
+      "id": "mg-ame-kolonisation",
+      "label": "Kolonisation Amerikas",
+      "value": 1492,
+      "end": 1800,
+      "lane": "amerika",
+      "category": "Kolonialismus",
+      "info": null
+    },
+    {
+      "id": "mg-ame-kolumbus",
+      "label": "Kolumbus entdeckt Amerika",
+      "value": 1492,
+      "end": null,
+      "lane": "amerika",
+      "category": "Amerika",
+      "info": null
+    },
+    {
+      "id": "epo-fruehe-neuzeit",
+      "label": "Frühe Neuzeit",
+      "value": 1500,
+      "end": 1800,
+      "lane": "epochen",
+      "category": "Frühe Neuzeit",
+      "info": "Reformation, Dreißigjähriger Krieg, Absolutismus, Aufklärung – die moderne Welt beginnt sich zu formen."
+    },
+    {
+      "id": "mg-afr-sklaverei",
+      "label": "Transatlantischer Sklavenhandel",
+      "value": 1500,
+      "end": 1867,
+      "lane": "afrika",
+      "category": "Kolonialismus",
+      "info": "Millionen Menschen werden verschleppt"
+    },
+    {
+      "id": "kirche-95-thesen",
+      "label": "Luther veröffentlicht 95 Thesen gegen den Ablasshandel",
+      "value": 1517,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1517-10-31",
+      "info": "Martin Luther schlägt der Überlieferung nach seine 95 Thesen an die Tür der Wittenberger Schlosskirche und leitet damit die Reformation ein."
+    },
+    {
+      "id": "deu-luther",
+      "label": "Martin Luther – 95 Thesen",
+      "value": 1517,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Reformation",
+      "exact_date": "1517-10-31",
+      "info": "Martin Luthers 95 Thesen gegen den Ablasshandel – Beginn der Reformation."
+    },
+    {
+      "id": "mg-epo-reformation",
+      "label": "Reformationszeit",
+      "value": 1517,
+      "end": 1648,
+      "lane": "epochen",
+      "category": "Reformation",
+      "info": "Von Luthers Thesen bis zum Westfälischen Frieden"
+    },
+    {
+      "id": "mg-ame-eroberung",
+      "label": "Eroberung durch Cortés & Pizarro",
+      "value": 1519,
+      "end": 1533,
+      "lane": "amerika",
+      "category": "Kolonialismus",
+      "info": "Untergang von Azteken und Inka"
+    },
+    {
+      "id": "kirche-bannbulle-verbrennung",
+      "label": "Luther verbrennt die päpstliche Bannbulle",
+      "value": 1520,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1520-12-10",
+      "info": "Luther verbrennt die Bannandrohungsbulle 'Exsurge Domine' vor dem Elstertor in Wittenberg – der endgültige Bruch mit Rom."
+    },
+    {
+      "id": "mg-mid-sueleyman",
+      "label": "Süleyman der Prächtige",
+      "value": 1520,
+      "end": 1566,
+      "lane": "asien",
+      "category": "Osmanen",
+      "info": "Höhepunkt des Osmanischen Reiches"
+    },
+    {
+      "id": "mg-deu-luther-wartburg",
+      "label": "Luther übersetzt die Bibel",
+      "value": 1521,
+      "end": 1522,
+      "lane": "deutschland",
+      "category": "Reformation",
+      "info": "Auf der Wartburg, ins Deutsche"
+    },
+    {
+      "id": "kirche-reichstag-worms",
+      "label": "Reichstag zu Worms – Luther verweigert Widerruf",
+      "value": 1521,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1521-04-18",
+      "info": "Vor Kaiser Karl V. verweigert Luther auf dem Reichstag zu Worms den Widerruf seiner Lehren mit den Worten: „Hier stehe ich, ich kann nicht anders.“"
+    },
+    {
+      "id": "mg-deu-bauernkrieg",
+      "label": "Deutscher Bauernkrieg",
+      "value": 1524,
+      "end": 1525,
+      "lane": "deutschland",
+      "category": "Reformation",
+      "info": "Größter Volksaufstand vor 1789"
+    },
+    {
+      "id": "mg-ind-mogul",
+      "label": "Mogulreich (Babur)",
+      "value": 1526,
+      "end": 1857,
+      "lane": "asien",
+      "category": "Indien",
+      "info": null
+    },
+    {
+      "id": "deu-augsburg",
+      "label": "Augsburger Reichstag – Augsburger Bekenntnis",
+      "value": 1530,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Reformation",
+      "exact_date": "1530-06-25",
+      "info": "Die Augsburger Bekenntnis wird übergeben – die Lutheraner werden als eigenständige Konfession sichtbar."
+    },
+    {
+      "id": "kirche-augsburger-bekenntnis",
+      "label": "Übergabe des Augsburger Bekenntnisses (Confessio Augustana)",
+      "value": 1530,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1530-06-25",
+      "info": "Die lutherischen Fürsten überreichen Kaiser Karl V. auf dem Augsburger Reichstag das von Philipp Melanchthon verfasste Augsburger Bekenntnis – die wichtigste lutherische Bekenntnisschrift."
+    },
+    {
+      "id": "kirche-schmalkaldischer-bund",
+      "label": "Gründung des Schmalkaldischen Bundes",
+      "value": 1531,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1531-02-27",
+      "info": "Protestantische Fürsten und Städte schließen sich in Schmalkalden zu einem Verteidigungsbündnis gegen Kaiser Karl V. zusammen."
+    },
+    {
+      "id": "kultur-copernicus",
+      "label": "Nikolaus Kopernikus – heliozentrisches Weltbild",
+      "value": 1543,
+      "end": null,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Kopernikus veröffentlicht sein heliozentrisches Weltbild – die Erde dreht sich um die Sonne."
+    },
+    {
+      "id": "kirche-augsburger-religionsfrieden",
+      "label": "Augsburger Religionsfrieden",
+      "value": 1555,
+      "end": null,
+      "lane": "kirche",
+      "category": "Reformation",
+      "exact_date": "1555-09-25",
+      "info": "Der Augsburger Reichstag verabschiedet den Religionsfrieden – das Luthertum wird im Reich rechtlich anerkannt („Cuius regio, eius religio“)."
+    },
+    {
+      "id": "mg-epo-barock",
+      "label": "Barock",
+      "value": 1600,
+      "end": 1720,
+      "lane": "epochen",
+      "category": "Barock",
+      "info": "Prunkvolle Kunst und Musik, Zeit der Fürstenhöfe"
+    },
+    {
+      "id": "mg-chn-edo",
+      "label": "Japan: Edo-Zeit (Tokugawa)",
+      "value": 1603,
+      "end": 1868,
+      "lane": "asien",
+      "category": "Japan",
+      "info": "Abschottung von der Außenwelt"
+    },
+    {
+      "id": "kultur-galilei",
+      "label": "Galileo Galilei – Fernrohr & Inquisition",
+      "value": 1609,
+      "end": 1633,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Galileo verbessert das Fernrohr, entdeckt Jupiters Monde und gerät in Konflikt mit der Inquisition."
+    },
+    {
+      "id": "span-dreissigjaehriger-krieg",
+      "label": "Dreißigjähriger Krieg",
+      "value": 1618,
+      "end": 1648,
+      "lane": "kriege",
+      "category": "Dreißigjähriger Krieg",
+      "info": "Der verheerendste Konflikt der frühen Neuzeit in Mitteleuropa – begann mit dem Prager Fenstersturz (1618) und endete mit dem Westfälischen Frieden (1648).",
+      "exact_date": "1618-05-23",
+      "exact_date_end": "1648-10-24"
+    },
+    {
+      "id": "deu-fenstersturz",
+      "label": "Prager Fenstersturz – Beginn des Dreißigjährigen Krieges",
+      "value": 1618,
+      "end": null,
+      "lane": "kriege",
+      "category": "Dreißigjähriger Krieg",
+      "exact_date": "1618-05-23",
+      "info": "Der Prager Fenstersturz markiert den Beginn des Dreißigjährigen Krieges."
+    },
+    {
+      "id": "deu-breitenfeld",
+      "label": "Schlacht bei Breitenfeld",
+      "value": 1631,
+      "end": null,
+      "lane": "kriege",
+      "category": "Dreißigjähriger Krieg",
+      "exact_date": "1631-09-17",
+      "info": "Die erste große Schlacht des Dreißigjährigen Krieges – Gustav Adolf von Schweden siegt."
+    },
+    {
+      "id": "mg-ind-tajmahal",
+      "label": "Bau des Taj Mahal",
+      "value": 1632,
+      "end": 1653,
+      "lane": "asien",
+      "category": "Indien",
+      "info": "Grabmal aus weißem Marmor"
+    },
+    {
+      "id": "deu-luetzen",
+      "label": "Schlacht bei Lützen – Tod Gustav Adolfs",
+      "value": 1632,
+      "end": null,
+      "lane": "kriege",
+      "category": "Dreißigjähriger Krieg",
+      "exact_date": "1632-11-06",
+      "info": "Die Schlacht bei Lützen – Gustav Adolf fällt, der Krieg geht weiter."
+    },
+    {
+      "id": "eur-engl-buergerkrieg",
+      "label": "Englischer Bürgerkrieg – Beginn",
+      "value": 1642,
+      "end": null,
+      "lane": "europa",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1642-08-22",
+      "info": "Karl I. hisst die königliche Standarte in Nottingham – der Englische Bürgerkrieg beginnt."
+    },
+    {
+      "id": "mg-eur-ludwig14",
+      "label": "Ludwig XIV. (Sonnenkönig)",
+      "value": 1643,
+      "end": 1715,
+      "lane": "europa",
+      "category": "Frankreich",
+      "info": "Vorbild des Absolutismus in Europa"
+    },
+    {
+      "id": "mg-chn-qing",
+      "label": "China: Qing-Dynastie",
+      "value": 1644,
+      "end": 1912,
+      "lane": "asien",
+      "category": "China",
+      "info": "Letzte Kaiserdynastie"
+    },
+    {
+      "id": "eur-naseby",
+      "label": "Schlacht von Naseby",
+      "value": 1645,
+      "end": null,
+      "lane": "kriege",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1645-06-14",
+      "info": "Die New Model Army von Cromwell besiegt die Royalisten – die Entscheidungsschlacht des Englischen Bürgerkriegs."
+    },
+    {
+      "id": "mg-epo-absolutismus",
+      "label": "Absolutismus",
+      "value": 1648,
+      "end": 1789,
+      "lane": "epochen",
+      "category": "Absolutismus",
+      "info": "Alleinherrschaft der Fürsten — 'L'État, c'est moi'"
+    },
+    {
+      "id": "deu-westfaelischer-frieden",
+      "label": "Westfälischer Frieden – Ende des Dreißigjährigen Krieges",
+      "value": 1648,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Dreißigjähriger Krieg",
+      "exact_date": "1648-10-24",
+      "info": "Der Westfälische Frieden beendet den Dreißigjährigen Krieg und schließt auch die reformierte Konfession in die reichsrechtliche Anerkennung ein."
+    },
+    {
+      "id": "eur-charles-hinrichtung",
+      "label": "Hinrichtung Charles I. von England",
+      "value": 1649,
+      "end": null,
+      "lane": "europa",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1649-01-30",
+      "info": "König Charles I. wird in London hingerichtet – England wird zur Republik."
+    },
+    {
+      "id": "mg-epo-aufklaerung",
+      "label": "Aufklärung",
+      "value": 1685,
+      "end": 1789,
+      "lane": "epochen",
+      "category": "Aufklärung",
+      "info": "Vernunft und Menschenrechte gegen Willkür"
+    },
+    {
+      "id": "kultur-newton",
+      "label": "Isaac Newton – Principia Mathematica",
+      "value": 1687,
+      "end": null,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Newton veröffentlicht seine Principia Mathematica – die Grundlage der klassischen Physik."
+    },
+    {
+      "id": "mg-deu-preussen-koenig",
+      "label": "Preußen wird Königreich",
+      "value": 1701,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Preußen",
+      "info": null
+    },
+    {
+      "id": "deu-friedrich-grosse",
+      "label": "Friedrich der Große – König von Preußen",
+      "value": 1740,
+      "end": 1786,
+      "lane": "deutschland",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1740-05-31",
+      "exact_date_end": "1786-08-17",
+      "info": "Friedrich II. von Preußen regiert – einer der bedeutendsten Herrscher der Aufklärung."
+    },
+    {
+      "id": "deu-mollwitz",
+      "label": "Schlacht bei Mollwitz (Schlesischer Krieg)",
+      "value": 1741,
+      "end": null,
+      "lane": "kriege",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1741-04-10",
+      "info": "Preußen besiegt Österreich in der ersten Schlacht der Schlesischen Kriege."
+    },
+    {
+      "id": "mg-deu-siebenjaehrig",
+      "label": "Siebenjähriger Krieg",
+      "value": 1756,
+      "end": 1763,
+      "lane": "deutschland",
+      "category": "Preußen",
+      "info": null
+    },
+    {
+      "id": "deu-leuthen",
+      "label": "Schlacht bei Leuthen (Siebenjähriger Krieg)",
+      "value": 1757,
+      "end": null,
+      "lane": "kriege",
+      "category": "Frühe Neuzeit",
+      "exact_date": "1757-12-05",
+      "info": "Friedrich der Große besiegt die österreichische Armee mit einer brillanten Schwenkbewegung."
+    },
+    {
+      "id": "mg-epo-industrialisierung",
+      "label": "Industrialisierung",
+      "value": 1760,
+      "end": 1900,
+      "lane": "epochen",
+      "category": "Industrialisierung",
+      "info": "Dampfmaschine, Fabriken, Eisenbahn, soziale Frage"
+    },
+    {
+      "id": "mg-eur-industrielle",
+      "label": "Industrielle Revolution",
+      "value": 1760,
+      "end": 1840,
+      "lane": "europa",
+      "category": "Neuzeit",
+      "info": "Dampfmaschine, Fabriken, Eisenbahn"
+    },
+    {
+      "id": "mg-eur-napoleon",
+      "label": "Napoleon Bonaparte",
+      "value": 1769,
+      "end": 1821,
+      "lane": "europa",
+      "category": "Frankreich",
+      "info": null
+    },
+    {
+      "id": "mg-ame-usa-revolution",
+      "label": "Amerikanische Revolution",
+      "value": 1775,
+      "end": 1783,
+      "lane": "amerika",
+      "category": "USA",
+      "info": null
+    },
+    {
+      "id": "mg-ame-usa-unabhaengig",
+      "label": "Unabhängigkeit der USA",
+      "value": 1776,
+      "end": null,
+      "lane": "amerika",
+      "category": "USA",
+      "info": "Unabhängigkeitserklärung"
+    },
+    {
+      "id": "mg-eur-menschenrechte",
+      "label": "Erklärung der Menschenrechte",
+      "value": 1789,
+      "end": null,
+      "lane": "europa",
+      "category": "Frankreich",
+      "info": "'Freiheit, Gleichheit, Brüderlichkeit'"
+    },
+    {
+      "id": "mg-eur-frzrevolution",
+      "label": "Französische Revolution",
+      "value": 1789,
+      "end": 1799,
+      "lane": "europa",
+      "category": "Frankreich",
+      "info": "Sturm auf die Bastille 1789"
+    },
+    {
+      "id": "eur-bastille",
+      "label": "Sturm auf die Bastille – Beginn der Französischen Revolution",
+      "value": 1789,
+      "end": null,
+      "lane": "europa",
+      "category": "Neuzeit",
+      "exact_date": "1789-07-14",
+      "info": "Das Pariser Volk stürmt die Bastille – der Beginn der Französischen Revolution."
+    },
+    {
+      "id": "eur-ludwig-hinrichtung",
+      "label": "Hinrichtung Ludwig XVI. von Frankreich",
+      "value": 1793,
+      "end": null,
+      "lane": "europa",
+      "category": "Neuzeit",
+      "exact_date": "1793-01-21",
+      "info": "Der König wird durch die Guillotine hingerichtet – die radikale Phase der Revolution beginnt."
+    },
+    {
+      "id": "epo-neuzeit",
+      "label": "Neuzeit (19. Jahrhundert)",
+      "value": 1800,
+      "end": 1914,
+      "lane": "epochen",
+      "category": "Neuzeit",
+      "info": "Industrialisierung, Nationalstaatsbildung (Deutschland und Italien), Kolonialismus, Wissenschaft und Fortschritt."
+    },
+    {
+      "id": "mg-eur-napoleon-kaiser",
+      "label": "Napoleon als Kaiser",
+      "value": 1804,
+      "end": 1815,
+      "lane": "europa",
+      "category": "Frankreich",
+      "info": "Beherrscht weite Teile Europas"
+    },
+    {
+      "id": "deu-austerlitz",
+      "label": "Schlacht bei Austerlitz (Dreikaiserschlacht)",
+      "value": 1805,
+      "end": null,
+      "lane": "kriege",
+      "category": "Neuzeit",
+      "exact_date": "1805-12-02",
+      "info": "Napoleon besiegt Österreich und Russland – eine der größten Siege Napoleons."
+    },
+    {
+      "id": "deu-heiliges-reich-ende",
+      "label": "Ende des Heiligen Römischen Reiches",
+      "value": 1806,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "exact_date": "1806-08-06",
+      "info": "Franz II. legt die Kaiserkrone nieder – das Heilige Römische Reich Deutscher Nation endet."
+    },
+    {
+      "id": "mg-deu-leipzig",
+      "label": "Völkerschlacht bei Leipzig",
+      "value": 1813,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": "Entscheidende Niederlage Napoleons"
+    },
+    {
+      "id": "deu-wiener-kongress",
+      "label": "Wiener Kongress – Neuordnung Europas",
+      "value": 1814,
+      "end": 1815,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "exact_date": "1814-09-18",
+      "exact_date_end": "1815-06-09",
+      "info": "Der Wiener Kongress (1814–1815) ordnet Europa neu – der Deutsche Bund wird gegründet."
+    },
+    {
+      "id": "mg-deu-bund",
+      "label": "Deutscher Bund",
+      "value": 1815,
+      "end": 1866,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": "Lockerer Staatenbund nach dem Wiener Kongress"
+    },
+    {
+      "id": "deu-waterloo",
+      "label": "Schlacht bei Waterloo – Ende der napoleonischen Herrschaft",
+      "value": 1815,
+      "end": null,
+      "lane": "kriege",
+      "category": "Neuzeit",
+      "exact_date": "1815-06-18",
+      "info": "Napoleon wird bei Waterloo von Wellington und Blücher besiegt – das Ende des napoleonischen Zeitalters."
+    },
+    {
+      "id": "mg-deu-hambach",
+      "label": "Hambacher Fest",
+      "value": 1832,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": "Ruf nach Einheit und Freiheit"
+    },
+    {
+      "id": "mg-chn-opium",
+      "label": "Opiumkriege",
+      "value": 1839,
+      "end": 1860,
+      "lane": "asien",
+      "category": "China",
+      "info": "Kolonialmächte erzwingen Handel mit China"
+    },
+    {
+      "id": "mg-deu-1848",
+      "label": "Deutsche Revolution 1848/49",
+      "value": 1848,
+      "end": 1849,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": "Nationalversammlung in der Frankfurter Paulskirche"
+    },
+    {
+      "id": "deu-maerzrevolution",
+      "label": "Märzrevolution – Deutsche Revolution 1848/49",
+      "value": 1848,
+      "end": 1849,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "info": "Die deutsche Revolution 1848 bricht aus – Forderungen nach Freiheit und Einheit."
+    },
+    {
+      "id": "deu-paulskirche",
+      "label": "Paulskirchenparlament – erste deutsche Nationalversammlung",
+      "value": 1848,
+      "end": 1849,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "exact_date": "1848-05-18",
+      "info": "Die Nationalversammlung tritt in der Frankfurter Paulskirche zusammen."
+    },
+    {
+      "id": "eur-krim-balaklava",
+      "label": "Schlacht von Balaklava (Krimkrieg)",
+      "value": 1854,
+      "end": null,
+      "lane": "kriege",
+      "category": "Neuzeit",
+      "exact_date": "1854-10-25",
+      "info": "Die berühmte Charge der Leichten Brigade – eine der bekanntesten militärischen Katastrophen."
+    },
+    {
+      "id": "mg-ind-britisch",
+      "label": "Britische Kolonialherrschaft",
+      "value": 1858,
+      "end": 1947,
+      "lane": "asien",
+      "category": "Kolonialismus",
+      "info": "Indien als 'Kronjuwel' des britischen Empire"
+    },
+    {
+      "id": "eur-italien-garibaldi",
+      "label": "Garibaldi – Zug der Tausend nach Sizilien",
+      "value": 1860,
+      "end": null,
+      "lane": "europa",
+      "category": "Neuzeit",
+      "exact_date": "1860-05-11",
+      "info": "Garibaldi landet mit seinen Tausend in Marsala – der Beginn der italienischen Einigung."
+    },
+    {
+      "id": "mg-ame-buergerkrieg",
+      "label": "US-Bürgerkrieg",
+      "value": 1861,
+      "end": 1865,
+      "lane": "amerika",
+      "category": "USA",
+      "info": "Abschaffung der Sklaverei"
+    },
+    {
+      "id": "mg-deu-bismarck-mp",
+      "label": "Bismarck wird Ministerpräsident",
+      "value": 1862,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": "Einigung 'mit Blut und Eisen'"
+    },
+    {
+      "id": "mg-deu-1866",
+      "label": "Deutscher Krieg (Preußen–Österreich)",
+      "value": 1866,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Deutschland",
+      "info": null
+    },
+    {
+      "id": "mg-chn-meiji",
+      "label": "Japan: Meiji-Restauration",
+      "value": 1868,
+      "end": null,
+      "lane": "asien",
+      "category": "Japan",
+      "info": "Rasche Modernisierung Japans"
+    },
+    {
+      "id": "mg-ind-gandhi",
+      "label": "Mahatma Gandhi",
+      "value": 1869,
+      "end": 1948,
+      "lane": "asien",
+      "category": "Indien",
+      "info": "Gewaltfreier Widerstand"
+    },
+    {
+      "id": "mg-deu-1870",
+      "label": "Deutsch-Französischer Krieg",
+      "value": 1870,
+      "end": 1871,
+      "lane": "deutschland",
+      "category": "Deutsch-Französischer Krieg",
+      "info": "Krieg gegen Frankreich, Auslöser der Reichsgründung; die Annexion von Elsass-Lothringen belastet das Verhältnis bis 1945"
+    },
+    {
+      "id": "deu-kaiser-ausrufung",
+      "label": "Ausrufung des Deutschen Kaiserreiches in Versailles",
+      "value": 1871,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "exact_date": "1871-01-18",
+      "info": "Das Deutsche Kaiserreich wird in Versailles ausgerufen – Wilhelm I. wird Kaiser."
+    },
+    {
+      "id": "deu-kulturkampf",
+      "label": "Kulturkampf – Bismarcks Kampf gegen die katholische Kirche",
+      "value": 1871,
+      "end": 1878,
+      "lane": "deutschland",
+      "category": "Neuzeit",
+      "info": "Bismarcks Kulturkampf gegen die katholische Kirche – Konflikt um Bildung und kirchliche Autonomie."
+    },
+    {
+      "id": "mg-deu-reichsgruendung",
+      "label": "Reichsgründung / Deutsches Kaiserreich",
+      "value": 1871,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kaiserreich",
+      "info": "Kaiserproklamation in Versailles, Wilhelm I."
+    },
+    {
+      "id": "mg-epo-imperialismus",
+      "label": "Imperialismus",
+      "value": 1880,
+      "end": 1914,
+      "lane": "epochen",
+      "category": "Imperialismus",
+      "info": "Wettlauf der Großmächte um Kolonien"
+    },
+    {
+      "id": "mg-deu-sozialgesetze",
+      "label": "Sozialgesetze Bismarcks",
+      "value": 1883,
+      "end": 1889,
+      "lane": "deutschland",
+      "category": "Kaiserreich",
+      "info": "Kranken-, Unfall- und Rentenversicherung"
+    },
+    {
+      "id": "mg-afr-berlin",
+      "label": "Berliner Kongokonferenz",
+      "value": 1884,
+      "end": 1885,
+      "lane": "afrika",
+      "category": "Kolonialismus",
+      "info": "Aufteilung Afrikas unter den Kolonialmächten"
+    },
+    {
+      "id": "mg-deu-wilhelm2",
+      "label": "Wilhelm II. wird Kaiser",
+      "value": 1888,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kaiserreich",
+      "info": null
+    },
+    {
+      "id": "mg-deu-bismarck-ende",
+      "label": "Entlassung Bismarcks",
+      "value": 1890,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kaiserreich",
+      "info": "Wilhelm II. übernimmt selbst die Politik"
+    },
+    {
+      "id": "mg-deu-weltpolitik",
+      "label": "Deutsche 'Weltpolitik' & Flottenbau",
+      "value": 1898,
+      "end": 1914,
+      "lane": "deutschland",
+      "category": "Kaiserreich",
+      "info": "Wettrüsten mit Großbritannien"
+    },
+    {
+      "id": "kultur-einstein",
+      "label": "Albert Einstein – Spezielle Relativitätstheorie",
+      "value": 1905,
+      "end": null,
+      "lane": "kultur",
+      "category": "Erfindungen",
+      "info": "Einstein veröffentlicht seine Arbeiten zur speziellen Relativitätstheorie – revolutioniert das Verständnis von Raum und Zeit."
+    },
+    {
+      "id": "mg-chn-republik",
+      "label": "Chinesische Revolution / Republik",
+      "value": 1911,
+      "end": null,
+      "lane": "asien",
+      "category": "China",
+      "info": "Ende des Kaiserreichs"
+    },
+    {
+      "id": "mg-deu-sarajevo",
+      "label": "Attentat von Sarajevo",
+      "value": 1914,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Erster Weltkrieg",
+      "info": "Auslöser des Ersten Weltkriegs",
+      "exact_date": "1914-06-28"
+    },
+    {
+      "id": "deu-erd-wk-beginn",
+      "label": "Erster Weltkrieg – Österreich-Ungarn erklärt Serbien den Krieg",
+      "value": 1914,
+      "end": null,
+      "lane": "kriege",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1914-07-28",
+      "info": "Der Erste Weltkrieg (1914–1918) – ausgelöst durch das Attentat von Sarajevo. Verlustreiche Stellungskriege in Frankreich, an der Ostfront und in den Kolonien. Endet mit dem Waffenstillstand von Compiègne.",
+      "exact_date_end": "1918-11-11"
+    },
+    {
+      "id": "epo-weltkriege",
+      "label": "Weltkriege & Zwischenkriegszeit",
+      "value": 1914,
+      "end": 1945,
+      "lane": "epochen",
+      "category": "Weltkriege",
+      "info": "Zwei verheerende Weltkriege, Weimarer Republik, NS-Diktatur, Holocaust – die dunkelste Epoche der europäischen Geschichte."
+    },
+    {
+      "id": "deu-erd-wk-somme",
+      "label": "Schlacht an der Somme – Beginn",
+      "value": 1916,
+      "end": null,
+      "lane": "kriege",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1916-07-01",
+      "info": "Die britische Offensive an der Somme beginnt – der erste Tag kostet 60.000 britische Soldaten."
+    },
+    {
+      "id": "deu-erd-wk-verdun",
+      "label": "Schlacht um Verdun – Beginn",
+      "value": 1916,
+      "end": null,
+      "lane": "kriege",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1916-02-21",
+      "info": "Die deutsche Offensive gegen Verdun beginnt – eine der längsten und verlustreichsten Schlachten."
+    },
+    {
+      "id": "deu-erd-wk-russ-revol",
+      "label": "Russische Revolution – Abdankung des Zaren",
+      "value": 1917,
+      "end": null,
+      "lane": "europa",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1917-03-15",
+      "info": "Zar Nikolaus II. dankt ab – die Februarrevolution beginnt."
+    },
+    {
+      "id": "deu-erd-wk-usa",
+      "label": "USA treten in den Ersten Weltkrieg ein",
+      "value": 1917,
+      "end": null,
+      "lane": "europa",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1917-04-06",
+      "info": "Die USA erklären Deutschland den Krieg – der Wendepunkt des Krieges."
+    },
+    {
+      "id": "deu-erd-wk-ende",
+      "label": "Erster Weltkrieg – Waffenstillstand von Compiègne",
+      "value": 1918,
+      "end": null,
+      "lane": "kriege",
+      "category": "Erster Weltkrieg",
+      "exact_date": "1918-11-11",
+      "info": "Der Waffenstillstand tritt in Kraft – das Ende des Ersten Weltkriegs."
+    },
+    {
+      "id": "mg-deu-november",
+      "label": "Novemberrevolution",
+      "value": 1918,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Ende der Monarchie, Ausrufung der Republik"
+    },
+    {
+      "id": "mg-deu-versailles",
+      "label": "Versailler Vertrag",
+      "value": 1919,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Erster Weltkrieg",
+      "info": "Harter Friedensvertrag für Deutschland — Gebietsverluste, Reparationen und die 'Kriegsschuldfrage' belasten die Weimarer Republik"
+    },
+    {
+      "id": "mg-deu-weimar",
+      "label": "Weimarer Republik",
+      "value": 1919,
+      "end": 1933,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Erste deutsche Demokratie"
+    },
+    {
+      "id": "deu-weimar-verfassung",
+      "label": "Weimarer Verfassung tritt in Kraft",
+      "value": 1919,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Zwischenkriegszeit",
+      "exact_date": "1919-08-11",
+      "info": "Die Weimarer Verfassung tritt in Kraft – die erste deutsche Demokratie beginnt."
+    },
+    {
+      "id": "mg-deu-hitlerputsch",
+      "label": "Hitlerputsch in München",
+      "value": 1923,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Gescheiterter Umsturzversuch"
+    },
+    {
+      "id": "mg-deu-inflation",
+      "label": "Hyperinflation",
+      "value": 1923,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Das Geld verliert fast völlig seinen Wert"
+    },
+    {
+      "id": "mg-deu-zwanziger",
+      "label": "Goldene Zwanziger",
+      "value": 1924,
+      "end": 1929,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Kurze Blütezeit der Kultur"
+    },
+    {
+      "id": "mg-deu-weltwirtschaftskrise",
+      "label": "Weltwirtschaftskrise",
+      "value": 1929,
+      "end": 1932,
+      "lane": "deutschland",
+      "category": "Weimar",
+      "info": "Massenarbeitslosigkeit stärkt die Extremisten"
+    },
+    {
+      "id": "deu-hitler-reichskanzler",
+      "label": "Hitler wird Reichskanzler",
+      "value": 1933,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Zwischenkriegszeit",
+      "exact_date": "1933-01-30",
+      "info": "Adolf Hitler wird zum Reichskanzler ernannt – der Beginn der NS-Diktatur."
+    },
+    {
+      "id": "mg-deu-machtergreifung",
+      "label": "Machtergreifung Hitlers",
+      "value": 1933,
+      "end": null,
+      "lane": "deutschland",
+      "category": "NS",
+      "info": "Hitler wird Reichskanzler, Ende der Demokratie"
+    },
+    {
+      "id": "mg-deu-nsdiktatur",
+      "label": "NS-Diktatur",
+      "value": 1933,
+      "end": 1945,
+      "lane": "deutschland",
+      "category": "NS",
+      "info": null
+    },
+    {
+      "id": "deu-reichstagsbrand",
+      "label": "Reichstagsbrand",
+      "value": 1933,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Zwischenkriegszeit",
+      "exact_date": "1933-02-27",
+      "info": "Der Reichstag brennt – die Nationalsozialisten nutzen den Brand zur Ausschaltung der Opposition."
+    },
+    {
+      "id": "mg-deu-nuernberggesetze",
+      "label": "Nürnberger Gesetze",
+      "value": 1935,
+      "end": null,
+      "lane": "deutschland",
+      "category": "NS",
+      "info": "Entrechtung der jüdischen Bevölkerung"
+    },
+    {
+      "id": "mg-deu-pogrom",
+      "label": "Reichspogromnacht",
+      "value": 1938,
+      "end": null,
+      "lane": "deutschland",
+      "category": "NS",
+      "info": "Gewalt gegen Juden im ganzen Reich",
+      "exact_date": "1938-11-09"
+    },
+    {
+      "id": "deu-zweiter-wk-kriegserklaerung",
+      "label": "Kriegserklärung Großbritanniens und Frankreichs",
+      "value": 1939,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1939-09-03",
+      "info": "Großbritannien und Frankreich erklären Deutschland den Krieg."
+    },
+    {
+      "id": "deu-zweiter-wk-sowjet-polen",
+      "label": "Sowjetunion besetzt Ostpolen",
+      "value": 1939,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1939-09-17",
+      "info": "Die Rote Armee besetzt Polen von Osten her – entsprechend dem Molotow-Ribbentrop-Pakt."
+    },
+    {
+      "id": "deu-zweiter-wk-beginn",
+      "label": "Zweiter Weltkrieg – Überfall auf Polen",
+      "value": 1939,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1939-09-01",
+      "info": "Der Zweite Weltkrieg (1939–1945) – der größte und verlustreichste Krieg der Menschheitsgeschichte. Beginn mit dem deutschen Überfall auf Polen, Ende mit der Kapitulation Japans nach den Atombomben auf Hiroshima und Nagasaki.",
+      "exact_date_end": "1945-09-02"
+    },
+    {
+      "id": "deu-zweiter-wk-daenemark-norwegen",
+      "label": "Besetzung Dänemarks und Norwegens",
+      "value": 1940,
+      "end": 1940,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-04-09",
+      "exact_date_end": "1940-06-10",
+      "info": "Deutsche Truppen besetzen Dänemark und Norwegen."
+    },
+    {
+      "id": "deu-zweiter-wk-paris",
+      "label": "Besetzung von Paris",
+      "value": 1940,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-06-14",
+      "info": "Die Wehrmacht besetzt Paris – Frankreich ist militärisch geschlagen."
+    },
+    {
+      "id": "deu-zweiter-wk-duenkirchen",
+      "label": "Evakuierung von Dünkirchen",
+      "value": 1940,
+      "end": 1940,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-05-26",
+      "exact_date_end": "1940-06-04",
+      "info": "Die Evakuierung der alliierten Truppen aus Dünkirchen – etwa 338.000 Soldaten werden gerettet."
+    },
+    {
+      "id": "deu-zweiter-wk-battle-britain",
+      "label": "Luftschlacht um England (Battle of Britain)",
+      "value": 1940,
+      "end": 1940,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-07-10",
+      "exact_date_end": "1940-10-31",
+      "info": "Die Luftschlacht um Großbritannien – die Royal Air Force siegt über die Luftwaffe."
+    },
+    {
+      "id": "deu-zweiter-wk-waffenstillstand",
+      "label": "Waffenstillstand von Compiègne – Frankreichs Niederlage",
+      "value": 1940,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-06-22",
+      "info": "Frankreich unterzeichnet den Waffenstillstand – Teilung in besetzte Zone und Vichy-Frankreich."
+    },
+    {
+      "id": "deu-zweiter-wk-westoffensive",
+      "label": "Westoffensive – Einmarsch in Benelux-Staaten",
+      "value": 1940,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1940-05-10",
+      "info": "Deutschland greift Westeuropa an (Frankreich, Benelux)."
+    },
+    {
+      "id": "deu-zweiter-wk-pearl-harbor",
+      "label": "Angriff auf Pearl Harbor",
+      "value": 1941,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1941-12-07",
+      "info": "Japan bombardiert den US-Stützpunkt Pearl Harbor – die USA treten in den Krieg ein."
+    },
+    {
+      "id": "deu-zweiter-wk-usa-krieg",
+      "label": "Deutschland und Italien erklären den USA den Krieg",
+      "value": 1941,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1941-12-11",
+      "info": "Deutschland und Italien erklären den USA den Krieg."
+    },
+    {
+      "id": "mg-deu-holocaust",
+      "label": "Holocaust / Schoah",
+      "value": 1941,
+      "end": 1945,
+      "lane": "deutschland",
+      "category": "NS",
+      "info": "Völkermord an den europäischen Juden"
+    },
+    {
+      "id": "deu-zweiter-wk-barbarossa",
+      "label": "Unternehmen Barbarossa – Überfall auf die Sowjetunion",
+      "value": 1941,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1941-06-22",
+      "info": "Die deutsche Wehrmacht greift die Sowjetunion an – der größte Feldzug der Geschichte beginnt."
+    },
+    {
+      "id": "deu-zweiter-wk-stalingrad",
+      "label": "Schlacht von Stalingrad – Beginn",
+      "value": 1942,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1942-08-23",
+      "info": "Die deutsche 6. Armee beginnt den Angriff auf Stalingrad – die verheerendste Schlacht des Krieges."
+    },
+    {
+      "id": "hol-wannseekonferenz",
+      "label": "Wannseekonferenz – Organisation des Holocaust",
+      "value": 1942,
+      "end": null,
+      "lane": "kirche",
+      "category": "Holocaust",
+      "exact_date": "1942-01-20",
+      "info": "Die Wannseekonferenz unter der Leitung von Reinhard Heydrich koordiniert die systematische Ermordung der europäischen Juden."
+    },
+    {
+      "id": "hol-warschau-ghetto",
+      "label": "Aufstand im Warschauer Ghetto",
+      "value": 1943,
+      "end": null,
+      "lane": "kirche",
+      "category": "Holocaust",
+      "exact_date": "1943-04-19",
+      "info": "Die jüdische Bevölkerung des Warschauer Ghettos erhebt sich gegen die deutschen Besatzer."
+    },
+    {
+      "id": "deu-zweiter-wk-stalingrad-ende",
+      "label": "Kapitulation der 6. Armee in Stalingrad",
+      "value": 1943,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1943-02-02",
+      "info": "Die Reste der deutschen 6. Armee kapitulieren – die Wende an der Ostfront."
+    },
+    {
+      "id": "deu-zweiter-wk-aachen",
+      "label": "Aachen – erste deutsche Stadt fällt",
+      "value": 1944,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1944-10-21",
+      "info": "Aachen wird als erste deutsche Stadt von den Alliierten besetzt."
+    },
+    {
+      "id": "deu-zweiter-wk-ardenne",
+      "label": "Ardennen-Offensive (Rundstedt-Offensive)",
+      "value": 1944,
+      "end": 1945,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1944-12-16",
+      "exact_date_end": "1945-01-25",
+      "info": "Die letzte deutsche Offensive im Westen scheitert – die Alliierten stoßen auf deutsches Gebiet vor."
+    },
+    {
+      "id": "deu-zweiter-wk-stauffenberg",
+      "label": "Attentat vom 20. Juli 1944 – Stauffenberg",
+      "value": 1944,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Widerstand",
+      "exact_date": "1944-07-20",
+      "info": "Claus Schenk Graf von Stauffenberg verübt ein Attentat auf Adolf Hitler in der Wolfsschanze – es scheitert."
+    },
+    {
+      "id": "deu-zweiter-wk-normandie",
+      "label": "D-Day – Landung in der Normandie",
+      "value": 1944,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1944-06-06",
+      "info": "Die Alliierten landen in der Normandie – die 'Operation Overlord' eröffnet die Westfront."
+    },
+    {
+      "id": "deu-zweiter-wk-bagration",
+      "label": "Sowjetische Operation Bagration – Beginn",
+      "value": 1944,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1944-06-22",
+      "info": "Die Rote Armee startet die Operation Bagration – die größte sowjetische Offensive des Krieges."
+    },
+    {
+      "id": "deu-zweiter-wk-hiroshima",
+      "label": "Atombombe auf Hiroshima",
+      "value": 1945,
+      "end": null,
+      "lane": "europa",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-08-06",
+      "info": "Die USA wirft die erste Atombombe auf Hiroshima – etwa 140.000 Menschen sterben."
+    },
+    {
+      "id": "mg-chn-hiroshima",
+      "label": "Atombomben Hiroshima & Nagasaki",
+      "value": 1945,
+      "end": null,
+      "lane": "asien",
+      "category": "Japan",
+      "info": "Ende des Zweiten Weltkriegs in Asien"
+    },
+    {
+      "id": "deu-zweiter-wk-kapitulation",
+      "label": "Bedingungslose Kapitulation der Wehrmacht",
+      "value": 1945,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-05-08",
+      "info": "Die bedingungslose Kapitulation der Wehrmacht tritt in Kraft – das Ende des Zweiten Weltkriegs in Europa."
+    },
+    {
+      "id": "hol-auschwitz-befreiung",
+      "label": "Befreiung von Auschwitz",
+      "value": 1945,
+      "end": null,
+      "lane": "kirche",
+      "category": "Holocaust",
+      "exact_date": "1945-01-27",
+      "info": "Die Rote Armee befreit das Konzentrationslager Auschwitz-Birkenau."
+    },
+    {
+      "id": "deu-zweiter-wk-berlin",
+      "label": "Beginn des Sturms auf Berlin",
+      "value": 1945,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-04-16",
+      "info": "Sowjetische Truppen beginnen den Sturm auf Berlin."
+    },
+    {
+      "id": "deu-zweiter-wk-dresden",
+      "label": "Bombardierung Dresdens",
+      "value": 1945,
+      "end": null,
+      "lane": "kriege",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-02-13",
+      "info": "Die Zerstörung Dresdens durch britische und amerikanische Bomber am 13./14. Februar."
+    },
+    {
+      "id": "deu-zweiter-wk-jalta",
+      "label": "Jalta-Konferenz",
+      "value": 1945,
+      "end": null,
+      "lane": "europa",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-02-04",
+      "info": "Die Konferenz von Jalta – Churchill, Roosevelt und Stalin beraten über die Nachkriegsordnung."
+    },
+    {
+      "id": "deu-zweiter-wk-japan",
+      "label": "Kapitulation Japans – Ende des Zweiten Weltkriegs",
+      "value": 1945,
+      "end": null,
+      "lane": "europa",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-09-02",
+      "info": "Japan unterzeichnet an Bord der USS Missouri die bedingungslose Kapitulation – der Zweite Weltkrieg ist endgültig beendet."
+    },
+    {
+      "id": "mg-deu-kriegsende",
+      "label": "Kriegsende in Europa",
+      "value": 1945,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Zweiter Weltkrieg",
+      "info": "Bedingungslose Kapitulation Deutschlands am 8. Mai 1945",
+      "exact_date": "1945-05-08"
+    },
+    {
+      "id": "epo-nachkrieg",
+      "label": "Nachkriegszeit & Kalter Krieg",
+      "value": 1945,
+      "end": 1990,
+      "lane": "epochen",
+      "category": "Kalter Krieg",
+      "info": "Kalter Krieg, europäische Integration, Teilung und Wiedervereinigung Deutschlands, Aufbruch in die Moderne."
+    },
+    {
+      "id": "mg-deu-nuernbergprozess",
+      "label": "Nürnberger Prozesse",
+      "value": 1945,
+      "end": 1946,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "Kriegsverbrecher vor Gericht"
+    },
+    {
+      "id": "deu-zweiter-wk-hitler-tod",
+      "label": "Selbstmord Hitlers",
+      "value": 1945,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Zweiter Weltkrieg",
+      "exact_date": "1945-04-30",
+      "info": "Adolf Hitler begeht im Führerbunker in Berlin Selbstmord."
+    },
+    {
+      "id": "mg-ind-unabhaengig",
+      "label": "Unabhängigkeit Indiens",
+      "value": 1947,
+      "end": null,
+      "lane": "asien",
+      "category": "Indien",
+      "info": "Teilung in Indien und Pakistan"
+    },
+    {
+      "id": "mg-afr-apartheid",
+      "label": "Apartheid in Südafrika",
+      "value": 1948,
+      "end": 1994,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "System der Rassentrennung"
+    },
+    {
+      "id": "mg-deu-luftbruecke",
+      "label": "Berlin-Blockade / Luftbrücke",
+      "value": 1948,
+      "end": 1949,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "info": "'Rosinenbomber' versorgen West-Berlin"
+    },
+    {
+      "id": "mg-mid-israel",
+      "label": "Gründung des Staates Israel",
+      "value": 1948,
+      "end": null,
+      "lane": "asien",
+      "category": "Nahost",
+      "info": null
+    },
+    {
+      "id": "deu-brd-ddr",
+      "label": "Gründung BRD und DDR",
+      "value": 1949,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "exact_date": "1949-05-23",
+      "info": "Die Bundesrepublik Deutschland (BRD) wird am 23. Mai 1949 gegründet – die DDR am 7. Oktober 1949."
+    },
+    {
+      "id": "mg-eur-nato",
+      "label": "NATO-Gründung",
+      "value": 1949,
+      "end": null,
+      "lane": "europa",
+      "category": "Kalter Krieg",
+      "info": "Westliches Verteidigungsbündnis"
+    },
+    {
+      "id": "mg-chn-vr",
+      "label": "Volksrepublik China (Mao)",
+      "value": 1949,
+      "end": null,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "mg-deu-wunder",
+      "label": "Wirtschaftswunder",
+      "value": 1950,
+      "end": 1969,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "Rascher Aufschwung in der BRD"
+    },
+    {
+      "id": "deu-17-juni",
+      "label": "Aufstand in der DDR – 17. Juni 1953",
+      "value": 1953,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "exact_date": "1953-06-17",
+      "info": "Der Volksaufstand am 17. Juni 1953 in der DDR wird von sowjetischen Panzern niedergeschlagen."
+    },
+    {
+      "id": "mg-deu-17juni",
+      "label": "Aufstand vom 17. Juni 1953",
+      "value": 1953,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "Volksaufstand in der DDR"
+    },
+    {
+      "id": "mg-ame-buergerrechte",
+      "label": "Bürgerrechtsbewegung (M. L. King)",
+      "value": 1954,
+      "end": 1968,
+      "lane": "amerika",
+      "category": "USA",
+      "info": "'I have a dream'"
+    },
+    {
+      "id": "mg-eur-warschauer",
+      "label": "Warschauer Pakt",
+      "value": 1955,
+      "end": null,
+      "lane": "europa",
+      "category": "Kalter Krieg",
+      "info": "Militärbündnis des Ostblocks"
+    },
+    {
+      "id": "mg-eur-ewg",
+      "label": "Römische Verträge (EWG)",
+      "value": 1957,
+      "end": null,
+      "lane": "europa",
+      "category": "Europa",
+      "info": "Vorläufer der Europäischen Union"
+    },
+    {
+      "id": "mg-afr-unabhaengig",
+      "label": "Unabhängigkeit afrikanischer Staaten",
+      "value": 1957,
+      "end": 1975,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "Beginn mit Ghana 1957"
+    },
+    {
+      "id": "deu-mauerbau",
+      "label": "Berliner Mauer – Bau",
+      "value": 1961,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "exact_date": "1961-08-13",
+      "info": "Die Berliner Mauer wird ab dem 13. August 1961 errichtet – die physische Teilung Deutschlands."
+    },
+    {
+      "id": "mg-deu-mauerbau",
+      "label": "Mauerbau in Berlin",
+      "value": 1961,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "info": null
+    },
+    {
+      "id": "mg-ame-kuba",
+      "label": "Kubakrise",
+      "value": 1962,
+      "end": null,
+      "lane": "amerika",
+      "category": "Kalter Krieg",
+      "info": "Welt am Rande eines Atomkriegs"
+    },
+    {
+      "id": "mg-deu-elysee",
+      "label": "Élysée-Vertrag",
+      "value": 1963,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "Deutsch-französische Aussöhnung (Adenauer & de Gaulle)"
+    },
+    {
+      "id": "mg-chn-kulturrevolution",
+      "label": "Kulturrevolution",
+      "value": 1966,
+      "end": 1976,
+      "lane": "asien",
+      "category": "China",
+      "info": null
+    },
+    {
+      "id": "deu-68er",
+      "label": "1968er-Bewegung – Studierendenproteste",
+      "value": 1968,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "info": "Die 68er-Bewegung in Deutschland und Europa – Proteste gegen Autorität, Krieg und Spießbürgertum."
+    },
+    {
+      "id": "mg-ame-mondlandung",
+      "label": "Mondlandung (Apollo 11)",
+      "value": 1969,
+      "end": null,
+      "lane": "amerika",
+      "category": "USA",
+      "info": "Erster Mensch auf dem Mond"
+    },
+    {
+      "id": "mg-deu-ostpolitik",
+      "label": "Ostpolitik (Willy Brandt)",
+      "value": 1969,
+      "end": 1974,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "Kniefall von Warschau 1970"
+    },
+    {
+      "id": "mg-mid-iran",
+      "label": "Islamische Revolution im Iran",
+      "value": 1979,
+      "end": null,
+      "lane": "asien",
+      "category": "Nahost",
+      "info": null
+    },
+    {
+      "id": "deu-mauerfall",
+      "label": "Mauerfall – Wiedervereinigung",
+      "value": 1989,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Kalter Krieg",
+      "exact_date": "1989-11-09",
+      "info": "Die Berliner Mauer fällt am 9. November 1989 – die deutsche Wiedervereinigung wird am 3. Oktober 1990 vollendet."
+    },
+    {
+      "id": "mg-deu-einheit",
+      "label": "Deutsche Wiedervereinigung",
+      "value": 1990,
+      "end": null,
+      "lane": "deutschland",
+      "category": "Nachkriegszeit",
+      "info": "3. Oktober 1990"
+    },
+    {
+      "id": "mg-eur-eu",
+      "label": "Gründung der EU (Maastricht)",
+      "value": 1993,
+      "end": null,
+      "lane": "europa",
+      "category": "Europa",
+      "info": null
+    },
+    {
+      "id": "mg-afr-mandela",
+      "label": "Mandela / Ende der Apartheid",
+      "value": 1994,
+      "end": null,
+      "lane": "afrika",
+      "category": "Afrika",
+      "info": "Erste freie Wahlen in Südafrika"
+    }
+  ]
+}

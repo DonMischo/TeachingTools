@@ -109,8 +109,8 @@ class TestCrud:
         assert r.status_code == 200
         assert r.json()["id"] == w["id"]
 
-    def test_get_nonexistent_returns_404(self, client):
-        r = client.get("/api/wettkampf/99999")
+    def test_get_nonexistent_returns_404(self, client, teacher_token):
+        r = client.get("/api/wettkampf/99999", headers=auth(teacher_token))
         assert r.status_code == 404
 
     def test_update_wettkampf(self, client, teacher_token):
@@ -152,6 +152,7 @@ class TestParticipants:
 
     def test_add_participant_requires_auth(self, client, teacher_token):
         w = _create_wettkampf(client, teacher_token)
+        client.cookies.clear()  # login fixture leaves a session cookie behind
         r = client.post(f"/api/wettkampf/{w['id']}/participants", json={"name": "X"})
         assert r.status_code == 401
 

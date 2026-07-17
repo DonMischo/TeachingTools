@@ -12,8 +12,9 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Student, Class
 from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
-from ..auth import hash_password, require_admin, get_current_teacher
-from ..password_gen import POKEMON_DE, pokemon_password
+from ..auth import hash_password, verify_password, require_admin, get_current_teacher
+from ..password_gen import pokemon_password
+from ..schoolyear import klasse_to_ak_code
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
@@ -60,6 +61,34 @@ def _parse_date(s: str) -> date | None:
 def _extract_jahrgang(klasse: str) -> int | None:
     digits = "".join(c for c in klasse if c.isdigit())
     return int(digits) if digits else None
+
+
+def _derive_ak_code(klasse: str) -> str | None:
+    """Stable Abschlussklasse identity for `klasse` (e.g. '7a' -> 'AK2029a'), or
+    None if `klasse` doesn't match the expected grade+letter format."""
+    try:
+        return klasse_to_ak_code(klasse)
+    except ValueError:
+        return None
+
+
+def _resolve_class(db: Session, klasse: str, ak_code: str | None) -> Class | None:
+    """Find (or roll forward) the Class row for `klasse`, using `ak_code` as the
+    stable identity across the yearly grade bump ('7a' -> '8a'). Falls back to an
+    exact code match for classes that haven't been backfilled with an ak_code yet."""
+    cls = None
+    if ak_code:
+        cls = db.query(Class).filter(Class.ak_code == ak_code).one_or_none()
+    if cls is None:
+        cls = db.query(Class).filter(Class.code == klasse).one_or_none()
+    if cls is None:
+        return None
+    if ak_code and cls.ak_code != ak_code:
+        cls.ak_code = ak_code
+    if cls.code != klasse:
+        cls.code = klasse
+        cls.display_name = f"Klasse {klasse}"
+    return cls
 
 
 def _parse_csv(raw: bytes) -> list[dict]:
@@ -160,9 +189,17 @@ def preview_import(
     except Exception as exc:
         raise HTTPException(400, f"CSV-Parsing fehlgeschlagen: {exc}")
 
+    all_students = db.query(Student).all()
     existing: dict[tuple, Student] = {
         (s.nachname.lower(), s.vorname.lower(), s.klasse.lower()): s
-        for s in db.query(Student).all()
+        for s in all_students
+    }
+    # Stable match across the yearly grade bump ("7a" -> "8a"): keyed by name + AK-code
+    # instead of name + current klasse label. Only populated once a student has been
+    # imported at least once since the ak_code column was introduced.
+    existing_by_ak: dict[tuple, Student] = {
+        (s.nachname.lower(), s.vorname.lower(), s.ak_code): s
+        for s in all_students if s.ak_code
     }
 
     extra_cols: set[str] = set()
@@ -178,9 +215,13 @@ def preview_import(
         extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
         extra_cols.update(extra.keys())
 
-        lookup = (nachname.lower(), vorname.lower(), klasse.lower())
+        ak_code = _derive_ak_code(klasse)
         key = f"{nachname}|{vorname}|{klasse}"
-        db_student = existing.get(lookup)
+        db_student = None
+        if ak_code:
+            db_student = existing_by_ak.get((nachname.lower(), vorname.lower(), ak_code))
+        if db_student is None:
+            db_student = existing.get((nachname.lower(), vorname.lower(), klasse.lower()))
 
         if db_student is None:
             diff.append({"key": key, "action": "new", "csv_data": row, "db_data": None,
@@ -188,7 +229,7 @@ def preview_import(
         else:
             db_data = _student_to_dict(db_student)
             changed: list[str] = []
-            for field in _KNOWN_FIELDS - {"nachname", "vorname", "klasse"}:
+            for field in _KNOWN_FIELDS - {"nachname", "vorname"}:
                 csv_val = row.get(field, "").strip()
                 db_val = str(db_data.get(field, "") or "")
                 if csv_val and csv_val != db_val:
@@ -218,12 +259,21 @@ def apply_import(
     db: Session = Depends(get_db),
     _: object = Depends(require_admin),
 ):
-    """Apply selected diff rows — upserts only, never deletes existing students."""
+    """Apply selected diff rows — upserts only, never deletes existing students.
+
+    Students and classes are matched by AK-code (stable Abschlussklasse identity)
+    when available, so a class/student is recognized across the yearly grade bump
+    ("7a" -> "8a") instead of being duplicated. See api/schoolyear.py.
+    """
+    all_students = db.query(Student).all()
     existing: dict[tuple, Student] = {
         (s.nachname.lower(), s.vorname.lower(), s.klasse.lower()): s
-        for s in db.query(Student).all()
+        for s in all_students
     }
-    class_map: dict[str, int] = {c.code: c.id for c in db.query(Class).all()}
+    existing_by_ak: dict[tuple, Student] = {
+        (s.nachname.lower(), s.vorname.lower(), s.ak_code): s
+        for s in all_students if s.ak_code
+    }
 
     applied = 0
     errors: list[str] = []
@@ -241,11 +291,22 @@ def apply_import(
             errors.append(f"Pflichtfelder fehlen: {key}")
             continue
 
-        lookup = (nachname.lower(), vorname.lower(), klasse.lower())
+        ak_code = _derive_ak_code(klasse)
         extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
+        cls = _resolve_class(db, klasse, ak_code)
 
-        db_student = existing.get(lookup)
+        db_student = None
+        if ak_code:
+            db_student = existing_by_ak.get((nachname.lower(), vorname.lower(), ak_code))
+        if db_student is None:
+            db_student = existing.get((nachname.lower(), vorname.lower(), klasse.lower()))
+
         if db_student:
+            db_student.klasse = klasse
+            db_student.class_id = cls.id if cls else db_student.class_id
+            db_student.jahrgang = _extract_jahrgang(klasse)
+            if ak_code:
+                db_student.ak_code = ak_code
             if row.get("nummer") and row["nummer"].isdigit():
                 db_student.nummer = int(row["nummer"])
             if row.get("geschlecht"):
@@ -270,8 +331,9 @@ def apply_import(
                 nachname=nachname,
                 vorname=vorname,
                 klasse=klasse,
-                class_id=class_map.get(klasse),
+                class_id=cls.id if cls else None,
                 jahrgang=_extract_jahrgang(klasse),
+                ak_code=ak_code,
                 geschlecht=geschlecht,
                 geburtsdatum=_parse_date(row.get("geburtsdatum", "")),
                 extra_fields=extra or {},
@@ -380,19 +442,28 @@ def generate_credentials(
     result: list[StudentCredentialRow] = []
 
     for student in students:
-        if not student.username or not student.password_hash:
-            # Assign fresh Pokémon + username
-            pokedex = random.randint(1, len(POKEMON_DE) - 1)
-            username = _make_username(student.vorname, student.nachname, existing_usernames)
-            existing_usernames.add(username)
+        # A password needs (re)issuing when there is none yet — or when the
+        # seed-derived plaintext no longer matches the stored hash. The latter
+        # happens when credentials were created by an older password-generator
+        # implementation: the endpoint would then DISPLAY a password that
+        # doesn't actually log in. Re-hashing here heals such drift.
+        needs_password = (
+            not student.password_hash
+            or not student.pokedex_number
+            or not verify_password(pokemon_password(student.pokedex_number), student.password_hash)
+        )
+        if not student.username:
+            student.username = _make_username(student.vorname, student.nachname, existing_usernames)
+            existing_usernames.add(student.username)
+        if needs_password:
+            # pokemon_password() is deterministic per seed, so storing the
+            # seed lets us re-display the plaintext later (CSV export, cards).
+            pokedex = random.randint(1, 999_999)
             plain_pw = pokemon_password(pokedex)
-
-            student.username = username
             student.pokedex_number = pokedex
             student.password_hash = hash_password(plain_pw)
         else:
-            # Regenerate plaintext from stored Pokédex number (deterministic)
-            plain_pw = pokemon_password(student.pokedex_number) if student.pokedex_number else "???"
+            plain_pw = pokemon_password(student.pokedex_number)
 
         result.append(StudentCredentialRow(
             id=student.id,

@@ -10,6 +10,14 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 
+def bearer_headers(user_id: int, user_type: str = "teacher") -> list[tuple[bytes, bytes]]:
+    """ASGI headers carrying a real JWT — WS handlers now verify identity
+    server-side, so teacher-role test connections must authenticate."""
+    from api.auth import create_access_token
+    token = create_access_token({"sub": str(user_id), "type": user_type})
+    return [(b"authorization", f"Bearer {token}".encode())]
+
+
 class AsyncWsSession:
     def __init__(self):
         self._c2s: asyncio.Queue = asyncio.Queue()  # test → app

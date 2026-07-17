@@ -1,0 +1,349 @@
+Kartentool:
+```json
+{
+  "project": "GeoTeacher - Interactive Map & Quiz Tool for Geography Teachers",
+  "architecture_pattern": "Blank Canvas + Data Layers",
+  "stack": {
+    "frontend": {
+      "framework": "React",
+      "map_engine": "MapLibre GL JS",
+      "npm_dependencies": [
+        "maplibre-gl",
+        "react-map-gl"
+      ]
+    },
+    "backend": {
+      "framework": "FastAPI",
+      "data_format": "GeoJSON",
+      "data_source": "Natural Earth (public domain)",
+      "optional_enhancement": "PostGIS for spatial queries"
+    }
+  },
+  "goals": [
+    "Toggle individual geographic layers (countries, rivers, mountains, cities, etc.)",
+    "Replace geographic names with numbers for quiz generation",
+    "Render all features client-side with full style control",
+    "Serve data from existing FastAPI backend without external tile dependencies"
+  ],
+  "data_pipeline": {
+    "source": {
+      "name": "Natural Earth",
+      "url": "https://www.naturalearthdata.com/",
+      "license": "Public Domain",
+      "recommended_scales": [
+        "ne_110m",
+        "ne_50m"
+      ]
+    },
+    "datasets": [
+      {
+        "layer_id": "countries",
+        "natural_eearth_file": "ne_110m_admin_0_countries",
+        "geometry_type": "Polygon",
+        "label_property": "NAME",
+        "quiz_type": "outline_or_centroid"
+      },
+      {
+        "layer_id": "countries_boundary",
+        "natural_eearth_file": "ne_110m_admin_0_boundary_lines_land",
+        "geometry_type": "LineString",
+        "label_property": null,
+        "quiz_type": "none"
+      },
+      {
+        "layer_id": "rivers",
+        "natural_eearth_file": "ne_50m_rivers_lake_centerlines",
+        "geometry_type": "LineString",
+        "label_property": "name",
+        "quiz_type": "line_numbered"
+      },
+      {
+        "layer_id": "mountains",
+        "natural_eearth_file": "ne_50m_geography_regions_points",
+        "geometry_type": "Point",
+        "label_property": "name",
+        "quiz_type": "point_numbered"
+      },
+      {
+        "layer_id": "cities",
+        "natural_eearth_file": "ne_50m_populated_places",
+        "geometry_type": "Point",
+        "label_property": "NAME",
+        "quiz_type": "point_numbered"
+      },
+      {
+        "layer_id": "lakes",
+        "natural_eearth_file": "ne_50m_lakes",
+        "geometry_type": "Polygon",
+        "label_property": "name",
+        "quiz_type": "outline_or_centroid"
+      }
+    ],
+    "preprocessing": {
+      "tool": "ogr2ogr or Python geopandas",
+      "command_example": "ogr2ogr -f GeoJSON countries.json ne_110m_admin_0_countries.shp",
+      "output_format": "GeoJSON files stored in /backend/data/",
+      "optional_enhancement": {
+        "tool": "tippecanoe",
+        "purpose": "Convert large GeoJSON to .pmtiles if file size exceeds 10MB",
+        "trigger_condition": "Performance degradation with >50MB GeoJSON"
+      }
+    }
+  },
+  "backend_api": {
+    "base_prefix": "/api",
+    "routers": [
+      {
+        "name": "layers",
+        "prefix": "/layers",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/{layer_name}",
+            "description": "Serve raw GeoJSON file for a given layer",
+            "response": "application/geo+json",
+            "example": "GET /api/layers/rivers",
+            "error_handling": "404 if file not found"
+          }
+        ]
+      },
+      {
+        "name": "quiz",
+        "prefix": "/quizsets",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/create",
+            "description": "Generate a numbered quiz from a selected layer",
+            "request_body": {
+              "schema": {
+                "layer": "string - layer_id from AVAILABLE_LAYERS",
+                "item_count": "integer - default 20",
+                "region_filter": "string|null - optional continent or region filter"
+              }
+            },
+            "response": {
+              "quiz_id": "string",
+              "layer": "string",
+              "geojson": "FeatureCollection with _quiz_id, _show_label, _original_name",
+              "answer_key": "Array of {number, name, properties}"
+            },
+            "core_logic": [
+              "Load GeoJSON from disk",
+              "Shuffle features",
+              "Select N items by item_count",
+              "Assign sequential numbers (_quiz_id)",
+              "Inject _show_label = number (rendered on map)",
+              "Preserve _original_name in properties (not rendered)",
+              "Return answer_key to teacher only"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "frontend_components": {
+    "map_renderer": {
+      "library": "react-map-gl",
+      "engine": "maplibregl",
+      "basemap": "CartoDB Positron (minimal, via MapLibre style URL)",
+      "basemap_url": "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      "reason": "Provides blank canvas so data layers are visually dominant"
+    },
+    "layer_manager": {
+      "type": "sidebar UI",
+      "function": "Toggle visibility of GeoJSON layers",
+      "controls": [
+        {
+          "type": "checkbox",
+          "target": "layer_id",
+          "state": "activeLayers array"
+        }
+      ],
+      "data_flow": "Checked layers fetch from /api/layers/{id} and render as Source/Layer"
+    },
+    "layer_rendering": {
+      "point_features": {
+        "circle_layer": {
+          "type": "circle",
+          "paint": {
+            "circle-radius": 5,
+            "circle-color": "#3388ff"
+          }
+        },
+        "symbol_layer": {
+          "type": "symbol",
+          "layout": {
+            "text-field": ["get", "name"],
+            "text-size": 12,
+            "text-offset": [0, -1]
+          }
+        }
+      },
+      "line_features": {
+        "line_layer": {
+          "type": "line",
+          "paint": {
+            "line-color": "#3388ff",
+            "line-width": 2
+          }
+        }
+      },
+      "polygon_features": {
+        "fill_layer": {
+          "type": "fill",
+          "paint": {
+            "fill-color": "#3388ff",
+            "fill-opacity": 0.3
+          }
+        },
+        "line_layer": {
+          "type": "line",
+          "paint": {
+            "line-color": "#3388ff",
+            "line-width": 1
+          }
+        }
+      }
+    },
+    "quiz_mode": {
+      "activation": "Button in sidebar",
+      "flow": [
+        "Teacher selects layer from dropdown",
+        "Teacher clicks 'Generate Numbered Quiz'",
+        "Frontend POSTs to /api/quizsets/create",
+        "Frontend receives quiz GeoJSON and answer_key",
+        "Map enters quizMode=true",
+        "All normal layers hidden",
+        "Quiz GeoJSON rendered with symbol layer showing _show_label",
+        "Answer key displayed in teacher sidebar only"
+      ],
+      "rendering_rules": {
+        "symbol_layer": {
+          "type": "symbol",
+          "layout": {
+            "text-field": ["get", "_show_label"],
+            "text-size": 16,
+            "text-offset": [0, -1]
+          },
+          "paint": {
+            "text-color": "#d9534f",
+            "text-halo-color": "#fff",
+            "text-halo-width": 2
+          }
+        }
+      },
+      "student_view": "Numbers only, no names, no answer key",
+      "teacher_view": "Numbers on map + answer_key sidebar"
+    }
+  },
+  "implementation_phases": [
+    {
+      "phase": 1,
+      "title": "Data Preparation",
+      "tasks": [
+        "Download Natural Earth datasets",
+        "Convert .shp to .geojson using ogr2ogr",
+        "Place files in /backend/data/",
+        "Verify GeoJSON validity"
+      ],
+      "mandatory": true
+    },
+    {
+      "phase": 2,
+      "title": "Backend API",
+      "tasks": [
+        "Implement /layers/{layer_name} endpoint",
+        "Implement /quizsets/create endpoint",
+        "Add CORS for frontend",
+        "Test endpoints with curl"
+      ],
+      "mandatory": true
+    },
+    {
+      "phase": 3,
+      "title": "Frontend Map",
+      "tasks": [
+        "Install maplibre-gl and react-map-gl",
+        "Create Map component with Carto Positron basemap",
+        "Implement LayerSource sub-component for dynamic GeoJSON",
+        "Build layer toggle sidebar"
+      ],
+      "mandatory": true
+    },
+    {
+      "phase": 4,
+      "title": "Quiz Generation",
+      "tasks": [
+        "Build quiz creation UI in sidebar",
+        "Integrate POST to /quizsets/create",
+        "Implement quizMode state",
+        "Render quiz GeoJSON with number labels",
+        "Display answer_key for teacher"
+      ],
+      "mandatory": true
+    },
+    {
+      "phase": 5,
+      "title": "Enhancements",
+      "tasks": [
+        "Student answer input form",
+        "Grading logic",
+        "Printable map export",
+        "Curated quiz sets persistence",
+        "PostGIS spatial filtering",
+        "Tippecanoe/PMTiles for performance"
+      ],
+      "mandatory": false
+    }
+  ],
+  "dependencies": {
+    "mandatory": [
+      {
+        "name": "MapLibre GL JS",
+        "role": "Client-side vector rendering engine",
+        "install": "npm install maplibre-gl react-map-gl"
+      },
+      {
+        "name": "Natural Earth Data",
+        "role": "Source of truth for all geographic features",
+        "install": "Manual download from naturalearthdata.com"
+      },
+      {
+        "name": "FastAPI",
+        "role": "Existing backend to serve GeoJSON and quiz logic"
+      }
+    ],
+    "optional": [
+      {
+        "name": "geopandas",
+        "role": "Python-based GeoJSON preprocessing",
+        "install": "pip install geopandas"
+      },
+      {
+        "name": "PostGIS",
+        "role": "Spatial database for advanced queries",
+        "trigger": "Need to query 'mountains within Germany'"
+      },
+      {
+        "name": "tippecanoe",
+        "role": "Generate vector tiles from GeoJSON for large datasets",
+        "trigger": "GeoJSON files >10MB causing slow load"
+      }
+    ],
+    "not_needed": [
+      "ArcGIS licensing",
+      "QGIS server",
+      "Custom tile server (Mapnik, TileServer GL)",
+      "OpenStreetMap raster tile filtering (impossible)"
+    ]
+  },
+  "key_design_principles": [
+    "Raster tiles (OSM, OpenTopoMap) cannot be filtered client-side; they are pre-rendered PNGs",
+    "Vector data (GeoJSON) allows per-feature toggle, styling, and label replacement",
+    "Quiz numbering is done server-side by mutating GeoJSON properties before sending to client",
+    "Answer key must never be sent to student client; teacher client receives it separately",
+    "Blank basemap (Carto Positron) ensures data layers are the focus"
+  ]
+}
+```

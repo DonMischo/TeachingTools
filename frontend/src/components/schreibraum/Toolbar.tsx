@@ -11,7 +11,6 @@ interface Props {
   onMarkLocked?: () => void;
   onUnmarkBlock?: () => void;
   onUploadFile?: (file: File) => Promise<void>;
-  onExport?: (fmt: "docx" | "tex") => void;
 }
 
 const sep = (
@@ -75,7 +74,7 @@ function Btn({
 
 const ACCEPT = ".jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.docx,.odt,.pptx,.odp,.xlsx,.ods,.txt,.csv,.md";
 
-export default function Toolbar({ editor, isTeacher, mode, onModeChange, onMarkFree, onMarkLocked, onUnmarkBlock, onUploadFile, onExport }: Props) {
+export default function Toolbar({ editor, isTeacher, mode, onModeChange, onMarkFree, onMarkLocked, onUnmarkBlock, onUploadFile }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -126,25 +125,11 @@ export default function Toolbar({ editor, isTeacher, mode, onModeChange, onMarkF
       <input ref={fileRef} type="file" accept={ACCEPT} style={{ display: "none" }} onChange={handleFileChange} />
       <Btn onClick={() => fileRef.current?.click()} title="Bild oder Dokument einfügen" disabled={!onUploadFile}>📎</Btn>
 
-      {onExport && (<>
-        {sep}
-        <Btn onClick={() => onExport("docx")} title="Als DOCX exportieren">⬇ DOCX</Btn>
-        <Btn onClick={() => onExport("tex")} title="Als LaTeX exportieren">⬇ TeX</Btn>
-      </>)}
-
       {isTeacher && (<>
         {sep}
         <Btn onClick={() => onMarkFree?.()} title="Als Freie Zone markieren (alle können bearbeiten)">🔓 Frei</Btn>
         <Btn onClick={() => onMarkLocked?.()} title="Sperren (nur lesen)">🔒 Sperren</Btn>
         <Btn onClick={() => onUnmarkBlock?.()} title="Markierung entfernen">✕ Frei/Sperre aufheben</Btn>
-        {sep}
-        <Btn
-          onClick={() => onModeChange?.(mode === "add-line" ? "next-free-line" : "add-line")}
-          active={mode === "add-line"}
-          title={mode === "add-line" ? "Modus: Zeile hinzufügen (Enter = neue Zeile)" : "Modus: Nächste freie Zeile (Enter = normal)"}
-        >
-          {mode === "add-line" ? "↵+Zeile" : "↵ normal"}
-        </Btn>
       </>)}
     </div>
   );

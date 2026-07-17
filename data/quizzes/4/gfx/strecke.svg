@@ -1,9 +1,12 @@
-<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="180" fill="#1e293b" rx="12"/>
-  <line x1="70" y1="90" x2="330" y2="90" stroke="#e2e8f0" stroke-width="2.5"/>
-  <circle cx="70" cy="90" r="6" fill="#f87171"/>
-  <circle cx="330" cy="90" r="6" fill="#f87171"/>
-  <text x="70" y="125" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">A</text>
-  <text x="330" y="125" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">B</text>
-  <text x="200" y="55" text-anchor="middle" fill="#64748b" font-size="12" font-family="sans-serif">Strecke AB — zwei Endpunkte</text>
+<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="160" fill="#1e293b" rx="12"/>
+  <line x1="70" y1="80" x2="330" y2="80" stroke="#e2e8f0" stroke-width="2.5"/>
+  <!-- x marker A -->
+  <line x1="64" y1="74" x2="76" y2="86" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="76" y1="74" x2="64" y2="86" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- x marker B -->
+  <line x1="324" y1="74" x2="336" y2="86" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="336" y1="74" x2="324" y2="86" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="70" y="110" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">A</text>
+  <text x="330" y="110" text-anchor="middle" fill="#fbbf24" font-size="15" font-family="sans-serif" font-style="italic">B</text>
 </svg>

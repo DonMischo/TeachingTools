@@ -77,7 +77,7 @@ function AddAccessForm({ roomId, onAdded }: { roomId: string; onAdded: (g: any) 
 
 // ── Hamburger export menu ─────────────────────────────────────────────────────
 
-function ExportMenu({ onMd, onHtml, onPdf, onLog }: { onMd(): void; onHtml(): void; onPdf(): void; onLog(): void }) {
+function ExportMenu({ onMd, onHtml, onPdf, onLog, onDocx, onTex }: { onMd(): void; onHtml(): void; onPdf(): void; onLog(): void; onDocx(): void; onTex(): void }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position: "relative" }}>
@@ -97,6 +97,8 @@ function ExportMenu({ onMd, onHtml, onPdf, onLog }: { onMd(): void; onHtml(): vo
             boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 180, overflow: "hidden",
           }}>
             {[
+              { icon: "📄", label: "Word (.docx)", fn: onDocx },
+              { icon: "🔣", label: "LaTeX (.tex)", fn: onTex },
               { icon: "📝", label: "Markdown (.md)", fn: onMd },
               { icon: "🌐", label: "HTML (.html)", fn: onHtml },
               { icon: "🖨️", label: "PDF (drucken)", fn: onPdf },
@@ -351,7 +353,7 @@ export default function SchreibraumEditorPage() {
               >
                 💾 Speichern
               </button>
-              <ExportMenu onMd={downloadMarkdown} onHtml={downloadHtml} onPdf={downloadPdf} onLog={downloadLog} />
+              <ExportMenu onMd={downloadMarkdown} onHtml={downloadHtml} onPdf={downloadPdf} onLog={downloadLog} onDocx={() => editorRef.current?.exportDocxTex("docx")} onTex={() => editorRef.current?.exportDocxTex("tex")} />
             </>
           )}
 
@@ -412,6 +414,32 @@ export default function SchreibraumEditorPage() {
             {/* QR code */}
             <Panel title="QR-Code / Beitritt" defaultOpen={true}>
               <QRPanel roomCode={room.code} />
+            </Panel>
+
+            {/* Mode switcher */}
+            <Panel title="Schreibmodus" defaultOpen={true}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {[
+                  { value: "next-free-line", label: "✍️  Nächste freie Zeile", desc: "Enter springt zur nächsten freien Zeile" },
+                  { value: "add-line",       label: "↵  Zeile hinzufügen",     desc: "Enter fügt neue Zeile darunter ein" },
+                  { value: "wortstaffel",    label: "🔄  Wortstaffel",          desc: "Reihum: eine Person schreibt" },
+                ].map(({ value, label, desc }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleModeChange(value)}
+                    style={{
+                      textAlign: "left", padding: "7px 10px", borderRadius: 8, cursor: "pointer",
+                      border: mode === value ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+                      background: mode === value ? "rgba(255,235,59,0.1)" : "var(--bg)",
+                      color: mode === value ? "var(--accent)" : "var(--text-muted)",
+                      fontWeight: mode === value ? 700 : 400,
+                    }}
+                  >
+                    <div style={{ fontSize: 13 }}>{label}</div>
+                    <div style={{ fontSize: 10, opacity: 0.7, marginTop: 1 }}>{desc}</div>
+                  </button>
+                ))}
+              </div>
             </Panel>
 
             {/* Wortstaffel turn control */}

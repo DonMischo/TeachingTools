@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
-  | "tools" | "games"
+  | "tools" | "games" | "kalender"
   | "admin" | "punkte" | "user" | "login";
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
@@ -276,6 +276,21 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
+  // ── Calendar leaf (Kalender) ──────────────────────────────────────────
+  kalender: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      <rect x="2.5" y="4" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+      <line x1="2.5" y1="7.5" x2="17.5" y2="7.5" stroke="currentColor" strokeWidth="1.2"/>
+      <line x1="6" y1="2.5" x2="6" y2="5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <line x1="14" y1="2.5" x2="14" y2="5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <rect x="5" y="9.5" width="2.5" height="2.2" rx=".4" opacity=".7"/>
+      <rect x="8.8" y="9.5" width="2.5" height="2.2" rx=".4" opacity=".5"/>
+      <rect x="12.6" y="9.5" width="2.5" height="2.2" rx=".4" opacity=".7"/>
+      <rect x="5" y="13" width="2.5" height="2.2" rx=".4" opacity=".5"/>
+      <rect x="8.8" y="13" width="2.5" height="2.2" rx=".4" opacity=".7"/>
+    </svg>
+  ),
+
   // ── Gate / Portal (Login) ─────────────────────────────────────────────
   login: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -349,6 +364,15 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <path d="M13 7l5 3-5 3v-2H8v-2h5V7z"/>
     <rect x="2" y="2" width="2" height="2" opacity=".3"/>
   </svg>,
+  kalender: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <rect x="2.5" y="4" width="15" height="13" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3"/>
+    <line x1="2.5" y1="7.5" x2="17.5" y2="7.5" stroke="currentColor" strokeWidth="1.2"/>
+    <rect x="5" y="9.5" width="2.5" height="2.2" opacity=".7"/>
+    <rect x="8.8" y="9.5" width="2.5" height="2.2" opacity=".5"/>
+    <rect x="12.6" y="9.5" width="2.5" height="2.2" opacity=".7"/>
+    <line x1="6" y1="2.5" x2="6" y2="5.5" stroke="currentColor" strokeWidth="1.5"/>
+    <line x1="14" y1="2.5" x2="14" y2="5.5" stroke="currentColor" strokeWidth="1.5"/>
+  </svg>,
   barometer: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
     <path d="M2.5 14a7.5 7.5 0 0115 0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     <line x1="2.5" y1="14" x2="4" y2="14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
@@ -419,6 +443,7 @@ const EMOJI: Record<NavKey, string> = {
   classroom:      "🖥️",
   tools:          "🔨",
   games:          "🎮",
+  kalender:       "📅",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

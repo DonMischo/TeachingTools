@@ -187,6 +187,29 @@ def test_generate_credentials_creates_usernames(client, admin_token, db):
     assert len(set(usernames)) == len(usernames)
 
 
+def test_generate_credentials_heals_drifted_password(client, admin_token, db):
+    """If a student's stored hash no longer matches the seed-derived plaintext
+    (credentials from an older generator implementation), the endpoint must
+    re-issue the password — otherwise it displays a password that can't log in."""
+    from api.auth import hash_password, verify_password
+    from api.password_gen import pokemon_password
+
+    s = _seed_student(db, "Alt", "Anna", "6a", "weiblich")
+    s.username = "a.alt"
+    s.pokedex_number = 4711
+    s.password_hash = hash_password("VeraltetesPasswort99")  # ≠ pokemon_password(4711)
+    db.flush()
+
+    r = client.post("/api/students/generate-credentials",
+                    headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    row = next(x for x in r.json() if x["username"] == "a.alt")
+    # The displayed password must actually verify against the stored hash now.
+    db.refresh(s)
+    assert verify_password(row["password"], s.password_hash)
+    assert row["password"] == pokemon_password(s.pokedex_number)
+
+
 def test_generate_credentials_idempotent(client, admin_token, db):
     _seed_student(db, "Test", "Person", "7b")
     r1 = client.post(
@@ -263,3 +286,81 @@ def test_list_students_filterable(client, teacher_token, db, klass_5a):
     assert r.status_code == 200
     assert len(r.json()) == 1
     assert r.json()[0]["nachname"] == "A"
+
+
+# ---------------------------------------------------------------------------
+# AK-code (Abschlussklasse) grade-bump matching via preview/apply
+# ---------------------------------------------------------------------------
+
+def _preview(client, admin_token, csv: str):
+    return client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)],
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+
+def _apply(client, admin_token, selected_keys, csv_data):
+    return client.post(
+        "/api/students/apply",
+        json={"selected_keys": selected_keys, "csv_data": csv_data},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+
+def test_apply_sets_ak_code(client, admin_token, klass_5a, db):
+    csv = "#,Nachname,Vorname,Klasse,Geschlecht\n1,Test,Person,5a,männlich\n"
+    preview = _preview(client, admin_token, csv).json()
+    row = preview["diff"][0]
+    _apply(client, admin_token, [row["key"]], {row["key"]: row["csv_data"]})
+
+    s = db.query(Student).filter(Student.nachname == "Test").one()
+    assert s.ak_code is not None
+    assert s.ak_code.startswith("AK")
+    cls = db.query(Class).filter(Class.id == s.class_id).one()
+    assert cls.ak_code == s.ak_code
+
+
+def test_apply_recognizes_student_across_grade_bump(client, admin_token, klass_5a, db, monkeypatch):
+    """A student promoted from 5a -> 6a in next year's import should be matched
+    via AK-code (updated, not duplicated), even though their klasse label and
+    grade changed — only the AK-code (graduation year) stays constant."""
+    import api.schoolyear as schoolyear_mod
+    from datetime import date as real_date
+
+    class _FixedDate(real_date):
+        _fixed = real_date(2025, 7, 1)  # school year 2024/2025, before Stichtag
+
+        @classmethod
+        def today(cls):
+            return cls._fixed
+
+    monkeypatch.setattr(schoolyear_mod, "date", _FixedDate)
+
+    csv_year1 = "#,Nachname,Vorname,Klasse,Geschlecht\n1,Meier,Tom,5a,männlich\n"
+    preview1 = _preview(client, admin_token, csv_year1).json()
+    row1 = preview1["diff"][0]
+    assert row1["action"] == "new"
+    _apply(client, admin_token, [row1["key"]], {row1["key"]: row1["csv_data"]})
+    assert db.query(Student).count() == 1
+
+    # Next school year — after the 1. August Stichtag. No separate "6a" class is
+    # seeded: the same class row (klass_5a) is expected to roll forward in place.
+    _FixedDate._fixed = real_date(2025, 9, 1)
+
+    csv_year2 = "#,Nachname,Vorname,Klasse,Geschlecht\n1,Meier,Tom,6a,männlich\n"
+    preview2 = _preview(client, admin_token, csv_year2).json()
+    row2 = preview2["diff"][0]
+    assert row2["action"] == "update"
+    assert "klasse" in row2["changed_fields"]
+    _apply(client, admin_token, [row2["key"]], {row2["key"]: row2["csv_data"]})
+
+    # Still exactly one student — matched, not duplicated
+    assert db.query(Student).count() == 1
+    s = db.query(Student).filter(Student.nachname == "Meier").one()
+    assert s.klasse == "6a"
+    assert s.class_id == klass_5a.id
+    assert s.jahrgang == 6
+
+    db.refresh(klass_5a)
+    assert klass_5a.code == "6a"

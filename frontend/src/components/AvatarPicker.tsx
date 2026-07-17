@@ -47,7 +47,7 @@ type Props = {
 
 export function AvatarPicker({ selected, onSelect }: Props) {
   return (
-    <div className="grid grid-cols-6 gap-3">
+    <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 sm:gap-3">
       {AVATARS.map((av) => (
         <button
           key={av.id}
@@ -55,8 +55,8 @@ export function AvatarPicker({ selected, onSelect }: Props) {
           onClick={() => onSelect(av.id)}
           title={av.id}
           className={`
-            relative flex items-center justify-center rounded-2xl
-            w-14 h-14 text-3xl select-none cursor-pointer touch-manipulation
+            relative flex items-center justify-center rounded-2xl aspect-square
+            w-full text-2xl sm:text-3xl select-none cursor-pointer touch-manipulation
             transition-transform duration-150
             ${selected === av.id
               ? "ring-4 ring-white scale-110 shadow-lg"

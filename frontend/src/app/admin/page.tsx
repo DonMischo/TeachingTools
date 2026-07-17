@@ -4,12 +4,71 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { api, CalendarMeta, SchoolSettingsOut } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
+import { getSchoolYearStart } from "@/lib/schoolyear";
+
+function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: settings } = useQuery<SchoolSettingsOut>({ queryKey: ["calendar-settings"], queryFn: api.calendar.settings.get });
+  const { data: meta } = useQuery<CalendarMeta>({ queryKey: ["calendar-meta"], queryFn: api.calendar.meta, staleTime: Infinity });
+  const [bundesland, setBundesland] = useState<string | null>(null);
+
+  // Saving the Bundesland immediately pulls the current school year's Feriendaten
+  // too, so the calendar has holidays without a separate manual step.
+  const saveMut = useMutation({
+    mutationFn: async (b: string) => {
+      await api.calendar.settings.set(b);
+      return api.calendar.fetchHolidays(getSchoolYearStart());
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["calendar-settings"] });
+      qc.invalidateQueries({ queryKey: ["calendar"] });
+      toast(`Bundesland gespeichert · ${res.created} Ferientermine geladen`, "success");
+      onClose();
+    },
+    onError: (e: any) => toast(e.message ?? "Fehler beim Speichern", "error"),
+  });
+
+  const value = bundesland ?? settings?.bundesland ?? "TH";
+  const bundeslaender = meta?.bundeslaender ?? {};
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 max-w-[calc(100vw-2rem)] bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-[70]">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm">📅 Kalender-Einstellungen</h3>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-lg leading-none">×</button>
+        </div>
+        <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+          Bundesland (für Feriendaten-Import im Kalender)
+          <select className="input text-sm py-2" value={value} onChange={e => setBundesland(e.target.value)}>
+            {Object.entries(bundeslaender).map(([code, name]) => (
+              <option key={code} value={code}>{name}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          onClick={() => saveMut.mutate(value)}
+          disabled={saveMut.isPending}
+          className="btn-primary text-sm py-2 disabled:opacity-40"
+        >
+          {saveMut.isPending ? "Speichere & lade Ferien…" : "Speichern"}
+        </button>
+      </div>
+    </>
+  );
+}
 
 export default function AdminPage() {
   const { auth } = useAuth();
   const router = useRouter();
   const [showTheme, setShowTheme] = useState(false);
+  const [showKalenderSettings, setShowKalenderSettings] = useState(false);
 
   useEffect(() => {
     if (auth !== null && auth.role !== "admin") router.replace("/");
@@ -37,12 +96,26 @@ export default function AdminPage() {
           <div className="font-semibold">Schülerkarten</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
         </Link>
+        <Link href="/admin/teachers"
+          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          <div className="text-2xl mb-2">🧑‍🏫</div>
+          <div className="font-semibold">Lehrerdaten</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Rolle &amp; Klassenleitung</div>
+        </Link>
         <Link href="/haeuser"
           className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
           <div className="text-2xl mb-2">🛡️</div>
           <div className="font-semibold">Häuser &amp; Klassen</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Häuser verwalten · Klassen zuordnen · Punkte</div>
         </Link>
+        <button
+          onClick={() => setShowKalenderSettings(true)}
+          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors text-left"
+        >
+          <div className="text-2xl mb-2">📅</div>
+          <div className="font-semibold">Kalender-Einstellungen</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Bundesland für Feriendaten-Import</div>
+        </button>
         <button
           onClick={() => setShowTheme(true)}
           className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors text-left"
@@ -57,9 +130,16 @@ export default function AdminPage() {
           <div className="font-semibold">Style Pack</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Logo · Icons · Farbanpassung als ZIP hochladen</div>
         </Link>
+        <Link href="/admin/generators"
+          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          <div className="text-2xl mb-2">🧮</div>
+          <div className="font-semibold">Aufgaben-Generatoren</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Neue Übungsthemen ohne Code registrieren</div>
+        </Link>
       </div>
 
       {showTheme && <ThemeSwitcher onClose={() => setShowTheme(false)} />}
+      {showKalenderSettings && <KalenderSettingsPanel onClose={() => setShowKalenderSettings(false)} />}
     </div>
   );
 }

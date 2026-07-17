@@ -1,21 +1,119 @@
 import csv
 import io
+import re
+
+import chardet
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Teacher
-from ..schemas import TeacherOut
-from ..auth import get_current_teacher, hash_password, require_admin
+from ..models import Teacher, TeacherAssignment, TeacherRole, Class, StudentGroup, SubjectWochenstunden
+from ..schemas import (
+    TeacherOut, TeacherAssignmentOut, TeacherPreviewResponse, TeacherApplyRequest,
+    WochenstundenOut, WochenstundenSet, TeacherKorrekturIn,
+)
+from ..auth import get_current_teacher, get_current_user, hash_password, require_admin
+from ..seed import GRADES as _KNOWN_GRADES
 
 router = APIRouter(prefix="/api/teachers", tags=["teachers"])
 
 _TRUTHY = {"1", "true", "ja", "yes"}
+# Kurs assignments (Klasse 9/10 Kurssystem) and Wahlpflicht groups aren't tied
+# to one grade — use this as the representative grade for Wochenstunden lookup.
+_GROUP_ASSIGNMENT_GRADE = 9
+
+
+def _extract_grade(code: str) -> int | None:
+    m = re.match(r'^(\d+)', code or "")
+    return int(m.group(1)) if m else None
+
+
+def _ws_lookup(db: Session) -> dict[tuple[str, int], int]:
+    return {(w.subject, w.grade): w.hours for w in db.query(SubjectWochenstunden).all()}
+
+
+def _assignment_out(a: TeacherAssignment) -> TeacherAssignmentOut:
+    if a.group_id and a.group:
+        # Kurs/Wahlpflicht: "Ma I" (group named after the level)
+        label = f"{a.subject} {a.group.name}"
+        return TeacherAssignmentOut(
+            id=a.id, subject=a.subject, group_id=a.group_id,
+            group_name=a.group.name, group_type=a.group.group_type, label=label,
+        )
+    return TeacherAssignmentOut(
+        id=a.id, subject=a.subject, class_id=a.class_id,
+        class_code=a.class_.code if a.class_ else None,
+        label=f"{a.class_.code if a.class_ else '?'} · {a.subject}",
+    )
+
+
+def _assignment_hours(a: TeacherAssignment, ws: dict[tuple[str, int], int]) -> int:
+    if a.group_id:
+        return ws.get((a.subject, _GROUP_ASSIGNMENT_GRADE), 0)
+    grade = _extract_grade(a.class_.code) if a.class_ else None
+    return ws.get((a.subject, grade), 0) if grade is not None else 0
+
+
+def _teacher_out(t: Teacher, ws: dict[tuple[str, int], int] | None = None) -> TeacherOut:
+    ws = ws if ws is not None else {}
+    total_ws = sum(_assignment_hours(a, ws) for a in t.assignments) + t.korrektur
+    return TeacherOut(
+        id=t.id, first_name=t.first_name, last_name=t.last_name, active=t.active, role=t.role,
+        nummer=t.nummer, email=t.email,
+        teacher_role=t.teacher_role.name if t.teacher_role else None,
+        klasse=t.klasse.code if t.klasse else None,
+        klasse_id=t.klasse_id,
+        assignments=[_assignment_out(a) for a in t.assignments],
+        korrektur=t.korrektur, notiz=t.notiz, av_stunden=t.av_stunden, total_ws=total_ws,
+    )
 
 
 @router.get("", response_model=list[TeacherOut])
-def list_teachers(db: Session = Depends(get_db)):
-    return db.query(Teacher).filter(Teacher.active == True).order_by(Teacher.last_name, Teacher.first_name).all()
+def list_teachers(db: Session = Depends(get_db), _=Depends(get_current_user)):
+    teachers = db.query(Teacher).filter(Teacher.active == True).order_by(Teacher.last_name, Teacher.first_name).all()
+    ws = _ws_lookup(db)
+    return [_teacher_out(t, ws) for t in teachers]
+
+
+# ---------------------------------------------------------------------------
+# Wochenstunden config (admin only)
+# ---------------------------------------------------------------------------
+
+@router.get("/wochenstunden", response_model=list[WochenstundenOut])
+def get_wochenstunden(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+    return db.query(SubjectWochenstunden).all()
+
+
+@router.put("/wochenstunden", response_model=list[WochenstundenOut])
+def set_wochenstunden(body: list[WochenstundenSet], db: Session = Depends(get_db), _: object = Depends(require_admin)):
+    for item in body:
+        row = db.query(SubjectWochenstunden).filter_by(subject=item.subject, grade=item.grade).first()
+        if row:
+            row.hours = item.hours
+        else:
+            db.add(SubjectWochenstunden(subject=item.subject, grade=item.grade, hours=item.hours))
+    db.commit()
+    return db.query(SubjectWochenstunden).all()
+
+
+@router.patch("/{teacher_id}/korrektur", response_model=TeacherOut)
+def set_korrektur(
+    teacher_id: int,
+    body: TeacherKorrekturIn,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    t = db.get(Teacher, teacher_id)
+    if not t:
+        raise HTTPException(404, "Teacher not found")
+    t.korrektur = body.korrektur
+    t.notiz = (body.notiz or "").strip() or None
+    if body.av_stunden is not None or body.clear_av_stunden:
+        t.av_stunden = None if body.clear_av_stunden else body.av_stunden
+    db.commit()
+    db.refresh(t)
+    return _teacher_out(t, _ws_lookup(db))
 
 
 @router.post("/import", response_model=list[TeacherOut])
@@ -45,7 +143,8 @@ def import_teachers(
         else:
             db.add(Teacher(first_name=first, last_name=last, active=active))
     db.commit()
-    return db.query(Teacher).filter(Teacher.active == True).order_by(Teacher.last_name, Teacher.first_name).all()
+    teachers = db.query(Teacher).filter(Teacher.active == True).order_by(Teacher.last_name, Teacher.first_name).all()
+    return [_teacher_out(t) for t in teachers]
 
 
 @router.post("/{teacher_id}/set-password", status_code=204)
@@ -66,3 +165,259 @@ def set_password(
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
     teacher.password_hash = hash_password(password)
     db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Teacher management (admin): Klassenlehrer + teaching assignments
+# ---------------------------------------------------------------------------
+
+class KlasseUpdate(BaseModel):
+    klasse_id: int | None = None
+
+
+class AssignmentIn(BaseModel):
+    subject: str
+    class_id: int | None = None   # Klasse+Fach
+    group_id: int | None = None   # Klasse 9/10 Kurssystem / Wahlpflicht: Kurs-Gruppe
+
+
+@router.patch("/{teacher_id}/klasse", response_model=TeacherOut)
+def set_klassenlehrer(
+    teacher_id: int,
+    body: KlasseUpdate,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    """Set (or clear) which class this teacher is Klassenlehrer of."""
+    t = db.get(Teacher, teacher_id)
+    if not t:
+        raise HTTPException(404, "Teacher not found")
+    if body.klasse_id is not None and not db.get(Class, body.klasse_id):
+        raise HTTPException(404, "Class not found")
+    t.klasse_id = body.klasse_id
+    db.commit()
+    db.refresh(t)
+    return _teacher_out(t, _ws_lookup(db))
+
+
+@router.post("/{teacher_id}/assignments", response_model=TeacherOut, status_code=201)
+def add_assignment(
+    teacher_id: int,
+    body: AssignmentIn,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    t = db.get(Teacher, teacher_id)
+    if not t:
+        raise HTTPException(404, "Teacher not found")
+    subject = body.subject.strip()
+    if not subject:
+        raise HTTPException(422, "Fach fehlt")
+    if bool(body.class_id) == bool(body.group_id):
+        raise HTTPException(422, "Entweder Klasse ODER Kurs/Wahlpflicht-Gruppe angeben")
+    if body.class_id and not db.get(Class, body.class_id):
+        raise HTTPException(404, "Class not found")
+    if body.group_id:
+        group = db.get(StudentGroup, body.group_id)
+        if not group:
+            raise HTTPException(404, "Gruppe nicht gefunden")
+        if group.group_type not in ("kurs", "wahlpflicht"):
+            raise HTTPException(422, "Nur Kurs- oder Wahlpflicht-Gruppen zuweisbar")
+
+    exists = db.query(TeacherAssignment).filter_by(
+        teacher_id=teacher_id, class_id=body.class_id, group_id=body.group_id, subject=subject
+    ).first()
+    if not exists:
+        db.add(TeacherAssignment(
+            teacher_id=teacher_id, subject=subject,
+            class_id=body.class_id, group_id=body.group_id,
+        ))
+        db.commit()
+    db.refresh(t)
+    return _teacher_out(t, _ws_lookup(db))
+
+
+@router.delete("/assignments/{assignment_id}", status_code=204)
+def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    a = db.get(TeacherAssignment, assignment_id)
+    if not a:
+        raise HTTPException(404)
+    db.delete(a)
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Lehrerdaten — richer CSV import (number, name, email, Klasse, role) with a
+# preview/apply diff, mirroring the Schülerdaten import in api/routers/students.py.
+# ---------------------------------------------------------------------------
+
+_COL_ALIASES: dict[str, str] = {
+    "#": "nummer", "nummer": "nummer", "nr": "nummer", "number": "nummer",
+    "nachname": "nachname", "lastname": "nachname", "last_name": "nachname", "name": "nachname",
+    "vorname": "vorname", "firstname": "vorname", "first_name": "vorname", "first name": "vorname",
+    "email": "email", "e-mail": "email", "mail": "email",
+    "klasse": "klasse", "class": "klasse",
+    "rolle": "role", "role": "role",
+}
+
+
+def _parse_csv(raw: bytes) -> list[dict[str, str]]:
+    encoding = chardet.detect(raw)["encoding"] or "utf-8"
+    text = raw.decode(encoding)
+    sample = text[:4096]
+    dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+    reader = csv.DictReader(io.StringIO(text), dialect=dialect)
+    rows = []
+    for row in reader:
+        mapped: dict[str, str] = {}
+        for key, val in row.items():
+            if key is None:
+                continue
+            norm_key = _COL_ALIASES.get(key.strip().lower(), "")
+            if norm_key:
+                mapped[norm_key] = (val or "").strip()
+        rows.append(mapped)
+    return rows
+
+
+def _teacher_to_dict(t: Teacher) -> dict[str, str]:
+    return {
+        "nummer": str(t.nummer) if t.nummer is not None else "",
+        "nachname": t.last_name or "",
+        "vorname": t.first_name or "",
+        "email": t.email or "",
+        "klasse": t.klasse.code if t.klasse else "",
+        "role": t.teacher_role.name if t.teacher_role else "",
+    }
+
+
+_DIFF_FIELDS = ("nummer", "email", "klasse", "role")
+
+
+@router.post("/preview", response_model=TeacherPreviewResponse)
+def preview_import(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    """Parse CSV and return a diff against the current DB — no writes."""
+    raw = file.file.read()
+    try:
+        rows = _parse_csv(raw)
+    except Exception as exc:
+        raise HTTPException(400, f"CSV-Parsing fehlgeschlagen: {exc}")
+
+    all_teachers = db.query(Teacher).all()
+    existing_by_nummer = {t.nummer: t for t in all_teachers if t.nummer is not None}
+    existing_by_name = {(t.last_name.lower(), t.first_name.lower()): t for t in all_teachers}
+
+    diff: list[dict] = []
+    for row in rows:
+        nachname = row.get("nachname", "").strip()
+        vorname = row.get("vorname", "").strip()
+        if not nachname or not vorname:
+            continue
+
+        nummer_raw = row.get("nummer", "").strip()
+        nummer = int(nummer_raw) if nummer_raw.isdigit() else None
+
+        key = f"{nummer}|{nachname}|{vorname}" if nummer is not None else f"{nachname}|{vorname}"
+        db_teacher = existing_by_nummer.get(nummer) if nummer is not None else None
+        if db_teacher is None:
+            db_teacher = existing_by_name.get((nachname.lower(), vorname.lower()))
+
+        if db_teacher is None:
+            diff.append({"key": key, "action": "new", "csv_data": row, "db_data": None,
+                         "changed_fields": [k for k, v in row.items() if v]})
+        else:
+            db_data = _teacher_to_dict(db_teacher)
+            changed = [
+                field for field in _DIFF_FIELDS
+                if row.get(field, "").strip() and row.get(field, "").strip() != db_data.get(field, "")
+            ]
+            action = "update" if changed else "unchanged"
+            diff.append({"key": key, "action": action, "csv_data": row, "db_data": db_data, "changed_fields": changed})
+
+    return {
+        "diff": diff,
+        "summary": {
+            "new": sum(1 for d in diff if d["action"] == "new"),
+            "update": sum(1 for d in diff if d["action"] == "update"),
+            "unchanged": sum(1 for d in diff if d["action"] == "unchanged"),
+        },
+    }
+
+
+@router.post("/apply")
+def apply_import(
+    body: TeacherApplyRequest,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    roles_by_name = {r.name.lower(): r for r in db.query(TeacherRole).all()}
+    default_role = roles_by_name.get("lehrer")
+
+    all_teachers = db.query(Teacher).all()
+    existing_by_nummer = {t.nummer: t for t in all_teachers if t.nummer is not None}
+    existing_by_name = {(t.last_name.lower(), t.first_name.lower()): t for t in all_teachers}
+
+    applied = 0
+    errors: list[str] = []
+
+    for key in body.selected_keys:
+        row = body.csv_data.get(key)
+        if not row:
+            continue
+        nachname = row.get("nachname", "").strip()
+        vorname = row.get("vorname", "").strip()
+        if not nachname or not vorname:
+            errors.append(f"{key}: Nachname/Vorname fehlt")
+            continue
+
+        nummer_raw = row.get("nummer", "").strip()
+        nummer = int(nummer_raw) if nummer_raw.isdigit() else None
+        email = row.get("email", "").strip() or None
+        klasse_code = row.get("klasse", "").strip()
+        role_name = row.get("role", "").strip()
+
+        klasse = None
+        if klasse_code:
+            klasse = db.query(Class).filter_by(code=klasse_code).first()
+            if not klasse:
+                errors.append(f"{nachname}, {vorname}: Klasse '{klasse_code}' nicht gefunden")
+
+        if role_name:
+            role = roles_by_name.get(role_name.lower())
+            if not role:
+                errors.append(f"{nachname}, {vorname}: Rolle '{role_name}' unbekannt, 'Lehrer' verwendet")
+                role = default_role
+        else:
+            role = default_role
+
+        teacher = existing_by_nummer.get(nummer) if nummer is not None else None
+        if teacher is None:
+            teacher = existing_by_name.get((nachname.lower(), vorname.lower()))
+        if teacher is None:
+            teacher = Teacher(first_name=vorname, last_name=nachname, active=True)
+            db.add(teacher)
+            db.flush()
+            existing_by_name[(nachname.lower(), vorname.lower())] = teacher
+            if nummer is not None:
+                existing_by_nummer[nummer] = teacher
+
+        teacher.first_name = vorname
+        teacher.last_name = nachname
+        if nummer is not None:
+            teacher.nummer = nummer
+        if email:
+            teacher.email = email
+        teacher.teacher_role_id = role.id if role else None
+        teacher.klasse_id = klasse.id if klasse else None
+        applied += 1
+
+    db.commit()
+    return {"applied": applied, "errors": errors}

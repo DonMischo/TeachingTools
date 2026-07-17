@@ -33,7 +33,7 @@ def _out(t: ClassTracker) -> TrackerOut:
 
 
 @router.get("", response_model=list[TrackerOut])
-def list_trackers(class_id: int, db: Session = Depends(get_db)):
+def list_trackers(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     return [_out(t) for t in db.query(ClassTracker).filter_by(class_id=class_id).order_by(ClassTracker.created_at).all()]
 
 

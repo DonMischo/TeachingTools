@@ -44,6 +44,7 @@ def list_roles(
     role_type: str | None = None,
     scope_id: int | None = None,
     db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
 ):
     q = db.query(StudentRole)
     if role_type:

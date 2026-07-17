@@ -99,8 +99,8 @@ export default function SchreibraumListPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <button onClick={() => router.push("/")} className="mb-3 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-        ← Zurück
+      <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+        ← Tools
       </button>
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
@@ -149,6 +149,7 @@ export default function SchreibraumListPage() {
                   >
                     <option value="next-free-line">Nächste freie Zeile</option>
                     <option value="add-line">Zeile hinzufügen</option>
+                    <option value="wortstaffel">Wortstaffel</option>
                   </select>
                 </label>
                 <label className="text-xs text-[var(--text-muted)] flex items-center gap-2">

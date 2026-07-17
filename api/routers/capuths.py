@@ -13,7 +13,6 @@ import json
 import math
 import random
 import re
-import string
 import time
 import zipfile
 from datetime import datetime, timezone
@@ -23,43 +22,21 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSock
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from .. import timeline_engine
 from ..database import get_db
 from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
 from ..auth import get_current_teacher
+from ..utils import gen_code, parse_grades
+from ..ws_auth import ws_teacher
+from ..ws_manager import RoomManager
 
 router = APIRouter(tags=["capuths"])
 
 QUIZ_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "quizzes"
 
-
-def _parse_grades(raw) -> list[int]:
-    """
-    Parse grade field from JSON into a sorted list of ints.
-    Accepts: int, "7", "5,6,7", "5-10", [5,6,7].
-    Values are clamped to 1–13.
-    """
-    if raw is None:
-        return []
-    if isinstance(raw, int):
-        return [raw] if 1 <= raw <= 13 else []
-    if isinstance(raw, list):
-        return sorted({int(v) for v in raw if str(v).isdigit() and 1 <= int(v) <= 13})
-    s = str(raw).strip()
-    # Range: "5-10"
-    range_m = re.fullmatch(r'(\d+)\s*[-–]\s*(\d+)', s)
-    if range_m:
-        lo, hi = int(range_m.group(1)), int(range_m.group(2))
-        return [g for g in range(min(lo, hi), max(lo, hi) + 1) if 1 <= g <= 13]
-    # Comma-separated: "5,6,7"
-    parts = re.split(r'[,;\s]+', s)
-    result = []
-    for p in parts:
-        if p.isdigit() and 1 <= int(p) <= 13:
-            result.append(int(p))
-    return sorted(set(result))
 
 
 def _extract_class_grade(code: str) -> int | None:
@@ -87,74 +64,30 @@ def _grade_multiplier(class_grade: int | None, quiz_grades: list[int]) -> float:
 # In-memory WebSocket connection manager
 # ---------------------------------------------------------------------------
 
-class _SessionManager:
-    def __init__(self):
-        self._rooms: dict[str, dict] = {}
-
-    def _room(self, code: str) -> dict:
-        if code not in self._rooms:
-            self._rooms[code] = {"teacher": None, "students": {}}
-        return self._rooms[code]
+class _SessionManager(RoomManager):
+    """RoomManager that tracks when rooms become empty (inactivity timeout)."""
 
     def add_teacher(self, code: str, ws: WebSocket):
-        self._room(code)["teacher"] = ws
+        super().add_teacher(code, ws)
         _empty_since.pop(code, None)
 
-    def add_student(self, code: str, pid: int, ws: WebSocket):
-        self._room(code)["students"][pid] = ws
+    def add_student(self, code: str, key, ws: WebSocket, info: dict | None = None):
+        super().add_student(code, key, ws, info)
         _empty_since.pop(code, None)
 
-    def remove(self, code: str, pid: int | None):
-        r = self._rooms.get(code)
-        if not r:
-            return
-        if pid is None:
-            r["teacher"] = None
-        else:
-            r["students"].pop(pid, None)
-        # Track when the room becomes fully empty for inactivity timeout
-        if not r.get("teacher") and not r.get("students"):
+    def remove_teacher(self, code: str, ws: WebSocket):
+        super().remove_teacher(code, ws)
+        self._track_empty(code)
+
+    def remove_student(self, code: str, key):
+        super().remove_student(code, key)
+        self._track_empty(code)
+
+    def _track_empty(self, code: str):
+        if self.is_empty(code):
             _empty_since.setdefault(code, time.time())
         else:
             _empty_since.pop(code, None)
-
-    async def broadcast(self, code: str, msg: dict, exclude_pid: int | None = None):
-        r = self._rooms.get(code, {})
-        targets = list(r.get("students", {}).items())
-        if r.get("teacher"):
-            targets.append((-1, r["teacher"]))  # -1 sentinel for teacher (never a real pid)
-        for pid, ws in targets:
-            if exclude_pid is not None and pid == exclude_pid:
-                continue
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def send_teacher(self, code: str, msg: dict):
-        r = self._rooms.get(code, {})
-        if ws := r.get("teacher"):
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def send_student(self, code: str, pid: int, msg: dict):
-        ws = self._rooms.get(code, {}).get("students", {}).get(pid)
-        if ws:
-            try:
-                await ws.send_json(msg)
-            except Exception:
-                pass
-
-    async def kick_student(self, code: str, pid: int):
-        ws = self._rooms.get(code, {}).get("students", {}).get(pid)
-        if ws:
-            try:
-                await ws.close(code=4000)
-            except Exception:
-                pass
-            self._rooms.get(code, {}).get("students", {}).pop(pid, None)
 
 
 mgr = _SessionManager()
@@ -185,8 +118,7 @@ def _expire_stale_sessions(db) -> None:
     now = time.time()
     stale = [code for code, t in list(_empty_since.items()) if now - t >= INACTIVITY_TIMEOUT]
     for code in stale:
-        r = mgr._rooms.get(code, {})
-        if r.get("teacher") or r.get("students"):
+        if not mgr.is_empty(code):
             _empty_since.pop(code, None)
             continue
         s = db.query(QuizSession).filter_by(join_code=code).first()
@@ -196,7 +128,7 @@ def _expire_stale_sessions(db) -> None:
             db.commit()
         _empty_since.pop(code, None)
         _phases.pop(code, None)
-        mgr._rooms.pop(code, None)
+        mgr.drop_room(code)
 
 
 async def _inactivity_watchdog(get_db_fn):
@@ -233,22 +165,13 @@ async def _auto_show_answers(code: str, delay: int, db: Session):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _gen_code(db: Session, length: int = 6) -> str:
-    chars = string.ascii_uppercase + string.digits
-    for _ in range(20):
-        code = "".join(random.choices(chars, k=length))
-        if not db.query(QuizSession).filter_by(join_code=code).first():
-            return code
-    raise RuntimeError("Could not generate unique join code")
-
-
 def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
     if "title" not in data:
         raise ValueError("Missing 'title'")
     if "questions" not in data or not isinstance(data["questions"], list):
         raise ValueError("Missing or invalid 'questions'")
 
-    VALID_TYPES = {"single", "multi", "survey", "true_false", "sort", "umrechnung"}
+    VALID_TYPES = {"single", "multi", "survey", "true_false", "sort", "umrechnung", "timeline"}
     questions = []
     for i, q in enumerate(data["questions"]):
         qtype = q.get("type", "single")
@@ -256,8 +179,14 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
             raise ValueError(f"Question {i}: unknown type '{qtype}'")
         if not q.get("question") and not q.get("question_text"):
             raise ValueError(f"Question {i}: missing 'question'")
+        content = None
+        if qtype == "timeline":
+            content = q.get("timeline")
+            spec_errors = timeline_engine.validate_game_spec(content, f"Question {i}.timeline")
+            if spec_errors:
+                raise ValueError("; ".join(spec_errors))
         answers = []
-        for j, a in enumerate(q.get("answers", [])):
+        for j, a in enumerate(q.get("answers", []) if qtype != "timeline" else []):
             answers.append({
                 "order": j,
                 "text": a.get("text", ""),
@@ -270,6 +199,7 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
             "image_path": q.get("image"),
             "time_limit": q.get("time_limit"),
             "preview_time": q.get("preview_time"),
+            "content": content,
             "answers": answers,
         })
 
@@ -289,13 +219,14 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
     raw_tags = data.get("tags", [])
     tags = [str(t) for t in raw_tags] if isinstance(raw_tags, list) else []
 
-    grades = _parse_grades(data.get("grade") or data.get("grades"))
+    grades = parse_grades(data.get("grade") or data.get("grades"))
 
     return {
         "title": data["title"],
         "description": data.get("description"),
         "max_points": requested,
         "time_limit_default": data.get("time_limit_default", 20),
+        "preview_time_default": data.get("preview_time_default", 3),
         "randomize_answers": settings.get("randomize_answer_order", False),
         "quiz_type": quiz_type,
         "tags": tags,
@@ -341,7 +272,7 @@ def _question_preview_msg(q: QuizQuestion, idx: int, total: int, time_limit: int
         "question_text": q.question_text,
         "image_path": q.image_path,
         "time_limit": time_limit,
-        "preview_time": q.preview_time,
+        "preview_time": q.preview_time if q.preview_time is not None else q.quiz.preview_time_default,
         "question_type": q.type,
         "participant_count": participant_count,
     }
@@ -359,7 +290,7 @@ def _question_answering_msg(
         # Sort questions always shuffled (showing correct order gives the answer away);
         # other types shuffled when the quiz flag is set.
         random.shuffle(answers)
-    return {
+    msg = {
         "event": "question_answering",
         "question_id": q.id,
         "question_type": q.type,
@@ -367,9 +298,17 @@ def _question_answering_msg(
         "answers": answers,
         "participant_count": participant_count,
     }
+    if q.type == "timeline" and q.content:
+        # Students get the board without solutions (sort: values stripped,
+        # spot: displayed positions only, never which are misplaced).
+        msg["timeline"] = timeline_engine.sanitized_board(q.content)
+    return msg
 
 
 def _answer_counts(s: QuizSession, q: QuizQuestion, db: Session) -> dict:
+    if q.type == "timeline":
+        # Timeline responses store the board answer payload, not answer ids.
+        return {}
     responses = db.query(QuizResponse).filter_by(session_id=s.id, question_id=q.id).all()
     counts: dict[int, int] = {a.id: 0 for a in q.answers}
     for r in responses:
@@ -454,7 +393,7 @@ def _state_msg(s: QuizSession, db: Session) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.get("/api/capuths", response_model=list[QuizOut])
-def list_capuths(db: Session = Depends(get_db)):
+def list_capuths(db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     capuths = db.query(Quiz).order_by(Quiz.created_at.desc()).all()
     out = []
     for qz in capuths:
@@ -465,7 +404,7 @@ def list_capuths(db: Session = Depends(get_db)):
 
 
 @router.get("/api/capuths/template")
-def download_template():
+def download_template(_: Teacher = Depends(get_current_teacher)):
     from fastapi.responses import JSONResponse
     return JSONResponse({
         "_ai_instructions": (
@@ -483,10 +422,31 @@ def download_template():
             "--- FRAGETYPEN --- "
             "'single' (1 richtige Antwort), 'multi' (mehrere richtig, Teilpunkte), "
             "'true_false' (Wahr/Falsch), 'survey' (keine Wertung), 'sort' (Reihenfolge sortieren, 'order' beginnt bei 1), "
-            "'umrechnung' (Zahlenwert tippen, 1 Antwort: 'text' = Zahl + Leerzeichen + Zieleinheit z.B. '30000 cm'). "
+            "'umrechnung' (Zahlenwert tippen, 1 Antwort: 'text' = Zahl + Leerzeichen + Zieleinheit z.B. '30000 cm'), "
+            "'timeline' (Zeitstrahl/Zahlenstrahl: statt 'answers' ein Feld 'timeline' = {mode, axis, items}). "
             "Umrechnung: Anzeige lautet 'Rechne um: [Frage] = [Eingabefeld] [Einheit]'. Schüler tippen die Zahl, Einheit wird automatisch daneben gezeigt. "
+            "--- TIMELINE-FRAGEN --- timeline.mode 'sort': Schüler ziehen die items an die richtige Stelle "
+            "(items [{id, label, value}]; value = korrekte Position, wird Schülern NICHT gezeigt). "
+            "timeline.mode 'spot': items werden bei 'value' angezeigt; falsch platzierte tragen ihren wahren Wert "
+            "zusätzlich in 'actual' — Schüler markieren die Fehler. axis: {kind: 'year'|'number', min, max, step?, "
+            "unit?}; Jahre v. Chr. negativ (-753 = 753 v. Chr.). Optional: tolerance (erlaubte Abweichung bei sort), "
+            "scoring 'position' (Standard) oder 'order' (nur Reihenfolge zählt — fair bei Jahreszahlen). "
+            "Teilpunkte gibt es pro richtig platziertem/markiertem Item. "
+            "--- GENAUE DATEN IN TIMELINE-FRAGEN --- Ein item darf zusätzlich 'exact_date' tragen (ISO-8601 "
+            "n. Chr.: 'JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', z.B. '1914-07-28'); das Jahr darin muss zu 'value' "
+            "passen. Damit wird das item taggenau positioniert und bewertet — PFLICHT, sobald zwei items im "
+            "selben Jahr liegen (z.B. Attentat von Sarajevo 1914-06-28 und Kriegserklärung 1914-07-28), sonst "
+            "sitzen sie exakt übereinander und sind weder sortierbar noch bewertbar. Bei mode 'spot' gibt "
+            "'exact_date' die ANGEZEIGTE (evtl. falsche) Stelle an; die wahre Stelle kommt in 'actual' + "
+            "optional 'exact_date_actual' — so lässt sich ein Fehler auch innerhalb desselben Jahres verstecken. "
+            "Achse eng wählen (z.B. min 1914, max 1919), damit Tage sichtbar werden. "
             "--- PUNKTE --- "
             "max_points darf maximal Anzahl_Aufgaben × 2 betragen (Umfragen/sort zählen nicht). "
+            "--- VORSCHAUZEIT (preview_time_default, preview_time) --- "
+            "preview_time_default (Quiz-Ebene, Sekunden) gilt für jede Frage ohne eigenes 'preview_time'. "
+            "Während der Vorschauzeit sehen Schüler nur die Frage (ohne Antwortoptionen); danach wird automatisch "
+            "zu 'answering' gewechselt. 0 oder weglassen = kein automatischer Wechsel (Lehrer muss manuell weiterklicken). "
+            "'preview_time' pro Frage überschreibt den Default für diese eine Frage. "
             "--- MATHEMATISCHE FORMELN --- "
             "Inline-Formeln: $\\frac{a}{b}$, $x^2$, $3 \\cdot 4 =$. "
             "Abgesetzte Formel (zentriert, groß): $$u = 2 \\cdot (a + b)$$. "
@@ -503,6 +463,7 @@ def download_template():
         "tags": ["mathe", "fun"],
         "max_points": 100,
         "time_limit_default": 20,
+        "preview_time_default": 3,
         "settings": {"randomize_answer_order": True},
         "questions": [
             {
@@ -558,6 +519,42 @@ def download_template():
                 "answers": [
                     {"text": "30000 cm", "correct": True},
                 ],
+            },
+            {
+                "type": "timeline",
+                "question": "Ordne die Ereignisse auf dem Zeitstrahl zu.",
+                "time_limit": 60,
+                "timeline": {
+                    "mode": "sort",
+                    "scoring": "order",
+                    "axis": {"kind": "year", "min": -800, "max": 2000},
+                    "items": [
+                        {"id": "rom", "label": "Gründung Roms", "value": -753},
+                        {"id": "karl", "label": "Krönung Karls des Großen", "value": 800},
+                        {"id": "buchdruck", "label": "Gutenbergs Buchdruck", "value": 1440},
+                        {"id": "mauerfall", "label": "Mauerfall", "value": 1989},
+                    ],
+                },
+            },
+            {
+                # Alle drei Ereignisse liegen 1914/1918 — ohne exact_date säßen
+                # die beiden von 1914 exakt übereinander.
+                "type": "timeline",
+                "question": "Ordne den Beginn des Ersten Weltkriegs taggenau.",
+                "time_limit": 60,
+                "timeline": {
+                    "mode": "sort",
+                    "scoring": "order",
+                    "axis": {"kind": "year", "min": 1914, "max": 1919},
+                    "items": [
+                        {"id": "sarajevo", "label": "Attentat von Sarajevo", "value": 1914,
+                         "exact_date": "1914-06-28"},
+                        {"id": "kriegserklaerung", "label": "Kriegserklärung an Serbien", "value": 1914,
+                         "exact_date": "1914-07-28"},
+                        {"id": "waffenstillstand", "label": "Waffenstillstand von Compiègne", "value": 1918,
+                         "exact_date": "1918-11-11"},
+                    ],
+                },
             },
         ],
     })
@@ -622,7 +619,7 @@ def upload_caputh(
 
 
 @router.get("/api/capuths/{quiz_id}", response_model=QuizDetailOut)
-def get_caputh(quiz_id: int, db: Session = Depends(get_db)):
+def get_caputh(quiz_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     caputh = db.get(Quiz, quiz_id)
     if not caputh:
         raise HTTPException(404, "Caputh not found")
@@ -821,6 +818,37 @@ def gruppenauswertung_commit(
 # Session lifecycle (REST)
 # ---------------------------------------------------------------------------
 
+def create_session_for_class(
+    db: Session, quiz_id: int, class_id: int, teacher_id: int,
+    max_points: int | None = None, team_mode: bool = False,
+) -> QuizSession:
+    """Create (or return the existing waiting/active) session for a quiz+class
+    — shared by the REST endpoint and the Stundenplaner tool registry."""
+    caputh = db.get(Quiz, quiz_id)
+    if not caputh:
+        raise HTTPException(404, "Caputh not found")
+
+    existing = db.query(QuizSession).filter_by(quiz_id=quiz_id, class_id=class_id).first()
+    if existing and existing.points_awarded is not None:
+        raise HTTPException(409, "This class has already completed this quiz")
+    if existing and existing.status in ("waiting", "active"):
+        return existing
+
+    if max_points is not None:
+        caputh.max_points = max_points
+    session = QuizSession(
+        quiz_id=quiz_id,
+        class_id=class_id,
+        teacher_id=teacher_id,
+        join_code=gen_code(db, QuizSession, "join_code"),
+        team_mode=team_mode,
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
 @router.post("/api/capuths/{quiz_id}/sessions", response_model=SessionOut, status_code=201)
 def create_session(
     quiz_id: int,
@@ -828,31 +856,12 @@ def create_session(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    caputh = db.get(Quiz, quiz_id)
-    if not caputh:
-        raise HTTPException(404, "Caputh not found")
-
-    existing = db.query(QuizSession).filter_by(quiz_id=quiz_id, class_id=body.class_id).first()
-    if existing and existing.points_awarded is not None:
-        raise HTTPException(409, "This class has already completed this quiz")
-    if existing and existing.status in ("waiting", "active"):
-        o = SessionOut.model_validate(existing)
-        o.participant_count = len(existing.participants)
-        return o
-
-    caputh.max_points = body.max_points
-    session = QuizSession(
-        quiz_id=quiz_id,
-        class_id=body.class_id,
-        teacher_id=current.id,
-        join_code=_gen_code(db),
-        team_mode=body.team_mode,
+    session = create_session_for_class(
+        db, quiz_id, body.class_id, current.id,
+        max_points=body.max_points, team_mode=body.team_mode,
     )
-    db.add(session)
-    db.commit()
-    db.refresh(session)
     o = SessionOut.model_validate(session)
-    o.participant_count = 0
+    o.participant_count = len(session.participants)
     return o
 
 
@@ -867,7 +876,7 @@ def get_session(code: str, db: Session = Depends(get_db)):
 
 
 @router.get("/api/capuths/{quiz_id}/sessions")
-def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db)):
+def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     sessions = db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
     return [
         {
@@ -881,6 +890,35 @@ def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db)):
         }
         for s in sessions
     ]
+
+
+def _delete_session_rows(s: QuizSession, db: Session):
+    """Remove a session and its participants/responses/teams. Awarded points
+    (Transaction rows) reference only teacher/class — they are NOT touched."""
+    _phases.pop(s.join_code, None)
+    _empty_since.pop(s.join_code, None)
+    db.query(QuizResponse).filter_by(session_id=s.id).delete()
+    db.query(QuizParticipant).filter_by(session_id=s.id).delete()
+    db.query(QuizTeam).filter_by(session_id=s.id).delete()
+    db.delete(s)
+
+
+@router.delete("/api/sessions/{code}", status_code=204)
+def delete_session(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    s = db.query(QuizSession).filter_by(join_code=code).first()
+    if not s:
+        raise HTTPException(404, "Session not found")
+    _delete_session_rows(s, db)
+    db.commit()
+
+
+@router.delete("/api/capuths/{quiz_id}/sessions", status_code=204)
+def clear_sessions(quiz_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Delete all sessions of a quiz. Awarded points stay untouched."""
+    sessions = db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
+    for s in sessions:
+        _delete_session_rows(s, db)
+    db.commit()
 
 
 @router.post("/api/sessions/{code}/reset", status_code=200)
@@ -902,7 +940,7 @@ def reset_session(code: str, db: Session = Depends(get_db), current: Teacher = D
 
 
 @router.get("/api/sessions/{code}/report")
-def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db)):
+def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     import csv as csv_mod
     import io as io_mod
     from fastapi.responses import StreamingResponse
@@ -1059,6 +1097,12 @@ async def session_ws(
             await websocket.close(code=4004)
             return
 
+        # Host control requires a verified teacher identity from the session
+        # cookie — role= is client-supplied and must not grant control alone.
+        if role == "teacher" and ws_teacher(websocket, db) is None:
+            await websocket.close(code=4003)
+            return
+
         await websocket.accept()
 
         if role == "teacher":
@@ -1076,7 +1120,7 @@ async def session_ws(
             mgr.add_student(code, pid, websocket)
             await websocket.send_json({"event": "joined", "name": p.name, "avatar": p.avatar})
             await _resync_student(s, db, code, pid, websocket)
-            await mgr.send_teacher(code, {
+            await mgr.send_teachers(code, {
                 "event": "participant_joined",
                 "participant_id": p.id,
                 "name": p.name,
@@ -1105,7 +1149,10 @@ async def session_ws(
         except WebSocketDisconnect:
             pass
     finally:
-        mgr.remove(code, pid if role == "student" else None)
+        if role == "student":
+            mgr.remove_student(code, pid)
+        else:
+            mgr.remove_teacher(code, websocket)
 
 
 async def _resync_teacher(s: QuizSession, db: Session, code: str, ws: WebSocket):
@@ -1142,19 +1189,22 @@ async def _resync_teacher(s: QuizSession, db: Session, code: str, ws: WebSocket)
             correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         elif q.type == "umrechnung":
             correct_ids = [q.answers[0].id] if q.answers else None
-        elif q.type != "survey":
+        elif q.type not in ("survey", "timeline"):
             correct_ids = [a.id for a in q.answers if a.correct]
         else:
             correct_ids = None
         counts = _answer_counts(s, q, db)
-        await ws.send_json({
+        msg = {
             "event": "reveal",
             "question_id": q.id,
             "correct_answer_ids": correct_ids,
             "answer_counts": counts,
             "score_ratios": {},
             "is_last": s.current_question_idx + 1 >= len(questions),
-        })
+        }
+        if q.type == "timeline" and q.content:
+            msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+        await ws.send_json(msg)
         if ph["phase"] == "ranking":
             ranking = _build_ranking(s, ph.get("scores", {}), ph.get("last_delta", {}))
             await ws.send_json({
@@ -1190,7 +1240,7 @@ async def _resync_student(s: QuizSession, db: Session, code: str, pid: int, ws: 
             correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         elif q.type == "umrechnung":
             correct_ids = [q.answers[0].id] if q.answers else None
-        elif q.type != "survey":
+        elif q.type not in ("survey", "timeline"):
             correct_ids = [a.id for a in q.answers if a.correct]
         else:
             correct_ids = None
@@ -1199,14 +1249,17 @@ async def _resync_student(s: QuizSession, db: Session, code: str, pid: int, ws: 
         score_ratios = {str(p): round(v, 3) for p, v in scores.items()} if scores else {}
         await ws.send_json(_question_preview_msg(q, s.current_question_idx, len(questions), tl))
         await ws.send_json(_question_answering_msg(q, tl, answer_order=ph.get("answer_order")))
-        await ws.send_json({
+        msg = {
             "event": "reveal",
             "question_id": q.id,
             "correct_answer_ids": correct_ids,
             "answer_counts": counts,
             "score_ratios": score_ratios,
             "is_last": s.current_question_idx + 1 >= len(questions),
-        })
+        }
+        if q.type == "timeline" and q.content:
+            msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+        await ws.send_json(msg)
         if ph["phase"] == "ranking":
             ranking = _build_ranking(s, scores, ph.get("last_delta", {}))
             await ws.send_json({
@@ -1257,8 +1310,9 @@ async def _handle_teacher_action(action: str, data: dict, s: QuizSession, db: Se
         q = s.quiz.questions[0]
         tl = q.time_limit or s.quiz.time_limit_default
         await mgr.broadcast(code, _question_preview_msg(q, 0, len(s.quiz.questions), tl, len(s.participants)))
-        if q.preview_time:
-            asyncio.create_task(_auto_show_answers(code, q.preview_time, db))
+        pt = q.preview_time if q.preview_time is not None else s.quiz.preview_time_default
+        if pt:
+            asyncio.create_task(_auto_show_answers(code, pt, db))
 
     # ── show_answers — preview → answering ─────────────────────────────────
     elif action == "show_answers" and s.status == "active" and ph and ph["phase"] == "preview":
@@ -1320,14 +1374,14 @@ async def _handle_teacher_action(action: str, data: dict, s: QuizSession, db: Se
         pid_to_kick = data.get("participant_id")
         if pid_to_kick:
             await mgr.send_student(code, pid_to_kick, {"event": "kicked"})
-            await mgr.kick_student(code, pid_to_kick)
+            await mgr.close_student(code, pid_to_kick)
             p = db.get(QuizParticipant, pid_to_kick)
             if p and p.session_id == s.id:
                 db.delete(p)
                 db.commit()
             db.expire_all()
             s = db.query(QuizSession).filter_by(join_code=code).first()
-            await mgr.send_teacher(code, {
+            await mgr.send_teachers(code, {
                 "event": "participant_left",
                 "participant_id": pid_to_kick,
                 "count": len(s.participants),
@@ -1343,7 +1397,7 @@ async def _handle_teacher_action(action: str, data: dict, s: QuizSession, db: Se
                 p.name = new_name
                 db.commit()
                 await mgr.send_student(code, pid_to_rename, {"event": "renamed", "name": new_name})
-                await mgr.send_teacher(code, {"event": "participant_renamed", "participant_id": pid_to_rename, "name": new_name})
+                await mgr.send_teachers(code, {"event": "participant_renamed", "participant_id": pid_to_rename, "name": new_name})
 
     # ── finish — early end ─────────────────────────────────────────────────
     elif action == "finish" and s.status == "active":
@@ -1368,9 +1422,13 @@ async def _handle_teacher_action(action: str, data: dict, s: QuizSession, db: Se
 
 
 def _score_ratio(q: QuizQuestion, resp: QuizResponse) -> float:
-    """0.0–1.0 score ratio for a response. Multi/sort: partial credit."""
+    """0.0–1.0 score ratio for a response. Multi/sort/timeline: partial credit."""
     if q.type == "survey":
         return 0.0
+    if q.type == "timeline":
+        answer = resp.chosen_answer_ids if isinstance(resp.chosen_answer_ids, dict) else {}
+        ratio, _ = timeline_engine.score_answer(q.content or {}, answer)
+        return ratio
     if q.type == "sort":
         correct_order = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         submitted = resp.chosen_answer_ids or []
@@ -1397,7 +1455,7 @@ async def _do_reveal(s: QuizSession, db: Session, code: str):
 
     questions = s.quiz.questions
     q = questions[s.current_question_idx]
-    if q.type == "survey":
+    if q.type in ("survey", "timeline"):
         correct_ids = None
     elif q.type == "sort":
         correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
@@ -1444,14 +1502,17 @@ async def _do_reveal(s: QuizSession, db: Session, code: str):
     # Per-participant feedback: include their ratio so frontend can show partial credit
     score_ratios = {str(pid): round(r, 3) for pid, r in pid_ratios.items()}
 
-    await mgr.broadcast(code, {
+    msg = {
         "event": "reveal",
         "question_id": q.id,
         "correct_answer_ids": correct_ids,
         "answer_counts": counts,
         "score_ratios": score_ratios,
         "is_last": s.current_question_idx + 1 >= len(questions),
-    })
+    }
+    if q.type == "timeline" and q.content:
+        msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+    await mgr.broadcast(code, msg)
 
 
 async def _do_ranking(s: QuizSession, code: str):
@@ -1543,7 +1604,17 @@ async def _handle_student_action(action: str, data: dict, s: QuizSession, db: Se
 
     is_correct: bool | None = None
 
-    if cur_q.type == "umrechnung":
+    if cur_q.type == "timeline":
+        # The raw board answer ({placements} / {flagged}) is stored in
+        # chosen_answer_ids; the JSON column takes the dict as-is and
+        # _score_ratio re-scores it for partial credit at reveal time.
+        payload = data.get("timeline_answer")
+        if not isinstance(payload, dict):
+            payload = {}
+        ratio, _ = timeline_engine.score_answer(cur_q.content or {}, payload)
+        is_correct = ratio >= 1.0
+        chosen_ids = payload
+    elif cur_q.type == "umrechnung":
         raw = str(data.get("answer_text", "")).replace(" ", "")
         correct_ans = cur_q.answers[0] if cur_q.answers else None
         if correct_ans:
@@ -1582,7 +1653,7 @@ async def _handle_student_action(action: str, data: dict, s: QuizSession, db: Se
     db.expire_all()
     s = db.query(QuizSession).filter_by(join_code=code).first()
     resp_count = db.query(QuizResponse).filter_by(session_id=s.id, question_id=cur_q.id).count()
-    await mgr.send_teacher(code, {
+    await mgr.send_teachers(code, {
         "event": "answer_update",
         "question_id": cur_q.id,
         "answer_counts": _answer_counts(s, cur_q, db),

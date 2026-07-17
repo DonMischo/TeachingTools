@@ -3,10 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { AvatarPicker, AvatarDisplay, AVATARS } from "@/components/AvatarPicker";
+import { AvatarDisplay } from "@/components/AvatarPicker";
+import { PlayerIdentityForm, Team } from "@/components/PlayerIdentityForm";
+import { useSavedPlayer, SavedPlayer } from "@/hooks/useSavedPlayer";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
+import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
+import { TimelineAnswer, TimelineBoard, TimelineSolution } from "@/components/timeline/types";
 
 type Answer = { id: number; text: string; order: number };
 type Question = {
@@ -16,6 +19,7 @@ type Question = {
   image_path: string | null;
   time_limit: number | null;
   answers: Answer[];
+  timeline?: TimelineBoard | null;
 };
 
 type Phase =
@@ -23,7 +27,7 @@ type Phase =
   | { kind: "waiting"; participantId: number; name: string; avatar: string }
   | { kind: "preview"; participantId: number; avatar: string; questionText: string; imagePath: string | null; timeLimit: number; questionType: string }
   | { kind: "question"; question: Question; participantId: number; chosen: number[]; avatar: string; answered: boolean; timeLimit: number }
-  | { kind: "reveal"; question: Question; chosen: number[]; correct: number[] | null; isCorrect: boolean | null; scoreRatio: number | null; counts: Record<number, number>; avatar: string; myRank: number | null; myDelta: number | null }
+  | { kind: "reveal"; question: Question; chosen: number[]; correct: number[] | null; isCorrect: boolean | null; scoreRatio: number | null; counts: Record<number, number>; avatar: string; myRank: number | null; myDelta: number | null; timelineSolution: TimelineSolution | null }
   | { kind: "finished"; points: number; title: string; avatar: string; finalRanking: RankEntry[]; scoreRatio: number };
 
 type RankEntry = { pid: number; name: string; avatar: string; score: number; delta: number; rank: number };
@@ -127,38 +131,20 @@ function StudentCountdown({ seconds, stopped }: { seconds: number; stopped: bool
 export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
-  const { auth } = useAuth();
   const ws = useRef<WebSocket | null>(null);
 
-  type Saved = { participantId: number; name: string; avatar: string };
-  const storageKey = `quiz_participant_${code}`;
-
-  function loadSaved(): Saved | null {
-    try { return JSON.parse(localStorage.getItem(storageKey) ?? "null"); } catch { return null; }
-  }
-  function saveSaved(s: Saved) {
-    try { localStorage.setItem(storageKey, JSON.stringify(s)); } catch {}
-  }
+  const { saved, save: saveSaved, clear: clearSaved, loaded: savedLoaded } = useSavedPlayer("quiz_participant", code);
 
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>({ kind: "join" });
-  const [saved, setSaved] = useState<Saved | null>(null);
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [name, setName] = useState("");
-  const lockedName = auth?.student
-    ? (auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`)
-    : null;
-  const [avatar, setAvatar] = useState<string>(AVATARS[0].id);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [tlAnswer, setTlAnswer] = useState<TimelineAnswer>({});
   const [teamMode, setTeamMode] = useState(false);
-  const [teams, setTeams] = useState<{ id: number; name: string; color: string | null }[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    setSaved(loadSaved());
-    setAvatar(AVATARS[Math.floor(Math.random() * AVATARS.length)].id);
     setMounted(true);
     // Fetch session info; if not a caputh session, detect game type and redirect
     api.capuths.getSession(code).then(s => {
@@ -222,6 +208,7 @@ export default function PlayPage() {
             image_path: prev.kind === "preview" ? prev.imagePath : null,
             time_limit: msg.time_limit,
             answers,
+            timeline: msg.timeline ?? null,
           },
           participantId,
           chosen: [],
@@ -246,11 +233,13 @@ export default function PlayPage() {
           const ratios: Record<string, number> = msg.score_ratios ?? {};
           const scoreRatio = ratios[String(participantId)] ?? null;
           const isCorrect =
-            correct === null ? null
+            question.type === "timeline"
+              ? scoreRatio !== null && scoreRatio >= 0.999
+            : correct === null ? null
             : question.type === "umrechnung"
               ? scoreRatio !== null && scoreRatio > 0
               : correct.length === chosen.length && chosen.every((id: number) => correct.includes(id));
-          return { kind: "reveal", question, chosen, correct, isCorrect, scoreRatio, counts: msg.answer_counts, avatar: av, myRank: null, myDelta: null };
+          return { kind: "reveal", question, chosen, correct, isCorrect, scoreRatio, counts: msg.answer_counts, avatar: av, myRank: null, myDelta: null, timelineSolution: msg.timeline_solution ?? null };
         });
 
       } else if (msg.event === "ranking") {
@@ -263,7 +252,7 @@ export default function PlayPage() {
       } else if (msg.event === "kicked") {
         ws.current?.close();
         setPhase({ kind: "join" });
-        try { localStorage.removeItem(storageKey); } catch {}
+        clearSaved();
 
       } else if (msg.event === "renamed") {
         const newName = msg.name as string;
@@ -286,17 +275,13 @@ export default function PlayPage() {
     };
   }
 
-  async function handleJoin() {
-    const joinName = lockedName ?? name.trim();
-    if (!joinName) { setJoinError("Bitte gib deinen Namen ein."); return; }
-    if (teamMode && selectedTeamId === null) { setJoinError("Bitte wähle ein Team."); return; }
+  async function handleJoin(joinName: string, avatar: string, teamId?: number | null) {
+    if (teamMode && teamId == null) { setJoinError("Bitte wähle ein Team."); return; }
     setConnecting(true);
     setJoinError(null);
     try {
-      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? selectedTeamId : null);
-      const s = { participantId: res.participant_id, name: res.name, avatar };
-      saveSaved(s);
-      setSaved(s);
+      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? teamId! : null);
+      saveSaved({ participantId: res.participant_id, name: res.name, avatar });
       connectWs(res.participant_id, res.name, avatar);
     } catch (err: unknown) {
       setJoinError(err instanceof Error ? err.message : "Beitritt fehlgeschlagen");
@@ -304,7 +289,8 @@ export default function PlayPage() {
     }
   }
 
-  function handleRejoin(s: Saved) {
+  function handleRejoin(s: SavedPlayer) {
+    if (s.participantId == null) return;
     setConnecting(true);
     setJoinError(null);
     connectWs(s.participantId, s.name, s.avatar);
@@ -332,7 +318,7 @@ export default function PlayPage() {
   }
 
   useEffect(() => {
-    if (phase.kind === "question") setTextInput("");
+    if (phase.kind === "question") { setTextInput(""); setTlAnswer({}); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind === "question" ? (phase as Extract<Phase, { kind: "question" }>).question.id : null]);
 
@@ -342,105 +328,18 @@ export default function PlayPage() {
   if (!mounted) return null;
 
   if (phase.kind === "join") {
-    // Saved session exists and user hasn't explicitly asked for a new form
-    if (saved && !showNewForm) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center p-6 gap-4">
-          <div className="w-full max-w-sm bg-white/10 backdrop-blur rounded-3xl p-6 flex flex-col gap-4 shadow-2xl">
-            <p className="text-white/60 text-sm text-center font-mono">{code}</p>
-            <h1 className="text-xl font-bold text-white text-center">Wieder dabei?</h1>
-
-            {/* Rejoin card */}
-            <div className="flex items-center gap-4 bg-white/10 rounded-2xl p-4">
-              <AvatarDisplay avatarId={saved.avatar} size="lg" />
-              <div>
-                <p className="text-white font-bold text-lg leading-tight">{saved.name}</p>
-                <p className="text-white/50 text-sm">Gespeicherte Sitzung</p>
-              </div>
-            </div>
-
-            {joinError && <p className="text-red-300 text-sm text-center">{joinError}</p>}
-
-            <button
-              onClick={() => handleRejoin(saved)}
-              disabled={connecting}
-              className="w-full py-3 bg-yellow-400 text-black font-bold text-lg rounded-2xl hover:bg-yellow-300 disabled:opacity-40 transition-colors"
-            >
-              {connecting ? "Verbinde…" : "Weiter als " + saved.name + " →"}
-            </button>
-
-            <button
-              onClick={() => setShowNewForm(true)}
-              className="w-full py-2 text-white/50 text-sm hover:text-white/80 transition-colors"
-            >
-              Neuer Spieler
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    // New join form
+    if (!savedLoaded) return null;
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm bg-white/10 backdrop-blur rounded-3xl p-6 flex flex-col gap-5 shadow-2xl">
-          <div className="text-center">
-            <p className="text-white/60 text-sm font-mono mb-1">{code}</p>
-            <h1 className="text-2xl font-bold text-white">Figur wählen</h1>
-          </div>
-
-          <div className="flex items-center gap-3 bg-white/10 rounded-2xl p-3">
-            <AvatarDisplay avatarId={avatar} size="lg" />
-            <input
-              className={`flex-1 bg-transparent text-white text-lg font-semibold outline-none placeholder:text-white/40 ${lockedName ? "opacity-80" : ""}`}
-              placeholder="Dein Name…"
-              value={lockedName ?? name}
-              onChange={(e) => !lockedName && setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-              disabled={connecting || !!lockedName}
-            />
-          </div>
-
-          <AvatarPicker selected={avatar} onSelect={(id) => setAvatar(id)} />
-
-          {teamMode && teams.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-white/70 text-sm text-center">Team wählen</p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {teams.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTeamId(t.id)}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 transition-all ${selectedTeamId === t.id ? "border-yellow-400 bg-yellow-400/20 text-yellow-200" : "border-white/20 text-white/70 hover:border-white/50"}`}
-                    style={t.color ? { borderColor: selectedTeamId === t.id ? undefined : t.color + "88" } : undefined}
-                  >
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {joinError && <p className="text-red-300 text-sm text-center">{joinError}</p>}
-
-          <button
-            onClick={handleJoin}
-            disabled={connecting}
-            className="w-full py-3 bg-yellow-400 text-black font-bold text-lg rounded-2xl hover:bg-yellow-300 disabled:opacity-40 transition-colors touch-manipulation"
-          >
-            {connecting ? "Verbinde…" : "Beitreten 🎮"}
-          </button>
-
-          {saved && (
-            <button
-              onClick={() => setShowNewForm(false)}
-              className="w-full py-2 text-white/50 text-sm hover:text-white/80 transition-colors"
-            >
-              ← Zurück
-            </button>
-          )}
-        </div>
-      </div>
+      <PlayerIdentityForm
+        gameCode={code}
+        gameIcon="🏕️"
+        error={joinError}
+        submitting={connecting}
+        teams={teamMode ? teams : []}
+        savedSession={saved && saved.participantId != null ? saved : null}
+        onRejoin={() => saved && handleRejoin(saved)}
+        onJoin={handleJoin}
+      />
     );
   }
 
@@ -491,6 +390,39 @@ export default function PlayPage() {
     const hasAnswered = phase.answered || (phase.chosen.length > 0 && (q.type === "single" || q.type === "true_false" || q.type === "survey"));
     const sortComplete = isSort && phase.chosen.length === q.answers.length;
 
+    if (q.type === "timeline" && q.timeline) {
+      const board = q.timeline;
+      const submitTl = () => {
+        if (phase.answered) return;
+        ws.current?.send(JSON.stringify({ action: "answer", timeline_answer: tlAnswer }));
+      };
+      return (
+        <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">
+          <StudentCountdown seconds={phase.timeLimit} stopped={phase.answered} />
+          <div className="flex-1 min-h-0 flex flex-col gap-3 p-4 overflow-y-auto">
+            {q.question_text && (
+              <h2 className="text-xl font-bold text-center whitespace-pre-line leading-snug">
+                <MathText text={q.question_text} />
+              </h2>
+            )}
+            <div className="self-center"><QuestionTypeBadge type={q.type} size="sm" /></div>
+            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+              <TimelineGameBoard board={board} answer={tlAnswer} onChange={setTlAnswer} disabled={phase.answered} />
+            </div>
+            {phase.answered ? (
+              <p className="text-yellow-300 text-sm animate-pulse text-center">✓ Antwort gesendet</p>
+            ) : (
+              <button onClick={submitTl}
+                disabled={!timelineAnswerComplete(board, tlAnswer)}
+                className="w-full py-3 bg-yellow-400 text-black font-bold text-lg rounded-2xl disabled:opacity-40">
+                Antwort abschicken ✓
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     if (isUmrechnung) {
       const ansText = q.answers[0]?.text ?? "";
       const parts = ansText.split(" ");
@@ -500,7 +432,7 @@ export default function PlayPage() {
         ws.current?.send(JSON.stringify({ action: "answer", answer_text: textInput.trim().replace(/\s/g, "") }));
       };
       return (
-        <div className="flex flex-col h-screen bg-indigo-800 text-white overflow-hidden">
+        <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">
           <StudentCountdown seconds={phase.timeLimit} stopped={phase.answered} />
           <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 overflow-y-auto">
             {q.image_path && (
@@ -540,7 +472,7 @@ export default function PlayPage() {
     }
 
     return (
-      <div className="flex flex-col h-screen bg-indigo-800 text-white overflow-hidden">
+      <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">
         {/* Countdown bar */}
         <StudentCountdown seconds={phase.timeLimit} stopped={hasAnswered || sortComplete} />
 
@@ -659,6 +591,27 @@ export default function PlayPage() {
             </div>
           )}
         </div>
+
+        {/* Timeline reveal: own placements vs. correct positions */}
+        {q.type === "timeline" && phase.timelineSolution?.axis && (
+          <div className="px-4 pb-4">
+            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+              <TimelineGameBoard
+                board={{
+                  mode: phase.timelineSolution.mode,
+                  axis: phase.timelineSolution.axis,
+                  scoring: phase.timelineSolution.scoring,
+                  items: phase.timelineSolution.items.map(it =>
+                    phase.timelineSolution!.mode === "spot"
+                      ? { id: it.id, label: it.label, value: it.value }
+                      : { id: it.id, label: it.label }),
+                }}
+                answer={tlAnswer}
+                solution={phase.timelineSolution}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Answer diagram */}
         {q.answers.length > 0 && (

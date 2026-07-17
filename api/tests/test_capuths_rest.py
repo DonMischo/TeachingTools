@@ -173,8 +173,8 @@ class TestCRUD:
         assert "questions" in body
         assert len(body["questions"]) == 2
 
-    def test_get_nonexistent_returns_404(self, client):
-        r = client.get("/api/capuths/99999")
+    def test_get_nonexistent_returns_404(self, client, teacher_token):
+        r = client.get("/api/capuths/99999", headers={"Authorization": f"Bearer {teacher_token}"})
         assert r.status_code == 404
 
     def test_delete_removes_caputh(self, client, teacher_token, uploaded):
@@ -187,6 +187,9 @@ class TestCRUD:
         assert r2.status_code == 404
 
     def test_delete_requires_auth(self, client, uploaded):
+        # The upload fixture logged in via cookie — clear it so this request
+        # is genuinely unauthenticated (shared TestClient cookie jar).
+        client.cookies.clear()
         r = client.delete(f"/api/capuths/{uploaded['id']}")
         assert r.status_code == 401
 
@@ -232,3 +235,78 @@ class TestCreateSession:
             headers={"Authorization": f"Bearer {teacher_token}"},
         )
         assert r1.json()["join_code"] == r2.json()["join_code"]
+
+
+# ---------------------------------------------------------------------------
+# Session delete / clear
+# ---------------------------------------------------------------------------
+
+class TestDeleteSessions:
+    @pytest.fixture()
+    def caputh(self, db, klass, teacher):
+        quiz = Quiz(title="Quiz", max_points=4, time_limit_default=20)
+        db.add(quiz)
+        db.flush()
+        q = QuizQuestion(quiz_id=quiz.id, order=0, type="single", question_text="Q?", time_limit=10)
+        db.add(q)
+        db.flush()
+        db.add(QuizAnswer(question_id=q.id, order=0, text="A", correct=True))
+        db.flush()
+        return quiz
+
+    def _create(self, client, teacher_token, caputh, klass) -> str:
+        r = client.post(
+            f"/api/capuths/{caputh.id}/sessions",
+            json={"class_id": klass.id, "max_points": 4},
+            headers={"Authorization": f"Bearer {teacher_token}"},
+        )
+        return r.json()["join_code"]
+
+    def test_delete_session(self, client, teacher_token, caputh, klass):
+        code = self._create(client, teacher_token, caputh, klass)
+        r = client.delete(f"/api/sessions/{code}", headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 204
+        sessions = client.get(f"/api/capuths/{caputh.id}/sessions").json()
+        assert sessions == []
+
+    def test_delete_session_keeps_awarded_points(self, client, db, teacher, teacher_token, caputh, klass):
+        from api.models import Transaction
+
+        code = self._create(client, teacher_token, caputh, klass)
+        # Simulate a scored session: award points via a transaction (as the
+        # finish flow does — transactions have no session FK).
+        db.add(Transaction(teacher_id=teacher.id, class_id=klass.id, points=42, reason=f"Caputh: {caputh.title}"))
+        db.flush()
+
+        r = client.delete(f"/api/sessions/{code}", headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 204
+        assert db.query(Transaction).filter_by(class_id=klass.id).count() == 1
+
+    def test_delete_session_requires_auth(self, client, teacher_token, caputh, klass):
+        code = self._create(client, teacher_token, caputh, klass)
+        client.cookies.clear()
+        r = client.delete(f"/api/sessions/{code}")
+        assert r.status_code == 401
+
+    def test_delete_unknown_session_404(self, client, teacher_token):
+        r = client.delete("/api/sessions/XXXXXX", headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 404
+
+    def test_clear_sessions(self, client, db, teacher_token, caputh, klass):
+        from api.models import Class
+
+        klass2 = Class(code="6z", display_name="Klasse 6z")
+        db.add(klass2)
+        db.flush()
+        self._create(client, teacher_token, caputh, klass)
+        r = client.post(
+            f"/api/capuths/{caputh.id}/sessions",
+            json={"class_id": klass2.id, "max_points": 4},
+            headers={"Authorization": f"Bearer {teacher_token}"},
+        )
+        assert r.status_code == 201
+        assert len(client.get(f"/api/capuths/{caputh.id}/sessions").json()) == 2
+
+        r = client.delete(f"/api/capuths/{caputh.id}/sessions", headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 204
+        assert client.get(f"/api/capuths/{caputh.id}/sessions").json() == []

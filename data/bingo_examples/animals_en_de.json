@@ -3,6 +3,7 @@
   "subject": "Englisch",
   "tags": ["Vokabeln", "Tiere", "A1"],
   "description": "Englische Tiernamen – Lehrer ruft den englischen Begriff, Schüler markieren die deutsche Übersetzung.",
+  "grade": "1-4",
   "max_points": 10,
   "grid_size": 5,
   "grid_cols": 4,

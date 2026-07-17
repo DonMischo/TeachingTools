@@ -29,7 +29,32 @@ Konzeptideen.yml
 .claude/
 
 # frontend
+frontend/public/EGE_logo.png
+frontend/public/favicon.ico
 frontend/node_modules/
 frontend/.next/
 frontend/coverage/
 frontend/tsconfig.tsbuildinfo
+
+# root package / node_modules (screenshots helper etc.)
+node_modules/
+package-lock.json
+package.json
+
+# presentations
+presentations/node_modules/
+presentations/package-lock.json
+presentations/package.json
+presentations/*.pptx
+presentations/*.pdf
+presentations/*.png
+presentations/*.jpg
+presentations/slides_out/
+presentations/EGE_logo_white.png
+
+# screenshots
+screenshots/package-lock.json
+screenshots/README.md
+
+# build output
+tsc_out.txt

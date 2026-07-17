@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { wsUrl } from "@/lib/utils";
 
 type Question = {
   id: number;
@@ -29,18 +30,17 @@ export default function BarometerPlayPage() {
   const [error, setError] = useState<string | null>(null);
   const [hovering, setHovering] = useState<number | null>(null);
 
-  const studentId = auth?.student?.id ?? 0;
-
   useEffect(() => {
     if (!auth) return;
-    const wsBase = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/api/barometer`;
-    const ws = new WebSocket(`${wsBase}/${code}/ws?role=student&student_id=${studentId}`);
+    const ws = new WebSocket(wsUrl(`/api/barometer/${code}/ws?role=student`));
     wsRef.current = ws;
 
     ws.onopen = () => setError(null);
     ws.onerror = () => setError("Verbindungsfehler – bitte Seite neu laden.");
     ws.onclose = (e) => {
       if (e.code === 4004) setError("Umfrage nicht gefunden.");
+      else if (e.code === 4001) setError("Bitte einloggen, um teilzunehmen.");
+      else if (e.code === 4003) setError("Nur Schüler können an dieser Umfrage teilnehmen.");
     };
 
     ws.onmessage = (e) => {
@@ -79,7 +79,7 @@ export default function BarometerPlayPage() {
     };
 
     return () => ws.close();
-  }, [code, auth, studentId]);
+  }, [code, auth]);
 
   function respond(questionId: number, value: number) {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
