@@ -429,8 +429,11 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "(items [{id, label, value}]; value = korrekte Position, wird Schülern NICHT gezeigt). "
             "timeline.mode 'spot': items werden bei 'value' angezeigt; falsch platzierte tragen ihren wahren Wert "
             "zusätzlich in 'actual' — Schüler markieren die Fehler. axis: {kind: 'year'|'number', min, max, step?, "
-            "unit?}; Jahre v. Chr. negativ (-753 = 753 v. Chr.). Optional: tolerance (erlaubte Abweichung bei sort), "
-            "scoring 'position' (Standard) oder 'order' (nur Reihenfolge zählt — fair bei Jahreszahlen). "
+            "unit?}; Jahre v. Chr. negativ (-753 = 753 v. Chr.). scoring 'position' (Standard) wertet die Stelle "
+            "mit einer wählbaren tolerance = erlaubte Abweichung in Achseneinheiten (Jahren): 0 = exakt (Jahr bzw. "
+            "exact_date muss genau stimmen), sonst z.B. 1, 2, 5, 10, 15, 100 (Jahrhundert), 1000 (Jahrtausend) oder "
+            "1000000 (1 Mio. Jahre, für erdgeschichtliche Achsen). scoring 'order' wertet nur die Reihenfolge (fair "
+            "bei unsicheren Jahreszahlen; tolerance wird dann ignoriert). "
             "Teilpunkte gibt es pro richtig platziertem/markiertem Item. "
             "--- GENAUE DATEN IN TIMELINE-FRAGEN --- Ein item darf zusätzlich 'exact_date' tragen (ISO-8601 "
             "n. Chr.: 'JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', z.B. '1914-07-28'); das Jahr darin muss zu 'value' "
@@ -526,7 +529,8 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
                 "time_limit": 60,
                 "timeline": {
                     "mode": "sort",
-                    "scoring": "order",
+                    "scoring": "position",
+                    "tolerance": 100,
                     "axis": {"kind": "year", "min": -800, "max": 2000},
                     "items": [
                         {"id": "rom", "label": "Gründung Roms", "value": -753},

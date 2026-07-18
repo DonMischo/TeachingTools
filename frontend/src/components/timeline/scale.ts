@@ -153,6 +153,66 @@ export function formatIsoDateDe(iso: string): string | null {
   return `${p.day}. ${MONTHS_DE[p.month - 1]} ${p.year}`;
 }
 
+export function isoHasMonth(iso: string | null | undefined): boolean {
+  if (!iso) return false;
+  const p = parseIsoDate(iso);
+  return p != null && p.month != null;
+}
+
+// ---------------------------------------------------------------------------
+// Position-mode scoring tolerance (shared, mirrored in api/timeline_engine.py)
+// ---------------------------------------------------------------------------
+//
+// The tolerance is chosen explicitly by the author — a dropdown in the tool,
+// a `tolerance` field in Caputh/Exitgame specs — in axis units (years):
+//   tolerance > 0   -> correct iff |placed - effective| <= tolerance
+//   tolerance === 0 -> exact: the year must match (and, on a short round where
+//                      months can actually be placed, a month-precise date's
+//                      month too)
+//   tolerance null  -> falls back to the snap step / 5% of span (number axes,
+//                      legacy specs without an explicit tolerance)
+
+/** A round tight enough that month precision is meaningful and placeable. */
+export const SHORT_SPAN_YEARS = 25;
+
+export function isMonthRound(axis: TimelineAxis): boolean {
+  return axis.kind === "year" && axis.max - axis.min <= SHORT_SPAN_YEARS;
+}
+
+function monthIndex(v: number): number {
+  const m = Math.floor((v - Math.floor(v)) * 12);
+  return Math.min(11, Math.max(0, m));
+}
+
+function axisDefaultTolerance(axis: TimelineAxis): number {
+  if (axis.step && axis.step > 0) return axis.step;
+  return (axis.max - axis.min) * 0.05;
+}
+
+/** Is a placement correct for this item in position mode? `value` is the
+ * authored (integer) year, `effective` the day-precise position, `hasMonth`
+ * whether the exact date carries a month. `tolerance` (author-set, in axis
+ * units) drives it: 0 = exact, >0 = ± window, null = step/5%-span default. */
+export function positionCorrect(
+  axis: TimelineAxis,
+  item: { value: number; effective: number; hasMonth: boolean },
+  placed: number | null | undefined,
+  tolerance?: number | null,
+): boolean {
+  if (placed == null || !Number.isFinite(placed)) return false;
+  const tol = tolerance == null ? axisDefaultTolerance(axis) : tolerance;
+  if (tol > 0) return Math.abs(placed - item.effective) <= tol + 1e-9;
+  // tol === 0 -> exact match, at the finest granularity the round can place.
+  if (axis.kind === "year") {
+    if (isMonthRound(axis) && item.hasMonth) {
+      return Math.floor(placed) === Math.floor(item.effective)
+        && monthIndex(placed) === monthIndex(item.effective);
+    }
+    return Math.floor(placed) === Math.round(item.value);
+  }
+  return Math.abs(placed - item.effective) <= 1e-9;
+}
+
 /** The event's real axis position: the parsed exact_date when present and a
  * valid CE ISO date, otherwise the plain (year-level) value. Positioning
  * only — never feed this into formatValue/eventWhen, which must keep
@@ -259,14 +319,26 @@ export function xToValue(x: number, viewMin: number, viewMax: number, width: num
 }
 
 /** Snap a value to the axis step (if any), clamped to the axis range. Year
- * axes never snap finer than a whole year — placing an event "in 1913,95"
- * is meaningless, and the auto-focused game axis makes that reachable. */
+ * axes normally snap to whole years — placing an event "in 1913,95" is
+ * meaningless — but on a short-span round they snap to whole months (floor,
+ * so anywhere in July lands on "July") so month precision is placeable. */
 export function snapValue(v: number, axis: TimelineAxis): number {
-  const auto = niceStep((axis.max - axis.min) / 2000);
-  const step = axis.step && axis.step > 0
-    ? axis.step
-    : axis.kind === "year" ? Math.max(1, auto) : auto;
-  return Math.min(axis.max, Math.max(axis.min, roundToStep(v, step)));
+  const clamp = (x: number) => Math.min(axis.max, Math.max(axis.min, x));
+  if (axis.step && axis.step > 0) return clamp(roundToStep(v, axis.step));
+  if (axis.kind === "year") {
+    if (isMonthRound(axis)) return clamp(Math.floor(v * 12) / 12);
+    return clamp(Math.round(v));
+  }
+  return clamp(roundToStep(v, niceStep((axis.max - axis.min) / 2000)));
+}
+
+/** How a placement reads back to the player: month-level on a short round
+ * ("Jul 1914"), otherwise the normal axis label. */
+export function formatPlacement(v: number, axis: TimelineAxis): string {
+  if (isMonthRound(axis)) {
+    return `${MONTHS_DE_ABBR[monthIndex(v)]} ${Math.floor(v)}`;
+  }
+  return formatValue(v, axis);
 }
 
 const de = (v: number, maxFrac = 2) =>

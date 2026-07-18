@@ -191,6 +191,10 @@ class TestTolerance:
     def test_explicit_tolerance_wins(self):
         assert default_tolerance(sort_spec(tolerance=25)) == 25
 
+    def test_zero_tolerance_is_preserved(self):
+        # 0 = "exact"; it must not fall through to the span default.
+        assert default_tolerance(sort_spec(tolerance=0)) == 0
+
     def test_step_used_when_no_tolerance(self):
         spec = sort_spec()
         spec["axis"]["step"] = 10
@@ -394,3 +398,75 @@ class TestExactDatesInGameSpecs:
         by_id = {it["id"]: it for it in sol["items"]}
         assert by_id["sarajevo"]["value_effective"] < by_id["kriegserklaerung"]["value_effective"]
         assert by_id["sarajevo"]["exact_date"] == "1914-06-28"
+
+
+# ── explicit position tolerance ────────────────────────────────────────────
+
+def pos_spec(items, lo, hi, **over):
+    spec = {"mode": "sort", "scoring": "position", "axis": {"kind": "year", "min": lo, "max": hi}, "items": items}
+    spec.update(over)
+    return spec
+
+
+def _score_one(spec, item_id, placed):
+    ratio, results = score_answer(spec, {"placements": {item_id: placed}})
+    return results[item_id]
+
+
+class TestPositionTolerance:
+    def test_zero_tolerance_requires_the_exact_year(self):
+        spec = pos_spec([{"id": "a", "label": "A", "value": 1849}], 1000, 2000, tolerance=0)
+        assert _score_one(spec, "a", 1849) is True
+        assert _score_one(spec, "a", 1850) is False   # even 1 off fails
+
+    def test_positive_tolerance_is_a_band(self):
+        spec = pos_spec([{"id": "a", "label": "A", "value": 1500}], 1000, 2000, tolerance=15)
+        assert _score_one(spec, "a", 1512) is True    # within 15
+        assert _score_one(spec, "a", 1520) is False   # 20 off
+
+    def test_century_and_millennium_tolerances(self):
+        century = pos_spec([{"id": "a", "label": "A", "value": 1500}], 0, 2000, tolerance=100)
+        assert _score_one(century, "a", 1580) is True
+        assert _score_one(century, "a", 1650) is False
+        millennium = pos_spec([{"id": "a", "label": "A", "value": 1500}], -3000, 2000, tolerance=1000)
+        assert _score_one(millennium, "a", 900) is True     # within 1000
+        assert _score_one(millennium, "a", 300) is False
+
+    def test_millions_tolerance_on_deep_time_axis(self):
+        spec = {
+            "mode": "sort", "scoring": "position",
+            "axis": {"kind": "year", "min": -600_000_000, "max": 0},
+            "items": [{"id": "t", "label": "Trias", "value": -230_000_000}],
+            "tolerance": 5_000_000,
+        }
+        assert _score_one(spec, "t", -233_000_000) is True   # within 5 Mio
+        assert _score_one(spec, "t", -220_000_000) is False  # 10 Mio off
+
+    def test_zero_tolerance_matches_the_month_on_a_short_round(self):
+        spec = wk1_spec(scoring="position", tolerance=0, axis={"kind": "year", "min": 1912, "max": 1920})
+        # Sarajevo 1914-06-28 -> June. Placing in June passes, July fails.
+        june = 1914 + 5 / 12 + 0.01
+        july = 1914 + 6 / 12 + 0.01
+        assert _score_one(spec, "sarajevo", june) is True
+        assert _score_one(spec, "sarajevo", july) is False
+
+    def test_zero_tolerance_year_only_item_on_a_short_round(self):
+        spec = pos_spec([{"id": "x", "label": "X", "value": 1916}], 1912, 1920, tolerance=0)
+        assert _score_one(spec, "x", 1916 + 3 / 12) is True   # anywhere in 1916
+        assert _score_one(spec, "x", 1917.0) is False
+
+    def test_no_tolerance_falls_back_to_span_default(self):
+        # No explicit tolerance -> 5% of span (legacy default): 50 on 1000y.
+        spec = pos_spec([{"id": "a", "label": "A", "value": 1500}], 1000, 2000)
+        assert _score_one(spec, "a", 1540) is True
+        assert _score_one(spec, "a", 1560) is False
+
+    def test_number_axis_unaffected(self):
+        spec = {
+            "mode": "sort", "scoring": "position",
+            "axis": {"kind": "number", "min": 0, "max": 100, "step": 5},
+            "items": [{"id": "a", "label": "50", "value": 50}],
+        }
+        assert _score_one(spec, "a", 52) is True   # within step 5
+        assert _score_one(spec, "a", 60) is False
+        assert _score_one(spec, "a", 60) is False

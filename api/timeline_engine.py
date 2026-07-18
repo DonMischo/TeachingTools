@@ -25,6 +25,7 @@ Game modes:
 Both scorers return a per-item result map plus a 0.0-1.0 ratio, so Caputh can
 give partial credit while Exitgame keeps its binary correct/incorrect.
 """
+import math
 import re
 from datetime import date
 
@@ -166,8 +167,8 @@ def validate_game_spec(spec, where: str = "timeline") -> list[str]:
     errors.extend(_validate_items(spec.get("items"), spec.get("axis") or {}, where))
 
     tolerance = spec.get("tolerance")
-    if tolerance is not None and (not _is_num(tolerance) or tolerance <= 0):
-        errors.append(f"{where}.tolerance: muss eine Zahl > 0 sein")
+    if tolerance is not None and (not _is_num(tolerance) or tolerance < 0):
+        errors.append(f"{where}.tolerance: muss eine Zahl >= 0 sein (0 = exakt)")
     scoring = spec.get("scoring")
     if scoring is not None and scoring not in SCORING_MODES:
         errors.append(f"{where}.scoring: '{scoring}' ist ungültig (erlaubt: {', '.join(sorted(SCORING_MODES))})")
@@ -302,6 +303,63 @@ def default_tolerance(spec: dict) -> float:
     return (float(axis["max"]) - float(axis["min"])) * DEFAULT_TOLERANCE_RATIO
 
 
+# Position-mode tolerance — mirror of scale.ts positionCorrect.
+# The tolerance is chosen explicitly by the author (a dropdown in the tool, a
+# `tolerance` field in Caputh/Exitgame specs), in axis units (years):
+#   tolerance > 0   -> correct iff |placed - effective| <= tolerance
+#   tolerance == 0  -> exact: the year must match (and, on a short round where
+#                      months can actually be placed, a month-precise date's
+#                      month too)
+#   tolerance omitted -> falls back to the snap step / 5% of span (number axes,
+#                      legacy specs without an explicit tolerance)
+SHORT_SPAN_YEARS = 25
+
+
+def _is_month_round(axis: dict) -> bool:
+    return axis.get("kind") == "year" and _is_num(axis.get("min")) and _is_num(axis.get("max")) \
+        and (axis["max"] - axis["min"]) <= SHORT_SPAN_YEARS
+
+
+def _month_index(v: float) -> int:
+    return min(11, max(0, math.floor((v - math.floor(v)) * 12)))
+
+
+def _item_has_month(item: dict) -> bool:
+    exact = item.get("exact_date")
+    if not isinstance(exact, str):
+        return False
+    parsed = _parse_iso_date(exact)
+    return parsed is not None and parsed[1] is not None
+
+
+def _axis_default_tolerance(axis: dict) -> float:
+    """Tolerance when the author set neither `tolerance` nor a snap step: a full
+    step if there is one, else 5% of the span — the pre-dropdown default, kept
+    for number axes and legacy specs that carry no explicit tolerance."""
+    step = axis.get("step")
+    if _is_num(step) and step > 0:
+        return float(step)
+    return (float(axis["max"]) - float(axis["min"])) * DEFAULT_TOLERANCE_RATIO
+
+
+def _position_correct(axis: dict, item: dict, placed, tolerance) -> bool:
+    if not _is_num(placed):
+        return False
+    eff = effective_value(item)
+    if eff is None:
+        return False
+    tol = float(tolerance) if _is_num(tolerance) else _axis_default_tolerance(axis)
+    if tol > 0:
+        return abs(placed - eff) <= tol + 1e-9
+    # tol == 0 -> exact match, at the finest granularity the round can place.
+    if axis.get("kind") == "year":
+        value = item.get("value")
+        if _is_month_round(axis) and _item_has_month(item):
+            return math.floor(placed) == math.floor(eff) and _month_index(placed) == _month_index(eff)
+        return _is_num(value) and math.floor(placed) == round(value)
+    return abs(placed - eff) <= 1e-9
+
+
 def _sort_results(spec: dict, placements: dict) -> dict[str, bool]:
     items = spec["items"]
     results: dict[str, bool] = {}
@@ -318,10 +376,10 @@ def _sort_results(spec: dict, placements: dict) -> dict[str, bool]:
             iid = it["id"]
             results[iid] = iid in placed_rank and placed_rank[iid] == true_rank[iid]
     else:
-        tol = default_tolerance(spec)
+        axis = spec.get("axis") or {}
+        tolerance = spec.get("tolerance")  # None -> default; 0 -> exact; >0 -> band
         for it in items:
-            v = placements.get(it["id"])
-            results[it["id"]] = _is_num(v) and abs(v - effective_value(it)) <= tol
+            results[it["id"]] = _position_correct(axis, it, placements.get(it["id"]), tolerance)
     return results
 
 

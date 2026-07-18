@@ -13,7 +13,8 @@ import {
   TimelineAnswer, TimelineBoard, TimelineSolution,
 } from "./types";
 import {
-  assignRows, estimateTextWidth, formatValue, isoDateToYear, niceTicks,
+  assignRows, calendarTicks, estimateTextWidth, formatPlacement, formatValue,
+  isoDateToYear, isoHasMonth, niceTicks, positionCorrect,
   snapValue, useContainerWidth, valueToX, xToValue,
 } from "./scale";
 
@@ -147,9 +148,13 @@ export function TimelineGameBoard({
     const sol = solution.items.find(it => it.id === id);
     if (!sol) return null;
     if (solution.mode === "spot") return flagged.has(id) === sol.misplaced;
-    if (solution.scoring === "order" || solution.tolerance == null) return null;
-    const placed = placements[id];
-    return placed != null && Math.abs(placed - sol.value) <= solution.tolerance;
+    if (solution.scoring === "order") return null; // rank, not per-item position
+    return positionCorrect(
+      axis,
+      { value: sol.value, effective: sol.value_effective ?? sol.value, hasMonth: isoHasMonth(sol.exact_date) },
+      placements[id],
+      solution.tolerance,
+    );
   }
 
   // ── interactions ─────────────────────────────────────────────────────────
@@ -209,10 +214,13 @@ export function TimelineGameBoard({
     if (!panned) onLineTap(e);
   }
 
-  const ticks = niceTicks(
-    view.min, view.max, Math.max(3, Math.floor(innerW / 80)),
-    axis.kind === "year" ? 1 : 0,
-  );
+  // Show month/day ticks once zoomed tight enough for them to be legible;
+  // otherwise whole years. (A month round shows years until you zoom in.)
+  const tickTarget = Math.max(3, Math.floor(innerW / 80));
+  const ticks = axis.kind === "year" && view.max - view.min <= 3
+    ? calendarTicks(view.min, view.max, tickTarget)
+    : niceTicks(view.min, view.max, tickTarget, axis.kind === "year" ? 1 : 0)
+        .map(v => ({ v, label: formatValue(v, axis) }));
   const zoomed = view.max - view.min < fullSpan - 1e-9;
 
   return (
@@ -235,12 +243,12 @@ export function TimelineGameBoard({
         <line x1={MARGIN_X - 6} y1={lineY} x2={width - MARGIN_X + 6} y2={lineY}
           stroke="var(--text-muted)" strokeWidth={2} />
         {ticks.map(t => (
-          <g key={t}>
-            <line x1={x(t)} y1={lineY - 5} x2={x(t)} y2={lineY + 5}
+          <g key={t.v}>
+            <line x1={x(t.v)} y1={lineY - 5} x2={x(t.v)} y2={lineY + 5}
               stroke="var(--text-muted)" strokeWidth={1.5} />
-            <text x={x(t)} y={lineY + 18} textAnchor="middle" fontSize={10.5}
+            <text x={x(t.v)} y={lineY + 18} textAnchor="middle" fontSize={10.5}
               fill="var(--text-muted)">
-              {formatValue(t, axis)}
+              {t.label}
             </text>
           </g>
         ))}
@@ -290,7 +298,7 @@ export function TimelineGameBoard({
               {isSort && (
                 <text x={cx} y={topY + chipH + 11} textAnchor="middle" fontSize={9.5}
                   fill="var(--text-muted)" style={{ pointerEvents: "none" }}>
-                  {formatValue(f.at, axis)}
+                  {formatPlacement(f.at, axis)}
                 </text>
               )}
               {!isSort && !solution && isFlagged && (

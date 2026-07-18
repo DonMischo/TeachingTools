@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   isoDateToYear, formatIsoDateDe, effectiveStart, effectiveEnd,
-  eventDateLabel, eventWhen, calendarTicks,
+  eventDateLabel, eventWhen, calendarTicks, positionCorrect,
+  isMonthRound, snapValue,
 } from "@/components/timeline/scale";
 import { TimelineAxis } from "@/components/timeline/types";
 
@@ -169,6 +170,69 @@ describe("eventDateLabel", () => {
   it("matches eventWhen exactly when there's no exact_date at all", () => {
     const ev = { id: "e", label: "E", value: 1989, end: 1990 };
     expect(eventDateLabel(ev, yearAxis)).toBe(eventWhen(ev, yearAxis));
+  });
+});
+
+describe("positionCorrect — explicit tolerance", () => {
+  const broad: TimelineAxis = { kind: "year", min: 1000, max: 2000 };
+  const p = (axis: TimelineAxis, value: number, placed: number, opts?: { effective?: number; hasMonth?: boolean; tol?: number | null }) =>
+    positionCorrect(axis, { value, effective: opts?.effective ?? value, hasMonth: opts?.hasMonth ?? false }, placed, opts?.tol);
+
+  it("tol 0 requires the exact year", () => {
+    expect(p(broad, 1849, 1849, { tol: 0 })).toBe(true);
+    expect(p(broad, 1849, 1850, { tol: 0 })).toBe(false);
+  });
+
+  it("tol > 0 is a ± band around the true position", () => {
+    expect(p(broad, 1500, 1512, { tol: 15 })).toBe(true);
+    expect(p(broad, 1500, 1520, { tol: 15 })).toBe(false);
+    expect(p(broad, 1500, 1580, { tol: 100 })).toBe(true);
+    expect(p(broad, 1500, 1650, { tol: 100 })).toBe(false);
+  });
+
+  it("handles Mio-year tolerances on a deep-time axis", () => {
+    const deep: TimelineAxis = { kind: "year", min: -600_000_000, max: 0 };
+    expect(p(deep, -230_000_000, -233_000_000, { tol: 5_000_000 })).toBe(true);
+    expect(p(deep, -230_000_000, -220_000_000, { tol: 5_000_000 })).toBe(false);
+  });
+
+  it("tol 0 matches the month on a short round when a month is given", () => {
+    const wk1: TimelineAxis = { kind: "year", min: 1912, max: 1920 };
+    const sarajevoEff = isoDateToYear("1914-06-28")!;
+    expect(p(wk1, 1914, 1914 + 5 / 12 + 0.01, { effective: sarajevoEff, hasMonth: true, tol: 0 })).toBe(true);  // June
+    expect(p(wk1, 1914, 1914 + 6 / 12 + 0.01, { effective: sarajevoEff, hasMonth: true, tol: 0 })).toBe(false); // July
+  });
+
+  it("tol 0 only needs the year for a month-less item on a short round", () => {
+    const wk1: TimelineAxis = { kind: "year", min: 1912, max: 1920 };
+    expect(p(wk1, 1916, 1916 + 3 / 12, { tol: 0 })).toBe(true);
+    expect(p(wk1, 1916, 1917, { tol: 0 })).toBe(false);
+  });
+
+  it("falls back to 5% of span when no tolerance is given", () => {
+    expect(p(broad, 1500, 1540)).toBe(true);   // 5% of 1000 = 50
+    expect(p(broad, 1500, 1560)).toBe(false);
+  });
+
+  it("keeps number-axis behaviour (step / 5%)", () => {
+    const num: TimelineAxis = { kind: "number", min: 0, max: 100, step: 5 };
+    expect(p(num, 50, 52)).toBe(true);   // falls back to step 5
+    expect(p(num, 50, 60)).toBe(false);
+  });
+});
+
+describe("snapValue / isMonthRound", () => {
+  it("snaps to whole years on a broad year axis", () => {
+    const broad: TimelineAxis = { kind: "year", min: 1000, max: 2000 };
+    expect(isMonthRound(broad)).toBe(false);
+    expect(snapValue(1914.7, broad)).toBe(1915);
+  });
+
+  it("snaps to whole months on a short year axis (floor into the month)", () => {
+    const wk1: TimelineAxis = { kind: "year", min: 1912, max: 1920 };
+    expect(isMonthRound(wk1)).toBe(true);
+    // Anywhere in July (1914.5..1914.583) floors onto July's start.
+    expect(snapValue(1914.55, wk1)).toBeCloseTo(1914.5, 4);
   });
 });
 

@@ -6,10 +6,10 @@
 import {
   TimelineAnswer, TimelineBoard, TimelineGameSpec, TimelineSolution,
 } from "./types";
-import { isoDateToYear } from "./scale";
+import { isoDateToYear, isoHasMonth, positionCorrect } from "./scale";
 
 export function defaultTolerance(spec: TimelineGameSpec): number {
-  if (spec.tolerance && spec.tolerance > 0) return spec.tolerance;
+  if (spec.tolerance != null) return spec.tolerance; // 0 = exact
   if (spec.axis.step && spec.axis.step > 0) return spec.axis.step;
   return (spec.axis.max - spec.axis.min) * 0.05;
 }
@@ -89,11 +89,14 @@ export function scoreLocally(
       results[it.id] = placedRank.has(it.id) && placedRank.get(it.id) === trueRank.get(it.id);
     }
   } else {
-    const tol = defaultTolerance(spec);
     const placements = answer.placements ?? {};
     for (const it of spec.items) {
-      const p = placements[it.id];
-      results[it.id] = p != null && Math.abs(p - itemValue(it)) <= tol;
+      results[it.id] = positionCorrect(
+        spec.axis,
+        { value: it.value, effective: itemValue(it), hasMonth: isoHasMonth(it.exact_date) },
+        placements[it.id],
+        spec.tolerance,
+      );
     }
   }
   const total = spec.items.length;

@@ -25,6 +25,24 @@ type Tab = "ansehen" | "ueben" | "bearbeiten";
 const WRONG_MIN_RATIO = 0.15;
 const WRONG_MAX_RATIO = 0.30;
 
+/** Explicit tolerance choices for position scoring (axis units = years). 0 =
+ * exact (the year, or the month/day if an exact_date is given); the deep-time
+ * options are for erdgeschichtliche Achsen. */
+const TOLERANCE_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: "Exakt (Jahr/Datum)" },
+  { value: 1, label: "± 1 Jahr" },
+  { value: 2, label: "± 2 Jahre" },
+  { value: 3, label: "± 3 Jahre" },
+  { value: 5, label: "± 5 Jahre" },
+  { value: 10, label: "± 10 Jahre" },
+  { value: 15, label: "± 15 Jahre" },
+  { value: 100, label: "± 1 Jahrhundert" },
+  { value: 1000, label: "± 1 Jahrtausend" },
+  { value: 1_000_000, label: "± 1 Mio. Jahre" },
+  { value: 5_000_000, label: "± 5 Mio. Jahre" },
+  { value: 10_000_000, label: "± 10 Mio. Jahre" },
+];
+
 /** Narrow a round's axis to the events it actually uses, padded and rounded
  * outward to a nice step. Without this a handful of modern events on a
  * deep-time axis share a single pixel. Never widens past the source axis. */
@@ -239,7 +257,7 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
 }) {
   const { toast } = useToast();
   const [mode, setMode] = useState<"sort" | "spot">("sort");
-  const [scoring, setScoring] = useState<"order" | "position">(set.axis.kind === "year" ? "order" : "position");
+  const [tolerance, setTolerance] = useState(5);
   const [count, setCount] = useState(5);
   const [spec, setSpec] = useState<TimelineGameSpec | null>(null);
   const [answer, setAnswer] = useState<TimelineAnswer>({});
@@ -313,7 +331,11 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
     const ends = picked.map(p => (p.end != null && p.end > p.value ? p.end : p.value));
     return {
       mode, axis: focusedAxis([...marks, ...ends], set.axis), items,
-      scoring: mode === "sort" ? scoring : null,
+      // Placements are always judged by position; the Toleranz dropdown is the
+      // single knob for how strict that is. Number axes (Zahlenstrahl) have no
+      // year-based tolerance to pick and keep their step-based default.
+      scoring: mode === "sort" ? "position" : null,
+      ...(mode === "sort" && set.axis.kind === "year" ? { tolerance } : {}),
     };
   }
 
@@ -353,12 +375,11 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
             <option value="spot">Fehler finden</option>
           </select>
         </label>
-        {mode === "sort" && (
+        {mode === "sort" && set.axis.kind === "year" && (
           <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-            Wertung
-            <select value={scoring} onChange={e => setScoring(e.target.value as "order" | "position")} className="input text-sm py-1.5">
-              <option value="order">Reihenfolge reicht</option>
-              <option value="position">Position (mit Toleranz)</option>
+            Toleranz
+            <select value={tolerance} onChange={e => setTolerance(Number(e.target.value))} className="input text-sm py-1.5">
+              {TOLERANCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
         )}
