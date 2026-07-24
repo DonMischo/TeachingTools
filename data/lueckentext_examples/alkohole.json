@@ -1,0 +1,90 @@
+{
+  "title": "Alkohole – Grundlagen",
+  "description": "Funktionelle Gruppe, Nomenklatur, Gärung, Wasserstoffbrücken, Siedepunkt und Oxidation von Alkoholen.",
+  "tags": ["chemie", "organische chemie", "alkohole"],
+  "grades": [9, 10],
+  "text": "Alkohole sind organische Verbindungen, die eine funktionelle Gruppe namens {{hydroxylgruppe}} besitzen – diese besteht aus einem Sauerstoff- und einem Wasserstoffatom (–OH). Der einfachste Alkohol mit nur einem Kohlenstoffatom heißt {{methanol}} und ist bereits in kleinen Mengen giftig. Der bekannteste Alkohol, der in Bier, Wein und Spirituosen vorkommt, ist {{ethanol}}. Er entsteht, wenn Hefepilze Traubenzucker durch {{gaerung}} zu Alkohol und Kohlenstoffdioxid abbauen. Alkohole bilden eine {{homologe_reihe}}, das heißt, ihre Moleküle unterscheiden sich jeweils um eine CH2-Gruppe. Die Namen von Alkoholen erkennt man an der Endung {{endung}}. Weil die OH-Gruppe stark polar ist, bilden Alkoholmoleküle untereinander {{wasserstoffbruecken}} aus. Deshalb haben Alkohole im Vergleich zu Alkanen mit ähnlicher Molekülmasse einen {{siedepunkt}} Siedepunkt. Wird Ethanol oxidiert, entsteht zunächst ein {{aldehyd}} und danach eine Carbonsäure. Sitzt die OH-Gruppe an einem Kohlenstoffatom, das mit zwei weiteren Kohlenstoffresten verbunden ist, spricht man von einem {{sekundaer}} Alkohol.",
+  "gaps": [
+    {
+      "id": "hydroxylgruppe",
+      "answer": "Hydroxylgruppe",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": "Enthält ein Sauerstoff- und ein Wasserstoffatom (–OH).",
+      "choices": null
+    },
+    {
+      "id": "methanol",
+      "answer": "Methanol",
+      "type": "free_type",
+      "difficulty": "hard",
+      "hint": "C1-Alkohol – kann bei Verzehr erblinden lassen, Vorsicht bei selbstgebranntem Alkohol.",
+      "choices": null
+    },
+    {
+      "id": "ethanol",
+      "answer": "Ethanol",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "gaerung",
+      "answer": "Gärung",
+      "type": "free_type",
+      "difficulty": "medium",
+      "hint": "Hefepilze wandeln Zucker in Alkohol und CO2 um.",
+      "choices": null
+    },
+    {
+      "id": "homologe_reihe",
+      "answer": "homologe Reihe",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "hint": null,
+      "choices": ["homologe Reihe", "Isomeren-Reihe", "aromatische Reihe"]
+    },
+    {
+      "id": "endung",
+      "answer": "-ol",
+      "type": "free_type",
+      "difficulty": "easy",
+      "hint": "Typisches Suffix aller Alkohole, z.B. Methan-ol, Ethan-ol.",
+      "choices": null
+    },
+    {
+      "id": "wasserstoffbruecken",
+      "answer": "Wasserstoffbrücken",
+      "type": "word_bank",
+      "difficulty": "hard",
+      "hint": "Zwischenmolekulare Anziehung, verursacht durch die polare OH-Gruppe.",
+      "choices": null
+    },
+    {
+      "id": "siedepunkt",
+      "answer": "höheren",
+      "type": "multiple_choice",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": ["höheren", "niedrigeren", "gleichen"]
+    },
+    {
+      "id": "aldehyd",
+      "answer": "Aldehyd",
+      "type": "free_type",
+      "difficulty": "hard",
+      "hint": "Erste Oxidationsstufe von Ethanol, endet auf -al (z.B. Ethanal).",
+      "choices": null
+    },
+    {
+      "id": "sekundaer",
+      "answer": "sekundären",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "hint": "Zähle die Kohlenstoffreste, die direkt an der OH-Gruppe hängen.",
+      "choices": ["sekundären", "primären", "tertiären"]
+    }
+  ],
+  "distractors": ["Carboxylgruppe", "Methan", "Veresterung", "Kondensation"]
+}

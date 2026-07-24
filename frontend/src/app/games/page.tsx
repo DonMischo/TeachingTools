@@ -43,6 +43,13 @@ const CARDS = [
     description: "Aufgaben zum Trainieren — Schwierigkeit passt sich automatisch dem Können an, Fortschritt wird gezählt.",
     color: "#0ea5e9",
   },
+  {
+    href: "/tools/lueckentexte",
+    icon: "🧩",
+    title: "Lückentext",
+    description: "Lückentexte mit Wortbank, Freitext und Multiple Choice — Schüler treten via Code bei, live Rangliste.",
+    color: "#c084fc",
+  },
 ];
 
 export default function GamesPage() {

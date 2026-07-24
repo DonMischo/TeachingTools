@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from sqlalchemy import Integer, String, Text, Boolean, DateTime, Date, ForeignKey, func, JSON, UniqueConstraint, Float, Index, LargeBinary
 from sqlalchemy.sql import expression as sql_expr
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -1240,7 +1240,98 @@ class TimelineSet(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+
+class LueckentextSet(Base):
+    """Reusable Lückentext content (cloze text with gaps) — the library, open
+    to every teacher, following the BingoSet/TimelineSet JSON-blob pattern."""
+    __tablename__ = "lueckentext_sets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # target grade levels: e.g. [5,6,7] (empty = all grades) — mirrors Quiz.grades
+    grades: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    text: Mapped[str] = mapped_column(Text, nullable=False)  # cloze template with {{gap_id}} placeholders
+    gaps: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")  # list of gap dicts
+    distractors: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")  # extra word-bank words, never a correct answer
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
     creator: Mapped["Teacher"] = relationship()
+
+
+class LueckentextSession(Base):
+    """One live play instance started from a LueckentextSet."""
+    __tablename__ = "lueckentext_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    lueckentext_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_sets.id", ondelete="RESTRICT"), nullable=False)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    join_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
+    # waiting | active | finished
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    lueckentext: Mapped["LueckentextSet"] = relationship()
+    teacher: Mapped["Teacher"] = relationship()
+    participants: Mapped[list["LueckentextParticipant"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+    responses: Mapped[list["LueckentextResponse"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+
+class LueckentextParticipant(Base):
+    __tablename__ = "lueckentext_participants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_sessions.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    avatar: Mapped[str] = mapped_column(String(50), nullable=False, default="cat")
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["LueckentextSession"] = relationship(back_populates="participants")
+    responses: Mapped[list["LueckentextResponse"]] = relationship(back_populates="participant", cascade="all, delete-orphan")
+
+
+class LueckentextResponse(Base):
+    """Per-gap progress for one participant. gap_id is a plain string matching
+    the gap's "id" key in LueckentextSet.gaps JSON — not a foreign key."""
+    __tablename__ = "lueckentext_responses"
+    __table_args__ = (UniqueConstraint("participant_id", "gap_id", name="uq_lueckentext_participant_gap"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_sessions.id", ondelete="CASCADE"), nullable=False)
+    participant_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_participants.id", ondelete="CASCADE"), nullable=False)
+    gap_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    given_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    match: Mapped[str | None] = mapped_column(String(10), nullable=True)  # exact | near | wrong | null (unattempted)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    hints_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    revealed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    hint_shown: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    first_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    solved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    session: Mapped["LueckentextSession"] = relationship(back_populates="responses")
+    participant: Mapped["LueckentextParticipant"] = relationship(back_populates="responses")
+
+
+class LueckentextErrorPattern(Base):
+    """Best-effort cross-session tracking of a student's recurring misses on a
+    specific gap, keyed by (set, normalized display name, gap) since the app
+    has no student login — matches how every other game here already
+    identifies "the same student" only by re-typed display name. Used to bias
+    reveal_state() more generous for a name/gap pair that keeps getting missed,
+    even across separate sessions of the same LueckentextSet."""
+    __tablename__ = "lueckentext_error_patterns"
+    __table_args__ = (UniqueConstraint("lueckentext_id", "normalized_name", "gap_id", name="uq_lueckentext_error_pattern"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    lueckentext_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_sets.id", ondelete="CASCADE"), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    gap_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    miss_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class ExitGameEvent(Base):
@@ -1259,3 +1350,29 @@ class ExitGameEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     attempt: Mapped["ExitGameAttempt"] = relationship(back_populates="events")
+
+
+# ---------------------------------------------------------------------------
+# Sitzplan (seating plan per class)
+# ---------------------------------------------------------------------------
+
+class SeatingPlan(Base):
+    """A named room layout for a class (e.g. "Klassenraum", "Kunstraum"). The
+    whole layout lives in one JSON blob (`items`) like LessonPlan.phases — loaded
+    and saved as a unit by the canvas editor. Seat.student_id values reference
+    students loosely (resolved to names client-side; unknown ids treated empty)."""
+    __tablename__ = "seating_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="Klassenraum")
+    # "landscape" | "portrait" — drives canvas shape and A4 PDF orientation
+    orientation: Mapped[str] = mapped_column(String(20), nullable=False, server_default="landscape")
+    # furniture array; each item: {id, kind, x, y, rotation, locked, label, seats:[{id, student_id, locked}]}
+    items: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    class_: Mapped["Class"] = relationship()

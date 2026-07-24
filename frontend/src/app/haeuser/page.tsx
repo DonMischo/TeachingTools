@@ -1266,7 +1266,8 @@ function EinstellungenSection({ cls }: { cls: ClassOut }) {
 
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
-  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "einstellungen">("schüler");
+  const router = useRouter();
+  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "sitzplan" | "einstellungen">("schüler");
   const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
@@ -1389,7 +1390,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] shrink-0">
-          {(["schüler", "rollen", "gruppen", "dienste", "tracking", "einstellungen"] as const).map(s => (
+          {(["schüler", "rollen", "gruppen", "dienste", "tracking", "sitzplan", "einstellungen"] as const).map(s => (
             <button
               key={s}
               onClick={() => setSection(s)}
@@ -1399,7 +1400,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
               }}
             >
-              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "gruppen" ? "🧩 Gruppen" : s === "dienste" ? "🧹 Dienste" : s === "tracking" ? "📋 Tracking" : "⚙️ Einstellungen"}
+              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "gruppen" ? "🧩 Gruppen" : s === "dienste" ? "🧹 Dienste" : s === "tracking" ? "📋 Tracking" : s === "sitzplan" ? "🪑 Sitzplan" : "⚙️ Einstellungen"}
             </button>
           ))}
         </div>
@@ -1530,6 +1531,26 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
           {/* ── Gruppen (Kurse / Wahlpflicht / A-B) ── */}
           {section === "gruppen" && (
             <GroupsManager cls={cls} students={students} />
+          )}
+
+          {/* ── Sitzplan ── */}
+          {section === "sitzplan" && (
+            <div className="flex flex-col items-center gap-4 py-8 text-center">
+              <div className="text-5xl">🪑</div>
+              <div>
+                <p className="font-semibold">Sitzplan-Editor</p>
+                <p className="text-sm text-[var(--text-muted)] max-w-sm mt-1">
+                  Tische, Stühle und Inventar frei platzieren, Namen zuweisen und als A4-PDF drucken.
+                  Mehrere Räume pro Klasse möglich.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push(`/haeuser/sitzplan/${cls.id}`)}
+                className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90"
+              >
+                Sitzplan-Editor öffnen →
+              </button>
+            </div>
           )}
 
           {/* ── Einstellungen ── */}

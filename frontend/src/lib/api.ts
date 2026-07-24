@@ -776,10 +776,82 @@ export type BingoSetOut = {
   grid_size: number; grid_cols: number; total_pairs: number; created_at: string;
 };
 
+export type LueckentextGap = {
+  id: string;
+  answer: string;
+  type: "word_bank" | "free_type" | "multiple_choice";
+  difficulty: "easy" | "medium" | "hard";
+  hint: string | null;
+  choices: string[] | null;
+};
+
+export type LueckentextSetOut = {
+  id: number; title: string; description: string | null; tags: string[]; grades: number[];
+  gap_count: number; created_by: number; created_at: string;
+};
+
+export type LueckentextSetDetail = LueckentextSetOut & {
+  text: string; gaps: LueckentextGap[]; distractors: string[];
+};
+
+export type LueckentextBoardGap = {
+  id: string;
+  type: "word_bank" | "free_type" | "multiple_choice";
+  difficulty: "easy" | "medium" | "hard";
+  hint: string | null;
+  choices: string[] | null;
+};
+
+export type LueckentextBoard = { text: string; gaps: LueckentextBoardGap[]; word_bank: string[] };
+
+export type LueckentextGapReview = {
+  gap_id: string;
+  attempts: number;
+  hints_used: number;
+  revealed: boolean;
+  match: string | null;
+  solved: boolean;
+  time_spent_seconds: number | null;
+};
+
+export type LueckentextReviewEntry = {
+  pid: number;
+  name: string;
+  avatar: string;
+  gaps: LueckentextGapReview[];
+};
+
 export type ExitTicketSummary = {
   id: number; code: string; title: string; question: string;
   rating_enabled: boolean; status: string; response_count: number; created_at: string;
 };
+
+// ── Sitzplan (seating plans) ─────────────────────────────────────────────────
+export type SeatingItemKind = "table1" | "table2" | "teacher" | "chair" | "cabinet" | "board" | "smartboard" | "custom";
+
+export type SeatSlot = { id: string; student_id: number | null; label: string | null; locked: boolean };
+
+export type SeatingItem = {
+  id: string;
+  kind: SeatingItemKind;
+  x: number;
+  y: number;
+  rotation: number;
+  scaleX: number;      // per-axis size multipliers (inventory/chairs; tables stay 1)
+  scaleY: number;
+  locked: boolean;
+  label: string | null;
+  seats: SeatSlot[];
+};
+
+export type SeatingPlanSummary = {
+  id: number;
+  class_id: number;
+  name: string;
+  orientation: "landscape" | "portrait";
+};
+
+export type SeatingPlanDetail = SeatingPlanSummary & { items: SeatingItem[] };
 
 export const api = {
   classes: {
@@ -1098,6 +1170,45 @@ export const api = {
         });
     },
   },
+  lueckentexte: {
+    list: () => apiFetch<LueckentextSetOut[]>("lueckentexte"),
+    get: (id: number) => apiFetch<LueckentextSetDetail>(`lueckentexte/${id}`),
+    create: (body: Record<string, unknown>) =>
+      apiFetch<LueckentextSetDetail>("lueckentexte", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: number, body: Record<string, unknown>) =>
+      apiFetch<LueckentextSetDetail>(`lueckentexte/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    delete: (id: number) => apiFetch<void>(`lueckentexte/${id}`, { method: "DELETE" }),
+    template: () => apiFetch<Record<string, unknown>>("lueckentexte/template"),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/lueckentexte/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<LueckentextSetDetail>;
+        });
+    },
+    createSession: (setId: number) =>
+      apiFetch<{ id: number; join_code: string; status: string; lueckentext_id: number; lueckentext_title: string }>(
+        `lueckentexte/${setId}/sessions`, { method: "POST" }),
+    joinSession: (code: string, name: string, avatar: string) =>
+      apiFetch<{ id: number; name: string; avatar: string }>(
+        `lueckentexte/sessions/${code}/join`, { method: "POST", body: JSON.stringify({ name, avatar }) }),
+    sessionState: (code: string) =>
+      apiFetch<{ status: string; join_code: string; lueckentext_id: number; board: LueckentextBoard | null }>(`lueckentexte/sessions/${code}/state`),
+    startSession: (code: string) =>
+      apiFetch<{ id: number; join_code: string; status: string; lueckentext_id: number; lueckentext_title: string }>(
+        `lueckentexte/sessions/${code}/start`, { method: "POST" }),
+    finishSession: (code: string) =>
+      apiFetch<{ id: number; join_code: string; status: string; lueckentext_id: number; lueckentext_title: string }>(
+        `lueckentexte/sessions/${code}/finish`, { method: "POST" }),
+    submitAttempt: (code: string, gapId: string, participantId: number, text: string) =>
+      apiFetch<{ match: string; revealed: boolean; hint: string | null; attempts: number; solved: boolean }>(
+        `lueckentexte/sessions/${code}/gaps/${gapId}/attempt`,
+        { method: "POST", body: JSON.stringify({ participant_id: participantId, text }) }),
+    review: (code: string) =>
+      apiFetch<LueckentextReviewEntry[]>(`lueckentexte/sessions/${code}/review`),
+  },
   exitgame: {
     list: () => apiFetch<ExitGameOut[]>("exitgames"),
     get: (id: number) => apiFetch<ExitGameDetailOut>(`exitgames/${id}`),
@@ -1171,6 +1282,16 @@ export const api = {
     delete: (id: number) => apiFetch<void>(`trackers/${id}`, { method: "DELETE" }),
     toggle: (tracker_id: number, student_id: number) =>
       apiFetch<ClassTrackerOut>(`trackers/${tracker_id}/toggle?student_id=${student_id}`, { method: "POST" }),
+  },
+  seating: {
+    list: (class_id: number) => apiFetch<SeatingPlanSummary[]>(`classes/${class_id}/seating`),
+    create: (class_id: number, body: { name?: string; orientation?: "landscape" | "portrait" }) =>
+      apiFetch<SeatingPlanDetail>(`classes/${class_id}/seating`, { method: "POST", body: JSON.stringify(body) }),
+    get: (plan_id: number) => apiFetch<SeatingPlanDetail>(`seating/${plan_id}`),
+    update: (plan_id: number, body: { name: string; orientation: "landscape" | "portrait"; items: SeatingItem[] }) =>
+      apiFetch<SeatingPlanDetail>(`seating/${plan_id}`, { method: "PUT", body: JSON.stringify(body) }),
+    remove: (plan_id: number) => apiFetch<void>(`seating/${plan_id}`, { method: "DELETE" }),
+    exportPdfUrl: (plan_id: number) => `/api/seating/${plan_id}/export.pdf`,
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
