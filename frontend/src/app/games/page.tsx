@@ -37,6 +37,13 @@ const CARDS = [
     color: "#16a34a",
   },
   {
+    href: "/games/abacus",
+    icon: "🧮",
+    title: "Abakus",
+    description: "Rechenrahmen zum Schieben — dieselben Kugeln im Modus »Alle gleich« (bis 100) oder nach Stellenwert. Zeigt den Wert in Ziffern.",
+    color: "#ef4444",
+  },
+  {
     href: "/uebung",
     icon: "📚",
     title: "Übung",
