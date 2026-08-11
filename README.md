@@ -114,17 +114,31 @@ Schulweites Punktesystem und Unterrichtstool-Suite. Lehrer vergeben Punkte an Kl
 
 ## Setup & Start
 
-```bash
-# 1. Abhängigkeiten installieren
-cd frontend && npm install
-pip install -r requirements.txt
+Der komplette Stack läuft in Docker. Node-, Python- und System-Pakete werden
+**innerhalb der Container** installiert — die einzige Voraussetzung auf dem Host
+ist Docker, und das installiert das Setup-Skript bei Bedarf selbst.
 
-# 2. Starten (Windows)
-start.bat
+**Windows** (PowerShell im Projektordner):
 
-# Frontend läuft auf http://localhost:1339
-# API läuft auf http://localhost:8000
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
+
+**Linux / macOS**:
+
+```bash
+./install.sh
+```
+
+Das Skript installiert fehlendes Docker (Linux: Docker Engine + Compose;
+Windows: Docker Desktop + WSL2), legt `.env` an und baut & startet alle Dienste.
+Beim allerersten Docker-Build werden Images geladen — das kann einige Minuten dauern.
+
+> Ist Docker bereits installiert, genügt danach `start.bat` (Windows) bzw.
+> `./start.sh` (Linux/macOS) zum Starten und `stop.bat` / `./stop.sh` zum Stoppen.
+
+- Frontend läuft auf http://localhost:1339
+- API läuft auf http://localhost:8000
 
 Beim ersten Start erscheint ein **Setup-Dialog** zum Anlegen des ersten Admin-Accounts und der Klassen.
 
