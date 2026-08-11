@@ -155,65 +155,61 @@ describe("SchreibraumEditor — teacher view", () => {
     expect(editor).toHaveAttribute("data-mode", "next-free-line");
   });
 
-  it("shows Teilnehmer and Zugang buttons for teacher", async () => {
+  it("shows the Schüler and Zugang panels for teacher", async () => {
+    vi.spyOn(apiModule.api.schreibraum, "participants").mockResolvedValue([]);
     await act(async () => { renderPage(); });
     await waitFor(() => screen.getByText("Testroom"));
-    expect(screen.getByRole("button", { name: /teilnehmer/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /zugang/i })).toBeInTheDocument();
+    // Panel headers are collapsible <div>s, not buttons.
+    expect(screen.getByText("Schüler")).toBeInTheDocument();
+    expect(screen.getByText("Zugang")).toBeInTheDocument();
   });
 
-  it("opens participant panel and loads participants", async () => {
+  it("lists joined students in the Schüler panel (default open)", async () => {
     vi.spyOn(apiModule.api.schreibraum, "participants").mockResolvedValue([
-      makeParticipant({ name: "Anna Müller", is_teacher: true }),
       makeParticipant({ id: "p-2", name: "Ben Braun", is_teacher: false, color: "#E63946" }),
     ]);
     await act(async () => { renderPage(); });
     await waitFor(() => screen.getByText("Testroom"));
-    await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /teilnehmer/i }));
-    });
+    // The Schüler panel is open by default and lists non-teacher participants.
     await waitFor(() => expect(screen.getByText("Ben Braun")).toBeInTheDocument());
-    expect(screen.getByText("Anna Müller")).toBeInTheDocument();
   });
 
   it("kick button calls kick API", async () => {
+    vi.stubGlobal("confirm", () => true);
     vi.spyOn(apiModule.api.schreibraum, "participants").mockResolvedValue([
       makeParticipant({ id: "p-2", name: "Ben Braun", is_teacher: false, color: "#E63946" }),
     ]);
     vi.spyOn(apiModule.api.schreibraum, "kick").mockResolvedValue(undefined);
     await act(async () => { renderPage(); });
-    await waitFor(() => screen.getByText("Testroom"));
-    await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /teilnehmer/i }));
-    });
     await waitFor(() => screen.getByText("Ben Braun"));
-    // The kick ✕ button is inside the participant row
-    const kickBtn = screen.getAllByRole("button").find(
-      (b) => b.textContent === "✕" && b.title === "Kicken"
-    );
-    expect(kickBtn).toBeDefined();
-    await act(async () => { await userEvent.click(kickBtn!); });
+    await act(async () => {
+      await userEvent.click(screen.getByRole("button", { name: /^kick$/i }));
+    });
     expect(apiModule.api.schreibraum.kick).toHaveBeenCalledWith("room-1", "p-2");
   });
 
-  it("opens access panel", async () => {
+  it("opens the Zugang panel when its header is clicked", async () => {
+    vi.spyOn(apiModule.api.schreibraum, "participants").mockResolvedValue([]);
+    vi.spyOn(apiModule.api.classes, "list").mockResolvedValue([]);
     await act(async () => { renderPage(); });
     await waitFor(() => screen.getByText("Testroom"));
     await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /zugang/i }));
+      await userEvent.click(screen.getByText("Zugang"));
     });
-    expect(screen.getByText(/zugangsverwaltung/i)).toBeInTheDocument();
+    // Zugang is collapsed by default; opening reveals its content.
+    expect(screen.getByText(/kein schüler-zugang/i)).toBeInTheDocument();
   });
 
   it("shows existing access grants with remove button", async () => {
     vi.spyOn(apiModule.api.schreibraum, "getByCode").mockResolvedValue(
       makeRoom({ access: [{ id: 7, room_id: "room-1", class_id: 2, label: "5a" }] })
     );
+    vi.spyOn(apiModule.api.schreibraum, "participants").mockResolvedValue([]);
     vi.spyOn(apiModule.api.classes, "list").mockResolvedValue([]);
     await act(async () => { renderPage(); });
     await waitFor(() => screen.getByText("Testroom"));
     await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /zugang/i }));
+      await userEvent.click(screen.getByText("Zugang"));
     });
     await waitFor(() => expect(screen.getByText("5a")).toBeInTheDocument());
   });
