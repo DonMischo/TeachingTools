@@ -45,9 +45,19 @@ function newestMtime(dir, extensions = [".ts", ".tsx", ".js", ".json", ".css"]) 
 }
 
 function needsBuild() {
-  const buildId = ".next/BUILD_ID";
-  if (!fs.existsSync(buildId)) return true;
-  const buildTime = fs.statSync(buildId).mtimeMs;
+  // A build is only usable if `next start` can find all of its manifests. A
+  // persisted .next volume can hold a BUILD_ID from an interrupted or
+  // version-mismatched build (e.g. after a Next upgrade) while these are
+  // missing — that makes `next start` crash with ENOENT on prerender-manifest.
+  // Treat any missing artifact as "must rebuild" before trusting mtimes.
+  const required = [
+    ".next/BUILD_ID",
+    ".next/build-manifest.json",
+    ".next/routes-manifest.json",
+    ".next/prerender-manifest.json",
+  ];
+  if (required.some((f) => !fs.existsSync(f))) return true;
+  const buildTime = fs.statSync(".next/BUILD_ID").mtimeMs;
   const srcTime = newestMtime("src");
   const cfgTime = Math.max(
     fs.existsSync("next.config.ts") ? fs.statSync("next.config.ts").mtimeMs : 0,
