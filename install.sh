@@ -1,5 +1,7 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+# POSIX sh — runs under bash, dash, and BusyBox ash alike (no bashisms), so
+# `sh install.sh`, `./install.sh`, and `bash install.sh` all behave the same.
+set -eu
 
 # Hauspokal one-command installer (Linux / macOS)
 # Installs Docker (Engine + Compose plugin) if missing, then builds & starts the
@@ -10,7 +12,7 @@ log()  { printf '\n\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*"; }
 err()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 OS="$(uname -s)"
@@ -91,6 +93,14 @@ find_free_port() {
   echo "$port"
 }
 
+# Return 0 if $1 is an integer in the valid TCP port range (POSIX, no [[ =~ ]]).
+valid_port() {
+  case "$1" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
 # choose_port LABEL DEFAULT ALWAYS_PROMPT
 # Picks a conflict-free host port. When DEFAULT is free and ALWAYS_PROMPT != 1 it
 # is used silently; otherwise the user is prompted with the next free port as the
@@ -111,7 +121,7 @@ choose_port() {
     printf '  %s port [%s]: ' "$label" "$suggested" > /dev/tty
     read -r port < /dev/tty || { echo "$suggested"; return; }
     port="${port:-$suggested}"
-    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    if ! valid_port "$port"; then
       printf '  Enter a number between 1 and 65535.\n' > /dev/tty; continue
     fi
     if [ "$port" != "$default" ] && port_in_use "$port"; then

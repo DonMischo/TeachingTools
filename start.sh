@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 # Create .env from example if missing
 if [ ! -f .env ]; then
