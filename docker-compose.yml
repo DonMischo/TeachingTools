@@ -38,13 +38,13 @@ services:
     container_name: hauspokal-frontend
     restart: unless-stopped
     environment:
-      PORT: 1339
+      PORT: ${APP_PORT:-1339}
       NEXT_PORT: 3000
       API_HOST: api
       API_PORT: 8000
       HOST_IP: ${HOST_IP:-}
     ports:
-      - "1339:1339"
+      - "${APP_PORT:-1339}:${APP_PORT:-1339}"
     volumes:
       - ./frontend:/app
       - frontend-nm:/app/node_modules
