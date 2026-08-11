@@ -54,12 +54,12 @@ async function fetchManifest(): Promise<StyleManifest> {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [colorTheme, setColorThemeState] = useState<ColorTheme>("default");
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>("ege");
   const [iconTheme, setIconThemeState] = useState<IconTheme>("emoji");
   const [style, setStyle] = useState<StyleManifest>(DEFAULT_STYLE);
 
   useEffect(() => {
-    const c = (localStorage.getItem(LS_COLOR) ?? "default") as ColorTheme;
+    const c = (localStorage.getItem(LS_COLOR) ?? "ege") as ColorTheme;
     const i = (localStorage.getItem(LS_ICON)  ?? "emoji")   as IconTheme;
     setColorThemeState(c);
     setIconThemeState(i);
