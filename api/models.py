@@ -29,7 +29,13 @@ class Teacher(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Generated login username (e.g. "m.mueller42"). Null for teachers created
+    # before credential generation — they log in by "Vorname Nachname" instead.
+    username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Seed for generate_password(): lets us re-display a generated plaintext later
+    # (CSV export). Null when the password was set manually, not generated.
+    password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     role: Mapped[str] = mapped_column(String(20), default="teacher")
     # Import-only metadata (school's own staff number, contact email)
     nummer: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -351,7 +357,8 @@ class Student(Base):
     geburtsdatum: Mapped[date | None] = mapped_column(Date, nullable=True)
     username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
-    pokedex_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Seed for generate_password() — see Teacher.password_seed.
+    password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
     extra_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
 

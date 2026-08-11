@@ -7,13 +7,14 @@ from datetime import date
 import chardet
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Student, Class
 from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
 from ..auth import hash_password, verify_password, require_admin, get_current_teacher
-from ..password_gen import pokemon_password
+from ..password_gen import generate_password
 from ..schoolyear import klasse_to_ak_code
 
 router = APIRouter(prefix="/api/students", tags=["students"])
@@ -429,6 +430,83 @@ def list_students(
     return result
 
 
+def _new_student_password(student: Student) -> str:
+    """Assign a fresh random password to the student; returns the plaintext."""
+    seed = random.randint(1, 999_999)
+    plain = generate_password(seed)
+    student.password_seed = seed
+    student.password_hash = hash_password(plain)
+    return plain
+
+
+class StudentCreate(BaseModel):
+    vorname: str
+    nachname: str
+    klasse: str
+    geschlecht: str
+
+
+@router.post("", response_model=StudentCredentialRow, status_code=201)
+def create_student(
+    body: StudentCreate,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    """Manually create a single student and mint username + password."""
+    vorname = body.vorname.strip()
+    nachname = body.nachname.strip()
+    klasse = body.klasse.strip()
+    if not nachname or not klasse:
+        raise HTTPException(422, "Nachname und Klasse erforderlich")
+    try:
+        geschlecht = _norm_geschlecht(body.geschlecht)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+    ak_code = _derive_ak_code(klasse)
+    cls = _resolve_class(db, klasse, ak_code)
+
+    existing = {u for (u,) in db.query(Student.username).filter(Student.username.isnot(None)).all()}
+    student = Student(
+        nachname=nachname, vorname=vorname, klasse=klasse,
+        class_id=cls.id if cls else None, jahrgang=_extract_jahrgang(klasse),
+        ak_code=ak_code, geschlecht=geschlecht,
+        username=_make_username(vorname, nachname, existing),
+    )
+    plain = _new_student_password(student)
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return StudentCredentialRow(
+        id=student.id, nachname=student.nachname, vorname=student.vorname,
+        klasse=student.klasse, username=student.username, password=plain,
+    )
+
+
+@router.post("/{student_id}/reset-password", response_model=StudentCredentialRow)
+def reset_student_password(
+    student_id: int,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin),
+):
+    """Admin: issue a fresh random password (and username if missing) for one student."""
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(404, "Student not found")
+    if not student.username:
+        existing = {u for (u,) in db.query(Student.username).filter(
+            Student.username.isnot(None), Student.id != student_id
+        ).all()}
+        student.username = _make_username(student.vorname, student.nachname, existing)
+    plain = _new_student_password(student)
+    db.commit()
+    db.refresh(student)
+    return StudentCredentialRow(
+        id=student.id, nachname=student.nachname, vorname=student.vorname,
+        klasse=student.klasse, username=student.username, password=plain,
+    )
+
+
 @router.post("/generate-credentials", response_model=list[StudentCredentialRow])
 def generate_credentials(
     db: Session = Depends(get_db),
@@ -449,21 +527,21 @@ def generate_credentials(
         # doesn't actually log in. Re-hashing here heals such drift.
         needs_password = (
             not student.password_hash
-            or not student.pokedex_number
-            or not verify_password(pokemon_password(student.pokedex_number), student.password_hash)
+            or not student.password_seed
+            or not verify_password(generate_password(student.password_seed), student.password_hash)
         )
         if not student.username:
             student.username = _make_username(student.vorname, student.nachname, existing_usernames)
             existing_usernames.add(student.username)
         if needs_password:
-            # pokemon_password() is deterministic per seed, so storing the
+            # generate_password() is deterministic per seed, so storing the
             # seed lets us re-display the plaintext later (CSV export, cards).
-            pokedex = random.randint(1, 999_999)
-            plain_pw = pokemon_password(pokedex)
-            student.pokedex_number = pokedex
+            seed = random.randint(1, 999_999)
+            plain_pw = generate_password(seed)
+            student.password_seed = seed
             student.password_hash = hash_password(plain_pw)
         else:
-            plain_pw = pokemon_password(student.pokedex_number)
+            plain_pw = generate_password(student.password_seed)
 
         result.append(StudentCredentialRow(
             id=student.id,
@@ -495,8 +573,8 @@ def student_card_data(
         fields = {k: v for k, v in base.items() if v and k not in ("nachname", "vorname", "klasse")}
         if s.username:
             fields["username"] = s.username
-        if s.pokedex_number:
-            fields["password"] = pokemon_password(s.pokedex_number)
+        if s.password_seed:
+            fields["password"] = generate_password(s.password_seed)
         result.append(StudentCardData(
             id=s.id,
             nachname=s.nachname,
@@ -521,7 +599,7 @@ def download_credentials(
     writer = csv.writer(output)
     writer.writerow(["Klasse", "Nachname", "Vorname", "Benutzername", "Passwort"])
     for s in students:
-        pw = pokemon_password(s.pokedex_number) if s.pokedex_number else ""
+        pw = generate_password(s.password_seed) if s.password_seed else ""
         writer.writerow([s.klasse, s.nachname, s.vorname, s.username or "", pw])
 
     output.seek(0)

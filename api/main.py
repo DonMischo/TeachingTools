@@ -126,6 +126,13 @@ def _run_migrations(db_engine):
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS av_stunden INTEGER",
         "ALTER TABLE quiz_questions ADD COLUMN IF NOT EXISTS content JSON",
         "ALTER TABLE practice_tasks ADD COLUMN IF NOT EXISTS board JSON",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS username VARCHAR(100)",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS password_seed INTEGER",
+        # Rename the student password-seed column (formerly pokedex_number) to
+        # match Teacher.password_seed. RENAME COLUMN has no IF EXISTS — the loop's
+        # try/except swallows the error on a fresh DB (create_all already made
+        # password_seed) and on re-runs (already renamed).
+        "ALTER TABLE students RENAME COLUMN pokedex_number TO password_seed",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -136,6 +143,7 @@ def _run_migrations(db_engine):
         "CREATE INDEX IF NOT EXISTS ix_students_ak_code ON students (ak_code)",
         "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_teacher UNIQUE (session_id, teacher_id)",
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
     ]
     with db_engine.connect() as conn:
         for sql in migrations:

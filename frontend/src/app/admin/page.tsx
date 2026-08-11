@@ -84,6 +84,12 @@ export default function AdminPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Link href="/admin/users"
+          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          <div className="text-2xl mb-2">👤</div>
+          <div className="font-semibold">Benutzerverwaltung</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Konten anlegen · Zugänge generieren · Lehrer-CSV · Passwort-Reset</div>
+        </Link>
         <Link href="/admin/students"
           className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
           <div className="text-2xl mb-2">👥</div>

@@ -218,6 +218,15 @@ export type TeacherOut = {
   total_ws: number;
 };
 
+export type TeacherCredentialRow = {
+  id: number;
+  last_name: string;
+  first_name: string;
+  role: string;
+  username: string;
+  password: string | null;
+};
+
 export type WochenstundenOut = {
   subject: string;
   grade: number;
@@ -903,6 +912,12 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selected_keys, csv_data }),
       }),
+    generateCredentials: () => apiFetch<TeacherCredentialRow[]>("teachers/generate-credentials", { method: "POST" }),
+    downloadCredentials: () => fetch("/api/teachers/credentials/download", { credentials: "include" }),
+    create: (body: { first_name: string; last_name: string; role: string; email?: string | null; teacher_role?: string | null }) =>
+      apiFetch<TeacherCredentialRow>("teachers", { method: "POST", body: JSON.stringify(body) }),
+    resetPassword: (teacherId: number) =>
+      apiFetch<TeacherCredentialRow>(`teachers/${teacherId}/reset-password`, { method: "POST" }),
   },
   transactions: {
     create: (data: { teacher_id: number; class_id: number; points: number; reason: string }) =>
@@ -989,6 +1004,10 @@ export const api = {
     },
     generateCredentials: () => apiFetch<StudentCredentialRow[]>("students/generate-credentials", { method: "POST" }),
     downloadCredentials: () => fetch("/api/students/credentials/download", { credentials: "include" }),
+    create: (body: { vorname: string; nachname: string; klasse: string; geschlecht: string }) =>
+      apiFetch<StudentCredentialRow>("students", { method: "POST", body: JSON.stringify(body) }),
+    resetPassword: (studentId: number) =>
+      apiFetch<StudentCredentialRow>(`students/${studentId}/reset-password`, { method: "POST" }),
     preview: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);

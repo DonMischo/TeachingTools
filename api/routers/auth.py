@@ -77,7 +77,15 @@ def me(user=Depends(get_current_user)):
 # ---------------------------------------------------------------------------
 
 def _find_teacher(username: str, db: Session) -> Teacher | None:
-    parts = username.strip().split(" ", 1)
+    ident = username.strip()
+    # Generated username (e.g. "m.mueller42") takes precedence over name login.
+    by_username = db.query(Teacher).filter(
+        Teacher.username == ident,
+        Teacher.active == True,
+    ).first()
+    if by_username:
+        return by_username
+    parts = ident.split(" ", 1)
     if len(parts) == 2:
         return db.query(Teacher).filter(
             Teacher.first_name == parts[0],

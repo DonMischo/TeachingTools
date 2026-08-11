@@ -36,6 +36,17 @@ class TeacherOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TeacherCredentialRow(BaseModel):
+    id: int
+    last_name: str
+    first_name: str
+    role: str  # auth level: "teacher" | "admin"
+    username: str
+    # None when the teacher already had a manually-set (non-generated) password,
+    # whose plaintext we can't recover.
+    password: str | None = None
+
+
 class WochenstundenOut(BaseModel):
     subject: str
     grade: int
