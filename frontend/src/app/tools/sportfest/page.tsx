@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 export default function SportfestPage() {
   const { auth } = useAuth();
   const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
+  const { can } = useAvailability();
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
@@ -27,7 +29,7 @@ export default function SportfestPage() {
           <div className="font-semibold">Disziplinranking</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Sprint · Ausdauer · Weitsprung · Ballwurf</div>
         </Link>
-        {isTeacher && (
+        {isTeacher && can("sportfest", "create") && (
           <Link href="/tools/sportfest/ergebnisse"
             className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
             <div className="text-2xl mb-2">✏️</div>

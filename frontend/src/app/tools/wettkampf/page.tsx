@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, WettkampfOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 const TYPE_LABELS: Record<string, string> = {
   knockout: "K.O.-System",
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 export default function WettkampfListPage() {
   const router = useRouter();
   const { auth } = useAuth();
+  const { can } = useAvailability();
   const qc = useQueryClient();
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -44,7 +46,7 @@ export default function WettkampfListPage() {
     <div className="p-6 max-w-3xl mx-auto w-full">
       <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
       <h1 className="text-2xl font-bold mb-2 mt-1">Wettkämpfe</h1>
-      {auth && (
+      {auth && can("wettkampf", "create") && (
         <button
           onClick={() => router.push("/tools/wettkampf/new")}
           className="btn-primary mb-6"

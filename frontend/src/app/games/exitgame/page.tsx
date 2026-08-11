@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ExitGameOut, GeneratorInfo } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
@@ -71,6 +72,7 @@ function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
 export default function ExitgamePage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { can } = useAvailability();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -126,19 +128,21 @@ export default function ExitgamePage() {
             Selbstständiges Exit-Game — Schüler lösen Aufgaben in ihrem eigenen Tempo.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowGenerators(true)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
-            🧮 Generatoren
-          </button>
-          <button onClick={handleTemplate} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
-            📄 Vorlage
-          </button>
-          <button onClick={() => fileRef.current?.click()} disabled={uploading}
-            className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
-            {uploading ? "Lade hoch…" : "+ Exitgame hochladen"}
-          </button>
-          <input ref={fileRef} type="file" accept=".json,.zip" className="hidden" onChange={handleUpload} />
-        </div>
+        {can("exitgame", "upload") && (
+          <div className="flex gap-2">
+            <button onClick={() => setShowGenerators(true)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+              🧮 Generatoren
+            </button>
+            <button onClick={handleTemplate} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+              📄 Vorlage
+            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
+              {uploading ? "Lade hoch…" : "+ Exitgame hochladen"}
+            </button>
+            <input ref={fileRef} type="file" accept=".json,.zip" className="hidden" onChange={handleUpload} />
+          </div>
+        )}
       </div>
 
       {isLoading ? (

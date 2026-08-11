@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, AuctionSetOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 export default function AuctionLibraryPage() {
   const { auth } = useAuth();
@@ -13,6 +14,7 @@ export default function AuctionLibraryPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const canEdit = auth?.role === "teacher" || auth?.role === "admin";
+  const { can } = useAvailability();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,7 +49,7 @@ export default function AuctionLibraryPage() {
         </p>
       </div>
 
-      {canEdit && (
+      {canEdit && can("auktion", "host") && (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
           <h2 className="font-semibold text-sm">Neue Auktion</h2>
           <input className="input" placeholder="Titel (z. B. Freistunde freiwählen)" value={title}

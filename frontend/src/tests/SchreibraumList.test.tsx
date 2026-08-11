@@ -11,6 +11,12 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/schreibraum",
 }));
 
+// The create button is gated by useAvailability; mock it as fully permissive so
+// gating is deterministic (teacher-vs-student is still enforced by the page).
+vi.mock("@/hooks/useAvailability", () => ({
+  useAvailability: () => ({ can: () => true, ready: true }),
+}));
+
 const mockTeacher = makeTeacher();
 const mockStudent = { id: 10, vorname: "Ben", nachname: "Braun", klasse: "5a", class_id: 2, nummer: null, jahrgang: null, geschlecht: "m", geburtsdatum: null, username: "ben", active: true, has_credentials: true };
 

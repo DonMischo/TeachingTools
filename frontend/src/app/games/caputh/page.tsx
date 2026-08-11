@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, QuizOut, ClassOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 const QUIZ_TYPE_LABELS: Record<string, string> = {
   classic: "Klassisch",
@@ -41,6 +42,7 @@ type SessionRow = {
 export default function CaputhsPage() {
   const qc = useQueryClient();
   const { auth } = useAuth();
+  const { can } = useAvailability();
   const { data: capuths = [], isLoading } = useQuery({
     queryKey: ["capuths"],
     queryFn: api.capuths.list,
@@ -146,7 +148,7 @@ export default function CaputhsPage() {
             className="px-3 py-1.5 text-sm border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:border-[var(--text-muted)] transition-colors">
             Vorlage
           </a>
-          {auth && (
+          {auth && can("caputh", "upload") && (
             <label className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
               {uploading ? "Hochladen…" : "+ Hochladen"}
               <input ref={fileRef} type="file" accept=".json,.zip" className="hidden"

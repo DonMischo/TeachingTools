@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, SchreibraumRoom } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 export default function SchreibraumListPage() {
   const { auth } = useAuth();
   const router = useRouter();
   const isTeacher = auth?.user_type === "teacher";
   const { toast } = useToast();
+  const { can } = useAvailability();
 
   const [rooms, setRooms] = useState<SchreibraumRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function SchreibraumListPage() {
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <h1 className="text-2xl font-black tracking-tight">📝 Schreibraum</h1>
         <div className="flex items-center gap-2">
-          {isTeacher && (
+          {isTeacher && can("schreibraum", "create") && (
             <button
               onClick={() => { setShowCreate(v => !v); }}
               className="btn-primary text-sm py-1.5 px-4"

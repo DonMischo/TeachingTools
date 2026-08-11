@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, BarometerSessionSummary, BarometerSessionOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 type QuestionDraft = { text: string; scale_min: number; scale_max: number; scale_min_label: string; scale_max_label: string };
 
@@ -16,6 +17,7 @@ export default function BarometerPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
+  const { can } = useAvailability();
 
   const [showCreate, setShowCreate] = useState(false);
   const [editingCode, setEditingCode] = useState<string | null>(null);
@@ -102,10 +104,12 @@ export default function BarometerPage() {
       </button>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-black tracking-tight">🧭 Meinungsbarometer</h1>
-        <button onClick={() => showCreate ? resetForm() : setShowCreate(true)}
-          className="shrink-0 text-sm px-5 py-2 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity">
-          + Neue Umfrage
-        </button>
+        {can("barometer", "host") && (
+          <button onClick={() => showCreate ? resetForm() : setShowCreate(true)}
+            className="shrink-0 text-sm px-5 py-2 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity">
+            + Neue Umfrage
+          </button>
+        )}
       </div>
 
       {showCreate && (

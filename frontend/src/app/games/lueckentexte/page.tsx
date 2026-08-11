@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { api, LueckentextSetOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 export default function LueckentextePage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const router = useRouter();
   const { auth } = useAuth();
+  const { can } = useAvailability();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -74,17 +76,19 @@ export default function LueckentextePage() {
             Lückentexte mit Wortbank, Freitext oder Multiple-Choice — anzeigen, üben, in Caputh &amp; Exitgame einbauen.
           </p>
         </div>
-        <div className="flex gap-2 flex-nowrap shrink-0">
-          <button onClick={handleTemplate}
-            className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] whitespace-nowrap">
-            📄 Vorlage
-          </button>
-          <button onClick={() => fileRef.current?.click()} disabled={uploading}
-            className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40 whitespace-nowrap">
-            {uploading ? "Lade hoch…" : "+ Lückentext hochladen"}
-          </button>
-          <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
-        </div>
+        {can("lueckentext", "upload") && (
+          <div className="flex gap-2 flex-nowrap shrink-0">
+            <button onClick={handleTemplate}
+              className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] whitespace-nowrap">
+              📄 Vorlage
+            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40 whitespace-nowrap">
+              {uploading ? "Lade hoch…" : "+ Lückentext hochladen"}
+            </button>
+            <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
+          </div>
+        )}
       </div>
 
       {isLoading ? (

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { api, BingoSetOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 export default function BingoLibraryPage() {
   const { auth } = useAuth();
+  const { can } = useAvailability();
   const { toast } = useToast();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,7 +57,7 @@ export default function BingoLibraryPage() {
             Vokabeln, Gleichungen, Daten – als Bingo-Spiel für die Klasse. Von allen Kolleg·innen nutzbar.
           </p>
         </div>
-        {canEdit && (
+        {canEdit && can("bingo", "create") && (
           <div className="flex items-center gap-2 shrink-0">
             <a
               href="/api/bingo/template"
@@ -82,7 +84,7 @@ export default function BingoLibraryPage() {
       ) : sets.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl gap-3">
           <p className="text-[var(--text-muted)] text-sm">Noch keine Bingo-Sets.</p>
-          {canEdit && (
+          {canEdit && can("bingo", "create") && (
             <button onClick={() => router.push("/games/bingo/new")}
               className="text-sm px-4 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text)] font-semibold hover:bg-[var(--surface-hover)] transition-colors">
               Erstes Set erstellen

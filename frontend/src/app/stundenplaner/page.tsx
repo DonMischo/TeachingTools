@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, LessonPlanOut, Phase } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 const FAECHER = ["", "Deutsch", "Mathematik", "Englisch", "Biologie", "Chemie", "Physik", "Geschichte", "Geographie", "Informatik", "Musik", "Kunst", "Sport", "Ethik", "Religion"];
 
@@ -49,6 +50,7 @@ export default function StundenplanerListPage() {
   const { auth } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { can } = useAvailability();
   const isTeacher = auth?.user_type === "teacher";
 
   const [own, setOwn] = useState<LessonPlanOut[]>([]);
@@ -162,22 +164,24 @@ export default function StundenplanerListPage() {
           <h1 className="text-2xl font-black tracking-tight">📋 Stundenplaner</h1>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">Verlaufsplanungen erstellen und mit Kolleg·innen teilen.</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <a href="/api/stundenplaner/template" download="stundenplaner_vorlage.json"
-            className="btn-secondary text-sm py-1.5 px-4 no-underline"
-            title="JSON-Vorlage mit KI-Anweisungen herunterladen — von einer KI ausfüllen lassen und importieren.">
-            📋 KI-Vorlage
-          </a>
-          <button onClick={() => { setShowImport(v => !v); setShowCreate(false); }} className="btn-secondary text-sm py-1.5 px-4">
-            ↑ Importieren
-          </button>
-          <button onClick={handleCreateFromTemplate} disabled={creating} className="btn-secondary text-sm py-1.5 px-4">
-            {creating ? "…" : "＋ Aus Vorlage"}
-          </button>
-          <button onClick={() => { setShowCreate(v => !v); setShowImport(false); }} className="btn-primary text-sm py-1.5 px-4">
-            + Neue Planung
-          </button>
-        </div>
+        {can("stundenplaner", "create") && (
+          <div className="flex gap-2 flex-wrap">
+            <a href="/api/stundenplaner/template" download="stundenplaner_vorlage.json"
+              className="btn-secondary text-sm py-1.5 px-4 no-underline"
+              title="JSON-Vorlage mit KI-Anweisungen herunterladen — von einer KI ausfüllen lassen und importieren.">
+              📋 KI-Vorlage
+            </a>
+            <button onClick={() => { setShowImport(v => !v); setShowCreate(false); }} className="btn-secondary text-sm py-1.5 px-4">
+              ↑ Importieren
+            </button>
+            <button onClick={handleCreateFromTemplate} disabled={creating} className="btn-secondary text-sm py-1.5 px-4">
+              {creating ? "…" : "＋ Aus Vorlage"}
+            </button>
+            <button onClick={() => { setShowCreate(v => !v); setShowImport(false); }} className="btn-primary text-sm py-1.5 px-4">
+              + Neue Planung
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Create form */}

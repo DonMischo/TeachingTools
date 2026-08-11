@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api, ExitTicketSummary } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAvailability } from "@/hooks/useAvailability";
 
 const STATUS_LABEL: Record<string, string> = { open: "Offen", closed: "Geschlossen" };
 
@@ -14,6 +15,7 @@ export default function ExitTicketPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const canEdit = auth?.role === "teacher" || auth?.role === "admin";
+  const { can } = useAvailability();
 
   const [title, setTitle] = useState("");
   const [question, setQuestion] = useState("");
@@ -56,7 +58,7 @@ export default function ExitTicketPage() {
         </p>
       </div>
 
-      {canEdit && (
+      {canEdit && can("exit-ticket", "host") && (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
           <h2 className="font-semibold text-sm">Neues Exit Ticket</h2>
           <input className="input" placeholder="Titel (z. B. Stunde vom 30.6.)" value={title}
