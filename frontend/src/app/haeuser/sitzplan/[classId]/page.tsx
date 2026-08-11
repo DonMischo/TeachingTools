@@ -185,9 +185,13 @@ export default function SitzplanPage() {
     setSaveState("saving");
     const t = setTimeout(async () => {
       try {
-        await api.seating.update(planId, payload);
+        const updated = await api.seating.update(planId, payload);
         savedRef.current = ser;
         setSaveState("saved");
+        // Keep the cached detail truthful so switching away and back doesn't
+        // serve the stale (pre-edit) copy — the query uses staleTime: Infinity
+        // and would otherwise never refetch. (id unchanged → no reload effect.)
+        qc.setQueryData(["seating-plan", planId], updated);
         qc.invalidateQueries({ queryKey: ["seating", classId] });
       } catch {
         setSaveState("error");
@@ -319,7 +323,16 @@ export default function SitzplanPage() {
   // ── Plan management mutations ──
   const createMut = useMutation({
     mutationFn: (planName: string) => api.seating.create(classId, { name: planName || "Klassenraum" }),
-    onSuccess: (p) => { qc.invalidateQueries({ queryKey: ["seating", classId] }); setPlanId(p.id); },
+    onSuccess: (p) => {
+      // Seed the detail cache and add the new plan to the list *before* selecting
+      // it, so the plan-selection guard (which resets planId when the list lacks
+      // it) doesn't bounce us to an old plan while the list refetch is in flight.
+      qc.setQueryData(["seating-plan", p.id], p);
+      qc.setQueryData<SeatingPlanSummary[]>(["seating", classId], (old = []) =>
+        old.some(x => x.id === p.id) ? old : [...old, p]);
+      qc.invalidateQueries({ queryKey: ["seating", classId] });
+      setPlanId(p.id);
+    },
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
   const deleteMut = useMutation({
