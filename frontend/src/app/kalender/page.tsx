@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, CalendarEntryOut, CalendarTagOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";

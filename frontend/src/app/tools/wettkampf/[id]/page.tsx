@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, WettkampfMatch, WettkampfStageIn } from "@/lib/api";
+import { api, WettkampfMatch } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import BracketView from "./BracketView";
 import RoundRobinView from "./RoundRobinView";
@@ -89,75 +89,6 @@ function ResultModal({
   );
 }
 
-// ── StageEditor ───────────────────────────────────────────────────────────────
-
-function StageEditor({ wettkampfId, onDone }: { wettkampfId: number; onDone: () => void }) {
-  const qc = useQueryClient();
-  const [stages, setStages] = useState<WettkampfStageIn[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function load() {
-    const suggestions = await api.wettkampf.suggestStages(wettkampfId);
-    setStages(suggestions);
-    setLoaded(true);
-  }
-
-  async function save() {
-    setSaving(true);
-    setError(null);
-    try {
-      await api.wettkampf.setStages(wettkampfId, stages);
-      qc.invalidateQueries({ queryKey: ["wettkampf", wettkampfId] });
-      onDone();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!loaded) {
-    return (
-      <button onClick={load} className="text-sm text-indigo-400 hover:text-indigo-300 underline">
-        Stufen auto-vorschlagen
-      </button>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm text-gray-400">Punkte pro Stufe (von früh eliminiert → Sieger):</p>
-      {stages.map((s, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <input
-            className="input flex-1"
-            value={s.name}
-            onChange={e => setStages(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-          />
-          <input
-            type="number"
-            className="input w-24"
-            value={s.points}
-            onChange={e => setStages(prev => prev.map((x, j) => j === i ? { ...x, points: Number(e.target.value) } : x))}
-          />
-          <span className="text-xs text-gray-500 w-12">Pkte</span>
-        </div>
-      ))}
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="flex gap-2">
-        <button onClick={save} disabled={saving} className="btn-primary text-sm">
-          {saving ? "Speichere…" : "Stufen speichern"}
-        </button>
-        <button onClick={onDone} className="px-3 py-1.5 text-sm text-gray-400 hover:text-white">
-          Abbrechen
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function WettkampfDetailPage() {
@@ -181,7 +112,6 @@ export default function WettkampfDetailPage() {
   // selection keys: `${classId}:mixed`, `${classId}:male`, `${classId}:female`, `"teacher"`
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addingP, setAddingP] = useState(false);
-  const [editingStages, setEditingStages] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<WettkampfMatch | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -191,9 +121,8 @@ export default function WettkampfDetailPage() {
   const [showAuswertung, setShowAuswertung] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Group management
-  const [editingGroupFor, setEditingGroupFor] = useState<number | null>(null);
+  const [, setEditingGroupFor] = useState<number | null>(null);
   const [groupDraft, setGroupDraft] = useState("");
-  const [groupSuggestions, setGroupSuggestions] = useState<string[]>([]);
   const [newGroupInput, setNewGroupInput] = useState<number | null>(null); // pid with custom input shown
   // Auto-pairing
   const [autopairingGroup, setAutopairingGroup] = useState<string | null | undefined>(undefined); // undefined = not running

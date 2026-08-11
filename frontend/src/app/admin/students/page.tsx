@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, StudentCredentialRow, StudentDiffRow, StudentPreviewResponse } from "@/lib/api";
+import { api, StudentCredentialRow, StudentPreviewResponse } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

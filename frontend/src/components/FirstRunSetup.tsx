@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
 
 export function FirstRunSetup({ onComplete }: { onComplete: () => void }) {
-  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

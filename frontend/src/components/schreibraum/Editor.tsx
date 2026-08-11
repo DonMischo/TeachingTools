@@ -2,8 +2,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
-import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { Plugin, TextSelection } from "@tiptap/pm/state";
 import { Fragment, Slice } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -19,7 +18,6 @@ import Toolbar from "./Toolbar";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import type { SchreibraumParticipant } from "@/lib/api";
-import { api } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 
 // Safe on client (loaded only with ssr:false)

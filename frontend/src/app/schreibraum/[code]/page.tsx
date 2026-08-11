@@ -141,7 +141,7 @@ export default function SchreibraumEditorPage() {
   // Wortstaffel turn state
   const turnsWsRef = useRef<WebSocket | null>(null);
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
-  const [turnOrder, setTurnOrder] = useState<string[]>([]);
+  const [, setTurnOrder] = useState<string[]>([]);
 
   const isTeacher = auth?.user_type === "teacher";
 
@@ -263,12 +263,6 @@ export default function SchreibraumEditorPage() {
       downloadFile(new Blob([csv], { type: "text/csv" }), `raum-${room.code}-log.csv`);
     } catch {}
   }
-
-  const outlineBtn: React.CSSProperties = {
-    width: "100%", padding: "7px 0", borderRadius: 8, cursor: "pointer",
-    border: "1px solid var(--border)", background: "var(--bg)",
-    color: "var(--text-muted)", fontWeight: 600, fontSize: 13,
-  };
 
   // ── Early returns ─────────────────────────────────────────────────────────
 

@@ -171,24 +171,6 @@ function ClassIcon({ cls }: { cls: ClassOut }) {
   return <span style={{ fontSize: "2.4rem", lineHeight: 1 }}>{cls.symbol_emoji ?? "📚"}</span>;
 }
 
-// ─── Color helpers (used by HausCard/form) ────────────────────────────────────
-
-function hexToRgb(hex: string): [number, number, number] {
-  const c = hex.replace("#", "");
-  const r = parseInt(c.slice(0, 2), 16) || 0;
-  const g = parseInt(c.slice(2, 4), 16) || 0;
-  const b = parseInt(c.slice(4, 6), 16) || 0;
-  return [r, g, b];
-}
-function lighten(hex: string, amt: number): string {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgb(${Math.min(255, r + amt)},${Math.min(255, g + amt)},${Math.min(255, b + amt)})`;
-}
-function darken(hex: string, amt: number): string {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgb(${Math.max(0, r - amt)},${Math.max(0, g - amt)},${Math.max(0, b - amt)})`;
-}
-
 const PALETTE = [
   "#e21b3c", "#1368ce", "#d89e00", "#26890c",
   "#7c3aed", "#db2777", "#ea580c", "#0891b2",

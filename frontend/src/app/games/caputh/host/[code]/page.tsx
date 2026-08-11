@@ -160,40 +160,6 @@ function Confetti({ ratio }: { ratio: number }) {
   );
 }
 
-// ─── Podium (Siegertreppe) ────────────────────────────────────────────────────
-
-function Podium({ ranking }: { ranking: RankEntry[] }) {
-  const top3 = ranking.filter(r => r.rank <= 3).sort((a, b) => {
-    const order = [2, 1, 3];
-    return order.indexOf(a.rank) - order.indexOf(b.rank);
-  });
-  if (top3.length === 0) return null;
-  const heights: Record<number, number> = { 1: 200, 2: 160, 3: 130 };
-  const labels: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
-  const bgs: Record<number, string> = {
-    1: "linear-gradient(180deg,#fbbf24,#d97706)",
-    2: "linear-gradient(180deg,#94a3b8,#64748b)",
-    3: "linear-gradient(180deg,#cd7c33,#a0522d)",
-  };
-  return (
-    <div className="flex items-end justify-center gap-4 mt-6">
-      {top3.map((r) => (
-        <div key={r.pid} className="flex flex-col items-center gap-2">
-          <AvatarDisplay avatarId={r.avatar} size="md" />
-          <span className="text-white font-semibold text-sm text-center max-w-[80px] truncate">{r.name}</span>
-          <span className="text-white font-mono text-xs">{r.score.toFixed(1)}</span>
-          <div
-            className="w-24 flex items-start justify-center rounded-t-xl pt-2 text-3xl font-black"
-            style={{ height: `${heights[r.rank]}px`, background: bgs[r.rank] }}
-          >
-            {labels[r.rank]}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type ConfirmState = { msg: string; onYes: () => void } | null;

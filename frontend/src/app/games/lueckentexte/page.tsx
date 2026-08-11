@@ -12,7 +12,6 @@ export default function LueckentextePage() {
   const { toast } = useToast();
   const router = useRouter();
   const { auth } = useAuth();
-  const isTeacher = auth?.user_type === "teacher";
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 

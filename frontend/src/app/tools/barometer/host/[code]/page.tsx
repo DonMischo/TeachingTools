@@ -124,9 +124,6 @@ export default function BarometerHostPage() {
     }
   }
 
-  const currentQ = session?.questions[live.current_question_idx];
-  const currentDist = currentQ ? (live.distributions[currentQ.id] ?? {}) : {};
-
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">

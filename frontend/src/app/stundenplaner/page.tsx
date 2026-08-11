@@ -17,7 +17,6 @@ const TEMPLATE_PHASES: Phase[] = [
 
 function PlanCard({ plan, onDelete }: { plan: LessonPlanOut; onDelete: () => void }) {
   const router = useRouter();
-  const { auth } = useAuth();
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">

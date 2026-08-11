@@ -74,7 +74,6 @@ export default function ZeitstrahlDetailPage() {
   const setId = Number(id);
   const { auth } = useAuth();
   const isTeacher = auth?.user_type === "teacher";
-  const { toast } = useToast();
   const qc = useQueryClient();
 
   const { data: set, isLoading, isError } = useQuery<TimelineSetDetail>({

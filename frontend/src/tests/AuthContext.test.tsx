@@ -64,7 +64,7 @@ describe("AuthContext", () => {
       token_type: "bearer",
       teacher: mockTeacher,
     });
-    const meSpy = vi.spyOn(apiModule.api.auth, "me")
+    vi.spyOn(apiModule.api.auth, "me")
       .mockResolvedValueOnce(mockMeTeacher)  // mount
       .mockResolvedValueOnce(mockMeTeacher); // after login
 

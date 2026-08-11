@@ -33,11 +33,9 @@ class MockWebSocket {
   close = vi.fn();
   send = vi.fn();
 }
-let lastSocket: MockWebSocket;
 vi.stubGlobal("WebSocket", class extends MockWebSocket {
   constructor(..._args: unknown[]) {
     super();
-    lastSocket = this;
   }
 });
 
