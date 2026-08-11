@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, ClassOut, TeacherOut, TeacherPreviewResponse, WochenstundenOut } from "@/lib/api";
+import { api, ClassOut, TeacherOut, TeacherCredentialRow, TeacherPreviewResponse, WochenstundenOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -501,10 +501,26 @@ export default function AdminTeachersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<Filter>("all");
   const [applyResult, setApplyResult] = useState<{ applied: number; errors: string[] } | null>(null);
+  const [credentials, setCredentials] = useState<TeacherCredentialRow[] | null>(null);
 
   useEffect(() => {
     if (auth !== null && auth.role !== "admin") router.replace("/");
   }, [auth, router]);
+
+  const credentialsMut = useMutation({
+    mutationFn: api.teachers.generateCredentials,
+    onSuccess: (rows) => setCredentials(rows),
+  });
+
+  async function downloadCredentialsCsv() {
+    const r = await api.teachers.downloadCredentials();
+    if (!r.ok) return;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "lehrer-zugangsdaten.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const isAdmin = auth?.role === "admin";
   const { data: teachers = [] } = useQuery<TeacherOut[]>({
@@ -594,6 +610,47 @@ export default function AdminTeachersPage() {
           <div className={`text-sm rounded-lg p-3 ${applyResult.errors.length ? "bg-yellow-900/30 text-yellow-300" : "bg-green-900/30 text-green-300"}`}>
             <strong>{applyResult.applied} Lehrkräfte importiert.</strong>
             {applyResult.errors.map((e, i) => <div key={i} className="text-xs mt-1 opacity-80">{e}</div>)}
+          </div>
+        )}
+      </section>
+
+      {/* Credential generation (parity with Schülerdaten) */}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-sm">Zugangsdaten generieren</h2>
+          <Hint text={"Erzeugt Benutzernamen (z. B. m.mueller42) und Passwörter für alle Lehrkräfte ohne Zugang. Passwörter bestehen aus Farbe + Tier + Zahl (z. B. BlaueTiger042). Bestehende Zugangsdaten und selbst gesetzte Passwörter bleiben unverändert. Anmeldung ist mit dem Benutzernamen oder weiterhin mit „Vorname Nachname“ möglich."} />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={() => credentialsMut.mutate()} disabled={credentialsMut.isPending} className="btn-primary text-sm py-2 px-4">
+            {credentialsMut.isPending ? "Generiere…" : "🔑 Zugangsdaten generieren"}
+          </button>
+          <button onClick={downloadCredentialsCsv} className="btn-secondary text-sm py-2 px-4">
+            ⬇️ CSV exportieren
+          </button>
+        </div>
+
+        {credentials && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                  <th className="text-left py-2 pr-4">Name</th>
+                  <th className="text-left py-2 pr-4">Rolle</th>
+                  <th className="text-left py-2 pr-4">Benutzername</th>
+                  <th className="text-left py-2">Passwort</th>
+                </tr>
+              </thead>
+              <tbody>
+                {credentials.map(row => (
+                  <tr key={row.id} className="border-b border-[var(--border)]/50">
+                    <td className="py-1.5 pr-4">{row.last_name}, {row.first_name}</td>
+                    <td className="py-1.5 pr-4">{row.role === "admin" ? "Admin" : "Lehrer"}</td>
+                    <td className="py-1.5 pr-4 font-mono">{row.username}</td>
+                    <td className="py-1.5 font-mono">{row.password ?? <span className="opacity-40">eigenes Passwort</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

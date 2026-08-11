@@ -28,7 +28,9 @@ from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, get_current_user
+from ..availability import require_capability
+from ..authorship import scope_to_student_pool, is_student
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_teacher
 from ..ws_manager import RoomManager
@@ -235,9 +237,9 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
     }, questions
 
 
-def _create_caputh_from_parsed(db: Session, quiz_fields: dict, questions: list[dict]) -> Quiz:
+def _create_caputh_from_parsed(db: Session, quiz_fields: dict, questions: list[dict], author_kwargs: dict | None = None) -> Quiz:
     fields = {k: v for k, v in quiz_fields.items() if k not in ("warning",)}
-    quiz = Quiz(**fields)
+    quiz = Quiz(**fields, **(author_kwargs or {}))
     db.add(quiz)
     db.flush()
     for qd in questions:
@@ -393,8 +395,8 @@ def _state_msg(s: QuizSession, db: Session) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.get("/api/capuths", response_model=list[QuizOut])
-def list_capuths(db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
-    capuths = db.query(Quiz).order_by(Quiz.created_at.desc()).all()
+def list_capuths(db: Session = Depends(get_db), current=Depends(get_current_user)):
+    capuths = scope_to_student_pool(db.query(Quiz), Quiz, current).order_by(Quiz.created_at.desc()).all()
     out = []
     for qz in capuths:
         o = QuizOut.model_validate(qz)
@@ -564,13 +566,16 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
     })
 
 
-@router.post("/api/capuths/upload", response_model=QuizOut, status_code=201)
+@router.post("/api/capuths/upload", response_model=QuizOut, status_code=201, dependencies=[Depends(require_capability("caputh", "upload"))])
 def upload_caputh(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     content = file.file.read()
+    # Quizzes have no teacher owner (shared teacher library); only student
+    # authorship is tracked, for the shared student pool.
+    author_kwargs = {"created_by_student": current.id} if is_student(current) else {}
 
     if file.filename and file.filename.endswith(".zip"):
         try:
@@ -589,7 +594,7 @@ def upload_caputh(
         except ValueError as e:
             raise HTTPException(422, str(e))
 
-        quiz = _create_caputh_from_parsed(db, quiz_fields, questions)
+        quiz = _create_caputh_from_parsed(db, quiz_fields, questions, author_kwargs)
 
         gfx_files = [n for n in names if "gfx/" in n and not n.endswith("/")]
         if gfx_files:
@@ -614,7 +619,7 @@ def upload_caputh(
             quiz_fields, questions = _parse_caputh_json(raw)
         except ValueError as e:
             raise HTTPException(422, str(e))
-        quiz = _create_caputh_from_parsed(db, quiz_fields, questions)
+        quiz = _create_caputh_from_parsed(db, quiz_fields, questions, author_kwargs)
 
     o = QuizOut.model_validate(quiz)
     o.question_count = len(quiz.questions)
@@ -623,9 +628,12 @@ def upload_caputh(
 
 
 @router.get("/api/capuths/{quiz_id}", response_model=QuizDetailOut)
-def get_caputh(quiz_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def get_caputh(quiz_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     caputh = db.get(Quiz, quiz_id)
     if not caputh:
+        raise HTTPException(404, "Caputh not found")
+    # Students may only open quizzes from the shared student pool.
+    if is_student(current) and caputh.created_by_student is None:
         raise HTTPException(404, "Caputh not found")
     o = QuizDetailOut.model_validate(caputh)
     o.question_count = len(caputh.questions)
@@ -636,11 +644,15 @@ def get_caputh(quiz_id: int, db: Session = Depends(get_db), _: Teacher = Depends
 def delete_caputh(
     quiz_id: int,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     caputh = db.get(Quiz, quiz_id)
     if not caputh:
         raise HTTPException(404, "Caputh not found")
+    # Students may only delete quizzes from the shared student pool; quizzes have
+    # no per-teacher owner, so any teacher/admin may delete any quiz (as before).
+    if is_student(current) and caputh.created_by_student is None:
+        raise HTTPException(403)
     # Delete sessions and their responses/participants before deleting the quiz
     for s in list(caputh.sessions):
         db.query(QuizResponse).filter_by(session_id=s.id).delete(synchronize_session=False)
@@ -853,7 +865,7 @@ def create_session_for_class(
     return session
 
 
-@router.post("/api/capuths/{quiz_id}/sessions", response_model=SessionOut, status_code=201)
+@router.post("/api/capuths/{quiz_id}/sessions", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("caputh", "host"))])
 def create_session(
     quiz_id: int,
     body: SessionCreate,

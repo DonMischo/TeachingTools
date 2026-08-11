@@ -287,7 +287,7 @@ export default function AdminStudentsPage() {
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Zugangsdaten generieren</h2>
-          <Hint text={"Erzeugt Benutzernamen und Passwörter für alle Schüler ohne Zugang. Passwörter basieren auf einem Pokémon (z. B. 004Glumand4#!). Bestehende Zugangsdaten bleiben unverändert."} />
+          <Hint text={"Erzeugt Benutzernamen und Passwörter für alle Schüler ohne Zugang. Passwörter bestehen aus Farbe + Tier + Zahl (z. B. BlaueTiger042). Bestehende Zugangsdaten bleiben unverändert."} />
         </div>
         <div className="flex gap-3 flex-wrap">
           <button onClick={() => credentialsMut.mutate()} disabled={credentialsMut.isPending} className="btn-primary text-sm py-2 px-4">

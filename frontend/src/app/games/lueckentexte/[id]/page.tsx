@@ -62,6 +62,9 @@ export default function LueckentextDetailPage() {
     enabled: Number.isFinite(setId) && !!auth,
   });
 
+  // Teachers may edit any set; students only shared-pool (student-authored) sets.
+  const canEdit = isTeacher || (!!set && set.created_by_student != null);
+
   const [draft, setDraft] = useState<Draft | null>(null);
   useEffect(() => { if (set) setDraft(toDraft(set)); }, [set]);
 
@@ -161,7 +164,7 @@ export default function LueckentextDetailPage() {
   if (isLoading) return <div className="p-8 text-sm text-[var(--text-muted)]">Lade…</div>;
   if (isError || !set) return <div className="p-8 text-sm text-[var(--text-muted)]">Lückentext nicht gefunden.</div>;
 
-  if (!isTeacher) {
+  if (!canEdit) {
     return (
       <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
         <h1 className="text-2xl font-black tracking-tight">{set.title}</h1>
@@ -208,10 +211,12 @@ export default function LueckentextDetailPage() {
             className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] whitespace-nowrap">
             📄 PDF (gefüllt)
           </a>
-          <button onClick={() => startSessionMut.mutate()} disabled={startSessionMut.isPending}
-            className="text-sm border border-[var(--border)] rounded-lg px-6 py-1.5 hover:border-[var(--accent)] disabled:opacity-40 whitespace-nowrap">
-            {startSessionMut.isPending ? "Starte…" : "▶ Sitzung starten"}
-          </button>
+          {isTeacher && (
+            <button onClick={() => startSessionMut.mutate()} disabled={startSessionMut.isPending}
+              className="text-sm border border-[var(--border)] rounded-lg px-6 py-1.5 hover:border-[var(--accent)] disabled:opacity-40 whitespace-nowrap">
+              {startSessionMut.isPending ? "Starte…" : "▶ Sitzung starten"}
+            </button>
+          )}
           <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
             className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40 whitespace-nowrap">
             {saveMut.isPending ? "Speichere…" : "Speichern"}

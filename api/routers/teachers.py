@@ -1,9 +1,11 @@
 import csv
 import io
+import random
 import re
 
 import chardet
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,9 +13,10 @@ from ..database import get_db
 from ..models import Teacher, TeacherAssignment, TeacherRole, Class, StudentGroup, SubjectWochenstunden
 from ..schemas import (
     TeacherOut, TeacherAssignmentOut, TeacherPreviewResponse, TeacherApplyRequest,
-    WochenstundenOut, WochenstundenSet, TeacherKorrekturIn,
+    TeacherCredentialRow, WochenstundenOut, WochenstundenSet, TeacherKorrekturIn,
 )
-from ..auth import get_current_teacher, get_current_user, hash_password, require_admin
+from ..auth import get_current_teacher, get_current_user, hash_password, verify_password, require_admin
+from ..password_gen import generate_password
 from ..seed import GRADES as _KNOWN_GRADES
 
 router = APIRouter(prefix="/api/teachers", tags=["teachers"])
@@ -67,6 +70,50 @@ def _teacher_out(t: Teacher, ws: dict[tuple[str, int], int] | None = None) -> Te
         assignments=[_assignment_out(a) for a in t.assignments],
         korrektur=t.korrektur, notiz=t.notiz, av_stunden=t.av_stunden, total_ws=total_ws,
     )
+
+
+# ---------------------------------------------------------------------------
+# Credential generation (username + password), mirroring api/routers/students.py
+# ---------------------------------------------------------------------------
+
+_UMLAUT = str.maketrans({"ä": "a", "ö": "o", "ü": "u", "Ä": "a", "Ö": "o", "Ü": "u", "ß": "ss"})
+
+
+def _normalize_name_part(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.lower().translate(_UMLAUT))
+
+
+def _make_username(first_name: str, last_name: str, existing: set[str]) -> str:
+    initial = _normalize_name_part(first_name)[:1] or "x"
+    last = _normalize_name_part(last_name) or "lehrer"
+    base = f"{initial}.{last}"
+    for _ in range(200):
+        username = f"{base}{random.randint(10, 99)}"
+        if username not in existing:
+            return username
+    raise RuntimeError(f"Cannot generate unique username for {first_name} {last_name}")
+
+
+def _mint_teacher_credentials(t: Teacher, existing: set[str]) -> str | None:
+    """Give the teacher a username and password if missing. Returns the plaintext
+    password when known (freshly generated, or re-derivable from the stored seed),
+    else None. Never overwrites a manually-set password (seed is None)."""
+    needs_pw = not t.password_hash or (
+        t.password_seed is not None
+        and not verify_password(generate_password(t.password_seed), t.password_hash)
+    )
+    if not t.username:
+        t.username = _make_username(t.first_name, t.last_name, existing)
+        existing.add(t.username)
+    if needs_pw:
+        seed = random.randint(1, 999_999)
+        plain = generate_password(seed)
+        t.password_seed = seed
+        t.password_hash = hash_password(plain)
+        return plain
+    if t.password_seed is not None:
+        return generate_password(t.password_seed)
+    return None
 
 
 @router.get("", response_model=list[TeacherOut])
@@ -165,6 +212,88 @@ def set_password(
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
     teacher.password_hash = hash_password(password)
     db.commit()
+
+
+@router.post("/generate-credentials", response_model=list[TeacherCredentialRow])
+def generate_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+    """Mint a username + password for every active teacher that lacks one.
+    Existing credentials are kept; only teachers without a password get a new one."""
+    teachers = db.query(Teacher).filter(Teacher.active == True).order_by(
+        Teacher.last_name, Teacher.first_name
+    ).all()
+    existing = {t.username for t in teachers if t.username}
+    result: list[TeacherCredentialRow] = []
+    for t in teachers:
+        plain = _mint_teacher_credentials(t, existing)  # sets t.username in place
+        result.append(TeacherCredentialRow(
+            id=t.id, last_name=t.last_name, first_name=t.first_name,
+            role=t.role, username=t.username, password=plain,
+        ))
+    db.commit()
+    return result
+
+
+@router.get("/credentials/download")
+def download_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+    teachers = db.query(Teacher).filter(
+        Teacher.active == True, Teacher.username.isnot(None)
+    ).order_by(Teacher.last_name, Teacher.first_name).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Nachname", "Vorname", "Rolle", "Benutzername", "Passwort"])
+    for t in teachers:
+        pw = generate_password(t.password_seed) if t.password_seed else ""
+        writer.writerow([t.last_name, t.first_name, t.role, t.username or "", pw])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue().encode("utf-8-sig")]),  # utf-8-sig for Excel
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="lehrer-zugangsdaten.csv"'},
+    )
+
+
+class TeacherCreate(BaseModel):
+    first_name: str
+    last_name: str
+    role: str = "teacher"           # auth level: "teacher" | "admin"
+    email: str | None = None
+    teacher_role: str | None = None  # profession name (Lehrer/SPF/…), optional
+
+
+@router.post("", response_model=TeacherCredentialRow, status_code=201)
+def create_teacher(body: TeacherCreate, db: Session = Depends(get_db), _: object = Depends(require_admin)):
+    """Manually create a single teacher/admin account and mint its credentials."""
+    first = body.first_name.strip()
+    last = body.last_name.strip()
+    if not first or not last:
+        raise HTTPException(422, "Vor- und Nachname erforderlich")
+    if body.role not in ("teacher", "admin"):
+        raise HTTPException(422, "Rolle muss 'teacher' oder 'admin' sein")
+
+    role_id = None
+    if body.teacher_role:
+        roles = {r.name.lower(): r for r in db.query(TeacherRole).all()}
+        tr = roles.get(body.teacher_role.strip().lower())
+        if not tr:
+            raise HTTPException(422, f"Rolle '{body.teacher_role}' unbekannt")
+        role_id = tr.id
+
+    teacher = Teacher(
+        first_name=first, last_name=last, role=body.role, active=True,
+        email=(body.email or "").strip() or None, teacher_role_id=role_id,
+    )
+    db.add(teacher)
+    db.flush()
+    existing = {u for (u,) in db.query(Teacher.username).filter(Teacher.username.isnot(None)).all()}
+    plain = _mint_teacher_credentials(teacher, existing)
+    db.commit()
+    db.refresh(teacher)
+    return TeacherCredentialRow(
+        id=teacher.id, last_name=teacher.last_name, first_name=teacher.first_name,
+        role=teacher.role, username=teacher.username, password=plain,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -1,15 +1,18 @@
 import Link from "next/link";
+import HelpButton from "@/components/HelpButton";
 
 const CARDS = [
   {
-    href: "/games/wettkampf",
+    slug: "wettkampf",
+    href: "/tools/wettkampf",
     icon: "🏆",
     title: "Wettkämpfe",
     description: "Turniere erstellen, Spielpläne verwalten und Ergebnisse eintragen.",
     color: "#e8821a",
   },
   {
-    href: "/games/sportfest",
+    slug: "sportfest",
+    href: "/tools/sportfest",
     icon: "🏃",
     title: "Sportfest",
     description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",
@@ -32,10 +35,11 @@ export default function SportUndSpielePage() {
           <Link
             key={card.href}
             href={card.href}
-            className="group flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
+            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
               bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-all
               hover:border-[var(--accent)] hover:shadow-lg"
           >
+            <HelpButton slug={card.slug} className="absolute top-3 right-3" />
             <div className="flex items-center gap-3">
               <span style={{
                 fontSize: 40, lineHeight: 1,

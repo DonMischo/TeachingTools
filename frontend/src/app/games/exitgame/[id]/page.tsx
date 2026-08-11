@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, ExitGameDetailOut, ExitGameSessionOut } from "@/lib/api";
 import { ClassSelect } from "@/components/ClassSelect";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ExitgameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,9 @@ export default function ExitgameDetailPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { auth } = useAuth();
+  // Students may author Exitgames but not host live sessions.
+  const isTeacher = auth?.user_type === "teacher";
   const [classId, setClassId] = useState<number | "">("");
 
   const { data: game } = useQuery<ExitGameDetailOut>({
@@ -20,6 +24,7 @@ export default function ExitgameDetailPage() {
   });
   const { data: sessions = [] } = useQuery<ExitGameSessionOut[]>({
     queryKey: ["exitgame-sessions", gameId], queryFn: () => api.exitgame.sessions.list(gameId),
+    enabled: isTeacher,
   });
 
   const createSessionMut = useMutation({
@@ -54,6 +59,13 @@ export default function ExitgameDetailPage() {
         </div>
       </div>
 
+      {!isTeacher && (
+        <p className="text-sm text-[var(--text-muted)]">
+          Live-Sessions dieses Exitgames werden von Lehrkräften gestartet.
+        </p>
+      )}
+
+      {isTeacher && (
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
         <h2 className="font-semibold text-sm">▶ Neue Session starten</h2>
         <div className="flex gap-2">
@@ -64,7 +76,9 @@ export default function ExitgameDetailPage() {
           </button>
         </div>
       </section>
+      )}
 
+      {isTeacher && (
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Sessions</h2>
         {sessions.length === 0 ? (
@@ -90,6 +104,7 @@ export default function ExitgameDetailPage() {
           </ul>
         )}
       </section>
+      )}
     </div>
   );
 }

@@ -63,7 +63,7 @@ export default function LueckentextHostPage() {
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
-          <Link href="/tools/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>
+          <Link href="/games/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">📝 Lückentext-Sitzung</h1>
           <div className="text-xs text-[var(--text-muted)] mt-1 flex gap-3">
             <span className="font-mono tracking-widest">{code}</span>

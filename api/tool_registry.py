@@ -239,8 +239,8 @@ def _zeitstrahl_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse
         raise HTTPException(404, "Zeitstrahl nicht gefunden")
     # Static tool: no session/code — students get the same (read-only) viewer.
     return LaunchResult(
-        host_url=f"/tools/zeitstrahl/{s.id}",
-        join_url=f"/tools/zeitstrahl/{s.id}",
+        host_url=f"/games/zeitstrahl/{s.id}",
+        join_url=f"/games/zeitstrahl/{s.id}",
         code=None,
     )
 

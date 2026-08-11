@@ -21,6 +21,8 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import TimelineSet, Teacher
 from ..auth import get_current_teacher, get_current_user
+from ..availability import require_capability
+from ..authorship import author_fields, scope_to_student_pool, can_modify
 from ..timeline_engine import validate_set_payload
 
 router = APIRouter(prefix="/api/timelines", tags=["timelines"])
@@ -37,7 +39,8 @@ class TimelineSetOut(BaseModel):
     axis: dict
     lane_count: int
     event_count: int
-    created_by: int
+    created_by: int | None
+    created_by_student: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -52,7 +55,8 @@ def _to_out(s: TimelineSet) -> TimelineSetOut:
     return TimelineSetOut(
         id=s.id, title=s.title, description=s.description, tags=s.tags,
         grades=s.grades, axis=s.axis, lane_count=len(s.lanes),
-        event_count=len(s.events), created_by=s.created_by, created_at=s.created_at,
+        event_count=len(s.events), created_by=s.created_by,
+        created_by_student=s.created_by_student, created_at=s.created_at,
     )
 
 
@@ -60,7 +64,7 @@ def _to_detail(s: TimelineSet) -> TimelineSetDetail:
     return TimelineSetDetail(**_to_out(s).model_dump(), lanes=s.lanes, events=s.events)
 
 
-def _build_set(data: dict, teacher_id: int) -> TimelineSet:
+def _build_set(data: dict, current) -> TimelineSet:
     errors = validate_set_payload(data)
     if errors:
         raise HTTPException(422, {"message": "Ungültiges Zeitstrahl-Format", "errors": errors})
@@ -72,7 +76,7 @@ def _build_set(data: dict, teacher_id: int) -> TimelineSet:
         axis=data["axis"],
         lanes=data.get("lanes") or [],
         events=data.get("events") or [],
-        created_by=teacher_id,
+        **author_fields(current),
     )
 
 
@@ -81,31 +85,32 @@ def _build_set(data: dict, teacher_id: int) -> TimelineSet:
 # ---------------------------------------------------------------------------
 
 @router.get("", response_model=list[TimelineSetOut])
-def list_sets(db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
-    sets = db.query(TimelineSet).order_by(TimelineSet.created_at.desc()).all()
+def list_sets(db: Session = Depends(get_db), current=Depends(get_current_user)):
+    q = scope_to_student_pool(db.query(TimelineSet), TimelineSet, current)
+    sets = q.order_by(TimelineSet.created_at.desc()).all()
     return [_to_out(s) for s in sets]
 
 
-@router.post("", response_model=TimelineSetDetail, status_code=201)
-def create_set(data: dict, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
-    s = _build_set(data, current.id)
+@router.post("", response_model=TimelineSetDetail, status_code=201, dependencies=[Depends(require_capability("zeitstrahl", "create"))])
+def create_set(data: dict, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    s = _build_set(data, current)
     db.add(s)
     db.commit()
     db.refresh(s)
     return _to_detail(s)
 
 
-@router.post("/upload", response_model=TimelineSetDetail, status_code=201)
+@router.post("/upload", response_model=TimelineSetDetail, status_code=201, dependencies=[Depends(require_capability("zeitstrahl", "upload"))])
 def upload_set(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     try:
         raw = json.loads(file.file.read())
     except json.JSONDecodeError as e:
         raise HTTPException(400, f"Ungültiges JSON: {e}")
-    s = _build_set(raw, current.id)
+    s = _build_set(raw, current)
     db.add(s)
     db.commit()
     db.refresh(s)
@@ -201,7 +206,7 @@ def import_examples(db: Session = Depends(get_db), current: Teacher = Depends(ge
             continue
         if raw.get("title") in existing_titles:
             continue
-        s = _build_set(raw, current.id)
+        s = _build_set(raw, current)
         db.add(s)
         created.append(s)
     db.commit()
@@ -225,11 +230,11 @@ def get_set(set_id: int, db: Session = Depends(get_db), _=Depends(get_current_us
 
 
 @router.put("/{set_id}", response_model=TimelineSetDetail)
-def update_set(set_id: int, data: dict, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+def update_set(set_id: int, data: dict, db: Session = Depends(get_db), current=Depends(get_current_user)):
     s = db.get(TimelineSet, set_id)
     if not s:
         raise HTTPException(404, "Zeitstrahl nicht gefunden")
-    if s.created_by != current.id and current.role != "admin":
+    if not can_modify(s, current):
         raise HTTPException(403)
     errors = validate_set_payload(data)
     if errors:
@@ -247,11 +252,11 @@ def update_set(set_id: int, data: dict, db: Session = Depends(get_db), current: 
 
 
 @router.delete("/{set_id}", status_code=204)
-def delete_set(set_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+def delete_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     s = db.get(TimelineSet, set_id)
     if not s:
         raise HTTPException(404, "Zeitstrahl nicht gefunden")
-    if s.created_by != current.id and current.role != "admin":
+    if not can_modify(s, current):
         raise HTTPException(403)
     db.delete(s)
     db.commit()

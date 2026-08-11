@@ -1,6 +1,6 @@
 """
 Deterministic password generator.
-Given an integer seed (e.g. a student's pokedex_number), always produces
+Given an integer seed (e.g. a user's password_seed), always produces
 the same password — making it reproducible for teacher lookups and CSV exports.
 
 Format: {Adjective}{Noun}{3-digit-number}
@@ -23,7 +23,7 @@ _NOUNS = [
 ]
 
 
-def pokemon_password(seed: int) -> str:
+def generate_password(seed: int) -> str:
     """Deterministic password from an integer seed."""
     rng = random.Random(seed)
     adj  = rng.choice(_ADJECTIVES)
@@ -34,4 +34,4 @@ def pokemon_password(seed: int) -> str:
 
 # Kept for backwards compatibility with any code that referenced the list;
 # the list itself is no longer stored in the repository.
-POKEMON_DE: list[str] = []
+WORDLIST_DE: list[str] = []

@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..availability import require_capability
 from ..database import get_db
 from ..models import AuctionBid, AuctionSession, AuctionSet, Haus, HausMember, Student, StudentRole, Teacher, Transaction
 from .haeuser import haus_total_points
@@ -130,7 +131,7 @@ def list_auctions(set_id: int | None = None, db: Session = Depends(get_db), curr
     return q.order_by(AuctionSession.created_at.desc()).all()
 
 
-@router.post("", response_model=AuctionOut, status_code=201)
+@router.post("", response_model=AuctionOut, status_code=201, dependencies=[Depends(require_capability("auktion", "host"))])
 def create_auction(body: AuctionCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
     """Creates a reusable AuctionSet from the given content, then immediately
     starts a session from it — same request/response shape as before the
@@ -169,7 +170,7 @@ def create_session_from_set(db: Session, set_id: int, created_by: int) -> Auctio
     return session
 
 
-@router.post("/sets/{set_id}/sessions", response_model=AuctionOut, status_code=201)
+@router.post("/sets/{set_id}/sessions", response_model=AuctionOut, status_code=201, dependencies=[Depends(require_capability("auktion", "host"))])
 def start_session_from_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if current.role not in ("teacher", "admin"):
         raise HTTPException(403)

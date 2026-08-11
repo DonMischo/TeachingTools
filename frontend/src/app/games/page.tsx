@@ -1,7 +1,11 @@
+"use client";
 import Link from "next/link";
+import { useAvailability } from "@/hooks/useAvailability";
+import HelpButton from "@/components/HelpButton";
 
-const CARDS = [
+const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
+    slug: "caputh",
     href: "/games/caputh",
     icon: "🎲",
     title: "Caputh",
@@ -9,6 +13,7 @@ const CARDS = [
     color: "#a78bfa",
   },
   {
+    slug: "bingo",
     href: "/games/bingo",
     icon: "🎰",
     title: "Bingo",
@@ -16,20 +21,7 @@ const CARDS = [
     color: "#f59e0b",
   },
   {
-    href: "/games/wettkampf",
-    icon: "🏆",
-    title: "Wettkämpfe",
-    description: "Turniere erstellen, Spielpläne verwalten und Ergebnisse eintragen.",
-    color: "#e8821a",
-  },
-  {
-    href: "/games/sportfest",
-    icon: "🏃",
-    title: "Sportfest",
-    description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",
-    color: "#1878a8",
-  },
-  {
+    slug: "exitgame",
     href: "/games/exitgame",
     icon: "🗝️",
     title: "Exitgame",
@@ -37,6 +29,23 @@ const CARDS = [
     color: "#16a34a",
   },
   {
+    slug: "lueckentext",
+    href: "/games/lueckentexte",
+    icon: "🧩",
+    title: "Lückentext",
+    description: "Lückentexte mit Wortbank, Freitext und Multiple Choice — Schüler treten via Code bei, live Rangliste.",
+    color: "#c084fc",
+  },
+  {
+    slug: "zeitstrahl",
+    href: "/games/zeitstrahl",
+    icon: "📏",
+    title: "Zeitstrahl",
+    description: "Zeitleisten mit parallelen Spuren und Zahlenstrahlen — anzeigen, einsortieren, Fehler finden.",
+    color: "#f472b6",
+  },
+  {
+    slug: "abacus",
     href: "/games/abacus",
     icon: "🧮",
     title: "Abakus",
@@ -44,22 +53,18 @@ const CARDS = [
     color: "#ef4444",
   },
   {
+    slug: "uebung",
     href: "/uebung",
     icon: "📚",
     title: "Übung",
     description: "Aufgaben zum Trainieren — Schwierigkeit passt sich automatisch dem Können an, Fortschritt wird gezählt.",
     color: "#0ea5e9",
   },
-  {
-    href: "/tools/lueckentexte",
-    icon: "🧩",
-    title: "Lückentext",
-    description: "Lückentexte mit Wortbank, Freitext und Multiple Choice — Schüler treten via Code bei, live Rangliste.",
-    color: "#c084fc",
-  },
 ];
 
 export default function GamesPage() {
+  const { can, ready } = useAvailability();
+  const CARDS = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
   return (
     <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
       <div>
@@ -74,10 +79,11 @@ export default function GamesPage() {
           <Link
             key={card.href}
             href={card.href}
-            className="group flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
+            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
               bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-all
               hover:border-[var(--accent)] hover:shadow-lg"
           >
+            <HelpButton slug={card.slug} className="absolute top-3 right-3" />
             <div className="flex items-center gap-3">
               <span style={{
                 fontSize: 40, lineHeight: 1,

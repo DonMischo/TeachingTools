@@ -29,7 +29,13 @@ class Teacher(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Generated login username (e.g. "m.mueller42"). Null for teachers created
+    # before credential generation — they log in by "Vorname Nachname" instead.
+    username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Seed for generate_password(): lets us re-display a generated plaintext later
+    # (CSV export). Null when the password was set manually, not generated.
+    password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     role: Mapped[str] = mapped_column(String(20), default="teacher")
     # Import-only metadata (school's own staff number, contact email)
     nummer: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -106,6 +112,12 @@ class Quiz(Base):
     tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     # target grade levels: e.g. [5,6,7] (null/empty = all grades)
     grades: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Student author (shared student pool). NULL = teacher-authored content,
+    # which students never see; non-NULL = created by a student and visible to
+    # all students. Quizzes have no teacher `created_by` (all teachers share them).
+    created_by_student: Mapped[int | None] = mapped_column(
+        ForeignKey("students.id", ondelete="SET NULL"), nullable=True
+    )
 
     questions: Mapped[list["QuizQuestion"]] = relationship(
         back_populates="quiz", order_by="QuizQuestion.order", cascade="all, delete-orphan"
@@ -351,7 +363,7 @@ class Student(Base):
     geburtsdatum: Mapped[date | None] = mapped_column(Date, nullable=True)
     username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
-    pokedex_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
     extra_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
 
@@ -715,10 +727,15 @@ class BingoSet(Base):
     grades: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     # [{caller: str, answer: str}, ...]
     pairs: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
-    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    # Author: exactly one of created_by (teacher) / created_by_student is set.
+    # Student-authored sets (created_by_student non-NULL) form the shared
+    # student pool; teacher sets are hidden from students.
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     creator: Mapped["Teacher"] = relationship()
+    student_creator: Mapped["Student"] = relationship()
     sessions: Mapped[list["BingoSession"]] = relationship(back_populates="set")
 
 
@@ -1078,10 +1095,13 @@ class ExitGame(Base):
     tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     asset_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     data: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    # Author: exactly one of created_by (teacher) / created_by_student is set.
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     creator: Mapped["Teacher"] = relationship()
+    student_creator: Mapped["Student"] = relationship()
     sessions: Mapped[list["ExitGameSession"]] = relationship(back_populates="exitgame")
 
 
@@ -1237,8 +1257,12 @@ class TimelineSet(Base):
     lanes: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     # [{id, label, value, end?, lane?, info?, color?}, ...]
     events: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
-    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    # Author: exactly one of created_by (teacher) / created_by_student is set.
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    student_creator: Mapped["Student"] = relationship()
 
 
 class LueckentextSet(Base):
@@ -1255,10 +1279,13 @@ class LueckentextSet(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)  # cloze template with {{gap_id}} placeholders
     gaps: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")  # list of gap dicts
     distractors: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")  # extra word-bank words, never a correct answer
-    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
+    # Author: exactly one of created_by (teacher) / created_by_student is set.
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     creator: Mapped["Teacher"] = relationship()
+    student_creator: Mapped["Student"] = relationship()
 
 
 class LueckentextSession(Base):
@@ -1376,3 +1403,35 @@ class SeatingPlan(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     class_: Mapped["Class"] = relationship()
+
+
+# ---------------------------------------------------------------------------
+# Tool availability (which audience may use/host/create/upload per tool)
+# ---------------------------------------------------------------------------
+
+class ToolAvailability(Base):
+    """One allow/deny override for a (tool, capability, audience[, class]) tuple.
+
+    A row's absence means "fall back": to the global (class_id NULL) row if this
+    is a per-class row, and ultimately to the catalog default in
+    api/tool_catalog.py. `class_id` NULL = global default set by an admin;
+    non-NULL = a per-class override a class teacher (or admin) set for that class.
+    `audience` is "teacher" or "student"; Klassensprecher count as students here.
+    See api/availability.py for the resolution order."""
+    __tablename__ = "tool_availability"
+    __table_args__ = (
+        UniqueConstraint("tool_slug", "capability", "audience", "class_id",
+                         name="uq_tool_availability_scope"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tool_slug: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    capability: Mapped[str] = mapped_column(String(20), nullable=False)  # use | host | create | upload
+    audience: Mapped[str] = mapped_column(String(20), nullable=False)    # teacher | student
+    # NULL = global default; else scoped to this class.
+    class_id: Mapped[int | None] = mapped_column(
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    allowed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

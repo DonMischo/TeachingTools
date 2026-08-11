@@ -5,22 +5,22 @@ from fastapi.testclient import TestClient
 
 from api.models import Student, Class, SportfestDiscipline
 from api.auth import hash_password
-from api.password_gen import pokemon_password
+from api.password_gen import generate_password
 
 # ---------------------------------------------------------------------------
 # Password algorithm
 # ---------------------------------------------------------------------------
 
 def test_password_format():
-    pw = pokemon_password(4)
+    pw = generate_password(4)
     assert isinstance(pw, str)
     assert len(pw) >= 8
 
 
 def test_password_deterministic():
-    assert pokemon_password(25) == pokemon_password(25)
-    assert pokemon_password(1) == pokemon_password(1)
-    assert pokemon_password(1) != pokemon_password(2)
+    assert generate_password(25) == generate_password(25)
+    assert generate_password(1) == generate_password(1)
+    assert generate_password(1) != generate_password(2)
 
 
 # ---------------------------------------------------------------------------
@@ -192,12 +192,12 @@ def test_generate_credentials_heals_drifted_password(client, admin_token, db):
     (credentials from an older generator implementation), the endpoint must
     re-issue the password — otherwise it displays a password that can't log in."""
     from api.auth import hash_password, verify_password
-    from api.password_gen import pokemon_password
+    from api.password_gen import generate_password
 
     s = _seed_student(db, "Alt", "Anna", "6a", "weiblich")
     s.username = "a.alt"
-    s.pokedex_number = 4711
-    s.password_hash = hash_password("VeraltetesPasswort99")  # ≠ pokemon_password(4711)
+    s.password_seed = 4711
+    s.password_hash = hash_password("VeraltetesPasswort99")  # ≠ generate_password(4711)
     db.flush()
 
     r = client.post("/api/students/generate-credentials",
@@ -207,7 +207,7 @@ def test_generate_credentials_heals_drifted_password(client, admin_token, db):
     # The displayed password must actually verify against the stored hash now.
     db.refresh(s)
     assert verify_password(row["password"], s.password_hash)
-    assert row["password"] == pokemon_password(s.pokedex_number)
+    assert row["password"] == generate_password(s.password_seed)
 
 
 def test_generate_credentials_idempotent(client, admin_token, db):

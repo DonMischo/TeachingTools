@@ -123,9 +123,10 @@ export default function CaputhsPage() {
 
   const hasFilters = typeFilter || gradeFilter != null || activeTags.size > 0;
 
-  if (auth?.role !== "teacher" && auth?.role !== "admin") {
-    return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
+  if (!auth) {
+    return <div className="p-8 text-[var(--text-muted)]">Bitte einloggen.</div>;
   }
+  const isTeacher = auth.role === "teacher" || auth.role === "admin";
 
   return (
     <div className="p-6 max-w-3xl mx-auto w-full">
@@ -135,7 +136,7 @@ export default function CaputhsPage() {
           <h1 className="text-2xl font-bold mt-1">Caputh-Bibliothek</h1>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          {auth && (
+          {isTeacher && (
             <Link href="/games/caputh/gruppenauswertung"
               className="px-3 py-1.5 text-sm border border-[var(--accent)] text-[var(--accent)] rounded-lg hover:bg-[var(--accent)]/10 transition-colors">
               📊 Gruppenauswertung
@@ -234,7 +235,7 @@ export default function CaputhsPage() {
       ) : (
         <ul className="space-y-3">
           {filtered.map((q) => (
-            <QuizCard key={q.id} quiz={q} canDelete={!!auth} classes={classes}
+            <QuizCard key={q.id} quiz={q} canDelete={isTeacher} classes={classes}
               onDelete={() => deleteMutation.mutate(q.id)}
               activeTagFilter={activeTags} onTagClick={toggleTag} />
           ))}
@@ -399,10 +400,12 @@ function QuizCard({
               Sessions {sessionsOpen ? "▴" : "▾"}
             </button>
           )}
-          <Link href={`/games/caputh/${quiz.id}`}
-            className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 transition-opacity">
-            Starten
-          </Link>
+          {canDelete && (
+            <Link href={`/games/caputh/${quiz.id}`}
+              className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 transition-opacity">
+              Starten
+            </Link>
+          )}
           {canDelete && (
             <button onClick={onDelete}
               className="px-3 py-1.5 text-sm border border-red-400/30 text-red-400 rounded-lg hover:bg-red-400/10 transition-colors">
