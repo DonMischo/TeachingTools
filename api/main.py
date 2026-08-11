@@ -128,10 +128,22 @@ def _run_migrations(db_engine):
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS username VARCHAR(100)",
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS password_seed INTEGER",
         # Rename the student password-seed column (formerly pokedex_number) to
-        # match Teacher.password_seed. RENAME COLUMN has no IF EXISTS — the loop's
-        # try/except swallows the error on a fresh DB (create_all already made
-        # password_seed) and on re-runs (already renamed).
-        "ALTER TABLE students RENAME COLUMN pokedex_number TO password_seed",
+        # match Teacher.password_seed. Wrapped in a conditional DO block so it is
+        # idempotent — a plain RENAME has no IF EXISTS and would raise on a fresh
+        # DB (create_all already made password_seed) or on every restart after
+        # the first rename, which previously aborted the whole migration batch.
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (SELECT 1 FROM information_schema.columns
+                     WHERE table_name = 'students' AND column_name = 'pokedex_number')
+             AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                             WHERE table_name = 'students' AND column_name = 'password_seed')
+          THEN
+            ALTER TABLE students RENAME COLUMN pokedex_number TO password_seed;
+          END IF;
+        END $$;
+        """,
         "ALTER TABLE quiz_questions ADD COLUMN IF NOT EXISTS content JSON",
         "ALTER TABLE practice_tasks ADD COLUMN IF NOT EXISTS board JSON",
         # Student authorship (shared student pool) on reusable content tables.
@@ -156,14 +168,14 @@ def _run_migrations(db_engine):
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
     ]
+    # Each statement runs in its OWN transaction (commit on success, rollback on
+    # failure). These migrations are best-effort and idempotent: any one may fail
+    # because it was already applied or doesn't apply to this DB's history. On
+    # Postgres a failed statement aborts the current transaction and every later
+    # statement in it errors with "current transaction is aborted …", so a shared
+    # transaction would let one failure silently skip all migrations after it.
     with db_engine.connect() as conn:
-        for sql in migrations:
-            try:
-                conn.execute(text(sql))
-            except Exception as e:
-                logging.getLogger(__name__).warning("Migration skipped: %s — %s", sql, e)
-        conn.commit()
-        for sql in constraints:
+        for sql in migrations + constraints:
             try:
                 conn.execute(text(sql))
                 conn.commit()
