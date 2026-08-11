@@ -11,9 +11,10 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -42,18 +43,24 @@ def _strip(s: str) -> str:
 # Pydantic schemas
 # ---------------------------------------------------------------------------
 
+MAX_URL_LEN = 2000
+
+
 class ToolLinkIn(BaseModel):
     model_config = {"extra": "forbid"}
 
     type: str
     ref_id: str | None = None
+    url: str | None = None
     label: str = Field(default="", max_length=200)
 
     @field_validator("type")
     @classmethod
     def valid_type(cls, v: str) -> str:
-        if v not in REGISTRY:
-            raise ValueError(f"type must be one of {sorted(REGISTRY)}")
+        # "link" is a special client-side tool: an arbitrary external URL that
+        # is opened directly, with no registry content or session behind it.
+        if v != "link" and v not in REGISTRY:
+            raise ValueError(f"type must be 'link' or one of {sorted(REGISTRY)}")
         return v
 
     @field_validator("ref_id", mode="before")
@@ -65,6 +72,24 @@ class ToolLinkIn(BaseModel):
         if not re.match(r"^[A-Za-z0-9_-]+$", v):
             raise ValueError("ref_id contains invalid characters")
         return v
+
+    @model_validator(mode="after")
+    def check_url(self):
+        if self.type == "link":
+            u = (self.url or "").strip()
+            if not u:
+                raise ValueError("url ist für einen Link erforderlich")
+            if len(u) > MAX_URL_LEN:
+                raise ValueError(f"url zu lang (max {MAX_URL_LEN} Zeichen)")
+            parsed = urlparse(u)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise ValueError("url muss mit http:// oder https:// beginnen")
+            self.url = u
+            self.ref_id = None
+        else:
+            # url only applies to the "link" tool; drop it for real tools.
+            self.url = None
+        return self
 
 
 class PhaseIn(BaseModel):
@@ -276,6 +301,11 @@ async def import_plan(
     except Exception:
         raise HTTPException(400, "Ungültiges JSON")
 
+    # Drop metadata keys (e.g. "_ai_instructions" from the downloaded template)
+    # so a template filled in by an AI round-trips without tripping extra=forbid.
+    if isinstance(parsed, dict):
+        parsed = {k: v for k, v in parsed.items() if not str(k).startswith("_")}
+
     try:
         data = ImportIn.model_validate(parsed)
     except Exception as e:
@@ -293,6 +323,90 @@ async def import_plan(
     db.commit()
     db.refresh(plan)
     return _serialize(plan, teacher.id)
+
+
+@router.get("/template")
+def download_template(_: Teacher = Depends(get_current_teacher)):
+    """Downloadable JSON template with AI instructions and a full example
+    covering every importable field. Mirrors the Caputh-Vorlage pattern:
+    a teacher hands `_ai_instructions` + the example to an AI, gets a filled
+    plan back, and imports it via POST /import (the `_`-keys are ignored)."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse({
+        "_ai_instructions": (
+            "Erstelle eine Stundenplanung im vorgegebenen JSON-Format. Gib NUR gültiges JSON "
+            "zurück, keinen erklärenden Text davor oder danach. Alle mit '_' beginnenden Felder "
+            "(wie dieses) werden beim Import ignoriert und dürfen entfernt oder belassen werden. "
+            "--- PFLICHTFELD --- "
+            "title (string, 1–200 Zeichen). "
+            "--- KOPFDATEN (optional) --- "
+            "fach (string, z.B. 'Biologie'), klasse (string, z.B. '7b'), "
+            "datum (Format 'JJJJ-MM-TT', Jahr 2015–2040), "
+            "dauer_min (ganze Zahl 1–300, Gesamtdauer der Stunde, Standard 45). "
+            "--- LERNZIELE --- "
+            "lernziele: Liste von Strings (max. 10), formuliert als 'SuS können …'. "
+            "--- PHASEN (Verlaufsplanung) --- "
+            "phasen: Liste (max. 15) mit je: name (string, z.B. 'Einstieg', 'Erarbeitung', "
+            "'Sicherung', 'Abschluss'), dauer_min (ganze Zahl 1–300), "
+            "inhalt (string, max. 2000, was in der Phase passiert), "
+            "sozialform (genau einer von: 'Plenum', 'EA' = Einzelarbeit, 'PA' = Partnerarbeit, "
+            "'GA' = Gruppenarbeit, 'Gruppen'), "
+            "methode (string, z.B. 'Bildbetrachtung'), material (string, z.B. 'Beamer, AB'). "
+            "Die Summe der phasen.dauer_min sollte ungefähr dauer_min ergeben. "
+            "--- ABSCHLUSS --- "
+            "hausaufgaben (string, max. 1000), notizen (string, max. 2000, interne Hinweise, "
+            "Differenzierung). "
+            "--- WICHTIG --- "
+            "Kein HTML verwenden (Tags werden entfernt). Tool-Verknüpfungen und Links werden "
+            "beim Import NICHT übernommen — sie werden anschließend im Editor gesetzt; lasse "
+            "daher in den Phasen kein 'tool_link'-Feld setzen."
+        ),
+        "title": "Beispielstunde: Einführung Fotosynthese",
+        "fach": "Biologie",
+        "klasse": "7b",
+        "datum": "2026-09-15",
+        "dauer_min": 45,
+        "lernziele": [
+            "SuS können die Grundgleichung der Fotosynthese benennen.",
+            "SuS können die Rolle des Lichts für die Pflanze erklären.",
+        ],
+        "phasen": [
+            {
+                "name": "Einstieg",
+                "dauer_min": 5,
+                "inhalt": "Bildimpuls: Zimmerpflanze im Dunkeln vs. am Fenster. Vermutungen sammeln.",
+                "sozialform": "Plenum",
+                "methode": "Bildbetrachtung / Unterrichtsgespräch",
+                "material": "Beamer, Foliensatz",
+            },
+            {
+                "name": "Erarbeitung",
+                "dauer_min": 25,
+                "inhalt": "Text- und Grafikarbeit zur Fotosynthese-Gleichung, Ausfüllen des Arbeitsblatts.",
+                "sozialform": "EA",
+                "methode": "Textarbeit",
+                "material": "Arbeitsblatt, Lehrbuch S. 42",
+            },
+            {
+                "name": "Sicherung",
+                "dauer_min": 10,
+                "inhalt": "Ergebnisse vergleichen, Tafelbild gemeinsam vervollständigen.",
+                "sozialform": "PA",
+                "methode": "Think-Pair-Share",
+                "material": "Tafel",
+            },
+            {
+                "name": "Abschluss",
+                "dauer_min": 5,
+                "inhalt": "Kurze Zusammenfassung, offene Fragen klären, Hausaufgabe ansagen.",
+                "sozialform": "Plenum",
+                "methode": "Lehrervortrag",
+                "material": "",
+            },
+        ],
+        "hausaufgaben": "Lehrbuch S. 45, Aufgabe 3.",
+        "notizen": "Differenzierung: leistungsstarke SuS erhalten Zusatzaufgabe zur Zellatmung.",
+    })
 
 
 @router.get("/tool-refs")

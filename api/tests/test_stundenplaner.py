@@ -224,6 +224,47 @@ class TestCreate:
         r = client.post("/api/stundenplaner", json={**MINIMAL_PLAN, "phasen": [phase]}, headers=_auth(teacher_token))
         assert r.status_code == 422
 
+    def test_tool_link_url_valid(self, client, teacher_token):
+        phase = {
+            "name": "P", "dauer_min": 5, "inhalt": "", "sozialform": "Plenum",
+            "methode": "", "material": "",
+            "tool_link": {"type": "link", "url": "https://example.com/video", "label": "Erklärvideo"},
+        }
+        r = client.post("/api/stundenplaner", json={**MINIMAL_PLAN, "phasen": [phase]}, headers=_auth(teacher_token))
+        assert r.status_code == 201, r.text
+        tl = r.json()["phasen"][0]["tool_link"]
+        assert tl["type"] == "link"
+        assert tl["url"] == "https://example.com/video"
+        assert tl["ref_id"] is None
+
+    def test_tool_link_url_missing(self, client, teacher_token):
+        phase = {
+            "name": "P", "dauer_min": 5, "inhalt": "", "sozialform": "Plenum",
+            "methode": "", "material": "",
+            "tool_link": {"type": "link", "label": "Kein Link"},
+        }
+        r = client.post("/api/stundenplaner", json={**MINIMAL_PLAN, "phasen": [phase]}, headers=_auth(teacher_token))
+        assert r.status_code == 422
+
+    def test_tool_link_url_rejects_non_http_scheme(self, client, teacher_token):
+        phase = {
+            "name": "P", "dauer_min": 5, "inhalt": "", "sozialform": "Plenum",
+            "methode": "", "material": "",
+            "tool_link": {"type": "link", "url": "javascript:alert(1)", "label": ""},
+        }
+        r = client.post("/api/stundenplaner", json={**MINIMAL_PLAN, "phasen": [phase]}, headers=_auth(teacher_token))
+        assert r.status_code == 422
+
+    def test_tool_link_url_dropped_for_real_tool(self, client, teacher_token):
+        phase = {
+            "name": "P", "dauer_min": 5, "inhalt": "", "sozialform": "Plenum",
+            "methode": "", "material": "",
+            "tool_link": {"type": "bingo", "ref_id": "XY1234", "url": "https://evil.example", "label": ""},
+        }
+        r = client.post("/api/stundenplaner", json={**MINIMAL_PLAN, "phasen": [phase]}, headers=_auth(teacher_token))
+        assert r.status_code == 201, r.text
+        assert r.json()["phasen"][0]["tool_link"]["url"] is None
+
 
 class TestList:
     def test_empty(self, client, teacher_token):
@@ -380,6 +421,48 @@ class TestImport:
     def test_student_blocked(self, client, student_token):
         r = client.post("/api/stundenplaner/import", content=json.dumps(VALID_IMPORT),
                         headers={**_auth(student_token), "Content-Type": "application/json"})
+        assert r.status_code in (401, 403)
+
+    def test_underscore_metadata_ignored(self, client, teacher_token):
+        """The downloaded template ships an `_ai_instructions` key; importing a
+        filled-in template must round-trip without tripping extra=forbid."""
+        r = self._post(client, teacher_token, {**VALID_IMPORT, "_ai_instructions": "bla bla"})
+        assert r.status_code == 201, r.text
+        assert r.json()["title"] == "Import-Stunde"
+
+
+# ---------------------------------------------------------------------------
+# Template download
+# ---------------------------------------------------------------------------
+
+class TestTemplate:
+    def test_returns_instructions_and_example(self, client, teacher_token):
+        r = client.get("/api/stundenplaner/template", headers=_auth(teacher_token))
+        assert r.status_code == 200
+        data = r.json()
+        assert "_ai_instructions" in data
+        assert data["title"]
+        assert isinstance(data["phasen"], list) and len(data["phasen"]) > 0
+        for p in data["phasen"]:
+            assert p["sozialform"] in {"Plenum", "EA", "PA", "GA", "Gruppen"}
+
+    def test_template_round_trips_through_import(self, client, teacher_token):
+        """The example the template ships must itself be importable as-is."""
+        tmpl = client.get("/api/stundenplaner/template", headers=_auth(teacher_token)).json()
+        r = client.post(
+            "/api/stundenplaner/import",
+            content=json.dumps(tmpl),
+            headers={**_auth(teacher_token), "Content-Type": "application/json"},
+        )
+        assert r.status_code == 201, r.text
+        assert len(r.json()["phasen"]) == len(tmpl["phasen"])
+
+    def test_requires_auth(self, client):
+        r = client.get("/api/stundenplaner/template")
+        assert r.status_code == 401
+
+    def test_student_blocked(self, client, student_token):
+        r = client.get("/api/stundenplaner/template", headers=_auth(student_token))
         assert r.status_code in (401, 403)
 
 

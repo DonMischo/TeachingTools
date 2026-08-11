@@ -2,10 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, LessonPlanOut } from "@/lib/api";
+import { api, LessonPlanOut, Phase } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 
 const FAECHER = ["", "Deutsch", "Mathematik", "Englisch", "Biologie", "Chemie", "Physik", "Geschichte", "Geographie", "Informatik", "Musik", "Kunst", "Sport", "Ethik", "Religion"];
+
+// Standard-Verlauf für "Aus Vorlage erstellen" (Phasen-Ids werden serverseitig ergänzt).
+const TEMPLATE_PHASES: Phase[] = [
+  { name: "Einstieg", dauer_min: 5, inhalt: "", sozialform: "Plenum", methode: "", material: "", tool_link: null },
+  { name: "Erarbeitung", dauer_min: 25, inhalt: "", sozialform: "EA", methode: "", material: "", tool_link: null },
+  { name: "Sicherung", dauer_min: 10, inhalt: "", sozialform: "PA", methode: "", material: "", tool_link: null },
+  { name: "Abschluss", dauer_min: 5, inhalt: "", sozialform: "Plenum", methode: "", material: "", tool_link: null },
+];
 
 function PlanCard({ plan, onDelete }: { plan: LessonPlanOut; onDelete: () => void }) {
   const router = useRouter();
@@ -93,6 +101,21 @@ export default function StundenplanerListPage() {
     }
   }
 
+  async function handleCreateFromTemplate() {
+    setCreating(true);
+    try {
+      const plan = await api.stundenplaner.create({
+        title: "Neue Stunde (Vorlage)", fach: "", klasse: "",
+        dauer_min: 45, phasen: TEMPLATE_PHASES, lernziele: [],
+      });
+      router.push(`/stundenplaner/${plan.id}`);
+    } catch (e: any) {
+      toast(e.message ?? "Fehler", "error");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   async function handleDelete(plan: LessonPlanOut) {
     if (!confirm(`"${plan.title}" löschen?`)) return;
     try {
@@ -140,9 +163,17 @@ export default function StundenplanerListPage() {
           <h1 className="text-2xl font-black tracking-tight">📋 Stundenplaner</h1>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">Verlaufsplanungen erstellen und mit Kolleg·innen teilen.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <a href="/api/stundenplaner/template" download="stundenplaner_vorlage.json"
+            className="btn-secondary text-sm py-1.5 px-4 no-underline"
+            title="JSON-Vorlage mit KI-Anweisungen herunterladen — von einer KI ausfüllen lassen und importieren.">
+            📋 KI-Vorlage
+          </a>
           <button onClick={() => { setShowImport(v => !v); setShowCreate(false); }} className="btn-secondary text-sm py-1.5 px-4">
             ↑ Importieren
+          </button>
+          <button onClick={handleCreateFromTemplate} disabled={creating} className="btn-secondary text-sm py-1.5 px-4">
+            {creating ? "…" : "＋ Aus Vorlage"}
           </button>
           <button onClick={() => { setShowCreate(v => !v); setShowImport(false); }} className="btn-primary text-sm py-1.5 px-4">
             + Neue Planung
@@ -173,7 +204,8 @@ export default function StundenplanerListPage() {
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 mb-6 flex flex-col gap-3">
           <div className="font-semibold text-sm">Aus JSON importieren</div>
           <p className="text-xs text-[var(--text-muted)]">
-            JSON einfügen oder Datei hochladen. Tool-Links werden beim Import entfernt und können danach im Editor gesetzt werden.
+            JSON einfügen oder Datei hochladen. Tipp: Lade die <strong>KI-Vorlage</strong> herunter, lass sie von einer KI ausfüllen und importiere das Ergebnis hier.
+            Tool-Links werden beim Import entfernt und können danach im Editor gesetzt werden.
           </p>
           <div className="flex gap-2">
             <button onClick={() => fileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">📂 Datei wählen</button>

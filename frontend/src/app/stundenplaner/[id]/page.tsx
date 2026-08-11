@@ -20,6 +20,9 @@ const FAECHER = ["", "Deutsch", "Mathematik", "Englisch", "Biologie", "Chemie", 
 // Tool Picker Modal
 // ---------------------------------------------------------------------------
 
+const LINK_TYPE = "link";
+const LINK_LABEL = "🔗 Link / URL";
+
 function ToolPicker({ refs, onConfirm, onClose }: {
   refs: ToolRefs;
   onConfirm: (link: ToolLink) => void;
@@ -27,13 +30,16 @@ function ToolPicker({ refs, onConfirm, onClose }: {
 }) {
   const [type, setType] = useState<string>("");
   const [refId, setRefId] = useState<string | null>(null);
+  const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
 
   const tool = refs.find(t => t.type === type);
+  const isLink = type === LINK_TYPE;
 
   function handleTypeChange(t: string) {
     setType(t);
     setRefId(null);
+    setUrl("");
     setLabel("");
     const info = refs.find(x => x.type === t);
     if (info && !info.requires_ref) {
@@ -47,7 +53,17 @@ function ToolPicker({ refs, onConfirm, onClose }: {
     setLabel(item?.label ?? "");
   }
 
-  const canConfirm = tool && (!tool.requires_ref || refId);
+  const urlOk = /^https?:\/\/.+/i.test(url.trim());
+  const canConfirm = isLink ? urlOk : (tool && (!tool.requires_ref || refId));
+
+  function confirm() {
+    if (isLink) {
+      if (!urlOk) return;
+      onConfirm({ type: LINK_TYPE, ref_id: null, url: url.trim(), label: label.trim() || url.trim() });
+    } else if (tool && canConfirm) {
+      onConfirm({ type: tool.type as ToolLink["type"], ref_id: refId, label: label || tool.label });
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -57,7 +73,7 @@ function ToolPicker({ refs, onConfirm, onClose }: {
         <div>
           <label className="text-xs text-[var(--text-muted)] block mb-1">Tool-Typ</label>
           <div className="grid grid-cols-2 gap-2">
-            {refs.map(t => (
+            {[...refs, { type: LINK_TYPE, label: LINK_LABEL }].map(t => (
               <button key={t.type} onClick={() => handleTypeChange(t.type)}
                 className="text-left px-3 py-2 rounded-lg border text-sm transition-colors"
                 style={{
@@ -70,6 +86,16 @@ function ToolPicker({ refs, onConfirm, onClose }: {
             ))}
           </div>
         </div>
+
+        {isLink && (
+          <div>
+            <label className="text-xs text-[var(--text-muted)] block mb-1">URL</label>
+            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" className="input text-sm py-2 w-full" />
+            {url.trim() && !urlOk && (
+              <p className="text-xs text-red-400 mt-1">Bitte eine gültige http(s)-Adresse eingeben.</p>
+            )}
+          </div>
+        )}
 
         {tool && tool.requires_ref && (
           <div>
@@ -87,17 +113,17 @@ function ToolPicker({ refs, onConfirm, onClose }: {
           </div>
         )}
 
-        {tool && (
+        {(tool || isLink) && (
           <div>
             <label className="text-xs text-[var(--text-muted)] block mb-1">Anzeigetext (optional)</label>
-            <input value={label} onChange={e => setLabel(e.target.value)} placeholder={tool.label} className="input text-sm py-2 w-full" />
+            <input value={label} onChange={e => setLabel(e.target.value)} placeholder={isLink ? "z.B. Erklärvideo" : tool?.label} className="input text-sm py-2 w-full" />
           </div>
         )}
 
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="btn-secondary text-sm py-1.5 px-4">Abbrechen</button>
           <button
-            onClick={() => tool && canConfirm && onConfirm({ type: tool.type as ToolLink["type"], ref_id: refId, label: label || tool.label })}
+            onClick={confirm}
             disabled={!canConfirm}
             className="btn-primary text-sm py-1.5 px-4">
             Einbinden
