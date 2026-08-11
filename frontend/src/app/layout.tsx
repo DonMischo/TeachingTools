@@ -13,7 +13,7 @@ const themeScript = `(function(){try{var t=localStorage.getItem('hp_color_theme'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" data-theme="ege" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
