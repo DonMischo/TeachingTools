@@ -71,15 +71,19 @@ void renderFall(vec2 cpx, float elapsed, float edgeStart, float curEdge,
   if (elapsed < 0.0 || elapsed > 6.0) return;
   float fade = 1.0 - smoothstep(4.0, 5.5, elapsed);
   if (fade <= 0.0) return;
-  int count = int(min(pc, 150.0));
+  // Uniform control flow: no if/break/continue inside the loop. Dynamic
+  // branching in loops fails silently on some embedded WebGL drivers, so the
+  // per-particle count and start-time gates are applied branchlessly via step().
+  float countF = min(pc, 150.0);
   for (int i = 0; i < 150; i++) {
-    if (i >= count) break;
     float fi = float(i);
+    float inCount = 1.0 - step(countF, fi + 0.5);   // count gate (was an early break past the count)
     float seed = fi * 0.6180339887 + 131.0;
     float fallDur = 2.5 + hash(vec2(seed, 8.0)) * 1.0;
     float startDelay = (fi / max(pc, 1.0)) * 1.5;
     float pe = elapsed - startDelay;
-    if (pe < 0.0) continue;
+    float started = step(0.0, pe);                  // start gate (was an early skip before start time)
+    float gate = inCount * started;
     float fp = clamp(pe / fallDur, 0.0, 1.0);
     float landP = clamp((startDelay + fallDur) / 4.0, 0.0, 1.0);
     float targetY = mix(edgeStart, curEdge, landP);
@@ -90,8 +94,8 @@ void renderFall(vec2 cpx, float elapsed, float edgeStart, float curEdge,
     float pSzPx = 2.0 + blobSize * 4.0;
     float p = smoothstep(pSzPx, 0.0, length(cpx - pPosPx));
     float brightness = 0.9 + hash(vec2(seed, 7.0)) * 0.2;
-    col += (vec3(1.0, 0.96, 0.82) * brightness + u_color * 0.4) * p * fade;
-    alp += p * fade * 0.9;
+    col += (vec3(1.0, 0.96, 0.82) * brightness + u_color * 0.4) * p * fade * gate;
+    alp += p * fade * 0.9 * gate;
   }
   if (curEdge > 0.0 && curEdge < 1.0 && elapsed > 0.8) {
     vec2 uv2 = cpx / u_resolution;
@@ -146,7 +150,7 @@ void main() {
     float cg = exp(-r * 4.2);
     col  = u_color * 0.05;
     col += u_color * (wisp*0.9 + big*0.3 + turb*0.10);
-    col += vec3(0.85,0.75,1.0) * pow(wisp,2.5) * 0.3;
+    col += vec3(0.85,0.75,1.0) * pow(max(0.0,wisp),2.5) * 0.3;
     col += u_color * cg*0.45 + vec3(1.0)*cg*0.08;
     col *= 1.0 - smoothstep(0.0,0.38,abs(uv.x-0.5))*0.55;
     col *= (0.78 + (uv.y / max(fillEdge,0.001)) * 0.35) * lvlBright;
