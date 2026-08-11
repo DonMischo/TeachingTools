@@ -5,16 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import * as apiModule from "@/lib/api";
+import { makeTeacher } from "./helpers";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
-const mockTeacher: apiModule.TeacherOut = {
-  id: 1,
-  first_name: "Anna",
-  last_name: "Müller",
-  active: true,
-  role: "teacher",
-};
+const mockTeacher = makeTeacher();
 
 function renderSidebar() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

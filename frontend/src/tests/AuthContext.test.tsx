@@ -3,6 +3,7 @@ import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import * as apiModule from "@/lib/api";
+import { makeTeacher } from "./helpers";
 
 function AuthDisplay() {
   const { auth, login, logout } = useAuth();
@@ -16,7 +17,7 @@ function AuthDisplay() {
   );
 }
 
-const mockTeacher = { id: 1, first_name: "Anna", last_name: "Müller", active: true, role: "teacher" as const };
+const mockTeacher = makeTeacher();
 const mockMeTeacher = { user_type: "teacher" as const, teacher: mockTeacher };
 
 beforeEach(() => {

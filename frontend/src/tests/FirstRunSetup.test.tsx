@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { FirstRunSetup } from "@/components/FirstRunSetup";
 import * as apiModule from "@/lib/api";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { makeTeacher } from "./helpers";
 
-const mockTeacher = { id: 1, first_name: "", last_name: "admin", active: true, role: "admin" };
+const mockTeacher = makeTeacher({ first_name: "", last_name: "admin", role: "admin" });
 
 function renderSetup(onComplete = vi.fn()) {
   return render(

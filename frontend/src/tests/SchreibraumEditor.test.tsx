@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as apiModule from "@/lib/api";
+import { makeTeacher } from "./helpers";
 
 // Mock heavy client-only editor with a placeholder
 vi.mock("@/components/schreibraum/Editor", () => ({
@@ -31,7 +32,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-const mockTeacher = { id: 1, first_name: "Anna", last_name: "Müller", active: true, role: "teacher" };
+const mockTeacher = makeTeacher();
 const mockStudent = { id: 10, vorname: "Ben", nachname: "Braun", klasse: "5a", class_id: 2, nummer: null, jahrgang: null, geschlecht: "m", geburtsdatum: null, username: "ben", active: true, has_credentials: true };
 
 const makeRoom = (overrides: Partial<apiModule.SchreibraumRoom> = {}): apiModule.SchreibraumRoom => ({
