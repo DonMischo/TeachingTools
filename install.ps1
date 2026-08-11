@@ -16,24 +16,60 @@ function Write-Step($m) { Write-Host "`n==> $m" -ForegroundColor Cyan }
 function Write-Warn($m) { Write-Host "WARN: $m"  -ForegroundColor Yellow }
 function Write-Err ($m) { Write-Host "ERROR: $m" -ForegroundColor Red }
 
-# Ask which port the web app should listen on (default 1339).
-function Read-AppPort {
-    $default = 1339
+# Return $true if a host port is already bound (by any process or Docker
+# container). Several Hauspokal-style apps can share one host, so every published
+# port (frontend, postgres, API) must be checked before we map it.
+function Test-PortInUse($port) {
+    try {
+        if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { return $true }
+    }
+    catch {
+        # Older hosts without Get-NetTCPConnection: fall back to netstat
+        if (netstat -ano -p TCP 2>$null | Select-String -Quiet ":$port\s.*LISTENING") { return $true }
+    }
+    try {
+        if ((docker ps --format '{{.Ports}}' 2>$null) -match "[:.]$port->") { return $true }
+    }
+    catch {}
+    return $false
+}
+
+# Echo the next free port at or above $start.
+function Find-FreePort($start) {
+    $p = [int]$start
+    while (Test-PortInUse $p) { $p++ }
+    return $p
+}
+
+# Pick a conflict-free host port. When $default is free and -AlwaysPrompt is not
+# set it is used silently; otherwise prompt with the next free port suggested.
+function Select-Port($label, $default, [switch]$AlwaysPrompt) {
+    $suggested = Find-FreePort $default
+    if (-not $AlwaysPrompt -and $suggested -eq $default) { return $default }
+    if ($suggested -ne $default) { Write-Warn "$label port $default is already in use." }
     while ($true) {
-        $inp = Read-Host "Port for the web app [$default]"
-        if ([string]::IsNullOrWhiteSpace($inp)) { return $default }
+        $inp = Read-Host "  $label port [$suggested]"
+        if ([string]::IsNullOrWhiteSpace($inp)) { return $suggested }
         $n = 0
-        if ([int]::TryParse($inp.Trim(), [ref]$n) -and $n -ge 1 -and $n -le 65535) { return $n }
-        Write-Warn "Please enter a number between 1 and 65535."
+        if (-not ([int]::TryParse($inp.Trim(), [ref]$n)) -or $n -lt 1 -or $n -gt 65535) {
+            Write-Warn "Enter a number between 1 and 65535."; continue
+        }
+        if ($n -ne $default -and (Test-PortInUse $n)) {
+            Write-Warn "Port $n is also in use - pick another."; continue
+        }
+        return $n
     }
 }
 
 # Write KEY=VALUE into .env, replacing an existing line or appending a new one.
 # ASCII avoids a UTF-8 BOM, which docker compose would misread on the first line.
 function Set-EnvVar($key, $val) {
-    $lines = if (Test-Path .env) { @(Get-Content .env) } else { @() }
+    # @(...) around the whole if is required: a single-line file returned through
+    # an if-expression collapses to a scalar, and $lines += would then do string
+    # concatenation instead of an array append (mashing .env onto one line).
+    $lines = @(if (Test-Path .env) { Get-Content .env })
     if ($lines | Where-Object { $_ -match "^$key=" }) {
-        $lines = $lines -replace "^$key=.*", "$key=$val"
+        $lines = @($lines -replace "^$key=.*", "$key=$val")
     }
     else {
         $lines += "$key=$val"
@@ -97,10 +133,17 @@ if (-not (Test-Path .env)) {
     Write-Warn "Edit .env to set a real SECRET_KEY before production use."
 }
 
-# --- Choose the web app port and persist it to .env ---
-$APP_PORT = Read-AppPort
+# --- Choose conflict-free host ports and persist them to .env ---
+# Frontend is always prompted (user-facing URL); postgres and the API are only
+# prompted when their default host port is already taken by another app.
+Write-Step "Selecting host ports (avoiding conflicts with other apps)..."
+$APP_PORT = Select-Port 'Frontend (web app)' 1339 -AlwaysPrompt
 Set-EnvVar 'APP_PORT' $APP_PORT
-Write-Step "Web app port set to $APP_PORT"
+$DB_PORT = Select-Port 'PostgreSQL' 5435
+Set-EnvVar 'DB_PORT' $DB_PORT
+$API_PORT = Select-Port 'Backend API' 8000
+Set-EnvVar 'API_PORT' $API_PORT
+Write-Step "Ports - frontend: $APP_PORT, postgres: $DB_PORT, api: $API_PORT"
 
 # --- Detect LAN IP (same logic as start.bat) ---
 $HOST_IP = (Get-NetIPAddress -AddressFamily IPv4 |
@@ -142,6 +185,7 @@ if ($LASTEXITCODE -ne 0) { Write-Err "docker compose failed."; exit 1 }
 
 Write-Step "Hauspokal is running:"
 Write-Host "  Frontend  >  http://$HOST_IP`:$APP_PORT"
-Write-Host "  API docs  >  http://localhost:8000/docs"
+Write-Host "  API docs  >  http://localhost`:$API_PORT/docs"
+Write-Host "  Postgres  >  127.0.0.1`:$DB_PORT"
 Write-Host ""
 Write-Host "Stop with stop.bat"

@@ -21,9 +21,10 @@ echo
 
 export HOST_IP
 
-# Web app port (chosen during install, stored in .env; defaults to 1339)
-APP_PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
-APP_PORT=${APP_PORT:-1339}
+# Host ports (chosen during install, stored in .env; defaults match compose)
+read_env() { grep -E "^$1=" .env 2>/dev/null | tail -1 | cut -d= -f2 | tr -d '[:space:]'; }
+APP_PORT=$(read_env APP_PORT); APP_PORT=${APP_PORT:-1339}
+API_PORT=$(read_env API_PORT); API_PORT=${API_PORT:-8000}
 
 # Check if Docker is running; attempt to start it if not
 if ! docker info >/dev/null 2>&1; then
@@ -58,6 +59,6 @@ docker compose up -d --build
 echo
 echo "Hauspokal is running:"
 echo "  Frontend  >  http://$HOST_IP:$APP_PORT"
-echo "  API docs  >  http://localhost:8000/docs"
+echo "  API docs  >  http://localhost:$API_PORT/docs"
 echo
 echo "Use ./stop.sh to shut down."

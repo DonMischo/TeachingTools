@@ -63,19 +63,61 @@ set_env_var() {
   fi
 }
 
-# Ask which port the web app should listen on (default 1339). Falls back to the
-# default when not attached to a terminal (e.g. piped/non-interactive runs).
-prompt_port() {
-  local default=1339 port
-  if [ ! -t 0 ]; then echo "$default"; return; fi
+# Return 0 if a host port is already bound (by any process or Docker container).
+# Several Hauspokal-style apps can share one host, so every published port
+# (frontend, postgres, API) must be checked before we map it.
+port_in_use() {
+  local port=$1
+  if command -v ss >/dev/null 2>&1; then
+    ss -tlnH 2>/dev/null | grep -qE "[[:space:]]:${port}[[:space:]]" && return 0
+  fi
+  if command -v netstat >/dev/null 2>&1; then
+    netstat -tln 2>/dev/null | grep -qE "[[:space:]]:${port}[[:space:]]" && return 0
+  fi
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1 && return 0
+  fi
+  if docker info >/dev/null 2>&1; then
+    docker ps --format '{{.Ports}}' 2>/dev/null \
+      | grep -qE "(0\.0\.0\.0|127\.0\.0\.1|\[::\]):${port}->" && return 0
+  fi
+  return 1
+}
+
+# Echo the next free port at or above $1.
+find_free_port() {
+  local port=$1
+  while port_in_use "$port"; do port=$((port + 1)); done
+  echo "$port"
+}
+
+# choose_port LABEL DEFAULT ALWAYS_PROMPT
+# Picks a conflict-free host port. When DEFAULT is free and ALWAYS_PROMPT != 1 it
+# is used silently; otherwise the user is prompted with the next free port as the
+# suggested default. Non-interactive runs auto-take the suggested free port.
+choose_port() {
+  local label=$1 default=$2 always=$3 suggested port
+  suggested=$(find_free_port "$default")
+  if [ "$always" != "1" ] && [ "$suggested" = "$default" ]; then
+    echo "$default"; return
+  fi
+  if [ ! -t 0 ]; then
+    [ "$suggested" != "$default" ] && warn "$label port $default in use — using $suggested." >&2
+    echo "$suggested"; return
+  fi
+  [ "$suggested" != "$default" ] && \
+    printf '  \033[1;33m[!]\033[0m %s port %s is already in use.\n' "$label" "$default" > /dev/tty
   while true; do
-    printf 'Port for the web app [%s]: ' "$default" > /dev/tty
-    read -r port < /dev/tty || { echo "$default"; return; }
-    port="${port:-$default}"
-    if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
-      echo "$port"; return
+    printf '  %s port [%s]: ' "$label" "$suggested" > /dev/tty
+    read -r port < /dev/tty || { echo "$suggested"; return; }
+    port="${port:-$suggested}"
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+      printf '  Enter a number between 1 and 65535.\n' > /dev/tty; continue
     fi
-    printf 'Please enter a number between 1 and 65535.\n' > /dev/tty
+    if [ "$port" != "$default" ] && port_in_use "$port"; then
+      printf '  Port %s is also in use — pick another.\n' "$port" > /dev/tty; continue
+    fi
+    echo "$port"; return
   done
 }
 
@@ -140,10 +182,17 @@ if [ ! -f .env ]; then
   warn "Edit .env to set a real SECRET_KEY before production use."
 fi
 
-# 4b. Choose the web app port and persist it to .env
-APP_PORT=$(prompt_port)
+# 4b. Choose conflict-free host ports and persist them to .env.
+# Frontend is always prompted (it's the user-facing URL); postgres and the API
+# are only prompted when their default host port is already taken.
+log "Selecting host ports (avoiding conflicts with other apps)..."
+APP_PORT=$(choose_port "Frontend (web app)" 1339 1)
 set_env_var APP_PORT "$APP_PORT"
-log "Web app port set to $APP_PORT"
+DB_PORT=$(choose_port "PostgreSQL" 5435 0)
+set_env_var DB_PORT "$DB_PORT"
+API_PORT=$(choose_port "Backend API" 8000 0)
+set_env_var API_PORT "$API_PORT"
+log "Ports — frontend: $APP_PORT · postgres: $DB_PORT · api: $API_PORT"
 
 # 5. Detect LAN IP (same logic as start.sh)
 HOST_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}' | head -1)
@@ -158,7 +207,8 @@ $DOCKER compose up -d --build
 
 log "Hauspokal is running:"
 echo "  Frontend  >  http://$HOST_IP:$APP_PORT"
-echo "  API docs  >  http://localhost:8000/docs"
+echo "  API docs  >  http://localhost:$API_PORT/docs"
+echo "  Postgres  >  127.0.0.1:$DB_PORT"
 echo
 echo "Stop with ./stop.sh"
 [ "$NEEDS_RELOGIN" -eq 1 ] && warn "Log out and back in once so you can run docker / ./stop.sh without sudo."

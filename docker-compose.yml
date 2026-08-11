@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: hauspokal
       POSTGRES_DB: hauspokal
     ports:
-      - "127.0.0.1:5435:5432"
+      - "127.0.0.1:${DB_PORT:-5435}:5432"
     volumes:
       - hauspokal-pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -28,6 +28,8 @@ services:
     volumes:
       - ./api:/workspace/api
       - ./data:/workspace/data
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy

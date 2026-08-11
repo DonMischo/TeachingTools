@@ -16,9 +16,10 @@ if not defined HOST_IP set HOST_IP=localhost
 echo Detected LAN IP: %HOST_IP%
 echo.
 
-:: Web app port (chosen during install, stored in .env; defaults to 1339)
+:: Host ports (chosen during install, stored in .env; defaults match compose)
 set APP_PORT=1339
-if exist .env for /f "usebackq tokens=1,* delims==" %%a in (`findstr /b "APP_PORT=" .env`) do set APP_PORT=%%b
+set API_PORT=8000
+if exist .env for /f "usebackq tokens=1,* delims==" %%a in (`findstr /b "APP_PORT= API_PORT=" .env`) do set %%a=%%b
 
 :: Check if Docker is running; attempt to start Docker Desktop if not
 docker info >nul 2>&1
@@ -57,6 +58,6 @@ if %ERRORLEVEL% neq 0 (
 echo.
 echo Hauspokal is running:
 echo   Frontend  ^>  http://%HOST_IP%:%APP_PORT%
-echo   API docs  ^>  http://localhost:8000/docs
+echo   API docs  ^>  http://localhost:%API_PORT%/docs
 echo.
 echo Use stop.bat to shut down.
