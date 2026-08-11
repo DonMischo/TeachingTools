@@ -12,7 +12,9 @@ export default function BingoLibraryPage() {
   const { toast } = useToast();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const canEdit = auth?.role === "teacher" || auth?.role === "admin";
+  // Any logged-in user may author Bingo sets (students land in the shared pool);
+  // hosting a live round stays teacher-only (enforced on /games/bingo/new).
+  const canEdit = !!auth;
 
   const { data: sets = [], isLoading } = useQuery<BingoSetOut[]>({
     queryKey: ["bingo-sets"],
@@ -38,8 +40,8 @@ export default function BingoLibraryPage() {
     reader.readAsText(file);
   }
 
-  if (!canEdit) {
-    return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
+  if (!auth) {
+    return <div className="p-8 text-[var(--text-muted)]">Bitte einloggen.</div>;
   }
 
   return (

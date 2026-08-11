@@ -78,7 +78,7 @@ export default function SportfestErgebnissePage() {
 
   const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
   useEffect(() => {
-    if (auth !== null && !isTeacher) router.replace("/games/sportfest");
+    if (auth !== null && !isTeacher) router.replace("/tools/sportfest");
   }, [auth, isTeacher, router]);
 
   const { data: disciplines = [] } = useQuery<SportfestDiscipline[]>({
@@ -108,7 +108,7 @@ export default function SportfestErgebnissePage() {
   return (
     <div className="flex flex-col gap-4 p-4 max-w-5xl mx-auto w-full">
       <div className="flex items-center gap-4 flex-wrap">
-        <Link href="/games/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors shrink-0">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors shrink-0">← Sportfest</Link>
         <h1 className="text-xl font-black tracking-tight">✏️ Ergebnisse erfassen</h1>
         <select value={klasse} onChange={e => setKlasse(e.target.value)} className="input text-sm py-1.5 w-24">
           {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}

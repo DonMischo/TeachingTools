@@ -68,7 +68,7 @@ export default function NewWettkampfPage() {
         ranking_mode: rankingMode,
         ...scoring,
       });
-      router.push(`/games/wettkampf/${w.id}`);
+      router.push(`/tools/wettkampf/${w.id}`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Fehler");
       setSaving(false);

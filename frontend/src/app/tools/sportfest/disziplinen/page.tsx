@@ -36,7 +36,7 @@ export default function SportfestDisziplinenPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
       <div>
-        <Link href="/games/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">📊 Disziplinranking</h1>
       </div>
 

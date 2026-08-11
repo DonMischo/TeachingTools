@@ -42,11 +42,11 @@ export default function WettkampfListPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto w-full">
-      <Link href="/games" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Spiele</Link>
+      <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
       <h1 className="text-2xl font-bold mb-2 mt-1">Wettkämpfe</h1>
       {auth && (
         <button
-          onClick={() => router.push("/games/wettkampf/new")}
+          onClick={() => router.push("/tools/wettkampf/new")}
           className="btn-primary mb-6"
         >
           + Neuer Wettkampf
@@ -66,7 +66,7 @@ export default function WettkampfListPage() {
             <div
               key={w.id}
               className="flex items-center gap-4 p-4 border border-[var(--border)] bg-[var(--surface)] rounded-xl hover:border-[var(--accent)] transition-colors cursor-pointer"
-              onClick={() => router.push(`/games/wettkampf/${w.id}`)}
+              onClick={() => router.push(`/tools/wettkampf/${w.id}`)}
             >
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{w.title}</p>

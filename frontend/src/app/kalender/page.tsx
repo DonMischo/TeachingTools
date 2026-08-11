@@ -522,6 +522,13 @@ export default function KalenderPage() {
         )}
       </div>
 
+      {!isTeacher && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-muted)] flex items-start gap-2">
+          <span aria-hidden>ℹ️</span>
+          <span>Es werden nur Termine der Schulgemeinschaft und Ferien angezeigt — interne Termine der Lehrkräfte sind nicht sichtbar.</span>
+        </div>
+      )}
+
       {showExportPanel && isTeacher && (
         <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
           <div className="flex flex-wrap gap-4">

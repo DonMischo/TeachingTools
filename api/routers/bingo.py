@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
+from ..availability import require_capability
+from ..authorship import author_fields, scope_to_student_pool, is_student
 from ..database import get_db
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity
@@ -217,12 +219,12 @@ def list_sessions(set_id: int | None = None, db: Session = Depends(get_db), curr
     ]
 
 
-@router.post("", status_code=201)
+@router.post("", status_code=201, dependencies=[Depends(require_capability("bingo", "host"))])
 def create_session(body: BingoCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
     """Creates a reusable BingoSet from the given content, then immediately
     starts a session from it — same request/response shape as before the
     library split, so existing callers (e.g. /bingo/new) need no changes."""
-    if current.role not in ("teacher", "admin"):
+    if is_student(current):
         raise HTTPException(403)
     cols = body.grid_cols if body.grid_cols > 0 else body.grid_size
     cells = body.grid_size * cols
@@ -246,8 +248,10 @@ def create_session(body: BingoCreate, db: Session = Depends(get_db), current=Dep
 
 @router.get("/sets", response_model=list[BingoSetOut])
 def list_sets(db: Session = Depends(get_db), current=Depends(get_current_user)):
-    """The Bingo content library — open to every teacher (mirrors /api/capuths)."""
-    sets = db.query(BingoSet).order_by(BingoSet.created_at.desc()).all()
+    """The Bingo content library — teachers see everything; students only the
+    shared student pool (created_by_student set)."""
+    q = scope_to_student_pool(db.query(BingoSet), BingoSet, current)
+    sets = q.order_by(BingoSet.created_at.desc()).all()
     return [
         BingoSetOut(
             id=s.id, title=s.title, subject=s.subject, tags=s.tags or [], description=s.description,
@@ -258,6 +262,33 @@ def list_sets(db: Session = Depends(get_db), current=Depends(get_current_user)):
         )
         for s in sets
     ]
+
+
+@router.post("/sets", response_model=BingoSetOut, status_code=201, dependencies=[Depends(require_capability("bingo", "create"))])
+def create_set(body: BingoCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """Create a reusable Bingo set without starting a session. This is the
+    student authoring path (students may create content but not host live
+    rounds); teachers may use it too."""
+    cols = body.grid_cols if body.grid_cols > 0 else body.grid_size
+    cells = body.grid_size * cols
+    if len(body.pairs) < cells:
+        raise HTTPException(400, f"Mindestens {cells} Paare für ein {body.grid_size}×{cols} Bingo benötigt")
+    bingo_set = BingoSet(
+        title=body.title, subject=body.subject, tags=body.tags, description=body.description,
+        max_points=body.max_points, grid_size=body.grid_size, grid_cols=cols,
+        grades=parse_grades(body.grade),
+        pairs=[p.model_dump() for p in body.pairs],
+        **author_fields(current),
+    )
+    db.add(bingo_set)
+    db.commit()
+    db.refresh(bingo_set)
+    return BingoSetOut(
+        id=bingo_set.id, title=bingo_set.title, subject=bingo_set.subject, tags=bingo_set.tags or [],
+        description=bingo_set.description, max_points=bingo_set.max_points, grid_size=bingo_set.grid_size,
+        grid_cols=bingo_set.grid_cols if bingo_set.grid_cols > 0 else bingo_set.grid_size,
+        grades=bingo_set.grades or [], total_pairs=len(bingo_set.pairs), created_at=bingo_set.created_at,
+    )
 
 
 def create_session_from_set(db: Session, set_id: int, created_by: int, class_id: int | None = None) -> BingoSession:
@@ -280,9 +311,9 @@ class SessionFromSetIn(BaseModel):
     class_id: int | None = None
 
 
-@router.post("/sets/{set_id}/sessions", status_code=201)
+@router.post("/sets/{set_id}/sessions", status_code=201, dependencies=[Depends(require_capability("bingo", "host"))])
 def start_session_from_set(set_id: int, body: SessionFromSetIn | None = None, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
+    if is_student(current):
         raise HTTPException(403)
     session = create_session_from_set(db, set_id, current.id, body.class_id if body else None)
     return {"id": session.id, "code": session.code, "class_id": session.class_id}
@@ -290,7 +321,7 @@ def start_session_from_set(set_id: int, body: SessionFromSetIn | None = None, db
 
 @router.delete("/{code}", status_code=204)
 def delete_session(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
+    if is_student(current):
         raise HTTPException(403)
     s = db.query(BingoSession).filter_by(code=code).first()
     if not s:
@@ -330,7 +361,7 @@ async def _close_and_award(session: BingoSession, db: Session):
 
 @router.post("/{code}/close", status_code=204)
 async def close_session_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
+    if is_student(current):
         raise HTTPException(403)
     s = db.query(BingoSession).filter_by(code=code).first()
     if not s:
@@ -342,7 +373,7 @@ async def close_session_rest(code: str, db: Session = Depends(get_db), current=D
 
 @router.post("/{code}/reset", status_code=204)
 async def reset_session_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
+    if is_student(current):
         raise HTTPException(403)
     s = db.query(BingoSession).filter_by(code=code).first()
     if not s:

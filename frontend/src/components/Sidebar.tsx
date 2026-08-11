@@ -242,7 +242,9 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
       <div className="w-7 h-px bg-[var(--border)] mb-1" />
 
       <div className="flex flex-col items-center gap-1">
-        {NAV_MAIN.map(({ tab, label, href }) => (
+        {NAV_MAIN
+          .filter(({ tab }) => !(tab === "tools" && auth?.role === "student"))
+          .map(({ tab, label, href }) => (
           <Link key={tab} href={href} title={label}
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
               ${isActive(href)
@@ -571,6 +573,15 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
                 <p className="text-xs text-[var(--text-muted)] capitalize">{auth.role}</p>
               </div>
               <hr className="border-[var(--border)]" />
+              {auth.teacher?.klasse_id != null && (
+                <Link
+                  href="/klasse/verfuegbarkeit"
+                  onClick={() => setLoginOpen(false)}
+                  className="btn-secondary text-sm text-center"
+                >
+                  🧩 Verfügbarkeit ({auth.teacher.klasse})
+                </Link>
+              )}
               <button onClick={() => { authLogout(); setLoginOpen(false); }} className="btn-secondary text-sm">Logout</button>
             </>
           )}

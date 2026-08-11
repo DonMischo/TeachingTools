@@ -147,7 +147,7 @@ export default function SportfestRankingPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div>
-        <Link href="/games/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏆 Gesamtranking</h1>
         {tab === "gesamt" && (
           <p className="text-[var(--text-muted)] text-sm mt-1">

@@ -798,7 +798,7 @@ export type LueckentextGap = {
 
 export type LueckentextSetOut = {
   id: number; title: string; description: string | null; tags: string[]; grades: number[];
-  gap_count: number; created_by: number; created_at: string;
+  gap_count: number; created_by: number | null; created_by_student: number | null; created_at: string;
 };
 
 export type LueckentextSetDetail = LueckentextSetOut & {
@@ -863,6 +863,36 @@ export type SeatingPlanSummary = {
 };
 
 export type SeatingPlanDetail = SeatingPlanSummary & { items: SeatingItem[] };
+
+// ── Tool availability ──
+export type ToolCapability = "use" | "host" | "create" | "upload";
+export type AudienceKind = "teacher" | "student";
+
+// Resolved caps for the current user: { slug: { capability: allowed } }.
+export type AvailabilityMap = Record<string, Partial<Record<ToolCapability, boolean>>>;
+
+export type CatalogCapability = {
+  capability: ToolCapability;
+  label: string;
+  teacher_default: boolean;
+  student_default: boolean;
+};
+
+export type CatalogToolOut = {
+  slug: string;
+  label: string;
+  icon: string;
+  surface: "games" | "tools";
+  capabilities: CatalogCapability[];
+};
+
+export type AvailabilityOverride = {
+  tool_slug: string;
+  capability: ToolCapability;
+  audience: AudienceKind;
+  class_id: number | null;
+  allowed: boolean;
+};
 
 export const api = {
   classes: {
@@ -1132,6 +1162,24 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ points, reason }),
       }),
+  },
+  availability: {
+    me: () => apiFetch<AvailabilityMap>("availability/me"),
+    catalog: () => apiFetch<CatalogToolOut[]>("availability/catalog"),
+    overrides: (class_id?: number | null) => {
+      const q = class_id != null ? `?class_id=${class_id}` : "";
+      return apiFetch<AvailabilityOverride[]>(`availability/overrides${q}`);
+    },
+    setOverride: (body: AvailabilityOverride) =>
+      apiFetch<AvailabilityOverride>("availability/override", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    clearOverride: (p: { tool_slug: string; capability: ToolCapability; audience: AudienceKind; class_id?: number | null }) => {
+      const q = new URLSearchParams({ tool_slug: p.tool_slug, capability: p.capability, audience: p.audience });
+      if (p.class_id != null) q.set("class_id", String(p.class_id));
+      return apiFetch<void>(`availability/override?${q}`, { method: "DELETE" });
+    },
   },
   calendar: {
     meta: () => apiFetch<CalendarMeta>("calendar/meta"),
@@ -1416,6 +1464,9 @@ export const api = {
     list: (set_id?: number) => apiFetch<BingoOut[]>(`bingo${set_id != null ? `?set_id=${set_id}` : ""}`),
     create: (body: { title: string; subject?: string | null; tags?: string[]; description?: string | null; max_points?: number; grid_size: number; grid_cols?: number; pairs: { caller: string; answer: string }[] }) =>
       apiFetch<{ id: number; code: string }>("bingo", { method: "POST", body: JSON.stringify(body) }),
+    // Create a reusable set without starting a session (student authoring path).
+    createSet: (body: { title: string; subject?: string | null; tags?: string[]; description?: string | null; max_points?: number; grid_size: number; grid_cols?: number; pairs: { caller: string; answer: string }[] }) =>
+      apiFetch<BingoSetOut>("bingo/sets", { method: "POST", body: JSON.stringify(body) }),
     delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
     close: (code: string) => apiFetch<void>(`bingo/${code}/close`, { method: "POST" }),
     reset: (code: string) => apiFetch<void>(`bingo/${code}/reset`, { method: "POST" }),

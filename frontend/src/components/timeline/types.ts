@@ -48,7 +48,8 @@ export type TimelineSetOut = {
   axis: TimelineAxis;
   lane_count: number;
   event_count: number;
-  created_by: number;
+  created_by: number | null;
+  created_by_student: number | null;
   created_at: string;
 };
 

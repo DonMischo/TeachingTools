@@ -47,6 +47,8 @@ from ..task_generators import check_input_answer
 from ..database import get_db
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
 from ..auth import get_current_teacher, get_current_user
+from ..availability import require_capability
+from ..authorship import author_fields, scope_to_student_pool, can_modify, is_student
 from ..utils import gen_code
 from ..ws_auth import ws_teacher
 from ..ws_manager import RoomManager
@@ -227,8 +229,9 @@ def _to_out(g: ExitGame) -> ExitGameOut:
 
 
 @router.get("/api/exitgames", response_model=list[ExitGameOut])
-def list_exitgames(db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
-    games = db.query(ExitGame).order_by(ExitGame.created_at.desc()).all()
+def list_exitgames(db: Session = Depends(get_db), current=Depends(get_current_user)):
+    q = scope_to_student_pool(db.query(ExitGame), ExitGame, current)
+    games = q.order_by(ExitGame.created_at.desc()).all()
     return [_to_out(g) for g in games]
 
 
@@ -374,11 +377,11 @@ def _parse_exitgame_json(raw: dict) -> ExitGame:
     )
 
 
-@router.post("/api/exitgames/upload", response_model=ExitGameOut, status_code=201)
+@router.post("/api/exitgames/upload", response_model=ExitGameOut, status_code=201, dependencies=[Depends(require_capability("exitgame", "upload"))])
 def upload_exitgame(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     content = file.file.read()
     asset_files: list[tuple[str, bytes]] = []
@@ -403,7 +406,8 @@ def upload_exitgame(
             raise HTTPException(400, f"Ungültiges JSON: {e}")
 
     game = _parse_exitgame_json(raw)
-    game.created_by = current.id
+    for k, v in author_fields(current).items():
+        setattr(game, k, v)
     db.add(game)
     db.commit()
     db.refresh(game)
@@ -421,19 +425,22 @@ def upload_exitgame(
 
 
 @router.get("/api/exitgames/{exitgame_id}")
-def get_exitgame(exitgame_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def get_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     g = db.get(ExitGame, exitgame_id)
     if not g:
+        raise HTTPException(404, "Exitgame nicht gefunden")
+    # Students may only open games from the shared student pool.
+    if is_student(current) and g.created_by_student is None:
         raise HTTPException(404, "Exitgame nicht gefunden")
     return {**_to_out(g).model_dump(), "data": g.data}
 
 
 @router.delete("/api/exitgames/{exitgame_id}", status_code=204)
-def delete_exitgame(exitgame_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+def delete_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     g = db.get(ExitGame, exitgame_id)
     if not g:
         raise HTTPException(404, "Exitgame nicht gefunden")
-    if g.created_by != current.id and current.role != "admin":
+    if not can_modify(g, current):
         raise HTTPException(403)
     db.delete(g)
     db.commit()
@@ -492,7 +499,7 @@ def create_or_reuse_open_session(db: Session, exitgame_id: int, class_id: int, t
     return session
 
 
-@router.post("/api/exitgames/{exitgame_id}/sessions", response_model=SessionOut, status_code=201)
+@router.post("/api/exitgames/{exitgame_id}/sessions", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("exitgame", "host"))])
 def create_session(
     exitgame_id: int, body: SessionCreate,
     db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher),

@@ -83,6 +83,9 @@ export default function ZeitstrahlDetailPage() {
     enabled: Number.isFinite(setId) && !!auth,
   });
 
+  // Teachers may edit any set; students only shared-pool (student-authored) sets.
+  const canEdit = isTeacher || (!!set && set.created_by_student != null);
+
   const [tab, setTab] = useState<Tab>("ansehen");
   const [hiddenLanes, setHiddenLanes] = useState<Set<string>>(new Set());
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
@@ -153,16 +156,14 @@ export default function ZeitstrahlDetailPage() {
     <div className="flex flex-col gap-5 p-6 max-w-6xl mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          {isTeacher && (
-            <Link href="/tools/zeitstrahl" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]">
-              ← Bibliothek
-            </Link>
-          )}
+          <Link href="/games/zeitstrahl" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]">
+            ← Bibliothek
+          </Link>
           <h1 className="text-2xl font-black tracking-tight">📏 {set.title}</h1>
           {set.description && <p className="text-[var(--text-muted)] text-sm mt-1 max-w-2xl">{set.description}</p>}
         </div>
         <div className="flex gap-1 rounded-xl border border-[var(--border)] p-1">
-          {(["ansehen", "ueben", ...(isTeacher ? ["bearbeiten"] as Tab[] : [])] as Tab[]).map(t => (
+          {(["ansehen", "ueben", ...(canEdit ? ["bearbeiten"] as Tab[] : [])] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
                 tab === t ? "bg-[var(--accent)] text-white font-semibold" : "hover:bg-[var(--surface-hover)]"
@@ -243,7 +244,7 @@ export default function ZeitstrahlDetailPage() {
       )}
 
       {tab === "ueben" && <PracticeTab set={set} visibleEvents={visibleEvents} isTeacher={isTeacher} />}
-      {tab === "bearbeiten" && isTeacher && <EditTab set={set} onSaved={() => qc.invalidateQueries({ queryKey: ["timeline", setId] })} />}
+      {tab === "bearbeiten" && canEdit && <EditTab set={set} onSaved={() => qc.invalidateQueries({ queryKey: ["timeline", setId] })} />}
     </div>
   );
 }

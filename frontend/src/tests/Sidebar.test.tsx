@@ -11,6 +11,21 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 const mockTeacher = makeTeacher();
 
+const mockStudent: apiModule.StudentOut = {
+  id: 1,
+  nummer: null,
+  nachname: "Schmidt",
+  vorname: "Ben",
+  klasse: "5a",
+  class_id: 1,
+  jahrgang: 5,
+  geschlecht: "m",
+  geburtsdatum: null,
+  username: "ben",
+  active: true,
+  has_credentials: true,
+};
+
 function renderSidebar() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -48,6 +63,17 @@ describe("Sidebar — navigation", () => {
     });
     await act(async () => { renderSidebar(); });
     expect(screen.getByTitle("Admin")).toBeInTheDocument();
+  });
+
+  it("hides Tools link for students", async () => {
+    vi.spyOn(apiModule.api.auth, "me").mockResolvedValue({
+      user_type: "student",
+      student: mockStudent,
+    });
+    await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(screen.getByTitle(/Ben Schmidt/i)).toBeInTheDocument());
+    expect(screen.getByTitle("Spiele")).toBeInTheDocument();
+    expect(screen.queryByTitle("Tools")).not.toBeInTheDocument();
   });
 });
 

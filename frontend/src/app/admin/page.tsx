@@ -142,6 +142,12 @@ export default function AdminPage() {
           <div className="font-semibold">Aufgaben-Generatoren</div>
           <div className="text-xs text-[var(--text-muted)] mt-1">Neue Übungsthemen ohne Code registrieren</div>
         </Link>
+        <Link href="/admin/availability"
+          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          <div className="text-2xl mb-2">🧩</div>
+          <div className="font-semibold">Verfügbarkeit</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Werkzeuge freischalten · pro Gruppe &amp; Klasse · Hosten/Erstellen/Hochladen</div>
+        </Link>
       </div>
 
       {showTheme && <ThemeSwitcher onClose={() => setShowTheme(false)} />}

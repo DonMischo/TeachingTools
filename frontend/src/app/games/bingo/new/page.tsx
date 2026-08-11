@@ -133,24 +133,33 @@ export default function BingoNewPage() {
   const validCount = pairs.filter(p => p.caller.trim() && p.answer.trim()).length;
   const tags = tagsInput.split(",").map((t: string) => t.trim()).filter(Boolean);
 
-  const createMut = useMutation({
+  const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
+
+  const createMut = useMutation<{ kind: "session"; code: string } | { kind: "set" }>({
     mutationFn: () => {
       const validPairs = pairs.filter(p => p.caller.trim() && p.answer.trim());
       if (validPairs.length < cells) throw new Error(`Mindestens ${cells} vollständige Paare benötigt`);
-      return api.bingo.create({
+      const body = {
         title, subject: subject || null, tags, description: description || null,
         max_points: maxPoints, grid_size: gridRows, grid_cols: gridCols, pairs: validPairs,
-      });
+      };
+      // Teachers create-and-host in one step; students only create the set
+      // (hosting a live round stays teacher-only).
+      return isTeacher
+        ? api.bingo.create(body).then(s => ({ kind: "session" as const, code: s.code }))
+        : api.bingo.createSet(body).then(() => ({ kind: "set" as const }));
     },
-    onSuccess: (s) => {
+    onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["bingo"] });
-      router.push(`/games/bingo/host/${s.code}`);
+      qc.invalidateQueries({ queryKey: ["bingo-sets"] });
+      if (r.kind === "session") router.push(`/games/bingo/host/${r.code}`);
+      else router.push("/games/bingo");
     },
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
 
-  if (auth?.role !== "teacher" && auth?.role !== "admin") {
-    return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
+  if (!auth) {
+    return <div className="p-8 text-[var(--text-muted)]">Bitte einloggen.</div>;
   }
 
   return (

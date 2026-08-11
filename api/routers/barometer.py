@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import BarometerSession, BarometerQuestion, BarometerResponse, Student, Teacher
 from ..auth import get_current_teacher, get_current_user_optional
+from ..availability import require_capability
 from ..utils import gen_code
 from ..ws_auth import ws_identity
 from ..ws_manager import RoomManager
@@ -172,7 +173,7 @@ def list_sessions(
     ]
 
 
-@router.post("", response_model=SessionOut, status_code=201)
+@router.post("", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("barometer", "host"))])
 def create_session(
     body: SessionCreate,
     db: Session = Depends(get_db),
@@ -236,7 +237,7 @@ def clone_session_impl(db: Session, code: str, teacher: Teacher) -> BarometerSes
     return session
 
 
-@router.post("/{code}/clone", response_model=SessionOut, status_code=201)
+@router.post("/{code}/clone", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("barometer", "host"))])
 def clone_session(
     code: str,
     db: Session = Depends(get_db),

@@ -1,70 +1,88 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { useAvailability } from "@/hooks/useAvailability";
+import HelpButton from "@/components/HelpButton";
 
-const ALL_CARDS: { href: string; icon: string; title: string; description: string; color: string; teacherOnly: boolean }[] = [
+const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
+    slug: "schreibraum",
     href: "/schreibraum",
     icon: "📝",
     title: "Schreibraum",
     description: "Kollaborativer Schreibraum für die Klasse — gemeinsam schreiben, Zeilen vergeben.",
     color: "#a78bfa",
-    teacherOnly: false,
   },
   {
+    slug: "barometer",
     href: "/tools/barometer",
     icon: "🧭",
     title: "Meinungsbarometer",
     description: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse durchführen.",
     color: "#f59e0b",
-    teacherOnly: false,
   },
   {
+    slug: "exit-ticket",
     href: "/tools/exit-ticket",
     icon: "🎫",
     title: "Exit Ticket",
     description: "Anonymes Schnell-Feedback am Ende einer Stunde einholen.",
     color: "#34d399",
-    teacherOnly: false,
   },
   {
+    slug: "auktion",
     href: "/tools/auction",
     icon: "🏷️",
     title: "Auktion",
     description: "Lehrer legt Items auf, Schüler geben Gebote ab — Wartend, offen, abgeschlossen.",
     color: "#34d399",
-    teacherOnly: true,
   },
   {
-    href: "/tools/zeitstrahl",
-    icon: "📏",
-    title: "Zeitstrahl",
-    description: "Zeitleisten mit parallelen Spuren und Zahlenstrahlen — anzeigen, einsortieren, Fehler finden.",
-    color: "#f472b6",
-    teacherOnly: true,
-  },
-  {
+    slug: "classroom",
     href: "/classroom",
     icon: "🖥️",
     title: "Classroom Screen",
     description: "Uhr, Timer und Stoppuhr als frei positionierbare Widgets auf dem Beamer.",
     color: "#60a5fa",
-    teacherOnly: false,
   },
   {
+    slug: "stundenplaner",
     href: "/stundenplaner",
     icon: "📋",
     title: "Stundenplaner",
     description: "Verlaufsplanungen erstellen, Phasen strukturieren und mit Kolleg·innen teilen.",
     color: "#a3e635",
-    teacherOnly: true,
+  },
+  {
+    slug: "wettkampf",
+    href: "/tools/wettkampf",
+    icon: "🏆",
+    title: "Wettkämpfe",
+    description: "Turniere erstellen, Spielpläne verwalten und Ergebnisse eintragen.",
+    color: "#e8821a",
+  },
+  {
+    slug: "sportfest",
+    href: "/tools/sportfest",
+    icon: "🏃",
+    title: "Sportfest",
+    description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",
+    color: "#1878a8",
   },
 ];
 
 export default function ToolsPage() {
-  const { auth } = useAuth();
-  const isTeacher = auth?.user_type === "teacher";
-  const CARDS = ALL_CARDS.filter(c => !c.teacherOnly || isTeacher);
+  const router = useRouter();
+  const { can, ready } = useAvailability();
+  const CARDS = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
+
+  // Once resolved, a user with no available Tools (the default for students)
+  // is sent to Games rather than shown an empty page.
+  useEffect(() => {
+    if (ready && CARDS.length === 0) router.replace("/games");
+  }, [ready, CARDS.length, router]);
+
   return (
     <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
       <div>
@@ -79,10 +97,11 @@ export default function ToolsPage() {
           <Link
             key={card.href}
             href={card.href}
-            className="group flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
+            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
               bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-all
               hover:border-[var(--accent)] hover:shadow-lg"
           >
+            <HelpButton slug={card.slug} className="absolute top-3 right-3" />
             <div className="flex items-center gap-3">
               <span style={{
                 fontSize: 40, lineHeight: 1,

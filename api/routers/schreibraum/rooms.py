@@ -15,6 +15,7 @@ from ...models import (
     SchreibraumActionLog, SchreibraumAccess, Teacher, Student, Class,
 )
 from ...auth import get_current_user, get_current_teacher, require_admin
+from ...availability import require_capability
 from ...utils import gen_code
 from .colors import pick_color
 from .schemas import (
@@ -61,7 +62,7 @@ def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
 # Room CRUD
 # ---------------------------------------------------------------------------
 
-@router.post("/rooms", response_model=RoomOut)
+@router.post("/rooms", response_model=RoomOut, dependencies=[Depends(require_capability("schreibraum", "create"))])
 def create_room(
     body: RoomCreate,
     db: Session = Depends(get_db),

@@ -13,7 +13,7 @@ export default function SportfestSetupPage() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/games/sportfest");
+    if (auth !== null && auth.role !== "admin") router.replace("/tools/sportfest");
   }, [auth, router]);
 
   const { data: disciplines = [] } = useQuery<SportfestDiscipline[]>({
@@ -32,7 +32,7 @@ export default function SportfestSetupPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-xl mx-auto w-full">
       <div>
-        <Link href="/games/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">⚙️ Sportfest Setup</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">Disziplinen aktivieren / deaktivieren</p>
       </div>
