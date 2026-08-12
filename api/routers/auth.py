@@ -8,6 +8,11 @@ from ..auth import (
     revoke_token_from_request
 )
 from ..config import settings
+# _teacher_out flattens the ORM relationships (teacher_role -> name, klasse ->
+# code) that TeacherOut expects as strings. Serializing a Teacher with
+# TeacherOut.model_validate() directly raises a ValidationError whenever
+# teacher_role/klasse is set, so reuse the canonical serializer here.
+from .teachers import _teacher_out
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -34,7 +39,7 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         token = create_access_token({"sub": str(teacher.id), "type": "teacher"})
         _set_auth_cookie(response, token)
-        return TokenOut(access_token=token, teacher=TeacherOut.model_validate(teacher))
+        return TokenOut(access_token=token, teacher=_teacher_out(teacher))
 
     # Try student login
     student = db.query(Student).filter(
@@ -66,7 +71,7 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
 @router.get("/me", response_model=MeOut)
 def me(user=Depends(get_current_user)):
     if isinstance(user, Teacher):
-        return MeOut(user_type="teacher", teacher=TeacherOut.model_validate(user))
+        return MeOut(user_type="teacher", teacher=_teacher_out(user))
     student_out = StudentOut.model_validate(user)
     student_out.has_credentials = bool(user.username and user.password_hash)
     return MeOut(user_type="student", student=student_out)

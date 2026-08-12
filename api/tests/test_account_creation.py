@@ -4,12 +4,38 @@ Tests for account/credential generation, manual user creation, and password rese
   - manual creation of student / teacher / admin accounts with roles
   - admin password reset for a single student or teacher
 """
-from api.models import Teacher, Student
+from api.models import Teacher, Student, TeacherRole
 from api.auth import hash_password, verify_password
 
 
 def _auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
+
+
+# ── Login serialization (regression) ───────────────────────────────────────
+
+def test_login_teacher_with_professional_role(client, db):
+    """A teacher with a teacher_role set must be able to log in. Regression:
+    login/me serialized the Teacher via TeacherOut.model_validate(), which fed
+    the ORM TeacherRole object into a `str` field and 500'd for every teacher
+    that had a role assigned."""
+    role = TeacherRole(name="Lehrer", counts_as_teacher=True)
+    db.add(role)
+    db.flush()
+    t = Teacher(first_name="Rolf", last_name="Rolle", active=True, role="teacher",
+                username="r.rolle10", password_hash=hash_password("secret123"),
+                teacher_role_id=role.id)
+    db.add(t)
+    db.flush()
+
+    r = client.post("/api/auth/login", json={"username": "r.rolle10", "password": "secret123"})
+    assert r.status_code == 200, r.text
+    assert r.json()["teacher"]["teacher_role"] == "Lehrer"
+
+    # /me had the same bug — the login cookie is now set on the client.
+    me = client.get("/api/auth/me")
+    assert me.status_code == 200, me.text
+    assert me.json()["teacher"]["teacher_role"] == "Lehrer"
 
 
 # ── Teacher credential generation ──────────────────────────────────────────
