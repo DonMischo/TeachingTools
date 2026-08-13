@@ -6,18 +6,29 @@ JSON blob (`items`) loaded/saved as a unit by the canvas editor — the JSON-blo
 pattern used by LessonPlan/BingoSet. Writes require admin or the class's
 Klassenlehrer (assert_class_editor, shared with the classes router).
 """
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import SeatingPlan, Class, Student, Teacher
-from ..auth import get_current_teacher, get_current_user
+from ..auth import get_current_user, require_class_teacher, is_granted_klassensprecher
 from ..seating_export import export_pdf, ITEM_SIZES
-from .classes import assert_class_editor
 
 router = APIRouter(prefix="/api", tags=["seating"])
+
+
+def _assert_additional_editor(current, class_id: int, db: Session) -> None:
+    """Additional (non-default) rooms may be managed by any teacher or by a
+    granted Klassensprecher of the class — the default 'Klassenraum' stays
+    locked to the Klassenlehrer (require_class_teacher)."""
+    if isinstance(current, Teacher) or is_granted_klassensprecher(db, current, class_id):
+        return
+    raise HTTPException(403, "Keine Berechtigung für diesen Sitzplan.")
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
@@ -105,11 +116,16 @@ def create_plan(
     class_id: int,
     body: SeatingPlanCreate,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     if not db.get(Class, class_id):
         raise HTTPException(404, "Klasse nicht gefunden")
-    assert_class_editor(current, class_id)
+    # The first plan is the default "Klassenraum" and belongs to the class
+    # teacher; any teacher (or a granted Klassensprecher) may add further rooms.
+    if db.query(SeatingPlan).filter_by(class_id=class_id).count() == 0:
+        require_class_teacher(current, class_id)
+    else:
+        _assert_additional_editor(current, class_id, db)
     plan = SeatingPlan(
         class_id=class_id,
         name=body.name.strip() or "Klassenraum",
@@ -129,6 +145,13 @@ def _get_plan_or_404(plan_id: int, db: Session) -> SeatingPlan:
     return plan
 
 
+def _is_default_plan(plan: SeatingPlan, db: Session) -> bool:
+    """The default "Klassenraum" = the first (lowest-id) plan of the class. It
+    stays locked to the class teacher; additional rooms are open to any teacher."""
+    min_id = db.query(func.min(SeatingPlan.id)).filter_by(class_id=plan.class_id).scalar()
+    return plan.id == min_id
+
+
 @router.get("/seating/{plan_id}", response_model=SeatingPlanDetail)
 def get_plan(plan_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
     return _detail(_get_plan_or_404(plan_id, db))
@@ -139,10 +162,13 @@ def update_plan(
     plan_id: int,
     body: SeatingPlanUpdate,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     plan = _get_plan_or_404(plan_id, db)
-    assert_class_editor(current, plan.class_id)
+    if _is_default_plan(plan, db):
+        require_class_teacher(current, plan.class_id)
+    else:
+        _assert_additional_editor(current, plan.class_id, db)
     plan.name = body.name.strip() or "Klassenraum"
     plan.orientation = body.orientation
     plan.items = [it.model_dump() for it in body.items]
@@ -155,10 +181,13 @@ def update_plan(
 def delete_plan(
     plan_id: int,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     plan = _get_plan_or_404(plan_id, db)
-    assert_class_editor(current, plan.class_id)
+    if _is_default_plan(plan, db):
+        require_class_teacher(current, plan.class_id)
+    else:
+        _assert_additional_editor(current, plan.class_id, db)
     db.delete(plan)
     db.commit()
 
@@ -184,4 +213,5 @@ def export_plan_pdf(plan_id: int, db: Session = Depends(get_db), _=Depends(get_c
         raise HTTPException(503, "PDF-Export momentan nicht verfügbar")
     cls = db.get(Class, plan.class_id)
     klasse = cls.code if cls else str(plan.class_id)
-    return FileResponse(pdf_path, media_type="application/pdf", filename=f"Sitzplan_{klasse}_{plan.name}.pdf")
+    stamp = datetime.now().strftime("%Y%m%d")
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"{klasse}_{stamp}.pdf")

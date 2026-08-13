@@ -111,6 +111,57 @@ def require_admin(
     return user
 
 
+def is_class_teacher(user: Union[Teacher, Student], class_id: int | None) -> bool:
+    """True for admins and the Klassenlehrer of ``class_id`` (a two-person
+    Klassenleitungsteam shares one ``klasse_id``). Students are never class
+    teachers. Used to lock Klassenverwaltung edits to a class's own leadership."""
+    if not isinstance(user, Teacher):
+        return False
+    if user.role == "admin":
+        return True
+    return class_id is not None and user.klasse_id == class_id
+
+
+def require_class_teacher(user: Union[Teacher, Student], class_id: int | None) -> None:
+    if not is_class_teacher(user, class_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Nur die Klassenleitung dieser Klasse oder Admins dürfen das bearbeiten.",
+        )
+
+
+def is_granted_klassensprecher(db: Session, user: Union[Teacher, Student], class_id: int | None) -> bool:
+    """True if ``user`` is a Klassensprecher of ``class_id`` AND that class has
+    enabled the Klassensprecher edit-grant (``Class.ksprecher_can_edit``)."""
+    if not isinstance(user, Student) or class_id is None:
+        return False
+    from .models import StudentRole, Class
+    cls = db.get(Class, class_id)
+    if not cls or not cls.ksprecher_can_edit:
+        return False
+    role = (
+        db.query(StudentRole)
+        .filter(
+            StudentRole.student_id == user.id,
+            StudentRole.role_type.ilike("klassensprecher"),
+            StudentRole.scope_id == class_id,
+        )
+        .first()
+    )
+    return role is not None
+
+
+def require_class_manager(db: Session, user: Union[Teacher, Student], class_id: int | None) -> None:
+    """Guard for the limited Klassenverwaltung subset (Klassendienste, zusätzliche
+    Sitzpläne): the class's Klassenlehrer, an admin, or a granted Klassensprecher."""
+    if is_class_teacher(user, class_id) or is_granted_klassensprecher(db, user, class_id):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Keine Berechtigung, diese Klasse zu bearbeiten.",
+    )
+
+
 def revoke_token_from_request(request: Request, db: Session) -> None:
     """Extract token from request (cookie or header), add jti to blocklist."""
     token = request.cookies.get("hp_session")

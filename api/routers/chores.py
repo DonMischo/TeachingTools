@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ClassChore, ClassChoreHistory, Student, Teacher
-from ..auth import get_current_teacher
+from ..auth import (
+    get_current_teacher, get_current_user, require_class_teacher,
+    require_class_manager,
+)
 
 router = APIRouter(prefix="/api/chores", tags=["chores"])
 
@@ -120,7 +123,10 @@ def chore_stats(class_id: int, db: Session = Depends(get_db), _: Teacher = Depen
 
 
 @router.get("", response_model=list[ChoreOut])
-def list_chores(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def list_chores(class_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    # Any teacher may view; a student only if a granted Klassensprecher of this class.
+    if not isinstance(current, Teacher):
+        require_class_manager(db, current, class_id)
     return [_out(c) for c in db.query(ClassChore).filter_by(class_id=class_id).all()]
 
 
@@ -128,8 +134,11 @@ def list_chores(class_id: int, db: Session = Depends(get_db), _: Teacher = Depen
 def upsert_chore(
     body: ChoreUpsert,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
+    require_class_manager(db, current, body.class_id)
+    # assigned_by references teachers; a Klassensprecher editing leaves it null.
+    editor_id = current.id if isinstance(current, Teacher) else None
     existing = db.query(ClassChore).filter_by(class_id=body.class_id, chore_name=body.chore_name).first()
     if existing:
         # If student is changing, potentially log the old assignment
@@ -138,7 +147,7 @@ def upsert_chore(
             existing.assigned_at = _now()  # reset clock for new student
         existing.student_id = body.student_id
         existing.enabled = body.enabled
-        existing.assigned_by = current.id
+        existing.assigned_by = editor_id
         db.commit()
         db.refresh(existing)
         return _out(existing)
@@ -147,7 +156,7 @@ def upsert_chore(
         chore_name=body.chore_name,
         enabled=body.enabled,
         student_id=body.student_id,
-        assigned_by=current.id,
+        assigned_by=editor_id,
     )
     db.add(chore)
     db.commit()
@@ -164,6 +173,7 @@ def delete_chore(
     chore = db.get(ClassChore, chore_id)
     if not chore:
         raise HTTPException(404, "Chore not found")
+    require_class_teacher(current, chore.class_id)
     _maybe_complete(chore, db)
     db.delete(chore)
     db.commit()
@@ -173,9 +183,10 @@ def delete_chore(
 def clear_chores(
     class_id: int,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     """Clear student assignments from all enabled chores; log any that qualify."""
+    require_class_manager(db, current, class_id)
     chores = db.query(ClassChore).filter_by(class_id=class_id, enabled=True).all()
     for c in chores:
         _maybe_complete(c, db)
@@ -188,9 +199,11 @@ def clear_chores(
 def random_assign(
     class_id: int,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(get_current_teacher),
+    current=Depends(get_current_user),
 ):
     """Randomly assign students to all enabled chores; log any qualifying old assignments."""
+    require_class_manager(db, current, class_id)
+    editor_id = current.id if isinstance(current, Teacher) else None
     chores = db.query(ClassChore).filter_by(class_id=class_id, enabled=True).all()
     if not chores:
         return []
@@ -204,7 +217,7 @@ def random_assign(
             _maybe_complete(chore, db)
             chore.assigned_at = _now()
         chore.student_id = new_sid
-        chore.assigned_by = current.id
+        chore.assigned_by = editor_id
     db.commit()
     for c in chores:
         db.refresh(c)

@@ -8,6 +8,7 @@ import {
   TeacherCredentialRow, StudentCredentialRow, TeacherPreviewResponse,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useToast } from "@/contexts/ToastContext";
 
 type UserType = "student" | "teacher" | "admin";
@@ -86,13 +87,13 @@ export default function AdminUsersPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("students") || aHas("teachers");
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
-
-  const isAdmin = auth?.role === "admin";
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
   const { data: classes = [] } = useQuery<ClassOut[]>({
-    queryKey: ["classes"], queryFn: api.classes.list, enabled: isAdmin, staleTime: 60_000,
+    queryKey: ["classes"], queryFn: api.classes.list, enabled: allowed, staleTime: 60_000,
   });
 
   // ── Manual create ────────────────────────────────────────────────────────
@@ -192,12 +193,12 @@ export default function AdminUsersPage() {
   const [resetResult, setResetResult] = useState<CredResult | null>(null);
 
   const { data: teachers = [] } = useQuery<TeacherOut[]>({
-    queryKey: ["teachers"], queryFn: api.teachers.list, enabled: isAdmin,
+    queryKey: ["teachers"], queryFn: api.teachers.list, enabled: allowed,
   });
   const { data: resetStudents = [] } = useQuery<StudentOut[]>({
     queryKey: ["students", resetClass],
     queryFn: () => api.students.list({ klasse: resetClass }),
-    enabled: isAdmin && resetType === "student" && Boolean(resetClass),
+    enabled: allowed && resetType === "student" && Boolean(resetClass),
   });
 
   const resetMut = useMutation({
@@ -214,7 +215,7 @@ export default function AdminUsersPage() {
   });
   const canReset = resetType === "teacher" ? Boolean(resetTeacherId) : Boolean(resetStudentId);
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   return (
     <div className="flex flex-col gap-8 p-6 max-w-4xl mx-auto w-full">

@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 
-from ..auth import require_admin
+from ..admin_access import require_admin_feature
 
 router = APIRouter(prefix="/api/admin/style", tags=["style"])
 
@@ -97,7 +97,7 @@ def get_manifest():
 @router.post("/pack")
 async def upload_style_pack(
     file: UploadFile = File(...),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("style_pack")),
 ):
     """Upload a ZIP containing any combination of theme.json, logo.*, icons/*.svg."""
     _ensure_dirs()
@@ -156,7 +156,7 @@ async def upload_style_pack(
 @router.post("/colors")
 async def save_colors(
     body: dict,
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("style_pack")),
 ):
     """Save individual color variables (from the color editor)."""
     _ensure_dirs()
@@ -170,7 +170,7 @@ async def save_colors(
 
 
 @router.delete("")
-async def reset_style_pack(_: object = Depends(require_admin)):
+async def reset_style_pack(_: object = Depends(require_admin_feature("style_pack"))):
     """Remove all custom style pack files, reverting to built-in themes."""
     _ensure_dirs()
     for ext in LOGO_EXTS:

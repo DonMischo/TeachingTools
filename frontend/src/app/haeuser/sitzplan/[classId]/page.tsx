@@ -7,6 +7,7 @@ import {
   api, ClassOut, StudentOut, SeatingItem, SeatingItemKind, SeatingPlanSummary,
 } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Base item footprints in mm — MUST match api/seating_export.py ITEM_SIZES + SIZE_FACTOR.
 // SIZE_FACTOR scales every element relative to the A4 canvas (kept in sync BE/FE).
@@ -124,17 +125,40 @@ export default function SitzplanPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { auth } = useAuth();
   const classId = Number(params.classId);
+  const isTeacher = auth?.user_type === "teacher";
+  const isAdmin = auth?.teacher?.role === "admin";
 
   // ── Data ──
   const { data: classes = [] } = useQuery<ClassOut[]>({ queryKey: ["classes"], queryFn: api.classes.list });
   const cls = classes.find(c => c.id === classId);
 
-  const { data: students = [] } = useQuery<StudentOut[]>({
+  // Students only reach this page as a granted Klassensprecher of THIS class.
+  const { data: myMgmt } = useQuery<{ class_id: number | null }>({
+    queryKey: ["my-management"], queryFn: api.classes.myManagement, enabled: !!auth && !isTeacher,
+  });
+  const grantedHere = !isTeacher && myMgmt?.class_id === classId;
+  useEffect(() => {
+    if (auth && !isTeacher && myMgmt && myMgmt.class_id !== classId) router.replace("/");
+  }, [auth, isTeacher, myMgmt, classId, router]);
+
+  // Teachers get the full roster; a granted Klassensprecher gets the minimal one
+  // (names + Geschlecht) that class-manager access allows.
+  const { data: teacherStudents = [] } = useQuery<StudentOut[]>({
     queryKey: ["students", classId],
     queryFn: () => api.students.list({ klasse: cls!.code }),
-    enabled: !!cls,
+    enabled: !!cls && isTeacher,
   });
+  const { data: roster = [] } = useQuery({
+    queryKey: ["roster", classId], queryFn: () => api.classes.roster(classId),
+    enabled: !!cls && grantedHere,
+  });
+  const students: StudentOut[] = useMemo(() => isTeacher ? teacherStudents : roster.map(r => ({
+    id: r.id, nummer: null, nachname: r.nachname, vorname: r.vorname, klasse: cls?.code ?? "",
+    class_id: classId, jahrgang: null, geschlecht: r.geschlecht, geburtsdatum: null,
+    username: null, active: true, has_credentials: false,
+  })), [isTeacher, teacherStudents, roster, cls?.code, classId]);
   const studentById = useMemo(() => new Map(students.map(s => [s.id, s])), [students]);
 
   const { data: plans = [] } = useQuery<SeatingPlanSummary[]>({
@@ -154,6 +178,14 @@ export default function SitzplanPage() {
     enabled: planId != null,
     staleTime: Infinity,
   });
+
+  // The default "Klassenraum" (first/lowest-id plan) is editable only by the
+  // Klassenlehrer/admin; additional rooms by any teacher or granted
+  // Klassensprecher. Mirrors the backend (api/routers/seating.py).
+  const mayEditAdditional = isTeacher || grantedHere;
+  const isClassTeacher = isAdmin || auth?.teacher?.klasse_id === classId;
+  const isDefaultPlan = plans.length > 0 && planId === plans[0].id;
+  const canEdit = isDefaultPlan ? isClassTeacher : mayEditAdditional;
 
   // ── Editable local state (autosaved) ──
   const [name, setName] = useState("");
@@ -176,9 +208,9 @@ export default function SitzplanPage() {
     setSaveState("saved");
   }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced autosave.
+  // Debounced autosave (only when the current user may edit this plan).
   useEffect(() => {
-    if (planId == null) return;
+    if (planId == null || !canEdit) return;
     const payload = { name, orientation, items };
     const ser = JSON.stringify(payload);
     if (ser === savedRef.current) return;
@@ -198,7 +230,7 @@ export default function SitzplanPage() {
       }
     }, 600);
     return () => clearTimeout(t);
-  }, [name, orientation, items, planId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, orientation, items, planId, canEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const dims = pageDims(orientation);
@@ -246,7 +278,7 @@ export default function SitzplanPage() {
   }
   function onItemPointerDown(e: React.PointerEvent, it: SeatingItem) {
     setSelectedId(it.id);
-    if (it.locked) return;
+    if (!canEdit || it.locked) return;
     e.preventDefault();
     const p = pointerToMm(e);
     drag.current = { id: it.id, offX: p.x - it.x, offY: p.y - it.y };
@@ -267,6 +299,18 @@ export default function SitzplanPage() {
   function onCanvasPointerUp(e: React.PointerEvent) {
     if (drag.current) { try { canvasRef.current?.releasePointerCapture(e.pointerId); } catch {} }
     drag.current = null;
+  }
+
+  // Print to PDF. The browser's Save-as-PDF dialog takes its default filename
+  // from document.title, so name it "<Klasse>_<YYYYMMDD>" (e.g. 10c_20260813)
+  // for the duration of the print, then restore the page title.
+  function printPdf() {
+    const d = new Date();
+    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    const prev = document.title;
+    document.title = `${cls?.code ?? "Sitzplan"}_${ymd}`;
+    window.print();
+    setTimeout(() => { document.title = prev; }, 500);
   }
 
   // Clear every unlocked seat on an unlocked item (locked seats/items keep theirs).
@@ -344,6 +388,10 @@ export default function SitzplanPage() {
   const selected = items.find(i => i.id === selectedId) ?? null;
   const usedIds = new Set(items.flatMap(it => it.seats.map(s => s.student_id).filter((x): x is number => x != null)));
 
+  // Ungranted student (or grant still resolving) — render nothing while the
+  // guard redirect settles.
+  if (!auth || (!isTeacher && !grantedHere)) return null;
+
   // ── No-plan empty state ──
   if (plans.length === 0) {
     return (
@@ -352,13 +400,17 @@ export default function SitzplanPage() {
         <div className="flex flex-col items-center justify-center gap-4 flex-1 py-20 text-center">
           <div className="text-6xl">🪑</div>
           <p className="text-lg font-semibold">Noch kein Sitzplan für {cls?.code ?? "diese Klasse"}</p>
-          <button
-            onClick={() => createMut.mutate("Klassenraum")}
-            disabled={createMut.isPending}
-            className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90 disabled:opacity-50"
-          >
-            + Klassenraum anlegen
-          </button>
+          {isClassTeacher ? (
+            <button
+              onClick={() => createMut.mutate("Klassenraum")}
+              disabled={createMut.isPending}
+              className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90 disabled:opacity-50"
+            >
+              + Klassenraum anlegen
+            </button>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">Die Klassenleitung muss zuerst einen Klassenraum anlegen.</p>
+          )}
         </div>
       </div>
     );
@@ -395,101 +447,117 @@ export default function SitzplanPage() {
         >
           {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <button
-          onClick={() => { const n = prompt("Name des Raums:", "Klassenraum"); if (n !== null) createMut.mutate(n.trim()); }}
-          className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-        >+ Raum</button>
-        {planId != null && (
+        {mayEditAdditional && (
+          <button
+            onClick={() => { const n = prompt("Name des Raums:", "Klassenraum"); if (n !== null) createMut.mutate(n.trim()); }}
+            className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+          >+ Raum</button>
+        )}
+        {planId != null && canEdit && (
           <button
             onClick={() => { if (confirm(`Raum „${name}" löschen?`)) deleteMut.mutate(planId); }}
             className="text-sm px-2.5 py-1.5 rounded-lg text-red-400 border border-red-900/40 hover:bg-red-900/20"
           >🗑</button>
         )}
 
-        <span className="w-px h-6 bg-[var(--border)] mx-1" />
+        {canEdit ? (
+          <>
+            <span className="w-px h-6 bg-[var(--border)] mx-1" />
 
-        {/* Room name */}
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm w-40"
-          placeholder="Raumname"
-        />
+            {/* Room name */}
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm w-40"
+              placeholder="Raumname"
+            />
 
-        {/* Orientation */}
-        <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs">
-          {(["landscape", "portrait"] as const).map(o => (
+            {/* Orientation */}
+            <div className="flex rounded-lg border border-[var(--border)] overflow-hidden text-xs">
+              {(["landscape", "portrait"] as const).map(o => (
+                <button
+                  key={o}
+                  onClick={() => setOrientation(o)}
+                  className={`px-3 py-1.5 font-semibold ${orientation === o ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)]"}`}
+                >{o === "landscape" ? "Querformat" : "Hochformat"}</button>
+              ))}
+            </div>
+
+            {/* Snap */}
             <button
-              key={o}
-              onClick={() => setOrientation(o)}
-              className={`px-3 py-1.5 font-semibold ${orientation === o ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)]"}`}
-            >{o === "landscape" ? "Querformat" : "Hochformat"}</button>
-          ))}
-        </div>
+              onClick={() => setSnap(s => !s)}
+              className={`text-sm px-3 py-1.5 rounded-lg border ${snap ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}
+            >🧲 Raster {snap ? "an" : "aus"}</button>
 
-        {/* Snap */}
-        <button
-          onClick={() => setSnap(s => !s)}
-          className={`text-sm px-3 py-1.5 rounded-lg border ${snap ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}
-        >🧲 Raster {snap ? "an" : "aus"}</button>
-
-        {/* Fit all items into the 5 mm print area */}
-        <button
-          onClick={() => setItems(prev => prev.map(it => {
-            const s = effSize(it);
-            return {
-              ...it,
-              x: Math.max(PRINT_MARGIN_MM, Math.min(dims.w - PRINT_MARGIN_MM - s.w, it.x)),
-              y: Math.max(PRINT_MARGIN_MM, Math.min(dims.h - PRINT_MARGIN_MM - s.h, it.y)),
-            };
-          }))}
-          title="Alle Elemente in den 5-mm-Druckbereich verschieben"
-          className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-        >🖨 Einpassen</button>
+            {/* Fit all items into the 5 mm print area */}
+            <button
+              onClick={() => setItems(prev => prev.map(it => {
+                const s = effSize(it);
+                return {
+                  ...it,
+                  x: Math.max(PRINT_MARGIN_MM, Math.min(dims.w - PRINT_MARGIN_MM - s.w, it.x)),
+                  y: Math.max(PRINT_MARGIN_MM, Math.min(dims.h - PRINT_MARGIN_MM - s.h, it.y)),
+                };
+              }))}
+              title="Alle Elemente in den 5-mm-Druckbereich verschieben"
+              className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+            >🖨 Einpassen</button>
+          </>
+        ) : (
+          <span className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--surface-hover)] text-[var(--text-muted)]">
+            👁 Nur ansehen{isDefaultPlan ? " · Klassenraum (nur Klassenleitung)" : ""}
+          </span>
+        )}
 
         <span className="flex-1" />
 
         {/* Save state */}
-        <span className="text-xs text-[var(--text-muted)]">
-          {saveState === "saving" ? "Speichern…" : saveState === "error" ? "⚠️ Fehler" : "✓ Gespeichert"}
-        </span>
+        {canEdit && (
+          <span className="text-xs text-[var(--text-muted)]">
+            {saveState === "saving" ? "Speichern…" : saveState === "error" ? "⚠️ Fehler" : "✓ Gespeichert"}
+          </span>
+        )}
         {planId != null && (
           <button
-            onClick={() => window.print()}
-            title="Öffnet den Druckdialog — dort „Als PDF speichern“ wählen. Der Ausdruck ist exakt diese Ansicht."
+            onClick={printPdf}
+            title="Öffnet den Druckdialog — dort „Als PDF speichern“ wählen. Der Dateiname ist Klasse + Datum, der Ausdruck exakt diese Ansicht."
             className="text-sm px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white font-semibold hover:opacity-90"
           >🖨 Als PDF (A4)</button>
         )}
       </div>
 
       {/* Palette */}
-      <div className="flex flex-wrap gap-2">
-        {PALETTE.map(kind => (
-          <button
-            key={kind}
-            onClick={() => addItem(kind)}
-            className="text-sm px-3 py-2 rounded-xl border border-dashed border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-2"
-          >
-            <span>{KIND_EMOJI[kind]}</span>{ITEM_SIZES[kind].label}
-          </button>
-        ))}
-      </div>
+      {canEdit && (
+        <div className="flex flex-wrap gap-2">
+          {PALETTE.map(kind => (
+            <button
+              key={kind}
+              onClick={() => addItem(kind)}
+              className="text-sm px-3 py-2 rounded-xl border border-dashed border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-2"
+            >
+              <span>{KIND_EMOJI[kind]}</span>{ITEM_SIZES[kind].label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={randomAssign}
-          className="text-sm px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90"
-        >🎲 Namen zufällig verteilen</button>
-        <button
-          onClick={emptySeats}
-          title="Alle nicht gesperrten Plätze leeren (gesperrte bleiben)"
-          className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
-        >🧹 Plätze leeren</button>
-        <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-          <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-[var(--accent)] w-4 h-4" />
-          Junge/Mädchen abwechselnd
-        </label>
-      </div>
+      {canEdit && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={randomAssign}
+            className="text-sm px-4 py-2 rounded-xl bg-[var(--accent)] text-white font-semibold hover:opacity-90"
+          >🎲 Namen zufällig verteilen</button>
+          <button
+            onClick={emptySeats}
+            title="Alle nicht gesperrten Plätze leeren (gesperrte bleiben)"
+            className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+          >🧹 Plätze leeren</button>
+          <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+            <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-[var(--accent)] w-4 h-4" />
+            Junge/Mädchen abwechselnd
+          </label>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Canvas */}
@@ -593,7 +661,13 @@ export default function SitzplanPage() {
 
         {/* Inspector */}
         <div className="lg:w-72 shrink-0">
-          {selected ? (
+          {!canEdit ? (
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-sm text-[var(--text-muted)]">
+              👁 Nur-Ansicht. {isDefaultPlan
+                ? "Den Klassenraum bearbeitet nur die Klassenleitung — zusätzliche Räume darfst du anlegen und bearbeiten."
+                : "Du hast keine Bearbeitungsrechte für diesen Raum."}
+            </div>
+          ) : selected ? (
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm">{KIND_EMOJI[selected.kind]} {ITEM_SIZES[selected.kind].label}</span>

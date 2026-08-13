@@ -17,7 +17,8 @@ from .. import task_generators
 from ..database import get_db
 from ..expr_eval import eval_expr, render_template
 from ..models import TaskGeneratorDef, Teacher
-from ..auth import get_current_teacher, require_admin
+from ..auth import get_current_teacher
+from ..admin_access import require_admin_feature
 
 router = APIRouter(tags=["generators"])
 
@@ -111,7 +112,7 @@ def sample_generator(
 
 
 @router.post("/api/admin/generators", status_code=201)
-def create_generator(body: GeneratorIn, db: Session = Depends(get_db), current: Teacher = Depends(require_admin)):
+def create_generator(body: GeneratorIn, db: Session = Depends(get_db), current: Teacher = Depends(require_admin_feature("generators"))):
     slug = body.slug.strip().lower()
     if not slug or not slug.replace("_", "").replace("-", "").isalnum():
         raise HTTPException(400, "slug: nur Kleinbuchstaben, Zahlen, '-' und '_'")
@@ -140,7 +141,7 @@ def create_generator(body: GeneratorIn, db: Session = Depends(get_db), current: 
 
 
 @router.get("/api/admin/generators")
-def list_admin_generators(db: Session = Depends(get_db), _: Teacher = Depends(require_admin)):
+def list_admin_generators(db: Session = Depends(get_db), _: Teacher = Depends(require_admin_feature("generators"))):
     defs = db.query(TaskGeneratorDef).order_by(TaskGeneratorDef.label).all()
     return [
         {"id": d.id, "slug": d.slug, "label": d.label, "subject": d.subject,
@@ -150,7 +151,7 @@ def list_admin_generators(db: Session = Depends(get_db), _: Teacher = Depends(re
 
 
 @router.delete("/api/admin/generators/{slug}", status_code=204)
-def delete_generator(slug: str, db: Session = Depends(get_db), _: Teacher = Depends(require_admin)):
+def delete_generator(slug: str, db: Session = Depends(get_db), _: Teacher = Depends(require_admin_feature("generators"))):
     d = db.query(TaskGeneratorDef).filter_by(slug=slug).first()
     if not d:
         raise HTTPException(404, "Generator nicht gefunden")

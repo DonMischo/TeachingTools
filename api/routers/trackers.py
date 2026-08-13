@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ClassTracker, ClassTrackerCheck, Teacher
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, require_class_teacher
 
 router = APIRouter(prefix="/api/trackers", tags=["trackers"])
 
@@ -43,6 +43,7 @@ def create_tracker(
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
+    require_class_teacher(current, body.class_id)
     t = ClassTracker(class_id=body.class_id, name=body.name, created_by=current.id)
     db.add(t)
     db.commit()
@@ -59,6 +60,7 @@ def delete_tracker(
     t = db.get(ClassTracker, tracker_id)
     if not t:
         raise HTTPException(404, "Tracker not found")
+    require_class_teacher(current, t.class_id)
     db.delete(t)
     db.commit()
 
@@ -73,6 +75,7 @@ def toggle_student(
     t = db.get(ClassTracker, tracker_id)
     if not t:
         raise HTTPException(404, "Tracker not found")
+    require_class_teacher(current, t.class_id)
     existing = db.query(ClassTrackerCheck).filter_by(tracker_id=tracker_id, student_id=student_id).first()
     if existing:
         db.delete(existing)

@@ -11,12 +11,14 @@ import { useSelectedClass } from "@/contexts/SelectedClassContext";
 import { NavIcon } from "@/components/icons/NavIcon";
 import { AppLogo } from "@/components/AppLogo";
 import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
-  { tab: "home",           label: "Hauspokal",      href: "/" },
-  { tab: "games",          label: "Spiele",         href: "/games" },
-  { tab: "tools",          label: "Tools",          href: "/tools" },
-  { tab: "kalender",       label: "Kalender",       href: "/kalender" },
+  { tab: "home",           label: "Hauspokal",         href: "/" },
+  { tab: "games",          label: "Spiele",            href: "/games" },
+  { tab: "tools",          label: "Tools",             href: "/tools" },
+  { tab: "haeuser",        label: "Klassenverwaltung", href: "/haeuser" },
+  { tab: "kalender",       label: "Kalender",          href: "/kalender" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
@@ -142,6 +144,20 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
 
   const canAwardPoints = auth?.role === "teacher" || auth?.role === "admin";
 
+  // A student sees the Klassenverwaltung icon only if they're a granted
+  // Klassensprecher (limited Dienste/Sitzplan edit for their class).
+  const { data: myMgmt } = useQuery<{ class_id: number | null }>({
+    queryKey: ["my-management"],
+    queryFn: api.classes.myManagement,
+    enabled: auth?.role === "student",
+    staleTime: 60_000,
+  });
+  const canSeeKlassen = auth?.role === "teacher" || auth?.role === "admin" || myMgmt?.class_id != null;
+
+  // The admin icon shows for real admins and for teachers granted any admin feature.
+  const { isAdmin, hasAny: hasAdminFeature } = useAdminAccess();
+  const canSeeAdmin = isAdmin || hasAdminFeature;
+
   const { data: classes = [] } = useQuery<ClassOut[]>({
     queryKey: ["classes"],
     queryFn: api.classes.list,
@@ -243,7 +259,13 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
 
       <div className="flex flex-col items-center gap-1">
         {NAV_MAIN
-          .filter(({ tab }) => !(tab === "tools" && auth?.role === "student"))
+          .filter(({ tab }) => {
+            // Tools stays teacher/admin-only; Klassenverwaltung also shows for a
+            // granted Klassensprecher (canSeeKlassen).
+            if (tab === "tools" && auth?.role === "student") return false;
+            if (tab === "haeuser" && !canSeeKlassen) return false;
+            return true;
+          })
           .map(({ tab, label, href }) => (
           <Link key={tab} href={href} title={label}
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
@@ -265,8 +287,8 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
       </div>
 
       <div className="mt-auto flex flex-col items-center gap-1 mb-1">
-        {/* Admin — only visible to admins */}
-        {auth?.role === "admin" && (
+        {/* Admin — real admins, plus teachers granted any admin feature */}
+        {canSeeAdmin && (
           <Link href="/admin" title="Admin"
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
               ${isActive("/admin")

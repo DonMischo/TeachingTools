@@ -10,6 +10,7 @@ export type ClassOut = {
   symbol_emoji: string | null;
   symbol_image: string | null;
   total_points: number;
+  ksprecher_can_edit?: boolean;
 };
 
 export type StudentOut = {
@@ -894,6 +895,16 @@ export type AvailabilityOverride = {
   allowed: boolean;
 };
 
+// ── Admin feature grants ──
+export type AdminAccessMe = { is_admin: boolean; features: string[] };
+export type AdminFeatureOut = { slug: string; label: string; icon: string };
+export type AdminTeacherRole = { id: number; name: string };
+export type AdminFeatureGrant = {
+  feature_slug: string;
+  teacher_role_id: number | null;
+  teacher_id: number | null;
+};
+
 export const api = {
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),
@@ -910,6 +921,10 @@ export const api = {
         body: fd,
       }).then((r) => r.json() as Promise<ClassOut>);
     },
+    setKsprecherEdit: (id: number, enabled: boolean) =>
+      apiFetch<ClassOut>(`classes/${id}/ksprecher-edit`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+    myManagement: () => apiFetch<{ class_id: number | null }>("classes/my-management"),
+    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string }[]>(`classes/${id}/roster`),
   },
   teachers: {
     list: () => apiFetch<TeacherOut[]>("teachers"),
@@ -1179,6 +1194,20 @@ export const api = {
       const q = new URLSearchParams({ tool_slug: p.tool_slug, capability: p.capability, audience: p.audience });
       if (p.class_id != null) q.set("class_id", String(p.class_id));
       return apiFetch<void>(`availability/override?${q}`, { method: "DELETE" });
+    },
+  },
+  adminAccess: {
+    me: () => apiFetch<AdminAccessMe>("admin-access/me"),
+    catalog: () => apiFetch<AdminFeatureOut[]>("admin-access/catalog"),
+    teacherRoles: () => apiFetch<AdminTeacherRole[]>("admin-access/teacher-roles"),
+    grants: () => apiFetch<AdminFeatureGrant[]>("admin-access/grants"),
+    addGrant: (b: { feature_slug: string; teacher_role_id?: number | null; teacher_id?: number | null }) =>
+      apiFetch<AdminFeatureGrant>("admin-access/grant", { method: "PUT", body: JSON.stringify(b) }),
+    removeGrant: (b: { feature_slug: string; teacher_role_id?: number | null; teacher_id?: number | null }) => {
+      const q = new URLSearchParams({ feature_slug: b.feature_slug });
+      if (b.teacher_role_id != null) q.set("teacher_role_id", String(b.teacher_role_id));
+      if (b.teacher_id != null) q.set("teacher_id", String(b.teacher_id));
+      return apiFetch<void>(`admin-access/grant?${q}`, { method: "DELETE" });
     },
   },
   calendar: {

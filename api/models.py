@@ -72,6 +72,9 @@ class Class(Base):
     # school year's Stichtag (1. August). Lets a class keep its identity across the
     # yearly grade bump ("7a" -> "8a") for import matching. See api/schoolyear.py.
     ak_code: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
+    # When true, this class's Klassensprecher may edit the limited Klassenverwaltung
+    # subset (Klassendienste + zusätzliche Sitzpläne). Toggled by the Klassenlehrer.
+    ksprecher_can_edit: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="class_")
 
@@ -1436,3 +1439,29 @@ class ToolAvailability(Base):
     allowed: Mapped[bool] = mapped_column(Boolean, nullable=False)
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Admin feature grants (grant an admin area to a teacher group / individual)
+# ---------------------------------------------------------------------------
+
+class AdminFeatureGrant(Base):
+    """Grants one admin feature (api/admin_features.py) to either a whole teacher
+    group (``teacher_role_id`` set) or an individually trusted teacher
+    (``teacher_id`` set) — exactly one of the two per row. Admins always have
+    every feature regardless of grants. See api/admin_access.py."""
+    __tablename__ = "admin_feature_grants"
+    __table_args__ = (
+        UniqueConstraint("feature_slug", "teacher_role_id", "teacher_id",
+                         name="uq_admin_feature_grant"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    feature_slug: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    teacher_role_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teacher_roles.id", ondelete="CASCADE"), nullable=True
+    )
+    teacher_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

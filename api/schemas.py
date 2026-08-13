@@ -153,6 +153,7 @@ class ClassOut(BaseModel):
     symbol_image: str | None
     ak_code: str | None = None
     total_points: int = 0
+    ksprecher_can_edit: bool = False
 
     model_config = {"from_attributes": True}
 

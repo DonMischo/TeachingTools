@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, GeneratorDefOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const EXAMPLE_LEVELS = [
   { template: "Löse nach $x$ auf: $${{a}}x + {{b}} = {{c}}$$",
@@ -21,10 +22,12 @@ export default function AdminGeneratorsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("generators");
 
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
 
   const { data: defs = [] } = useQuery<GeneratorDefOut[]>({
     queryKey: ["admin-generators"], queryFn: api.generators.adminList,
@@ -69,7 +72,7 @@ export default function AdminGeneratorsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-generators"] }),
   });
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">

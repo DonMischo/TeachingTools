@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ClassOut, TeacherOut, WochenstundenOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 function Hint({ text }: { text: string }) {
   return (
@@ -470,24 +471,24 @@ function printTeacherSheets(teachers: TeacherOut[], wsByKey: Map<string, number>
 export default function AdminTeachersPage() {
   const { auth } = useAuth();
   const router = useRouter();
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("teachers");
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
-
-  const isAdmin = auth?.role === "admin";
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
   const { data: teachers = [] } = useQuery<TeacherOut[]>({
     queryKey: ["teachers"],
     queryFn: api.teachers.list,
-    enabled: isAdmin,
+    enabled: allowed,
   });
   const { data: classes = [] } = useQuery<ClassOut[]>({
     queryKey: ["classes"],
     queryFn: api.classes.list,
-    enabled: isAdmin,
+    enabled: allowed,
     staleTime: 60_000,
   });
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   return (
     <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full">

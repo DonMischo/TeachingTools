@@ -34,7 +34,9 @@ from ..schemas import (
     CalendarEntryIn, CalendarEntryOut, CalendarTagIn, CalendarTagOut,
     SchoolSettingsIn, SchoolSettingsOut,
 )
-from ..auth import get_current_teacher, get_current_user, require_admin
+from ..auth import get_current_teacher, get_current_user
+from ..admin_access import require_admin_feature
+from ..schoolyear import get_school_year_start
 
 router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 
@@ -172,7 +174,7 @@ def get_settings(db: Session = Depends(get_db), current: Teacher = Depends(get_c
 
 
 @router.put("/settings", response_model=SchoolSettingsOut)
-def set_settings(body: SchoolSettingsIn, db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def set_settings(body: SchoolSettingsIn, db: Session = Depends(get_db), _: object = Depends(require_admin_feature("calendar_settings"))):
     if body.bundesland not in BUNDESLAENDER:
         raise HTTPException(400, f"Unbekanntes Bundesland. Erlaubt: {', '.join(BUNDESLAENDER)}")
     s = db.get(SchoolSettings, 1)
@@ -189,7 +191,7 @@ def set_settings(body: SchoolSettingsIn, db: Session = Depends(get_db), _: objec
 def fetch_holidays(
     school_year_start: int,
     db: Session = Depends(get_db),
-    current: Teacher = Depends(require_admin),
+    current: Teacher = Depends(require_admin_feature("calendar_settings")),
 ):
     """Pull Feriendaten for the configured Bundesland from OpenHolidaysAPI and
     import them as category='Ferien' entries (deduped by title+dates)."""
@@ -259,6 +261,34 @@ def _ics_fold(line: str) -> str:
     return "\r\n".join(parts)
 
 
+def _school_year_window(db: Session, today: date) -> tuple[date, date | None, int]:
+    """Return (opens, closes, start_year) for the school year that `today` falls
+    in, bounded by 'Sommerferien' entries.
+
+    The school year flips the moment a Sommerferien begins: `opens` is the start
+    of the most recent Sommerferien on/before `today`, `closes` is the start of
+    the next Sommerferien after `today` (None if unknown, i.e. open-ended). When
+    no Sommerferien data is present, falls back to the 1. August Stichtag.
+    """
+    starts = [
+        r.start_date
+        for r in db.query(CalendarEntry)
+        .filter(
+            CalendarEntry.category == "Ferien",
+            CalendarEntry.title.ilike("%sommerferien%"),
+        )
+        .order_by(CalendarEntry.start_date)
+        .all()
+    ]
+    opens = max((d for d in starts if d <= today), default=None)
+    closes = min((d for d in starts if d > today), default=None)
+    if opens is None:
+        # No Sommerferien on/before today (unseeded, or before the first one):
+        # fall back to the 1. August Stichtag for the lower bound.
+        opens = date(get_school_year_start(today), 8, 1)
+    return opens, closes, opens.year
+
+
 @router.get("/export.ics")
 def export_ics(
     tags: str = "",
@@ -276,9 +306,33 @@ def export_ics(
     if wanted_cats:
         entries = [e for e in entries if e.category in wanted_cats]
 
+    # Gate to the current school year: Sommerferien -> next Sommerferien. Once
+    # the end-of-year Sommerferien begins, the window (and calendar name) flip
+    # to the next school year, so the client downloads that year's file.
+    opens, closes, start_year = _school_year_window(db, date.today())
+    entries = [
+        e for e in entries
+        if e.end_date >= opens and (closes is None or e.start_date < closes)
+    ]
+
     tag_colors = {t.name: t.color for t in db.query(CalendarTag).all()}
 
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Hauspokal//Kalender//DE"]
+    cal_name = f"EGE{start_year}/{start_year + 1}"
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Hauspokal//Kalender//DE",
+        "METHOD:PUBLISH",
+        # Calendar name: X-WR-CALNAME is the de-facto standard honored by Apple
+        # and Google; NAME is the RFC 7986 equivalent. Clients that support it
+        # will import into / create a distinct calendar rather than the default.
+        _ics_fold(f"X-WR-CALNAME:{_ics_escape(cal_name)}"),
+        _ics_fold(f"NAME:{_ics_escape(cal_name)}"),
+        _ics_fold(f"X-WR-CALDESC:{_ics_escape('Termine aus dem Hauspokal-Kalender')}"),
+        # Hint for subscription clients on how often to re-fetch.
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+        "X-PUBLISHED-TTL:PT12H",
+    ]
     for e in entries:
         # All-day event: DTEND is exclusive per RFC 5545, so +1 day on a single date too.
         dtend_exclusive = date.fromordinal(e.end_date.toordinal() + 1)

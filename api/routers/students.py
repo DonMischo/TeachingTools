@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Student, Class
 from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
-from ..auth import hash_password, verify_password, require_admin, get_current_teacher
+from ..auth import hash_password, verify_password, get_current_teacher
+from ..admin_access import require_admin_feature
 from ..password_gen import generate_password
 from ..schoolyear import klasse_to_ak_code
 
@@ -181,7 +182,7 @@ def _make_username(vorname: str, nachname: str, existing: set[str]) -> str:
 def preview_import(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     """Parse CSV and return a diff against the current DB — no writes."""
     raw = file.file.read()
@@ -258,7 +259,7 @@ def preview_import(
 def apply_import(
     body: StudentApplyRequest,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     """Apply selected diff rows — upserts only, never deletes existing students.
 
@@ -350,7 +351,7 @@ def apply_import(
 def import_students(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     raw = file.file.read()
     try:
@@ -450,7 +451,7 @@ class StudentCreate(BaseModel):
 def create_student(
     body: StudentCreate,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     """Manually create a single student and mint username + password."""
     vorname = body.vorname.strip()
@@ -487,7 +488,7 @@ def create_student(
 def reset_student_password(
     student_id: int,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     """Admin: issue a fresh random password (and username if missing) for one student."""
     student = db.get(Student, student_id)
@@ -510,7 +511,7 @@ def reset_student_password(
 @router.post("/generate-credentials", response_model=list[StudentCredentialRow])
 def generate_credentials(
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     students = db.query(Student).filter(Student.active == True).order_by(
         Student.klasse, Student.nachname, Student.vorname
@@ -560,7 +561,7 @@ def generate_credentials(
 def student_card_data(
     klasse: str | None = None,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     """All student fields (incl. extra_fields) for card generation."""
     q = db.query(Student).filter(Student.active == True)
@@ -589,7 +590,7 @@ def student_card_data(
 @router.get("/credentials/download")
 def download_credentials(
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("students")),
 ):
     students = db.query(Student).filter(
         Student.active == True, Student.username.isnot(None)

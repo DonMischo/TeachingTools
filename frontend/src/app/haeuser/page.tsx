@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, HausOut, ClassOut, StudentOut, StudentRoleOut, ClassChoreOut, TransactionOut, StudentGroupOut, GroupType } from "@/lib/api";
@@ -988,10 +989,11 @@ function KlassenlisteSection({
 }
 
 function TrackingSection({
-  cls, students,
+  cls, students, canEdit,
 }: {
   cls: ClassOut;
   students: StudentOut[];
+  canEdit: boolean;
 }) {
   const qc = useQueryClient();
   const [newName, setNewName] = useState("");
@@ -1036,24 +1038,26 @@ function TrackingSection({
   return (
     <div className="flex flex-col gap-3">
       {/* Add tracker + filter */}
-      <div className="flex gap-2">
-        <input
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          placeholder="Neues Tracking-Element… (z. B. Materialgeld)"
-          className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-          onKeyDown={e => { if (e.key === "Enter" && newName.trim()) createTracker.mutate(newName.trim()); }}
-        />
-        <button
-          onClick={() => { if (newName.trim()) createTracker.mutate(newName.trim()); }}
-          disabled={!newName.trim() || createTracker.isPending}
-          className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
-        >+</button>
-      </div>
+      {canEdit && (
+        <div className="flex gap-2">
+          <input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="Neues Tracking-Element… (z. B. Materialgeld)"
+            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            onKeyDown={e => { if (e.key === "Enter" && newName.trim()) createTracker.mutate(newName.trim()); }}
+          />
+          <button
+            onClick={() => { if (newName.trim()) createTracker.mutate(newName.trim()); }}
+            disabled={!newName.trim() || createTracker.isPending}
+            className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
+          >+</button>
+        </div>
+      )}
 
       {trackers.length === 0 ? (
         <p className="text-sm text-[var(--text-muted)] text-center py-4">
-          Noch keine Tracking-Elemente. Oben hinzufügen.
+          {canEdit ? "Noch keine Tracking-Elemente. Oben hinzufügen." : "Noch keine Tracking-Elemente."}
         </p>
       ) : (
         <>
@@ -1077,11 +1081,13 @@ function TrackingSection({
                         <span className="text-[10px] text-[var(--text-muted)] font-normal tabular-nums">
                           {t.checked_student_ids.length}/{sorted.length}
                         </span>
-                        <button
-                          onClick={() => deleteTracker.mutate(t.id)}
-                          className="text-[var(--text-muted)] hover:text-red-400 text-[10px] leading-none transition-colors"
-                          title="Tracker löschen"
-                        >✕ löschen</button>
+                        {canEdit && (
+                          <button
+                            onClick={() => deleteTracker.mutate(t.id)}
+                            className="text-[var(--text-muted)] hover:text-red-400 text-[10px] leading-none transition-colors"
+                            title="Tracker löschen"
+                          >✕ löschen</button>
+                        )}
                       </div>
                     </th>
                   ))}
@@ -1102,8 +1108,9 @@ function TrackingSection({
                           <input
                             type="checkbox"
                             checked={done}
+                            disabled={!canEdit}
                             onChange={() => toggleCheck.mutate({ tracker_id: t.id, student_id: s.id })}
-                            className="accent-[var(--accent)] w-4 h-4 cursor-pointer"
+                            className="accent-[var(--accent)] w-4 h-4 cursor-pointer disabled:cursor-default disabled:opacity-60"
                           />
                         </td>
                       );
@@ -1126,13 +1133,19 @@ function TrackingSection({
   );
 }
 
-function EinstellungenSection({ cls }: { cls: ClassOut }) {
+function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolean }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState("");
   const [aliasInput, setAliasInput] = useState(cls.class_name ?? "");
   const [editingAlias, setEditingAlias] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [ksEdit, setKsEdit] = useState(!!cls.ksprecher_can_edit);
+
+  const ksprecherMut = useMutation({
+    mutationFn: (enabled: boolean) => api.classes.setKsprecherEdit(cls.id, enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["classes"] }),
+  });
 
   const logQuery = useQuery<TransactionOut[]>({
     queryKey: ["transactions", cls.id],
@@ -1165,22 +1178,26 @@ function EinstellungenSection({ cls }: { cls: ClassOut }) {
   return (
     <div className="flex flex-col gap-3">
       {/* Image upload */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploadMut.isPending}
-          className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
-        >
-          {uploadMut.isPending ? "Lade hoch…" : "🖼 Bild hochladen"}
-        </button>
-        {uploadError && <span className="text-xs text-red-400">{uploadError}</span>}
-      </div>
-      <input ref={fileRef} type="file"
-        accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-        className="hidden" onChange={handleFileChange} />
+      {canEdit && (
+        <>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploadMut.isPending}
+              className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+            >
+              {uploadMut.isPending ? "Lade hoch…" : "🖼 Bild hochladen"}
+            </button>
+            {uploadError && <span className="text-xs text-red-400">{uploadError}</span>}
+          </div>
+          <input ref={fileRef} type="file"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+            className="hidden" onChange={handleFileChange} />
+        </>
+      )}
 
       {/* Alias */}
-      {editingAlias ? (
+      {!canEdit ? null : editingAlias ? (
         <div className="flex items-center gap-2">
           <input
             className="input text-xs py-1 flex-1"
@@ -1207,6 +1224,19 @@ function EinstellungenSection({ cls }: { cls: ClassOut }) {
         >
           ✏️ {cls.class_name ? `„${cls.class_name}" ändern` : "Klassenname festlegen"}
         </button>
+      )}
+
+      {/* Klassensprecher edit-grant */}
+      {canEdit && (
+        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={ksEdit}
+            onChange={e => { setKsEdit(e.target.checked); ksprecherMut.mutate(e.target.checked); }}
+            className="accent-[var(--accent)] w-4 h-4"
+          />
+          👑 Klassensprecher dürfen Dienste &amp; Sitzpläne bearbeiten
+        </label>
       )}
 
       {/* Log */}
@@ -1249,6 +1279,11 @@ function EinstellungenSection({ cls }: { cls: ClassOut }) {
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
   const router = useRouter();
+  const { auth } = useAuth();
+  // Only this class's Klassenlehrer (or an admin) may edit it; every teacher may
+  // view. Backend enforces the same rule (require_class_teacher).
+  const canEdit = auth?.teacher?.role === "admin"
+    || (auth?.teacher?.klasse_id != null && auth.teacher.klasse_id === cls.id);
   const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "sitzplan" | "einstellungen">("schüler");
   const [newRole, setNewRole] = useState("");
 
@@ -1390,6 +1425,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
 
+          {!canEdit && (
+            <div className="text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 flex items-center gap-2">
+              🔒 Nur die Klassenleitung von {cls.code} kann diese Klasse bearbeiten — Ansicht schreibgeschützt.
+            </div>
+          )}
+
           {/* ── Schüler ── */}
           {section === "schüler" && (
             <KlassenlisteSection
@@ -1409,40 +1450,46 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 return (
                   <div key={role_type} className="flex items-center gap-3">
                     <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)] capitalize">{role_type}</div>
-                    <select
-                      className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                      value={existing?.student_id ?? ""}
-                      onChange={e => {
-                        const sid = e.target.value ? Number(e.target.value) : null;
-                        if (existing && !sid) removeRole.mutate(existing.id);
-                        else if (sid) assignRole.mutate({ role_type, student_id: sid });
-                      }}
-                    >
-                      <option value="">— niemand —</option>
-                      {students.map(s => (
-                        <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
-                      ))}
-                    </select>
+                    {canEdit ? (
+                      <select
+                        className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                        value={existing?.student_id ?? ""}
+                        onChange={e => {
+                          const sid = e.target.value ? Number(e.target.value) : null;
+                          if (existing && !sid) removeRole.mutate(existing.id);
+                          else if (sid) assignRole.mutate({ role_type, student_id: sid });
+                        }}
+                      >
+                        <option value="">— niemand —</option>
+                        {students.map(s => (
+                          <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{existing?.student_name ?? "— niemand —"}</div>
+                    )}
                   </div>
                 );
               })}
 
               {/* Add custom role */}
-              <div className="flex gap-2 mt-2">
-                <input
-                  value={newRole}
-                  onChange={e => setNewRole(e.target.value)}
-                  placeholder="Neue Rolle…"
-                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                  onKeyDown={e => { if (e.key === "Enter") setNewRole(""); }}
-                />
-                <button
-                  onClick={() => setNewRole("")}
-                  className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
-                >
-                  + Hinzufügen
-                </button>
-              </div>
+              {canEdit && (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    value={newRole}
+                    onChange={e => setNewRole(e.target.value)}
+                    placeholder="Neue Rolle…"
+                    className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                    onKeyDown={e => { if (e.key === "Enter") setNewRole(""); }}
+                  />
+                  <button
+                    onClick={() => setNewRole("")}
+                    className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
+                  >
+                    + Hinzufügen
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -1450,16 +1497,18 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
           {section === "dienste" && (
             <>
               {/* Chore picker dropdown */}
-              <ChoreSelector
-                allNames={allChoreNames}
-                chores={chores}
-                cls={cls}
-                onToggle={handleToggleChore}
-                onAddCustom={handleAddCustom}
-              />
+              {canEdit && (
+                <ChoreSelector
+                  allNames={allChoreNames}
+                  chores={chores}
+                  cls={cls}
+                  onToggle={handleToggleChore}
+                  onAddCustom={handleAddCustom}
+                />
+              )}
 
               {/* Action buttons */}
-              {enabledChores.length > 0 && (
+              {canEdit && enabledChores.length > 0 && (
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => clearChores.mutate()}
@@ -1486,19 +1535,23 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 enabledChores.map(chore => (
                   <div key={chore.id} className="flex items-center gap-3">
                     <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore.chore_name}</div>
-                    <select
-                      className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                      value={chore.student_id ?? ""}
-                      onChange={e => {
-                        const sid = e.target.value ? Number(e.target.value) : null;
-                        upsertChore.mutate({ chore_name: chore.chore_name, student_id: sid, enabled: true });
-                      }}
-                    >
-                      <option value="">— niemand —</option>
-                      {students.map(s => (
-                        <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
-                      ))}
-                    </select>
+                    {canEdit ? (
+                      <select
+                        className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                        value={chore.student_id ?? ""}
+                        onChange={e => {
+                          const sid = e.target.value ? Number(e.target.value) : null;
+                          upsertChore.mutate({ chore_name: chore.chore_name, student_id: sid, enabled: true });
+                        }}
+                      >
+                        <option value="">— niemand —</option>
+                        {students.map(s => (
+                          <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{chore.student_name ?? "— niemand —"}</div>
+                    )}
                   </div>
                 ))
               )}
@@ -1507,10 +1560,12 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Tracking ── */}
           {section === "tracking" && (
-            <TrackingSection cls={cls} students={students} />
+            <TrackingSection cls={cls} students={students} canEdit={canEdit} />
           )}
 
           {/* ── Gruppen (Kurse / Wahlpflicht / A-B) ── */}
+          {/* Groups (Kurse/Wahlpflicht) span multiple classes, so they are not
+              locked to a single class's Klassenlehrer. */}
           {section === "gruppen" && (
             <GroupsManager cls={cls} students={students} />
           )}
@@ -1537,7 +1592,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Einstellungen ── */}
           {section === "einstellungen" && (
-            <EinstellungenSection cls={cls} />
+            <EinstellungenSection cls={cls} canEdit={canEdit} />
           )}
         </div>
       </div>
@@ -1547,9 +1602,95 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Scoped Klassenverwaltung view for a granted Klassensprecher: only their class,
+ * only the limited subset (Klassendienste assignment). Backend enforces the same
+ * grant (require_class_manager).
+ */
+function KlassensprecherView({ classId }: { classId: number }) {
+  const qc = useQueryClient();
+  const { data: roster = [] } = useQuery<{ id: number; vorname: string; nachname: string }[]>({
+    queryKey: ["roster", classId],
+    queryFn: () => api.classes.roster(classId),
+  });
+  const { data: chores = [] } = useQuery<ClassChoreOut[]>({
+    queryKey: ["chores", classId],
+    queryFn: () => api.chores.list(classId),
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["chores", classId] });
+  const upsert = useMutation({
+    mutationFn: (b: { chore_name: string; student_id: number | null }) =>
+      api.chores.upsert({ class_id: classId, enabled: true, ...b }),
+    onSuccess: invalidate,
+  });
+  const clear = useMutation({ mutationFn: () => api.chores.clear(classId), onSuccess: invalidate });
+  const random = useMutation({ mutationFn: () => api.chores.randomAssign(classId), onSuccess: invalidate });
+
+  const enabled = chores.filter(c => c.enabled);
+
+  return (
+    <div className="p-6 flex flex-col gap-4 max-w-xl mx-auto w-full">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">🧹 Klassendienste</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
+            Als Klassensprecher:in darfst du die Dienste eurer Klasse verteilen.
+          </p>
+        </div>
+        <Link
+          href={`/haeuser/sitzplan/${classId}`}
+          className="shrink-0 text-sm px-3 py-2 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-2"
+        >🪑 Sitzplan</Link>
+      </div>
+
+      {enabled.length === 0 ? (
+        <p className="text-sm text-[var(--text-muted)] py-6 text-center">
+          Die Klassenleitung hat noch keine Dienste aktiviert.
+        </p>
+      ) : (
+        <>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => clear.mutate()}
+              className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+            >🗑 Zuweisungen löschen</button>
+            <button
+              onClick={() => random.mutate()}
+              disabled={random.isPending}
+              className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+            >🎲 Zufällig zuweisen</button>
+          </div>
+          {enabled.map(chore => (
+            <div key={chore.id} className="flex items-center gap-3">
+              <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore.chore_name}</div>
+              <select
+                className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                value={chore.student_id ?? ""}
+                onChange={e => upsert.mutate({ chore_name: chore.chore_name, student_id: e.target.value ? Number(e.target.value) : null })}
+              >
+                <option value="">— niemand —</option>
+                {roster.map(s => (
+                  <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function HaeuserPage() {
   const { auth } = useAuth();
   const router = useRouter();
+  const isStudent = auth?.role === "student";
+
+  const { data: myMgmt } = useQuery<{ class_id: number | null }>({
+    queryKey: ["my-management"],
+    queryFn: api.classes.myManagement,
+    enabled: isStudent,
+  });
   const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
   const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
@@ -1567,6 +1708,26 @@ export default function HaeuserPage() {
     refetchInterval: 15_000,
   });
 
+  // A Klassenlehrer lands on the Klassen tab (their own class) rather than the
+  // house charts.
+  const didInitTab = useRef(false);
+  useEffect(() => {
+    if (!didInitTab.current && auth?.teacher?.klasse_id != null) {
+      setTab("klassen");
+      didInitTab.current = true;
+    }
+  }, [auth]);
+
+  // Students only reach Klassenverwaltung as a granted Klassensprecher, and then
+  // only a scoped Dienste view for their own class.
+  useEffect(() => {
+    if (auth && isStudent && myMgmt && myMgmt.class_id == null) router.replace("/");
+  }, [auth, isStudent, myMgmt, router]);
+  if (isStudent) {
+    if (!myMgmt || myMgmt.class_id == null) return null;  // loading or redirecting
+    return <KlassensprecherView classId={myMgmt.class_id} />;
+  }
+
   const isAdmin = auth?.teacher?.role === "admin";
   const sortedByPts = haeuser;
 
@@ -1574,7 +1735,6 @@ export default function HaeuserPage() {
     <div className="p-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <button onClick={() => router.push("/admin")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
       <div className="flex items-center gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">🛡️ Häuser &amp; Klassen</h1>
         <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">

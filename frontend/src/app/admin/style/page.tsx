@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { StyleManifest } from "@/contexts/ThemeContext";
@@ -279,9 +280,11 @@ export default function AdminStylePage() {
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [tab, setTab] = useState<"pack" | "colors">("pack");
 
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("style_pack");
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
 
   const handleZip = useCallback(async (file: File) => {
     setUploading(true);
@@ -312,7 +315,7 @@ export default function AdminStylePage() {
     setUploadResult(null);
   }
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">

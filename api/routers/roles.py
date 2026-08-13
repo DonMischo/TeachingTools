@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import StudentRole, Student, Teacher
-from ..auth import get_current_teacher
+from ..auth import get_current_teacher, require_class_teacher
 
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 
@@ -62,6 +62,9 @@ def assign_role(
 ):
     if VALID_ROLES and body.role_type not in VALID_ROLES:
         raise HTTPException(400, f"Unknown role. Valid: {', '.join(sorted(VALID_ROLES))}")
+    # Roles are assigned per class (scope_id = class id) from Klassenverwaltung —
+    # only that class's Klassenlehrer (or an admin) may (un)assign them.
+    require_class_teacher(current, body.scope_id)
     student = db.get(Student, body.student_id)
     if not student:
         raise HTTPException(404, "Student not found")
@@ -92,5 +95,6 @@ def remove_role(
     role = db.get(StudentRole, role_id)
     if not role:
         raise HTTPException(404, "Role not found")
+    require_class_teacher(current, role.scope_id)
     db.delete(role)
     db.commit()

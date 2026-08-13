@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { api, CalendarMeta, SchoolSettingsOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { getSchoolYearStart } from "@/lib/schoolyear";
@@ -64,90 +65,105 @@ function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+const CARD = "p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors";
+
 export default function AdminPage() {
   const { auth } = useAuth();
   const router = useRouter();
+  const { ready, isAdmin, has, hasAny } = useAdminAccess();
   const [showTheme, setShowTheme] = useState(false);
   const [showKalenderSettings, setShowKalenderSettings] = useState(false);
 
+  // Reachable by real admins and by teachers granted at least one admin feature.
+  const allowed = isAdmin || hasAny;
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
+    if (ready && !allowed) router.replace("/");
+  }, [ready, allowed, router]);
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !ready || !allowed) return null;
+
+  const show = (feature: string) => isAdmin || has(feature);
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black tracking-tight">⚙️ Admin</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">Verwaltung nur für Administratoren</p>
+        <p className="text-[var(--text-muted)] text-sm mt-1">
+          {isAdmin ? "Verwaltung nur für Administratoren" : "Dir freigeschaltete Verwaltungsbereiche"}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Link href="/admin/users"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">👤</div>
-          <div className="font-semibold">Benutzerverwaltung</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Konten anlegen · Zugänge generieren · Lehrer-CSV · Passwort-Reset</div>
-        </Link>
-        <Link href="/admin/students"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">👥</div>
-          <div className="font-semibold">Schülerdaten</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Zugänge generieren · Exportieren</div>
-        </Link>
-        <Link href="/admin/students/cards"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🪪</div>
-          <div className="font-semibold">Schülerkarten</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
-        </Link>
-        <Link href="/admin/teachers"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🧑‍🏫</div>
-          <div className="font-semibold">Lehrerdaten</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Rolle &amp; Klassenleitung</div>
-        </Link>
-        <Link href="/haeuser"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🛡️</div>
-          <div className="font-semibold">Häuser &amp; Klassen</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Häuser verwalten · Klassen zuordnen · Punkte</div>
-        </Link>
-        <button
-          onClick={() => setShowKalenderSettings(true)}
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors text-left"
-        >
-          <div className="text-2xl mb-2">📅</div>
-          <div className="font-semibold">Kalender-Einstellungen</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Bundesland für Feriendaten-Import</div>
-        </button>
-        <button
-          onClick={() => setShowTheme(true)}
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors text-left"
-        >
-          <div className="text-2xl mb-2">🎨</div>
-          <div className="font-semibold">Darstellung</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Farbschema · Icon-Stil · Theme wechseln</div>
-        </button>
-        <Link href="/admin/style"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">📦</div>
-          <div className="font-semibold">Style Pack</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Logo · Icons · Farbanpassung als ZIP hochladen</div>
-        </Link>
-        <Link href="/admin/generators"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🧮</div>
-          <div className="font-semibold">Aufgaben-Generatoren</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Neue Übungsthemen ohne Code registrieren</div>
-        </Link>
-        <Link href="/admin/availability"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-          <div className="text-2xl mb-2">🧩</div>
-          <div className="font-semibold">Verfügbarkeit</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Werkzeuge freischalten · pro Gruppe &amp; Klasse · Hosten/Erstellen/Hochladen</div>
-        </Link>
+        {(show("students") || show("teachers")) && (
+          <Link href="/admin/users" className={CARD}>
+            <div className="text-2xl mb-2">👤</div>
+            <div className="font-semibold">Benutzerverwaltung</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Konten anlegen · Zugänge generieren · Lehrer-CSV · Passwort-Reset</div>
+          </Link>
+        )}
+        {show("students") && (
+          <Link href="/admin/students" className={CARD}>
+            <div className="text-2xl mb-2">👥</div>
+            <div className="font-semibold">Schülerdaten</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Zugänge generieren · Exportieren</div>
+          </Link>
+        )}
+        {show("students") && (
+          <Link href="/admin/students/cards" className={CARD}>
+            <div className="text-2xl mb-2">🪪</div>
+            <div className="font-semibold">Schülerkarten</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
+          </Link>
+        )}
+        {show("teachers") && (
+          <Link href="/admin/teachers" className={CARD}>
+            <div className="text-2xl mb-2">🧑‍🏫</div>
+            <div className="font-semibold">Lehrerdaten</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Rolle &amp; Klassenleitung</div>
+          </Link>
+        )}
+        {show("calendar_settings") && (
+          <button onClick={() => setShowKalenderSettings(true)} className={`${CARD} text-left`}>
+            <div className="text-2xl mb-2">📅</div>
+            <div className="font-semibold">Kalender-Einstellungen</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Bundesland für Feriendaten-Import</div>
+          </button>
+        )}
+        {isAdmin && (
+          <button onClick={() => setShowTheme(true)} className={`${CARD} text-left`}>
+            <div className="text-2xl mb-2">🎨</div>
+            <div className="font-semibold">Darstellung</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Farbschema · Icon-Stil · Theme wechseln</div>
+          </button>
+        )}
+        {show("style_pack") && (
+          <Link href="/admin/style" className={CARD}>
+            <div className="text-2xl mb-2">📦</div>
+            <div className="font-semibold">Style Pack</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Logo · Icons · Farbanpassung als ZIP hochladen</div>
+          </Link>
+        )}
+        {show("generators") && (
+          <Link href="/admin/generators" className={CARD}>
+            <div className="text-2xl mb-2">🧮</div>
+            <div className="font-semibold">Aufgaben-Generatoren</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Neue Übungsthemen ohne Code registrieren</div>
+          </Link>
+        )}
+        {isAdmin && (
+          <Link href="/admin/availability" className={CARD}>
+            <div className="text-2xl mb-2">🧩</div>
+            <div className="font-semibold">Verfügbarkeit</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Werkzeuge freischalten · pro Gruppe &amp; Klasse · Hosten/Erstellen/Hochladen</div>
+          </Link>
+        )}
+        {isAdmin && (
+          <Link href="/admin/permissions" className={CARD}>
+            <div className="text-2xl mb-2">🔑</div>
+            <div className="font-semibold">Berechtigungen</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Admin-Bereiche für Lehrergruppen &amp; einzelne Lehrer freigeben</div>
+          </Link>
+        )}
       </div>
 
       {showTheme && <ThemeSwitcher onClose={() => setShowTheme(false)} />}

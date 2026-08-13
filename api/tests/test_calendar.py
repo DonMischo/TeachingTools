@@ -201,14 +201,18 @@ def test_fetch_holidays_requires_admin(client, teacher_token):
 
 
 def test_export_ics_filters_by_category_and_includes_color(client, teacher_token):
+    # Dates within the current school-year window (no Sommerferien seeded -> the
+    # window is open-ended upward from 1. August, so any future date qualifies).
+    d1 = date.today() + timedelta(days=10)
+    d2 = d1 + timedelta(days=1)
     client.post("/api/calendar/tags", json={"name": "Dienstberatung", "color": "#8b5cf6"}, headers=_auth(teacher_token))
     client.post("/api/calendar", json={
         "title": "Nur Kollegium", "category": "Kollegium",
-        "start_date": "2026-03-01", "end_date": "2026-03-01", "tags": ["Dienstberatung"],
+        "start_date": d1.isoformat(), "end_date": d1.isoformat(), "tags": ["Dienstberatung"],
     }, headers=_auth(teacher_token))
     client.post("/api/calendar", json={
         "title": "Für alle", "category": "Schulgemeinschaft",
-        "start_date": "2026-04-01", "end_date": "2026-04-02", "tags": [],
+        "start_date": d1.isoformat(), "end_date": d2.isoformat(), "tags": [],
     }, headers=_auth(teacher_token))
 
     r = client.get("/api/calendar/export.ics?categories=Schulgemeinschaft", headers=_auth(teacher_token))
@@ -216,8 +220,9 @@ def test_export_ics_filters_by_category_and_includes_color(client, teacher_token
     body = r.text
     assert "Für alle" in body
     assert "Nur Kollegium" not in body
-    assert "DTSTART;VALUE=DATE:20260401" in body
-    assert "DTEND;VALUE=DATE:20260403" in body  # exclusive end = last day + 1
+    assert f"DTSTART;VALUE=DATE:{d1.strftime('%Y%m%d')}" in body
+    dtend_excl = d2 + timedelta(days=1)
+    assert f"DTEND;VALUE=DATE:{dtend_excl.strftime('%Y%m%d')}" in body  # exclusive end = last day + 1
 
     r2 = client.get("/api/calendar/export.ics?tags=Dienstberatung", headers=_auth(teacher_token))
     assert "Nur Kollegium" in r2.text

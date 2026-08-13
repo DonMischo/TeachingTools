@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useRouter } from "next/navigation";
 import { api, StudentCardData } from "@/lib/api";
 
@@ -252,9 +253,11 @@ export default function StudentCardsPage() {
   const [cardFields, setCardFields] = useState<CardField[]>([]);
   const [showFieldPanel, setShowFieldPanel] = useState(true);
 
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("students");
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
 
   const { data: students = [], isLoading } = useQuery<StudentCardData[]>({
     queryKey: ["student-card-data", klasseFilter],
@@ -334,7 +337,7 @@ export default function StudentCardsPage() {
     w.onload = () => w.print();
   }
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-5xl mx-auto w-full">

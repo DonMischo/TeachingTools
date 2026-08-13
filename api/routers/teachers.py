@@ -15,7 +15,8 @@ from ..schemas import (
     TeacherOut, TeacherAssignmentOut, TeacherPreviewResponse, TeacherApplyRequest,
     TeacherCredentialRow, WochenstundenOut, WochenstundenSet, TeacherKorrekturIn,
 )
-from ..auth import get_current_teacher, get_current_user, hash_password, verify_password, require_admin
+from ..auth import get_current_teacher, get_current_user, hash_password, verify_password
+from ..admin_access import require_admin_feature
 from ..password_gen import generate_password
 from ..seed import GRADES as _KNOWN_GRADES
 
@@ -140,12 +141,12 @@ def list_teachers(db: Session = Depends(get_db), _=Depends(get_current_user)):
 # ---------------------------------------------------------------------------
 
 @router.get("/wochenstunden", response_model=list[WochenstundenOut])
-def get_wochenstunden(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def get_wochenstunden(db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     return db.query(SubjectWochenstunden).all()
 
 
 @router.put("/wochenstunden", response_model=list[WochenstundenOut])
-def set_wochenstunden(body: list[WochenstundenSet], db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def set_wochenstunden(body: list[WochenstundenSet], db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     for item in body:
         row = db.query(SubjectWochenstunden).filter_by(subject=item.subject, grade=item.grade).first()
         if row:
@@ -161,7 +162,7 @@ def set_korrektur(
     teacher_id: int,
     body: TeacherKorrekturIn,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     t = db.get(Teacher, teacher_id)
     if not t:
@@ -179,7 +180,7 @@ def set_korrektur(
 def import_teachers(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     content = file.file.read().decode("utf-8-sig")  # strip BOM if present
     reader = csv.DictReader(io.StringIO(content))
@@ -227,7 +228,7 @@ def set_password(
 
 
 @router.post("/generate-credentials", response_model=list[TeacherCredentialRow])
-def generate_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def generate_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     """Mint a username + password for every active teacher that lacks one.
     Existing credentials are kept; only teachers without a password get a new one."""
     teachers = db.query(Teacher).filter(Teacher.active == True).order_by(
@@ -246,7 +247,7 @@ def generate_credentials(db: Session = Depends(get_db), _: object = Depends(requ
 
 
 @router.get("/credentials/download")
-def download_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def download_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     teachers = db.query(Teacher).filter(
         Teacher.active == True, Teacher.username.isnot(None)
     ).order_by(Teacher.last_name, Teacher.first_name).all()
@@ -275,7 +276,7 @@ class TeacherCreate(BaseModel):
 
 
 @router.post("", response_model=TeacherCredentialRow, status_code=201)
-def create_teacher(body: TeacherCreate, db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def create_teacher(body: TeacherCreate, db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     """Manually create a single teacher/admin account and mint its credentials."""
     first = body.first_name.strip()
     last = body.last_name.strip()
@@ -309,7 +310,7 @@ def create_teacher(body: TeacherCreate, db: Session = Depends(get_db), _: object
 
 
 @router.post("/{teacher_id}/reset-password", response_model=TeacherCredentialRow)
-def reset_password(teacher_id: int, db: Session = Depends(get_db), _: object = Depends(require_admin)):
+def reset_password(teacher_id: int, db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
     """Admin: issue a fresh random password (and username if missing) for one teacher."""
     teacher = db.get(Teacher, teacher_id)
     if not teacher:
@@ -345,7 +346,7 @@ def set_klassenlehrer(
     teacher_id: int,
     body: KlasseUpdate,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     """Set (or clear) which class this teacher is Klassenlehrer of."""
     t = db.get(Teacher, teacher_id)
@@ -364,7 +365,7 @@ def add_assignment(
     teacher_id: int,
     body: AssignmentIn,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     t = db.get(Teacher, teacher_id)
     if not t:
@@ -400,7 +401,7 @@ def add_assignment(
 def delete_assignment(
     assignment_id: int,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     a = db.get(TeacherAssignment, assignment_id)
     if not a:
@@ -461,7 +462,7 @@ _DIFF_FIELDS = ("nummer", "email", "klasse", "role")
 def preview_import(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     """Parse CSV and return a diff against the current DB — no writes."""
     raw = file.file.read()
@@ -515,7 +516,7 @@ def preview_import(
 def apply_import(
     body: TeacherApplyRequest,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin),
+    _: object = Depends(require_admin_feature("teachers")),
 ):
     roles_by_name = {r.name.lower(): r for r in db.query(TeacherRole).all()}
     default_role = roles_by_name.get("lehrer")

@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, StudentCredentialRow, StudentPreviewResponse } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -55,9 +56,11 @@ export default function AdminStudentsPage() {
   const [applyResult, setApplyResult] = useState<{ applied: number; errors: string[] } | null>(null);
   const [credentials, setCredentials] = useState<StudentCredentialRow[] | null>(null);
 
+  const { ready: aReady, isAdmin: aAdmin, has: aHas } = useAdminAccess();
+  const allowed = aAdmin || aHas("students");
   useEffect(() => {
-    if (auth !== null && auth.role !== "admin") router.replace("/");
-  }, [auth, router]);
+    if (aReady && !allowed) router.replace("/");
+  }, [aReady, allowed, router]);
 
   const previewMut = useMutation({
     mutationFn: (file: File) => api.students.preview(file),
@@ -120,7 +123,7 @@ export default function AdminStudentsPage() {
     URL.revokeObjectURL(url);
   }
 
-  if (!auth || auth.role !== "admin") return null;
+  if (!auth || !aReady || !allowed) return null;
 
   const visibleRows = preview?.diff.filter(r =>
     filter === "all" ? true : r.action === filter

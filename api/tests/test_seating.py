@@ -145,6 +145,31 @@ def test_list_requires_login(client, klass):
     assert client.get(f"/api/classes/{klass.id}/seating").status_code == 401
 
 
+def test_additional_plans_open_to_any_teacher_default_stays_locked(client, klass, admin_token, teacher):
+    # admin (bypasses) creates the default "Klassenraum" plan
+    r = client.post(f"/api/classes/{klass.id}/seating", json={"name": "Klassenraum"}, headers=auth(admin_token))
+    assert r.status_code == 200
+    default_id = r.json()["id"]
+
+    # a non-Klassenlehrer teacher may ADD and edit an additional room…
+    client.cookies.clear()
+    from api.tests.test_lueckentexte import token_for
+    ttoken = token_for(teacher)
+    r2 = client.post(f"/api/classes/{klass.id}/seating", json={"name": "Kunstraum"}, headers=auth(ttoken))
+    assert r2.status_code == 200
+    extra_id = r2.json()["id"]
+    r3 = client.put(f"/api/seating/{extra_id}",
+                    json={"name": "Kunstraum", "orientation": "landscape", "items": []},
+                    headers=auth(ttoken))
+    assert r3.status_code == 200
+
+    # …but must not touch the default Klassenraum.
+    r4 = client.put(f"/api/seating/{default_id}",
+                    json={"name": "X", "orientation": "landscape", "items": []},
+                    headers=auth(ttoken))
+    assert r4.status_code == 403
+
+
 # ── SVG builder (no LibreOffice needed) ───────────────────────────────────────
 
 class _FakePlan:
@@ -249,8 +274,10 @@ def test_export_pdf(client, db, klass, admin_token):
     w, h = _mediabox(r.content)
     assert w > h, f"expected landscape, got {w}x{h}"
     assert 835 < w < 848 and 590 < h < 600, f"not A4 landscape: {w}x{h}"
-    # filename carries the class code
-    assert f"Sitzplan_{klass.code}_" in r.headers.get("content-disposition", "")
+    # filename is "<Klasse>_<YYYYMMDD>.pdf"
+    import re as _re
+    cd = r.headers.get("content-disposition", "")
+    assert _re.search(rf"filename=\"?{klass.code}_\d{{8}}\.pdf", cd), cd
 
 
 @pytest.mark.skipif(shutil.which("soffice") is None, reason="LibreOffice not installed")
