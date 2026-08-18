@@ -1,5 +1,6 @@
 """Tests for the Kalender router: CRUD, category-based visibility, tags,
 settings, Feriendaten fetch, ICS export/import."""
+from datetime import date, timedelta
 from unittest.mock import patch, MagicMock
 from api.models import Student
 from api.auth import hash_password
@@ -227,6 +228,42 @@ def test_export_ics_filters_by_category_and_includes_color(client, teacher_token
     r2 = client.get("/api/calendar/export.ics?tags=Dienstberatung", headers=_auth(teacher_token))
     assert "Nur Kollegium" in r2.text
     assert "COLOR:#8b5cf6" in r2.text
+
+
+def test_export_ics_gated_to_school_year_between_sommerferien(client, teacher_token):
+    """Export includes only entries in the current school year, bounded by
+    Sommerferien -> next Sommerferien, and names the calendar after that year."""
+    today = date.today()
+    opens = today - timedelta(days=30)   # this year's Sommerferien (already begun)
+    closes = today + timedelta(days=300)  # next year's Sommerferien (in the future)
+    for start in (opens, closes):
+        client.post("/api/calendar", json={
+            "title": "Sommerferien", "category": "Ferien",
+            "start_date": start.isoformat(),
+            "end_date": (start + timedelta(days=40)).isoformat(), "tags": ["Ferien"],
+        }, headers=_auth(teacher_token))
+
+    # One entry before the window, one inside, one after.
+    client.post("/api/calendar", json={
+        "title": "Letztes Jahr", "category": "Schulgemeinschaft",
+        "start_date": (opens - timedelta(days=10)).isoformat(),
+        "end_date": (opens - timedelta(days=10)).isoformat(), "tags": [],
+    }, headers=_auth(teacher_token))
+    client.post("/api/calendar", json={
+        "title": "Dieses Jahr", "category": "Schulgemeinschaft",
+        "start_date": today.isoformat(), "end_date": today.isoformat(), "tags": [],
+    }, headers=_auth(teacher_token))
+    client.post("/api/calendar", json={
+        "title": "Nächstes Jahr", "category": "Schulgemeinschaft",
+        "start_date": (closes + timedelta(days=10)).isoformat(),
+        "end_date": (closes + timedelta(days=10)).isoformat(), "tags": [],
+    }, headers=_auth(teacher_token))
+
+    body = client.get("/api/calendar/export.ics", headers=_auth(teacher_token)).text
+    assert "Dieses Jahr" in body
+    assert "Letztes Jahr" not in body   # before this year's Sommerferien
+    assert "Nächstes Jahr" not in body  # at/after next Sommerferien (window flip)
+    assert f"X-WR-CALNAME:EGE{opens.year}/{opens.year + 1}" in body
 
 
 def test_import_ics_roundtrip(client, teacher_token):
