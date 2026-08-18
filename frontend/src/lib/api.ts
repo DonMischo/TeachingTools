@@ -970,6 +970,8 @@ export const api = {
       apiFetch<TeacherCredentialRow>(`teachers/${teacherId}/reset-password`, { method: "POST" }),
     setUsername: (teacherId: number, username: string) =>
       apiFetch<TeacherOut>(`teachers/${teacherId}/username`, { method: "PATCH", body: JSON.stringify({ username }) }),
+    delete: (teacherId: number) =>
+      apiFetch<void>(`teachers/${teacherId}`, { method: "DELETE" }),
   },
   transactions: {
     create: (data: { teacher_id: number; class_id: number; points: number; reason: string }) =>
@@ -1064,6 +1066,8 @@ export const api = {
       apiFetch<StudentOut>(`students/${studentId}/profile`, { method: "PATCH", body: JSON.stringify(body) }),
     setUsername: (studentId: number, username: string) =>
       apiFetch<StudentOut>(`students/${studentId}/username`, { method: "PATCH", body: JSON.stringify({ username }) }),
+    delete: (studentId: number) =>
+      apiFetch<void>(`students/${studentId}`, { method: "DELETE" }),
     preview: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);

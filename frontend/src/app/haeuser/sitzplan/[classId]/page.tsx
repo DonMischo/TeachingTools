@@ -176,6 +176,7 @@ export default function SitzplanPage() {
     }
     return m;
   }, [students]);
+  const ntaById = useMemo(() => new Map(students.map(s => [s.id, s.nta ?? []])), [students]);
 
   const { data: plans = [] } = useQuery<SeatingPlanSummary[]>({
     queryKey: ["seating", classId],
@@ -632,12 +633,15 @@ export default function SitzplanPage() {
                       const text = seat.student_id != null
                         ? (seatNameById.get(seat.student_id) ?? "")
                         : (seat.label ?? "");
+                      const seatNta = seat.student_id != null ? (ntaById.get(seat.student_id) ?? []) : [];
                       const seatWmm = size.w / it.seats.length;
-                      const fontStr = cqw(fitFontMm(text || "x", seatWmm - 2, baseMm), isChair ? 5 : 6);
+                      const nameMm = fitFontMm(text || "x", seatWmm - 2, baseMm);
+                      const fontStr = cqw(nameMm, isChair ? 5 : 6);
+                      const ntaFontStr = cqw(Math.max(1.3, nameMm * 0.62), isChair ? 5 : 6);
                       return (
                         <div
                           key={seat.id}
-                          className="relative flex-1 flex items-center justify-center px-0.5 text-center overflow-hidden"
+                          className="relative flex-1 flex flex-col items-center justify-center px-0.5 text-center overflow-hidden"
                           style={{
                             minWidth: 0,
                             borderLeft: i > 0 ? "1px solid #9ca3af" : undefined,
@@ -652,6 +656,11 @@ export default function SitzplanPage() {
                           }}
                         >
                           {text}
+                          {seatNta.length > 0 && (
+                            <span style={{ fontSize: ntaFontStr, fontWeight: 500, color: "#6b7280", letterSpacing: "0.03em" }}>
+                              {seatNta.join(" ")}
+                            </span>
+                          )}
                           {seat.locked && <span className="absolute top-0 right-0.5" style={{ fontSize: cqw(2.4, 6) }}>📌</span>}
                         </div>
                       );

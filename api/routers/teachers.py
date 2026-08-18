@@ -7,6 +7,7 @@ import chardet
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -329,6 +330,23 @@ def reset_password(teacher_id: int, db: Session = Depends(get_db), _: object = D
 
 class UsernameUpdate(BaseModel):
     username: str
+
+
+@router.delete("/{teacher_id}", status_code=204)
+def delete_teacher(teacher_id: int, db: Session = Depends(get_db), actor: Teacher = Depends(require_admin_feature("teachers"))):
+    """Admin: permanently delete a teacher. Blocked (409) when the teacher still
+    owns RESTRICT-referenced data (created games, awarded points, …)."""
+    if teacher_id == actor.id:
+        raise HTTPException(400, "Sie können Ihr eigenes Konto nicht löschen.")
+    teacher = db.get(Teacher, teacher_id)
+    if not teacher:
+        raise HTTPException(404, "Teacher not found")
+    db.delete(teacher)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Lehrkraft kann nicht gelöscht werden — es existieren noch verknüpfte Daten (z. B. erstellte Spiele oder vergebene Punkte).")
 
 
 @router.patch("/{teacher_id}/username", response_model=TeacherOut)

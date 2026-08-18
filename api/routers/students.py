@@ -572,6 +572,21 @@ def set_student_username(
     return out
 
 
+@router.delete("/{student_id}", status_code=204)
+def delete_student(
+    student_id: int,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin_feature("students")),
+):
+    """Admin: permanently delete a student. All references cascade or null out
+    (see the ondelete rules on students.id FKs)."""
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(404, "Student not found")
+    db.delete(student)
+    db.commit()
+
+
 @router.post("/generate-credentials", response_model=list[StudentCredentialRow])
 def generate_credentials(
     db: Session = Depends(get_db),

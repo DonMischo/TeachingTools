@@ -454,6 +454,19 @@ def test_set_student_username(client, admin_token, student_5a, db):
     assert student_5a.username == "neu.name"
 
 
+def test_delete_student(client, admin_token, student_5a, db):
+    sid = student_5a.id
+    r = client.delete(f"/api/students/{sid}", headers=_hdr(admin_token))
+    assert r.status_code == 204
+    assert db.get(Student, sid) is None
+
+
+def test_delete_student_requires_admin(client, teacher_token, student_5a, db):
+    r = client.delete(f"/api/students/{student_5a.id}", headers=_hdr(teacher_token))
+    assert r.status_code == 403
+    assert db.get(Student, student_5a.id) is not None
+
+
 def test_set_student_username_rejects_duplicate(client, admin_token, klass_5a, db):
     a = Student(nachname="A", vorname="A", klasse="5a", geschlecht="männlich", username="taken")
     b = Student(nachname="B", vorname="B", klasse="5a", geschlecht="männlich")

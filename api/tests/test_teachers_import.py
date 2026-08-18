@@ -133,3 +133,19 @@ def test_set_teacher_username_rejects_duplicate(client, db, admin, admin_token):
     r = client.patch(f"/api/teachers/{b.id}/username", json={"username": "taken"},
                      headers={"Authorization": f"Bearer {admin_token}"})
     assert r.status_code == 409
+
+
+def test_delete_teacher(client, db, admin, admin_token):
+    t = Teacher(first_name="Weg", last_name="Damit", active=True, role="teacher")
+    db.add(t)
+    db.flush()
+    tid = t.id
+    r = client.delete(f"/api/teachers/{tid}", headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 204
+    assert db.get(Teacher, tid) is None
+
+
+def test_delete_teacher_self_forbidden(client, db, admin, admin_token):
+    r = client.delete(f"/api/teachers/{admin.id}", headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 400
+    assert db.get(Teacher, admin.id) is not None

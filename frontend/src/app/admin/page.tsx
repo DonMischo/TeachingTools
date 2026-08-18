@@ -98,14 +98,7 @@ export default function AdminPage() {
           <Link href="/admin/users" className={CARD}>
             <div className="text-2xl mb-2">👤</div>
             <div className="font-semibold">Benutzerverwaltung</div>
-            <div className="text-xs text-[var(--text-muted)] mt-1">Konten anlegen · Zugänge generieren · Lehrer-CSV · Passwort-Reset</div>
-          </Link>
-        )}
-        {show("students") && (
-          <Link href="/admin/students" className={CARD}>
-            <div className="text-2xl mb-2">👥</div>
-            <div className="font-semibold">Schülerdaten</div>
-            <div className="text-xs text-[var(--text-muted)] mt-1">CSV-Import · Zugänge generieren · Exportieren</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Konten anlegen · Zugänge generieren · CSV-Import · Passwort-Reset · Löschen</div>
           </Link>
         )}
         {show("students") && (

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   api, ClassOut, TeacherOut, StudentOut,
-  TeacherCredentialRow, StudentCredentialRow, TeacherPreviewResponse,
+  TeacherCredentialRow, StudentCredentialRow, TeacherPreviewResponse, StudentPreviewResponse,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
@@ -20,6 +20,11 @@ const TYPE_LABEL: Record<UserType, string> = {
   teacher: "Lehrkraft",
   admin: "Admin",
 };
+
+// apiFetch throws Error(<response body>); FastAPI bodies are {"detail": "…"}.
+function apiErr(e: any): string {
+  try { return JSON.parse(e?.message)?.detail ?? e?.message; } catch { return e?.message ?? "Fehler"; }
+}
 
 function Hint({ text }: { text: string }) {
   return (
@@ -38,7 +43,7 @@ const ACTION_COLOR: Record<string, string> = {
   update: "bg-yellow-900/40 text-yellow-300",
   unchanged: "text-[var(--text-muted)]",
 };
-const FIELD_LABELS: Record<string, string> = { nummer: "Nr.", email: "E-Mail", klasse: "Klasse", role: "Rolle" };
+const FIELD_LABELS: Record<string, string> = { nummer: "Nr.", email: "E-Mail", klasse: "Klasse", role: "Rolle", geschlecht: "Geschl.", geburtsdatum: "Geb." };
 
 function FieldDiff({ field, csvVal, dbVal }: { field: string; csvVal: string; dbVal: string | undefined }) {
   const label = FIELD_LABELS[field] ?? field;
@@ -78,6 +83,142 @@ function CredTable({ rows }: { rows: CredResult[] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+// Student CSV import (preview → diff → apply). Mirrors the teacher import; writes
+// the selected new/changed students to the DB via /api/students/apply.
+function StudentImportSection() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [preview, setPreview] = useState<StudentPreviewResponse | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<Filter>("all");
+  const [applyResult, setApplyResult] = useState<{ applied: number; errors: string[] } | null>(null);
+
+  const previewMut = useMutation({
+    mutationFn: (file: File) => api.students.preview(file),
+    onSuccess: (res) => {
+      setPreview(res); setApplyResult(null);
+      setSelected(new Set(res.diff.filter(r => r.action !== "unchanged").map(r => r.key)));
+      setFilter("all");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
+  const applyMut = useMutation({
+    mutationFn: () => {
+      if (!preview) throw new Error("Keine Vorschau");
+      const map: Record<string, Record<string, string>> = {};
+      for (const row of preview.diff) if (selected.has(row.key)) map[row.key] = row.csv_data;
+      return api.students.apply([...selected], map);
+    },
+    onSuccess: (res) => {
+      setApplyResult(res); setPreview(null); setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["students"] });
+      toast(`${res.applied} Schüler importiert`, res.errors.length ? "error" : "success");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) previewMut.mutate(file);
+  }
+  const toggleRow = useCallback((key: string) => {
+    setSelected(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  }, []);
+  const visibleRows = preview?.diff.filter(r => filter === "all" ? true : r.action === filter) ?? [];
+
+  return (
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <h2 className="font-semibold text-sm">Schüler-CSV-Import</h2>
+        <Hint text={"Spalten: # (Nummer), Nachname, Vorname, Klasse, Geschlecht, Geburtsdatum. Pflichtfelder: Nachname, Klasse. Bestehende Schüler werden über Name + Klasse (bzw. AK-Code über den Jahrgangswechsel hinweg) erkannt und aktualisiert, nicht gelöscht. Zusatzspalten werden als Extra-Felder übernommen. Trennzeichen: Komma, Semikolon oder Tab."} />
+      </div>
+      <div className="flex gap-3 items-center flex-wrap">
+        <label className="btn-primary text-sm py-2 px-4 cursor-pointer">
+          {previewMut.isPending ? "Analysiere…" : "📂 CSV auswählen & Vorschau laden"}
+          <input type="file" accept=".csv,.tsv,text/csv" className="hidden" onChange={handleFileChange} disabled={previewMut.isPending} />
+        </label>
+      </div>
+      {applyResult && (
+        <div className={`text-sm rounded-lg p-3 ${applyResult.errors.length ? "bg-yellow-900/30 text-yellow-300" : "bg-green-900/30 text-green-300"}`}>
+          <strong>{applyResult.applied} Schüler importiert.</strong>
+          {applyResult.errors.map((e, i) => <div key={i} className="text-xs mt-1 opacity-80">{e}</div>)}
+        </div>
+      )}
+
+      {preview && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <p className="text-xs text-[var(--text-muted)]">
+              {preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert
+              {preview.extra_columns.length > 0 && <> · Zusatzfelder: {preview.extra_columns.join(", ")}</>}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "new", "update"] as Filter[]).map(f => (
+                <button key={f} onClick={() => setFilter(f)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                    filter === f ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                  }`}>
+                  {f === "all" ? "Alle" : f === "new" ? "Nur neu" : "Nur geändert"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3 text-xs">
+            <button onClick={() => setSelected(new Set(visibleRows.map(r => r.key)))} className="underline opacity-70 hover:opacity-100">Alle auswählen</button>
+            <button onClick={() => setSelected(new Set())} className="underline opacity-70 hover:opacity-100">Keine</button>
+            <span className="opacity-50">{selected.size} ausgewählt</span>
+          </div>
+          <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+            <table className="w-full text-xs border-collapse">
+              <thead className="sticky top-0 bg-[var(--surface)] z-10">
+                <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                  <th className="w-8 py-2 px-2"></th>
+                  <th className="text-left py-2 px-2 w-24">Status</th>
+                  <th className="text-left py-2 px-2">Nachname</th>
+                  <th className="text-left py-2 px-2">Vorname</th>
+                  <th className="text-left py-2 px-2">Klasse</th>
+                  <th className="text-left py-2 px-2">Änderungen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.key} onClick={() => toggleRow(row.key)}
+                    className={`border-b border-[var(--border)]/40 cursor-pointer transition-colors hover:bg-[var(--surface-hover)] ${selected.has(row.key) ? "bg-[var(--accent)]/5" : ""}`}>
+                    <td className="py-1.5 px-2 text-center">
+                      <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-[var(--accent)]" />
+                    </td>
+                    <td className="py-1.5 px-2">
+                      <span className={`inline-block rounded px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
+                    </td>
+                    <td className="py-1.5 px-2 font-medium">{row.csv_data.nachname}</td>
+                    <td className="py-1.5 px-2">{row.csv_data.vorname}</td>
+                    <td className="py-1.5 px-2 font-mono">{row.csv_data.klasse || "–"}</td>
+                    <td className="py-1.5 px-2">
+                      {row.action === "new" ? <span className="opacity-50 italic">Neuer Schüler</span>
+                        : row.changed_fields.length > 0 ? (
+                          <div className="flex flex-wrap">
+                            {row.changed_fields.map(f => <FieldDiff key={f} field={f} csvVal={row.csv_data[f] ?? ""} dbVal={row.db_data?.[f]} />)}
+                          </div>
+                        ) : <span className="opacity-30">–</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => applyMut.mutate()} disabled={applyMut.isPending || selected.size === 0} className="btn-primary text-sm py-2 px-5">
+              {applyMut.isPending ? "Übernehme…" : `✓ ${selected.size} Änderung${selected.size !== 1 ? "en" : ""} übernehmen`}
+            </button>
+            <button onClick={() => { setPreview(null); setSelected(new Set()); }} className="text-xs opacity-50 hover:opacity-80">Abbrechen</button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -250,8 +391,9 @@ export default function AdminUsersPage() {
   });
   const canReset = resetType === "teacher" ? Boolean(resetTeacherId) : Boolean(resetStudentId);
 
-  // ── User management (username change + per-row reset) ──────────────────────
+  // ── User management (username change + per-row reset + delete) ─────────────
   const [mgmtRole, setMgmtRole] = useState<UserType>("student");
+  const [mgmtClass, setMgmtClass] = useState("");
   const [mgmtCreds, setMgmtCreds] = useState<CredResult[]>([]);
   const { data: allStudents = [] } = useQuery<StudentOut[]>({
     queryKey: ["students", "manage-all"], queryFn: () => api.students.list(), enabled: allowed,
@@ -265,7 +407,7 @@ export default function AdminUsersPage() {
       qc.invalidateQueries({ queryKey: ["teachers"] });
       toast("Benutzername geändert", "success");
     },
-    onError: (e: any) => toast(e?.message?.includes("409") || e?.message?.includes("vergeben") ? "Benutzername bereits vergeben" : (e?.message ?? "Fehler"), "error"),
+    onError: (e: any) => toast(apiErr(e), "error"),
   });
 
   const mgmtResetMut = useMutation({
@@ -278,19 +420,31 @@ export default function AdminUsersPage() {
       setMgmtCreds(prev => [row, ...prev]);
       toast(`Neues Passwort für ${row.label}`, "success");
     },
-    onError: (e: any) => toast(e?.message ?? "Fehler beim Zurücksetzen", "error"),
+    onError: (e: any) => toast(apiErr(e) ?? "Fehler beim Zurücksetzen", "error"),
   });
 
-  // Rows for the currently selected role. Admins are teachers with role === "admin".
+  const deleteMut = useMutation({
+    mutationFn: ({ kind, id }: { kind: ResetType; id: number }): Promise<unknown> =>
+      kind === "student" ? api.students.delete(id) : api.teachers.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: ["teachers"] });
+      toast("Benutzer gelöscht", "success");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
+
+  // Rows for the currently selected role + class. Admins are teachers with role === "admin".
   const mgmtRows: { id: number; name: string; sub: string; username: string | null; kind: ResetType }[] =
     mgmtRole === "student"
-      ? [...allStudents]
+      ? allStudents
+          .filter(s => !mgmtClass || s.klasse === mgmtClass)
           .sort((a, b) => a.klasse.localeCompare(b.klasse) || a.nachname.localeCompare(b.nachname))
           .map(s => ({ id: s.id, name: `${s.nachname}, ${s.vorname} (${s.klasse})`, sub: "Schüler:in", username: s.username, kind: "student" as const }))
       : teachers
-          .filter(t => mgmtRole === "admin" ? t.role === "admin" : t.role !== "admin")
+          .filter(t => (mgmtRole === "admin" ? t.role === "admin" : t.role !== "admin") && (!mgmtClass || t.klasse === mgmtClass))
           .sort((a, b) => a.last_name.localeCompare(b.last_name))
-          .map(t => ({ id: t.id, name: `${t.last_name}, ${t.first_name}`, sub: TYPE_LABEL[mgmtRole], username: t.username, kind: "teacher" as const }));
+          .map(t => ({ id: t.id, name: `${t.last_name}, ${t.first_name}${t.klasse ? ` · ${t.klasse}` : ""}`, sub: TYPE_LABEL[mgmtRole], username: t.username, kind: "teacher" as const }));
 
   if (!auth || !aReady || !allowed) return null;
 
@@ -299,7 +453,7 @@ export default function AdminUsersPage() {
       <div>
         <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">👤 Benutzerverwaltung</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">Konten anlegen · Zugangsdaten generieren · Lehrer-CSV importieren · Passwörter zurücksetzen</p>
+        <p className="text-[var(--text-muted)] text-sm mt-1">Konten anlegen · Zugänge generieren · Lehrer- &amp; Schüler-CSV · Passwörter · Löschen</p>
       </div>
 
       {/* ── Manual create ─────────────────────────────────────────────────── */}
@@ -508,6 +662,9 @@ export default function AdminUsersPage() {
         )}
       </section>
 
+      {/* ── Student CSV import (below the teacher import) ───────────────────── */}
+      <StudentImportSection />
+
       {/* ── Password reset ─────────────────────────────────────────────────── */}
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
@@ -567,17 +724,24 @@ export default function AdminUsersPage() {
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Benutzer verwalten</h2>
-          <Hint text={"Benutzernamen ändern (✏️) und Passwörter einzeln zurücksetzen. Nach Rolle gefiltert — Admins sind Lehrkräfte mit Admin-Rechten."} />
+          <Hint text={"Benutzernamen ändern (✏️), Passwörter zurücksetzen und Konten löschen. Nach Rolle und Klasse gefiltert — Admins sind Lehrkräfte mit Admin-Rechten. Löschen ist endgültig; Lehrkräfte mit erstellten Inhalten oder vergebenen Punkten lassen sich nicht löschen."} />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {(["student", "teacher", "admin"] as UserType[]).map(t => (
-            <button key={t} onClick={() => setMgmtRole(t)}
-              className={`text-sm px-4 py-2 rounded-full border transition-colors ${
-                mgmtRole === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
-              }`}>
-              {TYPE_LABEL[t]}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
+            {(["student", "teacher", "admin"] as UserType[]).map(t => (
+              <button key={t} onClick={() => setMgmtRole(t)}
+                className={`text-sm px-4 py-2 rounded-full border transition-colors ${
+                  mgmtRole === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                }`}>
+                {TYPE_LABEL[t]}
+              </button>
+            ))}
+          </div>
+          <select className="input text-sm py-2 ml-auto" value={mgmtClass} onChange={e => setMgmtClass(e.target.value)}
+            title={mgmtRole === "student" ? "Nach Klasse filtern" : "Nach Klassenleitung filtern"}>
+            <option value="">Alle Klassen</option>
+            {classes.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+          </select>
         </div>
 
         <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
@@ -586,7 +750,8 @@ export default function AdminUsersPage() {
               <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
                 <th className="text-left py-2 px-2">Name</th>
                 <th className="text-left py-2 px-2">Benutzername</th>
-                <th className="text-left py-2 px-2 w-32">Passwort</th>
+                <th className="text-left py-2 px-2 w-28">Passwort</th>
+                <th className="text-left py-2 px-2 w-20">Löschen</th>
               </tr>
             </thead>
             <tbody>
@@ -600,10 +765,16 @@ export default function AdminUsersPage() {
                     <button onClick={() => mgmtResetMut.mutate({ kind: r.kind, id: r.id })} disabled={mgmtResetMut.isPending}
                       className="text-xs underline opacity-70 hover:opacity-100 disabled:opacity-30">🔁 zurücksetzen</button>
                   </td>
+                  <td className="py-1.5 px-2">
+                    <button
+                      onClick={() => { if (window.confirm(`„${r.name}" endgültig löschen? Das kann nicht rückgängig gemacht werden.`)) deleteMut.mutate({ kind: r.kind, id: r.id }); }}
+                      disabled={deleteMut.isPending}
+                      className="text-xs text-red-400 hover:text-red-300 disabled:opacity-30" title="Endgültig löschen">🗑️ löschen</button>
+                  </td>
                 </tr>
               ))}
               {mgmtRows.length === 0 && (
-                <tr><td colSpan={3} className="py-6 text-center text-[var(--text-muted)]">Keine Einträge.</td></tr>
+                <tr><td colSpan={4} className="py-6 text-center text-[var(--text-muted)]">Keine Einträge.</td></tr>
               )}
             </tbody>
           </table>
