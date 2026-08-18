@@ -32,6 +32,13 @@ class MemberAdd(BaseModel):
     student_id: int
 
 
+class RosterEntry(BaseModel):
+    id: int
+    vorname: str
+    nachname: str
+    alias: str | None = None
+
+
 class AwardIn(BaseModel):
     points: int
     reason: str | None = None
@@ -91,6 +98,30 @@ def delete_group(
         raise HTTPException(404, "Group not found")
     db.delete(g)
     db.commit()
+
+
+@router.get("/{group_id}/roster", response_model=list[RosterEntry])
+def group_roster(
+    group_id: int,
+    db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
+):
+    """Member students of a group (name + alias), sorted — enough to render and
+    export a printable list for a Kurs / Wahlpflicht group."""
+    g = db.get(StudentGroup, group_id)
+    if not g:
+        raise HTTPException(404, "Group not found")
+    rows = (
+        db.query(Student)
+        .join(StudentGroupMember, StudentGroupMember.student_id == Student.id)
+        .filter(StudentGroupMember.group_id == group_id, Student.active == True)  # noqa: E712
+        .order_by(Student.nachname, Student.vorname)
+        .all()
+    )
+    return [
+        RosterEntry(id=s.id, vorname=s.vorname, nachname=s.nachname, alias=s.alias)
+        for s in rows
+    ]
 
 
 @router.post("/{group_id}/members", response_model=GroupOut)

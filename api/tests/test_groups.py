@@ -97,6 +97,25 @@ class TestMembership:
         r = client.post(f"/api/groups/{gid}/members", json={"student_id": student_a.id}, headers=auth(teacher_token))
         assert r.json()["member_ids"] == [student_a.id]
 
+    def test_roster_returns_members_sorted(self, client, teacher_token, student_a, student_b):
+        create = client.post("/api/groups", json={"group_type": "kurs", "name": "Kurs I"}, headers=auth(teacher_token))
+        gid = create.json()["id"]
+        client.post(f"/api/groups/{gid}/members", json={"student_id": student_a.id}, headers=auth(teacher_token))
+        client.post(f"/api/groups/{gid}/members", json={"student_id": student_b.id}, headers=auth(teacher_token))
+
+        r = client.get(f"/api/groups/{gid}/roster", headers=auth(teacher_token))
+        assert r.status_code == 200, r.text
+        # student_a = Meier, student_b = Schulz → sorted by Nachname
+        names = [(e["nachname"], e["vorname"]) for e in r.json()]
+        assert names == [("Meier", "Tom"), ("Schulz", "Nina")]
+
+    def test_roster_requires_auth(self, client, teacher_token):
+        create = client.post("/api/groups", json={"group_type": "kurs", "name": "Kurs I"}, headers=auth(teacher_token))
+        gid = create.json()["id"]
+        client.cookies.clear()
+        r = client.get(f"/api/groups/{gid}/roster")
+        assert r.status_code == 401
+
     def test_member_class_ids_derived(self, client, teacher_token, student_a, student_b, klass, klass_b):
         create = client.post("/api/groups", json={"group_type": "kurs", "name": "Kurs I"}, headers=auth(teacher_token))
         gid = create.json()["id"]

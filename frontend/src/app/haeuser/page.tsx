@@ -33,8 +33,75 @@ function gradeOf(code: string): number | null {
   return m ? parseInt(m[1], 10) : null;
 }
 
-const KURS_PRESETS = ["Kurs I", "Kurs II", "Kurs III"];
+const KURS_PRESETS = ["Kurs I", "Kurs II", "Kurs III", "Kursgruppe"];
 const WAHLPFLICHT_PRESETS = ["DuG", "NaT", "Fr", "Span"];
+
+/** Compact label for the Klassenübersicht badges: "Kurs I"→"K1", "Kursgruppe"→"KG".
+ *  WPF/other groups already carry their short label (Fr, Span, NaT, DuG). */
+function groupShortCode(name: string): string {
+  const kurs: Record<string, string> = {
+    "Kurs I": "K1", "Kurs II": "K2", "Kurs III": "K3", "Kursgruppe": "KG",
+  };
+  return kurs[name.trim()] ?? name.trim();
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+}
+
+/** Name shown in exports: alias if set, else the first of the first names. */
+function displayFirstName(vorname: string, alias: string | null | undefined): string {
+  const a = alias?.trim();
+  if (a) return a;
+  return firstNameTokens(vorname)[0] ?? vorname;
+}
+
+/**
+ * Open a printable A4-portrait list (Nachname, Vorname + a blank 0.8 cm grid
+ * filling the page width) for a class / Kurs / Wahlpflicht roster.
+ */
+function exportRosterList(title: string, entries: { nachname: string; vorname: string; alias?: string | null }[]) {
+  const CELL_MM = 8;     // 0.8 cm per grid cell
+  const NACH_MM = 42;
+  const VOR_MM  = 34;
+  const USABLE_MM = 186; // A4 portrait (210 mm) minus 12 mm margins each side
+  const cells = Math.max(1, Math.floor((USABLE_MM - NACH_MM - VOR_MM) / CELL_MM));
+
+  const sorted = [...entries].sort(
+    (a, b) => a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname)
+  );
+  const gridHead = Array.from({ length: cells }, () => `<th class="cell"></th>`).join("");
+  const rows = sorted.map(e => `<tr>
+      <td class="nach">${escapeHtml(e.nachname)}</td>
+      <td class="vor">${escapeHtml(displayFirstName(e.vorname, e.alias))}</td>
+      ${Array.from({ length: cells }, () => `<td class="cell"></td>`).join("")}
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>
+    @page { size: A4 portrait; margin: 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; color: #111; }
+    h1 { font-size: 13pt; margin-bottom: 4mm; }
+    table { border-collapse: collapse; table-layout: fixed; width: ${USABLE_MM}mm; }
+    th, td { border: 0.3mm solid #333; height: ${CELL_MM}mm; font-size: 9pt; }
+    th { background: #eee; }
+    .nach, .vor { padding: 0 2mm; text-align: left; white-space: nowrap; overflow: hidden; }
+    .nach { width: ${NACH_MM}mm; }
+    .vor  { width: ${VOR_MM}mm; }
+    .cell { width: ${CELL_MM}mm; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style></head><body>
+    <h1>${escapeHtml(title)} · ${sorted.length}</h1>
+    <table><thead><tr><th class="nach">Nachname</th><th class="vor">Vorname</th>${gridHead}</tr></thead>
+    <tbody>${rows}</tbody></table>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  w.onload = () => w.print();
+}
 
 /** Kurs/Wahlpflicht level colors: I=rot, II=blau, III=grün (see legend). */
 function kursLevel(name: string): "I" | "II" | "III" | null {
@@ -132,7 +199,7 @@ function GroupTabSection({
 
 function GroupsManager({ cls, students }: { cls: ClassOut; students: StudentOut[] }) {
   const grade = gradeOf(cls.code);
-  const showKurs = grade !== null && grade >= 9 && grade <= 10;
+  const showKurs = grade !== null && grade >= 9;
   const showWahlpflicht = grade !== null && grade >= 7;
   const tabs: { key: GroupType; label: string; presets: string[] }[] = [
     ...(showKurs ? [{ key: "kurs" as GroupType, label: "Kurse", presets: KURS_PRESETS }] : []),
@@ -1392,6 +1459,77 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
   );
 }
 
+// ─── Kurs / Wahlpflicht Detail Dialog (roster + export) ───────────────────────
+
+function GroupDetailDialog({
+  group, classes, onClose,
+}: {
+  group: StudentGroupOut;
+  classes: ClassOut[];
+  onClose: () => void;
+}) {
+  const { data: roster = [], isLoading } = useQuery<import("@/lib/api").GroupRosterEntry[]>({
+    queryKey: ["group-roster", group.id],
+    queryFn: () => api.groups.roster(group.id),
+  });
+  const memberClasses = classes.filter(c => group.member_class_ids.includes(c.id));
+  const typeLabel = group.group_type === "kurs" ? "Kurs" : group.group_type === "wahlpflicht" ? "Wahlpflicht" : "Gruppe";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative w-full sm:w-[95vw] sm:max-w-lg max-h-[92dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-lg truncate">{group.name}</div>
+            <div className="text-xs text-[var(--text-muted)]">{typeLabel} · {roster.length} Schüler:innen</div>
+          </div>
+          <button
+            onClick={() => exportRosterList(`${typeLabel} ${group.name}`, roster)}
+            disabled={roster.length === 0}
+            className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors disabled:opacity-40"
+          >
+            🖨 Export
+          </button>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-2xl leading-none px-1">×</button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-3">
+          {memberClasses.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {memberClasses.map(c => (
+                <span key={c.id} className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)]">
+                  {c.code}
+                </span>
+              ))}
+            </div>
+          )}
+          {isLoading ? (
+            <p className="text-sm text-[var(--text-muted)]">Laden…</p>
+          ) : roster.length === 0 ? (
+            <p className="text-sm text-[var(--text-muted)] text-center py-6">
+              Noch keine Mitglieder. In einer Klasse → Tab „Gruppen" zuordnen.
+            </p>
+          ) : (
+            <div className="flex flex-col divide-y divide-[var(--border)]">
+              {roster.map(s => (
+                <div key={s.id} className="flex items-center gap-2 py-2 text-sm">
+                  <span className="font-semibold">{s.nachname},</span>
+                  <span>{displayFirstName(s.vorname, s.alias)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => void }) {
   const qc = useQueryClient();
   const router = useRouter();
@@ -1549,13 +1687,25 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Schüler ── */}
           {section === "schüler" && (
-            <KlassenlisteSection
-              students={students}
-              roles={roles}
-              chores={chores}
-              choreStats={choreStats}
-              groups={allGroups}
-            />
+            <>
+              {students.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => exportRosterList(`Klasse ${cls.code}`, students)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                  >
+                    🖨 Liste exportieren
+                  </button>
+                </div>
+              )}
+              <KlassenlisteSection
+                students={students}
+                roles={roles}
+                chores={chores}
+                choreStats={choreStats}
+                groups={allGroups}
+              />
+            </>
           )}
 
           {/* ── Rollen ── */}
@@ -1823,9 +1973,11 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
     enabled: mode === "klassen" && isStudent,
   });
   const [tab, setTab] = useState<"charts" | "manage">("charts");
+  const [gridFilter, setGridFilter] = useState<"klassen" | "kurs" | "wahlpflicht">("klassen");
   const [showAddForm, setShowAddForm] = useState(false);
   const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
   const [detailClass, setDetailClass] = useState<ClassOut | null>(null);
+  const [detailGroup, setDetailGroup] = useState<StudentGroupOut | null>(null);
 
   const { data: haeuser = [], isLoading: hLoading } = useQuery<HausOut[]>({
     queryKey: ["haeuser"],
@@ -1839,6 +1991,20 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
     queryFn: api.classes.list,
     refetchInterval: 15_000,
   });
+
+  // Kurse + Wahlpflicht span classes — loaded for the /klassen filter and the
+  // per-class "grade + short-code" badges (e.g. "7 Fr", "10 K1").
+  const { data: kursGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "kurs"],
+    queryFn: () => api.groups.list({ group_type: "kurs" }),
+    enabled: mode === "klassen",
+  });
+  const { data: wpfGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "wahlpflicht"],
+    queryFn: () => api.groups.list({ group_type: "wahlpflicht" }),
+    enabled: mode === "klassen",
+  });
+  const classGroups = [...kursGroups, ...wpfGroups];
 
   // Access. /haeuser is admin-only; /klassen is for teachers/admin, and for a
   // granted Klassensprecher (student) it collapses to the scoped Dienste view.
@@ -1917,49 +2083,137 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
       {/* ── Klassen (Klassenverwaltung) ── */}
       {mode === "klassen" && (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-[var(--text-muted)]">
-            {classes.length} Klassen · Klasse anklicken zum Konfigurieren
-          </p>
+          {/* Filter: Klassen / Kurs / Wahlpflicht */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
+              {([
+                ["klassen", "🎓 Klassen"],
+                ["kurs", "📘 Kurse"],
+                ["wahlpflicht", "🧩 Wahlpflicht"],
+              ] as const).map(([f, label]) => (
+                <button
+                  key={f}
+                  onClick={() => setGridFilter(f)}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                    gridFilter === f
+                      ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-[var(--text-muted)]">
+              {gridFilter === "klassen"
+                ? `${classes.length} Klassen · Klasse anklicken zum Konfigurieren`
+                : gridFilter === "kurs"
+                ? `${kursGroups.length} Kurse · anklicken für Liste & Export`
+                : `${wpfGroups.length} Wahlpflicht-Gruppen · anklicken für Liste & Export`}
+            </p>
+          </div>
+
           {cLoading ? (
             <div className="text-[var(--text-muted)] text-sm">Laden…</div>
-          ) : classes.length === 0 ? (
-            <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)]">
-              Noch keine Klassen angelegt.
-            </div>
+          ) : gridFilter === "klassen" ? (
+            classes.length === 0 ? (
+              <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)]">
+                Noch keine Klassen angelegt.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[...classes]
+                  .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
+                  .map(cls => {
+                    const grade = gradeOf(cls.code);
+                    const badges = classGroups.filter(g => g.member_class_ids.includes(cls.id));
+                    return (
+                      <button
+                        key={cls.id}
+                        onClick={() => setDetailClass(cls)}
+                        className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <ClassIcon cls={cls} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold truncate">
+                            {cls.code}
+                            {cls.class_name && (
+                              <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">
+                                „{cls.class_name}"
+                              </span>
+                            )}
+                          </div>
+                          {cls.display_name && (
+                            <div className="text-xs text-[var(--text-muted)] truncate">{cls.display_name}</div>
+                          )}
+                          {/* Kurse / WPF badges: "7 Fr", "10 K1" */}
+                          {badges.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {badges.map(g => (
+                                <span key={g.id} className={`text-[10px] px-1.5 py-0.5 rounded-md border ${kursBadgeClasses(g.name)}`}>
+                                  {grade !== null ? `${grade} ` : ""}{groupShortCode(g.name)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
+                            {cls.total_points}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)]">Pkt</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[...classes]
-                .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
-                .map(cls => (
-                  <button
-                    key={cls.id}
-                    onClick={() => setDetailClass(cls)}
-                    className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
-                    style={{ borderColor: "var(--border)" }}
-                  >
-                    <ClassIcon cls={cls} />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold truncate">
-                        {cls.code}
-                        {cls.class_name && (
-                          <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">
-                            „{cls.class_name}"
+            // Kurs / Wahlpflicht cards
+            (() => {
+              const list = gridFilter === "kurs" ? kursGroups : wpfGroups;
+              if (list.length === 0) {
+                return (
+                  <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)] text-sm text-center px-6">
+                    Noch keine {gridFilter === "kurs" ? "Kurse" : "Wahlpflicht-Gruppen"} angelegt. In einer Klasse → Tab „Gruppen" anlegen &amp; zuordnen.
+                  </div>
+                );
+              }
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[...list]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map(g => {
+                      const memberClasses = classes.filter(c => g.member_class_ids.includes(c.id));
+                      return (
+                        <button
+                          key={g.id}
+                          onClick={() => setDetailGroup(g)}
+                          className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <span className={`text-xs font-bold px-2 py-1 rounded-md border shrink-0 ${kursBadgeClasses(g.name)}`}>
+                            {groupShortCode(g.name)}
                           </span>
-                        )}
-                      </div>
-                      {cls.display_name && (
-                        <div className="text-xs text-[var(--text-muted)] truncate">{cls.display_name}</div>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
-                        {cls.total_points}
-                      </div>
-                      <div className="text-xs text-[var(--text-muted)]">Pkt</div>
-                    </div>
-                  </button>
-                ))}
-            </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold truncate">{g.name}</div>
+                            <div className="text-xs text-[var(--text-muted)] truncate">
+                              {memberClasses.length > 0 ? memberClasses.map(c => c.code).join(", ") : "keine Klassen"}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
+                              {g.member_ids.length}
+                            </div>
+                            <div className="text-xs text-[var(--text-muted)]">SuS</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              );
+            })()
           )}
         </div>
       )}
@@ -2010,6 +2264,10 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
 
       {mode === "klassen" && detailClass && (
         <ClassDetailDialog cls={detailClass} onClose={() => setDetailClass(null)} />
+      )}
+
+      {mode === "klassen" && detailGroup && (
+        <GroupDetailDialog group={detailGroup} classes={classes} onClose={() => setDetailGroup(null)} />
       )}
     </div>
   );

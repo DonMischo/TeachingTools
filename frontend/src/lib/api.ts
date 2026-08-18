@@ -131,6 +131,13 @@ export type StudentGroupOut = {
   member_class_ids: number[];
 };
 
+export type GroupRosterEntry = {
+  id: number;
+  vorname: string;
+  nachname: string;
+  alias: string | null;
+};
+
 export type ClassChoreOut = {
   id: number;
   class_id: number;
@@ -1185,6 +1192,7 @@ export const api = {
       apiFetch<StudentGroupOut>(`groups/${id}/members`, { method: "POST", body: JSON.stringify({ student_id }) }),
     removeMember: (id: number, student_id: number) =>
       apiFetch<StudentGroupOut>(`groups/${id}/members/${student_id}`, { method: "DELETE" }),
+    roster: (id: number) => apiFetch<GroupRosterEntry[]>(`groups/${id}/roster`),
     award: (id: number, points: number, reason?: string) =>
       apiFetch<{ class_id: number; points: number }[]>(`groups/${id}/award`, {
         method: "POST",
