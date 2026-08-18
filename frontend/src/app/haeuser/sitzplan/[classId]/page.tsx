@@ -779,7 +779,7 @@ export default function SitzplanPage() {
 function BackBar({ cls, router }: { cls: ClassOut | undefined; router: ReturnType<typeof useRouter> }) {
   return (
     <div className="flex flex-col gap-1">
-      <button onClick={() => router.push("/haeuser")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zu Häuser &amp; Klassen</button>
+      <button onClick={() => router.push("/klassen")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Klassenverwaltung</button>
       <h1 className="text-2xl font-bold">🪑 Sitzplan {cls ? `— ${cls.code}${cls.class_name ? ` „${cls.class_name}"` : ""}` : ""}</h1>
     </div>
   );

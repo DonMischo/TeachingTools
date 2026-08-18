@@ -151,6 +151,13 @@ export default function AdminPage() {
           </Link>
         )}
         {isAdmin && (
+          <Link href="/haeuser" className={CARD}>
+            <div className="text-2xl mb-2">🛡️</div>
+            <div className="font-semibold">Häuser &amp; Klassen</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Häuser-Übersicht · Häuser verwalten · Klassen zuordnen</div>
+          </Link>
+        )}
+        {isAdmin && (
           <Link href="/admin/availability" className={CARD}>
             <div className="text-2xl mb-2">🧩</div>
             <div className="font-semibold">Verfügbarkeit</div>

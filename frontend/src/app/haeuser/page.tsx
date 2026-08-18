@@ -1682,6 +1682,16 @@ function KlassensprecherView({ classId }: { classId: number }) {
 }
 
 export default function HaeuserPage() {
+  return <KlassenHaeuserView mode="haeuser" />;
+}
+
+/**
+ * Shared view behind two routes:
+ *  - mode="haeuser" → /haeuser: Häuser-Übersicht + Verwaltung (admin only).
+ *  - mode="klassen" → /klassen: Klassenverwaltung — the class grid + detail
+ *    (teachers/admin, or a granted Klassensprecher via the scoped Dienste view).
+ */
+export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
   const { auth } = useAuth();
   const router = useRouter();
   const isStudent = auth?.role === "student";
@@ -1689,9 +1699,9 @@ export default function HaeuserPage() {
   const { data: myMgmt } = useQuery<{ class_id: number | null }>({
     queryKey: ["my-management"],
     queryFn: api.classes.myManagement,
-    enabled: isStudent,
+    enabled: mode === "klassen" && isStudent,
   });
-  const [tab, setTab] = useState<"charts" | "manage" | "klassen">("charts");
+  const [tab, setTab] = useState<"charts" | "manage">("charts");
   const [showAddForm, setShowAddForm] = useState(false);
   const [verwaltenHaus, setVerwaltenHaus] = useState<HausOut | null>(null);
   const [detailClass, setDetailClass] = useState<ClassOut | null>(null);
@@ -1700,6 +1710,7 @@ export default function HaeuserPage() {
     queryKey: ["haeuser"],
     queryFn: api.haeuser.list,
     refetchInterval: 15_000,
+    enabled: mode === "haeuser",
   });
 
   const { data: classes = [], isLoading: cLoading } = useQuery<ClassOut[]>({
@@ -1708,25 +1719,23 @@ export default function HaeuserPage() {
     refetchInterval: 15_000,
   });
 
-  // A Klassenlehrer lands on the Klassen tab (their own class) rather than the
-  // house charts.
-  const didInitTab = useRef(false);
+  // Access. /haeuser is admin-only; /klassen is for teachers/admin, and for a
+  // granted Klassensprecher (student) it collapses to the scoped Dienste view.
   useEffect(() => {
-    if (!didInitTab.current && auth?.teacher?.klasse_id != null) {
-      setTab("klassen");
-      didInitTab.current = true;
+    if (!auth) return;
+    if (mode === "haeuser") {
+      if (auth.role !== "admin") router.replace("/");
+    } else if (isStudent && myMgmt && myMgmt.class_id == null) {
+      router.replace("/");
     }
-  }, [auth]);
+  }, [auth, mode, isStudent, myMgmt, router]);
 
-  // Students only reach Klassenverwaltung as a granted Klassensprecher, and then
-  // only a scoped Dienste view for their own class.
-  useEffect(() => {
-    if (auth && isStudent && myMgmt && myMgmt.class_id == null) router.replace("/");
-  }, [auth, isStudent, myMgmt, router]);
-  if (isStudent) {
+  if (mode === "klassen" && isStudent) {
     if (!myMgmt || myMgmt.class_id == null) return null;  // loading or redirecting
     return <KlassensprecherView classId={myMgmt.class_id} />;
   }
+  if (!auth) return null;
+  if (mode === "haeuser" && auth.role !== "admin") return null;
 
   const isAdmin = auth?.teacher?.role === "admin";
   const sortedByPts = haeuser;
@@ -1736,31 +1745,32 @@ export default function HaeuserPage() {
       {/* Header */}
       <div className="flex flex-col gap-1">
       <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold">🛡️ Häuser &amp; Klassen</h1>
-        <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
-          {([
-            ["charts",  "📊 Übersicht"],
-            ["klassen", "🎓 Klassen"],
-            ["manage",  "⚙️ Verwaltung"],
-          ] as const).map(([t, label]) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
-                tab === t
-                  ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <h1 className="text-2xl font-bold">{mode === "klassen" ? "🎓 Klassenverwaltung" : "🛡️ Häuser & Klassen"}</h1>
+        {mode === "haeuser" && (
+          <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
+            {([
+              ["charts",  "📊 Übersicht"],
+              ["manage",  "⚙️ Verwaltung"],
+            ] as const).map(([t, label]) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                  tab === t
+                    ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       </div>
 
-      {/* ── Diagramme ── */}
-      {tab === "charts" && (
+      {/* ── Diagramme (Übersicht) ── */}
+      {mode === "haeuser" && tab === "charts" && (
         <div className="flex flex-col gap-8">
           {/* Houses 3D chart */}
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
@@ -1783,8 +1793,8 @@ export default function HaeuserPage() {
         </div>
       )}
 
-      {/* ── Klassen ── */}
-      {tab === "klassen" && (
+      {/* ── Klassen (Klassenverwaltung) ── */}
+      {mode === "klassen" && (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-[var(--text-muted)]">
             {classes.length} Klassen · Klasse anklicken zum Konfigurieren
@@ -1834,7 +1844,7 @@ export default function HaeuserPage() {
       )}
 
       {/* ── Verwaltung ── */}
-      {tab === "manage" && (
+      {mode === "haeuser" && tab === "manage" && (
         <div className="flex flex-col gap-4">
           {/* Add form */}
           {isAdmin && (
@@ -1877,7 +1887,7 @@ export default function HaeuserPage() {
         />
       )}
 
-      {detailClass && (
+      {mode === "klassen" && detailClass && (
         <ClassDetailDialog cls={detailClass} onClose={() => setDetailClass(null)} />
       )}
     </div>

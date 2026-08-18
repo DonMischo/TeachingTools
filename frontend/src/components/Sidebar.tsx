@@ -17,7 +17,7 @@ const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",         href: "/" },
   { tab: "games",          label: "Spiele",            href: "/games" },
   { tab: "tools",          label: "Tools",             href: "/tools" },
-  { tab: "haeuser",        label: "Klassenverwaltung", href: "/haeuser" },
+  { tab: "klassen",        label: "Klassenverwaltung", href: "/klassen" },
   { tab: "kalender",       label: "Kalender",          href: "/kalender" },
 ];
 
@@ -263,7 +263,7 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
             // Tools stays teacher/admin-only; Klassenverwaltung also shows for a
             // granted Klassensprecher (canSeeKlassen).
             if (tab === "tools" && auth?.role === "student") return false;
-            if (tab === "haeuser" && !canSeeKlassen) return false;
+            if (tab === "klassen" && !canSeeKlassen) return false;
             return true;
           })
           .map(({ tab, label, href }) => (
@@ -275,15 +275,6 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
             <NavIcon name={tab as any} />
           </Link>
         ))}
-
-        <div className="w-7 h-px bg-[var(--border)] my-0.5" />
-        <button
-          title="Punkte vergeben"
-          onClick={() => { const next = !pointsOpen; closeAll(); setPointsOpen(next); }}
-          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
-            ${pointsOpen ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"}`}>
-          <NavIcon name="punkte" />
-        </button>
       </div>
 
       <div className="mt-auto flex flex-col items-center gap-1 mb-1">
