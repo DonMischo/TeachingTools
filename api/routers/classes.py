@@ -51,6 +51,8 @@ class RosterEntry(BaseModel):
     vorname: str
     nachname: str
     geschlecht: str
+    alias: str | None = None
+    nta: list[int] = []
 
 
 @router.get("/{class_id}/roster", response_model=list[RosterEntry])
@@ -65,7 +67,11 @@ def class_roster(class_id: int, db: Session = Depends(get_db), current=Depends(g
         .order_by(Student.nachname, Student.vorname)
         .all()
     )
-    return [RosterEntry(id=s.id, vorname=s.vorname, nachname=s.nachname, geschlecht=s.geschlecht) for s in rows]
+    return [
+        RosterEntry(id=s.id, vorname=s.vorname, nachname=s.nachname, geschlecht=s.geschlecht,
+                    alias=s.alias, nta=list(s.nta or []))
+        for s in rows
+    ]
 
 
 @router.get("/my-management")

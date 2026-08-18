@@ -64,7 +64,7 @@ def _teacher_out(t: Teacher, ws: dict[tuple[str, int], int] | None = None) -> Te
     total_ws = sum(_assignment_hours(a, ws) for a in t.assignments) + t.korrektur
     return TeacherOut(
         id=t.id, first_name=t.first_name, last_name=t.last_name, active=t.active, role=t.role,
-        nummer=t.nummer, email=t.email,
+        username=t.username, nummer=t.nummer, email=t.email,
         teacher_role=t.teacher_role.name if t.teacher_role else None,
         klasse=t.klasse.code if t.klasse else None,
         klasse_id=t.klasse_id,
@@ -325,6 +325,30 @@ def reset_password(teacher_id: int, db: Session = Depends(get_db), _: object = D
         id=teacher.id, last_name=teacher.last_name, first_name=teacher.first_name,
         role=teacher.role, username=teacher.username, password=plain,
     )
+
+
+class UsernameUpdate(BaseModel):
+    username: str
+
+
+@router.patch("/{teacher_id}/username", response_model=TeacherOut)
+def set_teacher_username(teacher_id: int, body: UsernameUpdate, db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
+    """Admin: change a teacher's login username (must stay unique)."""
+    teacher = db.get(Teacher, teacher_id)
+    if not teacher:
+        raise HTTPException(404, "Teacher not found")
+    username = body.username.strip()
+    if not username:
+        raise HTTPException(422, "Benutzername darf nicht leer sein")
+    clash = db.query(Teacher).filter(
+        Teacher.username == username, Teacher.id != teacher_id
+    ).first()
+    if clash:
+        raise HTTPException(409, "Benutzername bereits vergeben")
+    teacher.username = username
+    db.commit()
+    db.refresh(teacher)
+    return _teacher_out(teacher, _ws_lookup(db))
 
 
 # ---------------------------------------------------------------------------

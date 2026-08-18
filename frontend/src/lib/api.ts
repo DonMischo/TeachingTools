@@ -25,6 +25,8 @@ export type StudentOut = {
   geburtsdatum: string | null;
   username: string | null;
   active: boolean;
+  alias: string | null;
+  nta: number[];
   has_credentials: boolean;
 };
 
@@ -207,6 +209,7 @@ export type TeacherOut = {
   last_name: string;
   active: boolean;
   role: string;
+  username: string | null;
   nummer: number | null;
   email: string | null;
   teacher_role: string | null;
@@ -924,7 +927,7 @@ export const api = {
     setKsprecherEdit: (id: number, enabled: boolean) =>
       apiFetch<ClassOut>(`classes/${id}/ksprecher-edit`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
     myManagement: () => apiFetch<{ class_id: number | null }>("classes/my-management"),
-    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string }[]>(`classes/${id}/roster`),
+    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string; alias: string | null; nta: number[] }[]>(`classes/${id}/roster`),
   },
   teachers: {
     list: () => apiFetch<TeacherOut[]>("teachers"),
@@ -965,6 +968,8 @@ export const api = {
       apiFetch<TeacherCredentialRow>("teachers", { method: "POST", body: JSON.stringify(body) }),
     resetPassword: (teacherId: number) =>
       apiFetch<TeacherCredentialRow>(`teachers/${teacherId}/reset-password`, { method: "POST" }),
+    setUsername: (teacherId: number, username: string) =>
+      apiFetch<TeacherOut>(`teachers/${teacherId}/username`, { method: "PATCH", body: JSON.stringify({ username }) }),
   },
   transactions: {
     create: (data: { teacher_id: number; class_id: number; points: number; reason: string }) =>
@@ -1055,6 +1060,10 @@ export const api = {
       apiFetch<StudentCredentialRow>("students", { method: "POST", body: JSON.stringify(body) }),
     resetPassword: (studentId: number) =>
       apiFetch<StudentCredentialRow>(`students/${studentId}/reset-password`, { method: "POST" }),
+    updateProfile: (studentId: number, body: { alias: string | null; nta: number[] }) =>
+      apiFetch<StudentOut>(`students/${studentId}/profile`, { method: "PATCH", body: JSON.stringify(body) }),
+    setUsername: (studentId: number, username: string) =>
+      apiFetch<StudentOut>(`students/${studentId}/username`, { method: "PATCH", body: JSON.stringify({ username }) }),
     preview: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);

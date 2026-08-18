@@ -364,3 +364,101 @@ def test_apply_recognizes_student_across_grade_bump(client, admin_token, klass_5
 
     db.refresh(klass_5a)
     assert klass_5a.code == "6a"
+
+
+def _apply_all(client, admin_token, preview):
+    """Mirror the frontend: select every non-unchanged row, apply with its csv_data."""
+    keys = [r["key"] for r in preview["diff"] if r["action"] != "unchanged"]
+    csv_data = {r["key"]: r["csv_data"] for r in preview["diff"] if r["key"] in keys}
+    return _apply(client, admin_token, keys, csv_data)
+
+
+def test_apply_persists_realistic_csv(client, admin_token, klass_5a, db):
+    """Semicolon-delimited export with an extra column — the full preview→apply
+    round-trip must actually create the students in the DB."""
+    csv = "#;Nachname;Vorname;Klasse;Geschlecht;Geburtsdatum;Förderschwerpunkt\n" \
+          "1;Schäfer;Lea;5a;weiblich;03.09.2013;LRS\n" \
+          "2;Wagner;Ben;5a;männlich;11.12.2013;\n"
+    preview = _preview(client, admin_token, csv).json()
+    assert preview["summary"]["new"] == 2
+    resp = _apply_all(client, admin_token, preview)
+    assert resp.status_code == 200
+    assert resp.json()["applied"] == 2
+    assert db.query(Student).count() == 2
+    lea = db.query(Student).filter(Student.nachname == "Schäfer").one()
+    assert lea.vorname == "Lea"
+    assert lea.class_id == klass_5a.id
+    assert lea.extra_fields.get("Förderschwerpunkt") == "LRS"
+
+
+def test_apply_two_students_sharing_name(client, admin_token, klass_5a, db):
+    """Two distinct students with the same Vor+Nachname in one class must BOTH be
+    created — the diff key (nachname|vorname|klasse) collides for them."""
+    csv = "#,Nachname,Vorname,Klasse,Geschlecht\n" \
+          "1,Yilmaz,Ali,5a,männlich\n" \
+          "2,Yilmaz,Ali,5a,männlich\n"
+    preview = _preview(client, admin_token, csv).json()
+    resp = _apply_all(client, admin_token, preview)
+    assert resp.status_code == 200
+    assert db.query(Student).filter(Student.nachname == "Yilmaz").count() == 2
+
+
+# ---------------------------------------------------------------------------
+# Alias / Nachteilsausgleich + username management
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def student_5a(db, klass_5a) -> Student:
+    s = Student(nachname="Meier", vorname="Anna Lena", klasse="5a",
+                class_id=klass_5a.id, geschlecht="weiblich")
+    db.add(s)
+    db.flush()
+    return s
+
+
+def _hdr(token):
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_update_profile_sets_alias_and_nta(client, admin_token, student_5a, db):
+    r = client.patch(f"/api/students/{student_5a.id}/profile",
+                     json={"alias": "Lena", "nta": [1, 3, 5, 3, 9]}, headers=_hdr(admin_token))
+    assert r.status_code == 200
+    db.refresh(student_5a)
+    assert student_5a.alias == "Lena"
+    assert student_5a.nta == [1, 3, 5]  # deduped, sorted, out-of-range 9 dropped
+
+
+def test_update_profile_empty_alias_clears(client, admin_token, student_5a, db):
+    student_5a.alias = "X"
+    db.flush()
+    r = client.patch(f"/api/students/{student_5a.id}/profile",
+                     json={"alias": "  ", "nta": []}, headers=_hdr(admin_token))
+    assert r.status_code == 200
+    db.refresh(student_5a)
+    assert student_5a.alias is None
+
+
+def test_update_profile_requires_class_editor(client, teacher_token, student_5a):
+    """A teacher who is not this class's Klassenlehrer may not edit the profile."""
+    r = client.patch(f"/api/students/{student_5a.id}/profile",
+                     json={"alias": "Lena", "nta": []}, headers=_hdr(teacher_token))
+    assert r.status_code == 403
+
+
+def test_set_student_username(client, admin_token, student_5a, db):
+    r = client.patch(f"/api/students/{student_5a.id}/username",
+                     json={"username": "neu.name"}, headers=_hdr(admin_token))
+    assert r.status_code == 200
+    db.refresh(student_5a)
+    assert student_5a.username == "neu.name"
+
+
+def test_set_student_username_rejects_duplicate(client, admin_token, klass_5a, db):
+    a = Student(nachname="A", vorname="A", klasse="5a", geschlecht="männlich", username="taken")
+    b = Student(nachname="B", vorname="B", klasse="5a", geschlecht="männlich")
+    db.add_all([a, b])
+    db.flush()
+    r = client.patch(f"/api/students/{b.id}/username",
+                     json={"username": "taken"}, headers=_hdr(admin_token))
+    assert r.status_code == 409

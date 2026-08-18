@@ -15,6 +15,7 @@ export function makeTeacher(overrides: Partial<TeacherOut> = {}): TeacherOut {
     last_name: "Müller",
     active: true,
     role: "teacher",
+    username: null,
     nummer: null,
     email: null,
     teacher_role: null,

@@ -988,6 +988,122 @@ function KlassenlisteSection({
   );
 }
 
+function firstNameTokens(vorname: string): string[] {
+  return vorname.trim().split(/\s+/).filter(Boolean);
+}
+
+// Per-student Alias (for the Sitzplan) + Nachteilsausgleich flags (1–5).
+function NtaSection({
+  cls, students, canEdit,
+}: {
+  cls: ClassOut;
+  students: StudentOut[];
+  canEdit: boolean;
+}) {
+  const qc = useQueryClient();
+  const [customMode, setCustomMode] = useState<Set<number>>(new Set());
+  const [customText, setCustomText] = useState<Record<number, string>>({});
+
+  const save = useMutation({
+    mutationFn: ({ id, alias, nta }: { id: number; alias: string | null; nta: number[] }) =>
+      api.students.updateProfile(id, { alias, nta }),
+    onSuccess: (updated) => {
+      qc.setQueryData<StudentOut[]>(["students", cls.id], prev =>
+        prev ? prev.map(s => s.id === updated.id ? updated : s) : prev);
+      qc.invalidateQueries({ queryKey: ["roster", cls.id] });
+    },
+  });
+
+  const sorted = [...students].sort((a, b) =>
+    a.nachname.localeCompare(b.nachname) || a.vorname.localeCompare(b.vorname));
+
+  function toggleNta(s: StudentOut, n: number) {
+    if (!canEdit) return;
+    const nta = s.nta.includes(n) ? s.nta.filter(x => x !== n) : [...s.nta, n].sort((a, b) => a - b);
+    save.mutate({ id: s.id, alias: s.alias, nta });
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="text-[var(--text-muted)] text-xs">
+            <th className="text-left py-2 px-2">Name</th>
+            <th className="text-left py-2 px-2 min-w-[10rem]">Alias (Sitzplan)</th>
+            {[1, 2, 3, 4, 5].map(n => (
+              <th key={n} className="py-2 px-1.5 text-center w-8" title={`Nachteilsausgleich ${n}`}>{n}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map(s => {
+            const tokens = firstNameTokens(s.vorname);
+            const isCustom = customMode.has(s.id) || (!!s.alias && !tokens.includes(s.alias));
+            return (
+              <tr key={s.id} className="border-t border-[var(--border)]">
+                <td className="py-1.5 px-2 whitespace-nowrap">
+                  <span className="font-medium">{s.nachname}</span>, {s.vorname}
+                </td>
+                <td className="py-1.5 px-2">
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      disabled={!canEdit}
+                      value={isCustom ? "__custom__" : (s.alias ?? "")}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === "__custom__") {
+                          setCustomMode(prev => new Set(prev).add(s.id));
+                          setCustomText(prev => ({ ...prev, [s.id]: s.alias ?? "" }));
+                        } else {
+                          setCustomMode(prev => { const nx = new Set(prev); nx.delete(s.id); return nx; });
+                          save.mutate({ id: s.id, alias: v || null, nta: s.nta });
+                        }
+                      }}
+                      className="bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-xs"
+                    >
+                      <option value="">— (Vorname)</option>
+                      {tokens.map(t => <option key={t} value={t}>{t}</option>)}
+                      <option value="__custom__">Eigener…</option>
+                    </select>
+                    {isCustom && (
+                      <input
+                        disabled={!canEdit}
+                        value={customText[s.id] ?? s.alias ?? ""}
+                        placeholder="Eigener Alias"
+                        onChange={e => setCustomText(prev => ({ ...prev, [s.id]: e.target.value }))}
+                        onBlur={e => save.mutate({ id: s.id, alias: e.target.value.trim() || null, nta: s.nta })}
+                        onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                        className="w-24 bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-xs"
+                      />
+                    )}
+                  </div>
+                </td>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <td key={n} className="py-1.5 px-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      disabled={!canEdit}
+                      checked={s.nta.includes(n)}
+                      onChange={() => toggleNta(s, n)}
+                      className="w-4 h-4 accent-[var(--accent)] cursor-pointer disabled:cursor-default"
+                    />
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+          {sorted.length === 0 && (
+            <tr><td colSpan={7} className="py-6 text-center text-[var(--text-muted)] text-sm">Keine Schüler:innen.</td></tr>
+          )}
+        </tbody>
+      </table>
+      <p className="text-xs text-[var(--text-muted)] mt-3">
+        Alias steuert den im Sitzplan angezeigten Namen. Spalten 1–5 = Nachteilsausgleiche (frei belegbar).
+      </p>
+    </div>
+  );
+}
+
 function TrackingSection({
   cls, students, canEdit,
 }: {
@@ -1284,7 +1400,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
   // view. Backend enforces the same rule (require_class_teacher).
   const canEdit = auth?.teacher?.role === "admin"
     || (auth?.teacher?.klasse_id != null && auth.teacher.klasse_id === cls.id);
-  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "sitzplan" | "einstellungen">("schüler");
+  const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "nta" | "sitzplan" | "einstellungen">("schüler");
   const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
@@ -1394,7 +1510,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:max-w-3xl max-h-[92dvh] sm:max-h-none sm:aspect-[4/3] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
           <ClassIcon cls={cls} />
@@ -1407,7 +1523,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
         {/* Tabs */}
         <div className="flex border-b border-[var(--border)] shrink-0">
-          {(["schüler", "rollen", "gruppen", "dienste", "tracking", "sitzplan", "einstellungen"] as const).map(s => (
+          {(["schüler", "rollen", "gruppen", "dienste", "tracking", "nta", "sitzplan", "einstellungen"] as const).map(s => (
             <button
               key={s}
               onClick={() => setSection(s)}
@@ -1417,7 +1533,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 borderBottom: section === s ? "2px solid var(--accent)" : "2px solid transparent",
               }}
             >
-              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "gruppen" ? "🧩 Gruppen" : s === "dienste" ? "🧹 Dienste" : s === "tracking" ? "📋 Tracking" : s === "sitzplan" ? "🪑 Sitzplan" : "⚙️ Einstellungen"}
+              {s === "schüler" ? "👥 Klasse" : s === "rollen" ? "👑 Rollen" : s === "gruppen" ? "🧩 Gruppen" : s === "dienste" ? "🧹 Dienste" : s === "tracking" ? "📋 Tracking" : s === "nta" ? "⚖️ NTA" : s === "sitzplan" ? "🪑 Sitzplan" : "⚙️ Einstellungen"}
             </button>
           ))}
         </div>
@@ -1568,6 +1684,11 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
               locked to a single class's Klassenlehrer. */}
           {section === "gruppen" && (
             <GroupsManager cls={cls} students={students} />
+          )}
+
+          {/* ── Nachteilsausgleich + Alias ── */}
+          {section === "nta" && (
+            <NtaSection cls={cls} students={students} canEdit={canEdit} />
           )}
 
           {/* ── Sitzplan ── */}

@@ -23,6 +23,8 @@ const mockStudent: apiModule.StudentOut = {
   geburtsdatum: null,
   username: "ben",
   active: true,
+  alias: null,
+  nta: [],
   has_credentials: true,
 };
 

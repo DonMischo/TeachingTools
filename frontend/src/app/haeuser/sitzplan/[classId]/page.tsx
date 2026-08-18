@@ -84,14 +84,15 @@ function interleave<T>(a: T[], b: T[]): T[] {
   return out;
 }
 
-function shortName(s: StudentOut | undefined): string {
-  if (!s) return "";
-  return `${s.vorname} ${s.nachname ? s.nachname[0] + "." : ""}`.trim();
+// Preferred display name: the alias if set, otherwise the first name (no surname).
+function baseDisplayName(s: StudentOut): string {
+  return (s.alias?.trim() || s.vorname || "").trim();
 }
 
-function fullName(s: StudentOut | undefined): string {
-  if (!s) return "";
-  return `${s.vorname} ${s.nachname}`.trim();
+// Cap very long names so a single long word can't overflow the seat (in addition
+// to the dynamic font shrink); the surname initial is appended separately.
+function capName(name: string, max = 13): string {
+  return name.length > max ? name.slice(0, max - 1).trimEnd() + "…" : name;
 }
 
 // Dynamic font (mm): shrink `baseMm` just enough that the longest word fits
@@ -157,9 +158,24 @@ export default function SitzplanPage() {
   const students: StudentOut[] = useMemo(() => isTeacher ? teacherStudents : roster.map(r => ({
     id: r.id, nummer: null, nachname: r.nachname, vorname: r.vorname, klasse: cls?.code ?? "",
     class_id: classId, jahrgang: null, geschlecht: r.geschlecht, geburtsdatum: null,
-    username: null, active: true, has_credentials: false,
+    username: null, active: true, alias: r.alias, nta: r.nta, has_credentials: false,
   })), [isTeacher, teacherStudents, roster, cls?.code, classId]);
-  const studentById = useMemo(() => new Map(students.map(s => [s.id, s])), [students]);
+  // Seat label per student: alias/first name, disambiguated with the surname
+  // initial only when two students in the class share the same display name.
+  const seatNameById = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of students) {
+      const b = baseDisplayName(s).toLowerCase();
+      counts.set(b, (counts.get(b) ?? 0) + 1);
+    }
+    const m = new Map<number, string>();
+    for (const s of students) {
+      const b = baseDisplayName(s);
+      const dup = (counts.get(b.toLowerCase()) ?? 0) > 1;
+      m.set(s.id, dup && s.nachname ? `${capName(b)} ${s.nachname[0]}.` : capName(b));
+    }
+    return m;
+  }, [students]);
 
   const { data: plans = [] } = useQuery<SeatingPlanSummary[]>({
     queryKey: ["seating", classId],
@@ -614,7 +630,7 @@ export default function SitzplanPage() {
                     it.seats.map((seat, i) => {
                       const isSb = seat.student_id == null && !!seat.label;
                       const text = seat.student_id != null
-                        ? (isChair ? fullName(studentById.get(seat.student_id)) : shortName(studentById.get(seat.student_id)))
+                        ? (seatNameById.get(seat.student_id) ?? "")
                         : (seat.label ?? "");
                       const seatWmm = size.w / it.seats.length;
                       const fontStr = cqw(fitFontMm(text || "x", seatWmm - 2, baseMm), isChair ? 5 : 6);

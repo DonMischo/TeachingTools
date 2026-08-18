@@ -111,3 +111,25 @@ def test_preview_requires_admin(client, teacher_token):
     r = client.post("/api/teachers/preview", files={"file": ("t.csv", csv, "text/csv")},
                      headers={"Authorization": f"Bearer {teacher_token}"})
     assert r.status_code == 403
+
+
+def test_set_teacher_username(client, db, admin, admin_token):
+    t = Teacher(first_name="Bea", last_name="Klein", active=True, role="teacher")
+    db.add(t)
+    db.flush()
+    r = client.patch(f"/api/teachers/{t.id}/username", json={"username": "b.klein"},
+                     headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    assert r.json()["username"] == "b.klein"
+    db.refresh(t)
+    assert t.username == "b.klein"
+
+
+def test_set_teacher_username_rejects_duplicate(client, db, admin, admin_token):
+    a = Teacher(first_name="A", last_name="A", active=True, role="teacher", username="taken")
+    b = Teacher(first_name="B", last_name="B", active=True, role="teacher")
+    db.add_all([a, b])
+    db.flush()
+    r = client.patch(f"/api/teachers/{b.id}/username", json={"username": "taken"},
+                     headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 409

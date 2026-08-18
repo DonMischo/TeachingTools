@@ -159,6 +159,9 @@ def _run_migrations(db_engine):
         "ALTER TABLE timeline_sets ALTER COLUMN created_by DROP NOT NULL",
         "ALTER TABLE lueckentext_sets ADD COLUMN IF NOT EXISTS created_by_student INTEGER REFERENCES students(id) ON DELETE SET NULL",
         "ALTER TABLE lueckentext_sets ALTER COLUMN created_by DROP NOT NULL",
+        # Student display alias (Sitzplan) + Nachteilsausgleich flags.
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS alias VARCHAR(100)",
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS nta JSON NOT NULL DEFAULT '[]'",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an

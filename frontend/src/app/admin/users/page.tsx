@@ -81,6 +81,41 @@ function CredTable({ rows }: { rows: CredResult[] }) {
   );
 }
 
+// Inline-editable username cell — stays in edit mode if the save rejects (e.g. 409).
+function UsernameCell({ value, onSave, disabled }: { value: string | null; onSave: (name: string) => Promise<unknown>; disabled?: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value ?? "");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!editing) setText(value ?? ""); }, [value, editing]);
+
+  async function commit() {
+    const name = text.trim();
+    if (!name || name === (value ?? "")) { setEditing(false); return; }
+    setBusy(true);
+    try { await onSave(name); setEditing(false); }
+    catch { /* keep editing; parent shows a toast */ }
+    finally { setBusy(false); }
+  }
+
+  if (!editing) {
+    return (
+      <span className="inline-flex items-center gap-2">
+        <span className="font-mono">{value ?? <span className="opacity-40">—</span>}</span>
+        {!disabled && <button onClick={() => setEditing(true)} className="opacity-50 hover:opacity-100" title="Benutzernamen ändern">✏️</button>}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1">
+      <input autoFocus value={text} onChange={e => setText(e.target.value)} disabled={busy}
+        onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+        className="input text-xs py-1 w-32 font-mono" />
+      <button disabled={busy} onClick={commit} className="text-green-400 disabled:opacity-40" title="Speichern">✓</button>
+      <button onClick={() => setEditing(false)} className="opacity-50 hover:opacity-100" title="Abbrechen">×</button>
+    </span>
+  );
+}
+
 export default function AdminUsersPage() {
   const { auth } = useAuth();
   const router = useRouter();
@@ -214,6 +249,48 @@ export default function AdminUsersPage() {
     onError: (e: any) => toast(e?.message ?? "Fehler beim Zurücksetzen", "error"),
   });
   const canReset = resetType === "teacher" ? Boolean(resetTeacherId) : Boolean(resetStudentId);
+
+  // ── User management (username change + per-row reset) ──────────────────────
+  const [mgmtRole, setMgmtRole] = useState<UserType>("student");
+  const [mgmtCreds, setMgmtCreds] = useState<CredResult[]>([]);
+  const { data: allStudents = [] } = useQuery<StudentOut[]>({
+    queryKey: ["students", "manage-all"], queryFn: () => api.students.list(), enabled: allowed,
+  });
+
+  const setUsernameMut = useMutation({
+    mutationFn: ({ kind, id, username }: { kind: ResetType; id: number; username: string }): Promise<any> =>
+      kind === "student" ? api.students.setUsername(id, username) : api.teachers.setUsername(id, username),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: ["teachers"] });
+      toast("Benutzername geändert", "success");
+    },
+    onError: (e: any) => toast(e?.message?.includes("409") || e?.message?.includes("vergeben") ? "Benutzername bereits vergeben" : (e?.message ?? "Fehler"), "error"),
+  });
+
+  const mgmtResetMut = useMutation({
+    mutationFn: ({ kind, id }: { kind: ResetType; id: number }): Promise<any> =>
+      kind === "student" ? api.students.resetPassword(id) : api.teachers.resetPassword(id),
+    onSuccess: (r: any, vars) => {
+      const row: CredResult = vars.kind === "student"
+        ? { kind: "reset", sub: "Schüler:in", label: `${r.nachname}, ${r.vorname} (${r.klasse})`, username: r.username, password: r.password }
+        : { kind: "reset", sub: r.role === "admin" ? "Admin" : "Lehrkraft", label: `${r.last_name}, ${r.first_name}`, username: r.username, password: r.password };
+      setMgmtCreds(prev => [row, ...prev]);
+      toast(`Neues Passwort für ${row.label}`, "success");
+    },
+    onError: (e: any) => toast(e?.message ?? "Fehler beim Zurücksetzen", "error"),
+  });
+
+  // Rows for the currently selected role. Admins are teachers with role === "admin".
+  const mgmtRows: { id: number; name: string; sub: string; username: string | null; kind: ResetType }[] =
+    mgmtRole === "student"
+      ? [...allStudents]
+          .sort((a, b) => a.klasse.localeCompare(b.klasse) || a.nachname.localeCompare(b.nachname))
+          .map(s => ({ id: s.id, name: `${s.nachname}, ${s.vorname} (${s.klasse})`, sub: "Schüler:in", username: s.username, kind: "student" as const }))
+      : teachers
+          .filter(t => mgmtRole === "admin" ? t.role === "admin" : t.role !== "admin")
+          .sort((a, b) => a.last_name.localeCompare(b.last_name))
+          .map(t => ({ id: t.id, name: `${t.last_name}, ${t.first_name}`, sub: TYPE_LABEL[mgmtRole], username: t.username, kind: "teacher" as const }));
 
   if (!auth || !aReady || !allowed) return null;
 
@@ -484,6 +561,60 @@ export default function AdminUsersPage() {
         </div>
 
         {resetResult && <CredTable rows={[resetResult]} />}
+      </section>
+
+      {/* ── User management (username + reset) ──────────────────────────────── */}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-sm">Benutzer verwalten</h2>
+          <Hint text={"Benutzernamen ändern (✏️) und Passwörter einzeln zurücksetzen. Nach Rolle gefiltert — Admins sind Lehrkräfte mit Admin-Rechten."} />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {(["student", "teacher", "admin"] as UserType[]).map(t => (
+            <button key={t} onClick={() => setMgmtRole(t)}
+              className={`text-sm px-4 py-2 rounded-full border transition-colors ${
+                mgmtRole === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+              }`}>
+              {TYPE_LABEL[t]}
+            </button>
+          ))}
+        </div>
+
+        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+          <table className="w-full text-xs border-collapse">
+            <thead className="sticky top-0 bg-[var(--surface)] z-10">
+              <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                <th className="text-left py-2 px-2">Name</th>
+                <th className="text-left py-2 px-2">Benutzername</th>
+                <th className="text-left py-2 px-2 w-32">Passwort</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mgmtRows.map(r => (
+                <tr key={`${r.kind}-${r.id}`} className="border-b border-[var(--border)]/40">
+                  <td className="py-1.5 px-2">{r.name}</td>
+                  <td className="py-1.5 px-2">
+                    <UsernameCell value={r.username} onSave={(name) => setUsernameMut.mutateAsync({ kind: r.kind, id: r.id, username: name })} />
+                  </td>
+                  <td className="py-1.5 px-2">
+                    <button onClick={() => mgmtResetMut.mutate({ kind: r.kind, id: r.id })} disabled={mgmtResetMut.isPending}
+                      className="text-xs underline opacity-70 hover:opacity-100 disabled:opacity-30">🔁 zurücksetzen</button>
+                  </td>
+                </tr>
+              ))}
+              {mgmtRows.length === 0 && (
+                <tr><td colSpan={3} className="py-6 text-center text-[var(--text-muted)]">Keine Einträge.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {mgmtCreds.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-[var(--text-muted)]">Neue Passwörter — bitte notieren.</p>
+            <CredTable rows={mgmtCreds} />
+          </div>
+        )}
       </section>
     </div>
   );

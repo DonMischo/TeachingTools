@@ -22,6 +22,7 @@ class TeacherOut(BaseModel):
     last_name: str
     active: bool
     role: str
+    username: str | None = None
     nummer: int | None = None
     email: str | None = None
     teacher_role: str | None = None  # e.g. "Lehrer" / "SPF" — professional role, not auth level
@@ -288,6 +289,8 @@ class StudentOut(BaseModel):
     geburtsdatum: date | None
     username: str | None
     active: bool
+    alias: str | None = None
+    nta: list[int] = []
     has_credentials: bool = False
 
     model_config = {"from_attributes": True}

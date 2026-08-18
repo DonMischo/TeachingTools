@@ -370,6 +370,11 @@ class Student(Base):
     password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
     extra_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
+    # Display alias for the Sitzplan: one of the student's first names, or a fully
+    # custom name (e.g. for trans students). Null => fall back to `vorname`.
+    alias: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Nachteilsausgleich — subset of [1,2,3,4,5], each an independent measure flag.
+    nta: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
 
     class_: Mapped["Class | None"] = relationship()
     sf_results: Mapped[list["SportfestResult"]] = relationship(back_populates="student", cascade="all, delete-orphan")

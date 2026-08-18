@@ -15,6 +15,7 @@ from ..models import Student, Class
 from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
 from ..auth import hash_password, verify_password, get_current_teacher
 from ..admin_access import require_admin_feature
+from .classes import assert_class_editor
 from ..password_gen import generate_password
 from ..schoolyear import klasse_to_ak_code
 
@@ -506,6 +507,69 @@ def reset_student_password(
         id=student.id, nachname=student.nachname, vorname=student.vorname,
         klasse=student.klasse, username=student.username, password=plain,
     )
+
+
+class StudentProfileUpdate(BaseModel):
+    alias: str | None = None
+    nta: list[int] = []
+
+
+@router.patch("/{student_id}/profile", response_model=StudentOut)
+def update_student_profile(
+    student_id: int,
+    body: StudentProfileUpdate,
+    db: Session = Depends(get_db),
+    teacher=Depends(get_current_teacher),
+):
+    """Set a student's Sitzplan alias and Nachteilsausgleich flags. Allowed for the
+    student's Klassenlehrer or an admin."""
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(404, "Student not found")
+    if student.class_id is None and teacher.role != "admin":
+        raise HTTPException(403, "Schüler ohne Klasse — nur Admins")
+    if student.class_id is not None:
+        assert_class_editor(teacher, student.class_id)
+
+    alias = (body.alias or "").strip()
+    student.alias = alias or None
+    student.nta = sorted({n for n in body.nta if 1 <= n <= 5})
+    db.commit()
+    db.refresh(student)
+    out = StudentOut.model_validate(student)
+    out.has_credentials = bool(student.username and student.password_hash)
+    return out
+
+
+class UsernameUpdate(BaseModel):
+    username: str
+
+
+@router.patch("/{student_id}/username", response_model=StudentOut)
+def set_student_username(
+    student_id: int,
+    body: UsernameUpdate,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin_feature("students")),
+):
+    """Admin: change a student's login username (must stay unique)."""
+    student = db.get(Student, student_id)
+    if not student:
+        raise HTTPException(404, "Student not found")
+    username = body.username.strip()
+    if not username:
+        raise HTTPException(422, "Benutzername darf nicht leer sein")
+    clash = db.query(Student).filter(
+        Student.username == username, Student.id != student_id
+    ).first()
+    if clash:
+        raise HTTPException(409, "Benutzername bereits vergeben")
+    student.username = username
+    db.commit()
+    db.refresh(student)
+    out = StudentOut.model_validate(student)
+    out.has_credentials = bool(student.username and student.password_hash)
+    return out
 
 
 @router.post("/generate-credentials", response_model=list[StudentCredentialRow])
