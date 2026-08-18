@@ -95,6 +95,13 @@ function capName(name: string, max = 13): string {
   return name.length > max ? name.slice(0, max - 1).trimEnd() + "…" : name;
 }
 
+// Alias/first name + abbreviated surname (e.g. "Lena B.") — used in the seat
+// assignment dropdown so teachers can always tell students apart.
+function dropdownName(s: StudentOut): string {
+  const base = baseDisplayName(s);
+  return s.nachname ? `${base} ${s.nachname[0]}.` : base;
+}
+
 // Dynamic font (mm): shrink `baseMm` just enough that the longest word fits
 // `availMm` (rough width ≈ 0.55·font per char). Text also wraps, so multi-word
 // labels use several lines instead of overflowing. Deterministic (no DOM
@@ -755,7 +762,7 @@ export default function SitzplanPage() {
                             <optgroup label="Schüler:innen">
                               {students.map(s => (
                                 <option key={s.id} value={s.id} disabled={usedIds.has(s.id) && s.id !== seat.student_id}>
-                                  {s.vorname} {s.nachname}
+                                  {dropdownName(s)}
                                 </option>
                               ))}
                             </optgroup>
