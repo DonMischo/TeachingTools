@@ -391,6 +391,17 @@ def test_apply_persists_realistic_csv(client, admin_token, klass_5a, db):
     assert lea.extra_fields.get("Förderschwerpunkt") == "LRS"
 
 
+def test_apply_persists_without_geschlecht(client, admin_token, klass_5a, db):
+    """Geschlecht is optional — a row without it must still be created (no NOT-NULL crash)."""
+    csv = "#,Nachname,Vorname,Klasse,Geburtsdatum\n1,Beispiel,Mia,5a,01.01.2014\n"
+    preview = _preview(client, admin_token, csv).json()
+    resp = _apply_all(client, admin_token, preview)
+    assert resp.status_code == 200
+    s = db.query(Student).filter(Student.nachname == "Beispiel").one()
+    assert s.geschlecht is None
+    assert s.class_id == klass_5a.id
+
+
 def test_apply_two_students_sharing_name(client, admin_token, klass_5a, db):
     """Two distinct students with the same Vor+Nachname in one class must BOTH be
     created — the diff key (nachname|vorname|klasse) collides for them."""

@@ -162,6 +162,8 @@ def _run_migrations(db_engine):
         # Student display alias (Sitzplan) + Nachteilsausgleich flags.
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS alias VARCHAR(100)",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nta JSON NOT NULL DEFAULT '[]'",
+        # Geschlecht is optional — CSV imports may omit it.
+        "ALTER TABLE students ALTER COLUMN geschlecht DROP NOT NULL",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an

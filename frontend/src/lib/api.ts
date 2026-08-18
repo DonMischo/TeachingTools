@@ -21,7 +21,7 @@ export type StudentOut = {
   klasse: string;
   class_id: number | null;
   jahrgang: number | null;
-  geschlecht: string;
+  geschlecht: string | null;
   geburtsdatum: string | null;
   username: string | null;
   active: boolean;
@@ -927,7 +927,7 @@ export const api = {
     setKsprecherEdit: (id: number, enabled: boolean) =>
       apiFetch<ClassOut>(`classes/${id}/ksprecher-edit`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
     myManagement: () => apiFetch<{ class_id: number | null }>("classes/my-management"),
-    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string; alias: string | null; nta: number[] }[]>(`classes/${id}/roster`),
+    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string | null; alias: string | null; nta: number[] }[]>(`classes/${id}/roster`),
   },
   teachers: {
     list: () => apiFetch<TeacherOut[]>("teachers"),

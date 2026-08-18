@@ -362,7 +362,7 @@ class Student(Base):
     # time. Used to match a student across school years even after their grade-based
     # `klasse` label changes ("7a" -> "8a"). See api/schoolyear.py.
     ak_code: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
-    geschlecht: Mapped[str] = mapped_column(String(20), nullable=False)
+    geschlecht: Mapped[str | None] = mapped_column(String(20), nullable=True)
     geburtsdatum: Mapped[date | None] = mapped_column(Date, nullable=True)
     username: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -50,7 +50,7 @@ class RosterEntry(BaseModel):
     id: int
     vorname: str
     nachname: str
-    geschlecht: str
+    geschlecht: str | None = None
     alias: str | None = None
     nta: list[int] = []
 

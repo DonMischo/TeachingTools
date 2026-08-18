@@ -285,7 +285,7 @@ class StudentOut(BaseModel):
     class_id: int | None
     jahrgang: int | None
     ak_code: str | None = None
-    geschlecht: str
+    geschlecht: str | None = None
     geburtsdatum: date | None
     username: str | None
     active: bool
