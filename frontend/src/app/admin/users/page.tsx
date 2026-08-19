@@ -548,6 +548,17 @@ export default function AdminUsersPage() {
   const { data: fieldKeys = [] } = useQuery<string[]>({
     queryKey: ["student-field-keys"], queryFn: api.students.fieldKeys, enabled: allowed,
   });
+  const deleteFieldMut = useMutation({
+    mutationFn: (key: string) => api.students.deleteField(key),
+    onSuccess: (res, key) => {
+      if (usernameField === key) setUsernameField("");
+      if (passwordField === key) setPasswordField("");
+      qc.invalidateQueries({ queryKey: ["student-field-keys"] });
+      qc.invalidateQueries({ queryKey: ["students"] });
+      toast(`Feld „${key}" bei ${res.removed} Schüler:innen entfernt`, "success");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
   const studentGenMut = useMutation({
     mutationFn: () => api.students.generateCredentials({ username_field: usernameField || null, password_field: passwordField || null }),
     onSuccess: (res) => {
@@ -825,6 +836,26 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {fieldKeys.length > 0 && (
+          <div className="flex flex-col gap-1.5 border-t border-[var(--border)] pt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[var(--text-muted)]">Zusatzfelder</span>
+              <Hint text={"Importierte Zusatzspalten. Klicke auf 🗑, um ein Feld bei allen Schüler:innen zu löschen (z. B. veraltete oder sensible Spalten)."} />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {fieldKeys.map(k => (
+                <span key={k} className="inline-flex items-center gap-1 text-xs bg-[var(--bg)] rounded-full pl-2.5 pr-1 py-0.5">
+                  {k}
+                  <button
+                    onClick={() => { if (window.confirm(`Feld „${k}" bei allen Schüler:innen löschen? Das kann nicht rückgängig gemacht werden.`)) deleteFieldMut.mutate(k); }}
+                    disabled={deleteFieldMut.isPending}
+                    className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-900/40 hover:text-red-300 disabled:opacity-40"
+                    title={`Feld „${k}" löschen`}>×</button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         {studentCredErrors.length > 0 && (
           <div className="text-xs rounded-lg p-3 bg-yellow-900/30 text-yellow-300">
             <strong>{studentCredErrors.length} übersprungen:</strong>

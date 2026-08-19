@@ -1119,6 +1119,8 @@ export const api = {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}),
       }),
     fieldKeys: () => apiFetch<string[]>("students/field-keys"),
+    deleteField: (key: string) =>
+      apiFetch<{ removed: number }>(`students/fields?key=${encodeURIComponent(key)}`, { method: "DELETE" }),
     downloadCredentials: () => fetch("/api/students/credentials/download", { credentials: "include" }),
     create: (body: { vorname: string; nachname: string; klasse: string; geschlecht: string }) =>
       apiFetch<StudentCredentialRow>("students", { method: "POST", body: JSON.stringify(body) }),

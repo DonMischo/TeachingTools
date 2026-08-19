@@ -829,6 +829,24 @@ def set_student_username(
     return out
 
 
+@router.delete("/fields")
+def delete_student_field(
+    key: str,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin_feature("students")),
+):
+    """Remove a custom (extra_fields) column from every student. Declared before
+    the /{student_id} route so 'fields' isn't parsed as a student id."""
+    removed = 0
+    for s in db.query(Student).all():
+        ef = s.extra_fields or {}
+        if key in ef:
+            s.extra_fields = {k: v for k, v in ef.items() if k != key}
+            removed += 1
+    db.commit()
+    return {"removed": removed}
+
+
 @router.delete("/{student_id}", status_code=204)
 def delete_student(
     student_id: int,

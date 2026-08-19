@@ -909,6 +909,21 @@ def test_field_keys_endpoint(client, admin_token, db):
     assert set(r.json()) >= {"Office", "Passwort"}
 
 
+def test_delete_student_field(client, admin_token, db):
+    a = _seed_student(db, "Meier", "Anna", "3a", "weiblich")
+    b = _seed_student(db, "Bauer", "Ben", "3a")
+    a.extra_fields = {"Office": "x", "Passwort": "y"}
+    b.extra_fields = {"Office": "z"}
+    db.flush()
+    r = client.request("DELETE", "/api/students/fields", params={"key": "Office"},
+                       headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    assert r.json()["removed"] == 2
+    db.refresh(a); db.refresh(b)
+    assert "Office" not in a.extra_fields and "Passwort" in a.extra_fields
+    assert "Office" not in b.extra_fields
+
+
 def test_encrypt_seed_passwords_migration(client, admin_token, db):
     """The production backfill encrypts seed-based passwords and drops the seed;
     a drifted row (hash != seed) is left intact for later healing."""
