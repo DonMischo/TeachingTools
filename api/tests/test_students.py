@@ -174,7 +174,7 @@ def test_generate_credentials_creates_usernames(client, admin_token, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
-    rows = r.json()
+    rows = r.json()["rows"]
     assert len(rows) == 2
 
     for row in rows:
@@ -203,7 +203,7 @@ def test_generate_credentials_heals_drifted_password(client, admin_token, db):
     r = client.post("/api/students/generate-credentials",
                     headers={"Authorization": f"Bearer {admin_token}"})
     assert r.status_code == 200
-    row = next(x for x in r.json() if x["username"] == "a.alt")
+    row = next(x for x in r.json()["rows"] if x["username"] == "a.alt")
     # The displayed password must actually verify against the stored hash now.
     db.refresh(s)
     assert verify_password(row["password"], s.password_hash)
@@ -216,14 +216,14 @@ def test_generate_credentials_idempotent(client, admin_token, db):
         "/api/students/generate-credentials",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    first = r1.json()[0]
+    first = r1.json()["rows"][0]
 
     # Second call should return same credentials (deterministic)
     r2 = client.post(
         "/api/students/generate-credentials",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    second = r2.json()[0]
+    second = r2.json()["rows"][0]
 
     assert first["username"] == second["username"]
     assert first["password"] == second["password"]
@@ -240,7 +240,7 @@ def test_student_can_login(client, admin_token, db):
         "/api/students/generate-credentials",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    cred = r.json()[0]
+    cred = r.json()["rows"][0]
 
     r2 = client.post("/api/auth/login", json={"username": cred["username"], "password": cred["password"]})
     assert r2.status_code == 200
@@ -255,7 +255,7 @@ def test_student_cannot_award_points(client, admin_token, db, klass):
         "/api/students/generate-credentials",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    cred = r.json()[0]
+    cred = r.json()["rows"][0]
     r2 = client.post("/api/auth/login", json={"username": cred["username"], "password": cred["password"]})
     student_token = r2.json()["access_token"]
 
@@ -801,3 +801,135 @@ def test_enrich_preview_requires_admin(client, teacher_token, klass_5a):
         headers={"Authorization": f"Bearer {teacher_token}"},
     )
     assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Credential generation from extra_fields + at-rest encryption
+# ---------------------------------------------------------------------------
+
+def _gen(client, admin_token, body=None):
+    return client.post("/api/students/generate-credentials",
+                       json=body, headers={"Authorization": f"Bearer {admin_token}"})
+
+
+def test_generate_credentials_from_fields(client, admin_token, db):
+    """username_field/password_field reuse the imported Office credentials; the
+    student can log in with them, and the password is stored encrypted (not seed)."""
+    from api.pw_crypto import decrypt
+    s = _seed_student(db, "Sommer", "Kim", "3a")
+    s.extra_fields = {"Office": "ksommer4711", "Passwort": "Beispiel4711!"}
+    db.flush()
+
+    r = _gen(client, admin_token, {"username_field": "Office", "password_field": "Passwort"})
+    assert r.status_code == 200
+    row = r.json()["rows"][0]
+    assert row["username"] == "ksommer4711"
+    assert row["password"] == "Beispiel4711!"
+
+    # Stored: hash for login, encrypted plaintext for display, no seed.
+    db.refresh(s)
+    assert s.password_seed is None
+    assert decrypt(s.password_enc) == "Beispiel4711!"
+
+    # The reused credentials actually log in.
+    login = client.post("/api/auth/login", json={"username": "ksommer4711", "password": "Beispiel4711!"})
+    assert login.status_code == 200
+
+
+def test_generate_credentials_username_clash_skips_with_error(client, admin_token, db):
+    a = _seed_student(db, "Eins", "Anna", "3a", "weiblich")
+    b = _seed_student(db, "Zwei", "Bea", "3a", "weiblich")
+    a.extra_fields = {"Office": "dup.name"}
+    b.extra_fields = {"Office": "dup.name"}
+    db.flush()
+
+    r = _gen(client, admin_token, {"username_field": "Office"})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["errors"]) == 1
+    db.refresh(a); db.refresh(b)
+    usernames = {a.username, b.username}
+    assert "dup.name" in usernames          # exactly one got it
+    assert a.username != b.username
+
+
+def test_generate_auto_does_not_clobber_field_password(client, admin_token, db):
+    """A password set from a field (seed=None) must survive a later plain
+    'generate' run — it is a valid credential, not a drifted one to reissue."""
+    s = _seed_student(db, "Bleib", "Ben", "3a")
+    s.extra_fields = {"Passwort": "MeinOffice1!"}
+    db.flush()
+    _gen(client, admin_token, {"password_field": "Passwort"})
+    db.refresh(s)
+    assert s.password_seed is None
+
+    # Plain generate run (no fields) — must NOT overwrite the field password.
+    r = _gen(client, admin_token, None)
+    row = next(x for x in r.json()["rows"] if x["id"] == s.id)
+    assert row["password"] == "MeinOffice1!"
+    db.refresh(s)
+    assert s.password_seed is None
+
+
+def test_sensitive_extra_field_encrypted_at_rest(client, admin_token, db):
+    """A password-like custom column is encrypted in the DB but shown decrypted
+    on the card data; a non-sensitive column stays plaintext."""
+    from api.pw_crypto import decrypt
+    s = _seed_student(db, "Meier", "Anna", "3a", "weiblich")
+    db.flush()
+    csv = "Nachname,Vorname,Passwort,Instrument\nMeier,Anna,Geheim123,Geige\n"
+    key = client.post(
+        "/api/students/preview", files=[_csv_file(csv)], data={"mode": "enrichment"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ).json()["enrich"][0]["key"]
+    client.post("/api/students/apply", json={
+        "mode": "enrichment",
+        "resolutions": [{"key": key, "student_id": s.id, "take_fields": []}],
+        "csv_data": {key: {"Passwort": "Geheim123", "Instrument": "Geige"}},
+    }, headers={"Authorization": f"Bearer {admin_token}"})
+
+    db.refresh(s)
+    assert s.extra_fields["Passwort"].startswith("enc:v1:")   # encrypted at rest
+    assert decrypt(s.extra_fields["Passwort"]) == "Geheim123"
+    assert s.extra_fields["Instrument"] == "Geige"            # non-sensitive stays plaintext
+
+    # Card data shows the decrypted value.
+    cards = client.get("/api/students/card-data",
+                       headers={"Authorization": f"Bearer {admin_token}"}).json()
+    fields = next(c for c in cards if c["id"] == s.id)["fields"]
+    assert fields["Passwort"] == "Geheim123"
+
+
+def test_field_keys_endpoint(client, admin_token, db):
+    s = _seed_student(db, "Meier", "Anna", "3a", "weiblich")
+    s.extra_fields = {"Office": "x", "Passwort": "y"}
+    db.flush()
+    r = client.get("/api/students/field-keys", headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    assert set(r.json()) >= {"Office", "Passwort"}
+
+
+def test_encrypt_seed_passwords_migration(client, admin_token, db):
+    """The production backfill encrypts seed-based passwords and drops the seed;
+    a drifted row (hash != seed) is left intact for later healing."""
+    from api.routers.students import encrypt_seed_passwords
+    from api.pw_crypto import decrypt
+    from api.password_gen import generate_password
+    from api.auth import hash_password
+
+    good = _seed_student(db, "Alt", "Anna", "3a", "weiblich")
+    good.password_seed = 4711
+    good.password_hash = hash_password(generate_password(4711))
+    drift = _seed_student(db, "Drift", "Ben", "3a")
+    drift.password_seed = 1234
+    drift.password_hash = hash_password("etwas-anderes")
+    db.flush()
+
+    assert encrypt_seed_passwords(db) == 1
+    db.flush()
+    db.refresh(good); db.refresh(drift)
+    assert good.password_seed is None
+    assert decrypt(good.password_enc) == generate_password(4711)
+    assert drift.password_seed == 1234 and drift.password_enc is None
+    # Idempotent: a second run migrates nothing more.
+    assert encrypt_seed_passwords(db) == 0

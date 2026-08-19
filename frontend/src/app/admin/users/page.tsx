@@ -541,8 +541,23 @@ export default function AdminUsersPage() {
 
   // ── Credential generation ─────────────────────────────────────────────────
   const [studentCreds, setStudentCreds] = useState<StudentCredentialRow[] | null>(null);
+  const [studentCredErrors, setStudentCredErrors] = useState<string[]>([]);
   const [teacherCreds, setTeacherCreds] = useState<TeacherCredentialRow[] | null>(null);
-  const studentGenMut = useMutation({ mutationFn: api.students.generateCredentials, onSuccess: setStudentCreds });
+  const [usernameField, setUsernameField] = useState("");   // "" = generate with our rules
+  const [passwordField, setPasswordField] = useState("");
+  const { data: fieldKeys = [] } = useQuery<string[]>({
+    queryKey: ["student-field-keys"], queryFn: api.students.fieldKeys, enabled: allowed,
+  });
+  const studentGenMut = useMutation({
+    mutationFn: () => api.students.generateCredentials({ username_field: usernameField || null, password_field: passwordField || null }),
+    onSuccess: (res) => {
+      setStudentCreds(res.rows); setStudentCredErrors(res.errors);
+      qc.invalidateQueries({ queryKey: ["students"] });
+      if (res.errors.length) toast(`${res.errors.length} Benutzername(n) übersprungen (Konflikt)`, "error");
+      else toast(`Zugangsdaten für ${res.rows.length} Schüler`, "success");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
   const teacherGenMut = useMutation({ mutationFn: api.teachers.generateCredentials, onSuccess: setTeacherCreds });
 
   async function downloadCsv(which: "students" | "teachers") {
@@ -771,11 +786,27 @@ export default function AdminUsersPage() {
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Zugangsdaten generieren</h2>
-          <Hint text={"Erzeugt Benutzernamen und Passwörter für alle Schüler bzw. Lehrkräfte ohne Zugang. Passwörter bestehen aus Farbe + Tier + Zahl (z. B. BlaueTiger042). Bestehende und selbst gesetzte Passwörter bleiben unverändert."} />
+          <Hint text={"Erzeugt Benutzernamen und Passwörter für alle Schüler bzw. Lehrkräfte ohne Zugang. Standard-Passwörter bestehen aus Farbe + Tier + Zahl (z. B. BlaueTiger042). Bei Schülern kannst du stattdessen ein Zusatzfeld als Quelle wählen (z. B. Office-Benutzername / Passwort) — dann werden diese als Login übernommen; ist das Feld bei einem Schüler leer, gelten die Standardregeln. Übernommene Passwörter werden verschlüsselt gespeichert (nur mit dem SECRET_KEY lesbar) und können weiterhin auf Karten/Export angezeigt werden. Doppelte Benutzernamen werden übersprungen und gemeldet."} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-xs font-semibold text-[var(--text-muted)]">Schüler</span>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                Benutzername aus
+                <select className="input text-xs py-1.5" value={usernameField} onChange={e => setUsernameField(e.target.value)}>
+                  <option value="">Automatisch generieren</option>
+                  {fieldKeys.map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                Passwort aus
+                <select className="input text-xs py-1.5" value={passwordField} onChange={e => setPasswordField(e.target.value)}>
+                  <option value="">Automatisch generieren</option>
+                  {fieldKeys.map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </label>
+            </div>
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => studentGenMut.mutate()} disabled={studentGenMut.isPending} className="btn-primary text-sm py-2 px-4">
                 {studentGenMut.isPending ? "Generiere…" : "🔑 Generieren"}
@@ -794,6 +825,12 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {studentCredErrors.length > 0 && (
+          <div className="text-xs rounded-lg p-3 bg-yellow-900/30 text-yellow-300">
+            <strong>{studentCredErrors.length} übersprungen:</strong>
+            {studentCredErrors.map((e, i) => <div key={i} className="mt-1 opacity-80">{e}</div>)}
+          </div>
+        )}
         {studentCreds && (
           <CredTable rows={studentCreds.map(r => ({ kind: "student", sub: "Schüler:in", label: `${r.nachname}, ${r.vorname} (${r.klasse})`, username: r.username, password: r.password }))} />
         )}

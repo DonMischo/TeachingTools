@@ -19,6 +19,7 @@ from ..schemas import (
 from ..auth import get_current_teacher, get_current_user, hash_password, verify_password
 from ..admin_access import require_admin_feature
 from ..password_gen import generate_password
+from ..pw_crypto import encrypt as _pw_encrypt, display_password as _display_password
 from ..seed import GRADES as _KNOWN_GRADES
 
 router = APIRouter(prefix="/api/teachers", tags=["teachers"])
@@ -112,10 +113,10 @@ def _mint_teacher_credentials(t: Teacher, existing: set[str]) -> str | None:
         plain = generate_password(seed)
         t.password_seed = seed
         t.password_hash = hash_password(plain)
+        t.password_enc = _pw_encrypt(plain)
         return plain
-    if t.password_seed is not None:
-        return generate_password(t.password_seed)
-    return None
+    # Displayable if generated (seed or encrypted); None for a manually-set password.
+    return _display_password(t) or None
 
 
 def _reset_teacher_password(t: Teacher, existing: set[str]) -> str:
@@ -127,7 +128,26 @@ def _reset_teacher_password(t: Teacher, existing: set[str]) -> str:
     plain = generate_password(seed)
     t.password_seed = seed
     t.password_hash = hash_password(plain)
+    t.password_enc = _pw_encrypt(plain)
     return plain
+
+
+def encrypt_seed_passwords_teachers(db: Session) -> int:
+    """Migrate seed-based teacher passwords to encrypted-at-rest and drop the seed
+    (idempotent); mirrors students.encrypt_seed_passwords. Caller commits."""
+    rows = db.query(Teacher).filter(Teacher.password_seed.isnot(None)).all()
+    migrated = 0
+    for t in rows:
+        if not t.password_hash:
+            continue
+        plain = generate_password(t.password_seed)
+        if not verify_password(plain, t.password_hash):
+            continue
+        if not t.password_enc:
+            t.password_enc = _pw_encrypt(plain)
+        t.password_seed = None
+        migrated += 1
+    return migrated
 
 
 @router.get("", response_model=list[TeacherOut])
@@ -225,6 +245,9 @@ def set_password(
     if len(password) < 6:
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
     teacher.password_hash = hash_password(password)
+    # A self-set password stays private — not re-displayable in admin exports.
+    teacher.password_seed = None
+    teacher.password_enc = None
     db.commit()
 
 
@@ -257,8 +280,7 @@ def download_credentials(db: Session = Depends(get_db), _: object = Depends(requ
     writer = csv.writer(output)
     writer.writerow(["Nachname", "Vorname", "Rolle", "Benutzername", "Passwort"])
     for t in teachers:
-        pw = generate_password(t.password_seed) if t.password_seed else ""
-        writer.writerow([t.last_name, t.first_name, t.role, t.username or "", pw])
+        writer.writerow([t.last_name, t.first_name, t.role, t.username or "", _display_password(t)])
 
     output.seek(0)
     return StreamingResponse(

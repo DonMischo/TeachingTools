@@ -36,6 +36,9 @@ class Teacher(Base):
     # Seed for generate_password(): lets us re-display a generated plaintext later
     # (CSV export). Null when the password was set manually, not generated.
     password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Encrypted-at-rest plaintext of a generated password, for re-display without
+    # a recoverable seed. Null for manually-set (private) passwords. See pw_crypto.
+    password_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
     role: Mapped[str] = mapped_column(String(20), default="teacher")
     # Import-only metadata (school's own staff number, contact email)
     nummer: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -370,6 +373,10 @@ class Student(Base):
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Seed for generate_password() — see Teacher.password_seed.
     password_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Encrypted-at-rest plaintext of the login password, for re-display on cards /
+    # the Zugangsdaten export when the password isn't seed-derived (e.g. reused from
+    # an external system). See api/pw_crypto.py.
+    password_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
     extra_fields: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
     # Display alias for the Sitzplan: one of the student's first names, or a fully

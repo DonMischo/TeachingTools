@@ -305,6 +305,11 @@ class StudentCredentialRow(BaseModel):
     password: str
 
 
+class StudentCredsResult(BaseModel):
+    rows: list[StudentCredentialRow]
+    errors: list[str] = []
+
+
 class StudentDiffRow(BaseModel):
     key: str
     action: str  # "new" | "update" | "unchanged"

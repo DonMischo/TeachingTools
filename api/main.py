@@ -164,6 +164,9 @@ def _run_migrations(db_engine):
         # Student display alias (Sitzplan) + Nachteilsausgleich flags.
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS alias VARCHAR(100)",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nta JSON NOT NULL DEFAULT '[]'",
+        # Encrypted-at-rest login password for re-display (externally reused passwords).
+        "ALTER TABLE students ADD COLUMN IF NOT EXISTS password_enc TEXT",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS password_enc TEXT",
         # Geschlecht is optional — CSV imports may omit it.
         "ALTER TABLE students ALTER COLUMN geschlecht DROP NOT NULL",
         # QR/join-link guest access: per-session opt-in + guest-keyed exitgame attempts.
@@ -209,10 +212,32 @@ def _run_migrations(db_engine):
                 logging.getLogger(__name__).warning("Migration skipped: %s — %s", sql, e)
 
 
+def _backfill_encrypted_passwords():
+    """One-time (idempotent) production migration: encrypt existing seed-based
+    student passwords at rest and drop the recoverable seed. See
+    students.encrypt_seed_passwords."""
+    from .database import SessionLocal
+    from .routers.students import encrypt_seed_passwords
+    from .routers.teachers import encrypt_seed_passwords_teachers
+
+    db = SessionLocal()
+    try:
+        migrated = encrypt_seed_passwords(db) + encrypt_seed_passwords_teachers(db)
+        if migrated:
+            db.commit()
+            logging.getLogger(__name__).info("Encrypted %d seed-based passwords", migrated)
+    except Exception as e:
+        db.rollback()
+        logging.getLogger(__name__).warning("Password encryption backfill skipped: %s", e)
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
     _run_migrations(engine)
+    _backfill_encrypted_passwords()
     ensure_classes()
     ensure_sportfest_disciplines()
     ensure_teacher_roles()

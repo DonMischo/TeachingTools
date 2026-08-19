@@ -1114,7 +1114,11 @@ export const api = {
       return fetch("/api/students/import", { method: "POST", credentials: "include", body: fd })
         .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json(); });
     },
-    generateCredentials: () => apiFetch<StudentCredentialRow[]>("students/generate-credentials", { method: "POST" }),
+    generateCredentials: (body?: { username_field?: string | null; password_field?: string | null }) =>
+      apiFetch<{ rows: StudentCredentialRow[]; errors: string[] }>("students/generate-credentials", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}),
+      }),
+    fieldKeys: () => apiFetch<string[]>("students/field-keys"),
     downloadCredentials: () => fetch("/api/students/credentials/download", { credentials: "include" }),
     create: (body: { vorname: string; nachname: string; klasse: string; geschlecht: string }) =>
       apiFetch<StudentCredentialRow>("students", { method: "POST", body: JSON.stringify(body) }),

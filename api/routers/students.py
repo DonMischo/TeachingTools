@@ -13,15 +13,16 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Student, Class
 from ..schemas import (
-    StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest,
-    StudentCardData, StudentEnrichRow, StudentCandidate, StudentFieldConflict,
-    StudentAbsentRow,
+    StudentOut, StudentCredentialRow, StudentCredsResult, StudentPreviewResponse,
+    StudentApplyRequest, StudentCardData, StudentEnrichRow, StudentCandidate,
+    StudentFieldConflict, StudentAbsentRow,
 )
 from ..auth import hash_password, verify_password, get_current_teacher
 from ..admin_access import require_admin_feature
 from .classes import assert_class_editor
 from ..password_gen import generate_password
 from ..schoolyear import klasse_to_ak_code, get_school_year_start
+from ..pw_crypto import encrypt as _pw_encrypt, encrypt_sensitive, decrypt_extra, display_password as _display_password
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
@@ -151,8 +152,29 @@ def _student_to_dict(s: Student) -> dict[str, str]:
         "klasse": s.klasse or "",
         "geschlecht": s.geschlecht or "",
         "geburtsdatum": s.geburtsdatum.strftime("%d.%m.%Y") if s.geburtsdatum else "",
-        **(s.extra_fields or {}),
+        **decrypt_extra(s.extra_fields or {}),
     }
+
+
+def encrypt_seed_passwords(db: Session) -> int:
+    """Migrate seed-based student passwords to encrypted-at-rest (idempotent):
+    encrypt the seed-derived plaintext into password_enc and drop the seed, so a
+    DB dump alone can't reconstruct them. Only rows whose seed still matches the
+    stored hash are migrated — a drifted row keeps its seed for generate-
+    credentials to heal. Caller commits. Returns the number migrated."""
+    rows = db.query(Student).filter(Student.password_seed.isnot(None)).all()
+    migrated = 0
+    for s in rows:
+        if not s.password_hash:
+            continue
+        plain = generate_password(s.password_seed)
+        if not verify_password(plain, s.password_hash):
+            continue
+        if not s.password_enc:
+            s.password_enc = _pw_encrypt(plain)
+        s.password_seed = None
+        migrated += 1
+    return migrated
 
 
 # ---------------------------------------------------------------------------
@@ -337,7 +359,7 @@ def _preview_roster(db: Session, rows: list[dict[str, str]]) -> dict:
                 db_val = str(db_data.get(field, "") or "")
                 if csv_val and csv_val != db_val:
                     changed.append(field)
-            db_extra = db_student.extra_fields or {}
+            db_extra = decrypt_extra(db_student.extra_fields or {})
             for k, v in extra.items():
                 if db_extra.get(k, "") != v:
                     changed.append(k)
@@ -412,7 +434,7 @@ def _preview_enrichment(db: Session, rows: list[dict[str, str]], list_year: int)
         cands = _enrich_candidates(all_students, nachname, vorname, klasse, target_ak)
         if len(cands) == 1:
             s = cands[0]
-            db_extra = s.extra_fields or {}
+            db_extra = decrypt_extra(s.extra_fields or {})
             extra_writes = {k: v for k, v in extra.items() if db_extra.get(k, "") != v}
             conflicts = [
                 c for c in (_known_conflict(f, row.get(f, ""), s) for f in _CONFLICT_FIELDS)
@@ -514,7 +536,7 @@ def apply_import(
             if row.get("geburtsdatum"):
                 db_student.geburtsdatum = _parse_date(row["geburtsdatum"])
             if extra:
-                db_student.extra_fields = {**(db_student.extra_fields or {}), **extra}
+                db_student.extra_fields = {**(db_student.extra_fields or {}), **encrypt_sensitive(extra)}
         else:
             geschlecht = None
             if row.get("geschlecht"):
@@ -533,7 +555,7 @@ def apply_import(
                 ak_code=ak_code,
                 geschlecht=geschlecht,
                 geburtsdatum=_parse_date(row.get("geburtsdatum", "")),
-                extra_fields=extra or {},
+                extra_fields=encrypt_sensitive(extra),
             ))
 
         applied += 1
@@ -562,7 +584,7 @@ def _apply_enrichment(db: Session, body: StudentApplyRequest) -> dict:
         # Extra/unknown columns are always merged in; name & klasse are never touched.
         extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
         if extra:
-            s.extra_fields = {**(s.extra_fields or {}), **extra}
+            s.extra_fields = {**(s.extra_fields or {}), **encrypt_sensitive(extra)}
         for field in res.take_fields:
             val = row.get(field, "").strip()
             if not val:
@@ -672,6 +694,7 @@ def _new_student_password(student: Student) -> str:
     plain = generate_password(seed)
     student.password_seed = seed
     student.password_hash = hash_password(plain)
+    student.password_enc = _pw_encrypt(plain)
     return plain
 
 
@@ -821,53 +844,115 @@ def delete_student(
     db.commit()
 
 
-@router.post("/generate-credentials", response_model=list[StudentCredentialRow])
-def generate_credentials(
+class GenerateCredsRequest(BaseModel):
+    # extra_fields key to reuse as the login username / password; empty/None =
+    # generate with our own rules (only filling in what's missing).
+    username_field: str | None = None
+    password_field: str | None = None
+
+
+@router.get("/field-keys", response_model=list[str])
+def student_field_keys(
     db: Session = Depends(get_db),
     _: object = Depends(require_admin_feature("students")),
 ):
+    """Distinct extra_fields column names across students — options for the
+    'reuse as username/password' dropdowns."""
+    keys: set[str] = set()
+    for (ef,) in db.query(Student.extra_fields).all():
+        if ef:
+            keys.update(ef.keys())
+    return sorted(keys)
+
+
+@router.post("/generate-credentials", response_model=StudentCredsResult)
+def generate_credentials(
+    body: GenerateCredsRequest | None = None,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_admin_feature("students")),
+):
+    """Issue login credentials for all active students.
+
+    username_field/password_field name an extra_fields column to REUSE (e.g. the
+    imported Office credentials); an empty column value or no field falls back to
+    our generated rules. Reused usernames must stay unique — a clash is skipped
+    and reported. Login passwords are stored bcrypt-hashed (for verification) and
+    Fernet-encrypted (for re-display); see api/pw_crypto.py."""
+    body = body or GenerateCredsRequest()
+    username_field = (body.username_field or "").strip()
+    password_field = (body.password_field or "").strip()
+
     students = db.query(Student).filter(Student.active == True).order_by(
         Student.klasse, Student.nachname, Student.vorname
     ).all()
 
-    existing_usernames: set[str] = {s.username for s in students if s.username}
+    # username -> owning student id, to detect clashes when reusing external names.
+    taken: dict[str, int] = {s.username: s.id for s in students if s.username}
     result: list[StudentCredentialRow] = []
+    errors: list[str] = []
 
     for student in students:
-        # A password needs (re)issuing when there is none yet — or when the
-        # seed-derived plaintext no longer matches the stored hash. The latter
-        # happens when credentials were created by an older password-generator
-        # implementation: the endpoint would then DISPLAY a password that
-        # doesn't actually log in. Re-hashing here heals such drift.
-        needs_password = (
-            not student.password_hash
-            or not student.password_seed
-            or not verify_password(generate_password(student.password_seed), student.password_hash)
-        )
-        if not student.username:
-            student.username = _make_username(student.vorname, student.nachname, existing_usernames)
-            existing_usernames.add(student.username)
-        if needs_password:
-            # generate_password() is deterministic per seed, so storing the
-            # seed lets us re-display the plaintext later (CSV export, cards).
-            seed = random.randint(1, 999_999)
-            plain_pw = generate_password(seed)
-            student.password_seed = seed
-            student.password_hash = hash_password(plain_pw)
+        extra = decrypt_extra(student.extra_fields or {})
+
+        # --- Username ---
+        desired_user = (extra.get(username_field) or "").strip() if username_field else ""
+        if desired_user:
+            owner = taken.get(desired_user)
+            if owner is not None and owner != student.id:
+                errors.append(
+                    f"Benutzername „{desired_user}“ doppelt — übersprungen für "
+                    f"{student.nachname}, {student.vorname}"
+                )
+            else:
+                if student.username in taken:
+                    del taken[student.username]
+                student.username = desired_user
+                taken[desired_user] = student.id
+        elif not student.username:
+            student.username = _make_username(student.vorname, student.nachname, set(taken))
+            taken[student.username] = student.id
+
+        # --- Password ---
+        desired_pw = (extra.get(password_field) or "").strip() if password_field else ""
+        if desired_pw:
+            student.password_hash = hash_password(desired_pw)
+            student.password_enc = _pw_encrypt(desired_pw)
+            student.password_seed = None
+            plain_pw = desired_pw
         else:
-            plain_pw = generate_password(student.password_seed)
+            # (Re)issue when there is no hash, or the seed-derived plaintext no
+            # longer matches the hash (drift from an older generator). A row with
+            # a hash but no seed is externally set — keep it.
+            if not student.password_hash:
+                needs_password = True
+            elif student.password_seed:
+                needs_password = not verify_password(
+                    generate_password(student.password_seed), student.password_hash)
+            else:
+                needs_password = False
+
+            if needs_password:
+                seed = random.randint(1, 999_999)
+                plain_pw = generate_password(seed)
+                student.password_seed = seed
+                student.password_hash = hash_password(plain_pw)
+                student.password_enc = _pw_encrypt(plain_pw)
+            else:
+                plain_pw = _display_password(student)
+                if not student.password_enc and plain_pw:
+                    student.password_enc = _pw_encrypt(plain_pw)  # backfill legacy rows
 
         result.append(StudentCredentialRow(
             id=student.id,
             nachname=student.nachname,
             vorname=student.vorname,
             klasse=student.klasse,
-            username=student.username,
+            username=student.username or "",
             password=plain_pw,
         ))
 
     db.commit()
-    return result
+    return {"rows": result, "errors": errors}
 
 
 @router.get("/card-data", response_model=list[StudentCardData])
@@ -887,8 +972,9 @@ def student_card_data(
         fields = {k: v for k, v in base.items() if v and k not in ("nachname", "vorname", "klasse")}
         if s.username:
             fields["username"] = s.username
-        if s.password_seed:
-            fields["password"] = generate_password(s.password_seed)
+        pw = _display_password(s)
+        if pw:
+            fields["password"] = pw
         result.append(StudentCardData(
             id=s.id,
             nachname=s.nachname,
@@ -913,8 +999,7 @@ def download_credentials(
     writer = csv.writer(output)
     writer.writerow(["Klasse", "Nachname", "Vorname", "Benutzername", "Passwort"])
     for s in students:
-        pw = generate_password(s.password_seed) if s.password_seed else ""
-        writer.writerow([s.klasse, s.nachname, s.vorname, s.username or "", pw])
+        writer.writerow([s.klasse, s.nachname, s.vorname, s.username or "", _display_password(s)])
 
     output.seek(0)
     return StreamingResponse(
