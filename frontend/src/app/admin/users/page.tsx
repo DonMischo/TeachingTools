@@ -307,7 +307,15 @@ function StudentImportSection() {
                 <table className="w-full text-xs border-collapse">
                   <thead className="sticky top-0 bg-[var(--surface)] z-10">
                     <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
-                      <th className="w-16 py-2 px-2 text-left">Löschen</th>
+                      <th className="w-16 py-2 px-2 text-left">
+                        <label className="inline-flex items-center gap-1 cursor-pointer" title="Alle zum Löschen auswählen">
+                          <input type="checkbox" className="accent-red-500"
+                            checked={deleteIds.size === preview.absent.length && preview.absent.length > 0}
+                            ref={el => { if (el) el.indeterminate = deleteIds.size > 0 && deleteIds.size < preview.absent.length; }}
+                            onChange={e => setDeleteIds(e.target.checked ? new Set(preview.absent.map(a => a.id)) : new Set())} />
+                          Löschen
+                        </label>
+                      </th>
                       <th className="text-left py-2 px-2">Nachname</th>
                       <th className="text-left py-2 px-2">Vorname</th>
                       <th className="text-left py-2 px-2">Klasse</th>
