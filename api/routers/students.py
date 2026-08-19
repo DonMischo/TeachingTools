@@ -5,19 +5,23 @@ import re
 from datetime import date
 
 import chardet
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Student, Class
-from ..schemas import StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest, StudentCardData
+from ..schemas import (
+    StudentOut, StudentCredentialRow, StudentPreviewResponse, StudentApplyRequest,
+    StudentCardData, StudentEnrichRow, StudentCandidate, StudentFieldConflict,
+    StudentAbsentRow,
+)
 from ..auth import hash_password, verify_password, get_current_teacher
 from ..admin_access import require_admin_feature
 from .classes import assert_class_editor
 from ..password_gen import generate_password
-from ..schoolyear import klasse_to_ak_code
+from ..schoolyear import klasse_to_ak_code, get_school_year_start
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
@@ -152,6 +156,81 @@ def _student_to_dict(s: Student) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# Enrichment-mode fuzzy matching
+# ---------------------------------------------------------------------------
+
+# Known fields whose CSV value may differ from the DB and is surfaced as a
+# keep-DB / keep-CSV conflict (never nachname/vorname/klasse — those are locked).
+_CONFLICT_FIELDS = ("nummer", "geschlecht", "geburtsdatum")
+
+
+def _name_tokens(vorname: str) -> set[str]:
+    """Normalized set of given-name tokens ('Anna Maria' -> {'anna', 'maria'})."""
+    return {t for t in (_normalize_name_part(p) for p in vorname.split()) if t}
+
+
+def _enrich_candidates(students: list[Student], nachname: str, vorname: str,
+                       klasse: str, target_ak: str | None) -> list[Student]:
+    """Existing students a file row could refer to: exact normalized nachname +
+    token-subset vorname (file given-names ⊆ DB given-names). The class narrows
+    the set only when it doesn't empty it (a stale class never blocks a match):
+    a candidate matches the class by its year-invariant AK-code (`target_ak`,
+    derived from the list's school year) or by the literal klasse label."""
+    nk = _normalize_name_part(nachname)
+    file_tokens = _name_tokens(vorname)
+    cands = [
+        s for s in students
+        if _normalize_name_part(s.nachname or "") == nk
+        and (not file_tokens or file_tokens.issubset(_name_tokens(s.vorname or "")))
+    ]
+    if len(cands) > 1 and (target_ak or klasse):
+        narrowed = [
+            s for s in cands
+            if (target_ak and s.ak_code == target_ak)
+            or (klasse and (s.klasse or "").lower() == klasse.lower())
+        ]
+        if narrowed:
+            cands = narrowed
+    return cands
+
+
+def _known_conflict(field: str, csv_val: str, s: Student) -> StudentFieldConflict | None:
+    """A differing non-empty known field on `s`, normalized so 'm' vs 'männlich'
+    or date-format differences aren't reported as conflicts. None if no conflict."""
+    csv_val = csv_val.strip()
+    if not csv_val:
+        return None
+    if field == "geschlecht":
+        try:
+            cv = _norm_geschlecht(csv_val)
+        except ValueError:
+            return None
+        dv = s.geschlecht or ""
+        if cv != dv:
+            return StudentFieldConflict(field=field, db_val=dv, csv_val=cv)
+    elif field == "geburtsdatum":
+        cv = _parse_date(csv_val)
+        if cv and cv != s.geburtsdatum:
+            return StudentFieldConflict(
+                field=field,
+                db_val=s.geburtsdatum.strftime("%d.%m.%Y") if s.geburtsdatum else "",
+                csv_val=cv.strftime("%d.%m.%Y"),
+            )
+    elif field == "nummer" and csv_val.isdigit():
+        cv = int(csv_val)
+        if cv != s.nummer:
+            return StudentFieldConflict(
+                field=field, db_val=str(s.nummer) if s.nummer is not None else "",
+                csv_val=str(cv),
+            )
+    return None
+
+
+def _candidate(s: Student) -> StudentCandidate:
+    return StudentCandidate(id=s.id, nachname=s.nachname, vorname=s.vorname, klasse=s.klasse)
+
+
+# ---------------------------------------------------------------------------
 # Username generation
 # ---------------------------------------------------------------------------
 
@@ -182,16 +261,33 @@ def _make_username(vorname: str, nachname: str, existing: set[str]) -> str:
 @router.post("/preview", response_model=StudentPreviewResponse)
 def preview_import(
     file: UploadFile = File(...),
+    mode: str = Form("roster"),
+    list_year: int = Form(0),
     db: Session = Depends(get_db),
     _: object = Depends(require_admin_feature("students")),
 ):
-    """Parse CSV and return a diff against the current DB — no writes."""
+    """Parse CSV and return a diff against the current DB — no writes.
+
+    mode="roster": name+klasse (AK-code fallback) upsert diff, plus the students
+    in the file's classes that are *absent* from the file (deletion candidates).
+    mode="enrichment": fuzzy name-match existing students and surface only the
+    extra columns to add, with known-field differences flagged as conflicts.
+    `list_year` is the start year of the school year the enrichment list's Klasse
+    column refers to (0 = current), used to convert a stale Klasse to a stable
+    AK-code for disambiguation.
+    """
     raw = file.file.read()
     try:
         rows = _parse_csv_extended(raw)
     except Exception as exc:
         raise HTTPException(400, f"CSV-Parsing fehlgeschlagen: {exc}")
 
+    if mode == "enrichment":
+        return _preview_enrichment(db, rows, list_year)
+    return _preview_roster(db, rows)
+
+
+def _preview_roster(db: Session, rows: list[dict[str, str]]) -> dict:
     all_students = db.query(Student).all()
     existing: dict[tuple, Student] = {
         (s.nachname.lower(), s.vorname.lower(), s.klasse.lower()): s
@@ -207,6 +303,8 @@ def preview_import(
 
     extra_cols: set[str] = set()
     diff: list[dict] = []
+    file_classes: set[str] = set()
+    matched_ids: set[int] = set()
 
     for row in rows:
         nachname = row.get("nachname", "").strip()
@@ -214,6 +312,7 @@ def preview_import(
         klasse = row.get("klasse", "").strip()
         if not nachname or not klasse:
             continue
+        file_classes.add(klasse.lower())
 
         extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
         extra_cols.update(extra.keys())
@@ -230,6 +329,7 @@ def preview_import(
             diff.append({"key": key, "action": "new", "csv_data": row, "db_data": None,
                          "changed_fields": [k for k, v in row.items() if v]})
         else:
+            matched_ids.add(db_student.id)
             db_data = _student_to_dict(db_student)
             changed: list[str] = []
             for field in _KNOWN_FIELDS - {"nachname", "vorname"}:
@@ -245,13 +345,101 @@ def preview_import(
             diff.append({"key": key, "action": action, "csv_data": row,
                          "db_data": db_data, "changed_fields": changed})
 
+    # Absent = active students in one of the file's classes but not in the file.
+    absent = [
+        StudentAbsentRow(id=s.id, nachname=s.nachname, vorname=s.vorname, klasse=s.klasse)
+        for s in all_students
+        if s.active and (s.klasse or "").lower() in file_classes and s.id not in matched_ids
+    ]
+
     return {
+        "mode": "roster",
         "diff": diff,
+        "absent": absent,
         "extra_columns": sorted(extra_cols),
         "summary": {
             "new": sum(1 for d in diff if d["action"] == "new"),
             "update": sum(1 for d in diff if d["action"] == "update"),
             "unchanged": sum(1 for d in diff if d["action"] == "unchanged"),
+            "absent": len(absent),
+        },
+    }
+
+
+def _detect_names_swapped(all_students: list[Student], rows: list[dict[str, str]]) -> bool:
+    """Some exports label the columns 'Vorname, Nachname' but actually list the
+    surname first. Detect that by asking which orientation puts more values into
+    the column of known DB surnames — the labelled one or the swap."""
+    db_surnames = {_normalize_name_part(s.nachname or "") for s in all_students if s.nachname}
+    db_surnames.discard("")
+    if not db_surnames:
+        return False
+    as_is = sum(1 for r in rows if _normalize_name_part(r.get("nachname", "").strip()) in db_surnames)
+    swapped = sum(1 for r in rows if _normalize_name_part(r.get("vorname", "").strip()) in db_surnames)
+    return swapped > as_is
+
+
+def _preview_enrichment(db: Session, rows: list[dict[str, str]], list_year: int) -> dict:
+    all_students = db.query(Student).all()
+    extra_cols: set[str] = set()
+    enrich: list[StudentEnrichRow] = []
+    # A date in the list's school year, so a stale Klasse ("7a" two years ago)
+    # converts to the same AK-code the student carries now ("9a").
+    year_date = date(list_year, 9, 1) if list_year else None
+    names_swapped = _detect_names_swapped(all_students, rows)
+
+    for i, row in enumerate(rows):
+        if names_swapped:
+            row["nachname"], row["vorname"] = row.get("vorname", ""), row.get("nachname", "")
+        nachname = row.get("nachname", "").strip()
+        vorname = row.get("vorname", "").strip()
+        klasse = row.get("klasse", "").strip()
+        if not nachname:
+            continue
+
+        extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
+        extra_cols.update(extra.keys())
+        # Row keys collide on name alone here, so disambiguate by row index.
+        key = f"{nachname}|{vorname}|{klasse}|{i}"
+
+        target_ak = None
+        if klasse:
+            try:
+                target_ak = klasse_to_ak_code(klasse, today=year_date)
+            except ValueError:
+                target_ak = None
+
+        cands = _enrich_candidates(all_students, nachname, vorname, klasse, target_ak)
+        if len(cands) == 1:
+            s = cands[0]
+            db_extra = s.extra_fields or {}
+            extra_writes = {k: v for k, v in extra.items() if db_extra.get(k, "") != v}
+            conflicts = [
+                c for c in (_known_conflict(f, row.get(f, ""), s) for f in _CONFLICT_FIELDS)
+                if c is not None
+            ]
+            outdated = bool(klasse) and (s.klasse or "").lower() != klasse.lower()
+            enrich.append(StudentEnrichRow(
+                key=key, status="matched", csv_data=row, match=_candidate(s),
+                extra_writes=extra_writes, conflicts=conflicts, outdated=outdated,
+            ))
+        elif len(cands) > 1:
+            enrich.append(StudentEnrichRow(
+                key=key, status="ambiguous", csv_data=row,
+                candidates=[_candidate(s) for s in cands],
+            ))
+        else:
+            enrich.append(StudentEnrichRow(key=key, status="unmatched", csv_data=row))
+
+    return {
+        "mode": "enrichment",
+        "enrich": enrich,
+        "extra_columns": sorted(extra_cols),
+        "names_swapped": names_swapped,
+        "summary": {
+            "matched": sum(1 for e in enrich if e.status == "matched"),
+            "ambiguous": sum(1 for e in enrich if e.status == "ambiguous"),
+            "unmatched": sum(1 for e in enrich if e.status == "unmatched"),
         },
     }
 
@@ -262,12 +450,18 @@ def apply_import(
     db: Session = Depends(get_db),
     _: object = Depends(require_admin_feature("students")),
 ):
-    """Apply selected diff rows — upserts only, never deletes existing students.
+    """Apply the reviewed diff.
 
-    Students and classes are matched by AK-code (stable Abschlussklasse identity)
-    when available, so a class/student is recognized across the yearly grade bump
-    ("7a" -> "8a") instead of being duplicated. See api/schoolyear.py.
+    roster mode: upsert the selected rows (matched by AK-code when available, so a
+    student is recognized across the "7a"->"8a" grade bump instead of duplicated —
+    see api/schoolyear.py) and delete the students in `delete_ids`.
+    enrichment mode: for each resolution, write only the extra columns (and the
+    conflict fields listed in `take_fields`) onto the chosen student; name and
+    klasse are never touched.
     """
+    if body.mode == "enrichment":
+        return _apply_enrichment(db, body)
+
     all_students = db.query(Student).all()
     existing: dict[tuple, Student] = {
         (s.nachname.lower(), s.vorname.lower(), s.klasse.lower()): s
@@ -344,8 +538,48 @@ def apply_import(
 
         applied += 1
 
+    deleted = 0
+    if body.delete_ids:
+        for sid in set(body.delete_ids):
+            s = db.get(Student, sid)
+            if s:
+                db.delete(s)
+                deleted += 1
+
     db.commit()
-    return {"applied": applied, "errors": errors}
+    return {"applied": applied, "deleted": deleted, "errors": errors}
+
+
+def _apply_enrichment(db: Session, body: StudentApplyRequest) -> dict:
+    applied = 0
+    errors: list[str] = []
+    for res in body.resolutions:
+        s = db.get(Student, res.student_id)
+        if not s:
+            errors.append(f"Schüler nicht gefunden: {res.student_id}")
+            continue
+        row = body.csv_data.get(res.key, {})
+        # Extra/unknown columns are always merged in; name & klasse are never touched.
+        extra = {k: v for k, v in row.items() if k not in _KNOWN_FIELDS and v}
+        if extra:
+            s.extra_fields = {**(s.extra_fields or {}), **extra}
+        for field in res.take_fields:
+            val = row.get(field, "").strip()
+            if not val:
+                continue
+            if field == "geschlecht":
+                try:
+                    s.geschlecht = _norm_geschlecht(val)
+                except ValueError as e:
+                    errors.append(str(e))
+            elif field == "geburtsdatum":
+                s.geburtsdatum = _parse_date(val)
+            elif field == "nummer" and val.isdigit():
+                s.nummer = int(val)
+        applied += 1
+
+    db.commit()
+    return {"applied": applied, "deleted": 0, "errors": errors}
 
 
 @router.post("/import", status_code=201)

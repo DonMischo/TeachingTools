@@ -313,15 +313,68 @@ class StudentDiffRow(BaseModel):
     changed_fields: list[str]
 
 
+class StudentAbsentRow(BaseModel):
+    """Roster mode: an active student in one of the classes present in the file
+    who is *not* in the file — a deletion candidate (default unchecked)."""
+    id: int
+    nachname: str
+    vorname: str
+    klasse: str
+
+
+class StudentCandidate(BaseModel):
+    """Enrichment mode: an existing student a file row could refer to."""
+    id: int
+    nachname: str
+    vorname: str
+    klasse: str
+
+
+class StudentFieldConflict(BaseModel):
+    """Enrichment mode: a known field whose CSV value differs from the DB.
+    Surfaced for a keep-DB / keep-CSV choice. Never covers nachname/vorname/klasse."""
+    field: str
+    db_val: str
+    csv_val: str
+
+
+class StudentEnrichRow(BaseModel):
+    key: str
+    status: str  # "matched" | "ambiguous" | "unmatched"
+    csv_data: dict[str, str]
+    match: StudentCandidate | None = None       # the single match (status == "matched")
+    candidates: list[StudentCandidate] = []     # options (status == "ambiguous")
+    extra_writes: dict[str, str] = {}           # new/changed extra columns to write
+    conflicts: list[StudentFieldConflict] = []  # differing known fields (keep-DB/CSV)
+    outdated: bool = False                       # list's Klasse differs from the student's current one
+
+
 class StudentPreviewResponse(BaseModel):
-    diff: list[StudentDiffRow]
-    extra_columns: list[str]
+    mode: str = "roster"
+    diff: list[StudentDiffRow] = []             # roster
+    absent: list[StudentAbsentRow] = []         # roster: not-in-list students
+    enrich: list[StudentEnrichRow] = []         # enrichment
+    extra_columns: list[str] = []
+    names_swapped: bool = False                  # enrichment: Vorname/Nachname columns auto-swapped
     summary: dict[str, int]
 
 
+class StudentResolution(BaseModel):
+    """Enrichment apply: one file row resolved to a target student, with the set
+    of conflict fields to overwrite from the CSV (all others keep the DB value)."""
+    key: str
+    student_id: int
+    take_fields: list[str] = []
+
+
 class StudentApplyRequest(BaseModel):
-    selected_keys: list[str]
-    csv_data: dict[str, dict[str, str]]
+    mode: str = "roster"
+    # roster:
+    selected_keys: list[str] = []
+    csv_data: dict[str, dict[str, str]] = {}
+    delete_ids: list[int] = []                  # absent students to delete
+    # enrichment:
+    resolutions: list[StudentResolution] = []
 
 
 class StudentCardData(BaseModel):

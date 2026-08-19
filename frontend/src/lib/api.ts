@@ -62,10 +62,37 @@ export type StudentDiffRow = {
   changed_fields: string[];
 };
 
+export type StudentAbsentRow = { id: number; nachname: string; vorname: string; klasse: string };
+export type StudentCandidate = { id: number; nachname: string; vorname: string; klasse: string };
+export type StudentFieldConflict = { field: string; db_val: string; csv_val: string };
+export type StudentEnrichRow = {
+  key: string;
+  status: "matched" | "ambiguous" | "unmatched";
+  csv_data: Record<string, string>;
+  match: StudentCandidate | null;
+  candidates: StudentCandidate[];
+  extra_writes: Record<string, string>;
+  conflicts: StudentFieldConflict[];
+  outdated: boolean;
+};
+
 export type StudentPreviewResponse = {
+  mode: "roster" | "enrichment";
   diff: StudentDiffRow[];
+  absent: StudentAbsentRow[];
+  enrich: StudentEnrichRow[];
   extra_columns: string[];
-  summary: { new: number; update: number; unchanged: number };
+  names_swapped: boolean;
+  summary: Record<string, number>;
+};
+
+export type StudentResolution = { key: string; student_id: number; take_fields: string[] };
+export type StudentApplyBody = {
+  mode: "roster" | "enrichment";
+  selected_keys?: string[];
+  csv_data?: Record<string, Record<string, string>>;
+  delete_ids?: number[];
+  resolutions?: StudentResolution[];
 };
 
 export type SportfestDiscipline = {
@@ -1099,17 +1126,19 @@ export const api = {
       apiFetch<StudentOut>(`students/${studentId}/username`, { method: "PATCH", body: JSON.stringify({ username }) }),
     delete: (studentId: number) =>
       apiFetch<void>(`students/${studentId}`, { method: "DELETE" }),
-    preview: (file: File) => {
+    preview: (file: File, mode: "roster" | "enrichment" = "roster", listYear = 0) => {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("mode", mode);
+      fd.append("list_year", String(listYear));
       return fetch("/api/students/preview", { method: "POST", credentials: "include", body: fd })
         .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<StudentPreviewResponse>; });
     },
-    apply: (selected_keys: string[], csv_data: Record<string, Record<string, string>>) =>
-      apiFetch<{ applied: number; errors: string[] }>("students/apply", {
+    apply: (body: StudentApplyBody) =>
+      apiFetch<{ applied: number; deleted: number; errors: string[] }>("students/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selected_keys, csv_data }),
+        body: JSON.stringify(body),
       }),
     cardData: (klasse?: string) => {
       const q = klasse ? `?klasse=${encodeURIComponent(klasse)}` : "";

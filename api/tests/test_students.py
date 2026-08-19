@@ -486,3 +486,318 @@ def test_set_student_username_rejects_duplicate(client, admin_token, klass_5a, d
     r = client.patch(f"/api/students/{b.id}/username",
                      json={"username": "taken"}, headers=_hdr(admin_token))
     assert r.status_code == 409
+
+
+# ---------------------------------------------------------------------------
+# Two-mode CSV import: roster mode (absent detection + scoped delete) and
+# enrichment mode (fuzzy name match + known-field conflicts).
+# ---------------------------------------------------------------------------
+
+def _preview_mode(client, admin_token, csv: str, mode: str):
+    return client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)],
+        data={"mode": mode},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+
+def _apply_body(client, admin_token, body: dict):
+    return client.post(
+        "/api/students/apply",
+        json=body,
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+
+# --- roster mode ---
+
+def test_preview_roster_mode_returns_absent(client, admin_token, klass_5a, klass_6b, db):
+    """`absent` lists active students in a class present in the file who are not
+    themselves in the file. Scope is per-class: a student in a class that never
+    appears in the file (6b here) must never show up as absent."""
+    kept = _seed_student(db, "A", "X", "5a")
+    absent = _seed_student(db, "B", "Y", "5a")
+    other_class = _seed_student(db, "C", "Z", "6b")
+
+    csv = "#,Nachname,Vorname,Klasse,Geschlecht\n1,A,X,5a,männlich\n"
+    r = _preview_mode(client, admin_token, csv, "roster")
+    assert r.status_code == 200
+    body = r.json()
+
+    absent_ids = {row["id"] for row in body["absent"]}
+    assert absent.id in absent_ids
+    assert other_class.id not in absent_ids
+    assert kept.id not in absent_ids
+
+    row = next(x for x in body["absent"] if x["id"] == absent.id)
+    assert row["nachname"] == "B"
+    assert row["vorname"] == "Y"
+    assert row["klasse"] == "5a"
+
+
+def test_apply_roster_delete_ids(client, admin_token, klass_5a, klass_6b, db):
+    """/apply in roster mode with delete_ids deletes exactly those students —
+    everyone else (including other classes) is untouched."""
+    kept = _seed_student(db, "A", "X", "5a")
+    absent = _seed_student(db, "B", "Y", "5a")
+    other_class = _seed_student(db, "C", "Z", "6b")
+
+    r = _apply_body(client, admin_token, {
+        "mode": "roster",
+        "selected_keys": [],
+        "csv_data": {},
+        "delete_ids": [absent.id],
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert body["deleted"] == 1
+
+    assert db.get(Student, absent.id) is None
+    assert db.get(Student, kept.id) is not None
+    assert db.get(Student, other_class.id) is not None
+
+
+def test_preview_default_mode_still_returns_diff(client, admin_token, klass_5a, db):
+    """Backward-compat smoke test: without a mode field (or with mode='roster'),
+    preview still behaves exactly as before — a new student shows action 'new'."""
+    csv = "#,Nachname,Vorname,Klasse,Geschlecht\n1,Neu,Person,5a,männlich\n"
+    body = _preview(client, admin_token, csv).json()
+    assert "diff" in body
+    assert "summary" in body
+    row = next(x for x in body["diff"] if x["csv_data"]["nachname"] == "Neu")
+    assert row["action"] == "new"
+
+
+# --- enrichment mode ---
+
+def test_enrich_matches_by_vorname_token_subset(client, admin_token, klass_5a, db):
+    """File vorname 'Anna' matches DB student 'Anna Maria' (subset of given-name
+    tokens); the extra 'Instrument' column is surfaced in extra_writes."""
+    student = _seed_student(db, "Meier", "Anna Maria", "5a")
+    csv = "Nachname,Vorname,Instrument\nMeier,Anna,Geige\n"
+    r = _preview_mode(client, admin_token, csv, "enrichment")
+    assert r.status_code == 200
+    body = r.json()
+    row = body["enrich"][0]
+    assert row["status"] == "matched"
+    assert row["match"]["id"] == student.id
+    assert row["extra_writes"] == {"Instrument": "Geige"}
+
+
+def test_enrich_matches_by_other_vorname_token(client, admin_token, klass_5a, db):
+    """File vorname 'Maria' also matches DB student 'Anna Maria'."""
+    student = _seed_student(db, "Meier", "Anna Maria", "5a")
+    csv = "Nachname,Vorname\nMeier,Maria\n"
+    body = _preview_mode(client, admin_token, csv, "enrichment").json()
+    row = body["enrich"][0]
+    assert row["status"] == "matched"
+    assert row["match"]["id"] == student.id
+
+
+def test_enrich_ambiguous_multiple_candidates(client, admin_token, db):
+    """Two same-name students in different classes, no klasse in the file to
+    narrow it down -> ambiguous, both listed as candidates, no single match."""
+    s1 = _seed_student(db, "Schmidt", "Tom", "5a")
+    s2 = _seed_student(db, "Schmidt", "Tom", "6a")
+    csv = "Nachname,Vorname\nSchmidt,Tom\n"
+    body = _preview_mode(client, admin_token, csv, "enrichment").json()
+    row = body["enrich"][0]
+    assert row["status"] == "ambiguous"
+    candidate_ids = {c["id"] for c in row["candidates"]}
+    assert candidate_ids == {s1.id, s2.id}
+    assert row["match"] is None
+
+
+def test_enrich_unmatched_unknown_nachname(client, admin_token, klass_5a, db):
+    _seed_student(db, "Meier", "Anna", "5a")
+    csv = "Nachname,Vorname\nUnknown,Person\n"
+    body = _preview_mode(client, admin_token, csv, "enrichment").json()
+    row = body["enrich"][0]
+    assert row["status"] == "unmatched"
+    assert row["match"] is None
+    assert row["candidates"] == []
+
+
+def test_enrich_known_field_conflict_not_auto_applied(client, admin_token, klass_5a, db):
+    """A differing known field (geschlecht) is surfaced as a conflict for the
+    user to resolve — never silently folded into extra_writes, and name/klasse
+    are never conflict fields."""
+    student = _seed_student(db, "Meier", "Anna", "5a", geschlecht="weiblich")
+    csv = "Nachname,Vorname,Geschlecht,Instrument\nMeier,Anna,männlich,Geige\n"
+    body = _preview_mode(client, admin_token, csv, "enrichment").json()
+    row = body["enrich"][0]
+    assert row["status"] == "matched"
+
+    conflict = next(c for c in row["conflicts"] if c["field"] == "geschlecht")
+    assert conflict["db_val"] == "weiblich"
+    assert conflict["csv_val"] == "männlich"
+
+    assert "geschlecht" not in row["extra_writes"]
+    assert "geburtsdatum" not in row["extra_writes"]
+    assert "nummer" not in row["extra_writes"]
+    assert all(c["field"] not in ("nachname", "vorname", "klasse") for c in row["conflicts"])
+
+
+def test_enrich_apply_take_fields_empty_only_writes_extras(client, admin_token, klass_5a, db):
+    """With take_fields=[], only unknown/extra columns are written — known
+    fields (geschlecht) and identity fields (nachname/vorname/klasse) are
+    left exactly as they were in the DB, even though the CSV disagrees."""
+    student = _seed_student(db, "Meier", "Anna", "5a", geschlecht="weiblich")
+    key = "row1"
+    csv_data = {key: {"nachname": "Meier", "vorname": "Anna", "klasse": "6z",
+                       "geschlecht": "männlich", "Instrument": "Geige"}}
+    r = _apply_body(client, admin_token, {
+        "mode": "enrichment",
+        "resolutions": [{"key": key, "student_id": student.id, "take_fields": []}],
+        "csv_data": csv_data,
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert body["applied"] == 1
+
+    db.refresh(student)
+    assert student.extra_fields.get("Instrument") == "Geige"
+    assert student.geschlecht == "weiblich"
+    assert student.nachname == "Meier"
+    assert student.vorname == "Anna"
+    assert student.klasse == "5a"
+
+
+def test_enrich_apply_take_fields_overwrites_selected(client, admin_token, klass_5a, db):
+    """take_fields=['geschlecht'] overwrites geschlecht from the CSV, but
+    nachname/vorname/klasse are still never touched."""
+    student = _seed_student(db, "Meier", "Anna", "5a", geschlecht="weiblich")
+    key = "row1"
+    csv_data = {key: {"nachname": "Meier", "vorname": "Anna", "klasse": "9z",
+                       "geschlecht": "männlich"}}
+    r = _apply_body(client, admin_token, {
+        "mode": "enrichment",
+        "resolutions": [{"key": key, "student_id": student.id, "take_fields": ["geschlecht"]}],
+        "csv_data": csv_data,
+    })
+    assert r.status_code == 200
+    db.refresh(student)
+    assert student.geschlecht == "männlich"
+    assert student.nachname == "Meier"
+    assert student.vorname == "Anna"
+    assert student.klasse == "5a"
+
+
+def test_enrich_apply_ambiguous_resolved_to_chosen_student(client, admin_token, db):
+    """Resolving an ambiguous row writes only to the explicitly chosen
+    student_id — the other candidate must stay untouched."""
+    s1 = _seed_student(db, "Schmidt", "Tom", "5a")
+    s2 = _seed_student(db, "Schmidt", "Tom", "6a")
+    key = "row1"
+    csv_data = {key: {"nachname": "Schmidt", "vorname": "Tom", "Instrument": "Geige"}}
+    r = _apply_body(client, admin_token, {
+        "mode": "enrichment",
+        "resolutions": [{"key": key, "student_id": s1.id, "take_fields": []}],
+        "csv_data": csv_data,
+    })
+    assert r.status_code == 200
+    db.refresh(s1)
+    db.refresh(s2)
+    assert s1.extra_fields.get("Instrument") == "Geige"
+    assert s2.extra_fields.get("Instrument") is None
+
+
+# --- outdated class / school-year conversion ---
+
+def test_enrich_stale_class_disambiguates_via_list_year(client, admin_token, db):
+    """Two same-name students in different current classes. An enrichment list from
+    a PRIOR school year carries a stale Klasse; converting it to an AK-code with
+    `list_year` picks the right student and flags the row outdated."""
+    from api.schoolyear import get_school_year_start, klasse_to_ak_code
+    start = get_school_year_start()
+    a = _seed_student(db, "Schmidt", "Tom", "9a")
+    a.ak_code = klasse_to_ak_code("9a")   # stable identity for current 9a
+    b = _seed_student(db, "Schmidt", "Tom", "9b")
+    b.ak_code = klasse_to_ak_code("9b")
+    db.flush()
+
+    # Last year Tom(A) was in 8a; 8a a year ago -> same AK-code as 9a now.
+    csv = "Klasse,Vorname,Nachname,Office\n8a,Tom,Schmidt,tom@x\n"
+    r = client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)], data={"mode": "enrichment", "list_year": str(start - 1)},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    row = r.json()["enrich"][0]
+    assert row["status"] == "matched"
+    assert row["match"]["id"] == a.id
+    assert row["outdated"] is True
+    assert row["extra_writes"] == {"Office": "tom@x"}
+
+
+def test_enrich_outdated_flag_reflects_current_class(client, admin_token, db):
+    """A unique name always matches; `outdated` is True only when the list's Klasse
+    differs from the student's current one."""
+    from api.schoolyear import get_school_year_start, klasse_to_ak_code
+    start = get_school_year_start()
+    s = _seed_student(db, "Meier", "Anna", "9a")
+    s.ak_code = klasse_to_ak_code("9a")
+    db.flush()
+
+    # Same class, current year -> not outdated.
+    same = client.post(
+        "/api/students/preview",
+        files=[_csv_file("Klasse,Vorname,Nachname,Office\n9a,Anna,Meier,a@x\n")],
+        data={"mode": "enrichment"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ).json()["enrich"][0]
+    assert same["status"] == "matched" and same["outdated"] is False
+
+    # Stale class from last year -> outdated.
+    old = client.post(
+        "/api/students/preview",
+        files=[_csv_file("Klasse,Vorname,Nachname,Office\n8a,Anna,Meier,a@x\n")],
+        data={"mode": "enrichment", "list_year": str(start - 1)},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ).json()["enrich"][0]
+    assert old["status"] == "matched" and old["outdated"] is True
+
+
+def test_enrich_autodetects_swapped_name_columns(client, admin_token, db):
+    """A list whose header says 'Vorname, Nachname' but lists the surname first is
+    auto-corrected: matching still works and `names_swapped` is reported."""
+    _seed_student(db, "Sommer", "Kim", "3a")
+    _seed_student(db, "Winter", "Lea", "3a", "weiblich")
+    # Data is surname-first despite the header labels.
+    csv = "Klasse,Vorname,Nachname,Office\n3a,Sommer,Kim,c@x\n3a,Winter,Lea,e@x\n"
+    body = client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)], data={"mode": "enrichment"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ).json()
+    assert body["names_swapped"] is True
+    matched = [e for e in body["enrich"] if e["status"] == "matched"]
+    assert len(matched) == 2
+    assert {e["match"]["nachname"] for e in matched} == {"Sommer", "Winter"}
+
+
+def test_enrich_correct_columns_not_swapped(client, admin_token, db):
+    """A correctly-oriented list is left as-is (no false swap)."""
+    _seed_student(db, "Meier", "Anna", "3a", "weiblich")
+    csv = "Klasse,Vorname,Nachname,Office\n3a,Anna,Meier,a@x\n"
+    body = client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)], data={"mode": "enrichment"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ).json()
+    assert body["names_swapped"] is False
+    assert body["enrich"][0]["status"] == "matched"
+
+
+# --- auth ---
+
+def test_enrich_preview_requires_admin(client, teacher_token, klass_5a):
+    csv = "Nachname,Vorname\nMeier,Anna\n"
+    r = client.post(
+        "/api/students/preview",
+        files=[_csv_file(csv)],
+        data={"mode": "enrichment"},
+        headers={"Authorization": f"Bearer {teacher_token}"},
+    )
+    assert r.status_code == 403
