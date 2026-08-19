@@ -105,7 +105,8 @@ function FieldBuilder({
 
   function addField(dbKey: string) {
     const alias = FIELD_SUGGESTIONS[dbKey] || dbKey;
-    onChange([...cardFields, { id: crypto.randomUUID(), dbKey, alias }]);
+    const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
+    onChange([...cardFields, { id, dbKey, alias }]);
     setDropdownRect(null);
   }
 
