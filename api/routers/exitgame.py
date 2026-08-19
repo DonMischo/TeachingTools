@@ -37,7 +37,8 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -46,7 +47,10 @@ from .. import timeline_engine
 from ..task_generators import check_input_answer
 from ..database import get_db
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
-from ..auth import get_current_teacher, get_current_user
+from ..auth import (
+    get_current_teacher, get_current_user, get_current_user_optional,
+    get_player, guest_from_credentials, bearer, Guest,
+)
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify, is_student
 from ..utils import gen_code
@@ -64,29 +68,51 @@ DDA_RECENT_WINDOW = 10
 mgr = RoomManager()
 
 
-def get_current_player(current=Depends(get_current_user)) -> Teacher | Student:
-    """Anyone logged in may play — student or teacher/admin trying it out."""
-    return current
+def _identity_for_attempt(
+    attempt: ExitGameAttempt,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None,
+    db: Session,
+) -> Teacher | Student | Guest | None:
+    """Resolve who is calling an attempt-scoped endpoint (path has attempt_id, not
+    the session code). A logged-in user, or a guest whose token is scoped to this
+    attempt's session code."""
+    user = get_current_user_optional(request, credentials, db)
+    if user is not None:
+        return user
+    return guest_from_credentials(credentials, attempt.session.join_code)
 
 
-def _owner_filter(current: Teacher | Student) -> dict:
-    return {"student_id": current.id} if isinstance(current, Student) else {"teacher_id": current.id}
+def _owner_filter(current: Teacher | Student | Guest) -> dict:
+    if isinstance(current, Student):
+        return {"student_id": current.id}
+    if isinstance(current, Guest):
+        return {"guest_id": current.id}
+    return {"teacher_id": current.id}
 
 
-def _attempt_belongs_to(attempt: ExitGameAttempt, current: Teacher | Student) -> bool:
+def _attempt_belongs_to(attempt: ExitGameAttempt, current: Teacher | Student | Guest) -> bool:
     if isinstance(current, Student):
         return attempt.student_id == current.id
+    if isinstance(current, Guest):
+        return attempt.guest_id == current.id
     return attempt.teacher_id == current.id
 
 
 def _participant_name(attempt: ExitGameAttempt) -> str:
     if attempt.student:
         return f"{attempt.student.vorname} {attempt.student.nachname}"
+    if attempt.guest_id:
+        return attempt.guest_name or "Gast"
     return f"{attempt.teacher.first_name} {attempt.teacher.last_name}".strip()
 
 
 def _participant_class(attempt: ExitGameAttempt) -> str:
-    return attempt.student.klasse if attempt.student else "Lehrkraft"
+    if attempt.student:
+        return attempt.student.klasse
+    if attempt.guest_id:
+        return "Gast"
+    return "Lehrkraft"
 
 
 # ---------------------------------------------------------------------------
@@ -572,20 +598,24 @@ def _attempt_summary(a: ExitGameAttempt) -> dict:
 
 @router.post("/api/exitgame-sessions/{code}/attempts", status_code=201)
 def start_or_resume_attempt(
-    code: str, db: Session = Depends(get_db), current: Teacher | Student = Depends(get_current_player),
+    code: str, db: Session = Depends(get_db),
+    current: Teacher | Student | Guest = Depends(get_player),
 ):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session nicht gefunden")
     if s.status != "open":
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
-    # The join link is the only gate — any logged-in student, teacher, or
-    # admin may start an attempt. session.class_id is a reporting label, not
-    # a participation check.
+    # The join link is the only gate — any logged-in student, teacher, admin, or
+    # (if the teacher opted in) a QR/join-link guest may start an attempt.
+    # session.class_id is a reporting label, not a participation check.
 
+    owner = _owner_filter(current)
+    if isinstance(current, Guest):
+        owner["guest_name"] = current.name
     attempt = db.query(ExitGameAttempt).filter_by(session_id=s.id, **_owner_filter(current)).first()
     if not attempt:
-        attempt = ExitGameAttempt(session_id=s.id, **_owner_filter(current))
+        attempt = ExitGameAttempt(session_id=s.id, **owner)
         db.add(attempt)
         db.commit()
         db.refresh(attempt)
@@ -722,11 +752,15 @@ async def _broadcast_progress(code: str, attempt: ExitGameAttempt, total_slides:
 
 @router.post("/api/exitgame-attempts/{attempt_id}/events")
 async def post_event(
-    attempt_id: int, body: EventIn,
-    db: Session = Depends(get_db), current: Teacher | Student = Depends(get_current_player),
+    attempt_id: int, body: EventIn, request: Request,
+    db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
     attempt = db.get(ExitGameAttempt, attempt_id)
-    if not attempt or not _attempt_belongs_to(attempt, current):
+    if not attempt:
+        raise HTTPException(404, "Attempt nicht gefunden")
+    current = _identity_for_attempt(attempt, request, credentials, db)
+    if current is None or not _attempt_belongs_to(attempt, current):
         raise HTTPException(404, "Attempt nicht gefunden")
     if attempt.status != "in_progress":
         raise HTTPException(409, "Dieser Versuch ist bereits abgeschlossen")
@@ -807,10 +841,14 @@ async def post_event(
 
 @router.post("/api/exitgame-attempts/{attempt_id}/finish")
 async def finish_attempt(
-    attempt_id: int, db: Session = Depends(get_db), current: Teacher | Student = Depends(get_current_player),
+    attempt_id: int, request: Request, db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
     attempt = db.get(ExitGameAttempt, attempt_id)
-    if not attempt or not _attempt_belongs_to(attempt, current):
+    if not attempt:
+        raise HTTPException(404, "Attempt nicht gefunden")
+    current = _identity_for_attempt(attempt, request, credentials, db)
+    if current is None or not _attempt_belongs_to(attempt, current):
         raise HTTPException(404, "Attempt nicht gefunden")
     if attempt.status == "finished":
         return {"attempt": _attempt_summary(attempt), "completion": attempt.session.exitgame.data.get("completion")}

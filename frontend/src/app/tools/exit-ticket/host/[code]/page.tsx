@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 
 type Response = {
@@ -111,6 +112,7 @@ export default function ExitTicketHostPage() {
           <JoinQR url={playUrl} size={200} className="rounded-xl" />
           <div className="text-xs text-[var(--text-muted)] text-center font-mono break-all">{code}</div>
           <div className="text-xs text-[var(--text-muted)]">{state.participant_count} verbunden · {state.responses.length} Antworten</div>
+          <GuestAccessToggle tool="exit-ticket" code={code} />
         </div>
 
         {/* Rating distribution */}

@@ -9,12 +9,12 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user
+from ..auth import get_current_user, get_player, Guest
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, is_student
 from ..database import get_db
 from ..utils import gen_code, parse_grades
-from ..ws_auth import ws_identity
+from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager
 from ..models import BingoCard, BingoSession, BingoSet, Student, Transaction
 
@@ -424,15 +424,18 @@ def game_info(code: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{code}/card")
-def get_or_create_card_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    """Card for the calling student — identity comes from the session, never
-    from a client-supplied student_id (that allowed fetching anyone's card)."""
-    if not isinstance(current, Student):
-        raise HTTPException(403, "Nur für Schüler")
+def get_or_create_card_rest(code: str, db: Session = Depends(get_db), current=Depends(get_player)):
+    """Card for the calling player — identity comes from the session/guest token,
+    never from a client-supplied student_id (that allowed fetching anyone's card)."""
     session = db.query(BingoSession).filter_by(code=code).first()
     if not session:
         raise HTTPException(404)
-    card = _find_or_create_card(session, db, student_id=current.id)
+    if isinstance(current, Student):
+        card = _find_or_create_card(session, db, student_id=current.id)
+    elif isinstance(current, Guest):
+        card = _find_or_create_card(session, db, anon_token=current.id, name=current.name)
+    else:
+        raise HTTPException(403, "Nur für Schüler")
     return _card_dict(card, session)
 
 
@@ -472,8 +475,19 @@ async def bingo_ws(
             card = _find_or_create_card(session, db, student_id=identity[1])
             student_id = identity[1]
             _mgr.add_student(code, student_id, ws, info={"name": card.student_name, "avatar": avatar})
-        elif token:
-            card = _find_or_create_card(session, db, anon_token=token, name=name)
+        else:
+            # QR/join-link guest: must hold a live guest token scoped to this code
+            # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
+            # A logged-in teacher may also test the student view.
+            guest = ws_guest(ws, code)
+            if guest:
+                anon_key, anon_name = guest.id, guest.name
+            elif identity and identity[0] == "teacher":
+                anon_key, anon_name = f"teacher-{identity[1]}", (name or "Lehrkraft")
+            else:
+                await ws.close(code=4001)
+                return
+            card = _find_or_create_card(session, db, anon_token=anon_key, name=anon_name)
             _mgr.add_student(code, card.id, ws, info={"name": card.student_name, "avatar": avatar})
         db.refresh(session)
         await ws.send_json(_session_state(session, db, players=_mgr.infos(code)))

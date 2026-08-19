@@ -4,8 +4,10 @@ import { useParams } from "next/navigation";
 import { wsUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
+import { GuestExpired } from "@/components/GuestExpired";
 import { AVATARS, AvatarDisplay } from "@/components/AvatarPicker";
 import { useSavedPlayer, newAnonToken } from "@/hooks/useSavedPlayer";
+import { useGuestSession } from "@/hooks/useGuestSession";
 
 type Cell = { pair_index: number; answer: string };
 type CardState = { grid_size: number; grid_cols: number; cells: Cell[]; marked_positions: number[]; has_bingo: boolean };
@@ -21,6 +23,7 @@ type Phase =
 export default function BingoPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const wsRef = useRef<WebSocket | null>(null);
   const { saved, save: saveSaved, loaded: savedLoaded } = useSavedPlayer("bingo_session", code);
 
@@ -48,13 +51,14 @@ export default function BingoPlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, savedLoaded, auth?.student?.id]);
 
-  function connect(token: string, name: string, avatar: string) {
+  function connect(token: string, name: string, avatar: string, gtoken?: string | null) {
     if (wsRef.current) wsRef.current.close();
     setJoinError(null);
     setConnecting(true);
     saveSaved({ token, name, avatar });
     playerNameRef.current = name;
-    const url = wsUrl(`/api/bingo/${code}/ws?role=student&token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}`);
+    const gt = gtoken ?? guest.token;
+    const url = wsUrl(`/api/bingo/${code}/ws?role=student&token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}${gt ? `&guest_token=${gt}` : ""}`);
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
@@ -63,6 +67,7 @@ export default function BingoPlayPage() {
     ws.onclose = (e) => {
       setConnecting(false);
       if (e.code === 4004) setJoinError("Bingo-Runde nicht gefunden.");
+      else if (e.code === 4001) guest.markExpired();  // guest token missing/expired → hard block
     };
 
     ws.onmessage = (e) => {
@@ -109,11 +114,25 @@ export default function BingoPlayPage() {
     };
   }
 
+  async function handleGuestJoin(name: string, avatar: string) {
+    try {
+      let gt = guest.token;
+      if (!auth && !gt) gt = (await guest.join("bingo", name)).token;
+      connect(saved?.token ?? newAnonToken(), name, avatar, gt);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diese Runde sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
+  }
+
   function markCell(pos: number) {
     if (game.status !== "active" || !card) return;
     if (card.marked_positions.includes(pos) || wrongPositions.includes(pos)) return;
     wsRef.current?.send(JSON.stringify({ action: "mark", position: pos }));
   }
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (mounted && guest.expired && !auth) return <GuestExpired gameIcon="🎰" />;
 
   // ── Join screen ──────────────────────────────────────────────────────────────
   if (!mounted || (phase.kind === "join" && !auth?.student)) {
@@ -123,7 +142,7 @@ export default function BingoPlayPage() {
         gameIcon="🎰"
         error={joinError}
         submitting={connecting}
-        onJoin={(name, avatar) => connect(saved?.token ?? newAnonToken(), name, avatar)}
+        onJoin={handleGuestJoin}
       />
     );
   }

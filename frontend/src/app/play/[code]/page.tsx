@@ -3,9 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { PlayerIdentityForm, Team } from "@/components/PlayerIdentityForm";
+import { GuestExpired } from "@/components/GuestExpired";
 import { useSavedPlayer, SavedPlayer } from "@/hooks/useSavedPlayer";
+import { useGuestSession } from "@/hooks/useGuestSession";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
@@ -132,6 +135,8 @@ export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const ws = useRef<WebSocket | null>(null);
+  const { auth } = useAuth();
+  const guest = useGuestSession(code);
 
   const { saved, save: saveSaved, clear: clearSaved, loaded: savedLoaded } = useSavedPlayer("quiz_participant", code);
 
@@ -167,11 +172,15 @@ export default function PlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function connectWs(participantId: number, playerName: string, playerAvatar: string) {
+  function connectWs(participantId: number, playerName: string, playerAvatar: string, gtoken?: string | null) {
+    const gt = gtoken ?? guest.token;
     const socket = new WebSocket(
-      wsUrl(`/api/sessions/${code}/ws?role=student&participant_id=${participantId}`)
+      wsUrl(`/api/sessions/${code}/ws?role=student&participant_id=${participantId}${gt ? `&guest_token=${gt}` : ""}`)
     );
     ws.current = socket;
+
+    // 4001 = guest token missing/expired → hard block (no rejoin).
+    socket.onclose = (e) => { if (e.code === 4001) guest.markExpired(); };
 
     socket.onmessage = (e) => {
       const msg = JSON.parse(e.data);
@@ -280,11 +289,18 @@ export default function PlayPage() {
     setConnecting(true);
     setJoinError(null);
     try {
-      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? teamId! : null);
+      // Unauthenticated players first obtain a 60-min guest token (the backend
+      // enforces the teacher's "Gäste erlauben" opt-in and 403s if it's off).
+      let guestToken = guest.token;
+      if (!auth && !guestToken) {
+        guestToken = (await guest.join("caputh", joinName)).token;
+      }
+      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? teamId! : null, guestToken);
       saveSaved({ participantId: res.participant_id, name: res.name, avatar });
-      connectWs(res.participant_id, res.name, avatar);
+      connectWs(res.participant_id, res.name, avatar, guestToken);
     } catch (err: unknown) {
-      setJoinError(err instanceof Error ? err.message : "Beitritt fehlgeschlagen");
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diese Sitzung sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
       setConnecting(false);
     }
   }
@@ -326,6 +342,9 @@ export default function PlayPage() {
 
   // ── Join screen ────────────────────────────────────────────────────
   if (!mounted) return null;
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (guest.expired && !auth) return <GuestExpired gameIcon="🏕️" />;
 
   if (phase.kind === "join") {
     if (!savedLoaded) return null;

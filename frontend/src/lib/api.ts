@@ -916,6 +916,19 @@ export type AdminFeatureGrant = {
 };
 
 export const api = {
+  // QR/join-link guest access (see api/routers/guest.py)
+  guest: {
+    join: (code: string, tool: string, name: string) =>
+      apiFetch<{ token: string; name: string }>("guest/join", {
+        method: "POST", body: JSON.stringify({ code, tool, name }),
+      }),
+    status: (tool: string, code: string) =>
+      apiFetch<{ allow_guests: boolean }>(`guest/status?tool=${encodeURIComponent(tool)}&code=${encodeURIComponent(code)}`),
+    setAllowed: (tool: string, code: string, allow: boolean) =>
+      apiFetch<{ allow_guests: boolean }>("guest/allow", {
+        method: "PATCH", body: JSON.stringify({ tool, code, allow }),
+      }),
+  },
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),
     updateSymbolEmoji: (id: number, emoji: string | null) =>
@@ -1017,9 +1030,10 @@ export const api = {
       apiFetch<void>(`sessions/${code}`, { method: "DELETE" }),
     clearSessions: (quizId: number) =>
       apiFetch<void>(`capuths/${quizId}/sessions`, { method: "DELETE" }),
-    joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null) =>
+    joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null, guestToken?: string | null) =>
       apiFetch<{ participant_id: number; name: string; avatar: string; team_id: number | null }>(`sessions/${code}/join`, {
         method: "POST",
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
         body: JSON.stringify({ name, avatar, team_id: team_id ?? null }),
       }),
     listTeams: (code: string) =>

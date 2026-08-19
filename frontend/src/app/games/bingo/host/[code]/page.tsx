@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 
 type CalledItem = { index: number; caller: string; answer: string };
@@ -102,6 +103,7 @@ export default function BingoHostPage() {
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
             <span className="text-xs text-[var(--text-muted)]">/play/bingo/{code}</span>
+            <GuestAccessToggle tool="bingo" code={code} />
           </div>
         )}
       </div>

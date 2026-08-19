@@ -59,6 +59,8 @@ app.include_router(seating_router.router)
 app.include_router(availability_router.router)
 from .routers import admin_access as admin_access_router
 app.include_router(admin_access_router.router)
+from .routers import guest as guest_router
+app.include_router(guest_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -164,6 +166,16 @@ def _run_migrations(db_engine):
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS nta JSON NOT NULL DEFAULT '[]'",
         # Geschlecht is optional — CSV imports may omit it.
         "ALTER TABLE students ALTER COLUMN geschlecht DROP NOT NULL",
+        # QR/join-link guest access: per-session opt-in + guest-keyed exitgame attempts.
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE exit_ticket_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100)",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -173,6 +185,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE classes ADD CONSTRAINT uq_classes_ak_code UNIQUE (ak_code)",
         "CREATE INDEX IF NOT EXISTS ix_students_ak_code ON students (ak_code)",
         "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_teacher UNIQUE (session_id, teacher_id)",
+        "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_guest UNIQUE (session_id, guest_id)",
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
     ]

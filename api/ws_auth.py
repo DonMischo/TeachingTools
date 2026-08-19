@@ -12,7 +12,7 @@ grant teacher/host control without a verified Teacher identity.
 from fastapi import HTTPException, WebSocket
 from sqlalchemy.orm import Session
 
-from .auth import _check_revocation, _decode_token
+from .auth import Guest, _check_revocation, _decode_token, decode_guest_token
 from .models import Student, Teacher
 
 
@@ -46,3 +46,17 @@ def ws_teacher(websocket: WebSocket, db: Session) -> Teacher | None:
     if not identity or identity[0] != "teacher":
         return None
     return db.get(Teacher, identity[1])
+
+
+def ws_guest(websocket: WebSocket, code: str) -> Guest | None:
+    """Return the Guest for a valid, unexpired guest token scoped to `code`, else
+    None. The token comes from the `guest_token` query param (preferred, since JS
+    can't set WS headers) or an Authorization: Bearer header."""
+    token = websocket.query_params.get("guest_token")
+    if not token:
+        auth_header = websocket.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:]
+    if not token:
+        return None
+    return decode_guest_token(token, code)

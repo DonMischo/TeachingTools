@@ -51,7 +51,12 @@ def _ws_teacher_auth(teacher):
 
 
 def _scope(code: str, role: str = "student", participant_id: int = 0) -> dict:
-    qs = b"role=teacher" if role == "teacher" else f"role=student&participant_id={participant_id}".encode()
+    if role == "teacher":
+        qs = b"role=teacher"
+    else:
+        from api.auth import create_guest_token
+        gt = create_guest_token(code, "Gast")
+        qs = f"role=student&participant_id={participant_id}&guest_token={gt}".encode()
     return {
         "type": "websocket",
         "path": f"/api/sessions/{code}/ws",

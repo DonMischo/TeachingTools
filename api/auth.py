@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 import bcrypt as _bcrypt
@@ -11,6 +12,16 @@ from .models import Teacher, Student, RevokedToken
 from .config import settings
 
 bearer = HTTPBearer(auto_error=False)
+
+
+@dataclass(frozen=True)
+class Guest:
+    """An unauthenticated QR/join-link participant. Scoped to a single session
+    code and short-lived (see create_guest_token). Never a Teacher or Student,
+    so teacher/admin/management dependencies reject it automatically."""
+    id: str
+    name: str
+    scope: str  # the session join code this guest may access
 
 
 def hash_password(password: str) -> str:
@@ -27,6 +38,35 @@ def create_access_token(data: dict) -> str:
     payload = {**data, "exp": expire, "jti": jti}
     # Enforce HS256 — never accept algorithm substitution
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
+
+
+def create_guest_token(code: str, name: str) -> str:
+    """Signed, session-scoped, 60-min token for a QR/join-link guest. `sub` is a
+    throwaway guest id (no DB row); `scope` binds the token to one session code."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.guest_token_expire_minutes)
+    payload = {
+        "sub": str(uuid.uuid4()),
+        "type": "guest",
+        "name": name,
+        "scope": code,
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm="HS256")
+
+
+def decode_guest_token(token: str, code: str) -> Guest | None:
+    """Return the Guest for a valid, unexpired token scoped to `code`, else None.
+    Expiry is enforced by jwt.decode (JWTError → None → access denied)."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+    except JWTError:
+        return None
+    if payload.get("type") != "guest" or payload.get("scope") != code:
+        return None
+    sub = payload.get("sub")
+    if not sub:
+        return None
+    return Guest(id=sub, name=payload.get("name") or "Gast", scope=code)
 
 
 def _resolve_token(
@@ -70,6 +110,9 @@ def get_current_user(
     _check_revocation(payload.get("jti"), db)
 
     user_type = payload.get("type", "teacher")  # default "teacher" for legacy tokens
+    # Guest tokens are only valid via player_identity(code); never as a real user.
+    if user_type == "guest":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     sub = int(payload["sub"])
 
     if user_type == "student":
@@ -93,6 +136,38 @@ def get_current_user_optional(
         return get_current_user(request, credentials, db)
     except HTTPException:
         return None
+
+
+def guest_from_credentials(
+    credentials: Optional[HTTPAuthorizationCredentials], code: str
+) -> Guest | None:
+    """Resolve a valid Guest for `code` from an Authorization: Bearer token, else
+    None. Used where the session code isn't the request's path param (e.g. the
+    exitgame attempt endpoints keyed by attempt_id)."""
+    if not credentials:
+        return None
+    return decode_guest_token(credentials.credentials, code)
+
+
+def get_player(
+    code: str,
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> Union[Teacher, Student, Guest]:
+    """Dependency for player-facing endpoints that carry a `{code}` path param.
+
+    Returns the logged-in Teacher/Student (cookie/bearer) if present, otherwise a
+    valid Guest whose token is scoped to this code, otherwise 401. Guest tokens are
+    accepted ONLY through this path — never by get_current_user — so a guest can
+    never reach management or content endpoints."""
+    user = get_current_user_optional(request, credentials, db)
+    if user is not None:
+        return user
+    guest = guest_from_credentials(credentials, code)
+    if guest is not None:
+        return guest
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
 
 def get_current_teacher(

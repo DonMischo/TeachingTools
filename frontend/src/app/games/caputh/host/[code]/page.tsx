@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { AvatarDisplay } from "@/components/AvatarPicker";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
 import { wsUrl } from "@/lib/utils";
@@ -376,6 +377,7 @@ export default function HostPage() {
         <QRCodeSVG value={joinUrl} size={200} bgColor="#ffffff" fgColor="#1e1b4b" level="M" />
         <p className="text-2xl font-black font-mono text-indigo-900 tracking-widest">{code}</p>
         <p className="text-gray-400 text-xs">{joinUrl}</p>
+        <GuestAccessToggle tool="caputh" code={code} />
       </div>
     </div>
   ) : null;

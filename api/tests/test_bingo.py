@@ -73,8 +73,20 @@ def _teacher_scope(code: str) -> dict:
     }
 
 
+def _guest_token(code: str, name: str, sub: str) -> str:
+    """A guest token with a caller-controlled `sub` so reconnecting with the same
+    `token` key resolves to the same guest id → the same anon bingo card."""
+    from datetime import datetime, timedelta, timezone
+    from jose import jwt
+    from api.config import settings
+    payload = {"sub": sub, "type": "guest", "name": name, "scope": code,
+               "exp": datetime.now(timezone.utc) + timedelta(minutes=60)}
+    return jwt.encode(payload, settings.secret_key, algorithm="HS256")
+
+
 def _student_scope(code: str, token: str = "tok1", name: str = "Alex") -> dict:
-    qs = f"role=student&token={token}&name={name}".encode()
+    gt = _guest_token(code, name, sub=token)
+    qs = f"role=student&guest_token={gt}".encode()
     return {
         "type": "websocket",
         "path": f"/api/bingo/{code}/ws",

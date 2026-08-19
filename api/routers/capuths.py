@@ -28,11 +28,11 @@ from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
-from ..auth import get_current_teacher, get_current_user
+from ..auth import get_current_teacher, get_current_user, get_player
 from ..availability import require_capability
 from ..authorship import scope_to_student_pool, is_student
 from ..utils import gen_code, parse_grades
-from ..ws_auth import ws_teacher
+from ..ws_auth import ws_teacher, ws_identity, ws_guest
 from ..ws_manager import RoomManager
 
 router = APIRouter(tags=["capuths"])
@@ -1076,7 +1076,7 @@ def delete_team(
 
 
 @router.post("/api/sessions/{code}/join", status_code=201)
-def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)):
+def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db), _player=Depends(get_player)):
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
@@ -1128,6 +1128,12 @@ async def session_ws(
             else:
                 await _resync_teacher(s, db, code, websocket)
         else:
+            # Unauthenticated players must hold a live guest token scoped to this
+            # code (only issued when the teacher opted in — enforces opt-in +
+            # 60-min expiry). Logged-in students/teachers pass freely.
+            if ws_identity(websocket, db) is None and ws_guest(websocket, code) is None:
+                await websocket.close(code=4001)
+                return
             p = db.get(QuizParticipant, participant_id)
             if not p or p.session_id != s.id:
                 await websocket.close(code=4003)

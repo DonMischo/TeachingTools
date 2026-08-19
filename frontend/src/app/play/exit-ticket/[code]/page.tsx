@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
+import { GuestExpired } from "@/components/GuestExpired";
+import { useGuestSession } from "@/hooks/useGuestSession";
 
 type SessionInfo = {
   status: "open" | "closed";
@@ -15,25 +18,42 @@ const STARS = [1, 2, 3, 4, 5];
 export default function ExitTicketPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const wsRef = useRef<WebSocket | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [rating, setRating] = useState<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
+  useEffect(() => { setMounted(true); }, []);
+
+  const isGuest = mounted && !auth;               // fully unauthenticated visitor
   const studentId = auth?.student?.id ?? 0;
   const studentName = auth?.student
     ? `${auth.student.vorname} ${auth.student.nachname}`
-    : "Anonym";
+    : (guest.session?.name ?? "Anonym");
+
+  async function handleGuestJoin(name: string) {
+    try {
+      await guest.join("exit-ticket", name);      // reconnect effect fires once token lands
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für dieses Exit Ticket sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
+  }
 
   useEffect(() => {
-    if (!code) return;
+    if (!code || !mounted) return;
+    if (isGuest && !guest.token) return;           // wait until the guest has a token
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
     const params = new URLSearchParams({ role: "student" });
     if (studentId) params.set("student_id", String(studentId));
     params.set("student_name", studentName);
+    if (guest.token) params.set("guest_token", guest.token);
     const ws = new WebSocket(
       `${proto}://${window.location.host}/api/exit-ticket/${code}/ws?${params}`
     );
@@ -41,6 +61,7 @@ export default function ExitTicketPlayPage() {
 
     ws.onclose = (e) => {
       if (e.code === 4004) setError("Exit Ticket nicht gefunden.");
+      else if (e.code === 4001) guest.markExpired();  // guest token missing/expired → hard block
     };
 
     ws.onmessage = (e) => {
@@ -60,7 +81,8 @@ export default function ExitTicketPlayPage() {
     };
 
     return () => ws.close();
-  }, [code, studentId, studentName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, mounted, studentId, studentName, guest.token]);
 
   function submit() {
     if (!session || session.status !== "open") return;
@@ -70,6 +92,23 @@ export default function ExitTicketPlayPage() {
       rating: rating,
       comment: comment.trim() || null,
     }));
+  }
+
+  if (!mounted) return null;
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (isGuest && guest.expired) return <GuestExpired gameIcon="📝" />;
+
+  // Unauthenticated visitor picks a username before connecting.
+  if (isGuest && !guest.token) {
+    return (
+      <PlayerIdentityForm
+        gameCode={code}
+        gameIcon="📝"
+        error={joinError}
+        onJoin={(name) => handleGuestJoin(name)}
+      />
+    );
   }
 
   if (error) {

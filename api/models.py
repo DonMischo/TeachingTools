@@ -182,6 +182,8 @@ class QuizSession(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     points_awarded: Mapped[int | None] = mapped_column(Integer, nullable=True)
     team_mode: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     quiz: Mapped["Quiz"] = relationship(back_populates="sessions")
     class_: Mapped["Class"] = relationship()
@@ -612,6 +614,8 @@ class BarometerSession(Base):
     results_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
     # visible to all teachers in the tool pool (vs. creator-only)
     shared: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     creator: Mapped["Teacher"] = relationship()
     questions: Mapped[list["BarometerQuestion"]] = relationship(
@@ -686,6 +690,8 @@ class AuctionSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     winner_house_id: Mapped[int | None] = mapped_column(ForeignKey("haeuser.id", ondelete="SET NULL"), nullable=True)
     winning_bid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     creator: Mapped["Teacher"] = relationship()
     set: Mapped["AuctionSet"] = relationship(back_populates="sessions")
@@ -763,6 +769,8 @@ class BingoSession(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="waiting")
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     creator: Mapped["Teacher"] = relationship()
     set: Mapped["BingoSet"] = relationship(back_populates="sessions")
@@ -823,6 +831,8 @@ class ExitTicketSession(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="open")
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     creator: Mapped["Teacher"] = relationship()
     responses: Mapped[list["ExitTicketResponse"]] = relationship(
@@ -1128,6 +1138,8 @@ class ExitGameSession(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="open")  # open | closed
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     exitgame: Mapped["ExitGame"] = relationship(back_populates="sessions")
     class_: Mapped["Class"] = relationship()
@@ -1141,20 +1153,25 @@ class ExitGameAttempt(Base):
 
     Anyone with the join link may play (session.class_id is a reporting
     label, not a gate) — a participant is either a Student (student_id set)
-    or a Teacher/admin trying it out themselves (teacher_id set), never
-    both. Both FKs are nullable so Postgres's NULL-is-distinct unique
-    semantics let each identity type have its own one-row-per-session
-    uniqueness without a CHECK constraint."""
+    or a Teacher/admin trying it out themselves (teacher_id set), or a
+    QR/join-link guest (guest_id set — the guest token's id), never more
+    than one. All three owner FKs/ids are nullable so Postgres's
+    NULL-is-distinct unique semantics let each identity type have its own
+    one-row-per-session uniqueness without a CHECK constraint."""
     __tablename__ = "exitgame_attempts"
     __table_args__ = (
         UniqueConstraint("session_id", "student_id", name="uq_exitgame_attempt_student"),
         UniqueConstraint("session_id", "teacher_id", name="uq_exitgame_attempt_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_exitgame_attempt_guest"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("exitgame_sessions.id", ondelete="CASCADE"), nullable=False)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    # QR/join-link guest: the guest token's id + the name they chose (no FK, no DB user row)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    guest_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="in_progress")  # in_progress | finished
     current_slide_idx: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     solved_slide_ids: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
@@ -1309,6 +1326,8 @@ class LueckentextSession(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # QR/join-link guests may join this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     lueckentext: Mapped["LueckentextSet"] = relationship()
     teacher: Mapped["Teacher"] = relationship()

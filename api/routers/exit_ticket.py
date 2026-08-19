@@ -17,7 +17,7 @@ from ..models import ExitTicketSession, ExitTicketResponse, Student, Teacher
 from ..auth import get_current_teacher, get_current_user_optional
 from ..availability import require_capability
 from ..utils import gen_code
-from ..ws_auth import ws_teacher
+from ..ws_auth import ws_teacher, ws_identity, ws_guest
 from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/exit-ticket", tags=["exit-ticket"])
@@ -191,6 +191,12 @@ async def exit_ticket_ws(
     # Host view requires a verified teacher (responses contain student names).
     if role == "teacher" and ws_teacher(websocket, db) is None:
         await websocket.close(code=4003)
+        return
+
+    # Unauthenticated students must hold a live guest token scoped to this code
+    # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
+    if role != "teacher" and ws_identity(websocket, db) is None and ws_guest(websocket, code) is None:
+        await websocket.close(code=4001)
         return
 
     await websocket.accept()
