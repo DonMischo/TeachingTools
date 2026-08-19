@@ -5,7 +5,10 @@ import {
   DndContext, useDraggable, useDroppable, DragEndEvent,
 } from "@dnd-kit/core";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
+import { GuestExpired } from "@/components/GuestExpired";
 import { useSavedPlayer } from "@/hooks/useSavedPlayer";
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { useAuth } from "@/contexts/AuthContext";
 import { api, LueckentextBoard, LueckentextBoardGap } from "@/lib/api";
 
 type Phase = "join" | "waiting" | "active" | "finished";
@@ -28,6 +31,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function LueckentextPlayPage() {
   const { code } = useParams<{ code: string }>();
+  const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const { saved, save, loaded: savedLoaded } = useSavedPlayer("lueckentext", code);
 
   const [phase, setPhase] = useState<Phase>("join");
@@ -80,12 +85,17 @@ export default function LueckentextPlayPage() {
     setSubmitting(true);
     setJoinError(null);
     try {
-      const p = await api.lueckentexte.joinSession(code, name, avatar);
+      // Unauthenticated visitors first obtain a 60-min guest token (backend
+      // enforces the "Gäste erlauben" opt-in and 403s if it's off).
+      let gt = guest.token;
+      if (!auth && !gt) gt = (await guest.join("lueckentext", name)).token;
+      const p = await api.lueckentexte.joinSession(code, name, avatar, gt);
       save({ name, avatar, participantId: p.id });
       setParticipantId(p.id);
       setPhase("waiting");
     } catch (e) {
-      setJoinError((e as Error).message);
+      const msg = (e as Error).message;
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diese Sitzung sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
     } finally {
       setSubmitting(false);
     }
@@ -113,6 +123,9 @@ export default function LueckentextPlayPage() {
     const gapId = e.over?.id as string | undefined;
     if (word && gapId) submitGap(gapId, word);
   }
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (!auth && guest.expired) return <GuestExpired gameIcon="📝" />;
 
   // ── Join screen ──────────────────────────────────────────────────────────
   if (phase === "join") {

@@ -3,9 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  api, ExitGameData, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary, DdaAdaptation,
+  api, setActiveGuestToken, ExitGameData, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary, DdaAdaptation,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { GuestExpired } from "@/components/GuestExpired";
+import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { specToBoard } from "@/components/timeline/game";
@@ -324,12 +327,31 @@ function CompletionCard({ completion, summary }: {
 export default function ExitgamePlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const qc = useQueryClient();
+
+  const [mounted, setMounted] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  useEffect(() => { setMounted(true); }, []);
+  const isGuest = mounted && !auth;
+
+  // Attempt calls fired deep in child widgets read the active guest token from
+  // the api module, so register it here (cleared for logged-in users).
+  useEffect(() => { setActiveGuestToken(isGuest ? guest.token : null); }, [isGuest, guest.token]);
+
+  async function handleGuestJoin(name: string) {
+    try {
+      await guest.join("exitgame", name);   // enables the start query once the token lands
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für dieses Spiel sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
+  }
 
   const { data: start, isLoading, isError } = useQuery({
     queryKey: ["exitgame-attempt-start", code],
     queryFn: () => api.exitgame.attempts.start(code),
-    enabled: !!auth,
+    enabled: !!auth || (isGuest && !!guest.token),
     retry: false,
   });
 
@@ -383,7 +405,16 @@ export default function ExitgamePlayPage() {
     viewSlide(targetIdx);
   }
 
-  if (!auth) return <div className="p-8 text-sm text-[var(--text-muted)]">Bitte einloggen, um beizutreten.</div>;
+  if (!mounted) return null;
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (isGuest && guest.expired) return <GuestExpired gameIcon="🗝️" />;
+  // Unauthenticated visitor picks a username before starting.
+  if (isGuest && !guest.token) {
+    return (
+      <PlayerIdentityForm gameCode={code} gameIcon="🗝️" gameTitle="Exitgame"
+        error={joinError} onJoin={(name) => handleGuestJoin(name)} />
+    );
+  }
   if (isLoading) return <div className="p-8 text-sm text-[var(--text-muted)]">Lade…</div>;
   if (isError || !start) return <div className="p-8 text-sm text-red-400">Diese Sitzung ist nicht verfügbar (geschlossen oder nicht gefunden).</div>;
 

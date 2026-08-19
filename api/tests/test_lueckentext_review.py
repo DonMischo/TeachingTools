@@ -2,6 +2,7 @@
 import pytest
 
 from api.tests.conftest import auth
+from api.auth import create_guest_token
 from api.tests.test_lueckentexte import token_for
 from api.models import Teacher
 from api.auth import hash_password
@@ -54,7 +55,7 @@ def session_code(client, teacher_token, set_id):
 
 @pytest.fixture()
 def participant_id(client, session_code):
-    r = client.post(f"/api/lueckentexte/sessions/{session_code}/join", json={"name": "Max", "avatar": "cat"})
+    r = client.post(f"/api/lueckentexte/sessions/{session_code}/join", json={"name": "Max", "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(session_code, 'Max')}"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 

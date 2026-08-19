@@ -302,6 +302,15 @@ export type TokenOut = {
   teacher: TeacherOut;
 };
 
+// Active guest token for REST calls that can't take an explicit token argument
+// (e.g. exitgame attempt events fired deep in child widgets). The play page sets
+// it when an unauthenticated guest joins, and clears it otherwise.
+let _activeGuestToken: string | null = null;
+export function setActiveGuestToken(token: string | null) { _activeGuestToken = token; }
+function guestAuthHeaders(): Record<string, string> | undefined {
+  return _activeGuestToken ? { Authorization: `Bearer ${_activeGuestToken}` } : undefined;
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/${path}`, {
     ...init,
@@ -487,6 +496,7 @@ export type SchreibraumRoom = {
   title: string;
   mode: string;
   is_permanent: boolean;
+  allow_guests?: boolean;
   created_by: number;
   creator_name: string;
   created_at: string;
@@ -1324,9 +1334,13 @@ export const api = {
     createSession: (setId: number) =>
       apiFetch<{ id: number; join_code: string; status: string; lueckentext_id: number; lueckentext_title: string }>(
         `lueckentexte/${setId}/sessions`, { method: "POST" }),
-    joinSession: (code: string, name: string, avatar: string) =>
+    joinSession: (code: string, name: string, avatar: string, guestToken?: string | null) =>
       apiFetch<{ id: number; name: string; avatar: string }>(
-        `lueckentexte/sessions/${code}/join`, { method: "POST", body: JSON.stringify({ name, avatar }) }),
+        `lueckentexte/sessions/${code}/join`, {
+          method: "POST",
+          headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+          body: JSON.stringify({ name, avatar }),
+        }),
     sessionState: (code: string) =>
       apiFetch<{ status: string; join_code: string; lueckentext_id: number; board: LueckentextBoard | null }>(`lueckentexte/sessions/${code}/state`),
     startSession: (code: string) =>
@@ -1366,18 +1380,20 @@ export const api = {
       report: (code: string) => apiFetch<ExitGameReport>(`exitgame-sessions/${code}/report`),
       reportCsvUrl: (code: string) => `/api/exitgame-sessions/${code}/report?fmt=csv`,
     },
+    // Guest players carry a Bearer token on every attempt call. Set once by the
+    // play page (see setActiveGuestToken) so child widgets need no token prop.
     attempts: {
       start: (code: string) => apiFetch<{ attempt: ExitGameAttemptSummary; exitgame_data: ExitGameData; variant_choices: Record<string, number> }>(
-        `exitgame-sessions/${code}/attempts`, { method: "POST" },
+        `exitgame-sessions/${code}/attempts`, { method: "POST", headers: guestAuthHeaders() },
       ),
       postEvent: (attemptId: number, slide_id: string, action: string, payload: Record<string, unknown> = {}) =>
         apiFetch<{ correct: boolean | null; adaptation: DdaAdaptation | null; attempt: ExitGameAttemptSummary }>(
           `exitgame-attempts/${attemptId}/events`,
-          { method: "POST", body: JSON.stringify({ slide_id, action, payload }) },
+          { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ slide_id, action, payload }) },
         ),
       finish: (attemptId: number) =>
         apiFetch<{ attempt: ExitGameAttemptSummary; completion: { message?: string; code?: string } | null }>(
-          `exitgame-attempts/${attemptId}/finish`, { method: "POST" },
+          `exitgame-attempts/${attemptId}/finish`, { method: "POST", headers: guestAuthHeaders() },
         ),
       log: (attemptId: number) => apiFetch<ExitGameAttemptLog>(`exitgame-attempts/${attemptId}/log`),
     },
@@ -1439,7 +1455,8 @@ export const api = {
   schreibraum: {
     list: (created_by?: number) =>
       apiFetch<SchreibraumRoom[]>(`schreibraum/rooms${created_by != null ? `?created_by=${created_by}` : ""}`),
-    getByCode: (code: string) => apiFetch<SchreibraumRoom>(`schreibraum/rooms/by-code/${code}`),
+    getByCode: (code: string, guestToken?: string | null) =>
+      apiFetch<SchreibraumRoom>(`schreibraum/rooms/by-code/${code}`, guestToken ? { headers: { Authorization: `Bearer ${guestToken}` } } : undefined),
     create: (body: { title: string; mode?: string; is_permanent?: boolean }) =>
       apiFetch<SchreibraumRoom>("schreibraum/rooms", { method: "POST", body: JSON.stringify(body) }),
     patch: (id: string, body: { title?: string; mode?: string; is_permanent?: boolean }) =>
@@ -1449,8 +1466,11 @@ export const api = {
       apiFetch<SchreibraumAccessGrant>(`schreibraum/rooms/${id}/access`, { method: "POST", body: JSON.stringify(body) }),
     removeAccess: (id: string, grantId: number) =>
       apiFetch<void>(`schreibraum/rooms/${id}/access/${grantId}`, { method: "DELETE" }),
-    join: (id: string) =>
-      apiFetch<SchreibraumParticipant>(`schreibraum/rooms/${id}/join`, { method: "POST" }),
+    join: (id: string, guestToken?: string | null) =>
+      apiFetch<SchreibraumParticipant>(`schreibraum/rooms/${id}/join`, {
+        method: "POST",
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
     participants: (id: string) => apiFetch<SchreibraumParticipant[]>(`schreibraum/rooms/${id}/participants`),
     kick: (id: string, pid: string) =>
       apiFetch<void>(`schreibraum/rooms/${id}/participants/${pid}/kick`, { method: "POST" }),

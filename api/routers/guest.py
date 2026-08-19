@@ -15,7 +15,7 @@ from ..database import get_db
 from ..auth import create_guest_token, get_current_teacher
 from ..models import (
     QuizSession, BingoSession, ExitTicketSession, BarometerSession,
-    AuctionSession, ExitGameSession, LueckentextSession, Teacher,
+    AuctionSession, ExitGameSession, LueckentextSession, SchreibraumRoom, Teacher,
 )
 
 router = APIRouter(prefix="/api/guest", tags=["guest"])
@@ -29,6 +29,7 @@ _TOOLS = {
     "auction": (AuctionSession, "code"),
     "exitgame": (ExitGameSession, "join_code"),
     "lueckentext": (LueckentextSession, "join_code"),
+    "schreibraum": (SchreibraumRoom, "code"),
 }
 
 

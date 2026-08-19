@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { api, ExitGameSessionOut, ExitGameAttemptLog, ExitGameLogEvent } from "@/lib/api";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { MathText } from "@/components/MathText";
 
@@ -106,6 +107,7 @@ export default function ExitgameHostPage() {
             <div className="flex flex-col items-center gap-1">
               <JoinQR url={joinUrl} />
               <span className="text-[10px] text-[var(--text-muted)]">/play/exitgame/{code}</span>
+              <GuestAccessToggle tool="exitgame" code={code} />
             </div>
           )}
           <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">

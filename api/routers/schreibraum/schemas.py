@@ -35,6 +35,7 @@ class RoomOut(BaseModel):
     title: str
     mode: str
     is_permanent: bool
+    allow_guests: bool = False
     created_by: int
     creator_name: str
     created_at: datetime

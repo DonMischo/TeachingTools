@@ -2,6 +2,7 @@
 import pytest
 
 from api.tests.conftest import auth
+from api.auth import create_guest_token
 from api.tests.test_lueckentexte import sample_payload, token_for
 from api.models import Teacher
 
@@ -39,7 +40,7 @@ def session_code(client, teacher_token, set_id):
 
 @pytest.fixture()
 def participant_id(client, session_code):
-    r = client.post(f"/api/lueckentexte/sessions/{session_code}/join", json={"name": "Max", "avatar": "cat"})
+    r = client.post(f"/api/lueckentexte/sessions/{session_code}/join", json={"name": "Max", "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(session_code, 'Max')}"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -61,7 +62,7 @@ class TestSessionLifecycle:
         assert r.json()["board"]["text"]
 
     def test_unknown_join_code_404(self, client):
-        assert client.post("/api/lueckentexte/sessions/XXXXXXXX/join", json={"name": "A"}).status_code == 404
+        assert client.post("/api/lueckentexte/sessions/XXXXXXXX/join", json={"name": "A"}, headers={"Authorization": f"Bearer {create_guest_token('XXXXXXXX', 'A')}"}).status_code == 404
         assert client.get("/api/lueckentexte/sessions/XXXXXXXX/state").status_code == 404
 
     def test_unknown_gap_id_404(self, client, teacher_token, session_code, participant_id):

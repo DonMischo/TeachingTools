@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 
 type Bid = { house_id: number; house_name: string; amount: number; student_id: number | null };
@@ -86,6 +87,7 @@ export default function AuctionHostPage() {
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
             <span className="text-xs text-[var(--text-muted)]">/play/auction/{code}</span>
+            <GuestAccessToggle tool="auction" code={code} />
           </div>
         )}
       </div>

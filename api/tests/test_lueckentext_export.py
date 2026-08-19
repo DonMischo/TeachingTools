@@ -5,6 +5,7 @@ import shutil
 import pytest
 
 from api.tests.conftest import auth
+from api.auth import create_guest_token
 from api.tests.test_lueckentexte import sample_payload, token_for
 from api.lueckentext_export import build_html
 
@@ -114,7 +115,7 @@ class TestPdfHttp:
         assert r.status_code == 201, r.text
         code = r.json()["join_code"]
 
-        r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": "Max", "avatar": "cat"})
+        r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": "Max", "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(code, 'Max')}"})
         assert r.status_code == 201, r.text
         pid = r.json()["id"]
 

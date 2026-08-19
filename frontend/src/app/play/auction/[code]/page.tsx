@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { wsUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { GuestExpired } from "@/components/GuestExpired";
 
 type AuctionState = {
   status: string;
@@ -32,6 +34,7 @@ function newToken() {
 export default function AuctionPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const wsRef = useRef<WebSocket | null>(null);
 
   const [nameInput, setNameInput] = useState("");
@@ -53,16 +56,18 @@ export default function AuctionPlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, auth?.student?.id]);
 
-  function connect(token: string, name: string) {
+  function connect(token: string, name: string, gtoken?: string | null) {
     if (wsRef.current) wsRef.current.close();
     setJoinError(null);
     saveSaved(code, token);
-    const url = wsUrl(`/api/auction/${code}/ws?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}`);
+    const gt = gtoken ?? guest.token;
+    const url = wsUrl(`/api/auction/${code}/ws?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}${gt ? `&guest_token=${gt}` : ""}`);
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onclose = (e) => {
       if (e.code === 4004) setJoinError("Auktion nicht gefunden.");
+      else if (e.code === 4001 && !auth) guest.markExpired();  // guest token missing/expired → hard block
     };
 
     ws.onmessage = (e) => {
@@ -101,10 +106,19 @@ export default function AuctionPlayPage() {
     };
   }
 
-  function joinNew() {
+  async function joinNew() {
     const n = nameInput.trim();
     if (!n) return;
-    connect(newToken(), n);
+    try {
+      // Unauthenticated visitors first obtain a 60-min guest token (backend
+      // enforces the "Gäste erlauben" opt-in and 403s if it's off).
+      let gt = guest.token;
+      if (!auth && !gt) gt = (await guest.join("auction", n)).token;
+      connect(newToken(), n, gt);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diese Auktion sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
   }
 
   function bid() {
@@ -112,6 +126,9 @@ export default function AuctionPlayPage() {
     if (!amount || amount <= 0) return;
     wsRef.current?.send(JSON.stringify({ action: "bid", amount }));
   }
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (mounted && !auth && guest.expired) return <GuestExpired gameIcon="🏷" />;
 
   // ── Join screen (only when not logged in) ───────────────────────────────
   if (!mounted || !connected) {

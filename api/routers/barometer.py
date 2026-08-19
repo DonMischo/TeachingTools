@@ -21,7 +21,7 @@ from ..models import BarometerSession, BarometerQuestion, BarometerResponse, Stu
 from ..auth import get_current_teacher, get_current_user_optional
 from ..availability import require_capability
 from ..utils import gen_code
-from ..ws_auth import ws_identity
+from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/barometer", tags=["barometer"])
@@ -328,10 +328,14 @@ async def barometer_ws(
     # from client-supplied query params — otherwise a participant could
     # spoof another student_id (or reuse several) to vote more than once.
     identity = ws_identity(websocket, db)
-    if not identity:
+    # Unauthenticated players may vote if they hold a live guest token scoped to
+    # this code (only issued when the teacher opted in — enforces opt-in + expiry).
+    guest = ws_guest(websocket, code) if not identity else None
+    if not identity and not guest:
         await websocket.close(code=4001)
         return
-    ident_role, ident_id = identity
+    ident_role, ident_id = identity if identity else (None, 0)
+    guest_id: str | None = None
 
     if role == "teacher":
         teacher = db.get(Teacher, ident_id) if ident_role == "teacher" else None
@@ -339,6 +343,9 @@ async def barometer_ws(
             await websocket.close(code=4003)
             return
         student_id = 0
+    elif guest:
+        student_id = 0
+        guest_id = guest.id
     else:
         if ident_role != "student":
             await websocket.close(code=4003)
@@ -404,10 +411,15 @@ async def barometer_ws(
                     if not q:
                         continue
                     value = max(q.scale_min, min(q.scale_max, value))
-                    # Upsert response
-                    existing = db.query(BarometerResponse).filter_by(
-                        session_id=s.id, question_id=qid, student_id=student_id or None
-                    ).first()
+                    # Upsert response — keyed by guest_id for guests, else student_id.
+                    if guest_id:
+                        existing = db.query(BarometerResponse).filter_by(
+                            session_id=s.id, question_id=qid, guest_id=guest_id
+                        ).first()
+                    else:
+                        existing = db.query(BarometerResponse).filter_by(
+                            session_id=s.id, question_id=qid, student_id=student_id or None, guest_id=None
+                        ).first()
                     if existing:
                         existing.value = value
                     else:
@@ -415,6 +427,7 @@ async def barometer_ws(
                             session_id=s.id,
                             question_id=qid,
                             student_id=student_id or None,
+                            guest_id=guest_id,
                             value=value,
                         ))
                     db.commit()

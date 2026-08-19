@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from api.tests.conftest import auth
+from api.auth import create_guest_token
 from api.tests.test_lueckentexte import token_for
 from api.lueckentext_engine import reveal_state, normalize_name, _ESCALATE
 from api.models import LueckentextResponse
@@ -42,7 +43,7 @@ def _start_session(client, teacher_token, set_id):
 
 
 def _join(client, code, name):
-    r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": name, "avatar": "cat"})
+    r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": name, "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(code, name)}"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 

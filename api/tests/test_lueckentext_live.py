@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from api.tests.conftest import auth
+from api.auth import create_guest_token
 from api.tests.ws_test_helper import bearer_headers, connect_ws
 from api.tests.test_lueckentexte import token_for
 from api.main import app
@@ -160,7 +161,7 @@ class TestWebSocketPush:
         assert r.status_code == 201, r.text
         code = r.json()["join_code"]
 
-        r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": "Max", "avatar": "cat"})
+        r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": "Max", "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(code, 'Max')}"})
         assert r.status_code == 201, r.text
         pid = r.json()["id"]
 

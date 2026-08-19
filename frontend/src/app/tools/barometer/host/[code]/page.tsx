@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, BarometerSessionOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { wsUrl } from "@/lib/utils";
 
@@ -140,6 +141,7 @@ export default function BarometerHostPage() {
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
             <span className="text-xs text-[var(--text-muted)]">/play/barometer/{code}</span>
+            <GuestAccessToggle tool="barometer" code={code} />
           </div>
         )}
       </div>

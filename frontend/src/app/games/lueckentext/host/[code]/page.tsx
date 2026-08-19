@@ -5,6 +5,7 @@ import Link from "next/link";
 import { wsUrl } from "@/lib/utils";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { api } from "@/lib/api";
@@ -74,6 +75,7 @@ export default function LueckentextHostPage() {
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
             <span className="text-xs text-[var(--text-muted)]">/games/lueckentext/play/{code}</span>
+            <GuestAccessToggle tool="lueckentext" code={code} />
           </div>
         )}
       </div>

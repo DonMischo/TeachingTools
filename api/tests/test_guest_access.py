@@ -9,7 +9,10 @@ from jose import jwt
 
 from api.config import settings
 from api.auth import create_guest_token, decode_guest_token
-from api.models import ExitTicketSession, ExitGame, ExitGameSession, ExitGameAttempt, Class
+from api.models import (
+    ExitTicketSession, ExitGame, ExitGameSession, ExitGameAttempt, Class,
+    SchreibraumRoom, SchreibraumParticipant, SchreibraumDocument,
+)
 from .conftest import auth
 
 
@@ -136,3 +139,37 @@ def test_exitgame_guest_token_wrong_session_blocked(client, db, teacher):
     tok = create_guest_token("EG0002", "Gast")  # scoped to the OTHER session
     r = client.post("/api/exitgame-sessions/EG0001/attempts", headers=guest_auth(tok))
     assert r.status_code == 401
+
+
+# ── schreibraum: guest joins a room by code when opted in ───────────────────
+
+def _schreibraum_room(db, teacher, code="SR0001", allow=True) -> SchreibraumRoom:
+    room = SchreibraumRoom(code=code, title="Raum", created_by=teacher.id, allow_guests=allow)
+    db.add(room); db.flush()
+    db.add(SchreibraumDocument(room_id=room.id)); db.flush()
+    return room
+
+
+def test_schreibraum_guest_denied_when_not_opted_in(client, db, teacher):
+    _schreibraum_room(db, teacher, allow=False)
+    tok = create_guest_token("SR0001", "Gast")
+    r = client.get("/api/schreibraum/rooms/by-code/SR0001", headers=guest_auth(tok))
+    assert r.status_code == 403
+
+
+def test_schreibraum_guest_can_join_when_opted_in(client, db, teacher):
+    room = _schreibraum_room(db, teacher, allow=True)
+    tok = create_guest_token("SR0001", "Gast Greta")
+    r = client.get("/api/schreibraum/rooms/by-code/SR0001", headers=guest_auth(tok))
+    assert r.status_code == 200 and r.json()["allow_guests"] is True
+    j = client.post(f"/api/schreibraum/rooms/{room.id}/join", headers=guest_auth(tok))
+    assert j.status_code == 200, j.text
+    body = j.json()
+    assert body["name"] == "Gast Greta" and not body["is_teacher"]
+    guest_p = db.query(SchreibraumParticipant).filter(SchreibraumParticipant.guest_id.isnot(None)).one()
+    assert guest_p.name == "Gast Greta" and guest_p.teacher_id is None and guest_p.student_id is None
+
+
+def test_schreibraum_guest_no_token_rejected(client, db, teacher):
+    _schreibraum_room(db, teacher, allow=True)
+    assert client.get("/api/schreibraum/rooms/by-code/SR0001").status_code == 401

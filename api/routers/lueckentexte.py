@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import LueckentextSet, LueckentextSession, LueckentextParticipant, LueckentextResponse, LueckentextErrorPattern, Teacher
-from ..auth import get_current_teacher, get_current_user
+from ..auth import get_current_teacher, get_current_user, get_player
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify
 from ..lueckentext_engine import validate_set_payload, sanitized_board, fuzzy_match, reveal_state, normalize_name
@@ -278,7 +278,9 @@ def create_session(set_id: int, db: Session = Depends(get_db), current: Teacher 
 
 
 @router.post("/sessions/{code}/join", response_model=ParticipantOut, status_code=201)
-def join_session(code: str, data: JoinIn, db: Session = Depends(get_db)):
+def join_session(code: str, data: JoinIn, db: Session = Depends(get_db), _player=Depends(get_player)):
+    # get_player gates the join: a logged-in user, or an unauthed guest holding a
+    # 60-min token scoped to this code (only issued when the teacher opted in).
     s = _get_session_or_404(code, db)
     p = LueckentextParticipant(session_id=s.id, name=data.name, avatar=data.avatar)
     db.add(p)

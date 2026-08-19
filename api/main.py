@@ -174,6 +174,9 @@ def _run_migrations(db_engine):
         "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE schreibraum_participants ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "ALTER TABLE barometer_responses ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100)",
         # New tables in models.py need nothing here — Base.metadata.create_all()
@@ -186,6 +189,7 @@ def _run_migrations(db_engine):
         "CREATE INDEX IF NOT EXISTS ix_students_ak_code ON students (ak_code)",
         "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_teacher UNIQUE (session_id, teacher_id)",
         "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_guest UNIQUE (session_id, guest_id)",
+        "ALTER TABLE barometer_responses ADD CONSTRAINT uq_baro_guest_question UNIQUE (session_id, question_id, guest_id)",
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
     ]

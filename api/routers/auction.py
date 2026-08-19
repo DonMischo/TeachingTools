@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import AuctionBid, AuctionSession, AuctionSet, Haus, HausMember, Student, StudentRole, Teacher, Transaction
 from .haeuser import haus_total_points
 from ..utils import gen_code
-from ..ws_auth import ws_identity, ws_teacher
+from ..ws_auth import ws_identity, ws_teacher, ws_guest
 from ..ws_manager import RoomManager
 
 router = APIRouter(prefix="/api/auction", tags=["auction"])
@@ -208,7 +208,17 @@ async def auction_ws(
     is_haussp = False
     is_teacher_ctrl = False  # true only for authenticated teachers who can control the auction
 
-    if token:
+    # Player entry (spectator or Haussprecher-by-name). Unauthenticated visitors
+    # must hold a live guest token scoped to this code (only issued when the
+    # teacher opted in — enforces opt-in + 60-min expiry); logged-in users pass
+    # via their session cookie as before.
+    guest = ws_guest(ws, code)
+    if token or guest:
+        if guest:
+            name = guest.name
+        elif ws_identity(ws, db) is None:
+            await ws.close(code=4001)   # anonymous without an opt-in guest token
+            return
         # Anon join: resolve role by name lookup
         student = _find_student_by_name(name, db)
         if student:

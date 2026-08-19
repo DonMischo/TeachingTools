@@ -14,7 +14,12 @@ from ...models import (
     SchreibraumRoom, SchreibraumParticipant, SchreibraumDocument,
     SchreibraumActionLog, SchreibraumAccess, Teacher, Student, Class,
 )
-from ...auth import get_current_user, get_current_teacher, require_admin
+from fastapi import Request
+from fastapi.security import HTTPAuthorizationCredentials
+from ...auth import (
+    get_current_user, get_current_teacher, require_admin,
+    get_player, get_current_user_optional, guest_from_credentials, bearer, Guest,
+)
 from ...availability import require_capability
 from ...utils import gen_code
 from .colors import pick_color
@@ -51,6 +56,7 @@ def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
         title=room.title,
         mode=room.mode,
         is_permanent=room.is_permanent,
+        allow_guests=room.allow_guests,
         created_by=room.created_by,
         creator_name=f"{creator.first_name} {creator.last_name}" if creator else "",
         created_at=room.created_at,
@@ -129,7 +135,7 @@ def list_rooms(
 def get_room_by_code(
     code: str,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    user=Depends(get_player),
 ):
     room = db.query(SchreibraumRoom).filter_by(code=code.upper()).first()
     if not room:
@@ -271,20 +277,30 @@ def remove_access(
 @router.post("/rooms/{room_id}/join", response_model=ParticipantOut)
 def join_room(
     room_id: str,
+    request: Request,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ):
     room = db.get(SchreibraumRoom, room_id)
     if not room:
         raise HTTPException(404, "Room not found")
+    # Path carries room_id, not the code, so resolve identity manually: a logged-in
+    # user, or a guest whose token is scoped to this room's code.
+    user = get_current_user_optional(request, credentials, db)
+    if user is None:
+        user = guest_from_credentials(credentials, room.code)
+    if user is None:
+        raise HTTPException(401, "Not authenticated")
     _assert_access(room, user, db)
 
     is_teacher = isinstance(user, Teacher)
+    is_guest = isinstance(user, Guest)
     teacher_id = user.id if is_teacher else None
-    student_id = user.id if not is_teacher else None
+    student_id = user.id if isinstance(user, Student) else None
+    guest_id = user.id if is_guest else None
     name = (
-        f"{user.first_name} {user.last_name}"
-        if is_teacher
+        user.name if is_guest
+        else f"{user.first_name} {user.last_name}" if is_teacher
         else f"{user.vorname} {user.nachname}"
     )
 
@@ -293,6 +309,7 @@ def join_room(
         room_id=room_id,
         teacher_id=teacher_id,
         student_id=student_id,
+        guest_id=guest_id,
     ).first()
 
     if existing:
@@ -315,6 +332,7 @@ def join_room(
         room_id=room_id,
         teacher_id=teacher_id,
         student_id=student_id,
+        guest_id=guest_id,
         name=name,
         color=color,
         is_teacher=is_teacher,
@@ -552,6 +570,10 @@ def _assert_access(room: SchreibraumRoom, user, db: Session) -> None:
     """Raise 403 if user is not allowed in this room."""
     if isinstance(user, Teacher):
         return  # all teachers can enter all rooms
+    if isinstance(user, Guest):
+        if room.allow_guests:
+            return
+        raise HTTPException(403, "Gäste sind für diesen Raum nicht freigeschaltet")
     student: Student = user
     class_id = student.class_id
     grant = db.query(SchreibraumAccess).filter(

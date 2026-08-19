@@ -442,6 +442,8 @@ class SchreibraumRoom(Base):
     # "next-free-line" | "add-line"
     mode: Mapped[str] = mapped_column(String(20), nullable=False, server_default="next-free-line")
     is_permanent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
+    # QR/join-link guests may join this room (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -467,9 +469,11 @@ class SchreibraumParticipant(Base):
     room_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("schreibraum_rooms.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    # Link to Hauspokal identity (one of these two is set)
+    # Link to Hauspokal identity (one of these is set; all null = QR/join-link guest)
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    # QR/join-link guest: the guest token's id (stable across reconnects, no DB user row)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     color: Mapped[str] = mapped_column(String(7), nullable=False)
     session_token: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=_uuid, index=True)
@@ -644,12 +648,17 @@ class BarometerQuestion(Base):
 
 class BarometerResponse(Base):
     __tablename__ = "barometer_responses"
-    __table_args__ = (UniqueConstraint("session_id", "question_id", "student_id", name="uq_baro_student_question"),)
+    __table_args__ = (
+        UniqueConstraint("session_id", "question_id", "student_id", name="uq_baro_student_question"),
+        UniqueConstraint("session_id", "question_id", "guest_id", name="uq_baro_guest_question"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("barometer_sessions.id", ondelete="CASCADE"), nullable=False)
     question_id: Mapped[int] = mapped_column(ForeignKey("barometer_questions.id", ondelete="CASCADE"), nullable=False)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    # QR/join-link guest: the guest token's id (dedupes anonymous votes per guest)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     value: Mapped[int] = mapped_column(Integer, nullable=False)
     answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

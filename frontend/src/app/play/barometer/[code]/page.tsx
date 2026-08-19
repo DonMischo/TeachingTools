@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { wsUrl } from "@/lib/utils";
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { GuestExpired } from "@/components/GuestExpired";
+import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 
 type Question = {
   id: number;
@@ -24,22 +27,38 @@ type Phase =
 export default function BarometerPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
-  const router = useRouter();
+  const guest = useGuestSession(code);
   const wsRef = useRef<WebSocket | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>({ type: "lobby", total_questions: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [hovering, setHovering] = useState<number | null>(null);
 
+  useEffect(() => { setMounted(true); }, []);
+  const isGuest = mounted && !auth;
+
+  async function handleGuestJoin(name: string) {
+    try {
+      await guest.join("barometer", name);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diese Umfrage sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
+  }
+
   useEffect(() => {
-    if (!auth) return;
-    const ws = new WebSocket(wsUrl(`/api/barometer/${code}/ws?role=student`));
+    if (!mounted) return;
+    if (isGuest && !guest.token) return;   // wait until the guest has a token
+    const gt = guest.token;
+    const ws = new WebSocket(wsUrl(`/api/barometer/${code}/ws?role=student${gt ? `&guest_token=${gt}` : ""}`));
     wsRef.current = ws;
 
     ws.onopen = () => setError(null);
     ws.onerror = () => setError("Verbindungsfehler – bitte Seite neu laden.");
     ws.onclose = (e) => {
       if (e.code === 4004) setError("Umfrage nicht gefunden.");
-      else if (e.code === 4001) setError("Bitte einloggen, um teilzunehmen.");
+      else if (e.code === 4001) { if (isGuest) guest.markExpired(); else setError("Bitte einloggen, um teilzunehmen."); }
       else if (e.code === 4003) setError("Nur Schüler können an dieser Umfrage teilnehmen.");
     };
 
@@ -79,7 +98,8 @@ export default function BarometerPlayPage() {
     };
 
     return () => ws.close();
-  }, [code, auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, mounted, isGuest, guest.token]);
 
   function respond(questionId: number, value: number) {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -88,15 +108,21 @@ export default function BarometerPlayPage() {
     setPhase(prev => prev.type === "question" ? { ...prev, answered: value } : prev);
   }
 
-  if (!auth) {
+  if (!mounted) return null;
+
+  // Guest's 60-min window elapsed → hard block, no rejoin.
+  if (isGuest && guest.expired) return <GuestExpired gameIcon="📊" />;
+
+  // Unauthenticated visitor picks a username before connecting.
+  if (isGuest && !guest.token) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)]">
-        <div className="text-4xl">📊</div>
-        <p className="text-[var(--text-muted)] text-sm text-center">
-          Bitte einloggen, um an der Umfrage teilzunehmen.
-        </p>
-        <button onClick={() => router.push("/")} className="btn-secondary text-sm py-1.5 px-4">Zur Startseite</button>
-      </div>
+      <PlayerIdentityForm
+        gameCode={code}
+        gameIcon="📊"
+        gameTitle="Barometer"
+        error={joinError}
+        onJoin={(name) => handleGuestJoin(name)}
+      />
     );
   }
 

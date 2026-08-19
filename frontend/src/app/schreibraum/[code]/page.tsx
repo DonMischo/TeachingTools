@@ -5,6 +5,10 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, SchreibraumRoom, SchreibraumParticipant } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useGuestSession } from "@/hooks/useGuestSession";
+import { GuestExpired } from "@/components/GuestExpired";
+import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
+import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import type { EditorHandle } from "@/components/schreibraum/Editor";
 import ActionLog from "@/components/schreibraum/ActionLog";
 import QRPanel from "@/components/schreibraum/QRPanel";
@@ -126,6 +130,7 @@ function ExportMenu({ onMd, onHtml, onPdf, onLog, onDocx, onTex }: { onMd(): voi
 export default function SchreibraumEditorPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
+  const guest = useGuestSession(code);
   const { toast } = useToast();
   const router = useRouter();
   const editorRef = useRef<EditorHandle>(null);
@@ -135,6 +140,7 @@ export default function SchreibraumEditorPage() {
   const [mode, setMode] = useState("next-free-line");
   const [kicked, setKicked] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveMsg, setSaveMsg] = useState("");
 
@@ -146,13 +152,15 @@ export default function SchreibraumEditorPage() {
   const isTeacher = auth?.user_type === "teacher";
 
   useEffect(() => {
-    if (!auth || !code) return;
+    if (!code) return;
+    if (!auth && !guest.token) return;   // guest must obtain a token first
+    const gt = auth ? null : guest.token;
     async function init() {
       try {
-        const r = await api.schreibraum.getByCode(code.toUpperCase());
+        const r = await api.schreibraum.getByCode(code.toUpperCase(), gt);
         setRoom(r);
         setMode(r.mode);
-        const p = await api.schreibraum.join(r.id);
+        const p = await api.schreibraum.join(r.id, gt);
         setParticipant(p);
       } catch (e: any) {
         setError(e.message ?? "Fehler beim Beitreten");
@@ -161,7 +169,17 @@ export default function SchreibraumEditorPage() {
       }
     }
     init();
-  }, [auth, code]);
+  }, [auth, code, guest.token]);
+
+  async function handleGuestJoin(name: string) {
+    setJoinError(null);
+    try {
+      await guest.join("schreibraum", code.toUpperCase());  // init effect fires once token lands
+    } catch (e: any) {
+      const msg = e?.message ?? "Beitritt fehlgeschlagen";
+      setJoinError(/freigeschaltet/.test(msg) ? "Für diesen Raum sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
+    }
+  }
 
   // Wortstaffel turns WS
   useEffect(() => {
@@ -266,8 +284,21 @@ export default function SchreibraumEditorPage() {
 
   // ── Early returns ─────────────────────────────────────────────────────────
 
+  // Unauthenticated visitor: guest join flow (60-min scoped access, teacher opt-in).
   if (!auth) {
-    return <div style={{ padding: 32, color: "var(--text-muted)" }}>Bitte anmelden, um den Schreibraum zu nutzen.</div>;
+    if (guest.expired) return <GuestExpired gameIcon="✍️" />;
+    if (!guest.token) {
+      return (
+        <PlayerIdentityForm
+          gameCode={code}
+          gameIcon="✍️"
+          gameTitle="Schreibraum"
+          error={joinError}
+          onJoin={(name) => handleGuestJoin(name)}
+        />
+      );
+    }
+    // has a token → fall through to the loading / room render below
   }
   if (loading) {
     return <div style={{ padding: 32, color: "var(--text-muted)" }}>Lade Raum…</div>;
@@ -408,6 +439,9 @@ export default function SchreibraumEditorPage() {
             {/* QR code */}
             <Panel title="QR-Code / Beitritt" defaultOpen={true}>
               <QRPanel roomCode={room.code} />
+              <div style={{ marginTop: 10 }}>
+                <GuestAccessToggle tool="schreibraum" code={room.code} />
+              </div>
             </Panel>
 
             {/* Mode switcher */}
