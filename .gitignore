@@ -6,6 +6,10 @@ data/teachers.csv
 data/housepoints.db
 .env
 
+# student credential exports (names, usernames, plaintext passwords)
+Zugangsdaten-*.csv
+zugangsdaten*.csv
+
 # data assets (school-specific, not for public repo)
 data/*.png
 data/*.jpg
