@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { CollectionModal } from "@/components/fragmente/CollectionSettingsDialog";
 
 const TAB_LABEL: Record<string, string> = { snippets: "Schnipsel", archive: "Archiv" };
 const tabLabel = (t: string) => TAB_LABEL[t] ?? t;
@@ -488,6 +489,7 @@ export default function FragmentBoardPage() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [addTabOpen, setAddTabOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const selectTab = (t: string) => { setActiveTab(t); setTagFilter(null); };
 
   const { data: collection, isError } = useQuery<FragmentCollectionOut>({
@@ -602,7 +604,15 @@ export default function FragmentBoardPage() {
             <span className="font-mono">{collection.guest_code}</span>
           </button>
         )}
+        {canManage && collection && (
+          <button className="shrink-0 px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+            onClick={() => setSettingsOpen(true)} title="Einstellungen" aria-label="Einstellungen">⚙️</button>
+        )}
       </div>
+
+      {settingsOpen && collection && (
+        <CollectionModal initial={collection} onClose={() => setSettingsOpen(false)} />
+      )}
 
       {qrOpen && collection?.guest_code && (
         <Modal title="Gastzugang" onClose={() => setQrOpen(false)}>
