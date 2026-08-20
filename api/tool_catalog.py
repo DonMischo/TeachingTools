@@ -117,6 +117,13 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, False),
         "create": _cap(True, False),
     }),
+    # Fragmente: students may USE boards shared with their class (default on);
+    # creating a collection is teacher-only. Per-collection access is further
+    # governed by the collection's own ACL grants.
+    CatalogTool("fragmente", "🗂️ Fragmente", "🗂️", "tools", {
+        "use": _cap(True, True),
+        "create": _cap(True, False),
+    }),
 ]
 
 BY_SLUG: dict[str, CatalogTool] = {t.slug: t for t in CATALOG}

@@ -5,8 +5,18 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
-  | "tools" | "games" | "kalender"
+  | "tools" | "games" | "kalender" | "fragmente"
   | "admin" | "punkte" | "user" | "login";
+
+const FRAGMENTE_GLYPH = (
+  <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+    <rect x="3" y="4" width="10" height="12" rx="1.5" fill="currentColor" fillOpacity=".15"
+      stroke="currentColor" strokeWidth="1.3" transform="rotate(-6 8 10)"/>
+    <rect x="7" y="4" width="10" height="12" rx="1.5" fill="currentColor" fillOpacity=".2"
+      stroke="currentColor" strokeWidth="1.3" transform="rotate(6 12 10)"/>
+    <circle cx="12" cy="5" r="1.4" fill="currentColor"/>
+  </svg>
+);
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
 // home → Siegerpokal (Victory Trophy)
@@ -306,6 +316,7 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
       <circle cx="12" cy="14.5" r=".8" fill="currentColor"/>
     </svg>
   ),
+  fragmente: FRAGMENTE_GLYPH,
 };
 
 /* ── Cyberpunk SVG icons (angular, circuit feel) ────────────────────────── */
@@ -426,6 +437,7 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <circle cx="13.5" cy="11.8" r=".9"/>
     <circle cx="12.2" cy="10.5" r=".9" opacity=".4"/>
   </svg>,
+  fragmente: FRAGMENTE_GLYPH,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -444,6 +456,7 @@ const EMOJI: Record<NavKey, string> = {
   tools:          "🔨",
   games:          "🎮",
   kalender:       "📅",
+  fragmente:      "🗂️",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

@@ -70,6 +70,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Sportfest-Disziplinen, Anmeldungen und Punktevergabe.",
     color: "#1878a8",
   },
+  {
+    slug: "fragmente",
+    href: "/fragmente",
+    icon: "🗂️",
+    title: "Fragmente",
+    description: "Pinnwände mit Karten & Clippings — teilbar mit Klassen und per QR-Gastzugang.",
+    color: "#8b5cf6",
+  },
 ];
 
 export default function ToolsPage() {

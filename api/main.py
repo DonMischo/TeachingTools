@@ -61,6 +61,10 @@ from .routers import admin_access as admin_access_router
 app.include_router(admin_access_router.router)
 from .routers import guest as guest_router
 app.include_router(guest_router.router)
+from .routers import fragments as fragments_router
+app.include_router(fragments_router.router)
+from .routers import fragments_cards as fragments_cards_router
+app.include_router(fragments_cards_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -77,6 +81,10 @@ app.mount("/uploads/quizzes", StaticFiles(directory=str(QUIZ_GFX_DIR)), name="qu
 SCHREIBRAUM_FILES_DIR = Path(__file__).parent.parent / "data" / "schreibraum"
 SCHREIBRAUM_FILES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/schreibraum", StaticFiles(directory=str(SCHREIBRAUM_FILES_DIR)), name="schreibraum_files")
+
+FRAGMENTS_FILES_DIR = Path(__file__).parent.parent / "data" / "fragments"
+FRAGMENTS_FILES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads/fragments", StaticFiles(directory=str(FRAGMENTS_FILES_DIR)), name="fragment_media")
 
 STUNDENPLANER_FILES_DIR = Path(__file__).parent.parent / "data" / "stundenplaner"
 STUNDENPLANER_FILES_DIR.mkdir(parents=True, exist_ok=True)
@@ -182,6 +190,10 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_responses ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100)",
+        # Fragments: specific-teacher grants. Add the column and drop the old
+        # 3-column unique constraint so the 4-column one (below) can replace it.
+        "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
+        "ALTER TABLE fragment_collection_grants DROP CONSTRAINT IF EXISTS uq_fragment_grant",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -195,6 +207,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_responses ADD CONSTRAINT uq_baro_guest_question UNIQUE (session_id, question_id, guest_id)",
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
+        "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id)",
     ]
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail

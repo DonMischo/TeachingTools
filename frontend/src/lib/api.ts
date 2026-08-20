@@ -362,6 +362,32 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// Fragment guest requests: authenticate with a collection-scoped Bearer token
+// (guests have no cookie) and, unlike apiFetch, never clear the logged-in user's
+// stored credentials on 401 — a guest's expired token must not log anyone out.
+async function ffetch<T>(path: string, init?: RequestInit, guestToken?: string): Promise<T> {
+  if (!guestToken) return apiFetch<T>(path, init);
+  const res = await fetch(`/api/${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}), Authorization: `Bearer ${guestToken}` },
+  });
+  if (!res.ok) throw new Error((await res.text()) || res.statusText);
+  if (res.status === 204 || res.headers.get("content-length") === "0") return undefined as T;
+  return res.json();
+}
+
+/** Per-collection guest token store (sessionStorage). Set after a QR/link join. */
+export const fragmentGuest = {
+  get: (collectionId: number): string | undefined =>
+    (typeof window !== "undefined" ? sessionStorage.getItem(`hp_frag_guest_${collectionId}`) : null) ?? undefined,
+  set: (collectionId: number, token: string) => {
+    if (typeof window !== "undefined") sessionStorage.setItem(`hp_frag_guest_${collectionId}`, token);
+  },
+  clear: (collectionId: number) => {
+    if (typeof window !== "undefined") sessionStorage.removeItem(`hp_frag_guest_${collectionId}`);
+  },
+};
+
 export type WettkampfParticipant = {
   id: number;
   name: string;
@@ -952,6 +978,78 @@ export type AdminFeatureGrant = {
   teacher_id: number | null;
 };
 
+// ── Fragments (TaskCards-style boards) ─────────────────────────────────────────
+export type FragmentPermission = "read" | "contribute" | "manage";
+export type FragmentGranteeType = "all_teachers" | "class" | "teacher";
+export type FragmentGrant = {
+  grantee_type: FragmentGranteeType;
+  class_id: number | null;
+  class_code: string | null;
+  teacher_id: number | null;
+  teacher_name: string | null;
+  permission: FragmentPermission;
+};
+export type FragmentGrantIn = {
+  grantee_type: FragmentGranteeType;
+  class_id?: number | null;
+  teacher_id?: number | null;
+  permission: FragmentPermission;
+};
+export type FragmentCollectionOut = {
+  id: number;
+  name: string;
+  description: string | null;
+  subject: string | null;
+  owner_teacher_id: number;
+  owner_name: string | null;
+  allow_guests: boolean;
+  guest_code: string | null;
+  guest_permission: "read" | "contribute";
+  my_permission: FragmentPermission | "none";
+  is_owner: boolean;
+  grants: FragmentGrant[];
+  fragment_count: number;
+  research_count: number;
+};
+export type FragmentOut = {
+  id: number;
+  collection_id: number;
+  tab: string;
+  title: string | null;
+  content: string | null;
+  category: string | null;
+  order_index: number;
+  author_kind: string | null;
+  author_id: number | null;
+  author_name: string | null;
+  can_edit: boolean;
+};
+export type ResearchMediaOut = { id: number; kind: "image" | "pdf"; path: string; order_index: number };
+export type ResearchItemOut = {
+  id: number;
+  collection_id: number;
+  tab: string;
+  title: string | null;
+  url: string | null;
+  url_title: string | null;
+  url_description: string | null;
+  url_image: string | null;
+  text_content: string | null;
+  tags: string[];
+  media: ResearchMediaOut[];
+  author_kind: string | null;
+  author_id: number | null;
+  author_name: string | null;
+  can_edit: boolean;
+};
+export type FragmentTabs = { builtin: string[]; custom: string[]; all: string[] };
+export type FragmentGuestStatus = {
+  allow_guests: boolean;
+  collection_id?: number | null;
+  collection_name?: string | null;
+  permission?: "read" | "contribute" | null;
+};
+
 export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
@@ -965,6 +1063,64 @@ export const api = {
       apiFetch<{ allow_guests: boolean }>("guest/allow", {
         method: "PATCH", body: JSON.stringify({ tool, code, allow }),
       }),
+  },
+
+  // Fragments — TaskCards-style boards (see api/routers/fragments*.py)
+  fragments: {
+    listCollections: () => apiFetch<FragmentCollectionOut[]>("fragments/collections"),
+    getCollection: (id: number, guestToken?: string) => ffetch<FragmentCollectionOut>(`fragments/collections/${id}`, undefined, guestToken),
+    createCollection: (body: { name: string; description?: string | null; subject?: string | null; grants?: FragmentGrantIn[] }) =>
+      apiFetch<FragmentCollectionOut>("fragments/collections", { method: "POST", body: JSON.stringify(body) }),
+    updateCollection: (id: number, body: Partial<{ name: string; description: string | null; subject: string | null; allow_guests: boolean; guest_permission: "read" | "contribute" }>) =>
+      apiFetch<FragmentCollectionOut>(`fragments/collections/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    deleteCollection: (id: number) => apiFetch<void>(`fragments/collections/${id}`, { method: "DELETE" }),
+    setGrants: (id: number, grants: FragmentGrantIn[]) =>
+      apiFetch<FragmentCollectionOut>(`fragments/collections/${id}/grants`, { method: "PUT", body: JSON.stringify(grants) }),
+    regenerateGuestCode: (id: number) =>
+      apiFetch<FragmentCollectionOut>(`fragments/collections/${id}/guest-code`, { method: "POST" }),
+    guestStatus: (code: string) =>
+      apiFetch<FragmentGuestStatus>(`fragments/guest/status?code=${encodeURIComponent(code)}`),
+    guestJoin: (code: string, name: string) =>
+      apiFetch<{ token: string; name: string; collection_id: number; collection_name: string; permission: string }>("fragments/guest/join", {
+        method: "POST", body: JSON.stringify({ code, name }),
+      }),
+
+    getTabs: (id: number, guestToken?: string) => ffetch<FragmentTabs>(`fragments/collections/${id}/tabs`, undefined, guestToken),
+    setTabs: (id: number, custom_tabs: string[]) =>
+      apiFetch<FragmentTabs>(`fragments/collections/${id}/tabs`, { method: "PATCH", body: JSON.stringify({ custom_tabs }) }),
+
+    listFragments: (id: number, tab?: string, guestToken?: string) =>
+      ffetch<FragmentOut[]>(`fragments/collections/${id}/fragments${tab ? `?tab=${encodeURIComponent(tab)}` : ""}`, undefined, guestToken),
+    createFragment: (id: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number }>, guestToken?: string) =>
+      ffetch<FragmentOut>(`fragments/collections/${id}/fragments`, { method: "POST", body: JSON.stringify(body) }, guestToken),
+    updateFragment: (fragmentId: number, body: Partial<{ tab: string; title: string | null; content: string | null; category: string | null; order_index: number }>) =>
+      apiFetch<FragmentOut>(`fragments/items/${fragmentId}`, { method: "PATCH", body: JSON.stringify(body) }),
+    deleteFragment: (fragmentId: number) => apiFetch<void>(`fragments/items/${fragmentId}`, { method: "DELETE" }),
+    importFragments: (id: number, files: File[]) => {
+      const fd = new FormData();
+      files.forEach(f => fd.append("files", f));
+      return fetch(`/api/fragments/collections/${id}/fragments/import`, { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<{ created: number; skipped: number }>; });
+    },
+
+    listResearch: (id: number, guestToken?: string) => ffetch<ResearchItemOut[]>(`fragments/collections/${id}/research`, undefined, guestToken),
+    createResearch: (id: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[] }>, guestToken?: string) =>
+      ffetch<ResearchItemOut>(`fragments/collections/${id}/research`, { method: "POST", body: JSON.stringify(body) }, guestToken),
+    updateResearch: (itemId: number, body: Partial<{ tab: string; title: string | null; url: string | null; text_content: string | null; tags: string[] }>) =>
+      apiFetch<ResearchItemOut>(`fragments/research/${itemId}`, { method: "PATCH", body: JSON.stringify(body) }),
+    deleteResearch: (itemId: number) => apiFetch<void>(`fragments/research/${itemId}`, { method: "DELETE" }),
+    refetchUrl: (itemId: number) => apiFetch<ResearchItemOut>(`fragments/research/${itemId}/fetch-url`, { method: "POST" }),
+    // Media upload accepts a logged-in user (edit-own) or a contribute-guest (add-only).
+    uploadMedia: (itemId: number, file: File, guestToken?: string) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch(`/api/fragments/research/${itemId}/media`, {
+        method: "POST",
+        ...(guestToken ? { headers: { Authorization: `Bearer ${guestToken}` } } : { credentials: "include" }),
+        body: fd,
+      }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<ResearchItemOut>; });
+    },
+    deleteMedia: (mediaId: number) => apiFetch<void>(`fragments/media/${mediaId}`, { method: "DELETE" }),
   },
   classes: {
     list: () => apiFetch<ClassOut[]>("classes"),

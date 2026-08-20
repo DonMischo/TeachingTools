@@ -12,6 +12,7 @@ import { NavIcon } from "@/components/icons/NavIcon";
 import { AppLogo } from "@/components/AppLogo";
 import { useSidebarPanel } from "@/contexts/SidebarPanelContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
+import { useAvailability } from "@/hooks/useAvailability";
 
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",         href: "/" },
@@ -19,6 +20,7 @@ const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "tools",          label: "Tools",             href: "/tools" },
   { tab: "klassen",        label: "Klassenverwaltung", href: "/klassen" },
   { tab: "kalender",       label: "Kalender",          href: "/kalender" },
+  { tab: "fragmente",      label: "Fragmente",         href: "/fragmente" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];
@@ -157,6 +159,7 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
   // The admin icon shows for real admins and for teachers granted any admin feature.
   const { isAdmin, hasAny: hasAdminFeature } = useAdminAccess();
   const canSeeAdmin = isAdmin || hasAdminFeature;
+  const { can: canUse, ready: availReady } = useAvailability();
 
   const { data: classes = [] } = useQuery<ClassOut[]>({
     queryKey: ["classes"],
@@ -264,6 +267,8 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
             // granted Klassensprecher (canSeeKlassen).
             if (tab === "tools" && auth?.role === "student") return false;
             if (tab === "klassen" && !canSeeKlassen) return false;
+            // Fragmente respects tool availability; shown optimistically until resolved.
+            if (tab === "fragmente" && availReady && !canUse("fragmente", "use")) return false;
             return true;
           })
           .map(({ tab, label, href }) => (

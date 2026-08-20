@@ -1505,3 +1505,155 @@ class AdminFeatureGrant(Base):
         ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Fragments — TaskCards-style boards of text cards + media clippings.
+# A collection is owned by a teacher; who else may see/edit it is driven
+# entirely by FragmentCollectionGrant rows (see api/routers/fragments.py).
+# ---------------------------------------------------------------------------
+
+class FragmentCollection(Base):
+    """A board of cards (text fragments + media clippings), owned by a teacher.
+
+    Access is derived from FragmentCollectionGrant rows:
+      * no grants                -> creator-only (private to the owner)
+      * grant(all_teachers)      -> every teacher ("public") at that permission
+      * grant(class, class_id=X) -> students of class X at that permission
+    The owner always has full ('manage') rights, regardless of grants.
+    Guests (QR / join link) get `guest_permission` when `allow_guests` is on.
+    """
+    __tablename__ = "fragment_collections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_teacher_id: Mapped[int] = mapped_column(
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Custom tab names (JSON list of strings); the builtin tabs live in code.
+    fragment_tabs: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Guest (QR / join-link) access — opt-in, with a stable join code.
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    guest_code: Mapped[str | None] = mapped_column(String(12), unique=True, nullable=True, index=True)
+    guest_permission: Mapped[str] = mapped_column(String(20), nullable=False, server_default="read")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner: Mapped["Teacher"] = relationship()
+    grants: Mapped[list["FragmentCollectionGrant"]] = relationship(
+        back_populates="collection", cascade="all, delete-orphan"
+    )
+    fragments: Mapped[list["Fragment"]] = relationship(
+        back_populates="collection", cascade="all, delete-orphan"
+    )
+    research_items: Mapped[list["ResearchItem"]] = relationship(
+        back_populates="collection", cascade="all, delete-orphan"
+    )
+
+
+class FragmentCollectionGrant(Base):
+    """One access grant on a collection for an audience group.
+
+    grantee_type = 'all_teachers' -> every teacher       (class_id/teacher_id NULL)
+    grantee_type = 'class'        -> students of class_id
+    grantee_type = 'teacher'      -> one specific teacher (teacher_id) — lets an
+                                     owner add a colleague to an otherwise private board
+    permission   = 'read' | 'contribute' | 'manage'
+    """
+    __tablename__ = "fragment_collection_grants"
+    __table_args__ = (
+        UniqueConstraint("collection_id", "grantee_type", "class_id", "teacher_id", name="uq_fragment_grant"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    collection_id: Mapped[int] = mapped_column(
+        ForeignKey("fragment_collections.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    grantee_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'all_teachers' | 'class' | 'teacher'
+    class_id: Mapped[int | None] = mapped_column(
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=True
+    )
+    teacher_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True
+    )
+    permission: Mapped[str] = mapped_column(String(20), nullable=False, server_default="read")
+
+    collection: Mapped["FragmentCollection"] = relationship(back_populates="grants")
+    class_: Mapped["Class | None"] = relationship()
+    teacher: Mapped["Teacher | None"] = relationship()
+
+
+class Fragment(Base):
+    """A small text card in a collection tab (snippets, ideas, archive, custom)."""
+    __tablename__ = "fragments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    collection_id: Mapped[int] = mapped_column(
+        ForeignKey("fragment_collections.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tab: Mapped[str] = mapped_column(String(100), nullable=False, server_default="snippets")
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True, server_default="")
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    # Author — lets 'contribute' grants restrict editing to a card's own creator.
+    # kind = 'teacher' | 'student' | 'guest'; author_id is teacher/student PK (NULL for guests).
+    author_kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    author_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    author_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    collection: Mapped["FragmentCollection"] = relationship(back_populates="fragments")
+
+
+class ResearchItem(Base):
+    """A research clipping in a collection — URL, text excerpt, and/or media gallery.
+
+    Ported from foliantica; re-scoped from project_id to collection_id.
+    """
+    __tablename__ = "research_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    collection_id: Mapped[int] = mapped_column(
+        ForeignKey("fragment_collections.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tab: Mapped[str] = mapped_column(String(100), nullable=False, server_default="research")
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    url_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    url_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    url_image: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Author — same scheme as Fragment.
+    author_kind: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    author_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    author_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    collection: Mapped["FragmentCollection"] = relationship(back_populates="research_items")
+    media: Mapped[list["ResearchMedia"]] = relationship(
+        back_populates="item",
+        cascade="all, delete-orphan",
+        order_by="ResearchMedia.order_index",
+    )
+
+
+class ResearchMedia(Base):
+    """One image or PDF attached to a ResearchItem (multiple per item allowed)."""
+    __tablename__ = "research_media"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    research_item_id: Mapped[int] = mapped_column(
+        ForeignKey("research_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(10), nullable=False)  # 'image' | 'pdf'
+    path: Mapped[str] = mapped_column(String(500), nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    item: Mapped["ResearchItem"] = relationship(back_populates="media")
