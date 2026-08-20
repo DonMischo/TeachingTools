@@ -517,6 +517,9 @@ export default function FragmentBoardPage() {
   // student devices. Hook must run before the early return below.
   const guestUrlRaw = useLanUrl(collection?.guest_code ? `/fragmente/join?code=${collection.guest_code}` : "");
   const guestUrl = collection?.guest_code ? guestUrlRaw : null;
+  // Direct link to this board. Not a credential: opening it still requires a
+  // login and the collection's own permissions, so it is only a shortcut.
+  const directUrl = useLanUrl(`/fragmente/${collectionId}`);
 
   const perm = collection?.my_permission ?? "none";
   const canContribute = perm === "contribute" || perm === "manage";
@@ -603,11 +606,14 @@ export default function FragmentBoardPage() {
         {/* Actions grouped so the QR sits next to the settings wheel rather than
             being spread out by justify-between. */}
         <div className="shrink-0 flex items-center gap-2">
-          {collection?.allow_guests && collection.guest_code && (
+          {collection && !guestToken && (
             <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-              onClick={() => setQrOpen(true)} title="QR-Code für Gastzugang anzeigen">
-              <JoinQR url={guestUrl} size={28} className="rounded" />
-              <span className="font-mono">{collection.guest_code}</span>
+              onClick={() => setQrOpen(true)}
+              title={collection.allow_guests ? "QR-Codes anzeigen" : "QR-Code zum Öffnen der Sammlung"}>
+              <JoinQR url={collection.allow_guests ? guestUrl : directUrl} size={28} className="rounded" />
+              {collection.allow_guests && collection.guest_code
+                ? <span className="font-mono">{collection.guest_code}</span>
+                : <span>QR</span>}
             </button>
           )}
           {canManage && collection && (
@@ -621,22 +627,37 @@ export default function FragmentBoardPage() {
         <CollectionModal initial={collection} onClose={() => setSettingsOpen(false)} />
       )}
 
-      {qrOpen && collection?.guest_code && (
-        <Modal title="Gastzugang" onClose={() => setQrOpen(false)}>
-          <div className="flex flex-col items-center gap-3">
-            <JoinQR url={guestUrl} size={220} />
-            <div className="text-center">
-              <p className="text-xs text-[var(--text-muted)]">Code</p>
-              <p className="font-mono text-lg tracking-wider">{collection.guest_code}</p>
+      {qrOpen && collection && (
+        <Modal title="QR-Codes" onClose={() => setQrOpen(false)}>
+          <div className="flex flex-col gap-5">
+            {/* Direct link — always available. Requires a login and the collection's
+                own permissions, so it is a shortcut rather than an access grant. */}
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-xs font-semibold">Sammlung öffnen</p>
+              <JoinQR url={directUrl} size={180} />
+              <p className="text-[11px] text-[var(--text-muted)] text-center">
+                Nur für angemeldete Berechtigte — Login und Freigabe bleiben nötig.
+              </p>
+              <button className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+                onClick={() => { if (directUrl) { navigator.clipboard?.writeText(directUrl); toast("Link kopiert", "success"); } }}>
+                Link kopieren
+              </button>
             </div>
-            <p className="text-[11px] text-[var(--text-muted)] break-all text-center">{guestUrl}</p>
-            <p className="text-[11px] text-[var(--text-muted)]">
-              Gäste dürfen: {collection.guest_permission === "contribute" ? "beitragen" : "nur lesen"}
-            </p>
-            <button className="mt-1 text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-              onClick={() => { if (guestUrl) { navigator.clipboard?.writeText(guestUrl); toast("Link kopiert", "success"); } }}>
-              Link kopieren
-            </button>
+
+            {collection.allow_guests && collection.guest_code && (
+              <div className="flex flex-col items-center gap-2 border-t border-[var(--border)] pt-4">
+                <p className="text-xs font-semibold">Gastzugang</p>
+                <JoinQR url={guestUrl} size={180} />
+                <p className="font-mono text-lg tracking-wider">{collection.guest_code}</p>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Gäste dürfen: {collection.guest_permission === "contribute" ? "beitragen" : "nur lesen"}
+                </p>
+                <button className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+                  onClick={() => { if (guestUrl) { navigator.clipboard?.writeText(guestUrl); toast("Gast-Link kopiert", "success"); } }}>
+                  Gast-Link kopieren
+                </button>
+              </div>
+            )}
           </div>
         </Modal>
       )}
