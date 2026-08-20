@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { JoinQR } from "@/components/JoinQR";
 
 const TAB_LABEL: Record<string, string> = { snippets: "Schnipsel", archive: "Archiv" };
 const tabLabel = (t: string) => TAB_LABEL[t] ?? t;
@@ -93,9 +94,12 @@ function TabBar({
   };
 
   return (
-    <div className="flex items-stretch h-10 border-b border-[var(--border)] mb-4 select-none">
+    <div className="flex items-stretch h-12 border-b border-[var(--border)] mb-4 select-none">
       <button className="px-1.5 text-[var(--text-muted)] hover:text-[var(--text)] shrink-0" onClick={() => scrollByPx(-180)} title="Zurück">‹</button>
-      <div ref={scrollRef} className="flex-1 flex items-stretch overflow-x-hidden">
+      {/* overflow-hidden on BOTH axes: setting only overflow-x:hidden makes the
+          browser compute overflow-y as auto, which adds a stray vertical scrollbar.
+          Scrolling still works here because it is driven programmatically. */}
+      <div ref={scrollRef} className="flex-1 flex items-stretch overflow-hidden">
         {tabs.map(t => (
           <button key={t} data-tab={t}
             className={`px-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors shrink-0 ${
@@ -483,6 +487,7 @@ export default function FragmentBoardPage() {
   const [dragId, setDragId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [addTabOpen, setAddTabOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const selectTab = (t: string) => { setActiveTab(t); setTagFilter(null); };
 
   const { data: collection, isError } = useQuery<FragmentCollectionOut>({
@@ -544,6 +549,9 @@ export default function FragmentBoardPage() {
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
   const tabResearch = research.filter(r => effTab(r.tab) === activeTab);
   const isColumns = view === "columns";
+  const guestUrl = typeof window !== "undefined" && collection?.guest_code
+    ? `${window.location.origin}/fragmente/join?code=${collection.guest_code}`
+    : null;
   // Tag chips filter clippings (tags are clipping-only); an active tag hides fragments.
   // In column view the chips span the whole board, not just the active tab.
   const tabTags = Array.from(new Set(tabResearch.flatMap(r => r.tags))).sort();
@@ -582,12 +590,39 @@ export default function FragmentBoardPage() {
   return (
     <div className="mx-auto w-[92%] max-w-[1600px] p-6">
       <button className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">{collection?.name ?? "…"}</h1>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold truncate">{collection?.name ?? "…"}</h1>
           {collection?.subject && <p className="text-sm text-[var(--text-muted)]">{collection.subject}</p>}
         </div>
+        {collection?.allow_guests && collection.guest_code && (
+          <button className="shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+            onClick={() => setQrOpen(true)} title="QR-Code für Gastzugang anzeigen">
+            <JoinQR url={guestUrl} size={28} className="rounded" />
+            <span className="font-mono">{collection.guest_code}</span>
+          </button>
+        )}
       </div>
+
+      {qrOpen && collection?.guest_code && (
+        <Modal title="Gastzugang" onClose={() => setQrOpen(false)}>
+          <div className="flex flex-col items-center gap-3">
+            <JoinQR url={guestUrl} size={220} />
+            <div className="text-center">
+              <p className="text-xs text-[var(--text-muted)]">Code</p>
+              <p className="font-mono text-lg tracking-wider">{collection.guest_code}</p>
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] break-all text-center">{guestUrl}</p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              Gäste dürfen: {collection.guest_permission === "contribute" ? "beitragen" : "nur lesen"}
+            </p>
+            <button className="mt-1 text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+              onClick={() => { if (guestUrl) { navigator.clipboard?.writeText(guestUrl); toast("Link kopiert", "success"); } }}>
+              Link kopieren
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* Tab bar — in column view every tab is on screen, so it's redundant */}
       {!isColumns && (

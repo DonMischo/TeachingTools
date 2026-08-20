@@ -194,7 +194,7 @@ function CollectionModal({
           </div>
           <div className="space-y-2">
             {grants.map((g, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-2 w-full">
                 <input type="checkbox" className="shrink-0" title="Auswählen"
                   checked={selectedGrantIdx.has(i)}
                   onChange={e => setSelectedGrantIdx(s => {
@@ -202,8 +202,11 @@ function CollectionModal({
                     e.target.checked ? n.add(i) : n.delete(i);
                     return n;
                   })} />
+                {/* Inline flex sizing: .input carries `w-full` via @apply, which would
+                    otherwise force each select to the full row width and overflow. */}
                 <select
-                  className="input min-w-0 flex-[3]"
+                  className="input"
+                  style={{ flex: "1 1 0%", minWidth: 0, width: "auto" }}
                   value={g.grantee_type === "all_teachers" ? "all_teachers" : g.grantee_type === "class" ? `class:${g.class_id}` : `teacher:${g.teacher_id}`}
                   onChange={e => {
                     const v = e.target.value;
@@ -230,7 +233,8 @@ function CollectionModal({
                     ))}
                   </optgroup>
                 </select>
-                <select className="input w-40 shrink-0" value={g.permission}
+                <select className="input" style={{ flex: "0 0 9.5rem", width: "9.5rem", minWidth: 0 }}
+                  value={g.permission}
                   onChange={e => updateGrant(i, { permission: e.target.value as FragmentPermission })}>
                   <option value="read">Nur lesen</option>
                   <option value="contribute">Beitragen</option>
