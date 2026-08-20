@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { useLanUrl } from "@/hooks/useLanUrl";
 import { CollectionModal } from "@/components/fragmente/CollectionSettingsDialog";
 
 const TAB_LABEL: Record<string, string> = { snippets: "Schnipsel", archive: "Archiv" };
@@ -512,6 +513,11 @@ export default function FragmentBoardPage() {
     enabled: !!collection,
   });
 
+  // Join URL uses the host's LAN IP (not localhost) so scanned QR codes work on
+  // student devices. Hook must run before the early return below.
+  const guestUrlRaw = useLanUrl(collection?.guest_code ? `/fragmente/join?code=${collection.guest_code}` : "");
+  const guestUrl = collection?.guest_code ? guestUrlRaw : null;
+
   const perm = collection?.my_permission ?? "none";
   const canContribute = perm === "contribute" || perm === "manage";
   const canManage = perm === "manage";
@@ -551,9 +557,6 @@ export default function FragmentBoardPage() {
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
   const tabResearch = research.filter(r => effTab(r.tab) === activeTab);
   const isColumns = view === "columns";
-  const guestUrl = typeof window !== "undefined" && collection?.guest_code
-    ? `${window.location.origin}/fragmente/join?code=${collection.guest_code}`
-    : null;
   // Tag chips filter clippings (tags are clipping-only); an active tag hides fragments.
   // In column view the chips span the whole board, not just the active tab.
   const tabTags = Array.from(new Set(tabResearch.flatMap(r => r.tags))).sort();

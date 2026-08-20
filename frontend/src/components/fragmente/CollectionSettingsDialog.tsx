@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
+import { useLanUrl } from "@/hooks/useLanUrl";
 
 // ── Teacher multi-select picker ───────────────────────────────────────────────
 
@@ -155,9 +156,10 @@ export function CollectionModal({
     setGrants(g => g.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const removeGrant = (i: number) => setGrants(g => g.filter((_, idx) => idx !== i));
 
-  const guestUrl = typeof window !== "undefined" && initial?.guest_code
-    ? `${window.location.origin}/fragmente/join?code=${initial.guest_code}`
-    : null;
+  // LAN IP rather than localhost, so a scanned QR reaches this machine from a
+  // student device on the same network.
+  const guestUrlRaw = useLanUrl(initial?.guest_code ? `/fragmente/join?code=${initial.guest_code}` : "");
+  const guestUrl = initial?.guest_code ? guestUrlRaw : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
