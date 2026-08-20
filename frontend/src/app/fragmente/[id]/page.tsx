@@ -600,17 +600,21 @@ export default function FragmentBoardPage() {
           <h1 className="text-2xl font-bold truncate">{collection?.name ?? "…"}</h1>
           {collection?.subject && <p className="text-sm text-[var(--text-muted)]">{collection.subject}</p>}
         </div>
-        {collection?.allow_guests && collection.guest_code && (
-          <button className="shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-            onClick={() => setQrOpen(true)} title="QR-Code für Gastzugang anzeigen">
-            <JoinQR url={guestUrl} size={28} className="rounded" />
-            <span className="font-mono">{collection.guest_code}</span>
-          </button>
-        )}
-        {canManage && collection && (
-          <button className="shrink-0 px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-            onClick={() => setSettingsOpen(true)} title="Einstellungen" aria-label="Einstellungen">⚙️</button>
-        )}
+        {/* Actions grouped so the QR sits next to the settings wheel rather than
+            being spread out by justify-between. */}
+        <div className="shrink-0 flex items-center gap-2">
+          {collection?.allow_guests && collection.guest_code && (
+            <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+              onClick={() => setQrOpen(true)} title="QR-Code für Gastzugang anzeigen">
+              <JoinQR url={guestUrl} size={28} className="rounded" />
+              <span className="font-mono">{collection.guest_code}</span>
+            </button>
+          )}
+          {canManage && collection && (
+            <button className="px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+              onClick={() => setSettingsOpen(true)} title="Einstellungen" aria-label="Einstellungen">⚙️</button>
+          )}
+        </div>
       </div>
 
       {settingsOpen && collection && (
