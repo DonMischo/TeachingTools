@@ -344,7 +344,7 @@ export default function StudentCardsPage() {
     <div className="flex flex-col gap-5 p-6 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div>
-        <button onClick={() => router.push("/admin/students")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🪪 Schülerkarten</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">Felder wählen · Karten auswählen · PDF drucken</p>
       </div>

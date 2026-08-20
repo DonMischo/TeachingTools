@@ -102,7 +102,7 @@ export default function AdminPage() {
           </Link>
         )}
         {show("students") && (
-          <Link href="/admin/students/cards" className={CARD}>
+          <Link href="/admin/cards" className={CARD}>
             <div className="text-2xl mb-2">🪪</div>
             <div className="font-semibold">Schülerkarten</div>
             <div className="text-xs text-[var(--text-muted)] mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
