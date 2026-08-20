@@ -478,8 +478,8 @@ export default function FragmentBoardPage() {
   const guestToken = auth ? undefined : fragmentGuest.get(collectionId);
 
   const [activeTab, setActiveTab] = useState<string>("snippets");
-  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null }>(null);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [clippingModal, setClippingModal] = useState<null | { item: ResearchItemOut | null; tab?: string }>(null);
+  const [view, setView] = useState<"grid" | "list" | "columns">("grid");
   const [dragId, setDragId] = useState<number | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [addTabOpen, setAddTabOpen] = useState(false);
@@ -514,7 +514,7 @@ export default function FragmentBoardPage() {
   const effTab = (t: string) => (allTabs.includes(t) ? t : allTabs[0]);
 
   const addFragment = useMutation({
-    mutationFn: () => api.fragments.createFragment(collectionId, { tab: activeTab, content: "" }, guestToken),
+    mutationFn: (tab: string) => api.fragments.createFragment(collectionId, { tab, content: "" }, guestToken),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fragments", collectionId] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
@@ -543,8 +543,13 @@ export default function FragmentBoardPage() {
 
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
   const tabResearch = research.filter(r => effTab(r.tab) === activeTab);
+  const isColumns = view === "columns";
   // Tag chips filter clippings (tags are clipping-only); an active tag hides fragments.
+  // In column view the chips span the whole board, not just the active tab.
   const tabTags = Array.from(new Set(tabResearch.flatMap(r => r.tags))).sort();
+  const visibleTags = isColumns
+    ? Array.from(new Set(research.flatMap(r => r.tags))).sort()
+    : tabTags;
   const shownResearch = tagFilter ? tabResearch.filter(r => r.tags.includes(tagFilter)) : tabResearch;
   const shownFragments = tagFilter ? [] : tabFragments;
   const tabEmpty = shownFragments.length === 0 && shownResearch.length === 0;
@@ -584,26 +589,33 @@ export default function FragmentBoardPage() {
         </div>
       </div>
 
-      <TabBar
-        tabs={allTabs}
-        active={activeTab}
-        onSelect={selectTab}
-        canManage={canManage}
-        onAdd={() => setAddTabOpen(true)}
-      />
+      {/* Tab bar — in column view every tab is on screen, so it's redundant */}
+      {!isColumns && (
+        <TabBar
+          tabs={allTabs}
+          active={activeTab}
+          onSelect={selectTab}
+          canManage={canManage}
+          onAdd={() => setAddTabOpen(true)}
+        />
+      )}
       {addTabOpen && (
         <AddTabDialog existing={allTabs} onAdd={(n) => addTab.mutate(n)} onClose={() => setAddTabOpen(false)} />
       )}
 
-      {/* Toolbar — both card kinds can be added in every tab */}
+      {/* Toolbar — per-tab add buttons move into the columns in column view */}
       <div className="mb-3 flex items-center gap-2 flex-wrap">
-        {canContribute && (
+        {canContribute && !isColumns && (
           <button className="px-3 py-1.5 text-sm rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 disabled:opacity-50"
-            disabled={addFragment.isPending} onClick={() => addFragment.mutate()}>+ Karte</button>
+            disabled={addFragment.isPending} onClick={() => addFragment.mutate(activeTab)}>+ Karte</button>
         )}
-        {canContribute && (
+        {canContribute && !isColumns && (
           <button className="px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
-            onClick={() => setClippingModal({ item: null })}>+ Clipping</button>
+            onClick={() => setClippingModal({ item: null, tab: activeTab })}>+ Clipping</button>
+        )}
+        {canManage && isColumns && (
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+            onClick={() => setAddTabOpen(true)}>+ Tab</button>
         )}
         {canContribute && !guestToken && (
           <button className="px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
@@ -614,13 +626,15 @@ export default function FragmentBoardPage() {
             onClick={() => setView("grid")} title="Raster">▦</button>
           <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-[var(--surface-hover)] text-[var(--text)]" : "text-[var(--text-muted)]"}`}
             onClick={() => setView("list")} title="Liste">☰</button>
+          <button className={`px-2 py-1 text-sm ${view === "columns" ? "bg-[var(--surface-hover)] text-[var(--text)]" : "text-[var(--text-muted)]"}`}
+            onClick={() => setView("columns")} title="Spalten (alle Tabs nebeneinander)">▥</button>
         </div>
       </div>
 
-      {/* Tag filter chips (from this tab's clippings) */}
-      {tabTags.length > 0 && (
+      {/* Tag filter chips — from the active tab, or the whole board in column view */}
+      {visibleTags.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap mb-3">
-          {tabTags.map(t => (
+          {visibleTags.map(t => (
             <button key={t} onClick={() => setTagFilter(f => f === t ? null : t)}
               className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors ${
                 tagFilter === t ? "bg-[var(--accent)] text-black border-[var(--accent)]"
@@ -635,15 +649,52 @@ export default function FragmentBoardPage() {
         </div>
       )}
 
-      {/* Content — fragments + clippings for the active tab, side by side */}
-      {tabEmpty ? (
+      {/* Content */}
+      {isColumns ? (
+        <div className="flex gap-4 overflow-x-auto pb-4 items-start">
+          {allTabs.map(t => {
+            const colFrags = tagFilter ? [] : fragments.filter(f => effTab(f.tab) === t);
+            const colRes = research.filter(r => effTab(r.tab) === t && (!tagFilter || r.tags.includes(tagFilter)));
+            const empty = colFrags.length === 0 && colRes.length === 0;
+            return (
+              <div key={t} className="shrink-0 w-80 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]/30 p-3 flex flex-col gap-3">
+                {/* Column header + its own add buttons */}
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold truncate">{tabLabel(t)}</h3>
+                  <span className="text-[10px] text-[var(--text-muted)] shrink-0">{colFrags.length + colRes.length}</span>
+                </div>
+                {canContribute && (
+                  <div className="flex gap-1.5">
+                    <button className="flex-1 px-2 py-1 text-xs rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90 disabled:opacity-50"
+                      disabled={addFragment.isPending} onClick={() => addFragment.mutate(t)}>+ Karte</button>
+                    <button className="flex-1 px-2 py-1 text-xs rounded-lg border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface-hover)]"
+                      onClick={() => setClippingModal({ item: null, tab: t })}>+ Clipping</button>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  {empty ? (
+                    <p className="text-[11px] text-[var(--text-muted)] text-center py-6">Leer</p>
+                  ) : (
+                    <>
+                      {colFrags.map(f => <FragmentCard key={`f${f.id}`} frag={f} layout="list" />)}
+                      {colRes.map(item => (
+                        <ClippingCard key={`r${item.id}`} item={item} onEdit={() => item.can_edit && setClippingModal({ item })} />
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : tabEmpty ? (
         <p className="text-[var(--text-muted)] text-sm py-16 text-center">
           {tagFilter ? "Keine Clippings mit diesem Tag." : "Noch nichts in diesem Tab."}
         </p>
       ) : (
         <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "flex flex-col gap-2"}>
           {shownFragments.map(f => (
-            <FragmentCard key={`f${f.id}`} frag={f} layout={view} canReorder={canManage}
+            <FragmentCard key={`f${f.id}`} frag={f} layout={view === "grid" ? "grid" : "list"} canReorder={canManage}
               onDragStartCard={() => setDragId(f.id)} onDropCard={() => reorderTo(f.id)} />
           ))}
           {shownResearch.map(item => (
@@ -653,7 +704,8 @@ export default function FragmentBoardPage() {
       )}
 
       {clippingModal && (
-        <ClippingModal collectionId={collectionId} initial={clippingModal.item} tab={activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
+        <ClippingModal collectionId={collectionId} initial={clippingModal.item}
+          tab={clippingModal.tab ?? activeTab} guestToken={guestToken} onClose={() => setClippingModal(null)} />
       )}
     </div>
   );
