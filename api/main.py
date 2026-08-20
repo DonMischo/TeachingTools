@@ -116,6 +116,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS max_points INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS ak_code VARCHAR(20)",
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS ksprecher_can_edit BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE classes ADD COLUMN IF NOT EXISTS role_types JSON",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS ak_code VARCHAR(20)",
         "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS shared BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL",

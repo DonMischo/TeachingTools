@@ -3,12 +3,21 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import StudentRole, Student, Teacher
+from ..models import StudentRole, Student, Teacher, Class
 from ..auth import get_current_teacher, require_class_teacher
 
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 
 VALID_ROLES: set[str] = set()  # empty = allow any role type
+
+# Role types a class starts out with, until its Klassenlehrer curates the list
+# (Class.role_types stays NULL until then).
+DEFAULT_CLASS_ROLES = [
+    "Klassensprecher",
+    "Stellvertretender Klassensprecher",
+    "Schülersprecher",
+    "Haussprecher",
+]
 
 
 class RoleOut(BaseModel):
@@ -54,6 +63,63 @@ def list_roles(
     return [_out(r) for r in q.all()]
 
 
+class RoleTypesUpdate(BaseModel):
+    class_id: int
+    role_types: list[str]
+
+
+def _class_role_types(db: Session, class_id: int) -> list[str]:
+    """The class's role types — its curated list, or the defaults plus whatever
+    role types are already assigned in that class."""
+    cls = db.get(Class, class_id)
+    if not cls:
+        raise HTTPException(404, "Class not found")
+    if cls.role_types is not None:
+        return list(cls.role_types)
+    assigned = [r.role_type for r in db.query(StudentRole).filter_by(scope_id=class_id).all()]
+    known = {t.lower() for t in DEFAULT_CLASS_ROLES}
+    extra = [t for t in dict.fromkeys(assigned) if t.lower() not in known]
+    return DEFAULT_CLASS_ROLES + extra
+
+
+@router.get("/types", response_model=list[str])
+def list_role_types(
+    class_id: int,
+    db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
+):
+    return _class_role_types(db, class_id)
+
+
+@router.put("/types", response_model=list[str])
+def set_role_types(
+    body: RoleTypesUpdate,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    """Replace the class's role types. Assignments of dropped types are removed."""
+    require_class_teacher(current, body.class_id)
+    cls = db.get(Class, body.class_id)
+    if not cls:
+        raise HTTPException(404, "Class not found")
+
+    types: list[str] = []
+    seen: set[str] = set()
+    for t in body.role_types:
+        t = t.strip()
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            types.append(t)
+
+    for role in db.query(StudentRole).filter_by(scope_id=body.class_id).all():
+        if role.role_type.lower() not in seen:
+            db.delete(role)
+
+    cls.role_types = types
+    db.commit()
+    return types
+
+
 @router.post("", response_model=RoleOut, status_code=201)
 def assign_role(
     body: RoleCreate,
@@ -68,6 +134,12 @@ def assign_role(
     student = db.get(Student, body.student_id)
     if not student:
         raise HTTPException(404, "Student not found")
+
+    # Keep the class's curated role list in sync, so an assigned role is always listed.
+    cls = db.get(Class, body.scope_id) if body.scope_id is not None else None
+    if cls is not None and cls.role_types is not None:
+        if body.role_type.lower() not in {t.lower() for t in cls.role_types}:
+            cls.role_types = list(cls.role_types) + [body.role_type]
 
     # Remove any existing role of same type+scope
     db.query(StudentRole).filter_by(

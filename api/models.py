@@ -78,6 +78,9 @@ class Class(Base):
     # When true, this class's Klassensprecher may edit the limited Klassenverwaltung
     # subset (Klassendienste + zusätzliche Sitzpläne). Toggled by the Klassenlehrer.
     ksprecher_can_edit: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Role types (Klassensprecher, ...) this class uses, curated by the Klassenlehrer.
+    # NULL = never curated -> the defaults from api/routers/roles.py apply.
+    role_types: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="class_")
 

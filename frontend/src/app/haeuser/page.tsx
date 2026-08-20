@@ -920,6 +920,89 @@ function ChoreSelector({
   );
 }
 
+/** Checkbox dropdown for picking which role types a class uses. */
+function RoleSelector({
+  catalog, active, onSetTypes,
+}: {
+  catalog: string[];
+  active: string[];
+  onSetTypes: (types: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const activeSet = new Set(active.map(t => t.toLowerCase()));
+
+  function toggle(name: string) {
+    onSetTypes(
+      activeSet.has(name.toLowerCase())
+        ? active.filter(t => t.toLowerCase() !== name.toLowerCase())
+        : [...active, name]
+    );
+  }
+
+  function addCustom() {
+    const name = newName.trim();
+    if (!name) return;
+    if (!activeSet.has(name.toLowerCase())) onSetTypes([...active, name]);
+    setNewName("");
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--border)] rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] w-full"
+      >
+        <span className="flex-1 text-left text-[var(--text-muted)]">👑 Rollen auswählen</span>
+        <span className="text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5">{active.length} aktiv</span>
+        <span className="text-[var(--text-muted)]">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+          <div className="max-h-60 overflow-y-auto">
+            {catalog.map(name => (
+              <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={activeSet.has(name.toLowerCase())}
+                  onChange={() => toggle(name)}
+                  className="accent-[var(--accent)] w-4 h-4"
+                />
+                <span className="text-sm">{name}</span>
+              </label>
+            ))}
+          </div>
+          <div className="border-t border-[var(--border)] p-2 flex gap-2">
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Eigene Rolle…"
+              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+              onKeyDown={e => { if (e.key === "Enter") addCustom(); }}
+            />
+            <button
+              onClick={addCustom}
+              className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+            >+</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type KlassenlisteFilter = "rollen" | "gruppen" | "dienste";
 const KLASSENLISTE_FILTERS: { key: KlassenlisteFilter; label: string }[] = [
   { key: "rollen", label: "👑 Rollen" },
@@ -1539,7 +1622,6 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
   const canEdit = auth?.teacher?.role === "admin"
     || (auth?.teacher?.klasse_id != null && auth.teacher.klasse_id === cls.id);
   const [section, setSection] = useState<"schüler" | "rollen" | "dienste" | "tracking" | "gruppen" | "nta" | "sitzplan" | "einstellungen">("schüler");
-  const [newRole, setNewRole] = useState("");
 
   const { data: students = [] } = useQuery<StudentOut[]>({
     queryKey: ["students", cls.id],
@@ -1549,6 +1631,11 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
   const { data: roles = [] } = useQuery<StudentRoleOut[]>({
     queryKey: ["roles", cls.id],
     queryFn: () => api.roles.list({ scope_id: cls.id }),
+  });
+
+  const { data: roleTypes = [] } = useQuery<string[]>({
+    queryKey: ["role-types", cls.id],
+    queryFn: () => api.roles.types(cls.id),
   });
 
   const { data: chores = [] } = useQuery<ClassChoreOut[]>({
@@ -1598,6 +1685,14 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
     onSuccess: () => qc.invalidateQueries({ queryKey: ["roles", cls.id] }),
   });
 
+  const setRoleTypes = useMutation({
+    mutationFn: (types: string[]) => api.roles.setTypes(cls.id, types),
+    onSuccess: types => {
+      qc.setQueryData(["role-types", cls.id], types);
+      qc.invalidateQueries({ queryKey: ["roles", cls.id] });
+    },
+  });
+
   const upsertChore = useMutation({
     mutationFn: (body: { chore_name: string; student_id?: number | null; enabled?: boolean }) =>
       api.chores.upsert({ class_id: cls.id, ...body }),
@@ -1630,8 +1725,8 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
     return roles.find(r => r.role_type.toLowerCase() === role_type.toLowerCase() && r.scope_id === cls.id);
   }
 
-  const allRoleTypes = [...new Set([...CLASS_ROLES, ...roles.map(r => r.role_type)])];
-  if (newRole.trim() && !allRoleTypes.includes(newRole.trim())) allRoleTypes.push(newRole.trim());
+  // Catalog for the picker: the built-in roles plus whatever this class added.
+  const roleCatalog = [...new Set([...CLASS_ROLES, ...roleTypes])];
 
   const enabledChores = chores.filter(c => c.enabled);
 
@@ -1711,50 +1806,57 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
           {/* ── Rollen ── */}
           {section === "rollen" && (
             <>
-              {allRoleTypes.map(role_type => {
-                const existing = getRoleFor(role_type);
-                return (
-                  <div key={role_type} className="flex items-center gap-3">
-                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)] capitalize">{role_type}</div>
-                    {canEdit ? (
-                      <select
-                        className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                        value={existing?.student_id ?? ""}
-                        onChange={e => {
-                          const sid = e.target.value ? Number(e.target.value) : null;
-                          if (existing && !sid) removeRole.mutate(existing.id);
-                          else if (sid) assignRole.mutate({ role_type, student_id: sid });
-                        }}
-                      >
-                        <option value="">— niemand —</option>
-                        {students.map(s => (
-                          <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{existing?.student_name ?? "— niemand —"}</div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Add custom role */}
               {canEdit && (
-                <div className="flex gap-2 mt-2">
-                  <input
-                    value={newRole}
-                    onChange={e => setNewRole(e.target.value)}
-                    placeholder="Neue Rolle…"
-                    className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
-                    onKeyDown={e => { if (e.key === "Enter") setNewRole(""); }}
-                  />
-                  <button
-                    onClick={() => setNewRole("")}
-                    className="px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)]"
-                  >
-                    + Hinzufügen
-                  </button>
-                </div>
+                <RoleSelector
+                  catalog={roleCatalog}
+                  active={roleTypes}
+                  onSetTypes={types => setRoleTypes.mutate(types)}
+                />
+              )}
+
+              {roleTypes.length === 0 ? (
+                <p className="text-sm text-[var(--text-muted)] text-center py-6">
+                  Noch keine Rollen aktiviert. Oben Rollen auswählen.
+                </p>
+              ) : (
+                roleTypes.map(role_type => {
+                  const existing = getRoleFor(role_type);
+                  return (
+                    <div key={role_type} className="flex items-center gap-3">
+                      <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)] capitalize">{role_type}</div>
+                      {canEdit ? (
+                        <>
+                          <select
+                            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                            value={existing?.student_id ?? ""}
+                            onChange={e => {
+                              const sid = e.target.value ? Number(e.target.value) : null;
+                              if (existing && !sid) removeRole.mutate(existing.id);
+                              else if (sid) assignRole.mutate({ role_type, student_id: sid });
+                            }}
+                          >
+                            <option value="">— niemand —</option>
+                            {students.map(s => (
+                              <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Rolle „${role_type}“ löschen?${existing ? ` ${existing.student_name} verliert sie.` : ""}`))
+                                setRoleTypes.mutate(roleTypes.filter(t => t !== role_type));
+                            }}
+                            title="Rolle löschen"
+                            className="shrink-0 px-2 py-2 text-sm rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+                          >
+                            🗑
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{existing?.student_name ?? "— niemand —"}</div>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </>
           )}

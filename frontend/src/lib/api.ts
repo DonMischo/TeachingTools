@@ -1392,6 +1392,9 @@ export const api = {
     assign: (body: { student_id: number; role_type: string; scope_id?: number | null }) =>
       apiFetch<StudentRoleOut>("roles", { method: "POST", body: JSON.stringify(body) }),
     remove: (id: number) => apiFetch<void>(`roles/${id}`, { method: "DELETE" }),
+    types: (class_id: number) => apiFetch<string[]>(`roles/types?class_id=${class_id}`),
+    setTypes: (class_id: number, role_types: string[]) =>
+      apiFetch<string[]>("roles/types", { method: "PUT", body: JSON.stringify({ class_id, role_types }) }),
   },
   groups: {
     list: (params?: { group_type?: GroupType; class_id?: number }) => {
