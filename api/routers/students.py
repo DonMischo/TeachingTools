@@ -933,9 +933,12 @@ def generate_credentials(
         # --- Password ---
         desired_pw = (extra.get(password_field) or "").strip() if password_field else ""
         if desired_pw:
-            student.password_hash = hash_password(desired_pw)
-            student.password_enc = _pw_encrypt(desired_pw)
-            student.password_seed = None
+            # Only re-hash when it actually changed — bcrypt is ~0.2s, so hashing
+            # every student on every run would block for a minute+ (proxy reset).
+            if _display_password(student) != desired_pw:
+                student.password_hash = hash_password(desired_pw)
+                student.password_enc = _pw_encrypt(desired_pw)
+                student.password_seed = None
             plain_pw = desired_pw
         else:
             # (Re)issue when there is no hash, or the seed-derived plaintext no

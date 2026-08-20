@@ -28,7 +28,9 @@ const nextProc = spawn(
 );
 nextProc.on("exit", (code) => process.exit(code ?? 1));
 
-const httpProxy_ = httpProxy.createProxyServer({});
+// Generous timeout: bulk admin ops (e.g. generating credentials for a whole
+// school) do hundreds of bcrypt hashes and can legitimately run ~1–2 minutes.
+const httpProxy_ = httpProxy.createProxyServer({ proxyTimeout: 300000, timeout: 300000 });
 const wsProxy = httpProxy.createProxyServer({
   target: { host: API_HOST, port: API_PORT },
   ws: true,
