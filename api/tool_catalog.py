@@ -90,7 +90,7 @@ CATALOG: list[CatalogTool] = [
     }),
     # Barometer / Exit Ticket / Auktion: a session is the artifact — creating it
     # is the host act, so a single "host" capability covers authoring+hosting.
-    CatalogTool("barometer", "🧭 Meinungsbarometer", "🧭", "tools", {
+    CatalogTool("barometer", "🧭 Umfrage", "🧭", "tools", {
         "use": _cap(True, False),
         "host": _cap(True, False),
     }),

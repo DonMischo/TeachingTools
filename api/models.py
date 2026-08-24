@@ -609,7 +609,7 @@ class ClassTrackerCheck(Base):
 
 
 # ---------------------------------------------------------------------------
-# Meinungsbarometer
+# Umfrage (Meinungsbarometer)
 # ---------------------------------------------------------------------------
 
 class BarometerSession(Base):

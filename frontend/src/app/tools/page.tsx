@@ -18,7 +18,7 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     slug: "barometer",
     href: "/tools/barometer",
     icon: "🧭",
-    title: "Meinungsbarometer",
+    title: "Umfrage",
     description: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse durchführen.",
     color: "#f59e0b",
   },

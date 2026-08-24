@@ -119,7 +119,7 @@ export default function BarometerPlayPage() {
       <PlayerIdentityForm
         gameCode={code}
         gameIcon="📊"
-        gameTitle="Barometer"
+        gameTitle="Umfrage"
         error={joinError}
         onJoin={(name) => handleGuestJoin(name)}
       />

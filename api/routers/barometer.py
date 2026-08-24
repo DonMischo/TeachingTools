@@ -1,5 +1,5 @@
 """
-Meinungsbarometer — live scale-question sessions.
+Umfrage (früher "Meinungsbarometer") — live scale-question sessions.
 
 Flow:
   1. Teacher POST /api/barometer  → session with questions, gets code
@@ -8,10 +8,11 @@ Flow:
   4. Teacher sends: show_question / show_results / next / close
   5. Students send: respond {question_id, value}
 """
+import json
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -235,6 +236,111 @@ def clone_session_impl(db: Session, code: str, teacher: Teacher) -> BarometerSes
     db.commit()
     db.refresh(session)
     return session
+
+
+# ---------------------------------------------------------------------------
+# Vorlage + Upload (authored elsewhere — typically by an AI from the template's
+# `_ai_instructions` — and imported here as one JSON file)
+# ---------------------------------------------------------------------------
+
+MAX_SCALE_STEPS = 12   # the student view renders one button per step
+
+
+def _validate_umfrage(data) -> list[str]:
+    """Hand-rolled, German error list — same shape as the Caputh/Exitgame/
+    Lückentext upload validators, so the frontend can show them all at once."""
+    if not isinstance(data, dict):
+        return ["Die Datei muss ein JSON-Objekt sein"]
+    errors: list[str] = []
+    title = data.get("title")
+    if not isinstance(title, str) or not title.strip():
+        errors.append("Pflichtfeld fehlt: 'title' (Titel der Umfrage)")
+
+    questions = data.get("questions")
+    if not isinstance(questions, list) or not questions:
+        errors.append("'questions' muss eine nicht-leere Liste sein")
+        return errors
+
+    for i, q in enumerate(questions):
+        where = f"questions[{i}]"
+        if not isinstance(q, dict):
+            errors.append(f"{where}: muss ein Objekt sein")
+            continue
+        if not isinstance(q.get("text"), str) or not q["text"].strip():
+            errors.append(f"{where}: 'text' (die Frage bzw. Aussage) fehlt")
+        lo, hi = q.get("scale_min", 1), q.get("scale_max", 6)
+        if not isinstance(lo, int) or isinstance(lo, bool) or not isinstance(hi, int) or isinstance(hi, bool):
+            errors.append(f"{where}: 'scale_min' und 'scale_max' müssen ganze Zahlen sein")
+            continue
+        if lo >= hi:
+            errors.append(f"{where}: 'scale_min' ({lo}) muss kleiner als 'scale_max' ({hi}) sein")
+        elif hi - lo + 1 > MAX_SCALE_STEPS:
+            errors.append(f"{where}: die Skala hat {hi - lo + 1} Stufen — höchstens {MAX_SCALE_STEPS} sind sinnvoll darstellbar")
+        for key in ("scale_min_label", "scale_max_label"):
+            if q.get(key) is not None and not isinstance(q[key], str):
+                errors.append(f"{where}.{key}: muss ein Text sein")
+    return errors
+
+
+@router.get("/template", dependencies=[Depends(require_capability("barometer", "host"))])
+def download_template(_: Teacher = Depends(get_current_teacher)):
+    return {
+        "_ai_instructions": (
+            "Erstelle eine Umfrage (Meinungsbarometer) im vorgegebenen JSON-Format. Die Schüler bekommen "
+            "jede Aussage einzeln angezeigt und antworten auf einer Skala; die Lehrkraft sieht die "
+            "Verteilung live als Balken. "
+            "--- PFLICHTFELDER --- title, questions (mindestens eine). "
+            "--- FRAGEN --- Jede Frage: {\"text\": die Aussage oder Frage, \"scale_min\": kleinster Wert "
+            "(Standard 1), \"scale_max\": größter Wert (Standard 6), \"scale_min_label\": Beschriftung des "
+            "linken Endes, \"scale_max_label\": Beschriftung des rechten Endes}. Die Skala darf höchstens "
+            f"{MAX_SCALE_STEPS} Stufen haben — bewährt sind 1-4 (klare Entscheidung), 1-5 oder 1-6 "
+            "(Schulnoten-Gefühl). Beschrifte immer BEIDE Enden und schreibe sie in derselben Richtung wie "
+            "die Zahlen (kleiner Wert = linkes Label). "
+            "--- STIL --- Formuliere kurze, eindeutige Aussagen in der Ich-Form ('Ich habe verstanden, "
+            "wie …'), keine Doppelfragen ('… und …'), keine Suggestivfragen. 5-10 Fragen sind eine gute "
+            "Länge. Mische nicht mehrere Skalenrichtungen in einer Umfrage — sonst verrutschen die "
+            "Antworten. "
+            "--- SHARED --- shared: true macht die Umfrage für alle Lehrkräfte im Pool sichtbar (Standard "
+            "false)."
+        ),
+        "title": "Feedback zur Unterrichtsreihe",
+        "shared": False,
+        "questions": [
+            {"text": "Ich habe verstanden, worum es in der Reihe ging.",
+             "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft voll zu", "scale_max_label": "trifft gar nicht zu"},
+            {"text": "Das Tempo im Unterricht war für mich angenehm.",
+             "scale_min": 1, "scale_max": 6, "scale_min_label": "viel zu langsam", "scale_max_label": "viel zu schnell"},
+            {"text": "Ich habe mich getraut, Fragen zu stellen.",
+             "scale_min": 1, "scale_max": 4, "scale_min_label": "immer", "scale_max_label": "nie"},
+            {"text": "Die Gruppenarbeit hat mir beim Lernen geholfen.",
+             "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft voll zu", "scale_max_label": "trifft gar nicht zu"},
+        ],
+    }
+
+
+@router.post("/upload", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("barometer", "host"))])
+def upload_session(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(get_current_teacher),
+):
+    try:
+        raw = json.loads(file.file.read())
+    except json.JSONDecodeError as e:
+        raise HTTPException(400, f"Ungültiges JSON: {e}")
+
+    errors = _validate_umfrage(raw)
+    if errors:
+        raise HTTPException(422, {"message": "Ungültiges Umfrage-Format", "errors": errors})
+
+    return create_session(
+        SessionCreate(
+            title=raw["title"].strip(),
+            shared=bool(raw.get("shared", False)),
+            questions=[QuestionIn(**{k: v for k, v in q.items() if k in QuestionIn.model_fields}) for q in raw["questions"]],
+        ),
+        db=db, current=current,
+    )
 
 
 @router.post("/{code}/clone", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("barometer", "host"))])

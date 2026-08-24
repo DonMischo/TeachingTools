@@ -263,7 +263,7 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("caputh", "🏕️ Caputh", True, True, _caputh_refs, _caputh_launch),
         ToolDescriptor("bingo", "🎯 Bingo", True, True, _bingo_refs, _bingo_launch),
         ToolDescriptor("auction", "🏷️ Auktion", True, False, _auction_refs, _auction_launch),
-        ToolDescriptor("barometer", "🧭 Barometer", True, False, _barometer_refs, _barometer_launch),
+        ToolDescriptor("barometer", "🧭 Umfrage", True, False, _barometer_refs, _barometer_launch),
         ToolDescriptor("exit-ticket", "🎫 Exit Ticket", True, False, _exit_ticket_refs, _exit_ticket_launch),
         ToolDescriptor("schreibraum", "📝 Schreibraum", True, True, _schreibraum_refs, _schreibraum_launch),
         ToolDescriptor("exitgame", "🗝️ Exitgame", True, True, _exitgame_refs, _exitgame_launch),

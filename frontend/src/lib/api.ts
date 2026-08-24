@@ -1666,6 +1666,16 @@ export const api = {
     get: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}`),
     delete: (code: string) => apiFetch<void>(`barometer/${code}`, { method: "DELETE" }),
     clone: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}/clone`, { method: "POST" }),
+    template: () => apiFetch<Record<string, unknown>>("barometer/template"),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/barometer/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<BarometerSessionOut>;
+        });
+    },
   },
   schreibraum: {
     list: (created_by?: number) =>

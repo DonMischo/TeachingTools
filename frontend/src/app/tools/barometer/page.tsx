@@ -1,11 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, BarometerSessionSummary, BarometerSessionOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
+import { UploadErrorDialog } from "@/components/UploadErrorDialog";
+import { parseUploadError, UploadError } from "@/lib/uploadError";
 
 type QuestionDraft = { text: string; scale_min: number; scale_max: number; scale_min_label: string; scale_max_label: string };
 
@@ -24,6 +26,9 @@ export default function BarometerPage() {
   const [title, setTitle] = useState("");
   const [shared, setShared] = useState(false);
   const [questions, setQuestions] = useState<QuestionDraft[]>([BLANK_Q()]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<UploadError | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: sessions = [], isLoading } = useQuery<BarometerSessionSummary[]>({
     queryKey: ["barometer"],
@@ -87,6 +92,33 @@ export default function BarometerPage() {
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
+  async function handleTemplate() {
+    const tpl = await api.barometer.template();
+    const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "umfrage-vorlage.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const created = await api.barometer.upload(file);
+      qc.invalidateQueries({ queryKey: ["barometer"] });
+      router.push(`/tools/barometer/host/${created.code}`);
+    } catch (err: unknown) {
+      setUploadError(parseUploadError(err));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   function addQuestion() { setQuestions(qs => [...qs, BLANK_Q()]); }
   function removeQuestion(i: number) { setQuestions(qs => qs.filter((_, j) => j !== i)); }
   function updateQuestion(i: number, patch: Partial<QuestionDraft>) {
@@ -103,12 +135,23 @@ export default function BarometerPage() {
         ← Tools
       </button>
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-black tracking-tight">🧭 Meinungsbarometer</h1>
+        <h1 className="text-2xl font-black tracking-tight">🧭 Umfrage</h1>
         {can("barometer", "host") && (
-          <button onClick={() => showCreate ? resetForm() : setShowCreate(true)}
-            className="shrink-0 text-sm px-5 py-2 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity">
-            + Neue Umfrage
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={handleTemplate}
+              className="text-sm border border-[var(--border)] rounded-lg px-3 py-2 hover:border-[var(--accent)]">
+              📄 Vorlage
+            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="text-sm border border-[var(--border)] rounded-lg px-3 py-2 hover:border-[var(--accent)] disabled:opacity-40">
+              {uploading ? "Lade hoch…" : "⬆️ Hochladen"}
+            </button>
+            <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
+            <button onClick={() => showCreate ? resetForm() : setShowCreate(true)}
+              className="shrink-0 text-sm px-5 py-2 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity">
+              + Neue Umfrage
+            </button>
+          </div>
         )}
       </div>
 
@@ -223,6 +266,8 @@ export default function BarometerPage() {
           </div>
         ))}
       </div>
+
+      <UploadErrorDialog error={uploadError} onClose={() => setUploadError(null)} />
     </div>
   );
 }

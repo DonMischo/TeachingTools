@@ -82,12 +82,13 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     ],
   },
   barometer: {
-    title: "Meinungsbarometer",
+    title: "Umfrage",
     intro: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse.",
     sections: [
       { label: "▶️ Starten", text: "Umfrage mit Fragen und Skalen anlegen — Code + Host-Screen zum Anzeigen der Ergebnisse." },
       { label: "👥 Beitreten", text: "Schüler antworten anonym über den Code." },
       { label: "🔗 Teilen", text: "Mit dem Schalter »Öffentlich« wird die Umfrage für Kolleg·innen sichtbar." },
+      { label: "📄 Vorlage", text: "»Vorlage« lädt umfrage-vorlage.json mit Beispielfragen und KI-Anleitung herunter; »Hochladen« importiert eine fertige .json-Datei als neue Umfrage." },
     ],
   },
   "exit-ticket": {

@@ -68,10 +68,11 @@ Schulweites Punktesystem und Unterrichtstool-Suite. Lehrer vergeben Punkte an Kl
 - Permanente oder temporäre Räume
 - Echtzeit-Sync per WebSocket
 
-#### 🌡️ Meinungsbarometer
+#### 🌡️ Umfrage
 - Anonyme Abstimmungssessions mit konfigurierbaren Skalafragen
 - Live-Ergebnisse auf der Host-Ansicht
 - Schüler stimmen über Code ab (kein Login nötig)
+- Vorlage + JSON-Upload (KI-Anleitung in der Vorlage)
 
 #### 🎫 Exit Ticket
 - Anonymes Schnell-Feedback am Stundenende
