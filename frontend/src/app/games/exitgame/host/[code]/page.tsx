@@ -122,7 +122,12 @@ export default function ExitgameHostPage() {
         ) : (
           <ul className="divide-y divide-[var(--border)]">
             {roster.map(r => {
-              const pct = r.total_slides ? Math.round((r.current_slide_idx / r.total_slides) * 100) : 0;
+              // current_slide_idx is 0-based; a student on the last slide is on
+              // slide total_slides, not total_slides - 1.
+              const position = r.status === "finished"
+                ? r.total_slides
+                : Math.min(r.current_slide_idx + 1, r.total_slides);
+              const pct = r.total_slides ? Math.round((position / r.total_slides) * 100) : 0;
               return (
                 <li key={r.participant_key} className="py-2.5 flex items-center gap-3">
                   <span className="text-sm font-medium w-32 truncate" title={r.student_class}>{r.student_name}</span>
@@ -130,7 +135,7 @@ export default function ExitgameHostPage() {
                   <div className="flex-1 h-2 rounded-full bg-[var(--bg)] overflow-hidden">
                     <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-xs text-[var(--text-muted)] w-16 text-right">{r.current_slide_idx}/{r.total_slides}</span>
+                  <span className="text-xs text-[var(--text-muted)] w-16 text-right">{position}/{r.total_slides}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${r.status === "finished" ? "border-green-500/40 text-green-500" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
                     {r.status === "finished" ? "fertig" : "läuft"}
                   </span>
