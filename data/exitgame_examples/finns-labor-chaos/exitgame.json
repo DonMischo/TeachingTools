@@ -1,0 +1,947 @@
+{
+  "id": "finns-labor-chaos",
+  "title": "Finns Labor-Chaos",
+  "description": "Sicheres Arbeiten im Fachraum: Sicherheitsregeln, die neun Gefahrensymbole, Sicherheitseinrichtungen und Aufräumen. Drei Türen, deren Codes aus eingesammelten Schnipseln entstehen.",
+  "subject": "nawi",
+  "grade": "5,6,7",
+  "tags": [
+    "fachraum",
+    "sicherheit",
+    "chemie",
+    "gefahrensymbole",
+    "einführung"
+  ],
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "selbstständig",
+        "hintCount": 0,
+        "timeLimitSeconds": 60,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "leichte Unterstützung",
+        "hintCount": 1,
+        "timeLimitSeconds": 90,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "mittlere Unterstützung",
+        "hintCount": 2,
+        "timeLimitSeconds": 120,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "starke Unterstützung",
+        "hintCount": 3,
+        "timeLimitSeconds": 180,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "maximale Unterstützung",
+        "hintCount": 99,
+        "timeLimitSeconds": 300,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "Geschafft! Der Fachraum ist sicher — und Finn hat zum ersten Mal nichts kaputt gemacht.",
+    "code": "FINN-RETTET-LABOR"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "Finns Labor-Chaos",
+      "text": "Finn ist der tollpatschigste Schüler der Schule. Heute sollte er den Fachraum für die Lehrkraft vorbereiten — aber es ist alles schiefgegangen:\n• Die Schutzbrillen liegen im Spülbecken.\n• Der Gasbrenner steht auf einem Stapel Papier.\n• Auf dem Pult liegt ein halb gegessenes Brötchen.\n\nHilf Finn, den Raum wieder sicher zu machen, bevor die Lehrkraft zurückkommt.\n\nFür jede gelöste Aufgabe bekommst du einen Codeschnipsel. Zusammen öffnen sie die Türen. Wenn du eine Aufgabe offen lässt, fehlt dir später ein Buchstabe — du kannst dann von der Tür aus zurückspringen."
+    },
+    {
+      "id": "regeln",
+      "type": "example",
+      "title": "Die Sicherheitsregeln auf einen Blick",
+      "text": "Damit man sich und andere beim Experimentieren nicht verletzt, gelten im Fachraum feste Regeln:\n• Nicht essen und trinken — auch keine Lebensmittel offen herumstehen lassen.\n• Schutzbrille beim Experimentieren mit Gasbrennern, Chemikalien oder auf Anweisung der Lehrkraft.\n• Versuchsaufbau auf einer festen Unterlage, Geräte in sicherer Entfernung zur Tischkante.\n• Wärmequellen auf eine feste, nicht brennbare Unterlage — keine brennbaren Materialien wie Papier in der Nähe.\n• Strom nur aus Batterien oder Netzgeräten, nie aus der Steckdose.\n• Aufgaben vorher verteilen und besprechen, Arbeitsplatz aufgeräumt halten."
+    },
+    {
+      "id": "essen",
+      "type": "task",
+      "title": "Das vergessene Brötchen",
+      "text": "Finn findet ein halb gegessenes Brötchen auf dem Laborpult und überlegt, ob er es aufessen soll.",
+      "extraExample": "Merke: Im Fachraum stehen offene Chemikalien, Stäube und Reste auf den Tischen. Alles, was offen herumliegt, kann davon etwas abbekommen — auch dein Pausenbrot.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "S",
+        "question": "Warum darf man im Fachraum nicht essen und trinken?",
+        "answers": [
+          {
+            "text": "Weil Chemikalien in die Lebensmittel gelangen können.",
+            "correct": true
+          },
+          {
+            "text": "Weil Krümel die Waage ungenau machen.",
+            "correct": false
+          },
+          {
+            "text": "Weil die Lehrkraft kein Essen mag.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🤢 Finn probiert einen Bissen — und schmeckt Salzsäure. Die Krümel sind nicht das Problem.",
+        "Überlege, was auf einem Labortisch alles offen herumsteht.",
+        "Es geht darum, was in dein Essen hineingelangen kann."
+      ]
+    },
+    {
+      "id": "schutzbrille",
+      "type": "task",
+      "title": "Die versteckte Schutzbrille",
+      "text": "Finn findet seine Schutzbrille im Spülbecken und meint: »Ach, das ist doch nur kurz — geht auch ohne!«",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "I",
+        "question": "Wann muss die Schutzbrille getragen werden? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          {
+            "text": "Beim Experimentieren mit dem Gasbrenner.",
+            "correct": true
+          },
+          {
+            "text": "Beim Umgang mit Chemikalien.",
+            "correct": true
+          },
+          {
+            "text": "Wenn die Lehrkraft es anweist.",
+            "correct": true
+          },
+          {
+            "text": "Immer, sobald man den Raum betritt.",
+            "correct": false
+          },
+          {
+            "text": "Nur, wenn schon etwas passiert ist.",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Finn arbeitet mit einer ätzenden Flüssigkeit. Braucht er eine Schutzbrille?",
+          "answers": [
+            {
+              "text": "Ja — bei Chemikalien immer.",
+              "correct": true
+            },
+            {
+              "text": "Nein, nur beim Gasbrenner.",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "👀 Finn blinzelt kurz zur Seite — und bekommt genau in diesem Moment einen Spritzer ab.",
+        "Im Buch stehen drei Situationen: Gasbrenner, Chemikalien und eine Anweisung.",
+        "Drei Antworten sind richtig, zwei sind übertrieben oder zu spät."
+      ]
+    },
+    {
+      "id": "versuchsaufbau",
+      "type": "task",
+      "title": "Der wackelige Aufbau",
+      "text": "Finn baut sein Experiment ganz vorne an der Tischkante auf — auf einem Stapel Hefte.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "C",
+        "variants": [
+          {
+            "question": "Wie muss ein Versuch aufgebaut werden?",
+            "answers": [
+              {
+                "text": "Auf einer festen Unterlage, in sicherer Entfernung zur Tischkante.",
+                "correct": true
+              },
+              {
+                "text": "Auf Heften, damit der Tisch sauber bleibt.",
+                "correct": false
+              },
+              {
+                "text": "Möglichst weit vorne, damit man alles gut sieht.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Finns Reagenzglasständer steht direkt an der Tischkante. Was ist daran falsch?",
+            "answers": [
+              {
+                "text": "Geräte gehören in sichere Entfernung zur Tischkante.",
+                "correct": true
+              },
+              {
+                "text": "Nichts — Hauptsache, man sieht gut hin.",
+                "correct": false
+              },
+              {
+                "text": "Er müsste nur weiter links stehen.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Warum darf ein Versuch nicht auf einem Stapel Hefte stehen?",
+            "answers": [
+              {
+                "text": "Weil die Unterlage fest sein muss und nicht wackeln darf.",
+                "correct": true
+              },
+              {
+                "text": "Weil die Hefte dann schmutzig werden.",
+                "correct": false
+              },
+              {
+                "text": "Weil Papier den Versuch verlangsamt.",
+                "correct": false
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "🤸 Finn stößt mit dem Ellbogen an — der halbe Aufbau segelt vom Tisch.",
+        "Zwei Dinge sind wichtig: worauf der Versuch steht und wie weit vorne."
+      ]
+    },
+    {
+      "id": "waermequellen",
+      "type": "task",
+      "title": "Der Brenner auf dem Papierstapel",
+      "text": "Finn hat den Gasbrenner auf einen Stapel Papier gestellt. Ein Blatt fängt schon an zu qualmen.",
+      "extraExample": "Beispiel: Eine Kerze auf einem Holzbrett mit Zeitung daneben — falsch. Eine Kerze auf einer Keramikfliese mit freier Fläche ringsum — richtig.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "H",
+        "question": "Was gilt für Wärmequellen wie Gasbrenner, Herdplatten oder Kerzen? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          {
+            "text": "Sie stehen auf einer festen, nicht brennbaren Unterlage.",
+            "correct": true
+          },
+          {
+            "text": "In ihrer Nähe dürfen keine brennbaren Materialien wie Papier liegen.",
+            "correct": true
+          },
+          {
+            "text": "Papier darunter ist erlaubt, solange man aufpasst.",
+            "correct": false
+          },
+          {
+            "text": "Sie dürfen auch auf dem Fensterbrett stehen, wenn dort Platz ist.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🔥 Finn pustet — und der Brand wird größer, statt auszugehen.",
+        "Denke an die Unterlage UND an das, was daneben liegt.",
+        "Zwei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "strom",
+      "type": "task",
+      "title": "Strom aus der Wand?",
+      "text": "Finns Batterien sind leer. Er will das Gerät kurzerhand in die Steckdose stecken.",
+      "task": {
+        "kind": "true_false",
+        "codeFragment": "E",
+        "question": "»Im Schülerversuch darf man Geräte direkt an die Steckdose anschließen.« Stimmt das?",
+        "answers": [
+          {
+            "text": "Falsch",
+            "correct": true
+          },
+          {
+            "text": "Wahr",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "⚡ Finns Haare stehen anschließend eine Woche lang senkrecht.",
+        "Im Buch stehen genau zwei erlaubte Stromquellen — die Steckdose ist keine davon."
+      ]
+    },
+    {
+      "id": "arbeitsplatz",
+      "type": "task",
+      "title": "Vor dem Experiment",
+      "text": "Bevor es losgeht, schaut Finn auf seinen Tisch: Jacke, Mäppchen, drei Hefte und der Rest vom Vortag.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "R",
+        "question": "Was gehört zur Vorbereitung eines Experiments?",
+        "answers": [
+          {
+            "text": "Aufgaben verteilen und besprechen, Arbeitsplatz aufräumen.",
+            "correct": true
+          },
+          {
+            "text": "Schnell anfangen, Absprachen kosten nur Zeit.",
+            "correct": false
+          },
+          {
+            "text": "Jeder macht für sich, was ihm einfällt.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🎒 Finn sucht mitten im Versuch sein Lineal — und stößt dabei den Brenner um.",
+        "Es geht um zwei Dinge: wer was macht, und wie der Tisch aussieht."
+      ]
+    },
+    {
+      "id": "tuer-1",
+      "type": "door",
+      "title": "Die Tür zum Vorbereitungsraum",
+      "text": "Die erste Tür hat ein Buchstabenschloss. Gib die Codeschnipsel ein, die du bei den Regeln eingesammelt hast."
+    },
+    {
+      "id": "gefahrstoffschrank",
+      "type": "example",
+      "title": "Der Gefahrstoffschrank",
+      "text": "Hinter der ersten Tür steht der Gefahrstoffschrank — weit offen. Auf jeder Flasche klebt ein Etikett mit einer roten Raute.\n\nFinn: »Coole Aufkleber! Ich glaub, ich weiß bei allen, was sie bedeuten.«\n\nEr weiß es nicht. Bei jedem Symbol rät er daneben — du musst es richtigstellen. Jedes Etikett bringt dir einen Buchstaben für den Schrank-Code."
+    },
+    {
+      "id": "sym-flamme",
+      "type": "task",
+      "title": "Die Flamme",
+      "text": "Finn hält die Flasche hoch: »Ein Lagerfeuer! Da kann man bestimmt Marshmallows dran rösten.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-flamme.svg",
+        "alt": "GHS-Symbol: schwarze Flamme in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "E",
+        "question": "Was bedeutet dieses Symbol wirklich?",
+        "answers": [
+          {
+            "text": "Der Stoff ist leicht entzündbar.",
+            "correct": true
+          },
+          {
+            "text": "Der Stoff ist warm und ungefährlich.",
+            "correct": false
+          },
+          {
+            "text": "Der Stoff darf nur draußen benutzt werden.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🔥 Finn stellt die Flasche neben den Gasbrenner. Schlechte Idee — es geht um genau diese Gefahr.",
+        "Das Symbol warnt davor, dass der Stoff selbst Feuer fängt."
+      ]
+    },
+    {
+      "id": "sym-acid",
+      "type": "task",
+      "title": "Die tropfende Hand",
+      "text": "Finn betrachtet das nächste Etikett: »Zwei Hände beim Händewaschen. Also eine Art Seife.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-acid.svg",
+        "alt": "GHS-Symbol: Flüssigkeit tropft auf Hand und Material, rote Raute",
+        "height": 180
+      },
+      "extraExample": "Ätzend heißt: Der Stoff zerstört, worauf er trifft. Auf dem Bild sind es zwei Dinge — eine Hand UND ein Stück Material. Beides wird zerfressen.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "T",
+        "question": "Was gilt bei diesem Symbol? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          {
+            "text": "Der Stoff ist ätzend und zerstört Haut und Augen.",
+            "correct": true
+          },
+          {
+            "text": "Er greift auch Material an, zum Beispiel Metall.",
+            "correct": true
+          },
+          {
+            "text": "Schutzbrille und Handschuhe sind Pflicht.",
+            "correct": true
+          },
+          {
+            "text": "Mit viel Wasser verdünnt ist er harmlos zum Händewaschen.",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Was passiert, wenn dieser Stoff auf deine Haut kommt?",
+          "answers": [
+            {
+              "text": "Er verätzt sie — sofort mit viel Wasser spülen.",
+              "correct": true
+            },
+            {
+              "text": "Nichts, er wäscht sie sauber.",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "🧼 Finn hält die Hände drunter. Es brennt sofort — das ist keine Seife.",
+        "Schau genau: Es tropft auf eine Hand und auf ein Stück Material.",
+        "Drei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "sym-skull",
+      "type": "task",
+      "title": "Der Totenkopf",
+      "text": "Finn grinst: »Totenkopf! Das ist bestimmt für die Piratenparty in der Aula.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-skull.svg",
+        "alt": "GHS-Symbol: Totenkopf mit gekreuzten Knochen, rote Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "I",
+        "question": "Was sagt der Totenkopf über den Stoff?",
+        "answers": [
+          {
+            "text": "Er ist giftig — schon kleine Mengen können lebensgefährlich sein.",
+            "correct": true
+          },
+          {
+            "text": "Er ist alt und abgelaufen.",
+            "correct": false
+          },
+          {
+            "text": "Er riecht unangenehm, ist aber harmlos.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "☠️ Finn will daran riechen. Halte ihn auf.",
+        "Von allen Symbolen ist dieses die schärfste Warnung."
+      ]
+    },
+    {
+      "id": "sym-exclam",
+      "type": "task",
+      "title": "Das Ausrufezeichen",
+      "text": "Finn: »Ein Ausrufezeichen — bestimmt eine Überraschung! Und weil da kein Totenkopf ist, kann ja nichts passieren.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-exclam.svg",
+        "alt": "GHS-Symbol: Ausrufezeichen in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "K",
+        "question": "Was bedeutet das Ausrufezeichen?",
+        "answers": [
+          {
+            "text": "Der Stoff reizt Haut, Augen oder Atemwege und ist gesundheitsschädlich.",
+            "correct": true
+          },
+          {
+            "text": "Genau dasselbe wie der Totenkopf.",
+            "correct": false
+          },
+          {
+            "text": "Der Stoff ist völlig harmlos, das Zeichen ist nur Deko.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "😀 Finn wartet auf die Überraschung. Sie besteht aus juckender Haut.",
+        "Weniger gefährlich als der Totenkopf — aber eben nicht harmlos."
+      ]
+    },
+    {
+      "id": "sym-rondflam",
+      "type": "task",
+      "title": "Die Flamme über dem Kreis",
+      "text": "Finn: »Eine Flamme mit Heiligenschein. Extra gesegnet, also besonders sicher.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-rondflam.svg",
+        "alt": "GHS-Symbol: Flamme über einem Kreis, rote Raute",
+        "height": 180
+      },
+      "extraExample": "Vergleich: Die einfache Flamme heißt »der Stoff brennt selbst«. Die Flamme über dem Kreis heißt »der Stoff lässt anderes viel besser brennen« — wie Sauerstoff, der ein Glutstück wieder aufflammen lässt.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "E",
+        "question": "Was ist der Unterschied zur einfachen Flamme?",
+        "answers": [
+          {
+            "text": "Dieser Stoff brennt nicht selbst, aber er facht Feuer stark an.",
+            "correct": true
+          },
+          {
+            "text": "Er brennt genauso, nur langsamer.",
+            "correct": false
+          },
+          {
+            "text": "Er löscht Feuer.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "😇 Finn legt die Flasche neben den Papierstapel. Genau davor warnt das Zeichen.",
+        "Denk an Sauerstoff: Er brennt nicht selbst — aber alles andere brennt mit ihm viel besser."
+      ]
+    },
+    {
+      "id": "sym-bottle",
+      "type": "task",
+      "title": "Die Gasflasche",
+      "text": "Finn: »Eine Tauchflasche! Die nehm ich mit ins Schwimmbad.« Er wuchtet sie hoch und lässt sie fast fallen.",
+      "media": {
+        "kind": "image",
+        "src": "ghs-bottle.svg",
+        "alt": "GHS-Symbol: liegende Gasflasche in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "multi",
+        "codeFragment": "T",
+        "question": "Was musst du bei diesem Symbol beachten? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          {
+            "text": "In der Flasche steht Gas unter hohem Druck.",
+            "correct": true
+          },
+          {
+            "text": "Bei Hitze kann die Flasche bersten.",
+            "correct": true
+          },
+          {
+            "text": "Sie muss gesichert stehen und darf nicht umfallen.",
+            "correct": true
+          },
+          {
+            "text": "Man kann die Luft daraus zum Atmen benutzen.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🤿 Finn setzt die Flasche an den Mund. Nein.",
+        "Das Gefährliche ist nicht der Inhalt allein, sondern der Druck.",
+        "Drei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "sym-explos",
+      "type": "task",
+      "title": "Die zerspringende Kugel",
+      "text": "Finn strahlt: »Feuerwerk! Das heben wir für Silvester auf.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-explos.svg",
+        "alt": "GHS-Symbol: explodierende Bombe in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "true_false",
+        "codeFragment": "T",
+        "question": "Finn sagt: »Damit kann man Silvester feiern.« Stimmt das?",
+        "answers": [
+          {
+            "text": "Falsch",
+            "correct": true
+          },
+          {
+            "text": "Wahr",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "💥 Finn steckt die Dose in den Rucksack. Beim Fahrradfahren rüttelt es.",
+        "Das Symbol warnt vor Explosionsgefahr — solche Stoffe gehören ausschließlich in die Hand der Lehrkraft."
+      ]
+    },
+    {
+      "id": "sym-silhouette",
+      "type": "task",
+      "title": "Der Mensch mit dem Stern",
+      "text": "Finn hält das Etikett gegen das Licht: »Sieht aus wie ein Röntgenbild. Ich fühl mich gut, also ist alles in Ordnung.«",
+      "media": {
+        "kind": "image",
+        "src": "ghs-silhouette.svg",
+        "alt": "GHS-Symbol: Oberkörper mit sternförmigem Bereich, rote Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "E",
+        "question": "Warum ist Finns Schluss »ich fühl mich gut, also passt das« hier besonders gefährlich?",
+        "answers": [
+          {
+            "text": "Weil der Stoff Organe schwer schädigen kann, auch wenn man sofort nichts merkt.",
+            "correct": true
+          },
+          {
+            "text": "Weil das Symbol nur für Erwachsene gilt.",
+            "correct": false
+          },
+          {
+            "text": "Weil der Stoff sofort weh tut, wenn er gefährlich ist.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🩻 Finn wartet ab, ob er etwas spürt. Das ist genau der Denkfehler.",
+        "Dieses Symbol steht für langfristige Schäden im Körper — manche zeigen sich erst viel später."
+      ]
+    },
+    {
+      "id": "sym-pollu",
+      "type": "task",
+      "title": "Baum und Fisch",
+      "text": "Finn: »Ein Baum und ein Fisch — Naturschutzgebiet, hier darf man angeln!« Er greift schon zum Ausguss, um die Reste wegzukippen.",
+      "media": {
+        "kind": "image",
+        "src": "ghs-pollu.svg",
+        "alt": "GHS-Symbol: toter Baum und toter Fisch, rote Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "input",
+        "codeFragment": "N",
+        "question": "Halt ihn auf! Reste mit diesem Symbol dürfen auf keinen Fall in den … (ein Wort)",
+        "accept": [
+          "Ausguss",
+          "Abfluss",
+          "Abguss",
+          "Spüle",
+          "Abwasser",
+          "Waschbecken",
+          "in den Ausguss"
+        ]
+      },
+      "hints": [
+        "🐟 Der Baum und der Fisch auf dem Bild sind nicht gesund — sie sind tot.",
+        "Das Symbol heißt: gewässergefährdend. Denk daran, wo das Wasser aus dem Waschbecken landet.",
+        "Gemeint ist das Becken, in das Finn gerade kippen will."
+      ]
+    },
+    {
+      "id": "tuer-2",
+      "type": "door",
+      "title": "Der Gefahrstoffschrank",
+      "text": "Der Schrank hat ein Buchstabenschloss. Gib die neun Buchstaben ein, die du bei den Symbolen eingesammelt hast — dann ist er wieder sicher verschlossen."
+    },
+    {
+      "id": "einrichtungen",
+      "type": "example",
+      "title": "Die Sicherheitseinrichtungen",
+      "text": "Im Vorbereitungsraum hängt eine Übersicht:\n• Not-Ausschalter — neben den Türen und am Lehrerpult. Der rote Knopf schaltet den Strom ab und unterbricht sofort die Gaszufuhr.\n• Augendusche — spült im Notfall das Auge aus.\n• Fluchtweg — das grüne Schild zeigt den schnellsten Weg ins Freie, gesammelt wird am Sammelplatz.\n• Löschmittel — kleiner Brand: Löschdecke oder Feuerlöscher; größerer Brand: sofort die Feuerwehr rufen.\n• Abzug — für Experimente, bei denen giftige Gase entstehen.\n• Erste-Hilfe-Kasten mit Verbandsmaterial."
+    },
+    {
+      "id": "not-aus",
+      "type": "task",
+      "title": "Der rote Knopf",
+      "text": "Ein Gerät qualmt. Finn sucht hektisch nach dem Not-Ausschalter.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "L",
+        "question": "Was passiert, wenn der rote Knopf des Not-Ausschalters gedrückt wird? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          {
+            "text": "Der elektrische Strom wird abgeschaltet.",
+            "correct": true
+          },
+          {
+            "text": "Die Gaszufuhr wird sofort unterbrochen.",
+            "correct": true
+          },
+          {
+            "text": "Die Feuerwehr wird automatisch gerufen.",
+            "correct": false
+          },
+          {
+            "text": "Das Wasser wird abgestellt.",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Der Not-Ausschalter schaltet den Strom ab. Was unterbricht er außerdem?",
+          "answers": [
+            {
+              "text": "die Gaszufuhr",
+              "correct": true
+            },
+            {
+              "text": "die Wasserleitung",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "🔴 Finn drückt erst mal auf den Lichtschalter. Es wird nur dunkel.",
+        "Im Fachraum gibt es Anschlüsse für Wasser, Strom und Gas — zwei davon betrifft der Knopf.",
+        "Zwei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "augendusche",
+      "type": "task",
+      "title": "Etwas im Auge",
+      "text": "Finn hat sich mit einer Pipette ins Auge gespritzt und rennt panisch durch den Raum.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "A",
+        "question": "Was ist jetzt richtig?",
+        "answers": [
+          {
+            "text": "Sofort das Auge an der Augendusche ausspülen.",
+            "correct": true
+          },
+          {
+            "text": "Das Auge zuhalten und abwarten.",
+            "correct": false
+          },
+          {
+            "text": "Erst den Raum aufräumen, dann spülen.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🙈 Finn hält das Auge zu und hofft. Es brennt weiter.",
+        "Es gibt eine Einrichtung im Fachraum, die genau dafür da ist."
+      ]
+    },
+    {
+      "id": "fluchtweg",
+      "type": "task",
+      "title": "Das grüne Schild",
+      "text": "Über der Tür hängt ein grünes Schild mit einer laufenden Figur.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "B",
+        "question": "Was zeigt das grüne Schild an?",
+        "answers": [
+          {
+            "text": "Den schnellsten Fluchtweg ins Freie.",
+            "correct": true
+          },
+          {
+            "text": "Wo der Feuerlöscher hängt.",
+            "correct": false
+          },
+          {
+            "text": "Dass hier Experimente erlaubt sind.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🏃 Finn rennt zielsicher in den Geräteschrank.",
+        "Grün steht nicht für Gefahr, sondern für den Weg nach draußen.",
+        "Danach trifft man sich an einem festen Ort — dem Sammelplatz."
+      ]
+    },
+    {
+      "id": "loeschmittel",
+      "type": "task",
+      "title": "Kleiner Brand, großer Brand",
+      "text": "Auf dem Pult brennt ein einzelnes Blatt Papier. Finn greift nach seiner Wasserflasche.",
+      "extraExample": "Beispiel: Brennender Papierkorb — Löschdecke drauf, Sauerstoff weg, Feuer aus. Brennender Vorhang, der schon bis zur Decke reicht — raus und Feuerwehr rufen.",
+      "tasks": [
+        {
+          "kind": "single",
+          "codeFragment": "O",
+          "question": "Womit löscht man einen kleinen Brand im Fachraum?",
+          "answers": [
+            {
+              "text": "Mit einer Löschdecke oder einem Feuerlöscher.",
+              "correct": true
+            },
+            {
+              "text": "Mit der eigenen Wasserflasche.",
+              "correct": false
+            },
+            {
+              "text": "Man pustet kräftig.",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "kind": "true_false",
+          "question": "»Bei einem größeren Brand muss man schnell die Feuerwehr rufen.« Stimmt das?",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "hints": [
+        "💦 Finn kippt Wasser darüber. Es zischt, qualmt und wird schlimmer.",
+        "Zwei Löschmittel stehen im Fachraum bereit — beide ersticken das Feuer.",
+        "Bei der zweiten Aufgabe geht es um den Unterschied zwischen klein und groß."
+      ]
+    },
+    {
+      "id": "abzug",
+      "type": "task",
+      "title": "Stechender Geruch",
+      "text": "Bei einem Versuch entstehen stechend riechende Dämpfe. Finn hustet und meint: »So schlimm riecht das gar nicht.«",
+      "task": {
+        "kind": "single",
+        "codeFragment": "R",
+        "question": "Wo und von wem werden Experimente mit giftigen Gasen durchgeführt?",
+        "answers": [
+          {
+            "text": "Unter dem Abzug, von der Lehrkraft.",
+            "correct": true
+          },
+          {
+            "text": "Am offenen Fenster, von den Schülern.",
+            "correct": false
+          },
+          {
+            "text": "Auf dem Flur, damit der Raum nicht stinkt.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "🌬️ Finn reißt das Fenster auf. Die Gase bleiben trotzdem im Raum.",
+        "Es gibt im Fachraum eine Einrichtung, die genau diese Gase absaugt.",
+        "Achte auch darauf, WER solche Versuche durchführen darf."
+      ]
+    },
+    {
+      "id": "tuer-3",
+      "type": "door",
+      "title": "Die letzte Tür",
+      "text": "Die Lehrkraft kommt in fünf Minuten zurück. Löse die beiden Aufgaben und gib den Code aus dem zweiten Abschnitt ein.",
+      "tasks": [
+        {
+          "kind": "multi",
+          "question": "Was gehört zum ordentlichen Aufräumen des Arbeitsplatzes? Wähle alle richtigen Antworten aus.",
+          "answers": [
+            {
+              "text": "Benutzte Geräte sauber zurückstellen.",
+              "correct": true
+            },
+            {
+              "text": "Chemikalienreste besonders entsorgen.",
+              "correct": true
+            },
+            {
+              "text": "Die Anweisungen der Lehrkraft befolgen.",
+              "correct": true
+            },
+            {
+              "text": "Alle Reste in den Ausguss kippen.",
+              "correct": false
+            },
+            {
+              "text": "Offene Chemikalien für die nächste Klasse stehen lassen.",
+              "correct": false
+            }
+          ],
+          "easierAlternative": {
+            "kind": "single",
+            "question": "Wohin kommen Reste von Chemikalien?",
+            "answers": [
+              {
+                "text": "In die besondere Entsorgung, nach Anweisung der Lehrkraft.",
+                "correct": true
+              },
+              {
+                "text": "In den Ausguss.",
+                "correct": false
+              }
+            ]
+          }
+        },
+        {
+          "kind": "timeline",
+          "question": "Es brennt. Bringe die Schritte in die richtige Reihenfolge.",
+          "timeline": {
+            "mode": "sort",
+            "scoring": "order",
+            "axis": {
+              "kind": "number",
+              "min": 1,
+              "max": 4,
+              "step": 1,
+              "unit": "Schritt"
+            },
+            "items": [
+              {
+                "id": "notaus",
+                "label": "Not-Ausschalter drücken",
+                "value": 1
+              },
+              {
+                "id": "loeschen",
+                "label": "Kleinen Brand mit Löschdecke ersticken",
+                "value": 2
+              },
+              {
+                "id": "feuerwehr",
+                "label": "Bei größerem Brand die Feuerwehr rufen",
+                "value": 3
+              },
+              {
+                "id": "raus",
+                "label": "Über den Fluchtweg zum Sammelplatz",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "hints": [
+        "🧽 Finn stellt nur die Geräte zurück — der Rest bleibt kleben.",
+        "Beim Aufräumen sind drei Antworten richtig.",
+        "Bei der Reihenfolge gilt: erst die Gefahrenquelle abschalten, ganz zum Schluss nach draußen."
+      ],
+      "onFailReview": [
+        "einrichtungen",
+        "loeschmittel",
+        "not-aus"
+      ]
+    }
+  ]
+}
