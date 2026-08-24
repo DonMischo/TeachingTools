@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { api, ExitGameOut, GeneratorInfo } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
+import { UploadErrorDialog } from "@/components/UploadErrorDialog";
+import { parseUploadError, UploadError } from "@/lib/uploadError";
 
 function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
@@ -71,11 +73,11 @@ function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
 
 export default function ExitgamePage() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   const { can } = useAvailability();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [showGenerators, setShowGenerators] = useState(false);
 
   const { data: games = [], isLoading } = useQuery<ExitGameOut[]>({
@@ -96,12 +98,7 @@ export default function ExitgamePage() {
       qc.invalidateQueries({ queryKey: ["exitgames"] });
       router.push(`/games/exitgame/${created.id}`);
     } catch (err: unknown) {
-      let msg = err instanceof Error ? err.message : "Upload fehlgeschlagen";
-      try {
-        const parsed = JSON.parse(msg);
-        msg = parsed.detail?.errors?.join("\n") ?? parsed.detail?.message ?? msg;
-      } catch { /* not JSON, use raw message */ }
-      toast(msg, "error");
+      setUploadError(parseUploadError(err));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -176,6 +173,7 @@ export default function ExitgamePage() {
         </div>
       )}
 
+      <UploadErrorDialog error={uploadError} onClose={() => setUploadError(null)} />
       {showGenerators && <GeneratorsHintPanel onClose={() => setShowGenerators(false)} />}
     </div>
   );

@@ -7,6 +7,8 @@ import { api, QuizOut, ClassOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
+import { UploadErrorDialog } from "@/components/UploadErrorDialog";
+import { parseUploadError, UploadError } from "@/lib/uploadError";
 
 const QUIZ_TYPE_LABELS: Record<string, string> = {
   classic: "Klassisch",
@@ -57,6 +59,7 @@ export default function CaputhsPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -80,7 +83,7 @@ export default function CaputhsPage() {
       if (created.warning) setError(`⚠️ ${created.warning}`);
       router.push(`/games/caputh/${created.id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload fehlgeschlagen");
+      setUploadError(parseUploadError(err));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -243,6 +246,8 @@ export default function CaputhsPage() {
           ))}
         </ul>
       )}
+
+      <UploadErrorDialog error={uploadError} onClose={() => setUploadError(null)} />
     </div>
   );
 }

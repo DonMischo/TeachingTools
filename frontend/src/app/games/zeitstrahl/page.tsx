@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { TimelineSetOut } from "@/components/timeline/types";
 import { useToast } from "@/contexts/ToastContext";
+import { UploadErrorDialog } from "@/components/UploadErrorDialog";
+import { parseUploadError, UploadError } from "@/lib/uploadError";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAvailability } from "@/hooks/useAvailability";
 
@@ -18,6 +20,7 @@ export default function ZeitstrahlPage() {
   const isTeacher = auth?.user_type === "teacher";
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<UploadError | null>(null);
 
   const { data: sets = [], isLoading } = useQuery<TimelineSetOut[]>({
     queryKey: ["timelines"], queryFn: api.timelines.list, enabled: !!auth,
@@ -49,12 +52,7 @@ export default function ZeitstrahlPage() {
       qc.invalidateQueries({ queryKey: ["timelines"] });
       router.push(`/games/zeitstrahl/${created.id}`);
     } catch (err: unknown) {
-      let msg = err instanceof Error ? err.message : "Upload fehlgeschlagen";
-      try {
-        const parsed = JSON.parse(msg);
-        msg = parsed.detail?.errors?.join("\n") ?? parsed.detail?.message ?? msg;
-      } catch { /* not JSON, use raw message */ }
-      toast(msg, "error");
+      setUploadError(parseUploadError(err));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -157,6 +155,7 @@ export default function ZeitstrahlPage() {
           ))}
         </div>
       )}
+      <UploadErrorDialog error={uploadError} onClose={() => setUploadError(null)} />
     </div>
   );
 }
