@@ -671,6 +671,9 @@ export type ExitGameTask = {
   accept?: string[];
   // kind "timeline": the Zeitstrahl game spec (sort/spot), checked server-side.
   timeline?: TimelineGameSpec;
+  // Awarded when this task is solved; the door's code is the section's
+  // fragments in reading order.
+  codeFragment?: string;
   easierAlternative?: ExitGameTask;
   // Pool of equivalent alternatives; the server assigns one per attempt
   // (variant_choices) and checks answers against the same one.
@@ -684,9 +687,20 @@ export type ExitGameSlide = {
   media?: ExitGameMedia;
   task?: ExitGameTask;
   tasks?: ExitGameTask[];
-  code?: string;
   hints?: string[];
   onFailReview?: string[];
+  // Shown to students whose DDA level asks for an extra example.
+  extraExample?: string;
+};
+
+// One fragment slot of a door's code. `fragment` is filled in only once the
+// student has earned it — the server withholds the rest.
+export type ExitGameFragment = {
+  door_id: string;
+  slide_id: string;
+  task_index: number;
+  earned: boolean;
+  fragment: string | null;
 };
 export type ExitGameStyle = {
   theme?: string;
@@ -1577,11 +1591,18 @@ export const api = {
     // Guest players carry a Bearer token on every attempt call. Set once by the
     // play page (see setActiveGuestToken) so child widgets need no token prop.
     attempts: {
-      start: (code: string) => apiFetch<{ attempt: ExitGameAttemptSummary; exitgame_data: ExitGameData; variant_choices: Record<string, number> }>(
+      start: (code: string) => apiFetch<{
+        attempt: ExitGameAttemptSummary; exitgame_id: number; exitgame_data: ExitGameData;
+        variant_choices: Record<string, number>;
+        code_fragments: ExitGameFragment[]; adaptation: DdaAdaptation | null;
+      }>(
         `exitgame-sessions/${code}/attempts`, { method: "POST", headers: guestAuthHeaders() },
       ),
       postEvent: (attemptId: number, slide_id: string, action: string, payload: Record<string, unknown> = {}) =>
-        apiFetch<{ correct: boolean | null; adaptation: DdaAdaptation | null; attempt: ExitGameAttemptSummary }>(
+        apiFetch<{
+          correct: boolean | null; adaptation: DdaAdaptation | null; attempt: ExitGameAttemptSummary;
+          code_fragments: ExitGameFragment[]; open_slides?: string[];
+        }>(
           `exitgame-attempts/${attemptId}/events`,
           { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ slide_id, action, payload }) },
         ),

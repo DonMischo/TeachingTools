@@ -12,7 +12,10 @@ session. Each attempt steps through explanation/example/task/door slides
 authored as one JSON document (ExitGame.data — content shape
 ported from the standalone Exitbuilder_text reference: slides of type
 explanation|example|task|door, task kinds single|multi|true_false|input,
-optional hints[] and an easierAlternative). Every answer is checked
+optional hints[] and an easierAlternative). Solving a task hands out its
+optional codeFragment; a door's code is the fragments of the section before
+it, so a task left open ("Später lösen") shows up as a missing character at
+the door and sends the student back. Every answer is checked
 server-side (never trust client-claimed correctness) and logged as an
 ExitGameEvent, which is both the audit trail teachers review afterward and
 the input history the server-side fuzzy DDA (api/dda.py) reads to decide
@@ -33,6 +36,7 @@ Flow:
 import io
 import json
 import random
+import re
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -156,6 +160,9 @@ def _task_errors(task: dict, where: str) -> list[str]:
             errors.append(f"{where}: task.kind 'input' braucht 'accept' (Liste akzeptierter Antworten)")
     elif kind == "timeline":
         errors.extend(timeline_engine.validate_game_spec(task.get("timeline"), f"{where}.timeline"))
+    fragment = task.get("codeFragment")
+    if fragment is not None and (not isinstance(fragment, str) or not fragment.strip()):
+        errors.append(f"{where}: 'codeFragment' muss ein nicht-leerer Text sein")
     easier = task.get("easierAlternative")
     if easier:
         errors.extend(_task_errors(easier, f"{where}.easierAlternative"))
@@ -213,8 +220,9 @@ def _validate_exitgame(data: dict) -> list[str]:
             errors.append(f"{where}: unbekannter type '{stype}'")
             continue
 
-        if stype == "door" and not (slide.get("task") or slide.get("tasks") or slide.get("code")):
-            errors.append(f"{where}: 'door' braucht 'task', 'tasks' oder 'code'")
+        if stype == "door" and slide.get("code"):
+            errors.append(f"{where}: 'code' auf einer Tür wird nicht mehr unterstützt — vergib "
+                          f"'codeFragment' an den Aufgaben vor der Tür, der Türcode setzt sich daraus zusammen")
         if stype == "task" and not (slide.get("task") or slide.get("tasks")):
             errors.append(f"{where}: 'task' braucht 'task' oder 'tasks'")
 
@@ -222,11 +230,47 @@ def _validate_exitgame(data: dict) -> list[str]:
             errors.extend(_task_errors(task, f"{where}.tasks[{j}]"))
 
     for i, slide in enumerate(slides):
+        if not isinstance(slide, dict):
+            continue
+        if slide.get("type") == "door" and not _iter_tasks(slide) and not _fragment_tasks(slides, i):
+            errors.append(f"slides[{i}]: 'door' braucht 'task'/'tasks' oder mindestens ein "
+                          f"'codeFragment' an einer Aufgabe davor")
         for target in slide.get("onFailReview") or []:
             if target not in seen_ids:
                 errors.append(f"slides[{i}]: onFailReview verweist auf unbekannte slide-id '{target}'")
 
     return errors
+
+
+# ---------------------------------------------------------------------------
+# Türcodes: jede Aufgabe kann ein 'codeFragment' vergeben, das der Schüler beim
+# richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der
+# Fragmente des Abschnitts davor (seit der vorigen Tür) — er ist also erst
+# vollständig, wenn alle Aufgaben des Abschnitts gelöst sind.
+# ---------------------------------------------------------------------------
+
+def _fragment_tasks(slides: list, door_index: int) -> list[tuple[str, int, dict]]:
+    """(slide_id, task_index, task) für jede Aufgabe mit 'codeFragment' im
+    Abschnitt vor dieser Tür, in Lesereihenfolge."""
+    start = 0
+    for i in range(door_index - 1, -1, -1):
+        if isinstance(slides[i], dict) and slides[i].get("type") == "door":
+            start = i + 1
+            break
+    out: list[tuple[str, int, dict]] = []
+    for slide in slides[start:door_index]:
+        if not isinstance(slide, dict) or not slide.get("id"):
+            continue
+        for idx, task in enumerate(_iter_tasks(slide)):
+            frag = task.get("codeFragment")
+            if isinstance(frag, str) and frag.strip():
+                out.append((slide["id"], idx, task))
+    return out
+
+
+def _normalize_code(value) -> str:
+    """Leerzeichen, Bindestriche und Groß/Kleinschreibung sind beim Türcode egal."""
+    return re.sub(r"[\s\-_]", "", str(value or "")).lower()
 
 
 # ---------------------------------------------------------------------------
@@ -263,76 +307,78 @@ def list_exitgames(db: Session = Depends(get_db), current=Depends(get_current_us
 
 @router.get("/api/exitgames/template")
 def download_template(_: Teacher = Depends(get_current_teacher)):
+    """The Vorlage a teacher downloads and hands to an AI. It is a feature
+    showcase: every element the format supports appears exactly once, so the
+    instructions can stay short and the example carries the detail."""
     return {
         "_ai_instructions": (
-            "Erstelle ein Text-Exitgame im vorgegebenen JSON-Format. "
-            "--- PFLICHTFELDER --- id (kleinbuchstaben-mit-bindestrichen), title, subject, slides. "
-            "--- HEADER --- subject: Freitext (mathe, physik, deutsch, ...). grade wie Caputh: "
-            "'7', '5,6,7' oder '5-10'. tags: Freitextliste. completion: {message, code} - der Exit-Code am Ende. "
-            "--- STYLE --- style: {\"theme\": ..., \"font\": ..., \"customVars\": {...}} (alles optional). "
-            "theme: eingebaute Presets 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk' — ohne theme "
-            "gilt das normale App-Design. font: CSS-Schriftfamilie, z.B. 'Georgia, serif'. customVars: "
-            "gezielte Farb-Overrides der App-Standardvariablen, z.B. {\"--accent\": \"#ff8800\", "
-            "\"--bg\": \"#0a0a12\", \"--surface\": \"#12121f\", \"--text\": \"#e0f2fe\"} — customVars gewinnen "
-            "über das theme-Preset. Gilt nur für die Spielansicht der Schüler. "
-            "--- DDA (Differenzierung) --- dda: {\"enabled\": true, \"levels\": [...]} — 'levels' ist PFLICHT "
-            "wenn enabled, und definiert die komplette Differenzierung DIESES Spiels: eine geordnete Liste von "
-            "MINDESTENS 3, EMPFOHLEN 5 Stufen, sortiert von wenig zu viel Unterstützung. Jede Stufe: "
-            "{\"name\": Freitext, \"hintCount\": ganze Zahl (wie viele der pro Slide angelegten hints maximal "
-            "freigegeben werden), \"timeLimitSeconds\": Richtwert Bearbeitungszeit pro Aufgabe, "
-            "\"extraExample\": true/false (Zusatzbeispiel zeigen), \"offerEasier\": true/false (leichtere "
-            "Alternativaufgabe anbieten)}. Das Spiel stuft jeden Schüler laufend anhand seines "
-            "Antwortverhaltens (Tempo, Fehler, Hinweisnutzung) in eine dieser Stufen ein — schnell+richtig -> "
-            "niedrige Stufe (wenig Hilfe), viele Fehlversuche -> hohe Stufe (viel Hilfe). Ohne dda-Feld: "
-            "statisches Spiel mit festem Budget von 2 Hinweisen pro Slide. "
-            "--- SLIDE-TYPEN --- 'explanation' (Erklärung, Weiter-Button), 'example' (Beispiel, Weiter-Button), "
-            "'task' (muss gelöst werden; 'task': {...} für eine Aufgabe ODER 'tasks': [{...}] für mehrere Aufgaben "
-            "auf einer Slide - alle müssen richtig sein), 'door' (Tür/Gate, schwerere Transferaufgabe; braucht "
-            "task/tasks ODER code; onFailReview: Slide-IDs zur Wiederholung nach 2 Fehlversuchen). "
-            "--- AUFGABEN-ARTEN (task.kind) --- 'single' (1 richtige Antwort), 'multi' (mehrere richtig, exakte "
-            "Auswahl nötig), 'true_false' (2 Antworten Wahr/Falsch), 'input' (Freitext/Zahl; accept = Liste "
-            "akzeptierter Antworten, Zahlen mit Komma ODER Punkt, Groß/Klein egal), 'timeline' (Zeitstrahl/"
-            "Zahlenstrahl, Feld 'timeline': {mode, axis, items}). timeline mode 'sort': Schüler ziehen die items "
-            "an die richtige Stelle der Achse; items [{id, label, value}]; axis {kind: 'year'|'number', min, max, "
-            "step?, unit?}; scoring 'position' (Standard) wertet die Stelle mit wählbarer tolerance = erlaubte "
-            "Abweichung in Achseneinheiten (Jahren): 0 = exakt, sonst z.B. 1, 2, 5, 10, 100 (Jahrhundert), 1000 "
-            "(Jahrtausend) oder 1000000 (Mio. Jahre); scoring 'order' wertet nur die Reihenfolge (tolerance "
-            "ignoriert). timeline mode 'spot': "
-            "items werden bei 'value' ANGEZEIGT, falsch platzierte tragen ihren wahren Wert zusätzlich in "
-            "'actual' — Schüler markieren die falschen. Jahreszahlen v. Chr. = negativ (-753). "
-            "Genaue Daten: ein item darf 'exact_date' tragen (ISO-8601 n. Chr.: 'JJJJ', 'JJJJ-MM' oder "
-            "'JJJJ-MM-TT', z.B. '1914-07-28'; das Jahr muss zu 'value' passen). Dann wird taggenau positioniert "
-            "und bewertet — nötig, sobald zwei items im selben Jahr liegen, sonst liegen sie übereinander. Bei "
-            "'spot' ist 'exact_date' die angezeigte Stelle, die wahre kommt in 'actual' (+ optional "
-            "'exact_date_actual'). Nur diese fünf — "
-            "prozedural erzeugte Aufgaben gibt es separat auf der Übungsseite. "
-            "--- VARIANTEN (Abschreibschutz) --- Jede Aufgabe kann optional 'variants' tragen: eine Liste "
-            "gleichwertiger Alternativen derselben Aufgabe (jeweils nur die abweichenden Felder, z.B. "
-            "{\"question\": ..., \"accept\": [...]}). Jeder Schüler bekommt pro Versuch fest EINE Variante "
-            "zugelost (beim Nachbarn abgucken lohnt nicht); Wiederaufnahme zeigt dieselbe. Schreibe 2-4 "
-            "Varianten bei wichtigen Aufgaben. "
-            "--- MEDIEN --- media: {kind: image|html|video, src, alt, height}. kind 'video': normaler "
-            "YouTube-/Vimeo-Link, wird automatisch eingebettet. kind 'html': absolute URL einer einbettbaren "
-            "Simulation (z.B. PhET), height in px. kind 'image': Dateiname einer Datei im assets/-Ordner des "
-            "hochgeladenen ZIPs (z.B. 'waage.svg') oder eine absolute Bild-URL. "
-            "--- HINWEISE & DIFFERENZIERUNG PRO SLIDE --- hints: geordnete Liste pro Slide, erster Hinweis = "
-            "sanfter Schubser, letzter = fast die Lösung; schreibe ruhig 2-4, die dda-Stufe entscheidet, wie "
-            "viele freigegeben werden. task.easierAlternative: (optional, gleicher Aufbau wie 'task') eine "
-            "leichtere Version derselben Aufgabe; wird als Ja/Nein-Angebot vorgeschlagen, nachdem der Schüler "
-            "mehrfach falsch lag und Hinweise aufgebraucht sind - kein automatischer Wechsel. "
-            "--- MATHE --- KaTeX: inline $\\frac{a}{b}$, abgesetzt $$u = 2 \\cdot (a+b)$$. Dezimalkomma: $3{,}14$. "
-            "WICHTIG: Die zu lösende Gleichung/Formel einer Aufgabe IMMER abgesetzt mit $$...$$ schreiben "
-            "(eigene Zeile, besser lesbar); inline $...$ nur für einzelne Symbole im Fließtext wie $x$. "
-            "--- REGELN --- Keine Lösungshinweise in Bildern/Fragen/Antwortoptionen. Slide-IDs eindeutig. "
-            "Jede door braucht task oder code."
+            "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau "
+            "einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; "
+            "subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der "
+            "Exit-Code am Ende. Ein Spiel hat meist 8-15 Slides und muss nicht alle Aufgabenarten nutzen. "
+            "--- SLIDES --- 'explanation' und 'example': nur lesen, Weiter-Button. 'task': muss gelöst werden "
+            "('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). "
+            "'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; "
+            "'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, "
+            "Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen "
+            "lassen — was fehlt, fällt spätestens an der Tür auf. "
+            "--- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim "
+            "richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des "
+            "Abschnitts davor (seit der vorigen Tür) in Lesereihenfolge; an der Tür tippt der Schüler ihn ein, "
+            "geprüft wird serverseitig (Groß/Klein, Leerzeichen und Bindestriche egal). Abschreiben nützt "
+            "nichts: die Tür geht nur auf, wenn der Schüler alle Schnipsel des Abschnitts selbst "
+            "eingesammelt hat — sonst zeigt sie genau die offenen Aufgaben als Rücksprung-Links. "
+            "Sinnvoll sind 3-6 Fragmente pro "
+            "Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft "
+            "zeigen. "
+            "--- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss "
+            "exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' "
+            "(accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl "
+            "reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' "
+            "(Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. "
+            "--- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die "
+            "richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, "
+            "0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode "
+            "'spot': Items stehen bei 'value', die falsch platzierten tragen ihren wahren Wert in 'actual' "
+            "und sollen markiert werden (mindestens eines). Jahre v. Chr. sind negativ. 'exact_date' "
+            "('JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', nur n. Chr., Jahr muss zu 'value' passen) ist nötig, "
+            "sobald zwei Items im selben Jahr liegen; bei 'spot' steht das wahre Datum in "
+            "'exact_date_actual'. "
+            "--- HILFEN --- 'hints': geordnete Liste pro Slide (2-4), vom sanften Schubser bis fast zur "
+            "Lösung; der Hinweis-Button erscheint erst nach einem Fehlversuch. 'easierAlternative' (Aufbau "
+            "wie 'task'): leichtere Fassung, wird als Ja/Nein-Angebot vorgeschlagen, sobald der Schüler 2x "
+            "falsch lag und seine Hinweise verbraucht hat. 'variants': gleichwertige Fassungen derselben "
+            "Aufgabe (nur die abweichenden Felder); jeder Schüler bekommt fest eine zugelost — "
+            "Abschreibschutz, lohnt sich bei wichtigen Aufgaben. 'extraExample' (Text pro Slide): ein "
+            "zweites durchgerechnetes Beispiel für Schüler, deren Stufe es vorsieht. "
+            "--- DDA --- dda.levels ist die Differenzierungsleiter dieses Spiels: mindestens 3, empfohlen 5 "
+            "Stufen von wenig zu viel Unterstützung. Das Spiel stuft jeden Schüler laufend nach Antwortzeit, "
+            "Fehlern und Hinweisnutzung in eine Stufe ein. Jede Stufe steuert: 'hintCount' = wie viele hints "
+            "freigegeben werden, 'timeLimitSeconds' = sichtbare Richtzeit pro Aufgabe (kein Abbruch — läuft "
+            "sie ab, wird ein Hinweis vorzeitig frei), 'extraExample' = ob das 'extraExample' der Slide nach "
+            "einem Fehlversuch eingeblendet wird, 'offerEasier' = ob die easierAlternative überhaupt "
+            "angeboten wird. Ohne dda-Feld: feste 2 Hinweise pro Slide, keine Richtzeit. "
+            "--- MEDIEN --- media, eine pro Slide: 'image' (Dateiname aus dem assets/-Ordner des ZIPs oder "
+            "Bild-URL), 'video' (YouTube-/Vimeo-Link), 'html' (URL einer einbettbaren Simulation). 'height' "
+            "in px begrenzt die Höhe (bei Bildern die maximale Höhe — für Piktogramme z.B. 180, sonst füllen "
+            "sie die ganze Spalte). "
+            "--- STYLE --- theme: 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk'; font: "
+            "CSS-Schriftfamilie; customVars: einzelne Farben ('--accent', '--bg', '--surface', '--text'), "
+            "die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. "
+            "--- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für "
+            "einzelne Symbole, Dezimalkomma als $3{,}14$. "
+            "--- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. "
+            "--- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht "
+            "eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es "
+            "nicht mehr). onFailReview nur auf vorhandene Slide-IDs."
         ),
-        "id": "beispiel-exitgame",
-        "title": "Beispiel Exitgame",
-        "description": "Ein Beispiel-Exitgame mit allen Slide-Typen",
-        "subject": "mathe",
-        "grade": "5-10",
-        "tags": ["mathe", "fun"],
-        "style": {"theme": "dark", "customVars": {"--accent": "#22c55e"}},
+        "id": "vorlage-alle-bausteine",
+        "title": "Vorlage: alle Bausteine (Hebelgesetz)",
+        "description": "Zeigt jeden Baustein des Formats genau einmal.",
+        "subject": "physik",
+        "grade": "7,8",
+        "tags": ["vorlage", "physik", "hebel"],
+        "style": {"theme": "dark", "font": "Georgia, serif", "customVars": {"--accent": "#22c55e"}},
         "dda": {
             "enabled": True,
             "levels": [
@@ -343,48 +389,140 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
                 {"name": "maximale Unterstützung", "hintCount": 99, "timeLimitSeconds": 300, "extraExample": True, "offerEasier": True},
             ],
         },
-        "completion": {"message": "Geschafft! Du bist entkommen!", "code": "GEHEIM-42"},
+        "completion": {"message": "Geschafft! Du hast die Werkstatt verlassen.", "code": "WERKSTATT-7"},
         "slides": [
-            {"id": "intro", "type": "explanation", "title": "Willkommen",
-             "text": "Löse die Aufgaben, um die Tür zu öffnen."},
-            {"id": "beispiel", "type": "example", "title": "Beispiel",
-             "text": "$$3 + 4 = 7$$"},
-            {"id": "aufgabe-1", "type": "task", "title": "Aufgabe 1",
-             "text": "Rechne aus:",
-             "task": {"kind": "single",
-                       "variants": [
-                           {"question": "5 + 3 = ?", "answers": [{"text": "8", "correct": True}, {"text": "7", "correct": False}]},
-                           {"question": "4 + 5 = ?", "answers": [{"text": "9", "correct": True}, {"text": "8", "correct": False}]},
-                           {"question": "6 + 3 = ?", "answers": [{"text": "9", "correct": True}, {"text": "10", "correct": False}]},
-                       ]},
-             "hints": ["Zähl an den Fingern.", "Zähl von der größeren Zahl aus weiter."]},
-            {"id": "zeitstrahl", "type": "task", "title": "Zahlenstrahl",
-             "text": "Ziehe die Zahlen an die richtige Stelle.",
+            # explanation + media kind "video"
+            {"id": "intro", "type": "explanation", "title": "Willkommen in der Werkstatt",
+             "text": "Du bist in der alten Werkstatt eingeschlossen. Sammle bei den Aufgaben die "
+                     "Codeschnipsel ein — zusammen öffnen sie die Tür.\n"
+                     "(Video-Link ersetzen oder das media-Feld löschen.)",
+             "media": {"kind": "video", "src": "https://www.youtube.com/watch?v=DEINE-VIDEO-ID"}},
+
+            # example + media kind "image" (Datei aus assets/ im ZIP) + KaTeX
+            {"id": "beispiel", "type": "example", "title": "So funktioniert der Hebel",
+             "text": "Ein Hebel ist im Gleichgewicht, wenn Masse mal Abstand auf beiden Seiten gleich ist:\n"
+                     "$$m_1 \\cdot a_1 = m_2 \\cdot a_2$$\n"
+                     "Dabei ist $a$ der Abstand vom Drehpunkt: $2$ kg bei $30$ cm halten $3$ kg bei "
+                     "$20$ cm im Gleichgewicht.",
+             "media": {"kind": "image", "src": "hebel.svg",
+                       "alt": "Zweiseitiger Hebel mit Drehpunkt in der Mitte"}},
+
+            # task kind "single" + variants (Abschreibschutz) + hints
+            {"id": "einfachauswahl", "type": "task", "title": "Aufgabe: eine richtige Antwort",
+             "text": "Wähle die richtige Antwort.",
+             "extraExample": "Wippe: Ein Kind mit $20$ kg sitzt $2$ m vom Drehpunkt entfernt "
+                             "($20 \\cdot 2 = 40$). Ein Kind mit $40$ kg muss dafür bei $1$ m sitzen.",
+             "task": {"kind": "single", "codeFragment": "HE",
+                      "variants": [
+                          {"question": "Wo musst du drücken, damit es am leichtesten geht?",
+                           "answers": [{"text": "weit außen, weit weg vom Drehpunkt", "correct": True},
+                                       {"text": "direkt am Drehpunkt", "correct": False},
+                                       {"text": "Der Ort spielt keine Rolle.", "correct": False}]},
+                          {"question": "Warum ist eine lange Brechstange praktischer als eine kurze?",
+                           "answers": [{"text": "Der größere Abstand verstärkt die Kraft.", "correct": True},
+                                       {"text": "Sie ist schwerer.", "correct": False},
+                                       {"text": "Sie ist aus härterem Stahl.", "correct": False}]},
+                          {"question": "Was passiert, wenn du ein Gewicht näher an den Drehpunkt schiebst?",
+                           "answers": [{"text": "Seine Wirkung wird kleiner.", "correct": True},
+                                       {"text": "Seine Wirkung wird größer.", "correct": False},
+                                       {"text": "Nichts ändert sich.", "correct": False}]},
+                      ]},
+             "hints": ["Denk an eine Wippe: Wo sitzt das leichtere Kind?",
+                       "Es zählt nicht die Masse allein, sondern Masse mal Abstand."]},
+
+            # task kind "multi" + media kind "html" (einbettbare Simulation)
+            {"id": "mehrfachauswahl", "type": "task", "title": "Aufgabe: mehrere richtige Antworten",
+             "text": "Probiere es in der Simulation aus und kreuze ALLE richtigen Aussagen an.",
+             "media": {"kind": "html",
+                       "src": "https://phet.colorado.edu/sims/html/balancing-act/latest/balancing-act_de.html",
+                       "height": 420},
+             "task": {"kind": "multi", "codeFragment": "BE",
+                      "question": "Welche Aussagen über den Hebel stimmen?",
+                      "answers": [
+                          {"text": "Je weiter außen ein Gewicht liegt, desto stärker wirkt es.", "correct": True},
+                          {"text": "Gleiche Massen im gleichen Abstand halten sich im Gleichgewicht.", "correct": True},
+                          {"text": "Nur die Masse zählt, der Abstand ist egal.", "correct": False},
+                          {"text": "Ein leichtes Gewicht kann ein schweres nie ausgleichen.", "correct": False},
+                      ]},
+             "hints": ["Schiebe ein Gewicht nach außen und beobachte die Waage.",
+                       "Vergleiche das Produkt aus Masse und Abstand auf beiden Seiten."]},
+
+            # eine Slide mit MEHREREN Aufgaben ("tasks"): true_false + input
+            {"id": "arbeitsblatt", "type": "task", "title": "Kurzes Arbeitsblatt",
+             "text": "Löse beide Aufgaben — erst dann geht es weiter.",
+             "tasks": [
+                 {"kind": "true_false",
+                  "question": "Ein Gewicht doppelt so weit außen wirkt doppelt so stark.",
+                  "answers": [{"text": "Wahr", "correct": True}, {"text": "Falsch", "correct": False}]},
+                 {"kind": "input",
+                  "question": "Links hängen $3$ kg im Abstand $40$ cm, rechts hängt ein Gewicht bei "
+                              "$60$ cm. Wie schwer ist es (in kg)?",
+                  "accept": ["2"]},
+             ],
+             "hints": ["Stelle die Gleichung $$m_1 \\cdot a_1 = m_2 \\cdot a_2$$ auf.",
+                       "$3 \\cdot 40 = m_2 \\cdot 60$ — teile durch $60$."]},
+
+            # timeline: mode "sort", scoring "position" — Zahlenstrahl mit Einheit und Toleranz
+            {"id": "zahlenstrahl", "type": "task", "title": "Zahlenstrahl",
+             "text": "Ziehe die Abstände an die richtige Stelle des Maßbands.",
+             "task": {"kind": "timeline", "codeFragment": "L",
+                      "timeline": {"mode": "sort", "scoring": "position", "tolerance": 2,
+                                   "axis": {"kind": "number", "min": 0, "max": 100, "step": 5, "unit": "cm"},
+                                   "items": [{"id": "a", "label": "25 cm", "value": 25},
+                                             {"id": "b", "label": "60 cm", "value": 60},
+                                             {"id": "c", "label": "85 cm", "value": 85}]}},
+             "hints": ["Wo liegt die Mitte des Maßbands?"]},
+
+            # timeline: mode "sort", scoring "order" — Jahresachse mit negativen Jahren (v. Chr.)
+            {"id": "zeitstrahl-antike", "type": "task", "title": "Zeitstrahl: nur die Reihenfolge zählt",
+             "text": "Bringe die Ereignisse der Antike in die richtige Reihenfolge. "
+                     "Die genauen Jahreszahlen musst du nicht kennen.",
              "task": {"kind": "timeline",
-                       "timeline": {"mode": "sort",
-                                     "axis": {"kind": "number", "min": 0, "max": 100, "step": 5},
-                                     "items": [{"id": "a", "label": "25", "value": 25},
-                                                {"id": "b", "label": "60", "value": 60},
-                                                {"id": "c", "label": "85", "value": 85}]}},
-             "hints": ["Wo liegt die Mitte des Strahls?"]},
-            {"id": "zeitstrahl-tage", "type": "task", "title": "Zeitstrahl mit genauen Daten",
-             "text": "Beide Ereignisse liegen 1914 — ohne exact_date lägen sie übereinander.",
+                      "timeline": {"mode": "sort", "scoring": "order",
+                                   "axis": {"kind": "year", "min": -800, "max": -100},
+                                   "items": [
+                                       {"id": "rom", "label": "Sagenhafte Gründung Roms", "value": -753},
+                                       {"id": "marathon", "label": "Schlacht bei Marathon", "value": -490},
+                                       {"id": "archimedes", "label": "Archimedes beschreibt den Hebel", "value": -250}]}},
+             "hints": ["Rom wurde der Sage nach im 8. Jahrhundert v. Chr. gegründet.",
+                       "Archimedes lebte am Ende dieser Reihe."]},
+
+            # timeline: mode "spot" — falsch platziertes Ereignis finden, taggenaue Daten
+            {"id": "fehlersuche", "type": "task", "title": "Zeitstrahl: Fehler finden",
+             "text": "Ein Ereignis steht an der falschen Stelle. Markiere es.",
              "task": {"kind": "timeline",
-                       "timeline": {"mode": "sort", "scoring": "order",
-                                     "axis": {"kind": "year", "min": 1914, "max": 1919},
-                                     "items": [
-                                         {"id": "sarajevo", "label": "Attentat von Sarajevo",
-                                          "value": 1914, "exact_date": "1914-06-28"},
-                                         {"id": "kriegserklaerung", "label": "Kriegserklärung an Serbien",
-                                          "value": 1914, "exact_date": "1914-07-28"},
-                                         {"id": "waffenstillstand", "label": "Waffenstillstand",
-                                          "value": 1918, "exact_date": "1918-11-11"}]}},
-             "hints": ["Das Attentat war der Auslöser — was kam danach?"]},
+                      "timeline": {"mode": "spot",
+                                   "axis": {"kind": "year", "min": 1940, "max": 2000},
+                                   "items": [
+                                       {"id": "grundgesetz", "label": "Grundgesetz tritt in Kraft",
+                                        "value": 1949, "exact_date": "1949-05-23"},
+                                       {"id": "mauerfall", "label": "Fall der Berliner Mauer",
+                                        "value": 1961, "exact_date": "1961-08-13",
+                                        "actual": 1989, "exact_date_actual": "1989-11-09"},
+                                       {"id": "mondlandung", "label": "Erste Mondlandung",
+                                        "value": 1969, "exact_date": "1969-07-20"}]}},
+             "hints": ["1961 wurde die Mauer gebaut — nicht geöffnet."]},
+
+            # door: Transferaufgabe + Codeschloss aus den Schnipseln davor
+            # (HE + BE + L) + easierAlternative + onFailReview
             {"id": "tuer", "type": "door", "title": "Die Tür",
-             "text": "Löse die letzte Aufgabe.",
-             "task": {"kind": "input", "question": "Wie viel ist $12 - 4$?", "accept": ["8"],
-                        "easierAlternative": {"kind": "input", "question": "Wie viel ist $10 - 4$?", "accept": ["6"]}},
-             "hints": ["Zähl rückwärts von 12."], "onFailReview": ["aufgabe-1"]},
+             "text": "Löse die letzte Aufgabe und gib die eingesammelten Codeschnipsel ein.",
+             "task": {"kind": "single",
+                      "question": "Links hängen $4$ kg im Abstand $30$ cm, rechts hängt ein Gewicht im "
+                                  "Abstand $60$ cm.\n$$4 \\cdot 30 = m_2 \\cdot 60$$\nWie schwer ist es?",
+                      "answers": [{"text": "2 kg", "correct": True},
+                                  {"text": "4 kg", "correct": False},
+                                  {"text": "8 kg", "correct": False}],
+                      "easierAlternative": {
+                          "kind": "single",
+                          "question": "Links hängen $2$ kg im Abstand $20$ cm, rechts hängt ein Gewicht "
+                                      "bei $40$ cm. Wie schwer ist es?",
+                          "answers": [{"text": "1 kg", "correct": True},
+                                      {"text": "2 kg", "correct": False},
+                                      {"text": "4 kg", "correct": False}]}},
+             "hints": ["Doppelter Abstand bedeutet halbe Masse.",
+                       "Rechne $4 \\cdot 30 = 120$ und teile durch $60$."],
+             "onFailReview": ["beispiel", "arbeitsblatt"]},
         ],
     }
 
@@ -622,16 +760,25 @@ def start_or_resume_attempt(
         db.add(ExitGameEvent(attempt_id=attempt.id, slide_id=s.exitgame.data["slides"][0]["id"], event_type="view", payload={"slide_index": 0}))
         db.commit()
 
+    dda_cfg = s.exitgame.data.get("dda") or {}
     return {
         "attempt": _attempt_summary(attempt),
+        # Needed to resolve media filenames from the uploaded ZIP's assets/
+        # folder against /uploads/exitgames/<id>/assets/.
+        "exitgame_id": s.exitgame_id,
         "exitgame_data": s.exitgame.data,
         "variant_choices": _variant_choices(s.exitgame.data, attempt.id),
+        "code_fragments": _fragment_state(db, attempt.id, s.exitgame.data),
+        # The level is needed before the first wrong answer too — hint budget,
+        # Richtzeit and extra example are read from it on every task.
+        "adaptation": dda_engine.adapt(dda_cfg, _recent_dda_history(db, attempt.id))
+        if dda_cfg.get("enabled") else None,
     }
 
 
 class EventIn(BaseModel):
     slide_id: str
-    action: str  # view | answer | hint | easier_taken | review_jump
+    action: str  # view | answer | hint | easier_taken | review_jump | skip | code
     payload: dict = {}
 
 
@@ -665,6 +812,39 @@ def _resolve_variant(task_def: dict, attempt_id: int, slide_id: str, task_index:
     return merged
 
 
+def _expected_code(slides: list, door_index: int, attempt_id: int) -> str:
+    """The code this door expects from THIS attempt — variants may carry their
+    own fragment, so two students can legitimately need different codes."""
+    parts = []
+    for slide_id, idx, task in _fragment_tasks(slides, door_index):
+        merged = _resolve_variant(task, attempt_id, slide_id, idx)
+        parts.append(str(merged.get("codeFragment", "")).strip())
+    return "".join(parts)
+
+
+def _fragment_state(db: Session, attempt_id: int, data: dict) -> list[dict]:
+    """Every fragment slot of the game, with the fragment filled in only where
+    the student actually solved the task — the player renders this as the
+    collected-code strip, so an unearned fragment must not be sent."""
+    slides = data["slides"]
+    solved = {
+        (e.slide_id, e.payload.get("task_index", 0))
+        for e in db.query(ExitGameEvent).filter_by(attempt_id=attempt_id, event_type="success")
+    }
+    out = []
+    for i, slide in enumerate(slides):
+        if slide.get("type") != "door":
+            continue
+        for slide_id, idx, task in _fragment_tasks(slides, i):
+            earned = (slide_id, idx) in solved
+            merged = _resolve_variant(task, attempt_id, slide_id, idx)
+            out.append({
+                "door_id": slide["id"], "slide_id": slide_id, "task_index": idx,
+                "earned": earned, "fragment": merged.get("codeFragment") if earned else None,
+            })
+    return out
+
+
 def _variant_choices(data: dict, attempt_id: int) -> dict[str, int]:
     """The player needs to render the same variant the server will check —
     Python's seeded RNG can't be reproduced in JS, so send the choices."""
@@ -683,16 +863,46 @@ def _find_slide(data: dict, slide_id: str) -> dict | None:
     return next((sl for sl in data["slides"] if sl["id"] == slide_id), None)
 
 
-def _slide_solved(db: Session, attempt: ExitGameAttempt, slide: dict) -> bool:
-    """A slide is solved once every task index on it has a recorded 'success' event."""
+def _slide_solved(db: Session, attempt: ExitGameAttempt, slide: dict, data: dict) -> bool:
+    """A slide is solved once every task index on it has a recorded 'success'
+    event — and a door that collects a code additionally needs that code
+    accepted ('code_ok')."""
     tasks = _iter_tasks(slide)
-    if not tasks:
-        return True
     solved_indices = {
         e.payload.get("task_index", 0)
         for e in db.query(ExitGameEvent).filter_by(attempt_id=attempt.id, slide_id=slide["id"], event_type="success")
     }
-    return len(solved_indices) >= len(tasks)
+    if len(solved_indices) < len(tasks):
+        return False
+    if slide.get("type") == "door":
+        idx = next((i for i, sl in enumerate(data["slides"]) if sl["id"] == slide["id"]), None)
+        if idx is not None and _fragment_tasks(data["slides"], idx):
+            return db.query(ExitGameEvent).filter_by(
+                attempt_id=attempt.id, slide_id=slide["id"], event_type="code_ok").first() is not None
+    return True
+
+
+def _seconds_on_task(db: Session, attempt: ExitGameAttempt) -> float:
+    """How long the student worked on this answer: time since their previous
+    event (viewing the slide, a hint, an earlier wrong try), or since the
+    attempt started. Measured here rather than trusted from the client — the
+    DDA record has to hold up when a teacher reviews it."""
+    last = (
+        db.query(ExitGameEvent)
+        .filter_by(attempt_id=attempt.id)
+        .order_by(ExitGameEvent.created_at.desc(), ExitGameEvent.id.desc())
+        .first()
+    )
+    ref = _aware(last.created_at) if last else _aware(attempt.started_at)
+    return max(0.0, min(600.0, (datetime.now(timezone.utc) - ref).total_seconds()))
+
+
+def _offer_easier_allowed(adaptation: dict | None) -> bool:
+    """Without DDA the easier alternative is always on offer; with DDA the
+    student's current level decides (authored `offerEasier`)."""
+    if not adaptation:
+        return True
+    return bool(adaptation.get("contentParams", {}).get("scaffolding_level", {}).get("offerEasier", True))
 
 
 def _hints_shown_for_slide(db: Session, attempt_id: int, slide_id: str) -> int:
@@ -776,6 +986,7 @@ async def post_event(
     dda_cfg = data.get("dda") or {}
     dda_enabled = bool(dda_cfg.get("enabled", False))
     correct = None
+    door_open_slides: list[str] | None = None
     event_type = body.action
 
     if body.action == "view":
@@ -795,6 +1006,7 @@ async def post_event(
         event_type = "success" if correct else "fail"
         body.payload["attempt_number"] = prior_fails + 1
         body.payload["hints_shown"] = _hints_shown_for_slide(db, attempt_id, body.slide_id)
+        body.payload["time_spent_s"] = round(_seconds_on_task(db, attempt), 1)
         if not correct:
             attempt.errors_total += 1
 
@@ -808,10 +1020,36 @@ async def post_event(
         attempt.hints_total += 1
 
     elif body.action == "easier_taken":
+        adaptation = dda_engine.adapt(dda_cfg, _recent_dda_history(db, attempt_id)) if dda_enabled else None
+        if not _offer_easier_allowed(adaptation):
+            raise HTTPException(409, "Auf dieser Stufe ist keine leichtere Aufgabe vorgesehen")
         attempt.easier_taken_total += 1
 
     elif body.action == "review_jump":
         pass
+
+    elif body.action == "skip":
+        # Leaving a task open is allowed and recorded — the missing code
+        # fragment is what stops the student at the door.
+        if slide.get("type") != "task":
+            raise HTTPException(400, "Nur Aufgaben-Slides können übersprungen werden")
+
+    elif body.action == "code":
+        if slide.get("type") != "door":
+            raise HTTPException(400, "Nur Türen haben einen Code")
+        door_index = next(i for i, sl in enumerate(data["slides"]) if sl["id"] == body.slide_id)
+        expected = _expected_code(data["slides"], door_index, attempt_id)
+        if not expected:
+            raise HTTPException(400, "Diese Tür sammelt keinen Code")
+        # The code must match AND be the student's own: a code copied from a
+        # neighbour does not open a door whose fragments are still unearned.
+        slots = [f for f in _fragment_state(db, attempt_id, data) if f["door_id"] == body.slide_id]
+        all_earned = all(f["earned"] for f in slots)
+        correct = all_earned and _normalize_code(body.payload.get("code")) == _normalize_code(expected)
+        event_type = "code_ok" if correct else "code_fail"
+        if not correct:
+            attempt.errors_total += 1
+            door_open_slides = [f["slide_id"] for f in slots if not f["earned"]]
 
     else:
         raise HTTPException(400, "Unbekannte action")
@@ -823,7 +1061,7 @@ async def post_event(
     # slide only counts as solved on the NEXT request (i.e. after a reload).
     db.flush()
 
-    if event_type == "success" and _slide_solved(db, attempt, slide):
+    if event_type in ("success", "code_ok") and _slide_solved(db, attempt, slide, data):
         if body.slide_id not in attempt.solved_slide_ids:
             attempt.solved_slide_ids = [*attempt.solved_slide_ids, body.slide_id]
 
@@ -836,7 +1074,15 @@ async def post_event(
 
     await _broadcast_progress(session.join_code, attempt, len(data["slides"]), event_type)
 
-    return {"correct": correct, "adaptation": adaptation, "attempt": _attempt_summary(attempt)}
+    out = {
+        "correct": correct, "adaptation": adaptation, "attempt": _attempt_summary(attempt),
+        "code_fragments": _fragment_state(db, attempt_id, data),
+    }
+    if door_open_slides is not None:
+        # Which slides still owe a fragment — the player turns these into
+        # "back to this task" links so the code can be completed.
+        out["open_slides"] = list(dict.fromkeys(door_open_slides))
+    return out
 
 
 @router.post("/api/exitgame-attempts/{attempt_id}/finish")

@@ -125,6 +125,16 @@ def test_template_endpoint(client, teacher_token):
     assert "_ai_instructions" in r.json()
 
 
+def test_template_is_a_valid_game(client, teacher_token):
+    """The Vorlage demonstrates every element of the format, so it must stay
+    uploadable as-is — otherwise teachers get a validation error from the very
+    file we handed them."""
+    tpl = client.get("/api/exitgames/template", headers=_auth(teacher_token)).json()
+    r = _upload(client, teacher_token, tpl)
+    assert r.status_code == 201, r.json()
+    assert r.json()["slide_count"] == len(tpl["slides"])
+
+
 # ---------------------------------------------------------------------------
 # Sessions
 # ---------------------------------------------------------------------------
@@ -551,4 +561,146 @@ def test_hint_budget_respects_authored_levels(client, db, teacher_token, klass):
     r = client.post(f"/api/exitgame-attempts/{aid}/events", json={
         "slide_id": "aufgabe-1", "action": "hint", "payload": {"hint_index": 2},
     }, headers=_auth(student_token))
+    assert r.status_code == 409
+
+
+# ---------------------------------------------------------------------------
+# Türcodes aus Codeschnipseln, Überspringen, serverseitige Zeitmessung
+# ---------------------------------------------------------------------------
+
+CODE_GAME = {
+    "id": "code-game",
+    "title": "Codespiel",
+    "subject": "mathe",
+    "completion": {"message": "Fertig!", "code": "END-1"},
+    "slides": [
+        {"id": "a1", "type": "task", "text": "Erste",
+         "task": {"kind": "input", "question": "1+1?", "accept": ["2"], "codeFragment": "AB"}},
+        {"id": "a2", "type": "task", "text": "Zweite",
+         "task": {"kind": "input", "question": "2+2?", "accept": ["4"], "codeFragment": "7"}},
+        {"id": "tuer", "type": "door", "text": "Tür"},
+    ],
+}
+
+
+def _event(client, token, aid, slide_id, action, payload=None):
+    client.cookies.clear()
+    return client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": slide_id, "action": action, "payload": payload or {},
+    }, headers=_auth(token))
+
+
+def test_upload_rejects_door_code_field(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "intro", "type": "explanation", "text": "x"},
+        {"id": "tuer", "type": "door", "text": "x", "code": "GEHEIM"},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("codeFragment" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_door_without_task_or_fragments(client, teacher_token):
+    bad = {**SIMPLE_GAME, "slides": [
+        {"id": "intro", "type": "explanation", "text": "x"},
+        {"id": "tuer", "type": "door", "text": "x"},
+    ]}
+    r = _upload(client, teacher_token, bad)
+    assert r.status_code == 422
+    assert any("codeFragment" in e for e in r.json()["detail"]["errors"])
+
+
+def test_door_without_task_is_valid_with_fragments(client, teacher_token):
+    assert _upload(client, teacher_token, CODE_GAME).status_code == 201
+
+
+def test_attempt_start_returns_the_game_id_for_asset_urls(client, db, teacher_token, klass):
+    """ZIP assets are served from /uploads/exitgames/<id>/assets/<file>, so the
+    player cannot resolve a media filename without the game id."""
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    client.cookies.clear()
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert isinstance(r.json()["exitgame_id"], int)
+
+
+def test_fragments_are_earned_by_solving(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+
+    r = _event(client, student_token, aid, "a1", "answer", {"task_index": 0, "answer": "2"})
+    frags = {f["slide_id"]: f for f in r.json()["code_fragments"]}
+    assert frags["a1"]["earned"] is True and frags["a1"]["fragment"] == "AB"
+    # An unearned fragment must not be handed to the player.
+    assert frags["a2"]["earned"] is False and frags["a2"]["fragment"] is None
+
+
+def test_door_opens_only_with_the_complete_code(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+    _event(client, student_token, aid, "a1", "answer", {"task_index": 0, "answer": "2"})
+
+    r = _event(client, student_token, aid, "tuer", "code", {"code": "AB"})
+    assert r.json()["correct"] is False
+    assert r.json()["open_slides"] == ["a2"]
+    assert r.json()["attempt"]["errors_total"] == 1
+    assert "tuer" not in r.json()["attempt"]["solved_slide_ids"]
+
+    _event(client, student_token, aid, "a2", "answer", {"task_index": 0, "answer": "4"})
+    r = _event(client, student_token, aid, "tuer", "code", {"code": " ab-7 "})
+    assert r.json()["correct"] is True
+    assert "tuer" in r.json()["attempt"]["solved_slide_ids"]
+
+
+def test_code_action_rejected_on_a_task_slide(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+    assert _event(client, student_token, aid, "a1", "code", {"code": "AB"}).status_code == 400
+
+
+def test_code_action_rejected_on_a_door_without_fragments(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)  # SIMPLE_GAME
+    assert _event(client, student_token, aid, "tuer", "code", {"code": "X"}).status_code == 400
+
+
+def test_right_code_does_not_open_a_door_with_unearned_fragments(client, db, teacher_token, klass):
+    """Abschreiben nuetzt nichts: the door checks that THIS student collected
+    the fragments, not just that the typed string matches."""
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+    r = _event(client, student_token, aid, "tuer", "code", {"code": "AB7"})
+    assert r.json()["correct"] is False
+    assert r.json()["open_slides"] == ["a1", "a2"]
+
+
+def test_task_slides_can_be_skipped_doors_cannot(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+    r = _event(client, student_token, aid, "a2", "skip")
+    assert r.status_code == 200
+    assert "a2" not in r.json()["attempt"]["solved_slide_ids"]
+    assert _event(client, student_token, aid, "tuer", "skip").status_code == 400
+
+
+def test_answer_time_is_measured_server_side(client, db, teacher_token, klass):
+    """The DDA reads response_time from the event payload — the client never
+    sends it, and a client-sent value must not be trusted."""
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, CODE_GAME)
+    _event(client, student_token, aid, "a1", "answer",
+           {"task_index": 0, "answer": "2", "time_spent_s": 9999})
+
+    client.cookies.clear()
+    log = client.get(f"/api/exitgame-attempts/{aid}/log", headers=_auth(teacher_token)).json()
+    answer_events = [e for e in log["events"] if e["event_type"] == "success"]
+    assert len(answer_events) == 1
+    assert answer_events[0]["payload"]["time_spent_s"] < 60
+
+
+NO_EASIER_GAME = {
+    **SIMPLE_GAME,
+    "dda": {"enabled": True, "levels": [
+        {"name": "a", "hintCount": 0, "offerEasier": False},
+        {"name": "b", "hintCount": 1, "offerEasier": False},
+        {"name": "c", "hintCount": 2, "offerEasier": False},
+    ]},
+}
+
+
+def test_easier_alternative_blocked_when_level_forbids_it(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, NO_EASIER_GAME)
+    r = _event(client, student_token, aid, "aufgabe-1", "easier_taken", {"task_index": 0})
     assert r.status_code == 409

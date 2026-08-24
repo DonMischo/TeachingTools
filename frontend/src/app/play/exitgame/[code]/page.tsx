@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  api, setActiveGuestToken, ExitGameData, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary, DdaAdaptation,
+  api, setActiveGuestToken, ExitGameData, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary,
+  ExitGameFragment, DdaAdaptation,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
@@ -53,6 +54,27 @@ function styleVars(style?: ExitGameStyle): React.CSSProperties {
   return css;
 }
 
+// ── DDA level ─────────────────────────────────────────────────────────────
+// The server re-rates the student after every answer and hands back the level
+// it picked from the game's authored `dda.levels`. Everything the level says —
+// hint budget, Richtzeit, extra example, easier alternative — is applied here;
+// the server independently enforces the budget and the easier-task offer.
+
+type DdaLevel = Record<string, unknown>;
+
+function levelOf(adaptation: DdaAdaptation | null): DdaLevel | null {
+  return adaptation?.contentParams?.scaffolding_level ?? null;
+}
+
+function levelNumber(level: DdaLevel | null, key: string): number | null {
+  const v = level?.[key];
+  return typeof v === "number" ? v : null;
+}
+
+function mmss(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
 function mergeVariant(task: ExitGameTask, variantIdx: number | undefined): ExitGameTask {
   if (!task.variants || variantIdx === undefined) return task;
   const { variants: _drop, ...base } = task;
@@ -69,10 +91,22 @@ function toVideoEmbed(src: string): { kind: "iframe" | "video"; url: string } {
   return { kind: "video", url: src };
 }
 
-function MediaView({ media }: { media: NonNullable<ExitGameSlide["media"]> }) {
+// A media src is either an absolute URL or the name of a file from the
+// assets/ folder of the uploaded ZIP, which the API serves per game.
+function mediaUrl(src: string, exitgameId: number): string {
+  if (/^(https?:)?\/\//.test(src) || src.startsWith("/") || src.startsWith("data:")) return src;
+  return `/uploads/exitgames/${exitgameId}/assets/${src}`;
+}
+
+function MediaView({ media, exitgameId }: {
+  media: NonNullable<ExitGameSlide["media"]>; exitgameId: number;
+}) {
   const height = media.height ?? 360;
   if (media.kind === "image") {
-    return <img src={media.src} alt={media.alt ?? ""} className="max-w-full rounded-lg" />;
+    // `height` caps images too — a pictogram should not fill the column.
+    return <img src={mediaUrl(media.src, exitgameId)} alt={media.alt ?? ""}
+      style={media.height ? { maxHeight: media.height } : undefined}
+      className="max-w-full rounded-lg" />;
   }
   if (media.kind === "html") {
     return <iframe src={media.src} style={{ height, width: "100%", border: 0 }} className="rounded-lg" />;
@@ -87,10 +121,11 @@ function MediaView({ media }: { media: NonNullable<ExitGameSlide["media"]> }) {
 // ── Single task widget ───────────────────────────────────────────────────
 
 function SingleTaskWidget({
-  task, taskIndex, slideId, hints, attemptId, alreadySolved, onSolved, onAttemptChange,
+  task, taskIndex, slideId, hints, attemptId, alreadySolved, level, extraExample, onSolved, onAttemptChange,
 }: {
   task: ExitGameTask; taskIndex: number; slideId: string; hints: string[]; attemptId: number; alreadySolved: boolean;
-  onSolved: (attempt: ExitGameAttemptSummary) => void;
+  level: DdaLevel | null; extraExample?: string;
+  onSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
   onAttemptChange: (attempts: number, hintsShown: number, adaptation: DdaAdaptation | null) => void;
 }) {
   const [activeTask, setActiveTask] = useState(task);
@@ -102,9 +137,21 @@ function SingleTaskWidget({
   const [feedback, setFeedback] = useState<"right" | "wrong" | null>(alreadySolved ? "right" : null);
   const [attempts, setAttempts] = useState(0);
   const [hintsShown, setHintsShown] = useState(0);
-  const [hintBudget, setHintBudget] = useState(2);
   const [showEasierOffer, setShowEasierOffer] = useState(false);
   const [solved, setSolved] = useState(alreadySolved);
+  const hintBudget = levelNumber(level, "hintCount") ?? 2;
+  const richtzeit = levelNumber(level, "timeLimitSeconds");
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(richtzeit);
+
+  // Richtzeit is a guide, never a deadline: nothing is lost when it runs out,
+  // it just releases a hint early for students who are stuck but not guessing.
+  useEffect(() => {
+    if (richtzeit == null || solved) { setSecondsLeft(null); return; }
+    setSecondsLeft(richtzeit);
+    const t = setInterval(() => setSecondsLeft(s => (s == null ? null : Math.max(0, s - 1))), 1000);
+    return () => clearInterval(t);
+  }, [richtzeit, solved]);
+  const timeUp = secondsLeft === 0;
 
   const answerMut = useMutation({
     mutationFn: (answer: unknown) =>
@@ -113,16 +160,15 @@ function SingleTaskWidget({
       if (res.correct) {
         setFeedback("right");
         setSolved(true);
-        onSolved(res.attempt);
+        onSolved(res.attempt, res.code_fragments);
       } else {
         setFeedback("wrong");
         setAttempts(a => a + 1);
         onAttemptChange(attempts + 1, hintsShown, res.adaptation);
-        if (res.adaptation) {
-          const budget = (res.adaptation.contentParams.scaffolding_level?.hintCount as number) ?? 2;
-          setHintBudget(budget);
+        const mayTakeEasier = levelOf(res.adaptation)?.offerEasier !== false;
+        if (attempts + 1 >= 2 && hintsShown >= hintBudget && task.easierAlternative && mayTakeEasier) {
+          setShowEasierOffer(true);
         }
-        if (attempts + 1 >= 2 && hintsShown >= hintBudget && task.easierAlternative) setShowEasierOffer(true);
       }
     },
   });
@@ -148,7 +194,14 @@ function SingleTaskWidget({
   });
 
   if (solved) {
-    return <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-500">✔ Richtig gelöst!</div>;
+    return (
+      <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-500 flex items-center gap-2 flex-wrap">
+        <span>✔ Richtig gelöst!</span>
+        {task.codeFragment && (
+          <span>🔑 Codeschnipsel: <span className="font-mono font-bold">{task.codeFragment}</span></span>
+        )}
+      </div>
+    );
   }
 
   function submitSingle(text: string) {
@@ -227,7 +280,20 @@ function SingleTaskWidget({
 
       {feedback === "wrong" && <p className="text-xs text-red-400">Nicht ganz — versuch's nochmal.</p>}
 
-      {hints.length > 0 && attempts > hintsShown && hintsShown < hintBudget && (
+      {secondsLeft != null && (
+        <p className="text-xs text-[var(--text-muted)]">
+          {timeUp ? "⏱ Richtzeit vorbei — lass dir Zeit, ein Hinweis ist frei." : `⏱ Richtzeit ${mmss(secondsLeft)}`}
+        </p>
+      )}
+
+      {extraExample && level?.extraExample === true && (attempts > 0 || timeUp) && (
+        <div className="rounded-lg border border-[var(--border)] p-2 text-xs flex flex-col gap-1">
+          <span className="text-[var(--text-muted)]">Noch ein Beispiel:</span>
+          <MathText text={extraExample} blockEquations />
+        </div>
+      )}
+
+      {hints.length > 0 && (attempts > hintsShown || timeUp) && hintsShown < hintBudget && (
         <button onClick={() => hintMut.mutate(hintsShown)} disabled={hintMut.isPending}
           className="text-xs text-[var(--accent)] hover:underline self-start">
           💡 Hinweis anzeigen ({hintsShown}/{hintBudget})
@@ -248,14 +314,90 @@ function SingleTaskWidget({
   );
 }
 
+// ── Door code ─────────────────────────────────────────────────────────────
+// Every solved task hands out its `codeFragment`; the door wants them in
+// order. A missing fragment is a "?" that jumps back to the task that owes it,
+// so a student who skipped something can go and earn it.
+
+function DoorCodePanel({
+  slideId, attemptId, fragments, solved, onSolved, onReview,
+}: {
+  slideId: string; attemptId: number; fragments: ExitGameFragment[]; solved: boolean;
+  onSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
+  onReview: (targetSlideId: string) => void;
+}) {
+  const [value, setValue] = useState("");
+  const [wrong, setWrong] = useState(false);
+  const [openSlides, setOpenSlides] = useState<string[]>([]);
+
+  const codeMut = useMutation({
+    mutationFn: () => api.exitgame.attempts.postEvent(attemptId, slideId, "code", { code: value.trim() }),
+    onSuccess: (res) => {
+      if (res.correct) {
+        setWrong(false);
+        setOpenSlides([]);
+        onSolved(res.attempt, res.code_fragments);
+      } else {
+        setWrong(true);
+        setOpenSlides(res.open_slides ?? []);
+      }
+    },
+  });
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+      <p className="text-sm font-medium">🔑 Türcode</p>
+      <div className="flex gap-1.5 flex-wrap">
+        {fragments.map(f => (
+          <button key={`${f.slide_id}:${f.task_index}`} onClick={() => onReview(f.slide_id)} disabled={f.earned}
+            title={f.earned ? "Eingesammelt" : "Diese Aufgabe ist noch offen — hier tippen"}
+            className={`font-mono text-sm px-2 py-1 rounded-lg border ${
+              f.earned ? "border-[var(--border)]" : "border-dashed border-[var(--accent)] text-[var(--accent)]"
+            }`}>
+            {f.earned ? f.fragment : "?"}
+          </button>
+        ))}
+      </div>
+
+      {solved ? (
+        <p className="text-sm text-green-500">✔ Die Tür ist offen!</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <input className="input text-sm py-1.5 w-full" value={value} placeholder="Code eingeben…"
+            onChange={e => setValue(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && value.trim()) codeMut.mutate(); }} />
+          <button onClick={() => codeMut.mutate()} disabled={!value.trim() || codeMut.isPending}
+            className="btn-primary text-sm py-1.5 px-4 self-start disabled:opacity-40">Tür öffnen</button>
+        </div>
+      )}
+
+      {wrong && <p className="text-xs text-red-400">Der Code passt nicht.</p>}
+      {openSlides.length > 0 && (
+        <div className="text-xs flex flex-col gap-1">
+          <span className="text-[var(--text-muted)]">Diese Aufgaben fehlen dir noch:</span>
+          <div className="flex gap-2 flex-wrap">
+            {openSlides.map(target => (
+              <button key={target} onClick={() => onReview(target)} className="text-[var(--accent)] hover:underline">
+                ↩ {target}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Task area (a task/door slide, possibly a worksheet of several tasks) ──
 
 function TaskArea({
-  slide, attemptId, solvedSlideIds, variantChoices, onSlideSolved, onReview,
+  slide, attemptId, solvedSlideIds, variantChoices, level, fragments, onSlideSolved, onAdaptation, onReview,
 }: {
   slide: ExitGameSlide; attemptId: number; solvedSlideIds: string[];
-  variantChoices: Record<string, number>;
-  onSlideSolved: (attempt: ExitGameAttemptSummary) => void; onReview: (targetSlideId: string) => void;
+  variantChoices: Record<string, number>; level: DdaLevel | null; fragments: ExitGameFragment[];
+  onSlideSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
+  onAdaptation: (adaptation: DdaAdaptation | null) => void;
+  onReview: (targetSlideId: string) => void;
 }) {
   const rawTasks = slide.tasks ?? (slide.task ? [slide.task] : []);
   const tasks = rawTasks.map((t, i) => mergeVariant(t, variantChoices[`${slide.id}:${i}`]));
@@ -264,25 +406,28 @@ function TaskArea({
   const [totalAttempts, setTotalAttempts] = useState(0);
 
   const allSolved = wasAlreadySolved || solvedIndices.size === tasks.length;
-
-  if (tasks.length === 0 && slide.code) {
-    return <p className="text-sm text-[var(--text-muted)]">Dieser Türcode wird nicht als Eingabe unterstützt — bitte den Lehrer fragen.</p>;
-  }
+  const doorFragments = fragments.filter(f => f.door_id === slide.id);
 
   return (
     <div className="flex flex-col gap-3">
       {tasks.map((t, i) => (
         <SingleTaskWidget key={i} task={t} taskIndex={i} slideId={slide.id} hints={slide.hints ?? []} attemptId={attemptId}
           alreadySolved={wasAlreadySolved || solvedIndices.has(i)}
-          onSolved={(attempt) => {
+          level={level} extraExample={slide.extraExample}
+          onSolved={(attempt, frags) => {
             setSolvedIndices(prev => new Set(prev).add(i));
             // The answer response's attempt already reflects the solved state
             // server-side — pass it up so "Weiter" appears without a refetch.
-            if (solvedIndices.size + 1 >= tasks.length) onSlideSolved(attempt);
+            if (solvedIndices.size + 1 >= tasks.length) onSlideSolved(attempt, frags);
           }}
-          onAttemptChange={() => setTotalAttempts(a => a + 1)}
+          onAttemptChange={(_a, _h, adaptation) => { setTotalAttempts(a => a + 1); onAdaptation(adaptation); }}
         />
       ))}
+
+      {slide.type === "door" && doorFragments.length > 0 && (
+        <DoorCodePanel slideId={slide.id} attemptId={attemptId} fragments={doorFragments}
+          solved={solvedSlideIds.includes(slide.id)} onSolved={onSlideSolved} onReview={onReview} />
+      )}
 
       {slide.type === "door" && totalAttempts >= 2 && !allSolved && slide.onFailReview && slide.onFailReview.length > 0 && (
         <div className="rounded-lg border border-[var(--border)] p-2 text-xs flex flex-col gap-1">
@@ -360,9 +505,14 @@ export default function ExitgamePlayPage() {
   const [finished, setFinished] = useState(false);
   const [completion, setCompletion] = useState<{ message?: string; code?: string } | null>(null);
   const [finalSummary, setFinalSummary] = useState<ExitGameAttemptSummary | null>(null);
+  const [fragments, setFragments] = useState<ExitGameFragment[]>([]);
+  const [adaptation, setAdaptation] = useState<DdaAdaptation | null>(null);
 
   useEffect(() => {
-    if (start) setIdx(start.attempt.current_slide_idx || 0);
+    if (!start) return;
+    setIdx(start.attempt.current_slide_idx || 0);
+    setFragments(start.code_fragments ?? []);
+    setAdaptation(start.adaptation);
   }, [start?.attempt.id]);
 
   const finishMut = useMutation({
@@ -394,6 +544,12 @@ export default function ExitgamePlayPage() {
     } else {
       viewSlide(next);
     }
+  }
+
+  function skipSlide() {
+    if (!start) return;
+    api.exitgame.attempts.postEvent(start.attempt.id, start.exitgame_data.slides[idx].id, "skip", {});
+    advance();
   }
 
   function jumpToReview(targetSlideId: string) {
@@ -451,17 +607,20 @@ export default function ExitgamePlayPage() {
         </div>
         {slide.title && <h2 className="font-semibold">{slide.title}</h2>}
         {slide.text && <MathText text={slide.text} blockEquations className="text-sm whitespace-pre-line" />}
-        {slide.media && <MediaView media={slide.media} />}
+        {slide.media && <MediaView media={slide.media} exitgameId={start.exitgame_id} />}
 
         {isTaskSlide ? (
           <TaskArea key={slide.id} slide={slide} attemptId={start.attempt.id} solvedSlideIds={solvedSlideIds}
             variantChoices={start.variant_choices ?? {}}
-            onSlideSolved={(attempt) => {
+            level={levelOf(adaptation)} fragments={fragments}
+            onSlideSolved={(attempt, frags) => {
               // Update the cached attempt directly from the answer response —
               // "Weiter" appears immediately, no round-trip needed.
               qc.setQueryData(["exitgame-attempt-start", code],
                 (old: typeof start | undefined) => old ? { ...old, attempt } : old);
+              if (frags) setFragments(frags);
             }}
+            onAdaptation={(a) => { if (a) setAdaptation(a); }}
             onReview={jumpToReview}
           />
         ) : (
@@ -470,6 +629,14 @@ export default function ExitgamePlayPage() {
 
         {isTaskSlide && (solvedSlideIds.includes(slide.id)) && (
           <button onClick={advance} className="btn-primary text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
+        )}
+
+        {/* A task may be left open — the missing code fragment is what stops
+            the student at the door, and the door links back here. */}
+        {slide.type === "task" && !solvedSlideIds.includes(slide.id) && (
+          <button onClick={skipSlide} className="text-xs text-[var(--text-muted)] hover:underline self-start">
+            Später lösen →
+          </button>
         )}
       </section>
     </div>
