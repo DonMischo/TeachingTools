@@ -154,6 +154,8 @@ export type StudentGroupOut = {
   group_type: GroupType;
   name: string;
   class_id: number | null;
+  /** Klassenstufe of a cross-class Kurs/WPF — "Kurs I" exists once per Jahrgang. */
+  grade: number | null;
   member_ids: number[];
   member_class_ids: number[];
 };
@@ -180,7 +182,8 @@ export type ClassChoreStats = Record<number, Record<string, number>>;
 
 export type ClassTrackerOut = {
   id: number;
-  class_id: number;
+  class_id: number | null;
+  group_id: number | null;
   name: string;
   checked_student_ids: number[];
 };
@@ -945,12 +948,18 @@ export type SeatingItem = {
 
 export type SeatingPlanSummary = {
   id: number;
-  class_id: number;
+  class_id: number | null;
+  group_id: number | null;
   name: string;
   orientation: "landscape" | "portrait";
 };
 
 export type SeatingPlanDetail = SeatingPlanSummary & { items: SeatingItem[] };
+
+/** Whose seating plans: a Klasse or a Kurs/WPF. */
+export type SeatingScope = { kind: "class" | "group"; id: number };
+
+const seatingBase = (s: SeatingScope) => (s.kind === "class" ? `classes/${s.id}` : `groups/${s.id}`);
 
 // ── Tool availability ──
 export type ToolCapability = "use" | "host" | "create" | "upload";
@@ -1283,10 +1292,11 @@ export const api = {
     me: () => apiFetch<MeOut>("auth/me"),
   },
   students: {
-    list: (params?: { klasse?: string; jahrgang?: number }) => {
+    list: (params?: { klasse?: string; jahrgang?: number; group_id?: number }) => {
       const q = new URLSearchParams();
       if (params?.klasse) q.set("klasse", params.klasse);
       if (params?.jahrgang != null) q.set("jahrgang", String(params.jahrgang));
+      if (params?.group_id != null) q.set("group_id", String(params.group_id));
       return apiFetch<StudentOut[]>(`students${q.size ? "?" + q : ""}`);
     },
     import: (file: File) => {
@@ -1422,14 +1432,18 @@ export const api = {
       apiFetch<string[]>("roles/types", { method: "PUT", body: JSON.stringify({ class_id, role_types }) }),
   },
   groups: {
-    list: (params?: { group_type?: GroupType; class_id?: number }) => {
+    list: (params?: { group_type?: GroupType; class_id?: number; grade?: number }) => {
       const q = new URLSearchParams();
       if (params?.group_type) q.set("group_type", params.group_type);
       if (params?.class_id != null) q.set("class_id", String(params.class_id));
+      if (params?.grade != null) q.set("grade", String(params.grade));
       return apiFetch<StudentGroupOut[]>(`groups${q.size ? "?" + q : ""}`);
     },
-    create: (body: { group_type: GroupType; name: string; class_id?: number | null }) =>
+    create: (body: { group_type: GroupType; name: string; class_id?: number | null; grade?: number | null }) =>
       apiFetch<StudentGroupOut>("groups", { method: "POST", body: JSON.stringify(body) }),
+    get: (id: number) => apiFetch<StudentGroupOut>(`groups/${id}`),
+    rename: (id: number, name: string) =>
+      apiFetch<StudentGroupOut>(`groups/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
     delete: (id: number) => apiFetch<void>(`groups/${id}`, { method: "DELETE" }),
     addMember: (id: number, student_id: number) =>
       apiFetch<StudentGroupOut>(`groups/${id}/members`, { method: "POST", body: JSON.stringify({ student_id }) }),
@@ -1651,17 +1665,20 @@ export const api = {
     randomAssign: (class_id: number) => apiFetch<ClassChoreOut[]>(`chores/random?class_id=${class_id}`, { method: "POST" }),
   },
   trackers: {
-    list: (class_id: number) => apiFetch<ClassTrackerOut[]>(`trackers?class_id=${class_id}`),
-    create: (body: { class_id: number; name: string }) =>
+    list: (scope: { class_id: number } | { group_id: number }) =>
+      apiFetch<ClassTrackerOut[]>(`trackers?${new URLSearchParams(
+        "class_id" in scope ? { class_id: String(scope.class_id) } : { group_id: String(scope.group_id) })}`),
+    create: (body: ({ class_id: number } | { group_id: number }) & { name: string }) =>
       apiFetch<ClassTrackerOut>("trackers", { method: "POST", body: JSON.stringify(body) }),
     delete: (id: number) => apiFetch<void>(`trackers/${id}`, { method: "DELETE" }),
     toggle: (tracker_id: number, student_id: number) =>
       apiFetch<ClassTrackerOut>(`trackers/${tracker_id}/toggle?student_id=${student_id}`, { method: "POST" }),
   },
   seating: {
-    list: (class_id: number) => apiFetch<SeatingPlanSummary[]>(`classes/${class_id}/seating`),
-    create: (class_id: number, body: { name?: string; orientation?: "landscape" | "portrait" }) =>
-      apiFetch<SeatingPlanDetail>(`classes/${class_id}/seating`, { method: "POST", body: JSON.stringify(body) }),
+    // Plans hang off a Klasse or a Kurs/WPF — same endpoints, different owner.
+    list: (scope: SeatingScope) => apiFetch<SeatingPlanSummary[]>(`${seatingBase(scope)}/seating`),
+    create: (scope: SeatingScope, body: { name?: string; orientation?: "landscape" | "portrait" }) =>
+      apiFetch<SeatingPlanDetail>(`${seatingBase(scope)}/seating`, { method: "POST", body: JSON.stringify(body) }),
     get: (plan_id: number) => apiFetch<SeatingPlanDetail>(`seating/${plan_id}`),
     update: (plan_id: number, body: { name: string; orientation: "landscape" | "portrait"; items: SeatingItem[] }) =>
       apiFetch<SeatingPlanDetail>(`seating/${plan_id}`, { method: "PUT", body: JSON.stringify(body) }),

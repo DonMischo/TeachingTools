@@ -221,7 +221,10 @@ def _run_migrations(db_engine):
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
         "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id)",
-        "ALTER TABLE student_groups ADD CONSTRAINT uq_group_type_class_grade_name UNIQUE (group_type, class_id, grade, name)",
+        # NULL-safe: class_id/grade are NULL for cross-class groups, and NULLs
+        # never collide in a plain UNIQUE — so a second "10 Kurs I" would slip in.
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_group_scope_name ON student_groups "
+        "(group_type, COALESCE(class_id, -1), COALESCE(grade, -1), name)",
     ]
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail

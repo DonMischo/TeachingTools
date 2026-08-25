@@ -119,6 +119,13 @@ function kursBadgeClasses(name: string): string {
 }
 const AB_PRESETS = ["A", "B"];
 
+/** Whose roster a section works on — a Klasse or a Kurs/WPF. The Kurs detail
+ *  view reuses the class sections (Liste, Tracking, NTA, Sitzplan) through this. */
+type RosterScope = { classId: number } | { groupId: number };
+const isClassScope = (s: RosterScope): s is { classId: number } => "classId" in s;
+const studentsKeyOf = (s: RosterScope) =>
+  isClassScope(s) ? ["students", s.classId] : ["students", "group", s.groupId];
+
 function GroupTabSection({
   groupType, cls, students, presetNames,
 }: {
@@ -130,24 +137,36 @@ function GroupTabSection({
   const { toast } = useToast();
   const qc = useQueryClient();
   const scopedToClass = groupType === "ab_gruppe";
-  const listKey = ["groups", groupType, scopedToClass ? cls.id : "all"];
+  // Kurse/WPF belong to a Jahrgang, not to the whole school: picking "Kurs I"
+  // in 10a creates *this* Kurs (the "10 K1" one), separate from 9's Kurs I.
+  const grade = gradeOf(cls.code);
+  const listKey = ["groups", groupType, scopedToClass ? cls.id : `jg${grade ?? "?"}`];
 
   const { data: groups = [] } = useQuery<StudentGroupOut[]>({
     queryKey: listKey,
-    queryFn: () => api.groups.list(scopedToClass ? { group_type: groupType, class_id: cls.id } : { group_type: groupType }),
+    queryFn: () => api.groups.list(
+      scopedToClass
+        ? { group_type: groupType, class_id: cls.id }
+        : { group_type: groupType, grade: grade ?? undefined }
+    ),
     staleTime: 15_000,
   });
 
   const createMut = useMutation({
-    mutationFn: (name: string) => api.groups.create({ group_type: groupType, name, class_id: scopedToClass ? cls.id : null }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey }),
+    mutationFn: (name: string) => api.groups.create({
+      group_type: groupType,
+      name,
+      class_id: scopedToClass ? cls.id : null,
+      grade: scopedToClass ? null : grade,
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["groups"] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
   const toggleMut = useMutation({
     mutationFn: ({ groupId, studentId, member }: { groupId: number; studentId: number; member: boolean }) =>
       member ? api.groups.removeMember(groupId, studentId) : api.groups.addMember(groupId, studentId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: listKey }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["groups"] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
@@ -1011,17 +1030,19 @@ const KLASSENLISTE_FILTERS: { key: KlassenlisteFilter; label: string }[] = [
 ];
 
 function KlassenlisteSection({
-  students, roles, chores, choreStats, groups,
+  students, roles, chores, choreStats, groups, filters = KLASSENLISTE_FILTERS,
 }: {
   students: StudentOut[];
   roles: StudentRoleOut[];
   chores: ClassChoreOut[];
   choreStats: import("@/lib/api").ClassChoreStats;
   groups: StudentGroupOut[];
+  /** Which chips to offer — a Kurs has no Rollen and no Dienste. */
+  filters?: { key: KlassenlisteFilter; label: string }[];
 }) {
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [activeFilters, setActiveFilters] = useState<Set<KlassenlisteFilter>>(
-    new Set(["rollen", "gruppen", "dienste"])
+    new Set(filters.map(f => f.key))
   );
 
   function toggleFilter(f: KlassenlisteFilter) {
@@ -1037,14 +1058,14 @@ function KlassenlisteSection({
   );
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)] text-center py-6">Keine Schüler:innen in dieser Klasse.</p>;
+    return <p className="text-sm text-[var(--text-muted)] text-center py-6">Noch keine Schüler:innen zugeordnet.</p>;
   }
 
   return (
     <div className="flex flex-col gap-0">
       {/* Filter row */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        {KLASSENLISTE_FILTERS.map(f => (
+        {filters.map(f => (
           <button
             key={f.key}
             onClick={() => toggleFilter(f.key)}
@@ -1144,9 +1165,9 @@ function firstNameTokens(vorname: string): string[] {
 
 // Per-student Alias (for the Sitzplan) + Nachteilsausgleich flags (1–5).
 function NtaSection({
-  cls, students, canEdit,
+  scope, students, canEdit,
 }: {
-  cls: ClassOut;
+  scope: RosterScope;
   students: StudentOut[];
   canEdit: boolean;
 }) {
@@ -1158,9 +1179,9 @@ function NtaSection({
     mutationFn: ({ id, alias, nta }: { id: number; alias: string | null; nta: number[] }) =>
       api.students.updateProfile(id, { alias, nta }),
     onSuccess: (updated) => {
-      qc.setQueryData<StudentOut[]>(["students", cls.id], prev =>
+      qc.setQueryData<StudentOut[]>(studentsKeyOf(scope), prev =>
         prev ? prev.map(s => s.id === updated.id ? updated : s) : prev);
-      qc.invalidateQueries({ queryKey: ["roster", cls.id] });
+      if (isClassScope(scope)) qc.invalidateQueries({ queryKey: ["roster", scope.classId] });
     },
   });
 
@@ -1255,9 +1276,9 @@ function NtaSection({
 }
 
 function TrackingSection({
-  cls, students, canEdit,
+  scope, students, canEdit,
 }: {
-  cls: ClassOut;
+  scope: RosterScope;
   students: StudentOut[];
   canEdit: boolean;
 }) {
@@ -1265,29 +1286,32 @@ function TrackingSection({
   const [newName, setNewName] = useState("");
   const [filter, setFilter] = useState("");
 
+  const apiScope = isClassScope(scope) ? { class_id: scope.classId } : { group_id: scope.groupId };
+  const trackerKey = isClassScope(scope) ? ["trackers", scope.classId] : ["trackers", "group", scope.groupId];
+
   const { data: trackers = [] } = useQuery<import("@/lib/api").ClassTrackerOut[]>({
-    queryKey: ["trackers", cls.id],
-    queryFn: () => api.trackers.list(cls.id),
+    queryKey: trackerKey,
+    queryFn: () => api.trackers.list(apiScope),
   });
 
   const createTracker = useMutation({
-    mutationFn: (name: string) => api.trackers.create({ class_id: cls.id, name }),
+    mutationFn: (name: string) => api.trackers.create({ ...apiScope, name }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trackers", cls.id] });
+      qc.invalidateQueries({ queryKey: trackerKey });
       setNewName("");
     },
   });
 
   const deleteTracker = useMutation({
     mutationFn: (id: number) => api.trackers.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trackers", cls.id] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: trackerKey }),
   });
 
   const toggleCheck = useMutation({
     mutationFn: ({ tracker_id, student_id }: { tracker_id: number; student_id: number }) =>
       api.trackers.toggle(tracker_id, student_id),
     onSuccess: (updated) => {
-      qc.setQueryData<import("@/lib/api").ClassTrackerOut[]>(["trackers", cls.id], prev =>
+      qc.setQueryData<import("@/lib/api").ClassTrackerOut[]>(trackerKey, prev =>
         prev ? prev.map(t => t.id === updated.id ? updated : t) : prev
       );
     },
@@ -1542,7 +1566,107 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
   );
 }
 
-// ─── Kurs / Wahlpflicht Detail Dialog (roster + export) ───────────────────────
+// ─── Kurs / Wahlpflicht Detail Dialog ─────────────────────────────────────────
+// Same shape as the class dialog, minus what a Kurs does not have: Rollen,
+// Gruppen and Dienste all belong to a Klasse. What stays is the roster, the
+// Tracking table, NTA/Alias and the Sitzplan.
+
+/** Display tag of a Kurs/WPF as it appears everywhere else: "10 K1", "7 Fr". */
+function groupTag(g: StudentGroupOut): string {
+  return `${g.grade != null ? `${g.grade} ` : ""}${groupShortCode(g.name)}`;
+}
+
+function GroupEinstellungenSection({
+  group, memberClasses, canEdit, onDeleted,
+}: {
+  group: StudentGroupOut;
+  memberClasses: ClassOut[];
+  canEdit: boolean;
+  onDeleted: () => void;
+}) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [name, setName] = useState(group.name);
+
+  const rename = useMutation({
+    mutationFn: () => api.groups.rename(group.id, name.trim()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["groups"] });
+      toast("Umbenannt.", "success");
+    },
+    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+  });
+
+  const remove = useMutation({
+    mutationFn: () => api.groups.delete(group.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["groups"] });
+      onDeleted();
+    },
+    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+  });
+
+  return (
+    <div className="flex flex-col gap-6 max-w-lg">
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-[var(--text-muted)]">Name</label>
+        <div className="flex gap-2">
+          <input
+            value={name}
+            disabled={!canEdit}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && name.trim() && name !== group.name) rename.mutate(); }}
+            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={() => rename.mutate()}
+            disabled={!canEdit || !name.trim() || name === group.name || rename.isPending}
+            className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
+          >
+            Speichern
+          </button>
+        </div>
+        <p className="text-xs text-[var(--text-muted)]">
+          Die Klassenstufe {group.grade ?? "—"} steht fest: Kurse gibt es einmal pro Jahrgang.
+          Mitglieder werden in der Klasse unter „🧩 Gruppen" zugeordnet.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-[var(--text-muted)]">Beteiligte Klassen</span>
+        {memberClasses.length === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">Noch keine — der Kurs ist leer.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {memberClasses.map(c => (
+              <span key={c.id} className="text-xs px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)]">
+                {c.code}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {canEdit && (
+        <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+          <button
+            onClick={() => {
+              if (confirm(`„${group.name}" wirklich löschen? Tracking und Sitzpläne dieses Kurses gehen mit.`))
+                remove.mutate();
+            }}
+            disabled={remove.isPending}
+            className="self-start px-3 py-2 text-sm rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+          >
+            🗑 Kurs löschen
+          </button>
+          <p className="text-xs text-[var(--text-muted)]">
+            Die Schüler:innen bleiben in ihrer Klasse — nur die Kurszuordnung verschwindet.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function GroupDetailDialog({
   group, classes, onClose,
@@ -1551,61 +1675,134 @@ function GroupDetailDialog({
   classes: ClassOut[];
   onClose: () => void;
 }) {
-  const { data: roster = [], isLoading } = useQuery<import("@/lib/api").GroupRosterEntry[]>({
-    queryKey: ["group-roster", group.id],
-    queryFn: () => api.groups.roster(group.id),
-  });
-  const memberClasses = classes.filter(c => group.member_class_ids.includes(c.id));
+  const router = useRouter();
+  const { auth } = useAuth();
+  const [section, setSection] = useState<"schüler" | "tracking" | "nta" | "sitzplan" | "einstellungen">("schüler");
+
+  const scope: RosterScope = { groupId: group.id };
   const typeLabel = group.group_type === "kurs" ? "Kurs" : group.group_type === "wahlpflicht" ? "Wahlpflicht" : "Gruppe";
+  // A Kurs spans classes and has no Klassenleitung, so every teacher may edit it
+  // — the same rule the groups endpoints have always used.
+  const canEdit = !!auth?.teacher;
+
+  const { data: students = [] } = useQuery<StudentOut[]>({
+    queryKey: studentsKeyOf(scope),
+    queryFn: () => api.students.list({ group_id: group.id }),
+  });
+
+  // Other Kurse/WPF of the same Jahrgang — so the list can show that a "10 K1"
+  // member is also in "Fr", exactly like the class list does.
+  const { data: kursGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "kurs", `jg${group.grade ?? "?"}`],
+    queryFn: () => api.groups.list({ group_type: "kurs", grade: group.grade ?? undefined }),
+  });
+  const { data: wpfGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "wahlpflicht", `jg${group.grade ?? "?"}`],
+    queryFn: () => api.groups.list({ group_type: "wahlpflicht", grade: group.grade ?? undefined }),
+  });
+
+  const memberClasses = classes.filter(c => group.member_class_ids.includes(c.id));
+  const fullTitle = `${typeLabel} ${group.grade != null ? `${group.grade} ` : ""}${group.name}`;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:w-[95vw] sm:max-w-lg max-h-[92dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+          <span className={`text-sm font-bold px-2.5 py-1.5 rounded-lg border shrink-0 ${kursBadgeClasses(group.name)}`}>
+            {groupTag(group)}
+          </span>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-lg truncate">{group.name}</div>
-            <div className="text-xs text-[var(--text-muted)]">{typeLabel} · {roster.length} Schüler:innen</div>
+            <div className="text-xs text-[var(--text-muted)]">
+              {typeLabel}
+              {group.grade != null ? ` · Jahrgang ${group.grade}` : ""}
+              {` · ${students.length} Schüler:innen`}
+              {memberClasses.length > 0 ? ` · ${memberClasses.map(c => c.code).join(", ")}` : ""}
+            </div>
           </div>
-          <button
-            onClick={() => exportRosterList(`${typeLabel} ${group.name}`, roster)}
-            disabled={roster.length === 0}
-            className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors disabled:opacity-40"
-          >
-            🖨 Export
-          </button>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-2xl leading-none px-1">×</button>
         </div>
 
+        {/* Tabs — no Rollen/Gruppen/Dienste: those belong to a Klasse. */}
+        <div className="flex border-b border-[var(--border)] shrink-0">
+          {(["schüler", "tracking", "nta", "sitzplan", "einstellungen"] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setSection(t)}
+              className="flex-1 py-2.5 text-xs font-semibold transition-colors"
+              style={{
+                color: section === t ? "var(--accent)" : "var(--text-muted)",
+                borderBottom: section === t ? "2px solid var(--accent)" : "2px solid transparent",
+              }}
+            >
+              {t === "schüler" ? `👥 ${typeLabel}` : t === "tracking" ? "📋 Tracking" : t === "nta" ? "⚖️ NTA" : t === "sitzplan" ? "🪑 Sitzplan" : "⚙️ Einstellungen"}
+            </button>
+          ))}
+        </div>
+
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-3">
-          {memberClasses.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {memberClasses.map(c => (
-                <span key={c.id} className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)]">
-                  {c.code}
-                </span>
-              ))}
+        <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
+          {section === "schüler" && (
+            <>
+              {students.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => exportRosterList(fullTitle, students)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                  >
+                    🖨 Liste exportieren
+                  </button>
+                </div>
+              )}
+              <KlassenlisteSection
+                students={students}
+                roles={[]}
+                chores={[]}
+                choreStats={{}}
+                groups={[...kursGroups, ...wpfGroups]}
+                filters={KLASSENLISTE_FILTERS.filter(f => f.key === "gruppen")}
+              />
+            </>
+          )}
+
+          {section === "tracking" && (
+            <TrackingSection scope={scope} students={students} canEdit={canEdit} />
+          )}
+
+          {section === "nta" && (
+            <NtaSection scope={scope} students={students} canEdit={canEdit} />
+          )}
+
+          {section === "sitzplan" && (
+            <div className="flex flex-col items-center gap-4 py-8 text-center">
+              <div className="text-5xl">🪑</div>
+              <div>
+                <p className="font-semibold">Sitzplan-Editor</p>
+                <p className="text-sm text-[var(--text-muted)] max-w-sm mt-1">
+                  Eigene Räume für {groupTag(group)} — Tische und Inventar frei platzieren,
+                  Namen aus dem Kurs zuweisen und als A4-PDF drucken.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push(`/haeuser/sitzplan/kurs/${group.id}`)}
+                className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90"
+              >
+                Sitzplan-Editor öffnen →
+              </button>
             </div>
           )}
-          {isLoading ? (
-            <p className="text-sm text-[var(--text-muted)]">Laden…</p>
-          ) : roster.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)] text-center py-6">
-              Noch keine Mitglieder. In einer Klasse → Tab „Gruppen" zuordnen.
-            </p>
-          ) : (
-            <div className="flex flex-col divide-y divide-[var(--border)]">
-              {roster.map(s => (
-                <div key={s.id} className="flex items-center gap-2 py-2 text-sm">
-                  <span className="font-semibold">{s.nachname},</span>
-                  <span>{displayFirstName(s.vorname, s.alias)}</span>
-                </div>
-              ))}
-            </div>
+
+          {section === "einstellungen" && (
+            <GroupEinstellungenSection
+              group={group}
+              memberClasses={memberClasses}
+              canEdit={canEdit}
+              onDeleted={onClose}
+            />
           )}
         </div>
       </div>
@@ -1928,7 +2125,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Tracking ── */}
           {section === "tracking" && (
-            <TrackingSection cls={cls} students={students} canEdit={canEdit} />
+            <TrackingSection scope={{ classId: cls.id }} students={students} canEdit={canEdit} />
           )}
 
           {/* ── Gruppen (Kurse / Wahlpflicht / A-B) ── */}
@@ -1940,7 +2137,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
           {/* ── Nachteilsausgleich + Alias ── */}
           {section === "nta" && (
-            <NtaSection cls={cls} students={students} canEdit={canEdit} />
+            <NtaSection scope={{ classId: cls.id }} students={students} canEdit={canEdit} />
           )}
 
           {/* ── Sitzplan ── */}
@@ -2285,7 +2482,8 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[...list]
-                    .sort((a, b) => a.name.localeCompare(b.name))
+                    // Jahrgang first — "9 K1" and "10 K1" are different courses.
+                    .sort((a, b) => (a.grade ?? 0) - (b.grade ?? 0) || a.name.localeCompare(b.name))
                     .map(g => {
                       const memberClasses = classes.filter(c => g.member_class_ids.includes(c.id));
                       return (
@@ -2296,10 +2494,15 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                           style={{ borderColor: "var(--border)" }}
                         >
                           <span className={`text-xs font-bold px-2 py-1 rounded-md border shrink-0 ${kursBadgeClasses(g.name)}`}>
-                            {groupShortCode(g.name)}
+                            {groupTag(g)}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold truncate">{g.name}</div>
+                            <div className="font-bold truncate">
+                              {g.name}
+                              {g.grade != null && (
+                                <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">Jg. {g.grade}</span>
+                              )}
+                            </div>
                             <div className="text-xs text-[var(--text-muted)] truncate">
                               {memberClasses.length > 0 ? memberClasses.map(c => c.code).join(", ") : "keine Klassen"}
                             </div>

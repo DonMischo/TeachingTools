@@ -91,10 +91,33 @@ def create_group(
 ):
     if body.group_type not in VALID_GROUP_TYPES:
         raise HTTPException(400, f"Unknown group_type. Valid: {', '.join(sorted(VALID_GROUP_TYPES))}")
+    # Picking "Kurs I" in 10a means *this* Kurs — the one Jahrgang 10 already has,
+    # if it exists. A plain insert would quietly make a second one (the unique
+    # constraint cannot catch it: class_id is NULL for cross-class groups, and
+    # NULLs never collide in Postgres), splitting the course in two.
+    existing = (
+        db.query(StudentGroup)
+        .filter_by(group_type=body.group_type, name=body.name, class_id=body.class_id, grade=body.grade)
+        .first()
+    )
+    if existing:
+        return _out(existing)
     g = StudentGroup(group_type=body.group_type, name=body.name, class_id=body.class_id, grade=body.grade)
     db.add(g)
     db.commit()
     db.refresh(g)
+    return _out(g)
+
+
+@router.get("/{group_id}", response_model=GroupOut)
+def get_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
+):
+    g = db.get(StudentGroup, group_id)
+    if not g:
+        raise HTTPException(404, "Group not found")
     return _out(g)
 
 
