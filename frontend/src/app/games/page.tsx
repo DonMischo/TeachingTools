@@ -53,6 +53,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#ef4444",
   },
   {
+    slug: "bildformate",
+    href: "/games/bildformate",
+    icon: "🖼️",
+    title: "Bildformate",
+    description: "PBM, PGM und PPM zum Anfassen — Zahlen tippen und das Bild live sehen oder ins Bild klicken und die Zahlen ändern.",
+    color: "#f97316",
+  },
+  {
     slug: "uebung",
     href: "/uebung",
     icon: "📚",

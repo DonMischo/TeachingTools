@@ -65,6 +65,15 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🔀 Modus", text: "»Alle gleich« zählt alle Kugeln bis 100; »Stellenwert« gibt jeder Reihe einen Stellenwert (Einer, Zehner, …)." },
     ],
   },
+  bildformate: {
+    title: "Bildformate (PBM · PGM · PPM)",
+    intro: "Die Netpbm-Textformate zum Anfassen: eine Bilddatei besteht nur aus Zahlen — links tippen, rechts das Bild.",
+    sections: [
+      { label: "🎨 Formate", text: "PBM (P1) schwarz-weiß mit 0 und 1, PGM (P2) Graustufen bis zum Maximalwert, PPM (P3) Farbe mit drei Werten (Rot Grün Blau) je Pixel. Jedes Format hat sein eigenes Blatt — Umschalten löscht nichts." },
+      { label: "✏️ Bearbeiten", text: "Im Text tippen aktualisiert das Bild sofort; ein Klick ins Bild schreibt den Wert zurück in den Text. Der Cursor im Text markiert das passende Pixel rot." },
+      { label: "↹ Aufräumen", text: "Zeilenumbrüche sind egal — die Werte werden der Reihe nach gelesen. »Aufräumen« bricht sie nach je »Breite« Werten um und füllt fehlende Werte mit 0 auf." },
+    ],
+  },
   uebung: {
     title: "Übung",
     intro: "Aufgaben zum eigenständigen Trainieren mit automatischem Fortschritt.",

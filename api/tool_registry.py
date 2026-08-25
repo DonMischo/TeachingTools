@@ -255,6 +255,17 @@ def _classroom_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse:
     return LaunchResult(host_url="/classroom", join_url=None, code=None)
 
 
+# ── bildformate ───────────────────────────────────────────────────────────────
+
+def _bildformate_refs(db: Session, teacher: Teacher) -> list[dict]:
+    return [{"ref_id": None, "label": "Bildformate (PBM/PGM/PPM)"}]
+
+
+def _bildformate_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    # Static tool: no session/code — students open the same page.
+    return LaunchResult(host_url="/games/bildformate", join_url="/games/bildformate", code=None)
+
+
 # ── registry ──────────────────────────────────────────────────────────────────
 
 REGISTRY: dict[str, ToolDescriptor] = {
@@ -269,5 +280,6 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("exitgame", "🗝️ Exitgame", True, True, _exitgame_refs, _exitgame_launch),
         ToolDescriptor("zeitstrahl", "📏 Zeitstrahl", True, False, _zeitstrahl_refs, _zeitstrahl_launch),
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
+        ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),
     ]
 }

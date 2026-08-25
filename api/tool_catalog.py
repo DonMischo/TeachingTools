@@ -80,6 +80,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("abacus", "🧮 Abakus", "🧮", "games", {
         "use": _cap(True, True),
     }),
+    CatalogTool("bildformate", "🖼️ Bildformate", "🖼️", "games", {
+        "use": _cap(True, True),
+    }),
     CatalogTool("uebung", "📚 Übung", "📚", "games", {
         "use": _cap(True, True),
     }),
