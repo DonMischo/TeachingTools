@@ -2,7 +2,7 @@
 Canonical catalog of student/teacher-facing tools for the availability system.
 
 This is the single source of truth for:
-  - which tools appear on /games and /tools,
+  - which tools appear on /games, /simulationen and /tools,
   - which capabilities (use/host/create/upload) each tool actually has, and
   - the default allow/deny per audience (teacher | student) when no admin or
     class-teacher override exists.
@@ -34,7 +34,7 @@ class CatalogTool:
     slug: str
     label: str
     icon: str
-    surface: str  # "games" | "tools"
+    surface: str  # "games" | "simulationen" | "tools"
     # capability -> {"teacher": default_allowed, "student": default_allowed}
     capabilities: dict[str, dict[str, bool]] = field(default_factory=dict)
 
@@ -77,13 +77,17 @@ CATALOG: list[CatalogTool] = [
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
-    CatalogTool("abacus", "🧮 Abakus", "🧮", "games", {
-        "use": _cap(True, True),
-    }),
     CatalogTool("bildformate", "🖼️ Bildformate", "🖼️", "games", {
         "use": _cap(True, True),
     }),
     CatalogTool("uebung", "📚 Übung", "📚", "games", {
+        "use": _cap(True, True),
+    }),
+    # ── Simulationen (Modelle zum Ausprobieren — wie Spiele für alle offen) ──
+    CatalogTool("gleichungswaage", "⚖️ Gleichungswaage", "⚖️", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("abacus", "🧮 Abakus", "🧮", "simulationen", {
         "use": _cap(True, True),
     }),
     # ── Tools (teacher surface — students default off) ──

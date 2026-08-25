@@ -17,6 +17,7 @@ import { useAvailability } from "@/hooks/useAvailability";
 const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "home",           label: "Hauspokal",         href: "/" },
   { tab: "games",          label: "Spiele",            href: "/games" },
+  { tab: "simulationen",   label: "Simulationen",      href: "/simulationen" },
   { tab: "tools",          label: "Tools",             href: "/tools" },
   { tab: "klassen",        label: "Klassenverwaltung", href: "/klassen" },
   { tab: "kalender",       label: "Kalender",          href: "/kalender" },

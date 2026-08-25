@@ -266,6 +266,17 @@ def _bildformate_launch(db: Session, teacher: Teacher, ref_id: str | None, klass
     return LaunchResult(host_url="/games/bildformate", join_url="/games/bildformate", code=None)
 
 
+# ── gleichungswaage ───────────────────────────────────────────────────────────
+
+def _gleichungswaage_refs(db: Session, teacher: Teacher) -> list[dict]:
+    return [{"ref_id": None, "label": "Gleichungswaage (Äquivalenzumformung)"}]
+
+
+def _gleichungswaage_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    # Static tool: no session/code — students open the same page.
+    return LaunchResult(host_url="/simulationen/gleichungswaage", join_url="/simulationen/gleichungswaage", code=None)
+
+
 # ── registry ──────────────────────────────────────────────────────────────────
 
 REGISTRY: dict[str, ToolDescriptor] = {
@@ -281,5 +292,6 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("zeitstrahl", "📏 Zeitstrahl", True, False, _zeitstrahl_refs, _zeitstrahl_launch),
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
         ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),
+        ToolDescriptor("gleichungswaage", "⚖️ Gleichungswaage", False, False, _gleichungswaage_refs, _gleichungswaage_launch),
     ]
 }

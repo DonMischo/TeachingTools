@@ -6,7 +6,7 @@ import { useToast } from "@/contexts/ToastContext";
 
 type CellState = "default" | "on" | "off";
 
-const SURFACE_LABEL: Record<string, string> = { games: "🎮 Spiele", tools: "🔨 Tools" };
+const SURFACE_LABEL: Record<string, string> = { games: "🎮 Spiele", simulationen: "🔬 Simulationen", tools: "🔨 Tools" };
 
 function keyOf(slug: string, cap: string, audience: string) {
   return `${slug}|${cap}|${audience}`;
@@ -72,8 +72,8 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
     return <div className="text-sm text-[var(--text-muted)]">Lade…</div>;
   }
 
-  const bySurface = { games: [] as CatalogToolOut[], tools: [] as CatalogToolOut[] };
-  catalog.forEach(t => (t.surface === "games" ? bySurface.games : bySurface.tools).push(t));
+  const bySurface: Record<string, CatalogToolOut[]> = { games: [], simulationen: [], tools: [] };
+  catalog.forEach(t => (bySurface[t.surface] ?? bySurface.tools).push(t));
 
   function baseline(slug: string, cap: string, audience: AudienceKind, catalogDefault: boolean): boolean {
     if (classId == null) return catalogDefault;
@@ -154,7 +154,7 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
 
   return (
     <div className="flex flex-col gap-6">
-      {(["games", "tools"] as const).map(surface => (
+      {(["games", "simulationen", "tools"] as const).map(surface => (
         <div key={surface} className="flex flex-col gap-3">
           <h3 className="text-sm font-bold text-[var(--text-muted)]">{SURFACE_LABEL[surface]}</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

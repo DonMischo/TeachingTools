@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
-  | "tools" | "games" | "kalender" | "fragmente"
+  | "tools" | "games" | "simulationen" | "kalender" | "fragmente"
   | "admin" | "punkte" | "user" | "login";
 
 const FRAGMENTE_GLYPH = (
@@ -268,6 +268,23 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
   ),
 
   // ── Game Controller (Games) ───────────────────────────────────────────
+  // ── Alchemistenkolben (Simulationen) ──────────────────────────────────
+  simulationen: (
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      {/* Hals */}
+      <path d="M8 2.5h4v3.2l3.6 7.4A2.6 2.6 0 0113.3 17H6.7a2.6 2.6 0 01-2.3-3.9L8 5.7V2.5z"
+        fill="currentColor" fillOpacity=".18" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+      {/* Korken */}
+      <rect x="7.4" y="1.5" width="5.2" height="1.6" rx=".7"/>
+      {/* Flüssigkeit */}
+      <path d="M6.1 11.8h7.8l1.1 2.3A2 2 0 0113.3 17H6.7a2 2 0 01-1.7-2.9l1.1-2.3z" opacity=".55"/>
+      {/* Blasen */}
+      <circle cx="8.6" cy="13.8" r=".85"/>
+      <circle cx="11.3" cy="14.7" r=".65" opacity=".8"/>
+      <circle cx="10" cy="9.4" r=".55" opacity=".6"/>
+    </svg>
+  ),
+
   games: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
       {/* Body */}
@@ -321,6 +338,13 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
 
 /* ── Cyberpunk SVG icons (angular, circuit feel) ────────────────────────── */
 const CYBER: Record<NavKey, React.ReactElement> = {
+  simulationen: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+    <path d="M8 2h4v4l4 8.5A2 2 0 0114.2 17H5.8A2 2 0 014 14.5L8 6V2z"
+      fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+    <path d="M6.2 12h7.6" stroke="currentColor" strokeWidth="1.4"/>
+    <rect x="7.2" y="1" width="5.6" height="1.6" rx=".5"/>
+    <circle cx="8.8" cy="14.2" r="1"/><circle cx="11.5" cy="15" r=".8" opacity=".6"/>
+  </svg>,
   home: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
     <path d="M10 2L2 8v1h2v9h4v-5h4v5h4V9h2V8L10 2zm0 2.5l5 3.7V17h-2v-5H7v5H5V8.2L10 4.5z"/>
     <path d="M8 10h4v2H8z" opacity=".5"/>
@@ -455,6 +479,7 @@ const EMOJI: Record<NavKey, string> = {
   classroom:      "🖥️",
   tools:          "🔨",
   games:          "🎮",
+  simulationen:   "🔬",
   kalender:       "📅",
   fragmente:      "🗂️",
   admin:          "🧙",
