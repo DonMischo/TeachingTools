@@ -123,6 +123,34 @@ class TestSessionList:
         assert r.json() == []
 
 
+class TestSessionDelete:
+    def test_delete_takes_participants_and_responses(self, client, db, teacher_token, session_code, participant_id):
+        from api.models import LueckentextParticipant, LueckentextResponse, LueckentextSession
+
+        client.post(f"/api/lueckentexte/sessions/{session_code}/start", headers=auth(teacher_token))
+        client.post(f"/api/lueckentexte/sessions/{session_code}/gaps/a/attempt",
+                    json={"participant_id": participant_id, "text": "Verdunstung"})
+        assert db.query(LueckentextResponse).filter_by(participant_id=participant_id).count() == 1
+
+        r = client.delete(f"/api/lueckentexte/sessions/{session_code}", headers=auth(teacher_token))
+        assert r.status_code == 204, r.text
+        assert db.query(LueckentextSession).filter_by(join_code=session_code).count() == 0
+        assert db.get(LueckentextParticipant, participant_id) is None
+        assert db.query(LueckentextResponse).filter_by(participant_id=participant_id).count() == 0
+
+    def test_delete_403_for_non_owner_teacher(self, client, other_teacher_token, session_code):
+        r = client.delete(f"/api/lueckentexte/sessions/{session_code}", headers=auth(other_teacher_token))
+        assert r.status_code == 403
+
+    def test_delete_unknown_session_404(self, client, teacher_token):
+        assert client.delete("/api/lueckentexte/sessions/NOPE1234", headers=auth(teacher_token)).status_code == 404
+
+    def test_deleted_session_leaves_the_list(self, client, teacher_token, set_id, session_code):
+        client.delete(f"/api/lueckentexte/sessions/{session_code}", headers=auth(teacher_token))
+        rows = client.get(f"/api/lueckentexte/{set_id}/sessions", headers=auth(teacher_token)).json()
+        assert rows == []
+
+
 class TestReport:
     def _play(self, client, teacher_token, session_code, participant_id):
         client.post(f"/api/lueckentexte/sessions/{session_code}/start", headers=auth(teacher_token))

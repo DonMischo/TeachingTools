@@ -27,7 +27,9 @@ export default function LueckentextePage() {
   const deleteMut = useMutation({
     mutationFn: (id: number) => api.lueckentexte.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lueckentexte"] }),
-    onError: (e: Error) => toast(e.message, "error"),
+    // A set with sessions comes back as 409 with a sentence worth reading —
+    // the raw JSON body would hide it.
+    onError: (e: Error) => toast(parseUploadError(e, "Löschen fehlgeschlagen").message, "error"),
   });
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {

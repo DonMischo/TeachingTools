@@ -1619,6 +1619,8 @@ export const api = {
       apiFetch<LueckentextReviewEntry[]>(`lueckentexte/sessions/${code}/review`),
     sessions: (setId: number) =>
       apiFetch<LueckentextSessionOut[]>(`lueckentexte/${setId}/sessions`),
+    deleteSession: (code: string) =>
+      apiFetch<void>(`lueckentexte/sessions/${code}`, { method: "DELETE" }),
     reportCsvUrl: (code: string) => `/api/lueckentexte/sessions/${code}/report?fmt=csv`,
   },
   exitgame: {

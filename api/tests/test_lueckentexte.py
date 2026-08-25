@@ -107,9 +107,9 @@ class TestCrud:
         sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
         assert client.delete(f"/api/lueckentexte/{sid}", headers=auth(admin_token)).status_code == 204
 
-    def test_delete_played_set_takes_its_sessions(self, client, db, teacher_token):
-        """A set that was played is still deletable: its sessions reference it
-        with ondelete=RESTRICT, so they have to go first."""
+    def test_delete_refused_while_sessions_exist(self, client, db, teacher_token):
+        """A session carries its Auswertung, so it must never be swept away as a
+        side effect: the set delete refuses until the sessions are gone."""
         sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
         r = client.post(f"/api/lueckentexte/{sid}/sessions", headers=auth(teacher_token))
         assert r.status_code == 201, r.text
@@ -117,9 +117,37 @@ class TestCrud:
         client.post(f"/api/lueckentexte/sessions/{code}/join",
                     json={"name": "Max", "avatar": "cat"}, headers=auth(teacher_token))
 
+        r = client.delete(f"/api/lueckentexte/{sid}", headers=auth(teacher_token))
+        assert r.status_code == 409
+        assert "Sitzung" in r.json()["detail"]
+        assert db.query(LueckentextSession).filter_by(lueckentext_id=sid).count() == 1
+
+        # Remove the session by hand, then the set goes.
+        assert client.delete(f"/api/lueckentexte/sessions/{code}", headers=auth(teacher_token)).status_code == 204
         assert client.delete(f"/api/lueckentexte/{sid}", headers=auth(teacher_token)).status_code == 204
-        assert db.query(LueckentextSession).filter_by(lueckentext_id=sid).count() == 0
-        assert client.get(f"/api/lueckentexte/sessions/{code}/state", headers=auth(teacher_token)).status_code == 404
+
+    def test_delete_refusal_counts_sessions(self, client, teacher_token):
+        """A finished session blocks just as much as a running one — it is the
+        one holding results worth keeping."""
+        sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
+        for _ in range(2):
+            code = client.post(f"/api/lueckentexte/{sid}/sessions", headers=auth(teacher_token)).json()["join_code"]
+        client.post(f"/api/lueckentexte/sessions/{code}/finish", headers=auth(teacher_token))
+
+        r = client.delete(f"/api/lueckentexte/{sid}", headers=auth(teacher_token))
+        assert r.status_code == 409
+        assert "2 Sitzungen" in r.json()["detail"]
+        assert "andere" not in r.json()["detail"]   # both are the caller's own
+
+    def test_delete_refusal_names_a_colleagues_session(self, client, teacher_token, other_teacher_token):
+        """A shared library means a colleague's session can block the delete —
+        and it is nowhere in your own session list, so the message has to say so."""
+        sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
+        client.post(f"/api/lueckentexte/{sid}/sessions", headers=auth(other_teacher_token))
+
+        r = client.delete(f"/api/lueckentexte/{sid}", headers=auth(teacher_token))
+        assert r.status_code == 409
+        assert "anderen Lehrkraft" in r.json()["detail"]
 
     def test_get_missing_404(self, client, teacher_token):
         assert client.get("/api/lueckentexte/999999", headers=auth(teacher_token)).status_code == 404

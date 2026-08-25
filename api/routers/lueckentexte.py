@@ -197,12 +197,30 @@ def delete_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_c
         raise HTTPException(404, "Lückentext nicht gefunden")
     if not can_modify(s, current):
         raise HTTPException(403)
-    # Sessions reference the set with ondelete=RESTRICT, so a set that was ever
-    # played can't be dropped while they exist — Postgres raises and the UI just
-    # shows an error. Take the sessions with it (their participants/responses
-    # follow via cascade); without the text they mean nothing anyway.
-    for sess in db.query(LueckentextSession).filter_by(lueckentext_id=set_id).all():
-        db.delete(sess)
+    # Sitzungen tragen die Auswertungen. Die sollen nicht nebenbei verschwinden,
+    # nur weil jemand den Text wegräumt — also verweigern, solange welche da
+    # sind, und dem Gastgeber sagen, was im Weg steht. (Technisch hängen sie mit
+    # ondelete=RESTRICT am Set; ohne diese Prüfung bräche Postgres den Löschvorgang
+    # ohnehin ab, nur eben mit einer unverständlichen Fehlermeldung.)
+    sessions = db.query(LueckentextSession).filter_by(lueckentext_id=set_id).all()
+    if sessions:
+        count = len(sessions)
+        # Die Bibliothek ist geteilt: eine Kollegin kann eine Sitzung zu diesem
+        # Text gestartet haben. Die steht ebenfalls im Weg, taucht aber in der
+        # eigenen Sitzungsliste nicht auf — das muss die Meldung sagen, sonst
+        # verweist sie auf etwas Unauffindbares.
+        foreign = sum(1 for x in sessions if not (isinstance(current, Teacher) and x.teacher_id == current.id))
+        message = (
+            f"Zu diesem Lückentext {'gehört noch eine Sitzung' if count == 1 else f'gehören noch {count} Sitzungen'} "
+            "mit der jeweiligen Auswertung. Lösche sie zuerst einzeln — "
+            "die Ergebnisse gibt es vorher als CSV."
+        )
+        if foreign:
+            message += (
+                f" {'Diese Sitzung gehört' if foreign == count == 1 else f'{foreign} davon gehören'} "
+                "einer anderen Lehrkraft und kann nur von ihr oder einem Admin gelöscht werden."
+            )
+        raise HTTPException(409, message)
     db.query(LueckentextErrorPattern).filter_by(lueckentext_id=set_id).delete()
     db.delete(s)
     db.commit()
@@ -559,6 +577,17 @@ def session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), 
         )
 
     return {"session_code": code, "lueckentext_title": s.lueckentext.title, "status": s.status, "participants": rows}
+
+
+@router.delete("/sessions/{code}", status_code=204)
+def delete_session(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Throw away one session with its Auswertung. The deliberate counterpart to
+    the set delete, which refuses while sessions are still around."""
+    s = _get_session_or_404(code, db)
+    if s.teacher_id != current.id and current.role != "admin":
+        raise HTTPException(403)
+    db.delete(s)   # participants and responses follow via cascade
+    db.commit()
 
 
 @router.post("/sessions/{code}/finish", response_model=SessionOut)

@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, LueckentextGap, LueckentextSessionOut, LueckentextSetDetail } from "@/lib/api";
+import { parseUploadError } from "@/lib/uploadError";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -353,10 +354,18 @@ const STATUS_LABEL: Record<string, string> = { waiting: "wartet", active: "läuf
 /** Past sessions of this Lückentext — the way back to an Auswertung once the
  *  join code has scrolled out of the browser history. Own sessions only. */
 function SessionHistory({ setId }: { setId: number }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: sessions = [], isLoading } = useQuery<LueckentextSessionOut[]>({
     queryKey: ["lueckentext-sessions", setId],
     queryFn: () => api.lueckentexte.sessions(setId),
     enabled: Number.isFinite(setId),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (code: string) => api.lueckentexte.deleteSession(code),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lueckentext-sessions", setId] }),
+    onError: (e: Error) => toast(parseUploadError(e, "Löschen fehlgeschlagen").message, "error"),
   });
 
   return (
@@ -386,6 +395,18 @@ function SessionHistory({ setId }: { setId: number }) {
               <Link href={`/games/lueckentext/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Sitzung</Link>
               <Link href={`/games/lueckentext/review/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Auswertung</Link>
               <a href={api.lueckentexte.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
+              <button
+                onClick={() => {
+                  const what = s.participant_count > 0
+                    ? `Sitzung ${s.join_code} mit der Auswertung von ${s.participant_count} Teilnehmenden löschen?`
+                    : `Sitzung ${s.join_code} löschen?`;
+                  if (confirm(what)) deleteMut.mutate(s.join_code);
+                }}
+                disabled={deleteMut.isPending}
+                className="text-xs text-red-400 hover:underline disabled:opacity-40"
+              >
+                Löschen
+              </button>
             </li>
           ))}
         </ul>
