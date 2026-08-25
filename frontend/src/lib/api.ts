@@ -923,6 +923,17 @@ export type LueckentextReviewEntry = {
   gaps: LueckentextGapReview[];
 };
 
+/** A row in the session history of one Lückentext (only your own sessions). */
+export type LueckentextSessionOut = {
+  id: number;
+  join_code: string;
+  status: string;
+  participant_count: number;
+  created_at: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+};
+
 export type ExitTicketSummary = {
   id: number; code: string; title: string; question: string;
   rating_enabled: boolean; status: string; response_count: number; created_at: string;
@@ -1075,6 +1086,17 @@ export type FragmentGuestStatus = {
 
 export type ToolSessionOut = { code: string; tool_slug: string; allow_guests: boolean };
 
+/** Ein Werkzeug-Bündel als einzelne HTML-Datei zum Mitnehmen. */
+export type StandaloneBundle = {
+  name: string;
+  label: string;
+  note: string;
+  tools: string[];
+  available: boolean;
+  size_bytes: number | null;
+  built_at: string | null;
+};
+
 export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
@@ -1097,6 +1119,13 @@ export const api = {
       apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug }) }),
     /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */
     get: (code: string) => apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}`),
+  },
+
+  // Offline-Dateien (siehe api/routers/standalone.py)
+  standalone: {
+    list: () => apiFetch<StandaloneBundle[]>("standalone"),
+    /** Direkter Link — der Browser lädt herunter, statt zu rendern. */
+    downloadUrl: (name: string) => `/api/standalone/${encodeURIComponent(name)}`,
   },
 
   // Fragments — TaskCards-style boards (see api/routers/fragments*.py)
@@ -1588,6 +1617,9 @@ export const api = {
         { method: "POST", body: JSON.stringify({ participant_id: participantId, text }) }),
     review: (code: string) =>
       apiFetch<LueckentextReviewEntry[]>(`lueckentexte/sessions/${code}/review`),
+    sessions: (setId: number) =>
+      apiFetch<LueckentextSessionOut[]>(`lueckentexte/${setId}/sessions`),
+    reportCsvUrl: (code: string) => `/api/lueckentexte/sessions/${code}/report?fmt=csv`,
   },
   exitgame: {
     list: () => apiFetch<ExitGameOut[]>("exitgames"),

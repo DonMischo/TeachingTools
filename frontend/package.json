@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "node server-wrapper.js",
     "check-shaders": "node scripts/check-shaders.mjs",
+    "build:standalone": "node scripts/build-standalone.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

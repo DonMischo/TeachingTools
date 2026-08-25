@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useAvailability } from "@/hooks/useAvailability";
 import HelpButton from "@/components/HelpButton";
 import { RequireAccount } from "@/components/RequireAccount";
+import { StandaloneDownload } from "@/components/StandaloneDownload";
 
 const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
@@ -74,6 +75,8 @@ export default function SimulationenPage() {
           </Link>
         ))}
       </div>
+
+      <StandaloneDownload name="simulationen" />
     </div>
     </RequireAccount>
   );

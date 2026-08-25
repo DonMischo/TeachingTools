@@ -18,6 +18,7 @@ data/*.html
 data/style-packs/
 data/style-pack/
 data/stundenplaner/
+data/standalone/
 data/quizzes/
 data/pokemon.py
 data/gen_passwords.py

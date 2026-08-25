@@ -1,0 +1,84 @@
+/**
+ * Die Simulationen als eine Datei zum Mitnehmen.
+ *
+ * Genau dieselben Komponenten wie in der App — sie kennen weder Server noch
+ * Anmeldung, deshalb läuft hier alles im Browser. Was fehlt, ist der
+ * Beitritts-Code samt QR: dafür bräuchte es die App. Gebaut wird das über
+ * `npm run build:standalone`.
+ */
+import { StrictMode, useEffect, useState, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
+import "./styles.css";
+import { WaageStyles } from "@/components/waage/Balance";
+import Gleichungswaage from "@/components/waage/Gleichungswaage";
+import Abakus from "@/components/simulationen/Abakus";
+import Bildformate from "@/components/simulationen/Bildformate";
+
+const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
+  { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
+  { id: "abakus", icon: "🧮", label: "Abakus", node: <Abakus /> },
+  { id: "bildformate", icon: "🖼️", label: "Bildformate", node: <Bildformate /> },
+];
+
+function App() {
+  const [active, setActive] = useState(TOOLS[0].id);
+  const [hell, setHell] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = hell ? "hell" : "dunkel";
+  }, [hell]);
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <WaageStyles />
+
+      <header className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-[var(--border)] bg-[var(--surface)]">
+        <span className="font-black tracking-tight mr-2">🔬 Simulationen</span>
+        <div className="inline-flex rounded-xl border border-[var(--border)] p-1">
+          {TOOLS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                active === t.id
+                  ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              {t.icon} <span className="hidden sm:inline">{t.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex-1" />
+        <button
+          onClick={() => setHell(v => !v)}
+          title="Zwischen hell und dunkel wechseln"
+          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]"
+        >
+          {hell ? "🌙 Dunkel" : "☀️ Hell"}
+        </button>
+      </header>
+
+      <main className="flex-1">
+        {TOOLS.map(t => (
+          // Alle Werkzeuge bleiben im Baum: wer zwischendurch umschaltet,
+          // findet seine Gleichung hinterher noch vor.
+          <div key={t.id} hidden={active !== t.id}>
+            {t.node}
+          </div>
+        ))}
+      </main>
+
+      <footer className="px-4 sm:px-6 py-3 text-xs text-[var(--text-muted)] border-t border-[var(--border)]">
+        Offline-Fassung der Simulationen aus dem Hauspokal — läuft ohne Internet und ohne Anmeldung.
+        Nichts wird gespeichert oder verschickt.
+      </footer>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

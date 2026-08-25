@@ -64,6 +64,8 @@ app.include_router(guest_router.router)
 
 from .routers import tool_sessions as tool_sessions_router
 app.include_router(tool_sessions_router.router)
+from .routers import standalone as standalone_router
+app.include_router(standalone_router.router)
 from .routers import fragments as fragments_router
 app.include_router(fragments_router.router)
 from .routers import fragments_cards as fragments_cards_router
@@ -207,6 +209,12 @@ def _run_migrations(db_engine):
         "ALTER TABLE class_trackers ALTER COLUMN class_id DROP NOT NULL",
         "ALTER TABLE seating_plans ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
         "ALTER TABLE seating_plans ALTER COLUMN class_id DROP NOT NULL",
+        # Lückentext-Sitzungen tauchen jetzt in einer Liste auf und brauchen dafür
+        # ein Datum. Alte Zeilen bleiben leer statt falsch datiert zu werden.
+        # Ohne DEFAULT anlegen (sonst füllt Postgres die Altbestände mit dem
+        # Migrationszeitpunkt), den DEFAULT erst danach für neue Zeilen setzen.
+        "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ",
+        "ALTER TABLE lueckentext_sessions ALTER COLUMN created_at SET DEFAULT NOW()",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an

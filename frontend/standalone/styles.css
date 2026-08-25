@@ -1,0 +1,50 @@
+/* Stilgrundlage für die Offline-Datei.
+   Die Werkzeuge selbst benutzen nur Tailwind-Klassen und CSS-Variablen — hier
+   stehen die Variablen also einmal für dunkel und einmal für hell. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #1a1a1a;
+  --surface: #2b2b2b;
+  --surface-hover: #3a3a3a;
+  --border: #505050;
+  --border-selected: #ffeb3b;
+  --text: #f5f5f5;
+  --text-muted: #9ca3af;
+  --accent: #ffeb3b;
+  --accent-text: #111111;
+  --green: #4caf50;
+  --red: #f44336;
+}
+
+:root[data-theme="hell"] {
+  --bg: #f4f0ea;
+  --surface: #ffffff;
+  --surface-hover: #ede8e0;
+  --border: #ccc0a0;
+  --border-selected: #e07820;
+  --text: #1a3060;
+  --text-muted: #5a6880;
+  --accent: #e07820;
+  --accent-text: #ffffff;
+  --green: #6a921a;
+  --red: #c83030;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  margin: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
