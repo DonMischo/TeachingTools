@@ -1064,6 +1064,8 @@ export type FragmentGuestStatus = {
   permission?: "read" | "contribute" | null;
 };
 
+export type ToolSessionOut = { code: string; tool_slug: string; allow_guests: boolean };
+
 export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
@@ -1077,6 +1079,15 @@ export const api = {
       apiFetch<{ allow_guests: boolean }>("guest/allow", {
         method: "PATCH", body: JSON.stringify({ tool, code, allow }),
       }),
+  },
+
+  // Beitritts-Sitzungen für zustandslose Werkzeuge (Abakus, Gleichungswaage)
+  toolSessions: {
+    /** Session der Lehrkraft für dieses Werkzeug — legt sie beim ersten Mal an. */
+    create: (tool_slug: string) =>
+      apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug }) }),
+    /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */
+    get: (code: string) => apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}`),
   },
 
   // Fragments — TaskCards-style boards (see api/routers/fragments*.py)

@@ -1660,3 +1660,24 @@ class ResearchMedia(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     item: Mapped["ResearchItem"] = relationship(back_populates="media")
+
+
+class ToolSession(Base):
+    """A joinable session for a tool that keeps no state of its own.
+
+    Abakus and Gleichungswaage run entirely in the browser — there is nothing to
+    host. This row exists so a teacher can hand out a code/QR and decide whether
+    QR guests (no account) may open it; the code is stable per teacher and tool,
+    so a printed QR keeps working.
+    """
+    __tablename__ = "tool_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    tool_slug: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # QR/join-link guests may open this session (teacher opt-in)
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+
+    creator: Mapped["Teacher"] = relationship()

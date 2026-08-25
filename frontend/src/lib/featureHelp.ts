@@ -63,6 +63,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "🎯 Nutzung", text: "Kugeln mit dem Finger/der Maus schieben und den Wert in Ziffern ablesen." },
       { label: "🔀 Modus", text: "»Alle gleich« zählt alle Kugeln bis 100; »Stellenwert« gibt jeder Reihe einen Stellenwert (Einer, Zehner, …)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
     ],
   },
   bildformate: {
@@ -86,6 +87,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🧪 Oxidationszahlen", text: "Im Chemiemodus einschaltbar. Sie werden nach den Schulregeln bestimmt (F −I, Alkalimetalle +I, H +I, Sauerstoff zuletzt — dadurch fällt bei Peroxiden von selbst −I heraus). Ist es nicht eindeutig, steht dort ein »?« statt einer geratenen Zahl." },
       { label: "⚠️ Oktett-Hinweis", text: "Passt eine Verbindung nicht zur Bindigkeit (z. B. H₃O), erklärt ein Hinweis, warum: wie viele Bindungen jedes Element braucht und wie viele zusammenkommen. Geprüft werden nur Verbindungen aus zwei Elementen, und es gibt Ausnahmen von der Oktettregel." },
       { label: "📝 Rechenweg", text: "In Zahlen- und Variablenmodus wird jeder Schritt mitgeschrieben — mit Strich und Umformung dahinter, wie im Heft. »Zurück« nimmt einen Schritt zurück." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR — die Schüler scannen ihn und haben das Werkzeug auf dem eigenen Gerät. Mit dem Schalter »Gäste erlauben« kommt auch ohne Konto hinein, wer den Code scannt (60 Minuten lang). Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter." },
     ],
   },
   uebung: {

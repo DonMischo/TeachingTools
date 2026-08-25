@@ -61,6 +61,9 @@ from .routers import admin_access as admin_access_router
 app.include_router(admin_access_router.router)
 from .routers import guest as guest_router
 app.include_router(guest_router.router)
+
+from .routers import tool_sessions as tool_sessions_router
+app.include_router(tool_sessions_router.router)
 from .routers import fragments as fragments_router
 app.include_router(fragments_router.router)
 from .routers import fragments_cards as fragments_cards_router
