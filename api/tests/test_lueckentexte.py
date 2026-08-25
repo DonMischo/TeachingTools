@@ -8,7 +8,7 @@ teacher B" into "request as whoever logged in last".
 import pytest
 
 from api.tests.conftest import auth
-from api.models import Teacher
+from api.models import LueckentextSession, Teacher
 from api.auth import create_access_token
 
 
@@ -106,6 +106,20 @@ class TestCrud:
     def test_admin_may_delete_foreign(self, client, teacher_token, admin_token):
         sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
         assert client.delete(f"/api/lueckentexte/{sid}", headers=auth(admin_token)).status_code == 204
+
+    def test_delete_played_set_takes_its_sessions(self, client, db, teacher_token):
+        """A set that was played is still deletable: its sessions reference it
+        with ondelete=RESTRICT, so they have to go first."""
+        sid = client.post("/api/lueckentexte", json=sample_payload(), headers=auth(teacher_token)).json()["id"]
+        r = client.post(f"/api/lueckentexte/{sid}/sessions", headers=auth(teacher_token))
+        assert r.status_code == 201, r.text
+        code = r.json()["join_code"]
+        client.post(f"/api/lueckentexte/sessions/{code}/join",
+                    json={"name": "Max", "avatar": "cat"}, headers=auth(teacher_token))
+
+        assert client.delete(f"/api/lueckentexte/{sid}", headers=auth(teacher_token)).status_code == 204
+        assert db.query(LueckentextSession).filter_by(lueckentext_id=sid).count() == 0
+        assert client.get(f"/api/lueckentexte/sessions/{code}/state", headers=auth(teacher_token)).status_code == 404
 
     def test_get_missing_404(self, client, teacher_token):
         assert client.get("/api/lueckentexte/999999", headers=auth(teacher_token)).status_code == 404

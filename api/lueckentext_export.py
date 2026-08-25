@@ -21,6 +21,7 @@ from pathlib import Path
 from .doc_convert import convert_to_pdf
 
 _GAP_RE = re.compile(r"\{\{([^{}]+)\}\}")
+_NEWLINE_RE = re.compile(r"\r\n|\r")
 
 _STAGES = [
     ("wordbank", "Stufe 1 – Wortbank", "Nutze die Wörter aus der Wortbank, um die Lücken zu füllen."),
@@ -78,7 +79,7 @@ def _choices_note(choices: list[str] | None) -> str:
 
 
 def _render_body(text: str, gaps_by_id: dict, mode: str, given_answers: dict[str, str] | None = None) -> str:
-    escaped = html_lib.escape(text)
+    escaped = html_lib.escape(_NEWLINE_RE.sub("\n", text))
 
     def _sub(m: re.Match) -> str:
         gid = m.group(1)
@@ -93,7 +94,10 @@ def _render_body(text: str, gaps_by_id: dict, mode: str, given_answers: dict[str
             span += _choices_note(gap.get("choices"))
         return span
 
-    return _GAP_RE.sub(_sub, escaped)
+    # HTML collapses newlines, so the line breaks an author put into the text
+    # (verses, list items, dialogue) would silently vanish on paper. Gap spans
+    # never contain a newline, so substituting the gaps first is safe.
+    return _GAP_RE.sub(_sub, escaped).replace("\n", "<br />")
 
 
 def _word_bank_list(lset) -> list[str]:

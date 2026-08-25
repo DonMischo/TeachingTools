@@ -41,9 +41,14 @@ export default function LueckentextPlayPage() {
   const [participantId, setParticipantId] = useState<number | null>(null);
   const [board, setBoard] = useState<LueckentextBoard | null>(null);
   const [attempts, setAttempts] = useState<Record<string, AttemptState>>({});
-  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  // The same word can sit in the bank more than once, so a tile is identified
+  // by its position — selecting (or dragging) one must not move its twin.
+  const [selected, setSelected] = useState<number | null>(null);
   const [wordBankOrder, setWordBankOrder] = useState<string[]>([]);
+  const selectedWord = selected == null ? null : wordBankOrder[selected] ?? null;
   const [gapValues, setGapValues] = useState<Record<string, string>>({});
+  // Gap whose word list is open on phones (see WordPicker).
+  const [pickerGap, setPickerGap] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Auto-rejoin if we have a saved session for this code.
@@ -118,10 +123,17 @@ export default function LueckentextPlayPage() {
     } catch { /* ignore, let the student retry */ }
   }
 
+  /** Put a word into a gap and send it off — the slot has to show what was
+   *  placed there, otherwise a dropped tile just vanishes. */
+  function placeWord(gapId: string, word: string) {
+    setGapValues((prev) => ({ ...prev, [gapId]: word }));
+    submitGap(gapId, word);
+  }
+
   function handleDragEnd(e: DragEndEvent) {
     const word = e.active?.data?.current?.word as string | undefined;
     const gapId = e.over?.id as string | undefined;
-    if (word && gapId) submitGap(gapId, word);
+    if (word && gapId) placeWord(gapId, word);
   }
 
   // Guest's 60-min window elapsed → hard block, no rejoin.
@@ -173,11 +185,18 @@ export default function LueckentextPlayPage() {
 
   const gapsById = new Map(board.gaps.map((g) => [g.id, g]));
   const parts = board.text.split(/(\{\{[^{}]+\}\})/g);
+  const hasWordBank = board.gaps.some((g) => g.type === "word_bank");
+  const usedUpWords = board.gaps
+    .filter((g) => g.type === "word_bank" && attempts[g.id]?.solved)
+    .map((g) => gapValues[g.id])
+    .filter(Boolean);
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
-        <p className="whitespace-pre-wrap leading-relaxed text-lg">
+      {/* Wide screens put the word bank beside the text (sticky, so it stays in
+          reach while scrolling); narrow ones stack it underneath as before. */}
+      <div className="flex flex-col lg:flex-row lg:items-start gap-6 p-6 max-w-5xl mx-auto w-full">
+        <p className="flex-1 min-w-0 whitespace-pre-wrap leading-relaxed text-lg">
           {parts.map((part, i) => {
             const m = part.match(/^\{\{([^{}]+)\}\}$/);
             if (!m) return <span key={i}>{part}</span>;
@@ -192,43 +211,115 @@ export default function LueckentextPlayPage() {
                 attempt={attempts[gap.id]}
                 selectedWord={selectedWord}
                 onSelectSlot={() => {
-                  if (gap.type === "word_bank" && selectedWord) {
-                    submitGap(gap.id, selectedWord);
-                    setSelectedWord(null);
+                  if (gap.type !== "word_bank") return;
+                  if (selectedWord) {
+                    placeWord(gap.id, selectedWord);
+                    setSelected(null);
+                  } else {
+                    // Opens the picker on phones. On wide screens the sheet is
+                    // display:none and the sidebar does the job, so this stays
+                    // the no-op it always was there.
+                    setPickerGap(gap.id);
                   }
                 }}
-                onSubmit={(text) => submitGap(gap.id, text)}
+                onSubmit={(text) => placeWord(gap.id, text)}
               />
             );
           })}
         </p>
 
-        {board.gaps.some((g) => g.type === "word_bank") && (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <h2 className="text-sm font-semibold mb-2">Wortbank</h2>
-            <div className="flex flex-wrap gap-2">
-              {wordBankOrder.map((word, i) => (
-                <WordChip
-                  key={`${word}-${i}`}
-                  word={word}
-                  selected={selectedWord === word}
-                  onClick={() => setSelectedWord((prev) => (prev === word ? null : word))}
-                />
-              ))}
-            </div>
-          </div>
+        {hasWordBank && (
+          <>
+            <p className="lg:hidden text-sm text-[var(--text-muted)]">
+              Tippe auf eine Lücke, um ein Wort aus der Wortbank zu wählen.
+            </p>
+            <aside className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 lg:w-60 lg:shrink-0 lg:sticky lg:top-6">
+              <h2 className="text-sm font-semibold mb-2">Wortbank</h2>
+              <div className="flex flex-wrap gap-2">
+                {wordBankOrder.map((word, i) => (
+                  <WordChip
+                    key={i}
+                    index={i}
+                    word={word}
+                    selected={selected === i}
+                    onClick={() => setSelected((prev) => (prev === i ? null : i))}
+                  />
+                ))}
+              </div>
+            </aside>
+          </>
         )}
       </div>
+
+      {pickerGap && (
+        <WordPicker
+          words={remainingWords(wordBankOrder, usedUpWords)}
+          onPick={(word) => { placeWord(pickerGap, word); setPickerGap(null); }}
+          onClose={() => setPickerGap(null)}
+        />
+      )}
     </DndContext>
   );
 }
 
-function WordChip({ word, selected, onClick }: { word: string; selected: boolean; onClick: () => void }) {
+/** Words still up for grabs: the bank minus one tile per gap a word already
+ *  solved. A wrong guess keeps its tile in the list — a word parked in the
+ *  wrong gap must not disappear from the gap it actually belongs to. */
+function remainingWords(order: string[], usedUp: string[]): string[] {
+  const pool = [...usedUp];
+  return order.filter((word) => {
+    const hit = pool.indexOf(word);
+    if (hit < 0) return true;
+    pool.splice(hit, 1);
+    return false;
+  });
+}
+
+/** Phone-sized word bank: no room for a standing list beside the text, so the
+ *  words come to the gap you tapped — as a sheet that scrolls when the bank is
+ *  long. Hidden on wide screens, where the sidebar is always in view. */
+function WordPicker({ words, onPick, onClose }: { words: string[]; onPick: (word: string) => void; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end bg-black/50 lg:hidden" onClick={onClose}>
+      <div
+        className="w-full max-h-[60vh] flex flex-col gap-3 rounded-t-2xl border-t border-[var(--border)] p-4"
+        style={{ background: "var(--bg)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between shrink-0">
+          <h2 className="text-sm font-semibold">Wortbank</h2>
+          <button onClick={onClose} className="text-xs text-[var(--text-muted)]">Schließen</button>
+        </div>
+        {words.length === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">Alle Wörter sind vergeben.</p>
+        ) : (
+          <div className="flex flex-col gap-2 overflow-y-auto">
+            {words.map((word, i) => (
+              <button
+                key={i}
+                onClick={() => onPick(word)}
+                className="w-full rounded-xl border-2 border-[var(--border)] px-3 py-2.5 text-left active:border-[var(--accent)]"
+              >
+                {word}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WordChip({ index, word, selected, onClick }: { index: number; word: string; selected: boolean; onClick: () => void }) {
+  // Keyed by position, not by the word: two tiles sharing a draggable id would
+  // both follow the pointer.
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: `word-${word}`,
+    id: `word-${index}`,
     data: { word },
   });
-  const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
+  const style = transform
+    ? { transform: `translate(${transform.x}px, ${transform.y}px)`, zIndex: 50, position: "relative" as const }
+    : undefined;
   return (
     <button
       ref={setNodeRef}
@@ -267,13 +358,17 @@ function Gap({
   if (gap.type === "word_bank") {
     return (
       <span className="inline-flex flex-col items-center align-middle mx-1">
-        <span
+        {/* A real button, not a clickable span: on phones this is how a word
+            gets picked at all, so it needs a name and the keyboard. */}
+        <button
+          type="button"
           ref={setNodeRef}
           onClick={onSelectSlot}
+          aria-label={value ? `Lücke, gefüllt mit ${value}` : "Leere Lücke"}
           className={`inline-block min-w-[4rem] px-2 py-0.5 rounded-lg border-2 text-center cursor-pointer ${matchClass} ${isOver ? "bg-[var(--accent)]/20" : ""}`}
         >
           {value || " "}
-        </span>
+        </button>
         {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
         {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}
       </span>
@@ -284,11 +379,13 @@ function Gap({
     return (
       <span className="inline-flex flex-col items-center align-middle mx-1 gap-1">
         <span className="inline-flex gap-1 flex-wrap justify-center">
+          {/* Only the option the student actually picked carries the verdict —
+              colouring every button green would read as "all of them fit". */}
           {(gap.choices ?? []).map((choice) => (
             <button
               key={choice}
               onClick={() => onSubmit(choice)}
-              className={`px-2 py-0.5 rounded-lg border-2 text-sm ${matchClass}`}
+              className={`px-2 py-0.5 rounded-lg border-2 text-sm ${choice === value ? matchClass : "border-[var(--border)]"}`}
             >
               {choice}
             </button>
@@ -308,7 +405,10 @@ function Gap({
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") onSubmit(value); }}
         onBlur={() => { if (value) onSubmit(value); }}
-        className={`inline-block w-28 px-2 py-0.5 rounded-lg border-2 text-center bg-transparent ${matchClass}`}
+        // Grows with what's typed instead of clipping long answers at a fixed
+        // width — the minimum keeps an empty gap visible as a gap.
+        style={{ width: `${Math.min(Math.max(value.length + 2, 8), 28)}ch` }}
+        className={`inline-block max-w-full px-2 py-0.5 rounded-lg border-2 text-center bg-transparent ${matchClass}`}
       />
       {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
       {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}

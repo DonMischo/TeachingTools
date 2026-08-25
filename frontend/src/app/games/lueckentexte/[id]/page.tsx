@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, LueckentextGap, LueckentextSetDetail } from "@/lib/api";
+import { api, LueckentextGap, LueckentextSessionOut, LueckentextSetDetail } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -336,6 +337,59 @@ export default function LueckentextDetailPage() {
           + Distraktor
         </button>
       </div>
+
+      {isTeacher && <SessionHistory setId={setId} />}
     </div>
+  );
+}
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return "ohne Datum";
+  return new Date(iso).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+const STATUS_LABEL: Record<string, string> = { waiting: "wartet", active: "läuft", finished: "beendet" };
+
+/** Past sessions of this Lückentext — the way back to an Auswertung once the
+ *  join code has scrolled out of the browser history. Own sessions only. */
+function SessionHistory({ setId }: { setId: number }) {
+  const { data: sessions = [], isLoading } = useQuery<LueckentextSessionOut[]>({
+    queryKey: ["lueckentext-sessions", setId],
+    queryFn: () => api.lueckentexte.sessions(setId),
+    enabled: Number.isFinite(setId),
+  });
+
+  return (
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <h2 className="font-semibold text-sm">Sitzungen</h2>
+      {isLoading ? (
+        <p className="text-sm text-[var(--text-muted)]">Lade…</p>
+      ) : sessions.length === 0 ? (
+        <p className="text-sm text-[var(--text-muted)]">Noch keine Sitzungen gestartet.</p>
+      ) : (
+        <ul className="divide-y divide-[var(--border)]">
+          {sessions.map(s => (
+            <li key={s.id} className="py-2 flex items-center gap-3 flex-wrap">
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                s.status === "active" ? "border-green-500/40 text-green-500"
+                : s.status === "waiting" ? "border-amber-500/40 text-amber-500"
+                : "border-[var(--border)] text-[var(--text-muted)]"
+              }`}>
+                {STATUS_LABEL[s.status] ?? s.status}
+              </span>
+              <span className="text-sm font-mono">{s.join_code}</span>
+              <span className="text-xs text-[var(--text-muted)]">
+                {s.participant_count} {s.participant_count === 1 ? "Teilnehmer" : "Teilnehmende"}
+              </span>
+              <span className="text-xs text-[var(--text-muted)]">{formatWhen(s.created_at)}</span>
+              <div className="flex-1" />
+              <Link href={`/games/lueckentext/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Sitzung</Link>
+              <Link href={`/games/lueckentext/review/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Auswertung</Link>
+              <a href={api.lueckentexte.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

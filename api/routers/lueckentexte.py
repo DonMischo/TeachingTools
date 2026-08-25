@@ -5,11 +5,13 @@ Content lives in LueckentextSet (JSON-blob pattern like BingoSet/TimelineSet):
 a text template with gaps. The library is open to every teacher; students may
 READ a set. Validation and scoring helpers live in api/lueckentext_engine.py.
 """
+import csv
+import io
 import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -195,6 +197,13 @@ def delete_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_c
         raise HTTPException(404, "Lückentext nicht gefunden")
     if not can_modify(s, current):
         raise HTTPException(403)
+    # Sessions reference the set with ondelete=RESTRICT, so a set that was ever
+    # played can't be dropped while they exist — Postgres raises and the UI just
+    # shows an error. Take the sessions with it (their participants/responses
+    # follow via cascade); without the text they mean nothing anyway.
+    for sess in db.query(LueckentextSession).filter_by(lueckentext_id=set_id).all():
+        db.delete(sess)
+    db.query(LueckentextErrorPattern).filter_by(lueckentext_id=set_id).delete()
     db.delete(s)
     db.commit()
 
@@ -211,6 +220,17 @@ class SessionOut(BaseModel):
     lueckentext_title: str
 
     model_config = {"from_attributes": True}
+
+
+class SessionListOut(BaseModel):
+    """A row in the session history of one Lückentext."""
+    id: int
+    join_code: str
+    status: str
+    participant_count: int
+    created_at: datetime | None
+    started_at: datetime | None
+    finished_at: datetime | None
 
 
 class ParticipantOut(BaseModel):
@@ -275,6 +295,27 @@ def create_session(set_id: int, db: Session = Depends(get_db), current: Teacher 
     db.commit()
     db.refresh(s)
     return _session_out(s)
+
+
+@router.get("/{set_id}/sessions", response_model=list[SessionListOut])
+def list_set_sessions(set_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Own sessions only. The library is shared, the evaluations are not — and a
+    colleague's code would be a dead link anyway, since the Auswertung and the
+    CSV belong to whoever hosted."""
+    sessions = (
+        db.query(LueckentextSession)
+        .filter_by(lueckentext_id=set_id, teacher_id=current.id)
+        .order_by(LueckentextSession.id.desc())
+        .all()
+    )
+    return [
+        SessionListOut(
+            id=s.id, join_code=s.join_code, status=s.status,
+            participant_count=len(s.participants),
+            created_at=s.created_at, started_at=s.started_at, finished_at=s.finished_at,
+        )
+        for s in sessions
+    ]
 
 
 @router.post("/sessions/{code}/join", response_model=ParticipantOut, status_code=201)
@@ -442,12 +483,9 @@ async def submit_attempt(code: str, gap_id: str, data: AttemptIn, db: Session = 
     )
 
 
-@router.get("/sessions/{code}/review")
-def session_review(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
-    s = _get_session_or_404(code, db)
-    if s.teacher_id != current.id:
-        raise HTTPException(403)
-
+def _review_entries(s: LueckentextSession, db: Session) -> list[dict]:
+    """One entry per participant, one row per gap — the shared basis of the
+    Auswertung screen and the CSV, so both always tell the same story."""
     out = []
     for p in s.participants:
         responses = {r.gap_id: r for r in db.query(LueckentextResponse).filter_by(participant_id=p.id).all()}
@@ -470,6 +508,57 @@ def session_review(code: str, db: Session = Depends(get_db), current: Teacher = 
             })
         out.append({"pid": p.id, "name": p.name, "avatar": p.avatar, "gaps": gaps})
     return out
+
+
+def _owned_session_or_403(code: str, db: Session, current: Teacher) -> LueckentextSession:
+    s = _get_session_or_404(code, db)
+    if s.teacher_id != current.id:
+        raise HTTPException(403)
+    return s
+
+
+@router.get("/sessions/{code}/review")
+def session_review(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    return _review_entries(_owned_session_or_403(code, db, current), db)
+
+
+@router.get("/sessions/{code}/report")
+def session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """One line per student instead of the per-gap detail: what a teacher wants
+    next to a grade book. fmt=csv hands out the same numbers as a file."""
+    s = _owned_session_or_403(code, db, current)
+    total_gaps = len(s.lueckentext.gaps)
+
+    rows = []
+    for entry in _review_entries(s, db):
+        gaps = entry["gaps"]
+        times = [g["time_spent_seconds"] for g in gaps if g["time_spent_seconds"] is not None]
+        rows.append({
+            "pid": entry["pid"],
+            "name": entry["name"],
+            "gaps_solved": sum(1 for g in gaps if g["solved"]),
+            "gaps_total": total_gaps,
+            "attempts_total": sum(g["attempts"] for g in gaps),
+            "hints_total": sum(g["hints_used"] for g in gaps),
+            "revealed_total": sum(1 for g in gaps if g["revealed"]),
+            "time_total_seconds": round(sum(times)) if times else None,
+        })
+    rows.sort(key=lambda r: r["name"].lower())
+
+    if fmt == "csv":
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["Name", "Gelöst", "Lücken gesamt", "Versuche", "Hinweise", "Aufgedeckt", "Zeit (s)"])
+        for r in rows:
+            writer.writerow([r["name"], r["gaps_solved"], r["gaps_total"], r["attempts_total"],
+                              r["hints_total"], r["revealed_total"], r["time_total_seconds"] or ""])
+        # utf-8-sig: Excel reads umlauts as garbage without the BOM.
+        return StreamingResponse(
+            iter([buf.getvalue().encode("utf-8-sig")]), media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="lueckentext_{code}.csv"'},
+        )
+
+    return {"session_code": code, "lueckentext_title": s.lueckentext.title, "status": s.status, "participants": rows}
 
 
 @router.post("/sessions/{code}/finish", response_model=SessionOut)

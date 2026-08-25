@@ -81,6 +81,20 @@ class TestBuildHtml:
         # of the real answer's length — no letter-count cue at all.
         assert html.count('<span class="gap">' + "_" * 16 + '</span>') == 2
 
+    def test_line_breaks_survive(self):
+        """HTML collapses newlines — the author's line breaks must be kept."""
+        lset = FakeSet(
+            title="Gedicht",
+            text="Erste Zeile {{a}}\r\nZweite Zeile\n\nNach der Leerzeile {{b}}",
+            gaps=[{"id": "a", "answer": "Verdunstung"}, {"id": "b", "answer": "Wolke"}],
+        )
+        for html in (build_html(lset, filled=False), build_html(lset, filled=True)):
+            assert "\n" not in re.search(r'<p class="body-text">(.*?)</p>', html, re.S).group(1)
+            assert "Erste Zeile" in html and "Zweite Zeile" in html
+        # 3 breaks per stage body: one after "Zeile {{a}}", two around the blank line.
+        assert build_html(lset, filled=True).count("<br />") == 3
+        assert build_html(lset, filled=False).count("<br />") == 9  # 3 stages
+
     def test_filled_version_has_answers(self):
         lset = make_fake_set()
         html = build_html(lset, filled=True)

@@ -1352,6 +1352,9 @@ class LueckentextSession(Base):
     join_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     # waiting | active | finished
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
+    # Nullable on purpose: sessions hosted before this column existed have no
+    # honest value, and stamping them with the migration date would lie.
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # QR/join-link guests may join this session (teacher opt-in)
