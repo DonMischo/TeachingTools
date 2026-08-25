@@ -1149,7 +1149,12 @@ class ExitGame(Base):
 
     creator: Mapped["Teacher"] = relationship()
     student_creator: Mapped["Student"] = relationship()
-    sessions: Mapped[list["ExitGameSession"]] = relationship(back_populates="exitgame")
+    # Ohne Kaskade versucht SQLAlchemy beim Löschen eines Exitgames, die
+    # exitgame_id seiner Sitzungen auf NULL zu setzen — die Spalte ist NOT NULL
+    # (und die FK steht auf RESTRICT), das Löschen scheiterte also immer, sobald
+    # das Spiel einmal gehostet wurde. Die Versuche und deren Ereignisse hängen
+    # ihrerseits an der Sitzung und gehen mit.
+    sessions: Mapped[list["ExitGameSession"]] = relationship(back_populates="exitgame", cascade="all, delete-orphan")
 
 
 class ExitGameSession(Base):

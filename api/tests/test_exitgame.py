@@ -704,3 +704,25 @@ def test_easier_alternative_blocked_when_level_forbids_it(client, db, teacher_to
     student_token, s, aid = _start_attempt(client, db, teacher_token, klass, NO_EASIER_GAME)
     r = _event(client, student_token, aid, "aufgabe-1", "easier_taken", {"task_index": 0})
     assert r.status_code == 409
+
+
+def test_delete_exitgame_that_was_played(client, db, teacher_token, klass):
+    """A game that has been hosted must still be deletable: exitgame_sessions
+    references it with ondelete=RESTRICT, so the sessions (and with them the
+    attempts and their events) have to go first."""
+    from api.models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent
+
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass)
+    gid = client.get("/api/exitgames", headers=_auth(teacher_token)).json()[0]["id"]
+    _event(client, student_token, aid, "aufgabe-1", "hint_used", {"task_index": 0})
+    assert db.query(ExitGameEvent).filter_by(attempt_id=aid).count() > 0
+
+    client.cookies.clear()
+    r = client.delete(f"/api/exitgames/{gid}", headers=_auth(teacher_token))
+    assert r.status_code == 204, r.text
+
+    # The whole chain goes: Spiel -> Sitzungen -> Versuche -> Ereignisse.
+    assert db.get(ExitGame, gid) is None
+    assert db.query(ExitGameSession).filter_by(exitgame_id=gid).count() == 0
+    assert db.get(ExitGameAttempt, aid) is None
+    assert db.query(ExitGameEvent).filter_by(attempt_id=aid).count() == 0
