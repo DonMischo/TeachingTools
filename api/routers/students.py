@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Student, Class
+from ..models import Student, Class, StudentGroupMember
 from ..schemas import (
     StudentOut, StudentCredentialRow, StudentCredsResult, StudentPreviewResponse,
     StudentApplyRequest, StudentCardData, StudentEnrichRow, StudentCandidate,
@@ -669,12 +669,18 @@ def list_students(
     klasse: str | None = None,
     jahrgang: int | None = None,
     geschlecht: str | None = None,
+    group_id: int | None = None,
     db: Session = Depends(get_db),
     _: object = Depends(get_current_teacher),
 ):
     q = db.query(Student)
     if klasse:
         q = q.filter(Student.klasse == klasse)
+    if group_id is not None:
+        # Members of a Kurs/WPF (or A/B group) — the roster its detail view shows.
+        q = q.join(StudentGroupMember, StudentGroupMember.student_id == Student.id).filter(
+            StudentGroupMember.group_id == group_id
+        )
     if jahrgang is not None:
         q = q.filter(Student.jahrgang == jahrgang)
     if geschlecht:

@@ -198,6 +198,15 @@ def _run_migrations(db_engine):
         # 3-column unique constraint so the 4-column one (below) can replace it.
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
         "ALTER TABLE fragment_collection_grants DROP CONSTRAINT IF EXISTS uq_fragment_grant",
+        # Kurse/WPF exist once per Jahrgang ("10 K1" != "9 K1"). Drop the old
+        # 3-column unique so the 4-column one (below) can replace it.
+        "ALTER TABLE student_groups ADD COLUMN IF NOT EXISTS grade INTEGER",
+        "ALTER TABLE student_groups DROP CONSTRAINT IF EXISTS uq_group_type_class_name",
+        # Tracking + Sitzplan gained a second scope: a Kurs/WPF instead of a Klasse.
+        "ALTER TABLE class_trackers ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
+        "ALTER TABLE class_trackers ALTER COLUMN class_id DROP NOT NULL",
+        "ALTER TABLE seating_plans ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
+        "ALTER TABLE seating_plans ALTER COLUMN class_id DROP NOT NULL",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -212,6 +221,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
         "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id)",
+        "ALTER TABLE student_groups ADD CONSTRAINT uq_group_type_class_grade_name UNIQUE (group_type, class_id, grade, name)",
     ]
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail
@@ -250,11 +260,66 @@ def _backfill_encrypted_passwords():
         db.close()
 
 
+def _backfill_group_grades():
+    """One-time (idempotent) migration: give every cross-class Kurs/WPF its Jahrgang.
+
+    Kurse used to be global, so a single "Kurs I" could hold 9th and 10th graders
+    at once. Such a group is split by grade: the lowest grade keeps the existing
+    row, every other grade gets its own group and its members move over. Groups
+    whose grade cannot be derived (no members, or members without a class) keep
+    grade NULL and are simply skipped on the next start."""
+    from .database import SessionLocal
+    from .models import StudentGroup, Student, Class
+    from .utils import grade_of_class_code
+
+    db = SessionLocal()
+    try:
+        stale = (
+            db.query(StudentGroup)
+            .filter(StudentGroup.grade.is_(None), StudentGroup.class_id.is_(None))
+            .all()
+        )
+        if not stale:
+            return
+        class_grade = {c.id: grade_of_class_code(c.code) for c in db.query(Class).all()}
+        split = 0
+        for g in stale:
+            by_grade: dict[int, list] = {}
+            for m in g.members:
+                s: Student = m.student
+                grade = class_grade.get(s.class_id) if s.class_id else None
+                if grade is None:
+                    grade = s.jahrgang
+                if grade is not None:
+                    by_grade.setdefault(grade, []).append(m)
+            if not by_grade:
+                continue
+            keep, *rest = sorted(by_grade)
+            g.grade = keep
+            for grade in rest:
+                sibling = StudentGroup(group_type=g.group_type, name=g.name, class_id=None, grade=grade)
+                db.add(sibling)
+                db.flush()
+                for m in by_grade[grade]:
+                    m.group_id = sibling.id
+                split += 1
+        db.commit()
+        logging.getLogger(__name__).info(
+            "Backfilled Jahrgang on %d groups (%d split off)", len(stale), split
+        )
+    except Exception as e:
+        db.rollback()
+        logging.getLogger(__name__).warning("Group grade backfill skipped: %s", e)
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
     _run_migrations(engine)
     _backfill_encrypted_passwords()
+    _backfill_group_grades()
     ensure_classes()
     ensure_sportfest_disciplines()
     ensure_teacher_roles()

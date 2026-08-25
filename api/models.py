@@ -584,10 +584,14 @@ class ClassChoreHistory(Base):
 # ---------------------------------------------------------------------------
 
 class ClassTracker(Base):
+    """A checklist column ("Materialgeld", "Einverstaendnis") over a roster.
+
+    Scoped to exactly one of class_id (a Klasse) or group_id (a Kurs/WPF)."""
     __tablename__ = "class_trackers"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True)
+    group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="CASCADE"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -1004,14 +1008,19 @@ class StudentGroup(Base):
     class_id is set for group types that belong to a single class (ab_gruppe);
     left null for cross-class groups (kurs, wahlpflicht) whose member classes
     are derived from their students' class_id.
+    grade is the Klassenstufe a cross-class group belongs to: "Kurs I" exists
+    once per Jahrgang (9 and 10 are different courses), which is what the "10 K1"
+    tag says. Null for ab_gruppe (already class-scoped) and for legacy rows whose
+    grade could not be derived.
     """
     __tablename__ = "student_groups"
-    __table_args__ = (UniqueConstraint("group_type", "class_id", "name", name="uq_group_type_class_name"),)
+    __table_args__ = (UniqueConstraint("group_type", "class_id", "grade", "name", name="uq_group_type_class_grade_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_type: Mapped[str] = mapped_column(String(30), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=True)
+    grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     class_: Mapped["Class | None"] = relationship()
@@ -1438,8 +1447,12 @@ class SeatingPlan(Base):
     __tablename__ = "seating_plans"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    class_id: Mapped[int] = mapped_column(
-        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True
+    # Exactly one scope is set: a Klasse (class_id) or a Kurs/WPF (group_id).
+    class_id: Mapped[int | None] = mapped_column(
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("student_groups.id", ondelete="CASCADE"), nullable=True, index=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="Klassenraum")
     # "landscape" | "portrait" — drives canvas shape and A4 PDF orientation
@@ -1449,7 +1462,8 @@ class SeatingPlan(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    class_: Mapped["Class"] = relationship()
+    class_: Mapped["Class | None"] = relationship()
+    group: Mapped["StudentGroup | None"] = relationship()
 
 
 # ---------------------------------------------------------------------------

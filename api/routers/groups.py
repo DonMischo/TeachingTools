@@ -16,6 +16,7 @@ class GroupOut(BaseModel):
     group_type: str
     name: str
     class_id: int | None
+    grade: int | None
     member_ids: list[int]
     member_class_ids: list[int]
 
@@ -26,6 +27,12 @@ class GroupCreate(BaseModel):
     group_type: str
     name: str
     class_id: int | None = None
+    # Klassenstufe for cross-class groups: "Kurs I" exists once per Jahrgang.
+    grade: int | None = None
+
+
+class GroupUpdate(BaseModel):
+    name: str
 
 
 class MemberAdd(BaseModel):
@@ -52,6 +59,7 @@ def _out(g: StudentGroup) -> GroupOut:
         group_type=g.group_type,
         name=g.name,
         class_id=g.class_id,
+        grade=g.grade,
         member_ids=member_ids,
         member_class_ids=class_ids,
     )
@@ -61,6 +69,7 @@ def _out(g: StudentGroup) -> GroupOut:
 def list_groups(
     group_type: str | None = None,
     class_id: int | None = None,
+    grade: int | None = None,
     db: Session = Depends(get_db),
     _: Teacher = Depends(get_current_teacher),
 ):
@@ -69,7 +78,9 @@ def list_groups(
         q = q.filter(StudentGroup.group_type == group_type)
     if class_id is not None:
         q = q.filter(StudentGroup.class_id == class_id)
-    return [_out(g) for g in q.order_by(StudentGroup.name).all()]
+    if grade is not None:
+        q = q.filter(StudentGroup.grade == grade)
+    return [_out(g) for g in q.order_by(StudentGroup.grade, StudentGroup.name).all()]
 
 
 @router.post("", response_model=GroupOut, status_code=201)
@@ -80,8 +91,27 @@ def create_group(
 ):
     if body.group_type not in VALID_GROUP_TYPES:
         raise HTTPException(400, f"Unknown group_type. Valid: {', '.join(sorted(VALID_GROUP_TYPES))}")
-    g = StudentGroup(group_type=body.group_type, name=body.name, class_id=body.class_id)
+    g = StudentGroup(group_type=body.group_type, name=body.name, class_id=body.class_id, grade=body.grade)
     db.add(g)
+    db.commit()
+    db.refresh(g)
+    return _out(g)
+
+
+@router.patch("/{group_id}", response_model=GroupOut)
+def rename_group(
+    group_id: int,
+    body: GroupUpdate,
+    db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
+):
+    g = db.get(StudentGroup, group_id)
+    if not g:
+        raise HTTPException(404, "Group not found")
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(400, "Name darf nicht leer sein.")
+    g.name = name
     db.commit()
     db.refresh(g)
     return _out(g)

@@ -41,3 +41,12 @@ def parse_grades(raw) -> list[int]:
         if p.isdigit() and 1 <= int(p) <= 13:
             result.append(int(p))
     return sorted(set(result))
+
+
+def grade_of_class_code(code: str | None) -> int | None:
+    """Klassenstufe from a class code: "9a" -> 9, "10b" -> 10, "Vorkurs" -> None."""
+    m = re.match(r"\s*(\d{1,2})", code or "")
+    if not m:
+        return None
+    g = int(m.group(1))
+    return g if 1 <= g <= 13 else None

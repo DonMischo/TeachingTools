@@ -15,11 +15,18 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import SeatingPlan, Class, Student, Teacher
+from ..models import SeatingPlan, Class, Student, StudentGroup, Teacher
 from ..auth import get_current_user, require_class_teacher, is_granted_klassensprecher
 from ..seating_export import export_pdf, ITEM_SIZES
 
 router = APIRouter(prefix="/api", tags=["seating"])
+
+
+def _assert_group_editor(current) -> None:
+    """A Kurs/WPF has no owning Klassenlehrer, so every teacher may manage its
+    rooms — the same rule the groups router uses. Students never may."""
+    if not isinstance(current, Teacher):
+        raise HTTPException(403, "Keine Berechtigung für diesen Sitzplan.")
 
 
 def _assert_additional_editor(current, class_id: int, db: Session) -> None:
@@ -81,7 +88,8 @@ class SeatingPlanUpdate(SeatingPlanCreate):
 
 class SeatingPlanSummary(BaseModel):
     id: int
-    class_id: int
+    class_id: int | None
+    group_id: int | None
     name: str
     orientation: str
     model_config = {"from_attributes": True}
@@ -138,6 +146,40 @@ def create_plan(
     return _detail(plan)
 
 
+@router.get("/groups/{group_id}/seating", response_model=list[SeatingPlanSummary])
+def list_group_plans(group_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+    if not db.get(StudentGroup, group_id):
+        raise HTTPException(404, "Kurs nicht gefunden")
+    return (
+        db.query(SeatingPlan)
+        .filter(SeatingPlan.group_id == group_id)
+        .order_by(SeatingPlan.id)
+        .all()
+    )
+
+
+@router.post("/groups/{group_id}/seating", response_model=SeatingPlanDetail)
+def create_group_plan(
+    group_id: int,
+    body: SeatingPlanCreate,
+    db: Session = Depends(get_db),
+    current=Depends(get_current_user),
+):
+    if not db.get(StudentGroup, group_id):
+        raise HTTPException(404, "Kurs nicht gefunden")
+    _assert_group_editor(current)
+    plan = SeatingPlan(
+        group_id=group_id,
+        name=body.name.strip() or "Kursraum",
+        orientation=body.orientation,
+        items=[],
+    )
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    return _detail(plan)
+
+
 def _get_plan_or_404(plan_id: int, db: Session) -> SeatingPlan:
     plan = db.get(SeatingPlan, plan_id)
     if not plan:
@@ -148,8 +190,18 @@ def _get_plan_or_404(plan_id: int, db: Session) -> SeatingPlan:
 def _is_default_plan(plan: SeatingPlan, db: Session) -> bool:
     """The default "Klassenraum" = the first (lowest-id) plan of the class. It
     stays locked to the class teacher; additional rooms are open to any teacher."""
-    min_id = db.query(func.min(SeatingPlan.id)).filter_by(class_id=plan.class_id).scalar()
+    scope = {"class_id": plan.class_id} if plan.class_id is not None else {"group_id": plan.group_id}
+    min_id = db.query(func.min(SeatingPlan.id)).filter_by(**scope).scalar()
     return plan.id == min_id
+
+
+def _assert_plan_editor(plan: SeatingPlan, current, db: Session) -> None:
+    if plan.group_id is not None:
+        _assert_group_editor(current)
+    elif _is_default_plan(plan, db):
+        require_class_teacher(current, plan.class_id)
+    else:
+        _assert_additional_editor(current, plan.class_id, db)
 
 
 @router.get("/seating/{plan_id}", response_model=SeatingPlanDetail)
@@ -165,10 +217,7 @@ def update_plan(
     current=Depends(get_current_user),
 ):
     plan = _get_plan_or_404(plan_id, db)
-    if _is_default_plan(plan, db):
-        require_class_teacher(current, plan.class_id)
-    else:
-        _assert_additional_editor(current, plan.class_id, db)
+    _assert_plan_editor(plan, current, db)
     plan.name = body.name.strip() or "Klassenraum"
     plan.orientation = body.orientation
     plan.items = [it.model_dump() for it in body.items]
@@ -184,10 +233,7 @@ def delete_plan(
     current=Depends(get_current_user),
 ):
     plan = _get_plan_or_404(plan_id, db)
-    if _is_default_plan(plan, db):
-        require_class_teacher(current, plan.class_id)
-    else:
-        _assert_additional_editor(current, plan.class_id, db)
+    _assert_plan_editor(plan, current, db)
     db.delete(plan)
     db.commit()
 
@@ -211,7 +257,11 @@ def export_plan_pdf(plan_id: int, db: Session = Depends(get_db), _=Depends(get_c
     pdf_path = export_pdf(plan, names, short)
     if pdf_path is None:
         raise HTTPException(503, "PDF-Export momentan nicht verfügbar")
-    cls = db.get(Class, plan.class_id)
-    klasse = cls.code if cls else str(plan.class_id)
+    if plan.group_id is not None:
+        grp = db.get(StudentGroup, plan.group_id)
+        scope = f"{grp.grade} {grp.name}" if grp and grp.grade else (grp.name if grp else str(plan.group_id))
+    else:
+        cls = db.get(Class, plan.class_id)
+        scope = cls.code if cls else str(plan.class_id)
     stamp = datetime.now().strftime("%Y%m%d")
-    return FileResponse(pdf_path, media_type="application/pdf", filename=f"{klasse}_{stamp}.pdf")
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"{scope}_{stamp}.pdf")
