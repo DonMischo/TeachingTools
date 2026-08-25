@@ -10,14 +10,15 @@
 import { useCallback, useMemo, useState } from "react";
 import { fmtNum, MINUS } from "@/lib/gleichung";
 import {
-  applyFOp, evalExpr, evalMono, formatExpr, formatFOp, initialValues, isolated,
-  monoBody, monoKey, parseFormel, parseSingleMono, PRESETS, solveFor, suggestFOps, varsOf,
+  applyFOp, evalExpr, evalMono, exprToLatex, feqToLatex, formatExpr, formatFOp, initialValues,
+  isolated, monoBody, monoKey, parseFormel, parseSingleMono, PRESETS, solveFor, suggestFOps, varsOf,
   type Feq, type FOp, type Expr, type Mono, type Values,
 } from "@/lib/formel";
 import {
   Balance, bestLayout, Konfetti, Piece, Protokoll, tiltFor, useExitingItems, useWobble,
   type PanContent, type Placed,
 } from "./Balance";
+import { Tex } from "@/components/Tex";
 
 const PALETTE = ["#a78bfa", "#22d3ee", "#f472b6", "#34d399", "#fb923c", "#60a5fa", "#e879f9", "#facc15"];
 const NEUTRAL = "#94a3b8";
@@ -288,6 +289,7 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
   const tilt = tiltFor(wl, wr, wobble);
 
   const chips = done ? [] : suggestFOps(current, target);
+  const preview = useMemo(() => parseFormel(customText), [customText]);
   const pan = (p: { tiles: Tile[]; scale: number }, e: Expr): PanContent => ({
     node: <Tiles tiles={p.tiles} />, scale: p.scale, label: formatExpr(e), empty: !p.tiles.length,
   });
@@ -335,9 +337,20 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
               Auf die Waage
             </button>
           </div>
+          <div className="text-sm min-h-[1.75rem]">
+            {preview.ok ? (
+              <>
+                <span className="text-[var(--text-muted)]">So lese ich das: </span>
+                <Tex tex={feqToLatex(preview.eq)} />
+              </>
+            ) : (
+              <span className="text-[var(--red)]">{preview.error}</span>
+            )}
+          </div>
           <p className="text-xs text-[var(--text-muted)]">
             Variablen sind einzelne Buchstaben, gern mit Index (<code>v0</code>, <code>s_1</code>).
             Erlaubt sind + − · : ^ und Klammern — <code>E = 0,5·m·v^2</code>, <code>p = F/A</code>.
+            LaTeX geht auch: <code>p = \frac{"{F}"}{"{A}"}</code>, <code>E = m \cdot c^{"{2}"}</code>.
             Klammern werden beim Einlesen ausmultipliziert.
           </p>
         </div>
@@ -459,8 +472,8 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
         </div>
       </div>
 
-      <Protokoll lines={chain.map((eq, i) => ({
-        left: formatExpr(eq.left), right: formatExpr(eq.right), op: ops[i] ? formatFOp(ops[i]) : undefined,
+      <Protokoll tex lines={chain.map((eq, i) => ({
+        left: exprToLatex(eq.left), right: exprToLatex(eq.right), op: ops[i] ? formatFOp(ops[i]) : undefined,
       }))} />
     </>
   );

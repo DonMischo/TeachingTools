@@ -5,6 +5,7 @@
  * Flächen, Atome), zeichnet der jeweilige Modus selbst und übergibt es hier.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Tex } from "@/components/Tex";
 
 // ── Maße (SVG-Einheiten) ──────────────────────────────────────────────────────
 export const VBW = 1000;
@@ -272,12 +273,18 @@ export function Konfetti({ seed }: { seed: number }) {
   );
 }
 
-/** Der mitgeschriebene Rechenweg. */
-export function Protokoll({ lines }: { lines: { left: string; right: string; op?: string }[] }) {
+/**
+ * Der mitgeschriebene Rechenweg. Mit `tex` sind `left` und `right` LaTeX und
+ * werden gesetzt — Brüche sehen dann aus wie im Heft.
+ */
+export function Protokoll({ lines, tex = false }: {
+  lines: { left: string; right: string; op?: string }[];
+  tex?: boolean;
+}) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-2">Rechenweg</div>
-      <div className="flex flex-col gap-1 font-mono overflow-x-auto">
+      <div className={`flex flex-col gap-1 overflow-x-auto ${tex ? "" : "font-mono"}`}>
         {lines.map((l, i) => {
           const last = i === lines.length - 1;
           return (
@@ -286,9 +293,11 @@ export function Protokoll({ lines }: { lines: { left: string; right: string; op?
                 last ? "text-[var(--text)]" : "text-[var(--text-muted)]"
               }`}
               style={{ fontSize: last ? "1.35rem" : "1rem", fontWeight: last ? 800 : 400 }}>
-              <span className="text-right whitespace-nowrap">{l.left}</span>
+              <span className="text-right whitespace-nowrap">
+                {tex ? <Tex tex={l.left} /> : l.left}
+              </span>
               <span>=</span>
-              <span className="whitespace-nowrap">{l.right}</span>
+              <span className="whitespace-nowrap">{tex ? <Tex tex={l.right} /> : l.right}</span>
               <span className="text-[var(--accent)] whitespace-nowrap text-sm font-bold">
                 {l.op ? `| ${l.op}` : ""}
               </span>

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  bondHint, CHEM_PRESETS, countAtoms, elementBalance, formatParts, formatReaction,
-  isBalanced, molarMass, oxidationStates, parseReaction, setCoef, setIndex, sideAtoms,
-  sideMass, unknownElements, type Reaction,
+  bondHint, chargeBalance, CHEM_PRESETS, countAtoms, elementBalance, formatParts,
+  formatReaction, formatSpecies, hasIons, isBalanced, molarMass, oxidationStates,
+  parseReaction, setCharge, setCoef, setIndex, sideAtoms, sideCharge, sideMass,
+  unknownElements, type Reaction,
 } from "@/lib/chemie";
 import { element } from "@/lib/elemente";
 
@@ -189,5 +190,94 @@ describe("Elementdaten", () => {
       expect(e!.mass).toBeGreaterThan(0);
       expect(e!.color).toMatch(/^#[0-9a-f]{6}$/i);
     }
+  });
+});
+
+describe("Ionen", () => {
+  it("liest die Ladung in der Schreibweise (H)+ und (CO2)2-", () => {
+    const r = parse("(H)+ + (CO3)2- -> X");
+    expect(r.left[0].charge).toBe(1);
+    expect(countAtoms(r.left[0].parts)).toEqual({ H: 1 });
+    expect(r.left[1].charge).toBe(-2);
+    expect(countAtoms(r.left[1].parts)).toEqual({ C: 1, O: 3 });
+  });
+
+  it("packt die überflüssige Klammer aus", () => {
+    // (H)+ meint das Ion, nicht »die Gruppe H einmal«.
+    expect(parse("(H)+ -> X").left[0].parts).toEqual([{ kind: "el", el: "H", n: 1 }]);
+    // Ca(OH)2 bleibt dagegen eine echte Gruppe.
+    expect(parse("Ca(OH)2 -> X").left[0].parts).toHaveLength(2);
+  });
+
+  it("versteht auch Na+, Cl- und SO4^2-", () => {
+    expect(parse("Na+ -> X").left[0].charge).toBe(1);
+    expect(parse("Cl- -> X").left[0].charge).toBe(-1);
+    expect(parse("SO4^2- -> X").left[0].charge).toBe(-2);
+    expect(parse("Ca2+ -> X").left[0].charge).toBe(2);
+  });
+
+  it("verwechselt das trennende Plus nicht mit einer Ladung", () => {
+    const r = parse("(H)+ + (OH)- -> H2O");
+    expect(r.left).toHaveLength(2);
+    expect(r.left.map(s => s.charge)).toEqual([1, -1]);
+    // Und ohne Ionen bleibt alles wie gehabt, auch ohne Leerzeichen.
+    expect(parse("H2+O2 -> H2O").left).toHaveLength(2);
+  });
+
+  it("schreibt die Ladung hochgestellt", () => {
+    expect(formatSpecies(parse("(H)+ -> X").left[0])).toBe("H⁺");
+    expect(formatSpecies(parse("(CO3)2- -> X").left[0])).toBe("CO₃²⁻");
+    expect(formatSpecies(parse("2 Cl- -> X").left[0])).toBe("2 Cl⁻");
+    expect(formatReaction(parse("(H)+ + (OH)- -> H2O"))).toBe("H⁺ + OH⁻ → H₂O");
+  });
+
+  it("zählt die Ladung als eigene Bilanz", () => {
+    const gut = parse("(H)+ + (OH)- -> H2O");
+    expect(sideCharge(gut.left)).toBe(0);
+    expect(chargeBalance(gut)).toEqual({ left: 0, right: 0, ok: true });
+    expect(isBalanced(gut)).toBe(true);
+    expect(hasIons(gut)).toBe(true);
+    expect(hasIons(parse("H2 + O2 -> H2O"))).toBe(false);
+  });
+
+  it("meldet eine Gleichung mit schiefer Ladung als nicht ausgeglichen", () => {
+    // Atome stimmen, die Ladung nicht.
+    const schief = parse("Ag+ + Cl- -> AgCl+");
+    expect(elementBalance(schief).every(b => b.ok)).toBe(true);
+    expect(chargeBalance(schief)).toEqual({ left: 0, right: 1, ok: false });
+    expect(isBalanced(schief)).toBe(false);
+  });
+
+  it("rechnet die Faktoren in die Ladung ein", () => {
+    const r = parse("Ca2+ + 2 Cl- -> CaCl2");
+    expect(sideCharge(r.left)).toBe(0);
+    expect(isBalanced(r)).toBe(true);
+  });
+
+  it("lässt die Ladung verstellen", () => {
+    let r = parse("Ag+ + Cl- -> AgCl");
+    expect(isBalanced(r)).toBe(true);
+    r = setCharge(r, "left", 0, 2);
+    expect(chargeBalance(r).ok).toBe(false);
+    expect(formatSpecies(r.left[0])).toBe("Ag²⁺");
+  });
+
+  it("bezieht die Oxidationszahlen auf die Ladung", () => {
+    const ox = (f: string) => {
+      const s = parse(`${f} -> X`).left[0];
+      return oxidationStates(s.parts, s.charge);
+    };
+    expect(ox("Na+")).toEqual({ Na: 1 });            // einatomiges Ion
+    expect(ox("Cl-")).toEqual({ Cl: -1 });
+    expect(ox("(SO4)2-")).toEqual({ S: 6, O: -2 });  // Summe = −2
+    expect(ox("(NO3)-")).toEqual({ N: 5, O: -2 });
+    expect(ox("(NH4)+")).toEqual({ N: -3, H: 1 });
+  });
+
+  it("schweigt beim Oktett-Hinweis, sobald eine Ladung im Spiel ist", () => {
+    // H₃O⁺ gibt es wirklich — H₃O ohne Ladung nicht. Die Ladung entscheidet.
+    const ion = parse("(H3O)+ -> X").left[0];
+    expect(bondHint(ion.parts, ion.charge)).toBeNull();
+    expect(bondHint(ion.parts, 0)?.level).toBe("warn");
   });
 });

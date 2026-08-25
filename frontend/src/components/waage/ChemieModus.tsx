@@ -10,9 +10,9 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import {
-  bondHint, CHEM_PRESETS, countAtoms, elementBalance, formatParts, formatReaction,
-  fmtMass, formatSide, isBalanced, molarMass, oxidationStates, parseReaction, setCoef, setIndex,
-  sideAtoms, sideMass, unknownElements,
+  bondHint, chargeBalance, CHEM_PRESETS, countAtoms, elementBalance, formatCharge, formatParts,
+  formatReaction, fmtMass, formatSide, hasIons, isBalanced, molarMass, oxidationStates,
+  parseReaction, setCharge, setCoef, setIndex, sideAtoms, sideMass, unknownElements,
   type Part, type Reaction, type SideKey, type Species,
 } from "@/lib/chemie";
 import { element, missingElectrons, shellGoal, textOn } from "@/lib/elemente";
@@ -30,7 +30,15 @@ const MAX_SAME = 8; // darüber ein Atom mit ×n
 
 type Atom = { key: string; el: string; times: number; w: number; h: number; px: number; py: number };
 
-type Crate = Placed & { id: string; atoms: Atom[]; label: string; times: number };
+type Crate = Placed & { id: string; atoms: Atom[]; label: string; times: number; charge: number };
+
+/** Kationen rot, Anionen blau, neutrale Teilchen wie gehabt cyan. */
+const ionColor = (charge: number): string =>
+  charge > 0 ? "#ef4444" : charge < 0 ? "#3b82f6" : "#38bdf8";
+
+/** Kurze Ladung fürs Abzeichen an der Kiste: +, 2− … */
+const chargeBadge = (charge: number): string =>
+  `${Math.abs(charge) > 1 ? Math.abs(charge) : ""}${charge > 0 ? "+" : "−"}`;
 
 /** Die Atome einer Formeleinheit — Gruppen werden dabei ausgemultipliziert. */
 function atomsOf(parts: Part[]): { el: string; times: number }[] {
@@ -47,7 +55,7 @@ function layoutSide(species: Species[], prefix: SideKey): { crates: Crate[]; sca
   species.forEach((s, si) => {
     const copies = s.coef > MAX_COPIES ? 1 : s.coef;
     const times = s.coef > MAX_COPIES ? s.coef : 1;
-    const label = formatParts(s.parts);
+    const label = formatParts(s.parts) + formatCharge(s.charge);
     for (let j = 0; j < copies; j++) {
       const atoms: Atom[] = atomsOf(s.parts).map((a, k) => ({
         key: `${k}-${a.el}-${a.times}`, el: a.el, times: a.times, w: ATOM, h: ATOM, px: 0, py: 0,
@@ -55,7 +63,7 @@ function layoutSide(species: Species[], prefix: SideKey): { crates: Crate[]; sca
       const box = flowLayout(atoms, CRATE_COLS * ATOM + (CRATE_COLS - 1) * GAP);
       crates.push({
         id: `${prefix}-${si}-${j}`,
-        atoms, label, times,
+        atoms, label, times, charge: s.charge,
         w: box.w + 2 * CRATE_PAD,
         h: box.h + 2 * CRATE_PAD + LABEL_H,
         px: 0, py: 0, tx: 0, ty: 0,
@@ -94,7 +102,17 @@ function Crates({ crates }: { crates: Crate[] }) {
       {shown.map(c => (
         <Piece key={c.id} tx={c.tx} ty={c.ty} gone={c.gone}>
           <rect x={0} y={0} width={c.w} height={c.h} rx={12}
-            fill="rgba(56,189,248,0.10)" stroke="#38bdf8" strokeWidth={1.6} strokeDasharray="7 4" />
+            fill={ionColor(c.charge)} fillOpacity={c.charge ? 0.16 : 0.1}
+            stroke={ionColor(c.charge)} strokeWidth={c.charge ? 2.2 : 1.6}
+            strokeDasharray={c.charge ? undefined : "7 4"} />
+          {c.charge !== 0 && (
+            <g>
+              <rect x={c.w - 26} y={-9} width={26} height={18} rx={9}
+                fill={ionColor(c.charge)} />
+              <text x={c.w - 13} y={0} textAnchor="middle" dominantBaseline="central"
+                fontSize={12} fontWeight={900} fill="#ffffff">{chargeBadge(c.charge)}</text>
+            </g>
+          )}
           {c.atoms.map(a => (
             <g key={a.key} transform={`translate(${CRATE_PAD + a.px}, ${CRATE_PAD + a.py})`}>
               <AtomShape a={a} />
@@ -190,15 +208,16 @@ function FormulaEditor({
 }
 
 function SpeciesCard({
-  s, side, i, showOx, onCoef, onIndex,
+  s, side, i, showOx, onCoef, onIndex, onCharge,
 }: {
   s: Species; side: SideKey; i: number; showOx: boolean;
   onCoef: (side: SideKey, i: number, n: number) => void;
   onIndex: (side: SideKey, i: number, path: number[], n: number) => void;
+  onCharge: (side: SideKey, i: number, n: number) => void;
 }) {
   const mass = molarMass(s.parts);
-  const hint = bondHint(s.parts);
-  const ox = showOx ? oxidationStates(s.parts) : null;
+  const hint = bondHint(s.parts, s.charge);
+  const ox = showOx ? oxidationStates(s.parts, s.charge) : null;
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-3 flex flex-col gap-2">
@@ -215,9 +234,28 @@ function SpeciesCard({
               aria-label="Faktor größer">+</button>
           </span>
         </span>
-        <span className="text-lg font-black">{formatParts(s.parts)}</span>
+        <span className="text-lg font-black">
+          {formatParts(s.parts)}
+          <span style={{ color: s.charge ? ionColor(s.charge) : undefined }}>{formatCharge(s.charge)}</span>
+        </span>
         <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Formel</span>
         <FormulaEditor parts={s.parts} onIndex={(p, n) => onIndex(side, i, p, n)} />
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Ladung</span>
+          <span className="inline-flex items-center rounded-lg border overflow-hidden"
+            style={{ borderColor: s.charge ? ionColor(s.charge) : "var(--border)" }}>
+            <button onClick={() => onCharge(side, i, s.charge - 1)} disabled={s.charge <= -6}
+              className="px-2 py-1 text-sm font-black hover:bg-[var(--surface-hover)] disabled:opacity-30"
+              aria-label="Ladung kleiner">−</button>
+            <span className="px-2 py-1 text-sm font-black tabular-nums"
+              style={{ color: s.charge ? ionColor(s.charge) : "var(--text-muted)" }}>
+              {s.charge === 0 ? "0" : chargeBadge(s.charge)}
+            </span>
+            <button onClick={() => onCharge(side, i, s.charge + 1)} disabled={s.charge >= 6}
+              className="px-2 py-1 text-sm font-black hover:bg-[var(--surface-hover)] disabled:opacity-30"
+              aria-label="Ladung größer">+</button>
+          </span>
+        </span>
         <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
           {mass === null ? "—" : `M = ${fmtMass(mass)} u`}
         </span>
@@ -303,6 +341,7 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
   const onCoef = (side: SideKey, i: number, n: number) => update(setCoef(reaction, side, i, n));
   const onIndex = (side: SideKey, i: number, path: number[], n: number) =>
     update(setIndex(reaction, side, i, path, n));
+  const onCharge = (side: SideKey, i: number, n: number) => update(setCharge(reaction, side, i, n));
 
   const applyCustom = () => {
     const r = parseReaction(customText);
@@ -315,6 +354,8 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
   const rightPan = useMemo(() => layoutSide(reaction.right, "right"), [reaction.right]);
 
   const balance = elementBalance(reaction);
+  const charges = chargeBalance(reaction);
+  const ionen = hasIons(reaction);
   const done = isBalanced(reaction);
   const unknown = unknownElements(reaction);
   const ml = sideMass(reaction.left) ?? 0;
@@ -360,7 +401,10 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
           </div>
           <p className="text-xs text-[var(--text-muted)]">
             Elementsymbole groß schreiben, Indizes als Zahl: <code>Ca(OH)2 + CO2 -&gt; CaCO3 + H2O</code>.
-            Ionen und Ladungen kann die Waage noch nicht.
+            Ionen bekommen ihre Ladung angehängt: <code>(H)+ + (OH)- -&gt; H2O</code> — auch
+            <code>Na+</code>, <code>Cl-</code> oder <code>SO4^2-</code>. Zwischen zwei Stoffen
+            gehört ein Leerzeichen um das Plus, sonst wird daraus eine Ladung.
+            Hydrate (CuSO₄·5H₂O) kann die Waage noch nicht.
           </p>
         </div>
       )}
@@ -424,6 +468,7 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-2">
           Elementbilanz — jedes Element muss links so oft vorkommen wie rechts
+          {ionen && ", die Ladung auch"}
         </div>
         <div className="flex flex-wrap gap-2">
           {balance.map(b => {
@@ -446,6 +491,25 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
             );
           })}
         </div>
+        {ionen && (
+          <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 ${
+            charges.ok ? "border-[var(--green)] bg-[var(--green)]/10" : "border-[var(--red)] bg-[var(--red)]/10"
+          }`}>
+            <span className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ladung</span>
+            <span className="font-mono text-sm tabular-nums">
+              {charges.left > 0 ? `+${charges.left}` : charges.left}
+              <span className="text-[var(--text-muted)]"> : </span>
+              {charges.right > 0 ? `+${charges.right}` : charges.right}
+            </span>
+            <span className={charges.ok ? "text-[var(--green)]" : "text-[var(--red)]"}>
+              {charges.ok ? "✓" : "✗"}
+            </span>
+            <span className="text-xs text-[var(--text-muted)]">
+              <span style={{ color: ionColor(1) }}>■</span> positiv ·
+              <span style={{ color: ionColor(-1) }}> ■</span> negativ
+            </span>
+          </div>
+        )}
         {info && (
           <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2">
             <ElementInfo symbol={info} />
@@ -477,7 +541,7 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
             </div>
             {reaction[side].map((s, i) => (
               <SpeciesCard key={`${side}-${i}`} s={s} side={side} i={i} showOx={showOx}
-                onCoef={onCoef} onIndex={onIndex} />
+                onCoef={onCoef} onIndex={onIndex} onCharge={onCharge} />
             ))}
           </div>
         ))}

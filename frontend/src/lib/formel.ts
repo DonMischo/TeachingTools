@@ -8,6 +8,7 @@
  * die Show des Zahlenmodus.
  */
 import { clean, fmtNum, MINUS } from "./gleichung";
+import { fromLatex, numToLatex } from "./latex";
 
 /** `c · Π var^exp` — Exponent 0 kommt in `v` nicht vor. */
 export type Mono = { c: number; v: Record<string, number> };
@@ -185,6 +186,37 @@ export function formatExpr(e: Expr): string {
 
 export const formatFeq = (eq: Feq): string => `${formatExpr(eq.left)} = ${formatExpr(eq.right)}`;
 
+// ── LaTeX ─────────────────────────────────────────────────────────────────────
+
+const varLatex = (name: string, exp: number): string => {
+  // v0 und s_1 sind Größen mit Index — in LaTeX gehört der tief.
+  const m = /^([A-Za-zΑ-Ωα-ωÄÖÜäöü])_?(\d+)$/.exec(name);
+  const base = m ? `${m[1]}_{${m[2]}}` : name;
+  return exp === 1 ? base : `${base}^{${exp}}`;
+};
+
+/** Der Betrag eines Monoms als LaTeX — Brüche werden echte Brüche. */
+export function monoLatex(m: Mono): string {
+  const a = Math.abs(m.c);
+  const up = Object.entries(m.v).filter(([, e]) => e > 0);
+  const down = Object.entries(m.v).filter(([, e]) => e < 0);
+  const upTex = up.map(([k, e]) => varLatex(k, e)).join(" \\cdot ");
+  const num = a === 1 && upTex ? upTex : upTex ? `${numToLatex(fmtNum(a))} \\cdot ${upTex}` : numToLatex(fmtNum(a));
+  if (!down.length) return num;
+  const denTex = down.map(([k, e]) => varLatex(k, -e)).join(" \\cdot ");
+  return `\\frac{${num}}{${denTex}}`;
+}
+
+export function exprToLatex(e: Expr): string {
+  if (!e.length) return "0";
+  return e
+    .map((m, i) => (i === 0 ? (m.c < 0 ? `-${monoLatex(m)}` : monoLatex(m)) : ` ${m.c < 0 ? "-" : "+"} ${monoLatex(m)}`))
+    .join("");
+}
+
+export const feqToLatex = (eq: Feq): string =>
+  `${exprToLatex(eq.left)} = ${exprToLatex(eq.right)}`;
+
 export function formatFOp(op: FOp): string {
   switch (op.op) {
     case "add":
@@ -266,7 +298,8 @@ function tokenize(src: string): Tok[] {
       let j = i + 1;
       if (s[j] === "_") j++;
       while (j < s.length && /[0-9]/.test(s[j])) j++;
-      toks.push({ k: "id", v: s.slice(i, j) });
+      // s_1 und s1 meinen dieselbe Größe — der Unterstrich ist nur Schreibweise.
+      toks.push({ k: "id", v: s.slice(i, j).replace("_", "") });
       i = j;
       continue;
     }
@@ -383,7 +416,7 @@ function parseExprToks(toks: Tok[]): Expr {
 /** Ein einzelner Term für die freie Eingabe einer Umformung: 2, a, m·a, t². */
 export function parseSingleMono(src: string): { ok: true; m: Mono } | { ok: false; error: string } {
   try {
-    const e = parseExprToks(tokenize(src));
+    const e = parseExprToks(tokenize(fromLatex(src)));
     if (e.length !== 1) return { ok: false, error: "Bitte nur einen Term, z. B. 2, a oder m·a." };
     return { ok: true, m: e[0] };
   } catch (err) {
@@ -393,7 +426,7 @@ export function parseSingleMono(src: string): { ok: true; m: Mono } | { ok: fals
 
 export function parseFormel(input: string): { ok: true; eq: Feq } | { ok: false; error: string } {
   try {
-    const toks = tokenize(input);
+    const toks = tokenize(fromLatex(input));
     const at = toks.findIndex(t => t.k === "=");
     if (at < 0) return { ok: false, error: "Es fehlt ein »=«." };
     if (toks.slice(at + 1).some(t => t.k === "=")) return { ok: false, error: "Nur ein »=« ist erlaubt." };

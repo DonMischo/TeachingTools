@@ -10,14 +10,15 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import {
-  applyOp, clean, coeffs, evalSide, fmtNum, formatOp, formatSide, generateTask,
-  isSolved, LEVELS, MINUS, parseEquation, solve, suggestions,
+  applyOp, clean, coeffs, equationToLatex, evalSide, fmtNum, formatOp, formatSide,
+  generateTask, isSolved, LEVELS, MINUS, parseEquation, sideToLatex, solve, suggestions,
   type Equation, type Op, type Side,
 } from "@/lib/gleichung";
 import {
   Balance, bestLayout, flowLayout, GAP, Konfetti, Piece, Protokoll, tiltFor,
   useExitingItems, useWobble, type PanContent, type Placed,
 } from "./Balance";
+import { Tex } from "@/components/Tex";
 
 const XW = 48, XH = 46;
 const NW = 34, NH = 34;
@@ -283,6 +284,7 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
   const leftLayout = useMemo(() => layoutSide(current.left, "L"), [current.left]);
   const rightLayout = useMemo(() => layoutSide(current.right, "R"), [current.right]);
   const chips = useMemo(() => (solvedX === null ? suggestions(current) : []), [current, solvedX]);
+  const preview = useMemo(() => parseEquation(customText), [customText]);
 
   const pan = (l: { units: Unit[]; scale: number }, side: Side): PanContent => ({
     node: <Units units={l.units} />,
@@ -340,8 +342,19 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
               Auf die Waage
             </button>
           </div>
+          <div className="text-sm min-h-[1.75rem]">
+            {preview.ok ? (
+              <>
+                <span className="text-[var(--text-muted)]">So lese ich das: </span>
+                <Tex tex={equationToLatex(preview.eq)} />
+              </>
+            ) : (
+              <span className="text-[var(--red)]">{preview.error}</span>
+            )}
+          </div>
           <p className="text-xs text-[var(--text-muted)]">
             Erlaubt sind Zahlen, x, + − · : und Klammern — z. B. <code>3x - 4 = x + 2</code> oder <code>2(x + 3) = 14</code>.
+            LaTeX geht auch: <code>\frac{"{x}"}{"{2}"} = 3</code>, <code>2 \cdot (x+3) = 14</code>.
           </p>
         </div>
       )}
@@ -425,8 +438,8 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
         </div>
       </div>
 
-      <Protokoll lines={chain.map((eq, i) => ({
-        left: formatSide(eq.left), right: formatSide(eq.right), op: ops[i] ? formatOp(ops[i]) : undefined,
+      <Protokoll tex lines={chain.map((eq, i) => ({
+        left: sideToLatex(eq.left), right: sideToLatex(eq.right), op: ops[i] ? formatOp(ops[i]) : undefined,
       }))} />
     </>
   );

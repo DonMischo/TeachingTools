@@ -9,6 +9,8 @@
  * Reine Logik ohne React; die Seite /simulationen/gleichungswaage zeichnet damit.
  */
 
+import { fromLatex, numToLatex } from "./latex";
+
 export type XTerm = { t: "x"; n: number };
 export type NTerm = { t: "n"; n: number };
 export type GTerm = { t: "g"; k: number; x: number; c: number };
@@ -189,6 +191,32 @@ export function formatEquation(eq: Equation): string {
   return `${formatSide(eq.left)} = ${formatSide(eq.right)}`;
 }
 
+// ── LaTeX ─────────────────────────────────────────────────────────────────────
+
+function bodyLatex(t: Term): string {
+  if (t.t === "x") {
+    const a = Math.abs(t.n);
+    return a === 1 ? "x" : `${numToLatex(fmtNum(a))}x`;
+  }
+  if (t.t === "n") return numToLatex(fmtNum(Math.abs(t.n)));
+  const k = Math.abs(t.k);
+  const inner: Side = [];
+  if (clean(t.x) !== 0) inner.push({ t: "x", n: t.x });
+  if (clean(t.c) !== 0) inner.push({ t: "n", n: t.c });
+  const innerTex = inner.length ? sideToLatex(inner) : "0";
+  return `${k === 1 ? "" : `${numToLatex(fmtNum(k))} \\cdot `}\\left( ${innerTex} \\right)`;
+}
+
+export function sideToLatex(side: Side): string {
+  if (!side.length) return "0";
+  return side
+    .map((t, i) => (i === 0 ? (isNeg(t) ? `-${bodyLatex(t)}` : bodyLatex(t)) : ` ${isNeg(t) ? "-" : "+"} ${bodyLatex(t)}`))
+    .join("");
+}
+
+export const equationToLatex = (eq: Equation): string =>
+  `${sideToLatex(eq.left)} = ${sideToLatex(eq.right)}`;
+
 /** Die Notation hinter dem Strich, z. B. "− 4" oder ": 2". */
 export function formatOp(op: Op): string {
   switch (op.op) {
@@ -354,7 +382,7 @@ function parseSide(toks: Tok[]): Side {
 
 export function parseEquation(input: string): { ok: true; eq: Equation } | { ok: false; error: string } {
   try {
-    const toks = tokenize(input);
+    const toks = tokenize(fromLatex(input));
     const at = toks.findIndex(t => t.k === "=");
     if (at < 0) return { ok: false, error: "Es fehlt ein »=«." };
     if (toks.slice(at + 1).some(t => t.k === "=")) return { ok: false, error: "Nur ein »=« ist erlaubt." };
