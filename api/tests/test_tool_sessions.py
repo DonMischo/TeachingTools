@@ -1,4 +1,4 @@
-"""Join sessions for the stateless tools (Abakus, Gleichungswaage) + guest opt-in."""
+"""Join sessions for the stateless tools (Abakus, Gleichungswaage, Bildformate) + guest opt-in."""
 from api.models import ToolAvailability, ToolSession
 from api.tests.conftest import auth
 
@@ -25,9 +25,11 @@ def test_same_teacher_and_tool_keeps_one_code(client, teacher_token):
 
 
 def test_each_tool_has_its_own_session(client, teacher_token):
-    waage = _create(client, teacher_token, "gleichungswaage").json()["code"]
-    abakus = _create(client, teacher_token, "abacus").json()["code"]
-    assert waage != abakus
+    codes = {
+        slug: _create(client, teacher_token, slug).json()["code"]
+        for slug in ("gleichungswaage", "abacus", "bildformate")
+    }
+    assert len(set(codes.values())) == 3
 
 
 def test_unknown_or_unsupported_tool_is_refused(client, teacher_token):

@@ -12,9 +12,11 @@ export type AuthUser = {
 
 const AuthContext = createContext<{
   auth: AuthUser | null;
+  /** false, solange /me noch läuft — vorher heißt `auth === null` nicht "ausgeloggt". */
+  ready: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-}>({ auth: null, login: async () => {}, logout: async () => {} });
+}>({ auth: null, ready: false, login: async () => {}, logout: async () => {} });
 
 function _buildAuthUser(res: { user_type: string; teacher?: TeacherOut; student?: StudentOut }): AuthUser {
   const user_type = res.user_type as "teacher" | "student";
@@ -26,12 +28,14 @@ function _buildAuthUser(res: { user_type: string; teacher?: TeacherOut; student?
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
 
   // Hydrate from server cookie via /me on mount
   useEffect(() => {
     api.auth.me()
       .then(res => setAuth(_buildAuthUser(res)))
-      .catch(() => setAuth(null));
+      .catch(() => setAuth(null))
+      .finally(() => setReady(true));
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, ready, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

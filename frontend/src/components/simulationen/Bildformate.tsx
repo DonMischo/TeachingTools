@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 /**
  * PBM / PGM / PPM (Netpbm-Textformate) zum Anfassen: links die Datei als Text,
@@ -241,7 +241,7 @@ function rebuild(src: string, p: Parsed): string {
 
 // ── Seite ─────────────────────────────────────────────────────────────────────
 
-export default function BildformatePage() {
+export default function Bildformate({ action }: { action?: ReactNode }) {
   const [tab, setTab] = useState<Magic>("P1");
   const [texts, setTexts] = useState<Record<Magic, string>>(EXAMPLES);
   const [gray, setGray] = useState(0);
@@ -351,12 +351,15 @@ export default function BildformatePage() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto w-full">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">🖼️ Bildformate</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
-          PBM, PGM und PPM sind Bilddateien aus lauter Zahlen. Links tippen, rechts sofort sehen —
-          oder ins Bild klicken und zusehen, wie sich die Zahlen ändern.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">🖼️ Bildformate</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
+            PBM, PGM und PPM sind Bilddateien aus lauter Zahlen. Links tippen, rechts sofort sehen —
+            oder ins Bild klicken und zusehen, wie sich die Zahlen ändern.
+          </p>
+        </div>
+        {action}
       </div>
 
       {/* Formatwahl — jedes Format hat sein eigenes Blatt, nichts geht verloren */}

@@ -17,10 +17,12 @@ import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
+import Bildformate from "@/components/simulationen/Bildformate";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
   abacus: { title: "Abakus", icon: "🧮", node: <Abakus /> },
+  bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
 };
 
 function Hinweis({ icon, title, text }: { icon: string; title: string; text: string }) {
@@ -38,7 +40,7 @@ function Hinweis({ icon, title, text }: { icon: string; title: string; text: str
 export default function SimulationJoinPage() {
   const params = useParams();
   const code = String(params.code ?? "").toUpperCase();
-  const { auth } = useAuth();
+  const { auth, ready } = useAuth();
   const guest = useGuestSession(code);
 
   const [mounted, setMounted] = useState(false);
@@ -66,7 +68,7 @@ export default function SimulationJoinPage() {
     }
   }
 
-  if (!mounted || (!session && !notFound)) {
+  if (!mounted || !ready || (!session && !notFound)) {
     return <Hinweis icon="⏳" title="Einen Moment" text="Der Code wird geprüft." />;
   }
   if (notFound || !session) {

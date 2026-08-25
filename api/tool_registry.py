@@ -263,7 +263,7 @@ def _bildformate_refs(db: Session, teacher: Teacher) -> list[dict]:
 
 def _bildformate_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
     # Static tool: no session/code — students open the same page.
-    return LaunchResult(host_url="/games/bildformate", join_url="/games/bildformate", code=None)
+    return LaunchResult(host_url="/simulationen/bildformate", join_url="/simulationen/bildformate", code=None)
 
 
 # ── gleichungswaage ───────────────────────────────────────────────────────────

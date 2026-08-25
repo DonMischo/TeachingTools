@@ -77,9 +77,6 @@ CATALOG: list[CatalogTool] = [
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
-    CatalogTool("bildformate", "🖼️ Bildformate", "🖼️", "games", {
-        "use": _cap(True, True),
-    }),
     CatalogTool("uebung", "📚 Übung", "📚", "games", {
         "use": _cap(True, True),
     }),
@@ -88,6 +85,9 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, True),
     }),
     CatalogTool("abacus", "🧮 Abakus", "🧮", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("bildformate", "🖼️ Bildformate", "🖼️", "simulationen", {
         "use": _cap(True, True),
     }),
     # ── Tools (teacher surface — students default off) ──

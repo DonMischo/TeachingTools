@@ -73,6 +73,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🎨 Formate", text: "PBM (P1) schwarz-weiß mit 0 und 1, PGM (P2) Graustufen bis zum Maximalwert, PPM (P3) Farbe mit drei Werten (Rot Grün Blau) je Pixel. Jedes Format hat sein eigenes Blatt — Umschalten löscht nichts." },
       { label: "✏️ Bearbeiten", text: "Im Text tippen aktualisiert das Bild sofort; ein Klick ins Bild schreibt den Wert zurück in den Text. Der Cursor im Text markiert das passende Pixel rot." },
       { label: "↹ Aufräumen", text: "Zeilenumbrüche sind egal — die Werte werden der Reihe nach gelesen. »Aufräumen« bricht sie nach je »Breite« Werten um und füllt fehlende Werte mit 0 auf." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
     ],
   },
   gleichungswaage: {

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useAvailability } from "@/hooks/useAvailability";
 import HelpButton from "@/components/HelpButton";
+import { RequireAccount } from "@/components/RequireAccount";
 
 const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
@@ -11,6 +12,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     title: "Gleichungswaage",
     description: "Äquivalenzumformung zum Zusehen — mit x und Klammern, zum Umstellen physikalischer Formeln oder zum Ausgleichen von Reaktionsgleichungen, Atom für Atom.",
     color: "#14b8a6",
+  },
+  {
+    slug: "bildformate",
+    href: "/simulationen/bildformate",
+    icon: "🖼️",
+    title: "Bildformate",
+    description: "PBM, PGM und PPM zum Anfassen — Zahlen tippen und das Bild live sehen oder ins Bild klicken und die Zahlen ändern.",
+    color: "#f97316",
   },
   {
     slug: "abacus",
@@ -26,6 +35,7 @@ export default function SimulationenPage() {
   const { can, ready } = useAvailability();
   const CARDS = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
   return (
+    <RequireAccount>
     <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black tracking-tight">🔬 Simulationen</h1>
@@ -65,5 +75,6 @@ export default function SimulationenPage() {
         ))}
       </div>
     </div>
+    </RequireAccount>
   );
 }

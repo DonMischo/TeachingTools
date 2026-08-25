@@ -1665,8 +1665,8 @@ class ResearchMedia(Base):
 class ToolSession(Base):
     """A joinable session for a tool that keeps no state of its own.
 
-    Abakus and Gleichungswaage run entirely in the browser — there is nothing to
-    host. This row exists so a teacher can hand out a code/QR and decide whether
+    Abakus, Gleichungswaage and Bildformate run entirely in the browser — there is
+    nothing to host. This row exists so a teacher can hand out a code/QR and decide whether
     QR guests (no account) may open it; the code is stable per teacher and tool,
     so a printed QR keeps working.
     """
