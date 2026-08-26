@@ -362,12 +362,14 @@ def list_participants(
 
 
 @router.post("/rooms/{room_id}/participants/{participant_id}/kick", status_code=204)
-def kick_participant(
+async def kick_participant(
     room_id: str,
     participant_id: str,
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
+    # async because closing the participant's socket needs the running event
+    # loop — a sync route runs in a worker thread, where there is none.
     p = db.get(SchreibraumParticipant, participant_id)
     if not p or p.room_id != room_id:
         raise HTTPException(404)
@@ -378,8 +380,7 @@ def kick_participant(
     db.commit()
     # Signal the WS handler to close this connection
     from .collab import kick_ws
-    import asyncio
-    asyncio.create_task(kick_ws(participant_id))
+    await kick_ws(participant_id)
 
 
 @router.post("/rooms/{room_id}/participants/{participant_id}/rejoin-toggle", status_code=204)
@@ -533,27 +534,30 @@ async def export_document(
         raise HTTPException(404)
     _assert_access(room, user, db)
 
+    mime, ext = _EXPORT_FORMATS[fmt]
+    is_latex = fmt in ("tex", "latex")
+    extra_args = ["--standalone", f"--metadata=title:{body.title}"]
+
     try:
         import pypandoc
-        pan_fmt = "latex" if fmt in ("tex", "latex") else "docx"
-        result = pypandoc.convert_text(
-            body.html,
-            pan_fmt,
-            format="html",
-            extra_args=["--standalone", f"--metadata=title:{body.title}"],
-        )
+        if is_latex:
+            data = pypandoc.convert_text(body.html, "latex", format="html",
+                                         extra_args=extra_args).encode("utf-8")
+        else:
+            # pypandoc refuses binary targets without an outputfile, so docx has
+            # to go through a temp file and be read back.
+            import tempfile
+            with tempfile.TemporaryDirectory() as tmp:
+                out = Path(tmp) / f"export{ext}"
+                pypandoc.convert_text(body.html, "docx", format="html",
+                                      outputfile=str(out), extra_args=extra_args)
+                data = out.read_bytes()
     except Exception as exc:
         logging.getLogger(__name__).error("Export failed: %s", exc)
         raise HTTPException(500, "Export fehlgeschlagen — pandoc nicht verfügbar?")
 
-    mime, ext = _EXPORT_FORMATS[fmt]
     safe_title = "".join(c if c.isalnum() or c in "-_" else "_" for c in body.title)[:60] or "dokument"
     filename = f"{safe_title}{ext}"
-
-    if isinstance(result, str):
-        data = result.encode("utf-8")
-    else:
-        data = result
 
     return StreamingResponse(
         io.BytesIO(data),
