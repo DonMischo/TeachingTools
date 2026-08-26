@@ -3,8 +3,9 @@ School-year math for deriving stable "Abschlussklasse" (AK) codes from
 grade-based class labels like "7a", so a class keeps a stable identity
 across the yearly grade bump (Stichtag: 1. August -> new school year).
 
-AK-code format: AK<abschlussjahr><letter>, e.g. "7a" in school year
-2025/2026 -> graduates 2029 (13 grades) -> "AK2029a".
+AK-code format: AK<abschlussjahr><letter>, where abschlussjahr is the START
+year of the school year in which the class reaches grade TOTAL_GRADES:
+"7a" in school year 2025/2026 -> grade 13 in 2031/2032 -> "AK2031a".
 """
 import re
 from datetime import date
