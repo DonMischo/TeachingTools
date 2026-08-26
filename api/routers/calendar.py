@@ -3,7 +3,8 @@ Kalender — school-year calendar (single dates + date spans).
 
 category = single-select AUDIENCE tier (Kollegium/Primar/Sekundar/
 Schulgemeinschaft/Ferien/Persönlich) that drives who can see the entry —
-students only ever see 'Schulgemeinschaft' and 'Ferien' entries, and
+students see 'Schulgemeinschaft' and 'Ferien' plus the Stufe tier matching
+their grade ('Primar' for grades 1–4, 'Sekundar' from grade 5 up), and
 'Persönlich' entries are visible only to their own creator (private notes,
 not shared with other teachers).
 tags = free-form, colorable, multi-select descriptive labels (Dienstberatung,
@@ -29,7 +30,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import CalendarEntry, CalendarTag, SchoolSettings, Teacher
+from ..models import CalendarEntry, CalendarTag, SchoolSettings, Student, Teacher
 from ..schemas import (
     CalendarEntryIn, CalendarEntryOut, CalendarTagIn, CalendarTagOut,
     SchoolSettingsIn, SchoolSettingsOut,
@@ -37,11 +38,13 @@ from ..schemas import (
 from ..auth import get_current_teacher, get_current_user
 from ..admin_access import require_admin_feature
 from ..schoolyear import get_school_year_start
+from .students import _extract_jahrgang
 
 router = APIRouter(prefix="/api/calendar", tags=["calendar"])
 
 CATEGORIES = ["Kollegium", "Primar", "Sekundar", "Schulgemeinschaft", "Ferien", "Persönlich"]
 STUDENT_VISIBLE_CATEGORIES = {"Schulgemeinschaft", "Ferien"}
+PRIMAR_MAX_GRADE = 4  # grades 1-4 = Primarstufe, grade 5 and up = Sekundarstufe
 BUNDESLAENDER = {
     "BW": "Baden-Württemberg", "BY": "Bayern", "BE": "Berlin", "BB": "Brandenburg",
     "HB": "Bremen", "HH": "Hamburg", "HE": "Hessen", "MV": "Mecklenburg-Vorpommern",
@@ -49,6 +52,15 @@ BUNDESLAENDER = {
     "SL": "Saarland", "SN": "Sachsen", "ST": "Sachsen-Anhalt", "SH": "Schleswig-Holstein",
     "TH": "Thüringen",
 }
+
+
+def _stufe_category(s: Student) -> str | None:
+    """The audience tier ('Primar'/'Sekundar') a student's grade puts them in,
+    or None when the grade is unknown (jahrgang unset and `klasse` unparsable)."""
+    grade = s.jahrgang if s.jahrgang is not None else _extract_jahrgang(s.klasse or "")
+    if grade is None:
+        return None
+    return "Primar" if grade <= PRIMAR_MAX_GRADE else "Sekundar"
 
 
 def _out(e: CalendarEntry) -> CalendarEntryOut:
@@ -85,10 +97,12 @@ def list_entries(
         q = q.filter(CalendarEntry.start_date <= to)
     entries = q.order_by(CalendarEntry.start_date).all()
     # Students (and any non-Teacher account) only see the Schulgemeinschaft/
-    # Ferien audience tiers — no other entry's title/description reaches the
-    # browser. Filtered in Python (list is small; keeps SQLite/Postgres parity).
+    # Ferien audience tiers, plus the Stufe tier their grade puts them in — no
+    # other entry's title/description reaches the browser. Filtered in Python
+    # (list is small; keeps SQLite/Postgres parity).
     if not isinstance(current, Teacher):
-        entries = [e for e in entries if e.category in STUDENT_VISIBLE_CATEGORIES]
+        visible = STUDENT_VISIBLE_CATEGORIES | {_stufe_category(current)}
+        entries = [e for e in entries if e.category in visible]
     else:
         # "Persönlich" entries are private to their creator, even from other teachers.
         entries = [e for e in entries if e.category != "Persönlich" or e.created_by == current.id]

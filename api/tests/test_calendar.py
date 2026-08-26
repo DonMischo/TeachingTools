@@ -10,12 +10,12 @@ def _auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _student_login(client, db) -> str:
-    s = Student(nachname="Muster", vorname="Mia", klasse="5a", geschlecht="weiblich",
-               username="m.muster", password_hash=hash_password("pw"), active=True)
+def _student_login(client, db, klasse: str = "5a", username: str = "m.muster") -> str:
+    s = Student(nachname="Muster", vorname="Mia", klasse=klasse, geschlecht="weiblich",
+               username=username, password_hash=hash_password("pw"), active=True)
     db.add(s)
     db.flush()
-    r = client.post("/api/auth/login", json={"username": "m.muster", "password": "pw"})
+    r = client.post("/api/auth/login", json={"username": username, "password": "pw"})
     return r.json()["access_token"]
 
 
@@ -89,6 +89,26 @@ def test_student_only_sees_schulgemeinschaft_and_ferien(client, db, teacher_toke
     assert r.status_code == 200
     titles = {e["title"] for e in r.json()}
     assert titles == {"Schulfest", "Sommerferien"}
+
+
+def test_student_sees_own_stufe_but_not_the_other(client, db, teacher_token):
+    client.post("/api/calendar", json={
+        "title": "Zuckertütenfest", "category": "Primar",
+        "start_date": "2026-04-01", "end_date": "2026-04-01", "tags": [],
+    }, headers=_auth(teacher_token))
+    client.post("/api/calendar", json={
+        "title": "Berufsmesse", "category": "Sekundar",
+        "start_date": "2026-04-02", "end_date": "2026-04-02", "tags": [],
+    }, headers=_auth(teacher_token))
+
+    client.cookies.clear()
+    r = client.get("/api/calendar", headers=_auth(_student_login(client, db, "3b", "p.primar")))
+    client.cookies.clear()
+    assert {e["title"] for e in r.json()} == {"Zuckertütenfest"}
+
+    r = client.get("/api/calendar", headers=_auth(_student_login(client, db, "5a", "s.sekundar")))
+    client.cookies.clear()
+    assert {e["title"] for e in r.json()} == {"Berufsmesse"}
 
 
 def test_persoenlich_category_visible_only_to_creator(client, teacher_token, admin_token):
