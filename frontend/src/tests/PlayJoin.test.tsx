@@ -15,12 +15,18 @@ vi.mock("next/navigation", () => ({
 
 // ── api mock ──────────────────────────────────────────────────────────────────
 const mockJoinSession = vi.fn();
+const mockGuestJoin = vi.fn();
 vi.mock("@/lib/api", () => ({
   api: {
     capuths: {
       joinSession: (...args: unknown[]) => mockJoinSession(...args),
       getSession: vi.fn().mockResolvedValue({ team_mode: false }),
       listTeams: vi.fn().mockResolvedValue([]),
+    },
+    // Ohne Login besorgt sich die Seite zuerst ein Gast-Token und reicht es
+    // an joinSession weiter (useGuestSession).
+    guest: {
+      join: (...args: unknown[]) => mockGuestJoin(...args),
     },
   },
 }));
@@ -46,6 +52,8 @@ describe("PlayPage – join form", () => {
   beforeEach(() => {
     localStorage.clear();
     mockJoinSession.mockReset();
+    mockGuestJoin.mockReset();
+    mockGuestJoin.mockResolvedValue({ token: "gast-token", name: "Test" });
   });
 
   afterEach(() => {
@@ -104,7 +112,19 @@ describe("PlayPage – join form", () => {
     await user.click(screen.getByTitle("cat"));
     await user.type(screen.getByPlaceholderText("Dein Name"), "Test");
     await user.click(screen.getByText(/Beitreten/));
-    expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat", null);
+    await waitFor(() =>
+      expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat", null, "gast-token")
+    );
+  });
+
+  it("obtains a guest token before joining", async () => {
+    const user = userEvent.setup();
+    mockJoinSession.mockResolvedValue({ participant_id: 1, name: "Test" });
+    await renderAndHydrate();
+    await user.type(screen.getByPlaceholderText("Dein Name"), "Test");
+    await user.click(screen.getByText(/Beitreten/));
+    // Ohne Token lässt der Server keinen Gast in die Session.
+    await waitFor(() => expect(mockGuestJoin).toHaveBeenCalledWith("TEST01", "caputh", "Test"));
   });
 
   it("shows error message when joinSession fails", async () => {

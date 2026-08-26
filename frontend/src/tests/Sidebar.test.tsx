@@ -63,8 +63,34 @@ describe("Sidebar — navigation", () => {
       user_type: "teacher",
       teacher: { ...mockTeacher, role: "admin" },
     });
+    // Der Admin-Status kommt seit den Nutzungsrechten aus /admin-access/me,
+    // nicht mehr aus teacher.role — ohne diese Antwort bleibt das Icon aus.
+    vi.spyOn(apiModule.api.adminAccess, "me").mockResolvedValue({ is_admin: true, features: [] });
     await act(async () => { renderSidebar(); });
-    expect(screen.getByTitle("Admin")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTitle("Admin")).toBeInTheDocument());
+  });
+
+  it("shows admin link for a teacher granted a single admin feature", async () => {
+    vi.spyOn(apiModule.api.auth, "me").mockResolvedValue({
+      user_type: "teacher",
+      teacher: mockTeacher,
+    });
+    vi.spyOn(apiModule.api.adminAccess, "me").mockResolvedValue({
+      is_admin: false, features: ["klassen"],
+    });
+    await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(screen.getByTitle("Admin")).toBeInTheDocument());
+  });
+
+  it("hides admin link from a teacher without any admin feature", async () => {
+    vi.spyOn(apiModule.api.auth, "me").mockResolvedValue({
+      user_type: "teacher",
+      teacher: mockTeacher,
+    });
+    vi.spyOn(apiModule.api.adminAccess, "me").mockResolvedValue({ is_admin: false, features: [] });
+    await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(screen.getByTitle(/Anna Müller/i)).toBeInTheDocument());
+    expect(screen.queryByTitle("Admin")).not.toBeInTheDocument();
   });
 
   it("hides Tools link for students", async () => {

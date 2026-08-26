@@ -27,6 +27,12 @@ vi.mock("@/lib/api", () => ({
       getSession: vi.fn().mockResolvedValue({ team_mode: false }),
       listTeams: vi.fn().mockResolvedValue([]),
     },
+    // Ohne Login holt die Seite vor dem Beitreten ein Gast-Token
+    // (useGuestSession). Fehlt das hier, scheitert schon der Klick auf
+    // "Beitreten" und es entsteht nie ein WebSocket.
+    guest: {
+      join: vi.fn().mockResolvedValue({ token: "gast-token", name: "Lena" }),
+    },
   },
 }));
 

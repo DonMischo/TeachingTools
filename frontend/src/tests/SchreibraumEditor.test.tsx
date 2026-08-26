@@ -91,9 +91,14 @@ beforeEach(() => {
 });
 
 describe("SchreibraumEditor — auth gate", () => {
-  it("shows login hint when not authenticated", async () => {
+  it("offers the guest join form when not authenticated", async () => {
+    localStorage.clear();
     await act(async () => { renderPage(); });
-    expect(screen.getByText(/bitte anmelden/i)).toBeInTheDocument();
+    // Seit dem Gastzugang steht hier kein Anmelde-Hinweis mehr: Wer ohne Konto
+    // über QR/Link kommt, trägt seinen Namen ein und bekommt ein 60-Minuten-Token.
+    expect(screen.getByPlaceholderText("Dein Name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Beitreten/ })).toBeInTheDocument();
+    expect(screen.queryByText(/bitte anmelden/i)).not.toBeInTheDocument();
   });
 });
 
