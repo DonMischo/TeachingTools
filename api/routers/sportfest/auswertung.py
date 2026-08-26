@@ -1,12 +1,12 @@
 from typing import Union
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from ...database import get_db
 from ...models import Teacher, Student, SportfestResult, SportfestDiscipline, Class, Transaction
 from ...schemas import AuswertungStudent, AuswertungDisciplineEntry
-from ...auth import get_current_user_optional, get_current_user
+from ...auth import get_current_user_optional, get_current_teacher
 
 router = APIRouter(prefix="/api/sportfest/auswertung", tags=["sportfest"])
 
@@ -198,11 +198,11 @@ def klassen_punkte_preview(
 def klassen_punkte_commit(
     body: KlassePunkteCommitBody,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user),
+    teacher: Teacher = Depends(get_current_teacher),
 ):
-    if user is None or not hasattr(user, "id"):
-        raise HTTPException(status_code=403, detail="Nur Lehrer können Punkte vergeben")
-    teacher_id = user.id
+    # Must be a Teacher, not just any authenticated user: the awarded points are
+    # booked as that teacher's Transactions.
+    teacher_id = teacher.id
 
     entries = _klassen_aggregate(db)
     normalized = _bayesian_normalize(entries, body.prior_strength)
