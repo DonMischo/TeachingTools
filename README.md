@@ -86,6 +86,18 @@ Schulweites Punktesystem und Unterrichtstool-Suite. Lehrer vergeben Punkte an Kl
   - **Stoppuhr** — Vorwärtszähler
 - Widgets per Drag-and-Drop positionieren
 
+#### 🧱 Snap!
+- Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite — läuft
+  vollständig lokal, ohne Internet und ohne Konto bei snap.berkeley.edu
+- Programme werden in Hauspokal gespeichert statt als Datei exportiert
+- Lehrer-Programme mit Klassenzuordnung sind Vorlagen: die Klasse öffnet sie,
+  speichert aber immer als eigene Kopie
+- **Einrichtung:** läuft automatisch beim ersten Start des Frontend-Containers —
+  Snap! v12.0.6 wird nach `frontend/public/snap` geholt (~90 MB, nicht im Repo,
+  daher der Download). Spätere Starts überspringen den Schritt; ohne Internet
+  startet die App normal, nur das Snap!-Tool fehlt. Nachholen von Hand:
+  `npm run fetch:snap` im `frontend/`-Verzeichnis
+
 ### 🏷️ Auktion
 - Lehrer legt Items auf, Schüler geben Gebote ab
 - Status-Phasen: Wartend → Gebote offen → Abgeschlossen

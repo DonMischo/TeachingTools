@@ -35,6 +35,8 @@ Konzeptideen.yml
 .claude/
 
 # frontend
+# Snap! wird per `npm run fetch:snap` geholt (~90 MB, nicht ins Repo)
+frontend/public/snap/
 frontend/public/EGE_logo.png
 frontend/public/favicon.ico
 frontend/node_modules/

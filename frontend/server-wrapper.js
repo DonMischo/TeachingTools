@@ -72,6 +72,17 @@ function needsBuild() {
 console.log("Syncing node_modules...");
 execSync("npm install --legacy-peer-deps --prefer-offline", { stdio: "inherit" });
 
+// Snap! (public/snap) ist zu groß fürs Repo und wird einmalig geholt — hier und
+// nicht im Dockerfile, weil der Bind-Mount ./frontend:/app alles überdeckt, was
+// im Image unter /app liegt. Das Skript merkt sich die Version und tut beim
+// zweiten Start nichts mehr. Ein Fehlschlag (kein Netz) darf den Start nicht
+// aufhalten: dann fehlt nur das Snap!-Tool, der Rest läuft.
+try {
+  execSync("node scripts/fetch-snap.mjs", { stdio: "inherit" });
+} catch {
+  console.warn("Snap! konnte nicht geladen werden — /tools/snap bleibt leer. Nachholen: npm run fetch:snap");
+}
+
 if (needsBuild()) {
   console.log("Source changed — building Next.js...");
   execSync("npx next build", { stdio: "inherit" });

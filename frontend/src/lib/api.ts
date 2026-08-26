@@ -1097,6 +1097,23 @@ export type StandaloneBundle = {
   built_at: string | null;
 };
 
+/** Ein im eingebetteten Snap!-Editor gespeichertes Programm. */
+export type SnapProjectOut = {
+  id: number;
+  title: string;
+  class_id: number | null;
+  /** Lehrer-Projekt für eine Klasse — Schüler öffnen es, speichern nur als Kopie. */
+  is_template: boolean;
+  created_by: number | null;
+  created_by_student: number | null;
+  author: string | null;
+  mine: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SnapProjectDetail = SnapProjectOut & { xml: string };
+
 export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
@@ -1919,6 +1936,15 @@ export const api = {
       remove: (planId: number, class_id: number) =>
         apiFetch<void>(`stundenplaner/${planId}/class-shares/${class_id}`, { method: "DELETE" }),
     },
+  },
+  snap: {
+    list: () => apiFetch<SnapProjectOut[]>("snap"),
+    get: (id: number) => apiFetch<SnapProjectDetail>(`snap/${id}`),
+    create: (body: { title: string; xml: string; class_id?: number | null }) =>
+      apiFetch<SnapProjectDetail>("snap", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: number, body: { title?: string; xml?: string; class_id?: number | null }) =>
+      apiFetch<SnapProjectDetail>(`snap/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    remove: (id: number) => apiFetch<void>(`snap/${id}`, { method: "DELETE" }),
   },
   apiFetch,
 };

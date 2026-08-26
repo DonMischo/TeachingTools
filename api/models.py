@@ -1703,3 +1703,31 @@ class ToolSession(Base):
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
 
     creator: Mapped["Teacher"] = relationship()
+
+
+class SnapProject(Base):
+    """Ein Snap!-Programm (Berkeley) als XML-Blob.
+
+    Snap! selbst kennt nur Datei-Export und seine eigene Cloud; hier liegt das
+    Projekt stattdessen in Hauspokal, damit Schüler es an jedem Rechner
+    weiterbearbeiten können. Das XML kommt aus der Snap!-API
+    (`getProjectXML()`) und geht unverändert wieder an sie zurück — es wird
+    absichtlich nicht geparst.
+
+    Autor ist entweder ein Lehrer (created_by) oder ein Schüler
+    (created_by_student), wie bei den übrigen Inhaltsbibliotheken. Setzt ein
+    Lehrer zusätzlich class_id, wird das Projekt zur Vorlage: die Klasse sieht
+    es und öffnet es, speichern kann sie es nur als eigene Kopie.
+    """
+    __tablename__ = "snap_projects"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    xml: Mapped[str] = mapped_column(Text, nullable=False)
+    # Gesetzt = Vorlage für diese Klasse (nur bei Lehrer-Projekten sinnvoll).
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    # Autor: genau eines von created_by (Lehrer) / created_by_student ist gesetzt.
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

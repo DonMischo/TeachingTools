@@ -168,4 +168,15 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🏅 Wertung", text: "Nach DLV-Wertungstabellen. Disziplinen: Sprint, Ausdauer, Weitsprung, Ballwurf." },
     ],
   },
+  snap: {
+    title: "Snap!",
+    intro: "Der Blockeditor Snap! (Berkeley) läuft vollständig lokal — ohne Internet, ohne Konto bei snap.berkeley.edu.",
+    sections: [
+      { label: "▶️ Starten", text: "»Snap!« öffnen — der Editor erscheint direkt in der Seite. Kostüme, Klänge und Bibliotheken liegen mit auf dem Server." },
+      { label: "💾 Speichern", text: "»Speichern« legt das Programm in Hauspokal ab, nicht als Datei im Download-Ordner. »Kopie…« speichert unter neuem Namen." },
+      { label: "📂 Öffnen", text: "»Öffnen« listet die eigenen Programme; Schüler sehen zusätzlich die Vorlagen ihrer Klasse." },
+      { label: "🧩 Vorlagen", text: "Ein Lehrer-Programm mit Klasse wird zur Vorlage: die Klasse öffnet es, speichert aber immer als eigene Kopie — das Original bleibt unberührt." },
+      { label: "🔧 Einrichtung", text: "Snap! selbst wird einmalig mit »npm run fetch:snap« nach frontend/public/snap geholt (~90 MB, nicht im Repo)." },
+    ],
+  },
 };

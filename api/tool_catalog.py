@@ -131,6 +131,12 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, True),
         "create": _cap(True, False),
     }),
+    # Snap!: der Editor läuft lokal (frontend/public/snap), "create" deckt das
+    # Speichern eigener Programme in der Hauspokal-Bibliothek ab.
+    CatalogTool("snap", "🧱 Snap!", "🧱", "tools", {
+        "use": _cap(True, False),
+        "create": _cap(True, False),
+    }),
 ]
 
 BY_SLUG: dict[str, CatalogTool] = {t.slug: t for t in CATALOG}

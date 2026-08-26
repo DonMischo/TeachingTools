@@ -78,6 +78,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Pinnwände mit Karten & Clippings — teilbar mit Klassen und per QR-Gastzugang.",
     color: "#8b5cf6",
   },
+  {
+    slug: "snap",
+    href: "/tools/snap",
+    icon: "🧱",
+    title: "Snap!",
+    description: "Blockbasiertes Programmieren — läuft lokal, Programme liegen in Hauspokal.",
+    color: "#22d3ee",
+  },
 ];
 
 export default function ToolsPage() {

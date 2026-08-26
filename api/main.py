@@ -70,6 +70,8 @@ from .routers import fragments as fragments_router
 app.include_router(fragments_router.router)
 from .routers import fragments_cards as fragments_cards_router
 app.include_router(fragments_cards_router.router)
+from .routers import snap as snap_router
+app.include_router(snap_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
