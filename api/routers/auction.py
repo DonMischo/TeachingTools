@@ -2,10 +2,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user
+from ..auth import get_current_user, get_current_teacher
 from ..availability import require_capability
 from ..database import get_db
 from ..models import AuctionBid, AuctionSession, AuctionSet, Haus, HausMember, Student, StudentRole, Teacher, Transaction
@@ -73,11 +72,24 @@ def _state_haussp(session: AuctionSession, house_id: int, db: Session) -> dict:
     }
 
 
-def _find_student_by_name(name: str, db: Session) -> "Student | None":
-    """Look up a student by full name (case-insensitive)."""
-    return db.query(Student).filter(
-        func.lower(Student.vorname + " " + Student.nachname) == name.strip().lower()
+def _haussprecher_house(db: Session, student: Student) -> int | None:
+    """The house this student may bid for, or None if they are not a Haussprecher.
+
+    The role is assigned in Klassenverwaltung, which stores it scoped to the
+    CLASS it was assigned in (api/routers/roles.py) and spelled the way the
+    curated role list spells it ("Haussprecher"), hence the case-insensitive
+    match. The house itself therefore comes from that class's Haus membership,
+    not from the role's scope_id.
+    """
+    role = db.query(StudentRole).filter(
+        StudentRole.student_id == student.id,
+        StudentRole.role_type.ilike("haussprecher"),
     ).first()
+    if not role:
+        return None
+    class_id = student.class_id if student.class_id is not None else role.scope_id
+    member = db.query(HausMember).filter_by(class_id=class_id).order_by(HausMember.haus_id).first()
+    return member.haus_id if member else None
 
 
 # ── REST ──────────────────────────────────────────────────────────────────────
@@ -132,12 +144,10 @@ def list_auctions(set_id: int | None = None, db: Session = Depends(get_db), curr
 
 
 @router.post("", response_model=AuctionOut, status_code=201, dependencies=[Depends(require_capability("auktion", "host"))])
-def create_auction(body: AuctionCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
+def create_auction(body: AuctionCreate, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     """Creates a reusable AuctionSet from the given content, then immediately
     starts a session from it — same request/response shape as before the
     library split, so existing callers need no changes."""
-    if current.role not in ("teacher", "admin"):
-        raise HTTPException(403)
     auction_set = AuctionSet(
         title=body.title, description=body.description, prize_description=body.prize_description,
         created_by=current.id,
@@ -171,16 +181,12 @@ def create_session_from_set(db: Session, set_id: int, created_by: int) -> Auctio
 
 
 @router.post("/sets/{set_id}/sessions", response_model=AuctionOut, status_code=201, dependencies=[Depends(require_capability("auktion", "host"))])
-def start_session_from_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
-        raise HTTPException(403)
+def start_session_from_set(set_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     return create_session_from_set(db, set_id, current.id)
 
 
 @router.delete("/{code}", status_code=204)
-def delete_auction(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    if current.role not in ("teacher", "admin"):
-        raise HTTPException(403)
+def delete_auction(code: str, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     s = db.query(AuctionSession).filter_by(code=code).first()
     if not s:
         raise HTTPException(404)
@@ -208,24 +214,27 @@ async def auction_ws(
     is_haussp = False
     is_teacher_ctrl = False  # true only for authenticated teachers who can control the auction
 
-    # Player entry (spectator or Haussprecher-by-name). Unauthenticated visitors
-    # must hold a live guest token scoped to this code (only issued when the
-    # teacher opted in — enforces opt-in + 60-min expiry); logged-in users pass
+    # Player entry (spectator, or a Haussprecher who is logged in). Unauthenticated
+    # visitors must hold a live guest token scoped to this code (only issued when
+    # the teacher opted in — enforces opt-in + 60-min expiry); logged-in users pass
     # via their session cookie as before.
     guest = ws_guest(ws, code)
     if token or guest:
+        identity = ws_identity(ws, db)
         if guest:
             name = guest.name
-        elif ws_identity(ws, db) is None:
+        elif identity is None:
             await ws.close(code=4001)   # anonymous without an opt-in guest token
             return
-        # Anon join: resolve role by name lookup
-        student = _find_student_by_name(name, db)
-        if student:
-            sr = db.query(StudentRole).filter_by(student_id=student.id, role_type="haussprecher").first()
-            if sr:
-                house_id = sr.scope_id
-                is_haussp = True
+        # Bidding rights come from the Haussprecher role in the database, resolved
+        # from the connection's own identity. A guest is always a spectator, and a
+        # typed display name never grants anything — both are client-supplied.
+        if identity and identity[0] == "student":
+            bidder = db.get(Student, identity[1])
+            name = f"{bidder.vorname} {bidder.nachname}"
+            student_id = bidder.id
+            house_id = _haussprecher_house(db, bidder)
+            is_haussp = house_id is not None
 
         _spectators.setdefault(code, {})[ws] = name
         if is_haussp:
@@ -252,12 +261,11 @@ async def auction_ws(
             await ws.close(code=4001)
             return
         student_id = identity[1]
-        sr = db.query(StudentRole).filter_by(student_id=student_id, role_type="haussprecher").first()
-        if not sr:
+        house_id = _haussprecher_house(db, db.get(Student, student_id))
+        if house_id is None:
             await ws.send_json({"event": "error", "message": "Kein Haussprecher-Status für diesen Schüler"})
             await ws.close(code=4003)
             return
-        house_id = sr.scope_id
         is_haussp = True
         _mgr.add_student(code, house_id, ws)
         await ws.send_json(_state_haussp(session, house_id, db))
@@ -294,6 +302,11 @@ async def auction_ws(
                     winner_house_id = int(data.get("house_id", 0))
                     amount = int(data.get("amount", 0))
                     if not winner_house_id or not amount:
+                        continue
+                    if session.winner_house_id is not None:
+                        # Awarding books the Transactions that take the points off
+                        # the house, so a second award would charge it twice.
+                        await ws.send_json({"event": "error", "message": "Diese Auktion wurde bereits vergeben"})
                         continue
                     available = haus_total_points(db, winner_house_id)
                     if amount > available:
