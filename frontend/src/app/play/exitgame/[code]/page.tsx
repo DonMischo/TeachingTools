@@ -51,6 +51,9 @@ function styleVars(style?: ExitGameStyle): React.CSSProperties {
   const css: React.CSSProperties = { ...vars } as React.CSSProperties;
   if (style.font) css.fontFamily = style.font;
   if (vars["--bg"]) css.background = "var(--bg)";
+  // Inherited colour is resolved on <body>, so redefining --text here alone
+  // would leave the app's own text colour on the themed background.
+  if (vars["--text"]) css.color = "var(--text)";
   return css;
 }
 
