@@ -28,7 +28,7 @@ from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
-from ..auth import get_current_teacher, get_current_user, get_player
+from ..auth import get_current_teacher, get_current_user, get_player, Guest
 from ..availability import require_capability
 from ..authorship import scope_to_student_pool, is_student
 from ..utils import gen_code, parse_grades
@@ -1076,18 +1076,36 @@ def delete_team(
 
 
 @router.post("/api/sessions/{code}/join", status_code=201)
-def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db), _player=Depends(get_player)):
+def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db), player=Depends(get_player)):
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
     if s.status == "finished":
         raise HTTPException(409, "Session already finished")
     name = body.name.strip()[:100]
-    # Rejoin: return existing participant if same name already registered
-    existing = db.query(QuizParticipant).filter_by(session_id=s.id, name=name).first()
+    avatar = body.avatar[:50]
+
+    # Wiedereinstieg. Gaeste werden an ihrer Token-Id erkannt, nicht am Namen:
+    # zwei Gaeste, die beide "Max" eintippen, sind zwei Spieler. Der Name allein
+    # hat sie frueher zu einem einzigen Teilnehmer verschmolzen, samt geteilter
+    # Punkte — und der zweite Avatar fiel stillschweigend unter den Tisch.
+    guest_id = player.id if isinstance(player, Guest) else None
+    if guest_id is not None:
+        existing = db.query(QuizParticipant).filter_by(session_id=s.id, guest_id=guest_id).first()
+    else:
+        existing = db.query(QuizParticipant).filter_by(session_id=s.id, guest_id=None, name=name).first()
+
     if existing:
+        # Beim Wiedereinstieg zaehlt die frische Wahl, nicht die von vorhin.
+        existing.name = name
+        existing.avatar = avatar
+        if body.team_id is not None:
+            existing.team_id = body.team_id
+        db.commit()
+        db.refresh(existing)
         return {"participant_id": existing.id, "name": existing.name, "avatar": existing.avatar, "team_id": existing.team_id, "rejoined": True}
-    p = QuizParticipant(session_id=s.id, name=name, avatar=body.avatar[:50], team_id=body.team_id)
+
+    p = QuizParticipant(session_id=s.id, name=name, avatar=avatar, team_id=body.team_id, guest_id=guest_id)
     db.add(p)
     db.commit()
     db.refresh(p)

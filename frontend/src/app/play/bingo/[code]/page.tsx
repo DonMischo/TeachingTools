@@ -7,6 +7,7 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { GuestExpired } from "@/components/GuestExpired";
 import { AVATARS, AvatarDisplay } from "@/components/AvatarPicker";
 import { useSavedPlayer, newAnonToken } from "@/hooks/useSavedPlayer";
+import { useHubIdentity } from "@/hooks/useHubIdentity";
 import { useGuestSession } from "@/hooks/useGuestSession";
 
 type Cell = { pair_index: number; answer: string };
@@ -124,6 +125,13 @@ export default function BingoPlayPage() {
       setJoinError(/freigeschaltet/.test(msg) ? "Für diese Runde sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
     }
   }
+
+  // Aus dem Playhub durchgereicht — Gäste sind dort schon vorgestellt worden.
+  useHubIdentity(
+    code,
+    mounted && savedLoaded && !auth?.student && phase.kind === "join",
+    (id) => { void handleGuestJoin(id.name, id.avatar); },
+  );
 
   function markCell(pos: number) {
     if (game.status !== "active" || !card) return;

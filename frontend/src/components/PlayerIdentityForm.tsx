@@ -17,24 +17,30 @@ interface Props {
   /** Saved session from a previous visit — renders a rejoin card first. */
   savedSession?: { name: string; avatar: string } | null;
   onRejoin?: () => void;
+  /** Werkzeug verwirft den Avatar — dann gar nicht erst danach fragen. */
+  showAvatar?: boolean;
+  /** Im Playhub bereits gewählt: Name und Avatar stehen fest, es bleibt nur der Rest (Teams). */
+  identity?: { name: string; avatar: string } | null;
 }
 
 export function PlayerIdentityForm({
   gameCode, gameIcon = "🎮", gameTitle, error, submitting, onJoin,
-  teams = [], savedSession = null, onRejoin,
+  teams = [], savedSession = null, onRejoin, showAvatar = true, identity = null,
 }: Props) {
   const { auth } = useAuth();
   const [nameInput, setNameInput] = useState("");
-  const [avatar, setAvatar] = useState<string>(() => AVATARS[Math.floor(Math.random() * AVATARS.length)].id);
+  const [avatar, setAvatar] = useState<string>(
+    () => identity?.avatar ?? AVATARS[Math.floor(Math.random() * AVATARS.length)].id,
+  );
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  const lockedName = auth?.student
+  const lockedName = identity?.name ?? (auth?.student
     ? (auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`)
-    : null;
+    : null);
 
   const needsTeam = teams.length > 0 && selectedTeamId === null;
 
@@ -99,10 +105,10 @@ export function PlayerIdentityForm({
     <>
       {lockedName ? (
         <div className="flex flex-col items-center gap-3">
-          <AvatarDisplay avatarId={avatar} size="lg" />
+          {showAvatar && <AvatarDisplay avatarId={avatar} size="lg" />}
           <div className="flex items-center gap-2 rounded-xl px-4 py-2 border border-white/20 bg-white/10">
             <span className="text-white font-semibold">{lockedName}</span>
-            <span className="text-white/40 text-xs">eingeloggt</span>
+            {!identity && <span className="text-white/40 text-xs">eingeloggt</span>}
           </div>
         </div>
       ) : (
@@ -117,10 +123,12 @@ export function PlayerIdentityForm({
         />
       )}
 
-      <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <p className="text-xs text-white/50 mb-2 text-center">Avatar wählen</p>
-        <AvatarPicker selected={avatar} onSelect={(id) => setAvatar(id)} />
-      </div>
+      {showAvatar && !identity && (
+        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+          <p className="text-xs text-white/50 mb-2 text-center">Avatar wählen</p>
+          <AvatarPicker selected={avatar} onSelect={(id) => setAvatar(id)} />
+        </div>
+      )}
 
       {teams.length > 0 && (
         <div className="flex flex-col gap-2">

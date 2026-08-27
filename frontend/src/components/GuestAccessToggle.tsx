@@ -5,9 +5,16 @@ import { api } from "@/lib/api";
 /**
  * Teacher opt-in toggle for QR/join-link guest access on one session. Drop it next
  * to the join QR on any tool's host page: `<GuestAccessToggle tool="caputh" code={code} />`.
- * `tool` must match a key in api/routers/guest.py's _TOOLS map.
+ * `tool` must match a key in the join-code registry (api/join_codes.py).
+ *
+ * `className` traegt die Schriftfarben: die Vorgabe passt auf helle Flaechen,
+ * dunkle Hostansichten (Caputh-Lobby) reichen helle Toene herein.
  */
-export function GuestAccessToggle({ tool, code }: { tool: string; code: string }) {
+export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-600 hover:text-gray-900" }: {
+  tool: string;
+  code: string;
+  className?: string;
+}) {
   const [allow, setAllow] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -31,7 +38,7 @@ export function GuestAccessToggle({ tool, code }: { tool: string; code: string }
     <button
       onClick={toggle}
       disabled={saving}
-      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+      className={`flex items-center gap-2 disabled:opacity-50 ${className}`}
       title="Ob nicht angemeldete Gäste per QR/Link beitreten dürfen (60-Minuten-Zugang)"
     >
       <span

@@ -8,6 +8,8 @@ import { AvatarDisplay } from "@/components/AvatarPicker";
 import { PlayerIdentityForm, Team } from "@/components/PlayerIdentityForm";
 import { GuestExpired } from "@/components/GuestExpired";
 import { useSavedPlayer, SavedPlayer } from "@/hooks/useSavedPlayer";
+import { useHubIdentity } from "@/hooks/useHubIdentity";
+import { readPlayIdentity, clearPlayIdentity, type PlayIdentity } from "@/lib/playIdentity";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
@@ -148,26 +150,30 @@ export default function PlayPage() {
   const [tlAnswer, setTlAnswer] = useState<TimelineAnswer>({});
   const [teamMode, setTeamMode] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  // Im Playhub gewählt — dann bleibt hier höchstens noch die Teamwahl.
+  const [hubIdentity, setHubIdentity] = useState<PlayIdentity | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    // Fetch session info; if not a caputh session, detect game type and redirect
+    setHubIdentity(readPlayIdentity(code));
+    // Sitzung laden — und falls der Code gar keiner Caputh-Runde gehört,
+    // an das Werkzeug weiterreichen, dem er gehört.
     api.capuths.getSession(code).then(s => {
       if (s.team_mode) {
         setTeamMode(true);
         api.capuths.listTeams(code).then(setTeams).catch(() => {});
       }
+      setSessionLoaded(true);
     }).catch(() => {
-      // Not a caputh code — check other game types
-      fetch(`/api/bingo/info?code=${code}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d?.game === "bingo") { router.replace(`/play/bingo/${code}`); return; }
-          return fetch(`/api/auction/info?code=${code}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(d2 => { if (d2?.game === "auction") router.replace(`/play/auction/${code}`); });
+      // Kein Caputh-Code — der Playhub weiß, welchem Werkzeug er gehört.
+      api.play.resolve(code)
+        .then(({ matches }) => {
+          const other = matches.find(m => m.tool !== "caputh");
+          if (other) router.replace(other.join_url);
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setSessionLoaded(true));
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -286,6 +292,7 @@ export default function PlayPage() {
 
   async function handleJoin(joinName: string, avatar: string, teamId?: number | null) {
     if (teamMode && teamId == null) { setJoinError("Bitte wähle ein Team."); return; }
+    clearPlayIdentity(code);
     setConnecting(true);
     setJoinError(null);
     try {
@@ -304,6 +311,13 @@ export default function PlayPage() {
       setConnecting(false);
     }
   }
+
+  // Aus dem Playhub durchgereicht: ohne Teamwahl gibt es hier nichts mehr zu fragen.
+  useHubIdentity(
+    code,
+    mounted && savedLoaded && sessionLoaded && !teamMode && phase.kind === "join",
+    (id) => { void handleJoin(id.name, id.avatar, null); },
+  );
 
   function handleRejoin(s: SavedPlayer) {
     if (s.participantId == null) return;
@@ -355,7 +369,8 @@ export default function PlayPage() {
         error={joinError}
         submitting={connecting}
         teams={teamMode ? teams : []}
-        savedSession={saved && saved.participantId != null ? saved : null}
+        identity={hubIdentity}
+        savedSession={hubIdentity ? null : (saved && saved.participantId != null ? saved : null)}
         onRejoin={() => saved && handleRejoin(saved)}
         onJoin={handleJoin}
       />

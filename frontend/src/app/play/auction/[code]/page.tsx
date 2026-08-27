@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { wsUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
+import { useHubIdentity } from "@/hooks/useHubIdentity";
 import { GuestExpired } from "@/components/GuestExpired";
 
 type AuctionState = {
@@ -107,7 +108,10 @@ export default function AuctionPlayPage() {
   }
 
   async function joinNew() {
-    const n = nameInput.trim();
+    await joinAs(nameInput.trim());
+  }
+
+  async function joinAs(n: string) {
     if (!n) return;
     try {
       // Unauthenticated visitors first obtain a 60-min guest token (backend
@@ -120,6 +124,11 @@ export default function AuctionPlayPage() {
       setJoinError(/freigeschaltet/.test(msg) ? "Für diese Auktion sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);
     }
   }
+
+  // Aus dem Playhub durchgereicht — der Gast-Token liegt dort schon bereit.
+  useHubIdentity(code, mounted && !connected && !auth?.student, (id) => {
+    void joinAs(id.name);
+  });
 
   function bid() {
     const amount = parseInt(bidInput);

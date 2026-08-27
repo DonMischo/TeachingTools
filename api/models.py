@@ -207,6 +207,10 @@ class QuizParticipant(Base):
     session_id: Mapped[int] = mapped_column(ForeignKey("quiz_sessions.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     avatar: Mapped[str] = mapped_column(String(50), nullable=False, default="cat")
+    # Gast-Token-Id (uuid) fuer Teilnehmer ohne Konto. Ohne sie wurden Gaeste
+    # allein am Namen erkannt — zwei "Max" landeten auf demselben Teilnehmer
+    # und teilten sich Punkte und Antworten.
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     team_id: Mapped[int | None] = mapped_column(ForeignKey("quiz_teams.id", ondelete="SET NULL"), nullable=True)
 
@@ -790,6 +794,12 @@ class BingoSession(Base):
     called_indices: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
     # "waiting" | "active" | "closed"
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="waiting")
+    # Gesetzt, sobald die Runde ausgewertet und den Spielern ihr Ergebnis
+    # geschickt wurde. Danach gibt es kein Wiederoeffnen: ein zweites
+    # Schliessen wuerde dieselbe Runde ein zweites Mal verpunkten. Wer weiter
+    # spielen will, setzt zurueck — das startet eine frische Runde und loescht
+    # dieses Feld wieder.
+    awarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # QR/join-link guests may join this session (teacher opt-in)
@@ -1378,6 +1388,9 @@ class LueckentextParticipant(Base):
     session_id: Mapped[int] = mapped_column(ForeignKey("lueckentext_sessions.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     avatar: Mapped[str] = mapped_column(String(50), nullable=False, default="cat")
+    # Wie bei QuizParticipant: erkennt denselben Gast beim Neuladen wieder,
+    # statt bei jedem Beitritt eine weitere Zeile anzulegen.
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     session: Mapped["LueckentextSession"] = relationship(back_populates="participants")
@@ -1687,16 +1700,25 @@ class ResearchMedia(Base):
 class ToolSession(Base):
     """A joinable session for a tool that keeps no state of its own.
 
-    Abakus, Gleichungswaage and Bildformate run entirely in the browser — there is
-    nothing to host. This row exists so a teacher can hand out a code/QR and decide whether
-    QR guests (no account) may open it; the code is stable per teacher and tool,
-    so a printed QR keeps working.
+    Abakus, Gleichungswaage, Bildformate, Tippen und der Zeitstrahl laufen ganz
+    im Browser — es gibt nichts zu hosten. Die Zeile existiert nur, damit eine
+    Lehrkraft Code/QR ausgeben und den Gastzugang freischalten kann; der Code
+    ist je Lehrkraft, Werkzeug und Inhalt stabil, damit ein gedruckter QR
+    weiter funktioniert.
     """
     __tablename__ = "tool_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
     tool_slug: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    # "open" | "closed". Geschlossen laesst niemanden mehr herein, der Code
+    # bleibt aber bestehen — gedruckte QR sollen nach dem Wiederoeffnen
+    # weiterhin stimmen.
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="open")
+    # Auf welchen Inhalt die Sitzung zeigt, wenn das Werkzeug einen hat:
+    # Zeitstrahl teilt eine bestimmte Zeitleiste (TimelineSet.id). Abakus & Co.
+    # haben nichts zu waehlen und lassen das Feld leer.
+    ref_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # QR/join-link guests may open this session (teacher opt-in)

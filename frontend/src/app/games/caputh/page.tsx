@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, QuizOut, ClassOut } from "@/lib/api";
+import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
@@ -298,54 +299,53 @@ function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOu
           </button>
         )}
       </div>
-      {sessions.length === 0 ? (
-        <p className="text-xs text-[var(--text-muted)]">Noch keine Sessions.</p>
-      ) : (
-        <ul className="flex flex-col gap-1.5">
-          {sessions.map(s => {
-            const cls = classes.find(c => c.id === s.class_id);
-            const scored = s.points_awarded !== null;
-            const statusLabel = s.status === "active" ? "Läuft" : s.status === "waiting" ? "Wartet" : "Beendet";
-            const statusColor = s.status === "active" ? "text-yellow-400" : s.status === "waiting" ? "text-blue-400" : "text-[var(--text-muted)]";
-            return (
-              <li key={s.join_code} className="flex items-center gap-2 flex-wrap text-xs rounded-lg border border-[var(--border)] px-2.5 py-1.5">
-                <span className="font-medium">{cls?.display_name ?? `Klasse ${s.class_id}`}</span>
-                <span className={`font-semibold ${statusColor}`}>{statusLabel}</span>
-                <span className="text-[var(--text-muted)] font-mono">{s.join_code}</span>
-                <span className="text-[var(--text-muted)]">{s.participant_count} Teiln.</span>
-                {scored && <span className="text-yellow-400 font-semibold">{s.points_awarded} Pkt.</span>}
-                <span className="flex-1" />
-                {s.status !== "finished" && (
-                  <button onClick={() => router.push(`/games/caputh/host/${s.join_code}`)}
-                    className="px-2 py-0.5 rounded border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors">
-                    Öffnen
-                  </button>
-                )}
-                {scored && (
-                  <a href={`/api/sessions/${s.join_code}/report?fmt=csv`} download
-                    className="px-2 py-0.5 rounded border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)] transition-colors">
-                    ↓ Bericht
-                  </a>
-                )}
-                {!scored && (
-                  <button onClick={() => resetMut.mutate(s.join_code)} disabled={resetMut.isPending}
-                    className="px-2 py-0.5 rounded border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)] transition-colors disabled:opacity-40">
-                    ↺ Reset
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteMut.mutate(s.join_code)}
-                  disabled={deleteMut.isPending}
-                  title="Session löschen (Punkte bleiben erhalten)"
-                  className="px-2 py-0.5 rounded border border-red-400/30 text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
-                >
-                  ✕
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <SessionGrid
+        items={sessions.map((s): SessionCardItem => {
+          const cls = classes.find(c => c.id === s.class_id);
+          return {
+            code: s.join_code,
+            title: cls?.display_name ?? `Klasse ${s.class_id}`,
+            status: s.status === "active" ? { label: "Läuft", tone: "live" }
+              : s.status === "waiting" ? { label: "Wartet", tone: "waiting" }
+              : { label: "Beendet", tone: "done" },
+            meta: [
+              `${s.participant_count} Teiln.`,
+              ...(s.points_awarded !== null ? [`${s.points_awarded} Pkt.`] : []),
+            ],
+          };
+        })}
+        renderActions={(item) => {
+          const s = sessions.find(x => x.join_code === item.code)!;
+          const scored = s.points_awarded !== null;
+          return (
+            <>
+              {s.status !== "finished" && (
+                <SessionAction onClick={() => router.push(`/games/caputh/host/${s.join_code}`)}>
+                  Öffnen
+                </SessionAction>
+              )}
+              {scored && (
+                <SessionAction href={`/api/sessions/${s.join_code}/report?fmt=csv`} download>
+                  ↓ Bericht
+                </SessionAction>
+              )}
+              {!scored && (
+                <SessionAction onClick={() => resetMut.mutate(s.join_code)} disabled={resetMut.isPending}>
+                  ↺ Reset
+                </SessionAction>
+              )}
+              <SessionAction
+                danger
+                onClick={() => deleteMut.mutate(s.join_code)}
+                disabled={deleteMut.isPending}
+                title="Session löschen (Punkte bleiben erhalten)"
+              >
+                ✕
+              </SessionAction>
+            </>
+          );
+        }}
+      />
     </div>
   );
 }
@@ -360,7 +360,8 @@ function QuizCard({
   activeTagFilter: Set<string>;
   onTagClick: (t: string) => void;
 }) {
-  const [sessionsOpen, setSessionsOpen] = useState(false);
+  // Standardmaessig offen: die Sitzungen sind der Grund, warum man hier ist.
+  const [sessionsOpen, setSessionsOpen] = useState(true);
   const typeColor = QUIZ_TYPE_COLORS[quiz.quiz_type] ?? QUIZ_TYPE_COLORS.custom;
   const typeLabel = QUIZ_TYPE_LABELS[quiz.quiz_type] ?? quiz.quiz_type;
 

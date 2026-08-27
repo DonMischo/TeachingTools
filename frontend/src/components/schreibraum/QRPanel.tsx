@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { JoinQR } from "@/components/JoinQR";
 
 const STORAGE_KEY = "schreibraum_qr_addresses";
 
@@ -65,7 +65,7 @@ export default function QRPanel({ roomCode }: { roomCode: string }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <QRCodeSVG value={joinUrl} size={180} style={{ display: "block", borderRadius: 8 }} />
+      <JoinQR url={joinUrl} size={180} className="block rounded-lg" />
       <div style={{ fontSize: 11, wordBreak: "break-all", color: "var(--text-muted)", background: "var(--surface)", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)" }}>
         {joinUrl}
       </div>

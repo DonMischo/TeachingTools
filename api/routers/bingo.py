@@ -1,6 +1,6 @@
 import json
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -147,6 +147,8 @@ class BingoOut(BaseModel):
     total_pairs: int
     created_at: datetime
     class_id: int | None = None
+    # Ausgewertet = endgueltig zu; die Oberflaeche blendet "Wieder oeffnen" aus.
+    awarded: bool = False
 
     class Config:
         from_attributes = True
@@ -213,7 +215,7 @@ def list_sessions(set_id: int | None = None, db: Session = Depends(get_db), curr
             grid_size=s.grid_size,
             grid_cols=s.grid_cols if s.grid_cols > 0 else s.grid_size,
             status=s.status, total_pairs=len(s.pairs), created_at=s.created_at,
-            class_id=s.class_id,
+            class_id=s.class_id, awarded=s.awarded_at is not None,
         )
         for s in sessions
     ]
@@ -339,6 +341,8 @@ async def _close_and_award(session: BingoSession, db: Session):
     db.commit()
     await _mgr.broadcast(session.code, {"event": "closed"})
     if session.max_points > 0 and called_set:
+        # Ab hier kennen die Spieler ihr Ergebnis — die Runde ist gelaufen.
+        session.awarded_at = datetime.now(timezone.utc)
         for card in session.cards:
             called_positions = [i for i, pair_idx in enumerate(card.grid_indices) if pair_idx in called_set]
             if not called_positions:
@@ -371,6 +375,31 @@ async def close_session_rest(code: str, db: Session = Depends(get_db), current=D
     await _close_and_award(s, db)
 
 
+@router.post("/{code}/reopen", status_code=204)
+async def reopen_session_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """Eine zu frueh beendete Runde wieder oeffnen — Karten und Zuege bleiben.
+
+    Nach der Auswertung geht das nicht mehr: die Punkte sind vergeben und die
+    Spieler haben ihr Ergebnis gesehen; ein zweites Schliessen wuerde dieselbe
+    Runde erneut verpunkten. Dafuer gibt es Zuruecksetzen, das eine neue Runde
+    beginnt.
+    """
+    if is_student(current):
+        raise HTTPException(403)
+    s = db.query(BingoSession).filter_by(code=code).first()
+    if not s:
+        raise HTTPException(404)
+    if s.awarded_at is not None:
+        raise HTTPException(409, "Diese Runde ist schon ausgewertet — zum Weiterspielen zurücksetzen.")
+    if s.status != "closed":
+        return
+    # Waren schon Zahlen dran, lief die Runde bereits; sonst wartet sie noch.
+    s.status = "active" if s.called_indices else "waiting"
+    db.commit()
+    db.refresh(s)
+    await _mgr.broadcast(code, _session_state(s, db, players=_mgr.infos(code)))
+
+
 @router.post("/{code}/reset", status_code=204)
 async def reset_session_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if is_student(current):
@@ -380,6 +409,7 @@ async def reset_session_rest(code: str, db: Session = Depends(get_db), current=D
         raise HTTPException(404)
     s.called_indices = []
     s.status = "waiting"
+    s.awarded_at = None      # frische Runde: darf spaeter neu ausgewertet werden
     for card in s.cards:
         card.marked_positions = []
         card.has_bingo = False

@@ -45,6 +45,7 @@ vi.stubGlobal("WebSocket", class extends MockWebSocket {
   }
 });
 
+import * as apiModule from "@/lib/api";
 import HostPage from "@/app/games/caputh/host/[code]/page";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -123,6 +124,20 @@ describe("HostPage – game flow", () => {
 
     expect(screen.getAllByText("HOST01").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Caputh starten/i })).toBeInTheDocument();
+  });
+
+  it("Lobby zeigt den Gaeste-Schalter direkt am QR", async () => {
+    // Der Schalter steckte vorher nur im QR-Overlay hinter einem kleinen Knopf
+    // und war auf der Lobby-Ansicht, die die Lehrkraft anschaut, nicht zu sehen.
+    const status = vi.spyOn(apiModule.api.guest, "status")
+      .mockResolvedValue({ allow_guests: false });
+
+    render(<HostPage />);
+    openSocket();
+    send({ event: "state", status: "waiting", participant_count: 0 });
+
+    expect(await screen.findByRole("button", { name: /Gäste erlauben/ })).toBeInTheDocument();
+    expect(status).toHaveBeenCalledWith("caputh", "HOST01");
   });
 
   it("preview phase: shows question text, no answer choices", () => {

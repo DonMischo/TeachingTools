@@ -16,6 +16,7 @@ import {
 import { eventDateLabel, formatValue, niceStep } from "@/components/timeline/scale";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { ToolSessionBar } from "@/components/ToolSessionBar";
 
 type Tab = "ansehen" | "ueben" | "bearbeiten";
 
@@ -161,6 +162,10 @@ export default function ZeitstrahlDetailPage() {
           <h1 className="text-2xl font-black tracking-tight">📏 {set.title}</h1>
           {set.description && <p className="text-[var(--text-muted)] text-sm mt-1 max-w-2xl">{set.description}</p>}
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Teilen: ein Code je Zeitleiste, damit ein gedruckter QR immer
+              dieselbe Zeitleiste oeffnet. */}
+          <ToolSessionBar tool="zeitstrahl" title={set.title} refId={set.id} />
         <div className="flex gap-1 rounded-xl border border-[var(--border)] p-1">
           {(["ansehen", "ueben", ...(canEdit ? ["bearbeiten"] as Tab[] : [])] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -170,6 +175,7 @@ export default function ZeitstrahlDetailPage() {
               {t === "ansehen" ? "🔍 Ansehen" : t === "ueben" ? "🎯 Üben" : "✏️ Bearbeiten"}
             </button>
           ))}
+        </div>
         </div>
       </div>
 

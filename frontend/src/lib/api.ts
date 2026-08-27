@@ -864,6 +864,8 @@ export type BingoOut = {
   subject: string | null; tags: string[]; description: string | null; max_points: number;
   grid_size: number; grid_cols: number; status: string; total_pairs: number; created_at: string;
   class_id: number | null;
+  /** Ausgewertet — dann bleibt die Runde endgültig zu. */
+  awarded: boolean;
 };
 
 export type BingoCardOut = {
@@ -1143,7 +1145,42 @@ export type FragmentGuestStatus = {
   permission?: "read" | "contribute" | null;
 };
 
-export type ToolSessionOut = { code: string; tool_slug: string; allow_guests: boolean };
+export type ToolSessionOut = {
+  code: string;
+  tool_slug: string;
+  allow_guests: boolean;
+  status: string;
+  /** Geteilter Inhalt, wo das Werkzeug einen hat (Zeitstrahl: TimelineSet.id). */
+  ref_id: number | null;
+  ref_title: string | null;
+};
+
+/** Eine laufende Sitzung in der Übersicht (siehe api/routers/play.py). */
+export type PlaySessionRow = {
+  tool: string;
+  label: string;
+  code: string;
+  join_url: string;
+  status: string | null;
+  closed: boolean;
+  mine: boolean;
+  created_at: string | null;
+  tool_slug: string | null;
+  ref_id: number | null;
+  ref_title: string | null;
+  owner: string | null;
+};
+
+/** Ein Treffer der Code-Suche auf /play (siehe api/routers/play.py). */
+export type PlayMatch = {
+  tool: string;
+  label: string;
+  code: string;
+  join_url: string;
+  status: string | null;
+  /** "none" | "guests" | "always" — wer im Hub einen Avatar wählt. */
+  avatar: "none" | "guests" | "always";
+};
 
 /** Ein Werkzeug-Bündel als einzelne HTML-Datei zum Mitnehmen. */
 export type StandaloneBundle = {
@@ -1174,6 +1211,24 @@ export type SnapProjectOut = {
 export type SnapProjectDetail = SnapProjectOut & { xml: string };
 
 export const api = {
+  // Playhub: Beitrittscode ohne Werkzeugnamen auflösen (siehe api/routers/play.py)
+  play: {
+    resolve: (code: string) =>
+      apiFetch<{ code: string; matches: PlayMatch[] }>(`play/resolve/${encodeURIComponent(code)}`),
+    /** Laufende Sitzungen eines Werkzeugs — eigene, für Admins alle. */
+    sessions: (tool: string, slug?: string) =>
+      apiFetch<PlaySessionRow[]>(
+        `play/sessions?tool=${encodeURIComponent(tool)}${slug ? `&slug=${encodeURIComponent(slug)}` : ""}`,
+      ),
+    /** Zu — der Code bleibt gültig, ein gedruckter QR funktioniert nach dem Öffnen weiter. */
+    close: (tool: string, code: string) =>
+      apiFetch<PlaySessionRow>(
+        `play/sessions/${encodeURIComponent(code)}/close?tool=${encodeURIComponent(tool)}`, { method: "POST" }),
+    reopen: (tool: string, code: string) =>
+      apiFetch<PlaySessionRow>(
+        `play/sessions/${encodeURIComponent(code)}/reopen?tool=${encodeURIComponent(tool)}`, { method: "POST" }),
+  },
+
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
     join: (code: string, tool: string, name: string) =>
@@ -1237,10 +1292,15 @@ export const api = {
 
   toolSessions: {
     /** Session der Lehrkraft für dieses Werkzeug — legt sie beim ersten Mal an. */
-    create: (tool_slug: string) =>
-      apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug }) }),
+    create: (tool_slug: string, ref_id?: number) =>
+      apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug, ref_id }) }),
     /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */
     get: (code: string) => apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}`),
+    /** Der geteilte Inhalt (Zeitstrahl) — für Gäste der einzige Weg dorthin. */
+    content: (code: string, guestToken?: string | null) =>
+      apiFetch<TimelineSetDetail>(`tool-sessions/${encodeURIComponent(code)}/content`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
   },
 
   // Offline-Dateien (siehe api/routers/standalone.py)
@@ -1962,6 +2022,9 @@ export const api = {
       apiFetch<BingoSetOut>("bingo/sets", { method: "POST", body: JSON.stringify(body) }),
     delete: (code: string) => apiFetch<void>(`bingo/${code}`, { method: "DELETE" }),
     close: (code: string) => apiFetch<void>(`bingo/${code}/close`, { method: "POST" }),
+    /** Zu früh beendet — Karten und gezogene Zahlen bleiben. Nach der
+     *  Auswertung lehnt der Server ab (409), dann hilft nur Zurücksetzen. */
+    reopen: (code: string) => apiFetch<void>(`bingo/${code}/reopen`, { method: "POST" }),
     reset: (code: string) => apiFetch<void>(`bingo/${code}/reset`, { method: "POST" }),
     getOrCreateCard: (code: string) =>
       apiFetch<BingoCardOut>(`bingo/${code}/card`, { method: "POST" }),

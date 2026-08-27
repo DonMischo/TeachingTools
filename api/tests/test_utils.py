@@ -4,6 +4,8 @@
 shape the author typed it ("7", "5,6,7", "5-10", [5,6,7]), and a
 misinterpretation silently offers material to the wrong year group.
 """
+import string
+
 import pytest
 
 from api.models import ExitTicketSession
@@ -65,10 +67,16 @@ def test_grade_of_class_code(code, expected):
 
 # ── gen_code ─────────────────────────────────────────────────────────────────
 
+ALPHABET = set(string.ascii_uppercase + string.digits)
+
+
 def test_gen_code_shape_and_uniqueness(db):
     codes = {gen_code(db, ExitTicketSession) for _ in range(50)}
     assert all(len(c) == 6 for c in codes)
-    assert all(c.isalnum() and c.isupper() for c in codes)
+    # Gegen das Alphabet pruefen, nicht mit str.isupper(): ein reiner
+    # Ziffern-Code ("123456") ist gueltig, gilt aber als nicht-upper, weil
+    # er keinen Buchstaben enthaelt. Das traf rund 2 % der Laeufe.
+    assert all(set(c) <= ALPHABET for c in codes)
     assert len(codes) > 40          # random, but collisions must be rare
 
 

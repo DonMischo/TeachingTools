@@ -7,6 +7,7 @@ import {
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { GuestExpired } from "@/components/GuestExpired";
 import { useSavedPlayer } from "@/hooks/useSavedPlayer";
+import { useHubIdentity } from "@/hooks/useHubIdentity";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, LueckentextBoard, LueckentextBoardGap } from "@/lib/api";
@@ -105,6 +106,12 @@ export default function LueckentextPlayPage() {
       setSubmitting(false);
     }
   }
+
+  // Aus dem Playhub durchgereicht: Name und Avatar stehen schon fest.
+  useHubIdentity(code, savedLoaded && phase === "join", (id) => {
+    void handleJoin(id.name, id.avatar);
+  });
+
 
   async function submitGap(gapId: string, text: string) {
     if (participantId == null) return;

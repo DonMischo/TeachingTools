@@ -4,15 +4,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, BingoSetOut, BingoOut, ClassOut } from "@/lib/api";
+import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClassSelect } from "@/components/ClassSelect";
 
-const STATUS_COLOR: Record<string, string> = {
-  waiting: "#6b7280",
-  active: "#22c55e",
-  closed: "#ef4444",
-};
 const STATUS_LABEL: Record<string, string> = {
   waiting: "Wartend", active: "Läuft", closed: "Beendet",
 };
@@ -65,6 +61,12 @@ export default function BingoSetDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bingo", setId] }),
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
+
+  const reopenMut = useMutation({
+    mutationFn: (code: string) => api.bingo.reopen(code),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bingo-sessions", setId] }),
+    onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
+  });
   const resetMut = useMutation({
     mutationFn: (code: string) => api.bingo.reset(code),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bingo", setId] }),
@@ -106,44 +108,52 @@ export default function BingoSetDetailPage() {
         <div className="font-semibold text-sm text-[var(--text-muted)] uppercase tracking-wide">Runden</div>
         {sessionsLoading ? (
           <div className="text-[var(--text-muted)] text-sm">Laden…</div>
-        ) : sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine Runde gestartet.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {sessions.map(s => (
-              <li key={s.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: STATUS_COLOR[s.status] ?? "#6b7280" }} />
-                <span className="flex-1 text-sm text-[var(--text-muted)]">
-                  {STATUS_LABEL[s.status] ?? s.status}
-                  {s.class_id != null && ` · ${classes.find(c => c.id === s.class_id)?.code ?? `Klasse ${s.class_id}`}`}
-                  {" · "}{new Date(s.created_at).toLocaleDateString("de-DE")}
-                </span>
-                {canEdit && (
-                  <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => router.push(`/games/bingo/host/${s.code}`)} className="btn-secondary text-xs py-1 px-3">
-                      Öffnen
-                    </button>
-                    {s.status === "active" && (
-                      <button onClick={() => closeMut.mutate(s.code)} disabled={closeMut.isPending}
-                        className="text-xs border border-red-400/50 text-red-400 hover:bg-red-400/10 rounded-xl px-3 py-1 transition-colors disabled:opacity-40">
-                        Beenden
-                      </button>
-                    )}
-                    {s.status !== "waiting" && (
-                      <button onClick={() => resetMut.mutate(s.code)} disabled={resetMut.isPending}
-                        className="text-xs border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl px-3 py-1 transition-colors disabled:opacity-40">
-                        Zurücksetzen
-                      </button>
-                    )}
-                    <button onClick={() => deleteMut.mutate(s.code)} disabled={deleteMut.isPending}
-                      className="text-xs border border-red-400/30 text-red-400/70 hover:bg-red-400/10 hover:text-red-400 rounded-xl px-3 py-1 transition-colors disabled:opacity-40">
-                      Löschen
-                    </button>
-                  </div>
+          <SessionGrid
+            items={sessions.map((s): SessionCardItem => ({
+              code: s.code,
+              title: s.class_id != null
+                ? (classes.find(c => c.id === s.class_id)?.code ?? `Klasse ${s.class_id}`)
+                : "Ohne Klasse",
+              status: {
+                label: STATUS_LABEL[s.status] ?? s.status,
+                tone: s.status === "active" ? "live" : s.status === "waiting" ? "waiting" : "done",
+              },
+              meta: [
+                new Date(s.created_at).toLocaleDateString("de-DE"),
+                ...(s.awarded ? ["ausgewertet"] : []),
+              ],
+            }))}
+            empty="Noch keine Runde gestartet."
+            renderActions={canEdit ? (item) => (
+              <>
+                <SessionAction onClick={() => router.push(`/games/bingo/host/${item.code}`)}>
+                  Öffnen
+                </SessionAction>
+                {sessions.find(x => x.code === item.code)?.status === "active" && (
+                  <SessionAction danger onClick={() => closeMut.mutate(item.code)} disabled={closeMut.isPending}>
+                    Beenden
+                  </SessionAction>
                 )}
-              </li>
-            ))}
-          </ul>
+                {/* Zu früh beendet: zurückholen, solange nicht ausgewertet ist.
+                    Danach wäre ein zweites Schließen eine zweite Punktevergabe. */}
+                {sessions.find(x => x.code === item.code)?.status === "closed"
+                  && !sessions.find(x => x.code === item.code)?.awarded && (
+                  <SessionAction onClick={() => reopenMut.mutate(item.code)} disabled={reopenMut.isPending}>
+                    Wieder öffnen
+                  </SessionAction>
+                )}
+                {sessions.find(x => x.code === item.code)?.status !== "waiting" && (
+                  <SessionAction onClick={() => resetMut.mutate(item.code)} disabled={resetMut.isPending}>
+                    ↺ Zurücksetzen
+                  </SessionAction>
+                )}
+                <SessionAction danger onClick={() => deleteMut.mutate(item.code)} disabled={deleteMut.isPending}>
+                  ✕
+                </SessionAction>
+              </>
+            ) : undefined}
+          />
         )}
       </div>
     </div>

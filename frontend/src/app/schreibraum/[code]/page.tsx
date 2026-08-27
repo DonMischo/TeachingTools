@@ -174,7 +174,8 @@ export default function SchreibraumEditorPage() {
   async function handleGuestJoin(name: string) {
     setJoinError(null);
     try {
-      await guest.join("schreibraum", code.toUpperCase());  // init effect fires once token lands
+      // Der Name geht ins Gast-Token und wird dort zum Teilnehmernamen im Raum.
+      await guest.join("schreibraum", name);  // init effect fires once token lands
     } catch (e: any) {
       const msg = e?.message ?? "Beitritt fehlgeschlagen";
       setJoinError(/freigeschaltet/.test(msg) ? "Für diesen Raum sind Gäste nicht freigeschaltet. Bitte melde dich an." : msg);

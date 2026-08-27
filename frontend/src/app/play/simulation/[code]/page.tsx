@@ -19,12 +19,16 @@ import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
 import Tippen from "@/components/tippen/Tippen";
+import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
   abacus: { title: "Abakus", icon: "🧮", node: <Abakus /> },
   bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
+  // Der Zeitstrahl teilt eine bestimmte Zeitleiste — die haengt am Code, nicht
+  // am Werkzeug, und wird deshalb erst hier nachgeladen.
+  zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
 };
 
 function Hinweis({ icon, title, text }: { icon: string; title: string; text: string }) {
@@ -84,8 +88,12 @@ export default function SimulationJoinPage() {
       text={`Für »${session.tool_slug}« habe ich keine Ansicht.`} />;
   }
 
+  const body = session.tool_slug === "zeitstrahl"
+    ? <SharedTimeline code={code} guestToken={guest.token} />
+    : tool.node;
+
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.
-  if (auth) return <div className="flex-1 overflow-y-auto">{tool.node}</div>;
+  if (auth) return <div className="flex-1 overflow-y-auto">{body}</div>;
 
   if (guest.expired) return <GuestExpired gameIcon={tool.icon} />;
 
@@ -106,5 +114,5 @@ export default function SimulationJoinPage() {
     );
   }
 
-  return <div className="flex-1 overflow-y-auto">{tool.node}</div>;
+  return <div className="flex-1 overflow-y-auto">{body}</div>;
 }

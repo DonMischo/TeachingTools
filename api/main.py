@@ -75,6 +75,8 @@ from .routers import fragments_cards as fragments_cards_router
 app.include_router(fragments_cards_router.router)
 from .routers import snap as snap_router
 app.include_router(snap_router.router)
+from .routers import play as play_router
+app.include_router(play_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -117,6 +119,13 @@ def _run_migrations(db_engine):
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS extra_fields JSON NOT NULL DEFAULT '{}'",
         "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS team_mode BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS team_id INTEGER REFERENCES quiz_teams(id) ON DELETE SET NULL",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'open'",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS ref_id INTEGER",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS awarded_at TIMESTAMPTZ",
+        "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "CREATE INDEX IF NOT EXISTS ix_quiz_participants_guest_id ON quiz_participants (guest_id)",
+        "ALTER TABLE lueckentext_participants ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "CREATE INDEX IF NOT EXISTS ix_lueckentext_participants_guest_id ON lueckentext_participants (guest_id)",
         "ALTER TABLE class_chores ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS grid_cols INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE bingo_cards ADD COLUMN IF NOT EXISTS anon_token VARCHAR(36)",

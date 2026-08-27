@@ -7,11 +7,19 @@ from sqlalchemy.orm import Session
 
 
 def gen_code(db: Session, model, field: str = "code", length: int = 6) -> str:
-    """Generate a unique uppercase alphanumeric join code for `model.field`."""
+    """Generate a join code for `model.field` that no tool is already using.
+
+    Uniqueness is checked across every tool in the join-code registry, not just
+    this one table: /play resolves a bare code to a session, so two tools
+    sharing a code would make that lookup ambiguous.
+    """
+    # Lokal importiert, damit api.utils ein Blattmodul ohne DB-Engine bleibt.
+    from .join_codes import code_taken
+
     chars = string.ascii_uppercase + string.digits
     for _ in range(20):
         code = "".join(random.choices(chars, k=length))
-        if not db.query(model).filter_by(**{field: code}).first():
+        if not db.query(model).filter_by(**{field: code}).first() and not code_taken(db, code):
             return code
     raise RuntimeError("Could not generate unique code")
 

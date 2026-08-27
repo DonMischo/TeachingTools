@@ -610,7 +610,8 @@ export default function FragmentBoardPage() {
             <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
               onClick={() => setQrOpen(true)}
               title={collection.allow_guests ? "QR-Codes anzeigen" : "QR-Code zum Öffnen der Sammlung"}>
-              <JoinQR url={collection.allow_guests ? guestUrl : directUrl} size={28} className="rounded" />
+              {/* Sitzt schon in einem Button, der die QR-Ansicht öffnet — keine zweite Lupe. */}
+              <JoinQR url={collection.allow_guests ? guestUrl : directUrl} size={28} className="rounded" zoomable={false} />
               {collection.allow_guests && collection.guest_code
                 ? <span className="font-mono">{collection.guest_code}</span>
                 : <span>QR</span>}

@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, LueckentextGap, LueckentextSessionOut, LueckentextSetDetail } from "@/lib/api";
+import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { parseUploadError } from "@/lib/uploadError";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -355,6 +355,7 @@ const STATUS_LABEL: Record<string, string> = { waiting: "wartet", active: "läuf
  *  join code has scrolled out of the browser history. Own sessions only. */
 function SessionHistory({ setId }: { setId: number }) {
   const qc = useQueryClient();
+  const router = useRouter();
   const { toast } = useToast();
   const { data: sessions = [], isLoading } = useQuery<LueckentextSessionOut[]>({
     queryKey: ["lueckentext-sessions", setId],
@@ -373,43 +374,45 @@ function SessionHistory({ setId }: { setId: number }) {
       <h2 className="font-semibold text-sm">Sitzungen</h2>
       {isLoading ? (
         <p className="text-sm text-[var(--text-muted)]">Lade…</p>
-      ) : sessions.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">Noch keine Sitzungen gestartet.</p>
       ) : (
-        <ul className="divide-y divide-[var(--border)]">
-          {sessions.map(s => (
-            <li key={s.id} className="py-2 flex items-center gap-3 flex-wrap">
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${
-                s.status === "active" ? "border-green-500/40 text-green-500"
-                : s.status === "waiting" ? "border-amber-500/40 text-amber-500"
-                : "border-[var(--border)] text-[var(--text-muted)]"
-              }`}>
-                {STATUS_LABEL[s.status] ?? s.status}
-              </span>
-              <span className="text-sm font-mono">{s.join_code}</span>
-              <span className="text-xs text-[var(--text-muted)]">
-                {s.participant_count} {s.participant_count === 1 ? "Teilnehmer" : "Teilnehmende"}
-              </span>
-              <span className="text-xs text-[var(--text-muted)]">{formatWhen(s.created_at)}</span>
-              <div className="flex-1" />
-              <Link href={`/games/lueckentext/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Sitzung</Link>
-              <Link href={`/games/lueckentext/review/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Auswertung</Link>
-              <a href={api.lueckentexte.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
-              <button
-                onClick={() => {
-                  const what = s.participant_count > 0
-                    ? `Sitzung ${s.join_code} mit der Auswertung von ${s.participant_count} Teilnehmenden löschen?`
-                    : `Sitzung ${s.join_code} löschen?`;
-                  if (confirm(what)) deleteMut.mutate(s.join_code);
-                }}
-                disabled={deleteMut.isPending}
-                className="text-xs text-red-400 hover:underline disabled:opacity-40"
-              >
-                Löschen
-              </button>
-            </li>
-          ))}
-        </ul>
+        <SessionGrid
+          items={sessions.map((s): SessionCardItem => ({
+            code: s.join_code,
+            title: `${s.participant_count} ${s.participant_count === 1 ? "Teilnehmer" : "Teilnehmende"}`,
+            status: {
+              label: STATUS_LABEL[s.status] ?? s.status,
+              tone: s.status === "active" ? "live" : s.status === "waiting" ? "waiting" : "done",
+            },
+            meta: [formatWhen(s.created_at)],
+          }))}
+          empty="Noch keine Sitzungen gestartet."
+          renderActions={(item) => {
+            const s = sessions.find(x => x.join_code === item.code)!;
+            return (
+              <>
+                <SessionAction onClick={() => router.push(`/games/lueckentext/host/${s.join_code}`)}>
+                  Sitzung
+                </SessionAction>
+                <SessionAction onClick={() => router.push(`/games/lueckentext/review/${s.join_code}`)}>
+                  Auswertung
+                </SessionAction>
+                <SessionAction href={api.lueckentexte.reportCsvUrl(s.join_code)}>CSV</SessionAction>
+                <SessionAction
+                  danger
+                  disabled={deleteMut.isPending}
+                  onClick={() => {
+                    const what = s.participant_count > 0
+                      ? `Sitzung ${s.join_code} mit der Auswertung von ${s.participant_count} Teilnehmenden löschen?`
+                      : `Sitzung ${s.join_code} löschen?`;
+                    if (confirm(what)) deleteMut.mutate(s.join_code);
+                  }}
+                >
+                  ✕
+                </SessionAction>
+              </>
+            );
+          }}
+        />
       )}
     </section>
   );

@@ -54,7 +54,12 @@ def test_lookup_is_public_and_says_which_tool(client, teacher_token):
     code = _create(client, teacher_token, "abacus").json()["code"]
     r = client.get(f"/api/tool-sessions/{code}")  # ohne Login
     assert r.status_code == 200
-    assert r.json() == {"code": code, "tool_slug": "abacus", "allow_guests": False}
+    # Abakus teilt keinen Inhalt — ref_id/ref_title bleiben leer, anders als
+    # beim Zeitstrahl, der immer eine bestimmte Zeitleiste teilt.
+    assert r.json() == {
+        "code": code, "tool_slug": "abacus", "allow_guests": False,
+        "status": "open", "ref_id": None, "ref_title": None,
+    }
 
 
 def test_lookup_of_an_unknown_code_is_404(client):

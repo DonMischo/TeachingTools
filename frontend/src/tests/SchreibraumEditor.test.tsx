@@ -100,6 +100,25 @@ describe("SchreibraumEditor — auth gate", () => {
     expect(screen.getByRole("button", { name: /Beitreten/ })).toBeInTheDocument();
     expect(screen.queryByText(/bitte anmelden/i)).not.toBeInTheDocument();
   });
+
+  it("meldet den Gast unter seinem Namen an, nicht unter dem Raumcode", async () => {
+    // Der Name aus dem Formular landet im Gast-Token und von dort auf dem
+    // Teilnehmer (rooms.py: `user.name if is_guest`). Wurde hier der Code
+    // durchgereicht, hiess im Schreibraum jeder Gast "ABC123".
+    localStorage.clear();
+    const guestJoin = vi.spyOn(apiModule.api.guest, "join")
+      .mockResolvedValue({ token: "gast-token", name: "Anna" });
+    vi.spyOn(apiModule.api.schreibraum, "getByCode").mockResolvedValue(makeRoom());
+    vi.spyOn(apiModule.api.schreibraum, "join").mockResolvedValue(makeParticipant({ name: "Anna" }));
+
+    await act(async () => { renderPage(); });
+    await userEvent.type(screen.getByPlaceholderText("Dein Name"), "Anna");
+    await userEvent.click(screen.getByRole("button", { name: /Beitreten/ }));
+
+    await waitFor(() =>
+      expect(guestJoin).toHaveBeenCalledWith("ABC123", "schreibraum", "Anna"),
+    );
+  });
 });
 
 describe("SchreibraumEditor — loading and error", () => {

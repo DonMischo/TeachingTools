@@ -653,3 +653,87 @@ class TestWebSocketFlow:
                     assert "Reihe" in line_event["line"] or "Diagonale" in line_event["line"]
 
         asyncio.run(run())
+
+
+# ── Wieder oeffnen ──────────────────────────────────────────────────────────
+#
+# Eine zu frueh beendete Runde soll zurueckkommen koennen. Sobald sie aber
+# ausgewertet ist, waere ein zweites Schliessen eine zweite Punktevergabe fuer
+# dieselbe Runde — ab da fuehrt nur noch Zuruecksetzen weiter.
+
+class TestReopen:
+    def _auth(self, token):
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_reopens_a_round_closed_before_any_number_was_called(self, client, db, teacher_token):
+        code = _create_session(client, teacher_token, max_points=10)
+        assert client.post(f"/api/bingo/{code}/close", headers=self._auth(teacher_token)).status_code == 204
+
+        s = db.query(BingoSession).filter_by(code=code).first()
+        assert s.status == "closed" and s.awarded_at is None
+
+        assert client.post(f"/api/bingo/{code}/reopen", headers=self._auth(teacher_token)).status_code == 204
+        db.refresh(s)
+        # Nichts gerufen -> die Runde wartet wieder auf den Start.
+        assert s.status == "waiting"
+
+    def test_reopen_keeps_a_started_round_running(self, client, db, teacher_token):
+        code = _create_session(client, teacher_token)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        s.called_indices = [0, 1]
+        s.status = "closed"
+        db.flush()
+
+        client.post(f"/api/bingo/{code}/reopen", headers=self._auth(teacher_token))
+        db.refresh(s)
+        assert s.status == "active"
+        assert s.called_indices == [0, 1]      # gezogene Zahlen bleiben stehen
+
+    def test_an_evaluated_round_refuses_to_reopen(self, client, db, teacher_token):
+        code = _create_session(client, teacher_token, max_points=10)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        s.called_indices = [0]
+        db.flush()
+
+        # Schliessen wertet aus (max_points > 0 und es wurde gerufen).
+        client.post(f"/api/bingo/{code}/close", headers=self._auth(teacher_token))
+        db.refresh(s)
+        assert s.awarded_at is not None
+
+        r = client.post(f"/api/bingo/{code}/reopen", headers=self._auth(teacher_token))
+        assert r.status_code == 409
+        assert "zurücksetzen" in r.json()["detail"].lower()
+        db.refresh(s)
+        assert s.status == "closed"            # bleibt zu
+
+    def test_resetting_starts_a_fresh_round_that_may_close_again(self, client, db, teacher_token):
+        code = _create_session(client, teacher_token, max_points=10)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        s.called_indices = [0]
+        db.flush()
+        client.post(f"/api/bingo/{code}/close", headers=self._auth(teacher_token))
+        db.refresh(s)
+        assert s.awarded_at is not None
+
+        client.post(f"/api/bingo/{code}/reset", headers=self._auth(teacher_token))
+        db.refresh(s)
+        assert s.awarded_at is None and s.status == "waiting"
+
+    def test_reopen_needs_a_teacher(self, client, teacher_token):
+        code = _create_session(client, teacher_token)
+        client.post(f"/api/bingo/{code}/close", headers=self._auth(teacher_token))
+        client.cookies.clear()
+        assert client.post(f"/api/bingo/{code}/reopen").status_code in (401, 403)
+
+    def test_the_list_says_whether_a_round_is_evaluated(self, client, db, teacher_token):
+        code = _create_session(client, teacher_token, max_points=10)
+        rows = client.get("/api/bingo", headers=self._auth(teacher_token)).json()
+        assert next(r for r in rows if r["code"] == code)["awarded"] is False
+
+        s = db.query(BingoSession).filter_by(code=code).first()
+        s.called_indices = [0]
+        db.flush()
+        client.post(f"/api/bingo/{code}/close", headers=self._auth(teacher_token))
+
+        rows = client.get("/api/bingo", headers=self._auth(teacher_token)).json()
+        assert next(r for r in rows if r["code"] == code)["awarded"] is True

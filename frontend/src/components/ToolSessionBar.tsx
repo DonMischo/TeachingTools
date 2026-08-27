@@ -1,10 +1,10 @@
 "use client";
 /**
- * Beitritts-Code + QR für ein zustandsloses Werkzeug (Abakus, Gleichungswaage).
+ * Beitritts-Code + QR für ein zustandsloses Werkzeug (Abakus, Zeitstrahl, …).
  *
- * Die Session hat keinen Inhalt — sie ist nur der Einstieg: ein Code zum
- * Scannen und der Schalter, ob Gäste ohne Konto hereindürfen. Der Code bleibt
- * pro Lehrkraft und Werkzeug derselbe, ein ausgedruckter QR gilt also weiter.
+ * Die Session ist nur der Einstieg: ein Code zum Scannen und der Schalter, ob
+ * Gäste ohne Konto hereindürfen. Der Code bleibt pro Lehrkraft, Werkzeug und
+ * geteiltem Inhalt derselbe, ein ausgedruckter QR gilt also weiter.
  */
 import { useState } from "react";
 import { api, type ToolSessionOut } from "@/lib/api";
@@ -12,8 +12,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
+import { ToolSessionList } from "@/components/ToolSessionList";
 
-export function ToolSessionBar({ tool, title }: { tool: string; title: string }) {
+export function ToolSessionBar({ tool, title, refId }: {
+  tool: string;
+  title: string;
+  /** Werkzeuge mit Inhalt (Zeitstrahl) teilen eine bestimmte Sache, nicht sich selbst. */
+  refId?: number;
+}) {
   const { auth } = useAuth();
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<ToolSessionOut | null>(null);
@@ -29,7 +35,7 @@ export function ToolSessionBar({ tool, title }: { tool: string; title: string })
     setOpen(true);
     if (session) return;
     try {
-      setSession(await api.toolSessions.create(tool));
+      setSession(await api.toolSessions.create(tool, refId));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Der Code ließ sich nicht anlegen.");
@@ -103,6 +109,10 @@ export function ToolSessionBar({ tool, title }: { tool: string; title: string })
                       Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter.
                     </p>
                   </div>
+
+                  {/* Alle Sitzungen dieses Werkzeugs — ansehen und schliessen,
+                      ohne sie einzeln suchen zu muessen. */}
+                  <ToolSessionList slug={tool} />
                 </>
               )}
             </div>

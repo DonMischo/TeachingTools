@@ -13,28 +13,10 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import create_guest_token, get_current_teacher
-from ..models import (
-    QuizSession, BingoSession, ExitTicketSession, BarometerSession,
-    AuctionSession, ExitGameSession, LueckentextSession, SchreibraumRoom, Teacher,
-    ToolSession, WettschreibenSession,
-)
+from ..models import Teacher
+from ..join_codes import BY_KEY
 
 router = APIRouter(prefix="/api/guest", tags=["guest"])
-
-# tool key (as the frontend knows it) → (model, code column name)
-_TOOLS = {
-    "caputh": (QuizSession, "join_code"),
-    "bingo": (BingoSession, "code"),
-    "exit-ticket": (ExitTicketSession, "code"),
-    "barometer": (BarometerSession, "code"),
-    "auction": (AuctionSession, "code"),
-    "exitgame": (ExitGameSession, "join_code"),
-    "lueckentext": (LueckentextSession, "join_code"),
-    "schreibraum": (SchreibraumRoom, "code"),
-    "wettschreiben": (WettschreibenSession, "code"),
-    # Zustandslose Werkzeuge (Abakus, Gleichungswaage) teilen sich ein Modell.
-    "simulation": (ToolSession, "code"),
-}
 
 
 class GuestJoinIn(BaseModel):
@@ -59,11 +41,10 @@ class GuestAllowIn(BaseModel):
 
 
 def _resolve_session(tool: str, code: str, db: Session):
-    entry = _TOOLS.get(tool)
+    entry = BY_KEY.get(tool)
     if not entry:
         raise HTTPException(400, "Unbekanntes Tool")
-    model, code_col = entry
-    session = db.query(model).filter(getattr(model, code_col) == code).first()
+    session = db.query(entry.model).filter(getattr(entry.model, entry.column) == code).first()
     if not session:
         raise HTTPException(404, "Sitzung nicht gefunden")
     return session
@@ -74,6 +55,11 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     session = _resolve_session(body.tool, body.code, db)
     if not session.allow_guests:
         raise HTTPException(403, "Gäste sind für diese Sitzung nicht freigeschaltet")
+    # Geschlossen heisst geschlossen — der Code bleibt gueltig, damit die
+    # Lehrkraft ihn spaeter wieder oeffnen kann, aber jetzt kommt niemand rein.
+    entry = BY_KEY[body.tool]
+    if entry.closable and getattr(session, "status", None) == entry.closed_status:
+        raise HTTPException(403, "Diese Sitzung ist geschlossen")
 
     name = body.name.strip()[:100]
     if not name:

@@ -374,7 +374,14 @@ export default function HostPage() {
   const qrOverlay = showJoinQR ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setShowJoinQR(false)}>
       <div className="bg-white rounded-2xl p-6 flex flex-col items-center gap-3 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <QRCodeSVG value={joinUrl} size={200} bgColor="#ffffff" fgColor="#1e1b4b" level="M" />
+        <QRCodeSVG
+          value={joinUrl}
+          size={1024}
+          bgColor="#ffffff"
+          fgColor="#1e1b4b"
+          level="M"
+          style={{ display: "block", width: "min(70vw, 55vh)", height: "auto" }}
+        />
         <p className="text-2xl font-black font-mono text-indigo-900 tracking-widest">{code}</p>
         <p className="text-gray-400 text-xs">{joinUrl}</p>
         <GuestAccessToggle tool="caputh" code={code} />
@@ -483,12 +490,21 @@ export default function HostPage() {
         <div className="flex-1 flex gap-8 items-start justify-center pt-4 px-4">
           {/* QR Code */}
           <div className="flex flex-col items-center gap-4 flex-shrink-0">
-            <div className="bg-white p-4 rounded-3xl shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setShowJoinQR(true)}
+              title="QR-Code vergrößern"
+              aria-label="QR-Code vergrößern"
+              className="bg-white p-4 rounded-3xl shadow-2xl cursor-zoom-in transition-transform hover:scale-105"
+            >
               <QRCodeSVG value={joinUrl} size={220} bgColor="#ffffff" fgColor="#1e1b4b" level="M" />
-            </div>
+            </button>
             <p className="text-gray-400 text-sm">oder Code eingeben:</p>
             <p className="text-5xl font-black font-mono tracking-[0.2em] text-yellow-400">{code}</p>
             <p className="text-gray-500 text-xs break-all max-w-[240px] text-center">{joinUrl}</p>
+            {/* Wie auf jeder anderen Hostseite direkt am QR — vorher steckte der
+                Schalter nur im QR-Overlay und war praktisch nicht zu finden. */}
+            <GuestAccessToggle tool="caputh" code={code} className="text-sm text-gray-300 hover:text-white" />
           </div>
 
           {/* Participants + start */}
