@@ -9,6 +9,7 @@
  * nicht das laufende Rennen der Klasse verlieren.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAvailability } from "@/hooks/useAvailability";
 import { api, type WettschreibenRennen } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
 import { type Lektion } from "@/lib/tippen/lektionen";
@@ -20,6 +21,7 @@ import { Rennbahn, type Laeufer } from "@/components/tippen/Rennbahn";
 const SPEICHER = "hp_wettschreiben_code";
 
 export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
+  const { can, ready } = useAvailability();
   const [auswahl, setAuswahl] = useState(0);
   const [rennen, setRennen] = useState<WettschreibenRennen | null>(null);
   const [laeufer, setLaeufer] = useState<Laeufer[]>([]);
@@ -31,13 +33,14 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
 
   // Ein Rennen von vorhin wieder aufnehmen, falls die Seite neu geladen wurde.
   useEffect(() => {
+    if (ready && !can("tippen", "host")) return;
     const code = localStorage.getItem(SPEICHER);
     if (!code) return;
     api.wettschreiben
       .lesen(code)
       .then(r => { if (r.status !== "fertig") setRennen(r); else localStorage.removeItem(SPEICHER); })
       .catch(() => localStorage.removeItem(SPEICHER));
-  }, []);
+  }, [ready]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Host-Socket: liefert den Stand aller Mitschreiber.
   useEffect(() => {
@@ -89,6 +92,20 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
     localStorage.removeItem(SPEICHER);
     setRennen(null);
     setLaeufer([]);
+  }
+
+  // Ein Rennen legt an, wer hosten darf. Schüler sehen den Reiter auch — für
+  // sie ist der Weg der Code der Lehrkraft, nicht eine Fehlermeldung vom Server.
+  if (ready && !can("tippen", "host")) {
+    return (
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+        <div className="text-4xl mb-2">🏁</div>
+        <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto leading-relaxed">
+          Ein Rennen startet deine Lehrkraft. Du bekommst dann einen Code oder einen QR-Code
+          zum Scannen — darüber kommst du an den Start.
+        </p>
+      </div>
+    );
   }
 
   if (!rennen) {

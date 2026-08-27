@@ -12,20 +12,23 @@
  * nur auf der Werkzeugseite (`verwaltung`), nicht auf der Beitrittsseite, wo
  * niemand angemeldet ist.
  */
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { LEKTIONEN, type Lektion } from "@/lib/tippen/lektionen";
-import type { TippSammlung } from "@/lib/api";
+import { api, type TippModus, type TippSammlung } from "@/lib/api";
 import Lektionen from "@/components/tippen/Lektionen";
 import Wortregen from "@/components/tippen/Wortregen";
 import Tastenjagd from "@/components/tippen/Tastenjagd";
 import TippMaterial from "@/components/tippen/TippMaterial";
+import Bestenliste from "@/components/tippen/Bestenliste";
 import Wettschreiben from "@/components/tippen/Wettschreiben";
 
 const MODI = [
   { id: "lektionen", label: "📚 Lektionen", nurHost: false },
   { id: "wortregen", label: "🌧️ Wortregen", nurHost: false },
   { id: "tastenjagd", label: "🎯 Tastenjagd", nurHost: false },
-  // Das Rennen legt die Lehrkraft an; die Klasse kommt über Code/QR dazu.
+  // Bestenliste und Rennen brauchen ein Konto: eine Rangliste frei gewählter
+  // Gastnamen wäre keine, und ein Rennen legt die Lehrkraft an.
+  { id: "bestenliste", label: "🏆 Bestenliste", nurHost: true },
   { id: "wettschreiben", label: "🏁 Wettschreiben", nurHost: true },
 ] as const;
 
@@ -46,12 +49,31 @@ export default function Tippen({
   verwaltung,
 }: {
   action?: ReactNode;
-  /** Auf der Werkzeugseite: eigene Texte wählen und hochladen. */
+  /**
+   * Auf der Werkzeugseite mit eigenem Zugang: eigene Texte wählen, Bestenliste
+   * sehen, Ergebnisse eintragen, Rennen anlegen. Auf der Beitrittsseite (Gäste
+   * ohne Konto) bleibt das alles aus.
+   */
   verwaltung?: boolean;
 }) {
   const [modus, setModus] = useState<Modus>("lektionen");
   const [zeigeFinger, setZeigeFinger] = useState(true);
   const [sammlung, setSammlung] = useState<TippSammlung | null>(null);
+
+  /**
+   * Ein fertiges Ergebnis in die Bestenliste melden. Fehler bleiben still: ein
+   * abgelehnter Wert (unplausibel, Werkzeug gesperrt) soll dem Kind nicht die
+   * gerade geschaffte Runde vermiesen.
+   */
+  const melden = useCallback(
+    (modus: TippModus) =>
+      verwaltung
+        ? (e: { wert: number; anschlaege: number; fehler: number; dauer_ms: number; kontext: string }) => {
+            api.tippenBestenliste.eintragen({ modus, ...e }).catch(() => {});
+          }
+        : undefined,
+    [verwaltung],
+  );
 
   const texte = sammlung ? alsLektionen(sammlung) : LEKTIONEN;
   const sperre = sammlung ? sammlung.settings.lock_on_error !== false : true;
@@ -88,7 +110,7 @@ export default function Tippen({
         ))}
       </div>
 
-      {verwaltung && modus !== "wettschreiben" && (
+      {verwaltung && modus !== "wettschreiben" && modus !== "bestenliste" && (
         <TippMaterial gewaehlt={sammlung} onWaehlen={setSammlung} />
       )}
 
@@ -96,7 +118,13 @@ export default function Tippen({
           Wort oder eine laufende Bildschleife soll nicht im Hintergrund
           weiterlaufen. Ein Materialwechsel setzt genauso zurück. */}
       {modus === "lektionen" && (
-        <Lektionen key={`lektionen-${material}`} zeigeFinger={zeigeFinger} texte={texte} sperre={sperre} />
+        <Lektionen
+          key={`lektionen-${material}`}
+          zeigeFinger={zeigeFinger}
+          texte={texte}
+          sperre={sperre}
+          onErgebnis={melden("lektionen")}
+        />
       )}
       {modus === "wortregen" && (
         <Wortregen
@@ -104,9 +132,13 @@ export default function Tippen({
           zeigeFinger={zeigeFinger}
           woerter={sammlung?.words}
           quelle={sammlung?.title}
+          onErgebnis={melden("wortregen")}
         />
       )}
-      {modus === "tastenjagd" && <Tastenjagd key={`tastenjagd-${material}`} zeigeFinger={zeigeFinger} />}
+      {modus === "tastenjagd" && (
+        <Tastenjagd key={`tastenjagd-${material}`} zeigeFinger={zeigeFinger} onErgebnis={melden("tastenjagd")} />
+      )}
+      {modus === "bestenliste" && verwaltung && <Bestenliste />}
       {modus === "wettschreiben" && verwaltung && <Wettschreiben texte={texte} />}
     </div>
   );

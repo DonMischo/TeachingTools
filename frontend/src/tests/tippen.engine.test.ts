@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { start, feed, werte, erwartet, schwacheZeichen } from "@/lib/tippen/engine";
 import { zeichenZuTaste, umschaltFuer, REIHEN, REIHENBREITE } from "@/lib/tippen/layout";
+import { LEKTIONEN } from "@/lib/tippen/lektionen";
 
 describe("Tipp-Engine", () => {
   it("rückt bei richtigem Zeichen vor", () => {
@@ -117,6 +118,19 @@ describe("Tastaturbelegung (deutsch)", () => {
     // als "diese Taste jetzt drücken" auftauchen.
     expect(zeichenZuTaste("^")).toBeUndefined();
     expect(zeichenZuTaste("´")).toBeUndefined();
+  });
+
+  it("lässt jeden Übungstext vollständig tippen", () => {
+    // Die Fehlersperre kommt über ein Zeichen, das die Tastatur nicht kennt,
+    // nie hinweg — ein einziges @ oder ´ in einer Lektion hängt den Schüler auf.
+    for (const lektion of LEKTIONEN) {
+      for (const zeichen of lektion.text) {
+        expect(
+          zeichenZuTaste(zeichen),
+          `Lektion »${lektion.titel}« enthält das nicht tippbare Zeichen »${zeichen}«`,
+        ).toBeDefined();
+      }
+    }
   });
 
   it("hält jede Reihe innerhalb der Reihenbreite", () => {

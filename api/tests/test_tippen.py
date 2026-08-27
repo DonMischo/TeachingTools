@@ -149,6 +149,15 @@ def test_tottasten_werden_abgelehnt(client, teacher_token):
     assert "Tottasten" in r.json()["detail"]
 
 
+def test_altgr_zeichen_werden_abgelehnt(client, teacher_token):
+    """Die Übung nimmt keine Anschläge mit Strg/Alt an — ein @ im Text wäre für
+    den Schüler hinter der Fehlersperre unerreichbar."""
+    r = _lade_hoch(client, teacher_token, _gueltig(
+        texts=[{"title": "T", "text": "Schreib an anna@schule.de"}]))
+    assert r.status_code == 400
+    assert "AltGr" in r.json()["detail"]
+
+
 def test_titel_und_texte_sind_pflicht(client, teacher_token):
     assert _lade_hoch(client, teacher_token, _gueltig(title="")).status_code == 400
     assert _lade_hoch(client, teacher_token, _gueltig(texts=[])).status_code == 400

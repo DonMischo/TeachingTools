@@ -7,7 +7,7 @@
  * sondern die Liste der zähesten Tasten — das ist die Auskunft, mit der ein
  * Schüler etwas anfangen kann.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LEKTIONEN, zeichenBis } from "@/lib/tippen/lektionen";
 import {
   starteJagd, jagdStart, jagdZiel, jagdTreffer, jagdVorbei, langsamste, schnitt, zieleFuer,
@@ -20,12 +20,20 @@ import { Wert, Klickhinweis } from "@/components/tippen/Wert";
 
 const RUNDE = 20;
 
-export default function Tastenjagd({ zeigeFinger }: { zeigeFinger: boolean }) {
+export default function Tastenjagd({
+  zeigeFinger,
+  onErgebnis,
+}: {
+  zeigeFinger: boolean;
+  onErgebnis?: (e: { wert: number; anschlaege: number; fehler: number; dauer_ms: number; kontext: string }) => void;
+}) {
   const [bisLektion, setBisLektion] = useState(LEKTIONEN.length - 1);
   const [jagd, setJagd] = useState<Jagd>(() => starteJagd([]));
   const [verfehlt, setVerfehlt] = useState(false);
   // Spiegel des Standes, damit der Tastendruck ihn synchron lesen kann.
   const jagdRef = useRef(jagd);
+  const onErgebnisRef = useRef(onErgebnis);
+  useEffect(() => { onErgebnisRef.current = onErgebnis; }, [onErgebnis]);
 
   const erlaubt = useMemo(() => zeichenBis(bisLektion), [bisLektion]);
   const laeuft = jagd.ziele.length > 0 && !jagdVorbei(jagd);
@@ -37,6 +45,17 @@ export default function Tastenjagd({ zeigeFinger }: { zeigeFinger: boolean }) {
     jagdRef.current = nachher;
     setJagd(nachher);
     setVerfehlt(nachher.fehler > vorher.fehler);
+
+    if (jagdVorbei(nachher)) {
+      const gesamt = nachher.zeiten.reduce((s, z) => s + z.ms, 0);
+      onErgebnisRef.current?.({
+        wert: schnitt(nachher),
+        anschlaege: nachher.zeiten.length + nachher.fehler,
+        fehler: nachher.fehler,
+        dauer_ms: gesamt,
+        kontext: `${nachher.ziele.length} Tasten`,
+      });
+    }
   }, []);
 
   const { gedrueckt, fokus, feldProps, fokussieren } = useTippEingabe(anschlag);

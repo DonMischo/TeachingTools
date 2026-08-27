@@ -4,10 +4,10 @@ Eine Sammlung ist eine JSON-Datei mit Texten zum Abtippen und optional einer
 eigenen Wortliste für den Wortregen. Damit tippt eine Klasse die Fachbegriffe,
 die im Unterricht gerade dran sind, statt »fff jjj«.
 
-Bewusst geprüft wird beim Hochladen eines: **Tottasten**. Ein ^ oder ´ im Text
-erzeugt am deutschen Keyboard erst zusammen mit dem nächsten Zeichen etwas —
-die Fehlersperre der Übung käme nie darüber hinweg. Lieber die Datei ablehnen
-als den Schüler vor einer unlösbaren Stelle sitzen lassen.
+Bewusst geprüft wird beim Hochladen, ob sich der Text überhaupt tippen lässt
+(siehe api/tipp_text.py): Tottasten und AltGr-Zeichen kämen in der Übung nie
+an, und die Fehlersperre käme über eine solche Stelle nie hinweg. Lieber die
+Datei ablehnen als den Schüler davor sitzen lassen.
 """
 import json
 
@@ -19,11 +19,10 @@ from ..database import get_db
 from ..auth import get_current_user, get_current_teacher
 from ..availability import require_capability
 from ..models import Teacher, TippSammlung
+from ..tipp_text import pruefe_tippbar
 
 router = APIRouter(prefix="/api/tipptexte", tags=["tipptexte"])
 
-# ^ ´ ` sind am deutschen Keyboard Tottasten.
-TOTTASTEN = "^´`"
 MAX_TEXTE = 50
 MAX_ZEICHEN = 5000
 BEKANNTE_EINSTELLUNGEN = {"lock_on_error"}
@@ -65,14 +64,7 @@ def _pruefe_text(text: str, wo: str) -> str:
         raise HTTPException(400, f"{wo}: »text« fehlt oder ist leer.")
     if len(text) > MAX_ZEICHEN:
         raise HTTPException(400, f"{wo}: Der Text ist länger als {MAX_ZEICHEN} Zeichen.")
-    treffer = sorted({c for c in text if c in TOTTASTEN})
-    if treffer:
-        raise HTTPException(
-            400,
-            f"{wo}: Der Text enthält Tottasten ({' '.join(treffer)}). "
-            "Diese Zeichen entstehen am deutschen Keyboard erst zusammen mit dem "
-            "nächsten Anschlag und lassen sich in der Übung nicht tippen — bitte ersetzen.",
-        )
+    pruefe_tippbar(text, wo)
     return text
 
 
@@ -148,8 +140,9 @@ def vorlage(_: Teacher = Depends(get_current_teacher)):
             "--- TEXTS --- Liste von Objekten mit title und text. Der text wird Zeichen für "
             "Zeichen abgetippt; er sollte aus vollständigen, sinnvollen Sätzen bestehen und "
             "zwischen 100 und 600 Zeichen lang sein. "
-            "--- VERBOTEN --- Die Zeichen ^ ´ ` (Tottasten am deutschen Keyboard) dürfen NICHT "
-            "vorkommen, auch nicht in Zitaten; verwende gerade Anführungszeichen. "
+            "--- VERBOTEN --- Nicht vorkommen dürfen: die Tottasten ^ ´ ` (auch nicht in "
+            "Zitaten — verwende gerade Anführungszeichen) und alle Zeichen der AltGr-Ebene "
+            "@ € [ ] { } \ ~ | ² ³ µ. Schreibe »at« statt @ und »Euro« statt €. "
             "--- WORDS --- optionale Liste einzelner Wörter (ohne Leerzeichen) für das Spiel "
             "»Wortregen«: die Fachbegriffe des Themas, klein geschrieben. "
             "--- SETTINGS --- lock_on_error (Standard true): bei true rückt ein Fehlanschlag "

@@ -82,6 +82,13 @@ def test_tottasten_im_renntext_werden_abgelehnt(client, teacher_token):
     assert "Tottasten" in r.json()["detail"]
 
 
+def test_altgr_zeichen_im_renntext_werden_abgelehnt(client, teacher_token):
+    r = client.post("/api/wettschreiben", json={"title": "X", "text": "3 € pro Heft"},
+                    headers=auth(teacher_token))
+    assert r.status_code == 400
+    assert "AltGr" in r.json()["detail"]
+
+
 def test_hosten_folgt_der_freigabe(client, db, teacher, teacher_token):
     db.add(ToolAvailability(tool_slug="tippen", capability="host", audience="teacher",
                             class_id=None, allowed=False))

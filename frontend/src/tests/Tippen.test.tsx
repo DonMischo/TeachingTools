@@ -1,13 +1,18 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "./helpers";
 import { Rennbahn } from "@/components/tippen/Rennbahn";
 import { api } from "@/lib/api";
 
+const darfHosten = { wert: true };
 vi.mock("@/hooks/useAvailability", () => ({
-  useAvailability: () => ({ can: () => true, ready: true }),
+  useAvailability: () => ({
+    can: (_slug: string, cap: string) => (cap === "host" ? darfHosten.wert : true),
+    ready: true,
+  }),
 }));
 import Tippen from "@/components/tippen/Tippen";
+import Lektionen from "@/components/tippen/Lektionen";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { zeichenZuTaste, REIHENBREITE } from "@/lib/tippen/layout";
 import { LEKTIONEN } from "@/lib/tippen/lektionen";
@@ -231,6 +236,19 @@ describe("Wettschreiben im Werkzeug", () => {
     expect(screen.queryByRole("tab", { name: /Wettschreiben/ })).not.toBeInTheDocument();
   });
 
+  beforeEach(() => { darfHosten.wert = true; });
+
+  it("bietet Schülern kein Rennen an, sondern erklärt den Weg über den Code", async () => {
+    // Ohne diese Sperre bekämen sie beim Anlegen ein 403 vom Server.
+    darfHosten.wert = false;
+    vi.spyOn(api.tipptexte, "list").mockResolvedValue([]);
+    renderWithProviders(<Tippen verwaltung />);
+    fireEvent.click(screen.getByRole("tab", { name: /Wettschreiben/ }));
+
+    expect(await screen.findByText(/Ein Rennen startet deine Lehrkraft/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Rennen anlegen/ })).not.toBeInTheDocument();
+  });
+
   it("steht der Lehrkraft zur Verfügung", async () => {
     vi.spyOn(api.tipptexte, "list").mockResolvedValue([]);
     renderWithProviders(<Tippen verwaltung />);
@@ -239,5 +257,111 @@ describe("Wettschreiben im Werkzeug", () => {
     expect(await screen.findByRole("button", { name: /Rennen anlegen/ })).toBeInTheDocument();
     // Der Renntext kommt aus demselben Material wie die Lektionen.
     expect(screen.getByLabelText("Text für das Rennen")).toBeInTheDocument();
+  });
+});
+
+describe("Bestenliste", () => {
+  const EINTRAEGE = [
+    { platz: 1, name: "Ada L.", klasse: "7a", wert: 260, anschlaege: 300, fehler: 0,
+      dauer_ms: 60000, kontext: "Grundstellung", selbst: false },
+    { platz: 2, name: "Bo M.", klasse: "7a", wert: 210, anschlaege: 280, fehler: 4,
+      dauer_ms: 70000, kontext: "Grundstellung", selbst: true },
+  ];
+
+  beforeEach(() => {
+    vi.spyOn(api.tipptexte, "list").mockResolvedValue([]);
+    vi.spyOn(api.tippenBestenliste, "liste").mockResolvedValue(EINTRAEGE);
+  });
+
+  it("bleibt Gästen ohne Konto verborgen", () => {
+    render(<Tippen />);
+    expect(screen.queryByRole("tab", { name: /Bestenliste/ })).not.toBeInTheDocument();
+  });
+
+  it("zeigt die Plätze und hebt die eigene Zeile hervor", async () => {
+    renderWithProviders(<Tippen verwaltung />);
+    fireEvent.click(screen.getByRole("tab", { name: /Bestenliste/ }));
+
+    expect(await screen.findByText("Ada L.")).toBeInTheDocument();
+    expect(document.querySelector('[data-platz="1"]')).toHaveTextContent("Ada L.");
+    expect(document.querySelector("[data-selbst]")).toHaveTextContent("Bo M.");
+  });
+
+  it("wechselt zwischen den drei Listen", async () => {
+    renderWithProviders(<Tippen verwaltung />);
+    fireEvent.click(screen.getByRole("tab", { name: /Bestenliste/ }));
+    await screen.findByText("Ada L.");
+    expect(api.tippenBestenliste.liste).toHaveBeenCalledWith("lektionen");
+
+    fireEvent.click(screen.getByRole("button", { name: /Tastenjagd/ }));
+    await waitFor(() => expect(api.tippenBestenliste.liste).toHaveBeenCalledWith("tastenjagd"));
+    // Bei der Tastenjagd zählt die kleinere Zahl — das muss dranstehen.
+    expect(screen.getByText(/weniger ist besser/)).toBeInTheDocument();
+  });
+
+  it("sagt es, wenn noch niemand eingetragen ist", async () => {
+    vi.spyOn(api.tippenBestenliste, "liste").mockResolvedValue([]);
+    renderWithProviders(<Tippen verwaltung />);
+    fireEvent.click(screen.getByRole("tab", { name: /Bestenliste/ }));
+    expect(await screen.findByText(/Noch kein Eintrag/)).toBeInTheDocument();
+  });
+});
+
+describe("Ergebnisse melden", () => {
+  // Direkt am Lektionsmodus statt durch die ganze Hülle: der Test tippt einen
+  // Text Zeichen für Zeichen ab, und jeder Anschlag rendert die Tastatur neu —
+  // über die volle Lektion und die Modus-Reiter lief das unter Last in den Timeout.
+  const KURZ = {
+    id: "kurz",
+    titel: "Kurzprobe",
+    neueZeichen: "",
+    text: "asdf jklö asdf jklö asdf jklö asdf jklö asdf jklö asdf jklö asdf",
+  };
+
+  function tippen(text: string) {
+    const feld = screen.getByRole("textbox", { name: "Übungstext tippen" });
+    for (const c of text) fireEvent.keyDown(feld, { key: c, code: "KeyF" });
+  }
+
+  it("meldet nichts, wenn niemand angemeldet ist", () => {
+    // Ohne Konto reicht die Hülle keinen Melder durch.
+    render(<Lektionen zeigeFinger={false} texte={[KURZ]} />);
+    tippen(KURZ.text);
+    expect(screen.getByText(/Lektion geschafft/)).toBeInTheDocument();
+  });
+
+  it("meldet die fertige Lektion mit Anschlägen, Fehlern und Titel", () => {
+    const gemeldet = vi.fn();
+    render(<Lektionen zeigeFinger={false} texte={[KURZ]} onErgebnis={gemeldet} />);
+
+    const feld = screen.getByRole("textbox", { name: "Übungstext tippen" });
+    fireEvent.keyDown(feld, { key: "x", code: "KeyX" }); // ein Fehlgriff
+    tippen(KURZ.text);
+
+    expect(gemeldet).toHaveBeenCalledTimes(1);
+    expect(gemeldet.mock.calls[0][0]).toMatchObject({
+      fehler: 1,
+      anschlaege: KURZ.text.length + 1,
+      kontext: "Kurzprobe",
+    });
+  });
+
+  it("meldet kurze Texte gar nicht erst", () => {
+    // Auf zehn Zeichen ist jeder schnell — das gehört nicht in eine Bestenliste.
+    const winzig = { ...KURZ, text: "asdf jklö" };
+    const gemeldet = vi.fn();
+    render(<Lektionen zeigeFinger={false} texte={[winzig]} onErgebnis={gemeldet} />);
+    tippen(winzig.text);
+    expect(screen.getByText(/Lektion geschafft/)).toBeInTheDocument();
+    expect(gemeldet).not.toHaveBeenCalled();
+  });
+
+  it("meldet dieselbe Runde nur einmal", () => {
+    const gemeldet = vi.fn();
+    render(<Lektionen zeigeFinger={false} texte={[KURZ]} onErgebnis={gemeldet} />);
+    tippen(KURZ.text);
+    // Weitere Anschläge nach dem Ziel ändern nichts mehr.
+    tippen("abc");
+    expect(gemeldet).toHaveBeenCalledTimes(1);
   });
 });

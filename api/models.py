@@ -1808,3 +1808,37 @@ class WettschreibenTeilnehmer(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     session: Mapped["WettschreibenSession"] = relationship(back_populates="teilnehmer")
+
+
+class TippBestenliste(Base):
+    """Bestenliste der Schreibübung — eine Zeile je Person und Modus.
+
+    Gespeichert wird nur die *beste* Leistung: sonst füllte ein einzelnes
+    schnelles Kind die ganze Liste, und die hundert Plätze sagten nichts mehr
+    über die Schule aus. Der Name wird beim Eintragen aus dem Konto abgeleitet,
+    nie vom Browser übernommen.
+
+    Gäste ohne Konto tragen sich nicht ein: eine Rangliste aus frei gewählten
+    Namen wäre keine.
+    """
+    __tablename__ = "tipp_bestenliste"
+    __table_args__ = (
+        UniqueConstraint("modus", "student_id", name="uq_tipp_beste_student"),
+        UniqueConstraint("modus", "teacher_id", name="uq_tipp_beste_teacher"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # lektionen | wortregen | tastenjagd
+    modus: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    # Die Zahl, nach der sortiert wird — je Modus etwas anderes, siehe Router.
+    wert: Mapped[float] = mapped_column(Float, nullable=False)
+    anschlaege: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    fehler: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    dauer_ms: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    # Woran gemessen wurde: Lektionstitel, Lektionsstufe des Spiels, …
+    kontext: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

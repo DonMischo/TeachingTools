@@ -27,12 +27,14 @@ export default function Wortregen({
   zeigeFinger,
   woerter,
   quelle,
+  onErgebnis,
 }: {
   zeigeFinger: boolean;
   /** Eigene Wortliste aus hochgeladenem Material; sonst die Lektionswörter. */
   woerter?: string[];
   /** Name der Sammlung, aus der die Wörter kommen. */
   quelle?: string;
+  onErgebnis?: (e: { wert: number; anschlaege: number; fehler: number; dauer_ms: number; kontext: string }) => void;
 }) {
   const [bisLektion, setBisLektion] = useState(LEKTIONEN.length - 1);
   const [phase, setPhase] = useState<Phase>("bereit");
@@ -40,6 +42,9 @@ export default function Wortregen({
 
   const regenRef = useRef(starteRegen());
   const uhrRef = useRef({ letzte: 0, seitSpawn: 0 });
+  // Die Bildschleife hängt nicht am Prop-Wechsel — der Melder wandert über ein Ref hinein.
+  const onErgebnisRef = useRef(onErgebnis);
+  useEffect(() => { onErgebnisRef.current = onErgebnis; }, [onErgebnis]);
 
   const eigeneWoerter = woerter && woerter.length > 0 ? woerter : undefined;
   const erlaubt = zeichenBis(bisLektion);
@@ -79,8 +84,16 @@ export default function Wortregen({
       regenRef.current = next;
       setBild(b => b + 1);
 
-      if (vorbei(next)) setPhase("vorbei");
-      else raf = requestAnimationFrame(bild);
+      if (vorbei(next)) {
+        setPhase("vorbei");
+        onErgebnisRef.current?.({
+          wert: next.punkte,
+          anschlaege: next.anschlaege,
+          fehler: next.fehler,
+          dauer_ms: Math.round(next.laufzeit),
+          kontext: quelle ?? `bis Lektion ${bisLektion + 1}`,
+        });
+      } else raf = requestAnimationFrame(bild);
     };
 
     raf = requestAnimationFrame(bild);

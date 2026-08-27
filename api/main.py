@@ -9,7 +9,7 @@ from pathlib import Path
 from .database import engine
 from .models import Base
 from .database import get_db
-from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router, trackers as trackers_router, stundenplaner as stundenplaner_router, groups as groups_router, calendar as calendar_router, exitgame as exitgame_router, practice as practice_router, generators as generators_router, timelines as timelines_router, lueckentexte as lueckentexte_router, seating as seating_router, availability as availability_router, tipptexte as tipptexte_router, wettschreiben as wettschreiben_router
+from .routers import classes, teachers, transactions, auth as auth_router, setup as setup_router, capuths as capuths_router, wettkampf as wettkampf_router, haeuser as haeuser_router, students as students_router, style as style_router, roles as roles_router, barometer as barometer_router, auction as auction_router, bingo as bingo_router, exit_ticket as exit_ticket_router, chores as chores_router, trackers as trackers_router, stundenplaner as stundenplaner_router, groups as groups_router, calendar as calendar_router, exitgame as exitgame_router, practice as practice_router, generators as generators_router, timelines as timelines_router, lueckentexte as lueckentexte_router, seating as seating_router, availability as availability_router, tipptexte as tipptexte_router, wettschreiben as wettschreiben_router, bestenliste as bestenliste_router
 from .routers.sportfest import disciplines as sf_disciplines, results as sf_results, auswertung as sf_auswertung
 from .routers.schreibraum import rooms as schreibraum_rooms, collab as schreibraum_collab
 from .routers.capuths import _inactivity_watchdog
@@ -57,6 +57,7 @@ app.include_router(timelines_router.router)
 app.include_router(lueckentexte_router.router)
 app.include_router(tipptexte_router.router)
 app.include_router(wettschreiben_router.router)
+app.include_router(bestenliste_router.router)
 app.include_router(seating_router.router)
 app.include_router(availability_router.router)
 from .routers import admin_access as admin_access_router

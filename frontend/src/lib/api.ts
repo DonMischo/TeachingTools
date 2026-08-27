@@ -973,6 +973,28 @@ export type SeatingScope = { kind: "class" | "group"; id: number };
 const seatingBase = (s: SeatingScope) => (s.kind === "class" ? `classes/${s.id}` : `groups/${s.id}`);
 
 // ── Tool availability ──
+export type TippModus = "lektionen" | "wortregen" | "tastenjagd";
+export type BestenlisteEintrag = {
+  platz: number;
+  name: string;
+  klasse: string | null;
+  wert: number;
+  anschlaege: number;
+  fehler: number;
+  dauer_ms: number;
+  kontext: string | null;
+  /** Die eigene Zeile — zum Hervorheben. */
+  selbst: boolean;
+};
+export type ErgebnisIn = {
+  modus: TippModus;
+  wert: number;
+  anschlaege: number;
+  fehler: number;
+  dauer_ms: number;
+  kontext?: string | null;
+};
+
 export type WettschreibenTeilnehmer = {
   id: number;
   name: string;
@@ -1167,6 +1189,14 @@ export const api = {
   },
 
   // Beitritts-Sitzungen für zustandslose Werkzeuge (Abakus, Gleichungswaage)
+  // Bestenliste der Schreibübung (siehe api/routers/bestenliste.py)
+  tippenBestenliste: {
+    liste: (modus: TippModus) =>
+      apiFetch<BestenlisteEintrag[]>(`tippen/bestenliste?modus=${encodeURIComponent(modus)}`),
+    eintragen: (body: ErgebnisIn) =>
+      apiFetch<BestenlisteEintrag>("tippen/bestenliste", { method: "POST", body: JSON.stringify(body) }),
+  },
+
   // Tipp-Rennen (siehe api/routers/wettschreiben.py)
   wettschreiben: {
     anlegen: (title: string, text: string) =>

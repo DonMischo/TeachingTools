@@ -22,6 +22,7 @@ from ..database import get_db
 from ..auth import Guest, get_current_teacher, get_player
 from ..availability import require_capability
 from ..models import Student, Teacher, WettschreibenSession, WettschreibenTeilnehmer
+from ..tipp_text import pruefe_tippbar
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager
@@ -34,7 +35,6 @@ mgr = RoomManager()
 _stand: dict[str, dict[int, dict]] = {}
 
 MAX_TEXT = 5000
-TOTTASTEN = "^´`"
 
 
 # ── Schemata ────────────────────────────────────────────────────────────────
@@ -123,9 +123,7 @@ def anlegen(body: RennenIn, db: Session = Depends(get_db),
             teacher: Teacher = Depends(get_current_teacher)):
     if len(body.text) > MAX_TEXT:
         raise HTTPException(400, f"Der Text ist länger als {MAX_TEXT} Zeichen.")
-    treffer = sorted({c for c in body.text if c in TOTTASTEN})
-    if treffer:
-        raise HTTPException(400, f"Der Text enthält Tottasten ({' '.join(treffer)}) und lässt sich nicht tippen.")
+    pruefe_tippbar(body.text, "Der Renntext")
 
     s = WettschreibenSession(
         code=gen_code(db, WettschreibenSession),

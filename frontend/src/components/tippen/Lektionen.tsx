@@ -13,15 +13,21 @@ import { useTippEingabe } from "@/hooks/useTippEingabe";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { Wert, Klickhinweis } from "@/components/tippen/Wert";
 
+/** Kürzer als das lohnt keinen Eintrag — auf zehn Zeichen ist jeder schnell. */
+const MINDESTLAENGE = 60;
+
 export default function Lektionen({
   zeigeFinger,
   texte,
   sperre = true,
+  onErgebnis,
 }: {
   zeigeFinger: boolean;
   texte: Lektion[];
   /** Fehlersperre — hochgeladenes Material darf sie abschalten. */
   sperre?: boolean;
+  /** Meldet das Ergebnis an die Bestenliste (nur mit eigenem Zugang gesetzt). */
+  onErgebnis?: (e: { wert: number; anschlaege: number; fehler: number; dauer_ms: number; kontext: string }) => void;
 }) {
   const [lektion, setLektion] = useState(0);
   const [stand, setStand] = useState<Stand>(() => start(texte[0].text));
@@ -32,6 +38,8 @@ export default function Lektionen({
   // Spiegel des Stands: der Tastatur-Handler braucht ihn synchron, um den
   // Fehler zu erkennen, ohne den State-Updater unrein zu machen.
   const standRef = useRef(stand);
+  // Ein Ergebnis wird genau einmal gemeldet, nicht bei jedem Rendern danach.
+  const gemeldetRef = useRef(false);
 
   const w = werte(stand, performance.now());
 
@@ -52,12 +60,26 @@ export default function Lektionen({
     return () => clearInterval(id);
   }, [stand.startMs, w.fertig]);
 
+  useEffect(() => {
+    if (!w.fertig || gemeldetRef.current) return;
+    gemeldetRef.current = true;
+    if (stand.text.length < MINDESTLAENGE) return;
+    onErgebnis?.({
+      wert: w.anschlaegeProMinute,
+      anschlaege: stand.anschlaege,
+      fehler: stand.fehler,
+      dauer_ms: Math.round(w.dauer * 1000),
+      kontext: texte[lektion].titel,
+    });
+  }, [w.fertig]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   function neu(index: number) {
     const s = start(texte[index].text);
     standRef.current = s;
     setLektion(index);
     setStand(s);
     setVerfehlt(false);
+    gemeldetRef.current = false;
     fokussieren();
   }
 
