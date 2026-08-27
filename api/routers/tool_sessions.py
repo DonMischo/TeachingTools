@@ -1,8 +1,7 @@
 """Join sessions for tools that keep no state of their own.
 
-Abakus, Gleichungswaage and Bildformate run entirely in the browser: there is
-nothing to
-host, no answers to collect, no live state. A ToolSession exists only so the
+Abakus, Gleichungswaage, Bildformate and the Tippen trainer run entirely in the
+browser: there is nothing to host, no answers to collect, no live state. A ToolSession exists only so the
 teacher can hand out a code/QR — and so the usual per-session guest opt-in
 applies to these tools too (see routers/guest.py, which resolves the key
 "simulation" to this model).
@@ -23,7 +22,7 @@ from .. import availability, tool_catalog
 router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 
 # Tools that can be joined this way — everything that runs purely client-side.
-SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate")
+SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen")
 
 
 class ToolSessionOut(BaseModel):

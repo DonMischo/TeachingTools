@@ -1731,3 +1731,80 @@ class SnapProject(Base):
     created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class TippSammlung(Base):
+    """Hochgeladenes Tippmaterial — Diktate und Fachbegriffe statt der
+    eingebauten Lektionen.
+
+    Eine Sammlung bringt Texte mit (die abgetippt werden) und optional eine
+    eigene Wortliste für den Wortregen: so üben die Finger an genau den
+    Begriffen, um die es im Fach gerade geht. Folgt dem JSON-Blob-Muster von
+    LueckentextSet/BingoSet — der Inhalt liegt als JSON in der Zeile, nicht in
+    eigenen Tabellen.
+    """
+    __tablename__ = "tipp_sammlungen"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # [{"title": "Die Zelle", "text": "..."}]
+    texts: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # Optionale Wortliste für den Wortregen.
+    words: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
+    # {"lock_on_error": true}
+    settings: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}")
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    creator: Mapped["Teacher"] = relationship()
+
+
+class WettschreibenSession(Base):
+    """Ein Tipp-Rennen: alle tippen denselben Text, die Balken laufen live.
+
+    Der Text wird beim Anlegen kopiert statt verlinkt — wird die Sammlung
+    später gelöscht oder geändert, bleibt das gelaufene Rennen erklärbar.
+    """
+    __tablename__ = "wettschreiben_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    # lobby → laeuft → fertig
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="lobby")
+    allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="0")
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    teilnehmer: Mapped[list["WettschreibenTeilnehmer"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class WettschreibenTeilnehmer(Base):
+    """Wer mitschreibt — angemeldet oder als Gast über den QR.
+
+    Der laufende Fortschritt steht NICHT hier: er fliegt über den WebSocket und
+    liegt solange im Speicher. Erst das Ergebnis am Ziel wird gespeichert, sonst
+    schriebe jede Klasse bei jedem Anschlag in die Datenbank.
+    """
+    __tablename__ = "wettschreiben_teilnehmer"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("wettschreiben_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Endstand, gefüllt wenn das Rennen für diesen Teilnehmer vorbei ist.
+    pos: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    anschlaege: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    fehler: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    dauer_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["WettschreibenSession"] = relationship(back_populates="teilnehmer")

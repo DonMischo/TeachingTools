@@ -973,6 +973,43 @@ export type SeatingScope = { kind: "class" | "group"; id: number };
 const seatingBase = (s: SeatingScope) => (s.kind === "class" ? `classes/${s.id}` : `groups/${s.id}`);
 
 // ── Tool availability ──
+export type WettschreibenTeilnehmer = {
+  id: number;
+  name: string;
+  pos: number;
+  anschlaege: number;
+  fehler: number;
+  dauer_ms: number | null;
+};
+export type WettschreibenRennen = {
+  code: string;
+  title: string;
+  text: string;
+  /** lobby | laeuft | fertig */
+  status: string;
+  allow_guests: boolean;
+  teilnehmer: WettschreibenTeilnehmer[];
+};
+
+export type TippText = { title: string; text: string };
+export type TippSammlung = {
+  id: number;
+  title: string;
+  description: string | null;
+  texts: TippText[];
+  words: string[];
+  /** lock_on_error: Fehlanschlag rückt nicht vor (Voreinstellung). */
+  settings: { lock_on_error?: boolean };
+  created_by: number | null;
+};
+export type TippSammlungKurz = {
+  id: number;
+  title: string;
+  description: string | null;
+  anzahl_texte: number;
+  anzahl_woerter: number;
+};
+
 export type ToolCapability = "use" | "host" | "create" | "upload";
 export type AudienceKind = "teacher" | "student";
 
@@ -1130,6 +1167,44 @@ export const api = {
   },
 
   // Beitritts-Sitzungen für zustandslose Werkzeuge (Abakus, Gleichungswaage)
+  // Tipp-Rennen (siehe api/routers/wettschreiben.py)
+  wettschreiben: {
+    anlegen: (title: string, text: string) =>
+      apiFetch<WettschreibenRennen>("wettschreiben", { method: "POST", body: JSON.stringify({ title, text }) }),
+    lesen: (code: string, guestToken?: string | null) =>
+      apiFetch<WettschreibenRennen>(`wettschreiben/${encodeURIComponent(code)}`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    beitreten: (code: string, name: string, guestToken?: string | null) =>
+      apiFetch<{ teilnehmer_id: number; name: string }>(
+        `wettschreiben/${encodeURIComponent(code)}/join`, {
+          method: "POST",
+          body: JSON.stringify({ name }),
+          headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+        }),
+    starten: (code: string) =>
+      apiFetch<WettschreibenRennen>(`wettschreiben/${encodeURIComponent(code)}/start`, { method: "POST" }),
+    beenden: (code: string) =>
+      apiFetch<WettschreibenRennen>(`wettschreiben/${encodeURIComponent(code)}/ende`, { method: "POST" }),
+  },
+
+  // Hochgeladenes Tippmaterial (siehe api/routers/tipptexte.py)
+  tipptexte: {
+    list: () => apiFetch<TippSammlungKurz[]>("tipptexte"),
+    get: (id: number) => apiFetch<TippSammlung>(`tipptexte/${id}`),
+    template: () => apiFetch<Record<string, unknown>>("tipptexte/template"),
+    delete: (id: number) => apiFetch<void>(`tipptexte/${id}`, { method: "DELETE" }),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/tipptexte/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<TippSammlung>;
+        });
+    },
+  },
+
   toolSessions: {
     /** Session der Lehrkraft für dieses Werkzeug — legt sie beim ersten Mal an. */
     create: (tool_slug: string) =>

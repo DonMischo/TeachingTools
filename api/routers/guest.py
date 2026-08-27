@@ -16,7 +16,7 @@ from ..auth import create_guest_token, get_current_teacher
 from ..models import (
     QuizSession, BingoSession, ExitTicketSession, BarometerSession,
     AuctionSession, ExitGameSession, LueckentextSession, SchreibraumRoom, Teacher,
-    ToolSession,
+    ToolSession, WettschreibenSession,
 )
 
 router = APIRouter(prefix="/api/guest", tags=["guest"])
@@ -31,6 +31,7 @@ _TOOLS = {
     "exitgame": (ExitGameSession, "join_code"),
     "lueckentext": (LueckentextSession, "join_code"),
     "schreibraum": (SchreibraumRoom, "code"),
+    "wettschreiben": (WettschreibenSession, "code"),
     # Zustandslose Werkzeuge (Abakus, Gleichungswaage) teilen sich ein Modell.
     "simulation": (ToolSession, "code"),
 }

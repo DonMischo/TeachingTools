@@ -32,6 +32,11 @@ def ws_identity(websocket: WebSocket, db: Session) -> tuple[str, int] | None:
         _check_revocation(payload.get("jti"), db)
     except HTTPException:
         return None
+    # Gast-Token sind keine Anmeldung. Sie tragen eine UUID als `sub`, an der
+    # das int() unten zerbräche — und eine unbehandelte Ausnahme im WS-Handler
+    # bedeutet: kein accept, kein close, der Client wartet ewig.
+    if payload.get("type") == "guest":
+        return None
     sub = int(payload["sub"])
     if payload.get("type", "teacher") == "student":
         student = db.get(Student, sub)

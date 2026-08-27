@@ -57,6 +57,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📄 Vorlage & Beispiele", text: "»Vorlage« lädt eine leere Datei zum Ausfüllen. »🌍 Beispiele laden« importiert fertige Beispiel-Zeitleisten zum sofortigen Einsatz." },
     ],
   },
+  tippen: {
+    title: "Tippen",
+    intro: "Zehnfingersystem üben — die Bildschirmtastatur zeigt, welcher Finger welche Taste nimmt. Vier Modi, ein Werkzeug.",
+    sections: [
+      { label: "📚 Lektionen", text: "Lektion wählen, in das Textfeld klicken und lostippen. Die nächste Taste leuchtet auf, bei Großbuchstaben zusätzlich die Umschalttaste der anderen Hand. Die Farben zeigen den zuständigen Finger; die kleinen Striche auf F und J sind die Grundstellung." },
+      { label: "⛔ Fehlersperre", text: "Ein falscher Anschlag zählt als Fehler, rückt aber nicht vor — die richtige Taste muss kommen. So prägt sich nichts Falsches ein. Eine Rücktaste gibt es deshalb nicht. Hochgeladene Texte dürfen die Sperre abschalten." },
+      { label: "🌧️ Wortregen", text: "Wörter fallen von oben und müssen fertig getippt werden, bevor sie unten ankommen — drei dürfen durch. Es regnen nur Buchstaben, die bis zur gewählten Lektion dran waren." },
+      { label: "🎯 Tastenjagd", text: "Eine Taste, so schnell wie möglich. Gemessen wird die Reaktionszeit je Taste; am Ende stehen die zähesten." },
+      { label: "🏁 Wettschreiben", text: "Das Klassenrennen: Text wählen, »Rennen anlegen«, Code oder QR zeigen, starten. Alle tippen denselben Text, die Balken laufen nebeneinander, im Ziel steht die Zeit in Anschlägen pro Minute. Nur für Lehrkräfte sichtbar." },
+      { label: "⬆️ Eigene Texte", text: "»Hochladen« nimmt eine JSON-Datei mit eigenen Texten an — Diktate oder Fachbegriffe statt Übungssätzen. »Vorlage« lädt eine ausgefüllte Beispieldatei samt Anleitung. Eine Wortliste in der Datei versorgt auch den Wortregen. Tottasten (^ ´ `) werden abgelehnt: sie lassen sich nicht einzeln tippen." },
+      { label: "📊 Werte", text: "Anschläge pro Minute (die im Schreibunterricht übliche Größe, gezählt werden die richtigen) und die Fehlerquote über alle Anschläge. Am Ende stehen die schwächsten Tasten." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Das Wettschreiben hat seinen eigenen Code je Rennen." },
+    ],
+  },
   abacus: {
     title: "Abakus",
     intro: "Rechenrahmen zum Schieben — für Zahlverständnis und Stellenwerte.",

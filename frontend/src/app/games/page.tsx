@@ -45,6 +45,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#f472b6",
   },
   {
+    slug: "tippen",
+    href: "/games/tippen",
+    icon: "⌨️",
+    title: "Tippen",
+    description: "Zehnfingersystem üben: Lektionen mit Fingeranzeige, Wortregen und Tastenjagd — dazu das Klassenrennen »Wettschreiben« über Code/QR.",
+    color: "#38bdf8",
+  },
+  {
     slug: "uebung",
     href: "/uebung",
     icon: "📚",

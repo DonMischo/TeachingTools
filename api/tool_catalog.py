@@ -80,6 +80,13 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("uebung", "📚 Übung", "📚", "games", {
         "use": _cap(True, True),
     }),
+    # Tippen rechnet im Browser: kein Hosten, kein Erstellen — die Sitzung ist
+    # nur der Beitritts-Code (siehe routers/tool_sessions.py).
+    CatalogTool("tippen", "⌨️ Tippen", "⌨️", "games", {
+        "use": _cap(True, True),
+        "host": _cap(True, False),
+        "upload": _cap(True, False),
+    }),
     # ── Simulationen (Modelle zum Ausprobieren — wie Spiele für alle offen) ──
     CatalogTool("gleichungswaage", "⚖️ Gleichungswaage", "⚖️", "simulationen", {
         "use": _cap(True, True),

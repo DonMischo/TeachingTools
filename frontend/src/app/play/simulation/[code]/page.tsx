@@ -18,11 +18,13 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
+import Tippen from "@/components/tippen/Tippen";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
   abacus: { title: "Abakus", icon: "🧮", node: <Abakus /> },
   bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
+  tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
 };
 
 function Hinweis({ icon, title, text }: { icon: string; title: string; text: string }) {
