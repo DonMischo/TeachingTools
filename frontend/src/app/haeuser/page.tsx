@@ -33,7 +33,11 @@ function gradeOf(code: string): number | null {
   return m ? parseInt(m[1], 10) : null;
 }
 
-const KURS_PRESETS = ["Kurs I", "Kurs II", "Kurs III", "Kursgruppe"];
+/** Jahrgangskurse — one per Klassenstufe, which is what the "10 K1" tag says. */
+const JAHRGANGSKURS_PRESETS = ["Kurs I", "Kurs II", "Kurs III"];
+/** Schulweite Kurse: a hand-picked selection of students from any class, so they
+ *  belong to no Jahrgang (grade null) and are offered in every class. */
+const SCHULWEITE_KURS_PRESETS = ["Kursgruppe"];
 const WAHLPFLICHT_PRESETS = ["DuG", "NaT", "Fr", "Span"];
 
 /** Compact label for the Klassenübersicht badges: "Kurs I"→"K1", "Kursgruppe"→"KG".
@@ -139,25 +143,30 @@ function GroupTabSection({
   const scopedToClass = groupType === "ab_gruppe";
   // Kurse/WPF belong to a Jahrgang, not to the whole school: picking "Kurs I"
   // in 10a creates *this* Kurs (the "10 K1" one), separate from 9's Kurs I.
+  // The exception is a Kursgruppe — see SCHULWEITE_KURS_PRESETS.
   const grade = gradeOf(cls.code);
-  const listKey = ["groups", groupType, scopedToClass ? cls.id : `jg${grade ?? "?"}`];
+  const listKey = scopedToClass ? ["groups", groupType, cls.id] : ["groups", groupType];
 
-  const { data: groups = [] } = useQuery<StudentGroupOut[]>({
+  const { data: allGroups = [] } = useQuery<StudentGroupOut[]>({
     queryKey: listKey,
     queryFn: () => api.groups.list(
-      scopedToClass
-        ? { group_type: groupType, class_id: cls.id }
-        : { group_type: groupType, grade: grade ?? undefined }
+      scopedToClass ? { group_type: groupType, class_id: cls.id } : { group_type: groupType }
     ),
     staleTime: 15_000,
   });
+
+  // This class's Jahrgangskurse plus every schulweite Gruppe (grade null): those
+  // collect students across all classes, so they show up in each one.
+  const groups = scopedToClass
+    ? allGroups
+    : allGroups.filter(g => g.grade === grade || g.grade == null);
 
   const createMut = useMutation({
     mutationFn: (name: string) => api.groups.create({
       group_type: groupType,
       name,
       class_id: scopedToClass ? cls.id : null,
-      grade: scopedToClass ? null : grade,
+      grade: scopedToClass || SCHULWEITE_KURS_PRESETS.includes(name) ? null : grade,
     }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["groups"] }),
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
@@ -179,7 +188,12 @@ function GroupTabSection({
       )}
       {groups.map(g => (
         <div key={g.id} className="rounded-lg border border-[var(--border)] p-2">
-          <div className="text-xs font-semibold mb-1">{g.name} <span className="text-[var(--text-muted)] font-normal">({g.member_ids.length})</span></div>
+          <div className="text-xs font-semibold mb-1">
+            {g.name}{" "}
+            <span className="text-[var(--text-muted)] font-normal">
+              ({g.member_ids.length}){!scopedToClass && g.grade == null ? " · schulweit" : ""}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-1">
             {students.map(s => {
               const member = g.member_ids.includes(s.id);
@@ -218,10 +232,14 @@ function GroupTabSection({
 
 function GroupsManager({ cls, students }: { cls: ClassOut; students: StudentOut[] }) {
   const grade = gradeOf(cls.code);
-  const showKurs = grade !== null && grade >= 9;
   const showWahlpflicht = grade !== null && grade >= 7;
+  // Jahrgangskurse start in Klasse 9; a schulweite Kursgruppe can pick students
+  // from any class, so that preset is offered everywhere.
+  const kursPresets = grade !== null && grade >= 9
+    ? [...JAHRGANGSKURS_PRESETS, ...SCHULWEITE_KURS_PRESETS]
+    : SCHULWEITE_KURS_PRESETS;
   const tabs: { key: GroupType; label: string; presets: string[] }[] = [
-    ...(showKurs ? [{ key: "kurs" as GroupType, label: "Kurse", presets: KURS_PRESETS }] : []),
+    { key: "kurs" as GroupType, label: "Kurse", presets: kursPresets },
     ...(showWahlpflicht ? [{ key: "wahlpflicht" as GroupType, label: "Wahlpflicht", presets: WAHLPFLICHT_PRESETS }] : []),
     { key: "ab_gruppe" as GroupType, label: "Gruppen A/B", presets: AB_PRESETS },
   ];
@@ -1627,8 +1645,10 @@ function GroupEinstellungenSection({
           </button>
         </div>
         <p className="text-xs text-[var(--text-muted)]">
-          Die Klassenstufe {group.grade ?? "—"} steht fest: Kurse gibt es einmal pro Jahrgang.
-          Mitglieder werden in der Klasse unter „🧩 Gruppen" zugeordnet.
+          {group.grade != null
+            ? `Die Klassenstufe ${group.grade} steht fest: Kurse gibt es einmal pro Jahrgang.`
+            : "Schulweit — eine freie Auswahl von Schüler:innen aus allen Klassen, ohne Jahrgang."}
+          {" Mitglieder werden in der Klasse unter „🧩 Gruppen“ zugeordnet."}
         </p>
       </div>
 
@@ -1690,15 +1710,16 @@ function GroupDetailDialog({
     queryFn: () => api.students.list({ group_id: group.id }),
   });
 
-  // Other Kurse/WPF of the same Jahrgang — so the list can show that a "10 K1"
-  // member is also in "Fr", exactly like the class list does.
+  // Other Kurse/WPF — so the list can show that a "10 K1" member is also in
+  // "Fr", exactly like the class list does. Not filtered by Jahrgang: a
+  // schulweite Kursgruppe holds students from several of them.
   const { data: kursGroups = [] } = useQuery<StudentGroupOut[]>({
-    queryKey: ["groups", "kurs", `jg${group.grade ?? "?"}`],
-    queryFn: () => api.groups.list({ group_type: "kurs", grade: group.grade ?? undefined }),
+    queryKey: ["groups", "kurs"],
+    queryFn: () => api.groups.list({ group_type: "kurs" }),
   });
   const { data: wpfGroups = [] } = useQuery<StudentGroupOut[]>({
-    queryKey: ["groups", "wahlpflicht", `jg${group.grade ?? "?"}`],
-    queryFn: () => api.groups.list({ group_type: "wahlpflicht", grade: group.grade ?? undefined }),
+    queryKey: ["groups", "wahlpflicht"],
+    queryFn: () => api.groups.list({ group_type: "wahlpflicht" }),
   });
 
   const memberClasses = classes.filter(c => group.member_class_ids.includes(c.id));
@@ -1719,7 +1740,7 @@ function GroupDetailDialog({
             <div className="font-bold text-lg truncate">{group.name}</div>
             <div className="text-xs text-[var(--text-muted)]">
               {typeLabel}
-              {group.grade != null ? ` · Jahrgang ${group.grade}` : ""}
+              {group.grade != null ? ` · Jahrgang ${group.grade}` : " · schulweit"}
               {` · ${students.length} Schüler:innen`}
               {memberClasses.length > 0 ? ` · ${memberClasses.map(c => c.code).join(", ")}` : ""}
             </div>
@@ -2424,7 +2445,6 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                 {[...classes]
                   .sort((a, b) => b.total_points - a.total_points || a.code.localeCompare(b.code))
                   .map(cls => {
-                    const grade = gradeOf(cls.code);
                     const badges = classGroups.filter(g => g.member_class_ids.includes(cls.id));
                     return (
                       <button
@@ -2451,7 +2471,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                             <div className="flex flex-wrap gap-1 mt-1.5">
                               {badges.map(g => (
                                 <span key={g.id} className={`text-[10px] px-1.5 py-0.5 rounded-md border ${kursBadgeClasses(g.name)}`}>
-                                  {grade !== null ? `${grade} ` : ""}{groupShortCode(g.name)}
+                                  {groupTag(g)}
                                 </span>
                               ))}
                             </div>
@@ -2482,8 +2502,9 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[...list]
-                    // Jahrgang first — "9 K1" and "10 K1" are different courses.
-                    .sort((a, b) => (a.grade ?? 0) - (b.grade ?? 0) || a.name.localeCompare(b.name))
+                    // Jahrgang first — "9 K1" and "10 K1" are different courses;
+                    // schulweite Gruppen have none and come last.
+                    .sort((a, b) => (a.grade ?? 99) - (b.grade ?? 99) || a.name.localeCompare(b.name))
                     .map(g => {
                       const memberClasses = classes.filter(c => g.member_class_ids.includes(c.id));
                       return (
@@ -2499,8 +2520,10 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                           <div className="flex-1 min-w-0">
                             <div className="font-bold truncate">
                               {g.name}
-                              {g.grade != null && (
+                              {g.grade != null ? (
                                 <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">Jg. {g.grade}</span>
+                              ) : (
+                                <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">schulweit</span>
                               )}
                             </div>
                             <div className="text-xs text-[var(--text-muted)] truncate">
