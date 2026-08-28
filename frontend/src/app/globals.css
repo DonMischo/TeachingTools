@@ -122,6 +122,40 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+/* ── iOS: nur der Inhaltsbereich scrollt ───────────────────────────
+   Safari auf iPhone/iPad rechnet 100vh mit *eingeklappten* Leisten.
+   Ohne die folgenden Regeln ist das Dokument selbst ein paar hundert
+   Pixel höher als das Sichtfeld: die Wischgeste klappt dann nur die
+   Adressleiste ein, statt den <main>-Container zu scrollen — die
+   Werkzeugseiten (z. B. Gleichungswaage) wirken „festgeklebt".       */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Höhe der App-Hülle: 100dvh folgt den ein-/ausklappenden Leisten,
+   100vh bleibt als Rückfallwert für ältere WebKit-Versionen. */
+.app-viewport {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Der einzige Scroll-Container. -webkit-overflow-scrolling für
+   iOS < 13, overscroll-behavior gegen das Gummiband-Weiterreichen. */
+.app-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* min-h-screen == 100vh ist auf iOS zu hoch und erzeugt im
+   Scroll-Container einen leeren Streifen. */
+.min-h-screen {
+  min-height: 100dvh;
+}
+
 /* ── Modern thin scrollbar ─────────────────────────────────────── */
 * {
   scrollbar-width: thin;

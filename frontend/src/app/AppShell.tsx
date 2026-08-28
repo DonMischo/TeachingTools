@@ -19,9 +19,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isFullscreen) {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex app-viewport overflow-hidden">
         <Sidebar iconOnly />
-        <main className={`flex-1 min-h-0 overflow-hidden transition-[margin-right] duration-200 ease-out ${lessonMarginRight}`}>{children}</main>
+        <main className={`flex-1 min-h-0 h-full overflow-hidden transition-[margin-right] duration-200 ease-out ${lessonMarginRight}`}>{children}</main>
         <LessonGuideSidebar />
         <MaterialViewerOverlay />
       </div>
@@ -29,9 +29,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex app-viewport overflow-hidden">
       <Sidebar />
-      <main className={`flex-1 min-h-0 overflow-y-auto flex flex-col transition-[margin-left,margin-right] duration-200 ease-out ${panelOpen ? "ml-72" : ""} ${lessonMarginRight}`}>
+      <main className={`flex-1 min-h-0 h-full app-scroll flex flex-col transition-[margin-left,margin-right] duration-200 ease-out ${panelOpen ? "ml-72" : ""} ${lessonMarginRight}`}>
         {children}
       </main>
       <LessonGuideSidebar />
