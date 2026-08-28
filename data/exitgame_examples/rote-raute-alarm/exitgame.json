@@ -1,0 +1,483 @@
+{
+  "id": "rote-raute-alarm",
+  "title": "Roter-Rauten-Alarm",
+  "description": "Die neun GHS-Gefahrensymbole anhand echter Unfälle: Warum steht das Symbol auf der Flasche, was ist wirklich passiert und wie hätte man es verhindern können? Drei Türen, deren Codes aus eingesammelten Schnipseln entstehen.",
+  "subject": "nawi",
+  "grade": "4,5,6",
+  "tags": [
+    "gefahrensymbole",
+    "ghs",
+    "sicherheit",
+    "chemie",
+    "unfälle"
+  ],
+  "style": {
+    "customVars": {
+      "--accent": "#dc2626"
+    }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      { "name": "selbstständig", "hintCount": 0, "timeLimitSeconds": 60, "extraExample": false, "offerEasier": false },
+      { "name": "leichte Unterstützung", "hintCount": 1, "timeLimitSeconds": 90, "extraExample": false, "offerEasier": false },
+      { "name": "mittlere Unterstützung", "hintCount": 2, "timeLimitSeconds": 120, "extraExample": true, "offerEasier": false },
+      { "name": "starke Unterstützung", "hintCount": 3, "timeLimitSeconds": 180, "extraExample": true, "offerEasier": true },
+      { "name": "maximale Unterstützung", "hintCount": 99, "timeLimitSeconds": 300, "extraExample": true, "offerEasier": true }
+    ]
+  },
+  "completion": {
+    "message": "Alle Akten geschlossen. Du erkennst jetzt alle neun roten Rauten — und weißt, warum sie auf der Flasche stehen.",
+    "code": "ROTE-RAUTE-PROFI"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "Willkommen in der Unfall-Zentrale",
+      "text": "Du machst heute ein Praktikum in der Unfall-Zentrale. Hier liegen die Akten von Unfällen, die wirklich passiert sind — beim Grillen, im Badezimmer, im Gartenhaus, an Silvester.\n\nIn fast jeder Akte steht am Ende derselbe Satz: »Auf der Verpackung war ein rotes Warnzeichen. Niemand hat es gelesen.«\n\nDeine Aufgabe: Lies die Akten, erkenne das passende Warnzeichen und finde heraus, was man hätte anders machen müssen.\n\nFür jede gelöste Akte bekommst du einen Codeschnipsel. Zusammen öffnen sie die drei Türen des Archivs. Lässt du eine Akte offen, fehlt dir später ein Buchstabe — von der Tür aus kommst du zurück."
+    },
+    {
+      "id": "was-ist-ghs",
+      "type": "example",
+      "title": "Die rote Raute",
+      "text": "Auf gefährlichen Flaschen, Dosen und Tuben steht ein weißes Quadrat auf der Spitze — eine Raute — mit dickem rotem Rand und einem schwarzen Bild darin.\n\nDiese Zeichen heißen GHS-Symbole. Dahinter steckt eine Vereinbarung fast aller Länder der Welt: Überall bedeuten dieselben Bilder dasselbe. Ein Kind in Deutschland, Brasilien oder Japan liest dieselbe Warnung.\n\nEs gibt genau neun Stück. Jedes sagt: »Achtung, hier steckt eine ganz bestimmte Gefahr drin.«\n\nWichtig: Das Symbol verrät dir nicht nur, DASS etwas gefährlich ist, sondern WIE — ob es brennt, ätzt, giftig ist oder die Umwelt schädigt. Und genau das entscheidet, was du tun musst, wenn etwas schiefgeht."
+    },
+    {
+      "id": "grundlagen",
+      "type": "task",
+      "title": "Akte 0: Das gemeinsame Merkmal",
+      "text": "Ganz oben in der Aktenkiste liegt ein Merkzettel. Jemand hat neun Symbole nebeneinandergeklebt. Sie zeigen völlig verschiedene Bilder — eine Flamme, einen Totenkopf, einen Fisch. Aber etwas haben alle neun gemeinsam.",
+      "task": {
+        "kind": "input",
+        "codeFragment": "R",
+        "question": "Alle neun Symbole haben dieselbe Form (eine Raute) und dieselbe Randfarbe. Welche Farbe hat der Rand?",
+        "accept": ["rot", "rote", "roter Rand", "rot umrandet"]
+      },
+      "hints": [
+        "Lies die Beschreibung auf dem Merkzettel noch einmal: weißes Feld, schwarzes Bild — und der Rand?",
+        "Es ist die Farbe, die bei der Ampel »Halt!« bedeutet."
+      ]
+    },
+    {
+      "id": "akte-flamme",
+      "type": "task",
+      "title": "Akte 1: Der Grill im Garten",
+      "text": "Sommer, Gartenparty. Die Kohle im Grill glüht nicht richtig. Jemand holt die Flasche mit Brennspiritus und gießt nach.\n\nWas dann passiert, passiert in Deutschland jeden Sommer: Der Spiritus verdampft schon über der warmen Kohle. Die Flamme läuft in Sekundenbruchteilen den Strahl hoch bis zur Flasche — eine Stichflamme. Menschen, die daneben standen, kamen mit schweren Verbrennungen in die Klinik und mussten wochenlang behandelt werden. Kliniken und Feuerwehren warnen deshalb jedes Jahr vor Beginn der Grillsaison.\n\nAuf der Spiritusflasche stand dieses Symbol:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-flamme.svg",
+        "alt": "GHS-Symbol: schwarze Flamme über einer Linie, in roter Raute",
+        "height": 180
+      },
+      "extraExample": "Genauso gefährlich: Grillanzünder-Flüssigkeit, Nagellackentferner, Benzin, Feuerzeuggas. Alle tragen die Flamme, alle verdampfen — und der Dampf ist es, der brennt, nicht die Flüssigkeit selbst.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "A",
+        "variants": [
+          {
+            "question": "Wovor warnt dieses Symbol?",
+            "answers": [
+              { "text": "Der Stoff entzündet sich sehr leicht.", "correct": true },
+              { "text": "Der Stoff wird beim Anfassen heiß.", "correct": false },
+              { "text": "Der Stoff darf nur draußen benutzt werden.", "correct": false }
+            ]
+          },
+          {
+            "question": "Warum war das Nachgießen so gefährlich?",
+            "answers": [
+              { "text": "Der Stoff verdampft, und die Dämpfe fangen sofort Feuer.", "correct": true },
+              { "text": "Der Stoff macht die Kohle nass und schwer.", "correct": false },
+              { "text": "Der Stoff riecht unangenehm.", "correct": false }
+            ]
+          },
+          {
+            "question": "Eine Flasche trägt dieses Symbol. Wo darf sie auf keinen Fall stehen?",
+            "answers": [
+              { "text": "Neben einer Flamme oder einer heißen Platte.", "correct": true },
+              { "text": "Im kühlen Schrank.", "correct": false },
+              { "text": "In einem verschlossenen Regal.", "correct": false }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Das Bild zeigt genau das, was in der Akte passiert ist.",
+        "Es geht nicht um Hitze von außen — der Stoff selbst fängt Feuer.",
+        "Merke: Flamme = leicht entzündbar. Solche Stoffe niemals in die Nähe von Feuer bringen."
+      ]
+    },
+    {
+      "id": "akte-acid",
+      "type": "task",
+      "title": "Akte 2: Der verstopfte Abfluss",
+      "text": "Der Abfluss in der Dusche ist verstopft. Ein Kind will helfen und kippt Rohrreiniger hinein — ohne Handschuhe, ohne Brille, das Gesicht direkt über dem Abfluss.\n\nRohrreiniger enthält starke Lauge. Im Abfluss schäumt es auf und spritzt. Augenkliniken behandeln solche Verätzungen regelmäßig, denn die Lauge frisst sich weiter in Haut und Auge hinein, auch wenn man sie schon abgewischt hat. Nur sofortiges, minutenlanges Spülen mit viel Wasser rettet das Auge.\n\nAuf der Flasche stand:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-acid.svg",
+        "alt": "GHS-Symbol: zwei Reagenzgläser, aus denen Flüssigkeit auf eine Hand und auf eine Oberfläche tropft und Löcher hinterlässt",
+        "height": 180
+      },
+      "task": {
+        "kind": "multi",
+        "codeFragment": "U",
+        "question": "Was bedeutet dieses Symbol? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          { "text": "Der Stoff zerstört die Haut.", "correct": true },
+          { "text": "Der Stoff kann das Auge schwer verletzen.", "correct": true },
+          { "text": "Der Stoff greift auch Material an, zum Beispiel Metall.", "correct": true },
+          { "text": "Der Stoff ist nur heiß und kühlt schnell ab.", "correct": false },
+          { "text": "Der Stoff ist ungefährlich, solange man ihn nicht trinkt.", "correct": false }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Was macht ein Stoff mit diesem Symbol mit deiner Haut?",
+          "answers": [
+            { "text": "Er verätzt sie — sie wird zerstört.", "correct": true },
+            { "text": "Er färbt sie nur ein.", "correct": false }
+          ]
+        }
+      },
+      "hints": [
+        "Schau genau hin: Die Flüssigkeit tropft auf zwei verschiedene Dinge.",
+        "Eines davon ist eine Hand — das andere ist kein Lebewesen.",
+        "Drei Antworten sind richtig. Der Fachbegriff heißt »ätzend«."
+      ]
+    },
+    {
+      "id": "akte-exclam",
+      "type": "task",
+      "title": "Akte 3: Das Schulhaus wird geräumt",
+      "text": "In einer Schule sprüht jemand im Flur Pfefferspray — als »Spaß«. Wenige Minuten später hustet der halbe Jahrgang, die Augen brennen und tränen. Die Feuerwehr lüftet das Gebäude, Sanitäterinnen und Sanitäter kümmern sich um mehrere Kinder, der Unterricht fällt aus. Solche Meldungen stehen mehrmals im Jahr in der Zeitung.\n\nDauerhaft verletzt wurde niemand — aber allen ging es stundenlang schlecht. Auf der Dose stand dieses Symbol:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-exclam.svg",
+        "alt": "GHS-Symbol: schwarzes Ausrufezeichen in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "true_false",
+        "codeFragment": "T",
+        "question": "»Das Ausrufezeichen bedeutet: Der Stoff reizt Haut, Augen oder Atemwege. Er kann krank machen, ist aber die schwächere Warnung im Vergleich zum Totenkopf.« Stimmt das?",
+        "answers": [
+          { "text": "Wahr", "correct": true },
+          { "text": "Falsch", "correct": false }
+        ]
+      },
+      "hints": [
+        "Denk an die Akte: Alle husteten und hatten brennende Augen — aber alle waren am nächsten Tag wieder gesund.",
+        "Das Ausrufezeichen ist die Warnung für »reizend«: Es tut weh und macht krank, ist aber nicht die stärkste Giftwarnung."
+      ]
+    },
+    {
+      "id": "akte-pollu",
+      "type": "task",
+      "title": "Akte 4: Der Fluss wurde rot",
+      "text": "1986 brannte in der Schweiz bei Basel eine große Chemikalienhalle. Die Feuerwehr löschte mit sehr viel Wasser — und dieses Löschwasser lief zusammen mit den Chemikalien in den Rhein.\n\nDer Fluss färbte sich rot. Auf einer Strecke von Hunderten Kilometern starben die Fische, besonders die Aale. Es hat Jahre gedauert, bis in diesem Abschnitt wieder Leben war. Menschen wurden nicht verletzt — die Natur schon.\n\nAuf vielen dieser Chemikalien stand dieses Symbol:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-pollu.svg",
+        "alt": "GHS-Symbol: toter Baum und toter Fisch in roter Raute",
+        "height": 180
+      },
+      "extraExample": "Das gilt auch für kleine Mengen zu Hause: Farbreste, Nagellack, Motoröl, alte Batterien und Medikamente gehören zum Wertstoffhof oder in die Apotheke — niemals in den Ausguss oder in die Toilette. Was dort hineingeht, landet am Ende im Fluss.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "E",
+        "question": "Was bedeutet dieses Symbol?",
+        "answers": [
+          { "text": "Der Stoff schädigt Gewässer und die Lebewesen darin.", "correct": true },
+          { "text": "Der Stoff darf nur im Freien benutzt werden.", "correct": false },
+          { "text": "Der Stoff ist aus Pflanzen hergestellt und deshalb harmlos.", "correct": false }
+        ]
+      },
+      "hints": [
+        "Der Baum und der Fisch auf dem Bild sind nicht gesund — sie sind tot.",
+        "Überlege, wohin das Löschwasser gelaufen ist und wer dort gestorben ist.",
+        "Der Fachbegriff heißt »umweltgefährlich« oder »gewässergefährdend«."
+      ]
+    },
+    {
+      "id": "tuer-1",
+      "type": "door",
+      "title": "Tür 1: Das Archiv",
+      "text": "Die erste Tür hat ein Buchstabenschloss. Gib die Codeschnipsel ein, die du in den Akten 0 bis 4 eingesammelt hast — in der Reihenfolge, in der du sie bekommen hast."
+    },
+    {
+      "id": "giftschrank",
+      "type": "example",
+      "title": "Die zweite Aktenkiste",
+      "text": "Hinter der Tür stehen fünf weitere Akten. Sie gehören zu den Symbolen, die man seltener sieht — und die man deshalb oft übersieht:\n\n• Totenkopf: Schon eine kleine Menge kann schwer vergiften.\n• Mensch mit Stern in der Brust: Der Stoff schädigt das Innere des Körpers, zum Beispiel die Lunge.\n• Gasflasche: Der Stoff steht unter Druck.\n• Kreis mit Flamme darüber: Der Stoff brennt nicht selbst, macht ein Feuer aber viel schlimmer.\n• Explodierende Bombe: Der Stoff kann explodieren.\n\nPräg dir die Bilder gut ein — gleich musst du sie den Akten zuordnen."
+    },
+    {
+      "id": "akte-skull",
+      "type": "task",
+      "title": "Akte 5: Der süße Geschmack",
+      "text": "Im Winter tropft aus einem Auto etwas Frostschutzmittel auf den Parkplatz. Ein Hund leckt die Pfütze auf — Frostschutzmittel schmeckt süßlich.\n\nWenige Stunden später geht es dem Hund sehr schlecht, seine Nieren arbeiten nicht mehr richtig. Tierärztinnen und Tierärzte kennen diesen Notfall gut; sie behandeln ihn jeden Winter. Wird das Tier sofort gebracht, kann man es meistens retten. Genau deshalb mischt man Frostschutzmittel heute vielerorts einen Bitterstoff bei.\n\nAuf dem Kanister stand:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-skull.svg",
+        "alt": "GHS-Symbol: Totenkopf mit gekreuzten Knochen in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "GI",
+        "question": "Was bedeutet der Totenkopf?",
+        "answers": [
+          { "text": "Schon eine kleine Menge kann schwer vergiften.", "correct": true },
+          { "text": "Der Stoff ist nur gefährlich, wenn man sehr viel davon trinkt.", "correct": false },
+          { "text": "Der Stoff ist nur für Tiere gefährlich, nicht für Menschen.", "correct": false }
+        ]
+      },
+      "hints": [
+        "Der Hund hat nur eine Pfütze aufgeleckt — nicht den ganzen Kanister.",
+        "Der Totenkopf ist die stärkste Giftwarnung, die es gibt.",
+        "Wichtig ist das Wort »klein«: Es braucht keine große Menge."
+      ]
+    },
+    {
+      "id": "akte-silhouette",
+      "type": "task",
+      "title": "Akte 6: Die bunte Flasche auf dem Tisch",
+      "text": "Auf einem Gartentisch steht eine hübsche bunte Flasche mit Lampenöl für die Öllampe. Ein kleines Kind hält sie für Saft und nimmt einen Schluck.\n\nLampenöl ist besonders tückisch: Es ist so dünnflüssig wie Wasser. Beim Verschlucken kann schon ein winziger Rest in die Lunge geraten und dort eine schwere Lungenentzündung auslösen. Das Kind kam ins Krankenhaus und wurde beobachtet. Genau solche Fälle waren der Grund, warum Lampenöl heute nur noch mit Kindersicherung, deutlicher Warnung und ohne bunte Färbung verkauft werden darf.\n\nAuf der Flasche steht dieses Symbol:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-silhouette.svg",
+        "alt": "GHS-Symbol: Umriss eines Menschen mit sternförmigem Riss in der Brust, in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "single",
+        "codeFragment": "FT",
+        "question": "Wovor warnt dieses Symbol?",
+        "answers": [
+          { "text": "Der Stoff schädigt Organe im Körper, zum Beispiel die Lunge.", "correct": true },
+          { "text": "Der Stoff verbrennt die Haut von außen.", "correct": false },
+          { "text": "Der Stoff macht nur müde und schläfrig.", "correct": false }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Der Riss auf dem Bild sitzt in der Brust der Figur. Was ist also in Gefahr?",
+          "answers": [
+            { "text": "Das Innere des Körpers.", "correct": true },
+            { "text": "Die Haut an den Händen.", "correct": false }
+          ]
+        }
+      },
+      "hints": [
+        "Achte darauf, WO der Stern auf der Figur sitzt.",
+        "Bei dem Kind war nicht die Haut das Problem, sondern ein Organ.",
+        "Der Fachbegriff heißt »gesundheitsschädlich für Organe«."
+      ]
+    },
+    {
+      "id": "akte-bottle",
+      "type": "task",
+      "title": "Akte 7: Die Dose im Lagerfeuer",
+      "text": "Beim Zelten wirft jemand eine leere Deo-Dose ins Lagerfeuer, »damit sie weg ist«. Nach kurzer Zeit knallt es: Die Dose platzt, Teile fliegen durch die Gegend, Glut wird meterweit verteilt.\n\nFeuerwehren warnen jedes Jahr davor. In Spraydosen und Gaskartuschen ist Gas unter hohem Druck eingesperrt. Hitze erhöht diesen Druck so stark, bis der Behälter zerreißt — auch wenn er »leer« wirkt.\n\nAuf der Dose stand:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-bottle.svg",
+        "alt": "GHS-Symbol: stehende Gasflasche in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "multi",
+        "codeFragment": "AL",
+        "question": "Was gilt für Behälter mit diesem Symbol? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          { "text": "In ihnen steht Gas unter Druck.", "correct": true },
+          { "text": "Sie können bei Hitze platzen.", "correct": true },
+          { "text": "Sie dürfen niemals ins Feuer geworfen werden.", "correct": true },
+          { "text": "Wenn sie leer sind, sind sie harmlos.", "correct": false },
+          { "text": "Man legt sie in den Backofen, damit das Gas entweicht.", "correct": false }
+        ]
+      },
+      "hints": [
+        "Das Bild zeigt eine Flasche, wie man sie zum Tauchen oder Schweißen benutzt.",
+        "Denk daran, was mit dem Druck passiert, wenn es heiß wird.",
+        "Drei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "akte-rondflam",
+      "type": "task",
+      "title": "Akte 8: Feuer im Gartenhaus",
+      "text": "In einem Gartenhaus lagern Chlortabletten für den Pool — im offenen Eimer, direkt neben Lappen und Terpentin. Durch ein undichtes Dach wird das Chlor feucht.\n\nDann brennt das Gartenhaus. Niemand hat gezündelt. Solche Brände kennt die Feuerwehr: Poolchemikalien liefern selbst Sauerstoff. Sie brennen nicht, aber sie machen aus einem winzigen Funken oder aus Wärme einen richtigen Brand — und ein Feuer, das seinen eigenen Sauerstoff mitbringt, lässt sich nur schwer ersticken.\n\nAuf der Dose stand:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-rondflam.svg",
+        "alt": "GHS-Symbol: Flamme über einem Kreis, in roter Raute",
+        "height": 180
+      },
+      "extraExample": "Vergleich: Ein Streichholz braucht den Sauerstoff aus der Luft. Pustet man es aus, geht es aus. Ein Stoff mit diesem Symbol bringt den Sauerstoff selbst mit — Auspusten hilft dann nicht mehr.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "AR",
+        "question": "Was bedeutet die Flamme über dem Kreis?",
+        "answers": [
+          { "text": "Der Stoff brennt selbst nicht, verstärkt ein Feuer aber stark.", "correct": true },
+          { "text": "Der Stoff brennt besonders leicht.", "correct": false },
+          { "text": "Der Stoff löscht Feuer.", "correct": false }
+        ]
+      },
+      "hints": [
+        "Achtung, Verwechslungsgefahr: Die einfache Flamme aus Akte 1 bedeutet etwas anderes.",
+        "Der Kreis unter der Flamme steht für Sauerstoff.",
+        "Der Fachbegriff heißt »brandfördernd«: Der Stoff ist der Helfer des Feuers, nicht das Feuer selbst."
+      ]
+    },
+    {
+      "id": "akte-explos",
+      "type": "task",
+      "title": "Akte 9: Silvester",
+      "text": "Ein Jugendlicher zündet einen nicht zugelassenen Böller aus dem Internet. Er geht früher los als erwartet — direkt in der Hand.\n\nJedes Jahr an Silvester behandeln deutsche Kliniken solche Handverletzungen, fast immer durch nicht geprüfte oder umgebaute Böller. Manche Verletzte müssen mehrfach operiert werden. Zugelassenes Feuerwerk erkennt man an einer Prüfnummer auf der Verpackung; verkauft werden darf es erst ab 18 Jahren.\n\nAuf gefährlichem Sprengstoff steht dieses Symbol:",
+      "media": {
+        "kind": "image",
+        "src": "ghs-explos.svg",
+        "alt": "GHS-Symbol: explodierende Bombe in roter Raute",
+        "height": 180
+      },
+      "task": {
+        "kind": "true_false",
+        "codeFragment": "M",
+        "question": "»Ein Stoff mit diesem Symbol kann durch Stoß, Reibung, Funken oder Hitze plötzlich explodieren.« Stimmt das?",
+        "answers": [
+          { "text": "Wahr", "correct": true },
+          { "text": "Falsch", "correct": false }
+        ]
+      },
+      "hints": [
+        "In der Akte ging der Böller früher los, als der Jugendliche dachte.",
+        "»Explosiv« heißt: Es kann jederzeit losgehen — nicht erst dann, wenn man es will."
+      ]
+    },
+    {
+      "id": "tuer-2",
+      "type": "door",
+      "title": "Tür 2: Der Giftschrank-Flur",
+      "text": "Die zweite Tür hat wieder ein Buchstabenschloss. Gib die Codeschnipsel aus den Akten 5 bis 9 ein."
+    },
+    {
+      "id": "richtig-handeln",
+      "type": "example",
+      "title": "Was man wirklich tun muss",
+      "text": "In jeder Akte steht am Ende, was geholfen hat — oder geholfen hätte:\n\n• Nie an einer unbekannten Flasche riechen, sie nicht öffnen und nichts umfüllen. Schon gar nicht in Getränkeflaschen.\n• Gefahrstoff im Gesicht oder auf der Haut: sofort mit sehr viel Wasser spülen, mehrere Minuten lang — auch wenn es schon weniger weh tut.\n• Sofort eine erwachsene Person holen. Niemand bekommt Ärger dafür, dass er Hilfe holt.\n• Im Notfall 112 anrufen. Sagen: wo du bist, was passiert ist, wie viele Personen betroffen sind — und warten, bis die Leitstelle das Gespräch beendet.\n• Die Verpackung mitnehmen oder abfotografieren. Das Symbol darauf sagt den Rettungskräften, womit sie es zu tun haben.\n• Bei Feuer: raus, Tür zu, Feuerwehr rufen — nicht selbst löschen wollen."
+    },
+    {
+      "id": "erste-hilfe",
+      "type": "task",
+      "title": "Akte 10: Der Spritzer",
+      "text": "Beim Putzen spritzt einem Kind Reinigungsmittel ins Auge. Es brennt sofort stark. Das Kind kneift das Auge zu und will erst einmal abwarten, ob es von allein besser wird.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "S",
+        "question": "Was ist jetzt richtig?",
+        "answers": [
+          { "text": "Sofort das offene Auge mehrere Minuten mit viel Wasser spülen und Hilfe holen.", "correct": true },
+          { "text": "Das Auge zukneifen und abwarten, ob es besser wird.", "correct": false },
+          { "text": "Das Auge kräftig reiben, damit das Mittel herauskommt.", "correct": false }
+        ]
+      },
+      "hints": [
+        "Denk an Akte 2 mit dem Rohrreiniger: Das Mittel wirkt weiter, auch wenn man nichts mehr sieht.",
+        "Zwei Dinge müssen gleichzeitig passieren: spülen und jemanden holen.",
+        "Abwarten und Reiben machen es beides schlimmer."
+      ]
+    },
+    {
+      "id": "notruf",
+      "type": "task",
+      "title": "Akte 11: Der Anruf",
+      "text": "In einer Akte steht: »Die Rettung war in sechs Minuten da, weil sofort jemand angerufen hat.« In einer anderen steht: »Es hat zwanzig Minuten gedauert, bis jemand Hilfe geholt hat.«\n\nDer Unterschied war nur eine Telefonnummer.",
+      "task": {
+        "kind": "input",
+        "codeFragment": "O",
+        "question": "Unter welcher Nummer erreichst du in Deutschland und in ganz Europa Feuerwehr und Rettungsdienst? (nur die Ziffern)",
+        "accept": ["112", "Notruf 112", "1 1 2"]
+      },
+      "hints": [
+        "Die Nummer hat drei Ziffern und beginnt mit einer 1.",
+        "Gesucht ist nicht die Nummer der Polizei (110), sondern die von Feuerwehr und Rettungsdienst."
+      ]
+    },
+    {
+      "id": "zuhause",
+      "type": "task",
+      "title": "Akte 12: Bei euch zu Hause",
+      "text": "Zum Schluss sollst du prüfen, wo die roten Rauten in einer ganz normalen Wohnung stehen. Viele Leute glauben, Gefahrstoffe gebe es nur im Labor.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "S",
+        "question": "Auf welchen dieser Dinge findet man normalerweise ein GHS-Symbol? Wähle alle richtigen Antworten aus.",
+        "answers": [
+          { "text": "Rohrreiniger", "correct": true },
+          { "text": "Grillanzünder und Brennspiritus", "correct": true },
+          { "text": "Deo-Spray und Gaskartuschen", "correct": true },
+          { "text": "Eine Packung Nudeln", "correct": false },
+          { "text": "Ein Glas Leitungswasser", "correct": false }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Auf welcher Flasche steht ein rotes Warnzeichen?",
+          "answers": [
+            { "text": "Auf der Flasche Rohrreiniger.", "correct": true },
+            { "text": "Auf der Flasche Apfelsaft.", "correct": false }
+          ]
+        }
+      },
+      "hints": [
+        "Denk daran, aus welchen Räumen die Akten kamen: Bad, Garten, Küche.",
+        "Lebensmittel tragen keine GHS-Symbole.",
+        "Drei Antworten sind richtig."
+      ]
+    },
+    {
+      "id": "tuer-3",
+      "type": "door",
+      "title": "Tür 3: Der Ausgang",
+      "text": "Letzte Tür. Löse die beiden Abschlussaufgaben und gib den Code aus den Akten 10 bis 12 ein.",
+      "tasks": [
+        {
+          "kind": "single",
+          "question": "In der Garage steht eine unbeschriftete Wasserflasche mit einer klaren Flüssigkeit. Sie riecht seltsam. Was machst du?",
+          "answers": [
+            { "text": "Nichts anfassen und eine erwachsene Person holen.", "correct": true },
+            { "text": "Kurz probieren, um herauszufinden, was es ist.", "correct": false },
+            { "text": "In den Ausguss kippen, damit nichts passiert.", "correct": false }
+          ],
+          "easierAlternative": {
+            "kind": "true_false",
+            "question": "»Aus einer unbeschrifteten Flasche darf man nie trinken.« Stimmt das?",
+            "answers": [
+              { "text": "Wahr", "correct": true },
+              { "text": "Falsch", "correct": false }
+            ]
+          }
+        },
+        {
+          "kind": "timeline",
+          "question": "Jemandem ist Rohrreiniger ins Gesicht gespritzt. Bringe die Schritte in die richtige Reihenfolge.",
+          "timeline": {
+            "mode": "sort",
+            "scoring": "order",
+            "axis": { "kind": "number", "min": 1, "max": 4, "step": 1, "unit": "Schritt" },
+            "items": [
+              { "id": "spuelen", "label": "Sofort mit viel Wasser spülen", "value": 1 },
+              { "id": "hilfe", "label": "Laut rufen und eine erwachsene Person holen", "value": 2 },
+              { "id": "notruf", "label": "112 anrufen", "value": 3 },
+              { "id": "verpackung", "label": "Die Verpackung für die Rettungskräfte bereitlegen", "value": 4 }
+            ]
+          }
+        }
+      ],
+      "hints": [
+        "Zuerst kommt immer das, was den Schaden sofort kleiner macht.",
+        "Hilfe holen und Anrufen kommen vor dem Suchen der Verpackung.",
+        "Die Verpackung brauchen erst die Rettungskräfte — also ganz zum Schluss."
+      ],
+      "onFailReview": ["richtig-handeln", "erste-hilfe", "akte-acid"]
+    }
+  ]
+}
