@@ -714,6 +714,20 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                 </div>
               );
             })}
+            {/* Raumname — part of the canvas, so it is on the A4 printout too.
+                Drawn last (over the furniture) so it stays readable wherever
+                the layout is dense. */}
+            <div
+              className="absolute pointer-events-none font-semibold text-[#1f2937] whitespace-nowrap"
+              style={{
+                left: `${((PRINT_MARGIN_MM + 1.5) / dims.w) * 100}%`,
+                top: `${((PRINT_MARGIN_MM + 1.5) / dims.h) * 100}%`,
+                fontSize: cqw(PRIMARY_FONT_MM, 8),
+                lineHeight: 1.1,
+              }}
+            >
+              {name}
+            </div>
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-2">
             {orientation === "landscape" ? "A4 quer" : "A4 hoch"} · Element antippen zum Bearbeiten · ziehen zum Verschieben

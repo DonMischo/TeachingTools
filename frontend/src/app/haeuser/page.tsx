@@ -181,6 +181,14 @@ function GroupTabSection({
 
   const missingPresets = presetNames.filter(p => !groups.some(g => g.name === p));
 
+  // A student picked for one group drops out of the other groups' pools, so a
+  // card only ever offers its own members plus whoever is still unassigned.
+  // Schulweite Gruppen (Kursgruppe) are the exception: they run alongside the
+  // Jahrgangskurse, not instead of them, and keep the full pool.
+  const parallel = (g: StudentGroupOut) => !scopedToClass && g.grade == null;
+  const claimed = new Set(groups.filter(g => !parallel(g)).flatMap(g => g.member_ids));
+  const unassigned = students.filter(s => !groups.some(g => g.member_ids.includes(s.id)));
+
   return (
     <div className="flex flex-col gap-2">
       {groups.length === 0 && (
@@ -195,7 +203,7 @@ function GroupTabSection({
             </span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {students.map(s => {
+            {students.filter(s => g.member_ids.includes(s.id) || parallel(g) || !claimed.has(s.id)).map(s => {
               const member = g.member_ids.includes(s.id);
               return (
                 <button
@@ -214,6 +222,13 @@ function GroupTabSection({
           </div>
         </div>
       ))}
+      {groups.length > 0 && (
+        <p className="text-xs text-[var(--text-muted)]">
+          {unassigned.length === 0
+            ? "Alle zugeordnet ✓"
+            : `Ohne Gruppe (${unassigned.length}): ${unassigned.map(s => `${s.vorname} ${s.nachname[0]}.`).join(", ")}`}
+        </p>
+      )}
       {missingPresets.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {missingPresets.map(p => (
@@ -843,10 +858,10 @@ function StudentChorePopover({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        title="Dienst-Verlauf"
-        className={`w-6 h-6 rounded-full border text-xs font-bold flex items-center justify-center transition-colors
+        title={`${totalCompleted} Dienste erledigt — Verlauf anzeigen`}
+        className={`min-w-6 h-6 px-1.5 rounded-full border text-xs font-bold flex items-center justify-center transition-colors tabular-nums
           ${open ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
-      >?</button>
+      >{totalCompleted}×</button>
 
       {open && (
         <div className="absolute right-0 top-8 z-20 w-56 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl p-3 flex flex-col gap-2">
@@ -2131,13 +2146,24 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                         }}
                       >
                         <option value="">— niemand —</option>
-                        {students.map(s => (
-                          <option key={s.id} value={s.id}>{s.vorname} {s.nachname}</option>
-                        ))}
+                        {students.map(s => {
+                          const done = choreStats[s.id]?.[chore.chore_name] ?? 0;
+                          return (
+                            <option key={s.id} value={s.id}>
+                              {s.vorname} {s.nachname}{done > 0 ? ` (${done}×)` : ""}
+                            </option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{chore.student_name ?? "— niemand —"}</div>
                     )}
+                    {/* How often the assigned student already completed this chore */}
+                    <span className="w-16 shrink-0 text-xs text-right tabular-nums text-[var(--text-muted)]" title="Bereits erledigt">
+                      {chore.student_id != null
+                        ? `${choreStats[chore.student_id]?.[chore.chore_name] ?? 0}× erledigt`
+                        : ""}
+                    </span>
                   </div>
                 ))
               )}

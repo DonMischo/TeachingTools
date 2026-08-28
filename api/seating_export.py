@@ -163,6 +163,15 @@ def build_svg(plan, student_names: dict[int, str], student_short: dict[int, str]
         f'<rect x="{m}" y="{m}" width="{pw - 2 * m}" height="{ph - 2 * m}" '
         f'fill="none" stroke="#d1d5db" stroke-width="0.3" stroke-dasharray="2 2"/>'
     )
+    # Raumname, top-left inside the safe area and drawn over the furniture —
+    # same position and size as the editor canvas shows it.
+    room = getattr(plan, "name", "") or ""
+    title = (
+        f'<text x="{m + 1.5:.1f}" y="{m + 1.5:.1f}" '
+        f'font-size="{_PRIMARY_FONT_MM:.1f}" font-family="Segoe UI, Arial, sans-serif" '
+        f'font-weight="600" fill="#1f2937" text-anchor="start" '
+        f'dominant-baseline="hanging">{_esc(room)}</text>'
+    ) if room else ""
     return (
         f'<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{pw}mm" height="{ph}mm" '
@@ -170,6 +179,7 @@ def build_svg(plan, student_names: dict[int, str], student_short: dict[int, str]
         f'<rect x="0" y="0" width="{pw}" height="{ph}" fill="#ffffff"/>'
         f'{border}'
         f'{body}'
+        f'{title}'
         f'</svg>'
     )
 

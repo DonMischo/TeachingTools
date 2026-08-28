@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   api, setActiveGuestToken, ExitGameData, ExitGameSlide, ExitGameStyle, ExitGameTask, ExitGameAttemptSummary,
-  ExitGameFragment, DdaAdaptation,
+  ExitGameFragment, ExitGameAnswer, DdaAdaptation,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
@@ -78,6 +78,18 @@ function mmss(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+// Authors write the correct answer first, so an unshuffled list gives the
+// task away. The server checks answers by text, never by index, so the player
+// is free to reorder them.
+function shuffledAnswers(task: ExitGameTask): ExitGameAnswer[] {
+  const answers = [...(task.answers ?? [])];
+  for (let i = answers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [answers[i], answers[j]] = [answers[j], answers[i]];
+  }
+  return answers;
+}
+
 function mergeVariant(task: ExitGameTask, variantIdx: number | undefined): ExitGameTask {
   if (!task.variants || variantIdx === undefined) return task;
   const { variants: _drop, ...base } = task;
@@ -142,6 +154,8 @@ function SingleTaskWidget({
   const [hintsShown, setHintsShown] = useState(0);
   const [showEasierOffer, setShowEasierOffer] = useState(false);
   const [solved, setSolved] = useState(alreadySolved);
+  // Reshuffled only when the task itself changes (easier alternative taken).
+  const answerOptions = useMemo(() => shuffledAnswers(activeTask), [activeTask]);
   const hintBudget = levelNumber(level, "hintCount") ?? 2;
   const richtzeit = levelNumber(level, "timeLimitSeconds");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(richtzeit);
@@ -225,7 +239,7 @@ function SingleTaskWidget({
 
       {(activeTask.kind === "single" || activeTask.kind === "true_false") && (
         <div className="flex flex-wrap gap-2">
-          {(activeTask.answers ?? []).map(a => (
+          {answerOptions.map(a => (
             <button key={a.text} onClick={() => submitSingle(a.text)}
               className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                 selected === a.text && feedback === "wrong" ? "border-red-400 text-red-400" : "border-[var(--border)] hover:border-[var(--accent)]"
@@ -238,7 +252,7 @@ function SingleTaskWidget({
 
       {activeTask.kind === "multi" && (
         <div className="flex flex-col gap-1.5">
-          {(activeTask.answers ?? []).map(a => (
+          {answerOptions.map(a => (
             <label key={a.text} className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={multiSelected.has(a.text)}
                 onChange={() => setMultiSelected(prev => {

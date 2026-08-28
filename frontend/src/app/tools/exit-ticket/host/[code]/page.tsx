@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
@@ -89,7 +90,8 @@ export default function ExitTicketHostPage() {
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
       <div className="flex items-start gap-4 justify-between flex-wrap">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">🎫 {state.title}</h1>
+          <Link href="/tools/exit-ticket" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Exit-Ticket</Link>
+          <h1 className="text-2xl font-black tracking-tight mt-1">🎫 {state.title}</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">{state.question}</p>
         </div>
         <div className="flex gap-2 shrink-0">
