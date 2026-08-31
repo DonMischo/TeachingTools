@@ -1,0 +1,998 @@
+{
+  "_ai_instructions": "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der Exit-Code am Ende. Ein Spiel hat meist 8-15 Slides und muss nicht alle Aufgabenarten nutzen. --- SLIDES --- 'explanation' und 'example': nur lesen, Weiter-Button. 'task': muss gelöst werden ('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). 'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; 'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen lassen — was fehlt, fällt spätestens an der Tür auf. --- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des Abschnitts davor (seit der vorigen Tür) in Lesereihenfolge; an der Tür tippt der Schüler ihn ein, geprüft wird serverseitig (Groß/Klein, Leerzeichen und Bindestriche egal). Abschreiben nützt nichts: die Tür geht nur auf, wenn der Schüler alle Schnipsel des Abschnitts selbst eingesammelt hat — sonst zeigt sie genau die offenen Aufgaben als Rücksprung-Links. Sinnvoll sind 3-6 Fragmente pro Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft zeigen. --- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' (accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' (Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. --- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, 0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode 'spot': Items stehen bei 'value', die falsch platzierten tragen ihren wahren Wert in 'actual' und sollen markiert werden (mindestens eines). Jahre v. Chr. sind negativ. 'exact_date' ('JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', nur n. Chr., Jahr muss zu 'value' passen) ist nötig, sobald zwei Items im selben Jahr liegen; bei 'spot' steht das wahre Datum in 'exact_date_actual'. --- HILFEN --- 'hints': geordnete Liste pro Slide (2-4), vom sanften Schubser bis fast zur Lösung; der Hinweis-Button erscheint erst nach einem Fehlversuch. 'easierAlternative' (Aufbau wie 'task'): leichtere Fassung, wird als Ja/Nein-Angebot vorgeschlagen, sobald der Schüler 2x falsch lag und seine Hinweise verbraucht hat. 'variants': gleichwertige Fassungen derselben Aufgabe (nur die abweichenden Felder); jeder Schüler bekommt fest eine zugelost — Abschreibschutz, lohnt sich bei wichtigen Aufgaben. 'extraExample' (Text pro Slide): ein zweites durchgerechnetes Beispiel für Schüler, deren Stufe es vorsieht. --- DDA --- dda.levels ist die Differenzierungsleiter dieses Spiels: mindestens 3, empfohlen 5 Stufen von wenig zu viel Unterstützung. Das Spiel stuft jeden Schüler laufend nach Antwortzeit, Fehlern und Hinweisnutzung in eine Stufe ein. Jede Stufe steuert: 'hintCount' = wie viele hints freigegeben werden, 'timeLimitSeconds' = sichtbare Richtzeit pro Aufgabe (kein Abbruch — läuft sie ab, wird ein Hinweis vorzeitig frei), 'extraExample' = ob das 'extraExample' der Slide nach einem Fehlversuch eingeblendet wird, 'offerEasier' = ob die easierAlternative überhaupt angeboten wird. Ohne dda-Feld: feste 2 Hinweise pro Slide, keine Richtzeit. --- MEDIEN --- media, eine pro Slide: 'image' (Dateiname aus dem assets/-Ordners des ZIPs oder Bild-URL), 'video' (YouTube-/Vimeo-Link), 'html' (URL einer einbettbaren Simulation). 'height' in px begrenzt die Höhe (bei Bildern die maximale Höhe — für Piktogramme z.B. 180, sonst füllen sie die ganze Spalte). --- STYLE --- theme: 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk'; font: CSS-Schriftfamilie; customVars: einzelne Farben ('--accent', '--bg', '--surface', '--text'), die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. --- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für einzelne Symbole, Dezimalkomma als $3{,}14$. --- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. --- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es nicht mehr). onFailReview nur auf vorhandene Slide-IDs.",
+  "id": "dezimal-dungeon-story",
+  "title": "🏰 Das Geheimnis der Zahlen-Drachen",
+  "description": "Ein Abenteuer voller Rechenkünste: Hilf den Dorfbewohnern, besiege die Zahlen-Drachen und rette das Königreich!",
+  "subject": "mathematik",
+  "grade": "6,7",
+  "tags": [
+    "dezimalzahlen",
+    "dungeon",
+    "addition",
+    "subtraktion",
+    "multiplikation",
+    "division",
+    "geschichte",
+    "kindgerecht"
+  ],
+  "style": {
+    "theme": "dark",
+    "font": "Cinzel, serif",
+    "customVars": {
+      "--accent": "#eab308",
+      "--bg": "#1a1a2e",
+      "--surface": "#16213e",
+      "--text": "#f8fafc"
+    }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "Held",
+        "hintCount": 0,
+        "timeLimitSeconds": 45,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "Abenteurer",
+        "hintCount": 1,
+        "timeLimitSeconds": 60,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "Magier",
+        "hintCount": 2,
+        "timeLimitSeconds": 90,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "Weiser",
+        "hintCount": 3,
+        "timeLimitSeconds": 120,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "Beschützer",
+        "hintCount": 99,
+        "timeLimitSeconds": 180,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "🎉 Du hast alle Drachen besiegt, das Königreich gerettet und den uralten Schatz der Zahlen gefunden! Zeige den Code DEZIMAL-6 dem König – du bist ein wahrer Zahlen-Held!",
+    "code": "DEZIMAL-6"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "⚔️ Die Legende der Zahlen-Drachen",
+      "text": "Im Königreich Rechenland herrscht große Not: Vier mächtige Drachen – Addi, Subtrax, Multi und Divi – haben die magischen Zahlenkristalle gestohlen. Ohne sie verlieren alle Menschen ihr Zahlengedächtnis!\n\nDu bist der auserwählte Held. Deine Aufgabe: Durchstreife die vier Dungeons, besiege die Drachen mit deinem Rechenwissen und sammle die Kristallsplitter (Code-Schnipsel). Jeder Drache bewacht ein Tor – öffne es, indem du seine Prüfung bestehst.\n\nBist du bereit? Dann los!",
+      "media": {
+        "kind": "image",
+        "src": "castle.jpg",
+        "alt": "Ein märchenhaftes Königreich mit Burgen und Drachen",
+        "height": 300
+      }
+    },
+    {
+      "id": "addi-einleitung",
+      "type": "explanation",
+      "title": "➕ Raum des Addi-Drachen",
+      "text": "Addi ist der freundlichste der Drachen, aber er liebt es, Zahlen zusammenzufügen. Schau dir sein Video an, um seine Sprache zu verstehen.",
+      "media": {
+        "kind": "video",
+        "src": "https://www.youtube.com/watch?v=FZJ6kX1JqEk"
+      }
+    },
+    {
+      "id": "addi-methode",
+      "type": "example",
+      "title": "Zauber der Addition",
+      "text": "Addi verbindet Zahlen wie Perlen auf einer Kette. Schreibe die Zahlen so untereinander, dass die Kommas genau passen. Fülle fehlende Stellen mit Nullen, dann addiere von rechts nach links.\n\n**Beispiel:**\n$$2{,}45 + 1{,}3 = 2{,}45 + 1{,}30 = 3{,}75$$\n\n*Merke: Das Komma bleibt an seinem Platz.*",
+      "media": {
+        "kind": "image",
+        "src": "dragon.jpg",
+        "alt": "Ein Drache zeigt, wie man Zahlen untereinander schreibt",
+        "height": 200
+      }
+    },
+    {
+      "id": "addi-verstaendnis",
+      "type": "task",
+      "title": "Verständnis: Addi's Regel",
+      "text": "Addi stellt dir zwei Fragen. Beantworte sie, um seinen ersten Kristallsplitter zu bekommen.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Addi sagt: 'Beim Addieren müssen die Kommas genau untereinander stehen.' Stimmt das?",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "kind": "single",
+          "question": "Was passiert, wenn du die Kommas nicht untereinander schreibst?",
+          "answers": [
+            {
+              "text": "Das Ergebnis bleibt trotzdem richtig.",
+              "correct": false
+            },
+            {
+              "text": "Die Stellenwerte stimmen nicht – das Ergebnis wird falsch.",
+              "correct": true
+            },
+            {
+              "text": "Der Drache wird wütend und frisst deine Zahlen.",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "codeFragment": "A1",
+      "hints": [
+        "Stell dir eine Tabelle mit Einer, Zehnteln vor.",
+        "Das Komma ist wie eine Brücke zwischen ganzen und gebrochenen Zahlen."
+      ]
+    },
+    {
+      "id": "addi-mc1",
+      "type": "task",
+      "title": "Kampf gegen Addi (1)",
+      "text": "Addi speit Feuerbälle mit Zahlen. Wähle die richtige Summe, um ihn zu treffen!",
+      "task": {
+        "kind": "single",
+        "codeFragment": "A2",
+        "question": "$$2{,}5 + 3{,}7 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$5{,}2$$",
+            "correct": false
+          },
+          {
+            "text": "$$6{,}2$$",
+            "correct": true
+          },
+          {
+            "text": "$$6{,}12$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Addiere zuerst die Nachkommastellen: 5 + 7 = 12 → 1 übertragen."
+      ]
+    },
+    {
+      "id": "addi-mc2",
+      "type": "task",
+      "title": "Kampf gegen Addi (2)",
+      "text": "Ein weiterer Feuerball! Weiche aus, indem du die richtige Summe wählst.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "A3",
+        "question": "$$12{,}99 + 3{,}01 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$15{,}00$$",
+            "correct": false
+          },
+          {
+            "text": "$$16{,}00$$",
+            "correct": true
+          },
+          {
+            "text": "$$16{,}10$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "$12{,}99$ ist fast $13$ – fehlen nur $0{,}01$.",
+        "Also $3{,}01 = 3 + 0{,}01$ → zusammen $13 + 3 = 16$."
+      ]
+    },
+    {
+      "id": "addi-input1",
+      "type": "task",
+      "title": "Flucht vor Addi",
+      "text": "Addi ist wütend! Du musst durch einen Tunnel voller Zahlen kriechen. Gib die richtigen Summen ein, um die Falltüren zu öffnen.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "$$4{,}8 + 2{,}3 = \\,?$$",
+          "accept": ["7,1", "7.1"]
+        },
+        {
+          "kind": "input",
+          "question": "$$9{,}9 + 0{,}7 = \\,?$$",
+          "accept": ["10,6", "10.6"]
+        },
+        {
+          "kind": "input",
+          "question": "$$14{,}65 + 5{,}35 = \\,?$$",
+          "accept": ["20", "20,0", "20.0"]
+        }
+      ],
+      "codeFragment": "A4",
+      "hints": [
+        "Schreibe die Zahlen untereinander – Komma unter Komma.",
+        "Bei $9{,}9 + 0{,}7$: $9+0=9$ und $0{,}9+0{,}7=1{,}6$ → $10{,}6$."
+      ]
+    },
+    {
+      "id": "addi-endboss",
+      "type": "task",
+      "title": "👹 Endboss Addi – der große Kampf",
+      "text": "Addi entfesselt seine volle Kraft! Nur wenn du alle drei Textaufgaben löst, kannst du ihn besiegen.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "Auf dem Markt kaufst du für $2{,}50$ Goldstücke ein Schwert und für $3{,}75$ einen Schild. Wie viele Goldstücke musst du insgesamt bezahlen?",
+          "accept": ["6,25", "6.25"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein Seil für die Brücke ist $4{,}8$ Ellen lang. Ein zweites Seil ist $2{,}75$ Ellen lang. Wie lang sind beide zusammen?",
+          "accept": ["7,55", "7.55"]
+        },
+        {
+          "kind": "input",
+          "question": "Du rennst $0{,}9$ Meilen, dann noch $1{,}25$ Meilen zu einer Höhle. Wie weit bist du insgesamt gelaufen?",
+          "accept": ["2,15", "2.15"]
+        }
+      ],
+      "codeFragment": "A5",
+      "hints": [
+        "Schreibe die Beträge untereinander und achte auf das Komma.",
+        "Goldstücke haben immer zwei Nachkommastellen (z.B. $2{,}50$)."
+      ],
+      "extraExample": "Wenn du $3{,}20$ und $2{,}80$ ausgibst, sind das zusammen $6{,}00$ Goldstücke."
+    },
+    {
+      "id": "addi-tuer",
+      "type": "door",
+      "title": "🚪 Tor der Addition",
+      "text": "Addi ist besiegt! Du hast alle Kristallsplitter (A1, A2, A3, A4, A5). Nun musst du das Tor öffnen. Löse die letzte Prüfung und gib den Code in der richtigen Reihenfolge ein.",
+      "task": {
+        "kind": "single",
+        "question": "Ein Sack mit magischem Staub wiegt $25{,}75$ kg. Ein zweiter Sack wiegt $14{,}25$ kg. Wie schwer sind beide zusammen?",
+        "answers": [
+          {
+            "text": "$$39{,}00$$ kg",
+            "correct": false
+          },
+          {
+            "text": "$$40{,}00$$ kg",
+            "correct": true
+          },
+          {
+            "text": "$$40{,}50$$ kg",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Ein Sack wiegt $12{,}30$ kg, ein anderer $7{,}70$ kg. Wie schwer sind beide zusammen?",
+          "answers": [
+            {
+              "text": "$$19{,}00$$ kg",
+              "correct": false
+            },
+            {
+              "text": "$$20{,}00$$ kg",
+              "correct": true
+            },
+            {
+              "text": "$$20{,}10$$ kg",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Addiere die kg und die Gramm getrennt.",
+        "$25{,}75 + 14{,}25 = 40{,}00$"
+      ],
+      "onFailReview": ["addi-methode", "addi-input1"]
+    },
+    {
+      "id": "sub-einleitung",
+      "type": "explanation",
+      "title": "➖ Raum des Subtrax-Drachen",
+      "text": "Subtrax ist ein listiger Drache, der Zahlen stiehlt. Lerne seine Tricks im Video.",
+      "media": {
+        "kind": "video",
+        "src": "https://www.youtube.com/watch?v=hB-iJNC17M0"
+      }
+    },
+    {
+      "id": "sub-methode",
+      "type": "example",
+      "title": "Die Klinge der Subtraktion",
+      "text": "Subtrax nimmt Zahlen weg. Schreibe die Zahlen untereinander, Komma unter Komma. Subtrahiere von rechts nach links. Wenn nötig, borgen wie bei einem Dieb.\n\n**Beispiel:**\n$$5{,}6 - 2{,}3 = 3{,}3$$\n\n*Tipp: Fehlende Stellen mit Nullen auffüllen.*",
+      "media": {
+        "kind": "image",
+        "src": "dagger.jpg",
+        "alt": "Ein Drache mit einem Dolch, der Zahlen wegstiehlt",
+        "height": 200
+      }
+    },
+    {
+      "id": "sub-verstaendnis",
+      "type": "task",
+      "title": "Verständnis: Subtrax' Regeln",
+      "text": "Subtrax stellt zwei Fallen. Entschärfe sie mit deinem Wissen.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Bei der Subtraktion müssen die Kommas untereinander stehen – sonst wird die Zahl gestohlen!",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "kind": "single",
+          "question": "Was tust du, wenn bei $8{,}2 - 3{,}75$ die Nachkommastellen nicht gleich sind?",
+          "answers": [
+            {
+              "text": "Ich subtrahiere trotzdem, das Komma kommt später.",
+              "correct": false
+            },
+            {
+              "text": "Ich fülle mit Nullen auf: $8{,}20 - 3{,}75$.",
+              "correct": true
+            },
+            {
+              "text": "Ich vertausche die Zahlen – Subtrax wird es nicht merken.",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "codeFragment": "S1",
+      "hints": [
+        "Das Komma ist der Schlüssel zum Zahlenschloss.",
+        "Nullen helfen, die Stellen anzugleichen."
+      ]
+    },
+    {
+      "id": "sub-mc1",
+      "type": "task",
+      "title": "Kampf gegen Subtrax (1)",
+      "text": "Subtrax wirft dir Zahlen zu, die er gestohlen hat. Wähle die richtige Differenz, um sie zurückzuholen.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "S2",
+        "question": "$$5{,}8 - 2{,}3 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$3{,}5$$",
+            "correct": true
+          },
+          {
+            "text": "$$3{,}8$$",
+            "correct": false
+          },
+          {
+            "text": "$$4{,}5$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "$8 - 3 = 5$ und $5 - 2 = 3$."
+      ]
+    },
+    {
+      "id": "sub-mc2",
+      "type": "task",
+      "title": "Kampf gegen Subtrax (2)",
+      "text": "Ein weiterer Angriff! Wähle die richtige Differenz, um den Drachen zu verwirren.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "S3",
+        "question": "$$12{,}5 - 4{,}7 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$7{,}8$$",
+            "correct": true
+          },
+          {
+            "text": "$$8{,}2$$",
+            "correct": false
+          },
+          {
+            "text": "$$8{,}8$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "$5 - 7$ → borge: $15 - 7 = 8$ → 1 als Übertrag."
+      ]
+    },
+    {
+      "id": "sub-input1",
+      "type": "task",
+      "title": "Flucht vor Subtrax",
+      "text": "Subtrax verfolgt dich durch einen Irrgarten. Gib die richtigen Differenzen ein, um die geheimen Türen zu öffnen.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "$$9{,}7 - 3{,}2 = \\,?$$",
+          "accept": ["6,5", "6.5"]
+        },
+        {
+          "kind": "input",
+          "question": "$$15{,}4 - 8{,}6 = \\,?$$",
+          "accept": ["6,8", "6.8"]
+        },
+        {
+          "kind": "input",
+          "question": "$$22{,}5 - 13{,}7 = \\,?$$",
+          "accept": ["8,8", "8.8"]
+        }
+      ],
+      "codeFragment": "S4",
+      "hints": [
+        "Subtrahiere zuerst die Nachkommastellen.",
+        "Bei $15{,}4 - 8{,}6$: $4 - 6$ → borge."
+      ]
+    },
+    {
+      "id": "sub-endboss",
+      "type": "task",
+      "title": "👹 Endboss Subtrax – der große Dieb",
+      "text": "Subtrax hat die Dorfvorräte gestohlen! Löse die Textaufgaben, um sie zurückzuholen.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "Ein Wassertank fasst $50$ Liter. Es sind noch $32{,}5$ Liter drin. Wie viele Liter fehlen bis zur vollen Füllung?",
+          "accept": ["17,5", "17.5"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein Balken ist $3{,}75$ m lang. Du sägst $1{,}80$ m ab. Wie lang ist das Reststück?",
+          "accept": ["1,95", "1.95"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein Kuchen wiegt $1{,}2$ kg. Die Dorfbewohner essen $0{,}75$ kg. Wie viel kg bleiben übrig?",
+          "accept": ["0,45", "0.45"]
+        }
+      ],
+      "codeFragment": "S5",
+      "hints": [
+        "Stelle die Rechnung auf: $50 - 32{,}5$.",
+        "Subtrahiere die Gewichte – denk an die Kommas."
+      ],
+      "extraExample": "Wenn $2{,}5$ kg Kuchen da sind und $1{,}25$ kg gegessen werden, bleiben $1{,}25$ kg."
+    },
+    {
+      "id": "sub-tuer",
+      "type": "door",
+      "title": "🚪 Tor der Subtraktion",
+      "text": "Subtrax ist besiegt! Gib den Code (S1S2S3S4S5) ein und öffne das Tor.",
+      "task": {
+        "kind": "single",
+        "question": "Dein Geldbeutel hat $250{,}00$ Goldmünzen. Du kaufst eine Rüstung für $197{,}50$ Gold. Wie viele Goldmünzen bleiben dir?",
+        "answers": [
+          {
+            "text": "$$52{,}50$$",
+            "correct": true
+          },
+          {
+            "text": "$$53{,}50$$",
+            "correct": false
+          },
+          {
+            "text": "$$47{,}50$$",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Du hast $150$ Gold, gibst $75{,}50$ aus. Wie viel bleibt?",
+          "answers": [
+            {
+              "text": "$$74{,}50$$",
+              "correct": true
+            },
+            {
+              "text": "$$75{,}50$$",
+              "correct": false
+            },
+            {
+              "text": "$$76{,}50$$",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "$250{,}00 - 197{,}50$ – subtrahiere Cent und Euro."
+      ],
+      "onFailReview": ["sub-methode", "sub-input1"]
+    },
+    {
+      "id": "mul-einleitung",
+      "type": "explanation",
+      "title": "✖️ Raum des Multi-Drachen",
+      "text": "Multi ist ein Vielfraß – er vermehrt alles. Schau dir sein Video an, um seine Schwachstelle zu finden.",
+      "media": {
+        "kind": "video",
+        "src": "https://www.youtube.com/watch?v=2QfdWJMQpUU"
+      }
+    },
+    {
+      "id": "mul-methode",
+      "type": "example",
+      "title": "Die Axt der Multiplikation",
+      "text": "Multi schlägt zu wie eine Axt: Multipliziere die Zahlen, ohne auf das Komma zu achten. Dann zähle die Nachkommastellen beider Faktoren – das Ergebnis hat genauso viele.\n\n**Beispiel:**\n$$1{,}2 \\cdot 0{,}3 = 12 \\cdot 3 = 36 \\rightarrow 0{,}36$$\n(1+1=2 Nachkommastellen)",
+      "media": {
+        "kind": "image",
+        "src": "axe.jpg",
+        "alt": "Ein Drache mit einer Axt, der Zahlen vermehrt",
+        "height": 200
+      }
+    },
+    {
+      "id": "mul-verstaendnis",
+      "type": "task",
+      "title": "Verständnis: Multi's Geheimnis",
+      "text": "Multi stellt zwei Rätsel. Löse sie, um seinen ersten Splitter zu erhalten.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Bei der Multiplikation von Dezimalzahlen werden die Nachkommastellen addiert.",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "kind": "single",
+          "question": "Wie viele Nachkommastellen hat $0{,}5 \\cdot 0{,}5$?",
+          "answers": [
+            {
+              "text": "1",
+              "correct": false
+            },
+            {
+              "text": "2",
+              "correct": true
+            },
+            {
+              "text": "3",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "codeFragment": "M1",
+      "hints": [
+        "Zähle die Nachkommastellen der Faktoren.",
+        "$0{,}5$ hat eine, also $1+1=2$."
+      ]
+    },
+    {
+      "id": "mul-mc1",
+      "type": "task",
+      "title": "Kampf gegen Multi (1)",
+      "text": "Multi spuckt Zahlenklumpen. Wähle das richtige Produkt, um sie zu zerschlagen.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "M2",
+        "question": "$$2{,}5 \\cdot 4 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$10{,}0$$",
+            "correct": true
+          },
+          {
+            "text": "$$1{,}0$$",
+            "correct": false
+          },
+          {
+            "text": "$$100{,}0$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Rechne $25 \\cdot 4 = 100$ und setze das Komma (eine Nachkommastelle)."
+      ]
+    },
+    {
+      "id": "mul-mc2",
+      "type": "task",
+      "title": "Kampf gegen Multi (2)",
+      "text": "Ein weiterer Angriff – wähle das richtige Produkt.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "M3",
+        "question": "$$0{,}2 \\cdot 0{,}4 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$0{,}08$$",
+            "correct": true
+          },
+          {
+            "text": "$$0{,}8$$",
+            "correct": false
+          },
+          {
+            "text": "$$0{,}008$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "$2 \\cdot 4 = 8$ und zwei Nachkommastellen → $0{,}08$."
+      ]
+    },
+    {
+      "id": "mul-input1",
+      "type": "task",
+      "title": "Flucht vor Multi",
+      "text": "Multi jagt dich durch eine Höhle. Gib die richtigen Produkte ein, um die Falltüren zu aktivieren.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "$$3{,}2 \\cdot 5 = \\,?$$",
+          "accept": ["16", "16,0", "16.0"]
+        },
+        {
+          "kind": "input",
+          "question": "$$0{,}7 \\cdot 0{,}3 = \\,?$$",
+          "accept": ["0,21", "0.21"]
+        },
+        {
+          "kind": "input",
+          "question": "$$2{,}5 \\cdot 0{,}4 = \\,?$$",
+          "accept": ["1", "1,0", "1.0"]
+        }
+      ],
+      "codeFragment": "M4",
+      "hints": [
+        "Bei $3{,}2 \\cdot 5$: $32 \\cdot 5 = 160$ → eine Nachkommastelle → $16{,}0$."
+      ]
+    },
+    {
+      "id": "mul-endboss",
+      "type": "task",
+      "title": "👹 Endboss Multi – der Vielfraß",
+      "text": "Multi hat die Kornkammer geplündert. Löse die Textaufgaben, um die Ernte zu retten.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "Ein Liter Trank kostet $1{,}65$ Gold. Wie viel kosten $4$ Liter?",
+          "accept": ["6,6", "6.6", "6,60", "6.60"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein magisches Quadrat hat eine Seitenlänge von $0{,}8$ m. Welchen Flächeninhalt hat es?",
+          "accept": ["0,64", "0.64"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein Brotlaib wiegt $2{,}5$ kg. Wie viel wiegen $3{,}5$ Laibe?",
+          "accept": ["8,75", "8.75"]
+        }
+      ],
+      "codeFragment": "M5",
+      "hints": [
+        "$1{,}65 \\cdot 4 = 6{,}60$ Gold.",
+        "$0{,}8 \\cdot 0{,}8 = 0{,}64$."
+      ],
+      "extraExample": "Wenn 1 Liter $1{,}20$ kostet, kosten 5 Liter $6{,}00$."
+    },
+    {
+      "id": "mul-tuer",
+      "type": "door",
+      "title": "🚪 Tor der Multiplikation",
+      "text": "Multi ist besiegt! Gib den Code (M1M2M3M4M5) ein und öffne das Tor.",
+      "task": {
+        "kind": "single",
+        "question": "Ein rechteckiger Garten ist $3{,}2$ m lang und $2{,}5$ m breit. Wie groß ist seine Fläche?",
+        "answers": [
+          {
+            "text": "$$8{,}0$$ m²",
+            "correct": true
+          },
+          {
+            "text": "$$8{,}2$$ m²",
+            "correct": false
+          },
+          {
+            "text": "$$7{,}5$$ m²",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Ein Beet ist $1{,}5$ m lang und $0{,}4$ m breit. Wie groß ist es?",
+          "answers": [
+            {
+              "text": "$$0{,}6$$ m²",
+              "correct": true
+            },
+            {
+              "text": "$$0{,}8$$ m²",
+              "correct": false
+            },
+            {
+              "text": "$$0{,}2$$ m²",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Fläche = Länge $\\cdot$ Breite",
+        "$3{,}2 \\cdot 2{,}5 = 8{,}0$."
+      ],
+      "onFailReview": ["mul-methode", "mul-input1"]
+    },
+    {
+      "id": "div-einleitung",
+      "type": "explanation",
+      "title": "➗ Raum des Divi-Drachen",
+      "text": "Divi teilt alles in gleiche Teile – manchmal zu viel! Schau dir sein Video an.",
+      "media": {
+        "kind": "video",
+        "src": "https://www.youtube.com/watch?v=CjcwkeOPuOQ"
+      }
+    },
+    {
+      "id": "div-methode",
+      "type": "example",
+      "title": "Der Hammer der Division",
+      "text": "Divi zerschmettert Zahlen in Stücke. Wenn der Divisor ganz ist, teile wie gewohnt und setze das Komma, wenn du die erste Nachkommastelle herunterholst. Wenn der Divisor eine Dezimalzahl ist, verschiebe das Komma bei beiden so weit, dass der Divisor ganz wird.\n\n**Beispiele:**\n$4{,}8 : 4 = 1{,}2$  und  $3{,}6 : 0{,}3 \\rightarrow 36 : 3 = 12$",
+      "media": {
+        "kind": "image",
+        "src": "hammer.jpg",
+        "alt": "Ein Drache mit einem Hammer, der Zahlen zertrümmert",
+        "height": 200
+      }
+    },
+    {
+      "id": "div-verstaendnis",
+      "type": "task",
+      "title": "Verständnis: Divi's Regel",
+      "text": "Divi stellt zwei Prüfungen. Bestehe sie, um seinen ersten Splitter zu erhalten.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Wenn der Divisor eine Dezimalzahl ist, verschiebt man das Komma, bis der Divisor ganz wird.",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "kind": "single",
+          "question": "Was ist $2{,}4 : 0{,}4$?",
+          "answers": [
+            {
+              "text": "$$6$$",
+              "correct": true
+            },
+            {
+              "text": "$$0{,}6$$",
+              "correct": false
+            },
+            {
+              "text": "$$60$$",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "codeFragment": "D1",
+      "hints": [
+        "$2{,}4 : 0{,}4$ → Komma verschieben → $24 : 4 = 6$."
+      ]
+    },
+    {
+      "id": "div-mc1",
+      "type": "task",
+      "title": "Kampf gegen Divi (1)",
+      "text": "Divi wirft dir Zahlenbrocken zu. Wähle das richtige Ergebnis, um sie zu zerschmettern.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "D2",
+        "question": "$$6{,}4 : 8 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$0{,}8$$",
+            "correct": true
+          },
+          {
+            "text": "$$8{,}0$$",
+            "correct": false
+          },
+          {
+            "text": "$$0{,}08$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Teile $64$ durch $8$ und setze das Komma."
+      ]
+    },
+    {
+      "id": "div-mc2",
+      "type": "task",
+      "title": "Kampf gegen Divi (2)",
+      "text": "Ein weiterer Schlag – wähle das richtige Ergebnis.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "D3",
+        "question": "$$1{,}2 : 0{,}3 = \\,?$$",
+        "answers": [
+          {
+            "text": "$$4$$",
+            "correct": true
+          },
+          {
+            "text": "$$0{,}4$$",
+            "correct": false
+          },
+          {
+            "text": "$$40$$",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Verschiebe das Komma: $12 : 3 = 4$."
+      ]
+    },
+    {
+      "id": "div-input1",
+      "type": "task",
+      "title": "Flucht vor Divi",
+      "text": "Divi verfolgt dich durch einen unterirdischen Fluss. Gib die richtigen Quotienten ein, um die Brücken zu aktivieren.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "$$8{,}4 : 7 = \\,?$$",
+          "accept": ["1,2", "1.2"]
+        },
+        {
+          "kind": "input",
+          "question": "$$0{,}9 : 0{,}3 = \\,?$$",
+          "accept": ["3", "3,0", "3.0"]
+        },
+        {
+          "kind": "input",
+          "question": "$$15{,}5 : 5 = \\,?$$",
+          "accept": ["3,1", "3.1"]
+        }
+      ],
+      "codeFragment": "D4",
+      "hints": [
+        "$8{,}4 : 7 = 1{,}2$.",
+        "$0{,}9 : 0{,}3 \\rightarrow 9 : 3 = 3$."
+      ]
+    },
+    {
+      "id": "div-endboss",
+      "type": "task",
+      "title": "👹 Endboss Divi – der Zerteiler",
+      "text": "Divi hat die königliche Schatzkammer in Teile zerlegt. Löse die Textaufgaben, um alles wieder zusammenzufügen.",
+      "tasks": [
+        {
+          "kind": "input",
+          "question": "Ein Kuchen von $0{,}75$ kg wird auf $3$ gleiche Teile verteilt. Wie schwer ist jedes Teil?",
+          "accept": ["0,25", "0.25"]
+        },
+        {
+          "kind": "input",
+          "question": "$5{,}50$ Gold werden unter $2$ Helden aufgeteilt. Wie viel bekommt jeder?",
+          "accept": ["2,75", "2.75"]
+        },
+        {
+          "kind": "input",
+          "question": "Ein Läufer legt $10{,}5$ Meilen in $3{,}5$ Stunden zurück. Wie viele Meilen pro Stunde sind das?",
+          "accept": ["3", "3,0", "3.0"]
+        }
+      ],
+      "codeFragment": "D5",
+      "hints": [
+        "$0{,}75 : 3 = 0{,}25$ kg.",
+        "$5{,}50 : 2 = 2{,}75$ Gold."
+      ],
+      "extraExample": "Wenn $1{,}2$ kg in $4$ Teile geteilt werden, ist jedes $0{,}3$ kg."
+    },
+    {
+      "id": "div-tuer",
+      "type": "door",
+      "title": "🚪 Tor der Division",
+      "text": "Divi ist besiegt! Gib den Code (D1D2D3D4D5) ein, um das letzte Tor zu öffnen.",
+      "task": {
+        "kind": "single",
+        "question": "Ein königliches Grundstück ist $12{,}8$ m lang und hat eine Fläche von $102{,}4$ m². Wie breit ist es?",
+        "answers": [
+          {
+            "text": "$$8{,}0$$ m",
+            "correct": true
+          },
+          {
+            "text": "$$9{,}0$$ m",
+            "correct": false
+          },
+          {
+            "text": "$$7{,}0$$ m",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Ein kleiner Garten ist $6{,}4$ m lang und $25{,}6$ m² groß. Wie breit ist er?",
+          "answers": [
+            {
+              "text": "$$4{,}0$$ m",
+              "correct": true
+            },
+            {
+              "text": "$$5{,}0$$ m",
+              "correct": false
+            },
+            {
+              "text": "$$3{,}0$$ m",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Breite = Fläche : Länge",
+        "$102{,}4 : 12{,}8 \\rightarrow 1024 : 128 = 8$."
+      ],
+      "onFailReview": ["div-methode", "div-input1"]
+    },
+    {
+      "id": "finale",
+      "type": "explanation",
+      "title": "🏆 Der Schatz der Zahlen",
+      "text": "Du hast alle vier Drachen besiegt und die Kristallsplitter zurückgebracht! Das Königreich Rechenland ist gerettet.\n\n**Dein Abschluss-Code:** `DEZIMAL-6`\n\nZeige ihn dem König, um deine Belohnung zu erhalten – du bist der größte Zahlen-Held aller Zeiten!\n\nDu beherrschst jetzt Addition, Subtraktion, Multiplikation und Division von Dezimalzahlen – eine mächtige Waffe für alle Abenteuer."
+    }
+  ]
+}

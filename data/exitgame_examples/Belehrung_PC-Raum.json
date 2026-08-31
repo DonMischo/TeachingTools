@@ -1,0 +1,359 @@
+{
+  "_ai_instructions": "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der Exit-Code am Ende. Ein Spiel hat meist 8-15 Slides und muss nicht alle Aufgabenarten nutzen. --- SLIDES --- 'explanation' und 'example': nur lesen, Weiter-Button. 'task': muss gelöst werden ('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). 'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; 'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen lassen — was fehlt, fällt spätestens an der Tür auf. --- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des Abschnitts davor (seit der vorigen Tür) in Lesereihenfolge; an der Tür tippt der Schüler ihn ein, geprüft wird serverseitig (Groß/Klein, Leerzeichen und Bindestriche egal). Abschreiben nützt nichts: die Tür geht nur auf, wenn der Schüler alle Schnipsel des Abschnitts selbst eingesammelt hat — sonst zeigt sie genau die offenen Aufgaben als Rücksprung-Links. Sinnvoll sind 3-6 Fragmente pro Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft zeigen. --- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' (accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' (Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. --- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, 0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode 'spot': Items stehen bei 'value', die falsch platzierten tragen ihren wahren Wert in 'actual' und sollen markiert werden (mindestens eines). Jahre v. Chr. sind negativ. 'exact_date' ('JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', nur n. Chr., Jahr muss zu 'value' passen) ist nötig, sobald zwei Items im selben Jahr liegen; bei 'spot' steht das wahre Datum in 'exact_date_actual'. --- HILFEN --- 'hints': geordnete Liste pro Slide (2-4), vom sanften Schubser bis fast zur Lösung; der Hinweis-Button erscheint erst nach einem Fehlversuch. 'easierAlternative' (Aufbau wie 'task'): leichtere Fassung, wird als Ja/Nein-Angebot vorgeschlagen, sobald der Schüler 2x falsch lag und seine Hinweise verbraucht hat. 'variants': gleichwertige Fassungen derselben Aufgabe (nur die abweichenden Felder); jeder Schüler bekommt fest eine zugelost — Abschreibschutz, lohnt sich bei wichtigen Aufgaben. 'extraExample' (Text pro Slide): ein zweites durchgerechnetes Beispiel für Schüler, deren Stufe es vorsieht. --- DDA --- dda.levels ist die Differenzierungsleiter dieses Spiels: mindestens 3, empfohlen 5 Stufen von wenig zu viel Unterstützung. Das Spiel stuft jeden Schüler laufend nach Antwortzeit, Fehlern und Hinweisnutzung in eine Stufe ein. Jede Stufe steuert: 'hintCount' = wie viele hints freigegeben werden, 'timeLimitSeconds' = sichtbare Richtzeit pro Aufgabe (kein Abbruch — läuft sie ab, wird ein Hinweis vorzeitig frei), 'extraExample' = ob das 'extraExample' der Slide nach einem Fehlversuch eingeblendet wird, 'offerEasier' = ob die easierAlternative überhaupt angeboten wird. Ohne dda-Feld: feste 2 Hinweise pro Slide, keine Richtzeit. --- MEDIEN --- media, eine pro Slide: 'image' (Dateiname aus dem assets/-Ordner des ZIPs oder Bild-URL), 'video' (YouTube-/Vimeo-Link), 'html' (URL einer einbettbaren Simulation). 'height' in px begrenzt die Höhe (bei Bildern die maximale Höhe — für Piktogramme z.B. 180, sonst füllen sie die ganze Spalte). --- STYLE --- theme: 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk'; font: CSS-Schriftfamilie; customVars: einzelne Farben ('--accent', '--bg', '--surface', '--text'), die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. --- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für einzelne Symbole, Dezimalkomma als $3{,}14$. --- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. --- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es nicht mehr). onFailReview nur auf vorhandene Slide-IDs.",
+  "id": "pc-raum-regeln-ironisch",
+  "title": "Operation: PC-Raum-Überleben – Die Chronik der gescheiterten Versuche",
+  "description": "Ein ironisches Exitgame über die (gebrochenen) Regeln im Fachraum PC-Raum. Finde heraus, was du besser nicht tun solltest – und sammle die Scherben ein.",
+  "subject": "medienkompetenz",
+  "grade": "5-10",
+  "tags": [
+    "pc-raum",
+    "regeln",
+    "ironisch",
+    "verhalten",
+    "hardware",
+    "fails"
+  ],
+  "style": {
+      "theme": "ege",
+      "font": "'Courier New', monospace",
+      "customVars": {
+        "--accent": "#C08542",
+        "--bg": "#2A3B5C",
+        "--surface": "#2A3B5C",
+        "--text": "#E8E0C2"
+      }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "selbstständig",
+        "hintCount": 0,
+        "timeLimitSeconds": 45,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "leichte Unterstützung",
+        "hintCount": 1,
+        "timeLimitSeconds": 70,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "mittlere Unterstützung",
+        "hintCount": 2,
+        "timeLimitSeconds": 100,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "starke Unterstützung",
+        "hintCount": 3,
+        "timeLimitSeconds": 150,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "maximale Unterstützung",
+        "hintCount": 99,
+        "timeLimitSeconds": 240,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "Geschafft! Du hast den PC-Raum überlebt – und deinen Verstand hoffentlich auch. Zeige diesen Code der Lehrkraft vor dem Verlassen des Raumes vor.",
+    "code": "KABEL-HELD"
+  },
+  "slides": [
+    {
+      "id": "intro-fail",
+      "type": "explanation",
+      "title": "Willkommen im Raum der verlorenen Tasten",
+      "text": "Dieser PC-Raum hat schon viel gesehen: zerkleckerte Energy-Drinks, Mäuse, die als Wurfgeschosse dienten, und Tastaturen, die wie Klaviere behandelt wurden. Deine Mission: Zeige, dass du es besser weißt – oder scheitere mit Stil. \n\n**Die Grundregeln (die eigentlich jeder kennt, aber...):**\n- 🚫 Kein Essen im Raum. Krümel sind der Tod für Tastaturen.\n- 🚫 Getränke? NUR VOR DEM RAUM. Ein Schluck Wasser und der PC ist Matsch.\n- 🖥️ Behutsam mit der Hardware: Mäuse sind keine Lasso-Seile, Tasten keine Kaugummis, Kabel keine Turnseile.\n- 🛡️ Nichts Spitzes gegen den Monitor. Der mag keine Speere.\n\nLies die Beispiele – sie sind die Chronik der gescheiterten Versuche anderer.",
+      "media": {
+        "kind": "image",
+        "src": "fail-pc-room.jpg",
+        "alt": "Ein wildes Durcheinander aus Kabeln und eine Tastatur ohne Leertaste.",
+        "height": 200
+      }
+    },
+    {
+      "id": "beispiel-getraenk",
+      "type": "example",
+      "title": "Das Opfer der Flüssigkeit",
+      "text": "Max dachte: 'Ein Schluck Cola schadet doch nicht.' Er stellte die Dose neben die Tastatur. Dann klingelte das Telefon. Er drehte sich um und – *PLATSCH*. Die Cola ergoss sich über das halbe Keyboard. Die Leertaste klebte für immer, und der PC roch nach Karamell. Die IT-Abteilung weinte.\n\n**Moral:** Getränke haben im PC-Raum nichts zu suchen. Punkt.",
+      "media": {
+        "kind": "image",
+        "src": "cola-keyboard.jpg",
+        "alt": "Eine umgestoßene Cola-Dose auf einer Tastatur.",
+        "height": 180
+      }
+    },
+    {
+      "id": "beispiel-maus-lasso",
+      "type": "example",
+      "title": "Die Maus – kein Lassowerfer",
+      "text": "Lisa langweilte sich und ließ ihre Maus am Kabel kreisen wie einen Bolas. 'Schau, ich bin ein Cowboy!', rief sie. Das Kabel riss mit einem lauten Knall. Die Maus flog gegen den Monitor und hinterließ einen Kratzer. \n\n**Moral:** Mäuse sind zum Klicken da, nicht für den Zirkus.",
+      "media": {
+        "kind": "image",
+        "src": "mouse-lasso.jpg",
+        "alt": "Eine Maus, die an ihrem Kabel durch die Luft geschwungen wird.",
+        "height": 180
+      }
+    },
+    {
+      "id": "einfachauswahl-essen",
+      "type": "task",
+      "title": "Aufgabe: Katastrophe mit Krümeln",
+      "text": "Was ist das Problem, wenn du dein belegtes Brötchen über der Tastatur isst?",
+      "extraExample": "Stell dir vor: Ein Krümel fällt zwischen die Tasten und blockiert die Enter-Taste. Deine nächste Eingabe ist für immer verloren.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "KR",
+        "question": "Warum ist Essen im PC-Raum eine schlechte Idee?",
+        "answers": [
+          {
+            "text": "Krümel und Fett können die Tastatur beschädigen und Kriechtiere anlocken.",
+            "correct": true
+          },
+          {
+            "text": "Das Essen könnte auf den Boden fallen und die Putzfrau ärgern.",
+            "correct": false
+          },
+          {
+            "text": "Die Gerüche stören die Lüfter der PCs.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Denk an die Lücken zwischen den Tasten.",
+        "Was passiert mit klebrigen Fingern auf der Maus?"
+      ]
+    },
+    {
+      "id": "mehrfachauswahl-getraenk",
+      "type": "task",
+      "title": "Aufgabe: Das Desaster der offenen Flasche",
+      "text": "Wähle ALLE wahren Aussagen über Getränke im PC-Raum.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "FL",
+        "question": "Welche dieser Szenarien können durch ein Getränk im PC-Raum eintreten?",
+        "answers": [
+          {
+            "text": "Das Getränk kann über die Tastatur schwappen und einen Kurzschluss verursachen.",
+            "correct": true
+          },
+          {
+            "text": "Die Süße des Getränks kann Ameisen anziehen.",
+            "correct": true
+          },
+          {
+            "text": "Ein Getränk verbessert die Konzentration der Schüler.",
+            "correct": false
+          },
+          {
+            "text": "Der PC darf nie nass werden, auch nicht von außen.",
+            "correct": true
+          }
+        ]
+      },
+      "hints": [
+        "Was passiert, wenn Flüssigkeit in elektronische Geräte gelangt?",
+        "Denk an die Folgen für die Hardware."
+      ]
+    },
+    {
+      "id": "true-false-kabel",
+      "type": "task",
+      "title": "Wahr oder Falsch? Kabelgeschichten",
+      "text": "Entscheide bei jeder Aussage, ob sie für einen PC-Raum gilt.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "codeFragment": "KA",
+          "question": "Es ist in Ordnung, an einem Kabel zu ziehen, um den Stecker aus der Buchse zu lösen – das ist schneller.",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": false
+            },
+            {
+              "text": "Falsch",
+              "correct": true
+            }
+          ]
+        },
+        {
+          "kind": "true_false",
+          "codeFragment": "BE",
+          "question": "Kabel auf dem Boden sind eine Stolperfalle und sollten ordentlich verlegt oder gebündelt werden.",
+          "answers": [
+            {
+              "text": "Wahr",
+              "correct": true
+            },
+            {
+              "text": "Falsch",
+              "correct": false
+            }
+          ]
+        }
+      ],
+      "hints": [
+        "Wie würdest du wollen, dass deine eigenen Kabel behandelt werden?",
+        "An den Stecker fassen, nicht am Kabel ziehen."
+      ]
+    },
+    {
+      "id": "input-monitor",
+      "type": "task",
+      "title": "Eingabe: Die Spitze des Problems",
+      "text": "Ein Kugelschreiber oder eine Schere sollten niemals in die Nähe eines Monitors kommen. Warum?",
+      "task": {
+        "kind": "input",
+        "codeFragment": "MO",
+        "question": "Nenne einen schwerwiegenden Grund, warum spitze Gegenstände nie gegen den Monitor gedrückt werden sollten (ein Wort genügt).",
+        "accept": [
+          "kratzer",
+          "kratzen",
+          "bildschirmkratzer",
+          "displaybruch",
+          "bruch",
+          "schaden",
+          "zertrümmern",
+          "kaputt"
+        ]
+      },
+      "hints": [
+        "Was passiert mit der Oberfläche eines Displays, wenn etwas Hartes und Spitzes dagegen drückt?",
+        "Die Folie oder das Glas kann brechen oder zerkratzt werden."
+      ]
+    },
+    {
+      "id": "timeline-fails",
+      "type": "task",
+      "title": "Zeitstrahl der PC-Raum-Fails",
+      "text": "Bringe diese berüchtigten Vorfälle in die richtige zeitliche Reihenfolge (nur die Reihenfolge zählt – mach dir keine Sorgen um genaue Jahre).",
+      "task": {
+        "kind": "timeline",
+        "codeFragment": "ZE",
+        "timeline": {
+          "mode": "sort",
+          "scoring": "order",
+          "axis": {
+            "kind": "year",
+            "min": 0,
+            "max": 4
+          },
+          "items": [
+            {
+              "id": "mauswurf",
+              "label": "Maus wird als Lasso missbraucht und fliegt gegen die Wand",
+              "value": 1
+            },
+            {
+              "id": "tastaturkaugummi",
+              "label": "Eine Tastatur wird mit Kaugummi verklebt – Tasten lassen sich nicht mehr drücken",
+              "value": 2
+            },
+            {
+              "id": "colakurzschluss",
+              "label": "Eine Cola-Dose läuft aus und der PC stirbt einen qualvollen Tod",
+              "value": 3
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Der Kaugummi-Vorfall war der erste große Skandal.",
+        "Der Mauswurf war ein klassischer Fall von 'Ich langweile mich'.",
+        "Die Cola-Katastrophe geschah erst vor kurzem."
+      ]
+    },
+    {
+      "id": "mehrfachauswahl-tastatur",
+      "type": "task",
+      "title": "Aufgabe: Die Tastatur des Grauens",
+      "text": "Markiere alle Handlungen, die eine Tastatur für immer unbrauchbar machen.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "TA",
+        "question": "Was sollte man mit einer Tastatur NIEMALS tun?",
+        "answers": [
+          {
+            "text": "Die Tasten mit einem Schraubenzieher heraushebeln.",
+            "correct": true
+          },
+          {
+            "text": "Sie von Krümeln und Staub befreien (z.B. mit Druckluft).",
+            "correct": false
+          },
+          {
+            "text": "Die Tasten als kleine Bauklötze benutzen.",
+            "correct": true
+          },
+          {
+            "text": "Darauf trommeln, als wäre es ein Schlagzeug.",
+            "correct": true
+          }
+        ]
+      },
+      "hints": [
+        "Wie leicht gehen Tasten heutzutage ab?",
+        "Würdest du deine eigene Tastatur wie einen Baseballschläger behandeln?"
+      ]
+    },
+    {
+      "id": "tuer-code",
+      "type": "door",
+      "title": "Die letzte Tür – oder: Der Code deines Überlebens",
+      "text": "Du hast es fast geschafft. Um den PC-Raum endgültig zu beherrschen, musst du den finalen Code eingeben. Dieser setzt sich aus allen eingesammelten Fragmenten zusammen: KR-FL-KA-BE-MO-ZE-TA.\n\nAber Achtung: Du darfst diese Tür nur passieren, wenn du die letzte Aufgabe richtig löst – sonst wirst du zurückgeschickt, um dein Wissen aufzufrischen.",
+      "task": {
+        "kind": "single",
+        "question": "Ein Schüler schwingt seine Maus am Kabel im Kreis herum. Was sagst du ihm?",
+        "answers": [
+          {
+            "text": "'Das Kabel reißt gleich und die Maus fliegt durch den Raum!'",
+            "correct": true
+          },
+          {
+            "text": "'Cool, mach weiter!'",
+            "correct": false
+          },
+          {
+            "text": "'Kannst du sie mir mal leihen? Ich will auch üben.'",
+            "correct": false
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Was ist die beste Art, eine Maus zu benutzen?",
+          "answers": [
+            {
+              "text": "Ruhig auf dem Mauspad bewegen.",
+              "correct": true
+            },
+            {
+              "text": "Wie ein Jo-Jo am Kabel auf und ab hüpfen lassen.",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Was ist die wahrscheinlichste Konsequenz dieses Verhaltens?",
+        "Denk an die Sicherheit der anderen und der Hardware."
+      ],
+      "onFailReview": [
+        "beispiel-maus-lasso",
+        "einfachauswahl-essen",
+        "mehrfachauswahl-getraenk"
+      ]
+    }
+  ]
+}
