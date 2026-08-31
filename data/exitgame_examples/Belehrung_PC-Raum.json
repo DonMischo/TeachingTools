@@ -254,12 +254,12 @@
             {
               "id": "mauswurf",
               "label": "Maus wird als Lasso missbraucht und fliegt gegen die Wand",
-              "value": 1
+              "value": 2
             },
             {
               "id": "tastaturkaugummi",
               "label": "Eine Tastatur wird mit Kaugummi verklebt – Tasten lassen sich nicht mehr drücken",
-              "value": 2
+              "value": 1
             },
             {
               "id": "colakurzschluss",
