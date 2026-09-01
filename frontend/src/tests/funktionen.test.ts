@@ -8,7 +8,9 @@
 import { describe, it, expect } from "vitest";
 import {
   TEMPLATES, evalAt, fmt, fmtPi, formatNode, hasX, parseFunction, segments,
-  substitutionSteps, tableRows, xAtPixel, type Node,
+  UNIT_GRID_MAX, axisStep, niceStep, piAxisStep, substitutionSteps, tableRows,
+  panViewport, pxToUnits, squareViewport, substitutedTerm, xAtPixel, zoomViewport,
+  type Node,
 } from "@/lib/funktionen";
 
 const p = (src: string): Node => {
@@ -287,5 +289,178 @@ describe("Bereich der Vorlagen", () => {
       // Am rechten Rand muss die Wurzel definiert sein, sonst zeigt sie nichts.
       expect(evalAt(node.node, inst.to)).not.toBeNull();
     }
+  });
+});
+
+describe("Achsenteilung", () => {
+  it("nimmt Einer-Schritte, solange das Raster lesbar bleibt", () => {
+    expect(axisStep(6, true)).toBe(1);
+    expect(axisStep(20, true)).toBe(1);
+    expect(axisStep(UNIT_GRID_MAX, true)).toBe(1);
+  });
+
+  it("weicht bei sehr weiten Bereichen auf runde Schritte aus", () => {
+    expect(axisStep(100, true)).toBeGreaterThan(1);
+    expect(axisStep(1000, true)).toBe(100);
+  });
+
+  it("lässt Winkelfunktionen bei der runden Teilung", () => {
+    expect(axisStep(6, false)).toBe(niceStep(6));
+  });
+
+  it("teilt die x-Achse im π-Modus in Vielfachen von π", () => {
+    expect(piAxisStep(2 * Math.PI) / Math.PI).toBeCloseTo(0.25, 6);
+    expect(piAxisStep(20 * Math.PI) / Math.PI).toBeCloseTo(2, 6);
+  });
+});
+
+describe("Zoomen", () => {
+  const v = { x0: -3, x1: 3, y0: -2, y1: 4 };
+
+  it("behält die Mitte bei", () => {
+    const z = zoomViewport(v, 0.5, 0.5);
+    expect((z.x0 + z.x1) / 2).toBeCloseTo(0, 9);
+    expect((z.y0 + z.y1) / 2).toBeCloseTo(1, 9);
+  });
+
+  it("zoomt hinein und wieder heraus", () => {
+    const rein = zoomViewport(v, 0.5, 0.5);
+    expect(rein.x1 - rein.x0).toBeCloseTo(3, 9);
+    const raus = zoomViewport(rein, 2, 2);
+    expect(raus.x1 - raus.x0).toBeCloseTo(6, 9);
+    expect(raus.y1 - raus.y0).toBeCloseTo(6, 9);
+  });
+
+  it("skaliert die Achsen unabhängig voneinander", () => {
+    const z = zoomViewport(v, 2, 1);
+    expect(z.x1 - z.x0).toBeCloseTo(12, 9);
+    expect(z.y1 - z.y0).toBeCloseTo(6, 9);   // y unangetastet
+  });
+
+  it("entartet nicht, egal wie oft man zoomt", () => {
+    let z = v;
+    for (let i = 0; i < 60; i++) z = zoomViewport(z, 0.5, 0.5);
+    expect(z.x1).toBeGreaterThan(z.x0);
+    expect(Number.isFinite(z.x0) && Number.isFinite(z.y1)).toBe(true);
+    let w = v;
+    for (let i = 0; i < 60; i++) w = zoomViewport(w, 2, 2);
+    expect(Number.isFinite(w.x0) && Number.isFinite(w.y1)).toBe(true);
+    expect(w.x1 - w.x0).toBeLessThanOrEqual(2e6 + 1);
+  });
+});
+
+describe("Quadratisches Raster", () => {
+  const W = 572, H = 392;   // Zeichenfläche ohne Ränder
+
+  it("macht die Maßstäbe beider Achsen gleich", () => {
+    const q = squareViewport({ x0: -3, x1: 3, y0: -8, y1: 10 }, W, H);
+    expect((q.x1 - q.x0) / W).toBeCloseTo((q.y1 - q.y0) / H, 9);
+  });
+
+  it("dehnt nur — was drin war, bleibt drin", () => {
+    const v = { x0: -3, x1: 3, y0: -8, y1: 10 };
+    const q = squareViewport(v, W, H);
+    expect(q.x0).toBeLessThanOrEqual(v.x0 + 1e-9);
+    expect(q.x1).toBeGreaterThanOrEqual(v.x1 - 1e-9);
+    expect(q.y0).toBeLessThanOrEqual(v.y0 + 1e-9);
+    expect(q.y1).toBeGreaterThanOrEqual(v.y1 - 1e-9);
+  });
+
+  it("behält die Mitte", () => {
+    const v = { x0: 1, x1: 7, y0: -2, y1: 4 };
+    const q = squareViewport(v, W, H);
+    expect((q.x0 + q.x1) / 2).toBeCloseTo(4, 9);
+    expect((q.y0 + q.y1) / 2).toBeCloseTo(1, 9);
+  });
+
+  it("bleibt quadratisch, wenn man beide Achsen zusammen zoomt", () => {
+    const q = squareViewport({ x0: -3, x1: 3, y0: -8, y1: 10 }, W, H);
+    const z = zoomViewport(q, 1.4, 1.4);
+    expect((z.x1 - z.x0) / W).toBeCloseTo((z.y1 - z.y0) / H, 9);
+  });
+
+  it("gibt die Quadrate auf, sobald eine Achse einzeln gedehnt wird", () => {
+    const q = squareViewport({ x0: -3, x1: 3, y0: -8, y1: 10 }, W, H);
+    const z = zoomViewport(q, 1.4, 1);
+    expect((z.x1 - z.x0) / W).not.toBeCloseTo((z.y1 - z.y0) / H, 6);
+  });
+
+  it("verträgt entartete Maße, statt NaN zu liefern", () => {
+    const v = { x0: -1, x1: 1, y0: -1, y1: 1 };
+    expect(squareViewport(v, 0, H)).toEqual(v);
+    expect(squareViewport(v, W, 0)).toEqual(v);
+  });
+});
+
+describe("Rechnung in der Wertetabelle", () => {
+  it("zeigt den Term mit eingesetztem x", () => {
+    const segs = substitutedTerm(p("2x + 3"), 5);
+    expect(segs.map(s => s.t).join("")).toBe("2 · 5 + 3");
+  });
+
+  it("markiert jedes eingesetzte x — es ist überall dieselbe Zahl", () => {
+    const segs = substitutedTerm(p("x^2 + x"), 4);
+    expect(segs.filter(s => s.kind === "mark").map(s => s.t)).toEqual(["4", "4"]);
+    // Nach dem Einsetzen steht kein x mehr da.
+    expect(segs.some(s => s.kind === "x")).toBe(false);
+  });
+
+  it("rechnet nichts aus — der Rechenweg gehört ins »?«", () => {
+    expect(substitutedTerm(p("(x - 2)^2 - 3"), 5).map(s => s.t).join("")).toBe("(5 − 2)^2 − 3");
+  });
+
+  it("zeigt auch die undefinierte Stelle, statt sie zu verschweigen", () => {
+    expect(substitutedTerm(p("1/x"), 0).map(s => s.t).join("")).toBe("1 / 0");
+  });
+});
+
+describe("Rechnung im π-Modus", () => {
+  it("schreibt den eingesetzten Wert so wie die x-Spalte", () => {
+    // Sonst stünde in der einen Spalte »−π« und daneben »-3,14«.
+    const segs = substitutedTerm(p("sin(x)"), -Math.PI, fmtPi);
+    expect(segs.map(s => s.t).join("")).toBe("sin(−π)");
+    expect(segs.filter(s => s.kind === "mark").map(s => s.t)).toEqual(["−π"]);
+  });
+
+  it("lässt gerechnete Zahlen davon unberührt", () => {
+    // Nur der eingesetzte Wert wird umgeschrieben, die 2 bleibt eine 2.
+    expect(substitutedTerm(p("2x"), Math.PI, fmtPi).map(s => s.t).join("")).toBe("2 · π");
+  });
+
+  it("bleibt ohne Formatierer bei der Dezimalzahl", () => {
+    expect(substitutedTerm(p("2x"), 1.5).map(s => s.t).join("")).toBe("2 · 1,5");
+  });
+});
+
+describe("Verschieben", () => {
+  const v = { x0: -3, x1: 3, y0: -2, y1: 4 };
+
+  it("verschiebt das Fenster, ohne den Maßstab zu ändern", () => {
+    const p2 = panViewport(v, 2, -1);
+    expect(p2).toEqual({ x0: -1, x1: 5, y0: -3, y1: 3 });
+    expect(p2.x1 - p2.x0).toBeCloseTo(v.x1 - v.x0, 9);
+    expect(p2.y1 - p2.y0).toBeCloseTo(v.y1 - v.y0, 9);
+  });
+
+  it("lässt quadratische Kästchen quadratisch", () => {
+    const q = squareViewport(v, 572, 392);
+    const p2 = panViewport(q, 5, 5);
+    expect((p2.x1 - p2.x0) / 572).toBeCloseTo((p2.y1 - p2.y0) / 392, 9);
+  });
+
+  it("hebt sich beim Zurückschieben wieder auf", () => {
+    expect(panViewport(panViewport(v, 3, 2), -3, -2)).toEqual(v);
+  });
+
+  it("rechnet Bildschirmpunkte in Einheiten um", () => {
+    // Bild 1144 breit für viewBox 640, Zeichenfläche 572, Spanne 6 Einheiten:
+    // ein halber viewBox-Punkt je Bildpunkt, also 6/572 Einheiten je halbem Punkt.
+    expect(pxToUnits(1144, 1144, 640, 572, 6)).toBeCloseTo((640 / 572) * 6, 9);
+    expect(pxToUnits(0, 1144, 640, 572, 6)).toBe(0);
+  });
+
+  it("gibt 0 statt NaN, wenn das Bild noch keine Größe hat", () => {
+    expect(pxToUnits(50, 0, 640, 572, 6)).toBe(0);
+    expect(pxToUnits(50, 1144, 640, 0, 6)).toBe(0);
   });
 });

@@ -277,7 +277,7 @@ export type Seg = { t: string; kind: "plain" | "x" | "mark" };
  * Term als farbige Stücke. `mark` ist der Knoten, der gerade hervorgehoben
  * werden soll (der eingesetzte Wert oder das Zwischenergebnis).
  */
-export function segments(n: Node, mark?: Node | null): Seg[] {
+export function segments(n: Node, mark?: Node | null, fmtSubst?: (v: number) => string): Seg[] {
   const out: Seg[] = [];
   const put = (t: string, kind: Seg["kind"] = "plain") => out.push({ t, kind });
 
@@ -285,7 +285,10 @@ export function segments(n: Node, mark?: Node | null): Seg[] {
     const marked = mark != null && node === mark;
     if (node.k === "x") { put("x", "x"); return; }
     if (node.k === "num") {
-      put(fmt(node.v), marked || node.subst ? "mark" : "plain");
+      // Eingesetzte Werte dürfen anders geschrieben werden als gerechnete —
+      // im π-Modus steht in der Tabelle »−π«, nicht »−3,14«.
+      const txt = node.subst && fmtSubst ? fmtSubst(node.v) : fmt(node.v);
+      put(txt, marked || node.subst ? "mark" : "plain");
       return;
     }
     if (node.k === "neg") {
@@ -321,7 +324,7 @@ export const formatNode = (n: Node): string => segments(n).map(s => s.t).join(""
 // ── Einsetzen, Schritt für Schritt ────────────────────────────────────────────
 
 /** x überall durch den Wert ersetzen; die eingesetzten Zahlen bleiben markiert. */
-function substituteX(n: Node, x: number): Node {
+export function substituteX(n: Node, x: number): Node {
   switch (n.k) {
     case "x": return { k: "num", v: x, subst: true };
     case "num": return n;
@@ -610,3 +613,103 @@ export const TEMPLATES: Template[] = [
 
 /** Erste Vorlage beim Öffnen — fest, damit der Einstieg immer gleich aussieht. */
 export const START: Instance = { src: "2x + 1", from: -3, to: 3, step: 1, pi: false };
+
+// ── Ausschnitt und Achsenteilung ──────────────────────────────────────────────
+
+export type Viewport = { x0: number; x1: number; y0: number; y1: number };
+
+/** Runde Schrittweite (1, 2, 5, 10 …) für eine Spannweite. */
+export function niceStep(span: number): number {
+  if (!(span > 0)) return 1;
+  const rough = span / 10;
+  const p = Math.pow(10, Math.floor(Math.log10(rough)));
+  for (const m of [1, 2, 5, 10]) if (rough <= m * p) return m * p;
+  return 10 * p;
+}
+
+/** Wie viele Linien ein 1er-Raster höchstens haben darf, bevor es zumatscht. */
+export const UNIT_GRID_MAX = 26;
+
+/**
+ * Achsenteilung. `unit` heißt: möglichst in Einer-Schritten, damit sich Kästchen
+ * zählen lassen — das ist bei den meisten Funktionen das Anschaulichste. Erst
+ * wenn dabei zu viele Linien herauskämen, wird auf 2, 5, 10 … ausgewichen.
+ * Winkelfunktionen rechnen dagegen in π und geben `unit = false` mit.
+ */
+export function axisStep(span: number, unit: boolean): number {
+  if (unit && span > 0 && span <= UNIT_GRID_MAX) return 1;
+  return niceStep(span);
+}
+
+/** Teilung der x-Achse im π-Modus: Vielfache von π, nicht von 1. */
+export function piAxisStep(span: number): number {
+  const m = [0.25, 0.5, 1, 2, 4].find(k => span / (k * Math.PI) <= 10) ?? 4;
+  return m * Math.PI;
+}
+
+/**
+ * Ausschnitt um seine Mitte herum skalieren — x und y unabhängig.
+ * Faktor < 1 heißt hineinzoomen (der gezeigte Bereich wird kleiner).
+ */
+export function zoomViewport(v: Viewport, fx: number, fy: number): Viewport {
+  const cx = (v.x0 + v.x1) / 2;
+  const cy = (v.y0 + v.y1) / 2;
+  // Grenzen, damit der Ausschnitt weder entartet noch ins Unendliche läuft.
+  const clamp = (h: number) => Math.min(Math.max(Math.abs(h), 1e-3), 1e6);
+  const hx = clamp(((v.x1 - v.x0) / 2) * fx);
+  const hy = clamp(((v.y1 - v.y0) / 2) * fy);
+  return { x0: cx - hx, x1: cx + hx, y0: cy - hy, y1: cy + hy };
+}
+
+/**
+ * Ausschnitt auf gleiche Maßstäbe bringen: ein Schritt in x ist dann genauso
+ * breit wie ein Schritt in y hoch — das Raster besteht aus Quadraten.
+ *
+ * Es wird nur gedehnt, nie beschnitten: was vorher im Bild war, bleibt drin.
+ * Sobald jemand eine Achse einzeln staucht oder dehnt, gilt das absichtlich
+ * nicht mehr — dafür sind die getrennten Achsenknöpfe da.
+ */
+export function squareViewport(v: Viewport, width: number, height: number): Viewport {
+  if (!(width > 0) || !(height > 0)) return v;
+  const proX = (v.x1 - v.x0) / width;    // Einheiten je Pixel
+  const proY = (v.y1 - v.y0) / height;
+  if (!(proX > 0) || !(proY > 0)) return v;
+  const s = Math.max(proX, proY);        // die engere Achse wird aufgezogen
+  const cx = (v.x0 + v.x1) / 2, cy = (v.y0 + v.y1) / 2;
+  const hx = (s * width) / 2, hy = (s * height) / 2;
+  return { x0: cx - hx, x1: cx + hx, y0: cy - hy, y1: cy + hy };
+}
+
+/**
+ * Der Term mit eingesetztem x, als farbige Stücke — für die Rechnung-Spalte
+ * der Wertetabelle. Die eingesetzten Zahlen tragen `kind: "mark"`, damit in
+ * der Tabelle sichtbar wird, dass dort überall dasselbe x steht.
+ */
+export function substitutedTerm(n: Node, x: number, fmtValue?: (v: number) => string): Seg[] {
+  return segments(substituteX(n, x), null, fmtValue);
+}
+
+/**
+ * Ausschnitt verschieben — reine Translation, die Maßstäbe bleiben.
+ *
+ * `dx`/`dy` sind die Verschiebung des **Fensters** in Einheiten, nicht die des
+ * Inhalts: wer den Graphen nach rechts zieht, schiebt das Fenster nach links.
+ * Quadratische Kästchen bleiben quadratisch, weil sich keine Spannweite ändert.
+ */
+export function panViewport(v: Viewport, dx: number, dy: number): Viewport {
+  return { x0: v.x0 + dx, x1: v.x1 + dx, y0: v.y0 + dy, y1: v.y1 + dy };
+}
+
+/**
+ * Wie viele Einheiten eine Verschiebung um `clientPx` Bildschirmpunkte ist.
+ *
+ * Dazwischen liegen zwei Umrechnungen: vom gerenderten Bild auf das viewBox-Maß
+ * und von dort auf Einheiten. Ohne die zweite würde bei gezoomtem Ausschnitt
+ * zu weit oder zu kurz geschoben.
+ */
+export function pxToUnits(
+  clientPx: number, renderedSize: number, viewBoxSize: number, plotSize: number, span: number,
+): number {
+  if (!(renderedSize > 0) || !(plotSize > 0)) return 0;
+  return clientPx * (viewBoxSize / renderedSize) * (span / plotSize);
+}

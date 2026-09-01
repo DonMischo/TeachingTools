@@ -12,27 +12,23 @@
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  START, TEMPLATES, evalAt, fmt, fmtPi, hasX, parseFunction, substitutionSteps,
-  tableRows, xAtPixel, type Instance, type Node, type Row, type Seg,
+  START, TEMPLATES, axisStep, evalAt, fmt, fmtPi, hasX, parseFunction, piAxisStep,
+  squareViewport, substitutedTerm, substitutionSteps, tableRows, xAtPixel, zoomViewport,
+  type Instance, type Node, type Row, type Seg, type Viewport,
 } from "@/lib/funktionen";
 
 /* ── Zeichenfläche ─────────────────────────────────────────────────────────── */
 
 const W = 640, H = 460, M = 34;      // Innenrand für die Achsenbeschriftung
+const PLOT_W = W - 2 * M, PLOT_H = H - 2 * M;
 const SAMPLES = 600;                 // Auflösung der Kurve
 
-type View = { x0: number; x1: number; y0: number; y1: number };
-
-/** Ein Achsenraster mit runden Schritten (1, 2, 5, 10 …). */
-function tickStep(span: number): number {
-  const rough = span / 10;
-  const p = Math.pow(10, Math.floor(Math.log10(rough)));
-  for (const m of [1, 2, 5, 10]) if (rough <= m * p) return m * p;
-  return 10 * p;
-}
-
-/** y-Bereich aus den Werten, damit der Graph nicht aus dem Bild läuft. */
-function autoY(node: Node, x0: number, x1: number): { y0: number; y1: number } {
+/**
+ * y-Bereich aus den Werten, damit der Graph nicht aus dem Bild läuft.
+ * `round` legt die Grenzen auf ganze Zahlen — dann trifft das Einer-Raster die
+ * Ränder und man kann Kästchen zählen. Im π-Modus bleibt es krumm.
+ */
+function autoY(node: Node, x0: number, x1: number, round: boolean, tight = false): { y0: number; y1: number } {
   const ys: number[] = [];
   for (let i = 0; i <= 200; i++) {
     const y = evalAt(node, x0 + ((x1 - x0) * i) / 200);
@@ -45,21 +41,42 @@ function autoY(node: Node, x0: number, x1: number): { y0: number; y1: number } {
   const hi = ys[Math.floor(ys.length * 0.98)];
   let y0 = Math.min(lo, 0), y1 = Math.max(hi, 0);
   if (y1 - y0 < 1e-6) { y0 -= 1; y1 += 1; }
-  const pad = (y1 - y0) * 0.12;
-  return { y0: y0 - pad, y1: y1 + pad };
+  // Beim quadratischen Raster bleibt der y-Bereich eng: die Luft entsteht
+  // ohnehin dadurch, dass das Seitenverhältnis die x-Achse aufzieht. Sonst
+  // käme beides zusammen und der Ausschnitt würde unnötig weit.
+  if (!tight) {
+    const pad = (y1 - y0) * 0.12;
+    y0 -= pad; y1 += pad;
+  }
+  if (round) { y0 = Math.floor(y0); y1 = Math.ceil(y1); }
+  return { y0, y1 };
 }
 
 /* ── Rechenweg-Fenster ─────────────────────────────────────────────────────── */
 
-function SegLine({ segs, big = false }: { segs: Seg[]; big?: boolean }) {
+/** Farbe für die Unbekannte und für jede Zahl, die an ihre Stelle getreten ist. */
+const X_COLOR = "#8b5cf6";
+/** Farbe für das Zwischenergebnis eines Rechenschritts. */
+const STEP_COLOR = "#f59e0b";
+
+function SegLine({ segs, big = false, small = false, markColor = STEP_COLOR }: {
+  segs: Seg[];
+  big?: boolean;
+  small?: boolean;
+  /** Womit »mark« gefärbt wird — in der Tabelle das eingesetzte x. */
+  markColor?: string;
+}) {
   return (
-    <span className={big ? "text-xl font-bold" : "text-base"} style={{ fontVariantNumeric: "tabular-nums" }}>
+    <span
+      className={big ? "text-xl font-bold" : small ? "text-xs" : "text-base"}
+      style={{ fontVariantNumeric: "tabular-nums" }}
+    >
       {segs.map((s, i) => (
         <span
           key={i}
           style={
-            s.kind === "x" ? { color: "#8b5cf6", fontWeight: 800 }
-            : s.kind === "mark" ? { color: "#f59e0b", fontWeight: 800 }
+            s.kind === "x" ? { color: X_COLOR, fontWeight: 800 }
+            : s.kind === "mark" ? { color: markColor, fontWeight: 800 }
             : undefined
           }
         >
@@ -92,8 +109,8 @@ function Rechenweg({ node, x, onClose }: { node: Node; x: number; onClose: () =>
           <div>
             <h2 className="font-black text-lg">Woher kommt der Wert?</h2>
             <p className="text-xs text-[var(--text-muted)]">
-              <span style={{ color: "#8b5cf6", fontWeight: 800 }}>x</span> wird durch{" "}
-              <span style={{ color: "#f59e0b", fontWeight: 800 }}>{fmt(x)}</span> ersetzt.
+              <span style={{ color: X_COLOR, fontWeight: 800 }}>x</span> wird durch{" "}
+              <span style={{ color: STEP_COLOR, fontWeight: 800 }}>{fmt(x)}</span> ersetzt.
             </p>
           </div>
           <button onClick={onClose} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">✕</button>
@@ -118,6 +135,23 @@ function Rechenweg({ node, x, onClose }: { node: Node; x: number; onClose: () =>
   );
 }
 
+/** Quadratischer Knopf für die Ansichtssteuerung. */
+function ZoomBtn({ onClick, title, children }: {
+  onClick: () => void; title: string; children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="w-7 h-7 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]
+        text-sm leading-none flex items-center justify-center"
+    >
+      {children}
+    </button>
+  );
+}
+
 /* ── Werkzeug ──────────────────────────────────────────────────────────────── */
 
 export default function Funktionen({ action }: { action?: ReactNode }) {
@@ -131,6 +165,8 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
   const [hoverX, setHoverX] = useState<number | null>(null);   // vom Graphen
   const [hoverRow, setHoverRow] = useState<number | null>(null); // von der Tabelle
   const [wegX, setWegX] = useState<number | null>(null);
+  // null = automatisch einpassen. Sobald jemand zoomt, steht hier sein Ausschnitt.
+  const [zoom, setZoom] = useState<Viewport | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   /** π-Modus: die Eingabefelder rechnen in π, die Funktion in Bogenmaß. */
@@ -161,13 +197,48 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
     [node, from, to, step, unit],
   );
 
-  const view: View = useMemo(() => {
+  const baseView: Viewport = useMemo(() => {
     // Etwas Luft links und rechts, damit die Randpunkte nicht am Rahmen kleben.
     const a = from * unit, b = to * unit;
     const pad = Math.max((b - a) * 0.1, 0.5 * unit);
     const x0 = a - pad, x1 = b + pad;
-    return node ? { x0, x1, ...autoY(node, x0, x1) } : { x0, x1, y0: -5, y1: 5 };
-  }, [node, from, to, unit]);
+    const roh: Viewport = node
+      ? { x0, x1, ...autoY(node, x0, x1, !pi, !pi) }
+      : { x0, x1, y0: -5, y1: 5 };
+    // Ungestreckt sind die Kästchen quadratisch: ein Schritt nach rechts ist
+    // so lang wie ein Schritt nach oben. Wer das nicht will, dehnt eine Achse
+    // einzeln — dann gilt es bewusst nicht mehr.
+    //
+    // Im π-Modus nicht: dort ist ein x-Schritt ein Bruchteil von π und ein
+    // y-Schritt eine 1 — die sind nicht vergleichbar, Quadrate hätten keine
+    // Bedeutung.
+    return pi ? roh : squareViewport(roh, PLOT_W, PLOT_H);
+  }, [node, from, to, unit, pi]);
+
+  const view = zoom ?? baseView;
+
+  // Neue Funktion oder neuer Bereich: wieder automatisch einpassen. Ohne das
+  // bliebe der alte Ausschnitt stehen und die neue Kurve läge daneben.
+  useEffect(() => { setZoom(null); }, [src, from, to, pi]);
+
+  /** Beide Achsen oder nur eine skalieren. Faktor < 1 heißt hineinzoomen. */
+  const scale = (fx: number, fy: number) =>
+    setZoom(v => zoomViewport(v ?? baseView, fx, fy));
+
+  // Mausrad über der Zeichenfläche zoomt, wie in den üblichen Funktionenplottern.
+  // Als nicht-passiver Listener, sonst darf preventDefault die Seite nicht
+  // am Mitscrollen hindern.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const f = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+      setZoom(v => zoomViewport(v ?? baseView, f, f));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [baseView]);
 
   const sx = (x: number) => M + ((x - view.x0) / (view.x1 - view.x0)) * (W - 2 * M);
   const sy = (y: number) => H - M - ((y - view.y0) / (view.y1 - view.y0)) * (H - 2 * M);
@@ -196,11 +267,16 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node, view]);
 
-  // Im π-Modus liegen die Striche auf Vielfachen von π, nicht auf 1, 2, 5.
-  const xStep = pi
-    ? ([0.25, 0.5, 1, 2].find(m => (view.x1 - view.x0) / (m * Math.PI) <= 10) ?? 2) * Math.PI
-    : tickStep(view.x1 - view.x0);
-  const yStep = tickStep(view.y1 - view.y0);
+  // Einer-Raster, wo es lesbar bleibt — bei π-Achsen Vielfache von π.
+  //
+  // Stehen beide Achsen im selben Maßstab, bekommen sie auch dieselbe Teilung:
+  // sonst wären die Maßstäbe zwar gleich, die Kästchen aber trotzdem länglich
+  // (etwa 5er-Schritte quer, 1er-Schritte hoch).
+  const spanX = view.x1 - view.x0, spanY = view.y1 - view.y0;
+  const gleicherMassstab = !pi && Math.abs(spanX / PLOT_W - spanY / PLOT_H) < 1e-9;
+  const gemeinsam = axisStep(Math.max(spanX, spanY), true);
+  const xStep = pi ? piAxisStep(spanX) : gleicherMassstab ? gemeinsam : axisStep(spanX, true);
+  const yStep = gleicherMassstab ? gemeinsam : axisStep(spanY, !pi);
   const ticks = (a: number, b: number, s: number) => {
     const out: number[] = [];
     for (let t = Math.ceil(a / s) * s; t <= b + 1e-9; t += s) out.push(Math.round(t * 1e6) / 1e6);
@@ -225,7 +301,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
 
   const reset = () => {
     setSrc(START.src); setFrom(START.from); setTo(START.to);
-    setStep(START.step); setPi(START.pi); setTpl(null);
+    setStep(START.step); setPi(START.pi); setTpl(null); setZoom(null);
   };
 
   return (
@@ -317,6 +393,28 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
           <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} className="accent-[var(--accent)]" />
           in π rechnen
         </label>
+
+        {/* Ausschnitt. Beide Achsen zusammen — oder jede für sich, wenn eine
+            Kurve flach liegt oder aus dem Bild läuft. */}
+        <div className="flex items-center gap-1.5 pb-0.5 flex-wrap">
+          <span className="text-xs text-[var(--text-muted)] mr-0.5">Ansicht</span>
+          <ZoomBtn onClick={() => scale(1 / 1.4, 1 / 1.4)} title="Hineinzoomen">＋</ZoomBtn>
+          <ZoomBtn onClick={() => scale(1.4, 1.4)} title="Herauszoomen">−</ZoomBtn>
+          <span className="text-xs text-[var(--text-muted)] ml-1.5">x</span>
+          <ZoomBtn onClick={() => scale(1 / 1.4, 1)} title="x-Achse dehnen">＋</ZoomBtn>
+          <ZoomBtn onClick={() => scale(1.4, 1)} title="x-Achse stauchen">−</ZoomBtn>
+          <span className="text-xs text-[var(--text-muted)] ml-1.5">y</span>
+          <ZoomBtn onClick={() => scale(1, 1 / 1.4)} title="y-Achse dehnen">＋</ZoomBtn>
+          <ZoomBtn onClick={() => scale(1, 1.4)} title="y-Achse stauchen">−</ZoomBtn>
+          <button
+            onClick={() => setZoom(null)}
+            disabled={!zoom}
+            title="Wieder automatisch einpassen"
+            className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-40 ml-1"
+          >
+            Passend
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5 items-start">
@@ -407,20 +505,21 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
               umwerfen können. */}
           <p className="text-xs text-[var(--text-muted)] mt-1">
             Über den Graphen oder die Tabelle fahren zeigt den Punkt samt Koordinaten.
-            Anklicken zeigt den Rechenweg.
+            Anklicken zeigt den Rechenweg. Mausrad über dem Bild zoomt.
           </p>
         </div>
 
         {/* Wertetabelle */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 w-full lg:w-64">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 w-full lg:w-96">
           <div className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
             Wertetabelle
           </div>
           <table className="w-full text-sm" style={{ fontVariantNumeric: "tabular-nums" }}>
             <thead>
               <tr className="text-[var(--text-muted)]">
-                <th className="text-left font-bold pb-1" style={{ color: "#8b5cf6" }}>x</th>
+                <th className="text-left font-bold pb-1" style={{ color: X_COLOR }}>x</th>
                 <th className="text-left font-bold pb-1">f(x)</th>
+                <th className="text-left font-bold pb-1">Rechnung</th>
                 <th />
               </tr>
             </thead>
@@ -433,8 +532,13 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
                   className="border-t border-[var(--border)] cursor-pointer"
                   style={hoverRow === i ? { background: "rgba(245,158,11,0.15)" } : undefined}
                 >
-                  <td className="py-1 font-bold" style={{ color: "#8b5cf6" }}>{fmtX(r.x)}</td>
+                  <td className="py-1 font-bold" style={{ color: X_COLOR }}>{fmtX(r.x)}</td>
                   <td className="py-1">{r.y === null ? "—" : fmt(r.y)}</td>
+                  {/* Der Term mit eingesetztem x. Dieselbe Farbe wie die
+                      x-Spalte: es ist überall dieselbe Zahl. */}
+                  <td className="py-1 pr-2 whitespace-nowrap">
+                    {node ? <SegLine segs={substitutedTerm(node, r.x, fmtX)} small markColor={X_COLOR} /> : null}
+                  </td>
                   <td className="py-1 text-right">
                     {r.y !== null && (
                       <button
@@ -450,7 +554,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
                 </tr>
               ))}
               {!rows.length && (
-                <tr><td colSpan={3} className="py-2 text-xs text-[var(--text-muted)]">
+                <tr><td colSpan={4} className="py-2 text-xs text-[var(--text-muted)]">
                   Kein Bereich — »von« muss kleiner als »bis« sein.
                 </td></tr>
               )}
