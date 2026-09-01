@@ -374,22 +374,43 @@ function reduceOnce(n: Node): { node: Node; done: Node } | null {
   return null;
 }
 
-export type Step = { segs: Seg[]; label: string };
+/**
+ * Ein Schritt des Rechenwegs — als farbige Stücke *und* als LaTeX.
+ *
+ * Die Stücke bleiben, weil sich die Abfolge daran prüfen lässt, ohne KaTeX zu
+ * bemühen; gesetzt wird in der Oberfläche `tex`.
+ */
+export type Step = { segs: Seg[]; tex: string; label: string };
 
 /**
  * Der Rechenweg für eine Zeile der Wertetabelle: Formel → x eingesetzt →
  * Schritt für Schritt ausgerechnet.
+ *
+ * `fmtValue` schreibt den eingesetzten Wert; im π-Modus als Bruchteil von π,
+ * damit im Fenster dasselbe steht wie in der Tabelle.
  */
-export function substitutionSteps(n: Node, x: number, maxSteps = 12): Step[] {
-  const steps: Step[] = [{ segs: segments(n), label: "Die Funktion" }];
+export function substitutionSteps(
+  n: Node, x: number, fmtValue: (v: number) => string = numLatex, maxSteps = 12,
+): Step[] {
+  const steps: Step[] = [
+    { segs: segments(n), tex: toLatex(n), label: "Die Funktion" },
+  ];
   let cur = substituteX(n, x);
-  steps.push({ segs: segments(cur), label: `x = ${fmt(x)} einsetzen` });
+  steps.push({
+    segs: segments(cur),
+    tex: toLatex(cur, null, fmtValue),
+    label: `x = ${fmt(x)} einsetzen`,
+  });
 
   for (let guard = 0; guard < maxSteps; guard++) {
     const next = reduceOnce(cur);
     if (!next) break;
     cur = next.node;
-    steps.push({ segs: segments(cur, next.done), label: "ausrechnen" });
+    steps.push({
+      segs: segments(cur, next.done),
+      tex: toLatex(cur, next.done, fmtValue),
+      label: "ausrechnen",
+    });
   }
   if (steps.length > 2) steps[steps.length - 1].label = "Ergebnis";
   return steps;
@@ -712,4 +733,161 @@ export function pxToUnits(
 ): number {
   if (!(renderedSize > 0) || !(plotSize > 0)) return 0;
   return clientPx * (viewBoxSize / renderedSize) * (span / plotSize);
+}
+
+// ── Quadratische Terme: Normalform ↔ Scheitelpunktform ────────────────────────
+
+export type Quadratic = { a: number; b: number; c: number };
+
+/** Zahl so schreiben, dass der Leser sie wieder einlesen kann. */
+const forTerm = (v: number) => String(Math.round(v * 1e6) / 1e6);
+
+/**
+ * Die Koeffizienten a, b, c einer quadratischen Funktion — oder null, wenn der
+ * Term keine ist.
+ *
+ * Ermittelt aus Stützstellen statt aus dem Baum: dann greift es auch bei
+ * »(x-2)^2-3«, »x(x+1)« oder einem selbst getippten Term, ohne dass jede
+ * Schreibweise einzeln erkannt werden muss. Zwei zusätzliche Stellen prüfen
+ * gegen, damit z. B. x^3 oder sin(x) nicht als Parabel durchgehen.
+ */
+export function quadraticCoeffs(n: Node): Quadratic | null {
+  const f = (x: number) => evalAt(n, x);
+  const f0 = f(0), f1 = f(1), fm1 = f(-1);
+  if (f0 === null || f1 === null || fm1 === null) return null;
+
+  const a = (f1 + fm1) / 2 - f0;
+  const b = (f1 - fm1) / 2;
+  const c = f0;
+  if (!Number.isFinite(a) || Math.abs(a) < 1e-9) return null;   // linear oder gar nichts
+
+  // Gegenprobe an weiteren Stellen: passt die Parabel wirklich?
+  for (const x of [2, -2, 3.5]) {
+    const soll = f(x);
+    if (soll === null) return null;
+    if (Math.abs(a * x * x + b * x + c - soll) > 1e-6 * Math.max(1, Math.abs(soll))) return null;
+  }
+  const r = (v: number) => Math.round(v * 1e6) / 1e6;
+  return { a: r(a), b: r(b), c: r(c) };
+}
+
+/**
+ * Scheitelpunkt (d | e) einer Parabel in Normalform.
+ *
+ * Die −0 wird abgefangen: bei b = 0 liefert −b/(2a) eine negative Null, und die
+ * schlägt sonst bis in Vergleiche und Beschriftungen durch.
+ */
+export function vertex(q: Quadratic): { d: number; e: number } {
+  const r = (v: number) => {
+    const x = Math.round(v * 1e6) / 1e6;
+    return Object.is(x, -0) ? 0 : x;
+  };
+  return { d: r(-q.b / (2 * q.a)), e: r(q.c - (q.b * q.b) / (4 * q.a)) };
+}
+
+/** »x^2 - 4x + 3« — Vorfaktoren 1 und Summanden 0 bleiben ungeschrieben. */
+export function normalForm(q: Quadratic): string {
+  const kopf = q.a === 1 ? "x^2" : q.a === -1 ? "-x^2" : `${forTerm(q.a)}x^2`;
+  const mitte = q.b === 0 ? ""
+    : `${q.b > 0 ? " + " : " - "}${Math.abs(q.b) === 1 ? "" : forTerm(Math.abs(q.b))}x`;
+  const ende = q.c === 0 ? "" : `${q.c > 0 ? " + " : " - "}${forTerm(Math.abs(q.c))}`;
+  return kopf + mitte + ende;
+}
+
+/** »(x - 2)^2 - 3« — dieselbe Parabel, am Scheitelpunkt abgelesen. */
+export function vertexForm(q: Quadratic): string {
+  const { d, e } = vertex(q);
+  const vor = q.a === 1 ? "" : q.a === -1 ? "-" : forTerm(q.a);
+  const klammer = d === 0 ? "x^2" : `(x ${d > 0 ? "-" : "+"} ${forTerm(Math.abs(d))})^2`;
+  const ende = e === 0 ? "" : `${e > 0 ? " + " : " - "}${forTerm(Math.abs(e))}`;
+  return `${vor}${klammer}${ende}`;
+}
+
+// ── LaTeX ─────────────────────────────────────────────────────────────────────
+
+/** Farben der Hervorhebungen — dieselben wie in der Oberfläche. */
+export const TEX_X_COLOR = "#8b5cf6";
+export const TEX_MARK_COLOR = "#f59e0b";
+
+/** Zahl für LaTeX: deutsches Komma braucht Klammern, sonst setzt KaTeX zu viel Luft. */
+export function numLatex(v: number): string {
+  return fmt(v).replace("−", "-").replace(",", "{,}");
+}
+
+/**
+ * Vielfaches von π als echter Bruch: aus »−3π/4« wird ein gesetzter Bruch.
+ * Was kein Vielfaches ist, bleibt eine Dezimalzahl.
+ */
+export function fmtPiLatex(v: number): string {
+  const s = fmtPi(v);
+  if (!s.includes("π")) return numLatex(v);
+  const m = /^(−?)(\d*)π(?:\/(\d+))?$/.exec(s);
+  if (!m) return s.replace("π", "\\pi").replace("−", "-");
+  const [, minus, zaehler, nenner] = m;
+  const kopf = `${zaehler || ""}\\pi`;
+  const body = nenner ? `\\frac{${kopf}}{${nenner}}` : kopf;
+  return (minus ? "-" : "") + body;
+}
+
+const TEX_FN: Record<FnName, (inner: string) => string> = {
+  sin: a => `\\sin\\left(${a}\\right)`,
+  cos: a => `\\cos\\left(${a}\\right)`,
+  tan: a => `\\tan\\left(${a}\\right)`,
+  sqrt: a => `\\sqrt{${a}}`,
+  abs: a => `\\left|${a}\\right|`,
+  ln: a => `\\ln\\left(${a}\\right)`,
+  log: a => `\\log\\left(${a}\\right)`,
+  exp: a => `e^{${a}}`,
+};
+
+/**
+ * Der Term als LaTeX — mit Farben, damit das x und die eingesetzten Zahlen
+ * auch gesetzt noch zu erkennen sind.
+ *
+ * Division wird zum echten Bruch und die Potenz zum Hochgestellten; deshalb
+ * braucht es hier eine eigene Klammerlogik und nicht die von `segments`.
+ */
+export function toLatex(
+  n: Node,
+  mark?: Node | null,
+  fmtSubst: (v: number) => string = numLatex,
+): string {
+  const farbe = (tex: string, color: string) => `\\textcolor{${color}}{${tex}}`;
+
+  const go = (node: Node, parentPrec: number): string => {
+    const markiert = mark != null && node === mark;
+
+    if (node.k === "x") return farbe("x", TEX_X_COLOR);
+    if (node.k === "num") {
+      const tex = node.subst ? fmtSubst(node.v) : numLatex(node.v);
+      if (node.subst) return farbe(tex, TEX_X_COLOR);
+      return markiert ? farbe(tex, TEX_MARK_COLOR) : tex;
+    }
+    if (node.k === "neg") {
+      const inner = `-${go(node.a, 2)}`;
+      return parentPrec > 1 ? `\\left(${inner}\\right)` : inner;
+    }
+    if (node.k === "fn") return TEX_FN[node.name](go(node.a, 0));
+
+    // Der Bruch klammert selbst, seine Teile brauchen keine Klammern.
+    if (node.op === "/") return `\\frac{${go(node.a, 0)}}{${go(node.b, 0)}}`;
+    if (node.op === "^") {
+      const basis = go(node.a, 4);   // x^2 ohne, (x-2)^2 mit Klammer
+      return `${basis}^{${go(node.b, 0)}}`;
+    }
+    const prec = node.op === "*" ? 2 : 1;
+    const zeichen = node.op === "*" ? " \\cdot " : node.op === "+" ? " + " : " - ";
+    const rechts = go(node.b, prec + (node.op === "-" ? 1 : 0));
+    const tex = `${go(node.a, prec)}${zeichen}${rechts}`;
+    return prec < parentPrec ? `\\left(${tex}\\right)` : tex;
+  };
+
+  return go(n, 0);
+}
+
+/** Der Term mit eingesetztem x, als LaTeX — für die Rechnung-Spalte. */
+export function substitutedLatex(
+  n: Node, x: number, fmtValue: (v: number) => string = numLatex,
+): string {
+  return toLatex(substituteX(n, x), null, fmtValue);
 }

@@ -6,10 +6,13 @@
  * geprüft wie das Ergebnis.
  */
 import { describe, it, expect } from "vitest";
+import katex from "katex";
 import {
   TEMPLATES, evalAt, fmt, fmtPi, formatNode, hasX, parseFunction, segments,
   UNIT_GRID_MAX, axisStep, niceStep, piAxisStep, substitutionSteps, tableRows,
-  panViewport, pxToUnits, squareViewport, substitutedTerm, xAtPixel, zoomViewport,
+  fmtPiLatex, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
+  substitutedLatex, substitutedTerm, toLatex,
+  vertex, vertexForm, xAtPixel, zoomViewport,
   type Node,
 } from "@/lib/funktionen";
 
@@ -462,5 +465,184 @@ describe("Verschieben", () => {
   it("gibt 0 statt NaN, wenn das Bild noch keine Größe hat", () => {
     expect(pxToUnits(50, 0, 640, 572, 6)).toBe(0);
     expect(pxToUnits(50, 1144, 640, 0, 6)).toBe(0);
+  });
+});
+
+describe("Quadratische Terme erkennen", () => {
+  it("liest a, b, c aus jeder Schreibweise", () => {
+    expect(quadraticCoeffs(p("x^2 - 4x + 3"))).toEqual({ a: 1, b: -4, c: 3 });
+    // Ausmultipliziert ist es dieselbe Parabel.
+    expect(quadraticCoeffs(p("(x - 2)^2 - 1"))).toEqual({ a: 1, b: -4, c: 3 });
+    expect(quadraticCoeffs(p("x(x + 1)"))).toEqual({ a: 1, b: 1, c: 0 });
+    expect(quadraticCoeffs(p("-0.5x^2 + 2"))).toEqual({ a: -0.5, b: 0, c: 2 });
+  });
+
+  it("lässt sich nicht von anderen Funktionen täuschen", () => {
+    for (const src of ["2x + 1", "x^3 - 3x", "sin(x)", "1/x", "sqrt(x)", "abs(x)", "3"]) {
+      expect(quadraticCoeffs(p(src)), src).toBeNull();
+    }
+  });
+
+  it("findet den Scheitelpunkt", () => {
+    expect(vertex({ a: 1, b: -4, c: 3 })).toEqual({ d: 2, e: -1 });
+    expect(vertex({ a: 1, b: 0, c: 0 })).toEqual({ d: 0, e: 0 });
+    expect(vertex({ a: -2, b: 4, c: 1 })).toEqual({ d: 1, e: 3 });
+  });
+
+  it("schreibt beide Formen lesbar", () => {
+    expect(normalForm({ a: 1, b: -4, c: 3 })).toBe("x^2 - 4x + 3");
+    expect(normalForm({ a: 1, b: 1, c: 0 })).toBe("x^2 + x");
+    expect(normalForm({ a: -1, b: 0, c: -2 })).toBe("-x^2 - 2");
+    expect(vertexForm({ a: 1, b: -4, c: 3 })).toBe("(x - 2)^2 - 1");
+    expect(vertexForm({ a: 1, b: 0, c: 0 })).toBe("x^2");
+    expect(vertexForm({ a: -2, b: 4, c: 1 })).toBe("-2(x - 1)^2 + 3");
+  });
+
+  it("beschreibt in beiden Formen dieselbe Funktion", () => {
+    for (const q of [
+      { a: 1, b: -4, c: 3 }, { a: -1, b: 2, c: 0 }, { a: 0.5, b: 3, c: -2 },
+      { a: 2, b: 0, c: 5 }, { a: -0.5, b: -1, c: 1 }, { a: 3, b: 7, c: -4 },
+    ]) {
+      const nf = parseFunction(normalForm(q));
+      const spf = parseFunction(vertexForm(q));
+      expect(nf.ok, `Normalform »${normalForm(q)}«`).toBe(true);
+      expect(spf.ok, `Scheitelpunktform »${vertexForm(q)}«`).toBe(true);
+      if (!nf.ok || !spf.ok) continue;
+      for (const x of [-3, -1, 0, 0.5, 2, 4]) {
+        const soll = q.a * x * x + q.b * x + q.c;
+        expect(evalAt(nf.node, x)).toBeCloseTo(soll, 6);
+        // Die Scheitelpunktform wird mit gerundetem d und e geschrieben — bei
+        // einem Scheitel wie −7/6 bleibt deshalb ein Rest in der 6. Stelle.
+        // Sichtbar ist das nicht; hier wird trotzdem ehrlich gerundet geprüft.
+        expect(evalAt(spf.node, x)).toBeCloseTo(soll, 4);
+      }
+    }
+  });
+
+  it("überlebt das Hin- und Herwandeln", () => {
+    const q = { a: 1, b: -4, c: 3 };
+    const zurueck = quadraticCoeffs(p(vertexForm(q)));
+    expect(zurueck).toEqual(q);
+  });
+});
+
+describe("LaTeX", () => {
+  const tex = (src: string) => toLatex(p(src));
+  const gesetzt = (t: string) => katex.renderToString(t, { throwOnError: false, output: "html" });
+
+  it("setzt Potenzen hoch und Brüche als Bruch", () => {
+    expect(tex("x^2")).toContain("^{2}");
+    expect(tex("1/x")).toContain("\\frac{");
+    expect(tex("2*x")).toContain("\\cdot");
+  });
+
+  it("klammert die Basis einer Potenz, wenn sie zusammengesetzt ist", () => {
+    expect(tex("(x-2)^2")).toContain("\\left(");
+    expect(tex("x^2")).not.toContain("\\left(");
+  });
+
+  it("kennt die Funktionsnamen als Operatoren", () => {
+    expect(tex("sin(x)")).toContain("\\sin");
+    expect(tex("sqrt(x)")).toContain("\\sqrt{");
+    expect(tex("abs(x)")).toContain("\\left|");
+    expect(tex("ln(x)")).toContain("\\ln");
+  });
+
+  it("färbt jedes x ein", () => {
+    const t = tex("x^2 + x");
+    expect([...t.matchAll(/\\textcolor\{#8b5cf6\}\{x\}/g)]).toHaveLength(2);
+  });
+
+  it("färbt die eingesetzten Zahlen", () => {
+    const t = substitutedLatex(p("x^2 + x"), 4);
+    expect([...t.matchAll(/\\textcolor\{#8b5cf6\}\{4\}/g)]).toHaveLength(2);
+    expect(t).not.toContain("{x}");
+  });
+
+  it("schreibt das deutsche Komma klammerfest", () => {
+    // Ohne die Klammern setzt KaTeX hinter dem Komma eine Lücke.
+    expect(numLatex(2.5)).toBe("2{,}5");
+    expect(numLatex(-0.5)).toBe("-0{,}5");
+    expect(numLatex(3)).toBe("3");
+  });
+
+  it("macht aus Vielfachen von π echte Brüche", () => {
+    expect(fmtPiLatex(Math.PI)).toBe("\\pi");
+    expect(fmtPiLatex(-Math.PI)).toBe("-\\pi");
+    expect(fmtPiLatex(Math.PI / 2)).toBe("\\frac{\\pi}{2}");
+    expect(fmtPiLatex((-3 * Math.PI) / 4)).toBe("-\\frac{3\\pi}{4}");
+    expect(fmtPiLatex(2 * Math.PI)).toBe("2\\pi");
+    expect(fmtPiLatex(0)).toBe("0");
+    // Was kein Vielfaches ist, bleibt Dezimalzahl.
+    expect(fmtPiLatex(1)).toBe("1");
+  });
+
+  it("enthält keine Steuerzeichen — die Falle mit dem einfachen Backslash", () => {
+    // `\f` und `\t` in einem TS-Template sind Seitenvorschub und Tabulator.
+    // Genau daran ist die erste Fassung gescheitert, zweimal.
+    for (const src of ["1/x", "2x", "sin(x)", "x^2"]) {
+      expect(tex(src)).not.toMatch(/[\f\v\b\t]/);
+    }
+  });
+
+  it("wird von KaTeX ohne Fehler gesetzt", () => {
+    for (const src of [
+      "2x + 1", "x^2 - 4x + 3", "(x - 2)^2 - 3", "1/x", "sin(x)/x", "sqrt(x) + 1",
+      "abs(x - 2)", "x^3 - 3x", "-0.5x^2 + 2", "2^3^2", "ln(x)", "exp(x)", "0.5x",
+    ]) {
+      expect(gesetzt(tex(src)), src).not.toContain("katex-error");
+    }
+  });
+
+  it("setzt auch die eingesetzten Terme fehlerfrei", () => {
+    for (const src of ["2x + 3", "(x - 2)^2 - 3", "1/x", "sin(x)"]) {
+      for (const x of [-2, 0, 0.5, 3]) {
+        expect(gesetzt(substitutedLatex(p(src), x, fmtPiLatex)), `${src} @ ${x}`)
+          .not.toContain("katex-error");
+      }
+    }
+  });
+
+  it("setzt Vielfache von π fehlerfrei", () => {
+    for (const v of [0, Math.PI, -Math.PI / 2, (3 * Math.PI) / 4, 2 * Math.PI, 1.234]) {
+      expect(gesetzt(fmtPiLatex(v)), String(v)).not.toContain("katex-error");
+    }
+  });
+});
+
+describe("Rechenweg als Formelsatz", () => {
+  const gesetzt = (t: string) => katex.renderToString(t, { throwOnError: false, output: "html" });
+
+  it("liefert zu jedem Schritt gesetzten LaTeX-Code", () => {
+    const steps = substitutionSteps(p("2x + 1"), 3);
+    for (const st of steps) {
+      expect(st.tex.length).toBeGreaterThan(0);
+      expect(gesetzt(st.tex), st.label).not.toContain("katex-error");
+    }
+  });
+
+  it("faerbt im ersten Schritt das x, danach die eingesetzte Zahl", () => {
+    const steps = substitutionSteps(p("2x + 1"), 3);
+    expect(steps[0].tex).toContain("{x}");
+    expect(steps[1].tex).not.toContain("{x}");
+    expect(steps[1].tex).toContain("8b5cf6");
+  });
+
+  it("schreibt den eingesetzten Wert im Pi-Modus als Bruch", () => {
+    const steps = substitutionSteps(p("sin(x)"), Math.PI / 2, fmtPiLatex);
+    expect(steps[1].tex).toContain("pi");
+    expect(gesetzt(steps[1].tex)).not.toContain("katex-error");
+  });
+
+  it("bleibt bei allen Vorlagen fehlerfrei", () => {
+    for (const t of TEMPLATES) {
+      const inst = t.build();
+      const r = parseFunction(inst.src);
+      expect(r.ok, inst.src).toBe(true);
+      if (!r.ok) continue;
+      for (const st of substitutionSteps(r.node, 2, fmtPiLatex)) {
+        expect(gesetzt(st.tex), `${t.label}: ${inst.src}`).not.toContain("katex-error");
+      }
+    }
   });
 });

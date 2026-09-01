@@ -13,9 +13,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   START, TEMPLATES, axisStep, evalAt, fmt, fmtPi, hasX, parseFunction, piAxisStep,
-  squareViewport, substitutedTerm, substitutionSteps, tableRows, xAtPixel, zoomViewport,
-  type Instance, type Node, type Row, type Seg, type Viewport,
+  fmtPiLatex, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
+  substitutedLatex, substitutionSteps, tableRows, toLatex, vertex, vertexForm, xAtPixel,
+  zoomViewport, type Instance, type Node, type Row, type Viewport,
 } from "@/lib/funktionen";
+import { Tex } from "@/components/Tex";
 
 /* ── Zeichenfläche ─────────────────────────────────────────────────────────── */
 
@@ -56,39 +58,11 @@ function autoY(node: Node, x0: number, x1: number, round: boolean, tight = false
 
 /** Farbe für die Unbekannte und für jede Zahl, die an ihre Stelle getreten ist. */
 const X_COLOR = "#8b5cf6";
-/** Farbe für das Zwischenergebnis eines Rechenschritts. */
-const STEP_COLOR = "#f59e0b";
 
-function SegLine({ segs, big = false, small = false, markColor = STEP_COLOR }: {
-  segs: Seg[];
-  big?: boolean;
-  small?: boolean;
-  /** Womit »mark« gefärbt wird — in der Tabelle das eingesetzte x. */
-  markColor?: string;
+function Rechenweg({ node, x, fmtValue, onClose }: {
+  node: Node; x: number; fmtValue: (v: number) => string; onClose: () => void;
 }) {
-  return (
-    <span
-      className={big ? "text-xl font-bold" : small ? "text-xs" : "text-base"}
-      style={{ fontVariantNumeric: "tabular-nums" }}
-    >
-      {segs.map((s, i) => (
-        <span
-          key={i}
-          style={
-            s.kind === "x" ? { color: X_COLOR, fontWeight: 800 }
-            : s.kind === "mark" ? { color: markColor, fontWeight: 800 }
-            : undefined
-          }
-        >
-          {s.t}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function Rechenweg({ node, x, onClose }: { node: Node; x: number; onClose: () => void }) {
-  const steps = useMemo(() => substitutionSteps(node, x), [node, x]);
+  const steps = useMemo(() => substitutionSteps(node, x, fmtValue), [node, x, fmtValue]);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", esc);
@@ -110,7 +84,7 @@ function Rechenweg({ node, x, onClose }: { node: Node; x: number; onClose: () =>
             <h2 className="font-black text-lg">Woher kommt der Wert?</h2>
             <p className="text-xs text-[var(--text-muted)]">
               <span style={{ color: X_COLOR, fontWeight: 800 }}>x</span> wird durch{" "}
-              <span style={{ color: STEP_COLOR, fontWeight: 800 }}>{fmt(x)}</span> ersetzt.
+              <span style={{ color: X_COLOR, fontWeight: 800 }}>{fmt(x)}</span> ersetzt.
             </p>
           </div>
           <button onClick={onClose} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">✕</button>
@@ -122,7 +96,7 @@ function Rechenweg({ node, x, onClose }: { node: Node; x: number; onClose: () =>
               <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] w-28 shrink-0 text-right">
                 {s.label}
               </span>
-              <SegLine segs={s.segs} big={i === steps.length - 1} />
+              <Tex tex={s.tex} className={i === steps.length - 1 ? "text-2xl" : "text-lg"} />
             </li>
           ))}
         </ol>
@@ -168,11 +142,19 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
   // null = automatisch einpassen. Sobald jemand zoomt, steht hier sein Ausschnitt.
   const [zoom, setZoom] = useState<Viewport | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  // Läuft ein Ziehen? Merkt sich Startpunkt und Ausschnitt von damals, damit
+  // die Verschiebung nicht von Zwischenschritten abhängt und nicht driftet.
+  const drag = useRef<{ x: number; y: number; view: Viewport; moved: boolean } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  // Nach einem echten Ziehen darf der Klick am Ende keinen Rechenweg öffnen.
+  const swallowClick = useRef(false);
 
   /** π-Modus: die Eingabefelder rechnen in π, die Funktion in Bogenmaß. */
   const unit = pi ? Math.PI : 1;
   /** x-Werte beschriften — im π-Modus als Bruchteil von π. */
   const fmtX = (v: number) => (pi ? fmtPi(v) : fmt(v));
+  /** Dasselbe für den Formelsatz: dort wird der Bruch wirklich gesetzt. */
+  const texX = (v: number) => (pi ? fmtPiLatex(v) : numLatex(v));
 
   /** Vorlage anwenden. Nochmal auf dieselbe klicken würfelt neue Parameter. */
   function useTemplate(key: string) {
@@ -283,13 +265,45 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
     return out;
   };
 
+  function onDown(e: React.PointerEvent<SVGSVGElement>) {
+    if (e.button !== 0) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.setPointerCapture(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, view, moved: false };
+    swallowClick.current = false;
+    setDragging(true);
+    setHoverX(null);
+  }
+
   function onMove(e: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
     if (!svg || !node) return;
     const r = svg.getBoundingClientRect();
     if (!(r.width > 0)) return;                       // noch nicht gelayoutet
+
+    const d = drag.current;
+    if (d) {
+      const dxPx = e.clientX - d.x, dyPx = e.clientY - d.y;
+      if (Math.abs(dxPx) + Math.abs(dyPx) > 3) d.moved = true;
+      const dxU = pxToUnits(dxPx, r.width, W, PLOT_W, d.view.x1 - d.view.x0);
+      const dyU = pxToUnits(dyPx, r.height, H, PLOT_H, d.view.y1 - d.view.y0);
+      // Der Inhalt folgt dem Zeiger: nach rechts ziehen schiebt das Fenster
+      // nach links, nach unten ziehen schiebt es nach oben.
+      setZoom(panViewport(d.view, -dxU, dyU));
+      return;
+    }
+
     const px = ((e.clientX - r.left) / r.width) * W;  // Bildschirm → viewBox
     setHoverX(xAtPixel(px, view.x0, view.x1, W, M));
+  }
+
+  function onUp(e: React.PointerEvent<SVGSVGElement>) {
+    const svg = svgRef.current;
+    if (svg?.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
+    swallowClick.current = drag.current?.moved ?? false;
+    drag.current = null;
+    setDragging(false);
   }
 
   // Punkt, der hervorgehoben wird: Tabelle hat Vorrang vor dem Graphen.
@@ -298,6 +312,52 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
     : hoverX != null && node
       ? { x: hoverX, y: evalAt(node, hoverX) }
       : null;
+
+  /** Die Zeilen der quer gelegten Tabelle: je Größe eine. */
+  const TABELLE: { key: string; label: string; zelle: (r: Row) => ReactNode }[] = [
+    { key: "x", label: "x", zelle: r => <span className="font-bold" style={{ color: X_COLOR }}>{fmtX(r.x)}</span> },
+    { key: "y", label: "f(x)", zelle: r => (r.y === null ? "—" : fmt(r.y)) },
+    {
+      key: "punkt", label: "Punkt",
+      // Dieselbe Schreibweise wie am Graphen — so ist die Tabellenspalte und
+      // der Punkt im Koordinatensystem als dasselbe zu erkennen.
+      // Auch gesetzt: sonst stößt der Trennstrich mit einem π-Bruch zusammen
+      // (»P(−3π/2/0,707)«). Gestapelt ist der Bruch klar vom Trenner zu
+      // unterscheiden.
+      zelle: r => r.y === null ? "—" : (
+        <Tex tex={`P(\\textcolor{${X_COLOR}}{${texX(r.x)}} / ${numLatex(r.y)})`} />
+      ),
+    },
+    {
+      key: "rechnung", label: "Rechnung",
+      // Der Term mit eingesetztem x, in derselben Farbe wie die x-Zeile:
+      // es ist überall dieselbe Zahl.
+      zelle: r => (node ? <Tex tex={substitutedLatex(node, r.x, texX)} /> : null),
+    },
+    {
+      key: "weg", label: "",
+      zelle: r => r.y === null ? null : (
+        <button
+          onClick={() => setWegX(r.x)}
+          title={`Rechenweg für x = ${fmtX(r.x)}`}
+          aria-label={`Rechenweg für x = ${fmtX(r.x)}`}
+          className="text-xs w-5 h-5 rounded-full border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          ?
+        </button>
+      ),
+    },
+  ];
+
+  // Quadratisch? Dann lässt sich zwischen den beiden Formen umschalten. Die
+  // Koeffizienten kommen aus Stützstellen, also geht das auch bei einem selbst
+  // getippten Term, nicht nur bei der Vorlage.
+  const quad = useMemo(() => (node ? quadraticCoeffs(node) : null), [node]);
+  const formen = useMemo(() => {
+    if (!quad) return null;
+    return { nf: normalForm(quad), spf: vertexForm(quad) };
+  }, [quad]);
+  const vertexOf = useMemo(() => (quad ? vertex(quad) : { d: 0, e: 0 }), [quad]);
 
   const reset = () => {
     setSrc(START.src); setFrom(START.from); setTo(START.to);
@@ -336,6 +396,13 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
             className="flex-1 min-w-[16rem] bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-lg"
           />
         </label>
+        {/* Der Term, wie er in einem Heft stünde. Die Eingabe bleibt Text —
+            getippt wird »x^2«, gesetzt erscheint es hochgestellt. */}
+        {parsed.ok && (
+          <div className="rounded-xl bg-[var(--bg)] border border-[var(--border)] px-4 py-3 overflow-x-auto">
+            <Tex tex={`f(x) = ${toLatex(node!)}`} className="text-2xl" />
+          </div>
+        )}
         {!parsed.ok
           ? <p className="text-sm text-red-500">{parsed.error}</p>
           : !hasX(node!)
@@ -357,6 +424,31 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
             </button>
           ))}
         </div>
+        {formen && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-[var(--text-muted)] mr-0.5">Form</span>
+            {([["nf", "Normalform", formen.nf], ["spf", "Scheitelpunktform", formen.spf]] as const).map(
+              ([key, label, term]) => (
+                <button
+                  key={key}
+                  onClick={() => setSrc(term)}
+                  title={`f(x) = ${term}`}
+                  className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
+                    src.trim() === term
+                      ? "border-[var(--accent)] bg-[var(--accent)]/10 font-bold"
+                      : "border-[var(--border)] hover:border-[var(--accent)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ),
+            )}
+            <span className="text-xs text-[var(--text-muted)] ml-1">
+              Scheitelpunkt ({fmt(vertexOf.d)} | {fmt(vertexOf.e)})
+            </span>
+          </div>
+        )}
+
         {/* Auch hier feste Höhe — sonst springt die Seite beim Vorlagenwechsel. */}
         <p className="text-xs text-[var(--text-muted)] min-h-[2rem]">
           {tpl
@@ -417,16 +509,71 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5 items-start">
+      {/* Wertetabelle — quer gelegt und über dem Diagramm: eine Zeile je
+          Größe, eine Spalte je Stelle. So liest sie sich wie an der Tafel,
+          und bei vielen Stellen wird waagerecht gescrollt statt in die Länge
+          gezogen. Die Beschriftungsspalte bleibt dabei stehen. */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+        <div className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
+          Wertetabelle
+        </div>
+
+        {rows.length ? (
+          <div className="overflow-x-auto">
+            <table className="text-sm border-collapse" style={{ fontVariantNumeric: "tabular-nums" }}>
+              <tbody>
+                {TABELLE.map(zeile => (
+                  <tr key={zeile.key} className="border-t border-[var(--border)] first:border-t-0">
+                    <th
+                      scope="row"
+                      className="sticky left-0 z-10 bg-[var(--surface)] text-left font-bold
+                        pr-3 py-1 whitespace-nowrap text-[var(--text-muted)]"
+                      style={zeile.key === "x" ? { color: X_COLOR } : undefined}
+                    >
+                      {zeile.label}
+                    </th>
+                    {rows.map((r, i) => (
+                      <td
+                        key={i}
+                        onPointerEnter={() => setHoverRow(i)}
+                        onPointerLeave={() => setHoverRow(null)}
+                        className="px-2 py-1 border-l border-[var(--border)] whitespace-nowrap cursor-pointer text-center"
+                        style={hoverRow === i ? { background: "rgba(245,158,11,0.15)" } : undefined}
+                      >
+                        {zeile.zelle(r)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--text-muted)]">
+            Kein Bereich — »von« muss kleiner als »bis« sein.
+          </p>
+        )}
+
+        {rows.some(r => r.y === null) && (
+          <p className="text-xs text-[var(--text-muted)] mt-2">
+            — heißt: dort ist die Funktion nicht definiert.
+          </p>
+        )}
+      </div>
+
+      <div>
         {/* Koordinatensystem */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
             className="w-full h-auto"
-            style={{ touchAction: "none" }}
+            style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
+            onPointerDown={onDown}
             onPointerMove={onMove}
-            onPointerLeave={() => setHoverX(null)}
+            onPointerUp={onUp}
+            onPointerCancel={onUp}
+            onPointerLeave={() => { if (!drag.current) setHoverX(null); }}
             role="img"
             aria-label={`Graph von f(x) = ${src}`}
           >
@@ -474,7 +621,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
                   style={{ cursor: "pointer" }}
                   onPointerEnter={() => setHoverRow(i)}
                   onPointerLeave={() => setHoverRow(null)}
-                  onClick={() => setWegX(r.x)}
+                  onClick={() => { if (!swallowClick.current) setWegX(r.x); }}
                 />
               ),
             )}
@@ -505,71 +652,14 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
               umwerfen können. */}
           <p className="text-xs text-[var(--text-muted)] mt-1">
             Über den Graphen oder die Tabelle fahren zeigt den Punkt samt Koordinaten.
-            Anklicken zeigt den Rechenweg. Mausrad über dem Bild zoomt.
+            Anklicken zeigt den Rechenweg. Mausrad zoomt, Ziehen verschiebt den Ausschnitt.
           </p>
         </div>
 
-        {/* Wertetabelle */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 w-full lg:w-96">
-          <div className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
-            Wertetabelle
-          </div>
-          <table className="w-full text-sm" style={{ fontVariantNumeric: "tabular-nums" }}>
-            <thead>
-              <tr className="text-[var(--text-muted)]">
-                <th className="text-left font-bold pb-1" style={{ color: X_COLOR }}>x</th>
-                <th className="text-left font-bold pb-1">f(x)</th>
-                <th className="text-left font-bold pb-1">Rechnung</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr
-                  key={i}
-                  onPointerEnter={() => setHoverRow(i)}
-                  onPointerLeave={() => setHoverRow(null)}
-                  className="border-t border-[var(--border)] cursor-pointer"
-                  style={hoverRow === i ? { background: "rgba(245,158,11,0.15)" } : undefined}
-                >
-                  <td className="py-1 font-bold" style={{ color: X_COLOR }}>{fmtX(r.x)}</td>
-                  <td className="py-1">{r.y === null ? "—" : fmt(r.y)}</td>
-                  {/* Der Term mit eingesetztem x. Dieselbe Farbe wie die
-                      x-Spalte: es ist überall dieselbe Zahl. */}
-                  <td className="py-1 pr-2 whitespace-nowrap">
-                    {node ? <SegLine segs={substitutedTerm(node, r.x, fmtX)} small markColor={X_COLOR} /> : null}
-                  </td>
-                  <td className="py-1 text-right">
-                    {r.y !== null && (
-                      <button
-                        onClick={() => setWegX(r.x)}
-                        title={`Rechenweg für x = ${fmtX(r.x)}`}
-                        aria-label={`Rechenweg für x = ${fmtX(r.x)}`}
-                        className="text-xs w-5 h-5 rounded-full border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                      >
-                        ?
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!rows.length && (
-                <tr><td colSpan={4} className="py-2 text-xs text-[var(--text-muted)]">
-                  Kein Bereich — »von« muss kleiner als »bis« sein.
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-          {rows.some(r => r.y === null) && (
-            <p className="text-xs text-[var(--text-muted)] mt-2">
-              — heißt: dort ist die Funktion nicht definiert.
-            </p>
-          )}
-        </div>
       </div>
 
       {wegX !== null && node && (
-        <Rechenweg node={node} x={wegX} onClose={() => setWegX(null)} />
+        <Rechenweg node={node} x={wegX} fmtValue={texX} onClose={() => setWegX(null)} />
       )}
     </div>
   );
