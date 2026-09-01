@@ -3,7 +3,7 @@ import { useRef, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, QuizOut, ClassOut } from "@/lib/api";
+import { api, QuizOut, ClassOut, ClassPoints } from "@/lib/api";
 import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -35,9 +35,14 @@ const GRADES = [5, 6, 7, 8, 9, 10];
 type SessionRow = {
   join_code: string;
   status: string;
-  class_id: number;
+  class_id: number | null;
+  group_id: number | null;
+  /** »9a« bzw. »9 NaT« — bei einem Kurs/WPF steckt keine Klasse dahinter. */
+  scope_label: string;
   participant_count: number;
   points_awarded: number | null;
+  /** Je Klasse eine Zeile — bei einer klassenübergreifenden Runde mehrere. */
+  points_by_class: ClassPoints[];
   started_at: string | null;
   finished_at: string | null;
 };
@@ -301,16 +306,21 @@ function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOu
       </div>
       <SessionGrid
         items={sessions.map((s): SessionCardItem => {
-          const cls = classes.find(c => c.id === s.class_id);
+          const cls = s.class_id != null ? classes.find(c => c.id === s.class_id) : undefined;
+          // Bei mehreren Klassen sagt die Summe wenig — dann steht hier, was
+          // jede einzelne bekommen hat.
+          const points = s.points_by_class.length > 1
+            ? s.points_by_class.map(c => `${c.class_code}: ${c.points} Pkt.`)
+            : s.points_awarded !== null ? [`${s.points_awarded} Pkt.`] : [];
           return {
             code: s.join_code,
-            title: cls?.display_name ?? `Klasse ${s.class_id}`,
+            title: cls?.display_name ?? s.scope_label,
             status: s.status === "active" ? { label: "Läuft", tone: "live" }
               : s.status === "waiting" ? { label: "Wartet", tone: "waiting" }
               : { label: "Beendet", tone: "done" },
             meta: [
               `${s.participant_count} Teiln.`,
-              ...(s.points_awarded !== null ? [`${s.points_awarded} Pkt.`] : []),
+              ...points,
             ],
           };
         })}

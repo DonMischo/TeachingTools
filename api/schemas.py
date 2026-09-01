@@ -236,7 +236,9 @@ class QuizDetailOut(QuizOut):
 
 
 class SessionCreate(BaseModel):
-    class_id: int
+    # Genau eines von beidem: eine Klasse oder ein Kurs/WPF (klassenübergreifend).
+    class_id: int | None = None
+    group_id: int | None = None
     max_points: int = 100
     team_mode: bool = False
 
@@ -245,6 +247,9 @@ class ParticipantJoin(BaseModel):
     name: str
     avatar: str = "cat"
     team_id: int | None = None
+    # Nur in einer Kurs/WPF-Sitzung und nur von Gästen gefüllt: angemeldete
+    # Schüler bringen ihre Klasse selbst mit.
+    class_id: int | None = None
 
 
 class SessionOut(BaseModel):
@@ -253,7 +258,9 @@ class SessionOut(BaseModel):
     status: str
     current_question_idx: int
     quiz_id: int
-    class_id: int
+    class_id: int | None
+    group_id: int | None = None
+    scope_label: str = ""
     points_awarded: int | None
     participant_count: int = 0
     team_mode: bool = False

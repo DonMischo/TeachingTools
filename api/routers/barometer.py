@@ -436,7 +436,7 @@ async def barometer_ws(
     identity = ws_identity(websocket, db)
     # Unauthenticated players may vote if they hold a live guest token scoped to
     # this code (only issued when the teacher opted in — enforces opt-in + expiry).
-    guest = ws_guest(websocket, code) if not identity else None
+    guest = ws_guest(websocket, code, db) if not identity else None
     if not identity and not guest:
         await websocket.close(code=4001)
         return

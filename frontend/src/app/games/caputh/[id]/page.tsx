@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { ClassSelect } from "@/components/ClassSelect";
+import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CaputhDetailPage() {
@@ -18,17 +18,17 @@ export default function CaputhDetailPage() {
     queryFn: () => api.capuths.get(quizId),
   });
 
-  const [classId, setClassId] = useState<number | "">("");
+  const [scope, setScope] = useState<Scope>(null);
   const [teamMode, setTeamMode] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleStart() {
-    if (!classId || !quiz) return;
+    if (!scope || !quiz) return;
     setStarting(true);
     setError(null);
     try {
-      const session = await api.capuths.createSession(quizId, Number(classId), quiz.max_points, teamMode);
+      const session = await api.capuths.createSession(quizId, scopeBody(scope), quiz.max_points, teamMode);
       router.push(`/games/caputh/host/${session.join_code}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Fehler beim Starten");
@@ -70,8 +70,14 @@ export default function CaputhDetailPage() {
       <div className="border-t border-[var(--border)] pt-6 space-y-4">
         <h2 className="font-semibold">Neue Session</h2>
         <div>
-          <label className="label">Klasse</label>
-          <ClassSelect value={classId} onChange={setClassId} />
+          <label className="label">Klasse oder Kurs/WPF</label>
+          <ScopeSelect value={scope} onChange={setScope} />
+          {scope?.kind === "group" && (
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              Klassenübergreifend: jede beteiligte Klasse bekommt Punkte nach ihrer eigenen
+              Trefferquote.
+            </p>
+          )}
         </div>
         <label className="flex items-center gap-3 cursor-pointer text-sm">
           <div
@@ -84,7 +90,7 @@ export default function CaputhDetailPage() {
         </label>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
-          disabled={!classId || starting}
+          disabled={!scope || starting}
           onClick={handleStart}
           className="btn-primary disabled:opacity-40"
         >

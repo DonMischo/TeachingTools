@@ -40,23 +40,66 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def create_guest_token(code: str, name: str) -> str:
+def create_guest_token(code: str, name: str, epoch: int = 0) -> str:
     """Signed, session-scoped, 60-min token for a QR/join-link guest. `sub` is a
-    throwaway guest id (no DB row); `scope` binds the token to one session code."""
+    throwaway guest id (no DB row); `scope` binds the token to one session code.
+
+    `gen` haelt den Stand des Sitzungszaehlers fest: startet die Lehrkraft den
+    Gastzugang neu, sind alle Token mit kleinerem `gen` verbraucht (siehe
+    :func:`guest_access_restarted`)."""
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.guest_token_expire_minutes)
     payload = {
         "sub": str(uuid.uuid4()),
         "type": "guest",
         "name": name,
         "scope": code,
+        "gen": epoch,
         "exp": expire,
     }
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def decode_guest_token(token: str, code: str) -> Guest | None:
+def guest_epoch_for(db: Session, code: str) -> int:
+    """Aktueller Stand des »neu starten«-Zaehlers dieser Sitzung (0, wenn es
+    keine gibt oder nie neu gestartet wurde)."""
+    from .join_codes import find_sessions  # lokal: vermeidet einen Import-Zyklus
+
+    for _tool, session in find_sessions(db, code):
+        return getattr(session, "guest_epoch", 0) or 0
+    return 0
+
+
+def guest_access_restarted(db: Session, code: str, token_epoch: int | None) -> bool:
+    """True, wenn der Gastzugang dieser Sitzung seit Ausgabe des Tokens neu
+    gestartet wurde — dann ist das Token verbraucht.
+
+    Nachgesehen wird ueber die Join-Code-Registry, weil ein Gast-Token nur
+    seinen Code kennt, nicht das Werkzeug. Codes sind global eindeutig
+    (``utils.gen_code`` prueft gegen alle Werkzeuge), also trifft die Suche
+    genau eine Sitzung.
+
+    Findet sich keine Sitzung, wird **nicht** abgelehnt: Fragment-Sammlungen
+    haben eigene ``guest_code``-Werte ausserhalb dieser Registry, und die
+    sollen weiter funktionieren.
+    """
+    from .join_codes import find_sessions  # lokal: vermeidet einen Import-Zyklus
+
+    for _tool, session in find_sessions(db, code):
+        current = getattr(session, "guest_epoch", 0) or 0
+        # Token ohne `gen` stammen aus der Zeit vor diesem Feld — ein Neustart
+        # soll gerade sie abraeumen, also zaehlen sie als Stand 0.
+        if (token_epoch or 0) < current:
+            return True
+    return False
+
+
+def decode_guest_token(token: str, code: str, db: Session | None = None) -> Guest | None:
     """Return the Guest for a valid, unexpired token scoped to `code`, else None.
-    Expiry is enforced by jwt.decode (JWTError → None → access denied)."""
+    Expiry is enforced by jwt.decode (JWTError → None → access denied).
+
+    Mit `db` wird zusaetzlich geprueft, ob die Lehrkraft den Gastzugang dieser
+    Sitzung inzwischen neu gestartet hat. Ohne `db` bleibt es bei der reinen
+    Token-Pruefung (Aufrufer ohne DB-Sitzung)."""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
     except JWTError:
@@ -65,6 +108,8 @@ def decode_guest_token(token: str, code: str) -> Guest | None:
         return None
     sub = payload.get("sub")
     if not sub:
+        return None
+    if db is not None and guest_access_restarted(db, code, payload.get("gen")):
         return None
     return Guest(id=sub, name=payload.get("name") or "Gast", scope=code)
 
@@ -139,14 +184,18 @@ def get_current_user_optional(
 
 
 def guest_from_credentials(
-    credentials: Optional[HTTPAuthorizationCredentials], code: str
+    credentials: Optional[HTTPAuthorizationCredentials], code: str,
+    db: Session | None = None,
 ) -> Guest | None:
     """Resolve a valid Guest for `code` from an Authorization: Bearer token, else
     None. Used where the session code isn't the request's path param (e.g. the
-    exitgame attempt endpoints keyed by attempt_id)."""
+    exitgame attempt endpoints keyed by attempt_id).
+
+    `db` mitgeben, wo eine DB-Sitzung zur Hand ist: dann wird auch ein
+    neugestarteter Gastzugang erkannt."""
     if not credentials:
         return None
-    return decode_guest_token(credentials.credentials, code)
+    return decode_guest_token(credentials.credentials, code, db)
 
 
 def get_player(
@@ -164,7 +213,7 @@ def get_player(
     user = get_current_user_optional(request, credentials, db)
     if user is not None:
         return user
-    guest = guest_from_credentials(credentials, code)
+    guest = guest_from_credentials(credentials, code, db)
     if guest is not None:
         return guest
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")

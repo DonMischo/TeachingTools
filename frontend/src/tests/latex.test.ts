@@ -41,7 +41,8 @@ describe("LaTeX als Eingabe", () => {
     const r = parseEquation("$2 \\cdot (x + 3) = 14$");
     expect(r.ok && formatEquation(r.eq)).toBe("2·(x + 3) = 14");
     const f = parseEquation("\\frac{x}{2} = 3");
-    expect(f.ok && formatEquation(f.eq)).toBe("0,5x = 3");
+    // Der Faktor vor dem x steht als Bruch, nicht als Dezimalzahl.
+    expect(f.ok && formatEquation(f.eq)).toBe("1/2x = 3");
   });
 
   it("liest Formeln im Variablenmodus", () => {

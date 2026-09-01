@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api, ExitGameDetailOut, ExitGameSessionOut } from "@/lib/api";
-import { ClassSelect } from "@/components/ClassSelect";
+import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,7 +17,7 @@ export default function ExitgameDetailPage() {
   const { auth } = useAuth();
   // Students may author Exitgames but not host live sessions.
   const isTeacher = auth?.user_type === "teacher";
-  const [classId, setClassId] = useState<number | "">("");
+  const [scope, setScope] = useState<Scope>(null);
 
   const { data: game } = useQuery<ExitGameDetailOut>({
     queryKey: ["exitgame", gameId], queryFn: () => api.exitgame.get(gameId),
@@ -28,7 +28,7 @@ export default function ExitgameDetailPage() {
   });
 
   const createSessionMut = useMutation({
-    mutationFn: () => api.exitgame.sessions.create(gameId, classId as number),
+    mutationFn: () => api.exitgame.sessions.create(gameId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] });
       router.push(`/games/exitgame/host/${s.join_code}`);
@@ -69,8 +69,8 @@ export default function ExitgameDetailPage() {
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
         <h2 className="font-semibold text-sm">▶ Neue Session starten</h2>
         <div className="flex gap-2">
-          <ClassSelect value={classId} onChange={setClassId} />
-          <button onClick={() => createSessionMut.mutate()} disabled={!classId || createSessionMut.isPending}
+          <ScopeSelect value={scope} onChange={setScope} />
+          <button onClick={() => createSessionMut.mutate()} disabled={!scope || createSessionMut.isPending}
             className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
             Starten
           </button>
@@ -91,6 +91,11 @@ export default function ExitgameDetailPage() {
                   {s.status === "open" ? "offen" : "geschlossen"}
                 </span>
                 <span className="text-sm font-mono">{s.join_code}</span>
+                {s.scope_label && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg)] text-[var(--text-muted)]">
+                    {s.scope_label}
+                  </span>
+                )}
                 <span className="text-xs text-[var(--text-muted)]">{s.attempt_count} Versuch(e)</span>
                 <div className="flex-1" />
                 <Link href={`/games/exitgame/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>

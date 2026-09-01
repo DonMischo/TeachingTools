@@ -97,6 +97,15 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("bildformate", "🖼️ Bildformate", "🖼️", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("vierecke", "📐 Vierecke", "📐", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("binaerrechner", "◈ Binär-Rechner", "◈", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("funktionen", "📈 Funktionen", "📈", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

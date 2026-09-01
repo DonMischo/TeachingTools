@@ -288,7 +288,7 @@ def join_room(
     # user, or a guest whose token is scoped to this room's code.
     user = get_current_user_optional(request, credentials, db)
     if user is None:
-        user = guest_from_credentials(credentials, room.code)
+        user = guest_from_credentials(credentials, room.code, db)
     if user is None:
         raise HTTPException(401, "Not authenticated")
     _assert_access(room, user, db)

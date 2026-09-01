@@ -287,7 +287,7 @@ export default function SchreibraumEditorPage() {
 
   // Unauthenticated visitor: guest join flow (60-min scoped access, teacher opt-in).
   if (!auth) {
-    if (guest.expired) return <GuestExpired gameIcon="✍️" />;
+    if (guest.expired) return <GuestExpired gameIcon="✍️" onRejoin={guest.rejoin} />;
     if (!guest.token) {
       return (
         <PlayerIdentityForm

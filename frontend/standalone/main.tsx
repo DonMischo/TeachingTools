@@ -13,11 +13,17 @@ import { WaageStyles } from "@/components/waage/Balance";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
+import Vierecke from "@/components/simulationen/Vierecke";
+import Binaerrechner from "@/components/simulationen/Binaerrechner";
+import Funktionen from "@/components/simulationen/Funktionen";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
   { id: "abakus", icon: "🧮", label: "Abakus", node: <Abakus /> },
   { id: "bildformate", icon: "🖼️", label: "Bildformate", node: <Bildformate /> },
+  { id: "vierecke", icon: "📐", label: "Vierecke", node: <Vierecke /> },
+  { id: "binaer", icon: "◈", label: "Binär-Rechner", node: <Binaerrechner /> },
+  { id: "funktionen", icon: "📈", label: "Funktionen", node: <Funktionen /> },
 ];
 
 function App() {

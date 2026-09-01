@@ -170,15 +170,23 @@ class QuizAnswer(Base):
 
 
 class QuizSession(Base):
+    """A quiz run, scoped to exactly one of class_id (a Klasse) or group_id
+    (a Kurs/WPF). Kurse and Wahlpflicht groups are klassenuebergreifend, so a
+    group session's points are split per participating Klasse — see
+    points_by_class and api/scoping.py."""
     __tablename__ = "quiz_sessions"
     __table_args__ = (
         # A class can only earn points from a given quiz once
         UniqueConstraint("quiz_id", "class_id", name="uq_quiz_class"),
+        # ... and so can a Kurs/WPF group. Both constraints coexist because the
+        # unused column is NULL, and NULLs never collide in Postgres.
+        UniqueConstraint("quiz_id", "group_id", name="uq_quiz_group"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     quiz_id: Mapped[int] = mapped_column(ForeignKey("quizzes.id", ondelete="RESTRICT"), nullable=False)
-    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="RESTRICT"), nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="RESTRICT"), nullable=True)
+    group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="RESTRICT"), nullable=True)
     teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     join_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     # waiting | active | finished
@@ -186,13 +194,28 @@ class QuizSession(Base):
     current_question_idx: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Total handed out, summed over all participating classes. Kept as the one
+    # number every existing reader (session list, host screen) already shows.
     points_awarded: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # {"<class_id>": points} — the per-Klasse breakdown behind points_awarded.
+    # Set for every scored session, so a single-class run has one entry.
+    points_by_class: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     team_mode: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     quiz: Mapped["Quiz"] = relationship(back_populates="sessions")
-    class_: Mapped["Class"] = relationship()
+    class_: Mapped["Class | None"] = relationship()
+    group: Mapped["StudentGroup | None"] = relationship()
     teacher: Mapped["Teacher"] = relationship()
     participants: Mapped[list["QuizParticipant"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
@@ -213,9 +236,18 @@ class QuizParticipant(Base):
     guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     team_id: Mapped[int | None] = mapped_column(ForeignKey("quiz_teams.id", ondelete="SET NULL"), nullable=True)
+    # Angemeldete Schueler werden mitgeschrieben, damit ihre Klasse feststeht.
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    # Die Klasse, der die Punkte dieses Teilnehmers zugute kommen. Bei einer
+    # Klassensitzung immer die der Sitzung; bei Kurs/WPF die eigene Klasse des
+    # angemeldeten Schuelers bzw. die vom Gast beim Beitritt gewaehlte.
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
 
     session: Mapped["QuizSession"] = relationship(back_populates="participants")
     responses: Mapped[list["QuizResponse"]] = relationship(back_populates="participant")
+    # Ohne diese Beziehung fiel die Rangliste auf "Team 3" zurueck, statt den
+    # bei der Anlage eingegebenen Namen ("Jungen", "Maedchen") zu zeigen.
+    team: Mapped["QuizTeam | None"] = relationship()
 
 
 class QuizResponse(Base):
@@ -458,6 +490,15 @@ class SchreibraumRoom(Base):
     is_permanent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
     # QR/join-link guests may join this room (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -638,6 +679,15 @@ class BarometerSession(Base):
     shared: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     creator: Mapped["Teacher"] = relationship()
     questions: Mapped[list["BarometerQuestion"]] = relationship(
@@ -719,6 +769,15 @@ class AuctionSession(Base):
     winning_bid: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     creator: Mapped["Teacher"] = relationship()
     set: Mapped["AuctionSet"] = relationship(back_populates="sessions")
@@ -789,6 +848,9 @@ class BingoSession(Base):
     # Class the round is played with. Anonymous players' points are credited
     # to this class on close; logged-in students credit their own class.
     class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    # Alternative zur Klasse: ein Kurs/WPF. Klassenuebergreifend, deshalb werden
+    # die Punkte je Klasse der Spieler gebucht (siehe api/scoping.py).
+    group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="SET NULL"), nullable=True)
     code: Mapped[str] = mapped_column(String(8), unique=True, index=True, nullable=False)
     # indices of pairs called so far (in order)
     called_indices: Mapped[list] = mapped_column(JSON, nullable=False, server_default="[]")
@@ -800,12 +862,25 @@ class BingoSession(Base):
     # spielen will, setzt zurueck — das startet eine frische Runde und loescht
     # dieses Feld wieder.
     awarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # {"<class_id>": Punkte} — beim Auswerten festgehalten, damit die Runde
+    # spaeter noch sagen kann, welche Klasse was bekommen hat.
+    points_by_class: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     creator: Mapped["Teacher"] = relationship()
+    group: Mapped["StudentGroup | None"] = relationship()
     set: Mapped["BingoSet"] = relationship(back_populates="sessions")
     cards: Mapped[list["BingoCard"]] = relationship(back_populates="session", cascade="all, delete-orphan")
 
@@ -838,6 +913,9 @@ class BingoCard(Base):
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     # UUID token for anonymous (non-auth) participants, stored in their localStorage
     anon_token: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    # Klasse, der die Punkte dieser Karte zugute kommen — bei Gaesten in einer
+    # Kurs/WPF-Runde die beim Beitritt gewaehlte.
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
     student_name: Mapped[str] = mapped_column(String(100), nullable=False)
     # pair indices assigned to each grid cell (length = rows*cols)
     grid_indices: Mapped[list] = mapped_column(JSON, nullable=False)
@@ -866,6 +944,15 @@ class ExitTicketSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     creator: Mapped["Teacher"] = relationship()
     responses: Mapped[list["ExitTicketResponse"]] = relationship(
@@ -1175,7 +1262,10 @@ class ExitGameSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     exitgame_id: Mapped[int] = mapped_column(ForeignKey("exitgames.id", ondelete="RESTRICT"), nullable=False)
-    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="RESTRICT"), nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="RESTRICT"), nullable=True)
+    # Alternative zur Klasse: ein Kurs/WPF. Reines Berichtsetikett — das
+    # Exitgame vergibt keine Hauspunkte.
+    group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="RESTRICT"), nullable=True)
     teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     join_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="open")  # open | closed
@@ -1183,9 +1273,19 @@ class ExitGameSession(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     exitgame: Mapped["ExitGame"] = relationship(back_populates="sessions")
-    class_: Mapped["Class"] = relationship()
+    class_: Mapped["Class | None"] = relationship()
+    group: Mapped["StudentGroup | None"] = relationship()
     teacher: Mapped["Teacher"] = relationship()
     attempts: Mapped[list["ExitGameAttempt"]] = relationship(back_populates="session", cascade="all, delete-orphan")
 
@@ -1374,6 +1474,15 @@ class LueckentextSession(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # QR/join-link guests may join this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     lueckentext: Mapped["LueckentextSet"] = relationship()
     teacher: Mapped["Teacher"] = relationship()
@@ -1723,6 +1832,15 @@ class ToolSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # QR/join-link guests may open this session (teacher opt-in)
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
 
     creator: Mapped["Teacher"] = relationship()
 
@@ -1797,6 +1915,15 @@ class WettschreibenSession(Base):
     # lobby → laeuft → fertig
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="lobby")
     allow_guests: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="0")
+    # Zaehler fuer »Gastzugang neu starten«. Jedes Gast-Token merkt sich den
+    # Stand bei seiner Ausgabe; erhoeht die Lehrkraft ihn, sind alle aelteren
+    # Token verbraucht — so kommt die naechste Klasse an denselben gedruckten
+    # QR, ohne dass die vorige noch drinsitzt.
+    #
+    # Bewusst ein Zaehler und kein Zeitstempel: `iat` im JWT ist auf ganze
+    # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
+    # Beitritt in derselben Sekunde nicht auseinanderhalten.
+    guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

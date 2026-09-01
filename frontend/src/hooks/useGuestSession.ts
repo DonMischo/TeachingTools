@@ -22,8 +22,17 @@ function load(key: string): GuestSession | null {
 /**
  * Guest identity for one session `code`. `join(tool, name)` calls the backend
  * (which enforces the teacher opt-in) and persists the returned token; `expired`
- * flips to true when the 60-minute window elapses — the caller shows a hard-block
- * "Sitzung abgelaufen" screen and does NOT offer a rejoin.
+ * flips to true when the 60-minute window elapses and the caller shows the
+ * "Sitzung abgelaufen" screen.
+ *
+ * Dieser Bildschirm ist eine Sackgasse *auf Zeit*, keine dauerhafte Sperre:
+ * `rejoin()` wirft den abgelaufenen Eintrag weg und lädt die Seite neu, sodass
+ * der Gast wieder ganz normal beitreten kann. Ohne das blieb der abgelaufene
+ * localStorage-Eintrag für immer liegen — und weil die Codes zustandsloser
+ * Werkzeuge absichtlich stabil sind (ein gedruckter QR soll weiter gelten),
+ * war dasselbe Gerät danach dauerhaft ausgesperrt, auch wenn die Lehrkraft
+ * erneut geteilt hatte. Das Tor bleibt der Server: `guest/join` prüft weiter
+ * das Gast-Opt-in und ob die Sitzung offen ist.
  */
 export function useGuestSession(code: string) {
   const key = `hp_guest_${code}`;
@@ -42,8 +51,16 @@ export function useGuestSession(code: string) {
 
   useEffect(() => {
     const s = load(key);
+    // Ein beim Seitenaufruf schon abgelaufener Eintrag wird weggeworfen, statt
+    // den Abgelaufen-Bildschirm zu zeigen: wer den Link in der naechsten Stunde
+    // erneut oeffnet, soll einfach wieder beitreten koennen. Der Bildschirm
+    // gehoert dem Fall, dass das Fenster *waehrend* der Nutzung ablaeuft — dort
+    // muss die Nutzung stoppen und erklaert werden.
+    if (s === null) {
+      try { localStorage.removeItem(key); } catch {}
+    }
     setSession(s);
-    setExpired(s === null && localStorage.getItem(key) !== null);
+    setExpired(false);
     armExpiry(s);
     setLoaded(true);
     return () => { if (timer.current) clearTimeout(timer.current); };
@@ -63,10 +80,27 @@ export function useGuestSession(code: string) {
     if (timer.current) clearTimeout(timer.current);
     try { localStorage.removeItem(key); } catch {}
     setSession(null);
+    setExpired(false);
   }, [key]);
 
   /** Force the hard-block screen (e.g. a WS closed 4001 or a REST call 401'd). */
   const markExpired = useCallback(() => setExpired(true), []);
 
-  return { session, token: session?.token ?? null, expired, loaded, join, clear, markExpired };
+  /**
+   * Abgelaufenes Gastfenster verwerfen und von vorn beginnen.
+   *
+   * Der Neuaufbau der Seite ist Absicht: die Werkzeugseiten halten eigenen
+   * Zustand (Phase, WebSocket, Karte). Ein Reload setzt alles davon sauber auf
+   * den Beitrittsweg zurück und holt nebenbei den aktuellen Sitzungsstatus —
+   * die Lehrkraft kann inzwischen geschlossen oder Gäste abgeschaltet haben.
+   */
+  const rejoin = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    try { localStorage.removeItem(key); } catch {}
+    setSession(null);
+    setExpired(false);
+    if (typeof window !== "undefined") window.location.reload();
+  }, [key]);
+
+  return { session, token: session?.token ?? null, expired, loaded, join, clear, markExpired, rejoin };
 }

@@ -25,12 +25,14 @@ from sqlalchemy.orm import Session
 from .. import timeline_engine
 from ..database import get_db
 from ..models import (
-    Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class
+    Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class,
+    Student
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
 from ..auth import get_current_teacher, get_current_user, get_player, Guest
 from ..availability import require_capability
 from ..authorship import scope_to_student_pool, is_student
+from .. import scoping
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
 from ..ws_manager import RoomManager
@@ -254,15 +256,50 @@ def _create_caputh_from_parsed(db: Session, quiz_fields: dict, questions: list[d
     return quiz
 
 
-def _score_session(session: QuizSession) -> int:
+def _score_by_class(session: QuizSession) -> dict[int, dict]:
+    """Trefferquote und Rohpunkte je beteiligter Klasse.
+
+    Jede Klasse wird fuer sich bewertet: die 9a an ihren eigenen Teilnehmern,
+    die 9b an ihren. 60 % richtig heisst 60 % der Maximalpunktzahl — fuer jede
+    Klasse einzeln, nicht als Anteil an einem geteilten Topf. Bei einer
+    Klassensitzung bleibt genau ein Eintrag uebrig, also unveraendertes
+    Verhalten.
+
+    Teilnehmer ohne eigene Klasse zaehlen in einer Klassensitzung fuer deren
+    Klasse — dort gibt es nur eine, und genau so war es vor dieser Aufteilung.
+    In einer Kurs/WPF-Sitzung fehlt diese Rueckfallebene: ein Gast, der keine
+    Klasse gewaehlt hat, zaehlt nirgends mit, weder als Zaehler noch als
+    Nenner, statt einer fremden Klasse angerechnet zu werden.
+    """
     scored_questions = [q for q in session.quiz.questions if q.type != "survey"]
     n_q = len(scored_questions)
-    n_p = len(session.participants)
-    if n_q == 0 or n_p == 0:
-        return 0
-    correct = sum(1 for r in session.responses if r.is_correct is True)
-    ratio = correct / (n_p * n_q)
-    return math.floor(ratio * session.quiz.max_points)
+    if n_q == 0:
+        return {}
+
+    def class_of(p: QuizParticipant) -> int | None:
+        return p.class_id if p.class_id is not None else session.class_id
+
+    per_class: dict[int, dict] = {}
+    for p in session.participants:
+        cid = class_of(p)
+        if cid is None:
+            continue
+        per_class.setdefault(cid, {"participants": 0, "correct": 0})
+        per_class[cid]["participants"] += 1
+
+    by_participant = {p.id: class_of(p) for p in session.participants}
+    for r in session.responses:
+        if r.is_correct is not True:
+            continue
+        cid = by_participant.get(r.participant_id)
+        if cid is not None and cid in per_class:
+            per_class[cid]["correct"] += 1
+
+    for cid, d in per_class.items():
+        d["ratio"] = d["correct"] / (d["participants"] * n_q)
+        d["raw_points"] = math.floor(d["ratio"] * session.quiz.max_points)
+    return per_class
+
 
 
 def _question_preview_msg(q: QuizQuestion, idx: int, total: int, time_limit: int, participant_count: int = 0) -> dict:
@@ -332,14 +369,11 @@ def _build_ranking(s: QuizSession, scores: dict, last_delta: dict) -> list:
             if p.team_id is not None:
                 team_scores[p.team_id] = team_scores.get(p.team_id, 0.0) + scores.get(p.id, 0.0)
                 team_deltas[p.team_id] = team_deltas.get(p.team_id, 0.0) + last_delta.get(p.id, 0.0)
-                if p.team_id not in team_names and hasattr(p, "team") and p.team:
+                if p.team_id not in team_names and p.team is not None:
+                    # Der bei der Anlage eingegebene Name — »Jungen«, »Mädchen« —,
+                    # nicht »Team 3«.
                     team_names[p.team_id] = p.team.name
                     team_colors[p.team_id] = p.team.color
-        # Fall back to DB for team names we didn't get from relationship
-        for p in s.participants:
-            if p.team_id is not None and p.team_id not in team_names:
-                team_names[p.team_id] = f"Team {p.team_id}"
-                team_colors[p.team_id] = None
         result = []
         for tid, score in team_scores.items():
             result.append({
@@ -703,7 +737,9 @@ def _compute_gruppenauswertung(
         .all()
     )
 
-    # Aggregate per class
+    # Aggregate per class. Eine Kurs/WPF-Sitzung zaehlt fuer jede beteiligte
+    # Klasse einzeln — mit deren eigener Quote, nicht mit der Summe der Runde
+    # (die liegt bei mehreren Klassen ueber max_points).
     class_data: dict[int, dict] = {}
     for s in sessions:
         if s.points_awarded is None:
@@ -711,15 +747,23 @@ def _compute_gruppenauswertung(
         quiz = quiz_ids[s.quiz_id]
         if quiz.max_points == 0:
             continue
-        score_ratio = s.points_awarded / quiz.max_points  # 0–1
+        if s.points_by_class:
+            per_class = [(int(cid), pts) for cid, pts in s.points_by_class.items()]
+        elif s.class_id is not None:
+            # Altbestand: vor points_by_class gab es nur die eine Klasse.
+            per_class = [(s.class_id, s.points_awarded)]
+        else:
+            continue
 
-        if s.class_id not in class_data:
-            class_data[s.class_id] = {"ratios": [], "teacher_counts": {}}
-        class_data[s.class_id]["ratios"].append(score_ratio)
         teacher_name = f"{s.teacher.first_name} {s.teacher.last_name}"
-        class_data[s.class_id]["teacher_counts"][teacher_name] = (
-            class_data[s.class_id]["teacher_counts"].get(teacher_name, 0) + 1
-        )
+        for class_id, points in per_class:
+            score_ratio = points / quiz.max_points  # 0–1
+            if class_id not in class_data:
+                class_data[class_id] = {"ratios": [], "teacher_counts": {}}
+            class_data[class_id]["ratios"].append(score_ratio)
+            class_data[class_id]["teacher_counts"][teacher_name] = (
+                class_data[class_id]["teacher_counts"].get(teacher_name, 0) + 1
+            )
 
     all_classes = {c.id: c for c in db.query(Class).all()}
 
@@ -835,18 +879,28 @@ def gruppenauswertung_commit(
 # ---------------------------------------------------------------------------
 
 def create_session_for_class(
-    db: Session, quiz_id: int, class_id: int, teacher_id: int,
+    db: Session, quiz_id: int, class_id: int | None, teacher_id: int,
     max_points: int | None = None, team_mode: bool = False,
+    group_id: int | None = None,
 ) -> QuizSession:
-    """Create (or return the existing waiting/active) session for a quiz+class
-    — shared by the REST endpoint and the Stundenplaner tool registry."""
+    """Create (or return the existing waiting/active) session for a quiz and one
+    scope — either a Klasse or a Kurs/WPF. Shared by the REST endpoint and the
+    Stundenplaner tool registry."""
     caputh = db.get(Quiz, quiz_id)
     if not caputh:
         raise HTTPException(404, "Caputh not found")
+    scoping.validate_scope(class_id, group_id)
+    if group_id is not None:
+        scoping.load_group(db, group_id)
 
-    existing = db.query(QuizSession).filter_by(quiz_id=quiz_id, class_id=class_id).first()
+    if class_id is not None:
+        existing = db.query(QuizSession).filter_by(quiz_id=quiz_id, class_id=class_id).first()
+        already = "Diese Klasse hat dieses Caputh bereits gespielt."
+    else:
+        existing = db.query(QuizSession).filter_by(quiz_id=quiz_id, group_id=group_id).first()
+        already = "Dieser Kurs hat dieses Caputh bereits gespielt."
     if existing and existing.points_awarded is not None:
-        raise HTTPException(409, "This class has already completed this quiz")
+        raise HTTPException(409, already)
     if existing and existing.status in ("waiting", "active"):
         return existing
 
@@ -855,6 +909,7 @@ def create_session_for_class(
     session = QuizSession(
         quiz_id=quiz_id,
         class_id=class_id,
+        group_id=group_id,
         teacher_id=teacher_id,
         join_code=gen_code(db, QuizSession, "join_code"),
         team_mode=team_mode,
@@ -863,6 +918,13 @@ def create_session_for_class(
     db.commit()
     db.refresh(session)
     return session
+
+
+def _session_out(s: QuizSession, db: Session) -> SessionOut:
+    o = SessionOut.model_validate(s)
+    o.participant_count = len(s.participants)
+    o.scope_label = scoping.scope_label(db, s.class_id, s.group_id)
+    return o
 
 
 @router.post("/api/capuths/{quiz_id}/sessions", response_model=SessionOut, status_code=201, dependencies=[Depends(require_capability("caputh", "host"))])
@@ -875,10 +937,9 @@ def create_session(
     session = create_session_for_class(
         db, quiz_id, body.class_id, current.id,
         max_points=body.max_points, team_mode=body.team_mode,
+        group_id=body.group_id,
     )
-    o = SessionOut.model_validate(session)
-    o.participant_count = len(session.participants)
-    return o
+    return _session_out(session, db)
 
 
 @router.get("/api/sessions/{code}", response_model=SessionOut)
@@ -886,9 +947,7 @@ def get_session(code: str, db: Session = Depends(get_db)):
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
-    o = SessionOut.model_validate(s)
-    o.participant_count = len(s.participants)
-    return o
+    return _session_out(s, db)
 
 
 @router.get("/api/capuths/{quiz_id}/sessions")
@@ -899,8 +958,11 @@ def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db), _: Teacher
             "join_code": s.join_code,
             "status": s.status,
             "class_id": s.class_id,
+            "group_id": s.group_id,
+            "scope_label": scoping.scope_label(db, s.class_id, s.group_id),
             "participant_count": len(s.participants),
             "points_awarded": s.points_awarded,
+            "points_by_class": _stored_breakdown(s, db),
             "started_at": s.started_at.isoformat() if s.started_at else None,
             "finished_at": s.finished_at.isoformat() if s.finished_at else None,
         }
@@ -967,6 +1029,9 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
 
     questions = s.quiz.questions
     scored_qs = [q for q in questions if q.type != "survey"]
+    # In einer Kurs/WPF-Runde sagt der Name allein nicht, fuer welche Klasse
+    # jemand gespielt hat.
+    class_codes = {c.id: c.code for c in db.query(Class).all()}
 
     rows = []
     for p in sorted(s.participants, key=lambda x: x.name):
@@ -988,6 +1053,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         rows.append({
             "name": p.name,
             "avatar": p.avatar,
+            "class_code": class_codes.get(p.class_id, "–"),
             "correct": correct_count,
             "total_scored": n_scored,
             "percent": round(correct_count / n_scored * 100) if n_scored else None,
@@ -997,10 +1063,10 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
     if fmt == "csv":
         buf = io_mod.StringIO()
         writer = csv_mod.writer(buf)
-        header = ["Name", "Richtig", "Gesamt", "%"] + [f"F{i+1}: {q.question_text[:40]}" for i, q in enumerate(questions)]
+        header = ["Name", "Klasse", "Richtig", "Gesamt", "%"] + [f"F{i+1}: {q.question_text[:40]}" for i, q in enumerate(questions)]
         writer.writerow(header)
         for r in rows:
-            cells = [r["name"], r["correct"], r["total_scored"],
+            cells = [r["name"], r["class_code"], r["correct"], r["total_scored"],
                      f"{r['percent']}%" if r["percent"] is not None else "–"]
             for qr in r["questions"]:
                 if qr["correct"] is None:
@@ -1022,6 +1088,8 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         "session_code": code,
         "quiz_title": s.quiz.title,
         "status": s.status,
+        "scope_label": scoping.scope_label(db, s.class_id, s.group_id),
+        "points_by_class": _stored_breakdown(s, db),
         "questions": [{"id": q.id, "text": q.question_text, "type": q.type} for q in questions],
         "participants": rows,
     }
@@ -1085,6 +1153,19 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
     name = body.name.strip()[:100]
     avatar = body.avatar[:50]
 
+    # Wem die Leistung dieses Teilnehmers gutgeschrieben wird. In einer
+    # Klassensitzung immer der Klasse der Sitzung; in einer Kurs/WPF-Sitzung
+    # der eigenen Klasse des angemeldeten Schuelers, sonst der beim Beitritt
+    # gewaehlten.
+    student_id = player.id if isinstance(player, Student) else None
+    target_class_id = scoping.participant_class_id(
+        session_class_id=s.class_id,
+        session_group_id=s.group_id,
+        student_class_id=player.class_id if isinstance(player, Student) else None,
+        chosen_class_id=body.class_id,
+        allowed_class_ids=scoping.scope_class_ids(db, s.class_id, s.group_id) or None,
+    )
+
     # Wiedereinstieg. Gaeste werden an ihrer Token-Id erkannt, nicht am Namen:
     # zwei Gaeste, die beide "Max" eintippen, sind zwei Spieler. Der Name allein
     # hat sie frueher zu einem einzigen Teilnehmer verschmolzen, samt geteilter
@@ -1101,15 +1182,21 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
         existing.avatar = avatar
         if body.team_id is not None:
             existing.team_id = body.team_id
+        existing.student_id = student_id
+        if target_class_id is not None:
+            existing.class_id = target_class_id
         db.commit()
         db.refresh(existing)
-        return {"participant_id": existing.id, "name": existing.name, "avatar": existing.avatar, "team_id": existing.team_id, "rejoined": True}
+        return {"participant_id": existing.id, "name": existing.name, "avatar": existing.avatar,
+                "team_id": existing.team_id, "class_id": existing.class_id, "rejoined": True}
 
-    p = QuizParticipant(session_id=s.id, name=name, avatar=avatar, team_id=body.team_id, guest_id=guest_id)
+    p = QuizParticipant(session_id=s.id, name=name, avatar=avatar, team_id=body.team_id, guest_id=guest_id,
+                        student_id=student_id, class_id=target_class_id)
     db.add(p)
     db.commit()
     db.refresh(p)
-    return {"participant_id": p.id, "name": p.name, "avatar": p.avatar, "team_id": p.team_id, "rejoined": False}
+    return {"participant_id": p.id, "name": p.name, "avatar": p.avatar,
+            "team_id": p.team_id, "class_id": p.class_id, "rejoined": False}
 
 
 # ---------------------------------------------------------------------------
@@ -1149,7 +1236,7 @@ async def session_ws(
             # Unauthenticated players must hold a live guest token scoped to this
             # code (only issued when the teacher opted in — enforces opt-in +
             # 60-min expiry). Logged-in students/teachers pass freely.
-            if ws_identity(websocket, db) is None and ws_guest(websocket, code) is None:
+            if ws_identity(websocket, db) is None and ws_guest(websocket, code, db) is None:
                 await websocket.close(code=4001)
                 return
             p = db.get(QuizParticipant, participant_id)
@@ -1566,6 +1653,71 @@ async def _do_ranking(s: QuizSession, code: str):
     })
 
 
+def _class_breakdown(s: QuizSession, db: Session) -> list[dict]:
+    """Was jede beteiligte Klasse verdient hat — eine Zeile pro Klasse.
+
+    Die Punkte einer Klasse sind ihre eigene Trefferquote mal die
+    Maximalpunktzahl, danach ihr eigener Klassenstufen-Faktor: in einem Kurs
+    koennen 9er und 10er sitzen, und dieselbe Aufgabe ist fuer sie nicht
+    gleich viel wert.
+    """
+    per_class = _score_by_class(s)
+    if not per_class:
+        return []
+    classes = {c.id: c for c in db.query(Class).filter(Class.id.in_(per_class.keys())).all()}
+    rows = []
+    for cid, d in per_class.items():
+        cls = classes.get(cid)
+        multiplier = _grade_multiplier(_extract_class_grade(cls.code) if cls else None, s.quiz.grades or [])
+        rows.append({
+            "class_id": cid,
+            "class_code": cls.code if cls else str(cid),
+            "class_name": cls.display_name if cls else str(cid),
+            "participants": d["participants"],
+            "ratio": d["ratio"],
+            "multiplier": multiplier,
+            "points": round(d["raw_points"] * multiplier),
+        })
+    rows.sort(key=lambda r: r["class_code"])
+    return rows
+
+
+def _award_points(s: QuizSession, db: Session) -> tuple[int, list[dict]]:
+    """Je Klasse eine Buchung. Gibt (Summe, Aufschluesselung) zurueck."""
+    rows = _class_breakdown(s, db)
+    scope = scoping.scope_label(db, s.class_id, s.group_id)
+    for r in rows:
+        if r["points"] <= 0:
+            continue
+        reason = f"Caputh: {s.quiz.title}"
+        if s.group_id is not None:
+            reason += f" ({scope})"
+        if r["multiplier"] < 1.0:
+            reason += f" (×{r['multiplier']:.0%} Klassenstufen-Faktor)"
+        db.add(Transaction(teacher_id=s.teacher_id, class_id=r["class_id"], points=r["points"], reason=reason))
+    return sum(r["points"] for r in rows), rows
+
+
+def _stored_breakdown(s: QuizSession, db: Session) -> list[dict]:
+    """Die Aufschluesselung einer schon verpunkteten Sitzung, aus der DB."""
+    stored = s.points_by_class or {}
+    if not stored:
+        return []
+    ids = [int(k) for k in stored]
+    classes = {c.id: c for c in db.query(Class).filter(Class.id.in_(ids)).all()}
+    rows = [
+        {
+            "class_id": cid,
+            "class_code": classes[cid].code if cid in classes else str(cid),
+            "class_name": classes[cid].display_name if cid in classes else str(cid),
+            "points": pts,
+        }
+        for cid, pts in ((int(k), v) for k, v in stored.items())
+    ]
+    rows.sort(key=lambda r: r["class_code"])
+    return rows
+
+
 async def _finish_session(s: QuizSession, db: Session, code: str):
     s.status = "finished"
     s.finished_at = datetime.now(timezone.utc)
@@ -1573,24 +1725,12 @@ async def _finish_session(s: QuizSession, db: Session, code: str):
     # Only award points once — replays don't re-score
     is_replay = s.points_awarded is not None
     if not is_replay:
-        raw_points = _score_session(s)
-        class_grade = _extract_class_grade(s.class_.code) if s.class_ else None
-        multiplier = _grade_multiplier(class_grade, s.quiz.grades or [])
-        points = round(raw_points * multiplier)
+        points, breakdown = _award_points(s, db)
         s.points_awarded = points
-        if points > 0:
-            reason = f"Caputh: {s.quiz.title}"
-            if multiplier < 1.0:
-                reason += f" (×{multiplier:.0%} Klassenstufen-Faktor)"
-            tx = Transaction(
-                teacher_id=s.teacher_id,
-                class_id=s.class_id,
-                points=points,
-                reason=reason,
-            )
-            db.add(tx)
+        s.points_by_class = {str(r["class_id"]): r["points"] for r in breakdown}
     else:
         points = s.points_awarded
+        breakdown = _stored_breakdown(s, db)
 
     db.commit()
 
@@ -1605,6 +1745,13 @@ async def _finish_session(s: QuizSession, db: Session, code: str):
     await mgr.broadcast(code, {
         "event": "finished",
         "points_awarded": points,
+        # Je Klasse eine Zeile — in einer Kurs/WPF-Runde mehr als eine.
+        "points_by_class": [
+            {k: v for k, v in r.items() if k in ("class_id", "class_code", "class_name", "points", "ratio")}
+            for r in breakdown
+        ],
+        "scope_label": scoping.scope_label(db, s.class_id, s.group_id),
+        "is_group_scope": s.group_id is not None,
         "quiz_title": s.quiz.title,
         "final_ranking": final_ranking,
         "score_ratio": score_ratio,

@@ -221,7 +221,7 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
     # Identität nur aus der Verbindung selbst — ein mitgeschicktes role=teacher
     # wäre aus den Entwicklerwerkzeugen heraus frei erfunden.
     identity = ws_identity(websocket, db)
-    guest = ws_guest(websocket, code) if not identity else None
+    guest = ws_guest(websocket, code, db) if not identity else None
     if not identity and not guest:
         await websocket.close(code=4001)
         return

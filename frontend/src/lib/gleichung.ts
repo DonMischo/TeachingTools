@@ -160,10 +160,47 @@ export function fmtNum(n: number): string {
   return s.replace("-", MINUS);
 }
 
+/**
+ * Zerlegt eine Zahl in einen einfachen Bruch, sonst null.
+ *
+ * Nur kleine Nenner — genau die, bei denen ein Bruch besser liest als eine
+ * Dezimalzahl: ½ statt 0,5. Bei 0,333… käme kein sauberer Bruch heraus, also
+ * bleibt es dort bei der Dezimalzahl.
+ */
+export function asFraction(n: number): { num: number; den: number } | null {
+  const v = Math.abs(n);
+  if (!Number.isFinite(v) || v === 0 || Number.isInteger(clean(v))) return null;
+  // Nicht vorher runden: clean() macht aus ⅓ die 0,333333, und die ist durch
+  // kein kleines Nenner-Vielfaches mehr ganz.
+  for (const den of [2, 3, 4, 5, 6, 8, 10]) {
+    const raw = v * den;
+    const num = Math.round(raw);
+    // Toleranz mal Nenner: clean() rundet auf sechs Stellen, ein Drittel kommt
+    // also als 0,333333 an — mal 3 fehlt dann schon 1e-6.
+    if (num > 0 && Math.abs(raw - num) < den * 1e-6) {
+      // Schon gekürzt? 2/4 soll als ½ erscheinen.
+      const g = (a: number, b: number): number => (b ? g(b, a % b) : a);
+      const d = g(num, den);
+      return { num: num / d, den: den / d };
+    }
+  }
+  return null;
+}
+
+/** Bruchschreibweise, wo ein Bruch gemeint ist — sonst wie fmtNum. */
+export function fmtFrac(n: number): string {
+  const f = asFraction(n);
+  if (!f) return fmtNum(n);
+  const sign = clean(n) < 0 ? MINUS : "";
+  return `${sign}${f.num}/${f.den}`;
+}
+
 function body(t: Term): string {
   if (t.t === "x") {
     const a = Math.abs(t.n);
-    return a === 1 ? "x" : `${fmtNum(a)}x`;
+    // Der Faktor vor dem x ist die Stelle, an der ein Bruch als Bruch gehört:
+    // »½x«, nicht »0,5x«. Ergebnisse und Messwerte bleiben Dezimalzahlen.
+    return a === 1 ? "x" : `${fmtFrac(a)}x`;
   }
   if (t.t === "n") return fmtNum(Math.abs(t.n));
   const k = Math.abs(t.k);
@@ -196,7 +233,9 @@ export function formatEquation(eq: Equation): string {
 function bodyLatex(t: Term): string {
   if (t.t === "x") {
     const a = Math.abs(t.n);
-    return a === 1 ? "x" : `${numToLatex(fmtNum(a))}x`;
+    if (a === 1) return "x";
+    const f = asFraction(a);
+    return f ? `\\frac{${f.num}}{${f.den}}x` : `${numToLatex(fmtNum(a))}x`;
   }
   if (t.t === "n") return numToLatex(fmtNum(Math.abs(t.n)));
   const k = Math.abs(t.k);
@@ -222,7 +261,7 @@ export function formatOp(op: Op): string {
   switch (op.op) {
     case "add": {
       const a = Math.abs(op.n);
-      const b = op.kind === "x" ? (a === 1 ? "x" : `${fmtNum(a)}x`) : fmtNum(a);
+      const b = op.kind === "x" ? (a === 1 ? "x" : `${fmtFrac(a)}x`) : fmtNum(a);
       return `${op.n < 0 ? MINUS : "+"} ${b}`;
     }
     case "mul":
@@ -405,13 +444,21 @@ export const LEVELS = [
   { level: 2, label: "3x + 4 = 19", hint: "Zahl und Faktor" },
   { level: 3, label: "3x + 4 = x + 10", hint: "x auf beiden Seiten" },
   { level: 4, label: "2·(x + 3) = 14", hint: "mit Klammer" },
+  { level: 5, label: "12 − 2x = 4", hint: "Minus üben" },
+  { level: 6, label: "½x + 3 = 7", hint: "Bruch vor dem x" },
+  { level: 7, label: "4x = 10", hint: "Ergebnis ist ein Bruch" },
 ] as const;
 
 const ri = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-/** Bleibt die Waage lesbar? Zu große Zahlen ergeben zu viele Klötzchen. */
-function readable(eq: Equation): boolean {
+/**
+ * Bleibt die Waage lesbar? Zu große Zahlen ergeben zu viele Klötzchen.
+ *
+ * `fractionalX` erlaubt ein gebrochenes Ergebnis (4x = 10 → x = 2,5). Sonst
+ * bleibt es bei ganzen Lösungen: die Klötzchen sollen aufgehen.
+ */
+function readable(eq: Equation, fractionalX = false): boolean {
   const mag = (side: Side) =>
     Math.max(
       ...side.map(t =>
@@ -419,28 +466,59 @@ function readable(eq: Equation): boolean {
       ),
     );
   const sol = solve(eq);
-  return (
-    sol.kind === "one" &&
-    Number.isInteger(sol.x) &&
-    sol.x >= 1 &&
-    isSolved(eq) === null &&
-    mag(eq.left) <= 20 &&
-    mag(eq.right) <= 20
-  );
+  if (sol.kind !== "one" || isSolved(eq) !== null) return false;
+  if (sol.x < 1 || mag(eq.left) > 20 || mag(eq.right) > 20) return false;
+  if (fractionalX) {
+    // Halbe und Viertel sind noch ablesbar, Drittel als Dezimalzahl nicht.
+    const q = clean(sol.x * 4);
+    return !Number.isInteger(sol.x) && Number.isInteger(q);
+  }
+  return Number.isInteger(sol.x);
 }
 
 export function generateTask(level: number): Equation {
   for (let tries = 0; tries < 80; tries++) {
     let eq: Equation;
+    let fractionalX = false;
+    // Minus soll nicht die Ausnahme sein: in den ersten Stufen ueberwiegt es,
+    // damit auch das Wegnehmen geuebt wird und nicht nur das Ergaenzen.
+    const sign = () => pick([1, -1, -1]);
     if (level <= 1) {
       const s = ri(1, 12);
-      const b = ri(1, 10) * pick([1, -1]);
+      const b = ri(1, 10) * sign();
       eq = { left: simplify([{ t: "x", n: 1 }, { t: "n", n: b }]), right: [{ t: "n", n: s + b }] };
     } else if (level === 2) {
       const s = ri(1, 8);
       const a = ri(2, 5);
-      const b = ri(1, 10) * pick([1, -1]);
+      const b = ri(1, 10) * sign();
       eq = { left: simplify([{ t: "x", n: a }, { t: "n", n: b }]), right: [{ t: "n", n: a * s + b }] };
+    } else if (level === 5) {
+      // Minus vor dem x: »12 − 2x = 4«. Dazu die Umkehrung »4 = 12 − 2x«,
+      // damit das x auch mal rechts steht.
+      const s = ri(1, 6);
+      const a = ri(1, 4);
+      const b = a * s + ri(1, 10);
+      const lhs: Side = simplify([{ t: "n", n: b }, { t: "x", n: -a }]);
+      const rhs: Side = [{ t: "n", n: b - a * s }];
+      eq = Math.random() < 0.5 ? { left: lhs, right: rhs } : { left: rhs, right: lhs };
+    } else if (level === 6) {
+      // Bruch vor dem x, Ergebnis ganz: »x/2 + 3 = 7«.
+      const den = pick([2, 3, 4]);
+      const k = ri(1, 5);                // Lösung x = k · den, damit x/den aufgeht
+      // Echter, gekürzter Bruch: 2/2 wäre eine 1 und damit gar kein Bruch mehr.
+      const num = pick(den === 2 ? [1] : den === 3 ? [1, 1, 2] : [1, 1, 3]);
+      const b = ri(1, 9) * sign();
+      // Der Faktor bleibt ungerundet (⅓ ist keine 0,333333), die rechte Seite
+      // wird ganzzahlig gerechnet: (num/den) · (k·den) = num · k.
+      const left = simplify([{ t: "x", n: num / den }, { t: "n", n: b }]);
+      eq = { left, right: [{ t: "n", n: num * k + b }] };
+    } else if (level === 7) {
+      // Ergebnis ist ein Bruch: »4x = 10« → x = 2,5.
+      fractionalX = true;
+      const a = pick([2, 4]);
+      const half = ri(1, 5) * 2 + 1;     // ungerade ⇒ geteilt durch 2 bleibt ein Rest
+      const b = ri(0, 8) * sign();
+      eq = { left: simplify([{ t: "x", n: a }, { t: "n", n: b }]), right: [{ t: "n", n: clean((a * half) / 2 + b) }] };
     } else if (level === 3) {
       const s = ri(1, 8);
       const a = ri(2, 6);
@@ -464,7 +542,7 @@ export function generateTask(level: number): Equation {
         eq = { left: [group], right: simplify([{ t: "x", n: c }, { t: "n", n: k * inner - c * s }]) };
       }
     }
-    if (readable(eq)) return eq;
+    if (readable(eq, fractionalX)) return eq;
   }
   return {
     left: simplify([{ t: "x", n: 3 }, { t: "n", n: 4 }]),

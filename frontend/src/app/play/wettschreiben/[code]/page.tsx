@@ -164,7 +164,7 @@ export default function WettschreibenPlayPage() {
     return <Hinweis icon="🔍" title="Diesen Code kenne ich nicht"
       text="Tippfehler? Frag deine Lehrkraft nach dem aktuellen Code oder scanne den QR noch einmal." />;
   }
-  if (gast.expired) return <GuestExpired gameIcon="🏁" />;
+  if (gast.expired) return <GuestExpired gameIcon="🏁" onRejoin={gast.rejoin} />;
 
   if (!auth && !gast.session && gaesteErlaubt === false) {
     return <Hinweis icon="🔒" title="Gäste sind hier nicht freigeschaltet"

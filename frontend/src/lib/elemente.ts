@@ -20,6 +20,12 @@ export type Element = {
   /** Übliche Bindigkeiten (Bindungen je Atom). */
   valence: number[];
   metal: boolean;
+  /**
+   * Nur für die Kernteilchen p, e, n: ihre Ladung steckt im Teilchen selbst.
+   * Wer »e« ohne Vorzeichen schreibt, meint trotzdem ein Elektron — deshalb
+   * zählt diese Ladung auch ohne geschriebenes Minus (siehe chemie.ts).
+   */
+  particleCharge?: number;
 };
 
 const E = (
@@ -66,7 +72,34 @@ export const ELEMENTS: Element[] = [
   E(82, "Pb", "Blei", 207.2, "#6b6d75", 4, [2, 4], true),
 ];
 
-const BY_SYMBOL = new Map(ELEMENTS.map(e => [e.symbol, e]));
+/**
+ * Proton, Neutron, Elektron — für Redox-Halbgleichungen (Fe²⁺ → Fe³⁺ + e⁻)
+ * und Kernumwandlungen (n → p⁺ + e⁻).
+ *
+ * Sie stehen bewusst NICHT in ELEMENTS: das ist die Elementliste, und ein
+ * Elektron ist kein Element. Nachschlagbar sind sie trotzdem, damit die Waage
+ * Masse und Ladung wie bei jedem anderen Teilchen verrechnen kann.
+ *
+ * Die Symbole sind klein geschrieben (p, n, e) und kollidieren deshalb nicht
+ * mit Phosphor (P) und Stickstoff (N). `group: null` hält sie aus der
+ * Oxidationszahl- und Oktett-Logik heraus — beides gilt für Atome, nicht für
+ * einzelne Kernteilchen.
+ */
+export const PARTICLES: Element[] = [
+  { z: 0, symbol: "p", name: "Proton", mass: 1.00728, color: "#ef4444",
+    group: null, outer: null, valence: [], metal: false, particleCharge: 1 },
+  { z: 0, symbol: "n", name: "Neutron", mass: 1.00866, color: "#94a3b8",
+    group: null, outer: null, valence: [], metal: false, particleCharge: 0 },
+  { z: 0, symbol: "e", name: "Elektron", mass: 0.00055, color: "#3b82f6",
+    group: null, outer: null, valence: [], metal: false, particleCharge: -1 },
+];
+
+export const PARTICLE_SYMBOLS: readonly string[] = PARTICLES.map(p => p.symbol);
+
+export const isParticle = (symbol: string): boolean =>
+  PARTICLE_SYMBOLS.includes(symbol);
+
+const BY_SYMBOL = new Map([...ELEMENTS, ...PARTICLES].map(e => [e.symbol, e]));
 
 export const element = (symbol: string): Element | undefined => BY_SYMBOL.get(symbol);
 

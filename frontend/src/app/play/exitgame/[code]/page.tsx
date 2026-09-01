@@ -580,7 +580,7 @@ export default function ExitgamePlayPage() {
 
   if (!mounted) return null;
   // Guest's 60-min window elapsed → hard block, no rejoin.
-  if (isGuest && guest.expired) return <GuestExpired gameIcon="🗝️" />;
+  if (isGuest && guest.expired) return <GuestExpired gameIcon="🗝️" onRejoin={guest.rejoin} />;
   // Unauthenticated visitor picks a username before starting.
   if (isGuest && !guest.token) {
     return (

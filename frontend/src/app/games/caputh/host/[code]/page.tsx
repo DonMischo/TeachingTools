@@ -7,6 +7,7 @@ import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
 import { wsUrl } from "@/lib/utils";
+import { ClassPoints } from "@/lib/api";
 import { TimelineGameBoard } from "@/components/timeline/TimelineGameBoard";
 import { TimelineBoard, TimelineSolution } from "@/components/timeline/types";
 
@@ -43,7 +44,8 @@ type HostPhase =
   | { kind: "answering"; q: QuestionInfo; answers: Answer[]; timeLimit: number; counts: Record<number, number>; responses: number; participantCount: number; timeline: TimelineBoard | null }
   | { kind: "revealed"; q: QuestionInfo; answers: Answer[]; correctIds: number[] | null; counts: Record<number, number>; isLast: boolean; timelineSolution: TimelineSolution | null }
   | { kind: "ranking"; ranking: RankEntry[]; isLast: boolean }
-  | { kind: "finished"; pointsAwarded: number; title: string; finalRanking: RankEntry[]; scoreRatio: number; isReplay: boolean };
+  | { kind: "finished"; pointsAwarded: number; title: string; finalRanking: RankEntry[]; scoreRatio: number; isReplay: boolean;
+      pointsByClass: ClassPoints[]; scopeLabel: string; isGroupScope: boolean };
 
 const COLORS = ["#e21b3c", "#1368ce", "#d89e00", "#26890c"];
 
@@ -341,6 +343,9 @@ export default function HostPage() {
           finalRanking: msg.final_ranking ?? [],
           scoreRatio: msg.score_ratio ?? 0,
           isReplay: msg.is_replay ?? false,
+          pointsByClass: msg.points_by_class ?? [],
+          scopeLabel: msg.scope_label ?? "",
+          isGroupScope: msg.is_group_scope ?? false,
         });
       }
     };
@@ -427,6 +432,30 @@ export default function HostPage() {
             <p className="text-base text-gray-400 text-center bg-gray-800 rounded-xl px-4 py-2">
               🔁 Wiederholung — keine weiteren Punkte (bereits {phase.pointsAwarded} vergeben)
             </p>
+          ) : phase.isGroupScope ? (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-lg text-gray-300 text-center">
+                {phase.scopeLabel} — Punkte je Klasse:
+              </p>
+              <table className="text-lg">
+                <tbody>
+                  {phase.pointsByClass.map((c) => (
+                    <tr key={c.class_id}>
+                      <td className="pr-4 py-0.5 text-gray-300 text-right">{c.class_code}</td>
+                      {c.ratio != null && (
+                        <td className="pr-4 py-0.5 text-gray-500 text-sm">{Math.round(c.ratio * 100)} %</td>
+                      )}
+                      <td className="py-0.5 font-bold text-yellow-400">{c.points} Punkte</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {phase.pointsByClass.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Keine Punkte vergeben — kein Teilnehmer war einer Klasse zugeordnet.
+                </p>
+              )}
+            </div>
           ) : (
             <p className="text-xl text-gray-300 text-center">
               Klasse erhält{" "}

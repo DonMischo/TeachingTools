@@ -195,7 +195,7 @@ async def exit_ticket_ws(
 
     # Unauthenticated students must hold a live guest token scoped to this code
     # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
-    if role != "teacher" and ws_identity(websocket, db) is None and ws_guest(websocket, code) is None:
+    if role != "teacher" and ws_identity(websocket, db) is None and ws_guest(websocket, code, db) is None:
         await websocket.close(code=4001)
         return
 

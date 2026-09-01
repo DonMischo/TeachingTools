@@ -18,6 +18,9 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
+import Vierecke from "@/components/simulationen/Vierecke";
+import Binaerrechner from "@/components/simulationen/Binaerrechner";
+import Funktionen from "@/components/simulationen/Funktionen";
 import Tippen from "@/components/tippen/Tippen";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
@@ -25,6 +28,9 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
   abacus: { title: "Abakus", icon: "🧮", node: <Abakus /> },
   bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
+  vierecke: { title: "Vierecke", icon: "📐", node: <Vierecke /> },
+  binaerrechner: { title: "Binär-Rechner", icon: "◈", node: <Binaerrechner /> },
+  funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Der Zeitstrahl teilt eine bestimmte Zeitleiste — die haengt am Code, nicht
   // am Werkzeug, und wird deshalb erst hier nachgeladen.
@@ -95,7 +101,7 @@ export default function SimulationJoinPage() {
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.
   if (auth) return <div className="flex-1 overflow-y-auto">{body}</div>;
 
-  if (guest.expired) return <GuestExpired gameIcon={tool.icon} />;
+  if (guest.expired) return <GuestExpired gameIcon={tool.icon} onRejoin={guest.rejoin} />;
 
   if (!guest.token) {
     if (!session.allow_guests) {

@@ -149,6 +149,38 @@ export type StudentRoleOut = {
 
 export type GroupType = "kurs" | "wahlpflicht" | "ab_gruppe";
 
+export type GuestStatus = {
+  allow_guests: boolean;
+  /** Wie oft der Gastzugang neu gestartet wurde — jeder Neustart entwertet die
+   *  bis dahin ausgegebenen Gast-Token. */
+  guest_epoch: number;
+};
+
+/** Für wen eine Spielsitzung läuft. Genau eines der beiden Felder ist gesetzt. */
+export type ScopeBody = { class_id?: number; group_id?: number };
+
+/**
+ * Was eine Klasse an einer Runde verdient hat. Überall, wo `points_by_class`
+ * auftaucht, ist es eine Liste davon — bei Kurs/WPF mit mehr als einer Zeile.
+ */
+export type ClassPoints = {
+  class_id: number;
+  class_code: string;
+  class_name: string;
+  points: number;
+  /** Nur in der Live-Auswertung dabei. */
+  ratio?: number;
+};
+
+/** Geltungsbereich einer Sitzung, für die Spielerseite (öffentlich). */
+export type SessionScopeOut = {
+  code: string;
+  scope: "class" | "group" | "none";
+  label: string;
+  needs_class_choice: boolean;
+  classes: { id: number; code: string; display_name: string }[];
+};
+
 export type StudentGroupOut = {
   id: number;
   group_type: GroupType;
@@ -523,7 +555,10 @@ export type SessionOut = {
   status: "waiting" | "active" | "finished";
   current_question_idx: number;
   quiz_id: number;
-  class_id: number;
+  class_id: number | null;
+  group_id: number | null;
+  /** »9a« bzw. »9 NaT«. */
+  scope_label: string;
   points_awarded: number | null;
   participant_count: number;
   team_mode: boolean;
@@ -725,7 +760,9 @@ export type ExitGameSessionOut = {
   join_code: string;
   status: "open" | "closed";
   exitgame_id: number;
-  class_id: number;
+  class_id: number | null;
+  group_id: number | null;
+  scope_label: string;
   attempt_count: number;
   created_at: string;
   closed_at: string | null;
@@ -864,6 +901,11 @@ export type BingoOut = {
   subject: string | null; tags: string[]; description: string | null; max_points: number;
   grid_size: number; grid_cols: number; status: string; total_pairs: number; created_at: string;
   class_id: number | null;
+  group_id: number | null;
+  /** »9a« bzw. »9 NaT« — was in der Rundenliste steht. */
+  scope_label: string;
+  /** Je Klasse eine Zeile, sobald die Runde ausgewertet ist. */
+  points_by_class: ClassPoints[];
   /** Ausgewertet — dann bleibt die Runde endgültig zu. */
   awarded: boolean;
 };
@@ -1215,6 +1257,9 @@ export const api = {
   play: {
     resolve: (code: string) =>
       apiFetch<{ code: string; matches: PlayMatch[] }>(`play/resolve/${encodeURIComponent(code)}`),
+    /** Für welche Klasse bzw. welchen Kurs eine Sitzung läuft — auch ohne Login. */
+    scope: (code: string) =>
+      apiFetch<SessionScopeOut>(`play/scope/${encodeURIComponent(code)}`),
     /** Laufende Sitzungen eines Werkzeugs — eigene, für Admins alle. */
     sessions: (tool: string, slug?: string) =>
       apiFetch<PlaySessionRow[]>(
@@ -1236,10 +1281,19 @@ export const api = {
         method: "POST", body: JSON.stringify({ code, tool, name }),
       }),
     status: (tool: string, code: string) =>
-      apiFetch<{ allow_guests: boolean }>(`guest/status?tool=${encodeURIComponent(tool)}&code=${encodeURIComponent(code)}`),
+      apiFetch<GuestStatus>(`guest/status?tool=${encodeURIComponent(tool)}&code=${encodeURIComponent(code)}`),
     setAllowed: (tool: string, code: string, allow: boolean) =>
-      apiFetch<{ allow_guests: boolean }>("guest/allow", {
+      apiFetch<GuestStatus>("guest/allow", {
         method: "PATCH", body: JSON.stringify({ tool, code, allow }),
+      }),
+    /**
+     * Bereits ausgegebene Gast-Token entziehen — für den gedruckten QR, der
+     * mehrere Klassen überlebt. Der Code bleibt derselbe; jeder Gast muss neu
+     * beitreten. Angemeldete Schüler sind nicht betroffen.
+     */
+    restart: (tool: string, code: string) =>
+      apiFetch<GuestStatus>("guest/restart", {
+        method: "POST", body: JSON.stringify({ tool, code }),
       }),
   },
 
@@ -1454,25 +1508,25 @@ export const api = {
         return r.json() as Promise<QuizOut>;
       });
     },
-    createSession: (quizId: number, class_id: number, max_points: number, team_mode?: boolean) =>
+    createSession: (quizId: number, scope: ScopeBody, max_points: number, team_mode?: boolean) =>
       apiFetch<SessionOut>(`capuths/${quizId}/sessions`, {
         method: "POST",
-        body: JSON.stringify({ class_id, max_points, team_mode: team_mode ?? false }),
+        body: JSON.stringify({ ...scope, max_points, team_mode: team_mode ?? false }),
       }),
     getSession: (code: string) => apiFetch<SessionOut>(`sessions/${code}`),
     listSessions: (quizId: number) =>
-      apiFetch<{ join_code: string; status: string; class_id: number; participant_count: number; points_awarded: number | null; started_at: string | null; finished_at: string | null }[]>(`capuths/${quizId}/sessions`),
+      apiFetch<{ join_code: string; status: string; class_id: number | null; group_id: number | null; scope_label: string; participant_count: number; points_awarded: number | null; points_by_class: ClassPoints[]; started_at: string | null; finished_at: string | null }[]>(`capuths/${quizId}/sessions`),
     resetSession: (code: string) =>
       apiFetch<{ join_code: string; status: string }>(`sessions/${code}/reset`, { method: "POST" }),
     deleteSession: (code: string) =>
       apiFetch<void>(`sessions/${code}`, { method: "DELETE" }),
     clearSessions: (quizId: number) =>
       apiFetch<void>(`capuths/${quizId}/sessions`, { method: "DELETE" }),
-    joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null, guestToken?: string | null) =>
-      apiFetch<{ participant_id: number; name: string; avatar: string; team_id: number | null }>(`sessions/${code}/join`, {
+    joinSession: (code: string, name: string, avatar: string = "cat", team_id?: number | null, guestToken?: string | null, class_id?: number | null) =>
+      apiFetch<{ participant_id: number; name: string; avatar: string; team_id: number | null; class_id: number | null }>(`sessions/${code}/join`, {
         method: "POST",
         headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
-        body: JSON.stringify({ name, avatar, team_id: team_id ?? null }),
+        body: JSON.stringify({ name, avatar, team_id: team_id ?? null, class_id: class_id ?? null }),
       }),
     listTeams: (code: string) =>
       apiFetch<{ id: number; name: string; color: string | null }[]>(`sessions/${code}/teams`),
@@ -1820,8 +1874,8 @@ export const api = {
         });
     },
     sessions: {
-      create: (exitgameId: number, class_id: number) =>
-        apiFetch<ExitGameSessionOut>(`exitgames/${exitgameId}/sessions`, { method: "POST", body: JSON.stringify({ class_id }) }),
+      create: (exitgameId: number, scope: ScopeBody) =>
+        apiFetch<ExitGameSessionOut>(`exitgames/${exitgameId}/sessions`, { method: "POST", body: JSON.stringify(scope) }),
       list: (exitgameId: number) => apiFetch<ExitGameSessionOut[]>(`exitgames/${exitgameId}/sessions`),
       get: (code: string) => apiFetch<ExitGameSessionOut>(`exitgame-sessions/${code}`),
       close: (code: string) => apiFetch<ExitGameSessionOut>(`exitgame-sessions/${code}/close`, { method: "POST" }),
@@ -2026,12 +2080,14 @@ export const api = {
      *  Auswertung lehnt der Server ab (409), dann hilft nur Zurücksetzen. */
     reopen: (code: string) => apiFetch<void>(`bingo/${code}/reopen`, { method: "POST" }),
     reset: (code: string) => apiFetch<void>(`bingo/${code}/reset`, { method: "POST" }),
-    getOrCreateCard: (code: string) =>
-      apiFetch<BingoCardOut>(`bingo/${code}/card`, { method: "POST" }),
-    listSets: () => apiFetch<BingoSetOut[]>("bingo/sets"),
-    startSet: (setId: number, class_id?: number | null) =>
-      apiFetch<{ id: number; code: string; class_id: number | null }>(`bingo/sets/${setId}/sessions`, {
+    getOrCreateCard: (code: string, class_id?: number | null) =>
+      apiFetch<BingoCardOut>(`bingo/${code}/card`, {
         method: "POST", body: JSON.stringify({ class_id: class_id ?? null }),
+      }),
+    listSets: () => apiFetch<BingoSetOut[]>("bingo/sets"),
+    startSet: (setId: number, scope: ScopeBody = {}) =>
+      apiFetch<{ id: number; code: string; class_id: number | null; group_id: number | null }>(`bingo/sets/${setId}/sessions`, {
+        method: "POST", body: JSON.stringify({ class_id: null, group_id: null, ...scope }),
       }),
   },
   exitTicket: {

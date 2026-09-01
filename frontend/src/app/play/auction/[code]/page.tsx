@@ -137,7 +137,7 @@ export default function AuctionPlayPage() {
   }
 
   // Guest's 60-min window elapsed → hard block, no rejoin.
-  if (mounted && !auth && guest.expired) return <GuestExpired gameIcon="🏷" />;
+  if (mounted && !auth && guest.expired) return <GuestExpired gameIcon="🏷" onRejoin={guest.rejoin} />;
 
   // ── Join screen (only when not logged in) ───────────────────────────────
   if (!mounted || !connected) {

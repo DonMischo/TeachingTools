@@ -113,7 +113,9 @@ describe("PlayPage – join form", () => {
     await user.type(screen.getByPlaceholderText("Dein Name"), "Test");
     await user.click(screen.getByText(/Beitreten/));
     await waitFor(() =>
-      expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat", null, "gast-token")
+      // Letztes Argument: die Klasse, für die gespielt wird — nur in einer
+      // Kurs/WPF-Runde belegt, hier also null.
+      expect(mockJoinSession).toHaveBeenCalledWith("TEST01", "Test", "cat", null, "gast-token", null)
     );
   });
 

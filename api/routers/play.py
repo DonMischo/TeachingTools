@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session, object_session
 from ..database import get_db
 from ..auth import get_current_teacher
 from ..join_codes import BY_KEY, JoinCodeTool, find_sessions
-from ..models import Teacher
+from ..models import Class, Teacher
+from .. import scoping
 
 router = APIRouter(prefix="/api/play", tags=["play"])
 
@@ -62,6 +63,59 @@ def resolve(code: str, db: Session = Depends(get_db)):
             for tool, session in hits
         ],
     )
+
+
+# ── Geltungsbereich einer Sitzung ───────────────────────────────────────────
+
+
+class ScopeClass(BaseModel):
+    id: int
+    code: str
+    display_name: str
+
+
+class ScopeOut(BaseModel):
+    code: str
+    # "class" | "group" | "none"
+    scope: str
+    # »9a« bzw. »9 NaT«
+    label: str
+    # Ein Kurs/WPF ist klassenübergreifend: wer sich ohne Konto anmeldet, muss
+    # sagen, für welche Klasse er spielt — sonst zählt seine Leistung nirgends.
+    needs_class_choice: bool = False
+    classes: list[ScopeClass] = []
+
+
+@router.get("/scope/{code}", response_model=ScopeOut)
+def session_scope(code: str, db: Session = Depends(get_db)):
+    """Für welche Klasse bzw. welchen Kurs eine Sitzung läuft.
+
+    Öffentlich wie ``/resolve`` — die Spielerseite braucht es, bevor irgendwer
+    angemeldet ist, und mehr als Klassenkürzel steht nicht darin. Ein Code kann
+    zu mehreren Werkzeugen passen; genommen wird die erste Sitzung, die
+    überhaupt einen Geltungsbereich kennt.
+    """
+    clean = normalize_code(code)
+    hits = find_sessions(db, clean) if clean else []
+    if not hits:
+        raise HTTPException(404, "Kein Spiel mit diesem Code gefunden")
+
+    for _tool, session in hits:
+        class_id = getattr(session, "class_id", None)
+        group_id = getattr(session, "group_id", None)
+        if class_id is None and group_id is None:
+            continue
+        label = scoping.scope_label(db, class_id, group_id)
+        if group_id is None:
+            return ScopeOut(code=clean, scope="class", label=label)
+        ids = scoping.scope_class_ids(db, None, group_id)
+        rows = db.query(Class).filter(Class.id.in_(ids)).order_by(Class.code).all() if ids else []
+        return ScopeOut(
+            code=clean, scope="group", label=label, needs_class_choice=True,
+            classes=[ScopeClass(id=c.id, code=c.code, display_name=c.display_name) for c in rows],
+        )
+
+    return ScopeOut(code=clean, scope="none", label="Ohne Klasse")
 
 
 # ── Sitzungsuebersicht ──────────────────────────────────────────────────────

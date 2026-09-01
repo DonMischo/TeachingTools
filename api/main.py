@@ -229,6 +229,40 @@ def _run_migrations(db_engine):
         # Migrationszeitpunkt), den DEFAULT erst danach für neue Zeilen setzen.
         "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ",
         "ALTER TABLE lueckentext_sessions ALTER COLUMN created_at SET DEFAULT NOW()",
+        # Spiel-Sitzungen bekommen denselben zweiten Geltungsbereich wie Tracking
+        # und Sitzplan: ein Kurs/WPF statt einer Klasse. Kurse sind
+        # klassenuebergreifend, deshalb haelt points_by_class die Aufteilung.
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE RESTRICT",
+        "ALTER TABLE quiz_sessions ALTER COLUMN class_id DROP NOT NULL",
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS points_by_class JSON",
+        "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS student_id INTEGER REFERENCES students(id) ON DELETE SET NULL",
+        "ALTER TABLE quiz_participants ADD COLUMN IF NOT EXISTS class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE SET NULL",
+        "ALTER TABLE bingo_cards ADD COLUMN IF NOT EXISTS class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS points_by_class JSON",
+        "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE RESTRICT",
+        "ALTER TABLE exitgame_sessions ALTER COLUMN class_id DROP NOT NULL",
+        # Altbestand nachziehen: vor dem Kurs/WPF-Geltungsbereich gehoerte jeder
+        # Teilnehmer der Klasse seiner Sitzung. Ohne das bekaeme eine Runde, die
+        # ueber das Deployment hinweg laeuft, am Ende null Punkte — ihre
+        # Teilnehmer haetten gar keine Klasse.
+        "UPDATE quiz_participants p SET class_id = s.class_id FROM quiz_sessions s "
+        "WHERE p.session_id = s.id AND p.class_id IS NULL AND s.class_id IS NOT NULL",
+        "UPDATE quiz_sessions SET points_by_class = json_build_object(class_id::text, points_awarded) "
+        "WHERE points_by_class IS NULL AND points_awarded IS NOT NULL AND class_id IS NOT NULL",
+        # "Gastzugang neu starten": entzieht bereits ausgegebene Gast-Token,
+        # damit die naechste Klasse denselben gedruckten QR nutzen kann, ohne
+        # dass die vorige noch Zugang hat.
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE exit_ticket_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -247,6 +281,8 @@ def _run_migrations(db_engine):
         # never collide in a plain UNIQUE — so a second "10 Kurs I" would slip in.
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_group_scope_name ON student_groups "
         "(group_type, COALESCE(class_id, -1), COALESCE(grade, -1), name)",
+        # Ein Kurs/WPF verdient an einem Quiz genauso nur einmal Punkte wie eine Klasse.
+        "ALTER TABLE quiz_sessions ADD CONSTRAINT uq_quiz_group UNIQUE (quiz_id, group_id)",
     ]
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail

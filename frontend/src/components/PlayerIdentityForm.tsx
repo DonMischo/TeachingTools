@@ -5,15 +5,24 @@ import { AvatarPicker, AvatarDisplay, AVATARS } from "@/components/AvatarPicker"
 
 export type Team = { id: number; name: string; color: string | null };
 
+/** Eine der Klassen, aus denen ein Kurs/WPF besteht. */
+export type ScopeClassOption = { id: number; code: string; display_name: string };
+
 interface Props {
   gameCode: string;
   gameIcon?: string;
   gameTitle?: string;
   error?: string | null;
   submitting?: boolean;
-  onJoin: (name: string, avatar: string, teamId?: number | null) => void;
+  onJoin: (name: string, avatar: string, teamId?: number | null, classId?: number | null) => void;
   /** Optional team selection (Caputh team mode). Selection required when non-empty. */
   teams?: Team[];
+  /**
+   * Klassen einer klassenübergreifenden Runde (Kurs/WPF). Wird nur Gästen
+   * gezeigt — angemeldete Schüler bringen ihre Klasse selbst mit. Ohne Wahl
+   * zählt die Leistung für keine Klasse, deshalb ist sie dann Pflicht.
+   */
+  classes?: ScopeClassOption[];
   /** Saved session from a previous visit — renders a rejoin card first. */
   savedSession?: { name: string; avatar: string } | null;
   onRejoin?: () => void;
@@ -25,7 +34,7 @@ interface Props {
 
 export function PlayerIdentityForm({
   gameCode, gameIcon = "🎮", gameTitle, error, submitting, onJoin,
-  teams = [], savedSession = null, onRejoin, showAvatar = true, identity = null,
+  teams = [], classes = [], savedSession = null, onRejoin, showAvatar = true, identity = null,
 }: Props) {
   const { auth } = useAuth();
   const [nameInput, setNameInput] = useState("");
@@ -33,6 +42,7 @@ export function PlayerIdentityForm({
     () => identity?.avatar ?? AVATARS[Math.floor(Math.random() * AVATARS.length)].id,
   );
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -43,11 +53,15 @@ export function PlayerIdentityForm({
     : null);
 
   const needsTeam = teams.length > 0 && selectedTeamId === null;
+  // Angemeldete Schüler haben ihre Klasse schon — gefragt wird nur, wer keine mitbringt.
+  const asksClass = classes.length > 0 && !auth?.student;
+  const needsClass = asksClass && selectedClassId === null;
 
   function handleSubmit() {
     const n = lockedName ?? nameInput.trim();
-    if (!n || needsTeam) return;
-    onJoin(n, avatar, teams.length > 0 ? selectedTeamId : undefined);
+    if (!n || needsTeam || needsClass) return;
+    onJoin(n, avatar, teams.length > 0 ? selectedTeamId : undefined,
+           asksClass ? selectedClassId : undefined);
   }
 
   if (!mounted) return null;
@@ -148,9 +162,29 @@ export function PlayerIdentityForm({
         </div>
       )}
 
+      {asksClass && (
+        <div className="flex flex-col gap-2">
+          <p className="text-white/70 text-sm text-center">Für welche Klasse spielst du?</p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {classes.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedClassId(c.id)}
+                className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 transition-all ${selectedClassId === c.id ? "border-yellow-400 bg-yellow-400/20 text-yellow-200" : "border-white/20 text-white/70 hover:border-white/50"}`}
+              >
+                {c.code}
+              </button>
+            ))}
+          </div>
+          <p className="text-white/40 text-xs text-center">
+            Deine Punkte gehen an diese Klasse.
+          </p>
+        </div>
+      )}
+
       <button
         onClick={handleSubmit}
-        disabled={submitting || (!lockedName && !nameInput.trim()) || needsTeam}
+        disabled={submitting || (!lockedName && !nameInput.trim()) || needsTeam || needsClass}
         className="w-full py-3 rounded-xl font-bold text-white disabled:opacity-40 transition-opacity hover:opacity-90"
         style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
       >

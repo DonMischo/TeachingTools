@@ -32,12 +32,20 @@ class GuestJoinOut(BaseModel):
 
 class GuestStatusOut(BaseModel):
     allow_guests: bool
+    # Wie oft der Gastzugang neu gestartet wurde. Jeder Neustart entwertet die
+    # bis dahin ausgegebenen Gast-Token.
+    guest_epoch: int = 0
 
 
 class GuestAllowIn(BaseModel):
     code: str
     tool: str
     allow: bool
+
+
+class GuestRestartIn(BaseModel):
+    code: str
+    tool: str
 
 
 def _resolve_session(tool: str, code: str, db: Session):
@@ -65,7 +73,10 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     if not name:
         raise HTTPException(422, "Bitte einen Namen angeben")
 
-    return GuestJoinOut(token=create_guest_token(body.code, name), name=name)
+    return GuestJoinOut(
+        token=create_guest_token(body.code, name, getattr(session, "guest_epoch", 0) or 0),
+        name=name,
+    )
 
 
 @router.get("/status", response_model=GuestStatusOut)
@@ -73,7 +84,7 @@ def guest_status(tool: str, code: str, db: Session = Depends(get_db)):
     """Whether this session accepts guests. Public — the join screen and the host
     toggle both read it; it reveals nothing sensitive beyond the opt-in flag."""
     session = _resolve_session(tool, code, db)
-    return GuestStatusOut(allow_guests=session.allow_guests)
+    return GuestStatusOut(allow_guests=session.allow_guests, guest_epoch=session.guest_epoch)
 
 
 @router.patch("/allow", response_model=GuestStatusOut)
@@ -86,4 +97,30 @@ def set_guest_allowed(
     session = _resolve_session(body.tool, body.code, db)
     session.allow_guests = body.allow
     db.commit()
-    return GuestStatusOut(allow_guests=body.allow)
+    return GuestStatusOut(allow_guests=body.allow, guest_epoch=session.guest_epoch)
+
+
+@router.post("/restart", response_model=GuestStatusOut)
+def restart_guest_access(
+    body: GuestRestartIn,
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+):
+    """Bereits ausgegebene Gast-Token dieser Sitzung entziehen.
+
+    Gedacht fuer den gedruckten QR, der mehrere Klassen ueberlebt: die vorige
+    Gruppe haette sonst bis zu 60 Minuten weiter Zugang. Nach dem Neustart muss
+    jeder Gast erneut beitreten — der Code selbst bleibt derselbe, damit der
+    Aushang weiter stimmt.
+
+    Angemeldete Schueler sind nicht betroffen; sie haengen nicht am Gast-Token.
+    """
+    session = _resolve_session(body.tool, body.code, db)
+    entry = BY_KEY[body.tool]
+    owner = getattr(session, entry.owner_column, None)
+    if owner != teacher.id and teacher.role != "admin":
+        raise HTTPException(403, "Das ist nicht deine Sitzung")
+    session.guest_epoch = (session.guest_epoch or 0) + 1
+    db.commit()
+    db.refresh(session)
+    return GuestStatusOut(allow_guests=session.allow_guests, guest_epoch=session.guest_epoch)

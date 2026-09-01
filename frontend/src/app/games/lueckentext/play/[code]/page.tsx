@@ -144,7 +144,7 @@ export default function LueckentextPlayPage() {
   }
 
   // Guest's 60-min window elapsed → hard block, no rejoin.
-  if (!auth && guest.expired) return <GuestExpired gameIcon="📝" />;
+  if (!auth && guest.expired) return <GuestExpired gameIcon="📝" onRejoin={guest.rejoin} />;
 
   // ── Join screen ──────────────────────────────────────────────────────────
   if (phase === "join") {

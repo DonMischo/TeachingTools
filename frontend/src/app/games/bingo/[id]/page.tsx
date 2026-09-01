@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, BingoSetOut, BingoOut, ClassOut } from "@/lib/api";
+import { api, BingoSetOut, BingoOut } from "@/lib/api";
 import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ClassSelect } from "@/components/ClassSelect";
+import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 
 const STATUS_LABEL: Record<string, string> = {
   waiting: "Wartend", active: "Läuft", closed: "Beendet",
@@ -34,16 +34,10 @@ export default function BingoSetDetailPage() {
     enabled: !!setId,
   });
 
-  const { data: classes = [] } = useQuery<ClassOut[]>({
-    queryKey: ["classes"],
-    queryFn: api.classes.list,
-    staleTime: 60_000,
-  });
-
-  const [classId, setClassId] = useState<number | "">("");
+  const [scope, setScope] = useState<Scope>(null);
 
   const startMut = useMutation({
-    mutationFn: () => api.bingo.startSet(setId, classId === "" ? null : classId),
+    mutationFn: () => api.bingo.startSet(setId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["bingo", setId] });
       router.push(`/games/bingo/host/${s.code}`);
@@ -92,7 +86,7 @@ export default function BingoSetDetailPage() {
 
       {canEdit && (
         <div className="flex items-center gap-3 flex-wrap">
-          <ClassSelect value={classId} onChange={setClassId} className="input text-sm py-2 w-56" />
+          <ScopeSelect value={scope} onChange={setScope} className="input text-sm py-2 w-56" />
           <button
             onClick={() => startMut.mutate()}
             disabled={startMut.isPending}
@@ -100,7 +94,11 @@ export default function BingoSetDetailPage() {
           >
             {startMut.isPending ? "Startet…" : "▶ Neue Runde starten"}
           </button>
-          <span className="text-xs text-[var(--text-muted)]">Gäste-Punkte gehen an die gewählte Klasse.</span>
+          <span className="text-xs text-[var(--text-muted)]">
+            {scope?.kind === "group"
+              ? "Klassenübergreifend: Punkte gehen an die Klasse, die jeder Spieler beim Beitritt wählt."
+              : "Gäste-Punkte gehen an die gewählte Klasse."}
+          </span>
         </div>
       )}
 
@@ -112,9 +110,7 @@ export default function BingoSetDetailPage() {
           <SessionGrid
             items={sessions.map((s): SessionCardItem => ({
               code: s.code,
-              title: s.class_id != null
-                ? (classes.find(c => c.id === s.class_id)?.code ?? `Klasse ${s.class_id}`)
-                : "Ohne Klasse",
+              title: s.scope_label || "Ohne Klasse",
               status: {
                 label: STATUS_LABEL[s.status] ?? s.status,
                 tone: s.status === "active" ? "live" : s.status === "waiting" ? "waiting" : "done",
@@ -122,6 +118,9 @@ export default function BingoSetDetailPage() {
               meta: [
                 new Date(s.created_at).toLocaleDateString("de-DE"),
                 ...(s.awarded ? ["ausgewertet"] : []),
+                // Bei einer klassenübergreifenden Runde steht hier, was jede
+                // Klasse bekommen hat — sonst nur die eine Zahl.
+                ...s.points_by_class.map(c => `${c.class_code}: ${c.points} Pkt.`),
               ],
             }))}
             empty="Noch keine Runde gestartet."

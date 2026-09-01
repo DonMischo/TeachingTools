@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { wsUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarDisplay } from "@/components/AvatarPicker";
-import { PlayerIdentityForm, Team } from "@/components/PlayerIdentityForm";
+import { PlayerIdentityForm, ScopeClassOption, Team } from "@/components/PlayerIdentityForm";
 import { GuestExpired } from "@/components/GuestExpired";
 import { useSavedPlayer, SavedPlayer } from "@/hooks/useSavedPlayer";
 import { useHubIdentity } from "@/hooks/useHubIdentity";
@@ -151,6 +151,9 @@ export default function PlayPage() {
   const [teamMode, setTeamMode] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  // Klassenübergreifende Runde (Kurs/WPF): Gäste sagen beim Beitritt, für
+  // welche Klasse sie spielen — sonst zählt ihre Leistung für keine.
+  const [scopeClasses, setScopeClasses] = useState<ScopeClassOption[]>([]);
   // Im Playhub gewählt — dann bleibt hier höchstens noch die Teamwahl.
   const [hubIdentity, setHubIdentity] = useState<PlayIdentity | null>(null);
 
@@ -163,6 +166,11 @@ export default function PlayPage() {
       if (s.team_mode) {
         setTeamMode(true);
         api.capuths.listTeams(code).then(setTeams).catch(() => {});
+      }
+      if (s.group_id != null) {
+        api.play.scope(code)
+          .then(sc => setScopeClasses(sc.needs_class_choice ? sc.classes : []))
+          .catch(() => {});
       }
       setSessionLoaded(true);
     }).catch(() => {
@@ -290,7 +298,7 @@ export default function PlayPage() {
     };
   }
 
-  async function handleJoin(joinName: string, avatar: string, teamId?: number | null) {
+  async function handleJoin(joinName: string, avatar: string, teamId?: number | null, classId?: number | null) {
     if (teamMode && teamId == null) { setJoinError("Bitte wähle ein Team."); return; }
     clearPlayIdentity(code);
     setConnecting(true);
@@ -302,7 +310,7 @@ export default function PlayPage() {
       if (!auth && !guestToken) {
         guestToken = (await guest.join("caputh", joinName)).token;
       }
-      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? teamId! : null, guestToken);
+      const res = await api.capuths.joinSession(code, joinName, avatar, teamMode ? teamId! : null, guestToken, classId ?? null);
       saveSaved({ participantId: res.participant_id, name: res.name, avatar });
       connectWs(res.participant_id, res.name, avatar, guestToken);
     } catch (err: unknown) {
@@ -315,7 +323,7 @@ export default function PlayPage() {
   // Aus dem Playhub durchgereicht: ohne Teamwahl gibt es hier nichts mehr zu fragen.
   useHubIdentity(
     code,
-    mounted && savedLoaded && sessionLoaded && !teamMode && phase.kind === "join",
+    mounted && savedLoaded && sessionLoaded && !teamMode && scopeClasses.length === 0 && phase.kind === "join",
     (id) => { void handleJoin(id.name, id.avatar, null); },
   );
 
@@ -358,7 +366,7 @@ export default function PlayPage() {
   if (!mounted) return null;
 
   // Guest's 60-min window elapsed → hard block, no rejoin.
-  if (guest.expired && !auth) return <GuestExpired gameIcon="🏕️" />;
+  if (guest.expired && !auth) return <GuestExpired gameIcon="🏕️" onRejoin={guest.rejoin} />;
 
   if (phase.kind === "join") {
     if (!savedLoaded) return null;
@@ -369,6 +377,7 @@ export default function PlayPage() {
         error={joinError}
         submitting={connecting}
         teams={teamMode ? teams : []}
+        classes={scopeClasses}
         identity={hubIdentity}
         savedSession={hubIdentity ? null : (saved && saved.participantId != null ? saved : null)}
         onRejoin={() => saved && handleRejoin(saved)}

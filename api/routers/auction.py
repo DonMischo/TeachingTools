@@ -218,7 +218,7 @@ async def auction_ws(
     # visitors must hold a live guest token scoped to this code (only issued when
     # the teacher opted in — enforces opt-in + 60-min expiry); logged-in users pass
     # via their session cookie as before.
-    guest = ws_guest(ws, code)
+    guest = ws_guest(ws, code, db)
     if token or guest:
         identity = ws_identity(ws, db)
         if guest:

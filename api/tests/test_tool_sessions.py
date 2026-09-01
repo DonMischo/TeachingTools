@@ -32,6 +32,29 @@ def test_each_tool_has_its_own_session(client, teacher_token):
     assert len(set(codes.values())) == 3
 
 
+def test_every_joinable_tool_can_open_a_session(client, teacher_token):
+    """Ein Werkzeug in SESSION_TOOLS muss auch im Katalog stehen und einen Code
+    bekommen — sonst zeigt die Werkzeugseite einen QR-Knopf, der 400 liefert."""
+    from api.routers.tool_sessions import SESSION_TOOLS
+    from api.tool_catalog import BY_SLUG
+
+    from api.routers.tool_sessions import REF_TOOLS
+
+    codes = set()
+    for slug in SESSION_TOOLS:
+        assert slug in BY_SLUG, f"{slug} fehlt im tool_catalog"
+        r = _create(client, teacher_token, slug)
+        if slug in REF_TOOLS:
+            # Der Zeitstrahl teilt eine bestimmte Zeitleiste — ohne ref_id
+            # gibt es nichts zu teilen, und der Code bleibt aus.
+            assert r.status_code == 422, f"{slug}: {r.text}"
+            continue
+        assert r.status_code == 201, f"{slug}: {r.text}"
+        codes.add(r.json()["code"])
+    # Jedes Werkzeug hat seinen eigenen Code, nicht einen gemeinsamen.
+    assert len(codes) == len([s for s in SESSION_TOOLS if s not in REF_TOOLS])
+
+
 def test_unknown_or_unsupported_tool_is_refused(client, teacher_token):
     assert _create(client, teacher_token, "caputh").status_code == 400
     assert _create(client, teacher_token, "gibtsnicht").status_code == 400
@@ -84,7 +107,7 @@ def test_guest_join_works_after_opt_in(client, teacher_token):
 
     # Der Beitritts-Screen sieht die Freigabe ohne Login.
     assert client.get("/api/guest/status", params={"tool": "simulation", "code": code}).json() == {
-        "allow_guests": True
+        "allow_guests": True, "guest_epoch": 0
     }
     assert client.get(f"/api/tool-sessions/{code}").json()["allow_guests"] is True
 

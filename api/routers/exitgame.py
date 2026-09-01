@@ -47,6 +47,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .. import dda as dda_engine
+from .. import scoping
 from .. import timeline_engine
 from ..task_generators import check_input_answer
 from ..database import get_db
@@ -84,7 +85,7 @@ def _identity_for_attempt(
     user = get_current_user_optional(request, credentials, db)
     if user is not None:
         return user
-    return guest_from_credentials(credentials, attempt.session.join_code)
+    return guest_from_credentials(credentials, attempt.session.join_code, db)
 
 
 def _owner_filter(current: Teacher | Student | Guest) -> dict:
@@ -615,7 +616,9 @@ def delete_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Dep
 # ---------------------------------------------------------------------------
 
 class SessionCreate(BaseModel):
-    class_id: int
+    # Genau eines von beidem: eine Klasse oder ein Kurs/WPF (klassenübergreifend).
+    class_id: int | None = None
+    group_id: int | None = None
 
 
 class SessionOut(BaseModel):
@@ -623,7 +626,10 @@ class SessionOut(BaseModel):
     join_code: str
     status: str
     exitgame_id: int
-    class_id: int
+    class_id: int | None
+    group_id: int | None = None
+    # »9a« bzw. »9 NaT«. Beim Exitgame reines Etikett — es vergibt keine Punkte.
+    scope_label: str = ""
     attempt_count: int
     created_at: datetime
     closed_at: datetime | None
@@ -631,30 +637,37 @@ class SessionOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-def _session_out(s: ExitGameSession) -> SessionOut:
+def _session_out(s: ExitGameSession, db: Session | None = None) -> SessionOut:
     return SessionOut(
         id=s.id, join_code=s.join_code, status=s.status, exitgame_id=s.exitgame_id,
-        class_id=s.class_id, attempt_count=len(s.attempts), created_at=s.created_at,
+        class_id=s.class_id, group_id=s.group_id,
+        scope_label=scoping.scope_label(db, s.class_id, s.group_id) if db is not None else "",
+        attempt_count=len(s.attempts), created_at=s.created_at,
         closed_at=s.closed_at,
     )
 
 
-def create_or_reuse_open_session(db: Session, exitgame_id: int, class_id: int, teacher_id: int) -> ExitGameSession:
-    """Create (or return the existing open) session for an exitgame+class —
-    shared by the REST endpoint and the Stundenplaner tool registry."""
+def create_or_reuse_open_session(db: Session, exitgame_id: int, class_id: int | None, teacher_id: int,
+                                 group_id: int | None = None) -> ExitGameSession:
+    """Create (or return the existing open) session for an exitgame and one
+    scope — either a Klasse or a Kurs/WPF. Shared by the REST endpoint and the
+    Stundenplaner tool registry."""
     game = db.get(ExitGame, exitgame_id)
     if not game:
         raise HTTPException(404, "Exitgame nicht gefunden")
+    scoping.validate_scope(class_id, group_id)
+    if group_id is not None:
+        scoping.load_group(db, group_id)
     existing = (
         db.query(ExitGameSession)
-        .filter_by(exitgame_id=exitgame_id, class_id=class_id, status="open")
+        .filter_by(exitgame_id=exitgame_id, class_id=class_id, group_id=group_id, status="open")
         .order_by(ExitGameSession.created_at.desc())
         .first()
     )
     if existing:
         return existing
     session = ExitGameSession(
-        exitgame_id=exitgame_id, class_id=class_id, teacher_id=teacher_id,
+        exitgame_id=exitgame_id, class_id=class_id, group_id=group_id, teacher_id=teacher_id,
         join_code=gen_code(db, ExitGameSession, "join_code"),
     )
     db.add(session)
@@ -668,14 +681,14 @@ def create_session(
     exitgame_id: int, body: SessionCreate,
     db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher),
 ):
-    session = create_or_reuse_open_session(db, exitgame_id, body.class_id, current.id)
-    return _session_out(session)
+    session = create_or_reuse_open_session(db, exitgame_id, body.class_id, current.id, body.group_id)
+    return _session_out(session, db)
 
 
 @router.get("/api/exitgames/{exitgame_id}/sessions", response_model=list[SessionOut])
 def list_exitgame_sessions(exitgame_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
     sessions = db.query(ExitGameSession).filter_by(exitgame_id=exitgame_id).order_by(ExitGameSession.created_at.desc()).all()
-    return [_session_out(s) for s in sessions]
+    return [_session_out(s, db) for s in sessions]
 
 
 @router.get("/api/exitgame-sessions/{code}", response_model=SessionOut)
@@ -683,7 +696,7 @@ def get_session(code: str, db: Session = Depends(get_db)):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session nicht gefunden")
-    return _session_out(s)
+    return _session_out(s, db)
 
 
 @router.post("/api/exitgame-sessions/{code}/close", response_model=SessionOut)
@@ -697,7 +710,7 @@ def close_session(code: str, db: Session = Depends(get_db), current: Teacher = D
     s.closed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(s)
-    return _session_out(s)
+    return _session_out(s, db)
 
 
 @router.delete("/api/exitgame-sessions/{code}", status_code=204)

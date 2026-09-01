@@ -13,7 +13,7 @@
  *
  * Nicht abgedeckt: Hydrate (CuSO₄·5H₂O).
  */
-import { element, shellGoal, type Element } from "./elemente";
+import { element, isParticle, shellGoal, type Element } from "./elemente";
 
 export type Part =
   | { kind: "el"; el: string; n: number }
@@ -36,6 +36,16 @@ export function countAtoms(parts: Part[], factor = 1): Record<string, number> {
   };
   walk(parts, factor);
   return out;
+}
+
+/** Summe der Eigenladungen aller Kernteilchen einer Formel. */
+export function particleCharge(parts: Part[]): number {
+  let q = 0;
+  for (const [sym, n] of Object.entries(countAtoms(parts))) {
+    const e = element(sym);
+    if (e?.particleCharge) q += e.particleCharge * n;
+  }
+  return q;
 }
 
 export function sideAtoms(species: Species[]): Record<string, number> {
@@ -68,10 +78,19 @@ export function sideMass(species: Species[]): number | null {
 
 export type ElementBalance = { el: string; left: number; right: number; ok: boolean };
 
+/**
+ * Elementbilanz — Kernteilchen bleiben bewusst draußen.
+ *
+ * In einer Redox-Halbgleichung stehen die Elektronen nur auf einer Seite
+ * (Cu²⁺ + 2e⁻ → Cu), und bei einer Kernumwandlung wandeln sich die Teilchen
+ * ineinander um (n → p⁺ + e⁻). Beides ist richtig, würde aber jede
+ * Teilchenbilanz reißen. Was hier zählen muss, ist die **Ladung** — die prüft
+ * chargeBalance, und isBalanced verlangt beides.
+ */
 export function elementBalance(r: Reaction): ElementBalance[] {
   const l = sideAtoms(r.left);
   const rt = sideAtoms(r.right);
-  const els = [...new Set([...Object.keys(l), ...Object.keys(rt)])];
+  const els = [...new Set([...Object.keys(l), ...Object.keys(rt)])].filter(el => !isParticle(el));
   els.sort((a, b) => (element(a)?.z ?? 999) - (element(b)?.z ?? 999));
   return els.map(el => ({ el, left: l[el] ?? 0, right: rt[el] ?? 0, ok: (l[el] ?? 0) === (rt[el] ?? 0) }));
 }
@@ -348,6 +367,13 @@ function parseSpecies(src: string): Species {
         parts.push({ kind: "grp", parts: inner, n: number() ?? 1 });
         continue;
       }
+      // Kernteilchen (p, n, e) sind klein geschrieben — sie kollidieren
+      // deshalb nicht mit Phosphor und Stickstoff.
+      if (isParticle(ch)) {
+        i++;
+        parts.push({ kind: "el", el: ch, n: number() ?? 1 });
+        continue;
+      }
       if (!/[A-Z]/.test(ch)) throw new ChemieError(`Ein Elementsymbol beginnt groß — »${ch}« passt nicht.`);
       let sym = ch;
       i++;
@@ -363,11 +389,15 @@ function parseSpecies(src: string): Species {
 
   const parts = formula(0);
   if (!parts.length) throw new ChemieError("Da fehlt eine Formel.");
+  // »e« ohne Vorzeichen ist trotzdem ein Elektron. Nur ergänzen, wenn niemand
+  // eine Ladung geschrieben hat — sonst gilt das Geschriebene.
+  const chargeWithParticles = charge !== 0 ? charge : particleCharge(parts);
   // »(H)+« meint das Ion, nicht die Gruppe: eine Klammer, die die ganze Formel
   // umschließt und nur einmal zählt, wird ausgepackt.
   const only = parts.length === 1 ? parts[0] : null;
-  if (only && only.kind === "grp" && only.n === 1) return { coef, parts: only.parts, charge };
-  return { coef, parts, charge };
+  if (only && only.kind === "grp" && only.n === 1)
+    return { coef, parts: only.parts, charge: chargeWithParticles };
+  return { coef, parts, charge: chargeWithParticles };
 }
 
 /**
@@ -424,4 +454,10 @@ export const CHEM_PRESETS: ChemPreset[] = [
   { label: "Neutralisation (Ionen)", src: "(H)+ + (OH)- -> H2O" },
   { label: "Silberchlorid fällt aus", src: "Ag+ + Cl- -> AgCl" },
   { label: "Kalk aus Ionen", src: "Ca2+ + (CO3)2- -> CaCO3" },
+  // Kernteilchen: Redox-Halbgleichungen und Kernumwandlungen. Ausgeglichen
+  // ist hier vor allem die Ladung — die Masse eines Elektrons fällt kaum auf.
+  { label: "Eisen gibt ein Elektron ab", src: "Fe2+ -> Fe3+ + e-" },
+  { label: "Kupfer nimmt Elektronen auf", src: "Cu2+ + 2e- -> Cu" },
+  { label: "Chlor wird zum Chlorid", src: "Cl2 + 2e- -> 2Cl-" },
+  { label: "Neutron zerfällt", src: "n -> p+ + e-" },
 ];

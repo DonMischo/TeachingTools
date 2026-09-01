@@ -16,7 +16,8 @@ from ..database import get_db
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager
-from ..models import BingoCard, BingoSession, BingoSet, Student, Transaction
+from ..models import BingoCard, BingoSession, BingoSet, Class, Student, Transaction
+from .. import scoping
 
 if TYPE_CHECKING:
     pass
@@ -147,6 +148,11 @@ class BingoOut(BaseModel):
     total_pairs: int
     created_at: datetime
     class_id: int | None = None
+    group_id: int | None = None
+    # »9a« bzw. »9 NaT« — was in Listen ueber der Runde steht.
+    scope_label: str = ""
+    # Je Klasse eine Zeile, gefuellt sobald die Runde ausgewertet ist.
+    points_by_class: list[dict] = []
     # Ausgewertet = endgueltig zu; die Oberflaeche blendet "Wieder oeffnen" aus.
     awarded: bool = False
 
@@ -169,6 +175,26 @@ class BingoSetOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+def _points_breakdown(s: BingoSession, db: Session) -> list[dict]:
+    """Je Klasse eine Zeile — bei einer Kurs/WPF-Runde mehr als eine."""
+    stored = s.points_by_class or {}
+    if not stored:
+        return []
+    ids = [int(k) for k in stored]
+    classes = {c.id: c for c in db.query(Class).filter(Class.id.in_(ids)).all()}
+    rows = [
+        {
+            "class_id": cid,
+            "class_code": classes[cid].code if cid in classes else str(cid),
+            "class_name": classes[cid].display_name if cid in classes else str(cid),
+            "points": pts,
+        }
+        for cid, pts in ((int(k), v) for k, v in stored.items())
+    ]
+    rows.sort(key=lambda r: r["class_code"])
+    return rows
 
 
 _EXAMPLES_DIR = Path(__file__).parent.parent.parent / "data" / "bingo_examples"
@@ -215,7 +241,10 @@ def list_sessions(set_id: int | None = None, db: Session = Depends(get_db), curr
             grid_size=s.grid_size,
             grid_cols=s.grid_cols if s.grid_cols > 0 else s.grid_size,
             status=s.status, total_pairs=len(s.pairs), created_at=s.created_at,
-            class_id=s.class_id, awarded=s.awarded_at is not None,
+            class_id=s.class_id, group_id=s.group_id,
+            scope_label=scoping.scope_label(db, s.class_id, s.group_id),
+            points_by_class=_points_breakdown(s, db),
+            awarded=s.awarded_at is not None,
         )
         for s in sessions
     ]
@@ -293,15 +322,22 @@ def create_set(body: BingoCreate, db: Session = Depends(get_db), current=Depends
     )
 
 
-def create_session_from_set(db: Session, set_id: int, created_by: int, class_id: int | None = None) -> BingoSession:
+def create_session_from_set(db: Session, set_id: int, created_by: int, class_id: int | None = None,
+                            group_id: int | None = None) -> BingoSession:
     """Start a fresh session from a library set — shared by the REST endpoint
-    and the Stundenplaner tool registry."""
+    and the Stundenplaner tool registry.
+
+    Scope is a Klasse, a Kurs/WPF, or neither ("Ohne Klasse", as before)."""
     bingo_set = db.query(BingoSet).filter_by(id=set_id).first()
     if not bingo_set:
         raise HTTPException(404, "Bingo-Set nicht gefunden")
+    if class_id is not None and group_id is not None:
+        raise HTTPException(422, "Entweder eine Klasse oder einen Kurs/WPF wählen, nicht beides.")
+    if group_id is not None:
+        scoping.load_group(db, group_id)
     session = BingoSession(
         set_id=bingo_set.id, code=gen_code(db, BingoSession, length=8),
-        created_by=created_by, class_id=class_id,
+        created_by=created_by, class_id=class_id, group_id=group_id,
     )
     db.add(session)
     db.commit()
@@ -311,14 +347,17 @@ def create_session_from_set(db: Session, set_id: int, created_by: int, class_id:
 
 class SessionFromSetIn(BaseModel):
     class_id: int | None = None
+    group_id: int | None = None
 
 
 @router.post("/sets/{set_id}/sessions", status_code=201, dependencies=[Depends(require_capability("bingo", "host"))])
 def start_session_from_set(set_id: int, body: SessionFromSetIn | None = None, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if is_student(current):
         raise HTTPException(403)
-    session = create_session_from_set(db, set_id, current.id, body.class_id if body else None)
-    return {"id": session.id, "code": session.code, "class_id": session.class_id}
+    session = create_session_from_set(db, set_id, current.id,
+                                     body.class_id if body else None,
+                                     body.group_id if body else None)
+    return {"id": session.id, "code": session.code, "class_id": session.class_id, "group_id": session.group_id}
 
 
 @router.delete("/{code}", status_code=204)
@@ -334,8 +373,12 @@ def delete_session(code: str, db: Session = Depends(get_db), current=Depends(get
 
 async def _close_and_award(session: BingoSession, db: Session):
     """Close a session and award points per card based on % correctly marked.
+
     Logged-in students credit their own class; anonymous players credit the
-    session's bound class (class_id), if any."""
+    class stored on their card — in a Kurs/WPF round the one they picked when
+    joining, otherwise the session's bound class (class_id), if any. Each class
+    is booked separately, so a klassenuebergreifende Runde lands as one
+    Transaction per Klasse and can be listed per Klasse afterwards."""
     session.status = "closed"
     called_set = set(session.called_indices)
     db.commit()
@@ -343,6 +386,7 @@ async def _close_and_award(session: BingoSession, db: Session):
     if session.max_points > 0 and called_set:
         # Ab hier kennen die Spieler ihr Ergebnis — die Runde ist gelaufen.
         session.awarded_at = datetime.now(timezone.utc)
+        by_class: dict[int, int] = {}
         for card in session.cards:
             called_positions = [i for i, pair_idx in enumerate(card.grid_indices) if pair_idx in called_set]
             if not called_positions:
@@ -356,11 +400,21 @@ async def _close_and_award(session: BingoSession, db: Session):
                 "max_points": session.max_points, "correct": correctly_marked, "total_called": len(called_positions),
             })
             student = db.get(Student, card.student_id) if card.student_id else None
-            target_class_id = student.class_id if student and student.class_id else session.class_id
+            target_class_id = (
+                student.class_id if student and student.class_id
+                else card.class_id if card.class_id
+                else session.class_id
+            )
             if pts > 0 and target_class_id:
+                by_class[target_class_id] = by_class.get(target_class_id, 0) + pts
                 db.add(Transaction(teacher_id=session.created_by, class_id=target_class_id, points=pts,
                                   reason=f"Bingo: {session.title} ({round(ratio * 100)}%)"))
+        session.points_by_class = {str(cid): pts for cid, pts in by_class.items()}
         db.commit()
+        await _mgr.broadcast(session.code, {
+            "event": "awarded",
+            "points_by_class": _points_breakdown(session, db),
+        })
 
 
 @router.post("/{code}/close", status_code=204)
@@ -410,6 +464,7 @@ async def reset_session_rest(code: str, db: Session = Depends(get_db), current=D
     s.called_indices = []
     s.status = "waiting"
     s.awarded_at = None      # frische Runde: darf spaeter neu ausgewertet werden
+    s.points_by_class = None
     for card in s.cards:
         card.marked_positions = []
         card.has_bingo = False
@@ -419,17 +474,30 @@ async def reset_session_rest(code: str, db: Session = Depends(get_db), current=D
     await _mgr.broadcast(code, _session_state(s, db, players=_mgr.infos(code)))
 
 
-def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int = 0, anon_token: str = "", name: str = "Anonym") -> BingoCard:
+def _card_class_id(session: BingoSession, db: Session, student: Student | None, chosen_class_id: int | None) -> int | None:
+    """Welche Klasse die Punkte dieser Karte bekommt."""
+    return scoping.participant_class_id(
+        session_class_id=session.class_id,
+        session_group_id=session.group_id,
+        student_class_id=student.class_id if student else None,
+        chosen_class_id=chosen_class_id,
+        allowed_class_ids=scoping.scope_class_ids(db, session.class_id, session.group_id) or None,
+    )
+
+
+def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int = 0, anon_token: str = "",
+                         name: str = "Anonym", class_id: int | None = None) -> BingoCard:
     """Find or create a bingo card for either an authenticated student or an anonymous participant."""
     rows, cols = _dims(session)
     cells = rows * cols
     if student_id:
         card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
+        student = db.query(Student).filter_by(id=student_id).first()
         if not card:
-            student = db.query(Student).filter_by(id=student_id).first()
             sname = f"{student.vorname} {student.nachname}" if student else name or "Anonym"
             indices = random.sample(range(len(session.pairs)), cells)
-            card = BingoCard(session_id=session.id, student_id=student_id, student_name=sname, grid_indices=indices)
+            card = BingoCard(session_id=session.id, student_id=student_id, student_name=sname, grid_indices=indices,
+                             class_id=_card_class_id(session, db, student, class_id))
             db.add(card)
             db.commit()
             db.refresh(card)
@@ -437,8 +505,14 @@ def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int 
         card = db.query(BingoCard).filter_by(session_id=session.id, anon_token=anon_token).first()
         if not card:
             indices = random.sample(range(len(session.pairs)), cells)
-            card = BingoCard(session_id=session.id, student_id=None, anon_token=anon_token, student_name=name or "Anonym", grid_indices=indices)
+            card = BingoCard(session_id=session.id, student_id=None, anon_token=anon_token, student_name=name or "Anonym",
+                             grid_indices=indices, class_id=_card_class_id(session, db, None, class_id))
             db.add(card)
+            db.commit()
+            db.refresh(card)
+        elif card.class_id is None and class_id is not None:
+            # Klasse erst beim zweiten Anlauf gewaehlt — nachtragen.
+            card.class_id = _card_class_id(session, db, None, class_id)
             db.commit()
             db.refresh(card)
     return card
@@ -453,17 +527,24 @@ def game_info(code: str, db: Session = Depends(get_db)):
     raise HTTPException(404, "Code not found")
 
 
+class CardIn(BaseModel):
+    # Nur in einer Kurs/WPF-Runde und nur von Gästen gefüllt: angemeldete
+    # Schüler bringen ihre Klasse selbst mit.
+    class_id: int | None = None
+
+
 @router.post("/{code}/card")
-def get_or_create_card_rest(code: str, db: Session = Depends(get_db), current=Depends(get_player)):
+def get_or_create_card_rest(code: str, body: CardIn | None = None, db: Session = Depends(get_db), current=Depends(get_player)):
     """Card for the calling player — identity comes from the session/guest token,
     never from a client-supplied student_id (that allowed fetching anyone's card)."""
     session = db.query(BingoSession).filter_by(code=code).first()
     if not session:
         raise HTTPException(404)
+    chosen = body.class_id if body else None
     if isinstance(current, Student):
-        card = _find_or_create_card(session, db, student_id=current.id)
+        card = _find_or_create_card(session, db, student_id=current.id, class_id=chosen)
     elif isinstance(current, Guest):
-        card = _find_or_create_card(session, db, anon_token=current.id, name=current.name)
+        card = _find_or_create_card(session, db, anon_token=current.id, name=current.name, class_id=chosen)
     else:
         raise HTTPException(403, "Nur für Schüler")
     return _card_dict(card, session)
@@ -479,6 +560,9 @@ async def bingo_ws(
     token: str = "",
     name: str = "",
     avatar: str = "",
+    # Nur in einer Kurs/WPF-Runde belegt: die Klasse, fuer die ein Gast spielt.
+    # Angemeldete Schueler bringen ihre eigene mit, ihre Angabe wird ignoriert.
+    class_id: int = 0,
     db: Session = Depends(get_db),
 ):
     session = db.query(BingoSession).filter_by(code=code).first()
@@ -502,14 +586,14 @@ async def bingo_ws(
     if role == "student":
         if identity and identity[0] == "student":
             # Logged-in students always play as themselves.
-            card = _find_or_create_card(session, db, student_id=identity[1])
+            card = _find_or_create_card(session, db, student_id=identity[1], class_id=class_id or None)
             student_id = identity[1]
             _mgr.add_student(code, student_id, ws, info={"name": card.student_name, "avatar": avatar})
         else:
             # QR/join-link guest: must hold a live guest token scoped to this code
             # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
             # A logged-in teacher may also test the student view.
-            guest = ws_guest(ws, code)
+            guest = ws_guest(ws, code, db)
             if guest:
                 anon_key, anon_name = guest.id, guest.name
             elif identity and identity[0] == "teacher":
@@ -517,7 +601,7 @@ async def bingo_ws(
             else:
                 await ws.close(code=4001)
                 return
-            card = _find_or_create_card(session, db, anon_token=anon_key, name=anon_name)
+            card = _find_or_create_card(session, db, anon_token=anon_key, name=anon_name, class_id=class_id or None)
             _mgr.add_student(code, card.id, ws, info={"name": card.student_name, "avatar": avatar})
         db.refresh(session)
         await ws.send_json(_session_state(session, db, players=_mgr.infos(code)))

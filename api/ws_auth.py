@@ -53,10 +53,14 @@ def ws_teacher(websocket: WebSocket, db: Session) -> Teacher | None:
     return db.get(Teacher, identity[1])
 
 
-def ws_guest(websocket: WebSocket, code: str) -> Guest | None:
+def ws_guest(websocket: WebSocket, code: str, db: Session | None = None) -> Guest | None:
     """Return the Guest for a valid, unexpired guest token scoped to `code`, else
     None. The token comes from the `guest_token` query param (preferred, since JS
-    can't set WS headers) or an Authorization: Bearer header."""
+    can't set WS headers) or an Authorization: Bearer header.
+
+    `db` mitgeben, damit ein von der Lehrkraft neugestarteter Gastzugang auch
+    hier greift — sonst bliebe eine offene Verbindung ueber den Neustart hinweg
+    per Wiederverbinden erneuerbar."""
     token = websocket.query_params.get("guest_token")
     if not token:
         auth_header = websocket.headers.get("authorization", "")
@@ -64,4 +68,4 @@ def ws_guest(websocket: WebSocket, code: str) -> Guest | None:
             token = auth_header[7:]
     if not token:
         return None
-    return decode_guest_token(token, code)
+    return decode_guest_token(token, code, db)
