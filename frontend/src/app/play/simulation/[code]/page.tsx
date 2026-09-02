@@ -8,7 +8,7 @@
  * rufen nichts ab; der Gast-Token ist der Nachweis, dass die Lehrkraft
  * Gäste hereingelassen hat.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { api, type ToolSessionOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,9 +42,26 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
 };
 
+/**
+ * Der scrollende Rahmen um das Werkzeug.
+ *
+ * `h-full` ist hier keine Zierde: auf den Vollbildrouten ist `<main>` ein
+ * Block-Container mit `overflow-hidden`, kein Flex-Container. Ein `flex-1`
+ * wäre also wirkungslos, das Werkzeug bekäme seine Inhaltshöhe, `overflow-y`
+ * hätte nichts zu scrollen — und alles unterhalb des Sichtfelds wäre
+ * abgeschnitten und mit keiner Geste erreichbar. Auf dem Telefon ist das die
+ * halbe Simulation. `app-scroll` bringt dazu die iOS-Behandlung aus
+ * globals.css (Momentum-Scrolling, kein Gummiband nach außen).
+ */
+function Buehne({ children }: { children: ReactNode }) {
+  return <div className="h-full app-scroll">{children}</div>;
+}
+
 function Hinweis({ icon, title, text }: { icon: string; title: string; text: string }) {
   return (
-    <div className="flex-1 flex items-center justify-center p-6">
+    // h-full statt flex-1 aus demselben Grund wie in `Buehne`: sonst ist die
+    // Karte nur innerhalb ihrer eigenen Inhaltshöhe zentriert, klebt also oben.
+    <div className="h-full flex items-center justify-center p-6">
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-8 max-w-md text-center">
         <div className="text-4xl mb-2">{icon}</div>
         <h1 className="text-xl font-black">{title}</h1>
@@ -106,7 +123,7 @@ export default function SimulationJoinPage() {
       : tool.node;
 
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.
-  if (auth) return <div className="flex-1 overflow-y-auto">{body}</div>;
+  if (auth) return <Buehne>{body}</Buehne>;
 
   if (guest.expired) return <GuestExpired gameIcon={tool.icon} onRejoin={guest.rejoin} />;
 
@@ -127,5 +144,5 @@ export default function SimulationJoinPage() {
     );
   }
 
-  return <div className="flex-1 overflow-y-auto">{body}</div>;
+  return <Buehne>{body}</Buehne>;
 }
