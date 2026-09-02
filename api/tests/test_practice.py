@@ -246,3 +246,74 @@ def test_wrong_answer_from_other_student_rejected(client, db):
     client.cookies.clear()
     r = client.post(f"/api/practice/tasks/{t['task_id']}/answer", json={"answer": "1"}, headers=_auth(token_b))
     assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Gäste über den QR einer Übungs-Sitzung
+# ---------------------------------------------------------------------------
+
+def _uebung_gast(client, teacher_token, name="Gast"):
+    """Übungs-Sitzung anlegen, Gäste erlauben, beitreten — gibt (code, token)."""
+    from api.tests.conftest import auth
+    code = client.post("/api/tool-sessions", json={"tool_slug": "uebung"},
+                       headers=auth(teacher_token)).json()["code"]
+    client.patch("/api/guest/allow", json={"code": code, "tool": "simulation", "allow": True},
+                 headers=auth(teacher_token))
+    client.cookies.clear()
+    token = client.post("/api/guest/join",
+                        json={"code": code, "tool": "simulation", "name": name}).json()["token"]
+    return code, token
+
+
+def test_guest_can_practice_with_code_and_token(client, db, teacher_token):
+    code, token = _uebung_gast(client, teacher_token)
+    from api.models import PracticeTask
+
+    r = client.get(f"/api/practice/topics?code={code}", headers=_auth(token))
+    assert r.status_code == 200, r.text
+    assert any(t["id"] == "linear_equation" for t in r.json())
+
+    t = client.post(f"/api/practice/linear_equation/task?code={code}", headers=_auth(token)).json()
+    row = db.get(PracticeTask, t["task_id"])
+    assert row.guest_id and row.student_id is None and row.teacher_id is None
+
+    r = client.post(f"/api/practice/tasks/{t['task_id']}/answer?code={code}",
+                    json={"answer": row.accept[0]}, headers=_auth(token))
+    assert r.status_code == 200
+    assert r.json()["progress"]["tasks_correct"] == 1
+
+
+def test_guest_without_code_is_rejected(client, teacher_token):
+    _, token = _uebung_gast(client, teacher_token)
+    assert client.get("/api/practice/topics", headers=_auth(token)).status_code == 401
+
+
+def test_guest_token_of_another_tool_does_not_open_practice(client, teacher_token):
+    """Ein Gast-Token aus dem Abakus ist beim Üben kein Ausweis."""
+    from api.tests.conftest import auth
+    code = client.post("/api/tool-sessions", json={"tool_slug": "abacus"},
+                       headers=auth(teacher_token)).json()["code"]
+    client.patch("/api/guest/allow", json={"code": code, "tool": "simulation", "allow": True},
+                 headers=auth(teacher_token))
+    client.cookies.clear()
+    token = client.post("/api/guest/join",
+                        json={"code": code, "tool": "simulation", "name": "Gast"}).json()["token"]
+    assert client.get(f"/api/practice/topics?code={code}", headers=_auth(token)).status_code == 401
+
+
+def test_two_guests_are_counted_apart(client, db, teacher_token):
+    code, a = _uebung_gast(client, teacher_token, "Anna")
+    _, b = _uebung_gast(client, teacher_token, "Ben")
+    from api.models import PracticeTask
+
+    t = client.post(f"/api/practice/linear_equation/task?code={code}", headers=_auth(a)).json()
+    row = db.get(PracticeTask, t["task_id"])
+    client.post(f"/api/practice/tasks/{t['task_id']}/answer?code={code}",
+                json={"answer": row.accept[0]}, headers=_auth(a))
+
+    # Bens Zähler steht noch auf null, und Annas Aufgabe gehört ihm nicht.
+    themen = client.get(f"/api/practice/topics?code={code}", headers=_auth(b)).json()
+    assert next(x for x in themen if x["id"] == "linear_equation")["progress"] is None
+    r = client.post(f"/api/practice/tasks/{t['task_id']}/answer?code={code}",
+                    json={"answer": "1"}, headers=_auth(b))
+    assert r.status_code == 404

@@ -8,8 +8,11 @@ import {
   begruendung, istKindgerecht, wuerfelnTerm, wuerfelnZug, wuerfelnStufen,
   type StufenModus,
   zugAusTerm, zugTerm, zugWert, gruppen, tauscheZahlen, tauscheGruppen,
-  zerlegeStufen, stellenwerte, fmt, RechenError,
+  zerlegeStufen, zerlegeZahl, rutsche, ziffernNachStellen, tafelBereich,
+  neueStellen, zahlAusText, fmt, RechenError,
 } from "@/lib/rechenregeln";
+
+const ALLE_MODI: StufenModus[] = ["frei", "komma", "10", "100", "1000", "10000"];
 
 const schritte = (src: string) => alleSchritte(parse(src)).map(s => s.nachher);
 const naechsteRechnung = (src: string) => {
@@ -152,21 +155,23 @@ describe("Aufgaben würfeln", () => {
     }
   });
 
-  it("hängt die Nullen der Stufenaufgabe immer an den zweiten Faktor", () => {
-    for (const modus of ["frei", "10", "100", "1000"] as StufenModus[]) {
+  it("hängt die Nullen der Stufenaufgabe immer an die zweite Zahl", () => {
+    for (const modus of ALLE_MODI) {
       for (let i = 0; i < 20; i++) {
         const [a, b] = wuerfelnStufen(modus);
         expect(b % 10, `${a} · ${b}`).toBe(0);
-        expect(zerlegeStufen(a, b).nullenB).toBeGreaterThanOrEqual(1);
+        expect(zerlegeStufen(a, b).stellenB).toBeGreaterThanOrEqual(1);
       }
     }
   });
 
-  it("legt den zweiten Faktor in den festen Stufen auf genau 10, 100 oder 1000", () => {
-    for (const modus of ["10", "100", "1000"] as StufenModus[]) {
-      for (let i = 0; i < 20; i++) {
-        const [, b] = wuerfelnStufen(modus);
-        expect(b).toBe(Number(modus));
+  it("legt die zweite Zahl in den festen Stufen auf genau die Stufenzahl", () => {
+    for (const modus of ["10", "100", "1000", "10000"] as StufenModus[]) {
+      for (const art of ["*", ":"] as const) {
+        for (let i = 0; i < 20; i++) {
+          const [, b] = wuerfelnStufen(modus, art);
+          expect(b).toBe(Number(modus));
+        }
       }
     }
   });
@@ -178,6 +183,21 @@ describe("Aufgaben würfeln", () => {
     expect(zweite.size).toBeGreaterThan(3);
   });
 
+  it("würfelt »Komma« mit Zehnteln oder Hundertsteln", () => {
+    const krumm = Array.from({ length: 40 }, () => wuerfelnStufen("komma"))
+      .filter(([a]) => !Number.isInteger(a));
+    expect(krumm.length).toBe(40);
+  });
+
+  it("würfelt Divisionen, die aufgehen", () => {
+    for (const modus of ALLE_MODI) {
+      for (let i = 0; i < 20; i++) {
+        const [a, b] = wuerfelnStufen(modus, ":");
+        expect(() => zerlegeStufen(a, b, ":"), `${a} : ${b}`).not.toThrow();
+      }
+    }
+  });
+
   it("würfelt nie dieselbe Aufgabe noch einmal", () => {
     for (let i = 0; i < 30; i++) {
       const term = wuerfelnTerm(2);
@@ -185,7 +205,7 @@ describe("Aufgaben würfeln", () => {
       const zug = wuerfelnZug(4);
       expect(wuerfelnZug(4, zug)).not.toBe(zug);
       const paar = wuerfelnStufen("frei");
-      expect(wuerfelnStufen("frei", paar)).not.toEqual(paar);
+      expect(wuerfelnStufen("frei", "*", paar)).not.toEqual(paar);
     }
   });
 });
@@ -244,30 +264,82 @@ describe("Der Zug", () => {
 });
 
 describe("Stufenzahlen", () => {
+  it("liest jede Zahl als Kern mal Zehnerpotenz", () => {
+    expect(zerlegeZahl(40)).toEqual({ kern: 4, stellen: 1 });
+    expect(zerlegeZahl(2000)).toEqual({ kern: 2, stellen: 3 });
+    expect(zerlegeZahl(0.3)).toEqual({ kern: 3, stellen: -1 });
+    expect(zerlegeZahl(0.045)).toEqual({ kern: 45, stellen: -3 });
+    expect(zerlegeZahl(7)).toEqual({ kern: 7, stellen: 0 });
+    expect(zerlegeZahl(0)).toEqual({ kern: 0, stellen: 0 });
+  });
+
+  it("rutscht ohne Rundungsstaub", () => {
+    // 1.1 * 100 ergibt in Fließkomma 110.00000000000001 — hier nicht.
+    expect(rutsche(1.1, 2)).toBe(110);
+    expect(rutsche(45, -1)).toBe(4.5);
+    expect(rutsche(3, -3)).toBe(0.003);
+  });
+
   it("trennt die Nullen ab und gibt sie zurück", () => {
-    expect(zerlegeStufen(3, 40)).toMatchObject({ kernA: 3, kernB: 4, nullenA: 0, nullenB: 1, nullen: 1, kern: 12, ergebnis: 120 });
-    expect(zerlegeStufen(20, 50)).toMatchObject({ kern: 10, nullen: 2, ergebnis: 1000 });
-    expect(zerlegeStufen(4, 300)).toMatchObject({ kern: 12, nullen: 2, ergebnis: 1200 });
-    expect(zerlegeStufen(700, 8)).toMatchObject({ kern: 56, nullen: 2, ergebnis: 5600 });
+    expect(zerlegeStufen(3, 40)).toMatchObject({ kernA: 3, kernB: 4, stellenA: 0, stellenB: 1, stellen: 1, kern: 12, ergebnis: 120 });
+    expect(zerlegeStufen(20, 50)).toMatchObject({ kern: 10, stellen: 2, ergebnis: 1000 });
+    expect(zerlegeStufen(4, 300)).toMatchObject({ kern: 12, stellen: 2, ergebnis: 1200 });
+    expect(zerlegeStufen(700, 8)).toMatchObject({ kern: 56, stellen: 2, ergebnis: 5600 });
   });
 
   it("kommt mit Kernen klar, die selbst auf Null enden", () => {
-    expect(zerlegeStufen(50, 40)).toMatchObject({ kern: 20, nullen: 2, ergebnis: 2000 });
+    expect(zerlegeStufen(50, 40)).toMatchObject({ kern: 20, stellen: 2, ergebnis: 2000 });
   });
 
   it("rechnet ohne Nullen genauso richtig", () => {
-    expect(zerlegeStufen(3, 4)).toMatchObject({ nullen: 0, ergebnis: 12 });
+    expect(zerlegeStufen(3, 4)).toMatchObject({ stellen: 0, ergebnis: 12 });
     expect(zerlegeStufen(0, 40)).toMatchObject({ ergebnis: 0 });
   });
 
-  it("nimmt keine krummen oder negativen Zahlen", () => {
-    expect(() => zerlegeStufen(2.5, 4)).toThrow(RechenError);
+  it("teilt als dieselbe Rutsche rückwärts", () => {
+    expect(zerlegeStufen(3600, 40, ":")).toMatchObject({ kernA: 36, kernB: 4, kern: 9, stellen: 1, ergebnis: 90 });
+    expect(zerlegeStufen(45, 10, ":")).toMatchObject({ kern: 45, stellen: -1, ergebnis: 4.5 });
+    expect(zerlegeStufen(45, 100, ":")).toMatchObject({ stellen: -2, ergebnis: 0.45 });
+    expect(zerlegeStufen(6, 200, ":")).toMatchObject({ kern: 3, stellen: -2, ergebnis: 0.03 });
+  });
+
+  it("rechnet mit Kommazahlen", () => {
+    expect(zerlegeStufen(0.3, 400)).toMatchObject({ kernA: 3, stellenA: -1, kern: 12, stellen: 1, ergebnis: 120 });
+    expect(zerlegeStufen(0.04, 1000)).toMatchObject({ ergebnis: 40 });
+    expect(zerlegeStufen(120, 400, ":")).toMatchObject({ ergebnis: 0.3 });
+  });
+
+  it("lehnt ab, was nicht aufgeht, und was unter null liegt", () => {
+    expect(() => zerlegeStufen(10, 3, ":")).toThrow(/glatt/);
+    expect(() => zerlegeStufen(5, 0, ":")).toThrow(/durch 0/i);
     expect(() => zerlegeStufen(-3, 4)).toThrow(RechenError);
   });
 
-  it("legt Ziffern rechtsbündig auf die Stellenwerttafel", () => {
-    expect(stellenwerte(120, 5)).toEqual(["", "", "1", "2", "0"]);
-    expect(stellenwerte(7, 3)).toEqual(["", "", "7"]);
+  it("legt Ziffern spaltenweise auf die Stellenwerttafel", () => {
+    // Die 0 der 120 steht im Einer, die Spalten davor bleiben leer.
+    expect(ziffernNachStellen(120, 4, 0)).toEqual(["", "", "1", "2", "0"]);
+    expect(ziffernNachStellen(7, 2, 0)).toEqual(["", "", "7"]);
+    // 0,45 wird mit der führenden Null geschrieben, wie im Heft.
+    expect(ziffernNachStellen(0.45, 1, -2)).toEqual(["", "0", "4", "5"]);
+  });
+
+  it("spannt die Tafel über alle Zahlen der Aufgabe, den Einer immer dabei", () => {
+    expect(tafelBereich(12, 120)).toEqual({ von: 2, bis: 0 });
+    expect(tafelBereich(45, 0.45)).toEqual({ von: 1, bis: -2 });
+  });
+
+  it("nennt die Stellen, die durchs Rutschen neu dazukommen", () => {
+    expect(neueStellen(2)).toEqual([0, 1]);
+    expect(neueStellen(-2)).toEqual([-1, -2]);
+    expect(neueStellen(0)).toEqual([]);
+  });
+
+  it("liest getippte Zahlen mit Komma wie mit Punkt", () => {
+    expect(zahlAusText(" 4,5 ")).toBe(4.5);
+    expect(zahlAusText("4.5")).toBe(4.5);
+    expect(zahlAusText("120")).toBe(120);
+    expect(zahlAusText("")).toBeNull();
+    expect(zahlAusText("4,5x")).toBeNull();
   });
 });
 

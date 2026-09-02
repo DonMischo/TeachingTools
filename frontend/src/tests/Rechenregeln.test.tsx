@@ -147,14 +147,31 @@ describe("Rechenzug", () => {
 });
 
 describe("Stufenzahlen", () => {
+  /** Der Rechenweg liegt verdeckt — erst selbst rechnen, dann nachsehen. */
+  const aufdecken = () => fireEvent.click(screen.getByText("Lösung zeigen"));
+
   const zeigeStufen = () => {
     const r = render(<Rechenregeln />);
     fireEvent.click(screen.getByText("🎚️ Stufenzahlen"));
     return r;
   };
 
+  const zahlen = (a: string, b: string) => {
+    fireEvent.change(screen.getByLabelText("erste Zahl"), { target: { value: a } });
+    fireEvent.change(screen.getByLabelText("zweite Zahl"), { target: { value: b } });
+  };
+
+  it("hält den Rechenweg verdeckt, bis jemand gerechnet hat", () => {
+    zeigeStufen();
+    expect(screen.getByText(/Rechenweg ist verdeckt/)).toBeTruthy();
+    expect(screen.queryByText("3 · 4 = 12")).toBeNull();
+    aufdecken();
+    expect(screen.getByText("3 · 4 = 12")).toBeTruthy();
+  });
+
   it("zerlegt 3 · 40 in Kern und Rutsche", () => {
     zeigeStufen();
+    aufdecken();
     expect(screen.getByText(/3 · 40 =/)).toBeTruthy();
     expect(screen.getByText("3 · 4 = 12")).toBeTruthy();
     expect(screen.getByText(/1 Stelle nach links/)).toBeTruthy();
@@ -162,24 +179,25 @@ describe("Stufenzahlen", () => {
 
   it("rechnet eigene Zahlen und zählt die Nullen zusammen", () => {
     zeigeStufen();
-    fireEvent.change(screen.getByLabelText("erster Faktor"), { target: { value: "20" } });
-    fireEvent.change(screen.getByLabelText("zweiter Faktor"), { target: { value: "500" } });
+    zahlen("20", "500");
+    aufdecken();
     expect(screen.getByText(/20 · 500 =/)).toBeTruthy();
     expect(screen.getByText("2 · 5 = 10")).toBeTruthy();
     expect(screen.getByText(/3 Stellen nach links/)).toBeTruthy();
   });
 
-  it("legt den zweiten Faktor auf die gewählte Stufenzahl fest", () => {
+  it("legt die zweite Zahl auf die gewählte Stufenzahl fest", () => {
     zeigeStufen();
     fireEvent.click(screen.getByText("· 100"));
-    expect((screen.getByLabelText("zweiter Faktor") as HTMLInputElement).value).toBe("100");
+    expect((screen.getByLabelText("zweite Zahl") as HTMLInputElement).value).toBe("100");
+    aufdecken();
     expect(screen.getByText(/2 Stellen nach links/)).toBeTruthy();
   });
 
   it("rechnet bei einer reinen Stufenzahl gar nichts aus, sondern rutscht nur", () => {
     zeigeStufen();
-    fireEvent.change(screen.getByLabelText("erster Faktor"), { target: { value: "34" } });
-    fireEvent.change(screen.getByLabelText("zweiter Faktor"), { target: { value: "10" } });
+    zahlen("34", "10");
+    aufdecken();
     expect(screen.getByText(/mal 1 ändert nichts/)).toBeTruthy();
     expect(screen.queryByText("34 · 1 = 34")).toBeNull();
     expect(screen.getByText(/34 · 10 =/)).toBeTruthy();
@@ -187,7 +205,72 @@ describe("Stufenzahlen", () => {
 
   it("kommt ohne Nullen ohne Rutsche aus", () => {
     zeigeStufen();
-    fireEvent.change(screen.getByLabelText("zweiter Faktor"), { target: { value: "4" } });
-    expect(screen.getByText(/Keine Null abgetrennt/)).toBeTruthy();
+    zahlen("3", "4");
+    aufdecken();
+    expect(screen.getByText(/Nichts zu rutschen/)).toBeTruthy();
+  });
+
+  it("rutscht beim Teilen nach rechts, ins Komma hinein", () => {
+    zeigeStufen();
+    fireEvent.click(screen.getByText(": geteilt"));
+    zahlen("45", "100");
+    aufdecken();
+    // Das Ergebnis steht in einem eigenen Span, deshalb zwei Prüfungen.
+    expect(screen.getByText(/45 : 100 =/).textContent).toContain("0,45");
+    expect(screen.getByText(/2 Stellen nach rechts/)).toBeTruthy();
+  });
+
+  it("nimmt Kommazahlen an", () => {
+    zeigeStufen();
+    zahlen("0,3", "400");
+    aufdecken();
+    expect(screen.getByText(/0,3 · 400 =/).textContent).toContain("120");
+    expect(screen.getByText("3 · 4 = 12")).toBeTruthy();
+  });
+
+  it("sagt es, wenn eine Division nicht aufgeht", () => {
+    zeigeStufen();
+    fireEvent.click(screen.getByText(": geteilt"));
+    zahlen("10", "3");
+    expect(screen.getByText(/geht nicht glatt auf/)).toBeTruthy();
+  });
+});
+
+describe("Selbst rechnen", () => {
+  const antworte = (v: string) => {
+    fireEvent.change(screen.getByLabelText("Dein Ergebnis"), { target: { value: v } });
+    fireEvent.click(screen.getByText("Prüfen"));
+  };
+
+  it("prüft die eigene Lösung des Terms und zählt sie mit", () => {
+    render(<Rechenregeln />);
+    expect(screen.getByText(/Tipp dein Ergebnis ein/)).toBeTruthy();
+    antworte("14");
+    expect(screen.getByText("✔ Richtig!")).toBeTruthy();
+    expect(screen.getByLabelText("Punktestand").textContent).toBe("✔ 1 von 1 richtig");
+  });
+
+  it("verrät bei einer falschen Antwort die Lösung nicht", () => {
+    const { container } = render(<Rechenregeln />);
+    antworte("20"); // was von links nach rechts herauskäme
+    expect(screen.getByText(/Noch nicht/)).toBeTruthy();
+    expect(screen.getByLabelText("Punktestand").textContent).toBe("✔ 0 von 1 richtig");
+    expect(termzeile(container)).toBe("2 + 3 · 4");
+  });
+
+  it("zählt je Aufgabe nur den ersten Versuch", () => {
+    render(<Rechenregeln />);
+    antworte("20");
+    antworte("14");
+    expect(screen.getByText("✔ Richtig!")).toBeTruthy();
+    expect(screen.getByLabelText("Punktestand").textContent).toBe("✔ 0 von 1 richtig");
+  });
+
+  it("zählt über die Reiter hinweg weiter", () => {
+    render(<Rechenregeln />);
+    antworte("14");
+    fireEvent.click(screen.getByText("🎚️ Stufenzahlen"));
+    antworte("120");
+    expect(screen.getByLabelText("Punktestand").textContent).toBe("✔ 2 von 2 richtig");
   });
 });

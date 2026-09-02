@@ -1,8 +1,20 @@
 "use client";
-import { useState } from "react";
+/**
+ * Übung — Aufgaben zum Trainieren, im eigenen Tempo.
+ *
+ * Die Aufgaben würfelt der Server (api/task_generators.py) und prüft sie auch
+ * dort: der Browser bekommt nur die Frage zu sehen, nie die Lösung. Die
+ * Schwierigkeit steigt nach drei richtigen in Folge und fällt nach zwei
+ * falschen — das Werkzeug sucht sich also selbst die Stufe, auf der es gerade
+ * passt.
+ *
+ * Als Simulation statt als eigene Seite, damit derselbe QR-Beitritt gilt wie
+ * bei den anderen Werkzeugen: Gäste ohne Konto üben mit dem Sitzungscode und
+ * ihrem Gast-Token (`zugang`), Angemeldete ohne beides.
+ */
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, PracticeTopicOut, PracticeTaskOut, PracticeAnswerOut } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
+import { api, type PracticeTopicOut, type PracticeTaskOut, type PracticeAnswerOut, type PracticeZugang } from "@/lib/api";
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { TimelineAnswer, TimelineSolution } from "@/components/timeline/types";
@@ -15,7 +27,26 @@ function DifficultyStars({ level }: { level: number }) {
   );
 }
 
-function PracticePanel({ topic }: { topic: PracticeTopicOut }) {
+/** Der Zählerstand zum gewählten Thema — er kommt vom Server, nicht aus dem Tab. */
+function Fortschritt({ p }: { p: { difficulty: number; tasks_done: number; tasks_correct: number } }) {
+  const quote = p.tasks_done ? Math.round((p.tasks_correct / p.tasks_done) * 100) : 0;
+  return (
+    <div aria-label="Fortschritt" className="flex flex-wrap items-center gap-3 text-sm">
+      <DifficultyStars level={p.difficulty} />
+      <span className="font-bold">{p.tasks_correct} von {p.tasks_done} richtig</span>
+      {p.tasks_done > 0 && (
+        <span className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span className="w-24 h-1.5 rounded-full bg-[var(--surface-hover)] overflow-hidden">
+            <span className="block h-full bg-[var(--accent)]" style={{ width: `${quote}%` }} />
+          </span>
+          {quote}%
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PracticePanel({ topic, zugang }: { topic: PracticeTopicOut; zugang?: PracticeZugang }) {
   const qc = useQueryClient();
   const [task, setTask] = useState<PracticeTaskOut | null>(null);
   const [answer, setAnswer] = useState("");
@@ -24,7 +55,7 @@ function PracticePanel({ topic }: { topic: PracticeTopicOut }) {
   const [showHint, setShowHint] = useState(false);
 
   const newTaskMut = useMutation({
-    mutationFn: () => api.practice.newTask(topic.id),
+    mutationFn: () => api.practice.newTask(topic.id, zugang),
     onSuccess: (t) => {
       setTask(t);
       setAnswer("");
@@ -40,7 +71,7 @@ function PracticePanel({ topic }: { topic: PracticeTopicOut }) {
     return placed != null ? String(placed).replace(".", ",") : "";
   };
   const answerMut = useMutation({
-    mutationFn: () => api.practice.answer(task!.task_id, task?.board ? boardAnswer() : answer.trim()),
+    mutationFn: () => api.practice.answer(task!.task_id, task?.board ? boardAnswer() : answer.trim(), zugang),
     onSuccess: (res) => {
       setResult(res);
       qc.invalidateQueries({ queryKey: ["practice-topics"] });
@@ -67,13 +98,9 @@ function PracticePanel({ topic }: { topic: PracticeTopicOut }) {
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-semibold">{topic.label}</h2>
-        {progress && (
-          <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-            <DifficultyStars level={progress.difficulty} />
-            <span>{progress.tasks_done} Aufgaben · {progress.tasks_correct} richtig</span>
-          </div>
-        )}
+        {progress && <Fortschritt p={progress} />}
       </div>
+      <p className="text-xs text-[var(--text-muted)]">{topic.description}</p>
 
       {!task ? (
         <button onClick={() => newTaskMut.mutate()} disabled={newTaskMut.isPending}
@@ -146,55 +173,82 @@ function PracticePanel({ topic }: { topic: PracticeTopicOut }) {
   );
 }
 
-export default function UebungPage() {
-  const { auth } = useAuth();
-  const [selected, setSelected] = useState<string | null>(null);
+/** Die Themen nach Fach gebündelt — die Liste ist lang, das Fach ordnet sie. */
+function nachFach(topics: PracticeTopicOut[]): [string, PracticeTopicOut[]][] {
+  const map = new Map<string, PracticeTopicOut[]>();
+  for (const t of topics) {
+    const fach = t.subject || "Sonstiges";
+    if (!map.has(fach)) map.set(fach, []);
+    map.get(fach)!.push(t);
+  }
+  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b, "de"));
+}
 
-  const { data: topics = [], isLoading } = useQuery<PracticeTopicOut[]>({
-    queryKey: ["practice-topics"], queryFn: api.practice.topics, enabled: !!auth,
+export default function Uebung({ action, zugang }: {
+  action?: ReactNode;
+  /** Gesetzt, wenn ein Gast über den QR hereingekommen ist. */
+  zugang?: PracticeZugang;
+}) {
+  const [selected, setSelected] = useState("");
+
+  const { data: topics = [], isLoading, isError } = useQuery<PracticeTopicOut[]>({
+    queryKey: ["practice-topics", zugang?.code ?? "ich"],
+    queryFn: () => api.practice.topics(zugang),
   });
-
-  if (!auth) return <div className="p-8 text-sm text-[var(--text-muted)]">Bitte einloggen.</div>;
 
   const selectedTopic = topics.find(t => t.id === selected);
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">📚 Übung</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
-          Aufgaben zum Trainieren — die Schwierigkeit passt sich deinem Können an.
-        </p>
+    <div className="flex flex-col gap-5 p-6 max-w-2xl mx-auto w-full">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">📚 Übung</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
+            Aufgaben zum Trainieren — die Schwierigkeit passt sich deinem Können an.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {isLoading ? (
-        <p className="text-sm text-[var(--text-muted)]">Lade…</p>
+      {isError ? (
+        <p className="text-sm text-[var(--text-muted)]">
+          Die Themen ließen sich nicht laden. Melde dich an oder tritt über den Code deiner Lehrkraft bei.
+        </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {topics.map(t => (
-            <button key={t.id} onClick={() => setSelected(prev => prev === t.id ? null : t.id)}
-              className={`text-left rounded-2xl border p-4 transition-colors ${
-                selected === t.id ? "border-[var(--accent)]" : "border-[var(--border)] hover:border-[var(--accent)]"
-              } bg-[var(--surface)]`}>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="font-semibold text-sm">{t.label}</span>
-                <span className="text-xs text-[var(--text-muted)]">
-                  {t.subject}
-                  {t.grades.length > 0 && ` · Kl. ${t.grades.length > 1 ? `${t.grades[0]}–${t.grades[t.grades.length - 1]}` : t.grades[0]}`}
-                </span>
-              </div>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{t.description}</p>
-              {t.progress && (
-                <p className="text-xs text-[var(--text-muted)] mt-1.5">
-                  <DifficultyStars level={t.progress.difficulty} /> · {t.progress.tasks_done} Aufgaben gemacht
-                </p>
-              )}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="uebung-thema" className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">
+            Thema
+          </label>
+          <select
+            id="uebung-thema"
+            value={selected}
+            disabled={isLoading}
+            onChange={e => setSelected(e.target.value)}
+            className="input text-sm py-2 min-w-[16rem] max-w-full"
+          >
+            <option value="">{isLoading ? "Lade …" : "Thema wählen …"}</option>
+            {nachFach(topics).map(([fach, ts]) => (
+              <optgroup key={fach} label={fach}>
+                {ts.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                    {t.grades.length > 0 && ` · Kl. ${t.grades.length > 1
+                      ? `${t.grades[0]}–${t.grades[t.grades.length - 1]}` : t.grades[0]}`}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
       )}
 
-      {selectedTopic && <PracticePanel key={selectedTopic.id} topic={selectedTopic} />}
+      {selectedTopic
+        ? <PracticePanel key={selectedTopic.id} topic={selectedTopic} zugang={zugang} />
+        : !isLoading && !isError && (
+            <p className="text-sm text-[var(--text-muted)]">
+              Wähle oben ein Thema — darunter erscheinen die Aufgaben und dein Zählerstand.
+            </p>
+          )}
     </div>
   );
 }

@@ -16,13 +16,14 @@
  *
  * Gerechnet wird in `@/lib/rechenregeln`; hier steht nur das Bild.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import {
   parse, render, wert, wertVonLinks, naechster, kandidaten, anwenden, begruendung,
   brauchtKlammer, opZeichen, fmt, wuerfelnTerm, wuerfelnZug, wuerfelnStufen,
   zugAusTerm, zugTerm, zugWert, gruppen, tauscheZahlen, tauscheGruppen,
-  zerlegeStufen, stellenwerte, STELLEN, RechenError,
-  type Node, type Op, type Pfad, type Zug, type StufenModus,
+  zerlegeStufen, ziffernNachStellen, tafelBereich, neueStellen, zahlAusText,
+  STELLEN_NAMEN, RechenError,
+  type Node, type Op, type Pfad, type Zug, type StufenModus, type Rechenart,
 } from "@/lib/rechenregeln";
 
 type Reiter = "korb" | "zug" | "stufen";
@@ -46,6 +47,9 @@ function Knopf({ an, onClick, children, klein }: {
 }) {
   return (
     <button
+      // Ohne das ist der Knopf in einem Formular ein Absende-Knopf: der Klick
+      // löst dann onClick *und* onSubmit aus, und der Punktestand zählte doppelt.
+      type="button"
       onClick={onClick}
       className={`rounded-xl border font-bold transition-colors ${klein ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"} ${
         an
@@ -107,6 +111,111 @@ function Eigenes({ platzhalter, onSubmit, fehler }: {
         <Knopf onClick={() => onSubmit(text)}>Übernehmen</Knopf>
       </form>
       {fehler && <span className="text-xs text-red-500">{fehler}</span>}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────── Selbst rechnen & zählen ── */
+
+/**
+ * Erst selbst rechnen, dann nachsehen.
+ *
+ * Gezählt wird nur der *erste* Versuch je Aufgabe. Wer nachbessert, soll das
+ * dürfen — der Punktestand soll aber nicht davon abhängen, wie oft jemand
+ * probiert hat. Bei einer falschen Antwort steht die Lösung ausdrücklich
+ * nicht da: nachgerechnet wird am Bild, dafür ist es gebaut.
+ */
+function Loesungsfeld({ loesung, onGeprueft, onZeigen }: {
+  loesung: number;
+  onGeprueft: (richtig: boolean) => void;
+  /** Aufgeben — gibt die Lösung frei, ohne sie zu zählen. */
+  onZeigen?: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [urteil, setUrteil] = useState<"richtig" | "falsch" | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [gezaehlt, setGezaehlt] = useState(false);
+
+  function pruefe() {
+    const v = zahlAusText(text);
+    if (v === null) {
+      setFehler("Da fehlt noch eine Zahl.");
+      return;
+    }
+    setFehler(null);
+    const richtig = Math.abs(v - loesung) < 1e-9;
+    setUrteil(richtig ? "richtig" : "falsch");
+    if (!gezaehlt) {
+      setGezaehlt(true);
+      onGeprueft(richtig);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 p-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+      <form className="flex flex-wrap items-center gap-2"
+        onSubmit={e => { e.preventDefault(); pruefe(); }}>
+        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Dein Ergebnis</span>
+        <input
+          value={text}
+          onChange={e => { setText(e.target.value); setUrteil(null); }}
+          // Die Knöpfe sind alle type="button", also gibt es kein Absenden per
+          // Eingabetaste mehr — die will man hier aber haben.
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); pruefe(); } }}
+          inputMode="decimal"
+          placeholder="?"
+          aria-label="Dein Ergebnis"
+          className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]
+            text-sm font-mono w-28 focus:outline-none focus:border-[var(--accent)]"
+        />
+        <Knopf onClick={pruefe} klein>Prüfen</Knopf>
+        {onZeigen && !urteil && <Knopf onClick={onZeigen} klein>Lösung zeigen</Knopf>}
+      </form>
+      {fehler && <span className="text-xs text-red-500">{fehler}</span>}
+      {urteil === "richtig" && (
+        <span className="text-sm font-bold text-green-600 dark:text-green-400">✔ Richtig!</span>
+      )}
+      {urteil === "falsch" && (
+        <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+          ✘ Noch nicht — rechne am Bild nach und probier es noch einmal.
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Wie viele Antworten sassen — für die ganze Sitzung, über die Reiter hinweg. */
+export type Punktestand = { richtig: number; gesamt: number; serie: number; beste: number };
+
+const LEER: Punktestand = { richtig: 0, gesamt: 0, serie: 0, beste: 0 };
+
+function zaehle(p: Punktestand, richtig: boolean): Punktestand {
+  const serie = richtig ? p.serie + 1 : 0;
+  return {
+    richtig: p.richtig + (richtig ? 1 : 0),
+    gesamt: p.gesamt + 1,
+    serie,
+    beste: Math.max(p.beste, serie),
+  };
+}
+
+function Punkteleiste({ p, onReset }: { p: Punktestand; onReset: () => void }) {
+  if (!p.gesamt) {
+    return (
+      <p className="text-xs text-[var(--text-muted)]">
+        Tipp dein Ergebnis ein, bevor du nachsiehst — dann wird mitgezählt.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <span aria-label="Punktestand" className="font-black">
+        ✔ {p.richtig} von {p.gesamt} richtig
+      </span>
+      <span className="text-[var(--text-muted)]">
+        · Serie {p.serie}{p.beste > p.serie && ` (beste ${p.beste})`}
+      </span>
+      <Knopf onClick={onReset} klein>↺ Zähler</Knopf>
     </div>
   );
 }
@@ -237,7 +346,7 @@ function Bild({ n, pfad, dranPfad, frucht, onTipp }: {
   );
 }
 
-function Obstkorb() {
+function Obstkorb({ melde }: { melde: (richtig: boolean) => void }) {
   const [stufe, setStufe] = useState("1");
   const [src, setSrc] = useState("2 + 3 · 4");
   const [baum, setBaum] = useState<Node>(() => parse("2 + 3 · 4"));
@@ -321,6 +430,11 @@ function Obstkorb() {
         {verlauf.length > 0 && <Knopf onClick={zurueck} klein>↶ zurück</Knopf>}
         <Knopf onClick={() => neu(src)} klein>↺ von vorn</Knopf>
       </div>
+
+      {/* Erst selbst rechnen — solange der Term noch nicht ausgerechnet dasteht. */}
+      {!fertig && richtig !== null && (
+        <Loesungsfeld key={src} loesung={richtig} onGeprueft={melde} />
+      )}
 
       {/* Bühne */}
       <div className="p-4 sm:p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
@@ -549,98 +663,153 @@ function Rechenzug() {
 
 /* ─────────────────────────────────────────────────── Stufenzahlen 🎚️ ── */
 
-function Tafel({ zahl, breite, verschoben }: { zahl: number; breite: number; verschoben: number }) {
-  const ziffern = stellenwerte(zahl, breite);
-  const spalten = STELLEN.slice(-breite);
+function Tafel({ zahl, von, bis, hervor = [] }: {
+  zahl: number; von: number; bis: number;
+  /** Die Stellen, die durchs Rutschen neu dazugekommen sind. */
+  hervor?: number[];
+}) {
+  const ziffern = ziffernNachStellen(zahl, von, bis);
+  const spalten: number[] = [];
+  for (let e = von; e >= bis; e--) spalten.push(e);
   return (
-    <div className="flex">
-      {ziffern.map((z, i) => {
-        const angehaengt = verschoben > 0 && i >= breite - verschoben && z !== "";
-        return (
-          <div key={i} className="flex flex-col items-center w-11 border-l border-[var(--border)] last:border-r">
+    <div className="flex items-stretch">
+      {spalten.map((e, i) => (
+        <Fragment key={e}>
+          {e === -1 && (
+            <span className="self-end px-0.5 pb-1.5 text-2xl font-black text-[var(--accent)]" aria-hidden>,</span>
+          )}
+          <div className="flex flex-col items-center w-11 border-l border-[var(--border)] last:border-r">
             <span className="w-full text-center text-[10px] font-bold uppercase text-[var(--text-muted)] bg-[var(--surface-hover)] py-0.5">
-              {spalten[i]}
+              {STELLEN_NAMEN[e]}
             </span>
             <span className={`w-full text-center text-2xl font-black py-1.5 font-mono ${
-              angehaengt ? "text-[var(--accent)]" : z === "" ? "text-transparent" : ""
+              hervor.includes(e) && ziffern[i] !== "" ? "text-[var(--accent)]"
+                : ziffern[i] === "" ? "text-transparent" : ""
             }`}>
-              {z === "" ? "·" : z}
+              {ziffern[i] === "" ? "·" : ziffern[i]}
             </span>
           </div>
-        );
-      })}
+        </Fragment>
+      ))}
     </div>
   );
 }
 
-const MODI: { id: StufenModus; label: string }[] = [
-  { id: "frei", label: "Frei" },
-  { id: "10", label: "· 10" },
-  { id: "100", label: "· 100" },
-  { id: "1000", label: "· 1000" },
-];
+const MODI: StufenModus[] = ["frei", "komma", "10", "100", "1000", "10000"];
 
-const MODUS_HINWEIS: Record<StufenModus, string> = {
-  frei: "Zehner, Hunderter, Tausender",
-  "10": "eine Stelle rutschen",
-  "100": "zwei Stellen rutschen",
-  "1000": "drei Stellen rutschen",
-};
+function modusLabel(m: StufenModus, art: Rechenart): string {
+  if (m === "frei") return "Frei";
+  if (m === "komma") return "Komma";
+  return `${opZeichen(art)} ${m === "10000" ? "10 000" : m}`;
+}
 
-function Stufenzahlen() {
+function modusHinweis(m: StufenModus, art: Rechenart): string {
+  const richtung = art === "*" ? "nach links" : "nach rechts";
+  if (m === "frei") return "Zehner, Hunderter, Tausender";
+  if (m === "komma") return "mit Zehnteln und Hundertsteln";
+  const stellen = String(m).length - 1;
+  return `${["eine Stelle", "zwei Stellen", "drei Stellen", "vier Stellen"][stellen - 1]} ${richtung}`;
+}
+
+/** »40 ist 4 mit einer Null«, »0,3 ist 3, eine Stelle nach rechts«. */
+function zahlWort(kern: number, stellen: number): string {
+  if (stellen > 0) return `${fmt(kern)} mit ${stellen === 1 ? "einer Null" : `${stellen} Nullen`}`;
+  const n = -stellen;
+  return `${fmt(kern)}, ${n === 1 ? "eine Stelle" : `${n} Stellen`} nach rechts gerutscht`;
+}
+
+const stellenWort = (n: number) => (Math.abs(n) === 1 ? "1 Stelle" : `${Math.abs(n)} Stellen`);
+
+function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
   const [modus, setModus] = useState<StufenModus>("frei");
-  const [a, setA] = useState(3);
-  const [b, setB] = useState(40);
+  const [art, setArt] = useState<Rechenart>("*");
+  // Die Zahlen stehen als Text da, nicht als number: nur so darf man »0,3«
+  // tippen, ohne dass das Komma beim Zwischenstand verschluckt wird.
+  const [aText, setAText] = useState("3");
+  const [bText, setBText] = useState("40");
+  // Solange die Lösung verdeckt ist, gibt es etwas selbst zu rechnen.
+  const [offen, setOffen] = useState(false);
 
-  const z = useMemo(() => {
-    try { return zerlegeStufen(a, b); } catch { return null; }
-  }, [a, b]);
+  const a = zahlAusText(aText), b = zahlAusText(bText);
+  const { z, fehler } = useMemo(() => {
+    if (a === null || b === null) return { z: null, fehler: "Da fehlt noch eine Zahl." };
+    try { return { z: zerlegeStufen(a, b, art), fehler: null }; }
+    catch (e) { return { z: null, fehler: fehlertext(e) }; }
+  }, [a, b, art]);
 
-  function wuerfeln(m: StufenModus) {
+  function wuerfeln(m: StufenModus, neueArt: Rechenart = art) {
     setModus(m);
-    const [na, nb] = wuerfelnStufen(m, [a, b]);
-    setA(na); setB(nb);
+    setArt(neueArt);
+    const [na, nb] = wuerfelnStufen(m, neueArt, a !== null && b !== null ? [a, b] : undefined);
+    setAText(fmt(na));
+    setBText(fmt(nb));
+    setOffen(false);
   }
 
-  const breite = z ? Math.max(String(z.ergebnis).length, String(z.kern).length + z.nullen) : 3;
+  const feld = (wert: string, setzen: (s: string) => void, label: string) => (
+    <input value={wert} aria-label={label} inputMode="decimal"
+      onChange={e => { setzen(e.target.value); setOffen(false); }}
+      className="w-24 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-mono text-sm" />
+  );
+
+  const zeichen = opZeichen(art);
+  const bereich = z ? tafelBereich(z.kern, z.ergebnis) : null;
+  // Die Zerlegung in Worten — genannt wird nur, was wirklich verschoben ist.
+  const teile = z ? [
+    z.stellenA !== 0 ? `${fmt(z.a)} ist ${zahlWort(z.kernA, z.stellenA)}` : null,
+    z.stellenB !== 0 ? `${fmt(z.b)} ist ${zahlWort(z.kernB, z.stellenB)}` : null,
+  ].filter(Boolean) : [];
 
   return (
     <div className="flex flex-col gap-4">
       <Aufgabenleiste
-        stufen={MODI} aktiv={modus}
+        stufen={MODI.map(m => ({ id: m, label: modusLabel(m, art) }))} aktiv={modus}
         onWaehle={id => wuerfeln(id as StufenModus)} onNeu={() => wuerfeln(modus)}
-        hinweis={MODUS_HINWEIS[modus]} />
+        hinweis={modusHinweis(modus, art)} />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Rechenart</span>
+        <Knopf an={art === "*"} onClick={() => wuerfeln(modus, "*")}>· mal</Knopf>
+        <Knopf an={art === ":"} onClick={() => wuerfeln(modus, ":")}>: geteilt</Knopf>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Eigene Zahlen</span>
-        <input type="number" min={0} max={100000} value={a} aria-label="erster Faktor"
-          onChange={e => setA(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-          className="w-24 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-mono text-sm" />
-        <span className="text-xl font-black">·</span>
-        <input type="number" min={0} max={100000} value={b} aria-label="zweiter Faktor"
-          onChange={e => setB(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-          className="w-24 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-mono text-sm" />
+        {feld(aText, setAText, "erste Zahl")}
+        <span className="text-xl font-black">{zeichen}</span>
+        {feld(bText, setBText, "zweite Zahl")}
       </div>
 
+      {fehler && <p className="text-sm font-bold text-amber-600 dark:text-amber-400">✋ {fehler}</p>}
+
       {z && (
+        <Loesungsfeld
+          key={`${art}|${aText}|${bText}`}
+          loesung={z.ergebnis}
+          onGeprueft={r => { setOffen(true); melde(r); }}
+          onZeigen={() => setOffen(true)} />
+      )}
+
+      {z && !offen && (
+        <p className="p-4 rounded-2xl border border-dashed border-[var(--border)] text-sm text-[var(--text-muted)]">
+          🙈 Der Rechenweg ist verdeckt. Rechne erst selbst — dann steht hier, wie die Rutsche geht.
+        </p>
+      )}
+
+      {z && offen && bereich && (
         <>
           <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
             <p className="text-2xl sm:text-3xl font-black font-mono">
-              {z.a} · {z.b} = <span className="text-[var(--accent)]">{z.ergebnis}</span>
+              {fmt(z.a)} {zeichen} {fmt(z.b)} = <span className="text-[var(--accent)]">{fmt(z.ergebnis)}</span>
             </p>
             <ol className="flex flex-col gap-2 text-sm">
               <li className="flex gap-2">
                 <span className="font-black text-[var(--accent)]">1.</span>
                 <span>
-                  {z.kernB === 1 && z.nullenA === 0
-                    // »49 · 1« wäre albern — bei einer reinen Stufenzahl bleibt
-                    // der erste Faktor einfach stehen.
-                    ? <>Nullen abtrennen: die {z.nullenB === 1 ? "Null" : `${z.nullenB} Nullen`} der{" "}
-                        <span className="font-mono font-bold">{z.b}</span> warten draußen,{" "}
-                        <span className="font-mono font-bold">{z.a}</span> bleibt stehen.</>
-                    : <>Nullen abtrennen: <span className="font-mono font-bold">{z.a} · {z.b}</span> wird zu{" "}
-                        <span className="font-mono font-bold">{z.kernA} · {z.kernB}</span>
-                        {z.nullen > 0 && <> — {z.nullen} {z.nullen === 1 ? "Null wartet" : "Nullen warten"} draußen.</>}</>}
+                  {teile.length === 0
+                    ? <>Nichts abzutrennen — hier steht keine Stufenzahl.</>
+                    : <>Zerlegen: {teile.join(", ")} — das wartet draußen, gerechnet wird mit{" "}
+                        <span className="font-mono font-bold">{fmt(z.kernA)} {zeichen} {fmt(z.kernB)}</span>.</>}
                 </span>
               </li>
               <li className="flex gap-2">
@@ -649,34 +818,37 @@ function Stufenzahlen() {
                   {z.kernB === 1
                     // Bei reinen Stufenzahlen gibt es nichts auszurechnen — das ist
                     // der Punkt der Übung, also darf hier auch kein »· 1« stehen.
-                    ? <>Die {z.b} ist eine 1 mit {z.nullenB === 1 ? "einer Null" : `${z.nullenB} Nullen`} — mal 1 ändert nichts,
-                        es bleibt <span className="font-mono font-bold">{z.kern}</span>.</>
-                    : <>Kleines Einmaleins: <span className="font-mono font-bold">{z.kernA} · {z.kernB} = {z.kern}</span></>}
+                    ? <>Die {fmt(z.b)} ist eine 1 mit {z.stellenB === 1 ? "einer Null" : `${z.stellenB} Nullen`} —{" "}
+                        {art === "*" ? "mal 1" : "durch 1"} ändert nichts,
+                        es bleibt <span className="font-mono font-bold">{fmt(z.kern)}</span>.</>
+                    : <>Kleines {art === "*" ? "Einmaleins" : "Einsdurcheins"}:{" "}
+                        <span className="font-mono font-bold">{fmt(z.kernA)} {zeichen} {fmt(z.kernB)} = {fmt(z.kern)}</span></>}
                 </span>
               </li>
               <li className="flex gap-2">
                 <span className="font-black text-[var(--accent)]">3.</span>
                 <span>
-                  {z.nullen === 0
-                    ? <>Keine Null abgetrennt — fertig: <span className="font-mono font-bold">{z.ergebnis}</span></>
-                    : <>Zurückrutschen: <span className="font-mono font-bold">{z.kern}</span> rutscht{" "}
-                      {z.nullen} {z.nullen === 1 ? "Stelle" : "Stellen"} nach links →{" "}
-                      <span className="font-mono font-bold">{z.ergebnis}</span></>}
+                  {z.stellen === 0
+                    ? <>Nichts zu rutschen — fertig: <span className="font-mono font-bold">{fmt(z.ergebnis)}</span></>
+                    : <>Rutschen: <span className="font-mono font-bold">{fmt(z.kern)}</span> rutscht{" "}
+                      {stellenWort(z.stellen)} nach {z.stellen > 0 ? "links" : "rechts"} →{" "}
+                      <span className="font-mono font-bold">{fmt(z.ergebnis)}</span></>}
                 </span>
               </li>
             </ol>
           </div>
 
-          {/* Stellenwerttafel: erst der Kern, dann derselbe Kern eine Etage höher */}
+          {/* Stellenwerttafel: erst der Kern, dann derselbe Kern eine Etage höher (oder tiefer) */}
           <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
             <div className="min-w-fit flex flex-col items-center gap-1">
-              <Tafel zahl={z.kern} breite={breite} verschoben={0} />
-              {z.nullen > 0 && (
+              <Tafel zahl={z.kern} von={bereich.von} bis={bereich.bis} />
+              {z.stellen !== 0 && (
                 <>
                   <span className="text-sm font-bold text-[var(--accent)]">
-                    ⬅︎ {z.nullen} {z.nullen === 1 ? "Stelle" : "Stellen"} rutschen
+                    {z.stellen > 0 ? "⬅︎" : "➡︎"} {stellenWort(z.stellen)} rutschen
                   </span>
-                  <Tafel zahl={z.ergebnis} breite={breite} verschoben={z.nullen} />
+                  <Tafel zahl={z.ergebnis} von={bereich.von} bis={bereich.bis}
+                    hervor={neueStellen(z.stellen)} />
                 </>
               )}
             </div>
@@ -687,7 +859,8 @@ function Stufenzahlen() {
       <p className="text-xs text-[var(--text-muted)] leading-relaxed">
         🎚️ »Mal 10« heißt nicht »eine Null anhängen«, sondern: jede Ziffer rückt eine Stelle nach
         links. Aus Einern werden Zehner, aus Zehnern Hunderter — die Null füllt nur den frei
-        gewordenen Platz. Bei »mal 100« sind es zwei Stellen, bei »mal 1000« drei.
+        gewordenen Platz. Geteilt geht dieselbe Rutsche rückwärts: aus 45 : 10 wird 4,5, die
+        4 fällt vom Zehner auf den Einer und die 5 ins Zehntel.
       </p>
     </div>
   );
@@ -697,6 +870,11 @@ function Stufenzahlen() {
 
 export default function Rechenregeln({ action }: { action?: ReactNode }) {
   const [reiter, setReiter] = useState<Reiter>("korb");
+  // Der Punktestand gehört hierher und nicht in die Reiter: die werden beim
+  // Umschalten abgebaut, und ein Zähler, der beim Reiterwechsel auf 0 springt,
+  // wäre keiner.
+  const [punkte, setPunkte] = useState(LEER);
+  const melde = (richtig: boolean) => setPunkte(p => zaehle(p, richtig));
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-4xl mx-auto w-full">
@@ -718,9 +896,11 @@ export default function Rechenregeln({ action }: { action?: ReactNode }) {
         ))}
       </div>
 
-      {reiter === "korb" && <Obstkorb />}
+      {reiter !== "zug" && <Punkteleiste p={punkte} onReset={() => setPunkte(LEER)} />}
+
+      {reiter === "korb" && <Obstkorb melde={melde} />}
       {reiter === "zug" && <Rechenzug />}
-      {reiter === "stufen" && <Stufenzahlen />}
+      {reiter === "stufen" && <Stufenzahlen melde={melde} />}
     </div>
   );
 }

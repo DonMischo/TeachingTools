@@ -397,9 +397,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-// Fragment guest requests: authenticate with a collection-scoped Bearer token
+// Guest requests (Fragmente, Übung): authenticate with a scoped Bearer token
 // (guests have no cookie) and, unlike apiFetch, never clear the logged-in user's
 // stored credentials on 401 — a guest's expired token must not log anyone out.
+// Ohne Token ist es schlicht apiFetch, der Aufrufer braucht also keine Weiche.
 async function ffetch<T>(path: string, init?: RequestInit, guestToken?: string): Promise<T> {
   if (!guestToken) return apiFetch<T>(path, init);
   const res = await fetch(`/api/${path}`, {
@@ -839,6 +840,13 @@ export type PracticeAnswerOut = {
   leveled: "up" | "down" | null;
   progress: PracticeProgressOut;
 };
+/**
+ * Wer übt. Angemeldete brauchen nichts mitzugeben — sie haben ihren Cookie.
+ * Ein Gast, der über den QR einer Übungs-Sitzung hereingekommen ist, gibt
+ * Code und Token mit: der Token gilt nur für genau diesen Code.
+ */
+export type PracticeZugang = { code: string; token: string };
+const praxisFrage = (g?: PracticeZugang) => (g ? `?code=${encodeURIComponent(g.code)}` : "");
 
 // ── Task generators (built-in + admin-registered) ──────────────────────────
 
@@ -1919,10 +1927,13 @@ export const api = {
     },
   },
   practice: {
-    topics: () => apiFetch<PracticeTopicOut[]>("practice/topics"),
-    newTask: (topic: string) => apiFetch<PracticeTaskOut>(`practice/${topic}/task`, { method: "POST" }),
-    answer: (taskId: number, answer: string) =>
-      apiFetch<PracticeAnswerOut>(`practice/tasks/${taskId}/answer`, { method: "POST", body: JSON.stringify({ answer }) }),
+    topics: (g?: PracticeZugang) =>
+      ffetch<PracticeTopicOut[]>(`practice/topics${praxisFrage(g)}`, undefined, g?.token),
+    newTask: (topic: string, g?: PracticeZugang) =>
+      ffetch<PracticeTaskOut>(`practice/${topic}/task${praxisFrage(g)}`, { method: "POST" }, g?.token),
+    answer: (taskId: number, answer: string, g?: PracticeZugang) =>
+      ffetch<PracticeAnswerOut>(`practice/tasks/${taskId}/answer${praxisFrage(g)}`,
+        { method: "POST", body: JSON.stringify({ answer }) }, g?.token),
   },
   generators: {
     list: () => apiFetch<GeneratorInfo[]>("generators"),

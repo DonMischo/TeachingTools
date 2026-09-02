@@ -22,6 +22,7 @@ import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import Funktionen from "@/components/simulationen/Funktionen";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
+import Uebung from "@/components/simulationen/Uebung";
 import Tippen from "@/components/tippen/Tippen";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
@@ -34,6 +35,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
+  // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
+  uebung: { title: "Übung", icon: "📚", node: null },
   // Der Zeitstrahl teilt eine bestimmte Zeitleiste — die haengt am Code, nicht
   // am Werkzeug, und wird deshalb erst hier nachgeladen.
   zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
@@ -98,7 +101,9 @@ export default function SimulationJoinPage() {
 
   const body = session.tool_slug === "zeitstrahl"
     ? <SharedTimeline code={code} guestToken={guest.token} />
-    : tool.node;
+    : session.tool_slug === "uebung"
+      ? <Uebung zugang={guest.token ? { code, token: guest.token } : undefined} />
+      : tool.node;
 
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.
   if (auth) return <div className="flex-1 overflow-y-auto">{body}</div>;

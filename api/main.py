@@ -157,6 +157,12 @@ def _run_migrations(db_engine):
         "ALTER TABLE practice_progress ALTER COLUMN student_id DROP NOT NULL",
         "ALTER TABLE practice_tasks ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
         "ALTER TABLE practice_tasks ALTER COLUMN student_id DROP NOT NULL",
+        # Üben über den QR einer Werkzeug-Sitzung: der Teilnehmer kann auch ein
+        # Gast ohne Konto sein, erkannt an der Id seines Gast-Tokens.
+        "ALTER TABLE practice_progress ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "ALTER TABLE practice_tasks ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_practice_guest_topic ON practice_progress (guest_id, topic)",
+        "CREATE INDEX IF NOT EXISTS ix_practice_tasks_guest_id ON practice_tasks (guest_id)",
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS av_stunden INTEGER",
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS username VARCHAR(100)",
         "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS password_seed INTEGER",

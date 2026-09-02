@@ -1360,19 +1360,22 @@ class TaskGeneratorDef(Base):
 class PracticeProgress(Base):
     """Per participant+topic practice state for the Übungsseite: current
     difficulty ladder position (1-5, streak-driven) and lifetime counters —
-    the 'amount of tasks done' tracking teachers asked for. Open to everyone
-    logged in: a participant is either a Student (student_id) or a
-    Teacher/admin trying it out (teacher_id) — same pattern as
-    ExitGameAttempt."""
+    the 'amount of tasks done' tracking teachers asked for. Open to everyone:
+    a participant is a Student (student_id), a Teacher/admin trying it out
+    (teacher_id) or a QR/join-link guest (guest_id — the guest token's id) —
+    same pattern as ExitGameAttempt. Der Fortschritt eines Gastes lebt so
+    lange wie sein Token: danach führt derselbe Name auf eine neue Zeile."""
     __tablename__ = "practice_progress"
     __table_args__ = (
         UniqueConstraint("student_id", "topic", name="uq_practice_student_topic"),
         UniqueConstraint("teacher_id", "topic", name="uq_practice_teacher_topic"),
+        UniqueConstraint("guest_id", "topic", name="uq_practice_guest_topic"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     topic: Mapped[str] = mapped_column(String(50), nullable=False)  # task_generators.REGISTRY id
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     streak_correct: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
@@ -1393,6 +1396,7 @@ class PracticeTask(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True, index=True)
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True, index=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     topic: Mapped[str] = mapped_column(String(50), nullable=False)
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)

@@ -77,9 +77,6 @@ CATALOG: list[CatalogTool] = [
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
-    CatalogTool("uebung", "📚 Übung", "📚", "games", {
-        "use": _cap(True, True),
-    }),
     # Tippen rechnet im Browser: kein Hosten, kein Erstellen — die Sitzung ist
     # nur der Beitritts-Code (siehe routers/tool_sessions.py).
     CatalogTool("tippen", "⌨️ Tippen", "⌨️", "games", {
@@ -107,6 +104,10 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, True),
     }),
     CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    # Übung gehört zu den Simulationen: eigenes Tempo, eigener QR, kein Host.
+    CatalogTool("uebung", "📚 Übung", "📚", "simulationen", {
         "use": _cap(True, True),
     }),
     # ── Tools (teacher surface — students default off) ──

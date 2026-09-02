@@ -52,14 +52,6 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Zehnfingersystem üben: Lektionen mit Fingeranzeige, Wortregen und Tastenjagd — dazu das Klassenrennen »Wettschreiben« über Code/QR.",
     color: "#38bdf8",
   },
-  {
-    slug: "uebung",
-    href: "/uebung",
-    icon: "📚",
-    title: "Übung",
-    description: "Aufgaben zum Trainieren — Schwierigkeit passt sich automatisch dem Können an, Fortschritt wird gezählt.",
-    color: "#0ea5e9",
-  },
 ];
 
 export default function GamesPage() {

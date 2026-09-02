@@ -1,44 +1,80 @@
 """
 Übungsseite — self-paced practice with procedurally generated tasks.
 
-Anyone logged in picks a topic from the generator library
-(api/task_generators.py), gets one task at a time at their current
-difficulty (1-5), and answers it. Difficulty climbs after 3 correct in a
-row, drops after 2 wrong in a row. Every answered task is counted in
-PracticeProgress (per participant+topic), so teachers can later see how
-much a student practiced. A participant is a Student OR a Teacher/admin
-trying topics out — tracked separately, same pattern as ExitGameAttempt.
+Anyone picks a topic from the generator library (api/task_generators.py),
+gets one task at a time at their current difficulty (1-5), and answers it.
+Difficulty climbs after 3 correct in a row, drops after 2 wrong in a row.
+Every answered task is counted in PracticeProgress (per participant+topic),
+so teachers can later see how much a student practiced. A participant is a
+Student, a Teacher/admin trying topics out, or a guest who came in through
+the QR of an Übung tool session — tracked separately, same pattern as
+ExitGameAttempt.
+
+Gäste bringen keinen Cookie mit, sondern den Gast-Token ihrer Sitzung. Er
+gilt nur für genau einen Beitritts-Code, deshalb hängt an jedem Aufruf ein
+``?code=``: ohne den passenden Code ist der Token wertlos, und angemeldete
+Nutzer brauchen ihn gar nicht.
 
 Answers are checked server-side against the accept list stored with the
 generated PracticeTask row — the client only ever receives the question.
 """
 import random
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .. import task_generators
 from .generators import generate_from_def
 from ..database import get_db
-from ..models import PracticeProgress, PracticeTask, Student, Teacher, TaskGeneratorDef
-from ..auth import get_current_user
+from ..models import (
+    PracticeProgress, PracticeTask, Student, Teacher, TaskGeneratorDef, ToolSession,
+)
+from ..auth import Guest, bearer, get_current_user_optional, guest_from_credentials
 
 router = APIRouter(prefix="/api/practice", tags=["practice"])
 
 STREAK_UP = 3    # correct in a row to level up
 STREAK_DOWN = 2  # wrong in a row to level down
 
-
-def _get_player(current=Depends(get_current_user)) -> Teacher | Student:
-    """Üben steht allen offen — Schüler wie Lehrkräfte."""
-    return current
+Spieler = Teacher | Student | Guest
 
 
-def _owner_filter(current: Teacher | Student) -> dict:
-    return {"student_id": current.id} if isinstance(current, Student) else {"teacher_id": current.id}
+def _get_player(
+    request: Request,
+    code: str | None = None,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> Spieler:
+    """Üben steht allen offen — Schülern, Lehrkräften und Gästen mit Code.
+
+    Wie ``auth.get_player``, nur dass der Code hier in der Query steht statt im
+    Pfad: die Übungs-Routen gehören dem Thema, nicht der Sitzung.
+    """
+    user = get_current_user_optional(request, credentials, db)
+    if user is not None:
+        return user
+    if code:
+        guest = guest_from_credentials(credentials, code, db)
+        # Der Code muss auch wirklich zu einer Übungs-Sitzung gehören: ein
+        # Gast-Token aus einem anderen Werkzeug ist hier kein Ausweis.
+        gehoert_hierher = db.query(ToolSession).filter_by(code=code, tool_slug="uebung").first()
+        if guest is not None and gehoert_hierher:
+            return guest
+    raise HTTPException(401, "Not authenticated")
 
 
-def _progress(db: Session, current: Teacher | Student, topic: str) -> PracticeProgress:
+def _owner_filter(current: Spieler) -> dict:
+    if isinstance(current, Student):
+        return {"student_id": current.id}
+    if isinstance(current, Guest):
+        return {"guest_id": current.id}
+    return {"teacher_id": current.id}
+
+
+def _progress(db: Session, current: Spieler, topic: str) -> PracticeProgress:
     p = db.query(PracticeProgress).filter_by(topic=topic, **_owner_filter(current)).first()
     if not p:
         p = PracticeProgress(topic=topic, **_owner_filter(current))
@@ -48,7 +84,7 @@ def _progress(db: Session, current: Teacher | Student, topic: str) -> PracticePr
 
 
 @router.get("/topics")
-def list_topics(db: Session = Depends(get_db), current=Depends(get_current_user)):
+def list_topics(db: Session = Depends(get_db), current: Spieler = Depends(_get_player)):
     """Topic list plus the caller's own progress per topic."""
     rows = db.query(PracticeProgress).filter_by(**_owner_filter(current)).all()
     progress_by_topic = {p.topic: p for p in rows}
@@ -72,7 +108,7 @@ def list_topics(db: Session = Depends(get_db), current=Depends(get_current_user)
 
 
 @router.post("/{topic}/task", status_code=201)
-def new_task(topic: str, db: Session = Depends(get_db), current: Teacher | Student = Depends(_get_player)):
+def new_task(topic: str, db: Session = Depends(get_db), current: Spieler = Depends(_get_player)):
     custom_def = None
     if topic not in task_generators.REGISTRY:
         custom_def = db.query(TaskGeneratorDef).filter_by(slug=topic).first()
@@ -106,7 +142,7 @@ class AnswerIn(BaseModel):
 
 
 @router.post("/tasks/{task_id}/answer")
-def answer_task(task_id: int, body: AnswerIn, db: Session = Depends(get_db), current: Teacher | Student = Depends(_get_player)):
+def answer_task(task_id: int, body: AnswerIn, db: Session = Depends(get_db), current: Spieler = Depends(_get_player)):
     task = db.get(PracticeTask, task_id)
     owner = _owner_filter(current)
     is_owner = task and all(getattr(task, k) == v for k, v in owner.items())

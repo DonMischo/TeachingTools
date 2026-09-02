@@ -13,7 +13,8 @@
  *      bleiben stehen. Genau so merkt man, dass es bei + und · gutgeht und
  *      bei − und : nicht.
  *   3. Stufenzahlen: 3 · 40 wird in 3 · 4 und »eine Stelle nach links«
- *      zerlegt, damit »eine Null anhängen« kein Zauberspruch bleibt.
+ *      zerlegt, damit »eine Null anhängen« kein Zauberspruch bleibt. Geteilt
+ *      wird dieselbe Rutsche rückwärts (45 : 10 = 4,5), Kommazahlen dabei.
  *
  * Reine Rechnung ohne React, damit sie prüfbar ist.
  */
@@ -448,69 +449,191 @@ export function wuerfelnZug(stufe: number, nicht?: string): string {
 
 // ── Stufenzahlen ─────────────────────────────────────────────────────────────
 
+/** Mal oder geteilt — die Rutsche geht in beide Richtungen. */
+export type Rechenart = "*" | ":";
+
 export type Zerlegung = {
+  art: Rechenart;
   a: number; b: number;
-  /** Die Faktoren ohne ihre Nullen. */
+  /** Die Zahlen ohne ihre Nullen und ohne Komma — der Teil fürs kleine Einmaleins. */
   kernA: number; kernB: number;
-  /** Die Nullen je Faktor — getrennt, weil der zweite die Stufenzahl ist. */
-  nullenA: number; nullenB: number;
-  /** So viele Nullen wurden abgetrennt — so viele Stellen rutscht es zurück. */
-  nullen: number;
+  /** Wie weit jede Zahl selbst schon verschoben ist: 40 = 4 · 10¹, 0,3 = 3 · 10⁻¹. */
+  stellenA: number; stellenB: number;
+  /** So weit rutscht das Ergebnis: positiv nach links, negativ nach rechts. */
+  stellen: number;
   kern: number;
   ergebnis: number;
 };
 
-function ohneNullen(v: number): { kern: number; nullen: number } {
-  if (v === 0) return { kern: 0, nullen: 0 };
-  let kern = v, nullen = 0;
-  while (kern % 10 === 0) { kern /= 10; nullen++; }
-  return { kern, nullen };
+/**
+ * Eine Zahl als »Kern mal Zehnerpotenz«: 40 → 4 · 10¹, 0,05 → 5 · 10⁻².
+ *
+ * Über den Dezimalstring und nicht über Logarithmen oder `* 10 ** n`: sonst
+ * wird aus 1,1 · 100 die 110,00000000000001, und die Tafel zeigt Staub.
+ */
+export function zerlegeZahl(v: number): { kern: number; stellen: number } {
+  if (!Number.isFinite(v)) throw new RechenError("Das ist keine Zahl.");
+  if (v === 0) return { kern: 0, stellen: 0 };
+  const vorzeichen = v < 0 ? -1 : 1;
+  let ziffern = String(Math.abs(v));
+  if (ziffern.includes("e")) throw new RechenError("Diese Zahl ist zu groß oder zu klein.");
+  let stellen = 0;
+  const punkt = ziffern.indexOf(".");
+  if (punkt >= 0) {
+    stellen = -(ziffern.length - punkt - 1);
+    ziffern = ziffern.slice(0, punkt) + ziffern.slice(punkt + 1);
+  }
+  let kern = Number(ziffern);
+  while (kern !== 0 && kern % 10 === 0) { kern /= 10; stellen++; }
+  return { kern: vorzeichen * kern, stellen };
 }
 
-export function zerlegeStufen(a: number, b: number): Zerlegung {
-  if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) {
-    throw new RechenError("Nimm zwei ganze Zahlen ab 0.");
+/** Eine Zahl um `stellen` Zehnerpotenzen verschieben — ohne Rundungsstaub. */
+export function rutsche(v: number, stellen: number): number {
+  if (v === 0) return 0;
+  const z = zerlegeZahl(v);
+  return Number(`${z.kern}e${z.stellen + stellen}`);
+}
+
+/** Genau multiplizieren — über die Kerne, aus demselben Grund wie `rutsche`. */
+function mal(x: number, y: number): number {
+  const zx = zerlegeZahl(x), zy = zerlegeZahl(y);
+  return rutsche(zx.kern * zy.kern, zx.stellen + zy.stellen);
+}
+
+function ggt(a: number, b: number): number {
+  return b === 0 ? a : ggt(b, a % b);
+}
+
+/** Geht a : b als Dezimalzahl auf? Nur, wenn im gekürzten Nenner nur 2 und 5 stecken. */
+function gehtGlattAuf(a: number, b: number): boolean {
+  if (a === 0) return true;
+  let n = Math.abs(b) / ggt(Math.abs(a), Math.abs(b));
+  while (n % 2 === 0) n /= 2;
+  while (n % 5 === 0) n /= 5;
+  return n === 1;
+}
+
+/**
+ * Eine Stufenaufgabe zerlegen — mal oder geteilt.
+ *
+ * Beides ist dieselbe Rutsche, nur in verschiedene Richtungen: bei · zählen
+ * sich die Verschiebungen zusammen (3 · 40 = 12, eine Stelle nach links), bei :
+ * ziehen sie sich ab (45 : 10 = 45, eine Stelle nach rechts → 4,5). Deshalb
+ * ist `stellen` vorzeichenbehaftet und nicht mehr eine Anzahl Nullen.
+ */
+export function zerlegeStufen(a: number, b: number, art: Rechenart = "*"): Zerlegung {
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a < 0 || b < 0) {
+    throw new RechenError("Nimm zwei Zahlen ab 0.");
   }
-  const ka = ohneNullen(a), kb = ohneNullen(b);
-  const kern = ka.kern * kb.kern;
-  const nullen = ka.nullen + kb.nullen;
+  if (art === ":" && b === 0) throw new RechenError("Durch 0 kann man nicht teilen.");
+  const za = zerlegeZahl(a), zb = zerlegeZahl(b);
+  if (art === ":" && !gehtGlattAuf(za.kern, zb.kern)) {
+    throw new RechenError("Das geht nicht glatt auf — nimm eine Aufgabe ohne Rest.");
+  }
+  const kern = art === "*" ? za.kern * zb.kern : za.kern / zb.kern;
+  const stellen = art === "*" ? za.stellen + zb.stellen : za.stellen - zb.stellen;
   return {
-    a, b,
-    kernA: ka.kern, kernB: kb.kern,
-    nullenA: ka.nullen, nullenB: kb.nullen,
-    nullen, kern,
-    ergebnis: kern * 10 ** nullen,
+    art, a, b,
+    kernA: za.kern, kernB: zb.kern,
+    stellenA: za.stellen, stellenB: zb.stellen,
+    stellen, kern,
+    ergebnis: rutsche(kern, stellen),
   };
 }
 
-/** Die Ziffern einer Zahl auf die Stellenwerttafel gelegt, rechtsbündig. */
-export function stellenwerte(v: number, breite: number): string[] {
-  const ziffern = String(v).split("");
-  const leer = Array(Math.max(0, breite - ziffern.length)).fill("");
-  return [...leer, ...ziffern].slice(-breite);
-}
-
-export const STELLEN = ["HM", "ZM", "M", "HT", "ZT", "T", "H", "Z", "E"];
-
-export type StufenModus = "frei" | "10" | "100" | "1000";
+/** Die Stellen der Tafel, von der Million bis zum Tausendstel. */
+export const STELLEN_NAMEN: Record<number, string> = {
+  6: "M", 5: "HT", 4: "ZT", 3: "T", 2: "H", 1: "Z", 0: "E",
+  "-1": "z", "-2": "h", "-3": "t",
+};
+export const STELLE_MAX = 6;
+export const STELLE_MIN = -3;
 
 /**
- * Aufgaben für die Rutsche. Die Nullen hängen immer am *zweiten* Faktor —
- * er ist die Stufenzahl, an ihm liest man ab, wie weit gerutscht wird.
+ * Die Ziffern einer Zahl auf die Stellenwerttafel — eine Spalte je
+ * Zehnerpotenz, von `von` (links) bis `bis` (rechts).
+ *
+ * Geschrieben wird genau so viel, wie man auch ins Heft schreibt: von der
+ * höchsten Ziffer bis zum Einer und, bei Kommazahlen, weiter bis zur letzten
+ * Nachkommastelle. Die 0 in der 120 gehört also dazu, die in der 0,45 auch —
+ * die Spalten davor und danach bleiben leer.
+ */
+export function ziffernNachStellen(v: number, von: number, bis: number): string[] {
+  const { kern, stellen } = zerlegeZahl(v);
+  const ziffern = String(Math.abs(kern));
+  const hoechste = stellen + ziffern.length - 1;
+  const oben = Math.max(hoechste, 0);
+  const unten = Math.min(stellen, 0);
+  const out: string[] = [];
+  for (let e = von; e >= bis; e--) {
+    if (e > oben || e < unten) { out.push(""); continue; }
+    const i = hoechste - e;
+    out.push(i >= 0 && i < ziffern.length ? ziffern[i] : "0");
+  }
+  return out;
+}
+
+/** Der Spaltenbereich, in den alle genannten Zahlen passen — der Einer immer dabei. */
+export function tafelBereich(...zahlen: number[]): { von: number; bis: number } {
+  let von = 0, bis = 0;
+  for (const v of zahlen) {
+    if (v === 0) continue;
+    const { kern, stellen } = zerlegeZahl(v);
+    von = Math.max(von, stellen + String(Math.abs(kern)).length - 1);
+    bis = Math.min(bis, stellen);
+  }
+  return { von: Math.min(von, STELLE_MAX), bis: Math.max(bis, STELLE_MIN) };
+}
+
+/**
+ * Die Stellen, die durch das Rutschen neu dazukommen: beim Rutschen nach links
+ * die angehängten Nullen (Einer aufwärts), nach rechts die frisch geöffneten
+ * Nachkommastellen. Genau die dürfen auf der Tafel leuchten.
+ */
+export function neueStellen(stellen: number): number[] {
+  if (stellen > 0) return Array.from({ length: stellen }, (_, i) => i);
+  if (stellen < 0) return Array.from({ length: -stellen }, (_, i) => -1 - i);
+  return [];
+}
+
+export type StufenModus = "frei" | "komma" | "10" | "100" | "1000" | "10000";
+
+/**
+ * Aufgaben für die Rutsche. Die Nullen hängen immer an der *zweiten* Zahl —
+ * an ihr liest man ab, wie weit gerutscht wird.
  *
  * »Frei« würfelt Zehner-, Hunderter- und Tausenderzahlen (40, 500, 2000):
- * dort gibt es beides, ein kleines Einmaleins und eine Rutsche. Die drei
- * anderen Knöpfe legen den zweiten Faktor auf genau 10, 100 oder 1000 fest —
- * dann wird gar nichts gerechnet, dann rutscht nur, und der erste Faktor darf
- * dafür mehrstellig sein.
+ * dort gibt es beides, ein kleines Einmaleins und eine Rutsche. »Komma« nimmt
+ * Zehntel und Hundertstel dazu (0,3 · 400 = 120). Die festen Stufen legen die
+ * zweite Zahl auf genau 10, 100, 1000 oder 10000 fest — dann wird gar nichts
+ * gerechnet, dann rutscht nur, und die erste Zahl darf mehrstellig sein.
+ *
+ * Beim Teilen muss die Aufgabe aufgehen. Durch eine reine Stufenzahl geht sie
+ * das immer (45 : 100 = 0,45), sonst wird sie vom Ergebnis her gebaut:
+ * a = Ergebnis · b.
  */
-export function wuerfelnStufen(modus: StufenModus, nicht?: [number, number]): [number, number] {
+export function wuerfelnStufen(
+  modus: StufenModus, art: Rechenart = "*", nicht?: [number, number],
+): [number, number] {
+  const fest = modus !== "frei" && modus !== "komma";
   for (let versuch = 0; versuch < 200; versuch++) {
-    const paar: [number, number] = modus === "frei"
-      ? [zufall(2, 9), zufall(2, 9) * 10 ** zufall(1, 3)]
-      : [zufall(2, 99), Number(modus)];
+    const b = fest ? Number(modus) : zufall(2, 9) * 10 ** zufall(1, 3);
+    const klein = modus === "komma"
+      ? rutsche(zufall(2, 9), -zufall(1, 2))
+      : fest ? zufall(2, 99) : zufall(2, 9);
+    const paar: [number, number] = art === "*" || fest ? [klein, b] : [mal(klein, b), b];
+    if (paar[0] > 10 ** STELLE_MAX) continue;
     if (nicht && paar[0] === nicht[0] && paar[1] === nicht[1]) continue;
     return paar;
   }
-  return [3, 40];
+  return art === "*" ? [3, 40] : [120, 40];
+}
+
+/** Eine getippte Zahl lesen — Komma wie an der Tafel, ein Punkt geht auch. */
+export function zahlAusText(s: string): number | null {
+  const t = s.trim().replace(/[−–]/g, "-").replace(",", ".");
+  if (t === "" || !/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return null;
+  const v = Number(t);
+  return Number.isFinite(v) ? v : null;
 }
