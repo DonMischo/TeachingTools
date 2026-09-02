@@ -478,7 +478,7 @@ export default function FragmentBoardPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { auth } = useAuth();
+  const { auth, ready: authReady } = useAuth();
   const collectionId = Number(params.id);
   // Guest mode: no logged-in user, but a collection-scoped guest token from a QR/link join.
   const guestToken = auth ? undefined : fragmentGuest.get(collectionId);
@@ -496,6 +496,12 @@ export default function FragmentBoardPage() {
   const { data: collection, isError } = useQuery<FragmentCollectionOut>({
     queryKey: ["fragment-collection", collectionId],
     queryFn: () => api.fragments.getCollection(collectionId, guestToken),
+    // 401/403 heilt kein Wiederholen — ohne dies stand das leere Brett
+    // sekundenlang da, bevor die Sperre erschien.
+    retry: false,
+    // Erst laden, wenn feststeht, ob jemand angemeldet ist: sonst fragt ein
+    // Gast mit gültigem Token die Sammlung ohne Token ab.
+    enabled: authReady,
   });
   const { data: tabs } = useQuery<FragmentTabs>({
     queryKey: ["fragment-tabs", collectionId],
@@ -553,8 +559,40 @@ export default function FragmentBoardPage() {
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
+  // Der Direktlink auf ein Brett ist kein Zugang: wer nicht angemeldet ist und
+  // kein (noch gültiges) Gast-Token für diese Sammlung hat, landet hier. Statt
+  // einer Sackgasse führt der Weg zurück zum Beitritt per Code.
   if (isError) {
-    return <div className="max-w-4xl mx-auto p-6 text-[var(--text-muted)]">Kein Zugriff auf diese Sammlung.</div>;
+    return auth ? (
+      <div className="mx-auto max-w-md p-6 mt-10 text-center">
+        <div className="rounded-2xl border border-[var(--border)] p-6" style={{ background: "var(--bg)" }}>
+          <div className="text-4xl mb-2">🔒</div>
+          <h1 className="text-lg font-bold">Keine Berechtigung</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-2">
+            Diese Pinnwand ist nicht für dich freigegeben.
+          </p>
+          <button className="btn-primary mt-5" onClick={() => router.push("/fragmente")}>Zu den Sammlungen</button>
+        </div>
+      </div>
+    ) : (
+      <div className="mx-auto max-w-md p-6 mt-10 text-center">
+        <div className="rounded-2xl border border-[var(--border)] p-6" style={{ background: "var(--bg)" }}>
+          <div className="text-4xl mb-2">🗂️</div>
+          <h1 className="text-lg font-bold">Diese Pinnwand ist nicht öffentlich</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">
+            Der Link allein reicht nicht. Als Gast kommst du mit dem Beitritts-Code
+            deiner Lehrkraft herein — oder du meldest dich links unten an.
+          </p>
+          <button className="btn-primary mt-5" onClick={() => router.push("/fragmente/join")}>Mit Code beitreten</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Bis die Sammlung da ist, kein leeres Brett zeigen — das sah aus wie eine
+  // Pinnwand ohne Inhalt.
+  if (!collection) {
+    return <div className="mx-auto max-w-md p-6 mt-10 text-center text-sm text-[var(--text-muted)]">Einen Moment …</div>;
   }
 
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
