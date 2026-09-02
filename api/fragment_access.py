@@ -11,7 +11,9 @@ Permission ladder (ascending):
   * read       — view cards
   * contribute — add cards, edit/delete only one's own cards
   * manage     — edit/delete any card + change collection settings/grants
-The owner (and admins) always resolve to 'manage'.
+The owner (and admins) always resolve to 'manage'. Students reach a board through
+a grant on their class or on a group they belong to (in practice an A/B-Gruppe —
+half a class); the higher of the two wins.
 """
 from __future__ import annotations
 
@@ -58,12 +60,19 @@ def resolve_permission(user: Principal, collection: FragmentCollection) -> str:
         return best
 
     if isinstance(user, Student):
-        if user.class_id is None:
-            return "none"
         best = "none"
+        # Gruppenmitgliedschaften erst laden, wenn die Sammlung ueberhaupt eine
+        # Gruppen-Freigabe hat — eine Abfrage je Schueler, danach aus der
+        # Identity Map (auch beim Durchlaufen vieler Sammlungen).
+        group_ids: set[int] | None = None
         for g in collection.grants:
-            if g.grantee_type == "class" and g.class_id == user.class_id:
+            if g.grantee_type == "class" and user.class_id is not None and g.class_id == user.class_id:
                 best = _max(best, g.permission)
+            elif g.grantee_type == "group" and g.group_id is not None:
+                if group_ids is None:
+                    group_ids = {m.group_id for m in user.group_memberships}
+                if g.group_id in group_ids:
+                    best = _max(best, g.permission)
         return best
 
     if isinstance(user, Guest):

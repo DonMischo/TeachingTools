@@ -1102,6 +1102,8 @@ export type AvailabilityOverride = {
   capability: ToolCapability;
   audience: AudienceKind;
   class_id: number | null;
+  // Enger als eine Klasse: eine A/B-Gruppe. Genau eines von beiden ist gesetzt.
+  group_id?: number | null;
   allowed: boolean;
 };
 
@@ -1117,19 +1119,23 @@ export type AdminFeatureGrant = {
 
 // ── Fragments (TaskCards-style boards) ─────────────────────────────────────────
 export type FragmentPermission = "read" | "contribute" | "manage";
-export type FragmentGranteeType = "all_teachers" | "class" | "teacher";
+// "group" ist in der Praxis eine A/B-Gruppe — eine halbe Klasse.
+export type FragmentGranteeType = "all_teachers" | "class" | "group" | "teacher";
 export type FragmentGrant = {
   grantee_type: FragmentGranteeType;
   class_id: number | null;
   class_code: string | null;
   teacher_id: number | null;
   teacher_name: string | null;
+  group_id: number | null;
+  group_name: string | null;
   permission: FragmentPermission;
 };
 export type FragmentGrantIn = {
   grantee_type: FragmentGranteeType;
   class_id?: number | null;
   teacher_id?: number | null;
+  group_id?: number | null;
   permission: FragmentPermission;
 };
 export type FragmentCollectionOut = {
@@ -1724,18 +1730,22 @@ export const api = {
   availability: {
     me: () => apiFetch<AvailabilityMap>("availability/me"),
     catalog: () => apiFetch<CatalogToolOut[]>("availability/catalog"),
-    overrides: (class_id?: number | null) => {
-      const q = class_id != null ? `?class_id=${class_id}` : "";
-      return apiFetch<AvailabilityOverride[]>(`availability/overrides${q}`);
+    overrides: (class_id?: number | null, group_id?: number | null) => {
+      const q = new URLSearchParams();
+      if (group_id != null) q.set("group_id", String(group_id));
+      else if (class_id != null) q.set("class_id", String(class_id));
+      const qs = q.toString();
+      return apiFetch<AvailabilityOverride[]>(`availability/overrides${qs ? `?${qs}` : ""}`);
     },
     setOverride: (body: AvailabilityOverride) =>
       apiFetch<AvailabilityOverride>("availability/override", {
         method: "PUT",
         body: JSON.stringify(body),
       }),
-    clearOverride: (p: { tool_slug: string; capability: ToolCapability; audience: AudienceKind; class_id?: number | null }) => {
+    clearOverride: (p: { tool_slug: string; capability: ToolCapability; audience: AudienceKind; class_id?: number | null; group_id?: number | null }) => {
       const q = new URLSearchParams({ tool_slug: p.tool_slug, capability: p.capability, audience: p.audience });
-      if (p.class_id != null) q.set("class_id", String(p.class_id));
+      if (p.group_id != null) q.set("group_id", String(p.group_id));
+      else if (p.class_id != null) q.set("class_id", String(p.class_id));
       return apiFetch<void>(`availability/override?${q}`, { method: "DELETE" });
     },
   },

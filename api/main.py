@@ -210,10 +210,16 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_responses ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",
         "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS guest_name VARCHAR(100)",
-        # Fragments: specific-teacher grants. Add the column and drop the old
-        # 3-column unique constraint so the 4-column one (below) can replace it.
+        # Fragments: specific-teacher grants und Freigaben an eine A/B-Gruppe.
+        # Spalten anlegen und das alte Unique fallen lassen, damit das breitere
+        # (unten) an seine Stelle treten kann.
         "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE",
+        "ALTER TABLE fragment_collection_grants ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
         "ALTER TABLE fragment_collection_grants DROP CONSTRAINT IF EXISTS uq_fragment_grant",
+        # Verfuegbarkeit auch fuer eine A/B-Gruppe statt nur fuer eine ganze Klasse.
+        "ALTER TABLE tool_availability ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES student_groups(id) ON DELETE CASCADE",
+        "CREATE INDEX IF NOT EXISTS ix_tool_availability_group_id ON tool_availability (group_id)",
+        "ALTER TABLE tool_availability DROP CONSTRAINT IF EXISTS uq_tool_availability_scope",
         # Kurse/WPF exist once per Jahrgang ("10 K1" != "9 K1"). Drop the old
         # 3-column unique so the 4-column one (below) can replace it.
         "ALTER TABLE student_groups ADD COLUMN IF NOT EXISTS grade INTEGER",
@@ -276,7 +282,8 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_responses ADD CONSTRAINT uq_baro_guest_question UNIQUE (session_id, question_id, guest_id)",
         "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
-        "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id)",
+        "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id, group_id)",
+        "ALTER TABLE tool_availability ADD CONSTRAINT uq_tool_availability_scope UNIQUE (tool_slug, capability, audience, class_id, group_id)",
         # NULL-safe: class_id/grade are NULL for cross-class groups, and NULLs
         # never collide in a plain UNIQUE — so a second "10 Kurs I" would slip in.
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_group_scope_name ON student_groups "

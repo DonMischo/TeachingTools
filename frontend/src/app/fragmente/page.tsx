@@ -29,7 +29,8 @@ function CollectionCard({
   const canManage = coll.my_permission === "manage";
   const audience = coll.grants.length === 0
     ? "Privat"
-    : coll.grants.some(g => g.grantee_type === "all_teachers") && !coll.grants.some(g => g.grantee_type === "class")
+    : coll.grants.some(g => g.grantee_type === "all_teachers")
+      && !coll.grants.some(g => g.grantee_type === "class" || g.grantee_type === "group")
       ? "Öffentlich (Lehrer)"
       : `${coll.grants.length} Gruppe${coll.grants.length === 1 ? "" : "n"}`;
 
@@ -103,7 +104,9 @@ export default function FragmentsLandingPage() {
     const seen = new Map<number, string>();
     for (const c of collections)
       for (const g of c.grants)
-        if (g.grantee_type === "class" && g.class_id != null) seen.set(g.class_id, g.class_code ?? String(g.class_id));
+        // group-Grants (A/B-Gruppen) tragen die Klasse ihrer Gruppe.
+        if (g.class_id != null && (g.grantee_type === "class" || g.grantee_type === "group"))
+          seen.set(g.class_id, g.class_code ?? String(g.class_id));
     return [...seen.entries()].map(([id, code]) => ({ id, code }));
   }, [collections]);
 
@@ -114,7 +117,7 @@ export default function FragmentsLandingPage() {
     if (filter === "alle") return true;
     if (filter.startsWith("class:")) {
       const cid = Number(filter.split(":")[1]);
-      return c.grants.some(g => g.grantee_type === "class" && g.class_id === cid);
+      return c.grants.some(g => (g.grantee_type === "class" || g.grantee_type === "group") && g.class_id === cid);
     }
     // default: teachers see own + public; students see everything shared with them.
     return isTeacher ? (c.is_owner || isPublic(c)) : true;

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   api, FragmentCollectionOut, FragmentGrantIn, FragmentPermission, ClassOut, TeacherOut,
+  StudentGroupOut,
 } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
@@ -98,7 +99,10 @@ export function CollectionModal({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [subject, setSubject] = useState(initial?.subject ?? "");
   const [grants, setGrants] = useState<GrantRow[]>(
-    initial?.grants.map(g => ({ grantee_type: g.grantee_type, class_id: g.class_id, permission: g.permission })) ?? []
+    initial?.grants.map(g => ({
+      grantee_type: g.grantee_type, class_id: g.class_id, teacher_id: g.teacher_id,
+      group_id: g.group_id, permission: g.permission,
+    })) ?? []
   );
   const [allowGuests, setAllowGuests] = useState(initial?.allow_guests ?? false);
   const [guestPermission, setGuestPermission] = useState<"read" | "contribute">(initial?.guest_permission ?? "read");
@@ -107,6 +111,11 @@ export function CollectionModal({
 
   const { data: classes = [] } = useQuery<ClassOut[]>({ queryKey: ["classes"], queryFn: () => api.classes.list() });
   const { data: teachers = [] } = useQuery<TeacherOut[]>({ queryKey: ["teachers"], queryFn: () => api.teachers.list() });
+  // A/B-Gruppen: eine halbe Klasse freigeben statt der ganzen.
+  const { data: abGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "ab_gruppe"],
+    queryFn: () => api.groups.list({ group_type: "ab_gruppe" }),
+  });
 
   // Refresh both the landing list and this board's own record, since the dialog
   // is opened from either place.
@@ -148,6 +157,15 @@ export function CollectionModal({
 
   const usedClassIds = new Set(grants.filter(g => g.grantee_type === "class").map(g => g.class_id));
   const usedTeacherIds = new Set(grants.filter(g => g.grantee_type === "teacher").map(g => g.teacher_id));
+  const usedGroupIds = new Set(grants.filter(g => g.grantee_type === "group").map(g => g.group_id));
+
+  // Klassen mit ihren A/B-Gruppen darunter: »Klasse 9a (ganze Klasse)«,
+  // »9a – Gruppe A«, »9a – Gruppe B«.
+  const classEntries = classes.map(c => ({
+    cls: c,
+    groups: abGroups.filter(g => g.class_id === c.id)
+      .sort((a, b) => a.name.localeCompare(b.name, "de")),
+  }));
   const hasAllTeachers = grants.some(g => g.grantee_type === "all_teachers");
   const grantableTeachers = teachers.filter(t => !initial || t.id !== initial.owner_teacher_id);
 
@@ -209,23 +227,35 @@ export function CollectionModal({
                 <select
                   className="input"
                   style={{ flex: "1 1 0%", minWidth: 0, width: "auto" }}
-                  value={g.grantee_type === "all_teachers" ? "all_teachers" : g.grantee_type === "class" ? `class:${g.class_id}` : `teacher:${g.teacher_id}`}
+                  value={
+                    g.grantee_type === "all_teachers" ? "all_teachers"
+                      : g.grantee_type === "class" ? `class:${g.class_id}`
+                      : g.grantee_type === "group" ? `group:${g.group_id}`
+                      : `teacher:${g.teacher_id}`}
                   onChange={e => {
                     const v = e.target.value;
-                    if (v === "all_teachers") updateGrant(i, { grantee_type: "all_teachers", class_id: null, teacher_id: null });
-                    else if (v.startsWith("class:")) updateGrant(i, { grantee_type: "class", class_id: Number(v.split(":")[1]), teacher_id: null });
-                    else updateGrant(i, { grantee_type: "teacher", teacher_id: Number(v.split(":")[1]), class_id: null });
+                    const id = Number(v.split(":")[1]);
+                    if (v === "all_teachers") updateGrant(i, { grantee_type: "all_teachers", class_id: null, teacher_id: null, group_id: null });
+                    else if (v.startsWith("class:")) updateGrant(i, { grantee_type: "class", class_id: id, teacher_id: null, group_id: null });
+                    else if (v.startsWith("group:")) updateGrant(i, { grantee_type: "group", group_id: id, class_id: null, teacher_id: null });
+                    else updateGrant(i, { grantee_type: "teacher", teacher_id: id, class_id: null, group_id: null });
                   }}
                 >
                   <option value="all_teachers" disabled={hasAllTeachers && g.grantee_type !== "all_teachers"}>Alle Lehrer (öffentlich)</option>
-                  <optgroup label="Klassen">
-                    {classes.map(c => (
-                      <option key={c.id} value={`class:${c.id}`}
-                        disabled={usedClassIds.has(c.id) && g.class_id !== c.id}>
-                        Klasse {c.display_name}
+                  {classEntries.map(({ cls, groups }) => (
+                    <optgroup key={cls.id} label={`Klasse ${cls.display_name}`}>
+                      <option value={`class:${cls.id}`}
+                        disabled={usedClassIds.has(cls.id) && g.class_id !== cls.id}>
+                        {cls.display_name} — ganze Klasse
                       </option>
-                    ))}
-                  </optgroup>
+                      {groups.map(gr => (
+                        <option key={gr.id} value={`group:${gr.id}`}
+                          disabled={usedGroupIds.has(gr.id) && g.group_id !== gr.id}>
+                          {cls.display_name} – Gruppe {gr.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
                   <optgroup label="Lehrer">
                     {grantableTeachers.map(t => (
                       <option key={t.id} value={`teacher:${t.id}`}
@@ -259,7 +289,7 @@ export function CollectionModal({
                 if (!free) { toast("Alle Klassen bereits hinzugefügt", "info"); return; }
                 addGrant({ grantee_type: "class", class_id: free.id, permission: "read" });
               }}>
-              + Klasse
+              + Klasse / Gruppe
             </button>
             <button className="text-xs px-2 py-1 rounded border border-[var(--border)] hover:bg-[var(--surface-hover)]"
               onClick={() => setTeacherPicker(true)}>

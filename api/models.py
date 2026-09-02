@@ -426,6 +426,9 @@ class Student(Base):
 
     class_: Mapped["Class | None"] = relationship()
     sf_results: Mapped[list["SportfestResult"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    # Kurse/WPF/A-B-Gruppen, in denen dieser Schueler steht. Nur lesend — die
+    # Mitgliedschaft wird ueber StudentGroupMember gepflegt.
+    group_memberships: Mapped[list["StudentGroupMember"]] = relationship(viewonly=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1601,17 +1604,19 @@ class SeatingPlan(Base):
 # ---------------------------------------------------------------------------
 
 class ToolAvailability(Base):
-    """One allow/deny override for a (tool, capability, audience[, class]) tuple.
+    """One allow/deny override for a (tool, capability, audience[, class|group]) tuple.
 
-    A row's absence means "fall back": to the global (class_id NULL) row if this
-    is a per-class row, and ultimately to the catalog default in
-    api/tool_catalog.py. `class_id` NULL = global default set by an admin;
-    non-NULL = a per-class override a class teacher (or admin) set for that class.
-    `audience` is "teacher" or "student"; Klassensprecher count as students here.
-    See api/availability.py for the resolution order."""
+    A row's absence means "fall back": from a group row to its class row, from a
+    class row to the global one (class_id and group_id both NULL), and ultimately
+    to the catalog default in api/tool_catalog.py. `class_id` non-NULL = a
+    per-class override a class teacher (or admin) set; `group_id` non-NULL = an
+    override for one student group (in practice an A/B-Gruppe, i.e. half a class).
+    At most one of the two is set. `audience` is "teacher" or "student";
+    Klassensprecher count as students here. Group rows only ever bite students —
+    teachers are not group members. See api/availability.py for the resolution order."""
     __tablename__ = "tool_availability"
     __table_args__ = (
-        UniqueConstraint("tool_slug", "capability", "audience", "class_id",
+        UniqueConstraint("tool_slug", "capability", "audience", "class_id", "group_id",
                          name="uq_tool_availability_scope"),
     )
 
@@ -1622,6 +1627,10 @@ class ToolAvailability(Base):
     # NULL = global default; else scoped to this class.
     class_id: Mapped[int | None] = mapped_column(
         ForeignKey("classes.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    # Enger als eine Klasse: eine A/B-Gruppe. Genau eines von beiden ist gesetzt.
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("student_groups.id", ondelete="CASCADE"), nullable=True, index=True
     )
     allowed: Mapped[bool] = mapped_column(Boolean, nullable=False)
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
@@ -1705,31 +1714,38 @@ class FragmentCollectionGrant(Base):
 
     grantee_type = 'all_teachers' -> every teacher       (class_id/teacher_id NULL)
     grantee_type = 'class'        -> students of class_id
+    grantee_type = 'group'        -> members of student group group_id — in practice
+                                     an A/B-Gruppe, i.e. half a class
     grantee_type = 'teacher'      -> one specific teacher (teacher_id) — lets an
                                      owner add a colleague to an otherwise private board
     permission   = 'read' | 'contribute' | 'manage'
     """
     __tablename__ = "fragment_collection_grants"
     __table_args__ = (
-        UniqueConstraint("collection_id", "grantee_type", "class_id", "teacher_id", name="uq_fragment_grant"),
+        UniqueConstraint("collection_id", "grantee_type", "class_id", "teacher_id", "group_id",
+                         name="uq_fragment_grant"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     collection_id: Mapped[int] = mapped_column(
         ForeignKey("fragment_collections.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    grantee_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'all_teachers' | 'class' | 'teacher'
+    grantee_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'all_teachers' | 'class' | 'group' | 'teacher'
     class_id: Mapped[int | None] = mapped_column(
         ForeignKey("classes.id", ondelete="CASCADE"), nullable=True
     )
     teacher_id: Mapped[int | None] = mapped_column(
         ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True
     )
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("student_groups.id", ondelete="CASCADE"), nullable=True
+    )
     permission: Mapped[str] = mapped_column(String(20), nullable=False, server_default="read")
 
     collection: Mapped["FragmentCollection"] = relationship(back_populates="grants")
     class_: Mapped["Class | None"] = relationship()
     teacher: Mapped["Teacher | None"] = relationship()
+    group: Mapped["StudentGroup | None"] = relationship()
 
 
 class Fragment(Base):

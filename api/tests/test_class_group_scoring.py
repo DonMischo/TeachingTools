@@ -11,6 +11,7 @@ from api.models import (
     Student, StudentGroup, StudentGroupMember, Transaction,
 )
 from api.routers.capuths import _award_points, _class_breakdown, _score_by_class
+from api import scoping
 
 
 # ---------------------------------------------------------------------------
@@ -267,8 +268,8 @@ class TestSessionScope:
         r = client.post(f"/api/capuths/{quiz_id}/sessions", json={}, headers=auth(teacher_token))
         assert r.status_code == 422
 
-    def test_ab_gruppe_cannot_carry_a_session(self, client, db, teacher, teacher_token, klasse_9a):
-        """A/B-Gruppen gehören zu einer Klasse — dafür wählt man die Klasse."""
+    def test_ab_gruppe_can_carry_a_session(self, client, db, teacher, teacher_token, klasse_9a):
+        """Eine A/B-Gruppe trägt eine Sitzung — die Punkte gehen an ihre Klasse."""
         from api.tests.conftest import auth
         g = StudentGroup(group_type="ab_gruppe", name="A", class_id=klasse_9a.id)
         db.add(g)
@@ -276,7 +277,20 @@ class TestSessionScope:
         quiz_id = self._quiz_id(db, teacher)
         r = client.post(f"/api/capuths/{quiz_id}/sessions",
                         json={"group_id": g.id}, headers=auth(teacher_token))
-        assert r.status_code == 422
+        assert r.status_code in (200, 201), r.text
+        assert scoping.scope_class_ids(db, None, g.id) == [klasse_9a.id]
+
+    def test_ab_gruppe_session_needs_no_class_choice(self, client, db, teacher, quiz_2q, klasse_9a):
+        """Nur eine Klasse im Geltungsbereich — ein Gast muss nichts wählen."""
+        g = StudentGroup(group_type="ab_gruppe", name="B", class_id=klasse_9a.id)
+        db.add(g)
+        db.flush()
+        _session(db, quiz_2q["quiz"], teacher, group_id=g.id, code="ABGRP1")
+        body = client.get("/api/play/scope/ABGRP1").json()
+        assert body["scope"] == "group"
+        assert body["label"] == "9a B"
+        assert body["needs_class_choice"] is False
+        assert [c["code"] for c in body["classes"]] == ["9a"]
 
     def test_scope_endpoint_lists_member_classes(self, client, db, teacher, wpf, quiz_2q, klasse_9a, klasse_9b):
         _session(db, quiz_2q["quiz"], teacher, group_id=wpf.id, code="SCOPE1")

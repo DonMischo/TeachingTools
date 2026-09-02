@@ -18,7 +18,7 @@ test_student_authorship.py for the same pattern. client.cookies.clear() is
 called defensively at the top of every test.
 """
 from api.auth import create_access_token, hash_password
-from api.models import Teacher, Class, Student
+from api.models import Teacher, Class, Student, StudentGroup, StudentGroupMember
 from api.tests.conftest import auth
 
 PREFIX = "/api/fragments"
@@ -330,3 +330,60 @@ def test_custom_tabs_and_unknown_tab_rejected(client, teacher, teacher2):
     bad_tab = client.post(f"{PREFIX}/collections/{cid}/fragments",
                            json={"tab": "does-not-exist", "content": "x"}, headers=teacher_auth(teacher))
     assert bad_tab.status_code == 400
+
+
+# ── Freigabe an eine A/B-Gruppe (halbe Klasse) ───────────────────────────────
+
+def test_group_grant_reaches_only_its_members(client, db, teacher, klass, student):
+    """Ein group-Grant öffnet das Brett für die Gruppe, nicht für die ganze Klasse."""
+    client.cookies.clear()
+    outsider = Student(nachname="Aussen", vorname="Otto", klasse=klass.code, class_id=klass.id,
+                       geschlecht="männlich", username="otto.frag",
+                       password_hash=hash_password("pw"), active=True)
+    db.add(outsider)
+    db.flush()
+    group = StudentGroup(group_type="ab_gruppe", name="A", class_id=klass.id)
+    db.add(group)
+    db.flush()
+    db.add(StudentGroupMember(group_id=group.id, student_id=student.id))
+    db.flush()
+
+    h = teacher_auth(teacher)
+    cid = client.post(f"{PREFIX}/collections", json={
+        "name": "Nur Gruppe A",
+        "grants": [{"grantee_type": "group", "group_id": group.id, "permission": "contribute"}],
+    }, headers=h).json()["id"]
+
+    mine = client.get(f"{PREFIX}/collections/{cid}", headers=student_auth(student))
+    assert mine.status_code == 200, mine.text
+    assert mine.json()["my_permission"] == "contribute"
+    # Gleiche Klasse, andere Gruppe: kein Zugriff.
+    assert client.get(f"{PREFIX}/collections/{cid}",
+                      headers=student_auth(outsider)).status_code == 403
+
+
+def test_group_grant_reports_its_class(client, db, teacher, klass):
+    """Der Grant trägt die Klasse seiner Gruppe — dafür gibt es die Filterleiste."""
+    client.cookies.clear()
+    group = StudentGroup(group_type="ab_gruppe", name="B", class_id=klass.id)
+    db.add(group)
+    db.flush()
+    h = teacher_auth(teacher)
+    body = client.post(f"{PREFIX}/collections", json={
+        "name": "Gruppe B",
+        "grants": [{"grantee_type": "group", "group_id": group.id, "permission": "read"}],
+    }, headers=h).json()
+    g = body["grants"][0]
+    assert g["grantee_type"] == "group"
+    assert g["group_id"] == group.id
+    assert g["class_id"] == klass.id
+    assert g["group_name"] == f"{klass.display_name} – Gruppe B"
+
+
+def test_group_grant_needs_an_existing_group(client, teacher):
+    client.cookies.clear()
+    r = client.post(f"{PREFIX}/collections", json={
+        "name": "Kaputt",
+        "grants": [{"grantee_type": "group", "group_id": 999999, "permission": "read"}],
+    }, headers=teacher_auth(teacher))
+    assert r.status_code == 400

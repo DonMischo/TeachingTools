@@ -10,8 +10,9 @@ import { api, ClassOut, StudentGroupOut } from "@/lib/api";
  * nicht an „die Sitzung“, sondern je Klasse einzeln, jede mit ihrer eigenen
  * Trefferquote (siehe api/scoping.py).
  *
- * A/B-Gruppen fehlen bewusst: sie gehören zu genau einer Klasse, und dafür
- * wählt man die Klasse.
+ * A/B-Gruppen gehören zu genau einer Klasse. Sie stehen trotzdem zur Wahl —
+ * damit eine Runde nur mit der halben Klasse laufen kann. Die Punkte gehen dann
+ * ungeteilt an ihre Klasse, es gibt ja nur eine.
  */
 export type Scope = { kind: "class"; id: number } | { kind: "group"; id: number } | null;
 
@@ -47,6 +48,17 @@ export function ScopeSelect({ value, onChange, className = "input" }: {
     queryFn: () => api.groups.list({ group_type: "wahlpflicht" }),
     staleTime: 60_000,
   });
+  const { data: abGroups = [] } = useQuery<StudentGroupOut[]>({
+    queryKey: ["groups", "ab_gruppe"],
+    queryFn: () => api.groups.list({ group_type: "ab_gruppe" }),
+    staleTime: 60_000,
+  });
+
+  // »9a – A«: der blosse Gruppenname »A« sagt nicht, zu welcher Klasse er gehört.
+  const classNameById = new Map(classes.map(c => [c.id, c.display_name]));
+  const abLabel = (g: StudentGroupOut) =>
+    `${classNameById.get(g.class_id ?? -1) ?? "?"} – Gruppe ${g.name}`;
+  const abSorted = [...abGroups].sort((a, b) => abLabel(a).localeCompare(abLabel(b), "de"));
 
   const selected = value ? `${OPT_PREFIX[value.kind]}${value.id}` : "";
 
@@ -64,9 +76,16 @@ export function ScopeSelect({ value, onChange, className = "input" }: {
       <option value="">Klasse / Kurs wählen…</option>
       <optgroup label="Klassen">
         {classes.map((c) => (
-          <option key={`c${c.id}`} value={`c${c.id}`}>{c.display_name} ({c.code})</option>
+          <option key={`c${c.id}`} value={`c${c.id}`}>{c.display_name} ({c.code}) — ganze Klasse</option>
         ))}
       </optgroup>
+      {abSorted.length > 0 && (
+        <optgroup label="A/B-Gruppen (halbe Klasse)">
+          {abSorted.map((g) => (
+            <option key={`g${g.id}`} value={`g${g.id}`}>{abLabel(g)}</option>
+          ))}
+        </optgroup>
+      )}
       {kurse.length > 0 && (
         <optgroup label="Kurse (klassenübergreifend)">
           {kurse.map((g) => (

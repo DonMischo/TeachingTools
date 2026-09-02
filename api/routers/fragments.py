@@ -16,7 +16,7 @@ from ..database import get_db
 from ..auth import get_current_user, get_current_teacher, create_guest_token
 from ..availability import require_capability
 from ..models import (
-    Teacher, Student, Class,
+    Teacher, Student, Class, StudentGroup,
     FragmentCollection, FragmentCollectionGrant, Fragment, ResearchItem,
 )
 from ..fragment_access import (
@@ -25,7 +25,7 @@ from ..fragment_access import (
 
 router = APIRouter(prefix="/api/fragments", tags=["fragments"])
 
-_GRANTEE_TYPES = ("all_teachers", "class", "teacher")
+_GRANTEE_TYPES = ("all_teachers", "class", "group", "teacher")
 _GRANTABLE_PERMS = ("read", "contribute", "manage")
 _GUEST_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no ambiguous 0/O/1/I
 
@@ -36,6 +36,7 @@ class GrantIn(BaseModel):
     grantee_type: str
     class_id: int | None = None
     teacher_id: int | None = None
+    group_id: int | None = None
     permission: str
 
     def validate_self(self):
@@ -46,14 +47,17 @@ class GrantIn(BaseModel):
         if self.grantee_type == "class":
             if self.class_id is None:
                 raise HTTPException(400, "class-Grant braucht eine class_id")
-            self.teacher_id = None
+            self.teacher_id = self.group_id = None
+        elif self.grantee_type == "group":
+            if self.group_id is None:
+                raise HTTPException(400, "group-Grant braucht eine group_id")
+            self.class_id = self.teacher_id = None
         elif self.grantee_type == "teacher":
             if self.teacher_id is None:
                 raise HTTPException(400, "teacher-Grant braucht eine teacher_id")
-            self.class_id = None
+            self.class_id = self.group_id = None
         else:  # all_teachers
-            self.class_id = None
-            self.teacher_id = None
+            self.class_id = self.teacher_id = self.group_id = None
 
 
 class GrantOut(BaseModel):
@@ -62,6 +66,8 @@ class GrantOut(BaseModel):
     class_code: str | None = None
     teacher_id: int | None = None
     teacher_name: str | None = None
+    group_id: int | None = None
+    group_name: str | None = None
     permission: str
 
 
@@ -100,14 +106,27 @@ class CollectionOut(BaseModel):
 # ── Serialization ───────────────────────────────────────────────────────────────
 
 def _grant_out(g: FragmentCollectionGrant) -> GrantOut:
+    # Eine A/B-Gruppe gehoert zu einer Klasse. Die wird mitgeschickt (rein zur
+    # Anzeige — gespeichert ist bei einem group-Grant nur die group_id), damit
+    # die Sammlung in der Klassen-Filterleiste auftaucht.
+    cls = g.class_ or (g.group.class_ if g.group else None)
     return GrantOut(
         grantee_type=g.grantee_type,
-        class_id=g.class_id,
-        class_code=g.class_.code if g.class_ else None,
+        class_id=cls.id if cls else None,
+        class_code=cls.code if cls else None,
         teacher_id=g.teacher_id,
         teacher_name=f"{g.teacher.first_name} {g.teacher.last_name}".strip() if g.teacher else None,
+        group_id=g.group_id,
+        group_name=_group_label(g.group) if g.group else None,
         permission=g.permission,
     )
+
+
+def _group_label(g: StudentGroup) -> str:
+    """»9a – Gruppe A« bzw. »9 NaT« — der blosse Name »A« sagt nichts."""
+    if g.class_ is not None:
+        return f"{g.class_.display_name} – Gruppe {g.name}"
+    return f"{g.grade} {g.name}" if g.grade else g.name
 
 
 def _collection_out(coll: FragmentCollection, user, db: Session) -> CollectionOut:
@@ -136,20 +155,22 @@ def _collection_out(coll: FragmentCollection, user, db: Session) -> CollectionOu
 
 def _apply_grants(coll: FragmentCollection, grants: list[GrantIn], db: Session):
     """Replace a collection's grant set wholesale (deduplicated)."""
-    seen: set[tuple[str, int | None, int | None]] = set()
+    seen: set[tuple[str, int | None, int | None, int | None]] = set()
     coll.grants.clear()
     db.flush()  # emit the deletes before re-inserting (respects the unique constraint)
     for gi in grants:
         gi.validate_self()
         if gi.grantee_type == "class" and not db.get(Class, gi.class_id):
             raise HTTPException(400, f"Klasse {gi.class_id} nicht gefunden")
+        if gi.grantee_type == "group" and not db.get(StudentGroup, gi.group_id):
+            raise HTTPException(400, f"Gruppe {gi.group_id} nicht gefunden")
         if gi.grantee_type == "teacher":
             t = db.get(Teacher, gi.teacher_id)
             if not t:
                 raise HTTPException(400, f"Lehrer {gi.teacher_id} nicht gefunden")
             if gi.teacher_id == coll.owner_teacher_id:
                 continue  # owner already has full rights; skip redundant grant
-        key = (gi.grantee_type, gi.class_id, gi.teacher_id)
+        key = (gi.grantee_type, gi.class_id, gi.teacher_id, gi.group_id)
         if key in seen:
             continue
         seen.add(key)
@@ -157,6 +178,7 @@ def _apply_grants(coll: FragmentCollection, grants: list[GrantIn], db: Session):
             grantee_type=gi.grantee_type,
             class_id=gi.class_id,
             teacher_id=gi.teacher_id,
+            group_id=gi.group_id,
             permission=gi.permission,
         ))
 
@@ -173,6 +195,7 @@ def list_collections(
         db.query(FragmentCollection)
         .options(selectinload(FragmentCollection.grants).selectinload(FragmentCollectionGrant.class_),
                  selectinload(FragmentCollection.grants).selectinload(FragmentCollectionGrant.teacher),
+                 selectinload(FragmentCollection.grants).selectinload(FragmentCollectionGrant.group),
                  selectinload(FragmentCollection.owner))
     )
     colls = q.order_by(FragmentCollection.updated_at.desc()).all()

@@ -2,9 +2,11 @@
 Resolution + enforcement for tool availability.
 
 Resolution order for one (user, tool, capability):
-  1. per-class override matching the user's class (if the user has a class),
-  2. global override (class_id NULL),
-  3. catalog default (api/tool_catalog.py).
+  1. per-group override for a group the user belongs to (A/B-Gruppe — students
+     only; widersprechen sich mehrere Gruppen, gilt das Verbot),
+  2. per-class override matching the user's class (if the user has a class),
+  3. global override (class_id and group_id NULL),
+  4. catalog default (api/tool_catalog.py).
 
 Use `resolve_user` for the whole map (drives the frontend gate) and
 `require_capability` as a route dependency for backend enforcement.
@@ -34,43 +36,66 @@ def class_id_of(user: Union[Teacher, Student]) -> int | None:
     return user.klasse_id
 
 
+def group_ids_of(user: Union[Teacher, Student]) -> list[int]:
+    """Gruppen, deren Regeln fuer diesen Nutzer gelten.
+
+    Nur Schueler sind Gruppenmitglieder — die Verfuegbarkeit einer Lehrkraft
+    wird nie von einer A/B-Gruppe eingeengt."""
+    if isinstance(user, Student):
+        return [m.group_id for m in user.group_memberships]
+    return []
+
+
+Overrides = dict[tuple[str, str, int | None, int | None], bool]
+
+
 def _resolve(
-    overrides: dict[tuple[str, str, int | None], bool],
+    overrides: Overrides,
     slug: str,
     capability: str,
     audience: str,
     class_id: int | None,
+    group_ids: list[int],
 ) -> bool:
-    if class_id is not None and (slug, capability, class_id) in overrides:
-        return overrides[(slug, capability, class_id)]
-    if (slug, capability, None) in overrides:
-        return overrides[(slug, capability, None)]
+    # Die Gruppenregel schlaegt die Klassenregel — sie ist die engere Auswahl.
+    # Steht ein Schueler in mehreren Gruppen mit widerspruechlichen Regeln, gilt
+    # das Verbot: eine Sperre soll sich nicht durch eine zweite Gruppe aushebeln.
+    hits = [overrides[(slug, capability, None, gid)]
+            for gid in group_ids if (slug, capability, None, gid) in overrides]
+    if hits:
+        return all(hits)
+    if class_id is not None and (slug, capability, class_id, None) in overrides:
+        return overrides[(slug, capability, class_id, None)]
+    if (slug, capability, None, None) in overrides:
+        return overrides[(slug, capability, None, None)]
     return tool_catalog.default_allowed(slug, capability, audience)
 
 
 def _load_overrides(
-    db: Session, audience: str, class_id: int | None
-) -> dict[tuple[str, str, int | None], bool]:
-    """Global + this-class rows for one audience, keyed by (slug, cap, class_id)."""
+    db: Session, audience: str, class_id: int | None, group_ids: list[int]
+) -> Overrides:
+    """Global + this-class + this-user's-group rows for one audience,
+    keyed by (slug, cap, class_id, group_id)."""
     q = db.query(ToolAvailability).filter(ToolAvailability.audience == audience)
+    scope = ToolAvailability.class_id.is_(None) & ToolAvailability.group_id.is_(None)
     if class_id is not None:
-        q = q.filter(
-            (ToolAvailability.class_id == class_id) | (ToolAvailability.class_id.is_(None))
-        )
-    else:
-        q = q.filter(ToolAvailability.class_id.is_(None))
-    return {(r.tool_slug, r.capability, r.class_id): r.allowed for r in q.all()}
+        scope = scope | (ToolAvailability.class_id == class_id)
+    if group_ids:
+        scope = scope | (ToolAvailability.group_id.in_(group_ids))
+    q = q.filter(scope)
+    return {(r.tool_slug, r.capability, r.class_id, r.group_id): r.allowed for r in q.all()}
 
 
 def resolve_user(db: Session, user: Union[Teacher, Student]) -> dict[str, dict[str, bool]]:
     """Resolved {slug: {capability: allowed}} for every catalog tool/capability."""
     audience = audience_of(user)
     class_id = class_id_of(user)
-    overrides = _load_overrides(db, audience, class_id)
+    group_ids = group_ids_of(user)
+    overrides = _load_overrides(db, audience, class_id, group_ids)
     result: dict[str, dict[str, bool]] = {}
     for tool in tool_catalog.CATALOG:
         result[tool.slug] = {
-            cap: _resolve(overrides, tool.slug, cap, audience, class_id)
+            cap: _resolve(overrides, tool.slug, cap, audience, class_id, group_ids)
             for cap in tool.capabilities
         }
     return result
@@ -79,8 +104,9 @@ def resolve_user(db: Session, user: Union[Teacher, Student]) -> dict[str, dict[s
 def is_allowed(db: Session, user: Union[Teacher, Student], slug: str, capability: str) -> bool:
     audience = audience_of(user)
     class_id = class_id_of(user)
-    overrides = _load_overrides(db, audience, class_id)
-    return _resolve(overrides, slug, capability, audience, class_id)
+    group_ids = group_ids_of(user)
+    overrides = _load_overrides(db, audience, class_id, group_ids)
+    return _resolve(overrides, slug, capability, audience, class_id, group_ids)
 
 
 def require_capability(slug: str, capability: str):

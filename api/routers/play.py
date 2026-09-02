@@ -82,6 +82,7 @@ class ScopeOut(BaseModel):
     label: str
     # Ein Kurs/WPF ist klassenübergreifend: wer sich ohne Konto anmeldet, muss
     # sagen, für welche Klasse er spielt — sonst zählt seine Leistung nirgends.
+    # Bei nur einer beteiligten Klasse (A/B-Gruppe) entfällt die Frage.
     needs_class_choice: bool = False
     classes: list[ScopeClass] = []
 
@@ -111,7 +112,9 @@ def session_scope(code: str, db: Session = Depends(get_db)):
         ids = scoping.scope_class_ids(db, None, group_id)
         rows = db.query(Class).filter(Class.id.in_(ids)).order_by(Class.code).all() if ids else []
         return ScopeOut(
-            code=clean, scope="group", label=label, needs_class_choice=True,
+            # Nur bei mehreren Klassen gibt es etwas zu waehlen: eine A/B-Gruppe
+            # gehoert zu genau einer Klasse.
+            code=clean, scope="group", label=label, needs_class_choice=len(ids) > 1,
             classes=[ScopeClass(id=c.id, code=c.code, display_name=c.display_name) for c in rows],
         )
 

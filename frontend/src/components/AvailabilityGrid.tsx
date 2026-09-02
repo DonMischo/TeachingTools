@@ -13,13 +13,16 @@ function keyOf(slug: string, cap: string, audience: string) {
 }
 
 /**
- * Editable availability matrix for one scope (global when classId is null, else
- * per-class). Each (tool, capability, audience) cell is tri-state: Standard
- * (inherits the baseline), Ja (allow), Nein (sperren). Baseline for a class cell
- * is the global value the class would otherwise inherit; for the global scope it
- * is the catalog default.
+ * Editable availability matrix for one scope: global (classId null), a whole
+ * class, or one A/B-Gruppe of a class (groupId set — classId then names the
+ * group's class, whose values the group inherits). Each (tool, capability,
+ * audience) cell is tri-state: Standard (inherits the baseline), Ja (allow),
+ * Nein (sperren). The baseline is what the cell would resolve to one step up the
+ * chain: Gruppe → Klasse → global → Katalog-Vorgabe.
  */
-export function AvailabilityGrid({ classId, canEdit }: { classId: number | null; canEdit: boolean }) {
+export function AvailabilityGrid(
+  { classId, groupId = null, canEdit }: { classId: number | null; groupId?: number | null; canEdit: boolean },
+) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -29,12 +32,18 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
     staleTime: Infinity,
   });
   const { data: scopeRows } = useQuery<AvailabilityOverride[]>({
-    queryKey: ["availability-overrides", classId],
+    queryKey: ["availability-overrides", classId, groupId],
+    queryFn: () => api.availability.overrides(classId, groupId),
+  });
+  // Baseline für Gruppenzellen: die Zeilen der Klasse, aus der sie erben.
+  const { data: classRows } = useQuery<AvailabilityOverride[]>({
+    queryKey: ["availability-overrides", classId, null],
     queryFn: () => api.availability.overrides(classId),
+    enabled: groupId != null && classId != null,
   });
   // Baseline for per-class cells: the global rows they inherit from.
   const { data: globalRows } = useQuery<AvailabilityOverride[]>({
-    queryKey: ["availability-overrides", null],
+    queryKey: ["availability-overrides", null, null],
     queryFn: () => api.availability.overrides(null),
     enabled: classId != null,
   });
@@ -49,20 +58,25 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
     (globalRows ?? []).forEach(r => m.set(keyOf(r.tool_slug, r.capability, r.audience), r.allowed));
     return m;
   }, [globalRows]);
+  const classMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (classRows ?? []).forEach(r => m.set(keyOf(r.tool_slug, r.capability, r.audience), r.allowed));
+    return m;
+  }, [classRows]);
 
   const setMut = useMutation({
     mutationFn: (body: AvailabilityOverride) => api.availability.setOverride(body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["availability-overrides", classId] });
+      qc.invalidateQueries({ queryKey: ["availability-overrides", classId, groupId] });
       qc.invalidateQueries({ queryKey: ["availability-me"] });
     },
     onError: (e: any) => toast(e.message ?? "Fehler beim Speichern", "error"),
   });
   const clearMut = useMutation({
     mutationFn: (p: { tool_slug: string; capability: ToolCapability; audience: AudienceKind }) =>
-      api.availability.clearOverride({ ...p, class_id: classId }),
+      api.availability.clearOverride({ ...p, class_id: groupId != null ? null : classId, group_id: groupId }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["availability-overrides", classId] });
+      qc.invalidateQueries({ queryKey: ["availability-overrides", classId, groupId] });
       qc.invalidateQueries({ queryKey: ["availability-me"] });
     },
     onError: (e: any) => toast(e.message ?? "Fehler beim Speichern", "error"),
@@ -77,8 +91,9 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
 
   function baseline(slug: string, cap: string, audience: AudienceKind, catalogDefault: boolean): boolean {
     if (classId == null) return catalogDefault;
-    const g = globalMap.get(keyOf(slug, cap, audience));
-    return g ?? catalogDefault;
+    const k = keyOf(slug, cap, audience);
+    const inherited = groupId != null ? classMap.get(k) ?? globalMap.get(k) : globalMap.get(k);
+    return inherited ?? catalogDefault;
   }
 
   function stateOf(slug: string, cap: string, audience: AudienceKind): CellState {
@@ -91,7 +106,11 @@ export function AvailabilityGrid({ classId, canEdit }: { classId: number | null;
     if (next === "default") {
       clearMut.mutate({ tool_slug: slug, capability: cap, audience });
     } else {
-      setMut.mutate({ tool_slug: slug, capability: cap, audience, class_id: classId, allowed: next === "on" });
+      setMut.mutate({
+        tool_slug: slug, capability: cap, audience,
+        class_id: groupId != null ? null : classId, group_id: groupId,
+        allowed: next === "on",
+      });
     }
   }
 

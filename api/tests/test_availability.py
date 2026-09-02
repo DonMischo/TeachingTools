@@ -1,6 +1,6 @@
 """Tool-availability resolution + config API."""
 from api import availability
-from api.models import ToolAvailability, Student
+from api.models import ToolAvailability, Student, StudentGroup, StudentGroupMember
 from api.tests.conftest import auth
 
 
@@ -127,3 +127,79 @@ def test_clear_override_reverts_to_default(client, admin_token, db, teacher):
                        params={"tool_slug": "caputh", "capability": "use", "audience": "teacher"})
     assert r.status_code == 204
     assert availability.is_allowed(db, teacher, "caputh", "use") is True
+
+
+# ── A/B-Gruppen als engster Geltungsbereich ──────────────────────────────────
+
+def _ab_group(db, klass, name, *students):
+    g = StudentGroup(group_type="ab_gruppe", name=name, class_id=klass.id)
+    db.add(g)
+    db.flush()
+    for s in students:
+        db.add(StudentGroupMember(group_id=g.id, student_id=s.id))
+    db.flush()
+    return g
+
+
+def test_group_override_beats_class(db, klass):
+    """Die Gruppenregel ist die engere Auswahl und sticht die Klassenregel."""
+    in_a = _student(db, klass)
+    in_b = _student(db, klass)
+    group_a = _ab_group(db, klass, "A", in_a)
+    _ab_group(db, klass, "B", in_b)
+    # Für die ganze Klasse erlaubt …
+    db.add(ToolAvailability(tool_slug="bingo", capability="host",
+                            audience="student", class_id=klass.id, allowed=True))
+    # … nur nicht für Gruppe A.
+    db.add(ToolAvailability(tool_slug="bingo", capability="host",
+                            audience="student", group_id=group_a.id, allowed=False))
+    db.flush()
+    assert availability.is_allowed(db, in_a, "bingo", "host") is False
+    assert availability.is_allowed(db, in_b, "bingo", "host") is True
+
+
+def test_group_override_does_not_touch_teachers(db, klass, teacher):
+    """Lehrkräfte sind keine Gruppenmitglieder — eine Gruppensperre trifft sie nicht."""
+    group = _ab_group(db, klass, "A")
+    db.add(ToolAvailability(tool_slug="caputh", capability="use",
+                            audience="teacher", group_id=group.id, allowed=False))
+    db.flush()
+    assert availability.is_allowed(db, teacher, "caputh", "use") is True
+
+
+def test_group_scope_via_api(client, admin_token, db, klass):
+    """Setzen, Lesen und Zurücknehmen einer Gruppenregel über die API."""
+    student = _student(db, klass)
+    group = _ab_group(db, klass, "A", student)
+    r = client.put("/api/availability/override", headers=auth(admin_token), json={
+        "tool_slug": "bingo", "capability": "host",
+        "audience": "student", "group_id": group.id, "allowed": True,
+    })
+    assert r.status_code == 200, r.text
+    assert r.json()["group_id"] == group.id
+    assert availability.is_allowed(db, student, "bingo", "host") is True
+
+    rows = client.get("/api/availability/overrides", headers=auth(admin_token),
+                      params={"group_id": group.id}).json()
+    assert [(x["tool_slug"], x["group_id"]) for x in rows] == [("bingo", group.id)]
+    # Die Klassenebene bleibt davon unberührt.
+    assert client.get("/api/availability/overrides", headers=auth(admin_token),
+                      params={"class_id": klass.id}).json() == []
+
+    d = client.request("DELETE", "/api/availability/override", headers=auth(admin_token),
+                       params={"tool_slug": "bingo", "capability": "host",
+                               "audience": "student", "group_id": group.id})
+    assert d.status_code == 204
+    assert availability.is_allowed(db, student, "bingo", "host") is False
+
+
+def test_cross_class_group_cannot_be_a_scope(client, admin_token, db):
+    """Ein Kurs/WPF geht über Klassen hinweg — dafür gibt es keinen Geltungsbereich."""
+    kurs = StudentGroup(group_type="kurs", name="Kurs I", class_id=None, grade=10)
+    db.add(kurs)
+    db.flush()
+    r = client.put("/api/availability/override", headers=auth(admin_token), json={
+        "tool_slug": "bingo", "capability": "host",
+        "audience": "student", "group_id": kurs.id, "allowed": True,
+    })
+    assert r.status_code == 400
