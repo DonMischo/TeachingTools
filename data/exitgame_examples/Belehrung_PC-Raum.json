@@ -112,7 +112,7 @@
       "extraExample": "Stell dir vor: Ein Krümel fällt zwischen die Tasten und blockiert die Enter-Taste. Deine nächste Eingabe ist für immer verloren.",
       "task": {
         "kind": "single",
-        "codeFragment": "KR",
+        "codeFragment": "NO",
         "question": "Warum ist Essen im PC-Raum eine schlechte Idee?",
         "answers": [
           {
@@ -141,7 +141,7 @@
       "text": "Wähle ALLE wahren Aussagen über Getränke im PC-Raum.",
       "task": {
         "kind": "multi",
-        "codeFragment": "FL",
+        "codeFragment": "OB",
         "question": "Welche dieser Szenarien können durch ein Getränk im PC-Raum eintreten?",
         "answers": [
           {
@@ -175,7 +175,7 @@
       "tasks": [
         {
           "kind": "true_false",
-          "codeFragment": "KA",
+          "codeFragment": "FI",
           "question": "Es ist in Ordnung, an einem Kabel zu ziehen, um den Stecker aus der Buchse zu lösen – das ist schneller.",
           "answers": [
             {
@@ -216,7 +216,7 @@
       "text": "Ein Kugelschreiber oder eine Schere sollten niemals in die Nähe eines Monitors kommen. Warum?",
       "task": {
         "kind": "input",
-        "codeFragment": "MO",
+        "codeFragment": "LT",
         "question": "Nenne einen schwerwiegenden Grund, warum spitze Gegenstände nie gegen den Monitor gedrückt werden sollten (ein Wort genügt).",
         "accept": [
           "kratzer",
@@ -241,7 +241,7 @@
       "text": "Bringe diese berüchtigten Vorfälle in die richtige zeitliche Reihenfolge (nur die Reihenfolge zählt – mach dir keine Sorgen um genaue Jahre).",
       "task": {
         "kind": "timeline",
-        "codeFragment": "ZE",
+        "codeFragment": "ER",
         "timeline": {
           "mode": "sort",
           "scoring": "order",
@@ -282,7 +282,7 @@
       "text": "Markiere alle Handlungen, die eine Tastatur für immer unbrauchbar machen.",
       "task": {
         "kind": "multi",
-        "codeFragment": "TA",
+        "codeFragment": "!!111",
         "question": "Was sollte man mit einer Tastatur NIEMALS tun?",
         "answers": [
           {
