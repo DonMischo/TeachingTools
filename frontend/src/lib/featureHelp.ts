@@ -111,6 +111,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
     ],
   },
+  rechenregeln: {
+    title: "Rechenregeln",
+    intro: "Die Rechenregeln der Klassen 5/6 als Bild: Klammern vor Punkt vor Strich am Obstkorb, das Vertauschen am Rechenzug, die Stufenzahlen auf der Stellenwerttafel. Drei Reiter, jeder mit vier Würfelstufen und einem Feld für eigene Terme.",
+    sections: [
+      { label: "🍎 Obstkorb", text: "Ein Malpunkt ist ein Korb: »3 · 4« steht als drei Körbe mit je vier Früchten da, »12 : 3« als drei Teller, ein Minus als Früchte, die blass werden. Zusammenzählen lässt sich erst, was auf dem Tisch liegt — deshalb Punkt vor Strich. Eine Klammer wird als violette Kiste um ihren Teilterm gezeichnet." },
+      { label: "👆 Ein Schritt nach dem anderen", text: "Der Term rechnet sich nicht von selbst aus. Die Rechnung, die als Nächstes dran ist, pulsiert — antippen führt genau sie aus, und die Termzeile schreibt sich neu. Wer eine andere antippt, bekommt den Grund gesagt (»Klammer zuerst«, »Punkt vor Strich«) statt einer Fehlermeldung. »▶︎ Schritt« macht den Zug fürs Smartboard, »↶ zurück« nimmt ihn wieder weg. Am Ende steht daneben, was bei stur von links nach rechts herausgekommen wäre." },
+      { label: "🚂 Rechenzug", text: "Derselbe Term als Zug: · und : kuppeln zwei Waggons fest zusammen, + und − lose. Zwei Waggons antippen tauscht sie; auf ein Blockdach tippen zieht den ganzen Block um (nur zu Nachbarn). Darunter stehen Start- und jetziger Wert nebeneinander: bei + und · bleibt das Ergebnis grün stehen, bei − und : wird es rot — 8 − 3 ist eben nicht 3 − 8." },
+      { label: "🎚️ Stufenzahlen", text: "»Mal 10« ist kein Anhängen einer Null, sondern ein Rutschen: 3 · 40 wird zu 3 · 4 und einer wartenden Null, das kleine Einmaleins rechnet 12, dann rutscht die 12 eine Stelle nach links. Die Nullen hängen dabei immer am zweiten Faktor — an ihm liest man ab, wie weit gerutscht wird. Bei · 10, · 100 und · 1000 gibt es gar nichts auszurechnen: dort darf der erste Faktor mehrstellig sein und rutscht als Ganzes. Die Stellenwerttafel zeigt beide Zahlen übereinander, die neu gefüllten Stellen farbig." },
+      { label: "🎲 Aufgaben", text: "»Neue Aufgabe« würfelt — nie zweimal dieselbe. Daneben stehen die Sorten: beim Obstkorb vier Stufen von »a + b · c« bis zu zwei Klammern, beim Zug von »nur + und ·« bis gemischt, bei den Stufenzahlen »Frei« (Zehner-, Hunderter-, Tausenderzahlen wie 40, 500, 2000) sowie · 10, · 100 und · 1000. Ein Klick auf eine Sorte würfelt gleich mit. Das Feld daneben nimmt jeden eigenen Term (Zahlen, + − · : und Klammern; der Zug fährt ohne Klammern)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+    ],
+  },
   vierecke: {
     title: "Vierecke",
     intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen. Zusammengelegt aus zwei früheren Werkzeugen.",

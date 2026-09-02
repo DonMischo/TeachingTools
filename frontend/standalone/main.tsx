@@ -16,6 +16,7 @@ import Bildformate from "@/components/simulationen/Bildformate";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import Funktionen from "@/components/simulationen/Funktionen";
+import Rechenregeln from "@/components/simulationen/Rechenregeln";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -24,6 +25,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "vierecke", icon: "📐", label: "Vierecke", node: <Vierecke /> },
   { id: "binaer", icon: "◈", label: "Binär-Rechner", node: <Binaerrechner /> },
   { id: "funktionen", icon: "📈", label: "Funktionen", node: <Funktionen /> },
+  { id: "rechenregeln", icon: "🍎", label: "Rechenregeln", node: <Rechenregeln /> },
 ];
 
 function App() {

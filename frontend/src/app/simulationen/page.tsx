@@ -47,6 +47,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#22c55e",
   },
   {
+    slug: "rechenregeln",
+    href: "/simulationen/rechenregeln",
+    icon: "🍎",
+    title: "Rechenregeln",
+    description: "Punkt vor Strich zum Ansehen: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten. Dazu der Rechenzug zum Vertauschen und die Stufenzahl-Rutsche.",
+    color: "#e11d48",
+  },
+  {
     slug: "abacus",
     href: "/simulationen/abacus",
     icon: "🧮",

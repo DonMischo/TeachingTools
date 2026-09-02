@@ -106,6 +106,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("funktionen", "📈 Funktionen", "📈", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

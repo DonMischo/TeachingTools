@@ -21,6 +21,7 @@ import Bildformate from "@/components/simulationen/Bildformate";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import Funktionen from "@/components/simulationen/Funktionen";
+import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Tippen from "@/components/tippen/Tippen";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
@@ -31,6 +32,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   vierecke: { title: "Vierecke", icon: "📐", node: <Vierecke /> },
   binaerrechner: { title: "Binär-Rechner", icon: "◈", node: <Binaerrechner /> },
   funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
+  rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Der Zeitstrahl teilt eine bestimmte Zeitleiste — die haengt am Code, nicht
   // am Werkzeug, und wird deshalb erst hier nachgeladen.
