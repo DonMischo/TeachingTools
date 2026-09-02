@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { start, feed, werte, erwartet, schwacheZeichen } from "@/lib/tippen/engine";
+import {
+  start, feed, werte, erwartet, schwacheZeichen, stehtAufFehler, NACHSCHLAG_MS,
+} from "@/lib/tippen/engine";
 import { zeichenZuTaste, umschaltFuer, REIHEN, REIHENBREITE } from "@/lib/tippen/layout";
 import { LEKTIONEN } from "@/lib/tippen/lektionen";
 
@@ -18,6 +20,74 @@ describe("Tipp-Engine", () => {
     expect(s.anschlaege).toBe(1);
     expect(erwartet(s)).toBe("a");
     expect(s.fehlerJeZeichen).toEqual({ a: 1 });
+  });
+
+  it("zählt die Anschläge nach einem Vertipper als denselben Fehler", () => {
+    // Der Klassiker: man tippt vier Zeichen weiter, bevor man es merkt. Wegen
+    // der Fehlersperre landen alle auf derselben Stelle — ein Fehler, nicht fünf.
+    let s = start("abc");
+    s = feed(s, "x", 1000);
+    for (const [i, c] of [..."yzqw"].entries()) s = feed(s, c, 1100 + i * 100);
+
+    expect(s.fehler).toBe(1);
+    expect(s.anschlaege).toBe(1);
+    expect(s.fehlerJeZeichen).toEqual({ a: 1 });
+    expect(s.pos).toBe(0);
+  });
+
+  it("zählt wieder, wenn nach dem Fenster erneut danebengegriffen wird", () => {
+    let s = start("abc");
+    s = feed(s, "x", 1000);
+    s = feed(s, "y", 1000 + NACHSCHLAG_MS + 1);
+    expect(s.fehler).toBe(2);
+    expect(s.anschlaege).toBe(2);
+    expect(s.fehlerJeZeichen).toEqual({ a: 2 });
+  });
+
+  it("wandert mit jedem Fehlanschlag mit, damit die Serie zusammenbleibt", () => {
+    // Fünf Anschläge im Abstand von 200 ms: zusammen über 300 ms, aber
+    // ununterbrochen — also eine Serie.
+    let s = start("abc");
+    for (let i = 0; i < 5; i++) s = feed(s, "x", 1000 + i * 200);
+    expect(s.fehler).toBe(1);
+  });
+
+  it("beendet die Serie, sobald etwas Richtiges kommt", () => {
+    let s = start("abc");
+    s = feed(s, "x", 1000);
+    expect(stehtAufFehler(s)).toBe(true);
+    s = feed(s, "a", 1100);
+    expect(stehtAufFehler(s)).toBe(false);
+    // Der nächste Fehlgriff ist wieder ein eigener, auch gleich danach.
+    s = feed(s, "z", 1150);
+    expect(s.fehler).toBe(2);
+  });
+
+  it("hält die Fehlerquote unabhängig von der Reaktionszeit", () => {
+    // Wer schnell merkt, dass er daneben lag, und wer fünf Zeichen braucht,
+    // sollen dieselbe Quote bekommen.
+    let flott = start("ab");
+    flott = feed(flott, "x", 0);
+    flott = feed(flott, "a", 500);
+    flott = feed(flott, "b", 1000);
+
+    let langsam = start("ab");
+    langsam = feed(langsam, "x", 0);
+    for (const [i, c] of [..."yzq"].entries()) langsam = feed(langsam, c, 100 + i * 100);
+    langsam = feed(langsam, "a", 500);
+    langsam = feed(langsam, "b", 1000);
+
+    expect(werte(langsam, 1000).fehlerquote).toBe(werte(flott, 1000).fehlerquote);
+  });
+
+  it("kennt ohne Fehlersperre kein Nachschlagfenster", () => {
+    // Dort rückt der Cursor vor, jeder Fehlgriff trifft eine andere Stelle
+    // und ist ein eigener Fehler.
+    let s = start("abc");
+    s = feed(s, "x", 1000, false);
+    s = feed(s, "y", 1050, false);
+    expect(s.fehler).toBe(2);
+    expect(s.pos).toBe(2);
   });
 
   it("zählt Anschläge pro Minute aus den richtigen Anschlägen", () => {
@@ -56,11 +126,13 @@ describe("Tipp-Engine", () => {
   });
 
   it("nennt die schwächsten Zeichen, häufigster Fehler zuerst", () => {
+    // Die beiden Fehlgriffe auf »a« liegen weit auseinander — sonst fasste sie
+    // das Nachschlagfenster zu einem einzigen Fehler zusammen.
     let s = start("ab");
     s = feed(s, "x", 0);
-    s = feed(s, "x", 1);
-    s = feed(s, "a", 2);
-    s = feed(s, "x", 3);
+    s = feed(s, "x", 1000);
+    s = feed(s, "a", 2000);
+    s = feed(s, "x", 3000);
     expect(schwacheZeichen(s)).toEqual([{ zeichen: "a", fehler: 2 }, { zeichen: "b", fehler: 1 }]);
   });
 

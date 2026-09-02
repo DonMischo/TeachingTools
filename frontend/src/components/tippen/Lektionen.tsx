@@ -7,7 +7,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Lektion } from "@/lib/tippen/lektionen";
-import { start, feed, werte, erwartet, schwacheZeichen, type Stand } from "@/lib/tippen/engine";
+import {
+  start, feed, werte, erwartet, schwacheZeichen, stehtAufFehler, type Stand,
+} from "@/lib/tippen/engine";
 import { zeichenZuTaste } from "@/lib/tippen/layout";
 import { useTippEingabe } from "@/hooks/useTippEingabe";
 import { Tastatur } from "@/components/tippen/Tastatur";
@@ -48,7 +50,7 @@ export default function Lektionen({
     const nachher = feed(vorher, zeichen, performance.now(), sperre);
     standRef.current = nachher;
     setStand(nachher);
-    setVerfehlt(nachher.fehler > vorher.fehler);
+    setVerfehlt(stehtAufFehler(nachher));
   }, [sperre]);
 
   const { gedrueckt, fokus, feldProps, fokussieren } = useTippEingabe(anschlag);

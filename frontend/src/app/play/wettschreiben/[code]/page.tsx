@@ -19,7 +19,7 @@ import { useGuestSession } from "@/hooks/useGuestSession";
 import { useTippEingabe } from "@/hooks/useTippEingabe";
 import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
-import { start, feed, werte, erwartet, type Stand } from "@/lib/tippen/engine";
+import { start, feed, werte, erwartet, stehtAufFehler, type Stand } from "@/lib/tippen/engine";
 import { zeichenZuTaste } from "@/lib/tippen/layout";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { Wert, Klickhinweis } from "@/components/tippen/Wert";
@@ -134,7 +134,7 @@ export default function WettschreibenPlayPage() {
     const nachher = feed(vorher, zeichen, performance.now());
     standRef.current = nachher;
     setStand(nachher);
-    setVerfehlt(nachher.fehler > vorher.fehler);
+    setVerfehlt(stehtAufFehler(nachher));
   });
 
   async function beitreten(name: string) {
