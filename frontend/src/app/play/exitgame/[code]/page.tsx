@@ -119,9 +119,11 @@ function MediaView({ media, exitgameId }: {
   const height = media.height ?? 360;
   if (media.kind === "image") {
     // `height` caps images too — a pictogram should not fill the column.
+    // `self-start` matters: the surrounding column is a flex container, and a
+    // stretched flex item would widen the image without its height following.
     return <img src={mediaUrl(media.src, exitgameId)} alt={media.alt ?? ""}
       style={media.height ? { maxHeight: media.height } : undefined}
-      className="max-w-full rounded-lg" />;
+      className="max-w-full h-auto w-auto self-start rounded-lg" />;
   }
   if (media.kind === "html") {
     return <iframe src={media.src} style={{ height, width: "100%", border: 0 }} className="rounded-lg" />;

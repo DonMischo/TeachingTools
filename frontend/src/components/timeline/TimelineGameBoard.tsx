@@ -1,8 +1,9 @@
 "use client";
 // Interactive game board for the two Zeitstrahl mechanics:
 //   sort — items start in a pool; the player places each one on the line
-//          (tap a chip to pick it up, tap the line to drop it; drag a placed
-//          flag to adjust, drag it well below the line to unplace).
+//          (tap a chip to pick it up, tap the line to drop it). A placed flag
+//          answers to the same tap-pick-up-tap-place gesture, and still to a
+//          drag; dragging it well below the line unplaces it.
 //   spot — items sit at their displayed (possibly wrong) position; the player
 //          taps the ones that are misplaced.
 // Fully controlled: `answer` + `onChange`. Pass `solution` (and, if the server
@@ -42,8 +43,12 @@ export function TimelineGameBoard({
   const axis = board.axis;
   const innerW = Math.max(80, width - 2 * MARGIN_X);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [selectedPool, setSelectedPool] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ id: string; removing: boolean } | null>(null);
+  // Picked up and waiting for a tap on the line — a pool chip or a placed flag.
+  const [selected, setSelected] = useState<string | null>(null);
+  const [drag, setDrag] = useState<{ id: string; removing: boolean; moved: boolean } | null>(null);
+  // Touch drags on a phone always jitter a few pixels, so a press only counts
+  // as a drag once it clears a threshold — everything shorter stays a tap.
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
   const [view, setView] = useState<View>({ min: axis.min, max: axis.max });
   // A pan and a tap-to-place are the same gesture until the pointer moves, so
   // track the movement and only place if it stayed put.
@@ -159,9 +164,9 @@ export function TimelineGameBoard({
 
   // ── interactions ─────────────────────────────────────────────────────────
   function onLineTap(e: React.PointerEvent) {
-    if (!interactive || !isSort || !selectedPool) return;
-    onChange!({ placements: { ...placements, [selectedPool]: valueAt(e.clientX) } });
-    setSelectedPool(null);
+    if (!interactive || !isSort || !selected) return;
+    onChange!({ placements: { ...placements, [selected]: valueAt(e.clientX) } });
+    setSelected(null);
   }
 
   function onFlagPointerDown(e: React.PointerEvent, id: string) {
@@ -174,7 +179,8 @@ export function TimelineGameBoard({
       return;
     }
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-    setDrag({ id, removing: false });
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    setDrag({ id, removing: false, moved: false });
   }
 
   function onSvgPointerDown(e: React.PointerEvent) {
@@ -184,9 +190,11 @@ export function TimelineGameBoard({
 
   function onPointerMove(e: React.PointerEvent) {
     if (drag && isSort) {
+      const start = dragStart.current;
+      if (!drag.moved && start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 6) return;
       const rect = svgRef.current!.getBoundingClientRect();
       const removing = e.clientY - rect.top > lineY + 46;
-      if (removing !== drag.removing) setDrag({ ...drag, removing });
+      if (removing !== drag.removing || !drag.moved) setDrag({ ...drag, removing, moved: true });
       onChange!({ placements: { ...placements, [drag.id]: valueAt(e.clientX) } });
       return;
     }
@@ -198,20 +206,30 @@ export function TimelineGameBoard({
     setView(clampView({ min: pan.current.view.min + dv, max: pan.current.view.max + dv }));
   }
 
-  function releaseDrag() {
-    if (drag && isSort && drag.removing) {
+  /** True when the release belonged to a flag, so the line must not also
+   *  handle it as a placing tap. */
+  function releaseDrag(): boolean {
+    if (!drag) return false;
+    if (isSort && drag.removing) {
       const next = { ...placements };
       delete next[drag.id];
       onChange!({ placements: next });
+      setSelected(s => (s === drag.id ? null : s));
+    } else if (isSort && !drag.moved) {
+      // Tapped, not dragged: pick the flag up again — the next tap on the line
+      // moves it, which is far easier on a phone than dragging it there.
+      setSelected(s => (s === drag.id ? null : drag.id));
     }
     setDrag(null);
+    dragStart.current = null;
+    return true;
   }
 
   function onSvgPointerUp(e: React.PointerEvent) {
     const panned = pan.current?.moved ?? false;
     pan.current = null;
-    releaseDrag();
-    if (!panned) onLineTap(e);
+    const onFlag = releaseDrag();
+    if (!panned && !onFlag) onLineTap(e);
   }
 
   // Show month/day ticks once zoomed tight enough for them to be legible;
@@ -260,7 +278,7 @@ export function TimelineGameBoard({
           ))}
 
         {/* tap-to-place hint zone */}
-        {interactive && isSort && selectedPool && (
+        {interactive && isSort && selected && (
           <rect x={0} y={0} width={width} height={lineY + 12}
             fill="var(--accent)" opacity={0.06} rx={8} />
         )}
@@ -274,8 +292,9 @@ export function TimelineGameBoard({
           const res = resultFor(f.id);
           const isFlagged = !isSort && flagged.has(f.id);
           const removing = drag?.id === f.id && drag.removing;
+          const picked = isSort && selected === f.id;
           const stroke = res == null
-            ? (isFlagged ? "#f87171" : "var(--border)")
+            ? (picked ? "var(--accent)" : isFlagged ? "#f87171" : "var(--border)")
             : res ? "#4ade80" : "#f87171";
           const fill = res == null
             ? (isFlagged ? "rgba(248,113,113,0.18)" : "var(--surface)")
@@ -288,7 +307,7 @@ export function TimelineGameBoard({
                 stroke={stroke} strokeWidth={1.5} />
               <circle cx={cx} cy={lineY} r={4} fill={stroke} />
               <rect x={cx - w / 2} y={topY} width={w} height={chipH} rx={6}
-                fill={fill} stroke={stroke} strokeWidth={1.5} />
+                fill={fill} stroke={stroke} strokeWidth={picked ? 2.5 : 1.5} />
               <text x={cx} textAnchor="middle" fontSize={11.5}
                 fontWeight={600} fill="var(--text)" style={{ pointerEvents: "none" }}>
                 {f.chip.lines.map((line, i) => (
@@ -339,9 +358,9 @@ export function TimelineGameBoard({
         <div className="flex flex-wrap gap-2 mt-2">
           {pool.map(it => (
             <button key={it.id} disabled={!interactive}
-              onClick={() => interactive && setSelectedPool(p => p === it.id ? null : it.id)}
+              onClick={() => interactive && setSelected(p => p === it.id ? null : it.id)}
               className={`px-3 py-1.5 rounded-xl border text-sm font-semibold transition-all text-left max-w-[16rem] ${
-                selectedPool === it.id
+                selected === it.id
                   ? "border-[var(--accent)] ring-2 ring-[var(--accent)] scale-105"
                   : "border-[var(--border)] hover:border-[var(--accent)]"
               }`}>
@@ -352,11 +371,11 @@ export function TimelineGameBoard({
       )}
       {interactive && isSort && (
         <p className="text-xs text-[var(--text-muted)] mt-1.5">
-          {selectedPool
+          {selected
             ? "Tippe auf den Strahl, um zu platzieren."
             : pool.length > 0
-              ? "Tippe eine Karte an, dann auf die richtige Stelle. Platzierte Karten kannst du ziehen; nach unten ziehen entfernt sie."
-              : "Alles platziert — du kannst Karten noch ziehen, um sie zu korrigieren."}
+              ? "Tippe eine Karte an, dann auf die richtige Stelle. Platzierte Karten antippen und neu setzen — oder ziehen; nach unten ziehen entfernt sie."
+              : "Alles platziert — zum Korrigieren eine Karte antippen und neu setzen, oder sie ziehen."}
         </p>
       )}
       {interactive && !isSort && (

@@ -40,6 +40,13 @@ export default function ExitgameDetailPage() {
     mutationFn: (code: string) => api.exitgame.sessions.close(code),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] }),
   });
+  // Wieder öffnen kommt aus dem gemeinsamen Playhub-Endpunkt: der Code bleibt
+  // derselbe, ein gedruckter QR funktioniert danach weiter.
+  const reopenMut = useMutation({
+    mutationFn: (code: string) => api.play.reopen("exitgame", code),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] }),
+    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+  });
   const deleteSessionMut = useMutation({
     mutationFn: (code: string) => api.exitgame.sessions.delete(code),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] }),
@@ -100,8 +107,13 @@ export default function ExitgameDetailPage() {
                 <div className="flex-1" />
                 <Link href={`/games/exitgame/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
                 <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
-                {s.status === "open" && (
-                  <button onClick={() => closeMut.mutate(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">Schließen</button>
+                {s.status === "open" ? (
+                  <button onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}
+                    className="text-xs text-[var(--text-muted)] hover:underline disabled:opacity-40">Schließen</button>
+                ) : (
+                  <button onClick={() => reopenMut.mutate(s.join_code)} disabled={reopenMut.isPending}
+                    title="Wieder öffnen — der Code bleibt derselbe"
+                    className="text-xs text-[var(--text-muted)] hover:underline disabled:opacity-40">Wieder öffnen</button>
                 )}
                 <button onClick={() => { if (confirm("Session löschen?")) deleteSessionMut.mutate(s.join_code); }} className="text-xs text-red-400 hover:underline">Löschen</button>
               </li>
