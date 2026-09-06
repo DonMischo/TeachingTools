@@ -125,6 +125,21 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
     ],
   },
+  ki: {
+    title: "KI-Werkstatt",
+    intro: "Zwei Reiter, eine Aussage: Sprachmodelle würfeln Wörter, Bildmodelle holen Bilder aus Rauschen. Beide Hälften teilen sich einen Beitritts-Code — und den Zufallswert dazwischen.",
+    sections: [
+      { label: "1️⃣ Auftrag", text: "Ein Prompt steht bereit (»Schreibe einen kurzen Text über eine Katze.«). Er wird nie als Text gelesen, sondern erst zerlegt und in Zahlen verwandelt." },
+      { label: "2️⃣ Zerlegen", text: "Minispiel: zwischen die Buchstaben tippen, wo die Maschine schneidet, dann »Prüfen«. Der Vergleich zeigt die Regel — häufige Wörter bleiben ganz (»␣Katze«), seltenere zerfallen in Stamm und Endung (»␣kurz«+»en«), und das Leerzeichen gehört zum Wort dahinter. Am Ende steht nur noch eine Reihe von Nummern." },
+      { label: "3️⃣ Netz und Wählen", text: "In der Mitte das zuletzt geschriebene Wort, ringsherum die möglichen Fortsetzungen mit ihrer Häufigkeit — je dicker der Faden, desto wahrscheinlicher. Antippen schreibt weiter. Blass und gestrichelt hängen Wörter mit im Netz, die dort nicht stehen dürfen; ein Tipp darauf sagt, warum (»Nach dem Artikel ›die‹ kann kein Verb stehen«)." },
+      { label: "🎚️ Auswahl", text: "Der wichtigste Regler: er entscheidet, wie viele Vorschläge überhaupt angeboten werden (1 bis 6, in der Fachsprache top-k). Ganz links gibt es nur den wahrscheinlichsten — dann schreibt die ganze Klasse denselben Text. »🎲 Maschine wählt« würfelt einen Zug selbst, mit gezinkten Würfeln: häufiger heißt öfter." },
+      { label: "4️⃣ Ergebnis und Tafel", text: "Zum Schluss stehen Text, Erwartbarkeit (der Durchschnitt der gewählten Wahrscheinlichkeiten) und ein Fingerabdruck da. »An die Tafel« stellt den Text in die Sitzung: alle sehen alle Texte, sortiert vom erwartbarsten zum eigenwilligsten. Oben laut vorlesen, unten laut vorlesen — das ist die Stunde. Die Lehrkraft kann die Runde leeren." },
+      { label: "🌫️ Bilder: Verrauschen", text: "Der Browser rechnet echte Vorwärts-Diffusion: Schritt für Schritt kommt Rauschen dazu, nach derselben Formel wie beim Training. Der Seed dafür ist der Fingerabdruck aus dem ersten Reiter — gleicher Seed, gleiches Rauschmuster." },
+      { label: "✨ Bilder: Entrauschen", text: "Den Rückweg kann nur ein trainiertes Modell. Deshalb spielt der Reiter eine fertige Bildfolge ab: »📦 Bildfolge (ZIP)« lädt sie vom eigenen Gerät (ein Ordner je Folge, darin step_00.png, step_01.png, …; mehrere Ordner wie katze_seed42 und katze_seed99 lassen sich umschalten und vergleichen). Ohne ZIP läuft die eigene Rauschreihe rückwärts — mit dem ausdrücklichen Hinweis, dass das geschummelt ist. Die Bilder bleiben auf dem Gerät, es wird nichts hochgeladen." },
+      { label: "🧠 Was hier anders ist", text: "Ehrlich gesagt: unser Netz schaut nur auf das letzte Wort und hat ein paar hundert Zahlen, ein echtes Modell hat Milliarden und Tausende Wörter Zusammenhang. Deshalb bleiben die Sätze hier einfach, und Umstellungen wie »Plötzlich springt die Katze« gibt es nicht. Gleich ist das Entscheidende: Wahrscheinlichkeiten, eine Auswahl daraus, ein Würfel." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Der Code gilt für beide Reiter, und die Tafel sammelt alles, was unter diesem Code abgegeben wird." },
+    ],
+  },
   vierecke: {
     title: "Vierecke",
     intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen. Zusammengelegt aus zwei früheren Werkzeugen.",

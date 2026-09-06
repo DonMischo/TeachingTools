@@ -1211,6 +1211,29 @@ export type ToolSessionOut = {
   ref_title: string | null;
 };
 
+/** Ein abgegebener Text aus der KI-Werkstatt (siehe api/models.py::SimBeitrag). */
+export type SimBeitragOut = {
+  id: number;
+  name: string;
+  thema: string;
+  text: string;
+  /** Erwartbarkeit 0–1 — danach ist die Tafel sortiert. */
+  wert: number;
+  mut: number;
+  signatur: string;
+  /** Der eigene Beitrag, damit die Tafel ihn hervorheben kann. */
+  selbst: boolean;
+};
+
+export type SimBeitragIn = {
+  name: string;
+  thema: string;
+  text: string;
+  wert: number;
+  mut: number;
+  signatur: string;
+};
+
 /** Eine laufende Sitzung in der Übersicht (siehe api/routers/play.py). */
 export type PlaySessionRow = {
   tool: string;
@@ -1369,6 +1392,20 @@ export const api = {
       apiFetch<TimelineSetDetail>(`tool-sessions/${encodeURIComponent(code)}/content`, {
         headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
       }),
+    /** Die Tafel der KI-Werkstatt: alle Texte einer Sitzung. */
+    beitraege: (code: string, guestToken?: string | null) =>
+      apiFetch<SimBeitragOut[]>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    beitragAbgeben: (code: string, body: SimBeitragIn, guestToken?: string | null) =>
+      apiFetch<SimBeitragOut>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    /** Runde leeren — nur für die Lehrkraft, der die Sitzung gehört. */
+    beitraegeLeeren: (code: string) =>
+      apiFetch<void>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, { method: "DELETE" }),
   },
 
   // Offline-Dateien (siehe api/routers/standalone.py)

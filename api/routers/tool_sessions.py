@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_teacher, get_player
-from ..models import Teacher, TimelineSet, ToolSession
+from ..models import SimBeitrag, Student, Teacher, TimelineSet, ToolSession
 from ..utils import gen_code
 from .. import availability, tool_catalog
 
@@ -23,7 +23,8 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 
 # Tools that can be joined this way — everything that runs purely client-side.
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
-                 "vierecke", "binaerrechner", "funktionen", "rechenregeln", "uebung")
+                 "vierecke", "binaerrechner", "funktionen", "rechenregeln", "uebung",
+                 "ki")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
@@ -143,3 +144,119 @@ def session_content(code: str, db: Session = Depends(get_db), _player=Depends(ge
     if row is None:
         raise HTTPException(404, "Inhalt nicht gefunden")
     return _to_detail(row)
+
+
+# ───────────────────────────────────────────────────────── Beitraege ──
+# Die Tafel am Ende der KI-Werkstatt: alle Texte einer Sitzung nebeneinander,
+# sortiert nach Erwartbarkeit. Das ist der einzige Punkt, an dem eine
+# Simulation etwas speichert — ohne die gemeinsame Tafel gaebe es nichts zu
+# vergleichen, und genau der Vergleich ist der Lehrstoff.
+
+# Werkzeuge, die eine Tafel haben. Alle anderen antworten mit 400: eine
+# Abakus-Sitzung soll keine Textsammlung werden.
+BEITRAG_TOOLS = ("ki",)
+
+
+class BeitragIn(BaseModel):
+    name: str
+    thema: str = ""
+    text: str
+    wert: float = 0.0
+    mut: int = 0
+    signatur: str = ""
+
+
+class BeitragOut(BaseModel):
+    id: int
+    name: str
+    thema: str
+    text: str
+    wert: float
+    mut: int
+    signatur: str
+    selbst: bool
+
+
+def _beitrag_session(code: str, db: Session) -> ToolSession:
+    session = db.query(ToolSession).filter_by(code=code.upper()).first()
+    if not session:
+        raise HTTPException(404, "Sitzung nicht gefunden")
+    if session.tool_slug not in BEITRAG_TOOLS:
+        raise HTTPException(400, "Dieses Werkzeug sammelt keine Beiträge.")
+    return session
+
+
+def _teilnehmer(spieler) -> dict:
+    """Die Spalte, in der dieser Teilnehmer steht — wie in routers/practice.py."""
+    if isinstance(spieler, Student):
+        return {"student_id": spieler.id}
+    if isinstance(spieler, Teacher):
+        return {"teacher_id": spieler.id}
+    return {"guest_id": spieler.id}
+
+
+@router.post("/{code}/beitraege", response_model=BeitragOut, status_code=201)
+def beitrag_abgeben(
+    code: str,
+    body: BeitragIn,
+    db: Session = Depends(get_db),
+    spieler=Depends(get_player),
+):
+    """Einen Text abgeben — je Teilnehmer bleibt der letzte stehen."""
+    session = _beitrag_session(code, db)
+    if session.status == "closed":
+        raise HTTPException(403, "Diese Sitzung ist geschlossen")
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(422, "Der Text ist leer.")
+
+    wer = _teilnehmer(spieler)
+    beitrag = db.query(SimBeitrag).filter_by(session_id=session.id, **wer).first()
+    if beitrag is None:
+        beitrag = SimBeitrag(session_id=session.id, **wer)
+        db.add(beitrag)
+    beitrag.name = (body.name or "").strip()[:100] or "Jemand"
+    beitrag.thema = body.thema[:50]
+    beitrag.text = text[:2000]
+    beitrag.wert = max(0.0, min(1.0, body.wert))
+    beitrag.mut = max(0, min(5, body.mut))
+    beitrag.signatur = body.signatur[:16]
+    db.commit()
+    db.refresh(beitrag)
+    return _beitrag_out(beitrag, wer)
+
+
+def _beitrag_out(b: SimBeitrag, wer: dict) -> BeitragOut:
+    selbst = all(getattr(b, spalte) == wert for spalte, wert in wer.items())
+    return BeitragOut(
+        id=b.id, name=b.name, thema=b.thema, text=b.text,
+        wert=b.wert, mut=b.mut, signatur=b.signatur, selbst=selbst,
+    )
+
+
+@router.get("/{code}/beitraege", response_model=list[BeitragOut])
+def beitraege(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Die Tafel: alle Texte der Sitzung, der erwartbarste zuerst."""
+    session = _beitrag_session(code, db)
+    wer = _teilnehmer(spieler)
+    zeilen = (
+        db.query(SimBeitrag)
+        .filter_by(session_id=session.id)
+        .order_by(SimBeitrag.wert.desc(), SimBeitrag.id)
+        .all()
+    )
+    return [_beitrag_out(b, wer) for b in zeilen]
+
+
+@router.delete("/{code}/beitraege", status_code=204)
+def beitraege_leeren(
+    code: str,
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+):
+    """Runde leeren — nur die Lehrkraft, der die Sitzung gehört."""
+    session = _beitrag_session(code, db)
+    if session.created_by != teacher.id and teacher.role != "admin":
+        raise HTTPException(403, "Diese Sitzung gehört jemand anderem.")
+    db.query(SimBeitrag).filter_by(session_id=session.id).delete()
+    db.commit()

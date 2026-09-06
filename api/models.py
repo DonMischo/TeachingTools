@@ -1865,6 +1865,46 @@ class ToolSession(Base):
     creator: Mapped["Teacher"] = relationship()
 
 
+class SimBeitrag(Base):
+    """Ein abgegebenes Ergebnis aus einer Simulation — bisher: der Text, den
+    jemand in der KI-Werkstatt durch das Wortnetz geschrieben hat.
+
+    Die Simulationen rechnen sonst ganz im Browser; hier gibt es genau einen
+    Grund für eine Zeile in der Datenbank: die Klasse soll ihre Ergebnisse
+    nebeneinander sehen. Deshalb hängt der Beitrag an der Sitzung (dem Code)
+    und nicht an einer Klasse — wer denselben QR gescannt hat, gehört dazu.
+
+    Teilnehmer ist ein Schüler (student_id), eine Lehrkraft (teacher_id) oder
+    ein Gast (guest_id, die Id aus dem Gast-Token) — dasselbe Muster wie bei
+    PracticeProgress. Je Teilnehmer bleibt nur der letzte Beitrag stehen: ein
+    zweiter Durchgang ersetzt den ersten, sonst füllt ein einzelnes Kind die
+    Tafel.
+
+    `wert` ist die Erwartbarkeit des Textes (0–1, geometrisches Mittel der
+    gewählten Wahrscheinlichkeiten). Danach wird sortiert — oben steht der
+    Text, den die Maschine am ehesten selbst geschrieben hätte.
+    """
+    __tablename__ = "sim_beitraege"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    # Welches Thema des Wortnetzes (katze, …) — die Tafel gruppiert danach.
+    thema: Mapped[str] = mapped_column(String(50), nullable=False, server_default="")
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    wert: Mapped[float] = mapped_column(Float, nullable=False, server_default="0")
+    # Reglerstellung »Auswahl« (0–5) und der Fingerabdruck der Wortwahl.
+    mut: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    signatur: Mapped[str] = mapped_column(String(16), nullable=False, server_default="")
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["ToolSession"] = relationship()
+
+
 class SnapProject(Base):
     """Ein Snap!-Programm (Berkeley) als XML-Blob.
 

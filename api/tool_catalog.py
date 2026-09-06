@@ -110,6 +110,12 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("uebung", "📚 Übung", "📚", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Ein Werkzeug mit zwei Reitern (Sprachmodell + Bilder): beide erklaeren
+    # dieselbe Sache — dass eine Maschine wuerfelt statt zu denken — und teilen
+    # deshalb einen Code, eine Sitzung und den Zufallswert dazwischen.
+    CatalogTool("ki", "🤖 KI-Werkstatt", "🤖", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

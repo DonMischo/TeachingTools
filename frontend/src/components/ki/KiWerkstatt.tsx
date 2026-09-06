@@ -1,0 +1,101 @@
+"use client";
+/**
+ * Die KI-Werkstatt — zwei Reiter, eine Aussage.
+ *
+ *   🔤 Sprachmodell  Ein Text entsteht Wort für Wort aus Wahrscheinlichkeiten.
+ *   🖼️ Bilder        Ein Bild entsteht Schritt für Schritt aus Rauschen.
+ *
+ * Beide Hälften laufen auf denselben Kern hinaus: es wird gewürfelt, und der
+ * Startwert des Würfels entscheidet über das Ergebnis. Deshalb teilen sie sich
+ * auch einen: der Fingerabdruck des geschriebenen Textes wird zum Seed des
+ * Rauschens. Und deshalb ist es *ein* Werkzeug mit einem Code — wer den QR
+ * scannt, kommt in beide Hälften.
+ */
+import { useEffect, useState, type ReactNode } from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { Sprachmodell } from "@/components/ki/Sprachmodell";
+import { Bilder } from "@/components/ki/Bilder";
+
+/** Woran die Tafel hängt: der Sitzungscode und, bei Gästen, ihr Token. */
+export type KiZugang = { code: string; token?: string | null; name?: string };
+
+type Reiter = "sprache" | "bilder";
+
+export default function KiWerkstatt({ action, zugang }: {
+  action?: ReactNode;
+  zugang?: KiZugang;
+}) {
+  const { auth } = useAuth();
+  const [reiter, setReiter] = useState<Reiter>("sprache");
+  const [signatur, setSignatur] = useState<string | null>(null);
+  const [eigene, setEigene] = useState<KiZugang | undefined>(undefined);
+
+  const istLehrkraft = auth?.role === "teacher" || auth?.role === "admin";
+  const name = zugang?.name
+    ?? (auth?.student ? `${auth.student.vorname} ${auth.student.nachname}`.trim() : undefined)
+    ?? (auth?.teacher ? `${auth.teacher.first_name} ${auth.teacher.last_name}`.trim() : undefined);
+
+  // Auf der eigenen Werkzeugseite gibt es keinen Code aus der Adresszeile. Für
+  // die Tafel holt die Lehrkraft sich deshalb ihren eigenen — derselbe, den
+  // auch »Zum Mitmachen« ausgibt, das Anlegen wiederholt sich nicht.
+  useEffect(() => {
+    if (zugang?.code || eigene || !istLehrkraft) return;
+    let abbruch = false;
+    api.toolSessions.create("ki")
+      .then(s => { if (!abbruch) setEigene({ code: s.code }); })
+      .catch(() => { /* ohne Code bleibt die Tafel eben aus */ });
+    return () => { abbruch = true; };
+  }, [zugang?.code, eigene, istLehrkraft]);
+
+  // Der Name ist nur der Vorschlag im Feld: Gäste bringen ihn vom Beitritt mit,
+  // Angemeldete aus ihrem Konto — geändert werden darf er trotzdem.
+  const tafelZugang = zugang
+    ? { ...zugang, name: zugang.name ?? name }
+    : eigene ? { ...eigene, name } : undefined;
+
+  return (
+    <div className="flex flex-col gap-5 p-6 max-w-4xl mx-auto w-full">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">🤖 KI-Werkstatt</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
+            Zwei Maschinen zum Anfassen: eine, die Wörter würfelt, und eine, die Bilder aus
+            Rauschen holt. Beide zeigen dasselbe — es wird gerechnet, nicht gedacht.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">{action}</div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Knopf an={reiter === "sprache"} onClick={() => setReiter("sprache")}>🔤 Sprachmodell</Knopf>
+        <Knopf an={reiter === "bilder"} onClick={() => setReiter("bilder")}>🖼️ Bilder</Knopf>
+      </div>
+
+      {/* Beide Reiter bleiben montiert: ein Text, an dem zehn Minuten gewählt
+          wurde, darf nicht verschwinden, weil jemand kurz zu den Bildern schaut. */}
+      <div hidden={reiter !== "sprache"}>
+        <Sprachmodell zugang={tafelZugang} onSignatur={setSignatur} />
+      </div>
+      <div hidden={reiter !== "bilder"}>
+        <Bilder signatur={signatur} />
+      </div>
+    </div>
+  );
+}
+
+function Knopf({ an, onClick, children }: { an: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border px-3.5 py-1.5 text-sm font-bold transition-colors ${
+        an
+          ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+          : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

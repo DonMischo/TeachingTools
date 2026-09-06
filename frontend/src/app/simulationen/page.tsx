@@ -63,6 +63,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#0ea5e9",
   },
   {
+    slug: "ki",
+    href: "/simulationen/ki",
+    icon: "🤖",
+    title: "KI-Werkstatt",
+    description: "Wie ein Sprachmodell schreibt: Satz zerlegen, im Wortnetz Wort für Wort wählen, den eigenen Text mit der Klasse vergleichen. Dazu der Bilder-Reiter — ein Bild verrauschen und zusehen, wie eines aus Rauschen entsteht.",
+    color: "#6366f1",
+  },
+  {
     slug: "abacus",
     href: "/simulationen/abacus",
     icon: "🧮",
