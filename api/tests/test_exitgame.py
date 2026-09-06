@@ -192,6 +192,25 @@ def test_attempt_rejected_when_session_closed(client, db, teacher_token, klass):
     assert r.status_code == 403
 
 
+def test_reopened_session_keeps_its_code_and_lets_students_back_in(client, db, teacher_token, klass):
+    """Wieder oeffnen laeuft ueber den gemeinsamen Playhub-Endpunkt — der Code
+    bleibt derselbe, ein gedruckter QR funktioniert danach weiter."""
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token)).json()
+    code = s["join_code"]
+    client.cookies.clear()
+    client.post(f"/api/exitgame-sessions/{code}/close", headers=_auth(teacher_token))
+
+    r = client.post(f"/api/play/sessions/{code}/reopen?tool=exitgame", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    assert r.json()["code"] == code and r.json()["closed"] is False
+
+    student_token = _student_login(client, db, klass)
+    client.cookies.clear()
+    assert client.post(f"/api/exitgame-sessions/{code}/attempts", headers=_auth(student_token)).status_code == 201
+
+
 def test_teacher_can_join_and_play_own_session(client, db, teacher_token, klass):
     """Anyone with the link may play — including the teacher who created it,
     or another teacher/admin trying the game out."""
