@@ -488,6 +488,58 @@ function UsernameCell({ value, onSave, disabled }: { value: string | null; onSav
   );
 }
 
+/** Das Passwort einer einzelnen Lehrkraft ansehen.
+ *
+ *  Step-up: der Server verlangt bei *jedem* Abruf einen frischen Code aus der
+ *  Authenticator-App des Admins. Eine übernommene Sitzung reicht nicht, es
+ *  braucht auch das Telefon. Jeder Abruf landet im Protokoll. */
+function RevealPassword({ teacherId, name }: { teacherId: number; name: string }) {
+  const { toast } = useToast();
+  const [offen, setOffen] = useState(false);
+  const [code, setCode] = useState("");
+  const [passwort, setPasswort] = useState<string | null>(null);
+
+  const mut = useMutation({
+    mutationFn: () => api.teachers.revealPassword(teacherId, code.trim()),
+    onSuccess: (res) => {
+      setCode("");
+      setPasswort(res.password ?? "—");
+      if (!res.password) toast("Dieses Passwort wurde von Hand gesetzt und ist nicht gespeichert.", "error");
+    },
+    onError: (e: any) => toast(apiErr(e), "error"),
+  });
+
+  if (!offen) {
+    return (
+      <button onClick={() => setOffen(true)}
+        className="text-xs underline opacity-70 hover:opacity-100">🔐 Passwort ansehen</button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      {passwort ? (
+        <code className="text-xs bg-[var(--surface-hover)] rounded px-1.5 py-0.5 break-all">{passwort}</code>
+      ) : (
+        <div className="flex items-center gap-1">
+          <input
+            value={code} onChange={e => setCode(e.target.value)}
+            inputMode="numeric" maxLength={6} placeholder="2FA-Code"
+            aria-label={`Zwei-Faktor-Code für ${name}`}
+            className="input text-xs py-1 w-24 font-mono"
+          />
+          <button onClick={() => mut.mutate()} disabled={code.trim().length !== 6 || mut.isPending}
+            className="text-xs underline opacity-70 hover:opacity-100 disabled:opacity-30">
+            {mut.isPending ? "…" : "zeigen"}
+          </button>
+        </div>
+      )}
+      <button onClick={() => { setOffen(false); setPasswort(null); setCode(""); }}
+        className="text-xs opacity-50 hover:opacity-80 self-start">schließen</button>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const { auth } = useAuth();
   const router = useRouter();
@@ -571,13 +623,18 @@ export default function AdminUsersPage() {
   });
   const teacherGenMut = useMutation({ mutationFn: api.teachers.generateCredentials, onSuccess: setTeacherCreds });
 
-  async function downloadCsv(which: "students" | "teachers") {
-    const r = which === "students" ? await api.students.downloadCredentials() : await api.teachers.downloadCredentials();
-    if (!r.ok) return;
+  async function downloadStudentCsv() {
+    const r = await api.students.downloadCredentials();
+    if (!r.ok) {
+      toast(r.status === 403
+        ? "Dafür braucht dein Konto Zwei-Faktor (Konto → Zwei-Faktor)."
+        : "Download fehlgeschlagen.", "error");
+      return;
+    }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = which === "students" ? "zugangsdaten.csv" : "lehrer-zugangsdaten.csv"; a.click();
+    a.href = url; a.download = "zugangsdaten.csv"; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -822,7 +879,7 @@ export default function AdminUsersPage() {
               <button onClick={() => studentGenMut.mutate()} disabled={studentGenMut.isPending} className="btn-primary text-sm py-2 px-4">
                 {studentGenMut.isPending ? "Generiere…" : "🔑 Generieren"}
               </button>
-              <button onClick={() => downloadCsv("students")} className="btn-secondary text-sm py-2 px-4">⬇️ CSV</button>
+              <button onClick={downloadStudentCsv} className="btn-secondary text-sm py-2 px-4">⬇️ CSV</button>
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -831,7 +888,7 @@ export default function AdminUsersPage() {
               <button onClick={() => teacherGenMut.mutate()} disabled={teacherGenMut.isPending} className="btn-primary text-sm py-2 px-4">
                 {teacherGenMut.isPending ? "Generiere…" : "🔑 Generieren"}
               </button>
-              <button onClick={() => downloadCsv("teachers")} className="btn-secondary text-sm py-2 px-4">⬇️ CSV</button>
+              <Hint text={"Einen Sammelexport aller Lehrer-Passwörter gibt es nicht mehr — eine solche CSV lässt sich kaum versehentlich richtig verwenden. Einzelne Passwörter siehe unten."} />
             </div>
           </div>
         </div>
@@ -1061,8 +1118,11 @@ export default function AdminUsersPage() {
                     <UsernameCell value={r.username} onSave={(name) => setUsernameMut.mutateAsync({ kind: r.kind, id: r.id, username: name })} />
                   </td>
                   <td className="py-1.5 px-2">
-                    <button onClick={() => mgmtResetMut.mutate({ kind: r.kind, id: r.id })} disabled={mgmtResetMut.isPending}
-                      className="text-xs underline opacity-70 hover:opacity-100 disabled:opacity-30">🔁 zurücksetzen</button>
+                    <div className="flex flex-col gap-1">
+                      <button onClick={() => mgmtResetMut.mutate({ kind: r.kind, id: r.id })} disabled={mgmtResetMut.isPending}
+                        className="text-xs underline opacity-70 hover:opacity-100 disabled:opacity-30">🔁 zurücksetzen</button>
+                      {r.kind === "teacher" && aAdmin && <RevealPassword teacherId={r.id} name={r.name} />}
+                    </div>
                   </td>
                   <td className="py-1.5 px-2">
                     <button

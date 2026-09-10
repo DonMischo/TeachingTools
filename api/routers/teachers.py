@@ -4,8 +4,7 @@ import random
 import re
 
 import chardet
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -16,8 +15,10 @@ from ..schemas import (
     TeacherOut, TeacherAssignmentOut, TeacherPreviewResponse, TeacherApplyRequest,
     TeacherCredentialRow, WochenstundenOut, WochenstundenSet, TeacherKorrekturIn,
 )
-from ..auth import get_current_teacher, get_current_user, hash_password, verify_password
+from ..auth import get_current_teacher, get_current_user, hash_password, require_admin, verify_password
 from ..admin_access import require_admin_feature
+from ..audit import audit
+from .twofa import require_totp
 from ..password_gen import generate_password
 from ..pw_crypto import encrypt as _pw_encrypt, display_password as _display_password
 from ..seed import GRADES as _KNOWN_GRADES
@@ -150,11 +151,38 @@ def encrypt_seed_passwords_teachers(db: Session) -> int:
     return migrated
 
 
+def _ohne_deputat(out: TeacherOut) -> TeacherOut:
+    """Dieselbe Lehrkraft ohne ihre Arbeitszeitdaten.
+
+    Name, Fach, Klasse und Mailadresse stehen auf der Schulhomepage — die
+    duerfen bleiben. ``korrektur``, ``notiz`` und ``av_stunden`` (Stunden nach
+    Arbeitsvertrag) stehen dort nicht: das ist die Deputatsrechnung aus der
+    Lehrerdatenverwaltung, also Beschaeftigtendaten, und die gehen Schueler
+    nichts an. ``total_ws`` faellt mit, weil es die Summe daraus ist —
+    andernfalls liesse sich ``korrektur`` daraus zurueckrechnen.
+
+    Die Personalnummer und der Anmeldename gehen ebenfalls nicht raus: beides
+    sind interne Kennungen, keine Kontaktdaten.
+    """
+    out.korrektur = 0
+    out.notiz = None
+    out.av_stunden = None
+    out.total_ws = 0
+    out.nummer = None
+    out.username = None
+    return out
+
+
 @router.get("", response_model=list[TeacherOut])
-def list_teachers(db: Session = Depends(get_db), _=Depends(get_current_user)):
+def list_teachers(db: Session = Depends(get_db), viewer=Depends(get_current_user)):
+    """Das Kollegium. Der einzige Weg, auf dem eine TeacherOut bei jemandem
+    landen kann, der selbst keine Lehrkraft ist — alle anderen Routen mit
+    diesem Schema haengen an get_current_teacher oder am Recht »Lehrerdaten«."""
     teachers = db.query(Teacher).filter(Teacher.active == True).order_by(Teacher.last_name, Teacher.first_name).all()
     ws = _ws_lookup(db)
-    return [_teacher_out(t, ws) for t in teachers]
+    voll = isinstance(viewer, Teacher)
+    return [_teacher_out(t, ws) if voll else _ohne_deputat(_teacher_out(t, ws))
+            for t in teachers]
 
 
 # ---------------------------------------------------------------------------
@@ -270,23 +298,51 @@ def generate_credentials(db: Session = Depends(get_db), _: object = Depends(requ
     return result
 
 
-@router.get("/credentials/download")
-def download_credentials(db: Session = Depends(get_db), _: object = Depends(require_admin_feature("teachers"))):
-    teachers = db.query(Teacher).filter(
-        Teacher.active == True, Teacher.username.isnot(None)
-    ).order_by(Teacher.last_name, Teacher.first_name).all()
+# Der Sammelexport aller Lehrerzugaenge ist ersatzlos entfallen. Eine CSV mit
+# den Klarpasswoertern des ganzen Kollegiums ist nichts, was sich versehentlich
+# richtig verwenden laesst — sie liegt danach im Downloads-Ordner, im Mail-
+# Anhang, auf dem USB-Stick. Wer ein einzelnes Passwort braucht, holt es unten
+# ueber /{teacher_id}/password, einzeln und mit zweitem Faktor.
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Nachname", "Vorname", "Rolle", "Benutzername", "Passwort"])
-    for t in teachers:
-        writer.writerow([t.last_name, t.first_name, t.role, t.username or "", _display_password(t)])
 
-    output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue().encode("utf-8-sig")]),  # utf-8-sig for Excel
-        media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="lehrer-zugangsdaten.csv"'},
+class RevealIn(BaseModel):
+    # Frischer Sechsstelliger aus der Authenticator-App.
+    code: str
+
+
+class RevealOut(BaseModel):
+    id: int
+    last_name: str
+    first_name: str
+    username: str | None
+    # None, wenn das Passwort von Hand gesetzt wurde: dann ist der Klartext
+    # nirgends gespeichert und nur ein Zuruecksetzen hilft.
+    password: str | None
+
+
+@router.post("/{teacher_id}/password", response_model=RevealOut)
+def reveal_teacher_password(
+    teacher_id: int,
+    body: RevealIn,
+    request: Request,
+    db: Session = Depends(get_db),
+    current: Teacher = Depends(require_admin),
+):
+    """Das Passwort *einer* Lehrkraft ansehen — Admin und frischer 2FA-Code.
+
+    Step-up bei jedem Abruf: eine uebernommene Admin-Sitzung allein reicht
+    nicht, es braucht auch das Telefon. Jeder Abruf steht anschliessend im
+    Protokoll, mit dem Konto, das gelesen wurde.
+    """
+    require_totp(db, current, body.code)
+    t = db.get(Teacher, teacher_id)
+    if not t:
+        raise HTTPException(404, "Lehrkraft nicht gefunden")
+    audit("teachers.password.reveal", current, target=t.username or str(t.id),
+          detail="Einzelabruf mit 2FA", request=request, db=db)
+    return RevealOut(
+        id=t.id, last_name=t.last_name, first_name=t.first_name,
+        username=t.username, password=_display_password(t) or None,
     )
 
 

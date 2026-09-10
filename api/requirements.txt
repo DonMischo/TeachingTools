@@ -11,6 +11,9 @@ python-multipart>=0.0.9
 chardet>=5.0.0
 pycrdt>=0.10.0
 pypandoc>=1.13
+# Zwei-Faktor (TOTP) — siehe api/totp.py
+pyotp>=2.9
+qrcode>=7.4
 
 # testing
 pytest>=8.0

@@ -5,11 +5,17 @@ import io
 import pytest
 from api.models import Teacher
 from api.auth import hash_password
+from api.tests.conftest import auth
 
 
 def test_teacher_generate_encrypts_password(client, db, admin, admin_token):
-    """Generated teacher passwords are stored encrypted-at-rest and still show up
-    (decrypted) in the credential download."""
+    """Erzeugte Lehrerpasswoerter liegen verschluesselt in der DB und lassen
+    sich daraus wieder herstellen.
+
+    Frueher pruefte das hier gegen den Sammelexport aller Lehrerzugaenge — den
+    gibt es nicht mehr (siehe test_2fa.py). Der Weg zum Klartext fuehrt jetzt
+    ueber den Einzelabruf mit zweitem Faktor; hier reicht die Entschluesselung.
+    """
     from api.pw_crypto import decrypt
     t = Teacher(first_name="Neu", last_name="Lehrer", active=True)
     db.add(t); db.flush()
@@ -21,9 +27,6 @@ def test_teacher_generate_encrypts_password(client, db, admin, admin_token):
 
     db.refresh(t)
     assert decrypt(t.password_enc) == row["password"]
-
-    dl = client.get("/api/teachers/credentials/download", headers={"Authorization": f"Bearer {admin_token}"})
-    assert row["password"] in dl.text
 
 
 def test_teacher_seed_password_migration(client, db, admin, admin_token):
@@ -180,3 +183,51 @@ def test_password_shorter_than_6_chars_is_rejected(client, teacher, teacher_toke
     )
 
     assert r.status_code == 422
+
+
+def test_schueler_bekommen_keine_deputatsdaten(client, db, teacher, klass):
+    """korrektur, notiz und av_stunden sind die Deputatsrechnung aus der
+    Lehrerdatenverwaltung — Beschaeftigtendaten. Name, Fach, Klasse und Mail
+    stehen ohnehin auf der Schulhomepage und duerfen bleiben."""
+    from api.auth import create_access_token
+    from api.models import Student
+
+    teacher.korrektur = 3
+    teacher.notiz = "Reduzierung wegen Personalrat"
+    teacher.av_stunden = 21
+    teacher.nummer = 4711
+    teacher.username = "a.mueller42"
+    teacher.email = "anna.mueller@schule.de"
+    teacher.klasse_id = klass.id
+    s = Student(nachname="Aal", vorname="Anna", klasse=klass.code,
+                class_id=klass.id, active=True)
+    db.add(s)
+    db.flush()
+
+    client.cookies.clear()
+    kopf = {"Authorization": f"Bearer {create_access_token({'sub': str(s.id), 'type': 'student'})}"}
+    zeile = next(z for z in client.get("/api/teachers", headers=kopf).json() if z["id"] == teacher.id)
+
+    assert zeile["korrektur"] == 0
+    assert zeile["notiz"] is None
+    assert zeile["av_stunden"] is None
+    assert zeile["total_ws"] == 0        # sonst liesse sich korrektur zurueckrechnen
+    assert zeile["nummer"] is None       # interne Kennung, kein Kontaktdatum
+    assert zeile["username"] is None
+    # Kontaktdaten bleiben.
+    assert (zeile["first_name"], zeile["last_name"]) == ("Anna", "Müller")
+    assert zeile["email"] == "anna.mueller@schule.de"
+    assert zeile["klasse"] == klass.code
+
+
+def test_die_lehrkraft_selbst_sieht_ihr_deputat_weiterhin(client, db, teacher, teacher_token):
+    teacher.korrektur = 3
+    teacher.notiz = "Reduzierung wegen Personalrat"
+    teacher.av_stunden = 21
+    db.flush()
+
+    zeile = next(z for z in client.get("/api/teachers", headers=auth(teacher_token)).json()
+                 if z["id"] == teacher.id)
+    assert zeile["korrektur"] == 3
+    assert zeile["notiz"] == "Reduzierung wegen Personalrat"
+    assert zeile["av_stunden"] == 21

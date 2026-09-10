@@ -7,8 +7,9 @@ import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
-import { api, CalendarMeta, SchoolSettingsOut } from "@/lib/api";
+import { api, CalendarMeta, DisplaySettingsOut, SchoolSettingsOut } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import TwoFactorPanel from "@/components/TwoFactorPanel";
 import { getSchoolYearStart } from "@/lib/schoolyear";
 
 function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
@@ -65,6 +66,53 @@ function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+function DatenschutzPanel({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data } = useQuery<DisplaySettingsOut>({
+    queryKey: ["display-settings"], queryFn: api.school.displaySettings,
+  });
+  const saveMut = useMutation({
+    mutationFn: (v: boolean) => api.school.setDisplaySettings(v),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["display-settings"] });
+      qc.invalidateQueries({ queryKey: ["students"] });
+      qc.invalidateQueries({ queryKey: ["roster"] });
+      toast(res.show_geschlecht ? "Geschlecht wird wieder ausgeliefert" : "Geschlecht wird nicht mehr ausgeliefert", "success");
+    },
+    onError: (e: any) => toast(e.message ?? "Fehler beim Speichern", "error"),
+  });
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[26rem] max-w-[calc(100vw-2rem)] bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-[70]">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm">🔐 Datenfreigabe</h3>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)]">✕</button>
+        </div>
+        <label className="flex items-start gap-3 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={data?.show_geschlecht ?? false}
+            disabled={saveMut.isPending}
+            onChange={e => saveMut.mutate(e.target.checked)}
+            className="accent-[var(--accent)] w-4 h-4 mt-0.5"
+          />
+          <span>
+            <span className="font-medium">Geschlecht ausliefern</span>
+            <span className="block text-xs text-[var(--text-muted)] mt-1">
+              Aus: Das Geschlecht steht in keiner Antwort des Servers, und der Sitzplan
+              bietet »Junge/Mädchen abwechselnd« nicht an. Die Sportfest-Wertung rechnet
+              intern weiter damit. An: nur für Lehrkräfte sichtbar.
+            </span>
+          </span>
+        </label>
+      </div>
+    </>
+  );
+}
+
 const CARD = "p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors";
 
 export default function AdminPage() {
@@ -73,6 +121,8 @@ export default function AdminPage() {
   const { ready, isAdmin, has, hasAny } = useAdminAccess();
   const [showTheme, setShowTheme] = useState(false);
   const [showKalenderSettings, setShowKalenderSettings] = useState(false);
+  const [showDatenschutz, setShowDatenschutz] = useState(false);
+  const [show2fa, setShow2fa] = useState(false);
 
   // Reachable by real admins and by teachers granted at least one admin feature.
   const allowed = isAdmin || hasAny;
@@ -122,6 +172,18 @@ export default function AdminPage() {
             <div className="text-xs text-[var(--text-muted)] mt-1">Bundesland für Feriendaten-Import</div>
           </button>
         )}
+        <button onClick={() => setShow2fa(true)} className={`${CARD} text-left`}>
+          <div className="text-2xl mb-2">🔐</div>
+          <div className="font-semibold">Zwei-Faktor</div>
+          <div className="text-xs text-[var(--text-muted)] mt-1">Nötig für den Export von Zugangsdaten</div>
+        </button>
+        {isAdmin && (
+          <button onClick={() => setShowDatenschutz(true)} className={`${CARD} text-left`}>
+            <div className="text-2xl mb-2">🔐</div>
+            <div className="font-semibold">Datenfreigabe</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Welche Schülerdaten der Server überhaupt herausgibt</div>
+          </button>
+        )}
         {isAdmin && (
           <button onClick={() => setShowTheme(true)} className={`${CARD} text-left`}>
             <div className="text-2xl mb-2">🎨</div>
@@ -168,6 +230,19 @@ export default function AdminPage() {
 
       {showTheme && <ThemeSwitcher onClose={() => setShowTheme(false)} />}
       {showKalenderSettings && <KalenderSettingsPanel onClose={() => setShowKalenderSettings(false)} />}
+      {showDatenschutz && <DatenschutzPanel onClose={() => setShowDatenschutz(false)} />}
+      {show2fa && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShow2fa(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-[70]">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">🔐 Zwei-Faktor</h3>
+              <button onClick={() => setShow2fa(false)} className="text-[var(--text-muted)] hover:text-[var(--text)]">✕</button>
+            </div>
+            <TwoFactorPanel />
+          </div>
+        </>
+      )}
     </div>
   );
 }
