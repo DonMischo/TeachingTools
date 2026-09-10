@@ -39,6 +39,19 @@ class Teacher(Base):
     # Encrypted-at-rest plaintext of a generated password, for re-display without
     # a recoverable seed. Null for manually-set (private) passwords. See pw_crypto.
     password_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # --- Zwei-Faktor (TOTP) ------------------------------------------------
+    # `totp_secret` steht ab dem Start der Einrichtung, `totp_confirmed` erst,
+    # wenn ein echter Code geprueft wurde — eine abgebrochene Einrichtung kann
+    # also niemanden aussperren. `totp_last_counter` ist der zuletzt
+    # angenommene 30-Sekunden-Schritt und macht einen abgefangenen Code
+    # innerhalb seines eigenen Fensters unbrauchbar. Siehe api/totp.py.
+    totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    totp_confirmed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sql_expr.false())
+    totp_last_counter: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # JSON-Liste bcrypt-gehashter Wiederherstellungscodes.
+    recovery_codes: Mapped[str] = mapped_column(Text, nullable=False, default="[]", server_default="[]")
     role: Mapped[str] = mapped_column(String(20), default="teacher")
     # Import-only metadata (school's own staff number, contact email)
     nummer: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -192,6 +205,10 @@ class QuizSession(Base):
     # waiting | active | finished
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
     current_question_idx: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Als einziges Sitzungsmodell hatte Caputh kein Anlagedatum — die
+    # Schuljahresbereinigung (api/retention.py) braucht eins. Altbestaende
+    # bleiben NULL und werden ueber started_at/finished_at datiert.
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Total handed out, summed over all participating classes. Kept as the one
@@ -434,6 +451,33 @@ class Student(Base):
 # ---------------------------------------------------------------------------
 # Auth security
 # ---------------------------------------------------------------------------
+
+class AuditLog(Base):
+    """Fortgeschriebenes Protokoll sicherheitsrelevanter Zugriffe (Art. 5 (2)
+    DSGVO, Rechenschaftspflicht).
+
+    Haelt bewusst **keine** personenbezogenen Inhalte fest — nur *wer* *welche
+    Art* von Datensatz angefasst hat. Sonst waere das Protokoll eine zweite
+    Kopie genau der Daten, die es schuetzen soll. `target` ist eine grobe
+    Angabe (Klassenkuerzel, Benutzername, Anzahl), `detail` eine kurze Notiz.
+
+    Nur schreiben, nie aendern: es gibt keinen Endpunkt, der Zeilen loescht.
+    Uebernommen aus dem Werkstatt-Tool (backend/audit.py).
+    """
+    __tablename__ = "audit_log"
+    __table_args__ = (Index("ix_audit_log_ts", "ts"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # Wer — Benutzername statt Fremdschluessel, damit die Zeile ein geloeschtes
+    # Konto ueberlebt. `actor_id` nur als Hinweis, ohne FK.
+    actor: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    actor_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    action: Mapped[str] = mapped_column(String(60), nullable=False)      # z.B. "students.credentials.download"
+    target: Mapped[str] = mapped_column(String(120), nullable=False, server_default="")
+    detail: Mapped[str] = mapped_column(String(255), nullable=False, server_default="")
+    ip: Mapped[str] = mapped_column(String(45), nullable=False, server_default="")  # IPv6-breit
+
 
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
@@ -1220,6 +1264,13 @@ class SchoolSettings(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     bundesland: Mapped[str] = mapped_column(String(2), nullable=False, server_default="TH")
+    # Darf das Geschlecht eines Schuelers ueberhaupt nach draussen? Aus, solange
+    # es niemand braucht (Art. 25 DSGVO, Voreinstellung); anschalten laesst es
+    # nur ein Admin. Aus heisst: kein `geschlecht` in irgendeiner Antwort, und
+    # der Sitzplan zeigt das Kaestchen »Junge/Mädchen abwechselnd« nicht an.
+    show_geschlecht: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sql_expr.false()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1507,6 +1558,12 @@ class LueckentextParticipant(Base):
     # Wie bei QuizParticipant: erkennt denselben Gast beim Neuladen wieder,
     # statt bei jedem Beitritt eine weitere Zeile anzulegen.
     guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    # Nicht zu erratender Schluessel fuer den eigenen PDF-Download am Ende der
+    # Runde. Der Download steht Gaesten ohne Konto offen, kann also nicht an
+    # einer Anmeldung haengen — die fortlaufende `id` waere im Link aber ein
+    # Nachbarblatt weit entfernt (URL um eins hochzaehlen), samt Namen im
+    # Dateinamen. Siehe export_participant_pdf in routers/lueckentexte.py.
+    export_token: Mapped[str] = mapped_column(String(36), nullable=False, default=_uuid, index=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     session: Mapped["LueckentextSession"] = relationship(back_populates="participants")

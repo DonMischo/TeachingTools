@@ -77,6 +77,10 @@ from .routers import snap as snap_router
 app.include_router(snap_router.router)
 from .routers import play as play_router
 app.include_router(play_router.router)
+from .routers import school as school_router
+app.include_router(school_router.router)
+from .routers import twofa as twofa_router
+app.include_router(twofa_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -275,6 +279,26 @@ def _run_migrations(db_engine):
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        # Caputh-Sitzungen bekommen ein Anlagedatum fuer die Schuljahres-
+        # bereinigung. Ohne DEFAULT anlegen, damit Postgres die Altbestaende
+        # nicht auf den Migrationszeitpunkt datiert; DEFAULT danach fuer neue.
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ",
+        "ALTER TABLE quiz_sessions ALTER COLUMN created_at SET DEFAULT NOW()",
+        # Zwei-Faktor fuer Lehrkraefte (Klarpasswort-Zugriffe, siehe api/totp.py).
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64)",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS totp_confirmed BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS totp_last_counter INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS recovery_codes TEXT NOT NULL DEFAULT '[]'",
+        # Geschlecht wird nur noch ausgeliefert, wenn ein Admin es einschaltet.
+        "ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS show_geschlecht BOOLEAN NOT NULL DEFAULT FALSE",
+        # Der eigene PDF-Download am Ende einer Lueckentext-Runde haengt nicht
+        # mehr an der fortlaufenden Teilnehmer-Id. Erst nullable anlegen und die
+        # Altbestaende fuellen, dann NOT NULL setzen — sonst scheitert die
+        # Migration an bereits vorhandenen Zeilen.
+        "ALTER TABLE lueckentext_participants ADD COLUMN IF NOT EXISTS export_token VARCHAR(36)",
+        "UPDATE lueckentext_participants SET export_token = gen_random_uuid()::text WHERE export_token IS NULL",
+        "ALTER TABLE lueckentext_participants ALTER COLUMN export_token SET NOT NULL",
+        "CREATE INDEX IF NOT EXISTS ix_lueckentext_participants_export_token ON lueckentext_participants (export_token)",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an
@@ -388,12 +412,37 @@ def _backfill_group_grades():
         db.close()
 
 
+def _purge_last_school_year():
+    """Beim ersten Start im neuen Schuljahr die Sitzungen der vergangenen
+    Jahre loeschen. Siehe api/retention.py — wiederholbar, findet beim
+    zweiten Lauf nichts mehr."""
+    from .database import SessionLocal
+    from .retention import purge_old_sessions, school_year_cutoff
+
+    db = SessionLocal()
+    try:
+        geloescht = purge_old_sessions(db)
+        if geloescht:
+            db.commit()
+            logging.getLogger(__name__).info(
+                "Schuljahresbereinigung (vor %s): %s",
+                school_year_cutoff().date(),
+                ", ".join(f"{k}={v}" for k, v in sorted(geloescht.items())),
+            )
+    except Exception as e:
+        db.rollback()
+        logging.getLogger(__name__).warning("Schuljahresbereinigung uebersprungen: %s", e)
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
     _run_migrations(engine)
     _backfill_encrypted_passwords()
     _backfill_group_grades()
+    _purge_last_school_year()
     ensure_classes()
     ensure_sportfest_disciplines()
     ensure_teacher_roles()
