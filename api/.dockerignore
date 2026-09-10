@@ -1,0 +1,15 @@
+# Nichts Personenbezogenes und nichts Generiertes ins Image. Der Build-Kontext
+# ist api/, also kann eine versehentlich hier abgelegte Zugangsdaten-CSV sonst
+# in einer Layer landen — und Layer bleiben, auch wenn die Datei spaeter geht.
+*.csv
+*.env
+.env*
+*.db
+*.sqlite*
+Zugangsdaten*
+zugangsdaten*
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/

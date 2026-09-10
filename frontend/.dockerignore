@@ -1,0 +1,10 @@
+# Siehe api/.dockerignore — dasselbe fuer den Frontend-Kontext.
+*.csv
+*.env
+.env*
+Zugangsdaten*
+zugangsdaten*
+
+node_modules/
+.next/
+coverage/
