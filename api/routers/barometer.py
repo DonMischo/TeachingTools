@@ -23,7 +23,7 @@ from ..auth import get_current_teacher, get_current_user_optional
 from ..availability import require_capability
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 
 router = APIRouter(prefix="/api/barometer", tags=["barometer"])
 
@@ -427,7 +427,7 @@ async def barometer_ws(
 ):
     s = db.query(BarometerSession).filter_by(code=code).first()
     if not s:
-        await websocket.close(code=4004)
+        await reject(websocket, 4004)
         return
 
     # Identity comes from the connection's own session cookie/token, never
@@ -438,7 +438,7 @@ async def barometer_ws(
     # this code (only issued when the teacher opted in — enforces opt-in + expiry).
     guest = ws_guest(websocket, code, db) if not identity else None
     if not identity and not guest:
-        await websocket.close(code=4001)
+        await reject(websocket, 4001)
         return
     ident_role, ident_id = identity if identity else (None, 0)
     guest_id: str | None = None
@@ -446,7 +446,7 @@ async def barometer_ws(
     if role == "teacher":
         teacher = db.get(Teacher, ident_id) if ident_role == "teacher" else None
         if not teacher or (s.created_by != teacher.id and teacher.role != "admin"):
-            await websocket.close(code=4003)
+            await reject(websocket, 4003)
             return
         student_id = 0
     elif guest:
@@ -454,9 +454,13 @@ async def barometer_ws(
         guest_id = guest.id
     else:
         if ident_role != "student":
-            await websocket.close(code=4003)
+            await reject(websocket, 4003)
             return
         student_id = ident_id
+    # Gaeste haben keine student_id. Unter dem gemeinsamen Platz 0 verdraengte
+    # jeder neue Gast den vorigen im Raum — nur der zuletzt verbundene bekam die
+    # Fragen, alle anderen sahen weiter die Lobby.
+    player_key = guest_id or student_id
 
     await websocket.accept()
 
@@ -464,13 +468,13 @@ async def barometer_ws(
         mgr.add_teacher(code, websocket)
         await websocket.send_json({**_state_msg(s), "participants": mgr.student_count(code)})
     else:
-        mgr.add_student(code, student_id, websocket)
+        mgr.add_student(code, player_key, websocket)
         await websocket.send_json(_state_msg(s))
         await mgr.send_teachers(code, {"event": "participant_joined", "count": mgr.student_count(code)})
 
     try:
         while True:
-            data = await websocket.receive_json()
+            data = await receive_json(websocket, db)
             action = data.get("action")
 
             db.expire_all()
@@ -553,4 +557,4 @@ async def barometer_ws(
         if role == "teacher":
             mgr.remove_teacher(code, websocket)
         else:
-            mgr.remove_student(code, student_id)
+            mgr.remove_student(code, player_key, websocket)

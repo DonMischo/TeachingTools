@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, type WettschreibenRennen } from "@/lib/api";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { useTippEingabe } from "@/hooks/useTippEingabe";
@@ -58,7 +58,6 @@ export default function WettschreibenPlayPage() {
 
   const standRef = useRef(stand);
   const gesendetRef = useRef("");
-  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => { setMontiert(true); }, []);
 
@@ -86,27 +85,23 @@ export default function WettschreibenPlayPage() {
   }, [code, ready, auth, gast.session?.token]);
 
   // Socket erst, wenn der Platz im Rennen steht.
-  useEffect(() => {
-    if (teilnehmerId === null || !rennen) return;
-    const token = gast.session?.token;
-    const ws = new WebSocket(
-      wsUrl(`/api/wettschreiben/${code}/ws?role=student&teilnehmer_id=${teilnehmerId}` +
-        (token ? `&guest_token=${encodeURIComponent(token)}` : "")),
-    );
-    wsRef.current = ws;
-    ws.onmessage = e => {
-      const m = JSON.parse(e.data);
+  const gastToken = gast.session?.token;
+  const { send: sende } = useLiveSocket(
+    teilnehmerId !== null && rennen
+      ? `/api/wettschreiben/${code}/ws?role=student&teilnehmer_id=${teilnehmerId}` +
+        (gastToken ? `&guest_token=${encodeURIComponent(gastToken)}` : "")
+      : null,
+    m => {
       if (m.typ === "stand") setLaeufer(m.teilnehmer);
       if (m.typ === "status") setStatus(m.status);
-      if (m.typ === "start") {
+      if (m.typ === "start" && rennen) {
         setStatus("laeuft");
         const frisch = start(rennen.text);
         standRef.current = frisch;
         setStand(frisch);
       }
-    };
-    return () => { ws.close(); wsRef.current = null; };
-  }, [teilnehmerId, rennen?.text, code, gast.session?.token]);
+    },
+  );
 
   // Gedrosselt melden, was sich getan hat.
   useEffect(() => {
@@ -117,16 +112,19 @@ export default function WettschreibenPlayPage() {
       const abdruck = `${s.pos}/${s.anschlaege}/${s.fehler}`;
       if (abdruck === gesendetRef.current) return;
       gesendetRef.current = abdruck;
-      wsRef.current?.send(JSON.stringify({
+      const raus = sende({
         typ: "fortschritt",
         pos: s.pos,
         anschlaege: s.anschlaege,
         fehler: s.fehler,
         dauer_ms: Math.round(w.dauer * 1000),
-      }));
+      });
+      // Gerade keine Verbindung: beim nächsten Takt nochmal, sonst hinge der
+      // Balken nach dem Wiederverbinden bis zum nächsten Anschlag.
+      if (!raus) gesendetRef.current = "";
     }, TAKT_MS);
     return () => clearInterval(id);
-  }, [teilnehmerId]);
+  }, [teilnehmerId, sende]);
 
   const { gedrueckt, fokus, feldProps } = useTippEingabe(zeichen => {
     if (status !== "laeuft") return;

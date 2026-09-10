@@ -18,7 +18,7 @@ from ..auth import get_current_teacher, get_current_user_optional, is_session_ow
 from ..availability import require_capability
 from ..utils import gen_code
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(prefix="/api/exit-ticket", tags=["exit-ticket"])
@@ -187,7 +187,7 @@ async def exit_ticket_ws(
 ):
     s = db.query(ExitTicketSession).filter_by(code=code).first()
     if not s:
-        await websocket.close(code=4004)
+        await reject(websocket, 4004)
         return
 
     # Host view requires a verified teacher (responses contain student names) —
@@ -197,21 +197,26 @@ async def exit_ticket_ws(
     if role == "teacher":
         host = ws_teacher(websocket, db)
         if host is None or not is_session_owner(s, host, owner_attr="created_by"):
-            await websocket.close(code=4003)
+            await reject(websocket, 4003)
             return
 
     # Unauthenticated students must hold a live guest token scoped to this code
     # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
+    player_key = 0
     if role != "teacher":
         identity = ws_identity(websocket, db)
-        if identity is None and ws_guest(websocket, code, db) is None:
-            await websocket.close(code=4001)
+        guest = ws_guest(websocket, code, db) if identity is None else None
+        if identity is None and guest is None:
+            await reject(websocket, 4001)
             return
         # `student_id` aus der Query ist eine Behauptung des Browsers. Die
         # Rueckmeldung wird darunter gespeichert — mit der Nummer eines
         # Mitschuelers liesse sich also in seinem Namen abgeben oder seine
         # Antwort ueberschreiben. Es zaehlt nur die Anmeldung.
         student_id = identity[1] if identity and identity[0] == "student" else 0
+        # Gaeste haben keine student_id. Unter dem gemeinsamen Platz 0 verdraengte
+        # jeder neue Gast den vorigen im Raum, die Teilnehmerzahl blieb bei 1.
+        player_key = guest.id if guest else student_id
 
     await websocket.accept()
 
@@ -229,7 +234,7 @@ async def exit_ticket_ws(
             "participant_count": mgr.student_count(code),
         })
     else:
-        mgr.add_student(code, student_id, websocket)
+        mgr.add_student(code, player_key, websocket)
         await websocket.send_json({
             "event": "state",
             "status": s.status,
@@ -241,7 +246,7 @@ async def exit_ticket_ws(
 
     try:
         while True:
-            data = await websocket.receive_json()
+            data = await receive_json(websocket, db)
             action = data.get("action")
 
             db.expire_all()
@@ -303,4 +308,4 @@ async def exit_ticket_ws(
         if role == "teacher":
             mgr.remove_teacher(code, websocket)
         else:
-            mgr.remove_student(code, student_id)
+            mgr.remove_student(code, player_key, websocket)

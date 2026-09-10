@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
@@ -29,7 +30,6 @@ type BingoEvent = { student_name: string; student_id: number };
 export default function BingoHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const wsRef = useRef<WebSocket | null>(null);
   const joinUrl = useLanUrl(`/play/bingo/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", grid_size: 3, total_pairs: 0,
@@ -38,13 +38,9 @@ export default function BingoHostPage() {
   const [winners, setWinners] = useState<BingoEvent[]>([]);
   const [lines, setLines] = useState<LineEvent[]>([]);
 
-  useEffect(() => {
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/bingo/${code}/ws?role=teacher`);
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const liveSocket = useLiveSocket(
+    `/api/bingo/${code}/ws?role=teacher`,
+    (msg) => {
       if (msg.event === "state") {
         setLive(msg);
       } else if (msg.event === "started") {
@@ -75,14 +71,12 @@ export default function BingoHostPage() {
         setLines([]);
         setLive(prev => ({ ...prev, called_pairs: [] }));
       }
-    };
-    ws.onerror = () => toast("WebSocket-Fehler", "error");
-    return () => ws.close();
-  }, [code]);
+    },
+    { onRejected: () => toast("WebSocket-Fehler", "error") },
+  );
 
   function send(msg: object) {
-    if (wsRef.current?.readyState === WebSocket.OPEN)
-      wsRef.current.send(JSON.stringify(msg));
+    liveSocket.send(msg);
   }
 
   const remaining = live.total_pairs - live.called_count;

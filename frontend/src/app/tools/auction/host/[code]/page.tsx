@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
@@ -23,20 +24,15 @@ type LiveState = {
 export default function AuctionHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const wsRef = useRef<WebSocket | null>(null);
   const joinUrl = useLanUrl(`/play/auction/${code}`);
   const [live, setLive] = useState<LiveState>({
     status: "waiting", title: "", description: null, prize_description: null,
     bids: [], winner_house_id: null, winner_name: null, winning_bid: null,
   });
 
-  useEffect(() => {
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/auction/${code}/ws?role=teacher`);
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const liveSocket = useLiveSocket(
+    `/api/auction/${code}/ws?role=teacher`,
+    (msg) => {
       if (msg.event === "state") {
         setLive(msg);
       } else if (msg.event === "bid_update") {
@@ -54,14 +50,12 @@ export default function AuctionHostPage() {
         }));
         toast(`🏆 ${msg.winner_name} gewinnt mit ${msg.winning_bid} Punkten!`, "success");
       }
-    };
-    ws.onerror = () => toast("WebSocket-Fehler", "error");
-    return () => ws.close();
-  }, [code]);
+    },
+    { onRejected: () => toast("WebSocket-Fehler", "error") },
+  );
 
   function send(msg: object) {
-    if (wsRef.current?.readyState === WebSocket.OPEN)
-      wsRef.current.send(JSON.stringify(msg));
+    liveSocket.send(msg);
   }
 
   const maxBid = live.bids.length > 0 ? Math.max(...live.bids.map(b => b.amount)) : 0;

@@ -15,7 +15,7 @@ from ..authorship import author_fields, scope_to_student_pool, is_student
 from ..database import get_db
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 from ..models import BingoCard, BingoSession, BingoSet, Class, Student, Transaction
 from ..display_names import short_name, abbreviate_stored
 from .. import scoping
@@ -569,27 +569,31 @@ async def bingo_ws(
 ):
     session = db.query(BingoSession).filter_by(code=code).first()
     if not session:
-        await ws.accept()
-        await ws.close(code=4004)
+        await reject(ws, 4004)
         return
 
     # Verified identity from the session cookie; role=/student_id= query
     # params are client-supplied and never grant control on their own.
     identity = ws_identity(ws, db)
     if role != "student" and (not identity or identity[0] != "teacher"):
-        await ws.accept()
-        await ws.close(code=4003)
+        await reject(ws, 4003)
         return
 
     await ws.accept()
 
     card: BingoCard | None = None
+    # Unter diesem Schluessel steht der Spieler im Raum. Beim Aufraeumen wurde
+    # er frueher neu geraten (card_id bei gesetztem token, sonst student_id) —
+    # angemeldete Schueler schicken aber auch ein token und blieben so ewig in
+    # der Spielerliste stehen.
+    mgr_key = None
 
     if role == "student":
         if identity and identity[0] == "student":
             # Logged-in students always play as themselves.
             card = _find_or_create_card(session, db, student_id=identity[1], class_id=class_id or None)
             student_id = identity[1]
+            mgr_key = student_id
             _mgr.add_student(code, student_id, ws, info={"name": card.student_name, "avatar": avatar})
         else:
             # QR/join-link guest: must hold a live guest token scoped to this code
@@ -601,9 +605,10 @@ async def bingo_ws(
             elif identity and identity[0] == "teacher":
                 anon_key, anon_name = f"teacher-{identity[1]}", (name or "Lehrkraft")
             else:
-                await ws.close(code=4001)
+                await reject(ws, 4001)
                 return
             card = _find_or_create_card(session, db, anon_token=anon_key, name=anon_name, class_id=class_id or None)
+            mgr_key = card.id
             _mgr.add_student(code, card.id, ws, info={"name": card.student_name, "avatar": avatar})
         db.refresh(session)
         await ws.send_json(_session_state(session, db, players=_mgr.infos(code)))
@@ -619,7 +624,7 @@ async def bingo_ws(
 
     try:
         while True:
-            data = await ws.receive_json()
+            data = await receive_json(ws, db)
             action = data.get("action")
             db.refresh(session)
 
@@ -702,8 +707,7 @@ async def bingo_ws(
         pass
     finally:
         if role == "student":
-            mgr_key = card_id if token else student_id
-            _mgr.remove_student(code, mgr_key)
+            _mgr.remove_student(code, mgr_key, ws)
             await _mgr.broadcast(code, {"event": "players", "players": _mgr.infos(code)})
         else:
             _mgr.remove_teacher(code, ws)

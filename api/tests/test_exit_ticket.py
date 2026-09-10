@@ -153,28 +153,30 @@ def _guest_scope(code: str, name="Gast") -> dict:
 
 
 def test_ws_rejects_unknown_session(client, teacher, session):
+    """Abgewiesen wird nach dem accept(): vorher geschlossen, sieht der Browser
+    statt 4004 nur einen Abbruch — und die Seite verbindet endlos neu."""
     async def run():
-        with pytest.raises(ConnectionError):
-            async with connect_ws(app, _teacher_scope("NOPE12", teacher)):
-                pass
+        async with connect_ws(app, _teacher_scope("NOPE12", teacher)) as ws:
+            with pytest.raises(ConnectionError, match="4004"):
+                await ws.receive_json()
     asyncio.run(run())
 
 
 def test_ws_host_view_requires_a_teacher(client, student, session):
     """role=teacher off a student token must not open — responses carry names."""
     async def run():
-        with pytest.raises(ConnectionError):
-            async with connect_ws(app, _scope(session["code"], "role=teacher",
-                                              bearer_headers(student.id, "student"))):
-                pass
+        async with connect_ws(app, _scope(session["code"], "role=teacher",
+                                          bearer_headers(student.id, "student"))) as ws:
+            with pytest.raises(ConnectionError, match="4003"):
+                await ws.receive_json()
     asyncio.run(run())
 
 
 def test_ws_anonymous_student_without_a_guest_token_is_rejected(client, session):
     async def run():
-        with pytest.raises(ConnectionError):
-            async with connect_ws(app, _scope(session["code"], "role=student")):
-                pass
+        async with connect_ws(app, _scope(session["code"], "role=student")) as ws:
+            with pytest.raises(ConnectionError, match="4001"):
+                await ws.receive_json()
     asyncio.run(run())
 
 
@@ -299,9 +301,24 @@ def test_fremde_lehrkraft_kommt_nicht_an_die_hostansicht(client, teacher2, sessi
     Lehrkraft. Die Klasse schreibt sie in der Erwartung, dass genau sie sie
     liest — nicht das ganze Kollegium mit dem Code."""
     async def run():
-        with pytest.raises(ConnectionError):
-            async with connect_ws(app, _teacher_scope(session["code"], teacher2)):
-                pass
+        async with connect_ws(app, _teacher_scope(session["code"], teacher2)) as ws:
+            with pytest.raises(ConnectionError, match="4003"):
+                await ws.receive_json()
+    asyncio.run(run())
+
+
+def test_jeder_gast_zaehlt_als_eigener_teilnehmer(client, teacher, session):
+    """Gaeste haben keine student_id. Unter dem gemeinsamen Platz 0 verdraengte
+    jeder neue Gast den vorigen, und die Lehrkraft sah dauerhaft »1 Teilnehmer«."""
+    async def run():
+        async with connect_ws(app, _teacher_scope(session["code"], teacher)) as host:
+            await host.receive_json()  # state
+            async with connect_ws(app, _guest_scope(session["code"], "Ada")) as ada:
+                await ada.receive_json()
+                assert await host.receive_json() == {"event": "participant_joined", "count": 1}
+                async with connect_ws(app, _guest_scope(session["code"], "Ben")) as ben:
+                    await ben.receive_json()
+                    assert await host.receive_json() == {"event": "participant_joined", "count": 2}
     asyncio.run(run())
 
 

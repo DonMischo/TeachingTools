@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -48,9 +49,7 @@ type RosterRow = {
 
 export default function ExitgameHostPage() {
   const { code } = useParams<{ code: string }>();
-  const wsRef = useRef<WebSocket | null>(null);
   const [roster, setRoster] = useState<RosterRow[]>([]);
-  const [connected, setConnected] = useState(false);
   const [logAttemptId, setLogAttemptId] = useState<number | null>(null);
   const joinUrl = useLanUrl(`/play/exitgame/${code}`);
 
@@ -63,15 +62,9 @@ export default function ExitgameHostPage() {
     enabled: logAttemptId != null,
   });
 
-  useEffect(() => {
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/exitgame-sessions/${code}/ws`);
-    wsRef.current = ws;
-
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const { connected } = useLiveSocket(
+    `/api/exitgame-sessions/${code}/ws`,
+    (msg) => {
       if (msg.event === "roster") {
         setRoster(msg.attempts);
       } else if (msg.event === "progress") {
@@ -89,9 +82,8 @@ export default function ExitgameHostPage() {
           return next;
         });
       }
-    };
-    return () => ws.close();
-  }, [code]);
+    },
+  );
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">

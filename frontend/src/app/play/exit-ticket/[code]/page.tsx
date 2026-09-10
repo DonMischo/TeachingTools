@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
@@ -19,7 +20,6 @@ export default function ExitTicketPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
   const guest = useGuestSession(code);
-  const wsRef = useRef<WebSocket | null>(null);
   const [mounted, setMounted] = useState(false);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [rating, setRating] = useState<number | null>(null);
@@ -46,26 +46,14 @@ export default function ExitTicketPlayPage() {
     }
   }
 
-  useEffect(() => {
-    if (!code || !mounted) return;
-    if (isGuest && !guest.token) return;           // wait until the guest has a token
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const params = new URLSearchParams({ role: "student" });
-    if (studentId) params.set("student_id", String(studentId));
-    params.set("student_name", studentName);
-    if (guest.token) params.set("guest_token", guest.token);
-    const ws = new WebSocket(
-      `${proto}://${window.location.host}/api/exit-ticket/${code}/ws?${params}`
-    );
-    wsRef.current = ws;
-
-    ws.onclose = (e) => {
-      if (e.code === 4004) setError("Exit Ticket nicht gefunden.");
-      else if (e.code === 4001) guest.markExpired();  // guest token missing/expired → hard block
-    };
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const params = new URLSearchParams({ role: "student" });
+  if (studentId) params.set("student_id", String(studentId));
+  params.set("student_name", studentName);
+  if (guest.token) params.set("guest_token", guest.token);
+  const live = useLiveSocket(
+    // Gäste verbinden erst, wenn sie ein Token haben.
+    code && mounted && !(isGuest && !guest.token) ? `/api/exit-ticket/${code}/ws?${params}` : null,
+    (msg) => {
       if (msg.event === "state") {
         setSession({
           status: msg.status,
@@ -78,20 +66,23 @@ export default function ExitTicketPlayPage() {
       } else if (msg.event === "closed") {
         setSession(prev => prev ? { ...prev, status: "closed" } : prev);
       }
-    };
-
-    return () => ws.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, mounted, studentId, studentName, guest.token]);
+    },
+    {
+      onRejected: (c) => {
+        if (c === 4004) setError("Exit Ticket nicht gefunden.");
+        else if (c === 4001) guest.markExpired();  // guest token missing/expired → hard block
+      },
+    },
+  );
 
   function submit() {
     if (!session || session.status !== "open") return;
     if (session.rating_enabled && rating === null) return;
-    wsRef.current?.send(JSON.stringify({
+    live.send({
       action: "submit",
       rating: rating,
       comment: comment.trim() || null,
-    }));
+    });
   }
 
   if (!mounted) return null;

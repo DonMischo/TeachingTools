@@ -8,10 +8,10 @@
  * angelegte Code liegt in localStorage — ein versehentliches Neuladen soll
  * nicht das laufende Rennen der Klasse verlieren.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAvailability } from "@/hooks/useAvailability";
 import { api, type WettschreibenRennen } from "@/lib/api";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { type Lektion } from "@/lib/tippen/lektionen";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
@@ -27,7 +27,6 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   const [laeufer, setLaeufer] = useState<Laeufer[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
 
   const beitrittsUrl = useLanUrl(rennen ? `/play/wettschreiben/${rennen.code}` : "");
 
@@ -43,16 +42,9 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   }, [ready]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Host-Socket: liefert den Stand aller Mitschreiber.
-  useEffect(() => {
-    if (!rennen) return;
-    const ws = new WebSocket(wsUrl(`/api/wettschreiben/${rennen.code}/ws?role=teacher`));
-    wsRef.current = ws;
-    ws.onmessage = e => {
-      const m = JSON.parse(e.data);
-      if (m.typ === "stand") setLaeufer(m.teilnehmer);
-    };
-    return () => { ws.close(); wsRef.current = null; };
-  }, [rennen?.code]);
+  const { send: sende } = useLiveSocket(rennen ? `/api/wettschreiben/${rennen.code}/ws?role=teacher` : null, m => {
+    if (m.typ === "stand") setLaeufer(m.teilnehmer);
+  });
 
   const anlegen = useCallback(async () => {
     setLaedt(true);
@@ -73,7 +65,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
     if (!rennen) return;
     try {
       setRennen(await api.wettschreiben.starten(rennen.code));
-      wsRef.current?.send(JSON.stringify({ typ: "start" }));
+      sende({ typ: "start" });
     } catch (e) {
       setFehler(e instanceof Error ? e.message : "Start nicht möglich.");
     }

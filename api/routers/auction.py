@@ -11,7 +11,7 @@ from ..models import AuctionBid, AuctionSession, AuctionSet, Haus, HausMember, S
 from .haeuser import haus_total_points
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_teacher, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json
 from ..display_names import short_name
 
 router = APIRouter(prefix="/api/auction", tags=["auction"])
@@ -283,7 +283,7 @@ async def auction_ws(
 
     try:
         while True:
-            data = await ws.receive_json()
+            data = await receive_json(ws, db)
             action = data.get("action")
 
             if is_teacher_ctrl:
@@ -365,6 +365,6 @@ async def auction_ws(
             _spectators.get(code, {}).pop(ws, None)
             await _mgr.broadcast(code, {"event": "players", "players": _spectator_names(code)})
         if is_haussp and house_id is not None:
-            _mgr.remove_student(code, house_id)
+            _mgr.remove_student(code, house_id, ws)
         else:
             _mgr.remove_teacher(code, ws)

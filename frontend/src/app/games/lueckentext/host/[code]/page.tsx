@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
@@ -15,25 +15,20 @@ type RankingEntry = { pid: number; name: string; avatar: string; score: number; 
 export default function LueckentextHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const wsRef = useRef<WebSocket | null>(null);
   const joinUrl = useLanUrl(`/games/lueckentext/play/${code}`);
 
   const [status, setStatus] = useState<"waiting" | "active" | "finished">("waiting");
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
 
-  useEffect(() => {
-    const ws = new WebSocket(wsUrl(`/api/lueckentexte/sessions/${code}/ws`));
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  useLiveSocket(
+    `/api/lueckentexte/sessions/${code}/ws`,
+    (msg) => {
       if (msg.event === "ranking") {
         setRanking(msg.ranking ?? []);
       }
-    };
-    ws.onerror = () => toast("WebSocket-Fehler", "error");
-    return () => ws.close();
-  }, [code, toast]);
+    },
+    { onRejected: () => toast("WebSocket-Fehler", "error") },
+  );
 
   // Fetch state once for the current status.
   useEffect(() => {

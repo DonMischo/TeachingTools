@@ -26,7 +26,7 @@ from ..display_names import abbreviate_stored, short_name
 from ..tipp_text import pruefe_tippbar
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 
 router = APIRouter(prefix="/api/wettschreiben", tags=["wettschreiben"])
 
@@ -218,7 +218,7 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
                            teilnehmer_id: int = 0, db: Session = Depends(get_db)):
     s = db.query(WettschreibenSession).filter_by(code=code.upper()).first()
     if not s:
-        await websocket.close(code=4004)
+        await reject(websocket, 4004)
         return
 
     # Identität nur aus der Verbindung selbst — ein mitgeschicktes role=teacher
@@ -226,13 +226,13 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
     identity = ws_identity(websocket, db)
     guest = ws_guest(websocket, code, db) if not identity else None
     if not identity and not guest:
-        await websocket.close(code=4001)
+        await reject(websocket, 4001)
         return
 
     if role == "teacher":
         teacher = db.get(Teacher, identity[1]) if identity and identity[0] == "teacher" else None
         if not teacher or (s.created_by != teacher.id and teacher.role != "admin"):
-            await websocket.close(code=4003)
+            await reject(websocket, 4003)
             return
     else:
         # Der Platz im Rennen muss wirklich diesem Spieler gehören.
@@ -242,7 +242,7 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
             or (identity is not None and identity[0] == "student" and t.student_id == identity[1])
         )
         if not eigen:
-            await websocket.close(code=4003)
+            await reject(websocket, 4003)
             return
 
     await websocket.accept()
@@ -257,7 +257,7 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
 
     try:
         while True:
-            nachricht = await websocket.receive_json()
+            nachricht = await receive_json(websocket, db)
             if nachricht.get("typ") == "start" and role == "teacher":
                 await mgr.broadcast(code, {"typ": "start"})
                 continue
@@ -285,7 +285,7 @@ async def wettschreiben_ws(code: str, websocket: WebSocket, role: str = "student
         if role == "teacher":
             mgr.remove_teacher(code, websocket)
         else:
-            mgr.remove_student(code, teilnehmer_id)
+            mgr.remove_student(code, teilnehmer_id, websocket)
 
 
 def _schreibe_ergebnis(db: Session, teilnehmer_id: int, eintrag: dict) -> None:

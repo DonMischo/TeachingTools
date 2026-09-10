@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { PlayerIdentityForm, ScopeClassOption, Team } from "@/components/PlayerIdentityForm";
@@ -136,9 +136,6 @@ function StudentCountdown({ seconds, stopped }: { seconds: number; stopped: bool
 export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
-  const ws = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const reconnectAttempts = useRef(0);
   const { auth } = useAuth();
   const guest = useGuestSession(code);
 
@@ -188,39 +185,21 @@ export default function PlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Wer spielt; null = keine Verbindung (noch nicht beigetreten, rausgeworfen).
+  const [player, setPlayer] = useState<{ participantId: number; name: string; avatar: string; guestToken: string | null } | null>(null);
+
   function connectWs(participantId: number, playerName: string, playerAvatar: string, gtoken?: string | null) {
-    const gt = gtoken ?? guest.token;
-    const socket = new WebSocket(
-      wsUrl(`/api/sessions/${code}/ws?role=student&participant_id=${participantId}${gt ? `&guest_token=${gt}` : ""}`)
-    );
-    ws.current = socket;
+    setPlayer({ participantId, name: playerName, avatar: playerAvatar, guestToken: gtoken ?? guest.token });
+  }
 
-    socket.onopen = () => { reconnectAttempts.current = 0; };
-
-    socket.onclose = (e) => {
-      // Absichtlich geschlossen (Rauswurf, Seite verlassen) oder schon ersetzt.
-      if (ws.current !== socket) return;
-      // 4001 = guest token missing/expired → hard block (no rejoin).
-      if (e.code === 4001) { guest.markExpired(); return; }
-      if (e.code === 4003 || e.code === 4004) {
-        // Platz oder Runde gibt es nicht mehr: neu beitreten lassen, statt
-        // endlos auf »Verbinde…« zu stehen.
-        ws.current = null;
-        clearSaved();
-        setConnecting(false);
-        setJoinError("Diese Teilnahme gibt es nicht mehr. Bitte tritt neu bei.");
-        setPhase({ kind: "join" });
-        return;
-      }
-      // Alles andere ist ein Abriss — Handy gesperrt, WLAN weg. Ohne erneutes
-      // Verbinden blieb der Warteraum stehen, und die erste Frage kam erst nach
-      // dem Neuladen an. Beim Wiedereinstieg schickt der Server den Stand nach.
-      const delay = Math.min(1000 * 2 ** reconnectAttempts.current++, 10_000);
-      reconnectTimer.current = setTimeout(() => connectWs(participantId, playerName, playerAvatar, gt), delay);
-    };
-
-    socket.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  // Reißt die Verbindung ab (Handy gesperrt, WLAN weg), verbindet der Hook
+  // selbst neu; beim Wiedereinstieg schickt der Server den Stand nach.
+  const live = useLiveSocket(
+    player && `/api/sessions/${code}/ws?role=student&participant_id=${player.participantId}` +
+      (player.guestToken ? `&guest_token=${player.guestToken}` : ""),
+    (msg) => {
+      if (!player) return;
+      const { participantId, name: playerName, avatar: playerAvatar } = player;
 
       if (msg.event === "joined") {
         setPhase({ kind: "waiting", participantId, name: playerName, avatar: playerAvatar });
@@ -296,9 +275,8 @@ export default function PlayPage() {
         });
 
       } else if (msg.event === "kicked") {
-        // Vor dem Schließen austragen, sonst hielte onclose das für einen Abriss.
-        ws.current = null;
-        socket.close();
+        // Verbindung abbauen; den Schluss-Code 4000 wertet der Hook nicht als Abriss.
+        setPlayer(null);
         setPhase({ kind: "join" });
         clearSaved();
 
@@ -320,8 +298,23 @@ export default function PlayPage() {
           scoreRatio: msg.score_ratio ?? 0,
         }));
       }
-    };
-  }
+    },
+    {
+      onRejected: (c) => {
+        // 4001 = guest token missing/expired → hard block (no rejoin).
+        if (c === 4001) { guest.markExpired(); return; }
+        if (c === 4003 || c === 4004) {
+          // Platz oder Runde gibt es nicht mehr: neu beitreten lassen, statt
+          // endlos auf »Verbinde…« zu stehen.
+          setPlayer(null);
+          clearSaved();
+          setConnecting(false);
+          setJoinError("Diese Teilnahme gibt es nicht mehr. Bitte tritt neu bei.");
+          setPhase({ kind: "join" });
+        }
+      },
+    },
+  );
 
   async function handleJoin(joinName: string, avatar: string, teamId?: number | null, classId?: number | null) {
     if (teamMode && teamId == null) { setJoinError("Bitte wähle ein Team."); return; }
@@ -360,7 +353,7 @@ export default function PlayPage() {
   }
 
   function sendAnswer(ids: number[]) {
-    ws.current?.send(JSON.stringify({ action: "answer", answer_ids: ids }));
+    live.send({ action: "answer", answer_ids: ids });
   }
 
   function toggleChoice(phase: Extract<Phase, { kind: "question" }>, answerId: number) {
@@ -384,13 +377,6 @@ export default function PlayPage() {
     if (phase.kind === "question") { setTextInput(""); setTlAnswer({}); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind === "question" ? (phase as Extract<Phase, { kind: "question" }>).question.id : null]);
-
-  useEffect(() => () => {
-    clearTimeout(reconnectTimer.current);
-    const socket = ws.current;
-    ws.current = null;
-    socket?.close();
-  }, []);
 
   // ── Join screen ────────────────────────────────────────────────────
   if (!mounted) return null;
@@ -467,7 +453,7 @@ export default function PlayPage() {
       const board = q.timeline;
       const submitTl = () => {
         if (phase.answered) return;
-        ws.current?.send(JSON.stringify({ action: "answer", timeline_answer: tlAnswer }));
+        live.send({ action: "answer", timeline_answer: tlAnswer });
       };
       return (
         <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">
@@ -502,7 +488,7 @@ export default function PlayPage() {
       const unit = parts.length > 1 && !/^\d+$/.test(parts[parts.length - 1]) ? parts[parts.length - 1] : "";
       const submitText = () => {
         if (!textInput.trim() || phase.answered) return;
-        ws.current?.send(JSON.stringify({ action: "answer", answer_text: textInput.trim().replace(/\s/g, "") }));
+        live.send({ action: "answer", answer_text: textInput.trim().replace(/\s/g, "") });
       };
       return (
         <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">

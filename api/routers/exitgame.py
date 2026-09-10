@@ -61,7 +61,7 @@ from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify, is_student
 from ..utils import gen_code
 from ..ws_auth import ws_teacher
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, reject, release_db
 from ..display_names import NameScope, short_name
 
 router = APIRouter(tags=["exitgame"])
@@ -1200,13 +1200,13 @@ def get_attempt_log(attempt_id: int, db: Session = Depends(get_db), current: Tea
 async def exitgame_ws(code: str, websocket: WebSocket, db: Session = Depends(get_db)):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()
     if not s:
-        await websocket.close(code=4004)
+        await reject(websocket, 4004)
         return
     # Die Roster-Ansicht zeigt, wer gerade wo steht und wie viele Fehler er
     # gemacht hat — das ist die Stunde dieser Lehrkraft, nicht die aller.
     teacher = ws_teacher(websocket, db)
     if teacher is None or not is_session_owner(s, teacher):
-        await websocket.close(code=4003)
+        await reject(websocket, 4003)
         return
 
     await websocket.accept()
@@ -1231,6 +1231,7 @@ async def exitgame_ws(code: str, websocket: WebSocket, db: Session = Depends(get
 
     try:
         while True:
+            release_db(db)
             await websocket.receive_text()  # host sends nothing meaningful; keep connection alive
     except WebSocketDisconnect:
         pass

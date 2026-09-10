@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayerIdentityForm, ScopeClassOption } from "@/components/PlayerIdentityForm";
 import { GuestExpired } from "@/components/GuestExpired";
@@ -26,7 +26,6 @@ export default function BingoPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
   const guest = useGuestSession(code);
-  const wsRef = useRef<WebSocket | null>(null);
   const { saved, save: saveSaved, loaded: savedLoaded } = useSavedPlayer("bingo_session", code);
 
   const [phase, setPhase] = useState<Phase>({ kind: "join" });
@@ -64,27 +63,22 @@ export default function BingoPlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, savedLoaded, auth?.student?.id]);
 
+  // Pfad der Live-Verbindung; null, solange noch niemand beigetreten ist.
+  const [socketPath, setSocketPath] = useState<string | null>(null);
+
   function connect(token: string, name: string, avatar: string, gtoken?: string | null, classId?: number | null) {
-    if (wsRef.current) wsRef.current.close();
     setJoinError(null);
     setConnecting(true);
     saveSaved({ token, name, avatar });
     playerNameRef.current = name;
     const gt = gtoken ?? guest.token;
-    const url = wsUrl(`/api/bingo/${code}/ws?role=student&token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}${gt ? `&guest_token=${gt}` : ""}${classId ? `&class_id=${classId}` : ""}`);
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    setSocketPath(`/api/bingo/${code}/ws?role=student&token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}${gt ? `&guest_token=${gt}` : ""}${classId ? `&class_id=${classId}` : ""}`);
+  }
 
-    ws.onopen = () => setConnecting(false);
-
-    ws.onclose = (e) => {
-      setConnecting(false);
-      if (e.code === 4004) setJoinError("Bingo-Runde nicht gefunden.");
-      else if (e.code === 4001) guest.markExpired();  // guest token missing/expired → hard block
-    };
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const live = useLiveSocket(
+    socketPath,
+    (msg) => {
+      const name = playerNameRef.current;
       if (msg.event === "state") {
         setGame({ status: msg.status, last_called: msg.last_called, called_indices: msg.called_indices ?? [] });
         if (Array.isArray(msg.players)) setPlayers(msg.players);
@@ -124,8 +118,19 @@ export default function BingoPlayPage() {
         setGame({ status: "waiting", last_called: null, called_indices: [] });
         setPhase({ kind: "waiting", name: playerNameRef.current });
       }
-    };
-  }
+    },
+    {
+      onOpen: () => setConnecting(false),
+      onClose: () => setConnecting(false),
+      onRejected: (c) => {
+        setConnecting(false);
+        // Pfad vergessen, damit ein erneuter Beitritt wirklich neu verbindet.
+        setSocketPath(null);
+        if (c === 4004) setJoinError("Bingo-Runde nicht gefunden.");
+        else if (c === 4001) guest.markExpired();  // guest token missing/expired → hard block
+      },
+    },
+  );
 
   async function handleGuestJoin(name: string, avatar: string, _teamId?: number | null, classId?: number | null) {
     try {
@@ -148,7 +153,7 @@ export default function BingoPlayPage() {
   function markCell(pos: number) {
     if (game.status !== "active" || !card) return;
     if (card.marked_positions.includes(pos) || wrongPositions.includes(pos)) return;
-    wsRef.current?.send(JSON.stringify({ action: "mark", position: pos }));
+    live.send({ action: "mark", position: pos });
   }
 
   // Guest's 60-min window elapsed → hard block, no rejoin.

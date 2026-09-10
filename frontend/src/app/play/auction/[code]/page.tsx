@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { useHubIdentity } from "@/hooks/useHubIdentity";
@@ -36,7 +36,6 @@ export default function AuctionPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
   const guest = useGuestSession(code);
-  const wsRef = useRef<WebSocket | null>(null);
 
   const [nameInput, setNameInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -57,22 +56,19 @@ export default function AuctionPlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, auth?.student?.id]);
 
+  // Pfad der Live-Verbindung; null, solange noch niemand beigetreten ist.
+  const [socketPath, setSocketPath] = useState<string | null>(null);
+
   function connect(token: string, name: string, gtoken?: string | null) {
-    if (wsRef.current) wsRef.current.close();
     setJoinError(null);
     saveSaved(code, token);
     const gt = gtoken ?? guest.token;
-    const url = wsUrl(`/api/auction/${code}/ws?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}${gt ? `&guest_token=${gt}` : ""}`);
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    setSocketPath(`/api/auction/${code}/ws?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name)}${gt ? `&guest_token=${gt}` : ""}`);
+  }
 
-    ws.onclose = (e) => {
-      if (e.code === 4004) setJoinError("Auktion nicht gefunden.");
-      else if (e.code === 4001 && !auth) guest.markExpired();  // guest token missing/expired → hard block
-    };
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const live = useLiveSocket(
+    socketPath,
+    (msg) => {
       if (msg.event === "state") {
         setAuctionState(prev => ({
           status: msg.status,
@@ -104,8 +100,16 @@ export default function AuctionPlayPage() {
           winning_bid: msg.winning_bid,
         } : prev);
       }
-    };
-  }
+    },
+    {
+      onRejected: (c) => {
+        // Pfad vergessen, damit ein erneuter Beitritt wirklich neu verbindet.
+        setSocketPath(null);
+        if (c === 4004) setJoinError("Auktion nicht gefunden.");
+        else if (c === 4001 && !auth) guest.markExpired();  // guest token missing/expired → hard block
+      },
+    },
+  );
 
   async function joinNew() {
     await joinAs(nameInput.trim());
@@ -133,7 +137,7 @@ export default function AuctionPlayPage() {
   function bid() {
     const amount = parseInt(bidInput);
     if (!amount || amount <= 0) return;
-    wsRef.current?.send(JSON.stringify({ action: "bid", amount }));
+    live.send({ action: "bid", amount });
   }
 
   // Guest's 60-min window elapsed → hard block, no rejoin.

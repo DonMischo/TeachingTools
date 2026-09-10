@@ -6,7 +6,7 @@ import { AvatarDisplay } from "@/components/AvatarPicker";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { ClassPoints } from "@/lib/api";
 import { TimelineGameBoard } from "@/components/timeline/TimelineGameBoard";
 import { TimelineBoard, TimelineSolution } from "@/components/timeline/types";
@@ -171,7 +171,6 @@ type ConfirmState = { msg: string; onYes: () => void } | null;
 
 export default function HostPage() {
   const { code } = useParams<{ code: string }>();
-  const ws = useRef<WebSocket | null>(null);
   const [phase, setPhase] = useState<HostPhase>({ kind: "connecting" });
   const [lanIp, setLanIp] = useState<string | null>(null);
   const [showJoinQR, setShowJoinQR] = useState(false);
@@ -182,9 +181,6 @@ export default function HostPage() {
   const [newTeamName, setNewTeamName] = useState("");
   // Warum die Verbindung abgewiesen wurde (4003/4004) — sonst stünde »Verbinde…« ewig da.
   const [connectError, setConnectError] = useState<string | null>(null);
-  // Hochzählen baut die Verbindung neu auf (siehe onclose).
-  const [generation, setGeneration] = useState(0);
-  const reconnectAttempts = useRef(0);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -219,37 +215,10 @@ export default function HostPage() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const socket = new WebSocket(wsUrl(`/api/sessions/${code}/ws?role=teacher`));
-    ws.current = socket;
-    let stopped = false;
-    let retry: ReturnType<typeof setTimeout> | undefined;
-
-    socket.onopen = () => {
-      reconnectAttempts.current = 0;
-      setPhase({ kind: "waiting", participantCount: 0, participants: [] });
-    };
-
-    socket.onclose = (e) => {
-      if (stopped) return;
-      setPhase((prev) => (prev.kind === "connecting" ? prev : { kind: "connecting" }));
-      // Abgewiesen: ein neuer Versuch ändert daran nichts — sagen, woran es liegt.
-      if (e.code === 4003 || e.code === 4004) {
-        setConnectError(e.code === 4004
-          ? `Sitzung ${code} gibt es nicht (mehr).`
-          : "Keine Berechtigung — bitte mit dem Konto anmelden, das diese Sitzung gestartet hat.");
-        return;
-      }
-      // Sonst ein Abriss (WLAN, Ruhezustand, Server-Neustart): selbst neu
-      // verbinden, statt dauerhaft auf »Verbinde…« zu stehen.
-      retry = setTimeout(() => setGeneration((g) => g + 1),
-        Math.min(1000 * 2 ** reconnectAttempts.current++, 10_000));
-    };
-
-    socket.onmessage = (e) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const msg: any = JSON.parse(e.data);
-
+  const live = useLiveSocket(
+    `/api/sessions/${code}/ws?role=teacher`,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (msg: any) => {
       if (msg.event === "state") {
         // Waiting room initial state — nach Neuladen oder Wiederverbinden samt
         // der schon Beigetretenen, sonst stünde dort nur die Zahl.
@@ -377,14 +346,24 @@ export default function HostPage() {
           isGroupScope: msg.is_group_scope ?? false,
         });
       }
-    };
-
-    return () => { stopped = true; clearTimeout(retry); socket.close(); };
-  }, [code, generation]);
+    },
+    {
+      onOpen: () => setPhase({ kind: "waiting", participantCount: 0, participants: [] }),
+      // Abriss (WLAN, Ruhezustand, Server-Neustart): der Hook verbindet selbst neu.
+      onClose: () => setPhase((prev) => (prev.kind === "connecting" ? prev : { kind: "connecting" })),
+      // Abgewiesen: ein neuer Versuch ändert daran nichts — sagen, woran es liegt.
+      onRejected: (c) => {
+        setPhase({ kind: "connecting" });
+        setConnectError(c === 4004
+          ? `Sitzung ${code} gibt es nicht (mehr).`
+          : "Keine Berechtigung — bitte mit dem Konto anmelden, das diese Sitzung gestartet hat.");
+      },
+    },
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function send(action: string, extra?: Record<string, any>) {
-    ws.current?.send(JSON.stringify({ action, ...extra }));
+    live.send({ action, ...extra });
   }
 
   const origin = mounted ? window.location.origin : "";

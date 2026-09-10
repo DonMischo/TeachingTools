@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { JoinQR } from "@/components/JoinQR";
 import { GuestAccessToggle } from "@/components/GuestAccessToggle";
 import { useLanUrl } from "@/hooks/useLanUrl";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 
 type Distribution = Record<number, number>;
 
@@ -57,7 +57,6 @@ function BarChart({ question, dist }: { question: BarometerSessionOut["questions
 export default function BarometerHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const wsRef = useRef<WebSocket | null>(null);
   const joinUrl = useLanUrl(`/play/barometer/${code}`);
 
   const { data: session } = useQuery<BarometerSessionOut>({
@@ -72,12 +71,9 @@ export default function BarometerHostPage() {
   });
 
   // WebSocket
-  useEffect(() => {
-    const ws = new WebSocket(wsUrl(`/api/barometer/${code}/ws?role=teacher`));
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const liveSocket = useLiveSocket(
+    `/api/barometer/${code}/ws?role=teacher`,
+    (msg) => {
       if (msg.event === "state") {
         setLive(prev => ({
           ...prev,
@@ -113,16 +109,12 @@ export default function BarometerHostPage() {
       } else if (msg.event === "closed") {
         setLive(prev => ({ ...prev, status: "closed" }));
       }
-    };
-
-    ws.onerror = () => toast("WebSocket-Fehler", "error");
-    return () => ws.close();
-  }, [code]);
+    },
+    { onRejected: () => toast("WebSocket-Fehler", "error") },
+  );
 
   function send(msg: object) {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
-    }
+    liveSocket.send(msg);
   }
 
   return (

@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { wsUrl } from "@/lib/utils";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
@@ -28,7 +28,6 @@ export default function BarometerPlayPage() {
   const { code } = useParams<{ code: string }>();
   const { auth } = useAuth();
   const guest = useGuestSession(code);
-  const wsRef = useRef<WebSocket | null>(null);
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>({ type: "lobby", total_questions: 0 });
   const [error, setError] = useState<string | null>(null);
@@ -47,23 +46,11 @@ export default function BarometerPlayPage() {
     }
   }
 
-  useEffect(() => {
-    if (!mounted) return;
-    if (isGuest && !guest.token) return;   // wait until the guest has a token
-    const gt = guest.token;
-    const ws = new WebSocket(wsUrl(`/api/barometer/${code}/ws?role=student${gt ? `&guest_token=${gt}` : ""}`));
-    wsRef.current = ws;
-
-    ws.onopen = () => setError(null);
-    ws.onerror = () => setError("Verbindungsfehler – bitte Seite neu laden.");
-    ws.onclose = (e) => {
-      if (e.code === 4004) setError("Umfrage nicht gefunden.");
-      else if (e.code === 4001) { if (isGuest) guest.markExpired(); else setError("Bitte einloggen, um teilzunehmen."); }
-      else if (e.code === 4003) setError("Nur Schüler können an dieser Umfrage teilnehmen.");
-    };
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const gt = guest.token;
+  const live = useLiveSocket(
+    // Gäste verbinden erst, wenn sie ein Token haben.
+    mounted && !(isGuest && !gt) ? `/api/barometer/${code}/ws?role=student${gt ? `&guest_token=${gt}` : ""}` : null,
+    (msg) => {
 
       if (msg.event === "state") {
         if (msg.status === "closed") {
@@ -95,16 +82,19 @@ export default function BarometerPlayPage() {
       } else if (msg.event === "closed") {
         setPhase({ type: "closed" });
       }
-    };
-
-    return () => ws.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, mounted, isGuest, guest.token]);
+    },
+    {
+      onOpen: () => setError(null),
+      onRejected: (c) => {
+        if (c === 4004) setError("Umfrage nicht gefunden.");
+        else if (c === 4001) { if (isGuest) guest.markExpired(); else setError("Bitte einloggen, um teilzunehmen."); }
+        else if (c === 4003) setError("Nur Schüler können an dieser Umfrage teilnehmen.");
+      },
+    },
+  );
 
   function respond(questionId: number, value: number) {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: "respond", question_id: questionId, value }));
-    }
+    live.send({ action: "respond", question_id: questionId, value });
     setPhase(prev => prev.type === "question" ? { ...prev, answered: value } : prev);
   }
 

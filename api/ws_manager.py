@@ -9,8 +9,14 @@ support player lobbies.
 
 All send helpers swallow socket errors — a dead socket is cleaned up by the
 router's disconnect handler, not mid-broadcast.
+
+The module-level helpers at the bottom are the other half every tool handler
+shares: `reject` to refuse a connection, `receive_json` / `release_db` to wait
+on the socket without pinning a database connection.
 """
 from fastapi import WebSocket
+from sqlalchemy.orm import Session
+from starlette.websockets import WebSocketState
 
 
 class RoomManager:
@@ -31,13 +37,14 @@ class RoomManager:
         if info is not None:
             self._info.setdefault(code, {})[key] = info
 
-    def remove_student(self, code: str, key, ws: WebSocket | None = None):
-        """With `ws`, only remove while that socket is still the registered one.
+    def remove_student(self, code: str, key, ws: WebSocket | None):
+        """Remove only while `ws` is still the socket registered under `key`.
 
         A reconnect registers the new socket under the same key. When the old
         socket's disconnect handler runs afterwards, it must not take the new
-        one with it — the player would silently stop receiving broadcasts."""
-        if ws is not None and self._students.get(code, {}).get(key) is not ws:
+        one with it — the player would silently stop receiving broadcasts.
+        `ws` is required on purpose, so no handler can forget it."""
+        if self._students.get(code, {}).get(key) is not ws:
             return
         self._students.get(code, {}).pop(key, None)
         self._info.get(code, {}).pop(key, None)
@@ -99,4 +106,35 @@ class RoomManager:
                 await ws.close(code=close_code)
             except Exception:
                 pass
-        self.remove_student(code, key)
+        self.remove_student(code, key, ws)
+
+
+# ── shared handler helpers ──────────────────────────────────────────────
+
+async def reject(ws: WebSocket, code: int) -> None:
+    """Refuse a connection so that the browser really sees `code`.
+
+    close() before accept() becomes an HTTP 403 on the handshake: the browser
+    then reports 1006 and cannot tell "not found" (4004), "not allowed" (4003)
+    or "guest token expired" (4001) from a dropped network — the page would
+    keep reconnecting instead of saying why."""
+    if ws.client_state == WebSocketState.CONNECTING:
+        await ws.accept()
+    await ws.close(code=code)
+
+
+def release_db(db: Session) -> None:
+    """End the handler's transaction before it waits on the socket.
+
+    A Session keeps its pooled connection checked out until the transaction
+    ends, and each handler holds one Session for the socket's whole lifetime.
+    Without this every connected player pins a connection (pool: 5 + 10
+    overflow); the next DB call then blocks the event loop for the 30 s pool
+    timeout, and the whole app hangs until it is restarted."""
+    db.commit()
+
+
+async def receive_json(ws: WebSocket, db: Session):
+    """`ws.receive_json()` without holding a database connection meanwhile."""
+    release_db(db)
+    return await ws.receive_json()

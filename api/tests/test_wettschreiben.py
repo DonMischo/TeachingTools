@@ -223,10 +223,11 @@ class TestLive:
                           headers=gast(create_guest_token(code, "Bo"))).json()["teilnehmer_id"]
         fremd = spieler_query(tid, create_guest_token(code, "Eve"))
 
+        # Abgewiesen wird nach dem accept(): nur so kommt der Code im Browser an.
         async def lauf():
-            with pytest.raises(ConnectionError):
-                async with connect_ws(app, _scope(code, [], fremd)):
-                    pass
+            async with connect_ws(app, _scope(code, [], fremd)) as ws:
+                with pytest.raises(ConnectionError, match="4003"):
+                    await ws.receive_json()
 
         asyncio.run(lauf())
 
@@ -236,8 +237,8 @@ class TestLive:
         als_host = f"role=teacher&guest_token={create_guest_token(code, 'Bo')}".encode()
 
         async def lauf():
-            with pytest.raises(ConnectionError):
-                async with connect_ws(app, _scope(code, [], als_host)):
-                    pass
+            async with connect_ws(app, _scope(code, [], als_host)) as ws:
+                with pytest.raises(ConnectionError, match="4003"):
+                    await ws.receive_json()
 
         asyncio.run(lauf())

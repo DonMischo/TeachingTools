@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useLiveSocket } from "@/hooks/useLiveSocket";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { JoinQR } from "@/components/JoinQR";
@@ -27,19 +28,13 @@ const STARS = [1, 2, 3, 4, 5];
 
 export default function ExitTicketHostPage() {
   const { code } = useParams<{ code: string }>();
-  const wsRef = useRef<WebSocket | null>(null);
   const [state, setState] = useState<State | null>(null);
 
   const playUrl = useLanUrl(`/play/exit-ticket/${code}`);
 
-  useEffect(() => {
-    if (!code) return;
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${window.location.host}/api/exit-ticket/${code}/ws?role=teacher`);
-    wsRef.current = ws;
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
+  const live = useLiveSocket(
+    code ? `/api/exit-ticket/${code}/ws?role=teacher` : null,
+    (msg) => {
       if (msg.event === "state") {
         setState({
           status: msg.status,
@@ -59,13 +54,11 @@ export default function ExitTicketHostPage() {
       } else if (msg.event === "closed") {
         setState(prev => prev ? { ...prev, status: "closed" } : prev);
       }
-    };
-
-    return () => ws.close();
-  }, [code]);
+    },
+  );
 
   function close() {
-    wsRef.current?.send(JSON.stringify({ action: "close" }));
+    live.send({ action: "close" });
   }
 
   if (!state) {

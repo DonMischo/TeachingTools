@@ -36,7 +36,7 @@ from ..authorship import scope_to_student_pool, is_student
 from .. import scoping
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(tags=["capuths"])
@@ -86,7 +86,7 @@ class _SessionManager(RoomManager):
         super().remove_teacher(code, ws)
         self._track_empty(code)
 
-    def remove_student(self, code: str, key, ws: WebSocket | None = None):
+    def remove_student(self, code: str, key, ws: WebSocket | None):
         super().remove_student(code, key, ws)
         self._track_empty(code)
 
@@ -1275,15 +1275,10 @@ async def session_ws(
 ):
     pid: int | None = None
     try:
-        # Erst annehmen, dann ablehnen: ein close() vor accept() wird zur
-        # HTTP-403-Antwort, der Browser sieht statt 4004/4003 nur 1006 — die
-        # Seite kann dann nicht sagen, woran es liegt, und versucht es ewig.
-        await websocket.accept()
-
         s = db.query(QuizSession).filter_by(join_code=code).first()
         if not s:
             logger.warning("Caputh-WS %s: Sitzung nicht gefunden (role=%s)", code, role)
-            await websocket.close(code=4004)
+            await reject(websocket, 4004)
             return
 
         # Host control requires a verified teacher identity from the session
@@ -1296,8 +1291,10 @@ async def session_ws(
                 logger.warning("Caputh-WS %s: Host abgewiesen — %s", code,
                                "nicht als Lehrkraft angemeldet" if host is None
                                else f"Sitzung gehoert nicht Lehrkraft {host.id}")
-                await websocket.close(code=4003)
+                await reject(websocket, 4003)
                 return
+
+        await websocket.accept()
 
         if role == "teacher":
             mgr.add_teacher(code, websocket)
@@ -1332,13 +1329,7 @@ async def session_ws(
 
         try:
             while True:
-                # Die Transaktion vor dem Warten beenden. Sonst haelt jede offene
-                # Verbindung ihre Datenbankverbindung fest, solange sie besteht:
-                # der Pool hat 15, eine Klasse mehr Kinder. Die naechste Verbindung
-                # blockiert dann 30 s die ganze Ereignisschleife, und die App
-                # steht, bis jemand den Container neu startet.
-                db.commit()
-                data = await websocket.receive_json()
+                data = await receive_json(websocket, db)
                 action = data.get("action")
 
                 db.expire_all()

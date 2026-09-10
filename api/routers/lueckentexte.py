@@ -23,7 +23,7 @@ from ..authorship import author_fields, scope_to_student_pool, can_modify
 from ..lueckentext_engine import validate_set_payload, sanitized_board, fuzzy_match, reveal_state, normalize_name
 from ..lueckentext_export import export_pdf
 from ..utils import gen_code
-from ..ws_manager import RoomManager
+from ..ws_manager import RoomManager, receive_json, reject
 from ..ws_auth import ws_teacher
 from ..display_names import abbreviate_stored, short_name
 
@@ -436,12 +436,10 @@ def _build_ranking(s: LueckentextSession, db: Session) -> list[dict]:
 async def session_ws(code: str, websocket: WebSocket, db: Session = Depends(get_db)):
     s = db.query(LueckentextSession).filter_by(join_code=code).first()
     if not s:
-        await websocket.accept()
-        await websocket.close(code=4004)
+        await reject(websocket, 4004)
         return
     if ws_teacher(websocket, db) is None:
-        await websocket.accept()
-        await websocket.close(code=4003)
+        await reject(websocket, 4003)
         return
 
     await websocket.accept()
@@ -450,7 +448,7 @@ async def session_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
 
     try:
         while True:
-            await websocket.receive_json()
+            await receive_json(websocket, db)
     except WebSocketDisconnect:
         pass
     finally:
