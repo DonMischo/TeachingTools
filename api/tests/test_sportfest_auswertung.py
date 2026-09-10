@@ -56,7 +56,7 @@ def test_gesamt_ranks_by_total_points(client, db, head, klass, disciplines):
 
     rows = client.get(f"{PREFIX}/gesamt", headers=head).json()
     assert [(r["rank"], r["name"], r["total_points"]) for r in rows] == [
-        (1, "Ada Test", 400), (2, "Bo Test", 380),
+        (1, "Ada T.", 400), (2, "Bo T.", 380),
     ]
 
 
@@ -73,7 +73,7 @@ def test_gesamt_lists_participants_without_results_and_skips_inactive(client, db
     _student(db, klass, "Weg", active=False)
 
     rows = client.get(f"{PREFIX}/gesamt", headers=head).json()
-    assert [(r["name"], r["total_points"]) for r in rows] == [("Ada Test", 0)]
+    assert [(r["name"], r["total_points"]) for r in rows] == [("Ada T.", 0)]
 
 
 def test_gesamt_filters_by_jahrgang_and_geschlecht(client, db, head, klass, disciplines):
@@ -81,25 +81,34 @@ def test_gesamt_filters_by_jahrgang_and_geschlecht(client, db, head, klass, disc
     _student(db, klass, "Bo", jahrgang=2013, geschlecht="männlich")
 
     by_year = client.get(f"{PREFIX}/gesamt?jahrgang=2013", headers=head).json()
-    assert [r["name"] for r in by_year] == ["Bo Test"]
+    assert [r["name"] for r in by_year] == ["Bo T."]
 
     by_gender = client.get(f"{PREFIX}/gesamt?geschlecht=weiblich", headers=head).json()
-    assert [r["name"] for r in by_gender] == ["Ada Test"]
+    assert [r["name"] for r in by_gender] == ["Ada T."]
 
 
-def test_public_boards_show_ranks_but_never_names(client, db, klass, disciplines):
-    """The board runs on a beamer — no login, so no names."""
+def test_die_siegerehrung_laeuft_ohne_login_und_ohne_namen(client, db, klass, disciplines):
+    """Die Disziplinauswertung ist die Beamer-Ansicht: kein Login, keine Namen."""
     a = _student(db, klass, "Ada")
     _result(db, a, "sprint", 7.0, 300)
     client.cookies.clear()
 
-    gesamt = client.get(f"{PREFIX}/gesamt").json()
-    assert gesamt[0]["name"] is None
-    assert (gesamt[0]["klasse"], gesamt[0]["total_points"]) == ("5a", 300)
-
     disziplin = client.get(f"{PREFIX}/disziplin").json()
     assert disziplin[0]["name"] is None
     assert disziplin[0]["points"] == 300
+
+
+def test_die_gesamtwertung_ist_lehrersache(client, db, klass, head, disciplines):
+    """Anders als die Siegerehrung ist das eine vollstaendige Leistungsliste
+    jedes Kindes der Schule — die gehoert nicht auf den Flur."""
+    a = _student(db, klass, "Ada")
+    _result(db, a, "sprint", 7.0, 300)
+
+    client.cookies.clear()
+    assert client.get(f"{PREFIX}/gesamt").status_code == 401
+
+    gesamt = client.get(f"{PREFIX}/gesamt", headers=head).json()
+    assert (gesamt[0]["name"], gesamt[0]["klasse"]) == ("Ada T.", "5a")
 
 
 # ── Disziplinwertung ─────────────────────────────────────────────────────────
@@ -114,8 +123,8 @@ def test_disziplin_ranks_within_each_discipline(client, db, head, klass, discipl
     rows = client.get(f"{PREFIX}/disziplin", headers=head).json()
     sprint = [(r["rank"], r["name"]) for r in rows if r["discipline_id"] == "sprint"]
     weit = [(r["rank"], r["name"]) for r in rows if r["discipline_id"] == "weitsprung"]
-    assert sprint == [(1, "Bo Test"), (2, "Ada Test")]
-    assert weit == [(1, "Ada Test")]
+    assert sprint == [(1, "Bo T."), (2, "Ada T.")]
+    assert weit == [(1, "Ada T.")]
 
 
 def test_disziplin_skips_unscored_results_and_disabled_disciplines(client, db, head, klass, disciplines):
@@ -133,10 +142,10 @@ def test_disziplin_jahrgang_filter_can_be_widened_to_overall(client, db, head, k
     _result(db, b, "sprint", 6.5, 380)
 
     one_year = client.get(f"{PREFIX}/disziplin?jahrgang=2012", headers=head).json()
-    assert [r["name"] for r in one_year] == ["Ada Test"]
+    assert [r["name"] for r in one_year] == ["Ada T."]
 
     overall = client.get(f"{PREFIX}/disziplin?overall=true&jahrgang=2012", headers=head).json()
-    assert [r["name"] for r in overall] == ["Bo Test", "Ada Test"]
+    assert [r["name"] for r in overall] == ["Bo T.", "Ada T."]
 
 
 # ── Klassenwertung ───────────────────────────────────────────────────────────
@@ -240,3 +249,136 @@ def test_commit_is_teacher_only(client, db, klass, disciplines):
 
     assert client.post(f"{PREFIX}/klassen-punkte/commit", json={}).status_code == 401
     assert db.query(Transaction).count() == 0
+
+
+# ── Siegerehrung statt Rangliste ─────────────────────────────────────────────
+
+def test_disziplin_zeigt_nur_die_ersten_drei_je_geschlecht(client, db, head, klass, disciplines):
+    """Die Disziplinauswertung ist eine Siegerehrung: drei Plaetze je Geschlecht.
+
+    Vorher stand dort jede Leistung jedes Kindes der Schule — mit Namen, fuer
+    jeden Angemeldeten lesbar.
+    """
+    for i, punkte in enumerate([500, 400, 300, 200]):
+        _result(db, _student(db, klass, f"Junge{i}", geschlecht="männlich"), "sprint", 7.0 + i, punkte)
+    for i, punkte in enumerate([550, 450, 350, 250]):
+        _result(db, _student(db, klass, f"Maedchen{i}", geschlecht="weiblich"), "sprint", 6.0 + i, punkte)
+
+    rows = client.get(f"{PREFIX}/disziplin", headers=head).json()
+    sprint = [r for r in rows if r["discipline_id"] == "sprint"]
+
+    jungen = [r for r in sprint if r["geschlecht"] == "männlich"]
+    maedchen = [r for r in sprint if r["geschlecht"] == "weiblich"]
+    assert len(jungen) == 3 and len(maedchen) == 3
+
+    # Der Platz zaehlt je Geschlecht neu, nicht durch die ganze Disziplin.
+    assert [r["rank"] for r in jungen] == [1, 2, 3]
+    assert [r["rank"] for r in maedchen] == [1, 2, 3]
+
+    # Die Vierten tauchen gar nicht mehr auf.
+    assert [r["points"] for r in jungen] == [500, 400, 300]
+    assert [r["points"] for r in maedchen] == [550, 450, 350]
+
+    # Und die drei, die drinstehen, mit Kurzname, Klasse und Wert.
+    erster = jungen[0]
+    assert erster["name"] == "Junge0 T."
+    assert erster["klasse"] == klass.code
+    assert erster["value"] == 7.0
+
+
+def test_disziplin_ohne_anmeldung_weiter_ohne_namen(client, db, klass, disciplines):
+    _result(db, _student(db, klass, "Ada"), "sprint", 7.0, 300)
+    client.cookies.clear()
+    rows = client.get(f"{PREFIX}/disziplin").json()
+    assert rows and all(r["name"] is None for r in rows)
+
+
+# ── Klassenzuordnung über den AK-Code ────────────────────────────────────────
+#
+# `Student.klasse` wandert beim Jahrgangssprung mit ("7a" -> "8a"). Frueher war
+# genau dieser Text der Schluessel zur Klasse: passte er nicht, fiel die Zeile
+# mit class_id=None heraus und die Klasse bekam ihre Hauspokal-Punkte nicht.
+
+def _mit_ak(db, klass, vorname, ak_code, klasse_text, punkte):
+    """Ein Schueler mit stabilem AK-Code, dessen Kuerzel-Text abweichen darf."""
+    s = Student(nachname="Test", vorname=vorname, klasse=klasse_text,
+                class_id=None, ak_code=ak_code, geschlecht="weiblich",
+                jahrgang=None, active=True)
+    db.add(s)
+    db.flush()
+    _result(db, s, "sprint", 7.0, punkte)
+    return s
+
+
+def test_veraltetes_kuerzel_findet_die_klasse_trotzdem(client, db, head, klass, disciplines):
+    """Der Text am Schueler hinkt hinterher, der AK-Code stimmt — die Punkte
+    muessen bei der Klasse ankommen."""
+    klass.ak_code = "AK2034a"
+    db.flush()
+    _mit_ak(db, klass, "Ada", "AK2034a", klasse_text="4a", punkte=300)
+
+    zeilen = client.get(f"{PREFIX}/klassen", headers=head).json()
+    assert len(zeilen) == 1
+    assert zeilen[0]["class_id"] == klass.id           # zugeordnet, nicht verloren
+    assert zeilen[0]["klasse"] == klass.code           # angezeigt wird das heutige Kuerzel
+    assert zeilen[0]["raw_total"] == 300
+
+
+def test_ohne_ak_code_greift_das_kuerzel(client, db, head, klass, disciplines):
+    """425 von 515 Schuelern hatten zuletzt einen AK-Code — die anderen duerfen
+    nicht durchs Raster fallen."""
+    klass.ak_code = "AK2034a"
+    db.flush()
+    s = Student(nachname="Test", vorname="Bo", klasse=klass.code, class_id=None,
+                ak_code=None, geschlecht="männlich", active=True)
+    db.add(s)
+    db.flush()
+    _result(db, s, "sprint", 7.0, 200)
+
+    zeilen = client.get(f"{PREFIX}/klassen", headers=head).json()
+    assert [(z["class_id"], z["raw_total"]) for z in zeilen] == [(klass.id, 200)]
+
+
+def test_beide_wege_landen_im_selben_eimer(client, db, head, klass, disciplines):
+    """Ein Schueler ueber den AK-Code, einer ueber das Kuerzel — eine Klasse."""
+    klass.ak_code = "AK2034a"
+    db.flush()
+    _mit_ak(db, klass, "Ada", "AK2034a", klasse_text="4a", punkte=300)
+    s = Student(nachname="Test", vorname="Bo", klasse=klass.code, ak_code=None,
+                geschlecht="männlich", active=True)
+    db.add(s)
+    db.flush()
+    _result(db, s, "sprint", 7.0, 200)
+
+    zeilen = client.get(f"{PREFIX}/klassen", headers=head).json()
+    assert len(zeilen) == 1
+    assert zeilen[0]["raw_total"] == 500
+    assert zeilen[0]["participant_count"] == 2
+
+
+def test_ohne_zuordenbare_klasse_bleibt_die_zeile_sichtbar_ohne_punkte(client, db, head, disciplines):
+    """Sichtbar statt still verschwunden — aber ohne class_id vergibt der
+    Commit keine Punkte."""
+    s = Student(nachname="Test", vorname="Cem", klasse="9z", ak_code=None,
+                geschlecht="männlich", active=True)
+    db.add(s)
+    db.flush()
+    _result(db, s, "sprint", 7.0, 150)
+
+    zeilen = client.get(f"{PREFIX}/klassen", headers=head).json()
+    assert [(z["klasse"], z["class_id"]) for z in zeilen] == [("9z", None)]
+
+    vorher = db.query(Transaction).count()
+    client.post(f"{PREFIX}/klassen-punkte/commit", json={}, headers=head)
+    assert db.query(Transaction).count() == vorher
+
+
+def test_die_punkte_gehen_an_die_klasse_hinter_dem_ak_code(client, db, head, klass, disciplines):
+    klass.ak_code = "AK2034a"
+    db.flush()
+    _mit_ak(db, klass, "Ada", "AK2034a", klasse_text="4a", punkte=300)
+
+    r = client.post(f"{PREFIX}/klassen-punkte/commit", json={}, headers=head)
+    assert r.status_code == 200
+    tx = db.query(Transaction).filter_by(class_id=klass.id).all()
+    assert len(tx) == 1 and tx[0].points > 0

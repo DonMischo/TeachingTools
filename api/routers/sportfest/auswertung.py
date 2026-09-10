@@ -4,19 +4,26 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from ...database import get_db
-from ...models import Teacher, Student, SportfestResult, SportfestDiscipline, Class, Transaction
+from ...models import Teacher, Student, SportfestResult, SportfestDiscipline, Transaction
 from ...schemas import AuswertungStudent, AuswertungDisciplineEntry
 from ...auth import get_current_user_optional, get_current_teacher
+from ...display_names import NameScope
+from .klassen import class_index
 
 router = APIRouter(prefix="/api/sportfest/auswertung", tags=["sportfest"])
+
+# Wie viele je Disziplin und Geschlecht in der Disziplinauswertung stehen.
+SIEGEREHRUNG_PLAETZE = 3
 
 
 def _is_authenticated(user) -> bool:
     return user is not None
 
 
-def _student_name(student: Student, authenticated: bool) -> str | None:
-    return f"{student.vorname} {student.nachname}" if authenticated else None
+def _student_name(student: Student, scope: NameScope | None) -> str | None:
+    """Ohne Anmeldung gar kein Name; mit Anmeldung die Kurzform, und nur fuer
+    die Klassenleitung dieser Klasse der volle."""
+    return scope.name(student) if scope is not None else None
 
 
 @router.get("/gesamt", response_model=list[AuswertungStudent])
@@ -24,9 +31,15 @@ def gesamt(
     jahrgang: int | None = None,
     geschlecht: str | None = None,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user_optional),
+    user: Teacher = Depends(get_current_teacher),
 ):
-    authenticated = _is_authenticated(user)
+    """Die Gesamtwertung — jedes Kind der Schule mit seiner Punktzahl.
+
+    Anders als die Disziplinauswertung (Siegerehrung, drei Plaetze, laeuft am
+    Beamer) ist das eine vollstaendige Leistungsliste. Die gehoert ins
+    Lehrerzimmer, nicht auf den Flur: nur Lehrkraefte.
+    """
+    scope = NameScope(db, user)
 
     enabled_ids: set[str] = {
         d.id for d in db.query(SportfestDiscipline).filter(SportfestDiscipline.enabled == True).all()
@@ -50,13 +63,14 @@ def gesamt(
 
     rows = q.group_by(Student.id).order_by(func.coalesce(func.sum(SportfestResult.points), 0).desc()).all()
 
+    idx = class_index(db)
     result = []
     for rank, (student, total) in enumerate(rows, start=1):
         result.append(AuswertungStudent(
             rank=rank,
-            name=_student_name(student, authenticated),
-            klasse=student.klasse,
-            jahrgang=student.jahrgang,
+            name=_student_name(student, scope),
+            klasse=idx.label(student),
+            jahrgang=idx.grade(student),
             total_points=int(total),
         ))
     return result
@@ -69,10 +83,11 @@ def disziplin(
     db: Session = Depends(get_db),
     user=Depends(get_current_user_optional),
 ):
-    authenticated = _is_authenticated(user)
+    scope = NameScope(db, user) if _is_authenticated(user) else None
 
     disciplines = db.query(SportfestDiscipline).filter(SportfestDiscipline.enabled == True).all()
 
+    idx = class_index(db)
     result: list[AuswertungDisciplineEntry] = []
 
     for disc in disciplines:
@@ -89,11 +104,20 @@ def disziplin(
             q = q.filter(Student.jahrgang == jahrgang)
         rows = q.order_by(SportfestResult.points.desc()).all()
 
-        for rank, (student, res) in enumerate(rows, start=1):
+        # Es ist eine Siegerehrung, keine Rangliste der ganzen Schule: je
+        # Disziplin und Geschlecht die ersten drei. Wer weiter hinten steht,
+        # erscheint gar nicht — seine Leistung geht niemanden sonst etwas an.
+        platz: dict[str | None, int] = {}
+        for student, res in rows:
+            gruppe = student.geschlecht
+            platz[gruppe] = platz.get(gruppe, 0) + 1
+            if platz[gruppe] > SIEGEREHRUNG_PLAETZE:
+                continue
             result.append(AuswertungDisciplineEntry(
-                rank=rank,
-                name=_student_name(student, authenticated),
-                klasse=student.klasse,
+                rank=platz[gruppe],
+                name=_student_name(student, scope),
+                klasse=idx.label(student),
+                geschlecht=gruppe,
                 discipline_id=disc.id,
                 value=res.value,
                 points=res.points,
@@ -125,6 +149,15 @@ class KlassePunkteCommitBody(BaseModel):
 
 
 def _klassen_aggregate(db: Session) -> list[KlasseEntry]:
+    """Punkte je Klasse — gebuendelt ueber den AK-Code, nicht ueber das Kuerzel.
+
+    Frueher lief das als GROUP BY auf ``Student.klasse`` mit einem Textabgleich
+    gegen ``Class.code``. Beides bricht am Jahrgangssprung: das Kuerzel wandert
+    von »7a« auf »8a«, und wo es nicht zu einer Klasse passt, fiel die Zeile mit
+    ``class_id = None`` heraus — die Klasse bekam ihre Punkte dann gar nicht.
+    Jetzt bestimmt :mod:`.klassen` die Klasse je Schueler, ueber den stabilen
+    Schluessel mit dem Kuerzel als zweitem Weg.
+    """
     from sqlalchemy import func as f
 
     enabled_ids: set[str] = {
@@ -132,12 +165,7 @@ def _klassen_aggregate(db: Session) -> list[KlasseEntry]:
     }
 
     rows = (
-        db.query(
-            Student.klasse,
-            Student.jahrgang,
-            f.coalesce(f.sum(SportfestResult.points), 0).label("total"),
-            f.count(Student.id).label("n"),
-        )
+        db.query(Student, f.coalesce(f.sum(SportfestResult.points), 0).label("total"))
         .outerjoin(
             SportfestResult,
             (SportfestResult.student_id == Student.id) &
@@ -145,24 +173,31 @@ def _klassen_aggregate(db: Session) -> list[KlasseEntry]:
             (SportfestResult.points.isnot(None)),
         )
         .filter(Student.active == True)
-        .group_by(Student.klasse, Student.jahrgang)
+        .group_by(Student.id)
         .all()
     )
 
-    classes = {c.code: c.id for c in db.query(Class).all()}
+    idx = class_index(db)
+    # Schluessel ist die Klassen-Id; wer zu keiner Klasse findet, wird unter
+    # seinem Kuerzel gesammelt und bleibt sichtbar — nur ohne Punktevergabe.
+    eimer: dict[object, KlasseEntry] = {}
+    for student, total in rows:
+        cls = idx.of(student)
+        key = cls.id if cls is not None else f"?{student.klasse or ''}"
+        eintrag = eimer.get(key)
+        if eintrag is None:
+            eintrag = KlasseEntry(
+                klasse=idx.label(student),
+                jahrgang=idx.grade(student),
+                class_id=cls.id if cls is not None else None,
+                participant_count=0,
+                raw_total=0,
+            )
+            eimer[key] = eintrag
+        eintrag.participant_count += 1
+        eintrag.raw_total += int(total)
 
-    entries = []
-    for row in rows:
-        if int(row.total) == 0:
-            continue
-        entries.append(KlasseEntry(
-            klasse=row.klasse,
-            jahrgang=row.jahrgang,
-            class_id=classes.get(row.klasse),
-            participant_count=int(row.n),
-            raw_total=int(row.total),
-        ))
-    return entries
+    return [e for e in eimer.values() if e.raw_total > 0]
 
 
 def _bayesian_normalize(entries: list[KlasseEntry], prior_strength: float) -> list[KlassePunkteEntry]:

@@ -138,7 +138,9 @@ export default function SportfestErgebnissePage() {
                   <td className="px-3 py-1.5 text-[var(--text-muted)]">{s.nummer ?? ""}</td>
                   <td className="px-3 py-1.5 font-medium whitespace-nowrap">{s.nachname}, {s.vorname}</td>
                   <td className="px-3 py-1.5 text-[var(--text-muted)]">
-                    {s.geschlecht === "männlich" ? "m" : "w"}
+                    {/* Ohne den Schalter »Geschlecht anzeigen« liefert das
+                        Backend hier null — dann »—« statt fälschlich »w«. */}
+                    {s.geschlecht === "männlich" ? "m" : s.geschlecht === "weiblich" ? "w" : "—"}
                   </td>
                   {enabledDisc.map(d => (
                     <td key={d.id} className="px-3 py-1">

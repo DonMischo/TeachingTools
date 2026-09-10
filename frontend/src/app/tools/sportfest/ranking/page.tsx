@@ -130,6 +130,9 @@ export default function SportfestRankingPage() {
   const [tab, setTab] = useState<"gesamt" | "klassen">("gesamt");
   const [jahrgang, setJahrgang] = useState<number | "">("");
   const [geschlecht, setGeschlecht] = useState("");
+  // Die Gesamtwertung ist eine vollständige Leistungsliste aller Kinder und
+  // damit Lehrersache; der Server gibt sie Schüler:innen gar nicht mehr heraus.
+  const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
 
   const { data: ranking = [], isLoading } = useQuery<AuswertungStudent[]>({
     queryKey: ["sf-gesamt", jahrgang, geschlecht],
@@ -137,28 +140,26 @@ export default function SportfestRankingPage() {
       jahrgang: jahrgang !== "" ? jahrgang : undefined,
       geschlecht: geschlecht || undefined,
     }),
-    enabled: tab === "gesamt",
+    enabled: tab === "gesamt" && isTeacher,
     staleTime: 30_000,
   });
-
-  const isAuthenticated = !!auth;
-  const isTeacher = auth?.role === "teacher" || auth?.role === "admin";
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div>
         <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏆 Gesamtranking</h1>
-        {tab === "gesamt" && (
+        {tab === "gesamt" && !isTeacher && (
           <p className="text-[var(--text-muted)] text-sm mt-1">
-            {isAuthenticated ? "Namen sichtbar (eingeloggt)" : "Anonym – bitte einloggen für Namen"}
+            Die Schülerwertung sehen nur Lehrkräfte. Die Siegerehrung je Disziplin
+            steht unter <Link href="/tools/sportfest/disziplinen" className="underline">Disziplinranking</Link>.
           </p>
         )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2">
-        {(["gesamt", "klassen"] as const).map(t => (
+        {(["gesamt", "klassen"] as const).filter(t => t !== "gesamt" || isTeacher).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               tab === t
@@ -170,7 +171,7 @@ export default function SportfestRankingPage() {
         ))}
       </div>
 
-      {tab === "gesamt" && (
+      {tab === "gesamt" && isTeacher && (
         <>
           {/* Filters */}
           <div className="flex gap-3 flex-wrap">
@@ -225,7 +226,7 @@ export default function SportfestRankingPage() {
         </>
       )}
 
-      {tab === "klassen" && <KlassenTab isTeacher={!!isTeacher} />}
+      {(tab === "klassen" || !isTeacher) && <KlassenTab isTeacher={!!isTeacher} />}
     </div>
   );
 }

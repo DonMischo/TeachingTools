@@ -141,17 +141,17 @@ def test_delete_result(client, teacher_token, disciplines, student_male, db):
 # Auswertung
 # ---------------------------------------------------------------------------
 
-def test_gesamt_public_anonymised(client, disciplines, student_male, teacher_token):
+def test_gesamt_ist_nicht_oeffentlich(client, disciplines, student_male, teacher_token):
+    """Die Gesamtwertung listet jedes Kind der Schule mit seiner Punktzahl —
+    das ist Lehrersache. Oeffentlich bleibt nur die Siegerehrung je Disziplin
+    (siehe test_sportfest_auswertung.py)."""
     client.put(
         f"/api/sportfest/results/{student_male.id}/sprint",
         json={"value_raw": "9.5"},
         headers={"Authorization": f"Bearer {teacher_token}"},
     )
     client.cookies.clear()  # remove auth cookie → simulate unauthenticated browser
-    r = client.get("/api/sportfest/auswertung/gesamt")
-    assert r.status_code == 200
-    for entry in r.json():
-        assert entry["name"] is None  # anonymised for unauthenticated
+    assert client.get("/api/sportfest/auswertung/gesamt").status_code == 401
 
 
 def test_gesamt_authenticated_shows_name(client, disciplines, student_male, teacher_token):

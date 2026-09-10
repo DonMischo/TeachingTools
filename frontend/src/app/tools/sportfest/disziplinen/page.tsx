@@ -27,9 +27,12 @@ export default function SportfestDisziplinenPage() {
     staleTime: 30_000,
   });
 
-  // Group by discipline
-  const byDisc = entries.reduce<Record<string, AuswertungDisciplineEntry[]>>((acc, e) => {
-    (acc[e.discipline_id] ??= []).push(e);
+  // Das Backend liefert je Disziplin und Geschlecht die ersten drei — also auch
+  // hier nach beidem gruppieren, sonst stehen zwei erste Plätze untereinander.
+  const GESCHLECHT_LABEL: Record<string, string> = { "männlich": "Jungen", "weiblich": "Mädchen" };
+  const byDisc = entries.reduce<Record<string, Record<string, AuswertungDisciplineEntry[]>>>((acc, e) => {
+    const g = e.geschlecht ?? "ohne";
+    ((acc[e.discipline_id] ??= {})[g] ??= []).push(e);
     return acc;
   }, {});
 
@@ -61,30 +64,37 @@ export default function SportfestDisziplinenPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Object.entries(byDisc).map(([discId, discEntries]) => (
+          {Object.entries(byDisc).map(([discId, byGeschlecht]) => (
             <div key={discId} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--border)] font-semibold text-sm">
                 {DISC_LABELS[discId] ?? discId}
               </div>
-              <table className="w-full text-xs">
-                <tbody>
-                  {discEntries.slice(0, 10).map(e => (
-                    <tr key={e.rank} className="border-b border-[var(--border)]/50">
-                      <td className="px-3 py-2 w-8 text-center">{MEDALS[e.rank - 1] ?? e.rank}</td>
-                      <td className="px-2 py-2">
-                        <div>{e.name ?? "Schüler/in"}</div>
-                        <div className="text-[var(--text-muted)]">{e.klasse}</div>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono">
-                        {e.value != null ? e.value : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-bold text-[var(--accent)]">
-                        {e.points ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {Object.entries(byGeschlecht).map(([g, list]) => (
+                <div key={g}>
+                  <div className="px-4 py-1.5 bg-[var(--surface-hover)] text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                    {GESCHLECHT_LABEL[g] ?? "Ohne Angabe"}
+                  </div>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {list.map(e => (
+                        <tr key={`${g}-${e.rank}`} className="border-b border-[var(--border)]/50">
+                          <td className="px-3 py-2 w-8 text-center">{MEDALS[e.rank - 1] ?? e.rank}</td>
+                          <td className="px-2 py-2">
+                            <div>{e.name ?? "Schüler/in"}</div>
+                            <div className="text-[var(--text-muted)]">{e.klasse}</div>
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            {e.value != null ? e.value : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right font-bold text-[var(--accent)]">
+                            {e.points ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           ))}
         </div>
