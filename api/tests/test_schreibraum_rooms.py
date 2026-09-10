@@ -190,7 +190,7 @@ def test_access_grants_crud_and_labels(client, db, teacher, room, student, klass
     s_grant = client.post(f"{PREFIX}/rooms/{room['id']}/access", headers=h,
                           json={"student_id": student.id})
     assert s_grant.status_code == 201
-    assert s_grant.json()["label"] == "Sam Schueler"
+    assert s_grant.json()["label"] == "Sam S."
 
     c_grant = client.post(f"{PREFIX}/rooms/{room['id']}/access", headers=h,
                           json={"class_id": klass.id})
@@ -198,7 +198,7 @@ def test_access_grants_crud_and_labels(client, db, teacher, room, student, klass
     assert c_grant.json()["label"] == "5a"
 
     listed = client.get(f"{PREFIX}/rooms/{room['id']}/access", headers=h).json()
-    assert {g["label"] for g in listed} == {"Sam Schueler", "5a"}
+    assert {g["label"] for g in listed} == {"Sam S.", "5a"}
     # The room payload carries the same grants.
     assert len(client.get(f"{PREFIX}/rooms/{room['id']}", headers=h).json()["access"]) == 2
 
@@ -260,7 +260,7 @@ def test_join_student_requires_a_grant_and_gets_a_color(client, db, teacher, roo
     r = client.post(f"{PREFIX}/rooms/{room['id']}/join", headers=student_auth(student))
     assert r.status_code == 200
     body = r.json()
-    assert body["name"] == "Sam Schueler"
+    assert body["name"] == "Sam S."
     assert body["is_teacher"] is False
     assert body["color"] != "#374151"
     assert body["session_token"]
@@ -279,10 +279,10 @@ def test_participants_and_log_list_the_join(client, db, teacher, room, student, 
     client.post(f"{PREFIX}/rooms/{room['id']}/join", headers=student_auth(student))
 
     parts = client.get(f"{PREFIX}/rooms/{room['id']}/participants", headers=teacher_auth(teacher)).json()
-    assert {p["name"] for p in parts} == {"Anna Müller", "Sam Schueler"}
+    assert {p["name"] for p in parts} == {"Anna Müller", "Sam S."}
 
     log = client.get(f"{PREFIX}/rooms/{room['id']}/log", headers=teacher_auth(teacher)).json()
-    assert [(e["participant_name"], e["action"]) for e in log] == [("Sam Schueler", "join")]
+    assert [(e["participant_name"], e["action"]) for e in log] == [("Sam S.", "join")]
 
     assert client.get(f"{PREFIX}/rooms/nope/participants", headers=teacher_auth(teacher)).status_code == 404
     assert client.get(f"{PREFIX}/rooms/nope/log", headers=teacher_auth(teacher)).status_code == 404
@@ -510,3 +510,27 @@ def test_export_reports_a_conversion_failure_as_500(client, teacher, room, monke
                     json={"html": "<p>Text</p>"})
     assert r.status_code == 500
     assert "Export fehlgeschlagen" in r.json()["detail"]
+
+
+def test_schueler_bekommt_die_freigabeliste_nicht(client, db, teacher, student):
+    """Wer eingeladen ist, geht die Eingeladenen nichts an.
+
+    Zum Betreten braucht ein Schueler die Liste nicht — der Zugang wird
+    serverseitig geprueft. Fuer die Lehrkraft bleibt sie sichtbar.
+    """
+    room = client.post(f"{PREFIX}/rooms", json={"title": "Raum"},
+                       headers=teacher_auth(teacher)).json()
+    client.post(f"{PREFIX}/rooms/{room['id']}/access",
+                json={"student_id": student.id}, headers=teacher_auth(teacher))
+
+    als_lehrkraft = client.get(f"{PREFIX}/rooms/{room['id']}", headers=teacher_auth(teacher)).json()
+    assert [g["label"] for g in als_lehrkraft["access"]] == ["Sam S."]
+
+    client.cookies.clear()
+    kopf = auth(create_access_token({"sub": str(student.id), "type": "student"}))
+    als_schueler = client.get(f"{PREFIX}/rooms/{room['id']}", headers=kopf)
+    assert als_schueler.status_code == 200          # reinkommen ja
+    assert als_schueler.json()["access"] == []      # die Liste nein
+
+    listing = client.get(f"{PREFIX}/rooms", headers=kopf).json()
+    assert all(r["access"] == [] for r in listing)

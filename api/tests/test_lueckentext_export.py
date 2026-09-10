@@ -132,15 +132,41 @@ class TestPdfHttp:
         r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": "Max", "avatar": "cat"}, headers={"Authorization": f"Bearer {create_guest_token(code, 'Max')}"})
         assert r.status_code == 201, r.text
         pid = r.json()["id"]
+        token = r.json()["export_token"]
 
         client.post(f"/api/lueckentexte/sessions/{code}/start", headers=auth(teacher_token))
         client.post(f"/api/lueckentexte/sessions/{code}/gaps/a/attempt", json={"participant_id": pid, "text": "Verdunstung"})
         client.post(f"/api/lueckentexte/sessions/{code}/gaps/b/attempt", json={"participant_id": pid, "text": "Wolke"})
 
-        r = client.get(f"/api/lueckentexte/sessions/{code}/participants/{pid}/export.pdf")
+        r = client.get(f"/api/lueckentexte/sessions/{code}/participants/{token}/export.pdf")
         assert r.status_code == 200
         assert r.content.startswith(b"%PDF")
         assert len(r.content) > 0
+
+    def test_export_needs_the_token_not_the_id(self, client, teacher_token, set_id):
+        """Das Blatt des Nachbarn darf nicht eine URL-Ziffer weit entfernt liegen:
+        die fortlaufende Teilnehmer-Id oeffnet den Download nicht mehr, und der
+        Schluessel des einen fuehrt nicht zum Blatt des anderen."""
+        r = client.post(f"/api/lueckentexte/{set_id}/sessions", headers=auth(teacher_token))
+        code = r.json()["join_code"]
+
+        def join(name):
+            r = client.post(f"/api/lueckentexte/sessions/{code}/join", json={"name": name, "avatar": "cat"},
+                            headers={"Authorization": f"Bearer {create_guest_token(code, name)}"})
+            assert r.status_code == 201, r.text
+            return r.json()
+
+        a, b = join("Anna"), join("Bruno")
+        assert a["export_token"] != b["export_token"]
+
+        # Die blosse Id — frueher der ganze Schluessel — reicht nicht mehr.
+        r = client.get(f"/api/lueckentexte/sessions/{code}/participants/{b['id']}/export.pdf")
+        assert r.status_code == 404
+
+        # Und Annas Schluessel gehoert zu Annas Blatt.
+        r = client.get(f"/api/lueckentexte/sessions/{code}/participants/{a['export_token']}/export.pdf")
+        assert r.status_code == 200
+        assert "Anna" in r.headers["content-disposition"]
 
 
 class TestNotFound:

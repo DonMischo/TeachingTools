@@ -512,3 +512,55 @@ def test_inactivity_watchdog_cancels_empty_session(db, game_session):
         run()
     finally:
         app.dependency_overrides.clear()
+
+# ── Kein fremder Platz ───────────────────────────────────────────────────────
+
+def _student_scope(code: str, student_id: int, participant_id: int) -> dict:
+    """Verbindung eines *angemeldeten* Schuelers, mit behaupteter Teilnehmernummer."""
+    sc = _scope(code, "student", participant_id)
+    sc["query_string"] = f"role=student&participant_id={participant_id}".encode()
+    sc["headers"] = bearer_headers(student_id, "student")
+    return sc
+
+
+def test_ein_schueler_kann_den_platz_eines_anderen_nicht_uebernehmen(db, game_session, klass):
+    """Die participant_id kommt aus dem Browser. Ohne Pruefung liesse sich damit
+    der Platz des Nachbarn belegen: seine Rueckmeldungen mitlesen und unter
+    seinem Namen antworten."""
+    from api.models import Student
+
+    a = Student(nachname="Aal", vorname="Anna", klasse=klass.code, class_id=klass.id, active=True)
+    b = Student(nachname="Bär", vorname="Ben", klasse=klass.code, class_id=klass.id, active=True)
+    db.add_all([a, b])
+    db.flush()
+    platz_b = QuizParticipant(session_id=game_session.id, name="Ben B.", avatar="cat", student_id=b.id)
+    db.add(platz_b)
+    db.flush()
+
+    async def run():
+        # Anna behauptet, Bens Teilnehmer zu sein — sie hat selbst keinen Platz.
+        # Der Handler nimmt die Verbindung an und schliesst dann; der Abbruch
+        # zeigt sich also beim ersten Lesen, nicht schon beim Verbinden.
+        async with connect_ws(app, _student_scope(game_session.join_code, a.id, platz_b.id)) as ws:
+            with pytest.raises(ConnectionError):
+                await ws.receive_json()
+    _run(db, run)
+
+
+def test_der_eigene_platz_wird_an_der_anmeldung_erkannt(db, game_session, klass):
+    """Und zwar auch dann, wenn der Browser eine falsche Nummer mitschickt."""
+    from api.models import Student
+
+    a = Student(nachname="Aal", vorname="Anna", klasse=klass.code, class_id=klass.id, active=True)
+    db.add(a)
+    db.flush()
+    platz_a = QuizParticipant(session_id=game_session.id, name="Anna A.", avatar="cat", student_id=a.id)
+    db.add(platz_a)
+    db.flush()
+
+    async def run():
+        async with connect_ws(app, _student_scope(game_session.join_code, a.id, 99999)) as ws:
+            joined = await ws.receive_json()
+            assert joined["event"] == "joined"
+            assert joined["name"] == "Anna A."
+    _run(db, run)

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 export type SavedPlayer = {
   name: string;
   avatar: string;
-  /** anon token (bingo) or participant id (caputh) — game-specific */
+  /** anon token (bingo), export token (Lückentext) — game-specific */
   token?: string;
   participantId?: number;
 };

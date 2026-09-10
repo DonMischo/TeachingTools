@@ -7,7 +7,8 @@ import zipfile
 
 import pytest
 
-from api.models import Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant
+from api.models import Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, Teacher
+from api.tests.conftest import auth
 
 
 # ---------------------------------------------------------------------------
@@ -310,3 +311,70 @@ class TestDeleteSessions:
         r = client.delete(f"/api/capuths/{caputh.id}/sessions", headers={"Authorization": f"Bearer {teacher_token}"})
         assert r.status_code == 204
         assert client.get(f"/api/capuths/{caputh.id}/sessions").json() == []
+
+
+# ── Sitzungsschloss ──────────────────────────────────────────────────────────
+#
+# Eine Sitzung ist die Stunde einer bestimmten Lehrkraft. Dass jemand *eine*
+# Lehrkraft ist, hat frueher gereicht, um die Auswertung der Kollegin zu lesen,
+# ihre Runde fernzusteuern oder sie zu loeschen — und die Codes dafuer standen
+# in der Sitzungsliste des gemeinsamen Capuths.
+
+class TestSessionLock:
+    @pytest.fixture()
+    def fremde(self, db):
+        from api.auth import hash_password
+        t = Teacher(first_name="Fremde", last_name="Kollegin", active=True,
+                    role="teacher", password_hash=hash_password("x"))
+        db.add(t)
+        db.flush()
+        return t
+
+    @pytest.fixture()
+    def fremd_head(self, fremde):
+        from api.auth import create_access_token
+        return {"Authorization": f"Bearer {create_access_token({'sub': str(fremde.id), 'type': 'teacher'})}"}
+
+    @pytest.fixture()
+    def sitzung(self, db, klass, teacher):
+        quiz = Quiz(title="Quiz", max_points=4, time_limit_default=20)
+        db.add(quiz)
+        db.flush()
+        db.add(QuizQuestion(quiz_id=quiz.id, order=0, type="single", question_text="Q?", time_limit=10))
+        s = QuizSession(quiz_id=quiz.id, class_id=klass.id, teacher_id=teacher.id, join_code="LOCK01")
+        db.add(s)
+        db.flush()
+        return s
+
+    def test_fremde_lehrkraft_sieht_die_auswertung_nicht(self, client, sitzung, fremd_head):
+        client.cookies.clear()
+        assert client.get("/api/sessions/LOCK01/report", headers=fremd_head).status_code == 403
+
+    def test_die_eigene_lehrkraft_schon(self, client, sitzung, teacher_token):
+        r = client.get("/api/sessions/LOCK01/report", headers=auth(teacher_token))
+        assert r.status_code == 200
+        assert r.json()["session_code"] == "LOCK01"
+
+    def test_admin_darf_auch(self, client, sitzung, admin_token):
+        assert client.get("/api/sessions/LOCK01/report", headers=auth(admin_token)).status_code == 200
+
+    def test_fremde_darf_nicht_loeschen_zuruecksetzen_oder_teams_bauen(self, client, sitzung, fremd_head):
+        client.cookies.clear()
+        assert client.post("/api/sessions/LOCK01/reset", headers=fremd_head).status_code == 403
+        assert client.post("/api/sessions/LOCK01/teams", json={"name": "A", "color": "#fff"},
+                           headers=fremd_head).status_code == 403
+        assert client.delete("/api/sessions/LOCK01", headers=fremd_head).status_code == 403
+
+    def test_die_sitzungsliste_verraet_fremde_codes_nicht(self, client, db, sitzung, fremd_head):
+        """Ohne diesen Filter braucht es kein Raten: die Liste des gemeinsamen
+        Capuths lieferte den Beitrittscode gleich mit."""
+        client.cookies.clear()
+        r = client.get(f"/api/capuths/{sitzung.quiz_id}/sessions", headers=fremd_head)
+        assert r.status_code == 200
+        assert [z["join_code"] for z in r.json()] == []
+
+    def test_aufraeumen_nimmt_die_runde_der_kollegin_nicht_mit(self, client, db, sitzung, fremd_head):
+        client.cookies.clear()
+        r = client.delete(f"/api/capuths/{sitzung.quiz_id}/sessions", headers=fremd_head)
+        assert r.status_code == 204
+        assert db.query(QuizSession).filter_by(join_code="LOCK01").first() is not None

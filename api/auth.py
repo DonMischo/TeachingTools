@@ -254,6 +254,34 @@ def require_class_teacher(user: Union[Teacher, Student], class_id: int | None) -
         )
 
 
+def is_session_owner(session, user, *, owner_attr: str = "teacher_id") -> bool:
+    """Gehoert diese Sitzung dem Aufrufer (oder ist er Admin)?
+
+    Eine Sitzung ist die Stunde einer bestimmten Lehrkraft: ihre Auswertung,
+    ihr Spielstand, ihr Exit-Ticket-Feedback. Dass jemand *eine* Lehrkraft ist,
+    reicht dafuer nicht — sonst laesst sich mit einem Beitrittscode die Stunde
+    der Kollegin nachlesen oder fernsteuern.
+
+    `owner_attr`, weil die Werkzeuge ihre Besitzerspalte verschieden nennen:
+    ``teacher_id`` bei Caputh/Exitgame/Lueckentext, ``created_by`` beim
+    Exit-Ticket und beim Barometer.
+    """
+    if not isinstance(user, Teacher):
+        return False
+    if user.role == "admin":
+        return True
+    return getattr(session, owner_attr, None) == user.id
+
+
+def require_session_owner(session, user, *, owner_attr: str = "teacher_id") -> None:
+    """403, wenn die Sitzung jemand anderem gehoert. Siehe is_session_owner."""
+    if not is_session_owner(session, user, owner_attr=owner_attr):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Diese Sitzung gehört einer anderen Lehrkraft.",
+        )
+
+
 def is_granted_klassensprecher(db: Session, user: Union[Teacher, Student], class_id: int | None) -> bool:
     """True if ``user`` is a Klassensprecher of ``class_id`` AND that class has
     enabled the Klassensprecher edit-grant (``Class.ksprecher_can_edit``)."""

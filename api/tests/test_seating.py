@@ -293,3 +293,156 @@ def test_export_pdf_portrait_orientation(client, klass, admin_token):
 def test_export_unknown_plan_404(client, admin_token):
     r = client.get("/api/seating/99999/export.pdf", headers=auth(admin_token))
     assert r.status_code == 404
+
+
+# ── Wer einen Sitzplan lesen darf ────────────────────────────────────────────
+#
+# Der Plan ist Lehrkraftsache. Einzige Ausnahme sind Klassensprecher mit
+# Bearbeitungsfreigabe, und die nur fuer die eigene Klasse. Vorher hing an den
+# Leseendpunkten nur `get_current_user`: mit fortlaufenden Plan-Ids liess sich
+# der Sitzplan jeder Klasse abrufen, im PDF samt Namen.
+
+from api.auth import create_access_token
+from api.models import Class as _Class, StudentRole
+
+
+def _student_head(db, klass, *, ksprecher: bool, freigeschaltet: bool = True) -> dict:
+    s = Student(nachname="Sprecher", vorname="Kim", klasse=klass.code,
+                class_id=klass.id, active=True)
+    db.add(s)
+    db.flush()
+    if ksprecher:
+        db.add(StudentRole(student_id=s.id, role_type="Klassensprecher", scope_id=klass.id))
+        klass.ksprecher_can_edit = freigeschaltet
+    db.flush()
+    return auth(create_access_token({"sub": str(s.id), "type": "student"}))
+
+
+def _plan_of(client, klass, admin_token) -> int:
+    r = client.post(f"/api/classes/{klass.id}/seating", json={}, headers=auth(admin_token))
+    return r.json()["id"]
+
+
+def test_gewoehnlicher_schueler_kommt_nicht_an_den_sitzplan(client, db, klass, admin_token):
+    plan_id = _plan_of(client, klass, admin_token)
+    head = _student_head(db, klass, ksprecher=False)
+    client.cookies.clear()
+    assert client.get(f"/api/seating/{plan_id}", headers=head).status_code == 403
+    assert client.get(f"/api/seating/{plan_id}/export.pdf", headers=head).status_code == 403
+    assert client.get(f"/api/classes/{klass.id}/seating", headers=head).status_code == 403
+
+
+def test_freigeschalteter_klassensprecher_darf_die_eigene_klasse(client, db, klass, admin_token):
+    plan_id = _plan_of(client, klass, admin_token)
+    head = _student_head(db, klass, ksprecher=True)
+    client.cookies.clear()
+    assert client.get(f"/api/seating/{plan_id}", headers=head).status_code == 200
+    assert client.get(f"/api/classes/{klass.id}/seating", headers=head).status_code == 200
+
+
+def test_klassensprecher_ohne_freigabe_bleibt_draussen(client, db, klass, admin_token):
+    plan_id = _plan_of(client, klass, admin_token)
+    head = _student_head(db, klass, ksprecher=True, freigeschaltet=False)
+    client.cookies.clear()
+    assert client.get(f"/api/seating/{plan_id}", headers=head).status_code == 403
+
+
+def test_klassensprecher_kommt_nicht_an_fremde_klassen(client, db, klass, admin_token):
+    fremd = _Class(code="9z", display_name="Klasse 9z")
+    db.add(fremd)
+    db.flush()
+    fremder_plan = _plan_of(client, fremd, admin_token)
+    head = _student_head(db, klass, ksprecher=True)
+    client.cookies.clear()
+    assert client.get(f"/api/seating/{fremder_plan}", headers=head).status_code == 403
+    assert client.get(f"/api/seating/{fremder_plan}/export.pdf", headers=head).status_code == 403
+
+
+def test_kurssitzplaene_bleiben_lehrkraeften_vorbehalten(client, db, klass, teacher_token, admin_token):
+    from api.models import StudentGroup
+    g = StudentGroup(group_type="kurs", name="Kurs I", grade=9)
+    db.add(g)
+    db.flush()
+    r = client.post(f"/api/groups/{g.id}/seating", json={}, headers=auth(admin_token))
+    plan_id = r.json()["id"]
+
+    head = _student_head(db, klass, ksprecher=True)
+    client.cookies.clear()
+    assert client.get(f"/api/seating/{plan_id}", headers=head).status_code == 403
+    assert client.get(f"/api/groups/{g.id}/seating", headers=head).status_code == 403
+    # Jede Lehrkraft schon.
+    assert client.get(f"/api/seating/{plan_id}", headers=auth(teacher_token)).status_code == 200
+
+
+# ── Namen auf dem Plan ───────────────────────────────────────────────────────
+
+def test_sitzplan_beschriftet_mit_rufnamen_initiale_nur_bei_gleichem_namen(db, klass):
+    from api.display_names import seat_labels
+    anna = Student(id=1, nachname="Bauer", vorname="Anna", klasse=klass.code, class_id=klass.id)
+    anna2 = Student(id=2, nachname="Conrad", vorname="Anna", klasse=klass.code, class_id=klass.id)
+    ben = Student(id=3, nachname="Dorn", vorname="Ben", klasse=klass.code, class_id=klass.id)
+    labels = seat_labels([anna, anna2, ben])
+    # Zwei Annas — nur die bekommen die Initiale dazu.
+    assert labels[1] == "Anna B."
+    assert labels[2] == "Anna C."
+    assert labels[3] == "Ben"
+
+
+def test_sitzplan_nimmt_den_alias(db, klass):
+    from api.display_names import seat_labels
+    s = Student(id=1, nachname="Bauer", vorname="Annalena", alias="Ann",
+                klasse=klass.code, class_id=klass.id)
+    assert seat_labels([s])[1] == "Ann"
+
+
+def test_klassensprecher_bekommt_kein_nta(client, db, klass, admin_token):
+    """Nachteilsausgleich ist Gesundheitsdatum — es geht an die Klassenleitung
+    und an sonst niemanden, auch nicht an den Klassensprecher, der denselben
+    Sitzplan bearbeiten darf."""
+    betroffen = Student(nachname="Bauer", vorname="Anna", klasse=klass.code,
+                        class_id=klass.id, active=True, nta=[1, 3])
+    db.add(betroffen)
+    db.flush()
+
+    head = _student_head(db, klass, ksprecher=True)
+    client.cookies.clear()
+    r = client.get(f"/api/classes/{klass.id}/roster", headers=head)
+    assert r.status_code == 200, r.text
+    zeile = next(z for z in r.json() if z["id"] == betroffen.id)
+    assert zeile["nta"] == []
+    # Und der Name steht auch fuer ihn nur in der Kurzform.
+    assert (zeile["vorname"], zeile["nachname"]) == ("Anna", "B.")
+
+
+def test_klassenleitung_sieht_nta_weiterhin(client, db, klass, teacher, teacher_token):
+    betroffen = Student(nachname="Bauer", vorname="Anna", klasse=klass.code,
+                        class_id=klass.id, active=True, nta=[1, 3])
+    db.add(betroffen)
+    teacher.klasse_id = klass.id
+    db.flush()
+
+    r = client.get(f"/api/classes/{klass.id}/roster", headers=auth(teacher_token))
+    assert r.status_code == 200, r.text
+    zeile = next(z for z in r.json() if z["id"] == betroffen.id)
+    assert zeile["nta"] == [1, 3]
+    assert (zeile["vorname"], zeile["nachname"]) == ("Anna", "Bauer")
+
+
+def test_geschlecht_haengt_am_schulschalter(client, db, klass, teacher, teacher_token):
+    from api.models import SchoolSettings
+    s = Student(nachname="Bauer", vorname="Anna", klasse=klass.code,
+                class_id=klass.id, active=True, geschlecht="weiblich")
+    db.add(s)
+    teacher.klasse_id = klass.id
+    db.flush()
+
+    # Voreinstellung: aus.
+    zeile = client.get(f"/api/classes/{klass.id}/roster", headers=auth(teacher_token)).json()[0]
+    assert zeile["geschlecht"] is None
+
+    row = db.get(SchoolSettings, 1) or SchoolSettings(id=1)
+    row.show_geschlecht = True
+    db.add(row)
+    db.flush()
+    zeile = client.get(f"/api/classes/{klass.id}/roster", headers=auth(teacher_token)).json()[0]
+    assert zeile["geschlecht"] == "weiblich"

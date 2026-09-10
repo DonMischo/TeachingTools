@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import LueckentextSet, LueckentextSession, LueckentextParticipant, LueckentextResponse, LueckentextErrorPattern, Teacher
+from ..models import LueckentextSet, LueckentextSession, LueckentextParticipant, LueckentextResponse, LueckentextErrorPattern, Student, Teacher
 from ..auth import get_current_teacher, get_current_user, get_player, Guest
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify
@@ -25,6 +25,7 @@ from ..lueckentext_export import export_pdf
 from ..utils import gen_code
 from ..ws_manager import RoomManager
 from ..ws_auth import ws_teacher
+from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(prefix="/api/lueckentexte", tags=["lueckentexte"])
 
@@ -255,6 +256,9 @@ class ParticipantOut(BaseModel):
     id: int
     name: str
     avatar: str
+    # Schluessel fuer den eigenen PDF-Download — nur der Teilnehmer selbst
+    # bekommt ihn, beim Beitritt. Siehe export_participant_pdf.
+    export_token: str
 
     model_config = {"from_attributes": True}
 
@@ -344,17 +348,21 @@ def join_session(code: str, data: JoinIn, db: Session = Depends(get_db), player=
 
     # Gaeste an ihrer Token-Id wiedererkennen. Vorher legte jeder Beitritt eine
     # neue Zeile an — ein Neuladen der Seite verdoppelte den Spieler in der Liste.
+    # Angemeldete erscheinen unter ihrem Kontonamen in der Kurzform, nicht
+    # unter dem, den der Browser mitschickt.
+    anzeigename = (short_name(player) if isinstance(player, Student)
+                   else abbreviate_stored(data.name)[:100])
     guest_id = player.id if isinstance(player, Guest) else None
     if guest_id is not None:
         existing = db.query(LueckentextParticipant).filter_by(session_id=s.id, guest_id=guest_id).first()
         if existing:
-            existing.name = data.name
+            existing.name = anzeigename
             existing.avatar = data.avatar
             db.commit()
             db.refresh(existing)
             return ParticipantOut.model_validate(existing)
 
-    p = LueckentextParticipant(session_id=s.id, name=data.name, avatar=data.avatar, guest_id=guest_id)
+    p = LueckentextParticipant(session_id=s.id, name=anzeigename, avatar=data.avatar, guest_id=guest_id)
     db.add(p)
     db.commit()
     db.refresh(p)
@@ -630,11 +638,23 @@ def export_set_pdf(set_id: int, filled: int = 0, db: Session = Depends(get_db), 
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"{s.title}.pdf")
 
 
-@router.get("/sessions/{code}/participants/{pid}/export.pdf")
-def export_participant_pdf(code: str, pid: int, db: Session = Depends(get_db)):
+@router.get("/sessions/{code}/participants/{token}/export.pdf")
+def export_participant_pdf(code: str, token: str, db: Session = Depends(get_db)):
+    """Das eigene ausgefuellte Blatt als PDF.
+
+    Bewusst ohne Anmeldung: Gaeste kommen per QR und haben kein Konto, sollen
+    ihr Blatt am Ende aber mitnehmen koennen. Statt einer Anmeldung schuetzt
+    der beim Beitritt ausgegebene ``export_token`` — mit der fortlaufenden
+    Teilnehmer-Id im Link lag das Blatt des Nachbarn eine URL-Ziffer weit
+    entfernt, Name im Dateinamen inklusive.
+    """
     s = _get_session_or_404(code, db)
-    p = db.get(LueckentextParticipant, pid)
-    if not p or p.session_id != s.id:
+    p = (
+        db.query(LueckentextParticipant)
+        .filter_by(session_id=s.id, export_token=token)
+        .first()
+    )
+    if not p:
         raise HTTPException(404, "Teilnehmer nicht gefunden")
     responses = db.query(LueckentextResponse).filter_by(participant_id=p.id).all()
     given_answers = {r.gap_id: r.given_text for r in responses if r.given_text}

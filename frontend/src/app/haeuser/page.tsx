@@ -1208,6 +1208,28 @@ function NtaSection({
   const [customMode, setCustomMode] = useState<Set<number>>(new Set());
   const [customText, setCustomText] = useState<Record<number, string>>({});
 
+/** Geburtstagsmarker in der Klassenliste. Das Backend liefert `geburtsdatum`
+ *  nur der Klassenleitung und nur im Fenster von ±5 Tagen — steht es da, steht
+ *  der Geburtstag an. Sonst wissen wir das Datum hier gar nicht. */
+function BirthdayMark({ date }: { date: string }) {
+  const heute = new Date();
+  const tag = new Date(date);
+  const dieses = new Date(heute.getFullYear(), tag.getMonth(), tag.getDate());
+  const tage = Math.round((dieses.getTime() - new Date(heute.getFullYear(), heute.getMonth(), heute.getDate()).getTime()) / 86400000);
+  const wann =
+    tage === 0 ? "heute"
+    : tage === 1 ? "morgen"
+    : tage === -1 ? "gestern"
+    : tage > 0 ? `in ${tage} Tagen`
+    : `vor ${-tage} Tagen`;
+  const label = `Geburtstag ${wann} (${tag.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })})`;
+  return (
+    <span className="ml-1.5 align-middle" title={label} aria-label={label}>
+      {tage === 0 ? "🎂" : "🎈"}
+    </span>
+  );
+}
+
   const save = useMutation({
     mutationFn: ({ id, alias, nta }: { id: number; alias: string | null; nta: number[] }) =>
       api.students.updateProfile(id, { alias, nta }),
@@ -1247,6 +1269,7 @@ function NtaSection({
               <tr key={s.id} className="border-t border-[var(--border)]">
                 <td className="py-1.5 px-2 whitespace-nowrap">
                   <span className="font-medium">{s.nachname}</span>, {s.vorname}
+                  {s.geburtsdatum && <BirthdayMark date={s.geburtsdatum} />}
                 </td>
                 <td className="py-1.5 px-2">
                   <div className="flex items-center gap-1.5">
@@ -1500,6 +1523,25 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Zugangsdaten der eigenen Klasse. Der Server gibt Klarpasswörter nur an
+          Admins und an die Klassenleitung dieser einen Klasse — und schreibt
+          jeden Abruf ins Protokoll. */}
+      {canEdit && (
+        <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+          <div className="text-sm font-semibold">🔑 Zugangsdaten</div>
+          <p className="text-xs text-[var(--text-muted)]">
+            Benutzernamen und Passwörter der Klasse {cls.code} als CSV. Enthält Klartext-Passwörter —
+            bitte nicht per Mail weitergeben. Jeder Abruf wird protokolliert.
+          </p>
+          <a
+            href={`/api/students/credentials/download?klasse=${encodeURIComponent(cls.code)}`}
+            className="self-start text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+          >
+            CSV herunterladen
+          </a>
+        </div>
+      )}
+
       {/* Image upload */}
       {canEdit && (
         <>

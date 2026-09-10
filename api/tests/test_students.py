@@ -3,7 +3,8 @@ import io
 import pytest
 from fastapi.testclient import TestClient
 
-from api.models import Student, Class, SportfestDiscipline
+from api.models import Student, Class, SportfestDiscipline, Teacher
+from api.tests.conftest import auth
 from api.auth import hash_password
 from api.password_gen import generate_password
 
@@ -285,7 +286,11 @@ def test_list_students_filterable(client, teacher_token, db, klass_5a):
     )
     assert r.status_code == 200
     assert len(r.json()) == 1
-    assert r.json()[0]["nachname"] == "A"
+    # Eine fachfremde Lehrkraft sieht die Kurzform, nicht den vollen Nachnamen.
+    row = r.json()[0]
+    assert row["nachname"] == "A."
+    assert row["vorname"] == "X"
+    assert row["display_name"] == "X A."
 
 
 # ---------------------------------------------------------------------------
@@ -948,3 +953,94 @@ def test_encrypt_seed_passwords_migration(client, admin_token, db):
     assert drift.password_seed == 1234 and drift.password_enc is None
     # Idempotent: a second run migrates nothing more.
     assert encrypt_seed_passwords(db) == 0
+
+
+# ---------------------------------------------------------------------------
+# Zugangsdaten: wer Klarpasswoerter ausgeben darf, und dass es protokolliert wird
+# ---------------------------------------------------------------------------
+
+class TestZugangsdatenAusgabe:
+    """Klarpasswoerter gehen an genau zwei: den Admin und die Klassenleitung
+    dieser einen Klasse. Das delegierbare Recht »Schülerdaten« reicht nicht —
+    es traegt Import und Verwaltung, nicht den Griff auf die Passwoerter der
+    ganzen Schule."""
+
+    @pytest.fixture()
+    def klassenlehrer(self, db, klass):
+        """Klassenleitung *mit* eingerichtetem zweitem Faktor — ohne ihn ist der
+        Export gesperrt, das prueft test_2fa.py eigens."""
+        from api.auth import hash_password
+        t = Teacher(first_name="Kim", last_name="Klassen", active=True, role="teacher",
+                    klasse_id=klass.id, password_hash=hash_password("x"),
+                    totp_secret="JBSWY3DPEHPK3PXP", totp_confirmed=True)
+        db.add(t)
+        db.flush()
+        return t
+
+    def _head(self, t):
+        from api.auth import create_access_token
+        return {"Authorization": f"Bearer {create_access_token({'sub': str(t.id), 'type': 'teacher'})}"}
+
+    @pytest.fixture()
+    def klassen(self, db, klass):
+        from api.models import Class
+        andere = Class(code="6b", display_name="Klasse 6b")
+        db.add(andere)
+        db.flush()
+        # Der Export listet nur Konten mit Benutzernamen.
+        a = _seed_student(db, "Aal", "Anna", klass.code)
+        b = _seed_student(db, "Bär", "Ben", "6b")
+        a.username, b.username = "a.aal10", "b.baer11"
+        db.flush()
+        return klass, andere
+
+    def test_admin_bekommt_die_ganze_schule(self, client, admin_token, klassen):
+        r = client.get("/api/students/credentials/download", headers=auth(admin_token))
+        assert r.status_code == 200
+        assert "5a" in r.text and "6b" in r.text
+
+    def test_klassenleitung_bekommt_nur_die_eigene_klasse(self, client, db, klassenlehrer, klassen):
+        client.cookies.clear()
+        r = client.get("/api/students/credentials/download", headers=self._head(klassenlehrer))
+        assert r.status_code == 200
+        assert "Aal" in r.text
+        assert "Bär" not in r.text          # 6b bleibt draussen, auch ohne Filter
+
+    def test_klassenleitung_kommt_nicht_an_eine_fremde_klasse(self, client, db, klassenlehrer, klassen):
+        client.cookies.clear()
+        r = client.get("/api/students/credentials/download?klasse=6b",
+                       headers=self._head(klassenlehrer))
+        assert r.status_code == 403
+
+    def test_lehrkraft_ohne_klassenleitung_bekommt_nichts(self, client, teacher_token, klassen):
+        r = client.get("/api/students/credentials/download", headers=auth(teacher_token))
+        assert r.status_code == 403
+
+    def test_das_recht_schuelerdaten_allein_reicht_nicht(self, client, db, teacher, teacher_token, klassen):
+        from api.models import AdminFeatureGrant
+        db.add(AdminFeatureGrant(feature_slug="students", teacher_id=teacher.id))
+        db.flush()
+        # Import darf sie weiterhin …
+        assert client.get("/api/students/field-keys", headers=auth(teacher_token)).status_code == 200
+        # … die Klarpasswoerter der Schule nicht.
+        assert client.get("/api/students/credentials/download",
+                          headers=auth(teacher_token)).status_code == 403
+        assert client.get("/api/students/card-data", headers=auth(teacher_token)).status_code == 403
+
+    def test_der_export_steht_hinterher_im_protokoll(self, client, db, admin_token, klassen):
+        from api.models import AuditLog
+        client.get("/api/students/credentials/download?klasse=5a", headers=auth(admin_token))
+        zeile = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
+        assert zeile is not None
+        assert zeile.action == "students.credentials.download"
+        assert zeile.target == "5a"
+        # Im Protokoll steht, *dass* und *wie viel* — nie ein Name oder Passwort.
+        assert "Aal" not in (zeile.detail + zeile.target)
+
+    def test_passwort_zuruecksetzen_nur_fuer_die_eigene_klasse(self, client, db, klassenlehrer, klassen):
+        eigenes = db.query(Student).filter_by(klasse="5a").first()
+        fremdes = db.query(Student).filter_by(klasse="6b").first()
+        client.cookies.clear()
+        kopf = self._head(klassenlehrer)
+        assert client.post(f"/api/students/{eigenes.id}/reset-password", headers=kopf).status_code == 200
+        assert client.post(f"/api/students/{fremdes.id}/reset-password", headers=kopf).status_code == 403

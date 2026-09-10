@@ -209,7 +209,9 @@ def test_ws_submit_reaches_the_host_live(client, db, teacher, student, session):
                 new = await host.receive_json()
                 assert new["event"] == "new_response"
                 assert new["total"] == 1
-                assert new["response"]["student_name"] == "Sam Schueler"
+                # Der Name kommt aus dem Konto in der Kurzform — nicht aus der
+                # Query, die ihn frueher frei setzen konnte.
+                assert new["response"]["student_name"] == "Sam S."
                 assert new["response"]["rating"] == 4
                 assert new["response"]["comment"] == "Alles klar"      # trimmed
     asyncio.run(run())
@@ -290,3 +292,23 @@ def test_ws_students_cannot_close_a_session(client, db, teacher, student, sessio
     asyncio.run(run())
 
     assert db.query(ExitTicketSession).filter_by(code=session["code"]).one().status == "open"
+
+
+def test_fremde_lehrkraft_kommt_nicht_an_die_hostansicht(client, teacher2, session):
+    """Die Rueckmeldungen sind namentlich und handeln von der Stunde *einer*
+    Lehrkraft. Die Klasse schreibt sie in der Erwartung, dass genau sie sie
+    liest — nicht das ganze Kollegium mit dem Code."""
+    async def run():
+        with pytest.raises(ConnectionError):
+            async with connect_ws(app, _teacher_scope(session["code"], teacher2)):
+                pass
+    asyncio.run(run())
+
+
+def test_die_eigene_lehrkraft_kommt_weiterhin_rein(client, teacher, session):
+    async def run():
+        async with connect_ws(app, _teacher_scope(session["code"], teacher)) as ws:
+            state = await ws.receive_json()
+            assert state["event"] == "state"
+            assert state["responses"] == []
+    asyncio.run(run())

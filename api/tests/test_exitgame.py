@@ -745,3 +745,45 @@ def test_delete_exitgame_that_was_played(client, db, teacher_token, klass):
     assert db.query(ExitGameSession).filter_by(exitgame_id=gid).count() == 0
     assert db.get(ExitGameAttempt, aid) is None
     assert db.query(ExitGameEvent).filter_by(attempt_id=aid).count() == 0
+
+
+# ---------------------------------------------------------------------------
+# Sitzungsschloss: Bericht und Sitzungsliste gehoeren der eigenen Lehrkraft
+# ---------------------------------------------------------------------------
+
+def _zweite_lehrkraft(client, db) -> str:
+    from api.models import Teacher
+    t = Teacher(first_name="Fremde", last_name="Kollegin", active=True,
+                role="teacher", password_hash=hash_password("x"))
+    db.add(t)
+    db.flush()
+    r = client.post("/api/auth/login", json={"username": "Fremde Kollegin", "password": "x"})
+    assert r.status_code == 200, r.text
+    return r.json()["access_token"]
+
+
+def test_bericht_gehoert_der_eigenen_lehrkraft(client, db, teacher_token, admin_token, klass):
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    s = client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id},
+                    headers=_auth(teacher_token)).json()
+    code = s["join_code"]
+
+    fremd = _zweite_lehrkraft(client, db)
+    client.cookies.clear()
+    assert client.get(f"/api/exitgame-sessions/{code}/report", headers=_auth(fremd)).status_code == 403
+    assert client.get(f"/api/exitgame-sessions/{code}/report", headers=_auth(teacher_token)).status_code == 200
+    assert client.get(f"/api/exitgame-sessions/{code}/report", headers=_auth(admin_token)).status_code == 200
+
+
+def test_sitzungsliste_zeigt_nur_die_eigenen_runden(client, db, teacher_token, klass):
+    """Das Exitgame liegt in der gemeinsamen Bibliothek — seine Runden nicht."""
+    up = _upload(client, teacher_token)
+    gid = up.json()["id"]
+    client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id},
+                headers=_auth(teacher_token))
+
+    fremd = _zweite_lehrkraft(client, db)
+    client.cookies.clear()
+    assert client.get(f"/api/exitgames/{gid}/sessions", headers=_auth(fremd)).json() == []
+    assert len(client.get(f"/api/exitgames/{gid}/sessions", headers=_auth(teacher_token)).json()) == 1

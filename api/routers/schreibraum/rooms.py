@@ -20,6 +20,7 @@ from ...auth import (
     get_current_user, get_current_teacher, require_admin,
     get_player, get_current_user_optional, guest_from_credentials, bearer, Guest,
 )
+from ...display_names import short_name
 from ...availability import require_capability
 from ...utils import gen_code
 from .colors import pick_color
@@ -31,8 +32,17 @@ from .schemas import (
 router = APIRouter(prefix="/api/schreibraum", tags=["schreibraum"])
 
 
-def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
+def _room_out(room: SchreibraumRoom, db: Session, viewer=None) -> RoomOut:
+    """Ein Raum, wie ihn dieser Aufrufer sehen darf.
+
+    Die Freigabeliste (`access`) ist Verwaltungswissen und geht nur an
+    Lehrkraefte: wer eingeladen ist, geht die Eingeladenen nichts an. Zum
+    Betreten braucht ein Schueler sie nicht — der Zugang wird serverseitig in
+    `_assert_access` geprueft. `viewer=None` heisst »keine Liste«.
+    """
     creator = db.get(Teacher, room.created_by)
+    if not isinstance(viewer, Teacher):
+        return _room_out_base(room, creator, [])
     grants = db.query(SchreibraumAccess).filter_by(room_id=room.id).all()
     access = []
     for g in grants:
@@ -41,7 +51,7 @@ def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
             access.append(AccessGrantOut(
                 id=g.id, room_id=room.id,
                 student_id=g.student_id,
-                label=f"{s.vorname} {s.nachname}" if s else str(g.student_id),
+                label=short_name(s) if s else str(g.student_id),
             ))
         elif g.class_id:
             c = db.get(Class, g.class_id)
@@ -50,6 +60,10 @@ def _room_out(room: SchreibraumRoom, db: Session) -> RoomOut:
                 class_id=g.class_id,
                 label=c.code if c else str(g.class_id),
             ))
+    return _room_out_base(room, creator, access)
+
+
+def _room_out_base(room: SchreibraumRoom, creator, access: list) -> RoomOut:
     return RoomOut(
         id=room.id,
         code=room.code,
@@ -98,7 +112,7 @@ def create_room(
     db.add(SchreibraumDocument(room_id=room.id))
     db.commit()
     db.refresh(room)
-    return _room_out(room, db)
+    return _room_out(room, db, teacher)
 
 
 @router.get("/rooms", response_model=list[RoomOut])
@@ -128,7 +142,7 @@ def list_rooms(
             SchreibraumRoom.id.in_(room_ids)
         ).order_by(SchreibraumRoom.created_at.desc()).all()
 
-    return [_room_out(r, db) for r in rooms]
+    return [_room_out(r, db, user) for r in rooms]
 
 
 @router.get("/rooms/by-code/{code}", response_model=RoomOut)
@@ -141,7 +155,7 @@ def get_room_by_code(
     if not room:
         raise HTTPException(404, "Room not found")
     _assert_access(room, user, db)
-    return _room_out(room, db)
+    return _room_out(room, db, user)
 
 
 @router.get("/rooms/{room_id}", response_model=RoomOut)
@@ -154,7 +168,7 @@ def get_room(
     if not room:
         raise HTTPException(404, "Room not found")
     _assert_access(room, user, db)
-    return _room_out(room, db)
+    return _room_out(room, db, user)
 
 
 @router.patch("/rooms/{room_id}", response_model=RoomOut)
@@ -175,7 +189,7 @@ def patch_room(
         room.is_permanent = body.is_permanent
     db.commit()
     db.refresh(room)
-    return _room_out(room, db)
+    return _room_out(room, db, teacher)
 
 
 @router.delete("/rooms/{room_id}", status_code=204)
@@ -212,7 +226,7 @@ def list_access(
         label = ""
         if g.student_id:
             s = db.get(Student, g.student_id)
-            label = f"{s.vorname} {s.nachname}" if s else str(g.student_id)
+            label = short_name(s) if s else str(g.student_id)
         elif g.class_id:
             c = db.get(Class, g.class_id)
             label = c.code if c else str(g.class_id)
@@ -246,7 +260,7 @@ def add_access(
     label = ""
     if grant.student_id:
         s = db.get(Student, grant.student_id)
-        label = f"{s.vorname} {s.nachname}" if s else str(grant.student_id)
+        label = short_name(s) if s else str(grant.student_id)
     elif grant.class_id:
         c = db.get(Class, grant.class_id)
         label = c.code if c else str(grant.class_id)
@@ -301,7 +315,7 @@ def join_room(
     name = (
         user.name if is_guest
         else f"{user.first_name} {user.last_name}" if is_teacher
-        else f"{user.vorname} {user.nachname}"
+        else short_name(user)
     )
 
     # Reuse existing participant if already joined this room

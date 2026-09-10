@@ -180,9 +180,17 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
     queryKey: ["roster", classId], queryFn: () => api.classes.roster(classId!),
     enabled: !!cls && grantedHere,
   });
+  // Ohne den schulweiten Schalter liefert das Backend gar kein Geschlecht —
+  // dann gibt es auch nichts abwechselnd zu setzen.
+  const { data: display } = useQuery({
+    queryKey: ["display-settings"], queryFn: api.school.displaySettings,
+    staleTime: 5 * 60_000,
+  });
+  const geschlechtNutzbar = display?.show_geschlecht ?? false;
   const students: StudentOut[] = useMemo(() => isTeacher ? teacherStudents : roster.map(r => ({
-    id: r.id, nummer: null, nachname: r.nachname, vorname: r.vorname, klasse: cls?.code ?? "",
-    class_id: classId!, jahrgang: null, geschlecht: r.geschlecht, geburtsdatum: null,
+    id: r.id, nummer: null, nachname: r.nachname, vorname: r.vorname,
+    display_name: `${r.alias || r.vorname} ${r.nachname}`.trim(), klasse: cls?.code ?? "",
+    class_id: classId!, jahrgang: null, geschlecht: r.geschlecht, geburtsdatum: r.geburtstag,
     username: null, active: true, alias: r.alias, nta: r.nta, has_credentials: false,
   })), [isTeacher, teacherStudents, roster, cls?.code, classId]);
   // Seat label per student: alias/first name, disambiguated with the surname
@@ -384,7 +392,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
     const available = students.filter(s => !fixedStudentIds.has(s.id));
     let pool: StudentOut[];
-    if (alternate) {
+    if (alternate && geschlechtNutzbar) {
       const boys = shuffle(available.filter(s => s.geschlecht === "männlich"));
       const girls = shuffle(available.filter(s => s.geschlecht === "weiblich"));
       const others = shuffle(available.filter(s => s.geschlecht !== "männlich" && s.geschlecht !== "weiblich"));
@@ -601,10 +609,12 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             title="Alle nicht gesperrten Plätze leeren (gesperrte bleiben)"
             className="text-sm px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
           >🧹 Plätze leeren</button>
-          <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-            <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-[var(--accent)] w-4 h-4" />
-            Junge/Mädchen abwechselnd
-          </label>
+          {geschlechtNutzbar && (
+            <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-[var(--accent)] w-4 h-4" />
+              Junge/Mädchen abwechselnd
+            </label>
+          )}
         </div>
       )}
       </div>

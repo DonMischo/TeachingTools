@@ -29,13 +29,14 @@ from ..models import (
     Student
 )
 from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, SessionCreate, SessionOut, ParticipantJoin
-from ..auth import get_current_teacher, get_current_user, get_player, Guest
+from ..auth import get_current_teacher, get_current_user, get_player, Guest, is_session_owner, require_session_owner
 from ..availability import require_capability
 from ..authorship import scope_to_student_pool, is_student
 from .. import scoping
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
 from ..ws_manager import RoomManager
+from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(tags=["capuths"])
 
@@ -951,8 +952,14 @@ def get_session(code: str, db: Session = Depends(get_db)):
 
 
 @router.get("/api/capuths/{quiz_id}/sessions")
-def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
-    sessions = db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
+def list_caputh_sessions(quiz_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Die eigenen Runden zu diesem Caputh (Admins sehen alle).
+
+    Die Bibliothek ist gemeinsam, die Runden sind es nicht: hier stuenden sonst
+    die Beitrittscodes der Kollegin, und mit einem Code steht die Tuer zu ihrer
+    Auswertung offen."""
+    sessions = [s for s in db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
+                if is_session_owner(s, current)]
     return [
         {
             "join_code": s.join_code,
@@ -986,14 +993,19 @@ def delete_session(code: str, db: Session = Depends(get_db), current: Teacher = 
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
+    require_session_owner(s, current)
     _delete_session_rows(s, db)
     db.commit()
 
 
 @router.delete("/api/capuths/{quiz_id}/sessions", status_code=204)
 def clear_sessions(quiz_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
-    """Delete all sessions of a quiz. Awarded points stay untouched."""
-    sessions = db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
+    """Delete all sessions of a quiz. Awarded points stay untouched.
+
+    Nur die eigenen — ein Caputh liegt in der gemeinsamen Bibliothek, und
+    »aufraeumen« darf nicht die Auswertung der Kollegin mitnehmen."""
+    sessions = [s for s in db.query(QuizSession).filter_by(quiz_id=quiz_id).all()
+                if is_session_owner(s, current)]
     for s in sessions:
         _delete_session_rows(s, db)
     db.commit()
@@ -1004,6 +1016,7 @@ def reset_session(code: str, db: Session = Depends(get_db), current: Teacher = D
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
+    require_session_owner(s, current)
     if s.points_awarded is not None:
         raise HTTPException(409, "Session already scored — create a new session to play again")
     _phases.pop(code, None)
@@ -1018,7 +1031,7 @@ def reset_session(code: str, db: Session = Depends(get_db), current: Teacher = D
 
 
 @router.get("/api/sessions/{code}/report")
-def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     import csv as csv_mod
     import io as io_mod
     from fastapi.responses import StreamingResponse
@@ -1026,6 +1039,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session not found")
+    require_session_owner(s, current)
 
     questions = s.quiz.questions
     scored_qs = [q for q in questions if q.type != "survey"]
@@ -1119,6 +1133,7 @@ def create_team(
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404)
+    require_session_owner(s, current)
     t = QuizTeam(session_id=s.id, name=body.name.strip()[:50], color=body.color)
     db.add(t)
     db.commit()
@@ -1136,6 +1151,7 @@ def delete_team(
     s = db.query(QuizSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404)
+    require_session_owner(s, current)
     t = db.query(QuizTeam).filter_by(id=team_id, session_id=s.id).first()
     if not t:
         raise HTTPException(404)
@@ -1150,7 +1166,11 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
         raise HTTPException(404, "Session not found")
     if s.status == "finished":
         raise HTTPException(409, "Session already finished")
-    name = body.name.strip()[:100]
+    # Der Name landet in der Rangliste am Beamer. Wer angemeldet ist, erscheint
+    # unter dem Namen seines Kontos in der Kurzform — ein selbst getippter Name
+    # war bisher zugleich ein freies Namensfeld fuer jeden Mitspieler.
+    name = (short_name(player) if isinstance(player, Student)
+            else abbreviate_stored(body.name)[:100])
     avatar = body.avatar[:50]
 
     # Wem die Leistung dieses Teilnehmers gutgeschrieben wird. In einer
@@ -1203,6 +1223,43 @@ def join_session(code: str, body: ParticipantJoin, db: Session = Depends(get_db)
 # WebSocket — real-time game bus
 # ---------------------------------------------------------------------------
 
+def _ws_participant(db: Session, s: QuizSession, websocket: WebSocket,
+                    behauptet: int) -> QuizParticipant | None:
+    """Der Teilnehmer, der zu *dieser* Verbindung gehoert.
+
+    Die ``participant_id`` aus der Query ist eine Behauptung des Browsers. Wer
+    angemeldet ist oder ein Gast-Token hat, wird an seiner Identitaet erkannt,
+    nicht daran — sonst laesst sich mit der Nummer des Nachbarn dessen Platz
+    uebernehmen: seine Rueckmeldungen mitlesen und unter seinem Namen antworten.
+
+    Nur fuer eine Lehrkraft, die selbst mitspielt, bleibt die Nummer der einzige
+    Anhaltspunkt (QuizParticipant kennt keine teacher_id) — die spielt in der
+    eigenen Runde und hat nichts davon, jemanden zu verdraengen.
+    """
+    identity = ws_identity(websocket, db)
+    if identity and identity[0] == "student":
+        # Ein angemeldeter Schueler hat genau einen Platz: seinen.
+        return db.query(QuizParticipant).filter_by(
+            session_id=s.id, student_id=identity[1]).first()
+
+    gast = ws_guest(websocket, s.join_code, db)
+    if gast is not None:
+        eigener = db.query(QuizParticipant).filter_by(
+            session_id=s.id, guest_id=gast.id).first()
+        if eigener is not None:
+            return eigener
+
+    p = db.get(QuizParticipant, behauptet)
+    if p is None or p.session_id != s.id:
+        return None
+    # Ein Platz, der jemandem gehoert, laesst sich nicht per Nummer uebernehmen.
+    # Uebrig bleiben herrenlose Plaetze: die mitspielende Lehrkraft (kein
+    # teacher_id auf QuizParticipant) und Altbestaende von vor der Gast-Id.
+    if p.student_id is not None or p.guest_id is not None:
+        return None
+    return p
+
+
 @router.websocket("/api/sessions/{code}/ws")
 async def session_ws(
     code: str,
@@ -1220,9 +1277,13 @@ async def session_ws(
 
         # Host control requires a verified teacher identity from the session
         # cookie — role= is client-supplied and must not grant control alone.
-        if role == "teacher" and ws_teacher(websocket, db) is None:
-            await websocket.close(code=4003)
-            return
+        # Und nicht irgendeine Lehrkraft: die Steuerung (Frage weiter, Punkte
+        # vergeben) gehoert der Lehrkraft, der die Sitzung gehoert.
+        if role == "teacher":
+            host = ws_teacher(websocket, db)
+            if host is None or not is_session_owner(s, host):
+                await websocket.close(code=4003)
+                return
 
         await websocket.accept()
 
@@ -1239,8 +1300,8 @@ async def session_ws(
             if ws_identity(websocket, db) is None and ws_guest(websocket, code, db) is None:
                 await websocket.close(code=4001)
                 return
-            p = db.get(QuizParticipant, participant_id)
-            if not p or p.session_id != s.id:
+            p = _ws_participant(db, s, websocket, participant_id)
+            if p is None:
                 await websocket.close(code=4003)
                 return
             pid = p.id

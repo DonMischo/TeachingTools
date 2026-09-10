@@ -40,6 +40,9 @@ export default function LueckentextPlayPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [participantId, setParticipantId] = useState<number | null>(null);
+  // Schluessel fuer den eigenen PDF-Download. Kommt beim Beitritt zurueck und
+  // wird mitgespeichert, damit er ein Neuladen ueberlebt.
+  const [exportToken, setExportToken] = useState<string | null>(null);
   const [board, setBoard] = useState<LueckentextBoard | null>(null);
   const [attempts, setAttempts] = useState<Record<string, AttemptState>>({});
   // The same word can sit in the bank more than once, so a tile is identified
@@ -57,6 +60,7 @@ export default function LueckentextPlayPage() {
     if (!savedLoaded) return;
     if (saved?.participantId != null) {
       setParticipantId(saved.participantId);
+      setExportToken(saved.token ?? null);
       setPhase("waiting");
     }
   }, [savedLoaded, saved]);
@@ -96,8 +100,9 @@ export default function LueckentextPlayPage() {
       let gt = guest.token;
       if (!auth && !gt) gt = (await guest.join("lueckentext", name)).token;
       const p = await api.lueckentexte.joinSession(code, name, avatar, gt);
-      save({ name, avatar, participantId: p.id });
+      save({ name, avatar, participantId: p.id, token: p.export_token });
       setParticipantId(p.id);
+      setExportToken(p.export_token);
       setPhase("waiting");
     } catch (e) {
       const msg = (e as Error).message;
@@ -175,9 +180,9 @@ export default function LueckentextPlayPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)] text-center">
         <div className="text-5xl">🎉</div>
         <p className="font-black text-xl">Fertig!</p>
-        {participantId != null && (
+        {exportToken && (
           <a
-            href={`/api/lueckentexte/sessions/${code}/participants/${participantId}/export.pdf`}
+            href={`/api/lueckentexte/sessions/${code}/participants/${exportToken}/export.pdf`}
             className="btn-primary"
           >
             Meine PDF herunterladen

@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import SeatingPlan, Class, Student, StudentGroup, Teacher
 from ..auth import get_current_user, require_class_teacher, is_granted_klassensprecher
+from ..display_names import seat_labels
 from ..seating_export import export_pdf, ITEM_SIZES
 
 router = APIRouter(prefix="/api", tags=["seating"])
@@ -27,6 +28,30 @@ def _assert_group_editor(current) -> None:
     rooms — the same rule the groups router uses. Students never may."""
     if not isinstance(current, Teacher):
         raise HTTPException(403, "Keine Berechtigung für diesen Sitzplan.")
+
+
+def _assert_class_plan_reader(current, class_id: int | None, db: Session) -> None:
+    """Wer einen Klassen-Sitzplan ueberhaupt sehen darf: jede Lehrkraft, und von
+    den Schuelern nur ein freigeschalteter Klassensprecher *dieser* Klasse.
+
+    Bis hierher hing an den Leseendpunkten nur `get_current_user` — mit
+    fortlaufenden Plan-Ids liess sich damit der Sitzplan jeder Klasse abrufen,
+    im PDF samt Namen.
+    """
+    if isinstance(current, Teacher):
+        return
+    if class_id is not None and is_granted_klassensprecher(db, current, class_id):
+        return
+    raise HTTPException(403, "Keine Berechtigung für diesen Sitzplan.")
+
+
+def _assert_plan_reader(plan: SeatingPlan, current, db: Session) -> None:
+    """Wie oben, fuer einen konkreten Plan. Kurs/WPF-Plaene haben keine
+    Klassensprecher — die bleiben den Lehrkraeften vorbehalten."""
+    if plan.group_id is not None:
+        _assert_group_editor(current)
+        return
+    _assert_class_plan_reader(current, plan.class_id, db)
 
 
 def _assert_additional_editor(current, class_id: int, db: Session) -> None:
@@ -108,9 +133,10 @@ def _detail(p: SeatingPlan) -> SeatingPlanDetail:
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("/classes/{class_id}/seating", response_model=list[SeatingPlanSummary])
-def list_plans(class_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+def list_plans(class_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if not db.get(Class, class_id):
         raise HTTPException(404, "Klasse nicht gefunden")
+    _assert_class_plan_reader(current, class_id, db)
     return (
         db.query(SeatingPlan)
         .filter(SeatingPlan.class_id == class_id)
@@ -147,9 +173,10 @@ def create_plan(
 
 
 @router.get("/groups/{group_id}/seating", response_model=list[SeatingPlanSummary])
-def list_group_plans(group_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+def list_group_plans(group_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if not db.get(StudentGroup, group_id):
         raise HTTPException(404, "Kurs nicht gefunden")
+    _assert_group_editor(current)
     return (
         db.query(SeatingPlan)
         .filter(SeatingPlan.group_id == group_id)
@@ -205,8 +232,10 @@ def _assert_plan_editor(plan: SeatingPlan, current, db: Session) -> None:
 
 
 @router.get("/seating/{plan_id}", response_model=SeatingPlanDetail)
-def get_plan(plan_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return _detail(_get_plan_or_404(plan_id, db))
+def get_plan(plan_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    plan = _get_plan_or_404(plan_id, db)
+    _assert_plan_reader(plan, current, db)
+    return _detail(plan)
 
 
 @router.put("/seating/{plan_id}", response_model=SeatingPlanDetail)
@@ -239,8 +268,9 @@ def delete_plan(
 
 
 @router.get("/seating/{plan_id}/export.pdf")
-def export_plan_pdf(plan_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+def export_plan_pdf(plan_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     plan = _get_plan_or_404(plan_id, db)
+    _assert_plan_reader(plan, current, db)
     # Resolve the student_ids referenced by seats to display names.
     ids = {
         seat["student_id"]
@@ -248,12 +278,14 @@ def export_plan_pdf(plan_id: int, db: Session = Depends(get_db), _=Depends(get_c
         for seat in (it.get("seats") or [])
         if seat.get("student_id") is not None
     }
-    names: dict[int, str] = {}
-    short: dict[int, str] = {}
+    # Auf dem Sitzplan steht der Rufname, sonst nichts — die Initiale des
+    # Nachnamens nur dort, wo zwei denselben Rufnamen tragen. Gleiche Regel wie
+    # auf dem Bildschirm (seatNameById in SeatingEditor.tsx), auch fuer die
+    # Klassenleitung: ein ausgedruckter Plan haengt an der Wand.
+    labels: dict[int, str] = {}
     if ids:
-        for s in db.query(Student).filter(Student.id.in_(ids)).all():
-            names[s.id] = f"{s.vorname} {s.nachname}".strip()
-            short[s.id] = f"{s.vorname} {s.nachname[0]}." if s.nachname else s.vorname
+        labels = seat_labels(db.query(Student).filter(Student.id.in_(ids)).all())
+    names, short = labels, labels
     pdf_path = export_pdf(plan, names, short)
     if pdf_path is None:
         raise HTTPException(503, "PDF-Export momentan nicht verfügbar")

@@ -55,12 +55,14 @@ from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, 
 from ..auth import (
     get_current_teacher, get_current_user, get_current_user_optional,
     get_player, guest_from_credentials, bearer, Guest,
+    is_session_owner, require_session_owner,
 )
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify, is_student
 from ..utils import gen_code
 from ..ws_auth import ws_teacher
 from ..ws_manager import RoomManager
+from ..display_names import NameScope, short_name
 
 router = APIRouter(tags=["exitgame"])
 
@@ -104,9 +106,11 @@ def _attempt_belongs_to(attempt: ExitGameAttempt, current: Teacher | Student | G
     return attempt.teacher_id == current.id
 
 
-def _participant_name(attempt: ExitGameAttempt) -> str:
+def _participant_name(attempt: ExitGameAttempt, scope=None) -> str:
+    """Ohne `scope` die Kurzform — nur wo eine Klassenleitung zusieht, der
+    volle Name."""
     if attempt.student:
-        return f"{attempt.student.vorname} {attempt.student.nachname}"
+        return scope.name(attempt.student) if scope is not None else short_name(attempt.student)
     if attempt.guest_id:
         return attempt.guest_name or "Gast"
     return f"{attempt.teacher.first_name} {attempt.teacher.last_name}".strip()
@@ -686,9 +690,11 @@ def create_session(
 
 
 @router.get("/api/exitgames/{exitgame_id}/sessions", response_model=list[SessionOut])
-def list_exitgame_sessions(exitgame_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def list_exitgame_sessions(exitgame_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
+    """Die eigenen Runden zu diesem Exitgame (Admins sehen alle) — siehe
+    list_caputh_sessions: gemeinsame Bibliothek, eigene Runden."""
     sessions = db.query(ExitGameSession).filter_by(exitgame_id=exitgame_id).order_by(ExitGameSession.created_at.desc()).all()
-    return [_session_out(s, db) for s in sessions]
+    return [_session_out(s, db) for s in sessions if is_session_owner(s, current)]
 
 
 @router.get("/api/exitgame-sessions/{code}", response_model=SessionOut)
@@ -1128,17 +1134,21 @@ async def finish_attempt(
 # ---------------------------------------------------------------------------
 
 @router.get("/api/exitgame-sessions/{code}/report")
-def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()
     if not s:
         raise HTTPException(404, "Session nicht gefunden")
+    require_session_owner(s, current)
 
     total_slides = len(s.exitgame.data["slides"])
     rows = []
-    for a in sorted(s.attempts, key=_participant_name):
+    # Die Klassenleitung liest ihren eigenen Bericht mit vollen Namen, jede
+    # andere Lehrkraft mit »Anna B.«.
+    scope = NameScope(db, current)
+    for a in sorted(s.attempts, key=lambda a: _participant_name(a, scope)):
         rows.append({
             "attempt_id": a.id, "student_id": a.student_id,
-            "student_name": _participant_name(a),
+            "student_name": _participant_name(a, scope),
             "student_class": _participant_class(a),
             "status": a.status, "slides_solved": len(a.solved_slide_ids), "slides_total": total_slides,
             "errors_total": a.errors_total, "hints_total": a.hints_total,
@@ -1173,7 +1183,7 @@ def get_attempt_log(attempt_id: int, db: Session = Depends(get_db), current: Tea
     events = db.query(ExitGameEvent).filter_by(attempt_id=attempt_id).order_by(ExitGameEvent.created_at).all()
     return {
         "attempt": _attempt_summary(a),
-        "student_name": _participant_name(a),
+        "student_name": _participant_name(a, NameScope(db, current)),
         "student_class": _participant_class(a),
         "events": [
             {"slide_id": e.slide_id, "event_type": e.event_type, "payload": e.payload, "created_at": e.created_at.isoformat()}
@@ -1192,8 +1202,10 @@ async def exitgame_ws(code: str, websocket: WebSocket, db: Session = Depends(get
     if not s:
         await websocket.close(code=4004)
         return
+    # Die Roster-Ansicht zeigt, wer gerade wo steht und wie viele Fehler er
+    # gemacht hat — das ist die Stunde dieser Lehrkraft, nicht die aller.
     teacher = ws_teacher(websocket, db)
-    if teacher is None:
+    if teacher is None or not is_session_owner(s, teacher):
         await websocket.close(code=4003)
         return
 

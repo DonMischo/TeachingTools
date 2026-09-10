@@ -14,11 +14,12 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ExitTicketSession, ExitTicketResponse, Student, Teacher
-from ..auth import get_current_teacher, get_current_user_optional
+from ..auth import get_current_teacher, get_current_user_optional, is_session_owner
 from ..availability import require_capability
 from ..utils import gen_code
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
 from ..ws_manager import RoomManager
+from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(prefix="/api/exit-ticket", tags=["exit-ticket"])
 
@@ -33,7 +34,8 @@ mgr = RoomManager()
 def _response_dict(r: ExitTicketResponse) -> dict:
     return {
         "id": r.id,
-        "student_name": r.student_name,
+        # Auch der Altbestand, der noch ausgeschrieben in der Tabelle steht.
+        "student_name": abbreviate_stored(r.student_name),
         "rating": r.rating,
         "comment": r.comment,
         "submitted_at": r.submitted_at.isoformat(),
@@ -188,16 +190,28 @@ async def exit_ticket_ws(
         await websocket.close(code=4004)
         return
 
-    # Host view requires a verified teacher (responses contain student names).
-    if role == "teacher" and ws_teacher(websocket, db) is None:
-        await websocket.close(code=4003)
-        return
+    # Host view requires a verified teacher (responses contain student names) —
+    # und zwar die Lehrkraft, der die Sitzung gehoert. Die Rueckmeldungen sind
+    # namentlich und handeln von *ihrer* Stunde; die Klasse schreibt sie in der
+    # Erwartung, dass genau sie sie liest. Besitzerspalte hier: created_by.
+    if role == "teacher":
+        host = ws_teacher(websocket, db)
+        if host is None or not is_session_owner(s, host, owner_attr="created_by"):
+            await websocket.close(code=4003)
+            return
 
     # Unauthenticated students must hold a live guest token scoped to this code
     # (only issued when the teacher opted in — enforces opt-in + 60-min expiry).
-    if role != "teacher" and ws_identity(websocket, db) is None and ws_guest(websocket, code, db) is None:
-        await websocket.close(code=4001)
-        return
+    if role != "teacher":
+        identity = ws_identity(websocket, db)
+        if identity is None and ws_guest(websocket, code, db) is None:
+            await websocket.close(code=4001)
+            return
+        # `student_id` aus der Query ist eine Behauptung des Browsers. Die
+        # Rueckmeldung wird darunter gespeichert — mit der Nummer eines
+        # Mitschuelers liesse sich also in seinem Namen abgeben oder seine
+        # Antwort ueberschreiben. Es zaehlt nur die Anmeldung.
+        student_id = identity[1] if identity and identity[0] == "student" else 0
 
     await websocket.accept()
 
@@ -248,7 +262,11 @@ async def exit_ticket_ws(
                     if rating is not None:
                         rating = max(1, min(5, int(rating)))
 
-                    name = student_name.strip()[:100] or "Anonym"
+                    # Wer angemeldet ist, erscheint unter dem Namen seines
+                    # Kontos in der Kurzform — nicht unter dem, den die Query
+                    # behauptet. Gaeste behalten ihren getippten Namen, gekuerzt.
+                    ich = db.get(Student, student_id) if student_id else None
+                    name = short_name(ich) if ich else (abbreviate_stored(student_name)[:100] or "Anonym")
 
                     # Upsert by student_id (or by name if anonymous)
                     existing = None
