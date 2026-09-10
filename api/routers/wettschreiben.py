@@ -22,6 +22,7 @@ from ..database import get_db
 from ..auth import Guest, get_current_teacher, get_player
 from ..availability import require_capability
 from ..models import Student, Teacher, WettschreibenSession, WettschreibenTeilnehmer
+from ..display_names import abbreviate_stored, short_name
 from ..tipp_text import pruefe_tippbar
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_guest
@@ -163,8 +164,10 @@ def beitreten(code: str, body: BeitrittIn, db: Session = Depends(get_db),
     if vorhanden:
         return BeitrittOut(teilnehmer_id=vorhanden.id, name=vorhanden.name)
 
+    # Der Name steht waehrend des Rennens fuer alle auf der Bahn — Kurzform.
+    angezeigt = short_name(spieler) if isinstance(spieler, Student)         else abbreviate_stored(body.name)[:100]
     t = WettschreibenTeilnehmer(
-        session_id=s.id, name=body.name.strip()[:100],
+        session_id=s.id, name=angezeigt,
         student_id=student_id, guest_id=guest_id,
     )
     db.add(t)

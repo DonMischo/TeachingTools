@@ -58,7 +58,7 @@ export default function BingoPlayPage() {
   // Auto-connect when logged in (resume saved session or new)
   useEffect(() => {
     if (!mounted || !savedLoaded || !auth?.student) return;
-    const name = auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`;
+    const name = auth.student.username ?? auth.student.display_name;
     const avatar = saved?.avatar ?? AVATARS[Math.floor(Math.random() * AVATARS.length)].id;
     connect(saved?.token ?? newAnonToken(), name, avatar);
   // eslint-disable-next-line react-hooks/exhaustive-deps

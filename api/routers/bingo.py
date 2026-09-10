@@ -17,6 +17,7 @@ from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity, ws_guest
 from ..ws_manager import RoomManager
 from ..models import BingoCard, BingoSession, BingoSet, Class, Student, Transaction
+from ..display_names import short_name, abbreviate_stored
 from .. import scoping
 
 if TYPE_CHECKING:
@@ -494,7 +495,8 @@ def _find_or_create_card(session: BingoSession, db: Session, *, student_id: int 
         card = db.query(BingoCard).filter_by(session_id=session.id, student_id=student_id).first()
         student = db.query(Student).filter_by(id=student_id).first()
         if not card:
-            sname = f"{student.vorname} {student.nachname}" if student else name or "Anonym"
+            # Der Name steht auf der Karte und in der Rangliste am Beamer.
+            sname = short_name(student) if student else abbreviate_stored(name) or "Anonym"
             indices = random.sample(range(len(session.pairs)), cells)
             card = BingoCard(session_id=session.id, student_id=student_id, student_name=sname, grid_indices=indices,
                              class_id=_card_class_id(session, db, student, class_id))

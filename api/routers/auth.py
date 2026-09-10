@@ -8,6 +8,7 @@ from ..auth import (
     revoke_token_from_request
 )
 from ..config import settings
+from ..display_names import NameScope, student_out
 # _teacher_out flattens the ORM relationships (teacher_role -> name, klasse ->
 # code) that TeacherOut expects as strings. Serializing a Teacher with
 # TeacherOut.model_validate() directly raises a ValidationError whenever
@@ -69,17 +70,25 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=MeOut)
-def me(user=Depends(get_current_user)):
+def me(user=Depends(get_current_user), db: Session = Depends(get_db)):
     if isinstance(user, Teacher):
         return MeOut(user_type="teacher", teacher=_teacher_out(user))
-    student_out = StudentOut.model_validate(user)
-    student_out.has_credentials = bool(user.username and user.password_hash)
-    return MeOut(user_type="student", student=student_out)
+    # Sich selbst sieht man ausgeschrieben — den eigenen Namen kennt man. Was
+    # die Spielerseiten davon weiterreichen duerfen, steht in `display_name`;
+    # das Geburtsdatum braucht keine dieser Seiten und faellt hier weg.
+    return MeOut(user_type="student", student=_student_self(db, user))
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+def _student_self(db: Session, student: Student) -> StudentOut:
+    """Der eigene Datensatz: voller Name, kein Geburtsdatum."""
+    out = student_out(student, NameScope(db, student))
+    out.vorname, out.nachname = student.vorname, student.nachname
+    return out
+
 
 def _find_teacher(username: str, db: Session) -> Teacher | None:
     ident = username.strip()

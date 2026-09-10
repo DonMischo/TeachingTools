@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import StudentRole, Student, Teacher, Class
 from ..auth import get_current_teacher, require_class_teacher
+from ..display_names import NameScope
 
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 
@@ -37,11 +38,11 @@ class RoleCreate(BaseModel):
     scope_id: int | None = None
 
 
-def _out(r: StudentRole) -> RoleOut:
+def _out(r: StudentRole, scope: NameScope) -> RoleOut:
     return RoleOut(
         id=r.id,
         student_id=r.student_id,
-        student_name=f"{r.student.vorname} {r.student.nachname}",
+        student_name=scope.name(r.student),
         role_type=r.role_type,
         scope_id=r.scope_id,
         assigned_by=r.assigned_by,
@@ -53,14 +54,14 @@ def list_roles(
     role_type: str | None = None,
     scope_id: int | None = None,
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    viewer: Teacher = Depends(get_current_teacher),
 ):
     q = db.query(StudentRole)
     if role_type:
         q = q.filter(StudentRole.role_type == role_type)
     if scope_id is not None:
         q = q.filter(StudentRole.scope_id == scope_id)
-    return [_out(r) for r in q.all()]
+    return [_out(r, NameScope(db, viewer)) for r in q.all()]
 
 
 class RoleTypesUpdate(BaseModel):
@@ -155,7 +156,7 @@ def assign_role(
     db.add(role)
     db.commit()
     db.refresh(role)
-    return _out(role)
+    return _out(role, NameScope(db, current))
 
 
 @router.delete("/{role_id}", status_code=204)

@@ -26,6 +26,7 @@ from ..database import get_db
 from ..auth import get_current_user
 from ..availability import require_capability
 from ..models import Student, Teacher, TippBestenliste
+from ..display_names import abbreviate_parts, short_name
 
 router = APIRouter(prefix="/api/tippen/bestenliste", tags=["tippen"])
 
@@ -65,13 +66,12 @@ class EintragOut(BaseModel):
 def _anzeigename(user: Union[Teacher, Student]) -> tuple[str, str | None]:
     """Name und Klasse aus dem Konto — nie aus dem Browser.
 
-    Nachnamen werden abgekürzt: die Liste hängt womöglich am Beamer.
+    Nachnamen werden abgekürzt: die Liste hängt womöglich am Beamer. Das ist
+    inzwischen die Hausregel für alle Werkzeuge, siehe api/display_names.py.
     """
     if isinstance(user, Student):
-        kurz = f"{user.nachname[:1]}." if user.nachname else ""
-        return (f"{user.vorname} {kurz}".strip(), user.klasse)
-    kurz = f"{user.last_name[:1]}." if user.last_name else ""
-    return (f"{user.first_name} {kurz}".strip(), None)
+        return (short_name(user), user.klasse)
+    return (abbreviate_parts(user.first_name or "", user.last_name or ""), None)
 
 
 def _besser(modus: str, neu: float, alt: float) -> bool:

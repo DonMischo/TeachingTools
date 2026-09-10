@@ -271,7 +271,7 @@ def test_a_logged_in_student_cannot_borrow_a_name_either(client, db, klass, sess
         async with connect_ws(app, scope) as ws:
             state = await _join_lobby(ws)
             assert state["is_haussprecher"] is False
-            assert state["players"] == ["Bea Beliebig"]     # own name, not the typed one
+            assert state["players"] == ["Bea B."]           # eigener Name in der Kurzform, nicht der getippte
             await ws.send_json({"action": "bid", "amount": 100})
             with pytest.raises(asyncio.TimeoutError):
                 await asyncio.wait_for(ws.receive_json(), timeout=0.3)

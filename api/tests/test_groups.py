@@ -105,9 +105,10 @@ class TestMembership:
 
         r = client.get(f"/api/groups/{gid}/roster", headers=auth(teacher_token))
         assert r.status_code == 200, r.text
-        # student_a = Meier, student_b = Schulz → sorted by Nachname
+        # student_a = Meier, student_b = Schulz → sortiert nach Nachname, aber
+        # ausgegeben in der Kurzform: der Kursleiter ist nicht ihre Klassenleitung.
         names = [(e["nachname"], e["vorname"]) for e in r.json()]
-        assert names == [("Meier", "Tom"), ("Schulz", "Nina")]
+        assert names == [("M.", "Tom"), ("S.", "Nina")]
 
     def test_roster_requires_auth(self, client, teacher_token):
         create = client.post("/api/groups", json={"group_type": "kurs", "name": "Kurs I"}, headers=auth(teacher_token))

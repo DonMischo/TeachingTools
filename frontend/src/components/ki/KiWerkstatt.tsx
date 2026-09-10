@@ -33,7 +33,7 @@ export default function KiWerkstatt({ action, zugang }: {
 
   const istLehrkraft = auth?.role === "teacher" || auth?.role === "admin";
   const name = zugang?.name
-    ?? (auth?.student ? `${auth.student.vorname} ${auth.student.nachname}`.trim() : undefined)
+    ?? auth?.student?.display_name
     ?? (auth?.teacher ? `${auth.teacher.first_name} ${auth.teacher.last_name}`.trim() : undefined);
 
   // Auf der eigenen Werkzeugseite gibt es keinen Code aus der Adresszeile. Für

@@ -34,7 +34,7 @@ export default function ExitTicketPlayPage() {
   const isGuest = mounted && !auth;               // fully unauthenticated visitor
   const studentId = auth?.student?.id ?? 0;
   const studentName = auth?.student
-    ? `${auth.student.vorname} ${auth.student.nachname}`
+    ? auth.student.display_name
     : (guest.session?.name ?? "Anonym");
 
   async function handleGuestJoin(name: string) {

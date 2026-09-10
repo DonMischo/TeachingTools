@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from datetime import date
 from pathlib import Path
 import shutil, uuid
 
@@ -9,6 +10,7 @@ from ..database import get_db
 from ..models import Class, Teacher, Transaction, Student, StudentRole
 from ..schemas import ClassOut, ClassSymbolUpdate, ClassNameUpdate
 from ..auth import get_current_teacher, get_current_user, require_class_manager
+from ..display_names import NameScope
 
 router = APIRouter(prefix="/api/classes", tags=["classes"])
 
@@ -48,11 +50,19 @@ def list_classes(db: Session = Depends(get_db), _=Depends(get_current_user)):
 
 class RosterEntry(BaseModel):
     id: int
+    # Kurzform (»Anna B.«), ausser fuer die Klassenleitung dieser Klasse.
     vorname: str
     nachname: str
+    # Nur mit dem schulweiten Schalter »Geschlecht anzeigen« (Admin).
     geschlecht: str | None = None
     alias: str | None = None
+    # Nachteilsausgleich — ausschliesslich fuer die Klassenleitung. Ein
+    # Klassensprecher bekommt hier immer eine leere Liste: das sind
+    # Gesundheitsdaten seiner Mitschueler.
     nta: list[int] = []
+    # Nur fuer die Klassenleitung, und nur wenn er ansteht (±5 Tage) — sonst
+    # None. Gesetzt heisst: in der Klassenliste einen Kuchen danebenstellen.
+    geburtstag: date | None = None
 
 
 @router.get("/{class_id}/roster", response_model=list[RosterEntry])
@@ -67,9 +77,17 @@ def class_roster(class_id: int, db: Session = Depends(get_db), current=Depends(g
         .order_by(Student.nachname, Student.vorname)
         .all()
     )
+    scope = NameScope(db, current)
     return [
-        RosterEntry(id=s.id, vorname=s.vorname, nachname=s.nachname, geschlecht=s.geschlecht,
-                    alias=s.alias, nta=list(s.nta or []))
+        RosterEntry(
+            id=s.id,
+            vorname=s.vorname if scope.full(s) else (s.alias or s.vorname or ""),
+            nachname=(s.nachname or "") if scope.full(s) else f"{(s.nachname or '')[:1]}.",
+            geschlecht=scope.geschlecht(s),
+            alias=s.alias,
+            nta=list(s.nta or []) if scope.klassenleitung(s) else [],
+            geburtstag=scope.birthday(s),
+        )
         for s in rows
     ]
 

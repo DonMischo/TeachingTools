@@ -46,10 +46,15 @@ def can_modify(row, current: Union[Teacher, Student]) -> bool:
 
 
 def author_name(row, db) -> str | None:
-    """Human-readable author label for a content row (teacher or student)."""
+    """Human-readable author label for a content row (teacher or student).
+
+    Schuelerautoren erscheinen in der Kurzform (»Anna B.«) — die Bibliothek
+    sehen alle Schueler des Pools, nicht nur die eigene Klasse."""
+    from .display_names import short_name
+
     if row.created_by_student is not None:
         s = db.get(Student, row.created_by_student)
-        return f"{s.vorname} {s.nachname}" if s else "Schüler:in"
+        return short_name(s) if s else "Schüler:in"
     if row.created_by is not None:
         t = db.get(Teacher, row.created_by)
         return f"{t.first_name} {t.last_name}" if t else None

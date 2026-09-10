@@ -118,8 +118,10 @@ def test_an_admin_may_edit_anything(db, teacher, admin, student):
 # ── author label ─────────────────────────────────────────────────────────────
 
 def test_author_name_renders_the_right_identity(db, teacher, student):
+    # Lehrkraefte stehen ausgeschrieben in der Bibliothek, Schueler in der
+    # Kurzform — den Pool sehen alle Schueler, nicht nur die eigene Klasse.
     assert author_name(_set(db, teacher_id=teacher.id), db) == "Anna Müller"
-    assert author_name(_set(db, student_id=student.id), db) == "Sam Schueler"
+    assert author_name(_set(db, student_id=student.id), db) == "Sam S."
 
 
 def test_author_name_survives_a_deleted_author(db, teacher, student):

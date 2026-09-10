@@ -132,19 +132,21 @@ describe("Playhub", () => {
   });
 
   it("lässt Angemeldete bei Caputh den Avatar wählen, den Namen aber nicht", async () => {
-    authState.auth = { user_type: "student", student: { vorname: "Ann", nachname: "M" } };
+    authState.auth = { user_type: "student", student: { vorname: "Ann", nachname: "Meier", display_name: "Ann M." } };
     mockResolve.mockResolvedValue({ code: "ABC123", matches: [caputh] });
     const user = await enterCode("ABC123");
 
     expect(await screen.findByText("Avatar wählen")).toBeInTheDocument();
     expect(screen.queryByPlaceholderText("Dein Name")).not.toBeInTheDocument();
-    expect(screen.getByText("Ann M")).toBeInTheDocument();
+    // Nicht der volle Name: was am Beamer landet, ist die Kurzform.
+    expect(screen.getByText("Ann M.")).toBeInTheDocument();
+    expect(screen.queryByText("Ann Meier")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Beitreten" }));
     // Angemeldete brauchen keinen Gast-Token.
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/play/ABC123"));
     expect(mockGuestJoin).not.toHaveBeenCalled();
-    expect(readPlayIdentity("ABC123")?.name).toBe("Ann M");
+    expect(readPlayIdentity("ABC123")?.name).toBe("Ann M.");
   });
 
   // ── Mehrdeutige Codes und Fehler ────────────────────────────────────────

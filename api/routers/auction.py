@@ -12,6 +12,7 @@ from .haeuser import haus_total_points
 from ..utils import gen_code
 from ..ws_auth import ws_identity, ws_teacher, ws_guest
 from ..ws_manager import RoomManager
+from ..display_names import short_name
 
 router = APIRouter(prefix="/api/auction", tags=["auction"])
 
@@ -231,7 +232,7 @@ async def auction_ws(
         # typed display name never grants anything — both are client-supplied.
         if identity and identity[0] == "student":
             bidder = db.get(Student, identity[1])
-            name = f"{bidder.vorname} {bidder.nachname}"
+            name = short_name(bidder)
             student_id = bidder.id
             house_id = _haussprecher_house(db, bidder)
             is_haussp = house_id is not None

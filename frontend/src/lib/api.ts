@@ -22,6 +22,9 @@ export type StudentOut = {
   class_id: number | null;
   jahrgang: number | null;
   geschlecht: string | null;
+  /** Immer die Kurzform »Anna B.« — was angezeigt werden darf, egal wer fragt. */
+  display_name: string;
+  /** Nur für die Klassenleitung, und nur wenn er ansteht (±5 Tage). Sonst null. */
   geburtsdatum: string | null;
   username: string | null;
   active: boolean;
@@ -117,9 +120,11 @@ export type AuswertungStudent = {
 };
 
 export type AuswertungDisciplineEntry = {
+  /** Platz innerhalb von Disziplin *und* Geschlecht — das Backend liefert je Gruppe die ersten drei. */
   rank: number;
   name: string | null;
   klasse: string;
+  geschlecht: string | null;
   discipline_id: string;
   value: number | null;
   points: number | null;
@@ -330,6 +335,12 @@ export type CalendarMeta = {
   categories: string[];
   tags: CalendarTagOut[];
   bundeslaender: Record<string, string>;
+};
+
+/** Schulweite Schalter dafür, welche Schülerdaten das Backend herausgibt.
+ *  Lesen darf jede:r Angemeldete, setzen nur ein Admin. */
+export type DisplaySettingsOut = {
+  show_geschlecht: boolean;
 };
 
 export type SchoolSettingsOut = {
@@ -1490,7 +1501,7 @@ export const api = {
     setKsprecherEdit: (id: number, enabled: boolean) =>
       apiFetch<ClassOut>(`classes/${id}/ksprecher-edit`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
     myManagement: () => apiFetch<{ class_id: number | null }>("classes/my-management"),
-    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string | null; alias: string | null; nta: number[] }[]>(`classes/${id}/roster`),
+    roster: (id: number) => apiFetch<{ id: number; vorname: string; nachname: string; geschlecht: string | null; alias: string | null; nta: number[]; geburtstag: string | null }[]>(`classes/${id}/roster`),
   },
   teachers: {
     list: () => apiFetch<TeacherOut[]>("teachers"),
@@ -1526,7 +1537,11 @@ export const api = {
         body: JSON.stringify({ selected_keys, csv_data }),
       }),
     generateCredentials: () => apiFetch<TeacherCredentialRow[]>("teachers/generate-credentials", { method: "POST" }),
-    downloadCredentials: () => fetch("/api/teachers/credentials/download", { credentials: "include" }),
+    /** Das Passwort *einer* Lehrkraft — Admin plus frischer 2FA-Code je Abruf.
+     *  Der frühere Sammelexport aller Lehrerzugänge gibt es bewusst nicht mehr. */
+    revealPassword: (teacherId: number, code: string) =>
+      apiFetch<{ id: number; last_name: string; first_name: string; username: string | null; password: string | null }>(
+        `teachers/${teacherId}/password`, { method: "POST", body: JSON.stringify({ code }) }),
     create: (body: { first_name: string; last_name: string; role: string; email?: string | null; teacher_role?: string | null }) =>
       apiFetch<TeacherCredentialRow>("teachers", { method: "POST", body: JSON.stringify(body) }),
     resetPassword: (teacherId: number) =>
@@ -1607,6 +1622,25 @@ export const api = {
     logout: () => apiFetch<void>("auth/logout", { method: "POST" }),
     me: () => apiFetch<MeOut>("auth/me"),
   },
+  twoFactor: {
+    status: () => apiFetch<{ confirmed: boolean; recovery_left: number }>("2fa/status"),
+    setup: () => apiFetch<{ secret: string; otpauth_uri: string; qr_svg: string }>("2fa/setup", { method: "POST" }),
+    activate: (code: string) =>
+      apiFetch<{ recovery_codes: string[] }>("2fa/activate", { method: "POST", body: JSON.stringify({ code }) }),
+    disable: (password: string) =>
+      apiFetch<void>("2fa/disable", { method: "POST", body: JSON.stringify({ password }) }),
+    useRecovery: (code: string) =>
+      apiFetch<{ recovery_codes: string[] }>("2fa/recovery", { method: "POST", body: JSON.stringify({ code }) }),
+  },
+
+  school: {
+    displaySettings: () => apiFetch<DisplaySettingsOut>("school/display-settings"),
+    setDisplaySettings: (show_geschlecht: boolean) =>
+      apiFetch<DisplaySettingsOut>("school/display-settings", {
+        method: "PUT", body: JSON.stringify({ show_geschlecht }),
+      }),
+  },
+
   students: {
     list: (params?: { klasse?: string; jahrgang?: number; group_id?: number }) => {
       const q = new URLSearchParams();
@@ -1628,7 +1662,9 @@ export const api = {
     fieldKeys: () => apiFetch<string[]>("students/field-keys"),
     deleteField: (key: string) =>
       apiFetch<{ removed: number }>(`students/fields?key=${encodeURIComponent(key)}`, { method: "DELETE" }),
-    downloadCredentials: () => fetch("/api/students/credentials/download", { credentials: "include" }),
+    downloadCredentials: (klasse?: string) =>
+      fetch(`/api/students/credentials/download${klasse ? `?klasse=${encodeURIComponent(klasse)}` : ""}`,
+            { credentials: "include" }),
     create: (body: { vorname: string; nachname: string; klasse: string; geschlecht: string }) =>
       apiFetch<StudentCredentialRow>("students", { method: "POST", body: JSON.stringify(body) }),
     resetPassword: (studentId: number) =>
@@ -1888,7 +1924,7 @@ export const api = {
       apiFetch<{ id: number; join_code: string; status: string; lueckentext_id: number; lueckentext_title: string }>(
         `lueckentexte/${setId}/sessions`, { method: "POST" }),
     joinSession: (code: string, name: string, avatar: string, guestToken?: string | null) =>
-      apiFetch<{ id: number; name: string; avatar: string }>(
+      apiFetch<{ id: number; name: string; avatar: string; export_token: string }>(
         `lueckentexte/sessions/${code}/join`, {
           method: "POST",
           headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import StudentGroup, StudentGroupMember, Student, Transaction, Teacher
 from ..auth import get_current_teacher
+from ..display_names import NameScope
 
 router = APIRouter(prefix="/api/groups", tags=["groups"])
 
@@ -41,6 +42,7 @@ class MemberAdd(BaseModel):
 
 class RosterEntry(BaseModel):
     id: int
+    # Kurzform (»Anna B.«), ausser fuer die Klassenleitung dieser Klasse.
     vorname: str
     nachname: str
     alias: str | None = None
@@ -157,7 +159,7 @@ def delete_group(
 def group_roster(
     group_id: int,
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    viewer: Teacher = Depends(get_current_teacher),
 ):
     """Member students of a group (name + alias), sorted — enough to render and
     export a printable list for a Kurs / Wahlpflicht group."""
@@ -171,8 +173,14 @@ def group_roster(
         .order_by(Student.nachname, Student.vorname)
         .all()
     )
+    scope = NameScope(db, viewer)
     return [
-        RosterEntry(id=s.id, vorname=s.vorname, nachname=s.nachname, alias=s.alias)
+        RosterEntry(
+            id=s.id,
+            vorname=s.vorname if scope.full(s) else (s.alias or s.vorname or ""),
+            nachname=(s.nachname or "") if scope.full(s) else f"{(s.nachname or '')[:1]}.",
+            alias=s.alias,
+        )
         for s in rows
     ]
 

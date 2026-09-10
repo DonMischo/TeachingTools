@@ -51,7 +51,7 @@ export default function AuctionPlayPage() {
   // Auto-connect when logged in
   useEffect(() => {
     if (!mounted || !auth?.student) return;
-    const name = `${auth.student.vorname} ${auth.student.nachname}`;
+    const name = auth.student.display_name;
     const saved = loadSaved(code);
     connect(saved?.token ?? newToken(), name);
   // eslint-disable-next-line react-hooks/exhaustive-deps

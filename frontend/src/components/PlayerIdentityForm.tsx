@@ -49,7 +49,7 @@ export function PlayerIdentityForm({
   useEffect(() => { setMounted(true); }, []);
 
   const lockedName = identity?.name ?? (auth?.student
-    ? (auth.student.username ?? `${auth.student.vorname} ${auth.student.nachname}`)
+    ? (auth.student.username ?? auth.student.display_name)
     : null);
 
   const needsTeam = teams.length > 0 && selectedTeamId === null;

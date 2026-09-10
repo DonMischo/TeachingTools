@@ -10,6 +10,7 @@ from ..auth import (
     get_current_teacher, get_current_user, require_class_teacher,
     require_class_manager,
 )
+from ..display_names import NameScope
 
 router = APIRouter(prefix="/api/chores", tags=["chores"])
 
@@ -40,10 +41,8 @@ class ChoreUpsert(BaseModel):
     enabled: bool = True
 
 
-def _out(c: ClassChore) -> ChoreOut:
-    name = None
-    if c.student:
-        name = f"{c.student.vorname} {c.student.nachname}"
+def _out(c: ClassChore, scope: NameScope) -> ChoreOut:
+    name = scope.name(c.student) if c.student else None
     return ChoreOut(
         id=c.id,
         class_id=c.class_id,
@@ -127,7 +126,8 @@ def list_chores(class_id: int, db: Session = Depends(get_db), current=Depends(ge
     # Any teacher may view; a student only if a granted Klassensprecher of this class.
     if not isinstance(current, Teacher):
         require_class_manager(db, current, class_id)
-    return [_out(c) for c in db.query(ClassChore).filter_by(class_id=class_id).all()]
+    scope = NameScope(db, current)
+    return [_out(c, scope) for c in db.query(ClassChore).filter_by(class_id=class_id).all()]
 
 
 @router.post("", response_model=ChoreOut, status_code=201)
@@ -150,7 +150,7 @@ def upsert_chore(
         existing.assigned_by = editor_id
         db.commit()
         db.refresh(existing)
-        return _out(existing)
+        return _out(existing, NameScope(db, current))
     chore = ClassChore(
         class_id=body.class_id,
         chore_name=body.chore_name,
@@ -161,7 +161,7 @@ def upsert_chore(
     db.add(chore)
     db.commit()
     db.refresh(chore)
-    return _out(chore)
+    return _out(chore, NameScope(db, current))
 
 
 @router.delete("/{chore_id}", status_code=204)
@@ -209,7 +209,7 @@ def random_assign(
         return []
     students = db.query(Student).filter_by(class_id=class_id, active=True).all()
     if not students:
-        return [_out(c) for c in chores]
+        return [_out(c, NameScope(db, current)) for c in chores]
     shuffled = random.sample(students, len(students))
     for i, chore in enumerate(chores):
         new_sid = shuffled[i % len(shuffled)].id
@@ -221,4 +221,5 @@ def random_assign(
     db.commit()
     for c in chores:
         db.refresh(c)
-    return [_out(c) for c in chores]
+    scope = NameScope(db, current)
+    return [_out(c, scope) for c in chores]

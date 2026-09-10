@@ -16,6 +16,7 @@ const mockStudent: apiModule.StudentOut = {
   nummer: null,
   nachname: "Schmidt",
   vorname: "Ben",
+  display_name: "Ben S.",
   klasse: "5a",
   class_id: 1,
   jahrgang: 5,

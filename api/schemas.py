@@ -284,15 +284,29 @@ class TokenOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 class StudentOut(BaseModel):
+    """Ein Schueler, wie ihn *dieser* Aufrufer sehen darf.
+
+    Nie mit ``model_validate`` direkt bauen — ``display_names.student_out()``
+    benutzen. Der Serializer entscheidet, ob ``vorname``/``nachname`` den
+    echten Namen tragen oder die Kurzform, und ob ein Geburtsdatum ueberhaupt
+    mitkommt.
+    """
     id: int
     nummer: int | None
+    # Ausgeschrieben nur fuer Klassenleitung, Schuelerdatenverwaltung und den
+    # Schueler selbst; sonst steht hier schon die Kurzform (»Anna« / »B.«).
     nachname: str
     vorname: str
+    # Was angezeigt werden darf, egal wer fragt: »Anna B.«. Alles, was auch nur
+    # neben anderen Leuten auf einem Bildschirm landen kann, rendert dieses Feld.
+    display_name: str = ""
     klasse: str
     class_id: int | None
     jahrgang: int | None
     ak_code: str | None = None
     geschlecht: str | None = None
+    # Nur fuer die Klassenleitung, und nur im Fenster von ±5 Tagen um den Tag
+    # herum — sonst immer None. Gesetzt heisst also: Geburtstag steht an.
     geburtsdatum: date | None
     username: str | None
     active: bool
@@ -442,9 +456,10 @@ class AuswertungStudent(BaseModel):
 
 
 class AuswertungDisciplineEntry(BaseModel):
-    rank: int
+    rank: int          # Platz innerhalb von Disziplin *und* Geschlecht (1-3)
     name: str | None
     klasse: str
+    geschlecht: str | None = None
     discipline_id: str
     value: float | None
     points: int | None

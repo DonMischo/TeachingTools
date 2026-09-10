@@ -5,19 +5,22 @@ import re
 from datetime import date
 
 import chardet
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Student, Class, StudentGroupMember
+from ..models import Student, Class, StudentGroupMember, Teacher
 from ..schemas import (
     StudentOut, StudentCredentialRow, StudentCredsResult, StudentPreviewResponse,
     StudentApplyRequest, StudentCardData, StudentEnrichRow, StudentCandidate,
     StudentFieldConflict, StudentAbsentRow,
 )
 from ..auth import hash_password, verify_password, get_current_teacher
+from ..display_names import NameScope, student_out
+from ..audit import audit
+from .twofa import has_totp
 from ..admin_access import require_admin_feature
 from .classes import assert_class_editor
 from ..password_gen import generate_password
@@ -671,8 +674,18 @@ def list_students(
     geschlecht: str | None = None,
     group_id: int | None = None,
     db: Session = Depends(get_db),
-    _: object = Depends(get_current_teacher),
+    viewer: Teacher = Depends(get_current_teacher),
 ):
+    """Schuelerliste, optional nach Klasse / Kurs / Jahrgang gefiltert.
+
+    Bewusst **nicht** auf die eigenen Klassen eingegrenzt: Klassenlisten, Kurse
+    und WPF muessen jeder Lehrkraft offenstehen, sonst steht eine Vertretung
+    ohne Liste da. Der Datenschutz sitzt stattdessen im Inhalt — ueber
+    ``student_out`` gehen nur Kurznamen hinaus (»Anna B.«), kein Geburtsdatum,
+    kein Nachteilsausgleich und kein Geschlecht. Den vollen Datensatz sieht
+    weiterhin nur die Klassenleitung ihrer eigenen Klasse und die
+    Schuelerdatenverwaltung.
+    """
     q = db.query(Student)
     if klasse:
         q = q.filter(Student.klasse == klasse)
@@ -686,12 +699,8 @@ def list_students(
     if geschlecht:
         q = q.filter(Student.geschlecht == geschlecht)
     students = q.order_by(Student.klasse, Student.nachname, Student.vorname).all()
-    result = []
-    for s in students:
-        out = StudentOut.model_validate(s)
-        out.has_credentials = bool(s.username and s.password_hash)
-        result.append(out)
-    return result
+    scope = NameScope(db, viewer)
+    return [student_out(s, scope) for s in students]
 
 
 def _new_student_password(student: Student) -> str:
@@ -751,13 +760,18 @@ def create_student(
 @router.post("/{student_id}/reset-password", response_model=StudentCredentialRow)
 def reset_student_password(
     student_id: int,
+    request: Request = None,  # noqa: RUF013 — nur fuer die IP im Protokoll
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin_feature("students")),
+    user: Teacher = Depends(get_current_teacher),
 ):
-    """Admin: issue a fresh random password (and username if missing) for one student."""
+    """Ein frisches Zufallspasswort (und, falls noetig, einen Benutzernamen).
+
+    Gibt das Klarpasswort zurueck, faellt also unter dieselbe Regel wie der
+    Export: Admin, oder die Klassenleitung dieses Kindes."""
     student = db.get(Student, student_id)
     if not student:
         raise HTTPException(404, "Student not found")
+    _assert_credential_scope(db, user, student.klasse)
     if not student.username:
         existing = {u for (u,) in db.query(Student.username).filter(
             Student.username.isnot(None), Student.id != student_id
@@ -766,6 +780,8 @@ def reset_student_password(
     plain = _new_student_password(student)
     db.commit()
     db.refresh(student)
+    audit("students.password.reset", user, target=student.klasse,
+          detail=f"1 Konto (#{student.id})", request=request, db=db)
     return StudentCredentialRow(
         id=student.id, nachname=student.nachname, vorname=student.vorname,
         klasse=student.klasse, username=student.username, password=plain,
@@ -799,9 +815,7 @@ def update_student_profile(
     student.nta = sorted({n for n in body.nta if 1 <= n <= 5})
     db.commit()
     db.refresh(student)
-    out = StudentOut.model_validate(student)
-    out.has_credentials = bool(student.username and student.password_hash)
-    return out
+    return student_out(student, NameScope(db, teacher))
 
 
 class UsernameUpdate(BaseModel):
@@ -813,7 +827,7 @@ def set_student_username(
     student_id: int,
     body: UsernameUpdate,
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin_feature("students")),
+    admin: Teacher = Depends(require_admin_feature("students")),
 ):
     """Admin: change a student's login username (must stay unique)."""
     student = db.get(Student, student_id)
@@ -830,9 +844,7 @@ def set_student_username(
     student.username = username
     db.commit()
     db.refresh(student)
-    out = StudentOut.model_validate(student)
-    out.has_credentials = bool(student.username and student.password_hash)
-    return out
+    return student_out(student, NameScope(db, admin))
 
 
 @router.delete("/fields")
@@ -892,8 +904,9 @@ def student_field_keys(
 @router.post("/generate-credentials", response_model=StudentCredsResult)
 def generate_credentials(
     body: GenerateCredsRequest | None = None,
+    request: Request = None,  # noqa: RUF013 — nur fuer die IP im Protokoll
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin_feature("students")),
+    user: Teacher = Depends(require_admin_feature("students")),
 ):
     """Issue login credentials for all active students.
 
@@ -979,16 +992,59 @@ def generate_credentials(
         ))
 
     db.commit()
+    audit("students.credentials.generate", user, target="alle Klassen",
+          detail=f"{len(result)} Zugänge", request=request, db=db)
     return {"rows": result, "errors": errors}
+
+
+# ---------------------------------------------------------------------------
+# Wer Zugangsdaten (also Klarpasswoerter) ausgeben darf
+# ---------------------------------------------------------------------------
+
+def _assert_credential_scope(db: Session, user, klasse: str | None) -> str | None:
+    """Prueft die Ausgabe von Klarpasswoertern und liefert die erzwungene Klasse.
+
+    Zwei Wege hinein, mehr nicht:
+
+      * **Admin** — die ganze Schule, mit oder ohne Klassenfilter.
+      * **Klassenleitung** — genau die eigene Klasse, und ``klasse`` muss
+        gesetzt sein und dazu passen. Ein Klassenfilter ist hier keine Bequem-
+        lichkeit, sondern die Grenze.
+
+    Das delegierbare Recht »Schülerdaten« reicht ausdruecklich *nicht*: es
+    traegt Import, Anlegen und Umbenennen, aber nicht den Griff auf die
+    Klarpasswoerter der ganzen Schule.
+    """
+    if isinstance(user, Teacher) and user.role == "admin":
+        return klasse
+    cls = db.get(Class, user.klasse_id) if isinstance(user, Teacher) and user.klasse_id else None
+    if cls is None:
+        raise HTTPException(403, "Zugangsdaten gibt es nur für die eigene Klasse — oder als Admin.")
+    if klasse and klasse != cls.code:
+        raise HTTPException(403, f"Du bist Klassenleitung von {cls.code}, nicht von {klasse}.")
+    # Zwei-Faktor ist der Preis fuer den Griff auf Klarpasswoerter. Nicht bei
+    # jedem Abruf ein Code — die Liste wandert ohnehin auf Papier in die Klasse
+    # —, aber das Konto muss den zweiten Faktor eingerichtet haben.
+    if not has_totp(user):
+        raise HTTPException(
+            403,
+            "Zugangsdaten der Klasse gibt es nur mit Zwei-Faktor. "
+            "Einzurichten unter »Konto → Zwei-Faktor«.",
+        )
+    return cls.code
 
 
 @router.get("/card-data", response_model=list[StudentCardData])
 def student_card_data(
     klasse: str | None = None,
+    request: Request = None,  # noqa: RUF013 — nur fuer die IP im Protokoll
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin_feature("students")),
+    user: Teacher = Depends(get_current_teacher),
 ):
-    """All student fields (incl. extra_fields) for card generation."""
+    """All student fields (incl. extra_fields) for card generation.
+
+    Enthaelt das Klarpasswort — siehe _assert_credential_scope."""
+    klasse = _assert_credential_scope(db, user, klasse)
     q = db.query(Student).filter(Student.active == True)
     if klasse:
         q = q.filter(Student.klasse == klasse)
@@ -1010,17 +1066,26 @@ def student_card_data(
             username=s.username,
             fields=fields,
         ))
+    audit("students.card_data", user, target=klasse or "alle Klassen",
+          detail=f"{len(result)} Karten", request=request, db=db)
     return result
 
 
 @router.get("/credentials/download")
 def download_credentials(
+    klasse: str | None = None,
+    request: Request = None,  # noqa: RUF013 — nur fuer die IP im Protokoll
     db: Session = Depends(get_db),
-    _: object = Depends(require_admin_feature("students")),
+    user: Teacher = Depends(get_current_teacher),
 ):
-    students = db.query(Student).filter(
+    """Zugangsdaten als CSV — Klarpasswoerter. Siehe _assert_credential_scope."""
+    klasse = _assert_credential_scope(db, user, klasse)
+    q = db.query(Student).filter(
         Student.active == True, Student.username.isnot(None)
-    ).order_by(Student.klasse, Student.nachname).all()
+    )
+    if klasse:
+        q = q.filter(Student.klasse == klasse)
+    students = q.order_by(Student.klasse, Student.nachname).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -1029,8 +1094,11 @@ def download_credentials(
         writer.writerow([s.klasse, s.nachname, s.vorname, s.username or "", _display_password(s)])
 
     output.seek(0)
+    audit("students.credentials.download", user, target=klasse or "alle Klassen",
+          detail=f"{len(students)} Zugänge", request=request, db=db)
+    name = f"zugangsdaten_{klasse}.csv" if klasse else "zugangsdaten.csv"
     return StreamingResponse(
         iter([output.getvalue().encode("utf-8-sig")]),  # utf-8-sig for Excel
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="zugangsdaten.csv"'},
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
     )
