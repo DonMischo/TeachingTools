@@ -31,7 +31,14 @@ class RoomManager:
         if info is not None:
             self._info.setdefault(code, {})[key] = info
 
-    def remove_student(self, code: str, key):
+    def remove_student(self, code: str, key, ws: WebSocket | None = None):
+        """With `ws`, only remove while that socket is still the registered one.
+
+        A reconnect registers the new socket under the same key. When the old
+        socket's disconnect handler runs afterwards, it must not take the new
+        one with it — the player would silently stop receiving broadcasts."""
+        if ws is not None and self._students.get(code, {}).get(key) is not ws:
+            return
         self._students.get(code, {}).pop(key, None)
         self._info.get(code, {}).pop(key, None)
 

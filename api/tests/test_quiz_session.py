@@ -564,3 +564,63 @@ def test_der_eigene_platz_wird_an_der_anmeldung_erkannt(db, game_session, klass)
             assert joined["event"] == "joined"
             assert joined["name"] == "Anna A."
     _run(db, run)
+
+
+# ── Wiederverbinden ──────────────────────────────────────────────────────────
+
+def test_alter_socket_traegt_beim_schliessen_den_neuen_nicht_aus(db, game_session, p1):
+    """Das Handy wacht auf und verbindet neu — erst danach merkt der Server, dass
+    der alte Socket weg ist. Dessen Aufraeumen trug frueher den *neuen* aus: der
+    Gast bekam keine Nachricht mehr und die erste Frage erst nach dem Neuladen."""
+    async def run():
+        async with connect_ws(app, _scope("GAME01", role="teacher")) as teacher_ws:
+            await teacher_ws.receive_json()  # state
+            alt_cm = connect_ws(app, _scope("GAME01", participant_id=p1.id))
+            alt = await alt_cm.__aenter__()
+            await _drain_until(alt, "joined")
+            async with connect_ws(app, _scope("GAME01", participant_id=p1.id)) as neu:
+                await _drain_until(neu, "joined")
+                await alt_cm.__aexit__(None, None, None)
+
+                await teacher_ws.send_json({"action": "start"})
+                preview = await asyncio.wait_for(_drain_until(neu, "question_preview"), timeout=2)
+                assert preview["question_idx"] == 0
+    _run(db, run)
+
+
+def test_state_bringt_die_lobby_mit(db, game_session, p1, p2):
+    """Die Lehrkraft laedt neu: ohne Liste stuende dort »2 Teilnehmer« ohne Namen."""
+    async def run():
+        async with connect_ws(app, _scope("GAME01", role="teacher")) as teacher_ws:
+            state = await teacher_ws.receive_json()
+            assert state["event"] == "state"
+            assert sorted(p["name"] for p in state["participants"]) == ["Lena", "Milo"]
+    _run(db, run)
+
+
+def test_verbindung_beendet_ihre_transaktion_vor_dem_warten(db, game_session, p1):
+    """Jede offene Verbindung hielt ihre Datenbankverbindung, solange sie bestand:
+    der Pool hat 15, eine Klasse mehr Kinder — danach stand die ganze App.
+
+    Beobachtet wird das Commit, nicht der Pool: die Test-Session committet nie
+    wirklich (conftest macht daraus ein flush), eine Pool-Belegung ist hier also
+    nicht messbar."""
+    commits = []
+    flush = db.commit
+
+    def spy():
+        commits.append(1)
+        flush()
+    db.commit = spy
+
+    async def run():
+        async with connect_ws(app, _scope("GAME01", role="teacher")) as teacher_ws:
+            await teacher_ws.receive_json()  # state
+            await asyncio.sleep(0.05)
+            vorher = len(commits)
+            async with connect_ws(app, _scope("GAME01", participant_id=p1.id)) as student_ws:
+                await _drain_until(student_ws, "joined")
+                await _drain_until(teacher_ws, "participant_joined")
+                await asyncio.sleep(0.05)
+                assert len(commits) > vorher, "Schueler-Verbindung wartet mit offener Transaktion"
+    _run(db, run)

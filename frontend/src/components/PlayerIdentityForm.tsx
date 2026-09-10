@@ -67,19 +67,24 @@ export function PlayerIdentityForm({
   if (!mounted) return null;
 
   const shell = (children: React.ReactNode) => (
+    // Eigener Scroll-Rahmen, wie bei den Simulationen (f8d3648): auf den
+    // /play-Routen ist <main> overflow-hidden, also war alles unterhalb des
+    // Sichtfelds — Avatar-Raster, »Beitreten« — auf dem iPhone unerreichbar.
     <div
-      style={{ minHeight: "100svh", background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)" }}
-      className="flex flex-col items-center justify-center gap-6 p-6"
+      className="h-full app-scroll"
+      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)" }}
     >
-      <div className="text-5xl">{gameIcon}</div>
-      {gameTitle && <h1 className="text-xl font-black tracking-tight text-center text-white">{gameTitle}</h1>}
-      <p className="font-mono tracking-widest text-indigo-300 text-sm">{gameCode}</p>
+      <div style={{ minHeight: "100svh" }} className="flex flex-col items-center justify-center gap-6 p-6">
+        <div className="text-5xl">{gameIcon}</div>
+        {gameTitle && <h1 className="text-xl font-black tracking-tight text-center text-white">{gameTitle}</h1>}
+        <p className="font-mono tracking-widest text-indigo-300 text-sm">{gameCode}</p>
 
-      {error && (
-        <p className="text-red-400 text-sm text-center bg-red-400/10 rounded-xl px-4 py-2">{error}</p>
-      )}
+        {error && (
+          <p className="text-red-400 text-sm text-center bg-red-400/10 rounded-xl px-4 py-2">{error}</p>
+        )}
 
-      <div className="w-full max-w-xs flex flex-col gap-4">{children}</div>
+        <div className="w-full max-w-xs flex flex-col gap-4">{children}</div>
+      </div>
     </div>
   );
 

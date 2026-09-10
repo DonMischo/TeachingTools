@@ -180,6 +180,11 @@ export default function HostPage() {
   const [teamMode, setTeamMode] = useState(false);
   const [teams, setTeams] = useState<{ id: number; name: string; color: string | null }[]>([]);
   const [newTeamName, setNewTeamName] = useState("");
+  // Warum die Verbindung abgewiesen wurde (4003/4004) — sonst stünde »Verbinde…« ewig da.
+  const [connectError, setConnectError] = useState<string | null>(null);
+  // Hochzählen baut die Verbindung neu auf (siehe onclose).
+  const [generation, setGeneration] = useState(0);
+  const reconnectAttempts = useRef(0);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -217,29 +222,53 @@ export default function HostPage() {
   useEffect(() => {
     const socket = new WebSocket(wsUrl(`/api/sessions/${code}/ws?role=teacher`));
     ws.current = socket;
+    let stopped = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
 
-    socket.onopen = () =>
+    socket.onopen = () => {
+      reconnectAttempts.current = 0;
       setPhase({ kind: "waiting", participantCount: 0, participants: [] });
+    };
 
-    socket.onclose = () =>
+    socket.onclose = (e) => {
+      if (stopped) return;
       setPhase((prev) => (prev.kind === "connecting" ? prev : { kind: "connecting" }));
+      // Abgewiesen: ein neuer Versuch ändert daran nichts — sagen, woran es liegt.
+      if (e.code === 4003 || e.code === 4004) {
+        setConnectError(e.code === 4004
+          ? `Sitzung ${code} gibt es nicht (mehr).`
+          : "Keine Berechtigung — bitte mit dem Konto anmelden, das diese Sitzung gestartet hat.");
+        return;
+      }
+      // Sonst ein Abriss (WLAN, Ruhezustand, Server-Neustart): selbst neu
+      // verbinden, statt dauerhaft auf »Verbinde…« zu stehen.
+      retry = setTimeout(() => setGeneration((g) => g + 1),
+        Math.min(1000 * 2 ** reconnectAttempts.current++, 10_000));
+    };
 
     socket.onmessage = (e) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const msg: any = JSON.parse(e.data);
 
       if (msg.event === "state") {
-        // Waiting room initial state
-        setPhase({ kind: "waiting", participantCount: msg.participant_count, participants: [] });
+        // Waiting room initial state — nach Neuladen oder Wiederverbinden samt
+        // der schon Beigetretenen, sonst stünde dort nur die Zahl.
+        setPhase({ kind: "waiting", participantCount: msg.participant_count, participants: msg.participants ?? [] });
         if (msg.team_mode) { setTeamMode(true); reloadTeams(); }
 
       } else if (msg.event === "participant_joined") {
+        // Kommt bei jedem Verbinden eines Spielers, auch nach seinem Neuladen —
+        // deshalb ersetzen statt anhängen, sonst steht er doppelt in der Lobby.
+        const joined = { id: msg.participant_id, name: msg.name, avatar: msg.avatar };
         setPhase((prev) => {
           if (prev.kind !== "waiting") return prev;
+          const known = prev.participants.some((p) => p.id === joined.id);
           return {
             ...prev,
             participantCount: msg.count,
-            participants: [...prev.participants, { id: msg.participant_id, name: msg.name, avatar: msg.avatar }],
+            participants: known
+              ? prev.participants.map((p) => (p.id === joined.id ? joined : p))
+              : [...prev.participants, joined],
           };
         });
 
@@ -350,8 +379,8 @@ export default function HostPage() {
       }
     };
 
-    return () => socket.close();
-  }, [code]);
+    return () => { stopped = true; clearTimeout(retry); socket.close(); };
+  }, [code, generation]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function send(action: string, extra?: Record<string, any>) {
@@ -410,7 +439,7 @@ export default function HostPage() {
   if (phase.kind === "connecting") {
     return (
       <div className="flex items-center justify-center h-screen text-gray-400">
-        Verbinde mit Session {code}…
+        {connectError ?? `Verbinde mit Session ${code}…`}
       </div>
     );
   }

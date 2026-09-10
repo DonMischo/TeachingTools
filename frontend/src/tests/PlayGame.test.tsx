@@ -38,7 +38,7 @@ vi.mock("@/lib/api", () => ({
 
 class MockWebSocket {
   onopen: (() => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((e: { code: number }) => void) | null = null;
   onmessage: ((e: { data: string }) => void) | null = null;
   close = vi.fn();
   send = vi.fn();
@@ -284,5 +284,42 @@ describe("PlayPage – in-game phases", () => {
 
     expect(screen.getByText("Testquiz")).toBeInTheDocument();
     expect(screen.getByText("75")).toBeInTheDocument();
+  });
+});
+
+describe("PlayPage – Verbindungsabriss", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    socket = undefined as unknown as MockWebSocket;
+  });
+
+  it("verbindet nach einem Abriss selbst neu und bekommt die erste Frage", async () => {
+    // Handy im Warteraum gesperrt: die Verbindung reisst ab. Bisher blieb der
+    // Warteraum stehen, und die Frage kam erst nach dem Neuladen an.
+    await mountAndJoin();
+    const first = socket;
+    act(() => { first.onclose?.({ code: 1006 }); });
+
+    await waitFor(() => expect(socket).not.toBe(first), { timeout: 2500 });
+    act(() => { socket.fire(PREVIEW_MSG); });
+    expect(screen.getByText("Was ist 2+2?")).toBeInTheDocument();
+  });
+
+  it("schickt ins Beitrittsformular, wenn es den Platz nicht mehr gibt", async () => {
+    await mountAndJoin();
+    act(() => { socket.onclose?.({ code: 4003 }); });
+
+    expect(await screen.findByText(/Teilnahme gibt es nicht mehr/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Dein Name/i)).toBeInTheDocument();
+  });
+
+  it("verbindet nach dem Rauswurf nicht neu", async () => {
+    await mountAndJoin();
+    const first = socket;
+    act(() => { first.fire({ event: "kicked" }); });
+    act(() => { first.onclose?.({ code: 4000 }); });
+
+    await new Promise((r) => setTimeout(r, 1200));
+    expect(socket).toBe(first);
   });
 });

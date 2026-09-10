@@ -10,6 +10,7 @@ Live session flow (Kahoot-style):
 import asyncio
 import io
 import json
+import logging
 import math
 import random
 import re
@@ -39,6 +40,7 @@ from ..ws_manager import RoomManager
 from ..display_names import abbreviate_stored, short_name
 
 router = APIRouter(tags=["capuths"])
+logger = logging.getLogger(__name__)
 
 QUIZ_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "quizzes"
 
@@ -84,8 +86,8 @@ class _SessionManager(RoomManager):
         super().remove_teacher(code, ws)
         self._track_empty(code)
 
-    def remove_student(self, code: str, key):
-        super().remove_student(code, key)
+    def remove_student(self, code: str, key, ws: WebSocket | None = None):
+        super().remove_student(code, key, ws)
         self._track_empty(code)
 
     def _track_empty(self, code: str):
@@ -422,6 +424,9 @@ def _state_msg(s: QuizSession, db: Session) -> dict:
             "answers": [{"id": a.id, "text": a.text, "order": a.order} for a in q.answers],
         } if q else None,
         "participant_count": len(s.participants),
+        # Die Lobby der Lehrkraft baut sich beim Neuladen daraus wieder auf —
+        # sonst stuende dort die Zahl, aber kein einziger Avatar.
+        "participants": [{"id": p.id, "name": p.name, "avatar": p.avatar} for p in s.participants],
     }
 
 
@@ -1270,8 +1275,14 @@ async def session_ws(
 ):
     pid: int | None = None
     try:
+        # Erst annehmen, dann ablehnen: ein close() vor accept() wird zur
+        # HTTP-403-Antwort, der Browser sieht statt 4004/4003 nur 1006 — die
+        # Seite kann dann nicht sagen, woran es liegt, und versucht es ewig.
+        await websocket.accept()
+
         s = db.query(QuizSession).filter_by(join_code=code).first()
         if not s:
+            logger.warning("Caputh-WS %s: Sitzung nicht gefunden (role=%s)", code, role)
             await websocket.close(code=4004)
             return
 
@@ -1282,10 +1293,11 @@ async def session_ws(
         if role == "teacher":
             host = ws_teacher(websocket, db)
             if host is None or not is_session_owner(s, host):
+                logger.warning("Caputh-WS %s: Host abgewiesen — %s", code,
+                               "nicht als Lehrkraft angemeldet" if host is None
+                               else f"Sitzung gehoert nicht Lehrkraft {host.id}")
                 await websocket.close(code=4003)
                 return
-
-        await websocket.accept()
 
         if role == "teacher":
             mgr.add_teacher(code, websocket)
@@ -1298,10 +1310,12 @@ async def session_ws(
             # code (only issued when the teacher opted in — enforces opt-in +
             # 60-min expiry). Logged-in students/teachers pass freely.
             if ws_identity(websocket, db) is None and ws_guest(websocket, code, db) is None:
+                logger.warning("Caputh-WS %s: Spieler ohne Anmeldung oder gueltiges Gast-Token", code)
                 await websocket.close(code=4001)
                 return
             p = _ws_participant(db, s, websocket, participant_id)
             if p is None:
+                logger.warning("Caputh-WS %s: kein Platz fuer participant_id=%s", code, participant_id)
                 await websocket.close(code=4003)
                 return
             pid = p.id
@@ -1318,6 +1332,12 @@ async def session_ws(
 
         try:
             while True:
+                # Die Transaktion vor dem Warten beenden. Sonst haelt jede offene
+                # Verbindung ihre Datenbankverbindung fest, solange sie besteht:
+                # der Pool hat 15, eine Klasse mehr Kinder. Die naechste Verbindung
+                # blockiert dann 30 s die ganze Ereignisschleife, und die App
+                # steht, bis jemand den Container neu startet.
+                db.commit()
                 data = await websocket.receive_json()
                 action = data.get("action")
 
@@ -1329,16 +1349,28 @@ async def session_ws(
                         await _handle_teacher_action(action, data, s, db, code, websocket)
                     else:
                         await _handle_student_action(action, data, s, db, code, pid)
-                except Exception as e:
-                    import traceback
-                    print(f"ERROR handling action '{action}': {e}")
-                    traceback.print_exc()
+                except Exception:
+                    logger.exception("Caputh-WS %s: Aktion %r fehlgeschlagen (role=%s, pid=%s)",
+                                     code, action, role, pid)
+                    # Eine abgebrochene Transaktion vergiftete sonst die Session:
+                    # jede weitere Aktion dieser Verbindung scheiterte mit.
+                    db.rollback()
 
         except WebSocketDisconnect:
             pass
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        # Mit Code, Rolle und Platz ins Log: sonst sah die Lehrkraft nur
+        # »Verbinde…«, und im Log stand ein Traceback ohne Sitzung.
+        logger.exception("Caputh-WS %s: Verbindung abgebrochen (role=%s, pid=%s)", code, role, pid)
+        try:
+            await websocket.close(code=1011)
+        except Exception:
+            pass
     finally:
         if role == "student":
-            mgr.remove_student(code, pid)
+            mgr.remove_student(code, pid, websocket)
         else:
             mgr.remove_teacher(code, websocket)
 

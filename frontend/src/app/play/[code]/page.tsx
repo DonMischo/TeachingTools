@@ -137,6 +137,8 @@ export default function PlayPage() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const ws = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reconnectAttempts = useRef(0);
   const { auth } = useAuth();
   const guest = useGuestSession(code);
 
@@ -193,8 +195,29 @@ export default function PlayPage() {
     );
     ws.current = socket;
 
-    // 4001 = guest token missing/expired → hard block (no rejoin).
-    socket.onclose = (e) => { if (e.code === 4001) guest.markExpired(); };
+    socket.onopen = () => { reconnectAttempts.current = 0; };
+
+    socket.onclose = (e) => {
+      // Absichtlich geschlossen (Rauswurf, Seite verlassen) oder schon ersetzt.
+      if (ws.current !== socket) return;
+      // 4001 = guest token missing/expired → hard block (no rejoin).
+      if (e.code === 4001) { guest.markExpired(); return; }
+      if (e.code === 4003 || e.code === 4004) {
+        // Platz oder Runde gibt es nicht mehr: neu beitreten lassen, statt
+        // endlos auf »Verbinde…« zu stehen.
+        ws.current = null;
+        clearSaved();
+        setConnecting(false);
+        setJoinError("Diese Teilnahme gibt es nicht mehr. Bitte tritt neu bei.");
+        setPhase({ kind: "join" });
+        return;
+      }
+      // Alles andere ist ein Abriss — Handy gesperrt, WLAN weg. Ohne erneutes
+      // Verbinden blieb der Warteraum stehen, und die erste Frage kam erst nach
+      // dem Neuladen an. Beim Wiedereinstieg schickt der Server den Stand nach.
+      const delay = Math.min(1000 * 2 ** reconnectAttempts.current++, 10_000);
+      reconnectTimer.current = setTimeout(() => connectWs(participantId, playerName, playerAvatar, gt), delay);
+    };
 
     socket.onmessage = (e) => {
       const msg = JSON.parse(e.data);
@@ -273,7 +296,9 @@ export default function PlayPage() {
         });
 
       } else if (msg.event === "kicked") {
-        ws.current?.close();
+        // Vor dem Schließen austragen, sonst hielte onclose das für einen Abriss.
+        ws.current = null;
+        socket.close();
         setPhase({ kind: "join" });
         clearSaved();
 
@@ -360,7 +385,12 @@ export default function PlayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind === "question" ? (phase as Extract<Phase, { kind: "question" }>).question.id : null]);
 
-  useEffect(() => () => ws.current?.close(), []);
+  useEffect(() => () => {
+    clearTimeout(reconnectTimer.current);
+    const socket = ws.current;
+    ws.current = null;
+    socket?.close();
+  }, []);
 
   // ── Join screen ────────────────────────────────────────────────────
   if (!mounted) return null;

@@ -304,22 +304,30 @@ def _run_migrations(db_engine):
         # for a genuinely new *column* on a table that may already exist from an
         # earlier run (create_all never alters existing tables).
     ]
+    def add_unique(table: str, name: str, columns: str) -> str:
+        # Postgres kennt kein ADD CONSTRAINT IF NOT EXISTS. Ungeschuetzt scheiterte
+        # das ALTER bei jedem Start am schon vorhandenen Constraint — harmlos,
+        # aber Postgres schrieb dafuer jedes Mal ein ERROR ins Log. to_regclass
+        # findet den Namen, weil ein UNIQUE-Constraint seinen Index gleich nennt.
+        return (f"DO $$ BEGIN IF to_regclass('{name}') IS NULL THEN "
+                f"ALTER TABLE {table} ADD CONSTRAINT {name} UNIQUE ({columns}); END IF; END $$")
+
     constraints = [
-        "ALTER TABLE classes ADD CONSTRAINT uq_classes_ak_code UNIQUE (ak_code)",
+        add_unique("classes", "uq_classes_ak_code", "ak_code"),
         "CREATE INDEX IF NOT EXISTS ix_students_ak_code ON students (ak_code)",
-        "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_teacher UNIQUE (session_id, teacher_id)",
-        "ALTER TABLE exitgame_attempts ADD CONSTRAINT uq_exitgame_attempt_guest UNIQUE (session_id, guest_id)",
-        "ALTER TABLE barometer_responses ADD CONSTRAINT uq_baro_guest_question UNIQUE (session_id, question_id, guest_id)",
-        "ALTER TABLE practice_progress ADD CONSTRAINT uq_practice_teacher_topic UNIQUE (teacher_id, topic)",
+        add_unique("exitgame_attempts", "uq_exitgame_attempt_teacher", "session_id, teacher_id"),
+        add_unique("exitgame_attempts", "uq_exitgame_attempt_guest", "session_id, guest_id"),
+        add_unique("barometer_responses", "uq_baro_guest_question", "session_id, question_id, guest_id"),
+        add_unique("practice_progress", "uq_practice_teacher_topic", "teacher_id, topic"),
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_teachers_username ON teachers (username)",
-        "ALTER TABLE fragment_collection_grants ADD CONSTRAINT uq_fragment_grant UNIQUE (collection_id, grantee_type, class_id, teacher_id, group_id)",
-        "ALTER TABLE tool_availability ADD CONSTRAINT uq_tool_availability_scope UNIQUE (tool_slug, capability, audience, class_id, group_id)",
+        add_unique("fragment_collection_grants", "uq_fragment_grant", "collection_id, grantee_type, class_id, teacher_id, group_id"),
+        add_unique("tool_availability", "uq_tool_availability_scope", "tool_slug, capability, audience, class_id, group_id"),
         # NULL-safe: class_id/grade are NULL for cross-class groups, and NULLs
         # never collide in a plain UNIQUE — so a second "10 Kurs I" would slip in.
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_group_scope_name ON student_groups "
         "(group_type, COALESCE(class_id, -1), COALESCE(grade, -1), name)",
         # Ein Kurs/WPF verdient an einem Quiz genauso nur einmal Punkte wie eine Klasse.
-        "ALTER TABLE quiz_sessions ADD CONSTRAINT uq_quiz_group UNIQUE (quiz_id, group_id)",
+        add_unique("quiz_sessions", "uq_quiz_group", "quiz_id, group_id"),
     ]
     # Each statement runs in its OWN transaction (commit on success, rollback on
     # failure). These migrations are best-effort and idempotent: any one may fail

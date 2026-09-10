@@ -9,7 +9,7 @@
  *  - Teacher controls: correct action sent for each phase
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // ── mocks ─────────────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
 
 class MockWebSocket {
   onopen: (() => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((e: { code: number }) => void) | null = null;
   onmessage: ((e: { data: string }) => void) | null = null;
   close = vi.fn();
   send = vi.fn();
@@ -253,5 +253,47 @@ describe("HostPage – game flow", () => {
     expect(screen.getByText("Testquiz")).toBeInTheDocument();
     expect(screen.getByText(/42 Hauspunkte/)).toBeInTheDocument();
     expect(screen.getByText("Lena")).toBeInTheDocument();
+  });
+});
+
+describe("HostPage – Lobby und Verbindung", () => {
+  beforeEach(() => {
+    socket = undefined as unknown as MockWebSocket;
+  });
+
+  it("zeigt einen Gast, der neu verbindet, nur einmal", () => {
+    render(<HostPage />);
+    openSocket();
+    send({ event: "state", status: "waiting", participant_count: 0 });
+    const lena = { event: "participant_joined", participant_id: 5, name: "Lena", avatar: "cat", count: 1 };
+    send(lena);
+    send(lena); // derselbe Gast nach dem Neuladen
+
+    expect(screen.getAllByText("Lena")).toHaveLength(1);
+  });
+
+  it("nach dem Neuladen stehen die schon Beigetretenen wieder in der Lobby", () => {
+    render(<HostPage />);
+    openSocket();
+    send({ event: "state", status: "waiting", participant_count: 1,
+           participants: [{ id: 5, name: "Lena", avatar: "cat" }] });
+
+    expect(screen.getByText("Lena")).toBeInTheDocument();
+  });
+
+  it("sagt bei abgewiesener Verbindung, woran es liegt", () => {
+    render(<HostPage />);
+    act(() => { socket.onclose?.({ code: 4003 }); });
+
+    expect(screen.getByText(/Keine Berechtigung/)).toBeInTheDocument();
+  });
+
+  it("verbindet nach einem Abriss selbst neu", async () => {
+    render(<HostPage />);
+    openSocket();
+    const first = socket;
+    act(() => { first.onclose?.({ code: 1006 }); });
+
+    await waitFor(() => expect(socket).not.toBe(first), { timeout: 2500 });
   });
 });
