@@ -1,0 +1,552 @@
+{
+  "_ai_instructions": "Erstelle einen Zeitstrahl-Datensatz im vorgegebenen JSON-Format. --- PFLICHTFELDER --- title, axis, events. --- ACHSE --- axis: {kind, min, max, step?, unit?}. kind 'year' für historische Zeitleisten (Jahreszahlen als ganze Zahlen, v. Chr. = negativ, z.B. -753 für 753 v. Chr.) oder 'number' für Zahlenstrahlen/Skalen (unit optional, z.B. 'cm', '°C'; step = Raster-/Einrastschritt). min < max, alle Event-Werte müssen im Bereich liegen. --- SPUREN (lanes) --- optionale parallele Spuren für den Vergleich (z.B. Regionen: Europa neben Ostasien neben Amerika, oder Themen: Politik/Kultur, oder eine eigene Spur 'Epochen' als Zeitleisten-Rückgrat). lanes: [{id (kurz, eindeutig), label, color? (#rrggbb)}]. --- EREIGNISSE (events) --- [{id (eindeutig), label, value (Position auf der Achse), end? (nur für Zeitspannen, sonst weglassen/null), lane? (id einer Spur), category? (Filter-Schlagwort), info? (Zusatzinfo, erscheint beim Überfahren mit der Maus und ausführlich beim Anklicken — hier dürfen ruhig 1-2 erklärende Sätze stehen), exact_date?, exact_date_end? (optionales genaues Datum für Start bzw. Ende einer Zeitspanne). Zwei Schreibweisen: (1) ISO-8601 'JJJJ-MM-TT', z.B. '1942-01-20' — nur für n. Chr.-Daten (JJJJ vierstellig, kein Minus) — positioniert das Ereignis exakt auf diesen Tag (nicht nur das Jahr) und erlaubt Heranzoomen bis auf Tagesebene; das Jahr in 'value'/'end' muss dabei zum Datum passen (z.B. value: 1942 zu '1942-01-20'). (2) Freitext, z.B. '15. März 44 v. Chr.' oder '21. April 753 v. Chr. (Überlieferung)' — für v.-Chr.-Daten oder unsichere/überlieferte Angaben; wird nur als Zusatztext neben dem Jahr angezeigt, ändert nichts an Position oder Zoom. Nur setzen, wenn Tag/Monat wirklich belegt oder überliefert ist, sonst weglassen. Beide Schreibweisen dürfen sich auf derselben Zeitspanne mischen (z.B. Start v. Chr. als Freitext, Ende n. Chr. als ISO-Datum — siehe 'augustus' im Beispiel unten). color?}]. --- ZEITSPANNEN & EPOCHEN --- Alles mit Dauer bekommt 'end' und wird als Balken gezeichnet: Epochen (Antike, Mittelalter, Barock, Absolutismus), Herrschaftszeiten, Kriege, Kulturen, Lebensspannen. Punktereignisse (ein Datum) lassen 'end' weg. --- KATEGORIEN & FILTER --- category ist das Filter-Schlagwort, z.B. 'Rom', 'Mittelalter', 'Erster Weltkrieg', 'Klima'. Im Ansehen-Modus sind zunächst alle Kategorien aktiv; einzelne lassen sich abwählen (oder über 'Keine' + einen Klick isolieren), und die Ansicht zoomt automatisch auf den Bereich der verbliebenen Ereignisse. Deshalb: jeder Epoche/jedem Thema, das man einzeln betrachten können soll, eine eigene category geben (nicht alle Kriege in eine Sammelkategorie werfen). Dieselbe category darf über mehrere Spuren hinweg vorkommen — dann zeigt der Filter z.B. die Epoche 'Reformation' und die passenden Deutschland-Ereignisse gemeinsam. --- SPIELMECHANIKEN --- Aus einem Set lassen sich im Tool Spielvorschauen erzeugen; für Caputh-Fragen (type 'timeline') und Exitgame-Aufgaben (kind 'timeline') wird das separate TimelineGameSpec-Format verwendet: {mode: 'sort'|'spot', axis, items, tolerance?, scoring?}. mode 'sort': items [{id, label, value}] — Schüler ziehen die Begriffe an die richtige Stelle (scoring 'position' = Toleranzfenster, 'order' = nur Reihenfolge muss stimmen). mode 'spot': items [{id, label, value, actual?}] — Items werden bei 'value' angezeigt; falsch platzierte tragen zusätzlich ihren wahren Wert in 'actual'. Schüler markieren die Fehler. --- REGELN --- ids eindeutig, deutsche Beschriftungen, keine Lösungshinweise in labels.",
+
+  "title": "Mediengeschichte – Von der Höhle bis zum Smartphone",
+  "description": "Eine globale Zeitleiste der Medienentwicklung: Materialien, Technologien und Durchbrüche in der Übermittlung von Informationen von der Altsteinzeit bis in die Gegenwart.",
+  "tags": [
+    "medien",
+    "geschichte",
+    "technik",
+    "kommunikation",
+    "global"
+  ],
+  "grades": [
+    7,
+    8,
+    9,
+    10
+  ],
+  "axis": {
+    "kind": "year",
+    "min": -40000,
+    "max": 2030
+  },
+  "lanes": [
+    {
+      "id": "medium",
+      "label": "Medium / Material",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "technologie",
+      "label": "Technologie & Erfindung",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "region",
+      "label": "Region / Kultur",
+      "color": "#34d399"
+    },
+    {
+      "id": "funfact",
+      "label": "Fun Fact",
+      "color": "#c084fc"
+    }
+  ],
+  "events": [
+    {
+      "id": "hoehlenmalerei",
+      "label": "Höhlenmalerei",
+      "value": -40000,
+      "end": null,
+      "lane": "medium",
+      "category": "Steinzeit",
+      "info": "Erste Bildgeschichten an Höhlenwänden – oft Jagdszenen. Weltweit verbreitet, z.B. Lascaux (Frankreich) und Altamira (Spanien). Das erste visuelle Medium der Menschheit."
+    },
+    {
+      "id": "mondkalender",
+      "label": "Eiszeitkalender",
+      "value": -30000,
+      "end": null,
+      "lane": "funfact",
+      "category": "Steinzeit",
+      "info": "In der Höhle von Abri Blanchard (Frankreich) wurde ein Knochen gefunden, der als Mondkalender interpretiert wird – vielleicht der erste Versuch, Zeit festzuhalten."
+    },
+    {
+      "id": "tonmarken",
+      "label": "Tonmarken (Token)",
+      "value": -8000,
+      "end": null,
+      "lane": "medium",
+      "category": "Vor-Schrift",
+      "info": "In Mesopotamien verwendete man kleine Tonstücke, um Mengen von Waren zu zählen – ein Vorläufer der Schrift. Die früheste Buchhaltung der Welt."
+    },
+    {
+      "id": "schrift-meso",
+      "label": "Keilschrift (Mesopotamien)",
+      "value": -3200,
+      "end": null,
+      "lane": "medium",
+      "category": "Schrift",
+      "info": "Die älteste bekannte Schrift – mit einem Griffel in feuchte Tontafeln geritzt. Entstanden in Sumer (heute Irak) um 3200 v. Chr."
+    },
+    {
+      "id": "schrift-aegypten",
+      "label": "Hieroglyphen (Ägypten)",
+      "value": -3100,
+      "end": null,
+      "lane": "medium",
+      "category": "Schrift",
+      "info": "Ägyptische Bilderschrift, die auf Papyrus und in Tempeln verwendet wurde. Erst 1822 von Champollion entziffert."
+    },
+    {
+      "id": "papyrus",
+      "label": "Papyrus",
+      "value": -3000,
+      "end": null,
+      "lane": "medium",
+      "category": "Schriftträger",
+      "info": "Aus der Papyrus-Pflanze hergestellter Schriftträger – das wichtigste Schreibmaterial der Antike. Das Wort 'Papier' leitet sich davon ab."
+    },
+    {
+      "id": "schrift-indus",
+      "label": "Indus-Schrift",
+      "value": -2600,
+      "end": null,
+      "lane": "region",
+      "category": "Schrift",
+      "info": "Die noch nicht entzifferte Schrift der Indus-Kultur (heute Pakistan/Indien). Ein ungelöstes Rätsel der Medienarchäologie."
+    },
+    {
+      "id": "schrift-china",
+      "label": "Chinesische Schrift",
+      "value": -1200,
+      "end": null,
+      "lane": "medium",
+      "category": "Schrift",
+      "info": "Die älteste erhaltene chinesische Schrift findet sich auf Orakelknochen aus der Shang-Dynastie. Sie entwickelte sich zu einer der langlebigsten Schriften der Welt."
+    },
+    {
+      "id": "seide",
+      "label": "Seide als Schriftträger",
+      "value": -500,
+      "end": null,
+      "lane": "medium",
+      "category": "Schriftträger",
+      "info": "In China wurde Seide als Schreibmaterial verwendet – leichter als Papyrus, aber viel teurer. Später wurde sie durch Bambusstreifen und Papier abgelöst."
+    },
+    {
+      "id": "papier-china",
+      "label": "Papier erfunden (China)",
+      "value": 105,
+      "end": null,
+      "lane": "medium",
+      "category": "Schriftträger",
+      "info": "Der chinesische Hofbeamte Cai Lun gilt als Erfinder des Papiers, wie wir es kennen. Ein Gemisch aus Maulbeerrinde, Hanf und alten Lumpen."
+    },
+    {
+      "id": "codex",
+      "label": "Codex – das erste Buch",
+      "value": 100,
+      "end": null,
+      "lane": "medium",
+      "category": "Buch",
+      "info": "Der Codex löste die Schriftrolle ab: mehrere Lagen Papyrus oder Pergament, zusammengebunden – die Grundform des heutigen Buches."
+    },
+    {
+      "id": "palimpsest",
+      "label": "Palimpsest – wiederbeschriebenes Pergament",
+      "value": 400,
+      "end": null,
+      "lane": "funfact",
+      "category": "Mittelalter",
+      "info": "Im Mittelalter war Pergament teuer. Mönche schabten alte Texte ab und schrieben neue darüber – so gingen viele antike Werke verloren, manche wurden später wiederentdeckt."
+    },
+    {
+      "id": "druck-china",
+      "label": "Holzblockdruck (China)",
+      "value": 600,
+      "end": null,
+      "lane": "technologie",
+      "category": "Druck",
+      "info": "Die älteste gedruckte Schrift: Chinesische Mönche druckten buddhistische Texte mit Holzblöcken. Der Diamant-Sutra (868) ist der älteste datierte Druck."
+    },
+    {
+      "id": "papier-korea",
+      "label": "Papier in Korea",
+      "value": 636,
+      "end": null,
+      "lane": "region",
+      "category": "Schriftträger",
+      "info": "Ein koreanischer Mönch brachte die Papierherstellung von China nach Korea – und von dort später nach Japan. Die älteste erhaltene Papierrolle in Japan stammt von 702."
+    },
+    {
+      "id": "papier-verbreitung",
+      "label": "Papier in der islamischen Welt",
+      "value": 751,
+      "end": null,
+      "lane": "region",
+      "category": "Schriftträger",
+      "info": "In der Schlacht von Talas (751) gerieten chinesische Papiermacher in Gefangenschaft und brachten ihr Wissen in die arabische Welt. Bagdad wurde zum Zentrum der Papierproduktion."
+    },
+    {
+      "id": "druck-korea",
+      "label": "Bewegliche Lettern (Korea)",
+      "value": 1234,
+      "end": null,
+      "lane": "technologie",
+      "category": "Druck",
+      "info": "In Korea wurden schon vor Gutenberg bewegliche Metalllettern verwendet – fast 200 Jahre früher. Der Jikji (1377) ist das älteste erhaltene Buch mit Metalllettern."
+    },
+    {
+      "id": "gutenberg",
+      "label": "Buchdruck (Gutenberg)",
+      "value": 1440,
+      "end": null,
+      "lane": "technologie",
+      "category": "Druck",
+      "info": "Johannes Gutenberg erfand den Buchdruck mit beweglichen Lettern und die Druckerpresse. Die Gutenberg-Bibel (um 1455) ist das berühmteste Inkunabel (Frühdruck)."
+    },
+    {
+      "id": "zeitung-strassburg",
+      "label": "Erste Zeitung",
+      "value": 1605,
+      "end": null,
+      "lane": "medium",
+      "category": "Presse",
+      "info": "In Straßburg erschien die 'Relation' – die erste regelmäßig gedruckte Zeitung. Der Beginn des massenmedialen Nachrichtenwesens."
+    },
+    {
+      "id": "telegraph",
+      "label": "Elektrischer Telegraph",
+      "value": 1837,
+      "end": null,
+      "lane": "technologie",
+      "category": "Telekommunikation",
+      "info": "Samuel Morse entwickelte den ersten brauchbaren elektrischen Telegraphen und den Morse-Code. Die erste Nachricht: 'What hath God wrought?' (1844)."
+    },
+    {
+      "id": "telefon-bell",
+      "label": "Telefon (Bell)",
+      "value": 1876,
+      "end": null,
+      "lane": "technologie",
+      "category": "Telekommunikation",
+      "info": "Alexander Graham Bell meldete das Telefon zum Patent an – fünf Jahre später gab es bereits 50.000 Telefone in den USA."
+    },
+    {
+      "id": "fonograf",
+      "label": "Phonograph – erste Tonaufnahme",
+      "value": 1877,
+      "end": null,
+      "lane": "technologie",
+      "category": "Tonaufnahme",
+      "info": "Thomas Edison nahm mit dem Phonographen die erste Tonaufnahme auf: 'Mary had a little lamb'. Das Gerät war eine Sensation."
+    },
+    {
+      "id": "film-lumiere",
+      "label": "Erster öffentlicher Film",
+      "value": 1895,
+      "end": null,
+      "lane": "technologie",
+      "category": "Film",
+      "info": "Die Brüder Lumière zeigten in Paris den ersten öffentlichen Film ('Arbeiter verlassen die Fabrik') – die Geburtsstunde des Kinos."
+    },
+    {
+      "id": "radio-marconi",
+      "label": "Radio (drahtlose Übertragung)",
+      "value": 1895,
+      "end": null,
+      "lane": "technologie",
+      "category": "Rundfunk",
+      "info": "Guglielmo Marconi gelang die erste drahtlose Signalübertragung. 1901 empfing er ein Signal über den Atlantik – der Beginn des Rundfunks."
+    },
+    {
+      "id": "kino",
+      "label": "Erste Kinos (USA)",
+      "value": 1905,
+      "end": null,
+      "lane": "medium",
+      "category": "Film",
+      "info": "In Pittsburgh eröffnete das erste Nickelodeon-Kino – Eintritt: 5 Cent. Es war der Beginn der Kinokultur in den USA."
+    },
+    {
+      "id": "radio-usa",
+      "label": "Erste Radiosendung (USA)",
+      "value": 1906,
+      "end": null,
+      "lane": "funfact",
+      "category": "Rundfunk",
+      "info": "Reginald Fessenden übertrug die erste Radio-Sendung mit Musik und Sprache – Weihnachten 1906. Empfänger waren Schiffsradios vor der Küste."
+    },
+    {
+      "id": "fernsehen-mechanisch",
+      "label": "Mechanisches Fernsehen",
+      "value": 1927,
+      "end": null,
+      "lane": "technologie",
+      "category": "Fernsehen",
+      "info": "Philo Farnsworth übertrug das erste elektronische Fernsehbild. Das System war mechanisch – eine rotierende Scheibe mit Löchern."
+    },
+    {
+      "id": "fernsehen-regelmaessig",
+      "label": "Regelmäßiger Fernsehbetrieb",
+      "value": 1936,
+      "end": null,
+      "lane": "technologie",
+      "category": "Fernsehen",
+      "info": "In Berlin und London starteten die ersten regelmäßigen Fernsehsendungen – die Olympischen Spiele 1936 wurden gefilmt."
+    },
+    {
+      "id": "computer-eniac",
+      "label": "ENIAC – erster großer Computer",
+      "value": 1945,
+      "end": null,
+      "lane": "technologie",
+      "category": "Computer",
+      "info": "Der ENIAC in den USA füllte einen ganzen Raum, wog 30 Tonnen und konnte nur einfache Rechenoperationen – der Vorläufer aller modernen Computer."
+    },
+    {
+      "id": "fernsehen-deutschland",
+      "label": "Fernsehen in Deutschland",
+      "value": 1952,
+      "end": null,
+      "lane": "region",
+      "category": "Fernsehen",
+      "info": "Das NWDR (heute ARD) nahm den regelmäßigen Betrieb auf. Weihnachten 1952 gab es die erste Fernsehansprache des Bundespräsidenten."
+    },
+    {
+      "id": "videoband",
+      "label": "Videoband",
+      "value": 1956,
+      "end": null,
+      "lane": "technologie",
+      "category": "Film",
+      "info": "Die Firma Ampex präsentierte den ersten Videorekorder – Fernsehsendungen konnten jetzt erstmals aufgezeichnet und später ausgestrahlt werden."
+    },
+    {
+      "id": "tonband-kassette",
+      "label": "Tonbandkassette",
+      "value": 1963,
+      "end": null,
+      "lane": "medium",
+      "category": "Tonaufnahme",
+      "info": "Philips führte die Compact Cassette ein – ein revolutionäres Medium für Musik und Sprache, das bis in die 2000er genutzt wurde."
+    },
+    {
+      "id": "arpanet",
+      "label": "ARPANET",
+      "value": 1969,
+      "end": null,
+      "lane": "technologie",
+      "category": "Internet",
+      "info": "Das ARPANET wird eingerichtet – der Vorläufer des Internets. Die erste Nachricht: nur 'LO', weil das System nach dem Senden von 'L' abstürzte. Der legendärste Funfact der Internetgeschichte."
+    },
+    {
+      "id": "email",
+      "label": "Erste E‑Mail",
+      "value": 1971,
+      "end": null,
+      "lane": "technologie",
+      "category": "Internet",
+      "info": "Ray Tomlinson schickte die erste E‑Mail zwischen zwei Rechnern. Als Inhalt wählte er vermutlich die Zeichenfolge 'QWERTYUIOP' – und verwendete erstmals das @-Zeichen."
+    },
+    {
+      "id": "pc",
+      "label": "Erster Personal Computer",
+      "value": 1975,
+      "end": null,
+      "lane": "technologie",
+      "category": "Computer",
+      "info": "Der Altair 8800 gilt als erster PC – ein Bausatz, den man selbst löten musste. Bill Gates und Paul Allen schrieben dafür die erste BASIC-Version."
+    },
+    {
+      "id": "cd",
+      "label": "Compact Disc (CD)",
+      "value": 1982,
+      "end": null,
+      "lane": "technologie",
+      "category": "Tonaufnahme",
+      "info": "Die CD wurde von Philips und Sony eingeführt – sie fasste 74 Minuten Musik (angeblich, damit Beethovens 9. Sinfonie darauf passte)."
+    },
+    {
+      "id": "www",
+      "label": "World Wide Web",
+      "value": 1991,
+      "end": null,
+      "lane": "technologie",
+      "category": "Internet",
+      "info": "Tim Berners‑Lee veröffentlichte das WWW – ein Hyperlink-System, das das Internet für alle zugänglich machte. Die erste Website stand am CERN."
+    },
+    {
+      "id": "sms",
+      "label": "SMS – Kurzmitteilungen",
+      "value": 1992,
+      "end": null,
+      "lane": "technologie",
+      "category": "Mobilkommunikation",
+      "info": "Die erste SMS wurde in Großbritannien versendet: 'MERRY CHRISTMAS' – auf einem GSM-Prototyp."
+    },
+    {
+      "id": "google",
+      "label": "Google gegründet",
+      "value": 1998,
+      "end": null,
+      "lane": "technologie",
+      "category": "Internet",
+      "info": "Larry Page und Sergey Brin gründeten Google – die Suchmaschine, die die Art der Informationssuche revolutionierte. Anfangs lief sie aus einem Lego-Server."
+    },
+    {
+      "id": "wikipedia",
+      "label": "Wikipedia startet",
+      "value": 2001,
+      "end": null,
+      "lane": "technologie",
+      "category": "Internet",
+      "info": "Jimmy Wales und Larry Sanger gründeten Wikipedia – die freie Enzyklopädie, die von Nutzern geschrieben wird. Heute das größte Nachschlagewerk der Welt."
+    },
+    {
+      "id": "ipod",
+      "label": "iPod – Musik unterwegs",
+      "value": 2001,
+      "end": null,
+      "lane": "medium",
+      "category": "Tonaufnahme",
+      "info": "Apple präsentierte den iPod – ein tragbares Gerät mit 5 GB Speicher. Der Slogan: '1.000 Songs in deiner Tasche'."
+    },
+    {
+      "id": "facebook",
+      "label": "Facebook",
+      "value": 2004,
+      "end": null,
+      "lane": "technologie",
+      "category": "Social Media",
+      "info": "Mark Zuckerberg startete 'Thefacebook' – ursprünglich nur für Harvard-Studenten. In zwei Jahren erreichte es Millionen Nutzer weltweit."
+    },
+    {
+      "id": "youtube",
+      "label": "YouTube",
+      "value": 2005,
+      "end": null,
+      "lane": "technologie",
+      "category": "Social Media",
+      "info": "YouTube wurde gegründet – das erste große Videoportal. Das erste Video: 'Me at the zoo' – ein Elefant im Zoo von San Diego."
+    },
+    {
+      "id": "twitter",
+      "label": "Twitter (X)",
+      "value": 2006,
+      "end": null,
+      "lane": "technologie",
+      "category": "Social Media",
+      "info": "Twitter wurde gestartet – zunächst mit 140 Zeichen, inzwischen 280. Der erste Tweet: 'just setting up my twttr'."
+    },
+    {
+      "id": "iphone",
+      "label": "iPhone – das Smartphone",
+      "value": 2007,
+      "end": null,
+      "lane": "technologie",
+      "category": "Mobilkommunikation",
+      "info": "Steve Jobs präsentierte das iPhone – es vereinte Telefon, Internet und Musik in einem Gerät. Der Beginn des modernen Smartphones."
+    },
+    {
+      "id": "spotify",
+      "label": "Spotify – Musik-Streaming",
+      "value": 2008,
+      "end": null,
+      "lane": "technologie",
+      "category": "Streaming",
+      "info": "Spotify startete in Schweden – ein Musik-Streaming-Dienst, der das Abo-Modell etablierte und den CD-Verkauf verdrängte."
+    },
+    {
+      "id": "netflix-streaming",
+      "label": "Netflix Streaming",
+      "value": 2007,
+      "end": null,
+      "lane": "technologie",
+      "category": "Streaming",
+      "info": "Netflix wechselte vom DVD-Versand zum Streaming-Modell. Die erste Serie, die komplett online ausgestrahlt wurde: 'House of Cards' (2013)."
+    },
+    {
+      "id": "instagram",
+      "label": "Instagram",
+      "value": 2010,
+      "end": null,
+      "lane": "technologie",
+      "category": "Social Media",
+      "info": "Instagram startete als reine Foto-App mit Filtern. 2012 von Facebook (Meta) für eine Milliarde Dollar gekauft."
+    },
+    {
+      "id": "whatsapp",
+      "label": "WhatsApp",
+      "value": 2010,
+      "end": null,
+      "lane": "technologie",
+      "category": "Mobilkommunikation",
+      "info": "WhatsApp wurde gegründet – der Messaging-Dienst, der SMS ersetzte. 2014 kaufte Facebook (Meta) das Unternehmen für 19 Milliarden Dollar."
+    },
+    {
+      "id": "tiktok",
+      "label": "TikTok",
+      "value": 2016,
+      "end": null,
+      "lane": "technologie",
+      "category": "Social Media",
+      "info": "TikTok (in China Douyin) startete global – das erste soziale Netzwerk, das auf kurze Videoclips spezialisiert ist. Es gehört dem chinesischen Unternehmen ByteDance."
+    },
+    {
+      "id": "chatgpt",
+      "label": "ChatGPT – KI-Chatbot",
+      "value": 2022,
+      "end": null,
+      "lane": "technologie",
+      "category": "Künstliche Intelligenz",
+      "info": "OpenAI veröffentlichte ChatGPT – einen Chatbot, der menschenähnliche Texte generieren kann. Der Durchbruch der generativen KI im Massenmarkt."
+    },
+    {
+      "id": "ai-bild",
+      "label": "KI-Bildgeneratoren",
+      "value": 2022,
+      "end": null,
+      "lane": "technologie",
+      "category": "Künstliche Intelligenz",
+      "info": "DALL-E 2, Midjourney und Stable Diffusion verbreiten sich – aus Textbefehlen werden fotorealistische Bilder generiert. Eine neue Ära der Bildproduktion beginnt."
+    },
+    {
+      "id": "vr-brillen",
+      "label": "VR- und AR-Brillen",
+      "value": 2023,
+      "end": null,
+      "lane": "technologie",
+      "category": "Virtuelle Realität",
+      "info": "Apple Vision Pro und Meta Quest 3 bringen immersive Erlebnisse in den Alltag – Medien werden dreidimensional erlebbar."
+    },
+    {
+      "id": "papyrus-erste-buch",
+      "label": "Papyrus – erstes Buch",
+      "value": -2500,
+      "end": null,
+      "lane": "funfact",
+      "category": "Schriftträger",
+      "info": "Die älteste erhaltene Papyrusrolle stammt aus dem alten Ägypten (um 2500 v. Chr.) und enthält Rezepte für Augenkrankheiten – die erste Medizin-Rolle."
+    },
+    {
+      "id": "caesar-code",
+      "label": "Caesar-Verschlüsselung",
+      "value": -50,
+      "end": null,
+      "lane": "funfact",
+      "category": "Antike",
+      "info": "Julius Caesar nutzte eine einfache Verschlüsselung (Caesar-Chiffre), um militärische Nachrichten zu verschlüsseln – eine der frühesten Formen der Kryptografie."
+    },
+    {
+      "id": "rauchzeichen",
+      "label": "Rauchzeichen",
+      "value": -2000,
+      "end": null,
+      "lane": "medium",
+      "category": "Vor-Schrift",
+      "info": "Rauchzeichen wurden von vielen Kulturen genutzt, darunter die Römer, die Griechen und die amerikanischen Ureinwohner – eine der ältesten Formen der visuellen Fernkommunikation."
+    },
+    {
+      "id": "brieftaube",
+      "label": "Brieftauben",
+      "value": -500,
+      "end": null,
+      "lane": "medium",
+      "category": "Vor-Schrift",
+      "info": "Brieftauben wurden im antiken Ägypten und bei den Römern eingesetzt, um Nachrichten über weite Entfernungen zu schicken – sie erreichten bis zu 80 km/h."
+    }
+  ]
+}

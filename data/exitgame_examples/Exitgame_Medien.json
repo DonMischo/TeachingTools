@@ -1,0 +1,559 @@
+{
+  "_ai_instructions": "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der Exit-Code am Ende. Ein Spiel hat meist 8-15 Slides und muss nicht alle Aufgabenarten nutzen. --- SLIDES --- 'explanation' und 'example': nur lesen, Weiter-Button. 'task': muss gelöst werden ('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). 'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; 'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen lassen — was fehlt, fällt spätestens an der Tür auf. --- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des Abschnitts davor (seit der vorigen Tür) in Lesereihenfolge; an der Tür tippt der Schüler ihn ein, geprüft wird serverseitig (Groß/Klein, Leerzeichen und Bindestriche egal). Abschreiben nützt nichts: die Tür geht nur auf, wenn der Schüler alle Schnipsel des Abschnitts selbst eingesammelt hat — sonst zeigt sie genau die offenen Aufgaben als Rücksprung-Links. Sinnvoll sind 3-6 Fragmente pro Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft zeigen. --- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' (accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' (Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. --- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, 0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode 'spot': Items stehen bei 'value', die falsch platzierten tragen ihren wahren Wert in 'actual' und sollen markiert werden (mindestens eines). Jahre v. Chr. sind negativ. 'exact_date' ('JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', nur n. Chr., Jahr muss zu 'value' passen) ist nötig, sobald zwei Items im selben Jahr liegen; bei 'spot' steht das wahre Datum in 'exact_date_actual'. --- HILFEN --- 'hints': geordnete Liste pro Slide (2-4), vom sanften Schubser bis fast zur Lösung; der Hinweis-Button erscheint erst nach einem Fehlversuch. 'easierAlternative' (Aufbau wie 'task'): leichtere Fassung, wird als Ja/Nein-Angebot vorgeschlagen, sobald der Schüler 2x falsch lag und seine Hinweise verbraucht hat. 'variants': gleichwertige Fassungen derselben Aufgabe (nur die abweichenden Felder); jeder Schüler bekommt fest eine zugelost — Abschreibschutz, lohnt sich bei wichtigen Aufgaben. 'extraExample' (Text pro Slide): ein zweites durchgerechnetes Beispiel für Schüler, deren Stufe es vorsieht. --- DDA --- dda.levels ist die Differenzierungsleiter dieses Spiels: mindestens 3, empfohlen 5 Stufen von wenig zu viel Unterstützung. Das Spiel stuft jeden Schüler laufend nach Antwortzeit, Fehlern und Hinweisnutzung in eine Stufe ein. Jede Stufe steuert: 'hintCount' = wie viele hints freigegeben werden, 'timeLimitSeconds' = sichtbare Richtzeit pro Aufgabe (kein Abbruch — läuft sie ab, wird ein Hinweis vorzeitig frei), 'extraExample' = ob das 'extraExample' der Slide nach einem Fehlversuch eingeblendet wird, 'offerEasier' = ob die easierAlternative überhaupt angeboten wird. Ohne dda-Feld: feste 2 Hinweise pro Slide, keine Richtzeit. --- MEDIEN --- media, eine pro Slide: 'image' (Dateiname aus dem assets/-Ordners des ZIPs oder Bild-URL), 'video' (YouTube-/Vimeo-Link), 'html' (URL einer einbettbaren Simulation). 'height' in px begrenzt die Höhe (bei Bildern die maximale Höhe — für Piktogramme z.B. 180, sonst füllen sie die ganze Spalte). --- STYLE --- theme: 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk'; font: CSS-Schriftfamilie; customVars: einzelne Farben ('--accent', '--bg', '--surface', '--text'), die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. --- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für einzelne Symbole, Dezimalkomma als $3{,}14$. --- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. --- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es nicht mehr). onFailReview nur auf vorhandene Slide-IDs.",
+
+  "id": "zeitreise-medien-25",
+  "title": "Zeitreise der Medien – 25 Meilensteine",
+  "description": "Reise durch 25 entscheidende Medien-Momente – von der Höhle bis zum Smartphone. Sammle auf dem Weg die Code-Schnipsel für den finalen Satz.",
+  "subject": "medienkunde",
+  "grade": "8,9,10",
+  "tags": [
+    "medien",
+    "geschichte",
+    "zeitreise",
+    "kommunikation",
+    "funfacts"
+  ],
+  "style": {
+    "theme": "dark",
+    "font": "Georgia, serif",
+    "customVars": {
+      "--accent": "#d97706",
+      "--bg": "#1e1b1a",
+      "--surface": "#2d2a28",
+      "--text": "#f0e6d3"
+    }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "selbstständig",
+        "hintCount": 0,
+        "timeLimitSeconds": 60,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "leichte Unterstützung",
+        "hintCount": 1,
+        "timeLimitSeconds": 90,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "mittlere Unterstützung",
+        "hintCount": 2,
+        "timeLimitSeconds": 120,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "starke Unterstützung",
+        "hintCount": 3,
+        "timeLimitSeconds": 180,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "maximale Unterstützung",
+        "hintCount": 99,
+        "timeLimitSeconds": 300,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "Glückwunsch! Du hast alle 25 Medien-Meilensteine bereist und den Code entschlüsselt: VON DER HÖHLE BIS ZUM NETZ – MEDIEN VERBINDEN DIE WELT.",
+    "code": "MEDIEN-25"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "Die Zeitmaschine",
+      "text": "Du betrittst eine alte Bibliothek. Mitten im Raum steht ein merkwürdiges Gerät – eine Zeitmaschine! Deine Mission: Reise zu den wichtigsten Meilensteinen der Mediengeschichte. Sammle auf jeder Station Fakten und löse die Aufgaben, um Code-Fragmente zu erhalten. Am Ende setzt du sie zum Lösungssatz zusammen."
+    },
+    {
+      "id": "beispiel-steinzeit",
+      "type": "example",
+      "title": "Steinzeit – Die ersten Bilder",
+      "text": "Vor etwa 40.000 Jahren begannen Menschen, in Höhlen Tiere und Jagdszenen zu malen. Das war das erste Medium, das Geschichten festhielt – noch ohne Schrift. Ein berühmtes Beispiel sind die Höhlen von Lascaux in Frankreich."
+    },
+    {
+      "id": "steinzeit-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Höhlenmalerei",
+      "text": "Was war der Hauptzweck der Höhlenmalerei aus heutiger Sicht?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "HÖHLE",
+        "question": "Wozu dienten die Höhlenmalereien hauptsächlich?",
+        "answers": [
+          {
+            "text": "Sie dienten der Weitergabe von Jagdwissen und Geschichten.",
+            "correct": true
+          },
+          {
+            "text": "Sie waren reine Dekoration.",
+            "correct": false
+          },
+          {
+            "text": "Sie wurden als Landkarten genutzt.",
+            "correct": false
+          },
+          {
+            "text": "Sie waren Kalender.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Die Bilder zeigen oft Tiere und Jagdszenen.",
+        "Sie hatten eine kommunikative Funktion."
+      ]
+    },
+    {
+      "id": "antike-schrift-erklaerung",
+      "type": "explanation",
+      "title": "Antike – Die Erfindung der Schrift",
+      "text": "Um 3300 v. Chr. entstanden in Mesopotamien die ersten Keilschriftzeichen, wenig später in Ägypten die Hieroglyphen. Die Schrift machte es möglich, Wissen unabhängig von Ort und Zeit festzuhalten – ein Quantensprung für die Menschheit."
+    },
+    {
+      "id": "antike-schrift-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Die Geburt der Schrift",
+      "text": "Welches Material wurde in Ägypten zum Schreiben verwendet?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "SCHRIFT",
+        "question": "Auf welchem Material schrieben die alten Ägypter hauptsächlich?",
+        "answers": [
+          {
+            "text": "Papyrus",
+            "correct": true
+          },
+          {
+            "text": "Tontafeln",
+            "correct": false
+          },
+          {
+            "text": "Pergament",
+            "correct": false
+          },
+          {
+            "text": "Baumrinde",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Das Wort für Papier leitet sich davon ab.",
+        "Es wurde aus einer Pflanze hergestellt."
+      ]
+    },
+    {
+      "id": "antike-bibliothek",
+      "type": "explanation",
+      "title": "Antike – Die große Bibliothek von Alexandria",
+      "text": "Um 300 v. Chr. wurde in Alexandria die berühmteste Bibliothek der Antike gegründet. Sie sammelte alle bekannten Schriften der Welt – schätzungsweise 500.000 Papyrusrollen. Ein Brand zerstörte einen Großteil, aber die Idee einer zentralen Wissenssammlung blieb."
+    },
+    {
+      "id": "mittelalter-kloster",
+      "type": "explanation",
+      "title": "Mittelalter – Bücher aus Klöstern",
+      "text": "Nach dem Untergang des Römischen Reichs bewahrten Klöster das Wissen. Mönche kopierten alte Texte von Hand – oft tagelang für ein einziges Buch. Diese Handschriften waren wertvoller als Gold und nur für wenige zugänglich."
+    },
+    {
+      "id": "mittelalter-buch-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Das mittelalterliche Buch",
+      "text": "Welche Aussage über Bücher im Mittelalter ist richtig? (Mehrere Antworten möglich.)",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "BUCH",
+        "question": "Welche Eigenschaften treffen auf das mittelalterliche Buch zu?",
+        "answers": [
+          {
+            "text": "Sie wurden von Mönchen abgeschrieben.",
+            "correct": true
+          },
+          {
+            "text": "Sie waren für viele Menschen erschwinglich.",
+            "correct": false
+          },
+          {
+            "text": "Sie enthielten oft kunstvolle Verzierungen.",
+            "correct": true
+          },
+          {
+            "text": "Sie wurden im Buchdruck hergestellt.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Die Herstellung war sehr aufwendig.",
+        "Die Bücher waren oft reich verziert."
+      ]
+    },
+    {
+      "id": "gutenberg-erklaerung",
+      "type": "explanation",
+      "title": "1440 – Gutenbergs Buchdruck",
+      "text": "Johannes Gutenberg erfand den Buchdruck mit beweglichen Lettern. Erste gedruckte Bibel: um 1455. Plötzlich konnten Bücher schnell und preiswert hergestellt werden – das Wissen verbreitete sich wie nie zuvor."
+    },
+    {
+      "id": "gutenberg-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Der Buchdruck",
+      "text": "Was war die wichtigste Folge des Buchdrucks?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "DRUCK",
+        "question": "Welche Wirkung hatte der Buchdruck am stärksten?",
+        "answers": [
+          {
+            "text": "Die Verbreitung von Wissen an viele Menschen.",
+            "correct": true
+          },
+          {
+            "text": "Die Erfindung der Zeitung.",
+            "correct": false
+          },
+          {
+            "text": "Die Verbesserung der Schrift.",
+            "correct": false
+          },
+          {
+            "text": "Die Entstehung der Bibliotheken.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Vorher waren Bücher teuer und selten.",
+        "Die Reformation wurde durch den Druck gefördert."
+      ]
+    },
+    {
+      "id": "zeitung-erklaerung",
+      "type": "explanation",
+      "title": "1605 – Die erste Zeitung",
+      "text": "In Straßburg erschien die erste gedruckte Zeitung – die ‚Relation‘. Sie berichtete über aktuelle Ereignisse aus ganz Europa. Damit entstand ein neues Medium, das regelmäßig über Neuigkeiten informierte."
+    },
+    {
+      "id": "telegraph-erklaerung",
+      "type": "explanation",
+      "title": "1837 – Der elektrische Telegraph",
+      "text": "Samuel Morse entwickelte den ersten brauchbaren Telegraphen und den Morse-Code. Damit konnten Nachrichten in Sekundenschnelle über Kabel gesendet werden – die erste ‚digitale‘ Kommunikation."
+    },
+    {
+      "id": "telegraph-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Der Telegraph",
+      "text": "Welchen entscheidenden Vorteil brachte der Telegraph gegenüber der Post?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "TELEGRAMM",
+        "question": "Was war die größte Neuerung des Telegraphen?",
+        "answers": [
+          {
+            "text": "Die Übertragung in Echtzeit über weite Distanzen.",
+            "correct": true
+          },
+          {
+            "text": "Er konnte Bilder senden.",
+            "correct": false
+          },
+          {
+            "text": "Er war viel billiger.",
+            "correct": false
+          },
+          {
+            "text": "Er funktionierte ohne Strom.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Nachrichten brauchten vorher Tage oder Wochen.",
+        "Morsen war die Sprache des Telegraphen."
+      ]
+    },
+    {
+      "id": "telefon-erklaerung",
+      "type": "explanation",
+      "title": "1876 – Das Telefon",
+      "text": "Alexander Graham Bell meldete das Telefon zum Patent an. Erstmals konnte man die menschliche Stimme über Kabel übertragen – ein neues Zeitalter der persönlichen Kommunikation begann."
+    },
+    {
+      "id": "telefon-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Das Telefon",
+      "text": "Wer erfand das Telefon? (Bekanntester Name)",
+      "task": {
+        "kind": "single",
+        "codeFragment": "TELEFON",
+        "question": "Welcher Erfinder wird meist mit dem Telefon verbunden?",
+        "answers": [
+          {
+            "text": "Alexander Graham Bell",
+            "correct": true
+          },
+          {
+            "text": "Thomas Edison",
+            "correct": false
+          },
+          {
+            "text": "Nikola Tesla",
+            "correct": false
+          },
+          {
+            "text": "Guglielmo Marconi",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Der Name Bell ist bekannt.",
+        "Das Patent wurde 1876 angemeldet."
+      ]
+    },
+    {
+      "id": "radio-erklaerung",
+      "type": "explanation",
+      "title": "1895 – Das Radio",
+      "text": "Guglielmo Marconi gelang die erste drahtlose Übertragung von Signalen. 1906 gab es die erste Radiosendung mit Musik und Sprache. Das Radio wurde zum Massenmedium – Nachrichten und Unterhaltung für alle."
+    },
+    {
+      "id": "film-erklaerung",
+      "type": "explanation",
+      "title": "1895 – Die Geburt des Films",
+      "text": "Die Brüder Lumière zeigten ihren ersten öffentlichen Film – ‚Arbeiter verlassen die Fabrik‘. Der Film wurde schnell zum wichtigsten visuellen Medium und veränderte Unterhaltung und Bildung."
+    },
+    {
+      "id": "film-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Film",
+      "text": "Welche Aussage über den frühen Film ist falsch?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "FILM",
+        "question": "Was trifft auf die Anfänge des Films NICHT zu?",
+        "answers": [
+          {
+            "text": "Erste Filme waren nur wenige Minuten lang.",
+            "correct": false
+          },
+          {
+            "text": "Filme wurden sofort mit Ton aufgenommen.",
+            "correct": true
+          },
+          {
+            "text": "Die Brüder Lumière gelten als Pioniere.",
+            "correct": false
+          },
+          {
+            "text": "Filme wurden anfangs in Kinos gezeigt.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Stummfilme waren die Regel.",
+        "Ton kam erst später dazu."
+      ]
+    },
+    {
+      "id": "fernsehen-erklaerung",
+      "type": "explanation",
+      "title": "1927 – Das Fernsehen",
+      "text": "Philo Farnsworth übertrug das erste elektronische Fernsehbild. 1936 gab es in Berlin die ersten regelmäßigen Fernsehsendungen. Das Fernsehen wurde zum Leitmedium des 20. Jahrhunderts – Bilder aus aller Welt ins Wohnzimmer."
+    },
+    {
+      "id": "fernsehen-funfact",
+      "type": "explanation",
+      "title": "Funfact: Fernsehweihnacht",
+      "text": "Die erste Weihnachtsansprache des deutschen Bundespräsidenten im Fernsehen war 1953. Schon wenige Jahre später gehörte der Fernseher zur Standardausstattung in Haushalten."
+    },
+    {
+      "id": "computer-erklaerung",
+      "type": "explanation",
+      "title": "1940er – Die ersten Computer",
+      "text": "Große Rechenmaschinen wie der ENIAC (1945) waren die Vorläufer des PCs. Sie füllten ganze Räume und konnten nur einfache Berechnungen durchführen – doch sie legten den Grundstein für die digitale Revolution."
+    },
+    {
+      "id": "internet-vorlaeufer",
+      "type": "explanation",
+      "title": "1969 – ARPANET",
+      "text": "Das ARPANET war der Vorläufer des Internets. Die erste Nachricht wurde von der UCLA an das Stanford Research Institute gesendet – nur die Buchstaben ‚LO‘, weil das System abstürzte. Der erste Funfact der Internetgeschichte!"
+    },
+    {
+      "id": "email-erklaerung",
+      "type": "explanation",
+      "title": "1971 – Die erste E‑Mail",
+      "text": "Ray Tomlinson schickte die erste E‑Mail – zwischen zwei nebeneinanderstehenden Rechnern. Als Inhalt wählte er vermutlich die Zeichenfolge ‚QWERTYUIOP‘. Das @-Symbol wurde zum Trenner zwischen Nutzer und Rechner."
+    },
+    {
+      "id": "internet-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Internet-Meilenstein",
+      "text": "Welche Aussage über das frühe Internet (ARPANET) ist richtig?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "INTERNET",
+        "question": "Was war eine Besonderheit des ARPANET?",
+        "answers": [
+          {
+            "text": "Es war ein dezentrales Netzwerk.",
+            "correct": true
+          },
+          {
+            "text": "Es war nur für den privaten Gebrauch.",
+            "correct": false
+          },
+          {
+            "text": "Es übertrug Farbbilder.",
+            "correct": false
+          },
+          {
+            "text": "Es war weltweit verfügbar.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Es wurde vom US-Militär finanziert.",
+        "Es sollte ausfallsicher sein."
+      ]
+    },
+    {
+      "id": "www-erklaerung",
+      "type": "explanation",
+      "title": "1991 – Das World Wide Web",
+      "text": "Tim Berners‑Lee veröffentlichte das WWW – ein System von Hyperlinks, das das Internet für alle nutzbar machte. Die erste Website stand am CERN und erklärte, wie das Web funktioniert."
+    },
+    {
+      "id": "soziale-medien-erklaerung",
+      "type": "explanation",
+      "title": "2004 – Facebook und die sozialen Netzwerke",
+      "text": "Mark Zuckerberg gründete Facebook – ursprünglich nur für Harvard-Studenten. Es folgten YouTube (2005) und Twitter (2006). Soziale Medien veränderten die Kommunikation: Jeder konnte jetzt Inhalte veröffentlichen und teilen."
+    },
+    {
+      "id": "soziale-medien-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Soziale Medien",
+      "text": "Was war ein gemeinsames Merkmal der ersten sozialen Netzwerke?",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "SOCIAL",
+        "question": "Welche Eigenschaften hatten Facebook, YouTube und Twitter gemeinsam?",
+        "answers": [
+          {
+            "text": "Sie ermöglichten Nutzer-generierte Inhalte.",
+            "correct": true
+          },
+          {
+            "text": "Sie waren nur auf Mobilgeräten nutzbar.",
+            "correct": false
+          },
+          {
+            "text": "Sie verbreiteten sich viral.",
+            "correct": true
+          },
+          {
+            "text": "Sie waren alle werbefinanziert von Anfang an.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Die Nutzer selbst stellten die Inhalte ein.",
+        "Die Plattformen wuchsen schnell."
+      ]
+    },
+    {
+      "id": "smartphone-erklaerung",
+      "type": "explanation",
+      "title": "2007 – Das iPhone und die Smartphone-Ära",
+      "text": "Steve Jobs präsentierte das iPhone – ein Telefon, das auch Internet, Musik und Fotos vereinte. Damit wurde das Smartphone zum zentralen Medium, das alle vorherigen Medien in einer Tasche vereint."
+    },
+    {
+      "id": "streaming-erklaerung",
+      "type": "explanation",
+      "title": "2008 – Spotify und der Musik-Streaming",
+      "text": "Mit Spotify und später Netflix veränderte sich der Konsum von Musik und Filmen. Statt CDs oder DVDs gab es nun Inhalte auf Abruf – immer und überall. Das lineare Fernsehen verlor an Bedeutung."
+    },
+    {
+      "id": "ki-erklaerung",
+      "type": "explanation",
+      "title": "2020er – Künstliche Intelligenz im Alltag",
+      "text": "Chatbots wie ChatGPT, Bildgeneratoren und Sprachassistenten nutzen KI. Sie durchdringen alle Medienbereiche – vom Schreiben von Texten bis zur Erstellung von Bildern. Eine neue Qualität der Informationsverarbeitung."
+    },
+    {
+      "id": "digital-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Digitale Gegenwart",
+      "text": "Welche Aussage über die heutige Medienwelt ist zutreffend?",
+      "task": {
+        "kind": "single",
+        "codeFragment": "DIGITAL",
+        "question": "Was kennzeichnet die Medienlandschaft von heute am stärksten?",
+        "answers": [
+          {
+            "text": "Die Verschmelzung aller Medien in digitalen Geräten.",
+            "correct": true
+          },
+          {
+            "text": "Die Rückkehr zu analogen Formaten.",
+            "correct": false
+          },
+          {
+            "text": "Die Abnahme der Informationsgeschwindigkeit.",
+            "correct": false
+          },
+          {
+            "text": "Die Monopolisierung durch einen Anbieter.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Smartphones vereinen viele Funktionen.",
+        "Streaming und On-Demand sind heute normal."
+      ]
+    },
+    {
+      "id": "tuer-medien",
+      "type": "door",
+      "title": "Das Tor zur Gegenwart – Code eingeben",
+      "text": "Du hast alle wichtigen Meilensteine besucht und die Code-Fragmente gesammelt. Setze sie in der Reihenfolge deiner Reise zusammen (chronologisch) und gib den Code ein, um die Zeitmaschine zu starten und zurückzukehren.\n\n**Die Reihenfolge der Fragmente:** HÖHLE, SCHRIFT, BUCH, DRUCK, TELEGRAMM, TELEFON, FILM, INTERNET, SOCIAL, DIGITAL\n\nGib den Code ohne Leerzeichen ein.",
+      "task": {
+        "kind": "input",
+        "question": "Wie lautet der vollständige Code?",
+        "accept": [
+          "HÖHLESCHRIFTBUCHDRUCKTELEGRAMMTELEFONFILMINTERNETSOCIALDIGITAL",
+          "HÖHLE SCHRIFT BUCH DRUCK TELEGRAMM TELEFON FILM INTERNET SOCIAL DIGITAL",
+          "HöhleSchriftBuchDruckTelegrammTelefonFilmInternetSocialDigital"
+        ]
+      },
+      "hints": [
+        "Die Reihenfolge ist: Höhlenmalerei → Schrift → Buch → Buchdruck → Telegraph → Telefon → Film → Internet → Soziale Medien → Digitalisierung.",
+        "Beginne mit HÖHLE und endige mit DIGITAL."
+      ],
+      "onFailReview": [
+        "steinzeit-aufgabe",
+        "antike-schrift-aufgabe",
+        "mittelalter-buch-aufgabe",
+        "gutenberg-aufgabe",
+        "telegraph-aufgabe",
+        "telefon-aufgabe",
+        "film-aufgabe",
+        "internet-aufgabe",
+        "soziale-medien-aufgabe",
+        "digital-aufgabe"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "_ai_instructions": "Erstelle einen Lückentext-Datensatz im vorgegebenen JSON-Format. --- PFLICHTFELDER --- title, text, gaps. --- TEXT --- text: der Lückentext als Fließtext mit Platzhaltern der Form '{{gap_id}}' — für jede id in gaps muss genau ein Platzhalter im Text vorkommen, und es dürfen keine Platzhalter auf unbekannte ids verweisen. --- LÜCKEN (gaps) --- [{id (eindeutig), answer (die richtige Lösung), type ('word_bank' — Antwort kommt aus einer Wortliste, die dem Schüler angezeigt wird; 'free_type' — Schüler tippt die Antwort frei ein, Tippfehler werden großzügig verziehen; 'multiple_choice' — Schüler wählt aus 2-4 Optionen), difficulty ('easy'|'medium'|'hard', Standard 'medium'), hint? (optionaler Tipp-Text), choices? (nur bei type 'multiple_choice': Liste aus 2-4 eindeutigen Texten, die die richtige 'answer' enthalten muss)}]. --- DISTRACTORS --- distractors: optionale Liste zusätzlicher Wörter für die Wortliste der 'word_bank'-Lücken, die selbst nie eine richtige Antwort sind (erschweren die Auswahl). --- REGELN --- ids eindeutig, deutsche Formulierungen, keine Lösungshinweise außerhalb von 'hint'.",
+  "title": "Stoffe und ihre Eigenschaften – Zusammenfassung für die 7. Klasse",
+  "description": "Dieser Lückentext fasst die drei Kapitel 'Stoff und Gegenstand', 'Stoffe mit den Sinnen erfahren' und 'Stoffe bestehen aus Teilchen' zusammen. Er hilft den Schülerinnen und Schülern, die wichtigsten Begriffe und Zusammenhänge zu wiederholen und zu festigen.",
+  "tags": ["chemie", "stoffe", "stoffeigenschaften", "teilchenmodell", "aggregatzustände", "7. klasse"],
+  "grades": [7],
+  "text": "In den Naturwissenschaften beschäftigen wir uns damit, aus welchem Material ein Gegenstand besteht. Dieses Material nennen wir einen {{stoff}}. Ein Nagel besteht zum Beispiel aus dem Stoff {{eisen}}, ein Ballon kann mit dem Gas Helium gefüllt sein. Wichtig ist: Ein und derselbe Gegenstand kann aus ganz verschiedenen Stoffen hergestellt sein – so gibt es Löffel aus {{aluminium}}, Silber, Kunststoff, Porzellan oder Holz. Die Wahl des passenden Stoffes hängt von seiner {{verwendung}} ab und von seinen typischen Eigenschaften. In der Wissenschaft werden Gegenstände auch als {{koerper}} bezeichnet.\n\nUm Stoffe voneinander unterscheiden zu können, vergleicht man ihre Stoffeigenschaften. Viele davon können wir mit unseren Sinnen erfassen – man spricht dann von {{sensorischen}} Stoffeigenschaften. Dazu gehören:\n- {{sehen}}: Farbe und Oberfläche (z. B. metallischer Glanz oder matte Oberfläche)\n- {{hoe ren}}: der Klang beim Fallen (z. B. dumpf bei Holz, hell bei Metall)\n- {{fuehlen}}: Oberflächenbeschaffenheit (rau oder glatt) und Temperatur (Metall fühlt sich oft {{kuehler}} an als Holz)\n- {{riechen}}: Geruch (z. B. bei Essig oder Chemikalien) – Achtung: im Labor nur durch {{zufaecheln}}!\n- {{schmecken}}: Geschmack (z. B. bei Zucker oder Mehl) – aber niemals im Chemieraum, weil viele Stoffe {{giftig}} sind!\nEin vereinfachter Stoffsteckbrief fasst diese Eigenschaften zusammen, wie zum Beispiel der Steckbrief für {{holz}}.\n\nDoch Stoffe bestehen nicht nur aus dem, was wir sehen – sie haben einen inneren Aufbau. Nach dem {{teilchenmodell}} bestehen alle Stoffe aus vielen kleinen, unsichtbaren Teilchen. Ein Stück Würfelzucker besteht aus vielen kleinen Zuckerteilchen, die alle {{gleich}} sind. In einem festen Stoff sind die Teilchen dicht und regelmäßig angeordnet – in einer Flüssigkeit sind sie ebenfalls dicht, aber unregelmäßiger. Legt man einen Zuckerwürfel ins Wasser, schieben sich die Wasserteilchen zwischen die Zuckerteilchen. Beide Teilchensorten verteilen sich gleichmäßig – der Zucker ist gelöst. Aus dieser Lösung kann man den Zucker durch {{verdunsten}} des Wassers wieder zurückgewinnen. Ein Stoff kann in verschiedenen {{aggregatzustaenden}} vorkommen: fest, flüssig und gasförmig.",
+  "gaps": [
+    {
+      "id": "stoff",
+      "answer": "Stoff",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "eisen",
+      "answer": "Eisen",
+      "type": "free_type",
+      "difficulty": "easy",
+      "hint": "Ein graues, magnetisches Metall, das oft für Werkzeuge und Nägel verwendet wird.",
+      "choices": null
+    },
+    {
+      "id": "aluminium",
+      "answer": "Aluminium",
+      "type": "free_type",
+      "difficulty": "medium",
+      "hint": "Ein leichtes, silbriges Metall, das oft für Getränkedosen oder Kochgeschirr verwendet wird.",
+      "choices": null
+    },
+    {
+      "id": "verwendung",
+      "answer": "Verwendung",
+      "type": "free_type",
+      "difficulty": "medium",
+      "hint": "Wofür ein Gegenstand gebraucht wird – danach richtet sich die Wahl des Materials.",
+      "choices": null
+    },
+    {
+      "id": "koerper",
+      "answer": "Körper",
+      "type": "multiple_choice",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": ["Körper", "Gegenstand", "Material", "Stoffprobe"]
+    },
+    {
+      "id": "sensorischen",
+      "answer": "sensorischen",
+      "type": "word_bank",
+      "difficulty": "medium",
+      "hint": "Bezieht sich auf das, was wir mit Augen, Nase, Ohren, Zunge und Haut wahrnehmen.",
+      "choices": null
+    },
+    {
+      "id": "sehen",
+      "answer": "Sehen",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "hoe ren",
+      "answer": "Hören",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "fuehlen",
+      "answer": "Fühlen",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "kuehler",
+      "answer": "kühler",
+      "type": "free_type",
+      "difficulty": "hard",
+      "hint": "Das Gegenteil von 'warm' – Metall leitet Wärme gut und entzieht der Haut Wärme.",
+      "choices": null
+    },
+    {
+      "id": "riechen",
+      "answer": "Riechen",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "zufaecheln",
+      "answer": "Zufächeln",
+      "type": "free_type",
+      "difficulty": "hard",
+      "hint": "Man wedelt sich den Geruch vorsichtig mit der Hand zu, statt direkt daran zu schnüffeln.",
+      "choices": null
+    },
+    {
+      "id": "schmecken",
+      "answer": "Schmecken",
+      "type": "word_bank",
+      "difficulty": "easy",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "giftig",
+      "answer": "giftig",
+      "type": "free_type",
+      "difficulty": "medium",
+      "hint": "Das Gegenteil von 'ungefährlich' – viele Chemikalien sind gesundheitsschädlich.",
+      "choices": null
+    },
+    {
+      "id": "holz",
+      "answer": "Holz",
+      "type": "free_type",
+      "difficulty": "easy",
+      "hint": "Ein natürlicher Stoff, der aus Bäumen gewonnen wird, braun ist und sich warm anfühlt.",
+      "choices": null
+    },
+    {
+      "id": "teilchenmodell",
+      "answer": "Teilchenmodell",
+      "type": "word_bank",
+      "difficulty": "medium",
+      "hint": null,
+      "choices": null
+    },
+    {
+      "id": "gleich",
+      "answer": "gleich",
+      "type": "multiple_choice",
+      "difficulty": "hard",
+      "hint": null,
+      "choices": ["gleich", "unterschiedlich", "verschieden", "bunt"]
+    },
+    {
+      "id": "verdunsten",
+      "answer": "Verdunsten",
+      "type": "free_type",
+      "difficulty": "hard",
+      "hint": "Das Wasser geht als Dampf in die Luft über, der Zucker bleibt zurück.",
+      "choices": null
+    },
+    {
+      "id": "aggregatzustaenden",
+      "answer": "Aggregatzuständen",
+      "type": "word_bank",
+      "difficulty": "hard",
+      "hint": null,
+      "choices": null
+    }
+  ],
+  "distractors": [
+    "Gegenstand",
+    "Kristall",
+    "flüssig",
+    "Sauerstoff",
+    "Kunststoff",
+    "Zucker",
+    "Metall",
+    "gasförmig"
+  ]
+}
