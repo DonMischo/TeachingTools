@@ -718,7 +718,7 @@ class BarometerSession(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="active")
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    # index of currently shown question (-1 = lobby)
+    # index of currently shown SLIDE (a slide may bundle several questions; -1 = lobby)
     current_question_idx: Mapped[int] = mapped_column(Integer, nullable=False, server_default="-1")
     # whether results are shown to students for current question
     results_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
@@ -735,6 +735,9 @@ class BarometerSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # "live" (teacher shows one question at a time) | "self" (students see all questions at once)
+    mode: Mapped[str] = mapped_column(String(10), nullable=False, server_default="live", default="live")
+    results_public: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false(), default=False)
 
     creator: Mapped["Teacher"] = relationship()
     questions: Mapped[list["BarometerQuestion"]] = relationship(
@@ -756,6 +759,25 @@ class BarometerQuestion(Base):
     scale_max: Mapped[int] = mapped_column(Integer, nullable=False, server_default="6")
     scale_min_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
     scale_max_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # "scale" | "choice" | "multi" | "text" | "number"
+    kind: Mapped[str] = mapped_column(String(10), nullable=False, server_default="scale", default="scale")
+    options: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    chart: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # shown on the same slide as the previous question
+    same_slide: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false(), default=False)
+    # Aussagen-Block id; consecutive questions with the same id form one block
+    block: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # heading shown above the question/block (block: stored on the first member)
+    intro: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # {"question": <0-based index of the parent in the ordered question list>, "options": [option indices]}
+    show_if: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # "zahlen" | "smileys_auf" | "smileys_ab"
+    scale_style: Mapped[str] = mapped_column(String(20), nullable=False, server_default="zahlen", default="zahlen")
+    max_choices: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    num_min: Mapped[float | None] = mapped_column(Float, nullable=True)
+    num_max: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     session: Mapped["BarometerSession"] = relationship(back_populates="questions")
     responses: Mapped[list["BarometerResponse"]] = relationship(back_populates="question", cascade="all, delete-orphan")
@@ -774,7 +796,11 @@ class BarometerResponse(Base):
     student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
     # QR/join-link guest: the guest token's id (dedupes anonymous votes per guest)
     guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    value: Mapped[int] = mapped_column(Integer, nullable=False)
+    value: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    number: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # multi answers (sorted option indices). Not named `values` — reserved word in SQL.
+    choices: Mapped[list | None] = mapped_column(JSON, nullable=True)
     answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     session: Mapped["BarometerSession"] = relationship(back_populates="responses")

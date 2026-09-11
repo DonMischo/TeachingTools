@@ -2,16 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, BarometerSessionSummary, BarometerSessionOut } from "@/lib/api";
+import { api, BarometerSessionSummary, BarometerSessionOut, BarometerMode } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useAvailability } from "@/hooks/useAvailability";
 import { UploadErrorDialog } from "@/components/UploadErrorDialog";
 import { parseUploadError, UploadError } from "@/lib/uploadError";
-
-type QuestionDraft = { text: string; scale_min: number; scale_max: number; scale_min_label: string; scale_max_label: string };
-
-const BLANK_Q = (): QuestionDraft => ({ text: "", scale_min: 1, scale_max: 6, scale_min_label: "sehr gut", scale_max_label: "schlecht" });
+import {
+  MAX_SMILEY_STEPS, blankBlock, blankQuestion, draftsToQuestions, questionsToDrafts,
+  type DraftItem,
+} from "@/lib/barometer";
+import { QuestionDraftCard } from "@/components/barometer/QuestionDraftCard";
+import { BlockDraftCard } from "@/components/barometer/BlockDraftCard";
 
 export default function BarometerPage() {
   const { auth } = useAuth();
@@ -25,7 +27,8 @@ export default function BarometerPage() {
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [shared, setShared] = useState(false);
-  const [questions, setQuestions] = useState<QuestionDraft[]>([BLANK_Q()]);
+  const [mode, setMode] = useState<BarometerMode>("live");
+  const [items, setItems] = useState<DraftItem[]>([blankQuestion()]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<UploadError | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,10 +44,8 @@ export default function BarometerPage() {
     setEditingCode(s.code);
     setTitle(s.title);
     setShared(s.shared);
-    setQuestions(s.questions.map(q => ({
-      text: q.text, scale_min: q.scale_min, scale_max: q.scale_max,
-      scale_min_label: q.scale_min_label ?? "", scale_max_label: q.scale_max_label ?? "",
-    })));
+    setMode(s.mode);
+    setItems(questionsToDrafts(s.questions));
     setShowCreate(true);
   }
 
@@ -62,28 +63,34 @@ export default function BarometerPage() {
     setEditingCode(null);
     setTitle("");
     setShared(false);
-    setQuestions([BLANK_Q()]);
+    setMode("live");
+    setItems([blankQuestion()]);
     setShowCreate(false);
   }
 
-  const questionBody = () => questions.filter(q => q.text.trim()).map(q => ({
-    text: q.text.trim(),
-    scale_min: q.scale_min,
-    scale_max: q.scale_max,
-    scale_min_label: q.scale_min_label || undefined,
-    scale_max_label: q.scale_max_label || undefined,
-  }));
+  const questionBody = () => draftsToQuestions(items);
+
+  const hasInvalidOptions = items.some(it => {
+    if (it.type === "question" && (it.kind === "choice" || it.kind === "multi") && it.text.trim()) {
+      return it.options.map(o => o.trim()).filter(Boolean).length < 2;
+    }
+    return false;
+  });
+  const hasTooManySmileySteps = items.some(it => {
+    const steps = it.scale_max - it.scale_min + 1;
+    return it.scale_style !== "zahlen" && steps > MAX_SMILEY_STEPS;
+  });
 
   const createMut = useMutation({
     mutationFn: () => editingCode
-      ? api.barometer.update(editingCode, { title: title.trim(), shared, questions: questionBody() })
-      : api.barometer.create({ title: title.trim(), shared, questions: questionBody() }),
+      ? api.barometer.update(editingCode, { title: title.trim(), shared, mode, questions: questionBody() })
+      : api.barometer.create({ title: title.trim(), shared, mode, questions: questionBody() }),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["barometer"] });
       resetForm();
       router.push(`/tools/barometer/host/${s.code}`);
     },
-    onError: (e: any) => toast(e.message ?? "Fehler", "error"),
+    onError: (e: unknown) => setUploadError(parseUploadError(e)),
   });
 
   const deleteMut = useMutation({
@@ -119,10 +126,11 @@ export default function BarometerPage() {
     }
   }
 
-  function addQuestion() { setQuestions(qs => [...qs, BLANK_Q()]); }
-  function removeQuestion(i: number) { setQuestions(qs => qs.filter((_, j) => j !== i)); }
-  function updateQuestion(i: number, patch: Partial<QuestionDraft>) {
-    setQuestions(qs => qs.map((q, j) => j === i ? { ...q, ...patch } : q));
+  function addQuestion() { setItems(its => [...its, blankQuestion()]); }
+  function addBlock() { setItems(its => [...its, blankBlock()]); }
+  function removeItem(i: number) { setItems(its => its.filter((_, j) => j !== i)); }
+  function updateItem(i: number, patch: Partial<DraftItem>) {
+    setItems(its => its.map((it, j) => j === i ? ({ ...it, ...patch } as DraftItem) : it));
   }
 
   if (!isTeacher) {
@@ -166,46 +174,37 @@ export default function BarometerPage() {
             className="input text-sm py-2"
           />
 
+          <div className="flex gap-2">
+            <button type="button" aria-pressed={mode === "live"} onClick={() => setMode("live")}
+              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "live" ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+              Live – Frage für Frage
+            </button>
+            <button type="button" aria-pressed={mode === "self"} onClick={() => setMode("self")}
+              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "self" ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+              Selbst ausfüllen – alle Fragen auf einer Seite
+            </button>
+          </div>
+
           <div className="flex flex-col gap-3">
-            {questions.map((q, i) => (
-              <div key={i} className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--bg)]">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--text-muted)] w-5 shrink-0">{i + 1}.</span>
-                  <input
-                    value={q.text}
-                    onChange={e => updateQuestion(i, { text: e.target.value })}
-                    placeholder="Frage…"
-                    className="input text-sm py-1.5 flex-1"
-                  />
-                  {questions.length > 1 && (
-                    <button onClick={() => removeQuestion(i)}
-                      className="text-[var(--text-muted)] hover:text-red-400 text-sm px-1">✕</button>
-                  )}
-                </div>
-                <div className="flex gap-2 flex-wrap ml-7">
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                    Skala
-                    <input type="number" min={1} max={5} value={q.scale_min}
-                      onChange={e => updateQuestion(i, { scale_min: Number(e.target.value) })}
-                      className="input w-12 text-xs py-0.5 px-1" />
-                    –
-                    <input type="number" min={2} max={10} value={q.scale_max}
-                      onChange={e => updateQuestion(i, { scale_max: Number(e.target.value) })}
-                      className="input w-12 text-xs py-0.5 px-1" />
-                  </div>
-                  <input value={q.scale_min_label} onChange={e => updateQuestion(i, { scale_min_label: e.target.value })}
-                    placeholder={`Beschriftung ${q.scale_min}`} className="input text-xs py-0.5 px-2 w-28" />
-                  <input value={q.scale_max_label} onChange={e => updateQuestion(i, { scale_max_label: e.target.value })}
-                    placeholder={`Beschriftung ${q.scale_max}`} className="input text-xs py-0.5 px-2 w-28" />
-                </div>
-              </div>
+            {items.map((item, i) => item.type === "question" ? (
+              <QuestionDraftCard key={item.uid} item={item} index={i} items={items}
+                onChange={patch => updateItem(i, patch)} onRemove={() => removeItem(i)} canRemove={items.length > 1} />
+            ) : (
+              <BlockDraftCard key={item.uid} item={item} index={i} items={items}
+                onChange={patch => updateItem(i, patch)} onRemove={() => removeItem(i)} canRemove={items.length > 1} />
             ))}
           </div>
 
-          <button onClick={addQuestion}
-            className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] border border-dashed border-[var(--border)] rounded-xl py-2 transition-colors">
-            + Frage hinzufügen
-          </button>
+          <div className="flex gap-2">
+            <button onClick={addQuestion}
+              className="flex-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)] border border-dashed border-[var(--border)] rounded-xl py-2 transition-colors">
+              + Frage hinzufügen
+            </button>
+            <button onClick={addBlock}
+              className="flex-1 text-sm text-[var(--text-muted)] hover:text-[var(--text)] border border-dashed border-[var(--border)] rounded-xl py-2 transition-colors">
+              + Aussagen-Block
+            </button>
+          </div>
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={shared} onChange={e => setShared(e.target.checked)} />
@@ -215,7 +214,7 @@ export default function BarometerPage() {
           <div className="flex gap-2">
             <button
               onClick={() => createMut.mutate()}
-              disabled={!title.trim() || !questions.some(q => q.text.trim()) || createMut.isPending}
+              disabled={!title.trim() || questionBody().length === 0 || hasInvalidOptions || hasTooManySmileySteps || createMut.isPending}
               className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40"
             >
               {createMut.isPending ? "…" : editingCode ? "Speichern" : "Starten"}

@@ -70,7 +70,7 @@ def test_jeder_gast_bekommt_die_frage(client, teacher, umfrage):
                     await host.send_json({"action": "show_question", "index": 0})
                     for gast in (ada, ben):
                         msg = await asyncio.wait_for(gast.receive_json(), timeout=2)
-                        assert msg["event"] == "question"
+                        assert msg["event"] == "slide"
     asyncio.run(run())
 
 

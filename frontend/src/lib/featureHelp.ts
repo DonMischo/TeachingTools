@@ -199,10 +199,12 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     title: "Umfrage",
     intro: "Anonyme Abstimmungen und Meinungsbilder live in der Klasse.",
     sections: [
-      { label: "▶️ Starten", text: "Umfrage mit Fragen und Skalen anlegen — Code + Host-Screen zum Anzeigen der Ergebnisse." },
+      { label: "▶️ Starten", text: "Fragetypen Skala (auch als Smiley-Skala), Auswahl (Dropdown, mit Vorlagen wie Geschlecht/Alter/Klassenstufe oder eigenen Optionen), Mehrfachauswahl, Zahl und Freitext; Ablauf Live oder Selbst ausfüllen; Darstellung pro Frage wählbar. Ein Aussagen-Block bündelt mehrere Aussagen mit einer gemeinsamen Skala. »Auf derselben Folie wie davor« gruppiert Fragen zu einer Folie, »Nur zeigen, wenn …« macht eine Frage zur Folgefrage einer Auswahl-Antwort." },
       { label: "👥 Beitreten", text: "Schüler antworten anonym über den Code." },
       { label: "🔗 Teilen", text: "Mit dem Schalter »Öffentlich« wird die Umfrage für Kolleg·innen sichtbar." },
       { label: "📄 Vorlage", text: "»Vorlage« lädt umfrage-vorlage.json mit Beispielfragen und KI-Anleitung herunter; »Hochladen« importiert eine fertige .json-Datei als neue Umfrage." },
+      { label: "📊 Ergebnisse", text: "Diagrammart pro Frage umschaltbar, »Ergebnisse (JSON)« lädt alle Ergebnisse anonym herunter, »Ergebnisse teilen« zeigt einen QR auf eine öffentliche Ergebnisseite (ohne Freitext-Antworten)." },
+      { label: "🤖 KI-Auswertung", text: "Prompt kopieren, externe KI gruppiert die Freitext-Antworten und hebt besondere Ideen hervor, JSON-Antwort hochladen — sie wird bei genau dieser Umfrage angezeigt. Keine KI direkt in der App." },
     ],
   },
   "exit-ticket": {

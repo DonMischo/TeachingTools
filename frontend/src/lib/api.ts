@@ -225,6 +225,18 @@ export type ClassTrackerOut = {
   checked_student_ids: number[];
 };
 
+export type BarometerKind = "scale" | "choice" | "multi" | "text" | "number";
+export type BarometerMode = "live" | "self";
+export type BarometerScaleStyle = "zahlen" | "smileys_auf" | "smileys_ab";
+export type BarometerShowIf = { question: number; options: number[]; parent_id?: number };
+export type BarometerAnswer = number | string | number[];
+export type BarometerAnalysis = {
+  summary: string;
+  groups: { title: string; description: string; count: number; examples: string[] }[];
+  unique_ideas: { idea: string; reason: string }[];
+  uploaded_at: string;
+};
+
 export type BarometerQuestionOut = {
   id: number;
   order: number;
@@ -233,6 +245,19 @@ export type BarometerQuestionOut = {
   scale_max: number;
   scale_min_label: string | null;
   scale_max_label: string | null;
+  kind: BarometerKind;
+  options: string[];
+  chart: string | null;
+  analysis: BarometerAnalysis | null;
+  same_slide: boolean;
+  block: string | null;
+  intro: string | null;
+  show_if: BarometerShowIf | null;
+  scale_style: BarometerScaleStyle;
+  max_choices: number | null;
+  num_min: number | null;
+  num_max: number | null;
+  unit: string | null;
 };
 
 export type BarometerSessionOut = {
@@ -243,6 +268,8 @@ export type BarometerSessionOut = {
   current_question_idx: number;
   results_visible: boolean;
   shared: boolean;
+  mode: BarometerMode;
+  results_public: boolean;
   questions: BarometerQuestionOut[];
 };
 
@@ -264,6 +291,31 @@ export type BarometerQuestionIn = {
   scale_max?: number;
   scale_min_label?: string;
   scale_max_label?: string;
+  kind?: BarometerKind;
+  options?: string[];
+  chart?: string | null;
+  same_slide?: boolean;
+  block?: string | null;
+  intro?: string | null;
+  show_if?: BarometerShowIf | null;
+  scale_style?: BarometerScaleStyle;
+  max_choices?: number | null;
+  num_min?: number | null;
+  num_max?: number | null;
+  unit?: string | null;
+};
+
+export type BarometerResults = { distribution: Record<string, number>; count: number; texts?: string[] };
+
+export type BarometerPublicResults = {
+  code: string;
+  title: string;
+  status: string;
+  questions: (Omit<BarometerQuestionOut, "analysis"> & {
+    count: number;
+    distribution: Record<string, number>;
+    analysis: BarometerAnalysis | null;
+  })[];
 };
 
 export type TeacherAssignmentOut = {
@@ -2051,9 +2103,9 @@ export const api = {
   },
   barometer: {
     list: () => apiFetch<BarometerSessionSummary[]>("barometer"),
-    create: (body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean }) =>
+    create: (body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode }) =>
       apiFetch<BarometerSessionOut>("barometer", { method: "POST", body: JSON.stringify(body) }),
-    update: (code: string, body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean }) =>
+    update: (code: string, body: { title: string; questions: BarometerQuestionIn[]; shared?: boolean; mode?: BarometerMode }) =>
       apiFetch<BarometerSessionOut>(`barometer/${code}`, { method: "PATCH", body: JSON.stringify(body) }),
     get: (code: string) => apiFetch<BarometerSessionOut>(`barometer/${code}`),
     delete: (code: string) => apiFetch<void>(`barometer/${code}`, { method: "DELETE" }),
@@ -2068,6 +2120,26 @@ export const api = {
           return r.json() as Promise<BarometerSessionOut>;
         });
     },
+    setChart: (code: string, questionId: number, chart: string | null) =>
+      apiFetch<BarometerQuestionOut>(`barometer/${code}/questions/${questionId}/chart`, {
+        method: "PATCH", body: JSON.stringify({ chart }),
+      }),
+    setResultsPublic: (code: string, isPublic: boolean) =>
+      apiFetch<{ results_public: boolean }>(`barometer/${code}/results-public`, {
+        method: "PATCH", body: JSON.stringify({ public: isPublic }),
+      }),
+    exportResults: (code: string) => apiFetch<Record<string, unknown>>(`barometer/${code}/export`),
+    analysisPrompt: (code: string) => apiFetch<{ prompt: string }>(`barometer/${code}/analysis-prompt`),
+    uploadAnalysis: (code: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch(`/api/barometer/${code}/analysis`, { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<BarometerSessionOut>;
+        });
+    },
+    publicResults: (code: string) => apiFetch<BarometerPublicResults>(`barometer/${code}/public-results`),
   },
   schreibraum: {
     list: (created_by?: number) =>
