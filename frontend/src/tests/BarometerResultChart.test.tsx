@@ -109,23 +109,19 @@ describe("BlockChart", () => {
 
 describe("AnalysisView", () => {
   const analysis = {
-    summary: "Die Klasse ist insgesamt zufrieden.",
-    groups: [
-      { title: "Mehr Pausen", description: "Wunsch nach längeren Pausen", count: 5, examples: ["mehr Pause bitte"] },
-      { title: "Weniger Hausaufgaben", description: "Weniger HA", count: 2, examples: [] },
-    ],
-    unique_ideas: [
-      { idea: "Klassenfahrt ans Meer", reason: "Einzigartig genannt" },
+    answers: [
+      { text: "Weniger Hausaufgaben", count: 2 },
+      { text: "Mehr Pausen", count: 5 },
     ],
     uploaded_at: "2026-01-15T09:00:00Z",
   };
 
-  it("renders the summary, group titles and the Besondere Ideen section", () => {
+  it("shows the essence as one bar per answer with its count, most frequent first", () => {
     render(<AnalysisView analysis={analysis} />);
-    expect(screen.getByText(analysis.summary)).toBeInTheDocument();
-    expect(screen.getByText("Mehr Pausen")).toBeInTheDocument();
-    expect(screen.getByText("Weniger Hausaufgaben")).toBeInTheDocument();
-    expect(screen.getByText(/besondere ideen/i)).toBeInTheDocument();
-    expect(screen.getByText("Klassenfahrt ans Meer")).toBeInTheDocument();
+    const rows = screen.getAllByTestId("essenz-zeile");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("Mehr Pausen");
+    expect(rows[0]).toHaveTextContent("5");
+    expect(rows[1]).toHaveTextContent("Weniger Hausaufgaben");
   });
 });

@@ -723,77 +723,125 @@ def clone_session_impl(db: Session, code: str, teacher: Teacher) -> BarometerSes
 
 @router.get("/template", dependencies=[Depends(require_capability("barometer", "host"))])
 def download_template(_: Teacher = Depends(get_current_teacher)):
+    charts = "; ".join(f"{kind}: {', '.join(ids)} (Standard {ids[0]})" for kind, ids in CHARTS.items())
+    agree = {"scale_min": 1, "scale_max": 5,
+             "scale_min_label": "stimme voll zu", "scale_max_label": "stimme gar nicht zu"}
     return {
-        "_ai_instructions": (
-            "Erstelle eine Umfrage (Meinungsbarometer) im vorgegebenen JSON-Format. "
-            "--- PFLICHTFELDER --- title, questions (mindestens eine). "
-            "--- MODUS --- mode: 'live' (Standard) zeigt den Schülern eine Frage nach der anderen, die "
-            "Lehrkraft steuert den Ablauf; 'self' zeigt allen Schülern sofort alle Fragen, die das ganze "
-            "Formular auf einmal abschicken — passend für Fragebögen mit Angaben zur Person und Freitext. "
-            "--- FRAGEARTEN (kind) --- 'scale' (Standard): {\"text\", \"scale_min\" (Standard 1), "
-            f"\"scale_max\" (Standard 6, Skala höchstens {MAX_SCALE_STEPS} Stufen), \"scale_min_label\", "
-            "\"scale_max_label\" — immer beide Enden beschriften, in derselben Richtung wie die Zahlen. "
-            "'choice': Dropdown mit festen Antworten, zusätzlich \"options\" (Liste mit 2-20 kurzen Texten, "
-            "keine Duplikate) — typische Listen: Geschlecht (männlich/weiblich/divers), Altersgruppe, "
-            "Klassenstufe, Ja/Nein/Weiß nicht, Häufigkeit (nie/selten/manchmal/oft/immer), Zustimmung "
-            "(stimme zu/teils/stimme nicht zu). 'multi': wie 'choice', aber Mehrfachauswahl (Kästchen), "
-            "optional \"max_choices\" begrenzt die Anzahl. 'number': Zahleneingabe, optional \"num_min\", "
-            "\"num_max\" und \"unit\" (kurze Einheit, z.B. 'Stunden'). 'text': freie Antwort, bleibt nur bei "
-            "der Lehrkraft sichtbar. "
-            "--- SKALEN-STIL --- optionales \"scale_style\" bei 'scale': 'zahlen' (Standard), 'smileys_auf' "
-            "oder 'smileys_ab' (Smileys statt Zahlen, höchstens 7 Stufen). "
-            "--- FOLGEFRAGEN (show_if) --- eine Frage kann nur erscheinen, wenn eine frühere 'choice'/'multi'-"
-            "Frage bestimmte Optionen gewählt hat: \"show_if\": {\"question\": <0-basierter Index der "
-            "Elternfrage>, \"options\": [<Options-Indizes>]}. Meist zusammen mit \"same_slide\": true, damit "
-            "Frage und Folgefrage auf einer Folie erscheinen. "
-            "--- FOLIEN (same_slide) --- \"same_slide\": true zeigt eine Frage auf derselben Folie wie die "
-            "vorherige (im 'live'-Modus steuert die Lehrkraft dann eine ganze Folie statt einzelner Fragen). "
-            "--- AUSSAGEN-BLOCK (block/intro) --- mehrere aufeinanderfolgende 'scale'-Fragen mit derselben "
-            "\"block\"-Kennung (kurzer String) und identischer Skala bilden einen Block (z.B. ein Set von "
-            "Aussagen zu einem Thema); \"intro\" auf der ersten Aussage des Blocks ist die gemeinsame "
-            "Überschrift. Blockmitglieder erlauben nur die Charts likert/mittelwerte. "
-            "--- CHART --- optionales \"chart\" pro Frage (Diagrammtyp für die Auswertung): "
-            f"scale: {', '.join(CHARTS['scale'])}; choice: {', '.join(CHARTS['choice'])}; "
-            f"multi: {', '.join(CHARTS['multi'])}; number: {', '.join(CHARTS['number'])}; "
-            f"text: {', '.join(CHARTS['text'])}; Aussagen-Block: {', '.join(BLOCK_CHARTS)}. Weglassen wählt "
-            "die Standarddarstellung der Frageart. "
-            "--- STIL --- Formuliere kurze, eindeutige Aussagen in der Ich-Form ('Ich habe verstanden, "
-            "wie …'), keine Doppelfragen ('… und …'), keine Suggestivfragen. 5-10 Fragen sind eine gute "
-            "Länge. Mische nicht mehrere Skalenrichtungen in einer Umfrage — sonst verrutschen die "
-            "Antworten. "
-            "--- SHARED --- shared: true macht die Umfrage für alle Lehrkräfte im Pool sichtbar (Standard "
-            "false)."
-        ),
+        # Eine Regel pro Eintrag: liest sich fuer Mensch und KI besser als ein Fliesstext.
+        "_ai_instructions": [
+            "Du erstellst eine Umfrage für die Schul-App Hauspokal. Antworte ausschließlich mit gültigem JSON im "
+            "Aufbau dieser Vorlage – ohne Kommentare, ohne Text davor oder danach. Schlüssel, die mit '_' beginnen "
+            "('_ai_instructions', '_beispiel'), ignoriert die App; du kannst sie weglassen.",
+            "PFLICHTFELDER: 'title' (höchstens 200 Zeichen) und 'questions' (mindestens eine Frage). "
+            "Optional: 'mode' und 'shared'.",
+            "MODUS 'mode': 'live' (Standard) – die Lehrkraft zeigt die Umfrage Folie für Folie, die Schüler "
+            "antworten pro Folie und sehen danach auf Wunsch das Ergebnis. 'self' – alle Fragen stehen auf einer "
+            "Seite und werden einmal abgeschickt; gut für längere Fragebögen, Hausaufgaben oder Elternumfragen.",
+            "'shared': true macht die Umfrage für alle Lehrkräfte im Pool sichtbar (Standard false).",
+            "REIHENFOLGE: Die Liste 'questions' ist die Reihenfolge der Umfrage. Alle Indizes zählen ab 0 "
+            "(erste Frage = 0, erste Option = 0).",
+            "FRAGEARTEN 'kind' – jede Frage braucht 'text' (die Frage bzw. Aussage):",
+            f"- 'scale' (Standard, wenn 'kind' fehlt): Skala von 'scale_min' bis 'scale_max' (ganze Zahlen, "
+            f"Standard 1 bis 6, höchstens {MAX_SCALE_STEPS} Stufen). 'scale_min_label' und 'scale_max_label' "
+            "beschriften die Enden (je höchstens 50 Zeichen). Setze immer beide, in derselben Richtung wie die Zahlen.",
+            "- 'scale_style' (nur bei 'scale'): 'zahlen' (Standard), 'smileys_auf' (kleinster Wert 😣 … größter 😀) "
+            f"oder 'smileys_ab' (kleinster Wert 😀 … größter 😣, passend zu Schulnoten). Smileys höchstens "
+            f"{MAX_SMILEY_STEPS} Stufen.",
+            f"- 'choice': genau eine Antwort aus 'options' (Dropdown). 'options': 2 bis {MAX_OPTIONS} verschiedene, "
+            f"nicht leere Texte mit je höchstens {MAX_OPTION_LEN} Zeichen. Übliche Listen: Geschlecht (männlich, "
+            "weiblich, divers, keine Angabe), Alter, Klassenstufe (5–13), Ja/Nein/Weiß nicht, Häufigkeit (nie, "
+            "selten, manchmal, oft, immer), Zustimmung (stimme voll zu … stimme gar nicht zu), Zufriedenheit, "
+            "Schulnote (1–6), Rolle (Schüler:in, Lehrkraft, Elternteil, Sonstige).",
+            "- 'multi': beliebig viele Antworten aus 'options' (Kästchen), Regeln wie bei 'choice'. Optional "
+            "'max_choices' (1 bis Anzahl der Optionen) begrenzt, wie viele angekreuzt werden dürfen.",
+            "- 'number': Zahleneingabe, auch mit Komma. Optional 'num_min' und 'num_max' (num_min kleiner als "
+            f"num_max) sowie 'unit' (Einheit, höchstens {MAX_UNIT_LEN} Zeichen, z. B. 'Stunden').",
+            f"- 'text': freie Antwort (bis {MAX_TEXT_ANSWER} Zeichen). Nur die Lehrkraft sieht die Antworten; sie "
+            "kann sie später per KI zu kurzen Antworten mit Anzahl zusammenfassen lassen.",
+            "FOLIEN 'same_slide': true zeigt die Frage auf derselben Folie wie die Frage davor; ohne das beginnt "
+            "jede Frage eine neue Folie. Bündle kurze, zusammengehörige Fragen – höchstens etwa 3–4 Fragen oder "
+            "einen Aussagen-Block pro Folie. Die erste Frage beginnt immer die erste Folie.",
+            f"EINLEITUNG 'intro': optionaler Hinweistext über einer Frage (höchstens {MAX_INTRO_LEN} Zeichen), "
+            "z. B. als Überschrift für einen neuen Abschnitt.",
+            "AUSSAGEN-BLOCK 'block': direkt aufeinanderfolgende 'scale'-Fragen mit derselben 'block'-Kennung "
+            f"(kurz, ohne Leerzeichen, höchstens {MAX_BLOCK_ID_LEN} Zeichen) erscheinen als Matrix mit gemeinsamer "
+            "Skala auf einer Folie. Alle Aussagen eines Blocks brauchen exakt dieselbe Skala ('scale_min', "
+            "'scale_max', beide Labels, 'scale_style'). 'intro' der ersten Aussage ist die Überschrift des Blocks; "
+            "'chart', 'show_if' und 'same_slide' gibst du nur bei der ersten Aussage an. Formuliere alle Aussagen "
+            "in dieselbe Richtung.",
+            "FOLGEFRAGEN 'show_if': {\"question\": <Index einer FRÜHEREN 'choice'- oder 'multi'-Frage>, "
+            "\"options\": [<Indizes der Optionen, bei denen die Frage erscheint>]}. Die Frage – bei der ersten "
+            "Aussage eines Blocks der ganze Block – erscheint nur, wenn eine dieser Optionen gewählt wurde. Setze "
+            "bei Folgefragen meist 'same_slide': true, damit sie direkt unter der Elternfrage stehen.",
+            f"DIAGRAMM 'chart' (optional, bestimmt die Auswertung; weglassen = Standard): {charts}; "
+            f"Aussagen-Block: {', '.join(BLOCK_CHARTS)} (Standard {BLOCK_CHARTS[0]}).",
+            "STIL: kurze, eindeutige Fragen; eine Sache pro Frage (keine Doppelfragen mit 'und'); keine "
+            "Suggestivfragen; Ich-Aussagen für Skalen und Blöcke; altersgerechte Sprache; Zustimmungsskalen "
+            "innerhalb einer Umfrage immer in dieselbe Richtung. Frage Angaben zur Person (Alter, Geschlecht, "
+            "Klassenstufe) nur, wenn die Auswertung sie braucht, und biete 'keine Angabe' an. 5–15 Fragen sind "
+            "für eine Unterrichtsstunde eine gute Länge.",
+            "BEISPIELE: Die Fragen unten zeigen jedes Merkmal einmal (siehe '_beispiel'). Ersetze sie vollständig "
+            "durch Fragen zu deinem Thema und passe alle 'show_if'-Indizes an die neue Reihenfolge an.",
+        ],
         "title": "Feedback zur Unterrichtsreihe",
-        "shared": False,
         "mode": "live",
+        "shared": False,
         "questions": [
-            {"text": "Ich habe verstanden, worum es in der Reihe ging.",
-             "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft voll zu", "scale_max_label": "trifft gar nicht zu"},
-            {"text": "Das Tempo im Unterricht war für mich angenehm.",
-             "scale_min": 1, "scale_max": 6, "scale_min_label": "viel zu langsam", "scale_max_label": "viel zu schnell"},
-            {"text": "Ich habe mich getraut, Fragen zu stellen.",
-             "scale_min": 1, "scale_max": 4, "scale_min_label": "immer", "scale_max_label": "nie"},
-            {"text": "Die Gruppenarbeit hat mir beim Lernen geholfen.",
-             "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft voll zu", "scale_max_label": "trifft gar nicht zu"},
-            {"text": "Wie oft hast du die Hausaufgaben gemacht?", "kind": "choice",
-             "options": ["nie", "selten", "manchmal", "oft", "immer"]},
-            {"text": "Was sollten wir in der nächsten Reihe anders machen?", "kind": "text"},
-            {"text": "Bist du mit dem Kurs insgesamt zufrieden?", "kind": "choice", "options": ["Ja", "Nein"]},
-            {"text": "Was genau hat dir nicht gefallen?", "kind": "text",
-             "show_if": {"question": 6, "options": [1]}, "same_slide": True},
-            {"text": "Ich fühle mich in der Klasse wohl.", "scale_min": 1, "scale_max": 6,
-             "block": "klassenklima", "intro": "Wie geht es dir in der Klasse?"},
-            {"text": "Ich werde von den anderen ernst genommen.", "scale_min": 1, "scale_max": 6,
-             "block": "klassenklima"},
-            {"text": "Ich traue mich, meine Meinung zu sagen.", "scale_min": 1, "scale_max": 6,
-             "block": "klassenklima"},
-            {"text": "Welche Themen fandest du am spannendsten?", "kind": "multi",
-             "options": ["Gruppenarbeit", "Referate", "Experimente", "Diskussionen"], "max_choices": 2},
-            {"text": "Wie viele Stunden hast du pro Woche für dieses Fach gelernt?", "kind": "number",
-             "num_min": 0, "num_max": 20, "unit": "Stunden"},
-            {"text": "Wie fühlst du dich gerade?", "scale_min": 1, "scale_max": 5,
-             "scale_style": "smileys_auf"},
+            {"_beispiel": "0 · Skala mit Zahlen, beide Enden beschriftet, Einleitung und Diagramm",
+             "intro": "Teil 1: Rückblick auf die Reihe",
+             "text": "Ich habe verstanden, worum es in der Reihe ging.", "kind": "scale",
+             "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft voll zu",
+             "scale_max_label": "trifft gar nicht zu", "chart": "saeulen"},
+            {"_beispiel": "1 · Smiley-Skala aufsteigend (1 = 😣), auf derselben Folie wie Frage 0",
+             "text": "Wie hat dir die Reihe insgesamt gefallen?", "kind": "scale",
+             "scale_min": 1, "scale_max": 5, "scale_min_label": "gar nicht", "scale_max_label": "sehr gut",
+             "scale_style": "smileys_auf", "same_slide": True, "chart": "donut"},
+            {"_beispiel": "2 · Smiley-Skala absteigend (1 = 😀, wie Schulnoten)",
+             "text": "Welche Schulnote gibst du der Reihe?", "kind": "scale",
+             "scale_min": 1, "scale_max": 6, "scale_min_label": "sehr gut", "scale_max_label": "ungenügend",
+             "scale_style": "smileys_ab", "chart": "balken"},
+            {"_beispiel": "3 · Auswahl (Dropdown) mit einer üblichen Liste",
+             "text": "In welche Klassenstufe gehst du?", "kind": "choice",
+             "options": ["7", "8", "9", "10", "keine Angabe"], "chart": "kreis"},
+            {"_beispiel": "4 · Auswahl als Elternfrage für Frage 5",
+             "text": "Hast du die Hausaufgaben regelmäßig gemacht?", "kind": "choice",
+             "options": ["Ja", "Teilweise", "Nein"], "chart": "gestapelt"},
+            {"_beispiel": "5 · Folgefrage (Freitext): nur bei 'Teilweise' oder 'Nein' – Optionen 1 und 2 von Frage 4",
+             "text": "Was hat dich davon abgehalten?", "kind": "text",
+             "show_if": {"question": 4, "options": [1, 2]}, "same_slide": True, "chart": "liste"},
+            {"_beispiel": "6 · Mehrfachauswahl mit Höchstzahl, Elternfrage für Frage 7",
+             "text": "Welche Methoden haben dir beim Lernen am meisten geholfen?", "kind": "multi",
+             "options": ["Gruppenarbeit", "Experimente", "Erklärvideos", "Übungsblätter", "Etwas anderes"],
+             "max_choices": 2, "chart": "balken"},
+            {"_beispiel": "7 · Folgefrage einer Mehrfachauswahl: nur wenn 'Etwas anderes' (Option 4 von Frage 6) angekreuzt ist",
+             "text": "Welche andere Methode meinst du?", "kind": "text",
+             "show_if": {"question": 6, "options": [4]}, "same_slide": True, "chart": "wortwolke"},
+            {"_beispiel": "8 · Mehrfachauswahl ohne Begrenzung, Elternfrage für den Block ab Frage 9",
+             "text": "Welche Materialien hast du genutzt?", "kind": "multi",
+             "options": ["Schulbuch", "Arbeitsblätter", "Erklärvideos", "Online-Übungen"], "chart": "saeulen"},
+            {"_beispiel": "9 · Aussagen-Block mit Überschrift und Mittelwerte-Diagramm, nur wenn 'Erklärvideos' (Option 2 von Frage 8) angekreuzt ist",
+             "intro": "Wie fandest du die Erklärvideos?",
+             "text": "Die Videos waren verständlich.", "kind": "scale", **agree,
+             "block": "videos", "show_if": {"question": 8, "options": [2]}, "same_slide": True,
+             "chart": "mittelwerte"},
+            {"_beispiel": "10 · zweite Aussage desselben Blocks: gleiche Kennung, gleiche Skala",
+             "text": "Die Videos hatten eine angenehme Länge.", "kind": "scale", **agree, "block": "videos"},
+            {"_beispiel": "11 · Zahl mit Grenzen und Einheit",
+             "text": "Wie viele Stunden hast du pro Woche für das Fach gelernt?", "kind": "number",
+             "num_min": 0, "num_max": 20, "unit": "Stunden", "chart": "histogramm"},
+            {"_beispiel": "12 · Zahl ohne Grenzen, als Kennzahlen ausgewertet",
+             "text": "Schätze: Wie viele Aufgaben haben wir in der Reihe bearbeitet?", "kind": "number",
+             "same_slide": True, "chart": "kennzahlen"},
+            {"_beispiel": "13 · Aussagen-Block (Likert) auf einer eigenen Folie",
+             "intro": "Wie geht es dir in der Klasse?",
+             "text": "Ich fühle mich in der Klasse wohl.", "kind": "scale", **agree,
+             "block": "klima", "chart": "likert"},
+            {"_beispiel": "14 · Block-Aussage",
+             "text": "Ich traue mich, im Unterricht Fragen zu stellen.", "kind": "scale", **agree, "block": "klima"},
+            {"_beispiel": "15 · Block-Aussage",
+             "text": "Die anderen nehmen mich ernst.", "kind": "scale", **agree, "block": "klima"},
+            {"_beispiel": "16 · Freitext zum Abschluss (Diagramm weggelassen = Standard 'liste')",
+             "text": "Was sollten wir in der nächsten Reihe anders machen?", "kind": "text"},
         ],
     }
 
@@ -1055,12 +1103,63 @@ def export_session(
         respondents.append({"respondent": respondent_num[key], "answers": answers})
 
     return {
+        # Ganz oben der KI-Auftrag samt Antworten pro Freitextfrage: die Datei selbst
+        # taugt als Eingabe fuer die Auswertung. Ohne Freitextfragen entfaellt er.
+        **({"ki_auswertung": _analysis_task(s)} if any(q.kind == "text" for q in s.questions) else {}),
         "format": "hauspokal-umfrage-ergebnisse", "version": 1,
         "code": s.code, "title": s.title, "mode": s.mode, "status": s.status,
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "respondent_count": len(ordered_keys),
         "questions": questions_out,
         "respondents": respondents,
+    }
+
+
+MAX_ESSENCE_ANSWERS = 30
+MAX_ESSENCE_TEXT = 100
+
+
+def _analysis_task(s: BarometerSession) -> dict:
+    # Der KI-Auftrag fuer die Freitext-Auswertung. Er steckt in der Ergebnis-Datei und im
+    # kopierbaren Prompt, damit beide Wege dasselbe Rueckgabeformat liefern.
+    text_questions = [q for q in s.questions if q.kind == "text"]
+    fragen = []
+    for q in text_questions:
+        entry: dict = {"question_id": q.id, "frage": q.text}
+        if q.show_if:
+            parent = s.questions[q.show_if["question"]]
+            labels = ", ".join(parent.options[o] for o in q.show_if["options"] if 0 <= o < len(parent.options))
+            entry["folgefrage"] = f"nur beantwortet, wenn bei „{parent.text}“ gewählt wurde: {labels}"
+        entry["antworten"] = [r.text for r in sorted(
+            (r for r in s.responses if r.question_id == q.id and r.text and r.text.strip()),
+            key=lambda r: (r.answered_at, r.id),
+        )]
+        fragen.append(entry)
+    return {
+        "prompt": [
+            "AUFTRAG: Werte die Freitext-Antworten einer anonymen Schul-Umfrage aus. Unter 'fragen' stehen pro "
+            "Frage alle Antworten – nur diese wertest du aus.",
+            "Extrahiere für JEDE Frage die Essenz: Antworten mit derselben Aussage werden zu EINER kurzen Antwort "
+            "(höchstens 6 Wörter, möglichst in den Worten der Schüler, kein ganzer Satz).",
+            "'count' ist die Zahl der Antworten, die diese Aussage enthalten. Eine Antwort mit mehreren Aussagen "
+            "zählt bei jeder davon mit. Auch Einzelnennungen bleiben mit count 1 erhalten.",
+            "Nur die Antworten mit ihrer Anzahl: keine Zusammenfassung, keine Überschriften, keine Erklärungen, "
+            "keine Bewertung, keine Einleitung.",
+            "Mehr als 15 verschiedene Aussagen bei einer Frage? Dann fasse die seltensten als 'Sonstiges' zusammen. "
+            "Nichtssagende Antworten ('-', 'nix', 'weiß nicht') zählen gemeinsam als 'keine konkrete Antwort'.",
+            "Erfinde nichts. Lass Namen und alles weg, was eine Person erkennbar macht.",
+            "Sortiere pro Frage nach count absteigend.",
+            "Antworte AUSSCHLIESSLICH mit JSON im Aufbau von 'antwortformat' – 'survey_code' und 'question_id' "
+            "unverändert –, damit es als .json gespeichert und in genau diese Umfrage hochgeladen werden kann.",
+        ],
+        "fragen": fragen,
+        "antwortformat": {
+            "survey_code": s.code,
+            "analyses": [
+                {"question_id": q.id, "answers": [{"text": "kurze Antwort", "count": 1}]}
+                for q in text_questions
+            ],
+        },
     }
 
 
@@ -1075,52 +1174,19 @@ def analysis_prompt(
         raise HTTPException(404, "Session not found")
     if s.created_by != current.id and current.role != "admin":
         raise HTTPException(403)
-    text_questions = [q for q in s.questions if q.kind == "text"]
-    if not text_questions:
+    if not any(q.kind == "text" for q in s.questions):
         raise HTTPException(400, "Diese Umfrage hat keine Freitextfragen")
 
-    parts = [
-        "Du wertest die Freitextantworten einer anonymen Schüler-Umfrage aus. Lies für jede Frage "
-        "unten alle Antworten, gruppiere ähnliche Antworten zu Themen mit Anzahl, fasse in 2-3 "
-        "Sätzen zusammen, hebe einzigartige/originelle Ideen hervor (die nur von einem oder wenigen "
-        "Schülern genannt wurden), zitiere dabei die Formulierung der Schüler in den Beispielen, "
-        "erfinde nichts dazu und rate niemals Identitäten.",
-    ]
-    for q in text_questions:
-        answers = [r.text for r in sorted(
-            (r for r in s.responses if r.question_id == q.id and r.text and r.text.strip()),
-            key=lambda r: (r.answered_at, r.id),
-        )]
-        parts.append(f"\nFrage (question_id {q.id}): {q.text}")
-        if q.show_if:
-            parent = s.questions[q.show_if["question"]]
-            labels = ", ".join(
-                parent.options[o] for o in q.show_if["options"] if 0 <= o < len(parent.options)
-            )
-            parts.append(f"Folgefrage — nur beantwortet, wenn bei „{parent.text}“ gewählt wurde: {labels}")
-        if answers:
-            parts.append("\n".join(f"{i + 1}. {a}" for i, a in enumerate(answers)))
-        else:
-            parts.append("(noch keine Antworten)")
-
-    template = {
-        "survey_code": code,
-        "analyses": [
-            {
-                "question_id": q.id,
-                "summary": "2-3 Sätze Zusammenfassung",
-                "groups": [{"title": "Thema", "description": "kurze Beschreibung", "count": 0, "examples": ["Beispielzitat"]}],
-                "unique_ideas": [{"idea": "einzigartige Idee", "reason": "warum sie auffällt"}],
-            }
-            for q in text_questions
-        ],
-    }
-    parts.append(
-        "\nAntworte AUSSCHLIESSLICH mit dem folgenden JSON (keine weitere Erklärung), damit es als "
-        ".json gespeichert und wieder in diese Umfrage hochgeladen werden kann:"
-    )
-    parts.append("```json\n" + json.dumps(template, ensure_ascii=False, indent=2) + "\n```")
-
+    task = _analysis_task(s)
+    parts = ["\n".join(task["prompt"]), ""]
+    for f in task["fragen"]:
+        parts.append(f"Frage (question_id {f['question_id']}): {f['frage']}")
+        if "folgefrage" in f:
+            parts.append(f"Folgefrage — {f['folgefrage']}")
+        parts.append("\n".join(f"{i + 1}. {a}" for i, a in enumerate(f["antworten"])) or "(noch keine Antworten)")
+        parts.append("")
+    parts.append("antwortformat:")
+    parts.append("```json\n" + json.dumps(task["antwortformat"], ensure_ascii=False, indent=2) + "\n```")
     return {"prompt": "\n".join(parts)}
 
 
@@ -1154,41 +1220,25 @@ def _validate_analysis(data, session: BarometerSession) -> list[str]:
         else:
             seen_qids.add(qid)
 
-        summary = a.get("summary")
-        if not isinstance(summary, str) or not summary.strip():
-            errors.append(f"{where}.summary: Pflichtfeld fehlt")
-
-        groups = a.get("groups", [])
-        if not isinstance(groups, list):
-            errors.append(f"{where}.groups: muss eine Liste sein")
-            groups = []
-        for j, g in enumerate(groups):
-            gwhere = f"{where}.groups[{j}]"
-            if not isinstance(g, dict):
-                errors.append(f"{gwhere}: muss ein Objekt sein")
+        answers = a.get("answers")
+        if not isinstance(answers, list) or not answers:
+            errors.append(f"{where}.answers: muss eine nicht-leere Liste mit Einträgen aus 'text' und 'count' sein")
+            continue
+        if len(answers) > MAX_ESSENCE_ANSWERS:
+            errors.append(f"{where}.answers: höchstens {MAX_ESSENCE_ANSWERS} Einträge – Seltenes als 'Sonstiges' zusammenfassen")
+        for j, e in enumerate(answers):
+            ewhere = f"{where}.answers[{j}]"
+            if not isinstance(e, dict):
+                errors.append(f"{ewhere}: muss ein Objekt sein")
                 continue
-            if not isinstance(g.get("title"), str) or not g["title"].strip():
-                errors.append(f"{gwhere}.title: Pflichtfeld fehlt")
-            if not isinstance(g.get("count"), int) or isinstance(g.get("count"), bool) or g.get("count") < 0:
-                errors.append(f"{gwhere}.count: muss eine ganze Zahl >= 0 sein")
-            if g.get("description") is not None and not isinstance(g["description"], str):
-                errors.append(f"{gwhere}.description: muss ein Text sein")
-            if g.get("examples") is not None and not isinstance(g["examples"], list):
-                errors.append(f"{gwhere}.examples: muss eine Liste sein")
-
-        unique_ideas = a.get("unique_ideas", [])
-        if not isinstance(unique_ideas, list):
-            errors.append(f"{where}.unique_ideas: muss eine Liste sein")
-            unique_ideas = []
-        for j, u in enumerate(unique_ideas):
-            uwhere = f"{where}.unique_ideas[{j}]"
-            if not isinstance(u, dict):
-                errors.append(f"{uwhere}: muss ein Objekt sein")
-                continue
-            if not isinstance(u.get("idea"), str) or not u["idea"].strip():
-                errors.append(f"{uwhere}.idea: Pflichtfeld fehlt")
-            if u.get("reason") is not None and not isinstance(u["reason"], str):
-                errors.append(f"{uwhere}.reason: muss ein Text sein")
+            t = e.get("text")
+            if not isinstance(t, str) or not t.strip():
+                errors.append(f"{ewhere}.text: Pflichtfeld fehlt")
+            elif len(t) > MAX_ESSENCE_TEXT:
+                errors.append(f"{ewhere}.text: höchstens {MAX_ESSENCE_TEXT} Zeichen – nur die Essenz")
+            c = e.get("count")
+            if not isinstance(c, int) or isinstance(c, bool) or c < 1:
+                errors.append(f"{ewhere}.count: muss eine ganze Zahl ab 1 sein")
     return errors
 
 
@@ -1217,23 +1267,11 @@ def upload_analysis(
     now = datetime.now(timezone.utc).isoformat()
     for a in raw["analyses"]:
         q = next(qq for qq in s.questions if qq.id == a["question_id"])
-        q.analysis = {
-            "summary": a["summary"],
-            "groups": [
-                {
-                    "title": g["title"],
-                    "description": g.get("description") or "",
-                    "count": g["count"],
-                    "examples": g.get("examples") or [],
-                }
-                for g in a.get("groups", [])
-            ],
-            "unique_ideas": [
-                {"idea": u["idea"], "reason": u.get("reason") or ""}
-                for u in a.get("unique_ideas", [])
-            ],
-            "uploaded_at": now,
-        }
+        answers = sorted(
+            ({"text": e["text"].strip(), "count": e["count"]} for e in a["answers"]),
+            key=lambda e: -e["count"],
+        )
+        q.analysis = {"answers": answers, "uploaded_at": now}
     db.commit()
     db.refresh(s)
     return s

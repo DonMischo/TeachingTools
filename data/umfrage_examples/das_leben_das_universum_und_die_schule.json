@@ -1,0 +1,276 @@
+{
+  "_hinweis": "Genau 42 Fragen. Keine Panik.",
+  "title": "Das Leben, das Universum und überhaupt alles – in der Schule",
+  "mode": "live",
+  "shared": false,
+  "questions": [
+    {
+      "intro": "Keine Panik! Diese Umfrage ist anonym – und sie hat genau 42 Fragen.",
+      "text": "In welche Klassenstufe gehst du?",
+      "kind": "choice",
+      "options": ["5", "6", "7", "8", "9", "10", "11", "12", "13"],
+      "chart": "balken"
+    },
+    {
+      "text": "Welchem Geschlecht fühlst du dich zugehörig?",
+      "kind": "choice",
+      "options": ["männlich", "weiblich", "divers", "keine Angabe"],
+      "same_slide": true,
+      "chart": "kreis"
+    },
+    {
+      "text": "Wie alt bist du?",
+      "kind": "number",
+      "num_min": 9,
+      "num_max": 21,
+      "unit": "Jahre",
+      "same_slide": true,
+      "chart": "histogramm"
+    },
+
+    {
+      "text": "Wie geht es dir heute – im Großen und Ganzen des Universums?",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 5,
+      "scale_min_label": "mies",
+      "scale_max_label": "großartig",
+      "scale_style": "smileys_auf",
+      "chart": "donut"
+    },
+    {
+      "text": "Hast du heute an dein Handtuch gedacht?",
+      "kind": "choice",
+      "options": ["Ja, ich habe immer eins dabei", "Nein", "Was für ein Handtuch?"],
+      "same_slide": true,
+      "chart": "donut"
+    },
+    {
+      "text": "Kurze Gegenfrage: Wofür könnte man in der Schule ein Handtuch brauchen?",
+      "kind": "text",
+      "show_if": { "question": 4, "options": [2] },
+      "same_slide": true,
+      "chart": "wortwolke"
+    },
+
+    {
+      "intro": "Mein Schulalltag – wie sehr stimmst du zu?",
+      "text": "Ich komme gern in die Schule.",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 5,
+      "scale_min_label": "stimme gar nicht zu",
+      "scale_max_label": "stimme voll zu",
+      "block": "alltag",
+      "chart": "likert"
+    },
+    { "text": "Ich weiß meistens, wozu ich etwas lerne.", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "stimme gar nicht zu", "scale_max_label": "stimme voll zu", "block": "alltag" },
+    { "text": "Die Pausen sind lang genug.", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "stimme gar nicht zu", "scale_max_label": "stimme voll zu", "block": "alltag" },
+    { "text": "Ich fühle mich in meiner Klasse wohl.", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "stimme gar nicht zu", "scale_max_label": "stimme voll zu", "block": "alltag" },
+    { "text": "Ich traue mich, im Unterricht Fragen zu stellen.", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "stimme gar nicht zu", "scale_max_label": "stimme voll zu", "block": "alltag" },
+    { "text": "Die Hausaufgaben sind gut zu schaffen.", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "stimme gar nicht zu", "scale_max_label": "stimme voll zu", "block": "alltag" },
+
+    {
+      "text": "Wie viele Minuten brauchst du morgens bis zur Schule?",
+      "kind": "number",
+      "num_min": 0,
+      "num_max": 180,
+      "unit": "Minuten",
+      "chart": "kennzahlen"
+    },
+    {
+      "text": "Wie kommst du meistens zur Schule?",
+      "kind": "choice",
+      "options": ["zu Fuß", "Fahrrad", "Bus oder Bahn", "Auto", "per Anhalter durch die Galaxis"],
+      "same_slide": true,
+      "chart": "saeulen"
+    },
+
+    {
+      "intro": "Die großen Fragen",
+      "text": "Welche Fächer helfen dir am meisten, die großen Fragen des Lebens zu verstehen?",
+      "kind": "multi",
+      "options": ["Mathe", "Deutsch", "Englisch", "Physik", "Biologie", "Geschichte", "Philosophie oder Ethik", "Kunst", "Sport", "Informatik"],
+      "max_choices": 3,
+      "chart": "balken"
+    },
+    {
+      "text": "Welche große Frage würdest du in Philosophie oder Ethik gern einmal besprechen?",
+      "kind": "text",
+      "show_if": { "question": 14, "options": [6] },
+      "same_slide": true,
+      "chart": "liste"
+    },
+
+    {
+      "text": "Wie viel hast du diese Woche gelernt – gefühlt?",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 6,
+      "scale_min_label": "gar nichts",
+      "scale_max_label": "ein ganzes Universum",
+      "chart": "flaeche"
+    },
+    {
+      "text": "Wie viele Stunden schläfst du vor einem Schultag?",
+      "kind": "number",
+      "num_min": 0,
+      "num_max": 14,
+      "unit": "Stunden",
+      "same_slide": true,
+      "chart": "histogramm"
+    },
+
+    {
+      "text": "Isst du in der Mensa?",
+      "kind": "choice",
+      "options": ["Ja, regelmäßig", "Manchmal", "Nie"],
+      "chart": "gestapelt"
+    },
+    {
+      "intro": "Die Mensa – das Restaurant am Ende der Pause. Bewerte wie mit Schulnoten.",
+      "text": "Geschmack",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 5,
+      "scale_min_label": "hervorragend",
+      "scale_max_label": "schrecklich",
+      "scale_style": "smileys_ab",
+      "block": "mensa",
+      "show_if": { "question": 18, "options": [0, 1] },
+      "same_slide": true,
+      "chart": "mittelwerte"
+    },
+    { "text": "Auswahl an Gerichten", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "hervorragend", "scale_max_label": "schrecklich", "scale_style": "smileys_ab", "block": "mensa" },
+    { "text": "Preis", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "hervorragend", "scale_max_label": "schrecklich", "scale_style": "smileys_ab", "block": "mensa" },
+    { "text": "Wartezeit an der Ausgabe", "kind": "scale", "scale_min": 1, "scale_max": 5, "scale_min_label": "hervorragend", "scale_max_label": "schrecklich", "scale_style": "smileys_ab", "block": "mensa" },
+    {
+      "text": "Was müsste die Mensa anbieten, damit du dort isst?",
+      "kind": "text",
+      "show_if": { "question": 18, "options": [2] },
+      "same_slide": true,
+      "chart": "wortwolke"
+    },
+
+    {
+      "intro": "Das Leben neben der Schule",
+      "text": "Womit verbringst du deine Freizeit am liebsten?",
+      "kind": "multi",
+      "options": ["Sport", "Musik", "Lesen", "Gaming", "Freunde treffen", "Serien und Filme", "Draußen sein", "Handtücher sortieren"],
+      "chart": "saeulen"
+    },
+    {
+      "text": "Wie viele Stunden am Tag bist du ungefähr am Handy?",
+      "kind": "number",
+      "num_min": 0,
+      "num_max": 24,
+      "unit": "Stunden",
+      "same_slide": true,
+      "chart": "kennzahlen"
+    },
+    {
+      "text": "Wie gut kommst du mit Stress in der Schule klar?",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 4,
+      "scale_min_label": "gar nicht",
+      "scale_max_label": "sehr gut",
+      "same_slide": true,
+      "chart": "balken"
+    },
+
+    {
+      "intro": "Das Universum danach – wie siehst du deine Zukunft?",
+      "text": "Ich habe schon eine Idee, was ich nach der Schule machen will.",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 6,
+      "scale_min_label": "trifft gar nicht zu",
+      "scale_max_label": "trifft voll zu",
+      "block": "zukunft",
+      "chart": "likert"
+    },
+    { "text": "Die Schule bereitet mich gut auf das Leben vor.", "kind": "scale", "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft gar nicht zu", "scale_max_label": "trifft voll zu", "block": "zukunft" },
+    { "text": "Ich mache mir Sorgen um die Zukunft unseres Planeten.", "kind": "scale", "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft gar nicht zu", "scale_max_label": "trifft voll zu", "block": "zukunft" },
+    { "text": "Ich glaube, dass ich in der Welt etwas verändern kann.", "kind": "scale", "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft gar nicht zu", "scale_max_label": "trifft voll zu", "block": "zukunft" },
+    { "text": "Künstliche Intelligenz wird meinen späteren Beruf verändern.", "kind": "scale", "scale_min": 1, "scale_max": 6, "scale_min_label": "trifft gar nicht zu", "scale_max_label": "trifft voll zu", "block": "zukunft" },
+
+    {
+      "text": "Stell dir vor, ein Babelfisch im Ohr übersetzt dir jede Sprache. Welches Sprachfach würdest du dann abwählen?",
+      "kind": "choice",
+      "options": ["Englisch", "Französisch", "Latein", "Spanisch", "Keins – ich lerne Sprachen trotzdem gern"],
+      "chart": "balken"
+    },
+    {
+      "text": "Wie sehr freust du dich auf die nächsten Ferien?",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 7,
+      "scale_min_label": "gar nicht",
+      "scale_max_label": "unendlich",
+      "scale_style": "smileys_auf",
+      "same_slide": true,
+      "chart": "gestapelt"
+    },
+
+    {
+      "intro": "Die Antwort",
+      "text": "Was ist die Antwort auf die Frage nach dem Leben, dem Universum und überhaupt allem?",
+      "kind": "number",
+      "chart": "histogramm"
+    },
+    {
+      "text": "Weißt du, woher diese Antwort kommt?",
+      "kind": "choice",
+      "options": ["Ja, klar", "Nein", "Ist das nicht einfach eine Zahl?"],
+      "same_slide": true,
+      "chart": "kreis"
+    },
+    {
+      "text": "Dann verrate es den anderen – aber ohne zu viel zu spoilern:",
+      "kind": "text",
+      "show_if": { "question": 35, "options": [0] },
+      "same_slide": true,
+      "chart": "liste"
+    },
+
+    {
+      "intro": "Die Schule verbessern",
+      "text": "Was würde deine Schule zu einem besseren Ort im Universum machen?",
+      "kind": "multi",
+      "options": ["Mehr Pausen", "Schönere Räume", "Mehr Projekte", "Weniger Hausaufgaben", "Mehr Mitbestimmung", "Schnelleres WLAN", "Mehr Ausflüge"],
+      "max_choices": 2,
+      "chart": "balken"
+    },
+    {
+      "text": "Wobei möchtest du mitbestimmen?",
+      "kind": "text",
+      "show_if": { "question": 37, "options": [4] },
+      "same_slide": true,
+      "chart": "liste"
+    },
+    {
+      "text": "Wie gut ist deine Schule insgesamt?",
+      "kind": "scale",
+      "scale_min": 1,
+      "scale_max": 10,
+      "scale_min_label": "Vogonen-Gedicht",
+      "scale_max_label": "Restaurant am Ende des Universums",
+      "same_slide": true,
+      "chart": "saeulen"
+    },
+
+    {
+      "text": "Was sollten wir an unserer Schule unbedingt beibehalten?",
+      "kind": "text",
+      "chart": "wortwolke"
+    },
+    {
+      "intro": "Frage 42 – geschafft. Danke fürs Mitmachen!",
+      "text": "Und deine ganz eigene Antwort: Was ist für dich der Sinn von Schule?",
+      "kind": "text",
+      "same_slide": true,
+      "chart": "liste"
+    }
+  ]
+}

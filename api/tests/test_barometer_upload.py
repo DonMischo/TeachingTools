@@ -1,6 +1,11 @@
 """Umfrage (barometer) template download + JSON upload."""
 import io
 import json
+from pathlib import Path
+
+from api.routers.barometer import KINDS
+
+BEISPIEL_42 = Path(__file__).resolve().parents[2] / "data" / "umfrage_examples" / "das_leben_das_universum_und_die_schule.json"
 
 
 def _auth(token: str) -> dict:
@@ -73,3 +78,14 @@ def test_uploaded_umfrage_is_hostable(client, teacher_token):
     r = client.get(f"/api/barometer/{code}", headers=_auth(teacher_token))
     assert r.status_code == 200
     assert r.json()["questions"][0]["text"] == "Wie geht es dir?"
+
+
+def test_beispielumfrage_42_laesst_sich_hochladen(client, teacher_token):
+    """Die Beispiel-Umfrage in data/umfrage_examples nutzt jedes Merkmal — sie
+    bricht als Erstes, wenn sich das Format aendert."""
+    payload = json.loads(BEISPIEL_42.read_text(encoding="utf-8"))
+    up = _upload(client, teacher_token, payload)
+    assert up.status_code == 201, up.text
+    questions = up.json()["questions"]
+    assert len(questions) == 42
+    assert {q["kind"] for q in questions} == set(KINDS)

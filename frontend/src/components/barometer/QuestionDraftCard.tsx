@@ -204,7 +204,7 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
 
       {item.kind === "text" && (
         <div className="text-xs text-[var(--text-muted)] ml-7">
-          Die Antworten siehst nur du. Über »KI-Auswertung« kannst du sie gruppieren lassen.
+          Die Antworten siehst nur du. Über »KI-Auswertung« werden sie zu kurzen Antworten mit Anzahl verdichtet.
         </div>
       )}
 

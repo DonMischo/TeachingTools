@@ -308,6 +308,62 @@ def test_export_enthaelt_verteilung_mittelwert_texte_und_keine_identitaeten(clie
     assert "g-1" not in dumped
 
 
+def test_export_beginnt_mit_ki_auftrag_und_antworten_pro_freitextfrage(client, db, teacher):
+    """Die Ergebnis-Datei laesst sich direkt einer KI geben: ganz oben der
+    Auftrag, dann pro Freitextfrage die Antworten, dann das Rueckgabeformat."""
+    r = _create(client, teacher, {"title": "Export", "questions": [
+        {"text": "Wie zufrieden?", "kind": "scale"},
+        {"text": "Was war gut?", "kind": "text"},
+        {"text": "Was fehlt?", "kind": "text"},
+    ]})
+    assert r.status_code == 201, r.text
+    code = r.json()["code"]
+    _, gut_qid, fehlt_qid = (q["id"] for q in r.json()["questions"])
+    s = db.query(BarometerSession).filter_by(code=code).one()
+    db.add(BarometerResponse(session_id=s.id, question_id=gut_qid, guest_id="g-1", text="Die Experimente"))
+    db.add(BarometerResponse(session_id=s.id, question_id=gut_qid, guest_id="g-2", text="Experimente!"))
+    db.add(BarometerResponse(session_id=s.id, question_id=fehlt_qid, guest_id="g-1", text="Mehr Pausen"))
+    db.flush()
+
+    client.cookies.clear()
+    body = client.get(f"{PREFIX}/{code}/export", headers=head(teacher)).json()
+    assert next(iter(body)) == "ki_auswertung", "der Auftrag steht ganz oben in der Datei"
+    ki = body["ki_auswertung"]
+    prompt = "\n".join(ki["prompt"])
+    assert "Essenz" in prompt and "count" in prompt
+
+    fragen = ki["fragen"]
+    assert [f["question_id"] for f in fragen] == [gut_qid, fehlt_qid]
+    assert fragen[0]["frage"] == "Was war gut?"
+    assert fragen[0]["antworten"] == ["Die Experimente", "Experimente!"]
+
+    fmt = ki["antwortformat"]
+    assert fmt["survey_code"] == code
+    assert [a["question_id"] for a in fmt["analyses"]] == [gut_qid, fehlt_qid]
+    # das Rueckgabeformat ist selbst gueltig und landet in genau dieser Umfrage
+    client.cookies.clear()
+    up = client.post(f"{PREFIX}/{code}/analysis", headers=head(teacher), files=_analysis_file(fmt))
+    assert up.status_code == 200, up.text
+
+
+def test_oeffentliche_ergebnisse_zeigen_die_essenz_aber_keine_rohtexte(client, db, teacher):
+    r = _create(client, teacher, {"title": "T", "questions": [{"text": "Was fehlt?", "kind": "text"}]})
+    code, qid = r.json()["code"], r.json()["questions"][0]["id"]
+    s = db.query(BarometerSession).filter_by(code=code).one()
+    db.add(BarometerResponse(session_id=s.id, question_id=qid, guest_id="g-1", text="Geheimer Rohtext mit Pausen"))
+    db.flush()
+    client.cookies.clear()
+    client.post(f"{PREFIX}/{code}/analysis", headers=head(teacher), files=_analysis_file(
+        {"survey_code": code, "analyses": [{"question_id": qid, "answers": [{"text": "Mehr Pausen", "count": 1}]}]}))
+    client.patch(f"{PREFIX}/{code}/results-public", headers=head(teacher), json={"public": True})
+
+    client.cookies.clear()
+    pub = client.get(f"{PREFIX}/{code}/public-results")
+    assert pub.status_code == 200, pub.text
+    assert pub.json()["questions"][0]["analysis"]["answers"] == [{"text": "Mehr Pausen", "count": 1}]
+    assert "Geheimer Rohtext" not in pub.text
+
+
 # ---------------------------------------------------------------------------
 # REST: analysis-prompt / analysis upload
 # ---------------------------------------------------------------------------
@@ -352,9 +408,10 @@ def test_analyse_hochladen_setzt_analysis_und_prueft_alle_faelle(client, db, tea
         "survey_code": code,
         "analyses": [{
             "question_id": text_qid,
-            "summary": "Gute Stimmung insgesamt.",
-            "groups": [{"title": "Mehr Pausen", "count": 2, "examples": ["mehr Pausen bitte"]}],
-            "unique_ideas": [{"idea": "Exkursion ins Museum", "reason": "nur einmal genannt"}],
+            "answers": [
+                {"text": "Exkursion ins Museum", "count": 1},
+                {"text": "Mehr Pausen", "count": 4},
+            ],
         }],
     }
     client.cookies.clear()
@@ -364,10 +421,23 @@ def test_analyse_hochladen_setzt_analysis_und_prueft_alle_faelle(client, db, tea
     client.cookies.clear()
     got = client.get(f"{PREFIX}/{code}", headers=head(teacher)).json()
     analysis = got["questions"][0]["analysis"]
-    assert analysis["summary"] == "Gute Stimmung insgesamt."
-    assert analysis["groups"][0]["title"] == "Mehr Pausen"
-    assert analysis["unique_ideas"][0]["idea"] == "Exkursion ins Museum"
-    assert "uploaded_at" in analysis
+    # nur die Essenz: kurze Antworten mit Anzahl, nach Anzahl sortiert — keine Zusammenfassung
+    assert set(analysis) == {"answers", "uploaded_at"}
+    assert analysis["answers"] == [{"text": "Mehr Pausen", "count": 4}, {"text": "Exkursion ins Museum", "count": 1}]
+
+    # das alte Format mit Zusammenfassung und Gruppen gilt nicht mehr
+    old_format = {"survey_code": code, "analyses": [{"question_id": text_qid, "summary": "Gut.",
+                                                     "groups": [{"title": "Pausen", "count": 2}]}]}
+    client.cookies.clear()
+    r_old = client.post(f"{PREFIX}/{code}/analysis", headers=head(teacher), files=_analysis_file(old_format))
+    assert r_old.status_code == 422
+    assert any("answers" in e for e in r_old.json()["detail"]["errors"])
+
+    # eine Antwort ohne Nennung ergibt keinen Balken
+    zero = {"survey_code": code, "analyses": [{"question_id": text_qid, "answers": [{"text": "Nichts", "count": 0}]}]}
+    client.cookies.clear()
+    r_zero = client.post(f"{PREFIX}/{code}/analysis", headers=head(teacher), files=_analysis_file(zero))
+    assert r_zero.status_code == 422
 
     # falscher survey_code
     wrong_code = dict(good_payload, survey_code="XXXXXX")
@@ -377,7 +447,7 @@ def test_analyse_hochladen_setzt_analysis_und_prueft_alle_faelle(client, db, tea
     assert any("gehört zur Umfrage" in e for e in r2.json()["detail"]["errors"])
 
     # question_id einer Skalenfrage statt einer Freitextfrage
-    scale_target = {"survey_code": code, "analyses": [{"question_id": scale_qid, "summary": "x", "groups": []}]}
+    scale_target = {"survey_code": code, "analyses": [{"question_id": scale_qid, "answers": [{"text": "x", "count": 1}]}]}
     client.cookies.clear()
     r3 = client.post(f"{PREFIX}/{code}/analysis", headers=head(teacher), files=_analysis_file(scale_target))
     assert r3.status_code == 422

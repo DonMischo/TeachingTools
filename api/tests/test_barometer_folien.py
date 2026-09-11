@@ -757,3 +757,39 @@ def test_erneutes_absenden_ohne_eine_antwort_zieht_die_alte_zurueck(client, db, 
                 assert seen[text_qid]["count"] == 0
                 assert seen[scale_qid]["distribution"] == {"3": 1}
     asyncio.run(run())
+
+
+# ---------------------------------------------------------------------------
+# Vorlage: jedes Merkmal einmal vorgefuehrt und fuer die KI erklaert
+# ---------------------------------------------------------------------------
+
+def test_vorlage_fuehrt_jedes_merkmal_vor_und_erklaert_es(client, teacher):
+    """Die Vorlage ist die Anleitung fuer eine KI: jedes Merkmal braucht eine
+    Regel in `_ai_instructions` und ein beschriftetes Beispiel."""
+    client.cookies.clear()
+    tpl = client.get(f"{PREFIX}/template", headers=head(teacher)).json()
+    instructions = tpl["_ai_instructions"]
+    assert isinstance(instructions, list), "eine Regel pro Zeile liest sich fuer Mensch und KI besser"
+    text = "\n".join(instructions)
+    for word in ("mode", "same_slide", "intro", "block", "show_if", "scale_style", "max_choices",
+                 "num_min", "unit", "chart", "likert", "mittelwerte", "shared"):
+        assert word in text, word
+
+    qs = tpl["questions"]
+    assert all(q.get("_beispiel") for q in qs), "jede Beispielfrage sagt, welches Merkmal sie zeigt"
+    for kind in baro.KINDS:
+        assert any(q.get("kind", "scale") == kind for q in qs), kind
+    for style in baro.SCALE_STYLES:
+        assert any(q.get("scale_style", "zahlen") == style for q in qs if q.get("kind", "scale") == "scale"), style
+    assert any(q.get("same_slide") for q in qs)
+    assert any(q.get("intro") and not q.get("block") for q in qs)
+    assert any(q.get("block") for q in qs)
+    parent_kinds = {qs[q["show_if"]["question"]].get("kind") for q in qs if q.get("show_if")}
+    assert parent_kinds == {"choice", "multi"}
+    assert any(q.get("show_if") and q.get("block") for q in qs), "bedingter Aussagen-Block"
+    assert any(q.get("max_choices") for q in qs)
+    assert any(q.get("kind") == "number" and q.get("unit") for q in qs)
+    assert any(q.get("kind") == "number" and q.get("num_min") is None for q in qs)
+
+    up = _upload(client, teacher, tpl)
+    assert up.status_code == 201, up.text

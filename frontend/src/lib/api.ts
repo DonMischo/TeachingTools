@@ -231,9 +231,8 @@ export type BarometerScaleStyle = "zahlen" | "smileys_auf" | "smileys_ab";
 export type BarometerShowIf = { question: number; options: number[]; parent_id?: number };
 export type BarometerAnswer = number | string | number[];
 export type BarometerAnalysis = {
-  summary: string;
-  groups: { title: string; description: string; count: number; examples: string[] }[];
-  unique_ideas: { idea: string; reason: string }[];
+  // Essenz der Freitext-Antworten: kurze Antworten mit Anzahl, nach Anzahl sortiert.
+  answers: { text: string; count: number }[];
   uploaded_at: string;
 };
 

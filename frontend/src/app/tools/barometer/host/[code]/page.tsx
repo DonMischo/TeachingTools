@@ -274,13 +274,13 @@ export default function BarometerHostPage() {
                     return (
                       <div key={seg.block} className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--surface)]">
                         <div className="flex items-start gap-3">
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             {first.intro && <div className="font-semibold text-sm">{first.intro}</div>}
                             <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Aussagen-Block</span>
                           </div>
                           <select aria-label="Darstellung" value={chartValue}
                             onChange={e => handleSetChart(seg.questions.map(q => q.id), e.target.value)}
-                            className="input text-xs py-1 w-auto">
+                            className="input !w-auto !text-xs !py-1 !px-2 shrink-0">
                             {BLOCK_CHART_TYPES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                           </select>
                         </div>
@@ -299,12 +299,12 @@ export default function BarometerHostPage() {
                           <div className="font-semibold text-sm">{q.text}</div>
                           <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{KIND_LABELS[q.kind]}</span>
                           {badge && (
-                            <div className="text-[10px] text-[var(--text-muted)] bg-[var(--bg)] inline-block rounded-full px-2 py-0.5 ml-2">{badge}</div>
+                            <div className="text-[10px] text-[var(--text-muted)] bg-[var(--bg)] w-fit rounded-md px-2 py-0.5 mt-1">{badge}</div>
                           )}
                         </div>
                         <select aria-label="Darstellung" value={chartValue || CHART_TYPES[q.kind][0].id}
                           onChange={e => handleSetChart([q.id], e.target.value)}
-                          className="input text-xs py-1 w-auto">
+                          className="input !w-auto !text-xs !py-1 !px-2 shrink-0">
                           {CHART_TYPES[q.kind].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                         </select>
                       </div>
@@ -354,9 +354,9 @@ export default function BarometerHostPage() {
           {showAi && (
             <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[var(--border)]">
               <ol className="text-xs text-[var(--text-muted)] pt-3 leading-relaxed list-decimal list-inside">
-                <li>Prompt kopieren</li>
+                <li>Prompt kopieren – oder gleich die Datei »Ergebnisse (JSON)« an die KI geben, der Auftrag steht darin ganz oben</li>
                 <li>in ChatGPT/Claude/… einfügen</li>
-                <li>die JSON-Antwort als .json speichern und hier hochladen — sie landet bei genau dieser Umfrage</li>
+                <li>die JSON-Antwort als .json speichern und hier hochladen — pro Frage erscheint die Essenz als Balkendiagramm, auch auf der geteilten Ergebnisseite</li>
               </ol>
               <pre className="text-xs bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 whitespace-pre-wrap leading-relaxed text-[var(--text-muted)] max-h-48 overflow-y-auto">
                 {aiPrompt}

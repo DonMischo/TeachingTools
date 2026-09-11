@@ -204,7 +204,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🔗 Teilen", text: "Mit dem Schalter »Öffentlich« wird die Umfrage für Kolleg·innen sichtbar." },
       { label: "📄 Vorlage", text: "»Vorlage« lädt umfrage-vorlage.json mit Beispielfragen und KI-Anleitung herunter; »Hochladen« importiert eine fertige .json-Datei als neue Umfrage." },
       { label: "📊 Ergebnisse", text: "Diagrammart pro Frage umschaltbar, »Ergebnisse (JSON)« lädt alle Ergebnisse anonym herunter, »Ergebnisse teilen« zeigt einen QR auf eine öffentliche Ergebnisseite (ohne Freitext-Antworten)." },
-      { label: "🤖 KI-Auswertung", text: "Prompt kopieren, externe KI gruppiert die Freitext-Antworten und hebt besondere Ideen hervor, JSON-Antwort hochladen — sie wird bei genau dieser Umfrage angezeigt. Keine KI direkt in der App." },
+      { label: "🤖 KI-Auswertung", text: "Prompt kopieren oder die Datei »Ergebnisse (JSON)« an eine externe KI geben (der Auftrag steht ganz oben). Die KI fasst die Freitext-Antworten jeder Frage zu kurzen Antworten mit Anzahl zusammen; die JSON-Antwort hochladen — sie erscheint bei genau dieser Umfrage als Balkendiagramm, auch auf der geteilten Ergebnisseite. Keine KI direkt in der App." },
     ],
   },
   "exit-ticket": {
