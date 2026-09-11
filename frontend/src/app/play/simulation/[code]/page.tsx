@@ -25,7 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Tippen from "@/components/tippen/Tippen";
-import MausFuehrerschein from "@/components/maus/MausFuehrerschein";
+import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
@@ -131,7 +131,16 @@ export default function SimulationJoinPage() {
         // sammelt je Sitzung, nicht je Werkzeug.
         ? <KiWerkstatt zugang={{ code, token: guest.token, name: guest.session?.name }} />
         : session.tool_slug === "maus"
-          ? <MausFuehrerschein zugang={{ code, token: guest.token }} name={guest.session?.name} />
+          ? <MausFuehrerschein
+              zugang={{ code, token: guest.token }}
+              name={auth?.student?.display_name ?? guest.session?.name}
+              // Angemeldete behalten ihren Stand je Konto, Gäste je Code und Gast-Id.
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`}
+              konto={auth ? { typ: auth.user_type === "student" ? "student" : "teacher" } : undefined}
+              klasse={auth?.student?.klasse ?? null}
+            />
           : tool.node;
 
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.

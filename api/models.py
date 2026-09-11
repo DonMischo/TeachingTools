@@ -2166,3 +2166,52 @@ class MausBestenliste(Base):
     # Woran gemessen wurde: Lektionstitel, Übungsstufe, …
     kontext: Mapped[str | None] = mapped_column(String(200), nullable=True)
     erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Ob diese Bestleistung mit eingeschalteter Hilfestellung erzielt wurde.
+    hilfe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+
+
+class MausFortschritt(Base):
+    """Fortschritt einer Person in einer Maus-Sitzung — eine Zeile je Teilnehmer,
+    damit die Lehrkraft live sieht, wer welche Stufe des Führerscheins schon
+    geschafft hat. Anders als die Bestenliste ist das an eine konkrete Sitzung
+    gebunden, nicht global."""
+    __tablename__ = "maus_fortschritt"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_maus_fortschritt_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_maus_fortschritt_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_maus_fortschritt_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    hilfe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # {"<stufen_id>": {"punkte": int, "sterne": int, "dauer_ms": int}}
+    stufen: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    # Liste der bestandenen Teile (1 und/oder 2).
+    bestanden: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class MausPruefung(Base):
+    """Bestandene Abschlussprüfung eines Teils des Maus-Führerscheins — je
+    Schüler:in und Teil genau einmal, damit die Hauspunkte nicht doppelt
+    vergeben werden."""
+    __tablename__ = "maus_pruefungen"
+    __table_args__ = (UniqueConstraint("student_id", "teil", name="uq_maus_pruefung_student_teil"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    teil: Mapped[int] = mapped_column(Integer, nullable=False)
+    punkte: Mapped[int] = mapped_column(Integer, nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    bestanden_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

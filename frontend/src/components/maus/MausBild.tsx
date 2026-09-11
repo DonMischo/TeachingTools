@@ -6,7 +6,7 @@
  * Doppelklick, dauerhaft beim Ziehen. So sieht ein Kind in der Vorführung,
  * *welche* Taste gemeint ist, bevor es sie selbst sucht.
  */
-export type MausTaste = "links" | "rechts" | "doppel" | "halten" | null;
+export type MausTaste = "links" | "rechts" | "doppel" | "halten" | "rad" | null;
 
 const KOERPER = "M50 24 C24 24 16 46 16 70 L16 100 C16 124 31 136 50 136 C69 136 84 124 84 100 L84 70 C84 46 76 24 50 24 Z";
 const LINKS = "M50 24 C24 24 16 46 16 64 L49 64 L49 24 Z";
@@ -25,6 +25,7 @@ export function MausBild({ taste = null, groesse = 72 }: { taste?: MausTaste; gr
         taste === "rechts" ? "Maus: rechte Taste" :
         taste === "doppel" ? "Maus: linke Taste zweimal" :
         taste === "halten" ? "Maus: linke Taste festhalten" :
+        taste === "rad" ? "Maus: Mausrad drehen" :
         taste === "links" ? "Maus: linke Taste" : "Maus"
       }
       data-taste={taste ?? undefined}
@@ -44,7 +45,9 @@ export function MausBild({ taste = null, groesse = 72 }: { taste?: MausTaste; gr
       <path d={RECHTS} style={{ fill: taste === "rechts" ? "var(--accent, #3b82f6)" : "#e5e7eb" }} className={taste === "rechts" ? "maus-druck" : ""} />
       <line x1="50" y1="24" x2="50" y2="64" stroke="#6b7280" strokeWidth="2" />
       <line x1="16" y1="64" x2="84" y2="64" stroke="#6b7280" strokeWidth="2" />
-      <rect x="45.5" y="34" width="9" height="18" rx="4.5" fill="#9ca3af" />
+      <rect x="45.5" y="34" width="9" height="18" rx="4.5"
+        style={{ fill: taste === "rad" ? "var(--accent, #3b82f6)" : "#9ca3af" }}
+        className={taste === "rad" ? "maus-druck" : ""} />
       {/* Gesicht */}
       <circle cx="38" cy="88" r="4.5" fill="#374151" />
       <circle cx="62" cy="88" r="4.5" fill="#374151" />

@@ -16,7 +16,20 @@ import { DOPPELKLICK, KLICK, hoechstPunkte } from "./klickspiele";
 import { KOPIER_AUFGABEN, MARKIER_AUFGABEN, PUNKTE_KOPIEREN, PUNKTE_MARKIEREN } from "./text";
 import { SPUREN } from "./spur";
 
-export type StufeId = "klick" | "doppelklick" | "rechtsklick" | "ziehen" | "markieren" | "kopieren";
+export type StufeId =
+  | "klick" | "doppelklick" | "rechtsklick" | "ziehen" | "markieren" | "kopieren"
+  | "scrollen" | "tastatur" | "explorer" | "fenster" | "screenshot";
+
+export type Teil = 1 | 2;
+
+/** Die übenden Stufen je Teil — »Speichern« schließt jeden Teil ab und zählt nicht mit. */
+export const TEILE: Record<Teil, StufeId[]> = {
+  1: ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"],
+  2: ["scrollen", "tastatur", "explorer", "fenster", "screenshot"],
+};
+
+/** Jede Stufe von Teil 2 bringt höchstens so viel — Punkte = 1000 · gelöst / Aufgaben. */
+export const PUNKTE_TEIL2 = 1000;
 
 export type StufenErgebnis = {
   punkte: number;
@@ -30,7 +43,7 @@ export type Ergebnisse = Partial<Record<StufeId, StufenErgebnis>>;
 export const PUNKTE_RECHTSKLICK = 500;
 
 /** Die Obergrenzen, die auch der Server prüft (api/routers/maus.py). */
-export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 50000 } as const;
+export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 60000 } as const;
 export type MausModus = keyof typeof GRENZEN;
 
 export const HOECHST: Record<StufeId, number> = {
@@ -40,10 +53,42 @@ export const HOECHST: Record<StufeId, number> = {
   ziehen: SPUREN.length * 1000 + 2 * 1000,
   markieren: MARKIER_AUFGABEN.length * PUNKTE_MARKIEREN,
   kopieren: KOPIER_AUFGABEN.length * PUNKTE_KOPIEREN,
+  scrollen: PUNKTE_TEIL2,
+  tastatur: PUNKTE_TEIL2,
+  explorer: PUNKTE_TEIL2,
+  fenster: PUNKTE_TEIL2,
+  screenshot: PUNKTE_TEIL2,
 };
+
+/**
+ * Woran die Sterne gemessen werden. Meist das Höchstmaß — nur bei den
+ * Klickspielen nicht: deren Höchstwert verlangt Klicks in null Sekunden auf
+ * der höchsten Stufe. Bezug ist dort ein sehr guter Lauf eines Kindes.
+ */
+export const STERN_BEZUG: Record<StufeId, number> = {
+  ...HOECHST,
+  klick: 12000,
+  doppelklick: 6500,
+};
+
+/** 0 = nicht gemacht; sonst 1–3 Sterne (ab 45 % bzw. 80 % des Bezugs). */
+export function sterne(stufe: StufeId, punkte: number): 0 | 1 | 2 | 3 {
+  if (punkte <= 0) return 0;
+  const anteil = punkte / STERN_BEZUG[stufe];
+  return anteil >= 0.8 ? 3 : anteil >= 0.45 ? 2 : 1;
+}
 
 export function gesamt(ergebnisse: Ergebnisse): number {
   return Object.values(ergebnisse).reduce((s, e) => s + (e?.punkte ?? 0), 0);
+}
+
+export function teilSumme(ergebnisse: Ergebnisse, teil: Teil): number {
+  return TEILE[teil].reduce((s, id) => s + (ergebnisse[id]?.punkte ?? 0), 0);
+}
+
+/** Bestanden heißt: jede Stufe des Teils geschafft, keine übersprungen. */
+export function teilBestanden(ergebnisse: Ergebnisse, teil: Teil): boolean {
+  return TEILE[teil].every(id => (ergebnisse[id]?.punkte ?? 0) > 0);
 }
 
 export function sekunden(ms: number): string {

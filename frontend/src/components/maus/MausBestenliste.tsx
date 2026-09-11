@@ -2,12 +2,16 @@
 /**
  * Die besten hundert je Liste — auch Gäste stehen darin.
  *
+ * Eingrenzen lässt sich auf die eigene Sitzung (wer über denselben Code
+ * mitmacht) und auf die eigene Klasse: am Beamer interessiert selten die
+ * ganze Schule. 🤝 markiert Runden im Hilfsmodus.
+ *
  * Weil Gäste ihren Namen selbst eintippen, kann eine Admin-Person einzelne
  * Einträge löschen (unpassende Namen).
  */
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type MausModus, type MausZugang } from "@/lib/api";
+import { api, type MausFilter, type MausModus, type MausZugang } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 const LISTEN: { id: MausModus; label: string }[] = [
@@ -17,15 +21,31 @@ const LISTEN: { id: MausModus; label: string }[] = [
   { id: "ziehen", label: "✋ Ziehen" },
 ];
 
-export default function MausBestenliste({ zugang }: { zugang?: MausZugang }) {
+type Bereich = "alle" | "sitzung" | "klasse";
+
+export default function MausBestenliste({
+  zugang, sitzungCode, klasse,
+}: {
+  zugang?: MausZugang;
+  /** Code der Sitzung, auf die sich eingrenzen lässt (Beitritt oder Sitzung der Lehrkraft). */
+  sitzungCode?: string | null;
+  /** Klasse des angemeldeten Kindes. */
+  klasse?: string | null;
+}) {
   const { auth } = useAuth();
   const admin = auth?.role === "admin";
   const qc = useQueryClient();
   const [modus, setModus] = useState<MausModus>("gesamt");
+  const [bereich, setBereich] = useState<Bereich>(sitzungCode ? "sitzung" : "alle");
+
+  const filter: MausFilter =
+    bereich === "sitzung" && sitzungCode ? { sitzung: sitzungCode }
+      : bereich === "klasse" && klasse ? { klasse }
+        : {};
 
   const { data: eintraege = [], isLoading, isError } = useQuery({
-    queryKey: ["maus-bestenliste", modus, zugang?.code ?? null],
-    queryFn: () => api.mausBestenliste.liste(modus, zugang),
+    queryKey: ["maus-bestenliste", modus, zugang?.code ?? null, filter.sitzung ?? null, filter.klasse ?? null],
+    queryFn: () => api.mausBestenliste.liste(modus, zugang, filter),
   });
 
   async function loeschen(id: number, name: string) {
@@ -34,23 +54,38 @@ export default function MausBestenliste({ zugang }: { zugang?: MausZugang }) {
     qc.invalidateQueries({ queryKey: ["maus-bestenliste"] });
   }
 
+  const knopf = (aktiv: boolean) =>
+    "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
+    (aktiv ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "border-[var(--border)] hover:border-[var(--accent)]");
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
         {LISTEN.map(l => (
-          <button
-            key={l.id}
-            onClick={() => setModus(l.id)}
-            aria-pressed={modus === l.id}
-            className={
-              "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
-              (modus === l.id ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "border-[var(--border)] hover:border-[var(--accent)]")
-            }
-          >
+          <button key={l.id} onClick={() => setModus(l.id)} aria-pressed={modus === l.id} className={knopf(modus === l.id)}>
             {l.label}
           </button>
         ))}
       </div>
+
+      {(sitzungCode || klasse) && (
+        <div className="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="Eingrenzen">
+          <span className="text-xs text-[var(--text-muted)]">Zeigen:</span>
+          <button onClick={() => setBereich("alle")} aria-pressed={bereich === "alle"} className={knopf(bereich === "alle")}>
+            Ganze Schule
+          </button>
+          {sitzungCode && (
+            <button onClick={() => setBereich("sitzung")} aria-pressed={bereich === "sitzung"} className={knopf(bereich === "sitzung")}>
+              Diese Sitzung
+            </button>
+          )}
+          {klasse && (
+            <button onClick={() => setBereich("klasse")} aria-pressed={bereich === "klasse"} className={knopf(bereich === "klasse")}>
+              Klasse {klasse}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
         {isLoading && <p className="text-sm text-[var(--text-muted)] p-6 text-center">wird geladen …</p>}
@@ -71,6 +106,7 @@ export default function MausBestenliste({ zugang }: { zugang?: MausZugang }) {
                   {e.name}
                   {e.klasse && <span className="text-[var(--text-muted)] ml-2 text-xs">{e.klasse}</span>}
                   {e.gast && <span className="text-[var(--text-muted)] ml-2 text-xs">Gast</span>}
+                  {e.hilfe && <span className="ml-2 text-xs" title="Im Hilfsmodus erspielt">🤝</span>}
                 </span>
                 {e.kontext && <span className="hidden sm:block w-56 truncate text-xs text-[var(--text-muted)]">{e.kontext}</span>}
                 <span className="w-24 text-right font-black tabular-nums">

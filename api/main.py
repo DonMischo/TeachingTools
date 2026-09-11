@@ -83,6 +83,7 @@ from .routers import twofa as twofa_router
 app.include_router(twofa_router.router)
 from .routers import maus as maus_router
 app.include_router(maus_router.router)
+app.include_router(maus_router.router_sitzung)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -320,6 +321,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_questions ADD COLUMN IF NOT EXISTS unit VARCHAR(20)",
         "ALTER TABLE barometer_responses ADD COLUMN IF NOT EXISTS number DOUBLE PRECISION",
         "ALTER TABLE barometer_responses ADD COLUMN IF NOT EXISTS choices JSON",
+        "ALTER TABLE maus_bestenliste ADD COLUMN IF NOT EXISTS hilfe BOOLEAN NOT NULL DEFAULT FALSE",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here
         # for a genuinely new *column* on a table that may already exist from an

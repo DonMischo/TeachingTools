@@ -8,9 +8,19 @@ export default function MausPage() {
   const { auth } = useAuth();
   const name = auth?.student?.display_name
     ?? (auth?.teacher ? `${auth.teacher.first_name} ${auth.teacher.last_name.slice(0, 1)}.` : "");
+  const istSchueler = auth?.user_type === "student";
+  const id = auth?.student?.id ?? auth?.teacher?.id;
   return (
     <RequireAccount icon="🐭" title="Maus-Führerschein">
-      <MausFuehrerschein action={<ToolSessionBar tool="maus" title="Maus-Führerschein" />} name={name} />
+      <MausFuehrerschein
+        action={<ToolSessionBar tool="maus" title="Maus-Führerschein" />}
+        name={name}
+        // Je Konto ein eigener Stand — am Schulrechner melden sich nacheinander mehrere an.
+        speicherSchluessel={`konto-${auth?.user_type ?? "unbekannt"}-${id ?? 0}`}
+        konto={auth ? { typ: istSchueler ? "student" : "teacher" } : undefined}
+        klasse={auth?.student?.klasse ?? null}
+        verwaltung={!!auth && !istSchueler}
+      />
     </RequireAccount>
   );
 }

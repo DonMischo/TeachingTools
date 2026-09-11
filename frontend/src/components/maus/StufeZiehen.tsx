@@ -13,6 +13,7 @@ import { DATEI_ZONEN, TIER_ZONEN, dateiRunde, rundenPunkte, tierRunde, zoneBei, 
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt, type Ort } from "./Demo";
+import { HILFE_GROESSE, useMausKontext } from "./MausKontext";
 
 /** Wohin das eigene Tier will. */
 const FUTTER: Record<string, string> = {
@@ -105,6 +106,9 @@ function Spur({
 
   const fertig = nr >= SPUREN.length;
   const weg = SPUREN[Math.min(nr, SPUREN.length - 1)];
+  const { hilfe } = useMausKontext();
+  // Hilfsmodus: ein breiteres Band — der Weg bleibt derselbe.
+  const halbbreite = weg.halbbreite * (hilfe ? HILFE_GROESSE : 1);
   const tier = AVATARS.find(a => a.id === avatar) ?? AVATARS[0];
   const d = pfad(weg.punkte);
   const stueck = Math.floor((weg.punkte.length - 1) / ABSCHNITTE);
@@ -130,7 +134,7 @@ function Spur({
     const p = inFlaeche(e);
     if (!p) return;
     const hier = weg.punkte[s.index];
-    if (!greifbar(hier, p, weg.halbbreite)) {
+    if (!greifbar(hier, p, halbbreite)) {
       setHinweis({ text: "Zeige genau auf dein Tier und halte dann die linke Taste gedrückt.", gut: false });
       return;
     }
@@ -149,7 +153,7 @@ function Spur({
     const p = inFlaeche(e);
     if (!p) return;
     const q = { x: p.x + s.versatz.x, y: p.y + s.versatz.y };
-    const r = bewege(weg.punkte, weg.halbbreite, s.index, s.letzter, q);
+    const r = bewege(weg.punkte, halbbreite, s.index, s.letzter, q);
     if (r.draussen) {
       s.zieht = false;
       s.raus += 1;
@@ -257,7 +261,7 @@ function Spur({
           data-testid="spur"
         >
           {/* Farben mit var() gehören in style — im stroke-Attribut ignoriert der Browser sie. */}
-          <path d={d} fill="none" style={{ stroke: "var(--surface-hover)" }} strokeWidth={weg.halbbreite * 2} strokeLinecap="round" strokeLinejoin="round" />
+          <path d={d} fill="none" style={{ stroke: "var(--surface-hover)" }} strokeWidth={halbbreite * 2} strokeLinecap="round" strokeLinejoin="round" />
           <path d={d} fill="none" style={{ stroke: "var(--text-muted)" }} strokeWidth="2" strokeDasharray="6 10" opacity="0.5" />
           <path d={pfad(weg.punkte.slice(0, index + 1))} fill="none" style={{ stroke: "var(--accent)" }} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
           {[1, 2, 3].map(k => {

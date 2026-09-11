@@ -5,7 +5,9 @@ import {
 import { SPUREN, abtasten, bewege, geschafft, rastpunkt, spurPunkte } from "@/lib/maus/spur";
 import { LEBENSRAUM, TIER_ZONEN, rundenPunkte, tierRunde, zoneBei } from "@/lib/maus/aufraeumen";
 import { ABSAETZE, GANZER_TEXT, KOPIER_AUFGABEN, MARKIER_AUFGABEN, passt } from "@/lib/maus/text";
-import { GRENZEN, HOECHST, gesamt, nichtssagenderName, pruefsumme } from "@/lib/maus/ergebnis";
+import {
+  GRENZEN, HOECHST, TEILE, gesamt, nichtssagenderName, pruefsumme, sterne, teilBestanden, teilSumme,
+} from "@/lib/maus/ergebnis";
 import { AVATARS } from "@/components/AvatarPicker";
 
 const schnell = { treffer: true, ms: 500 };
@@ -177,6 +179,26 @@ describe("Markieren und Kopieren", () => {
 describe("Ergebnis", () => {
   it("zählt die Punkte aller Stufen zusammen", () => {
     expect(gesamt({ klick: { punkte: 100, dauerMs: 0, details: [] }, ziehen: { punkte: 50, dauerMs: 0, details: [] } })).toBe(150);
+  });
+
+  it("vergibt Sterne nach Anteil — bei den Klickspielen gemessen an einem sehr guten Lauf", () => {
+    expect(sterne("markieren", 0)).toBe(0);
+    expect(sterne("markieren", HOECHST.markieren)).toBe(3);
+    expect(sterne("markieren", HOECHST.markieren * 0.5)).toBe(2);
+    expect(sterne("markieren", 1)).toBe(1);
+    // 12 000 im Klicken sind drei Sterne, obwohl das Höchstmaß 24 000 wäre.
+    expect(sterne("klick", 10000)).toBe(3);
+  });
+
+  it("zählt je Teil und besteht nur ohne Lücke", () => {
+    const voll = (id: string) => ({ [id]: { punkte: 100, dauerMs: 0, details: [] } });
+    const teil1 = Object.assign({}, ...TEILE[1].map(voll));
+    expect(teilBestanden(teil1, 1)).toBe(true);
+    expect(teilBestanden(teil1, 2)).toBe(false);
+    expect(teilSumme(teil1, 1)).toBe(600);
+    expect(teilSumme(teil1, 2)).toBe(0);
+    const luecke = { ...teil1, rechtsklick: { punkte: 0, dauerMs: 0, details: [] } };
+    expect(teilBestanden(luecke, 1)).toBe(false);
   });
 
   it("erkennt eine Datei an ihrer Prüfsumme wieder", () => {

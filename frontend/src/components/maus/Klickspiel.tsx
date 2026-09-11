@@ -19,6 +19,7 @@ import { sekunden, type StufenErgebnis } from "@/lib/maus/ergebnis";
 import { tierName } from "@/lib/maus/tiere";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo } from "./Demo";
+import { HILFE_ZEIT, useMausKontext } from "./MausKontext";
 
 type Art = "klick" | "doppelklick";
 type Runde = { raster: string[]; ziel: string; nr: number; seit: number };
@@ -34,9 +35,14 @@ export default function Klickspiel({
   art, onFertig, onWeiter,
 }: { art: Art; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
   const spiel = art === "klick" ? KLICK : DOPPELKLICK;
+  const { hilfe } = useMausKontext();
+  // Hilfsmodus: höchstens 4×4 — die Felder bleiben groß genug zum Treffen.
+  const stufen = hilfe
+    ? spiel.stufen.map(s => ({ spalten: Math.min(s.spalten, 4), zeilen: Math.min(s.zeilen, 4) }))
+    : spiel.stufen;
   const [phase, setPhase] = useState<"bereit" | "laeuft" | "fertig">("bereit");
   const [stufe, setStufe] = useState(0);
-  const [runde, setRunde] = useState<Runde>(() => neueRunde(spiel.stufen[0].spalten * spiel.stufen[0].zeilen, 0));
+  const [runde, setRunde] = useState<Runde>(() => neueRunde(stufen[0].spalten * stufen[0].zeilen, 0));
   const [treffer, setTreffer] = useState(0);
   const [punkte, setPunkte] = useState(0);
   const [hinweis, setHinweis] = useState<Hinweis>(null);
@@ -52,9 +58,9 @@ export default function Klickspiel({
   const rasterRef = useRef<HTMLDivElement>(null);
 
   const demo = useDemo();
-  const { spalten, zeilen } = spiel.stufen[stufe];
-  // Jeder Treffer macht die Zeit fürs nächste Tier etwas knapper.
-  const zeitMs = zeitFuer(spiel, treffer);
+  const { spalten, zeilen } = stufen[stufe];
+  // Jeder Treffer macht die Zeit fürs nächste Tier etwas knapper; mit Hilfe gibt es mehr.
+  const zeitMs = Math.round(zeitFuer(spiel, treffer) * (hilfe ? HILFE_ZEIT : 1));
   const avatar = AVATARS.find(a => a.id === runde.ziel)!;
 
   function versuch(getroffen: boolean, ms: number, meldung?: Hinweis) {
@@ -106,7 +112,7 @@ export default function Klickspiel({
     // Ein neues Tier gibt es nach Treffer, abgelaufener Zeit oder Stufenwechsel —
     // nach einem Fehlgriff bleibt das Ziel stehen.
     if (getroffen || ms >= zeitMs || neu !== stufe) {
-      const s = spiel.stufen[neu];
+      const s = stufen[neu];
       setRunde(neueRunde(s.spalten * s.zeilen, runde.nr + 1, runde.ziel));
     }
   }
@@ -137,7 +143,7 @@ export default function Klickspiel({
     setTreffer(0);
     setPunkte(0);
     setHinweis(null);
-    setRunde(neueRunde(spiel.stufen[0].spalten * spiel.stufen[0].zeilen, 0));
+    setRunde(neueRunde(stufen[0].spalten * stufen[0].zeilen, 0));
     setPhase("bereit");
   }
 

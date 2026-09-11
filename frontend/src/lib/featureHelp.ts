@@ -74,8 +74,13 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
   },
   maus: {
     title: "Maus-Führerschein",
-    intro: "Grundkurs am Computer für Kinder ab etwa zehn Jahren — sieben Stufen, jede mit »Vorführen« und »Weiter«.",
+    intro: "Grundkurs am Computer für Kinder ab etwa zehn Jahren — Teil 1 (Maus) und Teil 2 (Tastatur, Dateien, Fenster), jede Stufe mit »Vorführen«, »Weiter« und 🔊 Vorlesen.",
     sections: [
+      { label: "⭐ Sterne & Fortschritt", text: "Jede geschaffte Stufe bekommt 1–3 Sterne. Der Stand bleibt beim Neuladen erhalten — je Konto bzw. je Gast, damit am selben Rechner jedes Kind seinen eigenen hat." },
+      { label: "🤝 Hilfsmodus", text: "Schalter oben rechts: größere Ziele, mehr Zeit, breitere Wege. Für Kinder, die mit der Maus noch langsam sind. Runden im Hilfsmodus stehen mit 🤝 in der Bestenliste." },
+      { label: "🎓 Prüfung", text: "Je Teil ein Durchgang am Stück, ohne Vorführung. Bestanden ist, wer keine Stufe überspringt. Schülerkonten bekommen beim ersten Bestehen je Teil einmalig 5 Hauspunkte für ihre Klasse; das Blatt bekommt einen Stempel." },
+      { label: "👩‍🏫 Klassenübersicht", text: "Auf der Werkzeugseite: alle, die über deinen Code mitmachen, mit Sternen je Stufe und bestandenen Prüfungen. Aktualisiert sich alle fünf Sekunden." },
+      { label: "🖱️ Teil 2", text: "Scrollen (Mausrad, Scrollleiste, Umschalt + Rad), Tastatur (Umschalt, Rücktaste, Entf, Pfeile, Pos1/Ende, Strg + Z, Strg + X), Dateien ordnen in einem nachgebauten Explorer (Ordner anlegen, F2, Strg-/Umschalt-Klick, verschieben), Fenster (maximieren, minimieren, verschieben, Größe, Alt + Tab, schließen) und Bildschirmfoto (⊞ + Umschalt + S, einfügen, speichern)." },
       { label: "▶ Vorführen", text: "Ein Mauszeiger macht die Aufgabe langsam vor (etwa drei Sekunden je Schritt). Daneben leuchtet an einer Maus die richtige Taste; bei Tastenkürzeln erscheint die Tastatur aus der Schreibübung mit den gedrückten Tasten." },
       { label: "👆 1 Klicken", text: "Oben steht ein Tier, darunter ein Raster aus Tieren. Anfangs 3×3 große Felder; wer schnell und sicher trifft (fünf Versuche, höchstens ein Fehlgriff, Median unter 60 % der Zeitgrenze), bekommt kleinere Felder bis 6×5. Zwei Fehlgriffe machen es wieder leichter. Anfangs 6 s je Tier, mit jedem Treffer etwas weniger (bis 2 s); schnelle Klicks bringen deutlich mehr Punkte. 20 Treffer." },
       { label: "✌️ 2 Doppelklick", text: "Das Raster bleibt 6×5, das Ziel blinkt. Anfangs 7 s je Tier, mit jedem Treffer etwas weniger (bis 2,5 s). Misslingt ein Doppelklick, steht dort warum: zu langsam oder die Maus hat gewackelt. 15 Treffer." },

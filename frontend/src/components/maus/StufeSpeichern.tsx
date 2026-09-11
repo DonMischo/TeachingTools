@@ -13,8 +13,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@/components/AvatarPicker";
 import {
-  HOECHST, bekannteBlaetter, gesamt, merkeBlatt, nichtssagenderName, pruefsumme,
-  type Ergebnisse, type StufeId,
+  bekannteBlaetter, merkeBlatt, nichtssagenderName, pruefsumme, sterne, teilSumme,
+  type Ergebnisse, type StufeId, type Teil,
 } from "@/lib/maus/ergebnis";
 import { tierName } from "@/lib/maus/tiere";
 import { Stufenkopf } from "./Stufenkopf";
@@ -26,14 +26,28 @@ const EMOJI = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-seri
 const SCHRIFT = '"Segoe UI",system-ui,sans-serif';
 const BLAU = "#2563eb";
 
-export const BLATT_STUFEN: { id: StufeId; icon: string; titel: string }[] = [
-  { id: "klick", icon: "👆", titel: "Klicken" },
-  { id: "doppelklick", icon: "✌️", titel: "Doppelklick" },
-  { id: "rechtsklick", icon: "📋", titel: "Rechtsklick" },
-  { id: "ziehen", icon: "✋", titel: "Ziehen und Ablegen" },
-  { id: "markieren", icon: "🖍️", titel: "Markieren" },
-  { id: "kopieren", icon: "📄", titel: "Kopieren und Einfügen" },
-];
+export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: string }[]> = {
+  1: [
+    { id: "klick", icon: "👆", titel: "Klicken" },
+    { id: "doppelklick", icon: "✌️", titel: "Doppelklick" },
+    { id: "rechtsklick", icon: "📋", titel: "Rechtsklick" },
+    { id: "ziehen", icon: "✋", titel: "Ziehen und Ablegen" },
+    { id: "markieren", icon: "🖍️", titel: "Markieren" },
+    { id: "kopieren", icon: "📄", titel: "Kopieren und Einfügen" },
+  ],
+  2: [
+    { id: "scrollen", icon: "🖱️", titel: "Scrollen" },
+    { id: "tastatur", icon: "⌨️", titel: "Tastatur" },
+    { id: "explorer", icon: "📁", titel: "Dateien ordnen" },
+    { id: "fenster", icon: "🪟", titel: "Fenster" },
+    { id: "screenshot", icon: "📸", titel: "Bildschirmfoto" },
+  ],
+};
+
+const UNTERTITEL: Record<Teil, string> = {
+  1: "Grundkurs: Maus und Tastatur",
+  2: "Teil 2: Tastatur, Dateien und Fenster",
+};
 
 const zahl = (n: number) => n.toLocaleString("de-DE");
 
@@ -49,7 +63,7 @@ function rund(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h:
 
 export function zeichneFuehrerschein(
   ctx: CanvasRenderingContext2D,
-  d: { name: string; avatar: string; ergebnisse: Ergebnisse; datum: string },
+  d: { name: string; avatar: string; ergebnisse: Ergebnisse; datum: string; teil: Teil; bestanden: boolean },
 ) {
   const av = AVATARS.find(a => a.id === d.avatar) ?? AVATARS[0];
   ctx.fillStyle = "#fffdf7";
@@ -71,7 +85,7 @@ export function zeichneFuehrerschein(
   ctx.font = `900 80px ${SCHRIFT}`;
   ctx.fillText("MAUS-FÜHRERSCHEIN", W / 2 + 70, 160, W - 420);
   ctx.font = `500 34px ${SCHRIFT}`;
-  ctx.fillText("Grundkurs: Maus und Tastatur", W / 2 + 70, 236);
+  ctx.fillText(UNTERTITEL[d.teil], W / 2 + 70, 236);
 
   // Tier
   ctx.fillStyle = av.bg;
@@ -95,9 +109,27 @@ export function zeichneFuehrerschein(
   ctx.font = `500 30px ${SCHRIFT}`;
   ctx.fillText(`am ${d.datum} · Begleiter: ${tierName(av.id)}`, W / 2, 696);
 
+  // Stempel für die bestandene Prüfung — schräg, wie aufgedrückt.
+  if (d.bestanden) {
+    ctx.save();
+    ctx.translate(W - 250, 450);
+    ctx.rotate(-0.22);
+    ctx.strokeStyle = "#16a34a";
+    ctx.fillStyle = "#16a34a";
+    ctx.lineWidth = 7;
+    rund(ctx, -165, -58, 330, 116, 18);
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.font = `900 40px ${SCHRIFT}`;
+    ctx.fillText("PRÜFUNG", 0, -16);
+    ctx.fillText("BESTANDEN", 0, 30);
+    ctx.restore();
+    ctx.textAlign = "center";
+  }
+
   // Stufen
   let y = 750;
-  for (const s of BLATT_STUFEN) {
+  for (const s of BLATT_STUFEN[d.teil]) {
     const e = d.ergebnisse[s.id];
     ctx.fillStyle = e ? "#f0f7ff" : "#f5f5f4";
     rund(ctx, 100, y, W - 200, 110, 20);
@@ -116,9 +148,10 @@ export function zeichneFuehrerschein(
       ctx.fillStyle = "#111827";
       ctx.font = `800 40px ${SCHRIFT}`;
       ctx.fillText(zahl(e.punkte), W - 330, y + 42);
-      ctx.fillStyle = "#6b7280";
-      ctx.font = `400 22px ${SCHRIFT}`;
-      ctx.fillText(`von ${zahl(HOECHST[s.id])}`, W - 330, y + 80);
+      const n = sterne(s.id, e.punkte);
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = `700 30px ${SCHRIFT}`;
+      ctx.fillText("★".repeat(n) + "☆".repeat(3 - n), W - 330, y + 82);
       ctx.fillStyle = "#16a34a";
       rund(ctx, W - 305, y + 30, 180, 50, 25);
       ctx.fill();
@@ -139,7 +172,7 @@ export function zeichneFuehrerschein(
   ctx.textAlign = "center";
   ctx.fillStyle = BLAU;
   ctx.font = `900 64px ${SCHRIFT}`;
-  ctx.fillText(`Gesamt: ${zahl(gesamt(d.ergebnisse))} Punkte`, W / 2, y + 50);
+  ctx.fillText(`Gesamt: ${zahl(teilSumme(d.ergebnisse, d.teil))} Punkte`, W / 2, y + 50);
   ctx.fillStyle = "#9ca3af";
   ctx.font = `500 26px ${SCHRIFT}`;
   ctx.fillText("Hauspokal · Maus-Führerschein", W / 2, H - 96);
@@ -157,8 +190,16 @@ function Kbd({ children }: { children: string }) {
 }
 
 export default function StufeSpeichern({
-  avatar, name, ergebnisse, onWeiter,
-}: { avatar: string; name: string; ergebnisse: Ergebnisse; onWeiter: () => void }) {
+  avatar, name, ergebnisse, onWeiter, teil = 1, bestanden = false,
+}: {
+  avatar: string;
+  name: string;
+  ergebnisse: Ergebnisse;
+  onWeiter: () => void;
+  teil?: Teil;
+  /** Prüfung dieses Teils bestanden — dann trägt das Blatt den Stempel. */
+  bestanden?: boolean;
+}) {
   const [blattName, setBlattName] = useState(name);
   const [bild, setBild] = useState<{ url: string; hash: string } | null>(null);
   const [browser, setBrowser] = useState<Browser>("chrome");
@@ -184,7 +225,7 @@ export default function StufeSpeichern({
       try { ctx = leinwand.getContext("2d"); } catch {}
       if (!ctx) return;
       zeichneFuehrerschein(ctx, {
-        name: blattName, avatar, ergebnisse, datum: new Date().toLocaleDateString("de-DE"),
+        name: blattName, avatar, ergebnisse, datum: new Date().toLocaleDateString("de-DE"), teil, bestanden,
       });
       leinwand.toBlob(async blob => {
         if (!blob || aus) return;
@@ -196,7 +237,7 @@ export default function StufeSpeichern({
       }, "image/png");
     }, 400);
     return () => { aus = true; clearTimeout(uhr); };
-  }, [blattName, avatar, ergebnisse]);
+  }, [blattName, avatar, ergebnisse, teil, bestanden]);
 
   // Daneben fallen gelassene Dateien soll der Browser nicht öffnen — sonst ist die Seite weg.
   useEffect(() => {
@@ -233,9 +274,9 @@ export default function StufeSpeichern({
   return (
     <div className="flex flex-col gap-4">
       <Stufenkopf
-        titel="💾 Stufe 7 · Speichern und Wiederfinden"
+        titel={teil === 1 ? "💾 Stufe 7 · Speichern und Wiederfinden" : "💾 Teil 2 · Urkunde speichern"}
         auftrag={<>Speichere deinen Führerschein auf dem Computer — mit <b>Rechtsklick auf das Bild</b>. Dann suche die Datei im <b>Explorer</b> und ziehe sie hierher zurück.</>}
-        punkte={gesamt(ergebnisse)}
+        punkte={teilSumme(ergebnisse, teil)}
         onDemo={vorfuehren}
         onWeiter={onWeiter}
         weiterText="🏆 Zur Bestenliste"

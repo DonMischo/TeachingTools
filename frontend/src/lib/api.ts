@@ -1121,8 +1121,26 @@ export type MausEintrag = {
   dauer_ms: number;
   kontext: string | null;
   selbst: boolean;
+  /** Im Hilfsmodus erspielt (größere Ziele, mehr Zeit). */
+  hilfe: boolean;
 };
-export type MausEintragIn = { modus: MausModus; wert: number; dauer_ms: number; kontext?: string | null };
+export type MausEintragIn = { modus: MausModus; wert: number; dauer_ms: number; kontext?: string | null; hilfe?: boolean };
+/** Bestenliste eingrenzen: nur diese Sitzung bzw. nur diese Klasse. */
+export type MausFilter = { sitzung?: string; klasse?: string };
+export type MausStufenStand = Record<string, { punkte: number; sterne: number; dauer_ms: number }>;
+export type MausFortschrittIn = { stufen: MausStufenStand; hilfe: boolean; bestanden: number[] };
+export type MausUebersichtZeile = {
+  name: string;
+  klasse: string | null;
+  gast: boolean;
+  hilfe: boolean;
+  stufen: MausStufenStand;
+  bestanden: number[];
+  aktualisiert_am: string;
+};
+/** `code`: über welche Sitzung geprüft wurde — deren Lehrkraft bucht die Hauspunkte. */
+export type MausPruefungIn = { teil: 1 | 2; stufen: MausStufenStand; hilfe: boolean; code?: string | null };
+export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeben: boolean; haus: string | null };
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
@@ -1424,11 +1442,15 @@ export const api = {
 
   // Bestenliste des Maus-Führerscheins — mit Zugang über den Code (auch Gäste)
   mausBestenliste: {
-    liste: (modus: MausModus, zugang?: MausZugang) =>
-      apiFetch<MausEintrag[]>(
-        `maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?modus=${encodeURIComponent(modus)}`,
+    liste: (modus: MausModus, zugang?: MausZugang, filter: MausFilter = {}) => {
+      const q = new URLSearchParams({ modus });
+      if (filter.sitzung) q.set("sitzung", filter.sitzung);
+      if (filter.klasse) q.set("klasse", filter.klasse);
+      return apiFetch<MausEintrag[]>(
+        `maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?${q}`,
         { headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined },
-      ),
+      );
+    },
     eintragen: (body: MausEintragIn, zugang?: MausZugang) =>
       apiFetch<MausEintrag>(`maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
         method: "POST",
@@ -1437,6 +1459,22 @@ export const api = {
       }),
     /** Nur Admin — für unpassende Gastnamen. */
     loeschen: (id: number) => apiFetch<void>(`maus/bestenliste/eintrag/${id}`, { method: "DELETE" }),
+  },
+
+  // Maus-Führerschein: Fortschritt je Sitzung, Live-Übersicht, Prüfung (siehe api/routers/maus.py)
+  maus: {
+    fortschritt: (zugang: MausZugang, body: MausFortschrittIn) =>
+      apiFetch<{ ok: boolean }>(`maus/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    /** Nur die Lehrkraft, der die Sitzung gehört (oder Admin). */
+    uebersicht: (code: string) =>
+      apiFetch<MausUebersichtZeile[]>(`maus/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    /** Prüfung melden — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
+    pruefung: (body: MausPruefungIn) =>
+      apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
   },
 
   // Tipp-Rennen (siehe api/routers/wettschreiben.py)
