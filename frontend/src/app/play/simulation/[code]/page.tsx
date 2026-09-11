@@ -25,6 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Tippen from "@/components/tippen/Tippen";
+import MausFuehrerschein from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
@@ -36,6 +37,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
+  // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
+  maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -127,7 +130,9 @@ export default function SimulationJoinPage() {
         // Angemeldete brauchen kein Token, den Code aber beide: die Tafel
         // sammelt je Sitzung, nicht je Werkzeug.
         ? <KiWerkstatt zugang={{ code, token: guest.token, name: guest.session?.name }} />
-        : tool.node;
+        : session.tool_slug === "maus"
+          ? <MausFuehrerschein zugang={{ code, token: guest.token }} name={guest.session?.name} />
+          : tool.node;
 
   // Angemeldete gehen direkt hinein — für sie gilt die Werkzeug-Freigabe.
   if (auth) return <Buehne>{body}</Buehne>;

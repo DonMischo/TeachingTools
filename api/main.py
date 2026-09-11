@@ -81,6 +81,8 @@ from .routers import school as school_router
 app.include_router(school_router.router)
 from .routers import twofa as twofa_router
 app.include_router(twofa_router.router)
+from .routers import maus as maus_router
+app.include_router(maus_router.router)
 
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)

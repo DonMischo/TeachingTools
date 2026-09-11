@@ -2134,3 +2134,35 @@ class TippBestenliste(Base):
     # Woran gemessen wurde: Lektionstitel, Lektionsstufe des Spiels, …
     kontext: Mapped[str | None] = mapped_column(String(200), nullable=True)
     erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MausBestenliste(Base):
+    """Bestenliste des »Maus-Führerscheins« — eine Zeile je Person und Modus.
+
+    Anders als bei der Schreibübung dürfen hier auch Gäste ohne Konto
+    mitspielen: sie kommen über den Sitzungscode (siehe SimBeitrag) und
+    tragen sich über ``guest_id`` ein statt über eine Fremdschlüssel-Beziehung
+    auf ein Konto.
+    """
+    __tablename__ = "maus_bestenliste"
+    __table_args__ = (
+        UniqueConstraint("modus", "student_id", name="uq_maus_beste_student"),
+        UniqueConstraint("modus", "teacher_id", name="uq_maus_beste_teacher"),
+        UniqueConstraint("modus", "guest_id", name="uq_maus_beste_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # klick | doppelklick | ziehen | gesamt
+    modus: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    # Die Zahl, nach der sortiert wird — je Modus etwas anderes, siehe Router.
+    wert: Mapped[float] = mapped_column(Float, nullable=False)
+    dauer_ms: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    # Woran gemessen wurde: Lektionstitel, Übungsstufe, …
+    kontext: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    erreicht_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

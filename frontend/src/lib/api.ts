@@ -1109,6 +1109,23 @@ export type ErgebnisIn = {
   kontext?: string | null;
 };
 
+// Bestenliste des Maus-Führerscheins (siehe api/routers/maus.py)
+export type MausModus = "klick" | "doppelklick" | "ziehen" | "gesamt";
+export type MausEintrag = {
+  id: number;
+  platz: number;
+  name: string;
+  klasse: string | null;
+  gast: boolean;
+  wert: number;
+  dauer_ms: number;
+  kontext: string | null;
+  selbst: boolean;
+};
+export type MausEintragIn = { modus: MausModus; wert: number; dauer_ms: number; kontext?: string | null };
+/** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
+export type MausZugang = { code: string; token: string | null };
+
 export type WettschreibenTeilnehmer = {
   id: number;
   name: string;
@@ -1403,6 +1420,23 @@ export const api = {
       apiFetch<BestenlisteEintrag[]>(`tippen/bestenliste?modus=${encodeURIComponent(modus)}`),
     eintragen: (body: ErgebnisIn) =>
       apiFetch<BestenlisteEintrag>("tippen/bestenliste", { method: "POST", body: JSON.stringify(body) }),
+  },
+
+  // Bestenliste des Maus-Führerscheins — mit Zugang über den Code (auch Gäste)
+  mausBestenliste: {
+    liste: (modus: MausModus, zugang?: MausZugang) =>
+      apiFetch<MausEintrag[]>(
+        `maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}?modus=${encodeURIComponent(modus)}`,
+        { headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined },
+      ),
+    eintragen: (body: MausEintragIn, zugang?: MausZugang) =>
+      apiFetch<MausEintrag>(`maus/bestenliste${zugang ? `/${encodeURIComponent(zugang.code)}` : ""}`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: zugang?.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    /** Nur Admin — für unpassende Gastnamen. */
+    loeschen: (id: number) => apiFetch<void>(`maus/bestenliste/eintrag/${id}`, { method: "DELETE" }),
   },
 
   // Tipp-Rennen (siehe api/routers/wettschreiben.py)

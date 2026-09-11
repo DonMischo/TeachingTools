@@ -52,6 +52,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Zehnfingersystem üben: Lektionen mit Fingeranzeige, Wortregen und Tastenjagd — dazu das Klassenrennen »Wettschreiben« über Code/QR.",
     color: "#38bdf8",
   },
+  {
+    slug: "maus",
+    href: "/games/maus",
+    icon: "🐭",
+    title: "Maus-Führerschein",
+    description: "Grundkurs am Computer: Klicken, Doppelklick, Rechtsklick, Ziehen, Markieren, Kopieren und Speichern — in sieben Stufen mit Vorführung und Bestenliste.",
+    color: "#fb7185",
+  },
 ];
 
 export default function GamesPage() {

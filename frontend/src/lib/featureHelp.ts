@@ -72,6 +72,22 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Das Wettschreiben hat seinen eigenen Code je Rennen." },
     ],
   },
+  maus: {
+    title: "Maus-Führerschein",
+    intro: "Grundkurs am Computer für Kinder ab etwa zehn Jahren — sieben Stufen, jede mit »Vorführen« und »Weiter«.",
+    sections: [
+      { label: "▶ Vorführen", text: "Ein Mauszeiger macht die Aufgabe langsam vor (etwa drei Sekunden je Schritt). Daneben leuchtet an einer Maus die richtige Taste; bei Tastenkürzeln erscheint die Tastatur aus der Schreibübung mit den gedrückten Tasten." },
+      { label: "👆 1 Klicken", text: "Oben steht ein Tier, darunter ein Raster aus Tieren. Anfangs 3×3 große Felder; wer schnell und sicher trifft (fünf Versuche, höchstens ein Fehlgriff, Median unter 60 % der Zeitgrenze), bekommt kleinere Felder bis 6×5. Zwei Fehlgriffe machen es wieder leichter. Anfangs 6 s je Tier, mit jedem Treffer etwas weniger (bis 2 s); schnelle Klicks bringen deutlich mehr Punkte. 20 Treffer." },
+      { label: "✌️ 2 Doppelklick", text: "Das Raster bleibt 6×5, das Ziel blinkt. Anfangs 7 s je Tier, mit jedem Treffer etwas weniger (bis 2,5 s). Misslingt ein Doppelklick, steht dort warum: zu langsam oder die Maus hat gewackelt. 15 Treffer." },
+      { label: "📋 3 Rechtsklick", text: "Rechtsklick auf ein Tier öffnet ein Menü wie unter Windows 11; nur »Als mein Tier wählen« geht, der Rest ist ausgegraut. Das Tier begleitet durch die übrigen Stufen." },
+      { label: "✋ 4 Ziehen", text: "Spur: das eigene Tier mit gedrückter Taste einen Weg entlangziehen (Gerade, Hügel, Zickzack, Schleifen) — wer abkommt, setzt an der letzten Fahne neu an. Aufräumen: Tiere nach Lebensraum sortieren, dann Dateien in Ordner und den Papierkorb ziehen." },
+      { label: "🖍️ 5 Markieren", text: "Ein Wort (Doppelklick oder ziehen), ein Absatz (Dreifachklick oder ziehen), der ganze Text (Strg + A oder ziehen)." },
+      { label: "📄 6 Kopieren", text: "Wörter, Sätze und einen Absatz kopieren und in den Merkzettel einfügen — mit Strg + C / Strg + V oder über das Rechtsklick-Menü. Abtippen zählt nicht. Der »Zwischenspeicher« zeigt, was gerade kopiert ist — beim Einfügen auch, was außerhalb der Seite kopiert wurde." },
+      { label: "💾 7 Speichern", text: "Der Führerschein ist ein Bild: Rechtsklick → »Bild speichern unter …« (Firefox: »Grafik speichern unter …«). Danach im Explorer (Windows + E) wiederfinden und zurück auf die Seite ziehen. Geprüft wird nur im Browser — die Datei wird nicht hochgeladen." },
+      { label: "🏆 Bestenliste", text: "Listen für Klicken, Doppelklick, Ziehen und Gesamt; je Person zählt die beste Runde. Gäste über den QR stehen mit ihrem eingegebenen Namen darin — Admins können einzelne Einträge löschen." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+    ],
+  },
   abacus: {
     title: "Abakus",
     intro: "Rechenrahmen zum Schieben — für Zahlverständnis und Stellenwerte.",

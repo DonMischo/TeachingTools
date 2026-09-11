@@ -84,6 +84,9 @@ CATALOG: list[CatalogTool] = [
         "host": _cap(True, False),
         "upload": _cap(True, False),
     }),
+    # Maus-Führerschein rechnet im Browser: kein Hosten, kein Erstellen — die
+    # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
+    CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "games", {"use": _cap(True, True)}),
     # ── Simulationen (Modelle zum Ausprobieren — wie Spiele für alle offen) ──
     CatalogTool("gleichungswaage", "⚖️ Gleichungswaage", "⚖️", "simulationen", {
         "use": _cap(True, True),
