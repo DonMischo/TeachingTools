@@ -147,8 +147,24 @@ server.on("upgrade", (req, socket, head) => {
   wsProxy.ws(req, socket, head);
 });
 
-server.listen(PORT, () => {
-  console.log(`Hauspokal listening on http://localhost:${PORT}`);
-  console.log(`  → HTTP proxied to Next.js :${NEXT_PORT}`);
-  console.log(`  → WS /api/** proxied to FastAPI ${API_HOST}:${API_PORT}`);
+// Only open the port once Next.js answers. `next start` needs a moment after
+// spawning; a request in that window hit the proxy error handler above and got
+// a bare 502 — right after every container start, often on the first page load.
+// If Next.js never comes up, nextProc's exit handler ends the process anyway.
+function waitForNext(onReady) {
+  const probe = http.request(
+    { host: "127.0.0.1", port: NEXT_PORT, path: "/", method: "HEAD", timeout: 2000 },
+    (res) => { res.resume(); onReady(); },
+  );
+  probe.on("timeout", () => probe.destroy());
+  probe.on("error", () => setTimeout(() => waitForNext(onReady), 250));
+  probe.end();
+}
+
+waitForNext(() => {
+  server.listen(PORT, () => {
+    console.log(`Hauspokal listening on http://localhost:${PORT}`);
+    console.log(`  → HTTP proxied to Next.js :${NEXT_PORT}`);
+    console.log(`  → WS /api/** proxied to FastAPI ${API_HOST}:${API_PORT}`);
+  });
 });
