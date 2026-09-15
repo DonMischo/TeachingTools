@@ -22,7 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import CalendarEntry, SlideshowItem, Student, Teacher
+from ..models import CalendarEntry, CalendarTag, SlideshowItem, Student, Teacher
 from ..schemas import (
     SlideshowBulkPatchIn, SlideshowDeleteIn, SlideshowEventOut, SlideshowItemIn, SlideshowItemOut,
     SlideshowItemPatch, SlideshowOrderIn, SlideshowWochenspruchOut,
@@ -423,6 +423,20 @@ def patch_items(
             setattr(item, field, value)
     db.commit()
     return [_out(it) for it in sorted(items, key=lambda it: (it.position, it.id))]
+
+
+@router.get("/calendar-tags")
+def calendar_tags(
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin_feature("slideshow")),
+):
+    """Tags to filter Termine by: the CalendarTag table plus every tag used on an entry
+    (imports like ICS/Ferien set tags that never get a CalendarTag row)."""
+    colors = {t.name: t.color for t in db.query(CalendarTag).all()}
+    names = set(colors)
+    for (tags,) in db.query(CalendarEntry.tags).all():
+        names.update(t for t in (tags or []) if isinstance(t, str) and t.strip())
+    return [{"name": n, "color": colors.get(n)} for n in sorted(names, key=str.casefold)]
 
 
 @router.get("/items/{item_id}/events", response_model=list[SlideshowEventOut])

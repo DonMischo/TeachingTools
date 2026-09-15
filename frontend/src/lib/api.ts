@@ -2429,6 +2429,7 @@ export const api = {
     updateMany: (ids: number[], patch: SlideshowPatch) =>
       apiFetch<SlideshowItem[]>("slideshow/items", { method: "PATCH", body: JSON.stringify({ ids, patch }) }),
     events: (id: number) => apiFetch<SlideshowEvent[]>(`slideshow/items/${id}/events`),
+    calendarTags: () => apiFetch<{ name: string; color: string | null }[]>("slideshow/calendar-tags"),
     order: (ids: number[]) => apiFetch<void>("slideshow/order", { method: "PUT", body: JSON.stringify({ ids }) }),
     remove: (ids: number[]) => apiFetch<{ deleted: number }>("slideshow/items/delete", { method: "POST", body: JSON.stringify({ ids }) }),
   },

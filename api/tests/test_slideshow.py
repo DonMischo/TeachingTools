@@ -872,3 +872,30 @@ def test_bulk_patch_requires_admin_feature(client, db, teacher_token):
     r = client.patch("/api/slideshow/items", headers=auth(teacher_token),
                      json={"ids": [a.id], "patch": {"active": False}})
     assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Tags for the Termine filter: tag table plus tags actually used on entries
+# ---------------------------------------------------------------------------
+
+def test_calendar_tags_include_tags_used_on_entries(client, db, admin_token, teacher):
+    from api.models import CalendarTag
+    db.add(CalendarTag(name="Wandertag", color="#ff0000"))
+    db.flush()
+    _entry(db, teacher.id, title="A", tags=["Elternabend", "Wandertag"])
+    _entry(db, teacher.id, title="B", tags=["gottesdienst"], start_date=date.today() - timedelta(days=400),
+           end_date=date.today() - timedelta(days=400))
+    client.cookies.clear()
+    r = client.get("/api/slideshow/calendar-tags", headers=auth(admin_token))
+    assert r.status_code == 200, r.text
+    assert r.json() == [
+        {"name": "Elternabend", "color": None},
+        {"name": "gottesdienst", "color": None},
+        {"name": "Wandertag", "color": "#ff0000"},
+    ]
+
+
+def test_calendar_tags_require_admin_feature(client, teacher_token):
+    client.cookies.clear()
+    r = client.get("/api/slideshow/calendar-tags", headers=auth(teacher_token))
+    assert r.status_code == 403

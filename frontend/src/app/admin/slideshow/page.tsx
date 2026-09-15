@@ -90,7 +90,7 @@ function SlotEditor({ item, onSave, onClose }: {
         }}>Zeitfenster entfernen</button>
         <div className="flex gap-2">
           <button className="text-xs text-[var(--text-muted)]" onClick={onClose}>Abbrechen</button>
-          <button className="btn-primary text-xs px-3 py-1" onClick={() => {
+          <button className="btn-primary !w-auto text-xs px-3 py-1" onClick={() => {
             onSave({ slot_days: days, slot_start: start, slot_end: end, slot_from: from || null, slot_until: until || null });
             onClose();
           }}>Speichern</button>
@@ -110,6 +110,7 @@ function CalendarConfig({ item, meta, onChange }: {
     queryKey: ["slideshow-events", item.id, item.calendar_tags, item.calendar_categories, item.calendar_days_ahead],
     queryFn: () => api.slideshow.events(item.id),
   });
+  const { data: tags = [] } = useQuery({ queryKey: ["slideshow-calendar-tags"], queryFn: api.slideshow.calendarTags });
   const categories = (meta?.categories ?? []).filter((c) => c !== "Persönlich");
   const visible = VISIBLE_CATEGORIES[item.audience];
   const ddmm = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
@@ -131,10 +132,10 @@ function CalendarConfig({ item, meta, onChange }: {
         <div>
           <div className="text-xs text-[var(--text-muted)] mb-1">Tags</div>
           <div className="flex flex-wrap gap-1">
-            {(meta?.tags ?? []).map((t) => (
+            {tags.map((t) => (
               <button key={t.name} onClick={() => onChange({ calendar_tags: toggle(item.calendar_tags, t.name) })}
                 className={`${CHIP} inline-flex items-center gap-1 ${item.calendar_tags.includes(t.name) ? CHIP_ON : CHIP_OFF}`}>
-                <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
+                <span className="w-2 h-2 rounded-full" style={{ background: t.color ?? "#6b7280" }} />
                 {t.name}
               </button>
             ))}
@@ -142,7 +143,7 @@ function CalendarConfig({ item, meta, onChange }: {
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span>Tage im Voraus</span>
-          <input key={item.calendar_days_ahead} type="number" min={1} max={365} className="input w-20"
+          <input key={item.calendar_days_ahead} type="number" min={1} max={365} className="input !w-20"
             defaultValue={item.calendar_days_ahead}
             onBlur={(e) => {
               const v = Number(e.target.value);
@@ -293,9 +294,10 @@ export default function AdminSlideshowPage() {
         }}
       >
         <span aria-hidden>🔗</span>
-        <input className="input flex-1 min-w-0" type="url" placeholder="Link hinzufügen: https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
-        <input className="input sm:w-56 w-full" placeholder="Titel (optional)" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
-        <button type="submit" className="btn-primary whitespace-nowrap px-4" disabled={!linkUrl || createMut.isPending}>Hinzufügen</button>
+        {/* .input/.btn-primary are w-full globally — widths need ! to win */}
+        <input className="input !w-auto flex-1 min-w-[12rem]" type="url" placeholder="Link hinzufügen: https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+        <input className="input sm:!w-56 shrink-0" placeholder="Titel (optional)" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
+        <button type="submit" className="btn-primary !w-auto shrink-0 whitespace-nowrap px-4 disabled:opacity-40" disabled={!linkUrl || createMut.isPending}>Hinzufügen</button>
       </form>
 
       {selected.length > 0 && (
@@ -364,10 +366,10 @@ export default function AdminSlideshowPage() {
                   </td>
                   <td className="p-2 whitespace-nowrap">
                     {item.media_type === "video" ? (
-                      <input className="input w-20" disabled value="bis Ende" />
+                      <input className="input !w-20" disabled value="bis Ende" />
                     ) : (
                       <>
-                        <input key={item.duration_seconds} type="number" min={3} max={3600} className="input w-20"
+                        <input key={item.duration_seconds} type="number" min={3} max={3600} className="input !w-20"
                           defaultValue={item.duration_seconds}
                           onBlur={(e) => {
                             const v = Number(e.target.value);
