@@ -164,6 +164,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Der Code gilt für beide Reiter, und die Tafel sammelt alles, was unter diesem Code abgegeben wird." },
     ],
   },
+  sonnensystem: {
+    title: "Sonnensystem",
+    intro: "Sonne, acht Planeten, Ceres, Pluto und 19 wichtige Monde — mit echten Daten, Fotos von Raumsonden und fünf Ansichten. Klick auf einen Himmelskörper öffnet überall seinen Steckbrief.",
+    sections: [
+      { label: "🪐 Übersicht", text: "3D-Modell mit den echten Bahnen: die Planeten stehen zum eingestellten Datum dort, wo sie wirklich stehen (bei unserem Mond stimmt sogar die Phase). Zeitraffer von einer Stunde bis einem Jahr je Sekunde. Ziehen dreht, Mausrad zoomt, Antippen wählt und fährt heran. Die Schalter unten wechseln zwischen gestauchten und echten Abständen und Größen — maßstabsgetreu sind die Planeten kleiner als ein Pixel, und genau das ist die Lektion." },
+      { label: "🚀 Flug", text: "Selbst fliegen wie in einem Weltraumspiel: W/S Schub, Maus oder Pfeiltasten lenken, Leertaste Pulsantrieb für weite Strecken, T wählt den Himmelskörper im Fadenkreuz, G fliegt per Autopilot hin, C scannt. Auf Tablets gibt es Stick und Knöpfe; das Ziel lässt sich auch oben aus der Liste wählen. Radien sind echt, Abstände 60-fach verkürzt, die Sonne 4-fach verkleinert." },
+      { label: "🛰️ Forschungsaufträge", text: "16 Rätsel führen zu einem Himmelskörper (»Finde den Mond mit Wasserfontänen«). Wer ihn scannt, bekommt eine Frage, deren Antwort im Steckbrief steht. Gezählt wird nur auf dem Gerät (bei Angemeldeten je Konto, bei Gästen je Code) — ohne Hauspunkte." },
+      { label: "⚖️ Größen", text: "Alle Körper maßstabsgetreu nebeneinander, als echte Fotos. Der Regler stellt ein, wie viele Pixel die Erde breit ist; von der Sonne passt nur der Rand ins Bild. »Monde im Vergleich« zeigt, dass Ganymed und Titan größer sind als Merkur." },
+      { label: "📏 Entfernungen", text: "Ein Band von der Sonne bis Pluto im selben Maßstab wie die Planeten — fast nur Leere. »Licht losschicken« lässt einen Lichtstrahl laufen, in echt oder im Zeitraffer, mit Stoppuhr bis zu jedem Planeten. Darunter Reisezeiten mit Auto, Flugzeug und Voyager 1 sowie der heutige Abstand zur Erde." },
+      { label: "🔭 Galerie", text: "Aufnahmen von Hubble, James Webb, Juno, Cassini, Voyager, Rosetta, BepiColombo und JUICE mit Erklärung. Hubble und Webb lassen sich beim selben Motiv nebeneinander vergleichen." },
+      { label: "🖼️ Bilder", text: "Alle Bilder liegen auf dem Schulserver, es wird nichts von außen nachgeladen. Quellen: NASA/JPL/USGS (gemeinfrei), ESA (CC BY / CC BY-SA), Planetentexturen von Solar System Scope (CC BY 4.0). Der vollständige Nachweis steht unten in der Galerie." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
+    ],
+  },
   vierecke: {
     title: "Vierecke",
     intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen. Zusammengelegt aus zwei früheren Werkzeugen.",

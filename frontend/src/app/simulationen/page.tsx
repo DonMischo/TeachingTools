@@ -71,6 +71,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#6366f1",
   },
   {
+    slug: "sonnensystem",
+    href: "/simulationen/sonnensystem",
+    icon: "🪐",
+    title: "Sonnensystem",
+    description: "Planeten und Monde auf echten Bahnen in 3D, maßstabsgetreue Größen und Entfernungen, Bilder von Hubble, Webb und Raumsonden — und ein Flugmodus mit Pulsantrieb, Scanner und Forschungsaufträgen.",
+    color: "#38bdf8",
+  },
+  {
     slug: "abacus",
     href: "/simulationen/abacus",
     icon: "🧮",

@@ -1,0 +1,726 @@
+{
+  "fotos/ceres": {
+    "datei": "/sonnensystem/fotos/ceres.webp",
+    "titel": "Ceres - RC3 - Haulani Crater (22381131691) (cropped).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ceres_-_RC3_-_Haulani_Crater_(22381131691)_(cropped).jpg",
+    "lizenz": "Public domain",
+    "urheber": "Justin Cowart",
+    "scheibe": {
+      "x": 0.461,
+      "y": 0.498,
+      "d": 0.859
+    }
+  },
+  "fotos/charon": {
+    "datei": "/sonnensystem/fotos/charon.webp",
+    "titel": "Charon in True Color - High-Res.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Charon_in_True_Color_-_High-Res.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute/Alex Parker",
+    "scheibe": {
+      "x": 0.508,
+      "y": 0.471,
+      "d": 0.797
+    }
+  },
+  "fotos/deimos": {
+    "datei": "/sonnensystem/fotos/deimos.webp",
+    "titel": "Deimos-MRO.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Deimos-MRO.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-caltech/University of Arizona",
+    "scheibe": {
+      "x": 0.494,
+      "y": 0.488,
+      "d": 0.98
+    }
+  },
+  "fotos/dione": {
+    "datei": "/sonnensystem/fotos/dione.webp",
+    "titel": "Dione in natural light.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dione_in_natural_light.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA",
+    "scheibe": {
+      "x": 0.504,
+      "y": 0.494,
+      "d": 0.867
+    }
+  },
+  "fotos/enceladus": {
+    "datei": "/sonnensystem/fotos/enceladus.webp",
+    "titel": "PIA17202 - Approaching Enceladus.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA17202_-_Approaching_Enceladus.jpg",
+    "lizenz": "Public domain",
+    "urheber": "National Aeronautics and Space Administration (NASA) / Jet Propulsion Laboratory (JPL)",
+    "scheibe": {
+      "x": 0.504,
+      "y": 0.496,
+      "d": 0.836
+    }
+  },
+  "fotos/erde": {
+    "datei": "/sonnensystem/fotos/erde.webp",
+    "titel": "The Earth seen from Apollo 17.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:The_Earth_seen_from_Apollo_17.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Apollo 17 crew; taken by either Harrison Schmitt or Ron Evans",
+    "scheibe": {
+      "x": 0.494,
+      "y": 0.496,
+      "d": 0.898
+    }
+  },
+  "fotos/europa": {
+    "datei": "/sonnensystem/fotos/europa.webp",
+    "titel": "Europa-moon-with-margins.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Europa-moon-with-margins.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL/DLR",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.498,
+      "d": 0.816
+    }
+  },
+  "fotos/ganymed": {
+    "datei": "/sonnensystem/fotos/ganymed.webp",
+    "titel": "Ganymede g1 true-edit1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ganymede_g1_true-edit1.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL (edited by PlanetUser)",
+    "scheibe": {
+      "x": 0.5,
+      "y": 0.496,
+      "d": 0.906
+    }
+  },
+  "fotos/iapetus": {
+    "datei": "/sonnensystem/fotos/iapetus.webp",
+    "titel": "Iapetus as seen by the Cassini probe - 20071008.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Iapetus_as_seen_by_the_Cassini_probe_-_20071008.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL / Space Science Institute",
+    "scheibe": {
+      "x": 0.465,
+      "y": 0.496,
+      "d": 0.867
+    }
+  },
+  "fotos/io": {
+    "datei": "/sonnensystem/fotos/io.webp",
+    "titel": "Io highest resolution true color.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Io_highest_resolution_true_color.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL / University of Arizona",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.496,
+      "d": 0.871
+    }
+  },
+  "fotos/jupiter": {
+    "datei": "/sonnensystem/fotos/jupiter.webp",
+    "titel": "Jupiter and its shrunken Great Red Spot.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Jupiter_and_its_shrunken_Great_Red_Spot.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA, ESA, and A. Simon (Goddard Space Flight Center)",
+    "scheibe": {
+      "x": 0.502,
+      "y": 0.498,
+      "d": 0.926
+    }
+  },
+  "fotos/kallisto": {
+    "datei": "/sonnensystem/fotos/kallisto.webp",
+    "titel": "Callisto.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Callisto.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL/DLR(German Aerospace Center)",
+    "scheibe": {
+      "x": 0.496,
+      "y": 0.496,
+      "d": 0.863
+    }
+  },
+  "fotos/mars": {
+    "datei": "/sonnensystem/fotos/mars.webp",
+    "titel": "OSIRIS Mars true color.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:OSIRIS_Mars_true_color.jpg",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "ESA & MPS for OSIRIS Team MPS/UPD/LAM/IAA/RSSD/INTA/UPM/DASP/IDA, CC BY-SA 3.0 IGO",
+    "scheibe": {
+      "x": 0.5,
+      "y": 0.498,
+      "d": 0.848
+    }
+  },
+  "fotos/merkur": {
+    "datei": "/sonnensystem/fotos/merkur.webp",
+    "titel": "Mercury in true color.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mercury_in_true_color.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Arizona State University/Carnegie Institution of Washington",
+    "scheibe": {
+      "x": 0.494,
+      "y": 0.498,
+      "d": 0.918
+    }
+  },
+  "fotos/mimas": {
+    "datei": "/sonnensystem/fotos/mimas.webp",
+    "titel": "Mimas Cassini.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mimas_Cassini.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL-Caltech / Space Science Institute",
+    "scheibe": {
+      "x": 0.49,
+      "y": 0.492,
+      "d": 0.871
+    }
+  },
+  "fotos/miranda": {
+    "datei": "/sonnensystem/fotos/miranda.webp",
+    "titel": "Miranda.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA18185_Miranda%27s_Icy_Face.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.5,
+      "d": 0.965
+    }
+  },
+  "fotos/mond": {
+    "datei": "/sonnensystem/fotos/mond.webp",
+    "titel": "FullMoon2010.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Gregory H. Revera",
+    "scheibe": {
+      "x": 0.5,
+      "y": 0.506,
+      "d": 0.828
+    }
+  },
+  "fotos/neptun": {
+    "datei": "/sonnensystem/fotos/neptun.webp",
+    "titel": "Neptune Voyager2 color calibrated.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neptune_Voyager2_color_calibrated.png",
+    "lizenz": "CC0",
+    "urheber": "NASA / Voyager 2 / PDS / OPUS / Ardenau4",
+    "scheibe": {
+      "x": 0.496,
+      "y": 0.502,
+      "d": 0.848
+    }
+  },
+  "fotos/oberon": {
+    "datei": "/sonnensystem/fotos/oberon.webp",
+    "titel": "Voyager 2 picture of Oberon.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Voyager_2_picture_of_Oberon.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA",
+    "scheibe": {
+      "x": 0.5,
+      "y": 0.5,
+      "d": 0.891
+    }
+  },
+  "fotos/phobos": {
+    "datei": "/sonnensystem/fotos/phobos.webp",
+    "titel": "Phobos colour 2008.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Phobos_colour_2008.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL-Caltech / University of Arizona",
+    "scheibe": {
+      "x": 0.502,
+      "y": 0.5,
+      "d": 0.902
+    }
+  },
+  "fotos/pluto": {
+    "datei": "/sonnensystem/fotos/pluto.webp",
+    "titel": "Pluto in True Color - High-Res.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Pluto_in_True_Color_-_High-Res.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute/Alex Parker",
+    "scheibe": {
+      "x": 0.5,
+      "y": 0.492,
+      "d": 0.859
+    }
+  },
+  "fotos/rhea": {
+    "datei": "/sonnensystem/fotos/rhea.webp",
+    "titel": "PIA07763 Rhea full globe5.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA07763_Rhea_full_globe5.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL/Space Science Institute",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.506,
+      "d": 0.895
+    }
+  },
+  "fotos/saturn": {
+    "datei": "/sonnensystem/fotos/saturn.webp",
+    "titel": "Saturn during Equinox.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Saturn_during_Equinox.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL / Space Science Institute",
+    "scheibe": {
+      "x": 0.496,
+      "y": 0.516,
+      "d": 0.367
+    }
+  },
+  "fotos/sonne": {
+    "datei": "/sonnensystem/fotos/sonne.webp",
+    "titel": "The Sun by the Atmospheric Imaging Assembly of NASA's Solar Dynamics Observatory - 20100819.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/SDO (AIA)",
+    "scheibe": {
+      "x": 0.496,
+      "y": 0.496,
+      "d": 0.898
+    }
+  },
+  "fotos/tethys": {
+    "datei": "/sonnensystem/fotos/tethys.webp",
+    "titel": "PIA18317-SaturnMoon-Tethys-Cassini-20150411.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA18317-SaturnMoon-Tethys-Cassini-20150411.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute",
+    "scheibe": {
+      "x": 0.496,
+      "y": 0.492,
+      "d": 0.906
+    }
+  },
+  "fotos/titan": {
+    "datei": "/sonnensystem/fotos/titan.webp",
+    "titel": "Titan in true color.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Titan_in_true_color.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.477,
+      "d": 0.824
+    }
+  },
+  "fotos/titania": {
+    "datei": "/sonnensystem/fotos/titania.webp",
+    "titel": "Titania (moon) color, edited.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Titania_(moon)_color,_cropped.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Titania_(moon)_color.jpg: NASA/JPL",
+    "scheibe": {
+      "x": 0.492,
+      "y": 0.5,
+      "d": 0.867
+    }
+  },
+  "fotos/triton": {
+    "datei": "/sonnensystem/fotos/triton.webp",
+    "titel": "Triton moon mosaic Voyager 2 (large).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Triton_moon_mosaic_Voyager_2_(large).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / Jet Propulsion Lab / U.S. Geological Survey",
+    "scheibe": {
+      "x": 0.484,
+      "y": 0.619,
+      "d": 0.93
+    }
+  },
+  "fotos/uranus": {
+    "datei": "/sonnensystem/fotos/uranus.webp",
+    "titel": "Uranus as seen by NASA's Voyager 2 (remastered) - JPEG converted.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Uranus_as_seen_by_NASA%27s_Voyager_2_(remastered)_-_JPEG_converted.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA",
+    "scheibe": {
+      "x": 0.494,
+      "y": 0.494,
+      "d": 0.809
+    }
+  },
+  "fotos/venus": {
+    "datei": "/sonnensystem/fotos/venus.webp",
+    "titel": "Venus-real color.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Venus-real_color.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA or Ricardo Nunes",
+    "scheibe": {
+      "x": 0.484,
+      "y": 0.488,
+      "d": 0.914
+    }
+  },
+  "galerie/earthrise": {
+    "datei": "/sonnensystem/galerie/earthrise.webp",
+    "titel": "NASA-Apollo8-Dec24-Earthrise.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Bill Anders"
+  },
+  "galerie/erde-juice": {
+    "datei": "/sonnensystem/galerie/erde-juice.webp",
+    "titel": "Juice images Earth during lunar-Earth flyby ESA500763.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Juice_images_Earth_during_lunar-Earth_flyby_ESA500763.png",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "European Space Agency"
+  },
+  "galerie/erde-von-saturn": {
+    "datei": "/sonnensystem/galerie/erde-von-saturn.webp",
+    "titel": "The Day the Earth Smiled - PIA17172.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:The_Day_the_Earth_Smiled_-_PIA17172.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/SSI"
+  },
+  "galerie/europa-juno": {
+    "datei": "/sonnensystem/galerie/europa-juno.webp",
+    "titel": "Europa - Nasa's Juno PJ 45 (52393304986).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Europa_-_Nasa%27s_Juno_PJ_45_(52393304986).png",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Andrea Luck"
+  },
+  "galerie/hubble-deep-field": {
+    "datei": "/sonnensystem/galerie/hubble-deep-field.webp",
+    "titel": "Hubble ultra deep field.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hubble_ultra_deep_field.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA and the European Space Agency."
+  },
+  "galerie/jupiter-juno-fleck": {
+    "datei": "/sonnensystem/galerie/jupiter-juno-fleck.webp",
+    "titel": "PIA22946-Jupiter-RedSpot-JunoSpacecraft-20190212.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA22946-Jupiter-RedSpot-JunoSpacecraft-20190212.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech/SwRI/MSSS/Kevin M. Gill"
+  },
+  "galerie/jupiter-juno-suedpol": {
+    "datei": "/sonnensystem/galerie/jupiter-juno-suedpol.webp",
+    "titel": "Jupiter South Pole - Juno Perijove 4 - February 2 2017 (38605852072).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Jupiter_South_Pole_-_Juno_Perijove_4_-_February_2_2017_(38605852072).jpg",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Kevin Gill from Los Angeles, CA, United States"
+  },
+  "galerie/jupiter-webb": {
+    "datei": "/sonnensystem/galerie/jupiter-webb.webp",
+    "titel": "Jupiter Showcases Auroras, Hazes (NIRCam Widefield View).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Jupiter_Showcases_Auroras,_Hazes_(NIRCam_Widefield_View).png",
+    "lizenz": "Public domain",
+    "urheber": "JWST (NASA, ESA, CSA, Jupiter ERS Team). Image processing by Judy Schmidt and Ricardo Hueso (UPV/EHU)."
+  },
+  "galerie/komet-rosetta": {
+    "datei": "/sonnensystem/galerie/komet-rosetta.webp",
+    "titel": "Comet 67P on 19 September 2014 NavCam mosaic.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Comet_67P_on_19_September_2014_NavCam_mosaic.jpg",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "ESA/Rosetta/NAVCAM, CC BY-SA IGO 3.0"
+  },
+  "galerie/merkur-bepi": {
+    "datei": "/sonnensystem/galerie/merkur-bepi.webp",
+    "titel": "BepiColombo hugs Mercury ESA24939504.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:BepiColombo_hugs_Mercury_ESA24939504.png",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "ESA/BepiColombo/MTM"
+  },
+  "galerie/neptun-webb": {
+    "datei": "/sonnensystem/galerie/neptun-webb.webp",
+    "titel": "Neptune and Triton - NASA-ESA JWST Webb Space Telescope (53023362438).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neptune_and_Triton_-_NASA-ESA_JWST_Webb_Space_Telescope_(53023362438).png",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Andrea Luck"
+  },
+  "galerie/pale-blue-dot": {
+    "datei": "/sonnensystem/galerie/pale-blue-dot.webp",
+    "titel": "PIA23645-Earth-PaleBlueDot-6Bkm-Voyager1-orig19900214-upd20200212.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA23645-Earth-PaleBlueDot-6Bkm-Voyager1-orig19900214-upd20200212.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech"
+  },
+  "galerie/riesen-webb": {
+    "datei": "/sonnensystem/galerie/riesen-webb.webp",
+    "titel": "Quartet of Ringed Giants - Jupiter, Saturn, Uranus and Neptune - NASA-ESA JWST Webb Space Telescope (53100897700).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Quartet_of_Ringed_Giants_-_Jupiter,_Saturn,_Uranus_and_Neptune_-_NASA-ESA_JWST_Webb_Space_Telescope_(53100897700).png",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Andrea Luck"
+  },
+  "galerie/saeulen-hubble": {
+    "datei": "/sonnensystem/galerie/saeulen-hubble.webp",
+    "titel": "Pillars of creation 2014 HST WFC3-UVIS full-res denoised.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA, ESA, and the Hubble Heritage Team (STScI/AURA)"
+  },
+  "galerie/saeulen-webb": {
+    "datei": "/sonnensystem/galerie/saeulen-webb.webp",
+    "titel": "Pillars of Creation (NIRCam Image).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Pillars_of_Creation_(NIRCam_Image).jpg",
+    "lizenz": "Public domain",
+    "urheber": "SCIENCE: NASA, ESA, CSA, STScI; IMAGE PROCESSING: Joseph DePasquale (STScI), Anton M. Koekemoer (STScI), Alyssa Pagan (STScI)"
+  },
+  "galerie/saturn-hubble": {
+    "datei": "/sonnensystem/galerie/saturn-hubble.webp",
+    "titel": "Hubble sees summertime on Saturn ESA23797272.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hubble_sees_summertime_on_Saturn_ESA23797272.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "European Space Agency"
+  },
+  "galerie/saturn-webb": {
+    "datei": "/sonnensystem/galerie/saturn-webb.webp",
+    "titel": "Saturn JWST NIRCam.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Saturn_JWST_NIRCam.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "NASA/ESA/CSA JWST NIRCam; Macarena Garcia Marin et al. & Melina Thévenot"
+  },
+  "galerie/uranus-webb": {
+    "datei": "/sonnensystem/galerie/uranus-webb.webp",
+    "titel": "Uranus - NASA-ESA JWST Webb Space Telescope (53412941760).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Uranus_-_NASA-ESA_JWST_Webb_Space_Telescope_(53412941760).png",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Andrea Luck"
+  },
+  "galerie/webb-deep-field": {
+    "datei": "/sonnensystem/galerie/webb-deep-field.webp",
+    "titel": "Webb's First Deep Field.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Webb%27s_First_Deep_Field.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA, ESA, CSA, and STScI"
+  },
+  "texturen/charon": {
+    "datei": "/sonnensystem/texturen/charon.webp",
+    "titel": "Charon map iau1803c.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Charon_map_iau1803c.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute"
+  },
+  "texturen/deimos": {
+    "datei": "/sonnensystem/texturen/deimos.webp",
+    "titel": "Deimos map by Askaniy.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Deimos_map_by_Askaniy.png",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Askaniy Anpilogov, John van Vliet"
+  },
+  "texturen/dione": {
+    "datei": "/sonnensystem/texturen/dione.webp",
+    "titel": "Dione Color Map.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dione_Color_Map.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute/Lunar and Planetary Institute"
+  },
+  "texturen/enceladus": {
+    "datei": "/sonnensystem/texturen/enceladus.webp",
+    "titel": "Enceladus Color Map.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Enceladus_Color_Map.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute/Lunar and Planetary Institute"
+  },
+  "texturen/erde": {
+    "datei": "/sonnensystem/texturen/erde.webp",
+    "titel": "Solarsystemscope texture 8k earth daymap.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_earth_daymap.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/erde-nacht": {
+    "datei": "/sonnensystem/texturen/erde-nacht.webp",
+    "titel": "Solarsystemscope texture 2k earth nightmap.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_earth_nightmap.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/erde-wolken": {
+    "datei": "/sonnensystem/texturen/erde-wolken.webp",
+    "titel": "Solarsystemscope texture 2k earth clouds.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_earth_clouds.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/europa": {
+    "datei": "/sonnensystem/texturen/europa.webp",
+    "titel": "Europa Voyager GalileoSSI global mosaic.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Europa_Voyager_GalileoSSI_global_mosaic.jpg",
+    "lizenz": "Public domain",
+    "urheber": "U.S. Geological Survey / Planetary Data System / Tammy Becker"
+  },
+  "texturen/ganymed": {
+    "datei": "/sonnensystem/texturen/ganymed.webp",
+    "titel": "Map of Ganymede by Björn Jónsson.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Map_of_Ganymede_by_Bj%C3%B6rn_J%C3%B3nsson.jpg",
+    "lizenz": "Attribution",
+    "urheber": "NASA (original photographies)/Björn Jónsson"
+  },
+  "texturen/iapetus": {
+    "datei": "/sonnensystem/texturen/iapetus.webp",
+    "titel": "Iapetus Color Map.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Iapetus_Color_Map.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute/Lunar and Planetary Institute"
+  },
+  "texturen/io": {
+    "datei": "/sonnensystem/texturen/io.webp",
+    "titel": "Io map projection PIA00319.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Io_map_projection_PIA00319.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL/USGS"
+  },
+  "texturen/jupiter": {
+    "datei": "/sonnensystem/texturen/jupiter.webp",
+    "titel": "Solarsystemscope texture 2k jupiter.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_jupiter.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/kallisto": {
+    "datei": "/sonnensystem/texturen/kallisto.webp",
+    "titel": "Callisto USGS global small.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Callisto_USGS_global_small.jpg",
+    "lizenz": "Public domain",
+    "urheber": "USGS Astrogeology Science Center"
+  },
+  "texturen/mars": {
+    "datei": "/sonnensystem/texturen/mars.webp",
+    "titel": "Solarsystemscope texture 2k mars.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_mars.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/merkur": {
+    "datei": "/sonnensystem/texturen/merkur.webp",
+    "titel": "Solarsystemscope texture 2k mercury.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_mercury.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/milchstrasse": {
+    "datei": "/sonnensystem/texturen/milchstrasse.webp",
+    "titel": "Solarsystemscope texture 8k stars milky way.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_stars_milky_way.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/mimas": {
+    "datei": "/sonnensystem/texturen/mimas.webp",
+    "titel": "Color map of Mimas PIA18437 Nov. 2014.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Color_map_of_Mimas_PIA18437_Nov._2014.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL-Caltech / Space Science Institute / Lunar and Planetary Institute"
+  },
+  "texturen/miranda": {
+    "datei": "/sonnensystem/texturen/miranda.webp",
+    "titel": "Miranda map JPL USGS.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Miranda_map_JPL_USGS.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Caltech/JPL/USGS"
+  },
+  "texturen/mond": {
+    "datei": "/sonnensystem/texturen/mond.webp",
+    "titel": "Solarsystemscope texture 2k moon.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_moon.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/neptun": {
+    "datei": "/sonnensystem/texturen/neptun.webp",
+    "titel": "Solarsystemscope texture 2k neptune.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_neptune.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/oberon": {
+    "datei": "/sonnensystem/texturen/oberon.webp",
+    "titel": "Oberon map JPL USGS.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Oberon_map_JPL_USGS.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Caltech/JPL/USGS"
+  },
+  "texturen/phobos": {
+    "datei": "/sonnensystem/texturen/phobos.webp",
+    "titel": "Phobos map by Askaniy.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Phobos_map_by_Askaniy.png",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Askaniy Anpilogov, Phil Stooke"
+  },
+  "texturen/pluto": {
+    "datei": "/sonnensystem/texturen/pluto.webp",
+    "titel": "PIA20658-Pluto-Global-released20160502.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA20658-Pluto-Global-released20160502.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute"
+  },
+  "texturen/rhea": {
+    "datei": "/sonnensystem/texturen/rhea.webp",
+    "titel": "Rhea Color Map.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rhea_Color_Map.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute/Lunar and Planetary Institute"
+  },
+  "texturen/saturn": {
+    "datei": "/sonnensystem/texturen/saturn.webp",
+    "titel": "Solarsystemscope texture 2k saturn.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_saturn.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/saturn-ring": {
+    "datei": "/sonnensystem/texturen/saturn-ring.png",
+    "titel": "Solarsystemscope texture 2k saturn ring alpha.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_saturn_ring_alpha.png",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/sonne": {
+    "datei": "/sonnensystem/texturen/sonne.webp",
+    "titel": "Solarsystemscope texture 2k sun.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_sun.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/tethys": {
+    "datei": "/sonnensystem/texturen/tethys.webp",
+    "titel": "Tethys Color Map.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tethys_Color_Map.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute/Lunar and Planetary Institute"
+  },
+  "texturen/titan": {
+    "datei": "/sonnensystem/texturen/titan.webp",
+    "titel": "PIA19658-SaturnMoon-TitanGlobalMap-June2015.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA19658-SaturnMoon-TitanGlobalMap-June2015.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute"
+  },
+  "texturen/titania": {
+    "datei": "/sonnensystem/texturen/titania.webp",
+    "titel": "Titania map JPL USGS.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Titania_map_JPL_USGS.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Caltech/JPL/USGS"
+  },
+  "texturen/triton": {
+    "datei": "/sonnensystem/texturen/triton.webp",
+    "titel": "Triton map no grid.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Triton_map_no_grid.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Image selection, radiometric calibration, geographic registration and photometric correction, and final mosaic assembly were performed by Dr. Paul Schenk at the Lunar and Planetary Institute, Houston,"
+  },
+  "texturen/uranus": {
+    "datei": "/sonnensystem/texturen/uranus.webp",
+    "titel": "Solarsystemscope texture 2k uranus.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_uranus.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  },
+  "texturen/venus": {
+    "datei": "/sonnensystem/texturen/venus.webp",
+    "titel": "Solarsystemscope texture 2k venus atmosphere.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_2k_venus_atmosphere.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "Solar System Scope"
+  }
+}

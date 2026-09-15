@@ -24,6 +24,7 @@ import Funktionen from "@/components/simulationen/Funktionen";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
+import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -39,6 +40,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
+  // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
+  sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -130,6 +133,10 @@ export default function SimulationJoinPage() {
         // Angemeldete brauchen kein Token, den Code aber beide: die Tafel
         // sammelt je Sitzung, nicht je Werkzeug.
         ? <KiWerkstatt zugang={{ code, token: guest.token, name: guest.session?.name }} />
+        : session.tool_slug === "sonnensystem"
+          ? <Sonnensystem speicherSchluessel={auth
+              ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+              : `gast-${code}`} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

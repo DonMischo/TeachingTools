@@ -119,6 +119,11 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("ki", "🤖 KI-Werkstatt", "🤖", "simulationen", {
         "use": _cap(True, True),
     }),
+    # 3D-Übersicht, Größen, Entfernungen, Galerie und Flugmodus mit
+    # Forschungsaufträgen — rechnet ganz im Browser, Fortschritt bleibt dort.
+    CatalogTool("sonnensystem", "🪐 Sonnensystem", "🪐", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),
