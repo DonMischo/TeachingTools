@@ -127,7 +127,7 @@ export default function StufeMarkieren({
         titel="🖍️ Stufe 5 · Markieren"
         auftrag={fertig
           ? <>Alle Markier-Aufgaben geschafft! Weiter geht es mit Kopieren und Einfügen.</>
-          : <>{auftrag.text}<div className="text-xs text-[var(--text-muted)] mt-1">💡 {auftrag.tipp}</div></>}
+          : <>{auftrag.text}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 {auftrag.tipp}</div></>}
         punkte={Math.min(nr, MARKIER_AUFGABEN.length) * PUNKTE_MARKIEREN}
         onDemo={fertig ? undefined : () => { markiere(null); demo.abspielen(demoSchritteMarkieren(feld.current, aufgabe)); }}
         onWeiter={onWeiter}

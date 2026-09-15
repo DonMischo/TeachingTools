@@ -23,6 +23,8 @@ export type Aufgabe = {
   caret: "anfang" | "ende";
   /** Tasten, die als Hinweis-Chips gezeigt werden. */
   tastenHinweis: string[];
+  /** Anschläge, die eine geübte Lösung braucht — Grundlage für die Fehlerzählung. */
+  noetigeAnschlaege: number;
 };
 
 export const TASTATUR_AUFGABEN: Aufgabe[] = [
@@ -35,6 +37,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "ende",
     tastenHinweis: ["Umschalt ⇧"],
+    // Umschalt + H, u, n, d.
+    noetigeAnschlaege: 5,
   },
   {
     id: "ruecktaste",
@@ -45,6 +49,7 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "ende",
     tastenHinweis: ["Rücktaste ⟵"],
+    noetigeAnschlaege: 1,
   },
   {
     id: "entf",
@@ -55,6 +60,7 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "anfang",
     tastenHinweis: ["Entf"],
+    noetigeAnschlaege: 1,
   },
   {
     id: "pfeiltasten",
@@ -65,6 +71,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "ende",
     tastenHinweis: ["←"],
+    // ← und das fehlende a.
+    noetigeAnschlaege: 2,
   },
   {
     id: "pos1",
@@ -75,6 +83,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "ende",
     tastenHinweis: ["Pos1"],
+    // Pos1 und das A.
+    noetigeAnschlaege: 2,
   },
   {
     id: "ende",
@@ -85,6 +95,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "anfang",
     tastenHinweis: ["Ende"],
+    // Ende und das !.
+    noetigeAnschlaege: 2,
   },
   {
     id: "strgz",
@@ -95,6 +107,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "textarea",
     caret: "ende",
     tastenHinweis: ["Strg", "Z"],
+    // Entf zum Löschen, dann Strg+Z (2 Tasten).
+    noetigeAnschlaege: 3,
   },
   {
     id: "ausschneiden",
@@ -105,6 +119,8 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     art: "input",
     caret: "ende",
     tastenHinweis: ["Strg", "X", "Strg", "V"],
+    // Strg+X (2 Tasten) und Strg+V (2 Tasten).
+    noetigeAnschlaege: 4,
   },
 ];
 
@@ -158,4 +174,9 @@ export function pruefeAufgabe(aufgabe: Aufgabe, wert: string, gesehen: Gesehen):
 /** Bei »Umschalt« gelöst, aber mit Feststelltaste statt Umschalt — verdient trotzdem den Punkt, aber einen Hinweis. */
 export function mitFeststelltasteGeloest(aufgabe: Aufgabe, wert: string, gesehen: Gesehen): boolean {
   return aufgabe.id === "umschalt" && wert === "Hund" && gesehen.capsLock && !gesehen.shift;
+}
+
+/** Zu viele Tasten gedrückt, bevor die Aufgabe gelöst war — mehr als das Dreifache plus 8. */
+export function zuVieleAnschlaege(anschlaege: number, noetigeAnschlaege: number): boolean {
+  return anschlaege > 3 * noetigeAnschlaege + 8;
 }

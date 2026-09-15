@@ -25,8 +25,18 @@ type Art = "klick" | "doppelklick";
 type Runde = { raster: string[]; ziel: string; nr: number; seit: number };
 type Hinweis = { text: string; ton: "gut" | "schlecht" | "info" } | null;
 
-function neueRunde(anzahl: number, nr: number, ohne?: string): Runde {
-  const raster = ziehe(AVATARS, anzahl).map(a => a.id);
+/** Eine zufällige Reihenfolge aller Tiere — beim Klicken gilt sie für einen ganzen Durchgang. */
+function mischen(): string[] {
+  return ziehe(AVATARS, AVATARS.length).map(a => a.id);
+}
+
+/**
+ * Mit `reihenfolge` bleibt das Raster stehen (nur mehr oder weniger Tiere je
+ * Stufe) — das Kind soll zielen üben, nicht jedes Mal neu suchen. Ohne wird
+ * jede Runde neu gemischt.
+ */
+function neueRunde(anzahl: number, nr: number, ohne?: string, reihenfolge?: string[]): Runde {
+  const raster = reihenfolge ? reihenfolge.slice(0, anzahl) : ziehe(AVATARS, anzahl).map(a => a.id);
   const auswahl = raster.filter(id => id !== ohne);
   return { raster, ziel: auswahl[Math.floor(Math.random() * auswahl.length)], nr, seit: performance.now() };
 }
@@ -42,7 +52,11 @@ export default function Klickspiel({
     : spiel.stufen;
   const [phase, setPhase] = useState<"bereit" | "laeuft" | "fertig">("bereit");
   const [stufe, setStufe] = useState(0);
-  const [runde, setRunde] = useState<Runde>(() => neueRunde(stufen[0].spalten * stufen[0].zeilen, 0));
+  // Beim Klicken eine feste Reihenfolge je Durchgang; »Nochmal« mischt neu.
+  const reihenfolge = useRef<string[] | null>(null);
+  if (reihenfolge.current === null) reihenfolge.current = mischen();
+  const ordnung = () => (art === "klick" ? reihenfolge.current! : undefined);
+  const [runde, setRunde] = useState<Runde>(() => neueRunde(stufen[0].spalten * stufen[0].zeilen, 0, undefined, ordnung()));
   const [treffer, setTreffer] = useState(0);
   const [punkte, setPunkte] = useState(0);
   const [hinweis, setHinweis] = useState<Hinweis>(null);
@@ -54,6 +68,7 @@ export default function Klickspiel({
   const start = useRef(0);
   const einzel = useRef<{ id: string; t: number } | null>(null);
   const einzelUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wackelUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
   const zielAnzeige = useRef<HTMLDivElement>(null);
   const rasterRef = useRef<HTMLDivElement>(null);
 
@@ -113,7 +128,7 @@ export default function Klickspiel({
     // nach einem Fehlgriff bleibt das Ziel stehen.
     if (getroffen || ms >= zeitMs || neu !== stufe) {
       const s = stufen[neu];
-      setRunde(neueRunde(s.spalten * s.zeilen, runde.nr + 1, runde.ziel));
+      setRunde(neueRunde(s.spalten * s.zeilen, runde.nr + 1, runde.ziel, ordnung()));
     }
   }
 
@@ -125,7 +140,10 @@ export default function Klickspiel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, runde.nr, stufe]);
 
-  useEffect(() => () => { if (einzelUhr.current) clearTimeout(einzelUhr.current); }, []);
+  useEffect(() => () => {
+    if (einzelUhr.current) clearTimeout(einzelUhr.current);
+    if (wackelUhr.current) clearTimeout(wackelUhr.current);
+  }, []);
 
   function los() {
     if (!start.current) start.current = performance.now();
@@ -143,12 +161,17 @@ export default function Klickspiel({
     setTreffer(0);
     setPunkte(0);
     setHinweis(null);
-    setRunde(neueRunde(stufen[0].spalten * stufen[0].zeilen, 0));
+    reihenfolge.current = mischen();
+    setRunde(neueRunde(stufen[0].spalten * stufen[0].zeilen, 0, undefined, ordnung()));
     setPhase("bereit");
   }
 
   function daneben(id: string, text: string) {
+    if (wackelUhr.current) clearTimeout(wackelUhr.current);
     setWackelt({ id, nr: Date.now() });
+    // Nur kurz: blieb die Markierung stehen, wackelte dasselbe Tier in einer
+    // späteren Runde noch einmal — als wäre es wieder daneben gegangen.
+    wackelUhr.current = setTimeout(() => setWackelt(null), 650);
     versuch(false, performance.now() - runde.seit, { text, ton: "schlecht" });
   }
 
@@ -220,7 +243,7 @@ export default function Klickspiel({
             {art === "klick"
               ? <>Klicke mit der <b>linken</b> Maustaste auf: <b>{tierName(runde.ziel)}</b></>
               : <><b>Doppelklick</b> auf das blinkende Tier: <b>{tierName(runde.ziel)}</b></>}
-            <div className="text-xs text-[var(--text-muted)] mt-1 tabular-nums">
+            <div data-zusatz className="text-xs text-[var(--text-muted)] mt-1 tabular-nums">
               Treffer {treffer} / {spiel.ziele} · Stufe {stufe + 1} von {spiel.stufen.length} · {sekunden(zeitMs)} je Tier
             </div>
           </>
@@ -269,15 +292,16 @@ export default function Klickspiel({
             const istZiel = id === runde.ziel;
             return (
               <button
-                key={`${runde.nr}-${id}`}
+                key={id}
                 type="button"
                 data-zelle={id}
+                data-ziel={istZiel || undefined}
                 aria-label={tierName(id)}
                 onClick={e => klick(e, id)}
                 onDoubleClick={() => doppelklick(id)}
                 className={
                   "aspect-square rounded-2xl flex items-center justify-center select-none cursor-pointer " +
-                  (art === "doppelklick" && istZiel ? "maus-blinken ring-4 ring-[var(--accent)] " : "") +
+                  (istZiel ? "maus-blinken ring-4 ring-[var(--accent)] " : "") +
                   (wackelt?.id === id ? "maus-wackeln" : "")
                 }
                 style={{ backgroundColor: a.bg, fontSize: `min(${48 / spalten}vw, ${300 / spalten}px)` }}

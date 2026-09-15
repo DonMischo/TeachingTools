@@ -37,10 +37,19 @@ import StufeTastatur from "./StufeTastatur";
 import StufeExplorer from "./StufeExplorer";
 import StufeFenster from "./StufeFenster";
 import StufeScreenshot from "./StufeScreenshot";
+import StufeSuche from "./StufeSuche";
+import StufeApps from "./StufeApps";
+import StufeAussehen from "./StufeAussehen";
+import StufeBedienhilfe from "./StufeBedienhilfe";
+import StufeTaskleiste from "./StufeTaskleiste";
+import StufeProfil from "./StufeProfil";
+import { WindowsKontext } from "./windows/WindowsKontext";
+import { STANDARD_AUSSEHEN, aussehenAus, type Aussehen } from "@/lib/maus/windows";
+import { benutzernameAus } from "@/lib/maus/dateisystem";
 import MausBestenliste from "./MausBestenliste";
 import MausUebersicht from "./MausUebersicht";
 
-type ReiterId = StufeId | "speichern1" | "speichern2" | "bestenliste" | "uebersicht";
+type ReiterId = StufeId | "speichern1" | "speichern2" | "speichern3" | "bestenliste" | "uebersicht";
 
 const REITER: { id: ReiterId; icon: string; label: string; teil: Teil | 0 }[] = [
   { id: "klick", icon: "👆", label: "Klicken", teil: 1 },
@@ -56,6 +65,13 @@ const REITER: { id: ReiterId; icon: string; label: string; teil: Teil | 0 }[] = 
   { id: "fenster", icon: "🪟", label: "Fenster", teil: 2 },
   { id: "screenshot", icon: "📸", label: "Bildschirmfoto", teil: 2 },
   { id: "speichern2", icon: "💾", label: "Urkunde", teil: 2 },
+  { id: "suche", icon: "🔍", label: "Suchen", teil: 3 },
+  { id: "apps", icon: "🧰", label: "Welche App?", teil: 3 },
+  { id: "aussehen", icon: "🎨", label: "Hintergrund & Farben", teil: 3 },
+  { id: "bedienhilfe", icon: "🔎", label: "Zeiger & Text", teil: 3 },
+  { id: "taskleiste", icon: "📌", label: "Taskleiste & Start", teil: 3 },
+  { id: "profil", icon: "🔒", label: "Profil & Sperrbildschirm", teil: 3 },
+  { id: "speichern3", icon: "💾", label: "Urkunde", teil: 3 },
   { id: "bestenliste", icon: "🏆", label: "Bestenliste", teil: 0 },
   { id: "uebersicht", icon: "👩‍🏫", label: "Klassenübersicht", teil: 0 },
 ];
@@ -65,7 +81,7 @@ const NAMEN = Object.fromEntries(REITER.map(r => [r.id, `${r.icon} ${r.label}`])
 const TIER_SCHLUESSEL = "hp_maus_tier";
 const EINZELLISTEN: MausModus[] = ["klick", "doppelklick", "ziehen"];
 
-type Gespeichert = { ergebnisse: Ergebnisse; bestanden: Teil[]; hilfe: boolean };
+type Gespeichert = { ergebnisse: Ergebnisse; bestanden: Teil[]; hilfe: boolean; aussehen: Aussehen };
 
 type Pruefung = {
   teil: Teil;
@@ -112,8 +128,9 @@ function laden(schluessel: string): Gespeichert | null {
     if (!roh || typeof roh !== "object" || typeof roh.ergebnisse !== "object") return null;
     return {
       ergebnisse: roh.ergebnisse ?? {},
-      bestanden: Array.isArray(roh.bestanden) ? roh.bestanden.filter((t: unknown) => t === 1 || t === 2) : [],
+      bestanden: Array.isArray(roh.bestanden) ? roh.bestanden.filter((t: unknown) => t === 1 || t === 2 || t === 3) : [],
       hilfe: roh.hilfe === true,
+      aussehen: aussehenAus(roh.aussehen),
     };
   } catch {
     return null;
@@ -141,6 +158,8 @@ export default function MausFuehrerschein({
   const [ergebnisse, setErgebnisse] = useState<Ergebnisse>({});
   const [bestanden, setBestanden] = useState<Teil[]>([]);
   const [hilfe, setHilfe] = useState(false);
+  // Das eigene Windows (Hintergrund, Zeiger, Taskleiste …) — Teil 3 verändert es.
+  const [aussehen, setAussehen] = useState<Aussehen>(STANDARD_AUSSEHEN);
   const [geladen, setGeladen] = useState(false);
   const [pruefung, setPruefung] = useState<Pruefung | null>(null);
   const [nurTouch, setNurTouch] = useState(false);
@@ -170,6 +189,7 @@ export default function MausFuehrerschein({
     setErgebnisse(g?.ergebnisse ?? {});
     setBestanden(g?.bestanden ?? []);
     setHilfe(g?.hilfe ?? false);
+    setAussehen(g?.aussehen ?? STANDARD_AUSSEHEN);
     const e = g?.ergebnisse ?? {};
     gemeldet.current = {
       klick: e.klick?.punkte ?? 0, doppelklick: e.doppelklick?.punkte ?? 0,
@@ -180,8 +200,8 @@ export default function MausFuehrerschein({
 
   useEffect(() => {
     if (!geladen) return;
-    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe })); } catch {}
-  }, [geladen, schluessel, ergebnisse, bestanden, hilfe]);
+    try { localStorage.setItem(schluessel, JSON.stringify({ ergebnisse, bestanden, hilfe, aussehen })); } catch {}
+  }, [geladen, schluessel, ergebnisse, bestanden, hilfe, aussehen]);
 
   // Bestenliste: nur melden, was besser ist als das zuletzt Gemeldete.
   useEffect(() => {
@@ -202,7 +222,7 @@ export default function MausFuehrerschein({
         modus,
         wert: Math.min(wert, GRENZEN[modus]),
         dauer_ms: e ? e.dauerMs : Object.values(ergebnisse).reduce((s, x) => s + (x?.dauerMs ?? 0), 0),
-        kontext: e ? e.details[0] ?? "" : `Teil 1: ${anzahl(1)}/6 · Teil 2: ${anzahl(2)}/5`,
+        kontext: e ? e.details[0] ?? "" : `Teil 1: ${anzahl(1)}/6 · Teil 2: ${anzahl(2)}/5 · Teil 3: ${anzahl(3)}/6`,
         hilfe,
       }, zugang).catch(() => {});
     }
@@ -267,7 +287,7 @@ export default function MausFuehrerschein({
 
   function zurUrkunde(teil: Teil) {
     setPruefung(null);
-    setReiter(teil === 1 ? "speichern1" : "speichern2");
+    setReiter(teil === 1 ? "speichern1" : teil === 2 ? "speichern2" : "speichern3");
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────
@@ -293,6 +313,12 @@ export default function MausFuehrerschein({
       case "explorer": return <StufeExplorer key={key} {...p} avatar={tier} />;
       case "fenster": return <StufeFenster key={key} {...p} avatar={tier} />;
       case "screenshot": return <StufeScreenshot key={key} {...p} avatar={tier} />;
+      case "suche": return <StufeSuche key={key} {...p} avatar={tier} />;
+      case "apps": return <StufeApps key={key} {...p} avatar={tier} />;
+      case "aussehen": return <StufeAussehen key={key} {...p} avatar={tier} />;
+      case "bedienhilfe": return <StufeBedienhilfe key={key} {...p} avatar={tier} />;
+      case "taskleiste": return <StufeTaskleiste key={key} {...p} avatar={tier} />;
+      case "profil": return <StufeProfil key={key} {...p} avatar={tier} />;
     }
   }
 
@@ -333,8 +359,8 @@ export default function MausFuehrerschein({
         onZurueck={() => setPruefung(null)}
       />
     );
-  } else if (reiter === "speichern1" || reiter === "speichern2") {
-    const teil: Teil = reiter === "speichern1" ? 1 : 2;
+  } else if (reiter === "speichern1" || reiter === "speichern2" || reiter === "speichern3") {
+    const teil: Teil = reiter === "speichern1" ? 1 : reiter === "speichern2" ? 2 : 3;
     inhalt = (
       <StufeSpeichern
         key={reiter}
@@ -357,6 +383,7 @@ export default function MausFuehrerschein({
 
   return (
     <MausKontext.Provider value={{ pruefung: !!pruefung && !pruefung.fertig, hilfe }}>
+    <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: benutzernameAus(name) }}>
       <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-5xl mx-auto w-full">
         <MausStile />
         <div className="flex flex-wrap items-center gap-3">
@@ -399,7 +426,7 @@ export default function MausFuehrerschein({
           </div>
         ) : (
           <div role="tablist" aria-label="Stufe" className="flex flex-col gap-2">
-            {([1, 2] as const).map(t => (
+            {([1, 2, 3] as const).map(t => (
               <div key={t} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black text-[var(--text-muted)] w-12">Teil {t}</span>
                 {REITER.filter(r => r.teil === t).map(reiterKnopf)}
@@ -420,6 +447,7 @@ export default function MausFuehrerschein({
 
         {inhalt}
       </div>
+    </WindowsKontext.Provider>
     </MausKontext.Provider>
   );
 }

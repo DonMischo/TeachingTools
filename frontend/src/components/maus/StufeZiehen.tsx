@@ -233,7 +233,7 @@ function Spur({
         auftrag={fertig
           ? <>Alle vier Wege geschafft! Weiter geht es mit dem Aufräumen.</>
           : <>Ziehe dein Tier mit <b>gedrückter linker Maustaste</b> am Weg entlang bis zum Ziel.
-              <span className="text-xs text-[var(--text-muted)] ml-2">Weg {nr + 1} von {SPUREN.length}: {weg.titel}</span></>}
+              <span data-zusatz className="text-xs text-[var(--text-muted)] ml-2">Weg {nr + 1} von {SPUREN.length}: {weg.titel}</span></>}
         punkte={summe(punkte)}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -302,6 +302,9 @@ function Aufraeumen({
   const [demoOrt, setDemoOrt] = useState<{ id: string; ort: Ort; weich: boolean } | null>(null);
   const [hinweis, setHinweis] = useState<Hinweis>(null);
   const [punkte, setPunkte] = useState<number[]>([]);
+  // Wackeln nur kurz nach dem Fehlgriff — `fehl` bleibt fürs Punkten stehen, das Wackeln nicht.
+  const [wackelt, setWackelt] = useState<string | null>(null);
+  const wackelUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
   const richtig = useRef(0);
   const anzahl = useRef(0);
   const zonenRef = useRef<Record<string, HTMLDivElement | null>>({});
@@ -332,6 +335,9 @@ function Aufraeumen({
     if (!zone) return;
     if (zone !== ding.ziel) {
       setFehl(f => new Set(f).add(ding.id));
+      if (wackelUhr.current) clearTimeout(wackelUhr.current);
+      setWackelt(ding.id);
+      wackelUhr.current = setTimeout(() => setWackelt(null), 650);
       const name = zonen.find(z => z.id === zone)?.label;
       setHinweis({ text: `${ding.label} gehört nicht zu »${name}«. Versuch es nochmal!`, gut: false });
       return;
@@ -429,7 +435,7 @@ function Aufraeumen({
                     onPointerUp={e => ablegen(e, ding)}
                     onPointerCancel={() => setZug(null)}
                     onContextMenu={e => e.preventDefault()}
-                    className={"select-none " + (ziehtDas ? "cursor-grabbing" : "cursor-grab") + (fehl.has(ding.id) && !ziehtDas ? " maus-wackeln" : "")}
+                    className={"select-none " + (ziehtDas ? "cursor-grabbing" : "cursor-grab") + (wackelt === ding.id && !ziehtDas ? " maus-wackeln" : "")}
                     style={{
                       touchAction: "none",
                       ...(ziehtDas ? {

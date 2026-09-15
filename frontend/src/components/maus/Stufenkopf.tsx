@@ -9,6 +9,20 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { useMausKontext } from "./MausKontext";
 
 /**
+ * Nur der Auftrag selbst: Tipps und Zähler tragen `data-zusatz` und bleiben
+ * stumm, Emojis auch — die Stimme läse sonst »Glühbirne« vor.
+ */
+export function vorlesbarerText(el: HTMLElement): string {
+  const kopie = el.cloneNode(true) as HTMLElement;
+  kopie.querySelectorAll("[data-zusatz]").forEach(z => z.remove());
+  return (kopie.textContent ?? "")
+    // Emojis samt Variations-Selektor (FE0F) und Verbinder (200D).
+    .replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Liest den Auftrag mit der Stimme des Browsers vor — für Kinder, die noch
  * langsam lesen oder gerade Deutsch lernen. Kein Server, keine Kosten.
  */
@@ -26,7 +40,7 @@ export function Vorlesen({ ziel }: { ziel: RefObject<HTMLElement | null> }) {
   function umschalten() {
     const synth = window.speechSynthesis;
     if (spricht) { synth.cancel(); setSpricht(false); return; }
-    const text = ziel.current?.innerText.trim();
+    const text = ziel.current ? vorlesbarerText(ziel.current) : "";
     if (!text) return;
     const satz = new SpeechSynthesisUtterance(text);
     satz.lang = "de-DE";

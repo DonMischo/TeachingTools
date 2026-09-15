@@ -11,10 +11,11 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  TASTATUR_AUFGABEN, leeresGesehen, mitFeststelltasteGeloest, pruefeAufgabe,
+  TASTATUR_AUFGABEN, leeresGesehen, mitFeststelltasteGeloest, pruefeAufgabe, zuVieleAnschlaege,
   type Aufgabe, type Gesehen,
 } from "@/lib/maus/tastatur";
-import { PUNKTE_TEIL2, type StufenErgebnis } from "@/lib/maus/ergebnis";
+import type { StufenErgebnis } from "@/lib/maus/ergebnis";
+import { wertung } from "@/lib/maus/wertung";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, useDemo, type DemoSchritt } from "./Demo";
@@ -81,8 +82,11 @@ export default function StufeTastatur({
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
   const [erfolg, setErfolg] = useState(false);
   const [gedrueckt, setGedrueckt] = useState<Set<string>>(new Set());
+  const [fehler, setFehler] = useState(0);
+  const fehlerRef = useRef(0);
   const feld = useRef<Feld>(null);
   const gesehen = useRef<Gesehen>(leeresGesehen());
+  const anschlaege = useRef(0);
   const start = useRef(performance.now());
   const vorDemo = useRef("");
   const demo = useDemo(() => { if (feld.current) feld.current.value = vorDemo.current; });
@@ -94,6 +98,7 @@ export default function StufeTastatur({
   useEffect(() => {
     if (fertig) return;
     gesehen.current = leeresGesehen();
+    anschlaege.current = 0;
     setErfolg(false);
     setHinweis(null);
     const el = feld.current;
@@ -108,27 +113,29 @@ export default function StufeTastatur({
     if (demo.aktiv || fertig || erfolg) return;
     if (!pruefeAufgabe(aufgabe, wert, gesehen.current)) return;
     setErfolg(true);
+    if (zuVieleAnschlaege(anschlaege.current, aufgabe.noetigeAnschlaege)) {
+      fehlerRef.current += 1;
+      setFehler(fehlerRef.current);
+    }
     const zeile = mitFeststelltasteGeloest(aufgabe, wert, gesehen.current)
       ? "Klappt auch mit Feststelltaste — für ein Zeichen ist Umschalt aber schneller."
       : "Richtig! ⭐";
     setHinweis({ text: zeile, gut: true });
+    const dauerMs = Math.round(performance.now() - start.current);
     setTimeout(() => {
       const naechste = nr + 1;
       setNr(naechste);
       if (naechste === TASTATUR_AUFGABEN.length) {
-        onFertig({
-          punkte: Math.round(PUNKTE_TEIL2 * naechste / TASTATUR_AUFGABEN.length),
-          dauerMs: Math.round(performance.now() - start.current),
-          details: [
-            `${naechste} von ${TASTATUR_AUFGABEN.length} Aufgaben`,
-            "Strg + Z gerettet",
-          ],
+        const { punkte, details } = wertung({
+          stufe: "tastatur", geloest: naechste, anzahl: TASTATUR_AUFGABEN.length, dauerMs, fehler: fehlerRef.current,
         });
+        onFertig({ punkte, dauerMs, details: [...details, "Strg + Z gerettet"] });
       }
     }, 900);
   }
 
   function tasteRunter(e: React.KeyboardEvent<Feld>) {
+    if (!demo.aktiv && !fertig) anschlaege.current += 1;
     setGedrueckt(s => new Set(s).add(e.code));
     const g = gesehen.current;
     if (e.code === "ShiftLeft" || e.code === "ShiftRight") g.shift = true;
@@ -168,6 +175,10 @@ export default function StufeTastatur({
   }
 
   const schriftgroesse = hilfe ? "text-lg" : "text-base";
+  const punkteLaufend = wertung({
+    stufe: "tastatur", geloest: nr, anzahl: TASTATUR_AUFGABEN.length,
+    dauerMs: Math.round(performance.now() - start.current), fehler,
+  }).punkte;
 
   return (
     <div className="flex flex-col gap-4">
@@ -175,8 +186,8 @@ export default function StufeTastatur({
         titel="⌨️ Teil 2 · Tastatur"
         auftrag={fertig
           ? <>Alle Tastatur-Aufgaben geschafft!</>
-          : <>{aufgabe.auftrag}<div className="text-xs text-[var(--text-muted)] mt-1">💡 {aufgabe.tipp}</div></>}
-        punkte={Math.round(PUNKTE_TEIL2 * Math.min(nr, TASTATUR_AUFGABEN.length) / TASTATUR_AUFGABEN.length)}
+          : <>{aufgabe.auftrag}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 {aufgabe.tipp}</div></>}
+        punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}

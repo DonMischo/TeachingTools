@@ -212,3 +212,8 @@ export function zurueck(stand: ExplorerStand): ExplorerStand {
 export function ordnerName(stand: ExplorerStand, id: string): string | undefined {
   return stand.dateien.find(d => d.id === id)?.name;
 }
+
+/** Landet eine Verschiebe-Aktion (Ziehen oder Einfügen) in einem anderen als dem Zielordner? */
+export function istFalscherZielordner(zielOrdner: string, schulordner: string | null): boolean {
+  return schulordner !== null && zielOrdner !== schulordner;
+}

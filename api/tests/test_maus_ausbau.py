@@ -21,13 +21,14 @@ HAUSPUNKTE_JE_TEIL = 5
 
 TEIL_1_STUFEN = ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"]
 TEIL_2_STUFEN = ["scrollen", "tastatur", "explorer", "fenster", "screenshot"]
+TEIL_3_STUFEN = ["suche", "apps", "aussehen", "bedienhilfe", "taskleiste", "profil"]
+_TEILE = {1: TEIL_1_STUFEN, 2: TEIL_2_STUFEN, 3: TEIL_3_STUFEN}
 
 
 def _stufen(teil: int) -> dict:
-    """Ein vollständiger ``stufen``-Block für Teil 1 oder Teil 2 — jede Stufe
+    """Ein vollständiger ``stufen``-Block für einen Teil — jede Stufe
     bestanden (punkte > 0)."""
-    ids = TEIL_1_STUFEN if teil == 1 else TEIL_2_STUFEN
-    return {sid: {"punkte": 900, "sterne": 2, "dauer_ms": 40000} for sid in ids}
+    return {sid: {"punkte": 900, "sterne": 2, "dauer_ms": 40000} for sid in _TEILE[teil]}
 
 
 def _schueler_mit_klasse(db, klass: Class, vorname="Ada", nachname="Lovelace") -> Student:
@@ -120,8 +121,8 @@ def test_sitzung_filter_falsches_werkzeug(client, teacher_token):
     assert r.status_code == 400
 
 
-@pytest.mark.parametrize("wert,status", [(60000, 200), (60001, 400)])
-def test_gesamt_obergrenze_ist_jetzt_60000(client, db, wert, status):
+@pytest.mark.parametrize("wert,status", [(70000, 200), (70001, 400)])
+def test_gesamt_obergrenze_mit_teil_3_ist_70000(client, db, wert, status):
     ada = schueler(db)
     r = client.post("/api/maus/bestenliste", json=_eintrag("gesamt", wert), headers=als(ada))
     assert r.status_code == status, r.text
@@ -221,7 +222,7 @@ def test_bestanden_unbekannter_teil_wird_abgelehnt(client, teacher_token):
     gast_token = _gast(client, teacher_token, code)
 
     body = _fortschritt_body(teil=1)
-    body["bestanden"] = [3]
+    body["bestanden"] = [4]
     r = client.put(f"/api/maus/sitzung/{code}/fortschritt", json=body, headers=auth(gast_token))
     assert r.status_code == 400
 
@@ -448,11 +449,33 @@ def test_unvollstaendige_stufen_gelten_als_nicht_bestanden(client, db):
     assert r.status_code == 400
 
 
-def test_pruefung_teil_ausserhalb_1_2_wird_abgelehnt(client, db):
+def test_pruefung_teil_ausserhalb_1_bis_3_wird_abgelehnt(client, db):
     ada = schueler(db)
-    r = client.post("/api/maus/pruefung", json={"teil": 3, "stufen": _stufen(1), "hilfe": False, "code": None},
+    r = client.post("/api/maus/pruefung", json={"teil": 4, "stufen": _stufen(1), "hilfe": False, "code": None},
                     headers=als(ada))
     assert r.status_code == 422
+
+
+def test_teil_3_bestanden_vergibt_hauspunkte(client, db, teacher_token, klass):
+    """Teil 3 (Suchen, Apps, Aussehen) zählt wie Teil 1 und 2."""
+    ada = _schueler_mit_klasse(db, klass)
+    _haus(db, klass, name="Haus Süd")
+    code = _sitzung(client, teacher_token)
+    client.cookies.clear()
+    r = client.post("/api/maus/pruefung", json={"teil": 3, "stufen": _stufen(3), "hilfe": False, "code": code},
+                    headers=als(ada))
+    assert r.status_code == 200, r.text
+    assert r.json()["punkte"] == HAUSPUNKTE_JE_TEIL
+    assert r.json()["haus"] == "Haus Süd"
+
+
+def test_teil_3_unvollstaendig_wird_abgelehnt(client, db, klass):
+    ada = _schueler_mit_klasse(db, klass)
+    stufen = _stufen(3)
+    del stufen["profil"]
+    r = client.post("/api/maus/pruefung", json={"teil": 3, "stufen": stufen, "hilfe": False, "code": None},
+                    headers=als(ada))
+    assert r.status_code == 400
 
 
 def test_pruefung_gast_darf_nicht(client, teacher_token):

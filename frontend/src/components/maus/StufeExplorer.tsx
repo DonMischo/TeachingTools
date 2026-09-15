@@ -8,10 +8,11 @@
  * Weg genommen wurde, spielt für die Punkte keine Rolle.
  */
 import { useEffect, useRef, useState, type MouseEvent as MausEreignis, type PointerEvent as ZeigerEreignis } from "react";
-import { PUNKTE_TEIL2, type StufenErgebnis } from "@/lib/maus/ergebnis";
+import type { StufenErgebnis } from "@/lib/maus/ergebnis";
+import { wertung } from "@/lib/maus/wertung";
 import {
-  anfangsStand, ausschneiden, einfuegen, klick, kopieren, leeren, loeschen, neuerOrdner,
-  oeffnen, sichtbareDateien, strgKlick, umbenennen, umschaltKlick, verschieben, zurueck,
+  anfangsStand, ausschneiden, einfuegen, istFalscherZielordner, klick, kopieren, leeren, loeschen,
+  neuerOrdner, oeffnen, sichtbareDateien, strgKlick, umbenennen, umschaltKlick, verschieben, zurueck,
   type Datei, type ExplorerStand,
 } from "@/lib/maus/explorer";
 import { Stufenkopf } from "./Stufenkopf";
@@ -20,6 +21,8 @@ import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
 
 const ANZAHL_SCHRITTE = 6;
+/** Schritt-Index der Aufgabe »Verschiebe die drei Dateien in den Ordner Schule«. */
+const VERSCHIEBE_SCHRITT = 3;
 
 const ICON: Record<Datei["art"], string> = {
   ordner: "📁", docx: "📄", jpg: "🖼️", mp3: "🎵", txt: "📄",
@@ -57,6 +60,8 @@ export default function StufeExplorer({
   const [nameEntwurf, setNameEntwurf] = useState("");
   const [zug, setZug] = useState<Zug | null>(null);
   const [ueberOrdner, setUeberOrdner] = useState<string | null>(null);
+  const [fehler, setFehler] = useState(0);
+  const fehlerRef = useRef(0);
 
   const start = useRef(performance.now());
   const schulordner = useRef<string | null>(null);
@@ -88,6 +93,25 @@ export default function StufeExplorer({
   const fertig = schritt >= ANZAHL_SCHRITTE;
   const sichtbar = sichtbareDateien(stand);
 
+  function fehlerHinzu() {
+    fehlerRef.current += 1;
+    setFehler(fehlerRef.current);
+  }
+
+  /** Löscht in den Papierkorb — zählt als Fehlversuch, ist in keiner Aufgabe verlangt. */
+  function handleLoeschen() {
+    fehlerHinzu();
+    aendern(loeschen);
+  }
+
+  /** Einfügen: außerhalb von »Schule« während der Verschiebe-Aufgabe zählt als Fehlversuch. */
+  function handleEinfuegen() {
+    if (schritt === VERSCHIEBE_SCHRITT && istFalscherZielordner(stand.aktuellerOrdner, schulordner.current)) {
+      fehlerHinzu();
+    }
+    aendern(einfuegen);
+  }
+
   function pruefeSchritt(neu: ExplorerStand) {
     let s = schritt;
     if (s === 0 && neu.dateien.some(d => d.art === "ordner")) {
@@ -117,11 +141,11 @@ export default function StufeExplorer({
     if (s !== schritt) setSchritt(s);
     if (s === 6 && !gemeldet.current) {
       gemeldet.current = true;
-      onFertig({
-        punkte: PUNKTE_TEIL2,
-        dauerMs: Math.round(performance.now() - start.current),
-        details: [`${ANZAHL_SCHRITTE} von ${ANZAHL_SCHRITTE} Aufgaben`, "Ordner angelegt, umbenannt, Dateien verschoben"],
+      const dauerMs = Math.round(performance.now() - start.current);
+      const { punkte, details } = wertung({
+        stufe: "explorer", geloest: ANZAHL_SCHRITTE, anzahl: ANZAHL_SCHRITTE, dauerMs, fehler: fehlerRef.current,
       });
+      onFertig({ punkte, dauerMs, details: [...details, "Ordner angelegt, umbenannt, Dateien verschoben"] });
     }
   }
 
@@ -175,6 +199,7 @@ export default function StufeExplorer({
         text: r.fehler === "leer" ? "Bitte gib einen Namen ein." : "Diesen Namen gibt es schon.",
         gut: false,
       });
+      fehlerHinzu();
       return;
     }
     setUmbenennenId(null);
@@ -186,10 +211,10 @@ export default function StufeExplorer({
     function taste(e: KeyboardEvent) {
       if (demo.aktiv || fertig || umbenennenId) return;
       if (e.key === "F2" && stand.auswahl.length === 1) { anF2(stand.auswahl[0]); }
-      else if (e.key === "Delete" && stand.auswahl.length > 0) { aendern(loeschen); }
+      else if (e.key === "Delete" && stand.auswahl.length > 0) { handleLoeschen(); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x" && stand.auswahl.length > 0) { aendern(ausschneiden); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && stand.auswahl.length > 0) { aendern(kopieren); }
-      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && stand.zwischenablage) { aendern(einfuegen); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && stand.zwischenablage) { handleEinfuegen(); }
     }
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
@@ -224,7 +249,12 @@ export default function StufeExplorer({
 
   function loslassen() {
     if (!zug) return;
-    if (zug.aktiv && ueberOrdner) aendern(s => verschieben(s, zug.ids, ueberOrdner));
+    if (zug.aktiv && ueberOrdner) {
+      if (schritt === VERSCHIEBE_SCHRITT && istFalscherZielordner(ueberOrdner, schulordner.current)) {
+        fehlerHinzu();
+      }
+      aendern(s => verschieben(s, zug.ids, ueberOrdner));
+    }
     setZug(null);
     setUeberOrdner(null);
   }
@@ -271,6 +301,10 @@ export default function StufeExplorer({
   }
 
   const groesse = hilfe ? HILFE_GROESSE : 1;
+  const punkteLaufend = wertung({
+    stufe: "explorer", geloest: schritt, anzahl: ANZAHL_SCHRITTE,
+    dauerMs: Math.round(performance.now() - start.current), fehler,
+  }).punkte;
 
   return (
     <div className="flex flex-col gap-4">
@@ -278,8 +312,8 @@ export default function StufeExplorer({
         titel="📁 Teil 2 · Dateien ordnen"
         auftrag={fertig
           ? <>Toll gemacht! Du kennst dich jetzt im Explorer aus.</>
-          : <>{AUFGABEN[schritt]}<div className="text-xs text-[var(--text-muted)] mt-1">💡 Rechtsklick, F2, Strg+X/C/V oder Ziehen — was du kannst!</div></>}
-        punkte={Math.round(PUNKTE_TEIL2 * Math.min(schritt, ANZAHL_SCHRITTE) / ANZAHL_SCHRITTE)}
+          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 Rechtsklick, F2, Strg+X/C/V oder Ziehen — was du kannst!</div></>}
+        punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
@@ -313,7 +347,7 @@ export default function StufeExplorer({
               📋 Kopieren
             </button>
             <button ref={einfuegenRef} type="button" title="Einfügen" disabled={!stand.zwischenablage}
-              onClick={() => aendern(einfuegen)}
+              onClick={handleEinfuegen}
               className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
               📌 Einfügen
             </button>
@@ -323,7 +357,7 @@ export default function StufeExplorer({
               ✏️ Umbenennen
             </button>
             <button type="button" title="Löschen" disabled={stand.auswahl.length === 0}
-              onClick={() => aendern(loeschen)}
+              onClick={handleLoeschen}
               className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
               🗑️ Löschen
             </button>
@@ -376,9 +410,12 @@ export default function StufeExplorer({
                     onPointerCancel={() => { setZug(null); setUeberOrdner(null); }}
                     style={{ touchAction: "none", width: `${5.5 * groesse}rem` }}
                     className={
-                      "flex flex-col items-center gap-1 rounded-xl p-2 text-center " +
-                      (gewaehlt ? "bg-[var(--accent)]/20 ring-2 ring-[var(--accent)] " : "hover:bg-[var(--surface-hover)] ") +
-                      (ueberOrdner === d.id ? "ring-2 ring-dashed ring-[var(--green,#16a34a)] " : "") +
+                      // Markierung im Windows-Blau (#0078D7), leicht durchscheinend —
+                      // so wie im echten Explorer, und auch im dunklen Design lesbar.
+                      "flex flex-col items-center gap-1 rounded-md border p-2 text-center " +
+                      (gewaehlt || ueberOrdner === d.id
+                        ? "bg-[#0078d738] border-[#0078d799] "
+                        : "border-transparent hover:bg-[#0078d71a] ") +
                       (ziehtDas ? "opacity-40" : "")
                     }
                   >
@@ -438,7 +475,7 @@ export default function StufeExplorer({
             { text: "Ausschneiden", symbol: SYMBOLE.ausschneiden, kuerzel: "Strg+X", onWahl: () => aendern(ausschneiden) },
             { text: "Kopieren", symbol: SYMBOLE.kopieren, kuerzel: "Strg+C", onWahl: () => aendern(kopieren) },
             { text: "Umbenennen", symbol: SYMBOLE.umbenennen, kuerzel: "F2", onWahl: () => anF2(menue.ziel) },
-            { text: "Löschen", symbol: SYMBOLE.loeschen, kuerzel: "Entf", onWahl: () => aendern(loeschen) },
+            { text: "Löschen", symbol: SYMBOLE.loeschen, kuerzel: "Entf", onWahl: handleLoeschen },
           ]}
         />
       )}

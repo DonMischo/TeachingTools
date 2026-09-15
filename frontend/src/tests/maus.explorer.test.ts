@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  anfangsStand, ausschneiden, einfuegen, klick, kopieren, leeren, loeschen,
+  anfangsStand, ausschneiden, einfuegen, istFalscherZielordner, klick, kopieren, leeren, loeschen,
   neuerOrdner, oeffnen, sichtbareDateien, strgKlick, umbenennen, umschaltKlick,
   verschieben, zurueck,
 } from "@/lib/maus/explorer";
@@ -183,6 +183,21 @@ describe("Explorer: Löschen, Öffnen, Zurück", () => {
   it("Zurück an der Wurzel ändert nichts", () => {
     const s = anfangsStand();
     expect(zurueck(s)).toBe(s);
+  });
+});
+
+describe("Explorer: falscher Zielordner", () => {
+  it("erkennt eine Ablage außerhalb des Schulordners", () => {
+    expect(istFalscherZielordner("", "schule-1")).toBe(true);
+    expect(istFalscherZielordner("anderer-ordner", "schule-1")).toBe(true);
+  });
+
+  it("erkennt die richtige Ablage im Schulordner", () => {
+    expect(istFalscherZielordner("schule-1", "schule-1")).toBe(false);
+  });
+
+  it("ohne bekannten Schulordner gibt es noch keinen Fehler", () => {
+    expect(istFalscherZielordner("irgendwo", null)).toBe(false);
   });
 });
 

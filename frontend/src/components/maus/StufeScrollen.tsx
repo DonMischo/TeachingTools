@@ -6,8 +6,8 @@
  */
 import { useRef, useState, type WheelEvent as RadEreignis } from "react";
 import { AvatarDisplay } from "@/components/AvatarPicker";
-import { PUNKTE_TEIL2 } from "@/lib/maus/ergebnis";
 import type { StufenErgebnis } from "@/lib/maus/ergebnis";
+import { wertung } from "@/lib/maus/wertung";
 import {
   ZIEL_LEISTE, ZIEL_QUER, ZIEL_RAD, scrollArt, spalten, zeilen,
 } from "@/lib/maus/scrollen";
@@ -53,6 +53,8 @@ export default function StufeScrollen({
   const [nr, setNr] = useState(0);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
   const [erfolg, setErfolg] = useState(false);
+  const [fehler, setFehler] = useState(0);
+  const fehlerRef = useRef(0);
   const start = useRef(performance.now());
 
   const liste = useRef<HTMLDivElement>(null);
@@ -74,6 +76,7 @@ export default function StufeScrollen({
   function naechste(details: string[]) {
     setErfolg(true);
     setHinweis({ text: "Richtig gefunden! ⭐", gut: true });
+    const dauerMs = Math.round(performance.now() - start.current);
     setTimeout(() => {
       setErfolg(false);
       setHinweis(null);
@@ -82,17 +85,18 @@ export default function StufeScrollen({
       const naechsteNr = nr + 1;
       setNr(naechsteNr);
       if (naechsteNr === AUFGABEN.length) {
-        onFertig({
-          punkte: Math.round((PUNKTE_TEIL2 * naechsteNr) / AUFGABEN.length),
-          dauerMs: Math.round(performance.now() - start.current),
-          details: [`${naechsteNr} von ${AUFGABEN.length} Aufgaben`, ...details],
+        const { punkte, details: wertungDetails } = wertung({
+          stufe: "scrollen", geloest: naechsteNr, anzahl: AUFGABEN.length, dauerMs, fehler: fehlerRef.current,
         });
+        onFertig({ punkte, dauerMs, details: [...wertungDetails, ...details] });
       }
     }, 1100);
   }
 
   function falsch(name: string) {
     setHinweis({ text: `Das war »${name}« — noch nicht ganz. ${auftrag.tipp}`, gut: false });
+    fehlerRef.current += 1;
+    setFehler(fehlerRef.current);
   }
 
   function radAmListe(e: RadEreignis<HTMLDivElement>) {
@@ -183,6 +187,10 @@ export default function StufeScrollen({
   }
 
   const zeilenHoehe = rowHoehe(hilfe);
+  const punkteLaufend = wertung({
+    stufe: "scrollen", geloest: nr, anzahl: AUFGABEN.length,
+    dauerMs: Math.round(performance.now() - start.current), fehler,
+  }).punkte;
 
   return (
     <div className="flex flex-col gap-4">
@@ -190,8 +198,8 @@ export default function StufeScrollen({
         titel="🖱️ Teil 2 · Scrollen"
         auftrag={fertig
           ? <>Alle Scroll-Aufgaben geschafft! Weiter geht es mit der Tastatur.</>
-          : <>{auftrag.text}<div className="text-xs text-[var(--text-muted)] mt-1">💡 {auftrag.tipp}</div></>}
-        punkte={Math.round((PUNKTE_TEIL2 * Math.min(nr, AUFGABEN.length)) / AUFGABEN.length)}
+          : <>{auftrag.text}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 {auftrag.tipp}</div></>}
+        punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}

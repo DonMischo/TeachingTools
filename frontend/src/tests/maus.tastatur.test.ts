@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   TASTATUR_AUFGABEN, leeresGesehen, normalisiereSatz, pruefeAufgabe, mitFeststelltasteGeloest,
-  type AufgabenId,
+  zuVieleAnschlaege, type AufgabenId,
 } from "@/lib/maus/tastatur";
 
 function aufgabe(id: AufgabenId) {
@@ -94,5 +94,27 @@ describe("Tastatur: Aufgabenliste", () => {
     expect(TASTATUR_AUFGABEN.length).toBeGreaterThanOrEqual(7);
     const ids = TASTATUR_AUFGABEN.map(a => a.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("hat für jede Aufgabe eine positive Anzahl nötiger Anschläge", () => {
+    for (const a of TASTATUR_AUFGABEN) {
+      expect(a.noetigeAnschlaege).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("Tastatur: zu viele Anschläge", () => {
+  it("verzeiht bis zum Dreifachen plus 8", () => {
+    expect(zuVieleAnschlaege(11, 1)).toBe(false);
+    expect(zuVieleAnschlaege(12, 1)).toBe(true);
+  });
+
+  it("skaliert mit den nötigen Anschlägen", () => {
+    expect(zuVieleAnschlaege(23, 5)).toBe(false);
+    expect(zuVieleAnschlaege(24, 5)).toBe(true);
+  });
+
+  it("zählt wenige Anschläge nie als Fehlversuch", () => {
+    expect(zuVieleAnschlaege(1, 1)).toBe(false);
   });
 });

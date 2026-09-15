@@ -19,6 +19,7 @@ import {
 import { tierName } from "@/lib/maus/tiere";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo } from "./Demo";
+import { leinwandAlsPdf } from "@/lib/maus/pdf";
 
 const W = 1240;
 const H = 1754;
@@ -42,11 +43,20 @@ export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: stri
     { id: "fenster", icon: "🪟", titel: "Fenster" },
     { id: "screenshot", icon: "📸", titel: "Bildschirmfoto" },
   ],
+  3: [
+    { id: "suche", icon: "🔍", titel: "Windows-Suche" },
+    { id: "apps", icon: "🧰", titel: "Welche App wofür?" },
+    { id: "aussehen", icon: "🎨", titel: "Hintergrund & Farben" },
+    { id: "bedienhilfe", icon: "🔎", titel: "Zeiger & Textgröße" },
+    { id: "taskleiste", icon: "📌", titel: "Taskleiste & Start" },
+    { id: "profil", icon: "🔒", titel: "Profil & Sperrbildschirm" },
+  ],
 };
 
 const UNTERTITEL: Record<Teil, string> = {
   1: "Grundkurs: Maus und Tastatur",
   2: "Teil 2: Tastatur, Dateien und Fenster",
+  3: "Teil 3: Suchen, Apps und Aussehen",
 };
 
 const zahl = (n: number) => n.toLocaleString("de-DE");
@@ -258,6 +268,30 @@ export default function StufeSpeichern({
     }
   }
 
+  /**
+   * Zusätzlich zum Speichern-Üben: das Blatt als PDF — zum Drucken oder
+   * Abgeben. Gezeichnet wird frisch, damit auch ein gerade geänderter Name
+   * im PDF steht.
+   */
+  async function alsPdf() {
+    const leinwand = document.createElement("canvas");
+    leinwand.width = W;
+    leinwand.height = H;
+    const ctx = leinwand.getContext("2d");
+    if (!ctx) return;
+    zeichneFuehrerschein(ctx, {
+      name: blattName, avatar, ergebnisse, datum: new Date().toLocaleDateString("de-DE"), teil, bestanden,
+    });
+    const url = URL.createObjectURL(await leinwandAlsPdf(leinwand));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Maus-Führerschein${teil > 1 ? ` Teil ${teil}` : ""} ${blattName.trim() || "ohne Namen"}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
   function vorfuehren() {
     const eintrag = () => menueRef.current?.querySelector("[data-speichern]") ?? null;
     demo.abspielen([
@@ -274,7 +308,7 @@ export default function StufeSpeichern({
   return (
     <div className="flex flex-col gap-4">
       <Stufenkopf
-        titel={teil === 1 ? "💾 Stufe 7 · Speichern und Wiederfinden" : "💾 Teil 2 · Urkunde speichern"}
+        titel={teil === 1 ? "💾 Stufe 7 · Speichern und Wiederfinden" : `💾 Teil ${teil} · Urkunde speichern`}
         auftrag={<>Speichere deinen Führerschein auf dem Computer — mit <b>Rechtsklick auf das Bild</b>. Dann suche die Datei im <b>Explorer</b> und ziehe sie hierher zurück.</>}
         punkte={teilSumme(ergebnisse, teil)}
         onDemo={vorfuehren}
@@ -294,6 +328,14 @@ export default function StufeSpeichern({
               className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
             />
           </label>
+          <button
+            type="button"
+            onClick={alsPdf}
+            data-testid="pdf-knopf"
+            className="self-start text-sm rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]"
+          >
+            📄 Als PDF herunterladen
+          </button>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex justify-center">
             {bild ? (
               // eslint-disable-next-line @next/next/no-img-element

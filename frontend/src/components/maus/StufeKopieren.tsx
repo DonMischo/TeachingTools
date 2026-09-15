@@ -166,7 +166,7 @@ export default function StufeKopieren({
         auftrag={fertig
           ? <>Alles kopiert und eingefügt! Zum Schluss holst du dir deinen Führerschein.</>
           : <>Kopiere {wasKopieren(aufgabe)} und füge es rechts in den Merkzettel ein.
-              <span className="text-xs text-[var(--text-muted)] ml-2 tabular-nums">Aufgabe {nr + 1} von {KOPIER_AUFGABEN.length}</span></>}
+              <span data-zusatz className="text-xs text-[var(--text-muted)] ml-2 tabular-nums">Aufgabe {nr + 1} von {KOPIER_AUFGABEN.length}</span></>}
         punkte={Math.min(nr, KOPIER_AUFGABEN.length) * PUNKTE_KOPIEREN}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}

@@ -72,6 +72,18 @@ export function groesseErreicht(pos: Rechteck, ziel: { w: number; h: number } = 
   return pos.w >= ziel.w && pos.h >= ziel.h;
 }
 
+/**
+ * Der gestrichelte Zielrahmen fürs Größe-ändern: von der aktuellen Ecke
+ * (oben links) aus ZIEL_GROESSE groß, aber nie über den Bildschirmrand
+ * hinaus — sonst liefe der Rahmen bei einem Fenster nah am Rand einfach ab.
+ */
+export function zielRahmen(pos: Rechteck, ziel: { w: number; h: number } = ZIEL_GROESSE): Rechteck {
+  const flaeche = fensterFlaeche(false);
+  const w = Math.min(ziel.w, flaeche.w - pos.x);
+  const h = Math.min(ziel.h, flaeche.h - pos.y);
+  return { x: pos.x, y: pos.y, w, h };
+}
+
 /** Alt+Tab gilt erst als geschafft, wer lange genug weg war — kein versehentliches Antippen. */
 export function altTabGeschafft(wegMs: number, mindestMs = ALT_TAB_MINDEST_MS): boolean {
   return wegMs >= mindestMs;

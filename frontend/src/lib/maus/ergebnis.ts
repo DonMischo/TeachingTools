@@ -18,17 +18,19 @@ import { SPUREN } from "./spur";
 
 export type StufeId =
   | "klick" | "doppelklick" | "rechtsklick" | "ziehen" | "markieren" | "kopieren"
-  | "scrollen" | "tastatur" | "explorer" | "fenster" | "screenshot";
+  | "scrollen" | "tastatur" | "explorer" | "fenster" | "screenshot"
+  | "suche" | "apps" | "aussehen" | "bedienhilfe" | "taskleiste" | "profil";
 
-export type Teil = 1 | 2;
+export type Teil = 1 | 2 | 3;
 
 /** Die übenden Stufen je Teil — »Speichern« schließt jeden Teil ab und zählt nicht mit. */
 export const TEILE: Record<Teil, StufeId[]> = {
   1: ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"],
   2: ["scrollen", "tastatur", "explorer", "fenster", "screenshot"],
+  3: ["suche", "apps", "aussehen", "bedienhilfe", "taskleiste", "profil"],
 };
 
-/** Jede Stufe von Teil 2 bringt höchstens so viel — Punkte = 1000 · gelöst / Aufgaben. */
+/** Jede Stufe von Teil 2 und 3 bringt höchstens so viel — Punkte = 1000 · gelöst / Aufgaben. */
 export const PUNKTE_TEIL2 = 1000;
 
 export type StufenErgebnis = {
@@ -43,7 +45,7 @@ export type Ergebnisse = Partial<Record<StufeId, StufenErgebnis>>;
 export const PUNKTE_RECHTSKLICK = 500;
 
 /** Die Obergrenzen, die auch der Server prüft (api/routers/maus.py). */
-export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 60000 } as const;
+export const GRENZEN = { klick: 24000, doppelklick: 13500, ziehen: 6000, gesamt: 70000 } as const;
 export type MausModus = keyof typeof GRENZEN;
 
 export const HOECHST: Record<StufeId, number> = {
@@ -58,6 +60,12 @@ export const HOECHST: Record<StufeId, number> = {
   explorer: PUNKTE_TEIL2,
   fenster: PUNKTE_TEIL2,
   screenshot: PUNKTE_TEIL2,
+  suche: PUNKTE_TEIL2,
+  apps: PUNKTE_TEIL2,
+  aussehen: PUNKTE_TEIL2,
+  bedienhilfe: PUNKTE_TEIL2,
+  taskleiste: PUNKTE_TEIL2,
+  profil: PUNKTE_TEIL2,
 };
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bildAusDaten, istText, groesseGleich } from "@/lib/maus/screenshot";
+import { bildAusDaten, istText, istBildschirmgroesse } from "@/lib/maus/screenshot";
 
 function bilddatei(name = "foto.png") {
   return new File(["x"], name, { type: "image/png" });
@@ -42,13 +42,26 @@ describe("Maus-Führerschein: Bildschirmfoto-Logik", () => {
     expect(istText({})).toBe(false);
   });
 
-  it("vergleicht Bildmaße", () => {
-    expect(groesseGleich({ width: 100, height: 50 }, { width: 100, height: 50 })).toBe(true);
-    expect(groesseGleich({ width: 100, height: 50 }, { width: 200, height: 50 })).toBe(false);
-  });
-
   it("ein getAsFile, das null liefert, zählt nicht als Bild", () => {
     const daten = { items: [{ kind: "file", type: "image/png", getAsFile: () => null }] };
     expect(bildAusDaten(daten)).toBeNull();
+  });
+
+  it("erkennt typische Bildschirmauflösungen", () => {
+    expect(istBildschirmgroesse(1920, 1080)).toBe(true);
+    expect(istBildschirmgroesse(1366, 768)).toBe(true);
+  });
+
+  it("toleriert kleine Abweichungen (Skalierung/Rundung)", () => {
+    expect(istBildschirmgroesse(1918, 1081)).toBe(true);
+    expect(istBildschirmgroesse(1917, 1080)).toBe(false);
+  });
+
+  it("erkennt eine Mehrschirm-Aufnahme aus zwei bekannten Auflösungen", () => {
+    expect(istBildschirmgroesse(3840, 1080)).toBe(true);
+  });
+
+  it("lehnt einen typischen Ausschnitt ab", () => {
+    expect(istBildschirmgroesse(412, 300)).toBe(false);
   });
 });

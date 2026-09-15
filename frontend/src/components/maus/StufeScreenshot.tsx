@@ -10,7 +10,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@/components/AvatarPicker";
 import { PUNKTE_TEIL2, type StufenErgebnis } from "@/lib/maus/ergebnis";
-import { bildAusDaten, groesseGleich, istText } from "@/lib/maus/screenshot";
+import { wertung } from "@/lib/maus/wertung";
+import { bildAusDaten, istBildschirmgroesse, istText } from "@/lib/maus/screenshot";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, useDemo } from "./Demo";
@@ -19,6 +20,12 @@ import { useMausKontext } from "./MausKontext";
 type Vorschau = { url: string; breite: number; hoehe: number };
 
 const ANZAHL = 3;
+
+const SCHRITT_3_TEXT =
+  "1. Mach wie in Schritt 1 einen Ausschnitt (⊞ Windows + Umschalt + S). " +
+  "2. Unten rechts erscheint eine Meldung — klick darin auf »Markup und Freigabe«. " +
+  "3. Erst jetzt öffnet sich das Fenster mit dem Speichern-Knopf 💾 (oder Strg + S): speichere das Bild. " +
+  "4. Zieh die gespeicherte Datei hierher.";
 
 function Kbd({ children }: { children: string }) {
   return <kbd className="inline-block rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
@@ -51,6 +58,7 @@ export default function StufeScreenshot({
   const kartenRef = useRef<HTMLDivElement>(null);
   const start = useRef(performance.now());
   const gezaehlt = useRef(-1);
+  const fehler = useRef(0);
   const demo = useDemo(() => { setDemoRahmen(false); setDemoVorschau(false); });
 
   const fertig = nr >= ANZAHL;
@@ -65,11 +73,14 @@ export default function StufeScreenshot({
 
   function fertigMelden(naechste: number) {
     if (naechste < ANZAHL) return;
-    onFertig({
-      punkte: Math.round((PUNKTE_TEIL2 * naechste) / ANZAHL),
+    const { punkte, details } = wertung({
+      stufe: "screenshot",
+      geloest: naechste,
+      anzahl: ANZAHL,
       dauerMs: Math.round(performance.now() - start.current),
-      details: [`${naechste} von ${ANZAHL} Aufgaben`],
+      fehler: fehler.current,
     });
+    onFertig({ punkte, dauerMs: Math.round(performance.now() - start.current), details });
   }
 
   async function bildEingefuegt(datei: File) {
@@ -83,15 +94,17 @@ export default function StufeScreenshot({
       setBild1(vorschau);
       setHinweis({ text: "Klasse! Das ist dein Ausschnitt. ⭐", gut: true });
     } else if (nr === 1) {
-      setBild2(vorschau);
-      if (bild1 && groesseGleich(
-        { width: vorschau.breite, height: vorschau.hoehe },
-        { width: bild1.breite, height: bild1.hoehe },
-      )) {
-        setHinweis({ text: "Eingefügt — ein ganzer Bildschirm ist aber meist größer als dein Ausschnitt.", gut: true });
-      } else {
-        setHinweis({ text: "Super, der ganze Bildschirm ist da! ⭐", gut: true });
+      if (!istBildschirmgroesse(vorschau.breite, vorschau.hoehe)) {
+        fehler.current += 1;
+        setHinweis({
+          text: `Das Bild ist ${vorschau.breite} × ${vorschau.hoehe} Pixel groß — ein ganzer Bildschirm ist zum Beispiel 1920 × 1080. Hast du vielleicht nur einen Ausschnitt gemacht? Drück die Druck-Taste …`,
+          gut: false,
+        });
+        gezaehlt.current = -1;
+        return;
       }
+      setBild2(vorschau);
+      setHinweis({ text: "Super, der ganze Bildschirm ist da! ⭐", gut: true });
     }
     const naechste = nr + 1;
     setTimeout(() => {
@@ -106,7 +119,10 @@ export default function StufeScreenshot({
     if (!daten || demo.aktiv || fertig || nr === 2) return;
     const bilddatei = bildAusDaten(daten);
     if (bilddatei) { bildEingefuegt(bilddatei); return; }
-    if (istText(daten)) setHinweis({ text: "Das war Text, kein Bild — mach zuerst ein Bildschirmfoto.", gut: false });
+    if (istText(daten)) {
+      fehler.current += 1;
+      setHinweis({ text: "Das war Text, kein Bild — mach zuerst ein Bildschirmfoto.", gut: false });
+    }
   }
 
   useEffect(() => {
@@ -127,6 +143,7 @@ export default function StufeScreenshot({
   function abgelegt(datei: File | undefined) {
     if (!datei || fertig || nr !== 2 || gezaehlt.current === nr) return;
     if (!datei.type.startsWith("image/")) {
+      fehler.current += 1;
       setHinweis({ text: `»${datei.name}« ist kein Bild — zieh die gespeicherte Bilddatei hierher.`, gut: false });
       return;
     }
@@ -156,7 +173,7 @@ export default function StufeScreenshot({
   const aufgaben = [
     { text: "Ausschnitt: ⊞ Windows + Umschalt + S, Rahmen um die Karte ziehen, dann Strg + V einfügen." },
     { text: "Ganzer Bildschirm: Druck-Taste (oder ⊞ Windows + Druck) drücken, dann wieder einfügen." },
-    { text: "Speichern: Meldung anklicken, im Snipping Tool speichern (Strg + S), Datei hierher ziehen." },
+    { text: SCHRITT_3_TEXT },
   ];
 
   return (
@@ -256,6 +273,14 @@ export default function StufeScreenshot({
               <span className="inline-block rounded-md border border-[var(--accent)] bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold">Druck</span>
               <span className="text-[var(--text-muted)]">oder <Kbd>⊞</Kbd> + <span className="inline-block rounded-md border border-[var(--accent)] bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold">Druck</span></span>
             </div>
+          )}
+          {nr === 2 && (
+            <ol className="flex flex-col gap-1 text-sm text-[var(--text-muted)] list-decimal list-inside">
+              <li>Mach wie in Schritt 1 einen Ausschnitt (⊞ Windows + Umschalt + S).</li>
+              <li>Unten rechts erscheint eine Meldung — klick darin auf »Markup und Freigabe«.</li>
+              <li>Erst jetzt öffnet sich das Fenster mit dem Speichern-Knopf 💾 (oder Strg + S): speichere das Bild.</li>
+              <li>Zieh die gespeicherte Datei hierher.</li>
+            </ol>
           )}
         </div>
       </div>

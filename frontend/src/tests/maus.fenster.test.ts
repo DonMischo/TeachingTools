@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   DESKTOP, TASKLEISTE_HOEHE, MINDEST_BREITE, MINDEST_HOEHE, ZIEL_GROESSE, ZIEL_POSITION,
   altTabGeschafft, amZiel, groesseAendern, groesseErreicht, klemmePosition, maximieren,
-  minimieren, schliessen, verschieben, wiederherstellen, zurueckholen, type FensterZustand,
+  minimieren, schliessen, verschieben, wiederherstellen, zurueckholen, zielRahmen, type FensterZustand,
 } from "@/lib/maus/fenster";
 
 const FLAECHE_H = DESKTOP.h - TASKLEISTE_HOEHE;
@@ -77,6 +77,22 @@ describe("Fenster: Zielzone und Zielgröße", () => {
   it("prüft, ob die verlangte Mindestgröße erreicht ist", () => {
     expect(groesseErreicht({ x: 0, y: 0, w: ZIEL_GROESSE.w, h: ZIEL_GROESSE.h })).toBe(true);
     expect(groesseErreicht({ x: 0, y: 0, w: ZIEL_GROESSE.w - 1, h: ZIEL_GROESSE.h })).toBe(false);
+  });
+});
+
+describe("Fenster: Zielrahmen für Größe ändern", () => {
+  it("ist normalerweise genau ZIEL_GROESSE groß", () => {
+    const pos = { x: 100, y: 50, w: 300, h: 200 };
+    const r = zielRahmen(pos, ZIEL_GROESSE);
+    expect(r.w).toBe(ZIEL_GROESSE.w);
+    expect(r.h).toBe(ZIEL_GROESSE.h);
+  });
+
+  it("bleibt innerhalb der Fensterfläche, auch nah am Rand", () => {
+    const pos = { x: DESKTOP.w - 100, y: FLAECHE_H - 100, w: 300, h: 200 };
+    const r = zielRahmen(pos, ZIEL_GROESSE);
+    expect(pos.x + r.w).toBeLessThanOrEqual(DESKTOP.w);
+    expect(pos.y + r.h).toBeLessThanOrEqual(FLAECHE_H);
   });
 });
 
