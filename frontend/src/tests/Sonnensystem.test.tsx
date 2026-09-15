@@ -6,7 +6,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, screen, within } from "@testing-library/react";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
-import { ScanKarte } from "@/components/sonnensystem/Flug";
+import { HOECHSTTEMPO, ScanKarte } from "@/components/sonnensystem/Flug";
+import { sichtweiteFuerLicht } from "@/components/sonnensystem/Entfernungen";
+import { FLUG_ABSTANDSTEILER, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
+import { KM_JE_AE, LICHT_KM_S } from "@/lib/sonnensystem/daten";
 import { KOERPER_NACH_ID } from "@/lib/sonnensystem/daten";
 import { AUFTRAEGE } from "@/lib/sonnensystem/auftraege";
 
@@ -71,5 +74,29 @@ describe("Scan-Karte", () => {
     expect(geloest).toHaveBeenCalledWith(auftrag.id);
     expect(screen.getByText(/Richtig!/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nächster Auftrag" })).toBeInTheDocument();
+  });
+});
+
+describe("Flug und Lichtlauf", () => {
+  it("begrenzt den Flug auf die 100-fache Lichtgeschwindigkeit", () => {
+    expect((HOECHSTTEMPO * FLUG_KM_JE_EINHEIT * FLUG_ABSTANDSTEILER) / LICHT_KM_S).toBeCloseTo(100, 6);
+  });
+
+  it("zeigt beim Lichtlauf immer bis 5 % hinter den nächsten Planeten", () => {
+    const au = (id: string) => KOERPER_NACH_ID[id].bahn!.a * KM_JE_AE;
+    expect(sichtweiteFuerLicht(0)).toBeCloseTo(au("merkur") * 1.05, -3);
+    expect(sichtweiteFuerLicht(au("erde") + 1)).toBeCloseTo(au("mars") * 1.05, -3);
+    expect(sichtweiteFuerLicht(au("pluto") * 2)).toBeCloseTo(au("pluto") * 1.05, -3);
+  });
+
+  it("lässt die Sonne im Größenvergleich stehen, wenn die Planeten scrollen", () => {
+    render(<Sonnensystem />);
+    reiter(/Größen/);
+    const sonne = screen.getByRole("button", { name: "Sonne" });
+    const merkur = screen.getByRole("button", { name: /^Merkur/ });
+    const scroller = merkur.closest(".overflow-x-auto");
+    expect(scroller).not.toBeNull();
+    expect(scroller!.contains(sonne)).toBe(false);
+    expect(screen.getByText("10 px")).toBeInTheDocument();
   });
 });

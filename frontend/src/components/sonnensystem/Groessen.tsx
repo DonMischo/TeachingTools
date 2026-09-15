@@ -26,13 +26,15 @@ const REIHEN: Record<Auswahl, () => Koerper[]> = {
 
 export function Groessen({ onWaehle }: { onWaehle: (id: string) => void }) {
   const [auswahl, setAuswahl] = useState<Auswahl>("planeten");
-  const [erdePx, setErdePx] = useState(40);
+  const [erdePx, setErdePx] = useState(10);
   const reihe = REIHEN[auswahl]();
   /** Durchmesser in Pixeln. */
   const px = (k: Koerper) => (k.radiusKm / ERDE.radiusKm) * erdePx;
   const sonne = reihe.find(k => k.art === "stern");
   const rest = () => reihe.filter(k => k.art !== "stern");
   const hoehe = Math.max(260, Math.min(Math.max(...rest().map(px)) + 90, 620));
+  // Die Sonne steht fest am linken Rand; nur ein Streifen von ihr ist zu sehen.
+  const sonnenBreite = sonne ? Math.round(Math.min(Math.max(px(sonne) * 0.18, 80), 260)) : 0;
 
   return (
     <div className="h-full flex flex-col text-slate-100">
@@ -45,31 +47,34 @@ export function Groessen({ onWaehle }: { onWaehle: (id: string) => void }) {
           ]}
           aktiv={auswahl}
           // Neben der Erde sind die meisten Monde winzig — dort braucht es mehr Pixel.
-          onWahl={a => { setAuswahl(a); setErdePx(a === "monde" ? 240 : 40); }}
+          onWahl={a => { setAuswahl(a); setErdePx(a === "monde" ? 240 : 10); }}
         />
         <label className="flex items-center gap-2 text-xs text-slate-300">
           Erde =
-          <input type="range" min={8} max={320} value={erdePx} onChange={e => setErdePx(Number(e.target.value))} className="w-36 accent-sky-400" />
+          <input type="range" min={4} max={320} value={erdePx} onChange={e => setErdePx(Number(e.target.value))} className="w-36 accent-sky-400" />
           <span className="tabular-nums w-12">{erdePx} px</span>
         </label>
       </div>
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden mt-2" style={{ minHeight: hoehe }}>
-        <div className="relative flex items-center h-full min-w-max pr-10" style={{ minHeight: hoehe }}>
-          {sonne && (
-            // Die Sonne passt nie ganz aufs Bild: nur ihr Rand ragt von links herein.
-            <button
-              onClick={() => onWaehle("sonne")}
-              className="relative shrink-0 self-stretch"
-              style={{ width: Math.min(px(sonne) * 0.06, 420) + 40 }}
-              aria-label="Sonne"
-            >
-              <Kugel koerper={sonne} durchmesser={px(sonne)} style={{ right: 40, top: "50%", transform: "translate(0, -50%)" }} />
-              <span className="absolute left-3 bottom-3 text-left text-xs font-bold text-amber-200 drop-shadow-[0_1px_2px_#000] w-40">
-                Sonne<span className="block font-normal text-amber-100/80">{gerundet(sonne.radiusKm / ERDE.radiusKm)}-mal so breit wie die Erde — sie passt nicht aufs Bild</span>
-              </span>
-            </button>
-          )}
+      <div className="flex-1 relative mt-2 overflow-hidden" style={{ minHeight: hoehe }}>
+        {sonne && (
+          // Die Sonne passt nie ganz aufs Bild: nur ihr Rand ragt von links herein — und bleibt
+          // dort stehen, während die Planeten daneben scrollen.
+          <button
+            onClick={() => onWaehle("sonne")}
+            className="absolute left-0 top-0 bottom-0 overflow-hidden"
+            style={{ width: sonnenBreite }}
+            aria-label="Sonne"
+          >
+            <Kugel koerper={sonne} durchmesser={px(sonne)} style={{ right: 12, top: "50%", transform: "translate(0, -50%)" }} />
+            <span className="absolute left-2 right-3 top-2 text-left text-xs font-bold text-amber-100 drop-shadow-[0_1px_3px_#000]">
+              Sonne
+              <span className="block font-normal text-amber-50/90 text-[11px] leading-tight">{gerundet(sonne.radiusKm / ERDE.radiusKm)}-mal so breit wie die Erde</span>
+            </span>
+          </button>
+        )}
+        <div className="absolute top-0 bottom-0 right-0 overflow-x-auto overflow-y-hidden" style={{ left: sonnenBreite }}>
+        <div className="relative flex items-center h-full min-w-max px-3">
           {rest().map(k => {
             const d = px(k);
             return (
@@ -77,18 +82,19 @@ export function Groessen({ onWaehle }: { onWaehle: (id: string) => void }) {
                 key={k.id}
                 onClick={() => onWaehle(k.id)}
                 className="group relative shrink-0 flex flex-col items-center justify-center self-stretch hover:bg-white/5 rounded-xl"
-                style={{ width: Math.max(d * (k.ringe && k.id === "saturn" ? 2.4 : 1) + 24, 64) }}
+                style={{ width: Math.max(d * (k.ringe && k.id === "saturn" ? 2.4 : 1) + 24, 72) }}
               >
                 <div className="relative" style={{ width: d, height: d }}>
                   <Kugel koerper={k} durchmesser={d} style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }} />
                 </div>
-                <span className="absolute bottom-2 left-0 right-0 text-center text-[11px] font-bold leading-tight">
+                <span className="absolute bottom-2 left-0 right-0 text-center text-[11px] font-bold leading-tight whitespace-nowrap">
                   {k.name}
                   <span className="block font-normal text-slate-400">{zahl(k.radiusKm * 2)} km</span>
                 </span>
               </button>
             );
           })}
+        </div>
         </div>
       </div>
       <p className="px-4 pb-3 text-[11px] text-slate-400">

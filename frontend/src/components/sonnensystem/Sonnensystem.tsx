@@ -8,6 +8,9 @@
  *   📏 Entfernungen  maßstabsgetreues Band, Lichtstrahl, Reisezeiten
  *   🔭 Galerie       Teleskop- und Sondenbilder
  *
+ * Der Flug nimmt den ganzen Bildschirm ein (fixed über der App); seine
+ * Einstellungen und der Weg zurück stecken dort im Menü oben links.
+ *
  * Von überall öffnet ein Himmelskörper denselben Steckbrief. Die beiden
  * 3D-Reiter laden three.js erst, wenn man sie öffnet — und nur einer ist
  * gleichzeitig montiert, denn jeder hält einen eigenen WebGL-Kontext.
@@ -125,13 +128,26 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet" }: 
           {imBrowser && (
             <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Lade 3D …</div>}>
               {reiter === "uebersicht" && <Uebersicht ausgewaehlt={ausgewaehlt} onWaehle={waehle} />}
-              {reiter === "flug" && <Flug onSteckbrief={waehle} speicherSchluessel={speicherSchluessel} />}
             </Suspense>
           )}
           {reiter === "groessen" && <Groessen onWaehle={waehle} />}
           {reiter === "entfernungen" && <Entfernungen onWaehle={waehle} />}
           {reiter === "galerie" && <Galerie offen={galerieOffen} onOeffne={setGalerieOffen} onWaehle={waehle} />}
         </div>
+
+        {reiter === "flug" && imBrowser && (
+          <div className="fixed inset-0 z-40 bg-black">
+            <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Lade 3D …</div>}>
+              <Flug
+                onSteckbrief={waehle}
+                speicherSchluessel={speicherSchluessel}
+                onVerlassen={setReiter}
+                onVollbild={umschaltenVollbild}
+                vollbild={vollbild}
+              />
+            </Suspense>
+          </div>
+        )}
 
         {steckbrief && KOERPER_NACH_ID[steckbrief] && (
           <Steckbrief

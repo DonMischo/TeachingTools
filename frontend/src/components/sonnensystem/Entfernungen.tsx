@@ -4,14 +4,19 @@
  * dem die Planeten fast unsichtbar klein sind — genau das ist die Lektion.
  *
  * Darauf läuft ein Lichtstrahl, in echter Lichtgeschwindigkeit oder im
- * Zeitraffer, mit Stoppuhr. Darunter die Reisezeiten mit Auto, Flugzeug und
- * der schnellsten Sonde, die das Sonnensystem verlässt.
+ * Zeitraffer, mit Stoppuhr. Solange er läuft, wächst der Maßstab mit: das
+ * Band zeigt immer die Sonne bis knapp hinter den nächsten Planeten. Erreicht
+ * das Licht einen Planeten, zoomt es heraus bis zum folgenden — so bleiben
+ * alle schon erreichten auf dem Weg sichtbar.
+ *
+ * Darunter die Reisezeiten mit Auto, Flugzeug und der schnellsten Sonde, die
+ * das Sonnensystem verlässt.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ERDE, HAUPTKOERPER, KM_JE_AE, LICHT_KM_S, type Koerper } from "@/lib/sonnensystem/daten";
 import { abstand, heliozentrisch, julianischerTag } from "@/lib/sonnensystem/bahnen";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
-import { Knopfgruppe, Schalter } from "./Bedienung";
+import { Knopfgruppe } from "./Bedienung";
 
 const MASSSTAEBE = [
   { wert: 50_000, name: "1 px = 50 000 km" },
@@ -26,46 +31,92 @@ const RAFFER = [
 ];
 
 const PLANETEN_UND_ZWERGE = HAUPTKOERPER.filter(k => k.bahn);
+const ABSTAND = Object.fromEntries(PLANETEN_UND_ZWERGE.map(k => [k.id, k.bahn!.a * KM_JE_AE]));
+const AEUSSERSTER = ABSTAND[PLANETEN_UND_ZWERGE.at(-1)!.id];
 const RAND = 60;
+/** Wie weit das Band über den nächsten Planeten hinausreicht. */
+const UEBERSTAND = 1.05;
+/** Namen, die näher als das beieinander stehen, werden ausgeblendet. */
+const NAMENSABSTAND = 56;
 
 /** Reisezeit in Sekunden für eine Strecke in km bei v km/h. */
 const reise = (strecke: number, kmh: number) => (strecke / kmh) * 3600;
 
+/** Was das Band beim Lichtlauf zeigen soll: von der Sonne bis kurz hinter das nächste Ziel. */
+export function sichtweiteFuerLicht(lichtKm: number): number {
+  const naechster = PLANETEN_UND_ZWERGE.find(k => ABSTAND[k.id] > lichtKm);
+  return (naechster ? ABSTAND[naechster.id] : AEUSSERSTER) * UEBERSTAND;
+}
+
 export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
   const [massstab, setMassstab] = useState(250_000);
   const [raffer, setRaffer] = useState(100);
-  const [mitfahren, setMitfahren] = useState(true);
   const [licht, setLicht] = useState<{ start: number; sekunden: number } | null>(null);
   const [erreicht, setErreicht] = useState<{ name: string; zeit: number } | null>(null);
   const bandRef = useRef<HTMLDivElement>(null);
+  const innenRef = useRef<HTMLDivElement>(null);
   const strahlRef = useRef<HTMLDivElement>(null);
+  const sonneRef = useRef<HTMLDivElement>(null);
+  const markerRef = useRef<Map<string, HTMLButtonElement>>(new Map());
   const rafferRef = useRef(raffer);
   rafferRef.current = raffer;
-  const mitfahrenRef = useRef(mitfahren);
-  mitfahrenRef.current = mitfahren;
 
-  const breite = (PLANETEN_UND_ZWERGE.at(-1)!.bahn!.a * KM_JE_AE) / massstab + RAND * 2 + 200;
+  const breite = AEUSSERSTER / massstab + RAND * 2 + 200;
   const x = (kmVonSonne: number) => RAND + kmVonSonne / massstab;
 
-  // Der Strahl läuft außerhalb von React; die Stoppuhr wird zehnmal je Sekunde gezeichnet.
+  // Der Strahl und der mitwachsende Maßstab laufen außerhalb von React;
+  // die Stoppuhr wird zehnmal je Sekunde gezeichnet.
   useEffect(() => {
     if (!licht) return;
     let bild = 0;
     let letzte = performance.now();
     let sim = licht.sekunden;
     let zuletztGezeigt = 0;
-    const naechsteZiele = PLANETEN_UND_ZWERGE.map(k => ({ k, zeit: (k.bahn!.a * KM_JE_AE) / LICHT_KM_S }))
+    let sicht = sichtweiteFuerLicht(sim * LICHT_KM_S);
+    const naechsteZiele = PLANETEN_UND_ZWERGE.map(k => ({ k, zeit: ABSTAND[k.id] / LICHT_KM_S }))
       .filter(z => z.zeit > sim);
+
+    const lege = () => {
+      const band = bandRef.current;
+      if (!band) return;
+      const nutzbar = Math.max(band.clientWidth - RAND * 2, 100);
+      const kmJePx = sicht / nutzbar;
+      const pos = (k: number) => RAND + k / kmJePx;
+      if (innenRef.current) innenRef.current.style.width = `${band.clientWidth}px`;
+      if (sonneRef.current) {
+        const r = Math.max(696_340 / kmJePx, 4);
+        Object.assign(sonneRef.current.style, { left: `${RAND - r}px`, width: `${r * 2}px`, height: `${r * 2}px`, marginTop: `${-r}px` });
+      }
+      const lichtKm = sim * LICHT_KM_S;
+      const ziel = PLANETEN_UND_ZWERGE.find(k => ABSTAND[k.id] > lichtKm)?.id;
+      let letzterName = -Infinity;
+      // Von außen nach innen: der nächste Planet behält seinen Namen, gedrängte innere geben ihn ab.
+      for (const k of [...PLANETEN_UND_ZWERGE].reverse()) {
+        const el = markerRef.current.get(k.id);
+        if (!el) continue;
+        const px = pos(ABSTAND[k.id]);
+        el.style.left = `${px}px`;
+        const punkt = el.querySelector<HTMLElement>("[data-punkt]")!;
+        const d = Math.max((k.radiusKm * 2) / kmJePx, 3);
+        Object.assign(punkt.style, { width: `${d}px`, height: `${d}px`, margin: `${-d / 2}px 0 0 ${-d / 2}px` });
+        el.style.display = px > band.clientWidth + 40 ? "none" : "";
+        const name = el.querySelector<HTMLElement>("[data-name]")!;
+        const frei = Math.abs(letzterName - px) >= NAMENSABSTAND || k.id === ziel;
+        name.style.opacity = frei ? "1" : "0";
+        if (frei && px <= band.clientWidth) letzterName = px;
+      }
+      if (strahlRef.current) strahlRef.current.style.transform = `translateX(${pos(lichtKm)}px)`;
+    };
+
     const schritt = (jetzt: number) => {
       bild = requestAnimationFrame(schritt);
-      sim += ((jetzt - letzte) / 1000) * rafferRef.current;
+      const dt = Math.min((jetzt - letzte) / 1000, 0.1);
       letzte = jetzt;
-      const px = x(sim * LICHT_KM_S);
-      if (strahlRef.current) strahlRef.current.style.transform = `translateX(${px}px)`;
-      const band = bandRef.current;
-      if (band && mitfahrenRef.current && (px > band.scrollLeft + band.clientWidth * 0.7 || px < band.scrollLeft)) {
-        band.scrollLeft = px - band.clientWidth * 0.3;
-      }
+      if (sim * LICHT_KM_S < AEUSSERSTER * UEBERSTAND) sim += dt * rafferRef.current;
+      // Neuer Planet erreicht: sanft herauszoomen statt springen.
+      const soll = sichtweiteFuerLicht(sim * LICHT_KM_S);
+      sicht += (soll - sicht) * (1 - Math.exp(-dt * 3));
+      lege();
       while (naechsteZiele.length && naechsteZiele[0].zeit <= sim) {
         const z = naechsteZiele.shift()!;
         setErreicht({ name: z.k.name, zeit: z.zeit });
@@ -74,12 +125,13 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
         zuletztGezeigt = jetzt;
         setLicht(l => (l ? { ...l, sekunden: sim } : l));
       }
-      if (!naechsteZiele.length && sim * LICHT_KM_S > PLANETEN_UND_ZWERGE.at(-1)!.bahn!.a * KM_JE_AE * 1.02) cancelAnimationFrame(bild);
+      if (!naechsteZiele.length && Math.abs(soll - sicht) < soll * 0.001) cancelAnimationFrame(bild);
     };
+    lege();
     bild = requestAnimationFrame(schritt);
     return () => cancelAnimationFrame(bild);
-    // Nur beim Start und bei neuem Maßstab neu aufsetzen, nicht bei jedem Stoppuhr-Tick.
-  }, [licht?.start, massstab]);
+    // Nur beim Start neu aufsetzen, nicht bei jedem Stoppuhr-Tick.
+  }, [licht?.start]);
 
   const heute = useMemo(() => {
     const jd = julianischerTag(new Date());
@@ -87,19 +139,30 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
     return Object.fromEntries(PLANETEN_UND_ZWERGE.map(k => [k.id, abstand(erde, heliozentrisch(k.bahn!, jd)) * KM_JE_AE]));
   }, []);
 
+  const starte = () => {
+    setErreicht(null);
+    setLicht({ start: performance.now(), sekunden: 0 });
+    if (bandRef.current) bandRef.current.scrollLeft = 0;
+  };
+
   return (
     <div className="h-full flex flex-col text-slate-100">
       <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
-        <Knopfgruppe werte={MASSSTAEBE} aktiv={massstab} onWahl={setMassstab} />
-        <button
-          onClick={() => { setErreicht(null); setLicht({ start: performance.now(), sekunden: 0 }); if (bandRef.current) bandRef.current.scrollLeft = 0; }}
-          className="rounded-lg bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 hover:bg-amber-200"
-        >☀️ Licht losschicken</button>
-        {licht && (
+        {licht ? (
           <>
+            <button onClick={starte} className="rounded-lg bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 hover:bg-amber-200">☀️ Noch einmal</button>
             <Knopfgruppe werte={RAFFER} aktiv={raffer} onWahl={setRaffer} />
-            <Schalter an={mitfahren} onClick={() => setMitfahren(m => !m)}>mitfahren</Schalter>
             <span className="text-sm font-bold tabular-nums text-amber-200">⏱ {dauer(licht.sekunden)}</span>
+            <button onClick={() => { setLicht(null); setErreicht(null); }} className="text-xs text-slate-400 hover:text-slate-200 underline">
+              zurück zum festen Maßstab
+            </button>
+          </>
+        ) : (
+          <>
+            <Knopfgruppe werte={MASSSTAEBE} aktiv={massstab} onWahl={setMassstab} />
+            <button onClick={starte} className="rounded-lg bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 hover:bg-amber-200">
+              ☀️ Licht losschicken
+            </button>
           </>
         )}
       </div>
@@ -109,20 +172,27 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
         </div>
       )}
 
-      <div ref={bandRef} className="shrink-0 overflow-x-auto overflow-y-hidden mt-3 border-y border-white/10 bg-black/30">
-        <div className="relative h-40" style={{ width: breite }}>
+      <div ref={bandRef} className={`shrink-0 ${licht ? "overflow-hidden" : "overflow-x-auto overflow-y-hidden"} mt-3 border-y border-white/10 bg-black/30`}>
+        {/* Neuer Schlüssel je Modus: die Schleife setzt Positionen direkt, React soll danach frisch zeichnen. */}
+        <div key={licht ? `licht-${licht.start}` : `fest-${massstab}`} ref={innenRef} className="relative h-40" style={{ width: licht ? "100%" : breite }}>
           <div className="absolute left-0 right-0 top-1/2 h-px bg-white/10" />
-          <Sonne x={x(0)} radiusPx={696_340 / massstab} />
+          <Sonne ref={sonneRef} x={x(0)} radiusPx={696_340 / massstab} />
           {PLANETEN_UND_ZWERGE.map((k, i) => (
             // Innen liegen die Planeten dicht: Namen abwechselnd oben und unten.
-            <Markierung key={k.id} koerper={k} x={x(k.bahn!.a * KM_JE_AE)} massstab={massstab} unten={i % 2 === 1} onWaehle={onWaehle} />
+            <Markierung
+              key={k.id}
+              ref={el => { if (el) markerRef.current.set(k.id, el); else markerRef.current.delete(k.id); }}
+              koerper={k} x={x(ABSTAND[k.id])} massstab={massstab} unten={i % 2 === 1} onWaehle={onWaehle}
+            />
           ))}
-          <div ref={strahlRef} className="absolute top-1/2 left-0 -mt-1.5 w-3 h-3 rounded-full bg-amber-200 pointer-events-none"
+          <div ref={strahlRef} className="absolute top-1/2 left-0 -mt-1.5 -ml-1.5 w-3 h-3 rounded-full bg-amber-200 pointer-events-none"
             style={{ display: licht ? "" : "none", boxShadow: "0 0 12px 4px rgba(253,230,138,0.8)" }} />
         </div>
       </div>
       <p className="px-4 pt-1 text-[11px] text-slate-400">
-        Planeten und Abstände im selben Maßstab — deshalb sind die meisten Planeten nur ein Punkt. Waagerecht scrollen.
+        {licht
+          ? "Der Maßstab wächst mit dem Licht: das Band reicht immer bis knapp hinter den nächsten Planeten. Planeten und Abstände bleiben im selben Maßstab."
+          : "Planeten und Abstände im selben Maßstab — deshalb sind die meisten Planeten nur ein Punkt. Waagerecht scrollen."}
       </p>
 
       <div className="flex-1 overflow-auto px-4 py-3">
@@ -140,7 +210,7 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
           </thead>
           <tbody>
             {PLANETEN_UND_ZWERGE.map(k => {
-              const s = k.bahn!.a * KM_JE_AE;
+              const s = ABSTAND[k.id];
               return (
                 <tr key={k.id} className="border-t border-white/10">
                   <td className="py-1.5 pr-3">
@@ -166,35 +236,37 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
   );
 }
 
-function Sonne({ x, radiusPx }: { x: number; radiusPx: number }) {
+function Sonne({ x, radiusPx, ref }: { x: number; radiusPx: number; ref: React.Ref<HTMLDivElement> }) {
   const r = Math.max(radiusPx, 3);
   return (
-    <div className="absolute top-1/2 rounded-full pointer-events-none" style={{
+    <div ref={ref} className="absolute top-1/2 rounded-full pointer-events-none" style={{
       left: x - r, width: r * 2, height: r * 2, marginTop: -r,
       background: "radial-gradient(circle, #fff7d0, #ffb638 70%)", boxShadow: "0 0 24px 6px rgba(255,190,60,0.5)",
     }} />
   );
 }
 
-function Markierung({ koerper, x, massstab, unten, onWaehle }: {
+function Markierung({ koerper, x, massstab, unten, onWaehle, ref }: {
   koerper: Koerper; x: number; massstab: number; unten: boolean; onWaehle: (id: string) => void;
+  ref: React.Ref<HTMLButtonElement>;
 }) {
   const echt = (koerper.radiusKm * 2) / massstab;
   const punkt = Math.max(echt, 3);
   return (
     <button
+      ref={ref}
       onClick={() => onWaehle(koerper.id)}
-      title={`In diesem Maßstab ist ${koerper.name} ${zahl(echt, echt < 1 ? 3 : 1)} Pixel breit.`}
+      title={`${koerper.name}: ${km(ABSTAND[koerper.id])} von der Sonne`}
       className="absolute top-0 bottom-0 -translate-x-1/2 w-20"
       style={{ left: x }}
     >
-      <span className={`absolute left-0 right-0 flex flex-col items-center ${unten ? "bottom-3" : "top-3"}`}>
+      <span data-name className={`absolute left-0 right-0 flex flex-col items-center transition-opacity ${unten ? "bottom-3" : "top-3"}`}>
         <span className="text-xs font-bold whitespace-nowrap" style={{ color: koerper.farbe }}>{koerper.name}</span>
-        <span className="text-[10px] text-slate-400 whitespace-nowrap">{km(koerper.bahn!.a * KM_JE_AE)}</span>
+        <span className="text-[10px] text-slate-400 whitespace-nowrap">{km(ABSTAND[koerper.id])}</span>
       </span>
-      <span className="absolute top-1/2 left-1/2 rounded-full" style={{
+      <span data-punkt className="absolute top-1/2 left-1/2 rounded-full" style={{
         width: punkt, height: punkt, margin: `${-punkt / 2}px 0 0 ${-punkt / 2}px`, background: koerper.farbe,
-        boxShadow: echt < 3 ? `0 0 6px ${koerper.farbe}` : undefined,
+        boxShadow: `0 0 6px ${koerper.farbe}`,
       }} />
     </button>
   );
