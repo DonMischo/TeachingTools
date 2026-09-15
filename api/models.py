@@ -1272,6 +1272,42 @@ class CalendarEntry(Base):
     creator: Mapped["Teacher"] = relationship()
 
 
+class SlideshowItem(Base):
+    """One rotation slot on the Startseiten-Slideshow (kiosk display): an
+    uploaded file, an external link, a calendar-tag feed, the Wochenspruch, or the singleton
+    'hauspunkte' item. `position` drives both list ordering and rotation
+    order. `audience` is the minimum viewer level required to see it
+    ("guest" < "student" < "teacher"). `slot_days`/`slot_start`/`slot_end`
+    (+ optional `slot_from`/`slot_until` date bounds) optionally restrict the
+    item to a recurring weekly time window; see api/routers/slideshow.py for
+    validation and warning computation."""
+    __tablename__ = "slideshow_items"
+    # sqlite_autoincrement: without it SQLite reuses a deleted row's rowid, which
+    # would let a freshly lazy-created 'hauspunkte' item collide with a just-deleted
+    # item's id (see _ensure_hauspunkte). No-op under Postgres.
+    __table_args__ = {"sqlite_autoincrement": True}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=sql_expr.true())
+    audience: Mapped[str] = mapped_column(String(10), nullable=False, default="guest", server_default="guest")
+    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=15, server_default="15")
+    media_type: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    stored_filename: Mapped[str | None] = mapped_column(String, nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String, nullable=True)
+    url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    calendar_tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    calendar_days_ahead: Mapped[int] = mapped_column(Integer, nullable=False, default=14, server_default="14")
+    slot_days: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    slot_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    slot_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    slot_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    slot_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CalendarTag(Base):
     """A reusable, colorable tag for calendar entries (name unique, e.g.
     'Dienstberatung' -> purple). Created ad hoc by teachers/admin from the

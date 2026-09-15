@@ -205,6 +205,13 @@ export default function AdminPage() {
             <div className="text-xs text-[var(--text-muted)] mt-1">Neue Übungsthemen ohne Code registrieren</div>
           </Link>
         )}
+        {show("slideshow") && (
+          <Link href="/admin/slideshow" className={CARD}>
+            <div className="text-2xl mb-2">🖼️</div>
+            <div className="font-semibold">Startseiten-Slideshow</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Bilder · PDFs · Videos · Links · Termine</div>
+          </Link>
+        )}
         {isAdmin && (
           <Link href="/haeuser" className={CARD}>
             <div className="text-2xl mb-2">🛡️</div>

@@ -13,6 +13,7 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { specToBoard } from "@/components/timeline/game";
+import { toVideoEmbed } from "@/lib/embed";
 import { TimelineAnswer } from "@/components/timeline/types";
 
 // ── Theming ────────────────────────────────────────────────────────────────
@@ -97,14 +98,6 @@ function mergeVariant(task: ExitGameTask, variantIdx: number | undefined): ExitG
 }
 
 // ── Media ─────────────────────────────────────────────────────────────────
-
-function toVideoEmbed(src: string): { kind: "iframe" | "video"; url: string } {
-  const yt = src.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\/)([\w-]+)/);
-  if (yt) return { kind: "iframe", url: `https://www.youtube.com/embed/${yt[1]}` };
-  const vimeo = src.match(/vimeo\.com\/(\d+)/);
-  if (vimeo) return { kind: "iframe", url: `https://player.vimeo.com/video/${vimeo[1]}` };
-  return { kind: "video", url: src };
-}
 
 // A media src is either an absolute URL or the name of a file from the
 // assets/ folder of the uploaded ZIP, which the API serves per game.

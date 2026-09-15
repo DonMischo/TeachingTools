@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { FirstRunSetup } from "@/components/FirstRunSetup";
-import { HaeuserDiagram } from "@/components/HaeuserDiagram";
+import { StartSlideshow } from "@/components/StartSlideshow";
 
 export default function Home() {
   const qc = useQueryClient();
@@ -13,13 +13,6 @@ export default function Home() {
     queryFn: api.setup.status,
     staleTime: Infinity,
     retry: 1,
-  });
-
-  const { data: haeuser = [] } = useQuery({
-    queryKey: ["haeuser"],
-    queryFn: api.haeuser.list,
-    refetchInterval: 15_000,
-    enabled: !setup?.needs_setup,
   });
 
   if (setupLoading) {
@@ -49,9 +42,5 @@ export default function Home() {
     );
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-full p-6">
-      <HaeuserDiagram haeuser={haeuser} />
-    </div>
-  );
+  return <StartSlideshow />;
 }

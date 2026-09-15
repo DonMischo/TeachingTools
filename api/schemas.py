@@ -463,3 +463,87 @@ class AuswertungDisciplineEntry(BaseModel):
     discipline_id: str
     value: float | None
     points: int | None
+
+
+# ---------------------------------------------------------------------------
+# Slideshow
+# ---------------------------------------------------------------------------
+
+class SlideshowEventOut(BaseModel):
+    title: str
+    start_date: date
+    end_date: date
+    all_day: bool
+    start_time: str | None
+    end_time: str | None
+    tags: list[str]
+
+
+class SlideshowWochenspruchOut(BaseModel):
+    sunday: str
+    season: str | None
+    date_label: str | None
+    text: str
+    reference: str | None
+    psalm: str | None
+    color: str | None
+    color_name: str | None
+    background_url: str | None
+    image_credit: str | None
+    hymns: list[str]
+    source_url: str | None
+
+
+class SlideshowItemOut(BaseModel):
+    id: int
+    position: int
+    kind: str
+    title: str
+    active: bool
+    audience: str
+    duration_seconds: int
+    media_type: str | None
+    file_url: str | None
+    original_filename: str | None
+    url: str | None
+    calendar_tags: list[str]
+    calendar_days_ahead: int
+    slot_days: list[int]
+    slot_start: str | None
+    slot_end: str | None
+    slot_from: date | None
+    slot_until: date | None
+    warnings: list[str] = []
+    events: list[SlideshowEventOut] = []
+    wochenspruch: SlideshowWochenspruchOut | None = None
+
+
+class SlideshowItemIn(BaseModel):
+    kind: str
+    title: str | None = None
+    url: str | None = None
+    calendar_tags: list[str] = []
+    calendar_days_ahead: int = 14
+
+
+class SlideshowItemPatch(BaseModel):
+    title: str | None = None
+    active: bool | None = None
+    audience: str | None = None
+    duration_seconds: int | None = None
+    url: str | None = None
+    calendar_tags: list[str] | None = None
+    calendar_days_ahead: int | None = None
+    slot_days: list[int] | None = None
+    slot_start: str | None = None
+    slot_end: str | None = None
+    slot_from: date | None = None
+    slot_until: date | None = None
+
+
+class SlideshowOrderIn(BaseModel):
+    ids: list[int]
+
+
+class SlideshowDeleteIn(BaseModel):
+    ids: list[int]

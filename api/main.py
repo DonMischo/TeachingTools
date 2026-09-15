@@ -85,6 +85,9 @@ from .routers import maus as maus_router
 app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
 
+from .routers import slideshow as slideshow_router
+app.include_router(slideshow_router.router)
+
 HAUS_LOGO_DIR = Path(__file__).parent.parent / "data" / "haeuser"
 HAUS_LOGO_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/haeuser", StaticFiles(directory=str(HAUS_LOGO_DIR)), name="haus_logos")
@@ -116,6 +119,8 @@ app.mount("/uploads/style-pack", StaticFiles(directory=str(STYLE_PACK_DIR)), nam
 EXITGAME_ASSETS_DIR = Path(__file__).parent.parent / "data" / "exitgames"
 EXITGAME_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/exitgames", StaticFiles(directory=str(EXITGAME_ASSETS_DIR)), name="exitgame_assets")
+
+app.mount("/uploads/slideshow", StaticFiles(directory=str(slideshow_router.SLIDESHOW_DIR)), name="slideshow_assets")
 
 
 def _run_migrations(db_engine):

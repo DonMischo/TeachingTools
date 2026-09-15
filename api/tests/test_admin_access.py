@@ -3,7 +3,7 @@ from api import admin_access
 from api.models import TeacherRole, AdminFeatureGrant
 from api.tests.conftest import auth
 
-ALL = {"students", "teachers", "generators", "style_pack", "calendar_settings"}
+ALL = {"students", "teachers", "generators", "style_pack", "calendar_settings", "slideshow"}
 
 
 def _role(db, name="Lehrer"):

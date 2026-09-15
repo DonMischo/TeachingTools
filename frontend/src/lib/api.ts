@@ -1,6 +1,9 @@
 import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
+import type { SlideshowItem } from "@/lib/slideshow";
+
+export type { SlideshowItem } from "@/lib/slideshow";
 
 export type ClassOut = {
   id: number;
@@ -2397,6 +2400,30 @@ export const api = {
       remove: (planId: number, class_id: number) =>
         apiFetch<void>(`stundenplaner/${planId}/class-shares/${class_id}`, { method: "DELETE" }),
     },
+  },
+  // Startseiten-Slideshow (siehe api/routers/slideshow.py)
+  slideshow: {
+    public: () => apiFetch<SlideshowItem[]>("slideshow/public"),
+    items: () => apiFetch<SlideshowItem[]>("slideshow/items"),
+    upload: (files: File[]) => {
+      const fd = new FormData();
+      files.forEach((f) => fd.append("files", f));
+      return fetch("/api/slideshow/items/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<SlideshowItem[]>;
+        });
+    },
+    create: (body: { kind: "link" | "calendar" | "wochenspruch"; title?: string; url?: string; calendar_tags?: string[]; calendar_days_ahead?: number }) =>
+      apiFetch<SlideshowItem>("slideshow/items", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: number, patch: Partial<{
+      title: string; active: boolean; audience: "guest" | "student" | "teacher"; duration_seconds: number;
+      url: string; calendar_tags: string[]; calendar_days_ahead: number;
+      slot_days: number[]; slot_start: string | null; slot_end: string | null;
+      slot_from: string | null; slot_until: string | null;
+    }>) => apiFetch<SlideshowItem>(`slideshow/items/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    order: (ids: number[]) => apiFetch<void>("slideshow/order", { method: "PUT", body: JSON.stringify({ ids }) }),
+    remove: (ids: number[]) => apiFetch<{ deleted: number }>("slideshow/items/delete", { method: "POST", body: JSON.stringify({ ids }) }),
   },
   snap: {
     list: () => apiFetch<SnapProjectOut[]>("snap"),

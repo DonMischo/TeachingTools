@@ -26,6 +26,7 @@ FEATURES: list[AdminFeature] = [
     AdminFeature("generators", "Aufgaben-Generatoren", "🧮"),
     AdminFeature("style_pack", "Style Pack", "📦"),
     AdminFeature("calendar_settings", "Kalender-Einstellungen", "📅"),
+    AdminFeature("slideshow", "Startseiten-Slideshow", "🖼️"),
 ]
 
 SLUGS: set[str] = {f.slug for f in FEATURES}
