@@ -1299,6 +1299,7 @@ class SlideshowItem(Base):
     original_filename: Mapped[str | None] = mapped_column(String, nullable=True)
     url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     calendar_tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    calendar_categories: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     calendar_days_ahead: Mapped[int] = mapped_column(Integer, nullable=False, default=14, server_default="14")
     slot_days: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     slot_start: Mapped[str | None] = mapped_column(String(5), nullable=True)

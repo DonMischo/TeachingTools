@@ -22,6 +22,7 @@ const baseItem = (overrides: Partial<SlideshowItem> = {}): SlideshowItem => ({
   original_filename: null,
   url: "https://example.com",
   calendar_tags: [],
+  calendar_categories: [],
   calendar_days_ahead: 14,
   slot_days: [],
   slot_start: null,
@@ -124,25 +125,34 @@ describe("pickSlides", () => {
     expect(pinned).toBeNull();
   });
 
-  it("rotation contains only items without a slot, in order", () => {
+  it("keeps slotted items in the rotation - a slot only adds pinning", () => {
     const withSlot = baseItem({ id: 1, slot_days: [0], slot_start: "00:00", slot_end: "23:59" });
-    const noSlotA = baseItem({ id: 2, slot_days: [] });
-    const noSlotB = baseItem({ id: 3, slot_days: [] });
+    const outsideSlot = baseItem({ id: 2, slot_days: [1], slot_start: "00:00", slot_end: "23:59" });
+    const noSlot = baseItem({ id: 3, slot_days: [] });
 
-    const { rotation } = pickSlides([withSlot, noSlotA, noSlotB], MONDAY);
-    expect(rotation.map((i) => i.id)).toEqual([2, 3]);
+    const { rotation } = pickSlides([withSlot, outsideSlot, noSlot], MONDAY);
+    expect(rotation.map((i) => i.id)).toEqual([1, 2, 3]);
   });
 
-  it("excludes slotted items from rotation even when their slot does not currently match", () => {
-    const slottedButInactive = baseItem({ id: 1, slot_days: [1], slot_start: "00:00", slot_end: "23:59" });
-    const { rotation } = pickSlides([slottedButInactive], MONDAY);
-    expect(rotation).toEqual([]);
+  it("skips a Wochenspruch without data and a Termine slide without events", () => {
+    const ws = baseItem({ id: 1, kind: "wochenspruch", wochenspruch: null });
+    const cal = baseItem({ id: 2, kind: "calendar", events: [], slot_days: [0], slot_start: "00:00", slot_end: "23:59" });
+    const link = baseItem({ id: 3 });
+
+    const { pinned, rotation } = pickSlides([ws, cal, link], MONDAY);
+    expect(pinned).toBeNull();
+    expect(rotation.map((i) => i.id)).toEqual([3]);
   });
 });
 
 describe("slideDurationMs", () => {
   it("is null for video items regardless of duration_seconds", () => {
     const item = baseItem({ media_type: "video", duration_seconds: 20 });
+    expect(slideDurationMs(item)).toBeNull();
+  });
+
+  it("is null for PDFs, which page through on their own", () => {
+    const item = baseItem({ kind: "file", media_type: "pdf", duration_seconds: 20 });
     expect(slideDurationMs(item)).toBeNull();
   });
 

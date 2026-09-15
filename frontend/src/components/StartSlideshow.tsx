@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AppLogo } from "@/components/AppLogo";
 import { HaeuserDiagram } from "@/components/HaeuserDiagram";
 import { WochenspruchSlide } from "@/components/WochenspruchSlide";
+import { PdfSlide } from "@/components/PdfSlide";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -66,7 +67,7 @@ function HauspunkteSlide() {
   );
 }
 
-// `loop`: a pinned or lone video has nothing to advance to, so it repeats.
+// `loop`: a pinned or lone video/PDF has nothing to advance to, so it repeats.
 function SlideView({ item, onAdvance, loop }: { item: SlideshowItem; onAdvance: () => void; loop: boolean }) {
   if (item.kind === "hauspunkte") return <HauspunkteSlide />;
   if (item.kind === "wochenspruch" && item.wochenspruch) return <WochenspruchSlide ws={item.wochenspruch} />;
@@ -96,7 +97,7 @@ function SlideView({ item, onAdvance, loop }: { item: SlideshowItem; onAdvance: 
       return <img src={item.file_url} alt={item.title} className="w-full h-full object-contain" />;
     }
     if (item.media_type === "pdf") {
-      return <iframe src={`${item.file_url}#toolbar=0&navpanes=0&view=Fit`} className="w-full h-full border-0" />;
+      return <PdfSlide url={item.file_url} pageMs={item.duration_seconds * 1000} loop={loop} onDone={onAdvance} />;
     }
     if (item.media_type === "video") {
       return <video src={item.file_url} autoPlay muted playsInline loop={loop} onEnded={onAdvance} onError={onAdvance} className="w-full h-full object-contain" />;
@@ -120,11 +121,7 @@ export function StartSlideshow() {
     return () => clearInterval(t);
   }, []);
 
-  // A Wochenspruch the server couldn't fetch has nothing to show — skip it rather than show an empty slide.
-  const { pinned, rotation } = useMemo(
-    () => pickSlides(items.filter((i) => i.kind !== "wochenspruch" || i.wochenspruch), now),
-    [items, now],
-  );
+  const { pinned, rotation } = useMemo(() => pickSlides(items, now), [items, now]);
 
   const [rotIndex, setRotIndex] = useState(0);
   useEffect(() => {
@@ -138,7 +135,7 @@ export function StartSlideshow() {
   useEffect(() => {
     if (pinned || rotation.length === 0 || !current) return;
     const ms = slideDurationMs(current);
-    if (ms === null) return; // video: advances on ended/error
+    if (ms === null) return; // video/PDF: the slide calls onAdvance itself
     const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

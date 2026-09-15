@@ -12,6 +12,7 @@ export type SlideshowEvent = {
   start_time: string | null;
   end_time: string | null;
   tags: string[];
+  category: string;
 };
 
 export type SlideshowWochenspruch = {
@@ -42,6 +43,7 @@ export type SlideshowItem = {
   original_filename: string | null;
   url: string | null;
   calendar_tags: string[];
+  calendar_categories: string[];
   calendar_days_ahead: number;
   slot_days: number[];
   slot_start: string | null;
@@ -87,16 +89,25 @@ export function isInSlot(item: SlideshowItem, now: Date): boolean {
   return true;
 }
 
+/** A Wochenspruch the server couldn't fetch, or Termine with nothing upcoming, has nothing to show. */
+function hasContent(item: SlideshowItem): boolean {
+  if (item.kind === "wochenspruch") return item.wochenspruch !== null;
+  if (item.kind === "calendar") return item.events.length > 0;
+  return true;
+}
+
+/** A slot pins its item while it is active; outside the slot the item simply rotates. */
 export function pickSlides(
   items: SlideshowItem[],
   now: Date
 ): { pinned: SlideshowItem | null; rotation: SlideshowItem[] } {
-  const pinned = items.find((item) => isInSlot(item, now)) ?? null;
-  const rotation = items.filter((item) => !hasSlot(item));
+  const rotation = items.filter(hasContent);
+  const pinned = rotation.find((item) => isInSlot(item, now)) ?? null;
   return { pinned, rotation };
 }
 
+/** null = the slide advances on its own (videos when they end, PDFs after their last page). */
 export function slideDurationMs(item: SlideshowItem): number | null {
-  if (item.media_type === "video") return null;
+  if (item.media_type === "video" || item.media_type === "pdf") return null;
   return item.duration_seconds * 1000;
 }

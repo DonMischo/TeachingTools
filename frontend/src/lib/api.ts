@@ -1,9 +1,16 @@
 import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
-import type { SlideshowItem } from "@/lib/slideshow";
+import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 
 export type { SlideshowItem } from "@/lib/slideshow";
+
+export type SlideshowPatch = Partial<{
+  title: string; active: boolean; audience: "guest" | "student" | "teacher"; duration_seconds: number;
+  url: string; calendar_tags: string[]; calendar_categories: string[]; calendar_days_ahead: number;
+  slot_days: number[]; slot_start: string | null; slot_end: string | null;
+  slot_from: string | null; slot_until: string | null;
+}>;
 
 export type ClassOut = {
   id: number;
@@ -2414,14 +2421,14 @@ export const api = {
           return r.json() as Promise<SlideshowItem[]>;
         });
     },
-    create: (body: { kind: "link" | "calendar" | "wochenspruch"; title?: string; url?: string; calendar_tags?: string[]; calendar_days_ahead?: number }) =>
+    create: (body: { kind: "link"; title?: string; url: string }) =>
       apiFetch<SlideshowItem>("slideshow/items", { method: "POST", body: JSON.stringify(body) }),
-    update: (id: number, patch: Partial<{
-      title: string; active: boolean; audience: "guest" | "student" | "teacher"; duration_seconds: number;
-      url: string; calendar_tags: string[]; calendar_days_ahead: number;
-      slot_days: number[]; slot_start: string | null; slot_end: string | null;
-      slot_from: string | null; slot_until: string | null;
-    }>) => apiFetch<SlideshowItem>(`slideshow/items/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    update: (id: number, patch: SlideshowPatch) =>
+      apiFetch<SlideshowItem>(`slideshow/items/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    // Multi-select edit: the same change for all ids
+    updateMany: (ids: number[], patch: SlideshowPatch) =>
+      apiFetch<SlideshowItem[]>("slideshow/items", { method: "PATCH", body: JSON.stringify({ ids, patch }) }),
+    events: (id: number) => apiFetch<SlideshowEvent[]>(`slideshow/items/${id}/events`),
     order: (ids: number[]) => apiFetch<void>("slideshow/order", { method: "PUT", body: JSON.stringify({ ids }) }),
     remove: (ids: number[]) => apiFetch<{ deleted: number }>("slideshow/items/delete", { method: "POST", body: JSON.stringify({ ids }) }),
   },

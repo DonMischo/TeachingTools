@@ -127,6 +127,7 @@ def _run_migrations(db_engine):
     """Apply additive schema changes that create_all cannot handle (new columns on existing tables)."""
     migrations = [
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS class_name VARCHAR(100)",
+        "ALTER TABLE slideshow_items ADD COLUMN IF NOT EXISTS calendar_categories JSON NOT NULL DEFAULT '[]'",
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS mode VARCHAR(20) NOT NULL DEFAULT 'next-free-line'",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS extra_fields JSON NOT NULL DEFAULT '{}'",
         "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS team_mode BOOLEAN NOT NULL DEFAULT FALSE",

@@ -477,6 +477,7 @@ class SlideshowEventOut(BaseModel):
     start_time: str | None
     end_time: str | None
     tags: list[str]
+    category: str
 
 
 class SlideshowWochenspruchOut(BaseModel):
@@ -507,6 +508,7 @@ class SlideshowItemOut(BaseModel):
     original_filename: str | None
     url: str | None
     calendar_tags: list[str]
+    calendar_categories: list[str]
     calendar_days_ahead: int
     slot_days: list[int]
     slot_start: str | None
@@ -522,8 +524,6 @@ class SlideshowItemIn(BaseModel):
     kind: str
     title: str | None = None
     url: str | None = None
-    calendar_tags: list[str] = []
-    calendar_days_ahead: int = 14
 
 
 class SlideshowItemPatch(BaseModel):
@@ -533,12 +533,18 @@ class SlideshowItemPatch(BaseModel):
     duration_seconds: int | None = None
     url: str | None = None
     calendar_tags: list[str] | None = None
+    calendar_categories: list[str] | None = None
     calendar_days_ahead: int | None = None
     slot_days: list[int] | None = None
     slot_start: str | None = None
     slot_end: str | None = None
     slot_from: date | None = None
     slot_until: date | None = None
+
+
+class SlideshowBulkPatchIn(BaseModel):
+    ids: list[int]
+    patch: SlideshowItemPatch
 
 
 class SlideshowOrderIn(BaseModel):

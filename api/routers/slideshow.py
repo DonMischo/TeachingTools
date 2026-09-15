@@ -1,9 +1,11 @@
 """
 Startseiten-Slideshow — kiosk-style rotation shown on the school's front
 display: uploaded files (image/pdf/video), external links, a calendar-tag
-feed (upcoming CalendarEntry rows sharing a tag), the current Wochenspruch
-(fetched from wochenspruch.pfarr.tools, data by kirchenjahr-evangelisch.de)
-and a singleton 'hauspunkte' item that always exists. `/public` serves the rotation filtered
+feed, the current Wochenspruch (fetched from wochenspruch.pfarr.tools, data by
+kirchenjahr-evangelisch.de) and Hauspunkte. Hauspunkte, Termine (calendar) and
+Wochenspruch are built-in rows that always exist once and can only be
+deactivated. A time slot pins an item while it is active; outside the slot the
+item rotates like any other. `/public` serves the rotation filtered
 by viewer audience level; the rest are admin-feature-gated management
 endpoints (create/patch/reorder/delete/upload) plus a pure `compute_warnings`
 helper that flags broken/overlapping items for the admin UI.
@@ -22,12 +24,12 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import CalendarEntry, SlideshowItem, Student, Teacher
 from ..schemas import (
-    SlideshowDeleteIn, SlideshowEventOut, SlideshowItemIn, SlideshowItemOut,
+    SlideshowBulkPatchIn, SlideshowDeleteIn, SlideshowEventOut, SlideshowItemIn, SlideshowItemOut,
     SlideshowItemPatch, SlideshowOrderIn, SlideshowWochenspruchOut,
 )
 from ..auth import get_current_user_optional
 from ..admin_access import require_admin_feature
-from .calendar import STUDENT_VISIBLE_CATEGORIES, _stufe_category
+from .calendar import CATEGORIES, STUDENT_VISIBLE_CATEGORIES, _stufe_category
 
 router = APIRouter(prefix="/api/slideshow", tags=["slideshow"])
 
@@ -41,6 +43,10 @@ ALLOWED_EXTENSIONS = {
     ".mp4": "video", ".webm": "video",
 }
 AUDIENCE_LEVELS = {"guest": 0, "student": 1, "teacher": 2}
+# kind -> default title; created on demand, never deletable
+BUILTIN_KINDS = {"hauspunkte": "Hauspunkte", "calendar": "Termine", "wochenspruch": "Wochenspruch"}
+# categories the Termine slide may filter on — private entries never reach the display
+SLIDE_CATEGORIES = [c for c in CATEGORIES if c != "Persönlich"]
 WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -93,15 +99,20 @@ def _get_wochenspruch(today: date) -> SlideshowWochenspruchOut | None:
     return value
 
 
-def _ensure_hauspunkte(db: Session) -> SlideshowItem:
-    item = db.query(SlideshowItem).filter_by(kind="hauspunkte").first()
-    if item is None:
-        item = SlideshowItem(position=0, kind="hauspunkte", title="Hauspunkte",
-                              active=True, audience="guest")
-        db.add(item)
+def _next_position(db: Session) -> int:
+    max_row = db.query(SlideshowItem.position).order_by(SlideshowItem.position.desc()).first()
+    return (max_row[0] + 1) if max_row else 0
+
+
+def _ensure_builtins(db: Session) -> None:
+    existing = {k for (k,) in db.query(SlideshowItem.kind).filter(SlideshowItem.kind.in_(BUILTIN_KINDS)).distinct()}
+    missing = [k for k in BUILTIN_KINDS if k not in existing]
+    for kind in missing:
+        db.add(SlideshowItem(position=0 if kind == "hauspunkte" else _next_position(db),
+                             kind=kind, title=BUILTIN_KINDS[kind], active=True, audience="guest"))
+        db.flush()
+    if missing:
         db.commit()
-        db.refresh(item)
-    return item
 
 
 def _viewer_level(user) -> str:
@@ -121,28 +132,36 @@ def _visible_categories(user) -> set[str] | None:
     return None
 
 
-def _events_for(db: Session, item: SlideshowItem, user, today: date) -> list[SlideshowEventOut]:
-    if item.kind != "calendar" or not item.calendar_tags:
-        return []
+def _matching_entries(db: Session, item: SlideshowItem, today: date) -> list[CalendarEntry]:
+    """Upcoming entries matching the item's filters (tags: any of; categories: one of;
+    an empty filter doesn't restrict). Never 'Persönlich'. Viewer visibility is applied
+    by the caller."""
     until = today.fromordinal(today.toordinal() + item.calendar_days_ahead)
-    q = db.query(CalendarEntry).filter(
+    entries = db.query(CalendarEntry).filter(
         CalendarEntry.end_date >= today,
         CalendarEntry.start_date <= until,
-    )
-    entries = [e for e in q.all() if e.tags and set(e.tags) & set(item.calendar_tags)]
-    visible = _visible_categories(user)
-    if visible is None:
-        entries = [e for e in entries if e.category != "Persönlich"]
-    else:
-        entries = [e for e in entries if e.category in visible]
-    entries.sort(key=lambda e: e.start_date)
-    entries = entries[:10]
+        CalendarEntry.category != "Persönlich",
+    ).order_by(CalendarEntry.start_date).all()
+    tags = set(item.calendar_tags or [])
+    categories = set(item.calendar_categories or [])
     return [
-        SlideshowEventOut(title=e.title, start_date=e.start_date, end_date=e.end_date,
-                           all_day=e.all_day, start_time=e.start_time, end_time=e.end_time,
-                           tags=e.tags or [])
-        for e in entries
+        e for e in entries
+        if (not tags or tags & set(e.tags or [])) and (not categories or e.category in categories)
     ]
+
+
+def _event_out(e: CalendarEntry) -> SlideshowEventOut:
+    return SlideshowEventOut(title=e.title, start_date=e.start_date, end_date=e.end_date,
+                             all_day=e.all_day, start_time=e.start_time, end_time=e.end_time,
+                             tags=e.tags or [], category=e.category)
+
+
+def _events_for(db: Session, item: SlideshowItem, user, today: date) -> list[SlideshowEventOut]:
+    if item.kind != "calendar":
+        return []
+    visible = _visible_categories(user)
+    entries = [e for e in _matching_entries(db, item, today) if visible is None or e.category in visible]
+    return [_event_out(e) for e in entries[:10]]
 
 
 def _out(item: SlideshowItem, warnings: list[str] | None = None,
@@ -154,7 +173,8 @@ def _out(item: SlideshowItem, warnings: list[str] | None = None,
         active=item.active, audience=item.audience, duration_seconds=item.duration_seconds,
         media_type=item.media_type, file_url=file_url,
         original_filename=item.original_filename, url=item.url,
-        calendar_tags=item.calendar_tags or [], calendar_days_ahead=item.calendar_days_ahead,
+        calendar_tags=item.calendar_tags or [], calendar_categories=item.calendar_categories or [],
+        calendar_days_ahead=item.calendar_days_ahead,
         slot_days=item.slot_days or [], slot_start=item.slot_start, slot_end=item.slot_end,
         slot_from=item.slot_from, slot_until=item.slot_until,
         warnings=warnings or [], events=events or [], wochenspruch=wochenspruch,
@@ -181,8 +201,6 @@ def compute_warnings(items: list[SlideshowItem], today: date, file_exists) -> di
             w.append(f"Abgelaufen (Zeitfenster endete am {item.slot_until.strftime('%d.%m.%Y')})")
         if item.kind == "file" and (not item.stored_filename or not file_exists(item.stored_filename)):
             w.append("Datei fehlt")
-        if item.kind == "calendar" and not (item.calendar_tags or []):
-            w.append("Keine Tags gewählt")
         if item.kind == "link" and item.url and not (item.url.startswith("http://") or item.url.startswith("https://")):
             w.append("Ungültiger Link")
 
@@ -213,22 +231,11 @@ def compute_warnings(items: list[SlideshowItem], today: date, file_exists) -> di
     return result
 
 
-def _has_upcoming_entries(db: Session, item: SlideshowItem, today: date) -> bool:
-    if not item.calendar_tags:
-        return True  # "Keine Tags gewählt" already covers this case
-    until = today.fromordinal(today.toordinal() + item.calendar_days_ahead)
-    entries = db.query(CalendarEntry).filter(
-        CalendarEntry.end_date >= today,
-        CalendarEntry.start_date <= until,
-    ).all()
-    return any(e.tags and set(e.tags) & set(item.calendar_tags) for e in entries)
-
-
 def _compute_warnings_with_db(db: Session, items: list[SlideshowItem]) -> dict[int, list[str]]:
     today = date.today()
     warnings = compute_warnings(items, today, lambda fn: (SLIDESHOW_DIR / fn).exists())
     for item in items:
-        if item.kind == "calendar" and item.calendar_tags and not _has_upcoming_entries(db, item, today):
+        if item.kind == "calendar" and not _matching_entries(db, item, today):
             warnings[item.id].append("Keine anstehenden Termine")
         if item.kind == "wochenspruch" and _get_wochenspruch(today) is None:
             warnings[item.id].append("Wochenspruch nicht abrufbar")
@@ -244,7 +251,7 @@ def get_public(
     db: Session = Depends(get_db),
     user=Depends(get_current_user_optional),
 ):
-    _ensure_hauspunkte(db)
+    _ensure_builtins(db)
     level = AUDIENCE_LEVELS[_viewer_level(user)]
     items = db.query(SlideshowItem).filter(SlideshowItem.active.is_(True)).order_by(
         SlideshowItem.position, SlideshowItem.id).all()
@@ -266,7 +273,7 @@ def list_items(
     db: Session = Depends(get_db),
     _admin=Depends(require_admin_feature("slideshow")),
 ):
-    _ensure_hauspunkte(db)
+    _ensure_builtins(db)
     items = db.query(SlideshowItem).order_by(SlideshowItem.position, SlideshowItem.id).all()
     warnings = _compute_warnings_with_db(db, items)
     return [_out(it, warnings=warnings[it.id]) for it in items]
@@ -292,8 +299,7 @@ async def upload_items(
             raise HTTPException(413, "Datei zu groß (max 100 MB)")
         validated.append((file, ext, data))
 
-    max_row = db.query(SlideshowItem.position).order_by(SlideshowItem.position.desc()).first()
-    next_position = (max_row[0] + 1) if max_row else 0
+    next_position = _next_position(db)
 
     created = []
     for file, ext, data in validated:
@@ -323,25 +329,15 @@ def create_item(
     db: Session = Depends(get_db),
     _admin=Depends(require_admin_feature("slideshow")),
 ):
-    if body.kind not in ("link", "calendar", "wochenspruch"):
+    # Files come via /items/upload; Hauspunkte, Termine and Wochenspruch are built in.
+    if body.kind != "link":
         raise HTTPException(400, f"Kind nicht erstellbar: {body.kind}")
-    if body.kind == "link":
-        if not body.url or not (body.url.startswith("http://") or body.url.startswith("https://")):
-            raise HTTPException(400, "Ungültiger Link")
-    _validate_days_ahead(body.calendar_days_ahead)
-
-    max_row = db.query(SlideshowItem.position).order_by(SlideshowItem.position.desc()).first()
-    next_position = (max_row[0] + 1) if max_row else 0
-
-    title = body.title
-    if not title:
-        title = {"link": body.url, "calendar": "Termine", "wochenspruch": "Wochenspruch"}[body.kind]
+    if not body.url or not (body.url.startswith("http://") or body.url.startswith("https://")):
+        raise HTTPException(400, "Ungültiger Link")
 
     item = SlideshowItem(
-        position=next_position, kind=body.kind, title=title, active=True, audience="guest",
-        url=body.url if body.kind == "link" else None,
-        calendar_tags=body.calendar_tags if body.kind == "calendar" else [],
-        calendar_days_ahead=body.calendar_days_ahead,
+        position=_next_position(db), kind="link", title=body.title or body.url,
+        active=True, audience="guest", url=body.url,
     )
     db.add(item)
     db.commit()
@@ -363,21 +359,12 @@ def _validate_time(value: str) -> None:
         raise HTTPException(400, f"Ungültige Uhrzeit: {value}")
 
 
-@router.patch("/items/{item_id}", response_model=SlideshowItemOut)
-def patch_item(
-    item_id: int,
-    body: SlideshowItemPatch,
-    db: Session = Depends(get_db),
-    _admin=Depends(require_admin_feature("slideshow")),
-):
-    item = db.query(SlideshowItem).filter_by(id=item_id).first()
-    if item is None:
-        raise HTTPException(404, "Nicht gefunden")
-
+def _validated_patch(body: SlideshowItemPatch) -> dict:
     data = body.model_dump(exclude_unset=True)
 
     # null only makes sense for the optional slot/url fields; the rest are NOT NULL columns
-    for field in ("title", "active", "audience", "duration_seconds", "calendar_tags", "calendar_days_ahead"):
+    for field in ("title", "active", "audience", "duration_seconds", "calendar_tags",
+                  "calendar_categories", "calendar_days_ahead"):
         if field in data and data[field] is None:
             raise HTTPException(400, f"{field} darf nicht leer sein")
     if "slot_days" in data and data["slot_days"] is None:
@@ -396,13 +383,61 @@ def patch_item(
         _validate_time(data["slot_start"])
     if "slot_end" in data and data["slot_end"] is not None:
         _validate_time(data["slot_end"])
+    if "calendar_categories" in data:
+        unknown = [c for c in data["calendar_categories"] if c not in SLIDE_CATEGORIES]
+        if unknown:
+            raise HTTPException(400, f"Unbekannte Kategorie: {', '.join(unknown)}")
+    return data
 
-    for field, value in data.items():
+
+@router.patch("/items/{item_id}", response_model=SlideshowItemOut)
+def patch_item(
+    item_id: int,
+    body: SlideshowItemPatch,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin_feature("slideshow")),
+):
+    item = db.query(SlideshowItem).filter_by(id=item_id).first()
+    if item is None:
+        raise HTTPException(404, "Nicht gefunden")
+    for field, value in _validated_patch(body).items():
         setattr(item, field, value)
-
     db.commit()
     db.refresh(item)
     return _out(item)
+
+
+@router.patch("/items", response_model=list[SlideshowItemOut])
+def patch_items(
+    body: SlideshowBulkPatchIn,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin_feature("slideshow")),
+):
+    """Multi-select edit: the same change for every listed item, all or nothing."""
+    data = _validated_patch(body.patch)
+    items = db.query(SlideshowItem).filter(SlideshowItem.id.in_(body.ids)).all()
+    if len(items) != len(set(body.ids)):
+        raise HTTPException(404, "Nicht gefunden")
+    for item in items:
+        for field, value in data.items():
+            setattr(item, field, value)
+    db.commit()
+    return [_out(it) for it in sorted(items, key=lambda it: (it.position, it.id))]
+
+
+@router.get("/items/{item_id}/events", response_model=list[SlideshowEventOut])
+def preview_events(
+    item_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin_feature("slideshow")),
+):
+    """What the Termine slide matches with its current filters (before viewer visibility)."""
+    item = db.query(SlideshowItem).filter_by(id=item_id).first()
+    if item is None:
+        raise HTTPException(404, "Nicht gefunden")
+    if item.kind != "calendar":
+        raise HTTPException(400, "Nur für Termine")
+    return [_event_out(e) for e in _matching_entries(db, item, date.today())]
 
 
 # ---------------------------------------------------------------------------
@@ -436,11 +471,10 @@ def delete_items(
     db: Session = Depends(get_db),
     _admin=Depends(require_admin_feature("slideshow")),
 ):
-    hauspunkte = db.query(SlideshowItem).filter_by(kind="hauspunkte").first()
-    if hauspunkte is not None and hauspunkte.id in body.ids:
-        raise HTTPException(400, "Hauspunkte kann nicht gelöscht werden, nur deaktiviert")
-
     items = db.query(SlideshowItem).filter(SlideshowItem.id.in_(body.ids)).all()
+    if any(it.kind in BUILTIN_KINDS for it in items):
+        raise HTTPException(400, "Hauspunkte, Termine und Wochenspruch können nicht gelöscht werden, nur deaktiviert")
+
     for item in items:
         if item.stored_filename:
             (SLIDESHOW_DIR / item.stored_filename).unlink(missing_ok=True)

@@ -19,6 +19,20 @@ from api.tests.conftest import auth
 # Helpers
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def _offline_wochenspruch(monkeypatch):
+    """The built-in Wochenspruch row exists in every test - keep the network out of it."""
+    from api.routers import slideshow
+
+    def offline(day):
+        raise OSError("offline in tests")
+
+    monkeypatch.setattr(slideshow, "_load_wochenspruch", offline)
+    slideshow._WOCHENSPRUCH_CACHE.clear()
+    yield
+    slideshow._WOCHENSPRUCH_CACHE.clear()
+
+
 def _student_login(client, db, klasse: str = "5a", username: str = "m.muster") -> str:
     s = Student(nachname="Muster", vorname="Mia", klasse=klasse, geschlecht="weiblich",
                username=username, password_hash=hash_password("pw"), active=True)
@@ -332,18 +346,20 @@ def test_create_link_item_invalid_url(client, admin_token):
     assert r.status_code == 400
 
 
-def test_create_calendar_item(client, admin_token):
-    r = client.post("/api/slideshow/items", headers=auth(admin_token),
-                    json={"kind": "calendar", "calendar_tags": ["Fest"]})
-    assert r.status_code == 201, r.text
-    assert r.json()["kind"] == "calendar"
-    assert r.json()["calendar_tags"] == ["Fest"]
+@pytest.mark.parametrize("kind", ["calendar", "wochenspruch"])
+def test_create_builtin_kinds_rejected(client, admin_token, kind):
+    r = client.post("/api/slideshow/items", headers=auth(admin_token), json={"kind": kind})
+    assert r.status_code == 400
 
 
-def test_create_calendar_item_empty_tags_allowed(client, admin_token):
-    r = client.post("/api/slideshow/items", headers=auth(admin_token),
-                    json={"kind": "calendar", "calendar_tags": []})
-    assert r.status_code == 201
+def test_builtin_rows_exist_once(client, admin_token):
+    client.get("/api/slideshow/public")
+    client.cookies.clear()
+    items = client.get("/api/slideshow/items", headers=auth(admin_token)).json()
+    kinds = [i["kind"] for i in items]
+    for kind, title in (("hauspunkte", "Hauspunkte"), ("calendar", "Termine"), ("wochenspruch", "Wochenspruch")):
+        assert kinds.count(kind) == 1, kind
+        assert next(i for i in items if i["kind"] == kind)["title"] == title
 
 
 def test_create_kind_file_rejected(client, admin_token):
@@ -439,9 +455,17 @@ def test_calendar_days_ahead_out_of_bounds(client, db, admin_token, value):
     r = client.patch(f"/api/slideshow/items/{it.id}", headers=auth(admin_token),
                      json={"calendar_days_ahead": value})
     assert r.status_code == 400
-    r = client.post("/api/slideshow/items", headers=auth(admin_token),
-                    json={"kind": "calendar", "calendar_tags": ["Fest"], "calendar_days_ahead": value})
+
+
+def test_patch_rejects_unknown_calendar_category(client, db, admin_token):
+    it = _item(db, kind="calendar", url=None)
+    r = client.patch(f"/api/slideshow/items/{it.id}", headers=auth(admin_token),
+                     json={"calendar_categories": ["Primar", "Erfunden"]})
     assert r.status_code == 400
+    r = client.patch(f"/api/slideshow/items/{it.id}", headers=auth(admin_token),
+                     json={"calendar_categories": ["Primar", "Schulgemeinschaft"]})
+    assert r.status_code == 200
+    assert r.json()["calendar_categories"] == ["Primar", "Schulgemeinschaft"]
 
 
 def test_patch_null_slot_days_clears_slot(client, db, admin_token):
@@ -511,9 +535,10 @@ def test_bulk_delete_removes_items_and_files(client, db, admin_token, tmp_path, 
     assert b.id not in remaining
 
 
-def test_bulk_delete_hauspunkte_id_rejected(client, db, admin_token):
-    client.get("/api/slideshow/public")  # ensures hauspunkte row exists
-    hauspunkte = db.query(SlideshowItem).filter_by(kind="hauspunkte").one()
+@pytest.mark.parametrize("kind", ["hauspunkte", "calendar", "wochenspruch"])
+def test_bulk_delete_builtin_id_rejected(client, db, admin_token, kind):
+    client.get("/api/slideshow/public")  # ensures the built-in rows exist
+    hauspunkte = db.query(SlideshowItem).filter_by(kind=kind).one()
     other = _item(db, title="Löschbar")
 
     r = client.post("/api/slideshow/items/delete", headers=auth(admin_token),
@@ -564,9 +589,10 @@ def test_warning_missing_file(client, db, admin_token, tmp_path, monkeypatch):
     assert "Datei fehlt" in _warnings_for(client, admin_token, it.id)
 
 
-def test_warning_no_tags(client, db, admin_token):
-    it = _item(db, kind="calendar", calendar_tags=[])
-    assert "Keine Tags gewählt" in _warnings_for(client, admin_token, it.id)
+def test_calendar_without_filters_has_no_tag_warning(client, db, admin_token, teacher):
+    it = _item(db, kind="calendar", url=None, calendar_tags=[])
+    _entry(db, teacher.id, title="Irgendwas", tags=[])
+    assert _warnings_for(client, admin_token, it.id) == []
 
 
 def test_warning_no_upcoming_entries(client, db, admin_token, teacher):
@@ -674,13 +700,6 @@ def ws_api(monkeypatch):
     slideshow._WOCHENSPRUCH_CACHE.clear()
 
 
-def test_create_wochenspruch_item(client, admin_token):
-    r = client.post("/api/slideshow/items", headers=auth(admin_token), json={"kind": "wochenspruch"})
-    assert r.status_code == 201, r.text
-    assert r.json()["kind"] == "wochenspruch"
-    assert r.json()["title"] == "Wochenspruch"
-
-
 def test_public_wochenspruch_payload(client, db, ws_api):
     _item(db, position=1, kind="wochenspruch", title="Wochenspruch", url=None)
     r = client.get("/api/slideshow/public")
@@ -704,7 +723,12 @@ def test_public_wochenspruch_payload(client, db, ws_api):
 def test_other_kinds_have_no_wochenspruch_payload(client, db, ws_api):
     _item(db, position=1, title="Link")
     r = client.get("/api/slideshow/public")
-    assert all(i["wochenspruch"] is None for i in r.json())
+    assert all(i["wochenspruch"] is None for i in r.json() if i["kind"] != "wochenspruch")
+
+
+def test_inactive_wochenspruch_is_not_fetched(client, db, ws_api):
+    _item(db, position=1, kind="wochenspruch", url=None, active=False)
+    client.get("/api/slideshow/public")
     assert ws_api["calls"] == 0
 
 
@@ -734,3 +758,117 @@ def test_wochenspruch_outage_keeps_last_good_value(client, db, ws_api, monkeypat
     r = client.get("/api/slideshow/public")
     ws = next(i for i in r.json() if i["kind"] == "wochenspruch")["wochenspruch"]
     assert ws is not None and ws["reference"] == "1. Petr 5,7"
+
+
+# ---------------------------------------------------------------------------
+# Calendar filters: tags AND categories, empty = no restriction
+# ---------------------------------------------------------------------------
+
+def _events(client, headers=None):
+    r = client.get("/api/slideshow/public", **({"headers": headers} if headers else {}))
+    cal = next(i for i in r.json() if i["kind"] == "calendar")
+    return {e["title"] for e in cal["events"]}
+
+
+def test_calendar_without_filters_shows_all_visible(client, db, teacher, teacher_token):
+    _item(db, position=1, kind="calendar", url=None)
+    _entry(db, teacher.id, title="Fest", category="Schulgemeinschaft", tags=["Fest"])
+    _entry(db, teacher.id, title="Ohne Tag", category="Kollegium", tags=[])
+    _entry(db, teacher.id, title="Privat", category="Persönlich", tags=[])
+    client.cookies.clear()
+    assert _events(client, auth(teacher_token)) == {"Fest", "Ohne Tag"}
+
+
+def test_calendar_category_filter(client, db, teacher, teacher_token):
+    _item(db, position=1, kind="calendar", url=None, calendar_categories=["Primar", "Schulgemeinschaft"])
+    _entry(db, teacher.id, title="Primar", category="Primar", tags=[])
+    _entry(db, teacher.id, title="Sekundar", category="Sekundar", tags=[])
+    _entry(db, teacher.id, title="Alle", category="Schulgemeinschaft", tags=["Fest"])
+    client.cookies.clear()
+    assert _events(client, auth(teacher_token)) == {"Primar", "Alle"}
+
+
+def test_calendar_tags_and_categories_combine(client, db, teacher, teacher_token):
+    _item(db, position=1, kind="calendar", url=None,
+          calendar_tags=["Fest"], calendar_categories=["Schulgemeinschaft"])
+    _entry(db, teacher.id, title="Treffer", category="Schulgemeinschaft", tags=["Fest"])
+    _entry(db, teacher.id, title="Falsche Kategorie", category="Kollegium", tags=["Fest"])
+    _entry(db, teacher.id, title="Falscher Tag", category="Schulgemeinschaft", tags=["Sport"])
+    client.cookies.clear()
+    assert _events(client, auth(teacher_token)) == {"Treffer"}
+
+
+def test_calendar_category_filter_still_respects_viewer(client, db, teacher):
+    _item(db, position=1, kind="calendar", url=None, calendar_categories=["Kollegium", "Ferien"])
+    _entry(db, teacher.id, title="Dienstberatung", category="Kollegium", tags=[])
+    _entry(db, teacher.id, title="Herbstferien", category="Ferien", tags=[])
+    assert _events(client) == {"Herbstferien"}
+
+
+def test_event_preview_for_admin(client, db, admin_token, teacher):
+    it = _item(db, position=1, kind="calendar", url=None, calendar_categories=["Kollegium"])
+    _entry(db, teacher.id, title="Dienstberatung", category="Kollegium", tags=["DB"])
+    _entry(db, teacher.id, title="Schulfest", category="Schulgemeinschaft", tags=[])
+    _entry(db, teacher.id, title="Privat", category="Persönlich", tags=[])
+    client.cookies.clear()
+    r = client.get(f"/api/slideshow/items/{it.id}/events", headers=auth(admin_token))
+    assert r.status_code == 200, r.text
+    assert [(e["title"], e["category"]) for e in r.json()] == [("Dienstberatung", "Kollegium")]
+
+
+def test_event_preview_requires_calendar_item(client, db, admin_token):
+    it = _item(db, position=1)
+    r = client.get(f"/api/slideshow/items/{it.id}/events", headers=auth(admin_token))
+    assert r.status_code == 400
+
+
+def test_event_preview_requires_admin_feature(client, db, teacher_token):
+    it = _item(db, position=1, kind="calendar", url=None)
+    client.cookies.clear()
+    r = client.get(f"/api/slideshow/items/{it.id}/events", headers=auth(teacher_token))
+    assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Bulk patch (multi-select edit)
+# ---------------------------------------------------------------------------
+
+def test_bulk_patch_applies_to_all(client, db, admin_token):
+    a = _item(db, title="A")
+    b = _item(db, title="B")
+    c = _item(db, title="C")
+    r = client.patch("/api/slideshow/items", headers=auth(admin_token), json={
+        "ids": [a.id, b.id],
+        "patch": {"audience": "teacher", "duration_seconds": 30,
+                  "slot_days": [0, 1], "slot_start": "12:00", "slot_end": "12:45"},
+    })
+    assert r.status_code == 200, r.text
+    assert {i["id"] for i in r.json()} == {a.id, b.id}
+    client.cookies.clear()
+    listed = {i["id"]: i for i in client.get("/api/slideshow/items", headers=auth(admin_token)).json()}
+    for it in (a, b):
+        assert listed[it.id]["audience"] == "teacher"
+        assert listed[it.id]["duration_seconds"] == 30
+        assert listed[it.id]["slot_start"] == "12:00"
+    assert listed[c.id]["audience"] == "guest"
+
+
+def test_bulk_patch_validates_before_writing(client, db, admin_token):
+    a = _item(db, title="A")
+    r = client.patch("/api/slideshow/items", headers=auth(admin_token),
+                     json={"ids": [a.id], "patch": {"audience": "guest", "duration_seconds": 1}})
+    assert r.status_code == 400
+    r = client.patch("/api/slideshow/items", headers=auth(admin_token),
+                     json={"ids": [a.id, 999999], "patch": {"active": False}})
+    assert r.status_code == 404
+    client.cookies.clear()
+    listed = {i["id"]: i for i in client.get("/api/slideshow/items", headers=auth(admin_token)).json()}
+    assert listed[a.id]["active"] is True
+
+
+def test_bulk_patch_requires_admin_feature(client, db, teacher_token):
+    a = _item(db, title="A")
+    client.cookies.clear()
+    r = client.patch("/api/slideshow/items", headers=auth(teacher_token),
+                     json={"ids": [a.id], "patch": {"active": False}})
+    assert r.status_code == 403
