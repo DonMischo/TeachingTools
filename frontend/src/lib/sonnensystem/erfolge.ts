@@ -93,7 +93,7 @@ export const ERFOLGE: Erfolg[] = [
   { id: "strecke-30", gruppe: "Reisen", icon: "🧭", name: "Bis zum Rand", text: "Fliege 30 AE — so weit ist Neptun von der Sonne entfernt.", ziel: 30 * KM_JE_AE, wert: d => d.statistik.strecke, einheit: ae },
   { id: "strecke-200", gruppe: "Reisen", icon: "🌌", name: "Weltraumwanderer", text: "Fliege insgesamt 200 AE.", ziel: 200 * KM_JE_AE, wert: d => d.statistik.strecke, einheit: ae },
   { id: "flugzeit-10", gruppe: "Reisen", icon: "⏱️", name: "Zehn Minuten im Cockpit", text: "Fliege zehn Minuten.", ziel: 600, wert: d => d.statistik.flugzeit, einheit: minuten },
-  { id: "flugzeit-60", gruppe: "Reisen", icon: "🕐", name: "Eine Stunde im All", text: "Fliege insgesamt eine Stunde.", ziel: 3600, wert: d => d.statistik.flugzeit, einheit: minuten },
+  { id: "flugzeit-60", gruppe: "Reisen", icon: "🕐", name: "Dauerflieger", text: "Fliege insgesamt zwanzig Minuten.", ziel: 1200, wert: d => d.statistik.flugzeit, einheit: minuten },
 
   // ── Pilot ──
   { id: "hundertfach", gruppe: "Pilot", icon: "⚡", name: "Hundertfach", text: "Erreiche im Pulsantrieb die 100-fache Lichtgeschwindigkeit.", ziel: 99, wert: d => d.statistik.hoechstC },
