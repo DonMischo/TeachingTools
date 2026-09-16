@@ -330,24 +330,36 @@ export default function Flug({
       if (monde.length) systemRadius.set(p.id, Math.max(...monde.map(m => flugMondbahn(m, p))) * 2.5);
     }
 
-    // ── Lagrangepunkte: Marken fester Bildschirmgröße, dazu Jupiters Trojaner ──
+    // ── Lagrangepunkte ──
+    // Sie stehen fest, genau wie die Planeten im Flug: alles zum Startdatum.
+    // L1 und L2 hängen am Planeten und werden wie eine Bahn gestaucht; L3, L4
+    // und L5 liegen auf der Planetenbahn selbst.
     const ortStelle = new Map<string, THREE.Vector3>(ORTE.map(o => [o.id, new THREE.Vector3()]));
-    const trojaner = new Map<string, THREE.Points>();
     for (const o of ORTE) {
+      const stelle = ortStelle.get(o.id)!;
+      const nah = ortAmPlaneten(o, startJd);
+      if (nah) {
+        const mutter = KOERPER_NACH_ID[o.planet];
+        const planetOrt = ort.get(o.planet)!;
+        stelle.copy(planetOrt).normalize()
+          .multiplyScalar(flugBahnRadius(nah.km, mutter) * (nah.nachAussen ? 1 : -1))
+          .add(planetOrt);
+      } else {
+        zuSzene(flugOrt(ortHeliozentrisch(o, startJd)), stelle);
+      }
+
       const marke = new THREE.Sprite(new THREE.SpriteMaterial({
         map: leuchtTextur("rgba(255,255,255,0.95)", `${o.farbe}44`),
         color: new THREE.Color(o.farbe),
         blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, sizeAttenuation: false,
       }));
       marke.scale.setScalar(0.045);
+      marke.position.copy(stelle);
       szene.add(marke);
       marke.userData.id = o.id;
       markenObjekte.push(marke);
-      if (o.planet === "jupiter") {
-        const wolke = baueTrojaner(new THREE.Color(o.farbe).getHex());
-        szene.add(wolke);
-        trojaner.set(o.id, wolke);
-      }
+
+      if (o.planet === "jupiter") szene.add(baueTrojaner(new THREE.Color(o.farbe).getHex(), stelle));
     }
 
     // ── Erdmagnetfeld und Sonnensturm ──
@@ -375,24 +387,6 @@ export default function Flug({
         o.kugel.rotation.y = drehwinkel(k, jd) % (Math.PI * 2);
         if (o.wolken) o.wolken.rotation.y = (jd * 3) % (Math.PI * 2);
       }
-      // L1 und L2 hängen am Planeten und werden wie eine Bahn gestaucht; L3,
-      // L4 und L5 liegen auf der Planetenbahn selbst und kommen direkt aus
-      // der Rechnung.
-      for (const o of ORTE) {
-        const stelle = ortStelle.get(o.id)!;
-        const nah = ortAmPlaneten(o, jd);
-        if (nah) {
-          const mutter = KOERPER_NACH_ID[o.planet];
-          const planetOrt = ort.get(o.planet)!;
-          versatz.copy(planetOrt).normalize().multiplyScalar(flugBahnRadius(nah.km, mutter) * (nah.nachAussen ? 1 : -1));
-          stelle.copy(planetOrt).add(versatz);
-        } else {
-          zuSzene(flugOrt(ortHeliozentrisch(o, jd)), stelle);
-        }
-        const wolke = trojaner.get(o.id);
-        if (wolke) { wolke.position.copy(stelle); wolke.lookAt(0, 0, 0); }
-      }
-      for (const marke of markenObjekte) marke.position.copy(ortStelle.get(marke.userData.id as string)!);
     }
     stelleMondeAuf();
 
@@ -1417,27 +1411,43 @@ export default function Flug({
   );
 }
 
+/** Normalverteilte Zufallszahl (Box-Muller) — für einen Schwarm ohne harte Kanten. */
+function glocke(): number {
+  return Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+}
+
 /**
- * Jupiters Trojaner: eine langgezogene Wolke aus Brocken um den Lagrangepunkt.
+ * Jupiters Trojaner als Schwarm um den Lagrangepunkt.
  *
- * Sie fallen nicht in den Punkt hinein, sondern pendeln in einer weit
- * ausholenden Bohnenform darum herum — die Wolke ist deshalb viel länger als
- * breit. Die Zahl der Punkte ist eine Andeutung, nicht die Wirklichkeit: dort
- * stehen über 13 000 bekannte Brocken.
+ * Sie fallen nicht in den Punkt hinein, sondern pendeln über Jahrhunderte in
+ * weiten Bögen darum herum. Deshalb ist die Wolke
+ *   — gekrümmt: sie folgt Jupiters Bahn um die Sonne, ist also kein Strich,
+ *   — dick: die Bahnen sind bis 30° geneigt, der Schwarm ist keine Scheibe,
+ *   — dünn in der Richtung zur Sonne: die große Halbachse liegt fest,
+ *   — nach außen ausdünnend, statt an einer Kante aufzuhören.
+ * Die Zahl der Punkte ist eine Andeutung: bekannt sind über 13 000 Brocken.
  */
-function baueTrojaner(farbe: number): THREE.Points {
-  const anzahl = 700;
+function baueTrojaner(farbe: number, mitte: THREE.Vector3): THREE.Points {
+  // Viele Punkte, weil der Schwarm über ein Viertel der Jupiterbahn reicht:
+  // zu wenige, und man hält sie für Sterne.
+  const anzahl = 2_400;
   const stellen = new Float32Array(anzahl * 3);
+  // Die Bahnebene ist die Szenen-xz-Ebene; y zeigt aus ihr heraus.
+  const bahnRadius = Math.hypot(mitte.x, mitte.z);
+  const grundwinkel = Math.atan2(mitte.z, mitte.x);
   for (let i = 0; i < anzahl; i++) {
-    const laengs = (Math.random() - 0.5) * 2;
-    stellen[i * 3] = laengs * 1500;
-    stellen[i * 3 + 1] = (Math.random() - 0.5) * 220;
-    stellen[i * 3 + 2] = (Math.random() - 0.5) * 420 + laengs * laengs * 300;
+    const laengs = THREE.MathUtils.clamp(glocke() * 0.2, -0.5, 0.5);
+    const winkel = grundwinkel + laengs;
+    const r = bahnRadius * (1 + THREE.MathUtils.clamp(glocke() * 0.025, -0.07, 0.07));
+    const neigung = THREE.MathUtils.clamp(glocke() * 0.13, -0.45, 0.45);
+    stellen[i * 3] = Math.cos(winkel) * r;
+    stellen[i * 3 + 1] = mitte.y + Math.tan(neigung) * r;
+    stellen[i * 3 + 2] = Math.sin(winkel) * r;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(stellen, 3));
   const punkte = new THREE.Points(geo, new THREE.PointsMaterial({
-    color: farbe, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.65, depthWrite: false,
+    color: farbe, size: 1.9, sizeAttenuation: false, transparent: true, opacity: 0.6, depthWrite: false,
   }));
   punkte.frustumCulled = false;
   return punkte;
