@@ -70,6 +70,15 @@ const ERFASSBAR = KOERPER.length + ORTE.length;
  */
 const ORT_RADIUS = 2;
 /**
+ * Wie nah man einem Lagrangepunkt kommen muss, um ihn zu scannen.
+ *
+ * Großzügig, weil dort nichts zu sehen ist, an dem man den Abstand abschätzen
+ * könnte — und weil der Punkt in Wirklichkeit auch kein Punkt ist: die Sonden
+ * dort ziehen Schleifen von Hunderttausenden Kilometern Durchmesser um ihn.
+ * Die Marke sagt zusätzlich, wann man in Reichweite ist.
+ */
+const ORT_SCANWEITE = 40;
+/**
  * Sonnensturm: so lange braucht die Wolke von der Sonne zur Erde. In echt sind
  * das ein bis drei Tage — hier zwölf Sekunden, sonst säße man nur da.
  */
@@ -185,6 +194,8 @@ export default function Flug({
   magnetfeldRef.current = magnetfeld;
   const setMagnetfeldRef = useRef(setMagnetfeld);
   setMagnetfeldRef.current = setMagnetfeld;
+  const magnetfeldUmschalten = useRef(() => {});
+  magnetfeldUmschalten.current = () => setMagnetfeld(m => !m);
 
   const eingabe = useRef<Eingabe>({ tasten: new Set(), maus: { x: 0, y: 0 }, stick: { x: 0, y: 0 }, schubKnopf: false, bremsKnopf: false });
   const befehle = useRef<Befehle>({});
@@ -461,6 +472,7 @@ export default function Flug({
       if (ev.code === "KeyT") b.zielNaechstes = true;
       if (ev.code === "KeyC") b.scan = true;
       if (ev.code === "KeyX") b.anhalten = true;
+      if (ev.code === "KeyF") magnetfeldUmschalten.current();
     };
     const tasteHoch = (ev: KeyboardEvent) => { e.tasten.delete(ev.code); };
     const fokusWeg = () => e.tasten.clear();
@@ -679,6 +691,7 @@ export default function Flug({
         if (b.scan && !scan) {
           const bereit = scanBereit(naechster);
           if (bereit) scan = { id: bereit, t: 0 };
+          else if (ziel) meldeRef.current(`Noch zu weit von ${nameVon(ziel)} — mit G fliegt der Autopilot hin.`);
           else meldeRef.current("Zu weit weg zum Scannen — flieg näher heran.");
         }
       }
@@ -963,8 +976,12 @@ export default function Flug({
       }
       function scanBereit(naechsterId: string): string | null {
         for (const id of [ziel, naechsterId]) {
-          if (id && oberflaeche(id) < radius.get(id)! * 8 + 60) return id;
+          if (!id) continue;
+          const weite = ORTE_NACH_ID[id] ? ORT_SCANWEITE : radiusVon(id) * 8 + 60;
+          if (oberflaeche(id) < weite) return id;
         }
+        // Auch ohne Zielwahl: ein Lagrangepunkt, an dem man gerade vorbeikommt.
+        for (const o of ORTE) if (oberflaeche(o.id) < ORT_SCANWEITE) return o.id;
         return null;
       }
     };
@@ -1087,13 +1104,15 @@ export default function Flug({
                 </span>
               )}
               {/* Ein Punkt ohne Körper: ein Kreis mit dem Kurzzeichen darin. */}
-              <svg viewBox="0 0 24 24" className={istZiel ? "w-9 h-9" : "w-6 h-6"} style={{ color: istZiel ? "#fcd34d" : o.farbe }}>
+              <svg viewBox="0 0 24 24" className={istZiel ? "w-9 h-9" : "w-6 h-6"}
+                style={{ color: hud.scanBereit === o.id ? "#6ee7b7" : istZiel ? "#fcd34d" : o.farbe }}>
                 <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeDasharray="3 2.5" />
                 <circle cx="12" cy="12" r="1.6" fill="currentColor" />
               </svg>
               <span className="mt-0.5 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap drop-shadow-[0_1px_2px_#000]"
-                style={{ color: istZiel ? "#fde68a" : o.farbe }}>
-                {o.kurz} {KOERPER_NACH_ID[o.planet].name}{fortschritt.erforscht.includes(o.id) ? " ✓" : ""}
+                style={{ color: hud.scanBereit === o.id ? "#6ee7b7" : istZiel ? "#fde68a" : o.farbe }}>
+                {o.kurz} {KOERPER_NACH_ID[o.planet].name}{o.zusatz ? ` · ${o.zusatz}` : ""}
+                {fortschritt.erforscht.includes(o.id) ? " ✓" : hud.scanBereit === o.id ? " 📡" : ""}
               </span>
             </button>
           );
@@ -1281,7 +1300,7 @@ export default function Flug({
       )}
       {!beruehrung && gestartet && !unfall && (
         <div className="absolute left-3 bottom-3 text-[11px] text-slate-400 bg-black/40 rounded-lg px-2 py-1 pointer-events-none">
-          Klick: Maus lenkt · Esc: Maus frei · M Menü · K Kodex · W/S Schub · Leertaste Puls · ⇧ Overdrive · T Ziel · G Autopilot · C Scan
+          Klick: Maus lenkt · Esc: Maus frei · M Menü · K Kodex · W/S Schub · Leertaste Puls · ⇧ Overdrive · T Ziel · G Autopilot · C Scan · F Magnetfeld
         </div>
       )}
 

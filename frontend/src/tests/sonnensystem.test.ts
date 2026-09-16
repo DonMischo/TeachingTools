@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync } from "fs";
 import { join } from "path";
 import {
-  abstand, bahnPunkte, heliozentrisch, julianischerTag, loeseKepler, mondVersatz, MONDBAHNEN, umlaufTage, type Vec3,
+  abstand, bahnPunkte, heliozentrisch, julianischerTag, loeseKepler, mondVersatz, MONDBAHNEN, satellitVersatz, umlaufTage, type Vec3,
 } from "@/lib/sonnensystem/bahnen";
 import { KOERPER, KOERPER_NACH_ID, mondeVon } from "@/lib/sonnensystem/daten";
 import { AUFTRAEGE, auftragZu, gemischteAntworten } from "@/lib/sonnensystem/auftraege";
@@ -199,6 +199,44 @@ describe("Lagrangepunkte", () => {
   });
 });
 
+describe("Raumfahrzeuge", () => {
+  const jd = 2_461_041.5;
+  const laenge = (v: readonly number[]) => Math.hypot(v[0], v[1], v[2]);
+
+  it("hält jedes Raumfahrzeug zwischen seinem nächsten und fernsten Bahnpunkt", () => {
+    for (const k of KOERPER.filter(x => x.art === "satellit")) {
+      const b = k.satBahn!;
+      for (let i = 0; i < 40; i++) {
+        const r = laenge(satellitVersatz(k, K[k.mutter!], jd + i * 0.037));
+        expect(r, k.id).toBeGreaterThanOrEqual(b.aKm * (1 - b.e) - 1);
+        expect(r, k.id).toBeLessThanOrEqual(b.aKm * (1 + b.e) + 1);
+      }
+    }
+  });
+
+  it("bewegt Chandra ruckfrei — die Keplergleichung braucht die Anomalie modulo 2π", () => {
+    // Ohne das Zurückholen sprang der Satellit, weil die mittlere Anomalie seit
+    // J2000 auf über 20 000 Bogenmaß aufgelaufen war und Newton nicht mehr traf.
+    const chandra = K.chandra;
+    const schritt = 1 / 1440; // eine Minute
+    let vor = satellitVersatz(chandra, K.erde, jd);
+    for (let i = 1; i <= 200; i++) {
+      const jetzt = satellitVersatz(chandra, K.erde, jd + i * schritt);
+      const weg = Math.hypot(jetzt[0] - vor[0], jetzt[1] - vor[1], jetzt[2] - vor[2]);
+      // Im schnellsten Punkt legt Chandra rund 500 km je Minute zurück.
+      expect(weg, `Schritt ${i}`).toBeLessThan(1_000);
+      vor = jetzt;
+    }
+  });
+
+  it("lässt den geostationären Meteosat über demselben Punkt stehen", () => {
+    // Ein Sterntag später steht er wieder genau dort, wo er war.
+    const a = satellitVersatz(K.meteosat, K.erde, jd);
+    const b = satellitVersatz(K.meteosat, K.erde, jd + K.erde.rotationStunden! / 24);
+    for (let i = 0; i < 3; i++) expect(b[i]).toBeCloseTo(a[i], 3);
+  });
+});
+
 describe("Keplersche Gesetze", () => {
   it("hält T² zu a³ für jeden Planeten bei eins", () => {
     for (const k of KOERPER.filter(x => x.bahn)) {
@@ -209,11 +247,14 @@ describe("Keplersche Gesetze", () => {
     }
   });
 
-  it("löst die Keplergleichung auch bei stark exzentrischen Bahnen", () => {
-    for (const e of [0, 0.2, 0.5, 0.9]) {
-      for (const M of [0, 1, 3, 5, 6.2]) {
+  it("löst die Keplergleichung auch bei stark exzentrischen Bahnen und großen Anomalien", () => {
+    const aufKreis = (w: number) => Math.atan2(Math.sin(w), Math.cos(w));
+    for (const e of [0, 0.2, 0.5, 0.81, 0.95]) {
+      // Auch weit außerhalb einer Umdrehung: so kommt die Anomalie eines
+      // Satelliten an, der seit J2000 tausende Male herumgelaufen ist.
+      for (const M of [0, 1, 3, 3.1416, -3.1017, 5, 6.2, 22_559.8167]) {
         const E = loeseKepler(M, e);
-        expect(E - e * Math.sin(E), `e=${e} M=${M}`).toBeCloseTo(M, 9);
+        expect(aufKreis(E - e * Math.sin(E) - M), `e=${e} M=${M}`).toBeCloseTo(0, 9);
       }
     }
   });

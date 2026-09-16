@@ -108,6 +108,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
       ["🎯", "Himmelskörper im Fadenkreuz als Ziel — oder im Menü ☰ oben links"],
       ["🧭", "Autopilot fliegt zum Ziel"],
       ["📡", "scannen, wenn du nah genug bist"],
+      ["☰ → Bei der Erde", "Erdmagnetfeld einblenden und einen Sonnensturm auslösen"],
     ]
     : [
       ["Klick ins Bild", "Maus lenkt (Esc gibt sie frei) — oder mit gedrückter Taste ziehen"],
@@ -120,6 +121,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
       ["G", "Autopilot zum Ziel"],
       ["C", "scannen, wenn du nah genug bist"],
       ["X", "sofort anhalten"],
+      ["F", "Erdmagnetfeld einblenden — im Menü ☰ steht darunter »Sonnensturm auslösen«"],
       ["M", "Menü: Ziel, Aufträge, Kodex, Erfolge, Zeitraffer, andere Ansichten"],
       ["K", "Kodex: alles, was du erforscht hast"],
     ];

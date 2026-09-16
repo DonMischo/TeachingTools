@@ -21,6 +21,8 @@ export interface Ort {
   name: string;
   /** Kurzzeichen für die Marke im Bild. */
   kurz: string;
+  /** Zusatz auf der Marke, wo ein Kurzzeichen allein rätselhaft bliebe. */
+  zusatz?: string;
   /** Um welchen Planeten es geht. */
   planet: string;
   /** Welcher der fünf Punkte. */
@@ -98,7 +100,7 @@ export const ORTE: Ort[] = [
     ],
   },
   {
-    id: "ort-jupiter-l4", name: "L4 — Sonne-Jupiter: die Griechen", kurz: "L4", planet: "jupiter", punkt: 4, farbe: "#ffb36b",
+    id: "ort-jupiter-l4", name: "L4 — Sonne-Jupiter: die Griechen", kurz: "L4", zusatz: "Trojaner", planet: "jupiter", punkt: 4, farbe: "#ffb36b",
     entfernung: "60° vor Jupiter, gut 780 Mio. km von der Sonne",
     bewohner: "über 7 000 Asteroiden, nach griechischen Helden benannt",
     intro: "Jupiters Vorhut. Hier fliegt ein ganzer Schwarm von Asteroiden mit dem Planeten mit — festgehalten von nichts als der Form des Kraftfeldes.",
@@ -110,7 +112,7 @@ export const ORTE: Ort[] = [
     ],
   },
   {
-    id: "ort-jupiter-l5", name: "L5 — Sonne-Jupiter: die Trojaner", kurz: "L5", planet: "jupiter", punkt: 5, farbe: "#ffb36b",
+    id: "ort-jupiter-l5", name: "L5 — Sonne-Jupiter: die Trojaner", kurz: "L5", zusatz: "Trojaner", planet: "jupiter", punkt: 5, farbe: "#ffb36b",
     entfernung: "60° hinter Jupiter",
     bewohner: "über 4 000 Asteroiden mit Namen aus Homers Ilias",
     intro: "Jupiters Nachhut. Seit 1906 der erste entdeckt wurde, heißen alle Asteroiden an solchen Punkten »Trojaner« — auch die von Mars, Neptun und der Erde.",

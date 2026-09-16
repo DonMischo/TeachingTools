@@ -32,10 +32,17 @@ export function datumAusJd(jd: number): Date {
 
 /** Löst die Keplergleichung E − e·sin E = M (Bogenmaß) nach E. */
 export function loeseKepler(M: number, e: number): number {
-  let E = e < 0.8 ? M : Math.PI;
-  for (let n = 0; n < 30; n++) {
-    const d = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-    E -= d;
+  // Erst auf −180 … 180 holen: bei Chandra sind seit J2000 über 3 600 Umläufe
+  // aufgelaufen, und mit einer mittleren Anomalie von 22 000 findet das
+  // Newton-Verfahren nichts mehr.
+  const m = Math.atan2(Math.sin(M), Math.cos(M));
+  // Startwert nach Danby. Bei stark exzentrischen Bahnen ist die Ableitung
+  // nahe der Periapsis winzig (1 − e), ein voller Newton-Schritt springt dann
+  // aus dem Bereich heraus und irrt danach umher — deshalb die Begrenzung.
+  let E = e < 0.8 ? m : m + Math.sign(m) * 0.85 * e;
+  for (let n = 0; n < 60; n++) {
+    const d = (E - e * Math.sin(E) - m) / (1 - e * Math.cos(E));
+    E -= Math.max(-1, Math.min(1, d));
     if (Math.abs(d) < 1e-12) break;
   }
   return E;
