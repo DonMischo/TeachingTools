@@ -14,8 +14,9 @@ import { AUFTRAEGE, auftragZu, gemischteAntworten } from "@/lib/sonnensystem/auf
 import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt } from "@/lib/sonnensystem/galerie";
 import { ALLE_NACHWEISE, foto, textur } from "@/lib/sonnensystem/bilder";
 import {
-  HOECHSTTEMPO, OVERDRIVE_TEMPO, haltAbstand, overdriveLohntNicht, schaetzeFlugzeit, vielfachesLicht, zielTempo,
+  HOECHSTTEMPO, OVERDRIVE_TEMPO, haltAbstand, overdriveLohntNicht, schaetzeFlugzeit, schleichTempo, vielfachesLicht, zielTempo,
 } from "@/lib/sonnensystem/flugmodell";
+import { flugMondbahn, flugRadius } from "@/lib/sonnensystem/massstab";
 import { ERFOLGE, LEERE_STATISTIK, neueErfolge } from "@/lib/sonnensystem/erfolge";
 import { KODEX_GRUPPEN, datenZeilen } from "@/lib/sonnensystem/kodex";
 import { baueKodexPdf, fuerPdf } from "@/components/sonnensystem/kodexPdf";
@@ -228,6 +229,26 @@ describe("Flugmodell", () => {
     expect(sehrWeit - weit).toBeCloseTo(50_000 / HOECHSTTEMPO, -1);
     expect(schaetzeFlugzeit({ ...lage, abstand: 70_000, puls: true, tempo: HOECHSTTEMPO, overdriveRest: 12 })).toBeLessThan(sehrWeit - 20);
     expect(schaetzeFlugzeit({ ...lage, abstand: 2_000, winkel: Math.PI })).toBeGreaterThan(nah);
+  });
+});
+
+describe("Anflug auf kleine Körper", () => {
+  it("hält so weit weg, dass jeder Körper sichtbar groß ist — auch Phobos und Deimos", () => {
+    for (const k of KOERPER) {
+      const r = flugRadius(k);
+      const grad = (2 * Math.atan(r / haltAbstand(r)) * 180) / Math.PI;
+      expect(grad, `${k.id}: ${grad.toFixed(1)}°`).toBeGreaterThan(15);
+    }
+  });
+
+  it("schleicht vor kleinen Körpern langsamer, als sie um ihren Planeten kreisen", () => {
+    // Deimos legt im 1000-fachen Zeitraffer 0,8 Einheiten je Sekunde zurück; in
+    // Oberflächennähe bremst der Zeitraffer auf ein Fünfzigstel — dann ist er einholbar.
+    const deimos = K.deimos;
+    const bahn = flugMondbahn(deimos, K.mars);
+    const tempoImRaffer = (2 * Math.PI * bahn) / ((Math.abs(deimos.mondBahn!.umlaufTage) * 86_400) / 1_000);
+    expect(tempoImRaffer).toBeGreaterThan(schleichTempo(flugRadius(deimos)));
+    expect(tempoImRaffer * 0.02).toBeLessThan(schleichTempo(flugRadius(deimos)));
   });
 });
 

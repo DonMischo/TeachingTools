@@ -19,11 +19,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
 import { heliozentrisch, julianischerTag, mondVersatz, type Vec3 } from "@/lib/sonnensystem/bahnen";
-import { flugMondbahn, flugOrt, flugRadius } from "@/lib/sonnensystem/massstab";
+import { flugMondbahn, flugOrt, flugRadius, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
 import { AUFTRAEGE, STUFEN_NAME, auftragZu, type Auftrag } from "@/lib/sonnensystem/auftraege";
 import {
   ABSTURZ_TEMPO, HOECHSTTEMPO, KM_JE_FLUGEINHEIT, OVERDRIVE_ABKLINGZEIT, OVERDRIVE_DAUER,
-  autopilot, haltAbstand, naechstesTempo, overdriveLohntNicht, schaetzeFlugzeit, vielfachesLicht, zielTempo,
+  autopilot, haltAbstand, naechstesTempo, overdriveLohntNicht, schaetzeFlugzeit, schleichTempo, vielfachesLicht, zielTempo,
 } from "@/lib/sonnensystem/flugmodell";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
 import {
@@ -37,8 +37,16 @@ import {
 export { ScanKarte } from "./FlugTeile";
 export { HOECHSTTEMPO } from "@/lib/sonnensystem/flugmodell";
 
-/** Tage Simulationszeit je Sekunde: 1 000-fach. */
+/**
+ * Tage Simulationszeit je Sekunde: 1 000-fach — aber nur aus der Ferne.
+ *
+ * Dicht an einem Körper läuft die Zeit langsamer, sonst wäre er nicht zu
+ * erreichen: Deimos umkreist den Mars im 1000-fachen Zeitraffer mit 0,8
+ * Einheiten je Sekunde, und so schnell darf man in Oberflächennähe gar nicht
+ * fliegen. Nebenbei beruhigt das die Szene beim Heranfliegen.
+ */
 const ZEITRAFFER = 1_000 / 86_400;
+const zeitfaktor = (abstand: number) => THREE.MathUtils.clamp(abstand / 60, 0.004, 1);
 const STAUB = 600;
 const STAUB_WUERFEL = 140;
 /** Wie oft die Statistik in den gespeicherten Fortschritt wandert. */
@@ -203,7 +211,9 @@ export default function Flug({
 
   const setzeZiel = useCallback((id: string | null) => {
     zielRef.current = id;
-    setHud(h => ({ ...h, ziel: id }));
+    // −1 heißt: die Schleife hat den Abstand noch nicht gemessen. Sonst stünde
+    // im ersten Augenblick nach der Zielwahl »Ziel erreicht« da.
+    setHud(h => ({ ...h, ziel: id, zielAbstand: -1 }));
   }, []);
   const setzeZielRef = useRef(setzeZiel);
   setzeZielRef.current = setzeZiel;
@@ -502,6 +512,7 @@ export default function Flug({
     }
 
     let letzteZeit = performance.now();
+    let zeitraffer = 1;
     let letzterHud = 0;
     let bild = 0;
     let fov = 70;
@@ -513,22 +524,25 @@ export default function Flug({
       const pausiert = pausiertRef.current || crash !== null;
       const b = befehle.current;
 
-      jd += dt * ZEITRAFFER;
+      // Der Zeitraffer des letzten Bildes: der Abstand dafür steht erst unten fest.
+      jd += dt * ZEITRAFFER * zeitraffer;
       stelleMondeAuf();
 
-      // Nächster Körper — nach ihm richten sich Tempo und Pulsantrieb.
+      // Nächster Körper — nach ihm richten sich Tempo, Pulsantrieb und Zeitraffer.
       let naechster = "sonne";
       let naechsterAbstand = oberflaeche("sonne");
       for (const id of objekte.keys()) {
         const d = oberflaeche(id);
         if (d < naechsterAbstand) { naechster = id; naechsterAbstand = d; }
       }
+      zeitraffer = zeitfaktor(naechsterAbstand);
       vorne.set(0, 0, -1).applyQuaternion(schiff.quat);
       const ziel = zielRef.current;
       const zielAbstand = ziel ? oberflaeche(ziel) : Infinity;
       const zielVoraus = ziel !== null && hilf.copy(ort.get(ziel)!).sub(schiff.pos).normalize().dot(vorne) > 0.5;
       // Frei voraus: der nächste Körper — und das Ziel, sobald man darauf zuhält.
-      const voraus = zielVoraus ? Math.min(naechsterAbstand, zielAbstand) : naechsterAbstand;
+      const voraus = zielVoraus && zielAbstand < naechsterAbstand ? zielAbstand : naechsterAbstand;
+      const vorausRadius = radius.get(zielVoraus && zielAbstand < naechsterAbstand ? ziel! : naechster)!;
 
       // ── Befehle ──
       if (!pausiert) {
@@ -634,20 +648,22 @@ export default function Flug({
         schiff.abklingen = Math.max(0, schiff.abklingen - dt);
       }
       const antrieb = { puls: schiff.puls, overdrive: schiff.overdrive > 0, schub: schiff.schub };
-      const vZiel = pausiert ? 0 : zielTempo(antrieb, voraus);
+      const vZiel = pausiert ? 0 : zielTempo(antrieb, voraus, vorausRadius);
       schiff.v = naechstesTempo(schiff.v, vZiel, antrieb, dt);
       schiff.pos.addScaledVector(vorne, schiff.v * dt);
 
       // ── Aufprall: sanft aufsetzen, zu schnell abstürzen, in der Sonne verglühen ──
       if (!crash) {
         for (const [id, o] of ort) {
-          const min = radius.get(id)! * 1.02 + 0.05;
+          // Sicherheitsabstand: bei großen Körpern 50 km, bei Brocken wie Deimos entsprechend weniger.
+          const min = radius.get(id)! * 1.02 + Math.min(0.05, radius.get(id)! * 0.3);
           const d = schiff.pos.distanceTo(o);
           if (d >= min) continue;
           const zurMitte = hilf2.copy(o).sub(schiff.pos).normalize();
           const aufprall = schiff.v * Math.max(0, zurMitte.dot(vorne));
           if (id === "sonne") { starteUnfall("verglueht", id); break; }
-          if (aufprall > ABSTURZ_TEMPO) { starteUnfall("absturz", id); break; }
+          // Zu schnell heißt: schneller als das Schleichtempo vor diesem Körper.
+          if (aufprall > Math.min(ABSTURZ_TEMPO, schleichTempo(radius.get(id)!) * 0.8)) { starteUnfall("absturz", id); break; }
           schiff.pos.sub(o).setLength(min).add(o);
         }
       }
@@ -845,13 +861,18 @@ export default function Flug({
   const zielK = hud.ziel ? KOERPER_NACH_ID[hud.ziel] : null;
   const standort = KOERPER_NACH_ID[hud.naechster];
   const echteStrecke = zielK && zielK.id !== standort.id ? echterAbstandRef.current(standort.id, zielK.id) : null;
-  const restzeit = zielK
+  const gemessen = hud.zielAbstand >= 0;
+  const restzeit = zielK && gemessen
     ? schaetzeFlugzeit({
       abstand: hud.zielAbstand, zielRadius: flugRadius(zielK), startAbstand: hud.startAbstand,
       tempo: hud.tempo, puls: hud.puls, overdriveRest: hud.overdrive, winkel: hud.winkel,
     })
     : 0;
-  const zielStrecke = km(Math.max(hud.zielAbstand, 0) * KM_JE_FLUGEINHEIT);
+  // Nah am Ziel steht eine Flugeinheit für 1 000 km (Radien sind echt), zwischen
+  // den Planeten für 60 000 km (Abstände sind gekürzt). Beides ehrlich beschriften.
+  const nahbereich = hud.ziel !== null && hud.ziel === hud.naechster && hud.zielAbstand < 300;
+  const zielStrecke = km(Math.max(hud.zielAbstand, 0) * (nahbereich ? FLUG_KM_JE_EINHEIT : KM_JE_FLUGEINHEIT));
+  const zielZeile = !gemessen ? "wird gemessen …" : restzeit <= 0 ? "Ziel erreicht" : `${zielStrecke} · Flugzeit ca. ${flugzeitText(restzeit)}`;
   const overdriveBereit = hud.overdrive <= 0 && hud.abklingen <= 0;
 
   return (
@@ -884,7 +905,7 @@ export default function Flug({
               {istZiel && (
                 // Über dem Zielmarker: Flugstrecke und geschätzte Flugzeit.
                 <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
-                  {zielStrecke} · {flugzeitText(restzeit)}
+                  {gemessen ? `${zielStrecke} · ${flugzeitText(restzeit)}` : "…"}
                 </span>
               )}
               <svg viewBox="0 0 20 20" className={istZiel ? "w-8 h-8 text-amber-300" : k.art === "mond" ? "w-3.5 h-3.5 text-slate-300/70" : "w-5 h-5 text-cyan-200/80"}>
@@ -912,7 +933,7 @@ export default function Flug({
               <span className={`block leading-none ${istZiel ? "text-2xl text-amber-300" : "text-sm"}`}
                 style={{ color: istZiel ? undefined : k.farbe, filter: "drop-shadow(0 0 4px #000)" }}>➤</span>
               <span className={`mt-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${istZiel ? "text-amber-200" : "text-slate-300/80"}`}>
-                {k.name}{istZiel ? ` · ${flugzeitText(restzeit)}` : ""}
+                {k.name}{istZiel && gemessen ? ` · ${flugzeitText(restzeit)}` : ""}
               </span>
             </div>
           );
@@ -989,7 +1010,7 @@ export default function Flug({
           </div>
           {zielK && (
             // Auf dem Telefon ist die Zielanzeige oben in der Mitte ausgeblendet — hier steht das Wichtigste.
-            <div className="md:hidden mt-1 text-[11px] text-amber-200 tabular-nums truncate">🎯 {zielK.name} · {flugzeitText(restzeit)}</div>
+            <div className="md:hidden mt-1 text-[11px] text-amber-200 tabular-nums truncate">🎯 {zielK.name} · {gemessen ? flugzeitText(restzeit) : "…"}</div>
           )}
         </div>
       </div>
@@ -1000,7 +1021,7 @@ export default function Flug({
           <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 text-center">
             <div className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">🎯 {zielK.name}</div>
             <div className="text-sm font-bold text-amber-50 tabular-nums mt-0.5" title="Geschätzt für einen Flug per Autopilot (G)">
-              {restzeit <= 0 ? "Ziel erreicht" : `${zielStrecke} · Flugzeit ca. ${flugzeitText(restzeit)}`}
+              {zielZeile}
             </div>
             {echteStrecke !== null && echteStrecke > 0 && (
               <div className="text-[11px] text-slate-300 mt-0.5">
@@ -1101,6 +1122,7 @@ export default function Flug({
           <Steuerungstabelle beruehrung={beruehrung} />
           <p className="text-xs text-slate-400 mt-3">
             Maßstab: Planeten und Monde in echter Größe, Abstände 60-fach verkürzt, die Sonne 4-fach verkleinert.
+            Die Zeit läuft 1 000-fach schneller, damit sich Monde und Drehungen bewegen — in der Nähe eines Körpers langsamer, damit man ihn einholt.
             In echt wäre der Flug zum Jupiter selbst mit Lichtgeschwindigkeit eine gute halbe Stunde lang.
           </p>
           <button onClick={() => setGestartet(true)} className="mt-4 w-full rounded-xl bg-cyan-400 text-slate-950 font-black py-2.5 hover:bg-cyan-300">

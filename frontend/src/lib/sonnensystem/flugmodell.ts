@@ -26,11 +26,23 @@ export const OVERDRIVE_ABKLINGZEIT = 60;
 export const PULS_BREMSFAKTOR = 0.8;
 /** Außerhalb des Pulsantriebs: Tempo = Abstand × Faktor, höchstens ein Fünftel des Pulstempos. */
 export const IMPULS_FAKTOR = 0.9;
+/**
+ * Langsamstes Schleichtempo vor einem Körper — bei großen 1,5 Einheiten/s,
+ * bei winzigen entsprechend weniger. Sonst schösse man an Phobos und Deimos
+ * (6 bzw. 11 km Radius) immer vorbei, statt sie ansehen zu können.
+ */
+export const schleichTempo = (radius: number) => Math.min(1.5, radius * 0.25 + 0.02);
 /** Wer schneller auf eine Oberfläche trifft, stürzt ab. Mit vollem Schub ist man darüber, mit wenig setzt man sanft auf. */
 export const ABSTURZ_TEMPO = 1.2;
 
-/** Hier hält der Autopilot an: ein paar Radien über der Oberfläche. */
-export const haltAbstand = (radius: number) => Math.max(radius * 2.5, 6);
+/**
+ * Hier hält der Autopilot an: ein paar Radien über der Oberfläche.
+ *
+ * Die Untergrenze wächst mit dem Körper. Fest 6 Einheiten (6 000 km) wären für
+ * Planeten richtig, ließen Deimos aber als 0,1°-Punkt erscheinen — von dort
+ * sieht man vom Mond nichts. So füllt jeder Körper rund 20 bis 45 Grad.
+ */
+export const haltAbstand = (radius: number) => Math.max(radius * 2.5, Math.min(6, radius * 4 + 0.01));
 
 export const vielfachesLicht = (tempo: number) => (tempo * KM_JE_FLUGEINHEIT) / LICHT_KM_S;
 
@@ -41,13 +53,18 @@ export interface Antrieb {
   schub: number;
 }
 
-/** Welches Tempo der Antrieb anstrebt, wenn `voraus` Einheiten frei sind. */
-export function zielTempo(a: Antrieb, voraus: number): number {
+/**
+ * Welches Tempo der Antrieb anstrebt, wenn `voraus` Einheiten frei sind.
+ * `bezugsRadius` ist der Körper, der voraus liegt — er bestimmt das
+ * Schleichtempo ganz dicht davor.
+ */
+export function zielTempo(a: Antrieb, voraus: number, bezugsRadius = 10): number {
   if (a.puls) {
     const grenze = a.overdrive ? OVERDRIVE_TEMPO : HOECHSTTEMPO;
     return Math.min(Math.max(voraus * PULS_BREMSFAKTOR, 20), grenze);
   }
-  return Math.min(a.schub * Math.min(Math.max(voraus * IMPULS_FAKTOR, 1.5), HOECHSTTEMPO / 5), HOECHSTTEMPO);
+  const langsamst = schleichTempo(bezugsRadius);
+  return Math.min(a.schub * Math.min(Math.max(voraus * IMPULS_FAKTOR, langsamst), HOECHSTTEMPO / 5), HOECHSTTEMPO);
 }
 
 /** Wie schnell das Tempo nachzieht: beschleunigen gemächlich, bremsen kräftig. */
@@ -70,7 +87,9 @@ export interface AutopilotEntscheidung { angekommen: boolean; puls: boolean; sch
 export function autopilot(rest: number, halt: number, naechster: number, ausgerichtet: boolean): AutopilotEntscheidung {
   if (rest <= halt * 1.05) return { angekommen: true, puls: false, schub: 0 };
   if (ausgerichtet && rest > halt * 12 && naechster > 30) return { angekommen: false, puls: true, schub: 1 };
-  return { angekommen: false, puls: false, schub: ausgerichtet ? Math.min(1, (rest - halt) / Math.max(halt, 1) + 0.15) : 0.1 };
+  // Der Schub misst sich am Halteabstand, nicht an einer festen Einheit: vor
+  // Phobos (Halteabstand 0,055) wäre er sonst so klein, dass man nie ankommt.
+  return { angekommen: false, puls: false, schub: ausgerichtet ? Math.min(1, (rest - halt) / Math.max(halt, 0.02) + 0.15) : 0.1 };
 }
 
 export interface FlugLage {
@@ -113,7 +132,7 @@ export function schaetzeFlugzeit(lage: FlugLage): number {
     a.schub = e.schub;
     a.overdrive = a.puls && overdrive > 0 && !overdriveLohntNicht(rest);
     if (overdrive > 0) overdrive = a.overdrive ? overdrive - dt : 0;
-    v = naechstesTempo(v, zielTempo(a, naechster), a, dt);
+    v = naechstesTempo(v, zielTempo(a, naechster, rest <= start ? lage.zielRadius : 10), a, dt);
     rest -= v * dt;
     start += v * dt;
     t += dt;
