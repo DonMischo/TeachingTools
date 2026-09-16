@@ -1,11 +1,12 @@
 "use client";
 /**
- * Simulation »Sonnensystem« — sechs Reiter über denselben Daten.
+ * Simulation »Sonnensystem« — sieben Reiter über denselben Daten.
  *
  *   🪐 Übersicht     3D, echte Bahnen zu jedem Datum, Zeitraffer
  *   🚀 Flug          selbst fliegen, scannen, Forschungsaufträge, Erfolge
  *   ⚖️ Größen        maßstabsgetreu nebeneinander
  *   📏 Entfernungen  maßstabsgetreues Band, Lichtstrahl, Reisezeiten
+ *   📐 Kepler        die drei Gesetze zum Einstellen und Ablaufen
  *   🔭 Galerie       Teleskop-, Sonden- und Missionsbilder — freigeschaltet durch Scans
  *   📓 Kodex         alles Erforschte, Erfolge, Statistik, PDF
  *
@@ -25,6 +26,7 @@ import { textur } from "@/lib/sonnensystem/bilder";
 import { Steckbrief } from "./Steckbrief";
 import { Groessen } from "./Groessen";
 import { Entfernungen } from "./Entfernungen";
+import { Kepler } from "./Kepler";
 import { Galerie } from "./Galerie";
 import { Kodex, type KodexBereich } from "./Kodex";
 import { useForschung } from "./fortschritt";
@@ -32,13 +34,14 @@ import { useForschung } from "./fortschritt";
 const Uebersicht = lazy(() => import("./Uebersicht"));
 const Flug = lazy(() => import("./Flug"));
 
-type Reiter = "uebersicht" | "flug" | "groessen" | "entfernungen" | "galerie" | "kodex";
+type Reiter = "uebersicht" | "flug" | "groessen" | "entfernungen" | "kepler" | "galerie" | "kodex";
 
 const REITER: { id: Reiter; name: string }[] = [
   { id: "uebersicht", name: "🪐 Übersicht" },
   { id: "flug", name: "🚀 Flug" },
   { id: "groessen", name: "⚖️ Größen" },
   { id: "entfernungen", name: "📏 Entfernungen" },
+  { id: "kepler", name: "📐 Kepler" },
   { id: "galerie", name: "🔭 Galerie" },
   { id: "kodex", name: "📓 Kodex" },
 ];
@@ -153,11 +156,14 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         >
           {imBrowser && (
             <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Lade 3D …</div>}>
-              {reiter === "uebersicht" && <Uebersicht ausgewaehlt={ausgewaehlt} onWaehle={waehle} />}
+              {reiter === "uebersicht" && (
+                <Uebersicht ausgewaehlt={ausgewaehlt} onWaehle={waehle} onKepler={() => setReiter("kepler")} />
+              )}
             </Suspense>
           )}
           {reiter === "groessen" && <Groessen onWaehle={waehle} />}
           {reiter === "entfernungen" && <Entfernungen onWaehle={waehle} />}
+          {reiter === "kepler" && <Kepler onSteckbrief={waehle} />}
           {reiter === "galerie" && (
             <Galerie
               offen={galerieOffen} onOeffne={setGalerieOffen} onWaehle={waehle}

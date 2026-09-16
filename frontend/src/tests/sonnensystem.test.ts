@@ -199,6 +199,26 @@ describe("Lagrangepunkte", () => {
   });
 });
 
+describe("Keplersche Gesetze", () => {
+  it("hält T² zu a³ für jeden Planeten bei eins", () => {
+    for (const k of KOERPER.filter(x => x.bahn)) {
+      const a = k.bahn!.a;
+      const T = umlaufTage(k.bahn!) / 365.25;
+      // In AE und Jahren ist die Konstante genau 1 — daran hängt der ganze dritte Satz.
+      expect((T * T) / (a * a * a), k.id).toBeCloseTo(1, 2);
+    }
+  });
+
+  it("löst die Keplergleichung auch bei stark exzentrischen Bahnen", () => {
+    for (const e of [0, 0.2, 0.5, 0.9]) {
+      for (const M of [0, 1, 3, 5, 6.2]) {
+        const E = loeseKepler(M, e);
+        expect(E - e * Math.sin(E), `e=${e} M=${M}`).toBeCloseTo(M, 9);
+      }
+    }
+  });
+});
+
 describe("Bilder", () => {
   it("hat für jeden Körper ein Foto und — außer Ceres — eine Textur", () => {
     for (const k of KOERPER) {

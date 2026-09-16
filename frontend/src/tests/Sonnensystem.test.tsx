@@ -39,6 +39,19 @@ describe("Sonnensystem", () => {
     expect(screen.getByRole("complementary", { name: "Steckbrief Jupiter" })).toBeInTheDocument();
   });
 
+  it("zeigt im Kepler-Reiter alle drei Gesetze und die Konstante T²/a³", () => {
+    render(<Sonnensystem />);
+    reiter(/Kepler/);
+    expect(screen.getByText("Die Bahn ist eine Ellipse")).toBeInTheDocument();
+    expect(screen.getByText("Gleiche Flächen in gleichen Zeiten")).toBeInTheDocument();
+    // In der Tabelle steht bei jedem Planeten dieselbe Zahl.
+    const zeile = screen.getAllByText("Saturn").map(el => el.closest("tr")).find(Boolean)!;
+    expect(within(zeile).getByText("1,000")).toBeInTheDocument();
+    // Ein Klick auf die Zeile erklärt den Zusammenhang für diesen Planeten.
+    fireEvent.click(zeile);
+    expect(screen.getByText(/dieselbe Zahl, nur aus dem Abstand gerechnet/)).toBeInTheDocument();
+  });
+
   it("rechnet in den Entfernungen die Lichtlaufzeit bis Neptun aus", () => {
     render(<Sonnensystem />);
     reiter(/Entfernungen/);

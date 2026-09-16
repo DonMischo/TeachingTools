@@ -36,9 +36,11 @@ interface Optionen {
   namen: boolean;
 }
 
-export default function Uebersicht({ ausgewaehlt, onWaehle }: {
+export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
   ausgewaehlt: string | null;
   onWaehle: (id: string) => void;
+  /** Weiter zu den Keplerschen Gesetzen — sie erklären genau diese Bahnen. */
+  onKepler?: () => void;
 }) {
   const buehneRef = useRef<HTMLDivElement>(null);
   const namenRef = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -383,6 +385,11 @@ export default function Uebersicht({ ausgewaehlt, onWaehle }: {
         </div>
         <p className="text-[11px] leading-snug text-slate-400 bg-black/40 rounded-lg px-2 py-1">
           {massstabHinweis(optionen)} Ziehen dreht, Mausrad oder zwei Finger zoomen, Antippen wählt.
+          {onKepler && (
+            <button onClick={onKepler} className="ml-1 text-sky-300 hover:text-sky-200 underline pointer-events-auto">
+              Warum die Bahnen so laufen: die Keplerschen Gesetze →
+            </button>
+          )}
         </p>
       </div>
     </div>

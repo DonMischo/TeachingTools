@@ -128,11 +128,12 @@ const leererZuwachs = (): Zuwachs => ({
 });
 
 /** Die anderen Ansichten, erreichbar aus dem Menü. */
-export type Ansicht = "uebersicht" | "groessen" | "entfernungen" | "galerie" | "kodex";
+export type Ansicht = "uebersicht" | "groessen" | "entfernungen" | "kepler" | "galerie" | "kodex";
 const ANSICHTEN: { id: Ansicht; name: string }[] = [
   { id: "uebersicht", name: "🪐 Übersicht" },
   { id: "groessen", name: "⚖️ Größen" },
   { id: "entfernungen", name: "📏 Entfernungen" },
+  { id: "kepler", name: "📐 Kepler" },
   { id: "galerie", name: "🔭 Galerie" },
 ];
 
