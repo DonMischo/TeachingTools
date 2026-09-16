@@ -90,7 +90,7 @@ export const ERFOLGE: Erfolg[] = [
   { id: "tausendfach", gruppe: "Pilot", icon: "🚀", name: "Tausendfach", text: "Erreiche im Overdrive die 1000-fache Lichtgeschwindigkeit.", ziel: 990, wert: d => d.statistik.hoechstC },
   { id: "overdrive-25", gruppe: "Pilot", icon: "🔥", name: "Overdrive-Routine", text: "Zünde den Overdrive 25-mal.", ziel: 25, wert: d => d.statistik.overdrives },
   { id: "vollgas-1", gruppe: "Pilot", icon: "🏎️", name: "Vollgas", text: "Fliege eine Minute mit Höchsttempo — ohne Overdrive.", ziel: 60, wert: d => d.statistik.vollgas, einheit: minuten },
-  { id: "vollgas-10", gruppe: "Pilot", icon: "🦶", name: "Bleifuß", text: "Fliege insgesamt zehn Minuten mit Höchsttempo — ohne Overdrive.", ziel: 600, wert: d => d.statistik.vollgas, einheit: minuten },
+  { id: "vollgas-10", gruppe: "Pilot", icon: "🦶", name: "Bleifuß", text: "Fliege insgesamt fünf Minuten mit Höchsttempo — ohne Overdrive.", ziel: 300, wert: d => d.statistik.vollgas, einheit: minuten },
   { id: "orbit-1", gruppe: "Pilot", icon: "🔄", name: "Einmal rundherum", text: "Umkreise einen Himmelskörper einmal ganz.", ziel: 1, wert: d => d.statistik.umrundungen },
   { id: "orbit-5", gruppe: "Pilot", icon: "🌀", name: "Orbit-Tourist", text: "Umkreise fünf verschiedene Himmelskörper.", ziel: 5, wert: d => d.statistik.umrundet.length },
   { id: "orbitzeit", gruppe: "Pilot", icon: "🛸", name: "Im Orbit zu Hause", text: "Verbringe fünf Minuten in Umlaufbahnen.", ziel: 300, wert: d => d.statistik.orbitzeit, einheit: minuten },
@@ -99,7 +99,7 @@ export const ERFOLGE: Erfolg[] = [
   { id: "ikarus", gruppe: "Missgeschicke", icon: "☀️", name: "Ikarus", text: "Komm der Sonne zu nah und verglühe.", ziel: 1, wert: d => d.statistik.verglueht },
   { id: "bruchlandung", gruppe: "Missgeschicke", icon: "💢", name: "Bruchlandung", text: "Schlag zu schnell auf einem Himmelskörper auf.", ziel: 1, wert: d => d.statistik.abstuerze },
   { id: "crashtest", gruppe: "Missgeschicke", icon: "🧯", name: "Crashtest-Tournee", text: "Stürze auf fünf verschiedenen Himmelskörpern ab.", ziel: 5, wert: d => d.statistik.abgestuerztAuf.length },
-  { id: "pechvogel", gruppe: "Missgeschicke", icon: "🐦", name: "Pechvogel", text: "Stürze zehnmal ab.", ziel: 10, wert: d => d.statistik.abstuerze },
+  { id: "pechvogel", gruppe: "Missgeschicke", icon: "🐦", name: "Pechvogel", text: "Stürze fünfmal ab.", ziel: 5, wert: d => d.statistik.abstuerze },
 ];
 
 export const erreicht = (e: Erfolg, d: ErfolgsDaten) => e.wert(d) >= e.ziel;
