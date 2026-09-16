@@ -316,3 +316,100 @@ def test_import_ics_roundtrip(client, teacher_token):
     assert e["end_date"] == "2026-07-02"  # exclusive DTEND -1 day
     assert e["category"] == "Kollegium"  # safe default, editable afterward
     assert e["tags"] == ["Events"]
+
+
+# ---------------------------------------------------------------------------
+# ICS escaping: commas inside tags/texts, CATEGORIES as a comma list
+# ---------------------------------------------------------------------------
+
+def _import(client, token, ics: str):
+    return client.post(
+        "/api/calendar/import.ics",
+        files={"file": ("import.ics", ics.encode(), "text/calendar")},
+        headers=_auth(token),
+    )
+
+
+def _vevent(*props: str) -> str:
+    return (
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20260701\r\n"
+        + "".join(p + "\r\n" for p in props)
+        + "END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+
+
+def test_export_escapes_each_tag_and_joins_with_plain_commas(client, teacher_token):
+    d = date.today() + timedelta(days=10)
+    client.post("/api/calendar", json={
+        "title": "Sportfest", "category": "Kollegium",
+        "start_date": d.isoformat(), "end_date": d.isoformat(), "tags": ["Sport, Spiel", "Events"],
+    }, headers=_auth(teacher_token))
+    body = client.get("/api/calendar/export.ics", headers=_auth(teacher_token)).text
+    assert r"CATEGORIES:Sport\, Spiel,Events" in body
+
+
+def test_import_splits_categories_only_on_unescaped_commas(client, teacher_token):
+    r = _import(client, teacher_token, _vevent("SUMMARY:Fest", r"CATEGORIES:Sport\, Spiel,Events, Wichtig"))
+    assert r.json()["created"] == 1
+    assert client.get("/api/calendar", headers=_auth(teacher_token)).json()[0]["tags"] == [
+        "Sport, Spiel", "Events", "Wichtig",
+    ]
+
+
+def test_import_unescapes_text_in_one_pass(client, teacher_token):
+    r = _import(client, teacher_token, _vevent(
+        r"SUMMARY:Elternabend\, Klasse 5\; Aula",
+        r"DESCRIPTION:Pfad C:\\neu\nZweite Zeile",
+    ))
+    assert r.json()["created"] == 1
+    e = client.get("/api/calendar", headers=_auth(teacher_token)).json()[0]
+    assert e["title"] == "Elternabend, Klasse 5; Aula"
+    assert e["description"] == "Pfad C:\\neu\nZweite Zeile"  # "\\" is a backslash, not the start of "\n"
+
+
+def test_ics_tags_with_commas_survive_export_and_import(client, teacher_token, db):
+    from api.models import CalendarEntry
+    d = date.today() + timedelta(days=10)
+    client.post("/api/calendar", json={
+        "title": "Rundreise", "category": "Kollegium",
+        "start_date": d.isoformat(), "end_date": d.isoformat(), "tags": ["Sport, Spiel", "Events"],
+    }, headers=_auth(teacher_token))
+    ics = client.get("/api/calendar/export.ics", headers=_auth(teacher_token)).text
+    db.query(CalendarEntry).delete()
+    assert _import(client, teacher_token, ics).json()["created"] == 1
+    assert client.get("/api/calendar", headers=_auth(teacher_token)).json()[0]["tags"] == ["Sport, Spiel", "Events"]
+
+
+def test_repair_calendar_tags_strips_trailing_backslashes(db, teacher):
+    from api.models import CalendarEntry, CalendarTag
+    from api.routers.calendar import repair_calendar_tags
+    d = date.today()
+    broken = CalendarEntry(title="A", category="Kollegium", start_date=d, end_date=d, created_by=teacher.id,
+                           tags=["Dienstberatung\\", "Dienstberatung", "Wichtig\\", "Sport, Spiel"])
+    clean = CalendarEntry(title="B", category="Kollegium", start_date=d, end_date=d, created_by=teacher.id,
+                          tags=["Events"])
+    db.add_all([broken, clean,
+                CalendarTag(name="Werkstatt\\", color="#111111"),
+                CalendarTag(name="Wichtig\\", color="#222222"), CalendarTag(name="Wichtig", color="#333333")])
+    db.flush()
+
+    assert repair_calendar_tags(db) == 1
+    db.refresh(broken)
+    assert broken.tags == ["Dienstberatung", "Wichtig", "Sport, Spiel"]
+    assert clean.tags == ["Events"]
+    tags = {t.name: t.color for t in db.query(CalendarTag).all()}
+    assert tags == {"Werkstatt": "#111111", "Wichtig": "#333333"}
+    assert repair_calendar_tags(db) == 0  # idempotent
+
+
+def test_export_filter_takes_tags_with_commas(client, teacher_token):
+    d = date.today() + timedelta(days=10)
+    for title, tags in (("Mit Komma", ["Sport, Spiel"]), ("Nur Sport", ["Sport"]), ("Andere", ["Events"])):
+        client.post("/api/calendar", json={
+            "title": title, "category": "Kollegium",
+            "start_date": d.isoformat(), "end_date": d.isoformat(), "tags": tags,
+        }, headers=_auth(teacher_token))
+    body = client.get("/api/calendar/export.ics", params=[("tags", "Sport, Spiel"), ("tags", "Events")],
+                      headers=_auth(teacher_token)).text
+    assert "Mit Komma" in body and "Andere" in body
+    assert "Nur Sport" not in body

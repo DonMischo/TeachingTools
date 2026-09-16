@@ -21,11 +21,12 @@ Feriendaten (school holidays) are pulled from the free OpenHolidaysAPI
 Bundesland (SchoolSettings.bundesland) and imported as category='Ferien'
 entries tagged 'Ferien'.
 """
+import re
 import uuid
 from datetime import date, datetime, timezone
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -305,15 +306,16 @@ def _school_year_window(db: Session, today: date) -> tuple[date, date | None, in
 
 @router.get("/export.ics")
 def export_ics(
-    tags: str = "",
-    categories: str = "",
+    tags: list[str] = Query(default=[]),
+    categories: list[str] = Query(default=[]),
     db: Session = Depends(get_db),
     current: Teacher = Depends(get_current_teacher),
 ):
-    """Export entries as .ics, optionally filtered by comma-separated tags
-    and/or categories (empty = no filter on that dimension)."""
-    wanted_tags = {t.strip() for t in tags.split(",") if t.strip()}
-    wanted_cats = {c.strip() for c in categories.split(",") if c.strip()}
+    """Export entries as .ics, optionally filtered by tags and/or categories, one
+    query parameter per value (?tags=A&tags=B) since tags may contain commas
+    (empty = no filter on that dimension)."""
+    wanted_tags = {t.strip() for t in tags if t.strip()}
+    wanted_cats = {c.strip() for c in categories if c.strip()}
     entries = db.query(CalendarEntry).order_by(CalendarEntry.start_date).all()
     if wanted_tags:
         entries = [e for e in entries if wanted_tags & set(e.tags or [])]
@@ -365,7 +367,7 @@ def export_ics(
         if e.description:
             lines.append(_ics_fold(f"DESCRIPTION:{_ics_escape(e.description)}"))
         if e.tags:
-            lines.append(_ics_fold(f"CATEGORIES:{_ics_escape(','.join(e.tags))}"))
+            lines.append(_ics_fold("CATEGORIES:" + ",".join(_ics_escape(t) for t in e.tags)))
             # Best-effort color hint (RFC 7986 COLOR; not universally supported,
             # but harmless for clients that ignore unknown properties).
             first_color = next((tag_colors[t] for t in e.tags if t in tag_colors), None)
@@ -392,8 +394,60 @@ def _unfold(raw: str) -> list[str]:
     return lines
 
 
+_ICS_ESCAPE = re.compile(r"\\(.)")
+
+
 def _ics_unescape(text: str) -> str:
-    return text.replace("\\n", "\n").replace("\\,", ",").replace("\\;", ";").replace("\\\\", "\\")
+    """RFC 5545 TEXT in one pass: chained replace() would read the escaped
+    backslash in "C:\\\\neu" as the start of a line break."""
+    return _ICS_ESCAPE.sub(lambda m: "\n" if m.group(1) in "nN" else m.group(1), text)
+
+
+def _ics_list(value: str) -> list[str]:
+    r"""CATEGORIES split at commas, but not at escaped ones (\,). Splitting on every
+    comma turned "Sport\, Spiel" into "Sport\" and " Spiel"."""
+    items, current, i = [], "", 0
+    while i < len(value):
+        if value[i] == "\\" and i + 1 < len(value):
+            current += value[i:i + 2]  # keep escaped, _ics_unescape resolves it
+            i += 2
+            continue
+        if value[i] == ",":
+            items.append(current)
+            current = ""
+        else:
+            current += value[i]
+        i += 1
+    items.append(current)
+    return [t for t in (_ics_unescape(x).strip() for x in items) if t]
+
+
+def repair_calendar_tags(db: Session) -> int:
+    """Strip the trailing backslash the old ICS import left on tags ("Dienstberatung\\"
+    from "Dienstberatung\\,Wichtig") and drop the duplicates that leaves. Idempotent;
+    runs at startup. Returns the number of entries changed."""
+    changed = 0
+    for entry in db.query(CalendarEntry).all():
+        old = entry.tags or []
+        new: list[str] = []
+        for t in old:
+            clean = t.rstrip("\\").strip()
+            if clean and clean not in new:
+                new.append(clean)
+        if new != old:
+            entry.tags = new
+            changed += 1
+    tags = {t.name: t for t in db.query(CalendarTag).all()}
+    for name, tag in tags.items():
+        clean = name.rstrip("\\").strip()
+        if clean == name:
+            continue
+        if not clean or clean in tags:
+            db.delete(tag)
+        else:
+            tag.name = clean
+    db.commit()
+    return changed
 
 
 def _parse_ics_date(value: str) -> date:
@@ -430,13 +484,12 @@ def import_ics(
                     end = _parse_ics_date(current_event["DTEND"]) if "DTEND" in current_event else start
                     if end > start:
                         end = date.fromordinal(end.toordinal() - 1)  # DTEND is exclusive
-                    tags = [t for t in current_event.get("CATEGORIES", "").split(",") if t]
                     db.add(CalendarEntry(
                         title=_ics_unescape(current_event.get("SUMMARY", "Ohne Titel")),
                         description=_ics_unescape(current_event["DESCRIPTION"]) if "DESCRIPTION" in current_event else None,
                         category="Kollegium",
                         start_date=start, end_date=end, all_day=True,
-                        tags=[_ics_unescape(t) for t in tags],
+                        tags=_ics_list(current_event.get("CATEGORIES", "")),
                         created_by=current.id,
                     ))
                     created += 1

@@ -2004,8 +2004,9 @@ export const api = {
       apiFetch<{ created: number; bundesland: string }>(`calendar/holidays/fetch?school_year_start=${schoolYearStart}`, { method: "POST" }),
     exportIcsUrl: (tags: string[], categories: string[]) => {
       const q = new URLSearchParams();
-      if (tags.length) q.set("tags", tags.join(","));
-      if (categories.length) q.set("categories", categories.join(","));
+      // one parameter per value: tags may contain commas
+      tags.forEach((t) => q.append("tags", t));
+      categories.forEach((c) => q.append("categories", c));
       return `/api/calendar/export.ics${q.size ? "?" + q : ""}`;
     },
     importIcs: (file: File) => {
