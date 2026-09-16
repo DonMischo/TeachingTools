@@ -836,14 +836,9 @@ export default function Flug({
         }
       }
 
-      // ── Magnetfeld und Sonnensturm ──
+      // ── Sonnensturm: erst die Stärke, damit das Magnetfeld sie gleich kennt ──
       const erdOrt = ort.get("erde")!;
-      magnet.sichtbar(magnetfeldRef.current);
-      if (magnetfeldRef.current) {
-        // Die Hülle zeigt zur Sonne: von dort kommt der Sonnenwind, der sie eindrückt.
-        magnet.huelle.position.copy(erdOrt);
-        magnet.huelle.quaternion.setFromUnitVectors(oben, hilf.copy(erdOrt).negate().normalize());
-      }
+      let sturmStaerke = 0;
       if (sturm) {
         sturm.t += pausiert ? 0 : dt;
         sturmwolke.setze((sturm.t / STURM_FLUG) * erdOrt.length(), Math.max(0, 1 - sturm.t / (STURM_FLUG * 1.4)));
@@ -852,15 +847,26 @@ export default function Flug({
           sturm.angekommen = true;
           meldeRef.current("⚡ Die Wolke trifft das Magnetfeld: es wird eingedrückt, an den Polen leuchten Polarlichter.");
         }
-        magnet.sturm(seitAnkunft < 0 ? 0
+        sturmStaerke = seitAnkunft < 0 ? 0
           : seitAnkunft < 1.5 ? seitAnkunft / 1.5
-            : Math.max(0, 1 - (seitAnkunft - 1.5) / STURM_NACHGLUEHEN));
+            : Math.max(0, 1 - (seitAnkunft - 1.5) / STURM_NACHGLUEHEN);
         if (seitAnkunft > 1.5 + STURM_NACHGLUEHEN) {
           sturm = null;
+          sturmStaerke = 0;
           sturmwolke.setze(0, 0);
-          magnet.sturm(0);
           meldeRef.current("Der Sturm ist vorbei — das Magnetfeld hat gehalten.");
         }
+      }
+
+      // ── Magnetfeld ──
+      magnet.sichtbar(magnetfeldRef.current);
+      if (magnetfeldRef.current) {
+        // Die Hülle zeigt zur Sonne: von dort kommt der Sonnenwind, der sie eindrückt.
+        magnet.huelle.position.copy(erdOrt);
+        magnet.huelle.quaternion.setFromUnitVectors(oben, hilf.copy(erdOrt).negate().normalize());
+        // Der Umriss richtet sich nach der Kamera des letzten Bildes — sie steht
+        // erst weiter unten fest, und ein Bild Versatz sieht niemand.
+        magnet.aktualisiere(pausiert ? 0 : dt, sturmStaerke, kamera.position);
       }
 
       // ── Kamera ──
