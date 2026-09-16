@@ -20,7 +20,7 @@ export const HOECHSTTEMPO = (100 * LICHT_KM_S) / KM_JE_FLUGEINHEIT;
 /** Overdrive: 1000-fache Lichtgeschwindigkeit, für kurze Zeit. */
 export const OVERDRIVE_TEMPO = 10 * HOECHSTTEMPO;
 export const OVERDRIVE_DAUER = 12;
-export const OVERDRIVE_ABKLINGZEIT = 60;
+export const OVERDRIVE_ABKLINGZEIT = 45;
 
 /** Im Pulsantrieb: Tempo = Abstand × Faktor. Daraus folgt das Abbremsen. */
 export const PULS_BREMSFAKTOR = 0.8;
