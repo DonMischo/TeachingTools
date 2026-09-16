@@ -10,9 +10,16 @@ import {
   abstand, bahnPunkte, heliozentrisch, julianischerTag, loeseKepler, mondVersatz, umlaufTage, type Vec3,
 } from "@/lib/sonnensystem/bahnen";
 import { KOERPER, KOERPER_NACH_ID, mondeVon } from "@/lib/sonnensystem/daten";
-import { AUFTRAEGE, gemischteAntworten } from "@/lib/sonnensystem/auftraege";
-import { GALERIE } from "@/lib/sonnensystem/galerie";
-import { ALLE_NACHWEISE, foto, galerieBild, textur } from "@/lib/sonnensystem/bilder";
+import { AUFTRAEGE, auftragZu, gemischteAntworten } from "@/lib/sonnensystem/auftraege";
+import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt } from "@/lib/sonnensystem/galerie";
+import { ALLE_NACHWEISE, foto, textur } from "@/lib/sonnensystem/bilder";
+import {
+  HOECHSTTEMPO, OVERDRIVE_TEMPO, haltAbstand, overdriveLohntNicht, schaetzeFlugzeit, vielfachesLicht, zielTempo,
+} from "@/lib/sonnensystem/flugmodell";
+import { ERFOLGE, LEERE_STATISTIK, neueErfolge } from "@/lib/sonnensystem/erfolge";
+import { KODEX_GRUPPEN, datenZeilen } from "@/lib/sonnensystem/kodex";
+import { baueKodexPdf, fuerPdf } from "@/components/sonnensystem/kodexPdf";
+import { ladeFortschritt } from "@/components/sonnensystem/fortschritt";
 import { dauer, km, tage, zehnerpotenz } from "@/lib/sonnensystem/format";
 
 const K = KOERPER_NACH_ID;
@@ -128,7 +135,8 @@ describe("Bilder", () => {
 
   it("hat für jeden Galerie-Eintrag ein Bild, und Paare verweisen aufeinander", () => {
     for (const g of GALERIE) {
-      expect(galerieBild(g.id), g.id).toBeDefined();
+      expect(bildFuer(g), g.id).toBeDefined();
+      for (const id of benoetigt(g)) expect(K[id], `${g.id} braucht ${id}`).toBeDefined();
       if (g.paar) expect(GALERIE.find(x => x.id === g.paar)?.paar).toBe(g.id);
     }
   });
@@ -152,5 +160,130 @@ describe("Formate", () => {
     expect(tage(0.41354)).toBe("9 h 55 min");
     expect(tage(224.7)).toBe("225 Tage");
     expect(tage(4332)).toBe("11,9 Jahre");
+  });
+});
+
+describe("Galerie freischalten und filtern", () => {
+  const eintrag = (id: string) => GALERIE.find(g => g.id === id)!;
+
+  it("enthält für jeden Himmelskörper ein Porträt und jede Bild-Id nur einmal", () => {
+    for (const k of KOERPER) expect(GALERIE.some(g => g.portraet && g.koerper === k.id), k.id).toBe(true);
+    expect(new Set(GALERIE.map(g => g.id)).size).toBe(GALERIE.length);
+  });
+
+  it("schaltet ein Bild erst frei, wenn alle nötigen Körper gescannt sind", () => {
+    expect(freigeschaltet(eintrag("mars-ingenuity"), [])).toBe(false);
+    expect(freigeschaltet(eintrag("mars-ingenuity"), ["mars"])).toBe(true);
+    expect(freigeschaltet(eintrag("riesen-webb"), ["jupiter", "saturn", "uranus"])).toBe(false);
+    expect(freigeschaltet(eintrag("riesen-webb"), ["jupiter", "saturn", "uranus", "neptun"])).toBe(true);
+  });
+
+  it("zeigt beim Planeten auch die Bilder seiner Monde, beim Mond nur seine", () => {
+    expect(zeigt(eintrag("enceladus-fontaenen"), "saturn")).toBe(true);
+    expect(zeigt(eintrag("enceladus-fontaenen"), "enceladus")).toBe(true);
+    expect(zeigt(eintrag("saturn-hexagon"), "enceladus")).toBe(false);
+    expect(zeigt(eintrag("hubble-deep-field"), "saturn")).toBe(false);
+    expect(zeigt(eintrag("hubble-deep-field"), null)).toBe(true);
+  });
+});
+
+describe("Aufträge", () => {
+  it("sind von Grundwissen bis Profi sortiert, mit höchstens einem Auftrag je Körper", () => {
+    expect(AUFTRAEGE.length).toBeGreaterThanOrEqual(24);
+    for (let i = 1; i < AUFTRAEGE.length; i++) expect(AUFTRAEGE[i].stufe).toBeGreaterThanOrEqual(AUFTRAEGE[i - 1].stufe);
+    expect(new Set(AUFTRAEGE.map(a => a.ziel)).size).toBe(AUFTRAEGE.length);
+  });
+
+  it("findet zu jedem gescannten Ziel den offenen Auftrag, egal in welcher Reihenfolge", () => {
+    expect(auftragZu("triton", [])?.id).toBe("rueckwaerts");
+    expect(auftragZu("triton", ["rueckwaerts"])).toBeNull();
+    expect(auftragZu("tethys", [])).toBeNull();
+  });
+});
+
+describe("Flugmodell", () => {
+  it("begrenzt Pulsantrieb auf 100-fache und Overdrive auf 1000-fache Lichtgeschwindigkeit", () => {
+    expect(vielfachesLicht(zielTempo({ puls: true, overdrive: false, schub: 1 }, 1e9))).toBeCloseTo(100, 6);
+    expect(vielfachesLicht(zielTempo({ puls: true, overdrive: true, schub: 1 }, 1e9))).toBeCloseTo(1000, 6);
+    expect(OVERDRIVE_TEMPO).toBeCloseTo(HOECHSTTEMPO * 10, 9);
+  });
+
+  it("wird langsamer, je näher etwas voraus ist", () => {
+    const puls = { puls: true, overdrive: false, schub: 1 };
+    expect(zielTempo(puls, 100)).toBeLessThan(zielTempo(puls, 400));
+    expect(overdriveLohntNicht(100)).toBe(true);
+    expect(overdriveLohntNicht(100_000)).toBe(false);
+  });
+
+  it("schätzt die Flugzeit: null am Halteabstand, länger bei weiterem Weg, kürzer mit Overdrive", () => {
+    const lage = { zielRadius: 70, startAbstand: 50, tempo: 0, puls: false, overdriveRest: 0, winkel: 0 };
+    expect(schaetzeFlugzeit({ ...lage, abstand: haltAbstand(70) })).toBe(0);
+    const nah = schaetzeFlugzeit({ ...lage, abstand: 2_000 });
+    const weit = schaetzeFlugzeit({ ...lage, abstand: 20_000 });
+    const sehrWeit = schaetzeFlugzeit({ ...lage, abstand: 70_000 });
+    expect(nah).toBeGreaterThan(0);
+    expect(weit).toBeGreaterThan(nah);
+    expect(sehrWeit).toBeGreaterThan(weit);
+    // Weit draußen bestimmt das Höchsttempo die Dauer: 50 000 Einheiten mehr brauchen gut 100 s mehr.
+    expect(sehrWeit - weit).toBeCloseTo(50_000 / HOECHSTTEMPO, -1);
+    expect(schaetzeFlugzeit({ ...lage, abstand: 70_000, puls: true, tempo: HOECHSTTEMPO, overdriveRest: 12 })).toBeLessThan(sehrWeit - 20);
+    expect(schaetzeFlugzeit({ ...lage, abstand: 2_000, winkel: Math.PI })).toBeGreaterThan(nah);
+  });
+});
+
+describe("Erfolge und Fortschritt", () => {
+  const leer = { erforscht: [] as string[], erledigt: [] as string[], statistik: LEERE_STATISTIK };
+
+  it("vergibt nichts ohne Fortschritt und jeden Erfolg nur einmal", () => {
+    expect(neueErfolge(leer, [])).toHaveLength(0);
+    expect(new Set(ERFOLGE.map(e => e.id)).size).toBe(ERFOLGE.length);
+    const planeten = KOERPER.filter(k => k.art === "planet").map(k => k.id);
+    const ids = neueErfolge({ ...leer, erforscht: planeten }, []).map(e => e.id);
+    expect(ids).toEqual(expect.arrayContaining(["erster-scan", "planeten"]));
+    expect(neueErfolge({ ...leer, erforscht: planeten }, ids)).toHaveLength(0);
+  });
+
+  it("zählt Missgeschicke, Overdrive und Umrundungen", () => {
+    const statistik = { ...LEERE_STATISTIK, verglueht: 1, abstuerze: 1, abgestuerztAuf: ["mars"], overdrives: 1, umrundungen: 1, umrundet: ["mond"] };
+    const ids = neueErfolge({ ...leer, statistik }, []).map(e => e.id);
+    expect(ids).toEqual(expect.arrayContaining(["ikarus", "bruchlandung", "overdrive-1", "orbit-1"]));
+  });
+
+  it("liest auch einen alten Spielstand ohne Statistik", () => {
+    localStorage.setItem("sonnensystem-forschung-v1:alt", JSON.stringify({ erforscht: ["mars"], erledigt: ["rost"] }));
+    const f = ladeFortschritt("alt");
+    expect(f.erforscht).toEqual(["mars"]);
+    expect(f.statistik.abgestuerztAuf).toEqual([]);
+    expect(f.erfolge).toEqual({});
+  });
+});
+
+describe("Kodex", () => {
+  it("führt jeden Himmelskörper genau einmal, Monde unter ihrem Planeten", () => {
+    const ids = KODEX_GRUPPEN.flatMap(g => [g.haupt.id, ...g.monde.map(m => m.id)]);
+    expect([...ids].sort()).toEqual(KOERPER.map(k => k.id).sort());
+    for (const g of KODEX_GRUPPEN) for (const m of g.monde) expect(m.mutter).toBe(g.haupt.id);
+    expect(datenZeilen(K.io, true).some(([n]) => n === "Abstand zu Jupiter")).toBe(true);
+  });
+
+  it("baut ein PDF mit einer Seite je Hauptkörper, Titel und Bildnachweisen", async () => {
+    const doc = await baueKodexPdf();
+    // Titelseite + je ein Hauptkörper + Bildnachweise, dazu Umbrüche bei langen Abschnitten.
+    expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(KODEX_GRUPPEN.length + 2);
+    const text = JSON.stringify(doc.internal.pages);
+    expect(text).toContain("Kodex des Sonnensystems");
+    expect(text).toContain("Bildnachweise");
+    expect(text).toContain("Ganymed");
+  }, 30_000);
+
+  it("übersetzt Text für die PDF-Standardschrift", () => {
+    expect(fuerPdf("5,97 · 10²⁴ kg")).toBe("5,97 · 10^24 kg");
+    expect(fuerPdf("−173 °C bis 427 °C")).toBe("-173 °C bis 427 °C");
+    expect(fuerPdf("🪐 Saturn — »Ringplanet«")).toBe("Saturn — »Ringplanet«");
+    for (const k of KOERPER) {
+      for (const text of [k.intro, ...k.fakten, ...datenZeilen(k).flat()]) {
+        for (const c of fuerPdf(text)) expect(c.charCodeAt(0) <= 0xff || "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ".includes(c), `${k.id}: ${c}`).toBe(true);
+      }
+    }
   });
 });

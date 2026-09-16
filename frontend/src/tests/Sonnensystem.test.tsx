@@ -47,7 +47,14 @@ describe("Sonnensystem", () => {
     expect(within(zeile).getByText("4,50 Mrd. km")).toBeInTheDocument();
   });
 
-  it("vergleicht in der Galerie Hubble und Webb nebeneinander", () => {
+  it("sperrt Galeriebilder bis zum Scan und vergleicht danach Hubble und Webb", () => {
+    const { unmount } = render(<Sonnensystem />);
+    reiter(/Galerie/);
+    expect(screen.queryByRole("button", { name: /Säulen der Schöpfung/ })).toBeNull();
+    expect(screen.getAllByText("Scanne Pluto").length).toBeGreaterThan(0);
+    unmount();
+
+    localStorage.setItem("sonnensystem-forschung-v1:geraet", JSON.stringify({ erforscht: ["pluto"], erledigt: [] }));
     render(<Sonnensystem />);
     reiter(/Galerie/);
     fireEvent.click(screen.getAllByRole("button", { name: /Säulen der Schöpfung/ })[0]);
@@ -55,6 +62,28 @@ describe("Sonnensystem", () => {
     expect(within(dialog).getAllByRole("img")).toHaveLength(1);
     fireEvent.click(within(dialog).getByRole("button", { name: /Vergleichen mit James-Webb/ }));
     expect(within(dialog).getAllByRole("img")).toHaveLength(2);
+    localStorage.clear();
+  });
+
+  it("lässt Lehrkräfte die ganze Galerie aufdecken und nach Planet samt Monden filtern", () => {
+    render(<Sonnensystem lehrkraft />);
+    reiter(/Galerie/);
+    fireEvent.click(screen.getByLabelText(/Alle zeigen/));
+    fireEvent.change(screen.getByLabelText("Nach Himmelskörper filtern"), { target: { value: "saturn" } });
+    expect(screen.getByRole("button", { name: /Das Sechseck am Nordpol/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Die Fontänen von Enceladus/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ingenuity/ })).toBeNull();
+  });
+
+  it("zeigt im Kodex Gescanntes mit Daten und den Rest nur mit Namen", () => {
+    localStorage.setItem("sonnensystem-forschung-v1:geraet", JSON.stringify({ erforscht: ["jupiter"], erledigt: [] }));
+    render(<Sonnensystem />);
+    reiter(/Kodex/);
+    expect(screen.getByRole("heading", { name: "Jupiter" })).toBeInTheDocument();
+    expect(screen.getAllByText(/noch nicht gescannt/).length).toBe(Object.keys(KOERPER_NACH_ID).length - 1);
+    fireEvent.click(screen.getByRole("button", { name: /Erfolge/ }));
+    expect(screen.getByText("Erster Kontakt").closest("div")!.parentElement!.textContent).toMatch(/erreicht/);
+    localStorage.clear();
   });
 });
 

@@ -11,6 +11,7 @@ export default function SonnensystemPage() {
       <Sonnensystem
         action={<ToolSessionBar tool="sonnensystem" title="Sonnensystem" />}
         speicherSchluessel={auth ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}` : "geraet"}
+        lehrkraft={auth?.role === "teacher" || auth?.role === "admin"}
       />
     </RequireAccount>
   );

@@ -2,44 +2,51 @@
 /**
  * Der Flugmodus: selbst durchs Sonnensystem fliegen.
  *
- * Wie in einem Weltraumspiel: Schub, Boost, und für die weiten Strecken ein
- * Pulsantrieb, dessen Tempo sich nach dem nächsten Himmelskörper richtet —
- * weit weg von allem wird er rasend schnell, in der Nähe eines Planeten
- * schaltet er sich ab. So dauert der Flug zu Neptun Sekunden und das
- * Heranfliegen an einen Mond trotzdem nicht zu kurz.
+ * Wie in einem Weltraumspiel: Schub, Pulsantrieb für weite Strecken und für
+ * kurze Zeit ein Overdrive. Das Tempo richtet sich immer nach dem Abstand —
+ * weit weg von allem wird es rasend schnell, beim Anflug auf das Ziel oder
+ * einen anderen Körper bremst das Schiff von selbst (Regeln: flugmodell.ts).
  *
  * Maßstab (siehe massstab.ts): Radien echt, Abstände 60-fach gekürzt, Sonne
  * 4-fach verkleinert. Die Planeten stehen dort, wo sie heute stehen; Monde und
  * Drehungen laufen 1 000-fach beschleunigt, damit sich etwas bewegt.
  *
- * Zum Unterricht gehören der Scanner und die Forschungsaufträge: ein Rätsel
- * führt zu einem Körper, der Scan öffnet eine Frage, deren Antwort im
- * Steckbrief steht.
+ * Zum Unterricht gehören Scanner, Forschungsaufträge (Reihenfolge beliebig),
+ * Kodex und Erfolge. Was erforscht und erflogen wurde, liegt in `fortschritt`
+ * und wird mit Galerie und Kodex geteilt.
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { ART_NAME, HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
+import { HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
 import { heliozentrisch, julianischerTag, mondVersatz, type Vec3 } from "@/lib/sonnensystem/bahnen";
-import { flugMondbahn, flugOrt, flugRadius, FLUG_ABSTANDSTEILER, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
-import { AUFTRAEGE, gemischteAntworten, type Auftrag } from "@/lib/sonnensystem/auftraege";
-import { foto } from "@/lib/sonnensystem/bilder";
-import { dauer, km, tage, zahl } from "@/lib/sonnensystem/format";
+import { flugMondbahn, flugOrt, flugRadius } from "@/lib/sonnensystem/massstab";
+import { AUFTRAEGE, STUFEN_NAME, auftragZu, type Auftrag } from "@/lib/sonnensystem/auftraege";
+import {
+  ABSTURZ_TEMPO, HOECHSTTEMPO, KM_JE_FLUGEINHEIT, OVERDRIVE_ABKLINGZEIT, OVERDRIVE_DAUER,
+  autopilot, haltAbstand, naechstesTempo, overdriveLohntNicht, schaetzeFlugzeit, vielfachesLicht, zielTempo,
+} from "@/lib/sonnensystem/flugmodell";
+import { dauer, km, zahl } from "@/lib/sonnensystem/format";
 import {
   Texturen, baueHimmel, baueKoerper, baueSonne, drehwinkel, entsorge, leuchtTextur, webglVerfuegbar, zuSzene, type KoerperObjekt,
 } from "./szene";
-import { ladeFortschritt, speichereFortschritt, type Fortschritt } from "./fortschritt";
+import { mitEintrag, type Fortschritt } from "./fortschritt";
+import {
+  Einblendung, HaltKnopf, HudKnopf, ScanKarte, Steuerungstabelle, Stick, ZielAuswahl, type Eingabe,
+} from "./FlugTeile";
+
+export { ScanKarte } from "./FlugTeile";
+export { HOECHSTTEMPO } from "@/lib/sonnensystem/flugmodell";
 
 /** Tage Simulationszeit je Sekunde: 1 000-fach. */
 const ZEITRAFFER = 1_000 / 86_400;
-/**
- * Höchsttempo: 100-fache Lichtgeschwindigkeit, gerechnet in echten Abständen.
- * Eine Flugeinheit steht für 1 000 km × 60 (Abstände sind 60-fach verkürzt).
- */
-export const HOECHSTTEMPO = (100 * LICHT_KM_S) / (FLUG_KM_JE_EINHEIT * FLUG_ABSTANDSTEILER);
 const STAUB = 600;
 const STAUB_WUERFEL = 140;
+/** Wie oft die Statistik in den gespeicherten Fortschritt wandert. */
+const STATISTIK_TAKT = 2;
+const UNFALL_DAUER = 2.8;
 
-type Modus = "steht" | "flug" | "boost" | "puls" | "autopilot";
+type Modus = "steht" | "flug" | "puls" | "overdrive" | "autopilot";
+type UnfallArt = "absturz" | "verglueht";
 
 interface Hud {
   modus: Modus;
@@ -48,31 +55,40 @@ interface Hud {
   naechster: string;
   ziel: string | null;
   zielAbstand: number;
+  /** Abstand zum nächsten Körper, der nicht das Ziel ist — für die Flugzeit */
+  startAbstand: number;
+  /** Winkel zwischen Blickrichtung und Ziel */
+  winkel: number;
   scanBereit: string | null;
   scan: number | null;
-  /** Läuft der Pulsantrieb — auch unter Autopilot. */
   puls: boolean;
-}
-
-interface Eingabe {
-  tasten: Set<string>;
-  maus: { x: number; y: number };
-  stick: { x: number; y: number };
-  schubKnopf: boolean;
-  bremsKnopf: boolean;
+  overdrive: number;
+  abklingen: number;
 }
 
 /** Aufrufe von außen an die Schleife — Knöpfe und Tasten landen hier. */
 interface Befehle {
   pulsUmschalten?: boolean;
+  overdrive?: boolean;
   autopilot?: boolean;
   zielNaechstes?: boolean;
   scan?: boolean;
   anhalten?: boolean;
 }
 
+/** Statistik, die seit dem letzten Speichern aufgelaufen ist. */
+interface Zuwachs {
+  flugzeit: number; strecke: number; vollgas: number; orbitzeit: number; hoechstC: number;
+  overdrives: number; umrundungen: number; umrundet: string[];
+  verglueht: number; abstuerze: number; abgestuerztAuf: string[];
+}
+const leererZuwachs = (): Zuwachs => ({
+  flugzeit: 0, strecke: 0, vollgas: 0, orbitzeit: 0, hoechstC: 0, overdrives: 0,
+  umrundungen: 0, umrundet: [], verglueht: 0, abstuerze: 0, abgestuerztAuf: [],
+});
+
 /** Die anderen Ansichten, erreichbar aus dem Menü. */
-export type Ansicht = "uebersicht" | "groessen" | "entfernungen" | "galerie";
+export type Ansicht = "uebersicht" | "groessen" | "entfernungen" | "galerie" | "kodex";
 const ANSICHTEN: { id: Ansicht; name: string }[] = [
   { id: "uebersicht", name: "🪐 Übersicht" },
   { id: "groessen", name: "⚖️ Größen" },
@@ -80,38 +96,54 @@ const ANSICHTEN: { id: Ansicht; name: string }[] = [
   { id: "galerie", name: "🔭 Galerie" },
 ];
 
-export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, onVollbild, vollbild = false }: {
+export const flugzeitText = (s: number) => {
+  const sek = Math.ceil(s);
+  return sek <= 0 ? "angekommen" : sek < 60 ? `${sek} s` : `${Math.floor(sek / 60)} min ${sek % 60} s`;
+};
+
+export default function Flug({
+  onSteckbrief, fortschritt, aendere, zuruecksetzen, onVerlassen, onVollbild, vollbild = false, onKodex, angehalten = false,
+}: {
   onSteckbrief: (id: string) => void;
-  speicherSchluessel: string;
+  fortschritt: Fortschritt;
+  aendere: (fn: (f: Fortschritt) => Fortschritt) => void;
+  zuruecksetzen: () => void;
   onVerlassen?: (ansicht: Ansicht) => void;
   onVollbild?: () => void;
   vollbild?: boolean;
+  /** Kodex öffnen, wahlweise gleich bei den Erfolgen */
+  onKodex?: (bereich: "eintraege" | "erfolge") => void;
+  /** Von außen angehalten, etwa während der Kodex offen ist */
+  angehalten?: boolean;
 }) {
   const buehneRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const pfeilRef = useRef<HTMLDivElement>(null);
+  const randRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const [fehlt, setFehlt] = useState(false);
   const [geladen, setGeladen] = useState(false);
   const [gestartet, setGestartet] = useState(false);
   const [hilfe, setHilfe] = useState(false);
   const [beruehrung, setBeruehrung] = useState(false);
   const [hud, setHud] = useState<Hud>({
-    modus: "steht", schub: 0, tempo: 0, naechster: "erde", ziel: null, zielAbstand: 0, scanBereit: null, scan: null, puls: false,
+    modus: "steht", schub: 0, tempo: 0, naechster: "erde", ziel: null, zielAbstand: 0, startAbstand: 0, winkel: 0,
+    scanBereit: null, scan: null, puls: false, overdrive: 0, abklingen: 0,
   });
   const [meldung, setMeldung] = useState<string | null>(null);
   // Die Karte merkt sich ihren Auftrag beim Scannen: nach der richtigen Antwort
-  // rückt der aktive Auftrag weiter, die Frage soll aber stehen bleiben.
+  // rückt der Vorschlag weiter, die Frage soll aber stehen bleiben.
   const [karte, setKarte] = useState<{ id: string; auftrag: Auftrag | null } | null>(null);
-  const [fortschritt, setFortschritt] = useState<Fortschritt>(() => ladeFortschritt(speicherSchluessel));
   const [auftragId, setAuftragId] = useState<string | null>(null);
   const [liste, setListe] = useState(false);
   const [menue, setMenue] = useState(false);
+  const [unfall, setUnfall] = useState<{ art: UnfallArt; name: string; knall: boolean } | null>(null);
 
   const eingabe = useRef<Eingabe>({ tasten: new Set(), maus: { x: 0, y: 0 }, stick: { x: 0, y: 0 }, schubKnopf: false, bremsKnopf: false });
   const befehle = useRef<Befehle>({});
   const zielRef = useRef<string | null>(null);
   const pausiertRef = useRef(true);
-  pausiertRef.current = !gestartet || karte !== null || liste || hilfe || menue;
+  pausiertRef.current = !gestartet || karte !== null || liste || hilfe || menue || angehalten;
+  const fortschrittRef = useRef(fortschritt);
+  fortschrittRef.current = fortschritt;
 
   const melde = useCallback((text: string) => {
     setMeldung(text);
@@ -120,30 +152,53 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
   const meldeRef = useRef(melde);
   meldeRef.current = melde;
   const scanFertigRef = useRef<(id: string) => void>(() => {});
+  const zuwachsRef = useRef<(z: Zuwachs) => void>(() => {});
 
-  useEffect(() => { speichereFortschritt(speicherSchluessel, fortschritt); }, [speicherSchluessel, fortschritt]);
   useEffect(() => { setBeruehrung(window.matchMedia("(pointer: coarse)").matches); }, []);
-  // M öffnet das Menü; die Maus wird dafür freigegeben.
+  // M öffnet das Menü, K den Kodex; die Maus wird dafür freigegeben.
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
-      if (e.code !== "KeyM" || (e.target as HTMLElement)?.closest?.("input, select, textarea")) return;
-      setMenue(m => !m);
+      if ((e.target as HTMLElement)?.closest?.("input, select, textarea")) return;
+      if (e.code === "KeyM") setMenue(m => !m);
+      if (e.code === "KeyK" && onKodex) { if (document.pointerLockElement) document.exitPointerLock(); onKodex("eintraege"); }
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
-  }, []);
+  }, [onKodex]);
   useEffect(() => { if (menue && document.pointerLockElement) document.exitPointerLock(); }, [menue]);
 
-  // Aktiver Auftrag: gewählt oder der erste offene.
-  const auftrag: Auftrag | null = useMemo(() => {
+  // Vorschlag: gewählt oder der erste offene. Gezählt wird jeder, dessen Ziel man scannt.
+  const vorschlag: Auftrag | null = useMemo(() => {
     const gewaehlt = AUFTRAEGE.find(a => a.id === auftragId && !fortschritt.erledigt.includes(a.id));
     return gewaehlt ?? AUFTRAEGE.find(a => !fortschritt.erledigt.includes(a.id)) ?? null;
   }, [auftragId, fortschritt.erledigt]);
 
   scanFertigRef.current = (id: string) => {
-    setFortschritt(f => (f.erforscht.includes(id) ? f : { ...f, erforscht: [...f.erforscht, id] }));
-    setKarte({ id, auftrag: auftrag?.ziel === id ? auftrag : null });
+    aendere(f => ({ ...f, erforscht: mitEintrag(f.erforscht, id) }));
+    setKarte({ id, auftrag: auftragZu(id, fortschrittRef.current.erledigt) });
     if (document.pointerLockElement) document.exitPointerLock();
+  };
+
+  zuwachsRef.current = (z: Zuwachs) => {
+    aendere(f => {
+      const s = f.statistik;
+      return {
+        ...f,
+        statistik: {
+          flugzeit: s.flugzeit + z.flugzeit,
+          strecke: s.strecke + z.strecke,
+          overdrives: s.overdrives + z.overdrives,
+          vollgas: s.vollgas + z.vollgas,
+          hoechstC: Math.max(s.hoechstC, z.hoechstC),
+          orbitzeit: s.orbitzeit + z.orbitzeit,
+          umrundungen: s.umrundungen + z.umrundungen,
+          umrundet: z.umrundet.reduce(mitEintrag, s.umrundet),
+          verglueht: s.verglueht + z.verglueht,
+          abstuerze: s.abstuerze + z.abstuerze,
+          abgestuerztAuf: z.abgestuerztAuf.reduce(mitEintrag, s.abgestuerztAuf),
+        },
+      };
+    });
   };
 
   const setzeZiel = useCallback((id: string | null) => {
@@ -241,6 +296,8 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       v: 0,
       schub: 0,
       puls: false,
+      overdrive: 0,
+      abklingen: 0,
       autopilot: false,
       drehung: new THREE.Vector3(),
     };
@@ -270,6 +327,26 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
     szene.add(scanHuelle);
     let scan: { id: string; t: number } | null = null;
 
+    // ── Unfall: ein kleines Schiff, das aufschlägt, und eine Explosion ──
+    const wrack = baueSchiffchen();
+    wrack.visible = false;
+    szene.add(wrack);
+    const TRUEMMER = 220;
+    const truemmerOrt = new Float32Array(TRUEMMER * 3);
+    const truemmerTempo = new Float32Array(TRUEMMER * 3);
+    const truemmerGeo = new THREE.BufferGeometry();
+    truemmerGeo.setAttribute("position", new THREE.BufferAttribute(truemmerOrt, 3));
+    const truemmerMat = new THREE.PointsMaterial({
+      color: 0xffb040, size: 5, sizeAttenuation: false, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const truemmer = new THREE.Points(truemmerGeo, truemmerMat);
+    truemmer.frustumCulled = false;
+    szene.add(truemmer);
+    let crash: {
+      art: UnfallArt; id: string; t: number; knall: boolean;
+      stelle: THREE.Vector3; anflug: THREE.Vector3; blick: THREE.Vector3; kamera: THREE.Vector3;
+    } | null = null;
+
     // ── Eingabe ──
     const e = eingabe.current;
     const tasteRunter = (ev: KeyboardEvent) => {
@@ -279,6 +356,7 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       e.tasten.add(ev.code);
       const b = befehle.current;
       if (ev.code === "Space") b.pulsUmschalten = true;
+      if (ev.code === "ShiftLeft" || ev.code === "ShiftRight") b.overdrive = true;
       if (ev.code === "KeyG") b.autopilot = true;
       if (ev.code === "KeyT") b.zielNaechstes = true;
       if (ev.code === "KeyC") b.scan = true;
@@ -315,11 +393,14 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
     // Hilfsobjekte, damit die Schleife nichts neu anlegt.
     const vorne = new THREE.Vector3();
     const hilf = new THREE.Vector3();
+    const hilf2 = new THREE.Vector3();
     const drehSchritt = new THREE.Quaternion();
     const euler = new THREE.Euler(0, 0, 0, "YXZ");
     const sollQuat = new THREE.Quaternion();
+    const kameraUmkehr = new THREE.Quaternion();
     const projiziert = new THREE.Vector3();
     const schiffOben = new THREE.Vector3();
+    const randPlaetze: [number, number][] = [];
 
     const oberflaeche = (id: string) => schiff.pos.distanceTo(ort.get(id)!) - radius.get(id)!;
 
@@ -340,6 +421,86 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       return Math.hypot(pa[0] - pb[0], pa[1] - pb[1], pa[2] - pb[2]) - KOERPER_NACH_ID[a].radiusKm - KOERPER_NACH_ID[b].radiusKm;
     };
 
+    // Umlaufbahn: wie weit hat sich das Schiff um den nächsten Körper herumbewegt?
+    const orbit = { id: "", winkel: 0, letzte: new THREE.Vector3(), gezaehlt: false };
+    let zuwachs = leererZuwachs();
+    let bisSpeichern = STATISTIK_TAKT;
+    const speichere = () => { zuwachsRef.current(zuwachs); zuwachs = leererZuwachs(); bisSpeichern = STATISTIK_TAKT; };
+
+    function starteUnfall(art: UnfallArt, id: string) {
+      const mitte = ort.get(id)!;
+      const normale = hilf2.copy(schiff.pos).sub(mitte).normalize();
+      const stelle = mitte.clone().addScaledVector(normale, radius.get(id)!);
+      schiffOben.set(0, 1, 0).applyQuaternion(schiff.quat);
+      const anflug = stelle.clone().addScaledVector(vorne, -4);
+      crash = {
+        art, id, t: 0, knall: false, stelle, anflug,
+        blick: vorne.clone(),
+        kamera: stelle.clone().addScaledVector(vorne, -11).addScaledVector(schiffOben, 3.5).addScaledVector(normale, 4),
+      };
+      wrack.visible = true;
+      wrack.position.copy(anflug);
+      wrack.quaternion.copy(schiff.quat);
+      (wrack.userData.huelle as THREE.MeshStandardMaterial).emissive.setHex(art === "verglueht" ? 0x000000 : 0x000000);
+      schiff.v = 0; schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
+      scan = null; scanHuelle.visible = false;
+      if (art === "verglueht") zuwachs.verglueht += 1;
+      else { zuwachs.abstuerze += 1; zuwachs.abgestuerztAuf = mitEintrag(zuwachs.abgestuerztAuf, id); }
+      speichere();
+      if (document.pointerLockElement === leinwand) document.exitPointerLock();
+      setUnfall({ art, name: KOERPER_NACH_ID[id].name, knall: false });
+    }
+
+    function laufeUnfall(dt: number) {
+      const c = crash!;
+      c.t += dt;
+      const huelle = wrack.userData.huelle as THREE.MeshStandardMaterial;
+      if (c.t < 0.7) {
+        // Hineinstürzen mit Taumeln; bei der Sonne glüht die Hülle auf.
+        wrack.position.lerpVectors(c.anflug, c.stelle, c.t / 0.7);
+        wrack.rotateZ(dt * 9);
+        wrack.rotateX(dt * 4);
+        if (c.art === "verglueht") huelle.emissive.setRGB(Math.min(c.t * 2, 1), Math.min(c.t, 0.5), 0);
+      } else if (!c.knall) {
+        c.knall = true;
+        wrack.visible = false;
+        for (let i = 0; i < TRUEMMER; i++) {
+          const r = hilf.randomDirection().multiplyScalar(2 + Math.random() * 7);
+          truemmerOrt[i * 3] = c.stelle.x; truemmerOrt[i * 3 + 1] = c.stelle.y; truemmerOrt[i * 3 + 2] = c.stelle.z;
+          truemmerTempo[i * 3] = r.x; truemmerTempo[i * 3 + 1] = r.y; truemmerTempo[i * 3 + 2] = r.z;
+        }
+        truemmerMat.color.setHex(c.art === "verglueht" ? 0xffe0a0 : 0xff9a30);
+        setUnfall(u => (u ? { ...u, knall: true } : u));
+      }
+      if (c.knall) {
+        const bremse = Math.exp(-dt * 1.5);
+        for (let i = 0; i < TRUEMMER * 3; i++) {
+          truemmerOrt[i] += truemmerTempo[i] * dt;
+          truemmerTempo[i] *= bremse;
+        }
+        truemmerGeo.attributes.position.needsUpdate = true;
+        truemmerMat.opacity = Math.max(0, 1 - (c.t - 0.7) / 1.8);
+      }
+      // Kamera: von hinten zusehen, leicht wackelnd beim Knall.
+      kamera.position.copy(c.kamera);
+      if (c.knall && c.t < 1.3) kamera.position.addScaledVector(hilf.randomDirection(), 0.25 * (1.3 - c.t));
+      kamera.lookAt(c.stelle);
+      if (c.t >= UNFALL_DAUER) {
+        // Rettungskapsel: ein Stück über der Oberfläche, Blick hinaus ins All.
+        const mitte = ort.get(c.id)!;
+        const r = radius.get(c.id)!;
+        const normale = hilf.copy(c.stelle).sub(mitte).normalize();
+        schiff.pos.copy(mitte).addScaledVector(normale, r + Math.max(r * 3, 25));
+        schiff.quat.setFromRotationMatrix(blickMatrix.lookAt(schiff.pos, hilf2.copy(schiff.pos).add(normale), oben));
+        schiff.drehung.set(0, 0, 0);
+        truemmerMat.opacity = 0;
+        const name = KOERPER_NACH_ID[c.id].name;
+        crash = null;
+        setUnfall(null);
+        meldeRef.current(`Rettungskapsel: neu gestartet über ${name}.`);
+      }
+    }
+
     let letzteZeit = performance.now();
     let letzterHud = 0;
     let bild = 0;
@@ -349,7 +510,7 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       bild = requestAnimationFrame(schleife);
       const dt = Math.min((jetzt - letzteZeit) / 1000, 0.1);
       letzteZeit = jetzt;
-      const pausiert = pausiertRef.current;
+      const pausiert = pausiertRef.current || crash !== null;
       const b = befehle.current;
 
       jd += dt * ZEITRAFFER;
@@ -364,19 +525,34 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       }
       vorne.set(0, 0, -1).applyQuaternion(schiff.quat);
       const ziel = zielRef.current;
+      const zielAbstand = ziel ? oberflaeche(ziel) : Infinity;
+      const zielVoraus = ziel !== null && hilf.copy(ort.get(ziel)!).sub(schiff.pos).normalize().dot(vorne) > 0.5;
+      // Frei voraus: der nächste Körper — und das Ziel, sobald man darauf zuhält.
+      const voraus = zielVoraus ? Math.min(naechsterAbstand, zielAbstand) : naechsterAbstand;
 
       // ── Befehle ──
       if (!pausiert) {
         if (b.pulsUmschalten) {
-          if (schiff.puls) { schiff.puls = false; schiff.schub = 0.5; }
+          if (schiff.puls) { schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0.5; }
           else if (naechsterAbstand < 6) meldeRef.current(`Zu nah an ${KOERPER_NACH_ID[naechster].name} für den Pulsantrieb.`);
           else { schiff.puls = true; schiff.autopilot = false; }
         }
-        if (b.autopilot) {
-          if (!ziel) meldeRef.current("Erst ein Ziel wählen: T drücken oder oben aus der Liste.");
-          else { schiff.autopilot = !schiff.autopilot; if (!schiff.autopilot) schiff.puls = false; }
+        if (b.overdrive) {
+          if (schiff.overdrive > 0) { /* läuft schon */ }
+          else if (schiff.abklingen > 0) meldeRef.current(`Overdrive lädt noch ${Math.ceil(schiff.abklingen)} s.`);
+          else if (naechsterAbstand < 6) meldeRef.current(`Zu nah an ${KOERPER_NACH_ID[naechster].name} für den Overdrive.`);
+          else if (overdriveLohntNicht(voraus)) meldeRef.current("Das Ziel ist zu nah — der Overdrive würde sofort wieder bremsen.");
+          else {
+            schiff.puls = true;
+            schiff.overdrive = OVERDRIVE_DAUER;
+            zuwachs.overdrives += 1;
+          }
         }
-        if (b.anhalten) { schiff.schub = 0; schiff.puls = false; schiff.autopilot = false; }
+        if (b.autopilot) {
+          if (!ziel) meldeRef.current("Erst ein Ziel wählen: T drücken oder im Menü ☰.");
+          else { schiff.autopilot = !schiff.autopilot; if (!schiff.autopilot) { schiff.puls = false; schiff.overdrive = 0; } }
+        }
+        if (b.anhalten) { schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false; }
         if (b.zielNaechstes) {
           let bestes: string | null = null;
           let besterWinkel = 0.35;
@@ -407,14 +583,17 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
         achse(t.has("KeyQ"), t.has("KeyE")),
       );
       if (schiff.autopilot && soll.lengthSq() > 0.04) schiff.autopilot = false;
-      soll.clampLength(0, 1.4).multiplyScalar(schiff.puls ? 0.5 : 1.2);
+      soll.clampLength(0, 1.4).multiplyScalar(schiff.overdrive > 0 ? 0.25 : schiff.puls ? 0.5 : 1.2);
       schiff.drehung.lerp(soll, 1 - Math.exp(-dt * 6));
       euler.set(schiff.drehung.x * dt, schiff.drehung.y * dt, schiff.drehung.z * dt * 1.4);
       schiff.quat.multiply(drehSchritt.setFromEuler(euler)).normalize();
 
       if (!pausiert) {
         if (t.has("KeyW") || e.schubKnopf) schiff.schub = Math.min(1, schiff.schub + dt * 0.8);
-        if (t.has("KeyS") || e.bremsKnopf) { schiff.schub = Math.max(0, schiff.schub - dt * 1.2); schiff.puls = false; schiff.autopilot = false; }
+        if (t.has("KeyS") || e.bremsKnopf) {
+          schiff.schub = Math.max(0, schiff.schub - dt * 1.2);
+          schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
+        }
       }
 
       // ── Autopilot: zum Ziel drehen, weit weg im Pulsantrieb, nah langsam ──
@@ -423,17 +602,15 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
         schiffOben.set(0, 1, 0).applyQuaternion(schiff.quat);
         sollQuat.setFromRotationMatrix(blickMatrix.lookAt(schiff.pos, zielOrt, schiffOben));
         schiff.quat.slerp(sollQuat, 1 - Math.exp(-dt * 2.5));
-        const rest = oberflaeche(ziel);
-        const halt = haltAbstand(ziel);
-        const ausgerichtet = schiff.quat.angleTo(sollQuat) < 0.15;
-        if (rest <= halt * 1.05) {
-          schiff.autopilot = false; schiff.puls = false; schiff.schub = 0;
+        const halt = haltAbstand(radius.get(ziel)!);
+        const entscheidung = autopilot(zielAbstand, halt, naechsterAbstand, schiff.quat.angleTo(sollQuat) < 0.15);
+        if (entscheidung.angekommen) {
+          schiff.autopilot = false; schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0;
           meldeRef.current(`Angekommen: ${KOERPER_NACH_ID[ziel].name}. Mit C oder 📡 scannen.`);
-        } else if (ausgerichtet && rest > halt * 12 && naechsterAbstand > 30) {
-          schiff.puls = true;
         } else {
-          schiff.puls = false;
-          schiff.schub = ausgerichtet ? Math.min(1, (rest - halt) / Math.max(halt, 1) + 0.15) : 0.1;
+          schiff.puls = entscheidung.puls || (schiff.overdrive > 0 && entscheidung.schub === 1);
+          if (!schiff.puls) schiff.overdrive = 0;
+          schiff.schub = entscheidung.schub;
         }
       }
 
@@ -442,26 +619,69 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       const kommtNaeher = hilf.copy(naechsterOrt).sub(schiff.pos).dot(vorne) > 0;
       if (schiff.puls && kommtNaeher && naechsterAbstand < Math.max(radius.get(naechster)! * 3, 40)) {
         schiff.puls = false;
+        schiff.overdrive = 0;
         schiff.schub = 0.6;
         if (!schiff.autopilot) meldeRef.current(`Pulsantrieb aus — ${KOERPER_NACH_ID[naechster].name} voraus.`);
       }
-      const boost = t.has("ShiftLeft") || t.has("ShiftRight");
-      // Bremsweg: das Tempo richtet sich nach dem, was voraus liegt — dem nächsten
-      // Körper, und unter Autopilot auch dem Ziel. Weit draußen gilt die Obergrenze.
-      const voraus = schiff.autopilot && ziel ? Math.min(naechsterAbstand, oberflaeche(ziel)) : naechsterAbstand;
-      const vZiel = pausiert ? 0 : schiff.puls
-        ? THREE.MathUtils.clamp(voraus * 0.8, 20, HOECHSTTEMPO)
-        : Math.min(schiff.schub * THREE.MathUtils.clamp(voraus * 0.9, 1.5, HOECHSTTEMPO / 5) * (boost ? 4 : 1), HOECHSTTEMPO);
-      // Beschleunigen gemächlich, bremsen kräftig — sonst schießt man am Planeten vorbei.
-      const rate = vZiel < schiff.v ? 4 : schiff.puls ? 0.9 : 2.4;
-      schiff.v += (vZiel - schiff.v) * (1 - Math.exp(-dt * rate));
+      if (schiff.overdrive > 0) {
+        schiff.overdrive -= pausiert ? 0 : dt;
+        // Beim Anflug bringt der Overdrive nichts mehr: das Bremstempo liegt schon darunter.
+        if (schiff.overdrive <= 0 || (overdriveLohntNicht(voraus) && schiff.v <= HOECHSTTEMPO * 1.05)) {
+          schiff.overdrive = 0;
+          schiff.abklingen = OVERDRIVE_ABKLINGZEIT;
+        }
+      } else if (schiff.abklingen > 0 && !pausiert) {
+        schiff.abklingen = Math.max(0, schiff.abklingen - dt);
+      }
+      const antrieb = { puls: schiff.puls, overdrive: schiff.overdrive > 0, schub: schiff.schub };
+      const vZiel = pausiert ? 0 : zielTempo(antrieb, voraus);
+      schiff.v = naechstesTempo(schiff.v, vZiel, antrieb, dt);
       schiff.pos.addScaledVector(vorne, schiff.v * dt);
 
-      // Nicht in Planeten hineinfliegen.
-      for (const [id, o] of ort) {
-        const min = radius.get(id)! * 1.02 + 0.05;
-        const d = schiff.pos.distanceTo(o);
-        if (d < min) schiff.pos.sub(o).setLength(min).add(o);
+      // ── Aufprall: sanft aufsetzen, zu schnell abstürzen, in der Sonne verglühen ──
+      if (!crash) {
+        for (const [id, o] of ort) {
+          const min = radius.get(id)! * 1.02 + 0.05;
+          const d = schiff.pos.distanceTo(o);
+          if (d >= min) continue;
+          const zurMitte = hilf2.copy(o).sub(schiff.pos).normalize();
+          const aufprall = schiff.v * Math.max(0, zurMitte.dot(vorne));
+          if (id === "sonne") { starteUnfall("verglueht", id); break; }
+          if (aufprall > ABSTURZ_TEMPO) { starteUnfall("absturz", id); break; }
+          schiff.pos.sub(o).setLength(min).add(o);
+        }
+      }
+
+      // ── Statistik ──
+      if (!pausiert) {
+        zuwachs.flugzeit += dt;
+        zuwachs.strecke += schiff.v * dt * KM_JE_FLUGEINHEIT;
+        zuwachs.hoechstC = Math.max(zuwachs.hoechstC, vielfachesLicht(schiff.v));
+        if (schiff.puls && schiff.overdrive <= 0 && schiff.v >= HOECHSTTEMPO * 0.97) zuwachs.vollgas += dt;
+        // Umlaufbahn: nah am Körper und seitlich unterwegs — der überstrichene Winkel zählt.
+        const nah = naechster !== "sonne" && naechsterAbstand < Math.max(radius.get(naechster)! * 5, 25) && schiff.v > 0.2;
+        const rel = hilf2.copy(schiff.pos).sub(naechsterOrt);
+        if (nah && orbit.id === naechster) {
+          const schritt = orbit.letzte.angleTo(rel);
+          if (schritt / Math.max(dt, 1e-3) > 0.01) {
+            orbit.winkel += schritt;
+            zuwachs.orbitzeit += dt;
+          }
+          if (orbit.winkel >= Math.PI * 2 && !orbit.gezaehlt) {
+            orbit.gezaehlt = true;
+            zuwachs.umrundungen += 1;
+            zuwachs.umrundet = mitEintrag(zuwachs.umrundet, naechster);
+            meldeRef.current(`🔄 ${KOERPER_NACH_ID[naechster].name} einmal ganz umrundet!`);
+          }
+          if (orbit.winkel >= Math.PI * 4) { orbit.winkel -= Math.PI * 2; orbit.gezaehlt = false; }
+        } else {
+          orbit.id = nah ? naechster : "";
+          orbit.winkel = 0;
+          orbit.gezaehlt = false;
+        }
+        orbit.letzte.copy(rel);
+        bisSpeichern -= dt;
+        if (bisSpeichern <= 0) speichere();
       }
 
       // ── Scanner ──
@@ -476,19 +696,25 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
           scanHuelle.visible = false;
           const id = scan.id;
           scan = null;
-          schiff.schub = 0; schiff.puls = false; schiff.autopilot = false;
+          schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
           scanFertigRef.current(id);
         }
       }
 
       // ── Kamera ──
-      kamera.position.copy(schiff.pos);
-      kamera.quaternion.copy(schiff.quat);
-      if (schiff.puls && schiff.v > HOECHSTTEMPO * 0.8) {
-        kamera.position.x += (Math.random() - 0.5) * 0.02;
-        kamera.position.y += (Math.random() - 0.5) * 0.02;
+      const overdriveAn = schiff.overdrive > 0;
+      if (crash) {
+        laufeUnfall(dt);
+      } else {
+        kamera.position.copy(schiff.pos);
+        kamera.quaternion.copy(schiff.quat);
+        if (schiff.puls && schiff.v > HOECHSTTEMPO * 0.8) {
+          const w = overdriveAn ? 0.06 : 0.02;
+          kamera.position.x += (Math.random() - 0.5) * w;
+          kamera.position.y += (Math.random() - 0.5) * w;
+        }
       }
-      const fovZiel = schiff.puls ? 92 : boost && schiff.schub > 0 ? 78 : 70;
+      const fovZiel = overdriveAn ? 108 : schiff.puls ? 92 : 70;
       fov += (fovZiel - fov) * (1 - Math.exp(-dt * 3));
       kamera.fov = fov;
       kamera.updateProjectionMatrix();
@@ -496,7 +722,7 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
 
       // Staub mitwandern lassen und zu Strichen ziehen.
       const halb = STAUB_WUERFEL / 2;
-      const strich = Math.min(schiff.v * 0.08, 60) + 0.06;
+      const strich = Math.min(schiff.v * 0.08, overdriveAn ? 140 : 60) + 0.06;
       for (let i = 0; i < STAUB; i++) {
         for (let a = 0; a < 3; a++) {
           const c = kamera.position.getComponent(a);
@@ -509,59 +735,68 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
         }
       }
       staubGeo.attributes.position.needsUpdate = true;
-      staubMat.opacity = Math.min(0.15 + schiff.v / 150, 0.7);
-      staubMat.color.setHex(schiff.puls ? 0x9fd8ff : 0xa8b8d8);
+      staubMat.opacity = Math.min(0.15 + schiff.v / 150, overdriveAn ? 0.9 : 0.7);
+      staubMat.color.setHex(overdriveAn ? 0xf0c8ff : schiff.puls ? 0x9fd8ff : 0xa8b8d8);
 
       renderer.render(szene, kamera);
 
-      // ── Markierungen ──
+      // ── Markierungen im Bild, Pfeile am Rand für alles außerhalb ──
       const { clientWidth: w, clientHeight: h } = buehne;
-      let zielRichtung: { x: number; y: number; winkel: number } | null = null;
+      const kameraVorne = hilf2.set(0, 0, -1).applyQuaternion(kamera.quaternion);
+      kameraUmkehr.copy(kamera.quaternion).invert();
+      // Wo schon ein Randschild steht, bleibt beim nächsten nur der Pfeil.
+      randPlaetze.length = 0;
       for (const [id, el] of markerRef.current) {
         const k = KOERPER_NACH_ID[id];
         const istZiel = id === ziel;
-        if (k.art === "mond" && !istZiel && !imSystem(k)) { el.style.display = "none"; continue; }
+        const rand = randRef.current.get(id);
+        const imBlick = k.art !== "mond" || istZiel || imSystem(k);
         projiziert.copy(ort.get(id)!);
-        const vor = hilf.copy(projiziert).sub(kamera.position).dot(vorne) > 0;
+        const vor = hilf.copy(projiziert).sub(kamera.position).dot(kameraVorne) > 0;
         projiziert.project(kamera);
         const drin = vor && Math.abs(projiziert.x) < 1 && Math.abs(projiziert.y) < 1;
-        if (!drin) {
-          el.style.display = "none";
-          if (istZiel) {
-            // Richtung zum Ziel am Bildrand: hinter der Kamera gespiegelt.
-            const x = vor ? projiziert.x : -projiziert.x;
-            const y = vor ? projiziert.y : -projiziert.y;
-            zielRichtung = { x, y, winkel: Math.atan2(-y, x) };
-          }
-          continue;
-        }
-        el.style.display = "";
-        el.style.transform = `translate(${((projiziert.x + 1) / 2) * w}px, ${((1 - projiziert.y) / 2) * h}px) translate(-50%, -50%)`;
-      }
-      if (pfeilRef.current) {
-        if (zielRichtung) {
-          const l = Math.max(Math.abs(zielRichtung.x), Math.abs(zielRichtung.y)) || 1;
-          const px = ((zielRichtung.x / l) * 0.85 + 1) / 2 * w;
-          const py = ((1 - (zielRichtung.y / l) * 0.8) / 2) * h;
-          pfeilRef.current.style.display = "";
-          pfeilRef.current.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%) rotate(${zielRichtung.winkel}rad)`;
+        if (drin && imBlick && !crash) {
+          el.style.display = "";
+          el.style.transform = `translate(${((projiziert.x + 1) / 2) * w}px, ${((1 - projiziert.y) / 2) * h}px) translate(-50%, -14px)`;
         } else {
-          pfeilRef.current.style.display = "none";
+          el.style.display = "none";
         }
+        if (!rand) continue;
+        // Randpfeil: Richtung im Kamerabild, auf den Bildrand gelegt.
+        if (drin || crash || (k.art === "mond" && !istZiel)) { rand.style.display = "none"; continue; }
+        const r = hilf.copy(ort.get(id)!).sub(kamera.position).applyQuaternion(kameraUmkehr);
+        let winkel = Math.atan2(r.y, r.x);
+        if (Math.abs(r.x) < 1e-6 && Math.abs(r.y) < 1e-6) winkel = -Math.PI / 2;
+        const cos = Math.cos(winkel), sin = Math.sin(winkel);
+        const rx = w / 2 - 34, ry = h / 2 - 34;
+        const s = Math.min(rx / Math.max(Math.abs(cos), 1e-6), ry / Math.max(Math.abs(sin), 1e-6));
+        const px = w / 2 + cos * s, py = h / 2 - sin * s;
+        rand.style.display = "";
+        rand.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
+        (rand.firstElementChild as HTMLElement).style.transform = `rotate(${-winkel}rad)`;
+        const eng = randPlaetze.some(([ax, ay]) => Math.abs(ax - px) < 60 && Math.abs(ay - py) < 26);
+        (rand.lastElementChild as HTMLElement).style.display = eng && !istZiel ? "none" : "";
+        if (!eng) randPlaetze.push([px, py]);
       }
 
       if (jetzt - letzterHud > 120) {
         letzterHud = jetzt;
+        let startAbstand = Infinity;
+        for (const id of ort.keys()) if (id !== ziel) startAbstand = Math.min(startAbstand, oberflaeche(id));
         setHud({
-          modus: schiff.autopilot ? "autopilot" : schiff.puls ? "puls" : schiff.v < 0.3 && schiff.schub === 0 ? "steht" : boost ? "boost" : "flug",
+          modus: schiff.autopilot ? "autopilot" : overdriveAn ? "overdrive" : schiff.puls ? "puls" : schiff.v < 0.3 && schiff.schub === 0 ? "steht" : "flug",
           schub: schiff.schub,
           tempo: schiff.v,
           naechster,
           ziel,
-          zielAbstand: ziel ? oberflaeche(ziel) : 0,
+          zielAbstand: ziel ? zielAbstand : 0,
+          startAbstand,
+          winkel: ziel ? hilf.copy(ort.get(ziel)!).sub(schiff.pos).angleTo(vorne) : 0,
           scanBereit: scanBereit(naechster),
           scan: scan ? scan.t : null,
           puls: schiff.puls,
+          overdrive: Math.max(schiff.overdrive, 0),
+          abklingen: schiff.abklingen,
         });
       }
 
@@ -577,14 +812,11 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       }
     };
 
-    function haltAbstand(id: string) {
-      return Math.max(radius.get(id)! * 2.5, 6);
-    }
-
     bild = requestAnimationFrame(schleife);
 
     return () => {
       cancelAnimationFrame(bild);
+      speichere();
       beobachter.disconnect();
       window.removeEventListener("keydown", tasteRunter);
       window.removeEventListener("keyup", tasteHoch);
@@ -613,47 +845,88 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
   const zielK = hud.ziel ? KOERPER_NACH_ID[hud.ziel] : null;
   const standort = KOERPER_NACH_ID[hud.naechster];
   const echteStrecke = zielK && zielK.id !== standort.id ? echterAbstandRef.current(standort.id, zielK.id) : null;
+  const restzeit = zielK
+    ? schaetzeFlugzeit({
+      abstand: hud.zielAbstand, zielRadius: flugRadius(zielK), startAbstand: hud.startAbstand,
+      tempo: hud.tempo, puls: hud.puls, overdriveRest: hud.overdrive, winkel: hud.winkel,
+    })
+    : 0;
+  const zielStrecke = km(Math.max(hud.zielAbstand, 0) * KM_JE_FLUGEINHEIT);
+  const overdriveBereit = hud.overdrive <= 0 && hud.abklingen <= 0;
 
   return (
     <div ref={buehneRef} className="relative h-full w-full overflow-hidden select-none text-slate-100">
-      {/* Vignette und Puls-Schimmer */}
+      {/* Vignette, Puls- und Overdrive-Schimmer */}
       <div className="absolute inset-0 pointer-events-none" style={{
         background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%)",
       }} />
       <div className="absolute inset-0 pointer-events-none transition-opacity duration-700" style={{
-        opacity: hud.puls ? 1 : 0,
+        opacity: hud.puls && hud.overdrive <= 0 ? 1 : 0,
         background: "radial-gradient(ellipse at center, transparent 35%, rgba(80,170,255,0.18) 100%)",
+      }} />
+      <div className="absolute inset-0 pointer-events-none transition-opacity duration-500" style={{
+        opacity: hud.overdrive > 0 ? 1 : 0,
+        background: "radial-gradient(ellipse at center, transparent 25%, rgba(220,120,255,0.28) 80%, rgba(255,255,255,0.18) 100%)",
       }} />
 
       {/* Markierungen */}
       <div className="absolute inset-0 pointer-events-none">
-        {KOERPER.map(k => (
-          <button
-            key={k.id}
-            ref={el => { if (el) markerRef.current.set(k.id, el); else markerRef.current.delete(k.id); }}
-            onClick={() => setzeZiel(k.id)}
-            className="absolute left-0 top-0 pointer-events-auto flex flex-col items-center"
-            style={{ display: "none" }}
-          >
-            <svg viewBox="0 0 20 20" className={k.id === hud.ziel ? "w-8 h-8 text-amber-300" : k.art === "mond" ? "w-3.5 h-3.5 text-slate-300/70" : "w-5 h-5 text-cyan-200/80"}>
-              <path d="M1 7V1h6M13 1h6v6M19 13v6h-6M7 19H1v-6" fill="none" stroke="currentColor" strokeWidth={k.id === hud.ziel ? 2 : 1.6} />
-            </svg>
-            <span className={`mt-1 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${
-              k.id === hud.ziel ? "text-amber-200" : fortschritt.erforscht.includes(k.id) ? "text-emerald-200/90" : "text-cyan-100/80"
-            }`}>
-              {k.name}{fortschritt.erforscht.includes(k.id) ? " ✓" : ""}
-            </span>
-          </button>
-        ))}
-        <div ref={pfeilRef} className="absolute left-0 top-0 text-amber-300 text-2xl drop-shadow-[0_0_6px_#000]" style={{ display: "none" }}>➤</div>
+        {KOERPER.map(k => {
+          const istZiel = k.id === hud.ziel;
+          return (
+            <button
+              key={k.id}
+              ref={el => { if (el) markerRef.current.set(k.id, el); else markerRef.current.delete(k.id); }}
+              onClick={() => setzeZiel(k.id)}
+              className="absolute left-0 top-0 pointer-events-auto flex flex-col items-center"
+              style={{ display: "none" }}
+            >
+              {istZiel && (
+                // Über dem Zielmarker: Flugstrecke und geschätzte Flugzeit.
+                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
+                  {zielStrecke} · {flugzeitText(restzeit)}
+                </span>
+              )}
+              <svg viewBox="0 0 20 20" className={istZiel ? "w-8 h-8 text-amber-300" : k.art === "mond" ? "w-3.5 h-3.5 text-slate-300/70" : "w-5 h-5 text-cyan-200/80"}>
+                <path d="M1 7V1h6M13 1h6v6M19 13v6h-6M7 19H1v-6" fill="none" stroke="currentColor" strokeWidth={istZiel ? 2 : 1.6} />
+              </svg>
+              <span className={`mt-1 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${
+                istZiel ? "text-amber-200" : fortschritt.erforscht.includes(k.id) ? "text-emerald-200/90" : "text-cyan-100/80"
+              }`}>
+                {k.name}{fortschritt.erforscht.includes(k.id) ? " ✓" : ""}
+              </span>
+            </button>
+          );
+        })}
+        {/* Randpfeile für Sonne, Planeten, Zwergplaneten — und das Ziel, falls es ein Mond ist */}
+        {KOERPER.map(k => {
+          const istZiel = k.id === hud.ziel;
+          if (k.art === "mond" && !istZiel) return null;
+          return (
+            <div
+              key={`rand-${k.id}`}
+              ref={el => { if (el) randRef.current.set(k.id, el); else randRef.current.delete(k.id); }}
+              className="absolute left-0 top-0 flex flex-col items-center"
+              style={{ display: "none" }}
+            >
+              <span className={`block leading-none ${istZiel ? "text-2xl text-amber-300" : "text-sm"}`}
+                style={{ color: istZiel ? undefined : k.farbe, filter: "drop-shadow(0 0 4px #000)" }}>➤</span>
+              <span className={`mt-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${istZiel ? "text-amber-200" : "text-slate-300/80"}`}>
+                {k.name}{istZiel ? ` · ${flugzeitText(restzeit)}` : ""}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Fadenkreuz */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        <div className="w-10 h-10 rounded-full border border-cyan-200/40 flex items-center justify-center">
-          <div className="w-1 h-1 rounded-full bg-cyan-200/80" />
+      {!unfall && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="w-10 h-10 rounded-full border border-cyan-200/40 flex items-center justify-center">
+            <div className="w-1 h-1 rounded-full bg-cyan-200/80" />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Links oben: Menü und Antrieb */}
       <button
@@ -673,38 +946,62 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
           onZiel={id => { setzeZiel(id); setMenue(false); }}
           erforscht={fortschritt.erforscht}
           geloest={fortschritt.erledigt.length}
+          erfolge={Object.keys(fortschritt.erfolge).length}
           onAuftraege={() => { setListe(true); setMenue(false); }}
+          onKodex={onKodex && (bereich => { setMenue(false); onKodex(bereich); })}
           onHilfe={() => { setHilfe(true); setMenue(false); }}
           onVollbild={onVollbild}
           vollbild={vollbild}
           onVerlassen={onVerlassen}
           onZuruecksetzen={() => {
-            if (window.confirm("Allen Forschungsfortschritt auf diesem Gerät löschen?")) setFortschritt({ erforscht: [], erledigt: [] });
+            if (window.confirm("Allen Forschungsfortschritt, alle Erfolge und die Flugstatistik auf diesem Gerät löschen?")) zuruecksetzen();
           }}
         />
       )}
       <div className="absolute left-[4.25rem] top-3 pointer-events-none">
-        <div className="rounded-xl bg-black/50 backdrop-blur border border-cyan-300/20 px-3 py-2 w-[8rem] sm:w-auto sm:min-w-[11rem]">
-          <div className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] ${hud.modus === "puls" ? "text-sky-300" : hud.modus === "autopilot" ? "text-amber-300" : "text-cyan-200"}`}>
-            {{ steht: "Antrieb bereit", flug: "Impulsflug", boost: "Boost", puls: "⚡ Pulsantrieb", autopilot: "🧭 Autopilot" }[hud.modus]}
-            {hud.modus === "autopilot" && hud.puls && " · ⚡ Puls"}
+        <div className={`rounded-xl bg-black/50 backdrop-blur border px-3 py-2 w-[9.5rem] sm:w-auto sm:min-w-[12rem] ${hud.overdrive > 0 ? "border-fuchsia-300/60" : "border-cyan-300/20"}`}>
+          <div className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] ${
+            hud.modus === "overdrive" ? "text-fuchsia-200" : hud.modus === "puls" ? "text-sky-300" : hud.modus === "autopilot" ? "text-amber-300" : "text-cyan-200"
+          }`}>
+            {{ steht: "Antrieb bereit", flug: "Impulsflug", puls: "⚡ Pulsantrieb", overdrive: "⚡⚡ Overdrive", autopilot: "🧭 Autopilot" }[hud.modus]}
+            {hud.modus === "autopilot" && hud.puls && (hud.overdrive > 0 ? " · ⚡⚡" : " · ⚡")}
           </div>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full bg-cyan-300 transition-[width]" style={{ width: `${hud.puls ? 100 : hud.schub * 100}%` }} />
+            <div className={`h-full transition-[width] ${hud.overdrive > 0 ? "bg-fuchsia-300" : "bg-cyan-300"}`}
+              style={{ width: `${hud.puls ? Math.min(100, (vielfachesLicht(hud.tempo) / (hud.overdrive > 0 ? 1000 : 100)) * 100) : hud.schub * 100}%` }} />
           </div>
-          <div className="mt-1 text-[11px] text-slate-400 tabular-nums hidden sm:block">
-            {hud.puls
-              ? `${zahl(Math.round((hud.tempo * FLUG_KM_JE_EINHEIT * FLUG_ABSTANDSTEILER) / LICHT_KM_S))}-fache Lichtgeschwindigkeit`
+          <div className="mt-1 text-[11px] text-slate-300 tabular-nums">
+            {vielfachesLicht(hud.tempo) >= 1
+              ? `${zahl(Math.round(vielfachesLicht(hud.tempo)))}-fache Lichtgeschwindigkeit`
               : `nächster Körper: ${standort.name}`}
           </div>
+          {/* Overdrive: bereit, läuft oder lädt */}
+          <div className="mt-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+            <span className={hud.overdrive > 0 ? "text-fuchsia-200" : overdriveBereit ? "text-fuchsia-300" : "text-slate-500"}>⚡⚡</span>
+            <span className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+              <span className="block h-full bg-fuchsia-300" style={{
+                width: `${hud.overdrive > 0 ? (hud.overdrive / OVERDRIVE_DAUER) * 100 : (1 - hud.abklingen / OVERDRIVE_ABKLINGZEIT) * 100}%`,
+              }} />
+            </span>
+            <span className="tabular-nums text-slate-300 normal-case tracking-normal">
+              {hud.overdrive > 0 ? `${Math.ceil(hud.overdrive)} s` : overdriveBereit ? (beruehrung ? "bereit" : "bereit · ⇧") : `${Math.ceil(hud.abklingen)} s`}
+            </span>
+          </div>
+          {zielK && (
+            // Auf dem Telefon ist die Zielanzeige oben in der Mitte ausgeblendet — hier steht das Wichtigste.
+            <div className="md:hidden mt-1 text-[11px] text-amber-200 tabular-nums truncate">🎯 {zielK.name} · {flugzeitText(restzeit)}</div>
+          )}
         </div>
       </div>
 
       {/* Mitte oben: Ziel */}
       {zielK && (
-        <div className="absolute left-1/2 -translate-x-1/2 top-3 pointer-events-auto max-w-[min(26rem,calc(100%-24rem))] hidden md:block">
+        <div className="absolute left-1/2 -translate-x-1/2 top-3 pointer-events-auto max-w-[min(28rem,calc(100%-26rem))] hidden md:block">
           <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 text-center">
             <div className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">🎯 {zielK.name}</div>
+            <div className="text-sm font-bold text-amber-50 tabular-nums mt-0.5" title="Geschätzt für einen Flug per Autopilot (G)">
+              {restzeit <= 0 ? "Ziel erreicht" : `${zielStrecke} · Flugzeit ca. ${flugzeitText(restzeit)}`}
+            </div>
             {echteStrecke !== null && echteStrecke > 0 && (
               <div className="text-[11px] text-slate-300 mt-0.5">
                 In Wirklichkeit {km(echteStrecke)} von {standort.name} · Licht: {dauer(echteStrecke / LICHT_KM_S)}
@@ -714,16 +1011,12 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
         </div>
       )}
 
-      {/* Rechts oben: der aktuelle Auftrag. Auf dem Telefon unter der Antriebsanzeige. */}
-      <div className="absolute right-3 top-[4.75rem] sm:top-3 flex flex-col items-end gap-2 pointer-events-auto">
-        {auftrag && gestartet && (
-          <AuftragKarte
-            auftrag={auftrag}
-            nummer={fortschritt.erledigt.length + 1}
-            onListe={() => setListe(true)}
-          />
+      {/* Rechts oben: vorgeschlagener Auftrag. Auf dem Telefon unter der Antriebsanzeige. */}
+      <div className="absolute right-3 top-[7.5rem] sm:top-3 flex flex-col items-end gap-2 pointer-events-auto">
+        {vorschlag && gestartet && (
+          <AuftragKarte auftrag={vorschlag} geloest={fortschritt.erledigt.length} onListe={() => setListe(true)} />
         )}
-        {!auftrag && gestartet && (
+        {!vorschlag && gestartet && (
           <div className="rounded-xl bg-emerald-900/60 border border-emerald-300/30 px-3 py-2 text-xs max-w-[16rem]">
             🏆 Alle {AUFTRAEGE.length} Forschungsaufträge gelöst!
             <button className="block mt-1 text-emerald-200 underline" onClick={() => setListe(true)}>Liste ansehen</button>
@@ -739,30 +1032,57 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
             <div className="text-[11px] uppercase tracking-widest text-cyan-200">Scanne …</div>
             <div className="mt-1 h-1.5 rounded bg-white/10 overflow-hidden"><div className="h-full bg-cyan-300" style={{ width: `${hud.scan * 100}%` }} /></div>
           </div>
-        ) : hud.scanBereit && gestartet ? (
+        ) : hud.scanBereit && gestartet && !unfall ? (
           <button onClick={() => befehl("scan")} className="pointer-events-auto rounded-lg bg-cyan-500/20 border border-cyan-300/50 px-3 py-1.5 text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">
             📡 {KOERPER_NACH_ID[hud.scanBereit].name} scannen <span className="hidden md:inline text-cyan-300/70">[C]</span>
+            {auftragZu(hud.scanBereit, fortschritt.erledigt) && <span className="ml-1 text-amber-300">◆</span>}
           </button>
         ) : null}
       </div>
 
       {/* Berührungssteuerung */}
-      {beruehrung && gestartet && (
+      {beruehrung && gestartet && !unfall && (
         <>
           <Stick eingabe={eingabe.current} />
-          <div className="absolute right-3 bottom-3 grid grid-cols-3 gap-2 pointer-events-auto">
+          <div className="absolute right-3 bottom-3 grid grid-cols-4 gap-2 pointer-events-auto">
             <HaltKnopf onAn={v => { eingabe.current.bremsKnopf = v; }}>Bremse</HaltKnopf>
             <HaltKnopf onAn={v => { eingabe.current.schubKnopf = v; }}>Schub</HaltKnopf>
-            <HudKnopf onClick={() => befehl("pulsUmschalten")} aktiv={hud.modus === "puls"} titel="Pulsantrieb">⚡</HudKnopf>
+            <HudKnopf onClick={() => befehl("pulsUmschalten")} aktiv={hud.puls} titel="Pulsantrieb">⚡</HudKnopf>
+            <HudKnopf onClick={() => befehl("overdrive")} aktiv={hud.overdrive > 0} titel="Overdrive">
+              <span className={overdriveBereit || hud.overdrive > 0 ? "" : "opacity-40"}>⚡⚡</span>
+            </HudKnopf>
             <HudKnopf onClick={() => befehl("zielNaechstes")} titel="Ziel im Fadenkreuz">🎯</HudKnopf>
             <HudKnopf onClick={() => befehl("autopilot")} aktiv={hud.modus === "autopilot"} titel="Autopilot">🧭</HudKnopf>
             <HudKnopf onClick={() => befehl("scan")} titel="Scannen">📡</HudKnopf>
+            {onKodex && <HudKnopf onClick={() => onKodex("eintraege")} titel="Kodex">📓</HudKnopf>}
           </div>
         </>
       )}
-      {!beruehrung && gestartet && (
+      {!beruehrung && gestartet && !unfall && (
         <div className="absolute left-3 bottom-3 text-[11px] text-slate-400 bg-black/40 rounded-lg px-2 py-1 pointer-events-none">
-          Klick: Maus lenkt · Esc: Maus frei · M Menü · W/S Schub · Leertaste Puls · T Ziel · G Autopilot · C Scan
+          Klick: Maus lenkt · Esc: Maus frei · M Menü · K Kodex · W/S Schub · Leertaste Puls · ⇧ Overdrive · T Ziel · G Autopilot · C Scan
+        </div>
+      )}
+
+      {/* Unfall: roter bzw. glühender Blitz, dann schwarz bis zur Rettungskapsel */}
+      {unfall && (
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+          <div className="absolute inset-0 transition-opacity duration-300" style={{
+            opacity: unfall.knall ? 1 : 0,
+            background: unfall.art === "verglueht"
+              ? "radial-gradient(circle, rgba(255,250,220,0.85), rgba(255,140,30,0.55) 60%, rgba(80,20,0,0.85))"
+              : "radial-gradient(circle, rgba(255,190,90,0.55), rgba(160,20,10,0.45) 60%, rgba(0,0,0,0.8))",
+          }} />
+          {unfall.knall && (
+            <div className="relative text-center font-mono">
+              <div className="text-3xl sm:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_2px_8px_#000]">
+                {unfall.art === "verglueht" ? "Verglüht" : "Aufgeschlagen"}
+              </div>
+              <div className="mt-2 text-sm text-white/90 drop-shadow-[0_1px_4px_#000]">
+                {unfall.art === "verglueht" ? `Zu nah an der ${unfall.name}. ` : `Zu schnell auf ${unfall.name}. `}Rettungskapsel startet …
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -775,8 +1095,8 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
           <h2 className="text-xl font-black tracking-tight">🚀 Flug durchs Sonnensystem</h2>
           <p className="text-sm text-slate-300 mt-2">
             Du startest neben der Erde. Die Planeten stehen dort, wo sie heute wirklich stehen.
-            Flieg zu einem Himmelskörper, scanne ihn — und löse die Forschungsaufträge oben rechts.
-            Ziele, Aufträge und die anderen Ansichten stecken im Menü ☰ oben links.
+            Flieg zu einem Himmelskörper, scanne ihn — jeder Scan füllt deinen Kodex und schaltet Bilder in der Galerie frei.
+            Ziele, Aufträge, Kodex und Erfolge stecken im Menü ☰ oben links.
           </p>
           <Steuerungstabelle beruehrung={beruehrung} />
           <p className="text-xs text-slate-400 mt-3">
@@ -806,7 +1126,7 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
           koerper={KOERPER_NACH_ID[karte.id]}
           anzahl={fortschritt.erforscht.length}
           auftrag={karte.auftrag}
-          onGeloest={id => setFortschritt(f => (f.erledigt.includes(id) ? f : { ...f, erledigt: [...f.erledigt, id] }))}
+          onGeloest={id => aendere(f => ({ ...f, erledigt: mitEintrag(f.erledigt, id) }))}
           onSteckbrief={() => onSteckbrief(karte.id)}
           onSchliessen={() => { setKarte(null); setAuftragId(null); }}
         />
@@ -815,93 +1135,74 @@ export default function Flug({ onSteckbrief, speicherSchluessel, onVerlassen, on
       {liste && (
         <Einblendung onSchliessen={() => setListe(false)} breit>
           <h2 className="text-lg font-black">🛰️ Forschungsaufträge</h2>
-          <p className="text-xs text-slate-400 mt-1">Antippen macht einen Auftrag zum aktuellen. Gelöst: {fortschritt.erledigt.length} von {AUFTRAEGE.length}.</p>
-          <ol className="mt-3 flex flex-col gap-1.5 max-h-[55vh] overflow-y-auto pr-1">
-            {AUFTRAEGE.map((a, i) => {
-              const fertig = fortschritt.erledigt.includes(a.id);
-              return (
-                <li key={a.id}>
-                  <button
-                    disabled={fertig}
-                    onClick={() => { setAuftragId(a.id); setListe(false); }}
-                    className={`w-full text-left rounded-lg px-3 py-2 text-sm border ${
-                      fertig ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100"
-                        : a.id === auftrag?.id ? "border-amber-300/50 bg-amber-300/10" : "border-white/10 bg-white/5 hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="font-bold mr-1">{fertig ? "✓" : `${i + 1}.`}</span>
-                    {fertig ? `${KOERPER_NACH_ID[a.ziel].name}: ${a.hinweis}` : a.hinweis}
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+          <p className="text-xs text-slate-400 mt-1">
+            Die Reihenfolge ist egal: jeder Auftrag zählt, sobald du sein Ziel scannst — auch zufällig.
+            Antippen macht einen Auftrag zum Vorschlag oben rechts. Gelöst: {fortschritt.erledigt.length} von {AUFTRAEGE.length}.
+          </p>
+          <div className="mt-3 flex flex-col gap-3 max-h-[58vh] overflow-y-auto pr-1">
+            {([1, 2, 3] as const).map(stufe => (
+              <section key={stufe}>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300 mb-1.5">
+                  {"◆".repeat(stufe)} {STUFEN_NAME[stufe]}
+                </h3>
+                <ol className="flex flex-col gap-1.5">
+                  {AUFTRAEGE.filter(a => a.stufe === stufe).map(a => {
+                    const fertig = fortschritt.erledigt.includes(a.id);
+                    return (
+                      <li key={a.id}>
+                        <button
+                          disabled={fertig}
+                          onClick={() => { setAuftragId(a.id); setListe(false); }}
+                          className={`w-full text-left rounded-lg px-3 py-2 text-sm border ${
+                            fertig ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100"
+                              : a.id === vorschlag?.id ? "border-amber-300/50 bg-amber-300/10" : "border-white/10 bg-white/5 hover:bg-white/10"
+                          }`}
+                        >
+                          <span className="font-bold mr-1">{fertig ? "✓" : "○"}</span>
+                          {fertig ? `${KOERPER_NACH_ID[a.ziel].name}: ${a.hinweis}` : a.hinweis}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </section>
+            ))}
+          </div>
         </Einblendung>
       )}
     </div>
   );
 }
 
-function HudKnopf({ onClick, children, titel, aktiv }: { onClick: () => void; children: ReactNode; titel: string; aktiv?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      title={titel}
-      aria-label={titel}
-      className={`w-12 h-12 rounded-xl border text-xl backdrop-blur ${aktiv ? "bg-sky-400/30 border-sky-300/70" : "bg-black/50 border-white/15 hover:bg-white/10"}`}
-    >{children}</button>
-  );
+/** Ein kleines Raumschiff für die Absturz-Szene: Rumpf, Flügel, Triebwerksglühen. */
+function baueSchiffchen(): THREE.Group {
+  const g = new THREE.Group();
+  const huelle = new THREE.MeshStandardMaterial({ color: 0xc8d0dc, metalness: 0.4, roughness: 0.5, emissive: 0x000000 });
+  const rumpf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.4, 12), huelle);
+  rumpf.rotation.x = -Math.PI / 2;
+  g.add(rumpf);
+  const fluegel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.45), huelle);
+  fluegel.position.z = 0.35;
+  g.add(fluegel);
+  const glut = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: leuchtTextur("rgba(160,230,255,1)", "rgba(60,160,255,0.4)"), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+  }));
+  glut.scale.setScalar(0.9);
+  glut.position.z = 0.8;
+  g.add(glut);
+  g.userData.huelle = huelle;
+  return g;
 }
 
-function HaltKnopf({ onAn, children }: { onAn: (an: boolean) => void; children: ReactNode }) {
-  return (
-    <button
-      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); onAn(true); }}
-      onPointerUp={() => onAn(false)}
-      onPointerCancel={() => onAn(false)}
-      onContextMenu={e => e.preventDefault()}
-      className="w-12 h-12 rounded-xl border border-white/15 bg-black/50 text-[10px] font-black uppercase active:bg-cyan-400/30 touch-none"
-    >{children}</button>
-  );
-}
-
-/** Ein Daumenstick unten links: Auslenkung = Drehgeschwindigkeit. */
-function Stick({ eingabe }: { eingabe: Eingabe }) {
-  const [knauf, setKnauf] = useState({ x: 0, y: 0 });
-  const bewege = (e: React.PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    let x = (e.clientX - r.left - r.width / 2) / (r.width / 2);
-    let y = (e.clientY - r.top - r.height / 2) / (r.height / 2);
-    const l = Math.hypot(x, y);
-    if (l > 1) { x /= l; y /= l; }
-    eingabe.stick.x = x;
-    eingabe.stick.y = -y;
-    setKnauf({ x, y });
-  };
-  const los = () => { eingabe.stick.x = 0; eingabe.stick.y = 0; setKnauf({ x: 0, y: 0 }); };
-  return (
-    <div
-      className="absolute left-4 bottom-4 w-32 h-32 rounded-full border border-white/15 bg-black/35 backdrop-blur touch-none pointer-events-auto"
-      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); bewege(e); }}
-      onPointerMove={e => { if (e.buttons || e.pointerType === "touch") bewege(e); }}
-      onPointerUp={los}
-      onPointerCancel={los}
-      aria-label="Lenken"
-    >
-      <div className="absolute w-12 h-12 rounded-full bg-cyan-300/40 border border-cyan-200/60 left-1/2 top-1/2" style={{
-        transform: `translate(calc(-50% + ${knauf.x * 40}px), calc(-50% + ${knauf.y * 40}px))`,
-      }} />
-    </div>
-  );
-}
-
-function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, onAuftraege, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
+function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
   onSchliessen: () => void;
   ziel: string | null;
   onZiel: (id: string | null) => void;
   erforscht: string[];
   geloest: number;
+  erfolge: number;
   onAuftraege: () => void;
+  onKodex?: (bereich: "eintraege" | "erfolge") => void;
   onHilfe: () => void;
   onVollbild?: () => void;
   vollbild: boolean;
@@ -924,6 +1225,16 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, onAuftraege, on
         <button className={eintrag} onClick={onAuftraege}>
           <span>🛰️ Forschungsaufträge</span><span className="text-xs text-slate-400">{geloest}/{AUFTRAEGE.length}</span>
         </button>
+        {onKodex && (
+          <>
+            <button className={eintrag} onClick={() => onKodex("eintraege")}>
+              <span>📓 Kodex</span><span className="text-xs text-slate-400">{erforscht.length}/{KOERPER.length}</span>
+            </button>
+            <button className={eintrag} onClick={() => onKodex("erfolge")}>
+              <span>🏆 Erfolge</span><span className="text-xs text-slate-400">{erfolge}</span>
+            </button>
+          </>
+        )}
         <button className={eintrag} onClick={onHilfe}><span>❔ Steuerung</span></button>
         {onVollbild && (
           <button className={eintrag} onClick={onVollbild}><span>{vollbild ? "⤡ Vollbild verlassen" : "⛶ Vollbild"}</span></button>
@@ -944,284 +1255,20 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, onAuftraege, on
   );
 }
 
-function ZielAuswahl({ ziel, onWahl, erforscht }: { ziel: string | null; onWahl: (id: string | null) => void; erforscht: string[] }) {
-  const gruppen: { name: string; koerper: Koerper[] }[] = [
-    { name: "Sonne und Planeten", koerper: HAUPTKOERPER },
-    ...HAUPTKOERPER.filter(p => mondeVon(p.id).length).map(p => ({ name: `Monde von ${p.name}`, koerper: mondeVon(p.id) })),
-  ];
-  return (
-    <select
-      aria-label="Ziel wählen"
-      value={ziel ?? ""}
-      // Danach den Fokus abgeben: sonst lenken die Pfeiltasten nicht, sondern wechseln das Ziel.
-      onChange={e => { onWahl(e.target.value || null); e.target.blur(); }}
-      className="h-11 w-full rounded-xl bg-black/60 backdrop-blur border border-white/15 text-sm font-bold px-2 text-slate-100 [color-scheme:dark]"
-    >
-      <option value="">🎯 Ziel wählen …</option>
-      {gruppen.map(g => (
-        <optgroup key={g.name} label={g.name}>
-          {g.koerper.map(k => <option key={k.id} value={k.id}>{k.name}{erforscht.includes(k.id) ? " ✓" : ""}</option>)}
-        </optgroup>
-      ))}
-    </select>
-  );
-}
-
-function AuftragKarte({ auftrag, nummer, onListe }: { auftrag: Auftrag; nummer: number; onListe: () => void }) {
+function AuftragKarte({ auftrag, geloest, onListe }: { auftrag: Auftrag; geloest: number; onListe: () => void }) {
   const [offen, setOffen] = useState(true);
   return (
     <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 max-w-[17rem] text-left">
       <button onClick={() => setOffen(o => !o)} className="w-full flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-widest text-amber-200">
-        <span>🛰️ Auftrag {nummer} von {AUFTRAEGE.length}</span>
+        <span>🛰️ Auftrag · {"◆".repeat(auftrag.stufe)} <span className="text-amber-200/60">{geloest}/{AUFTRAEGE.length}</span></span>
         <span>{offen ? "–" : "+"}</span>
       </button>
       {offen && (
         <>
           <p className="text-sm mt-1 leading-snug">{auftrag.hinweis}</p>
-          <button onClick={onListe} className="mt-1.5 text-xs text-amber-200/80 underline">Alle Aufträge</button>
+          <button onClick={onListe} className="mt-1.5 text-xs text-amber-200/80 underline">Alle Aufträge — Reihenfolge egal</button>
         </>
       )}
-    </div>
-  );
-}
-
-function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
-  const zeilen: [string, string][] = beruehrung
-    ? [
-      ["Stick unten links", "lenken"],
-      ["Schub / Bremse", "gedrückt halten"],
-      ["⚡", "Pulsantrieb für weite Strecken"],
-      ["🎯", "Himmelskörper im Fadenkreuz als Ziel — oder im Menü ☰ oben links"],
-      ["🧭", "Autopilot fliegt zum Ziel"],
-      ["📡", "scannen, wenn du nah genug bist"],
-    ]
-    : [
-      ["Klick ins Bild", "Maus lenkt (Esc gibt sie frei) — oder mit gedrückter Taste ziehen"],
-      ["Pfeiltasten, A / D", "lenken ohne Maus"],
-      ["Q / E", "rollen"],
-      ["W / S", "Schub geben / bremsen"],
-      ["Umschalt", "Boost"],
-      ["Leertaste", "Pulsantrieb an/aus — für weite Strecken"],
-      ["T", "Himmelskörper im Fadenkreuz als Ziel (oder Markierung anklicken)"],
-      ["G", "Autopilot zum Ziel"],
-      ["C", "scannen, wenn du nah genug bist"],
-      ["X", "sofort anhalten"],
-      ["M", "Menü: Ziel wählen, Aufträge, andere Ansichten"],
-    ];
-  return (
-    <table className="mt-3 w-full text-sm">
-      <tbody>
-        {zeilen.map(([taste, was]) => (
-          <tr key={taste} className="border-t border-white/10">
-            <td className="py-1 pr-3 font-bold text-cyan-200 whitespace-nowrap align-top">{taste}</td>
-            <td className="py-1 text-slate-300">{was}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function Einblendung({ children, onSchliessen, breit }: { children: ReactNode; onSchliessen?: () => void; breit?: boolean }) {
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pointer-events-auto">
-      <div className={`relative w-full ${breit ? "max-w-xl" : "max-w-md"} max-h-full overflow-y-auto rounded-2xl border border-cyan-300/25 bg-slate-950/90 p-5 shadow-2xl`}>
-        {onSchliessen && (
-          <button onClick={onSchliessen} className="absolute right-3 top-3 w-8 h-8 rounded-lg hover:bg-white/10" aria-label="Schließen">✕</button>
-        )}
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Der Analysevisor: das Scan-Ergebnis als Bildschirm im Raumschiff.
- *
- * Abgeschrägte Ecken (clip-path), zwei Lagen — außen der leuchtende Rahmen,
- * innen die Scheibe —, Scanlinien, ein rotierender Ring mit Scanstrahl um das
- * Foto und Zeilen, die nacheinander aufleuchten. Die Animationen stehen im
- * <style> darunter, damit sie ohne Tailwind-Konfiguration auskommen.
- */
-const ECKEN = "polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px)";
-const KNOPF_ECKEN = "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)";
-
-const VISOR_STIL = `
-@keyframes visor-ein { 0% { opacity: 0; transform: scale(.96) } 12% { opacity: 1 } 16% { opacity: .35 } 22% { opacity: 1; transform: scale(1) } 100% { opacity: 1 } }
-@keyframes visor-zeile { from { opacity: 0; transform: translateX(-8px) } to { opacity: 1; transform: none } }
-@keyframes visor-strahl { 0% { top: -10% } 100% { top: 110% } }
-@keyframes visor-dreh { to { transform: rotate(360deg) } }
-@keyframes visor-blink { 50% { opacity: 0 } }
-.visor-ein { animation: visor-ein .55s ease-out both }
-.visor-zeile { opacity: 0; animation: visor-zeile .35s ease-out forwards }
-.visor-strahl { animation: visor-strahl 2.4s linear infinite }
-.visor-dreh { animation: visor-dreh 14s linear infinite }
-.visor-dreh-rueck { animation: visor-dreh 22s linear infinite reverse }
-.visor-blink { animation: visor-blink 1s steps(1) infinite }
-.visor-glitch { text-shadow: 2px 0 rgba(255,60,140,.55), -2px 0 rgba(60,230,255,.55) }
-@media (prefers-reduced-motion: reduce) {
-  .visor-ein, .visor-zeile, .visor-strahl, .visor-dreh, .visor-dreh-rueck, .visor-blink { animation: none; opacity: 1 }
-}
-`;
-
-/** Ein Balken aus zehn Segmenten, wie auf einem Messgerät. */
-function Segmente({ anteil, farbe }: { anteil: number; farbe: string }) {
-  const an = Math.max(1, Math.min(10, Math.round(anteil * 10)));
-  return (
-    <span className="flex gap-[2px]" aria-hidden>
-      {Array.from({ length: 10 }, (_, i) => (
-        <span key={i} className="w-1.5 h-2.5 skew-x-[-18deg]" style={{ background: i < an ? farbe : "rgba(255,255,255,0.08)" }} />
-      ))}
-    </span>
-  );
-}
-
-export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, onSchliessen }: {
-  koerper: Koerper;
-  anzahl: number;
-  auftrag: Auftrag | null;
-  onGeloest: (auftragId: string) => void;
-  onSteckbrief: () => void;
-  onSchliessen: () => void;
-}) {
-  const [gewaehlt, setGewaehlt] = useState<number[]>([]);
-  const antworten = useMemo(() => (auftrag ? gemischteAntworten(auftrag) : []), [auftrag]);
-  const richtigIndex = antworten.findIndex(a => a.richtig);
-  const geloest = gewaehlt.includes(richtigIndex);
-  const bild = foto(koerper.id);
-  const mutter = koerper.mutter ? KOERPER_NACH_ID[koerper.mutter] : null;
-  const kennung = `${koerper.id.slice(0, 3).toUpperCase()}-${String(Math.round(koerper.radiusKm)).padStart(6, "0")}`;
-
-  // Messwerte mit Balken: logarithmisch, damit Phobos und Jupiter beide etwas zeigen.
-  const zeilen: { name: string; wert: string; anteil?: number }[] = [
-    { name: "Durchmesser", wert: `${zahl(koerper.radiusKm * 2)} km`, anteil: Math.log10(koerper.radiusKm * 2) / Math.log10(1_400_000) },
-    { name: "Schwerkraft", wert: `${zahl(koerper.schwerkraft, koerper.schwerkraft < 1 ? 2 : 1)} m/s²`, anteil: Math.min(koerper.schwerkraft / 25, 1) },
-    { name: "Eine Drehung", wert: `${tage(koerper.rotationStunden / 24)}${koerper.rotationStunden < 0 ? " · rückwärts" : ""}` },
-    { name: "Temperatur", wert: koerper.temperatur },
-    { name: "Atmosphäre", wert: koerper.atmosphaere },
-  ];
-  const buchstabe = "ABCD";
-
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-3 sm:p-6 pointer-events-auto font-mono"
-      style={{
-        background: "radial-gradient(ellipse at center, rgba(0,30,40,0.55), rgba(0,0,0,0.85))",
-      }}
-    >
-      <style>{VISOR_STIL}</style>
-      {/* Scanlinien über dem ganzen Bild */}
-      <div className="absolute inset-0 pointer-events-none opacity-40" style={{
-        background: "repeating-linear-gradient(0deg, rgba(120,255,255,0.05) 0 1px, transparent 1px 3px)",
-      }} />
-
-      <div className="visor-ein relative w-full max-w-3xl max-h-full" role="dialog" aria-label={`Scan ${koerper.name}`}
-        style={{ clipPath: ECKEN, background: "linear-gradient(135deg, rgba(94,242,255,0.9), rgba(94,242,255,0.15) 40%, rgba(255,179,71,0.8))", padding: 1.5 }}
-      >
-        <div className="relative max-h-[calc(100vh-3rem)] overflow-y-auto text-cyan-50"
-          style={{
-            clipPath: ECKEN,
-            background: "linear-gradient(160deg, rgba(4,18,26,0.97), rgba(8,10,24,0.97) 60%, rgba(22,12,8,0.97))",
-          }}
-        >
-          {/* Kopfzeile */}
-          <div className="flex items-center justify-between gap-3 px-5 sm:px-7 py-2 border-b border-cyan-300/20 text-[10px] uppercase tracking-[0.3em]"
-            style={{ background: "repeating-linear-gradient(-45deg, rgba(94,242,255,0.08) 0 6px, transparent 6px 12px)" }}
-          >
-            <span className="text-cyan-300">◢ Analysevisor</span>
-            <span className="text-amber-300 hidden sm:inline">Objekt {kennung}</span>
-            <span className="text-cyan-300">Erfasst {anzahl}/{KOERPER.length}<span className="visor-blink">▮</span></span>
-          </div>
-
-          <div className="grid sm:grid-cols-[13rem_1fr] gap-5 px-5 sm:px-7 pt-5">
-            {/* Objektbild mit Ring und Scanstrahl */}
-            <div className="relative mx-auto w-44 h-44 sm:w-52 sm:h-52 shrink-0">
-              <div className="visor-dreh absolute inset-0 rounded-full border-2 border-dashed border-cyan-300/50" />
-              <div className="visor-dreh-rueck absolute inset-3 rounded-full border border-amber-300/40" style={{ borderStyle: "dotted" }} />
-              <div className="absolute inset-6 rounded-full overflow-hidden bg-black" style={{ boxShadow: "0 0 30px rgba(94,242,255,0.35)" }}>
-                {bild && <img src={bild.datei} alt={koerper.name} className="w-full h-full object-cover" />}
-                <div className="visor-strahl absolute left-0 right-0 h-8 pointer-events-none"
-                  style={{ background: "linear-gradient(transparent, rgba(94,242,255,0.45), transparent)" }} />
-              </div>
-              {["left-0 top-0 border-l-2 border-t-2", "right-0 top-0 border-r-2 border-t-2", "left-0 bottom-0 border-l-2 border-b-2", "right-0 bottom-0 border-r-2 border-b-2"].map(ecke => (
-                <span key={ecke} className={`absolute w-4 h-4 border-amber-300 ${ecke}`} />
-              ))}
-            </div>
-
-            <div className="min-w-0">
-              <div className="visor-zeile text-[10px] uppercase tracking-[0.3em] text-emerald-300" style={{ animationDelay: "0.15s" }}>
-                ✦ Scan abgeschlossen · {ART_NAME[koerper.art]}{mutter ? ` von ${mutter.name}` : ""}
-              </div>
-              <h2 className="visor-zeile visor-glitch font-sans text-3xl sm:text-4xl font-black uppercase tracking-[0.12em] mt-1" style={{ animationDelay: "0.25s" }}>
-                {koerper.name}
-              </h2>
-              <p className="visor-zeile font-sans text-sm text-cyan-100/80 mt-2 leading-snug" style={{ animationDelay: "0.35s" }}>
-                {koerper.intro}
-              </p>
-              <dl className="mt-3 flex flex-col gap-1 text-xs">
-                {zeilen.map((z, i) => (
-                  <div key={z.name} className="visor-zeile grid grid-cols-[7.5rem_1fr] gap-2 items-center border-t border-cyan-300/10 pt-1"
-                    style={{ animationDelay: `${0.45 + i * 0.08}s` }}
-                  >
-                    <dt className="uppercase tracking-widest text-cyan-300/70 text-[10px]">{z.name}</dt>
-                    <dd className="flex items-center gap-2 min-w-0 font-sans">
-                      <span className="min-w-0">{z.wert}</span>
-                      {z.anteil !== undefined && <span className="ml-auto shrink-0"><Segmente anteil={z.anteil} farbe="#5ef2ff" /></span>}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-
-          {auftrag && (
-            <div className="visor-zeile mx-5 sm:mx-7 mt-5 border border-amber-300/40 p-3 sm:p-4"
-              style={{ clipPath: KNOPF_ECKEN, background: "rgba(255,179,71,0.06)", animationDelay: "0.9s" }}
-            >
-              <div className="text-[10px] uppercase tracking-[0.3em] text-amber-300">◆ Forschungsauftrag</div>
-              <p className="font-sans font-bold mt-1">{auftrag.frage}</p>
-              <div className="flex flex-col gap-1.5 mt-3">
-                {antworten.map((a, i) => {
-                  const angetippt = gewaehlt.includes(i);
-                  return (
-                    <button
-                      key={a.text}
-                      disabled={geloest}
-                      onClick={() => {
-                        setGewaehlt(g => [...g, i]);
-                        if (a.richtig) onGeloest(auftrag.id);
-                      }}
-                      className={`group flex items-center gap-3 text-left text-sm px-3 py-2 border transition-colors ${
-                        angetippt && a.richtig ? "border-emerald-300 bg-emerald-400/15 text-emerald-100"
-                          : angetippt ? "border-rose-400/60 bg-rose-500/10 text-rose-200/70 line-through"
-                            : "border-cyan-300/25 bg-cyan-300/5 hover:border-amber-300 hover:bg-amber-300/10"
-                      }`}
-                      style={{ clipPath: KNOPF_ECKEN }}
-                    >
-                      <span aria-hidden className="shrink-0 text-amber-300 font-bold">[{buchstabe[i]}]</span>
-                      <span className="font-sans">{a.text}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {geloest && (
-                <p className="font-sans text-sm text-emerald-200 mt-3">✓ Richtig! {auftrag.erklaerung}</p>
-              )}
-              {!geloest && gewaehlt.length > 0 && (
-                <p className="font-sans text-sm text-rose-200 mt-3">✕ Noch nicht. Die Antwort steht im Steckbrief — schau nach und versuch es noch einmal.</p>
-              )}
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-2 px-5 sm:px-7 py-5">
-            <button onClick={onSteckbrief} className="flex-1 border border-cyan-300/50 py-2.5 text-sm font-bold uppercase tracking-widest hover:bg-cyan-300/10"
-              style={{ clipPath: KNOPF_ECKEN }}
-            >📖 Steckbrief</button>
-            <button onClick={onSchliessen} className="flex-1 py-2.5 text-sm font-black uppercase tracking-widest text-slate-950 hover:brightness-110"
-              style={{ clipPath: KNOPF_ECKEN, background: "linear-gradient(90deg, #5ef2ff, #ffb347)" }}
-            >{auftrag && geloest ? "Nächster Auftrag" : "Weiterfliegen"}</button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

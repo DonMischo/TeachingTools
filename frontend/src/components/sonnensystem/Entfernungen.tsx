@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ERDE, HAUPTKOERPER, KM_JE_AE, LICHT_KM_S, type Koerper } from "@/lib/sonnensystem/daten";
 import { abstand, heliozentrisch, julianischerTag } from "@/lib/sonnensystem/bahnen";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
+import { foto } from "@/lib/sonnensystem/bilder";
 import { Knopfgruppe } from "./Bedienung";
 
 const MASSSTAEBE = [
@@ -36,6 +37,33 @@ const AEUSSERSTER = ABSTAND[PLANETEN_UND_ZWERGE.at(-1)!.id];
 const RAND = 60;
 /** Wie weit das Band über den nächsten Planeten hinausreicht. */
 const UEBERSTAND = 1.05;
+/**
+ * Beim Lichtlauf sind die Kugeln vergrößert, sonst sähe man nur Punkte. Sie
+ * wachsen und schrumpfen mit dem Maßstab; untereinander bleiben die Planeten
+ * im richtigen Verhältnis, die Sonne ist schwächer vergrößert und gedeckelt.
+ */
+export const PLANETEN_LUPE = 200;
+export const SONNEN_LUPE = 20;
+/** Durchmesser in Pixeln beim Lichtlauf. */
+export const lupenDurchmesser = (radiusKm: number, kmJePx: number, sonne = false) => sonne
+  ? Math.min(Math.max((2 * radiusKm * SONNEN_LUPE) / kmJePx, 10), 80)
+  : Math.min(Math.max((2 * radiusKm * PLANETEN_LUPE) / kmJePx, 4), 36);
+
+/** Das Porträtfoto als Hintergrund, so verschoben, dass die Scheibe das Feld füllt. */
+function fotoHintergrund(id: string): Partial<CSSStyleDeclaration> {
+  const b = foto(id);
+  if (!b?.scheibe) return {};
+  const { x, y, d } = b.scheibe;
+  const lage = (c: number) => `${d >= 1 ? 50 : ((0.5 - c / d) / (1 - 1 / d)) * 100}%`;
+  return {
+    backgroundImage: `url(${b.datei})`,
+    backgroundSize: `${100 / d}% auto`,
+    backgroundPosition: `${lage(x)} ${lage(y)}`,
+    backgroundRepeat: "no-repeat",
+    backgroundColor: "#000",
+  };
+}
+
 /** Namen, die näher als das beieinander stehen, werden ausgeblendet. */
 const NAMENSABSTAND = 56;
 
@@ -84,8 +112,10 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
       const pos = (k: number) => RAND + k / kmJePx;
       if (innenRef.current) innenRef.current.style.width = `${band.clientWidth}px`;
       if (sonneRef.current) {
-        const r = Math.max(696_340 / kmJePx, 4);
-        Object.assign(sonneRef.current.style, { left: `${RAND - r}px`, width: `${r * 2}px`, height: `${r * 2}px`, marginTop: `${-r}px` });
+        const r = lupenDurchmesser(696_340, kmJePx, true) / 2;
+        Object.assign(sonneRef.current.style, {
+          left: `${RAND - r}px`, width: `${r * 2}px`, height: `${r * 2}px`, marginTop: `${-r}px`, ...fotoHintergrund("sonne"),
+        });
       }
       const lichtKm = sim * LICHT_KM_S;
       const ziel = PLANETEN_UND_ZWERGE.find(k => ABSTAND[k.id] > lichtKm)?.id;
@@ -97,8 +127,11 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
         const px = pos(ABSTAND[k.id]);
         el.style.left = `${px}px`;
         const punkt = el.querySelector<HTMLElement>("[data-punkt]")!;
-        const d = Math.max((k.radiusKm * 2) / kmJePx, 3);
-        Object.assign(punkt.style, { width: `${d}px`, height: `${d}px`, margin: `${-d / 2}px 0 0 ${-d / 2}px` });
+        const d = lupenDurchmesser(k.radiusKm, kmJePx);
+        Object.assign(punkt.style, {
+          width: `${d}px`, height: `${d}px`, margin: `${-d / 2}px 0 0 ${-d / 2}px`,
+          ...(d >= 8 ? { ...fotoHintergrund(k.id), boxShadow: "none" } : {}),
+        });
         el.style.display = px > band.clientWidth + 40 ? "none" : "";
         const name = el.querySelector<HTMLElement>("[data-name]")!;
         const frei = Math.abs(letzterName - px) >= NAMENSABSTAND || k.id === ziel;
@@ -191,7 +224,7 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
       </div>
       <p className="px-4 pt-1 text-[11px] text-slate-400">
         {licht
-          ? "Der Maßstab wächst mit dem Licht: das Band reicht immer bis knapp hinter den nächsten Planeten. Planeten und Abstände bleiben im selben Maßstab."
+          ? `Der Maßstab wächst mit dem Licht: das Band reicht immer bis knapp hinter den nächsten Planeten. Damit man sie sieht, sind die Planeten ${PLANETEN_LUPE}-fach und die Sonne ${SONNEN_LUPE}-fach vergrößert — die Abstände stimmen.`
           : "Planeten und Abstände im selben Maßstab — deshalb sind die meisten Planeten nur ein Punkt. Waagerecht scrollen."}
       </p>
 

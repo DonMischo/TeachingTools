@@ -359,6 +359,20 @@
       "d": 0.914
     }
   },
+  "galerie/arrokoth": {
+    "datei": "/sonnensystem/galerie/arrokoth.webp",
+    "titel": "UltimaThule CA06 color 20190516.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:UltimaThule_CA06_color_20190516.png",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute/Roman Tkachenko."
+  },
+  "galerie/ceres-flecken": {
+    "datei": "/sonnensystem/galerie/ceres-flecken.webp",
+    "titel": "Bright Spots on Ceres by Dawn on 6 June 2015.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Bright_Spots_on_Ceres_by_Dawn_on_6_June_2015.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/UCLA/MPS/DLR/IDA"
+  },
   "galerie/earthrise": {
     "datei": "/sonnensystem/galerie/earthrise.webp",
     "titel": "NASA-Apollo8-Dec24-Earthrise.jpg",
@@ -366,12 +380,33 @@
     "lizenz": "Public domain",
     "urheber": "NASA/Bill Anders"
   },
+  "galerie/enceladus-fontaenen": {
+    "datei": "/sonnensystem/galerie/enceladus-fontaenen.webp",
+    "titel": "Dramatic plumes, both large and small, spray water ice out from many locations along the famed tiger stripes near the south pole of Saturn’s moon Enceladus in this image released on Feb 23 (newly-found-organics-in-enceladus-plumes).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dramatic_plumes,_both_large_and_small,_spray_water_ice_out_from_many_locations_along_the_famed_tiger_stripes_near_the_south_pole_of_Saturn%E2%80%99s_moon_Enceladus_in_this_image_released_on_Feb_23_(newly-found-organics-in-enceladus-plumes).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute"
+  },
+  "galerie/erde-epic": {
+    "datei": "/sonnensystem/galerie/erde-epic.webp",
+    "titel": "DSCOVR-EPIC-Earth-natural-true-color1c.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:DSCOVR-EPIC-Earth-natural-true-color1c.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA // DSCOVR"
+  },
   "galerie/erde-juice": {
     "datei": "/sonnensystem/galerie/erde-juice.webp",
     "titel": "Juice images Earth during lunar-Earth flyby ESA500763.png",
     "seite": "https://commons.wikimedia.org/wiki/File:Juice_images_Earth_during_lunar-Earth_flyby_ESA500763.png",
     "lizenz": "CC BY-SA 3.0 igo",
     "urheber": "European Space Agency"
+  },
+  "galerie/erde-polarlicht": {
+    "datei": "/sonnensystem/galerie/erde-polarlicht.webp",
+    "titel": "ISS-44 Night Earth Observation of an Aurora Australis.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ISS-44_Night_Earth_Observation_of_an_Aurora_Australis.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Scott Kelly"
   },
   "galerie/erde-von-saturn": {
     "datei": "/sonnensystem/galerie/erde-von-saturn.webp",
@@ -394,6 +429,13 @@
     "lizenz": "Public domain",
     "urheber": "NASA and the European Space Agency."
   },
+  "galerie/io-juno": {
+    "datei": "/sonnensystem/galerie/io-juno.webp",
+    "titel": "PIA25726-Jupiter+MoonIo-Juno-20230731.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA25726-Jupiter%2BMoonIo-Juno-20230731.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "NASA/JPL-Caltech/SwRI/MSSS/Alain Mirón Velázquez © CC BY"
+  },
   "galerie/jupiter-juno-fleck": {
     "datei": "/sonnensystem/galerie/jupiter-juno-fleck.webp",
     "titel": "PIA22946-Jupiter-RedSpot-JunoSpacecraft-20190212.jpg",
@@ -408,12 +450,33 @@
     "lizenz": "CC BY 2.0",
     "urheber": "Kevin Gill from Los Angeles, CA, United States"
   },
+  "galerie/jupiter-polarlicht": {
+    "datei": "/sonnensystem/galerie/jupiter-polarlicht.webp",
+    "titel": "Ultraviolet Aurora borealis on Jupiter from Hubble 1998.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ultraviolet_Aurora_borealis_on_Jupiter_from_Hubble_1998.jpg",
+    "lizenz": "Public domain",
+    "urheber": "J. Clarke (Univ. Michigan), NASA"
+  },
+  "galerie/jupiter-voyager": {
+    "datei": "/sonnensystem/galerie/jupiter-voyager.webp",
+    "titel": "Voyager 1 Image of Jupiter with Io and Europa.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Voyager_1_Image_of_Jupiter_with_Io_and_Europa.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL / Bjorn Jonsson"
+  },
   "galerie/jupiter-webb": {
     "datei": "/sonnensystem/galerie/jupiter-webb.webp",
     "titel": "Jupiter Showcases Auroras, Hazes (NIRCam Widefield View).png",
     "seite": "https://commons.wikimedia.org/wiki/File:Jupiter_Showcases_Auroras,_Hazes_(NIRCam_Widefield_View).png",
     "lizenz": "Public domain",
     "urheber": "JWST (NASA, ESA, CSA, Jupiter ERS Team). Image processing by Judy Schmidt and Ricardo Hueso (UPV/EHU)."
+  },
+  "galerie/komet-neowise": {
+    "datei": "/sonnensystem/galerie/komet-neowise.webp",
+    "titel": "ISS-63 Comet Neowise (3).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ISS-63_Comet_Neowise_(3).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA"
   },
   "galerie/komet-rosetta": {
     "datei": "/sonnensystem/galerie/komet-rosetta.webp",
@@ -422,12 +485,89 @@
     "lizenz": "CC BY-SA 3.0 igo",
     "urheber": "ESA/Rosetta/NAVCAM, CC BY-SA IGO 3.0"
   },
+  "galerie/mars-curiosity": {
+    "datei": "/sonnensystem/galerie/mars-curiosity.webp",
+    "titel": "NASA-CuriosityRover-Selfie-June2018.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:NASA-CuriosityRover-Selfie-June2018.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / JPL-Caltech / MSSS / Seán Doran"
+  },
+  "galerie/mars-ingenuity": {
+    "datei": "/sonnensystem/galerie/mars-ingenuity.webp",
+    "titel": "Mastcam-Z Gives Ingenuity a Close-up.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mastcam-Z_Gives_Ingenuity_a_Close-up.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/ASU/MSSS"
+  },
+  "galerie/mars-perseverance": {
+    "datei": "/sonnensystem/galerie/mars-perseverance.webp",
+    "titel": "PIA25681 Perseverance's Three Forks Sample Depot Selfie.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA25681_Perseverance%27s_Three_Forks_Sample_Depot_Selfie.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/MSSS"
+  },
+  "galerie/mars-sojourner": {
+    "datei": "/sonnensystem/galerie/mars-sojourner.webp",
+    "titel": "Sojourner on Mars PIA01122.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sojourner_on_Mars_PIA01122.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA"
+  },
+  "galerie/mars-sonnenuntergang": {
+    "datei": "/sonnensystem/galerie/mars-sonnenuntergang.webp",
+    "titel": "PIA19400-MarsCuriosityRover-GaleCrater-Sunset-20150415.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA19400-MarsCuriosityRover-GaleCrater-Sunset-20150415.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech/MSSS"
+  },
   "galerie/merkur-bepi": {
     "datei": "/sonnensystem/galerie/merkur-bepi.webp",
     "titel": "BepiColombo hugs Mercury ESA24939504.png",
     "seite": "https://commons.wikimedia.org/wiki/File:BepiColombo_hugs_Mercury_ESA24939504.png",
     "lizenz": "CC BY-SA 3.0 igo",
     "urheber": "ESA/BepiColombo/MTM"
+  },
+  "galerie/miranda-voyager": {
+    "datei": "/sonnensystem/galerie/miranda-voyager.webp",
+    "titel": "Miranda as seen by Voyager 2 - GPN-2003-000005 (cropped).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Miranda_as_seen_by_Voyager_2_-_GPN-2003-000005_(cropped).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA"
+  },
+  "galerie/mond-aldrin": {
+    "datei": "/sonnensystem/galerie/mond-aldrin.webp",
+    "titel": "Aldrin Apollo 11 original.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Aldrin_Apollo_11_original.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Neil Armstrong"
+  },
+  "galerie/mond-rueckseite": {
+    "datei": "/sonnensystem/galerie/mond-rueckseite.webp",
+    "titel": "The first panorama from the far side of the moon.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:The_first_panorama_from_the_far_side_of_the_moon.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "CNSA"
+  },
+  "galerie/mond-schmitt": {
+    "datei": "/sonnensystem/galerie/mond-schmitt.webp",
+    "titel": "Moon-apollo17-schmitt boulder.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Moon-apollo17-schmitt_boulder.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Eugene A. Cernan"
+  },
+  "galerie/mond-yutu": {
+    "datei": "/sonnensystem/galerie/mond-yutu.webp",
+    "titel": "Yutu-2 leaving Chang e-4-iau1901a.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Yutu-2_leaving_Chang_e-4-iau1901a.jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "CNSA"
+  },
+  "galerie/neptun-dunkler-fleck": {
+    "datei": "/sonnensystem/galerie/neptun-dunkler-fleck.webp",
+    "titel": "Neptune's Great Dark Spot (cropped).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neptune%27s_Great_Dark_Spot_(cropped).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA / Jet Propulsion Lab"
   },
   "galerie/neptun-webb": {
     "datei": "/sonnensystem/galerie/neptun-webb.webp",
@@ -442,6 +582,13 @@
     "seite": "https://commons.wikimedia.org/wiki/File:PIA23645-Earth-PaleBlueDot-6Bkm-Voyager1-orig19900214-upd20200212.jpg",
     "lizenz": "Public domain (NASA)",
     "urheber": "NASA/JPL-Caltech"
+  },
+  "galerie/pluto-berge": {
+    "datei": "/sonnensystem/galerie/pluto-berge.webp",
+    "titel": "PIA19947-NH-Pluto-Norgay-Hillary-Mountains-20150714.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA19947-NH-Pluto-Norgay-Hillary-Mountains-20150714.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute"
   },
   "galerie/riesen-webb": {
     "datei": "/sonnensystem/galerie/riesen-webb.webp",
@@ -464,6 +611,20 @@
     "lizenz": "Public domain",
     "urheber": "SCIENCE: NASA, ESA, CSA, STScI; IMAGE PROCESSING: Joseph DePasquale (STScI), Anton M. Koekemoer (STScI), Alyssa Pagan (STScI)"
   },
+  "galerie/saturn-gegenlicht": {
+    "datei": "/sonnensystem/galerie/saturn-gegenlicht.webp",
+    "titel": "PIA14934 - A Splendor Seldom Seen - Saturn Cassini.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA14934_-_A_Splendor_Seldom_Seen_-_Saturn_Cassini.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute"
+  },
+  "galerie/saturn-hexagon": {
+    "datei": "/sonnensystem/galerie/saturn-hexagon.webp",
+    "titel": "PIA18274-Saturn-NorthPolarHexagon-Cassini-20140402.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:PIA18274-Saturn-NorthPolarHexagon-Cassini-20140402.jpg",
+    "lizenz": "Public domain (NASA)",
+    "urheber": "NASA/JPL-Caltech/Space Science Institute"
+  },
   "galerie/saturn-hubble": {
     "datei": "/sonnensystem/galerie/saturn-hubble.webp",
     "titel": "Hubble sees summertime on Saturn ESA23797272.jpg",
@@ -478,12 +639,33 @@
     "lizenz": "CC BY-SA 4.0",
     "urheber": "NASA/ESA/CSA JWST NIRCam; Macarena Garcia Marin et al. & Melina Thévenot"
   },
+  "galerie/sonne-solar-orbiter": {
+    "datei": "/sonnensystem/galerie/sonne-solar-orbiter.webp",
+    "titel": "Solar Orbiter’s widest high-res view of the Sun ESA508430.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Solar_Orbiter%E2%80%99s_widest_high-res_view_of_the_Sun_ESA508430.jpg",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "European Space Agency"
+  },
+  "galerie/titan-huygens": {
+    "datei": "/sonnensystem/galerie/titan-huygens.webp",
+    "titel": "Huygens surface color sr.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Huygens_surface_color_sr.jpg",
+    "lizenz": "Public domain",
+    "urheber": "ESA/NASA/JPL/University of Arizona; processed by Andrey Pivovarov"
+  },
   "galerie/uranus-webb": {
     "datei": "/sonnensystem/galerie/uranus-webb.webp",
     "titel": "Uranus - NASA-ESA JWST Webb Space Telescope (53412941760).png",
     "seite": "https://commons.wikimedia.org/wiki/File:Uranus_-_NASA-ESA_JWST_Webb_Space_Telescope_(53412941760).png",
     "lizenz": "CC BY 2.0",
     "urheber": "Andrea Luck"
+  },
+  "galerie/venus-venera": {
+    "datei": "/sonnensystem/galerie/venus-venera.webp",
+    "titel": "Surface of Venus taken by Venera 13 (panoramic).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Surface_of_Venus_taken_by_Venera_13_(panoramic).jpg",
+    "lizenz": "Public domain",
+    "urheber": "Venera 13, Soviet space program"
   },
   "galerie/webb-deep-field": {
     "datei": "/sonnensystem/galerie/webb-deep-field.webp",

@@ -136,7 +136,8 @@ export default function SimulationJoinPage() {
         : session.tool_slug === "sonnensystem"
           ? <Sonnensystem speicherSchluessel={auth
               ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
-              : `gast-${code}`} />
+              : `gast-${code}`}
+              lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

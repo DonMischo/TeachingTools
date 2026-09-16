@@ -5,6 +5,11 @@
  * und ihn scannt, bekommt eine Frage, deren Antwort im Steckbrief steht —
  * lesen lohnt sich also. Gezählt wird nur im Browser, ohne Hauspunkte.
  *
+ * Die Reihenfolge ist beliebig: jeder Auftrag zählt, sobald sein Ziel gescannt
+ * wird — auch wenn man zufällig dort vorbeikommt. Sortiert sind sie von
+ * Grundwissen (Stufe 1) bis zu speziellem Wissen (Stufe 3); je Himmelskörper
+ * gibt es höchstens einen Auftrag.
+ *
  * Die richtige Antwort steht immer an Position 0; die Oberfläche mischt.
  */
 
@@ -16,9 +21,13 @@ export interface Auftrag {
   frage: string;
   antworten: [string, string, string, string];
   erklaerung: string;
+  /** 1 = Grundwissen, 2 = mittel, 3 = speziell */
+  stufe: 1 | 2 | 3;
 }
 
-export const AUFTRAEGE: Auftrag[] = [
+export const STUFEN_NAME = { 1: "Grundwissen", 2: "Fortgeschritten", 3: "Profi" } as const;
+
+const ROH: Omit<Auftrag, "stufe">[] = [
   {
     id: "heissester", ziel: "venus",
     hinweis: "Der heißeste Planet ist nicht der, der am nächsten an der Sonne liegt. Flieg zu ihm und scanne ihn.",
@@ -176,7 +185,112 @@ export const AUFTRAEGE: Auftrag[] = [
     antworten: ["176 Erdtage", "24 Stunden", "88 Erdtage", "10 Stunden"],
     erklaerung: "Merkur dreht sich in 59 Tagen einmal um sich selbst und läuft in 88 Tagen um die Sonne. Zusammen ergibt das 176 Tage von Mittag zu Mittag — zwei Merkurjahre.",
   },
+  {
+    id: "stern", ziel: "sonne",
+    hinweis: "Alles dreht sich um ihn: den Stern in der Mitte. Flieg hin — aber komm ihm nicht zu nah!",
+    frage: "Warum sehen wir die Sonne immer so, wie sie vor gut 8 Minuten war?",
+    antworten: [
+      "Ihr Licht braucht so lange bis zur Erde.",
+      "Die Erde dreht sich 8 Minuten zu langsam.",
+      "Die Lufthülle hält das Licht 8 Minuten auf.",
+      "Die Sonne schickt ihr Licht nur alle 8 Minuten los.",
+    ],
+    erklaerung: "Licht ist schnell, aber nicht unendlich schnell: rund 300 000 km pro Sekunde. Für die 150 Mio. km bis zur Erde braucht es 8 Minuten und 20 Sekunden.",
+  },
+  {
+    id: "jahreszeiten", ziel: "erde",
+    hinweis: "Fang zu Hause an: Scanne den Planeten, auf dem du lebst.",
+    frage: "Warum gibt es auf der Erde Jahreszeiten?",
+    antworten: [
+      "Weil die Erdachse schief steht.",
+      "Weil die Erde im Sommer näher an der Sonne ist.",
+      "Weil die Sonne mal heller und mal schwächer scheint.",
+      "Weil sich die Erde im Winter langsamer dreht.",
+    ],
+    erklaerung: "Die Achse ist um 23,4° geneigt. Im Juni ist die Nordhalbkugel zur Sonne gekippt: die Sonne steht höher, die Tage sind länger. Am nächsten an der Sonne ist die Erde übrigens im Januar.",
+  },
+  {
+    id: "ozean", ziel: "europa",
+    hinweis: "Unter dem Eis eines Jupitermondes liegt mehr Wasser als in allen Meeren der Erde. Finde ihn.",
+    frage: "Warum suchen Forschende gerade dort nach Leben?",
+    antworten: [
+      "Unter dem Eis gibt es vermutlich einen Ozean aus flüssigem Wasser.",
+      "Dort ist es so warm wie auf der Erde.",
+      "Raumsonden haben dort schon Pflanzen fotografiert.",
+      "Der Mond hat eine Lufthülle zum Atmen.",
+    ],
+    erklaerung: "Flüssiges Wasser gilt als Voraussetzung für Leben, wie wir es kennen. Die Sonde Europa Clipper soll ab 2030 genauer nachsehen.",
+  },
+  {
+    id: "guertel", ziel: "ceres",
+    hinweis: "Zwischen Mars und Jupiter kreisen unzählige Gesteinsbrocken. Finde den größten von ihnen.",
+    frage: "Wie heißt die Zone, in der dieser Zwergplanet kreist?",
+    antworten: ["Asteroidengürtel", "Kuipergürtel", "Oortsche Wolke", "Milchstraße"],
+    erklaerung: "Ceres ist das größte Objekt im Asteroidengürtel. In ihr steckt über ein Drittel der Masse des ganzen Gürtels.",
+  },
+  {
+    id: "todesstern", ziel: "mimas",
+    hinweis: "Ein kleiner Saturnmond sieht aus wie die Raumstation aus einem berühmten Science-Fiction-Film.",
+    frage: "Woher kommt der riesige Krater auf diesem Mond?",
+    antworten: [
+      "Von einem Einschlag, der den Mond beinahe zerbrochen hätte.",
+      "Von einem erloschenen Vulkan.",
+      "Von einer Raumsonde, die dort abgestürzt ist.",
+      "Er ist ein Tunnel quer durch den Mond.",
+    ],
+    erklaerung: "Der Krater Herschel ist 130 km breit — ein Drittel des ganzen Mondes. Ein etwas heftigerer Einschlag, und Mimas wäre zerbrochen.",
+  },
+  {
+    id: "krater", ziel: "kallisto",
+    hinweis: "Kein Himmelskörper hat mehr Krater als dieser Jupitermond.",
+    frage: "Warum ist seine Oberfläche so voller Krater?",
+    antworten: [
+      "Sie ist uralt: kein Vulkan und kein Wasser hat die Krater seit Milliarden Jahren verwischt.",
+      "Er wird öfter getroffen als alle anderen Monde.",
+      "Jupiter schleudert Gestein auf ihn.",
+      "Die Krater stammen von Raumsonden.",
+    ],
+    erklaerung: "Auf der Erde verschwinden Krater durch Wind, Wasser, Vulkane und wandernde Kontinentalplatten. Auf Kallisto passiert seit rund 4 Milliarden Jahren fast nichts — jeder Einschlag bleibt sichtbar.",
+  },
+  {
+    id: "tanz", ziel: "charon",
+    hinweis: "Ein Mond ist halb so groß wie sein Zwergplanet — die beiden tanzen umeinander.",
+    frage: "Wie sieht dieser Mond für jemanden aus, der auf Pluto steht?",
+    antworten: [
+      "Er steht immer an derselben Stelle am Himmel.",
+      "Er geht jeden Tag zweimal auf.",
+      "Man sieht ihn nie, weil er zu klein ist.",
+      "Er wandert rückwärts über den Himmel.",
+    ],
+    erklaerung: "Pluto und Charon zeigen einander immer dieselbe Seite: Plutos Tag und Charons Umlauf dauern beide 6,4 Tage. Von der einen Hälfte Plutos sieht man Charon also immer am selben Fleck — von der anderen nie.",
+  },
+  {
+    id: "klippe", ziel: "miranda",
+    hinweis: "Ein kleiner Uranusmond hat die höchste bekannte Klippe im Sonnensystem.",
+    frage: "Wie hoch ist diese Klippe, Verona Rupes, ungefähr?",
+    antworten: ["etwa 20 km", "etwa 200 m", "etwa 2 km", "etwa 200 km"],
+    erklaerung: "Verona Rupes ist vermutlich rund 20 km hoch — mehr als doppelt so hoch wie der Mount Everest. Bei der schwachen Schwerkraft bräuchte ein fallender Stein gut zehn Minuten bis nach unten.",
+  },
 ];
+
+const STUFE: Record<string, 1 | 2 | 3> = {
+  // Grundwissen: was man über das Sonnensystem wissen sollte.
+  jahreszeiten: 1, stern: 1, "eine-seite": 1, rost: 1, sturm: 1, heissester: 1,
+  // Fortgeschritten: steht im Steckbrief, braucht aber Nachdenken.
+  badewanne: 2, fontaenen: 2, "groesster-mond": 2, seitenlage: 2, vulkane: 2, methanseen: 2,
+  herz: 2, "langer-tag": 2, ozean: 2, guertel: 2, todesstern: 2,
+  // Profi: spezielles Wissen über einzelne Monde und Entdeckungen.
+  rueckwaerts: 3, absturz: 3, "zwei-gesichter": 3, wind: 3, krater: 3, tanz: 3, klippe: 3,
+};
+
+export const AUFTRAEGE: Auftrag[] = ROH
+  .map(a => ({ ...a, stufe: STUFE[a.id] }))
+  .sort((a, b) => a.stufe - b.stufe);
+
+/** Der offene Auftrag zu einem Himmelskörper — egal, welcher gerade vorgeschlagen ist. */
+export function auftragZu(ziel: string, erledigt: readonly string[]): Auftrag | null {
+  return AUFTRAEGE.find(a => a.ziel === ziel && !erledigt.includes(a.id)) ?? null;
+}
 
 /** Fisher-Yates mit festem Startwert: die Reihenfolge bleibt beim Neuzeichnen gleich. */
 export function gemischteAntworten(auftrag: Auftrag): { text: string; richtig: boolean }[] {

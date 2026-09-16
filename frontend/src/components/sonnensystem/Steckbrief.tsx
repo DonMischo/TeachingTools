@@ -9,21 +9,26 @@
 import { useMemo, type ReactNode } from "react";
 import { ART_NAME, ERDE, KM_JE_AE, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
 import { abstand, heliozentrisch, julianischerTag, umlaufTage } from "@/lib/sonnensystem/bahnen";
-import { foto, galerieBild, type Bildnachweis } from "@/lib/sonnensystem/bilder";
-import { GALERIE } from "@/lib/sonnensystem/galerie";
+import { foto, type Bildnachweis } from "@/lib/sonnensystem/bilder";
+import { GALERIE, bildFuer, freigeschaltet } from "@/lib/sonnensystem/galerie";
 import { dauer, gerundet, km, malErde, tage, zahl, zehnerpotenz } from "@/lib/sonnensystem/format";
 
-export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie }: {
+export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforscht = [], alleZeigen = false }: {
   koerper: Koerper;
   onWaehle: (id: string) => void;
   onSchliessen: () => void;
   onGalerie?: (id: string) => void;
+  /** Welche Bilder schon freigeschaltet sind */
+  erforscht?: readonly string[];
+  alleZeigen?: boolean;
 }) {
   const k = koerper;
   const bild = foto(k.id);
   const monde = mondeVon(k.id);
   const mutter = k.mutter ? KOERPER_NACH_ID[k.mutter] : null;
-  const bilderDazu = GALERIE.filter(g => g.koerper === k.id);
+  const alleBilder = GALERIE.filter(g => g.koerper === k.id && !g.portraet);
+  const bilderDazu = alleBilder.filter(g => alleZeigen || freigeschaltet(g, erforscht));
+  const gesperrt = alleBilder.length - bilderDazu.length;
 
   // Heute: wie weit von der Erde? Für Monde zählt ihr Planet.
   const heuteVonErde = useMemo(() => {
@@ -154,13 +159,18 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie }: {
           </button>
         )}
 
-        {bilderDazu.length > 0 && onGalerie && (
+        {alleBilder.length > 0 && onGalerie && (
           <section>
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sky-300 mb-2">Aus Teleskopen und Sonden</h3>
+            {gesperrt > 0 && (
+              <p className="text-xs text-slate-400 mb-2">
+                🔒 {gesperrt} {gesperrt === 1 ? "Bild ist" : "Bilder sind"} noch gesperrt — scanne {k.name} im Flugmodus.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
               {bilderDazu.map(g => (
                 <button key={g.id} onClick={() => onGalerie(g.id)} className="text-left rounded-lg overflow-hidden bg-white/5 hover:bg-white/10">
-                  <img src={galerieBild(g.id)?.datei} alt="" className="w-full aspect-video object-cover" />
+                  <img src={bildFuer(g)?.datei} alt="" className="w-full aspect-video object-cover" />
                   <div className="px-2 py-1 text-[11px] leading-tight">{g.titel}<span className="block text-slate-400">{g.von}</span></div>
                 </button>
               ))}
