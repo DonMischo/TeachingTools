@@ -115,7 +115,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
       ["G", "Autopilot zum Ziel"],
       ["C", "scannen, wenn du nah genug bist"],
       ["X", "sofort anhalten"],
-      ["M", "Menü: Ziel wählen, Aufträge, Kodex, Erfolge, andere Ansichten"],
+      ["M", "Menü: Ziel, Aufträge, Kodex, Erfolge, Zeitraffer, andere Ansichten"],
       ["K", "Kodex: alles, was du erforscht hast"],
     ];
   return (

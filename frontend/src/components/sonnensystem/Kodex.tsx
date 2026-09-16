@@ -86,7 +86,10 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
             )}
             {KODEX_GRUPPEN.map(g => (
               <section key={g.haupt.id}>
-                <Eintrag koerper={g.haupt} bekannt={bekannt(g.haupt)} gross onSteckbrief={onSteckbrief} />
+                <Eintrag
+                  koerper={g.haupt} bekannt={bekannt(g.haupt)} gross onSteckbrief={onSteckbrief}
+                  monde={g.monde.length ? { hier: g.monde.length, gescannt: g.monde.filter(bekannt).length } : undefined}
+                />
                 {g.monde.length > 0 && (
                   <div className="mt-2 ml-4 sm:ml-10 pl-3 border-l border-white/10 grid gap-2 sm:grid-cols-2">
                     {g.monde.map(m => <Eintrag key={m.id} koerper={m} bekannt={bekannt(m)} onSteckbrief={onSteckbrief} />)}
@@ -104,8 +107,11 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
   );
 }
 
-function Eintrag({ koerper: k, bekannt, gross = false, onSteckbrief }: {
-  koerper: Koerper; bekannt: boolean; gross?: boolean; onSteckbrief: (id: string) => void;
+function Eintrag({ koerper: k, bekannt, gross = false, monde, onSteckbrief }: {
+  koerper: Koerper; bekannt: boolean; gross?: boolean;
+  /** Bei Planeten: wie viele ihrer Monde die Simulation kennt und wie viele davon gescannt sind */
+  monde?: { hier: number; gescannt: number };
+  onSteckbrief: (id: string) => void;
 }) {
   const bild = foto(k.id);
   const kante = gross ? "w-20 h-20 sm:w-24 sm:h-24" : "w-14 h-14";
@@ -138,6 +144,11 @@ function Eintrag({ koerper: k, bekannt, gross = false, onSteckbrief }: {
           </div>
         ))}
       </dl>
+      {monde && (
+        <div className="mt-2 text-xs text-slate-400">
+          🌙 {k.mondeAnzahl ?? monde.hier} bekannte Monde · {monde.hier} davon hier · <span className="text-emerald-300">{monde.gescannt} gescannt</span>
+        </div>
+      )}
       {gross && (
         <ul className="mt-2 flex flex-col gap-1">
           {k.fakten.slice(0, 2).map(f => <li key={f} className="text-xs text-slate-300 pl-2 border-l-2 border-sky-400/40">{f}</li>)}

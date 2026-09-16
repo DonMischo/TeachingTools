@@ -38,15 +38,22 @@ export { ScanKarte } from "./FlugTeile";
 export { HOECHSTTEMPO } from "@/lib/sonnensystem/flugmodell";
 
 /**
- * Tage Simulationszeit je Sekunde: 1 000-fach — aber nur aus der Ferne.
+ * Zeit im Flug. Voreingestellt läuft sie echt: die Monde kreisen so schnell,
+ * wie sie wirklich kreisen — Phobos schafft in einer Minute ein Grad seiner
+ * Bahn. Wer ihnen beim Laufen zusehen will, schaltet den Zeitraffer im Menü ein.
  *
- * Dicht an einem Körper läuft die Zeit langsamer, sonst wäre er nicht zu
- * erreichen: Deimos umkreist den Mars im 1000-fachen Zeitraffer mit 0,8
- * Einheiten je Sekunde, und so schnell darf man in Oberflächennähe gar nicht
- * fliegen. Nebenbei beruhigt das die Szene beim Heranfliegen.
+ * Im Zeitraffer bremst die Nähe eines Körpers die Zeit: Deimos umkreist den
+ * Mars 1000-fach beschleunigt mit 0,8 Einheiten je Sekunde, und so schnell darf
+ * man in Oberflächennähe gar nicht fliegen — man könnte ihn nie einholen.
  */
-const ZEITRAFFER = 1_000 / 86_400;
-const zeitfaktor = (abstand: number) => THREE.MathUtils.clamp(abstand / 60, 0.004, 1);
+export const ZEITSTUFEN = [
+  { name: "echt", faktor: 1 },
+  { name: "1 Minute je Sekunde", faktor: 60 },
+  { name: "1 Stunde je Sekunde", faktor: 3_600 },
+  { name: "1 Tag je Sekunde", faktor: 86_400 },
+];
+const zeitfaktor = (abstand: number, stufe: number) =>
+  stufe <= 1 ? 1 : THREE.MathUtils.clamp(abstand / 60, 0.004, 1);
 const STAUB = 600;
 const STAUB_WUERFEL = 140;
 /** Wie oft die Statistik in den gespeicherten Fortschritt wandert. */
@@ -144,6 +151,9 @@ export default function Flug({
   const [liste, setListe] = useState(false);
   const [menue, setMenue] = useState(false);
   const [unfall, setUnfall] = useState<{ art: UnfallArt; name: string; knall: boolean } | null>(null);
+  const [zeitstufe, setZeitstufe] = useState(0);
+  const zeitstufeRef = useRef(0);
+  zeitstufeRef.current = ZEITSTUFEN[zeitstufe].faktor;
 
   const eingabe = useRef<Eingabe>({ tasten: new Set(), maus: { x: 0, y: 0 }, stick: { x: 0, y: 0 }, schubKnopf: false, bremsKnopf: false });
   const befehle = useRef<Befehle>({});
@@ -525,7 +535,7 @@ export default function Flug({
       const b = befehle.current;
 
       // Der Zeitraffer des letzten Bildes: der Abstand dafür steht erst unten fest.
-      jd += dt * ZEITRAFFER * zeitraffer;
+      jd += (dt * zeitstufeRef.current * zeitraffer) / 86_400;
       stelleMondeAuf();
 
       // Nächster Körper — nach ihm richten sich Tempo, Pulsantrieb und Zeitraffer.
@@ -535,7 +545,7 @@ export default function Flug({
         const d = oberflaeche(id);
         if (d < naechsterAbstand) { naechster = id; naechsterAbstand = d; }
       }
-      zeitraffer = zeitfaktor(naechsterAbstand);
+      zeitraffer = zeitfaktor(naechsterAbstand, zeitstufeRef.current);
       vorne.set(0, 0, -1).applyQuaternion(schiff.quat);
       const ziel = zielRef.current;
       const zielAbstand = ziel ? oberflaeche(ziel) : Infinity;
@@ -968,6 +978,8 @@ export default function Flug({
           erforscht={fortschritt.erforscht}
           geloest={fortschritt.erledigt.length}
           erfolge={Object.keys(fortschritt.erfolge).length}
+          zeitstufe={zeitstufe}
+          onZeit={() => setZeitstufe(z => (z + 1) % ZEITSTUFEN.length)}
           onAuftraege={() => { setListe(true); setMenue(false); }}
           onKodex={onKodex && (bereich => { setMenue(false); onKodex(bereich); })}
           onHilfe={() => { setHilfe(true); setMenue(false); }}
@@ -1122,7 +1134,8 @@ export default function Flug({
           <Steuerungstabelle beruehrung={beruehrung} />
           <p className="text-xs text-slate-400 mt-3">
             Maßstab: Planeten und Monde in echter Größe, Abstände 60-fach verkürzt, die Sonne 4-fach verkleinert.
-            Die Zeit läuft 1 000-fach schneller, damit sich Monde und Drehungen bewegen — in der Nähe eines Körpers langsamer, damit man ihn einholt.
+            Die Zeit läuft echt: die Monde stehen dort, wo sie heute wirklich stehen, und kreisen so schnell, wie sie wirklich kreisen.
+            Im Menü lässt sich ein Zeitraffer einschalten.
             In echt wäre der Flug zum Jupiter selbst mit Lichtgeschwindigkeit eine gute halbe Stunde lang.
           </p>
           <button onClick={() => setGestartet(true)} className="mt-4 w-full rounded-xl bg-cyan-400 text-slate-950 font-black py-2.5 hover:bg-cyan-300">
@@ -1216,13 +1229,15 @@ function baueSchiffchen(): THREE.Group {
   return g;
 }
 
-function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
+function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitstufe, onZeit, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
   onSchliessen: () => void;
   ziel: string | null;
   onZiel: (id: string | null) => void;
   erforscht: string[];
   geloest: number;
   erfolge: number;
+  zeitstufe: number;
+  onZeit: () => void;
   onAuftraege: () => void;
   onKodex?: (bereich: "eintraege" | "erfolge") => void;
   onHilfe: () => void;
@@ -1257,6 +1272,9 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, onAuft
             </button>
           </>
         )}
+        <button className={eintrag} onClick={onZeit} title="Wie schnell die Monde kreisen und die Planeten sich drehen">
+          <span>🕒 Zeit</span><span className="text-xs text-slate-400">{ZEITSTUFEN[zeitstufe].name}</span>
+        </button>
         <button className={eintrag} onClick={onHilfe}><span>❔ Steuerung</span></button>
         {onVollbild && (
           <button className={eintrag} onClick={onVollbild}><span>{vollbild ? "⤡ Vollbild verlassen" : "⛶ Vollbild"}</span></button>

@@ -1,15 +1,25 @@
 /**
- * Wo steht was? Keplerbahnen für Planeten, vereinfachte Kreise für Monde.
+ * Wo steht was? Keplerbahnen für Planeten und Monde.
  *
  * Alle Rückgaben sind ekliptikale Koordinaten (J2000): x zeigt zum
  * Frühlingspunkt, z senkrecht aus der Ebene der Erdbahn. Planeten in AE vom
  * Sonnenmittelpunkt, Monde in km vom Mittelpunkt ihres Planeten.
  */
 import type { Bahnelemente, Koerper } from "./daten";
+import mondbahnen from "./mondbahnen.json";
 
 export type Vec3 = [number, number, number];
 
 export const J2000 = 2_451_545.0;
+
+/** Bahnelemente der Monde von JPL Horizons, relativ zu ihrem Planeten. */
+interface Mondelemente {
+  a: number; e: number; i: number; knoten: number; periapsis: number;
+  /** Mittlere Länge zur Epoche und ihre Rate, Grad bzw. Grad je Tag */
+  L0: number; nL: number;
+  probe: number[];
+}
+export const MONDBAHNEN = mondbahnen as { epoche: number; probeJd: number; monde: Record<string, Mondelemente> };
 const GRAD = Math.PI / 180;
 
 export function julianischerTag(datum: Date): number {
@@ -75,29 +85,25 @@ export function umlaufTage(b: Bahnelemente): number {
   return 365.25 * Math.pow(b.a, 1.5);
 }
 
-/** Kleine, stabile Zahl je Mond — die Startstellung auf seiner Bahn. */
-function startwinkel(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 3600;
-  return (h / 10) * GRAD;
-}
-
-/** Dreht um die x-Achse — so sind Planetenachse und Mondbahnen gekippt. */
-export function kippe([x, y, z]: Vec3, grad: number): Vec3 {
-  const c = Math.cos(grad * GRAD), s = Math.sin(grad * GRAD);
-  return [x, y * c - z * s, y * s + z * c];
-}
-
 /**
- * Stellung eines Mondes relativ zu seinem Planeten, in km.
+ * Stellung eines Mondes relativ zu seinem Planeten, in km (ekliptikal, J2000).
  *
- * Unser Mond nach der Kurzformel aus Meeus (auf etwa ein Grad genau), damit
- * die Mondphasen zum Datum passen. Alle anderen laufen auf Kreisen in der
- * Äquatorebene ihres Planeten.
+ * Die Bahnelemente kommen von JPL Horizons (siehe scripts/fetch-mondbahnen.mjs)
+ * und werden mit ihrer mittleren Bewegung fortgeschrieben. Damit steht jeder
+ * Mond dort, wo er wirklich steht — auch Tritons rückläufige und die fast
+ * polaren Bahnen der Uranusmonde ergeben sich von selbst.
+ *
+ * Gerechnet wird mit der mittleren Länge: die momentanen Elemente schwanken,
+ * die über ein Jahr gemessene Rate läuft dagegen sauber rund. Die abgeleiteten
+ * Umlaufzeiten treffen die Lehrbuchwerte auf drei Stellen. Störungen bleiben
+ * ungerechnet, über Jahrzehnte wächst der Fehler also langsam.
+ *
+ * Für unseren Mond steht die genauere Kurzformel aus Meeus da — bei ihm sieht
+ * man die Phase, und die muss zum Datum passen.
  */
 export function mondVersatz(mond: Koerper, mutter: Koerper, jd: number): Vec3 {
-  const d = jd - J2000;
   if (mond.id === "mond") {
+    const d = jd - J2000;
     const L = (218.316 + 13.176396 * d) * GRAD;
     const M = (134.963 + 13.064993 * d) * GRAD;
     const F = (93.272 + 13.229350 * d) * GRAD;
@@ -106,10 +112,18 @@ export function mondVersatz(mond: Koerper, mutter: Koerper, jd: number): Vec3 {
     const r = 385_001 - 20_905 * Math.cos(M);
     return [r * Math.cos(lat) * Math.cos(lon), r * Math.cos(lat) * Math.sin(lon), r * Math.sin(lat)];
   }
-  const bahn = mond.mondBahn!;
-  const winkel = startwinkel(mond.id) + (2 * Math.PI * d) / bahn.umlaufTage;
-  const inEbene: Vec3 = kippe([bahn.aKm * Math.cos(winkel), bahn.aKm * Math.sin(winkel), 0], bahn.neigung);
-  return kippe(inEbene, mutter.achsneigung);
+  const b = MONDBAHNEN.monde[mond.id];
+  if (!b) throw new Error(`Keine Bahnelemente für ${mond.id}`);
+  // Mittlere Anomalie = mittlere Länge − Periapsis − Knoten.
+  const M = ((b.L0 + b.nL * (jd - MONDBAHNEN.epoche) - b.periapsis - b.knoten) % 360) * GRAD;
+  const E = loeseKepler(Math.atan2(Math.sin(M), Math.cos(M)), b.e);
+  return ellipsenPunkt(b.a, b.e, b.i * GRAD, b.periapsis * GRAD, b.knoten * GRAD, E);
+}
+
+/** Ein Umlauf in Tagen, aus der gemessenen Rate der mittleren Länge. */
+export function mondUmlauf(mondId: string): number | null {
+  const b = MONDBAHNEN.monde[mondId];
+  return b ? 360 / b.nL : null;
 }
 
 export function abstand(a: Vec3, b: Vec3): number {

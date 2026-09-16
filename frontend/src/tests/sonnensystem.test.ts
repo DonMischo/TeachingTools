@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync } from "fs";
 import { join } from "path";
 import {
-  abstand, bahnPunkte, heliozentrisch, julianischerTag, loeseKepler, mondVersatz, umlaufTage, type Vec3,
+  abstand, bahnPunkte, heliozentrisch, julianischerTag, loeseKepler, mondVersatz, MONDBAHNEN, umlaufTage, type Vec3,
 } from "@/lib/sonnensystem/bahnen";
 import { KOERPER, KOERPER_NACH_ID, mondeVon } from "@/lib/sonnensystem/daten";
 import { AUFTRAEGE, auftragZu, gemischteAntworten } from "@/lib/sonnensystem/auftraege";
@@ -84,10 +84,37 @@ describe("Monde", () => {
     expect(winkel(mondVersatz(K.mond, K.erde, jd), zurSonne)).toBeLessThan(5);
   });
 
-  it("hält jeden Mond auf seinem Bahnradius", () => {
+  it("trifft die echten Mondpositionen von JPL Horizons", () => {
+    // Die Bahnelemente stammen von Anfang 2026, die Vergleichspunkte von gut
+    // ein Jahr später — geprüft wird also auch die Bewegung, nicht nur der Start.
+    // Die meisten Monde liegen unter einem halben Grad daneben; am schlechtesten
+    // sind Phobos und Mimas mit knapp 4 Grad, weil ihre Bahnen stark gestört sind.
+    for (const mond of KOERPER.filter(k => k.art === "mond")) {
+      const soll = MONDBAHNEN.monde[mond.id].probe as Vec3;
+      const ist = mondVersatz(mond, K[mond.mutter!], MONDBAHNEN.probeJd);
+      const fehler = (2 * Math.asin(Math.min(1, abstand(ist, soll) / 2 / Math.hypot(...soll))) * 180) / Math.PI;
+      expect(fehler, `${mond.id}: ${fehler.toFixed(1)}° daneben`).toBeLessThan(5);
+    }
+  });
+
+  it("lässt die Monde in die richtige Richtung laufen — Triton rückwärts", () => {
+    const jd = julianischerTag(new Date("2026-09-16"));
+    const dreh = (mond: typeof K.io) => {
+      const a = mondVersatz(mond, K[mond.mutter!], jd);
+      const b = mondVersatz(mond, K[mond.mutter!], jd + 0.02);
+      // Drehsinn um die z-Achse der Ekliptik: positiv = rechtläufig
+      return a[0] * b[1] - a[1] * b[0];
+    };
+    expect(dreh(K.io)).toBeGreaterThan(0);
+    expect(dreh(K.mond)).toBeGreaterThan(0);
+    expect(dreh(K.triton)).toBeLessThan(0);
+  });
+
+  it("hält jeden Mond in der Nähe seiner mittleren Bahn", () => {
     const jd = julianischerTag(new Date("2026-09-15"));
-    for (const mond of KOERPER.filter(k => k.art === "mond" && k.id !== "mond")) {
-      expect(Math.hypot(...mondVersatz(mond, K[mond.mutter!], jd))).toBeCloseTo(mond.mondBahn!.aKm, 0);
+    for (const mond of KOERPER.filter(k => k.art === "mond")) {
+      const r = Math.hypot(...mondVersatz(mond, K[mond.mutter!], jd));
+      expect(Math.abs(r - mond.mondBahn!.aKm) / mond.mondBahn!.aKm, mond.id).toBeLessThan(0.08);
     }
   });
 });

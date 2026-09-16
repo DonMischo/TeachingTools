@@ -120,7 +120,16 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
           <Zeile name="Achsneigung">{zahl(k.achsneigung, k.achsneigung < 10 ? 1 : 0)}°</Zeile>
           <Zeile name="Temperatur">{k.temperatur}</Zeile>
           <Zeile name="Atmosphäre">{k.atmosphaere}</Zeile>
-          {k.mondeAnzahl !== undefined && <Zeile name="Monde">{k.mondeAnzahl === 0 ? "keine" : `${k.mondeAnzahl} bekannte`}</Zeile>}
+          {k.mondeAnzahl !== undefined && (
+            <Zeile name="Monde">
+              {k.mondeAnzahl === 0 ? "keine" : `${k.mondeAnzahl} bekannte`}
+              {monde.length > 0 && (
+                <div className="text-xs text-slate-400">
+                  {monde.length} davon hier · {monde.filter(m => erforscht.includes(m.id)).length} gescannt
+                </div>
+              )}
+            </Zeile>
+          )}
           {k.entdeckung && <Zeile name="Entdeckt">{k.entdeckung}</Zeile>}
         </dl>
 
@@ -141,10 +150,11 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
             <div className="grid grid-cols-3 gap-2">
               {monde.map(m => {
                 const mb = foto(m.id);
+                const gescannt = alleZeigen || erforscht.includes(m.id);
                 return (
                   <button key={m.id} onClick={() => onWaehle(m.id)} className="flex flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
-                    {mb && <img src={mb.datei} alt="" className="w-14 h-14 rounded-full object-cover bg-black" />}
-                    <span className="text-xs font-bold">{m.name}</span>
+                    {mb && <img src={mb.datei} alt="" className={`w-14 h-14 rounded-full object-cover bg-black ${gescannt ? "" : "opacity-40 grayscale"}`} />}
+                    <span className="text-xs font-bold">{m.name}{gescannt ? " ✓" : ""}</span>
                     <span className="text-[10px] text-slate-400">{zahl(m.radiusKm * 2)} km</span>
                   </button>
                 );

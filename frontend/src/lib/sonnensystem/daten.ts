@@ -9,9 +9,9 @@
  * Physikalische Werte: NASA Planetary Fact Sheets. Mondzahlen Stand 2025 —
  * sie ändern sich, sobald jemand wieder ein paar Kilometer große Brocken findet.
  *
- * Mondbahnen sind vereinfacht: Kreise in der Äquatorebene des Planeten, mit
- * echtem Abstand und echter Umlaufzeit, aber ausgedachter Startstellung. Nur
- * unser Mond steht dort, wo er wirklich steht (Phasen stimmen).
+ * Die Mondbahnen selbst stehen in mondbahnen.json: echte Bahnelemente von JPL
+ * Horizons, geholt mit scripts/fetch-mondbahnen.mjs. Die Werte hier (Abstand,
+ * Umlaufzeit, Neigung) sind die Lehrbuchzahlen für den Steckbrief.
  */
 
 export type Art = "stern" | "planet" | "zwergplanet" | "mond";
