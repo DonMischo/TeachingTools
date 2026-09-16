@@ -203,13 +203,21 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
   const kennung = `${koerper.id.slice(0, 3).toUpperCase()}-${String(Math.round(koerper.radiusKm)).padStart(6, "0")}`;
 
   // Messwerte mit Balken: logarithmisch, damit Phobos und Jupiter beide etwas zeigen.
-  const zeilen: { name: string; wert: string; anteil?: number }[] = [
-    { name: "Durchmesser", wert: `${zahl(koerper.radiusKm * 2)} km`, anteil: Math.log10(koerper.radiusKm * 2) / Math.log10(1_400_000) },
-    { name: "Schwerkraft", wert: `${zahl(koerper.schwerkraft, koerper.schwerkraft < 1 ? 2 : 1)} m/s²`, anteil: Math.min(koerper.schwerkraft / 25, 1) },
-    { name: "Eine Drehung", wert: `${tage(koerper.rotationStunden / 24)}${koerper.rotationStunden < 0 ? " · rückwärts" : ""}` },
-    { name: "Temperatur", wert: koerper.temperatur },
-    { name: "Atmosphäre", wert: koerper.atmosphaere },
-  ];
+  const zeilen: { name: string; wert: string; anteil?: number }[] = koerper.satBahn
+    ? [
+      { name: "Größe", wert: koerper.groesse ?? `${zahl(koerper.radiusKm * 2)} km` },
+      { name: "Bahnhöhe", wert: `${zahl(koerper.satBahn.aKm - (mutter?.radiusKm ?? 0))} km` },
+      { name: "Ein Umlauf", wert: koerper.satBahn.umlaufMinuten < 120 ? `${zahl(koerper.satBahn.umlaufMinuten, 1)} min` : tage(koerper.satBahn.umlaufMinuten / 1440) },
+      { name: "Aufgabe", wert: koerper.zweck ?? "" },
+      { name: "Temperatur", wert: koerper.temperatur },
+    ]
+    : [
+      { name: "Durchmesser", wert: `${zahl(koerper.radiusKm * 2)} km`, anteil: Math.log10(koerper.radiusKm * 2) / Math.log10(1_400_000) },
+      { name: "Schwerkraft", wert: `${zahl(koerper.schwerkraft!, koerper.schwerkraft! < 1 ? 2 : 1)} m/s²`, anteil: Math.min(koerper.schwerkraft! / 25, 1) },
+      { name: "Eine Drehung", wert: `${tage(koerper.rotationStunden! / 24)}${koerper.rotationStunden! < 0 ? " · rückwärts" : ""}` },
+      { name: "Temperatur", wert: koerper.temperatur },
+      { name: "Atmosphäre", wert: koerper.atmosphaere },
+    ];
   const buchstabe = "ABCD";
 
   return (

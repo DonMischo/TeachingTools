@@ -19,6 +19,7 @@ import {
 import { flugMondbahn, flugRadius } from "@/lib/sonnensystem/massstab";
 import { ERFOLGE, LEERE_STATISTIK, neueErfolge } from "@/lib/sonnensystem/erfolge";
 import { KODEX_GRUPPEN, datenZeilen } from "@/lib/sonnensystem/kodex";
+import { ORTE, ORTE_NACH_ID, ortAmPlaneten, ortHeliozentrisch } from "@/lib/sonnensystem/orte";
 import { baueKodexPdf, fuerPdf } from "@/components/sonnensystem/kodexPdf";
 import { ladeFortschritt } from "@/components/sonnensystem/fortschritt";
 import { dauer, km, tage, zehnerpotenz } from "@/lib/sonnensystem/format";
@@ -125,6 +126,11 @@ describe("Daten", () => {
       if (k.art === "mond") {
         expect(K[k.mutter!], k.id).toBeDefined();
         expect(k.mondBahn, k.id).toBeDefined();
+      } else if (k.art === "satellit") {
+        expect(K[k.mutter!], k.id).toBeDefined();
+        expect(k.satBahn, k.id).toBeDefined();
+        // Raumfahrzeuge kreisen über der Oberfläche, nicht darin.
+        expect(k.satBahn!.aKm * (1 - k.satBahn!.e), k.id).toBeGreaterThan(K[k.mutter!].radiusKm);
       } else if (k.art !== "stern") {
         expect(k.bahn, k.id).toBeDefined();
       }
@@ -153,18 +159,59 @@ describe("Daten", () => {
   });
 });
 
+describe("Lagrangepunkte", () => {
+  const jd = 2_461_041.5;
+  const laenge = (v: readonly number[]) => Math.hypot(v[0], v[1], v[2]);
+  const winkel = (a: readonly number[], b: readonly number[]) =>
+    (Math.acos((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (laenge(a) * laenge(b))) * 180) / Math.PI;
+
+  it("legt L1 und L2 1,5 Mio. km vor und hinter die Erde", () => {
+    const erde = heliozentrisch(K.erde.bahn!, jd);
+    const l1 = ortHeliozentrisch(ORTE_NACH_ID["ort-erde-l1"], jd);
+    const l2 = ortHeliozentrisch(ORTE_NACH_ID["ort-erde-l2"], jd);
+    expect(laenge(l1)).toBeLessThan(laenge(erde));
+    expect(laenge(l2)).toBeGreaterThan(laenge(erde));
+    for (const o of ["ort-erde-l1", "ort-erde-l2"]) {
+      const nah = ortAmPlaneten(ORTE_NACH_ID[o], jd)!;
+      expect(nah.km / 1e6).toBeCloseTo(1.5, 1);
+    }
+    expect(ortAmPlaneten(ORTE_NACH_ID["ort-erde-l4"], jd)).toBeNull();
+  });
+
+  it("stellt L4 und L5 60° voraus und hinterher auf dieselbe Bahn", () => {
+    for (const o of ORTE.filter(x => x.punkt === 4 || x.punkt === 5)) {
+      const planet = heliozentrisch(K[o.planet].bahn!, jd);
+      const p = ortHeliozentrisch(o, jd);
+      expect(winkel(planet, p), o.id).toBeCloseTo(60, 4);
+      expect(laenge(p) / laenge(planet), o.id).toBeCloseTo(1, 6);
+    }
+  });
+
+  it("stellt L3 der Erde gegenüber, hinter die Sonne", () => {
+    const erde = heliozentrisch(K.erde.bahn!, jd);
+    const l3 = ortHeliozentrisch(ORTE_NACH_ID["ort-erde-l3"], jd);
+    expect(winkel(erde, l3)).toBeCloseTo(180, 4);
+  });
+
+  it("gibt jedem Ort eine eigene Id und einen bekannten Planeten", () => {
+    expect(new Set(ORTE.map(o => o.id)).size).toBe(ORTE.length);
+    for (const o of ORTE) expect(K[o.planet], o.id).toBeDefined();
+  });
+});
+
 describe("Bilder", () => {
   it("hat für jeden Körper ein Foto und — außer Ceres — eine Textur", () => {
     for (const k of KOERPER) {
       expect(foto(k.id), `Foto ${k.id}`).toBeDefined();
-      if (k.id !== "ceres") expect(textur(k.id), `Textur ${k.id}`).toBeDefined();
+      // Raumfahrzeuge bekommen keine Kugeltextur, Ceres hat keine brauchbare.
+      if (k.id !== "ceres" && k.art !== "satellit") expect(textur(k.id), `Textur ${k.id}`).toBeDefined();
     }
   });
 
   it("hat für jeden Galerie-Eintrag ein Bild, und Paare verweisen aufeinander", () => {
     for (const g of GALERIE) {
       expect(bildFuer(g), g.id).toBeDefined();
-      for (const id of benoetigt(g)) expect(K[id], `${g.id} braucht ${id}`).toBeDefined();
+      for (const id of benoetigt(g)) expect(K[id] ?? ORTE_NACH_ID[id], `${g.id} braucht ${id}`).toBeDefined();
       if (g.paar) expect(GALERIE.find(x => x.id === g.paar)?.paar).toBe(g.id);
     }
   });
@@ -308,10 +355,11 @@ describe("Erfolge und Fortschritt", () => {
 
 describe("Kodex", () => {
   it("führt jeden Himmelskörper genau einmal, Monde unter ihrem Planeten", () => {
-    const ids = KODEX_GRUPPEN.flatMap(g => [g.haupt.id, ...g.monde.map(m => m.id)]);
+    const ids = KODEX_GRUPPEN.flatMap(g => [g.haupt.id, ...g.monde.map(m => m.id), ...g.satelliten.map(s => s.id)]);
     expect([...ids].sort()).toEqual(KOERPER.map(k => k.id).sort());
-    for (const g of KODEX_GRUPPEN) for (const m of g.monde) expect(m.mutter).toBe(g.haupt.id);
+    for (const g of KODEX_GRUPPEN) for (const m of [...g.monde, ...g.satelliten]) expect(m.mutter).toBe(g.haupt.id);
     expect(datenZeilen(K.io, true).some(([n]) => n === "Abstand zu Jupiter")).toBe(true);
+    expect(datenZeilen(K.iss).some(([n]) => n === "Bahnhöhe")).toBe(true);
   });
 
   it("baut ein PDF mit einer Seite je Hauptkörper, Titel und Bildnachweisen", async () => {

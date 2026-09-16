@@ -12,6 +12,7 @@ import { KM_JE_AE, KOERPER, type Koerper } from "@/lib/sonnensystem/daten";
 import { foto } from "@/lib/sonnensystem/bilder";
 import { AUFTRAEGE } from "@/lib/sonnensystem/auftraege";
 import { KODEX_GRUPPEN, artZeile, datenZeilen } from "@/lib/sonnensystem/kodex";
+import { ORTE, type Ort } from "@/lib/sonnensystem/orte";
 import { ERFOLGE, erreicht, type Gruppe } from "@/lib/sonnensystem/erfolge";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
 import { Knopfgruppe } from "./Bedienung";
@@ -95,8 +96,31 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
                     {g.monde.map(m => <Eintrag key={m.id} koerper={m} bekannt={bekannt(m)} onSteckbrief={onSteckbrief} />)}
                   </div>
                 )}
+                {g.satelliten.length > 0 && (
+                  <div className="mt-2 ml-4 sm:ml-10 pl-3 border-l border-sky-400/25">
+                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-300/80 mb-2">
+                      Raumfahrzeuge · {g.satelliten.filter(bekannt).length} von {g.satelliten.length} gescannt
+                    </h4>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {g.satelliten.map(s => <Eintrag key={s.id} koerper={s} bekannt={bekannt(s)} onSteckbrief={onSteckbrief} />)}
+                    </div>
+                  </div>
+                )}
               </section>
             ))}
+
+            <section>
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-amber-300 mt-2 mb-1">Orte ohne Körper</h3>
+              <p className="text-xs text-slate-400 mb-3">
+                Die Lagrangepunkte — man sieht dort nichts, und trotzdem parken genau dort die teuersten Teleskope.
+                {" "}{ORTE.filter(o => alleZeigen || fortschritt.erforscht.includes(o.id)).length} von {ORTE.length} erkundet.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {ORTE.map(o => (
+                  <OrtEintrag key={o.id} ort={o} bekannt={alleZeigen || fortschritt.erforscht.includes(o.id)} />
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
@@ -104,6 +128,37 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
         {bereich === "statistik" && <Statistik fortschritt={fortschritt} />}
       </div>
     </div>
+  );
+}
+
+/** Ein Lagrangepunkt: kein Foto, kein Durchmesser — nur Lage, Bewohner und Fakten. */
+function OrtEintrag({ ort: o, bekannt }: { ort: Ort; bekannt: boolean }) {
+  if (!bekannt) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3 text-sm">
+        <div className="w-14 h-14 shrink-0 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-xl">?</div>
+        <div>
+          <div className="font-bold text-slate-300">{o.name}</div>
+          <div className="text-xs text-slate-500">Lagrangepunkt · noch nicht erkundet</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <article className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+      <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: o.farbe }}>Lagrangepunkt</div>
+      <h3 className="text-base font-black leading-tight">{o.name}</h3>
+      <p className="text-xs text-slate-300 mt-1 leading-snug">{o.intro}</p>
+      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+        <dt className="text-slate-400">Lage</dt>
+        <dd className="text-slate-100">{o.entfernung}</dd>
+        <dt className="text-slate-400">Dort</dt>
+        <dd className="text-slate-100">{o.bewohner}</dd>
+      </dl>
+      <ul className="mt-2 flex flex-col gap-1">
+        {o.fakten.slice(0, 2).map(f => <li key={f} className="text-xs text-slate-300 pl-2 border-l-2 border-amber-400/40">{f}</li>)}
+      </ul>
+    </article>
   );
 }
 
@@ -159,7 +214,7 @@ function Eintrag({ koerper: k, bekannt, gross = false, monde, onSteckbrief }: {
   );
 }
 
-const GRUPPEN: Gruppe[] = ["Erforschen", "Aufträge", "Reisen", "Pilot", "Missgeschicke"];
+const GRUPPEN: Gruppe[] = ["Erforschen", "Raumfahrt", "Aufträge", "Reisen", "Pilot", "Missgeschicke"];
 
 function Erfolge({ fortschritt }: { fortschritt: Fortschritt }) {
   return (

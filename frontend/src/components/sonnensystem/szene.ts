@@ -158,7 +158,7 @@ export function baueKoerper(k: Koerper, radius: number, texturen: Texturen, fein
   const achse = new THREE.Group();
   // Um die x-Achse — genau wie `kippe` die Mondbahnen kippt, sonst lägen die
   // Uranusmonde nicht über seinem Äquator.
-  achse.rotation.x = THREE.MathUtils.degToRad(k.achsneigung);
+  achse.rotation.x = THREE.MathUtils.degToRad(k.achsneigung ?? 0);
   gruppe.add(achse);
 
   const karte = texturen.holen(k.id);
@@ -308,5 +308,5 @@ export function entsorge(obj: THREE.Object3D) {
 
 /** Planetendrehung: Winkel zur Zeit jd. Rückwärts drehende Körper haben negative Stunden. */
 export function drehwinkel(k: Koerper, jd: number): number {
-  return ((jd * 24) / k.rotationStunden) * Math.PI * 2;
+  return k.rotationStunden ? ((jd * 24) / k.rotationStunden) * Math.PI * 2 : 0;
 }

@@ -6,7 +6,8 @@
  * Blick ins All. Ein Bild wird freigeschaltet, sobald im Flug der Körper
  * gescannt ist, zu dem es gehört (`freischalten`, sonst `koerper`).
  */
-import { KOERPER, KOERPER_NACH_ID } from "./daten";
+import { HAUPTKOERPER, KOERPER, KOERPER_NACH_ID } from "./daten";
+import { ORTE_NACH_ID } from "./orte";
 import { foto, galerieBild, type Bildnachweis } from "./bilder";
 
 export interface GalerieEintrag {
@@ -91,22 +92,22 @@ const BASIS: GalerieEintrag[] = [
     text: "Aus 6 Milliarden km Entfernung drehte sich Voyager 1 noch einmal um. In dem hellen Streifen (Streulicht der Sonne) liegt ein Pünktchen, kleiner als ein Pixel: die Erde. Der Astronom Carl Sagan schrieb dazu, auf diesem Punkt habe jeder gelebt, von dem man je gehört hat.",
   },
   {
-    id: "saeulen-hubble", titel: "Säulen der Schöpfung", von: "Hubble-Weltraumteleskop", jahr: 2014, freischalten: ["pluto"],
+    id: "saeulen-hubble", titel: "Säulen der Schöpfung", von: "Hubble-Weltraumteleskop", jahr: 2014, freischalten: ["hubble"],
     text: "Weit außerhalb des Sonnensystems, 6 500 Lichtjahre entfernt: Säulen aus Gas und Staub im Adlernebel. In ihrem Inneren entstehen neue Sterne — so, wie vor 4,6 Milliarden Jahren auch unsere Sonne entstanden ist.",
     paar: "saeulen-webb",
   },
   {
-    id: "saeulen-webb", titel: "Säulen der Schöpfung", von: "James-Webb-Weltraumteleskop", jahr: 2022, freischalten: ["pluto"],
+    id: "saeulen-webb", titel: "Säulen der Schöpfung", von: "James-Webb-Weltraumteleskop", jahr: 2022, freischalten: ["ort-erde-l2"],
     text: "Dieselben Säulen, aber im Infrarotlicht: Webb blickt durch den Staub hindurch. Die roten Punkte an den Rändern sind junge Sterne, gerade erst ein paar hunderttausend Jahre alt.",
     paar: "saeulen-hubble",
   },
   {
-    id: "hubble-deep-field", titel: "Hubble Ultra Deep Field", von: "Hubble-Weltraumteleskop", jahr: 2004, freischalten: ["pluto"],
+    id: "hubble-deep-field", titel: "Hubble Ultra Deep Field", von: "Hubble-Weltraumteleskop", jahr: 2004, freischalten: ["hubble"],
     text: "Hubble starrte elf Tage lang auf einen dunklen Fleck am Himmel, nur ein Zehntel so breit wie der Vollmond. Fast jeder Lichtpunkt ist eine ganze Galaxie mit Milliarden Sternen.",
     paar: "webb-deep-field",
   },
   {
-    id: "webb-deep-field", titel: "Webbs erstes tiefes Feld", von: "James-Webb-Weltraumteleskop", jahr: 2022, freischalten: ["pluto"],
+    id: "webb-deep-field", titel: "Webbs erstes tiefes Feld", von: "James-Webb-Weltraumteleskop", jahr: 2022, freischalten: ["ort-erde-l2"],
     text: "Webbs erstes veröffentlichtes Bild: ein Himmelsausschnitt so klein wie ein Sandkorn auf der ausgestreckten Hand. Der Haufen darin ist so schwer, dass er das Licht noch fernerer Galaxien dahinter zu Bögen verbiegt. Manches Licht hier war über 13 Milliarden Jahre unterwegs — länger, als es unser Sonnensystem gibt.",
     paar: "hubble-deep-field",
   },
@@ -215,6 +216,34 @@ const MISSIONEN: GalerieEintrag[] = [
     text: "Kurz nach dem Vorbeiflug blickte New Horizons zurück: Berge aus Wassereis bis 3 500 m Höhe, eine glatte Ebene aus gefrorenem Stickstoff und darüber Schichten aus Dunst in Plutos dünner Lufthülle.",
   },
   {
+    id: "iss-cupola", titel: "Blick aus der Kuppel", von: "Internationale Raumstation (NASA)", jahr: 2022, koerper: "erde", freischalten: ["iss"],
+    text: "Die Cupola ist der Erker der ISS: sieben Fenster, aus denen die Besatzung in 400 km Höhe auf die Erde hinunterschaut. Hier lehnt sich Bob Hines hinaus — und darunter zieht in anderthalb Stunden die ganze Welt vorbei.",
+  },
+  {
+    id: "sentinel-bahamas", titel: "Die Bahamas von oben", von: "Sentinel-2 (ESA/Copernicus)", koerper: "erde", freischalten: ["sentinel"],
+    text: "Türkis sind die Sandbänke, dunkelblau die tiefen Rinnen dazwischen. Solche Bilder nimmt Sentinel-2 alle fünf Tage neu auf — daran sieht man, wie sich Küsten, Felder und Wälder verändern.",
+  },
+  {
+    id: "chandra-krebsnebel", titel: "Der Krebsnebel im Röntgenlicht", von: "Chandra (NASA)", jahr: 2009, freischalten: ["chandra"],
+    text: "1054 sahen chinesische Astronomen einen neuen Stern, hell genug, um am Tag zu leuchten. Übrig ist dieser Nebel — und in der Mitte ein Neutronenstern, der 30-mal in der Sekunde rotiert und alles in seiner Umgebung zum Glühen bringt. Im Röntgenlicht sieht man genau diesen Motor.",
+  },
+  {
+    id: "soho-cme", titel: "Ein Sonnensturm bricht los", von: "SOHO (ESA/NASA)", koerper: "sonne", freischalten: ["ort-erde-l1"],
+    text: "SOHO deckt die Sonnenscheibe mit einer Scheibe ab — nur so wird die dünne Korona sichtbar. Hier schleudert die Sonne eine Wolke aus Teilchen ins All. Braucht sie ein bis drei Tage bis zur Erde, gibt es Polarlichter; trifft sie hart, wackeln Stromnetze und Funkverkehr.",
+  },
+  {
+    id: "webb-spiegel", titel: "Webbs goldener Spiegel", von: "NASA/Chris Gunn", jahr: 2016, freischalten: ["ort-erde-l2"],
+    text: "18 Sechsecke aus Beryllium, hauchdünn mit Gold beschichtet, zusammen 6,5 m breit. Zusammengefaltet passte der Spiegel in eine Rakete und klappte sich erst auf dem Weg nach L2 auseinander — 344 Schritte, von denen keiner schiefgehen durfte.",
+  },
+  {
+    id: "gaia-karte", titel: "Gaias Karte der Milchstraße", von: "Gaia (ESA)", jahr: 2018, freischalten: ["ort-erde-l2"],
+    text: "Fast zwei Milliarden Sterne, jeder einzeln vermessen: Ort, Helligkeit, Farbe und Bewegung. Das helle Band ist die Scheibe unserer Milchstraße von innen gesehen; die dunklen Schlieren sind Staubwolken, die davorstehen. Unten links leuchten die beiden Magellanschen Wolken, unsere Nachbargalaxien.",
+  },
+  {
+    id: "lucy-dinkinesh", titel: "Dinkinesh und sein Mond", von: "Lucy (NASA)", jahr: 2023, freischalten: ["ort-jupiter-l4"],
+    text: "Auf dem Weg zu Jupiters Trojanern flog Lucy 2023 zum Üben an dem kleinen Asteroiden Dinkinesh vorbei — und entdeckte dabei, dass er einen Begleiter hat, der selbst aus zwei aneinandergeklebten Brocken besteht. Bis 2033 besucht die Sonde acht Trojaner.",
+  },
+  {
     id: "arrokoth", titel: "Arrokoth", von: "New Horizons (NASA)", jahr: 2019, koerper: "pluto",
     text: "Am Neujahrstag 2019 flog New Horizons an Arrokoth vorbei, 6,6 Mrd. km von der Sonne — das fernste Objekt, das je aus der Nähe erforscht wurde. Zwei Brocken, die sich ganz sanft berührt haben und seitdem zusammenkleben.",
   },
@@ -230,8 +259,11 @@ const PORTRAETS: GalerieEintrag[] = KOERPER.filter(k => foto(k.id)).map(k => ({
   portraet: true,
 }));
 
-/** Reihenfolge der Reise: Sonne, dann jeder Planet mit seinen Monden, am Ende der Blick ins All. */
-const REISE = KOERPER.filter(k => k.art !== "mond")
+/**
+ * Reihenfolge der Reise: Sonne, dann jeder Planet mit seinen Monden und
+ * Raumfahrzeugen, am Ende der Blick ins All.
+ */
+const REISE = HAUPTKOERPER
   .flatMap(k => [k.id, ...KOERPER.filter(m => m.mutter === k.id).map(m => m.id)]);
 
 function reiseplatz(e: GalerieEintrag): number {
@@ -252,6 +284,9 @@ export function bildFuer(e: GalerieEintrag): Bildnachweis | undefined {
 export function benoetigt(e: GalerieEintrag): string[] {
   return e.freischalten ?? (e.koerper ? [e.koerper] : []);
 }
+
+/** Wie das heißt, was man scannen muss: Himmelskörper, Raumfahrzeug oder Lagrangepunkt. */
+export const zielName = (id: string): string => KOERPER_NACH_ID[id]?.name ?? ORTE_NACH_ID[id]?.name ?? id;
 
 export function freigeschaltet(e: GalerieEintrag, erforscht: readonly string[]): boolean {
   return benoetigt(e).every(id => erforscht.includes(id));

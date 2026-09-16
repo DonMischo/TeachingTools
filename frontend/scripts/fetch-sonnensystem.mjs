@@ -103,6 +103,15 @@ const BILDER = [
   F("phobos", "Phobos colour 2008.jpg"),
   F("deimos", "Deimos-MRO.jpg"),
 
+  // ── Porträts der Raumfahrzeuge ──
+  F("iss", "ISS from the SpaceX Crew Dragon Endeavor during Flyaround (iss066e081130).jpg"),
+  F("tiangong", "Tiangong Space Station Rendering 2022.11.01.jpg"),
+  F("hubble", "Hubble 2009 close-up.jpg"),
+  F("chandra", "Chandra X-Ray Observatory (noirlab2427c).jpg"),
+  F("sentinel", "Sentinel-2A satellite - CSG - Carefully aligning the satellite to the adapter.jpg"),
+  F("gps", "Navstar-2F.jpg"),
+  F("meteosat", "Meteosat Third Generation Imager above Earth ESA24620590.png"),
+
   // ── Galerie: Weltraumteleskope und Raumsonden ──
   G("hubble-deep-field", "Hubble ultra deep field.jpg"),
   G("webb-deep-field", "Webb's First Deep Field.jpg"),
@@ -111,6 +120,13 @@ const BILDER = [
   G("pale-blue-dot", "PIA23645-Earth-PaleBlueDot-6Bkm-Voyager1-orig19900214-upd20200212.jpg", NASA),
   G("erde-von-saturn", "The Day the Earth Smiled - PIA17172.jpg", { breite: 1800 }),
   G("earthrise", "NASA-Apollo8-Dec24-Earthrise.jpg"),
+  G("webb-spiegel", "NASA's James Webb Space Telescope Primary Mirror Fully Assembled (25423929476).jpg"),
+  G("gaia-karte", "Gaia’s new map of star density ESA393130.jpg", { breite: 1800 }),
+  G("soho-cme", "05 Coronal Mass Ejection (2819895025).jpg"),
+  G("chandra-krebsnebel", "Chandra X-ray Images of Crab Nebula (2009-crab-more-1 - crab xray).tiff", { breite: 1000 }),
+  G("lucy-dinkinesh", "Lucy Sees Asteroid Dinkinesh in Detail (SVS14596).jpg", { breite: 1280 }),
+  G("iss-cupola", "ISS-68 Astronaut Bob Hines looks at the Earth through the cupola.jpg"),
+  G("sentinel-bahamas", "Sentinel-2 bahamas (cropped).jpg", { breite: 1000 }),
   G("jupiter-webb", "Jupiter Showcases Auroras, Hazes (NIRCam Widefield View).png"),
   G("jupiter-juno-fleck", "PIA22946-Jupiter-RedSpot-JunoSpacecraft-20190212.jpg", NASA),
   G("jupiter-juno-suedpol", "Jupiter South Pole - Juno Perijove 4 - February 2 2017 (38605852072).jpg"),

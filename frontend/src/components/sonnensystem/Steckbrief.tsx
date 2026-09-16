@@ -5,9 +5,15 @@
  *
  * Die Zahlen sind so übersetzt, dass man sie sich vorstellen kann: Schwerkraft
  * als »so schwer fühlst du dich«, Abstand als Lichtlaufzeit.
+ *
+ * Raumfahrzeuge haben keine Dichte und keine Schwerkraft; bei ihnen stehen
+ * dafür Betreiber, Startdatum, Zweck und die Bahnhöhe. Deshalb sind fast alle
+ * Zeilen einzeln abgesichert.
  */
 import { useMemo, type ReactNode } from "react";
-import { ART_NAME, ERDE, KM_JE_AE, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
+import {
+  ART_NAME, ERDE, KM_JE_AE, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, satellitenVon, type Koerper,
+} from "@/lib/sonnensystem/daten";
 import { abstand, heliozentrisch, julianischerTag, umlaufTage } from "@/lib/sonnensystem/bahnen";
 import { foto, type Bildnachweis } from "@/lib/sonnensystem/bilder";
 import { GALERIE, bildFuer, freigeschaltet } from "@/lib/sonnensystem/galerie";
@@ -25,6 +31,7 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
   const k = koerper;
   const bild = foto(k.id);
   const monde = mondeVon(k.id);
+  const satelliten = satellitenVon(k.id);
   const mutter = k.mutter ? KOERPER_NACH_ID[k.mutter] : null;
   const alleBilder = GALERIE.filter(g => g.koerper === k.id && !g.portraet);
   const bilderDazu = alleBilder.filter(g => alleZeigen || freigeschaltet(g, erforscht));
@@ -42,7 +49,7 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
     return abstand(erde, p) * KM_JE_AE;
   }, [k, mutter]);
 
-  const wiegt40 = (40 * k.schwerkraft) / ERDE.schwerkraft;
+  const wiegt40 = k.schwerkraft !== undefined ? (40 * k.schwerkraft) / ERDE.schwerkraft! : 0;
 
   return (
     <aside
@@ -73,24 +80,36 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
         <p className="text-sm leading-relaxed text-slate-200">{k.intro}</p>
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
-          <Zeile name="Durchmesser">
-            {zahl(k.radiusKm * 2)} km {k.id !== "erde" && <Vergleich>{malErde(k.radiusKm, ERDE.radiusKm)} Erde</Vergleich>}
-          </Zeile>
+          {k.groesse ? (
+            <Zeile name="Größe">{k.groesse}</Zeile>
+          ) : (
+            <Zeile name="Durchmesser">
+              {zahl(k.radiusKm * 2)} km {k.id !== "erde" && <Vergleich>{malErde(k.radiusKm, ERDE.radiusKm)} Erde</Vergleich>}
+            </Zeile>
+          )}
           <Zeile name="Masse">
-            {zehnerpotenz(k.masseKg)} kg {k.id !== "erde" && <Vergleich>{malErde(k.masseKg, ERDE.masseKg)} Erde</Vergleich>}
+            {k.art === "satellit"
+              ? `${zahl(k.masseKg)} kg`
+              : <>{zehnerpotenz(k.masseKg)} kg {k.id !== "erde" && <Vergleich>{malErde(k.masseKg, ERDE.masseKg)} Erde</Vergleich>}</>}
           </Zeile>
-          <Zeile name="Dichte">
-            {zahl(k.dichte, 2)} g/cm³ {k.dichte < 1 && <Vergleich>leichter als Wasser</Vergleich>}
-          </Zeile>
-          <Zeile name="Schwerkraft">
-            {gerundet(k.schwerkraft)} m/s²
-            {k.id !== "erde" && (
-              <div className="text-xs text-slate-400">Wer auf der Erde 40 kg wiegt, fühlt sich hier wie {gerundet(wiegt40)} kg.</div>
-            )}
-          </Zeile>
-          <Zeile name="Eine Drehung">
-            {tage(k.rotationStunden / 24)}{k.rotationStunden < 0 ? " — rückwärts" : ""}
-          </Zeile>
+          {k.dichte !== undefined && (
+            <Zeile name="Dichte">
+              {zahl(k.dichte, 2)} g/cm³ {k.dichte < 1 && <Vergleich>leichter als Wasser</Vergleich>}
+            </Zeile>
+          )}
+          {k.schwerkraft !== undefined && (
+            <Zeile name="Schwerkraft">
+              {gerundet(k.schwerkraft)} m/s²
+              {k.id !== "erde" && (
+                <div className="text-xs text-slate-400">Wer auf der Erde 40 kg wiegt, fühlt sich hier wie {gerundet(wiegt40)} kg.</div>
+              )}
+            </Zeile>
+          )}
+          {k.rotationStunden !== undefined && (
+            <Zeile name="Eine Drehung">
+              {tage(k.rotationStunden / 24)}{k.rotationStunden < 0 ? " — rückwärts" : ""}
+            </Zeile>
+          )}
           {k.sonnentagStunden && k.id !== "erde" && (
             <Zeile name="Von Mittag bis Mittag">{tage(k.sonnentagStunden / 24)}</Zeile>
           )}
@@ -111,15 +130,42 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
               <Zeile name="Ein Umlauf">{tage(Math.abs(k.mondBahn.umlaufTage))}{k.mondBahn.umlaufTage < 0 ? " — rückwärts" : ""}</Zeile>
             </>
           )}
+          {k.satBahn && mutter && (
+            <>
+              <Zeile name="Bahnhöhe">
+                {km(k.satBahn.aKm - mutter.radiusKm)} über der Oberfläche
+                {k.satBahn.e > 0.01 && (
+                  <div className="text-xs text-slate-400">
+                    eine Ellipse: zwischen {km(k.satBahn.aKm * (1 - k.satBahn.e) - mutter.radiusKm)} und {km(k.satBahn.aKm * (1 + k.satBahn.e) - mutter.radiusKm)}
+                  </div>
+                )}
+              </Zeile>
+              <Zeile name="Ein Umlauf">
+                {k.satBahn.umlaufMinuten < 120
+                  ? `${gerundet(k.satBahn.umlaufMinuten)} Minuten`
+                  : tage(k.satBahn.umlaufMinuten / 1440)}
+                {k.satBahn.geostationaer && <div className="text-xs text-slate-400">genau eine Erddrehung — er steht still über einem Punkt</div>}
+              </Zeile>
+              <Zeile name="Bahnneigung">
+                {zahl(k.satBahn.neigung, 1)}° zum Äquator
+                {k.satBahn.neigung > 90 && <div className="text-xs text-slate-400">über 90°: er läuft der Erddrehung entgegen</div>}
+              </Zeile>
+            </>
+          )}
           {heuteVonErde !== null && (
             <Zeile name="Heute von der Erde">
               {km(heuteVonErde)}
               <div className="text-xs text-slate-400">Licht braucht {dauer(heuteVonErde / LICHT_KM_S)}{mutter && k.id !== "mond" ? ` (bis ${mutter.name})` : ""}</div>
             </Zeile>
           )}
-          <Zeile name="Achsneigung">{zahl(k.achsneigung, k.achsneigung < 10 ? 1 : 0)}°</Zeile>
+          {k.achsneigung !== undefined && (
+            <Zeile name="Achsneigung">{zahl(k.achsneigung, k.achsneigung < 10 ? 1 : 0)}°</Zeile>
+          )}
           <Zeile name="Temperatur">{k.temperatur}</Zeile>
           <Zeile name="Atmosphäre">{k.atmosphaere}</Zeile>
+          {k.zweck && <Zeile name="Aufgabe">{k.zweck}</Zeile>}
+          {k.betreiber && <Zeile name="Betrieben von">{k.betreiber}</Zeile>}
+          {k.start && <Zeile name="Start">{k.start}</Zeile>}
           {k.mondeAnzahl !== undefined && (
             <Zeile name="Monde">
               {k.mondeAnzahl === 0 ? "keine" : `${k.mondeAnzahl} bekannte`}
@@ -156,6 +202,28 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
                     {mb && <img src={mb.datei} alt="" className={`w-14 h-14 rounded-full object-cover bg-black ${gescannt ? "" : "opacity-40 grayscale"}`} />}
                     <span className="text-xs font-bold">{m.name}{gescannt ? " ✓" : ""}</span>
                     <span className="text-[10px] text-slate-400">{zahl(m.radiusKm * 2)} km</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {satelliten.length > 0 && (
+          <section>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sky-300 mb-2">Raumfahrzeuge in der Umlaufbahn</h3>
+            <p className="text-xs text-slate-400 mb-2">
+              {satelliten.filter(s => alleZeigen || erforscht.includes(s.id)).length} von {satelliten.length} gescannt
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {satelliten.map(s => {
+                const sb = foto(s.id);
+                const gescannt = alleZeigen || erforscht.includes(s.id);
+                return (
+                  <button key={s.id} onClick={() => onWaehle(s.id)} className="flex flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
+                    {sb && <img src={sb.datei} alt="" className={`w-14 h-14 rounded-lg object-cover bg-black ${gescannt ? "" : "opacity-40 grayscale"}`} />}
+                    <span className="text-xs font-bold text-center leading-tight">{s.name.split("-")[0]}{gescannt ? " ✓" : ""}</span>
+                    <span className="text-[10px] text-slate-400">{km(s.satBahn!.aKm - k.radiusKm)}</span>
                   </button>
                 );
               })}

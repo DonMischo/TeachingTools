@@ -5,8 +5,9 @@
  * Jeder Erfolg liest nur Zahlen aus dem gespeicherten Fortschritt; neue
  * Erfolge erkennt `neueErfolge` durch Vergleich mit den schon vergebenen.
  */
-import { KM_JE_AE, KOERPER } from "./daten";
+import { KM_JE_AE, KOERPER, NATUERLICH, SATELLITEN } from "./daten";
 import { AUFTRAEGE } from "./auftraege";
+import { ORTE, orteVon } from "./orte";
 
 export interface Statistik {
   /** Sekunden aktiver Flug */
@@ -38,7 +39,7 @@ export interface ErfolgsDaten {
   statistik: Statistik;
 }
 
-export type Gruppe = "Erforschen" | "Aufträge" | "Reisen" | "Pilot" | "Missgeschicke";
+export type Gruppe = "Erforschen" | "Raumfahrt" | "Aufträge" | "Reisen" | "Pilot" | "Missgeschicke";
 
 export interface Erfolg {
   id: string;
@@ -54,6 +55,10 @@ export interface Erfolg {
 
 const PLANETEN = KOERPER.filter(k => k.art === "planet").map(k => k.id);
 const MONDE = KOERPER.filter(k => k.art === "mond").map(k => k.id);
+const HIMMELSKOERPER = NATUERLICH.map(k => k.id);
+const RAUMFAHRZEUGE = SATELLITEN.map(k => k.id);
+const ORT_IDS = ORTE.map(o => o.id);
+const ERD_ORTE = orteVon("erde").map(o => o.id);
 const GALILEI = ["io", "europa", "ganymed", "kallisto"];
 const zaehle = (liste: readonly string[], aus: readonly string[]) => aus.filter(id => liste.includes(id)).length;
 const stufe = (n: 1 | 2 | 3) => AUFTRAEGE.filter(a => a.stufe === n).map(a => a.id);
@@ -68,7 +73,13 @@ export const ERFOLGE: Erfolg[] = [
   { id: "monde-5", gruppe: "Erforschen", icon: "🌙", name: "Mondsüchtig", text: "Scanne fünf Monde.", ziel: 5, wert: d => zaehle(d.erforscht, MONDE) },
   { id: "monde-alle", gruppe: "Erforschen", icon: "🌕", name: "Mondsammlung", text: `Scanne alle ${MONDE.length} Monde.`, ziel: MONDE.length, wert: d => zaehle(d.erforscht, MONDE) },
   { id: "zwerge", gruppe: "Erforschen", icon: "🪨", name: "Kleine Welten", text: "Scanne die Zwergplaneten Ceres und Pluto.", ziel: 2, wert: d => zaehle(d.erforscht, ["ceres", "pluto"]) },
-  { id: "alles", gruppe: "Erforschen", icon: "🗺️", name: "Kartograf des Sonnensystems", text: `Scanne alle ${KOERPER.length} Himmelskörper.`, ziel: KOERPER.length, wert: d => d.erforscht.length },
+  { id: "alles", gruppe: "Erforschen", icon: "🗺️", name: "Kartograf des Sonnensystems", text: `Scanne alle ${HIMMELSKOERPER.length} Himmelskörper.`, ziel: HIMMELSKOERPER.length, wert: d => zaehle(d.erforscht, HIMMELSKOERPER) },
+
+  // ── Raumfahrt ──
+  { id: "satellit-1", gruppe: "Raumfahrt", icon: "🛰", name: "Auf Empfang", text: "Scanne dein erstes Raumfahrzeug in der Erdumlaufbahn.", ziel: 1, wert: d => zaehle(d.erforscht, RAUMFAHRZEUGE) },
+  { id: "satellit-alle", gruppe: "Raumfahrt", icon: "📶", name: "Verkehr über der Erde", text: `Scanne alle ${RAUMFAHRZEUGE.length} Raumfahrzeuge — von der ISS bis zur geostationären Bahn.`, ziel: RAUMFAHRZEUGE.length, wert: d => zaehle(d.erforscht, RAUMFAHRZEUGE) },
+  { id: "orte-erde", gruppe: "Raumfahrt", icon: "⚖️", name: "Fünf stille Punkte", text: "Erkunde alle fünf Lagrangepunkte von Sonne und Erde.", ziel: ERD_ORTE.length, wert: d => zaehle(d.erforscht, ERD_ORTE) },
+  { id: "orte-alle", gruppe: "Raumfahrt", icon: "🧲", name: "Wo nichts zu sehen ist", text: `Erkunde alle ${ORT_IDS.length} Lagrangepunkte, auch die Trojanerlager bei Jupiter.`, ziel: ORT_IDS.length, wert: d => zaehle(d.erforscht, ORT_IDS) },
 
   // ── Aufträge ──
   { id: "auftrag-1", gruppe: "Aufträge", icon: "🛰️", name: "Auf Mission", text: "Löse deinen ersten Forschungsauftrag.", ziel: 1, wert: d => d.erledigt.length },

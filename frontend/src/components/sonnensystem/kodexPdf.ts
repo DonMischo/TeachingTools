@@ -9,6 +9,7 @@
 import { KOERPER, type Koerper } from "@/lib/sonnensystem/daten";
 import { foto } from "@/lib/sonnensystem/bilder";
 import { KODEX_GRUPPEN, artZeile, datenZeilen } from "@/lib/sonnensystem/kodex";
+import { ORTE } from "@/lib/sonnensystem/orte";
 
 const HOCH: Record<string, string> = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "-" };
 /** Geschützte und schmale Leerzeichen, als Zeichencodes. */
@@ -145,21 +146,23 @@ export async function baueKodexPdf(onFortschritt?: (anteil: number) => void) {
     fakten(k.fakten, RAND, BREITE);
     onFortschritt?.(++fertig / KOERPER.length);
 
-    if (g.monde.length) {
+    // Monde und Raumfahrzeuge stehen gleich aufgebaut unter ihrem Planeten.
+    const unterKapitel = async (titel: string, liste: typeof g.monde) => {
+      if (!liste.length) return;
       y += 3;
       platz(12);
       schrift(13, "bold", 40);
-      doc.text(fuerPdf(`Monde von ${k.name}`), RAND, y);
+      doc.text(fuerPdf(titel), RAND, y);
       y += 3;
       doc.setDrawColor(200);
       doc.line(RAND, y, B - RAND, y);
       y += 6;
-      for (const m of g.monde) {
-        const mondBild = await bildDaten(m, 260);
+      for (const m of liste) {
+        const kleinBild = await bildDaten(m, 260);
         const kante = 30;
         platz(kante + 6);
         const oben = y;
-        if (mondBild) doc.addImage(mondBild, "JPEG", RAND, y - 3, kante, kante);
+        if (kleinBild) doc.addImage(kleinBild, "JPEG", RAND, y - 3, kante, kante);
         const x = RAND + kante + 5;
         const breite = BREITE - kante - 5;
         schrift(13, "bold", 20);
@@ -171,7 +174,30 @@ export async function baueKodexPdf(onFortschritt?: (anteil: number) => void) {
         y = Math.max(y, oben + kante) + 5;
         onFortschritt?.(++fertig / KOERPER.length);
       }
-    }
+    };
+    await unterKapitel(`Monde von ${k.name}`, g.monde);
+    await unterKapitel(`Raumfahrzeuge um ${k.name}`, g.satelliten);
+  }
+
+  // ── Orte ohne Körper: die Lagrangepunkte ──
+  doc.addPage();
+  y = RAND;
+  schrift(9, "bold", 110);
+  doc.text("ORTE OHNE KOERPER", RAND, y + 4);
+  schrift(24, "bold", 20);
+  doc.text("Die Lagrangepunkte", RAND, y + 14);
+  y += 22;
+  absatz("An fuenf Stellen heben sich die Anziehung zweier Koerper und die Fliehkraft gerade auf. Dort sieht man nichts - und genau dort parken die teuersten Teleskope, die wir haben.", RAND, BREITE, 10.5, 5);
+  y += 4;
+  for (const o of ORTE) {
+    platz(26);
+    schrift(13, "bold", 20);
+    doc.text(fuerPdf(`${o.name}`), RAND, y);
+    y += 6;
+    tabelle([["Lage", o.entfernung], ["Dort zu finden", o.bewohner]], RAND, BREITE, 9);
+    absatz(o.intro, RAND, BREITE, 9.5, 4.4);
+    fakten(o.fakten, RAND, BREITE);
+    y += 4;
   }
 
   // ── Bildnachweise ──

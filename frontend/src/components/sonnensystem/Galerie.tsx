@@ -9,9 +9,9 @@
  * Planeten auch die Bilder seiner Monde. Ganz unten: alle Bildnachweise.
  */
 import { useEffect, useMemo, useState } from "react";
-import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt, type GalerieEintrag } from "@/lib/sonnensystem/galerie";
+import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt, zielName, type GalerieEintrag } from "@/lib/sonnensystem/galerie";
 import { ALLE_NACHWEISE } from "@/lib/sonnensystem/bilder";
-import { HAUPTKOERPER, KOERPER_NACH_ID, mondeVon } from "@/lib/sonnensystem/daten";
+import { HAUPTKOERPER, KOERPER_NACH_ID, mondeVon, satellitenVon } from "@/lib/sonnensystem/daten";
 import { Nachweis } from "./Steckbrief";
 
 export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAlleZeigen }: {
@@ -46,7 +46,10 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
     return () => window.removeEventListener("keydown", taste);
   });
 
-  const filterOptionen = useMemo(() => HAUPTKOERPER.map(p => ({ planet: p, monde: mondeVon(p.id) })), []);
+  const filterOptionen = useMemo(
+    () => HAUPTKOERPER.map(p => ({ planet: p, kinder: [...mondeVon(p.id), ...satellitenVon(p.id)] })),
+    [],
+  );
 
   return (
     <div className="h-full overflow-y-auto p-4 text-slate-100">
@@ -65,10 +68,10 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
             aria-label="Nach Himmelskörper filtern"
           >
             <option value="">alle Himmelskörper</option>
-            {filterOptionen.map(({ planet, monde }) => (
+            {filterOptionen.map(({ planet, kinder }) => (
               <optgroup key={planet.id} label={planet.name}>
-                <option value={planet.id}>{planet.name}{monde.length ? " mit Monden" : ""}</option>
-                {monde.map(m => <option key={m.id} value={m.id}>└ {m.name}</option>)}
+                <option value={planet.id}>{planet.name}{kinder.length ? " und alles drum herum" : ""}</option>
+                {kinder.map(m => <option key={m.id} value={m.id}>└ {m.name}</option>)}
               </optgroup>
             ))}
           </select>
@@ -90,7 +93,7 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
         {liste.map(g => {
           const bild = bildFuer(g);
           if (!offenFuer(g)) {
-            const fehlt = benoetigt(g).filter(id => !erforscht.includes(id)).map(id => KOERPER_NACH_ID[id]?.name);
+            const fehlt = benoetigt(g).filter(id => !erforscht.includes(id)).map(zielName);
             return (
               <div key={g.id} className="rounded-xl overflow-hidden border border-dashed border-white/15 bg-white/[0.03]">
                 <div className="aspect-[4/3] relative overflow-hidden bg-black">

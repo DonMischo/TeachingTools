@@ -11,6 +11,18 @@
       "d": 0.859
     }
   },
+  "fotos/chandra": {
+    "datei": "/sonnensystem/fotos/chandra.webp",
+    "titel": "Chandra X-Ray Observatory (noirlab2427c).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Chandra_X-Ray_Observatory_(noirlab2427c).jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "NASA/CXC & J.Vaughan",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.497,
+      "d": 0.996
+    }
+  },
   "fotos/charon": {
     "datei": "/sonnensystem/fotos/charon.webp",
     "titel": "Charon in True Color - High-Res.jpg",
@@ -95,6 +107,30 @@
       "d": 0.906
     }
   },
+  "fotos/gps": {
+    "datei": "/sonnensystem/fotos/gps.webp",
+    "titel": "Navstar-2F.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Navstar-2F.jpg",
+    "lizenz": "Public domain",
+    "urheber": "USAF",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.515,
+      "d": 0.996
+    }
+  },
+  "fotos/hubble": {
+    "datei": "/sonnensystem/fotos/hubble.webp",
+    "titel": "Hubble 2009 close-up.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hubble_2009_close-up.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA",
+    "scheibe": {
+      "x": 0.438,
+      "y": 0.509,
+      "d": 0.875
+    }
+  },
   "fotos/iapetus": {
     "datei": "/sonnensystem/fotos/iapetus.webp",
     "titel": "Iapetus as seen by the Cassini probe - 20071008.jpg",
@@ -117,6 +153,18 @@
       "x": 0.498,
       "y": 0.496,
       "d": 0.871
+    }
+  },
+  "fotos/iss": {
+    "datei": "/sonnensystem/fotos/iss.webp",
+    "titel": "ISS from the SpaceX Crew Dragon Endeavor during Flyaround (iss066e081130).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ISS_from_the_SpaceX_Crew_Dragon_Endeavor_during_Flyaround_(iss066e081130).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA Johnson Space Center / Thomas Pesquet",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.497,
+      "d": 0.996
     }
   },
   "fotos/jupiter": {
@@ -165,6 +213,18 @@
       "x": 0.494,
       "y": 0.498,
       "d": 0.918
+    }
+  },
+  "fotos/meteosat": {
+    "datei": "/sonnensystem/fotos/meteosat.webp",
+    "titel": "Meteosat Third Generation Imager above Earth ESA24620590.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Meteosat_Third_Generation_Imager_above_Earth_ESA24620590.png",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "ESA/Mlabspace",
+    "scheibe": {
+      "x": 0.551,
+      "y": 0.497,
+      "d": 0.891
     }
   },
   "fotos/mimas": {
@@ -275,6 +335,18 @@
       "d": 0.367
     }
   },
+  "fotos/sentinel": {
+    "datei": "/sonnensystem/fotos/sentinel.webp",
+    "titel": "Sentinel-2A satellite - CSG - Carefully aligning the satellite to the adapter.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sentinel-2A_satellite_-_CSG_-_Carefully_aligning_the_satellite_to_the_adapter.jpg",
+    "lizenz": "CC BY-SA 2.0",
+    "urheber": "ESA_events",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.497,
+      "d": 0.996
+    }
+  },
   "fotos/sonne": {
     "datei": "/sonnensystem/fotos/sonne.webp",
     "titel": "The Sun by the Atmospheric Imaging Assembly of NASA's Solar Dynamics Observatory - 20100819.jpg",
@@ -297,6 +369,18 @@
       "x": 0.496,
       "y": 0.492,
       "d": 0.906
+    }
+  },
+  "fotos/tiangong": {
+    "datei": "/sonnensystem/fotos/tiangong.webp",
+    "titel": "Tiangong Space Station Rendering 2022.11.01.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tiangong_Space_Station_Rendering_2022.11.01.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "Shujianyang",
+    "scheibe": {
+      "x": 0.498,
+      "y": 0.497,
+      "d": 0.996
     }
   },
   "fotos/titan": {
@@ -373,6 +457,13 @@
     "lizenz": "Public domain",
     "urheber": "NASA/JPL-Caltech/UCLA/MPS/DLR/IDA"
   },
+  "galerie/chandra-krebsnebel": {
+    "datei": "/sonnensystem/galerie/chandra-krebsnebel.webp",
+    "titel": "Chandra X-ray Images of Crab Nebula (2009-crab-more-1 - crab xray).tiff",
+    "seite": "https://commons.wikimedia.org/wiki/File:Chandra_X-ray_Images_of_Crab_Nebula_(2009-crab-more-1_-_crab_xray).tiff",
+    "lizenz": "Public domain",
+    "urheber": "(Credit: X-ray: NASA/CXC/SAO/F.Seward; Optical: NASA/ESA/ASU/J.Hester & A.Loll; Infrared: NASA/JPL-Caltech/Univ. Minn./R.Gehrz)"
+  },
   "galerie/earthrise": {
     "datei": "/sonnensystem/galerie/earthrise.webp",
     "titel": "NASA-Apollo8-Dec24-Earthrise.jpg",
@@ -422,6 +513,13 @@
     "lizenz": "CC BY 2.0",
     "urheber": "Andrea Luck"
   },
+  "galerie/gaia-karte": {
+    "datei": "/sonnensystem/galerie/gaia-karte.webp",
+    "titel": "Gaia’s new map of star density ESA393130.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Gaia%E2%80%99s_new_map_of_star_density_ESA393130.jpg",
+    "lizenz": "CC BY-SA 3.0 igo",
+    "urheber": "European Space Agency"
+  },
   "galerie/hubble-deep-field": {
     "datei": "/sonnensystem/galerie/hubble-deep-field.webp",
     "titel": "Hubble ultra deep field.jpg",
@@ -435,6 +533,13 @@
     "seite": "https://commons.wikimedia.org/wiki/File:PIA25726-Jupiter%2BMoonIo-Juno-20230731.jpg",
     "lizenz": "CC BY 3.0",
     "urheber": "NASA/JPL-Caltech/SwRI/MSSS/Alain Mirón Velázquez © CC BY"
+  },
+  "galerie/iss-cupola": {
+    "datei": "/sonnensystem/galerie/iss-cupola.webp",
+    "titel": "ISS-68 Astronaut Bob Hines looks at the Earth through the cupola.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ISS-68_Astronaut_Bob_Hines_looks_at_the_Earth_through_the_cupola.jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/Bob Hines"
   },
   "galerie/jupiter-juno-fleck": {
     "datei": "/sonnensystem/galerie/jupiter-juno-fleck.webp",
@@ -484,6 +589,13 @@
     "seite": "https://commons.wikimedia.org/wiki/File:Comet_67P_on_19_September_2014_NavCam_mosaic.jpg",
     "lizenz": "CC BY-SA 3.0 igo",
     "urheber": "ESA/Rosetta/NAVCAM, CC BY-SA IGO 3.0"
+  },
+  "galerie/lucy-dinkinesh": {
+    "datei": "/sonnensystem/galerie/lucy-dinkinesh.webp",
+    "titel": "Lucy Sees Asteroid Dinkinesh in Detail (SVS14596).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Lucy_Sees_Asteroid_Dinkinesh_in_Detail_(SVS14596).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA's Scientific Visualization Studio - KBR Wyle Services, LLC/Dan Gallagher, SwRI/Harold Levison, Southwest Research Institute/John Spencer, London Stereoscopic Company/Brian May, Claudia Manzoni, N"
   },
   "galerie/mars-curiosity": {
     "datei": "/sonnensystem/galerie/mars-curiosity.webp",
@@ -639,6 +751,20 @@
     "lizenz": "CC BY-SA 4.0",
     "urheber": "NASA/ESA/CSA JWST NIRCam; Macarena Garcia Marin et al. & Melina Thévenot"
   },
+  "galerie/sentinel-bahamas": {
+    "datei": "/sonnensystem/galerie/sentinel-bahamas.webp",
+    "titel": "Sentinel-2 bahamas (cropped).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sentinel-2_bahamas_(cropped).jpg",
+    "lizenz": "Attribution",
+    "urheber": "European Union, Sentinel-2 Imagery"
+  },
+  "galerie/soho-cme": {
+    "datei": "/sonnensystem/galerie/soho-cme.webp",
+    "titel": "05 Coronal Mass Ejection (2819895025).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:05_Coronal_Mass_Ejection_(2819895025).jpg",
+    "lizenz": "Public domain",
+    "urheber": "NASA/SOHO"
+  },
   "galerie/sonne-solar-orbiter": {
     "datei": "/sonnensystem/galerie/sonne-solar-orbiter.webp",
     "titel": "Solar Orbiter’s widest high-res view of the Sun ESA508430.jpg",
@@ -673,6 +799,13 @@
     "seite": "https://commons.wikimedia.org/wiki/File:Webb%27s_First_Deep_Field.jpg",
     "lizenz": "Public domain",
     "urheber": "NASA, ESA, CSA, and STScI"
+  },
+  "galerie/webb-spiegel": {
+    "datei": "/sonnensystem/galerie/webb-spiegel.webp",
+    "titel": "NASA's James Webb Space Telescope Primary Mirror Fully Assembled (25423929476).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:NASA%27s_James_Webb_Space_Telescope_Primary_Mirror_Fully_Assembled_(25423929476).jpg",
+    "lizenz": "CC BY 2.0",
+    "urheber": "NASA's James Webb Space Telescope from Greenbelt, MD, USA"
   },
   "texturen/charon": {
     "datei": "/sonnensystem/texturen/charon.webp",

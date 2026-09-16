@@ -12,9 +12,14 @@
  * Die Mondbahnen selbst stehen in mondbahnen.json: echte Bahnelemente von JPL
  * Horizons, geholt mit scripts/fetch-mondbahnen.mjs. Die Werte hier (Abstand,
  * Umlaufzeit, Neigung) sind die Lehrbuchzahlen für den Steckbrief.
+ *
+ * Dazu kommen Raumfahrzeuge in der Erdumlaufbahn. Sie sind keine Himmelskörper:
+ * Dichte, Schwerkraft und Achsneigung fehlen ihnen, dafür haben sie Betreiber,
+ * Startdatum und Zweck. Ihre Bahnen sind Kreise beziehungsweise bei Chandra
+ * eine Ellipse — mit den echten Halbachsen, Neigungen und Umlaufzeiten.
  */
 
-export type Art = "stern" | "planet" | "zwergplanet" | "mond";
+export type Art = "stern" | "planet" | "zwergplanet" | "mond" | "satellit";
 
 /** Keplerelemente in AE und Grad; d… = Änderung je julianischem Jahrhundert. */
 export interface Bahnelemente {
@@ -30,6 +35,20 @@ export interface MondBahn {
   neigung: number;
 }
 
+/** Bahn eines Raumfahrzeugs um seinen Planeten, gegen dessen Äquator. */
+export interface SatellitenBahn {
+  /** Große Halbachse, vom Erdmittelpunkt aus, km. */
+  aKm: number;
+  e: number;
+  umlaufMinuten: number;
+  /** Neigung gegen den Erdäquator, Grad. Über 90° heißt: läuft rückwärts. */
+  neigung: number;
+  /** Wo auf der Bahn er startet, Grad — nur damit nicht alle übereinanderstehen. */
+  phase: number;
+  /** Läuft mit der Erddrehung mit und steht damit still über einem Punkt. */
+  geostationaer?: boolean;
+}
+
 export interface Koerper {
   id: string;
   name: string;
@@ -39,21 +58,27 @@ export interface Koerper {
   farbe: string;
   radiusKm: number;
   masseKg: number;
-  /** g/cm³ */
-  dichte: number;
-  /** m/s² am Äquator */
-  schwerkraft: number;
+  /** g/cm³ — Raumfahrzeuge haben keine. */
+  dichte?: number;
+  /** m/s² am Äquator — Raumfahrzeuge haben keine. */
+  schwerkraft?: number;
   /** Siderische Rotation in Stunden; negativ = dreht sich rückwärts. */
-  rotationStunden: number;
+  rotationStunden?: number;
   /** Von Mittag bis Mittag — nur angegeben, wo er auffällig vom Sterntag abweicht. */
   sonnentagStunden?: number;
-  achsneigung: number;
+  achsneigung?: number;
   temperatur: string;
   atmosphaere: string;
   mondeAnzahl?: number;
   entdeckung?: string;
   bahn?: Bahnelemente;
   mondBahn?: MondBahn;
+  satBahn?: SatellitenBahn;
+  /** Nur Raumfahrzeuge: wer es betreibt, wann es startete, wofür, wie groß. */
+  betreiber?: string;
+  start?: string;
+  zweck?: string;
+  groesse?: string;
   /** Ringe in Planetenradien vom Mittelpunkt. */
   ringe?: { innen: number; aussen: number };
   /** Farbe des Leuchtsaums am Rand, wo eine Atmosphäre Licht streut. */
@@ -516,17 +541,149 @@ export const KOERPER: Koerper[] = [
       "Sein rötlicher Nordpol heißt Mordor Macula: dort friert Gas fest, das von Pluto herüberweht.",
     ],
   },
+
+  // ── Raumfahrzeuge in der Erdumlaufbahn ──
+  // Von Menschen gebaut, deshalb ohne Dichte und Schwerkraft. Die Bahnhöhen
+  // reichen von 400 km (ISS) bis fast zur halben Mondentfernung (Chandra).
+  {
+    id: "iss", name: "ISS", art: "satellit", mutter: "erde", farbe: "#d8dde6",
+    radiusKm: 0.0545, masseKg: 419_725, groesse: "109 m × 73 m — so groß wie ein Fußballfeld",
+    temperatur: "in der Sonne bis +120 °C, im Erdschatten −150 °C",
+    atmosphaere: "innen Luft wie auf Meereshöhe, außen Vakuum",
+    betreiber: "NASA, Roskosmos, ESA, JAXA und CSA gemeinsam",
+    start: "erstes Modul 1998, seit dem 2. November 2000 ununterbrochen bewohnt",
+    zweck: "Forschungslabor in der Schwerelosigkeit",
+    satBahn: { aKm: 6_789, e: 0, umlaufMinuten: 92.9, neigung: 51.6, phase: 0 },
+    intro: "Das größte Bauwerk, das Menschen je ins All gebracht haben — und seit dem Jahr 2000 nie wieder leer.",
+    fakten: [
+      "Sie umrundet die Erde in 93 Minuten. Die Besatzung erlebt also 16 Sonnenaufgänge am Tag.",
+      "Mit 28 000 km/h ist sie schnell genug, um in anderthalb Stunden einmal herumzukommen — genau das hält sie oben.",
+      "Am Abendhimmel ist sie ein heller, ruhig wandernder Punkt: sie blinkt nicht, weil ihre Solarflächen einfach die Sonne spiegeln.",
+      "Ihr erstes Modul Sarja startete 1998; zusammengebaut wurde sie in über 40 Flügen.",
+    ],
+  },
+  {
+    id: "tiangong", name: "Tiangong", art: "satellit", mutter: "erde", farbe: "#e2c98a",
+    radiusKm: 0.0275, masseKg: 69_000, groesse: "T-förmig, rund 55 m lang",
+    temperatur: "wie bei der ISS: von +120 °C bis −150 °C",
+    atmosphaere: "innen Atemluft, außen Vakuum",
+    betreiber: "CMSA (China)",
+    start: "Kernmodul Tianhe am 29. April 2021",
+    zweck: "chinesische Raumstation für drei Raumfahrende",
+    satBahn: { aKm: 6_760, e: 0, umlaufMinuten: 92.2, neigung: 41.5, phase: 140 },
+    intro: "Der »Himmelspalast«: Chinas eigene Raumstation, gut ein Sechstel so schwer wie die ISS.",
+    fakten: [
+      "Drei Module: der Kern Tianhe und die beiden Labore Wentian und Mengtian.",
+      "Sie fliegt etwas niedriger als die ISS und braucht deshalb eine Minute weniger je Umlauf.",
+      "An Bord wuchs 2022 Reis vom Samen bis zum Korn — zum ersten Mal ganz in der Schwerelosigkeit.",
+    ],
+  },
+  {
+    id: "hubble", name: "Hubble-Weltraumteleskop", art: "satellit", mutter: "erde", farbe: "#c9d4e0",
+    radiusKm: 0.0066, masseKg: 11_110, groesse: "13,2 m lang, Spiegel 2,4 m",
+    temperatur: "der Spiegel wird auf 21 °C gehalten, damit er sich nicht verzieht",
+    atmosphaere: "keine — und genau darum geht es",
+    betreiber: "NASA und ESA",
+    start: "24. April 1990 mit der Raumfähre Discovery",
+    zweck: "Teleskop für sichtbares, ultraviolettes und nahes Infrarotlicht",
+    satBahn: { aKm: 6_906, e: 0, umlaufMinuten: 95.4, neigung: 28.5, phase: 250 },
+    intro: "Über der Luft ist der Himmel ruhig: kein Flimmern, keine Wolken. Deshalb sah Hubble schärfer als jedes Teleskop am Boden seiner Zeit.",
+    fakten: [
+      "Sein Spiegel war beim Start falsch geschliffen — um ein Fünfzigstel einer Haardicke. 1993 bekam er eine »Brille« eingebaut.",
+      "Für das Hubble Deep Field hielt er zehn Tage lang auf einen scheinbar leeren Fleck Himmel. Darauf waren rund 3 000 Galaxien.",
+      "Fünfmal flogen Astronautinnen und Astronauten hin und reparierten ihn — kein anderes Teleskop wurde je im All gewartet.",
+      "Er misst, wie schnell sich das Weltall ausdehnt. Benannt ist er nach Edwin Hubble, der diese Ausdehnung entdeckte.",
+    ],
+  },
+  {
+    id: "chandra", name: "Chandra-Röntgenobservatorium", art: "satellit", mutter: "erde", farbe: "#cfa0c8",
+    radiusKm: 0.0069, masseKg: 4_790, groesse: "13,8 m lang, Sonnensegel 19,5 m",
+    temperatur: "die Spiegel liegen bei rund 20 °C, die Detektoren bei −120 °C",
+    atmosphaere: "keine",
+    betreiber: "NASA",
+    start: "23. Juli 1999 mit der Raumfähre Columbia",
+    zweck: "Teleskop für Röntgenlicht",
+    satBahn: { aKm: 74_418, e: 0.808, umlaufMinuten: 3_809, neigung: 76.7, phase: 120 },
+    intro: "Röntgenlicht kommt am Boden nie an — die Luft schluckt es. Wer heißes Gas um Schwarze Löcher sehen will, muss hinaus.",
+    fakten: [
+      "Seine Bahn ist eine lange Ellipse: im fernsten Punkt ist er ein Drittel so weit weg wie der Mond, im nächsten nur 14 000 km.",
+      "Ein Umlauf dauert 2,6 Tage. Weit draußen stört ihn der Strahlungsgürtel der Erde nicht — dort misst er.",
+      "Röntgenlicht lässt sich nicht einfach spiegeln, es würde durch den Spiegel hindurchgehen. Chandras Spiegel streifen es nur ganz flach ab, wie ein Stein übers Wasser.",
+      "Benannt nach Subrahmanyan Chandrasekhar, der ausrechnete, wie schwer ein Stern sein muss, um am Ende zu kollabieren.",
+    ],
+  },
+  {
+    id: "sentinel", name: "Sentinel-2", art: "satellit", mutter: "erde", farbe: "#7fb8d8",
+    radiusKm: 0.0018, masseKg: 1_140, groesse: "3,4 m hoch, Sonnensegel 4,4 m",
+    temperatur: "die Kamera wird gekühlt, die Hülle schwankt zwischen −60 °C und +60 °C",
+    atmosphaere: "keine",
+    betreiber: "ESA im Programm Copernicus",
+    start: "Sentinel-2A am 23. Juni 2015",
+    zweck: "Erdbeobachtung: Landwirtschaft, Wälder, Wasser, Katastrophen",
+    satBahn: { aKm: 7_157, e: 0, umlaufMinuten: 100.6, neigung: 98.6, phase: 60 },
+    intro: "Ein Wächter auf einer Bahn über die Pole: er sieht jeden Fleck der Erde immer zur gleichen Ortszeit.",
+    fakten: [
+      "Seine Bahn ist sonnensynchron: sie kippt jeden Tag um ein knappes Grad mit, so steht die Sonne auf jedem Bild gleich hoch. Erst dadurch lassen sich Aufnahmen von heute und von vor einem Jahr vergleichen.",
+      "Er fliegt um 98,6° geneigt, also etwas über den Pol hinaus. Genau diese Neigung macht die Bahn sonnensynchron.",
+      "Sein Streifen ist 290 km breit; zusammen mit Sentinel-2B ist jeder Ort Europas alle fünf Tage wieder dran.",
+      "Alle Bilder sind frei verfügbar — jede Schule darf damit arbeiten.",
+    ],
+  },
+  {
+    id: "gps", name: "GPS-Satellit", art: "satellit", mutter: "erde", farbe: "#b9c4d2",
+    radiusKm: 0.0058, masseKg: 1_630, groesse: "Körper 2,5 m, Sonnensegel 11,6 m Spannweite",
+    temperatur: "im Wechsel von Sonne und Schatten −100 °C bis +100 °C",
+    atmosphaere: "keine",
+    betreiber: "US Space Force — Europa hat dazu Galileo, China Beidou",
+    start: "erster Satellit 1978, heute rund 31 aktive",
+    zweck: "Navigation: jeder funkt ununterbrochen, wie spät es bei ihm ist",
+    satBahn: { aKm: 26_560, e: 0, umlaufMinuten: 717.9, neigung: 55, phase: 20 },
+    intro: "Ein Navigationssatellit tut nichts anderes, als seine Uhrzeit zu funken. Aus dem Vergleich mehrerer Uhren rechnet das Handy seinen Ort aus.",
+    fakten: [
+      "Er braucht genau einen halben Sterntag für eine Runde — nach zwei Umläufen steht er wieder über derselben Stelle.",
+      "Zur Ortung müssen mindestens vier Satelliten am Himmel stehen: drei für den Ort, einer für die Uhr des Empfängers.",
+      "Seine Atomuhr geht schneller als eine auf der Erde, weil die Schwerkraft dort oben schwächer ist — und langsamer, weil er so schnell fliegt. Unterm Strich 38 Millionstel Sekunden am Tag.",
+      "Ohne diese Korrektur wäre die Ortung schon nach einem Tag um 10 km falsch. Einstein hatte also recht — und jedes Handy rechnet damit.",
+    ],
+  },
+  {
+    id: "meteosat", name: "Meteosat", art: "satellit", mutter: "erde", farbe: "#d9c9a8",
+    radiusKm: 0.004, masseKg: 3_800, groesse: "rund 5 m hoch",
+    temperatur: "die Instrumente werden auf unter −150 °C gekühlt",
+    atmosphaere: "keine",
+    betreiber: "EUMETSAT und ESA",
+    start: "erster Meteosat 1977, die neueste Reihe seit Dezember 2022",
+    zweck: "Wettersatellit — die Wolkenbilder im Wetterbericht kommen von ihm",
+    satBahn: { aKm: 42_164, e: 0, umlaufMinuten: 1_436.1, neigung: 0, phase: 0, geostationaer: true },
+    intro: "Er braucht für eine Runde genauso lange wie die Erde für eine Drehung. Also steht er scheinbar still — immer über demselben Punkt.",
+    fakten: [
+      "Das geht nur in genau 35 786 km Höhe über dem Äquator. Diese Bahn heißt geostationär, und dort ist es eng: alle Fernseh- und Wettersatelliten wollen hin.",
+      "Meteosat steht über dem Golf von Guinea bei 0° Länge — von dort sieht er Europa und Afrika in einem Bild.",
+      "Alle zehn Minuten fotografiert er die ganze Erdscheibe. Daraus werden die Wolkenfilme im Wetterbericht.",
+      "Die Idee hatte 1945 der Schriftsteller Arthur C. Clarke — zwölf Jahre bevor überhaupt der erste Satellit flog.",
+      "Ein Funkspruch hinauf und zurück braucht eine Viertelsekunde. Deshalb stockt ein Telefonat über Satellit.",
+    ],
+  },
 ];
 
 export const KOERPER_NACH_ID: Record<string, Koerper> = Object.fromEntries(KOERPER.map(k => [k.id, k]));
 
 /** Sonne, Planeten und Zwergplaneten in Reihenfolge des Abstands. */
-export const HAUPTKOERPER = KOERPER.filter(k => k.art !== "mond");
+export const HAUPTKOERPER = KOERPER.filter(k => k.art !== "mond" && k.art !== "satellit");
 
 export const PLANETEN = KOERPER.filter(k => k.art === "planet");
 
+/** Alles, was natürlich am Himmel steht — ohne die Raumfahrzeuge. */
+export const NATUERLICH = KOERPER.filter(k => k.art !== "satellit");
+
+export const SATELLITEN = KOERPER.filter(k => k.art === "satellit");
+
 export function mondeVon(id: string): Koerper[] {
-  return KOERPER.filter(k => k.mutter === id);
+  return KOERPER.filter(k => k.art === "mond" && k.mutter === id);
+}
+
+export function satellitenVon(id: string): Koerper[] {
+  return KOERPER.filter(k => k.art === "satellit" && k.mutter === id);
 }
 
 export const ERDE = KOERPER_NACH_ID.erde;
@@ -542,4 +699,5 @@ export const ART_NAME: Record<Art, string> = {
   planet: "Planet",
   zwergplanet: "Zwergplanet",
   mond: "Mond",
+  satellit: "Raumfahrzeug",
 };

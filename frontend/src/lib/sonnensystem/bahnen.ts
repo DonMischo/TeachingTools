@@ -120,6 +120,33 @@ export function mondVersatz(mond: Koerper, mutter: Koerper, jd: number): Vec3 {
   return ellipsenPunkt(b.a, b.e, b.i * GRAD, b.periapsis * GRAD, b.knoten * GRAD, E);
 }
 
+/**
+ * Wo ein Raumfahrzeug gerade steht, in km relativ zum Planetenmittelpunkt.
+ *
+ * Anders als bei den Monden sind das keine gemessenen Bahnelemente, sondern
+ * die Lehrbuchwerte: Halbachse, Exzentrizität, Neigung und Umlaufzeit. Wo
+ * genau ein Satellit heute über der Erde steht, ändert sich ohnehin täglich —
+ * was zählt, ist die Höhe, die Neigung und das Tempo.
+ *
+ * Gekippt wird zweimal: erst um die Bahnneigung gegen den Äquator, dann um die
+ * Achsneigung des Planeten. Das zweite Kippen folgt dem Vorzeichen, mit dem
+ * szene.ts die Kugel aufstellt — nur so läuft ein geostationärer Satellit auch
+ * wirklich über dem gezeichneten Äquator mit.
+ */
+export function satellitVersatz(sat: Koerper, mutter: Koerper, jd: number): Vec3 {
+  const b = sat.satBahn!;
+  // Geostationär: derselbe Winkel wie die Drehung des Planeten, also steht er still.
+  const u = b.geostationaer
+    ? ((jd * 24) / mutter.rotationStunden!) * 2 * Math.PI + b.phase * GRAD
+    : ((jd - J2000) * 1440 * 2 * Math.PI) / b.umlaufMinuten + b.phase * GRAD;
+  const E = loeseKepler(u, b.e);
+  const x = b.aKm * (Math.cos(E) - b.e);
+  const y = b.aKm * Math.sqrt(1 - b.e * b.e) * Math.sin(E);
+  // Bahnebene: x in der Äquatorebene, y um Neigung plus Achsneigung gekippt.
+  const w = (b.neigung + (mutter.achsneigung ?? 0)) * GRAD;
+  return [x, y * Math.cos(w), y * Math.sin(w)];
+}
+
 /** Ein Umlauf in Tagen, aus der gemessenen Rate der mittleren Länge. */
 export function mondUmlauf(mondId: string): number | null {
   const b = MONDBAHNEN.monde[mondId];

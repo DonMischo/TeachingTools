@@ -51,10 +51,11 @@ describe("Sonnensystem", () => {
     const { unmount } = render(<Sonnensystem />);
     reiter(/Galerie/);
     expect(screen.queryByRole("button", { name: /Säulen der Schöpfung/ })).toBeNull();
-    expect(screen.getAllByText("Scanne Pluto").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Scanne Hubble-Weltraumteleskop/).length).toBeGreaterThan(0);
     unmount();
 
-    localStorage.setItem("sonnensystem-forschung-v1:geraet", JSON.stringify({ erforscht: ["pluto"], erledigt: [] }));
+    // Die Säulen hängen an dem Teleskop, das sie aufgenommen hat — Hubble und Webb an L2.
+    localStorage.setItem("sonnensystem-forschung-v1:geraet", JSON.stringify({ erforscht: ["hubble", "ort-erde-l2"], erledigt: [] }));
     render(<Sonnensystem />);
     reiter(/Galerie/);
     fireEvent.click(screen.getAllByRole("button", { name: /Säulen der Schöpfung/ })[0]);
