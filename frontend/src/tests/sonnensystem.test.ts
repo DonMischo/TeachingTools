@@ -237,6 +237,36 @@ describe("Raumfahrzeuge", () => {
   });
 });
 
+describe("Sonnensturm", () => {
+  it("wirft einen Kegel zur Erde, keine Kugel", async () => {
+    const THREE = await import("three");
+    const { baueSturmwolke } = await import("@/components/sonnensystem/magnetfeld");
+    const wolke = baueSturmwolke();
+    const zurErde = new THREE.Vector3(0, 0, -100);
+    wolke.richteAus(zurErde);
+    // Die Achse des Kegels ist das lokale +z; sie muss zur Erde zeigen.
+    const achse = new THREE.Vector3(0, 0, 1).applyQuaternion(wolke.wolke.quaternion);
+    expect(achse.angleTo(zurErde.clone().normalize())).toBeCloseTo(0, 5);
+
+    const front = 50;
+    wolke.setze(front, 1);
+    const orte = wolke.wolke.geometry.attributes.position.array as Float32Array;
+    const punkt = new THREE.Vector3();
+    let groesster = 0;
+    for (let i = 0; i < orte.length; i += 3) {
+      punkt.set(orte[i], orte[i + 1], orte[i + 2]);
+      // Die Wolke hat Tiefe, reicht aber nie über die Front hinaus.
+      expect(punkt.length()).toBeLessThanOrEqual(front + 1e-4);
+      expect(punkt.length()).toBeGreaterThan(front * 0.45);
+      groesster = Math.max(groesster, punkt.angleTo(new THREE.Vector3(0, 0, 1)));
+    }
+    // Ein Auswurf ist 20 bis 45 Grad weit — und deckt eben nicht den ganzen Himmel ab.
+    expect((groesster * 180) / Math.PI).toBeLessThanOrEqual(38.01);
+    expect((groesster * 180) / Math.PI).toBeGreaterThan(30);
+    wolke.entsorgen();
+  });
+});
+
 describe("Keplersche Gesetze", () => {
   it("hält T² zu a³ für jeden Planeten bei eins", () => {
     for (const k of KOERPER.filter(x => x.bahn)) {

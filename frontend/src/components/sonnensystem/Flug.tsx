@@ -367,6 +367,9 @@ export default function Flug({
     objekte.get("erde")!.achse.add(magnet.feld);
     szene.add(magnet.huelle);
     const sturmwolke = baueSturmwolke();
+    // Der Auswurf sitzt in der Sonne und zielt auf die Erde — verfehlt er sie,
+    // passiert nämlich gar nichts.
+    sturmwolke.richteAus(ort.get("erde")!);
     szene.add(sturmwolke.wolke);
 
     const versatz = new THREE.Vector3();
@@ -1428,9 +1431,16 @@ function glocke(): number {
  * Sie fallen nicht in den Punkt hinein, sondern pendeln über Jahrhunderte in
  * weiten Bögen darum herum. Deshalb ist die Wolke
  *   — gekrümmt: sie folgt Jupiters Bahn um die Sonne, ist also kein Strich,
- *   — dick: die Bahnen sind bis 30° geneigt, der Schwarm ist keine Scheibe,
+ *   — dick: der Schwarm ist keine Scheibe, sondern reicht weit über die
+ *     Bahnebene hinaus,
  *   — dünn in der Richtung zur Sonne: die große Halbachse liegt fest,
  *   — nach außen ausdünnend, statt an einer Kante aufzuhören.
+ *
+ * Die Streuungen sind an die beobachtete Verteilung angelegt: längs der Bahn
+ * im Mittel 12° und höchstens 29° vom Punkt weg, in der Höhe im Mittel 8° und
+ * höchstens 26°, im Abstand 5,0 bis 5,4 AE. Dass die Wolke riesig wirkt,
+ * stimmt also: sie ist über zwei Astronomische Einheiten lang.
+ *
  * Die Zahl der Punkte ist eine Andeutung: bekannt sind über 13 000 Brocken.
  */
 function baueTrojaner(farbe: number, mitte: THREE.Vector3): THREE.Points {
@@ -1442,10 +1452,10 @@ function baueTrojaner(farbe: number, mitte: THREE.Vector3): THREE.Points {
   const bahnRadius = Math.hypot(mitte.x, mitte.z);
   const grundwinkel = Math.atan2(mitte.z, mitte.x);
   for (let i = 0; i < anzahl; i++) {
-    const laengs = THREE.MathUtils.clamp(glocke() * 0.2, -0.5, 0.5);
+    const laengs = THREE.MathUtils.clamp(glocke() * 0.26, -0.5, 0.5);
     const winkel = grundwinkel + laengs;
-    const r = bahnRadius * (1 + THREE.MathUtils.clamp(glocke() * 0.025, -0.07, 0.07));
-    const neigung = THREE.MathUtils.clamp(glocke() * 0.13, -0.45, 0.45);
+    const r = bahnRadius * (1 + THREE.MathUtils.clamp(glocke() * 0.018, -0.035, 0.035));
+    const neigung = THREE.MathUtils.clamp(glocke() * 0.17, -0.45, 0.45);
     stellen[i * 3] = Math.cos(winkel) * r;
     stellen[i * 3 + 1] = mitte.y + Math.tan(neigung) * r;
     stellen[i * 3 + 2] = Math.sin(winkel) * r;

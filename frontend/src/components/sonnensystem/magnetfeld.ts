@@ -313,27 +313,82 @@ function polarlichtKarte(): THREE.Texture {
   return karte;
 }
 
+/** Teilchen der Sturmwolke. */
+const STURM_TEILCHEN = 2600;
+/** Halber Öffnungswinkel des Auswurfs — echte Wolken sind 20 bis 45° weit. */
+const STURM_KEGEL = 38 * GRAD;
+
+export interface Sturmwolke {
+  wolke: THREE.Points;
+  /** Einmal beim Aufbau: der Kegel zeigt dorthin, wo die Erde steht. */
+  richteAus(nachErde: THREE.Vector3): void;
+  /** `front` ist der Abstand der Spitze von der Sonne, `kraft` die Sichtbarkeit. */
+  setze(front: number, kraft: number): void;
+  entsorgen(): void;
+}
+
 /**
- * Die Wolke eines Sonnensturms: eine Blase, die von der Sonne wegwächst.
+ * Die Wolke eines Sonnensturms: Milliarden Tonnen Gas, von der Sonne
+ * weggeschleudert.
+ *
+ * Keine Kugel — ein koronaler Massenauswurf ist ein Kegel, der in eine
+ * Richtung fliegt. Trifft er die Erde nicht, passiert gar nichts; hier ist er
+ * absichtlich auf sie gerichtet. Vorn ist er dicht und hell, nach hinten dünnt
+ * er aus.
  *
  * Echt sind das ein bis drei Tage bis zur Erde; hier sind es zwölf Sekunden,
  * sonst säße man nur da. Den Ablauf steuert der Flug (Flug.tsx).
  */
-export function baueSturmwolke(): { wolke: THREE.Mesh; setze(radius: number, kraft: number): void; entsorgen(): void } {
-  const mat = new THREE.MeshBasicMaterial({
-    color: 0xffa23a, transparent: true, opacity: 0, side: THREE.DoubleSide, wireframe: true,
+export function baueSturmwolke(): Sturmwolke {
+  const richtung = new Float32Array(STURM_TEILCHEN * 3);
+  const tiefe = new Float32Array(STURM_TEILCHEN);
+  const stellen = new Float32Array(STURM_TEILCHEN * 3);
+  const farben = new Float32Array(STURM_TEILCHEN * 3);
+  const vorn = new THREE.Color(0xfff2d8);
+  const hinten = new THREE.Color(0xd04a10);
+  const misch = new THREE.Color();
+  for (let i = 0; i < STURM_TEILCHEN; i++) {
+    // Gleichmäßig über die Kalotte: dafür muss der Kosinus gleichverteilt sein.
+    const laengs = 1 - Math.random() * (1 - Math.cos(STURM_KEGEL));
+    const quer = Math.sqrt(1 - laengs * laengs);
+    const phi = Math.random() * Math.PI * 2;
+    richtung[i * 3] = Math.cos(phi) * quer;
+    richtung[i * 3 + 1] = Math.sin(phi) * quer;
+    // Lokales +z ist die Flugrichtung; `richteAus` dreht sie zur Erde.
+    richtung[i * 3 + 2] = laengs;
+    // Tiefe: die meisten Teilchen liegen dicht hinter der Front.
+    const t = 1 - Math.random() ** 1.7 * 0.5;
+    tiefe[i] = t;
+    misch.copy(hinten).lerp(vorn, (t - 0.5) * 2);
+    farben[i * 3] = misch.r;
+    farben[i * 3 + 1] = misch.g;
+    farben[i * 3 + 2] = misch.b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(stellen, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(farben, 3));
+  const mat = new THREE.PointsMaterial({
+    vertexColors: true, size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0,
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
-  const wolke = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 14), mat);
+  const wolke = new THREE.Points(geo, mat);
   wolke.visible = false;
   wolke.frustumCulled = false;
   return {
     wolke,
-    setze(radius, kraft) {
+    richteAus(nachErde) { wolke.lookAt(nachErde); },
+    setze(front, kraft) {
       wolke.visible = kraft > 0;
-      wolke.scale.setScalar(Math.max(radius, 0.01));
-      mat.opacity = kraft * 0.6;
+      if (kraft <= 0) return;
+      for (let i = 0; i < STURM_TEILCHEN; i++) {
+        const r = front * tiefe[i];
+        stellen[i * 3] = richtung[i * 3] * r;
+        stellen[i * 3 + 1] = richtung[i * 3 + 1] * r;
+        stellen[i * 3 + 2] = richtung[i * 3 + 2] * r;
+      }
+      geo.attributes.position.needsUpdate = true;
+      mat.opacity = Math.min(1, kraft * 1.3);
     },
-    entsorgen() { wolke.geometry.dispose(); mat.dispose(); },
+    entsorgen() { geo.dispose(); mat.dispose(); },
   };
 }
