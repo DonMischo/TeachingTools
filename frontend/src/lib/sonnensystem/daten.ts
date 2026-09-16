@@ -52,6 +52,8 @@ export interface SatellitenBahn {
 export interface Koerper {
   id: string;
   name: string;
+  /** Kürzel für enge Stellen wie die Marken im Flug. Ohne Angabe: der Name. */
+  kurz?: string;
   art: Art;
   mutter?: string;
   /** Ersatzfarbe für Punkte, Bahnlinien und Beschriftungen. */
@@ -579,7 +581,7 @@ export const KOERPER: Koerper[] = [
     ],
   },
   {
-    id: "hubble", name: "Hubble-Weltraumteleskop", art: "satellit", mutter: "erde", farbe: "#c9d4e0",
+    id: "hubble", name: "Hubble-Weltraumteleskop", kurz: "Hubble", art: "satellit", mutter: "erde", farbe: "#c9d4e0",
     radiusKm: 0.0066, masseKg: 11_110, groesse: "13,2 m lang, Spiegel 2,4 m",
     temperatur: "der Spiegel wird auf 21 °C gehalten, damit er sich nicht verzieht",
     atmosphaere: "keine — und genau darum geht es",
@@ -596,7 +598,7 @@ export const KOERPER: Koerper[] = [
     ],
   },
   {
-    id: "chandra", name: "Chandra-Röntgenobservatorium", art: "satellit", mutter: "erde", farbe: "#cfa0c8",
+    id: "chandra", name: "Chandra-Röntgenobservatorium", kurz: "Chandra", art: "satellit", mutter: "erde", farbe: "#cfa0c8",
     radiusKm: 0.0069, masseKg: 4_790, groesse: "13,8 m lang, Sonnensegel 19,5 m",
     temperatur: "die Spiegel liegen bei rund 20 °C, die Detektoren bei −120 °C",
     atmosphaere: "keine",
@@ -630,7 +632,7 @@ export const KOERPER: Koerper[] = [
     ],
   },
   {
-    id: "gps", name: "GPS-Satellit", art: "satellit", mutter: "erde", farbe: "#b9c4d2",
+    id: "gps", name: "GPS-Satellit", kurz: "GPS", art: "satellit", mutter: "erde", farbe: "#b9c4d2",
     radiusKm: 0.0058, masseKg: 1_630, groesse: "Körper 2,5 m, Sonnensegel 11,6 m Spannweite",
     temperatur: "im Wechsel von Sonne und Schatten −100 °C bis +100 °C",
     atmosphaere: "keine",

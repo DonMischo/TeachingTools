@@ -150,7 +150,7 @@ describe("Daten", () => {
 
   it("führt jeden Auftrag zu einem vorhandenen Ziel, mit genau einer richtigen Antwort", () => {
     for (const a of AUFTRAEGE) {
-      expect(K[a.ziel], a.id).toBeDefined();
+      expect(K[a.ziel] ?? ORTE_NACH_ID[a.ziel], a.id).toBeDefined();
       const gemischt = gemischteAntworten(a);
       expect(gemischt.filter(x => x.richtig)).toHaveLength(1);
       expect(gemischteAntworten(a)).toEqual(gemischt);

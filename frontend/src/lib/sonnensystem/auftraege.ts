@@ -1,8 +1,9 @@
 /**
  * Forschungsaufträge für den Flugmodus.
  *
- * Ein Auftrag ist ein Rätsel, das zu einem Himmelskörper führt. Wer hinfliegt
- * und ihn scannt, bekommt eine Frage, deren Antwort im Steckbrief steht —
+ * Ein Auftrag ist ein Rätsel, das zu einem Himmelskörper, einem Raumfahrzeug
+ * oder einem Lagrangepunkt führt. Wer hinfliegt und scannt, bekommt eine
+ * Frage, deren Antwort im Steckbrief beziehungsweise auf der Scankarte steht —
  * lesen lohnt sich also. Gezählt wird nur im Browser, ohne Hauspunkte.
  *
  * Die Reihenfolge ist beliebig: jeder Auftrag zählt, sobald sein Ziel gescannt
@@ -28,6 +29,90 @@ export interface Auftrag {
 export const STUFEN_NAME = { 1: "Grundwissen", 2: "Fortgeschritten", 3: "Profi" } as const;
 
 const ROH: Omit<Auftrag, "stufe">[] = [
+  {
+    id: "raumstation", ziel: "iss",
+    hinweis: "Über dir kreist ein Bauwerk, so groß wie ein Fußballfeld — und seit dem Jahr 2000 ist immer jemand darin. Flieg hin.",
+    frage: "Wie lange braucht die ISS für eine Runde um die Erde?",
+    antworten: [
+      "Etwa 93 Minuten.",
+      "Genau 24 Stunden.",
+      "Einen Monat, wie der Mond.",
+      "Etwa acht Stunden.",
+    ],
+    erklaerung: "In 400 km Höhe muss sie mit 28 000 km/h fliegen, um nicht herunterzufallen. Die Besatzung erlebt deshalb 16 Sonnenaufgänge am Tag.",
+  },
+  {
+    id: "stillstehend", ziel: "meteosat",
+    hinweis: "Ein Satellit über dem Äquator scheint stillzustehen — dabei rast er wie alle anderen. Finde ihn.",
+    frage: "Warum steht ein geostationärer Satellit scheinbar still?",
+    antworten: [
+      "Er braucht für einen Umlauf genau so lange wie die Erde für eine Drehung.",
+      "Er wird von einem Raketenmotor an seinem Platz gehalten.",
+      "In dieser Höhe gibt es keine Schwerkraft mehr.",
+      "Er hängt an der Magnetfeldlinie über dem Äquator.",
+    ],
+    erklaerung: "Das geht nur in genau 35 786 km Höhe über dem Äquator. Deshalb ist dort oben kein Platz zu verschenken: alle Fernseh- und Wettersatelliten wollen auf diese eine Bahn.",
+  },
+  {
+    id: "brille", ziel: "hubble",
+    hinweis: "Ein berühmtes Teleskop bekam drei Jahre nach dem Start eine Brille eingebaut. Sieh es dir an.",
+    frage: "Was war mit dem Hubble-Teleskop nach dem Start nicht in Ordnung?",
+    antworten: [
+      "Sein Hauptspiegel war um ein Fünfzigstel einer Haardicke falsch geschliffen.",
+      "Seine Sonnensegel klappten nicht aus.",
+      "Sein Funkgerät war zu schwach.",
+      "Es war in der falschen Höhe ausgesetzt worden.",
+    ],
+    erklaerung: "Die Bilder waren unscharf. 1993 flogen Astronautinnen und Astronauten hin und bauten eine Korrekturoptik ein — danach war Hubble schärfer als jedes Teleskop am Boden.",
+  },
+  {
+    id: "uhren", ziel: "gps",
+    hinweis: "Ohne Einstein wäre dein Handy schon nach einem Tag um 10 km daneben. Finde die Satelliten, die das betrifft.",
+    frage: "Warum geht die Uhr eines GPS-Satelliten anders als eine auf der Erde?",
+    antworten: [
+      "Weil die Schwerkraft dort schwächer ist und er sich schnell bewegt.",
+      "Weil sie in der Kälte des Alls langsamer schwingt.",
+      "Weil das Magnetfeld der Erde sie stört.",
+      "Weil sie seit dem Start nie nachgestellt wurde.",
+    ],
+    erklaerung: "Die schwächere Schwerkraft lässt sie 45 Millionstel Sekunden am Tag vorgehen, das hohe Tempo 7 Millionstel nachgehen. Unterm Strich 38 — und genau das rechnet jedes Navi mit ein.",
+  },
+  {
+    id: "wachposten", ziel: "ort-erde-l1",
+    hinweis: "Zwischen Sonne und Erde gibt es eine Stelle, an der Sonden die Sonne ohne Unterbrechung im Blick haben. Flieg dorthin.",
+    frage: "Was ist an L1 so praktisch für die Sonnenbeobachtung?",
+    antworten: [
+      "Eine Sonde hält dort mit der Erde Schritt und sieht die Sonne ohne Pause.",
+      "Die Sonne ist von dort aus doppelt so groß zu sehen.",
+      "Dort ist es windstill, weil sich die Kräfte aufheben.",
+      "Dort kann man die Rückseite der Sonne sehen.",
+    ],
+    erklaerung: "SOHO sieht jeden Sonnensturm rund eine Stunde, bevor er bei uns ankommt. Diese Stunde reicht, um Satelliten in einen Schutzmodus zu schalten.",
+  },
+  {
+    id: "kaltes-schild", ziel: "ort-erde-l2",
+    hinweis: "Es gibt eine Stelle im All, von der aus Sonne, Erde und Mond alle in derselben Richtung stehen. Dort parkt das größte Teleskop, das wir haben.",
+    frage: "Warum stellt man Infrarotteleskope ausgerechnet an L2?",
+    antworten: [
+      "Ein einziger Sonnenschirm hält Sonne, Erde und Mond gleichzeitig ab — dahinter wird es eiskalt.",
+      "Dort ist die Erde im Weg, sodass es immer Nacht ist.",
+      "Dort gibt es keinen Staub, der die Sicht trübt.",
+      "Von dort aus ist der Funkkontakt zur Erde am besten.",
+    ],
+    erklaerung: "Vor Webbs Schirm sind es +85 °C, dahinter −233 °C. Ein warmes Teleskop würde im Infraroten nur sein eigenes Leuchten sehen.",
+  },
+  {
+    id: "vorhut", ziel: "ort-jupiter-l4",
+    hinweis: "Jupiter hat einen Schwarm von Begleitern, die ihm auf derselben Bahn 60 Grad vorauslaufen. Sieh sie dir an.",
+    frage: "Wie heißen die Asteroiden, die an solchen Punkten mitlaufen?",
+    antworten: [
+      "Trojaner.",
+      "Zentauren.",
+      "Kometen.",
+      "Meteoriten.",
+    ],
+    erklaerung: "Über 13 000 sind bekannt, an Jupiters L4 und L5 zusammen — vermutlich so viele wie im ganzen Asteroidengürtel. Die Sonde Lucy besucht bis 2033 acht von ihnen.",
+  },
   {
     id: "heissester", ziel: "venus",
     hinweis: "Der heißeste Planet ist nicht der, der am nächsten an der Sonne liegt. Flieg zu ihm und scanne ihn.",
@@ -281,6 +366,8 @@ const STUFE: Record<string, 1 | 2 | 3> = {
   herz: 2, "langer-tag": 2, ozean: 2, guertel: 2, todesstern: 2,
   // Profi: spezielles Wissen über einzelne Monde und Entdeckungen.
   rueckwaerts: 3, absturz: 3, "zwei-gesichter": 3, wind: 3, krater: 3, tanz: 3, klippe: 3,
+  // Raumfahrt und Lagrangepunkte.
+  raumstation: 1, stillstehend: 2, brille: 2, uhren: 3, wachposten: 2, "kaltes-schild": 3, vorhut: 2,
 };
 
 export const AUFTRAEGE: Auftrag[] = ROH

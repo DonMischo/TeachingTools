@@ -205,6 +205,44 @@ export function baueKoerper(k: Koerper, radius: number, texturen: Texturen, fein
   return { koerper: k, gruppe, achse, kugel, wolken, sonnenMaterialien, radius };
 }
 
+/**
+ * Ein Raumfahrzeug: Rumpf, zwei Sonnensegel, dazu ein Glanzpunkt fester
+ * Bildschirmgröße, damit man es überhaupt findet.
+ *
+ * Maßstabsgetreu wäre die ISS ein Hundertstel Pixel groß (siehe
+ * FLUG_SATELLIT_RADIUS). Sie ist hier also grob aufgeblasen — der Steckbrief
+ * nennt die echten Maße.
+ */
+export function baueSatellit(k: Koerper, radius: number): KoerperObjekt {
+  const gruppe = new THREE.Group();
+  gruppe.name = k.id;
+  const achse = new THREE.Group();
+  gruppe.add(achse);
+
+  const rumpf = new THREE.Mesh(
+    new THREE.BoxGeometry(radius * 1.1, radius * 0.85, radius * 1.7),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(k.farbe), roughness: 0.5, metalness: 0.45 }),
+  );
+  rumpf.userData.id = k.id;
+  achse.add(rumpf);
+
+  const segelMaterial = new THREE.MeshStandardMaterial({ color: 0x1d2c5c, roughness: 0.35, metalness: 0.7 });
+  for (const seite of [-1, 1]) {
+    const segel = new THREE.Mesh(new THREE.BoxGeometry(radius * 2.4, radius * 0.07, radius * 1.05), segelMaterial);
+    segel.position.x = seite * radius * 1.85;
+    achse.add(segel);
+  }
+
+  const glanz = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: leuchtTextur("rgba(255,255,255,0.9)", "rgba(180,220,255,0.2)"),
+    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, sizeAttenuation: false,
+  }));
+  glanz.scale.setScalar(0.03);
+  gruppe.add(glanz);
+
+  return { koerper: k, gruppe, achse, kugel: rumpf, sonnenMaterialien: [], radius };
+}
+
 function baueRinge(k: Koerper, radius: number, texturen: Texturen): THREE.Mesh {
   const innen = k.ringe!.innen * radius;
   const aussen = k.ringe!.aussen * radius;

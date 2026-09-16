@@ -4,7 +4,10 @@
  * Einblendungen und der Analysevisor für Scan-Ergebnisse.
  */
 import { useMemo, useState, type ReactNode } from "react";
-import { ART_NAME, HAUPTKOERPER, KOERPER, KOERPER_NACH_ID, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
+import {
+  ART_NAME, HAUPTKOERPER, KOERPER, KOERPER_NACH_ID, mondeVon, satellitenVon, type Koerper,
+} from "@/lib/sonnensystem/daten";
+import { ORTE, type Ort } from "@/lib/sonnensystem/orte";
 import { STUFEN_NAME, gemischteAntworten, type Auftrag } from "@/lib/sonnensystem/auftraege";
 import { foto } from "@/lib/sonnensystem/bilder";
 import { tage, zahl } from "@/lib/sonnensystem/format";
@@ -71,9 +74,11 @@ export function Stick({ eingabe }: { eingabe: Eingabe }) {
 }
 
 export function ZielAuswahl({ ziel, onWahl, erforscht }: { ziel: string | null; onWahl: (id: string | null) => void; erforscht: string[] }) {
-  const gruppen: { name: string; koerper: Koerper[] }[] = [
-    { name: "Sonne und Planeten", koerper: HAUPTKOERPER },
-    ...HAUPTKOERPER.filter(p => mondeVon(p.id).length).map(p => ({ name: `Monde von ${p.name}`, koerper: mondeVon(p.id) })),
+  const gruppen: { name: string; eintraege: { id: string; name: string }[] }[] = [
+    { name: "Sonne und Planeten", eintraege: HAUPTKOERPER },
+    ...HAUPTKOERPER.filter(p => mondeVon(p.id).length).map(p => ({ name: `Monde von ${p.name}`, eintraege: mondeVon(p.id) })),
+    ...HAUPTKOERPER.filter(p => satellitenVon(p.id).length).map(p => ({ name: `Raumfahrzeuge um ${p.name}`, eintraege: satellitenVon(p.id) })),
+    { name: "Lagrangepunkte", eintraege: ORTE },
   ];
   return (
     <select
@@ -86,7 +91,7 @@ export function ZielAuswahl({ ziel, onWahl, erforscht }: { ziel: string | null; 
       <option value="">🎯 Ziel wählen …</option>
       {gruppen.map(g => (
         <optgroup key={g.name} label={g.name}>
-          {g.koerper.map(k => <option key={k.id} value={k.id}>{k.name}{erforscht.includes(k.id) ? " ✓" : ""}</option>)}
+          {g.eintraege.map(k => <option key={k.id} value={k.id}>{k.name}{erforscht.includes(k.id) ? " ✓" : ""}</option>)}
         </optgroup>
       ))}
     </select>
@@ -186,8 +191,11 @@ function Segmente({ anteil, farbe }: { anteil: number; farbe: string }) {
   );
 }
 
-export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, onSchliessen }: {
-  koerper: Koerper;
+export function ScanKarte({ koerper, ort, anzahl, auftrag, onGeloest, onSteckbrief, onSchliessen }: {
+  /** Entweder ein Himmelskörper … */
+  koerper?: Koerper;
+  /** … oder ein Lagrangepunkt. An Orten gibt es kein Foto und keinen Steckbrief. */
+  ort?: Ort;
   anzahl: number;
   auftrag: Auftrag | null;
   onGeloest: (auftragId: string) => void;
@@ -198,16 +206,29 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
   const antworten = useMemo(() => (auftrag ? gemischteAntworten(auftrag) : []), [auftrag]);
   const richtigIndex = antworten.findIndex(a => a.richtig);
   const geloest = gewaehlt.includes(richtigIndex);
-  const bild = foto(koerper.id);
-  const mutter = koerper.mutter ? KOERPER_NACH_ID[koerper.mutter] : null;
-  const kennung = `${koerper.id.slice(0, 3).toUpperCase()}-${String(Math.round(koerper.radiusKm)).padStart(6, "0")}`;
+  const bild = koerper ? foto(koerper.id) : undefined;
+  const mutter = koerper?.mutter ? KOERPER_NACH_ID[koerper.mutter] : null;
+  const name = koerper?.name ?? ort!.name;
+  const intro = koerper?.intro ?? ort!.intro;
+  const artZeile = koerper
+    ? `${ART_NAME[koerper.art]}${mutter ? ` von ${mutter.name}` : ""}`
+    : `Lagrangepunkt · Sonne und ${KOERPER_NACH_ID[ort!.planet].name}`;
+  const kennung = koerper
+    ? `${koerper.id.slice(0, 3).toUpperCase()}-${String(Math.round(koerper.radiusKm)).padStart(6, "0")}`
+    : `LP-${ort!.planet.slice(0, 3).toUpperCase()}-${ort!.kurz}`;
 
   // Messwerte mit Balken: logarithmisch, damit Phobos und Jupiter beide etwas zeigen.
-  const zeilen: { name: string; wert: string; anteil?: number }[] = koerper.satBahn
+  const zeilen: { name: string; wert: string; anteil?: number }[] = !koerper
+    ? [
+      { name: "Lage", wert: ort!.entfernung },
+      { name: "Dort zu finden", wert: ort!.bewohner },
+      { name: "Zu sehen", wert: "nichts — der Punkt ist nur eine Stelle im Kraftfeld" },
+    ]
+    : koerper.satBahn
     ? [
       { name: "Größe", wert: koerper.groesse ?? `${zahl(koerper.radiusKm * 2)} km` },
-      { name: "Bahnhöhe", wert: `${zahl(koerper.satBahn.aKm - (mutter?.radiusKm ?? 0))} km` },
-      { name: "Ein Umlauf", wert: koerper.satBahn.umlaufMinuten < 120 ? `${zahl(koerper.satBahn.umlaufMinuten, 1)} min` : tage(koerper.satBahn.umlaufMinuten / 1440) },
+      { name: "Bahnhöhe", wert: `${zahl(koerper.satBahn!.aKm - (mutter?.radiusKm ?? 0))} km` },
+      { name: "Ein Umlauf", wert: koerper.satBahn!.umlaufMinuten < 120 ? `${zahl(koerper.satBahn!.umlaufMinuten, 1)} min` : tage(koerper.satBahn!.umlaufMinuten / 1440) },
       { name: "Aufgabe", wert: koerper.zweck ?? "" },
       { name: "Temperatur", wert: koerper.temperatur },
     ]
@@ -232,7 +253,7 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
         background: "repeating-linear-gradient(0deg, rgba(120,255,255,0.05) 0 1px, transparent 1px 3px)",
       }} />
 
-      <div className="visor-ein relative w-full max-w-3xl max-h-full" role="dialog" aria-label={`Scan ${koerper.name}`}
+      <div className="visor-ein relative w-full max-w-3xl max-h-full" role="dialog" aria-label={`Scan ${name}`}
         style={{ clipPath: ECKEN, background: "linear-gradient(135deg, rgba(94,242,255,0.9), rgba(94,242,255,0.15) 40%, rgba(255,179,71,0.8))", padding: 1.5 }}
       >
         <div className="relative max-h-[calc(100vh-3rem)] overflow-y-auto text-cyan-50"
@@ -247,7 +268,7 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
           >
             <span className="text-cyan-300">◢ Analysevisor</span>
             <span className="text-amber-300 hidden sm:inline">Objekt {kennung}</span>
-            <span className="text-cyan-300">Erfasst {anzahl}/{KOERPER.length}<span className="visor-blink">▮</span></span>
+            <span className="text-cyan-300">Erfasst {anzahl}/{KOERPER.length + ORTE.length}<span className="visor-blink">▮</span></span>
           </div>
 
           <div className="grid sm:grid-cols-[13rem_1fr] gap-5 px-5 sm:px-7 pt-5">
@@ -255,8 +276,10 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
             <div className="relative mx-auto w-44 h-44 sm:w-52 sm:h-52 shrink-0">
               <div className="visor-dreh absolute inset-0 rounded-full border-2 border-dashed border-cyan-300/50" />
               <div className="visor-dreh-rueck absolute inset-3 rounded-full border border-amber-300/40" style={{ borderStyle: "dotted" }} />
-              <div className="absolute inset-6 rounded-full overflow-hidden bg-black" style={{ boxShadow: "0 0 30px rgba(94,242,255,0.35)" }}>
-                {bild && <img src={bild.datei} alt={koerper.name} className="w-full h-full object-cover" />}
+              <div className="absolute inset-6 rounded-full overflow-hidden bg-black flex items-center justify-center" style={{ boxShadow: "0 0 30px rgba(94,242,255,0.35)" }}>
+                {bild
+                  ? <img src={bild.datei} alt={name} className="w-full h-full object-cover" />
+                  : <span className="font-black text-5xl tracking-widest" style={{ color: ort?.farbe }}>{ort?.kurz}</span>}
                 <div className="visor-strahl absolute left-0 right-0 h-8 pointer-events-none"
                   style={{ background: "linear-gradient(transparent, rgba(94,242,255,0.45), transparent)" }} />
               </div>
@@ -267,13 +290,13 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
 
             <div className="min-w-0">
               <div className="visor-zeile text-[10px] uppercase tracking-[0.3em] text-emerald-300" style={{ animationDelay: "0.15s" }}>
-                ✦ Scan abgeschlossen · {ART_NAME[koerper.art]}{mutter ? ` von ${mutter.name}` : ""}
+                ✦ Scan abgeschlossen · {artZeile}
               </div>
               <h2 className="visor-zeile visor-glitch font-sans text-3xl sm:text-4xl font-black uppercase tracking-[0.12em] mt-1" style={{ animationDelay: "0.25s" }}>
-                {koerper.name}
+                {name}
               </h2>
               <p className="visor-zeile font-sans text-sm text-cyan-100/80 mt-2 leading-snug" style={{ animationDelay: "0.35s" }}>
-                {koerper.intro}
+                {intro}
               </p>
               <dl className="mt-3 flex flex-col gap-1 text-xs">
                 {zeilen.map((z, i) => (
@@ -331,9 +354,11 @@ export function ScanKarte({ koerper, anzahl, auftrag, onGeloest, onSteckbrief, o
           )}
 
           <div className="flex flex-col sm:flex-row gap-2 px-5 sm:px-7 py-5">
-            <button onClick={onSteckbrief} className="flex-1 border border-cyan-300/50 py-2.5 text-sm font-bold uppercase tracking-widest hover:bg-cyan-300/10"
-              style={{ clipPath: KNOPF_ECKEN }}
-            >📖 Steckbrief</button>
+            {koerper && (
+              <button onClick={onSteckbrief} className="flex-1 border border-cyan-300/50 py-2.5 text-sm font-bold uppercase tracking-widest hover:bg-cyan-300/10"
+                style={{ clipPath: KNOPF_ECKEN }}
+              >📖 Steckbrief</button>
+            )}
             <button onClick={onSchliessen} className="flex-1 py-2.5 text-sm font-black uppercase tracking-widest text-slate-950 hover:brightness-110"
               style={{ clipPath: KNOPF_ECKEN, background: "linear-gradient(90deg, #5ef2ff, #ffb347)" }}
             >{auftrag && geloest ? "Nächster Auftrag" : "Weiterfliegen"}</button>

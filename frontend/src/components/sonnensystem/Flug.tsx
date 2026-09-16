@@ -17,9 +17,12 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper } from "@/lib/sonnensystem/daten";
-import { heliozentrisch, julianischerTag, mondVersatz, type Vec3 } from "@/lib/sonnensystem/bahnen";
-import { flugMondbahn, flugOrt, flugRadius, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
+import {
+  HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper,
+} from "@/lib/sonnensystem/daten";
+import { heliozentrisch, julianischerTag, mondVersatz, satellitVersatz, type Vec3 } from "@/lib/sonnensystem/bahnen";
+import { ORTE, ORTE_NACH_ID, ortAmPlaneten, ortHeliozentrisch, type Ort } from "@/lib/sonnensystem/orte";
+import { flugBahnRadius, flugMondbahn, flugOrt, flugRadius, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
 import { AUFTRAEGE, STUFEN_NAME, auftragZu, type Auftrag } from "@/lib/sonnensystem/auftraege";
 import {
   ABSTURZ_TEMPO, HOECHSTTEMPO, KM_JE_FLUGEINHEIT, OVERDRIVE_ABKLINGZEIT, OVERDRIVE_DAUER,
@@ -27,8 +30,10 @@ import {
 } from "@/lib/sonnensystem/flugmodell";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
 import {
-  Texturen, baueHimmel, baueKoerper, baueSonne, drehwinkel, entsorge, leuchtTextur, webglVerfuegbar, zuSzene, type KoerperObjekt,
+  Texturen, baueHimmel, baueKoerper, baueSatellit, baueSonne, drehwinkel, entsorge, leuchtTextur, webglVerfuegbar, zuSzene,
+  type KoerperObjekt,
 } from "./szene";
+import { baueMagnetfeld, baueSturmwolke } from "./magnetfeld";
 import { mitEintrag, type Fortschritt } from "./fortschritt";
 import {
   Einblendung, HaltKnopf, HudKnopf, ScanKarte, Steuerungstabelle, Stick, ZielAuswahl, type Eingabe,
@@ -56,6 +61,23 @@ const zeitfaktor = (abstand: number, stufe: number) =>
   stufe <= 1 ? 1 : THREE.MathUtils.clamp(abstand / 60, 0.004, 1);
 const STAUB = 600;
 const STAUB_WUERFEL = 140;
+/** Alles, was sich erfassen lässt: Himmelskörper, Raumfahrzeuge und Orte. */
+const ERFASSBAR = KOERPER.length + ORTE.length;
+/**
+ * Ein Lagrangepunkt hat keine Oberfläche. Fürs Anfliegen, Anhalten und Scannen
+ * zählt er trotzdem als Kugel dieser Größe — sonst wüsste der Autopilot nicht,
+ * wann er da ist.
+ */
+const ORT_RADIUS = 2;
+/**
+ * Sonnensturm: so lange braucht die Wolke von der Sonne zur Erde. In echt sind
+ * das ein bis drei Tage — hier zwölf Sekunden, sonst säße man nur da.
+ */
+const STURM_FLUG = 12;
+/** Und so lange leuchten die Polarlichter danach noch. */
+const STURM_NACHGLUEHEN = 26;
+
+const nameVon = (id: string) => KOERPER_NACH_ID[id]?.name ?? ORTE_NACH_ID[id]?.name ?? id;
 /** Wie oft die Statistik in den gespeicherten Fortschritt wandert. */
 const STATISTIK_TAKT = 2;
 const UNFALL_DAUER = 2.8;
@@ -76,6 +98,8 @@ interface Hud {
   winkel: number;
   scanBereit: string | null;
   scan: number | null;
+  /** Läuft gerade ein Sonnensturm? Sekunden bis zur Erde, und ob er schon da ist. */
+  sturm: { rest: number; da: boolean } | null;
   puls: boolean;
   overdrive: number;
   abklingen: number;
@@ -83,6 +107,7 @@ interface Hud {
 
 /** Aufrufe von außen an die Schleife — Knöpfe und Tasten landen hier. */
 interface Befehle {
+  sturm?: boolean;
   pulsUmschalten?: boolean;
   overdrive?: boolean;
   autopilot?: boolean;
@@ -141,12 +166,12 @@ export default function Flug({
   const [beruehrung, setBeruehrung] = useState(false);
   const [hud, setHud] = useState<Hud>({
     modus: "steht", schub: 0, tempo: 0, naechster: "erde", ziel: null, zielAbstand: 0, startAbstand: 0, winkel: 0,
-    scanBereit: null, scan: null, puls: false, overdrive: 0, abklingen: 0,
+    scanBereit: null, scan: null, sturm: null, puls: false, overdrive: 0, abklingen: 0,
   });
   const [meldung, setMeldung] = useState<string | null>(null);
   // Die Karte merkt sich ihren Auftrag beim Scannen: nach der richtigen Antwort
   // rückt der Vorschlag weiter, die Frage soll aber stehen bleiben.
-  const [karte, setKarte] = useState<{ id: string; auftrag: Auftrag | null } | null>(null);
+  const [karte, setKarte] = useState<{ id: string; ort: Ort | null; auftrag: Auftrag | null } | null>(null);
   const [auftragId, setAuftragId] = useState<string | null>(null);
   const [liste, setListe] = useState(false);
   const [menue, setMenue] = useState(false);
@@ -154,6 +179,11 @@ export default function Flug({
   const [zeitstufe, setZeitstufe] = useState(0);
   const zeitstufeRef = useRef(0);
   zeitstufeRef.current = ZEITSTUFEN[zeitstufe].faktor;
+  const [magnetfeld, setMagnetfeld] = useState(false);
+  const magnetfeldRef = useRef(false);
+  magnetfeldRef.current = magnetfeld;
+  const setMagnetfeldRef = useRef(setMagnetfeld);
+  setMagnetfeldRef.current = setMagnetfeld;
 
   const eingabe = useRef<Eingabe>({ tasten: new Set(), maus: { x: 0, y: 0 }, stick: { x: 0, y: 0 }, schubKnopf: false, bremsKnopf: false });
   const befehle = useRef<Befehle>({});
@@ -193,7 +223,7 @@ export default function Flug({
 
   scanFertigRef.current = (id: string) => {
     aendere(f => ({ ...f, erforscht: mitEintrag(f.erforscht, id) }));
-    setKarte({ id, auftrag: auftragZu(id, fortschrittRef.current.erledigt) });
+    setKarte({ id, ort: ORTE_NACH_ID[id] ?? null, auftrag: auftragZu(id, fortschrittRef.current.erledigt) });
     if (document.pointerLockElement) document.exitPointerLock();
   };
 
@@ -268,12 +298,13 @@ export default function Flug({
 
     // ── Körper ──
     const objekte = new Map<string, KoerperObjekt>();
+    const markenObjekte: THREE.Sprite[] = [];
     const ort = new Map<string, THREE.Vector3>([["sonne", new THREE.Vector3()]]);
     const radius = new Map<string, number>([["sonne", sonnenRadius]]);
     for (const k of KOERPER) {
       if (k.art === "stern") continue;
       const r = flugRadius(k);
-      const o = baueKoerper(k, r, texturen, k.art === "mond" ? 48 : 96);
+      const o = k.art === "satellit" ? baueSatellit(k, r) : baueKoerper(k, r, texturen, k.art === "mond" ? 48 : 96);
       objekte.set(k.id, o);
       szene.add(o.gruppe);
       radius.set(k.id, r);
@@ -287,15 +318,44 @@ export default function Flug({
       if (monde.length) systemRadius.set(p.id, Math.max(...monde.map(m => flugMondbahn(m, p))) * 2.5);
     }
 
+    // ── Lagrangepunkte: Marken fester Bildschirmgröße, dazu Jupiters Trojaner ──
+    const ortStelle = new Map<string, THREE.Vector3>(ORTE.map(o => [o.id, new THREE.Vector3()]));
+    const trojaner = new Map<string, THREE.Points>();
+    for (const o of ORTE) {
+      const marke = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: leuchtTextur("rgba(255,255,255,0.95)", `${o.farbe}44`),
+        color: new THREE.Color(o.farbe),
+        blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, sizeAttenuation: false,
+      }));
+      marke.scale.setScalar(0.045);
+      szene.add(marke);
+      marke.userData.id = o.id;
+      markenObjekte.push(marke);
+      if (o.planet === "jupiter") {
+        const wolke = baueTrojaner(new THREE.Color(o.farbe).getHex());
+        szene.add(wolke);
+        trojaner.set(o.id, wolke);
+      }
+    }
+
+    // ── Erdmagnetfeld und Sonnensturm ──
+    const magnet = baueMagnetfeld(KOERPER_NACH_ID.erde);
+    objekte.get("erde")!.achse.add(magnet.feld);
+    szene.add(magnet.huelle);
+    const sturmwolke = baueSturmwolke();
+    szene.add(sturmwolke.wolke);
+
     const versatz = new THREE.Vector3();
     function stelleMondeAuf() {
       for (const o of objekte.values()) {
         const k = o.koerper;
-        if (k.art === "mond") {
+        if (k.art === "mond" || k.art === "satellit") {
           const mutter = KOERPER_NACH_ID[k.mutter!];
-          const v = mondVersatz(k, mutter, jd);
+          const v = k.art === "mond" ? mondVersatz(k, mutter, jd) : satellitVersatz(k, mutter, jd);
           const l = Math.hypot(...v);
-          const r = flugMondbahn(k, mutter);
+          // Der Abstand wird gestaucht, die Richtung bleibt. Bei Chandras
+          // Ellipse zählt der jeweilige Abstand, nicht die Halbachse.
+          const r = k.art === "mond" ? flugMondbahn(k, mutter) : flugBahnRadius(l, mutter);
           zuSzene([(v[0] / l) * r, (v[1] / l) * r, (v[2] / l) * r], versatz);
           ort.get(k.id)!.copy(ort.get(mutter.id)!).add(versatz);
         }
@@ -303,6 +363,24 @@ export default function Flug({
         o.kugel.rotation.y = drehwinkel(k, jd) % (Math.PI * 2);
         if (o.wolken) o.wolken.rotation.y = (jd * 3) % (Math.PI * 2);
       }
+      // L1 und L2 hängen am Planeten und werden wie eine Bahn gestaucht; L3,
+      // L4 und L5 liegen auf der Planetenbahn selbst und kommen direkt aus
+      // der Rechnung.
+      for (const o of ORTE) {
+        const stelle = ortStelle.get(o.id)!;
+        const nah = ortAmPlaneten(o, jd);
+        if (nah) {
+          const mutter = KOERPER_NACH_ID[o.planet];
+          const planetOrt = ort.get(o.planet)!;
+          versatz.copy(planetOrt).normalize().multiplyScalar(flugBahnRadius(nah.km, mutter) * (nah.nachAussen ? 1 : -1));
+          stelle.copy(planetOrt).add(versatz);
+        } else {
+          zuSzene(flugOrt(ortHeliozentrisch(o, jd)), stelle);
+        }
+        const wolke = trojaner.get(o.id);
+        if (wolke) { wolke.position.copy(stelle); wolke.lookAt(0, 0, 0); }
+      }
+      for (const marke of markenObjekte) marke.position.copy(ortStelle.get(marke.userData.id as string)!);
     }
     stelleMondeAuf();
 
@@ -346,6 +424,7 @@ export default function Flug({
     scanHuelle.visible = false;
     szene.add(scanHuelle);
     let scan: { id: string; t: number } | null = null;
+    let sturm: { t: number; angekommen: boolean } | null = null;
 
     // ── Unfall: ein kleines Schiff, das aufschlägt, und eine Explosion ──
     const wrack = baueSchiffchen();
@@ -422,15 +501,19 @@ export default function Flug({
     const schiffOben = new THREE.Vector3();
     const randPlaetze: [number, number][] = [];
 
-    const oberflaeche = (id: string) => schiff.pos.distanceTo(ort.get(id)!) - radius.get(id)!;
+    /** Wo etwas steht — Himmelskörper, Raumfahrzeug oder Lagrangepunkt. */
+    const stelleVon = (id: string) => ort.get(id) ?? ortStelle.get(id)!;
+    const radiusVon = (id: string) => radius.get(id) ?? ORT_RADIUS;
+    const oberflaeche = (id: string) => schiff.pos.distanceTo(stelleVon(id)) - radiusVon(id);
 
     /** Wirklicher Ort in km (Planeten zum Startdatum, Monde laufen mit). */
     function echterOrt(id: string): Vec3 {
       const k = KOERPER_NACH_ID[id];
       if (k.art === "stern") return [0, 0, 0];
-      if (k.art === "mond") {
-        const m = echterOrt(k.mutter!);
-        const v = mondVersatz(k, KOERPER_NACH_ID[k.mutter!], jd);
+      if (k.art === "mond" || k.art === "satellit") {
+        const mutter = KOERPER_NACH_ID[k.mutter!];
+        const m = echterOrt(mutter.id);
+        const v = k.art === "mond" ? mondVersatz(k, mutter, jd) : satellitVersatz(k, mutter, jd);
         return [m[0] + v[0], m[1] + v[1], m[2] + v[2]];
       }
       const p = heliozentrisch(k.bahn!, startJd);
@@ -549,10 +632,10 @@ export default function Flug({
       vorne.set(0, 0, -1).applyQuaternion(schiff.quat);
       const ziel = zielRef.current;
       const zielAbstand = ziel ? oberflaeche(ziel) : Infinity;
-      const zielVoraus = ziel !== null && hilf.copy(ort.get(ziel)!).sub(schiff.pos).normalize().dot(vorne) > 0.5;
+      const zielVoraus = ziel !== null && hilf.copy(stelleVon(ziel)).sub(schiff.pos).normalize().dot(vorne) > 0.5;
       // Frei voraus: der nächste Körper — und das Ziel, sobald man darauf zuhält.
       const voraus = zielVoraus && zielAbstand < naechsterAbstand ? zielAbstand : naechsterAbstand;
-      const vorausRadius = radius.get(zielVoraus && zielAbstand < naechsterAbstand ? ziel! : naechster)!;
+      const vorausRadius = radiusVon(zielVoraus && zielAbstand < naechsterAbstand ? ziel! : naechster);
 
       // ── Befehle ──
       if (!pausiert) {
@@ -581,9 +664,13 @@ export default function Flug({
           let bestes: string | null = null;
           let besterWinkel = 0.35;
           for (const k of KOERPER) {
-            if (k.art === "mond" && !imSystem(k)) continue;
+            if ((k.art === "mond" || k.art === "satellit") && !imSystem(k)) continue;
             const w = hilf.copy(ort.get(k.id)!).sub(schiff.pos).angleTo(vorne);
             if (w < besterWinkel) { besterWinkel = w; bestes = k.id; }
+          }
+          for (const o of ORTE) {
+            const w = hilf.copy(ortStelle.get(o.id)!).sub(schiff.pos).angleTo(vorne);
+            if (w < besterWinkel) { besterWinkel = w; bestes = o.id; }
           }
           if (bestes) setzeZielRef.current(bestes);
           else meldeRef.current("Kein Himmelskörper im Fadenkreuz — dreh dich zu einem hin.");
@@ -592,6 +679,20 @@ export default function Flug({
           const bereit = scanBereit(naechster);
           if (bereit) scan = { id: bereit, t: 0 };
           else meldeRef.current("Zu weit weg zum Scannen — flieg näher heran.");
+        }
+      }
+      if (b.sturm) {
+        if (sturm) meldeRef.current("Der Sturm ist schon unterwegs.");
+        else {
+          sturm = { t: 0, angekommen: false };
+          if (!magnetfeldRef.current) setMagnetfeldRef.current(true);
+          // Zu sehen ist der Sturm nur bei der Erde — also gleich dorthin zeigen.
+          if (oberflaeche("erde") > 400) {
+            setzeZielRef.current("erde");
+            meldeRef.current("☀️ Eine Wolke ist losgebrochen. Flieg zur Erde — dort trifft sie in ein bis drei Tagen ein.");
+          } else {
+            meldeRef.current("☀️ Auf der Sonne ist eine Wolke losgebrochen. In echt braucht sie ein bis drei Tage bis zur Erde.");
+          }
         }
       }
       befehle.current = {};
@@ -622,15 +723,15 @@ export default function Flug({
 
       // ── Autopilot: zum Ziel drehen, weit weg im Pulsantrieb, nah langsam ──
       if (schiff.autopilot && ziel && !pausiert) {
-        const zielOrt = ort.get(ziel)!;
+        const zielOrt = stelleVon(ziel);
         schiffOben.set(0, 1, 0).applyQuaternion(schiff.quat);
         sollQuat.setFromRotationMatrix(blickMatrix.lookAt(schiff.pos, zielOrt, schiffOben));
         schiff.quat.slerp(sollQuat, 1 - Math.exp(-dt * 2.5));
-        const halt = haltAbstand(radius.get(ziel)!);
+        const halt = haltAbstand(radiusVon(ziel));
         const entscheidung = autopilot(zielAbstand, halt, naechsterAbstand, schiff.quat.angleTo(sollQuat) < 0.15);
         if (entscheidung.angekommen) {
           schiff.autopilot = false; schiff.puls = false; schiff.overdrive = 0; schiff.schub = 0;
-          meldeRef.current(`Angekommen: ${KOERPER_NACH_ID[ziel].name}. Mit C oder 📡 scannen.`);
+          meldeRef.current(`Angekommen: ${nameVon(ziel)}. Mit C oder 📡 scannen.`);
         } else {
           schiff.puls = entscheidung.puls || (schiff.overdrive > 0 && entscheidung.schub === 1);
           if (!schiff.puls) schiff.overdrive = 0;
@@ -713,9 +814,9 @@ export default function Flug({
       // ── Scanner ──
       if (scan) {
         scan.t += dt / 1.6;
-        const r = radius.get(scan.id)!;
+        const r = radiusVon(scan.id);
         scanHuelle.visible = true;
-        scanHuelle.position.copy(ort.get(scan.id)!);
+        scanHuelle.position.copy(stelleVon(scan.id));
         scanHuelle.scale.setScalar(r * (1.02 + 0.35 * scan.t));
         (scanHuelle.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - scan.t);
         if (scan.t >= 1) {
@@ -724,6 +825,33 @@ export default function Flug({
           scan = null;
           schiff.schub = 0; schiff.puls = false; schiff.overdrive = 0; schiff.autopilot = false;
           scanFertigRef.current(id);
+        }
+      }
+
+      // ── Magnetfeld und Sonnensturm ──
+      const erdOrt = ort.get("erde")!;
+      magnet.sichtbar(magnetfeldRef.current);
+      if (magnetfeldRef.current) {
+        // Die Hülle zeigt zur Sonne: von dort kommt der Sonnenwind, der sie eindrückt.
+        magnet.huelle.position.copy(erdOrt);
+        magnet.huelle.quaternion.setFromUnitVectors(oben, hilf.copy(erdOrt).negate().normalize());
+      }
+      if (sturm) {
+        sturm.t += pausiert ? 0 : dt;
+        sturmwolke.setze((sturm.t / STURM_FLUG) * erdOrt.length(), Math.max(0, 1 - sturm.t / (STURM_FLUG * 1.4)));
+        const seitAnkunft = sturm.t - STURM_FLUG;
+        if (seitAnkunft >= 0 && !sturm.angekommen) {
+          sturm.angekommen = true;
+          meldeRef.current("⚡ Die Wolke trifft das Magnetfeld: es wird eingedrückt, an den Polen leuchten Polarlichter.");
+        }
+        magnet.sturm(seitAnkunft < 0 ? 0
+          : seitAnkunft < 1.5 ? seitAnkunft / 1.5
+            : Math.max(0, 1 - (seitAnkunft - 1.5) / STURM_NACHGLUEHEN));
+        if (seitAnkunft > 1.5 + STURM_NACHGLUEHEN) {
+          sturm = null;
+          sturmwolke.setze(0, 0);
+          magnet.sturm(0);
+          meldeRef.current("Der Sturm ist vorbei — das Magnetfeld hat gehalten.");
         }
       }
 
@@ -774,10 +902,11 @@ export default function Flug({
       randPlaetze.length = 0;
       for (const [id, el] of markerRef.current) {
         const k = KOERPER_NACH_ID[id];
+        const klein = k ? k.art === "mond" || k.art === "satellit" : false;
         const istZiel = id === ziel;
         const rand = randRef.current.get(id);
-        const imBlick = k.art !== "mond" || istZiel || imSystem(k);
-        projiziert.copy(ort.get(id)!);
+        const imBlick = !klein || istZiel || imSystem(k);
+        projiziert.copy(stelleVon(id));
         const vor = hilf.copy(projiziert).sub(kamera.position).dot(kameraVorne) > 0;
         projiziert.project(kamera);
         const drin = vor && Math.abs(projiziert.x) < 1 && Math.abs(projiziert.y) < 1;
@@ -789,8 +918,8 @@ export default function Flug({
         }
         if (!rand) continue;
         // Randpfeil: Richtung im Kamerabild, auf den Bildrand gelegt.
-        if (drin || crash || (k.art === "mond" && !istZiel)) { rand.style.display = "none"; continue; }
-        const r = hilf.copy(ort.get(id)!).sub(kamera.position).applyQuaternion(kameraUmkehr);
+        if (drin || crash || (klein && !istZiel)) { rand.style.display = "none"; continue; }
+        const r = hilf.copy(stelleVon(id)).sub(kamera.position).applyQuaternion(kameraUmkehr);
         let winkel = Math.atan2(r.y, r.x);
         if (Math.abs(r.x) < 1e-6 && Math.abs(r.y) < 1e-6) winkel = -Math.PI / 2;
         const cos = Math.cos(winkel), sin = Math.sin(winkel);
@@ -817,18 +946,19 @@ export default function Flug({
           ziel,
           zielAbstand: ziel ? zielAbstand : 0,
           startAbstand,
-          winkel: ziel ? hilf.copy(ort.get(ziel)!).sub(schiff.pos).angleTo(vorne) : 0,
+          winkel: ziel ? hilf.copy(stelleVon(ziel)).sub(schiff.pos).angleTo(vorne) : 0,
           scanBereit: scanBereit(naechster),
           scan: scan ? scan.t : null,
+          sturm: sturm ? { rest: Math.max(0, STURM_FLUG - sturm.t), da: sturm.angekommen } : null,
           puls: schiff.puls,
           overdrive: Math.max(schiff.overdrive, 0),
           abklingen: schiff.abklingen,
         });
       }
 
-      function imSystem(mond: Koerper) {
-        const r = systemRadius.get(mond.mutter!) ?? 0;
-        return schiff.pos.distanceTo(ort.get(mond.mutter!)!) < r;
+      function imSystem(k: Koerper) {
+        const r = systemRadius.get(k.mutter!) ?? 0;
+        return schiff.pos.distanceTo(ort.get(k.mutter!)!) < r;
       }
       function scanBereit(naechsterId: string): string | null {
         for (const id of [ziel, naechsterId]) {
@@ -843,6 +973,8 @@ export default function Flug({
     return () => {
       cancelAnimationFrame(bild);
       speichere();
+      magnet.entsorgen();
+      sturmwolke.entsorgen();
       beobachter.disconnect();
       window.removeEventListener("keydown", tasteRunter);
       window.removeEventListener("keyup", tasteHoch);
@@ -868,21 +1000,30 @@ export default function Flug({
     );
   }
 
-  const zielK = hud.ziel ? KOERPER_NACH_ID[hud.ziel] : null;
+  const zielLagrange = hud.ziel ? ORTE_NACH_ID[hud.ziel] ?? null : null;
+  const zielK = hud.ziel && !zielLagrange ? KOERPER_NACH_ID[hud.ziel] : null;
+  const zielTitel = zielK?.name ?? zielLagrange?.name ?? null;
   const standort = KOERPER_NACH_ID[hud.naechster];
   const echteStrecke = zielK && zielK.id !== standort.id ? echterAbstandRef.current(standort.id, zielK.id) : null;
   const gemessen = hud.zielAbstand >= 0;
-  const restzeit = zielK && gemessen
+  const restzeit = zielTitel && gemessen
     ? schaetzeFlugzeit({
-      abstand: hud.zielAbstand, zielRadius: flugRadius(zielK), startAbstand: hud.startAbstand,
+      abstand: hud.zielAbstand, zielRadius: zielK ? flugRadius(zielK) : ORT_RADIUS, startAbstand: hud.startAbstand,
       tempo: hud.tempo, puls: hud.puls, overdriveRest: hud.overdrive, winkel: hud.winkel,
     })
     : 0;
   // Nah am Ziel steht eine Flugeinheit für 1 000 km (Radien sind echt), zwischen
   // den Planeten für 60 000 km (Abstände sind gekürzt). Beides ehrlich beschriften.
   const nahbereich = hud.ziel !== null && hud.ziel === hud.naechster && hud.zielAbstand < 300;
+  // Raumfahrzeuge und Lagrangepunkte stehen auf gestauchten Bahnen: eine
+  // Umrechnung in Kilometer wäre glatt gelogen (die ISS läge dann Millionen km
+  // entfernt). Dort steht nur die Flugzeit, die echte Strecke eine Zeile tiefer.
+  const gestauchtesZiel = zielLagrange !== null || zielK?.art === "satellit";
   const zielStrecke = km(Math.max(hud.zielAbstand, 0) * (nahbereich ? FLUG_KM_JE_EINHEIT : KM_JE_FLUGEINHEIT));
-  const zielZeile = !gemessen ? "wird gemessen …" : restzeit <= 0 ? "Ziel erreicht" : `${zielStrecke} · Flugzeit ca. ${flugzeitText(restzeit)}`;
+  const zielZeile = !gemessen ? "wird gemessen …"
+    : restzeit <= 0 ? "Ziel erreicht"
+      : gestauchtesZiel && !nahbereich ? `Flugzeit ca. ${flugzeitText(restzeit)}`
+        : `${zielStrecke} · Flugzeit ca. ${flugzeitText(restzeit)}`;
   const overdriveBereit = hud.overdrive <= 0 && hud.abklingen <= 0;
 
   return (
@@ -915,24 +1056,52 @@ export default function Flug({
               {istZiel && (
                 // Über dem Zielmarker: Flugstrecke und geschätzte Flugzeit.
                 <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
-                  {gemessen ? `${zielStrecke} · ${flugzeitText(restzeit)}` : "…"}
+                  {!gemessen ? "…" : gestauchtesZiel && !nahbereich ? flugzeitText(restzeit) : `${zielStrecke} · ${flugzeitText(restzeit)}`}
                 </span>
               )}
-              <svg viewBox="0 0 20 20" className={istZiel ? "w-8 h-8 text-amber-300" : k.art === "mond" ? "w-3.5 h-3.5 text-slate-300/70" : "w-5 h-5 text-cyan-200/80"}>
+              <svg viewBox="0 0 20 20" className={istZiel ? "w-8 h-8 text-amber-300" : k.art === "mond" || k.art === "satellit" ? "w-3.5 h-3.5 text-slate-300/70" : "w-5 h-5 text-cyan-200/80"}>
                 <path d="M1 7V1h6M13 1h6v6M19 13v6h-6M7 19H1v-6" fill="none" stroke="currentColor" strokeWidth={istZiel ? 2 : 1.6} />
               </svg>
               <span className={`mt-1 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${
                 istZiel ? "text-amber-200" : fortschritt.erforscht.includes(k.id) ? "text-emerald-200/90" : "text-cyan-100/80"
               }`}>
-                {k.name}{fortschritt.erforscht.includes(k.id) ? " ✓" : ""}
+                {k.kurz ?? k.name}{fortschritt.erforscht.includes(k.id) ? " ✓" : ""}
+              </span>
+            </button>
+          );
+        })}
+        {ORTE.map(o => {
+          const istZiel = o.id === hud.ziel;
+          return (
+            <button
+              key={o.id}
+              ref={el => { if (el) markerRef.current.set(o.id, el); else markerRef.current.delete(o.id); }}
+              onClick={() => setzeZiel(o.id)}
+              className="absolute left-0 top-0 pointer-events-auto flex flex-col items-center"
+              style={{ display: "none" }}
+            >
+              {istZiel && (
+                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
+                  {gemessen ? flugzeitText(restzeit) : "…"}
+                </span>
+              )}
+              {/* Ein Punkt ohne Körper: ein Kreis mit dem Kurzzeichen darin. */}
+              <svg viewBox="0 0 24 24" className={istZiel ? "w-9 h-9" : "w-6 h-6"} style={{ color: istZiel ? "#fcd34d" : o.farbe }}>
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeDasharray="3 2.5" />
+                <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+              </svg>
+              <span className="mt-0.5 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap drop-shadow-[0_1px_2px_#000]"
+                style={{ color: istZiel ? "#fde68a" : o.farbe }}>
+                {o.kurz} {KOERPER_NACH_ID[o.planet].name}{fortschritt.erforscht.includes(o.id) ? " ✓" : ""}
               </span>
             </button>
           );
         })}
         {/* Randpfeile für Sonne, Planeten, Zwergplaneten — und das Ziel, falls es ein Mond ist */}
-        {KOERPER.map(k => {
+        {[...KOERPER, ...ORTE].map(k => {
           const istZiel = k.id === hud.ziel;
-          if (k.art === "mond" && !istZiel) return null;
+          const art = "art" in k ? k.art : "ort";
+          if ((art === "mond" || art === "satellit") && !istZiel) return null;
           return (
             <div
               key={`rand-${k.id}`}
@@ -943,12 +1112,19 @@ export default function Flug({
               <span className={`block leading-none ${istZiel ? "text-2xl text-amber-300" : "text-sm"}`}
                 style={{ color: istZiel ? undefined : k.farbe, filter: "drop-shadow(0 0 4px #000)" }}>➤</span>
               <span className={`mt-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap drop-shadow-[0_1px_2px_#000] ${istZiel ? "text-amber-200" : "text-slate-300/80"}`}>
-                {k.name}{istZiel && gemessen ? ` · ${flugzeitText(restzeit)}` : ""}
+                {"punkt" in k ? `${k.kurz} ${KOERPER_NACH_ID[k.planet].name}` : k.kurz ?? k.name}
+                {istZiel && gemessen ? ` · ${flugzeitText(restzeit)}` : ""}
               </span>
             </div>
           );
         })}
       </div>
+
+      {/* Beim Eintreffen des Sturms zuckt das Bild kurz orange */}
+      <div className="absolute inset-0 pointer-events-none transition-opacity duration-1000" style={{
+        opacity: hud.sturm?.da ? 1 : 0,
+        background: "radial-gradient(ellipse at center, transparent 30%, rgba(255,150,40,0.18) 100%)",
+      }} />
 
       {/* Fadenkreuz */}
       {!unfall && (
@@ -980,6 +1156,9 @@ export default function Flug({
           erfolge={Object.keys(fortschritt.erfolge).length}
           zeitstufe={zeitstufe}
           onZeit={() => setZeitstufe(z => (z + 1) % ZEITSTUFEN.length)}
+          magnetfeld={magnetfeld}
+          onMagnetfeld={() => setMagnetfeld(m => !m)}
+          onSturm={() => { befehl("sturm"); setMenue(false); }}
           onAuftraege={() => { setListe(true); setMenue(false); }}
           onKodex={onKodex && (bereich => { setMenue(false); onKodex(bereich); })}
           onHilfe={() => { setHilfe(true); setMenue(false); }}
@@ -1020,18 +1199,26 @@ export default function Flug({
               {hud.overdrive > 0 ? `${Math.ceil(hud.overdrive)} s` : overdriveBereit ? (beruehrung ? "bereit" : "bereit · ⇧") : `${Math.ceil(hud.abklingen)} s`}
             </span>
           </div>
-          {zielK && (
+          {hud.sturm && (
+            <div className="mt-2 border-t border-amber-300/30 pt-1.5">
+              <div className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-200">☀️ Sonnensturm</div>
+              <div className="text-[11px] text-amber-50 tabular-nums">
+                {hud.sturm.da ? "Die Wolke ist da — sieh auf die Pole." : `Erde erreicht in ${Math.ceil(hud.sturm.rest)} s`}
+              </div>
+            </div>
+          )}
+          {zielTitel && (
             // Auf dem Telefon ist die Zielanzeige oben in der Mitte ausgeblendet — hier steht das Wichtigste.
-            <div className="md:hidden mt-1 text-[11px] text-amber-200 tabular-nums truncate">🎯 {zielK.name} · {gemessen ? flugzeitText(restzeit) : "…"}</div>
+            <div className="md:hidden mt-1 text-[11px] text-amber-200 tabular-nums truncate">🎯 {zielTitel} · {gemessen ? flugzeitText(restzeit) : "…"}</div>
           )}
         </div>
       </div>
 
       {/* Mitte oben: Ziel */}
-      {zielK && (
+      {zielTitel && (
         <div className="absolute left-1/2 -translate-x-1/2 top-3 pointer-events-auto max-w-[min(28rem,calc(100%-26rem))] hidden md:block">
           <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 text-center">
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">🎯 {zielK.name}</div>
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">🎯 {zielTitel}</div>
             <div className="text-sm font-bold text-amber-50 tabular-nums mt-0.5" title="Geschätzt für einen Flug per Autopilot (G)">
               {zielZeile}
             </div>
@@ -1067,7 +1254,7 @@ export default function Flug({
           </div>
         ) : hud.scanBereit && gestartet && !unfall ? (
           <button onClick={() => befehl("scan")} className="pointer-events-auto rounded-lg bg-cyan-500/20 border border-cyan-300/50 px-3 py-1.5 text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">
-            📡 {KOERPER_NACH_ID[hud.scanBereit].name} scannen <span className="hidden md:inline text-cyan-300/70">[C]</span>
+            📡 {nameVon(hud.scanBereit)} scannen <span className="hidden md:inline text-cyan-300/70">[C]</span>
             {auftragZu(hud.scanBereit, fortschritt.erledigt) && <span className="ml-1 text-amber-300">◆</span>}
           </button>
         ) : null}
@@ -1143,7 +1330,7 @@ export default function Flug({
           </button>
           {(fortschritt.erforscht.length > 0 || fortschritt.erledigt.length > 0) && (
             <p className="text-xs text-slate-400 mt-2 text-center">
-              Bisher erforscht: {fortschritt.erforscht.length} von {KOERPER.length} · Aufträge: {fortschritt.erledigt.length} von {AUFTRAEGE.length}
+              Bisher erforscht: {fortschritt.erforscht.length} von {ERFASSBAR} · Aufträge: {fortschritt.erledigt.length} von {AUFTRAEGE.length}
             </p>
           )}
         </Einblendung>
@@ -1158,7 +1345,8 @@ export default function Flug({
 
       {karte && (
         <ScanKarte
-          koerper={KOERPER_NACH_ID[karte.id]}
+          koerper={karte.ort ? undefined : KOERPER_NACH_ID[karte.id]}
+          ort={karte.ort ?? undefined}
           anzahl={fortschritt.erforscht.length}
           auftrag={karte.auftrag}
           onGeloest={id => aendere(f => ({ ...f, erledigt: mitEintrag(f.erledigt, id) }))}
@@ -1209,6 +1397,32 @@ export default function Flug({
   );
 }
 
+/**
+ * Jupiters Trojaner: eine langgezogene Wolke aus Brocken um den Lagrangepunkt.
+ *
+ * Sie fallen nicht in den Punkt hinein, sondern pendeln in einer weit
+ * ausholenden Bohnenform darum herum — die Wolke ist deshalb viel länger als
+ * breit. Die Zahl der Punkte ist eine Andeutung, nicht die Wirklichkeit: dort
+ * stehen über 13 000 bekannte Brocken.
+ */
+function baueTrojaner(farbe: number): THREE.Points {
+  const anzahl = 700;
+  const stellen = new Float32Array(anzahl * 3);
+  for (let i = 0; i < anzahl; i++) {
+    const laengs = (Math.random() - 0.5) * 2;
+    stellen[i * 3] = laengs * 1500;
+    stellen[i * 3 + 1] = (Math.random() - 0.5) * 220;
+    stellen[i * 3 + 2] = (Math.random() - 0.5) * 420 + laengs * laengs * 300;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(stellen, 3));
+  const punkte = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: farbe, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.65, depthWrite: false,
+  }));
+  punkte.frustumCulled = false;
+  return punkte;
+}
+
 /** Ein kleines Raumschiff für die Absturz-Szene: Rumpf, Flügel, Triebwerksglühen. */
 function baueSchiffchen(): THREE.Group {
   const g = new THREE.Group();
@@ -1229,7 +1443,7 @@ function baueSchiffchen(): THREE.Group {
   return g;
 }
 
-function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitstufe, onZeit, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
+function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitstufe, onZeit, magnetfeld, onMagnetfeld, onSturm, onAuftraege, onKodex, onHilfe, onVollbild, vollbild, onVerlassen, onZuruecksetzen }: {
   onSchliessen: () => void;
   ziel: string | null;
   onZiel: (id: string | null) => void;
@@ -1238,6 +1452,9 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
   erfolge: number;
   zeitstufe: number;
   onZeit: () => void;
+  magnetfeld: boolean;
+  onMagnetfeld: () => void;
+  onSturm: () => void;
   onAuftraege: () => void;
   onKodex?: (bereich: "eintraege" | "erfolge") => void;
   onHilfe: () => void;
@@ -1265,7 +1482,7 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
         {onKodex && (
           <>
             <button className={eintrag} onClick={() => onKodex("eintraege")}>
-              <span>📓 Kodex</span><span className="text-xs text-slate-400">{erforscht.length}/{KOERPER.length}</span>
+              <span>📓 Kodex</span><span className="text-xs text-slate-400">{erforscht.length}/{ERFASSBAR}</span>
             </button>
             <button className={eintrag} onClick={() => onKodex("erfolge")}>
               <span>🏆 Erfolge</span><span className="text-xs text-slate-400">{erfolge}</span>
@@ -1274,6 +1491,13 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
         )}
         <button className={eintrag} onClick={onZeit} title="Wie schnell die Monde kreisen und die Planeten sich drehen">
           <span>🕒 Zeit</span><span className="text-xs text-slate-400">{ZEITSTUFEN[zeitstufe].name}</span>
+        </button>
+        <div className="px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Bei der Erde</div>
+        <button className={eintrag} onClick={onMagnetfeld} title="Feldlinien, Polarlichtringe und die Blase, die der Sonnenwind eindrückt">
+          <span>🧲 Erdmagnetfeld</span><span className="text-xs text-slate-400">{magnetfeld ? "an" : "aus"}</span>
+        </button>
+        <button className={eintrag} onClick={onSturm} title="Eine Teilchenwolke von der Sonne — sieh zu, was am Magnetfeld passiert">
+          <span>☀️ Sonnensturm auslösen</span><span className="text-xs text-slate-400">≈40 s</span>
         </button>
         <button className={eintrag} onClick={onHilfe}><span>❔ Steuerung</span></button>
         {onVollbild && (

@@ -85,3 +85,11 @@ export function flugBahnRadius(kmVomMittelpunkt: number, mutter: Koerper): numbe
 export function flugMondbahn(mond: Koerper, mutter: Koerper): number {
   return flugBahnRadius(mond.mondBahn!.aKm, mutter);
 }
+
+/**
+ * Wie flugBahnRadius, nur um so viel verschoben, dass die Oberfläche die
+ * Oberfläche bleibt — für das Magnetfeld, dessen Linien aus dem Boden kommen.
+ */
+export function flugFeldRadius(kmVomMittelpunkt: number, mutter: Koerper): number {
+  return flugBahnRadius(kmVomMittelpunkt, mutter) - flugBahnRadius(mutter.radiusKm, mutter) + flugRadius(mutter);
+}
