@@ -17,6 +17,8 @@ import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { entferne, freierPlatz, neueSzene, stelle, stelleEin, trenne, treueVon } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
+import Oszilloskop from "./Oszilloskop";
+import { useSimulation } from "./useSimulation";
 
 const BEREICHE: { id: Bereich; name: string }[] = [
   { id: "aufbau", name: "🧱 Aufbau" },
@@ -47,6 +49,10 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     setStand(alt => ({ ...alt, szene: typeof s === "function" ? s(alt.szene) : s }));
   }, []);
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
+  const [laeuft, setLaeuft] = useState(true);
+  const [tempo, setTempo] = useState(1);
+  const [zeitProFeld, setZeitProFeld] = useState(0.2);
+  const { bus, beobachte, zuruecksetzen } = useSimulation(szene, laeuft, tempo);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -117,6 +123,33 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           onClick={() => { setSzene(s => ({ ...neueSzene(), treue: s.treue })); setAusgewaehlt(null); }}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >🧹 Tisch abräumen</button>
+
+        <span className="w-px h-6 bg-[var(--border)] mx-1" />
+
+        <button
+          onClick={() => setLaeuft(l => !l)}
+          aria-pressed={laeuft}
+          className="rounded-xl border border-[var(--border)] px-3 py-2 font-bold"
+        >{laeuft ? "⏸️ Anhalten" : "▶️ Laufen"}</button>
+        <button
+          onClick={zuruecksetzen}
+          title="Uhr auf null, Messwerte verwerfen"
+          className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
+        >⏮️ Messung neu</button>
+        <label className="flex items-center gap-1.5 text-[var(--text-muted)]">
+          Tempo
+          <select
+            value={tempo}
+            onChange={e => setTempo(Number(e.target.value))}
+            aria-label="Tempo"
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1"
+          >
+            <option value={0.1}>Zeitlupe (1/10)</option>
+            <option value={0.25}>langsam (1/4)</option>
+            <option value={1}>echt</option>
+            <option value={4}>Zeitraffer (4x)</option>
+          </select>
+        </label>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[13rem_1fr_16rem] gap-4">
@@ -146,18 +179,30 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                   <span className="flex justify-between">
                     <span className="text-[var(--text-muted)]">{p.name}</span>
                     <span className="font-bold tabular-nums">
-                      {formatiere(geraet.werte[p.schluessel] ?? p.standard, p.einheit, p.anzeige)}
+                      {p.optionen
+                        ? (p.optionen.find(o => o.wert === (geraet.werte[p.schluessel] ?? p.standard))?.name ?? "—")
+                        : formatiere(geraet.werte[p.schluessel] ?? p.standard, p.einheit, p.anzeige)}
                     </span>
                   </span>
-                  <input
-                    type="range"
-                    min={p.min} max={p.max} step={(p.max - p.min) / 200}
-                    value={geraet.werte[p.schluessel] ?? p.standard}
-                    onChange={e => setSzene(s => stelleEin(s, geraet.id, {
-                      [p.schluessel]: nachSI(Number(e.target.value), p.einheit),
-                    }))}
-                    className="accent-[var(--accent)]"
-                  />
+                  {p.optionen ? (
+                    <select
+                      value={geraet.werte[p.schluessel] ?? p.standard}
+                      onChange={e => setSzene(s => stelleEin(s, geraet.id, { [p.schluessel]: Number(e.target.value) }))}
+                      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1"
+                    >
+                      {p.optionen.map(o => <option key={o.wert} value={o.wert}>{o.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type="range"
+                      min={p.min} max={p.max} step={(p.max - p.min) / 200}
+                      value={geraet.werte[p.schluessel] ?? p.standard}
+                      onChange={e => setSzene(s => stelleEin(s, geraet.id, {
+                        [p.schluessel]: nachSI(Number(e.target.value), p.einheit),
+                      }))}
+                      className="accent-[var(--accent)]"
+                    />
+                  )}
                 </label>
               ))}
 
@@ -212,6 +257,14 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           )}
         </div>
       </div>
+
+      <Oszilloskop
+        szene={szene}
+        bus={bus}
+        beobachte={beobachte}
+        zeitProFeld={zeitProFeld}
+        setZeitProFeld={setZeitProFeld}
+      />
 
       <Legende />
     </div>

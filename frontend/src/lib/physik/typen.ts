@@ -49,6 +49,8 @@ export interface ParameterDef {
   standard: number;
   min: number;
   max: number;
+  /** Feste Auswahl statt Regler — gespeichert bleibt trotzdem eine Zahl. */
+  optionen?: { wert: number; name: string }[];
 }
 
 /**

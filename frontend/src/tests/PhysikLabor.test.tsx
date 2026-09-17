@@ -9,7 +9,7 @@
  */
 import { StrictMode } from "react";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import PhysikLabor from "@/components/physik/PhysikLabor";
 import { alsJSON, ausJSON, neueSzene, stelle, verbinde } from "@/lib/physik/szene";
 
@@ -20,7 +20,10 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   } as unknown as typeof ResizeObserver;
-  HTMLCanvasElement.prototype.getContext = (() => null) as unknown as HTMLCanvasElement["getContext"];
+  // Eine Leinwand, die alles klaglos entgegennimmt: gezeichnet wird in jsdom
+  // ohnehin nichts, geprüft wird, was danach im Text steht.
+  const leinwand = new Proxy({}, { get: () => () => {}, set: () => true });
+  HTMLCanvasElement.prototype.getContext = (() => leinwand) as unknown as HTMLCanvasElement["getContext"];
 });
 
 beforeEach(() => localStorage.clear());
@@ -71,5 +74,111 @@ describe("PhysikLabor", () => {
     // Der Titel kommt aus der geladenen Szene, nicht aus der leeren Voreinstellung.
     expect(getByLabelText("Name des Aufbaus")).toHaveValue("Neuer Aufbau");
     expect(document.body.textContent).not.toContain("Der Tisch ist leer");
+  });
+});
+
+describe("Oszilloskop im Labor", () => {
+  it("bietet die Signale der aufgestellten Geräte als Kanäle an", () => {
+    let s = stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 });
+    s = stelle(s, "kraftmesser", { x: 0.4, y: 0.5 });
+    localStorage.setItem(ABLAGE, alsJSON(s));
+
+    const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+
+    const kanal1 = getByLabelText("Kanal 1") as HTMLSelectElement;
+    const beschriftungen = [...kanal1.options].map(o => o.textContent);
+    expect(beschriftungen).toContain("Funktionsgenerator · Spannung");
+    expect(beschriftungen).toContain("Kraftmesser · Kraft");
+  });
+
+  it("legt das erste Signal von selbst auf Kanal 1", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
+
+    const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+
+    expect((getByLabelText("Kanal 1") as HTMLSelectElement).value).not.toBe("");
+  });
+
+  it("sagt es, wenn es nichts zu messen gibt", () => {
+    const { getByText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    expect(getByText(/Noch nichts zu messen/)).toBeInTheDocument();
+  });
+});
+
+describe("Messkette im Labor", () => {
+  /**
+   * Die Uhr läuft über requestAnimationFrame. In jsdom (und in einem
+   * verborgenen Fenster) feuert das nicht von selbst, also werden die Bilder
+   * hier von Hand durchgeschoben.
+   */
+  function mitBildern() {
+    // cancelAnimationFrame muss hier wirklich abbestellen: sonst liefe ein vor
+    // dem Anhalten angemeldetes Bild noch einmal, meldete sich dabei neu an —
+    // und das Anhalten waere gar nicht pruefbar.
+    let naechste = 1;
+    const offen = new Map<number, FrameRequestCallback>();
+    const echtesRAF = globalThis.requestAnimationFrame;
+    const echtesCAF = globalThis.cancelAnimationFrame;
+    globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      const id = naechste++;
+      offen.set(id, cb);
+      return id;
+    }) as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame = ((id: number) => { offen.delete(id); }) as typeof cancelAnimationFrame;
+
+    let uhr = performance.now();
+    return {
+      bilder(n: number) {
+        for (let i = 0; i < n; i++) {
+          const dran = [...offen.values()];
+          offen.clear();
+          uhr += 50; // 50 ms je Bild — reichlich Simulationsschritte je Runde
+          act(() => dran.forEach(cb => cb(uhr)));
+        }
+      },
+      zurueck() {
+        globalThis.requestAnimationFrame = echtesRAF;
+        globalThis.cancelAnimationFrame = echtesCAF;
+      },
+    };
+  }
+
+  it("zeigt die Spannung des Generators auf Kanal 1 an", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
+    const uhr = mitBildern();
+    try {
+      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const kanal = getByLabelText("Kanal 1").closest("label")!;
+
+      // Vor dem ersten Bild steht noch nichts da.
+      expect(kanal.textContent).toContain("—");
+
+      uhr.bilder(10);
+
+      // Danach eine echte Spannung — der Wert geht durch Rechenwerk, Messbus
+      // und Oszilloskop und kommt als Text mit Einheit wieder heraus.
+      expect(kanal.textContent).toMatch(/-?\d+(,\d+)?\s*[munk]?V/);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("hält die Uhr an, wenn man sie anhält", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
+    const uhr = mitBildern();
+    try {
+      const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(10);
+      const kanal = getByLabelText("Kanal 1").closest("label")!;
+
+      act(() => getByRole("button", { name: /Anhalten/ }).click());
+      uhr.bilder(5);
+      const stehengeblieben = kanal.textContent;
+      uhr.bilder(5);
+
+      expect(kanal.textContent).toBe(stehengeblieben);
+    } finally {
+      uhr.zurueck();
+    }
   });
 });
