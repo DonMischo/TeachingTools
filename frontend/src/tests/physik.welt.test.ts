@@ -305,3 +305,31 @@ describe("Aufschlag auf dem Boden", () => {
     expect(aufschlag!.ort.y).toBeCloseTo(0, 1);
   });
 });
+
+describe("Voreinstellungen taugen für den Versuch", () => {
+  it("trifft mit Stativ und Pendel aus dem Schrank ein Gewicht am Boden", () => {
+    // Der gemeldete Fehler war keiner der Physik: mit den Voreinstellungen lag
+    // der tiefste Punkt der Bahn bei 15 cm, ein Stapel aus drei Gewichten ist
+    // 14 cm hoch — das Pendel schwang schlicht darüber hinweg.
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = stelle(s, "fadenpendel", { x: 9, y: 9 });
+    const pendel = s.geraete[1].id;
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: pendel, port: "aufhaengung" });
+    // Nur der Startwinkel wird verstellt, alles andere bleibt, wie es kommt.
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel
+      ? { ...g, werte: { ...g.werte, startwinkel: -1 } } : g)) };
+
+    // Ein Gewicht ans Pendel …
+    s = stelle(s, "massestueck", { x: 8, y: 8 });
+    s = verbinde(s, { geraet: pendel, port: "koerper" }, { geraet: s.geraete[2].id, port: "oese" });
+
+    // … und eines unter den tiefsten Punkt der Bahn.
+    const tiefsterPunkt = s.geraete[0].pos.x + 0.35;
+    s = stelle(s, "massestueck", { x: tiefsterPunkt, y: 0.03 });
+    const klotz = s.geraete[3].id;
+
+    const { stoesse } = laufen({ ...s, treue: "real" }, 6);
+    expect(stoesse.filter(x => (x.a === klotz && x.b === pendel) || (x.b === klotz && x.a === pendel)).length)
+      .toBeGreaterThan(0);
+  });
+});

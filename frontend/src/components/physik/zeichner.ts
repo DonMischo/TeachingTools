@@ -72,6 +72,34 @@ const fadenpendel: Zeichner = (ctx, g, zustand, blick) => {
   ctx.lineTo(koerper.x, koerper.y);
   ctx.stroke();
 
+  // Die Bahn, die der Körper beschreibt.
+  //
+  // Ohne sie ist nicht zu sehen, in welcher Höhe er unten durchläuft — und ein
+  // Stapel, den man ihm in den Weg stellt, wird dann eben überschwungen, ohne
+  // dass man den Grund erkennt. Mit der Bahn legt man den Stapel dorthin, wo
+  // sie entlangführt.
+  const ausschlag = Math.max(Math.abs(g.werte.startwinkel ?? 0), Math.abs(s?.q ?? 0));
+  if (ausschlag > 0.02) {
+    ctx.save();
+    ctx.setLineDash([2, 6]);
+    ctx.strokeStyle = "rgba(56,189,248,0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    // Bildwinkel: unten ist π/2, und ein positiver Ausschlag dreht dagegen.
+    ctx.arc(dreh.x, dreh.y, laenge * blick.skala, Math.PI / 2 - ausschlag, Math.PI / 2 + ausschlag);
+    ctx.stroke();
+    ctx.restore();
+
+    // Der tiefste Punkt: dort ist der Körper am schnellsten.
+    const tief = zumBild({ x: g.pos.x, y: g.pos.y - laenge }, blick);
+    ctx.strokeStyle = "rgba(56,189,248,0.55)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(tief.x - 7, tief.y);
+    ctx.lineTo(tief.x + 7, tief.y);
+    ctx.stroke();
+  }
+
   // Der Haken am Ende — daran wird gehängt, und daran fasst man an.
   ctx.strokeStyle = "#38bdf8";
   ctx.lineWidth = 2.5;

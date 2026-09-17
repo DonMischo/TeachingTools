@@ -95,7 +95,10 @@ export const KATALOG: GeraetTyp[] = [
       { id: "koerper", art: "mechanik", name: "Pendelkörper", pos: { x: 0, y: -1 } },
     ],
     parameter: [
-      { schluessel: "laenge", name: "Fadenlänge", einheit: "m", standard: 1, min: 0.1, max: 3 },
+      // 1,10 m an einem 1,20-m-Stativ lässt den Körper dicht über dem Boden
+      // durchlaufen. Bei 1,00 m schwang er in 15 cm Höhe — über jedem Stapel
+      // hinweg, den man ihm in den Weg stellt, ohne dass man sah, warum.
+      { schluessel: "laenge", name: "Fadenlänge", einheit: "m", standard: 1.1, min: 0.1, max: 3 },
       // Keine eigene Masse: das Pendel ist Faden und Haken. Was schwingt, hängt
       // man an — dadurch ist die Masse etwas, das man auf den Tisch legt und
       // anfasst, statt eine Zahl am Regler.
