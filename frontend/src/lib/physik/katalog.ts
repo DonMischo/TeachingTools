@@ -67,6 +67,23 @@ export const KATALOG: GeraetTyp[] = [
     ],
     signale: [{ schluessel: "leistung", name: "Leistung", einheit: "W" }],
   },
+  {
+    typ: "signalgeber",
+    name: "Funktionsgenerator",
+    icon: "〰️",
+    bereich: "messen",
+    groesse: { b: 0.24, h: 0.12 },
+    ports: [{ id: "aus", art: "strom", name: "Ausgang", pos: { x: 0.12, y: 0 } }],
+    parameter: [
+      { schluessel: "frequenz", name: "Frequenz", einheit: "Hz", standard: 1, min: 0.1, max: 20 },
+      { schluessel: "amplitude", name: "Amplitude", einheit: "V", standard: 5, min: 0.1, max: 12 },
+      {
+        schluessel: "form", name: "Kurvenform", einheit: "", standard: 0, min: 0, max: 2,
+        optionen: [{ wert: 0, name: "Sinus" }, { wert: 1, name: "Rechteck" }, { wert: 2, name: "Dreieck" }],
+      },
+    ],
+    signale: [{ schluessel: "spannung", name: "Spannung", einheit: "V" }],
+  },
 ];
 
 const NACH_TYP = new Map(KATALOG.map(t => [t.typ, t]));
