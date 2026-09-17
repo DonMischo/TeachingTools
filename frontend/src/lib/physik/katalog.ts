@@ -123,7 +123,8 @@ export const KATALOG: GeraetTyp[] = [
     ],
     parameter: [
       { schluessel: "federkonstante", name: "Federhärte", einheit: "N/m", standard: 20, min: 1, max: 200 },
-      { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.2, min: 0.01, max: 5 },
+      // Wie beim Fadenpendel: die Feder allein hat keine Masse. Was schwingt,
+      // hängt man an — und erst dann schwingt überhaupt etwas.
       { schluessel: "startauslenkung", name: "Startauslenkung", einheit: "m", standard: 0.05, min: -0.3, max: 0.3 },
       { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 0.3, min: 0, max: 3 },
     ],

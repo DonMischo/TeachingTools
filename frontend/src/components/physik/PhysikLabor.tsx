@@ -429,6 +429,16 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 />
               )}
 
+              <button
+                onClick={() => setSzene(s => ({
+                  ...s,
+                  geraete: s.geraete.map(x => (x.id === geraet.id
+                    ? { ...x, winkel: ((x.winkel ?? 0) + Math.PI / 2) % (Math.PI * 2) } : x)),
+                }))}
+                className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--surface-hover)]"
+                title="Dreht das Gerät um eine Vierteldrehung — ein Stativ wird damit zum seitlichen Ausleger."
+              >↻ Um 90° drehen</button>
+
               {geraet.typ === "probe" && (
                 <div className="flex gap-2">
                   <button

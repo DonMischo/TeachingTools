@@ -9,6 +9,7 @@ import {
   treueVon, alsJSON, ausJSON, zumBild, zurWelt, portOrt, freierPlatz,
   aufgeloest, aushaengen, haengtIrgendwo, andockStelle,
 } from "@/lib/physik/szene";
+import { stativHaken } from "@/lib/physik/geometrie";
 import type { Szene } from "@/lib/physik/typen";
 
 describe("neueSzene", () => {
@@ -422,5 +423,43 @@ describe("Anhängen durch Ziehen", () => {
     const { szene, id } = gewicht(basis, { x: 0, y: 0.5 });
     const eigenerOrt = aufgeloest(szene).geraete.find(g => g.id === id)!.pos;
     expect(andockStelle(szene, id, eigenerOrt)?.geraet).not.toBe(id);
+  });
+});
+
+describe("Gedrehte Geräte", () => {
+  it("dreht den Stativhaken mit", () => {
+    const s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    const g = { ...s.geraete[0], werte: { hoehe: 1.2, armLaenge: 0.4 } };
+
+    // Aufrecht: der Haken steht oben, um die Armlänge nach rechts versetzt.
+    const aufrecht = stativHaken({ ...g, winkel: 0 });
+    expect(aufrecht.x).toBeCloseTo(0.4, 9);
+    expect(aufrecht.y).toBeCloseTo(0.6 + 0.6, 9);
+
+    // Eine Vierteldrehung: aus »oben rechts« wird »links oben«.
+    const quer = stativHaken({ ...g, winkel: Math.PI / 2 });
+    expect(quer.x).toBeCloseTo(-0.6, 9);
+    expect(quer.y).toBeCloseTo(0.6 + 0.4, 9);
+  });
+
+  it("zwingt ein gedrehtes Stativ nicht mehr auf den Boden", () => {
+    const s = stelle(neueSzene(), "stativ", { x: 0, y: 1.4 });
+    // Aufrecht: es stellt sich auf den Boden.
+    expect(aufgeloest(s).geraete[0].pos.y).toBeCloseTo(0.6, 9);
+    // Gedreht ist es ein seitlicher Ausleger und bleibt, wo es ist.
+    const gedrehtS = { ...s, geraete: s.geraete.map(g => ({ ...g, winkel: Math.PI / 2 })) };
+    expect(aufgeloest(gedrehtS).geraete[0].pos.y).toBeCloseTo(1.4, 9);
+  });
+
+  it("hängt ein Gewicht auch am gedrehten Haken richtig ein", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 1 });
+    s = { ...s, geraete: s.geraete.map(g => ({ ...g, winkel: Math.PI / 2, werte: { hoehe: 1.2, armLaenge: 0.4 } })) };
+    s = stelle(s, "massestueck", { x: 5, y: 5 });
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: s.geraete[1].id, port: "oese" });
+
+    const fertig = aufgeloest(s);
+    const haken = portOrt(fertig.geraete[0], "haken")!;
+    expect(fertig.geraete[1].pos.x).toBeCloseTo(haken.x, 9);
+    expect(fertig.geraete[1].pos.y).toBeCloseTo(haken.y - 0.04, 9);
   });
 });

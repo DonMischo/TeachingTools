@@ -14,7 +14,7 @@
  * Gezeichnet wird in Bildkoordinaten, umgerechnet ausschließlich über
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
-import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, stativHaken } from "@/lib/physik/geometrie";
+import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, stativTeile } from "@/lib/physik/geometrie";
 import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import { zumBild } from "@/lib/physik/szene";
@@ -323,10 +323,10 @@ const lampe: Zeichner = (ctx, g, zustand, blick) => {
  * sieht man den Haken und hängt daran.
  */
 const stativ: Zeichner = (ctx, g, _zustand, blick) => {
-  const hoehe = Math.max(0.1, g.werte.hoehe ?? 1.2);
-  const fuss = zumBild({ x: g.pos.x, y: g.pos.y - hoehe / 2 }, blick);
-  const kopf = zumBild({ x: g.pos.x, y: g.pos.y + hoehe / 2 }, blick);
-  const haken = zumBild(stativHaken(g), blick);
+  const teile = stativTeile(g);
+  const fuss = zumBild(teile.fuss, blick);
+  const kopf = zumBild(teile.kopf, blick);
+  const haken = zumBild(teile.haken, blick);
 
   ctx.strokeStyle = "#94a3b8";
   ctx.lineWidth = Math.max(3, 0.018 * blick.skala);
@@ -337,12 +337,14 @@ const stativ: Zeichner = (ctx, g, _zustand, blick) => {
   ctx.lineTo(haken.x, haken.y);
   ctx.stroke();
 
-  // Der Fuß steht auf dem Boden — breit, damit es nicht umkippt.
+  // Der Fuß — breit, damit es nicht umkippt; quer zur Stange.
   const fussBreite = Math.max(10, 0.16 * blick.skala);
+  const quer = { x: (kopf.y - fuss.y), y: -(kopf.x - fuss.x) };
+  const laenge = Math.hypot(quer.x, quer.y) || 1;
   ctx.lineWidth = Math.max(4, 0.022 * blick.skala);
   ctx.beginPath();
-  ctx.moveTo(fuss.x - fussBreite / 2, fuss.y);
-  ctx.lineTo(fuss.x + fussBreite / 2, fuss.y);
+  ctx.moveTo(fuss.x - (quer.x / laenge) * fussBreite / 2, fuss.y - (quer.y / laenge) * fussBreite / 2);
+  ctx.lineTo(fuss.x + (quer.x / laenge) * fussBreite / 2, fuss.y + (quer.y / laenge) * fussBreite / 2);
   ctx.stroke();
   ctx.lineCap = "butt";
 

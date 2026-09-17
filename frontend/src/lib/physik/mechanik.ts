@@ -87,6 +87,38 @@ export function hebelMomente(szene: Szene, g: Geraet, q = 0): { links: number; r
   };
 }
 
+/**
+ * An welchem Arm ein Kraftmesser den Hebel hält — oder null.
+ *
+ * Ein Federkraftmesser kann nur *ziehen*, nicht drücken. Er hält den Balken
+ * also nur dann waagerecht, wenn seine eigene Seite die schwerere ist; sonst
+ * kippt der Hebel, und der Messer zeigt nichts an.
+ */
+export function hebelGehalten(szene: Szene, g: Geraet): "links" | "rechts" | null {
+  for (const seite of ["links", "rechts"] as const) {
+    const dran = haengtDaran(szene, g.id, seite).some(x => x.typ === "kraftmesser");
+    if (dran && haltekraft(szene, g, seite) > 0) return seite;
+  }
+  return null;
+}
+
+/**
+ * Die Kraft, die ein Kraftmesser an diesem Arm aufbringen muss, damit der
+ * Balken waagerecht bleibt — in Newton.
+ *
+ * Gleichgewicht heißt M_links = M_rechts. Zieht der Messer an seiner Seite mit
+ * F im Abstand a nach oben, nimmt er dieser Seite das Moment F·a. Also ist
+ * F = (M_eigene − M_andere) / a. Ist die eigene Seite leichter, käme etwas
+ * Negatives heraus — dann müsste er drücken, und das kann er nicht.
+ */
+export function haltekraft(szene: Szene, g: Geraet, seite: "links" | "rechts"): number {
+  const m = hebelMomente(szene, g, 0);
+  const arm = seite === "links" ? (g.werte.armLinks ?? 0.3) : (g.werte.armRechts ?? 0.3);
+  const eigen = seite === "links" ? m.links : m.rechts;
+  const andere = seite === "links" ? m.rechts : m.links;
+  return Math.max(0, (eigen - andere) / Math.max(1e-6, arm));
+}
+
 /** Ob die schiefe Ebene festgehalten wird — dann misst man die Hangabtriebskraft. */
 export const wirdGehalten = (szene: Szene, g: Geraet) =>
   haengtDaran(szene, g.id, "koerper").some(x => x.typ === "kraftmesser");
@@ -109,11 +141,18 @@ export function beschleunigung(szene: Szene, g: Geraet, q: number, v: number): n
       return -(G / laenge) * Math.sin(q) - reibung;
     }
 
-    case "federpendel":
-      return -((g.werte.federkonstante ?? 10) / gesamtMasse(szene, g)) * q - reibung;
+    case "federpendel": {
+      // Ohne angehängte Masse gibt es nichts zu beschleunigen. Die Feder
+      // bleibt dann einfach stehen, statt unendlich schnell zu zappeln.
+      const masse = gesamtMasse(szene, g);
+      if (masse <= 0.005) return 0;
+      return -((g.werte.federkonstante ?? 10) / masse) * q - reibung;
+    }
 
     case "waage":
     case "hebel": {
+      // Hängt ein Kraftmesser an einem Arm, hält er den Balken waagerecht.
+      if (hebelGehalten(szene, g)) return 0;
       const aL = g.werte.armLinks ?? 0.3, aR = g.werte.armRechts ?? 0.3;
       const mL = lastAn(szene, g.id, "links"), mR = lastAn(szene, g.id, "rechts");
       // Drehmoment: rechts schwerer heißt, die rechte Seite geht herunter.
@@ -187,6 +226,17 @@ export function mechanikSchritt(szene: Szene, zustand: MechanikZustand, dt: numb
     // Kein Zustand, oder jemand hat den Startwert verstellt: neu loslassen.
     if (!alt || alt.start !== startWert) {
       neu[g.id] = anfang(g.typ, g.werte);
+      continue;
+    }
+
+    // Festgehalten wird nicht integriert: der Hebel steht waagerecht, die
+    // Kiste auf dem Hang bleibt liegen.
+    if ((g.typ === "hebel" || g.typ === "waage") && hebelGehalten(szene, g)) {
+      neu[g.id] = { q: 0, v: 0, start: alt.start };
+      continue;
+    }
+    if (g.typ === "schiefeebene" && wirdGehalten(szene, g)) {
+      neu[g.id] = { q: alt.q, v: 0, start: alt.start };
       continue;
     }
 

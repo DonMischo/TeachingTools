@@ -124,7 +124,12 @@ export const EIGENER_HAKEN: Record<string, string> = {
 
 /** Umriss eines Geräts in Weltkoordinaten — das, was man anfassen kann. */
 export function umriss(g: Geraet, standard: { b: number; h: number }): { mitte: Punkt; b: number; h: number } {
-  if (g.typ === "stativ") return { mitte: g.pos, b: 0.08, h: Math.max(0.1, g.werte.hoehe ?? 1.2) };
+  if (g.typ === "stativ") {
+    const h = Math.max(0.1, g.werte.hoehe ?? 1.2);
+    // Quer gedreht ist der Umriss entsprechend quer.
+    const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
+    return { mitte: g.pos, b: quer ? h : 0.08, h: quer ? 0.08 : h };
+  }
   return { mitte: g.pos, b: standard.b, h: standard.h };
 }
 
@@ -134,6 +139,9 @@ export function umriss(g: Geraet, standard: { b: number; h: number }): { mitte: 
  * Stativ.
  */
 export function bodenHoehe(g: Geraet): number | null {
+  // Gedreht steht es nicht mehr auf dem Boden, sondern ragt zur Seite —
+  // dann wird es auch nicht auf Bodenhöhe gezwungen.
+  if (Math.abs(g.winkel ?? 0) > 0.01) return null;
   if (g.typ === "stativ") return Math.max(0.1, g.werte.hoehe ?? 1.2) / 2;
   if (g.typ === "schiefeebene") {
     const laenge = Math.max(0.05, g.werte.laenge ?? 1);
@@ -142,10 +150,28 @@ export function bodenHoehe(g: Geraet): number | null {
   return null;
 }
 
-/** Das Ende des Stativarms — dort wird eingehängt. */
-export function stativHaken(g: Geraet): Punkt {
+/** Einen Punkt am Gerät in die Welt drehen. */
+export function gedreht(basis: Punkt, lokal: Punkt, winkel: number): Punkt {
+  const c = Math.cos(winkel), s = Math.sin(winkel);
+  return { x: basis.x + lokal.x * c - lokal.y * s, y: basis.y + lokal.x * s + lokal.y * c };
+}
+
+/**
+ * Fuß, Kopf und Haken eines Stativs — mitgedreht.
+ *
+ * Gedreht ist es kein Ständer mehr, sondern ein Ausleger: damit lässt sich
+ * etwas seitlich abspannen oder ein Pendel von der Seite aufhängen.
+ */
+export function stativTeile(g: Geraet): { fuss: Punkt; kopf: Punkt; haken: Punkt } {
+  const h = Math.max(0.1, g.werte.hoehe ?? 1.2);
+  const a = g.werte.armLaenge ?? 0.35;
+  const w = g.winkel ?? 0;
   return {
-    x: g.pos.x + (g.werte.armLaenge ?? 0.35),
-    y: g.pos.y + Math.max(0.1, g.werte.hoehe ?? 1.2) / 2,
+    fuss: gedreht(g.pos, { x: 0, y: -h / 2 }, w),
+    kopf: gedreht(g.pos, { x: 0, y: h / 2 }, w),
+    haken: gedreht(g.pos, { x: a, y: h / 2 }, w),
   };
 }
+
+/** Das Ende des Stativarms — dort wird eingehängt. */
+export const stativHaken = (g: Geraet): Punkt => stativTeile(g).haken;

@@ -6,7 +6,7 @@
  * Regel (Kraft durch n, Weg mal n) und F_H = G·sin α — nicht „läuft durch".
  */
 import { describe, it, expect } from "vitest";
-import { beschleunigung, hebelMomente, lastAn, mechanikSchritt, wirdGehalten, HEBEL_ANSCHLAG, type MechanikZustand } from "@/lib/physik/mechanik";
+import { beschleunigung, haltekraft, hebelGehalten, hebelMomente, lastAn, mechanikSchritt, wirdGehalten, HEBEL_ANSCHLAG, type MechanikZustand } from "@/lib/physik/mechanik";
 import { haengendeKraft, lastAmFlaschenzug, leererZustand, schritt, tragendeSeile } from "@/lib/physik/rechenwerke";
 import { signalId } from "@/lib/physik/messbus";
 import { aufgeloest, freierHaken, neueSzene, portOrt, stelle, verbinde } from "@/lib/physik/szene";
@@ -267,5 +267,79 @@ describe("Balkenwaage", () => {
     const unten = fertig.geraete.find(g => g.id === erstes.id)!;
     const oben = fertig.geraete.find(g => g.id === zweites.id)!;
     expect(oben.pos.y - unten.pos.y).toBeCloseTo(0.08, 6);
+  });
+});
+
+describe("Kraftmesser am Hebel", () => {
+  /** Hebel mit Last am einen Arm und einem Kraftmesser am anderen. */
+  function mitMesser(aL: number, aR: number, masseLinks: number, seite: "links" | "rechts") {
+    let s = mit("hebel", { armLinks: aL, armRechts: aR, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 });
+    if (masseLinks > 0) s = anhaengen(s, "links", masseLinks);
+    s = stelle(s, "kraftmesser", { x: 1, y: 1 });
+    const messer = s.geraete[s.geraete.length - 1].id;
+    s = verbinde(s, { geraet: messer, port: "unten" }, { geraet: s.geraete[0].id, port: seite });
+    return { szene: s, messer, hebel: s.geraete[0].id };
+  }
+
+  it("zeigt die Kraft, die den Balken waagerecht hält", () => {
+    // 1 kg am 40-cm-Arm, der Messer am 20-cm-Arm der anderen Seite.
+    let s = mit("hebel", { armLinks: 0.4, armRechts: 0.2, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 });
+    s = anhaengen(s, "links", 1);
+    s = stelle(s, "kraftmesser", { x: 1, y: 1 });
+    const messer = s.geraete[s.geraete.length - 1].id;
+    s = verbinde(s, { geraet: messer, port: "unten" }, { geraet: s.geraete[0].id, port: "links" });
+
+    // Der Messer haengt an der schweren Seite: er traegt deren ganzes Moment.
+    expect(haltekraft(s, s.geraete[0], "links")).toBeCloseTo((1 * G * 0.4) / 0.4, 9);
+    expect(haengendeKraft(s, messer, {})).toBeCloseTo(1 * G, 6);
+  });
+
+  it("hält den Hebel waagerecht, statt ihn kippen zu lassen", () => {
+    const { szene, hebel } = mitMesser(0.3, 0.3, 2, "links");
+    expect(hebelGehalten(szene, szene.geraete[0])).toBe("links");
+    // Ohne Messer wuerde er nach links kippen; mit ihm bleibt er stehen.
+    const nach = laufen(szene, 8);
+    expect(Math.abs(nach.q)).toBeCloseTo(0, 6);
+    expect(hebel).toBeTruthy();
+  });
+
+  it("kann nur ziehen, nicht drücken", () => {
+    // Der Messer haengt an der *leichten* Seite — dort kann er nichts halten.
+    const { szene } = mitMesser(0.3, 0.3, 2, "rechts");
+    expect(haltekraft(szene, szene.geraete[0], "rechts")).toBe(0);
+    expect(hebelGehalten(szene, szene.geraete[0])).toBeNull();
+    // Also kippt der Hebel wie ohne ihn zur schweren Seite.
+    expect(laufen(szene, 8).q).toBeCloseTo(-HEBEL_ANSCHLAG, 6);
+  });
+
+  it("zeigt weniger an, wenn die andere Seite gegenhält", () => {
+    // Der Messer haengt ueber der schweren Seite und traegt deren Moment. Ein
+    // Gegengewicht drueben nimmt ihm genau dessen Moment ab.
+    let s = mit("hebel", { armLinks: 0.3, armRechts: 0.3, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 });
+    s = anhaengen(s, "links", 2);
+    s = stelle(s, "kraftmesser", { x: 1, y: 1 });
+    const messer = s.geraete[s.geraete.length - 1].id;
+    s = verbinde(s, { geraet: messer, port: "unten" }, { geraet: s.geraete[0].id, port: "links" });
+
+    expect(haengendeKraft(s, messer, {})).toBeCloseTo(2 * G, 6);
+
+    // Ein Kilogramm drueben: der Messer traegt nur noch den Unterschied.
+    const mitGegen = anhaengen(s, "rechts", 1);
+    expect(haengendeKraft(mitGegen, messer, {})).toBeCloseTo(1 * G, 6);
+  });;
+});
+
+describe("Federpendel ohne Eigenmasse", () => {
+  it("steht still, solange nichts daran hängt", () => {
+    const s = mit("federpendel", { federkonstante: 20, startauslenkung: 0.05, daempfung: 0 });
+    // Keine Masse, nichts zu beschleunigen — es bleibt, wo es losgelassen wurde.
+    expect(beschleunigung(s, s.geraete[0], 0.05, 0)).toBe(0);
+    expect(laufen(s, 5).q).toBeCloseTo(0.05, 9);
+  });
+
+  it("schwingt, sobald ein Gewicht daran hängt", () => {
+    let s = mit("federpendel", { federkonstante: 20, startauslenkung: 0.05, daempfung: 0 });
+    s = anhaengen(s, "koerper", 0.5);
+    expect(beschleunigung(s, s.geraete[0], 0.05, 0)).toBeCloseTo(-(20 / 0.5) * 0.05, 9);
   });
 });

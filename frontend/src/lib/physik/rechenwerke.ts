@@ -13,7 +13,7 @@
  */
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
-import { gesamtMasse, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
+import { gesamtMasse, haltekraft, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { querschnitt, werkstoff } from "./material";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
@@ -164,8 +164,29 @@ export function ueberlastet(szene: Szene, mechanik: MechanikZustand): string[] {
  * mechanischen Verbindungen; ein Kabel trägt nichts.
  */
 export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: MechanikZustand): number {
+  // Am Hebelarm misst er nicht ein Gewicht, sondern die Kraft, die den Balken
+  // waagerecht hält — das ist der Versuch, für den man ihn dort anhängt.
+  const amBalken = hebelSeite(szene, kraftmesser);
+  if (amBalken) return haltekraft(szene, amBalken.hebel, amBalken.seite);
+
   return haengtDaran(szene, kraftmesser, "unten", "mechanik", EIGENE_RECHNUNG)
     .reduce((summe, g) => summe + eigengewicht(szene, g, mechanik), 0);
+}
+
+/** Ob dieser Kraftmesser an einem Hebel- oder Waagebalken hängt, und an welchem Arm. */
+export function hebelSeite(szene: Szene, kraftmesser: string):
+  { hebel: Geraet; seite: "links" | "rechts" } | null {
+  for (const v of szene.verbindungen) {
+    for (const [hier, dort] of [[v.von, v.nach], [v.nach, v.von]] as const) {
+      if (hier.geraet !== kraftmesser || hier.port !== "unten") continue;
+      if (dort.port !== "links" && dort.port !== "rechts") continue;
+      const wirt = szene.geraete.find(x => x.id === dort.geraet);
+      if (wirt && (wirt.typ === "hebel" || wirt.typ === "waage")) {
+        return { hebel: wirt, seite: dort.port };
+      }
+    }
+  }
+  return null;
 }
 
 /**
