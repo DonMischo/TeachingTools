@@ -11,10 +11,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
-import { bewege, portOrt, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
+import { bewege, portOrt, stelleEin, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { ZEICHNER } from "./zeichner";
+import { koerperOrt, koerperRadius, START_WERT, startWertAus, ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
 export const PORT_FARBE: Record<PortArt, string> = {
@@ -32,11 +32,14 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
 const PORT_RADIUS = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
   setAusgewaehlt: (id: string | null) => void;
+  /** Das Gerät unter dem Zeiger — Entf räumt es weg, ohne es erst anzuklicken. */
+  schwebt: string | null;
+  setSchwebt: (id: string | null) => void;
   /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
   zustand: { readonly current: LaborZustand };
   beobachte: (fn: () => void) => () => void;
@@ -48,6 +51,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const [fehler, setFehler] = useState<string | null>(null);
   const zieht = useRef<
     | { art: "geraet"; id: string; griff: Punkt }
+    | { art: "koerper"; id: string }
     | { art: "blick"; start: Punkt; mitte: Punkt }
     | null
   >(null);
@@ -90,6 +94,37 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     return null;
   }, [szene.geraete, blick]);
 
+  /**
+   * Der schwingende Körper unter dem Finger.
+   *
+   * Ihn zu greifen heißt, das Pendel auszulenken: gezogen wird der Startwert,
+   * und weil die Mechanik bei geändertem Startwert neu loslässt, hängt der
+   * Körper währenddessen still am Zeiger und schwingt beim Loslassen los —
+   * so wie man es im Vorbereitungsraum auch macht.
+   */
+  const koerperUnter = useCallback((p: Punkt): string | null => {
+    for (const g of [...szene.geraete].reverse()) {
+      const ort = koerperOrt(g, zustand.current.mechanik[g.id]);
+      if (!ort) continue;
+      const b = zumBild(ort, blick);
+      const r = Math.max(8, koerperRadius(g.werte.masse ?? 0.2) * blick.skala);
+      if (Math.hypot(b.x - p.x, b.y - p.y) <= r + 4) return g.id;
+    }
+    return null;
+  }, [szene.geraete, blick, zustand]);
+
+  /** Zieht den Körper eines Pendels an einen Weltpunkt. */
+  const lenkeAus = useCallback((id: string, welt: Punkt) => {
+    const g = szene.geraete.find(x => x.id === id);
+    if (!g) return;
+    const schluessel = START_WERT[g.typ];
+    const roh = startWertAus(g, welt);
+    if (!schluessel || roh === null) return;
+    const def = geraetTyp(g.typ)?.parameter.find(p => p.schluessel === schluessel);
+    const wert = def ? Math.min(def.max, Math.max(def.min, roh)) : roh;
+    setSzene(stelleEin(szene, id, { [schluessel]: wert }));
+  }, [szene, setSzene]);
+
   /** Das Gerät unter dem Finger — das oberste zuerst. */
   const geraetUnter = useCallback((p: Punkt): string | null => {
     const welt = zurWelt(p, blick);
@@ -120,6 +155,14 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     }
     setOffen(null);
 
+    const koerper = koerperUnter(p);
+    if (koerper) {
+      setAusgewaehlt(koerper);
+      zieht.current = { art: "koerper", id: koerper };
+      lenkeAus(koerper, zurWelt(p, blick));
+      return;
+    }
+
     const id = geraetUnter(p);
     if (id) {
       setAusgewaehlt(id);
@@ -134,8 +177,18 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
   function beiBewegung(e: React.PointerEvent) {
     const z = zieht.current;
-    if (!z) return;
     const p = bildPunkt(e);
+
+    if (!z) {
+      // Nichts in der Hand: nur merken, worüber der Zeiger steht.
+      setSchwebt(koerperUnter(p) ?? geraetUnter(p));
+      return;
+    }
+
+    if (z.art === "koerper") {
+      lenkeAus(z.id, zurWelt(p, blick));
+      return;
+    }
     if (z.art === "geraet") {
       const welt = zurWelt(p, blick);
       setSzene(bewege(szene, z.id, {
@@ -154,6 +207,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   }
 
   const beiLoslassen = () => { zieht.current = null; };
+  const beiVerlassen = () => { zieht.current = null; setSchwebt(null); };
 
   function beiRad(e: React.WheelEvent) {
     setBlick(b => ({
@@ -204,14 +258,15 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const mitte = zumBild(g.pos, blick);
       const b = t.groesse.b * blick.skala, h = t.groesse.h * blick.skala;
       const gewaehlt = g.id === ausgewaehlt;
+      const unterZeiger = g.id === schwebt;
 
       // Pendel und Verwandte bringen ihre eigene Zeichnung mit — ein Kasten
       // sagt ueber eine Schwingung nichts aus.
       const eigen = ZEICHNER[g.typ];
       if (eigen) {
         eigen(ctx, g, zustand.current.mechanik[g.id], blick);
-        if (gewaehlt) {
-          ctx.strokeStyle = "#38bdf8";
+        if (gewaehlt || unterZeiger) {
+          ctx.strokeStyle = unterZeiger ? "rgba(248,250,252,0.85)" : "#38bdf8";
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(mitte.x, mitte.y, Math.max(10, Math.max(b, h) * 0.7), 0, Math.PI * 2);
@@ -224,8 +279,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       // Minus, weil der Bildschirm y nach unten zählt und die Welt nach oben.
       ctx.rotate(-g.winkel);
       ctx.fillStyle = gewaehlt ? "rgba(56,189,248,0.18)" : "rgba(148,163,184,0.12)";
-      ctx.strokeStyle = gewaehlt ? "#38bdf8" : "rgba(148,163,184,0.5)";
-      ctx.lineWidth = gewaehlt ? 2.5 : 1.5;
+      ctx.strokeStyle = gewaehlt ? "#38bdf8" : unterZeiger ? "rgba(248,250,252,0.8)" : "rgba(148,163,184,0.5)";
+      ctx.lineWidth = gewaehlt || unterZeiger ? 2.5 : 1.5;
       kasten(ctx, -b / 2, -h / 2, b, h, Math.max(2, Math.min(10, b / 3, h / 3)));
       ctx.fill();
       ctx.stroke();
@@ -256,7 +311,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         ctx.stroke();
       }
     }
-  }, [szene, blick, ausgewaehlt, offen, zustand]);
+  }, [szene, blick, ausgewaehlt, schwebt, offen, zustand]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.
@@ -270,11 +325,12 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       <canvas
         ref={leinwand}
         aria-label="Werkbank"
-        style={{ width: blick.breite, height: blick.hoehe, display: "block" }}
+        style={{ width: blick.breite, height: blick.hoehe, display: "block", cursor: schwebt ? "grab" : "default" }}
         onPointerDown={beiDruck}
         onPointerMove={beiBewegung}
         onPointerUp={beiLoslassen}
-        onPointerCancel={beiLoslassen}
+        onPointerCancel={beiVerlassen}
+        onPointerLeave={beiVerlassen}
         onWheel={beiRad}
       />
       {offen && (

@@ -49,6 +49,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     setStand(alt => ({ ...alt, szene: typeof s === "function" ? s(alt.szene) : s }));
   }, []);
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
+  const [schwebt, setSchwebt] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(true);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
@@ -77,14 +78,18 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
       if (e.key !== "Delete" && e.key !== "Backspace") return;
       const ziel = e.target as HTMLElement | null;
       if (ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA")) return;
-      if (!ausgewaehlt) return;
+      // Worüber der Zeiger steht, hat Vorrang — so räumt man mehrere Geräte
+      // hintereinander weg, ohne jedes vorher anzuklicken.
+      const weg = schwebt ?? ausgewaehlt;
+      if (!weg) return;
       e.preventDefault();
-      setSzene(s => entferne(s, ausgewaehlt));
-      setAusgewaehlt(null);
+      setSzene(s => entferne(s, weg));
+      if (ausgewaehlt === weg) setAusgewaehlt(null);
+      if (schwebt === weg) setSchwebt(null);
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
-  }, [ausgewaehlt]);
+  }, [ausgewaehlt, schwebt]);
 
   const nimm = (t: string) => {
     setSzene(s => {
@@ -162,6 +167,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           <Werkbank
             szene={szene} setSzene={setSzene}
             ausgewaehlt={ausgewaehlt} setAusgewaehlt={setAusgewaehlt}
+            schwebt={schwebt} setSchwebt={setSchwebt}
             zustand={zustand} beobachte={beobachte}
           />
         </div>

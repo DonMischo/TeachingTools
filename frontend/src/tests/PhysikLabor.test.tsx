@@ -147,8 +147,8 @@ describe("Messkette im Labor", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
     const uhr = mitBildern();
     try {
-      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
-      const kanal = getByLabelText("Kanal 1").closest("label")!;
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const kanal = getByRole("group", { name: "Kanal 1 Einstellung" });
 
       // Vor dem ersten Bild steht noch nichts da.
       expect(kanal.textContent).toContain("—");
@@ -167,9 +167,9 @@ describe("Messkette im Labor", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
     const uhr = mitBildern();
     try {
-      const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
       uhr.bilder(10);
-      const kanal = getByLabelText("Kanal 1").closest("label")!;
+      const kanal = getByRole("group", { name: "Kanal 1 Einstellung" });
 
       act(() => getByRole("button", { name: /Anhalten/ }).click());
       uhr.bilder(5);
@@ -188,14 +188,14 @@ describe("Pendel im Labor", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
     const uhr = mitBildern();
     try {
-      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
       const kanal1 = getByLabelText("Kanal 1") as HTMLSelectElement;
       expect([...kanal1.options].map(o => o.textContent)).toContain("Fadenpendel · Winkel");
 
       uhr.bilder(10);
 
       // Gespeichert wird rad, angezeigt Grad — die Regel des Labors.
-      expect(kanal1.closest("label")!.textContent).toMatch(/-?\d+(,\d+)?\s*°/);
+      expect(getByRole("group", { name: "Kanal 1 Einstellung" }).textContent).toMatch(/-?\d+(,\d+)?\s*°/);
     } finally {
       uhr.zurueck();
     }
@@ -205,8 +205,8 @@ describe("Pendel im Labor", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
     const uhr = mitBildern();
     try {
-      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
-      const kanal = getByLabelText("Kanal 1").closest("label")!;
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const kanal = getByRole("group", { name: "Kanal 1 Einstellung" });
 
       uhr.bilder(2);
       const frueh = kanal.textContent;

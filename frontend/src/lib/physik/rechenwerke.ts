@@ -12,10 +12,10 @@
  * braucht es, um Messung gegen Formel zu prüfen.
  */
 import { G } from "./einheiten";
-import { geraetTyp } from "./katalog";
+import { geraetTyp, portVon } from "./katalog";
 import { mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
-import type { Szene } from "./typen";
+import type { Geraet, Szene } from "./typen";
 
 /** Kurvenformen des Funktionsgenerators — im Aufbau als Zahl gespeichert. */
 export const SINUS = 0;
@@ -44,25 +44,75 @@ export function generatorWert(form: number, frequenz: number, amplitude: number,
 }
 
 /**
- * Die Masse, die am unteren Haken eines Kraftmessers hängt, in Kilogramm.
+ * Was ein einzelnes Gerät nach unten zieht, in Newton.
  *
- * Vorerst nur, was unmittelbar daran hängt. Sobald Rollen und Flaschenzüge
- * dazukommen, wird daraus ein Lauf durch den Verbindungsgraphen.
+ * Ein Massestück zieht mit seinem Gewicht. Beim Federpendel ist es die
+ * Spannung der Feder: im Gleichgewicht genau m·g, beim Schwingen darum herum
+ * pendelnd (D·q). Beim Fadenpendel zieht die Fadenspannung — am tiefsten
+ * Punkt am größten, weil dort zur Gewichtskraft noch die Zentripetalkraft
+ * kommt. Genau das zeigt ein Kraftmesser im echten Versuch auch.
  */
-export function haengendeLast(szene: Szene, kraftmesser: string): number {
-  let masse = 0;
-  for (const v of szene.verbindungen) {
-    const enden = [
-      [v.von, v.nach],
-      [v.nach, v.von],
-    ] as const;
-    for (const [hier, dort] of enden) {
-      if (hier.geraet !== kraftmesser || hier.port !== "unten") continue;
-      const anderes = szene.geraete.find(g => g.id === dort.geraet);
-      if (anderes?.typ === "massestueck") masse += anderes.werte.masse ?? 0;
+function eigengewicht(g: Geraet, s: { q: number; v: number } | undefined): number {
+  const masse = g.werte.masse ?? 0;
+  switch (g.typ) {
+    case "massestueck":
+      return masse * G;
+    case "federpendel":
+      return masse * G + (g.werte.federkonstante ?? 0) * (s?.q ?? 0);
+    case "fadenpendel": {
+      const laenge = Math.max(0.01, g.werte.laenge ?? 1);
+      const winkel = s?.q ?? 0;
+      const winkelTempo = s?.v ?? 0;
+      return masse * (G * Math.cos(winkel) + laenge * winkelTempo * winkelTempo);
     }
+    default:
+      return 0;
   }
-  return masse;
+}
+
+/**
+ * Die Kraft am unteren Haken eines Kraftmessers, in Newton.
+ *
+ * Gelaufen wird der Verbindungsgraph: alles, was unter dem Haken hängt,
+ * zählt — auch ein Massestück am Massestück. (Der erste Wurf sah nur die
+ * unmittelbaren Nachbarn und zeigte bei zwei angehängten Stücken nur das
+ * obere an.) Gefolgt wird ausschließlich mechanischen Verbindungen; ein
+ * Kabel trägt nichts. Der Satz »gesehen« hält Ringe auf und verhindert, dass
+ * der Lauf über den Kraftmesser selbst wieder nach oben führt.
+ */
+export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: MechanikZustand): number {
+  const typVon = (id: string) => szene.geraete.find(g => g.id === id)?.typ;
+
+  const nachbarn = (geraet: string, nurPort?: string): string[] => {
+    const ziele: string[] = [];
+    for (const v of szene.verbindungen) {
+      const enden = [[v.von, v.nach], [v.nach, v.von]];
+      for (const [hier, dort] of enden) {
+        if (hier.geraet !== geraet) continue;
+        if (nurPort !== undefined && hier.port !== nurPort) continue;
+        const typ = typVon(hier.geraet);
+        if (!typ || portVon(typ, hier.port)?.art !== "mechanik") continue;
+        ziele.push(dort.geraet);
+      }
+    }
+    return ziele;
+  };
+
+  const gesehen = new Set<string>([kraftmesser]);
+  const offen = nachbarn(kraftmesser, "unten");
+  let kraft = 0;
+
+  while (offen.length) {
+    const id = offen.pop();
+    if (id === undefined || gesehen.has(id)) continue;
+    gesehen.add(id);
+    const g = szene.geraete.find(x => x.id === id);
+    if (!g) continue;
+    kraft += eigengewicht(g, mechanik[g.id]);
+    offen.push(...nachbarn(id));
+  }
+
+  return kraft;
 }
 
 /**
@@ -93,7 +143,7 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
         break;
 
       case "kraftmesser":
-        werte.set(signalId(g.id, "kraft"), haengendeLast(szene, g.id) * G);
+        werte.set(signalId(g.id, "kraft"), haengendeKraft(szene, g.id, mechanik));
         break;
 
       case "fadenpendel": {

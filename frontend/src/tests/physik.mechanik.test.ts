@@ -12,6 +12,7 @@ import { describe, it, expect } from "vitest";
 import { anfang, beschleunigung, mechanikSchritt, rk4, type MechanikZustand } from "@/lib/physik/mechanik";
 import { neueSzene, stelle } from "@/lib/physik/szene";
 import { bogen, G } from "@/lib/physik/einheiten";
+import { FEDER_RUHE, koerperOrt, startWertAus } from "@/components/physik/zeichner";
 import type { Szene } from "@/lib/physik/typen";
 
 const DT = 1 / 240;
@@ -191,5 +192,42 @@ describe("anfang", () => {
   it("startet in Ruhe bei der eingestellten Auslenkung", () => {
     expect(anfang("fadenpendel", { startwinkel: 0.3 })).toEqual({ q: 0.3, v: 0, start: 0.3 });
     expect(anfang("federpendel", { startauslenkung: 0.04 })).toEqual({ q: 0.04, v: 0, start: 0.04 });
+  });
+});
+
+describe("Körper greifen", () => {
+  it("setzt den Körper an seine Startauslenkung, solange nichts läuft", () => {
+    const feder = mit("federpendel", { startauslenkung: 0.08 });
+    const ort = koerperOrt(feder.geraete[0], undefined)!;
+    // Der Aufhängepunkt liegt bei y = 1; darunter Ruhelänge plus Auslenkung.
+    expect(ort.y).toBeCloseTo(1 - (FEDER_RUHE + 0.08), 9);
+
+    const pendel = mit("fadenpendel", { laenge: 1, startwinkel: bogen(30) });
+    const p = koerperOrt(pendel.geraete[0], undefined)!;
+    expect(p.x).toBeCloseTo(Math.sin(bogen(30)), 9);
+    expect(p.y).toBeCloseTo(1 - Math.cos(bogen(30)), 9);
+  });
+
+  it("folgt dem laufenden Zustand, nicht mehr dem Startwert", () => {
+    const feder = mit("federpendel", { startauslenkung: 0.08 });
+    const ort = koerperOrt(feder.geraete[0], { q: -0.02 })!;
+    expect(ort.y).toBeCloseTo(1 - (FEDER_RUHE - 0.02), 9);
+  });
+
+  it("rechnet aus dem Griffpunkt den Startwert zurück", () => {
+    // Ziehen und Loslassen ist genau das: den Startwert setzen.
+    const feder = mit("federpendel", {});
+    expect(startWertAus(feder.geraete[0], { x: 0, y: 1 - FEDER_RUHE - 0.12 })).toBeCloseTo(0.12, 9);
+
+    const pendel = mit("fadenpendel", { laenge: 1 });
+    const winkel = bogen(40);
+    const gezogen = { x: Math.sin(winkel), y: 1 - Math.cos(winkel) };
+    expect(startWertAus(pendel.geraete[0], gezogen)).toBeCloseTo(winkel, 9);
+  });
+
+  it("greift nur, wo es etwas zu greifen gibt", () => {
+    const stativ = stelle(neueSzene(), "stativ", { x: 0, y: 0 });
+    expect(koerperOrt(stativ.geraete[0], undefined)).toBeNull();
+    expect(startWertAus(stativ.geraete[0], { x: 1, y: 1 })).toBeNull();
   });
 });

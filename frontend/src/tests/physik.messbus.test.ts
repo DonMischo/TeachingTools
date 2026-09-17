@@ -7,8 +7,8 @@
  */
 import { describe, it, expect } from "vitest";
 import { Messbus, signalId } from "@/lib/physik/messbus";
-import { RECHTECK, SINUS, DREIECK, generatorWert, haengendeLast, leererZustand, schritt } from "@/lib/physik/rechenwerke";
-import { ausschnitt, flankenIndex, spanne } from "@/lib/physik/oszilloskop";
+import { RECHTECK, SINUS, DREIECK, generatorWert, haengendeKraft, leererZustand, schritt } from "@/lib/physik/rechenwerke";
+import { imFenster, zeitfenster } from "@/lib/physik/oszilloskop";
 import { neueSzene, stelle, verbinde } from "@/lib/physik/szene";
 import { G } from "@/lib/physik/einheiten";
 
@@ -89,29 +89,89 @@ describe("generatorWert", () => {
   });
 });
 
-describe("haengendeLast", () => {
-  const mitMasse = (masse: number) => {
+describe("haengendeKraft", () => {
+  /** Kraftmesser, darunter eine Kette von Massestuecken. */
+  function kette(...massen: number[]) {
     let s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
-    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
-    s = { ...s, geraete: s.geraete.map(g => (g.typ === "massestueck" ? { ...g, werte: { masse } } : g)) };
-    return verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: s.geraete[1].id, port: "oese" });
-  };
+    massen.forEach((masse, i) => {
+      s = stelle(s, "massestueck", { x: 0, y: 0.8 - i * 0.2 });
+      const neu = s.geraete[s.geraete.length - 1];
+      s = { ...s, geraete: s.geraete.map(g => (g.id === neu.id ? { ...g, werte: { masse } } : g)) };
+      // Das erste haengt am Haken, jedes weitere am Stueck darueber.
+      const oben = i === 0
+        ? { geraet: s.geraete[0].id, port: "unten" }
+        : { geraet: s.geraete[i].id, port: "oese" };
+      s = verbinde(s, oben, { geraet: neu.id, port: "oese" });
+    });
+    return s;
+  }
 
   it("ist ohne Last null", () => {
     const s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
-    expect(haengendeLast(s, s.geraete[0].id)).toBe(0);
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBe(0);
   });
 
-  it("wiegt ein angehängtes Massestück", () => {
-    const s = mitMasse(0.1);
-    expect(haengendeLast(s, s.geraete[0].id)).toBeCloseTo(0.1, 12);
+  it("wiegt ein angehaengtes Massestueck", () => {
+    const s = kette(0.1);
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBeCloseTo(0.1 * G, 9);
   });
 
-  it("zählt mehrere angehängte Massen zusammen", () => {
-    let s = mitMasse(0.1);
-    s = stelle(s, "massestueck", { x: 0.2, y: 0.5 });
-    s = verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: s.geraete[2].id, port: "oese" });
-    expect(haengendeLast(s, s.geraete[0].id)).toBeCloseTo(0.2, 12);
+  it("zaehlt eine ganze Kette zusammen", () => {
+    // Der gemeldete Fehler: haengte ein Stueck am anderen, zeigte der
+    // Kraftmesser nur das oberste an.
+    const s = kette(2.9, 0.5, 0.1);
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBeCloseTo(3.5 * G, 9);
+  });
+
+  it("zaehlt auch nebeneinander haengende Stuecke", () => {
+    let s = kette(0.1);
+    s = stelle(s, "massestueck", { x: 0.2, y: 0.8 });
+    const zweites = s.geraete[s.geraete.length - 1];
+    s = { ...s, geraete: s.geraete.map(g => (g.id === zweites.id ? { ...g, werte: { masse: 0.4 } } : g)) };
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: zweites.id, port: "oese" });
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBeCloseTo(0.5 * G, 9);
+  });
+
+  it("zaehlt nichts, was oben am Kraftmesser haengt", () => {
+    let s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
+    s = stelle(s, "stativ", { x: 0, y: 1.5 });
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "oben" }, { geraet: s.geraete[1].id, port: "haken" });
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBe(0);
+  });
+
+  it("spuert das Federpendel — im Gleichgewicht sein Gewicht", () => {
+    let s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
+    s = stelle(s, "federpendel", { x: 0, y: 0.7 });
+    const feder = s.geraete[1];
+    s = { ...s, geraete: s.geraete.map(g => (g.id === feder.id ? { ...g, werte: { masse: 0.2, federkonstante: 20 } } : g)) };
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: feder.id, port: "aufhaengung" });
+
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBeCloseTo(0.2 * G, 9);
+    // Ausgelenkt zieht die gespannte Feder staerker: m*g + D*q.
+    const ausgelenkt = { [feder.id]: { q: 0.05, v: 0, start: 0.05 } };
+    expect(haengendeKraft(s, s.geraete[0].id, ausgelenkt)).toBeCloseTo(0.2 * G + 20 * 0.05, 9);
+  });
+
+  it("spuert die Fadenspannung eines Pendels", () => {
+    let s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
+    s = stelle(s, "fadenpendel", { x: 0, y: 0.7 });
+    const pendel = s.geraete[1];
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel.id ? { ...g, werte: { masse: 0.2, laenge: 1 } } : g)) };
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: pendel.id, port: "aufhaengung" });
+
+    // Ganz unten und in Ruhe: genau das Gewicht.
+    const ruhe = { [pendel.id]: { q: 0, v: 0, start: 0 } };
+    expect(haengendeKraft(s, s.geraete[0].id, ruhe)).toBeCloseTo(0.2 * G, 9);
+    // Am Umkehrpunkt bei 60 Grad zieht nur noch der Anteil cos(60) = 0,5.
+    const umkehr = { [pendel.id]: { q: Math.PI / 3, v: 0, start: Math.PI / 3 } };
+    expect(haengendeKraft(s, s.geraete[0].id, umkehr)).toBeCloseTo(0.2 * G * 0.5, 9);
+  });
+
+  it("verlaeuft sich nicht in einem Ring", () => {
+    let s = kette(0.1, 0.2);
+    // Das untere Stueck zurueck an den Haken: ein geschlossener Ring.
+    s = verbinde(s, { geraet: s.geraete[2].id, port: "oese" }, { geraet: s.geraete[0].id, port: "unten" });
+    expect(haengendeKraft(s, s.geraete[0].id, {})).toBeCloseTo(0.3 * G, 9);
   });
 });
 
@@ -136,38 +196,6 @@ describe("schritt", () => {
   it("meldet nichts für Geräte ohne Signale", () => {
     const s = stelle(neueSzene(), "stativ", { x: 0, y: 0 });
     expect([...schritt(s, leererZustand(), DT_TEST).werte.keys()]).toEqual([]);
-  });
-});
-
-describe("flankenIndex", () => {
-  it("findet die letzte steigende Flanke durch den Pegel", () => {
-    //            0   1   2   3   4   5
-    const v = [-1, 1, -1, 1, 2, 3];
-    expect(flankenIndex(v, 0)).toBe(3);
-  });
-
-  it("gibt 0 zurück, wenn es keine Flanke gibt", () => {
-    expect(flankenIndex([1, 2, 3], 10)).toBe(0);
-    expect(flankenIndex([], 0)).toBe(0);
-  });
-});
-
-describe("spanne", () => {
-  it("umfasst alle Werte", () => {
-    const { min, max } = spanne([-2, 5, 1]);
-    expect(min).toBeLessThanOrEqual(-2);
-    expect(max).toBeGreaterThanOrEqual(5);
-  });
-
-  it("fällt bei lauter gleichen Werten nicht auf null zusammen", () => {
-    const { min, max } = spanne([3, 3, 3]);
-    expect(max).toBeGreaterThan(min);
-  });
-
-  it("kommt mit einer leeren Messung zurecht", () => {
-    const { min, max } = spanne([]);
-    expect(Number.isFinite(min) && Number.isFinite(max)).toBe(true);
-    expect(max).toBeGreaterThan(min);
   });
 });
 
@@ -211,22 +239,26 @@ describe("Messkette", () => {
     expect(Math.min(...v)).toBeLessThan(-4.99);
   });
 
-  it("stellt die Schwingung mit dem Ausloeser still", () => {
+  it("verankert das Bild an einer steigenden Flanke", () => {
     const { bus, id } = miss(2, 5, 5);
-    const teil = ausschnitt(bus.verlauf(id), 1, 0);
-    // Der Ausschnitt beginnt an einer steigenden Flanke durch null. Genauer
-    // als ein Abtastschritt geht nicht: bei 2 Hz und 5 V springt der Sinus
-    // je Schritt um bis zu A*2*pi*f*dt, hier rund 0,26 V.
+    const bild = imFenster(bus.verlauf(id), zeitfenster(bus.verlauf(id), 1, 0));
+    // Genauer als ein Abtastschritt geht nicht: bei 2 Hz und 5 V springt der
+    // Sinus je Schritt um bis zu A*2*pi*f*dt, hier rund 0,26 V.
     const schrittHoehe = 5 * 2 * Math.PI * 2 * DT_TEST;
-    expect(Math.abs(teil.v[0])).toBeLessThanOrEqual(schrittHoehe);
-    expect(teil.v[1]).toBeGreaterThan(teil.v[0]);
+    expect(Math.abs(bild.v[0])).toBeLessThanOrEqual(schrittHoehe);
+    expect(bild.v[1]).toBeGreaterThan(bild.v[0]);
   });
 
-  it("laeuft ohne Ausloeser bis ans Ende der Messung", () => {
+  it("fuellt den Schirm ueber die ganze eingestellte Zeit", () => {
     const { bus, id } = miss(2, 5, 5);
-    const teil = ausschnitt(bus.verlauf(id), 1, null);
+    const f = zeitfenster(bus.verlauf(id), 1, 0);
+    expect(f.t1 - f.t0).toBeCloseTo(1, 9);
+    expect(imFenster(bus.verlauf(id), f).t.length).toBeGreaterThan(200);
+  });
+
+  it("zeigt ohne Ausloeser das Neueste am rechten Rand", () => {
+    const { bus, id } = miss(2, 5, 5);
     const alles = bus.verlauf(id)!;
-    expect(teil.t[teil.t.length - 1]).toBeCloseTo(alles.t[alles.t.length - 1], 9);
-    expect(teil.t[0]).toBeGreaterThan(alles.t[alles.t.length - 1] - 1.01);
+    expect(zeitfenster(alles, 1, null).t1).toBeCloseTo(alles.t[alles.t.length - 1], 9);
   });
 });

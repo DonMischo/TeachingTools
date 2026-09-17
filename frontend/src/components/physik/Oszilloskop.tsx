@@ -7,6 +7,16 @@
  * Knotenspannung, die Beleuchtungsstärke und die Abkühlkurve an, ohne dass
  * eine Zeile dafür dazukommt.
  *
+ * Zwei Dinge sind hier keine Zierde, sondern Bedingung fürs Ablesen:
+ *
+ * 1. **Beide Kanäle teilen ein Zeitfenster.** Mit eigenem Zeitursprung je
+ *    Kanal liefen die Kurven nebeneinanderher und ließen sich nicht mehr
+ *    aufeinander beziehen — wozu sonst zwei Kanäle.
+ * 2. **Die Höhe lässt sich festhalten.** Wächst sie automatisch mit, füllt
+ *    jede Schwingung immer den ganzen Schirm — und ausgerechnet das Abklingen
+ *    einer gedämpften Schwingung sieht man dann nicht. Mit »−/+« rastet die
+ *    Empfindlichkeit wie am echten Gerät in 1-2-5-Stufen ein.
+ *
  * Gezeichnet wird auf Zuruf der Uhr (`beobachte`), nicht über React-Zustand —
  * sonst rendert das ganze Labor 60-mal je Sekunde neu.
  */
@@ -14,7 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatiere, type AnzeigeEinheit, type Einheit } from "@/lib/physik/einheiten";
 import { geraetTyp } from "@/lib/physik/katalog";
 import { signalId, type Messbus, type SignalId } from "@/lib/physik/messbus";
-import { ausschnitt, spanne } from "@/lib/physik/oszilloskop";
+import { imFenster, jeFeld, spanne, stufe, zeitfenster } from "@/lib/physik/oszilloskop";
 import type { Szene } from "@/lib/physik/typen";
 
 const KANAL_FARBE = ["#facc15", "#22d3ee"] as const;
@@ -26,6 +36,12 @@ interface Angebot {
   name: string;
   einheit: Einheit;
   anzeige?: AnzeigeEinheit;
+}
+
+/** Feste Höheneinstellung eines Kanals: Wert je Feld und Bildmitte. */
+interface Hoehe {
+  jeFeld: number;
+  mitte: number;
 }
 
 /** Alle Signale, die in diesem Aufbau überhaupt anfallen können. */
@@ -57,7 +73,10 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
   const [masse, setMasse] = useState({ b: 640, h: 300 });
   const [kanaele, setKanaele] = useState<(SignalId | null)[]>([null, null]);
   const [auslaufen, setAuslaufen] = useState(true);
+  const [hoehen, setHoehen] = useState<(Hoehe | null)[]>([null, null]);
   const [anzeige, setAnzeige] = useState<(number | undefined)[]>([]);
+  // Was gerade auf dem Schirm steht — fürs Beschriften neben dem Raster.
+  const [achsen, setAchsen] = useState<(Hoehe | null)[]>([null, null]);
 
   const moeglich = useMemo(() => angebote(szene), [szene]);
 
@@ -87,6 +106,16 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
     return () => beobachter.disconnect();
   }, []);
 
+  /** Der Bereich, den Kanal `k` gerade zeigt — fest eingestellt oder mitwachsend. */
+  const bereich = useCallback((k: number, werte: number[]) => {
+    const fest = hoehen[k];
+    if (fest) {
+      const halb = (fest.jeFeld * ZEILEN) / 2;
+      return { min: fest.mitte - halb, max: fest.mitte + halb };
+    }
+    return spanne(werte);
+  }, [hoehen]);
+
   const zeichne = useCallback(() => {
     const c = leinwand.current;
     if (!c) return;
@@ -94,14 +123,14 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
     if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
     const { b, h } = masse;
-    if (c.width !== Math.max(1, b * dpr)) c.width = Math.max(1, b * dpr);
-    if (c.height !== Math.max(1, h * dpr)) c.height = Math.max(1, h * dpr);
+    const breite = Math.max(1, b * dpr), hoehe = Math.max(1, h * dpr);
+    if (c.width !== breite) c.width = breite;
+    if (c.height !== hoehe) c.height = hoehe;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     ctx.fillStyle = "#050b16";
     ctx.fillRect(0, 0, b, h);
 
-    // Raster: zehn Felder quer, acht hoch — wie am echten Gerät.
     ctx.strokeStyle = "rgba(148,163,184,0.16)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -115,38 +144,87 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
     ctx.stroke();
 
     const dauer = zeitProFeld * SPALTEN;
+    // Ein Fenster für beide Kanäle, ausgelöst am ersten belegten.
+    const auslöser = kanaele[0] ?? kanaele[1];
+    const fenster = zeitfenster(
+      auslöser ? bus.verlauf(auslöser) : undefined,
+      dauer,
+      auslaufen ? 0 : null,
+    );
+    const breiteZeit = fenster.t1 - fenster.t0 || dauer;
+
     const gelesen: (number | undefined)[] = [];
+    const gezeigt: (Hoehe | null)[] = [null, null];
 
     kanaele.forEach((id, k) => {
       if (!id) { gelesen[k] = undefined; return; }
-      const roh = bus.verlauf(id);
-      // Ausgelöst wird immer am ersten Kanal — sonst laufen die beiden
-      // Kurven gegeneinander und das Bild wird unlesbar.
-      const pegel = auslaufen && k === 0 ? 0 : null;
-      const teil = ausschnitt(roh, dauer, pegel);
-      gelesen[k] = teil.v[teil.v.length - 1];
+      const teil = imFenster(bus.verlauf(id), fenster);
+      gelesen[k] = bus.letzter(id);
       if (teil.t.length < 2) return;
 
-      const { min, max } = spanne(teil.v);
-      const t0 = teil.t[0];
-      const x = (t: number) => ((t - t0) / dauer) * b;
-      const y = (v: number) => h - ((v - min) / (max - min)) * h;
+      const { min, max } = bereich(k, teil.v);
+      gezeigt[k] = { jeFeld: jeFeld(min, max, ZEILEN), mitte: (min + max) / 2 };
 
+      const x = (t: number) => ((t - fenster.t0) / breiteZeit) * b;
+      const y = (v: number) => h - ((v - min) / (max - min || 1)) * h;
+
+      // Nulllinie des Kanals, damit man positiv von negativ unterscheidet.
+      if (0 > min && 0 < max) {
+        ctx.save();
+        ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = KANAL_FARBE[k] + "66";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y(0)); ctx.lineTo(b, y(0));
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, b, h);
+      ctx.clip();
       ctx.strokeStyle = KANAL_FARBE[k];
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(x(teil.t[0]), y(teil.v[0]));
       for (let i = 1; i < teil.t.length; i++) ctx.lineTo(x(teil.t[i]), y(teil.v[i]));
       ctx.stroke();
+      ctx.restore();
+
+      // Beschriftung: Kanal 1 links, Kanal 2 rechts.
+      const angebot = moeglich.find(m => m.id === id);
+      if (angebot) {
+        ctx.fillStyle = KANAL_FARBE[k];
+        ctx.font = "600 10px system-ui, sans-serif";
+        ctx.textAlign = k === 0 ? "left" : "right";
+        const rand = k === 0 ? 4 : b - 4;
+        ctx.textBaseline = "top";
+        ctx.fillText(formatiere(max, angebot.einheit, angebot.anzeige), rand, 3);
+        ctx.textBaseline = "bottom";
+        ctx.fillText(formatiere(min, angebot.einheit, angebot.anzeige), rand, h - 3);
+      }
     });
 
     setAnzeige(alt => (alt[0] === gelesen[0] && alt[1] === gelesen[1] ? alt : gelesen));
-  }, [bus, kanaele, masse, zeitProFeld, auslaufen]);
+    setAchsen(alt => {
+      const gleich = [0, 1].every(k => alt[k]?.jeFeld === gezeigt[k]?.jeFeld && alt[k]?.mitte === gezeigt[k]?.mitte);
+      return gleich ? alt : gezeigt;
+    });
+  }, [bus, kanaele, masse, zeitProFeld, auslaufen, bereich, moeglich]);
 
   useEffect(() => {
     zeichne();
     return beobachte(zeichne);
   }, [beobachte, zeichne]);
+
+  /** Empfindlichkeit eines Kanals verstellen — das hält sie zugleich fest. */
+  function verstelle(k: number, richtung: 1 | -1) {
+    setHoehen(alt => {
+      const jetzt = alt[k] ?? achsen[k] ?? { jeFeld: 1, mitte: 0 };
+      return alt.map((h, i) => (i === k ? { ...jetzt, jeFeld: stufe(jetzt.jeFeld, richtung) } : h));
+    });
+  }
 
   function alsCSV() {
     const spalten = kanaele
@@ -178,19 +256,20 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
 
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <span className="font-black">📟 Oszilloskop</span>
 
         {[0, 1].map(k => {
           const gewaehlt = moeglich.find(m => m.id === kanaele[k]);
+          const achse = achsen[k];
           return (
-            <label key={k} className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-full" style={{ background: KANAL_FARBE[k] }} />
+            <div key={k} role="group" aria-label={`Kanal ${k + 1} Einstellung`} className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ background: KANAL_FARBE[k] }} />
               <select
                 aria-label={`Kanal ${k + 1}`}
                 value={kanaele[k] ?? ""}
                 onChange={e => setKanaele(alt => alt.map((v, i) => (i === k ? (e.target.value || null) : v)))}
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 max-w-44"
+                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 max-w-40"
               >
                 <option value="">— aus —</option>
                 {moeglich.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -198,7 +277,32 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
               <span className="font-bold tabular-nums min-w-20" style={{ color: KANAL_FARBE[k] }}>
                 {gewaehlt && anzeige[k] !== undefined ? formatiere(anzeige[k]!, gewaehlt.einheit, gewaehlt.anzeige) : "—"}
               </span>
-            </label>
+
+              {gewaehlt && (
+                <span className="flex items-center gap-0.5 text-xs">
+                  <button
+                    onClick={() => verstelle(k, -1)}
+                    aria-label={`Kanal ${k + 1} empfindlicher`}
+                    className="rounded border border-[var(--border)] w-6 h-6 leading-none"
+                  >−</button>
+                  <span className="tabular-nums text-[var(--text-muted)] min-w-20 text-center" title="Wert je Rasterfeld">
+                    {achse ? `${formatiere(achse.jeFeld, gewaehlt.einheit, gewaehlt.anzeige)}/Feld` : "—"}
+                  </span>
+                  <button
+                    onClick={() => verstelle(k, 1)}
+                    aria-label={`Kanal ${k + 1} unempfindlicher`}
+                    className="rounded border border-[var(--border)] w-6 h-6 leading-none"
+                  >+</button>
+                  <button
+                    onClick={() => setHoehen(alt => alt.map((h, i) => (i === k ? null : h)))}
+                    aria-pressed={hoehen[k] === null}
+                    title="Höhe wächst automatisch mit"
+                    className={`rounded border border-[var(--border)] px-1.5 h-6 leading-none ${
+                      hoehen[k] === null ? "text-[var(--accent)] font-bold" : "text-[var(--text-muted)]"}`}
+                  >auto</button>
+                </span>
+              )}
+            </div>
           );
         })}
       </div>
@@ -216,7 +320,7 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
         </label>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={auslaufen} onChange={e => setAuslaufen(e.target.checked)} />
-          <span className="text-[var(--text-muted)]" title="Zeichnet ab der letzten steigenden Flanke durch null — dadurch steht die Schwingung still.">
+          <span className="text-[var(--text-muted)]" title="Verankert das Bild an einer steigenden Flanke durch null, damit die Schwingung stillsteht.">
             Auslöser bei 0
           </span>
         </label>
@@ -232,7 +336,7 @@ export default function Oszilloskop({ szene, bus, beobachte, zeitProFeld, setZei
 
       {!moeglich.length && (
         <p className="text-xs text-[var(--text-muted)]">
-          Noch nichts zu messen. Stell einen Funktionsgenerator oder einen Kraftmesser auf den Tisch.
+          Noch nichts zu messen. Stell einen Funktionsgenerator, ein Pendel oder einen Kraftmesser auf den Tisch.
         </p>
       )}
     </div>
