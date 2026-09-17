@@ -7,7 +7,7 @@
  * er geändert, prüft der Hook gleich die Erfolge und merkt sich neue für eine
  * Einblendung.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LEERE_STATISTIK, neueErfolge, type Erfolg, type Statistik } from "@/lib/sonnensystem/erfolge";
 
 export interface Fortschritt {
@@ -50,34 +50,45 @@ export function speichereFortschritt(schluessel: string, f: Fortschritt) {
 export const mitEintrag = (l: string[], id: string) => (l.includes(id) ? l : [...l, id]);
 
 export function useForschung(schluessel: string) {
-  const [fortschritt, setFortschritt] = useState<Fortschritt>(LEERER_FORTSCHRITT);
+  // Der Schlüssel hängt am Stand, nicht an einem Ref: eine Marke im Ref steht
+  // schon auf »geladen«, während der geladene Stand noch in der Warteschlange
+  // liegt — der Speicher-Effekt schriebe dann die Leere über die Forschung, und
+  // weil StrictMode zweimal montiert, läse der zweite Ladevorgang genau diese
+  // Leere zurück. Dasselbe beim Wechsel des Schlüssels (ein Gast meldet sich
+  // an): sonst landet der Stand des einen Platzes auf dem anderen.
+  const [stand, setStand] = useState<{ fuer: string | null; fortschritt: Fortschritt }>(
+    () => ({ fuer: null, fortschritt: LEERER_FORTSCHRITT }),
+  );
+  const fortschritt = stand.fortschritt;
   const [neu, setNeu] = useState<Erfolg[]>([]);
-  const geladen = useRef(false);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
-    setFortschritt(ladeFortschritt(schluessel));
-    geladen.current = true;
+    setStand({ fuer: schluessel, fortschritt: ladeFortschritt(schluessel) });
   }, [schluessel]);
 
+  // Gespeichert wird nur, was auch zu diesem Platz geladen wurde.
   useEffect(() => {
-    if (geladen.current) speichereFortschritt(schluessel, fortschritt);
-  }, [schluessel, fortschritt]);
+    if (stand.fuer !== schluessel) return;
+    speichereFortschritt(schluessel, stand.fortschritt);
+  }, [schluessel, stand]);
 
   const aendere = useCallback((fn: (f: Fortschritt) => Fortschritt) => {
-    setFortschritt(alt => {
+    setStand(vorher => {
+      const alt = vorher.fortschritt;
       const f = fn(alt);
-      if (f === alt) return alt;
+      if (f === alt) return vorher;
       const erreicht = neueErfolge(f, Object.keys(f.erfolge));
-      if (!erreicht.length) return f;
+      if (!erreicht.length) return { ...vorher, fortschritt: f };
       const jetzt = Date.now();
       // Die Einblendung außerhalb des Updaters anstoßen — React mag keine Nebenwirkungen darin.
       queueMicrotask(() => setNeu(n => [...n, ...erreicht.filter(e => !n.some(x => x.id === e.id))]));
-      return { ...f, erfolge: { ...f.erfolge, ...Object.fromEntries(erreicht.map(e => [e.id, jetzt])) } };
+      const erfolge = { ...f.erfolge, ...Object.fromEntries(erreicht.map(e => [e.id, jetzt])) };
+      return { ...vorher, fortschritt: { ...f, erfolge } };
     });
   }, []);
 
-  const zuruecksetzen = useCallback(() => setFortschritt(LEERER_FORTSCHRITT), []);
+  const zuruecksetzen = useCallback(() => setStand(v => ({ ...v, fortschritt: LEERER_FORTSCHRITT })), []);
   const gesehen = useCallback((id: string) => setNeu(n => n.filter(e => e.id !== id)), []);
 
   return { fortschritt, aendere, zuruecksetzen, neueErfolge: neu, gesehen };
