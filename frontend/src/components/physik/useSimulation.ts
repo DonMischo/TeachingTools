@@ -75,6 +75,16 @@ export function useSimulation(
         const ergebnis = schritt(szeneRef.current, zustand.current, DT, welt.current.zustand());
         zustand.current = ergebnis.zustand;
 
+        // Im realen Modell führt das Drehgelenk, nicht die Differential-
+        // gleichung: der Winkel kommt dann aus der Lage des Körpers zurück.
+        const vomGelenk = welt.current.abgeleitet(szeneRef.current, zustand.current.mechanik);
+        for (const id in vomGelenk) {
+          zustand.current = {
+            ...zustand.current,
+            mechanik: { ...zustand.current.mechanik, [id]: vomGelenk[id] },
+          };
+        }
+
         // Erst melden, wenn der Zustand steht — sonst beschreibt der Bericht
         // den Augenblick vor dem Stoß.
         if (neueStoesse.length) meldung.current?.(neueStoesse, zustand.current);
@@ -119,10 +129,31 @@ export function useSimulation(
     for (const fn of zuschauer.current) fn();
   }, []);
 
+  /**
+   * Bringt Welt und Anzeige auf den neuesten Stand, ohne die Zeit laufen zu
+   * lassen.
+   *
+   * Gebraucht wird das im angehaltenen Zustand: dort dreht sich die Schleife
+   * nicht, also wird weder der Weltstand aufgefrischt noch neu gezeichnet —
+   * ein gezogenes Gewicht sprang deshalb sichtbar an seinen alten Platz
+   * zurück, obwohl es längst woanders lag.
+   */
+  const aktualisiere = useCallback(() => {
+    welt.current.synchronisiere(szeneRef.current, zustand.current.mechanik);
+    zustand.current = { ...zustand.current, welt: welt.current.zustand() };
+    for (const fn of zuschauer.current) fn();
+  }, []);
+
+  // Angehalten trotzdem mitbekommen, was sich am Aufbau ändert.
+  useEffect(() => {
+    if (!laeuft) aktualisiere();
+  }, [szene, laeuft, aktualisiere]);
+
   /** Setzt einen freien Körper an die Hand des Ziehenden. */
   const setzeKoerper = useCallback((id: string, pos: { x: number; y: number }) => {
     welt.current.setzeOrt(id, pos);
-  }, []);
+    aktualisiere();
+  }, [aktualisiere]);
 
-  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, stoesse };
+  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, aktualisiere, stoesse };
 }

@@ -1,25 +1,25 @@
 /**
  * Die Welt — Boden, Körper, Berührung.
  *
- * Bis hierher war der Aufbau eine Sammlung von Geräten, die einander nicht
- * wahrnahmen: nichts stand auf etwas, nichts stieß an etwas. Genau das fehlte,
- * um einen Parcours zu bauen, bei dem eines das nächste anstößt.
- *
- * Deshalb liegt unter dem Labor jetzt ein Starrkörperlöser (planck, ein
- * Box2D-Port). Er ist **nicht** dafür da, die Schulversuche zu rechnen — das
- * tun weiterhin die analytischen Modelle in `mechanik.ts`, weil nur sie eine
- * Schwingungsdauer liefern, die zur Formel passt. Er ist dafür da, dass Dinge
- * fallen, liegenbleiben, sich stapeln und einander umwerfen.
+ * Unter dem Labor liegt ein Starrkörperlöser (planck, ein Box2D-Port). Er ist
+ * **nicht** dafür da, die Schulversuche zu rechnen — das tun die analytischen
+ * Modelle in `mechanik.ts`, weil nur sie eine Schwingungsdauer liefern, die
+ * zur Formel passt. Er ist dafür da, dass Dinge fallen, liegenbleiben, sich
+ * stapeln und einander umwerfen.
  *
  * Die Aufteilung folgt der Modelltreue:
  *
- * - **Schulbuch**: Geräte sind ideal und gehen durcheinander hindurch. Das
- *   Pendel schwingt exakt nach 2π√(L/g), ungestört von allem anderen.
- * - **Real**: die Körper der Geräte stoßen mit, geben Energie ab und ändern
- *   dadurch den Verlauf.
+ * - **Schulbuch**: Geräte haben gar keinen Körper. Sie gehen durch alles
+ *   hindurch, und das Pendel schwingt exakt nach 2π√(L/g).
+ * - **Real**: das Pendel hängt als *richtiger* Körper an einem Drehgelenk.
+ *   Damit tauscht es beim Stoß Impuls aus: der Klotz bekommt einen
+ *   vernünftigen Schubs, das Pendel wird langsamer, und beim nächsten
+ *   Durchgang stößt es erneut an.
  *
- * Frei herumliegende Massestücke fallen und stapeln sich in beiden Fällen —
- * dass ein Gewicht zu Boden fällt, ist keine Idealisierung.
+ * Der letzte Punkt war ein Fehler wert: zuerst war der Pendelkörper
+ * *kinematisch* geführt. Ein kinematischer Körper hat in Box2D unendliche
+ * Masse — er kann keine Energie abgeben und schleudert alles, was er trifft,
+ * beim ersten Kontakt aus der Reichweite. Danach passierte nie wieder etwas.
  */
 import * as planck from "planck";
 import { koerperOrt, koerperRadius } from "./geometrie";
@@ -40,12 +40,10 @@ export type WeltZustand = Record<string, WeltKoerper>;
 
 /** Ein Zusammenstoß — Anlass für einen Phänomen-Marker. */
 export interface Stoss {
-  /** Die beiden beteiligten Geräte. */
   a: string;
   b: string;
-  /** Wo es passiert ist. */
   ort: { x: number; y: number };
-  /** Wie heftig, als Betrag der Relativgeschwindigkeit in m/s. */
+  /** Betrag der Relativgeschwindigkeit in m/s. */
   wucht: number;
 }
 
@@ -53,50 +51,49 @@ export interface Stoss {
 const STEHT_FEST = new Set(["stativ", "schiefeebene", "hebel", "flaschenzug",
   "batterie", "widerstand", "lampe", "schalter", "voltmeter", "amperemeter", "signalgeber"]);
 
-/** Geräte, deren Körper eine analytische Rechnung führt. */
-const GEFUEHRT = new Set(["fadenpendel", "federpendel", "schiefeebene"]);
+/** Geräte, die im realen Modell an einem Gelenk hängen und mitspielen. */
+const AM_GELENK = new Set(["fadenpendel"]);
 
 const KANTE = 60;
 
-function groesseVon(g: Geraet): { b: number; h: number } {
-  if (g.typ === "massestueck") {
-    const r = koerperRadius(g.werte.masse ?? 0.1);
-    return { b: r * 2, h: r * 2 };
-  }
-  if (g.typ === "stativ") return { b: 0.16, h: Math.max(0.1, g.werte.hoehe ?? 1.2) };
-  return { b: 0.12, h: 0.12 };
+const pendelLaenge = (g: Geraet) => Math.max(0.01, g.werte.laenge ?? 1);
+
+function bobOrt(g: Geraet, winkel: number) {
+  const l = pendelLaenge(g);
+  return { x: g.pos.x + l * Math.sin(winkel), y: g.pos.y - l * Math.cos(winkel) };
 }
 
-/**
- * Hält die planck-Welt im Gleichtakt mit der Szene.
- *
- * Die Welt lebt zwischen den Schritten weiter — ein Körper, der rollt, soll
- * weiterrollen. Also wird sie nicht jedes Bild neu gebaut, sondern
- * nachgeführt: neue Geräte bekommen einen Körper, weggeräumte verlieren ihn.
- */
 export class Welt {
-  // Ohne »allowSleep: false« legen sich ruhende Körper schlafen. Ein Pendel,
-  // das sie danach wieder anstößt, weckt sie zwar — aber der erste Stoß bleibt
-  // dann oft der einzige, den man sieht. Bei einer Handvoll Körper kostet
-  // Wachbleiben nichts.
+  // Ohne »allowSleep: false« legen sich ruhende Körper schlafen, und der erste
+  // Stoß bleibt oft der einzige, den man sieht. Bei einer Handvoll Körper
+  // kostet Wachbleiben nichts.
   private welt = new planck.World({ gravity: new planck.Vec2(0, -9.81), allowSleep: false });
   private koerper = new Map<string, planck.Body>();
+  private anker = new Map<string, planck.Body>();
   private bauart = new Map<string, string>();
+  private startWerte = new Map<string, number>();
   private stoesse: Stoss[] = [];
 
   constructor() {
     const boden = this.welt.createBody();
+    // Der Boden bekommt einen Namen, damit ein Aufschlag darauf als Ereignis
+    // zählt — »das Gewicht kommt unten an« ist im Parcours ein Phänomen. Ohne
+    // Namen fielen diese Berührungen stillschweigend unter den Tisch, und ein
+    // Pendel, das über den Boden schleift, bremste unerklärlich ab.
+    boden.setUserData("boden");
     boden.createFixture(new planck.Edge(new planck.Vec2(-KANTE, 0), new planck.Vec2(KANTE, 0)), {
       friction: 0.6,
     });
 
     this.welt.on("begin-contact", kontakt => {
-      const a = kontakt.getFixtureA().getBody().getUserData() as string | null;
-      const b = kontakt.getFixtureB().getBody().getUserData() as string | null;
+      const koerperA = kontakt.getFixtureA().getBody();
+      const koerperB = kontakt.getFixtureB().getBody();
+      const a = koerperA.getUserData() as string | null;
+      const b = koerperB.getUserData() as string | null;
       if (!a || !b) return;
-      const va = kontakt.getFixtureA().getBody().getLinearVelocity();
-      const vb = kontakt.getFixtureB().getBody().getLinearVelocity();
-      const ort = kontakt.getFixtureA().getBody().getPosition();
+      const va = koerperA.getLinearVelocity();
+      const vb = koerperB.getLinearVelocity();
+      const ort = koerperA.getPosition();
       this.stoesse.push({
         a, b,
         ort: { x: ort.x, y: ort.y },
@@ -105,14 +102,26 @@ export class Welt {
     });
   }
 
-  /** Welche Bauart ein Gerät gerade hat — ändert sie sich, wird neu gebaut. */
+  /** Welche Bauart ein Gerät gerade braucht — ändert sie sich, wird neu gebaut. */
   private artVon(g: Geraet, treue: Modelltreue, haengt: boolean): string | null {
     // Was eingehängt ist, ist Teil seines Wirts und kein eigener Körper.
     if (haengt) return null;
-    if (GEFUEHRT.has(g.typ)) return treue === "real" ? "gefuehrt-fest" : null;
+    const real = (g.treue ?? treue) === "real";
+    if (AM_GELENK.has(g.typ)) return real ? "gelenk" : null;
     if (STEHT_FEST.has(g.typ)) return "statisch";
     if (g.typ === "massestueck") return "frei";
     return null;
+  }
+
+  private entferne(id: string) {
+    const body = this.koerper.get(id);
+    if (body) this.welt.destroyBody(body);
+    const anker = this.anker.get(id);
+    if (anker) this.welt.destroyBody(anker);
+    this.koerper.delete(id);
+    this.anker.delete(id);
+    this.bauart.delete(id);
+    this.startWerte.delete(id);
   }
 
   /** Bringt die Welt auf den Stand der Szene. */
@@ -121,62 +130,128 @@ export class Welt {
     const gewollt = new Map<string, { g: Geraet; art: string }>();
 
     for (const g of sicht.geraete) {
-      const haengt = szene.verbindungen.some(v => v.von.geraet === g.id || v.nach.geraet === g.id)
-        && g.typ === "massestueck";
+      const haengt = g.typ === "massestueck"
+        && szene.verbindungen.some(v => v.von.geraet === g.id || v.nach.geraet === g.id);
       const art = this.artVon(g, szene.treue, haengt);
       if (art) gewollt.set(g.id, { g, art });
     }
 
-    for (const [id, body] of this.koerper) {
+    for (const id of [...this.koerper.keys()]) {
       const soll = gewollt.get(id);
-      if (!soll || this.bauart.get(id) !== soll.art) {
-        this.welt.destroyBody(body);
-        this.koerper.delete(id);
-        this.bauart.delete(id);
-      }
+      if (!soll || this.bauart.get(id) !== soll.art) this.entferne(id);
     }
 
     for (const [id, { g, art }] of gewollt) {
-      if (this.koerper.has(id)) continue;
-      const ort = art === "gefuehrt-fest" ? (koerperOrt(g, mechanik[g.id]) ?? g.pos) : g.pos;
-      const body = this.welt.createBody({
-        type: art === "frei" ? "dynamic" : "kinematic",
-        position: new planck.Vec2(ort.x, ort.y),
-      });
-      body.setUserData(id);
-      const { b, h } = groesseVon(g);
-      const masse = Math.max(0.001, g.werte.masse ?? 0.2);
-      body.createFixture(new planck.Box(b / 2, h / 2), {
-        density: masse / Math.max(1e-6, b * h),
-        friction: 0.5,
-        restitution: 0.05,
-      });
-      this.koerper.set(id, body);
-      this.bauart.set(id, art);
+      if (this.koerper.has(id)) {
+        this.fuehreNach(id, g, art);
+        continue;
+      }
+      this.baue(id, g, art, mechanik);
     }
   }
 
+  private baue(id: string, g: Geraet, art: string, mechanik: MechanikZustand) {
+    if (art === "gelenk") {
+      // Ein echter Körper an einem Drehgelenk: er schwingt, stößt an, gibt
+      // dabei Energie ab und wird selbst langsamer.
+      const start = g.werte.startwinkel ?? 0;
+      const anker = this.welt.createBody({ position: new planck.Vec2(g.pos.x, g.pos.y) });
+      const ort = bobOrt(g, start);
+      const bob = this.welt.createBody({
+        type: "dynamic",
+        position: new planck.Vec2(ort.x, ort.y),
+        linearDamping: g.werte.daempfung ?? 0,
+      });
+      bob.setUserData(id);
+      const r = koerperRadius(g.werte.masse ?? 0.2);
+      bob.createFixture(new planck.Circle(r), {
+        density: Math.max(0.001, g.werte.masse ?? 0.2) / (Math.PI * r * r),
+        friction: 0.4,
+        restitution: 0.2,
+      });
+      this.welt.createJoint(new planck.RevoluteJoint({}, anker, bob, new planck.Vec2(g.pos.x, g.pos.y)));
+      this.anker.set(id, anker);
+      this.koerper.set(id, bob);
+      this.bauart.set(id, art);
+      this.startWerte.set(id, start);
+      return;
+    }
+
+    const ort = art === "gefuehrt" ? (koerperOrt(g, mechanik[id]) ?? g.pos) : g.pos;
+    const body = this.welt.createBody({
+      type: art === "frei" ? "dynamic" : "kinematic",
+      position: new planck.Vec2(ort.x, ort.y),
+    });
+    body.setUserData(id);
+    const r = g.typ === "massestueck" ? koerperRadius(g.werte.masse ?? 0.1) : 0.06;
+    const hoehe = g.typ === "stativ" ? Math.max(0.1, g.werte.hoehe ?? 1.2) / 2 : r;
+    const masse = Math.max(0.001, g.werte.masse ?? 0.2);
+    body.createFixture(new planck.Box(r, hoehe), {
+      density: masse / Math.max(1e-6, 4 * r * hoehe),
+      friction: 0.5,
+      restitution: 0.05,
+    });
+    this.koerper.set(id, body);
+    this.bauart.set(id, art);
+  }
+
   /**
-   * Ein Zeitschritt.
+   * Führt einen vorhandenen Körper nach.
    *
-   * Geführte Körper werden vorher auf ihre gerechnete Lage gesetzt und
-   * bekommen die passende Geschwindigkeit — dadurch stoßen sie richtig an,
-   * ohne dass der Löser ihre Bahn verändert.
+   * Der Anker wandert mit dem Stativ mit, und wenn jemand den Startwinkel
+   * verstellt (am Regler oder durch Ziehen), wird das Pendel dorthin gesetzt
+   * und neu losgelassen — sonst bliebe es im realen Modell unbeeindruckt.
    */
-  schritt(szene: Szene, mechanik: MechanikZustand, dt: number) {
+  private fuehreNach(id: string, g: Geraet, art: string) {
+    if (art !== "gelenk") return;
+    const anker = this.anker.get(id);
+    const bob = this.koerper.get(id);
+    if (!anker || !bob) return;
+
+    anker.setPosition(new planck.Vec2(g.pos.x, g.pos.y));
+    bob.setLinearDamping(g.werte.daempfung ?? 0);
+
+    const start = g.werte.startwinkel ?? 0;
+    if (this.startWerte.get(id) !== start) {
+      this.startWerte.set(id, start);
+      const ort = bobOrt(g, start);
+      bob.setPosition(new planck.Vec2(ort.x, ort.y));
+      bob.setLinearVelocity(new planck.Vec2(0, 0));
+      bob.setAngularVelocity(0);
+    }
+  }
+
+  /** Ein Zeitschritt. */
+  schritt(_szene: Szene, _mechanik: MechanikZustand, dt: number) {
     this.stoesse = [];
+    this.welt.step(dt);
+  }
+
+  /**
+   * Der Schwingerzustand, den der Löser erzeugt hat.
+   *
+   * Im realen Modell führt nicht mehr die Differentialgleichung, sondern das
+   * Gelenk. Damit Anzeige, Signale und Inspektor unverändert weiterarbeiten,
+   * wird der Winkel aus der Lage des Körpers zurückgerechnet.
+   */
+  abgeleitet(szene: Szene, mechanik: MechanikZustand): MechanikZustand {
+    const aus: MechanikZustand = {};
     const sicht = aufgeloest(szene, mechanik);
 
     for (const g of sicht.geraete) {
-      const body = this.koerper.get(g.id);
-      if (!body || this.bauart.get(g.id) !== "gefuehrt-fest") continue;
-      const ziel = koerperOrt(g, mechanik[g.id]);
-      if (!ziel) continue;
-      const jetzt = body.getPosition();
-      body.setLinearVelocity(new planck.Vec2((ziel.x - jetzt.x) / dt, (ziel.y - jetzt.y) / dt));
+      if (this.bauart.get(g.id) !== "gelenk") continue;
+      const bob = this.koerper.get(g.id);
+      if (!bob) continue;
+      const p = bob.getPosition();
+      const v = bob.getLinearVelocity();
+      const laenge = pendelLaenge(g);
+      const winkel = Math.atan2(p.x - g.pos.x, g.pos.y - p.y);
+      // Die Bahngeschwindigkeit auf die Tangente projizieren.
+      const tempo = (v.x * Math.cos(winkel) + v.y * Math.sin(winkel)) / laenge;
+      aus[g.id] = { q: winkel, v: tempo, start: g.werte.startwinkel ?? 0 };
     }
 
-    this.welt.step(dt);
+    return aus;
   }
 
   /**
@@ -207,11 +282,9 @@ export class Welt {
     return this.stoesse;
   }
 
-  /** Setzt alle freien Körper auf ihren Platz in der Szene zurück. */
+  /** Setzt alle Körper auf ihren Platz in der Szene zurück. */
   zuruecksetzen(szene: Szene, mechanik: MechanikZustand) {
-    for (const body of this.koerper.values()) this.welt.destroyBody(body);
-    this.koerper.clear();
-    this.bauart.clear();
+    for (const id of [...this.koerper.keys()]) this.entferne(id);
     this.stoesse = [];
     this.synchronisiere(szene, mechanik);
   }

@@ -117,3 +117,89 @@ describe("zuruecksetzen", () => {
     expect(welt.zustand()[id].y).toBeCloseTo(2, 6);
   });
 });
+
+describe("Pendel im realen Modell", () => {
+  /**
+   * Pendel mit einem Klotz genau in seiner Bahn.
+   *
+   * Ohne Stativ, damit die Stange nicht selbst im Weg steht: der Drehpunkt
+   * liegt 1,20 m hoch, der 1,15 m lange Faden führt den Körper dicht über den
+   * Boden, und dort steht der Klotz.
+   */
+  function aufbau(): Szene {
+    let s = stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 });
+    const pendel = s.geraete[0].id;
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel
+      ? { ...g, werte: { laenge: 1.1, masse: 3, startwinkel: -1, daempfung: 0 } }
+      : g)) };
+    // Der Klotz ist schwer und damit hoch genug, dass ihn die Bahn trifft —
+    // und das Pendel bleibt unten frei vom Boden, sonst bremst dessen Reibung
+    // die Schwingung ab, bevor sie je hinkommt.
+    s = masse(s, { x: 0.4, y: 0.09 }, 20);
+    return { ...s, treue: "real" };
+  }
+
+  it("stösst den Klotz mehrfach an, nicht nur einmal", () => {
+    // Der gemeldete Fehler: der Pendelkörper war kinematisch, also unendlich
+    // schwer. Der erste Treffer schleuderte den Klotz aus der Reichweite, und
+    // danach passierte nie wieder etwas.
+    const szene = aufbau();
+    const klotz = szene.geraete[1].id;
+    const { stoesse } = laufen(szene, 8);
+
+    const treffer = stoesse.filter(s => s.a === klotz || s.b === klotz);
+    expect(treffer.length).toBeGreaterThan(1);
+  });
+
+  it("wird durch den Stoss selbst langsamer", () => {
+    const szene = aufbau();
+    const pendel = szene.geraete[0].id;
+    const welt = new Welt();
+    welt.synchronisiere(szene, {});
+
+    // Ausschlag vor dem ersten Treffer …
+    let vorher = 0;
+    for (let i = 0; i < 240 * 0.4; i++) {
+      welt.schritt(szene, {}, DT);
+      vorher = Math.max(vorher, Math.abs(welt.abgeleitet(szene, {})[pendel].q));
+    }
+    // … und nach mehreren Durchgängen mit Stoessen.
+    for (let i = 0; i < 240 * 6; i++) welt.schritt(szene, {}, DT);
+    let nachher = 0;
+    for (let i = 0; i < 240 * 2; i++) {
+      welt.schritt(szene, {}, DT);
+      nachher = Math.max(nachher, Math.abs(welt.abgeleitet(szene, {})[pendel].q));
+    }
+
+    // Energie ist an den Klotz gegangen — ohne Reibung kann sie nur dorthin.
+    expect(nachher).toBeLessThan(vorher);
+  });
+
+  it("rechnet aus der Körperlage wieder einen Winkel zurück", () => {
+    const szene = aufbau();
+    const pendel = szene.geraete[0].id;
+    const welt = new Welt();
+    welt.synchronisiere(szene, {});
+    // Direkt nach dem Aufbauen steht es auf seinem Startwinkel.
+    expect(welt.abgeleitet(szene, {})[pendel].q).toBeCloseTo(-1, 2);
+  });
+});
+
+describe("setzeOrt", () => {
+  it("versetzt einen Körper und lässt ihn dort", () => {
+    // Der gemeldete Fehler: angehalten liess sich ein Gewicht zwar greifen,
+    // sprang aber sichtbar zurück.
+    const szene = masse(neueSzene(), { x: 0, y: 1 });
+    const id = szene.geraete[0].id;
+    const welt = new Welt();
+    welt.synchronisiere(szene, {});
+
+    welt.setzeOrt(id, { x: 0.8, y: 1.4 });
+    expect(welt.zustand()[id].x).toBeCloseTo(0.8, 9);
+    expect(welt.zustand()[id].y).toBeCloseTo(1.4, 9);
+
+    // Ein erneutes Nachführen darf ihn nicht zurückholen.
+    welt.synchronisiere(szene, {});
+    expect(welt.zustand()[id].x).toBeCloseTo(0.8, 9);
+  });
+});

@@ -86,8 +86,10 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           art: "stoss",
           ort: stoss.ort,
           t: stand.t,
-          titel: "💥 Zusammenstoß",
-          erklaerung: "Beim Aufprall wird Bewegungsenergie in Verformung und Wärme umgesetzt — sie ist danach nicht mehr im Aufbau. Im Schulbuchmodell gäbe es diesen Stoß gar nicht: dort sind die Geräte ideal und gehen hindurch.",
+          titel: (stoss.a === "boden" || stoss.b === "boden") ? "💥 Aufschlag" : "💥 Zusammenstoß",
+          erklaerung: (stoss.a === "boden" || stoss.b === "boden")
+            ? "Unten angekommen: die Lageenergie ist vollständig in Bewegungsenergie übergegangen und beim Aufschlag in Verformung und Wärme. Aus der Aufprallgeschwindigkeit lässt sich zurückrechnen, aus welcher Höhe der Körper gefallen ist."
+            : "Beim Aufprall wird Bewegungsenergie in Verformung und Wärme umgesetzt — sie ist danach nicht mehr im Aufbau. Im Schulbuchmodell gäbe es diesen Stoß gar nicht: dort sind die Geräte ideal und gehen hindurch.",
           bericht: stossBericht(szene, stand, [stoss.a, stoss.b], stoss.wucht),
         });
       }
