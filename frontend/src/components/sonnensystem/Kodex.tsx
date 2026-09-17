@@ -77,7 +77,7 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         {bereich === "eintraege" && (
           <div className="flex flex-col gap-6">
             {!alleZeigen && fortschritt.erforscht.length === 0 && (

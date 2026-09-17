@@ -52,7 +52,7 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
   );
 
   return (
-    <div className="h-full overflow-y-auto p-4 text-slate-100">
+    <div className="h-full overflow-y-auto overscroll-contain p-4 text-slate-100">
       <p className="text-sm text-slate-300 max-w-3xl">
         So sehen Teleskope, Raumsonden, Rover und Astronauten unser Sonnensystem — und was dahinter liegt.
         Jedes Bild wird freigeschaltet, sobald du im Flugmodus den passenden Himmelskörper scannst.

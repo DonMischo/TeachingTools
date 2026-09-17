@@ -11,7 +11,7 @@ import {
 } from "@/lib/sonnensystem/bahnen";
 import { KOERPER, KOERPER_NACH_ID, mondeVon } from "@/lib/sonnensystem/daten";
 import { AUFTRAEGE, auftragZu, gemischteAntworten } from "@/lib/sonnensystem/auftraege";
-import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt } from "@/lib/sonnensystem/galerie";
+import { GALERIE, benoetigt, bildFuer, freigeschaltet, zeigt, zielName } from "@/lib/sonnensystem/galerie";
 import { ALLE_NACHWEISE, foto, textur } from "@/lib/sonnensystem/bilder";
 import {
   HOECHSTTEMPO, OVERDRIVE_TEMPO, haltAbstand, overdriveLohntNicht, schaetzeFlugzeit, schleichTempo, vielfachesLicht, zielTempo,
@@ -358,6 +358,10 @@ describe("Aufträge", () => {
     expect(AUFTRAEGE.length).toBeGreaterThanOrEqual(24);
     for (let i = 1; i < AUFTRAEGE.length; i++) expect(AUFTRAEGE[i].stufe).toBeGreaterThanOrEqual(AUFTRAEGE[i - 1].stufe);
     expect(new Set(AUFTRAEGE.map(a => a.ziel)).size).toBe(AUFTRAEGE.length);
+    // Die Liste zeigt bei gelösten Aufträgen den Namen des Ziels. Ein
+    // Lagrangepunkt steht nicht in KOERPER_NACH_ID — der direkte Zugriff riss
+    // die ganze Ansicht mit, sobald der erste solche Auftrag gelöst war.
+    for (const a of AUFTRAEGE) expect(zielName(a.ziel), a.id).not.toBe(a.ziel);
   });
 
   it("findet zu jedem gescannten Ziel den offenen Auftrag, egal in welcher Reihenfolge", () => {

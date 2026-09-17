@@ -78,7 +78,7 @@ export function Kepler({ onSteckbrief }: { onSteckbrief?: (id: string) => void }
   }, [laeuft]);
 
   return (
-    <div className="h-full overflow-y-auto p-4 text-slate-100 flex flex-col gap-6">
+    <div className="h-full overflow-y-auto overscroll-contain p-4 text-slate-100 flex flex-col gap-6">
       <p className="text-sm text-slate-300 max-w-3xl">
         Johannes Kepler saß zwischen 1600 und 1619 über den Messwerten von Tycho Brahe und fand drei Regeln, nach denen
         sich alle Planeten richten — 68 Jahre bevor Newton sagen konnte, warum. Hier lassen sie sich einstellen und ablaufen.

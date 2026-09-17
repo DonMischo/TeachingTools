@@ -61,12 +61,18 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
   const [alleZeigen, setAlleZeigen] = useState(false);
   const [imBrowser, setImBrowser] = useState(false);
   const [vollbild, setVollbild] = useState(false);
+  const [vollbildMoeglich, setVollbildMoeglich] = useState(false);
   const rahmenRef = useRef<HTMLDivElement>(null);
   const forschung = useForschung(speicherSchluessel);
   const { fortschritt } = forschung;
   const zeigeAlles = lehrkraft && alleZeigen;
 
-  useEffect(() => { setImBrowser(true); }, []);
+  useEffect(() => {
+    setImBrowser(true);
+    // Safari auf dem iPhone kann kein Vollbild für beliebige Elemente. Einen
+    // Knopf zu zeigen, der nichts tut, ist schlimmer als keiner.
+    setVollbildMoeglich(!!document.fullscreenEnabled);
+  }, []);
   useEffect(() => {
     const wechsel = () => setVollbild(document.fullscreenElement === rahmenRef.current);
     document.addEventListener("fullscreenchange", wechsel);
@@ -101,6 +107,16 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
     else rahmenRef.current?.requestFullscreen?.().catch(() => {});
   };
 
+  // Solange der Flug oder eine Einblendung den Schirm füllt, darf die Seite
+  // dahinter nicht mitscrollen: sonst wischt man auf dem Telefon in einer
+  // Einblendung und es bewegt sich der Hintergrund.
+  useEffect(() => {
+    if (reiter !== "flug" && !steckbrief && !kodexUeberFlug) return;
+    const vorher = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = vorher; };
+  }, [reiter, steckbrief, kodexUeberFlug]);
+
   const himmel = textur("milchstrasse")?.datei;
 
   return (
@@ -118,7 +134,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
 
       <div
         ref={rahmenRef}
-        className={`flex flex-col gap-2 ${vollbild ? "h-screen p-2 bg-black" : ""}`}
+        className={`flex flex-col gap-2 ${vollbild ? "h-[100dvh] p-2 bg-black" : ""}`}
       >
         <div className="flex items-center gap-2">
           <div className="flex gap-1 overflow-x-auto flex-1" role="tablist">
@@ -136,17 +152,22 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
               >{r.name}</button>
             ))}
           </div>
-          <button
-            onClick={umschaltenVollbild}
-            className="shrink-0 px-3 py-2 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
-            title={vollbild ? "Vollbild verlassen" : "Vollbild"}
-          >{vollbild ? "⤡" : "⛶"}</button>
+          {vollbildMoeglich && (
+            <button
+              onClick={umschaltenVollbild}
+              className="shrink-0 px-3 py-2 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
+              title={vollbild ? "Vollbild verlassen" : "Vollbild"}
+            >{vollbild ? "⤡" : "⛶"}</button>
+          )}
         </div>
 
         <div
           className="relative rounded-2xl overflow-hidden border border-white/10"
           style={{
-            height: vollbild ? undefined : "min(78vh, 820px)",
+            // dvh statt vh: auf dem Telefon zählt vh die Adressleiste mit, die
+            // Bühne ragte darunter. Beim Flug steht deshalb neben inset-0 (der
+            // Rückfalllinie) zusätzlich h-[100dvh].
+            height: vollbild ? undefined : "min(78dvh, 820px)",
             flex: vollbild ? 1 : undefined,
             minHeight: 420,
             background: himmel && reiter !== "uebersicht" && reiter !== "flug"
@@ -180,7 +201,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         </div>
 
         {reiter === "flug" && imBrowser && (
-          <div className="fixed inset-0 z-40 bg-black">
+          <div className="fixed inset-0 h-[100dvh] z-40 bg-black">
             <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Lade 3D …</div>}>
               <Flug
                 onSteckbrief={waehle}
@@ -188,7 +209,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
                 aendere={forschung.aendere}
                 zuruecksetzen={forschung.zuruecksetzen}
                 onVerlassen={setReiter}
-                onVollbild={umschaltenVollbild}
+                onVollbild={vollbildMoeglich ? umschaltenVollbild : undefined}
                 vollbild={vollbild}
                 onKodex={setKodexUeberFlug}
                 angehalten={kodexUeberFlug !== null || steckbrief !== null}
@@ -198,7 +219,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         )}
 
         {reiter === "flug" && kodexUeberFlug && (
-          <div className="fixed inset-0 z-[45] bg-slate-950/95 backdrop-blur">
+          <div className="fixed inset-0 h-[100dvh] z-[45] bg-slate-950/95 backdrop-blur">
             <div className="h-full max-w-5xl mx-auto">
               <Kodex
                 fortschritt={fortschritt} alleZeigen={zeigeAlles} bereich={kodexUeberFlug}

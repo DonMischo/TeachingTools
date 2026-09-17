@@ -53,7 +53,7 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
 
   return (
     <aside
-      className="fixed inset-x-0 bottom-0 top-auto sm:top-0 sm:left-auto sm:w-[420px] max-h-[82vh] sm:max-h-none z-50 flex flex-col
+      className="fixed inset-x-0 bottom-0 top-auto sm:top-0 sm:left-auto sm:w-[420px] max-h-[82dvh] sm:max-h-none z-50 flex flex-col
         bg-slate-950/95 backdrop-blur text-slate-100 border-t sm:border-t-0 sm:border-l border-white/10 shadow-2xl rounded-t-2xl sm:rounded-none"
       aria-label={`Steckbrief ${k.name}`}
     >
@@ -67,7 +67,7 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
         <button onClick={onSchliessen} className="w-9 h-9 rounded-lg hover:bg-white/10 text-lg" aria-label="Steckbrief schließen">✕</button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 flex flex-col gap-4">
         {bild && (
           <figure>
             <div className="aspect-square max-h-64 mx-auto rounded-xl overflow-hidden bg-black flex items-center justify-center">

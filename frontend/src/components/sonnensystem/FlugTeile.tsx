@@ -142,7 +142,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
 export function Einblendung({ children, onSchliessen, breit }: { children: ReactNode; onSchliessen?: () => void; breit?: boolean }) {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pointer-events-auto">
-      <div className={`relative w-full ${breit ? "max-w-xl" : "max-w-md"} max-h-full overflow-y-auto rounded-2xl border border-cyan-300/25 bg-slate-950/90 p-5 shadow-2xl`}>
+      <div className={`relative w-full ${breit ? "max-w-xl" : "max-w-md"} max-h-full overflow-y-auto overscroll-contain rounded-2xl border border-cyan-300/25 bg-slate-950/90 p-5 shadow-2xl`}>
         {onSchliessen && (
           <button onClick={onSchliessen} className="absolute right-3 top-3 w-8 h-8 rounded-lg hover:bg-white/10" aria-label="Schließen">✕</button>
         )}
@@ -258,7 +258,7 @@ export function ScanKarte({ koerper, ort, anzahl, auftrag, onGeloest, onSteckbri
       <div className="visor-ein relative w-full max-w-3xl max-h-full" role="dialog" aria-label={`Scan ${name}`}
         style={{ clipPath: ECKEN, background: "linear-gradient(135deg, rgba(94,242,255,0.9), rgba(94,242,255,0.15) 40%, rgba(255,179,71,0.8))", padding: 1.5 }}
       >
-        <div className="relative max-h-[calc(100vh-3rem)] overflow-y-auto text-cyan-50"
+        <div className="relative max-h-[calc(100dvh-3rem)] overflow-y-auto overscroll-contain text-cyan-50"
           style={{
             clipPath: ECKEN,
             background: "linear-gradient(160deg, rgba(4,18,26,0.97), rgba(8,10,24,0.97) 60%, rgba(22,12,8,0.97))",

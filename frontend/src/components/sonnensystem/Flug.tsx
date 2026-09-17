@@ -1348,7 +1348,15 @@ export default function Flug({
             Im Menü lässt sich ein Zeitraffer einschalten.
             In echt wäre der Flug zum Jupiter selbst mit Lichtgeschwindigkeit eine gute halbe Stunde lang.
           </p>
-          <button onClick={() => setGestartet(true)} className="mt-4 w-full rounded-xl bg-cyan-400 text-slate-950 font-black py-2.5 hover:bg-cyan-300">
+          <button
+            onClick={() => {
+              setGestartet(true);
+              // Vollbild braucht eine Fingerbewegung — die ist genau hier. Auf dem
+              // iPhone lässt Safari es nicht zu und der Aufruf verpufft still.
+              if (beruehrung && !vollbild) onVollbild?.();
+            }}
+            className="mt-4 w-full rounded-xl bg-cyan-400 text-slate-950 font-black py-2.5 hover:bg-cyan-300"
+          >
             Losfliegen
           </button>
           {(fortschritt.erforscht.length > 0 || fortschritt.erledigt.length > 0) && (
@@ -1385,7 +1393,7 @@ export default function Flug({
             Die Reihenfolge ist egal: jeder Auftrag zählt, sobald du sein Ziel scannst — auch zufällig.
             Antippen macht einen Auftrag zum Vorschlag oben rechts. Gelöst: {fortschritt.erledigt.length} von {AUFTRAEGE.length}.
           </p>
-          <div className="mt-3 flex flex-col gap-3 max-h-[58vh] overflow-y-auto pr-1">
+          <div className="mt-3 flex flex-col gap-3 max-h-[58dvh] overflow-y-auto overscroll-contain pr-1">
             {([1, 2, 3] as const).map(stufe => (
               <section key={stufe}>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300 mb-1.5">
@@ -1405,7 +1413,7 @@ export default function Flug({
                           }`}
                         >
                           <span className="font-bold mr-1">{fertig ? "✓" : "○"}</span>
-                          {fertig ? `${KOERPER_NACH_ID[a.ziel].name}: ${a.hinweis}` : a.hinweis}
+                          {fertig ? `${nameVon(a.ziel)}: ${a.hinweis}` : a.hinweis}
                         </button>
                       </li>
                     );
@@ -1515,7 +1523,7 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
       <div className="absolute inset-0 z-20 bg-black/40" onClick={onSchliessen} />
       <nav
         aria-label="Flugmenü"
-        className="absolute left-3 top-[4.25rem] z-30 w-[min(20rem,calc(100%-1.5rem))] max-h-[calc(100%-5.5rem)] overflow-y-auto
+        className="absolute left-3 top-[4.25rem] z-30 w-[min(20rem,calc(100%-1.5rem))] max-h-[calc(100%-5.5rem)] overflow-y-auto overscroll-contain
           rounded-2xl border border-cyan-300/30 bg-slate-950/95 backdrop-blur p-2 shadow-2xl"
       >
         <div className="px-3 pt-1 pb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Ziel</div>
