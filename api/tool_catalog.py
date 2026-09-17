@@ -124,6 +124,11 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("sonnensystem", "🪐 Sonnensystem", "🪐", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Das Physiklabor rechnet ganz im Browser; der Aufbau liegt dort. Die
+    # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
+    CatalogTool("physik", "🔬 Physiklabor", "🔬", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),
