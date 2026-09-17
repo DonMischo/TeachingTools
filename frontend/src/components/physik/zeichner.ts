@@ -464,9 +464,42 @@ const probe: Zeichner = (ctx, g, zustand, blick) => {
   }
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { stativ, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
+/**
+ * Der Drehpunkt — ein Keil, auf den man einen Balken legt.
+ *
+ * Damit wird aus dem Hebel das, was er im Unterricht ist: ein Lineal auf einer
+ * Kante. Liegt es ungleich, kippt es ab.
+ */
+const drehpunkt: Zeichner = (ctx, g, _zustand, blick) => {
+  const h = Math.max(0.03, g.werte.hoehe ?? 0.1);
+  const spitze = zumBild({ x: g.pos.x, y: g.pos.y + h / 2 }, blick);
+  const fuss = zumBild({ x: g.pos.x, y: g.pos.y - h / 2 }, blick);
+  const breite = Math.max(10, h * 1.6 * blick.skala);
+
+  ctx.fillStyle = "rgba(100,116,139,0.9)";
+  ctx.strokeStyle = "rgba(203,213,225,0.7)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(spitze.x, spitze.y);
+  ctx.lineTo(fuss.x - breite / 2, fuss.y);
+  ctx.lineTo(fuss.x + breite / 2, fuss.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
+/**
+ * Geräte, deren Zeichnung sich wirklich mitdreht.
+ *
+ * Die meisten eigenen Zeichnungen rechnen in Weltkoordinaten und kennen keinen
+ * Drehwinkel — bei ihnen wanderten nur die Anschlüsse, während das Bild stehen
+ * blieb. Für die bleibt das Drehen deshalb aus, bis ihre Zeichnung es kann.
+ */
+export const DREHBAR = (typ: string) => typ === "stativ" || !(typ in ZEICHNER);
+
 export const START_WERT: Record<string, string> = {
   fadenpendel: "startwinkel",
   federpendel: "startauslenkung",

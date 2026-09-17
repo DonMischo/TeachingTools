@@ -96,8 +96,14 @@ export function hebelMomente(szene: Szene, g: Geraet, q = 0): { links: number; r
  */
 export function hebelGehalten(szene: Szene, g: Geraet): "links" | "rechts" | null {
   for (const seite of ["links", "rechts"] as const) {
-    const dran = haengtDaran(szene, g.id, seite).some(x => x.typ === "kraftmesser");
-    if (dran && haltekraft(szene, g, seite) > 0) return seite;
+    for (const messer of haengtDaran(szene, g.id, seite).filter(x => x.typ === "kraftmesser")) {
+      // Mit welchem Anschluss der Messer am Arm hängt, entscheidet, ob er den
+      // Arm hochzieht oder heruntergezogen wird.
+      const ueber = szene.verbindungen.some(v =>
+        (v.von.geraet === messer.id && v.von.port === "unten" && v.nach.geraet === g.id) ||
+        (v.nach.geraet === messer.id && v.nach.port === "unten" && v.von.geraet === g.id));
+      if (haltekraft(szene, g, seite, ueber ? "hoch" : "runter") > 0) return seite;
+    }
   }
   return null;
 }
@@ -111,12 +117,20 @@ export function hebelGehalten(szene: Szene, g: Geraet): "links" | "rechts" | nul
  * F = (M_eigene − M_andere) / a. Ist die eigene Seite leichter, käme etwas
  * Negatives heraus — dann müsste er drücken, und das kann er nicht.
  */
-export function haltekraft(szene: Szene, g: Geraet, seite: "links" | "rechts"): number {
+export function haltekraft(
+  szene: Szene,
+  g: Geraet,
+  seite: "links" | "rechts",
+  /** »hoch«: der Messer hängt über dem Arm und zieht ihn an. »runter«: er ist
+   *  unter dem Arm befestigt, und man zieht ihn nach unten. */
+  richtung: "hoch" | "runter" = "hoch",
+): number {
   const m = hebelMomente(szene, g, 0);
   const arm = seite === "links" ? (g.werte.armLinks ?? 0.3) : (g.werte.armRechts ?? 0.3);
   const eigen = seite === "links" ? m.links : m.rechts;
   const andere = seite === "links" ? m.rechts : m.links;
-  return Math.max(0, (eigen - andere) / Math.max(1e-6, arm));
+  const noetig = richtung === "hoch" ? eigen - andere : andere - eigen;
+  return Math.max(0, noetig / Math.max(1e-6, arm));
 }
 
 /** Ob die schiefe Ebene festgehalten wird — dann misst man die Hangabtriebskraft. */

@@ -133,7 +133,7 @@ describe("Oszilloskop im Labor", () => {
     const kanal1 = getByLabelText("Kanal 1") as HTMLSelectElement;
     const beschriftungen = [...kanal1.options].map(o => o.textContent);
     expect(beschriftungen).toContain("Funktionsgenerator · Spannung");
-    expect(beschriftungen).toContain("Kraftmesser · Kraft");
+    expect(beschriftungen).toContain("Federkraftmesser · Kraft");
   });
 
   it("legt das erste Signal von selbst auf Kanal 1", () => {

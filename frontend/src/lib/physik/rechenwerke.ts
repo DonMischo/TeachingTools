@@ -167,22 +167,31 @@ export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: Mech
   // Am Hebelarm misst er nicht ein Gewicht, sondern die Kraft, die den Balken
   // waagerecht hält — das ist der Versuch, für den man ihn dort anhängt.
   const amBalken = hebelSeite(szene, kraftmesser);
-  if (amBalken) return haltekraft(szene, amBalken.hebel, amBalken.seite);
+  if (amBalken) return haltekraft(szene, amBalken.hebel, amBalken.seite, amBalken.richtung);
 
   return haengtDaran(szene, kraftmesser, "unten", "mechanik", EIGENE_RECHNUNG)
     .reduce((summe, g) => summe + eigengewicht(szene, g, mechanik), 0);
 }
 
-/** Ob dieser Kraftmesser an einem Hebel- oder Waagebalken hängt, und an welchem Arm. */
+/**
+ * Ob dieser Kraftmesser an einem Hebel- oder Waagebalken hängt.
+ *
+ * Beide Aufbauten kommen im Unterricht vor und ziehen in entgegengesetzte
+ * Richtungen: hängt der Messer *über* dem Arm (sein Haken unten am Balken),
+ * zieht er die Seite nach oben. Steht er *unter* dem Arm und ist mit seiner
+ * Aufhängung daran befestigt, zieht man ihn nach unten — dann hält er die
+ * leichtere Seite unten.
+ */
 export function hebelSeite(szene: Szene, kraftmesser: string):
-  { hebel: Geraet; seite: "links" | "rechts" } | null {
+  { hebel: Geraet; seite: "links" | "rechts"; richtung: "hoch" | "runter" } | null {
   for (const v of szene.verbindungen) {
     for (const [hier, dort] of [[v.von, v.nach], [v.nach, v.von]] as const) {
-      if (hier.geraet !== kraftmesser || hier.port !== "unten") continue;
+      if (hier.geraet !== kraftmesser) continue;
+      if (hier.port !== "unten" && hier.port !== "oben") continue;
       if (dort.port !== "links" && dort.port !== "rechts") continue;
       const wirt = szene.geraete.find(x => x.id === dort.geraet);
       if (wirt && (wirt.typ === "hebel" || wirt.typ === "waage")) {
-        return { hebel: wirt, seite: dort.port };
+        return { hebel: wirt, seite: dort.port, richtung: hier.port === "unten" ? "hoch" : "runter" };
       }
     }
   }

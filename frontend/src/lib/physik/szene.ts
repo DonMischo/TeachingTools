@@ -197,10 +197,17 @@ export function portOrt(geraet: Geraet, portId: string, zustand?: { q: number })
  * Neue Geräte sollen nicht aufeinanderfallen: gesucht wird reihenweise von
  * der Mitte aus der erste Rasterplatz, an dem noch nichts steht.
  */
-export function freierPlatz(szene: Szene, start: Punkt = { x: 0, y: 0.5 }): Punkt {
+export function freierPlatz(
+  szene: Szene,
+  start: Punkt = { x: 0, y: 0.5 },
+  /** Auf dem Boden wird nur zur Seite ausgewichen — nach unten ginge es hinein. */
+  nurWaagerecht = false,
+): Punkt {
   const SCHRITT = 0.3, PRO_REIHE = 5, ABSTAND = 0.2;
   for (let i = 0; i < PRO_REIHE * 8; i++) {
-    const platz = {
+    const platz = nurWaagerecht
+      ? { x: start.x + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * SCHRITT, y: start.y }
+      : {
       x: start.x + ((i % PRO_REIHE) - (PRO_REIHE - 1) / 2) * SCHRITT,
       y: start.y - Math.floor(i / PRO_REIHE) * SCHRITT,
     };

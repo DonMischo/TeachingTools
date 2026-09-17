@@ -29,9 +29,14 @@ export const PORT_FARBE: Record<PortArt, string> = {
   achse: "#94a3b8",
 };
 
-/** Raster, in dem Geräte einrasten — 5 cm, wie die Lochplatte im Schrank. */
-const RASTER = 0.05;
-const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
+/**
+ * Geräte werden frei gesetzt, nicht gerastert.
+ *
+ * Das 5-cm-Raster half beim Ordnen, stand aber im Weg, sobald es auf
+ * Zentimeter ankam — etwa den Stapel genau unter die Bahn des Pendels zu
+ * stellen. Wer ordnen will, kann immer noch von Hand ausrichten.
+ */
+const einrasten = (x: number) => x;
 
 /**
  * Anschlusspunkte sind klein und blass.

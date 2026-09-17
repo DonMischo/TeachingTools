@@ -12,7 +12,8 @@
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { formatiere, nachSI } from "@/lib/physik/einheiten";
-import { KATALOG, geraetTyp } from "@/lib/physik/katalog";
+import { KATALOG, geraetTyp, standardWerte } from "@/lib/physik/katalog";
+import { ablageHoehe } from "@/lib/physik/geometrie";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { istSchwinger } from "@/lib/physik/mechanik";
 import { bericht, bruchBericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
@@ -23,6 +24,7 @@ import { Bericht } from "./Bericht";
 import { aufgeloest, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
+import { DREHBAR } from "./zeichner";
 import Oszilloskop from "./Oszilloskop";
 import { useSimulation } from "./useSimulation";
 
@@ -201,7 +203,10 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
 
   const nimm = (t: string) => {
     setSzene(s => {
-      const neu = stelle(s, t, freierPlatz(s));
+      // Was von selbst fiele, wird gleich auf den Boden gelegt.
+      const ruhe = ablageHoehe(t, standardWerte(t));
+      const platz = ruhe === null ? freierPlatz(s) : freierPlatz(s, { x: 0, y: ruhe }, true);
+      const neu = stelle(s, t, platz);
       setAusgewaehlt(neu.geraete[neu.geraete.length - 1].id);
       return neu;
     });
@@ -435,6 +440,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 />
               )}
 
+              {DREHBAR(geraet.typ) && (
               <button
                 onClick={() => setSzene(s => ({
                   ...s,
@@ -444,6 +450,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--surface-hover)]"
                 title="Dreht das Gerät um eine Vierteldrehung — ein Stativ wird damit zum seitlichen Ausleger."
               >↻ Um 90° drehen</button>
+              )}
 
               {geraet.typ === "probe" && (
                 <div className="flex gap-2">

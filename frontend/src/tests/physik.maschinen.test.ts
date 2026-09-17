@@ -343,3 +343,70 @@ describe("Federpendel ohne Eigenmasse", () => {
     expect(beschleunigung(s, s.geraete[0], 0.05, 0)).toBeCloseTo(-(20 / 0.5) * 0.05, 9);
   });
 });
+
+describe("Hebel auf einem Drehpunkt", () => {
+  it("legt den Balken mit seiner Achse auf die Spitze", () => {
+    let s = stelle(neueSzene(), "drehpunkt", { x: 0.4, y: 2 });
+    const keil = s.geraete[0].id;
+    s = stelle(s, "hebel", { x: 5, y: 5 });
+    const balken = s.geraete[1].id;
+    s = verbinde(s, { geraet: keil, port: "spitze" }, { geraet: balken, port: "achse" });
+
+    const fertig = aufgeloest(s);
+    // Der Keil steht auf dem Boden, der Balken sitzt auf seiner Spitze.
+    const spitze = portOrt(fertig.geraete[0], "spitze")!;
+    expect(fertig.geraete[0].pos.y).toBeCloseTo(0.05, 9);
+    expect(fertig.geraete[1].pos.x).toBeCloseTo(spitze.x, 9);
+    expect(fertig.geraete[1].pos.y).toBeCloseTo(spitze.y, 9);
+  });
+
+  it("kippt ab, wenn es ungleich beladen ist", () => {
+    let s = stelle(neueSzene(), "drehpunkt", { x: 0, y: 0.05 });
+    s = stelle(s, "hebel", { x: 5, y: 5 });
+    const balken = s.geraete[1];
+    s = { ...s, geraete: s.geraete.map(g => (g.id === balken.id
+      ? { ...g, werte: { armLinks: 0.3, armRechts: 0.3, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 } } : g)) };
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "spitze" }, { geraet: balken.id, port: "achse" });
+
+    // Ein Gewicht rechts — der Balken legt sich nach rechts.
+    s = stelle(s, "massestueck", { x: 5, y: 5 });
+    const gewicht = s.geraete[2].id;
+    s = { ...s, geraete: s.geraete.map(g => (g.id === gewicht ? { ...g, werte: { masse: 0.5 } } : g)) };
+    s = verbinde(s, { geraet: balken.id, port: "rechts" }, { geraet: gewicht, port: "oese" });
+
+    let zustand: MechanikZustand = {};
+    for (let i = 1; i * DT <= 8; i++) zustand = mechanikSchritt(s, zustand, DT);
+    expect(zustand[balken.id].q).toBeCloseTo(HEBEL_ANSCHLAG, 6);
+  });
+});
+
+describe("Federkraftmesser von unten", () => {
+  /** Balken, Last links, Messer unter dem rechten Arm. */
+  function vonUnten() {
+    let s = mit("hebel", { armLinks: 0.3, armRechts: 0.3, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 });
+    s = anhaengen(s, "links", 2);
+    s = stelle(s, "kraftmesser", { x: 1, y: 0.3 });
+    const messer = s.geraete[s.geraete.length - 1].id;
+    // Mit seiner *Aufhängung* am Arm: er steht darunter und wird nach unten gezogen.
+    s = verbinde(s, { geraet: messer, port: "oben" }, { geraet: s.geraete[0].id, port: "rechts" });
+    return { szene: s, messer };
+  }
+
+  it("hält die leichtere Seite unten, wo der Messer von oben nichts könnte", () => {
+    const { szene, messer } = vonUnten();
+    // Von unten am leichten Arm: er zieht ihn herunter und gleicht aus.
+    expect(haltekraft(szene, szene.geraete[0], "rechts", "runter")).toBeCloseTo(2 * G, 6);
+    expect(haengendeKraft(szene, messer, {})).toBeCloseTo(2 * G, 6);
+    expect(hebelGehalten(szene, szene.geraete[0])).toBe("rechts");
+  });
+
+  it("zeigt nichts an, wenn seine Seite ohnehin die schwerere ist", () => {
+    // Derselbe Aufbau, aber der Messer haengt unter der *schweren* Seite.
+    let s = mit("hebel", { armLinks: 0.3, armRechts: 0.3, balkenMasse: 0.4, startneigung: 0, daempfung: 1.5 });
+    s = anhaengen(s, "links", 2);
+    s = stelle(s, "kraftmesser", { x: 1, y: 0.3 });
+    const messer = s.geraete[s.geraete.length - 1].id;
+    s = verbinde(s, { geraet: messer, port: "oben" }, { geraet: s.geraete[0].id, port: "links" });
+    expect(haengendeKraft(s, messer, {})).toBe(0);
+  });
+});

@@ -55,7 +55,7 @@ export interface Stoss {
  * Aufhängen, kein Hindernis; als Hindernis stieß der Pendelkörper gegen die
  * Stange seines eigenen Stativs und kam nie auf die andere Seite herum.
  */
-const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "flaschenzug",
+const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "drehpunkt", "flaschenzug",
   "batterie", "widerstand", "lampe", "schalter", "voltmeter", "amperemeter", "signalgeber"]);
 
 /** Geräte, die im realen Modell an einem Gelenk hängen und mitspielen. */

@@ -48,7 +48,7 @@ export const KATALOG: GeraetTyp[] = [
   },
   {
     typ: "kraftmesser",
-    name: "Kraftmesser",
+    name: "Federkraftmesser",
     icon: "🪝",
     bereich: "messen",
     groesse: { b: 0.06, h: 0.3 },
@@ -140,6 +140,9 @@ export const KATALOG: GeraetTyp[] = [
     bereich: "mechanik",
     groesse: { b: 0.1, h: 0.1 },
     ports: [
+      // Die Achse: damit sitzt der Balken auf einem Drehpunkt oder der Spitze
+      // eines Stativs — genau wie ein Lineal, das man auf einen Keil legt.
+      { id: "achse", art: "mechanik", name: "Achse", pos: { x: 0, y: 0 } },
       // Die Arme schwenken mit; wo sie wirklich sind, rechnet geometrie.ts aus.
       { id: "links", art: "mechanik", name: "linker Arm", pos: { x: -0.3, y: 0 } },
       { id: "rechts", art: "mechanik", name: "rechter Arm", pos: { x: 0.3, y: 0 } },
@@ -156,6 +159,21 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "momentLinks", name: "Moment links", einheit: "Nm" },
       { schluessel: "momentRechts", name: "Moment rechts", einheit: "Nm" },
     ],
+  },
+  {
+    typ: "drehpunkt",
+    name: "Drehpunkt",
+    icon: "🔺",
+    bereich: "aufbau",
+    groesse: { b: 0.16, h: 0.1 },
+    ports: [
+      // Die Spitze trägt: was man darauflegt, liegt darauf und dreht sich darum.
+      { id: "spitze", art: "mechanik", name: "Spitze", pos: { x: 0, y: 0.05 }, traegt: true },
+    ],
+    parameter: [
+      { schluessel: "hoehe", name: "Höhe", einheit: "m", standard: 0.1, min: 0.03, max: 0.5 },
+    ],
+    signale: [],
   },
   {
     typ: "waage",

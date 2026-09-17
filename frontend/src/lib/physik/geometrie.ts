@@ -94,6 +94,9 @@ export function beweglicherPortOrt(
   s: { q: number } | undefined,
 ): Punkt | null {
   if (g.typ === "stativ" && portId === "haken") return stativHaken(g);
+  if (g.typ === "drehpunkt" && portId === "spitze") {
+    return { x: g.pos.x, y: g.pos.y + Math.max(0.03, g.werte.hoehe ?? 0.1) / 2 };
+  }
   // Die Probe wird länger, wenn man zieht — die Last hängt am gedehnten Ende.
   if (g.typ === "probe" && portId === "unten") {
     return { x: g.pos.x, y: g.pos.y - (g.werte.laenge ?? 0.2) - (s?.q ?? 0) };
@@ -117,6 +120,7 @@ export function beweglicherPortOrt(
 /** Woran ein Gerät das nächste trägt — die Gegenrichtung zu EIGENER_HAKEN. */
 export const TRAEGER_PORT: Record<string, string> = {
   stativ: "haken",
+  drehpunkt: "spitze",
   massestueck: "unten",
   kraftmesser: "unten",
   fadenpendel: "koerper",
@@ -127,6 +131,8 @@ export const TRAEGER_PORT: Record<string, string> = {
 
 export const EIGENER_HAKEN: Record<string, string> = {
   massestueck: "oese",
+  hebel: "achse",
+  waage: "achse",
   fadenpendel: "aufhaengung",
   federpendel: "aufhaengung",
   kraftmesser: "oben",
@@ -141,7 +147,9 @@ export function umriss(g: Geraet, standard: { b: number; h: number }): { mitte: 
     const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
     return { mitte: g.pos, b: quer ? h : 0.08, h: quer ? 0.08 : h };
   }
-  return { mitte: g.pos, b: standard.b, h: standard.h };
+  // Quer gedreht vertauschen sich Breite und Höhe, sonst greift man ins Leere.
+  const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
+  return { mitte: g.pos, b: quer ? standard.h : standard.b, h: quer ? standard.b : standard.h };
 }
 
 /**
@@ -154,6 +162,7 @@ export function bodenHoehe(g: Geraet): number | null {
   // dann wird es auch nicht auf Bodenhöhe gezwungen.
   if (Math.abs(g.winkel ?? 0) > 0.01) return null;
   if (g.typ === "stativ") return Math.max(0.1, g.werte.hoehe ?? 1.2) / 2;
+  if (g.typ === "drehpunkt") return Math.max(0.03, g.werte.hoehe ?? 0.1) / 2;
   if (g.typ === "schiefeebene") {
     const laenge = Math.max(0.05, g.werte.laenge ?? 1);
     return (laenge / 2) * Math.sin(g.werte.winkel ?? 0);
@@ -182,6 +191,17 @@ export function stativTeile(g: Geraet): { fuss: Punkt; kopf: Punkt; haken: Punkt
     kopf: gedreht(g.pos, { x: 0, y: h / 2 }, w),
     haken: gedreht(g.pos, { x: a, y: h / 2 }, w),
   };
+}
+
+/**
+ * Die Höhe, auf der ein frisch aus dem Schrank genommenes Gerät liegt.
+ *
+ * Auf dem Boden, nicht darüber: ein Gewicht, das erst herunterfällt, löst
+ * einen Aufschlag aus und hinterlässt einen Marker, den niemand bestellt hat.
+ */
+export function ablageHoehe(typ: string, werte: Record<string, number>): number | null {
+  if (typ === "massestueck") return koerperRadius(werte.masse ?? 0.1);
+  return null;
 }
 
 /** Das Ende des Stativarms — dort wird eingehängt. */
