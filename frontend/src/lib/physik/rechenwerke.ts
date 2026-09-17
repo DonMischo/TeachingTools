@@ -13,7 +13,7 @@
  */
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
-import { hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
+import { gesamtMasse, hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import type { WeltZustand } from "./welt";
@@ -57,7 +57,7 @@ export function generatorWert(form: number, frequenz: number, amplitude: number,
  * durch den Verbindungsgraphen auf — sonst zählte man dieselben Gewichte
  * zweimal, einmal roh und einmal übersetzt.
  */
-const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene"] as const;
+const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene", "fadenpendel"] as const;
 
 /**
  * Was ein einzelnes Gerät nach unten zieht, in Newton.
@@ -70,6 +70,7 @@ const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene"] as const;
  * Seile weiter, die schiefe Ebene nur ihren Hangabtrieb.
  */
 function eigengewicht(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
+  void szene;
   const s = mechanik[g.id];
   const masse = g.werte.masse ?? 0;
 
@@ -81,10 +82,14 @@ function eigengewicht(szene: Szene, g: Geraet, mechanik: MechanikZustand): numbe
       return masse * G + (g.werte.federkonstante ?? 0) * (s?.q ?? 0);
 
     case "fadenpendel": {
+      // Das Pendel hat keine eigene Masse — es zieht mit dem, was daran hängt.
+      // Deshalb steht es auch in EIGENE_RECHNUNG: die angehängten Gewichte
+      // dürfen nicht noch einmal einzeln gezählt werden.
       const laenge = Math.max(0.01, g.werte.laenge ?? 1);
       const winkel = s?.q ?? 0;
       const winkelTempo = s?.v ?? 0;
-      return masse * (G * Math.cos(winkel) + laenge * winkelTempo * winkelTempo);
+      const schwingend = gesamtMasse(szene, g);
+      return schwingend * (G * Math.cos(winkel) + laenge * winkelTempo * winkelTempo);
     }
 
     case "flaschenzug":

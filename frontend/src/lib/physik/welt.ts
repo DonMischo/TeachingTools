@@ -23,7 +23,7 @@
  */
 import * as planck from "planck";
 import { koerperOrt, koerperRadius } from "./geometrie";
-import type { MechanikZustand } from "./mechanik";
+import { gesamtMasse, type MechanikZustand } from "./mechanik";
 import { aufgeloest } from "./szene";
 import type { Geraet, Modelltreue, Szene } from "./typen";
 
@@ -100,10 +100,16 @@ export class Welt {
       if (!a || !b) return;
       const va = koerperA.getLinearVelocity();
       const vb = koerperB.getLinearVelocity();
-      const ort = koerperA.getPosition();
+
+      // Der Berührpunkt, nicht der Mittelpunkt eines der beiden Körper: beim
+      // Aufschlag ist einer davon der Boden, und dessen Mittelpunkt liegt im
+      // Ursprung — der Marker landete dadurch weit weg vom Geschehen.
+      const manifold = kontakt.getWorldManifold(null);
+      const treffer = manifold?.points?.[0];
+      const ersatz = (a === "boden" ? koerperB : koerperA).getPosition();
       this.stoesse.push({
         a, b,
-        ort: { x: ort.x, y: ort.y },
+        ort: treffer ? { x: treffer.x, y: treffer.y } : { x: ersatz.x, y: ersatz.y },
         wucht: Math.hypot(va.x - vb.x, va.y - vb.y),
       });
     });
@@ -114,7 +120,7 @@ export class Welt {
     // Was eingehängt ist, ist Teil seines Wirts und kein eigener Körper.
     if (haengt) return null;
     const real = (g.treue ?? treue) === "real";
-    if (AM_GELENK.has(g.typ)) return real ? "gelenk" : null;
+    if (AM_GELENK.has(g.typ)) return real ? "gelenk" : null; // Masse haengt die Rufnummer an
     if (STEHT_FEST.has(g.typ)) return "statisch";
     if (g.typ === "massestueck") return "frei";
     return null;
@@ -139,7 +145,11 @@ export class Welt {
     for (const g of sicht.geraete) {
       const haengt = g.typ === "massestueck"
         && szene.verbindungen.some(v => v.von.geraet === g.id || v.nach.geraet === g.id);
-      const art = this.artVon(g, szene.treue, haengt);
+      let art = this.artVon(g, szene.treue, haengt);
+      // Die Masse steckt in der Bauart: haengt jemand ein Gewicht an oder ab,
+      // aendert sich die Kennung und der Koerper wird mit der neuen Masse und
+      // der neuen Groesse neu gebaut.
+      if (art === "gelenk") art = `gelenk:${gesamtMasse(szene, g).toFixed(4)}`;
       if (art) gewollt.set(g.id, { g, art });
     }
 
@@ -153,12 +163,12 @@ export class Welt {
         this.fuehreNach(id, g, art);
         continue;
       }
-      this.baue(id, g, art, mechanik);
+      this.baue(id, g, art, mechanik, szene);
     }
   }
 
-  private baue(id: string, g: Geraet, art: string, mechanik: MechanikZustand) {
-    if (art === "gelenk") {
+  private baue(id: string, g: Geraet, art: string, mechanik: MechanikZustand, szene: Szene) {
+    if (art.startsWith("gelenk")) {
       // Ein echter Körper an einem Drehgelenk: er schwingt, stößt an, gibt
       // dabei Energie ab und wird selbst langsamer.
       const start = g.werte.startwinkel ?? 0;
@@ -170,9 +180,13 @@ export class Welt {
         linearDamping: g.werte.daempfung ?? 0,
       });
       bob.setUserData(id);
-      const r = koerperRadius(g.werte.masse ?? 0.2);
+      // Groesse und Masse kommen von dem, was angehaengt ist. Ohne Gewicht ist
+      // der Koerper winzig und leicht — ein blosser Faden wirft nichts um, und
+      // das ist richtig so.
+      const masse = gesamtMasse(szene, g);
+      const r = koerperRadius(masse);
       bob.createFixture(new planck.Circle(r), {
-        density: Math.max(0.001, g.werte.masse ?? 0.2) / (Math.PI * r * r),
+        density: masse / (Math.PI * r * r),
         friction: 0.4,
         restitution: 0.2,
       });
@@ -210,7 +224,7 @@ export class Welt {
    * und neu losgelassen — sonst bliebe es im realen Modell unbeeindruckt.
    */
   private fuehreNach(id: string, g: Geraet, art: string) {
-    if (art !== "gelenk") return;
+    if (!art.startsWith("gelenk")) return;
     const anker = this.anker.get(id);
     const bob = this.koerper.get(id);
     if (!anker || !bob) return;
@@ -246,7 +260,7 @@ export class Welt {
     const sicht = aufgeloest(szene, mechanik);
 
     for (const g of sicht.geraete) {
-      if (this.bauart.get(g.id) !== "gelenk") continue;
+      if (!this.bauart.get(g.id)?.startsWith("gelenk")) continue;
       const bob = this.koerper.get(g.id);
       if (!bob) continue;
       const p = bob.getPosition();

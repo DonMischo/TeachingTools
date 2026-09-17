@@ -96,7 +96,9 @@ export const KATALOG: GeraetTyp[] = [
     ],
     parameter: [
       { schluessel: "laenge", name: "Fadenlänge", einheit: "m", standard: 1, min: 0.1, max: 3 },
-      { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.2, min: 0.01, max: 5 },
+      // Keine eigene Masse: das Pendel ist Faden und Haken. Was schwingt, hängt
+      // man an — dadurch ist die Masse etwas, das man auf den Tisch legt und
+      // anfasst, statt eine Zahl am Regler.
       { schluessel: "startwinkel", name: "Startwinkel", einheit: "rad", anzeige: "grad", standard: bogen(15), min: bogen(-80), max: bogen(80) },
       { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 0.2, min: 0, max: 2 },
     ],

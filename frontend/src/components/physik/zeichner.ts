@@ -40,12 +40,19 @@ function koerperRand(ctx: CanvasRenderingContext2D, angefasst: boolean) {
   ctx.lineWidth = angefasst ? 3 : 2;
 }
 
+/**
+ * Das Fadenpendel — Faden und Haken, sonst nichts.
+ *
+ * Es hat keine eigene Masse: was schwingt, hängt man an, und das zeichnet
+ * sich selbst an genau dieser Stelle. Früher malte das Pendel zusätzlich eine
+ * eigene Kugel, und neben einem angehängten Gewicht standen dann zwei Körper
+ * übereinander.
+ */
 const fadenpendel: Zeichner = (ctx, g, zustand, blick) => {
   const s = zustand.mechanik[g.id];
   const laenge = g.werte.laenge ?? 1;
   const dreh = zumBild(g.pos, blick);
-  const ort = koerperOrt(g, s)!;
-  const koerper = zumBild(ort, blick);
+  const koerper = zumBild(koerperOrt(g, s)!, blick);
 
   // Ruhelage gestrichelt: ohne sie sieht man dem Bild den Ausschlag nicht an.
   ctx.save();
@@ -65,12 +72,11 @@ const fadenpendel: Zeichner = (ctx, g, zustand, blick) => {
   ctx.lineTo(koerper.x, koerper.y);
   ctx.stroke();
 
-  const r = Math.max(4, koerperRadius(g.werte.masse ?? 0.2) * blick.skala);
-  ctx.fillStyle = "#38bdf8";
-  koerperRand(ctx, false);
+  // Der Haken am Ende — daran wird gehängt, und daran fasst man an.
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.arc(koerper.x, koerper.y, r, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.arc(koerper.x, koerper.y + 3, 4, Math.PI * 0.9, Math.PI * 2.4);
   ctx.stroke();
 
   aufhaengung(ctx, dreh.x, dreh.y);

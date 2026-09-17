@@ -244,3 +244,64 @@ describe("Pendel am Stativ", () => {
     expect(stoesse.filter(s => s.a === klotz || s.b === klotz).length).toBeGreaterThan(1);
   });
 });
+
+describe("Pendel ohne Eigenmasse", () => {
+  /** Stativ, Pendel daran, Gewicht am Pendel, Klotz in der Bahn. */
+  function mitGewicht(gewicht: number | null): Szene {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { hoehe: 2, armLaenge: 0.3 } })) };
+    s = stelle(s, "fadenpendel", { x: 9, y: 9 });
+    const pendel = s.geraete[1].id;
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: pendel, port: "aufhaengung" });
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel
+      ? { ...g, werte: { laenge: 1.85, startwinkel: -1, daempfung: 0 } } : g)) };
+
+    if (gewicht !== null) {
+      s = stelle(s, "massestueck", { x: 8, y: 8 });
+      const last = s.geraete[s.geraete.length - 1];
+      s = { ...s, geraete: s.geraete.map(g => (g.id === last.id ? { ...g, werte: { masse: gewicht } } : g)) };
+      s = verbinde(s, { geraet: pendel, port: "koerper" }, { geraet: last.id, port: "oese" });
+    }
+
+    // Dicht am tiefsten Punkt der Bahn, damit der Koerper ihn auch trifft —
+    // und schwer genug, dass er hoch genug steht.
+    s = masse(s, { x: 0.45, y: 0.06 }, 4);
+    return { ...s, treue: "real" };
+  }
+
+  it("wirft mit angehängtem Gewicht den Klotz um", () => {
+    const szene = mitGewicht(4);
+    const klotz = szene.geraete[szene.geraete.length - 1].id;
+    const pendel = szene.geraete[1].id;
+    const { stoesse, zustand } = laufen(szene, 6);
+
+    // Nur Treffer vom Pendel zaehlen — der Klotz beruehrt auch den Boden.
+    const vomPendel = stoesse.filter(s =>
+      (s.a === klotz && s.b === pendel) || (s.b === klotz && s.a === pendel));
+    expect(vomPendel.length).toBeGreaterThan(0);
+    // Und der Klotz ist danach nicht mehr dort, wo er stand.
+    expect(Math.abs(zustand[klotz].x - 0.45)).toBeGreaterThan(0.02);
+  });
+
+  it("wirft ohne Gewicht nichts um — ein blosser Faden hat keine Wucht", () => {
+    const szene = mitGewicht(null);
+    const klotz = szene.geraete[szene.geraete.length - 1].id;
+    const { zustand } = laufen(szene, 6);
+    expect(Math.abs(zustand[klotz].x - 0.45)).toBeLessThan(0.02);
+  });
+});
+
+describe("Aufschlag auf dem Boden", () => {
+  it("wird dort vermerkt, wo der Körper aufkommt — nicht im Ursprung", () => {
+    // Der gemeldete Fehler: als Ort stand der Mittelpunkt eines der beiden
+    // Körper. Beim Aufschlag ist einer davon der Boden, und dessen Mittelpunkt
+    // liegt bei (0,0) — der Marker landete weit weg vom Geschehen.
+    const szene = masse(neueSzene(), { x: 2.4, y: 1.5 }, 1);
+    const { stoesse } = laufen(szene, 2);
+
+    const aufschlag = stoesse.find(s => s.a === "boden" || s.b === "boden");
+    expect(aufschlag).toBeDefined();
+    expect(aufschlag!.ort.x).toBeCloseTo(2.4, 1);
+    expect(aufschlag!.ort.y).toBeCloseTo(0, 1);
+  });
+});
