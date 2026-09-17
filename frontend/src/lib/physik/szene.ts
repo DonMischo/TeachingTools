@@ -297,3 +297,33 @@ export function aushaengen(szene: Szene, id: string): Szene {
         (v.nach.geraet === id && v.nach.port === eigener))),
   };
 }
+
+/**
+ * Die Kette der Geräte, an denen dieses hängt — das nächste zuerst.
+ *
+ * Wer ein Massestück anfasst, das am Pendel hängt, meint das Pendel: man zieht
+ * nicht das Gewicht vom Haken, man lenkt die ganze Schwingung aus. Dafür muss
+ * man wissen, woran es letztlich hängt.
+ */
+export function wirtKette(szene: Szene, id: string): Geraet[] {
+  const kette: Geraet[] = [];
+  const gesehen = new Set<string>([id]);
+  let aktuell = szene.geraete.find(g => g.id === id);
+
+  while (aktuell) {
+    const eigener = EIGENER_HAKEN[aktuell.typ];
+    if (!eigener) break;
+    const jetzt = aktuell;
+    const v = szene.verbindungen.find(x =>
+      (x.von.geraet === jetzt.id && x.von.port === eigener) ||
+      (x.nach.geraet === jetzt.id && x.nach.port === eigener));
+    if (!v) break;
+    const dort = v.von.geraet === jetzt.id ? v.nach : v.von;
+    if (gesehen.has(dort.geraet)) break;
+    gesehen.add(dort.geraet);
+    aktuell = szene.geraete.find(g => g.id === dort.geraet);
+    if (aktuell) kette.push(aktuell);
+  }
+
+  return kette;
+}

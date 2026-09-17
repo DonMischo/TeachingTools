@@ -19,7 +19,13 @@ import { Welt, type Stoss } from "@/lib/physik/welt";
 import { DT, leererZustand, schritt, type LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Szene } from "@/lib/physik/typen";
 
-export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
+export function useSimulation(
+  szene: Szene,
+  laeuft: boolean,
+  tempo: number,
+  /** Wird nach einem Schritt mit den Zusammenstößen gerufen, die er brachte. */
+  beiStoss?: (stoesse: Stoss[], zustand: LaborZustand) => void,
+) {
   const bus = useRef<Messbus>(null as unknown as Messbus);
   if (bus.current === null) bus.current = new Messbus();
   const zustand = useRef<LaborZustand>(leererZustand());
@@ -32,6 +38,10 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
   // neu zu starten — sonst setzte jedes Verschieben eines Geräts die Uhr aus.
   const szeneRef = useRef(szene);
   szeneRef.current = szene;
+
+  // Über ein Ref, damit ein neuer Rückruf die Schleife nicht neu startet.
+  const meldung = useRef(beiStoss);
+  meldung.current = beiStoss;
 
   /** Meldet eine Zeichenroutine an; gibt das Abmelden zurück. */
   const beobachte = useCallback((fn: () => void) => {
@@ -64,6 +74,10 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
 
         const ergebnis = schritt(szeneRef.current, zustand.current, DT, welt.current.zustand());
         zustand.current = ergebnis.zustand;
+
+        // Erst melden, wenn der Zustand steht — sonst beschreibt der Bericht
+        // den Augenblick vor dem Stoß.
+        if (neueStoesse.length) meldung.current?.(neueStoesse, zustand.current);
         bus.current.schreibe(ergebnis.zustand.t, ergebnis.werte);
         rest -= DT;
         schritte++;

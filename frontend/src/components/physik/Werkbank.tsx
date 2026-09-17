@@ -11,8 +11,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
-import { aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
+import { istSchwinger } from "@/lib/physik/mechanik";
+import { aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, wirtKette, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
+import type { Marker } from "@/lib/physik/phaenomene";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
 import { koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
 import { START_WERT, ZEICHNER } from "./zeichner";
@@ -33,7 +35,7 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
 const PORT_RADIUS = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
@@ -43,6 +45,12 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   setSchwebt: (id: string | null) => void;
   /** Setzt einen freien Körper an die Hand — sonst zöge man nur die Zeichnung. */
   setzeKoerper: (id: string, pos: Punkt) => void;
+  /** Alle festgehaltenen Ereignisse. Sie bleiben stehen, bis man sie wegräumt. */
+  marker: Marker[];
+  onMarkerKlick: (id: string) => void;
+  /** Während das Werkzeug an ist, setzt ein Tipp einen eigenen Marker. */
+  markerWerkzeug: boolean;
+  onMarkerSetzen: (geraet: string | null, ort: Punkt) => void;
   /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
   zustand: { readonly current: LaborZustand };
   beobachte: (fn: () => void) => () => void;
@@ -151,9 +159,27 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     return null;
   }, [sicht, blick]);
 
+  /** Der Marker unter dem Finger — die Kreise liegen über allem. */
+  const markerUnter = useCallback((p: Punkt): string | null => {
+    for (const m of [...marker].reverse()) {
+      const b = zumBild(m.ort, blick);
+      if (Math.hypot(b.x - p.x, b.y - p.y) <= 14) return m.id;
+    }
+    return null;
+  }, [marker, blick]);
+
   function beiDruck(e: React.PointerEvent) {
     const p = bildPunkt(e);
     leinwand.current?.setPointerCapture(e.pointerId);
+
+    // Das Werkzeug hat Vorrang: hier soll ausdrücklich ein Marker hin.
+    if (markerWerkzeug) {
+      onMarkerSetzen(geraetUnter(p) ?? koerperUnter(p), zurWelt(p, blick));
+      return;
+    }
+
+    const getroffen = markerUnter(p);
+    if (getroffen) { onMarkerKlick(getroffen); return; }
 
     const port = portUnter(p);
     if (port) {
@@ -182,8 +208,19 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       setAusgewaehlt(id);
       const g = sicht().geraete.find(x => x.id === id)!;
       const welt = zurWelt(p, blick);
-      // Wer an etwas hängt, wird durch Ziehen abgenommen — und bleibt dabei
-      // erst einmal dort stehen, wo er hing, statt zurückzuspringen.
+
+      // Hängt es an einem Schwinger, meint das Anfassen den Schwinger: man
+      // zieht nicht das Gewicht vom Haken, man lenkt das ganze Pendel aus.
+      const schwinger = wirtKette(szene, id).find(w => istSchwinger(w.typ));
+      if (schwinger) {
+        setAusgewaehlt(schwinger.id);
+        zieht.current = { art: "koerper", id: schwinger.id };
+        lenkeAus(schwinger.id, welt);
+        return;
+      }
+
+      // Sonst: wer an etwas hängt, wird durch Ziehen abgenommen — und bleibt
+      // dabei stehen, wo er hing, statt zurückzuspringen.
       if (haengtIrgendwo(szene, g)) setSzene(bewege(aushaengen(szene, id), id, g.pos));
       zieht.current = { art: "geraet", id, griff: { x: welt.x - g.pos.x, y: welt.y - g.pos.y } };
       return;
@@ -333,7 +370,22 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         ctx.stroke();
       }
     }
-  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand]);
+    // Zuletzt die Marker — sie gehören über den Aufbau, nicht darunter.
+    for (const m of marker) {
+      const b = zumBild(m.ort, blick);
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 13, 0, Math.PI * 2);
+      ctx.fillStyle = m.art === "stoss" ? "rgba(248,113,113,0.22)" : "rgba(56,189,248,0.22)";
+      ctx.fill();
+      ctx.strokeStyle = m.art === "stoss" ? "#f87171" : "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = "14px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(m.art === "stoss" ? "💥" : "🔎", b.x, b.y);
+    }
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand, marker]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.

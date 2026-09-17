@@ -220,3 +220,45 @@ describe("Pendel im Labor", () => {
     }
   });
 });
+
+describe("Inspektor", () => {
+  it("zeigt angehalten die Werte des angetippten Geräts mit Formel", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
+    const uhr = mitBildern();
+    try {
+      const { getByRole, getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(6);
+
+      // Gerät antippen und anhalten.
+      act(() => getByLabelText("Fadenpendel auf den Tisch stellen").click());
+      act(() => getByRole("button", { name: /Anhalten/ }).click());
+
+      const text = document.body.textContent ?? "";
+      expect(text).toContain("Lageenergie");
+      expect(text).toContain("E_pot = m · g · h");
+      expect(text).toContain("Schwingungsdauer");
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("sagt nichts, solange die Uhr läuft und nichts ausgewählt ist", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
+    const uhr = mitBildern();
+    try {
+      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(4);
+      expect(document.body.textContent).not.toContain("E_pot = m · g · h");
+    } finally {
+      uhr.zurueck();
+    }
+  });
+});
+
+describe("Marker", () => {
+  it("bietet das Setzen und das Anhalten bei Berührung an", () => {
+    const { getByRole, getByText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    expect(getByRole("button", { name: /Marker setzen/ })).toBeInTheDocument();
+    expect(getByText(/Bei Berührung anhalten/)).toBeInTheDocument();
+  });
+});

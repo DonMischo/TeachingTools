@@ -15,6 +15,10 @@ import { formatiere, nachSI } from "@/lib/physik/einheiten";
 import { KATALOG, geraetTyp } from "@/lib/physik/katalog";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { istSchwinger } from "@/lib/physik/mechanik";
+import { bericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
+import type { LaborZustand } from "@/lib/physik/rechenwerke";
+import type { Stoss } from "@/lib/physik/welt";
+import { Bericht } from "./Bericht";
 import { entferne, freierPlatz, neueSzene, stelle, stelleEin, trenne, treueVon } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
@@ -54,7 +58,46 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [laeuft, setLaeuft] = useState(true);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
-  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } = useSimulation(szene, laeuft, tempo);
+  const [marker, setMarker] = useState<Marker[]>([]);
+  const [haltBeiStoss, setHaltBeiStoss] = useState(false);
+  const [markerWerkzeug, setMarkerWerkzeug] = useState(false);
+  const [offenerMarker, setOffenerMarker] = useState<string | null>(null);
+  // Zwingt die laufende Karte zum Auffrischen, ohne dafür jedes Bild zu rendern.
+  const [takt, setTakt] = useState(0);
+
+  /**
+   * Ein Zusammenstoß wird festgehalten — und bleibt stehen.
+   *
+   * Ein Aufprall meldet sich über mehrere Bilder und mehrere Berührpunkte.
+   * Damit daraus ein Marker wird und nicht zwanzig, zählt nur der erste in
+   * seiner Nachbarschaft; ganz sanftes Aufliegen ist ohnehin kein Ereignis.
+   */
+  const beiStoss = useCallback((stoesse: Stoss[], stand: LaborZustand) => {
+    setMarker(alt => {
+      const neu = [...alt];
+      for (const stoss of stoesse) {
+        if (stoss.wucht < 0.2) continue;
+        const schonDa = neu.some(m => m.art === "stoss"
+          && Math.hypot(m.ort.x - stoss.ort.x, m.ort.y - stoss.ort.y) < 0.1
+          && stand.t - m.t < 0.5);
+        if (schonDa) continue;
+        neu.push({
+          id: `stoss-${Math.round(stand.t * 1000)}-${neu.length}`,
+          art: "stoss",
+          ort: stoss.ort,
+          t: stand.t,
+          titel: "💥 Zusammenstoß",
+          erklaerung: "Beim Aufprall wird Bewegungsenergie in Verformung und Wärme umgesetzt — sie ist danach nicht mehr im Aufbau. Im Schulbuchmodell gäbe es diesen Stoß gar nicht: dort sind die Geräte ideal und gehen hindurch.",
+          bericht: stossBericht(szene, stand, [stoss.a, stoss.b], stoss.wucht),
+        });
+      }
+      return neu;
+    });
+    if (haltBeiStoss) setLaeuft(false);
+  }, [szene, haltBeiStoss]);
+
+  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } =
+    useSimulation(szene, laeuft, tempo, beiStoss);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -100,6 +143,45 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     });
   };
 
+  /**
+   * Was in der Karte steht.
+   *
+   * Ein offener Marker geht vor. Hängt er an einem Gerät, holt er seinen
+   * Bericht laufend; ein Stoß dagegen zeigt die Momentaufnahme von damals —
+   * die Zahlen von jetzt hätten mit dem Ereignis nichts mehr zu tun. Ohne
+   * Marker zeigt die Karte das angehaltene, angetippte Gerät.
+   */
+  const karte = useMemo(() => {
+    void takt;
+    const offen = marker.find(m => m.id === offenerMarker);
+    if (offen) {
+      const amGeraet = offen.geraet ? szene.geraete.find(g => g.id === offen.geraet) : undefined;
+      return {
+        titel: offen.titel,
+        hinweis: offen.erklaerung,
+        werte: amGeraet ? bericht(szene, amGeraet, zustand.current) : offen.bericht,
+        schliessbar: true,
+      };
+    }
+    if (!laeuft && geraet && typ) {
+      return {
+        titel: `${typ.icon} ${typ.name}`,
+        hinweis: "Angehalten — das sind die Werte in diesem Augenblick.",
+        werte: bericht(szene, geraet, zustand.current),
+        schliessbar: false,
+      };
+    }
+    return null;
+  }, [marker, offenerMarker, laeuft, geraet, typ, szene, zustand, takt]);
+
+  // Eine laufende Karte braucht frische Zahlen, aber nicht 60-mal je Sekunde.
+  useEffect(() => {
+    const laufend = marker.find(m => m.id === offenerMarker)?.geraet;
+    if (!laufend || !laeuft) return;
+    const uhr = window.setInterval(() => setTakt(x => x + 1), 250);
+    return () => window.clearInterval(uhr);
+  }, [marker, offenerMarker, laeuft]);
+
   const verbundenMit = geraet
     ? szene.verbindungen.filter(v => v.von.geraet === geraet.id || v.nach.geraet === geraet.id)
     : [];
@@ -126,7 +208,12 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
         />
         <Treue wert={szene.treue} onWechsel={t => setSzene(s => ({ ...s, treue: t }))} />
         <button
-          onClick={() => { setSzene(s => ({ ...neueSzene(), treue: s.treue })); setAusgewaehlt(null); }}
+          onClick={() => {
+            setSzene(s => ({ ...neueSzene(), treue: s.treue }));
+            setAusgewaehlt(null);
+            setMarker([]);
+            setOffenerMarker(null);
+          }}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >🧹 Tisch abräumen</button>
 
@@ -142,6 +229,26 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           title="Uhr auf null, Messwerte verwerfen"
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >⏮️ Messung neu</button>
+        <button
+          onClick={() => setMarkerWerkzeug(w => !w)}
+          aria-pressed={markerWerkzeug}
+          title="Danach auf ein Gerät tippen — der Marker zeigt dort laufend, was passiert."
+          className={`rounded-xl border px-3 py-2 font-bold ${markerWerkzeug
+            ? "border-[var(--accent)] text-[var(--accent)]"
+            : "border-[var(--border)] text-[var(--text-muted)]"}`}
+        >🔎 Marker setzen</button>
+        <label className="flex items-center gap-1.5 text-[var(--text-muted)]">
+          <input type="checkbox" checked={haltBeiStoss} onChange={e => setHaltBeiStoss(e.target.checked)} />
+          <span title="Hält die Uhr an, sobald sich zwei Dinge berühren — zum Hinsehen.">
+            Bei Berührung anhalten
+          </span>
+        </label>
+        {marker.length > 0 && (
+          <button
+            onClick={() => { setMarker([]); setOffenerMarker(null); }}
+            className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
+          >🧹 {marker.length} Marker</button>
+        )}
         <label className="flex items-center gap-1.5 text-[var(--text-muted)]">
           Tempo
           <select
@@ -169,6 +276,23 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             szene={szene} setSzene={setSzene}
             ausgewaehlt={ausgewaehlt} setAusgewaehlt={setAusgewaehlt}
             schwebt={schwebt} setSchwebt={setSchwebt} setzeKoerper={setzeKoerper}
+            marker={marker}
+            onMarkerKlick={setOffenerMarker}
+            markerWerkzeug={markerWerkzeug}
+            onMarkerSetzen={(g, ort) => {
+              const typName = g ? geraetTyp(szene.geraete.find(x => x.id === g)?.typ ?? "")?.name : null;
+              const id = `gesetzt-${Date.now()}`;
+              setMarker(alt => [...alt, {
+                id, art: "gesetzt", ort, t: zustand.current.t,
+                titel: typName ? `🔎 ${typName}` : "🔎 Beobachtung",
+                erklaerung: g
+                  ? "Zeigt laufend, was an diesem Gerät gerade passiert."
+                  : "An dieser Stelle ist nichts, woran der Marker hängen könnte — zieh ihn auf ein Gerät.",
+                bericht: [], geraet: g ?? undefined,
+              }]);
+              setMarkerWerkzeug(false);
+              setOffenerMarker(id);
+            }}
             zustand={zustand} beobachte={beobachte}
           />
         </div>
@@ -276,6 +400,15 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           )}
         </div>
       </div>
+
+      {karte && (
+        <Bericht
+          titel={karte.titel}
+          hinweis={karte.hinweis}
+          werte={karte.werte}
+          onSchliessen={karte.schliessbar ? () => setOffenerMarker(null) : undefined}
+        />
+      )}
 
       <Oszilloskop
         szene={szene}

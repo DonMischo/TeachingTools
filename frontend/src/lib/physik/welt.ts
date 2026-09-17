@@ -75,7 +75,11 @@ function groesseVon(g: Geraet): { b: number; h: number } {
  * nachgeführt: neue Geräte bekommen einen Körper, weggeräumte verlieren ihn.
  */
 export class Welt {
-  private welt = new planck.World({ x: 0, y: -9.81 });
+  // Ohne »allowSleep: false« legen sich ruhende Körper schlafen. Ein Pendel,
+  // das sie danach wieder anstößt, weckt sie zwar — aber der erste Stoß bleibt
+  // dann oft der einzige, den man sieht. Bei einer Handvoll Körper kostet
+  // Wachbleiben nichts.
+  private welt = new planck.World({ gravity: new planck.Vec2(0, -9.81), allowSleep: false });
   private koerper = new Map<string, planck.Body>();
   private bauart = new Map<string, string>();
   private stoesse: Stoss[] = [];
