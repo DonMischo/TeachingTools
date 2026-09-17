@@ -9,7 +9,7 @@ import { describe, it, expect } from "vitest";
 import { beschleunigung, hebelMomente, lastAn, mechanikSchritt, wirdGehalten, HEBEL_ANSCHLAG, type MechanikZustand } from "@/lib/physik/mechanik";
 import { haengendeKraft, lastAmFlaschenzug, leererZustand, schritt, tragendeSeile } from "@/lib/physik/rechenwerke";
 import { signalId } from "@/lib/physik/messbus";
-import { neueSzene, stelle, verbinde } from "@/lib/physik/szene";
+import { aufgeloest, freierHaken, neueSzene, portOrt, stelle, verbinde } from "@/lib/physik/szene";
 import { bogen, G } from "@/lib/physik/einheiten";
 import type { Szene } from "@/lib/physik/typen";
 
@@ -205,5 +205,67 @@ describe("Schiefe Ebene", () => {
     expect(laufen(s, 3).q).toBeCloseTo(0, 9);
     // Und der Kraftmesser zeigt F_H = G·sin α.
     expect(haengendeKraft(s, km.id, {})).toBeCloseTo(2 * G * Math.sin(bogen(30)), 6);
+  });
+});
+
+describe("Balkenwaage", () => {
+  const waage = () => mit("waage", { armLinks: 0.3, armRechts: 0.3, balkenMasse: 0.4, startneigung: 0, daempfung: 2.5 });
+
+  /** Stellt ein Massestück auf eine Schale (oder auf das, was dort schon steht). */
+  function stelleAuf(s: Szene, schale: string, masse: number) {
+    const neu = stelle(s, "massestueck", { x: 5, y: 5 });
+    const g = neu.geraete[neu.geraete.length - 1];
+    const mitWert = { ...neu, geraete: neu.geraete.map(x => (x.id === g.id ? { ...x, werte: { masse } } : x)) };
+    const ziel = freierHaken(mitWert, { geraet: mitWert.geraete[0].id, port: schale });
+    return { szene: verbinde(mitWert, ziel, { geraet: g.id, port: "oese" }), id: g.id };
+  }
+
+  it("bleibt waagerecht, wenn links so viel steht wie rechts", () => {
+    let s = waage();
+    s = stelleAuf(s, "links", 0.5).szene;
+    s = stelleAuf(s, "rechts", 0.5).szene;
+    expect(Math.abs(laufen(s, 8).q)).toBeLessThan(bogen(0.5));
+  });
+
+  it("neigt sich zur schwereren Seite", () => {
+    let s = waage();
+    s = stelleAuf(s, "links", 0.2).szene;
+    s = stelleAuf(s, "rechts", 0.8).szene;
+    // Rechts schwerer heisst: rechte Schale nach unten, q positiv.
+    expect(laufen(s, 8).q).toBeCloseTo(HEBEL_ANSCHLAG, 6);
+  });
+
+  it("meldet beide Schalenmassen", () => {
+    let s = waage();
+    s = stelleAuf(s, "links", 0.25).szene;
+    s = stelleAuf(s, "rechts", 0.75).szene;
+    const id = s.geraete[0].id;
+    const { werte } = schritt(s, leererZustand(), DT);
+    expect(werte.get(signalId(id, "masseLinks"))).toBeCloseTo(0.25, 9);
+    expect(werte.get(signalId(id, "masseRechts"))).toBeCloseTo(0.75, 9);
+  });
+
+  it("stellt das Gewicht auf die Schale, nicht darunter", () => {
+    const { szene, id } = stelleAuf(waage(), "links", 0.5);
+    const fertig = aufgeloest(szene);
+    const schale = portOrt(fertig.geraete[0], "links")!;
+    const gewicht = fertig.geraete.find(g => g.id === id)!;
+    // Die Unterkante liegt auf der Schale — der Mittelpunkt also darüber.
+    expect(gewicht.pos.y).toBeCloseTo(schale.y + 0.04, 9);
+  });
+
+  it("stapelt auf der Schale nach oben, nicht nach unten", () => {
+    let s = waage();
+    const erstes = stelleAuf(s, "links", 0.3);
+    s = erstes.szene;
+    // Der naechste freie Platz ist oben auf dem ersten Gewicht.
+    expect(freierHaken(s, { geraet: s.geraete[0].id, port: "links" }))
+      .toEqual({ geraet: erstes.id, port: "oese" });
+
+    const zweites = stelleAuf(s, "links", 0.3);
+    const fertig = aufgeloest(zweites.szene);
+    const unten = fertig.geraete.find(g => g.id === erstes.id)!;
+    const oben = fertig.geraete.find(g => g.id === zweites.id)!;
+    expect(oben.pos.y - unten.pos.y).toBeCloseTo(0.08, 6);
   });
 });

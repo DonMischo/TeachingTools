@@ -134,7 +134,7 @@ export const KATALOG: GeraetTyp[] = [
   {
     typ: "hebel",
     name: "Hebel",
-    icon: "⚖️",
+    icon: "🔺",
     bereich: "mechanik",
     groesse: { b: 0.1, h: 0.1 },
     ports: [
@@ -153,6 +153,30 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "winkel", name: "Neigung", einheit: "rad", anzeige: "grad" },
       { schluessel: "momentLinks", name: "Moment links", einheit: "Nm" },
       { schluessel: "momentRechts", name: "Moment rechts", einheit: "Nm" },
+    ],
+  },
+  {
+    typ: "waage",
+    name: "Balkenwaage",
+    icon: "⚖️",
+    bereich: "messen",
+    groesse: { b: 0.1, h: 0.1 },
+    ports: [
+      // Schalen tragen: was man darauf stellt, steht darauf.
+      { id: "links", art: "mechanik", name: "linke Schale", pos: { x: -0.3, y: 0 }, traegt: true },
+      { id: "rechts", art: "mechanik", name: "rechte Schale", pos: { x: 0.3, y: 0 }, traegt: true },
+    ],
+    parameter: [
+      { schluessel: "armLinks", name: "linker Arm", einheit: "m", standard: 0.3, min: 0.05, max: 0.6 },
+      { schluessel: "armRechts", name: "rechter Arm", einheit: "m", standard: 0.3, min: 0.05, max: 0.6 },
+      { schluessel: "balkenMasse", name: "Balken", einheit: "kg", standard: 0.4, min: 0.05, max: 3 },
+      { schluessel: "startneigung", name: "Startneigung", einheit: "rad", anzeige: "grad", standard: 0, min: -HEBEL_ANSCHLAG, max: HEBEL_ANSCHLAG },
+      { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 2.5, min: 0, max: 8 },
+    ],
+    signale: [
+      { schluessel: "masseLinks", name: "Masse links", einheit: "kg" },
+      { schluessel: "masseRechts", name: "Masse rechts", einheit: "kg" },
+      { schluessel: "winkel", name: "Neigung", einheit: "rad", anzeige: "grad" },
     ],
   },
   {

@@ -37,6 +37,14 @@ export interface Port {
   name: string;
   /** Sitz am Gerät, relativ zu dessen Mittelpunkt, in Metern. */
   pos: Punkt;
+  /**
+   * Hier wird etwas *aufgestellt*, nicht angehängt.
+   *
+   * Eine Waagschale trägt von unten: das Gewicht steht darauf, und das
+   * nächste kommt obendrauf. An einem Haken ist es andersherum — dort hängt
+   * es darunter, und das nächste hängt noch tiefer.
+   */
+  traegt?: boolean;
 }
 
 /** Ein einstellbarer Wert eines Geräts — immer in SI abgelegt. */

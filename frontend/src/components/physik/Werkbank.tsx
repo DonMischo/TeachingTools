@@ -12,11 +12,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
 import { istSchwinger } from "@/lib/physik/mechanik";
-import { aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, wirtKette, zumBild, zurWelt } from "@/lib/physik/szene";
+import { andockStelle, aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, wirtKette, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Marker } from "@/lib/physik/phaenomene";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
+import { EIGENER_HAKEN, koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
 import { START_WERT, ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
@@ -33,7 +33,16 @@ export const PORT_FARBE: Record<PortArt, string> = {
 const RASTER = 0.05;
 const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
-const PORT_RADIUS = 7;
+/**
+ * Anschlusspunkte sind klein und blass.
+ *
+ * Früher waren sie so groß, dass man beim Greifen eines Geräts fast immer
+ * einen Anschluss erwischte und versehentlich eine Verbindung anfing. Die
+ * übliche Geste ist das Ziehen; Anschlüsse antippen bleibt möglich, tritt aber
+ * in den Hintergrund und wird erst deutlich, wenn es darauf ankommt.
+ */
+const PORT_RADIUS = 4;
+const PORT_TREFFER = 7;
 
 export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, zustand, beobachte }: {
   szene: Szene;
@@ -63,6 +72,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const [blick, setBlick] = useState<Blick>({ mitte: { x: 0, y: 0.5 }, skala: 220, breite: 800, hoehe: 520 });
   const [offen, setOffen] = useState<PortZeiger | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Wohin das gezogene Gerät fiele, wenn man jetzt loslässt.
+  const [andock, setAndock] = useState<PortZeiger | null>(null);
   const zieht = useRef<
     | { art: "geraet"; id: string; griff: Punkt }
     | { art: "koerper"; id: string }
@@ -112,7 +123,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
         const b = zumBild(ort, blick);
-        if (Math.hypot(b.x - p.x, b.y - p.y) <= PORT_RADIUS + 5) return { geraet: g.id, port: port.id };
+        if (Math.hypot(b.x - p.x, b.y - p.y) <= PORT_TREFFER) return { geraet: g.id, port: port.id };
       }
     }
     return null;
@@ -253,6 +264,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const welt = zurWelt(p, blick);
       const ziel = { x: einrasten(welt.x - z.griff.x), y: einrasten(welt.y - z.griff.y) };
       setSzene(bewege(szene, z.id, ziel));
+      setAndock(andockStelle(szene, z.id, ziel, zustand.current.mechanik));
       // Der Körper in der Welt muss mit, sonst zieht man nur das Bild und das
       // Gewicht springt beim Loslassen an seinen alten Platz zurück.
       setzeKoerper(z.id, ziel);
@@ -267,8 +279,30 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     }
   }
 
-  const beiLoslassen = () => { zieht.current = null; };
-  const beiVerlassen = () => { zieht.current = null; setSchwebt(null); setSchwebenderMarker(null); };
+  /**
+   * Loslassen. Hängt das Gerät an, wenn es über einem Haken schwebt.
+   *
+   * Das ist die Geste, die man erwartet: Gewicht auf den Haken ziehen,
+   * loslassen, es hängt. Der Haken darunter bleibt frei, sodass das nächste
+   * Gewicht daruntergehängt werden kann.
+   */
+  const beiLoslassen = () => {
+    const z = zieht.current;
+    zieht.current = null;
+    if (z?.art === "geraet" && andock) {
+      const g = szene.geraete.find(x => x.id === z.id);
+      const eigener = g ? EIGENER_HAKEN[g.typ] : undefined;
+      if (eigener) {
+        try {
+          setSzene(verbinde(szene, andock, { geraet: z.id, port: eigener }));
+        } catch (err) {
+          setFehler(err instanceof Error ? err.message : "Das passt nicht zusammen.");
+        }
+      }
+    }
+    setAndock(null);
+  };
+  const beiVerlassen = () => { zieht.current = null; setAndock(null); setSchwebt(null); setSchwebenderMarker(null); };
 
   function beiRad(e: React.WheelEvent) {
     setBlick(b => ({
@@ -367,11 +401,25 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         if (!ort) continue;
         const bp = zumBild(ort, blick);
         const istOffen = offen?.geraet === g.id && offen.port === port.id;
+        const istZiel = andock?.geraet === g.id && andock.port === port.id;
+
+        if (istZiel) {
+          // Hier fiele es hin: ein deutlicher Ring, damit man vor dem Loslassen
+          // weiss, woran es haengen wird.
+          ctx.beginPath();
+          ctx.arc(bp.x, bp.y, 13, 0, Math.PI * 2);
+          ctx.strokeStyle = "#4ade80";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+
         ctx.beginPath();
-        ctx.arc(bp.x, bp.y, istOffen ? PORT_RADIUS + 3 : PORT_RADIUS, 0, Math.PI * 2);
+        ctx.arc(bp.x, bp.y, istOffen || istZiel ? PORT_RADIUS + 3 : PORT_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = PORT_FARBE[port.art];
+        ctx.globalAlpha = istOffen || istZiel ? 1 : 0.55;
         ctx.fill();
-        ctx.lineWidth = 2;
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = istOffen || istZiel ? 2 : 1;
         ctx.strokeStyle = istOffen ? "#f8fafc" : "rgba(2,6,23,0.65)";
         ctx.stroke();
       }
@@ -392,7 +440,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.textBaseline = "middle";
       ctx.fillText(m.art === "stoss" ? "💥" : "🔎", b.x, b.y);
     }
-  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand, marker, schwebenderMarker]);
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, andock, zustand, marker, schwebenderMarker]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.

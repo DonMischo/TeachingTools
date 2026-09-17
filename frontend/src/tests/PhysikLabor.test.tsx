@@ -57,9 +57,14 @@ function mitBildern() {
   }) as typeof requestAnimationFrame;
   globalThis.cancelAnimationFrame = ((id: number) => { offen.delete(id); }) as typeof cancelAnimationFrame;
 
-  let uhr = performance.now();
+  // Erst beim ersten Bild stellen, nicht schon hier: zwischen dieser Zeile und
+  // dem Montieren der Komponente kann unter Last Zeit vergehen, und ein
+  // Zeitstempel *vor* dem Start der Schleife ergibt einen negativen Abstand —
+  // dann rechnet die Uhr gar nichts und der Test faellt sprunghaft aus.
+  let uhr = 0;
   return {
     bilder(n: number) {
+      if (uhr === 0) uhr = performance.now();
       for (let i = 0; i < n; i++) {
         const dran = [...offen.values()];
         offen.clear();

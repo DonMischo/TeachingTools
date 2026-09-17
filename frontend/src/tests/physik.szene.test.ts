@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import {
   neueSzene, stelle, entferne, bewege, verbinde, trenne,
   treueVon, alsJSON, ausJSON, zumBild, zurWelt, portOrt, freierPlatz,
-  aufgeloest, aushaengen, haengtIrgendwo,
+  aufgeloest, aushaengen, haengtIrgendwo, andockStelle,
 } from "@/lib/physik/szene";
 import type { Szene } from "@/lib/physik/typen";
 
@@ -345,5 +345,82 @@ describe("aushaengen", () => {
   it("lässt ein Gerät in Ruhe, das gar nicht hängt", () => {
     const s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
     expect(aushaengen(s, s.geraete[0].id)).toEqual(s);
+  });
+});
+
+describe("Anhängen durch Ziehen", () => {
+  /** Stativ mit Pendel daran — der Haken am Pendelkörper ist noch frei. */
+  function pendelAufbau() {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = stelle(s, "fadenpendel", { x: 5, y: 5 });
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: s.geraete[1].id, port: "aufhaengung" });
+    return s;
+  }
+
+  /** Legt ein Massestück irgendwo hin und gibt seine Id zurück. */
+  function gewicht(s: Szene, pos: { x: number; y: number }) {
+    const neu = stelle(s, "massestueck", pos);
+    return { szene: neu, id: neu.geraete[neu.geraete.length - 1].id };
+  }
+
+  it("findet den Haken, über dem man loslässt", () => {
+    const basis = pendelAufbau();
+    const pendel = basis.geraete[1].id;
+    const koerper = portOrt(aufgeloest(basis).geraete[1], "koerper")!;
+
+    const { szene, id } = gewicht(basis, { x: 3, y: 3 });
+    const ziel = andockStelle(szene, id, koerper);
+    expect(ziel).toEqual({ geraet: pendel, port: "koerper" });
+  });
+
+  it("greift nicht ins Leere", () => {
+    const { szene, id } = gewicht(pendelAufbau(), { x: 3, y: 3 });
+    // Weit weg von allem: nichts zum Andocken.
+    expect(andockStelle(szene, id, { x: 4, y: 4 })).toBeNull();
+  });
+
+  it("hängt das zweite Gewicht unter das erste, statt abzuweisen", () => {
+    const basis = pendelAufbau();
+    const pendel = basis.geraete[1].id;
+    const koerper = portOrt(aufgeloest(basis).geraete[1], "koerper")!;
+
+    // Erstes Gewicht an den Pendelhaken.
+    const eins = gewicht(basis, { x: 3, y: 3 });
+    let szene = verbinde(eins.szene, { geraet: pendel, port: "koerper" }, { geraet: eins.id, port: "oese" });
+
+    // Zweites an dieselbe Stelle gezogen — es gehört darunter.
+    const zwei = gewicht(szene, { x: 3, y: 3 });
+    szene = zwei.szene;
+    expect(andockStelle(szene, zwei.id, koerper)).toEqual({ geraet: eins.id, port: "unten" });
+  });
+
+  it("stapelt beliebig weiter nach unten", () => {
+    let szene = pendelAufbau();
+    const pendel = szene.geraete[1].id;
+    const koerper = portOrt(aufgeloest(szene).geraete[1], "koerper")!;
+
+    let letzte = "";
+    for (let i = 0; i < 4; i++) {
+      const neu = gewicht(szene, { x: 3, y: 3 });
+      szene = neu.szene;
+      const ziel = andockStelle(szene, neu.id, koerper)!;
+      expect(ziel).toBeTruthy();
+      szene = verbinde(szene, ziel, { geraet: neu.id, port: "oese" });
+      letzte = neu.id;
+    }
+
+    // Vier Gewichte hängen als Kette — das letzte ganz unten.
+    expect(szene.verbindungen).toHaveLength(5);
+    const orte = aufgeloest(szene).geraete;
+    const unterstes = orte.find(g => g.id === letzte)!;
+    const pendelKoerper = portOrt(orte.find(g => g.id === pendel)!, "koerper")!;
+    expect(pendelKoerper.y - unterstes.pos.y).toBeCloseTo(4 * 0.08 - 0.04, 6);
+  });
+
+  it("hängt nichts an sich selbst", () => {
+    const basis = pendelAufbau();
+    const { szene, id } = gewicht(basis, { x: 0, y: 0.5 });
+    const eigenerOrt = aufgeloest(szene).geraete.find(g => g.id === id)!.pos;
+    expect(andockStelle(szene, id, eigenerOrt)?.geraet).not.toBe(id);
   });
 });

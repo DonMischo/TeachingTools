@@ -230,6 +230,9 @@ export function aufgeloest(
   const plan = new Map<string, Punkt>();
   const laeuft = new Set<string>();
   const nachId = new Map(szene.geraete.map(g => [g.id, g]));
+  // Wer auf etwas steht, trägt selbst nach oben weiter — sonst kippte der
+  // Stapel auf einer Waagschale ab dem zweiten Gewicht ins Hängen zurück.
+  const stehend = new Set<string>();
 
   const ortVon = (g: Geraet): Punkt => {
     const fertig = plan.get(g.id);
@@ -256,8 +259,15 @@ export function aufgeloest(
       if (dort && wirt) {
         const anschluss = portOrt({ ...wirt, pos: ortVon(wirt) }, dort.port, mechanik[wirt.id]);
         // Der eigene Haken sitzt nicht im Mittelpunkt — um seinen Versatz muss
-        // das Gerät zurückgeschoben werden, sonst hängt es schief.
-        const versatz = portOrt({ ...g, pos: { x: 0, y: 0 } }, eigener, mechanik[g.id]);
+        // das Gerät zurückgeschoben werden, sonst hängt es schief. Auf einer
+        // tragenden Stelle (Waagschale) zählt dabei die *Unterseite*: dort
+        // steht das Gewicht darauf, statt darunter zu hängen.
+        const wirtPort = portVon(wirt.typ, dort.port);
+        const daraufStehend = !!wirtPort?.traegt
+          || (dort.port === "oese" && stehend.has(wirt.id));
+        const stuetzPunkt = daraufStehend && portVon(g.typ, "unten") ? "unten" : eigener;
+        if (daraufStehend) stehend.add(g.id);
+        const versatz = portOrt({ ...g, pos: { x: 0, y: 0 } }, stuetzPunkt, mechanik[g.id]);
         if (anschluss && versatz) ort = { x: anschluss.x - versatz.x, y: anschluss.y - versatz.y };
       }
     }
@@ -326,4 +336,76 @@ export function wirtKette(szene: Szene, id: string): Geraet[] {
   }
 
   return kette;
+}
+
+/**
+ * Der unterste freie Haken unter einem Anschluss.
+ *
+ * Hängt am Pendelhaken schon ein Gewicht, soll das nächste *darunter* landen
+ * und nicht abgewiesen werden — so wächst ein Stapel Schlitzgewichte, wie man
+ * ihn im Vorbereitungsraum auch aufsteckt. Gesucht wird deshalb von der
+ * angetippten Stelle aus nach unten weiter, bis ein Haken frei ist.
+ */
+export function freierHaken(
+  szene: Szene,
+  zeiger: PortZeiger,
+  tiefe = 0,
+  /** Wird weitergereicht: ein Stapel auf einer Schale wächst durchgehend nach
+   *  oben, nicht nur im ersten Schritt. */
+  nachOben?: boolean,
+): PortZeiger {
+  if (tiefe > 20) return zeiger;
+  const belegt = szene.verbindungen.find(v => gleich(v.von, zeiger) || gleich(v.nach, zeiger));
+  if (!belegt) return zeiger;
+
+  const hier = szene.geraete.find(x => x.id === zeiger.geraet);
+  // Auf einer Schale wächst der Stapel nach oben, am Haken nach unten.
+  const traegt = nachOben ?? (hier ? !!portVon(hier.typ, zeiger.port)?.traegt : false);
+  const weiter = traegt ? "oese" : "unten";
+
+  const dort = gleich(belegt.von, zeiger) ? belegt.nach : belegt.von;
+  const dranhaengend = szene.geraete.find(x => x.id === dort.geraet);
+  if (dranhaengend?.typ === "massestueck" && portVon(dranhaengend.typ, weiter)) {
+    return freierHaken(szene, { geraet: dranhaengend.id, port: weiter }, tiefe + 1, traegt);
+  }
+  return zeiger;
+}
+
+/**
+ * Der Anschluss, an dem ein gezogenes Gerät andocken würde — oder null.
+ *
+ * Damit wird aus »Anschluss antippen, anderen Anschluss antippen« die Geste,
+ * die man erwartet: das Gewicht auf den Haken ziehen und loslassen.
+ */
+export function andockStelle(
+  szene: Szene,
+  gezogen: string,
+  welt: Punkt,
+  mechanik: Record<string, { q: number }> = {},
+  reichweite = 0.18,
+): PortZeiger | null {
+  const g = szene.geraete.find(x => x.id === gezogen);
+  const eigener = g ? EIGENER_HAKEN[g.typ] : undefined;
+  if (!g || !eigener) return null;
+
+  const sicht = aufgeloest(szene, mechanik);
+  let bestes: PortZeiger | null = null;
+  let beste = reichweite;
+
+  for (const wirt of sicht.geraete) {
+    if (wirt.id === gezogen) continue;
+    for (const port of geraetTyp(wirt.typ)?.ports ?? []) {
+      if (port.art !== "mechanik") continue;
+      const ort = portOrt(wirt, port.id, mechanik[wirt.id]);
+      if (!ort) continue;
+      const abstand = Math.hypot(ort.x - welt.x, ort.y - welt.y);
+      if (abstand < beste) { beste = abstand; bestes = { geraet: wirt.id, port: port.id }; }
+    }
+  }
+  if (!bestes) return null;
+
+  const frei = freierHaken(szene, bestes);
+  // Am eigenen Haken kann nichts hängen, und schon Verbundenes nicht doppelt.
+  if (frei.geraet === gezogen) return null;
+  return frei;
 }

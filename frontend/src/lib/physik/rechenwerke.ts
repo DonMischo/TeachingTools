@@ -13,7 +13,7 @@
  */
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
-import { gesamtMasse, hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
+import { gesamtMasse, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import type { WeltZustand } from "./welt";
@@ -184,6 +184,14 @@ export function schritt(
         werte.set(signalId(g.id, "auslenkung"), s.q);
         // Hooke: die Feder zieht entgegen der Auslenkung.
         werte.set(signalId(g.id, "kraft"), -(g.werte.federkonstante ?? 10) * s.q);
+        break;
+      }
+
+      case "waage": {
+        const winkel = mechanik[g.id]?.q ?? 0;
+        werte.set(signalId(g.id, "masseLinks"), lastAn(szene, g.id, "links"));
+        werte.set(signalId(g.id, "masseRechts"), lastAn(szene, g.id, "rechts"));
+        werte.set(signalId(g.id, "winkel"), winkel);
         break;
       }
 

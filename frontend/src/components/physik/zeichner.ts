@@ -353,7 +353,67 @@ const stativ: Zeichner = (ctx, g, _zustand, blick) => {
   ctx.stroke();
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { stativ, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
+/**
+ * Die Balkenwaage — Balken, Lager, zwei Schalen.
+ *
+ * Auf die Schalen wird gestellt, nicht gehängt: was man darauf zieht, steht
+ * obendrauf, und das nächste kommt darüber. Steht links so viel wie rechts,
+ * bleibt der Balken waagerecht — das ist die ganze Aussage des Geräts.
+ */
+const waage: Zeichner = (ctx, g, zustand, blick) => {
+  const q = zustand.mechanik[g.id]?.q ?? g.werte.startneigung ?? 0;
+  const links = zumBild(hebelArmOrt(g, "links", q), blick);
+  const rechts = zumBild(hebelArmOrt(g, "rechts", q), blick);
+  const achse = zumBild(g.pos, blick);
+
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = Math.max(3, 0.02 * blick.skala);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(links.x, links.y);
+  ctx.lineTo(rechts.x, rechts.y);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Die Schalen als flache Teller unter den Balkenenden.
+  const breite = Math.max(14, 0.13 * blick.skala);
+  for (const ende of [links, rechts]) {
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(ende.x - breite / 2, ende.y);
+    ctx.lineTo(ende.x + breite / 2, ende.y);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ende.x - breite / 2, ende.y);
+    ctx.lineTo(ende.x, ende.y + breite * 0.35);
+    ctx.lineTo(ende.x + breite / 2, ende.y);
+    ctx.stroke();
+  }
+
+  // Lager und Waagerechte.
+  const hoehe = Math.max(8, 0.07 * blick.skala);
+  ctx.fillStyle = "#64748b";
+  ctx.beginPath();
+  ctx.moveTo(achse.x, achse.y);
+  ctx.lineTo(achse.x - hoehe * 0.6, achse.y + hoehe);
+  ctx.lineTo(achse.x + hoehe * 0.6, achse.y + hoehe);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.save();
+  ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = "rgba(148,163,184,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(achse.x - Math.abs(links.x - achse.x) - 8, achse.y);
+  ctx.lineTo(achse.x + Math.abs(rechts.x - achse.x) + 8, achse.y);
+  ctx.stroke();
+  ctx.restore();
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { stativ, waage, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 export const START_WERT: Record<string, string> = {

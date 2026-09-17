@@ -37,6 +37,7 @@ const SCHWINGER: Record<string, { startWert: string }> = {
   fadenpendel: { startWert: "startwinkel" },
   federpendel: { startWert: "startauslenkung" },
   hebel: { startWert: "startneigung" },
+  waage: { startWert: "startneigung" },
   schiefeebene: { startWert: "startweg" },
 };
 
@@ -111,6 +112,7 @@ export function beschleunigung(szene: Szene, g: Geraet, q: number, v: number): n
     case "federpendel":
       return -((g.werte.federkonstante ?? 10) / gesamtMasse(szene, g)) * q - reibung;
 
+    case "waage":
     case "hebel": {
       const aL = g.werte.armLinks ?? 0.3, aR = g.werte.armRechts ?? 0.3;
       const mL = lastAn(szene, g.id, "links"), mR = lastAn(szene, g.id, "rechts");
@@ -141,7 +143,7 @@ export function beschleunigung(szene: Szene, g: Geraet, q: number, v: number): n
 
 /** Wie weit `q` gehen darf, bevor das Gerät aufsitzt. */
 export function grenzen(g: Geraet): { min: number; max: number } | null {
-  if (g.typ === "hebel") return { min: -HEBEL_ANSCHLAG, max: HEBEL_ANSCHLAG };
+  if (g.typ === "hebel" || g.typ === "waage") return { min: -HEBEL_ANSCHLAG, max: HEBEL_ANSCHLAG };
   if (g.typ === "schiefeebene") return { min: 0, max: Math.max(0.05, g.werte.laenge ?? 1) };
   return null;
 }

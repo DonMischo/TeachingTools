@@ -95,7 +95,7 @@ export function beweglicherPortOrt(
 ): Punkt | null {
   if (g.typ === "stativ" && portId === "haken") return stativHaken(g);
   if (portId === "koerper") return koerperOrt(g, s);
-  if (g.typ === "hebel" && (portId === "links" || portId === "rechts")) {
+  if ((g.typ === "hebel" || g.typ === "waage") && (portId === "links" || portId === "rechts")) {
     return hebelArmOrt(g, portId, s?.q ?? g.werte.startneigung ?? 0);
   }
   return null;
