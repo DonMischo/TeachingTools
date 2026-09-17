@@ -62,6 +62,8 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [haltBeiStoss, setHaltBeiStoss] = useState(false);
   const [markerWerkzeug, setMarkerWerkzeug] = useState(false);
   const [offenerMarker, setOffenerMarker] = useState<string | null>(null);
+  const [schwebenderMarker, setSchwebenderMarker] = useState<string | null>(null);
+  const [lauf, setLauf] = useState(0);
   // Zwingt die laufende Karte zum Auffrischen, ohne dafür jedes Bild zu rendern.
   const [takt, setTakt] = useState(0);
 
@@ -77,15 +79,21 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
       const neu = [...alt];
       for (const stoss of stoesse) {
         if (stoss.wucht < 0.2) continue;
-        const schonDa = neu.some(m => m.art === "stoss"
+        // Nur innerhalb desselben Durchlaufs zusammenfassen: ein Aufprall
+        // meldet sich ueber mehrere Bilder und Beruehrpunkte, daraus soll ein
+        // Marker werden. Nach »Messung neu« laeuft alles deterministisch noch
+        // einmal ab — gleicher Ort, gleiche Zeit —, und das ist trotzdem ein
+        // neues Ereignis.
+        const schonDa = neu.some(m => m.art === "stoss" && m.lauf === lauf
           && Math.hypot(m.ort.x - stoss.ort.x, m.ort.y - stoss.ort.y) < 0.1
-          && stand.t - m.t < 0.5);
+          && Math.abs(stand.t - m.t) < 0.5);
         if (schonDa) continue;
         neu.push({
-          id: `stoss-${Math.round(stand.t * 1000)}-${neu.length}`,
+          id: `stoss-${lauf}-${Math.round(stand.t * 1000)}-${neu.length}`,
           art: "stoss",
           ort: stoss.ort,
           t: stand.t,
+          lauf,
           titel: (stoss.a === "boden" || stoss.b === "boden") ? "💥 Aufschlag" : "💥 Zusammenstoß",
           erklaerung: (stoss.a === "boden" || stoss.b === "boden")
             ? "Unten angekommen: die Lageenergie ist vollständig in Bewegungsenergie übergegangen und beim Aufschlag in Verformung und Wärme. Aus der Aufprallgeschwindigkeit lässt sich zurückrechnen, aus welcher Höhe der Körper gefallen ist."
@@ -96,7 +104,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
       return neu;
     });
     if (haltBeiStoss) setLaeuft(false);
-  }, [szene, haltBeiStoss]);
+  }, [szene, haltBeiStoss, lauf]);
 
   const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } =
     useSimulation(szene, laeuft, tempo, beiStoss);
@@ -124,8 +132,18 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
       if (e.key !== "Delete" && e.key !== "Backspace") return;
       const ziel = e.target as HTMLElement | null;
       if (ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA")) return;
-      // Worüber der Zeiger steht, hat Vorrang — so räumt man mehrere Geräte
-      // hintereinander weg, ohne jedes vorher anzuklicken.
+      // Ein Marker unter dem Zeiger geht vor: er liegt sichtbar obenauf, und
+      // wer ihn wegräumen will, meint nicht das Gerät darunter.
+      if (schwebenderMarker) {
+        e.preventDefault();
+        setMarker(alt => alt.filter(m => m.id !== schwebenderMarker));
+        if (offenerMarker === schwebenderMarker) setOffenerMarker(null);
+        setSchwebenderMarker(null);
+        return;
+      }
+
+      // Sonst: worüber der Zeiger steht, hat Vorrang — so räumt man mehrere
+      // Geräte hintereinander weg, ohne jedes vorher anzuklicken.
       const weg = schwebt ?? ausgewaehlt;
       if (!weg) return;
       e.preventDefault();
@@ -135,7 +153,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
-  }, [ausgewaehlt, schwebt]);
+  }, [ausgewaehlt, schwebt, schwebenderMarker, offenerMarker]);
 
   const nimm = (t: string) => {
     setSzene(s => {
@@ -227,7 +245,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           className="rounded-xl border border-[var(--border)] px-3 py-2 font-bold"
         >{laeuft ? "⏸️ Anhalten" : "▶️ Laufen"}</button>
         <button
-          onClick={zuruecksetzen}
+          onClick={() => { zuruecksetzen(); setLauf(l => l + 1); }}
           title="Uhr auf null, Messwerte verwerfen"
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >⏮️ Messung neu</button>
@@ -285,7 +303,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
               const typName = g ? geraetTyp(szene.geraete.find(x => x.id === g)?.typ ?? "")?.name : null;
               const id = `gesetzt-${Date.now()}`;
               setMarker(alt => [...alt, {
-                id, art: "gesetzt", ort, t: zustand.current.t,
+                id, art: "gesetzt", ort, t: zustand.current.t, lauf,
                 titel: typName ? `🔎 ${typName}` : "🔎 Beobachtung",
                 erklaerung: g
                   ? "Zeigt laufend, was an diesem Gerät gerade passiert."
@@ -295,10 +313,12 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
               setMarkerWerkzeug(false);
               setOffenerMarker(id);
             }}
+            schwebenderMarker={schwebenderMarker} setSchwebenderMarker={setSchwebenderMarker}
             zustand={zustand} beobachte={beobachte}
           />
         </div>
 
+        <div className="flex flex-col gap-4 min-w-0">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
           {!geraet || !typ ? (
             <p className="text-sm text-[var(--text-muted)]">
@@ -401,16 +421,17 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             </>
           )}
         </div>
-      </div>
 
-      {karte && (
-        <Bericht
-          titel={karte.titel}
-          hinweis={karte.hinweis}
-          werte={karte.werte}
-          onSchliessen={karte.schliessbar ? () => setOffenerMarker(null) : undefined}
-        />
-      )}
+        {karte && (
+          <Bericht
+            titel={karte.titel}
+            hinweis={karte.hinweis}
+            werte={karte.werte}
+            onSchliessen={karte.schliessbar ? () => setOffenerMarker(null) : undefined}
+          />
+        )}
+        </div>
+      </div>
 
       <Oszilloskop
         szene={szene}

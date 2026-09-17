@@ -47,8 +47,15 @@ export interface Stoss {
   wucht: number;
 }
 
-/** Geräte, die als unbewegliches Mobiliar dastehen. */
-const STEHT_FEST = new Set(["stativ", "schiefeebene", "hebel", "flaschenzug",
+/**
+ * Geräte, die als unbewegliches Mobiliar dastehen — etwas kann darauf liegen
+ * oder dagegen stoßen.
+ *
+ * Das Stativ gehört ausdrücklich **nicht** dazu. Es ist eine dünne Stange zum
+ * Aufhängen, kein Hindernis; als Hindernis stieß der Pendelkörper gegen die
+ * Stange seines eigenen Stativs und kam nie auf die andere Seite herum.
+ */
+const STEHT_FEST = new Set(["schiefeebene", "hebel", "flaschenzug",
   "batterie", "widerstand", "lampe", "schalter", "voltmeter", "amperemeter", "signalgeber"]);
 
 /** Geräte, die im realen Modell an einem Gelenk hängen und mitspielen. */

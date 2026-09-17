@@ -163,6 +163,10 @@ export interface Marker {
   ort: Punkt;
   /** Laborzeit des Ereignisses. */
   t: number;
+  /** Zu welchem Durchlauf es gehört. Nach »Messung neu« faengt die Uhr wieder
+   *  bei null an; ohne diese Nummer gaelte derselbe Stoss im neuen Durchlauf
+   *  als Wiederholung des alten und wuerde verschluckt. */
+  lauf: number;
   titel: string;
   erklaerung: string;
   /** Bei einem Stoß die Momentaufnahme; bei gesetzten Markern leer, weil sie

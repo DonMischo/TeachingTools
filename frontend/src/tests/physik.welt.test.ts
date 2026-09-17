@@ -203,3 +203,44 @@ describe("setzeOrt", () => {
     expect(welt.zustand()[id].x).toBeCloseTo(0.8, 9);
   });
 });
+
+describe("Pendel am Stativ", () => {
+  /** So, wie man es aufbaut: Stativ, Pendel daran, Klotz daneben. */
+  function amStativ(mitKlotz = true): Szene {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { hoehe: 2, armLaenge: 0.3 } })) };
+    s = stelle(s, "fadenpendel", { x: 9, y: 9 });
+    const pendel = s.geraete[1].id;
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: pendel, port: "aufhaengung" });
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel
+      ? { ...g, werte: { laenge: 1.8, masse: 3, startwinkel: -1, daempfung: 0 } } : g)) };
+    if (mitKlotz) s = masse(s, { x: 0.7, y: 0.09 }, 20);
+    return { ...s, treue: "real" };
+  }
+
+  it("schwingt frei durch — das eigene Stativ steht ihm nicht im Weg", () => {
+    // Der gemeldete Rückfall: seit der Pendelkörper ein echter Körper ist,
+    // stiess er gegen die Stange seines eigenen Stativs und kam nie herum.
+    // Ohne Klotz: allein die Stange dürfte nichts aufhalten. (Mit Klotz wäre
+    // ein kleinerer Ausschlag richtig — der frisst ja Energie.)
+    const szene = amStativ(false);
+    const pendel = szene.geraete[1].id;
+    const welt = new Welt();
+    welt.synchronisiere(szene, {});
+
+    let groessterWinkel = -99;
+    for (let i = 0; i < 240 * 4; i++) {
+      welt.schritt(szene, {}, DT);
+      groessterWinkel = Math.max(groessterWinkel, welt.abgeleitet(szene, {})[pendel].q);
+    }
+    // Von −1 rad losgelassen muss es auf die andere Seite durchschwingen.
+    expect(groessterWinkel).toBeGreaterThan(0.6);
+  });
+
+  it("wirft den Klotz daneben um", () => {
+    const szene = amStativ();
+    const klotz = szene.geraete[2].id;
+    const { stoesse } = laufen(szene, 8);
+    expect(stoesse.filter(s => s.a === klotz || s.b === klotz).length).toBeGreaterThan(1);
+  });
+});

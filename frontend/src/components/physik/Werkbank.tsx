@@ -35,7 +35,7 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
 const PORT_RADIUS = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
@@ -51,6 +51,9 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   /** Während das Werkzeug an ist, setzt ein Tipp einen eigenen Marker. */
   markerWerkzeug: boolean;
   onMarkerSetzen: (geraet: string | null, ort: Punkt) => void;
+  /** Der Marker unter dem Zeiger — Entf räumt ihn weg, wie bei Geräten auch. */
+  schwebenderMarker: string | null;
+  setSchwebenderMarker: (id: string | null) => void;
   /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
   zustand: { readonly current: LaborZustand };
   beobachte: (fn: () => void) => () => void;
@@ -234,8 +237,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     const p = bildPunkt(e);
 
     if (!z) {
-      // Nichts in der Hand: nur merken, worüber der Zeiger steht.
-      setSchwebt(koerperUnter(p) ?? geraetUnter(p));
+      // Nichts in der Hand: nur merken, worüber der Zeiger steht. Marker
+      // liegen über allem, also haben sie Vorrang.
+      const ueberMarker = markerUnter(p);
+      setSchwebenderMarker(ueberMarker);
+      setSchwebt(ueberMarker ? null : (koerperUnter(p) ?? geraetUnter(p)));
       return;
     }
 
@@ -262,7 +268,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   }
 
   const beiLoslassen = () => { zieht.current = null; };
-  const beiVerlassen = () => { zieht.current = null; setSchwebt(null); };
+  const beiVerlassen = () => { zieht.current = null; setSchwebt(null); setSchwebenderMarker(null); };
 
   function beiRad(e: React.WheelEvent) {
     setBlick(b => ({
@@ -373,19 +379,20 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     // Zuletzt die Marker — sie gehören über den Aufbau, nicht darunter.
     for (const m of marker) {
       const b = zumBild(m.ort, blick);
+      const drunter = m.id === schwebenderMarker;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, 13, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, drunter ? 16 : 13, 0, Math.PI * 2);
       ctx.fillStyle = m.art === "stoss" ? "rgba(248,113,113,0.22)" : "rgba(56,189,248,0.22)";
       ctx.fill();
-      ctx.strokeStyle = m.art === "stoss" ? "#f87171" : "#38bdf8";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = drunter ? "#f8fafc" : m.art === "stoss" ? "#f87171" : "#38bdf8";
+      ctx.lineWidth = drunter ? 3 : 2;
       ctx.stroke();
       ctx.font = "14px serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(m.art === "stoss" ? "💥" : "🔎", b.x, b.y);
     }
-  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand, marker]);
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand, marker, schwebenderMarker]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.
@@ -399,7 +406,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       <canvas
         ref={leinwand}
         aria-label="Werkbank"
-        style={{ width: blick.breite, height: blick.hoehe, display: "block", cursor: schwebt ? "grab" : "default" }}
+        style={{ width: blick.breite, height: blick.hoehe, display: "block", cursor: schwebt ? "grab" : schwebenderMarker ? "pointer" : "default" }}
         onPointerDown={beiDruck}
         onPointerMove={beiBewegung}
         onPointerUp={beiLoslassen}

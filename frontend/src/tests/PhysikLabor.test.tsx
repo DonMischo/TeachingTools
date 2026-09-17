@@ -262,3 +262,72 @@ describe("Marker", () => {
     expect(getByText(/Bei Berührung anhalten/)).toBeInTheDocument();
   });
 });
+
+describe("Marker bleiben stehen", () => {
+  /** Pendel mit Klotz in der Bahn — im realen Modell stossen sie zusammen. */
+  function mitStoss() {
+    let s = stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 });
+    const pendel = s.geraete[0].id;
+    s = { ...s, geraete: s.geraete.map(g => (g.id === pendel
+      ? { ...g, werte: { laenge: 1.1, masse: 3, startwinkel: -1, daempfung: 0 } } : g)) };
+    s = stelle(s, "massestueck", { x: 0.4, y: 0.09 });
+    const klotz = s.geraete[1].id;
+    s = { ...s, geraete: s.geraete.map(g => (g.id === klotz ? { ...g, werte: { masse: 20 } } : g)) };
+    return { ...s, treue: "real" as const };
+  }
+
+  const anzahlMarker = (text: string) => Number(/🧹 (\d+) Marker/.exec(text)?.[1] ?? 0);
+
+  it("hält »Messung neu« stand", () => {
+    localStorage.setItem(ABLAGE, alsJSON(mitStoss()));
+    const uhr = mitBildern();
+    try {
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+
+      // Lange genug laufen lassen, dass das Pendel den Klotz trifft.
+      uhr.bilder(40);
+      const vorher = anzahlMarker(document.body.textContent ?? "");
+      expect(vorher).toBeGreaterThan(0);
+
+      act(() => getByRole("button", { name: /Messung neu/ }).click());
+
+      // Die Uhr faengt neu an — die festgehaltenen Ereignisse bleiben.
+      expect(anzahlMarker(document.body.textContent ?? "")).toBe(vorher);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("nimmt nach »Messung neu« weiter neue auf", () => {
+    // Die Doppelgaenger-Pruefung verglich Zeiten vorzeichenbehaftet. Nach dem
+    // Zuruecksetzen steht die Uhr wieder bei null, und jeder neue Stoss galt
+    // als Wiederholung eines alten.
+    localStorage.setItem(ABLAGE, alsJSON(mitStoss()));
+    const uhr = mitBildern();
+    try {
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(40);
+      const vorher = anzahlMarker(document.body.textContent ?? "");
+
+      act(() => getByRole("button", { name: /Messung neu/ }).click());
+      uhr.bilder(40);
+
+      expect(anzahlMarker(document.body.textContent ?? "")).toBeGreaterThan(vorher);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("lässt sich mit »🧹 Marker« leeren", () => {
+    localStorage.setItem(ABLAGE, alsJSON(mitStoss()));
+    const uhr = mitBildern();
+    try {
+      const { getByRole, queryByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(40);
+      act(() => getByRole("button", { name: /Marker$/ }).click());
+      expect(queryByRole("button", { name: /Marker$/ })).toBeNull();
+    } finally {
+      uhr.zurueck();
+    }
+  });
+});
