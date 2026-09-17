@@ -11,6 +11,7 @@
  */
 import { formatiere, G, grad, type AnzeigeEinheit, type Einheit } from "./einheiten";
 import { hebelMomente, gesamtMasse } from "./mechanik";
+import { zugversuch } from "./rechenwerke";
 import type { LaborZustand } from "./rechenwerke";
 import { bauteilSpannung } from "./stromkreis";
 import type { Geraet, Punkt, Szene } from "./typen";
@@ -125,6 +126,26 @@ export function bericht(szene: Szene, g: Geraet, zustand: LaborZustand): Groesse
       ];
     }
 
+    case "probe": {
+      const v = zugversuch(szene, g, zustand.mechanik);
+      const d = g.werte.durchmesser ?? 0.0004;
+      return [
+        groesse("Werkstoff", v.stoff.E, "Pa", "E", v.stoff.name),
+        groesse("Zugkraft", v.kraft, "N", "F"),
+        groesse("Querschnitt", v.flaeche * 1e6, "", "A = π · d² / 4",
+          `π · (${z(d * 1000)} mm)² / 4 = ${z(v.flaeche * 1e6)} mm²`),
+        groesse("Zugspannung", v.spannung, "Pa", "σ = F / A",
+          `${z(v.kraft)} N / ${z(v.flaeche * 1e6)} mm²`),
+        groesse("Dehnung", v.dehnung, "", "ε = σ / E",
+          `${z(v.spannung / 1e6)} MPa / ${z(v.stoff.E / 1e9)} GPa`, "%"),
+        groesse("Verlängerung", v.verlaengerung, "m", "Δl = ε · l",
+          `${z(v.dehnung)} · ${z(v.laenge)}`),
+        groesse("Zugfestigkeit", v.stoff.zugfestigkeit, "Pa", "R_m"),
+        groesse("Ausgelastet", v.auslastung, "", "σ / R_m",
+          `${z(v.spannung / 1e6)} / ${z(v.stoff.zugfestigkeit / 1e6)}`, "%"),
+      ];
+    }
+
     case "hebel": {
       const winkel = s?.q ?? 0;
       const m = hebelMomente(szene, g, winkel);
@@ -211,4 +232,24 @@ export function stossBericht(
   }
 
   return liste;
+}
+
+/**
+ * Der Bericht zu einem Riss.
+ *
+ * Die eigentliche Lehre steht in der ersten Zeile: gerissen ist die Probe
+ * nicht bei einer bestimmten *Kraft*, sondern bei einer bestimmten
+ * *Spannung*. Derselbe Klotz reißt einen dünnen Draht und lässt einen dicken
+ * aus demselben Werkstoff völlig kalt.
+ */
+export function bruchBericht(szene: Szene, g: Geraet, zustand: LaborZustand): Groesse[] {
+  const v = zugversuch(szene, g, zustand.mechanik);
+  return [
+    groesse("Zugspannung beim Riss", v.spannung, "Pa", "σ = F / A",
+      `${z(v.kraft)} N / ${z(v.flaeche * 1e6)} mm²`),
+    groesse("Zugfestigkeit", v.stoff.zugfestigkeit, "Pa", `R_m (${v.stoff.name})`),
+    groesse("Zugkraft", v.kraft, "N", "F"),
+    groesse("Querschnitt", v.flaeche * 1e6, "", "A in mm²"),
+    groesse("Dehnung kurz davor", v.dehnung, "", "ε = σ / E", undefined, "%"),
+  ];
 }

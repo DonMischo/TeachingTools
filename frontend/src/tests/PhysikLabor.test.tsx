@@ -79,6 +79,9 @@ function mitBildern() {
   };
 }
 
+/** Wie viele Marker der Aufräum-Knopf gerade meldet. */
+const anzahlMarker = (text: string) => Number(/🧹 (\d+) Marker/.exec(text)?.[1] ?? 0);
+
 describe("PhysikLabor", () => {
   it("behält den gespeicherten Aufbau beim Öffnen", () => {
     localStorage.setItem(ABLAGE, alsJSON(gespeicherterAufbau()));
@@ -281,7 +284,6 @@ describe("Marker bleiben stehen", () => {
     return { ...s, treue: "real" as const };
   }
 
-  const anzahlMarker = (text: string) => Number(/🧹 (\d+) Marker/.exec(text)?.[1] ?? 0);
 
   it("hält »Messung neu« stand", () => {
     localStorage.setItem(ABLAGE, alsJSON(mitStoss()));
@@ -334,5 +336,87 @@ describe("Marker bleiben stehen", () => {
     } finally {
       uhr.zurueck();
     }
+  });
+});
+
+describe("Zugversuch im Labor", () => {
+  /** Probe mit einem Gewicht daran, das sie sicher zerreißt. */
+  function ueberlastet() {
+    let s = stelle(neueSzene(), "probe", { x: 0, y: 1 });
+    const probe = s.geraete[0].id;
+    // Aluminium, 0,2 mm — 5 kg liegen weit über der Zugfestigkeit.
+    s = { ...s, geraete: s.geraete.map(g => (g.id === probe
+      ? { ...g, werte: { werkstoff: 2, laenge: 0.2, durchmesser: 0.0002 } } : g)) };
+    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
+    const last = s.geraete[1].id;
+    s = { ...s, geraete: s.geraete.map(g => (g.id === last ? { ...g, werte: { masse: 5 } } : g)) };
+    return { szene: verbinde(s, { geraet: probe, port: "unten" }, { geraet: last, port: "oese" }), probe, last };
+  }
+
+  it("reißt die überlastete Probe und lässt die Last fallen", () => {
+    const { szene } = ueberlastet();
+    localStorage.setItem(ABLAGE, alsJSON(szene));
+    const uhr = mitBildern();
+    try {
+      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(6);
+
+      // Die Verbindung unter der Probe ist gekappt …
+      const gespeichert = ausJSON(localStorage.getItem(ABLAGE)!);
+      expect(gespeichert.verbindungen).toHaveLength(0);
+      // … und ein Marker hält fest, bei welcher Spannung.
+      expect(document.body.textContent).toContain("Marker");
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("hält den Riss nur einmal fest, auch über viele Bilder", () => {
+    const { szene } = ueberlastet();
+    localStorage.setItem(ABLAGE, alsJSON(szene));
+    const uhr = mitBildern();
+    try {
+      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(30);
+      // Riss und Aufschlag der fallenden Last sind zwei Ereignisse — beide
+      // gehoeren dazu. Gepruefft wird, dass nicht weiter gezaehlt wird.
+      const nachDemRiss = anzahlMarker(document.body.textContent ?? "");
+      expect(nachDemRiss).toBeGreaterThan(0);
+      uhr.bilder(60);
+      expect(anzahlMarker(document.body.textContent ?? "")).toBe(nachDemRiss);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("lässt eine tragbare Last in Ruhe", () => {
+    let s = stelle(neueSzene(), "probe", { x: 0, y: 1 });
+    const probe = s.geraete[0].id;
+    // Stahl, 2 mm — 1 kg ist nichts.
+    s = { ...s, geraete: s.geraete.map(g => (g.id === probe
+      ? { ...g, werte: { werkstoff: 0, laenge: 0.2, durchmesser: 0.002 } } : g)) };
+    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
+    s = verbinde(s, { geraet: probe, port: "unten" }, { geraet: s.geraete[1].id, port: "oese" });
+    localStorage.setItem(ABLAGE, alsJSON(s));
+
+    const uhr = mitBildern();
+    try {
+      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(20);
+      expect(ausJSON(localStorage.getItem(ABLAGE)!).verbindungen).toHaveLength(1);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("bietet Schere und Kerze an, wenn eine Probe ausgewählt ist", () => {
+    let s = stelle(neueSzene(), "probe", { x: 0, y: 1 });
+    s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { werkstoff: 0, laenge: 0.2, durchmesser: 0.002 } })) };
+    localStorage.setItem(ABLAGE, alsJSON(s));
+
+    const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Materialprobe auf den Tisch stellen").click());
+    expect(getByRole("button", { name: /Durchschneiden/ })).toBeInTheDocument();
+    expect(getByRole("button", { name: /Durchbrennen/ })).toBeInTheDocument();
   });
 });

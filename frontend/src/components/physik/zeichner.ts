@@ -15,6 +15,7 @@
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
 import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, stativHaken } from "@/lib/physik/geometrie";
+import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import { zumBild } from "@/lib/physik/szene";
 import { bauteilSpannung } from "@/lib/physik/stromkreis";
@@ -413,7 +414,55 @@ const waage: Zeichner = (ctx, g, zustand, blick) => {
   ctx.restore();
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { stativ, waage, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
+/**
+ * Die Materialprobe — ein Draht zwischen zwei Einspannungen.
+ *
+ * Er wird sichtbar länger, wenn man zieht, und färbt sich zur Zugfestigkeit
+ * hin rot. So sieht man kommen, dass er gleich reißt, statt davon überrascht
+ * zu werden.
+ */
+const probe: Zeichner = (ctx, g, zustand, blick) => {
+  const stoff = werkstoff(g.werte.werkstoff ?? 0);
+  const laenge = Math.max(0.01, g.werte.laenge ?? 0.2);
+  const dehnung = zustand.mechanik[g.id]?.q ?? 0;
+
+  const oben = zumBild(g.pos, blick);
+  const unten = zumBild({ x: g.pos.x, y: g.pos.y - laenge - dehnung }, blick);
+
+  // Die Dicke ist stark überzeichnet — ein 0,4-mm-Draht wäre sonst unsichtbar.
+  const dicke = Math.max(2, (g.werte.durchmesser ?? 0.0004) * 8 * blick.skala);
+
+  ctx.strokeStyle = stoff.farbe;
+  ctx.lineWidth = dicke;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(oben.x, oben.y);
+  ctx.lineTo(unten.x, unten.y);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Die beiden Einspannungen.
+  ctx.fillStyle = "#64748b";
+  for (const ende of [oben, unten]) {
+    ctx.fillRect(ende.x - 9, ende.y - 3, 18, 6);
+  }
+
+  // Ungedehnte Länge als Strich: daran misst man die Verlängerung ab.
+  if (dehnung > 0) {
+    const ruhe = zumBild({ x: g.pos.x, y: g.pos.y - laenge }, blick);
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = "rgba(148,163,184,0.5)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ruhe.x - 11, ruhe.y);
+    ctx.lineTo(ruhe.x + 11, ruhe.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { stativ, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 export const START_WERT: Record<string, string> = {

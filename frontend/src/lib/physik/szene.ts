@@ -286,6 +286,14 @@ export function aufgeloest(
   };
 }
 
+/** Kappt alles, was an diesem Anschluss hängt — der Riss in der Probe. */
+export function trenneAn(szene: Szene, zeiger: PortZeiger): Szene {
+  return {
+    ...szene,
+    verbindungen: szene.verbindungen.filter(v => !(gleich(v.von, zeiger) || gleich(v.nach, zeiger))),
+  };
+}
+
 /** Ob dieses Gerät gerade irgendwo eingehängt ist. */
 export function haengtIrgendwo(szene: Szene, g: Geraet): boolean {
   const eigener = EIGENER_HAKEN[g.typ];

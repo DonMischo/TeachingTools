@@ -18,17 +18,17 @@
 /** SI-Einheiten, in denen das Labor rechnet. */
 export type Einheit =
   | "" | "m" | "kg" | "s" | "A" | "K"
-  | "N" | "V" | "Ohm" | "F" | "H" | "W" | "J" | "Hz" | "C" | "lx" | "Nm" | "N/m" | "1/s"
+  | "N" | "V" | "Ohm" | "F" | "H" | "W" | "J" | "Hz" | "C" | "lx" | "Nm" | "N/m" | "1/s" | "Pa"
   | "rad" | "m/s" | "m/s^2";
 
 /** Einheiten, die es nur zum Anzeigen gibt — nie zum Rechnen. */
-export type AnzeigeEinheit = "grad" | "°C" | "km/h";
+export type AnzeigeEinheit = "grad" | "°C" | "km/h" | "%";
 
 /** Wie die SI-Einheit geschrieben wird. */
 const ZEICHEN: Record<Einheit, string> = {
   "": "", m: "m", kg: "kg", s: "s", A: "A", K: "K",
   N: "N", V: "V", Ohm: "Ω", F: "F", H: "H", W: "W", J: "J", Hz: "Hz", C: "C", lx: "lx", Nm: "N·m",
-  "N/m": "N/m", "1/s": "1/s",
+  "N/m": "N/m", "1/s": "1/s", Pa: "Pa",
   rad: "rad", "m/s": "m/s", "m/s^2": "m/s²",
 };
 
@@ -50,6 +50,8 @@ const UMRECHNUNG: Record<AnzeigeEinheit, { si: Einheit; hin: (x: number) => numb
   grad: { si: "rad", hin: r => (r * 180) / Math.PI, her: d => (d * Math.PI) / 180, zeichen: "°" },
   "°C": { si: "K", hin: k => k - 273.15, her: c => c + 273.15, zeichen: "°C" },
   "km/h": { si: "m/s", hin: v => v * 3.6, her: v => v / 3.6, zeichen: "km/h" },
+  // Dehnung liest sich in Prozent, gerechnet wird mit dem blossen Verhältnis.
+  "%": { si: "", hin: x => x * 100, her: x => x / 100, zeichen: "%" },
 };
 
 /** Drei geltende Ziffern, deutsches Komma, keine überflüssigen Nullen. */

@@ -14,6 +14,7 @@
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
 import { gesamtMasse, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
+import { querschnitt, werkstoff } from "./material";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import type { WeltZustand } from "./welt";
@@ -57,7 +58,7 @@ export function generatorWert(form: number, frequenz: number, amplitude: number,
  * durch den Verbindungsgraphen auf — sonst zählte man dieselben Gewichte
  * zweimal, einmal roh und einmal übersetzt.
  */
-const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene", "fadenpendel"] as const;
+const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene", "fadenpendel", "probe"] as const;
 
 /**
  * Was ein einzelnes Gerät nach unten zieht, in Newton.
@@ -99,6 +100,10 @@ function eigengewicht(szene: Szene, g: Geraet, mechanik: MechanikZustand): numbe
     case "schiefeebene":
       return masse * G * Math.sin(g.werte.winkel ?? 0);
 
+    // Die Probe trägt weiter, was unter ihr hängt — sie fügt nichts hinzu.
+    case "probe":
+      return zugAnProbe(szene, g, mechanik);
+
     default:
       return 0;
   }
@@ -111,6 +116,44 @@ export const tragendeSeile = (g: Geraet) => Math.max(1, Math.round(g.werte.rolle
 export function lastAmFlaschenzug(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
   return haengtDaran(szene, g.id, "last", "mechanik", EIGENE_RECHNUNG)
     .reduce((summe, x) => summe + eigengewicht(szene, x, mechanik), 0);
+}
+
+/** Die Kraft, die an einer Materialprobe zieht, in Newton. */
+export function zugAnProbe(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
+  return haengtDaran(szene, g.id, "unten", "mechanik", EIGENE_RECHNUNG)
+    .reduce((summe, x) => summe + eigengewicht(szene, x, mechanik), 0);
+}
+
+/**
+ * Der Zugversuch an einer Probe.
+ *
+ * σ = F/A ist die Spannung im Draht — deshalb reißt ein dünner Draht bei
+ * weniger Kraft als ein dicker aus demselben Werkstoff, und deshalb ist die
+ * Spannung und nicht die Kraft die Zahl, die über den Bruch entscheidet.
+ * ε = σ/E ist das Hookesche Gesetz in seiner allgemeinen Form; die
+ * Verlängerung folgt daraus mit der Ausgangslänge.
+ */
+export function zugversuch(szene: Szene, g: Geraet, mechanik: MechanikZustand) {
+  const stoff = werkstoff(g.werte.werkstoff ?? 0);
+  const flaeche = querschnitt(Math.max(1e-5, g.werte.durchmesser ?? 0.0004));
+  const laenge = Math.max(0.01, g.werte.laenge ?? 0.2);
+  const kraft = zugAnProbe(szene, g, mechanik);
+  const spannung = kraft / flaeche;
+  const dehnung = spannung / stoff.E;
+  return {
+    stoff, flaeche, laenge, kraft, spannung, dehnung,
+    verlaengerung: dehnung * laenge,
+    /** Wie weit die Probe ihrer Zugfestigkeit schon nahe ist. */
+    auslastung: spannung / stoff.zugfestigkeit,
+    reisst: spannung > stoff.zugfestigkeit,
+  };
+}
+
+/** Welche Proben gerade überlastet sind — sie reißen im nächsten Augenblick. */
+export function ueberlastet(szene: Szene, mechanik: MechanikZustand): string[] {
+  return szene.geraete
+    .filter(g => g.typ === "probe" && zugversuch(szene, g, mechanik).reisst)
+    .map(g => g.id);
 }
 
 /**
@@ -142,6 +185,14 @@ export function schritt(
 } {
   const t = zustand.t + dt;
   const mechanik = mechanikSchritt(szene, zustand.mechanik, dt);
+
+  // Die Verlängerung jeder Probe kommt als »Auslenkung« in denselben Zustand:
+  // Zeichnung und Anschlusspunkt lesen sie dort, ohne dafür einen eigenen Weg
+  // zu brauchen.
+  for (const g of szene.geraete) {
+    if (g.typ !== "probe") continue;
+    mechanik[g.id] = { q: zugversuch(szene, g, mechanik).verlaengerung, v: 0, start: 0 };
+  }
   const werte = new Map<SignalId, number>();
 
   // Ein Stromkreis laesst sich nicht Bauteil fuer Bauteil rechnen: durch eine
@@ -231,6 +282,15 @@ export function schritt(
       case "amperemeter":
         if (kreis) werte.set(signalId(g.id, "strom"), kreis.strom.get(g.id) ?? 0);
         break;
+
+      case "probe": {
+        const z = zugversuch(szene, g, mechanik);
+        werte.set(signalId(g.id, "kraft"), z.kraft);
+        werte.set(signalId(g.id, "spannung"), z.spannung);
+        werte.set(signalId(g.id, "dehnung"), z.dehnung);
+        werte.set(signalId(g.id, "verlaengerung"), z.verlaengerung);
+        break;
+      }
 
       case "schiefeebene": {
         const s = mechanik[g.id];

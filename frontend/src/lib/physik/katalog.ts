@@ -11,6 +11,7 @@
  */
 import { bogen } from "./einheiten";
 import { FEDER_RUHE } from "./geometrie";
+import { WERKSTOFF_AUSWAHL } from "./material";
 import { HEBEL_ANSCHLAG } from "./mechanik";
 import type { GeraetTyp } from "./typen";
 
@@ -310,6 +311,33 @@ export const KATALOG: GeraetTyp[] = [
     ],
     parameter: [],
     signale: [{ schluessel: "strom", name: "Strom", einheit: "A" }],
+  },
+  {
+    typ: "probe",
+    name: "Materialprobe",
+    icon: "🧪",
+    bereich: "mechanik",
+    groesse: { b: 0.05, h: 0.05 },
+    ports: [
+      { id: "oese", art: "mechanik", name: "Einspannung oben", pos: { x: 0, y: 0.025 } },
+      // Sitzt am unteren Ende des *gedehnten* Drahts; wo genau, rechnet
+      // geometrie.ts aus der Dehnung aus.
+      { id: "unten", art: "mechanik", name: "Last", pos: { x: 0, y: -0.175 } },
+    ],
+    parameter: [
+      {
+        schluessel: "werkstoff", name: "Werkstoff", einheit: "", standard: 0,
+        min: 0, max: WERKSTOFF_AUSWAHL.length - 1, optionen: WERKSTOFF_AUSWAHL,
+      },
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.2, min: 0.05, max: 0.6 },
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.0004, min: 0.0001, max: 0.003 },
+    ],
+    signale: [
+      { schluessel: "kraft", name: "Zugkraft", einheit: "N" },
+      { schluessel: "spannung", name: "Zugspannung", einheit: "Pa" },
+      { schluessel: "dehnung", name: "Dehnung", einheit: "", anzeige: "%" },
+      { schluessel: "verlaengerung", name: "Verlängerung", einheit: "m" },
+    ],
   },
   {
     typ: "signalgeber",

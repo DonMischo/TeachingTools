@@ -94,6 +94,10 @@ export function beweglicherPortOrt(
   s: { q: number } | undefined,
 ): Punkt | null {
   if (g.typ === "stativ" && portId === "haken") return stativHaken(g);
+  // Die Probe wird länger, wenn man zieht — die Last hängt am gedehnten Ende.
+  if (g.typ === "probe" && portId === "unten") {
+    return { x: g.pos.x, y: g.pos.y - (g.werte.laenge ?? 0.2) - (s?.q ?? 0) };
+  }
   if (portId === "koerper") return koerperOrt(g, s);
   if ((g.typ === "hebel" || g.typ === "waage") && (portId === "links" || portId === "rechts")) {
     return hebelArmOrt(g, portId, s?.q ?? g.werte.startneigung ?? 0);

@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Messbus } from "@/lib/physik/messbus";
 import { Welt, type Stoss } from "@/lib/physik/welt";
-import { DT, leererZustand, schritt, type LaborZustand } from "@/lib/physik/rechenwerke";
+import { DT, leererZustand, schritt, ueberlastet, type LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Szene } from "@/lib/physik/typen";
 
 export function useSimulation(
@@ -25,6 +25,8 @@ export function useSimulation(
   tempo: number,
   /** Wird nach einem Schritt mit den Zusammenstößen gerufen, die er brachte. */
   beiStoss?: (stoesse: Stoss[], zustand: LaborZustand) => void,
+  /** Wird gerufen, wenn eine Materialprobe ihre Zugfestigkeit überschreitet. */
+  beiBruch?: (proben: string[], zustand: LaborZustand) => void,
 ) {
   const bus = useRef<Messbus>(null as unknown as Messbus);
   if (bus.current === null) bus.current = new Messbus();
@@ -42,6 +44,8 @@ export function useSimulation(
   // Über ein Ref, damit ein neuer Rückruf die Schleife nicht neu startet.
   const meldung = useRef(beiStoss);
   meldung.current = beiStoss;
+  const rissMeldung = useRef(beiBruch);
+  rissMeldung.current = beiBruch;
 
   /** Meldet eine Zeichenroutine an; gibt das Abmelden zurück. */
   const beobachte = useCallback((fn: () => void) => {
@@ -88,6 +92,9 @@ export function useSimulation(
         // Erst melden, wenn der Zustand steht — sonst beschreibt der Bericht
         // den Augenblick vor dem Stoß.
         if (neueStoesse.length) meldung.current?.(neueStoesse, zustand.current);
+
+        const gerissen = ueberlastet(szeneRef.current, zustand.current.mechanik);
+        if (gerissen.length) rissMeldung.current?.(gerissen, zustand.current);
         bus.current.schreibe(ergebnis.zustand.t, ergebnis.werte);
         rest -= DT;
         schritte++;

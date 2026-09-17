@@ -15,11 +15,12 @@ import { formatiere, nachSI } from "@/lib/physik/einheiten";
 import { KATALOG, geraetTyp } from "@/lib/physik/katalog";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { istSchwinger } from "@/lib/physik/mechanik";
-import { bericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
+import { bericht, bruchBericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
+import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Stoss } from "@/lib/physik/welt";
 import { Bericht } from "./Bericht";
-import { entferne, freierPlatz, neueSzene, stelle, stelleEin, trenne, treueVon } from "@/lib/physik/szene";
+import { aufgeloest, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAn, treueVon } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
 import Oszilloskop from "./Oszilloskop";
@@ -106,8 +107,50 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     if (haltBeiStoss) setLaeuft(false);
   }, [szene, haltBeiStoss, lauf]);
 
+  /**
+   * Eine Probe reißt.
+   *
+   * Die Verbindung unter ihr wird gekappt — was daran hing, fällt — und an der
+   * Stelle bleibt ein Marker mit der Spannung, bei der es passiert ist. Der
+   * Marker trägt eine feste Kennung, damit derselbe Riss nicht zweimal
+   * festgehalten wird, falls die Meldung ein Bild zu spät abreißt.
+   */
+  const reisseDurch = useCallback((
+    proben: string[],
+    stand: LaborZustand,
+    art: "riss" | "schere" | "kerze" = "riss",
+  ) => {
+    for (const id of proben) {
+      const g = szene.geraete.find(x => x.id === id);
+      if (!g) continue;
+      const ort = portOrt(aufgeloest(szene, stand.mechanik).geraete.find(x => x.id === id)!, "unten",
+        stand.mechanik[id]) ?? g.pos;
+      const stoff = werkstoff(g.werte.werkstoff ?? 0);
+      const markerId = `riss-${id}-${lauf}`;
+
+      setMarker(alt => {
+        if (alt.some(m => m.id === markerId)) return alt;
+        const kerzeGeht = stoff.brennbar;
+        return [...alt, {
+          id: markerId, art: "stoss", ort, t: stand.t, lauf,
+          titel: art === "schere" ? "✂️ Durchtrennt" : art === "kerze" ? "🕯️ Durchgebrannt" : "💥 Riss",
+          erklaerung: art === "riss"
+            ? `Die Probe aus ${stoff.name} hat ihre Zugfestigkeit überschritten und ist gerissen. Entscheidend war nicht die Kraft, sondern die Spannung σ = F/A: derselbe Klotz reißt einen dünnen Draht und lässt einen dicken aus demselben Werkstoff kalt.`
+            : art === "kerze"
+              ? (kerzeGeht
+                ? `${stoff.name} schmilzt und brennt durch — die Last fällt, ohne dass je die Zugfestigkeit erreicht war.`
+                : `${stoff.name} brennt nicht; hier hat die Flamme den Draht so weit erweicht, dass er die Last nicht mehr trug.`)
+              : "Mit der Schere durchtrennt — die Last fällt, unabhängig von der Zugfestigkeit.",
+          bericht: bruchBericht(szene, g, stand),
+        }];
+      });
+
+      setSzene(vorher => trenneAn(vorher, { geraet: id, port: "unten" }));
+    }
+  }, [szene, lauf]);
+
   const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } =
-    useSimulation(szene, laeuft, tempo, beiStoss);
+    useSimulation(szene, laeuft, tempo, beiStoss, reisseDurch);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -384,6 +427,21 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                     geraete: s.geraete.map(g => (g.id === geraet.id ? { ...g, treue: t } : g)),
                   }))}
                 />
+              )}
+
+              {geraet.typ === "probe" && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => reisseDurch([geraet.id], zustand.current, "schere")}
+                    className="flex-1 rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
+                    title="Trennt den Draht durch — die Last fällt."
+                  >✂️ Durchschneiden</button>
+                  <button
+                    onClick={() => reisseDurch([geraet.id], zustand.current, "kerze")}
+                    className="flex-1 rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
+                    title="Hält eine Flamme daran — was schmilzt oder brennt, gibt nach."
+                  >🕯️ Durchbrennen</button>
+                </div>
               )}
 
               {istSchwinger(geraet.typ) && (
