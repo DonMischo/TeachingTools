@@ -14,7 +14,7 @@
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
 import { gesamtMasse, haltekraft, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
-import { feststoff, masseKugel, querschnitt, werkstoff } from "./material";
+import { feststoff, masseKasten, masseKugel, querschnitt, werkstoff } from "./material";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import type { WeltZustand } from "./welt";
@@ -121,7 +121,25 @@ export function lastAmFlaschenzug(szene: Szene, g: Geraet, mechanik: MechanikZus
 /** Die Masse eines Bauteils, in Kilogramm. */
 export function bauteilMasse(g: Geraet): number {
   if (g.typ === "kugel") return masseKugel(feststoff(g.werte.stoff ?? 2), g.werte.durchmesser ?? 0.02);
+  if (g.typ === "klotz") {
+    return masseKasten(feststoff(g.werte.stoff ?? 0), g.werte.breite ?? 0.12, g.werte.hoehe ?? 0.12);
+  }
+  if (g.typ === "brett") {
+    return masseKasten(feststoff(g.werte.stoff ?? 0), g.werte.laenge ?? 0.5, g.werte.dicke ?? 0.02);
+  }
   return g.werte.masse ?? 0.1;
+}
+
+/**
+ * Was auf der Ladefläche eines Wagens festgezurrt ist, in Kilogramm.
+ *
+ * Angehängt heißt festgezurrt: die Ladung fährt mit und zählt zur trägen
+ * Masse. Was nur obendrauf *liegt*, ist hier nicht dabei — das trägt der
+ * Löser über die Reibung, und beim Aufprall fliegt es weiter. Genau dieser
+ * Unterschied ist der Gurtversuch.
+ */
+export function wagenLast(szene: Szene, id: string): number {
+  return haengtDaran(szene, id, "oben").reduce((summe, x) => summe + bauteilMasse(x), 0);
 }
 
 /**
@@ -280,6 +298,19 @@ export function schritt(
       case "kraftmesser":
         werte.set(signalId(g.id, "kraft"), haengendeKraft(szene, g.id, mechanik));
         break;
+
+      // Murmel und Wagen rechnet der Löser, nicht die Differentialgleichung:
+      // ihre Messwerte kommen deshalb aus der Welt.
+      case "kugel":
+      case "wagen": {
+        const k = welt[g.id];
+        if (!k) break;
+        werte.set(signalId(g.id, "geschwindigkeit"), Math.hypot(k.vx, k.vy));
+        if (g.typ === "kugel") werte.set(signalId(g.id, "hoehe"), k.y);
+        // Der Weg zählt ab dort, wo der Wagen zuletzt hingestellt wurde.
+        else werte.set(signalId(g.id, "weg"), k.x - g.pos.x);
+        break;
+      }
 
       case "fadenpendel": {
         const s = mechanik[g.id];

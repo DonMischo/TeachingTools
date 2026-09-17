@@ -16,7 +16,7 @@ import { andockStelle, aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, 
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Marker } from "@/lib/physik/phaenomene";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { EIGENER_HAKEN, koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
+import { EIGENER_HAKEN, gedreht, koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
 import { feststoff } from "@/lib/physik/material";
 import { START_WERT, ZEICHNER } from "./zeichner";
 
@@ -181,8 +181,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const t = geraetTyp(g.typ);
       if (!t) continue;
       const u = umriss(g, t.groesse);
-      const dx = Math.abs(welt.x - u.mitte.x), dy = Math.abs(welt.y - u.mitte.y);
-      if (dx <= u.b / 2 && dy <= u.h / 2) return g.id;
+      // Den Finger ins Gerät hineindrehen: eine schräge Rampe greift man dort,
+      // wo sie liegt, und nicht in ihrem achsenparallelen Kasten.
+      const drehung = u.schonGedreht ? 0 : -(g.winkel ?? 0);
+      const im = gedreht({ x: 0, y: 0 }, { x: welt.x - u.mitte.x, y: welt.y - u.mitte.y }, drehung);
+      if (Math.abs(im.x) <= u.b / 2 && Math.abs(im.y) <= u.h / 2) return g.id;
     }
     return null;
   }, [sicht, blick]);

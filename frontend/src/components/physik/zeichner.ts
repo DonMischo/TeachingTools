@@ -14,7 +14,7 @@
  * Gezeichnet wird in Bildkoordinaten, umgerechnet ausschließlich über
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
-import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, stativTeile } from "@/lib/physik/geometrie";
+import { FEDER_RUHE, gedreht, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, rohrWaende, stativTeile, wagenMasse } from "@/lib/physik/geometrie";
 import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import { zumBild } from "@/lib/physik/szene";
@@ -488,7 +488,84 @@ const drehpunkt: Zeichner = (ctx, g, _zustand, blick) => {
   ctx.stroke();
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
+/**
+ * Eine Röhre — zwei Wände und die Bahn dazwischen.
+ *
+ * Gemalt werden genau die Linienzüge, die der Löser als Wände angelegt hat.
+ * Die Bahn in der Mitte ist nur angedeutet: sie zeigt, wohin die Murmel läuft,
+ * ohne dass man sie für eine dritte Wand hält.
+ */
+const rohr: Zeichner = (ctx, g, _zustand, blick) => {
+  const { waende, achse } = rohrWaende(g);
+  const welt = (p: { x: number; y: number }) => zumBild(gedreht(g.pos, p, g.winkel ?? 0), blick);
+
+  ctx.save();
+  ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = "rgba(148,163,184,0.35)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  achse.forEach((p, i) => {
+    const b = welt(p);
+    if (i === 0) ctx.moveTo(b.x, b.y); else ctx.lineTo(b.x, b.y);
+  });
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  for (const wand of waende) {
+    ctx.beginPath();
+    wand.forEach((p, i) => {
+      const b = welt(p);
+      if (i === 0) ctx.moveTo(b.x, b.y); else ctx.lineTo(b.x, b.y);
+    });
+    ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+};
+
+/**
+ * Der Versuchswagen — eine Wanne auf zwei Rädern.
+ *
+ * Die Räder werden dort gemalt, wo der Löser sie hat: sie drehen sich wirklich
+ * und tragen die Wanne. Oben ist Platz für Gewichte; angehängte fahren fest
+ * mit, lose liegen nur darauf und rutschen beim Aufprall weiter.
+ */
+const wagen: Zeichner = (ctx, g, zustand, blick) => {
+  const w = wagenMasse(g);
+  const mitte = zumBild(g.pos, blick);
+  const b = w.laenge * blick.skala, h = w.hoehe * blick.skala;
+
+  ctx.fillStyle = "rgba(56,189,248,0.25)";
+  ctx.strokeStyle = "#7dd3fc";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(mitte.x - b / 2, mitte.y - h / 2, b, h, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  // Der Drehwinkel der Räder kommt aus der Welt: so sieht man am Rollen, dass
+  // der Wagen fährt, und am Stillstand der Speiche, dass er rutscht.
+  const drehung = zustand.welt[g.id]?.winkel ?? 0;
+  for (const achse of w.achsen) {
+    const ort = zumBild({ x: g.pos.x + achse.x, y: g.pos.y + achse.y }, blick);
+    const r = (w.rad / 2) * blick.skala;
+    ctx.fillStyle = "rgba(15,23,42,0.85)";
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(ort.x, ort.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ort.x, ort.y);
+    ctx.lineTo(ort.x + r * Math.cos(-drehung), ort.y + r * Math.sin(-drehung));
+    ctx.stroke();
+  }
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe, rohr, kruemmer: rohr, wagen };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 /**
@@ -498,7 +575,19 @@ export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, pr
  * Drehwinkel — bei ihnen wanderten nur die Anschlüsse, während das Bild stehen
  * blieb. Für die bleibt das Drehen deshalb aus, bis ihre Zeichnung es kann.
  */
-export const DREHBAR = (typ: string) => typ === "stativ" || !(typ in ZEICHNER);
+/** Zeichnungen, die den Drehwinkel schon berücksichtigen. */
+const DREHT_MIT = new Set(["stativ", "rohr", "kruemmer"]);
+
+export const DREHBAR = (typ: string) => DREHT_MIT.has(typ) || !(typ in ZEICHNER);
+
+/**
+ * Geräte, die sich frei drehen lassen — nicht nur um Vierteldrehungen.
+ *
+ * Für eine Rampe oder eine Rohrbahn ist gerade der Zwischenwinkel der Punkt:
+ * bei 12° rollt die Murmel an, bei 40° schießt sie davon. Die Vierteldrehung
+ * bleibt daneben stehen, weil »quer stellen« der häufigste Griff ist.
+ */
+export const FREI_DREHBAR = new Set(["rohr", "kruemmer", "brett", "klotz"]);
 
 export const START_WERT: Record<string, string> = {
   fadenpendel: "startwinkel",

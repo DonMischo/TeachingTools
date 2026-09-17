@@ -22,9 +22,10 @@
  * beim ersten Kontakt aus der Reichweite. Danach passierte nie wieder etwas.
  */
 import * as planck from "planck";
-import { koerperRadius } from "./geometrie";
+import { koerperRadius, rohrWaende, wagenMasse } from "./geometrie";
 import { gesamtMasse, type MechanikZustand } from "./mechanik";
 import { feststoff, masseKasten, masseKugel } from "./material";
+import { wagenLast } from "./rechenwerke";
 import { aufgeloest } from "./szene";
 import type { Geraet, Modelltreue, Szene } from "./typen";
 
@@ -56,8 +57,18 @@ export interface Stoss {
  * Aufhängen, kein Hindernis; als Hindernis stieß der Pendelkörper gegen die
  * Stange seines eigenen Stativs und kam nie auf die andere Seite herum.
  */
-const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "drehpunkt", "abschuss", "flaschenzug",
+const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "drehpunkt", "abschuss", "rohr", "kruemmer", "flaschenzug",
   "batterie", "widerstand", "lampe", "schalter", "voltmeter", "amperemeter", "signalgeber"]);
+
+/**
+ * Geräte, deren Körper aus ihren Einstellungen entsteht.
+ *
+ * Bei ihnen wandern Maße, Werkstoff und Drehung in die Bauart-Kennung: ändert
+ * man am Regler etwas, stimmt die Kennung nicht mehr, und der Körper wird mit
+ * den neuen Eigenschaften neu gebaut. Ohne das bliebe ein verlängertes Rohr
+ * körperlich so kurz, wie es beim Hinstellen war.
+ */
+const MASSGESCHNEIDERT = new Set(["brett", "klotz", "kugel", "rohr", "kruemmer", "wagen"]);
 
 /** Geräte, die ihren eigenen Körper abgeben, sobald sie irgendwo eingehängt sind. */
 const HAENGBAR = new Set(["massestueck", "brett", "klotz", "kugel"]);
@@ -81,6 +92,8 @@ export class Welt {
   private welt = new planck.World({ gravity: new planck.Vec2(0, -9.81), allowSleep: false });
   private koerper = new Map<string, planck.Body>();
   private anker = new Map<string, planck.Body>();
+  // Räder und anderes Beiwerk, das mit seinem Gerät verschwinden muss.
+  private beiwerk = new Map<string, planck.Body[]>();
   private bauart = new Map<string, string>();
   private startWerte = new Map<string, number>();
   private stoesse: Stoss[] = [];
@@ -131,7 +144,7 @@ export class Welt {
     if (g.typ === "brett" || g.typ === "klotz") {
       return (g.werte.fest ?? 0) >= 0.5 ? "statisch" : "frei";
     }
-    if (g.typ === "massestueck" || g.typ === "kugel") return "frei";
+    if (g.typ === "massestueck" || g.typ === "kugel" || g.typ === "wagen") return "frei";
     return null;
   }
 
@@ -140,8 +153,10 @@ export class Welt {
     if (body) this.welt.destroyBody(body);
     const anker = this.anker.get(id);
     if (anker) this.welt.destroyBody(anker);
+    for (const teil of this.beiwerk.get(id) ?? []) this.welt.destroyBody(teil);
     this.koerper.delete(id);
     this.anker.delete(id);
+    this.beiwerk.delete(id);
     this.bauart.delete(id);
     this.startWerte.delete(id);
   }
@@ -159,9 +174,12 @@ export class Welt {
       // aendert sich die Kennung und der Koerper wird mit der neuen Masse und
       // der neuen Groesse neu gebaut.
       if (art === "gelenk") art = `gelenk:${gesamtMasse(szene, g).toFixed(4)}`;
+      // Auch die Ladung gehört zur Kennung: zurrt man ein Gewicht fest, wird
+      // die Wanne mit der neuen Masse neu gebaut.
+      if (g.typ === "wagen") art = `${art}:last${wagenLast(szene, g.id).toFixed(4)}`;
       // Maße, Werkstoff und Lage stecken in der Kennung: ändert man sie, wird
       // der Körper mit den neuen Eigenschaften neu gebaut.
-      if (art && (g.typ === "brett" || g.typ === "klotz" || g.typ === "kugel")) {
+      if (art && MASSGESCHNEIDERT.has(g.typ)) {
         art = `${art}:${g.typ}:${JSON.stringify(g.werte)}:${(g.winkel ?? 0).toFixed(3)}`;
       }
       if (art) gewollt.set(g.id, { g, art });
@@ -222,6 +240,55 @@ export class Welt {
     });
     body.setUserData(id);
 
+    // Ein Rohr ist kein Klotz, sondern zwei Wände mit Luft dazwischen. Als
+    // Kettenform liegen sie dem Löser genau so vor, wie die Werkbank sie malt.
+    if (g.typ === "rohr" || g.typ === "kruemmer") {
+      for (const wand of rohrWaende(g).waende) {
+        body.createFixture(new planck.Chain(wand.map(p => new planck.Vec2(p.x, p.y)), false), {
+          friction: 0.25,
+          restitution: 0.1,
+        });
+      }
+      this.koerper.set(id, body);
+      this.bauart.set(id, art);
+      return;
+    }
+
+    // Der Versuchswagen: eine Wanne auf zwei frei drehenden Rädern. Die Räder
+    // sind eigene Körper an Drehgelenken — nur dann rollt er wirklich, statt
+    // auf dem Boden zu schleifen.
+    if (g.typ === "wagen") {
+      const w = wagenMasse(g);
+      // Festgezurrte Ladung hat keinen eigenen Körper — ihre Masse muss
+      // deshalb in die Wanne, sonst schöbe ein beladener Wagen so leicht an
+      // wie ein leerer.
+      const leer = Math.max(0.01, (g.werte.masse ?? 0.5) + wagenLast(szene, g.id));
+      body.setLinearDamping(Math.max(0, g.werte.rollreibung ?? 0.05));
+      body.createFixture(new planck.Box(w.laenge / 2, w.hoehe / 2), {
+        density: leer / (w.laenge * w.hoehe),
+        friction: 0.4,
+        restitution: 0.05,
+      });
+      const raeder: planck.Body[] = [];
+      for (const achse of w.achsen) {
+        const mitte = new planck.Vec2(g.pos.x + achse.x, g.pos.y + achse.y);
+        const rad = this.welt.createBody({ type: "dynamic", position: mitte });
+        // Ohne Namen zählt die Berührung Rad–Boden nicht als Ereignis; sonst
+        // hinterließe jedes rollende Rad im Parcours einen Marker.
+        rad.createFixture(new planck.Circle(w.rad / 2), {
+          density: 600,
+          friction: 0.9,
+          restitution: 0.05,
+        });
+        this.welt.createJoint(new planck.RevoluteJoint({}, body, rad, mitte));
+        raeder.push(rad);
+      }
+      this.beiwerk.set(id, raeder);
+      this.koerper.set(id, body);
+      this.bauart.set(id, art);
+      return;
+    }
+
     // Murmeln sind rund und rollen — als Kasten täten sie es nicht.
     if (g.typ === "kugel") {
       const stoff = feststoff(g.werte.stoff ?? 2);
@@ -274,7 +341,19 @@ export class Welt {
    * und neu losgelassen — sonst bliebe es im realen Modell unbeeindruckt.
    */
   private fuehreNach(id: string, g: Geraet, art: string) {
-    if (!art.startsWith("gelenk")) return;
+    if (!art.startsWith("gelenk")) {
+      // Verschiebt man eine Rampe oder ein Rohr, muss der Körper mit. Sonst
+      // bliebe die Wand, an der die Murmel abprallt, am alten Platz stehen,
+      // während das Bild längst woanders ist.
+      const fest = this.koerper.get(id);
+      if (!fest || !art.startsWith("statisch")) return;
+      const p = fest.getPosition(), w = g.winkel ?? 0;
+      if (Math.abs(p.x - g.pos.x) > 1e-9 || Math.abs(p.y - g.pos.y) > 1e-9
+        || Math.abs(fest.getAngle() - w) > 1e-9) {
+        fest.setTransform(new planck.Vec2(g.pos.x, g.pos.y), w);
+      }
+      return;
+    }
     const anker = this.anker.get(id);
     const bob = this.koerper.get(id);
     if (!anker || !bob) return;
@@ -333,17 +412,33 @@ export class Welt {
   setzeOrt(id: string, pos: { x: number; y: number }) {
     const body = this.koerper.get(id);
     if (!body) return;
-    body.setPosition(new planck.Vec2(pos.x, pos.y));
-    body.setLinearVelocity(new planck.Vec2(0, 0));
-    body.setAwake(true);
+    // Räder und anderes Beiwerk wandern um dasselbe Stück mit. Ohne das
+    // bleiben sie am alten Platz zurück, und die Gelenke reißen den Wagen
+    // beim nächsten Schritt wieder dorthin.
+    const alt = body.getPosition();
+    const um = new planck.Vec2(pos.x - alt.x, pos.y - alt.y);
+    for (const teil of [body, ...(this.beiwerk.get(id) ?? [])]) {
+      const p = teil.getPosition();
+      teil.setPosition(new planck.Vec2(p.x + um.x, p.y + um.y));
+      teil.setLinearVelocity(new planck.Vec2(0, 0));
+      teil.setAwake(true);
+    }
   }
 
-  /** Gibt einem Körper ein Tempo — der Abschuss. */
+  /**
+   * Gibt einem Körper ein Tempo — der Abschuss, der Schubs an den Wagen.
+   *
+   * Das Beiwerk bekommt dasselbe Tempo. Ein Wagen, dessen Räder stehen
+   * blieben, wurde von seinen eigenen Gelenken sofort wieder abgebremst und
+   * rollte kürzer als ein Klotz, der bloß rutscht.
+   */
   gibTempo(id: string, vx: number, vy: number) {
     const body = this.koerper.get(id);
     if (!body) return;
-    body.setLinearVelocity(new planck.Vec2(vx, vy));
-    body.setAwake(true);
+    for (const teil of [body, ...(this.beiwerk.get(id) ?? [])]) {
+      teil.setLinearVelocity(new planck.Vec2(vx, vy));
+      teil.setAwake(true);
+    }
   }
 
   zustand(): WeltZustand {

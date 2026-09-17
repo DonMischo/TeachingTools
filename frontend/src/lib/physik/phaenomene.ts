@@ -11,7 +11,7 @@
  */
 import { formatiere, G, grad, type AnzeigeEinheit, type Einheit } from "./einheiten";
 import { hebelMomente, gesamtMasse } from "./mechanik";
-import { abschuss, bauteilMasse, zugversuch } from "./rechenwerke";
+import { abschuss, bauteilMasse, wagenLast, zugversuch } from "./rechenwerke";
 import type { LaborZustand } from "./rechenwerke";
 import { bauteilSpannung } from "./stromkreis";
 import type { Geraet, Punkt, Szene } from "./typen";
@@ -153,6 +153,22 @@ export function bericht(szene: Szene, g: Geraet, zustand: LaborZustand): Groesse
         groesse("Masse", masse, "kg"),
         groesse("Geschwindigkeit", tempo, "m/s"),
         groesse("Höhe", koerper ? koerper.y : g.pos.y, "m"),
+        groesse("Bewegungsenergie", 0.5 * masse * tempo * tempo, "J", "E_kin = ½ · m · v²",
+          `0,5 · ${z(masse)} · ${z(tempo)}²`),
+        groesse("Impuls", masse * tempo, "Nm", "p = m · v", `${z(masse)} · ${z(tempo)}`),
+      ];
+    }
+
+    case "wagen": {
+      const leer = g.werte.masse ?? 0.5;
+      const ladung = wagenLast(szene, g.id);
+      const masse = leer + ladung;
+      const tempo = koerper ? Math.hypot(koerper.vx, koerper.vy) : 0;
+      return [
+        groesse("Leermasse", leer, "kg"),
+        groesse("Festgezurrte Ladung", ladung, "kg"),
+        groesse("Gesamtmasse", masse, "kg", "m = m_leer + m_Ladung", `${z(leer)} + ${z(ladung)}`),
+        groesse("Geschwindigkeit", tempo, "m/s"),
         groesse("Bewegungsenergie", 0.5 * masse * tempo * tempo, "J", "E_kin = ½ · m · v²",
           `0,5 · ${z(masse)} · ${z(tempo)}²`),
         groesse("Impuls", masse * tempo, "Nm", "p = m · v", `${z(masse)} · ${z(tempo)}`),

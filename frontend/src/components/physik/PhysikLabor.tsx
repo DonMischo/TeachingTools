@@ -11,7 +11,7 @@
  * noch nichts — Messbus und Oszilloskop kommen in 1b, die Mechanik in 1c.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { formatiere, nachSI } from "@/lib/physik/einheiten";
+import { bogen, formatiere, grad, nachSI } from "@/lib/physik/einheiten";
 import { KATALOG, geraetTyp, standardWerte } from "@/lib/physik/katalog";
 import { ablageHoehe } from "@/lib/physik/geometrie";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
@@ -25,7 +25,7 @@ import { Bericht } from "./Bericht";
 import { aufgeloest, bewege, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
-import { DREHBAR } from "./zeichner";
+import { DREHBAR, FREI_DREHBAR } from "./zeichner";
 import Oszilloskop from "./Oszilloskop";
 import { useSimulation } from "./useSimulation";
 
@@ -472,6 +472,25 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                     geraete: s.geraete.map(g => (g.id === geraet.id ? { ...g, treue: t } : g)),
                   }))}
                 />
+              )}
+
+              {FREI_DREHBAR.has(geraet.typ) && (
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-[var(--text-muted)]">
+                    Neigung <b className="text-[var(--text)]">{Math.round(grad(geraet.winkel ?? 0))}°</b>
+                  </span>
+                  <input
+                    type="range"
+                    min={-180} max={180} step={1}
+                    value={Math.round(grad(geraet.winkel ?? 0))}
+                    onChange={e => setSzene(s => ({
+                      ...s,
+                      geraete: s.geraete.map(x => (x.id === geraet.id
+                        ? { ...x, winkel: bogen(Number(e.target.value)) } : x)),
+                    }))}
+                    className="accent-[var(--accent)]"
+                  />
+                </label>
               )}
 
               {DREHBAR(geraet.typ) && (

@@ -222,6 +222,60 @@ export const KATALOG: GeraetTyp[] = [
     ],
   },
   {
+    typ: "rohr",
+    name: "Rohr",
+    icon: "🛣️",
+    bereich: "aufbau",
+    groesse: { b: 0.4, h: 0.06 },
+    ports: [
+      { id: "ein", art: "mechanik", name: "Eingang", pos: { x: -0.2, y: 0 } },
+      { id: "aus", art: "mechanik", name: "Ausgang", pos: { x: 0.2, y: 0 } },
+    ],
+    parameter: [
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.4, min: 0.1, max: 2 },
+      { schluessel: "weite", name: "Lichte Weite", einheit: "m", standard: 0.05, min: 0.02, max: 0.2 },
+    ],
+    signale: [],
+  },
+  {
+    typ: "kruemmer",
+    name: "Krümmer",
+    icon: "↰",
+    bereich: "aufbau",
+    groesse: { b: 0.3, h: 0.3 },
+    ports: [
+      { id: "ein", art: "mechanik", name: "Eingang", pos: { x: 0, y: 0 } },
+      { id: "aus", art: "mechanik", name: "Ausgang", pos: { x: 0.25, y: 0.25 } },
+    ],
+    parameter: [
+      { schluessel: "radius", name: "Biegeradius", einheit: "m", standard: 0.25, min: 0.05, max: 1 },
+      { schluessel: "bogen", name: "Bogenwinkel", einheit: "rad", anzeige: "grad", standard: bogen(90), min: bogen(15), max: bogen(180) },
+      { schluessel: "weite", name: "Lichte Weite", einheit: "m", standard: 0.05, min: 0.02, max: 0.2 },
+    ],
+    signale: [],
+  },
+  {
+    typ: "wagen",
+    name: "Versuchswagen",
+    icon: "🛒",
+    bereich: "mechanik",
+    groesse: { b: 0.16, h: 0.05 },
+    ports: [
+      // Die Ladefläche trägt: was hier angehängt ist, fährt fest mit.
+      { id: "oben", art: "mechanik", name: "Ladefläche", pos: { x: 0, y: 0.025 }, traegt: true, verborgen: true },
+    ],
+    parameter: [
+      { schluessel: "masse", name: "Leermasse", einheit: "kg", standard: 0.5, min: 0.05, max: 5 },
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.16, min: 0.08, max: 0.5 },
+      { schluessel: "radgroesse", name: "Raddurchmesser", einheit: "m", standard: 0.06, min: 0.02, max: 0.15 },
+      { schluessel: "rollreibung", name: "Rollreibung", einheit: "", standard: 0.05, min: 0, max: 1 },
+    ],
+    signale: [
+      { schluessel: "geschwindigkeit", name: "Geschwindigkeit", einheit: "m/s" },
+      { schluessel: "weg", name: "Weg", einheit: "m" },
+    ],
+  },
+  {
     typ: "abschuss",
     name: "Abschussgerät",
     icon: "🏹",
