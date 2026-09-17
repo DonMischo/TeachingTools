@@ -8,7 +8,7 @@
  *
  * Alle Funktionen geben eine neue Szene zurück und lassen die alte in Ruhe.
  */
-import { beweglicherPortOrt } from "./geometrie";
+import { beweglicherPortOrt, bodenHoehe, EIGENER_HAKEN } from "./geometrie";
 import { geraetTyp, portVon, standardWerte } from "./katalog";
 import type { Blick, Geraet, Modelltreue, Punkt, PortZeiger, Szene } from "./typen";
 
@@ -208,4 +208,83 @@ export function freierPlatz(szene: Szene, start: Punkt = { x: 0, y: 0.5 }): Punk
     if (!besetzt) return platz;
   }
   return start;
+}
+
+/**
+ * Die Szene mit aufgelösten Positionen.
+ *
+ * Wer an etwas hängt, steht nicht mehr dort, wo er hingelegt wurde, sondern
+ * dort, wo er eingehängt ist — das Massestück am Haken des Pendels, das Pendel
+ * am Arm des Stativs, das Stativ auf dem Boden. Ohne diesen Schritt bleibt der
+ * Aufbau ein Schaltplan mit Linien dazwischen; mit ihm wird er ein Aufbau.
+ *
+ * Aufgelöst wird beim Zeichnen und beim Anfassen, nicht in der gespeicherten
+ * Szene: `pos` bleibt der Platz, an den das Gerät zurückfällt, wenn man die
+ * Verbindung kappt.
+ */
+export function aufgeloest(szene: Szene, mechanik: Record<string, { q: number }> = {}): Szene {
+  const plan = new Map<string, Punkt>();
+  const laeuft = new Set<string>();
+  const nachId = new Map(szene.geraete.map(g => [g.id, g]));
+
+  const ortVon = (g: Geraet): Punkt => {
+    const fertig = plan.get(g.id);
+    if (fertig) return fertig;
+    // Ein Ring darf nicht endlos kreisen: dort bleibt das Gerät, wo es liegt.
+    if (laeuft.has(g.id)) return g.pos;
+    laeuft.add(g.id);
+
+    const boden = bodenHoehe(g);
+    let ort = boden === null ? g.pos : { x: g.pos.x, y: boden };
+
+    const eigener = EIGENER_HAKEN[g.typ];
+    if (eigener) {
+      const v = szene.verbindungen.find(x =>
+        (x.von.geraet === g.id && x.von.port === eigener) ||
+        (x.nach.geraet === g.id && x.nach.port === eigener));
+      const dort = v ? (v.von.geraet === g.id ? v.nach : v.von) : null;
+      const wirt = dort ? nachId.get(dort.geraet) : undefined;
+      if (dort && wirt) {
+        const anschluss = portOrt({ ...wirt, pos: ortVon(wirt) }, dort.port, mechanik[wirt.id]);
+        // Der eigene Haken sitzt nicht im Mittelpunkt — um seinen Versatz muss
+        // das Gerät zurückgeschoben werden, sonst hängt es schief.
+        const versatz = portOrt({ ...g, pos: { x: 0, y: 0 } }, eigener, mechanik[g.id]);
+        if (anschluss && versatz) ort = { x: anschluss.x - versatz.x, y: anschluss.y - versatz.y };
+      }
+    }
+
+    laeuft.delete(g.id);
+    plan.set(g.id, ort);
+    return ort;
+  };
+
+  return {
+    ...szene,
+    geraete: szene.geraete.map(g => {
+      const ort = ortVon(g);
+      return ort.x === g.pos.x && ort.y === g.pos.y ? g : { ...g, pos: ort };
+    }),
+  };
+}
+
+/** Ob dieses Gerät gerade irgendwo eingehängt ist. */
+export function haengtIrgendwo(szene: Szene, g: Geraet): boolean {
+  const eigener = EIGENER_HAKEN[g.typ];
+  if (!eigener) return false;
+  return szene.verbindungen.some(v =>
+    (v.von.geraet === g.id && v.von.port === eigener) ||
+    (v.nach.geraet === g.id && v.nach.port === eigener));
+}
+
+/** Kappt die Verbindung, mit der dieses Gerät eingehängt ist. */
+export function aushaengen(szene: Szene, id: string): Szene {
+  const g = szene.geraete.find(x => x.id === id);
+  const eigener = g ? EIGENER_HAKEN[g.typ] : undefined;
+  if (!eigener) return szene;
+  return {
+    ...szene,
+    verbindungen: szene.verbindungen.filter(v =>
+      !((v.von.geraet === id && v.von.port === eigener) ||
+        (v.nach.geraet === id && v.nach.port === eigener))),
+  };
 }

@@ -100,7 +100,7 @@ describe("haengendeKraft", () => {
       // Das erste haengt am Haken, jedes weitere am Stueck darueber.
       const oben = i === 0
         ? { geraet: s.geraete[0].id, port: "unten" }
-        : { geraet: s.geraete[i].id, port: "oese" };
+        : { geraet: s.geraete[i].id, port: "unten" };
       s = verbinde(s, oben, { geraet: neu.id, port: "oese" });
     });
     return s;

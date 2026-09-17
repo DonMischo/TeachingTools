@@ -21,9 +21,11 @@ export const KATALOG: GeraetTyp[] = [
     icon: "🗼",
     bereich: "aufbau",
     groesse: { b: 0.3, h: 1.2 },
-    ports: [{ id: "haken", art: "mechanik", name: "Haken", pos: { x: 0.1, y: 0.55 } }],
+    // Der Haken sitzt am Ende des Auslegers; wo genau, rechnet geometrie.ts.
+    ports: [{ id: "haken", art: "mechanik", name: "Haken", pos: { x: 0.35, y: 0.6 } }],
     parameter: [
       { schluessel: "hoehe", name: "Höhe", einheit: "m", standard: 1.2, min: 0.4, max: 2 },
+      { schluessel: "armLaenge", name: "Ausleger", einheit: "m", standard: 0.35, min: 0.1, max: 0.8 },
     ],
     signale: [],
   },
@@ -33,7 +35,11 @@ export const KATALOG: GeraetTyp[] = [
     icon: "🏋️",
     bereich: "mechanik",
     groesse: { b: 0.08, h: 0.08 },
-    ports: [{ id: "oese", art: "mechanik", name: "Öse", pos: { x: 0, y: 0.04 } }],
+    ports: [
+      { id: "oese", art: "mechanik", name: "Öse oben", pos: { x: 0, y: 0.04 } },
+      // Schlitzgewichte haben unten einen zweiten Haken — daran haengt das naechste.
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.04 } },
+    ],
     parameter: [
       { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.1, min: 0.001, max: 20 },
     ],

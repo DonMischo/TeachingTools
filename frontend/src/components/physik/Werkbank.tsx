@@ -11,10 +11,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
-import { bewege, portOrt, stelleEin, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
+import { aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { koerperOrt, koerperRadius, startWertAus } from "@/lib/physik/geometrie";
+import { koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
 import { START_WERT, ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
@@ -77,6 +77,14 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     return () => window.clearTimeout(t);
   }, [fehler]);
 
+  /**
+   * Die Szene, wie sie wirklich dasteht: eingehängte Geräte an ihrem Haken,
+   * stehende auf dem Boden. Alles, was zeichnet oder trifft, benutzt diese —
+   * sonst liegt ein Massestück da, wo man es fallen ließ, und bekommt nur eine
+   * Linie zum Haken gemalt.
+   */
+  const sicht = useCallback(() => aufgeloest(szene, zustand.current.mechanik), [szene, zustand]);
+
   const bildPunkt = (e: React.PointerEvent): Punkt => {
     const r = leinwand.current!.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -84,7 +92,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
   /** Der Port unter dem Finger, wenn einer da ist. */
   const portUnter = useCallback((p: Punkt): PortZeiger | null => {
-    for (const g of [...szene.geraete].reverse()) {
+    for (const g of [...sicht().geraete].reverse()) {
       for (const port of geraetTyp(g.typ)?.ports ?? []) {
         const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
@@ -93,7 +101,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       }
     }
     return null;
-  }, [szene.geraete, blick]);
+  }, [sicht, blick]);
 
   /**
    * Der schwingende Körper unter dem Finger.
@@ -104,7 +112,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
    * so wie man es im Vorbereitungsraum auch macht.
    */
   const koerperUnter = useCallback((p: Punkt): string | null => {
-    for (const g of [...szene.geraete].reverse()) {
+    for (const g of [...sicht().geraete].reverse()) {
       const ort = koerperOrt(g, zustand.current.mechanik[g.id]);
       if (!ort) continue;
       const b = zumBild(ort, blick);
@@ -112,11 +120,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       if (Math.hypot(b.x - p.x, b.y - p.y) <= r + 4) return g.id;
     }
     return null;
-  }, [szene.geraete, blick, zustand]);
+  }, [sicht, blick, zustand]);
 
   /** Zieht den Körper eines Pendels an einen Weltpunkt. */
   const lenkeAus = useCallback((id: string, welt: Punkt) => {
-    const g = szene.geraete.find(x => x.id === id);
+    const g = sicht().geraete.find(x => x.id === id);
     if (!g) return;
     const schluessel = START_WERT[g.typ];
     const roh = startWertAus(g, welt);
@@ -124,19 +132,20 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     const def = geraetTyp(g.typ)?.parameter.find(p => p.schluessel === schluessel);
     const wert = def ? Math.min(def.max, Math.max(def.min, roh)) : roh;
     setSzene(stelleEin(szene, id, { [schluessel]: wert }));
-  }, [szene, setSzene]);
+  }, [szene, setSzene, sicht]);
 
   /** Das Gerät unter dem Finger — das oberste zuerst. */
   const geraetUnter = useCallback((p: Punkt): string | null => {
     const welt = zurWelt(p, blick);
-    for (const g of [...szene.geraete].reverse()) {
+    for (const g of [...sicht().geraete].reverse()) {
       const t = geraetTyp(g.typ);
       if (!t) continue;
-      const dx = Math.abs(welt.x - g.pos.x), dy = Math.abs(welt.y - g.pos.y);
-      if (dx <= t.groesse.b / 2 && dy <= t.groesse.h / 2) return g.id;
+      const u = umriss(g, t.groesse);
+      const dx = Math.abs(welt.x - u.mitte.x), dy = Math.abs(welt.y - u.mitte.y);
+      if (dx <= u.b / 2 && dy <= u.h / 2) return g.id;
     }
     return null;
-  }, [szene.geraete, blick]);
+  }, [sicht, blick]);
 
   function beiDruck(e: React.PointerEvent) {
     const p = bildPunkt(e);
@@ -167,8 +176,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     const id = geraetUnter(p);
     if (id) {
       setAusgewaehlt(id);
-      const g = szene.geraete.find(x => x.id === id)!;
+      const g = sicht().geraete.find(x => x.id === id)!;
       const welt = zurWelt(p, blick);
+      // Wer an etwas hängt, wird durch Ziehen abgenommen — und bleibt dabei
+      // erst einmal dort stehen, wo er hing, statt zurückzuspringen.
+      if (haengtIrgendwo(szene, g)) setSzene(bewege(aushaengen(szene, id), id, g.pos));
       zieht.current = { art: "geraet", id, griff: { x: welt.x - g.pos.x, y: welt.y - g.pos.y } };
       return;
     }
@@ -236,11 +248,13 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
     zeichneRaster(ctx, blick);
 
+    const gezeigt = sicht();
+
     // Verbindungen zuerst — sie liegen hinter den Geräten.
     ctx.lineWidth = 2.5;
-    for (const v of szene.verbindungen) {
-      const a = szene.geraete.find(g => g.id === v.von.geraet);
-      const b = szene.geraete.find(g => g.id === v.nach.geraet);
+    for (const v of gezeigt.verbindungen) {
+      const a = gezeigt.geraete.find(g => g.id === v.von.geraet);
+      const b = gezeigt.geraete.find(g => g.id === v.nach.geraet);
       if (!a || !b) continue;
       const pa = portOrt(a, v.von.port, zustand.current.mechanik[a.id]);
       const pb = portOrt(b, v.nach.port, zustand.current.mechanik[b.id]);
@@ -254,11 +268,12 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.stroke();
     }
 
-    for (const g of szene.geraete) {
+    for (const g of gezeigt.geraete) {
       const t = geraetTyp(g.typ);
       if (!t) continue;
-      const mitte = zumBild(g.pos, blick);
-      const b = t.groesse.b * blick.skala, h = t.groesse.h * blick.skala;
+      const u = umriss(g, t.groesse);
+      const mitte = zumBild(u.mitte, blick);
+      const b = u.b * blick.skala, h = u.h * blick.skala;
       const gewaehlt = g.id === ausgewaehlt;
       const unterZeiger = g.id === schwebt;
 
@@ -313,7 +328,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         ctx.stroke();
       }
     }
-  }, [szene, blick, ausgewaehlt, schwebt, offen, zustand]);
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, zustand]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.

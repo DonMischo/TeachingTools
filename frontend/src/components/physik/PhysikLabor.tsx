@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { formatiere, nachSI } from "@/lib/physik/einheiten";
 import { KATALOG, geraetTyp } from "@/lib/physik/katalog";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
+import { istSchwinger } from "@/lib/physik/mechanik";
 import { entferne, freierPlatz, neueSzene, stelle, stelleEin, trenne, treueVon } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
@@ -53,7 +54,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [laeuft, setLaeuft] = useState(true);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
-  const { bus, zustand, beobachte, zuruecksetzen } = useSimulation(szene, laeuft, tempo);
+  const { bus, zustand, beobachte, zuruecksetzen, loslassen } = useSimulation(szene, laeuft, tempo);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -237,6 +238,14 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                     geraete: s.geraete.map(g => (g.id === geraet.id ? { ...g, treue: t } : g)),
                   }))}
                 />
+              )}
+
+              {istSchwinger(geraet.typ) && (
+                <button
+                  onClick={() => { setLaeuft(true); loslassen(geraet.id); }}
+                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
+                  title="Setzt das Gerät auf seine Startauslenkung und lässt es erneut los."
+                >▶️ Loslassen</button>
               )}
 
               {typ.signale.length > 0 && (

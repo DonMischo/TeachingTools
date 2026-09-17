@@ -7,7 +7,9 @@ import { describe, it, expect } from "vitest";
 import {
   neueSzene, stelle, entferne, bewege, verbinde, trenne,
   treueVon, alsJSON, ausJSON, zumBild, zurWelt, portOrt, freierPlatz,
+  aufgeloest, aushaengen, haengtIrgendwo,
 } from "@/lib/physik/szene";
+import type { Szene } from "@/lib/physik/typen";
 
 describe("neueSzene", () => {
   it("ist leer und rechnet voreingestellt mit dem Schulbuchmodell", () => {
@@ -246,5 +248,102 @@ describe("portOrt bei beweglichen Anschlüssen", () => {
     const a = portOrt(s.geraete[0], "aufhaengung", { q: 0 })!;
     const b = portOrt(s.geraete[0], "aufhaengung", { q: Math.PI / 2 })!;
     expect(a).toEqual(b);
+  });
+});
+
+describe("aufgeloest", () => {
+  /** Hängt ein neues Gerät mit seinem eigenen Haken an einen Anschluss. */
+  function haenge(s: Szene, typ: string, wirt: number, port: string, werte: Record<string, number> = {}) {
+    const eigener = { massestueck: "oese", fadenpendel: "aufhaengung", federpendel: "aufhaengung" }[typ]!;
+    let neu = stelle(s, typ, { x: 9, y: 9 }); // absichtlich weit weg abgelegt
+    const g = neu.geraete[neu.geraete.length - 1];
+    neu = { ...neu, geraete: neu.geraete.map(x => (x.id === g.id ? { ...x, werte: { ...x.werte, ...werte } } : x)) };
+    return verbinde(neu, { geraet: neu.geraete[wirt].id, port }, { geraet: g.id, port: eigener });
+  }
+
+  it("stellt ein Stativ auf den Boden, wo immer man es ablegt", () => {
+    const s = stelle(neueSzene(), "stativ", { x: 2, y: 7.5 });
+    const fertig = aufgeloest(s);
+    // Halbe Höhe über null heißt: der Fuß steht auf der Linie.
+    expect(fertig.geraete[0].pos.y).toBeCloseTo(1.2 / 2, 9);
+    expect(fertig.geraete[0].pos.x).toBeCloseTo(2, 9);
+  });
+
+  it("stellt auch die schiefe Ebene auf den Boden", () => {
+    const s = stelle(neueSzene(), "schiefeebene", { x: 0, y: 4 });
+    const g = aufgeloest(s).geraete[0];
+    const laenge = g.werte.laenge, winkel = g.werte.winkel;
+    expect(g.pos.y).toBeCloseTo((laenge / 2) * Math.sin(winkel), 9);
+  });
+
+  it("hängt ein Massestück an den Haken, statt es liegen zu lassen", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = haenge(s, "massestueck", 0, "haken");
+    const fertig = aufgeloest(s);
+    const haken = portOrt(fertig.geraete[0], "haken")!;
+    const masse = fertig.geraete[1];
+
+    // Es liegt nicht mehr bei (9, 9), sondern hängt mit seiner Öse am Haken.
+    expect(masse.pos.x).toBeCloseTo(haken.x, 9);
+    expect(masse.pos.y).toBeCloseTo(haken.y - 0.04, 9);
+  });
+
+  it("stapelt eine Kette von Massestücken untereinander", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = haenge(s, "massestueck", 0, "haken");
+    s = haenge(s, "massestueck", 1, "unten");
+    const fertig = aufgeloest(s);
+    const [, oben, unten] = fertig.geraete;
+
+    expect(unten.pos.x).toBeCloseTo(oben.pos.x, 9);
+    // Genau eine Gerätehöhe tiefer — sie berühren sich, ohne sich zu überlappen.
+    expect(oben.pos.y - unten.pos.y).toBeCloseTo(0.08, 9);
+  });
+
+  it("hängt das Pendel an den Stativarm, sodass es dort dreht", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 1, y: 0.6 });
+    s = haenge(s, "fadenpendel", 0, "haken");
+    const fertig = aufgeloest(s);
+    const haken = portOrt(fertig.geraete[0], "haken")!;
+    const pendel = fertig.geraete[1];
+
+    // Der Drehpunkt sitzt am Haken (die Aufhängung liegt 3 cm darüber).
+    expect(pendel.pos.x).toBeCloseTo(haken.x, 9);
+    expect(pendel.pos.y).toBeCloseTo(haken.y - 0.03, 9);
+  });
+
+  it("lässt frei stehende Geräte, wo sie sind", () => {
+    const s = stelle(neueSzene(), "massestueck", { x: 1.5, y: 0.7 });
+    expect(aufgeloest(s).geraete[0].pos).toEqual({ x: 1.5, y: 0.7 });
+  });
+
+  it("verläuft sich nicht in einem Ring", () => {
+    let s = stelle(neueSzene(), "massestueck", { x: 0, y: 1 });
+    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
+    const [a, b] = s.geraete;
+    s = verbinde(s, { geraet: a.id, port: "unten" }, { geraet: b.id, port: "oese" });
+    s = verbinde(s, { geraet: b.id, port: "unten" }, { geraet: a.id, port: "oese" });
+    // Darf nicht endlos kreisen und muss endliche Orte liefern.
+    const fertig = aufgeloest(s);
+    expect(fertig.geraete.every(g => Number.isFinite(g.pos.x) && Number.isFinite(g.pos.y))).toBe(true);
+  });
+});
+
+describe("aushaengen", () => {
+  it("erkennt und kappt die Verbindung, mit der etwas hängt", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
+    const [stativ, masse] = s.geraete;
+    s = verbinde(s, { geraet: stativ.id, port: "haken" }, { geraet: masse.id, port: "oese" });
+
+    expect(haengtIrgendwo(s, masse)).toBe(true);
+    const ab = aushaengen(s, masse.id);
+    expect(ab.verbindungen).toHaveLength(0);
+    expect(haengtIrgendwo(ab, masse)).toBe(false);
+  });
+
+  it("lässt ein Gerät in Ruhe, das gar nicht hängt", () => {
+    const s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    expect(aushaengen(s, s.geraete[0].id)).toEqual(s);
   });
 });

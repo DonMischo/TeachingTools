@@ -67,11 +67,30 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
     return () => cancelAnimationFrame(id);
   }, [laeuft, tempo]);
 
+  /**
+   * Ein Gerät neu loslassen — ohne Angabe alle.
+   *
+   * Der Zustand wird schlicht vergessen; der nächste Schritt setzt das Gerät
+   * dann wieder auf seine Startauslenkung. Gebraucht wird das, sobald ein
+   * gedämpftes Pendel ausgeschwungen ist: ohne das bliebe es für immer stehen,
+   * und man müsste es erst verstellen, um es wieder in Gang zu bringen.
+   */
+  const loslassen = useCallback((id?: string) => {
+    const alt = zustand.current.mechanik;
+    zustand.current = {
+      ...zustand.current,
+      mechanik: id === undefined
+        ? {}
+        : Object.fromEntries(Object.entries(alt).filter(([k]) => k !== id)),
+    };
+    for (const fn of zuschauer.current) fn();
+  }, []);
+
   const zuruecksetzen = useCallback(() => {
     bus.current.leere();
     zustand.current = leererZustand();
     for (const fn of zuschauer.current) fn();
   }, []);
 
-  return { bus: bus.current, zustand, beobachte, zuruecksetzen };
+  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen };
 }

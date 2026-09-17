@@ -14,7 +14,7 @@
  * Gezeichnet wird in Bildkoordinaten, umgerechnet ausschließlich über
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
-import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius } from "@/lib/physik/geometrie";
+import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius, stativHaken } from "@/lib/physik/geometrie";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import { zumBild } from "@/lib/physik/szene";
 import { bauteilSpannung } from "@/lib/physik/stromkreis";
@@ -281,7 +281,45 @@ const lampe: Zeichner = (ctx, g, zustand, blick) => {
   ctx.stroke();
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
+/**
+ * Das Stativ — Fuß, Stange, Ausleger, Haken.
+ *
+ * Als Kasten mit Sinnbild war nicht zu erkennen, wo man etwas einhängt. Jetzt
+ * sieht man den Haken und hängt daran.
+ */
+const stativ: Zeichner = (ctx, g, _zustand, blick) => {
+  const hoehe = Math.max(0.1, g.werte.hoehe ?? 1.2);
+  const fuss = zumBild({ x: g.pos.x, y: g.pos.y - hoehe / 2 }, blick);
+  const kopf = zumBild({ x: g.pos.x, y: g.pos.y + hoehe / 2 }, blick);
+  const haken = zumBild(stativHaken(g), blick);
+
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = Math.max(3, 0.018 * blick.skala);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(fuss.x, fuss.y);
+  ctx.lineTo(kopf.x, kopf.y);
+  ctx.lineTo(haken.x, haken.y);
+  ctx.stroke();
+
+  // Der Fuß steht auf dem Boden — breit, damit es nicht umkippt.
+  const fussBreite = Math.max(10, 0.16 * blick.skala);
+  ctx.lineWidth = Math.max(4, 0.022 * blick.skala);
+  ctx.beginPath();
+  ctx.moveTo(fuss.x - fussBreite / 2, fuss.y);
+  ctx.lineTo(fuss.x + fussBreite / 2, fuss.y);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Der Haken selbst.
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(haken.x, haken.y + 4, 4, Math.PI, Math.PI * 2.6);
+  ctx.stroke();
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { stativ, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 export const START_WERT: Record<string, string> = {

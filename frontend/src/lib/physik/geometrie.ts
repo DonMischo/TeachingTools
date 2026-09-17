@@ -93,9 +93,55 @@ export function beweglicherPortOrt(
   portId: string,
   s: { q: number } | undefined,
 ): Punkt | null {
+  if (g.typ === "stativ" && portId === "haken") return stativHaken(g);
   if (portId === "koerper") return koerperOrt(g, s);
   if (g.typ === "hebel" && (portId === "links" || portId === "rechts")) {
     return hebelArmOrt(g, portId, s?.q ?? g.werte.startneigung ?? 0);
   }
   return null;
+}
+
+// ── Was woran hängt ──────────────────────────────────────────────────────────
+
+/**
+ * Der Anschluss, mit dem ein Gerät *selbst* irgendwo eingehängt wird.
+ *
+ * Das ist der Unterschied zwischen einem Schaltplan und einem Vorbereitungs-
+ * raum: ein Massestück, das man an einen Haken hängt, bleibt nicht liegen, wo
+ * es lag, und bekommt eine Linie zum Haken gemalt — es *ist* dann dort.
+ */
+export const EIGENER_HAKEN: Record<string, string> = {
+  massestueck: "oese",
+  fadenpendel: "aufhaengung",
+  federpendel: "aufhaengung",
+  kraftmesser: "oben",
+  flaschenzug: "zug",
+};
+
+/** Umriss eines Geräts in Weltkoordinaten — das, was man anfassen kann. */
+export function umriss(g: Geraet, standard: { b: number; h: number }): { mitte: Punkt; b: number; h: number } {
+  if (g.typ === "stativ") return { mitte: g.pos, b: 0.08, h: Math.max(0.1, g.werte.hoehe ?? 1.2) };
+  return { mitte: g.pos, b: standard.b, h: standard.h };
+}
+
+/**
+ * Die Höhe, auf der ein Gerät stehen muss, damit es auf dem Boden aufsitzt —
+ * oder null, wenn es frei schwebt. Ein Stativ, das in der Luft steht, ist kein
+ * Stativ.
+ */
+export function bodenHoehe(g: Geraet): number | null {
+  if (g.typ === "stativ") return Math.max(0.1, g.werte.hoehe ?? 1.2) / 2;
+  if (g.typ === "schiefeebene") {
+    const laenge = Math.max(0.05, g.werte.laenge ?? 1);
+    return (laenge / 2) * Math.sin(g.werte.winkel ?? 0);
+  }
+  return null;
+}
+
+/** Das Ende des Stativarms — dort wird eingehängt. */
+export function stativHaken(g: Geraet): Punkt {
+  return {
+    x: g.pos.x + (g.werte.armLaenge ?? 0.35),
+    y: g.pos.y + Math.max(0.1, g.werte.hoehe ?? 1.2) / 2,
+  };
 }
