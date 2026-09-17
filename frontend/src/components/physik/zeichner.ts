@@ -15,14 +15,15 @@
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
 import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius } from "@/lib/physik/geometrie";
-import type { Schwinger } from "@/lib/physik/mechanik";
+import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import { zumBild } from "@/lib/physik/szene";
+import { bauteilSpannung } from "@/lib/physik/stromkreis";
 import type { Blick, Geraet } from "@/lib/physik/typen";
 
 export type Zeichner = (
   ctx: CanvasRenderingContext2D,
   g: Geraet,
-  s: Schwinger | undefined,
+  zustand: LaborZustand,
   blick: Blick,
 ) => void;
 
@@ -39,7 +40,8 @@ function koerperRand(ctx: CanvasRenderingContext2D, angefasst: boolean) {
   ctx.lineWidth = angefasst ? 3 : 2;
 }
 
-const fadenpendel: Zeichner = (ctx, g, s, blick) => {
+const fadenpendel: Zeichner = (ctx, g, zustand, blick) => {
+  const s = zustand.mechanik[g.id];
   const laenge = g.werte.laenge ?? 1;
   const dreh = zumBild(g.pos, blick);
   const ort = koerperOrt(g, s)!;
@@ -74,7 +76,8 @@ const fadenpendel: Zeichner = (ctx, g, s, blick) => {
   aufhaengung(ctx, dreh.x, dreh.y);
 };
 
-const federpendel: Zeichner = (ctx, g, s, blick) => {
+const federpendel: Zeichner = (ctx, g, zustand, blick) => {
+  const s = zustand.mechanik[g.id];
   const oben = zumBild(g.pos, blick);
   const ort = koerperOrt(g, s)!;
   const unten = zumBild(ort, blick);
@@ -115,7 +118,8 @@ const federpendel: Zeichner = (ctx, g, s, blick) => {
   aufhaengung(ctx, oben.x, oben.y);
 };
 
-const hebel: Zeichner = (ctx, g, s, blick) => {
+const hebel: Zeichner = (ctx, g, zustand, blick) => {
+  const s = zustand.mechanik[g.id];
   const q = s?.q ?? g.werte.startneigung ?? 0;
   const links = zumBild(hebelArmOrt(g, "links", q), blick);
   const rechts = zumBild(hebelArmOrt(g, "rechts", q), blick);
@@ -153,7 +157,7 @@ const hebel: Zeichner = (ctx, g, s, blick) => {
   ctx.restore();
 };
 
-const flaschenzug: Zeichner = (ctx, g, _s, blick) => {
+const flaschenzug: Zeichner = (ctx, g, _zustand, blick) => {
   const n = Math.max(1, Math.round(g.werte.rollen ?? 1));
   const mitte = zumBild(g.pos, blick);
   const b = 0.12 * blick.skala;
@@ -188,7 +192,8 @@ const flaschenzug: Zeichner = (ctx, g, _s, blick) => {
   ctx.fillText(String(n) + "x", mitte.x, mitte.y);
 };
 
-const schiefeebene: Zeichner = (ctx, g, s, blick) => {
+const schiefeebene: Zeichner = (ctx, g, zustand, blick) => {
+  const s = zustand.mechanik[g.id];
   const { oben, unten } = hangEnden(g);
   const o = zumBild(oben, blick);
   const u = zumBild(unten, blick);
@@ -223,7 +228,60 @@ const schiefeebene: Zeichner = (ctx, g, s, blick) => {
   ctx.restore();
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { fadenpendel, federpendel, hebel, flaschenzug, schiefeebene };
+/**
+ * Das Lämpchen — hell nach Leistung.
+ *
+ * Die eigentliche Frage jedes Stromkreis-Versuchs ist »leuchtet sie?«.
+ * Deshalb ist die Helligkeit keine Spielerei: erst sie macht aus der Rechnung
+ * einen Versuch, den man im Klassenraum sehen kann. Skaliert wird mit der
+ * Wurzel, weil das Auge Helligkeit nicht linear wahrnimmt.
+ */
+const lampe: Zeichner = (ctx, g, zustand, blick) => {
+  const kreis = zustand.kreis;
+  let leistung = 0;
+  if (kreis) {
+    const strom = kreis.strom.get(g.id) ?? 0;
+    leistung = Math.abs(bauteilSpannung(kreis, g) * strom);
+  }
+  // Ein halbes Watt reicht einem Schullämpchen zum hellen Leuchten.
+  const helligkeit = Math.min(1, Math.sqrt(leistung / 0.5));
+
+  const mitte = zumBild(g.pos, blick);
+  const r = Math.max(6, 0.05 * blick.skala);
+
+  if (helligkeit > 0.01) {
+    const schein = ctx.createRadialGradient(mitte.x, mitte.y, 0, mitte.x, mitte.y, r * 3);
+    schein.addColorStop(0, `rgba(253,224,71,${0.75 * helligkeit})`);
+    schein.addColorStop(1, "rgba(253,224,71,0)");
+    ctx.fillStyle = schein;
+    ctx.beginPath();
+    ctx.arc(mitte.x, mitte.y, r * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = helligkeit > 0.01
+    ? `rgb(${180 + 75 * helligkeit}, ${160 + 80 * helligkeit}, ${60 + 40 * helligkeit})`
+    : "rgba(148,163,184,0.35)";
+  ctx.strokeStyle = "rgba(2,6,23,0.6)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(mitte.x, mitte.y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Der Glühfaden als Zickzack, wie im Schaltbild.
+  ctx.strokeStyle = helligkeit > 0.01 ? "rgba(120,53,15,0.9)" : "rgba(148,163,184,0.6)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 6; i++) {
+    const x = mitte.x - r * 0.55 + (i * r * 1.1) / 6;
+    const y = mitte.y + (i % 2 ? -r * 0.3 : r * 0.3);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 export const START_WERT: Record<string, string> = {

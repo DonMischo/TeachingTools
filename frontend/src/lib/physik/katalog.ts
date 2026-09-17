@@ -68,7 +68,11 @@ export const KATALOG: GeraetTyp[] = [
     parameter: [
       { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 20, min: 1, max: 1000 },
     ],
-    signale: [{ schluessel: "leistung", name: "Leistung", einheit: "W" }],
+    signale: [
+      { schluessel: "spannung", name: "Spannung", einheit: "V" },
+      { schluessel: "strom", name: "Strom", einheit: "A" },
+      { schluessel: "leistung", name: "Leistung", einheit: "W" },
+    ],
   },
   {
     typ: "fadenpendel",
@@ -190,6 +194,87 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "weg", name: "Weg", einheit: "m" },
       { schluessel: "geschwindigkeit", name: "Geschwindigkeit", einheit: "m/s" },
     ],
+  },
+  {
+    typ: "batterie",
+    name: "Batterie",
+    icon: "🔋",
+    bereich: "strom",
+    groesse: { b: 0.16, h: 0.1 },
+    ports: [
+      { id: "plus", art: "strom", name: "+", pos: { x: -0.08, y: 0 } },
+      { id: "minus", art: "strom", name: "−", pos: { x: 0.08, y: 0 } },
+    ],
+    parameter: [
+      { schluessel: "spannung", name: "Spannung", einheit: "V", standard: 4.5, min: 0.5, max: 24 },
+      { schluessel: "innenwiderstand", name: "Innenwiderstand", einheit: "Ohm", standard: 0.5, min: 0, max: 20 },
+    ],
+    signale: [
+      { schluessel: "spannung", name: "Klemmenspannung", einheit: "V" },
+      { schluessel: "strom", name: "Strom", einheit: "A" },
+    ],
+  },
+  {
+    typ: "widerstand",
+    name: "Widerstand",
+    icon: "▭",
+    bereich: "strom",
+    groesse: { b: 0.16, h: 0.07 },
+    ports: [
+      { id: "a", art: "strom", name: "links", pos: { x: -0.08, y: 0 } },
+      { id: "b", art: "strom", name: "rechts", pos: { x: 0.08, y: 0 } },
+    ],
+    parameter: [
+      { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 100, min: 1, max: 10000 },
+    ],
+    signale: [
+      { schluessel: "spannung", name: "Spannung", einheit: "V" },
+      { schluessel: "strom", name: "Strom", einheit: "A" },
+    ],
+  },
+  {
+    typ: "schalter",
+    name: "Schalter",
+    icon: "🔘",
+    bereich: "strom",
+    groesse: { b: 0.14, h: 0.08 },
+    ports: [
+      { id: "a", art: "strom", name: "links", pos: { x: -0.07, y: 0 } },
+      { id: "b", art: "strom", name: "rechts", pos: { x: 0.07, y: 0 } },
+    ],
+    parameter: [
+      {
+        schluessel: "geschlossen", name: "Stellung", einheit: "", standard: 1, min: 0, max: 1,
+        optionen: [{ wert: 1, name: "geschlossen" }, { wert: 0, name: "offen" }],
+      },
+    ],
+    signale: [],
+  },
+  {
+    typ: "voltmeter",
+    name: "Voltmeter",
+    icon: "Ⓥ",
+    bereich: "messen",
+    groesse: { b: 0.12, h: 0.12 },
+    ports: [
+      { id: "a", art: "strom", name: "+", pos: { x: -0.06, y: 0 } },
+      { id: "b", art: "strom", name: "−", pos: { x: 0.06, y: 0 } },
+    ],
+    parameter: [],
+    signale: [{ schluessel: "spannung", name: "Spannung", einheit: "V" }],
+  },
+  {
+    typ: "amperemeter",
+    name: "Amperemeter",
+    icon: "Ⓐ",
+    bereich: "messen",
+    groesse: { b: 0.12, h: 0.12 },
+    ports: [
+      { id: "a", art: "strom", name: "links", pos: { x: -0.06, y: 0 } },
+      { id: "b", art: "strom", name: "rechts", pos: { x: 0.06, y: 0 } },
+    ],
+    parameter: [],
+    signale: [{ schluessel: "strom", name: "Strom", einheit: "A" }],
   },
   {
     typ: "signalgeber",

@@ -266,7 +266,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       // sagt ueber eine Schwingung nichts aus.
       const eigen = ZEICHNER[g.typ];
       if (eigen) {
-        eigen(ctx, g, zustand.current.mechanik[g.id], blick);
+        eigen(ctx, g, zustand.current, blick);
         if (gewaehlt || unterZeiger) {
           ctx.strokeStyle = unterZeiger ? "rgba(248,250,252,0.85)" : "#38bdf8";
           ctx.lineWidth = 2;

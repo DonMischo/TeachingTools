@@ -15,6 +15,7 @@ import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
 import { hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
+import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import { haengtDaran } from "./verbindungen";
 import type { Geraet, Szene } from "./typen";
 
@@ -30,9 +31,12 @@ export const DT = 1 / 240;
 export interface LaborZustand {
   t: number;
   mechanik: MechanikZustand;
+  /** Der zuletzt gelöste Stromkreis — die Werkbank zeichnet daraus, ob eine
+   *  Lampe leuchtet. Null, solange nichts Elektrisches dasteht. */
+  kreis: Stromkreis | null;
 }
 
-export const leererZustand = (): LaborZustand => ({ t: 0, mechanik: {} });
+export const leererZustand = (): LaborZustand => ({ t: 0, mechanik: {}, kreis: null });
 
 /** Momentanwert des Funktionsgenerators. */
 export function generatorWert(form: number, frequenz: number, amplitude: number, t: number): number {
@@ -126,6 +130,13 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
   const mechanik = mechanikSchritt(szene, zustand.mechanik, dt);
   const werte = new Map<SignalId, number>();
 
+  // Ein Stromkreis laesst sich nicht Bauteil fuer Bauteil rechnen: durch eine
+  // Reihenschaltung fliesst ueberall derselbe Strom. Also einmal je Schritt
+  // das ganze Netz loesen — und nur, wenn ueberhaupt etwas Elektrisches
+  // dasteht.
+  const elektrisch = szene.geraete.some(g => stromPorts(g.typ));
+  const kreis = elektrisch ? loeseStromkreis(szene) : null;
+
   for (const g of szene.geraete) {
     if (!geraetTyp(g.typ)?.signale.length) continue;
 
@@ -178,6 +189,27 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
         break;
       }
 
+      case "lampe":
+      case "widerstand":
+      case "batterie": {
+        if (!kreis) break;
+        const spannung = bauteilSpannung(kreis, g);
+        const strom = kreis.strom.get(g.id) ?? 0;
+        werte.set(signalId(g.id, "spannung"), spannung);
+        werte.set(signalId(g.id, "strom"), strom);
+        // Nur das Laempchen meldet Leistung — daran sieht man, ob es leuchtet.
+        if (g.typ === "lampe") werte.set(signalId(g.id, "leistung"), Math.abs(spannung * strom));
+        break;
+      }
+
+      case "voltmeter":
+        if (kreis) werte.set(signalId(g.id, "spannung"), bauteilSpannung(kreis, g));
+        break;
+
+      case "amperemeter":
+        if (kreis) werte.set(signalId(g.id, "strom"), kreis.strom.get(g.id) ?? 0);
+        break;
+
       case "schiefeebene": {
         const s = mechanik[g.id];
         const winkel = g.werte.winkel ?? 0;
@@ -191,5 +223,5 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
     }
   }
 
-  return { zustand: { t, mechanik }, werte };
+  return { zustand: { t, mechanik, kreis }, werte };
 }
