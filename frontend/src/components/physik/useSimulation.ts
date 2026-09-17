@@ -15,6 +15,7 @@
  */
 import { useCallback, useEffect, useRef } from "react";
 import { Messbus } from "@/lib/physik/messbus";
+import { Welt, type Stoss } from "@/lib/physik/welt";
 import { DT, leererZustand, schritt, type LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Szene } from "@/lib/physik/typen";
 
@@ -22,6 +23,9 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
   const bus = useRef<Messbus>(null as unknown as Messbus);
   if (bus.current === null) bus.current = new Messbus();
   const zustand = useRef<LaborZustand>(leererZustand());
+  const welt = useRef<Welt>(null as unknown as Welt);
+  if (welt.current === null) welt.current = new Welt();
+  const stoesse = useRef<Stoss[]>([]);
   const zuschauer = useRef(new Set<() => void>());
 
   // Der Schritt liest immer den neuesten Aufbau, ohne dafür die Schleife
@@ -51,7 +55,14 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
 
       let schritte = 0;
       while (rest >= DT && schritte < 240) {
-        const ergebnis = schritt(szeneRef.current, zustand.current, DT);
+        // Erst die Welt (Fallen, Stapeln, Stöße), dann die Messwerte — so
+        // beschreiben beide denselben Augenblick.
+        welt.current.synchronisiere(szeneRef.current, zustand.current.mechanik);
+        welt.current.schritt(szeneRef.current, zustand.current.mechanik, DT);
+        const neueStoesse = welt.current.ereignisse();
+        if (neueStoesse.length) stoesse.current = [...stoesse.current, ...neueStoesse].slice(-40);
+
+        const ergebnis = schritt(szeneRef.current, zustand.current, DT, welt.current.zustand());
         zustand.current = ergebnis.zustand;
         bus.current.schreibe(ergebnis.zustand.t, ergebnis.werte);
         rest -= DT;
@@ -89,8 +100,15 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
   const zuruecksetzen = useCallback(() => {
     bus.current.leere();
     zustand.current = leererZustand();
+    welt.current.zuruecksetzen(szeneRef.current, {});
+    stoesse.current = [];
     for (const fn of zuschauer.current) fn();
   }, []);
 
-  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen };
+  /** Setzt einen freien Körper an die Hand des Ziehenden. */
+  const setzeKoerper = useCallback((id: string, pos: { x: number; y: number }) => {
+    welt.current.setzeOrt(id, pos);
+  }, []);
+
+  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, stoesse };
 }

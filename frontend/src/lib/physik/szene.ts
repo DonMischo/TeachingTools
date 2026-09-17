@@ -222,7 +222,11 @@ export function freierPlatz(szene: Szene, start: Punkt = { x: 0, y: 0.5 }): Punk
  * Szene: `pos` bleibt der Platz, an den das Gerät zurückfällt, wenn man die
  * Verbindung kappt.
  */
-export function aufgeloest(szene: Szene, mechanik: Record<string, { q: number }> = {}): Szene {
+export function aufgeloest(
+  szene: Szene,
+  mechanik: Record<string, { q: number }> = {},
+  welt: Record<string, { x: number; y: number }> = {},
+): Szene {
   const plan = new Map<string, Punkt>();
   const laeuft = new Set<string>();
   const nachId = new Map(szene.geraete.map(g => [g.id, g]));
@@ -234,8 +238,13 @@ export function aufgeloest(szene: Szene, mechanik: Record<string, { q: number }>
     if (laeuft.has(g.id)) return g.pos;
     laeuft.add(g.id);
 
+    // Was einen Körper in der Welt hat, steht dort, wo der Löser ihn hat —
+    // ein gefallenes Gewicht liegt am Boden und nicht mehr in der Luft.
+    const koerper = welt[g.id];
     const boden = bodenHoehe(g);
-    let ort = boden === null ? g.pos : { x: g.pos.x, y: boden };
+    let ort = koerper
+      ? { x: koerper.x, y: koerper.y }
+      : boden === null ? g.pos : { x: g.pos.x, y: boden };
 
     const eigener = EIGENER_HAKEN[g.typ];
     if (eigener) {

@@ -33,7 +33,7 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
 const PORT_RADIUS = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
@@ -41,6 +41,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   /** Das Gerät unter dem Zeiger — Entf räumt es weg, ohne es erst anzuklicken. */
   schwebt: string | null;
   setSchwebt: (id: string | null) => void;
+  /** Setzt einen freien Körper an die Hand — sonst zöge man nur die Zeichnung. */
+  setzeKoerper: (id: string, pos: Punkt) => void;
   /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
   zustand: { readonly current: LaborZustand };
   beobachte: (fn: () => void) => () => void;
@@ -83,7 +85,9 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
    * sonst liegt ein Massestück da, wo man es fallen ließ, und bekommt nur eine
    * Linie zum Haken gemalt.
    */
-  const sicht = useCallback(() => aufgeloest(szene, zustand.current.mechanik), [szene, zustand]);
+  const sicht = useCallback(
+    () => aufgeloest(szene, zustand.current.mechanik, zustand.current.welt),
+    [szene, zustand]);
 
   const bildPunkt = (e: React.PointerEvent): Punkt => {
     const r = leinwand.current!.getBoundingClientRect();
@@ -204,10 +208,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     }
     if (z.art === "geraet") {
       const welt = zurWelt(p, blick);
-      setSzene(bewege(szene, z.id, {
-        x: einrasten(welt.x - z.griff.x),
-        y: einrasten(welt.y - z.griff.y),
-      }));
+      const ziel = { x: einrasten(welt.x - z.griff.x), y: einrasten(welt.y - z.griff.y) };
+      setSzene(bewege(szene, z.id, ziel));
+      // Der Körper in der Welt muss mit, sonst zieht man nur das Bild und das
+      // Gewicht springt beim Loslassen an seinen alten Platz zurück.
+      setzeKoerper(z.id, ziel);
     } else {
       setBlick(b => ({
         ...b,

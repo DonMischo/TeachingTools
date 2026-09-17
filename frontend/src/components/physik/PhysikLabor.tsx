@@ -54,7 +54,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [laeuft, setLaeuft] = useState(true);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
-  const { bus, zustand, beobachte, zuruecksetzen, loslassen } = useSimulation(szene, laeuft, tempo);
+  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } = useSimulation(szene, laeuft, tempo);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -168,7 +168,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           <Werkbank
             szene={szene} setSzene={setSzene}
             ausgewaehlt={ausgewaehlt} setAusgewaehlt={setAusgewaehlt}
-            schwebt={schwebt} setSchwebt={setSchwebt}
+            schwebt={schwebt} setSchwebt={setSchwebt} setzeKoerper={setzeKoerper}
             zustand={zustand} beobachte={beobachte}
           />
         </div>

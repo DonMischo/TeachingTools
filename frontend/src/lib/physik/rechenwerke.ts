@@ -16,6 +16,7 @@ import { geraetTyp } from "./katalog";
 import { hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
+import type { WeltZustand } from "./welt";
 import { haengtDaran } from "./verbindungen";
 import type { Geraet, Szene } from "./typen";
 
@@ -34,9 +35,12 @@ export interface LaborZustand {
   /** Der zuletzt gelöste Stromkreis — die Werkbank zeichnet daraus, ob eine
    *  Lampe leuchtet. Null, solange nichts Elektrisches dasteht. */
   kreis: Stromkreis | null;
+  /** Lage der freien Körper. Kommt vom Starrkörperlöser, nicht von hier —
+   *  »schritt« reicht ihn nur weiter, damit alles an einer Stelle steht. */
+  welt: WeltZustand;
 }
 
-export const leererZustand = (): LaborZustand => ({ t: 0, mechanik: {}, kreis: null });
+export const leererZustand = (): LaborZustand => ({ t: 0, mechanik: {}, kreis: null, welt: {} });
 
 /** Momentanwert des Funktionsgenerators. */
 export function generatorWert(form: number, frequenz: number, amplitude: number, t: number): number {
@@ -122,7 +126,12 @@ export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: Mech
  * Die Messwerte beschreiben den Zustand *nach* dem Schritt, also zum
  * Zeitpunkt `zustand.t` des Rückgabewerts.
  */
-export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
+export function schritt(
+  szene: Szene,
+  zustand: LaborZustand,
+  dt: number,
+  welt: WeltZustand = zustand.welt,
+): {
   zustand: LaborZustand;
   werte: Map<SignalId, number>;
 } {
@@ -223,5 +232,5 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
     }
   }
 
-  return { zustand: { t, mechanik, kreis }, werte };
+  return { zustand: { t, mechanik, kreis, welt }, werte };
 }
