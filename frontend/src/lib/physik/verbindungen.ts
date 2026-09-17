@@ -22,6 +22,9 @@ export function haengtDaran(
   geraetId: string,
   port: string,
   art: PortArt = "mechanik",
+  /** Gerätetypen, die ihre eigene Last selbst verrechnen — hinter ihnen wird
+   *  nicht weitergelaufen, sonst zählte sie jemand doppelt. */
+  stoppBei: readonly string[] = [],
 ): Geraet[] {
   const typVon = (id: string) => szene.geraete.find(g => g.id === id)?.typ;
 
@@ -51,7 +54,7 @@ export function haengtDaran(
     const g = szene.geraete.find(x => x.id === id);
     if (!g) continue;
     gefunden.push(g);
-    offen.push(...nachbarn(id));
+    if (!stoppBei.includes(g.typ)) offen.push(...nachbarn(id));
   }
 
   return gefunden;

@@ -3,9 +3,10 @@
  *
  * Die meisten Anschlüsse sitzen fest am Gerät und drehen sich höchstens mit
  * ihm. Bei einem Pendel ist das anders: der Körper wandert, und mit ihm der
- * Punkt, an dem man etwas anhängen kann. Beides — Zeichnen und Anfassen und
- * das Auffinden von Anschlüssen — muss dieselbe Geometrie benutzen, sonst
- * hängt ein Massestück sichtbar neben dem Körper.
+ * Punkt, an dem man etwas anhängen kann. Beim Hebel schwenken die Arme, auf
+ * der schiefen Ebene rutscht die Kiste den Hang hinunter. Zeichnen, Anfassen
+ * und das Auffinden von Anschlüssen müssen dieselbe Geometrie benutzen, sonst
+ * hängt ein Massestück sichtbar neben dem Haken.
  *
  * Deshalb steht die Geometrie hier in der Bibliothek und nicht bei den
  * Zeichenroutinen: die Rechenwerke brauchen sie genauso.
@@ -17,6 +18,32 @@ export const FEDER_RUHE = 0.25;
 
 /** Ein Pendelkörper wächst mit der Masse, aber nur langsam (dritte Wurzel). */
 export const koerperRadius = (masse: number) => 0.012 + 0.025 * Math.cbrt(Math.max(0.001, masse));
+
+/** Die beiden Enden des Hebelbalkens, mitgeneigt. */
+export function hebelArmOrt(g: Geraet, seite: "links" | "rechts", q: number): Punkt {
+  const arm = seite === "links" ? -(g.werte.armLinks ?? 0.3) : (g.werte.armRechts ?? 0.3);
+  // q > 0 heißt: die rechte Seite ist unten.
+  return { x: g.pos.x + arm * Math.cos(q), y: g.pos.y - arm * Math.sin(q) };
+}
+
+/** Oberes und unteres Ende der schiefen Ebene. */
+export function hangEnden(g: Geraet): { oben: Punkt; unten: Punkt } {
+  const laenge = Math.max(0.05, g.werte.laenge ?? 1);
+  const winkel = g.werte.winkel ?? Math.PI / 6;
+  const halbX = (laenge / 2) * Math.cos(winkel);
+  const halbY = (laenge / 2) * Math.sin(winkel);
+  return {
+    oben: { x: g.pos.x - halbX, y: g.pos.y + halbY },
+    unten: { x: g.pos.x + halbX, y: g.pos.y - halbY },
+  };
+}
+
+/** Wo die Kiste auf dem Hang steht, `weg` Meter vom oberen Ende aus. */
+export function hangOrt(g: Geraet, weg: number): Punkt {
+  const { oben } = hangEnden(g);
+  const winkel = g.werte.winkel ?? Math.PI / 6;
+  return { x: oben.x + weg * Math.cos(winkel), y: oben.y - weg * Math.sin(winkel) };
+}
 
 /**
  * Wo der schwingende Körper gerade ist — in Weltkoordinaten.
@@ -34,16 +61,26 @@ export function koerperOrt(g: Geraet, s: { q: number } | undefined): Punkt | nul
     const auslenkung = s?.q ?? g.werte.startauslenkung ?? 0;
     return { x: g.pos.x, y: g.pos.y - (FEDER_RUHE + auslenkung) };
   }
+  if (g.typ === "schiefeebene") {
+    return hangOrt(g, s?.q ?? g.werte.startweg ?? 0);
+  }
   return null;
 }
 
 /**
  * Der Startwert, der sich ergibt, wenn man den Körper an diesen Weltpunkt
- * zieht. Beim Fadenpendel der Winkel, beim Federpendel die Auslenkung.
+ * zieht. Beim Fadenpendel der Winkel, beim Federpendel die Auslenkung, auf
+ * der schiefen Ebene der Weg vom oberen Ende.
  */
 export function startWertAus(g: Geraet, welt: Punkt): number | null {
   if (g.typ === "fadenpendel") return Math.atan2(welt.x - g.pos.x, g.pos.y - welt.y);
   if (g.typ === "federpendel") return g.pos.y - FEDER_RUHE - welt.y;
+  if (g.typ === "schiefeebene") {
+    // Auf den Hang projizieren: nur der Anteil längs der Bahn zählt.
+    const { oben } = hangEnden(g);
+    const winkel = g.werte.winkel ?? Math.PI / 6;
+    return (welt.x - oben.x) * Math.cos(winkel) - (welt.y - oben.y) * Math.sin(winkel);
+  }
   return null;
 }
 
@@ -57,5 +94,8 @@ export function beweglicherPortOrt(
   s: { q: number } | undefined,
 ): Punkt | null {
   if (portId === "koerper") return koerperOrt(g, s);
+  if (g.typ === "hebel" && (portId === "links" || portId === "rechts")) {
+    return hebelArmOrt(g, portId, s?.q ?? g.werte.startneigung ?? 0);
+  }
   return null;
 }

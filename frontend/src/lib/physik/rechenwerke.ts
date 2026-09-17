@@ -13,7 +13,7 @@
  */
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
-import { mechanikSchritt, type MechanikZustand } from "./mechanik";
+import { hebelMomente, mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
 import { haengtDaran } from "./verbindungen";
 import type { Geraet, Szene } from "./typen";
@@ -45,45 +45,71 @@ export function generatorWert(form: number, frequenz: number, amplitude: number,
 }
 
 /**
+ * Geräte, die ihre eigene Last selbst verrechnen. Hinter ihnen hört der Lauf
+ * durch den Verbindungsgraphen auf — sonst zählte man dieselben Gewichte
+ * zweimal, einmal roh und einmal übersetzt.
+ */
+const EIGENE_RECHNUNG = ["flaschenzug", "schiefeebene"] as const;
+
+/**
  * Was ein einzelnes Gerät nach unten zieht, in Newton.
  *
  * Ein Massestück zieht mit seinem Gewicht. Beim Federpendel ist es die
  * Spannung der Feder: im Gleichgewicht genau m·g, beim Schwingen darum herum
  * pendelnd (D·q). Beim Fadenpendel zieht die Fadenspannung — am tiefsten
  * Punkt am größten, weil dort zur Gewichtskraft noch die Zentripetalkraft
- * kommt. Genau das zeigt ein Kraftmesser im echten Versuch auch.
+ * kommt. Der Flaschenzug gibt die Last geteilt durch die Zahl der tragenden
+ * Seile weiter, die schiefe Ebene nur ihren Hangabtrieb.
  */
-function eigengewicht(g: Geraet, s: { q: number; v: number } | undefined): number {
+function eigengewicht(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
+  const s = mechanik[g.id];
   const masse = g.werte.masse ?? 0;
+
   switch (g.typ) {
     case "massestueck":
       return masse * G;
+
     case "federpendel":
       return masse * G + (g.werte.federkonstante ?? 0) * (s?.q ?? 0);
+
     case "fadenpendel": {
       const laenge = Math.max(0.01, g.werte.laenge ?? 1);
       const winkel = s?.q ?? 0;
       const winkelTempo = s?.v ?? 0;
       return masse * (G * Math.cos(winkel) + laenge * winkelTempo * winkelTempo);
     }
+
+    case "flaschenzug":
+      // Die goldene Regel der Mechanik: Kraft durch n, Weg mal n.
+      return lastAmFlaschenzug(szene, g, mechanik) / tragendeSeile(g);
+
+    case "schiefeebene":
+      return masse * G * Math.sin(g.werte.winkel ?? 0);
+
     default:
       return 0;
   }
 }
 
+/** Wie viele Seile die Last tragen — eins heißt feste Rolle. */
+export const tragendeSeile = (g: Geraet) => Math.max(1, Math.round(g.werte.rollen ?? 1));
+
+/** Die Kraft, die unten am Flaschenzug hängt, in Newton. */
+export function lastAmFlaschenzug(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
+  return haengtDaran(szene, g.id, "last", "mechanik", EIGENE_RECHNUNG)
+    .reduce((summe, x) => summe + eigengewicht(szene, x, mechanik), 0);
+}
+
 /**
  * Die Kraft am unteren Haken eines Kraftmessers, in Newton.
  *
- * Gelaufen wird der Verbindungsgraph: alles, was unter dem Haken hängt,
- * zählt — auch ein Massestück am Massestück. (Der erste Wurf sah nur die
- * unmittelbaren Nachbarn und zeigte bei zwei angehängten Stücken nur das
- * obere an.) Gefolgt wird ausschließlich mechanischen Verbindungen; ein
- * Kabel trägt nichts. Der Satz »gesehen« hält Ringe auf und verhindert, dass
- * der Lauf über den Kraftmesser selbst wieder nach oben führt.
+ * Gelaufen wird der Verbindungsgraph: alles, was unter dem Haken hängt, zählt
+ * — auch ein Massestück am Massestück. Gefolgt wird ausschließlich
+ * mechanischen Verbindungen; ein Kabel trägt nichts.
  */
 export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: MechanikZustand): number {
-  return haengtDaran(szene, kraftmesser, "unten")
-    .reduce((summe, g) => summe + eigengewicht(g, mechanik[g.id]), 0);
+  return haengtDaran(szene, kraftmesser, "unten", "mechanik", EIGENE_RECHNUNG)
+    .reduce((summe, g) => summe + eigengewicht(szene, g, mechanik), 0);
 }
 
 /**
@@ -133,6 +159,33 @@ export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
         werte.set(signalId(g.id, "auslenkung"), s.q);
         // Hooke: die Feder zieht entgegen der Auslenkung.
         werte.set(signalId(g.id, "kraft"), -(g.werte.federkonstante ?? 10) * s.q);
+        break;
+      }
+
+      case "hebel": {
+        const winkel = mechanik[g.id]?.q ?? 0;
+        const momente = hebelMomente(szene, g, winkel);
+        werte.set(signalId(g.id, "winkel"), winkel);
+        werte.set(signalId(g.id, "momentLinks"), momente.links);
+        werte.set(signalId(g.id, "momentRechts"), momente.rechts);
+        break;
+      }
+
+      case "flaschenzug": {
+        const last = lastAmFlaschenzug(szene, g, mechanik);
+        werte.set(signalId(g.id, "last"), last);
+        werte.set(signalId(g.id, "zugkraft"), last / tragendeSeile(g));
+        break;
+      }
+
+      case "schiefeebene": {
+        const s = mechanik[g.id];
+        const winkel = g.werte.winkel ?? 0;
+        const gewicht = (g.werte.masse ?? 0) * G;
+        werte.set(signalId(g.id, "hangabtrieb"), gewicht * Math.sin(winkel));
+        werte.set(signalId(g.id, "normalkraft"), gewicht * Math.cos(winkel));
+        werte.set(signalId(g.id, "weg"), s?.q ?? 0);
+        werte.set(signalId(g.id, "geschwindigkeit"), s?.v ?? 0);
         break;
       }
     }

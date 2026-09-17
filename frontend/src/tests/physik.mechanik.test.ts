@@ -65,30 +65,33 @@ describe("rk4", () => {
 });
 
 describe("beschleunigung", () => {
+  /** Die Beschleunigung des einzigen Geräts der Szene. */
+  const a = (s: Szene, q: number, v: number) => beschleunigung(s, s.geraete[0], q, v);
+
   it("zieht das Fadenpendel zur Ruhelage zurück", () => {
-    const werte = { laenge: 1, masse: 0.2, startwinkel: 0.1, daempfung: 0.1 };
-    expect(beschleunigung("fadenpendel", werte, 0.1, 0, false)).toBeLessThan(0);
-    expect(beschleunigung("fadenpendel", werte, -0.1, 0, false)).toBeGreaterThan(0);
-    expect(beschleunigung("fadenpendel", werte, 0, 0, false)).toBeCloseTo(0, 12);
+    const s = mit("fadenpendel", { laenge: 1, masse: 0.2, daempfung: 0.1 });
+    expect(a(s, 0.1, 0)).toBeLessThan(0);
+    expect(a(s, -0.1, 0)).toBeGreaterThan(0);
+    expect(a(s, 0, 0)).toBeCloseTo(0, 12);
   });
 
   it("rechnet mit dem Sinus, nicht mit der Näherung", () => {
-    const werte = { laenge: 1, masse: 0.2, startwinkel: 0, daempfung: 0 };
-    // Bei 60° unterscheiden sich sin θ und θ deutlich.
+    const s = mit("fadenpendel", { laenge: 1, masse: 0.2, daempfung: 0 });
     const q = bogen(60);
-    expect(beschleunigung("fadenpendel", werte, q, 0, false)).toBeCloseTo(-G * Math.sin(q), 9);
-    expect(beschleunigung("fadenpendel", werte, q, 0, false)).not.toBeCloseTo(-G * q, 2);
+    expect(a(s, q, 0)).toBeCloseTo(-G * Math.sin(q), 9);
+    expect(a(s, q, 0)).not.toBeCloseTo(-G * q, 2);
   });
 
   it("bremst nur im realen Modell", () => {
-    const werte = { laenge: 1, masse: 0.2, startwinkel: 0, daempfung: 0.5 };
-    expect(beschleunigung("fadenpendel", werte, 0, 1, false)).toBeCloseTo(0, 12);
-    expect(beschleunigung("fadenpendel", werte, 0, 1, true)).toBeCloseTo(-0.5, 12);
+    const werte = { laenge: 1, masse: 0.2, daempfung: 0.5 };
+    expect(a(mit("fadenpendel", werte), 0, 1)).toBeCloseTo(0, 12);
+    const real: Szene = { ...mit("fadenpendel", werte), treue: "real" };
+    expect(a(real, 0, 1)).toBeCloseTo(-0.5, 12);
   });
 
   it("folgt beim Federpendel dem Hookeschen Gesetz", () => {
-    const werte = { federkonstante: 20, masse: 0.5, startauslenkung: 0, daempfung: 0 };
-    expect(beschleunigung("federpendel", werte, 0.1, 0, false)).toBeCloseTo(-(20 / 0.5) * 0.1, 9);
+    const s = mit("federpendel", { federkonstante: 20, masse: 0.5, daempfung: 0 });
+    expect(a(s, 0.1, 0)).toBeCloseTo(-(20 / 0.5) * 0.1, 9);
   });
 });
 

@@ -14,7 +14,7 @@
  * Gezeichnet wird in Bildkoordinaten, umgerechnet ausschließlich über
  * `zumBild` — Meter treffen nirgendwo sonst auf Pixel.
  */
-import { FEDER_RUHE, koerperOrt, koerperRadius } from "@/lib/physik/geometrie";
+import { FEDER_RUHE, hangEnden, hangOrt, hebelArmOrt, koerperOrt, koerperRadius } from "@/lib/physik/geometrie";
 import type { Schwinger } from "@/lib/physik/mechanik";
 import { zumBild } from "@/lib/physik/szene";
 import type { Blick, Geraet } from "@/lib/physik/typen";
@@ -115,10 +115,119 @@ const federpendel: Zeichner = (ctx, g, s, blick) => {
   aufhaengung(ctx, oben.x, oben.y);
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { fadenpendel, federpendel };
+const hebel: Zeichner = (ctx, g, s, blick) => {
+  const q = s?.q ?? g.werte.startneigung ?? 0;
+  const links = zumBild(hebelArmOrt(g, "links", q), blick);
+  const rechts = zumBild(hebelArmOrt(g, "rechts", q), blick);
+  const achse = zumBild(g.pos, blick);
+
+  // Der Balken.
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = Math.max(4, 0.025 * blick.skala);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(links.x, links.y);
+  ctx.lineTo(rechts.x, rechts.y);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Das Lager als Dreieck — der Drehpunkt, um den es hier geht.
+  const hoehe = Math.max(8, 0.07 * blick.skala);
+  ctx.fillStyle = "#64748b";
+  ctx.beginPath();
+  ctx.moveTo(achse.x, achse.y);
+  ctx.lineTo(achse.x - hoehe * 0.6, achse.y + hoehe);
+  ctx.lineTo(achse.x + hoehe * 0.6, achse.y + hoehe);
+  ctx.closePath();
+  ctx.fill();
+
+  // Waagerechte Bezugslinie: daran sieht man, ob er im Gleichgewicht ist.
+  ctx.save();
+  ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = "rgba(148,163,184,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(achse.x - Math.abs(links.x - achse.x) - 6, achse.y);
+  ctx.lineTo(achse.x + Math.abs(rechts.x - achse.x) + 6, achse.y);
+  ctx.stroke();
+  ctx.restore();
+};
+
+const flaschenzug: Zeichner = (ctx, g, _s, blick) => {
+  const n = Math.max(1, Math.round(g.werte.rollen ?? 1));
+  const mitte = zumBild(g.pos, blick);
+  const b = 0.12 * blick.skala;
+  const h = 0.16 * blick.skala;
+
+  // Die Seile zwischen fester und loser Rolle — so viele, wie tragen.
+  ctx.strokeStyle = "rgba(226,232,240,0.7)";
+  ctx.lineWidth = 1.4;
+  for (let i = 0; i < n; i++) {
+    const x = mitte.x - b / 2 + ((i + 0.5) * b) / n;
+    ctx.beginPath();
+    ctx.moveTo(x, mitte.y - h / 2);
+    ctx.lineTo(x, mitte.y + h / 2);
+    ctx.stroke();
+  }
+
+  // Feste Rolle oben, lose Rolle unten.
+  ctx.fillStyle = "#94a3b8";
+  ctx.strokeStyle = "rgba(2,6,23,0.6)";
+  ctx.lineWidth = 2;
+  for (const y of [mitte.y - h / 2, mitte.y + h / 2]) {
+    ctx.beginPath();
+    ctx.ellipse(mitte.x, y, b / 2, Math.max(3, b / 6), 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(226,232,240,0.9)";
+  ctx.font = "700 11px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(n) + "x", mitte.x, mitte.y);
+};
+
+const schiefeebene: Zeichner = (ctx, g, s, blick) => {
+  const { oben, unten } = hangEnden(g);
+  const o = zumBild(oben, blick);
+  const u = zumBild(unten, blick);
+  const fuss = zumBild({ x: oben.x, y: unten.y }, blick);
+
+  // Das Keil-Dreieck.
+  ctx.fillStyle = "rgba(148,163,184,0.16)";
+  ctx.strokeStyle = "rgba(148,163,184,0.6)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(o.x, o.y);
+  ctx.lineTo(u.x, u.y);
+  ctx.lineTo(fuss.x, fuss.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Die Kiste, mitgeneigt.
+  const weg = s?.q ?? g.werte.startweg ?? 0;
+  const kiste = zumBild(hangOrt(g, weg), blick);
+  const r = Math.max(6, koerperRadius(g.werte.masse ?? 0.5) * blick.skala);
+  ctx.save();
+  ctx.translate(kiste.x, kiste.y);
+  ctx.rotate(g.werte.winkel ?? 0);
+  ctx.fillStyle = "#f59e0b";
+  ctx.strokeStyle = "rgba(2,6,23,0.6)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.rect(-r, -2 * r, 2 * r, 2 * r);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+};
+
+export const ZEICHNER: Record<string, Zeichner> = { fadenpendel, federpendel, hebel, flaschenzug, schiefeebene };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 export const START_WERT: Record<string, string> = {
   fadenpendel: "startwinkel",
   federpendel: "startauslenkung",
+  schiefeebene: "startweg",
 };

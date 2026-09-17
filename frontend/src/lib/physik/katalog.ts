@@ -11,6 +11,7 @@
  */
 import { bogen } from "./einheiten";
 import { FEDER_RUHE } from "./geometrie";
+import { HEBEL_ANSCHLAG } from "./mechanik";
 import type { GeraetTyp } from "./typen";
 
 export const KATALOG: GeraetTyp[] = [
@@ -113,6 +114,81 @@ export const KATALOG: GeraetTyp[] = [
     signale: [
       { schluessel: "auslenkung", name: "Auslenkung", einheit: "m" },
       { schluessel: "kraft", name: "Federkraft", einheit: "N" },
+    ],
+  },
+  {
+    typ: "hebel",
+    name: "Hebel",
+    icon: "⚖️",
+    bereich: "mechanik",
+    groesse: { b: 0.1, h: 0.1 },
+    ports: [
+      // Die Arme schwenken mit; wo sie wirklich sind, rechnet geometrie.ts aus.
+      { id: "links", art: "mechanik", name: "linker Arm", pos: { x: -0.3, y: 0 } },
+      { id: "rechts", art: "mechanik", name: "rechter Arm", pos: { x: 0.3, y: 0 } },
+    ],
+    parameter: [
+      { schluessel: "armLinks", name: "linker Arm", einheit: "m", standard: 0.3, min: 0.05, max: 0.6 },
+      { schluessel: "armRechts", name: "rechter Arm", einheit: "m", standard: 0.3, min: 0.05, max: 0.6 },
+      { schluessel: "balkenMasse", name: "Balken", einheit: "kg", standard: 0.4, min: 0.05, max: 3 },
+      { schluessel: "startneigung", name: "Startneigung", einheit: "rad", anzeige: "grad", standard: 0, min: -HEBEL_ANSCHLAG, max: HEBEL_ANSCHLAG },
+      { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 1.5, min: 0, max: 6 },
+    ],
+    signale: [
+      { schluessel: "winkel", name: "Neigung", einheit: "rad", anzeige: "grad" },
+      { schluessel: "momentLinks", name: "Moment links", einheit: "Nm" },
+      { schluessel: "momentRechts", name: "Moment rechts", einheit: "Nm" },
+    ],
+  },
+  {
+    typ: "flaschenzug",
+    name: "Flaschenzug",
+    icon: "⛓️",
+    bereich: "mechanik",
+    groesse: { b: 0.14, h: 0.18 },
+    ports: [
+      { id: "zug", art: "mechanik", name: "Zugseil", pos: { x: -0.07, y: 0.09 } },
+      { id: "last", art: "mechanik", name: "Last", pos: { x: 0.04, y: -0.09 } },
+    ],
+    parameter: [
+      {
+        schluessel: "rollen", name: "tragende Seile", einheit: "", standard: 2, min: 1, max: 6,
+        optionen: [
+          { wert: 1, name: "1 — feste Rolle" },
+          { wert: 2, name: "2 — lose Rolle" },
+          { wert: 3, name: "3 Seile" },
+          { wert: 4, name: "4 Seile" },
+          { wert: 5, name: "5 Seile" },
+          { wert: 6, name: "6 Seile" },
+        ],
+      },
+    ],
+    signale: [
+      { schluessel: "zugkraft", name: "Zugkraft", einheit: "N" },
+      { schluessel: "last", name: "Last", einheit: "N" },
+    ],
+  },
+  {
+    typ: "schiefeebene",
+    name: "Schiefe Ebene",
+    icon: "🛝",
+    bereich: "mechanik",
+    groesse: { b: 0.12, h: 0.12 },
+    ports: [
+      { id: "koerper", art: "mechanik", name: "Kiste", pos: { x: 0, y: 0 } },
+    ],
+    parameter: [
+      { schluessel: "winkel", name: "Neigung", einheit: "rad", anzeige: "grad", standard: bogen(30), min: bogen(0), max: bogen(60) },
+      { schluessel: "masse", name: "Masse der Kiste", einheit: "kg", standard: 0.5, min: 0.01, max: 10 },
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 1, min: 0.2, max: 2.5 },
+      { schluessel: "startweg", name: "Startpunkt", einheit: "m", standard: 0, min: 0, max: 2.5 },
+      { schluessel: "reibungszahl", name: "Reibungszahl", einheit: "", standard: 0.2, min: 0, max: 1 },
+    ],
+    signale: [
+      { schluessel: "hangabtrieb", name: "Hangabtriebskraft", einheit: "N" },
+      { schluessel: "normalkraft", name: "Normalkraft", einheit: "N" },
+      { schluessel: "weg", name: "Weg", einheit: "m" },
+      { schluessel: "geschwindigkeit", name: "Geschwindigkeit", einheit: "m/s" },
     ],
   },
   {
