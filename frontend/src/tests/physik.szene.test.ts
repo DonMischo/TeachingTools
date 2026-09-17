@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import {
   neueSzene, stelle, entferne, bewege, verbinde, trenne,
   treueVon, alsJSON, ausJSON, zumBild, zurWelt, portOrt, freierPlatz,
-  aufgeloest, aushaengen, haengtIrgendwo, andockStelle,
+  aufgeloest, aushaengen, haengtIrgendwo, andockStelle, verketten, trenneAlle,
 } from "@/lib/physik/szene";
 import { stativHaken } from "@/lib/physik/geometrie";
 import type { Szene } from "@/lib/physik/typen";
@@ -461,5 +461,73 @@ describe("Gedrehte Geräte", () => {
     const haken = portOrt(fertig.geraete[0], "haken")!;
     expect(fertig.geraete[1].pos.x).toBeCloseTo(haken.x, 9);
     expect(fertig.geraete[1].pos.y).toBeCloseTo(haken.y - 0.04, 9);
+  });
+});
+
+describe("Verketten und Trennen", () => {
+  /** Mehrere Massestücke, lose nebeneinander. */
+  function lose(anzahl: number) {
+    let s = neueSzene();
+    const ids: string[] = [];
+    for (let i = 0; i < anzahl; i++) {
+      s = stelle(s, "massestueck", { x: i * 0.3, y: 0.5 });
+      ids.push(s.geraete[s.geraete.length - 1].id);
+    }
+    return { szene: s, ids };
+  }
+
+  it("hängt markierte Gewichte der Reihe nach aneinander", () => {
+    const { szene, ids } = lose(4);
+    const kette = verketten(szene, ids);
+
+    expect(kette.verbindungen).toHaveLength(3);
+    // Untereinander, jeweils eine Gerätehöhe tiefer.
+    const orte = aufgeloest(kette).geraete;
+    for (let i = 1; i < ids.length; i++) {
+      const oben = orte.find(g => g.id === ids[i - 1])!;
+      const unten = orte.find(g => g.id === ids[i])!;
+      expect(oben.pos.y - unten.pos.y).toBeCloseTo(0.08, 9);
+    }
+  });
+
+  it("hängt an ein Stativ, was darunter markiert ist", () => {
+    let s = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
+    const stativ = s.geraete[0].id;
+    const ids: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      s = stelle(s, "massestueck", { x: i * 0.3, y: 0.5 });
+      ids.push(s.geraete[s.geraete.length - 1].id);
+    }
+
+    const kette = verketten(s, [stativ, ...ids]);
+    expect(kette.verbindungen).toHaveLength(2);
+    // Das erste Gewicht hängt am Haken des Stativs.
+    const orte = aufgeloest(kette).geraete;
+    const haken = portOrt(orte.find(g => g.id === stativ)!, "haken")!;
+    expect(orte.find(g => g.id === ids[0])!.pos.y).toBeCloseTo(haken.y - 0.04, 9);
+  });;
+
+  it("lässt sich nicht von Unpassendem aus dem Tritt bringen", () => {
+    let s = stelle(neueSzene(), "lampe", { x: 0, y: 0.5 });
+    const lampe = s.geraete[0].id;
+    s = stelle(s, "massestueck", { x: 0.3, y: 0.5 });
+    const gewicht = s.geraete[1].id;
+    // Eine Lampe trägt nichts — es entsteht einfach keine Verbindung.
+    expect(verketten(s, [lampe, gewicht]).verbindungen).toHaveLength(0);
+  });;
+
+  it("trennt alles, woran die markierten Geräte hängen", () => {
+    const { szene, ids } = lose(4);
+    const kette = verketten(szene, ids);
+    expect(kette.verbindungen).toHaveLength(3);
+
+    // Das mittlere herauslösen: seine beiden Verbindungen fallen weg.
+    const ohne = trenneAlle(kette, [ids[1]]);
+    expect(ohne.verbindungen).toHaveLength(1);
+  });
+
+  it("trennt eine ganze Auswahl auf einmal", () => {
+    const { szene, ids } = lose(4);
+    expect(trenneAlle(verketten(szene, ids), ids).verbindungen).toHaveLength(0);
   });
 });

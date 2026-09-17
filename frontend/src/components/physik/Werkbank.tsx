@@ -44,7 +44,7 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 const PORT_RADIUS = 4;
 const PORT_TREFFER = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, auswahl, setAuswahl, onVerbinden, onTrennen, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
@@ -63,6 +63,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   /** Der Marker unter dem Zeiger — Entf räumt ihn weg, wie bei Geräten auch. */
   schwebenderMarker: string | null;
   setSchwebenderMarker: (id: string | null) => void;
+  /** Mit Umschalt markierte Geräte — für Verbinden und Trennen in einem Rutsch. */
+  auswahl: string[];
+  setAuswahl: (ids: string[]) => void;
+  onVerbinden: (ids: string[]) => void;
+  onTrennen: (ids: string[]) => void;
   /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
   zustand: { readonly current: LaborZustand };
   beobachte: (fn: () => void) => () => void;
@@ -74,6 +79,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const [fehler, setFehler] = useState<string | null>(null);
   // Wohin das gezogene Gerät fiele, wenn man jetzt loslässt.
   const [andock, setAndock] = useState<PortZeiger | null>(null);
+  // Wo das Rechtsklick-Menü steht, in Bildkoordinaten.
+  const [menue, setMenue] = useState<Punkt | null>(null);
   const zieht = useRef<
     | { art: "geraet"; id: string; griff: Punkt }
     | { art: "koerper"; id: string }
@@ -120,6 +127,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const portUnter = useCallback((p: Punkt): PortZeiger | null => {
     for (const g of [...sicht().geraete].reverse()) {
       for (const port of geraetTyp(g.typ)?.ports ?? []) {
+        if (port.verborgen) continue;
         const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
         const b = zumBild(ort, blick);
@@ -184,6 +192,20 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
   function beiDruck(e: React.PointerEvent) {
     const p = bildPunkt(e);
+    setMenue(null);
+
+    // Umschalt sammelt ein, statt zu ziehen: so stellt man sich zusammen, was
+    // gleich verbunden oder getrennt werden soll.
+    if (e.shiftKey) {
+      const treffer = koerperUnter(p) ?? geraetUnter(p);
+      if (treffer) {
+        setAuswahl(auswahl.includes(treffer) ? auswahl.filter(x => x !== treffer) : [...auswahl, treffer]);
+      } else {
+        setAuswahl([]);
+      }
+      return;
+    }
+
     leinwand.current?.setPointerCapture(e.pointerId);
 
     // Das Werkzeug hat Vorrang: hier soll ausdrücklich ein Marker hin.
@@ -304,6 +326,22 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   };
   const beiVerlassen = () => { zieht.current = null; setAndock(null); setSchwebt(null); setSchwebenderMarker(null); };
 
+  /**
+   * Rechtsklick öffnet das Menü.
+   *
+   * Steht der Zeiger auf einem Gerät, das nicht markiert ist, ersetzt es die
+   * Markierung — sonst gilt, was man vorher mit Umschalt zusammengestellt hat.
+   */
+  function beiMenue(e: React.MouseEvent) {
+    e.preventDefault();
+    const r = leinwand.current!.getBoundingClientRect();
+    const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+    const treffer = koerperUnter(p) ?? geraetUnter(p);
+    if (treffer && !auswahl.includes(treffer)) setAuswahl([treffer]);
+    else if (!treffer && !auswahl.length) return;
+    setMenue(p);
+  }
+
   function beiRad(e: React.WheelEvent) {
     setBlick(b => ({
       ...b,
@@ -358,6 +396,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const b = u.b * blick.skala, h = u.h * blick.skala;
       const gewaehlt = g.id === ausgewaehlt;
       const unterZeiger = g.id === schwebt;
+      const markiert = auswahl.includes(g.id);
 
       // Pendel und Verwandte bringen ihre eigene Zeichnung mit — ein Kasten
       // sagt ueber eine Schwingung nichts aus.
@@ -390,6 +429,16 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.restore();
       }
 
+      if (markiert) {
+        // Markiert: ein gestrichelter Kasten um das ganze Gerät.
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = "#4ade80";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(mitte.x - b / 2 - 5, mitte.y - h / 2 - 5, b + 10, h + 10);
+        ctx.restore();
+      }
+
       ctx.fillStyle = "rgba(226,232,240,0.85)";
       ctx.font = "600 11px system-ui, sans-serif";
       ctx.textAlign = "center";
@@ -412,6 +461,10 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
           ctx.lineWidth = 3;
           ctx.stroke();
         }
+
+        // Verborgene Anschlüsse bleiben unsichtbar — nur als Ziel beim Ziehen
+        // leuchten sie kurz auf.
+        if (port.verborgen && !istZiel) continue;
 
         ctx.beginPath();
         ctx.arc(bp.x, bp.y, istOffen || istZiel ? PORT_RADIUS + 3 : PORT_RADIUS, 0, Math.PI * 2);
@@ -440,7 +493,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.textBaseline = "middle";
       ctx.fillText(m.art === "stoss" ? "💥" : "🔎", b.x, b.y);
     }
-  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, andock, zustand, marker, schwebenderMarker]);
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, andock, zustand, marker, schwebenderMarker, auswahl]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.
@@ -460,8 +513,38 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
         onPointerUp={beiLoslassen}
         onPointerCancel={beiVerlassen}
         onPointerLeave={beiVerlassen}
+        onContextMenu={beiMenue}
         onWheel={beiRad}
       />
+      {menue && (
+        <div
+          role="menu"
+          aria-label="Auswahl"
+          className="absolute z-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg py-1 text-sm"
+          style={{ left: Math.min(menue.x, blick.breite - 190), top: Math.min(menue.y, blick.hoehe - 110) }}
+        >
+          <div className="px-3 py-1 text-xs text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+            {auswahl.length === 1 ? "1 Gerät" : `${auswahl.length} Geräte`} markiert
+          </div>
+          <button
+            role="menuitem"
+            disabled={auswahl.length < 2}
+            onClick={() => { onVerbinden(auswahl); setMenue(null); }}
+            className="block w-full text-left px-3 py-1.5 hover:bg-[var(--surface-hover)] disabled:opacity-40"
+          >🔗 Verbinden</button>
+          <button
+            role="menuitem"
+            onClick={() => { onTrennen(auswahl); setMenue(null); }}
+            className="block w-full text-left px-3 py-1.5 hover:bg-[var(--surface-hover)]"
+          >✂️ Trennen</button>
+          <button
+            role="menuitem"
+            onClick={() => { setAuswahl([]); setMenue(null); }}
+            className="block w-full text-left px-3 py-1.5 hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+          >Markierung aufheben</button>
+        </div>
+      )}
+
       {offen && (
         <div
           className="absolute left-1/2 -translate-x-1/2 bottom-3 rounded-full bg-slate-900/90 border border-white/15 px-4 py-2 text-xs text-slate-200"

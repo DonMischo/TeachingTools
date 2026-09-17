@@ -20,7 +20,7 @@ import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Stoss } from "@/lib/physik/welt";
 import { Bericht } from "./Bericht";
-import { aufgeloest, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAn, treueVon } from "@/lib/physik/szene";
+import { aufgeloest, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
 import Oszilloskop from "./Oszilloskop";
@@ -64,6 +64,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [markerWerkzeug, setMarkerWerkzeug] = useState(false);
   const [offenerMarker, setOffenerMarker] = useState<string | null>(null);
   const [schwebenderMarker, setSchwebenderMarker] = useState<string | null>(null);
+  const [auswahl, setAuswahl] = useState<string[]>([]);
   const [lauf, setLauf] = useState(0);
   // Zwingt die laufende Karte zum Auffrischen, ohne dafür jedes Bild zu rendern.
   const [takt, setTakt] = useState(0);
@@ -276,6 +277,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             setAusgewaehlt(null);
             setMarker([]);
             setOffenerMarker(null);
+            setAuswahl([]);
           }}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >🧹 Tisch abräumen</button>
@@ -357,6 +359,10 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
               setOffenerMarker(id);
             }}
             schwebenderMarker={schwebenderMarker} setSchwebenderMarker={setSchwebenderMarker}
+            auswahl={auswahl}
+            setAuswahl={setAuswahl}
+            onVerbinden={ids => { setSzene(s => verketten(s, ids)); setAuswahl([]); }}
+            onTrennen={ids => { setSzene(s => trenneAlle(s, ids)); setAuswahl([]); }}
             zustand={zustand} beobachte={beobachte}
           />
         </div>

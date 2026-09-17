@@ -37,9 +37,9 @@ export const KATALOG: GeraetTyp[] = [
     bereich: "mechanik",
     groesse: { b: 0.08, h: 0.08 },
     ports: [
-      { id: "oese", art: "mechanik", name: "Öse oben", pos: { x: 0, y: 0.04 } },
+      { id: "oese", art: "mechanik", name: "Öse oben", pos: { x: 0, y: 0.04 }, verborgen: true },
       // Schlitzgewichte haben unten einen zweiten Haken — daran haengt das naechste.
-      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.04 } },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.04 }, verborgen: true },
     ],
     parameter: [
       { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.1, min: 0.001, max: 20 },

@@ -45,6 +45,15 @@ export interface Port {
    * es darunter, und das nächste hängt noch tiefer.
    */
   traegt?: boolean;
+  /**
+   * Nicht zeichnen und nicht anklickbar.
+   *
+   * Die Öse eines Massestücks liegt mitten auf dem Stück. Sichtbar und
+   * anklickbar war sie vor allem im Weg: man wollte das Gewicht ziehen und
+   * erwischte den Anschluss. Als Ziel beim Ziehen zählt sie weiterhin — nur
+   * eben, ohne sich in den Vordergrund zu drängen.
+   */
+  verborgen?: boolean;
 }
 
 /** Ein einstellbarer Wert eines Geräts — immer in SI abgelegt. */

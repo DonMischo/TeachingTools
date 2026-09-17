@@ -8,7 +8,7 @@
  *
  * Alle Funktionen geben eine neue Szene zurück und lassen die alte in Ruhe.
  */
-import { beweglicherPortOrt, bodenHoehe, EIGENER_HAKEN } from "./geometrie";
+import { beweglicherPortOrt, bodenHoehe, EIGENER_HAKEN, TRAEGER_PORT } from "./geometrie";
 import { geraetTyp, portVon, standardWerte } from "./katalog";
 import type { Blick, Geraet, Modelltreue, Punkt, PortZeiger, Szene } from "./typen";
 
@@ -416,4 +416,40 @@ export function andockStelle(
   // Am eigenen Haken kann nichts hängen, und schon Verbundenes nicht doppelt.
   if (frei.geraet === gezogen) return null;
   return frei;
+}
+
+/**
+ * Hängt die genannten Geräte der Reihe nach aneinander.
+ *
+ * Das zweite kommt an das erste, das dritte an das zweite und so fort — und
+ * zwar jeweils an den nächsten freien Haken, sodass aus mehreren markierten
+ * Gewichten eine Kette wird und nicht ein Haufen am selben Punkt.
+ */
+export function verketten(szene: Szene, ids: string[]): Szene {
+  let s = szene;
+  for (let i = 1; i < ids.length; i++) {
+    const vorher = s.geraete.find(g => g.id === ids[i - 1]);
+    const jetzt = s.geraete.find(g => g.id === ids[i]);
+    if (!vorher || !jetzt) continue;
+
+    const traeger = TRAEGER_PORT[vorher.typ];
+    const eigener = EIGENER_HAKEN[jetzt.typ];
+    if (!traeger || !eigener) continue;
+
+    try {
+      s = verbinde(s, freierHaken(s, { geraet: vorher.id, port: traeger }), { geraet: jetzt.id, port: eigener });
+    } catch {
+      // Passt nicht zusammen oder hängt schon — dann eben nicht.
+    }
+  }
+  return s;
+}
+
+/** Löst alle Verbindungen, an denen eines der genannten Geräte beteiligt ist. */
+export function trenneAlle(szene: Szene, ids: string[]): Szene {
+  const menge = new Set(ids);
+  return {
+    ...szene,
+    verbindungen: szene.verbindungen.filter(v => !menge.has(v.von.geraet) && !menge.has(v.nach.geraet)),
+  };
 }

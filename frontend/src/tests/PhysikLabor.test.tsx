@@ -420,3 +420,22 @@ describe("Zugversuch im Labor", () => {
     expect(getByRole("button", { name: /Durchbrennen/ })).toBeInTheDocument();
   });
 });
+
+describe("Mehrfachauswahl", () => {
+  it("öffnet auf Rechtsklick ein Menü mit Verbinden und Trennen", () => {
+    let s = stelle(neueSzene(), "massestueck", { x: 0, y: 0.5 });
+    s = stelle(s, "massestueck", { x: 0.3, y: 0.5 });
+    localStorage.setItem(ABLAGE, alsJSON(s));
+
+    const { getByLabelText, getByRole, queryByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    expect(queryByRole("menu")).toBeNull();
+
+    act(() => {
+      getByLabelText("Werkbank").dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    // Ohne Markierung und ohne Gerät unter dem Zeiger bleibt es zu.
+    expect(queryByRole("menu")).toBeNull();
+    expect(getByRole("button", { name: /Tisch abräumen/ })).toBeInTheDocument();
+  });
+});

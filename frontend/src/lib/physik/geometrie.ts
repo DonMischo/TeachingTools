@@ -114,6 +114,17 @@ export function beweglicherPortOrt(
  * raum: ein Massestück, das man an einen Haken hängt, bleibt nicht liegen, wo
  * es lag, und bekommt eine Linie zum Haken gemalt — es *ist* dann dort.
  */
+/** Woran ein Gerät das nächste trägt — die Gegenrichtung zu EIGENER_HAKEN. */
+export const TRAEGER_PORT: Record<string, string> = {
+  stativ: "haken",
+  massestueck: "unten",
+  kraftmesser: "unten",
+  fadenpendel: "koerper",
+  federpendel: "koerper",
+  probe: "unten",
+  flaschenzug: "last",
+};
+
 export const EIGENER_HAKEN: Record<string, string> = {
   massestueck: "oese",
   fadenpendel: "aufhaengung",
