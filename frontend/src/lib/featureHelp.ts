@@ -164,6 +164,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Der Code gilt für beide Reiter, und die Tafel sammelt alles, was unter diesem Code abgegeben wird." },
     ],
   },
+  physik: {
+    title: "Physiklabor",
+    intro: "Der Vorbereitungsraum als Werkbank: Geräte aus dem Schrank nehmen, auf den Tisch stellen, miteinander verbinden. Gerechnet wird in SI-Einheiten — angezeigt wird, was die Klasse lesen soll.",
+    sections: [
+      { label: "🧱 Schrank und Tisch", text: "Links stehen die Geräte nach Regalen sortiert. Ein Tipp nimmt eines heraus und stellt es auf den Tisch. Dort lässt es sich ziehen — es rastet im 5-cm-Raster ein, so wie auf einer Lochplatte. Ziehen im Leeren verschiebt den Ausschnitt, das Mausrad zoomt." },
+      { label: "🔗 Verbinden", text: "Jedes Gerät hat farbige Anschlüsse: blau für Mechanik, orange für Strom, gelb für Licht, violett für Wellen, rot für Wärme, grau für Achsen. Einen Anschluss antippen, dann den Gegenpart — zusammen passt nur, was dieselbe Farbe hat. Eine Öse gehört an einen Haken, ein Kabel an eine Buchse, und beides nicht ans andere." },
+      { label: "🎛️ Einstellen", text: "Rechts stehen die Werte des angetippten Geräts: Masse, Höhe, Widerstand. Der Regler verstellt sie, darüber steht der Wert mit passender Einheit — 500 g statt 0,5 kg, 4,7 kΩ statt 4700 Ω. »Wegräumen« oder die Entf-Taste nimmt das Gerät samt seiner Verbindungen weg." },
+      { label: "📘 Schulbuch oder 🔧 Real", text: "Der wichtigste Schalter. »Schulbuch« rechnet ideal — reibungsfrei, verlustfrei, dünne Linse, Batterie ohne Innenwiderstand. Nur so bestätigt die Messung die Formel, die gerade hergeleitet wird. »Real« schaltet Reibung, Dämpfung und Innenwiderstand zu; dann weicht die Messung ab, und genau diese Abweichung ist der Unterrichtsgegenstand. Einzelne Geräte dürfen die Einstellung der Szene überstimmen." },
+      { label: "💾 Aufbau", text: "Der Aufbau bekommt oben einen Namen und bleibt im Browser liegen — bei Angemeldeten je Konto, bei Gästen je Code. »Tisch abräumen« fängt neu an." },
+      { label: "🚧 Im Bau", text: "Gerade steht das Gerüst: aufstellen, verbinden, einstellen, speichern. Als Nächstes kommen Oszilloskop und Messbus, danach Pendel, Hebel und Rollen — später Stromkreise, Optik, Wellen und Wärme." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+    ],
+  },
   sonnensystem: {
     title: "Sonnensystem",
     intro: "Sonne, acht Planeten, Ceres, Pluto, 19 wichtige Monde, sieben Raumfahrzeuge in der Erdumlaufbahn und die Lagrangepunkte — mit echten Daten, Fotos von Raumsonden und sechs Ansichten. Klick auf einen Himmelskörper öffnet überall seinen Steckbrief.",

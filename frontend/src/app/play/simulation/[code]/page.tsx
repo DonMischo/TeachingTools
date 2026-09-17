@@ -25,6 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
+import PhysikLabor from "@/components/physik/PhysikLabor";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -42,6 +43,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
+  // Das Labor merkt sich den Aufbau je Code bzw. Konto — dafür braucht es den Code.
+  physik: { title: "Physiklabor", icon: "🔬", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -138,6 +141,10 @@ export default function SimulationJoinPage() {
               ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
               : `gast-${code}`}
               lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
+        : session.tool_slug === "physik"
+          ? <PhysikLabor speicherSchluessel={auth
+              ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+              : `gast-${code}`} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

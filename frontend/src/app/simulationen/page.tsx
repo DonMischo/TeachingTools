@@ -86,6 +86,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Rechenrahmen zum Schieben — dieselben Kugeln im Modus »Alle gleich« (bis 100) oder nach Stellenwert. Zeigt den Wert in Ziffern.",
     color: "#ef4444",
   },
+  {
+    slug: "physik",
+    href: "/simulationen/physik",
+    icon: "🔬",
+    title: "Physiklabor",
+    description: "Der Vorbereitungsraum als Werkbank: Geräte aus dem Schrank nehmen, hinstellen, verbinden — Stativ, Massestück, Kraftmesser. Zusammen passt nur, was dieselbe Anschlussfarbe hat.",
+    color: "#2dd4bf",
+  },
 ];
 
 export default function SimulationenPage() {

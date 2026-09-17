@@ -18,6 +18,7 @@ import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import Funktionen from "@/components/simulationen/Funktionen";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
+import PhysikLabor from "@/components/physik/PhysikLabor";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -27,6 +28,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "binaer", icon: "◈", label: "Binär-Rechner", node: <Binaerrechner /> },
   { id: "funktionen", icon: "📈", label: "Funktionen", node: <Funktionen /> },
   { id: "rechenregeln", icon: "🍎", label: "Rechenregeln", node: <Rechenregeln /> },
+  { id: "physik", icon: "🔬", label: "Physiklabor", node: <PhysikLabor /> },
   // Ohne Sitzung: der Vergleich mit der Klasse bleibt aus, alles andere rechnet im Browser.
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
 ];
