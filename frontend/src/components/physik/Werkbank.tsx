@@ -14,7 +14,8 @@ import { geraetTyp } from "@/lib/physik/katalog";
 import { bewege, portOrt, stelleEin, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { koerperOrt, koerperRadius, START_WERT, startWertAus, ZEICHNER } from "./zeichner";
+import { koerperOrt, koerperRadius, startWertAus } from "@/lib/physik/geometrie";
+import { START_WERT, ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
 export const PORT_FARBE: Record<PortArt, string> = {
@@ -85,7 +86,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const portUnter = useCallback((p: Punkt): PortZeiger | null => {
     for (const g of [...szene.geraete].reverse()) {
       for (const port of geraetTyp(g.typ)?.ports ?? []) {
-        const ort = portOrt(g, port.id);
+        const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
         const b = zumBild(ort, blick);
         if (Math.hypot(b.x - p.x, b.y - p.y) <= PORT_RADIUS + 5) return { geraet: g.id, port: port.id };
@@ -241,7 +242,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const a = szene.geraete.find(g => g.id === v.von.geraet);
       const b = szene.geraete.find(g => g.id === v.nach.geraet);
       if (!a || !b) continue;
-      const pa = portOrt(a, v.von.port), pb = portOrt(b, v.nach.port);
+      const pa = portOrt(a, v.von.port, zustand.current.mechanik[a.id]);
+      const pb = portOrt(b, v.nach.port, zustand.current.mechanik[b.id]);
       if (!pa || !pb) continue;
       const art = geraetTyp(a.typ)?.ports.find(p => p.id === v.von.port)?.art ?? "mechanik";
       const ba = zumBild(pa, blick), bb = zumBild(pb, blick);
@@ -298,7 +300,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.fillText(t.name, mitte.x, mitte.y + h / 2 + 5);
 
       for (const port of t.ports) {
-        const ort = portOrt(g, port.id);
+        const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
         const bp = zumBild(ort, blick);
         const istOffen = offen?.geraet === g.id && offen.port === port.id;

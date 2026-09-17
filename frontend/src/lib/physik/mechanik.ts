@@ -17,7 +17,24 @@
  * bei großem ab — was kein Fehler ist, sondern der Unterrichtsstoff.
  */
 import { G } from "./einheiten";
-import type { Szene } from "./typen";
+import { haengtDaran } from "./verbindungen";
+import type { Geraet, Szene } from "./typen";
+
+/**
+ * Die Masse, die tatsächlich mitschwingt: die eigene plus jedes Massestück,
+ * das am Körper hängt.
+ *
+ * Damit wird der Schulversuch möglich: Gewichte anhängen und nachmessen. Beim
+ * Federpendel wird die Schwingung dadurch langsamer (T = 2π√(m/D)), beim
+ * Fadenpendel ändert sich gar nichts — und genau dieser Unterschied ist die
+ * Stunde.
+ */
+export function gesamtMasse(szene: Szene, g: Geraet): number {
+  const dran = haengtDaran(szene, g.id, "koerper")
+    .filter(x => x.typ === "massestueck")
+    .reduce((summe, x) => summe + (x.werte.masse ?? 0), 0);
+  return Math.max(0.001, (g.werte.masse ?? 0) + dran);
+}
 
 /** Ein Freiheitsgrad: Auslenkung, Geschwindigkeit — und womit gestartet wurde. */
 export interface Schwinger {
@@ -56,6 +73,8 @@ export function beschleunigung(
   q: number,
   v: number,
   real: boolean,
+  /** Mitschwingende Masse; ohne Angabe die eigene des Geräts. */
+  masse = werte.masse ?? 0.1,
 ): number {
   const reibung = real ? (werte.daempfung ?? 0) * v : 0;
   if (typ === "fadenpendel") {
@@ -63,8 +82,7 @@ export function beschleunigung(
     return -(G / laenge) * Math.sin(q) - reibung;
   }
   if (typ === "federpendel") {
-    const masse = Math.max(0.001, werte.masse ?? 0.1);
-    return -((werte.federkonstante ?? 10) / masse) * q - reibung;
+    return -((werte.federkonstante ?? 10) / Math.max(0.001, masse)) * q - reibung;
   }
   return 0;
 }
@@ -112,7 +130,8 @@ export function mechanikSchritt(szene: Szene, zustand: MechanikZustand, dt: numb
     }
 
     const real = (g.treue ?? szene.treue) === "real";
-    const schritt = rk4(alt, dt, (q, v) => beschleunigung(g.typ, g.werte, q, v, real));
+    const masse = gesamtMasse(szene, g);
+    const schritt = rk4(alt, dt, (q, v) => beschleunigung(g.typ, g.werte, q, v, real, masse));
     neu[g.id] = { ...schritt, start: alt.start };
   }
 

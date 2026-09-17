@@ -9,10 +9,10 @@
  * Näherung für kleine Winkel. Genau diese Abweichung ist Unterrichtsstoff.
  */
 import { describe, it, expect } from "vitest";
-import { anfang, beschleunigung, mechanikSchritt, rk4, type MechanikZustand } from "@/lib/physik/mechanik";
-import { neueSzene, stelle } from "@/lib/physik/szene";
+import { anfang, beschleunigung, gesamtMasse, mechanikSchritt, rk4, type MechanikZustand } from "@/lib/physik/mechanik";
+import { neueSzene, stelle, verbinde } from "@/lib/physik/szene";
 import { bogen, G } from "@/lib/physik/einheiten";
-import { FEDER_RUHE, koerperOrt, startWertAus } from "@/components/physik/zeichner";
+import { FEDER_RUHE, koerperOrt, startWertAus } from "@/lib/physik/geometrie";
 import type { Szene } from "@/lib/physik/typen";
 
 const DT = 1 / 240;
@@ -229,5 +229,49 @@ describe("Körper greifen", () => {
     const stativ = stelle(neueSzene(), "stativ", { x: 0, y: 0 });
     expect(koerperOrt(stativ.geraete[0], undefined)).toBeNull();
     expect(startWertAus(stativ.geraete[0], { x: 1, y: 1 })).toBeNull();
+  });
+});
+
+describe("Gewichte am Schwingkörper", () => {
+  /** Hängt Massestücke an den Körper des Geräts. */
+  function mitGewichten(typ: string, werte: Record<string, number>, ...gewichte: number[]): Szene {
+    let s = mit(typ, werte);
+    for (const masse of gewichte) {
+      s = stelle(s, "massestueck", { x: 0.3, y: 0.3 });
+      const neu = s.geraete[s.geraete.length - 1];
+      s = { ...s, geraete: s.geraete.map(g => (g.id === neu.id ? { ...g, werte: { masse } } : g)) };
+      s = verbinde(s, { geraet: s.geraete[0].id, port: "koerper" }, { geraet: neu.id, port: "oese" });
+    }
+    return s;
+  }
+
+  it("zählt angehängte Massen zur schwingenden Masse", () => {
+    const s = mitGewichten("federpendel", { masse: 0.1 }, 0.2, 0.3);
+    expect(gesamtMasse(s, s.geraete[0])).toBeCloseTo(0.6, 9);
+  });
+
+  it("macht das Federpendel langsamer — 2π√(m/D) mit der Gesamtmasse", () => {
+    const grund = { masse: 0.1, federkonstante: 20, startauslenkung: 0.05, daempfung: 0 };
+    const ohne = schwingungsdauer(mit("federpendel", grund), 20);
+    const dran = schwingungsdauer(mitGewichten("federpendel", grund, 0.3), 20);
+
+    // 0,1 kg + 0,3 kg an der Feder: T = 2π√(0,4/20).
+    expect(dran.T).toBeCloseTo(2 * Math.PI * Math.sqrt(0.4 / 20), 2);
+    // Viermal die Masse heißt doppelte Schwingungsdauer.
+    expect(dran.T / ohne.T).toBeCloseTo(2, 2);
+  });
+
+  it("lässt das Fadenpendel unbeeindruckt — die Masse kürzt sich heraus", () => {
+    const grund = { laenge: 1, masse: 0.1, startwinkel: bogen(5), daempfung: 0 };
+    const ohne = schwingungsdauer(mit("fadenpendel", grund), 20);
+    const dran = schwingungsdauer(mitGewichten("fadenpendel", grund, 1.5), 20);
+    expect(dran.T).toBeCloseTo(ohne.T, 6);
+  });
+
+  it("zählt nur, was am Körper hängt — nicht, was an der Aufhängung steckt", () => {
+    let s = mit("federpendel", { masse: 0.1 });
+    s = stelle(s, "stativ", { x: 0, y: 1.5 });
+    s = verbinde(s, { geraet: s.geraete[0].id, port: "aufhaengung" }, { geraet: s.geraete[1].id, port: "haken" });
+    expect(gesamtMasse(s, s.geraete[0])).toBeCloseTo(0.1, 9);
   });
 });

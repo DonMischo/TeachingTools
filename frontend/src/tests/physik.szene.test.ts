@@ -224,3 +224,27 @@ describe("freierPlatz", () => {
     }
   });
 });
+
+describe("portOrt bei beweglichen Anschlüssen", () => {
+  it("lässt den Anschluss am Pendelkörper mitwandern", () => {
+    const s = stelle(neueSzene(), "fadenpendel", { x: 0, y: 1 });
+    const g = { ...s.geraete[0], werte: { ...s.geraete[0].werte, laenge: 1 } };
+
+    // In Ruhe hängt der Körper einen Meter unter dem Drehpunkt.
+    const ruhe = portOrt(g, "koerper", { q: 0 })!;
+    expect(ruhe.x).toBeCloseTo(0, 9);
+    expect(ruhe.y).toBeCloseTo(0, 9);
+
+    // Eine Vierteldrehung weiter steht er waagerecht daneben.
+    const aus = portOrt(g, "koerper", { q: Math.PI / 2 })!;
+    expect(aus.x).toBeCloseTo(1, 9);
+    expect(aus.y).toBeCloseTo(1, 9);
+  });
+
+  it("lässt feste Anschlüsse fest", () => {
+    const s = stelle(neueSzene(), "fadenpendel", { x: 0, y: 1 });
+    const a = portOrt(s.geraete[0], "aufhaengung", { q: 0 })!;
+    const b = portOrt(s.geraete[0], "aufhaengung", { q: Math.PI / 2 })!;
+    expect(a).toEqual(b);
+  });
+});

@@ -12,9 +12,10 @@
  * braucht es, um Messung gegen Formel zu prüfen.
  */
 import { G } from "./einheiten";
-import { geraetTyp, portVon } from "./katalog";
+import { geraetTyp } from "./katalog";
 import { mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
+import { haengtDaran } from "./verbindungen";
 import type { Geraet, Szene } from "./typen";
 
 /** Kurvenformen des Funktionsgenerators — im Aufbau als Zahl gespeichert. */
@@ -81,38 +82,8 @@ function eigengewicht(g: Geraet, s: { q: number; v: number } | undefined): numbe
  * der Lauf über den Kraftmesser selbst wieder nach oben führt.
  */
 export function haengendeKraft(szene: Szene, kraftmesser: string, mechanik: MechanikZustand): number {
-  const typVon = (id: string) => szene.geraete.find(g => g.id === id)?.typ;
-
-  const nachbarn = (geraet: string, nurPort?: string): string[] => {
-    const ziele: string[] = [];
-    for (const v of szene.verbindungen) {
-      const enden = [[v.von, v.nach], [v.nach, v.von]];
-      for (const [hier, dort] of enden) {
-        if (hier.geraet !== geraet) continue;
-        if (nurPort !== undefined && hier.port !== nurPort) continue;
-        const typ = typVon(hier.geraet);
-        if (!typ || portVon(typ, hier.port)?.art !== "mechanik") continue;
-        ziele.push(dort.geraet);
-      }
-    }
-    return ziele;
-  };
-
-  const gesehen = new Set<string>([kraftmesser]);
-  const offen = nachbarn(kraftmesser, "unten");
-  let kraft = 0;
-
-  while (offen.length) {
-    const id = offen.pop();
-    if (id === undefined || gesehen.has(id)) continue;
-    gesehen.add(id);
-    const g = szene.geraete.find(x => x.id === id);
-    if (!g) continue;
-    kraft += eigengewicht(g, mechanik[g.id]);
-    offen.push(...nachbarn(id));
-  }
-
-  return kraft;
+  return haengtDaran(szene, kraftmesser, "unten")
+    .reduce((summe, g) => summe + eigengewicht(g, mechanik[g.id]), 0);
 }
 
 /**

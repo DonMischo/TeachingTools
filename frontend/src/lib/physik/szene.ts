@@ -8,6 +8,7 @@
  *
  * Alle Funktionen geben eine neue Szene zurück und lassen die alte in Ruhe.
  */
+import { beweglicherPortOrt } from "./geometrie";
 import { geraetTyp, portVon, standardWerte } from "./katalog";
 import type { Blick, Geraet, Modelltreue, Punkt, PortZeiger, Szene } from "./typen";
 
@@ -177,9 +178,12 @@ export function zurWelt(p: Punkt, blick: Blick): Punkt {
  * Zeichnen und Anfassen brauchen das, und ab Phase 2 auch die Rechenwerke:
  * welcher Draht an welcher Buchse steckt, entscheidet sich an diesem Punkt.
  */
-export function portOrt(geraet: Geraet, portId: string): Punkt | undefined {
+export function portOrt(geraet: Geraet, portId: string, zustand?: { q: number }): Punkt | undefined {
   const port = portVon(geraet.typ, portId);
   if (!port) return undefined;
+  // Anschluesse am schwingenden Koerper wandern mit ihm.
+  const beweglich = beweglicherPortOrt(geraet, portId, zustand);
+  if (beweglich) return beweglich;
   const c = Math.cos(geraet.winkel), s = Math.sin(geraet.winkel);
   return {
     x: geraet.pos.x + port.pos.x * c - port.pos.y * s,
