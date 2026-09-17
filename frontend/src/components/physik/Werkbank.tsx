@@ -17,6 +17,7 @@ import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Marker } from "@/lib/physik/phaenomene";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
 import { EIGENER_HAKEN, koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
+import { feststoff } from "@/lib/physik/material";
 import { START_WERT, ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
@@ -421,16 +422,27 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.translate(mitte.x, mitte.y);
       // Minus, weil der Bildschirm y nach unten zählt und die Welt nach oben.
       ctx.rotate(-g.winkel);
-      ctx.fillStyle = gewaehlt ? "rgba(56,189,248,0.18)" : "rgba(148,163,184,0.12)";
+      // Bauteile tragen die Farbe ihres Werkstoffs — man soll Holz von Stahl
+      // unterscheiden, ohne erst die Einstellungen aufzuklappen.
+      const stoff = ("stoff" in g.werte) ? feststoff(g.werte.stoff) : null;
+      ctx.fillStyle = gewaehlt ? "rgba(56,189,248,0.18)"
+        : stoff ? stoff.farbe + "cc" : "rgba(148,163,184,0.12)";
       ctx.strokeStyle = gewaehlt ? "#38bdf8" : unterZeiger ? "rgba(248,250,252,0.8)" : "rgba(148,163,184,0.5)";
       ctx.lineWidth = gewaehlt || unterZeiger ? 2.5 : 1.5;
-      kasten(ctx, -b / 2, -h / 2, b, h, Math.max(2, Math.min(10, b / 3, h / 3)));
+      if (g.typ === "kugel") {
+        ctx.beginPath();
+        ctx.arc(0, 0, b / 2, 0, Math.PI * 2);
+      } else {
+        kasten(ctx, -b / 2, -h / 2, b, h, Math.max(2, Math.min(10, b / 3, h / 3)));
+      }
       ctx.fill();
       ctx.stroke();
-      ctx.font = `${Math.max(12, Math.min(34, Math.min(b, h) * 0.6))}px serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(t.icon, 0, 0);
+      if (!stoff) {
+        ctx.font = `${Math.max(12, Math.min(34, Math.min(b, h) * 0.6))}px serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(t.icon, 0, 0);
+      }
       ctx.restore();
       }
 

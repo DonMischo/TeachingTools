@@ -156,11 +156,28 @@ export function useSimulation(
     if (!laeuft) aktualisiere();
   }, [szene, laeuft, aktualisiere]);
 
+  /**
+   * Gibt einem Körper ein Tempo — der Abschuss.
+   *
+   * Der übergebene Aufbau wird dabei zuerst in die Welt gebracht. Solange das
+   * Geschoss auf dem Lager liegt, hat es nämlich gar keinen eigenen Körper —
+   * es ist Teil seines Wirts. Ohne diesen Schritt ginge der Stoß ins Leere,
+   * weil React den gelösten Aufbau erst im nächsten Bild einspielt.
+   */
+  const gibTempo = useCallback((id: string, vx: number, vy: number, aufbau?: Szene) => {
+    if (aufbau) {
+      szeneRef.current = aufbau;
+      welt.current.synchronisiere(aufbau, zustand.current.mechanik);
+    }
+    welt.current.gibTempo(id, vx, vy);
+    zustand.current = { ...zustand.current, welt: welt.current.zustand() };
+  }, []);
+
   /** Setzt einen freien Körper an die Hand des Ziehenden. */
   const setzeKoerper = useCallback((id: string, pos: { x: number; y: number }) => {
     welt.current.setzeOrt(id, pos);
     aktualisiere();
   }, [aktualisiere]);
 
-  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, aktualisiere, stoesse };
+  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, gibTempo, aktualisiere, stoesse };
 }

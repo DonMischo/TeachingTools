@@ -22,8 +22,9 @@
  * beim ersten Kontakt aus der Reichweite. Danach passierte nie wieder etwas.
  */
 import * as planck from "planck";
-import { koerperOrt, koerperRadius } from "./geometrie";
+import { koerperRadius } from "./geometrie";
 import { gesamtMasse, type MechanikZustand } from "./mechanik";
+import { feststoff, masseKasten, masseKugel } from "./material";
 import { aufgeloest } from "./szene";
 import type { Geraet, Modelltreue, Szene } from "./typen";
 
@@ -55,8 +56,11 @@ export interface Stoss {
  * Aufhängen, kein Hindernis; als Hindernis stieß der Pendelkörper gegen die
  * Stange seines eigenen Stativs und kam nie auf die andere Seite herum.
  */
-const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "drehpunkt", "flaschenzug",
+const STEHT_FEST = new Set(["schiefeebene", "hebel", "waage", "drehpunkt", "abschuss", "flaschenzug",
   "batterie", "widerstand", "lampe", "schalter", "voltmeter", "amperemeter", "signalgeber"]);
+
+/** Geräte, die ihren eigenen Körper abgeben, sobald sie irgendwo eingehängt sind. */
+const HAENGBAR = new Set(["massestueck", "brett", "klotz", "kugel"]);
 
 /** Geräte, die im realen Modell an einem Gelenk hängen und mitspielen. */
 const AM_GELENK = new Set(["fadenpendel"]);
@@ -122,7 +126,12 @@ export class Welt {
     const real = (g.treue ?? treue) === "real";
     if (AM_GELENK.has(g.typ)) return real ? "gelenk" : null; // Masse haengt die Rufnummer an
     if (STEHT_FEST.has(g.typ)) return "statisch";
-    if (g.typ === "massestueck") return "frei";
+    // Bretter und Klötze lassen sich festschrauben — dann sind sie Mobiliar
+    // (eine Rampe, ein Anschlag) statt etwas, das umfällt.
+    if (g.typ === "brett" || g.typ === "klotz") {
+      return (g.werte.fest ?? 0) >= 0.5 ? "statisch" : "frei";
+    }
+    if (g.typ === "massestueck" || g.typ === "kugel") return "frei";
     return null;
   }
 
@@ -143,13 +152,18 @@ export class Welt {
     const gewollt = new Map<string, { g: Geraet; art: string }>();
 
     for (const g of sicht.geraete) {
-      const haengt = g.typ === "massestueck"
+      const haengt = HAENGBAR.has(g.typ)
         && szene.verbindungen.some(v => v.von.geraet === g.id || v.nach.geraet === g.id);
       let art = this.artVon(g, szene.treue, haengt);
       // Die Masse steckt in der Bauart: haengt jemand ein Gewicht an oder ab,
       // aendert sich die Kennung und der Koerper wird mit der neuen Masse und
       // der neuen Groesse neu gebaut.
       if (art === "gelenk") art = `gelenk:${gesamtMasse(szene, g).toFixed(4)}`;
+      // Maße, Werkstoff und Lage stecken in der Kennung: ändert man sie, wird
+      // der Körper mit den neuen Eigenschaften neu gebaut.
+      if (art && (g.typ === "brett" || g.typ === "klotz" || g.typ === "kugel")) {
+        art = `${art}:${g.typ}:${JSON.stringify(g.werte)}:${(g.winkel ?? 0).toFixed(3)}`;
+      }
       if (art) gewollt.set(g.id, { g, art });
     }
 
@@ -198,12 +212,48 @@ export class Welt {
       return;
     }
 
-    const ort = art === "gefuehrt" ? (koerperOrt(g, mechanik[id]) ?? g.pos) : g.pos;
+    const ort = g.pos;
     const body = this.welt.createBody({
-      type: art === "frei" ? "dynamic" : "kinematic",
+      // Festgeschraubtes ist »static«: es steht und laesst sich auch nicht
+      // verschieben. Gefuehrtes waere »kinematic« — das gibt es hier nicht mehr.
+      type: art.startsWith("frei") ? "dynamic" : "static",
       position: new planck.Vec2(ort.x, ort.y),
+      angle: g.winkel ?? 0,
     });
     body.setUserData(id);
+
+    // Murmeln sind rund und rollen — als Kasten täten sie es nicht.
+    if (g.typ === "kugel") {
+      const stoff = feststoff(g.werte.stoff ?? 2);
+      const r = Math.max(0.003, (g.werte.durchmesser ?? 0.02) / 2);
+      const masse = masseKugel(stoff, r * 2);
+      body.createFixture(new planck.Circle(r), {
+        density: masse / (Math.PI * r * r),
+        friction: stoff.reibung,
+        restitution: stoff.sprung,
+      });
+      this.koerper.set(id, body);
+      this.bauart.set(id, art);
+      return;
+    }
+
+    if (g.typ === "brett" || g.typ === "klotz") {
+      const stoff = feststoff(g.werte.stoff ?? 0);
+      const b = g.typ === "brett"
+        ? Math.max(0.05, g.werte.laenge ?? 0.5) : Math.max(0.02, g.werte.breite ?? 0.12);
+      const h = g.typ === "brett"
+        ? Math.max(0.005, g.werte.dicke ?? 0.02) : Math.max(0.02, g.werte.hoehe ?? 0.12);
+      const masse = masseKasten(stoff, b, h);
+      body.createFixture(new planck.Box(b / 2, h / 2), {
+        density: masse / (b * h),
+        friction: stoff.reibung,
+        restitution: stoff.sprung,
+      });
+      this.koerper.set(id, body);
+      this.bauart.set(id, art);
+      return;
+    }
+
     const r = g.typ === "massestueck" ? koerperRadius(g.werte.masse ?? 0.1) : 0.06;
     const hoehe = g.typ === "stativ" ? Math.max(0.1, g.werte.hoehe ?? 1.2) / 2 : r;
     const masse = Math.max(0.001, g.werte.masse ?? 0.2);
@@ -285,6 +335,14 @@ export class Welt {
     if (!body) return;
     body.setPosition(new planck.Vec2(pos.x, pos.y));
     body.setLinearVelocity(new planck.Vec2(0, 0));
+    body.setAwake(true);
+  }
+
+  /** Gibt einem Körper ein Tempo — der Abschuss. */
+  gibTempo(id: string, vx: number, vy: number) {
+    const body = this.koerper.get(id);
+    if (!body) return;
+    body.setLinearVelocity(new planck.Vec2(vx, vy));
     body.setAwake(true);
   }
 

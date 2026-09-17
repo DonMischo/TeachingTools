@@ -101,6 +101,17 @@ export function beweglicherPortOrt(
   if (g.typ === "probe" && portId === "unten") {
     return { x: g.pos.x, y: g.pos.y - (g.werte.laenge ?? 0.2) - (s?.q ?? 0) };
   }
+  // Bretter, Klötze und Murmeln sind so groß, wie man sie eingestellt hat —
+  // ihre Ober- und Unterkante wandert mit.
+  if (g.typ === "brett" || g.typ === "klotz" || g.typ === "kugel") {
+    const vorzeichen = portId === "oese" ? 1 : portId === "unten" ? -1 : 0;
+    if (vorzeichen !== 0) {
+      const h = g.typ === "brett" ? Math.max(0.005, g.werte.dicke ?? 0.02)
+        : g.typ === "klotz" ? Math.max(0.02, g.werte.hoehe ?? 0.12)
+        : Math.max(0.006, g.werte.durchmesser ?? 0.02);
+      return gedreht(g.pos, { x: 0, y: (vorzeichen * h) / 2 }, g.winkel ?? 0);
+    }
+  }
   if (portId === "koerper") return koerperOrt(g, s);
   if ((g.typ === "hebel" || g.typ === "waage") && (portId === "links" || portId === "rechts")) {
     return hebelArmOrt(g, portId, s?.q ?? g.werte.startneigung ?? 0);
@@ -127,6 +138,9 @@ export const TRAEGER_PORT: Record<string, string> = {
   federpendel: "koerper",
   probe: "unten",
   flaschenzug: "last",
+  brett: "unten",
+  klotz: "unten",
+  kugel: "unten",
 };
 
 export const EIGENER_HAKEN: Record<string, string> = {
@@ -137,6 +151,9 @@ export const EIGENER_HAKEN: Record<string, string> = {
   federpendel: "aufhaengung",
   kraftmesser: "oben",
   flaschenzug: "zug",
+  brett: "oese",
+  klotz: "oese",
+  kugel: "oese",
 };
 
 /** Umriss eines Geräts in Weltkoordinaten — das, was man anfassen kann. */
@@ -147,6 +164,21 @@ export function umriss(g: Geraet, standard: { b: number; h: number }): { mitte: 
     const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
     return { mitte: g.pos, b: quer ? h : 0.08, h: quer ? 0.08 : h };
   }
+  if (g.typ === "brett") {
+    const b = Math.max(0.05, g.werte.laenge ?? 0.5), h = Math.max(0.005, g.werte.dicke ?? 0.02);
+    const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
+    return { mitte: g.pos, b: quer ? h : b, h: quer ? b : h };
+  }
+  if (g.typ === "klotz") {
+    const b = Math.max(0.02, g.werte.breite ?? 0.12), h = Math.max(0.02, g.werte.hoehe ?? 0.12);
+    const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
+    return { mitte: g.pos, b: quer ? h : b, h: quer ? b : h };
+  }
+  if (g.typ === "kugel") {
+    const d = Math.max(0.006, g.werte.durchmesser ?? 0.02);
+    return { mitte: g.pos, b: d, h: d };
+  }
+
   // Quer gedreht vertauschen sich Breite und Höhe, sonst greift man ins Leere.
   const quer = Math.abs(Math.cos(g.winkel ?? 0)) < 0.5;
   return { mitte: g.pos, b: quer ? standard.h : standard.b, h: quer ? standard.b : standard.h };
@@ -201,6 +233,9 @@ export function stativTeile(g: Geraet): { fuss: Punkt; kopf: Punkt; haken: Punkt
  */
 export function ablageHoehe(typ: string, werte: Record<string, number>): number | null {
   if (typ === "massestueck") return koerperRadius(werte.masse ?? 0.1);
+  if (typ === "kugel") return Math.max(0.006, werte.durchmesser ?? 0.02) / 2;
+  if (typ === "klotz") return Math.max(0.02, werte.hoehe ?? 0.12) / 2;
+  if (typ === "brett") return Math.max(0.005, werte.dicke ?? 0.02) / 2;
   return null;
 }
 

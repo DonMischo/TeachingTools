@@ -14,7 +14,7 @@
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
 import { gesamtMasse, haltekraft, hebelMomente, lastAn, mechanikSchritt, type MechanikZustand } from "./mechanik";
-import { querschnitt, werkstoff } from "./material";
+import { feststoff, masseKugel, querschnitt, werkstoff } from "./material";
 import { signalId, type SignalId } from "./messbus";
 import { bauteilSpannung, loeseStromkreis, stromPorts, type Stromkreis } from "./stromkreis";
 import type { WeltZustand } from "./welt";
@@ -116,6 +116,38 @@ export const tragendeSeile = (g: Geraet) => Math.max(1, Math.round(g.werte.rolle
 export function lastAmFlaschenzug(szene: Szene, g: Geraet, mechanik: MechanikZustand): number {
   return haengtDaran(szene, g.id, "last", "mechanik", EIGENE_RECHNUNG)
     .reduce((summe, x) => summe + eigengewicht(szene, x, mechanik), 0);
+}
+
+/** Die Masse eines Bauteils, in Kilogramm. */
+export function bauteilMasse(g: Geraet): number {
+  if (g.typ === "kugel") return masseKugel(feststoff(g.werte.stoff ?? 2), g.werte.durchmesser ?? 0.02);
+  return g.werte.masse ?? 0.1;
+}
+
+/**
+ * Der Abschuss: was auf dem Lager liegt und wie schnell es wegfliegt.
+ *
+ * Die Spannkraft wirkt über den Spannweg, also ist die verrichtete Arbeit
+ * W = F·s — und die steckt danach als Bewegungsenergie im Geschoss:
+ * ½·m·v² = F·s, also v = √(2·F·s / m). Dieselbe Spannung schießt eine leichte
+ * Murmel darum viel schneller fort als eine schwere, und *das* ist der Grund,
+ * warum man beim Bogenschießen nicht einfach schwerere Pfeile nimmt.
+ */
+export function abschuss(szene: Szene, g: Geraet) {
+  const geschoss = haengtDaran(szene, g.id, "lager").find(x => x.typ === "kugel" || x.typ === "massestueck" || x.typ === "klotz");
+  const kraft = Math.max(0, g.werte.kraft ?? 40);
+  const weg = Math.max(0.001, g.werte.spannweg ?? 0.3);
+  const winkel = g.werte.winkel ?? Math.PI / 4;
+  const arbeit = kraft * weg;
+  const masse = geschoss ? bauteilMasse(geschoss) : 0;
+  const tempo = masse > 0 ? Math.sqrt((2 * arbeit) / masse) : 0;
+  return {
+    geschoss, kraft, weg, winkel, arbeit, masse, tempo,
+    vx: tempo * Math.cos(winkel),
+    vy: tempo * Math.sin(winkel),
+    /** Wurfweite im Schulbuchmodell: v²·sin(2α)/g. */
+    weite: (tempo * tempo * Math.sin(2 * winkel)) / G,
+  };
 }
 
 /** Die Kraft, die an einer Materialprobe zieht, in Newton. */

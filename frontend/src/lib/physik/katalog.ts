@@ -11,7 +11,7 @@
  */
 import { bogen } from "./einheiten";
 import { FEDER_RUHE } from "./geometrie";
-import { WERKSTOFF_AUSWAHL } from "./material";
+import { FESTSTOFF_AUSWAHL, WERKSTOFF_AUSWAHL } from "./material";
 import { HEBEL_ANSCHLAG } from "./mechanik";
 import type { GeraetTyp } from "./typen";
 
@@ -159,6 +159,88 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "momentLinks", name: "Moment links", einheit: "Nm" },
       { schluessel: "momentRechts", name: "Moment rechts", einheit: "Nm" },
     ],
+  },
+  {
+    typ: "brett",
+    name: "Brett",
+    icon: "🧱",
+    bereich: "aufbau",
+    groesse: { b: 0.5, h: 0.02 },
+    ports: [
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true },
+    ],
+    parameter: [
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.5, min: 0.1, max: 2 },
+      { schluessel: "dicke", name: "Dicke", einheit: "m", standard: 0.02, min: 0.005, max: 0.08 },
+      { schluessel: "stoff", name: "Werkstoff", einheit: "", standard: 0, min: 0, max: FESTSTOFF_AUSWAHL.length - 1, optionen: FESTSTOFF_AUSWAHL },
+      {
+        schluessel: "fest", name: "Lage", einheit: "", standard: 0, min: 0, max: 1,
+        optionen: [{ wert: 0, name: "lose" }, { wert: 1, name: "festgeschraubt" }],
+      },
+    ],
+    signale: [],
+  },
+  {
+    typ: "klotz",
+    name: "Klotz",
+    icon: "📦",
+    bereich: "aufbau",
+    groesse: { b: 0.12, h: 0.12 },
+    ports: [
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.06 }, verborgen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.06 }, verborgen: true },
+    ],
+    parameter: [
+      { schluessel: "breite", name: "Breite", einheit: "m", standard: 0.12, min: 0.03, max: 0.6 },
+      { schluessel: "hoehe", name: "Höhe", einheit: "m", standard: 0.12, min: 0.03, max: 0.6 },
+      { schluessel: "stoff", name: "Werkstoff", einheit: "", standard: 0, min: 0, max: FESTSTOFF_AUSWAHL.length - 1, optionen: FESTSTOFF_AUSWAHL },
+      {
+        schluessel: "fest", name: "Lage", einheit: "", standard: 0, min: 0, max: 1,
+        optionen: [{ wert: 0, name: "lose" }, { wert: 1, name: "festgeschraubt" }],
+      },
+    ],
+    signale: [],
+  },
+  {
+    typ: "kugel",
+    name: "Murmel",
+    icon: "🔵",
+    bereich: "aufbau",
+    groesse: { b: 0.02, h: 0.02 },
+    ports: [
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true },
+    ],
+    parameter: [
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.02, min: 0.006, max: 0.12 },
+      { schluessel: "stoff", name: "Werkstoff", einheit: "", standard: 2, min: 0, max: FESTSTOFF_AUSWAHL.length - 1, optionen: FESTSTOFF_AUSWAHL },
+    ],
+    signale: [
+      { schluessel: "geschwindigkeit", name: "Geschwindigkeit", einheit: "m/s" },
+      { schluessel: "hoehe", name: "Höhe", einheit: "m" },
+    ],
+  },
+  {
+    typ: "abschuss",
+    name: "Abschussgerät",
+    icon: "🏹",
+    bereich: "mechanik",
+    groesse: { b: 0.18, h: 0.12 },
+    ports: [
+      // Das Lager trägt: die Kugel liegt auf, bis ausgelöst wird.
+      { id: "lager", art: "mechanik", name: "Lager", pos: { x: 0, y: 0.06 }, traegt: true },
+    ],
+    parameter: [
+      {
+        schluessel: "art", name: "Bauart", einheit: "", standard: 0, min: 0, max: 2,
+        optionen: [{ wert: 0, name: "Bogen" }, { wert: 1, name: "Schleuder" }, { wert: 2, name: "Federkanone" }],
+      },
+      { schluessel: "kraft", name: "Spannkraft", einheit: "N", standard: 40, min: 1, max: 400 },
+      { schluessel: "spannweg", name: "Spannweg", einheit: "m", standard: 0.3, min: 0.02, max: 1 },
+      { schluessel: "winkel", name: "Abschusswinkel", einheit: "rad", anzeige: "grad", standard: bogen(45), min: bogen(0), max: bogen(90) },
+    ],
+    signale: [],
   },
   {
     typ: "drehpunkt",

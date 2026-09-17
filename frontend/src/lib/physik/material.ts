@@ -45,3 +45,53 @@ export const WERKSTOFF_AUSWAHL = WERKSTOFFE.map((w, i) => ({ wert: i, name: w.na
 
 /** Querschnitt eines runden Drahts aus seinem Durchmesser, in m². */
 export const querschnitt = (durchmesser: number) => (Math.PI * durchmesser * durchmesser) / 4;
+
+/**
+ * Werkstoffe für Bauteile — Bretter, Klötze, Murmeln.
+ *
+ * Anders als beim Zugversuch zählen hier nicht Festigkeit und Dehnung,
+ * sondern was man beim Anfassen und Zusehen merkt: wie schwer etwas ist, wie
+ * gut es rutscht und wie es springt. Eine Stahlkugel und eine gleich große
+ * aus Styropor unterscheiden sich um mehr als das Zweihundertfache im
+ * Gewicht — genau darum geht es beim Vergleichen.
+ */
+export interface Feststoff {
+  name: string;
+  /** Dichte in kg/m³. */
+  dichte: number;
+  /** Reibungszahl gegen andere Körper. */
+  reibung: number;
+  /** Sprungzahl: 0 bleibt liegen, 1 spränge ewig. */
+  sprung: number;
+  farbe: string;
+}
+
+export const FESTSTOFFE: Feststoff[] = [
+  { name: "Holz", dichte: 600, reibung: 0.6, sprung: 0.2, farbe: "#b45309" },
+  { name: "Stahl", dichte: 7850, reibung: 0.3, sprung: 0.35, farbe: "#cbd5e1" },
+  { name: "Glas", dichte: 2500, reibung: 0.2, sprung: 0.5, farbe: "#7dd3fc" },
+  { name: "Gummi", dichte: 1200, reibung: 0.9, sprung: 0.85, farbe: "#a78bfa" },
+  { name: "Kunststoff", dichte: 950, reibung: 0.4, sprung: 0.45, farbe: "#fde68a" },
+  { name: "Styropor", dichte: 30, reibung: 0.5, sprung: 0.1, farbe: "#f1f5f9" },
+];
+
+export const feststoff = (nummer: number): Feststoff =>
+  FESTSTOFFE[Math.min(FESTSTOFFE.length - 1, Math.max(0, Math.round(nummer)))];
+
+export const FESTSTOFF_AUSWAHL = FESTSTOFFE.map((f, i) => ({ wert: i, name: f.name }));
+
+/**
+ * Die Tiefe, die ein flach gezeichnetes Bauteil in Wirklichkeit hätte.
+ *
+ * Die Werkbank ist zweidimensional, Massen sind es nicht. Fünf Zentimeter
+ * Tiefe machen aus einem gezeichneten Brett ein Brett, das man tragen könnte.
+ */
+export const TIEFE = 0.05;
+
+/** Die Masse eines Kastens aus diesem Werkstoff, in Kilogramm. */
+export const masseKasten = (stoff: Feststoff, breite: number, hoehe: number) =>
+  Math.max(0.001, stoff.dichte * breite * hoehe * TIEFE);
+
+/** Die Masse einer Kugel aus diesem Werkstoff, in Kilogramm. */
+export const masseKugel = (stoff: Feststoff, durchmesser: number) =>
+  Math.max(0.0001, stoff.dichte * (Math.PI / 6) * durchmesser ** 3);

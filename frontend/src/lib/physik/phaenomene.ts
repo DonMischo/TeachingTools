@@ -11,7 +11,7 @@
  */
 import { formatiere, G, grad, type AnzeigeEinheit, type Einheit } from "./einheiten";
 import { hebelMomente, gesamtMasse } from "./mechanik";
-import { zugversuch } from "./rechenwerke";
+import { abschuss, bauteilMasse, zugversuch } from "./rechenwerke";
 import type { LaborZustand } from "./rechenwerke";
 import { bauteilSpannung } from "./stromkreis";
 import type { Geraet, Punkt, Szene } from "./typen";
@@ -143,6 +143,35 @@ export function bericht(szene: Szene, g: Geraet, zustand: LaborZustand): Groesse
         groesse("Zugfestigkeit", v.stoff.zugfestigkeit, "Pa", "R_m"),
         groesse("Ausgelastet", v.auslastung, "", "σ / R_m",
           `${z(v.spannung / 1e6)} / ${z(v.stoff.zugfestigkeit / 1e6)}`, "%"),
+      ];
+    }
+
+    case "kugel": {
+      const masse = bauteilMasse(g);
+      const tempo = koerper ? Math.hypot(koerper.vx, koerper.vy) : 0;
+      return [
+        groesse("Masse", masse, "kg"),
+        groesse("Geschwindigkeit", tempo, "m/s"),
+        groesse("Höhe", koerper ? koerper.y : g.pos.y, "m"),
+        groesse("Bewegungsenergie", 0.5 * masse * tempo * tempo, "J", "E_kin = ½ · m · v²",
+          `0,5 · ${z(masse)} · ${z(tempo)}²`),
+        groesse("Impuls", masse * tempo, "Nm", "p = m · v", `${z(masse)} · ${z(tempo)}`),
+      ];
+    }
+
+    case "abschuss": {
+      const a = abschuss(szene, g);
+      if (!a.geschoss) {
+        return [groesse("Spannarbeit", a.arbeit, "J", "W = F · s", `${z(a.kraft)} · ${z(a.weg)}`)];
+      }
+      return [
+        groesse("Spannarbeit", a.arbeit, "J", "W = F · s", `${z(a.kraft)} · ${z(a.weg)}`),
+        groesse("Masse des Geschosses", a.masse, "kg"),
+        groesse("Abschussgeschwindigkeit", a.tempo, "m/s", "v = √(2 · W / m)",
+          `√(2 · ${z(a.arbeit)} / ${z(a.masse)})`),
+        groesse("Abschusswinkel", a.winkel, "rad", "α", `${z(grad(a.winkel))}°`, "grad"),
+        groesse("Wurfweite (ideal)", a.weite, "m", "s = v² · sin(2α) / g",
+          `${z(a.tempo)}² · sin(${z(2 * grad(a.winkel))}°) / ${z(G)}`),
       ];
     }
 

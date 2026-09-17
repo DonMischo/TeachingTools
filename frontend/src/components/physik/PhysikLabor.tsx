@@ -17,11 +17,12 @@ import { ablageHoehe } from "@/lib/physik/geometrie";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { istSchwinger } from "@/lib/physik/mechanik";
 import { bericht, bruchBericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
+import { abschuss } from "@/lib/physik/rechenwerke";
 import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Stoss } from "@/lib/physik/welt";
 import { Bericht } from "./Bericht";
-import { aufgeloest, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
+import { aufgeloest, bewege, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
 import { DREHBAR } from "./zeichner";
@@ -152,8 +153,41 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     }
   }, [szene, lauf]);
 
-  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper } =
+  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, gibTempo } =
     useSimulation(szene, laeuft, tempo, beiStoss, reisseDurch);
+
+  /**
+   * Auslösen.
+   *
+   * Das Geschoss wird vom Lager gelöst und bekommt sein Tempo; ein Marker hält
+   * fest, mit welcher Spannarbeit, welcher Geschwindigkeit und welcher
+   * rechnerischen Wurfweite es losging.
+   */
+  const loeseAus = useCallback((id: string) => {
+    const g = szene.geraete.find(x => x.id === id);
+    if (!g) return;
+    const a = abschuss(szene, g);
+    if (!a.geschoss) return;
+
+    // Das Geschoss liegt auf dem Lager und steht damit nur in der aufgelösten
+    // Ansicht an der richtigen Stelle. Beim Lösen bekommt es diesen Platz fest
+    // eingetragen, sonst spränge es zurück dorthin, wo man es hergezogen hat.
+    const dort = aufgeloest(szene, zustand.current.mechanik).geraete.find(x => x.id === a.geschoss!.id);
+    let geloest = trenneAn(szene, { geraet: id, port: "lager" });
+    if (dort) geloest = bewege(geloest, a.geschoss.id, dort.pos);
+
+    setLaeuft(true);
+    setSzene(geloest);
+    gibTempo(a.geschoss.id, a.vx, a.vy, geloest);
+
+    const markerId = `abschuss-${id}-${lauf}-${Math.round(zustand.current.t * 1000)}`;
+    setMarker(alt => [...alt, {
+      id: markerId, art: "stoss", ort: g.pos, t: zustand.current.t, lauf,
+      titel: "🏹 Abschuss",
+      erklaerung: "Die Spannkraft hat über den Spannweg Arbeit verrichtet, und die steckt jetzt als Bewegungsenergie im Geschoss: ½·m·v² = F·s. Dieselbe Spannung schießt eine leichte Murmel darum viel schneller fort als eine schwere.",
+      bericht: bericht(szene, g, zustand.current),
+    }]);
+  }, [szene, lauf, gibTempo, zustand]);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -450,6 +484,14 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--surface-hover)]"
                 title="Dreht das Gerät um eine Vierteldrehung — ein Stativ wird damit zum seitlichen Ausleger."
               >↻ Um 90° drehen</button>
+              )}
+
+              {geraet.typ === "abschuss" && (
+                <button
+                  onClick={() => loeseAus(geraet.id)}
+                  className="rounded-xl border border-[var(--accent)] text-[var(--accent)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
+                  title="Schießt los, was auf dem Lager liegt."
+                >🏹 Auslösen</button>
               )}
 
               {geraet.typ === "probe" && (
