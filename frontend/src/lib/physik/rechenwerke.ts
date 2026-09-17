@@ -6,14 +6,14 @@
  * Ergebnis als Signal auf den Messbus. Ein gemeinsamer Löser wäre weder
  * möglich noch nötig: zusammen kommen die Bereiche über Ports und Signale.
  *
- * Schritt 1b hat zwei Quellen — den Funktionsgenerator (rechnet aus der Zeit)
- * und den Kraftmesser (rechnet aus dem Aufbau). Mehr braucht es nicht, um zu
- * zeigen, dass dasselbe Oszilloskop beides anzeigt, ohne die Herkunft zu
- * kennen. Der Kraftmesser wiegt vorerst nur statisch; die Bewegung kommt mit
- * der Mechanik in Schritt 1c.
+ * `schritt` ist eine reine Funktion: Zustand rein, neuer Zustand plus
+ * Messwerte raus. Damit lässt sich eine Minute Pendelschwingung im Test
+ * durchrechnen, ohne Uhr, ohne Bus und ohne Bildschirm — und genau das
+ * braucht es, um Messung gegen Formel zu prüfen.
  */
 import { G } from "./einheiten";
 import { geraetTyp } from "./katalog";
+import { mechanikSchritt, type MechanikZustand } from "./mechanik";
 import { signalId, type SignalId } from "./messbus";
 import type { Szene } from "./typen";
 
@@ -21,6 +21,17 @@ import type { Szene } from "./typen";
 export const SINUS = 0;
 export const RECHTECK = 1;
 export const DREIECK = 2;
+
+/** Zeitschritt der Simulation. 240 Hz trägt auch ein kurzes, schnelles Pendel. */
+export const DT = 1 / 240;
+
+/** Alles, was die Simulation zwischen zwei Schritten behalten muss. */
+export interface LaborZustand {
+  t: number;
+  mechanik: MechanikZustand;
+}
+
+export const leererZustand = (): LaborZustand => ({ t: 0, mechanik: {} });
 
 /** Momentanwert des Funktionsgenerators. */
 export function generatorWert(form: number, frequenz: number, amplitude: number, t: number): number {
@@ -57,30 +68,54 @@ export function haengendeLast(szene: Szene, kraftmesser: string): number {
 /**
  * Ein Zeitschritt über die ganze Szene.
  *
- * Gibt die Signalwerte zurück, statt sie selbst zu schreiben — so bleibt der
- * Schritt eine reine Funktion und lässt sich ohne Bus und ohne Uhr prüfen.
+ * Die Messwerte beschreiben den Zustand *nach* dem Schritt, also zum
+ * Zeitpunkt `zustand.t` des Rückgabewerts.
  */
-export function schritt(szene: Szene, t: number, _dt: number): Map<SignalId, number> {
+export function schritt(szene: Szene, zustand: LaborZustand, dt: number): {
+  zustand: LaborZustand;
+  werte: Map<SignalId, number>;
+} {
+  const t = zustand.t + dt;
+  const mechanik = mechanikSchritt(szene, zustand.mechanik, dt);
   const werte = new Map<SignalId, number>();
 
   for (const g of szene.geraete) {
-    const typ = geraetTyp(g.typ);
-    if (!typ?.signale.length) continue;
+    if (!geraetTyp(g.typ)?.signale.length) continue;
 
-    if (g.typ === "signalgeber") {
-      werte.set(signalId(g.id, "spannung"), generatorWert(
-        g.werte.form ?? SINUS,
-        g.werte.frequenz ?? 1,
-        g.werte.amplitude ?? 1,
-        t,
-      ));
-    } else if (g.typ === "kraftmesser") {
-      werte.set(signalId(g.id, "kraft"), haengendeLast(szene, g.id) * G);
+    switch (g.typ) {
+      case "signalgeber":
+        werte.set(signalId(g.id, "spannung"), generatorWert(
+          g.werte.form ?? SINUS,
+          g.werte.frequenz ?? 1,
+          g.werte.amplitude ?? 1,
+          t,
+        ));
+        break;
+
+      case "kraftmesser":
+        werte.set(signalId(g.id, "kraft"), haengendeLast(szene, g.id) * G);
+        break;
+
+      case "fadenpendel": {
+        const s = mechanik[g.id];
+        if (!s) break;
+        werte.set(signalId(g.id, "winkel"), s.q);
+        // Bahngeschwindigkeit: der Winkel ändert sich, der Körper legt dabei
+        // den Weg L·Δθ zurück.
+        werte.set(signalId(g.id, "geschwindigkeit"), s.v * (g.werte.laenge ?? 1));
+        break;
+      }
+
+      case "federpendel": {
+        const s = mechanik[g.id];
+        if (!s) break;
+        werte.set(signalId(g.id, "auslenkung"), s.q);
+        // Hooke: die Feder zieht entgegen der Auslenkung.
+        werte.set(signalId(g.id, "kraft"), -(g.werte.federkonstante ?? 10) * s.q);
+        break;
+      }
     }
   }
 
-  return werte;
+  return { zustand: { t, mechanik }, werte };
 }
-
-/** Zeitschritt der Simulation. 240 Hz trägt später auch ein schnelles Pendel. */
-export const DT = 1 / 240;

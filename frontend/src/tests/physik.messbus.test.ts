@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { Messbus, signalId } from "@/lib/physik/messbus";
-import { RECHTECK, SINUS, DREIECK, generatorWert, haengendeLast, schritt } from "@/lib/physik/rechenwerke";
+import { RECHTECK, SINUS, DREIECK, generatorWert, haengendeLast, leererZustand, schritt } from "@/lib/physik/rechenwerke";
 import { ausschnitt, flankenIndex, spanne } from "@/lib/physik/oszilloskop";
 import { neueSzene, stelle, verbinde } from "@/lib/physik/szene";
 import { G } from "@/lib/physik/einheiten";
@@ -120,7 +120,7 @@ describe("schritt", () => {
     let s = stelle(neueSzene(), "kraftmesser", { x: 0, y: 1 });
     s = stelle(s, "massestueck", { x: 0, y: 0.5 });
     s = verbinde(s, { geraet: s.geraete[0].id, port: "unten" }, { geraet: s.geraete[1].id, port: "oese" });
-    const werte = schritt(s, 0, 1 / 240);
+    const { werte } = schritt(s, leererZustand(), DT_TEST);
     // 100 g hängen mit 0,981 N.
     expect(werte.get(signalId(s.geraete[0].id, "kraft"))).toBeCloseTo(0.1 * G, 9);
   });
@@ -128,12 +128,14 @@ describe("schritt", () => {
   it("legt die Spannung des Generators auf den Bus", () => {
     const s = stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 });
     const id = signalId(s.geraete[0].id, "spannung");
-    expect(schritt(s, 0, 1 / 240).get(id)).toBeCloseTo(0, 9);
+    // Die Messwerte gelten fuer den Zeitpunkt *nach* dem Schritt.
+    const erwartet = 5 * Math.sin(2 * Math.PI * 1 * DT_TEST);
+    expect(schritt(s, leererZustand(), DT_TEST).werte.get(id)).toBeCloseTo(erwartet, 9);
   });
 
   it("meldet nichts für Geräte ohne Signale", () => {
     const s = stelle(neueSzene(), "stativ", { x: 0, y: 0 });
-    expect([...schritt(s, 0, 1 / 240).keys()]).toEqual([]);
+    expect([...schritt(s, leererZustand(), DT_TEST).werte.keys()]).toEqual([]);
   });
 });
 
@@ -175,8 +177,12 @@ describe("Messkette", () => {
     let s = stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 });
     s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { ...g.werte, frequenz, amplitude, form: SINUS } })) };
     const bus = new Messbus(1 << 20);
-    const DT = 1 / 240;
-    for (let i = 1; i * DT <= sekunden; i++) bus.schreibe(i * DT, schritt(s, i * DT, DT));
+    let z = leererZustand();
+    for (let i = 1; i * DT_TEST <= sekunden; i++) {
+      const r = schritt(s, z, DT_TEST);
+      z = r.zustand;
+      bus.schreibe(z.t, r.werte);
+    }
     return { bus, id: signalId(s.geraete[0].id, "spannung") };
   }
 

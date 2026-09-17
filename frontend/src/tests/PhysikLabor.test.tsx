@@ -37,6 +37,43 @@ function gespeicherterAufbau() {
   return verbinde(s, { geraet: s.geraete[0].id, port: "haken" }, { geraet: s.geraete[1].id, port: "oese" });
 }
 
+/**
+ * Die Uhr läuft über requestAnimationFrame. In jsdom (und in einem
+ * verborgenen Fenster) feuert das nicht von selbst, also werden die Bilder
+ * hier von Hand durchgeschoben.
+ */
+function mitBildern() {
+  // cancelAnimationFrame muss hier wirklich abbestellen: sonst liefe ein vor
+  // dem Anhalten angemeldetes Bild noch einmal, meldete sich dabei neu an —
+  // und das Anhalten waere gar nicht pruefbar.
+  let naechste = 1;
+  const offen = new Map<number, FrameRequestCallback>();
+  const echtesRAF = globalThis.requestAnimationFrame;
+  const echtesCAF = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+    const id = naechste++;
+    offen.set(id, cb);
+    return id;
+  }) as typeof requestAnimationFrame;
+  globalThis.cancelAnimationFrame = ((id: number) => { offen.delete(id); }) as typeof cancelAnimationFrame;
+
+  let uhr = performance.now();
+  return {
+    bilder(n: number) {
+      for (let i = 0; i < n; i++) {
+        const dran = [...offen.values()];
+        offen.clear();
+        uhr += 50; // 50 ms je Bild — reichlich Simulationsschritte je Runde
+        act(() => dran.forEach(cb => cb(uhr)));
+      }
+    },
+    zurueck() {
+      globalThis.requestAnimationFrame = echtesRAF;
+      globalThis.cancelAnimationFrame = echtesCAF;
+    },
+  };
+}
+
 describe("PhysikLabor", () => {
   it("behält den gespeicherten Aufbau beim Öffnen", () => {
     localStorage.setItem(ABLAGE, alsJSON(gespeicherterAufbau()));
@@ -106,43 +143,6 @@ describe("Oszilloskop im Labor", () => {
 });
 
 describe("Messkette im Labor", () => {
-  /**
-   * Die Uhr läuft über requestAnimationFrame. In jsdom (und in einem
-   * verborgenen Fenster) feuert das nicht von selbst, also werden die Bilder
-   * hier von Hand durchgeschoben.
-   */
-  function mitBildern() {
-    // cancelAnimationFrame muss hier wirklich abbestellen: sonst liefe ein vor
-    // dem Anhalten angemeldetes Bild noch einmal, meldete sich dabei neu an —
-    // und das Anhalten waere gar nicht pruefbar.
-    let naechste = 1;
-    const offen = new Map<number, FrameRequestCallback>();
-    const echtesRAF = globalThis.requestAnimationFrame;
-    const echtesCAF = globalThis.cancelAnimationFrame;
-    globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
-      const id = naechste++;
-      offen.set(id, cb);
-      return id;
-    }) as typeof requestAnimationFrame;
-    globalThis.cancelAnimationFrame = ((id: number) => { offen.delete(id); }) as typeof cancelAnimationFrame;
-
-    let uhr = performance.now();
-    return {
-      bilder(n: number) {
-        for (let i = 0; i < n; i++) {
-          const dran = [...offen.values()];
-          offen.clear();
-          uhr += 50; // 50 ms je Bild — reichlich Simulationsschritte je Runde
-          act(() => dran.forEach(cb => cb(uhr)));
-        }
-      },
-      zurueck() {
-        globalThis.requestAnimationFrame = echtesRAF;
-        globalThis.cancelAnimationFrame = echtesCAF;
-      },
-    };
-  }
-
   it("zeigt die Spannung des Generators auf Kanal 1 an", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
     const uhr = mitBildern();
@@ -177,6 +177,44 @@ describe("Messkette im Labor", () => {
       uhr.bilder(5);
 
       expect(kanal.textContent).toBe(stehengeblieben);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+});
+
+describe("Pendel im Labor", () => {
+  it("legt den Pendelwinkel als Signal aufs Oszilloskop — in Grad, nicht im Bogenmaß", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
+    const uhr = mitBildern();
+    try {
+      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const kanal1 = getByLabelText("Kanal 1") as HTMLSelectElement;
+      expect([...kanal1.options].map(o => o.textContent)).toContain("Fadenpendel · Winkel");
+
+      uhr.bilder(10);
+
+      // Gespeichert wird rad, angezeigt Grad — die Regel des Labors.
+      expect(kanal1.closest("label")!.textContent).toMatch(/-?\d+(,\d+)?\s*°/);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("lässt das Pendel wirklich schwingen", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
+    const uhr = mitBildern();
+    try {
+      const { getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const kanal = getByLabelText("Kanal 1").closest("label")!;
+
+      uhr.bilder(2);
+      const frueh = kanal.textContent;
+      // Ein Fadenpendel mit 1 m braucht rund 2 s je Schwingung; nach gut
+      // einer halben Sekunde steht es sicher woanders.
+      uhr.bilder(12);
+
+      expect(kanal.textContent).not.toBe(frueh);
     } finally {
       uhr.zurueck();
     }

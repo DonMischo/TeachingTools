@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
 import { bewege, portOrt, verbinde, zumBild, zurWelt } from "@/lib/physik/szene";
+import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
+import { ZEICHNER } from "./zeichner";
 
 /** Die Farben der Anschlussarten — dieselben wie in der Legende der Palette. */
 export const PORT_FARBE: Record<PortArt, string> = {
@@ -30,11 +32,14 @@ const einrasten = (x: number) => Math.round(x / RASTER) * RASTER;
 
 const PORT_RADIUS = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, zustand, beobachte }: {
   szene: Szene;
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
   setAusgewaehlt: (id: string | null) => void;
+  /** Der laufende Rechenzustand — daraus kommt die Stellung der Pendel. */
+  zustand: { readonly current: LaborZustand };
+  beobachte: (fn: () => void) => () => void;
 }) {
   const leinwand = useRef<HTMLCanvasElement>(null);
   const huelle = useRef<HTMLDivElement>(null);
@@ -158,12 +163,17 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt 
   }
 
   // ── Zeichnen ────────────────────────────────────────────────────────────────
-  useEffect(() => {
+  const zeichne = useCallback(() => {
     const c = leinwand.current;
     if (!c) return;
     const dpr = window.devicePixelRatio || 1;
-    c.width = Math.max(1, blick.breite * dpr);
-    c.height = Math.max(1, blick.hoehe * dpr);
+    // Nur bei echter Aenderung zuweisen: jede Zuweisung an width/height wirft
+    // den Zeichenpuffer weg und legt ihn neu an — bei 60 Bildern je Sekunde
+    // merkt man das auf einem Klassensatz-Tablet.
+    const breite = Math.max(1, blick.breite * dpr);
+    const hoehe = Math.max(1, blick.hoehe * dpr);
+    if (c.width !== breite) c.width = breite;
+    if (c.height !== hoehe) c.height = hoehe;
     const ctx = c.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -195,6 +205,20 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt 
       const b = t.groesse.b * blick.skala, h = t.groesse.h * blick.skala;
       const gewaehlt = g.id === ausgewaehlt;
 
+      // Pendel und Verwandte bringen ihre eigene Zeichnung mit — ein Kasten
+      // sagt ueber eine Schwingung nichts aus.
+      const eigen = ZEICHNER[g.typ];
+      if (eigen) {
+        eigen(ctx, g, zustand.current.mechanik[g.id], blick);
+        if (gewaehlt) {
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(mitte.x, mitte.y, Math.max(10, Math.max(b, h) * 0.7), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else {
+
       ctx.save();
       ctx.translate(mitte.x, mitte.y);
       // Minus, weil der Bildschirm y nach unten zählt und die Welt nach oben.
@@ -210,6 +234,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt 
       ctx.textBaseline = "middle";
       ctx.fillText(t.icon, 0, 0);
       ctx.restore();
+      }
 
       ctx.fillStyle = "rgba(226,232,240,0.85)";
       ctx.font = "600 11px system-ui, sans-serif";
@@ -231,7 +256,14 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt 
         ctx.stroke();
       }
     }
-  }, [szene, blick, ausgewaehlt, offen]);
+  }, [szene, blick, ausgewaehlt, offen, zustand]);
+
+  // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
+  // haengt das Pendel bewegungslos an seinem Faden.
+  useEffect(() => {
+    zeichne();
+    return beobachte(zeichne);
+  }, [beobachte, zeichne]);
 
   return (
     <div ref={huelle} className="relative h-full w-full touch-none">

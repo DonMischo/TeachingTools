@@ -52,7 +52,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   const [laeuft, setLaeuft] = useState(true);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
-  const { bus, beobachte, zuruecksetzen } = useSimulation(szene, laeuft, tempo);
+  const { bus, zustand, beobachte, zuruecksetzen } = useSimulation(szene, laeuft, tempo);
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
@@ -159,7 +159,11 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           className="rounded-2xl overflow-hidden border border-[var(--border)] bg-[#0b1220]"
           style={{ height: "min(70vh, 640px)", minHeight: 360 }}
         >
-          <Werkbank szene={szene} setSzene={setSzene} ausgewaehlt={ausgewaehlt} setAusgewaehlt={setAusgewaehlt} />
+          <Werkbank
+            szene={szene} setSzene={setSzene}
+            ausgewaehlt={ausgewaehlt} setAusgewaehlt={setAusgewaehlt}
+            zustand={zustand} beobachte={beobachte}
+          />
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">

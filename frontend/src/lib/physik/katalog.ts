@@ -9,6 +9,7 @@
  * Ein neues Gerät ist genau ein Eintrag hier plus sein Rechenwerk — die
  * Werkbank, das Speicherformat und die Messgeräte lesen alles aus dieser Liste.
  */
+import { bogen } from "./einheiten";
 import type { GeraetTyp } from "./typen";
 
 export const KATALOG: GeraetTyp[] = [
@@ -66,6 +67,44 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 20, min: 1, max: 1000 },
     ],
     signale: [{ schluessel: "leistung", name: "Leistung", einheit: "W" }],
+  },
+  {
+    typ: "fadenpendel",
+    name: "Fadenpendel",
+    icon: "🕰️",
+    bereich: "mechanik",
+    // Der Kasten ist nur die Aufhaengung; Faden und Koerper zeichnet der
+    // eigene Zeichner, weil ihre Laenge am Regler haengt.
+    groesse: { b: 0.07, h: 0.06 },
+    ports: [{ id: "aufhaengung", art: "mechanik", name: "Aufhängung", pos: { x: 0, y: 0.03 } }],
+    parameter: [
+      { schluessel: "laenge", name: "Fadenlänge", einheit: "m", standard: 1, min: 0.1, max: 3 },
+      { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.2, min: 0.01, max: 5 },
+      { schluessel: "startwinkel", name: "Startwinkel", einheit: "rad", anzeige: "grad", standard: bogen(15), min: bogen(-80), max: bogen(80) },
+      { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 0.2, min: 0, max: 2 },
+    ],
+    signale: [
+      { schluessel: "winkel", name: "Winkel", einheit: "rad", anzeige: "grad" },
+      { schluessel: "geschwindigkeit", name: "Geschwindigkeit", einheit: "m/s" },
+    ],
+  },
+  {
+    typ: "federpendel",
+    name: "Federpendel",
+    icon: "🌀",
+    bereich: "mechanik",
+    groesse: { b: 0.09, h: 0.06 },
+    ports: [{ id: "aufhaengung", art: "mechanik", name: "Aufhängung", pos: { x: 0, y: 0.03 } }],
+    parameter: [
+      { schluessel: "federkonstante", name: "Federhärte", einheit: "N/m", standard: 20, min: 1, max: 200 },
+      { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.2, min: 0.01, max: 5 },
+      { schluessel: "startauslenkung", name: "Startauslenkung", einheit: "m", standard: 0.05, min: -0.3, max: 0.3 },
+      { schluessel: "daempfung", name: "Reibung", einheit: "1/s", standard: 0.3, min: 0, max: 3 },
+    ],
+    signale: [
+      { schluessel: "auslenkung", name: "Auslenkung", einheit: "m" },
+      { schluessel: "kraft", name: "Federkraft", einheit: "N" },
+    ],
   },
   {
     typ: "signalgeber",

@@ -15,13 +15,13 @@
  */
 import { useCallback, useEffect, useRef } from "react";
 import { Messbus } from "@/lib/physik/messbus";
-import { DT, schritt } from "@/lib/physik/rechenwerke";
+import { DT, leererZustand, schritt, type LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Szene } from "@/lib/physik/typen";
 
 export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
   const bus = useRef<Messbus>(null as unknown as Messbus);
   if (bus.current === null) bus.current = new Messbus();
-  const zeit = useRef(0);
+  const zustand = useRef<LaborZustand>(leererZustand());
   const zuschauer = useRef(new Set<() => void>());
 
   // Der Schritt liest immer den neuesten Aufbau, ohne dafür die Schleife
@@ -51,8 +51,9 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
 
       let schritte = 0;
       while (rest >= DT && schritte < 240) {
-        zeit.current += DT;
-        bus.current.schreibe(zeit.current, schritt(szeneRef.current, zeit.current, DT));
+        const ergebnis = schritt(szeneRef.current, zustand.current, DT);
+        zustand.current = ergebnis.zustand;
+        bus.current.schreibe(ergebnis.zustand.t, ergebnis.werte);
         rest -= DT;
         schritte++;
       }
@@ -68,9 +69,9 @@ export function useSimulation(szene: Szene, laeuft: boolean, tempo: number) {
 
   const zuruecksetzen = useCallback(() => {
     bus.current.leere();
-    zeit.current = 0;
+    zustand.current = leererZustand();
     for (const fn of zuschauer.current) fn();
   }, []);
 
-  return { bus: bus.current, zeit, beobachte, zuruecksetzen };
+  return { bus: bus.current, zustand, beobachte, zuruecksetzen };
 }

@@ -18,7 +18,7 @@
 /** SI-Einheiten, in denen das Labor rechnet. */
 export type Einheit =
   | "" | "m" | "kg" | "s" | "A" | "K"
-  | "N" | "V" | "Ohm" | "F" | "H" | "W" | "J" | "Hz" | "C" | "lx" | "Nm"
+  | "N" | "V" | "Ohm" | "F" | "H" | "W" | "J" | "Hz" | "C" | "lx" | "Nm" | "N/m" | "1/s"
   | "rad" | "m/s" | "m/s^2";
 
 /** Einheiten, die es nur zum Anzeigen gibt — nie zum Rechnen. */
@@ -28,6 +28,7 @@ export type AnzeigeEinheit = "grad" | "°C" | "km/h";
 const ZEICHEN: Record<Einheit, string> = {
   "": "", m: "m", kg: "kg", s: "s", A: "A", K: "K",
   N: "N", V: "V", Ohm: "Ω", F: "F", H: "H", W: "W", J: "J", Hz: "Hz", C: "C", lx: "lx", Nm: "N·m",
+  "N/m": "N/m", "1/s": "1/s",
   rad: "rad", "m/s": "m/s", "m/s^2": "m/s²",
 };
 
