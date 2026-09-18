@@ -91,6 +91,25 @@ describe("Baukasten", () => {
     expect(getByText("an der Wand")).toBeInTheDocument();
   });
 
+  it("schaltet mit »An die Wand« und »Drehbar« um, statt Stifte zu stapeln", () => {
+    const { getByLabelText, getByRole } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Brett hinstellen").click());
+    tippe(getByLabelText("Werkbank"));
+    const fest = () => getByRole("button", { name: /An die Wand/ });
+    const drehbar = () => getByRole("button", { name: /Drehbar/ });
+
+    act(() => fest().click());
+    act(() => fest().click());
+    // Zweimal getippt: an und wieder aus — nicht zwei Schrauben.
+    expect(gespeichert().verbinder).toHaveLength(0);
+
+    act(() => fest().click());
+    act(() => drehbar().click());
+    expect(gespeichert().verbinder.map(v => v.art)).toEqual(["achse"]);
+    expect(drehbar()).toHaveAttribute("aria-pressed", "true");
+    expect(fest()).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("meldet es, wenn man eine Achse ins Leere setzt", () => {
     const { getByLabelText, getByRole } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
     act(() => getByLabelText("Achse setzen").click());

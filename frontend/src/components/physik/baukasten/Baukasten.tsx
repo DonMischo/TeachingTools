@@ -15,16 +15,16 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  lageImAufbau, merke, neuerVerlauf, setze, setzeGelenk, setzeLage, setzeTeilWerte, setzeVerbinderWerte,
+  lageImAufbau, merke, neuerVerlauf, setze, setzeGelenk, setzeLage, setzeMitteAnWand, setzeTeilWerte, setzeVerbinderWerte,
   spanne, teileUnter, tue, verbinderUnter, vor, zurueck, zurWelt, type Lage, type Verlauf,
 } from "@/lib/physik/kern/bearbeiten";
 import {
-  amTeil, entferneTeil, entferneVerbinder, fuegeTeilHinzu, neuerAufbau, verbinde, wand,
+  entferneTeil, entferneVerbinder, fuegeTeilHinzu, neuerAufbau,
   type TeilArt, type VerbinderArt,
 } from "@/lib/physik/kern/modell";
 import { ladeAufbau, speichereAufbau } from "@/lib/physik/kern/speicher";
 import { standardWerteTeil, TEILE } from "@/lib/physik/kern/teile";
-import { standardWerteVerbinder, VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
+import { VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
 import { TAKT, Welt } from "@/lib/physik/kern/welt";
 import type { Blick, Punkt } from "@/lib/physik/typen";
 import { Buehne, type Auswahl, type Bild } from "./buehne";
@@ -347,12 +347,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       const t = aufbau.teile.find(x => x.id === id);
       if (t) aendere(v => tue(v, setzeLage(v.jetzt, id, t.pos, winkel)));
     },
-    anWand: (id: string, art: "schraube" | "achse") => {
-      const t = aufbau.teile.find(x => x.id === id);
-      if (!t) return;
-      const r = verbinde(aufbau, art, amTeil(id), wand(t.pos), standardWerteVerbinder(art));
-      aendere(v => tue(v, r.aufbau));
-    },
+    anWand: (id: string, art: "schraube" | "achse" | null) => aendere(v => tue(v, setzeMitteAnWand(v.jetzt, id, art))),
     entferne: (a: Auswahl) => {
       aendere(v => tue(v, a.art === "teil" ? entferneTeil(v.jetzt, a.id) : entferneVerbinder(v.jetzt, a.id)));
       setAuswahl(null);

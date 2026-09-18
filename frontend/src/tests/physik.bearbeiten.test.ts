@@ -3,10 +3,10 @@
  */
 import { afterEach, describe, it, expect } from "vitest";
 import {
-  merke, neuerVerlauf, setze, setzeGelenk, setzeLage, spanne, teileUnter, tue,
+  merke, mitteAnWand, neuerVerlauf, setze, setzeGelenk, setzeLage, setzeMitteAnWand, spanne, teileUnter, tue,
   verbinderUnter, vor, zumBild, zurueck, zurWelt,
 } from "@/lib/physik/kern/bearbeiten";
-import { endeInWelt, fuegeTeilHinzu, neuerAufbau, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
+import { amTeil, endeInWelt, fuegeTeilHinzu, neuerAufbau, verbinde, wand, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
 import { aufbauAusJSON } from "@/lib/physik/kern/speicher";
 import { standardWerteTeil } from "@/lib/physik/kern/teile";
 import { Welt } from "@/lib/physik/kern/welt";
@@ -165,5 +165,42 @@ describe("Speichern", () => {
     });
     expect(aufbauAusJSON(roh).verbinder).toEqual([]);
     expect(aufbauAusJSON("kein json").teile).toEqual([]);
+  });
+});
+
+describe("In der Mitte an die Wand", () => {
+  it("schaltet statt zu stapeln: fest, drehbar, gelöst", () => {
+    const { aufbau, id } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
+    let a = setzeMitteAnWand(aufbau, id, "schraube");
+    a = setzeMitteAnWand(a, id, "schraube");
+    expect(a.verbinder).toHaveLength(1);
+    expect(mitteAnWand(a, id)).toBe("schraube");
+
+    a = setzeMitteAnWand(a, id, "achse");
+    expect(a.verbinder.map(v => v.art)).toEqual(["achse"]);
+
+    a = setzeMitteAnWand(a, id, null);
+    expect(a.verbinder).toEqual([]);
+    expect(mitteAnWand(a, id)).toBeNull();
+  });
+
+  it("räumt schon angesammelte Doppel in der Mitte auf, lässt Stifte an anderen Stellen stehen", () => {
+    const { aufbau, id } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
+    let a = aufbau;
+    // So sah es vorher nach mehrmaligem Klicken aus: neun Stifte in der Mitte.
+    for (let i = 0; i < 9; i++) {
+      a = verbinde(a, i % 2 ? "achse" : "schraube", amTeil(id), wand({ x: 0, y: 1 })).aufbau;
+    }
+    a = verbinde(a, "schraube", amTeil(id, { x: 0.25, y: 0 }), wand({ x: 0.25, y: 1 })).aufbau;
+    const b = setzeMitteAnWand(a, id, "achse");
+    expect(b.verbinder.map(v => v.art).sort()).toEqual(["achse", "schraube"]);
+  });
+
+  it("setzt kein zweites Gelenk an dieselbe Stelle", () => {
+    const { aufbau } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
+    const eins = erfolg(setzeGelenk(aufbau, "achse", { x: 0.1, y: 1 })).aufbau;
+    expect(setzeGelenk(eins, "achse", { x: 0.1, y: 1 })).toEqual({ fehler: "Hier sitzt schon eine Achse." });
+    // Ein Stück daneben ist eine andere Stelle.
+    expect(erfolg(setzeGelenk(eins, "achse", { x: 0.2, y: 1 })).aufbau.verbinder).toHaveLength(2);
   });
 });

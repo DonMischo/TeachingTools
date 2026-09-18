@@ -112,9 +112,50 @@ export function setzeGelenk(
   const unter = teileUnter(aufbau, p);
   if (unter.length === 0) return { fehler: "Hier liegt nichts, das sich befestigen ließe." };
   const [oben, darunter] = unter;
+  // Sitzt an dieser Stelle schon ein Gelenk zwischen denselben beiden, wäre
+  // ein zweites nur ein unsichtbares Doppel — man sähe eines und hätte zwei.
+  const zweiter = darunter?.id ?? null;
+  const doppelt = aufbau.verbinder.find(v =>
+    (v.art === "achse" || v.art === "schraube")
+    && ((v.a.teil === oben.id && v.b.teil === zweiter) || (v.b.teil === oben.id && v.a.teil === zweiter))
+    && Math.hypot(endeInWelt(aufbau, v.a).x - p.x, endeInWelt(aufbau, v.a).y - p.y) < NAH);
+  if (doppelt) {
+    return { fehler: doppelt.art === "achse" ? "Hier sitzt schon eine Achse." : "Hier sitzt schon eine Schraube." };
+  }
   const a = amTeil(oben.id, lokalpunkt(oben, p));
   const b = darunter ? amTeil(darunter.id, lokalpunkt(darunter, p)) : wand(p);
   return verbinde(aufbau, art, a, b, standardWerteVerbinder(art));
+}
+
+/** Näher als das zählt als »dieselbe Stelle« — ein halber Zentimeter. */
+const NAH = 0.005;
+
+/** Ob ein Verbinder ein Teil in dessen Mitte an der Wand hält. */
+function inDerMitteAnDerWand(v: Verbinder, teil: string): boolean {
+  if (v.art !== "achse" && v.art !== "schraube") return false;
+  const [amTeilEnde, andere] = v.a.teil === teil ? [v.a, v.b] : v.b.teil === teil ? [v.b, v.a] : [null, null];
+  return !!amTeilEnde && andere!.teil === null && Math.hypot(amTeilEnde.punkt.x, amTeilEnde.punkt.y) < NAH;
+}
+
+/** Wie ein Teil in seiner Mitte an der Wand sitzt: gar nicht, fest oder drehbar. */
+export function mitteAnWand(aufbau: Aufbau, teil: string): "schraube" | "achse" | null {
+  const v = aufbau.verbinder.find(x => inDerMitteAnDerWand(x, teil));
+  return v ? (v.art as "schraube" | "achse") : null;
+}
+
+/**
+ * Setzt, wie ein Teil in seiner Mitte an der Wand sitzt — oder löst es davon.
+ *
+ * Ein Schalter, kein Hinzufügen: vorher sitzende Stifte in der Mitte werden
+ * ersetzt, nicht ergänzt. Sonst sammelte jeder Klick einen weiteren Stift an
+ * derselben Stelle an. Stifte an anderen Stellen des Teils bleiben.
+ */
+export function setzeMitteAnWand(aufbau: Aufbau, teil: string, art: "schraube" | "achse" | null): Aufbau {
+  const t = aufbau.teile.find(x => x.id === teil);
+  if (!t) return aufbau;
+  const ohne = { ...aufbau, verbinder: aufbau.verbinder.filter(v => !inDerMitteAnDerWand(v, teil)) };
+  if (!art) return ohne;
+  return verbinde(ohne, art, amTeil(teil), wand(t.pos), standardWerteVerbinder(art)).aufbau;
 }
 
 /** Ein Ende für Seil oder Feder: das oberste Teil an der Stelle, sonst die Wand. */
