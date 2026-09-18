@@ -54,6 +54,17 @@ export interface Port {
    * eben, ohne sich in den Vordergrund zu drängen.
    */
   verborgen?: boolean;
+  /**
+   * Ein Drehlager: was hier aufsitzt, kann kippen. Ein Brett auf dem Keil ist
+   * eine Wippe und kein festgeschraubtes Regal.
+   */
+  dreh?: boolean;
+  /**
+   * Nur der eigene Anschluss des Geräts — nichts wird hier angehängt. Ein
+   * Brett hat keinen Haken, an den eine Murmel schnappen sollte, die man in
+   * seine Nähe zieht; sie soll darauf liegen.
+   */
+  nurEigen?: boolean;
 }
 
 /** Ein einstellbarer Wert eines Geräts — immer in SI abgelegt. */

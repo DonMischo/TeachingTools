@@ -65,15 +65,37 @@ describe("Stapeln", () => {
 });
 
 describe("Eingehängtes", () => {
-  it("bekommt keinen eigenen Körper — es ist Teil seines Wirts", () => {
+  /** Ein Gewicht am Haken eines Stativs. */
+  function amHaken() {
     let szene = stelle(neueSzene(), "stativ", { x: 0, y: 0.6 });
     szene = masse(szene, { x: 0, y: 0.5 });
     const [stativ, gewicht] = szene.geraete.map(g => g.id);
     szene = verbinde(szene, { geraet: stativ, port: "haken" }, { geraet: gewicht, port: "oese" });
+    return { szene, gewicht };
+  }
 
+  it("ist ein eigener Körper — und fällt trotzdem nicht, es hängt", () => {
+    const { szene, gewicht } = amHaken();
     const { zustand } = laufen(szene, 1);
-    // Es fällt nicht: es hängt.
-    expect(zustand[gewicht]).toBeUndefined();
+    expect(zustand[gewicht]).toBeDefined();
+    // Der Haken sitzt 1,2 m hoch; das Gewicht hängt knapp darunter.
+    expect(zustand[gewicht].y).toBeGreaterThan(1.05);
+  });
+
+  it("pendelt am Haken, wenn man es anstößt", () => {
+    const { szene, gewicht } = amHaken();
+    const welt = new Welt();
+    welt.synchronisiere(szene, {});
+    const ruhe = welt.zustand()[gewicht].x;
+    welt.gibTempo(gewicht, 1, 0);
+    let weitester = ruhe;
+    for (let i = 0; i < 240; i++) {
+      welt.schritt(szene, {}, DT);
+      weitester = Math.max(weitester, welt.zustand()[gewicht].x);
+    }
+    // Es schwingt aus — und kommt zurück, statt davonzufliegen.
+    expect(weitester - ruhe).toBeGreaterThan(0.005);
+    expect(Math.abs(welt.zustand()[gewicht].x - ruhe)).toBeLessThan(weitester - ruhe + 1e-9);
   });
 });
 

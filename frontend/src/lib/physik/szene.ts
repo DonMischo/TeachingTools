@@ -232,7 +232,7 @@ export function freierPlatz(
 export function aufgeloest(
   szene: Szene,
   mechanik: Record<string, { q: number }> = {},
-  welt: Record<string, { x: number; y: number }> = {},
+  welt: Record<string, { x: number; y: number; winkel?: number; frei?: boolean }> = {},
 ): Szene {
   const plan = new Map<string, Punkt>();
   const laeuft = new Set<string>();
@@ -256,7 +256,10 @@ export function aufgeloest(
       ? { x: koerper.x, y: koerper.y }
       : boden === null ? g.pos : { x: g.pos.x, y: boden };
 
-    const eigener = EIGENER_HAKEN[g.typ];
+    // Ein freier Körper steht dort, wo der Löser ihn hat — auch wenn er an
+    // einem Haken hängt. Sein Gelenk hält ihn dort; würde er hier an den Haken
+    // gesetzt, sähe man ein angestoßenes Gewicht nie ausschwingen.
+    const eigener = koerper?.frei ? undefined : EIGENER_HAKEN[g.typ];
     if (eigener) {
       const v = szene.verbindungen.find(x =>
         (x.von.geraet === g.id && x.von.port === eigener) ||
@@ -288,7 +291,10 @@ export function aufgeloest(
     ...szene,
     geraete: szene.geraete.map(g => {
       const ort = ortVon(g);
-      return ort.x === g.pos.x && ort.y === g.pos.y ? g : { ...g, pos: ort };
+      // Was frei fällt und kippt, wird auch gekippt gezeichnet.
+      const k = welt[g.id];
+      const winkel = k?.frei && k.winkel !== undefined ? k.winkel : g.winkel;
+      return ort.x === g.pos.x && ort.y === g.pos.y && winkel === g.winkel ? g : { ...g, pos: ort, winkel };
     }),
   };
 }
@@ -410,7 +416,7 @@ export function andockStelle(
   for (const wirt of sicht.geraete) {
     if (wirt.id === gezogen) continue;
     for (const port of geraetTyp(wirt.typ)?.ports ?? []) {
-      if (port.art !== "mechanik") continue;
+      if (port.art !== "mechanik" || port.nurEigen) continue;
       const ort = portOrt(wirt, port.id, mechanik[wirt.id]);
       if (!ort) continue;
       const abstand = Math.hypot(ort.x - welt.x, ort.y - welt.y);

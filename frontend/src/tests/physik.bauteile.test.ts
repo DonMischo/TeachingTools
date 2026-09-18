@@ -137,12 +137,15 @@ describe("Abschuss", () => {
     expect(a.weite).toBeCloseTo((a.tempo ** 2 * Math.sin(bogen(60))) / G, 9);
   });
 
-  it("gibt dem Geschoss erst nach dem Lösen einen Körper", () => {
+  it("hält das Geschoss auf dem Lager fest, bis ausgelöst wird", () => {
     const { szene, geraet, kugel } = geladen("Glas", 0.02, 40, 45);
     const welt = new Welt();
     welt.synchronisiere(szene, {});
-    // Auf dem Lager ist die Murmel Teil ihres Wirts — kein eigener Körper.
-    expect(welt.zustand()[kugel]).toBeUndefined();
+    // Auf dem Lager ist die Murmel ein Körper, aber festgehalten: sie fällt
+    // nicht herunter und rollt nicht weg.
+    const vorher = welt.zustand()[kugel];
+    for (let i = 0; i < 120; i++) welt.schritt(szene, {}, DT);
+    expect(Math.hypot(welt.zustand()[kugel].x - vorher.x, welt.zustand()[kugel].y - vorher.y)).toBeLessThan(0.005);
 
     const a = abschuss(szene, szene.geraete.find(g => g.id === geraet)!);
     const geloest = trenneAn(szene, { geraet, port: "lager" });

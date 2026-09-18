@@ -256,6 +256,13 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     setOffen(null);
 
     const koerper = koerperUnter(p);
+    // Ein echtes Pendel (im realen Modell) nimmt man in die Hand wie alles
+    // andere: ziehen, loslassen, schwingen lassen — und es stößt dabei an.
+    if (koerper && versuch && hand?.greifbar(koerper)) {
+      setAusgewaehlt(koerper);
+      if (hand.greife(koerper, zurWelt(p, blick))) zieht.current = { art: "hand", id: koerper };
+      return;
+    }
     if (koerper) {
       setAusgewaehlt(koerper);
       zieht.current = { art: "koerper", id: koerper };
@@ -278,6 +285,11 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       // Hängt es an einem Schwinger, meint das Anfassen den Schwinger: man
       // zieht nicht das Gewicht vom Haken, man lenkt das ganze Pendel aus.
       const schwinger = wirtKette(szene, id).find(w => istSchwinger(w.typ));
+      if (schwinger && versuch && hand?.greifbar(schwinger.id)) {
+        setAusgewaehlt(schwinger.id);
+        if (hand.greife(schwinger.id, welt)) zieht.current = { art: "hand", id: schwinger.id };
+        return;
+      }
       if (schwinger) {
         setAusgewaehlt(schwinger.id);
         zieht.current = { art: "koerper", id: schwinger.id };

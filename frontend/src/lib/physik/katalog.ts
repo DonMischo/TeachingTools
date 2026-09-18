@@ -167,8 +167,8 @@ export const KATALOG: GeraetTyp[] = [
     bereich: "aufbau",
     groesse: { b: 0.5, h: 0.02 },
     ports: [
-      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true },
-      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true },
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true, nurEigen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true, nurEigen: true },
     ],
     parameter: [
       { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.5, min: 0.1, max: 2 },
@@ -188,8 +188,8 @@ export const KATALOG: GeraetTyp[] = [
     bereich: "aufbau",
     groesse: { b: 0.12, h: 0.12 },
     ports: [
-      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.06 }, verborgen: true },
-      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.06 }, verborgen: true },
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.06 }, verborgen: true, nurEigen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.06 }, verborgen: true, nurEigen: true },
     ],
     parameter: [
       { schluessel: "breite", name: "Breite", einheit: "m", standard: 0.12, min: 0.03, max: 0.6 },
@@ -209,8 +209,8 @@ export const KATALOG: GeraetTyp[] = [
     bereich: "aufbau",
     groesse: { b: 0.02, h: 0.02 },
     ports: [
-      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true },
-      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true },
+      { id: "oese", art: "mechanik", name: "Oese oben", pos: { x: 0, y: 0.01 }, verborgen: true, nurEigen: true },
+      { id: "unten", art: "mechanik", name: "Haken unten", pos: { x: 0, y: -0.01 }, verborgen: true, nurEigen: true },
     ],
     parameter: [
       { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.02, min: 0.006, max: 0.12 },
@@ -304,7 +304,7 @@ export const KATALOG: GeraetTyp[] = [
     groesse: { b: 0.16, h: 0.1 },
     ports: [
       // Die Spitze trägt: was man darauflegt, liegt darauf und dreht sich darum.
-      { id: "spitze", art: "mechanik", name: "Spitze", pos: { x: 0, y: 0.05 }, traegt: true },
+      { id: "spitze", art: "mechanik", name: "Spitze", pos: { x: 0, y: 0.05 }, traegt: true, dreh: true },
     ],
     parameter: [
       { schluessel: "hoehe", name: "Höhe", einheit: "m", standard: 0.1, min: 0.03, max: 0.5 },
