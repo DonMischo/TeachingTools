@@ -72,6 +72,9 @@ function vorsatz(betrag: number, kleinster = 1e-12): { faktor: number; zeichen: 
  * bekommt dann keinen Vorsatz, denn »Millikilometer pro Stunde« gibt es nicht.
  */
 export function formatiere(wert: number, einheit: Einheit, anzeige?: AnzeigeEinheit): string {
+  // Unterhalb des kleinsten Vorsatzes ist nichts Lesbares mehr übrig — dort
+  // stand sonst »6,88e-20 pJ«, das Rauschen des Lösers bei einem ruhenden Teil.
+  if (Math.abs(wert) < 1e-12) wert = 0;
   if (anzeige) {
     const u = UMRECHNUNG[anzeige];
     return `${zahl(u.hin(wert))} ${u.zeichen}`;

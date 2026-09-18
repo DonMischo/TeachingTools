@@ -25,7 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
-import PhysikLabor from "@/components/physik/PhysikLabor";
+import Baukasten from "@/components/physik/baukasten/Baukasten";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -142,7 +142,7 @@ export default function SimulationJoinPage() {
               : `gast-${code}`}
               lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
         : session.tool_slug === "physik"
-          ? <PhysikLabor speicherSchluessel={auth
+          ? <Baukasten speicherSchluessel={auth
               ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
               : `gast-${code}`} />
         : session.tool_slug === "maus"

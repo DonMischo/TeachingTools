@@ -64,3 +64,12 @@ describe("Winkel", () => {
     expect(bogen(90)).toBeCloseTo(Math.PI / 2, 12);
   });
 });
+
+describe("Winzige Werte", () => {
+  it("zeigt Rauschen unterhalb des kleinsten Vorsatzes als null statt in Exponentenschreibweise", async () => {
+    const { formatiere } = await import("@/lib/physik/einheiten");
+    expect(formatiere(6.88e-32, "J")).toBe("0 J");
+    expect(formatiere(-2e-15, "m/s")).toBe("0 m/s");
+    expect(formatiere(3e-12, "J")).toBe("3 pJ");
+  });
+});
