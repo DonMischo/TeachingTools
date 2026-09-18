@@ -30,7 +30,7 @@
  * am eigenen Drehpunkt.
  */
 import * as planck from "planck";
-import { EIGENER_HAKEN, hangEnden, hangOrt, koerperRadius, rohrWaende, stativTeile, umriss, wagenMasse } from "./geometrie";
+import { EIGENER_HAKEN, hangEnden, hangOrt, koerperRadius, ROHRE, rohrWaende, stativTeile, umriss, wagenMasse } from "./geometrie";
 import { geraetTyp, portVon } from "./katalog";
 import { gesamtMasse, type MechanikZustand } from "./mechanik";
 import { feststoff, masseKasten, masseKugel } from "./material";
@@ -222,6 +222,8 @@ export class Welt {
       return "frei";
     }
     if (BALKEN.has(g.typ)) return real ? "folgt" : null;
+    // Eine Rohrbahn steht, auch wenn ihre Teile aneinander eingerastet sind.
+    if (ROHRE.has(g.typ)) return "statisch";
     // Wer an einem Stativ hängt (Kraftmesser, Federpendel), folgt seinem Haken.
     return aufhaengung(szene, g) ? "folgt" : "statisch";
   }
@@ -405,7 +407,7 @@ export class Welt {
 
     // Ein Rohr ist kein Klotz, sondern zwei Wände mit Luft dazwischen. Als
     // Kettenform liegen sie dem Löser genau so vor, wie die Werkbank sie malt.
-    if (g.typ === "rohr" || g.typ === "kruemmer") {
+    if (ROHRE.has(g.typ)) {
       for (const wand of rohrWaende(g).waende) {
         body.createFixture(new planck.Chain(wand.map(p => new planck.Vec2(p.x, p.y)), false), {
           friction: 0.25,

@@ -222,6 +222,23 @@ export const KATALOG: GeraetTyp[] = [
     ],
   },
   {
+    typ: "trichter",
+    name: "Trichter",
+    icon: "🔻",
+    bereich: "aufbau",
+    groesse: { b: 0.2, h: 0.15 },
+    ports: [
+      // Ein Rohr, das man hier ansetzt, rastet ein und richtet sich aus.
+      { id: "aus", art: "mechanik", name: "Auslauf", pos: { x: 0, y: -0.075 } },
+    ],
+    parameter: [
+      { schluessel: "oeffnung", name: "Öffnung", einheit: "m", standard: 0.2, min: 0.06, max: 0.6 },
+      { schluessel: "weite", name: "Auslauf", einheit: "m", standard: 0.05, min: 0.02, max: 0.2 },
+      { schluessel: "tiefe", name: "Höhe", einheit: "m", standard: 0.15, min: 0.05, max: 0.5 },
+    ],
+    signale: [],
+  },
+  {
     typ: "rohr",
     name: "Rohr",
     icon: "🛣️",
@@ -234,6 +251,7 @@ export const KATALOG: GeraetTyp[] = [
     parameter: [
       { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.4, min: 0.1, max: 2 },
       { schluessel: "weite", name: "Lichte Weite", einheit: "m", standard: 0.05, min: 0.02, max: 0.2 },
+      { schluessel: "knick", name: "Knick am Eingang", einheit: "rad", anzeige: "grad", standard: 0, min: bogen(-30), max: bogen(30) },
     ],
     signale: [],
   },
@@ -251,6 +269,7 @@ export const KATALOG: GeraetTyp[] = [
       { schluessel: "radius", name: "Biegeradius", einheit: "m", standard: 0.25, min: 0.05, max: 1 },
       { schluessel: "bogen", name: "Bogenwinkel", einheit: "rad", anzeige: "grad", standard: bogen(90), min: bogen(15), max: bogen(180) },
       { schluessel: "weite", name: "Lichte Weite", einheit: "m", standard: 0.05, min: 0.02, max: 0.2 },
+      { schluessel: "knick", name: "Knick am Eingang", einheit: "rad", anzeige: "grad", standard: 0, min: bogen(-30), max: bogen(30) },
     ],
     signale: [],
   },

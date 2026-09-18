@@ -113,7 +113,7 @@ export function beweglicherPortOrt(
     }
   }
   // Ein- und Ausgang einer Röhre sitzen an den Enden ihrer Achse.
-  if (g.typ === "rohr" || g.typ === "kruemmer") {
+  if (ROHRE.has(g.typ)) {
     const achse = rohrWaende(g).achse;
     if (portId === "ein") return gedreht(g.pos, achse[0], g.winkel ?? 0);
     if (portId === "aus") return gedreht(g.pos, achse[achse.length - 1], g.winkel ?? 0);
@@ -144,6 +144,22 @@ export function beweglicherPortOrt(
 export function rohrWaende(g: Geraet): { waende: [Punkt[], Punkt[]]; achse: Punkt[] } {
   const weite = Math.max(0.01, g.werte.weite ?? 0.05);
 
+  // Der Trichter: zwei schräge Wände, unten ein kurzer gerader Hals, damit
+  // ein angesetztes Rohr eine Kante zum Anschließen hat.
+  if (g.typ === "trichter") {
+    const o = Math.max(weite, g.werte.oeffnung ?? 0.2) / 2;
+    const t = Math.max(0.03, g.werte.tiefe ?? 0.15) / 2;
+    const hals = Math.min(0.03, t * 0.6);
+    const w = weite / 2;
+    return {
+      achse: [{ x: 0, y: t }, { x: 0, y: -t }],
+      waende: [
+        [{ x: -o, y: t }, { x: -w, y: -t + hals }, { x: -w, y: -t }],
+        [{ x: o, y: t }, { x: w, y: -t + hals }, { x: w, y: -t }],
+      ],
+    };
+  }
+
   if (g.typ === "rohr") {
     const l = Math.max(0.05, g.werte.laenge ?? 0.4);
     return {
@@ -167,6 +183,23 @@ export function rohrWaende(g: Geraet): { waende: [Punkt[], Punkt[]]; achse: Punk
     achse: bahn(r),
     waende: [bahn(Math.max(0.005, r - weite / 2)), bahn(r + weite / 2)],
   };
+}
+
+/** Alles, was eine Murmel führt: Rohr, Krümmer, Trichter. */
+export const ROHRE = new Set(["rohr", "kruemmer", "trichter"]);
+
+/**
+ * In welche Richtung eine Röhre an einem Ende läuft, in Gerätekoordinaten.
+ *
+ * Ein Rohr läuft längs seiner Achse, ein Krümmer kommt um seinen Bogenwinkel
+ * gedreht heraus, ein Trichter senkrecht nach unten. Daraus richtet sich ein
+ * angesetztes Rohr aus: sein Eingang zeigt dorthin, wohin der Ausgang des
+ * vorigen zeigt.
+ */
+export function rohrRichtung(g: Geraet, ende: "ein" | "aus"): number {
+  if (g.typ === "trichter") return -Math.PI / 2;
+  if (g.typ === "kruemmer" && ende === "aus") return Math.max(0.1, g.werte.bogen ?? Math.PI / 2);
+  return 0;
 }
 
 /** Ein Rohr ist so breit, wie seine Wände reichen — mitgedreht. */
@@ -222,6 +255,7 @@ export const TRAEGER_PORT: Record<string, string> = {
   // Rohre werden aneinandergereiht: das nächste hängt am Ausgang des vorigen.
   rohr: "aus",
   kruemmer: "aus",
+  trichter: "aus",
   wagen: "oben",
 };
 
@@ -284,7 +318,7 @@ export function umriss(g: Geraet, standard: { b: number; h: number }): Umriss {
     const d = Math.max(0.006, g.werte.durchmesser ?? 0.02);
     return { mitte: g.pos, b: d, h: d };
   }
-  if (g.typ === "rohr" || g.typ === "kruemmer") return rohrUmriss(g);
+  if (ROHRE.has(g.typ)) return rohrUmriss(g);
   if (g.typ === "wagen") {
     const w = wagenMasse(g);
     return { mitte: g.pos, b: w.laenge, h: w.hoehe };

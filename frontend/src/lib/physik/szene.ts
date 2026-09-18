@@ -8,7 +8,7 @@
  *
  * Alle Funktionen geben eine neue Szene zurück und lassen die alte in Ruhe.
  */
-import { beweglicherPortOrt, bodenHoehe, EIGENER_HAKEN, TRAEGER_PORT } from "./geometrie";
+import { beweglicherPortOrt, bodenHoehe, EIGENER_HAKEN, ROHRE, rohrRichtung, TRAEGER_PORT } from "./geometrie";
 import { geraetTyp, portVon, standardWerte } from "./katalog";
 import type { Blick, Geraet, Modelltreue, Punkt, PortZeiger, Szene } from "./typen";
 
@@ -240,6 +240,14 @@ export function aufgeloest(
   // Wer auf etwas steht, trägt selbst nach oben weiter — sonst kippte der
   // Stapel auf einer Waagschale ab dem zweiten Gewicht ins Hängen zurück.
   const stehend = new Set<string>();
+  // Röhren, die aneinander einrasten, richten sich aus: ihr Winkel kommt vom
+  // Vorgänger, nicht aus dem Aufbau. Dreht man den Trichter, dreht sich die
+  // ganze Bahn mit.
+  const drehung = new Map<string, number>();
+  const winkelVon = (g: Geraet): number => {
+    ortVon(g);
+    return drehung.get(g.id) ?? g.winkel ?? 0;
+  };
 
   const ortVon = (g: Geraet): Punkt => {
     const fertig = plan.get(g.id);
@@ -267,7 +275,15 @@ export function aufgeloest(
       const dort = v ? (v.von.geraet === g.id ? v.nach : v.von) : null;
       const wirt = dort ? nachId.get(dort.geraet) : undefined;
       if (dort && wirt) {
-        const anschluss = portOrt({ ...wirt, pos: ortVon(wirt) }, dort.port, mechanik[wirt.id]);
+        const anschluss = portOrt({ ...wirt, pos: ortVon(wirt), winkel: winkelVon(wirt) }, dort.port, mechanik[wirt.id]);
+        // Eingerastet: Eingang in Richtung des vorigen Ausgangs, plus dem
+        // kleinen Knick, den man beim Ansetzen gelassen hat.
+        let selbst = g;
+        if (ROHRE.has(g.typ) && ROHRE.has(wirt.typ) && eigener === "ein" && dort.port === "aus") {
+          const w = winkelVon(wirt) + rohrRichtung(wirt, "aus") - rohrRichtung(g, "ein") + (g.werte.knick ?? 0);
+          drehung.set(g.id, w);
+          selbst = { ...g, winkel: w };
+        }
         // Der eigene Haken sitzt nicht im Mittelpunkt — um seinen Versatz muss
         // das Gerät zurückgeschoben werden, sonst hängt es schief. Auf einer
         // tragenden Stelle (Waagschale) zählt dabei die *Unterseite*: dort
@@ -277,7 +293,7 @@ export function aufgeloest(
           || (dort.port === "oese" && stehend.has(wirt.id));
         const stuetzPunkt = daraufStehend && portVon(g.typ, "unten") ? "unten" : eigener;
         if (daraufStehend) stehend.add(g.id);
-        const versatz = portOrt({ ...g, pos: { x: 0, y: 0 } }, stuetzPunkt, mechanik[g.id]);
+        const versatz = portOrt({ ...selbst, pos: { x: 0, y: 0 } }, stuetzPunkt, mechanik[g.id]);
         if (anschluss && versatz) ort = { x: anschluss.x - versatz.x, y: anschluss.y - versatz.y };
       }
     }
@@ -293,10 +309,31 @@ export function aufgeloest(
       const ort = ortVon(g);
       // Was frei fällt und kippt, wird auch gekippt gezeichnet.
       const k = welt[g.id];
-      const winkel = k?.frei && k.winkel !== undefined ? k.winkel : g.winkel;
+      const winkel = k?.frei && k.winkel !== undefined ? k.winkel : (drehung.get(g.id) ?? g.winkel);
       return ort.x === g.pos.x && ort.y === g.pos.y && winkel === g.winkel ? g : { ...g, pos: ort, winkel };
     }),
   };
+}
+
+/** Der größte Knick, den eine Steckverbindung zweier Röhren hergibt. */
+export const KNICK_GRENZE = Math.PI / 6;
+
+/**
+ * Setzt beim Einrasten einer Röhre ihren Knick.
+ *
+ * Eingerastet richtet sich ein Rohr nach seinem Vorgänger aus. Wer es aber
+ * absichtlich ein wenig schräg ansetzt, bekommt diesen Knick — auf 5° gerundet,
+ * höchstens 30°. Weicht es weiter ab (ein frisch aus dem Schrank genommenes
+ * Rohr liegt waagerecht, der Trichter zeigt nach unten), war das keine
+ * Absicht: dann rastet es gerade ein.
+ */
+export function rasteEin(szene: Szene, id: string, angesetzt: number): Szene {
+  const gerade = stelleEin(szene, id, { knick: 0 });
+  const ausgerichtet = aufgeloest(gerade).geraete.find(g => g.id === id)?.winkel ?? 0;
+  const abweichung = Math.atan2(Math.sin(angesetzt - ausgerichtet), Math.cos(angesetzt - ausgerichtet));
+  if (Math.abs(abweichung) > KNICK_GRENZE + 1e-9) return gerade;
+  const stufe = Math.PI / 36;
+  return stelleEin(gerade, id, { knick: Math.round(abweichung / stufe) * stufe });
 }
 
 /** Kappt alles, was an diesem Anschluss hängt — der Riss in der Probe. */

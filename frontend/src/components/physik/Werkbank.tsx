@@ -12,11 +12,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { geraetTyp } from "@/lib/physik/katalog";
 import { istSchwinger } from "@/lib/physik/mechanik";
-import { andockStelle, aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, stelleEin, verbinde, wirtKette, zumBild, zurWelt } from "@/lib/physik/szene";
+import { andockStelle, aufgeloest, aushaengen, bewege, haengtIrgendwo, portOrt, rasteEin, stelleEin, verbinde, wirtKette, zumBild, zurWelt } from "@/lib/physik/szene";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Marker } from "@/lib/physik/phaenomene";
 import type { Blick, PortArt, PortZeiger, Punkt, Szene } from "@/lib/physik/typen";
-import { EIGENER_HAKEN, gedreht, koerperOrt, koerperRadius, startWertAus, umriss } from "@/lib/physik/geometrie";
+import { EIGENER_HAKEN, gedreht, koerperOrt, koerperRadius, ROHRE, startWertAus, umriss } from "@/lib/physik/geometrie";
 import { feststoff } from "@/lib/physik/material";
 import { START_WERT, ZEICHNER } from "./zeichner";
 
@@ -363,9 +363,12 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     if (z?.art === "geraet" && andock) {
       const g = szene.geraete.find(x => x.id === z.id);
       const eigener = g ? EIGENER_HAKEN[g.typ] : undefined;
-      if (eigener) {
+      if (eigener && g) {
         try {
-          setSzene(verbinde(szene, andock, { geraet: z.id, port: eigener }));
+          const verbunden = verbinde(szene, andock, { geraet: z.id, port: eigener });
+          // Röhren rasten ausgerichtet ein — mit dem kleinen Knick, den man
+          // beim Ansetzen gelassen hat.
+          setSzene(ROHRE.has(g.typ) ? rasteEin(verbunden, z.id, g.winkel ?? 0) : verbunden);
         } catch (err) {
           setFehler(err instanceof Error ? err.message : "Das passt nicht zusammen.");
         }

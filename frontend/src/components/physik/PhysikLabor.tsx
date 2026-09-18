@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { bogen, formatiere, grad, nachSI } from "@/lib/physik/einheiten";
 import { KATALOG, geraetTyp, standardWerte } from "@/lib/physik/katalog";
-import { ablageHoehe } from "@/lib/physik/geometrie";
+import { ablageHoehe, ROHRE } from "@/lib/physik/geometrie";
 import { ladeSzene, speichereSzene } from "@/lib/physik/speicher";
 import { istSchwinger } from "@/lib/physik/mechanik";
 import { bericht, bruchBericht, stossBericht, type Marker } from "@/lib/physik/phaenomene";
@@ -28,7 +28,7 @@ import { werkstoff } from "@/lib/physik/material";
 import type { LaborZustand } from "@/lib/physik/rechenwerke";
 import type { Stoss } from "@/lib/physik/welt";
 import { Bericht } from "./Bericht";
-import { aufgeloest, bewege, entferne, freierPlatz, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
+import { aufgeloest, bewege, entferne, freierPlatz, haengtIrgendwo, neueSzene, portOrt, stelle, stelleEin, trenne, trenneAlle, trenneAn, treueVon, verketten } from "@/lib/physik/szene";
 import type { Bereich, Modelltreue, Szene } from "@/lib/physik/typen";
 import Werkbank, { PORT_FARBE } from "./Werkbank";
 import { DREHBAR, FREI_DREHBAR } from "./zeichner";
@@ -534,7 +534,14 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 />
               )}
 
-              {FREI_DREHBAR.has(geraet.typ) && (
+              {ROHRE.has(geraet.typ) && haengtIrgendwo(szene, geraet) && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Eingerastet — die Richtung kommt vom Vorgänger. Schräg stellen lässt es sich
+                  nur um den Knick am Eingang.
+                </p>
+              )}
+
+              {FREI_DREHBAR.has(geraet.typ) && !(ROHRE.has(geraet.typ) && haengtIrgendwo(szene, geraet)) && (
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-[var(--text-muted)]">
                     Neigung <b className="text-[var(--text)]">{Math.round(grad(geraet.winkel ?? 0))}°</b>

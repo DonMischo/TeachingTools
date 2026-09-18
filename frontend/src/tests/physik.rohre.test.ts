@@ -12,7 +12,7 @@ import { describe, it, expect } from "vitest";
 import { Welt } from "@/lib/physik/welt";
 import { rohrWaende, umriss, wagenMasse } from "@/lib/physik/geometrie";
 import { wagenLast } from "@/lib/physik/rechenwerke";
-import { neueSzene, portOrt, stelle, verbinde } from "@/lib/physik/szene";
+import { aufgeloest, neueSzene, portOrt, rasteEin, stelle, verbinde } from "@/lib/physik/szene";
 import { bogen } from "@/lib/physik/einheiten";
 import { geraetTyp } from "@/lib/physik/katalog";
 import type { Szene } from "@/lib/physik/typen";
@@ -206,5 +206,85 @@ describe("Versuchswagen", () => {
     };
     // p = m·v: bei gleichem Tempo trägt die beladene Wanne mehr Impuls hinein.
     expect(schub(true)).toBeGreaterThan(schub(false));
+  });
+});
+
+describe("Trichter und Einrasten", () => {
+  /** Trichter bei (0 | 1), ein Rohr am Auslauf. */
+  function trichterMitRohr(werteRohr: Record<string, number> = {}, trichterWinkel = 0) {
+    let s = neueSzene();
+    const trichter = bauteil(s, "trichter", { x: 0, y: 1 }, { oeffnung: 0.2, weite: 0.05, tiefe: 0.15 }, trichterWinkel);
+    s = trichter.szene;
+    const rohr = bauteil(s, "rohr", { x: 3, y: 3 }, { laenge: 0.4, weite: 0.05, ...werteRohr });
+    s = verbinde(rohr.szene, { geraet: trichter.id, port: "aus" }, { geraet: rohr.id, port: "ein" });
+    return { szene: s, trichter: trichter.id, rohr: rohr.id };
+  }
+  const lage = (s: Szene, id: string) => aufgeloest(s).geraete.find(g => g.id === id)!;
+
+  it("ist oben so weit wie die Öffnung und unten so weit wie der Auslauf", () => {
+    const { szene, trichter } = trichterMitRohr();
+    const [links, rechts] = rohrWaende(szene.geraete.find(g => g.id === trichter)!).waende;
+    expect(rechts[0].x - links[0].x).toBeCloseTo(0.2, 9);
+    expect(rechts[rechts.length - 1].x - links[links.length - 1].x).toBeCloseTo(0.05, 9);
+  });
+
+  it("richtet ein angesetztes Rohr nach dem Auslauf aus — senkrecht nach unten", () => {
+    const { szene, rohr, trichter } = trichterMitRohr();
+    const r = lage(szene, rohr);
+    expect(r.winkel).toBeCloseTo(-Math.PI / 2, 9);
+    // Sein Eingang sitzt genau am Auslauf.
+    const ein = portOrt(r, "ein")!, aus = portOrt(lage(szene, trichter), "aus")!;
+    expect(ein.x).toBeCloseTo(aus.x, 9);
+    expect(ein.y).toBeCloseTo(aus.y, 9);
+  });
+
+  it("dreht die ganze Bahn mit, wenn man den Trichter dreht", () => {
+    const { szene, rohr, trichter } = trichterMitRohr({}, bogen(20));
+    const r = lage(szene, rohr);
+    expect(r.winkel).toBeCloseTo(-Math.PI / 2 + bogen(20), 9);
+    const ein = portOrt(r, "ein")!, aus = portOrt(lage(szene, trichter), "aus")!;
+    expect(Math.hypot(ein.x - aus.x, ein.y - aus.y)).toBeLessThan(1e-9);
+  });
+
+  it("nimmt den Knick am Eingang dazu", () => {
+    const { szene, rohr } = trichterMitRohr({ knick: bogen(15) });
+    expect(lage(szene, rohr).winkel).toBeCloseTo(-Math.PI / 2 + bogen(15), 9);
+  });
+
+  it("setzt ein Rohr hinter einem Krümmer in dessen Ausgangsrichtung fort", () => {
+    let s = neueSzene();
+    const k = bauteil(s, "kruemmer", { x: 0, y: 1 }, { radius: 0.25, bogen: bogen(60) });
+    s = k.szene;
+    const r = bauteil(s, "rohr", { x: 3, y: 3 });
+    s = verbinde(r.szene, { geraet: k.id, port: "aus" }, { geraet: r.id, port: "ein" });
+    expect(lage(s, r.id).winkel).toBeCloseTo(bogen(60), 9);
+  });
+
+  it("behält beim Einrasten einen kleinen Knick und richtet große Abweichungen gerade", () => {
+    const { szene, rohr } = trichterMitRohr();
+    // Leicht schräg angesetzt: 12° daneben ergibt 10° Knick.
+    const leicht = rasteEin(szene, rohr, -Math.PI / 2 + bogen(12));
+    expect(leicht.geraete.find(g => g.id === rohr)!.werte.knick).toBeCloseTo(bogen(10), 9);
+    // Waagerecht aus dem Schrank: das war keine Absicht, es rastet gerade ein.
+    const quer = rasteEin(szene, rohr, 0);
+    expect(quer.geraete.find(g => g.id === rohr)!.werte.knick).toBe(0);
+  });
+
+  it("fängt eine Murmel auf und führt sie durchs Rohr nach unten", () => {
+    const { szene } = trichterMitRohr();
+    // Neben der Mitte, aber noch über der Öffnung fallen lassen.
+    const kugel = bauteil(szene, "kugel", { x: 0.07, y: 1.3 }, { durchmesser: 0.02, stoff: 0 });
+    const welt = new Welt();
+    welt.synchronisiere(kugel.szene, {});
+    let austritt: number | null = null;
+    for (let i = 0; i < 240 * 2 && austritt === null; i++) {
+      welt.schritt(kugel.szene, {}, DT);
+      const k = welt.zustand()[kugel.id];
+      // Das Rohr endet bei y = 1 − 0,075 − 0,4 = 0,525.
+      if (k.y < 0.5) austritt = k.x;
+    }
+    expect(austritt).not.toBeNull();
+    // Herausgekommen ist sie in der Mitte, nicht dort, wo sie losfiel.
+    expect(Math.abs(austritt!)).toBeLessThan(0.03);
   });
 });

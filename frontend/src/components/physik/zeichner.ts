@@ -565,7 +565,7 @@ const wagen: Zeichner = (ctx, g, zustand, blick) => {
   }
 };
 
-export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe, rohr, kruemmer: rohr, wagen };
+export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, probe, fadenpendel, federpendel, hebel, flaschenzug, schiefeebene, lampe, rohr, kruemmer: rohr, trichter: rohr, wagen };
 
 /** Welcher Startwert eines Geräts sich durch Ziehen am Körper ergibt. */
 /**
@@ -576,7 +576,7 @@ export const ZEICHNER: Record<string, Zeichner> = { stativ, drehpunkt, waage, pr
  * blieb. Für die bleibt das Drehen deshalb aus, bis ihre Zeichnung es kann.
  */
 /** Zeichnungen, die den Drehwinkel schon berücksichtigen. */
-const DREHT_MIT = new Set(["stativ", "rohr", "kruemmer"]);
+const DREHT_MIT = new Set(["stativ", "rohr", "kruemmer", "trichter"]);
 
 export const DREHBAR = (typ: string) => DREHT_MIT.has(typ) || !(typ in ZEICHNER);
 
@@ -587,7 +587,7 @@ export const DREHBAR = (typ: string) => DREHT_MIT.has(typ) || !(typ in ZEICHNER)
  * bei 12° rollt die Murmel an, bei 40° schießt sie davon. Die Vierteldrehung
  * bleibt daneben stehen, weil »quer stellen« der häufigste Griff ist.
  */
-export const FREI_DREHBAR = new Set(["rohr", "kruemmer", "brett", "klotz"]);
+export const FREI_DREHBAR = new Set(["rohr", "kruemmer", "trichter", "brett", "klotz"]);
 
 export const START_WERT: Record<string, string> = {
   fadenpendel: "startwinkel",
