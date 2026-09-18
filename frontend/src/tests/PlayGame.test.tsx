@@ -9,7 +9,7 @@
  *  - reveal event: shows ✅/❌ result, rank, and delta
  *  - finished event: shows final ranking
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -58,13 +58,19 @@ import PlayPage from "@/app/play/[code]/page";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+// Ohne Pause zwischen den Tastendrücken: jede Pause ist ein setTimeout, der
+// unter Last der vollen Suite lange auf seinen Zug wartet.
+let user: ReturnType<typeof userEvent.setup>;
+
 async function mountAndJoin() {
+  user = userEvent.setup({ delay: null });
   render(<PlayPage />);
-  // hydrate
-  await act(async () => {});
   // fill name and click Beitreten
-  await userEvent.type(screen.getByPlaceholderText(/Dein Name/i), "Lena");
-  await userEvent.click(screen.getByRole("button", { name: /Beitreten/i }));
+  await user.type(await screen.findByPlaceholderText(/Dein Name/i), "Lena");
+  await user.click(screen.getByRole("button", { name: /Beitreten/i }));
+  // Der Socket entsteht erst, wenn Gast-Token und Beitritt aufgelöst sind und
+  // der Effekt gelaufen ist — darauf warten statt auf den Klick allein.
+  await waitFor(() => expect(socket).toBeDefined());
   // simulate server joined response
   act(() => { socket.fire({ event: "joined", name: "Lena" }); });
   // now in waiting phase
@@ -170,7 +176,7 @@ describe("PlayPage – in-game phases", () => {
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
 
-    await userEvent.click(screen.getByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "4" }));
 
     expect(socket.send).toHaveBeenCalledWith(
       JSON.stringify({ action: "answer", answer_ids: [11] })
@@ -182,7 +188,7 @@ describe("PlayPage – in-game phases", () => {
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
 
-    await userEvent.click(screen.getByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
 
     await waitFor(() =>
@@ -195,7 +201,7 @@ describe("PlayPage – in-game phases", () => {
     act(() => { socket.fire({ ...PREVIEW_MSG, question_type: "multi" }); });
     act(() => { socket.fire(ANSWERING_MULTI); });
 
-    await userEvent.click(screen.getByRole("button", { name: "Mars" }));
+    await user.click(screen.getByRole("button", { name: "Mars" }));
 
     // send not called yet (need to press submit)
     expect(socket.send).not.toHaveBeenCalled();
@@ -206,7 +212,7 @@ describe("PlayPage – in-game phases", () => {
     act(() => { socket.fire({ ...PREVIEW_MSG, question_type: "multi" }); });
     act(() => { socket.fire(ANSWERING_MULTI); });
 
-    await userEvent.click(screen.getByRole("button", { name: "Mars" }));
+    await user.click(screen.getByRole("button", { name: "Mars" }));
 
     expect(screen.getByRole("button", { name: /Antwort abschicken/i })).toBeInTheDocument();
   });
@@ -216,9 +222,9 @@ describe("PlayPage – in-game phases", () => {
     act(() => { socket.fire({ ...PREVIEW_MSG, question_type: "multi" }); });
     act(() => { socket.fire(ANSWERING_MULTI); });
 
-    await userEvent.click(screen.getByRole("button", { name: "Mars" }));
-    await userEvent.click(screen.getByRole("button", { name: "Venus" }));
-    await userEvent.click(screen.getByRole("button", { name: /Antwort abschicken/i }));
+    await user.click(screen.getByRole("button", { name: "Mars" }));
+    await user.click(screen.getByRole("button", { name: "Venus" }));
+    await user.click(screen.getByRole("button", { name: /Antwort abschicken/i }));
 
     expect(socket.send).toHaveBeenCalledWith(
       JSON.stringify({ action: "answer", answer_ids: [20, 22] })
@@ -229,7 +235,7 @@ describe("PlayPage – in-game phases", () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
-    await userEvent.click(screen.getByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
     act(() => { socket.fire(REVEAL_CORRECT); });
 
@@ -240,7 +246,7 @@ describe("PlayPage – in-game phases", () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
-    await userEvent.click(screen.getByRole("button", { name: "3" }));
+    await user.click(screen.getByRole("button", { name: "3" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: false }); });
     act(() => { socket.fire(REVEAL_WRONG); });
 
@@ -251,7 +257,7 @@ describe("PlayPage – in-game phases", () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
-    await userEvent.click(screen.getByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
     act(() => { socket.fire(REVEAL_CORRECT); });
     act(() => { socket.fire({ event: "ranking", ranking: [{ pid: 7, name: "Lena", avatar: "cat", score: 1.2, delta: 1.2, rank: 1 }] }); });
@@ -263,7 +269,7 @@ describe("PlayPage – in-game phases", () => {
     await mountAndJoin();
     act(() => { socket.fire(PREVIEW_MSG); });
     act(() => { socket.fire(ANSWERING_SINGLE); });
-    await userEvent.click(screen.getByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "4" }));
     act(() => { socket.fire({ event: "answer_received", is_correct: true }); });
     act(() => { socket.fire(REVEAL_CORRECT); });
     act(() => { socket.fire({ event: "ranking", ranking: [{ pid: 7, name: "Lena", avatar: "cat", score: 1.2, delta: 1.2, rank: 1 }] }); });
@@ -292,15 +298,19 @@ describe("PlayPage – Verbindungsabriss", () => {
     localStorage.clear();
     socket = undefined as unknown as MockWebSocket;
   });
+  afterEach(() => { vi.useRealTimers(); });
 
   it("verbindet nach einem Abriss selbst neu und bekommt die erste Frage", async () => {
     // Handy im Warteraum gesperrt: die Verbindung reisst ab. Bisher blieb der
     // Warteraum stehen, und die Frage kam erst nach dem Neuladen an.
     await mountAndJoin();
     const first = socket;
+    vi.useFakeTimers();
     act(() => { first.onclose?.({ code: 1006 }); });
 
-    await waitFor(() => expect(socket).not.toBe(first), { timeout: 2500 });
+    // Erster Neuversuch nach 1 s Wartezeit.
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(socket).not.toBe(first);
     act(() => { socket.fire(PREVIEW_MSG); });
     expect(screen.getByText("Was ist 2+2?")).toBeInTheDocument();
   });
@@ -316,10 +326,11 @@ describe("PlayPage – Verbindungsabriss", () => {
   it("verbindet nach dem Rauswurf nicht neu", async () => {
     await mountAndJoin();
     const first = socket;
+    vi.useFakeTimers();
     act(() => { first.fire({ event: "kicked" }); });
     act(() => { first.onclose?.({ code: 4000 }); });
 
-    await new Promise((r) => setTimeout(r, 1200));
+    act(() => { vi.advanceTimersByTime(10_000); });
     expect(socket).toBe(first);
   });
 });
