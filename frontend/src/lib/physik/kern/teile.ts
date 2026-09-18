@@ -1,0 +1,179 @@
+/**
+ * Die Grundteile: wie sie heißen, was man an ihnen einstellt, welche Gestalt
+ * sie haben und wie schwer sie sind.
+ *
+ * Die Gestalt steht hier einmal und wird von allen gelesen — vom Löser, von
+ * der Zeichnung und vom Treffertest. Liefen die auseinander, rollte eine
+ * Murmel sichtbar neben dem Brett entlang.
+ *
+ * Die Masse folgt aus Werkstoff und Volumen, nicht aus einer Zahl, die man
+ * irgendwo einträgt: ein Brett aus Stahl ist schwerer als eines aus Holz,
+ * ohne dass man es sagen muss. Wer eine bestimmte Masse braucht, gibt sie vor
+ * — dann gilt die, und die Dichte richtet sich danach.
+ */
+import { FESTSTOFF_AUSWAHL, feststoff } from "../material";
+import type { ParameterDef, Punkt } from "../typen";
+import type { Teil, TeilArt } from "./modell";
+
+/** Gestalt in Teilkoordinaten. Kasten und Kreis genügen fürs Erste, die Kapsel für Stangen. */
+export type Form =
+  | { art: "kasten"; mitte: Punkt; b: number; h: number }
+  | { art: "kreis"; mitte: Punkt; r: number }
+  | { art: "kapsel"; a: Punkt; b: Punkt; r: number };
+
+export interface TeilTyp {
+  art: TeilArt;
+  name: string;
+  icon: string;
+  parameter: ParameterDef[];
+  /** Die Gestalt — eine oder mehrere Formen, alle starr verbunden. */
+  formen: (t: Teil) => Form[];
+  /** Das Volumen in m³, aus dem mit der Dichte die Masse wird. */
+  volumen: (t: Teil) => number;
+}
+
+const STOFF = (standard: number): ParameterDef => ({
+  schluessel: "stoff", name: "Werkstoff", einheit: "", standard, min: 0,
+  max: FESTSTOFF_AUSWAHL.length - 1, optionen: FESTSTOFF_AUSWAHL,
+});
+
+/** 0 heißt: aus dem Werkstoff berechnen. */
+const MASSE_VORGABE: ParameterDef = {
+  schluessel: "masseVorgabe", name: "Masse vorgeben", einheit: "kg", standard: 0, min: 0, max: 50,
+};
+
+const w = (t: Teil, k: string, ersatz: number) => t.werte[k] ?? ersatz;
+
+export const TEILE: TeilTyp[] = [
+  {
+    art: "brett",
+    name: "Brett",
+    icon: "🪵",
+    parameter: [
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.6, min: 0.05, max: 3 },
+      { schluessel: "dicke", name: "Dicke", einheit: "m", standard: 0.02, min: 0.005, max: 0.2 },
+      { schluessel: "tiefe", name: "Breite (in die Tiefe)", einheit: "m", standard: 0.1, min: 0.01, max: 0.5 },
+      STOFF(0),
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: w(t, "laenge", 0.6), h: w(t, "dicke", 0.02) }],
+    volumen: t => w(t, "laenge", 0.6) * w(t, "dicke", 0.02) * w(t, "tiefe", 0.1),
+  },
+  {
+    art: "stange",
+    name: "Stange",
+    icon: "🥢",
+    parameter: [
+      { schluessel: "laenge", name: "Länge", einheit: "m", standard: 0.5, min: 0.02, max: 3 },
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.012, min: 0.002, max: 0.1 },
+      {
+        // Von vorn sieht man eine Stange, die aus der Wand ragt, nur als Kreis
+        // — und genau so wirkt sie auch: ein Stift, gegen den etwas stößt, an
+        // dem etwas hängt, um den sich etwas dreht.
+        schluessel: "stirn", name: "Ansicht", einheit: "", standard: 0, min: 0, max: 1,
+        optionen: [{ wert: 0, name: "längs" }, { wert: 1, name: "von vorn (Stift)" }],
+      },
+      STOFF(1),
+      MASSE_VORGABE,
+    ],
+    formen: t => {
+      const r = w(t, "durchmesser", 0.012) / 2;
+      if (w(t, "stirn", 0) >= 0.5) return [{ art: "kreis", mitte: { x: 0, y: 0 }, r }];
+      const halb = Math.max(0, w(t, "laenge", 0.5) / 2 - r);
+      return [{ art: "kapsel", a: { x: -halb, y: 0 }, b: { x: halb, y: 0 }, r }];
+    },
+    // Dieselbe Stange wiegt gleich viel, ob man sie längs oder von vorn sieht.
+    volumen: t => Math.PI * (w(t, "durchmesser", 0.012) / 2) ** 2 * w(t, "laenge", 0.5),
+  },
+  {
+    art: "klotz",
+    name: "Klotz",
+    icon: "🧱",
+    parameter: [
+      { schluessel: "breite", name: "Breite", einheit: "m", standard: 0.1, min: 0.01, max: 1 },
+      { schluessel: "hoehe", name: "Höhe", einheit: "m", standard: 0.1, min: 0.01, max: 1 },
+      { schluessel: "tiefe", name: "Tiefe", einheit: "m", standard: 0.1, min: 0.01, max: 1 },
+      STOFF(0),
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: w(t, "breite", 0.1), h: w(t, "hoehe", 0.1) }],
+    volumen: t => w(t, "breite", 0.1) * w(t, "hoehe", 0.1) * w(t, "tiefe", 0.1),
+  },
+  {
+    art: "kugel",
+    name: "Murmel",
+    icon: "🔵",
+    parameter: [
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.02, min: 0.004, max: 0.3 },
+      STOFF(2),
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kreis", mitte: { x: 0, y: 0 }, r: w(t, "durchmesser", 0.02) / 2 }],
+    volumen: t => (Math.PI / 6) * w(t, "durchmesser", 0.02) ** 3,
+  },
+  {
+    art: "scheibe",
+    name: "Scheibe",
+    icon: "⚙️",
+    parameter: [
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.2, min: 0.01, max: 2 },
+      { schluessel: "dicke", name: "Dicke", einheit: "m", standard: 0.02, min: 0.002, max: 0.3 },
+      STOFF(0),
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kreis", mitte: { x: 0, y: 0 }, r: w(t, "durchmesser", 0.2) / 2 }],
+    volumen: t => Math.PI * (w(t, "durchmesser", 0.2) / 2) ** 2 * w(t, "dicke", 0.02),
+  },
+  {
+    art: "massestueck",
+    name: "Massestück",
+    icon: "🏋️",
+    // Beim Massestück ist die Masse das Wesentliche — sie steht drauf. Die
+    // Größe folgt ihr, wie bei einem Satz Gewichte aus Messing.
+    parameter: [
+      { schluessel: "masse", name: "Masse", einheit: "kg", standard: 0.1, min: 0.001, max: 50 },
+    ],
+    formen: t => {
+      const s = massestueckKante(w(t, "masse", 0.1));
+      return [{ art: "kasten", mitte: { x: 0, y: 0 }, b: s, h: s }];
+    },
+    volumen: t => massestueckKante(w(t, "masse", 0.1)) ** 3,
+  },
+];
+
+/** Kantenlänge eines Messingwürfels dieser Masse. */
+export const massestueckKante = (masse: number) => Math.cbrt(Math.max(1e-6, masse) / 8500);
+
+export const teilTyp = (art: TeilArt | string): TeilTyp | undefined => TEILE.find(t => t.art === art);
+
+export function standardWerteTeil(art: TeilArt): Record<string, number> {
+  return Object.fromEntries((teilTyp(art)?.parameter ?? []).map(p => [p.schluessel, p.standard]));
+}
+
+/**
+ * Die Masse eines Teils in Kilogramm.
+ *
+ * Vorgegeben schlägt berechnet; beim Massestück ist die Masse selbst die
+ * Einstellung.
+ */
+export function teilMasse(t: Teil): number {
+  if (t.art === "massestueck") return Math.max(1e-6, w(t, "masse", 0.1));
+  const vorgabe = w(t, "masseVorgabe", 0);
+  if (vorgabe > 0) return vorgabe;
+  const typ = teilTyp(t.art);
+  return Math.max(1e-6, feststoff(w(t, "stoff", 0)).dichte * (typ?.volumen(t) ?? 0));
+}
+
+/** Die Fläche der Gestalt in der Ebene — daraus wird die Dichte für den Löser. */
+export function formFlaeche(f: Form): number {
+  if (f.art === "kasten") return f.b * f.h;
+  if (f.art === "kreis") return Math.PI * f.r * f.r;
+  return Math.PI * f.r * f.r + 2 * f.r * Math.hypot(f.b.x - f.a.x, f.b.y - f.a.y);
+}
+
+/** Reibung und Sprung aus dem Werkstoff; das Massestück ist aus Messing. */
+export function oberflaeche(t: Teil): { reibung: number; sprung: number; farbe: string } {
+  if (t.art === "massestueck") return { reibung: 0.4, sprung: 0.1, farbe: "#c9a227" };
+  const s = feststoff(w(t, "stoff", 0));
+  return { reibung: s.reibung, sprung: s.sprung, farbe: s.farbe };
+}
