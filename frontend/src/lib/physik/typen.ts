@@ -68,6 +68,15 @@ export interface ParameterDef {
   max: number;
   /** Feste Auswahl statt Regler — gespeichert bleibt trotzdem eine Zahl. */
   optionen?: { wert: number; name: string }[];
+  /**
+   * Ein Bedienelement: auch im Versuch verstellbar.
+   *
+   * Im Versuch ist der Aufbau fest — Maße, Massen und Werkstoffe ändern sich
+   * nicht mehr. Was man aber auch am echten Gerät während des Versuchs tut,
+   * bleibt frei: zielen und spannen, den Schalter umlegen, am Generator
+   * drehen.
+   */
+  bedienung?: boolean;
 }
 
 /**

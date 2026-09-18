@@ -287,12 +287,12 @@ export const KATALOG: GeraetTyp[] = [
     ],
     parameter: [
       {
-        schluessel: "art", name: "Bauart", einheit: "", standard: 0, min: 0, max: 2,
+        schluessel: "art", name: "Bauart", einheit: "", standard: 0, min: 0, max: 2, bedienung: true,
         optionen: [{ wert: 0, name: "Bogen" }, { wert: 1, name: "Schleuder" }, { wert: 2, name: "Federkanone" }],
       },
-      { schluessel: "kraft", name: "Spannkraft", einheit: "N", standard: 40, min: 1, max: 400 },
-      { schluessel: "spannweg", name: "Spannweg", einheit: "m", standard: 0.3, min: 0.02, max: 1 },
-      { schluessel: "winkel", name: "Abschusswinkel", einheit: "rad", anzeige: "grad", standard: bogen(45), min: bogen(0), max: bogen(90) },
+      { schluessel: "kraft", name: "Spannkraft", einheit: "N", standard: 40, min: 1, max: 400, bedienung: true },
+      { schluessel: "spannweg", name: "Spannweg", einheit: "m", standard: 0.3, min: 0.02, max: 1, bedienung: true },
+      { schluessel: "winkel", name: "Abschusswinkel", einheit: "rad", anzeige: "grad", standard: bogen(45), min: bogen(0), max: bogen(90), bedienung: true },
     ],
     signale: [],
   },
@@ -435,7 +435,7 @@ export const KATALOG: GeraetTyp[] = [
     ],
     parameter: [
       {
-        schluessel: "geschlossen", name: "Stellung", einheit: "", standard: 1, min: 0, max: 1,
+        schluessel: "geschlossen", name: "Stellung", einheit: "", standard: 1, min: 0, max: 1, bedienung: true,
         optionen: [{ wert: 1, name: "geschlossen" }, { wert: 0, name: "offen" }],
       },
     ],
@@ -502,10 +502,10 @@ export const KATALOG: GeraetTyp[] = [
     groesse: { b: 0.24, h: 0.12 },
     ports: [{ id: "aus", art: "strom", name: "Ausgang", pos: { x: 0.12, y: 0 } }],
     parameter: [
-      { schluessel: "frequenz", name: "Frequenz", einheit: "Hz", standard: 1, min: 0.1, max: 20 },
-      { schluessel: "amplitude", name: "Amplitude", einheit: "V", standard: 5, min: 0.1, max: 12 },
+      { schluessel: "frequenz", name: "Frequenz", einheit: "Hz", standard: 1, min: 0.1, max: 20, bedienung: true },
+      { schluessel: "amplitude", name: "Amplitude", einheit: "V", standard: 5, min: 0.1, max: 12, bedienung: true },
       {
-        schluessel: "form", name: "Kurvenform", einheit: "", standard: 0, min: 0, max: 2,
+        schluessel: "form", name: "Kurvenform", einheit: "", standard: 0, min: 0, max: 2, bedienung: true,
         optionen: [{ wert: 0, name: "Sinus" }, { wert: 1, name: "Rechteck" }, { wert: 2, name: "Dreieck" }],
       },
     ],

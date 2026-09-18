@@ -79,6 +79,11 @@ function mitBildern() {
   };
 }
 
+/** Wechselt in den Versuch — erst dort läuft die Uhr. */
+function imVersuch(getByRole: (rolle: string, o: { name: RegExp }) => HTMLElement) {
+  act(() => getByRole("button", { name: /^🧪 Versuch$/ }).click());
+}
+
 /** Wie viele Marker der Aufräum-Knopf gerade meldet. */
 const anzahlMarker = (text: string) => Number(/🧹 (\d+) Marker/.exec(text)?.[1] ?? 0);
 
@@ -161,6 +166,7 @@ describe("Messkette im Labor", () => {
       // Vor dem ersten Bild steht noch nichts da.
       expect(kanal.textContent).toContain("—");
 
+      imVersuch(getByRole);
       uhr.bilder(10);
 
       // Danach eine echte Spannung — der Wert geht durch Rechenwerk, Messbus
@@ -176,6 +182,7 @@ describe("Messkette im Labor", () => {
     const uhr = mitBildern();
     try {
       const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(10);
       const kanal = getByRole("group", { name: "Kanal 1 Einstellung" });
 
@@ -200,6 +207,7 @@ describe("Pendel im Labor", () => {
       const kanal1 = getByLabelText("Kanal 1") as HTMLSelectElement;
       expect([...kanal1.options].map(o => o.textContent)).toContain("Fadenpendel · Winkel");
 
+      imVersuch(getByRole);
       uhr.bilder(10);
 
       // Gespeichert wird rad, angezeigt Grad — die Regel des Labors.
@@ -216,6 +224,7 @@ describe("Pendel im Labor", () => {
       const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
       const kanal = getByRole("group", { name: "Kanal 1 Einstellung" });
 
+      imVersuch(getByRole);
       uhr.bilder(2);
       const frueh = kanal.textContent;
       // Ein Fadenpendel mit 1 m braucht rund 2 s je Schwingung; nach gut
@@ -235,10 +244,12 @@ describe("Inspektor", () => {
     const uhr = mitBildern();
     try {
       const { getByRole, getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
-      uhr.bilder(6);
 
-      // Gerät antippen und anhalten.
+      // Im Bauen ein Gerät hinstellen (es ist dann ausgewählt), dann in den
+      // Versuch, laufen lassen und anhalten.
       act(() => getByLabelText("Fadenpendel auf den Tisch stellen").click());
+      imVersuch(getByRole);
+      uhr.bilder(6);
       act(() => getByRole("button", { name: /Anhalten/ }).click());
 
       const text = document.body.textContent ?? "";
@@ -254,7 +265,8 @@ describe("Inspektor", () => {
     localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "fadenpendel", { x: 0, y: 1.2 })));
     const uhr = mitBildern();
     try {
-      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(4);
       expect(document.body.textContent).not.toContain("E_pot = m · g · h");
     } finally {
@@ -267,6 +279,7 @@ describe("Marker", () => {
   it("bietet das Setzen und das Anhalten bei Berührung an", () => {
     const { getByRole, getByText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
     expect(getByRole("button", { name: /Marker setzen/ })).toBeInTheDocument();
+    imVersuch(getByRole);
     expect(getByText(/Bei Berührung anhalten/)).toBeInTheDocument();
   });
 });
@@ -285,18 +298,19 @@ describe("Marker bleiben stehen", () => {
   }
 
 
-  it("hält »Messung neu« stand", () => {
+  it("hält »Von vorn« stand", () => {
     localStorage.setItem(ABLAGE, alsJSON(mitStoss()));
     const uhr = mitBildern();
     try {
       const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
 
       // Lange genug laufen lassen, dass das Pendel den Klotz trifft.
       uhr.bilder(40);
       const vorher = anzahlMarker(document.body.textContent ?? "");
       expect(vorher).toBeGreaterThan(0);
 
-      act(() => getByRole("button", { name: /Messung neu/ }).click());
+      act(() => getByRole("button", { name: /Von vorn/ }).click());
 
       // Die Uhr faengt neu an — die festgehaltenen Ereignisse bleiben.
       expect(anzahlMarker(document.body.textContent ?? "")).toBe(vorher);
@@ -305,7 +319,7 @@ describe("Marker bleiben stehen", () => {
     }
   });
 
-  it("nimmt nach »Messung neu« weiter neue auf", () => {
+  it("nimmt nach »Von vorn« weiter neue auf", () => {
     // Die Doppelgaenger-Pruefung verglich Zeiten vorzeichenbehaftet. Nach dem
     // Zuruecksetzen steht die Uhr wieder bei null, und jeder neue Stoss galt
     // als Wiederholung eines alten.
@@ -313,10 +327,11 @@ describe("Marker bleiben stehen", () => {
     const uhr = mitBildern();
     try {
       const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(40);
       const vorher = anzahlMarker(document.body.textContent ?? "");
 
-      act(() => getByRole("button", { name: /Messung neu/ }).click());
+      act(() => getByRole("button", { name: /Von vorn/ }).click());
       uhr.bilder(40);
 
       expect(anzahlMarker(document.body.textContent ?? "")).toBeGreaterThan(vorher);
@@ -330,6 +345,7 @@ describe("Marker bleiben stehen", () => {
     const uhr = mitBildern();
     try {
       const { getByRole, queryByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(40);
       act(() => getByRole("button", { name: /Marker$/ }).click());
       expect(queryByRole("button", { name: /Marker$/ })).toBeNull();
@@ -353,19 +369,19 @@ describe("Zugversuch im Labor", () => {
     return { szene: verbinde(s, { geraet: probe, port: "unten" }, { geraet: last, port: "oese" }), probe, last };
   }
 
-  it("reißt die überlastete Probe und lässt die Last fallen", () => {
+  it("reißt die überlastete Probe — und lässt den Aufbau dabei heil", () => {
     const { szene } = ueberlastet();
     localStorage.setItem(ABLAGE, alsJSON(szene));
     const uhr = mitBildern();
     try {
-      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(6);
 
-      // Die Verbindung unter der Probe ist gekappt …
-      const gespeichert = ausJSON(localStorage.getItem(ABLAGE)!);
-      expect(gespeichert.verbindungen).toHaveLength(0);
-      // … und ein Marker hält fest, bei welcher Spannung.
-      expect(document.body.textContent).toContain("Marker");
+      // Ein Marker hält fest, bei welcher Spannung es gerissen ist …
+      expect(anzahlMarker(document.body.textContent ?? "")).toBeGreaterThan(0);
+      // … aber gespeichert bleibt der Aufbau: die Last hängt dort noch.
+      expect(ausJSON(localStorage.getItem(ABLAGE)!).verbindungen).toHaveLength(1);
     } finally {
       uhr.zurueck();
     }
@@ -376,7 +392,8 @@ describe("Zugversuch im Labor", () => {
     localStorage.setItem(ABLAGE, alsJSON(szene));
     const uhr = mitBildern();
     try {
-      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(30);
       // Riss und Aufschlag der fallenden Last sind zwei Ereignisse — beide
       // gehoeren dazu. Gepruefft wird, dass nicht weiter gezaehlt wird.
@@ -401,9 +418,11 @@ describe("Zugversuch im Labor", () => {
 
     const uhr = mitBildern();
     try {
-      render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      const { getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
       uhr.bilder(20);
-      expect(ausJSON(localStorage.getItem(ABLAGE)!).verbindungen).toHaveLength(1);
+      // Nichts reißt, also hält auch kein Marker einen Riss fest.
+      expect(document.body.textContent).not.toContain("Riss");
     } finally {
       uhr.zurueck();
     }
@@ -414,8 +433,11 @@ describe("Zugversuch im Labor", () => {
     s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { werkstoff: 0, laenge: 0.2, durchmesser: 0.002 } })) };
     localStorage.setItem(ABLAGE, alsJSON(s));
 
-    const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    const { getByLabelText, getByRole, queryByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
     act(() => getByLabelText("Materialprobe auf den Tisch stellen").click());
+    // Im Bauen gibt es nichts durchzuschneiden — das ist ein Versuch.
+    expect(queryByRole("button", { name: /Durchschneiden/ })).toBeNull();
+    imVersuch(getByRole);
     expect(getByRole("button", { name: /Durchschneiden/ })).toBeInTheDocument();
     expect(getByRole("button", { name: /Durchbrennen/ })).toBeInTheDocument();
   });
@@ -437,5 +459,64 @@ describe("Mehrfachauswahl", () => {
     // Ohne Markierung und ohne Gerät unter dem Zeiger bleibt es zu.
     expect(queryByRole("menu")).toBeNull();
     expect(getByRole("button", { name: /Tisch abräumen/ })).toBeInTheDocument();
+  });
+});
+
+describe("Bauen und Versuch", () => {
+  it("lässt im Bauen die Uhr stehen", () => {
+    localStorage.setItem(ABLAGE, alsJSON(stelle(neueSzene(), "signalgeber", { x: 0, y: 0.5 })));
+    const uhr = mitBildern();
+    try {
+      const { getByRole, queryByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      uhr.bilder(10);
+      expect(getByRole("group", { name: "Kanal 1 Einstellung" }).textContent).toContain("—");
+      // Und es gibt auch nichts anzuhalten.
+      expect(queryByRole("button", { name: /Anhalten/ })).toBeNull();
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("schließt im Versuch den Schrank", () => {
+    const { getByLabelText, getByRole } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    expect(getByLabelText("Stativ auf den Tisch stellen")).not.toBeDisabled();
+    imVersuch(getByRole);
+    expect(getByLabelText("Stativ auf den Tisch stellen")).toBeDisabled();
+  });
+
+  it("stellt beim Zurückkehren den Aufbau wieder her", () => {
+    let s = stelle(neueSzene(), "probe", { x: 0, y: 1 });
+    const probe = s.geraete[0].id;
+    s = { ...s, geraete: s.geraete.map(g => ({ ...g, werte: { werkstoff: 2, laenge: 0.2, durchmesser: 0.0002 } })) };
+    s = stelle(s, "massestueck", { x: 0, y: 0.5 });
+    s = { ...s, geraete: s.geraete.map(g => (g.id === s.geraete[1].id ? { ...g, werte: { masse: 5 } } : g)) };
+    s = verbinde(s, { geraet: probe, port: "unten" }, { geraet: s.geraete[1].id, port: "oese" });
+    localStorage.setItem(ABLAGE, alsJSON(s));
+
+    const uhr = mitBildern();
+    try {
+      const { getByRole, getByLabelText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+      imVersuch(getByRole);
+      uhr.bilder(6);
+      act(() => getByRole("button", { name: /^🛠️ Bauen$/ }).click());
+
+      // Zurück im Bauen hängt die Last wieder: die Probe ist ausgewählt und
+      // zeigt ihre Verbindung.
+      act(() => getByLabelText("Materialprobe auf den Tisch stellen").click());
+      expect(ausJSON(localStorage.getItem(ABLAGE)!).verbindungen).toHaveLength(1);
+    } finally {
+      uhr.zurueck();
+    }
+  });
+
+  it("zeigt im Versuch nur die Bedienelemente eines Geräts", () => {
+    const { getByLabelText, getByRole, queryByText, getByText } = render(<PhysikLabor speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Abschussgerät auf den Tisch stellen").click());
+    imVersuch(getByRole);
+    // Zielen und spannen gehört zum Versuch …
+    expect(getByText("Spannkraft")).toBeInTheDocument();
+    expect(getByText("Abschusswinkel")).toBeInTheDocument();
+    // … umbauen nicht.
+    expect(queryByText(/Wegräumen/)).toBeNull();
   });
 });

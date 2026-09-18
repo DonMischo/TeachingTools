@@ -50,8 +50,20 @@ const einrasten = (x: number) => x;
 const PORT_RADIUS = 4;
 const PORT_TREFFER = 7;
 
-export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, auswahl, setAuswahl, onVerbinden, onTrennen, zustand, beobachte }: {
+export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt, schwebt, setSchwebt, setzeKoerper, marker, onMarkerKlick, markerWerkzeug, onMarkerSetzen, schwebenderMarker, setSchwebenderMarker, auswahl, setAuswahl, onVerbinden, onTrennen, zustand, beobachte, versuch = false, hand }: {
   szene: Szene;
+  /**
+   * Im Versuch ist der Aufbau fest: keine Anschlüsse, kein Umstellen. Greifen
+   * lässt sich nur, was sich auch im Vorbereitungsraum in die Hand nehmen
+   * ließe — Gewichte, Murmeln, Klötze, der Wagen.
+   */
+  versuch?: boolean;
+  hand?: {
+    greifbar: (id: string) => boolean;
+    greife: (id: string, p: Punkt) => boolean;
+    ziehe: (id: string, p: Punkt) => void;
+    lasse: () => void;
+  };
   setSzene: (s: Szene) => void;
   ausgewaehlt: string | null;
   setAusgewaehlt: (id: string | null) => void;
@@ -91,6 +103,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     | { art: "geraet"; id: string; griff: Punkt }
     | { art: "koerper"; id: string }
     | { art: "blick"; start: Punkt; mitte: Punkt }
+    | { art: "hand"; id: string }
     | null
   >(null);
 
@@ -131,6 +144,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
   /** Der Port unter dem Finger, wenn einer da ist. */
   const portUnter = useCallback((p: Punkt): PortZeiger | null => {
+    // Im Versuch sind die Anschlüsse weggeräumt — verbunden wird im Bauen.
+    if (versuch) return null;
     for (const g of [...sicht().geraete].reverse()) {
       for (const port of geraetTyp(g.typ)?.ports ?? []) {
         if (port.verborgen) continue;
@@ -141,7 +156,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       }
     }
     return null;
-  }, [sicht, blick]);
+  }, [sicht, blick, versuch]);
 
   /**
    * Der schwingende Körper unter dem Finger.
@@ -205,7 +220,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
     // Umschalt sammelt ein, statt zu ziehen: so stellt man sich zusammen, was
     // gleich verbunden oder getrennt werden soll.
-    if (e.shiftKey) {
+    if (e.shiftKey && !versuch) {
       const treffer = koerperUnter(p) ?? geraetUnter(p);
       if (treffer) {
         setAuswahl(auswahl.includes(treffer) ? auswahl.filter(x => x !== treffer) : [...auswahl, treffer]);
@@ -254,6 +269,12 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       const g = sicht().geraete.find(x => x.id === id)!;
       const welt = zurWelt(p, blick);
 
+      // Im Versuch: was einen beweglichen Körper hat, nimmt man in die Hand.
+      if (versuch && hand?.greifbar(id)) {
+        if (hand.greife(id, welt)) zieht.current = { art: "hand", id };
+        return;
+      }
+
       // Hängt es an einem Schwinger, meint das Anfassen den Schwinger: man
       // zieht nicht das Gewicht vom Haken, man lenkt das ganze Pendel aus.
       const schwinger = wirtKette(szene, id).find(w => istSchwinger(w.typ));
@@ -266,6 +287,8 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
       // Sonst: wer an etwas hängt, wird durch Ziehen abgenommen — und bleibt
       // dabei stehen, wo er hing, statt zurückzuspringen.
+      // Im Versuch bleibt der Aufbau stehen: antippen zeigt nur die Werte.
+      if (versuch) return;
       if (haengtIrgendwo(szene, g)) setSzene(bewege(aushaengen(szene, id), id, g.pos));
       zieht.current = { art: "geraet", id, griff: { x: welt.x - g.pos.x, y: welt.y - g.pos.y } };
       return;
@@ -289,6 +312,10 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
 
     if (z.art === "koerper") {
       lenkeAus(z.id, zurWelt(p, blick));
+      return;
+    }
+    if (z.art === "hand") {
+      hand?.ziehe(z.id, zurWelt(p, blick));
       return;
     }
     if (z.art === "geraet") {
@@ -320,6 +347,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
   const beiLoslassen = () => {
     const z = zieht.current;
     zieht.current = null;
+    if (z?.art === "hand") hand?.lasse();
     if (z?.art === "geraet" && andock) {
       const g = szene.geraete.find(x => x.id === z.id);
       const eigener = g ? EIGENER_HAKEN[g.typ] : undefined;
@@ -333,7 +361,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
     }
     setAndock(null);
   };
-  const beiVerlassen = () => { zieht.current = null; setAndock(null); setSchwebt(null); setSchwebenderMarker(null); };
+  const beiVerlassen = () => { if (zieht.current?.art === "hand") hand?.lasse(); zieht.current = null; setAndock(null); setSchwebt(null); setSchwebenderMarker(null); };
 
   /**
    * Rechtsklick öffnet das Menü.
@@ -343,6 +371,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
    */
   function beiMenue(e: React.MouseEvent) {
     e.preventDefault();
+    if (versuch) return;
     const r = leinwand.current!.getBoundingClientRect();
     const p = { x: e.clientX - r.left, y: e.clientY - r.top };
     const treffer = koerperUnter(p) ?? geraetUnter(p);
@@ -465,7 +494,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.textBaseline = "top";
       ctx.fillText(t.name, mitte.x, mitte.y + h / 2 + 5);
 
-      for (const port of t.ports) {
+      for (const port of versuch ? [] : t.ports) {
         const ort = portOrt(g, port.id, zustand.current.mechanik[g.id]);
         if (!ort) continue;
         const bp = zumBild(ort, blick);
@@ -513,7 +542,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       ctx.textBaseline = "middle";
       ctx.fillText(m.art === "stoss" ? "💥" : "🔎", b.x, b.y);
     }
-  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, andock, zustand, marker, schwebenderMarker, auswahl]);
+  }, [sicht, szene, blick, ausgewaehlt, schwebt, offen, andock, zustand, marker, schwebenderMarker, auswahl, versuch]);
 
   // Jedes Bild neu zeichnen, angestossen von der Uhr statt von React — sonst
   // haengt das Pendel bewegungslos an seinem Faden.
@@ -527,7 +556,7 @@ export default function Werkbank({ szene, setSzene, ausgewaehlt, setAusgewaehlt,
       <canvas
         ref={leinwand}
         aria-label="Werkbank"
-        style={{ width: blick.breite, height: blick.hoehe, display: "block", cursor: schwebt ? "grab" : schwebenderMarker ? "pointer" : "default" }}
+        style={{ width: blick.breite, height: blick.hoehe, display: "block", cursor: (schwebt && (!versuch || hand?.greifbar(schwebt))) ? "grab" : (schwebt || schwebenderMarker) ? "pointer" : "default" }}
         onPointerDown={beiDruck}
         onPointerMove={beiBewegung}
         onPointerUp={beiLoslassen}

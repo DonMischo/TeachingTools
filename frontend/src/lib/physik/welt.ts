@@ -97,9 +97,13 @@ export class Welt {
   private bauart = new Map<string, string>();
   private startWerte = new Map<string, number>();
   private stoesse: Stoss[] = [];
+  private boden: planck.Body;
+  // Die Hand im Versuch: ein Federgriff, der den Körper zum Zeiger zieht.
+  private hand: planck.MouseJoint | null = null;
 
   constructor() {
     const boden = this.welt.createBody();
+    this.boden = boden;
     // Der Boden bekommt einen Namen, damit ein Aufschlag darauf als Ereignis
     // zählt — »das Gewicht kommt unten an« ist im Parcours ein Phänomen. Ohne
     // Namen fielen diese Berührungen stillschweigend unter den Tisch, und ein
@@ -150,6 +154,7 @@ export class Welt {
 
   private entferne(id: string) {
     const body = this.koerper.get(id);
+    if (this.hand && body && this.hand.getBodyB() === body) this.lasse();
     if (body) this.welt.destroyBody(body);
     const anker = this.anker.get(id);
     if (anker) this.welt.destroyBody(anker);
@@ -457,7 +462,53 @@ export class Welt {
   }
 
   /** Setzt alle Körper auf ihren Platz in der Szene zurück. */
+  /** Ob ein Gerät gerade einen beweglichen Körper hat, den man greifen kann. */
+  greifbar(id: string): boolean {
+    return this.koerper.get(id)?.isDynamic() ?? false;
+  }
+
+  /**
+   * Greift einen Körper im laufenden Versuch.
+   *
+   * Nicht durch Versetzen, sondern mit einem Federgriff: der Körper wird zum
+   * Zeiger *gezogen* und bleibt dabei ein Körper unter anderen. Er schiebt,
+   * was im Weg liegt, pendelt am Haken, wenn er hängt, und fliegt beim
+   * Loslassen mit dem Schwung weiter, den die Hand ihm gegeben hat.
+   */
+  greife(id: string, punkt: { x: number; y: number }): boolean {
+    this.lasse();
+    const body = this.koerper.get(id);
+    if (!body || !body.isDynamic()) return false;
+    const masse = Math.max(0.01, body.getMass());
+    this.hand = this.welt.createJoint(new planck.MouseJoint({
+      maxForce: 300 * masse * 9.81,
+      frequencyHz: 6,
+      dampingRatio: 0.8,
+    }, this.boden, body, new planck.Vec2(punkt.x, punkt.y)));
+    body.setAwake(true);
+    return true;
+  }
+
+  /** Führt die Hand zum Zeiger. */
+  ziehe(punkt: { x: number; y: number }) {
+    this.hand?.setTarget(new planck.Vec2(punkt.x, punkt.y));
+  }
+
+  /** Lässt los — der Körper behält seinen Schwung. */
+  lasse() {
+    if (this.hand) this.welt.destroyJoint(this.hand);
+    this.hand = null;
+  }
+
+  /** Räumt die Welt leer — im Bauen gibt es nichts, das sich bewegt. */
+  leere() {
+    this.lasse();
+    for (const id of [...this.koerper.keys()]) this.entferne(id);
+    this.stoesse = [];
+  }
+
   zuruecksetzen(szene: Szene, mechanik: MechanikZustand) {
+    this.lasse();
     for (const id of [...this.koerper.keys()]) this.entferne(id);
     this.stoesse = [];
     this.synchronisiere(szene, mechanik);

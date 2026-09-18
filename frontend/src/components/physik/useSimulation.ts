@@ -8,6 +8,12 @@
  * ist — und dieselbe Pendelmessung käme auf dem Tablet anders heraus als am
  * Smartboard.
  *
+ * Die Uhr läuft nur im Versuch. Im Bauen steht alles still: nichts fällt,
+ * nichts stößt an, und jedes Gerät bleibt genau dort, wo man es hinstellt —
+ * auch in der Luft. Ein Versuch beginnt immer beim festgehaltenen Aufbau;
+ * `durchlauf` zählt die Starts, und jeder neue setzt Welt, Uhr und Messbus
+ * zurück.
+ *
  * Gezeichnet wird über `beobachte`, nicht über React-Zustand: ein `setState`
  * je Bild würde das ganze Labor samt Werkbank neu rendern, 60-mal in der
  * Sekunde. Die Messgeräte holen sich ihre Werte stattdessen selbst aus dem
@@ -21,12 +27,16 @@ import type { Szene } from "@/lib/physik/typen";
 
 export function useSimulation(
   szene: Szene,
+  /** Versuch statt Bauen: nur dann gibt es eine Welt und eine Uhr. */
+  versuch: boolean,
   laeuft: boolean,
   tempo: number,
   /** Wird nach einem Schritt mit den Zusammenstößen gerufen, die er brachte. */
   beiStoss?: (stoesse: Stoss[], zustand: LaborZustand) => void,
   /** Wird gerufen, wenn eine Materialprobe ihre Zugfestigkeit überschreitet. */
   beiBruch?: (proben: string[], zustand: LaborZustand) => void,
+  /** Zählt die Versuchsstarts; ein neuer Wert beginnt beim Aufbau von vorn. */
+  durchlauf = 0,
 ) {
   const bus = useRef<Messbus>(null as unknown as Messbus);
   if (bus.current === null) bus.current = new Messbus();
@@ -54,8 +64,24 @@ export function useSimulation(
     return () => { menge.delete(fn); };
   }, []);
 
+  // Jeder Wechsel zwischen Bauen und Versuch, und jeder Neustart, beginnt
+  // bei null: im Bauen gibt es gar keine Körper, im Versuch entstehen sie
+  // frisch aus dem Aufbau.
   useEffect(() => {
-    if (!laeuft) return;
+    bus.current.leere();
+    zustand.current = leererZustand();
+    stoesse.current = [];
+    if (versuch) {
+      welt.current.zuruecksetzen(szeneRef.current, {});
+      zustand.current = { ...zustand.current, welt: welt.current.zustand() };
+    } else {
+      welt.current.leere();
+    }
+    for (const fn of zuschauer.current) fn();
+  }, [versuch, durchlauf]);
+
+  useEffect(() => {
+    if (!versuch || !laeuft) return;
     let id = 0;
     let vorher = performance.now();
     let rest = 0;
@@ -107,7 +133,7 @@ export function useSimulation(
 
     id = requestAnimationFrame(rahmen);
     return () => cancelAnimationFrame(id);
-  }, [laeuft, tempo]);
+  }, [versuch, laeuft, tempo]);
 
   /**
    * Ein Gerät neu loslassen — ohne Angabe alle.
@@ -128,14 +154,6 @@ export function useSimulation(
     for (const fn of zuschauer.current) fn();
   }, []);
 
-  const zuruecksetzen = useCallback(() => {
-    bus.current.leere();
-    zustand.current = leererZustand();
-    welt.current.zuruecksetzen(szeneRef.current, {});
-    stoesse.current = [];
-    for (const fn of zuschauer.current) fn();
-  }, []);
-
   /**
    * Bringt Welt und Anzeige auf den neuesten Stand, ohne die Zeit laufen zu
    * lassen.
@@ -146,15 +164,18 @@ export function useSimulation(
    * zurück, obwohl es längst woanders lag.
    */
   const aktualisiere = useCallback(() => {
-    welt.current.synchronisiere(szeneRef.current, zustand.current.mechanik);
-    zustand.current = { ...zustand.current, welt: welt.current.zustand() };
+    // Im Bauen gibt es keine Welt: gezeichnet wird, was in der Szene steht.
+    if (versuch) {
+      welt.current.synchronisiere(szeneRef.current, zustand.current.mechanik);
+      zustand.current = { ...zustand.current, welt: welt.current.zustand() };
+    }
     for (const fn of zuschauer.current) fn();
-  }, []);
+  }, [versuch]);
 
   // Angehalten trotzdem mitbekommen, was sich am Aufbau ändert.
   useEffect(() => {
-    if (!laeuft) aktualisiere();
-  }, [szene, laeuft, aktualisiere]);
+    if (!versuch || !laeuft) aktualisiere();
+  }, [szene, versuch, laeuft, aktualisiere]);
 
   /**
    * Gibt einem Körper ein Tempo — der Abschuss.
@@ -175,9 +196,30 @@ export function useSimulation(
 
   /** Setzt einen freien Körper an die Hand des Ziehenden. */
   const setzeKoerper = useCallback((id: string, pos: { x: number; y: number }) => {
-    welt.current.setzeOrt(id, pos);
+    if (versuch) welt.current.setzeOrt(id, pos);
     aktualisiere();
-  }, [aktualisiere]);
+  }, [versuch, aktualisiere]);
 
-  return { bus: bus.current, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, gibTempo, aktualisiere, stoesse };
+  /**
+   * Die Hand im Versuch: greifen, führen, loslassen.
+   *
+   * Läuft die Uhr, zieht ein Federgriff den Körper mit — er bleibt dabei ein
+   * Körper unter anderen und fliegt mit Schwung weiter. Angehalten wird er
+   * einfach versetzt, denn ohne Uhr gäbe es niemanden, der ihn zieht.
+   */
+  const greifbar = useCallback((id: string) => versuch && welt.current.greifbar(id), [versuch]);
+  const greife = useCallback((id: string, punkt: { x: number; y: number }) => {
+    if (!versuch) return false;
+    return laeuft ? welt.current.greife(id, punkt) : welt.current.greifbar(id);
+  }, [versuch, laeuft]);
+  const ziehe = useCallback((id: string, punkt: { x: number; y: number }) => {
+    if (laeuft) welt.current.ziehe(punkt);
+    else setzeKoerper(id, punkt);
+  }, [laeuft, setzeKoerper]);
+  const lasse = useCallback(() => welt.current.lasse(), []);
+
+  return {
+    bus: bus.current, zustand, beobachte, loslassen, setzeKoerper, gibTempo, aktualisiere, stoesse,
+    greifbar, greife, ziehe, lasse,
+  };
 }

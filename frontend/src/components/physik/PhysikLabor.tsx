@@ -7,8 +7,14 @@
  * Sitzungscode) und ist damit dieselbe Zeichenkette, die später über einen
  * Beitritts-Code an die Klasse geht.
  *
- * Schritt 1a: aufstellen, verbinden, einstellen, speichern. Gerechnet wird
- * noch nichts — Messbus und Oszilloskop kommen in 1b, die Mechanik in 1c.
+ * Zwei Modi, weil Umbauen und Ausprobieren sich gegenseitig im Weg standen:
+ *
+ * - **Bauen**: aufstellen, verbinden, einstellen. Keine Uhr, nichts bewegt
+ *   sich, nichts stößt an. Ein Pendelkörper, den man zieht, zeigt nur, wo er
+ *   losgelassen wird.
+ * - **Versuch**: der Aufbau wird festgehalten, die Anschlüsse verschwinden.
+ *   Man greift, was lose ist, löst aus, schaltet um — und kehrt man zum Bauen
+ *   zurück, steht alles wieder so da, wie man es aufgebaut hat.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { bogen, formatiere, grad, nachSI } from "@/lib/physik/einheiten";
@@ -50,16 +56,22 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   // liest der zweite Ladevorgang genau diese Leere zurueck. Dasselbe beim
   // Wechsel des Schluessels (Gast wird angemeldet): sonst landet der Aufbau
   // des einen Platzes auf dem anderen.
-  const [stand, setStand] = useState<{ fuer: string | null; szene: Szene }>(
-    () => ({ fuer: null, szene: neueSzene() }),
+  //
+  // `aufbau` ist der beim Versuchsstart festgehaltene Stand. Solange er da
+  // ist, läuft ein Versuch: was darin geschieht (ein Geschoss fliegt ab, eine
+  // Probe reißt), ändert nur die Arbeitskopie `szene`. Gespeichert wird immer
+  // der Aufbau — ein Versuch soll niemandem den Aufbau zerlegen.
+  const [stand, setStand] = useState<{ fuer: string | null; szene: Szene; aufbau: Szene | null }>(
+    () => ({ fuer: null, szene: neueSzene(), aufbau: null }),
   );
   const szene = stand.szene;
+  const versuch = stand.aufbau !== null;
   const setSzene = useCallback((s: Szene | ((alt: Szene) => Szene)) => {
     setStand(alt => ({ ...alt, szene: typeof s === "function" ? s(alt.szene) : s }));
   }, []);
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
   const [schwebt, setSchwebt] = useState<string | null>(null);
-  const [laeuft, setLaeuft] = useState(true);
+  const [laeuft, setLaeuft] = useState(false);
   const [tempo, setTempo] = useState(1);
   const [zeitProFeld, setZeitProFeld] = useState(0.2);
   const [marker, setMarker] = useState<Marker[]>([]);
@@ -153,8 +165,29 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     }
   }, [szene, lauf]);
 
-  const { bus, zustand, beobachte, zuruecksetzen, loslassen, setzeKoerper, gibTempo } =
-    useSimulation(szene, laeuft, tempo, beiStoss, reisseDurch);
+  const { bus, zustand, beobachte, loslassen, setzeKoerper, gibTempo, greifbar, greife, ziehe, lasse } =
+    useSimulation(szene, versuch, laeuft, tempo, beiStoss, reisseDurch, lauf);
+
+  /** Hält den Aufbau fest und startet den Versuch. */
+  const starteVersuch = useCallback(() => {
+    setStand(alt => ({ ...alt, aufbau: alt.aufbau ?? alt.szene }));
+    setLauf(l => l + 1);
+    setLaeuft(true);
+    setAuswahl([]);
+  }, []);
+
+  /** Derselbe Versuch noch einmal — vom festgehaltenen Aufbau aus. */
+  const vonVorn = useCallback(() => {
+    setStand(alt => ({ ...alt, szene: alt.aufbau ?? alt.szene }));
+    setLauf(l => l + 1);
+    setLaeuft(true);
+  }, []);
+
+  /** Zurück zum Bauen: alles steht wieder da, wo es aufgebaut war. */
+  const zumBauen = useCallback(() => {
+    setStand(alt => ({ ...alt, szene: alt.aufbau ?? alt.szene, aufbau: null }));
+    setLaeuft(false);
+  }, []);
 
   /**
    * Auslösen.
@@ -191,13 +224,14 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
 
   // Erst im Browser laden: auf dem Server gibt es kein localStorage.
   useEffect(() => {
-    setStand({ fuer: speicherSchluessel, szene: ladeSzene(speicherSchluessel) });
+    setStand({ fuer: speicherSchluessel, szene: ladeSzene(speicherSchluessel), aufbau: null });
+    setLaeuft(false);
   }, [speicherSchluessel]);
 
   // Gespeichert wird nur, was auch zu diesem Platz geladen wurde.
   useEffect(() => {
     if (stand.fuer !== speicherSchluessel) return;
-    speichereSzene(speicherSchluessel, stand.szene);
+    speichereSzene(speicherSchluessel, stand.aufbau ?? stand.szene);
   }, [speicherSchluessel, stand]);
 
   const geraet = useMemo(
@@ -224,6 +258,8 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
 
       // Sonst: worüber der Zeiger steht, hat Vorrang — so räumt man mehrere
       // Geräte hintereinander weg, ohne jedes vorher anzuklicken.
+      // Im Versuch ist der Aufbau fest — weggeräumt wird im Bauen.
+      if (versuch) return;
       const weg = schwebt ?? ausgewaehlt;
       if (!weg) return;
       e.preventDefault();
@@ -233,7 +269,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
-  }, [ausgewaehlt, schwebt, schwebenderMarker, offenerMarker]);
+  }, [ausgewaehlt, schwebt, schwebenderMarker, offenerMarker, versuch]);
 
   const nimm = (t: string) => {
     setSzene(s => {
@@ -266,24 +302,28 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
         schliessbar: true,
       };
     }
-    if (!laeuft && geraet && typ) {
+    if (versuch && geraet && typ) {
       return {
         titel: `${typ.icon} ${typ.name}`,
-        hinweis: "Angehalten — das sind die Werte in diesem Augenblick.",
+        hinweis: laeuft
+          ? "Die Werte laufen mit — anhalten, um einen Augenblick festzuhalten."
+          : "Angehalten — das sind die Werte in diesem Augenblick.",
         werte: bericht(szene, geraet, zustand.current),
         schliessbar: false,
       };
     }
     return null;
-  }, [marker, offenerMarker, laeuft, geraet, typ, szene, zustand, takt]);
+  }, [marker, offenerMarker, laeuft, geraet, typ, szene, zustand, takt, versuch]);
 
   // Eine laufende Karte braucht frische Zahlen, aber nicht 60-mal je Sekunde.
   useEffect(() => {
-    const laufend = marker.find(m => m.id === offenerMarker)?.geraet;
-    if (!laufend || !laeuft) return;
+    const laufend = marker.find(m => m.id === offenerMarker)?.geraet ?? (versuch ? ausgewaehlt : null);
+    if (!laufend || !laeuft || !versuch) return;
     const uhr = window.setInterval(() => setTakt(x => x + 1), 250);
     return () => window.clearInterval(uhr);
-  }, [marker, offenerMarker, laeuft]);
+  }, [marker, offenerMarker, laeuft, versuch, ausgewaehlt]);
+
+  const hand = useMemo(() => ({ greifbar, greife, ziehe, lasse }), [greifbar, greife, ziehe, lasse]);
 
   const verbundenMit = geraet
     ? szene.verbindungen.filter(v => v.von.geraet === geraet.id || v.nach.geraet === geraet.id)
@@ -309,7 +349,9 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           aria-label="Name des Aufbaus"
           className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-bold min-w-48"
         />
-        <Treue wert={szene.treue} onWechsel={t => setSzene(s => ({ ...s, treue: t }))} />
+        <Modus versuch={versuch} onBauen={zumBauen} onVersuch={starteVersuch} />
+        <Treue wert={szene.treue} gesperrt={versuch} onWechsel={t => setSzene(s => ({ ...s, treue: t }))} />
+        {!versuch && (
         <button
           onClick={() => {
             setSzene(s => ({ ...neueSzene(), treue: s.treue }));
@@ -320,19 +362,24 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
           }}
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
         >🧹 Tisch abräumen</button>
+        )}
 
         <span className="w-px h-6 bg-[var(--border)] mx-1" />
 
+        {versuch && (
+        <>
         <button
           onClick={() => setLaeuft(l => !l)}
           aria-pressed={laeuft}
           className="rounded-xl border border-[var(--border)] px-3 py-2 font-bold"
         >{laeuft ? "⏸️ Anhalten" : "▶️ Laufen"}</button>
         <button
-          onClick={() => { zuruecksetzen(); setLauf(l => l + 1); }}
-          title="Uhr auf null, Messwerte verwerfen"
+          onClick={vonVorn}
+          title="Setzt alles auf den Aufbau zurück und startet den Versuch noch einmal."
           className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
-        >⏮️ Messung neu</button>
+        >⏮️ Von vorn</button>
+        </>
+        )}
         <button
           onClick={() => setMarkerWerkzeug(w => !w)}
           aria-pressed={markerWerkzeug}
@@ -341,18 +388,21 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             ? "border-[var(--accent)] text-[var(--accent)]"
             : "border-[var(--border)] text-[var(--text-muted)]"}`}
         >🔎 Marker setzen</button>
+        {versuch && (
         <label className="flex items-center gap-1.5 text-[var(--text-muted)]">
           <input type="checkbox" checked={haltBeiStoss} onChange={e => setHaltBeiStoss(e.target.checked)} />
           <span title="Hält die Uhr an, sobald sich zwei Dinge berühren — zum Hinsehen.">
             Bei Berührung anhalten
           </span>
         </label>
+        )}
         {marker.length > 0 && (
           <button
             onClick={() => { setMarker([]); setOffenerMarker(null); }}
             className="rounded-xl border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)]"
           >🧹 {marker.length} Marker</button>
         )}
+        {versuch && (
         <label className="flex items-center gap-1.5 text-[var(--text-muted)]">
           Tempo
           <select
@@ -367,10 +417,11 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             <option value={4}>Zeitraffer (4x)</option>
           </select>
         </label>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[13rem_1fr_16rem] gap-4">
-        <Schrank onNimm={nimm} />
+        <Schrank onNimm={nimm} gesperrt={versuch} onBauen={zumBauen} />
 
         <div
           className="rounded-2xl overflow-hidden border border-[var(--border)] bg-[#0b1220]"
@@ -403,6 +454,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
             onVerbinden={ids => { setSzene(s => verketten(s, ids)); setAuswahl([]); }}
             onTrennen={ids => { setSzene(s => trenneAlle(s, ids)); setAuswahl([]); }}
             zustand={zustand} beobachte={beobachte}
+            versuch={versuch} hand={hand}
           />
         </div>
 
@@ -419,7 +471,13 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 <span className="font-black">{typ.name}</span>
               </div>
 
-              {typ.parameter.map(p => (
+              {versuch && !typ.parameter.some(p => p.bedienung) && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Im Versuch ist der Aufbau fest. Zum Verstellen zurück zu 🛠️ Bauen.
+                </p>
+              )}
+
+              {typ.parameter.filter(p => !versuch || p.bedienung).map(p => (
                 <label key={p.schluessel} className="flex flex-col gap-1 text-sm">
                   <span className="flex justify-between">
                     <span className="text-[var(--text-muted)]">{p.name}</span>
@@ -451,6 +509,8 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 </label>
               ))}
 
+              {!versuch && (
+              <>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -504,8 +564,10 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 title="Dreht das Gerät um eine Vierteldrehung — ein Stativ wird damit zum seitlichen Ausleger."
               >↻ Um 90° drehen</button>
               )}
+              </>
+              )}
 
-              {geraet.typ === "abschuss" && (
+              {versuch && geraet.typ === "abschuss" && (
                 <button
                   onClick={() => loeseAus(geraet.id)}
                   className="rounded-xl border border-[var(--accent)] text-[var(--accent)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
@@ -513,7 +575,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 >🏹 Auslösen</button>
               )}
 
-              {geraet.typ === "probe" && (
+              {versuch && geraet.typ === "probe" && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => reisseDurch([geraet.id], zustand.current, "schere")}
@@ -528,7 +590,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 </div>
               )}
 
-              {istSchwinger(geraet.typ) && (
+              {versuch && istSchwinger(geraet.typ) && (
                 <button
                   onClick={() => { setLaeuft(true); loslassen(geraet.id); }}
                   className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-bold hover:bg-[var(--surface-hover)]"
@@ -543,7 +605,7 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 </div>
               )}
 
-              {verbundenMit.length > 0 && (
+              {!versuch && verbundenMit.length > 0 && (
                 <div className="text-xs">
                   <div className="font-bold mb-1 text-[var(--text-muted)]">Verbunden</div>
                   {verbundenMit.map(v => (
@@ -556,10 +618,12 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
                 </div>
               )}
 
+              {!versuch && (
               <button
                 onClick={() => { setSzene(s => entferne(s, geraet.id)); setAusgewaehlt(null); }}
                 className="mt-auto rounded-xl border border-rose-400/40 text-rose-300 px-3 py-2 text-sm hover:bg-rose-500/10"
               >🗑️ Wegräumen</button>
+              )}
             </>
           )}
         </div>
@@ -588,29 +652,65 @@ export default function PhysikLabor({ action, speicherSchluessel = "geraet" }: {
   );
 }
 
-function Treue({ wert, onWechsel }: { wert: Modelltreue; onWechsel: (t: Modelltreue) => void }) {
+/**
+ * Bauen oder Versuch.
+ *
+ * Getrennt, weil beides zugleich unbequem war: wer umbauen wollte, dem fiel
+ * das halbe Aufgebaute um, und wer zusehen wollte, verschob beim Antippen
+ * versehentlich ein Stativ.
+ */
+function Modus({ versuch, onBauen, onVersuch }: { versuch: boolean; onBauen: () => void; onVersuch: () => void }) {
+  const knopf = (aktiv: boolean) => `px-3 py-2 font-bold ${aktiv
+    ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
+    : "text-[var(--text-muted)] hover:text-[var(--text)]"}`;
+  return (
+    <div className="inline-flex rounded-xl border border-[var(--border)] overflow-hidden text-sm" role="group" aria-label="Modus">
+      <button
+        onClick={onBauen}
+        aria-pressed={!versuch}
+        title="Aufstellen, verbinden, einstellen — nichts bewegt sich."
+        className={knopf(!versuch)}
+      >🛠️ Bauen</button>
+      <button
+        onClick={onVersuch}
+        aria-pressed={versuch}
+        title="Der Aufbau steht fest, die Uhr läuft. Lose Teile lassen sich greifen, Auslöser bedienen."
+        className={knopf(versuch)}
+      >🧪 Versuch</button>
+    </div>
+  );
+}
+
+function Treue({ wert, onWechsel, gesperrt = false }: { wert: Modelltreue; onWechsel: (t: Modelltreue) => void; gesperrt?: boolean }) {
   return (
     <div className="inline-flex rounded-xl border border-[var(--border)] overflow-hidden text-sm" role="group" aria-label="Modelltreue">
       {(["ideal", "real"] as const).map(t => (
         <button
           key={t}
+          disabled={gesperrt}
           onClick={() => onWechsel(t)}
           aria-pressed={wert === t}
           title={t === "ideal"
             ? "Schulbuch: reibungsfrei, verlustfrei — die Messung bestätigt die Formel."
             : "Mit Reibung, Dämpfung und Innenwiderstand — die Messung weicht ab."}
-          className={`px-3 py-2 font-bold ${wert === t
+          className={`px-3 py-2 font-bold disabled:cursor-not-allowed ${wert === t
             ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-            : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}
+            : "text-[var(--text-muted)] hover:text-[var(--text)] disabled:opacity-40"}`}
         >{t === "ideal" ? "📘 Schulbuch" : "🔧 Real"}</button>
       ))}
     </div>
   );
 }
 
-function Schrank({ onNimm }: { onNimm: (typ: string) => void }) {
+function Schrank({ onNimm, gesperrt = false, onBauen }: { onNimm: (typ: string) => void; gesperrt?: boolean; onBauen?: () => void }) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
+      {gesperrt && (
+        <div className="rounded-xl bg-[var(--surface-hover)] p-2 text-xs text-[var(--text-muted)]">
+          Der Schrank ist zu, solange der Versuch läuft.{" "}
+          <button onClick={onBauen} className="font-bold text-[var(--accent)] underline">Zum Bauen</button>
+        </div>
+      )}
       {BEREICHE.map(b => {
         const geraete = KATALOG.filter(t => t.bereich === b.id);
         if (!geraete.length) return null;
@@ -621,9 +721,10 @@ function Schrank({ onNimm }: { onNimm: (typ: string) => void }) {
               {geraete.map(t => (
                 <button
                   key={t.typ}
+                  disabled={gesperrt}
                   onClick={() => onNimm(t.typ)}
                   aria-label={t.name + " auf den Tisch stellen"}
-                  className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-left hover:bg-[var(--surface-hover)]"
+                  className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-left hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:hover:bg-transparent"
                 >
                   <span className="text-xl" aria-hidden="true">{t.icon}</span>
                   <span className="font-bold">{t.name}</span>

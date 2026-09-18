@@ -333,3 +333,43 @@ describe("Voreinstellungen taugen für den Versuch", () => {
       .toBeGreaterThan(0);
   });
 });
+
+describe("Die Hand im Versuch", () => {
+  it("zieht einen gegriffenen Körper zum Zeiger", () => {
+    const s = masse(neueSzene(), { x: 0, y: 0.05 });
+    const id = s.geraete[0].id;
+    const welt = new Welt();
+    welt.synchronisiere(s, {});
+    expect(welt.greife(id, { x: 0, y: 0.05 })).toBe(true);
+
+    welt.ziehe({ x: 0.3, y: 0.5 });
+    for (let i = 0; i < 240; i++) welt.schritt(s, {}, DT);
+
+    const k = welt.zustand()[id];
+    expect(k.x).toBeCloseTo(0.3, 1);
+    expect(k.y).toBeCloseTo(0.5, 1);
+  });
+
+  it("lässt ihn beim Loslassen mit Schwung weiterfliegen", () => {
+    const s = masse(neueSzene(), { x: 0, y: 0.5 });
+    const id = s.geraete[0].id;
+    const welt = new Welt();
+    welt.synchronisiere(s, {});
+    welt.greife(id, { x: 0, y: 0.5 });
+    // Ein schneller Wurf nach rechts.
+    for (let i = 1; i <= 24; i++) {
+      welt.ziehe({ x: i * 0.02, y: 0.5 });
+      welt.schritt(s, {}, DT);
+    }
+    welt.lasse();
+    expect(welt.zustand()[id].vx).toBeGreaterThan(0.5);
+  });
+
+  it("greift nichts, was fest steht", () => {
+    const s = stelle(neueSzene(), "schiefeebene", { x: 0, y: 0.3 });
+    const welt = new Welt();
+    welt.synchronisiere(s, {});
+    expect(welt.greifbar(s.geraete[0].id)).toBe(false);
+    expect(welt.greife(s.geraete[0].id, { x: 0, y: 0.3 })).toBe(false);
+  });
+});
