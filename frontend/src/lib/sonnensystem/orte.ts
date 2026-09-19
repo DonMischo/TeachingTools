@@ -14,7 +14,7 @@
  * Prozent genau — mehr braucht die Anzeige nicht.
  */
 import { heliozentrisch, type Vec3 } from "./bahnen";
-import { KM_JE_AE, KOERPER_NACH_ID } from "./daten";
+import { KM_JE_AE, KOERPER, KOERPER_NACH_ID } from "./daten";
 
 export interface Ort {
   id: string;
@@ -125,6 +125,9 @@ export const ORTE: Ort[] = [
 ];
 
 export const ORTE_NACH_ID: Record<string, Ort> = Object.fromEntries(ORTE.map(o => [o.id, o]));
+
+/** Alles, was sich scannen lässt: Himmelskörper, Raumfahrzeuge und Lagrangepunkte. */
+export const ERFASSBAR = KOERPER.length + ORTE.length;
 
 export const orteVon = (planetId: string) => ORTE.filter(o => o.planet === planetId);
 

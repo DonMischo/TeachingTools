@@ -12,6 +12,7 @@ import { FLUG_ABSTANDSTEILER, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/mass
 import { KM_JE_AE, LICHT_KM_S } from "@/lib/sonnensystem/daten";
 import { KOERPER_NACH_ID } from "@/lib/sonnensystem/daten";
 import { AUFTRAEGE } from "@/lib/sonnensystem/auftraege";
+import { ERFASSBAR } from "@/lib/sonnensystem/orte";
 
 const reiter = (name: RegExp) => fireEvent.click(screen.getByRole("tab", { name }));
 
@@ -95,6 +96,8 @@ describe("Sonnensystem", () => {
     reiter(/Kodex/);
     expect(screen.getByRole("heading", { name: "Jupiter" })).toBeInTheDocument();
     expect(screen.getAllByText(/noch nicht gescannt/).length).toBe(Object.keys(KOERPER_NACH_ID).length - 1);
+    // Gezählt wird alles Scannbare, auch die Lagrangepunkte — sonst stand dort 44/37.
+    expect(screen.getByRole("button", { name: `Einträge 1/${ERFASSBAR}` })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Erfolge/ }));
     expect(screen.getByText("Erster Kontakt").closest("div")!.parentElement!.textContent).toMatch(/erreicht/);
     localStorage.clear();

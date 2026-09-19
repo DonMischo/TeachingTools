@@ -21,7 +21,7 @@ import {
   HAUPTKOERPER, KM_JE_AE, KOERPER, KOERPER_NACH_ID, LICHT_KM_S, mondeVon, type Koerper,
 } from "@/lib/sonnensystem/daten";
 import { heliozentrisch, julianischerTag, mondVersatz, satellitVersatz, type Vec3 } from "@/lib/sonnensystem/bahnen";
-import { ORTE, ORTE_NACH_ID, ortAmPlaneten, ortHeliozentrisch, type Ort } from "@/lib/sonnensystem/orte";
+import { ERFASSBAR, ORTE, ORTE_NACH_ID, ortAmPlaneten, ortHeliozentrisch, type Ort } from "@/lib/sonnensystem/orte";
 import { flugBahnRadius, flugMondbahn, flugOrt, flugRadius, FLUG_KM_JE_EINHEIT } from "@/lib/sonnensystem/massstab";
 import { AUFTRAEGE, STUFEN_NAME, auftragZu, type Auftrag } from "@/lib/sonnensystem/auftraege";
 import {
@@ -61,8 +61,6 @@ const zeitfaktor = (abstand: number, stufe: number) =>
   stufe <= 1 ? 1 : THREE.MathUtils.clamp(abstand / 60, 0.004, 1);
 const STAUB = 600;
 const STAUB_WUERFEL = 140;
-/** Alles, was sich erfassen lässt: Himmelskörper, Raumfahrzeuge und Orte. */
-const ERFASSBAR = KOERPER.length + ORTE.length;
 /**
  * Ein Lagrangepunkt hat keine Oberfläche. Fürs Anfliegen, Anhalten und Scannen
  * zählt er trotzdem als Kugel dieser Größe — sonst wüsste der Autopilot nicht,

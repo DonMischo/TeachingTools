@@ -5,9 +5,9 @@
  */
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  ART_NAME, HAUPTKOERPER, KOERPER, KOERPER_NACH_ID, mondeVon, satellitenVon, type Koerper,
+  ART_NAME, HAUPTKOERPER, KOERPER_NACH_ID, mondeVon, satellitenVon, type Koerper,
 } from "@/lib/sonnensystem/daten";
-import { ORTE, type Ort } from "@/lib/sonnensystem/orte";
+import { ERFASSBAR, ORTE, type Ort } from "@/lib/sonnensystem/orte";
 import { STUFEN_NAME, gemischteAntworten, type Auftrag } from "@/lib/sonnensystem/auftraege";
 import { foto } from "@/lib/sonnensystem/bilder";
 import { tage, zahl } from "@/lib/sonnensystem/format";
@@ -270,7 +270,7 @@ export function ScanKarte({ koerper, ort, anzahl, auftrag, onGeloest, onSteckbri
           >
             <span className="text-cyan-300">◢ Analysevisor</span>
             <span className="text-amber-300 hidden sm:inline">Objekt {kennung}</span>
-            <span className="text-cyan-300">Erfasst {anzahl}/{KOERPER.length + ORTE.length}<span className="visor-blink">▮</span></span>
+            <span className="text-cyan-300">Erfasst {anzahl}/{ERFASSBAR}<span className="visor-blink">▮</span></span>
           </div>
 
           <div className="grid sm:grid-cols-[13rem_1fr] gap-5 px-5 sm:px-7 pt-5">

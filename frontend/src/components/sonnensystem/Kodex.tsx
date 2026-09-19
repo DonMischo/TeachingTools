@@ -8,11 +8,11 @@
  * Das PDF enthält immer alle Himmelskörper — es ist Lernmaterial, keine Beute.
  */
 import { useState } from "react";
-import { KM_JE_AE, KOERPER, type Koerper } from "@/lib/sonnensystem/daten";
+import { KM_JE_AE, type Koerper } from "@/lib/sonnensystem/daten";
 import { foto } from "@/lib/sonnensystem/bilder";
 import { AUFTRAEGE } from "@/lib/sonnensystem/auftraege";
 import { KODEX_GRUPPEN, artZeile, datenZeilen } from "@/lib/sonnensystem/kodex";
-import { ORTE, type Ort } from "@/lib/sonnensystem/orte";
+import { ERFASSBAR, ORTE, type Ort } from "@/lib/sonnensystem/orte";
 import { ERFOLGE, erreicht, type Gruppe } from "@/lib/sonnensystem/erfolge";
 import { dauer, km, zahl } from "@/lib/sonnensystem/format";
 import { Knopfgruppe } from "./Bedienung";
@@ -50,7 +50,7 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
         <h2 className="text-lg font-black mr-2">📓 Kodex</h2>
         <Knopfgruppe
           werte={[
-            { wert: "eintraege" as KodexBereich, name: `Einträge ${fortschritt.erforscht.length}/${KOERPER.length}` },
+            { wert: "eintraege" as KodexBereich, name: `Einträge ${fortschritt.erforscht.length}/${ERFASSBAR}` },
             { wert: "erfolge" as KodexBereich, name: `Erfolge ${erfolgZahl}/${ERFOLGE.length}` },
             { wert: "statistik" as KodexBereich, name: "Statistik" },
           ]}
@@ -259,7 +259,7 @@ function Erfolge({ fortschritt }: { fortschritt: Fortschritt }) {
 function Statistik({ fortschritt: f }: { fortschritt: Fortschritt }) {
   const s = f.statistik;
   const zeilen: [string, string][] = [
-    ["Erforscht", `${f.erforscht.length} von ${KOERPER.length} Himmelskörpern`],
+    ["Erforscht", `${f.erforscht.length} von ${ERFASSBAR} Einträgen`],
     ["Forschungsaufträge", `${f.erledigt.length} von ${AUFTRAEGE.length}`],
     ["Flugzeit", dauer(s.flugzeit)],
     ["Strecke", `${km(s.strecke)} (${zahl(s.strecke / KM_JE_AE, 1)} AE)`],
