@@ -1334,6 +1334,12 @@ class SchoolSettings(Base):
     show_geschlecht: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=sql_expr.false()
     )
+    # Wie lange ein QR/Join-Link-Gast drinbleibt, in Minuten. Schulweit, weil
+    # eine Doppelstunde anderswo anders lang ist als hier; der Admin stellt es
+    # unter »Gastzugang« ein (api/routers/school.py).
+    guest_token_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=90, server_default="90"
+    )
 
 
 # ---------------------------------------------------------------------------

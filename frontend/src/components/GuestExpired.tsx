@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Bildschirm für ein abgelaufenes 60-Minuten-Gastfenster.
+ * Bildschirm für ein abgelaufenes Gastfenster.
  *
  * Mit `onRejoin` bekommt der Gast einen Weg zurück: der abgelaufene Eintrag
  * wird verworfen und der Beitritt beginnt von vorn. Ob das klappt, entscheidet
@@ -20,7 +20,7 @@ export function GuestExpired({ gameIcon = "⏰", onRejoin }: {
       <div className="text-5xl">{gameIcon}</div>
       <h1 className="text-2xl font-black text-white">Sitzung abgelaufen</h1>
       <p className="text-white/60 max-w-xs">
-        Dein Gastzugang war 60&nbsp;Minuten gültig und ist jetzt abgelaufen.
+        Dein Gastzugang ist abgelaufen.
         {onRejoin
           ? " Wenn deine Lehrkraft noch geöffnet hat, kannst du direkt wieder beitreten."
           : " Bitte scanne den QR-Code erneut oder frage deine Lehrkraft nach einem neuen Link."}

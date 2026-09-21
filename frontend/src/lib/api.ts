@@ -166,6 +166,8 @@ export type GroupType = "kurs" | "wahlpflicht" | "ab_gruppe";
 
 export type GuestStatus = {
   allow_guests: boolean;
+  /** Länge des Gastfensters in Minuten (Admin › Gastzugang). */
+  guest_minutes: number;
   /** Wie oft der Gastzugang neu gestartet wurde — jeder Neustart entwertet die
    *  bis dahin ausgegebenen Gast-Token. */
   guest_epoch: number;
@@ -406,6 +408,13 @@ export type DisplaySettingsOut = {
 
 export type SchoolSettingsOut = {
   bundesland: string;
+};
+
+/** Länge des Gastfensters in Minuten. Lesen darf jede Lehrkraft, setzen ein Admin. */
+export type GuestSettingsOut = {
+  guest_minutes: number;
+  min_minutes: number;
+  max_minutes: number;
 };
 
 export type TeacherDiffRow = {
@@ -1421,7 +1430,7 @@ export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
     join: (code: string, tool: string, name: string) =>
-      apiFetch<{ token: string; name: string }>("guest/join", {
+      apiFetch<{ token: string; name: string; expires_in_minutes: number }>("guest/join", {
         method: "POST", body: JSON.stringify({ code, tool, name }),
       }),
     status: (tool: string, code: string) =>
@@ -1771,6 +1780,11 @@ export const api = {
     setDisplaySettings: (show_geschlecht: boolean) =>
       apiFetch<DisplaySettingsOut>("school/display-settings", {
         method: "PUT", body: JSON.stringify({ show_geschlecht }),
+      }),
+    guestSettings: () => apiFetch<GuestSettingsOut>("school/guest-settings"),
+    setGuestSettings: (guest_minutes: number) =>
+      apiFetch<GuestSettingsOut>("school/guest-settings", {
+        method: "PUT", body: JSON.stringify({ guest_minutes }),
       }),
   },
 

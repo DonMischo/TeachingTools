@@ -107,7 +107,7 @@ describe("SchreibraumEditor — auth gate", () => {
     // durchgereicht, hiess im Schreibraum jeder Gast "ABC123".
     localStorage.clear();
     const guestJoin = vi.spyOn(apiModule.api.guest, "join")
-      .mockResolvedValue({ token: "gast-token", name: "Anna" });
+      .mockResolvedValue({ token: "gast-token", name: "Anna", expires_in_minutes: 90 });
     vi.spyOn(apiModule.api.schreibraum, "getByCode").mockResolvedValue(makeRoom());
     vi.spyOn(apiModule.api.schreibraum, "join").mockResolvedValue(makeParticipant({ name: "Anna" }));
 

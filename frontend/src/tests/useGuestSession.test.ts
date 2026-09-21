@@ -26,7 +26,7 @@ describe("useGuestSession", () => {
   beforeEach(() => {
     localStorage.clear();
     mockGuestJoin.mockReset();
-    mockGuestJoin.mockResolvedValue({ token: "frisch", name: "Gast" });
+    mockGuestJoin.mockResolvedValue({ token: "frisch", name: "Gast", expires_in_minutes: 90 });
   });
   afterEach(() => vi.useRealTimers());
 

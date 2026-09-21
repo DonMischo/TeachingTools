@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from .database import get_db
-from .models import Teacher, Student, RevokedToken
+from .models import Teacher, Student, RevokedToken, SchoolSettings
 from .config import settings
 
 bearer = HTTPBearer(auto_error=False)
@@ -40,14 +40,39 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(payload, settings.secret_key, algorithm="HS256")
 
 
-def create_guest_token(code: str, name: str, epoch: int = 0) -> str:
-    """Signed, session-scoped, 60-min token for a QR/join-link guest. `sub` is a
-    throwaway guest id (no DB row); `scope` binds the token to one session code.
+# Grenzen fuer die einstellbare Fensterlaenge: kuerzer als eine Viertelstunde
+# haelt keine Stunde durch, laenger als ein Schultag ist kein Gastzugang mehr.
+GUEST_MINUTES_MIN = 15
+GUEST_MINUTES_MAX = 480
+
+
+def guest_token_minutes(db: Session | None = None) -> int:
+    """Eingestellte Laenge des Gastfensters in Minuten.
+
+    Quelle ist die Schuleinstellung (Admin › Gastzugang); ohne DB-Sitzung oder
+    solange die Zeile fehlt, gilt der Wert aus der Konfiguration."""
+    if db is None:
+        return settings.guest_token_expire_minutes
+    row = db.get(SchoolSettings, 1)
+    minutes = getattr(row, "guest_token_minutes", None)
+    return minutes or settings.guest_token_expire_minutes
+
+
+def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None = None) -> str:
+    """Signed, session-scoped, short-lived token for a QR/join-link guest. `sub`
+    is a throwaway guest id (no DB row); `scope` binds the token to one session
+    code.
+
+    `minutes` ist die Fensterlaenge; ohne Angabe die Voreinstellung aus der
+    Konfiguration. Aufrufer mit DB-Sitzung reichen :func:`guest_token_minutes`
+    herein, damit die schulweite Einstellung greift.
 
     `gen` haelt den Stand des Sitzungszaehlers fest: startet die Lehrkraft den
     Gastzugang neu, sind alle Token mit kleinerem `gen` verbraucht (siehe
     :func:`guest_access_restarted`)."""
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.guest_token_expire_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=minutes or settings.guest_token_expire_minutes
+    )
     payload = {
         "sub": str(uuid.uuid4()),
         "type": "guest",

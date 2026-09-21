@@ -10,12 +10,17 @@ Angemeldete (der Sitzplan muss wissen, ob er das Kaestchen
 freigeschalteter Klassensprecher), Setzen nur ein Admin. Nicht das
 delegierbare Recht »Kalender-Einstellungen«: wer Ferientermine pflegen darf,
 soll damit nicht die Offenlegung personenbezogener Daten umschalten koennen.
+
+Nach derselben Regel liegt hier auch die Laenge des Gastfensters: wie lange ein
+unangemeldeter QR-Zugang gilt, ist eine Sicherheitsentscheidung der Schule, kein
+Knopf der einzelnen Lehrkraft. Lesen darf sie trotzdem jede — die Hostansicht
+schreibt die Zahl an den Schalter »Gäste erlauben«.
 """
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user, require_admin
+from ..auth import GUEST_MINUTES_MAX, GUEST_MINUTES_MIN, get_current_user, require_admin
 from ..database import get_db
 from ..models import SchoolSettings
 
@@ -58,3 +63,38 @@ def set_display_settings(
     row.show_geschlecht = body.show_geschlecht
     db.commit()
     return DisplaySettingsOut(show_geschlecht=row.show_geschlecht)
+
+
+class GuestSettingsOut(BaseModel):
+    """Wie lange ein QR/Join-Link-Gast drinbleibt, schulweit in Minuten."""
+    guest_minutes: int
+    min_minutes: int = GUEST_MINUTES_MIN
+    max_minutes: int = GUEST_MINUTES_MAX
+
+
+class GuestSettingsIn(BaseModel):
+    guest_minutes: int = Field(ge=GUEST_MINUTES_MIN, le=GUEST_MINUTES_MAX)
+
+
+@router.get("/guest-settings", response_model=GuestSettingsOut)
+def get_guest_settings(db: Session = Depends(get_db), _=Depends(get_current_user)):
+    """Lesen darf jede Lehrkraft — die Hostansicht schreibt die Zahl an den
+    Schalter »Gäste erlauben«."""
+    return GuestSettingsOut(guest_minutes=_settings(db).guest_token_minutes)
+
+
+@router.put("/guest-settings", response_model=GuestSettingsOut)
+def set_guest_settings(
+    body: GuestSettingsIn,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
+    """Setzen nur ein Admin: die Zahl entscheidet, wie lange ein unangemeldeter
+    Zugang gilt. Bereits ausgegebene Token behalten ihre alte Laufzeit — das
+    Ablaufdatum steht im JWT; wer sie sofort loswerden will, startet den
+    Gastzugang der Sitzung neu.
+    """
+    row = _settings(db)
+    row.guest_token_minutes = body.guest_minutes
+    db.commit()
+    return GuestSettingsOut(guest_minutes=row.guest_token_minutes)

@@ -130,7 +130,7 @@ describe("HostPage – game flow", () => {
     // Der Schalter steckte vorher nur im QR-Overlay hinter einem kleinen Knopf
     // und war auf der Lobby-Ansicht, die die Lehrkraft anschaut, nicht zu sehen.
     const status = vi.spyOn(apiModule.api.guest, "status")
-      .mockResolvedValue({ allow_guests: false, guest_epoch: 0 });
+      .mockResolvedValue({ allow_guests: false, guest_epoch: 0, guest_minutes: 90 });
 
     render(<HostPage />);
     openSocket();

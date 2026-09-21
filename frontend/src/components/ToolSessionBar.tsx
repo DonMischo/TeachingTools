@@ -105,8 +105,8 @@ export function ToolSessionBar({ tool, title, refId }: {
                     <GuestAccessToggle tool="simulation" code={session.code} />
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                       Ohne diesen Schalter brauchen die Schüler ein eigenes Konto. Mit ihm kommt
-                      jeder, der den Code scannt, für 60 Minuten hinein — ohne Anmeldung.
-                      Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter.
+                      jeder, der den Code scannt, ohne Anmeldung hinein — für die am Schalter
+                      genannte Zeit. Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter.
                     </p>
                   </div>
 

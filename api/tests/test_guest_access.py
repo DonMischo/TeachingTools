@@ -1,4 +1,4 @@
-"""Guest (QR / join-link) access: opt-in, 60-min expiry, session scoping.
+"""Guest (QR / join-link) access: opt-in, expiry, session scoping.
 
 Sessions are seeded directly via the db fixture so the TestClient carries no
 login cookie — guest requests then authenticate purely off the Bearer guest

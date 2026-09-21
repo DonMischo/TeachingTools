@@ -69,7 +69,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "⬆️ Eigene Texte", text: "»Hochladen« nimmt eine JSON-Datei mit eigenen Texten an — Diktate oder Fachbegriffe statt Übungssätzen. »Vorlage« lädt eine ausgefüllte Beispieldatei samt Anleitung. Eine Wortliste in der Datei versorgt auch den Wortregen. Tottasten (^ ´ `) werden abgelehnt: sie lassen sich nicht einzeln tippen." },
       { label: "📊 Werte", text: "Anschläge pro Minute (die im Schreibunterricht übliche Größe, gezählt werden die richtigen) und die Fehlerquote über alle Anschläge. Am Ende stehen die schwächsten Tasten." },
       { label: "🏆 Bestenliste", text: "Die besten hundert je Modus — Anschläge/Minute bei den Lektionen, Punkte beim Wortregen, Reaktionszeit bei der Tastenjagd (dort gewinnt die kleinste Zahl). Je Person zählt nur die beste Runde. Eingetragen wird automatisch am Ende einer Runde und nur mit eigenem Zugang — Gäste über den QR spielen mit, stehen aber nicht in der Liste." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Das Wettschreiben hat seinen eigenen Code je Rennen." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). Das Wettschreiben hat seinen eigenen Code je Rennen." },
     ],
   },
   maus: {
@@ -93,7 +93,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📄 6 Kopieren", text: "Wörter, Sätze und einen Absatz kopieren und in den Merkzettel einfügen — mit Strg + C / Strg + V oder über das Rechtsklick-Menü. Abtippen zählt nicht. Der »Zwischenspeicher« zeigt, was gerade kopiert ist — beim Einfügen auch, was außerhalb der Seite kopiert wurde." },
       { label: "💾 7 Speichern", text: "Der Führerschein ist ein Bild: Rechtsklick → »Bild speichern unter …« (Firefox: »Grafik speichern unter …«). Danach im Explorer (Windows + E) wiederfinden und zurück auf die Seite ziehen. Geprüft wird nur im Browser — die Datei wird nicht hochgeladen. Zusätzlich gibt es jedes Blatt als PDF zum Herunterladen." },
       { label: "🏆 Bestenliste", text: "Listen für Klicken, Doppelklick, Ziehen und Gesamt; je Person zählt die beste Runde. Gäste über den QR stehen mit ihrem eingegebenen Namen darin — Admins können einzelne Einträge löschen." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   abacus: {
@@ -102,7 +102,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "🎯 Nutzung", text: "Kugeln mit dem Finger/der Maus schieben und den Wert in Ziffern ablesen." },
       { label: "🔀 Modus", text: "»Alle gleich« zählt alle Kugeln bis 100; »Stellenwert« gibt jeder Reihe einen Stellenwert (Einer, Zehner, …)." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   bildformate: {
@@ -112,7 +112,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🎨 Formate", text: "PBM (P1) schwarz-weiß mit 0 und 1, PGM (P2) Graustufen bis zum Maximalwert, PPM (P3) Farbe mit drei Werten (Rot Grün Blau) je Pixel. Jedes Format hat sein eigenes Blatt — Umschalten löscht nichts." },
       { label: "✏️ Bearbeiten", text: "Im Text tippen aktualisiert das Bild sofort; ein Klick ins Bild schreibt den Wert zurück in den Text. Der Cursor im Text markiert das passende Pixel rot." },
       { label: "↹ Aufräumen", text: "Zeilenumbrüche sind egal — die Werte werden der Reihe nach gelesen. »Aufräumen« bricht sie nach je »Breite« Werten um und füllt fehlende Werte mit 0 auf." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   funktionen: {
@@ -132,7 +132,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🔍 Ansicht", text: "»＋« und »−« zoomen den Ausschnitt, das Mausrad über dem Bild ebenso. Daneben lassen sich x- und y-Achse getrennt dehnen und stauchen — nützlich, wenn eine Kurve flach liegt oder oben aus dem Bild läuft. »Passend« stellt die automatische Einpassung wieder her; sie greift auch von selbst, sobald ein neuer Term oder Bereich eingestellt wird." },
       { label: "▦ Raster", text: "Ungestreckt ist das Raster quadratisch — ein Schritt nach rechts ist so lang wie einer nach oben, wie auf Karopapier. Sobald eine Achse einzeln gedehnt wird, gilt das absichtlich nicht mehr; »Passend« stellt die Quadrate wieder her. Winkelfunktionen sind ausgenommen: dort ist ein x-Schritt ein Bruchteil von π und mit einem y-Schritt nicht vergleichbar. Die Achsen sind in Einer-Schritten geteilt, solange das lesbar bleibt — so lassen sich Kästchen zählen. Wird der Ausschnitt sehr weit, weicht die Teilung auf 2, 5, 10 … aus. Winkelfunktionen behalten auf der x-Achse ihre π-Teilung." },
       { label: "📐 Bereich", text: "»von«, »bis« und »Schritt« bestimmen die Wertetabelle; der Graph nimmt den gleichen Bereich mit etwas Luft und skaliert die y-Achse selbst. Halbe Schritte gehen auch. Wo eine Funktion nicht definiert ist (1/x bei 0, sqrt für negative x), steht in der Tabelle »—« und der Graph hat eine Lücke statt einer falschen Verbindungslinie." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   rechenregeln: {
@@ -146,7 +146,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "➗ Geteilt und mit Komma", text: "Der Umschalter »· mal / : geteilt« dreht die Rutsche um: aus 3600 : 40 wird 36 : 4 = 9 und eine Stelle nach links, aus 45 : 100 wird ein Rutschen um zwei Stellen nach rechts — 0,45. Die Tafel bekommt dafür Zehntel, Hundertstel und Tausendstel samt Komma. Kommazahlen darf man auch selbst eintippen (0,3 · 400), die Sorte »Komma« würfelt sie. Eine Division, die nicht aufgeht, wird abgelehnt statt gerundet." },
       { label: "✍️ Selbst rechnen", text: "Beim Obstkorb und bei den Stufenzahlen steht ein Feld für das eigene Ergebnis. Bei den Stufenzahlen liegt der Rechenweg so lange verdeckt — »Lösung zeigen« deckt ihn auf, ohne zu zählen. Eine falsche Antwort verrät die Lösung nicht: nachgerechnet wird am Bild. Oben zählt der Punktestand mit, wie viele Antworten saßen, samt Serie; gezählt wird je Aufgabe nur der erste Versuch, und »↺ Zähler« stellt ihn zurück." },
       { label: "🎲 Aufgaben", text: "»Neue Aufgabe« würfelt — nie zweimal dieselbe. Daneben stehen die Sorten: beim Obstkorb vier Stufen von »a + b · c« bis zu zwei Klammern, beim Zug von »nur + und ·« bis gemischt, bei den Stufenzahlen »Frei« (Zehner-, Hunderter-, Tausenderzahlen wie 40, 500, 2000), »Komma« sowie die festen Stufen 10 bis 10 000. Ein Klick auf eine Sorte würfelt gleich mit. Das Feld daneben nimmt jeden eigenen Term (Zahlen, + − · : und Klammern; der Zug fährt ohne Klammern)." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   ki: {
@@ -161,7 +161,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🌫️ Bilder: Verrauschen", text: "Der Browser rechnet echte Vorwärts-Diffusion: Schritt für Schritt kommt Rauschen dazu, nach derselben Formel wie beim Training. Der Seed dafür ist der Fingerabdruck aus dem ersten Reiter — gleicher Seed, gleiches Rauschmuster." },
       { label: "✨ Bilder: Entrauschen", text: "Den Rückweg kann nur ein trainiertes Modell. Deshalb spielt der Reiter eine fertige Bildfolge ab: »📦 Bildfolge (ZIP)« lädt sie vom eigenen Gerät (ein Ordner je Folge, darin step_00.png, step_01.png, …; mehrere Ordner wie katze_seed42 und katze_seed99 lassen sich umschalten und vergleichen). Ohne ZIP läuft die eigene Rauschreihe rückwärts — mit dem ausdrücklichen Hinweis, dass das geschummelt ist. Die Bilder bleiben auf dem Gerät, es wird nichts hochgeladen." },
       { label: "🧠 Was hier anders ist", text: "Ehrlich gesagt: unser Netz schaut nur auf das letzte Wort und hat ein paar hundert Zahlen, ein echtes Modell hat Milliarden und Tausende Wörter Zusammenhang. Deshalb bleiben die Sätze hier einfach, und Umstellungen wie »Plötzlich springt die Katze« gibt es nicht. Gleich ist das Entscheidende: Wahrscheinlichkeiten, eine Auswahl daraus, ein Würfel." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). Der Code gilt für beide Reiter, und die Tafel sammelt alles, was unter diesem Code abgegeben wird." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). Der Code gilt für beide Reiter, und die Tafel sammelt alles, was unter diesem Code abgegeben wird." },
     ],
   },
   sonnensystem: {
@@ -181,7 +181,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📐 Kepler", text: "Die drei Keplerschen Gesetze zum Einstellen. 1. Gesetz: eine Ellipse mit regelbarer Exzentrizität, beiden Brennpunkten und Voreinstellungen von Venus (e = 0,007) bis zum Halleyschen Kometen (0,967) — man sieht, dass die Bahnen fast rund sind und trotzdem die Sonne nicht in der Mitte steht. 2. Gesetz: der Umlauf in zwölf gleich lange Zeitabschnitte zerlegt; die Kuchenstücke sind alle gleich groß, die zurückgelegten Wege aber nicht — deshalb ist der Planet nah an der Sonne schneller. Die Flächen stehen als Zahl daneben. 3. Gesetz: eine Tabelle aller Planeten mit a, T, a³, T² und T²/a³ (überall 1,000) und dasselbe als doppelt logarithmisches Diagramm, in dem alle Punkte auf einer Geraden der Steigung 3/2 liegen. Aus der Übersicht führt ein Link hierher." },
       { label: "🔭 Galerie", text: "Rund 90 Bilder: Porträts aller Himmelskörper und Raumfahrzeuge und Aufnahmen von Hubble, James Webb, Gaia, Chandra, SOHO, Sentinel-2, Juno, Cassini, Voyager, Lucy, den Apollo-Missionen, Venera, Curiosity, Perseverance, Rosetta, BepiColombo, JUICE und Chang’e. Jedes Bild wird freigeschaltet, sobald der passende Körper im Flug gescannt ist; der Filter zeigt einzelne Planeten samt ihren Monden. Hubble und Webb lassen sich beim selben Motiv nebeneinander vergleichen. Lehrkräfte können mit »Alle zeigen« alles aufdecken." },
       { label: "🖼️ Bilder", text: "Alle Bilder liegen auf dem Schulserver, es wird nichts von außen nachgeladen. Quellen: NASA/JPL/USGS (gemeinfrei), ESA (CC BY / CC BY-SA), Planetentexturen von Solar System Scope (CC BY 4.0). Der vollständige Nachweis steht unten in der Galerie." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
     ],
   },
   vierecke: {
@@ -191,7 +191,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📐 Formen", text: "Quadrat, Rechteck, Parallelogramm, Trapez, Raute und Drachen. Die Schieberegler ändern die Maße, darunter steht der Rechenweg mit eingesetzten Zahlen und die Eigenschaften der Form. Höhe und Diagonalen sind gestrichelt eingezeichnet, wo die Formel sie braucht." },
       { label: "🚧 Umfang", text: "Die Weide wird Feld für Feld eingezäunt: der Umfang ist die Länge des Zauns, einmal rundherum. Antippen setzt ein Zaunfeld, mit gedrücktem Finger lässt sich streichen. Steht der Zaun, kommen die Schafe raus." },
       { label: "🧱 Fläche", text: "Die Fläche wird mit Einheitsquadraten ausgelegt — gezählt wird, was drinnen liegt. Beide Aufgaben gibt es nur für Quadrat und Rechteck: nur die zerfallen lückenlos in Einheitsquadrate." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   binaerrechner: {
@@ -200,7 +200,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "🔢 Nutzung", text: "Klick schaltet ein Bit um. Über jedem Schalter steht sein Stellenwert (128, 64, … 1), darunter die Bitnummer. Der Rechenweg zeigt, welche Stellenwerte addiert werden." },
       { label: "🎨 Aussehen", text: "Der Terminal-Look der Raumstation Nova-7 gehört zum Exitgame-Zusammenhang und bleibt bewusst dunkel — er folgt nicht dem Hell/Dunkel-Wechsel der App." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (60 Minuten)." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
   gleichungswaage: {
@@ -219,7 +219,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "⚠️ Oktett-Hinweis", text: "Passt eine Verbindung nicht zur Bindigkeit (z. B. H₃O), erklärt ein Hinweis, warum: wie viele Bindungen jedes Element braucht und wie viele zusammenkommen. Geprüft werden nur Verbindungen aus zwei Elementen, und es gibt Ausnahmen von der Oktettregel." },
       { label: "📐 LaTeX", text: "Gleichungen und Formeln darfst du auch in LaTeX tippen: »\\frac{x}{2} = 3«, »2 \\cdot (x+3) = 14«, »p = \\frac{F}{A}«, gern in $…$. Unter dem Eingabefeld steht sofort gesetzt, wie die Waage das gelesen hat." },
       { label: "📝 Rechenweg", text: "In Zahlen- und Variablenmodus wird jeder Schritt mitgeschrieben — mit Strich und Umformung dahinter, wie im Heft — gesetzt, Brüche also als echte Brüche. »Zurück« nimmt einen Schritt zurück." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR — die Schüler scannen ihn und haben das Werkzeug auf dem eigenen Gerät. Mit dem Schalter »Gäste erlauben« kommt auch ohne Konto hinein, wer den Code scannt (60 Minuten lang). Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR — die Schüler scannen ihn und haben das Werkzeug auf dem eigenen Gerät. Mit dem Schalter »Gäste erlauben« kommt auch ohne Konto hinein, wer den Code scannt (befristet, Länge stellt der Admin ein). Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter." },
     ],
   },
   uebung: {
@@ -228,7 +228,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "🎯 Nutzung", text: "Oben im Auswahlfeld ein Thema wählen — die Themen sind nach Fach gebündelt. Darunter erscheinen die Aufgaben und der Zählerstand: »Aufgabe holen«, Antwort eintippen, »Prüfen«, »Nächste Aufgabe«. Zu manchen Aufgaben gibt es einen Hinweis und einen Zahlenstrahl zum Setzen statt eines Eingabefelds." },
       { label: "⭐ Anpassung", text: "Die Schwierigkeit (die Sterne) steigt nach drei richtigen Antworten in Folge und sinkt nach zwei falschen. Gezählt werden gemachte und richtige Aufgaben je Thema — die Quote steht als Balken daneben. Gewürfelt und geprüft wird auf dem Server: die Lösung steht nie im Browser, bevor geantwortet wurde." },
-      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« kommt auch ohne Konto hinein, wer den Code scannt (60 Minuten). Der Fortschritt eines Gastes hängt an seinem Gast-Token und lebt genauso lange — wer ein Konto hat, behält seinen Zählerstand dauerhaft." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« kommt auch ohne Konto hinein, wer den Code scannt (befristet, Länge stellt der Admin ein). Der Fortschritt eines Gastes hängt an seinem Gast-Token und lebt genauso lange — wer ein Konto hat, behält seinen Zählerstand dauerhaft." },
     ],
   },
   schreibraum: {

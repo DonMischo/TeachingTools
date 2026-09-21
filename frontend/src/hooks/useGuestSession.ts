@@ -2,13 +2,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
-/** A signed guest token, valid for one session code, for a fixed 60-minute window.
+/** A signed guest token, valid for one session code, for one guest window.
  * Stored in localStorage under `hp_guest_<code>` and dropped once expired. */
 export type GuestSession = { token: string; name: string; expiresAt: number };
 
-/** Guest tokens live 60 min server-side; expire the client copy a hair earlier so
- * we show the hard-block screen before the server would reject a call. */
-const CLIENT_TTL_MS = 59 * 60 * 1000;
+/** Wie lang das Fenster ist, sagt der Server beim Beitritt (schulweit unter
+ * Admin › Gastzugang eingestellt) — der Browser rät die Zahl nicht selbst, sonst
+ * zeigt er den Abgelaufen-Schirm, während das Token noch gilt, oder umgekehrt.
+ * Die Kopie im Browser läuft eine Minute früher ab, damit der Schirm kommt,
+ * bevor der Server anfängt, Aufrufe abzuweisen. */
+const CLIENT_SKEW_MS = 60 * 1000;
+
+function clientTtlMs(minutes: number): number {
+  return Math.max(minutes * 60 * 1000 - CLIENT_SKEW_MS, 30 * 1000);
+}
 
 function load(key: string): GuestSession | null {
   try {
@@ -22,7 +29,7 @@ function load(key: string): GuestSession | null {
 /**
  * Guest identity for one session `code`. `join(tool, name)` calls the backend
  * (which enforces the teacher opt-in) and persists the returned token; `expired`
- * flips to true when the 60-minute window elapses and the caller shows the
+ * flips to true when the guest window elapses and the caller shows the
  * "Sitzung abgelaufen" screen.
  *
  * Dieser Bildschirm ist eine Sackgasse *auf Zeit*, keine dauerhafte Sperre:
@@ -68,7 +75,11 @@ export function useGuestSession(code: string) {
 
   const join = useCallback(async (tool: string, name: string) => {
     const res = await api.guest.join(code, tool, name);
-    const s: GuestSession = { token: res.token, name: res.name, expiresAt: Date.now() + CLIENT_TTL_MS };
+    const s: GuestSession = {
+      token: res.token,
+      name: res.name,
+      expiresAt: Date.now() + clientTtlMs(res.expires_in_minutes),
+    };
     try { localStorage.setItem(key, JSON.stringify(s)); } catch {}
     setSession(s);
     setExpired(false);

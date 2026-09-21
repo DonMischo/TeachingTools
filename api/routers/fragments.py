@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
-from ..auth import get_current_user, get_current_teacher, create_guest_token
+from ..auth import get_current_user, get_current_teacher, create_guest_token, guest_token_minutes
 from ..availability import require_capability
 from ..models import (
     Teacher, Student, Class, StudentGroup,
@@ -369,6 +369,7 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     if not name:
         raise HTTPException(422, "Bitte einen Namen angeben")
     return GuestJoinOut(
-        token=create_guest_token(coll.guest_code, name), name=name,
+        token=create_guest_token(coll.guest_code, name, minutes=guest_token_minutes(db)),
+        name=name,
         collection_id=coll.id, collection_name=coll.name, permission=coll.guest_permission,
     )

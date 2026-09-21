@@ -2,8 +2,9 @@
  * »Gastzugang neu starten« am Host-Bildschirm.
  *
  * Ein gedruckter QR überlebt mehrere Klassen: der Code bleibt derselbe, damit
- * der Aushang weiter stimmt. Ohne diesen Knopf hätte die vorige Gruppe bis zu
- * 60 Minuten weiter Zugang, während die nächste denselben Code scannt.
+ * der Aushang weiter stimmt. Ohne diesen Knopf hätte die vorige Gruppe bis zum
+ * Ende ihres Gastfensters weiter Zugang, während die nächste denselben Code
+ * scannt.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -29,12 +30,12 @@ describe("GuestAccessToggle", () => {
     mockStatus.mockReset();
     mockSetAllowed.mockReset();
     mockRestart.mockReset();
-    mockRestart.mockResolvedValue({ allow_guests: true, guest_epoch: 1 });
+    mockRestart.mockResolvedValue({ allow_guests: true, guest_epoch: 1, guest_minutes: 90 });
   });
   afterEach(() => vi.restoreAllMocks());
 
   it("zeigt »neu starten« nur, wenn Gäste erlaubt sind", async () => {
-    mockStatus.mockResolvedValue({ allow_guests: false, guest_epoch: 0 });
+    mockStatus.mockResolvedValue({ allow_guests: false, guest_epoch: 0, guest_minutes: 90 });
     render(<GuestAccessToggle tool="simulation" code="WAAGE1" />);
 
     await waitFor(() => expect(screen.getByText("Gäste erlauben")).toBeInTheDocument());
@@ -44,7 +45,7 @@ describe("GuestAccessToggle", () => {
 
   it("startet nach Rückfrage neu", async () => {
     const user = userEvent.setup();
-    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0 });
+    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0, guest_minutes: 90 });
     vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<GuestAccessToggle tool="simulation" code="WAAGE1" />);
 
@@ -57,7 +58,7 @@ describe("GuestAccessToggle", () => {
 
   it("bricht ab, wenn die Rückfrage verneint wird", async () => {
     const user = userEvent.setup();
-    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0 });
+    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0, guest_minutes: 90 });
     vi.spyOn(window, "confirm").mockReturnValue(false);
     render(<GuestAccessToggle tool="simulation" code="WAAGE1" />);
 
@@ -65,10 +66,19 @@ describe("GuestAccessToggle", () => {
     expect(mockRestart).not.toHaveBeenCalled();
   });
 
+  it("schreibt die eingestellte Fensterlänge an den Schalter", async () => {
+    // Die Zahl kommt vom Server (Admin › Gastzugang) — im Bauteil steht keine
+    // feste 60, sonst löge der Hinweis nach der ersten Umstellung.
+    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0, guest_minutes: 90 });
+    render(<GuestAccessToggle tool="simulation" code="WAAGE1" />);
+
+    expect(await screen.findByText("90 Min.")).toBeInTheDocument();
+  });
+
   it("wirft niemanden aus, wenn nur der Schalter umgelegt wird", async () => {
     const user = userEvent.setup();
-    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0 });
-    mockSetAllowed.mockResolvedValue({ allow_guests: false, guest_epoch: 0 });
+    mockStatus.mockResolvedValue({ allow_guests: true, guest_epoch: 0, guest_minutes: 90 });
+    mockSetAllowed.mockResolvedValue({ allow_guests: false, guest_epoch: 0, guest_minutes: 90 });
     render(<GuestAccessToggle tool="simulation" code="WAAGE1" />);
 
     await user.click(await screen.findByText("Gäste erlauben"));

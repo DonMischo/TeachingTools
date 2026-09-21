@@ -9,9 +9,9 @@ import { api } from "@/lib/api";
  *
  * Daneben steht »neu starten«: das entzieht die bereits ausgegebenen
  * Gast-Token, ohne den Code zu aendern. Gedacht fuer den gedruckten QR, der
- * mehrere Klassen ueberlebt — sonst haette die vorige Gruppe bis zu 60 Minuten
- * weiter Zugang, waehrend die naechste denselben Code scannt. Erst sichtbar,
- * wenn Gaeste ueberhaupt erlaubt sind.
+ * mehrere Klassen ueberlebt — sonst haette die vorige Gruppe bis zum Ende ihres
+ * Gastfensters weiter Zugang, waehrend die naechste denselben Code scannt.
+ * Erst sichtbar, wenn Gaeste ueberhaupt erlaubt sind.
  *
  * `className` traegt die Schriftfarben: die Vorgabe passt auf helle Flaechen,
  * dunkle Hostansichten (Caputh-Lobby) reichen helle Toene herein.
@@ -22,11 +22,16 @@ export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-6
   className?: string;
 }) {
   const [allow, setAllow] = useState<boolean | null>(null);
+  // Laenge des Gastfensters, wie der Server sie meldet (Admin › Gastzugang) —
+  // hier steht keine feste Zahl, sonst luege der Hinweis nach jeder Umstellung.
+  const [minutes, setMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
   const [restarted, setRestarted] = useState(false);
 
   useEffect(() => {
-    api.guest.status(tool, code).then(r => setAllow(r.allow_guests)).catch(() => setAllow(null));
+    api.guest.status(tool, code)
+      .then(r => { setAllow(r.allow_guests); setMinutes(r.guest_minutes); })
+      .catch(() => setAllow(null));
   }, [tool, code]);
 
   async function toggle() {
@@ -35,6 +40,7 @@ export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-6
     try {
       const r = await api.guest.setAllowed(tool, code, !allow);
       setAllow(r.allow_guests);
+      setMinutes(r.guest_minutes);
     } catch { /* keep previous state */ }
     finally { setSaving(false); }
   }
@@ -65,7 +71,7 @@ export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-6
         onClick={toggle}
         disabled={saving}
         className={`flex items-center gap-2 disabled:opacity-50 ${className}`}
-        title="Ob nicht angemeldete Gäste per QR/Link beitreten dürfen (60-Minuten-Zugang)"
+        title={`Ob nicht angemeldete Gäste per QR/Link beitreten dürfen${minutes ? ` (${minutes}-Minuten-Zugang)` : ""}`}
       >
         <span
           className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
@@ -78,6 +84,12 @@ export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-6
         </span>
         Gäste erlauben
       </button>
+
+      {allow && minutes > 0 && (
+        <span className="opacity-70" title="Schulweit im Admin einstellbar">
+          {minutes} Min.
+        </span>
+      )}
 
       {allow && (
         <button
