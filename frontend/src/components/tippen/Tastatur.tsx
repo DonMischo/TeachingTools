@@ -12,7 +12,10 @@
  * Taste. Deshalb leuchtet auch dann die richtige Stelle, wenn das System eine
  * andere Belegung meldet als auf den Tasten steht.
  */
-import { REIHEN, REIHENBREITE, FINGER_FARBEN, umschaltFuer, type Anschlag, type Taste } from "@/lib/tippen/layout";
+import {
+  REIHEN, REIHENBREITE, NAVIGATION, NAVIGATIONSBREITE, ZIFFERNBLOCK, ZIFFERNBLOCKBREITE,
+  FINGER_FARBEN, umschaltFuer, type Anschlag, type Reihe, type Taste,
+} from "@/lib/tippen/layout";
 
 type Props = {
   /** Die als nächstes fällige Taste — undefined, wenn die Übung fertig ist. */
@@ -20,6 +23,13 @@ type Props = {
   /** Gerade physisch gedrückte Tasten (KeyboardEvent.code). */
   gedrueckt: ReadonlySet<string>;
   zeigeFinger: boolean;
+  /**
+   * Auch Navigationsblock und Ziffernblock zeigen. Aus, wo es nur ums Tippen
+   * geht — der Hauptblock hat dann die ganze Breite. An, wo eine Aufgabe von
+   * Pos1, Ende oder Entf spricht: eine Taste, die nicht abgebildet ist, kann
+   * das Kind auch nicht suchen.
+   */
+  bloecke?: boolean;
 };
 
 function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Taste }) {
@@ -67,30 +77,41 @@ function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Ta
   );
 }
 
-function breite(reihe: Taste[]) {
-  return reihe.reduce((s, t) => s + (t.width ?? 1), 0);
+function breite(reihe: Reihe) {
+  return reihe.reduce((s, t) => s + (t?.width ?? 1), 0);
 }
 
-export function Tastatur({ naechste, gedrueckt, zeigeFinger }: Props) {
+/** Ein Tastenblock: Reihen untereinander, jede auf `volleBreite` aufgefüllt. */
+function Block({ reihen, volleBreite, ...rest }: Props & { reihen: Reihe[]; volleBreite: number }) {
   return (
-    <div aria-hidden className="flex flex-col gap-1 w-full max-w-2xl mx-auto">
-      {REIHEN.map((reihe, i) => {
-        const rest = REIHENBREITE - breite(reihe);
+    <div className="flex flex-col gap-1 basis-0" style={{ flexGrow: volleBreite }}>
+      {reihen.map((reihe, i) => {
+        const luecke = volleBreite - breite(reihe);
         return (
           <div key={i} className="flex gap-1">
-            {reihe.map(taste => (
-              <KeyCap
-                key={taste.code}
-                taste={taste}
-                naechste={naechste}
-                gedrueckt={gedrueckt}
-                zeigeFinger={zeigeFinger}
-              />
+            {reihe.map((taste, j) => (taste
+              ? <KeyCap key={taste.code} taste={taste} {...rest} />
+              // Leerstelle im Block — hält die Spalten darunter an ihrem Platz.
+              : <div key={`luecke-${j}`} className="h-9 sm:h-11" style={{ flexGrow: 1, flexBasis: 0 }} />
             ))}
-            {rest > 0 && <div style={{ flexGrow: rest, flexBasis: 0 }} />}
+            {luecke > 0 && <div style={{ flexGrow: luecke, flexBasis: 0 }} />}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+export function Tastatur({ bloecke = false, ...rest }: Props) {
+  return (
+    <div aria-hidden className={"flex gap-2 sm:gap-3 w-full mx-auto " + (bloecke ? "max-w-5xl" : "max-w-2xl")}>
+      <Block reihen={REIHEN} volleBreite={REIHENBREITE} {...rest} />
+      {bloecke && (
+        <>
+          <Block reihen={NAVIGATION} volleBreite={NAVIGATIONSBREITE} {...rest} />
+          <Block reihen={ZIFFERNBLOCK} volleBreite={ZIFFERNBLOCKBREITE} {...rest} />
+        </>
+      )}
     </div>
   );
 }

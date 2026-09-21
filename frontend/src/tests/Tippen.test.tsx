@@ -39,13 +39,39 @@ describe("Tastatur", () => {
     // Die Spalten müssen untereinander stehen — sonst zeigt die Tastatur auf
     // eine andere Stelle, als der Finger treffen soll.
     const { container } = render(<Tastatur gedrueckt={new Set()} zeigeFinger />);
-    const reihen = Array.from(container.firstElementChild!.children);
+    const hauptblock = container.firstElementChild!.firstElementChild!;
+    const reihen = Array.from(hauptblock.children);
     expect(reihen).toHaveLength(5);
     for (const reihe of reihen) {
       const summe = Array.from(reihe.children)
         .reduce((s, el) => s + parseFloat((el as HTMLElement).style.flexGrow || "0"), 0);
       expect(summe).toBeCloseTo(REIHENBREITE);
     }
+  });
+
+  it("zeigt Navigations- und Ziffernblock nur auf Anfrage", () => {
+    // Der Schreibtrainer braucht die Breite für den Hauptblock. Aufgaben, die
+    // von Pos1, Ende oder Entf sprechen, brauchen dagegen die Tasten im Bild —
+    // was nicht abgebildet ist, kann ein Kind auch nicht suchen.
+    const { unmount } = render(<Tastatur gedrueckt={new Set()} zeigeFinger />);
+    expect(document.querySelector('[data-code="Home"]')).toBeNull();
+    expect(document.querySelector('[data-code="Numpad5"]')).toBeNull();
+    unmount();
+
+    render(<Tastatur gedrueckt={new Set()} zeigeFinger bloecke />);
+    for (const code of ["Insert", "Home", "PageUp", "Delete", "End", "PageDown",
+                        "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight",
+                        "NumLock", "Numpad0", "Numpad5", "NumpadAdd", "NumpadEnter"]) {
+      expect(taste(code)).toBeInTheDocument();
+    }
+  });
+
+  it("hebt auch Pos1, Ende und Entf hervor, wenn sie gedrückt werden", () => {
+    render(<Tastatur gedrueckt={new Set(["Home", "End", "Delete"])} zeigeFinger={false} bloecke />);
+    expect(taste("Home")).toHaveAttribute("data-gedrueckt");
+    expect(taste("End")).toHaveAttribute("data-gedrueckt");
+    expect(taste("Delete")).toHaveAttribute("data-gedrueckt");
+    expect(taste("PageUp")).not.toHaveAttribute("data-gedrueckt");
   });
 
   it("zeigt gedrückte Tasten an", () => {

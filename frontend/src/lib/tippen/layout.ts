@@ -112,6 +112,80 @@ export const REIHEN: Taste[][] = [
   ],
 ];
 
+/**
+ * Die beiden Blöcke rechts vom Hauptblock: Navigation (Einfg/Pos1/Entf/Ende,
+ * Bild ↑↓, Pfeile) und Ziffernblock.
+ *
+ * Bewusst **nicht** Teil von `REIHEN` und `ALLE_TASTEN`: `zeichenZuTaste` baut
+ * daraus den Index fürs Zehnfingersystem, und dort soll eine 7 die Taste über
+ * u meinen, nicht die im Ziffernblock. Beide Blöcke zeigt nur, wer sie anfragt
+ * (`<Tastatur bloecke />`) — der Schreibtrainer kommt ohne sie aus und hätte
+ * sonst weniger Platz für den Hauptblock.
+ *
+ * `null` ist eine Lücke: auf der echten Tastatur ragen dort die hohe
+ * Eingabe- und Plustaste hinein, und über den Pfeilen ist schlicht nichts.
+ * Hier bleiben Plus und Eingabe normal hoch — eine Reihe Kästchen weniger ist
+ * leichter zu lesen als eine Sonderbehandlung für zwei Tasten.
+ */
+export type Reihe = (Taste | null)[];
+
+/** Breite der beiden Zusatzblöcke in Einheiten — wie REIHENBREITE, nur schmaler. */
+export const NAVIGATIONSBREITE = 3;
+export const ZIFFERNBLOCKBREITE = 4;
+
+export const NAVIGATION: Reihe[] = [
+  [
+    { code: "Insert", label: "Einfg", finger: "r5", mod: true },
+    { code: "Home", label: "Pos1", finger: "r5", mod: true },
+    { code: "PageUp", label: "Bild ↑", finger: "r5", mod: true },
+  ],
+  [
+    { code: "Delete", label: "Entf", finger: "r5", mod: true },
+    { code: "End", label: "Ende", finger: "r5", mod: true },
+    { code: "PageDown", label: "Bild ↓", finger: "r5", mod: true },
+  ],
+  [null, null, null],
+  [null, { code: "ArrowUp", label: "↑", finger: "r5", mod: true }, null],
+  [
+    { code: "ArrowLeft", label: "←", finger: "r5", mod: true },
+    { code: "ArrowDown", label: "↓", finger: "r5", mod: true },
+    { code: "ArrowRight", label: "→", finger: "r5", mod: true },
+  ],
+];
+
+export const ZIFFERNBLOCK: Reihe[] = [
+  [
+    { code: "NumLock", label: "Num", finger: "r5", mod: true },
+    { code: "NumpadDivide", label: "/", finger: "r3" },
+    { code: "NumpadMultiply", label: "*", finger: "r4" },
+    { code: "NumpadSubtract", label: "−", finger: "r5" },
+  ],
+  [
+    { code: "Numpad7", label: "7", finger: "r2" },
+    { code: "Numpad8", label: "8", finger: "r3" },
+    { code: "Numpad9", label: "9", finger: "r4" },
+    { code: "NumpadAdd", label: "+", finger: "r5" },
+  ],
+  [
+    { code: "Numpad4", label: "4", finger: "r2", home: true },
+    { code: "Numpad5", label: "5", finger: "r3", home: true },
+    { code: "Numpad6", label: "6", finger: "r4", home: true },
+    null,
+  ],
+  [
+    { code: "Numpad1", label: "1", finger: "r2" },
+    { code: "Numpad2", label: "2", finger: "r3" },
+    { code: "Numpad3", label: "3", finger: "r4" },
+    { code: "NumpadEnter", label: "⏎", finger: "r5", mod: true },
+  ],
+  [
+    { code: "Numpad0", label: "0", finger: "r2", width: 2 },
+    { code: "NumpadDecimal", label: ",", finger: "r4" },
+    null,
+  ],
+];
+
+
 export const ALLE_TASTEN: Taste[] = REIHEN.flat();
 
 /** Farbe je Finger — linke und rechte Hand spiegelbildlich gleich eingefärbt. */
