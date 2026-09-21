@@ -5,6 +5,7 @@
  * übereinander liegt — oder, liegt dort nur ein Teil, dieses mit der Wand.
  * Seil und Feder spannen sich zwischen *zwei* Punkten.
  */
+import { bogen } from "../einheiten";
 import type { ParameterDef } from "../typen";
 import type { VerbinderArt } from "./modell";
 
@@ -39,6 +40,8 @@ export const VERBINDER: VerbinderTyp[] = [
     hinweis: "Auf eine Stelle tippen: was dort übereinander liegt, wird fest verbunden — liegt dort nur ein Teil, wird es an die Wand geschraubt.",
     parameter: [
       { schluessel: "bruchkraft", name: "Bricht ab (0 = nie)", einheit: "N", standard: 0, min: 0, max: 2000 },
+      { schluessel: "loestNach", name: "Löst nach (0 = nie)", einheit: "s", standard: 0, min: 0, max: 60, bedienung: true },
+      { schluessel: "loestBeiWinkel", name: "Löst bei Drehung (0 = nie)", einheit: "rad", anzeige: "grad", standard: 0, min: bogen(-360), max: bogen(360) },
     ],
   },
   {
@@ -46,9 +49,21 @@ export const VERBINDER: VerbinderTyp[] = [
     name: "Seil",
     icon: "🪢",
     punkte: 2,
-    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Das Seil zieht, drückt aber nicht.",
+    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Das Seil zieht, drückt aber nicht. Setzt man den Anfang an den Rand einer Scheibe und schaltet »Wickelt auf« ein, wird eine Winde daraus.",
     parameter: [
       { schluessel: "laenge", name: "Länge (0 = wie gespannt)", einheit: "m", standard: 0, min: 0, max: 5 },
+      {
+        // Die Winde: das Seil sitzt am Rand einer Scheibe und wickelt sich auf,
+        // wenn sie sich dreht. Der Hebelarm ist der Abstand vom Mittelpunkt.
+        schluessel: "wickelt", name: "Wickelt auf das Teil am Anfang", einheit: "", standard: 0, min: 0, max: 1,
+        optionen: [{ wert: 0, name: "nein" }, { wert: 1, name: "ja — Winde" }],
+      },
+      {
+        schluessel: "wickelrichtung", name: "Wickelrichtung", einheit: "", standard: 1, min: -1, max: 1,
+        optionen: [{ wert: 1, name: "linksherum zieht an" }, { wert: -1, name: "rechtsherum zieht an" }],
+      },
+      { schluessel: "loestNach", name: "Löst nach (0 = nie)", einheit: "s", standard: 0, min: 0, max: 60, bedienung: true },
+      { schluessel: "loestBeiWinkel", name: "Löst bei Drehung (0 = nie)", einheit: "rad", anzeige: "grad", standard: 0, min: bogen(-360), max: bogen(360) },
     ],
   },
   {

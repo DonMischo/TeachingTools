@@ -51,12 +51,34 @@ export type Ereignis =
 
 const vec = (p: Punkt) => new b2.b2Vec2(p.x, p.y);
 
+/**
+ * Ein Seil, das sich auf ein Teil aufwickelt.
+ *
+ * Die Winde: das Seilende sitzt am Rand der Trommel, also greift die Last mit
+ * genau diesem Hebelarm am Motor an — und die freie Seillänge folgt dem
+ * Drehwinkel, L = L₀ − r · Δθ. Beides zusammen macht erst eine Winde daraus;
+ * mit dem Seilende in der Mitte gäbe es kein Drehmoment.
+ */
+interface Wickel {
+  verbinder: string;
+  trommel: string;
+  radius: number;
+  laenge0: number;
+  winkel0: number;
+  /** Ob Linksdrehung aufwickelt (+1) oder abwickelt (−1). */
+  richtung: number;
+  /** Wo das Seil die Trommel verlässt — fest im Raum, nicht mitdrehend. */
+  ablauf: Punkt;
+}
+
 export class Welt {
   private id: b2WorldId;
   private koerper = new Map<string, b2BodyId>();
   private gelenke = new Map<string, b2JointId>();
   private verbinder = new Map<string, Verbinder>();
   private umdrehung = new Map<string, number>();
+  private wickel: Wickel[] = [];
+  private anfangsWinkel = new Map<string, number>();
   private wand: b2BodyId;
   private hand: b2JointId | null = null;
   private ereignisse: Ereignis[] = [];
@@ -134,6 +156,7 @@ export class Welt {
     }
     this.koerper.set(t.id, body);
     this.umdrehung.set(t.id, t.winkel);
+    this.anfangsWinkel.set(t.id, t.winkel);
   }
 
   /** Der Körper hinter einem Verbinderende — die Wand, wenn es kein Teil ist. */
@@ -142,11 +165,16 @@ export class Welt {
   }
 
   private baueVerbinder(v: Verbinder) {
-    const a = this.koerperVon(v.a.teil), b = this.koerperVon(v.b.teil);
+    // Die Wand kommt immer zuerst. Box2D dreht bei einem Motor das *zweite*
+    // Ende gegen das erste: baute man die Achse in der Reihenfolge, in der
+    // geklickt wurde, liefe der Motor je nach Klickreihenfolge andersherum —
+    // beim Anklicken des Teils vor der Wand drehte sich rechnerisch die Wand.
+    const [eA, eB] = v.b.teil === null ? [v.b, v.a] : [v.a, v.b];
+    const a = this.koerperVon(eA.teil), b = this.koerperVon(eB.teil);
     if (!a || !b) return;
     // Beide Enden sitzen bei einer Achse oder Schraube am selben Punkt: dem
-    // von Ende a. Liegt b beim Bauen ein Stück daneben, gilt a.
-    const pa = endeInWelt(this.aufbau, v.a), pb = endeInWelt(this.aufbau, v.b);
+    // des ersten Endes. Liegt das zweite beim Bauen ein Stück daneben, gilt das erste.
+    const pa = endeInWelt(this.aufbau, eA), pb = endeInWelt(this.aufbau, eB);
     const lokalA = b2.b2Body_GetLocalPoint(a, vec(pa));
     let joint: b2JointId;
 
@@ -170,7 +198,7 @@ export class Welt {
       d.bodyIdA = a; d.bodyIdB = b;
       d.localAnchorA = lokalA;
       d.localAnchorB = b2.b2Body_GetLocalPoint(b, vec(pa));
-      d.referenceAngle = this.winkelVon(v.b.teil) - this.winkelVon(v.a.teil);
+      d.referenceAngle = this.winkelVon(eB.teil) - this.winkelVon(eA.teil);
       joint = b2.b2CreateWeldJoint(this.id, d);
     } else {
       // Feder und Seil verbinden zwei verschiedene Punkte.
@@ -198,7 +226,27 @@ export class Welt {
         d.hertz = Math.sqrt(k / Math.max(1e-6, mWirk)) / (2 * Math.PI);
         d.dampingRatio = v.werte.daempfung ?? 0;
       }
+      // Eine Winde: das Seil verlässt die Trommel an einer festen Stelle im
+      // Raum — dem Ablaufpunkt — und nicht an einem Punkt, der mitdreht. Sonst
+      // könnte der Löser das kürzer werdende Seil einfach dadurch erfüllen,
+      // dass er die Trommel weiterdreht: eine Längengrenze ist starr, ein
+      // Motor nur so stark wie sein Moment. Die Trommel bekommt stattdessen
+      // das Moment der Seilkraft zu spüren, F · r.
+      const wickelt = v.art === "seil" && (v.werte.wickelt ?? 0) >= 0.5 && eA.teil !== null
+        && Math.hypot(eA.punkt.x, eA.punkt.y) > 0.005;
+      if (wickelt) {
+        d.bodyIdA = this.wand;
+        d.localAnchorA = vec(pa);
+      }
       joint = b2.b2CreateDistanceJoint(this.id, d);
+      if (wickelt) {
+        this.wickel.push({
+          verbinder: v.id, trommel: eA.teil!, radius: Math.hypot(eA.punkt.x, eA.punkt.y),
+          laenge0: laenge, winkel0: this.umdrehung.get(eA.teil!) ?? 0,
+          richtung: (v.werte.wickelrichtung ?? 1) >= 0 ? 1 : -1,
+          ablauf: pa,
+        });
+      }
     }
     this.gelenke.set(v.id, joint);
     this.verbinder.set(v.id, v);
@@ -212,7 +260,8 @@ export class Welt {
   /** Ein Takt: Brüche prüfen, rechnen, Ereignisse einsammeln, Drehungen aufsummieren. */
   schritt() {
     if (this.zerstoert) return;
-    this.pruefeBrueche();
+    this.wickle();
+    this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
     this.zeit += TAKT;
 
@@ -229,16 +278,53 @@ export class Welt {
     }
   }
 
-  /** Schrauben mit Bruchkraft geben nach, wenn mehr an ihnen zieht. */
-  private pruefeBrueche() {
+/**
+   * Führt die Länge wickelnder Seile nach.
+   *
+   * Der Drehwinkel wird aufsummiert geführt — Box2D liefert ihn nur zwischen
+   * −π und π, und eine Trommel dreht sich viele Male.
+   */
+  private wickle() {
+    for (const w of this.wickel) {
+      const joint = this.gelenke.get(w.verbinder);
+      if (!joint || !b2.b2Joint_IsValid(joint)) continue;
+      const gedreht = (this.umdrehung.get(w.trommel) ?? 0) - w.winkel0;
+      const laenge = Math.min(w.laenge0 + 5, Math.max(0.02, w.laenge0 - w.richtung * w.radius * gedreht));
+      b2.b2DistanceJoint_SetLengthRange(joint, 0, laenge);
+
+      // Was am Seil hängt, hält die Trommel auf: das Moment ist Seilkraft mal
+      // Halbmesser. Ein zu schwacher Motor kommt damit nicht mehr hoch.
+      const trommel = this.koerper.get(w.trommel);
+      const kraft = this.kraft(w.verbinder);
+      if (trommel && kraft) b2.b2Body_ApplyTorque(trommel, -w.richtung * kraft.betrag * w.radius, true);
+    }
+  }
+
+  /**
+   * Was von selbst nachgibt: zu große Kraft, abgelaufene Zeit, gedrehter Arm.
+   *
+   * Der Winkel ist der des Teils am Anfang des Verbinders, aufsummiert. So
+   * löst die Schlinge eines Trebuchets, wenn der Wurfarm weit genug herum ist
+   * — und nicht, wenn eine Stoppuhr zufällig passt.
+   */
+  private pruefeAusloeser() {
     for (const [id, v] of this.verbinder) {
       const grenze = v.werte.bruchkraft ?? 0;
-      if (grenze <= 0) continue;
-      const kraft = this.kraft(id);
-      if (kraft && kraft.betrag > grenze) {
-        const ort = this.verbinderOrt(id);
-        this.loese(id);
-        this.ereignisse.push({ art: "bruch", verbinder: id, kraft: kraft.betrag, ort, t: this.zeit });
+      if (grenze > 0) {
+        const kraft = this.kraft(id);
+        if (kraft && kraft.betrag > grenze) {
+          const ort = this.verbinderOrt(id);
+          this.loese(id);
+          this.ereignisse.push({ art: "bruch", verbinder: id, kraft: kraft.betrag, ort, t: this.zeit });
+          continue;
+        }
+      }
+      const nach = v.werte.loestNach ?? 0;
+      if (nach > 0 && this.zeit >= nach) { this.loese(id); continue; }
+      const beiWinkel = v.werte.loestBeiWinkel ?? 0;
+      if (beiWinkel !== 0 && v.a.teil !== null) {
+        const gedreht = (this.umdrehung.get(v.a.teil) ?? 0) - (this.anfangsWinkel.get(v.a.teil) ?? 0);
+        if (beiWinkel > 0 ? gedreht >= beiWinkel : gedreht <= beiWinkel) this.loese(id);
       }
     }
   }
@@ -309,6 +395,21 @@ export class Welt {
       return { x: p.x, y: p.y };
     };
     return [ende(v.a), ende(v.b)];
+  }
+
+  /** Wo ein wickelndes Seil die Trommel verlässt — für die Zeichnung. */
+  seilAblauf(verbinderId: string): Punkt | undefined {
+    return this.wickel.find(x => x.verbinder === verbinderId)?.ablauf;
+  }
+
+  /** Die Länge, die ein Seil gerade freigibt — beim Wickeln ändert sie sich. */
+  seillaenge(verbinderId: string): number | undefined {
+    const joint = this.gelenke.get(verbinderId);
+    if (!joint || !b2.b2Joint_IsValid(joint)) return undefined;
+    const w = this.wickel.find(x => x.verbinder === verbinderId);
+    if (!w) return undefined;
+    const gedreht = (this.umdrehung.get(w.trommel) ?? 0) - w.winkel0;
+    return Math.min(w.laenge0 + 5, Math.max(0.02, w.laenge0 - w.richtung * w.radius * gedreht));
   }
 
   /** Ob ein Verbinder noch hält. */

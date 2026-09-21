@@ -151,6 +151,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
 
   const bild = useCallback((): Bild => ({
     aufbau, lage, blick, auswahl, schwebt, vorschau, geloest: geloest.current,
+    seillaenge: id => welt.current?.seillaenge(id),
+    seilAblauf: id => welt.current?.seilAblauf(id),
   }), [aufbau, lage, blick, auswahl, schwebt, vorschau]);
   // Die Schleife liest das jeweils neueste Bild über ein Ref. Hinge sie selbst
   // am Bild, finge sie bei jeder Zeigerbewegung neu an — und verlöre dabei

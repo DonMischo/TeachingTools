@@ -29,6 +29,10 @@ export interface Bild {
   vorschau: { art: "spannen"; verbinder: "seil" | "feder"; von: Punkt; bis: Punkt } | { art: "teil"; teil: Teil } | null;
   /** Verbinder, die im Versuch gelöst wurden oder gebrochen sind — sie fehlen. */
   geloest: Set<string>;
+  /** Im Versuch die freie Länge eines Seils — bei einer Winde ändert sie sich. */
+  seillaenge?: (id: string) => number | undefined;
+  /** Der Ablaufpunkt einer Winde: dort verlässt das Seil die Trommel. */
+  seilAblauf?: (id: string) => Punkt | undefined;
 }
 
 const FARBE = {
@@ -111,7 +115,7 @@ export class Buehne {
 
     for (const v of aufbau.verbinder) {
       if (bild.geloest.has(v.id)) continue;
-      this.zeichneVerbinder(v, aufbau, lage, blick);
+      this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id));
     }
 
     // Hervorhebungen obendrauf.
@@ -293,14 +297,17 @@ export class Buehne {
 
   // ── Verbinder ───────────────────────────────────────────────────────────────
 
-  private zeichneVerbinder(v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick) {
-    const [pa, pb] = verbinderEnden(aufbau, v, lage);
+  private zeichneVerbinder(v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick, frei?: number, ablauf?: Punkt) {
+    const [roh, pb] = verbinderEnden(aufbau, v, lage);
+    // Bei einer Winde läuft das Seil an einer festen Stelle von der Trommel —
+    // gezeichnet wird, woran der Löser wirklich zieht.
+    const pa = ablauf ?? roh;
     const a = zumBild(pa, blick), b = zumBild(pb, blick);
     const g = this.teile;
 
     if (v.art === "seil") {
       // Ein schlaffes Seil hängt durch — um so viel, wie es länger ist als der Abstand.
-      const laenge = (v.werte.laenge ?? 0) > 0 ? v.werte.laenge : this.gespannt(aufbau, v);
+      const laenge = frei ?? ((v.werte.laenge ?? 0) > 0 ? v.werte.laenge : this.gespannt(aufbau, v));
       const abstand = Math.hypot(pb.x - pa.x, pb.y - pa.y);
       const durchhang = Math.max(0, laenge - abstand) * 0.6 * blick.skala;
       const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + durchhang };

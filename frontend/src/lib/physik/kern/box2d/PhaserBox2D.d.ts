@@ -95,6 +95,7 @@ export function b2Body_SetBullet(id: b2BodyId, an: boolean): void;
 export function b2Body_SetAwake(id: b2BodyId, an: boolean): void;
 export function b2Body_GetType(id: b2BodyId): number;
 export function b2Body_ApplyLinearImpulseToCenter(id: b2BodyId, p: b2Vec2, wecken: boolean): void;
+export function b2Body_ApplyTorque(id: b2BodyId, moment: number, wecken: boolean): void;
 
 export function b2DefaultShapeDef(): b2ShapeDef;
 export function b2MakeBox(hx: number, hy: number): b2Polygon;
@@ -129,3 +130,6 @@ export function b2DistanceJoint_SetLengthRange(id: b2JointId, min: number, max: 
 export function b2DistanceJoint_GetCurrentLength(id: b2JointId): number;
 export function b2DistanceJoint_SetLength(id: b2JointId, l: number): void;
 export function b2MouseJoint_SetTarget(id: b2JointId, ziel: b2Vec2): void;
+export function b2RevoluteJoint_IsMotorEnabled(id: b2JointId): boolean;
+export function b2RevoluteJoint_GetMotorSpeed(id: b2JointId): number;
+export function b2RevoluteJoint_GetMaxMotorTorque(id: b2JointId): number;
