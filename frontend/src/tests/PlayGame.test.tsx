@@ -31,7 +31,7 @@ vi.mock("@/lib/api", () => ({
     // (useGuestSession). Fehlt das hier, scheitert schon der Klick auf
     // "Beitreten" und es entsteht nie ein WebSocket.
     guest: {
-      join: vi.fn().mockResolvedValue({ token: "gast-token", name: "Lena" }),
+      join: vi.fn().mockResolvedValue({ token: "gast-token", name: "Lena", expires_in_minutes: 90 }),
     },
   },
 }));

@@ -1430,7 +1430,7 @@ export const api = {
   // QR/join-link guest access (see api/routers/guest.py)
   guest: {
     join: (code: string, tool: string, name: string) =>
-      apiFetch<{ token: string; name: string; expires_in_minutes: number }>("guest/join", {
+      apiFetch<{ token: string; name: string; expires_in_minutes?: number }>("guest/join", {
         method: "POST", body: JSON.stringify({ code, tool, name }),
       }),
     status: (tool: string, code: string) =>

@@ -93,6 +93,19 @@ describe("useGuestSession", () => {
     }
   });
 
+  it("nimmt 90 Minuten an, wenn der Server die Fensterlänge nicht nennt", async () => {
+    // Ein Backend, das die Zahl noch nicht mitschickt: ohne Rückfall wäre das
+    // Ablaufdatum NaN — und damit sähe jeder Gast sofort »Sitzung abgelaufen«.
+    mockGuestJoin.mockResolvedValue({ token: "frisch", name: "Gast" });
+    const { result } = renderHook(() => useGuestSession("WAAGE1"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    await act(async () => { await result.current.join("simulation", "Gast"); });
+
+    expect(result.current.expired).toBe(false);
+    expect(result.current.token).toBe("frisch");
+  });
+
   it("join legt ein frisches Fenster an und hebt die Sperre auf", async () => {
     storeSession(Date.now() - 60 * 1000);
     const { result } = renderHook(() => useGuestSession("WAAGE1"));

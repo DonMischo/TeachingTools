@@ -13,8 +13,15 @@ export type GuestSession = { token: string; name: string; expiresAt: number };
  * bevor der Server anfängt, Aufrufe abzuweisen. */
 const CLIENT_SKEW_MS = 60 * 1000;
 
-function clientTtlMs(minutes: number): number {
-  return Math.max(minutes * 60 * 1000 - CLIENT_SKEW_MS, 30 * 1000);
+/** Fällt der Server aus, bevor er die Zahl nennt: das alte Fenster als Rückfall. */
+const RUECKFALL_MINUTEN = 90;
+
+function clientTtlMs(minutes: number | undefined): number {
+  // Ohne brauchbare Zahl (ein Backend, das sie noch nicht mitschickt) wäre die
+  // Rechnung NaN — und ein NaN-Ablauf gilt sofort als abgelaufen: jeder Gast
+  // sähe »Sitzung abgelaufen«, obwohl sein Token gilt.
+  const m = Number.isFinite(minutes) ? (minutes as number) : RUECKFALL_MINUTEN;
+  return Math.max(m * 60 * 1000 - CLIENT_SKEW_MS, 30 * 1000);
 }
 
 function load(key: string): GuestSession | null {
