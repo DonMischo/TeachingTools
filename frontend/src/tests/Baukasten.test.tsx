@@ -110,6 +110,40 @@ describe("Baukasten", () => {
     expect(fest()).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("fügt einen Bauplan dort ein, wo man tippt", () => {
+    const { getByLabelText } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Pendel einfügen").click());
+    tippe(getByLabelText("Werkbank"));
+
+    const a = gespeichert();
+    expect(a.teile).toHaveLength(1);
+    expect(a.verbinder[0].art).toBe("seil");
+    // Der Haken sitzt auf dem Tippunkt (0 | 0,7), das Gewicht hängt darunter.
+    const haken = a.verbinder[0].a.teil === null ? a.verbinder[0].a : a.verbinder[0].b;
+    expect(haken.punkt.y).toBeCloseTo(0.7, 6);
+    expect(a.teile[0].pos.y).toBeCloseTo(-0.3, 6);
+  });
+
+  it("sichert den Aufbau als eigenen Bauplan und stellt ihn wieder hin", () => {
+    const { getByLabelText, queryByLabelText } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Klotz hinstellen").click());
+    tippe(getByLabelText("Werkbank"));
+
+    act(() => {
+      fireEvent.change(getByLabelText("Name für den Bauplan"), { target: { value: "Mein Klotz" } });
+    });
+    act(() => getByLabelText("Aufbau als Bauplan sichern").click());
+
+    // Er steht jetzt im Schrank und lässt sich ein zweites Mal hinstellen.
+    act(() => getByLabelText("Mein Klotz einfügen").click());
+    tippe(getByLabelText("Werkbank"), 500, 260);
+    expect(gespeichert().teile).toHaveLength(2);
+
+    // Und wieder löschen: dann ist er aus dem Schrank verschwunden.
+    act(() => getByLabelText("Mein Klotz löschen").click());
+    expect(queryByLabelText("Mein Klotz einfügen")).toBeNull();
+  });
+
   it("meldet es, wenn man eine Achse ins Leere setzt", () => {
     const { getByLabelText, getByRole } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
     act(() => getByLabelText("Achse setzen").click());

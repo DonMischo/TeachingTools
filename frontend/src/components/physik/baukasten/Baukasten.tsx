@@ -22,7 +22,8 @@ import {
   entferneTeil, entferneVerbinder, fuegeTeilHinzu, neuerAufbau,
   type TeilArt, type VerbinderArt,
 } from "@/lib/physik/kern/modell";
-import { ladeAufbau, speichereAufbau } from "@/lib/physik/kern/speicher";
+import { BAUPLAENE, fuegeBauplanEin, umDenUrsprung, type Bauplan } from "@/lib/physik/kern/bauplan";
+import { ladeAufbau, ladeBauplaene, speichereAufbau, speichereBauplaene } from "@/lib/physik/kern/speicher";
 import { standardWerteTeil, TEILE } from "@/lib/physik/kern/teile";
 import { VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
 import { TAKT, Welt } from "@/lib/physik/kern/welt";
@@ -33,7 +34,8 @@ import { Inspektor } from "./Inspektor";
 type Werkzeug =
   | { art: "auswahl" }
   | { art: "teil"; teil: TeilArt }
-  | { art: "verbinder"; verbinder: VerbinderArt };
+  | { art: "verbinder"; verbinder: VerbinderArt }
+  | { art: "bauplan"; plan: Bauplan };
 
 const BILD_TOLERANZ = 8; // Pixel, in denen ein Verbinder als getroffen gilt
 const DREHSCHRITT = Math.PI / 12; // 15°
@@ -59,6 +61,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const [spannStart, setSpannStart] = useState<Punkt | null>(null);
   const [zeiger, setZeiger] = useState<Punkt | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [eigene, setEigene] = useState<Bauplan[]>([]);
+  const [planName, setPlanName] = useState("");
   const [blick, setBlick] = useState<Blick>({ mitte: { x: 0, y: 0.7 }, skala: 320, breite: 800, hoehe: 520 });
 
   // Versuch
@@ -81,6 +85,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   // ── Laden und Speichern ─────────────────────────────────────────────────────
   useEffect(() => {
     setStand({ fuer: speicherSchluessel, verlauf: neuerVerlauf(ladeAufbau(speicherSchluessel)) });
+    setEigene(ladeBauplaene(speicherSchluessel));
   }, [speicherSchluessel]);
   useEffect(() => {
     if (stand.fuer === speicherSchluessel) speichereAufbau(speicherSchluessel, stand.verlauf.jetzt);
@@ -146,6 +151,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     if (werkzeug.art === "teil") {
       return { art: "teil", teil: { id: "vorschau", art: werkzeug.teil, pos: zeiger, winkel: 0, werte: standardWerteTeil(werkzeug.teil) } };
     }
+    if (werkzeug.art === "bauplan") return null;
     return null;
   }, [versuch, zeiger, werkzeug, spannStart]);
 
@@ -217,7 +223,9 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const treffer = (p: Punkt): Auswahl | null => {
     const punkt = verbinderUnter(aufbau, p, toleranz, lage, v => v.art === "achse" || v.art === "schraube");
     if (punkt) return { art: "verbinder", id: punkt.id };
-    const [t] = teileUnter(aufbau, p, lage, 2 / blick.skala);
+    // Etwas Luft um dünne Teile: eine 4-cm-Stange ist beim Herauszoomen kaum
+    // einen Bildpunkt breit und wäre sonst nicht zu treffen.
+    const [t] = teileUnter(aufbau, p, lage, BILD_TOLERANZ / 2 / blick.skala);
     if (t) return { art: "teil", id: t.id };
     const linie = verbinderUnter(aufbau, p, toleranz, lage);
     return linie ? { art: "verbinder", id: linie.id } : null;
@@ -242,6 +250,13 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       const r = fuegeTeilHinzu(aufbau, werkzeug.teil, p, standardWerteTeil(werkzeug.teil));
       aendere(v => tue(v, r.aufbau));
       setAuswahl({ art: "teil", id: r.id });
+      if (!e.shiftKey) setWerkzeug({ art: "auswahl" });
+      return;
+    }
+    if (werkzeug.art === "bauplan") {
+      const r = fuegeBauplanEin(aufbau, werkzeug.plan, p);
+      aendere(v => tue(v, r.aufbau));
+      setAuswahl(r.neu.length ? { art: "teil", id: r.neu[0] } : null);
       if (!e.shiftKey) setWerkzeug({ art: "auswahl" });
       return;
     }
@@ -295,15 +310,29 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     zieht.current = null;
   }
 
-  function beiRad(e: React.WheelEvent) {
-    // Um den Zeiger zoomen: der Punkt unter dem Finger bleibt, wo er ist.
-    const p = weltpunkt(e);
-    setBlick(b => {
-      const skala = Math.min(4000, Math.max(30, b.skala * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
-      const k = b.skala / skala;
-      return { ...b, skala, mitte: { x: p.x + (b.mitte.x - p.x) * k, y: p.y + (b.mitte.y - p.y) * k } };
-    });
-  }
+  /**
+   * Zoomen mit dem Rad — um den Zeiger herum, der Punkt darunter bleibt.
+   *
+   * Von Hand angemeldet und nicht über `onWheel`: React meldet Rad-Ereignisse
+   * passiv an, und passiv lässt sich das Blättern der Seite nicht abstellen.
+   * Am Rad drehen scrollte dann die Seite, statt die Werkbank zu zoomen.
+   */
+  useEffect(() => {
+    const el = huelle.current;
+    if (!el) return;
+    const amRad = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      setBlick(b => {
+        const p = zurWelt({ x: e.clientX - r.left, y: e.clientY - r.top }, b);
+        const skala = Math.min(4000, Math.max(30, b.skala * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+        const k = b.skala / skala;
+        return { ...b, skala, mitte: { x: p.x + (b.mitte.x - p.x) * k, y: p.y + (b.mitte.y - p.y) * k } };
+      });
+    };
+    el.addEventListener("wheel", amRad, { passive: false });
+    return () => el.removeEventListener("wheel", amRad);
+  }, []);
 
   // ── Tastatur ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -361,7 +390,9 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     },
   };
 
-  const hinweis = werkzeug.art === "verbinder"
+  const hinweis = werkzeug.art === "bauplan"
+    ? `${werkzeug.plan.beschreibung} Auf die Wand tippen, wo er hin soll.`
+    : werkzeug.art === "verbinder"
     ? (spannStart ? "Jetzt das Ende antippen." : verbinderTyp(werkzeug.verbinder)?.hinweis)
     : werkzeug.art === "teil"
       ? "Auf die Wand tippen, wo es hin soll. Mit Umschalt bleibt das Werkzeug für das nächste."
@@ -437,6 +468,62 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
               </button>
             ))}
           </Gruppe>
+          <Gruppe titel="Baupläne">
+            {[...BAUPLAENE, ...eigene].map(p => (
+              <div key={p.id} className="flex gap-1">
+                <button
+                  disabled={versuch}
+                  aria-label={`${p.name} einfügen`}
+                  title={p.beschreibung}
+                  onClick={() => { setWerkzeug({ art: "bauplan", plan: p }); setSpannStart(null); }}
+                  className={`${aktivKnopf(werkzeug.art === "bauplan" && werkzeug.plan.id === p.id)} text-left flex gap-2 grow disabled:opacity-40`}
+                >
+                  <span aria-hidden="true">{p.icon}</span>{p.name}
+                </button>
+                {eigene.some(e => e.id === p.id) && (
+                  <button
+                    disabled={versuch}
+                    aria-label={`${p.name} löschen`}
+                    onClick={() => {
+                      const rest = eigene.filter(e => e.id !== p.id);
+                      setEigene(rest);
+                      speichereBauplaene(speicherSchluessel, rest);
+                    }}
+                    className="rounded-xl border border-[var(--border)] px-2 text-[var(--text-muted)] hover:text-rose-300 disabled:opacity-40"
+                  >×</button>
+                )}
+              </div>
+            ))}
+            {!versuch && aufbau.teile.length > 0 && (
+              <div className="flex gap-1 mt-1">
+                <input
+                  value={planName}
+                  onChange={e => setPlanName(e.target.value)}
+                  placeholder="Als Bauplan sichern"
+                  aria-label="Name für den Bauplan"
+                  className="min-w-0 grow rounded-xl border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs"
+                />
+                <button
+                  aria-label="Aufbau als Bauplan sichern"
+                  disabled={!planName.trim()}
+                  onClick={() => {
+                    const plan: Bauplan = {
+                      id: `eigen-${Date.now()}`,
+                      name: planName.trim(),
+                      icon: "📐",
+                      beschreibung: `Eigener Bauplan: ${aufbau.teile.length} Teile.`,
+                      aufbau: umDenUrsprung(aufbau),
+                    };
+                    const rest = [...eigene, plan];
+                    setEigene(rest);
+                    speichereBauplaene(speicherSchluessel, rest);
+                    setPlanName("");
+                  }}
+                  className="rounded-xl border border-[var(--border)] px-2 py-1 text-xs disabled:opacity-40"
+                >💾</button>
+              </div>
+            )}
+          </Gruppe>
           <Gruppe titel="Verbinder">
             {VERBINDER.map(v => (
               <button key={v.art} disabled={versuch} aria-label={`${v.name} setzen`}
@@ -460,7 +547,6 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
             onPointerUp={beiLoslassen}
             onPointerCancel={beiLoslassen}
             onPointerLeave={() => { beiLoslassen(); setZeiger(null); setSchwebt(null); }}
-            onWheel={beiRad}
           >
             {fehler && (
               <div role="alert" className="absolute left-1/2 -translate-x-1/2 top-3 rounded-xl bg-rose-950/90 border border-rose-400/50 px-4 py-2 text-xs font-bold text-rose-100">

@@ -8,6 +8,7 @@
  * einer fremden Sitzung kommen. Was nicht zu retten ist, fällt weg —
  * geworfen wird nie, sonst steht die Klasse vor einer leeren Seite.
  */
+import type { Bauplan } from "./bauplan";
 import { neuerAufbau, type Aufbau, type Ende, type Teil, type Verbinder } from "./modell";
 import { standardWerteTeil, teilTyp } from "./teile";
 import { standardWerteVerbinder, verbinderTyp } from "./verbinder";
@@ -88,5 +89,43 @@ export function ladeAufbau(schluessel: string): Aufbau {
 export function speichereAufbau(schluessel: string, aufbau: Aufbau) {
   try {
     localStorage.setItem(name(schluessel), JSON.stringify(aufbau));
+  } catch { /* privater Modus: dann eben nur für diese Sitzung */ }
+}
+
+// ── Eigene Baupläne ──────────────────────────────────────────────────────────
+
+const planName = (schluessel: string) => `physik-bauplaene-v1:${schluessel}`;
+
+/**
+ * Was jemand selbst als Bauplan gesichert hat.
+ *
+ * Wie beim Aufbau nachsichtig gelesen: ein Plan, dessen Teile nicht mehr zum
+ * Katalog passen, fällt weg, statt die ganze Liste unbrauchbar zu machen.
+ */
+export function ladeBauplaene(schluessel: string): Bauplan[] {
+  try {
+    const roh = localStorage.getItem(planName(schluessel));
+    if (!roh) return [];
+    const liste = JSON.parse(roh);
+    if (!Array.isArray(liste)) return [];
+    return liste
+      .map(p => (p ?? {}) as Record<string, unknown>)
+      .filter(p => typeof p.id === "string" && typeof p.name === "string")
+      .map(p => ({
+        id: p.id as string,
+        name: p.name as string,
+        icon: typeof p.icon === "string" ? p.icon : "📐",
+        beschreibung: typeof p.beschreibung === "string" ? p.beschreibung : "",
+        aufbau: aufbauAusJSON(JSON.stringify(p.aufbau ?? {})),
+      }))
+      .filter(p => p.aufbau.teile.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+export function speichereBauplaene(schluessel: string, plaene: Bauplan[]) {
+  try {
+    localStorage.setItem(planName(schluessel), JSON.stringify(plaene));
   } catch { /* privater Modus: dann eben nur für diese Sitzung */ }
 }
