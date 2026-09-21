@@ -17,7 +17,7 @@ import type { Teil, TeilArt } from "./modell";
 
 /** Gestalt in Teilkoordinaten. Kasten und Kreis genügen fürs Erste, die Kapsel für Stangen. */
 export type Form =
-  | { art: "kasten"; mitte: Punkt; b: number; h: number }
+  | { art: "kasten"; mitte: Punkt; b: number; h: number; winkel?: number }
   | { art: "kreis"; mitte: Punkt; r: number }
   | { art: "kapsel"; a: Punkt; b: Punkt; r: number };
 
@@ -43,6 +43,31 @@ const MASSE_VORGABE: ParameterDef = {
 };
 
 const w = (t: Teil, k: string, ersatz: number) => t.werte[k] ?? ersatz;
+
+/**
+ * Ein Zahnrad: Nabe und Zähne.
+ *
+ * Box2D v3 hat kein Zahnradgelenk mehr — zwei Zahnräder greifen hier
+ * wirklich ineinander, mit Zähnen, die sich berühren. Das ist ehrlicher als
+ * eine erzwungene Kopplung: ein zu großer Abstand greift nicht, und bei zu
+ * wenig Zähnen rutscht es durch, genau wie im Baukasten aus Blech.
+ */
+function zahnradFormen(t: Teil): Form[] {
+  const r = Math.max(0.02, w(t, "durchmesser", 0.2)) / 2;
+  const z = Math.max(6, Math.round(w(t, "zaehne", 12)));
+  const teilung = (2 * Math.PI * r) / z;
+  const hoehe = teilung * 0.5, breite = teilung * 0.45;
+  const formen: Form[] = [{ art: "kreis", mitte: { x: 0, y: 0 }, r: r - hoehe / 2 }];
+  for (let i = 0; i < z; i++) {
+    const winkel = (i / z) * 2 * Math.PI;
+    formen.push({
+      art: "kasten",
+      mitte: { x: r * Math.cos(winkel), y: r * Math.sin(winkel) },
+      b: hoehe, h: breite, winkel,
+    });
+  }
+  return formen;
+}
 
 export const TEILE: TeilTyp[] = [
   {
@@ -122,6 +147,20 @@ export const TEILE: TeilTyp[] = [
       MASSE_VORGABE,
     ],
     formen: t => [{ art: "kreis", mitte: { x: 0, y: 0 }, r: w(t, "durchmesser", 0.2) / 2 }],
+    volumen: t => Math.PI * (w(t, "durchmesser", 0.2) / 2) ** 2 * w(t, "dicke", 0.02),
+  },
+  {
+    art: "zahnrad",
+    name: "Zahnrad",
+    icon: "⚙️",
+    parameter: [
+      { schluessel: "durchmesser", name: "Teilkreis", einheit: "m", standard: 0.2, min: 0.04, max: 1 },
+      { schluessel: "zaehne", name: "Zähne", einheit: "", standard: 12, min: 6, max: 40 },
+      { schluessel: "dicke", name: "Dicke", einheit: "m", standard: 0.02, min: 0.002, max: 0.2 },
+      STOFF(1),
+      MASSE_VORGABE,
+    ],
+    formen: zahnradFormen,
     volumen: t => Math.PI * (w(t, "durchmesser", 0.2) / 2) ** 2 * w(t, "dicke", 0.02),
   },
   {

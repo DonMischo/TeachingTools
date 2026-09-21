@@ -17,7 +17,7 @@
  */
 import type { Modelltreue, Punkt } from "../typen";
 
-export type TeilArt = "brett" | "stange" | "klotz" | "kugel" | "scheibe" | "massestueck";
+export type TeilArt = "brett" | "stange" | "klotz" | "kugel" | "scheibe" | "zahnrad" | "massestueck";
 
 export interface Teil {
   id: string;

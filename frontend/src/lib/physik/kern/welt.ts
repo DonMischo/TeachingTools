@@ -147,7 +147,7 @@ export class Welt {
     };
     for (const f of formen) {
       if (f.art === "kasten") {
-        b2.b2CreatePolygonShape(body, formDef(), b2.b2MakeOffsetBox(f.b / 2, f.h / 2, vec(f.mitte), 0));
+        b2.b2CreatePolygonShape(body, formDef(), b2.b2MakeOffsetBox(f.b / 2, f.h / 2, vec(f.mitte), f.winkel ?? 0));
       } else if (f.art === "kreis") {
         b2.b2CreateCircleShape(body, formDef(), { center: vec(f.mitte), radius: f.r });
       } else {

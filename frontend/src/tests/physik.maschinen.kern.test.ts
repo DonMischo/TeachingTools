@@ -187,3 +187,51 @@ describe("Trebuchet", () => {
     expect(wurf.weite).toBeLessThan(2);
   });
 });
+
+describe("Zahnräder", () => {
+  /** Zwei Zahnräder auf Achsen an der Wand, im Abstand ihrer Teilkreise. */
+  function raederpaar(z1: number, z2: number, d1: number, d2: number) {
+    let a = neuerAufbau();
+    const g1 = teil(a, "zahnrad", { x: 0, y: 1 }, { durchmesser: d1, zaehne: z1 });
+    a = verbinde(g1.aufbau, "achse", amTeil(g1.id), wand({ x: 0, y: 1 }), { motorMoment: 30, drehzahl: 2 }).aufbau;
+    const x2 = (d1 + d2) / 2;
+    const g2 = teil(a, "zahnrad", { x: x2, y: 1 }, { durchmesser: d2, zaehne: z2 });
+    a = verbinde(g2.aufbau, "achse", amTeil(g2.id), wand({ x: x2, y: 1 }), { reibung: 0.02 }).aufbau;
+    return { aufbau: a, g1: g1.id, g2: g2.id };
+  }
+
+  /** Wie weit sich beide in drei Sekunden gedreht haben. */
+  function drehungen(p: { aufbau: ReturnType<typeof neuerAufbau>; g1: string; g2: string }) {
+    const w = starte(p.aufbau);
+    const start1 = w.zustand(p.g1)!.umdrehung, start2 = w.zustand(p.g2)!.umdrehung;
+    laufe(w, 3);
+    return { eins: w.zustand(p.g1)!.umdrehung - start1, zwei: w.zustand(p.g2)!.umdrehung - start2 };
+  }
+
+  it("treibt das zweite Rad an — andersherum", () => {
+    const { eins, zwei } = drehungen(raederpaar(12, 12, 0.2, 0.2));
+    expect(eins).toBeGreaterThan(4);
+    // Gegenläufig, und bei gleicher Größe etwa gleich schnell.
+    expect(zwei).toBeLessThan(0);
+    expect(Math.abs(zwei) / eins).toBeGreaterThan(0.8);
+  });
+
+  it("übersetzt im Verhältnis der Teilkreise", () => {
+    const { eins, zwei } = drehungen(raederpaar(12, 24, 0.2, 0.4));
+    // Das doppelt so große Rad dreht sich halb so weit.
+    expect(Math.abs(zwei) / eins).toBeCloseTo(0.5, 1);
+  });
+
+  it("greift nicht mehr, wenn die Räder zu weit auseinander stehen", () => {
+    let a = neuerAufbau();
+    const g1 = teil(a, "zahnrad", { x: 0, y: 1 }, { durchmesser: 0.2, zaehne: 12 });
+    a = verbinde(g1.aufbau, "achse", amTeil(g1.id), wand({ x: 0, y: 1 }), { motorMoment: 30, drehzahl: 2 }).aufbau;
+    // Ein Zentimeter zu weit: die Zähne fassen ins Leere.
+    const g2 = teil(a, "zahnrad", { x: 0.23, y: 1 }, { durchmesser: 0.2, zaehne: 12 });
+    a = verbinde(g2.aufbau, "achse", amTeil(g2.id), wand({ x: 0.23, y: 1 }), { reibung: 0.02 }).aufbau;
+    const w = starte(a);
+    laufe(w, 2);
+    expect(w.zustand(g1.id)!.umdrehung).toBeGreaterThan(3);
+    expect(Math.abs(w.zustand(g2.id)!.umdrehung)).toBeLessThan(0.2);
+  });
+});

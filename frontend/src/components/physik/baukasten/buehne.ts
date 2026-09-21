@@ -185,7 +185,9 @@ export class Buehne {
     const bild = (p: Punkt) => zumBild(weltpunkt(teil, p), blick);
     if (f.art === "kasten") {
       const { x, y } = f.mitte, hb = f.b / 2, hh = f.h / 2;
-      return [{ x: x - hb, y: y - hh }, { x: x + hb, y: y - hh }, { x: x + hb, y: y + hh }, { x: x - hb, y: y + hh }].map(bild);
+      const c = Math.cos(f.winkel ?? 0), s = Math.sin(f.winkel ?? 0);
+      return [{ x: -hb, y: -hh }, { x: hb, y: -hh }, { x: hb, y: hh }, { x: -hb, y: hh }]
+        .map(p => bild({ x: x + p.x * c - p.y * s, y: y + p.x * s + p.y * c }));
     }
     if (f.art === "kreis") {
       return Array.from({ length: 28 }, (_, i) => {
