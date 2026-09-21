@@ -94,18 +94,34 @@ export default function StufeTastatur({
   const fertig = nr >= TASTATUR_AUFGABEN.length;
   const aufgabe = TASTATUR_AUFGABEN[Math.min(nr, TASTATUR_AUFGABEN.length - 1)];
 
-  // Neue Aufgabe: Gesehenes zurücksetzen und den Cursor an die richtige Stelle setzen.
-  useEffect(() => {
-    if (fertig) return;
+  /**
+   * Die Aufgabe auf ihren Anfang zurückstellen: Starttext, Cursor und alles,
+   * was die Prüfung über den Weg dorthin gemerkt hat.
+   *
+   * Dient zwei Zwecken — dem Wechsel zur nächsten Aufgabe und dem Knopf
+   * »↺ Text zurücksetzen«. Den braucht es, weil verwirrte Kinder das Feld
+   * leer räumen: ohne »Katzee« lässt sich das doppelte e nicht mehr löschen,
+   * und die Aufgabe war unlösbar festgefahren. Zurücksetzen ist kein Fehler,
+   * es zählt keinen — aber es ist wirklich von vorn, also zählen auch die
+   * bisherigen Anschläge nicht mehr mit.
+   */
+  function aufAnfang() {
     gesehen.current = leeresGesehen();
     anschlaege.current = 0;
     setErfolg(false);
     setHinweis(null);
     const el = feld.current;
     if (!el) return;
+    el.value = aufgabe.start;
     el.focus();
-    const pos = aufgabe.caret === "anfang" ? 0 : el.value.length;
+    const pos = aufgabe.caret === "anfang" ? 0 : aufgabe.start.length;
     el.setSelectionRange(pos, pos);
+  }
+
+  // Neue Aufgabe: Gesehenes zurücksetzen und den Cursor an die richtige Stelle setzen.
+  useEffect(() => {
+    if (fertig) return;
+    aufAnfang();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nr]);
 
@@ -225,6 +241,20 @@ export default function StufeTastatur({
             </div>
           )}
 
+          {!fertig && (
+            <div className="flex justify-end -mt-2">
+              <button
+                type="button"
+                onClick={aufAnfang}
+                disabled={demo.aktiv || erfolg}
+                title="Stellt den Starttext dieser Aufgabe wieder her — falls du dich vertippt oder zu viel gelöscht hast."
+                className="text-xs text-[var(--text-muted)] underline decoration-dotted underline-offset-2 hover:text-[var(--text)] disabled:opacity-40"
+              >
+                ↺ Text zurücksetzen
+              </button>
+            </div>
+          )}
+
           <div className="min-h-[2.5rem] text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
@@ -238,7 +268,7 @@ export default function StufeTastatur({
                   <span key={i} className="text-xs font-bold rounded-md border border-[var(--accent)] px-2 py-1">{t}</span>
                 ))}
               </div>
-              <Tastatur gedrueckt={gedrueckt} zeigeFinger={false} />
+              <Tastatur gedrueckt={gedrueckt} zeigeFinger={false} bloecke />
             </div>
           )}
         </div>
