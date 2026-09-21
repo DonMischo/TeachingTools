@@ -12,6 +12,7 @@
  */
 import { afterEach, describe, it, expect } from "vitest";
 import { amTeil, entferneTeil, fuegeTeilHinzu, neuerAufbau, verbinde, wand, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
+import { rolleUnter, spanne } from "@/lib/physik/kern/bearbeiten";
 import { standardWerteTeil } from "@/lib/physik/kern/teile";
 import { Welt } from "@/lib/physik/kern/welt";
 
@@ -178,6 +179,29 @@ describe("Der Aufbau mit Rollen", () => {
     expect(seil.aufbau.verbinder[0].ueber).toHaveLength(1);
     // Ohne Umweg bliebe es verboten.
     expect(() => verbinde(a, "seil", wand({ x: 0, y: 1 }), wand({ x: 1, y: 1 }))).toThrow();
+  });
+
+  it("legt das Seil über die Mitte einer Scheibe und bindet es am Rand an", () => {
+    let a = neuerAufbau();
+    const rolle = teil(a, "scheibe", { x: 0, y: 2 }, { durchmesser: 0.2 }); a = rolle.aufbau;
+    const last = teil(a, "massestueck", { x: 0, y: 1 }, { masse: 1 }); a = last.aufbau;
+
+    // Die Mitte: dort läuft es nur darüber.
+    expect(rolleUnter(a, { x: 0.02, y: 2 })?.id).toBe(rolle.id);
+    // Der Rand: dort bindet man an, wie bei der Winde.
+    expect(rolleUnter(a, { x: 0.09, y: 2 })).toBeUndefined();
+
+    const r = spanne(a, "seil", { x: -1, y: 2.5 }, { x: 0, y: 1 }, [{ x: 0.02, y: 2 }]);
+    expect("fehler" in r).toBe(false);
+    const v = (r as { aufbau: Aufbau }).aufbau.verbinder[0];
+    expect(v.ueber).toEqual([{ teil: rolle.id, punkt: { x: 0, y: 0 } }]);
+    expect(v.b.teil).toBe(last.id);
+  });
+
+  it("sagt es, wenn zwischendurch keine Rolle liegt", () => {
+    const a = neuerAufbau();
+    const r = spanne(a, "seil", { x: -1, y: 2 }, { x: 1, y: 2 }, [{ x: 0, y: 2 }]);
+    expect(r).toHaveProperty("fehler");
   });
 
   it("nimmt das Seil mit, wenn die Rolle weggeräumt wird", () => {

@@ -62,7 +62,9 @@ function verschiebe(aufbau: Aufbau, um: Punkt): Aufbau {
   return {
     ...aufbau,
     teile: aufbau.teile.map(t => ({ ...t, pos: { x: t.pos.x + um.x, y: t.pos.y + um.y } })),
-    verbinder: aufbau.verbinder.map(v => ({ ...v, a: ende(v.a), b: ende(v.b) })),
+    verbinder: aufbau.verbinder.map(v => ({
+      ...v, a: ende(v.a), b: ende(v.b), ...(v.ueber ? { ueber: v.ueber.map(ende) } : {}),
+    })),
   };
 }
 
@@ -83,7 +85,7 @@ export function fuegeBauplanEin(aufbau: Aufbau, plan: Bauplan, ursprung: Punkt):
   }
   const ende = (e: Ende): Ende => (e.teil === null ? e : { teil: neueId.get(e.teil) ?? e.teil, punkt: e.punkt });
   for (const v of versetzt.verbinder) {
-    s = verbinde(s, v.art, ende(v.a), ende(v.b), v.werte).aufbau;
+    s = verbinde(s, v.art, ende(v.a), ende(v.b), v.werte, (v.ueber ?? []).map(ende)).aufbau;
   }
   return { aufbau: s, neu: [...neueId.values()] };
 }
@@ -144,6 +146,32 @@ function trebuchet(): Aufbau {
   return a;
 }
 
+/**
+ * Flaschenzug mit Winde: eine feste Rolle lenkt um, eine lose trägt die Last.
+ *
+ * Zwei Stränge tragen die lose Rolle, also hält das Seil nur ihr halbes
+ * Gewicht — und die Winde holt zwei Meter Seil ein, um die Last einen zu
+ * heben. Beides lässt sich am Kraftmesser und am Weg ablesen.
+ */
+function flaschenzug(): Aufbau {
+  const hoehe = 2.6, r = 0.1;
+  let a = neuerAufbau();
+  const trommel = teil(a, "scheibe", { x: 0.9, y: hoehe }, { durchmesser: r * 2, dicke: 0.03 });
+  a = verbinde(trommel.aufbau, "achse", amTeil(trommel.id), wand({ x: 0.9, y: hoehe }),
+    { reibung: 0, motorMoment: 120, drehzahl: 3 }).aufbau;
+
+  const fest = teil(a, "scheibe", { x: 0.15, y: hoehe }, { durchmesser: 0.12, dicke: 0.03 });
+  a = verbinde(fest.aufbau, "achse", amTeil(fest.id), wand({ x: 0.15, y: hoehe })).aufbau;
+
+  const lose = teil(a, "scheibe", { x: 0, y: hoehe - 1 }, { durchmesser: 0.16, dicke: 0.05, masseVorgabe: 10 });
+  a = lose.aufbau;
+
+  a = verbinde(a, "seil", amTeil(trommel.id, { x: 0, y: r }), wand({ x: -0.15, y: hoehe }),
+    { laenge: 0, wickelt: 1, wickelrichtung: 1 },
+    [amTeil(fest.id), amTeil(lose.id)]).aufbau;
+  return a;
+}
+
 export const BAUPLAENE: Bauplan[] = [
   {
     id: "pendel", name: "Pendel", icon: "🕰️",
@@ -160,6 +188,11 @@ export const BAUPLAENE: Bauplan[] = [
     id: "winde", name: "Winde", icon: "🧵",
     beschreibung: "Trommel mit Motor: hebt die Last um Halbmesser mal Drehwinkel.",
     aufbau: umDenUrsprung(winde()),
+  },
+  {
+    id: "flaschenzug", name: "Flaschenzug", icon: "⛓️",
+    beschreibung: "Feste und lose Rolle: die Winde hebt 10 kg und zieht dabei nur mit der halben Kraft.",
+    aufbau: umDenUrsprung(flaschenzug()),
   },
   {
     id: "trebuchet", name: "Trebuchet", icon: "🏰",

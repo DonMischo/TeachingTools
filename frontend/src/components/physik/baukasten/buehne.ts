@@ -11,7 +11,7 @@
  * nirgends sonst auf Pixel.
  */
 import type { Application, Graphics } from "pixi.js";
-import { verbinderEnden, zumBild, type Lage } from "@/lib/physik/kern/bearbeiten";
+import { verbinderEnden, verbinderWeg, zumBild, type Lage } from "@/lib/physik/kern/bearbeiten";
 import { weltpunkt, type Aufbau, type Teil, type Verbinder } from "@/lib/physik/kern/modell";
 import { oberflaeche, teilTyp, type Form } from "@/lib/physik/kern/teile";
 import { feststoff } from "@/lib/physik/material";
@@ -26,13 +26,18 @@ export interface Bild {
   auswahl: Auswahl | null;
   schwebt: Auswahl | null;
   /** Was gerade gesetzt wird: ein Seil, das man aufzieht, oder ein Teil am Zeiger. */
-  vorschau: { art: "spannen"; verbinder: "seil" | "feder"; von: Punkt; bis: Punkt } | { art: "teil"; teil: Teil } | null;
+  vorschau:
+    | { art: "spannen"; verbinder: "seil" | "feder"; von: Punkt; ueber: Punkt[]; bis: Punkt }
+    | { art: "teil"; teil: Teil }
+    | null;
   /** Verbinder, die im Versuch gelöst wurden oder gebrochen sind — sie fehlen. */
   geloest: Set<string>;
   /** Im Versuch die freie Länge eines Seils — bei einer Winde ändert sie sich. */
   seillaenge?: (id: string) => number | undefined;
   /** Der Ablaufpunkt einer Winde: dort verlässt das Seil die Trommel. */
   seilAblauf?: (id: string) => Punkt | undefined;
+  /** Im Versuch die Bahn eines Seils über Rollen — sie liegt, wie der Löser sie hält. */
+  seilBahn?: (id: string) => Punkt[] | undefined;
 }
 
 const FARBE = {
@@ -115,7 +120,7 @@ export class Buehne {
 
     for (const v of aufbau.verbinder) {
       if (bild.geloest.has(v.id)) continue;
-      this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id));
+      this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id), bild.seilBahn?.(v.id));
     }
 
     // Hervorhebungen obendrauf.
@@ -135,9 +140,17 @@ export class Buehne {
 
     const vs = bild.vorschau;
     if (vs?.art === "spannen") {
-      const a = zumBild(vs.von, blick), b = zumBild(vs.bis, blick);
-      if (vs.verbinder === "feder") this.feder(this.oben, a, b, FARBE.vorschau, 0.8);
-      else this.oben.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 2, color: FARBE.vorschau, alpha: 0.8 });
+      const weg = [vs.von, ...vs.ueber, vs.bis].map(p => zumBild(p, blick));
+      const a = weg[0];
+      if (vs.verbinder === "feder") {
+        this.feder(this.oben, a, weg[weg.length - 1], FARBE.vorschau, 0.8);
+      } else {
+        this.oben.moveTo(a.x, a.y);
+        for (const p of weg.slice(1)) this.oben.lineTo(p.x, p.y);
+        this.oben.stroke({ width: 2, color: FARBE.vorschau, alpha: 0.8, join: "round" });
+        // Jede Rolle, über die es schon läuft, bekommt einen Punkt.
+        for (const p of weg.slice(1, -1)) this.oben.circle(p.x, p.y, 4).stroke({ width: 2, color: FARBE.vorschau });
+      }
       this.oben.circle(a.x, a.y, 4).fill({ color: FARBE.vorschau });
     } else if (vs?.art === "teil") {
       this.umrande(vs.teil, t => ({ pos: t.pos, winkel: t.winkel }), blick, FARBE.vorschau, 1.5);
@@ -299,7 +312,13 @@ export class Buehne {
 
   // ── Verbinder ───────────────────────────────────────────────────────────────
 
-  private zeichneVerbinder(v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick, frei?: number, ablauf?: Punkt) {
+  private zeichneVerbinder(
+    v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick, frei?: number, ablauf?: Punkt, bahn?: Punkt[],
+  ) {
+    if (v.art === "seil" && (v.ueber?.length ?? 0) > 0) {
+      this.zeichneSeilUeberRollen(v, bahn ?? verbinderWeg(aufbau, v, lage), blick, frei);
+      return;
+    }
     const [roh, pb] = verbinderEnden(aufbau, v, lage);
     // Bei einer Winde läuft das Seil an einer festen Stelle von der Trommel —
     // gezeichnet wird, woran der Löser wirklich zieht.
@@ -334,6 +353,30 @@ export class Buehne {
       g.moveTo(a.x - 2.5, a.y - 2.5).lineTo(a.x + 2.5, a.y + 2.5).stroke({ width: 1.2, color: 0x334155 });
       g.moveTo(a.x - 2.5, a.y + 2.5).lineTo(a.x + 2.5, a.y - 2.5).stroke({ width: 1.2, color: 0x334155 });
     }
+  }
+
+  /**
+   * Ein Seil über Rollen: ein Zug von Strang zu Strang.
+   *
+   * Durchhang wird auf die Stränge verteilt, je nach ihrer Länge — sonst sähe
+   * ein schlaffer Flaschenzug straff aus.
+   */
+  private zeichneSeilUeberRollen(v: Verbinder, weg: Punkt[], blick: Blick, frei?: number) {
+    const g = this.teile;
+    const laengen = weg.slice(1).map((p, i) => Math.hypot(p.x - weg[i].x, p.y - weg[i].y));
+    const gespannt = laengen.reduce((a, b) => a + b, 0);
+    const laenge = frei ?? ((v.werte.laenge ?? 0) > 0 ? v.werte.laenge : gespannt);
+    const ueberschuss = Math.max(0, laenge - gespannt);
+
+    const bild = weg.map(p => zumBild(p, blick));
+    for (let i = 0; i + 1 < bild.length; i++) {
+      const a = bild[i], b = bild[i + 1];
+      const anteil = gespannt > 0 ? laengen[i] / gespannt : 0;
+      const durchhang = ueberschuss * anteil * 0.6 * blick.skala;
+      const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + durchhang };
+      g.moveTo(a.x, a.y).quadraticCurveTo(m.x, m.y, b.x, b.y).stroke({ width: 2.5, color: FARBE.seil, cap: "round" });
+    }
+    this.wandpunkt(g, v, bild[0], bild[bild.length - 1]);
   }
 
   /** Die Länge, auf die ein Seil beim Bauen gespannt war. */

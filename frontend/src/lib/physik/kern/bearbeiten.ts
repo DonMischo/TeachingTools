@@ -69,8 +69,13 @@ export function teileUnter(aufbau: Aufbau, p: Punkt, lage: Lage = lageImAufbau, 
   return treffer;
 }
 
-/** Die beiden Enden eines Verbinders in der Welt, nach der gegebenen Lage. */
-export function verbinderEnden(aufbau: Aufbau, v: Verbinder, lage: Lage = lageImAufbau): [Punkt, Punkt] {
+/**
+ * Die ganze Bahn eines Verbinders in der Welt, nach der gegebenen Lage.
+ *
+ * Bei Achse, Schraube und Feder sind das zwei Punkte; ein Seil über Rollen
+ * hat dazwischen noch einen je Rolle.
+ */
+export function verbinderWeg(aufbau: Aufbau, v: Verbinder, lage: Lage = lageImAufbau): Punkt[] {
   const ende = (e: Verbinder["a"]) => {
     if (e.teil === null) return e.punkt;
     const t = aufbau.teile.find(x => x.id === e.teil);
@@ -78,7 +83,13 @@ export function verbinderEnden(aufbau: Aufbau, v: Verbinder, lage: Lage = lageIm
     const l = lage(t);
     return endeInWelt({ ...aufbau, teile: [{ ...t, pos: l.pos, winkel: l.winkel }] }, e);
   };
-  return [ende(v.a), ende(v.b)];
+  return [v.a, ...(v.ueber ?? []), v.b].map(ende);
+}
+
+/** Die beiden Enden eines Verbinders in der Welt, nach der gegebenen Lage. */
+export function verbinderEnden(aufbau: Aufbau, v: Verbinder, lage: Lage = lageImAufbau): [Punkt, Punkt] {
+  const weg = verbinderWeg(aufbau, v, lage);
+  return [weg[0], weg[weg.length - 1]];
 }
 
 /** Der Verbinder unter einem Weltpunkt, oder null — auf Wunsch nur bestimmte Arten. */
@@ -90,8 +101,12 @@ export function verbinderUnter(
   let beste = toleranz;
   for (const v of aufbau.verbinder) {
     if (!nur(v)) continue;
-    const [a, b] = verbinderEnden(aufbau, v, lage);
-    const d = v.art === "seil" || v.art === "feder" ? abstandZurStrecke(p, a, b) : Math.hypot(p.x - a.x, p.y - a.y);
+    const weg = verbinderWeg(aufbau, v, lage);
+    let d = Math.hypot(p.x - weg[0].x, p.y - weg[0].y);
+    if (v.art === "seil" || v.art === "feder") {
+      d = Infinity;
+      for (let i = 0; i + 1 < weg.length; i++) d = Math.min(d, abstandZurStrecke(p, weg[i], weg[i + 1]));
+    }
     if (d <= beste) { beste = d; bester = v; }
   }
   return bester;
@@ -164,13 +179,34 @@ export function endeAn(aufbau: Aufbau, p: Punkt): Verbinder["a"] {
   return oben ? amTeil(oben.id, lokalpunkt(oben, p)) : wand(p);
 }
 
+/**
+ * Eine Scheibe, über die ein Seil laufen kann — getroffen nahe ihrer Mitte.
+ *
+ * Die Mitte ist die Stelle, an der das Seil nur umgelenkt wird; am Rand
+ * getroffen bindet man es an, wie bei der Winde. So braucht es keinen zweiten
+ * Knopf: wo man hintippt, sagt schon, was gemeint ist.
+ */
+export function rolleUnter(aufbau: Aufbau, p: Punkt): Teil | undefined {
+  return teileUnter(aufbau, p).find(t => {
+    if (t.art !== "scheibe") return false;
+    const l = lokalpunkt(t, p);
+    return Math.hypot(l.x, l.y) <= 0.5 * ((t.werte.durchmesser ?? 0.2) / 2);
+  });
+}
+
 export function spanne(
-  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder">, von: Punkt, bis: Punkt,
+  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder">, von: Punkt, bis: Punkt, ueber: Punkt[] = [],
 ): { aufbau: Aufbau; id: string } | { fehler: string } {
   const a = endeAn(aufbau, von), b = endeAn(aufbau, bis);
-  if (a.teil === null && b.teil === null) return { fehler: "Mindestens ein Ende muss an einem Teil sitzen." };
-  if (a.teil !== null && a.teil === b.teil) return { fehler: "Beide Enden sitzen am selben Teil." };
-  return verbinde(aufbau, art, a, b, standardWerteVerbinder(art));
+  const rollen = art === "seil" ? ueber.map(p => rolleUnter(aufbau, p)) : [];
+  if (rollen.some(r => !r)) return { fehler: "Ein Seil läuft nur über die Mitte einer Scheibe." };
+  // Über eine Rolle darf das Seil zurück zur Wand oder zum selben Teil — ohne
+  // Umweg wäre es ein Punkt.
+  if (rollen.length === 0) {
+    if (a.teil === null && b.teil === null) return { fehler: "Mindestens ein Ende muss an einem Teil sitzen." };
+    if (a.teil !== null && a.teil === b.teil) return { fehler: "Beide Enden sitzen am selben Teil." };
+  }
+  return verbinde(aufbau, art, a, b, standardWerteVerbinder(art), rollen.map(r => amTeil(r!.id)));
 }
 
 // ── Verschieben und Drehen ───────────────────────────────────────────────────

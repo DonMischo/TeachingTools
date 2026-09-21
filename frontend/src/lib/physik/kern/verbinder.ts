@@ -49,7 +49,7 @@ export const VERBINDER: VerbinderTyp[] = [
     name: "Seil",
     icon: "🪢",
     punkte: 2,
-    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Das Seil zieht, drückt aber nicht. Setzt man den Anfang an den Rand einer Scheibe und schaltet »Wickelt auf« ein, wird eine Winde daraus.",
+    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Unterwegs die Mitte einer Scheibe antippen: dort läuft das Seil über sie, und aus zwei Rollen wird ein Flaschenzug. Das Seil zieht, drückt aber nicht. Setzt man den Anfang an den Rand einer Scheibe und schaltet »Wickelt auf« ein, wird eine Winde daraus.",
     parameter: [
       { schluessel: "laenge", name: "Länge (0 = wie gespannt)", einheit: "m", standard: 0, min: 0, max: 5 },
       {

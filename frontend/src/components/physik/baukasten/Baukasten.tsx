@@ -15,7 +15,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  lageImAufbau, merke, neuerVerlauf, setze, setzeGelenk, setzeLage, setzeMitteAnWand, setzeTeilWerte, setzeVerbinderWerte,
+  lageImAufbau, merke, neuerVerlauf, rolleUnter, setze, setzeGelenk, setzeLage, setzeMitteAnWand, setzeTeilWerte,
+  setzeVerbinderWerte,
   spanne, teileUnter, tue, verbinderUnter, vor, zurueck, zurWelt, type Lage, type Verlauf,
 } from "@/lib/physik/kern/bearbeiten";
 import {
@@ -59,6 +60,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [schwebt, setSchwebt] = useState<Auswahl | null>(null);
   const [spannStart, setSpannStart] = useState<Punkt | null>(null);
+  /** Rollen, über die das Seil schon läuft, während man es aufzieht. */
+  const [spannUeber, setSpannUeber] = useState<Punkt[]>([]);
   const [zeiger, setZeiger] = useState<Punkt | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [eigene, setEigene] = useState<Bauplan[]>([]);
@@ -146,19 +149,20 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     if (versuch || !zeiger) return null;
     if (werkzeug.art === "verbinder" && spannStart) {
       const v = werkzeug.verbinder;
-      if (v === "seil" || v === "feder") return { art: "spannen", verbinder: v, von: spannStart, bis: zeiger };
+      if (v === "seil" || v === "feder") return { art: "spannen", verbinder: v, von: spannStart, ueber: spannUeber, bis: zeiger };
     }
     if (werkzeug.art === "teil") {
       return { art: "teil", teil: { id: "vorschau", art: werkzeug.teil, pos: zeiger, winkel: 0, werte: standardWerteTeil(werkzeug.teil) } };
     }
     if (werkzeug.art === "bauplan") return null;
     return null;
-  }, [versuch, zeiger, werkzeug, spannStart]);
+  }, [versuch, zeiger, werkzeug, spannStart, spannUeber]);
 
   const bild = useCallback((): Bild => ({
     aufbau, lage, blick, auswahl, schwebt, vorschau, geloest: geloest.current,
     seillaenge: id => welt.current?.seillaenge(id),
     seilAblauf: id => welt.current?.seilAblauf(id),
+    seilBahn: id => welt.current?.seilBahn(id),
   }), [aufbau, lage, blick, auswahl, schwebt, vorschau]);
   // Die Schleife liest das jeweils neueste Bild über ein Ref. Hinge sie selbst
   // am Bild, finge sie bei jeder Zeigerbewegung neu an — und verlöre dabei
@@ -268,9 +272,13 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         else { aendere(v => tue(v, r.aufbau)); setAuswahl({ art: "verbinder", id: r.id }); }
         return;
       }
-      if (!spannStart) { setSpannStart(p); return; }
-      const r = spanne(aufbau, art, spannStart, p);
+      if (!spannStart) { setSpannStart(p); setSpannUeber([]); return; }
+      // Tippt man ein Seil in die Mitte einer Scheibe, läuft es dort *über*
+      // sie und geht weiter — am Rand getroffen wird es angebunden.
+      if (art === "seil" && rolleUnter(aufbau, p)) { setSpannUeber([...spannUeber, p]); return; }
+      const r = spanne(aufbau, art, spannStart, p, spannUeber);
       setSpannStart(null);
+      setSpannUeber([]);
       if ("fehler" in r) setFehler(r.fehler);
       else { aendere(v => tue(v, r.aufbau)); setAuswahl({ art: "verbinder", id: r.id }); }
       return;
@@ -349,7 +357,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         aendere(vor);
         return;
       }
-      if (e.key === "Escape") { setWerkzeug({ art: "auswahl" }); setSpannStart(null); return; }
+      if (e.key === "Escape") { setWerkzeug({ art: "auswahl" }); setSpannStart(null); setSpannUeber([]); return; }
       if (versuch || !auswahl) return;
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
@@ -393,7 +401,11 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const hinweis = werkzeug.art === "bauplan"
     ? `${werkzeug.plan.beschreibung} Auf die Wand tippen, wo er hin soll.`
     : werkzeug.art === "verbinder"
-    ? (spannStart ? "Jetzt das Ende antippen." : verbinderTyp(werkzeug.verbinder)?.hinweis)
+    ? (spannStart
+        ? (werkzeug.verbinder === "seil"
+            ? "Jetzt das Ende antippen — oder die Mitte einer Scheibe, dann läuft das Seil über sie."
+            : "Jetzt das Ende antippen.")
+        : verbinderTyp(werkzeug.verbinder)?.hinweis)
     : werkzeug.art === "teil"
       ? "Auf die Wand tippen, wo es hin soll. Mit Umschalt bleibt das Werkzeug für das nächste."
       : versuch
@@ -527,7 +539,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
           <Gruppe titel="Verbinder">
             {VERBINDER.map(v => (
               <button key={v.art} disabled={versuch} aria-label={`${v.name} setzen`}
-                onClick={() => { setWerkzeug({ art: "verbinder", verbinder: v.art }); setSpannStart(null); }}
+                onClick={() => { setWerkzeug({ art: "verbinder", verbinder: v.art }); setSpannStart(null); setSpannUeber([]); }}
                 className={`${aktivKnopf(werkzeug.art === "verbinder" && werkzeug.verbinder === v.art)} text-left flex gap-2 disabled:opacity-40`}>
                 <span aria-hidden="true">{v.icon}</span>{v.name}
               </button>

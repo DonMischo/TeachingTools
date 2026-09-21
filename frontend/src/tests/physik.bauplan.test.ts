@@ -95,6 +95,20 @@ describe("Die mitgelieferten Pläne laufen", () => {
     expect(w.zustand(last)!.y).toBeGreaterThan(start + 0.2);
   });
 
+  it("hebt mit dem Flaschenzug — und das Seil hält nur die halbe Last", () => {
+    const { aufbau } = fuegeBauplanEin(neuerAufbau(), bauplan("flaschenzug")!, { x: 0, y: 2.6 });
+    const w = starte(aufbau);
+    const lose = aufbau.teile.find(t => t.werte.masseVorgabe === 10)!.id;
+    const seil = aufbau.verbinder.find(v => v.art === "seil")!.id;
+    const start = w.zustand(lose)!.y;
+    laufe(w, 2);
+
+    expect(w.zustand(lose)!.y).toBeGreaterThan(start + 0.2);
+    // Zwei Stränge tragen die lose Rolle, also hält das Seil die halbe Last.
+    expect(w.kraft(seil)!.betrag).toBeLessThan(10 * 9.81 * 0.62);
+    expect(w.kraft(seil)!.betrag).toBeGreaterThan(10 * 9.81 * 0.4);
+  });
+
   it("stellt Pläne, die auf den Boden gehören, auf den Boden — egal wo man tippt", () => {
     const plan = bauplan("trebuchet")!;
     expect(plan.amBoden).toBe(true);
