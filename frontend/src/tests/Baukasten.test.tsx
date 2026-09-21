@@ -7,7 +7,7 @@
  */
 import { StrictMode } from "react";
 import { beforeAll, beforeEach, describe, it, expect, vi } from "vitest";
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
 import Baukasten from "@/components/physik/baukasten/Baukasten";
 import { fuegeTeilHinzu, neuerAufbau } from "@/lib/physik/kern/modell";
 import { aufbauAusJSON } from "@/lib/physik/kern/speicher";
@@ -181,7 +181,9 @@ describe("Baukasten", () => {
 
     // Das Seil selbst, in der Mitte zwischen Wand und Gewicht (0,25 m höher).
     tippe(getByLabelText("Werkbank"), 400, 260 - 0.25 * 320);
-    expect(getByText("Seilkraft")).toBeInTheDocument();
+    // »Seilkraft« steht auch in der Liste des Messschreibers — gemeint ist hier
+    // die Anzeige neben der Werkbank.
+    expect(within(getByRole("region", { name: "Einstellungen" })).getByText("Seilkraft")).toBeInTheDocument();
     expect(getByRole("button", { name: /Lösen/ })).toBeInTheDocument();
   });
 });

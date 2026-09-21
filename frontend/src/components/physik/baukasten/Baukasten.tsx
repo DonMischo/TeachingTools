@@ -26,11 +26,13 @@ import {
 import { BAUPLAENE, fuegeBauplanEin, umDenUrsprung, type Bauplan } from "@/lib/physik/kern/bauplan";
 import { ladeAufbau, ladeBauplaene, speichereAufbau, speichereBauplaene } from "@/lib/physik/kern/speicher";
 import { standardWerteTeil, TEILE } from "@/lib/physik/kern/teile";
+import { Aufzeichnung, messgroessen } from "@/lib/physik/kern/messen";
 import { VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
 import { TAKT, Welt } from "@/lib/physik/kern/welt";
 import type { Blick, Punkt } from "@/lib/physik/typen";
 import { Buehne, type Auswahl, type Bild } from "./buehne";
 import { Inspektor } from "./Inspektor";
+import Schreiber from "./Schreiber";
 
 type Werkzeug =
   | { art: "auswahl" }
@@ -60,6 +62,9 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [schwebt, setSchwebt] = useState<Auswahl | null>(null);
   const [spannStart, setSpannStart] = useState<Punkt | null>(null);
+  /** Was der Messschreiber gerade zeigt — bleibt über »Von vorn« hinweg stehen. */
+  const [gezeigt, setGezeigt] = useState<string[]>([]);
+  const aufzeichnung = useRef<Aufzeichnung | null>(null);
   /** Rollen, über die das Seil schon läuft, während man es aufzieht. */
   const [spannUeber, setSpannUeber] = useState<Punkt[]>([]);
   const [zeiger, setZeiger] = useState<Punkt | null>(null);
@@ -132,6 +137,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     const w = new Welt(aufbau);
     welt.current = w;
     geloest.current = new Set();
+    aufzeichnung.current = new Aufzeichnung(messgroessen(aufbau));
     return () => {
       w.zerstoere();
       if (welt.current === w) welt.current = null;
@@ -184,6 +190,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       const w = welt.current;
       while (w && rest >= TAKT) {
         w.schritt();
+        aufzeichnung.current?.nimmAuf(w);
         for (const e of w.holeEreignisse()) {
           if (e.art === "bruch" || e.art === "geloest") geloest.current.add(e.verbinder);
         }
@@ -412,6 +419,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         ? "Teile greifen und werfen, Verbinder antippen zum Lösen."
         : "Teile ziehen, mit R drehen, Entf entfernt. Strg+Z macht rückgängig.";
 
+  const messGroessen = useMemo(() => messgroessen(aufbau), [aufbau]);
+
   const knopf = "rounded-xl border border-[var(--border)] px-3 py-2 text-sm";
   const aktivKnopf = (an: boolean) => `${knopf} ${an ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`;
 
@@ -584,6 +593,16 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
           aktionen={aktionen}
         />
       </div>
+
+      {versuch && (
+        <Schreiber
+          groessen={messGroessen}
+          bus={aufzeichnung.current?.bus ?? null}
+          gewaehlt={gezeigt}
+          onGewaehlt={setGezeigt}
+          takt={takt}
+        />
+      )}
     </div>
   );
 }

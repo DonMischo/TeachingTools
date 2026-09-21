@@ -8,10 +8,10 @@
  */
 import { afterEach, describe, it, expect } from "vitest";
 import { G } from "@/lib/physik/einheiten";
-import { alsCsv, messgroessen, Schreiber, MESSTAKT } from "@/lib/physik/kern/messen";
+import { alsCsv, Aufzeichnung, messgroessen, MESSTAKT } from "@/lib/physik/kern/messen";
 import { amTeil, fuegeTeilHinzu, neuerAufbau, verbinde, wand, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
 import { standardWerteTeil } from "@/lib/physik/kern/teile";
-import { Welt } from "@/lib/physik/kern/welt";
+import { TAKT, Welt } from "@/lib/physik/kern/welt";
 
 const welten: Welt[] = [];
 afterEach(() => { while (welten.length) welten.pop()!.zerstoere(); });
@@ -50,7 +50,32 @@ describe("Die Messgrößen eines Aufbaus", () => {
     // Auf einen Zentimeter genau: der Löser rechnet in Schritten, und dabei
     // bleibt der Fall um einen halben Schritt hinter der Formel zurück.
     expect(hoehe.lies(w)!).toBeCloseTo(5 - 0.5 * G * 0.5 ** 2, 1);
-    expect(tempo.lies(w)!).toBeCloseTo(-G * 0.5, 1);
+    // Das Tempo ist Weg durch Zeit über den letzten Takt, gilt also für dessen
+    // Mitte: rund einen halben Schritt hinter dem Wert der Formel.
+    expect(tempo.lies(w)!).toBeCloseTo(-G * (0.5 - TAKT / 2), 1);
+  });
+
+  it("zeigt am Seil einer Winde das Tempo, mit dem sie wirklich hebt", () => {
+    // Der Fall, an dem die Geschwindigkeit des Lösers lügt: Box2D holt die Last
+    // über die Lagekorrektur des kürzer werdenden Seils herauf und nimmt die
+    // dafür nötige Geschwindigkeit hinterher wieder heraus. Gemessen wird
+    // deshalb Weg durch Zeit — und der muss r·ω treffen.
+    const r = 0.1, drehzahl = 1.5;
+    let a = neuerAufbau();
+    const trommel = teil(a, "scheibe", { x: 0, y: 2 }, { durchmesser: 2 * r, dicke: 0.03 }); a = trommel.aufbau;
+    a = verbinde(a, "achse", amTeil(trommel.id), wand({ x: 0, y: 2 }), { motorMoment: 60, drehzahl }).aufbau;
+    const last = teil(a, "massestueck", { x: r, y: 1 }, { masse: 2 }); a = last.aufbau;
+    a = verbinde(a, "seil", amTeil(trommel.id, { x: r, y: 0 }), amTeil(last.id),
+      { laenge: 0, wickelt: 1, wickelrichtung: 1 }).aufbau;
+    const w = starte(a);
+    const hoehe = finde(a, `${last.id}.y`), tempo = finde(a, `${last.id}.v`);
+
+    const start = hoehe.lies(w)!;
+    laufe(w, 1.5);
+    const gehoben = hoehe.lies(w)! - start;
+
+    expect(gehoben).toBeCloseTo(r * drehzahl * 1.5, 1);
+    expect(tempo.lies(w)!).toBeCloseTo(r * drehzahl, 2);
   });
 
   it("hält die Summe der Energien am Pendel fest", () => {
@@ -99,13 +124,13 @@ describe("Die Messgrößen eines Aufbaus", () => {
   });
 });
 
-describe("Der Schreiber", () => {
+describe("Die Aufzeichnung", () => {
   it("nimmt mit, ohne bei jedem Rechenschritt einen Punkt zu setzen", () => {
     let a = neuerAufbau();
     const kugel = teil(a, "kugel", { x: 0, y: 5 }); a = kugel.aufbau;
     const w = starte(a);
     const groessen = messgroessen(a);
-    const s = new Schreiber(groessen);
+    const s = new Aufzeichnung(groessen);
     laufe(w, 2, () => s.nimmAuf(w));
 
     const verlauf = s.bus.verlauf(`${kugel.id}.y`)!;
@@ -120,7 +145,7 @@ describe("Der Schreiber", () => {
     const kugel = teil(a, "kugel", { x: 0, y: 5 }); a = kugel.aufbau;
     const w = starte(a);
     const groessen = messgroessen(a);
-    const s = new Schreiber(groessen);
+    const s = new Aufzeichnung(groessen);
     laufe(w, 0.5, () => s.nimmAuf(w));
 
     const gewaehlt = [finde(a, `${kugel.id}.y`), finde(a, `${kugel.id}.drehung`)];

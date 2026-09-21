@@ -43,7 +43,7 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
 
   if (!auswahl) {
     return (
-      <div className={rahmen}>
+      <div className={rahmen} role="region" aria-label="Einstellungen">
         <p className="text-[var(--text-muted)]">
           {versuch ? "Ein Teil antippen zeigt, was gerade an ihm geschieht." : "Nichts ausgewählt. Ein Teil oder einen Verbinder antippen, um es einzustellen."}
         </p>
@@ -54,7 +54,7 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
   if (auswahl.art === "teil") {
     const t = aufbau.teile.find(x => x.id === auswahl.id);
     const typ = t ? teilTyp(t.art) : undefined;
-    if (!t || !typ) return <div className={rahmen} />;
+    if (!t || !typ) return <div className={rahmen} role="region" aria-label="Einstellungen" />;
     const masse = teilMasse(t);
     const vorgegeben = t.art !== "massestueck" && (t.werte.masseVorgabe ?? 0) > 0;
     const herkunft = t.art === "massestueck" ? "eingestellt" : vorgegeben ? "vorgegeben" : `aus ${feststoff(t.werte.stoff ?? 0).name}`;
@@ -68,7 +68,7 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
     }
 
     return (
-      <div className={rahmen}>
+      <div className={rahmen} role="region" aria-label="Einstellungen">
         <div className="flex items-center gap-2">
           <span className="text-2xl" aria-hidden="true">{typ.icon}</span>
           <span className="font-black">{typ.name}</span>
@@ -120,12 +120,12 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
 
   const v = aufbau.verbinder.find(x => x.id === auswahl.id);
   const typ = v ? verbinderTyp(v.art) : undefined;
-  if (!v || !typ) return <div className={rahmen} />;
+  if (!v || !typ) return <div className={rahmen} role="region" aria-label="Einstellungen" />;
   const kraft = versuch ? welt?.kraft(v.id) : undefined;
   const offen = geloest.has(v.id);
 
   return (
-    <div className={rahmen}>
+    <div className={rahmen} role="region" aria-label="Einstellungen">
       <div className="flex items-center gap-2">
         <span className="text-2xl" aria-hidden="true">{typ.icon}</span>
         <span className="font-black">{typ.name}</span>

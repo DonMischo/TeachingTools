@@ -78,6 +78,8 @@ export class Welt {
   private gelenke = new Map<string, b2JointId>();
   private verbinder = new Map<string, Verbinder>();
   private umdrehung = new Map<string, number>();
+  private letzteLage = new Map<string, Punkt>();
+  private tempo = new Map<string, { vx: number; vy: number }>();
   private wickel: Wickel[] = [];
   private seilzuege = new Map<string, Seilzug>();
   private anfangsWinkel = new Map<string, number>();
@@ -372,8 +374,21 @@ export class Welt {
     for (const zug of this.seilzuege.values()) zug.rechne(TAKT);
     this.zeit += TAKT;
 
+    // Gemessen wird das Tempo aus dem zurückgelegten Weg, nicht aus dem, was
+    // der Löser als Geschwindigkeit führt.
+    //
+    // Box2D verschiebt einen Körper auch über die Lagekorrektur seiner
+    // Bedingungen und nimmt die dafür nötige Geschwindigkeit hinterher wieder
+    // heraus. Eine Winde, die ihr Seil einholt, hebt die Last deshalb sichtbar
+    // um 15 cm je Sekunde, während `b2Body_GetLinearVelocity` 2,6 cm/s meldet.
+    // Ein Messschreiber, der das anzeigte, würde lügen; Weg durch Zeit ist
+    // ohnehin das, was man im Versuch selbst messen würde.
     for (const [id, body] of this.koerper) {
       this.umdrehung.set(id, (this.umdrehung.get(id) ?? 0) + b2.b2Body_GetAngularVelocity(body) * TAKT);
+      const p = b2.b2Body_GetPosition(body);
+      const vorher = this.letzteLage.get(id);
+      if (vorher) this.tempo.set(id, { vx: (p.x - vorher.x) / TAKT, vy: (p.y - vorher.y) / TAKT });
+      this.letzteLage.set(id, { x: p.x, y: p.y });
     }
 
     const stoesse = b2.b2World_GetContactEvents(this.id);
@@ -451,11 +466,12 @@ export class Welt {
     const body = this.koerper.get(id);
     if (!body) return undefined;
     const p = b2.b2Body_GetPosition(body);
-    const v = b2.b2Body_GetLinearVelocity(body);
+    const roh = b2.b2Body_GetLinearVelocity(body);
+    const v = this.tempo.get(id) ?? { vx: roh.x, vy: roh.y };
     return {
       x: p.x, y: p.y,
       winkel: b2.b2Rot_GetAngle(b2.b2Body_GetRotation(body)),
-      vx: v.x, vy: v.y,
+      vx: v.vx, vy: v.vy,
       omega: b2.b2Body_GetAngularVelocity(body),
       umdrehung: this.umdrehung.get(id) ?? 0,
     };

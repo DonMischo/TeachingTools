@@ -136,7 +136,7 @@ export const MESSTAKT = 1 / 30;
  * Was älter ist als der Vorrat, fällt vorn heraus — ein Labor, das eine
  * Schulstunde lang offensteht, soll den Browser nicht auffressen.
  */
-export class Schreiber {
+export class Aufzeichnung {
   readonly bus = new Messbus(4096);
   private naechste = 0;
 
