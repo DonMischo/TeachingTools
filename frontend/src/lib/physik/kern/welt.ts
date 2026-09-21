@@ -599,6 +599,12 @@ export class Welt {
     return body ? b2.b2Body_GetMass(body) : 0;
   }
 
+  /** Massenträgheitsmoment eines Teils um seinen Schwerpunkt, in kg·m². */
+  traegheit(id: string): number {
+    const body = this.koerper.get(id);
+    return body ? b2.b2Body_GetInertiaTensor(body) : 0;
+  }
+
   /** Gibt den Platz im Löser frei. Danach ist die Welt nicht mehr zu gebrauchen. */
   zerstoere() {
     if (this.zerstoert) return;
