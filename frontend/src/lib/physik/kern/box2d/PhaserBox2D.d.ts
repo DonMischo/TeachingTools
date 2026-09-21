@@ -92,10 +92,12 @@ export function b2Body_GetWorldPoint(id: b2BodyId, lokal: b2Vec2): b2Vec2;
 export function b2Body_GetLocalPoint(id: b2BodyId, welt: b2Vec2): b2Vec2;
 export function b2Body_GetUserData(id: b2BodyId): unknown;
 export function b2Body_SetBullet(id: b2BodyId, an: boolean): void;
+export function b2Body_SetFixedRotation(id: b2BodyId, an: boolean): void;
 export function b2Body_SetAwake(id: b2BodyId, an: boolean): void;
 export function b2Body_GetType(id: b2BodyId): number;
 export function b2Body_ApplyLinearImpulseToCenter(id: b2BodyId, p: b2Vec2, wecken: boolean): void;
 export function b2Body_ApplyTorque(id: b2BodyId, moment: number, wecken: boolean): void;
+export function b2Body_GetShapes(id: b2BodyId, formen: b2ShapeId[], anzahl: number): number;
 
 export function b2DefaultShapeDef(): b2ShapeDef;
 export function b2MakeBox(hx: number, hy: number): b2Polygon;

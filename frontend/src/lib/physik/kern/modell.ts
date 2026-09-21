@@ -49,6 +49,14 @@ export interface Verbinder {
   art: VerbinderArt;
   a: Ende;
   b: Ende;
+  /**
+   * Punkte, über die ein Seil läuft — eine Rolle etwa.
+   *
+   * Sie sind nur die Wegbeschreibung beim Bauen: danach liegt das Seil auf
+   * der Rolle, weil es sie berührt, und kann auch wieder herunterrutschen.
+   * Festgehalten wird es nicht.
+   */
+  ueber?: Ende[];
   werte: Record<string, number>;
 }
 
@@ -88,16 +96,23 @@ export function fuegeTeilHinzu(
 
 export function verbinde(
   aufbau: Aufbau, art: VerbinderArt, a: Ende, b: Ende, werte: Record<string, number> = {},
+  ueber: Ende[] = [],
 ): { aufbau: Aufbau; id: string } {
   for (const e of [a, b]) {
     if (e.teil !== null && !aufbau.teile.some(t => t.id === e.teil)) {
       throw new Error(`Kein Teil mit der Id ${e.teil}`);
     }
   }
-  if (a.teil === null && b.teil === null) throw new Error("Die Wand lässt sich nicht mit sich selbst verbinden.");
+  // Beide Enden an der Wand sind nur dann sinnlos, wenn dazwischen nichts
+  // liegt: ein Seil, das *unter einer losen Rolle* hindurchläuft, hängt mit
+  // beiden Enden an der Wand — und genau das halbiert die Kraft.
+  if (a.teil === null && b.teil === null && !ueber.some(e => e.teil !== null)) {
+    throw new Error("Die Wand lässt sich nicht mit sich selbst verbinden.");
+  }
   if (a.teil !== null && a.teil === b.teil) throw new Error("Ein Teil lässt sich nicht mit sich selbst verbinden.");
   const id = naechsteId(aufbau.verbinder.map(v => v.id), "v");
-  return { aufbau: { ...aufbau, verbinder: [...aufbau.verbinder, { id, art, a, b, werte }] }, id };
+  const neu: Verbinder = ueber.length ? { id, art, a, b, ueber, werte } : { id, art, a, b, werte };
+  return { aufbau: { ...aufbau, verbinder: [...aufbau.verbinder, neu] }, id };
 }
 
 /** Nimmt ein Teil weg — und alles, was es mit anderem verband. */

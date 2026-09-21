@@ -62,6 +62,12 @@ export const VERBINDER: VerbinderTyp[] = [
         schluessel: "wickelrichtung", name: "Wickelrichtung", einheit: "", standard: 1, min: -1, max: 1,
         optionen: [{ wert: 1, name: "linksherum zieht an" }, { wert: -1, name: "rechtsherum zieht an" }],
       },
+      {
+        // Ein Seil aus Gliedern hat Gestalt: es kann über eine Rolle laufen.
+        // Das kostet Körper, deshalb nur, wenn man es braucht.
+        schluessel: "glieder", name: "Glieder (0 = straffes Seil)", einheit: "", standard: 0, min: 0, max: 60,
+      },
+      { schluessel: "masseProMeter", name: "Masse je Meter", einheit: "kg", standard: 0.15, min: 0.01, max: 3 },
       { schluessel: "loestNach", name: "Löst nach (0 = nie)", einheit: "s", standard: 0, min: 0, max: 60, bedienung: true },
       { schluessel: "loestBeiWinkel", name: "Löst bei Drehung (0 = nie)", einheit: "rad", anzeige: "grad", standard: 0, min: bogen(-360), max: bogen(360) },
     ],

@@ -33,6 +33,8 @@ export interface Bild {
   seillaenge?: (id: string) => number | undefined;
   /** Der Ablaufpunkt einer Winde: dort verlässt das Seil die Trommel. */
   seilAblauf?: (id: string) => Punkt | undefined;
+  /** Ein Seil aus Gliedern liegt, wie es liegt — seine Punkte kommen aus der Welt. */
+  seilPunkte?: (id: string) => Punkt[] | undefined;
 }
 
 const FARBE = {
@@ -115,7 +117,7 @@ export class Buehne {
 
     for (const v of aufbau.verbinder) {
       if (bild.geloest.has(v.id)) continue;
-      this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id));
+      this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id), bild.seilPunkte?.(v.id));
     }
 
     // Hervorhebungen obendrauf.
@@ -299,7 +301,7 @@ export class Buehne {
 
   // ── Verbinder ───────────────────────────────────────────────────────────────
 
-  private zeichneVerbinder(v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick, frei?: number, ablauf?: Punkt) {
+  private zeichneVerbinder(v: Verbinder, aufbau: Aufbau, lage: Lage, blick: Blick, frei?: number, ablauf?: Punkt, punkte?: Punkt[]) {
     const [roh, pb] = verbinderEnden(aufbau, v, lage);
     // Bei einer Winde läuft das Seil an einer festen Stelle von der Trommel —
     // gezeichnet wird, woran der Löser wirklich zieht.
@@ -307,6 +309,15 @@ export class Buehne {
     const a = zumBild(pa, blick), b = zumBild(pb, blick);
     const g = this.teile;
 
+    if (v.art === "seil" && punkte && punkte.length > 1) {
+      // Ein Seil aus Gliedern hängt, wie der Löser es hängen lässt.
+      const bild = punkte.map(p => zumBild(p, blick));
+      g.moveTo(bild[0].x, bild[0].y);
+      for (const p of bild.slice(1)) g.lineTo(p.x, p.y);
+      g.stroke({ width: 2.5, color: FARBE.seil, cap: "round", join: "round" });
+      this.wandpunkt(g, v, bild[0], bild[bild.length - 1]);
+      return;
+    }
     if (v.art === "seil") {
       // Ein schlaffes Seil hängt durch — um so viel, wie es länger ist als der Abstand.
       const laenge = frei ?? ((v.werte.laenge ?? 0) > 0 ? v.werte.laenge : this.gespannt(aufbau, v));

@@ -28,6 +28,13 @@ import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
 import { formFlaeche, oberflaeche, teilMasse, teilTyp } from "./teile";
 
 export const TAKT = 1 / 60;
+/**
+ * Wie steif ein Seil über Rollen ist, in Hertz.
+ *
+ * Hoch genug, dass es sich unter Last kaum längt, niedrig genug, dass der
+ * Löser bei acht Unterschritten nicht zittert.
+ */
+const SEIL_HERTZ = 30;
 export const UNTERSCHRITTE = 8;
 const G = 9.81;
 
@@ -59,6 +66,23 @@ const vec = (p: Punkt) => new b2.b2Vec2(p.x, p.y);
  * Drehwinkel, L = L₀ − r · Δθ. Beides zusammen macht erst eine Winde daraus;
  * mit dem Seilende in der Mitte gäbe es kein Drehmoment.
  */
+/**
+ * Ein Seil, das über Rollen läuft.
+ *
+ * Gebaut aus einem starren Abschnitt je Abschnitt des Wegs. Zusammen sind sie
+ * ein Seil, weil ihre Längen zusammen fest bleiben: was der eine Abschnitt
+ * länger wird, wird der andere kürzer. Genau das ist ein Flaschenzug — und es
+ * kommt von selbst heraus, dass eine lose Rolle die Kraft halbiert.
+ *
+ * Gegen ein Seil aus Gliedern hat das den Vorteil, dass es nicht dehnt:
+ * eine Kette aus zwanzig Gliedern zog sich unter 2 kg auf das Doppelte.
+ */
+interface Rollenzug {
+  verbinder: string;
+  abschnitte: b2JointId[];
+  gesamt: number;
+}
+
 interface Wickel {
   verbinder: string;
   trommel: string;
@@ -78,6 +102,10 @@ export class Welt {
   private verbinder = new Map<string, Verbinder>();
   private umdrehung = new Map<string, number>();
   private wickel: Wickel[] = [];
+  /** Seile aus Gliedern: die Körper in ihrer Reihenfolge, Anfang zuerst. */
+  private ketten = new Map<string, b2BodyId[]>();
+  private rollenzuege: Rollenzug[] = [];
+  private naechsteGruppe = -1;
   private anfangsWinkel = new Map<string, number>();
   private wand: b2BodyId;
   private hand: b2JointId | null = null;
@@ -200,6 +228,10 @@ export class Welt {
       d.localAnchorB = b2.b2Body_GetLocalPoint(b, vec(pa));
       d.referenceAngle = this.winkelVon(eB.teil) - this.winkelVon(eA.teil);
       joint = b2.b2CreateWeldJoint(this.id, d);
+    } else if (v.art === "seil" && (v.werte.glieder ?? 0) >= 2) {
+      joint = this.baueKette(v, a, b, pa, pb);
+    } else if (v.art === "seil" && (v.ueber?.length ?? 0) > 0) {
+      joint = this.baueRollenzug(v, a, b, pa, pb);
     } else {
       // Feder und Seil verbinden zwei verschiedene Punkte.
       const d = b2.b2DefaultDistanceJointDef();
@@ -252,6 +284,189 @@ export class Welt {
     this.verbinder.set(v.id, v);
   }
 
+  /**
+   * Ein Seil aus Gliedern — eines, das sich über eine Rolle legen kann.
+   *
+   * Ein Abstandsgelenk zieht immer geradewegs von einem Punkt zum anderen; es
+   * kann nicht über etwas *laufen*. Für einen Flaschenzug braucht es ein Seil
+   * mit Gestalt: viele kurze Glieder, gelenkig aneinander, die sich auf die
+   * Rolle legen und sie über die Reibung mitnehmen.
+   *
+   * Die Glieder sind in einer eigenen Stoßgruppe: sonst verheddert sich das
+   * Seil in sich selbst, statt zu hängen.
+   */
+  private baueKette(v: Verbinder, a: b2BodyId, b: b2BodyId, pa: Punkt, pb: Punkt): b2JointId {
+    const anzahl = Math.min(80, Math.max(2, Math.round(v.werte.glieder ?? 0)));
+    // Der Weg des Seils: von Ende zu Ende, über alles, worüber es laufen soll.
+    const weg = [pa, ...(v.ueber ?? []).map(e => endeInWelt(this.aufbau, e)), pb];
+    const strecken = weg.slice(1).map((p, i) => Math.hypot(p.x - weg[i].x, p.y - weg[i].y));
+    const abstand = Math.max(0.01, strecken.reduce((s, x) => s + x, 0));
+    const laenge = (v.werte.laenge ?? 0) > 0 ? v.werte.laenge! : abstand;
+    const glied = laenge / anzahl;
+    const masse = Math.max(0.002, (v.werte.masseProMeter ?? 0.15) * glied);
+    const gruppe = this.naechsteGruppe--;
+
+    /** Der Punkt nach s Metern entlang des Wegs; danach geradeaus weiter. */
+    const amWeg = (s: number): Punkt => {
+      let rest = Math.max(0, s);
+      for (let i = 0; i < strecken.length; i++) {
+        if (rest <= strecken[i] || i === strecken.length - 1) {
+          const t = strecken[i] === 0 ? 0 : rest / strecken[i];
+          return {
+            x: weg[i].x + (weg[i + 1].x - weg[i].x) * t,
+            y: weg[i].y + (weg[i + 1].y - weg[i].y) * t,
+          };
+        }
+        rest -= strecken[i];
+      }
+      return weg[weg.length - 1];
+    };
+    const knick = (s: number) => {
+      const vor = amWeg(Math.max(0, s - glied / 2)), nach = amWeg(s + glied / 2);
+      return Math.atan2(nach.y - vor.y, nach.x - vor.x);
+    };
+
+    const koerper: b2BodyId[] = [];
+    for (let i = 0; i < anzahl; i++) {
+      const mitte = amWeg(glied * (i + 0.5));
+      const def = b2.b2DefaultBodyDef();
+      def.type = b2.b2BodyType.b2_dynamicBody;
+      def.position = vec(mitte);
+      def.rotation = b2.b2MakeRot(knick(glied * (i + 0.5)));
+      def.userData = v.id;
+      const glieder = b2.b2CreateBody(this.id, def);
+      const dicke = Math.min(0.012, glied * 0.35);
+      const form = b2.b2DefaultShapeDef();
+      form.density = masse / Math.max(1e-9, Math.PI * dicke * dicke + 2 * dicke * glied);
+      form.friction = 0.5;
+      form.restitution = 0;
+      form.filter.groupIndex = gruppe;
+      b2.b2CreateCapsuleShape(glieder, form, {
+        center1: new b2.b2Vec2(-glied / 2 + dicke, 0),
+        center2: new b2.b2Vec2(glied / 2 - dicke, 0),
+        radius: dicke,
+      });
+      koerper.push(glieder);
+    }
+
+    /** Verbindet zwei Körper gelenkig an einem Weltpunkt. */
+    const gelenk = (x: b2BodyId, y: b2BodyId, punkt: Punkt) => {
+      const d = b2.b2DefaultRevoluteJointDef();
+      d.bodyIdA = x; d.bodyIdB = y;
+      d.localAnchorA = b2.b2Body_GetLocalPoint(x, vec(punkt));
+      d.localAnchorB = b2.b2Body_GetLocalPoint(y, vec(punkt));
+      return b2.b2CreateRevoluteJoint(this.id, d);
+    };
+
+    const erstes = gelenk(a, koerper[0], pa);
+    for (let i = 1; i < koerper.length; i++) gelenk(koerper[i - 1], koerper[i], amWeg(glied * i));
+    gelenk(koerper[koerper.length - 1], b, pb);
+    this.ketten.set(v.id, koerper);
+    return erstes;
+  }
+
+  /**
+   * Ein Seil über Rollen: je Wegabschnitt ein starrer Zug.
+   *
+   * Nachgeführt wird nur der letzte Abschnitt: seine Höchstlänge ist, was von
+   * der Gesamtlänge übrig bleibt. Damit ist das Seil unstreckbar, ohne dass
+   * jeder Abschnitt einzeln daran zerren müsste.
+   */
+  private baueRollenzug(v: Verbinder, a: b2BodyId, b: b2BodyId, pa: Punkt, pb: Punkt): b2JointId {
+    const stuetzen = (v.ueber ?? []).map(e => ({ ende: e, punkt: endeInWelt(this.aufbau, e) }));
+    const stationen: { koerper: b2BodyId; punkt: Punkt }[] = [
+      { koerper: a, punkt: pa },
+      ...stuetzen.map(s => ({ koerper: this.koerperVon(s.ende.teil) ?? this.wand, punkt: s.punkt })),
+      { koerper: b, punkt: pb },
+    ];
+
+    const abschnitte: b2JointId[] = [];
+    let gesamt = 0;
+    for (let i = 1; i < stationen.length; i++) {
+      const von = stationen[i - 1], nach = stationen[i];
+      const laenge = Math.max(0.01, Math.hypot(nach.punkt.x - von.punkt.x, nach.punkt.y - von.punkt.y));
+      // Das Stück *über* die Rolle verbindet zwei Punkte desselben Körpers.
+      // Es kann seine Länge nie ändern und zieht an nichts; als Abschnitt
+      // mitgeführt bekäme es einen Anteil an der Dehnung, der den tragenden
+      // Strängen fehlt — die lose Rolle zeigte dann 16 statt 21,5 N.
+      if (von.koerper === nach.koerper) continue;
+      gesamt += laenge;
+      const d = b2.b2DefaultDistanceJointDef();
+      d.bodyIdA = von.koerper; d.bodyIdB = nach.koerper;
+      d.localAnchorA = b2.b2Body_GetLocalPoint(von.koerper, vec(von.punkt));
+      d.localAnchorB = b2.b2Body_GetLocalPoint(nach.koerper, vec(nach.punkt));
+      d.length = laenge;
+      // Jeder Abschnitt ist eine gleich steife Feder, und die Ruhelängen
+      // werden je Takt so nachgeführt, dass alle gleich weit gedehnt sind.
+      // Mit starren Abschnitten wäre das Seil überbestimmt: der Löser dürfte
+      // den einen Strang stärker belasten als den anderen, und die halbe
+      // Kraft an der losen Rolle käme nie heraus (gemessen 25 statt 21,5 N).
+      d.enableSpring = true;
+      d.hertz = SEIL_HERTZ;
+      d.dampingRatio = 1;
+      d.enableLimit = true;
+      d.minLength = 0;
+      d.maxLength = laenge * 1.5;
+      abschnitte.push(b2.b2CreateDistanceJoint(this.id, d));
+    }
+    const vorgabe = (v.werte.laenge ?? 0) > 0 ? v.werte.laenge! : gesamt;
+    this.rollenzuege.push({ verbinder: v.id, abschnitte, gesamt: vorgabe });
+    return abschnitte[0];
+  }
+
+  /**
+   * Hält die Gesamtlänge eines Seils über Rollen fest — und die Spannung gleich.
+   *
+   * Alle Abschnitte bekommen dieselbe Dehnung: die überschüssige Länge wird
+   * gleichmäßig von ihren Ruhelängen abgezogen. Gleiche Feder, gleiche
+   * Dehnung, gleiche Kraft — das ist das Seil, das über eine Rolle läuft.
+   */
+  private fuehreRollenzuege() {
+    for (const r of this.rollenzuege) {
+      if (r.abschnitte.some(j => !b2.b2Joint_IsValid(j))) continue;
+      const jetzt = r.abschnitte.map(j => b2.b2DistanceJoint_GetCurrentLength(j));
+      const summe = jetzt.reduce((s, x) => s + x, 0);
+      // Nur ziehen, nie drücken: ist das Seil kürzer als seine Länge, hängt es
+      // durch und tut gar nichts. Ohne diese Schranke stemmten die Abschnitte
+      // die lose Rolle nach oben, und die Kraft im Strang war zu klein.
+      const zuviel = Math.max(0, (summe - r.gesamt) / r.abschnitte.length);
+      r.abschnitte.forEach((j, i) => {
+        b2.b2DistanceJoint_SetLength(j, Math.max(0.005, jetzt[i] - zuviel));
+        b2.b2DistanceJoint_SetLengthRange(j, 0, Math.max(0.01, r.gesamt));
+      });
+    }
+  }
+
+  /** Die Punkte eines Seils — aus Gliedern oder über Rollen. */
+  seilPunkte(verbinderId: string): Punkt[] | undefined {
+    const ueber = this.verbinder.get(verbinderId)?.ueber;
+    if (ueber?.length && !this.ketten.has(verbinderId)) {
+      const enden = this.verbinderEnden(verbinderId);
+      if (!enden) return undefined;
+      const stuetzen = ueber.map(e => {
+        const k = this.koerperVon(e.teil);
+        if (!k || e.teil === null) return e.punkt;
+        const p = b2.b2Body_GetWorldPoint(k, vec(e.punkt));
+        return { x: p.x, y: p.y };
+      });
+      return [enden[0], ...stuetzen, enden[1]];
+    }
+    const koerper = this.ketten.get(verbinderId);
+    if (!koerper) return undefined;
+    const v = this.verbinder.get(verbinderId);
+    const punkte = koerper.map(k => {
+      const p = b2.b2Body_GetPosition(k);
+      return { x: p.x, y: p.y };
+    });
+    // Anfang und Ende sitzen an den Teilen, nicht in der Mitte des ersten Glieds.
+    if (v) {
+      const [a, b] = this.verbinderEnden(verbinderId) ?? [];
+      if (a) punkte.unshift(a);
+      if (b) punkte.push(b);
+    }
+    return punkte;
+  }
+
   private winkelVon(teil: string | null): number {
     if (teil === null) return 0;
     return this.aufbau.teile.find(t => t.id === teil)?.winkel ?? 0;
@@ -261,6 +476,7 @@ export class Welt {
   schritt() {
     if (this.zerstoert) return;
     this.wickle();
+    this.fuehreRollenzuege();
     this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
     this.zeit += TAKT;
