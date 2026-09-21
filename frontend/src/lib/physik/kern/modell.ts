@@ -49,6 +49,11 @@ export interface Verbinder {
   art: VerbinderArt;
   a: Ende;
   b: Ende;
+  /**
+   * Stellen, über die ein Seil läuft — die Mitten der Rollen, der Reihe nach.
+   * Aus einem Seil wird damit ein Flaschenzug: eine Bahn, eine Seilkraft.
+   */
+  ueber?: Ende[];
   werte: Record<string, number>;
 }
 
@@ -87,17 +92,23 @@ export function fuegeTeilHinzu(
 }
 
 export function verbinde(
-  aufbau: Aufbau, art: VerbinderArt, a: Ende, b: Ende, werte: Record<string, number> = {},
+  aufbau: Aufbau, art: VerbinderArt, a: Ende, b: Ende, werte: Record<string, number> = {}, ueber: Ende[] = [],
 ): { aufbau: Aufbau; id: string } {
-  for (const e of [a, b]) {
+  for (const e of [a, b, ...ueber]) {
     if (e.teil !== null && !aufbau.teile.some(t => t.id === e.teil)) {
       throw new Error(`Kein Teil mit der Id ${e.teil}`);
     }
   }
-  if (a.teil === null && b.teil === null) throw new Error("Die Wand lässt sich nicht mit sich selbst verbinden.");
-  if (a.teil !== null && a.teil === b.teil) throw new Error("Ein Teil lässt sich nicht mit sich selbst verbinden.");
+  // Über eine Rolle darf ein Seil durchaus zur Wand zurück oder zum selben
+  // Teil — der Flaschenzug lebt davon. Ohne Umweg wäre es bloß ein Punkt.
+  if (ueber.length === 0) {
+    if (a.teil === null && b.teil === null) throw new Error("Die Wand lässt sich nicht mit sich selbst verbinden.");
+    if (a.teil !== null && a.teil === b.teil) throw new Error("Ein Teil lässt sich nicht mit sich selbst verbinden.");
+  }
   const id = naechsteId(aufbau.verbinder.map(v => v.id), "v");
-  return { aufbau: { ...aufbau, verbinder: [...aufbau.verbinder, { id, art, a, b, werte }] }, id };
+  const v: Verbinder = { id, art, a, b, werte };
+  if (ueber.length > 0) v.ueber = ueber;
+  return { aufbau: { ...aufbau, verbinder: [...aufbau.verbinder, v] }, id };
 }
 
 /** Nimmt ein Teil weg — und alles, was es mit anderem verband. */
@@ -105,7 +116,9 @@ export function entferneTeil(aufbau: Aufbau, id: string): Aufbau {
   return {
     ...aufbau,
     teile: aufbau.teile.filter(t => t.id !== id),
-    verbinder: aufbau.verbinder.filter(v => v.a.teil !== id && v.b.teil !== id),
+    verbinder: aufbau.verbinder.filter(
+      v => v.a.teil !== id && v.b.teil !== id && !(v.ueber ?? []).some(e => e.teil === id),
+    ),
   };
 }
 

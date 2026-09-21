@@ -25,6 +25,7 @@ import * as b2 from "./box2d/PhaserBox2D.js";
 import type { b2BodyId, b2JointId, b2ShapeDef, b2WorldId } from "./box2d/PhaserBox2D.js";
 import type { Punkt } from "../typen";
 import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
+import { Seilzug, type Seilknoten } from "./seilzug";
 import { formFlaeche, oberflaeche, teilMasse, teilTyp } from "./teile";
 
 export const TAKT = 1 / 60;
@@ -78,6 +79,7 @@ export class Welt {
   private verbinder = new Map<string, Verbinder>();
   private umdrehung = new Map<string, number>();
   private wickel: Wickel[] = [];
+  private seilzuege = new Map<string, Seilzug>();
   private anfangsWinkel = new Map<string, number>();
   private wand: b2BodyId;
   private hand: b2JointId | null = null;
@@ -200,6 +202,10 @@ export class Welt {
       d.localAnchorB = b2.b2Body_GetLocalPoint(b, vec(pa));
       d.referenceAngle = this.winkelVon(eB.teil) - this.winkelVon(eA.teil);
       joint = b2.b2CreateWeldJoint(this.id, d);
+    } else if (v.art === "seil" && (v.ueber?.length ?? 0) > 0) {
+      this.baueSeilzug(v);
+      this.verbinder.set(v.id, v);
+      return;
     } else {
       // Feder und Seil verbinden zwei verschiedene Punkte.
       const d = b2.b2DefaultDistanceJointDef();
@@ -252,6 +258,65 @@ export class Welt {
     this.verbinder.set(v.id, v);
   }
 
+  /**
+   * Ein Seil, das über Rollen läuft.
+   *
+   * Kein Gelenk des Lösers, sondern eine eigene Bedingung über die ganze Bahn
+   * — warum, steht in `seilzug.ts`. Die inneren Punkte sind die Mitten der
+   * Rollen; ihr Halbmesser sagt nur, wie schnell sie sich mitdrehen.
+   */
+  private baueSeilzug(v: Verbinder) {
+    const eA = v.a;
+    // Eine Winde am Anfang: das Seil verlässt die Trommel an einer festen
+    // Stelle im Raum, genau wie beim geraden Seil — nur dass die Bahn danach
+    // noch über Rollen läuft. Liefe der erste Punkt mit der Trommel herum,
+    // würde der erste Strang beim Drehen länger und kürzer und die Last stiege
+    // mehr, als die Winde eingeholt hat.
+    const wickelt = (v.werte.wickelt ?? 0) >= 0.5 && eA.teil !== null
+      && Math.hypot(eA.punkt.x, eA.punkt.y) > 0.005;
+    const ablauf = endeInWelt(this.aufbau, eA);
+
+    const knoten: Seilknoten[] = [];
+    const enden = [v.a, ...(v.ueber ?? []), v.b];
+    for (const [i, e] of enden.entries()) {
+      const koerper = this.koerperVon(e.teil);
+      if (!koerper) return;
+      if (i === 0 && wickelt) {
+        knoten.push({ schluessel: "wand", koerper: this.wand, lokal: ablauf });
+        continue;
+      }
+      const innen = i > 0 && i < enden.length - 1;
+      const teil = e.teil === null ? undefined : this.aufbau.teile.find(t => t.id === e.teil);
+      const durchmesser = teil?.werte.durchmesser ?? 0;
+      knoten.push({
+        schluessel: e.teil ?? "wand",
+        koerper,
+        lokal: e.punkt,
+        rolle: innen && durchmesser > 0 ? durchmesser / 2 : undefined,
+        fest: e.teil !== null && this.haengtAnDerWand(e.teil),
+      });
+    }
+    const zug = new Seilzug(v.id, knoten, 1);
+    zug.laenge = (v.werte.laenge ?? 0) > 0 ? v.werte.laenge! : zug.gespannt();
+    this.seilzuege.set(v.id, zug);
+
+    if (wickelt) {
+      this.wickel.push({
+        verbinder: v.id, trommel: eA.teil!, radius: Math.hypot(eA.punkt.x, eA.punkt.y),
+        laenge0: zug.laenge, winkel0: this.umdrehung.get(eA.teil!) ?? 0,
+        richtung: (v.werte.wickelrichtung ?? 1) >= 0 ? 1 : -1,
+        ablauf,
+      });
+    }
+  }
+
+  /** Ob ein Teil unmittelbar an der Wand sitzt und sich deshalb nicht verschieben kann. */
+  private haengtAnDerWand(teil: string): boolean {
+    return this.aufbau.verbinder.some(v =>
+      (v.art === "achse" || v.art === "schraube")
+      && ((v.a.teil === teil && v.b.teil === null) || (v.b.teil === teil && v.a.teil === null)));
+  }
+
   private winkelVon(teil: string | null): number {
     if (teil === null) return 0;
     return this.aufbau.teile.find(t => t.id === teil)?.winkel ?? 0;
@@ -263,6 +328,9 @@ export class Welt {
     this.wickle();
     this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
+    // Die Seile über Rollen danach: der Löser hat die Schwerkraft schon in den
+    // Geschwindigkeiten, und die Bahn hält sie im selben Takt wieder auf.
+    for (const zug of this.seilzuege.values()) zug.rechne(TAKT);
     this.zeit += TAKT;
 
     for (const [id, body] of this.koerper) {
@@ -286,11 +354,11 @@ export class Welt {
    */
   private wickle() {
     for (const w of this.wickel) {
-      const joint = this.gelenke.get(w.verbinder);
-      if (!joint || !b2.b2Joint_IsValid(joint)) continue;
-      const gedreht = (this.umdrehung.get(w.trommel) ?? 0) - w.winkel0;
-      const laenge = Math.min(w.laenge0 + 5, Math.max(0.02, w.laenge0 - w.richtung * w.radius * gedreht));
-      b2.b2DistanceJoint_SetLengthRange(joint, 0, laenge);
+      const laenge = this.seillaenge(w.verbinder);
+      if (laenge === undefined) continue;
+      const zug = this.seilzuege.get(w.verbinder);
+      if (zug) zug.laenge = laenge;
+      else b2.b2DistanceJoint_SetLengthRange(this.gelenke.get(w.verbinder)!, 0, laenge);
 
       // Was am Seil hängt, hält die Trommel auf: das Moment ist Seilkraft mal
       // Halbmesser. Ein zu schwacher Motor kommt damit nicht mehr hoch.
@@ -368,6 +436,14 @@ export class Welt {
    * Seil ist es die Seilkraft, bei der Achse die Lagerkraft.
    */
   kraft(verbinderId: string): { betrag: number; x: number; y: number; moment: number } | undefined {
+    const zug = this.seilzuege.get(verbinderId);
+    if (zug) {
+      // Die Richtung ist die des ersten Strangs — dort, wo das Seil anfasst.
+      const bahn = zug.bahn();
+      const dx = bahn[1].x - bahn[0].x, dy = bahn[1].y - bahn[0].y;
+      const l = Math.max(1e-9, Math.hypot(dx, dy));
+      return { betrag: zug.zug, x: (zug.zug * dx) / l, y: (zug.zug * dy) / l, moment: 0 };
+    }
     const j = this.gelenke.get(verbinderId);
     if (!j || !b2.b2Joint_IsValid(j)) return undefined;
     const f = b2.b2Joint_GetConstraintForce(j);
@@ -402,10 +478,14 @@ export class Welt {
     return this.wickel.find(x => x.verbinder === verbinderId)?.ablauf;
   }
 
+  /** Die ganze Bahn eines Seils über Rollen — für die Zeichnung. */
+  seilBahn(verbinderId: string): Punkt[] | undefined {
+    return this.seilzuege.get(verbinderId)?.bahn();
+  }
+
   /** Die Länge, die ein Seil gerade freigibt — beim Wickeln ändert sie sich. */
   seillaenge(verbinderId: string): number | undefined {
-    const joint = this.gelenke.get(verbinderId);
-    if (!joint || !b2.b2Joint_IsValid(joint)) return undefined;
+    if (!this.haelt(verbinderId)) return undefined;
     const w = this.wickel.find(x => x.verbinder === verbinderId);
     if (!w) return undefined;
     const gedreht = (this.umdrehung.get(w.trommel) ?? 0) - w.winkel0;
@@ -414,6 +494,7 @@ export class Welt {
 
   /** Ob ein Verbinder noch hält. */
   haelt(verbinderId: string): boolean {
+    if (this.seilzuege.has(verbinderId)) return true;
     const j = this.gelenke.get(verbinderId);
     return !!j && b2.b2Joint_IsValid(j);
   }
@@ -421,9 +502,10 @@ export class Welt {
   /** Löst einen Verbinder — der Auslöser. */
   loese(verbinderId: string) {
     const j = this.gelenke.get(verbinderId);
-    if (!j || !b2.b2Joint_IsValid(j)) return;
+    if (!this.seilzuege.has(verbinderId) && (!j || !b2.b2Joint_IsValid(j))) return;
     const ort = this.verbinderOrt(verbinderId);
-    b2.b2DestroyJoint(j);
+    if (j && b2.b2Joint_IsValid(j)) b2.b2DestroyJoint(j);
+    this.seilzuege.delete(verbinderId);
     this.gelenke.delete(verbinderId);
     this.verbinder.delete(verbinderId);
     this.ereignisse.push({ art: "geloest", verbinder: verbinderId, ort, t: this.zeit });

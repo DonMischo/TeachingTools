@@ -88,6 +88,8 @@ export function b2Body_SetLinearVelocity(id: b2BodyId, v: b2Vec2): void;
 export function b2Body_SetAngularVelocity(id: b2BodyId, w: number): void;
 export function b2Body_SetTransform(id: b2BodyId, p: b2Vec2, r: b2Rot): void;
 export function b2Body_GetMass(id: b2BodyId): number;
+export function b2Body_GetInertiaTensor(id: b2BodyId): number;
+export function b2Body_GetWorldCenterOfMass(id: b2BodyId): b2Vec2;
 export function b2Body_GetWorldPoint(id: b2BodyId, lokal: b2Vec2): b2Vec2;
 export function b2Body_GetLocalPoint(id: b2BodyId, welt: b2Vec2): b2Vec2;
 export function b2Body_GetUserData(id: b2BodyId): unknown;
