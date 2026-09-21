@@ -288,12 +288,14 @@ export class Welt {
       const innen = i > 0 && i < enden.length - 1;
       const teil = e.teil === null ? undefined : this.aufbau.teile.find(t => t.id === e.teil);
       const durchmesser = teil?.werte.durchmesser ?? 0;
+      const verbund = e.teil === null ? null : this.verbundFuer(e.teil, endeInWelt(this.aufbau, e));
       knoten.push({
-        schluessel: e.teil ?? "wand",
+        schluessel: verbund ? verbund.teile.join("+") : "wand",
         koerper,
         lokal: e.punkt,
-        rolle: innen && durchmesser > 0 ? durchmesser / 2 : undefined,
-        fest: e.teil !== null && this.haengtAnDerWand(e.teil),
+        rolle: innen && durchmesser > 0 && this.drehtFrei(e.teil) ? durchmesser / 2 : undefined,
+        verbund: verbund?.teile.map(id => this.koerper.get(id)).filter((k): k is b2BodyId => !!k),
+        fest: verbund?.fest ?? false,
       });
     }
     const zug = new Seilzug(v.id, knoten, 1);
@@ -310,11 +312,48 @@ export class Welt {
     }
   }
 
-  /** Ob ein Teil unmittelbar an der Wand sitzt und sich deshalb nicht verschieben kann. */
-  private haengtAnDerWand(teil: string): boolean {
-    return this.aufbau.verbinder.some(v =>
-      (v.art === "achse" || v.art === "schraube")
-      && ((v.a.teil === teil && v.b.teil === null) || (v.b.teil === teil && v.a.teil === null)));
+  /**
+   * Ob eine Scheibe sich überhaupt drehen kann.
+   *
+   * Eine festgeschraubte Scheibe ist keine Rolle, sondern ein Poller: das Seil
+   * rutscht darüber, sie steht. Ihr trotzdem Takt für Takt eine Drehung
+   * aufzuzwingen, hieße gegen die Schraube zu rechnen — der Löser müsste jedes
+   * Mal wieder zurückholen, was die Zeichnung hineingedreht hat.
+   */
+  private drehtFrei(teil: string | null): boolean {
+    return teil !== null
+      && !this.aufbau.verbinder.some(v => v.art === "schraube" && (v.a.teil === teil || v.b.teil === teil));
+  }
+
+  /**
+   * Was an einem Punkt starr zusammenhängt — und ob es überhaupt nachgeben kann.
+   *
+   * Wer am Haken eines Flaschenzugblocks zieht, zieht am ganzen Block: für die
+   * Seilbahn ist verschraubtes Zeug *ein* Körper mit einer Masse. Eine Achse
+   * zählt dazu, wenn sie genau an diesem Punkt sitzt — dann kann sich das Teil
+   * darum nur drehen, und der Punkt selbst sitzt so fest wie angeschweißt.
+   * Weiter weg zählt sie nicht: sonst gälte ein Hebel an der Wand als
+   * unverrückbar, und ein Seil könnte ihn nicht mehr herumziehen.
+   */
+  private verbundFuer(teil: string, punkt: Punkt): { teile: string[]; fest: boolean } {
+    const NAH = 0.01;
+    const starr = (v: Verbinder, ende: Verbinder["a"]) =>
+      v.art === "schraube"
+      || (v.art === "achse" && Math.hypot(
+        endeInWelt(this.aufbau, ende).x - punkt.x, endeInWelt(this.aufbau, ende).y - punkt.y) < NAH);
+
+    const teile = new Set([teil]);
+    let fest = false;
+    for (const naechstes of teile) {
+      for (const v of this.aufbau.verbinder) {
+        if (v.art !== "achse" && v.art !== "schraube") continue;
+        const [hier, dort] = v.a.teil === naechstes ? [v.a, v.b] : v.b.teil === naechstes ? [v.b, v.a] : [null, null];
+        if (!hier || !starr(v, hier)) continue;
+        if (dort!.teil === null) fest = true;
+        else teile.add(dort!.teil);
+      }
+    }
+    return { teile: [...teile].sort(), fest };
   }
 
   private winkelVon(teil: string | null): number {

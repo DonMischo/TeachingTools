@@ -93,6 +93,61 @@ describe("Die lose Rolle", () => {
   });
 });
 
+describe("Der Verbund am Seil", () => {
+  it("trägt einen Block, dessen Rollen auf Achsen in einer Wange sitzen", () => {
+    let a = neuerAufbau();
+    const o1 = festeRolle(a, { x: -0.15, y: 3 }, 0.1); a = o1.aufbau;
+    const o2 = festeRolle(a, { x: 0.15, y: 3 }, 0.1); a = o2.aufbau;
+    // Die Last steckt in der Wange, die Rollen wiegen fast nichts. Wer an
+    // einer Rolle zieht, zieht am ganzen Block — sonst fiele er zu Boden.
+    const wange = teil(a, "brett", { x: 0, y: 2 }, { laenge: 0.5, dicke: 0.03, masseVorgabe: 3.9 }); a = wange.aufbau;
+    const u1 = teil(a, "scheibe", { x: -0.15, y: 2 }, { durchmesser: 0.1, masseVorgabe: 0.05 }); a = u1.aufbau;
+    const u2 = teil(a, "scheibe", { x: 0.15, y: 2 }, { durchmesser: 0.1, masseVorgabe: 0.05 }); a = u2.aufbau;
+    a = verbinde(a, "achse", amTeil(u1.id), amTeil(wange.id, { x: -0.15, y: 0 })).aufbau;
+    a = verbinde(a, "achse", amTeil(u2.id), amTeil(wange.id, { x: 0.15, y: 0 })).aufbau;
+    const seil = verbinde(a, "seil", wand({ x: -0.3, y: 3 }), wand({ x: 0.3, y: 3 }), {}, [
+      amTeil(u1.id), amTeil(o1.id), amTeil(u2.id), amTeil(o2.id),
+    ]);
+    const w = starte(seil.aufbau);
+    laufe(w, 1.5);
+
+    expect(w.kraft(seil.id)!.betrag).toBeCloseTo((4 * G) / 4, 0);
+    expect(w.zustand(wange.id)!.y).toBeGreaterThan(1.97);
+  });
+
+  it("nagelt einen Hebel nicht fest, bloß weil er an der Wand hängt", () => {
+    let a = neuerAufbau();
+    const arm = teil(a, "brett", { x: 0.5, y: 3 }, { laenge: 1, dicke: 0.03 }); a = arm.aufbau;
+    // Die Achse sitzt am linken Ende — das Seil zieht am rechten. Der Arm ist
+    // dort alles andere als unverrückbar, und genau das muss die Bahn wissen.
+    a = verbinde(a, "achse", amTeil(arm.id, { x: -0.5, y: 0 }), wand({ x: 0, y: 3 })).aufbau;
+    const rolle = festeRolle(a, { x: 1.5, y: 3.5 }, 0.1); a = rolle.aufbau;
+    const last = teil(a, "massestueck", { x: 1.5, y: 2.5 }, { masse: 5 }); a = last.aufbau;
+    const seil = verbinde(a, "seil", amTeil(arm.id, { x: 0.5, y: 0 }), amTeil(last.id), {}, [amTeil(rolle.id)]);
+    const w = starte(seil.aufbau);
+    laufe(w, 1);
+
+    // Der Arm geht herum, und die Seilkraft bleibt in der Größe des Gewichts.
+    expect(w.zustand(arm.id)!.winkel).toBeGreaterThan(0.1);
+    expect(w.kraft(seil.id)!.betrag).toBeLessThan(2 * 5 * G);
+  });
+
+  it("dreht eine festgeschraubte Scheibe nicht — sie ist ein Poller", () => {
+    let a = neuerAufbau();
+    const scheibe = teil(a, "scheibe", { x: 0, y: 3 }, { durchmesser: 0.2 }); a = scheibe.aufbau;
+    a = verbinde(a, "schraube", amTeil(scheibe.id), wand({ x: 0, y: 3 })).aufbau;
+    const links = teil(a, "massestueck", { x: -0.1, y: 1 }, { masse: 2 }); a = links.aufbau;
+    const rechts = teil(a, "massestueck", { x: 0.1, y: 1 }, { masse: 1 }); a = rechts.aufbau;
+    const seil = verbinde(a, "seil", amTeil(links.id), amTeil(rechts.id), {}, [amTeil(scheibe.id)]);
+    const w = starte(seil.aufbau);
+    laufe(w, 0.5);
+
+    // Das Seil rutscht darüber, die Scheibe steht.
+    expect(Math.abs(w.zustand(scheibe.id)!.omega)).toBeLessThan(0.01);
+    expect(-w.zustand(links.id)!.vy).toBeGreaterThan(0.5);
+  });
+});
+
 describe("Die Atwoodsche Fallmaschine", () => {
   it("fällt mit (m₁−m₂)·g/(m₁+m₂) und hält im ganzen Seil dieselbe Kraft", () => {
     const m1 = 2, m2 = 1;

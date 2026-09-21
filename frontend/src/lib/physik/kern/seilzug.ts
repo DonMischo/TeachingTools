@@ -19,15 +19,23 @@
  * die Summe. Daraus folgt der Flaschenzug von selbst: an einer losen Rolle
  * greift die Seilkraft über den Umweg zweimal an, also hebt halbe Kraft.
  *
- * Gerechnet wird nach dem Schritt des Lösers, mit ein paar Durchgängen auf den
- * Geschwindigkeiten (Baumgarte-Anteil gegen das Auseinanderlaufen). Das Seil
- * zieht nur: der aufsummierte Stoß bleibt ≥ 0, sonst wird es schlaff.
+ * Gerechnet wird nach dem Schritt des Lösers, auf den Geschwindigkeiten (mit
+ * einem Baumgarte-Anteil gegen das Auseinanderlaufen). Das Seil zieht nur: der
+ * aufsummierte Stoß bleibt ≥ 0, sonst wird es schlaff.
  *
  * Die inneren Punkte liegen in der *Mitte* der Rolle, nicht am Kranz. Die Bahn
  * ist dadurch um den Bogen und die Tangentenstücke länger als die wirkliche —
  * aber um einen festen Betrag, solange der Umschlingungswinkel bleibt, und nur
  * Änderungen der Länge wirken. Für den üblichen Fall (Seil kehrt um 180° um)
  * ist die Rechnung damit exakt.
+ *
+ * Entscheidend für die Genauigkeit ist die *wirksame* Masse: wer daran zieht,
+ * zieht an allem, was mit dem Angriffspunkt starr zusammenhängt. Deshalb
+ * rechnet ein Verbund aus verschraubten und verachsten Teilen hier als *ein*
+ * Körper (Masse addiert, Trägheit um den gemeinsamen Schwerpunkt), und was an
+ * der Wand festsitzt, zählt gar nicht mit. Rechnete man stattdessen mit der
+ * Masse des einzelnen Teils, käme eine viel zu große wirksame Masse heraus und
+ * das Seil zöge zu schwach — ein Meter Seil dehnte sich dann um 15 cm.
  */
 import * as b2 from "./box2d/PhaserBox2D.js";
 import type { b2BodyId } from "./box2d/PhaserBox2D.js";
@@ -35,25 +43,29 @@ import type { Punkt } from "../typen";
 
 /** Ein Punkt der Seilbahn: ein Körper und die Stelle auf ihm. */
 export interface Seilknoten {
-  /** Teil-Id oder "wand" — nur zum Zusammenfassen mehrerer Punkte auf einem Körper. */
+  /**
+   * Der Verbund, zu dem der Körper gehört — Punkte mit demselben Schlüssel
+   * ziehen an derselben Masse. Bei einem einzelnen Teil ist das seine Id.
+   */
   schluessel: string;
   koerper: b2BodyId;
   lokal: Punkt;
   /** Halbmesser, wenn der Knoten eine Rolle ist — dann dreht sie sich mit dem Seil. */
   rolle?: number;
-  /**
-   * Ob der Körper festliegt, obwohl der Löser ihn für beweglich hält.
-   *
-   * Eine Rolle an einer Achse an der Wand kann sich nur drehen. Rechnete die
-   * Bahn trotzdem mit ihrer Masse, käme eine viel zu große wirksame Masse
-   * heraus — und das Seil zöge zu schwach. Ein Meter Seil dehnte sich dann um
-   * 15 cm, ehe die Kraft stimmte.
-   */
+  /** Alle Körper des Verbunds, einschließlich des eigenen. */
+  verbund?: b2BodyId[];
+  /** Ob der Punkt festliegt, obwohl der Löser den Körper für beweglich hält. */
   fest?: boolean;
 }
 
-/** Durchgänge je Takt. Acht reichen: der Fehler der losen Rolle liegt dann unter 1 %. */
-const DURCHGAENGE = 8;
+/**
+ * Durchgänge je Takt.
+ *
+ * Die Lage ändert sich während des Takts nicht, also trifft der erste Durchgang
+ * die Lösung schon genau; der zweite fängt nur den Fall ab, dass das Seil dabei
+ * schlaff geworden ist und der Stoß auf null zurückfällt.
+ */
+const DURCHGAENGE = 2;
 /**
  * Wie kräftig eine zu lange Bahn zurückgeholt wird.
  *
@@ -67,13 +79,27 @@ const SCHLUPF = 0.001;
 /** Höchstes Tempo, mit dem nachgeholt wird — sonst schnellt ein verschobener Aufbau. */
 const MAX_HOLEN = 3;
 
-interface Koerperanteil {
-  koerper: b2BodyId;
+/** Ein Verbund, wie ihn die Bedingung sieht: eine Masse, eine Trägheit, ein Hebel. */
+interface Anteil {
+  koerper: b2BodyId[];
+  /** Die Schwerpunkte der einzelnen Körper — für die Verteilung des Stoßes. */
+  schwerpunkte: Punkt[];
+  /** Der gemeinsame Schwerpunkt. */
+  mitte: Punkt;
   invM: number;
   invI: number;
   jx: number;
   jy: number;
   jw: number;
+}
+
+/** Was sich während eines Takts nicht ändert: die Lage und alles, was daraus folgt. */
+interface Gleichung {
+  punkte: Punkt[];
+  richtungen: Punkt[];
+  anteile: Anteil[];
+  K: number;
+  holen: number;
 }
 
 export class Seilzug {
@@ -114,58 +140,59 @@ export class Seilzug {
   rechne(dt: number) {
     this.dt = dt;
     this.stoss = 0;
-    for (let n = 0; n < DURCHGAENGE; n++) this.durchgang(dt);
+    const gl = this.stelleAuf(dt);
+    if (gl) for (let n = 0; n < DURCHGAENGE; n++) this.durchgang(gl);
     this.dreheRollen(dt);
   }
 
-  private durchgang(dt: number) {
-    const p = this.bahn();
-    const n = p.length;
+  /**
+   * Stellt die Bedingung für diesen Takt auf: Bahn, Richtungen, wirksame Masse.
+   *
+   * Alles davon hängt nur an der Lage, und die ändert sich während des Takts
+   * nicht mehr — die Durchgänge rechnen danach nur noch mit Geschwindigkeiten.
+   */
+  private stelleAuf(dt: number): Gleichung | null {
+    const punkte = this.bahn();
+    const n = punkte.length;
     const u: Punkt[] = [];
     let laenge = 0;
     for (let i = 0; i + 1 < n; i++) {
-      const dx = p[i + 1].x - p[i].x, dy = p[i + 1].y - p[i].y;
+      const dx = punkte[i + 1].x - punkte[i].x, dy = punkte[i + 1].y - punkte[i].y;
       const l = Math.hypot(dx, dy);
       laenge += l;
       u.push(l > 1e-9 ? { x: dx / l, y: dy / l } : { x: 0, y: 0 });
     }
 
     // Die Richtung, in die ein Punkt die Bahn verlängert: ∂L/∂Pₖ.
-    const richtung = (k: number): Punkt => {
+    const richtungen: Punkt[] = [];
+    for (let k = 0; k < n; k++) {
       const vor = k > 0 ? u[k - 1] : { x: 0, y: 0 };
       const nach = k < n - 1 ? u[k] : { x: 0, y: 0 };
-      return { x: vor.x - nach.x, y: vor.y - nach.y };
-    };
+      richtungen.push({ x: vor.x - nach.x, y: vor.y - nach.y });
+    }
 
-    // Mehrere Punkte auf demselben Körper zählen zusammen — sonst rechnete
-    // eine Rolle, über die das Seil zweimal läuft, mit zu wenig Masse.
-    const anteile = new Map<string, Koerperanteil>();
+    // Punkte auf demselben Verbund zählen zusammen: eine Rolle, über die das
+    // Seil zweimal läuft, hängt sonst an zu wenig Masse — und ein Flaschenzug,
+    // dessen lose Rollen in einem Block sitzen, wäre viel zu weich.
+    const anteile = new Map<string, Anteil>();
     for (let k = 0; k < n; k++) {
       const kn = this.knoten[k];
-      const d = richtung(k);
-      const m = b2.b2Body_GetMass(kn.koerper);
-      const traeg = b2.b2Body_GetInertiaTensor(kn.koerper);
-      const statisch = kn.fest === true || b2.b2Body_GetType(kn.koerper) !== b2.b2BodyType.b2_dynamicBody;
-      const c = b2.b2Body_GetWorldCenterOfMass(kn.koerper);
-      const rx = p[k].x - c.x, ry = p[k].y - c.y;
-      const vorhanden = anteile.get(kn.schluessel);
-      const a = vorhanden ?? {
-        koerper: kn.koerper,
-        invM: statisch || m <= 0 ? 0 : 1 / m,
-        invI: statisch || traeg <= 0 ? 0 : 1 / traeg,
-        jx: 0, jy: 0, jw: 0,
-      };
-      a.jx += d.x; a.jy += d.y; a.jw += rx * d.y - ry * d.x;
-      if (!vorhanden) anteile.set(kn.schluessel, a);
+      let a = anteile.get(kn.schluessel);
+      if (!a) {
+        a = this.anteilVon(kn);
+        anteile.set(kn.schluessel, a);
+      }
+      const d = richtungen[k];
+      a.jx += d.x;
+      a.jy += d.y;
+      a.jw += (punkte[k].x - a.mitte.x) * d.y - (punkte[k].y - a.mitte.y) * d.x;
     }
 
-    let K = 0, aenderung = 0;
+    let K = 0;
     for (const a of anteile.values()) {
       K += a.invM * (a.jx * a.jx + a.jy * a.jy) + a.invI * a.jw * a.jw;
-      const v = b2.b2Body_GetLinearVelocity(a.koerper);
-      aenderung += a.jx * v.x + a.jy * v.y + a.jw * b2.b2Body_GetAngularVelocity(a.koerper);
     }
-    if (K <= 1e-12) return;
+    if (K <= 1e-12) return null;
 
     // Ist die Bahn zu lang, wird sie zurückgeholt. Ist sie zu kurz, hängt das
     // Seil durch — dann darf es sich frei bis zur vollen Länge strecken, und
@@ -175,21 +202,72 @@ export class Seilzug {
     const holen = fehler > SCHLUPF
       ? Math.min(MAX_HOLEN, (BEIWERT / dt) * (fehler - SCHLUPF))
       : Math.min(0, fehler / dt);
-    const roh = (aenderung + holen) / K;
+
+    return { punkte, richtungen, anteile: [...anteile.values()], K, holen };
+  }
+
+  /** Masse, Trägheit und Schwerpunkt eines Verbunds — wie bei einem Körper. */
+  private anteilVon(kn: Seilknoten): Anteil {
+    const koerper = kn.verbund?.length ? kn.verbund : [kn.koerper];
+    const schwerpunkte: Punkt[] = [];
+    const massen: number[] = [];
+    let M = 0, sx = 0, sy = 0;
+    let beweglich = !kn.fest;
+    for (const b of koerper) {
+      const c = b2.b2Body_GetWorldCenterOfMass(b);
+      schwerpunkte.push({ x: c.x, y: c.y });
+      const m = b2.b2Body_GetType(b) === b2.b2BodyType.b2_dynamicBody ? b2.b2Body_GetMass(b) : 0;
+      if (m <= 0) beweglich = false;
+      massen.push(m);
+      M += m;
+      sx += m * c.x;
+      sy += m * c.y;
+    }
+    if (!beweglich || M <= 0) {
+      const c = schwerpunkte[0] ?? { x: 0, y: 0 };
+      return { koerper, schwerpunkte, mitte: c, invM: 0, invI: 0, jx: 0, jy: 0, jw: 0 };
+    }
+    const mitte = { x: sx / M, y: sy / M };
+    // Steinerscher Satz: die Trägheit des Verbunds um seinen Schwerpunkt.
+    let I = 0;
+    for (const [i, b] of koerper.entries()) {
+      const dx = schwerpunkte[i].x - mitte.x, dy = schwerpunkte[i].y - mitte.y;
+      I += b2.b2Body_GetInertiaTensor(b) + massen[i] * (dx * dx + dy * dy);
+    }
+    return { koerper, schwerpunkte, mitte, invM: 1 / M, invI: I > 0 ? 1 / I : 0, jx: 0, jy: 0, jw: 0 };
+  }
+
+  private durchgang(gl: Gleichung) {
+    // Wie schnell die Bahn gerade länger wird — Punkt für Punkt, jeder mit der
+    // Geschwindigkeit seines eigenen Körpers an genau dieser Stelle.
+    let aenderung = 0;
+    for (const [k, d] of gl.richtungen.entries()) {
+      const b = this.knoten[k].koerper;
+      const v = b2.b2Body_GetLinearVelocity(b);
+      const w = b2.b2Body_GetAngularVelocity(b);
+      const c = b2.b2Body_GetWorldCenterOfMass(b);
+      aenderung += d.x * (v.x - w * (gl.punkte[k].y - c.y)) + d.y * (v.y + w * (gl.punkte[k].x - c.x));
+    }
+
     // Ein Seil zieht und drückt nicht: der aufsummierte Stoß bleibt ≥ 0.
-    const neu = Math.max(0, this.stoss + roh);
+    const neu = Math.max(0, this.stoss + (aenderung + gl.holen) / gl.K);
     const schritt = neu - this.stoss;
     this.stoss = neu;
     if (schritt === 0) return;
 
-    for (const a of anteile.values()) {
+    for (const a of gl.anteile) {
       if (a.invM === 0 && a.invI === 0) continue;
-      const v = b2.b2Body_GetLinearVelocity(a.koerper);
-      b2.b2Body_SetLinearVelocity(a.koerper, new b2.b2Vec2(
-        v.x - schritt * a.invM * a.jx,
-        v.y - schritt * a.invM * a.jy,
-      ));
-      b2.b2Body_SetAngularVelocity(a.koerper, b2.b2Body_GetAngularVelocity(a.koerper) - schritt * a.invI * a.jw);
+      // Der Verbund bewegt sich wie ein Körper: sein Schwerpunkt verschiebt
+      // sich, er dreht sich, und jedes Teil folgt daraus.
+      const dvx = -schritt * a.invM * a.jx;
+      const dvy = -schritt * a.invM * a.jy;
+      const dw = -schritt * a.invI * a.jw;
+      for (const [i, b] of a.koerper.entries()) {
+        const rx = a.schwerpunkte[i].x - a.mitte.x, ry = a.schwerpunkte[i].y - a.mitte.y;
+        const v = b2.b2Body_GetLinearVelocity(b);
+        b2.b2Body_SetLinearVelocity(b, new b2.b2Vec2(v.x + dvx - dw * ry, v.y + dvy + dw * rx));
+        b2.b2Body_SetAngularVelocity(b, b2.b2Body_GetAngularVelocity(b) + dw);
+      }
     }
   }
 
