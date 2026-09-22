@@ -50,8 +50,12 @@ type Innen = (x: number, y: number) => boolean;
 
 const HERZ: Innen = (x, y) => {
   // Die klassische Herzkurve, etwas gestaucht: (x²+y²−1)³ − x²y³ ≤ 0
+  //
+  // Das Vorzeichen von b ist hier entscheidend: Die Kurve hat ihre Spitze bei
+  // negativem b. Stand hier ein Minus, zeigte die Spitze nach oben und das
+  // Herz stand auf dem Kopf — in der Formel unauffällig, auf dem Schirm sofort.
   const a = x * 1.25;
-  const b = -y * 1.25 + 0.25;
+  const b = y * 1.25 + 0.25;
   const u = a * a + b * b - 0.55;
   return u * u * u - a * a * b * b * b <= 0;
 };

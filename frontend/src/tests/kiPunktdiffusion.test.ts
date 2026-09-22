@@ -48,6 +48,37 @@ describe("Formen", () => {
     }
   });
 
+  it("stellt das Herz richtig herum hin", () => {
+    // Ein Vorzeichen in der Formel genügt, und das Herz steht auf dem Kopf.
+    // In der Formel fällt das niemandem auf, auf dem Schirm sofort.
+    const herz = FORMEN.find(f => f.slug === "herz")!.punkte;
+
+    // Oben die Kerbe: in der Mittelachse ist es viel leerer als daneben.
+    const obenMitte = herz.filter(p => p.y > 0.35 && Math.abs(p.x) < 0.12).length;
+    const obenFlanken = herz.filter(p => p.y > 0.35 && Math.abs(p.x) > 0.2 && Math.abs(p.x) < 0.6).length;
+    expect(obenFlanken, "oben fehlen die beiden Bögen").toBeGreaterThan(15);
+    expect(obenMitte * 5, "die Kerbe sitzt nicht oben").toBeLessThan(obenFlanken);
+    // Beide Bögen, nicht nur einer.
+    expect(herz.filter(p => p.y > 0.35 && p.x > 0.2).length).toBeGreaterThan(5);
+    expect(herz.filter(p => p.y > 0.35 && p.x < -0.2).length).toBeGreaterThan(5);
+
+    // Unten die Spitze: die tiefsten Punkte liegen in der Mitte.
+    const tiefste = [...herz].sort((a, b) => a.y - b.y).slice(0, 8);
+    for (const p of tiefste) {
+      expect(Math.abs(p.x), "die Spitze sitzt nicht unten in der Mitte").toBeLessThan(0.3);
+    }
+  });
+
+  it("setzt das Hausdach nach oben", () => {
+    const haus = FORMEN.find(f => f.slug === "haus")!.punkte;
+    const breiteBei = (y: number) => {
+      const reihe = haus.filter(p => Math.abs(p.y - y) < 0.08);
+      return reihe.length ? Math.max(...reihe.map(p => Math.abs(p.x))) : 0;
+    };
+    // Oben spitz (Dach), unten breit (Wand).
+    expect(breiteBei(0.6)).toBeLessThan(breiteBei(-0.4));
+  });
+
   it("würfelt die Punkte immer gleich aus", () => {
     // Zwei Geräte müssen dieselbe Form sehen, sonst stimmt der Vergleich nicht.
     const wieder = FORMEN.map(f => f.punkte[0]);

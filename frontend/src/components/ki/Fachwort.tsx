@@ -14,12 +14,14 @@
  * Verknüpft wird automatisch (siehe `glossar.ts`) — kein Text muss von Hand
  * ausgezeichnet werden, und neue Lesetexte bekommen die Erklärungen geschenkt.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { GLOSSAR, zerlegeMitFachworten, type GlossarBild } from "@/lib/ki/glossar";
 
-/** Breite des Erklärkastens (17rem) plus Rahmen — muss zur Klasse unten passen. */
+/** Maße des Erklärkastens: Breite, Abstand zum Fensterrand, Abstand zum Wort. */
 const KASTEN_BREITE = 276;
 const RAND = 8;
+const LUFT = 6;
 
 /* ────────────────────────────────────────────────────────── Die Bildchen ── */
 // Klein, einfarbig und ohne Beschriftung, wo es geht: Sie sollen den Satz
@@ -118,79 +120,143 @@ function Bild({ art }: { art: GlossarBild }) {
 
 /* ───────────────────────────────────────────────────────── Das Fachwort ── */
 
+/** Wo der Kasten steht — in Fensterkoordinaten, nicht im Absatz. */
+type Platz = { links: number; oben?: number; unten?: number; hoehe: number };
+
 export function Fachwort({ begriff, wort }: { begriff: string; wort: string }) {
   const eintrag = GLOSSAR[begriff];
-  const [offen, setOffen] = useState(false);
-  const [rechts, setRechts] = useState(false);
+  const [platz, setPlatz] = useState<Platz | null>(null);
   const huelle = useRef<HTMLSpanElement>(null);
+  const schliessgriff = useRef<number | null>(null);
 
-  // Antippen daneben schließt wieder — sonst bleibt auf dem Telefon ein
-  // Kasten stehen, den niemand mehr loswird.
+  const zu = useCallback(() => setPlatz(null), []);
+
+  /**
+   * Den Kasten ans Wort setzen — in Fensterkoordinaten.
+   *
+   * Er hing vorher als `absolute` im Absatz und wurde damit von jedem
+   * Vorfahren mit `overflow: hidden` oder einem Scrollbereich abgeschnitten
+   * (der Lesekasten hat beides, die Spielbühne auch). Deshalb wird er jetzt
+   * an den Seitenkörper gehängt und fest positioniert: So kann ihn niemand
+   * mehr beschneiden.
+   *
+   * Unten oder oben entscheidet der Platz; nach oben wird über `unten`
+   * verankert, dann braucht es die Höhe des Kastens gar nicht erst.
+   */
+  const oeffne = useCallback(() => {
+    const kasten = huelle.current?.getBoundingClientRect();
+    if (!kasten) return;
+    const breiteFenster = document.documentElement.clientWidth || window.innerWidth || 0;
+    const hoeheFenster = document.documentElement.clientHeight || window.innerHeight || 0;
+    if (!breiteFenster || !hoeheFenster) {
+      // Ohne brauchbare Maße (verborgenes Fenster) einfach unter das Wort.
+      setPlatz({ links: kasten.left, oben: kasten.bottom + LUFT, hoehe: 260 });
+      return;
+    }
+    const breite = Math.min(KASTEN_BREITE, breiteFenster - 2 * RAND);
+    const links = Math.min(Math.max(RAND, kasten.left), breiteFenster - breite - RAND);
+    const platzUnten = hoeheFenster - kasten.bottom - LUFT - RAND;
+    const platzOben = kasten.top - LUFT - RAND;
+    const nachOben = platzUnten < 180 && platzOben > platzUnten;
+    setPlatz(nachOben
+      ? { links, unten: hoeheFenster - kasten.top + LUFT, hoehe: platzOben }
+      : { links, oben: kasten.bottom + LUFT, hoehe: platzUnten });
+  }, []);
+
+  const spaeterSchliessen = () => {
+    // Kleine Nachlaufzeit, damit der Weg vom Wort in den Kasten nicht
+    // dazwischen abreißt — der Kasten ist kein Kind des Wortes mehr.
+    schliessgriff.current = window.setTimeout(zu, 140);
+  };
+  const nichtSchliessen = () => {
+    if (schliessgriff.current) window.clearTimeout(schliessgriff.current);
+    schliessgriff.current = null;
+  };
+
   useEffect(() => {
-    if (!offen) return;
-    const zu = (e: Event) => {
-      if (!huelle.current?.contains(e.target as Node)) setOffen(false);
+    if (!platz) return;
+    const daneben = (e: Event) => {
+      if (!huelle.current?.contains(e.target as Node)) zu();
     };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOffen(false); };
-    document.addEventListener("pointerdown", zu);
-    document.addEventListener("keydown", esc);
+    const taste = (e: KeyboardEvent) => { if (e.key === "Escape") zu(); };
+    /**
+     * Beim Scrollen mitwandern statt zumachen.
+     *
+     * Der Kasten hängt am Fenster, das Wort am Text — ohne Nachführen stünde
+     * er nach dem ersten Wischen woanders. Zumachen wäre einfacher, ist aber
+     * zickig: Schon ein Layoutsprung löst ein Scroll-Ereignis aus, und die
+     * Erklärung verschwindet, kaum dass man sie geöffnet hat.
+     */
+    const nachfuehren = () => {
+      const kasten = huelle.current?.getBoundingClientRect();
+      // Ist das Wort aus dem Bild gewandert, hat der Kasten dort nichts mehr
+      // verloren.
+      const hoehe = document.documentElement.clientHeight || window.innerHeight || 0;
+      if (!kasten || (hoehe && (kasten.bottom < 0 || kasten.top > hoehe))) { zu(); return; }
+      oeffne();
+    };
+    // »true« ist wichtig, damit auch innere Scrollbereiche zählen.
+    document.addEventListener("pointerdown", daneben);
+    document.addEventListener("keydown", taste);
+    window.addEventListener("scroll", nachfuehren, true);
+    window.addEventListener("resize", nachfuehren);
     return () => {
-      document.removeEventListener("pointerdown", zu);
-      document.removeEventListener("keydown", esc);
+      document.removeEventListener("pointerdown", daneben);
+      document.removeEventListener("keydown", taste);
+      window.removeEventListener("scroll", nachfuehren, true);
+      window.removeEventListener("resize", nachfuehren);
     };
-  }, [offen]);
+  }, [platz, zu, oeffne]);
 
-  function oeffne() {
-    // Passt der Kasten rechts vom Wort noch ins Bild? Wenn nicht, klappt er
-    // nach links auf. Gerechnet wird mit der echten Kastenbreite, nicht mit
-    // »das Wort steht in der rechten Hälfte« — auf einem Telefon ragt er sonst
-    // auch dann heraus, wenn das Wort noch links steht.
-    const wort = huelle.current?.getBoundingClientRect();
-    // Beim Messen misstrauisch bleiben: In einem verborgenen oder frisch
-    // geladenen Fenster kommt 0 zurück, und dann klappte der Kasten immer nach
-    // links. Ohne brauchbare Breite bleibt es bei der Grundstellung.
-    const breite = document.documentElement.clientWidth || window.innerWidth;
-    if (wort && breite > 0) setRechts(wort.left + KASTEN_BREITE > breite - RAND);
-    setOffen(true);
-  }
+  useEffect(() => () => { if (schliessgriff.current) window.clearTimeout(schliessgriff.current); }, []);
 
   if (!eintrag) return <>{wort}</>;
+
+  const karte = platz && (
+    <span
+      role="tooltip"
+      onMouseEnter={nichtSchliessen}
+      onMouseLeave={spaeterSchliessen}
+      style={{
+        position: "fixed",
+        left: platz.links,
+        top: platz.oben,
+        bottom: platz.unten,
+        width: KASTEN_BREITE,
+        maxWidth: `calc(100vw - ${2 * RAND}px)`,
+        maxHeight: Math.max(140, platz.hoehe),
+      }}
+      className="z-50 overflow-y-auto p-3 rounded-xl border border-[var(--accent)]
+        bg-[var(--surface)] shadow-xl flex flex-col gap-1.5 text-left normal-case"
+    >
+      <span className="font-black text-sm text-[var(--text)]">{eintrag.titel}</span>
+      <span className="text-xs leading-relaxed text-[var(--text)]">{eintrag.kurz}</span>
+      {eintrag.bild && <span className="block py-1"><Bild art={eintrag.bild} /></span>}
+      {eintrag.lang && (
+        <span className="text-xs leading-relaxed text-[var(--text-muted)]">{eintrag.lang}</span>
+      )}
+    </span>
+  );
 
   return (
     <span
       ref={huelle}
       className="relative inline-block"
-      onMouseEnter={oeffne}
-      onMouseLeave={() => setOffen(false)}
+      onMouseEnter={() => { nichtSchliessen(); oeffne(); }}
+      onMouseLeave={spaeterSchliessen}
     >
       <button
         type="button"
-        onClick={() => (offen ? setOffen(false) : oeffne())}
+        onClick={() => (platz ? zu() : oeffne())}
         onFocus={oeffne}
-        aria-expanded={offen}
+        aria-expanded={!!platz}
         className="underline decoration-dotted decoration-from-font underline-offset-2
-          font-semibold text-[var(--text)] hover:text-[var(--accent)] cursor-help"
+          font-semibold text-[var(--text)] hover:text-[var(--accent)] cursor-help text-left"
       >
         {wort}
       </button>
-
-      {offen && (
-        <span
-          role="tooltip"
-          className={`absolute z-30 top-full mt-1 w-[17rem] max-w-[78vw] p-3 rounded-xl border
-            border-[var(--accent)] bg-[var(--surface)] shadow-lg flex flex-col gap-1.5
-            text-left normal-case ${rechts ? "right-0" : "left-0"}`}
-        >
-          <span className="font-black text-sm text-[var(--text)]">{eintrag.titel}</span>
-          <span className="text-xs leading-relaxed text-[var(--text)]">{eintrag.kurz}</span>
-          {eintrag.bild && (
-            <span className="block py-1"><Bild art={eintrag.bild} /></span>
-          )}
-          {eintrag.lang && (
-            <span className="text-xs leading-relaxed text-[var(--text-muted)]">{eintrag.lang}</span>
-          )}
-        </span>
-      )}
+      {/* An den Seitenkörper gehängt: So schneidet kein Scrollbereich ihn ab. */}
+      {karte && typeof document !== "undefined" && createPortal(karte, document.body)}
     </span>
   );
 }

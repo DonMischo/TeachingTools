@@ -110,6 +110,39 @@ describe("Im Text angetippt", () => {
     expect(kasten.querySelector("svg")).toBeTruthy();
   });
 
+  it("hängt den Kasten an den Seitenkörper, nicht in den Absatz", () => {
+    // Sonst schneidet ihn jeder Rahmen mit »overflow: hidden« ab — der
+    // Lesekasten hat einen, die Spielbühne scrollt — und die Erklärung ist
+    // halb oder gar nicht zu sehen.
+    const { container } = render(
+      <div style={{ overflow: "hidden", height: 40 }}>
+        <MitFachworten text="Das nennt man XOR." />
+      </div>,
+    );
+    fireEvent.click(screen.getByText("XOR"));
+    const kasten = screen.getByRole("tooltip");
+    expect(container.contains(kasten), "der Kasten steckt im abschneidenden Rahmen").toBe(false);
+    expect(document.body.contains(kasten)).toBe(true);
+    expect(getComputedStyle(kasten).position).toBe("fixed");
+  });
+
+  it("räumt den Kasten wieder weg", () => {
+    render(<MitFachworten text="Das nennt man XOR." />);
+    fireEvent.click(screen.getByText("XOR"));
+    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(1);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.querySelectorAll('[role="tooltip"]')).toHaveLength(0);
+  });
+
+  it("bleibt beim Scrollen stehen und wandert mit", () => {
+    // Zumachen wäre einfacher — aber schon ein Layoutsprung löst ein
+    // Scroll-Ereignis aus, und die Erklärung wäre weg, kaum geöffnet.
+    render(<MitFachworten text="Das nennt man XOR." />);
+    fireEvent.click(screen.getByText("XOR"));
+    fireEvent.scroll(window);
+    expect(screen.queryByRole("tooltip")).toBeTruthy();
+  });
+
   it("schließt wieder", () => {
     render(<MitFachworten text="Das nennt man XOR." />);
     fireEvent.click(screen.getByText("XOR"));
