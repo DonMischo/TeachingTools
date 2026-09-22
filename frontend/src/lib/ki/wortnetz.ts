@@ -22,7 +22,11 @@
 
 export type Wortart =
   | "artikel" | "adjektiv" | "nomen" | "verb"
-  | "adverb" | "praeposition" | "konjunktion" | "punkt";
+  | "adverb" | "praeposition" | "konjunktion" | "punkt"
+  // Gelernte Netze (aus einem Korpus gezählt) kennen keine Wortarten: niemand
+  // hat sie eingetragen, und raten würde die Sache nur verfälschen. Für sie
+  // steht jedes Wort außer dem Punkt auf »unbekannt«.
+  | "unbekannt";
 
 export const ART_LABEL: Record<Wortart, string> = {
   artikel: "Artikel",
@@ -33,6 +37,7 @@ export const ART_LABEL: Record<Wortart, string> = {
   praeposition: "Präposition",
   konjunktion: "Bindewort",
   punkt: "Satzzeichen",
+  unbekannt: "Wort",
 };
 
 /**
@@ -58,6 +63,9 @@ export const ERLAUBT: Record<Wortart, Wortart[]> = {
   konjunktion: ["artikel", "adverb", "nomen"],
   // Nach dem Punkt fängt ein neuer Satz an — der kommt aus der Startliste.
   punkt: [],
+  // Gezählte Netze prüft der Satzbauplan nicht: was im Korpus stand, steht im
+  // Netz. Die Grammatik kommt dort aus dem Text, nicht aus einer Regel.
+  unbekannt: ["unbekannt", "punkt"],
 };
 
 /**
@@ -83,12 +91,41 @@ export type Netz = {
   titel: string;
   icon: string;
   prompt: string;
+  /**
+   * Woher die Zahlen kommen — und das ist der ganze Unterschied:
+   *
+   *   »kuratiert«  von Hand eingetragen (netze.ts), auf Grammatik geprüft.
+   *   »gelernt«    aus einem Text gezählt (trainieren.ts). Niemand hat die
+   *                Wahrscheinlichkeiten festgelegt, sie *sind* die Häufigkeiten
+   *                im Korpus. So entsteht auch ein echtes Sprachmodell — nur
+   *                mit sehr viel mehr Text.
+   */
+  art: "kuratiert" | "gelernt";
+  /**
+   * Rückblick: auf wie viele Wörter zugleich geschaut wird (1, 2 oder 3).
+   * 1 = gar kein Zusammenhang (Wortsalat), 2 = das letzte Wort (Bigramm),
+   * 3 = die letzten zwei (Trigramm).
+   */
+  n: number;
   woerter: Wort[];
   /** Womit ein Satz anfangen darf. */
   start: Kandidat[];
-  /** Was auf ein Wort folgen darf, absteigend nach Wahrscheinlichkeit. */
-  folgt: Map<number, Kandidat[]>;
+  /**
+   * Was folgen darf. Der Schlüssel ist der Rückblick: die letzten n−1 Wort-Ids
+   * mit Komma verbunden (bei n = 1 der leere Schlüssel). Ein Bigramm hat also
+   * »17«, ein Trigramm »17,42«.
+   */
+  folgt: Map<string, Kandidat[]>;
+  /** Bei gelernten Netzen: woraus gezählt wurde, und wie viel. */
+  quelle?: string;
+  statistik?: { woerter: number; verschiedene: number; uebergaenge: number };
 };
+
+/** Der Nachschlage-Schlüssel für einen Rückblick von n Wörtern. */
+export function schluessel(verlauf: readonly Wort[], n: number): string {
+  if (n <= 1) return "";
+  return verlauf.slice(-(n - 1)).map(w => w.id).join(",");
+}
 
 /** Die Schreibweise der Inhaltsdatei — Gewichte als ganze Zahlen. */
 export type NetzRoh = {
@@ -142,7 +179,7 @@ export function baueNetz(roh: NetzRoh): Netz {
   }
 
   const start = normiere(roh.start, nach, `${roh.slug}/start`);
-  const folgt = new Map<number, Kandidat[]>();
+  const folgt = new Map<string, Kandidat[]>();
   for (const [text, ziele] of Object.entries(roh.folgt)) {
     const von = nach.get(text);
     if (!von) throw new NetzFehler(`${roh.slug}/folgt: »${text}« steht in keiner Wortliste.`);
@@ -160,12 +197,12 @@ export function baueNetz(roh: NetzRoh): Netz {
           `[${k.wort.merkmale.join(" ")}] passt in Fall oder Geschlecht nicht zusammen.`);
       }
     }
-    folgt.set(von.id, kandidaten);
+    folgt.set(String(von.id), kandidaten);
   }
 
   // Keine Sackgassen: nur der Punkt darf ohne Fortsetzung dastehen.
   for (const w of woerter) {
-    if (w.art !== "punkt" && !folgt.has(w.id)) {
+    if (w.art !== "punkt" && !folgt.has(String(w.id))) {
       throw new NetzFehler(`${roh.slug}: »${w.text}« hat keine Fortsetzung — der Text bliebe dort stecken.`);
     }
   }
@@ -175,7 +212,7 @@ export function baueNetz(roh: NetzRoh): Netz {
   const rand = [...erreicht];
   while (rand.length) {
     const id = rand.pop()!;
-    for (const k of folgt.get(id) ?? []) {
+    for (const k of folgt.get(String(id)) ?? []) {
       if (!erreicht.has(k.wort.id)) { erreicht.add(k.wort.id); rand.push(k.wort.id); }
     }
   }
@@ -184,7 +221,10 @@ export function baueNetz(roh: NetzRoh): Netz {
     throw new NetzFehler(`${roh.slug}: unerreichbar — ${waisen.map(w => `»${w.text}«`).join(", ")}.`);
   }
 
-  return { slug: roh.slug, titel: roh.titel, icon: roh.icon, prompt: roh.prompt, woerter, start, folgt };
+  return {
+    slug: roh.slug, titel: roh.titel, icon: roh.icon, prompt: roh.prompt,
+    art: "kuratiert", n: 2, woerter, start, folgt,
+  };
 }
 
 /** Wie viele Vorschläge der Regler »Auswahl« zeigt (top-k, 1 bis 6). */
@@ -193,14 +233,39 @@ export function anzahlAuswahl(mut: number): number {
 }
 
 /**
- * Die angebotenen nächsten Wörter.
+ * Alle Fortsetzungen zu einem Verlauf — mit Rückfallebene.
  *
- * Ohne Vorgänger — am Anfang und nach jedem Punkt — kommen sie aus der
- * Startliste: ein neuer Satz fängt nicht mitten im alten an.
+ * Gefragt wird zuerst mit dem vollen Rückblick (bei einem Trigramm: die
+ * letzten zwei Wörter). Steht diese Kombination nicht im Netz, weil sie so im
+ * Korpus nie vorkam, wird der Rückblick um ein Wort gekürzt und erneut
+ * gefragt — bis notfalls nur noch gezählt wird, wie häufig ein Wort überhaupt
+ * ist. Fachleute nennen das Backoff; im Werkzeug ist es der ehrliche Satz
+ * »diese Kombination kenne ich nicht, ich schaue kürzer zurück«.
  */
-export function kandidaten(netz: Netz, von: Wort | null, mut: number): Kandidat[] {
-  const alle = !von || von.art === "punkt" ? netz.start : netz.folgt.get(von.id) ?? [];
-  return alle.slice(0, anzahlAuswahl(mut));
+export function fortsetzungen(netz: Netz, verlauf: readonly Wort[]): {
+  kandidaten: Kandidat[];
+  /** Mit wie vielen Wörtern Rückblick die Antwort kam (≤ netz.n). */
+  rueckblick: number;
+} {
+  const letztes = verlauf[verlauf.length - 1] ?? null;
+  // Am Anfang und nach jedem Punkt: ein neuer Satz fängt nicht mitten im alten
+  // an, die Startliste ist dafür da.
+  if (!letztes || letztes.art === "punkt") return { kandidaten: netz.start, rueckblick: netz.n };
+  for (let n = netz.n; n >= 1; n--) {
+    const treffer = netz.folgt.get(schluessel(verlauf, n));
+    if (treffer?.length) return { kandidaten: treffer, rueckblick: n };
+  }
+  return { kandidaten: [], rueckblick: 1 };
+}
+
+/**
+ * Die angebotenen nächsten Wörter — gekürzt auf das, was der Regler zulässt.
+ *
+ * `verlauf` ist der ganze bisherige Text, nicht nur das letzte Wort: ein
+ * Trigramm schaut zwei Wörter zurück, und nur der Verlauf weiß, welche.
+ */
+export function kandidaten(netz: Netz, verlauf: readonly Wort[], mut: number): Kandidat[] {
+  return fortsetzungen(netz, verlauf).kandidaten.slice(0, anzahlAuswahl(mut));
 }
 
 /**
@@ -211,6 +276,9 @@ export function kandidaten(netz: Netz, von: Wort | null, mut: number): Kandidat[
  * damit zwei Geräte dasselbe zeigen.
  */
 export function lockvoegel(netz: Netz, von: Wort | null, anzahl = 2): { wort: Wort; grund: string }[] {
+  // Gelernte Netze haben keine Wortarten — dort gäbe es nichts zu begründen,
+  // und ein geratener Grund wäre schlimmer als keiner.
+  if (netz.art === "gelernt") return [];
   const erlaubt: readonly Wortart[] = von && von.art !== "punkt"
     ? ERLAUBT[von.art]
     : ["artikel", "adverb", "nomen"];

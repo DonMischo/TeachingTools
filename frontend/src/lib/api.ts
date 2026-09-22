@@ -1337,9 +1337,13 @@ export type SimBeitragOut = {
   wert: number;
   mut: number;
   signatur: string;
+  /** "text" = Tafel, "korpus" = ein Satz fuer das Klassenmodell. */
+  art: SimBeitragArt;
   /** Der eigene Beitrag, damit die Tafel ihn hervorheben kann. */
   selbst: boolean;
 };
+
+export type SimBeitragArt = "text" | "korpus";
 
 export type SimBeitragIn = {
   name: string;
@@ -1348,6 +1352,7 @@ export type SimBeitragIn = {
   wert: number;
   mut: number;
   signatur: string;
+  art?: SimBeitragArt;
 };
 
 /** Eine laufende Sitzung in der Übersicht (siehe api/routers/play.py). */
@@ -1546,10 +1551,11 @@ export const api = {
         headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
       }),
     /** Die Tafel der KI-Werkstatt: alle Texte einer Sitzung. */
-    beitraege: (code: string, guestToken?: string | null) =>
-      apiFetch<SimBeitragOut[]>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, {
-        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
-      }),
+    beitraege: (code: string, guestToken?: string | null, art: SimBeitragArt = "text") =>
+      apiFetch<SimBeitragOut[]>(
+        `tool-sessions/${encodeURIComponent(code)}/beitraege?art=${art}`, {
+          headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+        }),
     beitragAbgeben: (code: string, body: SimBeitragIn, guestToken?: string | null) =>
       apiFetch<SimBeitragOut>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, {
         method: "POST",
@@ -1557,8 +1563,9 @@ export const api = {
         headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
       }),
     /** Runde leeren — nur für die Lehrkraft, der die Sitzung gehört. */
-    beitraegeLeeren: (code: string) =>
-      apiFetch<void>(`tool-sessions/${encodeURIComponent(code)}/beitraege`, { method: "DELETE" }),
+    beitraegeLeeren: (code: string, art: SimBeitragArt = "text") =>
+      apiFetch<void>(`tool-sessions/${encodeURIComponent(code)}/beitraege?art=${art}`,
+        { method: "DELETE" }),
   },
 
   // Offline-Dateien (siehe api/routers/standalone.py)

@@ -126,20 +126,20 @@ describe("Vorschläge", () => {
   it("zeigt bei Mut 0 genau einen Vorschlag und steigert sich bis sechs", () => {
     expect(anzahlAuswahl(0)).toBe(1);
     expect(anzahlAuswahl(5)).toBe(6);
-    expect(kandidaten(katze, null, 0)).toHaveLength(1);
-    expect(kandidaten(katze, null, 5).length).toBeLessThanOrEqual(6);
+    expect(kandidaten(katze, [], 0)).toHaveLength(1);
+    expect(kandidaten(katze, [], 5).length).toBeLessThanOrEqual(6);
   });
 
   it("fängt nach dem Punkt einen neuen Satz an", () => {
     const punkt = katze.woerter.find(w => w.art === "punkt")!;
-    expect(kandidaten(katze, punkt, 5).map(k => k.wort.text))
-      .toEqual(kandidaten(katze, null, 5).map(k => k.wort.text));
+    expect(kandidaten(katze, [punkt], 5).map(k => k.wort.text))
+      .toEqual(kandidaten(katze, [], 5).map(k => k.wort.text));
   });
 
   it("schlägt nur grammatisch mögliche Wörter vor", () => {
     for (const netz of NETZE) {
       for (const wort of netz.woerter) {
-        for (const k of kandidaten(netz, wort, 5)) {
+        for (const k of kandidaten(netz, [wort], 5)) {
           const erlaubt = wort.art === "punkt"
             ? ["artikel", "adverb", "nomen"]
             : ERLAUBT[wort.art];
@@ -163,7 +163,7 @@ describe("Vorschläge", () => {
 
 describe("Würfeln und Rechnen", () => {
   it("wählt immer eines der angebotenen Wörter", () => {
-    const ks = kandidaten(katze, null, 5);
+    const ks = kandidaten(katze, [], 5);
     const wuerfel = rng(7);
     for (let i = 0; i < 200; i++) {
       expect(ks).toContain(maschinenwahl(ks, wuerfel));
@@ -171,7 +171,7 @@ describe("Würfeln und Rechnen", () => {
   });
 
   it("würfelt mit demselben Startwert dieselbe Folge", () => {
-    const ks = kandidaten(katze, null, 5);
+    const ks = kandidaten(katze, [], 5);
     const lauf = (seed: number) => {
       const wuerfel = rng(seed);
       return Array.from({ length: 20 }, () => maschinenwahl(ks, wuerfel).wort.text);
@@ -217,7 +217,7 @@ describe("Text schreiben", () => {
         // Wer die Grenze reißt, hat eine Schleife gebaut, aus der das Netz
         // nicht mehr zum Punkt findet.
         for (let schritt = 0; schritt < 120 && saetze < 3; schritt++) {
-          const ks = kandidaten(netz, vorher, 5);
+          const ks = kandidaten(netz, vorher ? [vorher] : [], 5);
           if (!ks.length) { fehler.push(`${netz.slug}: Sackgasse hinter »${vorher?.text}«`); break; }
           const gewaehlt = maschinenwahl(ks, wuerfel).wort;
           if (vorher && vorher.art !== "punkt" && !ERLAUBT[vorher.art].includes(gewaehlt.art)) {

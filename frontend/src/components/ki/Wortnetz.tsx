@@ -17,7 +17,7 @@
  */
 import { useMemo, useState } from "react";
 import {
-  kandidaten, lockvoegel, maschinenwahl, anzahlAuswahl,
+  fortsetzungen, lockvoegel, maschinenwahl, anzahlAuswahl,
   type Kandidat, type Netz, type Wort,
 } from "@/lib/ki/wortnetz";
 
@@ -99,9 +99,10 @@ function Knoten({ angebot, x, y, i, onWaehlen }: {
   );
 }
 
-export function WortnetzBuehne({ netz, letztes, mut, onMut, onWaehlen, wuerfel }: {
+export function WortnetzBuehne({ netz, verlauf, mut, onMut, onWaehlen, wuerfel }: {
   netz: Netz;
-  letztes: Wort | null;
+  /** Der ganze bisherige Text: ein Trigramm schaut zwei Wörter zurück. */
+  verlauf: readonly Wort[];
   mut: number;
   onMut: (m: number) => void;
   onWaehlen: (k: Kandidat) => void;
@@ -109,8 +110,12 @@ export function WortnetzBuehne({ netz, letztes, mut, onMut, onWaehlen, wuerfel }
 }) {
   const [hinweis, setHinweis] = useState<string | null>(null);
 
-  const kands = useMemo(() => kandidaten(netz, letztes, mut), [netz, letztes, mut]);
+  const letztes = verlauf.length ? verlauf[verlauf.length - 1] : null;
+  const antwort = useMemo(() => fortsetzungen(netz, verlauf), [netz, verlauf]);
+  const kands = useMemo(() => antwort.kandidaten.slice(0, anzahlAuswahl(mut)), [antwort, mut]);
   const locker = useMemo(() => lockvoegel(netz, letztes, kands.length >= 5 ? 1 : 2), [netz, letztes, kands.length]);
+  // Musste das Netz kürzer zurückschauen, als es könnte? Dann sagt es das auch.
+  const gekuerzt = antwort.rueckblick < netz.n && !!letztes && letztes.art !== "punkt";
 
   const angebote: Angebot[] = [
     ...kands.map(k => ({ art: "kandidat" as const, wort: k.wort, p: k.p })),
@@ -178,6 +183,14 @@ export function WortnetzBuehne({ netz, letztes, mut, onMut, onWaehlen, wuerfel }
       {hinweis && (
         <p className="text-sm rounded-xl px-3 py-2 border border-[var(--red)] text-[var(--text)]">
           🚫 {hinweis}
+        </p>
+      )}
+
+      {gekuerzt && (
+        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          🔎 Diese Wortfolge stand so nie im Text — das Netz schaut deshalb gerade nur
+          {" "}{antwort.rueckblick === 1 ? "auf die Worthäufigkeit" : "ein Wort"} zurück
+          statt {netz.n - 1}. Fachleute nennen das Rückfall (»Backoff«).
         </p>
       )}
 

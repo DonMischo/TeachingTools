@@ -2026,6 +2026,12 @@ class SimBeitrag(Base):
     # Reglerstellung »Auswahl« (0–5) und der Fingerabdruck der Wortwahl.
     mut: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     signatur: Mapped[str] = mapped_column(String(16), nullable=False, server_default="")
+    # Wozu der Beitrag gehoert:
+    #   "text"   ein geschriebener Text fuer die Tafel (Station 4)
+    #   "korpus" ein Satz fuer den Klassenkorpus, aus dem trainiert wird
+    # Je Teilnehmer bleibt pro Art *ein* Beitrag stehen: wer einen Korpussatz
+    # abgibt, verliert damit nicht seinen Text auf der Tafel.
+    art: Mapped[str] = mapped_column(String(20), nullable=False, server_default="text")
     erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     session: Mapped["ToolSession"] = relationship()

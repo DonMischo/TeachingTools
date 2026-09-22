@@ -20,9 +20,11 @@ import { zerlege } from "@/lib/ki/tokenizer";
 import { Zerleger } from "@/components/ki/Zerleger";
 import { WortnetzBuehne } from "@/components/ki/Wortnetz";
 import { Vergleich } from "@/components/ki/Vergleich";
+import { Trainieren } from "@/components/ki/Trainieren";
+import { Wissen } from "@/components/ki/Wissen";
 import type { KiZugang } from "@/components/ki/KiWerkstatt";
 
-type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis";
+type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis" | "trainieren";
 
 const STATIONEN: { id: Station; nr: number; titel: string }[] = [
   { id: "auftrag", nr: 1, titel: "Auftrag" },
@@ -37,6 +39,22 @@ type Schritt = { wort: Wort; p: number };
 function Schritte({ station, auf }: { station: Station; auf: (s: Station) => void }) {
   return (
     <ol className="flex flex-wrap items-center gap-1 text-xs">
+      {/* Trainieren steht neben dem Lehrgang, nicht darin: die Station lässt
+          sich jederzeit öffnen und führt von sich aus zum Schreiben weiter. */}
+      <li className="flex items-center gap-1 mr-1">
+        <button
+          type="button"
+          onClick={() => auf("trainieren")}
+          className={`px-2.5 py-1 rounded-lg border font-bold ${
+            station === "trainieren"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+              : "border-[var(--border)] bg-[var(--surface)]"
+          }`}
+        >
+          🧪 Trainieren
+        </button>
+        <span className="text-[var(--text-muted)]">|</span>
+      </li>
       {STATIONEN.map((s, i) => {
         const aktiv = s.id === station;
         const erledigt = STATIONEN.findIndex(x => x.id === station) > i;
@@ -100,8 +118,12 @@ export function Sprachmodell({ zugang, onSignatur }: {
   const [schritte, setSchritte] = useState<Schritt[]>([]);
   const [mut, setMut] = useState(3);
   const [quote, setQuote] = useState<number | null>(null);
+  // Ein selbst gezähltes Netz ersetzt das kuratierte, solange es da ist.
+  const [gelernt, setGelernt] = useState<Netz | null>(null);
 
-  const netz: Netz = useMemo(() => netzMit(thema), [thema]);
+  const netz: Netz = useMemo(() => gelernt ?? netzMit(thema), [gelernt, thema]);
+  // Der Verlauf als reine Wortliste — so weit zurück, wie das Netz schaut.
+  const verlauf = useMemo(() => schritte.map(s => s.wort), [schritte]);
   const letztes = schritte.length ? schritte[schritte.length - 1].wort : null;
   const saetze = schritte.filter(s => s.wort.art === "punkt").length;
   const fertigMoeglich = letztes?.art === "punkt";
@@ -170,26 +192,63 @@ export function Sprachmodell({ zugang, onSignatur }: {
               Los →
             </button>
           </div>
+
+          <Wissen thema="auftrag" />
         </div>
       )}
 
-      {station === "zerlegen" && (
-        <Zerleger
-          text={netz.prompt}
-          onWeiter={q => { setQuote(q); setStation("schreiben"); }}
+      {station === "trainieren" && (
+        <Trainieren
+          zugang={zugang}
+          aktiv={gelernt}
+          onNetz={n => { setGelernt(n); setSchritte([]); setStation("schreiben"); }}
         />
+      )}
+
+      {station === "zerlegen" && (
+        <div className="flex flex-col gap-4">
+          <Zerleger
+            text={netz.prompt}
+            onWeiter={q => { setQuote(q); setStation("schreiben"); }}
+          />
+          <Wissen thema="zerlegen" />
+        </div>
       )}
 
       {station === "schreiben" && (
         <div className="flex flex-col gap-4">
+          {gelernt && (
+            <div className="flex items-center gap-2 flex-wrap text-sm p-3 rounded-2xl
+              border border-[var(--accent)] bg-[var(--surface)]">
+              <span aria-hidden>🧪</span>
+              <span>
+                Du schreibst mit einem <b>selbst gezählten</b> Netz:
+                {" "}{gelernt.quelle}, Rückblick {gelernt.n}.
+              </span>
+              <button
+                type="button"
+                onClick={() => { setGelernt(null); setSchritte([]); }}
+                className="px-2.5 py-1 rounded-lg border border-[var(--border)]
+                  bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-xs font-bold"
+              >
+                zurück zum fertigen Netz
+              </button>
+            </div>
+          )}
+
           <WortnetzBuehne
             netz={netz}
-            letztes={letztes}
+            verlauf={verlauf}
             mut={mut}
             onMut={setMut}
             onWaehlen={waehlen}
             wuerfel={wuerfel}
           />
+
+          <div className="flex flex-col gap-3">
+            <Wissen thema="netz" />
+            <Wissen thema="auswahl" />
+          </div>
 
           <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
@@ -243,6 +302,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
           onWeiterschreiben={() => setStation("schreiben")}
         />
       )}
+
+      {station === "ergebnis" && <Wissen thema="ergebnis" />}
     </div>
   );
 }

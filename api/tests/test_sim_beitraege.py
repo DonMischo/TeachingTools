@@ -22,9 +22,10 @@ def _gast(client, token, code):
     return token
 
 
-def _beitrag(name="Mia", text="Die Katze schläft.", wert=0.4, mut=3, thema="katze"):
+def _beitrag(name="Mia", text="Die Katze schläft.", wert=0.4, mut=3, thema="katze",
+             art="text"):
     return {"name": name, "text": text, "wert": wert, "mut": mut, "thema": thema,
-            "signatur": "AB1-C23"}
+            "signatur": "AB1-C23", "art": art}
 
 
 def test_lehrkraft_gibt_ab_und_sieht_sich_selbst(client, teacher_token):
@@ -121,3 +122,66 @@ def test_geschlossene_sitzung_nimmt_nichts_mehr_an(client, teacher_token):
     r = client.post(f"/api/tool-sessions/{code}/beitraege", json=_beitrag(),
                     headers=auth(teacher_token))
     assert r.status_code == 403
+
+
+# ───────────────────────────────────────────────── Klassenkorpus ──
+# Die zweite Sorte Beitrag: Saetze, aus denen die Klasse ihr eigenes Modell
+# zaehlt. Sie teilt sich die Tabelle mit der Tafel und darf ihr trotzdem nie in
+# die Quere kommen.
+
+def test_korpus_und_tafel_stehen_nebeneinander(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    client.post(f"/api/tool-sessions/{code}/beitraege", json=_beitrag(),
+                headers=auth(teacher_token))
+    client.post(f"/api/tool-sessions/{code}/beitraege",
+                json=_beitrag(text="Der Hund bellt laut.", art="korpus"),
+                headers=auth(teacher_token))
+
+    tafel = client.get(f"/api/tool-sessions/{code}/beitraege",
+                       headers=auth(teacher_token)).json()
+    korpus = client.get(f"/api/tool-sessions/{code}/beitraege", params={"art": "korpus"},
+                        headers=auth(teacher_token)).json()
+    # Derselbe Teilnehmer hat beides — der Korpussatz hat den Text nicht ersetzt.
+    assert [b["text"] for b in tafel] == ["Die Katze schläft."]
+    assert [b["text"] for b in korpus] == ["Der Hund bellt laut."]
+    assert korpus[0]["art"] == "korpus"
+
+
+def test_korpus_behaelt_die_reihenfolge_der_abgabe(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    token = _gast(client, teacher_token, code)
+    client.post(f"/api/tool-sessions/{code}/beitraege",
+                json=_beitrag(name="Gast", text="Zuerst.", wert=0.9, art="korpus"),
+                headers=auth(token))
+    client.post(f"/api/tool-sessions/{code}/beitraege",
+                json=_beitrag(name="Lehrkraft", text="Danach.", wert=0.1, art="korpus"),
+                headers=auth(teacher_token))
+    korpus = client.get(f"/api/tool-sessions/{code}/beitraege", params={"art": "korpus"},
+                        headers=auth(teacher_token)).json()
+    # Nach Abgabe sortiert, nicht nach Erwartbarkeit: eine Rangliste von
+    # Korpussaetzen waere sinnlos.
+    assert [b["text"] for b in korpus] == ["Zuerst.", "Danach."]
+
+
+def test_tafel_leeren_laesst_den_korpus_stehen(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    client.post(f"/api/tool-sessions/{code}/beitraege", json=_beitrag(),
+                headers=auth(teacher_token))
+    client.post(f"/api/tool-sessions/{code}/beitraege",
+                json=_beitrag(text="Bleibt stehen.", art="korpus"),
+                headers=auth(teacher_token))
+
+    assert client.delete(f"/api/tool-sessions/{code}/beitraege",
+                         headers=auth(teacher_token)).status_code == 204
+    korpus = client.get(f"/api/tool-sessions/{code}/beitraege", params={"art": "korpus"},
+                        headers=auth(teacher_token)).json()
+    assert [b["text"] for b in korpus] == ["Bleibt stehen."]
+
+
+def test_unbekannte_art_wird_abgelehnt(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    r = client.post(f"/api/tool-sessions/{code}/beitraege", json=_beitrag(art="quatsch"),
+                    headers=auth(teacher_token))
+    assert r.status_code == 422
+    assert client.get(f"/api/tool-sessions/{code}/beitraege", params={"art": "quatsch"},
+                      headers=auth(teacher_token)).status_code == 422

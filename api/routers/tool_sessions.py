@@ -157,6 +157,11 @@ def session_content(code: str, db: Session = Depends(get_db), _player=Depends(ge
 BEITRAG_TOOLS = ("ki",)
 
 
+# Welche Sorten Beitrag es gibt. "text" ist die Tafel (ein geschriebener Text),
+# "korpus" ist der Lesestoff fuers Trainieren (ein Satz je Kind).
+BEITRAG_ARTEN = ("text", "korpus")
+
+
 class BeitragIn(BaseModel):
     name: str
     thema: str = ""
@@ -164,6 +169,7 @@ class BeitragIn(BaseModel):
     wert: float = 0.0
     mut: int = 0
     signatur: str = ""
+    art: str = "text"
 
 
 class BeitragOut(BaseModel):
@@ -174,6 +180,7 @@ class BeitragOut(BaseModel):
     wert: float
     mut: int
     signatur: str
+    art: str
     selbst: bool
 
 
@@ -209,11 +216,17 @@ def beitrag_abgeben(
     text = body.text.strip()
     if not text:
         raise HTTPException(422, "Der Text ist leer.")
+    if body.art not in BEITRAG_ARTEN:
+        raise HTTPException(422, f"Unbekannte Art: {body.art}")
 
     wer = _teilnehmer(spieler)
-    beitrag = db.query(SimBeitrag).filter_by(session_id=session.id, **wer).first()
+    beitrag = (
+        db.query(SimBeitrag)
+        .filter_by(session_id=session.id, art=body.art, **wer)
+        .first()
+    )
     if beitrag is None:
-        beitrag = SimBeitrag(session_id=session.id, **wer)
+        beitrag = SimBeitrag(session_id=session.id, art=body.art, **wer)
         db.add(beitrag)
     beitrag.name = (body.name or "").strip()[:100] or "Jemand"
     beitrag.thema = body.thema[:50]
@@ -230,19 +243,35 @@ def _beitrag_out(b: SimBeitrag, wer: dict) -> BeitragOut:
     selbst = all(getattr(b, spalte) == wert for spalte, wert in wer.items())
     return BeitragOut(
         id=b.id, name=b.name, thema=b.thema, text=b.text,
-        wert=b.wert, mut=b.mut, signatur=b.signatur, selbst=selbst,
+        wert=b.wert, mut=b.mut, signatur=b.signatur, art=b.art, selbst=selbst,
     )
 
 
 @router.get("/{code}/beitraege", response_model=list[BeitragOut])
-def beitraege(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
-    """Die Tafel: alle Texte der Sitzung, der erwartbarste zuerst."""
+def beitraege(
+    code: str,
+    art: str = "text",
+    db: Session = Depends(get_db),
+    spieler=Depends(get_player),
+):
+    """Die Tafel: alle Texte der Sitzung, der erwartbarste zuerst.
+
+    Mit ``?art=korpus`` stattdessen die gesammelten Saetze fuers Trainieren —
+    die stehen in der Reihenfolge ihrer Abgabe, eine Rangliste waere dort
+    sinnlos.
+    """
     session = _beitrag_session(code, db)
+    if art not in BEITRAG_ARTEN:
+        raise HTTPException(422, f"Unbekannte Art: {art}")
     wer = _teilnehmer(spieler)
+    sortierung = (
+        (SimBeitrag.id,) if art == "korpus"
+        else (SimBeitrag.wert.desc(), SimBeitrag.id)
+    )
     zeilen = (
         db.query(SimBeitrag)
-        .filter_by(session_id=session.id)
-        .order_by(SimBeitrag.wert.desc(), SimBeitrag.id)
+        .filter_by(session_id=session.id, art=art)
+        .order_by(*sortierung)
         .all()
     )
     return [_beitrag_out(b, wer) for b in zeilen]
@@ -251,12 +280,19 @@ def beitraege(code: str, db: Session = Depends(get_db), spieler=Depends(get_play
 @router.delete("/{code}/beitraege", status_code=204)
 def beitraege_leeren(
     code: str,
+    art: str = "text",
     db: Session = Depends(get_db),
     teacher: Teacher = Depends(get_current_teacher),
 ):
-    """Runde leeren — nur die Lehrkraft, der die Sitzung gehört."""
+    """Runde leeren — nur die Lehrkraft, der die Sitzung gehört.
+
+    Geleert wird genau eine Sorte: Wer die Tafel abraeumt, verliert nicht den
+    muehsam gesammelten Klassenkorpus.
+    """
     session = _beitrag_session(code, db)
+    if art not in BEITRAG_ARTEN:
+        raise HTTPException(422, f"Unbekannte Art: {art}")
     if session.created_by != teacher.id and teacher.role != "admin":
         raise HTTPException(403, "Diese Sitzung gehört jemand anderem.")
-    db.query(SimBeitrag).filter_by(session_id=session.id).delete()
+    db.query(SimBeitrag).filter_by(session_id=session.id, art=art).delete()
     db.commit()
