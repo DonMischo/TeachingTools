@@ -176,6 +176,48 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  verrauschen: {
+    titel: "Warum macht man ein Bild erst kaputt?",
+    stufen: {
+      "5-7": [
+        "Ein Bildmodell lernt genau eine Sache: Rauschen wieder wegnehmen.",
+        "Zum Üben braucht es Paare — ein sauberes Bild und dasselbe Bild mit Rauschen. Die bekommt man geschenkt: Man nimmt ein Foto und schüttet selbst Rauschen darüber. Millionen Übungsaufgaben, ohne dass jemand etwas erklären muss.",
+        "Und weil man dabei genau weiß, wie viel Rauschen man dazugetan hat, weiß man auch immer die richtige Antwort.",
+      ],
+      "8+": [
+        "Der Hinweg heißt Vorwärtsprozess und ist reine Rechnung: x_t = √ᾱ·x₀ + √(1−ᾱ)·ε. Das Bild wird leiser gedreht, das Rauschen lauter — nach einem festen Fahrplan.",
+        "Der Trick daran ist das Erzeugen von Trainingsdaten: Zu jedem verrauschten Bild ist das hinzugefügte Rauschen bekannt. Das Modell wird darauf trainiert, genau dieses Rauschen vorherzusagen; die Abweichung ist sein Fehler.",
+        "Der Fahrplan ist mit Absicht ungleichmäßig: Am Anfang wird wenig zerstört (feine Details), am Ende viel (grobe Struktur). Beim Erzeugen läuft es andersherum — erst grobe Flächen, dann Details.",
+      ],
+      "10+": [
+        "Formal ist der Vorwärtsprozess eine Markow-Kette, die die Datenverteilung in eine Standardnormalverteilung überführt. Weil sich die Schritte zusammenfassen lassen, kommt man in einem Sprung zu jedem beliebigen t — das macht das Training überhaupt bezahlbar.",
+        "Trainiert wird auf einen einfachen Fehler: Vorhersage des Rauschens ε mit quadratischer Abweichung. Dass daraus ein Bildgenerator wird, liegt an einem Zusammenhang aus der Statistik — das vorhergesagte Rauschen ist bis auf einen Faktor die Richtung, in der die Wahrscheinlichkeitsdichte wächst (der Score).",
+        "Stable Diffusion & Co. tun das nicht auf Pixeln, sondern in einem komprimierten Raum (Latent Diffusion): Ein Autoencoder verkleinert das Bild um etwa den Faktor acht je Kante, was den Rechenaufwand drastisch senkt.",
+      ],
+    },
+  },
+
+  entrauschen: {
+    titel: "Wie wird aus Rauschen ein Bild?",
+    stufen: {
+      "5-7": [
+        "Das Modell malt kein Bild. Es schubst jeden Punkt immer wieder ein kleines Stück dorthin, wo es wahrscheinlicher wird — dreißigmal hintereinander.",
+        "Am Anfang sieht man gar nichts. Dann tauchen grobe Flächen auf, dann Formen, ganz zum Schluss die feinen Sachen.",
+        "Der Seed ist der Würfel am Anfang. Mit demselben Seed kommt immer genau dasselbe Bild heraus — jedes Mal wieder.",
+      ],
+      "8+": [
+        "In jedem Schritt schätzt das Modell: Welcher Teil von dem, was ich sehe, ist Rauschen? Dann zieht es einen Teil davon ab und würfelt ein bisschen neues dazu. Nach vielen Schritten ist vom Rauschen nichts mehr übrig.",
+        "Die Punktwolke hier rechnet das wirklich aus, weil das Ziel bekannt ist — vier Formen statt aller Bilder der Welt. Deshalb braucht sie kein Training und läuft auf jedem Telefon.",
+        "Der Regler »Prompt-Stärke« heißt bei Bildgeneratoren Guidance: Er bestimmt, wie streng sich das Modell an den Wunsch hält. Zu niedrig kommt irgendetwas heraus, zu hoch wird es überzeichnet — der beste Bereich liegt in der Mitte.",
+      ],
+      "10+": [
+        "Der Rückweg ist ein gelerntes Umkehren der Kette: x_{t−1} = 1/√α·(x_t + (1−α)·∇log q(x_t)) + √β·z. Für eine bekannte Verteilung — wie unsere Punktwolke — lässt sich der Score exakt angeben, für Bilder muss ihn ein Netz schätzen.",
+        "Classifier-Free Guidance interpoliert zwischen bedingtem und unbedingtem Score: s = s_uncond + w·(s_cond − s_uncond). Für w > 1 wird über den bedingten Score hinaus extrapoliert — das schärft die Übereinstimmung mit dem Prompt und erkauft sie mit Vielfalt und Artefakten.",
+        "Genau diesen Bogen kannst du hier messen: Die Trefferquote steigt bis ungefähr w = 4 und fällt danach wieder. Deshalb steht die Guidance in echten Werkzeugen selten über 10.",
+      ],
+    },
+  },
+
   attention: {
     titel: "Wie schafft ein Modell das, was unser Netz nicht kann?",
     stufen: {

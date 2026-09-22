@@ -20,6 +20,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { rng, seedAusSignatur } from "@/lib/ki/rng";
+import { Punktwolke } from "@/components/ki/Punktwolke";
+import { Wissen } from "@/components/ki/Wissen";
 
 const GROESSE = 256;
 const SCHRITTE = 20;
@@ -123,6 +125,8 @@ export function Bilder({ signatur }: { signatur: string | null }) {
   const [folgen, setFolgen] = useState<Folge[]>([]);
   const [folgeNr, setFolgeNr] = useState(0);
   const [zipFehler, setZipFehler] = useState<string | null>(null);
+  // Der dritte Weg: nicht Pixel abspielen, sondern Punkte wirklich entrauschen.
+  const [punktmodus, setPunktmodus] = useState(false);
 
   const seed = useMemo(
     () => (signatur ? seedAusSignatur(signatur) : 20260905),
@@ -213,17 +217,24 @@ export function Bilder({ signatur }: { signatur: string | null }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap gap-2">
-        <Umschalter an={richtung === "vor"} onClick={() => { setRichtung("vor"); setLaeuft(false); setT(0); }}>
+        <Umschalter an={richtung === "vor" && !punktmodus} onClick={() => { setPunktmodus(false); setRichtung("vor"); setLaeuft(false); setT(0); }}>
           🌫️ Verrauschen
         </Umschalter>
-        <Umschalter an={richtung === "rueck"} onClick={() => {
+        <Umschalter an={richtung === "rueck" && !punktmodus} onClick={() => {
+          setPunktmodus(false);
           setRichtung("rueck"); setLaeuft(false);
           setT(folge ? folge.bilder.length - 1 : SCHRITTE);
         }}>
           ✨ Entrauschen
         </Umschalter>
+        <Umschalter an={punktmodus} onClick={() => { setPunktmodus(true); setLaeuft(false); }}>
+          🔵 Punktwolke
+        </Umschalter>
       </div>
 
+      {punktmodus && <Punktwolke signatur={signatur} />}
+
+      {!punktmodus && (
       <div className="flex flex-col sm:flex-row gap-5 items-start">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
           {zeigtFolge ? (
@@ -334,6 +345,9 @@ export function Bilder({ signatur }: { signatur: string | null }) {
           </div>
         </div>
       </div>
+      )}
+
+      {!punktmodus && <Wissen thema={richtung === "vor" ? "verrauschen" : "entrauschen"} />}
     </div>
   );
 }
