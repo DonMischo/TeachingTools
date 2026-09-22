@@ -125,7 +125,7 @@ function ClassIcon({ cls, size }: { cls: ClassOut; size: string }) {
 }
 
 export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
-  const { auth, login, logout: authLogout } = useAuth();
+  const { auth, ready, login, logout: authLogout } = useAuth();
   const { selectedClass, setSelectedClass } = useSelectedClass();
   const pathname = usePathname();
   const [loginOpen, setLoginOpen] = useState(false);
@@ -564,7 +564,7 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
   const loginFlyout = loginOpen && (
     <>
       <div className="fixed inset-0 z-40" onClick={() => setLoginOpen(false)} />
-      <aside className="fixed top-0 left-12 h-full w-64 z-50 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col overflow-y-auto shadow-2xl">
+      <aside className={`fixed top-0 ${auth ? "left-12" : "left-0"} h-full w-64 z-50 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col overflow-y-auto shadow-2xl`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
           <span className="text-sm font-semibold text-[var(--text-muted)]">
             {auth ? (auth.teacher ? `${auth.teacher.first_name} ${auth.teacher.last_name}` : auth.student ? `${auth.student.vorname} ${auth.student.nachname}` : "Eingeloggt") : "Login"}
@@ -608,6 +608,44 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
       </aside>
     </>
   );
+
+  /**
+   * Ohne Konto bleibt nur ein Knopf in der Ecke.
+   *
+   * Jeder Eintrag der Leiste führte einen Gast ohnehin nur an die Anmeldung,
+   * und der Flurbildschirm soll die Slideshow zeigen, nicht eine Navigation,
+   * die niemand bedienen kann. Ganz weglassen geht trotzdem nicht: an der
+   * Leiste hing der einzige sichtbare Weg hinein (»melde dich links unten an«,
+   * siehe RequireAccount), und wer die Adresse /login nicht kennt, käme sonst
+   * nicht mehr an sein Konto.
+   */
+  const anmeldeKnopf = (
+    <button
+      suppressHydrationWarning
+      onClick={() => { const next = !loginOpen; closeAll(); setLoginOpen(next); }}
+      title="Mit eigenem Zugang anmelden"
+      className="fixed bottom-3 left-3 z-40 flex items-center gap-2 rounded-xl px-3 py-2 text-sm
+        bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)]
+        opacity-60 hover:opacity-100 hover:text-[var(--text)] transition-opacity shadow-sm"
+    >
+      <NavIcon name="login" />
+      Anmelden
+    </button>
+  );
+
+  // Solange /me läuft, ist `auth === null` noch keine Aussage. Den Platz des
+  // Streifens halten, aber nichts hineinzeichnen: sonst blitzt beim Gast eine
+  // Navigation auf, oder beim Angemeldeten springt das Layout.
+  if (!ready) return <div className="w-12 shrink-0" aria-hidden />;
+
+  if (!auth) {
+    return (
+      <>
+        {anmeldeKnopf}
+        {loginFlyout}
+      </>
+    );
+  }
 
   return (
     <>

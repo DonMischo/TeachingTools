@@ -40,6 +40,19 @@ function renderSidebar() {
   );
 }
 
+/** Ohne Anmeldung steht statt der Leiste nur dieser Knopf in der Ecke. */
+function anmeldeKnopf() {
+  return screen.getByRole("button", { name: /anmelden/i });
+}
+
+/** Angemeldet als Lehrkraft — sonst gibt es gar keine Leiste zu prüfen. */
+function alsLehrkraft() {
+  vi.spyOn(apiModule.api.auth, "me").mockResolvedValue({
+    user_type: "teacher",
+    teacher: mockTeacher,
+  });
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(apiModule.api.auth, "me").mockRejectedValue(new Error("401"));
@@ -48,15 +61,29 @@ beforeEach(() => {
 
 describe("Sidebar — navigation", () => {
   it("shows nav links", async () => {
+    alsLehrkraft();
     await act(async () => { renderSidebar(); });
-    expect(screen.getByTitle("Hauspokal")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTitle("Hauspokal")).toBeInTheDocument());
     expect(screen.getByTitle("Spiele")).toBeInTheDocument();
     expect(screen.getByTitle("Tools")).toBeInTheDocument();
   });
 
   it("hides admin link when not logged in as admin", async () => {
+    alsLehrkraft();
     await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(screen.getByTitle("Spiele")).toBeInTheDocument());
     expect(screen.queryByTitle("Admin")).not.toBeInTheDocument();
+  });
+
+  it("zeigt Gästen gar keine Leiste, nur den Anmelde-Knopf", async () => {
+    // Jeder Eintrag führte einen Gast ohnehin nur an die Anmeldung, und der
+    // Flurbildschirm soll die Slideshow zeigen statt einer Navigation, die
+    // niemand bedienen kann.
+    await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(anmeldeKnopf()).toBeInTheDocument());
+    expect(screen.queryByTitle("Hauspokal")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Spiele")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Tools")).not.toBeInTheDocument();
   });
 
   it("shows admin link for admin users", async () => {
@@ -109,7 +136,7 @@ describe("Sidebar — navigation", () => {
 describe("Sidebar — login flyout", () => {
   it("opens login form when key button is clicked", async () => {
     await act(async () => { renderSidebar(); });
-    await userEvent.click(screen.getByTitle("Login"));
+    await userEvent.click(anmeldeKnopf());
     expect(screen.getByPlaceholderText(/benutzername/i)).toBeInTheDocument();
   });
 
@@ -124,7 +151,7 @@ describe("Sidebar — login flyout", () => {
       .mockResolvedValueOnce({ user_type: "teacher", teacher: mockTeacher }); // after login
 
     await act(async () => { renderSidebar(); });
-    await userEvent.click(screen.getByTitle("Login"));
+    await userEvent.click(anmeldeKnopf());
     await userEvent.type(screen.getByPlaceholderText(/benutzername/i), "anna");
     await userEvent.type(screen.getByPlaceholderText(/passwort/i), "secret");
     await act(async () => {
@@ -137,7 +164,7 @@ describe("Sidebar — login flyout", () => {
   it("shows error when login fails", async () => {
     vi.spyOn(apiModule.api.auth, "login").mockRejectedValue(new Error("Unauthorized"));
     await act(async () => { renderSidebar(); });
-    await userEvent.click(screen.getByTitle("Login"));
+    await userEvent.click(anmeldeKnopf());
     await userEvent.type(screen.getByPlaceholderText(/benutzername/i), "nobody");
     await userEvent.type(screen.getByPlaceholderText(/passwort/i), "wrong");
     await act(async () => {
@@ -147,17 +174,16 @@ describe("Sidebar — login flyout", () => {
   });
 
   it("logs out and clears session", async () => {
-    vi.spyOn(apiModule.api.auth, "me").mockResolvedValue({
-      user_type: "teacher",
-      teacher: mockTeacher,
-    });
+    alsLehrkraft();
     await act(async () => { renderSidebar(); });
     // Open login flyout (shows user icon when logged in)
-    const userBtn = screen.getByTitle(/Anna Müller/i);
+    const userBtn = await screen.findByTitle(/Anna Müller/i);
     await userEvent.click(userBtn);
     await act(async () => {
       await userEvent.click(screen.getByRole("button", { name: /logout/i }));
     });
-    await waitFor(() => expect(screen.getByTitle("Login")).toBeInTheDocument());
+    // Nach dem Abmelden bleibt vom Sidebar nur der Knopf in der Ecke.
+    await waitFor(() => expect(anmeldeKnopf()).toBeInTheDocument());
+    expect(screen.queryByTitle("Spiele")).not.toBeInTheDocument();
   });
 });
