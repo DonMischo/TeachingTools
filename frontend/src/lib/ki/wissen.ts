@@ -176,6 +176,48 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  neuron: {
+    titel: "Was ist an einem neuronalen Netz »neuronal«?",
+    stufen: {
+      "5-7": [
+        "Ein künstliches Neuron ist kein Gehirn. Es ist eine Rechnung: Jede Eingabe bekommt ein Gewicht, alles wird zusammengezählt, und dann heißt es ja oder nein.",
+        "Lernen heißt: Wenn die Antwort falsch war, werden die Gewichte ein kleines Stück verschoben. Immer wieder, hunderte Male.",
+        "Am Ende sieht es aus, als hätte die Maschine etwas begriffen. In Wahrheit sind nur zwei Zahlen so lange verschoben worden, bis es passte.",
+      ],
+      "8+": [
+        "Das Neuron berechnet w₁·x₁ + w₂·x₂ + b und vergleicht das Ergebnis mit null. Weil das eine lineare Gleichung ist, entsteht als Grenze immer eine Gerade — mehr kann ein einzelnes Neuron nicht.",
+        "Die Lernregel stammt von Frank Rosenblatt (1958): Liegt das Neuron bei einem Beispiel falsch, verschiebe die Gewichte ein Stück in dessen Richtung. Für trennbare Daten ist bewiesen, dass das nach endlich vielen Schritten aufgeht.",
+        "Der knifflige Datensatz ist genau der Fall, an dem das Verfahren scheitert (das berühmte XOR-Problem). Die Lösung ist, mehrere Neuronen hintereinander zu schalten — daher »tiefe« Netze. Ein Sprachmodell besteht aus Milliarden solcher Gewichte.",
+      ],
+      "10+": [
+        "Ein Perzeptron ist ein linearer Klassifikator mit Schwellenwertfunktion; die Entscheidungsgrenze ist die Hyperebene w·x + b = 0. Das Konvergenztheorem garantiert Terminierung nur bei linear separierbaren Daten — bei den anderen oszilliert die Regel dauerhaft.",
+        "Minsky und Papert wiesen 1969 nach, dass XOR nicht darstellbar ist; das trug wesentlich zum ersten »KI-Winter« bei. Erst mehrschichtige Netze mit differenzierbaren Aktivierungen und Backpropagation lösten das Problem.",
+        "Der Unterschied zur heutigen Praxis ist nicht die Idee, sondern das Verfahren: Statt der diskreten Perzeptron-Regel wird eine glatte Verlustfunktion per Gradientenabstieg minimiert. »Fehler messen, Gewichte ein Stück dagegen verschieben« bleibt aber wörtlich dasselbe.",
+      ],
+    },
+  },
+
+  erkennen: {
+    titel: "Wie erkennt eine Maschine, was auf einem Bild ist?",
+    stufen: {
+      "5-7": [
+        "Sie vergleicht. Dein Bild ist für sie eine Reihe von 256 Zahlen — für jedes Kästchen eine.",
+        "Sie schaut, welches gespeicherte Bild die ähnlichsten Zahlen hat, und sagt dessen Namen. Was ein Kreis *ist*, weiß sie nicht.",
+        "Deshalb wird sie besser, je mehr Beispiele du ihr gibst. Und deshalb rät sie auch bei einer Form, die sie nie gesehen hat — sie kann gar nicht »weiß nicht« sagen.",
+      ],
+      "8+": [
+        "Das Verfahren heißt Nächster-Nachbar-Klassifikator und gehört zum überwachten Lernen: Man gibt Beispiele *mit* der richtigen Antwort vor, das ist das Training.",
+        "Die Bilder werden vorher in die Mitte gerückt. Ohne diesen Schritt würde vor allem gelernt, *wo* gemalt wurde, statt *was* — solche Vorverarbeitung entscheidet in der Praxis oft mehr als das Verfahren selbst.",
+        "Der Schwachpunkt heißt Generalisierung: Das Verfahren merkt sich nur und schließt nicht. Große Bilderkenner (neuronale Netze) lernen stattdessen Merkmale — Kanten, Ecken, Muster — und kommen damit auch mit ungesehenen Bildern zurecht.",
+      ],
+      "10+": [
+        "k-NN ist ein nichtparametrisches Verfahren: Es gibt kein Modell, die Trainingsdaten *sind* das Modell. Das macht das Training kostenlos und jede Vorhersage teuer — genau umgekehrt zu neuronalen Netzen.",
+        "Die Metrik ist hier die L1-Distanz auf zentrierten Binärbildern. Dass Vorverarbeitung so viel ausmacht, ist kein Zufall: Klassische Bildverarbeitung bestand vor allem aus dem Entwurf solcher Invarianzen (Verschiebung, Drehung, Skalierung). Faltungsnetze lernen sie stattdessen selbst.",
+        "Bemerkenswert ist die Zuversicht des Verfahrens bei ungesehenen Klassen — es gibt immer einen nächsten Nachbarn. Dieses Problem (Out-of-Distribution-Erkennung) ist bei großen Modellen bis heute ungelöst und der Grund, warum KI-Systeme bei völlig fremden Eingaben selbstbewusst Unsinn liefern.",
+      ],
+    },
+  },
+
   raten: {
     titel: "Warum ist Raten das ganze Geheimnis?",
     stufen: {

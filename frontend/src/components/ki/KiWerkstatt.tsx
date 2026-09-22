@@ -16,11 +16,12 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sprachmodell } from "@/components/ki/Sprachmodell";
 import { Bilder } from "@/components/ki/Bilder";
+import { Lernen } from "@/components/ki/Lernen";
 
 /** Woran die Tafel hängt: der Sitzungscode und, bei Gästen, ihr Token. */
 export type KiZugang = { code: string; token?: string | null; name?: string };
 
-type Reiter = "sprache" | "bilder";
+type Reiter = "sprache" | "bilder" | "lernen";
 
 export default function KiWerkstatt({ action, zugang }: {
   action?: ReactNode;
@@ -70,6 +71,7 @@ export default function KiWerkstatt({ action, zugang }: {
       <div className="flex gap-2 flex-wrap">
         <Knopf an={reiter === "sprache"} onClick={() => setReiter("sprache")}>🔤 Sprachmodell</Knopf>
         <Knopf an={reiter === "bilder"} onClick={() => setReiter("bilder")}>🖼️ Bilder</Knopf>
+        <Knopf an={reiter === "lernen"} onClick={() => setReiter("lernen")}>🧠 Lernen</Knopf>
       </div>
 
       {/* Beide Reiter bleiben montiert: ein Text, an dem zehn Minuten gewählt
@@ -79,6 +81,9 @@ export default function KiWerkstatt({ action, zugang }: {
       </div>
       <div hidden={reiter !== "bilder"}>
         <Bilder signatur={signatur} />
+      </div>
+      <div hidden={reiter !== "lernen"}>
+        <Lernen />
       </div>
     </div>
   );
