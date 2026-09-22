@@ -20,7 +20,9 @@ import type { Modelltreue, Punkt } from "../typen";
 export type TeilArt =
   | "brett" | "stange" | "klotz" | "kugel" | "scheibe" | "zahnrad" | "massestueck"
   /** Elektrische Bauteile: zwei Anschlüsse, links und rechts. */
-  | "batterie" | "widerstand" | "lampe" | "schalter" | "motor";
+  | "batterie" | "widerstand" | "lampe" | "schalter" | "motor" | "strahler"
+  /** Optik: sie lenken Licht um, statt es zu schlucken. */
+  | "linse" | "spiegel";
 
 export interface Teil {
   id: string;

@@ -66,6 +66,7 @@ function fuerTeil(t: Teil, quelle: string): Messgroesse[] {
   const waerme = [
     g("temperatur", "Temperatur", "K", w => w.temperatur(t.id), undefined, "°C"),
     g("waerme", "Wärme über der Umgebung", "J", w => w.waermemenge(t.id), "Q = m · c · ΔT"),
+    g("strahlung", "Aufgenommenes Licht", "W", w => w.strahlung(t.id)),
   ];
 
   if (istElektrisch(t.art)) {

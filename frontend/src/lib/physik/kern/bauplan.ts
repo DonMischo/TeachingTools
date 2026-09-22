@@ -227,6 +227,34 @@ function motorwinde(): Aufbau {
   return a;
 }
 
+/**
+ * Brennglas: Licht wird gebündelt, und am Brennpunkt wird es heiß.
+ *
+ * Der Aufbau, an dem drei Bereiche zusammenkommen — der Strahler hängt am
+ * Stromkreis, die Linse sammelt, und was am Brennpunkt ankommt, steht danach
+ * als Temperatur im Messschreiber. Dafür gibt es nirgends einen Sonderfall.
+ */
+function brennglas(): Aufbau {
+  const f = 0.3;
+  let a = neuerAufbau();
+  const bat = teil(a, "batterie", { x: -0.5, y: 2.5 }, { spannung: 24, innenwiderstand: 0.2 });
+  a = festAnDieWand(bat.aufbau, bat.id, { x: -0.5, y: 2.5 });
+  const schalter = teil(a, "schalter", { x: 0.1, y: 2.5 }, { geschlossen: 0 });
+  a = festAnDieWand(schalter.aufbau, schalter.id, { x: 0.1, y: 2.5 });
+
+  const strahler = teil(a, "strahler", { x: -0.5, y: 2 }, { widerstand: 8, wirkungsgrad: 0.9, breite: 0.14, strahlen: 7 });
+  a = festAnDieWand(strahler.aufbau, strahler.id, { x: -0.5, y: 2 });
+  const linse = teil(a, "linse", { x: 0, y: 2 }, { durchmesser: 0.2, brennweite: f });
+  a = festAnDieWand(linse.aufbau, linse.id, { x: 0, y: 2 });
+  const span = teil(a, "klotz", { x: f, y: 2 }, { breite: 0.03, hoehe: 0.03, tiefe: 0.03, stoff: 0 });
+  a = festAnDieWand(span.aufbau, span.id, { x: f, y: 2 });
+
+  a = verbinde(a, "kabel", rechterPol(bat.id), linkerPol(schalter.id)).aufbau;
+  a = verbinde(a, "kabel", rechterPol(schalter.id), rechterPol(strahler.id)).aufbau;
+  a = verbinde(a, "kabel", linkerPol(strahler.id), linkerPol(bat.id)).aufbau;
+  return a;
+}
+
 export const BAUPLAENE: Bauplan[] = [
   {
     id: "pendel", name: "Pendel", icon: "🕰️",
@@ -258,6 +286,11 @@ export const BAUPLAENE: Bauplan[] = [
     id: "motorwinde", name: "Motor mit Winde", icon: "⚡",
     beschreibung: "Strom hebt eine Last. Mehr Last heißt mehr Strom und weniger Drehzahl — der Schalter ist offen.",
     aufbau: umDenUrsprung(motorwinde()),
+  },
+  {
+    id: "brennglas", name: "Brennglas", icon: "🔎",
+    beschreibung: "Strahler, Linse, Holzspan im Brennpunkt. Einschalten — und die Temperatur im Messschreiber steigt.",
+    aufbau: umDenUrsprung(brennglas()),
   },
   {
     id: "trebuchet", name: "Trebuchet", icon: "🏰",

@@ -11,6 +11,7 @@
  * ohne dass man es sagen muss. Wer eine bestimmte Masse braucht, gibt sie vor
  * — dann gilt die, und die Dichte richtet sich danach.
  */
+import { bogen } from "../einheiten";
 import { FESTSTOFF_AUSWAHL, feststoff } from "../material";
 import type { ParameterDef, Punkt } from "../typen";
 import type { Teil, TeilArt } from "./modell";
@@ -35,6 +36,18 @@ export interface TeilTyp {
 const STOFF = (standard: number): ParameterDef => ({
   schluessel: "stoff", name: "Werkstoff", einheit: "", standard, min: 0,
   max: FESTSTOFF_AUSWAHL.length - 1, optionen: FESTSTOFF_AUSWAHL,
+});
+
+/**
+ * Welcher Anteil der aufgenommenen Leistung als Licht hinausgeht.
+ *
+ * Der Rest wird Wärme — bei einer Glühlampe ist das der größte Teil, und
+ * genau das ist die Zahl, an der man im Unterricht sieht, warum sie verboten
+ * wurde.
+ */
+const WIRKUNGSGRAD = (standard: number): ParameterDef => ({
+  schluessel: "wirkungsgrad", name: "Anteil als Licht", einheit: "", anzeige: "%",
+  standard, min: 0, max: 1,
 });
 
 /** 0 heißt: aus dem Werkstoff berechnen. */
@@ -89,7 +102,7 @@ function elektrisch(
 }
 
 /** Die elektrischen Bauteile — sie hängen am Stromkreis statt am Werkstoff. */
-export const ELEKTRISCHE_ARTEN = new Set<TeilArt>(["batterie", "widerstand", "lampe", "schalter", "motor"]);
+export const ELEKTRISCHE_ARTEN = new Set<TeilArt>(["batterie", "widerstand", "lampe", "schalter", "motor", "strahler"]);
 export const istElektrisch = (art: TeilArt | string) => ELEKTRISCHE_ARTEN.has(art as TeilArt);
 
 /**
@@ -217,6 +230,34 @@ export const TEILE: TeilTyp[] = [
     volumen: t => massestueckKante(w(t, "masse", 0.1)) ** 3,
   },
 
+  {
+    art: "linse",
+    name: "Linse",
+    icon: "🔎",
+    parameter: [
+      { schluessel: "durchmesser", name: "Durchmesser", einheit: "m", standard: 0.12, min: 0.02, max: 0.6 },
+      {
+        // Die Brennweite steht am echten Glas auch drauf; sie aus Krümmung und
+        // Brechzahl auszurechnen wäre genauer und für den Unterricht im Weg.
+        schluessel: "brennweite", name: "Brennweite", einheit: "m", standard: 0.25, min: -2, max: 2,
+      },
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: 0.012, h: w(t, "durchmesser", 0.12) }],
+    volumen: t => 0.012 * w(t, "durchmesser", 0.12) * 0.03,
+  },
+  {
+    art: "spiegel",
+    name: "Spiegel",
+    icon: "🪞",
+    parameter: [
+      { schluessel: "durchmesser", name: "Länge", einheit: "m", standard: 0.2, min: 0.02, max: 1 },
+      MASSE_VORGABE,
+    ],
+    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: 0.01, h: w(t, "durchmesser", 0.2) }],
+    volumen: t => 0.01 * w(t, "durchmesser", 0.2) * 0.03,
+  },
+
   elektrisch("batterie", "Batterie", "🔋", 0.12, 0.07, 0.3, [
     { schluessel: "spannung", name: "Spannung", einheit: "V", standard: 4.5, min: 0, max: 24, bedienung: true },
     { schluessel: "innenwiderstand", name: "Innenwiderstand", einheit: "Ohm", standard: 0.5, min: 0, max: 20 },
@@ -227,6 +268,14 @@ export const TEILE: TeilTyp[] = [
   elektrisch("lampe", "Lämpchen", "💡", 0.08, 0.08, 0.03, [
     { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 20, min: 0.5, max: 2000 },
     { schluessel: "nennleistung", name: "Nennleistung", einheit: "W", standard: 1, min: 0.05, max: 100 },
+    WIRKUNGSGRAD(0.1),
+  ]),
+  elektrisch("strahler", "Strahler", "🔦", 0.1, 0.06, 0.15, [
+    { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 5, min: 0.5, max: 500 },
+    WIRKUNGSGRAD(0.6),
+    { schluessel: "breite", name: "Bündelbreite", einheit: "m", standard: 0.05, min: 0.001, max: 0.4 },
+    { schluessel: "oeffnung", name: "Öffnungswinkel", einheit: "rad", anzeige: "grad", standard: 0, min: 0, max: bogen(120) },
+    { schluessel: "strahlen", name: "Strahlen", einheit: "", standard: 5, min: 1, max: 15 },
   ]),
   elektrisch("schalter", "Schalter", "🔘", 0.1, 0.04, 0.05, [
     {
@@ -280,6 +329,8 @@ export function oberflaeche(t: Teil): { reibung: number; sprung: number; farbe: 
   // Elektrische Bauteile stecken in einem Gehäuse, nicht in einem Werkstoff,
   // den man einstellt — sie haben deshalb gar keine Werkstoffwahl.
   if (istElektrisch(t.art)) return { reibung: 0.5, sprung: 0.1, farbe: "#475569" };
+  if (t.art === "linse") return { reibung: 0.2, sprung: 0.2, farbe: "#7dd3fc" };
+  if (t.art === "spiegel") return { reibung: 0.2, sprung: 0.2, farbe: "#e2e8f0" };
   const s = feststoff(w(t, "stoff", 0));
   return { reibung: s.reibung, sprung: s.sprung, farbe: s.farbe };
 }

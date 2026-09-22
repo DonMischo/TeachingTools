@@ -27,6 +27,7 @@ import type { Punkt } from "../typen";
 import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
 import { Seilzug, type Seilknoten } from "./seilzug";
 import { Stromkreis, type Messung } from "./strom";
+import { Optik, istLeuchte, type Strahlstueck } from "./optik";
 import { Waermenetz } from "./waerme";
 import { formFlaeche, istElektrisch, oberflaeche, teilMasse, teilTyp } from "./teile";
 
@@ -98,6 +99,7 @@ export class Welt {
   private seilzuege = new Map<string, Seilzug>();
   private kreis: Stromkreis;
   private waerme: Waermenetz;
+  private optik: Optik;
   /** Was im laufenden Versuch an einem Teil verstellt wurde: Schalter, Spannung. */
   private bedienung = new Map<string, Record<string, number>>();
   /** Die Welle eines Motors: die Achse, über die er sein Moment abgibt. */
@@ -133,6 +135,7 @@ export class Welt {
 
     this.kreis = new Stromkreis(aufbau);
     this.waerme = new Waermenetz(aufbau);
+    this.optik = new Optik(aufbau);
     // Ein Motor gibt sein Moment über die Achse ab, die an ihm sitzt — das
     // Gehäuse hält dagegen. Ohne Achse dreht er ins Leere.
     for (const t of aufbau.teile.filter(x => x.art === "motor")) {
@@ -403,6 +406,13 @@ export class Welt {
     if (this.zerstoert) return;
     this.wickle();
     this.treibeMotoren();
+    // Licht braucht keine Zeit: die Bahnen werden bei jedem Takt neu verfolgt,
+    // und wo ein Strahl endet, steht schon die nächste Wärmequelle.
+    this.optik.rechne(id => {
+      const z = this.zustand(id);
+      const t = this.aufbau.teile.find(x => x.id === id)!;
+      return z ? { pos: { x: z.x, y: z.y }, winkel: z.winkel } : { pos: t.pos, winkel: t.winkel };
+    }, id => this.lichtleistung(id));
     this.sammleWaerme();
     this.waerme.rechne(TAKT, id => this.waermequellen.get(id) ?? 0);
     this.pruefeAusloeser();
@@ -499,9 +509,14 @@ export class Welt {
     };
 
     for (const t of this.aufbau.teile) {
+      // Was ein Strahl irgendwo abgibt, wird dort zu Wärme — Brennglas und
+      // Sonnenkollektor brauchen dafür keinen eigenen Fall.
+      zu(t.id, this.optik.aufgenommen(t.id));
       if (!istElektrisch(t.art)) continue;
       const m = this.kreis.messung(t.id);
-      if (t.art === "widerstand" || t.art === "lampe") zu(t.id, Math.abs(m.leistung));
+      if (t.art === "widerstand") zu(t.id, Math.abs(m.leistung));
+      // Eine Leuchte behält nur, was nicht als Licht hinausgeht.
+      else if (istLeuchte(t.art)) zu(t.id, Math.abs(m.leistung) - this.lichtleistung(t.id));
       else if (t.art === "motor") zu(t.id, m.strom ** 2 * Math.max(1e-6, t.werte.widerstand ?? 1));
       else if (t.art === "batterie") zu(t.id, m.strom ** 2 * (t.werte.innenwiderstand ?? 0));
     }
@@ -521,6 +536,23 @@ export class Welt {
       const enden = [v.a.teil, v.b.teil].filter((x): x is string => x !== null);
       for (const teil of enden) zu(teil, leistung / enden.length);
     }
+  }
+
+  /** Wie viel Licht eine Leuchte gerade abgibt, in Watt. */
+  private lichtleistung(id: string): number {
+    const t = this.aufbau.teile.find(x => x.id === id);
+    if (!t || !istLeuchte(t.art)) return 0;
+    return Math.abs(this.kreis.messung(id).leistung) * Math.min(1, Math.max(0, t.werte.wirkungsgrad ?? 0));
+  }
+
+  /** Alle Strahlstücke des Augenblicks — zum Zeichnen. */
+  strahlen(): Strahlstueck[] {
+    return this.optik.strahlen();
+  }
+
+  /** Wie viel Strahlungsleistung ein Teil gerade aufnimmt, in Watt. */
+  strahlung(teil: string): number {
+    return this.optik.aufgenommen(teil);
   }
 
   /** Die Temperatur eines Teils in Kelvin. */

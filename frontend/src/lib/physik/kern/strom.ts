@@ -106,7 +106,7 @@ export class Stromkreis {
       const links = this.nr(t.id, 0), rechts = this.nr(t.id, 1);
       if (links < 0 || rechts < 0) continue;
 
-      if (t.art === "widerstand" || t.art === "lampe") {
+      if (t.art === "widerstand" || t.art === "lampe" || t.art === "strahler") {
         const ohm = Math.max(1e-6, v.widerstand ?? 1);
         zweige.push({ art: "leitwert", a: links, b: rechts, wert: 1 / ohm });
         ohmsch.push({ teil: t.id, ohm });

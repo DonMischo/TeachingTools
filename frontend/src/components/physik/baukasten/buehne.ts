@@ -42,6 +42,8 @@ export interface Bild {
   leuchten?: (id: string) => number;
   /** Wie weit ein Teil über der Umgebung liegt, in Kelvin. */
   uebertemperatur?: (id: string) => number;
+  /** Die Strahlbahnen des Augenblicks. */
+  strahlen?: () => { von: Punkt; nach: Punkt; leistung: number }[];
 }
 
 const FARBE = {
@@ -140,6 +142,8 @@ export class Buehne {
       if (bild.geloest.has(v.id)) continue;
       this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id), bild.seilBahn?.(v.id));
     }
+
+    this.zeichneStrahlen(bild.strahlen?.() ?? [], blick);
 
     // Hervorhebungen obendrauf.
     for (const [a, c, breite] of [[bild.schwebt, FARBE.schweben, 1.5], [bild.auswahl, FARBE.auswahl, 2.5]] as const) {
@@ -294,6 +298,23 @@ export class Buehne {
       const s = typ.formen(t)[0] as Extract<Form, { art: "kasten" }>;
       const oese = zumBild(weltpunkt({ ...t, pos: l.pos, winkel: l.winkel }, { x: 0, y: s.h / 2 + s.h * 0.12 }), blick);
       g.circle(oese.x, oese.y, Math.max(2, s.h * 0.12 * blick.skala)).stroke({ width: 1.5, color: 0x8a6d12 });
+    }
+  }
+
+  /**
+   * Die Strahlen — zwei Striche übereinander: ein breiter Schein und ein Kern.
+   *
+   * Die Helligkeit folgt der Leistung, aber logarithmisch: zwischen einem
+   * Strahl mit 0,1 W und einem mit 100 W liegt sonst nichts Sichtbares mehr,
+   * weil der erste schon unsichtbar und der zweite längst weiß ist.
+   */
+  private zeichneStrahlen(strahlen: { von: Punkt; nach: Punkt; leistung: number }[], blick: Blick) {
+    const g = this.oben;
+    for (const s of strahlen) {
+      const a = zumBild(s.von, blick), b = zumBild(s.nach, blick);
+      const hell = Math.min(1, 0.25 + 0.16 * Math.log1p(Math.max(0, s.leistung)));
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 5, color: FARBE.glut, alpha: 0.18 * hell });
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color: 0xfffbeb, alpha: hell });
     }
   }
 

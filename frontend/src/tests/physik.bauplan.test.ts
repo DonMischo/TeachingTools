@@ -171,6 +171,22 @@ describe("Die mitgelieferten Pläne laufen", () => {
     expect(w.zustand(last)!.y).toBeGreaterThan(start + 0.15);
   });
 
+  it("brennt mit dem Brennglas ein Loch in den Span — sobald man einschaltet", () => {
+    const { aufbau } = fuegeBauplanEin(neuerAufbau(), bauplan("brennglas")!, { x: 0, y: 2.8 });
+    const w = starte(aufbau);
+    const span = aufbau.teile.find(t => t.art === "klotz")!.id;
+    const schalter = aufbau.teile.find(t => t.art === "schalter")!.id;
+
+    laufe(w, 0.5);
+    expect(w.strahlung(span)).toBeCloseTo(0, 6);
+
+    w.setzeTeilWert(schalter, { geschlossen: 1 });
+    laufe(w, 3);
+    // Rund 60 W treffen den Span; 3 cm Holz sind 27 J/K, also gut 2 K je Sekunde.
+    expect(w.strahlung(span)).toBeGreaterThan(30);
+    expect(w.uebertemperatur(span)).toBeGreaterThan(5);
+  });
+
   it("hat für jeden Plan einen Namen, ein Sinnbild und Teile", () => {
     for (const p of BAUPLAENE) {
       expect(p.name.length).toBeGreaterThan(2);
