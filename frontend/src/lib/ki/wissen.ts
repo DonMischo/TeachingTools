@@ -176,6 +176,27 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  attention: {
+    titel: "Wie schafft ein Modell das, was unser Netz nicht kann?",
+    stufen: {
+      "5-7": [
+        "Unser Wortnetz hat ein sehr kurzes Gedächtnis. Wenn »er« an der Reihe ist, weiß es nicht mehr, dass vorne im Satz ein Pokal stand.",
+        "Große Sprachmodelle machen es anders: Bei jedem Wort schauen sie auf den ganzen Satz zurück und suchen sich aus, welche Wörter gerade wichtig sind. Das nennt man Aufmerksamkeit.",
+        "Das ist wie beim Lesen: Du liest auch nicht nur das letzte Wort, sondern weißt noch, worum es ging.",
+      ],
+      "8+": [
+        "Der Fachbegriff ist »Attention«. Für jedes Wort berechnet das Modell, wie stark es auf jedes frühere Wort achten soll — daraus entsteht ein Bild aus Bögen, wie du es hier siehst.",
+        "Das Entscheidende: Diese Gewichte sind nicht fest, sondern hängen vom Satz ab. Bei »weil er zu groß ist« zeigt der dicke Bogen auf den Pokal, bei »zu klein« auf den Koffer — obwohl beide Sätze fast gleich sind.",
+        "Deshalb heißt die wichtigste Bauform heutiger KI »Transformer«: Sie besteht im Kern aus vielen solchen Aufmerksamkeitsschichten übereinander.",
+      ],
+      "10+": [
+        "Jedes Token wird auf drei Vektoren abgebildet: Query, Key und Value. Die Aufmerksamkeit eines Tokens auf ein anderes ist das Skalarprodukt aus seiner Query und dessen Key, normiert über Softmax; die Ausgabe ist die gewichtete Summe der Values.",
+        "Ein Modell hat viele solcher »Köpfe« nebeneinander und Dutzende Schichten übereinander. Untersuchungen zeigen, dass sich einzelne Köpfe auf erkennbare Aufgaben spezialisieren — Bezüge von Pronomen, Satzgrenzen, Zahlwörter.",
+        "Der Preis ist Rechenzeit: Aufmerksamkeit von jedem auf jeden wächst quadratisch mit der Textlänge. Deshalb ist das Kontextfenster begrenzt, und deshalb ist es ein eigenes Forschungsfeld, es zu vergrößern.",
+      ],
+    },
+  },
+
   korpus: {
     titel: "Euer eigenes Modell",
     stufen: {

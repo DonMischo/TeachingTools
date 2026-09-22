@@ -21,10 +21,11 @@ import { Zerleger } from "@/components/ki/Zerleger";
 import { WortnetzBuehne } from "@/components/ki/Wortnetz";
 import { Vergleich } from "@/components/ki/Vergleich";
 import { Trainieren } from "@/components/ki/Trainieren";
+import { Attention } from "@/components/ki/Attention";
 import { Wissen } from "@/components/ki/Wissen";
 import type { KiZugang } from "@/components/ki/KiWerkstatt";
 
-type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis" | "trainieren";
+type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis" | "trainieren" | "attention";
 
 const STATIONEN: { id: Station; nr: number; titel: string }[] = [
   { id: "auftrag", nr: 1, titel: "Auftrag" },
@@ -52,6 +53,17 @@ function Schritte({ station, auf }: { station: Station; auf: (s: Station) => voi
           }`}
         >
           🧪 Trainieren
+        </button>
+        <button
+          type="button"
+          onClick={() => auf("attention")}
+          className={`px-2.5 py-1 rounded-lg border font-bold ${
+            station === "attention"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+              : "border-[var(--border)] bg-[var(--surface)]"
+          }`}
+        >
+          🔎 Attention
         </button>
         <span className="text-[var(--text-muted)]">|</span>
       </li>
@@ -204,6 +216,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
           onNetz={n => { setGelernt(n); setSchritte([]); setStation("schreiben"); }}
         />
       )}
+
+      {station === "attention" && <Attention />}
 
       {station === "zerlegen" && (
         <div className="flex flex-col gap-4">
