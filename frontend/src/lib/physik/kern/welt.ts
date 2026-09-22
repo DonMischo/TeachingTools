@@ -27,7 +27,8 @@ import type { Punkt } from "../typen";
 import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
 import { Seilzug, type Seilknoten } from "./seilzug";
 import { Stromkreis, type Messung } from "./strom";
-import { formFlaeche, oberflaeche, teilMasse, teilTyp } from "./teile";
+import { Waermenetz } from "./waerme";
+import { formFlaeche, istElektrisch, oberflaeche, teilMasse, teilTyp } from "./teile";
 
 export const TAKT = 1 / 60;
 export const UNTERSCHRITTE = 8;
@@ -96,6 +97,7 @@ export class Welt {
   private wickel: Wickel[] = [];
   private seilzuege = new Map<string, Seilzug>();
   private kreis: Stromkreis;
+  private waerme: Waermenetz;
   /** Was im laufenden Versuch an einem Teil verstellt wurde: Schalter, Spannung. */
   private bedienung = new Map<string, Record<string, number>>();
   /** Die Welle eines Motors: die Achse, über die er sein Moment abgibt. */
@@ -130,6 +132,7 @@ export class Welt {
     for (const v of aufbau.verbinder) this.baueVerbinder(v);
 
     this.kreis = new Stromkreis(aufbau);
+    this.waerme = new Waermenetz(aufbau);
     // Ein Motor gibt sein Moment über die Achse ab, die an ihm sitzt — das
     // Gehäuse hält dagegen. Ohne Achse dreht er ins Leere.
     for (const t of aufbau.teile.filter(x => x.art === "motor")) {
@@ -400,6 +403,8 @@ export class Welt {
     if (this.zerstoert) return;
     this.wickle();
     this.treibeMotoren();
+    this.sammleWaerme();
+    this.waerme.rechne(TAKT, id => this.waermequellen.get(id) ?? 0);
     this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
     // Die Seile über Rollen danach: der Löser hat die Schwerkraft schon in den
@@ -480,6 +485,59 @@ export class Welt {
     }
   }
 
+  /**
+   * Wo gerade Wärme entsteht, in Watt.
+   *
+   * Zwei Quellen, und beide sind Unterrichtsstoff: der elektrische Widerstand
+   * und die Reibung. Am Motor zählt nur der Anteil im Anker — der Rest verlässt
+   * ihn als Drehmoment und wird zu Hubarbeit, nicht zu Wärme.
+   */
+  private sammleWaerme() {
+    this.waermequellen.clear();
+    const zu = (id: string | null | undefined, w: number) => {
+      if (id && w > 0) this.waermequellen.set(id, (this.waermequellen.get(id) ?? 0) + w);
+    };
+
+    for (const t of this.aufbau.teile) {
+      if (!istElektrisch(t.art)) continue;
+      const m = this.kreis.messung(t.id);
+      if (t.art === "widerstand" || t.art === "lampe") zu(t.id, Math.abs(m.leistung));
+      else if (t.art === "motor") zu(t.id, m.strom ** 2 * Math.max(1e-6, t.werte.widerstand ?? 1));
+      else if (t.art === "batterie") zu(t.id, m.strom ** 2 * (t.werte.innenwiderstand ?? 0));
+    }
+
+    for (const [id, v] of this.verbinder) {
+      if (v.art !== "achse" || (v.werte.reibung ?? 0) <= 0 || (v.werte.motorMoment ?? 0) > 0) continue;
+      const gelenk = this.gelenke.get(id);
+      if (!gelenk || !b2.b2Joint_IsValid(gelenk)) continue;
+      const a = this.koerperVon(v.a.teil), b = this.koerperVon(v.b.teil);
+      if (!a || !b) continue;
+      const omega = b2.b2Body_GetAngularVelocity(b) - b2.b2Body_GetAngularVelocity(a);
+      // Reibungsarbeit ist Moment mal Winkelgeschwindigkeit; sie verteilt sich
+      // auf beide Seiten des Lagers.
+      const leistung = Math.abs(b2.b2RevoluteJoint_GetMotorTorque(gelenk)) * Math.abs(omega);
+      // Auf die Teile verteilen, die es *gibt*: sitzt das Lager an der Wand,
+      // bekommt das eine Teil alles. Sonst verschwände die halbe Wärme.
+      const enden = [v.a.teil, v.b.teil].filter((x): x is string => x !== null);
+      for (const teil of enden) zu(teil, leistung / enden.length);
+    }
+  }
+
+  /** Die Temperatur eines Teils in Kelvin. */
+  temperatur(teil: string): number {
+    return this.waerme.temperatur(teil);
+  }
+
+  /** Wie weit ein Teil über der Umgebung liegt, in Kelvin. */
+  uebertemperatur(teil: string): number {
+    return this.waerme.uebertemperatur(teil);
+  }
+
+  /** Die gespeicherte Wärme eines Teils über der Umgebung, in Joule. */
+  waermemenge(teil: string): number {
+    return this.waerme.waermemenge(teil);
+  }
+
   /** Wie schnell sich die Welle eines Motors gegen sein Gehäuse dreht, in 1/s. */
   private wellendrehzahl(motor: string): number {
     const welle = this.wellen.get(motor);
@@ -489,6 +547,9 @@ export class Welt {
     if (!gehaeuse || !angetrieben) return 0;
     return b2.b2Body_GetAngularVelocity(angetrieben) - b2.b2Body_GetAngularVelocity(gehaeuse);
   }
+
+  /** Was gerade wo an Wärme anfällt, in Watt. */
+  private waermequellen = new Map<string, number>();
 
   /** Was der Stromkreis an einem Bauteil misst. */
   stromMessung(teil: string): Messung {

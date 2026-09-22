@@ -85,7 +85,7 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
                 onWert={w => aktionen.teilWerte(t.id, { [p.schluessel]: w })} />
             ))}
             {istElektrisch(t.art)
-              ? <Stromwerte welt={welt} id={t.id} />
+              ? <Stromwerte welt={welt} id={t.id} art={t.art} />
               : <Messwerte welt={welt} id={t.id} masse={masse} />}
           </>
         ) : (
@@ -168,14 +168,24 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
   );
 }
 
-/** Was ein elektrisches Bauteil gerade tut — an seinen Klemmen abgelesen. */
-function Stromwerte({ welt, id }: { welt: Welt | null; id: string }) {
+/**
+ * Was ein elektrisches Bauteil gerade tut — an seinen Klemmen abgelesen.
+ *
+ * Bei der Batterie zeigt die Anzeige, was sie *abgibt*: sonst stünde dort ein
+ * Minus, nur weil der Strom in ihr von Minus nach Plus läuft. Beim Motor bleibt
+ * das Zeichen stehen — es kippt, sobald er als Dynamo arbeitet, und genau das
+ * soll man sehen.
+ */
+function Stromwerte({ welt, id, art }: { welt: Welt | null; id: string; art: string }) {
   const m = welt?.stromMessung(id);
   if (!m) return null;
+  const quelle = art === "batterie";
+  const dreh = quelle ? -1 : 1;
   const zeilen: [string, string, string][] = [
     ["Spannung", formatiere(m.spannung, "V"), ""],
-    ["Strom", formatiere(m.strom, "A"), ""],
-    ["Leistung", formatiere(m.leistung, "W"), "P = U · I"],
+    [quelle ? "Abgegebener Strom" : "Strom", formatiere(dreh * m.strom, "A"), ""],
+    [quelle ? "Abgegebene Leistung" : "Leistung", formatiere(dreh * m.leistung, "W"), "P = U · I"],
+    ["Temperatur", formatiere(welt?.temperatur(id) ?? 0, "K", "°C"), ""],
   ];
   return (
     <div className="flex flex-col gap-1.5">
@@ -202,6 +212,7 @@ function Messwerte({ welt, id, masse }: { welt: Welt | null; id: string; masse: 
     ["Höhe über dem Boden", formatiere(z.y, "m"), ""],
     ["Bewegungsenergie", formatiere(0.5 * masse * v * v, "J"), "E_kin = ½ · m · v²"],
     ["Lageenergie", formatiere(masse * G * Math.max(0, z.y), "J"), "E_pot = m · g · h"],
+    ["Temperatur", formatiere(welt?.temperatur(id) ?? 0, "K", "°C"), ""],
   ];
   return (
     <div className="flex flex-col gap-1.5">

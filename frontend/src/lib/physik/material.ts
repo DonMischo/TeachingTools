@@ -61,18 +61,28 @@ export interface Feststoff {
   dichte: number;
   /** Reibungszahl gegen andere Körper. */
   reibung: number;
+  /**
+   * Spezifische Wärmekapazität in J/(kg·K) — wie viel Wärme ein Kilogramm
+   * braucht, um ein Kelvin wärmer zu werden.
+   *
+   * Sie entscheidet, wie träge ein Körper auf Wärme reagiert: Wasser und Holz
+   * schlucken viel, Stahl wenig. Damit rechnet das Wärmenetz seine
+   * Zeitkonstante aus, und daran sieht man, warum ein Stahlklotz an der
+   * Heizplatte schnell heiß wird und ein Holzbrett nicht.
+   */
+  waerme: number;
   /** Sprungzahl: 0 bleibt liegen, 1 spränge ewig. */
   sprung: number;
   farbe: string;
 }
 
 export const FESTSTOFFE: Feststoff[] = [
-  { name: "Holz", dichte: 600, reibung: 0.6, sprung: 0.2, farbe: "#b45309" },
-  { name: "Stahl", dichte: 7850, reibung: 0.3, sprung: 0.35, farbe: "#cbd5e1" },
-  { name: "Glas", dichte: 2500, reibung: 0.2, sprung: 0.5, farbe: "#7dd3fc" },
-  { name: "Gummi", dichte: 1200, reibung: 0.9, sprung: 0.85, farbe: "#a78bfa" },
-  { name: "Kunststoff", dichte: 950, reibung: 0.4, sprung: 0.45, farbe: "#fde68a" },
-  { name: "Styropor", dichte: 30, reibung: 0.5, sprung: 0.1, farbe: "#f1f5f9" },
+  { name: "Holz", dichte: 600, waerme: 1700, reibung: 0.6, sprung: 0.2, farbe: "#b45309" },
+  { name: "Stahl", dichte: 7850, waerme: 470, reibung: 0.3, sprung: 0.35, farbe: "#cbd5e1" },
+  { name: "Glas", dichte: 2500, waerme: 840, reibung: 0.2, sprung: 0.5, farbe: "#7dd3fc" },
+  { name: "Gummi", dichte: 1200, waerme: 1400, reibung: 0.9, sprung: 0.85, farbe: "#a78bfa" },
+  { name: "Kunststoff", dichte: 950, waerme: 1500, reibung: 0.4, sprung: 0.45, farbe: "#fde68a" },
+  { name: "Styropor", dichte: 30, waerme: 1300, reibung: 0.5, sprung: 0.1, farbe: "#f1f5f9" },
 ];
 
 export const feststoff = (nummer: number): Feststoff =>

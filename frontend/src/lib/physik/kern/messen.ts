@@ -62,6 +62,12 @@ function fuerTeil(t: Teil, quelle: string): Messgroesse[] {
   // Die Batterie zeigt, was sie *abgibt* — U, I und P dann gleichsinnig positiv,
   // solange sie liefert; ein Motor, der zum Dynamo wird, kehrt sein Zeichen um
   // und zeigt genau dadurch, dass er jetzt Leistung hergibt.
+  // Warm wird alles, und messen will man es auch an allem.
+  const waerme = [
+    g("temperatur", "Temperatur", "K", w => w.temperatur(t.id), undefined, "°C"),
+    g("waerme", "Wärme über der Umgebung", "J", w => w.waermemenge(t.id), "Q = m · c · ΔT"),
+  ];
+
   if (istElektrisch(t.art)) {
     const dreh = t.art === "batterie" ? -1 : 1;
     return [
@@ -69,10 +75,12 @@ function fuerTeil(t: Teil, quelle: string): Messgroesse[] {
       g("i", t.art === "batterie" ? "Abgegebener Strom" : "Strom", "A",
         w => dreh * w.stromMessung(t.id).strom),
       g("p", "Leistung", "W", w => dreh * w.stromMessung(t.id).leistung, "P = U · I"),
+      ...waerme,
     ];
   }
 
   return [
+    ...waerme,
     g("y", "Höhe", "m", w => w.zustand(t.id)?.y),
     g("x", "Ort waagerecht", "m", w => w.zustand(t.id)?.x),
     g("v", "Geschwindigkeit", "m/s", w => {

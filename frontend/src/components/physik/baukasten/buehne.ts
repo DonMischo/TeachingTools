@@ -40,6 +40,8 @@ export interface Bild {
   seilBahn?: (id: string) => Punkt[] | undefined;
   /** Wie hell ein Lämpchen brennt: 0 aus, 1 bei Nennleistung. */
   leuchten?: (id: string) => number;
+  /** Wie weit ein Teil über der Umgebung liegt, in Kelvin. */
+  uebertemperatur?: (id: string) => number;
 }
 
 const FARBE = {
@@ -61,6 +63,15 @@ const FARBE = {
 };
 
 const farbe = (hex: string) => Number.parseInt(hex.replace("#", ""), 16);
+
+/** Mischt zwei Farben: 0 ist ganz die erste, 1 ganz die zweite. */
+function mische(a: number, b: number, t: number): number {
+  if (t <= 0) return a;
+  const f = (x: number, y: number) => Math.round(x + (y - x) * t);
+  return (f((a >> 16) & 255, (b >> 16) & 255) << 16)
+    | (f((a >> 8) & 255, (b >> 8) & 255) << 8)
+    | f(a & 255, b & 255);
+}
 
 /** Hellt eine Farbe auf (a > 0) oder dunkelt sie ab (a < 0). */
 function toene(c: number, a: number): number {
@@ -121,7 +132,9 @@ export class Buehne {
     // Erst die Schatten aller Teile, dann die Teile — sonst fiele der Schatten
     // des oberen auf das untere Teil und sähe aus wie ein Loch darin.
     for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "schatten");
-    for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "koerper", bild.leuchten?.(t.id) ?? 0);
+    for (const t of aufbau.teile) {
+      this.zeichneTeil(t, lage, blick, "koerper", bild.leuchten?.(t.id) ?? 0, bild.uebertemperatur?.(t.id) ?? 0);
+    }
 
     for (const v of aufbau.verbinder) {
       if (bild.geloest.has(v.id)) continue;
@@ -222,7 +235,7 @@ export class Buehne {
     return [...bogen(f.b, w0 - Math.PI / 2), ...bogen(f.a, w0 + Math.PI / 2)];
   }
 
-  private zeichneTeil(t: Teil, lage: Lage, blick: Blick, was: "schatten" | "koerper", glut = 0) {
+  private zeichneTeil(t: Teil, lage: Lage, blick: Blick, was: "schatten" | "koerper", glut = 0, warm = 0) {
     const typ = teilTyp(t.art);
     if (!typ) return;
     const g = this.teile;
@@ -238,7 +251,9 @@ export class Buehne {
       }
 
       const { farbe: hex } = oberflaeche(t);
-      const grund = farbe(hex);
+      // Was warm wird, färbt sich: bei 80 K über der Umgebung glüht es rot.
+      // Eine Zahl im Inspektor sieht man nicht, eine rote Spule schon.
+      const grund = mische(farbe(hex), 0xe11d48, Math.min(0.75, Math.max(0, warm) / 80));
       const stoffName = t.art === "massestueck" ? "Messing" : feststoff(t.werte.stoff ?? 0).name;
       const glas = stoffName === "Glas";
       g.poly(flach(ps)).fill({ color: grund, alpha: glas ? 0.4 : 1 });

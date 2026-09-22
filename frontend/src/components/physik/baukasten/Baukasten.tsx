@@ -169,6 +169,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     seillaenge: id => welt.current?.seillaenge(id),
     seilAblauf: id => welt.current?.seilAblauf(id),
     seilBahn: id => welt.current?.seilBahn(id),
+    uebertemperatur: id => welt.current?.uebertemperatur(id) ?? 0,
     leuchten: id => {
       const t = aufbau.teile.find(x => x.id === id);
       if (t?.art !== "lampe") return 0;
