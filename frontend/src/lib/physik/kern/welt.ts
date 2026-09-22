@@ -24,7 +24,7 @@
 import * as b2 from "./box2d/PhaserBox2D.js";
 import type { b2BodyId, b2JointId, b2ShapeDef, b2WorldId } from "./box2d/PhaserBox2D.js";
 import type { Punkt } from "../typen";
-import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
+import { endeInWelt, type Aufbau, type Ende, type Teil, type Verbinder } from "./modell";
 import { Seilzug, type Seilknoten } from "./seilzug";
 import { Stromkreis, type Messung } from "./strom";
 import { Optik, istLeuchte, type Strahlstueck } from "./optik";
@@ -85,6 +85,15 @@ interface Wickel {
   richtung: number;
   /** Wo das Seil die Trommel verlässt — fest im Raum, nicht mitdrehend. */
   ablauf: Punkt;
+  /**
+   * Offene Winde: ist das Seil ganz aufgewickelt, hängt die Last am Kranz und
+   * wird mitgenommen. Die geschlossene hält sie an der Öffnung fest.
+   */
+  offen: boolean;
+  /** Das Ende, an dem die Last hängt — für das Umhängen an den Kranz. */
+  last: Ende;
+  /** Ob schon an den Kranz umgehängt wurde. */
+  amKranz?: boolean;
 }
 
 export class Welt {
@@ -290,7 +299,7 @@ export class Welt {
           verbinder: v.id, trommel: eA.teil!, radius: Math.hypot(eA.punkt.x, eA.punkt.y),
           laenge0: laenge, winkel0: this.umdrehung.get(eA.teil!) ?? 0,
           richtung: (v.werte.wickelrichtung ?? 1) >= 0 ? 1 : -1,
-          ablauf: pa,
+          ablauf: pa, offen: (v.werte.wickelt ?? 0) < 1.5, last: eB,
         });
       }
     }
@@ -347,7 +356,7 @@ export class Welt {
         verbinder: v.id, trommel: eA.teil!, radius: Math.hypot(eA.punkt.x, eA.punkt.y),
         laenge0: zug.laenge, winkel0: this.umdrehung.get(eA.teil!) ?? 0,
         richtung: (v.werte.wickelrichtung ?? 1) >= 0 ? 1 : -1,
-        ablauf,
+        ablauf, offen: (v.werte.wickelt ?? 0) < 1.5, last: v.b,
       });
     }
   }
@@ -404,6 +413,10 @@ export class Welt {
   /** Ein Takt: Brüche prüfen, rechnen, Ereignisse einsammeln, Drehungen aufsummieren. */
   schritt() {
     if (this.zerstoert) return;
+    // Zuerst, was nachgibt — mit den Kräften des letzten Takts. Danach greift
+    // `wickle` an die Gelenke, und Box2D vergisst dabei ihren Impuls: gefragt
+    // man sie hinterher, meldeten sie null Newton und nichts risse je.
+    this.pruefeAusloeser();
     this.wickle();
     this.treibeMotoren();
     // Licht braucht keine Zeit: die Bahnen werden bei jedem Takt neu verfolgt,
@@ -415,7 +428,6 @@ export class Welt {
     }, id => this.lichtleistung(id));
     this.sammleWaerme();
     this.waerme.rechne(TAKT, id => this.waermequellen.get(id) ?? 0);
-    this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
     // Die Seile über Rollen danach: der Löser hat die Schwerkraft schon in den
     // Geschwindigkeiten, und die Bahn hält sie im selben Takt wieder auf.
@@ -458,6 +470,17 @@ export class Welt {
     for (const w of this.wickel) {
       const laenge = this.seillaenge(w.verbinder);
       if (laenge === undefined) continue;
+      // Ganz aufgewickelt: bei der offenen Winde hängt die Last von jetzt an
+      // am Kranz und fährt mit herum, statt an der Öffnung stehenzubleiben.
+      if (w.offen && !w.amKranz && laenge <= w.radius + 1e-6) {
+        this.hefteAnDenKranz(w);
+        continue;
+      }
+      if (w.amKranz) continue;
+
+      // Erst ablesen, dann verstellen: `SetLengthRange` setzt den gespeicherten
+      // Impuls des Gelenks zurück, und danach meldet es null Newton.
+      const kraft = this.kraft(w.verbinder);
       const zug = this.seilzuege.get(w.verbinder);
       if (zug) zug.laenge = laenge;
       else b2.b2DistanceJoint_SetLengthRange(this.gelenke.get(w.verbinder)!, 0, laenge);
@@ -465,7 +488,6 @@ export class Welt {
       // Was am Seil hängt, hält die Trommel auf: das Moment ist Seilkraft mal
       // Halbmesser. Ein zu schwacher Motor kommt damit nicht mehr hoch.
       const trommel = this.koerper.get(w.trommel);
-      const kraft = this.kraft(w.verbinder);
       if (trommel && kraft) b2.b2Body_ApplyTorque(trommel, -w.richtung * kraft.betrag * w.radius, true);
     }
   }
@@ -594,6 +616,41 @@ export class Welt {
   }
 
   /**
+   * Hängt das Seil einer offenen Winde an den Kranz der Trommel um.
+   *
+   * Bis hierher zog ein Gelenk zwischen einem festen Punkt im Raum und der
+   * Last; jetzt sitzt das Ende auf der Trommel und dreht mit. Das Gelenk lässt
+   * sich in Box2D nicht umhängen, also wird es neu gebaut — einmal, und dann
+   * nie wieder.
+   */
+  private hefteAnDenKranz(w: Wickel) {
+    const trommel = this.koerper.get(w.trommel);
+    const last = this.koerperVon(w.last.teil);
+    const alt = this.gelenke.get(w.verbinder);
+    w.amKranz = true;
+    if (!trommel || !last) return;
+    if (alt && b2.b2Joint_IsValid(alt)) b2.b2DestroyJoint(alt);
+    this.seilzuege.delete(w.verbinder);
+
+    const v = this.verbinder.get(w.verbinder);
+    const d = b2.b2DefaultDistanceJointDef();
+    d.bodyIdA = trommel;
+    d.localAnchorA = vec({ x: 0, y: w.radius });
+    d.localAnchorB = vec(w.last.teil === null ? w.last.punkt : w.last.punkt);
+    d.bodyIdB = last;
+    // Kurz und straff: die Last hängt am Kranz, nicht mehr an einem Seil.
+    d.length = 0.01;
+    d.enableSpring = true;
+    d.hertz = 0;
+    d.enableLimit = true;
+    d.minLength = 0;
+    d.maxLength = 0.01;
+    const neu = b2.b2CreateDistanceJoint(this.id, d);
+    this.gelenke.set(w.verbinder, neu);
+    if (v) this.verbinder.set(w.verbinder, v);
+  }
+
+  /**
    * Was von selbst nachgibt: zu große Kraft, abgelaufene Zeit, gedrehter Arm.
    *
    * Der Winkel ist der des Teils am Anfang des Verbinders, aufsummiert. So
@@ -715,7 +772,9 @@ export class Welt {
     const w = this.wickel.find(x => x.verbinder === verbinderId);
     if (!w) return undefined;
     const gedreht = (this.umdrehung.get(w.trommel) ?? 0) - w.winkel0;
-    return Math.min(w.laenge0 + 5, Math.max(0.02, w.laenge0 - w.richtung * w.radius * gedreht));
+    // Kürzer als der Halbmesser kann es nicht werden: dann liegt die Last an
+    // der Trommel an.
+    return Math.min(w.laenge0 + 5, Math.max(w.radius, w.laenge0 - w.richtung * w.radius * gedreht));
   }
 
   /** Ob ein Verbinder noch hält. */

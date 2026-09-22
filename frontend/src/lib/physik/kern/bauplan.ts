@@ -210,7 +210,10 @@ function motorwinde(): Aufbau {
   const motor = teil(a, "motor", { x: 0, y: 2.2 }, { widerstand: 2, konstante: 0.3 });
   a = festAnDieWand(motor.aufbau, motor.id, { x: -0.06, y: 2.24 });
   const trommel = teil(a, "scheibe", { x: 0, y: 2.2 }, { durchmesser: 0.16, dicke: 0.03 }); a = trommel.aufbau;
-  a = verbinde(a, "achse", amTeil(motor.id), amTeil(trommel.id), standardWerteVerbinder("achse")).aufbau;
+  // Etwas Lagerreibung, sonst läuft die Trommel bei offenem Schalter rückwärts
+  // und die Last fällt: eine Winde ohne Bremse tut das auch.
+  a = verbinde(a, "achse", amTeil(motor.id), amTeil(trommel.id),
+    { ...standardWerteVerbinder("achse"), reibung: 0.5 }).aufbau;
 
   const last = teil(a, "massestueck", { x: 0.08, y: 1.2 }, { masse: 0.5 }); a = last.aufbau;
   a = verbinde(a, "seil", amTeil(trommel.id, { x: 0.08, y: 0 }), amTeil(last.id),

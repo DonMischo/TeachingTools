@@ -29,7 +29,7 @@ const laufe = (w: Welt, sekunden: number, jeSchritt?: () => void) => {
 };
 
 /** Scheibe an der Wand mit Motor, Seil vom Rand zur Last. */
-function winde({ radius = 0.1, drehzahl = 2, last = 2, richtung = 1 } = {}) {
+function winde({ radius = 0.1, drehzahl = 2, last = 2, richtung = 1, wickelt = 1, bruchkraft = 0 } = {}) {
   let a = neuerAufbau();
   const trommel = teil(a, "scheibe", { x: 0, y: 2 }, { durchmesser: radius * 2, dicke: 0.03 });
   a = trommel.aufbau;
@@ -39,10 +39,50 @@ function winde({ radius = 0.1, drehzahl = 2, last = 2, richtung = 1 } = {}) {
   a = gewicht.aufbau;
   // Das Seil sitzt am rechten Rand der Trommel — dort greift die Last an.
   const seil = verbinde(a, "seil", amTeil(trommel.id, { x: radius, y: 0 }), amTeil(gewicht.id), {
-    laenge: 0, wickelt: 1, wickelrichtung: richtung,
+    laenge: 0, wickelt, wickelrichtung: richtung, bruchkraft,
   });
   return { aufbau: seil.aufbau, trommel: trommel.id, gewicht: gewicht.id, seil: seil.id, achse: achse.id };
 }
+
+describe("Die beiden Windenarten", () => {
+  it("trägt die Last bei der offenen Winde über den Scheitel", () => {
+    // Ist das Seil ganz aufgewickelt, sitzt die Last am Kranz und fährt mit.
+    const { aufbau, gewicht } = winde({ radius: 0.12, drehzahl: 3, last: 0.2, wickelt: 1 });
+    const w = starte(aufbau);
+    let hoechste = -9, weitLinks = 9;
+    laufe(w, 8, () => {
+      const z = w.zustand(gewicht)!;
+      hoechste = Math.max(hoechste, z.y);
+      weitLinks = Math.min(weitLinks, z.x);
+    });
+
+    // Über die Mitte der Trommel hinaus und auf die andere Seite.
+    expect(hoechste).toBeGreaterThan(2.05);
+    expect(weitLinks).toBeLessThan(-0.02);
+  });
+
+  it("hält die Last bei der geschlossenen Winde an der Öffnung", () => {
+    const { aufbau, gewicht } = winde({ radius: 0.12, drehzahl: 3, last: 0.2, wickelt: 2 });
+    const w = starte(aufbau);
+    let hoechste = -9;
+    laufe(w, 8, () => { hoechste = Math.max(hoechste, w.zustand(gewicht)!.y); });
+
+    // Sie kommt bis an die Trommel und bleibt dort hängen.
+    expect(hoechste).toBeGreaterThan(1.8);
+    expect(hoechste).toBeLessThan(2);
+  });
+
+  it("reißt, wenn die Winde stärker zieht, als das Seil hält", () => {
+    // 2 kg wiegen 19,6 N; ein Seil für 12 N hält das nicht.
+    const { aufbau, seil, gewicht } = winde({ radius: 0.1, drehzahl: 2, last: 2, bruchkraft: 12 });
+    const w = starte(aufbau);
+    laufe(w, 1);
+
+    expect(w.haelt(seil)).toBe(false);
+    // Und sie liegt am Boden: ohne Seil hält sie nichts mehr.
+    expect(w.zustand(gewicht)!.y).toBeLessThan(0.1);
+  });
+});
 
 describe("Die Winde", () => {
   it("hebt die Last um Halbmesser mal Drehwinkel", () => {

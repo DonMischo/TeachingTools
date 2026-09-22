@@ -10,7 +10,7 @@
 import { formatiere, G, grad, bogen } from "@/lib/physik/einheiten";
 import { feststoff } from "@/lib/physik/material";
 import type { Aufbau } from "@/lib/physik/kern/modell";
-import { mitteAnWand } from "@/lib/physik/kern/bearbeiten";
+import { aufhaengung } from "@/lib/physik/kern/bearbeiten";
 import { istElektrisch, teilMasse, teilTyp } from "@/lib/physik/kern/teile";
 import { verbinderTyp } from "@/lib/physik/kern/verbinder";
 import type { Welt } from "@/lib/physik/kern/welt";
@@ -22,7 +22,7 @@ export interface InspektorAktionen {
   verbinderWerte: (id: string, w: Record<string, number>) => void;
   drehe: (id: string, winkel: number) => void;
   /** Setzt, wie das Teil in seiner Mitte an der Wand sitzt; null löst es. */
-  anWand: (id: string, art: "schraube" | "achse" | null) => void;
+  anWand: (id: string, art: "schraube" | "achse" | null, stelle?: number) => void;
   entferne: (a: Auswahl) => void;
   loese: (id: string) => void;
 }
@@ -59,7 +59,7 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
     const vorgegeben = t.art !== "massestueck" && (t.werte.masseVorgabe ?? 0) > 0;
     const herkunft = t.art === "massestueck" ? "eingestellt" : vorgegeben ? "vorgegeben" : `aus ${feststoff(t.werte.stoff ?? 0).name}`;
     const verbunden = aufbau.verbinder.filter(v => v.a.teil === t.id || v.b.teil === t.id);
-    const anWand = mitteAnWand(aufbau, t.id);
+    const { art: anWand, stelle } = aufhaengung(aufbau, t.id);
     // Gezählt statt aufgezählt: »Achse, Achse, Achse« liest niemand.
     const anzahl = new Map<string, number>();
     for (const v of verbunden) {
@@ -104,18 +104,30 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => aktionen.anWand(t.id, anWand === "schraube" ? null : "schraube")}
+                onClick={() => aktionen.anWand(t.id, anWand === "schraube" ? null : "schraube", stelle)}
                 aria-pressed={anWand === "schraube"}
                 className={`${knopf} ${anWand === "schraube" ? "border-[var(--accent)] text-[var(--accent)] font-bold" : ""}`}
-                title="Fest an die Lochwand, in der Mitte des Teils. Nochmal tippen löst es."
+                title="Fest an die Lochwand. Nochmal tippen löst es."
               >🔩 An die Wand</button>
               <button
-                onClick={() => aktionen.anWand(t.id, anWand === "achse" ? null : "achse")}
+                onClick={() => aktionen.anWand(t.id, anWand === "achse" ? null : "achse", stelle)}
                 aria-pressed={anWand === "achse"}
                 className={`${knopf} ${anWand === "achse" ? "border-[var(--accent)] text-[var(--accent)] font-bold" : ""}`}
-                title="Drehbar an die Lochwand, um die Mitte des Teils. Nochmal tippen löst es."
+                title="Drehbar an die Lochwand. Nochmal tippen löst es."
               >⚙️ Drehbar</button>
             </div>
+            {anWand && (
+              <label className="flex flex-col gap-1">
+                <span className="flex justify-between">
+                  {/* Ein Hebel lebt davon, dass der Drehpunkt nicht in der Mitte sitzt. */}
+                  <span className="text-[var(--text-muted)]">Aufhängung</span>
+                  <b className="tabular-nums">{stelle === 0 ? "Mitte" : `${Math.round(stelle * 100)} %`}</b>
+                </span>
+                <input type="range" min={-100} max={100} step={1} value={Math.round(stelle * 100)}
+                  onChange={e => aktionen.anWand(t.id, anWand, Number(e.target.value) / 100)}
+                  className="accent-[var(--accent)]" />
+              </label>
+            )}
             {verbunden.length > 0 && (
               <div className="text-xs text-[var(--text-muted)]">
                 Verbunden über {[...anzahl].map(([name, n]) => (n > 1 ? `${n} × ${name}` : name)).join(", ")}.

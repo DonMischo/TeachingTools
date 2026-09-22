@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   anschluesse, lageImAufbau, merke, neuerVerlauf, rolleUnter, schnappe, setze, setzeGelenk, setzeLage,
-  setzeMitteAnWand, setzeTeilWerte,
+  setzeAufhaengung, setzeTeilWerte,
   setzeVerbinderWerte,
   spanne, teileUnter, tue, verbinderUnter, vor, zurueck, zurWelt, type Lage, type Verlauf,
 } from "@/lib/physik/kern/bearbeiten";
@@ -437,7 +437,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       const t = aufbau.teile.find(x => x.id === id);
       if (t) aendere(v => tue(v, setzeLage(v.jetzt, id, t.pos, winkel)));
     },
-    anWand: (id: string, art: "schraube" | "achse" | null) => aendere(v => tue(v, setzeMitteAnWand(v.jetzt, id, art))),
+    anWand: (id: string, art: "schraube" | "achse" | null, stelle = 0) =>
+      aendere(v => tue(v, setzeAufhaengung(v.jetzt, id, art, stelle))),
     entferne: (a: Auswahl) => {
       aendere(v => tue(v, a.art === "teil" ? entferneTeil(v.jetzt, a.id) : entferneVerbinder(v.jetzt, a.id)));
       setAuswahl(null);

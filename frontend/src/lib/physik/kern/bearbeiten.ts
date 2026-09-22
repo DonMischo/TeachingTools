@@ -145,32 +145,53 @@ export function setzeGelenk(
 /** Näher als das zählt als »dieselbe Stelle« — ein halber Zentimeter. */
 const NAH = 0.005;
 
-/** Ob ein Verbinder ein Teil in dessen Mitte an der Wand hält. */
-function inDerMitteAnDerWand(v: Verbinder, teil: string): boolean {
+/** Ob ein Verbinder ein Teil an der Wand hält — an welcher Stelle auch immer. */
+function haeltAnDerWand(v: Verbinder, teil: string): boolean {
   if (v.art !== "achse" && v.art !== "schraube") return false;
   const [amTeilEnde, andere] = v.a.teil === teil ? [v.a, v.b] : v.b.teil === teil ? [v.b, v.a] : [null, null];
-  return !!amTeilEnde && andere!.teil === null && Math.hypot(amTeilEnde.punkt.x, amTeilEnde.punkt.y) < NAH;
-}
-
-/** Wie ein Teil in seiner Mitte an der Wand sitzt: gar nicht, fest oder drehbar. */
-export function mitteAnWand(aufbau: Aufbau, teil: string): "schraube" | "achse" | null {
-  const v = aufbau.verbinder.find(x => inDerMitteAnDerWand(x, teil));
-  return v ? (v.art as "schraube" | "achse") : null;
+  return !!amTeilEnde && andere!.teil === null;
 }
 
 /**
- * Setzt, wie ein Teil in seiner Mitte an der Wand sitzt — oder löst es davon.
+ * Wo die Aufhängung eines Teils sitzt, als Anteil seiner halben Länge.
  *
- * Ein Schalter, kein Hinzufügen: vorher sitzende Stifte in der Mitte werden
- * ersetzt, nicht ergänzt. Sonst sammelte jeder Klick einen weiteren Stift an
- * derselben Stelle an. Stifte an anderen Stellen des Teils bleiben.
+ * −1 ist das eine Ende, 0 die Mitte, +1 das andere. Ein Brett hängt eben nicht
+ * immer in der Mitte — ein Hebel lebt davon, dass der Drehpunkt woanders
+ * sitzt, und ein Ausleger hängt am Ende.
  */
-export function setzeMitteAnWand(aufbau: Aufbau, teil: string, art: "schraube" | "achse" | null): Aufbau {
+export function aufhaengung(aufbau: Aufbau, teil: string): { art: "schraube" | "achse" | null; stelle: number } {
+  const v = aufbau.verbinder.find(x => haeltAnDerWand(x, teil));
+  const t = aufbau.teile.find(x => x.id === teil);
+  if (!v || !t) return { art: null, stelle: 0 };
+  const ende = v.a.teil === teil ? v.a : v.b;
+  const halb = halbeLaenge(t);
+  return { art: v.art as "schraube" | "achse", stelle: halb > 0 ? Math.max(-1, Math.min(1, ende.punkt.x / halb)) : 0 };
+}
+
+/** Die halbe Länge eines Teils entlang seiner eigenen x-Achse. */
+function halbeLaenge(t: Teil): number {
+  const f = teilTyp(t.art)?.formen(t)[0];
+  if (f?.art === "kasten") return f.b / 2;
+  if (f?.art === "kapsel") return Math.hypot(f.b.x - f.a.x, f.b.y - f.a.y) / 2;
+  if (f?.art === "kreis") return f.r;
+  return 0;
+}
+
+/**
+ * Setzt, wie und wo ein Teil an der Wand sitzt — oder löst es davon.
+ *
+ * Ein Schalter, kein Hinzufügen: ein vorher sitzender Stift wird ersetzt,
+ * nicht ergänzt. Sonst sammelte jeder Klick einen weiteren an.
+ */
+export function setzeAufhaengung(
+  aufbau: Aufbau, teil: string, art: "schraube" | "achse" | null, stelle = 0,
+): Aufbau {
   const t = aufbau.teile.find(x => x.id === teil);
   if (!t) return aufbau;
-  const ohne = { ...aufbau, verbinder: aufbau.verbinder.filter(v => !inDerMitteAnDerWand(v, teil)) };
+  const ohne = { ...aufbau, verbinder: aufbau.verbinder.filter(v => !haeltAnDerWand(v, teil)) };
   if (!art) return ohne;
-  return verbinde(ohne, art, amTeil(teil), wand(t.pos), standardWerteVerbinder(art)).aufbau;
+  const lokal = { x: halbeLaenge(t) * Math.max(-1, Math.min(1, stelle)), y: 0 };
+  return verbinde(ohne, art, amTeil(teil, lokal), wand(weltpunkt(t, lokal)), standardWerteVerbinder(art)).aufbau;
 }
 
 /**

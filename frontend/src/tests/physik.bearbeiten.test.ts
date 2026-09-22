@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, it, expect } from "vitest";
 import {
-  merke, mitteAnWand, neuerVerlauf, setze, setzeGelenk, setzeLage, setzeMitteAnWand, spanne, teileUnter, tue,
+  aufhaengung, merke, neuerVerlauf, setze, setzeAufhaengung, setzeGelenk, setzeLage, spanne, teileUnter, tue,
   verbinderUnter, vor, zumBild, zurueck, zurWelt,
 } from "@/lib/physik/kern/bearbeiten";
 import { amTeil, endeInWelt, fuegeTeilHinzu, neuerAufbau, verbinde, wand, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
@@ -168,32 +168,47 @@ describe("Speichern", () => {
   });
 });
 
-describe("In der Mitte an die Wand", () => {
+describe("Die Aufhängung an der Wand", () => {
   it("schaltet statt zu stapeln: fest, drehbar, gelöst", () => {
     const { aufbau, id } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
-    let a = setzeMitteAnWand(aufbau, id, "schraube");
-    a = setzeMitteAnWand(a, id, "schraube");
+    let a = setzeAufhaengung(aufbau, id, "schraube");
+    a = setzeAufhaengung(a, id, "schraube");
     expect(a.verbinder).toHaveLength(1);
-    expect(mitteAnWand(a, id)).toBe("schraube");
+    expect(aufhaengung(a, id).art).toBe("schraube");
 
-    a = setzeMitteAnWand(a, id, "achse");
+    a = setzeAufhaengung(a, id, "achse");
     expect(a.verbinder.map(v => v.art)).toEqual(["achse"]);
 
-    a = setzeMitteAnWand(a, id, null);
+    a = setzeAufhaengung(a, id, null);
     expect(a.verbinder).toEqual([]);
-    expect(mitteAnWand(a, id)).toBeNull();
+    expect(aufhaengung(a, id).art).toBeNull();
   });
 
-  it("räumt schon angesammelte Doppel in der Mitte auf, lässt Stifte an anderen Stellen stehen", () => {
+  it("hängt das Brett dort auf, wo man es sagt — nicht immer in der Mitte", () => {
+    // Ein Brett von 60 cm: −1 ist das linke Ende, also 30 cm links der Mitte.
+    const { aufbau, id } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
+    const a = setzeAufhaengung(aufbau, id, "achse", -1);
+    const v = a.verbinder[0];
+    const amBrett = v.a.teil === id ? v.a : v.b;
+    const anDerWand = v.a.teil === null ? v.a : v.b;
+    expect(amBrett.punkt.x).toBeCloseTo(-0.3, 6);
+    expect(anDerWand.punkt.x).toBeCloseTo(-0.3, 6);
+    expect(aufhaengung(a, id).stelle).toBeCloseTo(-1, 6);
+
+    // Und wieder in die Mitte gesetzt bleibt es ein einziger Stift.
+    const b = setzeAufhaengung(a, id, "achse", 0);
+    expect(b.verbinder).toHaveLength(1);
+    expect(aufhaengung(b, id).stelle).toBeCloseTo(0, 6);
+  });
+
+  it("räumt schon angesammelte Doppel auf", () => {
     const { aufbau, id } = teil(neuerAufbau(), "brett", { x: 0, y: 1 });
     let a = aufbau;
-    // So sah es vorher nach mehrmaligem Klicken aus: neun Stifte in der Mitte.
+    // So sah es vorher nach mehrmaligem Klicken aus: neun Stifte an der Wand.
     for (let i = 0; i < 9; i++) {
       a = verbinde(a, i % 2 ? "achse" : "schraube", amTeil(id), wand({ x: 0, y: 1 })).aufbau;
     }
-    a = verbinde(a, "schraube", amTeil(id, { x: 0.25, y: 0 }), wand({ x: 0.25, y: 1 })).aufbau;
-    const b = setzeMitteAnWand(a, id, "achse");
-    expect(b.verbinder.map(v => v.art).sort()).toEqual(["achse", "schraube"]);
+    expect(setzeAufhaengung(a, id, "achse").verbinder.map(v => v.art)).toEqual(["achse"]);
   });
 
   it("setzt kein zweites Gelenk an dieselbe Stelle", () => {

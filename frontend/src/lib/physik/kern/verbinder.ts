@@ -49,15 +49,35 @@ export const VERBINDER: VerbinderTyp[] = [
     name: "Seil",
     icon: "🪢",
     punkte: 2,
-    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Unterwegs die Mitte einer Scheibe antippen: dort läuft das Seil über sie, und aus zwei Rollen wird ein Flaschenzug. Das Seil zieht, drückt aber nicht. Setzt man den Anfang an den Rand einer Scheibe und schaltet »Wickelt auf« ein, wird eine Winde daraus.",
+    hinweis: "Anfang und Ende antippen — ein Teil oder die Wand. Unterwegs die Mitte einer Scheibe antippen: dort läuft das Seil über sie, und aus zwei Rollen wird ein Flaschenzug. Das Seil zieht, drückt aber nicht. Sitzt der Anfang am Rand einer Scheibe, wird mit »Wickelt auf« eine Winde daraus.",
     parameter: [
       { schluessel: "laenge", name: "Länge (0 = wie gespannt)", einheit: "m", standard: 0, min: 0, max: 5 },
       {
-        // Die Winde: das Seil sitzt am Rand einer Scheibe und wickelt sich auf,
-        // wenn sie sich dreht. Der Hebelarm ist der Abstand vom Mittelpunkt.
-        schluessel: "wickelt", name: "Wickelt auf das Teil am Anfang", einheit: "", standard: 0, min: 0, max: 1,
-        optionen: [{ wert: 0, name: "nein" }, { wert: 1, name: "ja — Winde" }],
+        /*
+         * Die Winde: das Seil sitzt am Rand einer Scheibe und wickelt sich auf,
+         * wenn sie sich dreht. Der Hebelarm ist der Abstand vom Mittelpunkt.
+         *
+         * Zwei Bauarten, und sie unterscheiden sich erst am Anschlag:
+         *
+         * - **Offen** wie ein Haspel ohne Gehäuse. Ist das Seil ganz
+         *   aufgewickelt, hängt die Last am Kranz und wird von da an
+         *   mitgenommen — über den Scheitel und auf der anderen Seite wieder
+         *   hinunter.
+         * - **Geschlossen** wie eine Seilwinde mit Öffnung. Dort bleibt die
+         *   Last hängen, und wer weiterkurbelt, spannt nur noch. Mit einer
+         *   Bruchkraft reißt das Seil dann irgendwann.
+         *
+         * Ohne Winde bleibt das Seilende einfach am Kranz festgebunden und
+         * dreht mit der Scheibe mit.
+         */
+        schluessel: "wickelt", name: "Wickelt auf das Teil am Anfang", einheit: "", standard: 0, min: 0, max: 2,
+        optionen: [
+          { wert: 0, name: "nein — am Kranz angebunden" },
+          { wert: 1, name: "offene Winde" },
+          { wert: 2, name: "geschlossene Winde" },
+        ],
       },
+      { schluessel: "bruchkraft", name: "Reißt bei (0 = nie)", einheit: "N", standard: 0, min: 0, max: 20000 },
       {
         schluessel: "wickelrichtung", name: "Wickelrichtung", einheit: "", standard: 1, min: -1, max: 1,
         optionen: [{ wert: 1, name: "linksherum zieht an" }, { wert: -1, name: "rechtsherum zieht an" }],
