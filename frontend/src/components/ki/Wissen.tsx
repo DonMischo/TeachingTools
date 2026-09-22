@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from "react";
 import { LESESTUFEN, WISSEN, type Lesestufe } from "@/lib/ki/wissen";
+import { MitFachworten } from "@/components/ki/Fachwort";
 
 const SPEICHER = "ki.lesestufe";
 
@@ -78,9 +79,13 @@ export function Wissen({ thema }: { thema: keyof typeof WISSEN | string }) {
 
           {eintrag.stufen[stufe].map((absatz, i) => (
             <p key={i} className="text-sm leading-relaxed text-[var(--text-muted)]">
-              {absatz}
+              <MitFachworten text={absatz} />
             </p>
           ))}
+
+          <p className="text-[10px] text-[var(--text-muted)]">
+            Unterstrichene Wörter erklären sich beim Antippen.
+          </p>
         </div>
       )}
     </div>

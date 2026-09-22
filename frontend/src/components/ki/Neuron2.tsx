@@ -23,6 +23,7 @@ import {
   START_SEED, starte, lernschritt2, treffer2, fehler2, vorwaerts, linie2, type Netz2,
 } from "@/lib/ki/netz2";
 import { Wissen } from "@/components/ki/Wissen";
+import { MitFachworten } from "@/components/ki/Fachwort";
 
 const FELD = 260;
 /** Auflösung der eingefärbten Fläche — klein gerechnet, groß gezeichnet. */
@@ -243,11 +244,11 @@ export function Neuron2() {
             </div>
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              {fertig
+              <MitFachworten text={fertig
                 ? "✓ Alle Punkte richtig — mit einem einzigen Neuron war genau das unmöglich. Die beiden Geraden schneiden gemeinsam einen Streifen aus der Fläche, und der Streifen passt."
                 : steckt
                   ? "Das Training kommt nicht weiter: Es ist in eine Sackgasse gelaufen, aus der kleine Schritte nicht mehr herausführen (ein »lokales Minimum«). Mit »Neuer Startwert« geht es von woanders los — auch echtes Training wird manchmal einfach neu gestartet."
-                  : "Jeder Durchgang rechnet alle Punkte durch, misst den Fehler und verteilt ihn rückwärts auf die Gewichte. Diesen Rückwärtsschritt nennt man Backpropagation — er ist der Grund, warum tiefe Netze überhaupt trainierbar sind."}
+                  : "Jeder Durchgang rechnet im Full Batch alle Punkte durch, misst den Fehler und verteilt ihn rückwärts auf die Gewichte. Diesen Rückwärtsschritt nennt man Backpropagation — er ist der Grund, warum tiefe Netze überhaupt trainierbar sind."} />
             </p>
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">

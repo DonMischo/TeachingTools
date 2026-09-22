@@ -13,7 +13,7 @@
  *   ▸ **Prompt-Stärke** ist die Guidance: zu niedrig wird beliebig, zu hoch
  *     drückt die Punkte über die Form hinaus. Die Mitte ist richtig.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FORMEN, ALLE_PUNKTE, rauschwolke, entrauscheSchritt, aehnlichkeit, type Punkt,
 } from "@/lib/ki/punktdiffusion";
@@ -57,10 +57,16 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
   const [wolke, setWolke] = useState<Punkt[]>([]);
   const wuerfel = useRef<() => number>(rng(1));
 
-  const seed = useMemo(
-    () => (signatur ? seedAusSignatur(signatur) % 100000 : 20260922),
-    [signatur],
-  );
+  // Der Seed kommt aus dem Sprachmodell-Reiter, sobald dort ein Text steht —
+  // sonst aus dem Würfel. Selbst gewählt schlägt beides: Ohne eigenen Seed
+  // hätte die Station keinen, solange niemand einen Text geschrieben hat, und
+  // »gleicher Seed, gleiches Bild« ließe sich gar nicht vorführen.
+  const [eigenerSeed, setEigenerSeed] = useState<number | null>(null);
+  const ausText = signatur ? seedAusSignatur(signatur) % 100000 : null;
+  const seed = eigenerSeed ?? ausText ?? 20260922;
+  const herkunft = eigenerSeed !== null ? "selbst gewählt"
+    : ausText !== null ? `aus deinem Text ${signatur}`
+    : "Grundstellung";
   const form = FORMEN[formNr];
 
   /** Zurück auf Anfang: reines Rauschen, derselbe Seed ergibt dasselbe. */
@@ -149,9 +155,30 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
           <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
             <span>Schritt {SCHRITTE - t} von {SCHRITTE}</span>
             <span>·</span>
-            <span>Seed {signatur ?? "—"}</span>
-            <span>·</span>
             <span>trifft die Form zu {Math.round(passt * 100)} %</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
+            <span>🎲 Seed <b className="font-mono text-[var(--text)]">{seed}</b> ({herkunft})</span>
+            <button
+              type="button"
+              onClick={() => { setEigenerSeed(Math.floor(Math.random() * 100000)); }}
+              className="px-2 py-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)]
+                hover:bg-[var(--surface-hover)] font-bold"
+            >
+              neuer Seed
+            </button>
+            {eigenerSeed !== null && ausText !== null && (
+              <button
+                type="button"
+                onClick={() => setEigenerSeed(null)}
+                className="px-2 py-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)]
+                  hover:bg-[var(--surface-hover)] font-bold"
+              >
+                zurück zum Text
+              </button>
+            )}
+            <span>Gleicher Seed, gleiches Bild — probiere dieselbe Form zweimal.</span>
           </div>
 
           <div className="flex flex-wrap gap-2">

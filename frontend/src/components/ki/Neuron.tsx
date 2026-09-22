@@ -16,6 +16,7 @@ import {
 } from "@/lib/ki/perzeptron";
 import { rng } from "@/lib/ki/rng";
 import { Wissen } from "@/components/ki/Wissen";
+import { MitFachworten } from "@/components/ki/Fachwort";
 
 const FELD = 260;
 
@@ -204,18 +205,16 @@ export function Neuron() {
             </div>
 
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              {!falsch.length
+              <MitFachworten text={!falsch.length
                 ? "✓ Alles richtig einsortiert. Genau das heißt »trainiert«: Es gibt keine Gewichte mehr zu verschieben."
                 : zuletzt
                   ? "Die Maschine hat sich gerade den großen Punkt vorgenommen, bei dem sie falsch lag, und die Gewichte ein Stück in seine Richtung geschoben. Mehr passiert bei keinem Lernschritt."
-                  : satz.hinweis}
+                  : satz.hinweis} />
             </p>
 
             {!satz.trennbar && schritte > 60 && (
               <p className="text-xs leading-relaxed p-3 rounded-xl border border-[var(--accent)]">
-                ⚡ Siehst du? Die Linie zappelt und findet nie Ruhe. Mit einem einzigen Neuron ist
-                dieser Datensatz nicht zu schaffen — man braucht mehrere hintereinander. Genau daran
-                ist die KI-Forschung fast zwanzig Jahre hängengeblieben.
+                <MitFachworten text="⚡ Siehst du? Die Linie zappelt und findet nie Ruhe. Dieser Datensatz ist nicht linear separierbar — mit einem einzigen Neuron (einem Perzeptron) also nicht zu schaffen. Man braucht mehrere hintereinander; das ist das berühmte XOR-Problem, an dem die KI-Forschung fast zwanzig Jahre hängengeblieben ist." />
               </p>
             )}
           </div>
