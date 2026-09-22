@@ -50,7 +50,14 @@ export function woerterAus(text: string): string[] {
   return out;
 }
 
-export type Korpus = { slug: string; titel: string; icon: string; text: string };
+export type Korpus = {
+  slug: string;
+  titel: string;
+  icon: string;
+  /** Worum es geht — ohne das raet man beim Ratespiel ins Blaue. */
+  beschreibung: string;
+  text: string;
+};
 
 /**
  * Zählt die Übergänge und baut daraus ein Netz.

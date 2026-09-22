@@ -11,6 +11,9 @@ import { render, screen } from "@testing-library/react";
 import {
   DATENSAETZE, START, antwort, fehlerhafte, treffer, lernschritt, linie,
 } from "@/lib/ki/perzeptron";
+import {
+  START_SEED, starte, lernschritt2, treffer2, fehler2, antwort2, linie2, vorwaerts,
+} from "@/lib/ki/netz2";
 import { KANTE, leeresBild, istLeer, zentriere, abstand, erkenne, type Bild } from "@/lib/ki/knn";
 import { Zeichnen } from "@/components/ki/Zeichnen";
 import { rng } from "@/lib/ki/rng";
@@ -66,6 +69,75 @@ describe("Das Neuron", () => {
     const g = { w1: 1, w2: 0, b: 0 };
     expect(antwort(g, { x: 0.9, y: 0.5 })).toBe(0);
     expect(antwort(g, { x: 0.1, y: 0.5 })).toBe(1);
+  });
+});
+
+describe("Zwei Neuronen", () => {
+  /** Üben wie die Station: ganze Durchgänge über alle Punkte. */
+  function uebe(slug: string, seed = START_SEED, durchgaenge = 3000) {
+    const satz = DATENSAETZE.find(d => d.slug === slug)!;
+    let n = starte(seed);
+    for (let i = 0; i < durchgaenge; i++) n = lernschritt2(n, satz.punkte, 2);
+    return { n, satz };
+  }
+
+  it("löst, woran ein einzelnes Neuron scheitert", () => {
+    // Das ist der ganze Sinn der Station — und der Grund für tiefe Netze.
+    const { n, satz } = uebe("knifflig");
+    expect(satz.trennbar).toBe(false);
+    expect(treffer2(n, satz.punkte), "zwei Neuronen kommen am XOR nicht durch").toBe(satz.punkte.length);
+  });
+
+  it("schafft auch die einfachen Datensätze", () => {
+    for (const satz of DATENSAETZE) {
+      const { n } = uebe(satz.slug);
+      expect(treffer2(n, satz.punkte), satz.slug).toBe(satz.punkte.length);
+    }
+  });
+
+  it("macht den Fehler mit jedem Üben kleiner", () => {
+    const satz = DATENSAETZE.find(d => d.slug === "knifflig")!;
+    const anfang = fehler2(starte(START_SEED), satz.punkte);
+    const { n } = uebe("knifflig", START_SEED, 500);
+    expect(fehler2(n, satz.punkte)).toBeLessThan(anfang);
+  });
+
+  it("übt reproduzierbar — derselbe Startwert, derselbe Verlauf", () => {
+    const a = uebe("knifflig", 3, 200).n;
+    const b = uebe("knifflig", 3, 200).n;
+    const c = uebe("knifflig", 4, 200).n;
+    expect(a.v[0]).toBe(b.v[0]);
+    expect(a.v[0]).not.toBe(c.v[0]);
+  });
+
+  it("zeichnet für beide verdeckten Neuronen eine Gerade", () => {
+    const { n } = uebe("knifflig", START_SEED, 100);
+    expect(linie2(n, 0)).not.toBeNull();
+    expect(linie2(n, 1)).not.toBeNull();
+  });
+
+  it("schneidet einen Streifen aus, keine Halbebene", () => {
+    // Ein einzelnes Neuron teilt die Fläche in zwei Hälften: Auf einer Geraden
+    // quer durchs Bild wechselt die Antwort dann genau einmal. Beim Streifen
+    // wechselt sie zweimal — daran erkennt man die zweite Schicht.
+    const { n } = uebe("knifflig");
+    let wechsel = 0;
+    let vorher = antwort2(n, { x: 0, y: 0 });
+    for (let i = 1; i <= 100; i++) {
+      const jetzt = antwort2(n, { x: i / 100, y: i / 100 });
+      if (jetzt !== vorher) wechsel++;
+      vorher = jetzt;
+    }
+    expect(wechsel, "die Antwort wechselt nicht zweimal — das wäre nur eine Gerade").toBe(2);
+  });
+
+  it("gibt für jede Stelle einen Wert zwischen 0 und 1", () => {
+    const { n } = uebe("obst", START_SEED, 50);
+    for (const [x, y] of [[0, 0], [1, 1], [0.5, 0.5], [0.2, 0.9]]) {
+      const { aus } = vorwaerts(n, x, y);
+      expect(aus).toBeGreaterThanOrEqual(0);
+      expect(aus).toBeLessThanOrEqual(1);
+    }
   });
 });
 

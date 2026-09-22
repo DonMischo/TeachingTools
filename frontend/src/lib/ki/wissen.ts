@@ -218,6 +218,27 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  neuron2: {
+    titel: "Warum reicht ein Neuron nicht?",
+    stufen: {
+      "5-7": [
+        "Ein Neuron kann nur eine gerade Linie ziehen. Manche Aufgaben lassen sich damit einfach nicht lösen — wie die vier Häufchen über Kreuz.",
+        "Zwei Neuronen ziehen zwei Linien. Ein drittes schaut sich beide Antworten an und macht daraus die endgültige. So entsteht ein Streifen statt einer Hälfte.",
+        "Genau deshalb heißen die Netze »tief«: Da sind viele Schichten hintereinander, und jede kann ein bisschen mehr als die davor.",
+      ],
+      "8+": [
+        "Ein einzelnes Neuron ist ein linearer Klassifikator: Seine Grenze ist immer eine Gerade. Datensätze, die man so nicht trennen kann, heißen nicht linear separierbar — das bekannteste Beispiel ist XOR, und genau das sind die vier Häufchen.",
+        "Zwei verdeckte Neuronen liefern zwei Geraden; das Ausgabeneuron verknüpft ihre Antworten. Aus »oberhalb von Linie 1« und »unterhalb von Linie 2« wird ein Streifen — eine Form, die eine einzelne Gerade nie ergibt.",
+        "Damit das trainierbar wird, braucht es zwei Zutaten: eine weiche Kurve statt der harten Schwelle (Sigmoid) und Backpropagation — den Fehler rückwärts durch die Schichten verteilen. Beides zusammen setzte sich erst ab 1986 durch und beendete den ersten KI-Winter.",
+      ],
+      "10+": [
+        "Das Universal-Approximations-Theorem sagt: Schon eine verdeckte Schicht mit genügend Neuronen kann jede stetige Funktion beliebig genau annähern. »Genügend« kann allerdings absurd viele bedeuten — tiefe Netze erreichen dieselbe Ausdruckskraft mit exponentiell weniger Neuronen, und das ist der eigentliche Grund für Tiefe.",
+        "Trainiert wird hier mit Full-Batch-Gradientenabstieg auf dem quadratischen Fehler; die Gradienten der verdeckten Schicht entstehen über die Kettenregel (Backpropagation). Der Faktor a·(1−a) darin ist die Ableitung der Sigmoid — sie wird an den Rändern sehr klein, und genau daraus entsteht bei vielen Schichten das Problem verschwindender Gradienten (heute meist mit ReLU umgangen).",
+        "Dass manche Startwerte nicht ankommen, ist kein Artefakt: Die Fehlerlandschaft von XOR mit zwei verdeckten Neuronen hat nachweislich lokale Minima. In großen Netzen ist das seltener ein Problem — dort sind die kritischen Stellen meist Sattelpunkte, keine echten Minima.",
+      ],
+    },
+  },
+
   erkennen: {
     titel: "Wie erkennt eine Maschine, was auf einem Bild ist?",
     stufen: {

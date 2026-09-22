@@ -19,6 +19,7 @@ import { useMemo, useState } from "react";
 import { trainiere, woerterAus } from "@/lib/ki/trainieren";
 import { KORPORA } from "@/lib/ki/korpora";
 import { fortsetzungen, type Wort } from "@/lib/ki/wortnetz";
+import { rng } from "@/lib/ki/rng";
 import { Wissen } from "@/components/ki/Wissen";
 
 /** Wie viele Vorschläge zur Auswahl stehen — mehr wäre auf dem Telefon zu viel. */
@@ -27,15 +28,34 @@ const RUNDEN = 12;
 
 type Stand = { ich: number; maschine: number; runde: number };
 
+/**
+ * Wo die Runde anfängt — ausgewürfelt, aber wiederholbar.
+ *
+ * Angefangen wird immer an einem Satzanfang: mitten in einen Satz zu
+ * springen, macht das Raten unfair. Derselbe Seed ergibt dieselbe Runde,
+ * damit eine Klasse sich vergleichen kann (»alle auf Seed 42«).
+ */
+function startPosition(woerter: readonly string[], seed: number, runden: number): number {
+  const anfaenge: number[] = [];
+  for (let i = 1; i < woerter.length - runden - 1; i++) {
+    if (woerter[i - 1] === ".") anfaenge.push(i);
+  }
+  if (!anfaenge.length) return Math.min(4, Math.max(0, woerter.length - runden - 1));
+  return anfaenge[Math.floor(rng(seed)() * anfaenge.length) % anfaenge.length];
+}
+
 export function Raten() {
   const [korpusNr, setKorpusNr] = useState(0);
-  const [pos, setPos] = useState(4);
+  const [seed, setSeed] = useState(42);
   const [stand, setStand] = useState<Stand>({ ich: 0, maschine: 0, runde: 0 });
   const [wahl, setWahl] = useState<string | null>(null);
 
   const korpus = KORPORA[korpusNr];
   const woerter = useMemo(() => woerterAus(korpus.text), [korpus]);
   const netz = useMemo(() => trainiere(korpus.text, 2, korpus.titel), [korpus]);
+  const start = useMemo(() => startPosition(woerter, seed, RUNDEN), [woerter, seed]);
+  const [versatz, setVersatz] = useState(0);
+  const pos = start + versatz;
 
   const richtig = woerter[pos];
   const fertig = stand.runde >= RUNDEN || pos >= woerter.length - 1;
@@ -70,12 +90,13 @@ export function Raten() {
 
   function weiter() {
     setWahl(null);
-    setPos(p => p + 1);
+    setVersatz(v => v + 1);
   }
 
-  function neu(nr = korpusNr) {
+  function neu(nr = korpusNr, neuerSeed = seed) {
     setKorpusNr(nr);
-    setPos(4);
+    setSeed(neuerSeed);
+    setVersatz(0);
     setStand({ ich: 0, maschine: 0, runde: 0 });
     setWahl(null);
   }
@@ -94,6 +115,28 @@ export function Raten() {
           Welches Wort kommt als Nächstes? Du tippst, das Netz tippt — und am Ende zählen wir ab.
           Genau diese Aufgabe löst ein Sprachmodell Milliarden Mal beim Training.
         </p>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <span>
+            <span aria-hidden>{korpus.icon}</span> <b>{korpus.titel}</b>
+            <span className="text-[var(--text-muted)]"> — {korpus.beschreibung}</span>
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span>🎲 Seed <b className="font-mono text-[var(--text)]">{seed}</b></span>
+          <button
+            type="button"
+            onClick={() => neu(korpusNr, Math.floor(Math.random() * 1000))}
+            className="px-2 py-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)]
+              hover:bg-[var(--surface-hover)] font-bold"
+          >
+            neue Stelle
+          </button>
+          <span>
+            Derselbe Seed ergibt dieselbe Runde — so rät die ganze Klasse an derselben Stelle.
+          </span>
+        </div>
 
         <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--bg)] text-sm leading-relaxed">
           {woerter.slice(Math.max(0, pos - 14), pos).join(" ")}{" "}
@@ -165,7 +208,7 @@ export function Raten() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => neu()}
+                onClick={() => neu(korpusNr, Math.floor(Math.random() * 1000))}
                 className="px-3 py-1.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] text-sm"
               >
                 ↺ Noch eine Runde

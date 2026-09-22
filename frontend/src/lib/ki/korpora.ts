@@ -71,7 +71,19 @@ Stelle die Teller auf den Tisch. Guten Appetit.
 `;
 
 export const KORPORA: Korpus[] = [
-  { slug: "maerchen", titel: "Märchen", icon: "🏰", text: MAERCHEN.trim() },
-  { slug: "spielbericht", titel: "Spielbericht", icon: "⚽", text: SPIELBERICHT.trim() },
-  { slug: "rezept", titel: "Rezept", icon: "🥞", text: REZEPT.trim() },
+  {
+    slug: "maerchen", titel: "Märchen", icon: "🏰",
+    beschreibung: "Ein Müller, seine Tochter und ein kleines Männchen, das Stroh zu Gold spinnt",
+    text: MAERCHEN.trim(),
+  },
+  {
+    slug: "spielbericht", titel: "Spielbericht", icon: "⚽",
+    beschreibung: "Ein Fußballspiel: die Gäste führen früh, die Gastgeber kommen zurück",
+    text: SPIELBERICHT.trim(),
+  },
+  {
+    slug: "rezept", titel: "Rezept", icon: "🥞",
+    beschreibung: "Eine Anleitung: Pfannkuchen backen, Schritt für Schritt",
+    text: REZEPT.trim(),
+  },
 ];

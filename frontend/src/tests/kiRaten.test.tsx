@@ -11,6 +11,25 @@ import { Raten } from "@/components/ki/Raten";
 import { KORPORA } from "@/lib/ki/korpora";
 import { trainiere, woerterAus } from "@/lib/ki/trainieren";
 import { fortsetzungen, type Wort } from "@/lib/ki/wortnetz";
+import { rng } from "@/lib/ki/rng";
+
+/**
+ * Wo die Station mit dem Grund-Seed anfängt.
+ *
+ * Muss dieselbe Rechnung sein wie in `Raten.tsx` — sonst prüft der Test eine
+ * andere Stelle im Text als die, die auf dem Bildschirm steht.
+ */
+const SEED = 42;
+const RUNDEN = 12;
+
+function startPosition(woerter: readonly string[]): number {
+  const anfaenge: number[] = [];
+  for (let i = 1; i < woerter.length - RUNDEN - 1; i++) {
+    if (woerter[i - 1] === ".") anfaenge.push(i);
+  }
+  if (!anfaenge.length) return Math.min(4, Math.max(0, woerter.length - RUNDEN - 1));
+  return anfaenge[Math.floor(rng(SEED)() * anfaenge.length) % anfaenge.length];
+}
 
 /** Dieselbe Auswahl, die die Station aufbaut. */
 function auswahl(korpusText: string, titel: string, pos: number, anzahl = 6) {
@@ -57,7 +76,8 @@ describe("Die Auswahl", () => {
 describe("Spielen", () => {
   it("zählt Mensch und Maschine getrennt", () => {
     const { container } = render(<Raten />);
-    const { liste, richtig, tipp } = auswahl(KORPORA[0].text, KORPORA[0].titel, 4);
+    const start = startPosition(woerterAus(KORPORA[0].text));
+    const { liste, richtig, tipp } = auswahl(KORPORA[0].text, KORPORA[0].titel, start);
 
     // Absichtlich falsch tippen, wo es geht.
     const falsch = liste.find(w => w !== richtig);
