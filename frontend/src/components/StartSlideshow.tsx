@@ -10,11 +10,22 @@ import { AppLogo } from "@/components/AppLogo";
 import { HaeuserDiagram } from "@/components/HaeuserDiagram";
 import { WochenspruchSlide } from "@/components/WochenspruchSlide";
 import { PdfSlide } from "@/components/PdfSlide";
+import { abWoche, isoWoche } from "@/lib/schoolyear";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 
+/**
+ * Uhrzeit, Datum und A/B-Woche.
+ *
+ * Doppelt genutzt: als Folie `kind: "clock"` in der Rotation und als
+ * Rückfallbild, solange überhaupt keine Folie etwas zu zeigen hat.
+ *
+ * Die A/B-Woche kommt aus derselben Funktion wie die Randspalte im Kalender
+ * (`lib/schoolyear`) — stünde die Regel zweimal da, zeigte irgendwann die eine
+ * Anzeige A und die andere B.
+ */
 function Screensaver() {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -23,11 +34,18 @@ function Screensaver() {
   }, []);
   const time = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
   const date = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  const kw = isoWoche(now);
   return (
     <div className="flex flex-col items-center justify-center gap-6 h-full">
       <AppLogo />
       <div className="text-7xl font-bold tabular-nums">{time}</div>
       <div className="text-xl text-[var(--text-muted)] capitalize">{date}</div>
+      <div className="flex items-center gap-3 text-xl" data-testid="ab-woche">
+        <span className="text-[var(--text-muted)] tabular-nums">KW {kw}</span>
+        <span className="px-4 py-1 rounded-full font-bold bg-[var(--accent)] text-[var(--accent-text)]">
+          {abWoche(kw)}-Woche
+        </span>
+      </div>
     </div>
   );
 }
@@ -70,6 +88,7 @@ function HauspunkteSlide() {
 // `loop`: a pinned or lone video/PDF has nothing to advance to, so it repeats.
 function SlideView({ item, onAdvance, loop }: { item: SlideshowItem; onAdvance: () => void; loop: boolean }) {
   if (item.kind === "hauspunkte") return <HauspunkteSlide />;
+  if (item.kind === "clock") return <Screensaver />;
   if (item.kind === "wochenspruch" && item.wochenspruch) return <WochenspruchSlide ws={item.wochenspruch} />;
 
   if (item.kind === "calendar") {
@@ -139,7 +158,7 @@ export function StartSlideshow() {
     const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id, pinned, rotation.length]);
+  }, [rotIndex, current?.id, pinned, rotation.length]);
 
   if (!current) {
     return (

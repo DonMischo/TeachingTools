@@ -2,10 +2,13 @@
 Startseiten-Slideshow — kiosk-style rotation shown on the school's front
 display: uploaded files (image/pdf/video), external links, a calendar-tag
 feed, the current Wochenspruch (fetched from wochenspruch.pfarr.tools, data by
-kirchenjahr-evangelisch.de) and Hauspunkte. Hauspunkte, Termine (calendar) and
-Wochenspruch are built-in rows that always exist once and can only be
-deactivated. A time slot pins an item while it is active; outside the slot the
-item rotates like any other. `/public` serves the rotation filtered
+kirchenjahr-evangelisch.de), Hauspunkte and a clock. Hauspunkte, Termine
+(calendar), Wochenspruch and the clock are built-in rows that always exist once
+and can only be deactivated; the clock starts at 3 seconds and, unlike the
+others, ignores its list position — the display shows it after every two other
+slides (see lib/slideshow.ts), because a screen in a hallway is looked at for
+the time first. A time slot pins an item while it is active; outside the slot
+the item rotates like any other. `/public` serves the rotation filtered
 by viewer audience level; the rest are admin-feature-gated management
 endpoints (create/patch/reorder/delete/upload) plus a pure `compute_warnings`
 helper that flags broken/overlapping items for the admin UI.
@@ -44,7 +47,13 @@ ALLOWED_EXTENSIONS = {
 }
 AUDIENCE_LEVELS = {"guest": 0, "student": 1, "teacher": 2}
 # kind -> default title; created on demand, never deletable
-BUILTIN_KINDS = {"hauspunkte": "Hauspunkte", "calendar": "Termine", "wochenspruch": "Wochenspruch"}
+BUILTIN_KINDS = {
+    "hauspunkte": "Hauspunkte", "calendar": "Termine",
+    "wochenspruch": "Wochenspruch", "clock": "Uhr",
+}
+# Abweichende Standdauer beim Anlegen. Die Uhr steht kurz: sie kommt oft dran
+# und hat nichts zu lesen ausser Uhrzeit, Datum und A/B-Woche.
+BUILTIN_SECONDS = {"clock": 3}
 # categories the Termine slide may filter on — private entries never reach the display
 SLIDE_CATEGORIES = [c for c in CATEGORIES if c != "Persönlich"]
 WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -108,8 +117,11 @@ def _ensure_builtins(db: Session) -> None:
     existing = {k for (k,) in db.query(SlideshowItem.kind).filter(SlideshowItem.kind.in_(BUILTIN_KINDS)).distinct()}
     missing = [k for k in BUILTIN_KINDS if k not in existing]
     for kind in missing:
-        db.add(SlideshowItem(position=0 if kind == "hauspunkte" else _next_position(db),
-                             kind=kind, title=BUILTIN_KINDS[kind], active=True, audience="guest"))
+        row = SlideshowItem(position=0 if kind == "hauspunkte" else _next_position(db),
+                            kind=kind, title=BUILTIN_KINDS[kind], active=True, audience="guest")
+        if kind in BUILTIN_SECONDS:
+            row.duration_seconds = BUILTIN_SECONDS[kind]
+        db.add(row)
         db.flush()
     if missing:
         db.commit()
@@ -329,7 +341,7 @@ def create_item(
     db: Session = Depends(get_db),
     _admin=Depends(require_admin_feature("slideshow")),
 ):
-    # Files come via /items/upload; Hauspunkte, Termine and Wochenspruch are built in.
+    # Files come via /items/upload; Hauspunkte, Termine, Wochenspruch and the clock are built in.
     if body.kind != "link":
         raise HTTPException(400, f"Kind nicht erstellbar: {body.kind}")
     if not body.url or not (body.url.startswith("http://") or body.url.startswith("https://")):
@@ -487,7 +499,7 @@ def delete_items(
 ):
     items = db.query(SlideshowItem).filter(SlideshowItem.id.in_(body.ids)).all()
     if any(it.kind in BUILTIN_KINDS for it in items):
-        raise HTTPException(400, "Hauspunkte, Termine und Wochenspruch können nicht gelöscht werden, nur deaktiviert")
+        raise HTTPException(400, "Hauspunkte, Termine, Wochenspruch und Uhr können nicht gelöscht werden, nur deaktiviert")
 
     for item in items:
         if item.stored_filename:

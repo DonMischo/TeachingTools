@@ -10,10 +10,10 @@ import { useToast } from "@/contexts/ToastContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const KIND_ICON: Record<SlideshowItem["kind"], string> = {
-  file: "🖼️", link: "🔗", calendar: "📅", wochenspruch: "📖", hauspunkte: "🏆",
+  file: "🖼️", link: "🔗", calendar: "📅", wochenspruch: "📖", hauspunkte: "🏆", clock: "🕒",
 };
 // Always present, can only be deactivated (see api/routers/slideshow.py BUILTIN_KINDS)
-const BUILTIN_KINDS: SlideshowItem["kind"][] = ["hauspunkte", "calendar", "wochenspruch"];
+const BUILTIN_KINDS: SlideshowItem["kind"][] = ["hauspunkte", "calendar", "wochenspruch", "clock"];
 
 function kindIcon(item: SlideshowItem): string {
   if (item.kind === "file") {
@@ -355,6 +355,13 @@ export default function AdminSlideshowPage() {
                           onClick={() => setOpenCalendar(openCalendar === item.id ? null : item.id)}>
                           {openCalendar === item.id ? "Schließen ▴" : "Anpassen ▾"}
                         </button>
+                      )}
+                      {/* Die Uhr haelt sich nicht an ihren Listenplatz — ohne den
+                          Hinweis schiebt man sie hoch und runter und wundert sich. */}
+                      {item.kind === "clock" && (
+                        <span className="text-xs whitespace-nowrap text-[var(--text-muted)]">
+                          kommt nach je 2 Folien
+                        </span>
                       )}
                     </div>
                   </td>

@@ -161,3 +161,41 @@ describe("slideDurationMs", () => {
     expect(slideDurationMs(item)).toBe(20000);
   });
 });
+
+describe("Uhr in der Rotation", () => {
+  // Eine Anzeige im Flur wird im Vorbeigehen angeschaut: das Erste, was man von
+  // ihr will, ist die Uhrzeit. Stünde die Uhr an ihrem Listenplatz, wäre sie bei
+  // zehn Folien neun Umläufe lang nicht zu sehen.
+  const uhr = baseItem({ id: 99, kind: "clock", title: "Uhr", duration_seconds: 3 });
+
+  it("schiebt die Uhr nach je zwei anderen Folien ein", () => {
+    const folien = [1, 2, 3, 4].map((id) => baseItem({ id }));
+    const { rotation } = pickSlides([uhr, ...folien], MONDAY);
+    expect(rotation.map((i) => i.id)).toEqual([1, 2, 99, 3, 4, 99]);
+  });
+
+  it("hängt die Uhr auch an eine angebrochene Gruppe", () => {
+    // Sonst liefen über den Rundenwechsel hinweg drei Folien ohne Uhr.
+    const folien = [1, 2, 3].map((id) => baseItem({ id }));
+    const { rotation } = pickSlides([...folien, uhr], MONDAY);
+    expect(rotation.map((i) => i.id)).toEqual([1, 2, 99, 3, 99]);
+  });
+
+  it("zeigt die Uhr einmal, wenn sie allein übrig ist", () => {
+    const { rotation } = pickSlides([uhr], MONDAY);
+    expect(rotation.map((i) => i.id)).toEqual([99]);
+  });
+
+  it("lässt die Reihenfolge in Ruhe, wenn die Uhr abgeschaltet ist", () => {
+    // Abgeschaltete Folien kommen gar nicht erst aus dem Server.
+    const folien = [1, 2, 3].map((id) => baseItem({ id }));
+    const { rotation } = pickSlides(folien, MONDAY);
+    expect(rotation.map((i) => i.id)).toEqual([1, 2, 3]);
+  });
+
+  it("ändert nichts daran, welche Folie ein Zeitfenster festhält", () => {
+    const fest = baseItem({ id: 7, slot_days: [0], slot_start: "00:00", slot_end: "23:59" });
+    const { pinned } = pickSlides([uhr, baseItem({ id: 1 }), fest], MONDAY);
+    expect(pinned?.id).toBe(7);
+  });
+});

@@ -346,7 +346,7 @@ def test_create_link_item_invalid_url(client, admin_token):
     assert r.status_code == 400
 
 
-@pytest.mark.parametrize("kind", ["calendar", "wochenspruch"])
+@pytest.mark.parametrize("kind", ["calendar", "wochenspruch", "clock"])
 def test_create_builtin_kinds_rejected(client, admin_token, kind):
     r = client.post("/api/slideshow/items", headers=auth(admin_token), json={"kind": kind})
     assert r.status_code == 400
@@ -357,9 +357,25 @@ def test_builtin_rows_exist_once(client, admin_token):
     client.cookies.clear()
     items = client.get("/api/slideshow/items", headers=auth(admin_token)).json()
     kinds = [i["kind"] for i in items]
-    for kind, title in (("hauspunkte", "Hauspunkte"), ("calendar", "Termine"), ("wochenspruch", "Wochenspruch")):
+    for kind, title in (("hauspunkte", "Hauspunkte"), ("calendar", "Termine"),
+                        ("wochenspruch", "Wochenspruch"), ("clock", "Uhr")):
         assert kinds.count(kind) == 1, kind
         assert next(i for i in items if i["kind"] == kind)["title"] == title
+
+
+def test_clock_starts_at_three_seconds(client, admin_token):
+    """Die Uhr steht kurz: sie kommt oft dran und hat nichts zu lesen ausser
+    Uhrzeit, Datum und A/B-Woche. Die 15 Sekunden der uebrigen Folien waeren
+    hier eine Ewigkeit. Verstellen darf man sie trotzdem."""
+    client.get("/api/slideshow/public")
+    client.cookies.clear()
+    items = client.get("/api/slideshow/items", headers=auth(admin_token)).json()
+    uhr = next(i for i in items if i["kind"] == "clock")
+    assert uhr["duration_seconds"] == 3
+
+    r = client.patch(f"/api/slideshow/items/{uhr['id']}", headers=auth(admin_token),
+                     json={"duration_seconds": 8})
+    assert r.status_code == 200 and r.json()["duration_seconds"] == 8
 
 
 def test_create_kind_file_rejected(client, admin_token):
@@ -535,7 +551,7 @@ def test_bulk_delete_removes_items_and_files(client, db, admin_token, tmp_path, 
     assert b.id not in remaining
 
 
-@pytest.mark.parametrize("kind", ["hauspunkte", "calendar", "wochenspruch"])
+@pytest.mark.parametrize("kind", ["hauspunkte", "calendar", "wochenspruch", "clock"])
 def test_bulk_delete_builtin_id_rejected(client, db, admin_token, kind):
     client.get("/api/slideshow/public")  # ensures the built-in rows exist
     hauspunkte = db.query(SlideshowItem).filter_by(kind=kind).one()

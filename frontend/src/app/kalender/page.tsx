@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, CalendarEntryOut, CalendarTagOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { getSchoolYearStart, getSchoolYearLabel } from "@/lib/schoolyear";
+import { getSchoolYearStart, getSchoolYearLabel, isoWoche, abWoche } from "@/lib/schoolyear";
 
 // Fixed audience-tier colors (category = who sees it, no longer the visual dimension).
 const CATEGORY_COLORS: Record<string, string> = {
@@ -28,18 +28,6 @@ function parseDate(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
-// ISO-8601 calendar week (weeks start Monday, week 1 contains the first Thursday).
-function isoWeek(d: Date): number {
-  const thursday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  const firstThursday = new Date(thursday.getFullYear(), 0, 4);
-  firstThursday.setDate(firstThursday.getDate() + 3 - ((firstThursday.getDay() + 6) % 7));
-  return 1 + Math.round((thursday.getTime() - firstThursday.getTime()) / (7 * 86_400_000));
-}
-// A/B-Woche: odd calendar weeks are A, even ones B.
-function abWeek(week: number): "A" | "B" {
-  return week % 2 === 1 ? "A" : "B";
-}
-
 function entryColor(e: { category: string; tags: string[] }, tagColors: Map<string, string>): string {
   for (const t of e.tags) if (tagColors.has(t)) return tagColors.get(t)!;
   return CATEGORY_COLORS[e.category] ?? FALLBACK_TAG_COLOR;
@@ -241,11 +229,11 @@ function MonthGrid({ year, month, entries, tagColors, isTeacher, onDayClick, onE
         {cells.map((day, i) => {
           // Start of each row: the KW / A-B-Woche marker for that week.
           const weekCell = i % 7 === 0 ? (() => {
-            const kw = isoWeek(new Date(year, month, 1 - startOffset + i));
+            const kw = isoWoche(new Date(year, month, 1 - startOffset + i));
             return (
               <div key={`kw${i}`} className="min-h-[5.5rem] border-b border-r border-[var(--border)]/30 bg-[var(--bg)] flex flex-col items-center pt-1 leading-tight">
                 <span className="text-xs font-semibold text-[var(--text-muted)]">{kw}</span>
-                <span className="text-[10px] font-bold text-[var(--accent)]">{abWeek(kw)}</span>
+                <span className="text-[10px] font-bold text-[var(--accent)]">{abWoche(kw)}</span>
               </div>
             );
           })() : null;

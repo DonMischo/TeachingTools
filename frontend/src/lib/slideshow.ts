@@ -1,6 +1,6 @@
 // Mirrors api/routers/slideshow.py's ItemOut. Dates are "YYYY-MM-DD" strings.
 
-export type SlideshowKind = "file" | "link" | "calendar" | "wochenspruch" | "hauspunkte";
+export type SlideshowKind = "file" | "link" | "calendar" | "wochenspruch" | "hauspunkte" | "clock";
 export type SlideshowAudience = "guest" | "student" | "teacher";
 export type SlideshowMediaType = "image" | "pdf" | "video";
 
@@ -96,14 +96,41 @@ function hasContent(item: SlideshowItem): boolean {
   return true;
 }
 
+/** Nach so vielen anderen Folien kommt die Uhr dran. */
+export const UHR_NACH = 2;
+
+/**
+ * Die Uhr an ihren Platz bringen: sie steht nicht einmal an ihrer Listenposition,
+ * sondern nach je zwei anderen Folien.
+ *
+ * Eine Anzeige im Flur wird im Vorbeigehen angeschaut, und das Erste, was man
+ * von ihr will, ist die Uhrzeit. Stünde die Uhr einfach in der Reihe, wäre sie
+ * bei zehn Folien neun Umläufe lang nicht zu sehen.
+ *
+ * Die letzte Gruppe darf kürzer sein — bei ungerader Folienzahl folgt die Uhr
+ * also schon nach einer. Das ist Absicht: sonst liefen über den Rundenwechsel
+ * hinweg drei Folien am Stück ohne Uhr.
+ */
+function mitUhr(folien: SlideshowItem[]): SlideshowItem[] {
+  const uhr = folien.find((f) => f.kind === "clock");
+  const andere = folien.filter((f) => f.kind !== "clock");
+  if (!uhr) return andere;
+  if (andere.length === 0) return [uhr];
+  const reihe: SlideshowItem[] = [];
+  for (let i = 0; i < andere.length; i += UHR_NACH) {
+    reihe.push(...andere.slice(i, i + UHR_NACH), uhr);
+  }
+  return reihe;
+}
+
 /** A slot pins its item while it is active; outside the slot the item simply rotates. */
 export function pickSlides(
   items: SlideshowItem[],
   now: Date
 ): { pinned: SlideshowItem | null; rotation: SlideshowItem[] } {
-  const rotation = items.filter(hasContent);
-  const pinned = rotation.find((item) => isInSlot(item, now)) ?? null;
-  return { pinned, rotation };
+  const sichtbar = items.filter(hasContent);
+  const pinned = sichtbar.find((item) => isInSlot(item, now)) ?? null;
+  return { pinned, rotation: mitUhr(sichtbar) };
 }
 
 /** null = the slide advances on its own (videos when they end, PDFs after their last page). */
