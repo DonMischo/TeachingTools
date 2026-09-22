@@ -44,7 +44,17 @@ export function Neuron2() {
   const richtig = treffer2(netz, satz.punkte);
   const fehler = fehler2(netz, satz.punkte);
   const fertig = richtig === satz.punkte.length;
-  const steckt = !fertig && durchgaenge > 1500;
+  /**
+   * Wirklich fertig ist das Netz erst, wenn der Fehler klein ist.
+   *
+   * Alle Punkte richtig einzusortieren schafft es früh (beim kniffligen
+   * Datensatz nach rund 70 Durchgängen) — da ist die Fläche aber noch
+   * verwaschen und der Streifen nicht zu sehen. Gemessen ist das Bild ab
+   * einem Fehler unter 0,02 sauber, und dort hört das Üben von selbst auf:
+   * bei guten Startwerten nach 200 bis 450 Durchgängen.
+   */
+  const austrainiert = fertig && fehler < 0.02;
+  const steckt = !austrainiert && durchgaenge > 1200;
 
   function zuruecksetzen(neuerSatz = nr, neuerSeed = seed) {
     setNr(neuerSatz);
@@ -56,7 +66,14 @@ export function Neuron2() {
 
   useEffect(() => {
     if (!laeuft) return;
-    if (durchgaenge > 4000) { setLaeuft(false); return; }
+    // Fertig ist fertig: Sobald alle Punkte stimmen, hört das Üben von selbst
+    // auf — wie beim einzelnen Neuron, wo es keinen falschen Punkt mehr zu
+    // holen gibt. Wer mag, drückt danach »Weiter üben«; der Fehler wird dann
+    // noch kleiner, das Netz also sicherer, richtiger wird es nicht mehr.
+    if (austrainiert) { setLaeuft(false); return; }
+    // Und irgendwann ist auch bei einer Sackgasse Schluss, sonst rechnet das
+    // Telefon bis zum Stundenende weiter.
+    if (durchgaenge > 2500) { setLaeuft(false); return; }
     const id = window.setTimeout(() => {
       setNetz(alt => {
         let n = alt;
@@ -66,7 +83,7 @@ export function Neuron2() {
       setDurchgaenge(d => d + PRO_BILD);
     }, 40);
     return () => window.clearTimeout(id);
-  }, [laeuft, durchgaenge, satz]);
+  }, [laeuft, durchgaenge, satz, austrainiert]);
 
   // Die Fläche einfärben: für jeden Rasterpunkt fragen, was das Netz sagt.
   useEffect(() => {
@@ -198,13 +215,14 @@ export function Neuron2() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {/* Nie ausgegraut: Wer anhalten will, muss anhalten können —
+                  auch in dem Augenblick, in dem das Netz fertig wird. */}
               <button
                 type="button"
                 onClick={() => setLaeuft(l => !l)}
-                disabled={fertig}
-                className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] disabled:opacity-40"
+                className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
               >
-                {laeuft ? "⏸ Anhalten" : "🤖 Maschine übt"}
+                {laeuft ? "⏸ Anhalten" : austrainiert ? "🤖 Weiter üben" : "🤖 Maschine übt"}
               </button>
               <button
                 type="button"

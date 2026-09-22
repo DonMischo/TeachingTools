@@ -6,8 +6,8 @@
  * Werkzeug, das nie fertig wird), und der knifflige *darf* es nicht sein
  * (sonst fällt die Begründung für tiefe Netze in sich zusammen).
  */
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import {
   DATENSAETZE, START, antwort, fehlerhafte, treffer, lernschritt, linie,
 } from "@/lib/ki/perzeptron";
@@ -15,6 +15,7 @@ import {
   START_SEED, starte, lernschritt2, treffer2, fehler2, antwort2, linie2, vorwaerts,
 } from "@/lib/ki/netz2";
 import { KANTE, leeresBild, istLeer, zentriere, abstand, erkenne, type Bild } from "@/lib/ki/knn";
+import { Neuron2 } from "@/components/ki/Neuron2";
 import { Zeichnen } from "@/components/ki/Zeichnen";
 import { rng } from "@/lib/ki/rng";
 
@@ -137,6 +138,54 @@ describe("Zwei Neuronen", () => {
       const { aus } = vorwaerts(n, x, y);
       expect(aus).toBeGreaterThanOrEqual(0);
       expect(aus).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe("Die Station »Zwei Neuronen«", () => {
+  /** Die Uhr vorstellen, bis das Training von selbst aufhört. */
+  async function ueben(sekunden: number) {
+    for (let i = 0; i < sekunden * 25; i++) {
+      await act(async () => { await vi.advanceTimersByTimeAsync(40); });
+    }
+  }
+
+  it("hört von selbst auf, sobald alle Punkte stimmen", async () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(<Neuron2 />);
+      fireEvent.click(screen.getByText("🤖 Maschine übt"));
+      await ueben(20);
+
+      // Fertig heißt: alle Punkte richtig — und der Lauf steht.
+      expect(container.textContent).toMatch(/32 von 32 richtig/);
+      expect(screen.queryByText("⏸ Anhalten"), "das Training läuft immer noch").toBeNull();
+      expect(screen.getByText("🤖 Weiter üben")).toBeTruthy();
+
+      // Und es rechnet auch nicht heimlich weiter.
+      const stand = container.textContent?.match(/(\d+) Durchgänge/)?.[1];
+      await ueben(5);
+      expect(container.textContent?.match(/(\d+) Durchgänge/)?.[1]).toBe(stand);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("lässt sich jederzeit anhalten", async () => {
+    vi.useFakeTimers();
+    try {
+      render(<Neuron2 />);
+      fireEvent.click(screen.getByText("🤖 Maschine übt"));
+      // Nur ein paar Bilder weit — mit dem Grund-Startwert ist das Netz nach
+      // einer Sekunde schon fertig, und dann heißt der Knopf anders.
+      await ueben(0.2);
+      // Der Knopf darf nie ausgegraut sein — sonst kommt man nicht mehr heraus.
+      const anhalten = screen.getByText("⏸ Anhalten").closest("button")!;
+      expect(anhalten.disabled).toBe(false);
+      fireEvent.click(anhalten);
+      expect(screen.getByText("🤖 Maschine übt")).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
     }
   });
 });
