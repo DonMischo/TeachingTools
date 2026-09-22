@@ -169,6 +169,12 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     seillaenge: id => welt.current?.seillaenge(id),
     seilAblauf: id => welt.current?.seilAblauf(id),
     seilBahn: id => welt.current?.seilBahn(id),
+    leuchten: id => {
+      const t = aufbau.teile.find(x => x.id === id);
+      if (t?.art !== "lampe") return 0;
+      const p = Math.abs(welt.current?.stromMessung(id).leistung ?? 0);
+      return p / Math.max(0.01, t.werte.nennleistung ?? 1);
+    },
   }), [aufbau, lage, blick, auswahl, schwebt, vorschau]);
   // Die Schleife liest das jeweils neueste Bild über ein Ref. Hinge sie selbst
   // am Bild, finge sie bei jeder Zeigerbewegung neu an — und verlöre dabei
@@ -383,7 +389,12 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
 
   // ── Aktionen des Inspektors ─────────────────────────────────────────────────
   const aktionen = {
-    teilWerte: (id: string, w: Record<string, number>) => aendere(v => tue(v, setzeTeilWerte(v.jetzt, id, w))),
+    teilWerte: (id: string, w: Record<string, number>) => {
+      aendere(v => tue(v, setzeTeilWerte(v.jetzt, id, w)));
+      // Bedienelemente wirken auch im laufenden Versuch: der Schalter legt um,
+      // die Spannung steigt, ohne dass der Aufbau neu gebaut wird.
+      if (versuch) welt.current?.setzeTeilWert(id, w);
+    },
     verbinderWerte: (id: string, w: Record<string, number>) => {
       aendere(v => tue(v, setzeVerbinderWerte(v.jetzt, id, w)));
       // Bedienelemente wirken auch im laufenden Versuch.

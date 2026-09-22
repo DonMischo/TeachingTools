@@ -67,6 +67,14 @@ export const VERBINDER: VerbinderTyp[] = [
     ],
   },
   {
+    art: "kabel",
+    name: "Kabel",
+    icon: "🔌",
+    punkte: 2,
+    hinweis: "Zwei Anschlüsse antippen — links oder rechts an einem Bauteil. Ein Kabel ist kein Bauteil, sondern ein Gleichheitszeichen: was es verbindet, ist derselbe Knoten.",
+    parameter: [],
+  },
+  {
     art: "feder",
     name: "Feder",
     icon: "〰️",

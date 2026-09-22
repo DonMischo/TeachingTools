@@ -195,7 +195,7 @@ export function rolleUnter(aufbau: Aufbau, p: Punkt): Teil | undefined {
 }
 
 export function spanne(
-  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder">, von: Punkt, bis: Punkt, ueber: Punkt[] = [],
+  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder" | "kabel">, von: Punkt, bis: Punkt, ueber: Punkt[] = [],
 ): { aufbau: Aufbau; id: string } | { fehler: string } {
   const a = endeAn(aufbau, von), b = endeAn(aufbau, bis);
   const rollen = art === "seil" ? ueber.map(p => rolleUnter(aufbau, p)) : [];

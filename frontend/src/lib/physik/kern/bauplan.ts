@@ -16,6 +16,7 @@ import {
   type Aufbau, type Ende, type TeilArt,
 } from "./modell";
 import { standardWerteTeil } from "./teile";
+import { standardWerteVerbinder } from "./verbinder";
 
 export interface Bauplan {
   id: string;
@@ -172,6 +173,60 @@ function flaschenzug(): Aufbau {
   return a;
 }
 
+/** Ein Bauteil an die Wand geschraubt — sonst fällt es herunter. */
+function festAnDieWand(a: Aufbau, id: string, pos: Punkt): Aufbau {
+  return verbinde(a, "schraube", amTeil(id), wand(pos), standardWerteVerbinder("schraube")).aufbau;
+}
+
+const linkerPol = (id: string): Ende => amTeil(id, { x: -0.03, y: 0 });
+const rechterPol = (id: string): Ende => amTeil(id, { x: 0.03, y: 0 });
+
+/** Batterie, Schalter, Lämpchen — der erste Stromkreis, den man baut. */
+function stromkreis(): Aufbau {
+  let a = neuerAufbau();
+  const bat = teil(a, "batterie", { x: -0.35, y: 2 }, { spannung: 4.5, innenwiderstand: 0.5 });
+  a = festAnDieWand(bat.aufbau, bat.id, { x: -0.35, y: 2 });
+  const schalter = teil(a, "schalter", { x: 0, y: 2.25 });
+  a = festAnDieWand(schalter.aufbau, schalter.id, { x: 0, y: 2.25 });
+  const lampe = teil(a, "lampe", { x: 0.35, y: 2 }, { widerstand: 12, nennleistung: 1.5 });
+  a = festAnDieWand(lampe.aufbau, lampe.id, { x: 0.35, y: 2 });
+
+  a = verbinde(a, "kabel", rechterPol(bat.id), linkerPol(schalter.id)).aufbau;
+  a = verbinde(a, "kabel", rechterPol(schalter.id), linkerPol(lampe.id)).aufbau;
+  a = verbinde(a, "kabel", rechterPol(lampe.id), linkerPol(bat.id)).aufbau;
+  return a;
+}
+
+/**
+ * Motor mit Winde: Strom hebt eine Last.
+ *
+ * Der Aufbau, an dem sich die ganze Kopplung zeigt — schaltet man ein, steigt
+ * das Gewicht; hängt man mehr daran, zieht der Motor mehr Strom und dreht
+ * langsamer. Dieselbe Maschine wird zum Dynamo, wenn man die Batterie durch
+ * ein Lämpchen ersetzt und das Rad von Hand anwirft.
+ */
+function motorwinde(): Aufbau {
+  let a = neuerAufbau();
+  const motor = teil(a, "motor", { x: 0, y: 2.2 }, { widerstand: 2, konstante: 0.3 });
+  a = festAnDieWand(motor.aufbau, motor.id, { x: -0.06, y: 2.24 });
+  const trommel = teil(a, "scheibe", { x: 0, y: 2.2 }, { durchmesser: 0.16, dicke: 0.03 }); a = trommel.aufbau;
+  a = verbinde(a, "achse", amTeil(motor.id), amTeil(trommel.id), standardWerteVerbinder("achse")).aufbau;
+
+  const last = teil(a, "massestueck", { x: 0.08, y: 1.2 }, { masse: 0.5 }); a = last.aufbau;
+  a = verbinde(a, "seil", amTeil(trommel.id, { x: 0.08, y: 0 }), amTeil(last.id),
+    { ...standardWerteVerbinder("seil"), laenge: 0, wickelt: 1, wickelrichtung: 1 }).aufbau;
+
+  const bat = teil(a, "batterie", { x: -0.45, y: 2.5 }, { spannung: 9, innenwiderstand: 0.3 });
+  a = festAnDieWand(bat.aufbau, bat.id, { x: -0.45, y: 2.5 });
+  const schalter = teil(a, "schalter", { x: 0.2, y: 2.5 }, { geschlossen: 0 });
+  a = festAnDieWand(schalter.aufbau, schalter.id, { x: 0.2, y: 2.5 });
+
+  a = verbinde(a, "kabel", rechterPol(bat.id), linkerPol(schalter.id)).aufbau;
+  a = verbinde(a, "kabel", rechterPol(schalter.id), rechterPol(motor.id)).aufbau;
+  a = verbinde(a, "kabel", linkerPol(motor.id), linkerPol(bat.id)).aufbau;
+  return a;
+}
+
 export const BAUPLAENE: Bauplan[] = [
   {
     id: "pendel", name: "Pendel", icon: "🕰️",
@@ -193,6 +248,16 @@ export const BAUPLAENE: Bauplan[] = [
     id: "flaschenzug", name: "Flaschenzug", icon: "⛓️",
     beschreibung: "Feste und lose Rolle: die Winde hebt 10 kg und zieht dabei nur mit der halben Kraft.",
     aufbau: umDenUrsprung(flaschenzug()),
+  },
+  {
+    id: "stromkreis", name: "Stromkreis", icon: "🔌",
+    beschreibung: "Batterie, Schalter, Lämpchen. Einschalten — und am Kraftmesser für Strom sieht man U = R · I.",
+    aufbau: umDenUrsprung(stromkreis()),
+  },
+  {
+    id: "motorwinde", name: "Motor mit Winde", icon: "⚡",
+    beschreibung: "Strom hebt eine Last. Mehr Last heißt mehr Strom und weniger Drehzahl — der Schalter ist offen.",
+    aufbau: umDenUrsprung(motorwinde()),
   },
   {
     id: "trebuchet", name: "Trebuchet", icon: "🏰",

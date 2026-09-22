@@ -141,6 +141,36 @@ describe("Die mitgelieferten Pläne laufen", () => {
     expect(Math.abs(w.zustand(stein)!.x)).toBeGreaterThan(5);
   });
 
+  it("bringt den Stromkreis zum Leuchten und schaltet ihn ab", () => {
+    const { aufbau } = fuegeBauplanEin(neuerAufbau(), bauplan("stromkreis")!, { x: 0, y: 2.5 });
+    const w = starte(aufbau);
+    const lampe = aufbau.teile.find(t => t.art === "lampe")!.id;
+    const schalter = aufbau.teile.find(t => t.art === "schalter")!.id;
+    laufe(w, 0.2);
+
+    expect(w.stromMessung(lampe).leistung).toBeGreaterThan(0.5);
+
+    w.setzeTeilWert(schalter, { geschlossen: 0 });
+    laufe(w, 0.2);
+    expect(w.stromMessung(lampe).leistung).toBeCloseTo(0, 6);
+  });
+
+  it("hebt mit dem Motor die Last, sobald man einschaltet", () => {
+    const { aufbau } = fuegeBauplanEin(neuerAufbau(), bauplan("motorwinde")!, { x: 0, y: 2.6 });
+    const w = starte(aufbau);
+    const last = aufbau.teile.find(t => t.art === "massestueck")!.id;
+    const schalter = aufbau.teile.find(t => t.art === "schalter")!.id;
+
+    // Der Schalter steht offen: es passiert nichts.
+    const start = w.zustand(last)!.y;
+    laufe(w, 0.5);
+    expect(Math.abs(w.zustand(last)!.y - start)).toBeLessThan(0.02);
+
+    w.setzeTeilWert(schalter, { geschlossen: 1 });
+    laufe(w, 2);
+    expect(w.zustand(last)!.y).toBeGreaterThan(start + 0.15);
+  });
+
   it("hat für jeden Plan einen Namen, ein Sinnbild und Teile", () => {
     for (const p of BAUPLAENE) {
       expect(p.name.length).toBeGreaterThan(2);

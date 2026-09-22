@@ -18,7 +18,7 @@
 import { G, grad, type AnzeigeEinheit, type Einheit } from "../einheiten";
 import { Messbus, signalId, type SignalId } from "../messbus";
 import type { Aufbau, Teil, Verbinder } from "./modell";
-import { teilMasse, teilTyp } from "./teile";
+import { istElektrisch, teilMasse, teilTyp } from "./teile";
 import type { Welt } from "./welt";
 
 export interface Messgroesse {
@@ -57,6 +57,20 @@ function fuerTeil(t: Teil, quelle: string): Messgroesse[] {
   const g = (schluessel: string, name: string, einheit: Einheit, lies: (w: Welt) => number | undefined,
     formel?: string, anzeige?: AnzeigeEinheit): Messgroesse =>
     ({ id: signalId(t.id, schluessel), quelle, name, einheit, anzeige, formel, lies });
+
+  // Ein elektrisches Bauteil misst man an seinen Klemmen, nicht an seiner Lage.
+  // Die Batterie zeigt, was sie *abgibt* — U, I und P dann gleichsinnig positiv,
+  // solange sie liefert; ein Motor, der zum Dynamo wird, kehrt sein Zeichen um
+  // und zeigt genau dadurch, dass er jetzt Leistung hergibt.
+  if (istElektrisch(t.art)) {
+    const dreh = t.art === "batterie" ? -1 : 1;
+    return [
+      g("u", "Spannung", "V", w => w.stromMessung(t.id).spannung),
+      g("i", t.art === "batterie" ? "Abgegebener Strom" : "Strom", "A",
+        w => dreh * w.stromMessung(t.id).strom),
+      g("p", "Leistung", "W", w => dreh * w.stromMessung(t.id).leistung, "P = U · I"),
+    ];
+  }
 
   return [
     g("y", "Höhe", "m", w => w.zustand(t.id)?.y),

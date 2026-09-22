@@ -69,6 +69,44 @@ function zahnradFormen(t: Teil): Form[] {
   return formen;
 }
 
+/**
+ * Ein elektrisches Bauteil: ein Kasten mit zwei Anschlüssen, links und rechts.
+ *
+ * Alle sehen gleich aus, weil alle dasselbe sind — zwei Klemmen und etwas
+ * dazwischen. Welchen Anschluss man meint, sagt die Seite, auf die man tippt;
+ * ein eigener Anschluss-Begriff im Modell wäre dafür zu viel.
+ */
+const ELEKTRISCH_TIEFE = 0.04;
+function elektrisch(
+  art: TeilArt, name: string, icon: string, b: number, h: number, masse: number, parameter: ParameterDef[],
+): TeilTyp {
+  return {
+    art, name, icon,
+    parameter: [...parameter, { ...MASSE_VORGABE, standard: masse }],
+    formen: () => [{ art: "kasten", mitte: { x: 0, y: 0 }, b, h }],
+    volumen: () => b * h * ELEKTRISCH_TIEFE,
+  };
+}
+
+/** Die elektrischen Bauteile — sie hängen am Stromkreis statt am Werkstoff. */
+export const ELEKTRISCHE_ARTEN = new Set<TeilArt>(["batterie", "widerstand", "lampe", "schalter", "motor"]);
+export const istElektrisch = (art: TeilArt | string) => ELEKTRISCHE_ARTEN.has(art as TeilArt);
+
+/**
+ * Die beiden Anschlüsse in Teilkoordinaten: 0 links, 1 rechts.
+ *
+ * Welcher gemeint ist, entscheidet allein das Vorzeichen von x — wer auf die
+ * linke Hälfte tippt, meint den linken.
+ */
+export function pole(t: Teil): [Punkt, Punkt] {
+  const form = teilTyp(t.art)?.formen(t)[0];
+  const b = form?.art === "kasten" ? form.b : 0.1;
+  return [{ x: -b / 2, y: 0 }, { x: b / 2, y: 0 }];
+}
+
+/** An welchem Anschluss ein Punkt des Teils sitzt. */
+export const polAn = (lokal: Punkt): 0 | 1 => (lokal.x < 0 ? 0 : 1);
+
 export const TEILE: TeilTyp[] = [
   {
     art: "brett",
@@ -178,6 +216,32 @@ export const TEILE: TeilTyp[] = [
     },
     volumen: t => massestueckKante(w(t, "masse", 0.1)) ** 3,
   },
+
+  elektrisch("batterie", "Batterie", "🔋", 0.12, 0.07, 0.3, [
+    { schluessel: "spannung", name: "Spannung", einheit: "V", standard: 4.5, min: 0, max: 24, bedienung: true },
+    { schluessel: "innenwiderstand", name: "Innenwiderstand", einheit: "Ohm", standard: 0.5, min: 0, max: 20 },
+  ]),
+  elektrisch("widerstand", "Widerstand", "🧱", 0.1, 0.04, 0.02, [
+    { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 100, min: 0.1, max: 10000 },
+  ]),
+  elektrisch("lampe", "Lämpchen", "💡", 0.08, 0.08, 0.03, [
+    { schluessel: "widerstand", name: "Widerstand", einheit: "Ohm", standard: 20, min: 0.5, max: 2000 },
+    { schluessel: "nennleistung", name: "Nennleistung", einheit: "W", standard: 1, min: 0.05, max: 100 },
+  ]),
+  elektrisch("schalter", "Schalter", "🔘", 0.1, 0.04, 0.05, [
+    {
+      schluessel: "geschlossen", name: "Schalter", einheit: "", standard: 1, min: 0, max: 1, bedienung: true,
+      optionen: [{ wert: 0, name: "offen" }, { wert: 1, name: "geschlossen" }],
+    },
+  ]),
+  elektrisch("motor", "Motor", "⚡", 0.14, 0.1, 0.4, [
+    { schluessel: "widerstand", name: "Ankerwiderstand", einheit: "Ohm", standard: 2, min: 0.1, max: 200 },
+    {
+      // Dieselbe Zahl trägt beide Richtungen: M = k·I und U = k·ω. Daran liegt
+      // es, dass ein Motor, den man dreht, zum Dynamo wird.
+      schluessel: "konstante", name: "Maschinenkonstante", einheit: "Nm", standard: 0.2, min: 0.01, max: 4,
+    },
+  ]),
 ];
 
 /** Kantenlänge eines Messingwürfels dieser Masse. */
@@ -213,6 +277,9 @@ export function formFlaeche(f: Form): number {
 /** Reibung und Sprung aus dem Werkstoff; das Massestück ist aus Messing. */
 export function oberflaeche(t: Teil): { reibung: number; sprung: number; farbe: string } {
   if (t.art === "massestueck") return { reibung: 0.4, sprung: 0.1, farbe: "#c9a227" };
+  // Elektrische Bauteile stecken in einem Gehäuse, nicht in einem Werkstoff,
+  // den man einstellt — sie haben deshalb gar keine Werkstoffwahl.
+  if (istElektrisch(t.art)) return { reibung: 0.5, sprung: 0.1, farbe: "#475569" };
   const s = feststoff(w(t, "stoff", 0));
   return { reibung: s.reibung, sprung: s.sprung, farbe: s.farbe };
 }

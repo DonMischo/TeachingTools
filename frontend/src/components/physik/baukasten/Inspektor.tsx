@@ -11,7 +11,7 @@ import { formatiere, G, grad, bogen } from "@/lib/physik/einheiten";
 import { feststoff } from "@/lib/physik/material";
 import type { Aufbau } from "@/lib/physik/kern/modell";
 import { mitteAnWand } from "@/lib/physik/kern/bearbeiten";
-import { teilMasse, teilTyp } from "@/lib/physik/kern/teile";
+import { istElektrisch, teilMasse, teilTyp } from "@/lib/physik/kern/teile";
 import { verbinderTyp } from "@/lib/physik/kern/verbinder";
 import type { Welt } from "@/lib/physik/kern/welt";
 import type { ParameterDef } from "@/lib/physik/typen";
@@ -78,7 +78,17 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
           <span><b className="tabular-nums">{formatiere(masse, "kg")}</b> <span className="text-xs text-[var(--text-muted)]">{herkunft}</span></span>
         </div>
 
-        {versuch ? <Messwerte welt={welt} id={t.id} masse={masse} /> : (
+        {versuch ? (
+          <>
+            {typ.parameter.filter(p => p.bedienung).map(p => (
+              <Regler key={p.schluessel} p={p} wert={t.werte[p.schluessel] ?? p.standard}
+                onWert={w => aktionen.teilWerte(t.id, { [p.schluessel]: w })} />
+            ))}
+            {istElektrisch(t.art)
+              ? <Stromwerte welt={welt} id={t.id} />
+              : <Messwerte welt={welt} id={t.id} masse={masse} />}
+          </>
+        ) : (
           <>
             {typ.parameter.map(p => (
               <Regler key={p.schluessel} p={p} wert={t.werte[p.schluessel] ?? p.standard}
@@ -154,6 +164,27 @@ export function Inspektor({ aufbau, auswahl, versuch, welt, geloest, takt, aktio
       {!versuch && (
         <button onClick={() => aktionen.entferne(auswahl)} className="rounded-xl border border-rose-400/40 text-rose-300 px-3 py-2 hover:bg-rose-500/10">🗑️ Entfernen</button>
       )}
+    </div>
+  );
+}
+
+/** Was ein elektrisches Bauteil gerade tut — an seinen Klemmen abgelesen. */
+function Stromwerte({ welt, id }: { welt: Welt | null; id: string }) {
+  const m = welt?.stromMessung(id);
+  if (!m) return null;
+  const zeilen: [string, string, string][] = [
+    ["Spannung", formatiere(m.spannung, "V"), ""],
+    ["Strom", formatiere(m.strom, "A"), ""],
+    ["Leistung", formatiere(m.leistung, "W"), "P = U · I"],
+  ];
+  return (
+    <div className="flex flex-col gap-1.5">
+      {zeilen.map(([name, wert, formel]) => (
+        <div key={name}>
+          <div className="flex justify-between"><span className="text-[var(--text-muted)]">{name}</span><b className="tabular-nums">{wert}</b></div>
+          {formel && <div className="text-xs text-[var(--text-muted)] font-mono">{formel}</div>}
+        </div>
+      ))}
     </div>
   );
 }

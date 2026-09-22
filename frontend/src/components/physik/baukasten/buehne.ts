@@ -13,7 +13,7 @@
 import type { Application, Graphics } from "pixi.js";
 import { verbinderEnden, verbinderWeg, zumBild, type Lage } from "@/lib/physik/kern/bearbeiten";
 import { weltpunkt, type Aufbau, type Teil, type Verbinder } from "@/lib/physik/kern/modell";
-import { oberflaeche, teilTyp, type Form } from "@/lib/physik/kern/teile";
+import { istElektrisch, oberflaeche, pole, teilTyp, type Form } from "@/lib/physik/kern/teile";
 import { feststoff } from "@/lib/physik/material";
 import type { Blick, Punkt } from "@/lib/physik/typen";
 
@@ -38,6 +38,8 @@ export interface Bild {
   seilAblauf?: (id: string) => Punkt | undefined;
   /** Im Versuch die Bahn eines Seils über Rollen — sie liegt, wie der Löser sie hält. */
   seilBahn?: (id: string) => Punkt[] | undefined;
+  /** Wie hell ein Lämpchen brennt: 0 aus, 1 bei Nennleistung. */
+  leuchten?: (id: string) => number;
 }
 
 const FARBE = {
@@ -50,6 +52,9 @@ const FARBE = {
   schweben: 0xf8fafc,
   schatten: 0x000000,
   seil: 0xd6b98c,
+  kabel: 0xb91c1c,
+  klemme: 0xd4a017,
+  glut: 0xfde68a,
   feder: 0xcbd5e1,
   stahl: 0xa8b3c2,
   vorschau: 0x4ade80,
@@ -116,7 +121,7 @@ export class Buehne {
     // Erst die Schatten aller Teile, dann die Teile — sonst fiele der Schatten
     // des oberen auf das untere Teil und sähe aus wie ein Loch darin.
     for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "schatten");
-    for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "koerper");
+    for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "koerper", bild.leuchten?.(t.id) ?? 0);
 
     for (const v of aufbau.verbinder) {
       if (bild.geloest.has(v.id)) continue;
@@ -217,7 +222,7 @@ export class Buehne {
     return [...bogen(f.b, w0 - Math.PI / 2), ...bogen(f.a, w0 + Math.PI / 2)];
   }
 
-  private zeichneTeil(t: Teil, lage: Lage, blick: Blick, was: "schatten" | "koerper") {
+  private zeichneTeil(t: Teil, lage: Lage, blick: Blick, was: "schatten" | "koerper", glut = 0) {
     const typ = teilTyp(t.art);
     if (!typ) return;
     const g = this.teile;
@@ -266,12 +271,83 @@ export class Buehne {
       g.poly(flach(ps)).stroke({ width: 1, color: toene(grund, -0.55), alpha: 0.9 });
     }
 
+    if (was === "koerper" && istElektrisch(t.art)) this.zeichneBauteil(t, lage(t), blick, glut);
+
     // Das Massestück trägt eine Öse oben.
     if (was === "koerper" && t.art === "massestueck") {
       const l = lage(t);
       const s = typ.formen(t)[0] as Extract<Form, { art: "kasten" }>;
       const oese = zumBild(weltpunkt({ ...t, pos: l.pos, winkel: l.winkel }, { x: 0, y: s.h / 2 + s.h * 0.12 }), blick);
       g.circle(oese.x, oese.y, Math.max(2, s.h * 0.12 * blick.skala)).stroke({ width: 1.5, color: 0x8a6d12 });
+    }
+  }
+
+  /**
+   * Das Sinnbild eines elektrischen Bauteils — wie im Schaltplan, nur auf dem Gehäuse.
+   *
+   * Der Kasten allein sähe bei allen gleich aus; erst die beiden Klemmen und
+   * das Zeichen darin sagen, was man vor sich hat. Das Lämpchen glüht nach
+   * seiner Leistung, der Schalter zeigt seine Stellung — beides liest man im
+   * Versuch lieber an der Wand ab als in einer Tabelle.
+   */
+  private zeichneBauteil(t: Teil, l: { pos: Punkt; winkel: number }, blick: Blick, glut: number) {
+    const g = this.teile;
+    const form = teilTyp(t.art)?.formen(t)[0];
+    if (form?.art !== "kasten") return;
+    const teil = { ...t, pos: l.pos, winkel: l.winkel };
+    const bild = (x: number, y: number) => zumBild(weltpunkt(teil, { x, y }), blick);
+    const s = blick.skala;
+    const [links, rechts] = pole(t);
+
+    if (t.art === "lampe" && glut > 0) {
+      const m = bild(0, 0);
+      const r = (form.b / 2) * s;
+      for (const [f, a] of [[2.2, 0.16], [1.5, 0.3], [1, 0.75]] as const) {
+        g.circle(m.x, m.y, r * f).fill({ color: FARBE.glut, alpha: a * Math.min(1, glut) });
+      }
+    }
+
+    // Die Klemmen: dort steckt das Kabel.
+    for (const p of [links, rechts]) {
+      const k = bild(p.x, p.y);
+      g.circle(k.x, k.y, Math.max(2, 0.008 * s)).fill({ color: FARBE.klemme }).stroke({ width: 1, color: 0x7c5c00 });
+    }
+
+    const strich = { width: Math.max(1.5, 0.004 * s), color: 0xe2e8f0 } as const;
+    const linie = (punkte: [number, number][]) => {
+      const ps = punkte.map(([x, y]) => bild(x, y));
+      g.moveTo(ps[0].x, ps[0].y);
+      for (const p of ps.slice(1)) g.lineTo(p.x, p.y);
+      g.stroke({ ...strich, join: "round", cap: "round" });
+    };
+    const h = form.h / 2, b = form.b / 2;
+
+    if (t.art === "batterie") {
+      // Lang und kurz: der lange Strich ist der Pluspol, und der sitzt rechts.
+      linie([[-0.02, -h * 0.55], [-0.02, h * 0.55]]);
+      linie([[0.02, -h * 0.8], [0.02, h * 0.8]]);
+      linie([[b * 0.55, h * 0.45], [b * 0.75, h * 0.45]]);
+      linie([[b * 0.65, h * 0.35], [b * 0.65, h * 0.55]]);
+    } else if (t.art === "widerstand") {
+      const zacken: [number, number][] = [[-b * 0.6, 0]];
+      for (let i = 0; i < 6; i++) zacken.push([-b * 0.6 + (b * 1.2 * (i + 0.5)) / 6, (i % 2 ? -1 : 1) * h * 0.55]);
+      zacken.push([b * 0.6, 0]);
+      linie(zacken);
+    } else if (t.art === "lampe") {
+      const m = bild(0, 0);
+      g.circle(m.x, m.y, Math.max(3, b * 0.6 * s)).stroke(strich);
+      linie([[-b * 0.42, -h * 0.42], [b * 0.42, h * 0.42]]);
+      linie([[-b * 0.42, h * 0.42], [b * 0.42, -h * 0.42]]);
+    } else if (t.art === "schalter") {
+      const zu = (t.werte.geschlossen ?? 1) >= 0.5;
+      linie([[-b, 0], [-b * 0.5, 0]]);
+      linie([[b * 0.5, 0], [b, 0]]);
+      linie([[-b * 0.5, 0], zu ? [b * 0.5, 0] : [b * 0.35, h * 0.9]]);
+    } else if (t.art === "motor") {
+      const m = bild(0, 0);
+      g.circle(m.x, m.y, Math.max(4, h * 0.7 * s)).stroke(strich);
+      // Ein »M« im Kreis, wie im Schaltplan.
+      linie([[-h * 0.3, -h * 0.35], [-h * 0.3, h * 0.35], [0, -h * 0.05], [h * 0.3, h * 0.35], [h * 0.3, -h * 0.35]]);
     }
   }
 
@@ -334,6 +410,15 @@ export class Buehne {
       const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + durchhang };
       g.moveTo(a.x, a.y).quadraticCurveTo(m.x, m.y, b.x, b.y).stroke({ width: 2.5, color: FARBE.seil, cap: "round" });
       this.wandpunkt(g, v, a, b);
+      return;
+    }
+    if (v.art === "kabel") {
+      // Litze hängt durch; sie zieht nichts, also hängt sie so, wie sie liegt.
+      const durchhang = Math.min(40, 0.18 * Math.hypot(b.x - a.x, b.y - a.y));
+      const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + durchhang };
+      g.moveTo(a.x, a.y).quadraticCurveTo(m.x, m.y, b.x, b.y)
+        .stroke({ width: 2.5, color: FARBE.kabel, cap: "round" });
+      for (const p of [a, b]) g.circle(p.x, p.y, 3).fill({ color: FARBE.klemme });
       return;
     }
     if (v.art === "feder") {

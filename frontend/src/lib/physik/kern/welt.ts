@@ -26,10 +26,23 @@ import type { b2BodyId, b2JointId, b2ShapeDef, b2WorldId } from "./box2d/PhaserB
 import type { Punkt } from "../typen";
 import { endeInWelt, type Aufbau, type Teil, type Verbinder } from "./modell";
 import { Seilzug, type Seilknoten } from "./seilzug";
+import { Stromkreis, type Messung } from "./strom";
 import { formFlaeche, oberflaeche, teilMasse, teilTyp } from "./teile";
 
 export const TAKT = 1 / 60;
 export const UNTERSCHRITTE = 8;
+/**
+ * Schneller dreht sich in dieser Welt nichts: 15π ≈ 47 rad/s, gut 450 Umdrehungen
+ * je Minute.
+ *
+ * Die Grenze kommt aus Box2D und ist kein Schönheitsfehler: der Löser lässt
+ * höchstens eine Vierteldrehung je Takt zu, sonst springen Körper durcheinander
+ * hindurch — Zahnräder tun das schon weit darunter. Wer einen Motor so
+ * auslegt, dass seine Leerlaufdrehzahl U/k darüber läge, sieht deshalb keinen
+ * Leerlauf, sondern eine Maschine, die gegen eine unsichtbare Bremse arbeitet.
+ * Die Voreinstellungen der Bauteile bleiben darunter.
+ */
+export const DREHZAHL_GRENZE = 0.25 * Math.PI * 60;
 const G = 9.81;
 
 /** Lage und Bewegung eines Teils. */
@@ -82,6 +95,11 @@ export class Welt {
   private tempo = new Map<string, { vx: number; vy: number }>();
   private wickel: Wickel[] = [];
   private seilzuege = new Map<string, Seilzug>();
+  private kreis: Stromkreis;
+  /** Was im laufenden Versuch an einem Teil verstellt wurde: Schalter, Spannung. */
+  private bedienung = new Map<string, Record<string, number>>();
+  /** Die Welle eines Motors: die Achse, über die er sein Moment abgibt. */
+  private wellen = new Map<string, { verbinder: string; partner: string | null }>();
   private anfangsWinkel = new Map<string, number>();
   private wand: b2BodyId;
   private hand: b2JointId | null = null;
@@ -110,6 +128,17 @@ export class Welt {
     this.baueBoden();
     for (const t of aufbau.teile) this.baueTeil(t);
     for (const v of aufbau.verbinder) this.baueVerbinder(v);
+
+    this.kreis = new Stromkreis(aufbau);
+    // Ein Motor gibt sein Moment über die Achse ab, die an ihm sitzt — das
+    // Gehäuse hält dagegen. Ohne Achse dreht er ins Leere.
+    for (const t of aufbau.teile.filter(x => x.art === "motor")) {
+      const achse = aufbau.verbinder.find(v => v.art === "achse" && (v.a.teil === t.id || v.b.teil === t.id));
+      if (achse) {
+        const partner = achse.a.teil === t.id ? achse.b.teil : achse.a.teil;
+        this.wellen.set(t.id, { verbinder: achse.id, partner });
+      }
+    }
   }
 
   private baueBoden() {
@@ -169,6 +198,9 @@ export class Welt {
   }
 
   private baueVerbinder(v: Verbinder) {
+    // Ein Kabel hält nichts: es ist elektrisch ein Gleichheitszeichen und
+    // mechanisch ein Stück Litze, das durchhängt.
+    if (v.art === "kabel") { this.verbinder.set(v.id, v); return; }
     // Die Wand kommt immer zuerst. Box2D dreht bei einem Motor das *zweite*
     // Ende gegen das erste: baute man die Achse in der Reihenfolge, in der
     // geklickt wurde, liefe der Motor je nach Klickreihenfolge andersherum —
@@ -367,6 +399,7 @@ export class Welt {
   schritt() {
     if (this.zerstoert) return;
     this.wickle();
+    this.treibeMotoren();
     this.pruefeAusloeser();
     b2.b2World_Step(this.id, TAKT, UNTERSCHRITTE);
     // Die Seile über Rollen danach: der Löser hat die Schwerkraft schon in den
@@ -420,6 +453,51 @@ export class Welt {
       const kraft = this.kraft(w.verbinder);
       if (trommel && kraft) b2.b2Body_ApplyTorque(trommel, -w.richtung * kraft.betrag * w.radius, true);
     }
+  }
+
+  /**
+   * Rechnet den Stromkreis und lässt die Motoren ihr Moment abgeben.
+   *
+   * Der Kreis wird in jedem Takt neu gelöst, weil sich etwas geändert haben
+   * kann: ein Schalter, die Spannung — und vor allem die Drehzahl, aus der die
+   * Gegenspannung folgt. Das ist die ganze Kopplung zwischen Strom und
+   * Mechanik, und sie läuft in beide Richtungen: wer die Welle festhält, treibt
+   * den Strom hoch; wer sie dreht, macht aus dem Motor einen Dynamo.
+   */
+  private treibeMotoren() {
+    if (this.kreis.leer) return;
+    this.kreis.rechne(id => this.bedienung.get(id) ?? {}, id => this.wellendrehzahl(id));
+
+    for (const [id, welle] of this.wellen) {
+      const teil = this.aufbau.teile.find(t => t.id === id);
+      const gehaeuse = this.koerper.get(id);
+      if (!teil || !gehaeuse) continue;
+      const moment = this.kreis.moment(teil);
+      if (!moment) continue;
+      const angetrieben = welle.partner === null ? this.wand : this.koerper.get(welle.partner);
+      if (angetrieben) b2.b2Body_ApplyTorque(angetrieben, moment, true);
+      b2.b2Body_ApplyTorque(gehaeuse, -moment, true);
+    }
+  }
+
+  /** Wie schnell sich die Welle eines Motors gegen sein Gehäuse dreht, in 1/s. */
+  private wellendrehzahl(motor: string): number {
+    const welle = this.wellen.get(motor);
+    if (!welle) return 0;
+    const gehaeuse = this.koerper.get(motor);
+    const angetrieben = welle.partner === null ? this.wand : this.koerper.get(welle.partner);
+    if (!gehaeuse || !angetrieben) return 0;
+    return b2.b2Body_GetAngularVelocity(angetrieben) - b2.b2Body_GetAngularVelocity(gehaeuse);
+  }
+
+  /** Was der Stromkreis an einem Bauteil misst. */
+  stromMessung(teil: string): Messung {
+    return this.kreis.messung(teil);
+  }
+
+  /** Stellt ein Bedienelement eines Teils im laufenden Versuch um. */
+  setzeTeilWert(teil: string, werte: Record<string, number>) {
+    this.bedienung.set(teil, { ...(this.bedienung.get(teil) ?? {}), ...werte });
   }
 
   /**
@@ -577,6 +655,12 @@ export class Welt {
   gibTempo(id: string, vx: number, vy: number) {
     const body = this.koerper.get(id);
     if (body) b2.b2Body_SetLinearVelocity(body, new b2.b2Vec2(vx, vy));
+  }
+
+  /** Gibt einem Teil Schwung — die Kurbel, mit der man einen Dynamo anwirft. */
+  gibDrehung(id: string, omega: number) {
+    const body = this.koerper.get(id);
+    if (body) b2.b2Body_SetAngularVelocity(body, omega);
   }
 
   /**

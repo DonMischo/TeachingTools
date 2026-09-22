@@ -17,7 +17,10 @@
  */
 import type { Modelltreue, Punkt } from "../typen";
 
-export type TeilArt = "brett" | "stange" | "klotz" | "kugel" | "scheibe" | "zahnrad" | "massestueck";
+export type TeilArt =
+  | "brett" | "stange" | "klotz" | "kugel" | "scheibe" | "zahnrad" | "massestueck"
+  /** Elektrische Bauteile: zwei Anschlüsse, links und rechts. */
+  | "batterie" | "widerstand" | "lampe" | "schalter" | "motor";
 
 export interface Teil {
   id: string;
@@ -30,7 +33,7 @@ export interface Teil {
   werte: Record<string, number>;
 }
 
-export type VerbinderArt = "achse" | "schraube" | "feder" | "seil";
+export type VerbinderArt = "achse" | "schraube" | "feder" | "seil" | "kabel";
 
 /**
  * Ein Ende eines Verbinders.
