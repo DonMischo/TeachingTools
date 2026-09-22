@@ -7,10 +7,10 @@
  */
 import type { Blick, Punkt } from "../typen";
 import {
-  amTeil, endeInWelt, lokalpunkt, verbinde, wand,
+  amTeil, endeInWelt, lokalpunkt, verbinde, wand, weltpunkt,
   type Aufbau, type Teil, type Verbinder, type VerbinderArt,
 } from "./modell";
-import { teilTyp, type Form } from "./teile";
+import { istElektrisch, pole, teilTyp, type Form } from "./teile";
 import { standardWerteVerbinder } from "./verbinder";
 
 // ── Meter und Pixel ──────────────────────────────────────────────────────────
@@ -173,8 +173,64 @@ export function setzeMitteAnWand(aufbau: Aufbau, teil: string, art: "schraube" |
   return verbinde(ohne, art, amTeil(teil), wand(t.pos), standardWerteVerbinder(art)).aufbau;
 }
 
-/** Ein Ende für Seil oder Feder: das oberste Teil an der Stelle, sonst die Wand. */
-export function endeAn(aufbau: Aufbau, p: Punkt): Verbinder["a"] {
+/**
+ * Die Stellen, an die sich ein Verbinder heften lässt.
+ *
+ * Ein echtes Gerät hat Ösen, Klemmen und Bohrungen — man hängt das Seil nicht
+ * irgendwo ans Brett, sondern ins Loch am Ende. Diese Punkte sind das; sie
+ * werden beim Ziehen als Ringe angezeigt und ziehen den Zeiger an, damit zwei
+ * Kabel am selben Pol auch wirklich am selben Pol sitzen.
+ */
+export function anschluesse(aufbau: Aufbau, lage: Lage = lageImAufbau): { teil: string; lokal: Punkt; welt: Punkt }[] {
+  const aus: { teil: string; lokal: Punkt; welt: Punkt }[] = [];
+  for (const t of aufbau.teile) {
+    const l = lage(t);
+    const gedreht = { ...t, pos: l.pos, winkel: l.winkel };
+    for (const lokal of anschlussstellen(t)) {
+      aus.push({ teil: t.id, lokal, welt: weltpunkt(gedreht, lokal) });
+    }
+  }
+  return aus;
+}
+
+/** Die Anschlussstellen eines Teils in seinen eigenen Koordinaten. */
+function anschlussstellen(t: Teil): Punkt[] {
+  const mitte = { x: 0, y: 0 };
+  if (istElektrisch(t.art)) return pole(t);
+  const form = teilTyp(t.art)?.formen(t)[0];
+  if (t.art === "brett" || t.art === "linse" || t.art === "spiegel") {
+    if (form?.art !== "kasten") return [mitte];
+    const halb = t.art === "brett" ? form.b / 2 : form.h / 2;
+    return t.art === "brett"
+      ? [{ x: -halb, y: 0 }, mitte, { x: halb, y: 0 }]
+      : [{ x: 0, y: -halb }, mitte, { x: 0, y: halb }];
+  }
+  if (t.art === "stange" && form?.art === "kapsel") return [form.a, mitte, form.b];
+  if (t.art === "scheibe" || t.art === "zahnrad") {
+    const r = (t.werte.durchmesser ?? 0.2) / 2;
+    return [mitte, { x: r, y: 0 }, { x: 0, y: r }, { x: -r, y: 0 }, { x: 0, y: -r }];
+  }
+  return [mitte];
+}
+
+/** Der Anschluss in der Nähe eines Punktes, oder nichts. */
+export function schnappe(aufbau: Aufbau, p: Punkt, toleranz: number, lage: Lage = lageImAufbau) {
+  let bester: { teil: string; lokal: Punkt; welt: Punkt } | null = null;
+  let beste = toleranz;
+  for (const a of anschluesse(aufbau, lage)) {
+    const d = Math.hypot(a.welt.x - p.x, a.welt.y - p.y);
+    if (d <= beste) { beste = d; bester = a; }
+  }
+  return bester;
+}
+
+/**
+ * Ein Ende für Seil, Feder oder Kabel: der nächste Anschluss, sonst das
+ * oberste Teil an der Stelle, sonst die Wand.
+ */
+export function endeAn(aufbau: Aufbau, p: Punkt, toleranz = 0): Verbinder["a"] {
+  const nah = toleranz > 0 ? schnappe(aufbau, p, toleranz) : null;
+  if (nah) return amTeil(nah.teil, nah.lokal);
   const [oben] = teileUnter(aufbau, p);
   return oben ? amTeil(oben.id, lokalpunkt(oben, p)) : wand(p);
 }
@@ -195,9 +251,10 @@ export function rolleUnter(aufbau: Aufbau, p: Punkt): Teil | undefined {
 }
 
 export function spanne(
-  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder" | "kabel">, von: Punkt, bis: Punkt, ueber: Punkt[] = [],
+  aufbau: Aufbau, art: Extract<VerbinderArt, "seil" | "feder" | "kabel">, von: Punkt, bis: Punkt,
+  ueber: Punkt[] = [], toleranz = 0,
 ): { aufbau: Aufbau; id: string } | { fehler: string } {
-  const a = endeAn(aufbau, von), b = endeAn(aufbau, bis);
+  const a = endeAn(aufbau, von, toleranz), b = endeAn(aufbau, bis, toleranz);
   const rollen = art === "seil" ? ueber.map(p => rolleUnter(aufbau, p)) : [];
   if (rollen.some(r => !r)) return { fehler: "Ein Seil läuft nur über die Mitte einer Scheibe." };
   // Über eine Rolle darf das Seil zurück zur Wand oder zum selben Teil — ohne

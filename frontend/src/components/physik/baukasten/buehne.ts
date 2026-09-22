@@ -10,10 +10,11 @@
  * Gezeichnet wird in Bildpunkten, umgerechnet über `zumBild` — Meter treffen
  * nirgends sonst auf Pixel.
  */
-import type { Application, Graphics } from "pixi.js";
+import type { Application, Container, Graphics, Text } from "pixi.js";
 import { verbinderEnden, verbinderWeg, zumBild, type Lage } from "@/lib/physik/kern/bearbeiten";
 import { weltpunkt, type Aufbau, type Teil, type Verbinder } from "@/lib/physik/kern/modell";
-import { istElektrisch, oberflaeche, pole, teilTyp, type Form } from "@/lib/physik/kern/teile";
+import { istElektrisch, linsenDicke, oberflaeche, pole, teilMasse, teilTyp, type Form } from "@/lib/physik/kern/teile";
+import { formatiere } from "@/lib/physik/einheiten";
 import { feststoff } from "@/lib/physik/material";
 import type { Blick, Punkt } from "@/lib/physik/typen";
 
@@ -27,7 +28,7 @@ export interface Bild {
   schwebt: Auswahl | null;
   /** Was gerade gesetzt wird: ein Seil, das man aufzieht, oder ein Teil am Zeiger. */
   vorschau:
-    | { art: "spannen"; verbinder: "seil" | "feder"; von: Punkt; ueber: Punkt[]; bis: Punkt }
+    | { art: "spannen"; verbinder: "seil" | "feder" | "kabel"; von: Punkt; ueber: Punkt[]; bis: Punkt }
     | { art: "teil"; teil: Teil }
     | null;
   /** Verbinder, die im Versuch gelöst wurden oder gebrochen sind — sie fehlen. */
@@ -44,27 +45,84 @@ export interface Bild {
   uebertemperatur?: (id: string) => number;
   /** Die Strahlbahnen des Augenblicks. */
   strahlen?: () => { von: Punkt; nach: Punkt; leistung: number }[];
+  /** Welche Tafel: die dunkle Werkbank oder die helle Seite im Schulbuch. */
+  tafel?: Tafel;
+  /** Die Anschlüsse, an denen ein Verbinder einrastet — beim Ziehen sichtbar. */
+  anschluesse?: Punkt[];
 }
 
-const FARBE = {
-  wand: 0x1c2535,
-  loch: 0x0d131d,
-  lochRand: 0x2b3648,
-  boden: 0x3a3f4a,
-  bodenKante: 0x8b93a3,
-  auswahl: 0x38bdf8,
-  schweben: 0xf8fafc,
-  schatten: 0x000000,
-  seil: 0xd6b98c,
-  kabel: 0xb91c1c,
-  klemme: 0xd4a017,
-  glut: 0xfde68a,
-  feder: 0xcbd5e1,
-  stahl: 0xa8b3c2,
-  vorschau: 0x4ade80,
-};
+export type Tafel = "werkbank" | "schulbuch";
+
+/**
+ * Zwei Tafeln, dieselben Striche.
+ *
+ * Die Werkbank ist zum Bauen: dunkel, plastisch, Licht von oben links. Das
+ * Schulbuch ist zum Zeigen — helles Papier, dünne dunkle Konturen, keine
+ * Schatten. Beides zeichnet derselbe Code; was sich unterscheidet, steht hier
+ * und in den paar Stellen, die `buchseite` abfragen.
+ */
+const PALETTEN = {
+  werkbank: {
+    wand: 0x1c2535,
+    loch: 0x0d131d,
+    lochRand: 0x2b3648,
+    boden: 0x3a3f4a,
+    bodenKante: 0x8b93a3,
+    auswahl: 0x38bdf8,
+    schweben: 0xf8fafc,
+    schatten: 0x000000,
+    seil: 0xd6b98c,
+    kabel: 0xb91c1c,
+    klemme: 0xd4a017,
+    glut: 0xfde68a,
+    feder: 0xcbd5e1,
+    stahl: 0xa8b3c2,
+    vorschau: 0x4ade80,
+    strich: 0xe2e8f0,
+    schrift: 0xcbd5e1,
+  },
+  schulbuch: {
+    wand: 0xfaf7f0,
+    loch: 0xd8d0be,
+    lochRand: 0xbdb3a0,
+    boden: 0xebe5d8,
+    bodenKante: 0x7a7060,
+    auswahl: 0x1d4ed8,
+    schweben: 0x0f172a,
+    schatten: 0x8a8070,
+    seil: 0x8a6d3b,
+    kabel: 0xb91c1c,
+    klemme: 0xb45309,
+    glut: 0xf59e0b,
+    feder: 0x475569,
+    stahl: 0x64748b,
+    vorschau: 0x15803d,
+    strich: 0x1f2937,
+    schrift: 0x44403c,
+  },
+} as const;
+
+/**
+ * Die Tafel des gerade gezeichneten Bildes.
+ *
+ * Eine Veränderliche im Modul statt eines Feldes: jede Zeichenroutine läse
+ * sonst dasselbe Feld durch drei Ebenen durch. Gezeichnet wird synchron und je
+ * Bühne einmal, also kann sie sich dabei nicht unter den Füßen wegdrehen.
+ */
+let FARBE: (typeof PALETTEN)[Tafel] = PALETTEN.werkbank;
+let buchseite = false;
 
 const farbe = (hex: string) => Number.parseInt(hex.replace("#", ""), 16);
+
+/** Die eine Zahl, die an einem Teil steht — oder nichts. */
+function beschriftung(t: Teil): string | null {
+  if (t.art === "massestueck") return `m = ${formatiere(teilMasse(t), "kg")}`;
+  if (t.art === "batterie") return `U = ${formatiere(t.werte.spannung ?? 0, "V")}`;
+  if (t.art === "widerstand" || t.art === "lampe") return `R = ${formatiere(t.werte.widerstand ?? 0, "Ohm")}`;
+  if (t.art === "linse") return `f = ${formatiere(t.werte.brennweite ?? 0, "m")}`;
+  if (t.art === "motor") return "M";
+  return null;
+}
 
 /** Mischt zwei Farben: 0 ist ganz die erste, 1 ganz die zweite. */
 function mische(a: number, b: number, t: number): number {
@@ -83,11 +141,16 @@ function toene(c: number, a: number): number {
 }
 
 export class Buehne {
+  private schriften: Text[] = [];
+  private schriftzug = 0;
+
   private constructor(
     private app: Application,
     private wand: Graphics,
     private teile: Graphics,
     private oben: Graphics,
+    private schrift: Container,
+    private machText: (text: string) => Text,
   ) {}
 
   /**
@@ -108,10 +171,14 @@ export class Buehne {
       el.appendChild(app.canvas);
       app.canvas.style.display = "block";
       const wand = new PIXI.Graphics(), teile = new PIXI.Graphics(), oben = new PIXI.Graphics();
-      app.stage.addChild(wand, teile, oben);
+      const schrift = new PIXI.Container();
+      app.stage.addChild(wand, teile, oben, schrift);
       // Gezeichnet wird auf Anforderung, nicht im eigenen Takt.
       app.ticker.stop();
-      return new Buehne(app, wand, teile, oben);
+      return new Buehne(app, wand, teile, oben, schrift, text => new PIXI.Text({
+        text,
+        style: { fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 13, fill: 0xffffff },
+      }));
     } catch {
       return null;
     }
@@ -126,6 +193,11 @@ export class Buehne {
   }
 
   zeichne(bild: Bild) {
+    const tafel: Tafel = bild.tafel ?? "werkbank";
+    FARBE = PALETTEN[tafel];
+    buchseite = tafel === "schulbuch";
+    this.app.renderer.background.color = FARBE.wand;
+    this.schriftzug = 0;
     this.zeichneWand(bild.blick);
     this.teile.clear();
     this.oben.clear();
@@ -133,7 +205,7 @@ export class Buehne {
     const { aufbau, lage, blick } = bild;
     // Erst die Schatten aller Teile, dann die Teile — sonst fiele der Schatten
     // des oberen auf das untere Teil und sähe aus wie ein Loch darin.
-    for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "schatten");
+    if (!buchseite) for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "schatten");
     for (const t of aufbau.teile) {
       this.zeichneTeil(t, lage, blick, "koerper", bild.leuchten?.(t.id) ?? 0, bild.uebertemperatur?.(t.id) ?? 0);
     }
@@ -142,6 +214,9 @@ export class Buehne {
       if (bild.geloest.has(v.id)) continue;
       this.zeichneVerbinder(v, aufbau, lage, blick, bild.seillaenge?.(v.id), bild.seilAblauf?.(v.id), bild.seilBahn?.(v.id));
     }
+
+    if (buchseite) for (const t of aufbau.teile) this.beschrifteTeil(t, lage, blick);
+    for (let i = this.schriftzug; i < this.schriften.length; i++) this.schriften[i].visible = false;
 
     this.zeichneStrahlen(bild.strahlen?.() ?? [], blick);
 
@@ -158,6 +233,13 @@ export class Buehne {
           this.oben.circle(p.x, p.y, 10).stroke({ width: breite, color: c });
         }
       }
+    }
+
+    // Die Anschlüsse zeigen, solange man zieht: erst dann sind sie eine Hilfe
+    // und nicht Gewusel.
+    for (const a of bild.anschluesse ?? []) {
+      const p = zumBild(a, blick);
+      this.oben.circle(p.x, p.y, 4.5).stroke({ width: 2, color: FARBE.klemme, alpha: 0.9 });
     }
 
     const vs = bild.vorschau;
@@ -182,6 +264,77 @@ export class Buehne {
   }
 
   // ── Die Lochwand ────────────────────────────────────────────────────────────
+
+  /**
+   * Eine Linse, wie sie geschliffen ist: sammelnd bauchig, zerstreuend tailliert.
+   *
+   * Die Dicke kommt aus der Brennweite — wer f kleiner dreht, sieht das Glas
+   * dicker werden. Das ist keine Spielerei, sondern genau der Zusammenhang, den
+   * die Linsenschleiferformel beschreibt.
+   */
+  private zeichneLinse(t: Teil, l: { pos: Punkt; winkel: number }, blick: Blick) {
+    const g = this.teile;
+    const h = (t.werte.durchmesser ?? 0.12) / 2;
+    const d = linsenDicke(t) / 2;
+    const sammelnd = (t.werte.brennweite ?? 0.25) >= 0;
+    const teil = { ...t, pos: l.pos, winkel: l.winkel };
+    const bild = (x: number, y: number) => zumBild(weltpunkt(teil, { x, y }), blick);
+
+    if (sammelnd) {
+      const a = bild(0, -h), b = bild(0, h);
+      const rechts = bild(d * 2, 0), links = bild(-d * 2, 0);
+      g.moveTo(a.x, a.y).quadraticCurveTo(rechts.x, rechts.y, b.x, b.y)
+        .quadraticCurveTo(links.x, links.y, a.x, a.y);
+    } else {
+      const rand = Math.max(d, 0.004);
+      const ol = bild(-rand, -h), or = bild(rand, -h), ur = bild(rand, h), ul = bild(-rand, h);
+      const kr = bild(rand - d * 1.6, 0), kl = bild(-rand + d * 1.6, 0);
+      g.moveTo(ol.x, ol.y).lineTo(or.x, or.y).quadraticCurveTo(kr.x, kr.y, ur.x, ur.y)
+        .lineTo(ul.x, ul.y).quadraticCurveTo(kl.x, kl.y, ol.x, ol.y);
+    }
+    g.fill({ color: buchseite ? 0xcfe8fb : 0x7dd3fc, alpha: buchseite ? 0.55 : 0.45 });
+    g.stroke({ width: buchseite ? 1.8 : 1.5, color: buchseite ? 0x1e6a94 : 0xbae6fd });
+
+    // Die optische Achse als dünner Strich — ohne sie ist eine Linse nur ein Fleck.
+    const a1 = bild(-h * 0.5, 0), a2 = bild(h * 0.5, 0);
+    g.moveTo(a1.x, a1.y).lineTo(a2.x, a2.y).stroke({ width: 1, color: FARBE.schrift, alpha: 0.45 });
+  }
+
+  /**
+   * Die Beschriftung eines Teils — im Schulbuch steht die Zahl daneben.
+   *
+   * Nur die eine Größe, um die es bei diesem Teil geht: beim Gewicht die
+   * Masse, beim Widerstand sein Wert, bei der Linse die Brennweite. Alles
+   * andere steht im Inspektor und würde die Abbildung zumüllen.
+   */
+  private beschrifteTeil(t: Teil, lage: Lage, blick: Blick) {
+    const text = beschriftung(t);
+    if (!text) return;
+    const l = lage(t);
+    const formen = teilTyp(t.art)?.formen(t) ?? [];
+    let tief = 0;
+    for (const f of formen) {
+      for (const p of this.umrissPunkte(f, t, lage, blick)) tief = Math.max(tief, p.y);
+    }
+    if (!formen.length) tief = zumBild(l.pos, blick).y;
+    const mitte = zumBild(l.pos, blick);
+    this.beschrifte(text, { x: mitte.x, y: tief + 4 });
+  }
+
+  private beschrifte(text: string, p: Punkt) {
+    let feld = this.schriften[this.schriftzug];
+    if (!feld) {
+      feld = this.machText(text);
+      feld.anchor.set(0.5, 0);
+      this.schrift.addChild(feld);
+      this.schriften.push(feld);
+    }
+    feld.text = text;
+    feld.style.fill = FARBE.schrift;
+    feld.position.set(p.x, p.y);
+    feld.visible = true;
+    this.schriftzug++;
+  }
 
   private zeichneWand(blick: Blick) {
     const g = this.wand;
@@ -245,6 +398,13 @@ export class Buehne {
     const g = this.teile;
     const flach = (ps: Punkt[]) => ps.flatMap(p => [p.x, p.y]);
 
+    // Die Linse hat eine eigene Gestalt: der Kasten darunter ist nur der
+    // Treffertest, gezeichnet wird geschliffenes Glas.
+    if (t.art === "linse") {
+      if (was === "koerper") this.zeichneLinse(t, lage(t), blick);
+      return;
+    }
+
     for (const f of typ.formen(t)) {
       const ps = this.umrissPunkte(f, t, lage, blick);
       if (was === "schatten") {
@@ -257,7 +417,10 @@ export class Buehne {
       const { farbe: hex } = oberflaeche(t);
       // Was warm wird, färbt sich: bei 80 K über der Umgebung glüht es rot.
       // Eine Zahl im Inspektor sieht man nicht, eine rote Spule schon.
-      const grund = mische(farbe(hex), 0xe11d48, Math.min(0.75, Math.max(0, warm) / 80));
+      const warmfarbe = mische(farbe(hex), 0xe11d48, Math.min(0.75, Math.max(0, warm) / 80));
+      // Auf Papier sind Körper blass ausgelegt und dunkel umrissen; auf der
+      // Werkbank haben sie ihre volle Farbe und leben vom Licht darauf.
+      const grund = buchseite ? toene(warmfarbe, 0.55) : warmfarbe;
       const stoffName = t.art === "massestueck" ? "Messing" : feststoff(t.werte.stoff ?? 0).name;
       const glas = stoffName === "Glas";
       g.poly(flach(ps)).fill({ color: grund, alpha: glas ? 0.4 : 1 });
@@ -287,7 +450,11 @@ export class Buehne {
         }
       }
 
-      g.poly(flach(ps)).stroke({ width: 1, color: toene(grund, -0.55), alpha: 0.9 });
+      g.poly(flach(ps)).stroke({
+        width: buchseite ? 1.8 : 1,
+        color: buchseite ? toene(warmfarbe, -0.45) : toene(grund, -0.55),
+        alpha: buchseite ? 1 : 0.9,
+      });
     }
 
     if (was === "koerper" && istElektrisch(t.art)) this.zeichneBauteil(t, lage(t), blick, glut);
@@ -314,7 +481,8 @@ export class Buehne {
       const a = zumBild(s.von, blick), b = zumBild(s.nach, blick);
       const hell = Math.min(1, 0.25 + 0.16 * Math.log1p(Math.max(0, s.leistung)));
       g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 5, color: FARBE.glut, alpha: 0.18 * hell });
-      g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1.5, color: 0xfffbeb, alpha: hell });
+      g.moveTo(a.x, a.y).lineTo(b.x, b.y)
+        .stroke({ width: 1.5, color: buchseite ? 0xb45309 : 0xfffbeb, alpha: hell });
     }
   }
 
@@ -349,7 +517,7 @@ export class Buehne {
       g.circle(k.x, k.y, Math.max(2, 0.008 * s)).fill({ color: FARBE.klemme }).stroke({ width: 1, color: 0x7c5c00 });
     }
 
-    const strich = { width: Math.max(1.5, 0.004 * s), color: 0xe2e8f0 } as const;
+    const strich = { width: Math.max(1.5, 0.004 * s), color: FARBE.strich };
     const linie = (punkte: [number, number][]) => {
       const ps = punkte.map(([x, y]) => bild(x, y));
       g.moveTo(ps[0].x, ps[0].y);

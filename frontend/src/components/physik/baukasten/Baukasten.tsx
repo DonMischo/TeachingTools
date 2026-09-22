@@ -15,7 +15,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  lageImAufbau, merke, neuerVerlauf, rolleUnter, setze, setzeGelenk, setzeLage, setzeMitteAnWand, setzeTeilWerte,
+  anschluesse, lageImAufbau, merke, neuerVerlauf, rolleUnter, schnappe, setze, setzeGelenk, setzeLage,
+  setzeMitteAnWand, setzeTeilWerte,
   setzeVerbinderWerte,
   spanne, teileUnter, tue, verbinderUnter, vor, zurueck, zurWelt, type Lage, type Verlauf,
 } from "@/lib/physik/kern/bearbeiten";
@@ -30,7 +31,7 @@ import { Aufzeichnung, messgroessen } from "@/lib/physik/kern/messen";
 import { VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
 import { TAKT, Welt } from "@/lib/physik/kern/welt";
 import type { Blick, Punkt } from "@/lib/physik/typen";
-import { Buehne, type Auswahl, type Bild } from "./buehne";
+import { Buehne, type Auswahl, type Bild, type Tafel } from "./buehne";
 import { Inspektor } from "./Inspektor";
 import Schreiber from "./Schreiber";
 
@@ -64,6 +65,9 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const [spannStart, setSpannStart] = useState<Punkt | null>(null);
   /** Was der Messschreiber gerade zeigt — bleibt über »Von vorn« hinweg stehen. */
   const [gezeigt, setGezeigt] = useState<string[]>([]);
+  /** Die Tafel: dunkle Werkbank zum Bauen, helle Seite zum Zeigen. */
+  const [tafel, setTafel] = useState<Tafel>("werkbank");
+  const [vollbild, setVollbild] = useState(false);
   const aufzeichnung = useRef<Aufzeichnung | null>(null);
   /** Rollen, über die das Seil schon läuft, während man es aufzieht. */
   const [spannUeber, setSpannUeber] = useState<Punkt[]>([]);
@@ -151,18 +155,32 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   }, []);
   const lage = versuch ? lageAusWelt : lageImAufbau;
 
+  /**
+   * Wie nah ein Anschluss sein muss, damit der Zeiger einrastet — in Pixeln,
+   * nicht in Metern: es ist eine Frage des Zielens, nicht des Aufbaus.
+   */
+  const SCHNAPP = 14;
+  const zeigeAnschluesse = !versuch && werkzeug.art === "verbinder"
+    && (verbinderTyp(werkzeug.verbinder)?.punkte ?? 1) === 2;
+  const schnapppunkt = useCallback(
+    (p: Punkt) => (zeigeAnschluesse ? schnappe(aufbau, p, SCHNAPP / blick.skala)?.welt ?? p : p),
+    [aufbau, blick.skala, zeigeAnschluesse],
+  );
+
   const vorschau = useMemo<Bild["vorschau"]>(() => {
     if (versuch || !zeiger) return null;
     if (werkzeug.art === "verbinder" && spannStart) {
       const v = werkzeug.verbinder;
-      if (v === "seil" || v === "feder") return { art: "spannen", verbinder: v, von: spannStart, ueber: spannUeber, bis: zeiger };
+      if (v === "seil" || v === "feder" || v === "kabel") {
+        return { art: "spannen", verbinder: v, von: spannStart, ueber: spannUeber, bis: schnapppunkt(zeiger) };
+      }
     }
     if (werkzeug.art === "teil") {
       return { art: "teil", teil: { id: "vorschau", art: werkzeug.teil, pos: zeiger, winkel: 0, werte: standardWerteTeil(werkzeug.teil) } };
     }
     if (werkzeug.art === "bauplan") return null;
     return null;
-  }, [versuch, zeiger, werkzeug, spannStart, spannUeber]);
+  }, [versuch, zeiger, werkzeug, spannStart, spannUeber, schnapppunkt]);
 
   const bild = useCallback((): Bild => ({
     aufbau, lage, blick, auswahl, schwebt, vorschau, geloest: geloest.current,
@@ -171,13 +189,15 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     seilBahn: id => welt.current?.seilBahn(id),
     uebertemperatur: id => welt.current?.uebertemperatur(id) ?? 0,
     strahlen: () => welt.current?.strahlen() ?? [],
+    anschluesse: zeigeAnschluesse ? anschluesse(aufbau).map(a => a.welt) : [],
+    tafel,
     leuchten: id => {
       const t = aufbau.teile.find(x => x.id === id);
       if (t?.art !== "lampe") return 0;
       const p = Math.abs(welt.current?.stromMessung(id).leistung ?? 0);
       return p / Math.max(0.01, t.werte.nennleistung ?? 1);
     },
-  }), [aufbau, lage, blick, auswahl, schwebt, vorschau]);
+  }), [aufbau, lage, blick, auswahl, schwebt, vorschau, tafel, zeigeAnschluesse]);
   // Die Schleife liest das jeweils neueste Bild über ein Ref. Hinge sie selbst
   // am Bild, finge sie bei jeder Zeigerbewegung neu an — und verlöre dabei
   // jedes Mal Rechenzeit, gerade wenn man etwas mit der Hand zieht.
@@ -287,11 +307,11 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         else { aendere(v => tue(v, r.aufbau)); setAuswahl({ art: "verbinder", id: r.id }); }
         return;
       }
-      if (!spannStart) { setSpannStart(p); setSpannUeber([]); return; }
+      if (!spannStart) { setSpannStart(schnapppunkt(p)); setSpannUeber([]); return; }
       // Tippt man ein Seil in die Mitte einer Scheibe, läuft es dort *über*
       // sie und geht weiter — am Rand getroffen wird es angebunden.
       if (art === "seil" && rolleUnter(aufbau, p)) { setSpannUeber([...spannUeber, p]); return; }
-      const r = spanne(aufbau, art, spannStart, p, spannUeber);
+      const r = spanne(aufbau, art, spannStart, p, spannUeber, SCHNAPP / blick.skala);
       setSpannStart(null);
       setSpannUeber([]);
       if ("fehler" in r) setFehler(r.fehler);
@@ -372,14 +392,25 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         aendere(vor);
         return;
       }
-      if (e.key === "Escape") { setWerkzeug({ art: "auswahl" }); setSpannStart(null); setSpannUeber([]); return; }
-      if (versuch || !auswahl) return;
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        aendere(v => tue(v, auswahl.art === "teil" ? entferneTeil(v.jetzt, auswahl.id) : entferneVerbinder(v.jetzt, auswahl.id)));
-        setAuswahl(null);
+      if (e.key === "Escape") {
+        if (vollbild) setVollbild(false);
+        setWerkzeug({ art: "auswahl" });
+        setSpannStart(null);
+        setSpannUeber([]);
         return;
       }
+      if (versuch) return;
+      // Was unter dem Zeiger liegt, geht vor: so wird man ein Kabel los, ohne
+      // es erst anzuklicken — hinzeigen und Entf drücken.
+      const weg = schwebt ?? auswahl;
+      if (weg && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        aendere(v => tue(v, weg.art === "teil" ? entferneTeil(v.jetzt, weg.id) : entferneVerbinder(v.jetzt, weg.id)));
+        if (auswahl && auswahl.id === weg.id) setAuswahl(null);
+        setSchwebt(null);
+        return;
+      }
+      if (!auswahl) return;
       if (auswahl.art === "teil" && (e.key === "r" || e.key === "R")) {
         const t = aufbau.teile.find(x => x.id === auswahl.id);
         if (t) aendere(v => tue(v, setzeLage(v.jetzt, t.id, t.pos, t.winkel + (e.shiftKey ? -DREHSCHRITT : DREHSCHRITT))));
@@ -430,7 +461,9 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       ? "Auf die Wand tippen, wo es hin soll. Mit Umschalt bleibt das Werkzeug für das nächste."
       : versuch
         ? "Teile greifen und werfen, Verbinder antippen zum Lösen."
-        : "Teile ziehen, mit R drehen, Entf entfernt. Strg+Z macht rückgängig.";
+        : schwebt?.art === "verbinder"
+          ? "Entf entfernt diese Verbindung."
+          : "Teile ziehen, mit R drehen, Entf entfernt (auch das, worauf der Zeiger liegt). Strg+Z macht rückgängig.";
 
   const messGroessen = useMemo(() => messgroessen(aufbau), [aufbau]);
 
@@ -438,8 +471,10 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const aktivKnopf = (an: boolean) => `${knopf} ${an ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`;
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-7xl mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className={vollbild
+      ? "fixed inset-0 z-50 flex flex-col gap-3 p-3 overflow-auto bg-[var(--bg,#0f172a)]"
+      : "flex flex-col gap-4 p-4 sm:p-6 max-w-7xl mx-auto w-full"}>
+      <div className={`flex items-start justify-between gap-3 flex-wrap ${vollbild ? "hidden" : ""}`}>
         <div>
           <h1 className="text-2xl font-black tracking-tight">🔬 Physiklabor</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1 max-w-2xl">
@@ -466,6 +501,14 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
             className={`px-3 py-2 font-bold ${versuch ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}
           >🧪 Versuch</button>
         </div>
+        <button onClick={() => setTafel(t => (t === "werkbank" ? "schulbuch" : "werkbank"))}
+          aria-pressed={tafel === "schulbuch"} className={knopf}
+          title="Zwischen Werkbank und Schulbuchseite umschalten">
+          {tafel === "schulbuch" ? "📖 Schulbuch" : "🛠️ Werkbank"}
+        </button>
+        <button onClick={() => setVollbild(v => !v)} aria-pressed={vollbild} className={knopf}>
+          {vollbild ? "✕ Vollbild beenden" : "⛶ Vollbild"}
+        </button>
         {versuch ? (
           <>
             <button onClick={() => setLaeuft(l => !l)} aria-pressed={laeuft} className={`${knopf} font-bold`}>
@@ -484,8 +527,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[12rem_1fr_17rem] gap-4">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-3 max-h-[72vh] overflow-y-auto">
+      <div className={`grid grid-cols-1 gap-4 ${vollbild ? "lg:grid-cols-[11rem_1fr_15rem] grow min-h-0" : "lg:grid-cols-[12rem_1fr_17rem]"}`}>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-3 max-h-[80vh] overflow-y-auto">
           {versuch && (
             <p className="rounded-xl bg-[var(--surface-hover)] p-2 text-xs text-[var(--text-muted)]">
               Im Versuch ist der Aufbau fest. <button onClick={zumBauen} className="font-bold text-[var(--accent)] underline">Zum Bauen</button>
@@ -574,8 +617,13 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
             ref={huelle}
             aria-label="Werkbank"
             role="application"
-            className="relative rounded-2xl overflow-hidden border border-[var(--border)] bg-[#1c2535] touch-none"
-            style={{ height: "min(72vh, 660px)", minHeight: 360, cursor: werkzeug.art === "auswahl" ? (schwebt ? "grab" : "default") : "crosshair" }}
+            className="relative rounded-2xl overflow-hidden border border-[var(--border)] touch-none"
+            style={{
+              height: vollbild ? "calc(100vh - 9rem)" : "min(80vh, 840px)",
+              minHeight: 360,
+              background: tafel === "schulbuch" ? "#faf7f0" : "#1c2535",
+              cursor: werkzeug.art === "auswahl" ? (schwebt ? "grab" : "default") : "crosshair",
+            }}
             onPointerDown={beiDruck}
             onPointerMove={beiBewegung}
             onPointerUp={beiLoslassen}

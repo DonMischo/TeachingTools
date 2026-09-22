@@ -50,6 +50,20 @@ const WIRKUNGSGRAD = (standard: number): ParameterDef => ({
   standard, min: 0, max: 1,
 });
 
+/**
+ * Wie dick eine Linse an ihrer dicksten Stelle ist.
+ *
+ * Eine kurze Brennweite heißt starke Krümmung heißt dickes Glas — das sieht
+ * man einer Linse an, und deshalb folgt die Gestalt hier der Brennweite statt
+ * einer eigenen Einstellung. Für eine Zerstreuungslinse ist es die Dicke des
+ * Randes; ihre Mitte ist dünn.
+ */
+export function linsenDicke(t: Teil): number {
+  const d = t.werte.durchmesser ?? 0.12;
+  const f = Math.abs(t.werte.brennweite ?? 0.25);
+  return Math.min(d * 0.4, Math.max(0.006, (d * 0.1 * 0.25) / Math.max(0.02, f)));
+}
+
 /** 0 heißt: aus dem Werkstoff berechnen. */
 const MASSE_VORGABE: ParameterDef = {
   schluessel: "masseVorgabe", name: "Masse vorgeben", einheit: "kg", standard: 0, min: 0, max: 50,
@@ -243,8 +257,8 @@ export const TEILE: TeilTyp[] = [
       },
       MASSE_VORGABE,
     ],
-    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: 0.012, h: w(t, "durchmesser", 0.12) }],
-    volumen: t => 0.012 * w(t, "durchmesser", 0.12) * 0.03,
+    formen: t => [{ art: "kasten", mitte: { x: 0, y: 0 }, b: linsenDicke(t), h: w(t, "durchmesser", 0.12) }],
+    volumen: t => linsenDicke(t) * w(t, "durchmesser", 0.12) * 0.03,
   },
   {
     art: "spiegel",
