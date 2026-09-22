@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { ATTENTION_AUFGABEN, partner } from "@/lib/ki/attention";
+import { ATTENTION_AUFGABEN, ART_TITEL, partner } from "@/lib/ki/attention";
 import { Attention } from "@/components/ki/Attention";
 
 /** Die anklickbaren Wörter der Bühne — SVG-Gruppen, keine <button>. */
@@ -46,6 +46,26 @@ describe("Die Aufgaben", () => {
     for (const a of ATTENTION_AUFGABEN) {
       const eintraege = Object.entries(a.modell).sort((x, y) => y[1] - x[1]);
       expect(Number(eintraege[0][0]), `${a.id}: stärkster Bogen zeigt woanders hin`).toBe(a.ziel);
+    }
+  });
+
+  it("stellt zu jeder Sorte eine eigene Frage", () => {
+    for (const a of ATTENTION_AUFGABEN) {
+      expect(ART_TITEL[a.art], `${a.id}: unbekannte Sorte`).toBeTruthy();
+      // Nur beim Pronomen trägt die Standardfrage (»Worauf bezieht sich …«);
+      // bei Wortbedeutung oder Verbklammer wäre sie schlicht falsch.
+      if (a.art !== "pronomen") {
+        expect(a.frageText, `${a.id}: braucht eine eigene Frage`).toBeTruthy();
+      }
+    }
+  });
+
+  it("deckt mehr ab als Pronomen", () => {
+    const sorten = new Set(ATTENTION_AUFGABEN.map(a => a.art));
+    expect(sorten.size).toBeGreaterThanOrEqual(4);
+    for (const sorte of sorten) {
+      expect(ATTENTION_AUFGABEN.filter(a => a.art === sorte).length,
+        `${sorte}: nur eine Aufgabe`).toBeGreaterThan(1);
     }
   });
 
@@ -98,6 +118,37 @@ describe("Spielen", () => {
     const vorher = boegen();
     fireEvent.click(screen.getByText(/Was ein Modell ansieht/));
     expect(boegen()).toBeGreaterThan(vorher);
+  });
+
+  it("zeichnet jeden Bogen innerhalb des Bildes", () => {
+    // Der Bogen ging früher über den oberen Rand hinaus und war abgeschnitten.
+    const { container } = render(<Attention />);
+    tippe(container, "Koffer,");
+    fireEvent.click(screen.getByText(/Was ein Modell ansieht/));
+    const svg = container.querySelector("svg[aria-label^='Satz:']")!;
+    const [, , , hoehe] = (svg.getAttribute("viewBox") ?? "").split(" ").map(Number);
+    for (const pfad of svg.querySelectorAll("path")) {
+      const zahlen = (pfad.getAttribute("d") ?? "").match(/-?\d+(\.\d+)?/g)!.map(Number);
+      // Jede zweite Zahl ist eine y-Koordinate (x y, x y, …).
+      const ys = zahlen.filter((_, i) => i % 2 === 1);
+      expect(Math.min(...ys), `Bogen ragt oben heraus: ${pfad.getAttribute("d")}`).toBeGreaterThanOrEqual(0);
+      expect(Math.max(...ys)).toBeLessThanOrEqual(hoehe);
+    }
+  });
+
+  it("zeigt am Ende eine Auswertung nach Sorten", () => {
+    const { container } = render(<Attention />);
+    for (let i = 0; i < ATTENTION_AUFGABEN.length; i++) {
+      const aufgabe = ATTENTION_AUFGABEN[i];
+      tippe(container, aufgabe.woerter[aufgabe.ziel]);
+      fireEvent.click(screen.getByText(i + 1 >= ATTENTION_AUFGABEN.length ? /Zur Auswertung/ : /Nächster Satz/));
+    }
+    expect(screen.getByText("🔎 Auswertung")).toBeTruthy();
+    expect(screen.getByText(new RegExp(`${ATTENTION_AUFGABEN.length} von ${ATTENTION_AUFGABEN.length}`))).toBeTruthy();
+    // Jede vorkommende Sorte steht mit ihrer Quote da.
+    for (const sorte of new Set(ATTENTION_AUFGABEN.map(a => a.art))) {
+      expect(screen.getByText(ART_TITEL[sorte])).toBeTruthy();
+    }
   });
 
   it("stellt das Paar nebeneinander, sobald beide Sätze dran waren", () => {

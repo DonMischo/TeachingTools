@@ -194,6 +194,17 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
           </Knopf>
         </div>
 
+        {quelle.art === "mitgeliefert" && text && (
+          <details className="rounded-xl border border-[var(--border)] bg-[var(--bg)]">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-bold">
+              📄 Der Text ({woerterImText} Wörter)
+            </summary>
+            <p className="px-3 pb-3 text-sm leading-relaxed whitespace-pre-line text-[var(--text-muted)]">
+              {text}
+            </p>
+          </details>
+        )}
+
         {quelle.art === "eigen" && (
           <textarea
             value={eigener}

@@ -2,28 +2,39 @@
 /**
  * Station »Worauf schaut das Modell?« — Attention zum Mitmachen.
  *
- * Der Satz steht als Wortkette da, ein Wort darin fragt (»er«, »sie«). Wer
- * antippt, worauf es sich bezieht, zieht damit selbst einen Bogen — und sieht
- * danach, welche Bögen ein Sprachmodell ziehen würde.
+ * Ein Wort im Satz fragt, und wer antippt, worauf es sich bezieht, zieht damit
+ * selbst einen Bogen. Danach sieht man, welche Bögen ein Sprachmodell zöge.
  *
  * Angetippt statt gezogen: Auf dem Telefon ist Ziehen eine Zumutung, und der
  * Bogen wird ja doch gezeichnet.
  *
- * Die Aufgaben kommen paarweise. Sobald beide Sätze eines Paares gelöst sind,
- * stehen sie untereinander: ein Wort Unterschied, andere Antwort. Das ist der
- * Grund, warum es Attention gibt — und der Beweis, dass unser Wortnetz das
- * nicht können *kann*: Wenn »weil er zu« gefallen ist, weiß es nichts mehr von
- * Pokal oder Koffer.
+ * Gefragt wird nicht nur nach Pronomen. Vier Sorten, alle mit derselben
+ * Mechanik — weil es für ein Modell auch dieselbe Rechnung ist:
+ *
+ *   pronomen     Wer ist mit »er«, »sie« gemeint?
+ *   bedeutung    Welches Wort legt fest, was »Bank«, »Maus«, »Ball« heißt?
+ *   verbklammer  Wohin gehört das »auf« am Satzende? (deutsche Besonderheit)
+ *   satzbau      Bezüge über Satzteile und Satzgrenzen hinweg.
+ *
+ * Viele Aufgaben kommen paarweise: zwei Sätze, ein Wort Unterschied, andere
+ * Antwort. Das ist der Beweis, dass unser Wortnetz das nicht können *kann* —
+ * wenn das fragende Wort dran ist, hat es den Satzanfang längst vergessen.
  */
 import { useMemo, useState } from "react";
-import { ATTENTION_AUFGABEN, partner, type AttentionAufgabe } from "@/lib/ki/attention";
+import {
+  ATTENTION_AUFGABEN, ART_TITEL, partner,
+  type AttentionArt, type AttentionAufgabe,
+} from "@/lib/ki/attention";
 import { Wissen } from "@/components/ki/Wissen";
 
 /** Wortkästchen mit ihren Mittelpunkten — daran hängen die Bögen. */
 type Kasten = { index: number; x: number; y: number; breite: number; zeile: number };
 
 const ZEILEN_HOEHE = 44;
-const BOGEN_HOEHE = 26;
+const KASTEN_HOEHE = 30;
+/** Luft über der ersten Zeile. Muss größer sein als der höchste Bogen. */
+const OBEN = 58;
+const BOGEN_MAX = OBEN - 12;
 
 /** Grobe Textbreite: ohne Messung im DOM, dafür ohne Layout-Sprünge. */
 function breiteVon(wort: string): number {
@@ -38,7 +49,7 @@ function lege(woerter: string[], maxBreite: number): Kasten[] {
   woerter.forEach((w, index) => {
     const breite = breiteVon(w);
     if (x + breite > maxBreite && x > 0) { x = 0; zeile++; }
-    out.push({ index, x, y: zeile * ZEILEN_HOEHE + BOGEN_HOEHE, breite, zeile });
+    out.push({ index, x, y: zeile * ZEILEN_HOEHE + OBEN, breite, zeile });
     x += breite + 6;
   });
   return out;
@@ -48,50 +59,140 @@ function bogen(von: Kasten, nach: Kasten): string {
   const x1 = von.x + von.breite / 2;
   const x2 = nach.x + nach.breite / 2;
   if (von.zeile === nach.zeile) {
-    // Über die Wörter hinweg, nicht hindurch: ein Halbbogen nach oben.
+    // Über die Wörter hinweg, nicht hindurch: ein Halbbogen nach oben. Die
+    // Höhe wächst mit dem Abstand, bleibt aber im Bild (siehe BOGEN_MAX).
     const y = von.y;
-    const hoehe = Math.min(BOGEN_HOEHE + Math.abs(x2 - x1) / 8, BOGEN_HOEHE + 18);
+    const hoehe = Math.min(22 + Math.abs(x2 - x1) / 9, BOGEN_MAX);
     return `M ${x1} ${y} C ${x1} ${y - hoehe}, ${x2} ${y - hoehe}, ${x2} ${y}`;
   }
   // Über zwei Zeilen: vom oberen Rand des einen Kastens zum unteren des
   // anderen. Ein Halbbogen wie oben liefe quer durch die Zeile dazwischen.
   const obenIstZiel = nach.zeile < von.zeile;
-  const start = obenIstZiel ? { x: x1, y: von.y } : { x: x1, y: von.y + 30 };
-  const ende = obenIstZiel ? { x: x2, y: nach.y + 30 } : { x: x2, y: nach.y };
+  const start = obenIstZiel ? { x: x1, y: von.y } : { x: x1, y: von.y + KASTEN_HOEHE };
+  const ende = obenIstZiel ? { x: x2, y: nach.y + KASTEN_HOEHE } : { x: x2, y: nach.y };
   const mitte = (start.y + ende.y) / 2;
   return `M ${start.x} ${start.y} C ${start.x} ${mitte}, ${ende.x} ${mitte}, ${ende.x} ${ende.y}`;
 }
 
+function frageZu(a: AttentionAufgabe): string {
+  return a.frageText ?? `Worauf bezieht sich »${a.woerter[a.frage].replace(/[.,]$/, "")}«?`;
+}
+
+type Ergebnis = { id: string; art: AttentionArt; richtig: boolean };
+
 export function Attention() {
   const [nr, setNr] = useState(0);
   const [wahl, setWahl] = useState<number | null>(null);
-  const [geloest, setGeloest] = useState<Record<string, boolean>>({});
+  const [ergebnisse, setErgebnisse] = useState<Ergebnis[]>([]);
   const [zeigeModell, setZeigeModell] = useState(false);
   const [breite, setBreite] = useState(560);
 
-  const aufgabe: AttentionAufgabe = ATTENTION_AUFGABEN[nr];
+  const durch = nr >= ATTENTION_AUFGABEN.length;
+  const aufgabe: AttentionAufgabe = ATTENTION_AUFGABEN[Math.min(nr, ATTENTION_AUFGABEN.length - 1)];
   const kaesten = useMemo(() => lege(aufgabe.woerter, breite), [aufgabe, breite]);
   const zeilen = Math.max(...kaesten.map(k => k.zeile)) + 1;
-  const hoehe = zeilen * ZEILEN_HOEHE + BOGEN_HOEHE + 8;
+  const hoehe = zeilen * ZEILEN_HOEHE + OBEN;
 
   const beantwortet = wahl !== null;
   const richtig = wahl === aufgabe.ziel;
   const gegenstueck = partner(aufgabe);
-  const paarFertig = !!gegenstueck && geloest[aufgabe.id] && geloest[gegenstueck.id];
+  const erledigt = new Set(ergebnisse.map(e => e.id));
+  const paarFertig = !!gegenstueck && erledigt.has(aufgabe.id) && erledigt.has(gegenstueck.id);
 
   function tippe(index: number) {
     if (beantwortet || !aufgabe.wahlbar.includes(index)) return;
     setWahl(index);
-    setGeloest(g => ({ ...g, [aufgabe.id]: true }));
+    setErgebnisse(alt => [
+      ...alt.filter(e => e.id !== aufgabe.id),
+      { id: aufgabe.id, art: aufgabe.art, richtig: index === aufgabe.ziel },
+    ]);
   }
 
   function weiter() {
     setWahl(null);
     setZeigeModell(false);
-    setNr(n => (n + 1) % ATTENTION_AUFGABEN.length);
+    setNr(n => n + 1);
   }
 
-  const treffer = Object.keys(geloest).length;
+  function nochmal() {
+    setWahl(null);
+    setZeigeModell(false);
+    setErgebnisse([]);
+    setNr(0);
+  }
+
+  // ─────────────────────────────────────────────── Auswertung am Ende ──
+  if (durch) {
+    const treffer = ergebnisse.filter(e => e.richtig).length;
+    const arten = (Object.keys(ART_TITEL) as AttentionArt[])
+      .map(art => {
+        const eigene = ergebnisse.filter(e => e.art === art);
+        return { art, richtig: eigene.filter(e => e.richtig).length, gesamt: eigene.length };
+      })
+      .filter(z => z.gesamt > 0);
+    const daneben = ergebnisse.filter(e => !e.richtig)
+      .map(e => ATTENTION_AUFGABEN.find(a => a.id === e.id)!)
+      .filter(Boolean);
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="p-4 rounded-2xl border border-[var(--accent)] bg-[var(--surface)] flex flex-col gap-3">
+          <h2 className="font-black">🔎 Auswertung</h2>
+          <p className="text-lg font-black">
+            {treffer} von {ergebnisse.length} Bögen richtig gezogen.
+          </p>
+
+          <ul className="flex flex-col gap-1.5">
+            {arten.map(z => (
+              <li key={z.art} className="flex items-center gap-2 text-sm">
+                <span className="w-44 shrink-0">{ART_TITEL[z.art]}</span>
+                <span className="flex-1 h-2 rounded-full bg-[var(--surface-hover)] overflow-hidden">
+                  <span
+                    className="block h-full bg-[var(--accent)]"
+                    style={{ width: `${(z.richtig / z.gesamt) * 100}%` }}
+                  />
+                </span>
+                <span className="w-12 text-right font-bold">{z.richtig}/{z.gesamt}</span>
+              </li>
+            ))}
+          </ul>
+
+          {daneben.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
+                Die hier waren knifflig
+              </span>
+              <ul className="flex flex-col gap-1 text-sm">
+                {daneben.map(a => (
+                  <li key={a.id} className="text-[var(--text-muted)]">
+                    »{a.woerter.join(" ")}« —{" "}
+                    <b className="text-[var(--text)]">{a.woerter[a.ziel].replace(/[.,]$/, "")}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-sm leading-relaxed">
+            Du hast gerade von Hand gemacht, was in einem Sprachmodell bei <b>jedem einzelnen
+            Wort</b> passiert — und zwar gleichzeitig für alle Wörter des Textes, in Dutzenden
+            solcher Bogenbilder nebeneinander. Was dich Nachdenken gekostet hat, ist dort eine
+            Multiplikation von Zahlen.
+          </p>
+
+          <button
+            type="button"
+            onClick={nochmal}
+            className="self-start px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+          >
+            ↺ Noch einmal
+          </button>
+        </div>
+
+        <Wissen thema="attention" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -99,13 +200,18 @@ export function Attention() {
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <h2 className="font-black">🔎 Worauf schaut das Modell?</h2>
           <span className="text-xs text-[var(--text-muted)]">
-            Satz {nr + 1} von {ATTENTION_AUFGABEN.length} · {treffer} bearbeitet
+            Satz {nr + 1} von {ATTENTION_AUFGABEN.length} ·{" "}
+            {ergebnisse.filter(e => e.richtig).length} richtig
           </span>
         </div>
 
-        <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-          Das gelbe Wort schaut zurück. Tippe das Wort an, das damit gemeint ist.
-        </p>
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="px-2 py-0.5 rounded-lg border border-[var(--border)] text-[10px]
+            uppercase tracking-wide text-[var(--text-muted)]">
+            {ART_TITEL[aufgabe.art]}
+          </span>
+          <p className="text-sm font-bold">{frageZu(aufgabe)}</p>
+        </div>
 
         <div
           className="overflow-x-auto"
@@ -161,7 +267,7 @@ export function Attention() {
               const istZiel = beantwortet && k.index === aufgabe.ziel;
               const istWahl = k.index === wahl;
               const wahlbar = aufgabe.wahlbar.includes(k.index) && !beantwortet;
-              const schluessel = beantwortet && k.index === aufgabe.schluesselwort;
+              const schluessel = beantwortet && k.index === aufgabe.schluesselwort && !istZiel;
               return (
                 <g
                   key={k.index}
@@ -172,7 +278,7 @@ export function Attention() {
                   style={{ cursor: wahlbar ? "pointer" : "default" }}
                 >
                   <rect
-                    x={k.x} y={k.y} width={k.breite} height={30} rx={9}
+                    x={k.x} y={k.y} width={k.breite} height={KASTEN_HOEHE} rx={9}
                     fill={
                       istFrage ? "var(--accent)"
                         : istZiel ? "var(--green, #22c55e)"
@@ -206,12 +312,6 @@ export function Attention() {
               {richtig ? "✓ Genau." : "✗ Knapp daneben."}{" "}
               <span className="font-normal text-[var(--text-muted)]">{aufgabe.erklaerung}</span>
             </p>
-            {aufgabe.schluesselwort !== undefined && (
-              <p className="text-xs text-[var(--text-muted)]">
-                Das entscheidende Wort ist gestrichelt umrandet — nimm es weg, und der Satz
-                ist nicht mehr zu beantworten.
-              </p>
-            )}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -226,7 +326,7 @@ export function Attention() {
                 onClick={weiter}
                 className="px-3 py-1.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] text-sm"
               >
-                Nächster Satz →
+                {nr + 1 >= ATTENTION_AUFGABEN.length ? "Zur Auswertung →" : "Nächster Satz →"}
               </button>
             </div>
           </div>
@@ -235,7 +335,7 @@ export function Attention() {
         {zeigeModell && (
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
             So sieht Attention aus: Das fragende Wort verteilt seine Aufmerksamkeit auf alle
-            früheren Wörter — dicker Bogen, mehr Gewicht. Ein echtes Modell hat davon Dutzende
+            übrigen Wörter — dicker Bogen, mehr Gewicht. Ein echtes Modell hat davon Dutzende
             solcher Bogenbilder nebeneinander (»Köpfe«), und jedes achtet auf etwas anderes.
           </p>
         )}
