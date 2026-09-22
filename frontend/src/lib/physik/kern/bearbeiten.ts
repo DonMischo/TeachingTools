@@ -7,7 +7,7 @@
  */
 import type { Blick, Punkt } from "../typen";
 import {
-  amTeil, endeInWelt, lokalpunkt, verbinde, wand, weltpunkt,
+  amTeil, endeInWelt, entferneTeil, lokalpunkt, verbinde, wand, weltpunkt,
   type Aufbau, type Teil, type Verbinder, type VerbinderArt,
 } from "./modell";
 import { istElektrisch, pole, teilTyp, type Form } from "./teile";
@@ -35,6 +35,16 @@ export function zurWelt(p: Punkt, blick: Blick): Punkt {
 /** Wo ein Teil gerade ist — im Bauen aus dem Aufbau, im Versuch aus der Welt. */
 export type Lage = (t: Teil) => { pos: Punkt; winkel: number };
 export const lageImAufbau: Lage = t => ({ pos: t.pos, winkel: t.winkel });
+/**
+ * Die Lage im Schaltplan: dort liegt alles waagerecht und dort, wo man es
+ * hingeschoben hat — nicht dort, wo es an der Wand hängt.
+ */
+export const lageImPlan: Lage = t => ({ pos: t.plan ?? t.pos, winkel: 0 });
+
+/** Schiebt ein Teil im Schaltplan, ohne den Aufbau anzufassen. */
+export function setzePlanlage(aufbau: Aufbau, id: string, pos: Punkt): Aufbau {
+  return { ...aufbau, teile: aufbau.teile.map(t => (t.id === id ? { ...t, plan: pos } : t)) };
+}
 
 function inForm(f: Form, p: Punkt, toleranz: number): boolean {
   if (f.art === "kasten") {
@@ -102,8 +112,10 @@ export function verbinderUnter(
   for (const v of aufbau.verbinder) {
     if (!nur(v)) continue;
     const weg = verbinderWeg(aufbau, v, lage);
+    // Achse und Schraube sitzen an einem Punkt, alles andere ist eine Leitung:
+    // die trifft man auf ihrer ganzen Länge, nicht nur am Ende.
     let d = Math.hypot(p.x - weg[0].x, p.y - weg[0].y);
-    if (v.art === "seil" || v.art === "feder") {
+    if (v.art !== "achse" && v.art !== "schraube") {
       d = Infinity;
       for (let i = 0; i + 1 < weg.length; i++) d = Math.min(d, abstandZurStrecke(p, weg[i], weg[i + 1]));
     }
@@ -269,6 +281,42 @@ export function rolleUnter(aufbau: Aufbau, p: Punkt): Teil | undefined {
     const l = lokalpunkt(t, p);
     return Math.hypot(l.x, l.y) <= 0.5 * ((t.werte.durchmesser ?? 0.2) / 2);
   });
+}
+
+/**
+ * Baut ein Bauteil in ein Kabel ein: das Kabel wird getrennt, das Teil sitzt
+ * dazwischen.
+ *
+ * So verdrahtet man auch in Wirklichkeit — man schneidet die Leitung auf und
+ * klemmt das Gerät dazwischen. Wer ein Lämpchen auf ein Kabel schiebt, meint
+ * genau das und nicht »leg es obendrauf«.
+ */
+export function baueEin(aufbau: Aufbau, teil: string, kabel: string): Aufbau {
+  const v = aufbau.verbinder.find(x => x.id === kabel);
+  const t = aufbau.teile.find(x => x.id === teil);
+  if (!v || !t || v.art !== "kabel" || v.a.teil === teil || v.b.teil === teil || !istElektrisch(t.art)) return aufbau;
+  const [links, rechts] = pole(t);
+  let s: Aufbau = { ...aufbau, verbinder: aufbau.verbinder.filter(x => x.id !== kabel) };
+  s = verbinde(s, "kabel", v.a, amTeil(teil, links), standardWerteVerbinder("kabel")).aufbau;
+  s = verbinde(s, "kabel", amTeil(teil, rechts), v.b, standardWerteVerbinder("kabel")).aufbau;
+  return s;
+}
+
+/**
+ * Nimmt ein Teil heraus und schließt die Leitung wieder.
+ *
+ * Hing es mit genau zwei Kabeln in einem Strang, werden daraus wieder eines —
+ * sonst bliebe nach jedem Ausbau eine Lücke, die man von Hand überbrücken
+ * müsste.
+ */
+export function baueAus(aufbau: Aufbau, teil: string): Aufbau {
+  const kabel = aufbau.verbinder.filter(v => v.art === "kabel" && (v.a.teil === teil || v.b.teil === teil));
+  const ohne = entferneTeil(aufbau, teil);
+  if (kabel.length !== 2) return ohne;
+  const fremd = (v: Verbinder) => (v.a.teil === teil ? v.b : v.a);
+  const [a, b] = [fremd(kabel[0]), fremd(kabel[1])];
+  if (a.teil === null && b.teil === null) return ohne;
+  return verbinde(ohne, "kabel", a, b, standardWerteVerbinder("kabel")).aufbau;
 }
 
 export function spanne(

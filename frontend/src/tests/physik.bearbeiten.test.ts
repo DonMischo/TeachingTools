@@ -3,7 +3,8 @@
  */
 import { afterEach, describe, it, expect } from "vitest";
 import {
-  aufhaengung, merke, neuerVerlauf, setze, setzeAufhaengung, setzeGelenk, setzeLage, spanne, teileUnter, tue,
+  aufhaengung, baueAus, baueEin, lageImAufbau, lageImPlan, merke, neuerVerlauf, setze, setzeAufhaengung,
+  setzeGelenk, setzeLage, setzePlanlage, spanne, teileUnter, tue,
   verbinderUnter, vor, zumBild, zurueck, zurWelt,
 } from "@/lib/physik/kern/bearbeiten";
 import { amTeil, endeInWelt, fuegeTeilHinzu, neuerAufbau, verbinde, wand, type Aufbau, type TeilArt } from "@/lib/physik/kern/modell";
@@ -165,6 +166,65 @@ describe("Speichern", () => {
     });
     expect(aufbauAusJSON(roh).verbinder).toEqual([]);
     expect(aufbauAusJSON("kein json").teile).toEqual([]);
+  });
+});
+
+describe("Bauteile in die Leitung", () => {
+  /** Batterie und Lämpchen, mit einem Kabel verbunden. */
+  function kreis() {
+    let a = neuerAufbau();
+    const bat = teil(a, "batterie", { x: 0, y: 1 }); a = bat.aufbau;
+    const lampe = teil(a, "lampe", { x: 1, y: 1 }); a = lampe.aufbau;
+    const kabel = verbinde(a, "kabel", amTeil(bat.id, { x: 0.05, y: 0 }), amTeil(lampe.id, { x: -0.03, y: 0 }));
+    return { aufbau: kabel.aufbau, bat: bat.id, lampe: lampe.id, kabel: kabel.id };
+  }
+
+  it("trennt das Kabel und klemmt das Bauteil dazwischen", () => {
+    const k = kreis();
+    const s = teil(k.aufbau, "schalter", { x: 0.5, y: 1 });
+    const a = baueEin(s.aufbau, s.id, k.kabel);
+
+    expect(a.verbinder).toHaveLength(2);
+    // Von der Batterie zum Schalter und vom Schalter zum Lämpchen.
+    const enden = a.verbinder.map(v => [v.a.teil, v.b.teil]);
+    expect(enden).toContainEqual([k.bat, s.id]);
+    expect(enden).toContainEqual([s.id, k.lampe]);
+    // Und zwar an verschiedenen Polen des Schalters.
+    const links = a.verbinder.find(v => v.b.teil === s.id)!.b.punkt.x;
+    const rechts = a.verbinder.find(v => v.a.teil === s.id)!.a.punkt.x;
+    expect(links).toBeLessThan(0);
+    expect(rechts).toBeGreaterThan(0);
+  });
+
+  it("schließt die Leitung wieder, wenn man das Bauteil herausnimmt", () => {
+    const k = kreis();
+    const s = teil(k.aufbau, "schalter", { x: 0.5, y: 1 });
+    const mit = baueEin(s.aufbau, s.id, k.kabel);
+    const ohne = baueAus(mit, s.id);
+
+    expect(ohne.teile.map(t => t.id).sort()).toEqual([k.bat, k.lampe].sort());
+    expect(ohne.verbinder).toHaveLength(1);
+    expect([ohne.verbinder[0].a.teil, ohne.verbinder[0].b.teil].sort()).toEqual([k.bat, k.lampe].sort());
+  });
+
+  it("lässt ein Bauteil in Ruhe, das gar nicht am Kabel hängt", () => {
+    const k = kreis();
+    const brett = teil(k.aufbau, "brett", { x: 0.5, y: 1 });
+    expect(baueEin(brett.aufbau, brett.id, k.kabel).verbinder).toHaveLength(1);
+  });
+});
+
+describe("Der Schaltplan", () => {
+  it("ist eine zweite Lage derselben Teile", () => {
+    const { aufbau, id } = teil(neuerAufbau(), "batterie", { x: 2, y: 1 });
+    // Ohne eigene Planlage steht das Teil da, wo es an der Wand hängt.
+    expect(lageImPlan(aufbau.teile[0]).pos).toEqual({ x: 2, y: 1 });
+
+    const a = setzePlanlage(aufbau, id, { x: -1, y: 3 });
+    expect(lageImPlan(a.teile[0]).pos).toEqual({ x: -1, y: 3 });
+    // Der Aufbau selbst bleibt unangetastet.
+    expect(a.teile[0].pos).toEqual({ x: 2, y: 1 });
+    expect(lageImAufbau(a.teile[0]).pos).toEqual({ x: 2, y: 1 });
   });
 });
 

@@ -43,6 +43,15 @@ function tippe(werkbank: HTMLElement, x = 400, y = 260) {
   });
 }
 
+/** Zieht von einer Stelle der Werkbank zur anderen. */
+function ziehe(werkbank: HTMLElement, von: [number, number], nach: [number, number]) {
+  act(() => {
+    fireEvent.pointerDown(werkbank, { clientX: von[0], clientY: von[1], pointerId: 1 });
+    fireEvent.pointerMove(werkbank, { clientX: nach[0], clientY: nach[1], pointerId: 1 });
+    fireEvent.pointerUp(werkbank, { clientX: nach[0], clientY: nach[1], pointerId: 1 });
+  });
+}
+
 describe("Baukasten", () => {
   it("behält einen gespeicherten Aufbau beim Öffnen, auch unter StrictMode", () => {
     const { aufbau } = fuegeTeilHinzu(neuerAufbau(), "brett", { x: 0, y: 1 }, standardWerteTeil("brett"));
@@ -164,6 +173,46 @@ describe("Baukasten", () => {
 
     act(() => getByRole("button", { name: /^🛠️ Bauen$/ }).click());
     expect(getByLabelText("Brett hinstellen")).not.toBeDisabled();
+  });
+
+  it("schiebt im Schaltplan nur die Planlage, nicht den Aufbau", () => {
+    const { getByLabelText, getByRole } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
+    act(() => getByLabelText("Batterie hinstellen").click());
+    tippe(getByLabelText("Werkbank"));
+    expect(gespeichert().teile[0].pos.x).toBeCloseTo(0, 6);
+
+    act(() => getByRole("button", { name: /🔧 Aufbau|🔌 Schaltplan/ }).click());
+    ziehe(getByLabelText("Werkbank"), [400, 260], [560, 260]);
+
+    const t = gespeichert().teile[0];
+    // Im Plan verschoben, an der Wand unverändert.
+    expect(t.plan!.x).toBeCloseTo(0.5, 2);
+    expect(t.pos.x).toBeCloseTo(0, 6);
+  });
+
+  it("klemmt ein Bauteil in das Kabel, auf das man es schiebt", () => {
+    const { getByLabelText } = render(<Baukasten speicherSchluessel={SCHLUESSEL} />);
+    const werkbank = () => getByLabelText("Werkbank");
+
+    act(() => getByLabelText("Batterie hinstellen").click());
+    tippe(werkbank(), 300, 260);
+    act(() => getByLabelText("Lämpchen hinstellen").click());
+    tippe(werkbank(), 500, 260);
+    // Das Kabel von Pol zu Pol — es rastet an den Anschlüssen ein.
+    act(() => getByLabelText("Kabel setzen").click());
+    tippe(werkbank(), 320, 260);
+    tippe(werkbank(), 486, 260);
+    expect(gespeichert().verbinder.filter(v => v.art === "kabel")).toHaveLength(1);
+
+    // Den Schalter darüber und auf das Kabel schieben.
+    act(() => getByLabelText("Schalter hinstellen").click());
+    tippe(werkbank(), 400, 180);
+    ziehe(werkbank(), [400, 180], [400, 260]);
+
+    const kabel = gespeichert().verbinder.filter(v => v.art === "kabel");
+    expect(kabel).toHaveLength(2);
+    const schalter = gespeichert().teile.find(t => t.art === "schalter")!;
+    expect(kabel.filter(v => v.a.teil === schalter.id || v.b.teil === schalter.id)).toHaveLength(2);
   });
 
   it("zeigt im Versuch die Messwerte mit Formel und die Kraft im Seil", () => {

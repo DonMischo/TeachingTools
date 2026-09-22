@@ -15,18 +15,19 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  anschluesse, lageImAufbau, merke, neuerVerlauf, rolleUnter, schnappe, setze, setzeGelenk, setzeLage,
+  anschluesse, baueAus, baueEin, lageImAufbau, lageImPlan, merke, neuerVerlauf, rolleUnter, schnappe, setze,
+  setzeGelenk, setzeLage, setzePlanlage,
   setzeAufhaengung, setzeTeilWerte,
   setzeVerbinderWerte,
   spanne, teileUnter, tue, verbinderUnter, vor, zurueck, zurWelt, type Lage, type Verlauf,
 } from "@/lib/physik/kern/bearbeiten";
 import {
-  entferneTeil, entferneVerbinder, fuegeTeilHinzu, neuerAufbau,
+  entferneVerbinder, fuegeTeilHinzu, neuerAufbau,
   type TeilArt, type VerbinderArt,
 } from "@/lib/physik/kern/modell";
 import { BAUPLAENE, fuegeBauplanEin, umDenUrsprung, type Bauplan } from "@/lib/physik/kern/bauplan";
 import { ladeAufbau, ladeBauplaene, speichereAufbau, speichereBauplaene } from "@/lib/physik/kern/speicher";
-import { standardWerteTeil, TEILE } from "@/lib/physik/kern/teile";
+import { istElektrisch, standardWerteTeil, TEILE } from "@/lib/physik/kern/teile";
 import { Aufzeichnung, messgroessen } from "@/lib/physik/kern/messen";
 import { VERBINDER, verbinderTyp } from "@/lib/physik/kern/verbinder";
 import { TAKT, Welt } from "@/lib/physik/kern/welt";
@@ -68,6 +69,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   /** Die Tafel: dunkle Werkbank zum Bauen, helle Seite zum Zeigen. */
   const [tafel, setTafel] = useState<Tafel>("werkbank");
   const [vollbild, setVollbild] = useState(false);
+  /** Werkbank oder Schaltplan — zwei Lagen derselben Teile. */
+  const [schaltplan, setSchaltplan] = useState(false);
   const aufzeichnung = useRef<Aufzeichnung | null>(null);
   /** Rollen, über die das Seil schon läuft, während man es aufzieht. */
   const [spannUeber, setSpannUeber] = useState<Punkt[]>([]);
@@ -153,7 +156,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     const z = welt.current?.zustand(t.id);
     return z ? { pos: { x: z.x, y: z.y }, winkel: z.winkel } : { pos: t.pos, winkel: t.winkel };
   }, []);
-  const lage = versuch ? lageAusWelt : lageImAufbau;
+  const lage = schaltplan ? lageImPlan : versuch ? lageAusWelt : lageImAufbau;
 
   /**
    * Wie nah ein Anschluss sein muss, damit der Zeiger einrastet — in Pixeln,
@@ -163,8 +166,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
   const zeigeAnschluesse = !versuch && werkzeug.art === "verbinder"
     && (verbinderTyp(werkzeug.verbinder)?.punkte ?? 1) === 2;
   const schnapppunkt = useCallback(
-    (p: Punkt) => (zeigeAnschluesse ? schnappe(aufbau, p, SCHNAPP / blick.skala)?.welt ?? p : p),
-    [aufbau, blick.skala, zeigeAnschluesse],
+    (p: Punkt) => (zeigeAnschluesse ? schnappe(aufbau, p, SCHNAPP / blick.skala, lage)?.welt ?? p : p),
+    [aufbau, blick.skala, zeigeAnschluesse, lage],
   );
 
   const vorschau = useMemo<Bild["vorschau"]>(() => {
@@ -189,15 +192,16 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     seilBahn: id => welt.current?.seilBahn(id),
     uebertemperatur: id => welt.current?.uebertemperatur(id) ?? 0,
     strahlen: () => welt.current?.strahlen() ?? [],
-    anschluesse: zeigeAnschluesse ? anschluesse(aufbau).map(a => a.welt) : [],
+    anschluesse: zeigeAnschluesse ? anschluesse(aufbau, lage).map(a => a.welt) : [],
     tafel,
+    schaltplan,
     leuchten: id => {
       const t = aufbau.teile.find(x => x.id === id);
       if (t?.art !== "lampe") return 0;
       const p = Math.abs(welt.current?.stromMessung(id).leistung ?? 0);
       return p / Math.max(0.01, t.werte.nennleistung ?? 1);
     },
-  }), [aufbau, lage, blick, auswahl, schwebt, vorschau, tafel, zeigeAnschluesse]);
+  }), [aufbau, lage, blick, auswahl, schwebt, vorschau, tafel, zeigeAnschluesse, schaltplan]);
   // Die Schleife liest das jeweils neueste Bild über ein Ref. Hinge sie selbst
   // am Bild, finge sie bei jeder Zeigerbewegung neu an — und verlöre dabei
   // jedes Mal Rechenzeit, gerade wenn man etwas mit der Hand zieht.
@@ -339,7 +343,10 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       return;
     }
     if (z.art === "hand") welt.current?.ziehe(p);
-    else if (z.art === "teil") aendere(v => setze(v, setzeLage(v.jetzt, z.id, { x: p.x - z.griff.x, y: p.y - z.griff.y })));
+    else if (z.art === "teil") {
+      const ziel = { x: p.x - z.griff.x, y: p.y - z.griff.y };
+      aendere(v => setze(v, schaltplan ? setzePlanlage(v.jetzt, z.id, ziel) : setzeLage(v.jetzt, z.id, ziel)));
+    }
     else {
       setBlick(b => ({
         ...b,
@@ -348,8 +355,30 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     }
   }
 
+  /**
+   * Ein Bauteil, das auf einem Kabel liegt, wird eingebaut.
+   *
+   * Beim Loslassen geprüft, nicht beim Ziehen: sonst schnitte man beim
+   * Vorbeiziehen jedes Kabel auf, über das man kommt.
+   */
+  function baueGegebenenfallsEin(id: string) {
+    // Im Verlauf nachsehen, nicht im Zustand dieser Wiedergabe: das Teil ist
+    // gerade eben verschoben worden, und davon weiß `aufbau` hier noch nichts.
+    aendere(v => {
+      const a = v.jetzt;
+      const t = a.teile.find(x => x.id === id);
+      if (!t || !istElektrisch(t.art)) return v;
+      const wo = schaltplan ? lageImPlan : lageImAufbau;
+      const kabel = verbinderUnter(a, wo(t).pos, 0.04, wo, x => x.art === "kabel");
+      if (!kabel || kabel.a.teil === id || kabel.b.teil === id) return v;
+      return tue(v, baueEin(a, id, kabel.id));
+    });
+  }
+
   function beiLoslassen() {
-    if (zieht.current?.art === "hand") welt.current?.lasse();
+    const z = zieht.current;
+    if (z?.art === "hand") welt.current?.lasse();
+    if (z?.art === "teil") baueGegebenenfallsEin(z.id);
     zieht.current = null;
   }
 
@@ -405,7 +434,7 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
       const weg = schwebt ?? auswahl;
       if (weg && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
-        aendere(v => tue(v, weg.art === "teil" ? entferneTeil(v.jetzt, weg.id) : entferneVerbinder(v.jetzt, weg.id)));
+        aendere(v => tue(v, weg.art === "teil" ? baueAus(v.jetzt, weg.id) : entferneVerbinder(v.jetzt, weg.id)));
         if (auswahl && auswahl.id === weg.id) setAuswahl(null);
         setSchwebt(null);
         return;
@@ -440,7 +469,8 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
     anWand: (id: string, art: "schraube" | "achse" | null, stelle = 0) =>
       aendere(v => tue(v, setzeAufhaengung(v.jetzt, id, art, stelle))),
     entferne: (a: Auswahl) => {
-      aendere(v => tue(v, a.art === "teil" ? entferneTeil(v.jetzt, a.id) : entferneVerbinder(v.jetzt, a.id)));
+      // Ein Bauteil aus der Leitung nehmen schließt sie wieder.
+      aendere(v => tue(v, a.art === "teil" ? baueAus(v.jetzt, a.id) : entferneVerbinder(v.jetzt, a.id)));
       setAuswahl(null);
     },
     loese: (id: string) => {
@@ -502,6 +532,10 @@ export default function Baukasten({ action, speicherSchluessel = "geraet" }: {
             className={`px-3 py-2 font-bold ${versuch ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}
           >🧪 Versuch</button>
         </div>
+        <button onClick={() => setSchaltplan(s => !s)} aria-pressed={schaltplan} className={knopf}
+          title="Dieselben Bauteile als Schaltplan — dort liegen sie, wo man sie hinschiebt.">
+          {schaltplan ? "🔌 Schaltplan" : "🔧 Aufbau"}
+        </button>
         <button onClick={() => setTafel(t => (t === "werkbank" ? "schulbuch" : "werkbank"))}
           aria-pressed={tafel === "schulbuch"} className={knopf}
           title="Zwischen Werkbank und Schulbuchseite umschalten">

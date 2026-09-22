@@ -49,6 +49,8 @@ export interface Bild {
   tafel?: Tafel;
   /** Die Anschlüsse, an denen ein Verbinder einrastet — beim Ziehen sichtbar. */
   anschluesse?: Punkt[];
+  /** Schaltplan statt Werkbank: nur Elektrisches, als Schaltzeichen. */
+  schaltplan?: boolean;
 }
 
 export type Tafel = "werkbank" | "schulbuch";
@@ -198,11 +200,17 @@ export class Buehne {
     buchseite = tafel === "schulbuch";
     this.app.renderer.background.color = FARBE.wand;
     this.schriftzug = 0;
-    this.zeichneWand(bild.blick);
+    this.zeichneWand(bild.blick, !bild.schaltplan);
     this.teile.clear();
     this.oben.clear();
 
     const { aufbau, lage, blick } = bild;
+    if (bild.schaltplan) {
+      this.zeichneSchaltplan(bild);
+      for (let i = this.schriftzug; i < this.schriften.length; i++) this.schriften[i].visible = false;
+      this.app.render();
+      return;
+    }
     // Erst die Schatten aller Teile, dann die Teile — sonst fiele der Schatten
     // des oberen auf das untere Teil und sähe aus wie ein Loch darin.
     if (!buchseite) for (const t of aufbau.teile) this.zeichneTeil(t, lage, blick, "schatten");
@@ -336,7 +344,66 @@ export class Buehne {
     this.schriftzug++;
   }
 
-  private zeichneWand(blick: Blick) {
+  /**
+   * Der Schaltplan: dieselben Bauteile, nur lesbar angeordnet.
+   *
+   * Gezeichnet wird, was elektrisch ist, als Schaltzeichen in einem Kästchen;
+   * die Kabel laufen rechtwinklig, weil ein Plan kein Foto ist. Die Lage kommt
+   * von außen — im Plan ist sie eine andere als an der Wand.
+   */
+  private zeichneSchaltplan(bild: Bild) {
+    const { aufbau, lage, blick } = bild;
+    const g = this.teile;
+
+    for (const v of aufbau.verbinder) {
+      if (v.art !== "kabel" || bild.geloest.has(v.id)) continue;
+      const [a, b] = verbinderEnden(aufbau, v, lage).map(p => zumBild(p, blick));
+      const mitte = (a.x + b.x) / 2;
+      g.moveTo(a.x, a.y).lineTo(mitte, a.y).lineTo(mitte, b.y).lineTo(b.x, b.y)
+        .stroke({ width: 2, color: FARBE.strich, join: "round", cap: "round" });
+      for (const p of [a, b]) g.circle(p.x, p.y, 3).fill({ color: FARBE.klemme });
+    }
+
+    for (const t of aufbau.teile) {
+      if (!istElektrisch(t.art)) continue;
+      const form = teilTyp(t.art)?.formen(t)[0];
+      if (form?.art !== "kasten") continue;
+      const l = lage(t);
+      const ps = this.umrissPunkte(form, t, lage, blick);
+      g.poly(ps.flatMap(p => [p.x, p.y]))
+        .fill({ color: FARBE.wand })
+        .stroke({ width: 1.8, color: FARBE.strich });
+      this.zeichneBauteil(t, l, blick, bild.leuchten?.(t.id) ?? 0);
+      const text = beschriftung(t);
+      if (text) {
+        let tief = 0;
+        for (const p of ps) tief = Math.max(tief, p.y);
+        this.beschrifte(text, { x: zumBild(l.pos, blick).x, y: tief + 4 });
+      }
+    }
+
+    this.hervorhebungen(bild);
+  }
+
+  /** Was gerade ausgewählt ist oder unter dem Zeiger liegt. */
+  private hervorhebungen(bild: Bild) {
+    const { aufbau, lage, blick } = bild;
+    for (const [a, c, breite] of [[bild.schwebt, FARBE.schweben, 1.5], [bild.auswahl, FARBE.auswahl, 2.5]] as const) {
+      if (!a) continue;
+      if (a.art === "teil") {
+        const t = aufbau.teile.find(x => x.id === a.id);
+        if (t) this.umrande(t, lage, blick, c, breite);
+      } else {
+        const v = aufbau.verbinder.find(x => x.id === a.id);
+        if (v) {
+          const [p] = verbinderEnden(aufbau, v, lage).map(q => zumBild(q, blick));
+          this.oben.circle(p.x, p.y, 10).stroke({ width: breite, color: c });
+        }
+      }
+    }
+  }
+
+  private zeichneWand(blick: Blick, mitBoden = true) {
     const g = this.wand;
     g.clear();
     // Löcher alle 5 cm, beim Herauszoomen dünner gesät — sonst wird aus der
@@ -358,7 +425,7 @@ export class Buehne {
 
     // Der Boden: y = 0. Darauf landet, was fällt.
     const boden = zumBild({ x: 0, y: 0 }, blick).y;
-    if (boden < blick.hoehe) {
+    if (mitBoden && boden < blick.hoehe) {
       g.rect(0, boden, blick.breite, blick.hoehe - boden).fill({ color: FARBE.boden });
       g.moveTo(0, boden).lineTo(blick.breite, boden).stroke({ width: 2, color: FARBE.bodenKante });
     }

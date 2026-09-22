@@ -48,6 +48,8 @@ export function aufbauAusJSON(roh: string): Aufbau {
       pos: punkt(t.pos),
       winkel: zahl(t.winkel),
       werte: werte(t.werte, standardWerteTeil(t.art as Teil["art"])),
+      // Die Lage im Schaltplan ist keine Pflicht: fehlt sie, gilt die an der Wand.
+      ...(t.plan ? { plan: punkt(t.plan) } : {}),
     }));
 
   const ids = new Set(teile.map(t => t.id));

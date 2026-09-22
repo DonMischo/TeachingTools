@@ -33,6 +33,15 @@ export interface Teil {
   winkel: number;
   /** Maße, Werkstoff und dergleichen — was welche Art braucht, steht im Katalog. */
   werte: Record<string, number>;
+  /**
+   * Wo das Teil im Schaltplan liegt.
+   *
+   * Ein Schaltplan ist keine Zeichnung des Aufbaus, sondern eine zweite Lage
+   * derselben Teile: auf der Werkbank hängt die Batterie da, wo sie hängt, im
+   * Plan steht sie da, wo sie lesbar ist. Fehlt sie, gilt die Lage auf der
+   * Werkbank.
+   */
+  plan?: Punkt;
 }
 
 export type VerbinderArt = "achse" | "schraube" | "feder" | "seil" | "kabel";
