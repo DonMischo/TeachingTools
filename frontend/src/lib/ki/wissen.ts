@@ -176,6 +176,27 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  echtoderki: {
+    titel: "Kann man KI-Bilder erkennen?",
+    stufen: {
+      "5-7": [
+        "Vor ein paar Jahren war es leicht: Die Hände waren falsch, die Schrift war Kauderwelsch. Heute stimmt das oft nicht mehr.",
+        "Hinschauen hilft noch ein bisschen. Sicher ist es nicht — und es wird jedes Jahr unsicherer.",
+        "Deshalb ist die wichtigere Frage nicht »sieht es echt aus?«, sondern »wo kommt das Bild her?«. Wer hat es gemacht? Wo stand es zuerst?",
+      ],
+      "8+": [
+        "Die bekannten Merkmale (Hände, Schrift, Symmetrie, Schatten) sind Fehler der Modelle — und Fehler werden behoben. Eine Erkennungsregel von heute ist in zwei Jahren wertlos.",
+        "Automatische Erkennungsprogramme gibt es, aber sie sind unzuverlässig: Sie schlagen bei echten Fotos an und lassen erzeugte Bilder durch, besonders nach dem Verkleinern oder Nachbearbeiten.",
+        "Deshalb setzt die Fachwelt auf die andere Richtung: nicht das Bild prüfen, sondern seine Herkunft mitliefern. Verfahren wie C2PA hängen eine signierte Entstehungsgeschichte an die Datei — die lässt sich prüfen, das Aussehen nicht.",
+      ],
+      "10+": [
+        "Detektoren sind Klassifikatoren und erben deren Probleme: Sie generalisieren schlecht auf Generatoren, die sie im Training nicht gesehen haben, und brechen bei Kompression, Zuschnitt oder Rauschen ein. Bei hohen Anforderungen an die Trefferquote wird die Fehlalarmrate untragbar — bei einem echten Foto jemandem Fälschung vorzuwerfen, ist teuer.",
+        "Wasserzeichen sind die aktivere Variante: Ein Muster wird beim Erzeugen eingebettet und später ausgelesen. Sie funktionieren nur, wenn alle mitmachen, und offene Modelle lassen sich ohne Wasserzeichen betreiben.",
+        "Herkunftsnachweise (C2PA/Content Credentials) verschieben die Frage von »ist das echt?« zu »wer behauptet was, und mit welcher Signatur?«. Das ist prüfbar — aber nur, solange die Kette lückenlos ist. Medienkompetenz bleibt damit der eigentliche Schutz: Quelle suchen, Gegenprobe machen, Rückwärtssuche nutzen.",
+      ],
+    },
+  },
+
   neuron: {
     titel: "Was ist an einem neuronalen Netz »neuronal«?",
     stufen: {

@@ -17,11 +17,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Sprachmodell } from "@/components/ki/Sprachmodell";
 import { Bilder } from "@/components/ki/Bilder";
 import { Lernen } from "@/components/ki/Lernen";
+import { EchtOderKi } from "@/components/ki/EchtOderKi";
 
 /** Woran die Tafel hängt: der Sitzungscode und, bei Gästen, ihr Token. */
 export type KiZugang = { code: string; token?: string | null; name?: string };
 
-type Reiter = "sprache" | "bilder" | "lernen";
+type Reiter = "sprache" | "bilder" | "lernen" | "echt";
 
 export default function KiWerkstatt({ action, zugang }: {
   action?: ReactNode;
@@ -61,8 +62,9 @@ export default function KiWerkstatt({ action, zugang }: {
         <div>
           <h1 className="text-2xl font-black tracking-tight">🤖 KI-Werkstatt</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
-            Zwei Maschinen zum Anfassen: eine, die Wörter würfelt, und eine, die Bilder aus
-            Rauschen holt. Beide zeigen dasselbe — es wird gerechnet, nicht gedacht.
+            Vier Reiter zum Anfassen: Wörter würfeln, Bilder aus Rauschen holen, eine Maschine
+            anlernen — und zum Schluss die Probe aufs Exempel. Alle zeigen dasselbe: Es wird
+            gerechnet, nicht gedacht.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
@@ -72,6 +74,7 @@ export default function KiWerkstatt({ action, zugang }: {
         <Knopf an={reiter === "sprache"} onClick={() => setReiter("sprache")}>🔤 Sprachmodell</Knopf>
         <Knopf an={reiter === "bilder"} onClick={() => setReiter("bilder")}>🖼️ Bilder</Knopf>
         <Knopf an={reiter === "lernen"} onClick={() => setReiter("lernen")}>🧠 Lernen</Knopf>
+        <Knopf an={reiter === "echt"} onClick={() => setReiter("echt")}>🕵️ Echt oder KI</Knopf>
       </div>
 
       {/* Beide Reiter bleiben montiert: ein Text, an dem zehn Minuten gewählt
@@ -84,6 +87,9 @@ export default function KiWerkstatt({ action, zugang }: {
       </div>
       <div hidden={reiter !== "lernen"}>
         <Lernen />
+      </div>
+      <div hidden={reiter !== "echt"}>
+        <EchtOderKi zugang={tafelZugang} />
       </div>
     </div>
   );

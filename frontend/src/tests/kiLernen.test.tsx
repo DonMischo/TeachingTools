@@ -7,7 +7,7 @@
  * (sonst fällt die Begründung für tiefe Netze in sich zusammen).
  */
 import { describe, it, expect } from "vitest";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import {
   DATENSAETZE, START, antwort, fehlerhafte, treffer, lernschritt, linie,
 } from "@/lib/ki/perzeptron";

@@ -1345,6 +1345,25 @@ export type SimBeitragOut = {
 
 export type SimBeitragArt = "text" | "korpus";
 
+/** Ein Bildpaar, wie es die Lehrkraft sieht — mit Aufloesung. */
+export type BildPaarOut = {
+  id: number;
+  titel: string;
+  hinweis: string;
+  echt_url: string;
+  ki_url: string;
+};
+
+/** Dasselbe Paar zum Raten: welches echt ist, steht hier absichtlich nicht. */
+export type SpielPaarOut = {
+  id: number;
+  titel: string;
+  a_url: string;
+  b_url: string;
+};
+
+export type AufloesungOut = { id: number; echt: "a" | "b"; hinweis: string };
+
 export type SimBeitragIn = {
   name: string;
   thema: string;
@@ -1566,6 +1585,34 @@ export const api = {
     beitraegeLeeren: (code: string, art: SimBeitragArt = "text") =>
       apiFetch<void>(`tool-sessions/${encodeURIComponent(code)}/beitraege?art=${art}`,
         { method: "DELETE" }),
+  },
+
+  /**
+   * Bildpaare fuer »Echt oder KI?« (siehe api/routers/bildpaare.py).
+   *
+   * Die Spielansicht kennt bewusst nur `a` und `b`: Welches Bild echt ist,
+   * steht erst in der Aufloesung — sonst liesse es sich im Quelltext nachsehen.
+   */
+  bildpaare: {
+    meine: () => apiFetch<BildPaarOut[]>("bildpaare"),
+    anlegen: (echt: File, ki: File, titel: string, hinweis: string) => {
+      const fd = new FormData();
+      fd.append("echt", echt);
+      fd.append("ki", ki);
+      fd.append("titel", titel);
+      fd.append("hinweis", hinweis);
+      return fetch("/api/bildpaare", { method: "POST", credentials: "include", body: fd })
+        .then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json() as Promise<BildPaarOut>; });
+    },
+    loeschen: (id: number) => apiFetch<void>(`bildpaare/${id}`, { method: "DELETE" }),
+    spiel: (code: string, guestToken?: string | null) =>
+      apiFetch<SpielPaarOut[]>(`bildpaare/spiel?code=${encodeURIComponent(code)}`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
+    aufloesung: (id: number, code: string, guestToken?: string | null) =>
+      apiFetch<AufloesungOut>(`bildpaare/${id}/aufloesung?code=${encodeURIComponent(code)}`, {
+        headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : undefined,
+      }),
   },
 
   // Offline-Dateien (siehe api/routers/standalone.py)

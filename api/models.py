@@ -2037,6 +2037,38 @@ class SimBeitrag(Base):
     session: Mapped["ToolSession"] = relationship()
 
 
+class BildPaar(Base):
+    """Zwei Bilder zum Vergleichen: eines echt, eines von einer KI erzeugt.
+
+    Fuer die Station »Echt oder KI?« in der KI-Werkstatt. Die Lehrkraft legt
+    Paare an (zwei Dateien ablegen, das echte anklicken), die Klasse raet sie
+    spaeter ueber den Sitzungscode durch.
+
+    `gedreht` entscheidet, welches Bild im Spiel links steht — gewuerfelt beim
+    Anlegen und danach fest. Es ist der Grund, warum die Antwort nicht aus dem
+    Aufbau der Seite ablesbar ist: Die Spielansicht liefert die Bilder nur als
+    »a« und »b«, welches davon echt ist, verraet erst die Aufloesung.
+
+    Die Dateien liegen unter data/bildpaare/ mit zufaelligem Namen und werden
+    ueber den statischen Mount /uploads/bildpaare ausgeliefert — wie bei den
+    uebrigen Uploads des Hauses.
+    """
+    __tablename__ = "bild_paare"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_by: Mapped[int] = mapped_column(
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    titel: Mapped[str] = mapped_column(String(120), nullable=False, server_default="")
+    # Woran man es erkennt — wird nach dem Raten angezeigt.
+    hinweis: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    echt_datei: Mapped[str] = mapped_column(String(120), nullable=False)
+    ki_datei: Mapped[str] = mapped_column(String(120), nullable=False)
+    gedreht: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false())
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    creator: Mapped["Teacher"] = relationship()
+
+
 class SnapProject(Base):
     """Ein Snap!-Programm (Berkeley) als XML-Blob.
 
