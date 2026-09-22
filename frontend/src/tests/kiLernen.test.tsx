@@ -15,7 +15,9 @@ import {
   START_SEED, starte, lernschritt2, treffer2, fehler2, antwort2, linie2, vorwaerts,
 } from "@/lib/ki/netz2";
 import { KANTE, leeresBild, istLeer, zentriere, abstand, erkenne, type Bild } from "@/lib/ki/knn";
+import { Neuron } from "@/components/ki/Neuron";
 import { Neuron2 } from "@/components/ki/Neuron2";
+import { Netzbild } from "@/components/ki/Netzbild";
 import { Zeichnen } from "@/components/ki/Zeichnen";
 import { rng } from "@/lib/ki/rng";
 
@@ -171,6 +173,26 @@ describe("Die Station »Zwei Neuronen«", () => {
     }
   });
 
+  it("zeigt im Bauplan, was an der angetippten Stelle durch das Netz läuft", () => {
+    const { container } = render(<Neuron2 />);
+    const feld = container.querySelector(".cursor-crosshair") as HTMLElement;
+    feld.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 260, height: 260, right: 260, bottom: 260, x: 0, y: 0 }) as DOMRect;
+
+    // Der Prüfpunkt ist der ganze Grund für den Bauplan: Erst an einer
+    // konkreten Stelle sieht man, dass hinten nur noch zwei Zahlen ankommen.
+    fireEvent.pointerDown(feld, { clientX: 195, clientY: 65 });
+    expect(container.textContent).toContain("0.75");
+
+    const oben = container.querySelector("svg[aria-label^='Bauplan']")!.textContent;
+    fireEvent.pointerDown(feld, { clientX: 26, clientY: 234 });
+    expect(container.textContent).toContain("0.10");
+    expect(
+      container.querySelector("svg[aria-label^='Bauplan']")!.textContent,
+      "der Bauplan zeigt überall dasselbe",
+    ).not.toBe(oben);
+  });
+
   it("lässt sich jederzeit anhalten", async () => {
     vi.useFakeTimers();
     try {
@@ -198,6 +220,55 @@ function bildAus(zeilen: string[]): Bild {
   });
   return out;
 }
+
+describe("Der Bauplan", () => {
+  it("zeichnet je Knoten einen Kreis und je Gewicht eine Verbindung", () => {
+    const { container } = render(
+      <Netzbild
+        schichten={[
+          { titel: "Eingang", knoten: [{ name: "a" }, { name: "b" }] },
+          { titel: "verdeckte Schicht", knoten: [{ name: "h1", wert: 0.8 }, { name: "h2", wert: 0.1 }] },
+          { titel: "Antwort", knoten: [{ name: "ja", wert: 0.9 }] },
+        ]}
+        kanten={[[[1, -2], [0.5, 0.5]], [[3, -3]]]}
+      />,
+    );
+    expect(container.querySelectorAll("circle")).toHaveLength(5);
+    const linien = [...container.querySelectorAll("line")];
+    expect(linien).toHaveLength(6);
+    // Gestrichelt heißt »spricht dagegen« — ohne das sieht ein negatives
+    // Gewicht aus wie ein positives.
+    expect(linien.filter(l => l.getAttribute("stroke-dasharray"))).toHaveLength(2);
+    const dick = (i: number) => Number(linien[i].getAttribute("stroke-width"));
+    expect(dick(0), "das größere Gewicht muss dicker sein").toBeLessThan(dick(4));
+  });
+
+  it("zeigt den Wert eines Neurons als Zahl und als Füllung", () => {
+    const { container } = render(
+      <Netzbild
+        schichten={[
+          { titel: "Eingang", knoten: [{ name: "a", wert: 0.2 }] },
+          { titel: "Antwort", knoten: [{ name: "ja", wert: 0.9 }] },
+        ]}
+        kanten={[[[1]]]}
+      />,
+    );
+    expect(container.textContent).toContain("90");
+    const [ein, aus] = [...container.querySelectorAll("circle")];
+    expect(Number(ein.getAttribute("fill-opacity"))).toBeLessThan(
+      Number(aus.getAttribute("fill-opacity")),
+    );
+  });
+
+  it("hat beim einzelnen Neuron keine Schicht dazwischen", () => {
+    // Genau darin besteht der Unterschied, um den es auf beiden Stationen
+    // geht: eine Spalte gegen zwei. Stünde hier eine verdeckte Schicht,
+    // wäre das Bild eine Lüge.
+    const { container } = render(<Neuron />);
+    expect(container.textContent).not.toContain("verdeckte Schicht");
+    expect(screen.getAllByText("Eingang")).toHaveLength(1);
+  });
+});
 
 describe("Erkennen durch Vergleichen", () => {
   it("rückt eine Zeichnung in die Mitte", () => {

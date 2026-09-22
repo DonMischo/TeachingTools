@@ -22,6 +22,7 @@ import { DATENSAETZE } from "@/lib/ki/perzeptron";
 import {
   START_SEED, starte, lernschritt2, treffer2, fehler2, vorwaerts, linie2, type Netz2,
 } from "@/lib/ki/netz2";
+import { Netzbild } from "@/components/ki/Netzbild";
 import { Wissen } from "@/components/ki/Wissen";
 import { MitFachworten } from "@/components/ki/Fachwort";
 
@@ -39,6 +40,15 @@ export function Neuron2() {
   const [netz, setNetz] = useState<Netz2>(() => starte(START_SEED));
   const [durchgaenge, setDurchgaenge] = useState(0);
   const [laeuft, setLaeuft] = useState(false);
+  /**
+   * Der Prüfpunkt: ein Punkt im Feld, den man verschieben kann.
+   *
+   * Er ist der Grund, warum man hier »Schicht« sehen kann statt nur zu lesen:
+   * Im Bauplan daneben steht für genau diesen Punkt, was vorne hineingeht, was
+   * die beiden verdeckten Neuronen daraus machen — und dass hinten nur noch
+   * deren zwei Zahlen ankommen.
+   */
+  const [probe, setProbe] = useState({ x: 0.28, y: 0.72 });
   const flaeche = useRef<HTMLCanvasElement>(null);
 
   const satz = DATENSAETZE[nr];
@@ -108,6 +118,13 @@ export function Neuron2() {
   }, [netz]);
 
   const zuPixel = (p: { x: number; y: number }) => ({ cx: p.x * FELD, cy: (1 - p.y) * FELD });
+  const gemessen = vorwaerts(netz, probe.x, probe.y);
+
+  function setzeProbe(e: React.PointerEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const im = (z: number) => Math.min(1, Math.max(0, z));
+    setProbe({ x: im((e.clientX - r.left) / r.width), y: im(1 - (e.clientY - r.top) / r.height) });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -138,8 +155,10 @@ export function Neuron2() {
 
         <div className="flex flex-col sm:flex-row gap-4 items-start">
           <div
-            className="relative rounded-xl border border-[var(--border)] bg-[var(--bg)] overflow-hidden shrink-0"
+            className="relative rounded-xl border border-[var(--border)] bg-[var(--bg)] overflow-hidden shrink-0 touch-none cursor-crosshair"
             style={{ width: FELD, height: FELD, maxWidth: "100%" }}
+            onPointerDown={setzeProbe}
+            onPointerMove={e => { if (e.buttons === 1) setzeProbe(e); }}
           >
             <canvas
               ref={flaeche}
@@ -190,6 +209,20 @@ export function Neuron2() {
                   />
                 );
               })}
+
+              {/* Der Prüfpunkt — bewusst anders als die Daten: Er gehört nicht
+                  zum Datensatz, er ist die Frage, die man dem Netz stellt. */}
+              <g>
+                <circle
+                  cx={zuPixel(probe).cx} cy={zuPixel(probe).cy} r={10}
+                  fill="none" stroke="var(--bg)" strokeWidth={5}
+                />
+                <circle
+                  cx={zuPixel(probe).cx} cy={zuPixel(probe).cy} r={10}
+                  fill="none" stroke="var(--text)" strokeWidth={2} strokeDasharray="4 3"
+                />
+                <circle cx={zuPixel(probe).cx} cy={zuPixel(probe).cy} r={2} fill="var(--text)" />
+              </g>
             </svg>
           </div>
 
@@ -255,6 +288,57 @@ export function Neuron2() {
               🎲 Startwert <b className="font-mono">{seed}</b> — derselbe Startwert ergibt denselben
               Trainingsverlauf.
             </p>
+          </div>
+        </div>
+
+        {/* Der Bauplan: Erst hier wird »Schicht« etwas Sichtbares. */}
+        <div className="pt-3 border-t border-[var(--border)] flex flex-col gap-2">
+          <h3 className="text-sm font-black">🧩 So ist das Netz gebaut</h3>
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+            Tippe oder ziehe den gestrichelten Prüfpunkt im Feld herum. Der Bauplan zeigt für
+            genau diesen Punkt, was durch das Netz läuft.
+          </p>
+          <div className="flex flex-col md:flex-row gap-4 items-start">
+            <div className="text-[var(--text)] w-full md:w-auto md:shrink-0">
+              <Netzbild
+                schichten={[
+                  {
+                    titel: "Eingang",
+                    knoten: [
+                      { name: satz.achsen[0], wert: probe.x, anzeige: probe.x.toFixed(2) },
+                      { name: satz.achsen[1], wert: probe.y, anzeige: probe.y.toFixed(2) },
+                    ],
+                  },
+                  {
+                    titel: "verdeckte Schicht",
+                    knoten: [
+                      { name: "Neuron 1", wert: gemessen.a0 },
+                      { name: "Neuron 2", wert: gemessen.a1 },
+                    ],
+                  },
+                  {
+                    titel: "Antwort",
+                    knoten: [{
+                      name: gemessen.aus < 0.5 ? satz.klassen[0] : satz.klassen[1],
+                      wert: gemessen.aus,
+                    }],
+                  },
+                ]}
+                kanten={[netz.w, [netz.v]]}
+              />
+            </div>
+            <div className="flex-1 flex flex-col gap-2">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                <MitFachworten text="Die Zahl im Kreis sagt, wie laut dieses Neuron gerade »ja« sagt — 0 heißt nein, 100 heißt ja. Die Striche sind die Gewichte: Ein dicker Strich zählt viel, ein gestrichelter spricht dagegen. Beim Üben ändern sich genau diese Striche." />
+              </p>
+              <p className="text-xs leading-relaxed p-3 rounded-xl border border-[var(--accent)]">
+                <MitFachworten text="Und das ist der ganze Trick an der Tiefe: Die letzte Schicht sieht deinen Punkt gar nicht mehr. Bei ihr kommen nur zwei Zahlen an — was Neuron 1 und Neuron 2 dazu gesagt haben. Jede Schicht arbeitet also nicht mit den Daten weiter, sondern mit der Meinung der Schicht davor. Zwei Schichten ergeben einen Streifen. Echte Bildmodelle haben Dutzende, Sprachmodelle über hundert." />
+              </p>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Beim einzelnen Neuron gab es diese mittlere Spalte nicht: Eingang, ein Neuron,
+                Antwort. <b>Eine</b> Schicht — deshalb blieb die Grenze eine Gerade.
+              </p>
+            </div>
           </div>
         </div>
       </div>

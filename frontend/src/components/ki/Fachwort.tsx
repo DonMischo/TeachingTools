@@ -59,9 +59,43 @@ function Bild({ art }: { art: GlossarBild }) {
       <>
         <path d="M 8 16 C 34 74, 86 74, 112 16" {...strich} />
         <circle cx={30} cy={45} r={6} fill="currentColor" />
-        <path d="M 40 52 l 10 7" {...strich} strokeWidth={1.5} opacity={0.6} />
-        <path d="M 52 60 l 9 3" {...strich} strokeWidth={1.5} opacity={0.6} />
+        {/* Ein Pfeil im Tal, nicht neben der Kurve: Zwei lose Striche sahen aus
+            wie ein Zeichenfehler statt wie die Richtung, in die die Kugel rollt. */}
+        <path d="M 39 48 L 51 53 M 46.5 47.5 L 51 53 L 44.5 54.5" {...strich}
+          strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.6} />
         <text x={60} y={20} fontSize={9} textAnchor="middle" fill="currentColor" opacity={0.7}>bergab</text>
+      </>
+    ),
+    // Drei Spalten mit Neuronen — jede Spalte ist eine Schicht.
+    schichten: (
+      <>
+        {[[22, [30, 54]], [60, [20, 42, 64]], [98, [42]]].map(([x, ys]) => (
+          <g key={x as number}>
+            {(ys as number[]).map(y => (
+              <circle key={y} cx={x as number} cy={y} r={5} fill="currentColor" />
+            ))}
+          </g>
+        ))}
+        {([[22, [30, 54], 60, [20, 42, 64]], [60, [20, 42, 64], 98, [42]]] as const).map(
+          ([x1, ys1, x2, ys2], i) =>
+            ys1.flatMap(y1 =>
+              ys2.map(y2 => (
+                <line
+                  key={`${i}-${y1}-${y2}`}
+                  x1={x1 + 5} y1={y1} x2={x2 - 5} y2={y2}
+                  {...strich} strokeWidth={1} opacity={0.3}
+                />
+              )),
+            ),
+        )}
+        {[22, 60, 98].map((x, i) => (
+          <text key={x} x={x} y={13} fontSize={9} textAnchor="middle" fill="currentColor" opacity={0.7}>
+            {i + 1}
+          </text>
+        ))}
+        <text x={60} y={77} fontSize={9} textAnchor="middle" fill="currentColor" opacity={0.7}>
+          drei Schichten
+        </text>
       </>
     ),
     // Zwei Täler — die Kugel steckt im flacheren.

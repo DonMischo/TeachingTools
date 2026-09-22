@@ -19,7 +19,8 @@
  */
 
 /** Ein kleines Bild zum Begriff — gezeichnet in `Fachwort.tsx`. */
-export type GlossarBild = "xor" | "sigmoid" | "tal" | "lokal" | "gerade" | "kette" | "fenster";
+export type GlossarBild =
+  | "xor" | "sigmoid" | "tal" | "lokal" | "gerade" | "kette" | "fenster" | "schichten";
 
 export type Glossareintrag = {
   /** Wie der Begriff im Kasten überschrieben wird. */
@@ -201,6 +202,32 @@ export const GLOSSAR: Record<string, Glossareintrag> = {
     auch: ["Perzeptron-Regel"],
     kurz: "Das erste künstliche Neuron, 1958 von Frank Rosenblatt — mit einer Regel, nach der es aus Fehlern lernt.",
     lang: "Es gewichtet seine Eingaben, zählt sie zusammen und sagt ja oder nein. Liegt es falsch, werden die Gewichte ein Stück in Richtung der richtigen Antwort geschoben. Mehr steckt nicht dahinter — und genau das ist bis heute die Idee jedes Trainings.",
+  },
+  Schicht: {
+    titel: "Schicht",
+    auch: ["Schichten", "Ausgabeschicht", "Eingabeschicht"],
+    kurz: "Eine Reihe von Neuronen, die alle gleichzeitig dieselbe Eingabe bekommen und nebeneinander antworten.",
+    lang: "Ein Netz ist in Spalten gebaut. Jede Spalte ist eine Schicht, und keine sieht die Daten von vorn: Sie bekommt nur die Antworten der Schicht davor. Deshalb sagt die Anzahl der Schichten, wie oft ein Netz weiterdenken darf.",
+    bild: "schichten",
+  },
+  "verdeckte Schicht": {
+    titel: "Verdeckte Schicht",
+    auch: ["verdeckten Schicht", "verdeckter Schicht", "verdeckte Schichten", "verdeckten Schichten"],
+    kurz: "Eine Schicht mitten im Netz — weder Eingabe noch Antwort, und deshalb von außen nicht zu sehen.",
+    lang: "»Verdeckt« heißt nicht geheim, sondern: Niemand sagt diesen Neuronen, was sie antworten sollen. Sie suchen sich beim Üben selbst etwas, das der letzten Schicht hilft — im kniffligen Datensatz zum Beispiel je eine Gerade.",
+  },
+  "tiefes Netz": {
+    titel: "Tiefes Netz",
+    auch: ["tiefe Netze", "tiefen Netze", "tiefer Netze", "tiefen Netzen", "Tiefe", "tief", "Deep Learning"],
+    kurz: "Ein Netz mit mehreren Schichten hintereinander — »tief« zählt die Schichten, nicht die Neuronen.",
+    lang: "Zwei Schichten machen aus zwei Geraden einen Streifen. Mit jeder weiteren wird die Form, die das Netz ausschneiden kann, verwickelter: Bilderkenner haben Dutzende Schichten, Sprachmodelle über hundert. Breiter statt tiefer ginge theoretisch auch, kostet aber absurd viele Neuronen.",
+    bild: "schichten",
+  },
+  Gewicht: {
+    titel: "Gewicht",
+    auch: ["Gewichte", "Gewichten", "Gewichts"],
+    kurz: "Eine Zahl an einer Verbindung, die sagt, wie stark das eine Neuron auf das nächste wirkt.",
+    lang: "Positiv heißt »spricht dafür«, negativ »spricht dagegen«, nahe null »egal«. Trainieren besteht aus nichts anderem, als diese Zahlen nachzustellen — bei großen Modellen sind es Milliarden davon.",
   },
   Backpropagation: {
     titel: "Backpropagation",

@@ -225,10 +225,12 @@ export const WISSEN: Record<string, Wissenstext> = {
         "Ein Neuron kann nur eine gerade Linie ziehen. Manche Aufgaben lassen sich damit einfach nicht lösen — wie die vier Häufchen über Kreuz.",
         "Zwei Neuronen ziehen zwei Linien. Ein drittes schaut sich beide Antworten an und macht daraus die endgültige. So entsteht ein Streifen statt einer Hälfte.",
         "Genau deshalb heißen die Netze »tief«: Da sind viele Schichten hintereinander, und jede kann ein bisschen mehr als die davor.",
+        "Schau dir den Bauplan an: Ganz hinten kommt dein Punkt gar nicht mehr an. Dort kommen nur zwei Zahlen an — was Neuron 1 und Neuron 2 zu ihm gesagt haben. Jede Schicht redet also nur mit der nächsten, nie mit allen.",
       ],
       "8+": [
         "Ein einzelnes Neuron ist ein linearer Klassifikator: Seine Grenze ist immer eine Gerade. Datensätze, die man so nicht trennen kann, heißen nicht linear separierbar — das bekannteste Beispiel ist XOR, und genau das sind die vier Häufchen.",
         "Zwei verdeckte Neuronen liefern zwei Geraden; das Ausgabeneuron verknüpft ihre Antworten. Aus »oberhalb von Linie 1« und »unterhalb von Linie 2« wird ein Streifen — eine Form, die eine einzelne Gerade nie ergibt.",
+        "»Tief« zählt die Schichten, nicht die Neuronen: Tausend Neuronen nebeneinander ergeben ein breites, aber flaches Netz. Der Gewinn entsteht dadurch, dass eine verdeckte Schicht die Daten gar nicht mehr sieht — sie bekommt nur die Antworten der Schicht davor und kann deshalb auf deren Vorarbeit aufbauen.",
         "Damit das trainierbar wird, braucht es zwei Zutaten: eine weiche Kurve statt der harten Schwelle (Sigmoid) und Backpropagation — den Fehler rückwärts durch die Schichten verteilen. Beides zusammen setzte sich erst ab 1986 durch und beendete den ersten KI-Winter.",
       ],
       "10+": [

@@ -15,6 +15,7 @@ import {
   type Gewichte, type Punkt2,
 } from "@/lib/ki/perzeptron";
 import { rng } from "@/lib/ki/rng";
+import { Netzbild } from "@/components/ki/Netzbild";
 import { Wissen } from "@/components/ki/Wissen";
 import { MitFachworten } from "@/components/ki/Fachwort";
 
@@ -218,6 +219,22 @@ export function Neuron() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Der Bauplan — hier vor allem, um zu zeigen, wie wenig dazwischen ist. */}
+        <div className="pt-3 border-t border-[var(--border)] flex flex-col md:flex-row gap-4 items-start">
+          <div className="text-[var(--accent)] w-full md:w-auto md:shrink-0">
+            <Netzbild
+              schichten={[
+                { titel: "Eingang", knoten: [{ name: satz.achsen[0] }, { name: satz.achsen[1] }] },
+                { titel: "Antwort", knoten: [{ name: `${satz.klassen[0]} / ${satz.klassen[1]}` }] },
+              ]}
+              kanten={[[[g.w1, g.w2]]]}
+            />
+          </div>
+          <p className="flex-1 text-xs text-[var(--text-muted)] leading-relaxed">
+            <MitFachworten text="So ist dieses Neuron gebaut: zwei Eingänge, ein Neuron, Antwort — dazwischen liegt nichts. Man sagt: Es hat eine Schicht. Die Striche sind die beiden Gewichte; schiebe die Regler, und sie werden dicker oder dünner. Gestrichelt heißt negativ: Dieses Merkmal spricht dagegen. Mit einer einzigen Schicht bleibt die Grenze immer eine Gerade. Auf der nächsten Station kommt eine Spalte dazwischen — und genau das meint das Wort »tief«." />
+          </p>
         </div>
       </div>
 
