@@ -12,7 +12,7 @@
  * Einzeldatei (`standalone/main.tsx`), und die hat keinen QueryClient. Ohne
  * Sitzungscode zeigt sie dort einfach den Hinweis statt der Tafel.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type SimBeitragOut } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { KiZugang } from "@/components/ki/KiWerkstatt";
@@ -35,6 +35,9 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
   const [zeilen, setZeilen] = useState<SimBeitragOut[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
   const [sendet, setSendet] = useState(false);
+  const [rateminute, setRateminute] = useState(false);
+  const [menschensatz, setMenschensatz] = useState("");
+  const [aufgedeckt, setAufgedeckt] = useState(false);
 
   const laden = useCallback(async () => {
     if (!code) return;
@@ -86,6 +89,21 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
 
   const schonAbgegeben = zeilen.some(z => z.selbst);
   const istLehrkraft = auth?.role === "teacher" || auth?.role === "admin";
+
+  // Rateminute: Namen weg, Reihenfolge gemischt, ein von Hand geschriebener
+  // Satz dazwischen. Läuft nur auf dem Bildschirm der Lehrkraft (Beamer) —
+  // gespeichert wird dafür nichts.
+  const gemischt = useMemo(() => {
+    const alle = [
+      ...zeilen.map(z => ({ id: String(z.id), text: z.text, name: z.name, mensch: false })),
+      ...(menschensatz.trim() ? [{ id: "mensch", text: menschensatz.trim(), name: "von Hand geschrieben", mensch: true }] : []),
+    ];
+    // Feste Mischung: beim Aufdecken soll sich nichts mehr bewegen.
+    return alle
+      .map(e => ({ e, r: [...e.id].reduce((a, c) => a + c.charCodeAt(0), zeilen.length) % 97 }))
+      .sort((a, b) => a.r - b.r || a.e.id.localeCompare(b.e.id))
+      .map(x => x.e);
+  }, [zeilen, menschensatz]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -151,7 +169,66 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
       )}
 
       {istLehrkraft && zeilen.length > 0 && (
-        <div>
+        <div className="flex flex-col gap-2 p-3 rounded-2xl border border-dashed border-[var(--border)]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => { setRateminute(r => !r); setAufgedeckt(false); }}
+              className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]
+                hover:bg-[var(--surface-hover)] text-sm font-bold"
+            >
+              {rateminute ? "✓ Rateminute beenden" : "🕵️ Rateminute"}
+            </button>
+            {rateminute && (
+              <>
+                <input
+                  value={menschensatz}
+                  onChange={e => { setMenschensatz(e.target.value); setAufgedeckt(false); }}
+                  placeholder="Ein selbst geschriebener Satz zum Untermischen"
+                  className="flex-1 min-w-[14rem] px-3 py-2 rounded-xl border border-[var(--border)]
+                    bg-[var(--surface)] text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAufgedeckt(a => !a)}
+                  className="px-3 py-1.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] text-sm"
+                >
+                  {aufgedeckt ? "↺ Wieder verdecken" : "🔎 Auflösen"}
+                </button>
+              </>
+            )}
+          </div>
+
+          {rateminute && (
+            <>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Namen verdeckt, Reihenfolge gemischt. Vorlesen lassen und abstimmen: Welcher Text
+                ist von Hand geschrieben? Nichts davon wird gespeichert — die Rateminute läuft nur
+                auf diesem Bildschirm.
+              </p>
+              <ol className="flex flex-col gap-2">
+                {gemischt.map((e, i) => (
+                  <li
+                    key={e.id}
+                    className={`p-3 rounded-2xl border bg-[var(--surface)] ${
+                      aufgedeckt && e.mensch ? "border-[var(--accent)]" : "border-[var(--border)]"
+                    }`}
+                  >
+                    <div className="flex items-baseline gap-2 text-xs text-[var(--text-muted)]">
+                      <span className="font-black text-sm text-[var(--text)]">{String.fromCharCode(65 + i)}</span>
+                      {aufgedeckt && (
+                        <span className={e.mensch ? "font-black text-[var(--accent)]" : "font-bold"}>
+                          {e.mensch ? "✋ von Hand" : `🤖 ${e.name}`}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm mt-1 leading-relaxed">{e.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+
           <button
             type="button"
             onClick={leeren}

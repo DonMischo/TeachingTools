@@ -17,15 +17,17 @@ import { erwartbarkeit, textAus, type Kandidat, type Netz, type Wort } from "@/l
 import { NETZE, netzMit } from "@/lib/ki/netze";
 import { rng, signatur } from "@/lib/ki/rng";
 import { zerlege } from "@/lib/ki/tokenizer";
+import { wegeAnzahl, zahlwort } from "@/lib/ki/trainieren";
 import { Zerleger } from "@/components/ki/Zerleger";
 import { WortnetzBuehne } from "@/components/ki/Wortnetz";
 import { Vergleich } from "@/components/ki/Vergleich";
 import { Trainieren } from "@/components/ki/Trainieren";
 import { Attention } from "@/components/ki/Attention";
+import { Raten } from "@/components/ki/Raten";
 import { Wissen } from "@/components/ki/Wissen";
 import type { KiZugang } from "@/components/ki/KiWerkstatt";
 
-type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis" | "trainieren" | "attention";
+type Station = "auftrag" | "zerlegen" | "schreiben" | "ergebnis" | "trainieren" | "attention" | "raten";
 
 const STATIONEN: { id: Station; nr: number; titel: string }[] = [
   { id: "auftrag", nr: 1, titel: "Auftrag" },
@@ -64,6 +66,17 @@ function Schritte({ station, auf }: { station: Station; auf: (s: Station) => voi
           }`}
         >
           🔎 Attention
+        </button>
+        <button
+          type="button"
+          onClick={() => auf("raten")}
+          className={`px-2.5 py-1 rounded-lg border font-bold ${
+            station === "raten"
+              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+              : "border-[var(--border)] bg-[var(--surface)]"
+          }`}
+        >
+          🎯 Raten
         </button>
         <span className="text-[var(--text-muted)]">|</span>
       </li>
@@ -219,6 +232,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
 
       {station === "attention" && <Attention />}
 
+      {station === "raten" && <Raten />}
+
       {station === "zerlegen" && (
         <div className="flex flex-col gap-4">
           <Zerleger
@@ -334,6 +349,10 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
   onWeiterschreiben: () => void;
 }) {
   const tokens = useMemo(() => zerlege(text), [text]);
+  // Wie viele Texte dieser Länge das Netz überhaupt schreiben könnte — die
+  // Antwort auf »würfelt das nicht immer dasselbe?«.
+  const woerterAnzahl = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const moeglich = useMemo(() => wegeAnzahl(netz, Math.max(1, woerterAnzahl)), [netz, woerterAnzahl]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -348,6 +367,32 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
         <Kachel titel="Auswahl" wert={`${mut + 1}`} hinweis="So viele Vorschläge standen je Wort zur Wahl" />
         <Kachel titel="Fingerabdruck" wert={sig} hinweis="Aus deiner Wortwahl gerechnet — er startet gleich das Bild" />
         <Kachel titel="Tokens" wert={`${tokens.length}`} hinweis="So viele Stücke sieht die Maschine" />
+      </div>
+
+      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-2">
+        <p className="text-sm">
+          🎲 Dein Text ist <b>{woerterAnzahl}</b> {woerterAnzahl === 1 ? "Wort" : "Wörter"} lang.
+          {" "}Genauso lange Texte könnte dieses Netz <b>{zahlwort(moeglich)}</b> verschiedene
+          schreiben — und du hast einen davon ausgesucht.
+        </p>
+        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          So entsteht der Eindruck, die Maschine denke sich etwas aus: Bei jedem Wort verzweigt
+          sich der Weg, und schon nach wenigen Wörtern gibt es mehr Möglichkeiten als Menschen
+          auf der Erde. Gewählt wird trotzdem nur — nach Häufigkeit, mit einem Würfel.
+        </p>
+      </div>
+
+      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-2">
+        <p className="text-sm">
+          ⚠️ <b>Sicher heißt nicht wahr.</b> Die Erwartbarkeit sagt nur, wie gewöhnlich dein Text
+          klingt. Ob etwas davon stimmt, hat das Netz nie geprüft — es hat keine Stelle, an der so
+          etwas geprüft würde.
+        </p>
+        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          Genau das steckt hinter dem Wort »Halluzination«: Ein Sprachmodell schreibt einen
+          falschen Satz mit derselben Selbstsicherheit wie einen richtigen, weil beide gleich
+          wahrscheinlich klingen. Wer eine KI nach Tatsachen fragt, muss sie nachschlagen.
+        </p>
       </div>
 
       <p className="text-xs text-[var(--text-muted)] leading-relaxed">

@@ -176,6 +176,27 @@ export const WISSEN: Record<string, Wissenstext> = {
     },
   },
 
+  raten: {
+    titel: "Warum ist Raten das ganze Geheimnis?",
+    stufen: {
+      "5-7": [
+        "Ein Sprachmodell macht den ganzen Tag nichts anderes als das, was du hier gerade tust: das nächste Wort raten.",
+        "Beim Üben bekommt es einen echten Text, deckt ein Wort zu und rät. Dann schaut es nach, ob es stimmt, und stellt sich ein bisschen um. Milliardenmal.",
+        "Du bist am Anfang besser, weil du weißt, worum es geht. Das Netz weiß nur, was oft zusammen vorkommt.",
+      ],
+      "8+": [
+        "Dieses Spiel hat sich Claude Shannon 1951 ausgedacht, um zu messen, wie viel Information in Sprache steckt: Je besser man das nächste Wort erraten kann, desto weniger Neues steht darin.",
+        "Daraus folgt etwas Verblüffendes: Gut vorhersagen und gut zusammenpacken (komprimieren) sind dasselbe Problem. Ein Modell, das Texte gut vorhersagt, könnte sie auch stark komprimieren.",
+        "Und es ist genau die Aufgabe, mit der große Modelle trainiert werden — »nächstes Wort vorhersagen« ist das ganze Trainingsziel. Alles, was sie sonst zu können scheinen, ist dabei nebenbei entstanden.",
+      ],
+      "10+": [
+        "Shannons Experiment schätzt die Entropie natürlicher Sprache: rund 1 Bit pro Zeichen im Englischen. Die Ratequote ist der direkte Zugang dazu — aus ihr lässt sich die Unsicherheit je Zeichen abschätzen.",
+        "Das Trainingsziel großer Modelle ist die Kreuzentropie über dem nächsten Token, gemessen in derselben Einheit. Perplexität ist nur eine andere Schreibweise davon.",
+        "Die Verbindung zur Kompression ist exakt: Mit einem Modell der Wahrscheinlichkeiten lässt sich ein Text arithmetisch so codieren, dass seine Länge der Kreuzentropie entspricht. Deshalb ist »besser vorhersagen« und »besser komprimieren« mathematisch derselbe Satz.",
+      ],
+    },
+  },
+
   verrauschen: {
     titel: "Warum macht man ein Bild erst kaputt?",
     stufen: {
