@@ -97,31 +97,45 @@ function FantasyLogo() {
  * der Rest sich aendert. Deshalb kein Zirkel und keine Schultafel: die sagen
  * »Schule«, aber nichts darueber, was das hier ist.
  *
- * Gezeichnet in isometrischer Ansicht aus neun Vielecken in `currentColor`,
- * die Tiefe allein ueber Deckkraft. Damit nimmt die Marke die Farbe des
- * Themes an und bleibt bei 16 px als Wuerfel mit Teil darueber lesbar.
+ * Gezeichnet in isometrischer Ansicht aus neun Vielecken, die Tiefe allein
+ * ueber Deckkraft. Zwei Farben aus dem Theme: der Wuerfel in der Textfarbe,
+ * das Teil in der Akzentfarbe — im EGE-Theme also Dunkelblau und Orange, in
+ * jedem anderen Theme dessen eigenes Paar. Bei 16 px bleibt es als Wuerfel
+ * mit Teil darueber lesbar.
  */
-export function TTMarke({ size = 34 }: { size?: number }) {
+export function TTMarke({ size = 34, koerper = "var(--text)", teil = "var(--accent)" }: {
+  size?: number;
+  /** Farbe des Wuerfels. */
+  koerper?: string;
+  /** Farbe des Teils, das eingesetzt wird. */
+  teil?: string;
+}) {
   return (
     <svg
-      viewBox="0 0 40 40" width={size} height={size} fill="currentColor"
+      viewBox="0 0 40 40" width={size} height={size}
       role="img" aria-label="TT - Teaching Tools"
     >
-      {/* Die Vertiefung zuerst: zwei Innenwaende und der Boden. Ohne sie waere
-          die Ecke nur ein fehlendes Stueck; mit ihnen ist es eine Aussparung,
-          in die das Teil gehoert. */}
-      <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" opacity=".3" />
-      <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" opacity=".45" />
-      <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" opacity=".62" />
-      {/* Deckflaeche mit der ausgesparten hinteren Ecke */}
-      <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75" />
-      {/* die beiden sichtbaren Seitenflaechen */}
-      <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" opacity=".5" />
-      <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" opacity=".75" />
-      {/* Das Teil, das gerade eingesetzt wird */}
-      <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625" />
-      <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" opacity=".5" />
-      <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" opacity=".75" />
+      {/* var() muss in `style` stehen — als SVG-Attribut ignoriert der Browser es. */}
+      <g style={{ fill: koerper }}>
+        {/* Die Vertiefung zuerst: zwei Innenwaende und der Boden. Ohne sie waere
+            die Ecke nur ein fehlendes Stueck; mit ihnen ist es eine Aussparung,
+            in die das Teil gehoert. */}
+        <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" opacity=".3" />
+        <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" opacity=".45" />
+        <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" opacity=".62" />
+        {/* Deckflaeche mit der ausgesparten hinteren Ecke */}
+        <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75" />
+        {/* die beiden sichtbaren Seitenflaechen */}
+        <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" opacity=".5" />
+        <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" opacity=".75" />
+      </g>
+      {/* Das Teil, das gerade eingesetzt wird — in der Akzentfarbe, damit das
+          Hinzukommen die Aussage des Zeichens ist und nicht nur seine Form. */}
+      <g style={{ fill: teil }}>
+        <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625" />
+        <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" opacity=".55" />
+        <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" opacity=".8" />
+      </g>
     </svg>
   );
 }
@@ -129,7 +143,7 @@ export function TTMarke({ size = 34 }: { size?: number }) {
 function DefaultLogo() {
   return (
     <div title="TT - Teaching Tools"
-      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 0", color: "var(--accent)" }}>
+      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 0" }}>
       <TTMarke />
     </div>
   );
