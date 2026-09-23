@@ -1,15 +1,18 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api, fragmentGuest } from "@/lib/api";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useHubIdentity } from "@/hooks/useHubIdentity";
 
 function JoinInner() {
   const params = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { auth } = useAuth();
   const [code, setCode] = useState((params.get("code") ?? "").toUpperCase());
   const [name, setName] = useState("");
   const [joining, setJoining] = useState(false);
@@ -22,17 +25,26 @@ function JoinInner() {
 
   const open = status?.allow_guests === true;
 
-  const join = async () => {
+  const join = useCallback(async (guestName: string) => {
     setJoining(true);
     try {
-      const res = await api.fragments.guestJoin(code.trim(), name.trim());
+      const res = await api.fragments.guestJoin(code.trim(), guestName.trim());
       fragmentGuest.set(res.collection_id, res.token);
       router.push(`/fragmente/${res.collection_id}`);
     } catch (e: any) {
       toast(e.message ?? "Beitritt fehlgeschlagen", "error");
       setJoining(false);
     }
-  };
+  }, [code, router, toast]);
+
+  // Angemeldete brauchen keinen Gastnamen — die Pinnwand prüft ihre eigenen Rechte.
+  useEffect(() => {
+    if (auth && open && status?.collection_id) router.replace(`/fragmente/${status.collection_id}`);
+  }, [auth, open, status?.collection_id, router]);
+
+  // Über /play gekommen: der Name steht schon fest, also still beitreten.
+  const hubJoin = useCallback(({ name }: { name: string }) => { setName(name); join(name); }, [join]);
+  useHubIdentity(code.trim(), open && !auth, hubJoin);
 
   return (
     <div className="max-w-md mx-auto p-6 mt-10">
@@ -58,10 +70,10 @@ function JoinInner() {
 
         <label className="label">Dein Name</label>
         <input className="input mb-5" value={name} onChange={e => setName(e.target.value)}
-          placeholder="Anzeigename" maxLength={100} onKeyDown={e => { if (e.key === "Enter" && open && name.trim()) join(); }} />
+          placeholder="Anzeigename" maxLength={100} onKeyDown={e => { if (e.key === "Enter" && open && name.trim()) join(name); }} />
 
         <button className="btn-primary disabled:opacity-50"
-          disabled={!open || !name.trim() || joining} onClick={join}>
+          disabled={!open || !name.trim() || joining} onClick={() => join(name)}>
           {joining ? "Trete bei…" : "Beitreten"}
         </button>
       </div>

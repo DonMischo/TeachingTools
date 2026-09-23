@@ -236,3 +236,31 @@ def test_stateless_tools_without_content_ignore_ref_id(client, db, teacher, teac
     r = client.post("/api/tool-sessions", json={"tool_slug": "abacus", "ref_id": 99},
                     headers=_auth(teacher_token))
     assert r.status_code == 201 and r.json()["ref_id"] is None
+
+
+# ── Pinnwände (Fragmente) ───────────────────────────────────────────────────
+
+def _pinnwand(db, teacher, code="PW0001", allow=True):
+    from api.models import FragmentCollection
+    c = FragmentCollection(name="Wand", owner_teacher_id=teacher.id, guest_code=code, allow_guests=allow)
+    db.add(c); db.flush()
+    return c
+
+
+def test_resolves_pinnwand_guest_code(client, db, teacher):
+    _pinnwand(db, teacher)
+    r = client.get("/api/play/resolve/pw-0001")
+    assert r.status_code == 200
+    (m,) = r.json()["matches"]
+    assert m["tool"] == "fragmente"
+    assert m["join_url"] == "/fragmente/join?code=PW0001"
+    assert code_taken(db, "PW0001")
+
+
+def test_hub_guest_join_respects_pinnwand_opt_in(client, db, teacher):
+    _pinnwand(db, teacher, code="PW0002", allow=False)
+    r = client.post("/api/guest/join", json={"tool": "fragmente", "code": "PW0002", "name": "Gast"})
+    assert r.status_code == 403
+    _pinnwand(db, teacher, code="PW0003")
+    r = client.post("/api/guest/join", json={"tool": "fragmente", "code": "PW0003", "name": "Gast"})
+    assert r.status_code == 200

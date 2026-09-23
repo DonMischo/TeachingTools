@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from .models import (
     AuctionSession, BarometerSession, BingoSession, ExitGameSession,
-    ExitTicketSession, LueckentextSession, QuizSession, SchreibraumRoom,
+    ExitTicketSession, FragmentCollection, LueckentextSession, QuizSession, SchreibraumRoom,
     ToolSession, WettschreibenSession,
 )
 
@@ -70,6 +70,10 @@ JOIN_CODE_TOOLS: tuple[JoinCodeTool, ...] = (
     # Zustandslose Werkzeuge (Abakus, Gleichungswaage, Bildformate) teilen sich ein Modell.
     JoinCodeTool("simulation", ToolSession, "code", "🧮 Simulation", "/play/simulation/{code}",
                  open_status="open", closed_status="closed"),
+    # Pinnwaende sind keine Sitzung, sondern eine Sammlung mit dauerhaftem
+    # Gastcode; ohne allow_guests weist der Gastbeitritt ab.
+    JoinCodeTool("fragmente", FragmentCollection, "guest_code", "🗂️ Pinnwand", "/fragmente/join?code={code}",
+                 owner_column="owner_teacher_id"),
 )
 
 BY_KEY: dict[str, JoinCodeTool] = {t.key: t for t in JOIN_CODE_TOOLS}

@@ -19,6 +19,7 @@ from ..models import (
     Teacher, Student, Class, StudentGroup,
     FragmentCollection, FragmentCollectionGrant, Fragment, ResearchItem,
 )
+from ..join_codes import code_taken
 from ..fragment_access import (
     resolve_permission, at_least, require_permission, collection_principal,
 )
@@ -301,7 +302,8 @@ def set_grants(
 def _new_guest_code(db: Session) -> str:
     for _ in range(20):
         code = "".join(secrets.choice(_GUEST_CODE_ALPHABET) for _ in range(6))
-        if not db.query(FragmentCollection).filter(FragmentCollection.guest_code == code).first():
+        # Ueber alle Werkzeuge eindeutig — /play loest den nackten Code auf.
+        if not code_taken(db, code):
             return code
     raise HTTPException(500, "Konnte keinen Gastcode erzeugen")
 
