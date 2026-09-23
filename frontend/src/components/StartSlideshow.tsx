@@ -37,7 +37,16 @@ function Screensaver() {
   const kw = isoWoche(now);
   return (
     <div className="flex flex-col items-center justify-center gap-6 h-full">
-      <AppLogo />
+      {/* Das Logo ist überall sonst 40–52 px gross; auf einem Flurbildschirm,
+          den man aus fünf Metern ansieht, ist das ein Fleck. Vervierfacht per
+          `scale`, damit keine der vier Logo-Varianten (Standard, Cyberpunk,
+          Fantasy, hochgeladenes Bild) eine eigene Grössenangabe braucht — der
+          Kasten hält den Platz frei, den die Vergrösserung einnimmt. */}
+      <div className="flex items-center justify-center w-52 h-52 shrink-0">
+        <div style={{ transform: "scale(4)" }}>
+          <AppLogo />
+        </div>
+      </div>
       <div className="text-7xl font-bold tabular-nums">{time}</div>
       <div className="text-xl text-[var(--text-muted)] capitalize">{date}</div>
       <div className="flex items-center gap-3 text-xl" data-testid="ab-woche">
