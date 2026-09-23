@@ -61,6 +61,10 @@ describe("Maus-Führerschein: Tastatur", () => {
     // Wer feststeckt, soll sich retten duerfen, ohne Punkte zu verlieren: nach
     // dem Zurücksetzen zaehlen auch die wilden Anschlaege davor nicht mehr mit.
     vi.useFakeTimers();
+    // Die Wertung zählt auch die gebrauchte Zeit. Ohne feste Uhr entscheidet
+    // unter Last die Rechenzeit der beiden Durchläufe das Ergebnis statt der
+    // Fehlerzähler — der Test schlug dann sporadisch fehl.
+    vi.spyOn(performance, "now").mockReturnValue(0);
 
     function punkteNachKatzee(zuruecksetzen: boolean): number {
       const { unmount } = render(<StufeTastatur avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);

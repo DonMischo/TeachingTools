@@ -35,18 +35,65 @@ describe("Tastatur", () => {
     expect(taste("ShiftLeft")).not.toHaveAttribute("data-naechste");
   });
 
-  it("füllt jede Reihe auf dieselbe Breite auf", () => {
+  /** Rasterplatz einer Taste: [Spalte, Breite, Reihe, Höhe] in Viertel-Einheiten. */
+  function platz(el: Element): [number, number, number, number] {
+    const st = (el as HTMLElement).style;
+    const [c, cs] = st.gridColumn.split("/").map((t) => parseInt(t.replace(/\D/g, ""), 10));
+    const [r, rs] = st.gridRow.split("/").map((t) => parseInt(t.replace(/\D/g, ""), 10));
+    return [c, cs, r, rs];
+  }
+
+  it("legt keine zwei Tasten übereinander und bleibt in der Reihenbreite", () => {
     // Die Spalten müssen untereinander stehen — sonst zeigt die Tastatur auf
-    // eine andere Stelle, als der Finger treffen soll.
-    const { container } = render(<Tastatur gedrueckt={new Set()} zeigeFinger />);
-    const hauptblock = container.firstElementChild!.firstElementChild!;
-    const reihen = Array.from(hauptblock.children);
-    expect(reihen).toHaveLength(5);
-    for (const reihe of reihen) {
-      const summe = Array.from(reihe.children)
-        .reduce((s, el) => s + parseFloat((el as HTMLElement).style.flexGrow || "0"), 0);
-      expect(summe).toBeCloseTo(REIHENBREITE);
+    // eine andere Stelle, als der Finger treffen soll. Seit Plus und Eingabe
+    // zwei Reihen hoch sind, steht jeder Platz ausdrücklich im Bauplan; ein
+    // Rechenfehler darin würde Tasten überlappen lassen.
+    const { container } = render(<Tastatur gedrueckt={new Set()} zeigeFinger bloecke />);
+    const tasten = Array.from(container.querySelectorAll("[data-code]"));
+    expect(tasten.length).toBeGreaterThan(80);
+
+    const belegt = new Set<string>();
+    for (const el of tasten) {
+      const [c, cs, r, rs] = platz(el);
+      for (let y = r; y < r + rs; y++) {
+        for (let x = c; x < c + cs; x++) {
+          const zelle = `${x}/${y}`;
+          expect(belegt.has(zelle)).toBe(false);
+          belegt.add(zelle);
+        }
+      }
     }
+  });
+
+  it("hält den Hauptblock auf 15 Einheiten", () => {
+    const { container } = render(<Tastatur gedrueckt={new Set()} zeigeFinger />);
+    for (const el of container.querySelectorAll("[data-code]")) {
+      const [c, cs] = platz(el);
+      expect(c + cs - 1).toBeLessThanOrEqual(REIHENBREITE * 4 + 1);
+    }
+  });
+
+  it("macht Plus und Eingabe des Ziffernblocks zwei Reihen hoch", () => {
+    // Wie auf der echten Tastatur — daran erkennt ein Kind den Block wieder.
+    render(<Tastatur gedrueckt={new Set()} zeigeFinger bloecke />);
+    expect(platz(taste("NumpadAdd"))[3]).toBe(2);
+    expect(platz(taste("NumpadEnter"))[3]).toBe(2);
+    expect(platz(taste("Numpad5"))[3]).toBe(1);
+  });
+
+  it("zeigt mit den Blöcken auch die Funktionsreihe", () => {
+    const { unmount } = render(<Tastatur gedrueckt={new Set()} zeigeFinger bloecke />);
+    for (const code of ["Escape", "F1", "F5", "F12", "PrintScreen", "ScrollLock", "Pause"]) {
+      expect(taste(code)).toBeInTheDocument();
+    }
+    unmount();
+
+    // Der Schreibtrainer bleibt beim Hauptblock: keine dieser Tasten wird dort
+    // getippt, und der Platz gehört den Buchstaben.
+    render(<Tastatur gedrueckt={new Set()} zeigeFinger />);
+    expect(document.querySelector('[data-code="Escape"]')).toBeNull();
+    expect(document.querySelector('[data-code="F1"]')).toBeNull();
+    expect(document.querySelector('[data-code="PrintScreen"]')).toBeNull();
   });
 
   it("zeigt Navigations- und Ziffernblock nur auf Anfrage", () => {

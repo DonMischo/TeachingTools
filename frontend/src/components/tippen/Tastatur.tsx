@@ -12,8 +12,10 @@
  * Taste. Deshalb leuchtet auch dann die richtige Stelle, wenn das System eine
  * andere Belegung meldet als auf den Tasten steht.
  */
+import type { CSSProperties } from "react";
 import {
-  REIHEN, REIHENBREITE, NAVIGATION, NAVIGATIONSBREITE, ZIFFERNBLOCK, ZIFFERNBLOCKBREITE,
+  REIHEN, REIHENBREITE, NAVIGATION, NAVIGATION_OBEN, NAVIGATIONSBREITE,
+  ZIFFERNBLOCK, ZIFFERNBLOCKBREITE, FUNKTIONSREIHE, BLOCKABSTAND,
   FINGER_FARBEN, umschaltFuer, type Anschlag, type Reihe, type Taste,
 } from "@/lib/tippen/layout";
 
@@ -32,7 +34,7 @@ type Props = {
   bloecke?: boolean;
 };
 
-function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Taste }) {
+function KeyCap({ taste, platz, naechste, gedrueckt, zeigeFinger }: Props & { taste: Taste; platz: CSSProperties }) {
   const farbe = FINGER_FARBEN[taste.finger];
   const istNaechste = naechste?.code === taste.code;
   const istUmschalt = !!naechste?.shift && taste.code === umschaltFuer(naechste.finger);
@@ -45,8 +47,7 @@ function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Ta
       data-naechste={hervor || undefined}
       data-gedrueckt={istGedrueckt || undefined}
       style={{
-        flexGrow: taste.width ?? 1,
-        flexBasis: 0,
+        ...platz,
         background: istGedrueckt
           ? "var(--accent)"
           : zeigeFinger && !taste.mod
@@ -59,7 +60,7 @@ function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Ta
         boxShadow: hervor ? "0 0 0 2px var(--accent)" : undefined,
       }}
       className={
-        "relative flex flex-col items-center justify-center rounded-md border h-9 sm:h-11 " +
+        "relative m-[1.5px] flex flex-col items-center justify-center overflow-hidden rounded-md border " +
         "text-[10px] sm:text-xs leading-none select-none transition-colors duration-75 " +
         (taste.mod ? "text-[var(--text-muted)]" : "font-bold")
       }
@@ -77,41 +78,77 @@ function KeyCap({ taste, naechste, gedrueckt, zeigeFinger }: Props & { taste: Ta
   );
 }
 
-function breite(reihe: Reihe) {
-  return reihe.reduce((s, t) => s + (t?.width ?? 1), 0);
-}
+/** Viertel-Einheiten je Taste — die schmalste Breite im Bauplan ist 0,25. */
+const EINHEIT = 4;
 
-/** Ein Tastenblock: Reihen untereinander, jede auf `volleBreite` aufgefüllt. */
-function Block({ reihen, volleBreite, ...rest }: Props & { reihen: Reihe[]; volleBreite: number }) {
-  return (
-    <div className="flex flex-col gap-1 basis-0" style={{ flexGrow: volleBreite }}>
-      {reihen.map((reihe, i) => {
-        const luecke = volleBreite - breite(reihe);
-        return (
-          <div key={i} className="flex gap-1">
-            {reihe.map((taste, j) => (taste
-              ? <KeyCap key={taste.code} taste={taste} {...rest} />
-              // Leerstelle im Block — hält die Spalten darunter an ihrem Platz.
-              : <div key={`luecke-${j}`} className="h-9 sm:h-11" style={{ flexGrow: 1, flexBasis: 0 }} />
-            ))}
-            {luecke > 0 && <div style={{ flexGrow: luecke, flexBasis: 0 }} />}
-          </div>
-        );
-      })}
-    </div>
-  );
+type Platz = { taste: Taste; spalte: number; spalten: number; reihe: number; reihen: number };
+
+/**
+ * Reihen eines Blocks auf Rasterplätze umrechnen.
+ *
+ * Die Plätze stehen ausdrücklich da, statt sie das Raster selbst verteilen zu
+ * lassen: sobald eine Taste zwei Reihen hoch ist (Plus und Eingabe im
+ * Ziffernblock), schiebt die automatische Verteilung alles danach um eine
+ * Zelle weiter.
+ */
+function platziere(reihen: Reihe[], spaltenVersatz: number, reihenVersatz: number): Platz[] {
+  const plaetze: Platz[] = [];
+  reihen.forEach((reihe, r) => {
+    let x = 0;
+    for (const eintrag of reihe) {
+      // Eine Zahl ist eine Lücke — überspringen, nichts zeichnen.
+      if (typeof eintrag === "number") { x += eintrag; continue; }
+      const breite = eintrag.width ?? 1;
+      plaetze.push({
+        taste: eintrag,
+        spalte: Math.round((spaltenVersatz + x) * EINHEIT) + 1,
+        spalten: Math.round(breite * EINHEIT),
+        reihe: reihenVersatz + r + 1,
+        reihen: eintrag.rows ?? 1,
+      });
+      x += breite;
+    }
+  });
+  return plaetze;
 }
 
 export function Tastatur({ bloecke = false, ...rest }: Props) {
+  const navVersatz = REIHENBREITE + BLOCKABSTAND;
+  const zifferVersatz = navVersatz + NAVIGATIONSBREITE + BLOCKABSTAND;
+  const spalten = bloecke ? zifferVersatz + ZIFFERNBLOCKBREITE : REIHENBREITE;
+  const reihen = bloecke ? 6 : 5;  // mit Funktionsreihe obendrauf
+
+  const plaetze = bloecke
+    ? [
+        ...platziere([FUNKTIONSREIHE], 0, 0),
+        ...platziere(REIHEN, 0, 1),
+        ...platziere([NAVIGATION_OBEN], navVersatz, 0),
+        ...platziere(NAVIGATION, navVersatz, 1),
+        ...platziere(ZIFFERNBLOCK, zifferVersatz, 1),
+      ]
+    : platziere(REIHEN, 0, 0);
+
   return (
-    <div aria-hidden className={"flex gap-2 sm:gap-3 w-full mx-auto " + (bloecke ? "max-w-5xl" : "max-w-2xl")}>
-      <Block reihen={REIHEN} volleBreite={REIHENBREITE} {...rest} />
-      {bloecke && (
-        <>
-          <Block reihen={NAVIGATION} volleBreite={NAVIGATIONSBREITE} {...rest} />
-          <Block reihen={ZIFFERNBLOCK} volleBreite={ZIFFERNBLOCKBREITE} {...rest} />
-        </>
-      )}
+    <div
+      aria-hidden
+      className={"grid w-full mx-auto " + (bloecke ? "max-w-6xl" : "max-w-2xl")}
+      style={{
+        gridTemplateColumns: `repeat(${spalten * EINHEIT}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${reihen}, minmax(0, 1fr))`,
+        // Quadratische Tasten ohne Rechnerei: ist der Kasten so viel breiter
+        // als hoch, wie er Einheiten hat, ist jede Zelle ein Quadrat — und
+        // zwar in jedem Block dasselbe, weil alle in einem Raster liegen.
+        aspectRatio: `${spalten} / ${reihen}`,
+      }}
+    >
+      {plaetze.map(({ taste, spalte, spalten: s, reihe, reihen: r }) => (
+        <KeyCap
+          key={taste.code}
+          taste={taste}
+          platz={{ gridColumn: `${spalte} / span ${s}`, gridRow: `${reihe} / span ${r}` }}
+          {...rest}
+        />
+      ))}
     </div>
   );
 }

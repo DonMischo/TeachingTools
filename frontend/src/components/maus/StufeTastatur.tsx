@@ -74,6 +74,21 @@ function demoSchritte(aufgabe: Aufgabe, setWert: (w: string) => void): DemoSchri
   }
 }
 
+/**
+ * Tasten, die sonst der Browser nimmt.
+ *
+ * Die Bildschirmtastatur zeigt sie, also müssen sie auch ankommen: ohne das
+ * lädt F5 die Seite neu (Fortschritt weg), F3 öffnet die Suchleiste, F6
+ * springt in die Adresszeile. `preventDefault` hält das auf, solange die
+ * Stufe läuft.
+ *
+ * Zwei gehen trotzdem nicht, die nimmt der Browser über der Seite weg:
+ * **F12** (Entwicklerwerkzeuge) und **Druck** (das Betriebssystem meldet den
+ * Tastendruck gar nicht erst an die Seite). Auf beiden darf deshalb keine
+ * Aufgabe aufbauen — sie stehen nur zum Anschauen auf der Tastatur.
+ */
+const ABGEFANGEN = /^(F[1-9]|F1[01]|Escape)$/;
+
 export default function StufeTastatur({
   avatar, onFertig, onWeiter,
 }: { avatar: string; onFertig: (e: StufenErgebnis) => void; onWeiter: () => void }) {
@@ -151,6 +166,7 @@ export default function StufeTastatur({
   }
 
   function tasteRunter(e: React.KeyboardEvent<Feld>) {
+    if (ABGEFANGEN.test(e.code)) e.preventDefault();
     if (!demo.aktiv && !fertig) anschlaege.current += 1;
     setGedrueckt(s => new Set(s).add(e.code));
     const g = gesehen.current;
@@ -211,8 +227,8 @@ export default function StufeTastatur({
         <AvatarDisplay avatarId={avatar} size="md" />
       </Stufenkopf>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
-        <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-w-3xl">
           {!fertig && (
             <div className={erfolg ? "ring-4 ring-[var(--green,#16a34a)] rounded-2xl transition-shadow" : ""}>
               {aufgabe.art === "textarea" ? (
@@ -260,7 +276,13 @@ export default function StufeTastatur({
             {hinweis?.text}
           </div>
 
-          {!fertig && (
+        </div>
+
+        {/* Tastatur und Aufgabenliste nebeneinander: die Tastatur bestimmt mit
+            ihren quadratischen Tasten selbst, wie breit sie sein will, die
+            Liste steht daneben und nicht mehr weit oben neben dem Eingabefeld. */}
+        {!fertig && (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_14rem] items-start">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
               <div className="flex flex-wrap gap-1.5" aria-hidden>
                 <span className="text-xs text-[var(--text-muted)] self-center mr-1">Diese Taste(n) brauchst du:</span>
@@ -270,20 +292,20 @@ export default function StufeTastatur({
               </div>
               <Tastatur gedrueckt={gedrueckt} zeigeFinger={false} bloecke />
             </div>
-          )}
-        </div>
 
-        <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-1 h-fit">
-          <h3 className="font-black mb-1">Aufgaben</h3>
-          <ul className="flex flex-col gap-1">
-            {TASTATUR_AUFGABEN.map((a, i) => (
-              <li key={a.id} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-[var(--text-muted)]" : "")}>
-                <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
-                <span className="truncate">{a.kurz}</span>
-              </li>
-            ))}
-          </ul>
-        </aside>
+            <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-1 h-fit">
+              <h3 className="font-black mb-1">Aufgaben</h3>
+              <ul className="flex flex-col gap-1">
+                {TASTATUR_AUFGABEN.map((a, i) => (
+                  <li key={a.id} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-[var(--text-muted)]" : "")}>
+                    <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
+                    <span className="truncate">{a.kurz}</span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+        )}
       </div>
 
       <DemoBuehne demo={demo} />

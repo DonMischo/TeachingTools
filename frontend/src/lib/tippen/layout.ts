@@ -26,7 +26,16 @@ export type Taste = {
   home?: boolean;
   /** Steuertaste: wird nie als »zu tippendes Zeichen« gesucht. */
   mod?: boolean;
+  /** Höhe in Reihen; 2 = die hohen Tasten des Ziffernblocks (+ und ⏎). */
+  rows?: number;
 };
+
+/**
+ * Eine Tastenreihe. Eine Zahl ist eine Lücke in Einheiten — dort ist entweder
+ * nichts (über den Pfeiltasten, zwischen Esc und F1) oder eine hohe Taste der
+ * Reihe darüber ragt herein.
+ */
+export type Reihe = (Taste | number)[];
 
 /** Breite einer Reihe in Einheiten — Grundlage der Ausrichtung untereinander. */
 export const REIHENBREITE = 15;
@@ -113,25 +122,47 @@ export const REIHEN: Taste[][] = [
 ];
 
 /**
- * Die beiden Blöcke rechts vom Hauptblock: Navigation (Einfg/Pos1/Entf/Ende,
- * Bild ↑↓, Pfeile) und Ziffernblock.
+ * Was rechts und oben um den Hauptblock herum liegt: die Funktionsreihe
+ * (Esc, F1–F12, Druck/Rollen/Pause), der Navigationsblock (Einfg/Pos1/Entf/
+ * Ende, Bild ↑↓, Pfeile) und der Ziffernblock.
  *
  * Bewusst **nicht** Teil von `REIHEN` und `ALLE_TASTEN`: `zeichenZuTaste` baut
  * daraus den Index fürs Zehnfingersystem, und dort soll eine 7 die Taste über
- * u meinen, nicht die im Ziffernblock. Beide Blöcke zeigt nur, wer sie anfragt
- * (`<Tastatur bloecke />`) — der Schreibtrainer kommt ohne sie aus und hätte
- * sonst weniger Platz für den Hauptblock.
- *
- * `null` ist eine Lücke: auf der echten Tastatur ragen dort die hohe
- * Eingabe- und Plustaste hinein, und über den Pfeilen ist schlicht nichts.
- * Hier bleiben Plus und Eingabe normal hoch — eine Reihe Kästchen weniger ist
- * leichter zu lesen als eine Sonderbehandlung für zwei Tasten.
+ * u meinen, nicht die im Ziffernblock. Alles hier zeigt nur, wer es anfragt
+ * (`<Tastatur bloecke />`) — der Schreibtrainer kommt ohne aus und hätte sonst
+ * weniger Platz für den Hauptblock.
  */
-export type Reihe = (Taste | null)[];
-
-/** Breite der beiden Zusatzblöcke in Einheiten — wie REIHENBREITE, nur schmaler. */
 export const NAVIGATIONSBREITE = 3;
 export const ZIFFERNBLOCKBREITE = 4;
+/** Abstand zwischen zwei Blöcken, in Tasteneinheiten. */
+export const BLOCKABSTAND = 1;
+
+/** Oberste Reihe des Hauptblocks. */
+export const FUNKTIONSREIHE: Reihe = [
+  { code: "Escape", label: "Esc", finger: "l5", mod: true },
+  1,
+  { code: "F1", label: "F1", finger: "l5", mod: true },
+  { code: "F2", label: "F2", finger: "l4", mod: true },
+  { code: "F3", label: "F3", finger: "l3", mod: true },
+  { code: "F4", label: "F4", finger: "l2", mod: true },
+  0.5,
+  { code: "F5", label: "F5", finger: "l2", mod: true },
+  { code: "F6", label: "F6", finger: "l2", mod: true },
+  { code: "F7", label: "F7", finger: "r2", mod: true },
+  { code: "F8", label: "F8", finger: "r2", mod: true },
+  0.5,
+  { code: "F9", label: "F9", finger: "r3", mod: true },
+  { code: "F10", label: "F10", finger: "r4", mod: true },
+  { code: "F11", label: "F11", finger: "r5", mod: true },
+  { code: "F12", label: "F12", finger: "r5", mod: true },
+];
+
+/** Oberste Reihe des Navigationsblocks, auf Höhe der Funktionsreihe. */
+export const NAVIGATION_OBEN: Reihe = [
+  { code: "PrintScreen", label: "Druck", finger: "r5", mod: true },
+  { code: "ScrollLock", label: "Rollen", finger: "r5", mod: true },
+  { code: "Pause", label: "Pause", finger: "r5", mod: true },
+];
 
 export const NAVIGATION: Reihe[] = [
   [
@@ -144,8 +175,8 @@ export const NAVIGATION: Reihe[] = [
     { code: "End", label: "Ende", finger: "r5", mod: true },
     { code: "PageDown", label: "Bild ↓", finger: "r5", mod: true },
   ],
-  [null, null, null],
-  [null, { code: "ArrowUp", label: "↑", finger: "r5", mod: true }, null],
+  [3],
+  [1, { code: "ArrowUp", label: "↑", finger: "r5", mod: true }, 1],
   [
     { code: "ArrowLeft", label: "←", finger: "r5", mod: true },
     { code: "ArrowDown", label: "↓", finger: "r5", mod: true },
@@ -153,6 +184,10 @@ export const NAVIGATION: Reihe[] = [
   ],
 ];
 
+/**
+ * Ziffernblock. Plus und Eingabe sind zwei Reihen hoch wie auf der echten
+ * Tastatur; die Reihen darunter hören deshalb nach drei Tasten auf.
+ */
 export const ZIFFERNBLOCK: Reihe[] = [
   [
     { code: "NumLock", label: "Num", finger: "r5", mod: true },
@@ -164,24 +199,22 @@ export const ZIFFERNBLOCK: Reihe[] = [
     { code: "Numpad7", label: "7", finger: "r2" },
     { code: "Numpad8", label: "8", finger: "r3" },
     { code: "Numpad9", label: "9", finger: "r4" },
-    { code: "NumpadAdd", label: "+", finger: "r5" },
+    { code: "NumpadAdd", label: "+", finger: "r5", rows: 2 },
   ],
   [
     { code: "Numpad4", label: "4", finger: "r2", home: true },
     { code: "Numpad5", label: "5", finger: "r3", home: true },
     { code: "Numpad6", label: "6", finger: "r4", home: true },
-    null,
   ],
   [
     { code: "Numpad1", label: "1", finger: "r2" },
     { code: "Numpad2", label: "2", finger: "r3" },
     { code: "Numpad3", label: "3", finger: "r4" },
-    { code: "NumpadEnter", label: "⏎", finger: "r5", mod: true },
+    { code: "NumpadEnter", label: "⏎", finger: "r5", mod: true, rows: 2 },
   ],
   [
     { code: "Numpad0", label: "0", finger: "r2", width: 2 },
     { code: "NumpadDecimal", label: ",", finger: "r4" },
-    null,
   ],
 ];
 
