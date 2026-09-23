@@ -44,7 +44,7 @@ def _sitzung(db, teacher, code="TIPP01", allow=False) -> ToolSession:
 
 def test_tippen_steht_im_katalog():
     tool = tool_catalog.BY_SLUG["tippen"]
-    assert tool.surface == "games"
+    assert tool.surface == "aktivitaeten"
     # Üben dürfen beide von Haus aus.
     assert tool_catalog.default_allowed("tippen", "use", "student") is True
     assert tool_catalog.default_allowed("tippen", "use", "teacher") is True
