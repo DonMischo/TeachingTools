@@ -1,0 +1,308 @@
+# TT - Teaching Tools: Feature-Übersicht (maschinenlesbar)
+# Die ausführliche Fassung steht in README.md. Freigabe-Defaults je Werkzeug
+# kommen aus api/tool_catalog.py, dort ist die verbindliche Quelle.
+
+projekt:
+  name: TT - Teaching Tools
+  beschreibung: >-
+    Schulweites Punktesystem und Unterrichtsplattform. Lehrkräfte vergeben
+    Punkte an Klassen, die Klassen sammeln in Häusern für den Hauspokal. Dazu
+    Spiele, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, Kalender
+    und Startseiten-Slideshow, alles auf dem eigenen Schulserver.
+  stack:
+    frontend: [Next.js 16, React 19, Tailwind CSS, TanStack Query, KaTeX, three.js]
+    backend: [FastAPI, SQLAlchemy, WebSockets]
+    datenbank: PostgreSQL 17
+    betrieb: Docker Compose (postgres, api, frontend), LibreOffice für PDF-Exporte
+  dienste:
+    frontend: http://localhost:1339
+    api: http://localhost:8000
+    postgres: localhost:5435
+
+# Fähigkeiten je Werkzeug: use = Öffnen/Beitreten, host = Hosten,
+# create = Erstellen, upload = Hochladen. Werte: Default für lehrkraft / schueler.
+
+kern:
+  - id: hauspokal
+    name: Hauspokal (Startseite)
+    kann:
+      - Live-Diagramm aller Häuser mit animierten WebGL-Balken
+      - Häuser zählen die Punkte ihrer Klassen zusammen, automatische Aktualisierung
+  - id: punkte
+    name: Punkte vergeben
+    kann:
+      - Schnellauswahl (+5 bis +100) oder freie Punktzahl mit Grund
+      - Punkte-Leitfaden mit Richtwerten von 5 bis 500
+      - Punkte an Klassen, Kurse, Wahlpflicht- und A/B-Gruppen
+      - Punkte-Log je Klasse, Löschen nur für Admins
+      - Klassen-Spitznamen
+      - Automatische Punkte aus Caputh, Bingo, Exitgame und Maus-Führerschein
+      - Kurs-/WPF-Sitzungen bewerten jede beteiligte Klasse nach eigener Quote
+  - id: playhub
+    name: Mitmachen per Code
+    kann:
+      - "/play: ein Code für alle Werkzeuge, Weiterleitung zum richtigen Werkzeug"
+      - QR-Code je Sitzung
+      - Befristeter Gastzugang ohne Konto, gilt nur für eine Sitzung
+      - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
+
+spiele:
+  - id: caputh
+    name: Caputh
+    typ: Quiz
+    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, true]}
+    kann:
+      - Modi Klassisch, TÜ, Test, Aufgabe, Wettbewerb, Benutzerdefiniert
+      - Live-Sitzung mit Host-Screen, Beitritt per Code, Team-Modus
+      - Bilder in Fragen, eingebettete Lückentexte und Zeitstrahlen
+      - Gruppenauswertung
+      - Import als .json/.zip, Vorlage
+  - id: bingo
+    name: Bingo
+    faehigkeiten: {use: [true, true], host: [true, false], create: [true, true]}
+    kann:
+      - Rastergröße und Caller/Antwort-Paare frei wählbar
+      - Eigene Karte für jede Person
+      - JSON-Import, Vorlage, Prompt für externe KI
+  - id: exitgame
+    name: Exitgame
+    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, true]}
+    kann:
+      - Spielen im eigenen Tempo, Fortschritt live für die Lehrkraft
+      - Codeschnipsel aus Aufgaben öffnen die Tür
+      - Serverseitige Fuzzy-Anpassung der Schwierigkeit (Hinweise, Zeitlimits, leichtere Aufgaben)
+      - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
+      - Import als .json/.zip, Vorlage mit allen Bausteinen
+  - id: lueckentext
+    name: Lückentext
+    faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}
+    kann:
+      - Lücken als Wortbank, Freitext oder Multiple Choice
+      - Live-Runde mit Rangliste, Einzelübung, Korrekturmodus
+      - PDF-Export leer oder ausgefüllt
+      - Einbettbar in Caputh und Exitgame
+  - id: zeitstrahl
+    name: Zeitstrahl
+    faehigkeiten: {use: [true, true], create: [true, true], upload: [true, true]}
+    kann:
+      - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
+      - Anzeigen, einsortieren, Fehler finden
+      - JSON-Import, Vorlage, Beispiel-Zeitleisten
+  - id: tippen
+    name: Tippen (10-Finger-Trainer)
+    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, false]}
+    kann:
+      - Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen
+      - Fehlersperre ohne Rücktaste
+      - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
+      - Anschläge pro Minute, Fehlerquote, schwächste Tasten
+      - Bestenliste mit den besten hundert je Modus
+      - Eigene Texte per JSON
+  - id: maus
+    name: Maus-Führerschein
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - PC-Grundkurs in drei Teilen (Maus / Tastatur, Dateien, Fenster / Suchen, Apps, Aussehen)
+      - Nachgebautes Windows mit Explorer, Fenstern, Speichern-unter, Bildschirmfoto
+      - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
+      - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
+      - Klassenübersicht und Bestenlisten
+
+simulationen:
+  - id: gleichungswaage
+    name: Gleichungswaage
+    kann:
+      - Äquivalenzumformungen in den Modi Zahlen, Variablen und Chemie
+      - Sieben Stufen, Klammern, Brüche, eigene Gleichungen
+      - Formeln umstellen (F = m·a, p = F/A)
+      - Reaktionsgleichungen ausgleichen mit Ionen, Kernteilchen, Oxidationszahlen, Oktett-Hinweis
+      - Rechenweg wie im Heft, LaTeX-Eingabe
+  - id: abacus
+    name: Abakus
+    kann:
+      - Rechenrahmen, Modus »Alle gleich« oder »Stellenwert«
+  - id: bildformate
+    name: Bildformate
+    kann:
+      - PBM, PGM und PPM als Text bearbeiten, Bild in Echtzeit
+      - Ins Bild klicken schreibt den Wert zurück in den Text
+  - id: vierecke
+    name: Vierecke
+    kann:
+      - Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften
+      - Umfang (Zaun bauen) und Fläche (Einheitsquadrate auslegen)
+  - id: binaerrechner
+    name: Binär-Rechner
+    kann:
+      - Acht Bits mit Stellenwerten, Werte von 0 bis 255 mit Rechenweg
+  - id: funktionen
+    name: Funktionen
+    kann:
+      - Term, Wertetabelle und Graph miteinander verbunden
+      - Formelsatz und Rechenweg je Punkt
+      - Normal- und Scheitelpunktform, π-Achsen für Winkelfunktionen
+      - Zoom, Achsen einzeln dehnen, Verschieben, Vorlagen würfeln
+  - id: rechenregeln
+    name: Rechenregeln
+    kann:
+      - Punkt vor Strich am Obstkorb
+      - Vertauschungsgesetz am Rechenzug
+      - Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
+      - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
+  - id: uebung
+    name: Übung
+    kann:
+      - Generierte Mathe-Aufgaben Kl. 1–7 (Thüringer Lehrplan)
+      - Schwierigkeit steigt nach drei richtigen, sinkt nach zwei falschen
+      - Prüfung auf dem Server, Fortschritt je Thema
+  - id: ki
+    name: KI-Werkstatt
+    kann:
+      - Sprachmodell zum Anfassen (Tokenisieren, Wortnetz, top-k, Klassentafel)
+      - Eigenes Netz aus Korpus trainieren, Rückblick und Backoff
+      - Attention-Minispiel, Mensch gegen Maschine raten
+      - Diffusion (Verrauschen, Bildfolgen, Punktwolke mit Guidance)
+      - Neuron lernen lassen, Zeichnen und Erkennen
+      - »Echt oder KI« mit eigenen Bildpaaren
+      - Hintergrundtexte in drei Lesestufen
+  - id: sonnensystem
+    name: Sonnensystem
+    kann:
+      - 3D-Modell mit echten Bahnen (JPL Horizons), Satelliten und Lagrangepunkten
+      - Flugmodus mit Pulsantrieb, Overdrive, Autopilot und Scanner
+      - 31 Forschungsaufträge, 34 Erfolge, Kodex als PDF
+      - Größen, Entfernungen mit Lichtlauf, Kepler-Gesetze
+      - Erdmagnetfeld mit Sonnensturm
+      - Galerie mit rund 90 Bildern zum Freischalten
+
+tools:
+  - id: schreibraum
+    name: Schreibraum
+    faehigkeiten: {use: [true, false], create: [true, false]}
+    kann:
+      - Gemeinsam schreiben in Echtzeit (WebSocket)
+      - Modi nächste freie Zeile, Zeile hinzufügen, Wortstaffel
+      - Dauerhafte oder temporäre Räume
+  - id: barometer
+    name: Umfrage
+    faehigkeiten: {use: [true, false], host: [true, false]}
+    kann:
+      - Skala, Smiley-Skala, Auswahl, Mehrfachauswahl, Zahl, Freitext, Aussagen-Blöcke
+      - Live oder zum Selbstausfüllen, Folien, Folgefragen
+      - Diagrammart je Frage, JSON-Export, öffentliche Ergebnisseite per QR
+      - KI-Auswertung der Freitexte über externe KI
+      - Mit Kolleginnen und Kollegen teilen
+  - id: exit-ticket
+    name: Exit Ticket
+    faehigkeiten: {use: [true, false], host: [true, false]}
+    kann:
+      - Anonymes Stundenfeedback mit Frage und optional 1 bis 5 Sternen
+  - id: auktion
+    name: Auktion
+    faehigkeiten: {use: [true, false], host: [true, false]}
+    kann:
+      - Haussprecher bieten mit Hauspunkten auf Items
+      - Phasen wartend, offen, abgeschlossen
+  - id: classroom
+    name: Classroom Screen
+    faehigkeiten: {use: [true, false]}
+    kann:
+      - Widgets Uhr, Timer, Stoppuhr, Arbeitsform, Notizen
+      - Frei anordnen, Layout im Browser gespeichert
+  - id: stundenplaner
+    name: Stundenplaner
+    faehigkeiten: {use: [true, false], create: [true, false]}
+    kann:
+      - Verlaufsplanungen mit Phasen (Inhalt, Methode, Material)
+      - Materialien anhängen, Office-Dateien zusätzlich als PDF
+      - JSON-Import, teilen
+  - id: snap
+    name: Snap!
+    faehigkeiten: {use: [true, false], create: [true, false]}
+    kann:
+      - Snap! komplett lokal, ohne Internet und Konto
+      - Programme in TT speichern
+      - Lehrkraft-Programme als Klassenvorlagen
+  - id: standalone
+    name: Offline-Dateien
+    kann:
+      - Werkzeuge als einzelne HTML-Datei herunterladen, nur mit Freigabe für das Werkzeug
+
+sport:
+  - id: wettkampf
+    name: Wettkämpfe
+    faehigkeiten: {use: [true, false], create: [true, false]}
+    kann:
+      - K.-o., Jeder gegen Jeden, Paarungsturnier
+      - Wertung, Punkte und Rangfolge einstellbar
+      - Teilnehmende aus Klassen, Schülern, freien Namen oder Lehrerteams
+  - id: sportfest
+    name: Sportfest
+    faehigkeiten: {use: [true, false], create: [true, false]}
+    kann:
+      - Sprint, Ausdauer, Weitsprung, Ballwurf nach DLV-Tabellen
+      - Ergebnisse je Klasse, Gesamt- und Disziplinranking
+
+verwaltung:
+  - id: fragmente
+    name: Fragmente
+    faehigkeiten: {use: [true, true], create: [true, false]}
+    kann:
+      - Pinnwände mit Textfragmenten und Recherche-Clips samt Link-Vorschau
+      - Zugriff je Sammlung (lesen, beitragen, verwalten) für Lehrkräfte, Klassen, A/B-Gruppen
+      - Gastbeitritt per QR, Tabs
+  - id: klassenverwaltung
+    name: Klassenverwaltung
+    kann:
+      - Häuser mit Name, Farbe, Logo, Klassen zuordnen
+      - Rollen (Klassen-, Schüler-, Haussprecher, eigene)
+      - Dienste von Hand oder zufällig verteilen
+      - Checklisten je Schüler für Klassen und Gruppen
+      - Kurse, Wahlpflicht, A/B-Gruppen
+      - Werkzeug-Freigaben je Klasse durch die Klassenlehrkraft
+      - Stabile Abschlussjahrgangs-Codes (z. B. AK2031a)
+  - id: sitzplan
+    name: Sitzplan
+    kann:
+      - Mehrere Räume je Klasse, Editor auf Zeichenfläche
+      - Export als A4-PDF, auch für Kurse
+  - id: kalender
+    name: Kalender
+    kann:
+      - Einzeltermine und Zeiträume im Schuljahr
+      - Sichtbarkeit nach Zielgruppe, persönliche Einträge
+      - Farbige Tags, Ferien nach Bundesland
+      - ICS-Import und -Export
+  - id: slideshow
+    name: Startseiten-Slideshow
+    kann:
+      - Bilder, PDFs, Videos, Links, Termine, Wochenspruch, Hauspunkte, Uhr
+      - Zeitfenster zum Festheften, Inhalte je Zielgruppe
+      - Warnungen bei kaputten oder überlappenden Einträgen
+
+admin:
+  - {id: schuelerdaten, name: Schülerdaten, kann: [CSV-Import mit Diff, Zugänge generieren, Export]}
+  - {id: lehrerdaten, name: Lehrerdaten, kann: [Konten und Lehrerrollen verwalten]}
+  - {id: schuelerkarten, name: Schülerkarten, kann: [Felder und Klassen wählen, Drucklayout, PDF-Export]}
+  - {id: freigaben, name: Werkzeug-Freigaben, kann: [Je Werkzeug, Fähigkeit und Zielgruppe erlauben oder sperren]}
+  - {id: admin_rechte, name: Admin-Rechte, kann: [Admin-Bereiche an Lehrerrollen oder einzelne Lehrkräfte vergeben]}
+  - {id: generatoren, name: Aufgaben-Generatoren, kann: [Eigene Übungsthemen deklarativ anlegen]}
+  - {id: darstellung, name: Darstellung, kann: [Farbschema, Icon-Stil Fantasy/Cyberpunk/Emoji, Hell/Dunkel]}
+  - {id: style_pack, name: Style Pack, kann: [ZIP mit Logo, Icons und Farben]}
+  - {id: schuleinstellungen, name: Schuleinstellungen, kann: [Dauer des Gastzugangs, Anzeige von Schülerdaten]}
+
+datenschutz_sicherheit:
+  - Schülernamen außerhalb von Klassenleitung und Datenverwaltung nur als »Vorname N.«
+  - Zwei-Faktor (TOTP) für Lehrkraft-Passwörter und Zugangsdaten-Export
+  - bcrypt für Logins, Fernet-Verschlüsselung für druckbare Zugangsdaten
+  - Audit-Log für sicherheitsrelevante Zugriffe
+  - Löschen der Spielsitzungen zum Schuljahreswechsel (1. August), Punkte bleiben
+  - Kein ausführbarer Code in Uploads, SSRF-Schutz bei Link-Vorschauen
+  - Keine KI in der App, nur Prompts für externe Werkzeuge
+
+rollen:
+  admin: Alles
+  lehrkraft: Punkte, Werkzeuge hosten, Inhalte erstellen, Admin-Bereiche nur mit Freigabe
+  klassenlehrkraft: Zusätzlich eigene Klasse bearbeiten, Zugangsdaten mit 2FA exportieren
+  schueler: Spiele, Simulationen, freigegebene Werkzeuge, gemeinsamer Schüler-Pool für Inhalte
+  gast: Nur die gescannte Sitzung, zeitlich begrenzt

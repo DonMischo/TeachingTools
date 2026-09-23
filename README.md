@@ -1,135 +1,263 @@
-# Hauspokal
+# TT - Teaching Tools
 
-Schulweites Punktesystem und Unterrichtstool-Suite. Lehrer vergeben Punkte an Klassen, Klassen kämpfen in Häusern um den Hauspokal. Daneben: Quizzes, Abstimmungen, Turniere, Sportfest und mehr.
+**TT - Teaching Tools** (früher »Hauspokal«) ist schulweites Punktesystem und Unterrichtsplattform in einem. Lehrkräfte vergeben Punkte an Klassen, die Klassen sammeln in ihren Häusern für den Hauspokal. Dazu kommen Spiele, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, ein Schulkalender und eine Startseiten-Slideshow. Alles läuft auf dem eigenen Schulserver.
+
+Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features.yml).
 
 ## Tech-Stack
 
 | Schicht | Technologie |
 |---------|-------------|
-| Frontend | Next.js 14 (App Router), React, Tailwind CSS, TanStack Query |
-| Backend | FastAPI (Python), SQLAlchemy, SQLite |
-| Start | `start.bat` — startet API und Frontend gleichzeitig |
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS, TanStack Query, KaTeX, three.js |
+| Backend | FastAPI (Python), SQLAlchemy, WebSockets |
+| Datenbank | PostgreSQL 17 |
+| Betrieb | Docker Compose (Postgres, API, Frontend); LibreOffice im API-Container für PDF-Exporte |
 
 ---
 
-## Features
+## Inhalt
 
-### 🏆 Hauspokal (Startseite)
-- Live-Diagramm aller Häuser mit animierten Sand-/Vortex-Bars (WebGL-Shader)
-- Jedes Haus zeigt akkumulierte Punkte aller zugeordneten Klassen
-- Auto-Refresh alle 15 Sekunden
+- [Hauspokal und Punkte](#-hauspokal-und-punkte)
+- [Mitmachen per Code (Playhub, QR, Gäste)](#-mitmachen-per-code)
+- [Spiele](#-spiele)
+- [Simulationen](#-simulationen)
+- [Tools](#-tools)
+- [Sport & Spiele](#-sport--spiele)
+- [Klassenverwaltung](#-klassenverwaltung)
+- [Kalender](#-kalender)
+- [Fragmente](#-fragmente)
+- [Startseiten-Slideshow](#-startseiten-slideshow)
+- [Admin](#-admin)
+- [Datenschutz und Sicherheit](#-datenschutz-und-sicherheit)
+- [Setup & Start](#setup--start)
+- [Rollen](#rollen)
 
-### ⭐ Punkte vergeben (Sidebar-Panel)
-- Klasse aus der Liste wählen oder direkt vom Klassen-Tab aus öffnen
-- Schnellauswahl: +5, +10, +25, +50, +100 Punkte
-- Freitext-Punktzahl + optionaler Grund
-- Punkte-Leitfaden (Richtwerte mit Beschreibung, klickbar zum Vorab-Ausfüllen)
-- Punkte-Log pro Klasse (Verlauf mit Lösch-Option für Admins)
-- Klassen-Nickname festlegen / ändern
+---
 
-### 🎲 Caputh (Quiz-System)
-- Quiz-Bibliothek mit Typen: Klassisch, TÜ, Test, Aufgabe, Wettbewerb, Benutzerdefiniert
-- Filter nach Typ und Jahrgangsstufe
-- Quiz starten → Host-Ansicht + Schüler-Beitritt via Code
-- Team-Modus: Schüler spielen in Teams
-- Bild-Unterstützung für Fragen
-- Gruppenauswertung
+## 🏆 Hauspokal und Punkte
 
-### ⚔️ Sport & Spiele
+**Startseite:** Ein Live-Diagramm zeigt alle Häuser mit animierten Balken (WebGL-Shader). Jedes Haus zählt die Punkte seiner Klassen zusammen, die Ansicht aktualisiert sich von selbst.
 
-#### 🏆 Wettkämpfe
-- Turniere anlegen (z. B. Tischtennis, Fußball)
-- Spielpläne verwalten, Ergebnisse eintragen
-- Live-Tabelle / Ranking
+**Punkte vergeben** (Seitenleiste):
+- Klasse wählen, Schnellauswahl (+5 bis +100) oder freie Punktzahl, optional mit Grund
+- Punkte-Leitfaden mit Richtwerten von »Gutes Verhalten« (5) bis »Turnier-/Wettbewerbssieg« (500), per Klick übernehmbar
+- Punkte auch an Kurse, Wahlpflichtgruppen und A/B-Gruppen vergeben
+- Punkte-Log je Klasse; Admins können Einträge löschen
+- Klassen-Spitznamen setzen
 
-#### 🏃 Sportfest
-- Disziplinen konfigurieren (Setup nur für Admins)
-- Ergebnisse pro Klasse/Schüler eintragen
-- Punkte-Ranking über alle Disziplinen
+**Punkte aus Spielen:** Caputh, Bingo und Exitgame vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
 
-### 🛡️ Häuser & Klassen (via Admin)
-- Häuser anlegen: Name, Farbe, Logo-Upload
-- Klassen Häusern zuordnen
-- Klassen-Tab: Übersicht aller Klassen sortiert nach Punkten
-- **Klassen-Einrichtung** (⚙️-Button auf jeder Klasse):
-  - **Rollen**: Klassensprecher, Schülersprecher, Haussprecher + eigene Rollen → Schüler per Dropdown zuweisen
-  - **Dienste**: Aktive Klassendienste aus Pool wählen (Checkbox-Dropdown mit Default-Diensten + klassenübergreifenden Customs)
-    - Tafeldienst, Pflanzendienst, Austeildienst, Fensterdienst, Computerdienst (Defaults)
-    - Eigene Dienste hinzufügen (werden global gespeichert)
-    - Schüler per Dropdown zuweisen
-    - 🎲 Zufällig zuweisen — verteilt alle aktiven Dienste zufällig
-    - 🗑 Zuweisungen löschen
+---
 
-### 🔨 Tools (Unterrichtstools)
+## 📱 Mitmachen per Code
 
-#### 📝 Schreibraum
-- Kollaborativer Schreibraum: Lehrer öffnet Raum, Schüler schreiben Zeilen
-- Modi: nächste freie Zeile / beliebige Zeile
-- Permanente oder temporäre Räume
-- Echtzeit-Sync per WebSocket
+- **Playhub (`/play`):** Schülerinnen und Schüler geben nur den Code von der Tafel ein. Der Playhub findet das passende Werkzeug und leitet weiter.
+- **QR-Code:** Jede Sitzung zeigt einen QR zum Scannen mit dem eigenen Gerät.
+- **Gastzugang:** Ist »Gäste erlauben« eingeschaltet, kommt man auch ohne Konto hinein. Der Gast-Token gilt nur für diese eine Sitzung und läuft ab (die Dauer stellt ein Admin ein). Gäste werden über eine eigene Gast-ID gezählt, nicht über den Namen.
+- **Sitzungs-Geltungsbereich:** Sitzungen lassen sich für eine Klasse, eine A/B-Hälfte, einen Kurs oder eine WPF-Gruppe starten.
 
-#### 🌡️ Umfrage
-- Anonyme Abstimmungssessions mit konfigurierbaren Skalafragen
-- Live-Ergebnisse auf der Host-Ansicht
-- Schüler stimmen über Code ab (kein Login nötig)
-- Vorlage + JSON-Upload (KI-Anleitung in der Vorlage)
+---
 
-#### 🎫 Exit Ticket
-- Anonymes Schnell-Feedback am Stundenende
-- Lehrer startet Session, Schüler antworten via Code
-- Ergebnisse live für den Lehrer sichtbar
+## 🎮 Spiele
 
-#### 🖥️ Classroom Screen
-- Beamer-Ansicht mit frei positionierbaren Widgets:
-  - **Uhr** — aktuelle Uhrzeit
-  - **Timer** — Countdown mit Ton-Signal bei Ablauf (3 Beeps via Web Audio API)
-  - **Stoppuhr** — Vorwärtszähler
-- Widgets per Drag-and-Drop positionieren
+Alle Spiele können Schüler spielen. Hosten dürfen standardmäßig nur Lehrkräfte; Admins können das pro Werkzeug freigeben (siehe [Werkzeug-Freigaben](#-admin)).
 
-#### 🧱 Snap!
-- Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite — läuft
-  vollständig lokal, ohne Internet und ohne Konto bei snap.berkeley.edu
-- Programme werden in Hauspokal gespeichert statt als Datei exportiert
-- Lehrer-Programme mit Klassenzuordnung sind Vorlagen: die Klasse öffnet sie,
-  speichert aber immer als eigene Kopie
-- **Einrichtung:** läuft automatisch beim ersten Start des Frontend-Containers —
-  Snap! v12.0.6 wird nach `frontend/public/snap` geholt (~90 MB, nicht im Repo,
-  daher der Download). Spätere Starts überspringen den Schritt; ohne Internet
-  startet die App normal, nur das Snap!-Tool fehlt. Nachholen von Hand:
-  `npm run fetch:snap` im `frontend/`-Verzeichnis
-
-### 🏷️ Auktion
-- Lehrer legt Items auf, Schüler geben Gebote ab
-- Status-Phasen: Wartend → Gebote offen → Abgeschlossen
-- Host-Ansicht zur Steuerung
+### 🎲 Caputh (Quiz)
+- Quiz-Bibliothek mit den Modi Klassisch, TÜ, Test, Aufgabe, Wettbewerb und Benutzerdefiniert, filterbar nach Typ und Jahrgang
+- Live-Sitzung mit Host-Screen und Beitritt per Code, optional im Team-Modus
+- Bilder in Fragen; Lückentexte und Zeitstrahlen lassen sich einbetten
+- Gruppenauswertung nach der Runde
+- Import als `.json` oder `.zip`, Vorlage zum Herunterladen
 
 ### 🎰 Bingo
-- Lehrer erstellt Bingo-Karten mit Caller/Antwort-Paaren
-- Schüler erhalten individuelle Bingo-Karten
-- Lehrer ruft Items auf, Schüler tippen auf ihrer Karte
+- Runden mit Rastergröße und Caller/Antwort-Paaren anlegen und sofort hosten
+- Jede Person bekommt eine eigene Karte; die Lehrkraft ruft auf, die Klasse markiert
+- JSON-Import, Vorlage und ein fertiger Prompt für externe KI (keine KI in der App selbst)
 
-### ⚙️ Admin
+### 🗝️ Exitgame
+- Exit-Game im eigenen Tempo, die Lehrkraft sieht den Fortschritt live
+- Aufgaben vergeben Codeschnipsel, die an der Tür zusammengesetzt werden
+- Serverseitige Anpassung der Schwierigkeit (Fuzzy-DDA): Hinweise, Zeitlimits, leichtere Aufgaben je nach Verlauf
+- Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen
+- Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein
+
+### 🧩 Lückentext
+- Lücken mit Wortbank, Freitext oder Multiple Choice
+- Live-Runde mit Rangliste, Einzelübung oder Korrekturmodus
+- PDF-Export (leer oder ausgefüllt); einbettbar in Caputh und Exitgame
+
+### 📏 Zeitstrahl
+- Zeitleisten mit parallelen Spuren und Zahlenstrahlen
+- Anzeigen, Ereignisse einsortieren, Fehler finden
+- JSON-Import, Vorlage und mitgelieferte Beispiele
+
+### ⌨️ Tippen (10-Finger-Trainer)
+- Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen von der Grundstellung bis zu Zahlen und Satzzeichen
+- Fehlersperre: ein falscher Anschlag zählt als Fehler, aber es geht erst mit der richtigen Taste weiter
+- Modi: Lektionen, Wortregen, Tastenjagd (Reaktionszeit) und Wettschreiben (Klassenrennen mit eigenem Code, nur für Lehrkräfte)
+- Werte: Anschläge pro Minute, Fehlerquote, schwächste Tasten
+- Bestenliste mit den besten hundert je Modus
+- Eigene Texte per JSON-Upload
+
+### 🐭 Maus-Führerschein
+- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien und Fenster; Suchen, Apps und Aussehen
+- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, »Speichern unter« und Bildschirmfoto
+- Jede Stufe mit Vorführen, Vorlesen und 1 bis 3 Sternen; Hilfsmodus für langsame Mausnutzer
+- Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
+- Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
+
+---
+
+## 🔬 Simulationen
+
+Modelle zum Ausprobieren. Alle sind für Schüler offen und haben einen eigenen Beitritts-Code mit QR.
+
+| Simulation | Was sie kann |
+|------------|--------------|
+| ⚖️ **Gleichungswaage** | Äquivalenzumformungen an einer Waage in drei Modi: Zahlen (sieben Stufen, Klammern, Brüche), Variablen (Formeln wie F = m·a umstellen) und Chemie (Reaktionsgleichungen ausgleichen, Ionen, Kernteilchen, Oxidationszahlen, Oktett-Hinweis). Rechenweg wie im Heft, LaTeX-Eingabe. |
+| 🧮 **Abakus** | Rechenrahmen zum Schieben, Modus »Alle gleich« oder »Stellenwert«. |
+| 🖼️ **Bildformate** | PBM, PGM und PPM zum Anfassen: Zahlen tippen, Bild sehen, ins Bild klicken schreibt zurück. |
+| 📐 **Vierecke** | Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften, dazu Umfang (Zaun bauen) und Fläche (mit Einheitsquadraten auslegen). |
+| ◈ **Binär-Rechner** | Acht Bits mit Stellenwerten, Rechenweg von 0 bis 255. |
+| 📈 **Funktionen** | Term, Wertetabelle und Graph verbunden. Formelsatz, Rechenweg je Punkt, Normal- und Scheitelpunktform, π-Achsen, Zoom, Verschieben und Vorlagen zum Würfeln. |
+| 🍎 **Rechenregeln** | Klasse 5/6: Punkt vor Strich am Obstkorb, Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel. Schrittweise lösen, Aufgaben würfeln, eigene Terme. |
+| 📚 **Übung** | Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan). Die Schwierigkeit passt sich an, geprüft wird auf dem Server. |
+| 🤖 **KI-Werkstatt** | Wie Sprach- und Bildmodelle arbeiten: Tokenisieren, Wortnetz mit top-k, eigenes Netz trainieren, Attention, Mensch gegen Maschine raten, Diffusion mit Rauschen und Punktwolke, ein Neuron lernen lassen, »Echt oder KI« mit Bildpaaren. Klassentafel und Hintergrundtexte in drei Lesestufen. |
+| 🪐 **Sonnensystem** | 3D-Modell mit echten Bahnen und Daten (JPL Horizons), Satelliten und Lagrangepunkten. Flugmodus mit Autopilot, Overdrive und 31 Forschungsaufträgen, dazu Kodex als PDF, 34 Erfolge, Größen- und Entfernungsvergleich, Kepler-Gesetze, Magnetfeld mit Sonnensturm und eine Galerie mit rund 90 Bildern. |
+
+---
+
+## 🔨 Tools
+
+Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
+
+### 📝 Schreibraum
+- Die Klasse schreibt gemeinsam an einem Text, synchron per WebSocket
+- Modi: nächste freie Zeile, Zeile hinzufügen, Wortstaffel
+- Dauerhafte oder temporäre Räume mit Raum-Code
+
+### 🧭 Umfrage
+- Fragetypen: Skala (auch mit Smileys), Auswahl, Mehrfachauswahl, Zahl, Freitext, Aussagen-Blöcke
+- Ablauf live oder zum Selbstausfüllen; mehrere Fragen pro Folie, Folgefragen mit Bedingung
+- Diagrammart je Frage umschaltbar, JSON-Export, öffentliche Ergebnisseite per QR (ohne Freitext)
+- KI-Auswertung der Freitexte über eine externe KI, das Ergebnis wird wieder hochgeladen
+- Umfragen für Kolleginnen und Kollegen freigeben, JSON-Vorlage und Upload
+
+### 🎫 Exit Ticket
+- Anonymes Feedback am Stundenende: Frage, optional 1 bis 5 Sterne, Ergebnisse live
+
+### 🏷️ Auktion
+- Die Lehrkraft bietet Items an, die Haussprecher bieten mit Hauspunkten
+- Phasen: wartend, offen, abgeschlossen
+
+### 🖥️ Classroom Screen
+- Beamer-Ansicht mit frei platzierbaren Widgets: Uhr, Timer mit Signalton, Stoppuhr, Arbeitsform, Notizen
+- Die Anordnung wird im Browser gespeichert
+
+### 📋 Stundenplaner
+- Verlaufsplanungen mit Phasen erstellen (Titel, Fach, Klasse; je Phase Inhalt, Methode, Material)
+- Materialien anhängen; Office-Dateien werden per LibreOffice zusätzlich als PDF abgelegt
+- JSON-Import, Planungen mit Kolleginnen und Kollegen teilen
+
+### 🧱 Snap!
+- Blockbasiertes Programmieren (Snap!, Berkeley) direkt in der Seite, komplett lokal, ohne Internet und ohne Konto
+- Programme werden in TT gespeichert; Lehrkraft-Programme mit Klasse werden zu Vorlagen, die die Klasse als eigene Kopie speichert
+- **Einrichtung:** Beim ersten Start des Frontend-Containers wird Snap! v12.0.6 nach `frontend/public/snap` geladen (~90 MB, nicht im Repo). Ohne Internet startet die App trotzdem, nur Snap! fehlt dann. Von Hand nachholen: `npm run fetch:snap` in `frontend/`.
+
+### 💾 Offline-Dateien
+- Ausgewählte Werkzeuge lassen sich als einzelne HTML-Datei herunterladen und ohne Server nutzen (Build mit `npm run build:standalone`). Herunterladen darf nur, wer das Werkzeug auch benutzen darf.
+
+---
+
+## ⚔️ Sport & Spiele
+
+### 🏆 Wettkämpfe
+- Turniere als K.-o., Jeder gegen Jeden oder Paarungsturnier
+- Eigene Wertung, Punkte und Rangfolge; Matches verwalten, Ergebnisse eintragen
+- Teilnehmende aus Klassen oder Schülern, mit freien Namen oder als Lehrerteam
+
+### 🏃 Sportfest
+- Disziplinen Sprint, Ausdauer, Weitsprung und Ballwurf, bewertet nach DLV-Tabellen
+- Ergebnisse je Klasse eintragen, Gesamt- und Disziplinranking
+- Disziplinen werden im Admin-Setup aktiviert
+
+---
+
+## 🛡️ Klassenverwaltung
+
+- **Häuser:** Name, Farbe und Logo; Klassen den Häusern zuordnen
+- **Klassen:** Übersicht nach Punkten. Klassenlehrkräfte bearbeiten ihre eigene Klasse, alle anderen sehen sie nur.
+- **Rollen:** Klassensprecher, Schülersprecher, Haussprecher und eigene Rollen
+- **Dienste:** Tafeldienst, Pflanzendienst und weitere, dazu eigene Dienste; Schüler von Hand oder zufällig zuweisen
+- **Checklisten (Tracker):** Abhaken je Schüler, zum Beispiel für abgegebene Hausaufgaben, für Klassen oder Gruppen
+- **Kurse, Wahlpflicht, A/B-Gruppen:** klassenübergreifende Gruppen mit eigener Punktevergabe. A/B-Gruppen lassen sich überall wählen, wo man eine Klasse wählt.
+- **Sitzplan:** mehrere Räume je Klasse (Klassenraum, Kunstraum …), Editor auf einer Zeichenfläche, Export als A4-PDF, auch für Kurse
+- **Werkzeug-Freigaben je Klasse:** Klassenlehrkräfte können Werkzeuge für ihre Klasse freigeben oder sperren
+- **Stabile Klassen-Codes:** Aus »7a« wird ein Abschlussjahrgangs-Code (z. B. `AK2031a`). So bleibt die Klasse über den Jahrgangswechsel am 1. August dieselbe.
+
+---
+
+## 📅 Kalender
+
+- Schuljahreskalender mit Einzelterminen und Zeiträumen
+- Sichtbarkeit nach Zielgruppe: Kollegium, Primar, Sekundar, Schulgemeinschaft, Ferien und Persönlich (nur für die eigene Person)
+- Frei benannte, farbige Tags (Dienstberatung, Wandertag …)
+- Ferien nach Bundesland
+- ICS-Import und -Export
+
+---
+
+## 🗂️ Fragmente
+
+- Pinnwände im Stil von TaskCards: Textfragmente und Recherche-Clips mit Link-Vorschau
+- Zugriff pro Sammlung in drei Stufen: lesen, beitragen, verwalten; vergeben an Lehrkräfte, Klassen oder A/B-Gruppen
+- Gäste treten per QR bei
+- Tabs innerhalb einer Sammlung
+
+---
+
+## 🖼️ Startseiten-Slideshow
+
+- Kiosk-Ansicht für den Bildschirm im Schulflur
+- Inhalte: hochgeladene Bilder, PDFs und Videos, externe Links, Termine aus dem Kalender, Wochenspruch, Hauspunkte und Uhr
+- Die Uhr erscheint nach jeweils zwei anderen Folien
+- Zeitfenster heften einen Eintrag fest, solange das Fenster läuft
+- Inhalte je nach Zielgruppe; Warnungen bei kaputten oder überlappenden Einträgen
+
+---
+
+## ⚙️ Admin
 
 | Bereich | Funktion |
 |---------|----------|
-| **Schülerdaten** | CSV-Import mit Vorschau · Änderungen prüfen & bestätigen · Zugänge generieren · Exportieren |
-| **Schülerkarten** | Felder wählen · Klassen filtern · Druck-Layout · PDF-Export |
-| **Häuser & Klassen** | Häuser verwalten · Klassen zuordnen (→ siehe oben) |
-| **Darstellung** | Farbschema wählen · Icon-Stil (Fantasy / Cyberpunk / Emoji) · Theme-Switcher |
-| **Style Pack** | ZIP hochladen mit eigenem Logo, Icons und Farben |
+| **Schülerdaten** | CSV-Import mit Vorschau und Diff · Änderungen bestätigen · Zugänge generieren · Export |
+| **Lehrerdaten** | Konten und Lehrerrollen verwalten |
+| **Schülerkarten** | Felder wählen · Klassen filtern · Drucklayout · PDF-Export |
+| **Werkzeug-Freigaben** | Je Werkzeug und Fähigkeit (Öffnen, Hosten, Erstellen, Hochladen) und je Zielgruppe (Lehrkraft, Schüler) erlauben oder sperren |
+| **Admin-Rechte** | Einzelne Admin-Bereiche (Schülerdaten, Lehrerdaten, Generatoren, Style Pack, Kalender-Einstellungen, Slideshow) an Lehrerrollen oder einzelne Lehrkräfte vergeben |
+| **Aufgaben-Generatoren** | Eigene Übungsthemen anlegen, deklarativ und ohne ausführbaren Code |
+| **Slideshow** | Startseiten-Rotation pflegen |
+| **Darstellung** | Farbschema · Icon-Stil (Fantasy / Cyberpunk / Emoji) · Hell/Dunkel |
+| **Style Pack** | ZIP mit `logo.svg`, `icons/<name>.svg` und `colors.json` hochladen |
+| **Schuleinstellungen** | Dauer des Gastzugangs · welche Schülerdaten angezeigt werden (z. B. Geschlecht für den Sitzplan) |
 
-### 🎨 Themes & Stil
-- 3 Icon-Sets: Fantasy (handgezeichnete SVGs), Cyberpunk (angular), Emoji
-- Theme-Farben per CSS-Variablen, vollständig anpassbar per Style Pack
-- Style Pack: ZIP-Datei mit `logo.svg`, Icons per `icons/<name>.svg`, `colors.json`
+---
+
+## 🔒 Datenschutz und Sicherheit
+
+- **Namen:** Außerhalb der Klassenleitung, der Schülerdatenverwaltung und der eigenen Person erscheinen Schüler nur als »Vorname N.«, also auch auf Ranglisten und am Beamer.
+- **Zwei-Faktor (TOTP) für Lehrkräfte:** Pflicht beim Ansehen von Lehrkraft-Passwörtern und beim Export der Zugangsdaten einer Klasse.
+- **Passwörter:** Login-Prüfung per bcrypt. Druckbare Zugangsdaten sind mit Fernet verschlüsselt, der Schlüssel kommt aus `SECRET_KEY`.
+- **Audit-Log** für sicherheitsrelevante Zugriffe.
+- **Aufbewahrung:** Spielsitzungen werden zum Schuljahreswechsel (1. August) gelöscht (Art. 5 DSGVO). Punkte und Materialien bleiben erhalten.
+- **Kein Fremdcode:** Hochgeladene Inhalte verweisen nur auf geprüfte Aufgaben-Generatoren, Link-Vorschauen sind gegen SSRF geschützt.
+- **Keine KI in der App:** KI-Funktionen erzeugen nur Prompts für externe Werkzeuge, Schülerdaten verlassen den Server nicht.
 
 ---
 
 ## Setup & Start
 
-Der komplette Stack läuft in Docker. Node-, Python- und System-Pakete werden
-**innerhalb der Container** installiert — die einzige Voraussetzung auf dem Host
-ist Docker, und das installiert das Setup-Skript bei Bedarf selbst.
+Der ganze Stack läuft in Docker. Node-, Python- und Systempakete werden in den Containern installiert. Auf dem Host braucht es nur Docker, und das richtet das Setup-Skript bei Bedarf selbst ein.
 
 **Windows** (PowerShell im Projektordner):
 
@@ -143,17 +271,19 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 ./install.sh
 ```
 
-Das Skript installiert fehlendes Docker (Linux: Docker Engine + Compose;
-Windows: Docker Desktop + WSL2), legt `.env` an und baut & startet alle Dienste.
-Beim allerersten Docker-Build werden Images geladen — das kann einige Minuten dauern.
+Das Skript installiert Docker, falls es fehlt (Linux: Docker Engine und Compose; Windows: Docker Desktop und WSL2), legt `.env` an und baut und startet alle Dienste. Der erste Build lädt Images und kann einige Minuten dauern.
 
-> Ist Docker bereits installiert, genügt danach `start.bat` (Windows) bzw.
-> `./start.sh` (Linux/macOS) zum Starten und `stop.bat` / `./stop.sh` zum Stoppen.
+> Ist Docker schon installiert, reichen danach `start.bat` (Windows) bzw. `./start.sh` (Linux/macOS) zum Starten und `stop.bat` / `./stop.sh` zum Stoppen.
 
-- Frontend läuft auf http://localhost:1339
-- API läuft auf http://localhost:8000
+| Dienst | Adresse |
+|--------|---------|
+| Frontend | http://localhost:1339 |
+| API | http://localhost:8000 |
+| PostgreSQL | localhost:5435 |
 
-Beim ersten Start erscheint ein **Setup-Dialog** zum Anlegen des ersten Admin-Accounts und der Klassen.
+Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
+
+> Für den Produktivbetrieb in `.env` einen echten `SECRET_KEY` setzen, sonst sind gespeicherte Zugangsdaten nicht geschützt.
 
 ---
 
@@ -161,7 +291,8 @@ Beim ersten Start erscheint ein **Setup-Dialog** zum Anlegen des ersten Admin-Ac
 
 | Rolle | Rechte |
 |-------|--------|
-| **Admin** | Alles — inkl. Schülerdaten, Häuser, Style, Punkte löschen |
-| **Lehrer** | Punkte vergeben, Tools starten, Quiz erstellen |
-| **Schüler** | Teilnahme an Quiz / Barometer / Exit Ticket / Bingo / Auktion |
-| **Gast** | Lesender Zugriff auf öffentliche Ansichten |
+| **Admin** | Alles, auch Schülerdaten, Häuser, Freigaben, Style und das Löschen von Punkten |
+| **Lehrkraft** | Punkte vergeben, Werkzeuge hosten, Inhalte erstellen. Admin-Bereiche nur, wenn freigegeben. |
+| **Klassenlehrkraft** | Zusätzlich: eigene Klasse bearbeiten (Rollen, Dienste, Sitzplan, Freigaben), Zugangsdaten exportieren (mit 2FA) |
+| **Schüler** | Spiele und Simulationen, freigegebene Werkzeuge, eigene Inhalte im gemeinsamen Schüler-Pool |
+| **Gast** | Nur die eine Sitzung, deren QR oder Code gescannt wurde, und nur für begrenzte Zeit |
