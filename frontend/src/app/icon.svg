@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="TT - Teaching Tools">
+  <rect width="40" height="40" rx="9" fill="#4f46e5"/>
+  <g fill="#ffffff" transform="translate(20 20) scale(.82) translate(-20.5 -19.9)">
+    <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" opacity=".3"/>
+    <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" opacity=".45"/>
+    <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" opacity=".62"/>
+    <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75"/>
+    <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" opacity=".5"/>
+    <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" opacity=".75"/>
+    <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625"/>
+    <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" opacity=".5"/>
+    <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" opacity=".75"/>
+  </g>
+</svg>

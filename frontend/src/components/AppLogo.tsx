@@ -89,10 +89,48 @@ function FantasyLogo() {
 }
 
 /* ── Default text logo ──────────────────────────────────────────────────── */
+/**
+ * Die Marke: ein Baukasten-Wuerfel, dem gerade ein Teil eingesetzt wird.
+ *
+ * Genau so ist die Plattform gebaut — Aktivitaeten, Simulationen und Werkzeuge
+ * sind Teile, die in denselben Rahmen passen; ein neues kommt dazu, ohne dass
+ * der Rest sich aendert. Deshalb kein Zirkel und keine Schultafel: die sagen
+ * »Schule«, aber nichts darueber, was das hier ist.
+ *
+ * Gezeichnet in isometrischer Ansicht aus neun Vielecken in `currentColor`,
+ * die Tiefe allein ueber Deckkraft. Damit nimmt die Marke die Farbe des
+ * Themes an und bleibt bei 16 px als Wuerfel mit Teil darueber lesbar.
+ */
+export function TTMarke({ size = 34 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 40 40" width={size} height={size} fill="currentColor"
+      role="img" aria-label="TT - Teaching Tools"
+    >
+      {/* Die Vertiefung zuerst: zwei Innenwaende und der Boden. Ohne sie waere
+          die Ecke nur ein fehlendes Stueck; mit ihnen ist es eine Aussparung,
+          in die das Teil gehoert. */}
+      <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" opacity=".3" />
+      <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" opacity=".45" />
+      <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" opacity=".62" />
+      {/* Deckflaeche mit der ausgesparten hinteren Ecke */}
+      <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75" />
+      {/* die beiden sichtbaren Seitenflaechen */}
+      <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" opacity=".5" />
+      <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" opacity=".75" />
+      {/* Das Teil, das gerade eingesetzt wird */}
+      <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625" />
+      <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" opacity=".5" />
+      <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" opacity=".75" />
+    </svg>
+  );
+}
+
 function DefaultLogo() {
   return (
-    <div title="TT - Teaching Tools" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "4px 0" }}>
-      <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: 1, color: "var(--accent)", lineHeight: 1 }}>TT</span>
+    <div title="TT - Teaching Tools"
+      style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 0", color: "var(--accent)" }}>
+      <TTMarke />
     </div>
   );
 }
