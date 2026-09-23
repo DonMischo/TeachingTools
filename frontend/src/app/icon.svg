@@ -1,22 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="TT - Teaching Tools">
-  <!-- Schulfarben: Dunkelblau #1a3060 und Orange #e07820 (siehe globals.css,
-       [data-theme="ege"]). Fest verdrahtet, weil eine Datei im Browser-Reiter
-       keine CSS-Variablen des Themes sieht. Der blaue Grund traegt das Zeichen
-       auch in hellen Reiterleisten; auf ihm leuchtet das orange Teil. -->
+  <!-- Schulfarben (globals.css, [data-theme="ege"]): Dunkelblau #1a3060 als
+       Grund, Gruen #6a921a fuer den Wuerfel, Orange #e07820 fuer das Teil.
+       Fest verdrahtet, weil eine Datei im Browser-Reiter die CSS-Variablen des
+       Themes nicht sieht.
+
+       Anders als die Marke in der App arbeiten die Flaechen hier nicht mit
+       Deckkraft, sondern mit ausgemischten Toenen: auf dem dunklen Grund
+       versackten die halbdurchsichtigen Seiten sonst im Blau. Die Basisfarbe
+       ist jeweils die rechte Flaeche. -->
   <rect width="40" height="40" rx="9" fill="#1a3060"/>
   <g transform="translate(20 20) scale(.82) translate(-20.5 -19.9)">
-    <g fill="#ffffff">
-      <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" opacity=".3"/>
-      <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" opacity=".45"/>
-      <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" opacity=".62"/>
-      <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75"/>
-      <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" opacity=".5"/>
-      <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" opacity=".75"/>
-    </g>
-    <g fill="#e07820">
-      <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625"/>
-      <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" opacity=".55"/>
-      <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" opacity=".8"/>
-    </g>
+    <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" fill="#33480d"/>
+    <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" fill="#425c10"/>
+    <polygon points="15.25,23.625 20.5,20.75 25.75,23.625 20.5,26.5" fill="#5a7d16"/>
+    <polygon points="15.25,17.875 20.5,20.75 25.75,17.875 31,20.75 20.5,26.5 10,20.75" fill="#8cbb26"/>
+    <polygon points="10,20.75 20.5,26.5 20.5,38 10,32.25" fill="#4e6c13"/>
+    <polygon points="20.5,26.5 31,20.75 31,32.25 20.5,38" fill="#6a921a"/>
+    <polygon points="20.5,1.75 25.75,4.625 20.5,7.5 15.25,4.625" fill="#f5942f"/>
+    <polygon points="15.25,4.625 20.5,7.5 20.5,13.25 15.25,10.375" fill="#b25e18"/>
+    <polygon points="20.5,7.5 25.75,4.625 25.75,10.375 20.5,13.25" fill="#e07820"/>
   </g>
 </svg>

@@ -98,12 +98,12 @@ function FantasyLogo() {
  * »Schule«, aber nichts darueber, was das hier ist.
  *
  * Gezeichnet in isometrischer Ansicht aus neun Vielecken, die Tiefe allein
- * ueber Deckkraft. Zwei Farben aus dem Theme: der Wuerfel in der Textfarbe,
- * das Teil in der Akzentfarbe — im EGE-Theme also Dunkelblau und Orange, in
- * jedem anderen Theme dessen eigenes Paar. Bei 16 px bleibt es als Wuerfel
- * mit Teil darueber lesbar.
+ * ueber Deckkraft. Zwei Farben aus dem Theme: der Wuerfel im Gruen, das Teil
+ * in der Akzentfarbe — im EGE-Theme also Schulgruen und Orange, in jedem
+ * anderen Theme dessen eigenes Paar. Bei 16 px bleibt es als Wuerfel mit
+ * Teil darueber lesbar.
  */
-export function TTMarke({ size = 34, koerper = "var(--text)", teil = "var(--accent)" }: {
+export function TTMarke({ size = 34, koerper = "var(--green)", teil = "var(--accent)" }: {
   size?: number;
   /** Farbe des Wuerfels. */
   koerper?: string;
