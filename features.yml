@@ -7,7 +7,7 @@ projekt:
   beschreibung: >-
     Schulweites Punktesystem und Unterrichtsplattform. Lehrkräfte vergeben
     Punkte an Klassen, die Klassen sammeln in Häusern für den Hauspokal. Dazu
-    Spiele, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, Kalender
+    Aktivitäten, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, Kalender
     und Startseiten-Slideshow, alles auf dem eigenen Schulserver.
   stack:
     frontend: [Next.js 16, React 19, Tailwind CSS, TanStack Query, KaTeX, three.js]
@@ -46,7 +46,7 @@ kern:
       - Befristeter Gastzugang ohne Konto, gilt nur für eine Sitzung
       - Sitzungen für Klasse, A/B-Hälfte, Kurs oder WPF-Gruppe
 
-spiele:
+aktivitaeten:
   - id: caputh
     name: Caputh
     typ: Quiz
@@ -108,6 +108,20 @@ spiele:
       - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
       - Klassenübersicht und Bestenlisten
 
+  - id: rechenregeln
+    name: Rechenregeln
+    kann:
+      - Punkt vor Strich am Obstkorb
+      - Vertauschungsgesetz am Rechenzug
+      - Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
+      - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
+  - id: uebung
+    name: Übung
+    kann:
+      - Generierte Mathe-Aufgaben Kl. 1–7 (Thüringer Lehrplan)
+      - Schwierigkeit steigt nach drei richtigen, sinkt nach zwei falschen
+      - Prüfung auf dem Server, Fortschritt je Thema
+
 simulationen:
   - id: gleichungswaage
     name: Gleichungswaage
@@ -142,19 +156,6 @@ simulationen:
       - Formelsatz und Rechenweg je Punkt
       - Normal- und Scheitelpunktform, π-Achsen für Winkelfunktionen
       - Zoom, Achsen einzeln dehnen, Verschieben, Vorlagen würfeln
-  - id: rechenregeln
-    name: Rechenregeln
-    kann:
-      - Punkt vor Strich am Obstkorb
-      - Vertauschungsgesetz am Rechenzug
-      - Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
-      - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
-  - id: uebung
-    name: Übung
-    kann:
-      - Generierte Mathe-Aufgaben Kl. 1–7 (Thüringer Lehrplan)
-      - Schwierigkeit steigt nach drei richtigen, sinkt nach zwei falschen
-      - Prüfung auf dem Server, Fortschritt je Thema
   - id: ki
     name: KI-Werkstatt
     kann:
@@ -304,5 +305,5 @@ rollen:
   admin: Alles
   lehrkraft: Punkte, Werkzeuge hosten, Inhalte erstellen, Admin-Bereiche nur mit Freigabe
   klassenlehrkraft: Zusätzlich eigene Klasse bearbeiten, Zugangsdaten mit 2FA exportieren
-  schueler: Spiele, Simulationen, freigegebene Werkzeuge, gemeinsamer Schüler-Pool für Inhalte
+  schueler: Aktivitäten, Simulationen, freigegebene Werkzeuge, gemeinsamer Schüler-Pool für Inhalte
   gast: Nur die gescannte Sitzung, zeitlich begrenzt

@@ -29,7 +29,7 @@ export default function CaputhDetailPage() {
     setError(null);
     try {
       const session = await api.capuths.createSession(quizId, scopeBody(scope), quiz.max_points, teamMode);
-      router.push(`/games/caputh/host/${session.join_code}`);
+      router.push(`/aktivitaeten/caputh/host/${session.join_code}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Fehler beim Starten");
       setStarting(false);
@@ -44,7 +44,7 @@ export default function CaputhDetailPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto w-full">
-      <Link href="/games/caputh" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">
+      <Link href="/aktivitaeten/caputh" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">
         ← Caputh-Bibliothek
       </Link>
 

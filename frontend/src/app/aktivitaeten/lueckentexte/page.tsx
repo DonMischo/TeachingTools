@@ -39,7 +39,7 @@ export default function LueckentextePage() {
     try {
       const created = await api.lueckentexte.upload(file);
       qc.invalidateQueries({ queryKey: ["lueckentexte"] });
-      router.push(`/games/lueckentexte/${created.id}`);
+      router.push(`/aktivitaeten/lueckentexte/${created.id}`);
     } catch (err: unknown) {
       setUploadError(parseUploadError(err));
     } finally {
@@ -101,7 +101,7 @@ export default function LueckentextePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {sets.map(s => (
             <div key={s.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
-              <Link href={`/games/lueckentexte/${s.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
+              <Link href={`/aktivitaeten/lueckentexte/${s.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
                 {s.title}
               </Link>
               {s.description && <p className="text-xs text-[var(--text-muted)]">{s.description}</p>}

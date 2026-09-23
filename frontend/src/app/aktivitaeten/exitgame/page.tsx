@@ -96,7 +96,7 @@ export default function ExitgamePage() {
     try {
       const created = await api.exitgame.upload(file);
       qc.invalidateQueries({ queryKey: ["exitgames"] });
-      router.push(`/games/exitgame/${created.id}`);
+      router.push(`/aktivitaeten/exitgame/${created.id}`);
     } catch (err: unknown) {
       setUploadError(parseUploadError(err));
     } finally {
@@ -120,7 +120,7 @@ export default function ExitgamePage() {
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Link href="/games" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Spiele</Link>
+          <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">🗝️ Exitgame</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
             Selbstständiges Exit-Game — Schüler lösen Aufgaben in ihrem eigenen Tempo.
@@ -151,7 +151,7 @@ export default function ExitgamePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {games.map(g => (
             <div key={g.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
-              <Link href={`/games/exitgame/${g.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
+              <Link href={`/aktivitaeten/exitgame/${g.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
                 {g.title}
               </Link>
               {g.description && <p className="text-xs text-[var(--text-muted)]">{g.description}</p>}

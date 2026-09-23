@@ -87,7 +87,7 @@ export default function CaputhsPage() {
       const created = await api.capuths.upload(file);
       qc.invalidateQueries({ queryKey: ["capuths"] });
       if (created.warning) setError(`⚠️ ${created.warning}`);
-      router.push(`/games/caputh/${created.id}`);
+      router.push(`/aktivitaeten/caputh/${created.id}`);
     } catch (err: unknown) {
       setUploadError(parseUploadError(err));
     } finally {
@@ -143,12 +143,12 @@ export default function CaputhsPage() {
     <div className="p-6 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <Link href="/games" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Spiele</Link>
+          <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>
           <h1 className="text-2xl font-bold mt-1">Caputh-Bibliothek</h1>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           {isTeacher && (
-            <Link href="/games/caputh/gruppenauswertung"
+            <Link href="/aktivitaeten/caputh/gruppenauswertung"
               className="px-3 py-1.5 text-sm border border-[var(--accent)] text-[var(--accent)] rounded-lg hover:bg-[var(--accent)]/10 transition-colors">
               📊 Gruppenauswertung
             </Link>
@@ -330,7 +330,7 @@ function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOu
           return (
             <>
               {s.status !== "finished" && (
-                <SessionAction onClick={() => router.push(`/games/caputh/host/${s.join_code}`)}>
+                <SessionAction onClick={() => router.push(`/aktivitaeten/caputh/host/${s.join_code}`)}>
                   Öffnen
                 </SessionAction>
               )}
@@ -419,7 +419,7 @@ function QuizCard({
             </button>
           )}
           {canDelete && (
-            <Link href={`/games/caputh/${quiz.id}`}
+            <Link href={`/aktivitaeten/caputh/${quiz.id}`}
               className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 transition-opacity">
               Starten
             </Link>

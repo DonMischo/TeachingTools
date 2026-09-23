@@ -63,15 +63,15 @@ describe("Sidebar — navigation", () => {
   it("shows nav links", async () => {
     alsLehrkraft();
     await act(async () => { renderSidebar(); });
-    await waitFor(() => expect(screen.getByTitle("Hauspokal")).toBeInTheDocument());
-    expect(screen.getByTitle("Spiele")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTitle("News")).toBeInTheDocument());
+    expect(screen.getByTitle("Aktivitäten")).toBeInTheDocument();
     expect(screen.getByTitle("Tools")).toBeInTheDocument();
   });
 
   it("hides admin link when not logged in as admin", async () => {
     alsLehrkraft();
     await act(async () => { renderSidebar(); });
-    await waitFor(() => expect(screen.getByTitle("Spiele")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTitle("Aktivitäten")).toBeInTheDocument());
     expect(screen.queryByTitle("Admin")).not.toBeInTheDocument();
   });
 
@@ -81,8 +81,8 @@ describe("Sidebar — navigation", () => {
     // niemand bedienen kann.
     await act(async () => { renderSidebar(); });
     await waitFor(() => expect(anmeldeKnopf()).toBeInTheDocument());
-    expect(screen.queryByTitle("Hauspokal")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Spiele")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("News")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Aktivitäten")).not.toBeInTheDocument();
     expect(screen.queryByTitle("Tools")).not.toBeInTheDocument();
   });
 
@@ -128,7 +128,7 @@ describe("Sidebar — navigation", () => {
     });
     await act(async () => { renderSidebar(); });
     await waitFor(() => expect(screen.getByTitle(/Ben Schmidt/i)).toBeInTheDocument());
-    expect(screen.getByTitle("Spiele")).toBeInTheDocument();
+    expect(screen.getByTitle("Aktivitäten")).toBeInTheDocument();
     expect(screen.queryByTitle("Tools")).not.toBeInTheDocument();
   });
 });
@@ -184,6 +184,6 @@ describe("Sidebar — login flyout", () => {
     });
     // Nach dem Abmelden bleibt vom Sidebar nur der Knopf in der Ecke.
     await waitFor(() => expect(anmeldeKnopf()).toBeInTheDocument());
-    expect(screen.queryByTitle("Spiele")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Aktivitäten")).not.toBeInTheDocument();
   });
 });

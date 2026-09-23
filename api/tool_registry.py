@@ -75,7 +75,7 @@ def _caputh_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: st
         raise HTTPException(400, "Keine Klasse zugeordnet — bitte Klasse in der Planung angeben.")
     session = create_session_for_class(db, quiz_id, cls.id, teacher.id)
     return LaunchResult(
-        host_url=f"/games/caputh/host/{session.join_code}",
+        host_url=f"/aktivitaeten/caputh/host/{session.join_code}",
         join_url=f"/play/{session.join_code}",
         code=session.join_code,
     )
@@ -95,7 +95,7 @@ def _bingo_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str
     cls = _resolve_class(db, klasse)
     session = create_session_from_set(db, set_id, teacher.id, cls.id if cls else None)
     return LaunchResult(
-        host_url=f"/games/bingo/host/{session.code}",
+        host_url=f"/aktivitaeten/bingo/host/{session.code}",
         join_url=f"/play/bingo/{session.code}",
         code=session.code,
     )
@@ -219,7 +219,7 @@ def _exitgame_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: 
         raise HTTPException(400, "Keine Klasse zugeordnet — bitte Klasse in der Planung angeben.")
     session = create_or_reuse_open_session(db, exitgame_id, cls.id, teacher.id)
     return LaunchResult(
-        host_url=f"/games/exitgame/host/{session.join_code}",
+        host_url=f"/aktivitaeten/exitgame/host/{session.join_code}",
         join_url=f"/play/exitgame/{session.join_code}",
         code=session.join_code,
     )
@@ -239,8 +239,8 @@ def _zeitstrahl_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse
         raise HTTPException(404, "Zeitstrahl nicht gefunden")
     # Static tool: no session/code — students get the same (read-only) viewer.
     return LaunchResult(
-        host_url=f"/games/zeitstrahl/{s.id}",
-        join_url=f"/games/zeitstrahl/{s.id}",
+        host_url=f"/aktivitaeten/zeitstrahl/{s.id}",
+        join_url=f"/aktivitaeten/zeitstrahl/{s.id}",
         code=None,
     )
 

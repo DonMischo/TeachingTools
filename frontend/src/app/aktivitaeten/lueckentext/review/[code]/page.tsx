@@ -32,7 +32,7 @@ export default function LueckentextReviewPage() {
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <Link href={`/games/lueckentext/host/${code}`} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Sitzung</Link>
+          <Link href={`/aktivitaeten/lueckentext/host/${code}`} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Sitzung</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">📊 Auswertung</h1>
         </div>
         {entries.length > 0 && (

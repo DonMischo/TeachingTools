@@ -50,7 +50,7 @@ export default function ZeitstrahlPage() {
     try {
       const created = await api.timelines.upload(file);
       qc.invalidateQueries({ queryKey: ["timelines"] });
-      router.push(`/games/zeitstrahl/${created.id}`);
+      router.push(`/aktivitaeten/zeitstrahl/${created.id}`);
     } catch (err: unknown) {
       setUploadError(parseUploadError(err));
     } finally {
@@ -120,7 +120,7 @@ export default function ZeitstrahlPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {sets.map(s => (
             <div key={s.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
-              <Link href={`/games/zeitstrahl/${s.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
+              <Link href={`/aktivitaeten/zeitstrahl/${s.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
                 {s.title}
               </Link>
               {s.description && <p className="text-xs text-[var(--text-muted)]">{s.description}</p>}

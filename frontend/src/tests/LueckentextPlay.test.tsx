@@ -51,7 +51,7 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-import LueckentextPlayPage from "@/app/games/lueckentext/play/[code]/page";
+import LueckentextPlayPage from "@/app/aktivitaeten/lueckentext/play/[code]/page";
 
 /** Skips the join screen: a saved participant id makes the page rejoin itself. */
 async function mountBoard() {

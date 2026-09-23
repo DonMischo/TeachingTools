@@ -9,7 +9,7 @@ import { LessonGuideSidebar } from "@/components/LessonGuideSidebar";
 import { MaterialViewerOverlay } from "@/components/MaterialViewerOverlay";
 
 // Pages that use the full screen — only icon strip shown
-const FULLSCREEN = ["/games/caputh/host/", "/play/"];
+const FULLSCREEN = ["/aktivitaeten/caputh/host/", "/play/"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -1217,7 +1217,7 @@ export type CatalogToolOut = {
   slug: string;
   label: string;
   icon: string;
-  surface: "games" | "tools";
+  surface: "aktivitaeten" | "simulationen" | "tools";
   capabilities: CatalogCapability[];
 };
 

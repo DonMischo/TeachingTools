@@ -156,7 +156,7 @@ export default function ZeitstrahlDetailPage() {
     <div className="flex flex-col gap-5 p-6 max-w-6xl mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <Link href="/games/zeitstrahl" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]">
+          <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]">
             ← Bibliothek
           </Link>
           <h1 className="text-2xl font-black tracking-tight">📏 {set.title}</h1>

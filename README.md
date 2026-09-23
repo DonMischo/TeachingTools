@@ -1,6 +1,6 @@
 # TT - Teaching Tools
 
-**TT - Teaching Tools** (früher »Hauspokal«) ist schulweites Punktesystem und Unterrichtsplattform in einem. Lehrkräfte vergeben Punkte an Klassen, die Klassen sammeln in ihren Häusern für den Hauspokal. Dazu kommen Spiele, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, ein Schulkalender und eine Startseiten-Slideshow. Alles läuft auf dem eigenen Schulserver.
+**TT - Teaching Tools** (früher »Hauspokal«) ist schulweites Punktesystem und Unterrichtsplattform in einem. Lehrkräfte vergeben Punkte an Klassen, die Klassen sammeln in ihren Häusern für den Hauspokal. Dazu kommen Aktivitäten, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, ein Schulkalender und eine Startseiten-Slideshow. Alles läuft auf dem eigenen Schulserver.
 
 Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features.yml).
 
@@ -19,7 +19,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 
 - [Hauspokal und Punkte](#-hauspokal-und-punkte)
 - [Mitmachen per Code (Playhub, QR, Gäste)](#-mitmachen-per-code)
-- [Spiele](#-spiele)
+- [Aktivitäten](#-aktivitäten)
 - [Simulationen](#-simulationen)
 - [Tools](#-tools)
 - [Sport & Spiele](#-sport--spiele)
@@ -45,7 +45,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 - Punkte-Log je Klasse; Admins können Einträge löschen
 - Klassen-Spitznamen setzen
 
-**Punkte aus Spielen:** Caputh, Bingo und Exitgame vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
+**Punkte aus Aktivitäten:** Caputh, Bingo und Exitgame vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
 
 ---
 
@@ -58,9 +58,9 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 
 ---
 
-## 🎮 Spiele
+## 🎮 Aktivitäten
 
-Alle Spiele können Schüler spielen. Hosten dürfen standardmäßig nur Lehrkräfte; Admins können das pro Werkzeug freigeben (siehe [Werkzeug-Freigaben](#-admin)).
+Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Lehrkräfte; Admins können das pro Werkzeug freigeben (siehe [Werkzeug-Freigaben](#-admin)).
 
 ### 🎲 Caputh (Quiz)
 - Quiz-Bibliothek mit den Modi Klassisch, TÜ, Test, Aufgabe, Wettbewerb und Benutzerdefiniert, filterbar nach Typ und Jahrgang
@@ -106,6 +106,16 @@ Alle Spiele können Schüler spielen. Hosten dürfen standardmäßig nur Lehrkr�
 - Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
 - Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
 
+### 🍎 Rechenregeln
+- Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
+- Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
+- Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
+
+### 📚 Übung
+- Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan)
+- Die Schwierigkeit steigt nach drei richtigen und sinkt nach zwei falschen Lösungen
+- Geprüft wird auf dem Server, der Fortschritt zählt je Thema
+
 ---
 
 ## 🔬 Simulationen
@@ -120,8 +130,6 @@ Modelle zum Ausprobieren. Alle sind für Schüler offen und haben einen eigenen 
 | 📐 **Vierecke** | Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften, dazu Umfang (Zaun bauen) und Fläche (mit Einheitsquadraten auslegen). |
 | ◈ **Binär-Rechner** | Acht Bits mit Stellenwerten, Rechenweg von 0 bis 255. |
 | 📈 **Funktionen** | Term, Wertetabelle und Graph verbunden. Formelsatz, Rechenweg je Punkt, Normal- und Scheitelpunktform, π-Achsen, Zoom, Verschieben und Vorlagen zum Würfeln. |
-| 🍎 **Rechenregeln** | Klasse 5/6: Punkt vor Strich am Obstkorb, Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel. Schrittweise lösen, Aufgaben würfeln, eigene Terme. |
-| 📚 **Übung** | Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan). Die Schwierigkeit passt sich an, geprüft wird auf dem Server. |
 | 🤖 **KI-Werkstatt** | Wie Sprach- und Bildmodelle arbeiten: Tokenisieren, Wortnetz mit top-k, eigenes Netz trainieren, Attention, Mensch gegen Maschine raten, Diffusion mit Rauschen und Punktwolke, ein Neuron lernen lassen, »Echt oder KI« mit Bildpaaren. Klassentafel und Hintergrundtexte in drei Lesestufen. |
 | 🪐 **Sonnensystem** | 3D-Modell mit echten Bahnen und Daten (JPL Horizons), Satelliten und Lagrangepunkten. Flugmodus mit Autopilot, Overdrive und 31 Forschungsaufträgen, dazu Kodex als PDF, 34 Erfolge, Größen- und Entfernungsvergleich, Kepler-Gesetze, Magnetfeld mit Sonnensturm und eine Galerie mit rund 90 Bildern. |
 
@@ -294,5 +302,5 @@ Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 | **Admin** | Alles, auch Schülerdaten, Häuser, Freigaben, Style und das Löschen von Punkten |
 | **Lehrkraft** | Punkte vergeben, Werkzeuge hosten, Inhalte erstellen. Admin-Bereiche nur, wenn freigegeben. |
 | **Klassenlehrkraft** | Zusätzlich: eigene Klasse bearbeiten (Rollen, Dienste, Sitzplan, Freigaben), Zugangsdaten exportieren (mit 2FA) |
-| **Schüler** | Spiele und Simulationen, freigegebene Werkzeuge, eigene Inhalte im gemeinsamen Schüler-Pool |
+| **Schüler** | Aktivitäten und Simulationen, freigegebene Werkzeuge, eigene Inhalte im gemeinsamen Schüler-Pool |
 | **Gast** | Nur die eine Sitzung, deren QR oder Code gescannt wurde, und nur für begrenzte Zeit |

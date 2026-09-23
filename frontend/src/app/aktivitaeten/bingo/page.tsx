@@ -15,7 +15,7 @@ export default function BingoLibraryPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   // Any logged-in user may author Bingo sets (students land in the shared pool);
-  // hosting a live round stays teacher-only (enforced on /games/bingo/new).
+  // hosting a live round stays teacher-only (enforced on /aktivitaeten/bingo/new).
   const canEdit = !!auth;
 
   const { data: sets = [], isLoading } = useQuery<BingoSetOut[]>({
@@ -31,9 +31,9 @@ export default function BingoLibraryPage() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
-        // Store in sessionStorage and open /games/bingo/new pre-filled
+        // Store in sessionStorage and open /aktivitaeten/bingo/new pre-filled
         sessionStorage.setItem("bingo_import", JSON.stringify(data));
-        router.push("/games/bingo/new?import=1");
+        router.push("/aktivitaeten/bingo/new?import=1");
       } catch {
         toast("Ungültiges JSON", "error");
       }
@@ -51,7 +51,7 @@ export default function BingoLibraryPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <Link href="/games" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Spiele</Link>
+          <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">🎰 Bingo-Bibliothek</h1>
           <p className="text-[var(--text-muted)] text-sm mt-0.5">
             Vokabeln, Gleichungen, Daten – als Bingo-Spiel für die Klasse. Von allen Kolleg·innen nutzbar.
@@ -70,7 +70,7 @@ export default function BingoLibraryPage() {
               Hochladen
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
             </label>
-            <button onClick={() => router.push("/games/bingo/new")}
+            <button onClick={() => router.push("/aktivitaeten/bingo/new")}
               className="text-xs px-3 py-1.5 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity">
               + Neu erstellen
             </button>
@@ -85,7 +85,7 @@ export default function BingoLibraryPage() {
         <div className="flex flex-col items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl gap-3">
           <p className="text-[var(--text-muted)] text-sm">Noch keine Bingo-Sets.</p>
           {canEdit && can("bingo", "create") && (
-            <button onClick={() => router.push("/games/bingo/new")}
+            <button onClick={() => router.push("/aktivitaeten/bingo/new")}
               className="text-sm px-4 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text)] font-semibold hover:bg-[var(--surface-hover)] transition-colors">
               Erstes Set erstellen
             </button>
@@ -96,7 +96,7 @@ export default function BingoLibraryPage() {
           {sets.map(s => (
             <li key={s.id}>
               <Link
-                href={`/games/bingo/${s.id}`}
+                href={`/aktivitaeten/bingo/${s.id}`}
                 className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--accent)] transition-colors"
               >
                 <div className="font-semibold truncate">{s.title}</div>

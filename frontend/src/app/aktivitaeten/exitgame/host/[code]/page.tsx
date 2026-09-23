@@ -165,7 +165,7 @@ export default function ExitgameHostPage() {
         </section>
       )}
 
-      <Link href={`/games/exitgame/${session?.exitgame_id ?? ""}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Übersicht</Link>
+      <Link href={`/aktivitaeten/exitgame/${session?.exitgame_id ?? ""}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Übersicht</Link>
     </div>
   );
 }

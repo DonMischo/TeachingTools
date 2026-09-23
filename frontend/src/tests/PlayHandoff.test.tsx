@@ -34,7 +34,7 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-import LueckentextPlayPage from "@/app/games/lueckentext/play/[code]/page";
+import LueckentextPlayPage from "@/app/aktivitaeten/lueckentext/play/[code]/page";
 import { savePlayIdentity, readPlayIdentity } from "@/lib/playIdentity";
 
 describe("Übergabe Playhub → Werkzeugseite", () => {

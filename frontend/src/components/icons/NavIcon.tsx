@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
-  | "tools" | "games" | "simulationen" | "kalender" | "fragmente"
+  | "tools" | "aktivitaeten" | "simulationen" | "kalender" | "fragmente"
   | "admin" | "punkte" | "user" | "login";
 
 const FRAGMENTE_GLYPH = (
@@ -19,7 +19,7 @@ const FRAGMENTE_GLYPH = (
 );
 
 /* ── Fantasy SVG icon set ───────────────────────────────────────────────── */
-// home → Siegerpokal (Victory Trophy)
+// home → Zeitung (News)
 // caputh → D20 (icosahedron die)
 // sportundspiele → Crossed Swords
 // haeuser → Wappen (Heraldic Shield)
@@ -31,25 +31,16 @@ const FRAGMENTE_GLYPH = (
 
 const FANTASY: Record<NavKey, React.ReactElement> = {
 
-  // ── Victory Trophy (Siegerpokal) ──────────────────────────────────────
+  // Zeitung (News)
   home: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-      {/* Bowl filled */}
-      <path d="M5.5 2.5h9l-1.2 7A3.5 3.5 0 0110 12a3.5 3.5 0 01-3.3-2.5L5.5 2.5z"/>
-      {/* Left handle */}
-      <path d="M5.5 4C3.5 4.5 2.5 6 2.5 7.5S4 10 5.5 9.5"
-        fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      {/* Right handle */}
-      <path d="M14.5 4C16.5 4.5 17.5 6 17.5 7.5S16 10 14.5 9.5"
-        fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-      {/* Stem */}
-      <rect x="9" y="12" width="2" height="3.5" rx=".8"/>
-      {/* Base */}
-      <rect x="5.5" y="15.5" width="9" height="2" rx="1"/>
-      {/* Shine on bowl */}
-      <path d="M8 4.5c-.4 1.2-.3 3 .5 4" stroke="var(--surface)" strokeWidth=".7"
-        fill="none" strokeLinecap="round" opacity=".5"/>
-    </svg>
+    <path d="M3.6 3h9.3a1.5 1.5 0 011.5 1.5V16a1 1 0 01-1 1H4.1A1.5 1.5 0 012.6 15.5v-11A1.5 1.5 0 014.1 3z"/>
+    <path d="M15.4 7.4h1.5a1 1 0 011 1v6.4A1.8 1.8 0 0116.1 17h-1.4c.45-.3.7-.8.7-1.35V7.4z" opacity=".55"/>
+    <rect x="4.3" y="4.9" width="7.5" height="2.2" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="8.5" width="7.5" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="10.8" width="7.5" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="13.1" width="4.6" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
+  </svg>
   ),
 
   // ── D20 Die ───────────────────────────────────────────────────────────
@@ -285,7 +276,7 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
 
-  games: (
+  aktivitaeten: (
     <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
       {/* Body */}
       <path d="M3 8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2l-1 5c-.3 1.2-1.3 2-2.5 2H6.5C5.3 15 4.3 14.2 4 13L3 8z"
@@ -346,8 +337,12 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <circle cx="8.8" cy="14.2" r="1"/><circle cx="11.5" cy="15" r=".8" opacity=".6"/>
   </svg>,
   home: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-    <path d="M10 2L2 8v1h2v9h4v-5h4v5h4V9h2V8L10 2zm0 2.5l5 3.7V17h-2v-5H7v5H5V8.2L10 4.5z"/>
-    <path d="M8 10h4v2H8z" opacity=".5"/>
+    <path d="M3.6 3h9.3a1.5 1.5 0 011.5 1.5V16a1 1 0 01-1 1H4.1A1.5 1.5 0 012.6 15.5v-11A1.5 1.5 0 014.1 3z"/>
+    <path d="M15.4 7.4h1.5a1 1 0 011 1v6.4A1.8 1.8 0 0116.1 17h-1.4c.45-.3.7-.8.7-1.35V7.4z" opacity=".55"/>
+    <rect x="4.3" y="4.9" width="7.5" height="2.2" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="8.5" width="7.5" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="10.8" width="7.5" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
+    <rect x="4.3" y="13.1" width="4.6" height="1.1" rx=".4" style={{ fill: "var(--surface)" }}/>
   </svg>,
   caputh: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
     <rect x="2" y="6" width="16" height="10" rx="2"/>
@@ -451,7 +446,7 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <rect x="9" y="2" width="8" height="4" rx="1" transform="rotate(45 13 4)"/>
     <line x1="11" y1="9" x2="3" y2="17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>,
-  games: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+  aktivitaeten: <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
     <path d="M3 8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2l-1 5c-.3 1.2-1.3 2-2.5 2H6.5C5.3 15 4.3 14.2 4 13L3 8z"
       fill="currentColor" fillOpacity=".15" stroke="currentColor" strokeWidth="1.2"/>
     <rect x="4.5" y="9.5" width="3" height="1.2" rx=".4"/>
@@ -466,7 +461,7 @@ const CYBER: Record<NavKey, React.ReactElement> = {
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
 const EMOJI: Record<NavKey, string> = {
-  home:           "🏆",
+  home:           "📰",
   caputh:         "🎲",
   sportundspiele: "⚔️",
   haeuser:        "🛡️",
@@ -478,7 +473,7 @@ const EMOJI: Record<NavKey, string> = {
   "exit-ticket":  "🎫",
   classroom:      "🖥️",
   tools:          "🔨",
-  games:          "🎮",
+  aktivitaeten:          "🎮",
   simulationen:   "🔬",
   kalender:       "📅",
   fragmente:      "🗂️",

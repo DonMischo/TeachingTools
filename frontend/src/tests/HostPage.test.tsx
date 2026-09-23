@@ -46,7 +46,7 @@ vi.stubGlobal("WebSocket", class extends MockWebSocket {
 });
 
 import * as apiModule from "@/lib/api";
-import HostPage from "@/app/games/caputh/host/[code]/page";
+import HostPage from "@/app/aktivitaeten/caputh/host/[code]/page";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

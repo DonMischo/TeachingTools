@@ -1,7 +1,9 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { useAvailability } from "@/hooks/useAvailability";
 import HelpButton from "@/components/HelpButton";
+import { ToolSuche, passtZurSuche } from "@/components/ToolSuche";
 import { RequireAccount } from "@/components/RequireAccount";
 import { StandaloneDownload } from "@/components/StandaloneDownload";
 
@@ -47,22 +49,6 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#22c55e",
   },
   {
-    slug: "rechenregeln",
-    href: "/simulationen/rechenregeln",
-    icon: "🍎",
-    title: "Rechenregeln",
-    description: "Punkt vor Strich zum Ansehen: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten. Dazu der Rechenzug zum Vertauschen und die Stufenzahl-Rutsche — mal wie geteilt, auch mit Komma. Eigenes Ergebnis eintippen, prüfen lassen, Treffer zählen.",
-    color: "#e11d48",
-  },
-  {
-    slug: "uebung",
-    href: "/simulationen/uebung",
-    icon: "📚",
-    title: "Übung",
-    description: "Aufgaben zum Trainieren: Thema auswählen, rechnen, prüfen lassen. Die Schwierigkeit passt sich automatisch dem Können an, der Fortschritt wird gezählt.",
-    color: "#0ea5e9",
-  },
-  {
     slug: "ki",
     href: "/simulationen/ki",
     icon: "🤖",
@@ -90,7 +76,9 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
 
 export default function SimulationenPage() {
   const { can, ready } = useAvailability();
-  const CARDS = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
+  const [suche, setSuche] = useState("");
+  const ERLAUBT = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
+  const CARDS = ERLAUBT.filter(c => passtZurSuche(c, suche));
   return (
     <RequireAccount>
     <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
@@ -100,6 +88,8 @@ export default function SimulationenPage() {
           Modelle zum Anfassen: ausprobieren, verstellen und zusehen, was passiert.
         </p>
       </div>
+
+      <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CARDS.map(card => (

@@ -102,7 +102,7 @@ export default function LueckentextDetailPage() {
 
   const startSessionMut = useMutation({
     mutationFn: () => api.lueckentexte.createSession(setId),
-    onSuccess: (session) => router.push(`/games/lueckentext/host/${session.join_code}`),
+    onSuccess: (session) => router.push(`/aktivitaeten/lueckentext/host/${session.join_code}`),
     onError: (e: Error) => toast(e.message, "error"),
   });
 
@@ -390,10 +390,10 @@ function SessionHistory({ setId }: { setId: number }) {
             const s = sessions.find(x => x.join_code === item.code)!;
             return (
               <>
-                <SessionAction onClick={() => router.push(`/games/lueckentext/host/${s.join_code}`)}>
+                <SessionAction onClick={() => router.push(`/aktivitaeten/lueckentext/host/${s.join_code}`)}>
                   Sitzung
                 </SessionAction>
-                <SessionAction onClick={() => router.push(`/games/lueckentext/review/${s.join_code}`)}>
+                <SessionAction onClick={() => router.push(`/aktivitaeten/lueckentext/review/${s.join_code}`)}>
                   Auswertung
                 </SessionAction>
                 <SessionAction href={api.lueckentexte.reportCsvUrl(s.join_code)}>CSV</SessionAction>

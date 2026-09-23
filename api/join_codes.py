@@ -63,7 +63,7 @@ JOIN_CODE_TOOLS: tuple[JoinCodeTool, ...] = (
     JoinCodeTool("auction", AuctionSession, "code", "🏷️ Auktion", "/play/auction/{code}"),
     JoinCodeTool("exitgame", ExitGameSession, "join_code", "🗝️ Exitgame", "/play/exitgame/{code}",
                  owner_column="teacher_id", open_status="open", closed_status="closed"),
-    JoinCodeTool("lueckentext", LueckentextSession, "join_code", "🧩 Lückentext", "/games/lueckentext/play/{code}",
+    JoinCodeTool("lueckentext", LueckentextSession, "join_code", "🧩 Lückentext", "/aktivitaeten/lueckentext/play/{code}",
                  avatar="always", owner_column="teacher_id"),
     JoinCodeTool("schreibraum", SchreibraumRoom, "code", "📝 Schreibraum", "/schreibraum/{code}"),
     JoinCodeTool("wettschreiben", WettschreibenSession, "code", "⌨️ Tipp-Rennen", "/play/wettschreiben/{code}"),

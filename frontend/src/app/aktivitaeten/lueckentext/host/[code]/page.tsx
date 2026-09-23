@@ -15,7 +15,7 @@ type RankingEntry = { pid: number; name: string; avatar: string; score: number; 
 export default function LueckentextHostPage() {
   const { code } = useParams<{ code: string }>();
   const { toast } = useToast();
-  const joinUrl = useLanUrl(`/games/lueckentext/play/${code}`);
+  const joinUrl = useLanUrl(`/aktivitaeten/lueckentext/play/${code}`);
 
   const [status, setStatus] = useState<"waiting" | "active" | "finished">("waiting");
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
@@ -59,7 +59,7 @@ export default function LueckentextHostPage() {
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
-          <Link href="/games/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>
+          <Link href="/aktivitaeten/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">📝 Lückentext-Sitzung</h1>
           <div className="text-xs text-[var(--text-muted)] mt-1 flex gap-3">
             <span className="font-mono tracking-widest">{code}</span>
@@ -69,7 +69,7 @@ export default function LueckentextHostPage() {
         {joinUrl && (
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
-            <span className="text-xs text-[var(--text-muted)]">/games/lueckentext/play/{code}</span>
+            <span className="text-xs text-[var(--text-muted)]">/aktivitaeten/lueckentext/play/{code}</span>
             <GuestAccessToggle tool="lueckentext" code={code} />
           </div>
         )}
@@ -87,7 +87,7 @@ export default function LueckentextHostPage() {
         )}
         {status === "finished" && (
           <div className="flex gap-3 items-center flex-wrap text-sm">
-            <Link href={`/games/lueckentext/review/${code}`} className="text-[var(--accent)] hover:underline">
+            <Link href={`/aktivitaeten/lueckentext/review/${code}`} className="text-[var(--accent)] hover:underline">
               Auswertung →
             </Link>
           </div>

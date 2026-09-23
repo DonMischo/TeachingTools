@@ -2,14 +2,14 @@
 Canonical catalog of student/teacher-facing tools for the availability system.
 
 This is the single source of truth for:
-  - which tools appear on /games, /simulationen and /tools,
+  - which tools appear on /aktivitaeten, /simulationen and /tools,
   - which capabilities (use/host/create/upload) each tool actually has, and
   - the default allow/deny per audience (teacher | student) when no admin or
     class-teacher override exists.
 
 Availability overrides (see models.ToolAvailability) supersede these defaults.
 Keeping defaults here preserves today's behaviour out of the box: e.g. students
-may play games but not host them, and the teacher-only Tools surface stays
+may use activities but not host them, and the teacher-only Tools surface stays
 teacher-only until an admin opens something up.
 
 To gate a new tool, add one CatalogTool entry — the admin grid, the resolved
@@ -34,7 +34,7 @@ class CatalogTool:
     slug: str
     label: str
     icon: str
-    surface: str  # "games" | "simulationen" | "tools"
+    surface: str  # "aktivitaeten" | "simulationen" | "tools"
     # capability -> {"teacher": default_allowed, "student": default_allowed}
     capabilities: dict[str, dict[str, bool]] = field(default_factory=dict)
 
@@ -44,50 +44,58 @@ def _cap(teacher: bool, student: bool) -> dict[str, bool]:
 
 
 # ── the catalog ────────────────────────────────────────────────────────────────
-# Defaults mirror current behaviour: games are student-usable, hosting stays
+# Defaults mirror current behaviour: activities are student-usable, hosting stays
 # teacher-only, and the Tools surface is teacher-only across the board.
 
 CATALOG: list[CatalogTool] = [
-    # ── Games ──
+    # ── Aktivitäten ──
     # Caputh & Exitgame author via file upload (no separate builder endpoint),
     # so their authoring capability is "upload", not "create".
-    CatalogTool("caputh", "🎲 Caputh", "🎲", "games", {
+    CatalogTool("caputh", "🎲 Caputh", "🎲", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "upload": _cap(True, True),
     }),
-    CatalogTool("bingo", "🎰 Bingo", "🎰", "games", {
+    CatalogTool("bingo", "🎰 Bingo", "🎰", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "create": _cap(True, True),
     }),
-    CatalogTool("exitgame", "🗝️ Exitgame", "🗝️", "games", {
+    CatalogTool("exitgame", "🗝️ Exitgame", "🗝️", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "upload": _cap(True, True),
     }),
-    CatalogTool("lueckentext", "🧩 Lückentext", "🧩", "games", {
+    CatalogTool("lueckentext", "🧩 Lückentext", "🧩", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
-    CatalogTool("zeitstrahl", "📏 Zeitstrahl", "📏", "games", {
+    CatalogTool("zeitstrahl", "📏 Zeitstrahl", "📏", "aktivitaeten", {
         "use": _cap(True, True),
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
     # Tippen rechnet im Browser: kein Hosten, kein Erstellen — die Sitzung ist
     # nur der Beitritts-Code (siehe routers/tool_sessions.py).
-    CatalogTool("tippen", "⌨️ Tippen", "⌨️", "games", {
+    CatalogTool("tippen", "⌨️ Tippen", "⌨️", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "upload": _cap(True, False),
     }),
     # Maus-Führerschein rechnet im Browser: kein Hosten, kein Erstellen — die
     # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
-    CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "games", {"use": _cap(True, True)}),
-    # ── Simulationen (Modelle zum Ausprobieren — wie Spiele für alle offen) ──
+    CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "aktivitaeten", {"use": _cap(True, True)}),
+    # Übung und Rechenregeln sind Aufgabenformate, keine Modelle zum
+    # Ausprobieren: eigenes Tempo, eigener QR, kein Host.
+    CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "aktivitaeten", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("uebung", "📚 Übung", "📚", "aktivitaeten", {
+        "use": _cap(True, True),
+    }),
+    # ── Simulationen (Modelle zum Ausprobieren — wie die Aktivitäten für alle offen) ──
     CatalogTool("gleichungswaage", "⚖️ Gleichungswaage", "⚖️", "simulationen", {
         "use": _cap(True, True),
     }),
@@ -104,13 +112,6 @@ CATALOG: list[CatalogTool] = [
         "use": _cap(True, True),
     }),
     CatalogTool("funktionen", "📈 Funktionen", "📈", "simulationen", {
-        "use": _cap(True, True),
-    }),
-    CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
-        "use": _cap(True, True),
-    }),
-    # Übung gehört zu den Simulationen: eigenes Tempo, eigener QR, kein Host.
-    CatalogTool("uebung", "📚 Übung", "📚", "simulationen", {
         "use": _cap(True, True),
     }),
     # Ein Werkzeug mit zwei Reitern (Sprachmodell + Bilder): beide erklaeren

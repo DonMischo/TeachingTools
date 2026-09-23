@@ -86,7 +86,7 @@ class TestLaunch:
         r = _launch(client, teacher_token, "caputh", ref_id=str(quiz.id), klasse=klass.code)
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body["host_url"].startswith("/games/caputh/host/")
+        assert body["host_url"].startswith("/aktivitaeten/caputh/host/")
         assert body["join_url"] == f"/play/{body['code']}"
         session = db.query(QuizSession).filter_by(join_code=body["code"]).one()
         assert session.class_id == klass.id
@@ -110,7 +110,7 @@ class TestLaunch:
         r = _launch(client, teacher_token, "bingo", ref_id=str(bset.id), klasse=klass.code)
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body["host_url"] == f"/games/bingo/host/{body['code']}"
+        assert body["host_url"] == f"/aktivitaeten/bingo/host/{body['code']}"
         session = db.query(BingoSession).filter_by(code=body["code"]).one()
         assert session.class_id == klass.id
 

@@ -152,8 +152,8 @@ export default function BingoNewPage() {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["bingo"] });
       qc.invalidateQueries({ queryKey: ["bingo-sets"] });
-      if (r.kind === "session") router.push(`/games/bingo/host/${r.code}`);
-      else router.push("/games/bingo");
+      if (r.kind === "session") router.push(`/aktivitaeten/bingo/host/${r.code}`);
+      else router.push("/aktivitaeten/bingo");
     },
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
@@ -165,7 +165,7 @@ export default function BingoNewPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div>
-        <Link href="/games/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo</Link>
+        <Link href="/aktivitaeten/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">Neue Bingo-Runde</h1>
       </div>
 

@@ -1,9 +1,11 @@
 "use client";
+import { useState } from "react";
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAvailability } from "@/hooks/useAvailability";
 import HelpButton from "@/components/HelpButton";
+import { ToolSuche, passtZurSuche } from "@/components/ToolSuche";
 
 const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
@@ -91,12 +93,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
 export default function ToolsPage() {
   const router = useRouter();
   const { can, ready } = useAvailability();
-  const CARDS = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
+  const [suche, setSuche] = useState("");
+  const ERLAUBT = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
+  const CARDS = ERLAUBT.filter(c => passtZurSuche(c, suche));
 
   // Once resolved, a user with no available Tools (the default for students)
   // is sent to Games rather than shown an empty page.
   useEffect(() => {
-    if (ready && CARDS.length === 0) router.replace("/games");
+    if (ready && CARDS.length === 0) router.replace("/aktivitaeten");
   }, [ready, CARDS.length, router]);
 
   return (
@@ -107,6 +111,8 @@ export default function ToolsPage() {
           Unterrichtstools — direkt im Unterricht einsetzen.
         </p>
       </div>
+
+      <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CARDS.map(card => (

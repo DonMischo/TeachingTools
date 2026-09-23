@@ -31,7 +31,7 @@ export default function ExitgameDetailPage() {
     mutationFn: () => api.exitgame.sessions.create(gameId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] });
-      router.push(`/games/exitgame/host/${s.join_code}`);
+      router.push(`/aktivitaeten/exitgame/host/${s.join_code}`);
     },
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
@@ -56,7 +56,7 @@ export default function ExitgameDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
-      <Link href="/games/exitgame" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
+      <Link href="/aktivitaeten/exitgame" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
       <div>
         <h1 className="text-2xl font-black tracking-tight">{game.title}</h1>
         {game.description && <p className="text-[var(--text-muted)] text-sm mt-1">{game.description}</p>}
@@ -105,7 +105,7 @@ export default function ExitgameDetailPage() {
                 )}
                 <span className="text-xs text-[var(--text-muted)]">{s.attempt_count} Versuch(e)</span>
                 <div className="flex-1" />
-                <Link href={`/games/exitgame/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
+                <Link href={`/aktivitaeten/exitgame/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
                 <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
                 {s.status === "open" ? (
                   <button onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}

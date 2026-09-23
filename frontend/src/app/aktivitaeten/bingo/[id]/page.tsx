@@ -40,7 +40,7 @@ export default function BingoSetDetailPage() {
     mutationFn: () => api.bingo.startSet(setId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["bingo", setId] });
-      router.push(`/games/bingo/host/${s.code}`);
+      router.push(`/aktivitaeten/bingo/host/${s.code}`);
     },
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
@@ -74,7 +74,7 @@ export default function BingoSetDetailPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
       <div>
-        <Link href="/games/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo-Bibliothek</Link>
+        <Link href="/aktivitaeten/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo-Bibliothek</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🎰 {set.title}</h1>
         <div className="text-xs text-[var(--text-muted)] flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
           {set.subject && <span>{set.subject}</span>}
@@ -126,7 +126,7 @@ export default function BingoSetDetailPage() {
             empty="Noch keine Runde gestartet."
             renderActions={canEdit ? (item) => (
               <>
-                <SessionAction onClick={() => router.push(`/games/bingo/host/${item.code}`)}>
+                <SessionAction onClick={() => router.push(`/aktivitaeten/bingo/host/${item.code}`)}>
                   Öffnen
                 </SessionAction>
                 {sessions.find(x => x.code === item.code)?.status === "active" && (
