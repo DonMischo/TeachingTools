@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="TT - Teaching Tools">
-  <!-- Schulfarben (globals.css, [data-theme="ege"]): Dunkelblau #1a3060 als
-       Grund, Gruen #6a921a fuer den Wuerfel, Orange #e07820 fuer das Teil.
-       Fest verdrahtet, weil eine Datei im Browser-Reiter die CSS-Variablen des
+  <!-- Schulfarben (globals.css, [data-theme="ege"]): der helle Grund #f4f0ea,
+       Gruen #6a921a fuer den Wuerfel, Orange #e07820 fuer das Teil. Fest
+       verdrahtet, weil eine Datei im Browser-Reiter die CSS-Variablen des
        Themes nicht sieht.
 
-       Anders als die Marke in der App arbeiten die Flaechen hier nicht mit
-       Deckkraft, sondern mit ausgemischten Toenen: auf dem dunklen Grund
-       versackten die halbdurchsichtigen Seiten sonst im Blau. Die Basisfarbe
-       ist jeweils die rechte Flaeche. -->
-  <rect width="40" height="40" rx="9" fill="#1a3060"/>
+       Die Flaechen arbeiten mit ausgemischten Toenen statt mit Deckkraft:
+       durchscheinend verblasst das Gruen auf dem warmen Grund und der Wuerfel
+       verliert seine Kanten. Die Basisfarbe ist jeweils die rechte Flaeche.
+
+       Kein Rand um die Kachel: in einer weissen Reiterleiste verschwindet ihr
+       Umriss, aber der Wuerfel traegt das Zeichen allein — bei 16 px fraesse
+       ein Rand mehr von der Zeichnung weg, als er an Kontur gaebe. -->
+  <rect width="40" height="40" rx="9" fill="#f4f0ea"/>
   <g transform="translate(20 20) scale(.82) translate(-20.5 -19.9)">
     <polygon points="15.25,17.875 20.5,15 20.5,20.75 15.25,23.625" fill="#33480d"/>
     <polygon points="20.5,15 25.75,17.875 25.75,23.625 20.5,20.75" fill="#425c10"/>
