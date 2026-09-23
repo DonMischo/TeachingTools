@@ -32,7 +32,7 @@ if %ERRORLEVEL% neq 0 (
     echo.
 )
 
-echo Starting Hauspokal (DEV mode - hot reload)...
+echo Starting TT - Teaching Tools (DEV mode - hot reload)...
 echo   API:      uvicorn --reload  ^(restarts on .py changes^)
 echo   Frontend: npx next dev      ^(HMR on every save^)
 echo.

@@ -1,6 +1,6 @@
 #requires -version 5
 <#
-  Hauspokal one-command installer (Windows)
+  TT - Teaching Tools one-command installer (Windows)
 
   Installs Docker Desktop (+ WSL2 backend) if missing, then builds & starts the
   whole stack. All app packages (pip / npm / apt) install inside the containers,
@@ -179,11 +179,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # --- Build & start the stack (first run downloads images / installs packages) ---
-Write-Step "Building and starting Hauspokal (first run may take several minutes)..."
+Write-Step "Building and starting TT - Teaching Tools (first run may take several minutes)..."
 docker compose up -d --build
 if ($LASTEXITCODE -ne 0) { Write-Err "docker compose failed."; exit 1 }
 
-Write-Step "Hauspokal is running:"
+Write-Step "TT - Teaching Tools is running:"
 Write-Host "  Frontend  >  http://$HOST_IP`:$APP_PORT"
 Write-Host "  API docs  >  http://localhost`:$API_PORT/docs"
 Write-Host "  Postgres  >  127.0.0.1`:$DB_PORT"

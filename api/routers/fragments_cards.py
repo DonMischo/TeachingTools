@@ -361,7 +361,7 @@ async def _fetch_url_meta(url: str) -> dict:
     try:
         import httpx
         async with httpx.AsyncClient(timeout=5, follow_redirects=True) as client:
-            resp = await client.get(url, headers={"User-Agent": "Hauspokal/1.0 (fragments-clipping)"})
+            resp = await client.get(url, headers={"User-Agent": "TT-TeachingTools/1.0 (fragments-clipping)"})
             html = resp.text
     except Exception:
         return {}

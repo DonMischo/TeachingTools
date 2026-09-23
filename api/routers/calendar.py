@@ -337,14 +337,14 @@ def export_ics(
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Hauspokal//Kalender//DE",
+        "PRODID:-//TT - Teaching Tools//Kalender//DE",
         "METHOD:PUBLISH",
         # Calendar name: X-WR-CALNAME is the de-facto standard honored by Apple
         # and Google; NAME is the RFC 7986 equivalent. Clients that support it
         # will import into / create a distinct calendar rather than the default.
         _ics_fold(f"X-WR-CALNAME:{_ics_escape(cal_name)}"),
         _ics_fold(f"NAME:{_ics_escape(cal_name)}"),
-        _ics_fold(f"X-WR-CALDESC:{_ics_escape('Termine aus dem Hauspokal-Kalender')}"),
+        _ics_fold(f"X-WR-CALDESC:{_ics_escape('Termine aus dem TT-Kalender')}"),
         # Hint for subscription clients on how often to re-fetch.
         "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
         "X-PUBLISHED-TTL:PT12H",

@@ -69,7 +69,7 @@ class TestEinrichtung:
         assert r.status_code == 200
         body = r.json()
         assert body["otpauth_uri"].startswith("otpauth://totp/")
-        assert "Hauspokal" in body["otpauth_uri"]
+        assert "Teaching" in body["otpauth_uri"]
         assert "<svg" in body["qr_svg"]
 
     def test_erst_der_richtige_code_schaltet_scharf(self, client, db, admin2):

@@ -15,7 +15,7 @@ from .routers.schreibraum import rooms as schreibraum_rooms, collab as schreibra
 from .routers.capuths import _inactivity_watchdog
 from .seed import ensure_classes, ensure_sportfest_disciplines, ensure_teacher_roles, ensure_wochenstunden, ensure_calendar_tags, ensure_school_settings
 
-app = FastAPI(title="Hauspokal API")
+app = FastAPI(title="TT - Teaching Tools API")
 
 app.add_middleware(
     CORSMiddleware,

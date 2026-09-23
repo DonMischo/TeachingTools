@@ -81,7 +81,7 @@ function App() {
       </main>
 
       <footer className="px-4 sm:px-6 py-3 text-xs text-[var(--text-muted)] border-t border-[var(--border)]">
-        Offline-Fassung der Simulationen aus dem Hauspokal — läuft ohne Internet und ohne Anmeldung.
+        Offline-Fassung der Simulationen aus TT - Teaching Tools — läuft ohne Internet und ohne Anmeldung.
         Nichts wird gespeichert oder verschickt.
       </footer>
     </div>

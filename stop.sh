@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
 
-echo "Stopping Hauspokal..."
+echo "Stopping TT - Teaching Tools..."
 docker compose down
 echo "Done."

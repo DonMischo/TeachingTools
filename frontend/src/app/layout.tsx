@@ -4,8 +4,8 @@ import { Providers } from "./providers";
 import { AppShell } from "./AppShell";
 
 export const metadata: Metadata = {
-  title: "Hauspunkte",
-  description: "Hauspunkte-App",
+  title: "TT - Teaching Tools",
+  description: "TT - Teaching Tools: Punktesystem und Unterrichtsplattform",
 };
 
 // Inline script to apply saved theme before React hydration (prevents flash)

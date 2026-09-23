@@ -3,7 +3,7 @@
 # `sh install.sh`, `./install.sh`, and `bash install.sh` all behave the same.
 set -eu
 
-# Hauspokal one-command installer (Linux / macOS)
+# TT - Teaching Tools one-command installer (Linux / macOS)
 # Installs Docker (Engine + Compose plugin) if missing, then builds & starts the
 # whole stack. All app packages (pip / npm / apt) install inside the containers,
 # so Docker is the only host prerequisite this script bootstraps.
@@ -212,10 +212,10 @@ export HOST_IP
 log "Detected LAN IP: $HOST_IP"
 
 # 6. Build & start the stack (first build downloads images / installs packages)
-log "Building and starting Hauspokal (first run may take several minutes)..."
+log "Building and starting TT - Teaching Tools (first run may take several minutes)..."
 $DOCKER compose up -d --build
 
-log "Hauspokal is running:"
+log "TT - Teaching Tools is running:"
 echo "  Frontend  >  http://$HOST_IP:$APP_PORT"
 echo "  API docs  >  http://localhost:$API_PORT/docs"
 echo "  Postgres  >  127.0.0.1:$DB_PORT"

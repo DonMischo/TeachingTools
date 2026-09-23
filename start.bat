@@ -45,7 +45,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 :: Build and start all services
-echo Starting Hauspokal...
+echo Starting TT - Teaching Tools...
 set HOST_IP=%HOST_IP%
 docker compose up -d --build
 
@@ -56,7 +56,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
-echo Hauspokal is running:
+echo TT - Teaching Tools is running:
 echo   Frontend  ^>  http://%HOST_IP%:%APP_PORT%
 echo   API docs  ^>  http://localhost:%API_PORT%/docs
 echo.

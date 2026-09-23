@@ -83,7 +83,7 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     href: "/tools/snap",
     icon: "🧱",
     title: "Snap!",
-    description: "Blockbasiertes Programmieren — läuft lokal, Programme liegen in Hauspokal.",
+    description: "Blockbasiertes Programmieren — läuft lokal, Programme liegen in TT.",
     color: "#22d3ee",
   },
 ];

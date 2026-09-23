@@ -28,7 +28,7 @@ import pyotp
 import qrcode
 import qrcode.image.svg
 
-ISSUER = "Hauspokal"
+ISSUER = "TT - Teaching Tools"
 
 # One step either side of now, to tolerate clock drift between phone and server.
 VALID_WINDOW = 1

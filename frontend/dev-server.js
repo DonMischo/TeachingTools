@@ -71,7 +71,7 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[dev] Hauspokal dev proxy on :${PORT}`);
+  console.log(`[dev] TT - Teaching Tools dev proxy on :${PORT}`);
   console.log(`  → HTTP → Next.js :${NEXT_PORT}`);
   console.log(`  → WS upgrades → FastAPI ${API_HOST}:${API_PORT}`);
 });

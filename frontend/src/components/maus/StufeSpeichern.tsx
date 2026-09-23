@@ -185,7 +185,7 @@ export function zeichneFuehrerschein(
   ctx.fillText(`Gesamt: ${zahl(teilSumme(d.ergebnisse, d.teil))} Punkte`, W / 2, y + 50);
   ctx.fillStyle = "#9ca3af";
   ctx.font = `500 26px ${SCHRIFT}`;
-  ctx.fillText("Hauspokal · Maus-Führerschein", W / 2, H - 96);
+  ctx.fillText("TT - Teaching Tools · Maus-Führerschein", W / 2, H - 96);
 }
 
 type Browser = "chrome" | "firefox";

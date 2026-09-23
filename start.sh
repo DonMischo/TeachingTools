@@ -53,11 +53,11 @@ if ! docker info >/dev/null 2>&1; then
     echo
 fi
 
-echo "Starting Hauspokal..."
+echo "Starting TT - Teaching Tools..."
 docker compose up -d --build
 
 echo
-echo "Hauspokal is running:"
+echo "TT - Teaching Tools is running:"
 echo "  Frontend  >  http://$HOST_IP:$APP_PORT"
 echo "  API docs  >  http://localhost:$API_PORT/docs"
 echo

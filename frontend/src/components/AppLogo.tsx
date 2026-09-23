@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 /* ── Cyberpunk logo ─────────────────────────────────────────────────────── */
 function CyberpunkLogo() {
   return (
-    <svg viewBox="0 0 160 56" width="120" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="Hauspokal – Cyberpunk">
+    <svg viewBox="0 0 160 56" width="120" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="TT - Teaching Tools – Cyberpunk">
       {/* Circuit grid background */}
       <rect width="160" height="56" fill="#070b14" rx="4"/>
       <line x1="0" y1="14" x2="160" y2="14" stroke="#00ffff" strokeWidth=".4" opacity=".2"/>
@@ -25,14 +25,14 @@ function CyberpunkLogo() {
       <line x1="152" y1="36" x2="152" y2="46" stroke="#00ffff" strokeWidth="1" opacity=".5"/>
       {/* Main text */}
       <text x="80" y="22" textAnchor="middle" fill="#00ffff"
-        fontFamily="'Courier New', monospace" fontSize="13" fontWeight="bold" letterSpacing="4"
+        fontFamily="'Courier New', monospace" fontSize="15" fontWeight="bold" letterSpacing="6"
         style={{ filter: "drop-shadow(0 0 4px #00ffff)" }}>
-        HAUS
+        TT
       </text>
       <text x="80" y="40" textAnchor="middle" fill="#00ffff"
-        fontFamily="'Courier New', monospace" fontSize="11" fontWeight="bold" letterSpacing="6"
+        fontFamily="'Courier New', monospace" fontSize="9" fontWeight="bold" letterSpacing="2"
         opacity=".85">
-        POKAL
+        TEACHING TOOLS
       </text>
       {/* Accent bar */}
       <rect x="30" y="26" width="100" height="1" fill="#00ffff" opacity=".4"/>
@@ -45,7 +45,7 @@ function CyberpunkLogo() {
 /* ── Fantasy logo ───────────────────────────────────────────────────────── */
 function FantasyLogo() {
   return (
-    <svg viewBox="0 0 160 56" width="120" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="Hauspokal – Fantasy">
+    <svg viewBox="0 0 160 56" width="120" height="42" xmlns="http://www.w3.org/2000/svg" aria-label="TT - Teaching Tools – Fantasy">
       {/* Parchment-dark background */}
       <rect width="160" height="56" fill="#120c1c" rx="4"/>
       {/* Stars */}
@@ -74,13 +74,13 @@ function FantasyLogo() {
       <polygon points="110,11 111.5,13.5 110,16 108.5,13.5" fill="#c8a040" opacity=".4"/>
       {/* Main text */}
       <text x="80" y="30" textAnchor="middle" fill="#c8a040"
-        fontFamily="Georgia, 'Times New Roman', serif" fontSize="16" fontWeight="bold" letterSpacing="3">
-        HAUSPOKAL
+        fontFamily="Georgia, 'Times New Roman', serif" fontSize="16" fontWeight="bold" letterSpacing="6">
+        TT
       </text>
       {/* Subtitle */}
       <text x="80" y="44" textAnchor="middle" fill="#c8a040"
-        fontFamily="Georgia, 'Times New Roman', serif" fontSize="7" letterSpacing="5" opacity=".65">
-        ✦  CHRONICLES  ✦
+        fontFamily="Georgia, 'Times New Roman', serif" fontSize="7" letterSpacing="2" opacity=".65">
+        ✦  TEACHING TOOLS  ✦
       </text>
       {/* Bottom ornament */}
       <path d="M32 47 Q80 50 128 47" fill="none" stroke="#c8a040" strokeWidth=".8" opacity=".4"/>
@@ -91,9 +91,8 @@ function FantasyLogo() {
 /* ── Default text logo ──────────────────────────────────────────────────── */
 function DefaultLogo() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: "4px 0" }}>
-      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "var(--accent)", lineHeight: 1 }}>HAUS</span>
-      <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: 3, color: "var(--text-muted)", lineHeight: 1 }}>POKAL</span>
+    <div title="TT - Teaching Tools" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "4px 0" }}>
+      <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: 1, color: "var(--accent)", lineHeight: 1 }}>TT</span>
     </div>
   );
 }

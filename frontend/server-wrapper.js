@@ -163,7 +163,7 @@ function waitForNext(onReady) {
 
 waitForNext(() => {
   server.listen(PORT, () => {
-    console.log(`Hauspokal listening on http://localhost:${PORT}`);
+    console.log(`TT - Teaching Tools listening on http://localhost:${PORT}`);
     console.log(`  → HTTP proxied to Next.js :${NEXT_PORT}`);
     console.log(`  → WS /api/** proxied to FastAPI ${API_HOST}:${API_PORT}`);
   });

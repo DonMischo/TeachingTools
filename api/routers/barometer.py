@@ -729,7 +729,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
     return {
         # Eine Regel pro Eintrag: liest sich fuer Mensch und KI besser als ein Fliesstext.
         "_ai_instructions": [
-            "Du erstellst eine Umfrage für die Schul-App Hauspokal. Antworte ausschließlich mit gültigem JSON im "
+            "Du erstellst eine Umfrage für die Schul-App TT - Teaching Tools. Antworte ausschließlich mit gültigem JSON im "
             "Aufbau dieser Vorlage – ohne Kommentare, ohne Text davor oder danach. Schlüssel, die mit '_' beginnen "
             "('_ai_instructions', '_beispiel'), ignoriert die App; du kannst sie weglassen.",
             "PFLICHTFELDER: 'title' (höchstens 200 Zeichen) und 'questions' (mindestens eine Frage). "
