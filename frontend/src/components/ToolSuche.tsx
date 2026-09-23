@@ -40,7 +40,10 @@ export function ToolSuche({ wert, setzen, treffer, gesamt }: {
           onChange={(e) => setzen(e.target.value)}
           placeholder="Suchen …"
           aria-label="Suchen"
-          className="input w-full pl-9"
+          // `.input` bringt ein eigenes px-3 mit und schlaegt die Tailwind-Klasse;
+          // der Platz fuer die Lupe muss deshalb inline gesetzt werden.
+          style={{ paddingLeft: "2.25rem" }}
+          className="input w-full"
         />
       </div>
       {wert.trim() !== "" && (
