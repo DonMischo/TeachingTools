@@ -86,6 +86,9 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
     steuerung.enableDamping = true;
     steuerung.minDistance = 0.005;
     steuerung.maxDistance = 4_000;
+    // Verschieben in der Bildebene: sonst klebt der Blick für immer am Ursprung.
+    steuerung.enablePan = true;
+    steuerung.screenSpacePanning = true;
 
     const manager = new THREE.LoadingManager(() => setGeladen(true));
     const texturen = new Texturen(manager);
@@ -189,26 +192,52 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
     let fokus: string | null = null;
     const letzterFokusOrt = new THREE.Vector3();
     let anflug = 0;  // > 0: die Kamera fährt gerade heran
+    // Wer ins Leere tippt, will weg vom gewählten Körper — dann hört das
+    // Mitziehen auf, bis wieder etwas ausgewählt wird.
+    let losgelassen = false;
+    /** Ziel eines Schwenks in die Bahnebene, sonst null. */
+    let schwenkZiel: THREE.Vector3 | null = null;
 
     function wunschAbstand(id: string, opt: Optionen): number {
       const k = KOERPER_NACH_ID[id];
       return Math.max(uebersichtRadius(k, opt.groessen) * (k.ringe ? 9 : 6), opt.groessen === "echt" ? 0.002 : 0.4);
     }
 
-    // ── Klick in die Szene wählt einen Körper ──
+    // ── Tippen: auf einen Körper wählt ihn, ins Leere schwenkt dorthin ──
+    // Die Planeten liegen alle nahe an einer Ebene. Ein Tipp ins Leere sticht
+    // deshalb in genau diese Scheibe und fährt den Blick an die getroffene
+    // Stelle — anders käme man aus der Umlaufbahn um die Sonne nie heraus.
     const strahl = new THREE.Raycaster();
+    const bahnebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const einstich = new THREE.Vector3();
+    const zeiger = new Set<number>();
     let druck: { x: number; y: number } | null = null;
-    const runter = (e: PointerEvent) => { druck = { x: e.clientX, y: e.clientY }; };
+    const runter = (e: PointerEvent) => {
+      zeiger.add(e.pointerId);
+      // Nur ein einzelner Finger zählt als Tipp; zwei schieben oder zoomen.
+      druck = zeiger.size === 1 ? { x: e.clientX, y: e.clientY } : null;
+    };
     const hoch = (e: PointerEvent) => {
-      if (!druck || Math.hypot(e.clientX - druck.x, e.clientY - druck.y) > 5) return;
+      zeiger.delete(e.pointerId);
+      const start = druck;
+      druck = null;
+      if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 5) return;
       const r = renderer.domElement.getBoundingClientRect();
       strahl.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), kamera);
       const ziele = [sonne.kugel, ...[...objekte.values()].filter(o => o.gruppe.visible).map(o => o.kugel)];
       const treffer = strahl.intersectObjects(ziele, false)[0];
-      if (treffer) zustand.current.onWaehle(treffer.object.userData.id);
+      if (treffer) { zustand.current.onWaehle(treffer.object.userData.id); return; }
+      // Flach auf die Ebene geschaut trifft der Strahl erst in der Unendlichkeit;
+      // solche Tipps bleiben folgenlos, statt den Blick ins Nichts zu schleudern.
+      if (!strahl.ray.intersectPlane(bahnebene, einstich)) return;
+      if (einstich.distanceTo(kamera.position) > steuerung.maxDistance * 2) return;
+      schwenkZiel = einstich.clone();
+      losgelassen = true;
     };
+    const abbruch = (e: PointerEvent) => { zeiger.delete(e.pointerId); druck = null; };
     renderer.domElement.addEventListener("pointerdown", runter);
     renderer.domElement.addEventListener("pointerup", hoch);
+    renderer.domElement.addEventListener("pointercancel", abbruch);
 
     const groesse = () => {
       const { clientWidth: w, clientHeight: h } = buehne;
@@ -239,9 +268,19 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
       // Fokus wechseln: die Kamera schwenkt herüber und fährt heran.
       if (z.ausgewaehlt !== fokus) {
         fokus = z.ausgewaehlt;
+        losgelassen = false;
+        schwenkZiel = null;
         if (fokus) { letzterFokusOrt.copy(weltOrt.get(fokus)!); anflug = 1; }
       }
-      if (fokus) {
+      // Schwenk in die Bahnebene: Blickpunkt und Kamera wandern gemeinsam,
+      // der Abstand und der Winkel bleiben also erhalten.
+      if (schwenkZiel) {
+        const schritt = hilfsVek.copy(schwenkZiel).sub(steuerung.target).multiplyScalar(0.14);
+        steuerung.target.add(schritt);
+        kamera.position.add(schritt);
+        if (schritt.lengthSq() < 1e-8) schwenkZiel = null;
+      }
+      if (fokus && !losgelassen) {
         const ort = weltOrt.get(fokus)!;
         const schritt = hilfsVek.copy(ort).sub(letzterFokusOrt);
         kamera.position.add(schritt);
@@ -292,6 +331,7 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
       beobachter.disconnect();
       renderer.domElement.removeEventListener("pointerdown", runter);
       renderer.domElement.removeEventListener("pointerup", hoch);
+      renderer.domElement.removeEventListener("pointercancel", abbruch);
       steuerung.dispose();
       entsorge(szene);
       texturen.entsorgen();
@@ -384,7 +424,8 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
           <Schalter an={optionen.namen} onClick={() => setze({ namen: !optionen.namen })}>Namen</Schalter>
         </div>
         <p className="text-[11px] leading-snug text-slate-400 bg-black/40 rounded-lg px-2 py-1">
-          {massstabHinweis(optionen)} Ziehen dreht, Mausrad oder zwei Finger zoomen, Antippen wählt.
+          {massstabHinweis(optionen)} Ziehen dreht, Mausrad oder zwei Finger zoomen, rechte Taste verschiebt.
+          Antippen wählt einen Körper — ins Leere getippt fährt der Blick an diese Stelle der Bahnebene.
           {onKepler && (
             <button onClick={onKepler} className="ml-1 text-sky-300 hover:text-sky-200 underline pointer-events-auto">
               Warum die Bahnen so laufen: die Keplerschen Gesetze →
