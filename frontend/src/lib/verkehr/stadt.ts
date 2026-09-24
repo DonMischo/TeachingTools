@@ -73,12 +73,15 @@ export class Stadt {
   readonly strassen: Strasse[];
   readonly halte: Halt[];
   readonly bahnsteige: P[][];
+  /** Wartefläche an jeder Bushaltestelle — auch dort, wo die Karte keinen Gehweg an der Straße hat. */
+  readonly wartebereiche: P[][];
   private strassenRaster = new Raster<{ s: Strasse; st: Stueck }>(20);
   private wegRaster = new Raster<{ art: WegArt; st: Stueck }>(20);
   private gleisRaster = new Raster<{ art: "tram" | "bahn"; st: Stueck }>(20);
   private hausRaster = new Raster<Haus>(20);
   private querungRaster = new Raster<KartenPunkt>(20);
   private bahnsteigRaster = new Raster<P[]>(20);
+  private warteRaster = new Raster<P[]>(20);
 
   constructor(readonly karte: Karte = KARTE) {
     this.strassen = karte.strassen.map((s) => ({ ...s, breite: fahrbahnBreite(s), gehwegBreite: gehwegBreite(s) }));
@@ -95,6 +98,11 @@ export class Stadt {
       ...this.halte.filter((h) => h.fiktiv).map((h) => bahnsteigUm(h)),
     ];
     for (const b of this.bahnsteige) this.bahnsteigRaster.fuege(b, boxVon(b));
+    this.wartebereiche = this.halte.filter((h) => h.art === "bushalt").flatMap((h) => {
+      const w = this.warteflaeche(h);
+      return w ? [w] : [];
+    });
+    for (const w of this.wartebereiche) this.warteRaster.fuege(w, boxVon(w));
   }
 
   /** `halb` im Stück ist die Halbbreite, bis zu der ein Treffer zählt. */
@@ -133,6 +141,19 @@ export class Stadt {
     return halte;
   }
 
+  /** 16 m lange, 2,5 m tiefe Fläche an der Bordsteinkante, auf der Seite der Haltestelle. */
+  private warteflaeche(h: Halt): P[] | null {
+    const n = this.naechsteStrasse(h.p[0], h.p[1], 30);
+    if (!n) return null;
+    const { a, b } = n.st;
+    const w = winkelVon(n.st), c = Math.cos(w), s = Math.sin(w);
+    const q0: P = [a[0] + (b[0] - a[0]) * n.t, a[1] + (b[1] - a[1]) * n.t];
+    const seite = -(h.p[0] - q0[0]) * s + (h.p[1] - q0[1]) * c >= 0 ? 1 : -1;
+    const innen = n.s.breite / 2, aussen = innen + 2.5;
+    const punkt = (l: number, q: number): P => [q0[0] + c * l - s * q * seite, q0[1] + s * l + c * q * seite];
+    return [punkt(-8, innen), punkt(8, innen), punkt(8, aussen), punkt(-8, aussen)];
+  }
+
   naechsteStrasse(x: number, y: number, maxD = 15): { s: Strasse; st: Stueck; d: number; t: number } | null {
     let best: { s: Strasse; st: Stueck; d: number; t: number } | null = null;
     const g = 20;
@@ -167,6 +188,7 @@ export class Stadt {
       }
       return { art: "fahrbahn", strasse: fahrbahn, querung };
     }
+    for (const w of this.warteRaster.bei(x, y)) if (imVieleck(x, y, w)) return { art: "gehweg" };
     for (const e of this.wegRaster.bei(x, y))
       if (abstandZuStrecke(x, y, e.st.a, e.st.b).d <= e.st.halb) return e.art === "rad" ? { art: "radweg" } : { art: "gehweg" };
     for (const e of this.strassenRaster.bei(x, y))

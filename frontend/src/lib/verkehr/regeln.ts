@@ -167,12 +167,17 @@ export type OffeneTuer = { fahrzeug: string; halt: string; phase: TuerPhase; tue
 export class Einstiegsregeln {
   private blockiert = new Set<string>();
   private gewartet = new Set<string>();
+  private selbstRaus = new Set<string>();
+
+  /** Wer gerade selbst aus diesem Fahrzeug gestiegen ist, steht zwangsläufig vor der Tür. */
+  ausgestiegen(fahrzeug: string, halt: string) { this.selbstRaus.add(`${fahrzeug}@${halt}`); }
 
   pruefe(x: number, y: number, offene: OffeneTuer[]): { meldungen: Meldung[]; einsteigen: OffeneTuer | null } {
     const meldungen: Meldung[] = [];
     let einsteigen: OffeneTuer | null = null;
     for (const o of offene) {
       const key = `${o.fahrzeug}@${o.halt}`;
+      if (this.selbstRaus.has(key)) continue;
       if (o.phase === "aussteigen") {
         if (imKorridor(o.tuer, x, y) && !this.blockiert.has(key)) { this.blockiert.add(key); meldungen.push(MELDUNGEN.tuerBlockiert); }
         if (seitlichDaneben(o.tuer, x, y)) this.gewartet.add(key);

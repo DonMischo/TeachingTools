@@ -97,3 +97,15 @@ describe("Bahnen", () => {
     }
   });
 });
+
+describe("Aussteigen", () => {
+  it("bestraft niemanden, der selbst gerade ausgestiegen ist", () => {
+    const [tuer] = tueren(0, 0, 0, 2.5, [0]);
+    const r = new Einstiegsregeln();
+    r.ausgestiegen("bus-1", "7");
+    const aus = r.pruefe(0, 2.4, [{ fahrzeug: "bus-1", halt: "7", phase: "aussteigen", tuer }]);
+    expect(aus.meldungen).toEqual([]);
+    // Beim nächsten Halt gilt wieder alles.
+    expect(r.pruefe(0, 2.4, [{ fahrzeug: "bus-1", halt: "8", phase: "aussteigen", tuer }]).meldungen.map((m) => m.id)).toEqual(["tuerBlockiert"]);
+  });
+});

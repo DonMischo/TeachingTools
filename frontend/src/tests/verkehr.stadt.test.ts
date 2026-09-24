@@ -83,3 +83,15 @@ describe("Gesten", () => {
     expect(gesteZuTaste("KeyW")).toBeUndefined();
   });
 });
+
+describe("Bushaltestellen", () => {
+  it("haben eine Wartefläche an der Bordsteinkante, die als Gehweg zählt", () => {
+    const s = stadt();
+    const bus = s.halte.filter((h) => h.art === "bushalt");
+    expect(s.wartebereiche.length).toBe(bus.length);
+    for (const w of s.wartebereiche) {
+      const mx = w.reduce((a, p) => a + p[0], 0) / 4, my = w.reduce((a, p) => a + p[1], 0) / 4;
+      expect(s.untergrund(mx, my).art).toBe("gehweg");
+    }
+  });
+});

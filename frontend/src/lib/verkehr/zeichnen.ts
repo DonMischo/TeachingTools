@@ -145,6 +145,11 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   }
   boden.addChild(querungen);
 
+  // Warteflächen an den Bushaltestellen, mit Bordstein
+  const warten = new Graphics();
+  for (const w of stadt.wartebereiche) warten.poly(flach(w)).fill(FARBE.gehweg).stroke({ width: 0.2, color: FARBE.bordstein });
+  boden.addChild(warten);
+
   // Bahnsteige der ausgedachten Halte (die echten kommen als Fläche)
   const steige = new Graphics();
   for (const h of stadt.halte) if (h.fiktiv) {

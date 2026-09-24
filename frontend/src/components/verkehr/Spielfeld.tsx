@@ -425,6 +425,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
             if (bus.haltSeit != null && String(bus.haltRi) !== String(fahrt.abRi) && tuerPhase(t - bus.haltSeit) === "aussteigen") {
               const [, mitte] = tueren(bus.x, bus.y, bus.winkel, BUS.breite, [...BUS.tueren]);
               ich = { ...ich, x: mitte.p[0] + mitte.raus[0] * 1.6, y: mitte.p[1] + mitte.raus[1] * 1.6 };
+              einstieg.ausgestiegen(`bus-${bus.id}`, String(bus.haltRi));
               mitfahrt = null;
               waechter.zuruecksetzen();
               melde(MELDUNGEN.ausgestiegen);
