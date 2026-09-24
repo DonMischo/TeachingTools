@@ -43,7 +43,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
-  verkehr: { title: "Verkehrssicherheit", icon: "🚦", node: <Verkehr /> },
+  // Die Stadt ist ein Live-Raum je Code — dafür braucht sie Code und Gast-Token.
+  verkehr: { title: "Verkehrssicherheit", icon: "🚦", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -140,6 +141,8 @@ export default function SimulationJoinPage() {
               ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
               : `gast-${code}`}
               lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
+        : session.tool_slug === "verkehr"
+          ? <Verkehr zugang={{ code, token: guest.token }} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

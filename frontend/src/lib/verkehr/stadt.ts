@@ -199,10 +199,13 @@ export function winkelVon(st: { a: P; b: P }) {
   return Math.atan2(st.b[1] - st.a[1], st.b[0] - st.a[0]);
 }
 
-/** Ein 40 m langer, 3 m breiter Bahnsteig neben dem Gleis. */
+/** Abstand der Bahnsteigkante von der Gleismitte. */
+export const BAHNSTEIG_AB = 2.2;
+
+/** Ein 40 m (Bahn: 60 m) langer, 3 m breiter Bahnsteig neben dem Gleis. */
 export function bahnsteigUm(h: Halt): P[] {
   const c = Math.cos(h.winkel), s = Math.sin(h.winkel);
-  const laenge = h.art === "bahnhalt" ? 30 : 20, ab = 2.2, breit = 3;
+  const laenge = h.art === "bahnhalt" ? 30 : 20, ab = BAHNSTEIG_AB, breit = 3;
   const punkt = (l: number, q: number): P => [h.p[0] + c * l - s * q, h.p[1] + s * l + c * q];
   return [punkt(-laenge, ab), punkt(laenge, ab), punkt(laenge, ab + breit), punkt(-laenge, ab + breit)];
 }

@@ -146,7 +146,16 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
 
   // Bahnsteige der ausgedachten Halte (die echten kommen als Fläche)
   const steige = new Graphics();
-  for (const h of stadt.halte) if (h.fiktiv) steige.poly(flach(bahnsteigUm(h))).fill(FLAECHE.bahnsteig).stroke({ width: 0.2, color: 0xeeeeee });
+  for (const h of stadt.halte) if (h.fiktiv) {
+    const umriss = bahnsteigUm(h);
+    steige.poly(flach(umriss)).fill(FLAECHE.bahnsteig);
+    // Weiße Linie 0,8 m hinter der Bahnsteigkante
+    const [a, b, , d] = umriss;
+    const nx = (d[0] - a[0]) / 3, ny = (d[1] - a[1]) / 3;
+    steige.moveTo(a[0] + nx * 0.8, a[1] + ny * 0.8).lineTo(b[0] + nx * 0.8, b[1] + ny * 0.8).stroke({ width: 0.15, color: 0xffffff });
+    // Kante mit Noppen-Streifen
+    steige.moveTo(a[0] + nx * 0.2, a[1] + ny * 0.2).lineTo(b[0] + nx * 0.2, b[1] + ny * 0.2).stroke({ width: 0.3, color: 0xd9d9d0 });
+  }
   boden.addChild(steige);
 
   // Häuser: Schlagschatten, dann Dach
@@ -222,14 +231,77 @@ function versetzt(punkte: P[], ab: number): P[] {
   });
 }
 
-/** Eine Figur von oben: Schultern, Arme, Kopf. Blickrichtung nach +x. */
-export function zeichneFigur(farbe: number): Container {
-  const c = new Container();
+/** Eine Figur von oben: Schultern, Arme, Kopf. Blickrichtung nach +x. Der Kopf dreht sich eigens (Umschauen). */
+export function zeichneFigur(farbe: number): Container & { kopf: Container } {
+  const c = new Container() as Container & { kopf: Container };
   const g = new Graphics();
   g.ellipse(0.12, 0.12, 0.32, 0.38).fill({ color: FARBE.schatten, alpha: 0.3 });
   g.ellipse(0, 0, 0.2, 0.34).fill(farbe).stroke({ width: 0.04, color: dunkler(farbe) });
-  g.circle(0.02, 0, 0.15).fill(0x5a3a22);
-  g.circle(0.08, 0, 0.1).fill(0xe8b98f);
+  const kopf = new Container();
+  const k = new Graphics();
+  k.circle(0.02, 0, 0.15).fill(0x5a3a22);
+  k.circle(0.08, 0, 0.1).fill(0xe8b98f);
+  kopf.addChild(k);
+  c.addChild(g, kopf);
+  c.kopf = kopf;
+  return c;
+}
+
+/** Kopfdrehung beim Umschauen: links – rechts – links über `dauer` Sekunden. */
+export function kopfWinkel(alter: number, dauer: number): number {
+  if (alter < 0 || alter >= dauer) return 0;
+  const phase = alter / dauer;
+  return Math.sin(phase * Math.PI * 3) * -1.2;
+}
+
+/** Ein Auto oder Bus von oben, Front nach +x. */
+export function zeichneFahrzeug(art: "auto" | "bus" | "tram" | "zug", farbe: number, laenge: number, breite: number): Container {
+  const c = new Container();
+  const g = new Graphics();
+  const l = laenge / 2, b = breite / 2;
+  g.roundRect(-l + 0.3, -b + 0.3, laenge, breite, 0.4).fill({ color: FARBE.schatten, alpha: 0.35 });
+  g.roundRect(-l, -b, laenge, breite, art === "auto" ? 0.5 : 0.3).fill(farbe).stroke({ width: 0.06, color: dunkler(farbe) });
+  if (art === "auto") {
+    g.roundRect(l - 1.7, -b + 0.2, 0.7, breite - 0.4, 0.15).fill(0x1d2a38); // Frontscheibe
+    g.roundRect(-l + 0.35, -b + 0.25, 0.5, breite - 0.5, 0.15).fill(0x1d2a38); // Heckscheibe
+    g.roundRect(-l + 0.9, -b + 0.2, laenge - 2.7, breite - 0.4, 0.3).fill(dunkler(farbe));
+  } else {
+    g.rect(l - 0.6, -b + 0.15, 0.4, breite - 0.3).fill(0x1d2a38);
+    for (let x = -l + 1; x < l - 1.5; x += 2) g.rect(x, -b + 0.35, 1.2, breite - 0.7).fill(dunkler(farbe));
+  }
+  g.circle(l - 0.1, -b + 0.3, 0.15).fill(0xfff6c0);
+  g.circle(l - 0.1, b - 0.3, 0.15).fill(0xfff6c0);
   c.addChild(g);
+  return c;
+}
+
+const LICHTFARBE = { an: { rot: 0xff2a1a, gelb: 0xffc21a, gruen: 0x2bdc4a }, aus: 0x2a2a2a };
+
+/** Autoampel: schwarzer Kasten mit drei Lichtern, zeigt zur Fahrbahn. */
+export function zeichneAutoampel(licht: "gruen" | "gelb" | "rot" | "rotgelb", g: Graphics) {
+  g.clear();
+  g.roundRect(-0.3, -0.75, 0.6, 1.5, 0.1).fill(0x111111);
+  g.circle(0, -0.45, 0.18).fill(licht === "rot" || licht === "rotgelb" ? LICHTFARBE.an.rot : LICHTFARBE.aus);
+  g.circle(0, 0, 0.18).fill(licht === "gelb" || licht === "rotgelb" ? LICHTFARBE.an.gelb : LICHTFARBE.aus);
+  g.circle(0, 0.45, 0.18).fill(licht === "gruen" ? LICHTFARBE.an.gruen : LICHTFARBE.aus);
+}
+
+/** Fußgängerampel: rotes stehendes oder grünes gehendes Männchen. `taster` = Signal kommt. */
+export function zeichneFussampel(gruen: boolean, signalKommt: boolean, g: Graphics) {
+  g.clear();
+  g.roundRect(-0.35, -0.7, 0.7, 1.4, 0.1).fill(0x111111);
+  const farbe = gruen ? LICHTFARBE.an.gruen : LICHTFARBE.an.rot;
+  const y = gruen ? 0.3 : -0.3;
+  g.circle(0, y - 0.18, 0.08).fill(farbe);
+  g.rect(-0.08, y - 0.08, 0.16, 0.26).fill(farbe);
+  g.circle(0, gruen ? -0.3 : 0.3, 0.2).fill(LICHTFARBE.aus);
+  if (signalKommt) g.roundRect(-0.3, 0.75, 0.6, 0.3, 0.05).fill(0xffc21a);
+}
+
+/** Polizist von oben: dunkelblaue Jacke, weiße Mütze. */
+export function zeichnePolizist(): Container {
+  const c = zeichneFigur(0x1e3a8a);
+  const muetze = new Graphics().circle(0.02, 0, 0.17).fill(0xf4f4f4).stroke({ width: 0.04, color: 0x1e3a8a });
+  c.kopf.addChild(muetze);
   return c;
 }
