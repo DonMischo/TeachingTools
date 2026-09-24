@@ -7,12 +7,16 @@
  * die Stadt nur in diesem Browser (die Lehrkraft probiert aus, bevor sie den
  * Code herausgibt).
  */
-import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { KARTE, type Untergrund } from "@/lib/verkehr/stadt";
 import { GESTEN } from "@/lib/verkehr/gesten";
 import { MELDUNGEN, type Meldung, type RegelId } from "@/lib/verkehr/regeln";
 import { soloNetz } from "@/lib/verkehr/netz";
 import { useVerkehrLive, type Zugang } from "./useVerkehrLive";
+import { Auftraege, useFortschritt } from "./Auftraege";
+import { SchildQuiz } from "./SchildQuiz";
+import { MISSIONEN } from "@/lib/verkehr/missionen";
+import type { SchildArt } from "@/lib/verkehr/schilder";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
 
@@ -35,7 +39,14 @@ const KURZ: Partial<Record<RegelId, string>> = {
   tuerBlockiert: "🚪 Tür blockiert", verdeckt: "🚌 hinter Bus", weisseLinie: "⬜ weiße Linie",
 };
 
-export default function Verkehr({ action, zugang = null }: { action?: ReactNode; zugang?: Zugang | null }) {
+export default function Verkehr({ action, zugang = null, speicherSchluessel = "lokal", konto = false }: {
+  action?: ReactNode;
+  zugang?: Zugang | null;
+  /** Wo der Fortschritt der Aufträge liegt (je Konto bzw. Gast). */
+  speicherSchluessel?: string;
+  /** Schülerkonto: der Führerschein bringt Hauspunkte. */
+  konto?: boolean;
+}) {
   const [untergrund, setUntergrund] = useState<Untergrund["art"]>("gehweg");
   const [vollbild, setVollbild] = useState(false);
   const [punkte, setPunkte] = useState(0);
@@ -51,12 +62,36 @@ export default function Verkehr({ action, zugang = null }: { action?: ReactNode;
   const netz = zugang ? live.netz : solo;
   const beleidigungen = zugang ? live.beleidigungen : true;
 
-  const onMeldung = useCallback((m: Meldung) => {
+  const zeige = useCallback((m: Meldung) => {
     const n = ++zaehler.current;
     setPunkte((p) => p + m.punkte);
     setMeldungen((alt) => [...alt.slice(-2), { ...m, n }]);
     setTimeout(() => setMeldungen((alt) => alt.filter((x) => x.n !== n)), m.schwer ? 7000 : 4500);
   }, []);
+
+  const fortschritt = useFortschritt(speicherSchluessel);
+  const { buche } = fortschritt;
+  const onMeldung = useCallback((m: Meldung, t: number) => {
+    zeige(m);
+    buche({ typ: "meldung", id: m.id, t });
+  }, [zeige, buche]);
+
+  // Geschaffte Aufträge ansagen
+  useEffect(() => {
+    for (const id of fortschritt.neu) {
+      const m = MISSIONEN.find((x) => x.id === id);
+      if (m) zeige({ id: "sicherGequert", punkte: 0, text: `✅ Auftrag geschafft: ${m.titel}` });
+    }
+  }, [fortschritt.neu, zeige]);
+
+  // Schilder-Quiz: jede Schildart bringt beim ersten richtigen Mal Punkte.
+  const [quiz, setQuiz] = useState<SchildArt | null>(null);
+  const onAntwort = (richtig: boolean) => {
+    if (!quiz) return;
+    const neu = richtig && !fortschritt.f.schilder.includes(quiz);
+    buche({ typ: "schild", art: quiz, richtig });
+    if (neu) { zeige(MELDUNGEN.schildRichtig); netz.sendeMeldung("schildRichtig", MELDUNGEN.schildRichtig.punkte); }
+  };
 
   return (
     <div className={vollbild ? "fixed inset-0 z-50 flex flex-col bg-[var(--bg)]" : "flex flex-col gap-3 p-4"}>
@@ -89,7 +124,8 @@ export default function Verkehr({ action, zugang = null }: { action?: ReactNode;
       <div className={`flex gap-3 ${vollbild ? "flex-1 min-h-0" : ""}`}>
         <div className={`relative flex-1 overflow-hidden rounded-xl border border-[var(--border)] ${vollbild ? "" : "h-[70vh] min-h-[420px]"}`}>
           <Suspense fallback={<div className="p-6 text-sm text-[var(--text-muted)]">Stadt wird gebaut …</div>}>
-            <Spielfeld netz={netz} farbe={farbe} onUntergrund={setUntergrund} onMeldung={onMeldung} onHinweis={setHinweis} />
+            <Spielfeld netz={netz} farbe={farbe} onUntergrund={setUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
+              onEreignis={buche} onSchild={setQuiz} />
           </Suspense>
           <div className="pointer-events-none absolute left-2 top-2 rounded-lg bg-black/60 px-3 py-2 text-xs leading-relaxed text-white">
             <div><b>Laufen:</b> Pfeiltasten oder WASD · <b>Rennen:</b> Umschalt</div>
@@ -97,8 +133,12 @@ export default function Verkehr({ action, zugang = null }: { action?: ReactNode;
             <div><b>Gesten:</b> {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => `${g.taste} ${g.emoji}`).join("  ")}</div>
             <div className="opacity-70">Erst ins Bild klicken, dann laufen.</div>
           </div>
+          {quiz && (
+            <SchildQuiz key={quiz} art={quiz} onAntwort={onAntwort}
+              onZu={() => { setQuiz(null); (document.querySelector('[aria-label^="Spielfeld"]') as HTMLElement | null)?.focus(); }} />
+          )}
           {hinweis && (
-            <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black shadow">
+            <div className="pointer-events-none absolute bottom-28 left-1/2 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1 text-sm font-bold text-black shadow">
               {hinweis}
             </div>
           )}
@@ -114,6 +154,12 @@ export default function Verkehr({ action, zugang = null }: { action?: ReactNode;
             {KARTE.nachweis}
           </div>
         </div>
+
+        {!(zugang && live.lehrkraft) && (
+          <aside className={`w-64 shrink-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 overflow-y-auto ${vollbild ? "" : "max-h-[70vh]"}`}>
+            <Auftraege f={fortschritt.f} neuAnfangen={fortschritt.neuAnfangen} konto={konto} code={zugang?.code} />
+          </aside>
+        )}
 
         {zugang && live.lehrkraft && (
           <aside className="w-64 shrink-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-sm overflow-y-auto max-h-[70vh]">

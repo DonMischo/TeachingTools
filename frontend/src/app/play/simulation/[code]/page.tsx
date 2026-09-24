@@ -142,7 +142,12 @@ export default function SimulationJoinPage() {
               : `gast-${code}`}
               lehrkraft={auth?.role === "teacher" || auth?.role === "admin"} />
         : session.tool_slug === "verkehr"
-          ? <Verkehr zugang={{ code, token: guest.token }} />
+          ? <Verkehr zugang={{ code, token: guest.token }}
+              // Wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Code und Gast-Id.
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`}
+              konto={auth?.user_type === "student"} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

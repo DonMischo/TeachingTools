@@ -15,12 +15,18 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from typing import Union
+
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from ..auth import get_current_user
+from ..availability import require_capability
 from ..database import get_db
 from ..display_names import short_name
-from ..models import Student, Teacher, ToolSession
+from ..models import Student, Teacher, ToolSession, Transaction, VerkehrPruefung
+from .maus import _buchende_lehrkraft, _haus_name
 from ..ws_auth import ws_guest, ws_identity
 from ..ws_manager import RoomManager, receive_json, reject
 
@@ -200,3 +206,60 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
                 _raeume.pop(code, None)
             else:
                 await _neuer_taktgeber(code, raum)
+
+
+# ── Führerschein ────────────────────────────────────────────────────────────
+
+# Spiegelt die Pflichtaufträge in frontend/src/lib/verkehr/missionen.ts.
+PFLICHT = {"fuss": {"lidl", "netto", "ampel", "taster", "zebra", "hand", "bus", "schilder"}}
+MAX_SCHWERE = 2
+HAUSPUNKTE = 5
+
+
+class PruefungIn(BaseModel):
+    stufe: str = "fuss"
+    erledigt: list[str]
+    schwere: int = Field(ge=0)
+    code: str | None = None
+
+
+class PruefungOut(BaseModel):
+    bestanden: bool
+    punkte: int
+    schon_vergeben: bool
+    haus: str | None
+
+
+@router.post("/pruefung", response_model=PruefungOut, dependencies=[Depends(require_capability("verkehr", "use"))])
+def pruefung(body: PruefungIn, db: Session = Depends(get_db),
+             user: Union[Teacher, Student] = Depends(get_current_user)):
+    """Fußgänger-Führerschein: alle Pflichtaufträge, höchstens zwei schwere
+    Verstöße. Wie beim Maus-Führerschein clientgemeldet — es geht um eine
+    Klassenrunde, nicht um eine Prüfung mit Folgen; die Hauspunkte gibt es je
+    Schüler:in und Stufe genau einmal."""
+    pflicht = PFLICHT.get(body.stufe)
+    if pflicht is None:
+        raise HTTPException(400, f"Unbekannte Stufe: {body.stufe}")
+    fehlt = pflicht - set(body.erledigt)
+    if fehlt:
+        raise HTTPException(400, f"Noch nicht bestanden – es fehlen {len(fehlt)} Aufträge.")
+    if body.schwere > MAX_SCHWERE:
+        raise HTTPException(400, "Noch nicht bestanden – zu viele schwere Verstöße.")
+
+    if not isinstance(user, Student):
+        return PruefungOut(bestanden=True, punkte=0, schon_vergeben=False, haus=None)
+    if db.query(VerkehrPruefung).filter_by(student_id=user.id, stufe=body.stufe).first():
+        return PruefungOut(bestanden=True, punkte=0, schon_vergeben=True, haus=_haus_name(db, user.class_id))
+    if user.class_id is None:
+        return PruefungOut(bestanden=True, punkte=0, schon_vergeben=False, haus=None)
+    buchende = _buchende_lehrkraft(db, user, body.code, slug="verkehr")
+    if buchende is None:
+        return PruefungOut(bestanden=True, punkte=0, schon_vergeben=False, haus=None)
+
+    db.add(Transaction(
+        teacher_id=buchende.id, class_id=user.class_id, points=HAUSPUNKTE,
+        reason=f"Fußgänger-Führerschein bestanden: {short_name(user)}",
+    ))
+    db.add(VerkehrPruefung(student_id=user.id, stufe=body.stufe, punkte=HAUSPUNKTE, class_id=user.class_id))
+    db.commit()
+    return PruefungOut(bestanden=True, punkte=HAUSPUNKTE, schon_vergeben=False, haus=_haus_name(db, user.class_id))

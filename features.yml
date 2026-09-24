@@ -181,7 +181,12 @@ simulationen:
       - Echte Karte um die Schule (OpenStreetMap, 750 m)
       - Zu Fuß laufen in GTA-artiger Draufsicht (Pfeile/WASD)
       - Anzeige des Untergrunds (Gehweg, Radweg, Fahrbahn, Gleis)
-      - Gesten mit Emoji-Blase
+      - Ampeln (Kreuzungen im Umlauf, Fußgängerampel mit Taster) und Autos
+      - Regelprüfung beim Queren (Rot, Umschauen, Umweg, Bummeln, Radweg, Gleis)
+      - Bus, Straßenbahn und Zug mit Türen (aussteigen lassen, seitlich warten)
+      - Gemeinsame Live-Stadt für die Klasse, Lehrkraft-Übersicht
+      - Gesten mit Emoji-Blase, Schimpfen mit Polizei (abschaltbar)
+      - Aufträge, Schilder-Rallye, Gruppe als Wand, Fußgänger-Führerschein mit Hauspunkten
 
 tools:
   - id: schreibraum

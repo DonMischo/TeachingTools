@@ -1520,6 +1520,13 @@ export const api = {
       apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
   },
 
+  // Verkehrssicherheit (siehe api/routers/verkehr.py)
+  verkehr: {
+    /** Fußgänger-Führerschein — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
+    pruefung: (body: { stufe?: string; erledigt: string[]; schwere: number; code?: string | null }) =>
+      apiFetch<MausPruefungOut>("verkehr/pruefung", { method: "POST", body: JSON.stringify(body) }),
+  },
+
   // Tipp-Rennen (siehe api/routers/wettschreiben.py)
   wettschreiben: {
     anlegen: (title: string, text: string) =>

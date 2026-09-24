@@ -146,3 +146,42 @@ def test_ohne_zugang_kein_eintritt(client, teacher_token):
 
     with pytest.raises(ConnectionError, match="4001"):
         asyncio.run(lauf())
+
+
+# ── Führerschein ────────────────────────────────────────────────────────────
+
+from api.models import Transaction, VerkehrPruefung  # noqa: E402
+from api.tests.test_maus import als  # noqa: E402
+from api.tests.test_maus_ausbau import _haus, _schueler_mit_klasse  # noqa: E402
+
+ALLE = sorted(verkehr.PFLICHT["fuss"])
+
+
+def test_fuehrerschein_vergibt_einmal_hauspunkte(client, db, teacher, teacher_token, klass):
+    _haus(db, klass, name="Haus Süd")
+    ada = _schueler_mit_klasse(db, klass)
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+
+    r = client.post("/api/verkehr/pruefung", json={"erledigt": ALLE, "schwere": 1, "code": code}, headers=als(ada))
+    assert r.status_code == 200, r.text
+    assert r.json() == {"bestanden": True, "punkte": verkehr.HAUSPUNKTE, "schon_vergeben": False, "haus": "Haus Süd"}
+    tx = db.query(Transaction).one()
+    assert tx.teacher_id == teacher.id and tx.class_id == klass.id and "Fußgänger" in tx.reason
+
+    r = client.post("/api/verkehr/pruefung", json={"erledigt": ALLE, "schwere": 0, "code": code}, headers=als(ada))
+    assert r.json()["schon_vergeben"] is True
+    assert db.query(Transaction).count() == 1
+    assert db.query(VerkehrPruefung).count() == 1
+
+
+def test_fuehrerschein_braucht_alle_pflichtauftraege(client, db, klass):
+    ada = _schueler_mit_klasse(db, klass)
+    r = client.post("/api/verkehr/pruefung", json={"erledigt": ALLE[1:], "schwere": 0}, headers=als(ada))
+    assert r.status_code == 400
+
+
+def test_fuehrerschein_zu_viele_schwere_verstoesse(client, db, klass):
+    ada = _schueler_mit_klasse(db, klass)
+    r = client.post("/api/verkehr/pruefung", json={"erledigt": ALLE, "schwere": verkehr.MAX_SCHWERE + 1}, headers=als(ada))
+    assert r.status_code == 400

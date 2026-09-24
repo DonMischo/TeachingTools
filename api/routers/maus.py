@@ -352,12 +352,12 @@ def _haus_name(db: Session, class_id: int | None) -> str | None:
     return haus.name if haus else None
 
 
-def _buchende_lehrkraft(db: Session, student: Student, code: str | None) -> Teacher | None:
+def _buchende_lehrkraft(db: Session, student: Student, code: str | None, slug: str = "maus") -> Teacher | None:
     """Wer die Hauspunkte für diese Prüfung bucht: die Lehrkraft der Sitzung,
     sonst die Klassenlehrkraft, sonst ein Admin."""
     if code:
         session = db.query(ToolSession).filter_by(code=code.upper()).first()
-        if session and session.tool_slug == "maus":
+        if session and session.tool_slug == slug:
             lehrer = db.get(Teacher, session.created_by)
             if lehrer:
                 return lehrer

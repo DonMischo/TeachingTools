@@ -132,7 +132,7 @@ Modelle zum Ausprobieren. Alle sind für Schüler offen und haben einen eigenen 
 | 📈 **Funktionen** | Term, Wertetabelle und Graph verbunden. Formelsatz, Rechenweg je Punkt, Normal- und Scheitelpunktform, π-Achsen, Zoom, Verschieben und Vorlagen zum Würfeln. |
 | 🤖 **KI-Werkstatt** | Wie Sprach- und Bildmodelle arbeiten: Tokenisieren, Wortnetz mit top-k, eigenes Netz trainieren, Attention, Mensch gegen Maschine raten, Diffusion mit Rauschen und Punktwolke, ein Neuron lernen lassen, »Echt oder KI« mit Bildpaaren. Klassentafel und Hintergrundtexte in drei Lesestufen. |
 | 🪐 **Sonnensystem** | 3D-Modell mit echten Bahnen und Daten (JPL Horizons), Satelliten und Lagrangepunkten. Flugmodus mit Autopilot, Overdrive und 31 Forschungsaufträgen, dazu Kodex als PDF, 34 Erfolge, Größen- und Entfernungsvergleich, Kepler-Gesetze, Magnetfeld mit Sonnensturm und eine Galerie mit rund 90 Bildern. |
-| 🚦 **Verkehrssicherheit** | Zu Fuß durchs echte Viertel um die Schule (OpenStreetMap): Gehwege, Radwege, Ampeln, Zebrastreifen, Bus und Bahn in GTA-artiger Draufsicht, mit Gesten. |
+| 🚦 **Verkehrssicherheit** | Zu Fuß durchs echte Viertel um die Schule (OpenStreetMap), die ganze Klasse in einer Live-Stadt: Ampeln mit Taster, Zebrastreifen, Autos, Bus, Straßenbahn und Zug mit Türen (erst aussteigen lassen), Gesten und Polizei, Schilder-Rallye, Gruppe als Wand und ein Fußgänger-Führerschein mit Hauspunkten. |
 
 ---
 

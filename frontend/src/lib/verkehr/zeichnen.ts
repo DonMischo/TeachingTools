@@ -6,6 +6,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import type { P } from "./geometrie";
 import { bahnsteigUm, winkelVon, type Stadt } from "./stadt";
+import type { SchildArt } from "./schilder";
 
 export const FARBE = {
   boden: 0x5f7a45,
@@ -304,4 +305,62 @@ export function zeichnePolizist(): Container {
   const muetze = new Graphics().circle(0.02, 0, 0.17).fill(0xf4f4f4).stroke({ width: 0.04, color: 0x1e3a8a });
   c.kopf.addChild(muetze);
   return c;
+}
+
+/** Ein Verkehrszeichen von schräg oben: Pfosten-Schatten und Schildfläche (etwa 0,9 m). */
+export function zeichneSchild(art: SchildArt): Container {
+  const c = new Container();
+  const g = new Graphics();
+  g.circle(0.15, 0.15, 0.12).fill({ color: FARBE.schatten, alpha: 0.4 });
+  g.circle(0, 0, 0.08).fill(0x777777);
+  const r = 0.45;
+  const bild = (text: string, farbe = 0xffffff, groesse = 0.5) => {
+    const t = new Text({ text, style: { fontFamily: "Arial", fontWeight: "bold", fontSize: 48, fill: farbe } });
+    t.anchor.set(0.5);
+    t.scale.set(groesse / 48);
+    t.position.set(0, -0.9);
+    c.addChild(t);
+  };
+  const y = -0.9;
+  switch (art) {
+    case "stopp": {
+      const pkt: number[] = [];
+      for (let i = 0; i < 8; i++) { const w = Math.PI / 8 + (i * Math.PI) / 4; pkt.push(Math.cos(w) * r, y + Math.sin(w) * r); }
+      g.poly(pkt).fill(0xc8102e).stroke({ width: 0.05, color: 0xffffff });
+      c.addChild(g);
+      bild("STOP", 0xffffff, 0.28);
+      return c;
+    }
+    case "vorfahrtAchten":
+      g.poly([-r, y - r * 0.8, r, y - r * 0.8, 0, y + r]).fill(0xffffff).stroke({ width: 0.09, color: 0xc8102e });
+      c.addChild(g);
+      return c;
+    case "zebra":
+      g.rect(-r, y - r, 2 * r, 2 * r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      g.poly([-r * 0.75, y + r * 0.6, r * 0.75, y + r * 0.6, 0, y - r * 0.75]).fill(0xffffff);
+      c.addChild(g);
+      bild("🚶", 0x000000, 0.4);
+      return c;
+    case "haltestelle":
+      g.circle(0, y, r).fill(0xf4c430).stroke({ width: 0.06, color: 0x1f7a3a });
+      c.addChild(g);
+      bild("H", 0x1f7a3a, 0.55);
+      return c;
+    case "radweg":
+      g.circle(0, y, r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      c.addChild(g);
+      bild("🚲", 0xffffff, 0.45);
+      return c;
+    case "gehRad":
+      g.circle(0, y, r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      g.moveTo(-r * 0.8, y).lineTo(r * 0.8, y).stroke({ width: 0.04, color: 0xffffff });
+      c.addChild(g);
+      bild("🚶\n🚲", 0xffffff, 0.3);
+      return c;
+    case "spielstrasse":
+      g.rect(-r * 1.2, y - r * 0.8, 2.4 * r, 1.6 * r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      c.addChild(g);
+      bild("🏠⚽", 0xffffff, 0.3);
+      return c;
+  }
 }

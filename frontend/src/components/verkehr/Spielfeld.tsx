@@ -9,12 +9,15 @@ import { Application, Container, Graphics, Text } from "pixi.js";
 import { BAHNSTEIG_AB, stadt, startpunkt, winkelVon, type Stadt, type Untergrund } from "@/lib/verkehr/stadt";
 import { eingabeAusTasten, KEINE_EINGABE, schritt, type Figur } from "@/lib/verkehr/bewegung";
 import {
-  beschriftung, kopfWinkel, zeichneAutoampel, zeichneFahrzeug, zeichneFigur, zeichneFussampel, zeichnePolizist, zeichneStadt,
+  beschriftung, kopfWinkel, zeichneSchild, zeichneAutoampel, zeichneFahrzeug, zeichneFigur, zeichneFussampel, zeichnePolizist, zeichneStadt,
 } from "@/lib/verkehr/zeichnen";
 import { GESTEN, gestenDeckkraft, gesteZuTaste, type Geste } from "@/lib/verkehr/gesten";
 import { autoLicht, baueAnlagen, fussGruen, FUSS_GRUEN, TASTER_WARTEN, type Anlage, type Licht } from "@/lib/verkehr/ampeln";
 import { BUS, Strassenverkehr, type Fahrzeug, type Fussgaenger } from "@/lib/verkehr/autos";
 import { entpacke, packe, winkelZu, type Netz } from "@/lib/verkehr/netz";
+import { baueSchilder, type SchildArt } from "@/lib/verkehr/schilder";
+import { Gruppenblick } from "@/lib/verkehr/gruppe";
+import type { Ereignis } from "@/lib/verkehr/missionen";
 import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, baueBahnen, wagenLagen } from "@/lib/verkehr/schiene";
 import { Einstiegsregeln, Regelwaechter, UMSCHAUEN_DAUER, MELDUNGEN, type Meldung, type OffeneTuer, type Verdecker } from "@/lib/verkehr/regeln";
@@ -74,7 +77,11 @@ export type SpielfeldProps = {
   farbe?: number;
   onUntergrund?: (u: Untergrund["art"]) => void;
   onGeste?: (g: Geste) => void;
-  onMeldung?: (m: Meldung) => void;
+  onMeldung?: (m: Meldung, t: number) => void;
+  /** Ereignisse für die Aufträge (Orte, Taster, Handzeichen, Einsteigen, Gruppe). */
+  onEreignis?: (e: Ereignis) => void;
+  /** Am Schild E gedrückt — die Hülle zeigt die Frage. */
+  onSchild?: (art: SchildArt) => void;
   onHinweis?: (text: string | null) => void;
   /** Der Live-Raum (oder ein Solo-Raum). Wird jedes Bild gelesen. */
   netz: Netz;
@@ -114,8 +121,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
       bereit = true;
       el.appendChild(app.canvas);
       // Prüfhilfe: mit ?takt läuft die Schleife am Zeitgeber statt an
-      // requestAnimationFrame — ein verdecktes Browserfenster liefert keine Bilder.
-      if (new URLSearchParams(window.location.search).has("takt")) {
+      // requestAnimationFrame — ein verdecktes Browserfenster liefert keine
+      // Bilder — und die Lage der Figur steht in data-lage.
+      const pruefhilfe = new URLSearchParams(window.location.search).has("takt");
+      if (pruefhilfe) {
         app.ticker.stop();
         zeitgeber = setInterval(() => app.ticker.update(performance.now()), 16);
       }
@@ -168,6 +177,19 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
         }
       }
 
+      // Verkehrszeichen am Straßenrand
+      const schilder = baueSchilder(s);
+      for (const sch of schilder) {
+        const c = zeichneSchild(sch.art);
+        c.position.set(sch.p[0], sch.p[1]);
+        c.scale.set(AMPEL_GROESSER);
+        ampelEbene.addChild(c);
+      }
+      let nahesSchild: SchildArt | null = null;
+      const laeden = s.karte.punkte.filter((p) => p.shop === "supermarket" && p.name);
+      const zuletztOrt = new Map<string, number>();
+      const gruppe = new Gruppenblick();
+
       const [sx, sy] = startpunkt(s);
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
       const figur = zeichneFigur(farbe);
@@ -202,7 +224,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
       let letzteLinie = -Infinity;
       let letzterHinweis: string | null = null;
 
-      const melde = (m: Meldung) => { rueckruf.current.onMeldung?.(m); netzRef.current.sendeMeldung(m.id, m.punkte); };
+      const melde = (m: Meldung) => { rueckruf.current.onMeldung?.(m, uhr()); netzRef.current.sendeMeldung(m.id, m.punkte); };
+      const ereignis = (e: Ereignis) => rueckruf.current.onEreignis?.(e);
 
       einmal = (code) => {
         const t = uhr();
@@ -210,12 +233,16 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
         if (geste) {
           if (geste.beleidigung && !netzRef.current.beleidigungen()) return;
           zeigeBlase(geste.emoji);
-          if (geste.id === "hand") mensch.hand = t;
+          if (geste.id === "hand") { mensch.hand = t; ereignis({ typ: "hand", t }); }
           netzRef.current.sendeGeste(geste.id);
           rueckruf.current.onGeste?.(geste);
         }
         if (code === "Space" && t - umschauenSeit > UMSCHAUEN_DAUER) { umschauenSeit = t; blickGezaehlt = false; }
-        if (code === "KeyE" && naherTaster && t - tasterVon(naherTaster) > TASTER_WARTEN + FUSS_GRUEN + 6) netzRef.current.sendeTaster(naherTaster.id);
+        if (code === "KeyE") {
+          if (naherTaster) {
+            if (t - tasterVon(naherTaster) > TASTER_WARTEN + FUSS_GRUEN + 6) { netzRef.current.sendeTaster(naherTaster.id); ereignis({ typ: "taster", t }); }
+          } else if (nahesSchild) rueckruf.current.onSchild?.(nahesSchild);
+        }
       };
 
       // Busse auf einer Linie durch die Haltestellen; Bahnen nach Fahrplan.
@@ -423,6 +450,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
           if (einsteigen) {
             const o = einsteigen as Tuerstand;
             mitfahrt = o.fahrzeug.startsWith("bus") ? { art: "bus", id: o.id, abRi: Number(o.halt) } : { art: "bahn", i: o.id - 1000 };
+            const art = mitfahrt.art === "bus" ? "bus" : bahnen[mitfahrt.i].art;
+            ereignis({ typ: "eingestiegen", art, gut: meldungen.some((m) => m.id === "gutEingestiegen") });
           }
         }
         figur.visible = !mitfahrt;
@@ -444,6 +473,26 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
           if (z !== k.letzt) { k.letzt = z; k.male(z); }
         }
 
+        // Gruppe: wer ist mit mir zusammen auf die Fahrbahn gegangen?
+        const meinUntergrund = s.untergrund(ich.x, ich.y).art;
+        gruppe.melde("ich", unterwegs && meinUntergrund === "fahrbahn", t, [ich.x, ich.y]);
+        for (const a of andere) gruppe.melde(a.key, !a.mitfahrt && s.untergrund(a.x, a.y).art === "fahrbahn", t, [a.x, a.y]);
+        if (letzterUntergrund === "fahrbahn" && meinUntergrund !== "fahrbahn" && unterwegs) {
+          const u = gruppe.urteil("ich", t);
+          if (u) {
+            melde(u.wand
+              ? { id: "gruppeWand", punkte: 15, text: `Als Wand gequert: ${u.n} nebeneinander, alle zugleich — nach ${u.dauer.toFixed(1)} s war die ganze Gruppe drüben.` }
+              : { id: "gruppeSchlange", punkte: 0, text: `Als Schlange gequert: ${u.dauer.toFixed(1)} s stand die Gruppe auf der Fahrbahn. Nebeneinander als Wand wären es nur ${u.einzeln.toFixed(1)} s.` });
+            ereignis({ typ: "gruppe", wand: u.wand });
+          }
+        }
+
+        // Orte der Aufträge (Supermärkte)
+        for (const l of laeden) if (Math.hypot(l.p[0] - ich.x, l.p[1] - ich.y) < 15 && t - (zuletztOrt.get(l.name!) ?? -Infinity) > 60) {
+          zuletztOrt.set(l.name!, t);
+          ereignis({ typ: "ort", name: l.name! });
+        }
+
         // Regeln
         if (unterwegs) {
           for (const m of waechter.pruefe(ich.x, ich.y, t, haltende)) {
@@ -456,8 +505,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
         // Hinweise: Taster in Reichweite, Mitfahrt
         naherTaster = null;
         for (const o of tasterOrte) if (Math.hypot(o.p[0] - ich.x, o.p[1] - ich.y) < 2.5) { naherTaster = o.a; break; }
+        nahesSchild = null;
+        for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
         const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …" : mitfahrt ? (mitfahrt.art === "bus" ? "Du fährst Bus — an der nächsten Haltestelle steigst du aus." : "Du fährst mit der Bahn …")
-          : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster") : null;
+          : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
+          : nahesSchild ? "E drücken: Schild ansehen" : null;
         if (hinweis !== letzterHinweis) { letzterHinweis = hinweis; rueckruf.current.onHinweis?.(hinweis); }
 
         // Kamera: an einer offenen Tür heranzoomen, damit man sieht, wo man steht.
@@ -472,6 +524,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, ...rueck }: Spielfel
         welt.scale.set(zoom);
         welt.position.set(app.screen.width / 2 - blickX * zoom, app.screen.height / 2 - blickY * zoom);
 
+        if (pruefhilfe) el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
         const u = s.untergrund(ich.x, ich.y).art;
         if (u !== letzterUntergrund) { letzterUntergrund = u; rueckruf.current.onUntergrund?.(u); }
       });

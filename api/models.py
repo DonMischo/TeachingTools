@@ -2283,6 +2283,20 @@ class MausFortschritt(Base):
     )
 
 
+class VerkehrPruefung(Base):
+    """Bestandener Führerschein der Verkehrs-Simulation (Stufe »fuss«, später
+    »rad« …) — je Schüler:in und Stufe genau einmal, wegen der Hauspunkte."""
+    __tablename__ = "verkehr_pruefungen"
+    __table_args__ = (UniqueConstraint("student_id", "stufe", name="uq_verkehr_pruefung_student_stufe"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    stufe: Mapped[str] = mapped_column(String(20), nullable=False)
+    punkte: Mapped[int] = mapped_column(Integer, nullable=False)
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    bestanden_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class MausPruefung(Base):
     """Bestandene Abschlussprüfung eines Teils des Maus-Führerscheins — je
     Schüler:in und Teil genau einmal, damit die Hauspunkte nicht doppelt
