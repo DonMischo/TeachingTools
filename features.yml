@@ -175,6 +175,13 @@ simulationen:
       - Größen, Entfernungen mit Lichtlauf, Kepler-Gesetze
       - Erdmagnetfeld mit Sonnensturm
       - Galerie mit rund 90 Bildern zum Freischalten
+  - id: verkehr
+    name: Verkehrssicherheit
+    kann:
+      - Echte Karte um die Schule (OpenStreetMap, 750 m)
+      - Zu Fuß laufen in GTA-artiger Draufsicht (Pfeile/WASD)
+      - Anzeige des Untergrunds (Gehweg, Radweg, Fahrbahn, Gleis)
+      - Gesten mit Emoji-Blase
 
 tools:
   - id: schreibraum

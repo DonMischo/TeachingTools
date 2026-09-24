@@ -125,6 +125,11 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("sonnensystem", "🪐 Sonnensystem", "🪐", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Verkehrssicherheit zu Fuß auf der echten Karte um die Schule
+    # (OpenStreetMap), GTA-artige Draufsicht — rechnet im Browser.
+    CatalogTool("verkehr", "🚦 Verkehrssicherheit", "🚦", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

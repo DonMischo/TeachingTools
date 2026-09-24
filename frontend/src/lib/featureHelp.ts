@@ -193,6 +193,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
     ],
   },
+  verkehr: {
+    title: "Verkehrssicherheit",
+    intro: "Zu Fuß durch das Viertel um die Schule in der Eugen-Richter-Straße — auf der echten Karte aus OpenStreetMap, mit Lidl, Netto, Aldi, Bushaltestellen, Ampeln und Zebrastreifen.",
+    sections: [
+      { label: "🎮 Steuerung", text: "Erst ins Bild klicken, dann mit den Pfeiltasten oder WASD laufen, mit Umschalt rennen. Oben steht immer, worauf man gerade steht: Gehweg, Radweg, Fahrbahn oder Gleis." },
+      { label: "✋ Gesten", text: "Die Tasten 1 bis 4 zeigen zwei Sekunden lang eine Geste über der Figur: lächeln, Hand raus (»ich will über die Straße«), danke winken und schimpfen." },
+      { label: "🗺️ Karte", text: "Straßen, Gehwege, Radwege, Gleise und Häuser stammen aus OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL). Im Umkreis von 750 m gibt es keinen echten Straßenbahn- oder Bahnhalt — die beiden Halte auf den echten Gleisen sind ausgedacht und so beschriftet." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto." },
+    ],
+  },
   vierecke: {
     title: "Vierecke",
     intro: "Sechs Vierecke der Klasse 5 mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen. Zusammengelegt aus zwei früheren Werkzeugen.",

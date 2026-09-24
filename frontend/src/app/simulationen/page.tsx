@@ -65,6 +65,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#38bdf8",
   },
   {
+    slug: "verkehr",
+    href: "/simulationen/verkehr",
+    icon: "🚦",
+    title: "Verkehrssicherheit",
+    description: "Zu Fuß durchs echte Viertel um die Schule — Ampel, Zebrastreifen, Radweg, Bus und Bahn. Draufsicht wie in einem Spiel, mit Pfeiltasten oder WASD.",
+    color: "#f59e0b",
+  },
+  {
     slug: "abacus",
     href: "/simulationen/abacus",
     icon: "🧮",

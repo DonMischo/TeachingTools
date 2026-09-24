@@ -25,6 +25,7 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
+import Verkehr from "@/components/verkehr/Verkehr";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -42,6 +43,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
+  verkehr: { title: "Verkehrssicherheit", icon: "🚦", node: <Verkehr /> },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
