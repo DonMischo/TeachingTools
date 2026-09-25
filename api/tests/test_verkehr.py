@@ -255,3 +255,26 @@ def test_stille_verbindungen_werden_entfernt(client, teacher, teacher_token):
                 assert w["du"] not in verkehr._raeume[code].spieler
 
     asyncio.run(lauf())
+
+
+def test_taktgeber_im_hintergrund_gibt_ab(client, teacher, teacher_token):
+    """Ein Tab im Hintergrund pingt noch, zeichnet aber nicht: dann rechnet ein anderer den Verkehr."""
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            w = await bis(lk, "willkommen")
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                g = await bis(gast, "willkommen")
+                # Der Gast zeichnet (schickt seine Lage), die Lehrkraft seit Sekunden nicht mehr — pingt aber.
+                await gast.send_json({"typ": "ich", "x": 1, "y": 2})
+                await lk.send_json({"typ": "ping", "c": 0})
+                verkehr._raeume[code].spieler[w["du"]].bild_zuletzt -= verkehr.BILD_STILL + 2
+                t = await bis(gast, "taktgeber", lambda n: n["key"] == g["du"])
+                assert t["key"] == g["du"]
+                # Die Lehrkraft bleibt im Raum
+                assert w["du"] in verkehr._raeume[code].spieler
+
+    asyncio.run(lauf())

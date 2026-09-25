@@ -18,13 +18,17 @@ import { entpacke, packe, winkelZu, type Netz } from "@/lib/verkehr/netz";
 import { baueSchilder, type SchildArt } from "@/lib/verkehr/schilder";
 import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import type { Ereignis } from "@/lib/verkehr/missionen";
-import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerOffen, tuerPhase, tueren } from "@/lib/verkehr/tueren";
+import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, bahnTakt, baueBahnen, umlauf, wagenLagen } from "@/lib/verkehr/schiene";
 import { werktag, abfahrten, abschnitt, helligkeit, istRush, linienImViertel, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import type { LtbOrt } from "@/lib/verkehr/ltb";
+import { stadtRaster } from "@/lib/verkehr/wegsuche";
+import { AUSSEN_Y, Busszene, RAND } from "@/lib/verkehr/busszene";
+import { BusBild } from "@/lib/verkehr/busbild";
+import type { P } from "@/lib/verkehr/geometrie";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
 import type { Steuerkanal } from "./Steuerkreuz";
 import { baueEimer, EIMER_NAH, GREIFEN, Muell, TRAGEN } from "@/lib/verkehr/muell";
@@ -237,7 +241,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const { c: tafelEbene, tafeln } = haltTafeln(s.halte);
       const infoEbene = new Container();
       infoEbene.addChild(namen, tafelEbene);
-      welt.addChild(boden, figuren, autoEbene, ampelEbene, kronen, infoEbene);
+      // Die Bus-Szene liegt über den Fahrzeugen (Bus ohne Dach, Leute drin).
+      const szenenEbene = new Container();
+      welt.addChild(boden, figuren, autoEbene, ampelEbene, szenenEbene, kronen, infoEbene);
       const nacht = new Nacht(laternen(s));
       const schule = schulMitte(s);
       const minikarte = new Minikarte(s, schule);
@@ -335,19 +341,38 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       // Maus wie in Diablo: klicken = dorthin gehen, gedrückt halten = dem Zeiger folgen.
       let mausZiel: { x: number; y: number } | null = null;
       let mausHaelt = false;
+      // Der Weg dorthin (Wegsuche wie in Diablo 2): um Häuser herum, über Gehwege und Überwege.
+      let mausWeg: P[] = [];
+      let wegFuer: { x: number; y: number } | null = null, zuletztSuche = -Infinity;
+      const plane = () => {
+        if (!mausZiel) return;
+        wegFuer = { ...mausZiel };
+        zuletztSuche = performance.now() / 1000;
+        mausWeg = stadtRaster(s, [ich.x, ich.y], [mausZiel.x, mausZiel.y]).suche([ich.x, ich.y], [mausZiel.x, mausZiel.y]) ?? [[mausZiel.x, mausZiel.y]];
+      };
       const zielMarke = new Graphics().circle(0, 0, 0.6).stroke({ width: 0.12, color: 0xffd400 }).circle(0, 0, 0.15).fill(0xffd400);
       zielMarke.visible = false;
       figuren.addChild(zielMarke);
+      // Die Welt kann gedreht sein (Bus-Szene) — Pixi rechnet den Klick zurück.
       const weltPunkt = (e: PointerEvent) => {
         const r = app.canvas.getBoundingClientRect();
-        return { x: (e.clientX - r.left - welt.position.x) / welt.scale.x, y: (e.clientY - r.top - welt.position.y) / welt.scale.y };
+        const p = welt.toLocal({ x: e.clientX - r.left, y: e.clientY - r.top });
+        return { x: p.x, y: p.y };
       };
       const mausRunter = (e: PointerEvent) => {
-        // Im Bus: auf den Bus tippen oder klicken = Halt wünschen (wie X).
-        if (mitfahrt?.art === "bus") {
+        // In der Bus-Szene: klicken oder tippen = dorthin gehen (auch drinnen, auch am Handy).
+        if (szene?.sz.mitIch && szeneBus) {
           const w = weltPunkt(e);
-          if (Math.hypot(w.x - ich.x, w.y - ich.y) < 8) einmal?.("KeyX");
-          return;
+          const [lx, ly] = zuBus(szeneBus, w.x, w.y);
+          const imRand = lx > RAND.x0 && lx < RAND.x1 && ly > RAND.y0 && ly < RAND.y1;
+          if (imRand || szene.sz.ich.drin) {
+            klang.wecke();
+            szene.sz.gehZu(Math.max(RAND.x0 + 0.2, Math.min(RAND.x1 - 0.2, lx)), Math.max(RAND.y0 + 0.2, Math.min(RAND.y1 - 0.2, ly)));
+            szeneHaelt = e.button === 0 && e.pointerType !== "touch";
+            return;
+          }
+          // Draußen weit weg geklickt: die Szene lässt los, es geht normal weiter.
+          lasseLos();
         }
         // An der offenen Tür: aufs Fahrzeug tippen oder klicken = einsteigen (wie E).
         if (einstiegBereit) {
@@ -362,10 +387,20 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         klang.wecke();
         mausHaelt = true;
         mausZiel = weltPunkt(e);
+        plane();
         app.canvas.setPointerCapture(e.pointerId);
       };
-      const mausBewegt = (e: PointerEvent) => { if (mausHaelt) mausZiel = weltPunkt(e); };
-      const mausHoch = () => { mausHaelt = false; };
+      let szeneHaelt = false, szeneFolgt = -Infinity;
+      const mausBewegt = (e: PointerEvent) => {
+        if (szeneHaelt && szene?.sz.mitIch && szeneBus && performance.now() - szeneFolgt > 200) {
+          szeneFolgt = performance.now();
+          const w = weltPunkt(e);
+          const [lx, ly] = zuBus(szeneBus, w.x, w.y);
+          szene.sz.gehZu(Math.max(RAND.x0 + 0.2, Math.min(RAND.x1 - 0.2, lx)), Math.max(RAND.y0 + 0.2, Math.min(RAND.y1 - 0.2, ly)));
+        }
+        if (mausHaelt) mausZiel = weltPunkt(e);
+      };
+      const mausHoch = () => { mausHaelt = false; szeneHaelt = false; };
       app.canvas.addEventListener("pointerdown", mausRunter);
       app.canvas.addEventListener("pointermove", mausBewegt);
       app.canvas.addEventListener("pointerup", mausHoch);
@@ -373,6 +408,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       // Mausrad: näher heran oder weiter weg.
       app.canvas.addEventListener("wheel", (e) => { e.preventDefault(); rueckruf.current.onZoom?.(e.deltaY < 0 ? 1 : -1); }, { passive: false });
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
+      // Zum Prüfen (?takt): die Figur an einen Ort setzen — el.dispatchEvent(new CustomEvent("vk-setze", { detail: [x, y] }))
+      if (pruefhilfe) el.addEventListener("vk-setze", (e) => { const [x, y] = (e as CustomEvent<[number, number]>).detail; ich = { ...ich, x, y }; });
       const figur = zeichneFigur(farbe);
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
       figur.scale.set(FIGUR_GROESSER);
@@ -381,6 +418,40 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       figur.addChildAt(weste, 1);
       weste.visible = false;
       let westeAn = false;
+      // Der Ranzen auf dem Rücken — B nimmt ihn ab (im Bus richtig)
+      const ranzen = new Graphics().roundRect(-0.36, -0.18, 0.16, 0.36, 0.05).fill(0xe0a100).stroke({ width: 0.03, color: 0x8a6200 });
+      figur.addChildAt(ranzen, 0);
+      let rucksackAn = true;
+
+      // Bus-Szene: ein Bus ganz nah, ohne Dach, mit Leuten — sobald man an einem haltenden Bus steht oder mitfährt.
+      let szene: { bus: number; sz: Busszene; bild: BusBild; tempo: number; bremse: number } | null = null;
+      let szeneBus: Fahrzeug | undefined;
+      let szeneHinweis: string | null = null;
+      let dreh = 0;
+      const zuBus = (f: Fahrzeug, wx: number, wy: number): [number, number] => {
+        const c = Math.cos(f.winkel), sn = Math.sin(f.winkel), dx = wx - f.x, dy = wy - f.y;
+        return [dx * c + dy * sn, -dx * sn + dy * c];
+      };
+      const zurWelt = (f: Fahrzeug, lx: number, ly: number): [number, number] => {
+        const c = Math.cos(f.winkel), sn = Math.sin(f.winkel);
+        return [f.x + lx * c - ly * sn, f.y + lx * sn + ly * c];
+      };
+      /** Die Figur verlässt die Szene und läuft wieder frei. */
+      const lasseLos = () => {
+        if (!szene?.sz.mitIch) return;
+        szene.sz.mitIch = false;
+        figuren.addChild(figur);
+        waechter.zuruecksetzen();
+      };
+      const beendeSzene = () => {
+        if (!szene) return;
+        lasseLos();
+        szene.bild.destroy();
+        szene = null;
+        szeneBus = undefined;
+      };
+      /** Wie voll der Bus ist, nach der Uhrzeit. */
+      const fuellung = () => ({ rushMorgen: 0.85, rushAbend: 0.8, tag: 0.45, frueh: 0.35, abend: 0.3, nacht: 0.12 } as const)[abschnitt(zeit)];
 
       // Gestenblase: weißer Kreis mit Emoji, hängt über der Figur (dreht nicht mit).
       const meineBlase = baueBlase();
@@ -440,10 +511,19 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         if (code === "KeyM") rueckruf.current.onUeberblick?.();
         if (code === "KeyL") frageLtb?.();
         // X im Bus: Haltewunsch — ausgestiegen wird erst, wenn die Türen offen sind.
-        if (code === "KeyX" && mitfahrt?.art === "bus" && !haltGewuenscht) { haltGewuenscht = true; klang.wecke(); }
+        if (code === "KeyX" && mitfahrt?.art === "bus" && !haltGewuenscht) { haltGewuenscht = true; klang.ampelTick(true); }
         if (code === "Equal" || code === "NumpadAdd" || code === "BracketRight") rueckruf.current.onZoom?.(1);
         if (code === "Minus" || code === "NumpadSubtract" || code === "Slash") rueckruf.current.onZoom?.(-1);
-        if (code === "KeyE") {
+        if (code === "KeyB") {
+          if (szene?.sz.mitIch) { const m = szene.sz.rucksack(); if (m) melde(MELDUNGEN[m]); rucksackAn = szene.sz.ich.rucksack; }
+          else rucksackAn = !rucksackAn;
+          ranzen.visible = rucksackAn;
+        }
+        if (code === "KeyE" && szene?.sz.mitIch) {
+          const m = szene.sz.aktion(t);
+          if (m) melde(MELDUNGEN[m]);
+          if (m === "platzAngeboten") klang.grosserErfolg();
+        } else if (code === "KeyE") {
           if (einstiegBereit && !mitfahrt) willEinsteigen = true;
           else if (naherTaster) {
             if (t - tasterVon(naherTaster) > TASTER_WARTEN + FUSS_GRUEN + 6) { netzRef.current.sendeTaster(naherTaster.id); ereignis({ typ: "taster", t }); }
@@ -558,14 +638,28 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         // Tasten haben Vorrang: wer tippt, bricht den Mausweg ab.
         if (tasten.hoch || tasten.runter || tasten.links || tasten.rechts) mausZiel = null;
         let stick = optionen.current.steuerkanal?.current.stick;
+        // Gedrückt halten: dem Zeiger folgen, den Weg alle Viertelsekunde neu suchen.
+        if (mausZiel && mausHaelt && wegFuer && performance.now() / 1000 - zuletztSuche > 0.25
+          && Math.hypot(mausZiel.x - wegFuer.x, mausZiel.y - wegFuer.y) > 1) plane();
+        while (mausWeg.length > 1 && Math.hypot(mausWeg[0][0] - ich.x, mausWeg[0][1] - ich.y) < 0.4) mausWeg.shift();
         if (mausZiel && (!stick || Math.hypot(stick.x, stick.y) < 0.15)) {
-          const dx = mausZiel.x - ich.x, dy = mausZiel.y - ich.y, d = Math.hypot(dx, dy);
-          if (d < 0.3 && !mausHaelt) mausZiel = null;
+          const [wx, wy] = mausWeg[0] ?? [mausZiel.x, mausZiel.y];
+          const dx = wx - ich.x, dy = wy - ich.y, d = Math.hypot(dx, dy);
+          if (d < 0.3 && !mausHaelt && mausWeg.length <= 1) { mausZiel = null; mausWeg = []; }
           // Gehen (Stärke 0,9); Umschalt rennt wie bei den Tasten.
           else if (d >= 0.3) stick = { x: (dx / d) * 0.9, y: (dy / d) * 0.9 };
         }
-        const eingabe = { ...tasten, stick };
-        if (t >= unfallBis && !mitfahrt && !festgehalten) ich = schritt(ich, t - umschauenSeit < UMSCHAUEN_DAUER ? KEINE_EINGABE : eingabe, dt, s);
+        let eingabe = { ...tasten, stick };
+        // Bei gedrehter Welt (Bus-Szene) meinen die Tasten den Bildschirm: mitdrehen.
+        const stickAn = !!stick && Math.hypot(stick.x, stick.y) > 0.15;
+        const bx = stickAn ? stick!.x : (tasten.rechts ? 1 : 0) - (tasten.links ? 1 : 0);
+        const by = stickAn ? stick!.y : (tasten.runter ? 1 : 0) - (tasten.hoch ? 1 : 0);
+        if (Math.abs(dreh) > 0.02 && (bx || by)) {
+          const c = Math.cos(-dreh), sn = Math.sin(-dreh), l = Math.hypot(bx, by);
+          const staerke = stickAn ? Math.min(1, l) : 0.9;
+          eingabe = { ...KEINE_EINGABE, rennen: tasten.rennen, stick: { x: ((bx * c - by * sn) / l) * staerke, y: ((bx * sn + by * c) / l) * staerke } };
+        }
+        if (t >= unfallBis && !mitfahrt && !festgehalten && !szene?.sz.mitIch) ich = schritt(ich, t - umschauenSeit < UMSCHAUEN_DAUER ? KEINE_EINGABE : eingabe, dt, s);
         // Hängt die Figur fest (Hauswand), gibt der Mausweg auf.
         if (mausZiel && !mausHaelt && Math.hypot(ich.x - vorher.x, ich.y - vorher.y) < 0.002 && t - umschauenSeit >= UMSCHAUEN_DAUER) mausZiel = null;
         zielMarke.visible = !!mausZiel && !mitfahrt;
@@ -748,6 +842,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         tuerEbene.clear();
         for (const o of offene) {
           if (Math.abs(o.tuer.p[0] - ich.x) > 60 || Math.abs(o.tuer.p[1] - ich.y) > 45) continue;
+          if (szene && o.id === szene.bus) continue;
           const offen = o.phase === "aussteigen" || o.phase === "einsteigen";
           const [lx, ly] = o.tuer.laengs, h = TUER_BREITE / 2;
           tuerEbene.moveTo(o.tuer.p[0] - lx * h, o.tuer.p[1] - ly * h).lineTo(o.tuer.p[0] + lx * h, o.tuer.p[1] + ly * h)
@@ -760,24 +855,77 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           }
         }
 
-        // Ein- und Aussteigen
-        if (mitfahrt?.art === "bus") {
-          const fahrt = mitfahrt;
-          const bus = fahrzeugListe.find((f) => f.id === fahrt.id);
-          if (!bus) mitfahrt = null;
-          else {
-            ich = { ...ich, x: bus.x, y: bus.y };
-            // Kein Aussteigen von allein: nur mit Haltewunsch (X / auf den Bus tippen) und offenen Türen.
-            if (haltGewuenscht && bus.haltSeit != null && tuerOffen(tuerPhase(t - bus.haltSeit))) {
-              const [, mitte] = tueren(bus.x, bus.y, bus.winkel, BUS.breite, [...BUS.tueren]);
-              ich = { ...ich, x: mitte.p[0] + mitte.raus[0] * 1.6, y: mitte.p[1] + mitte.raus[1] * 1.6 };
-              einstieg.ausgestiegen(`bus-${bus.id}`, String(bus.haltRi));
-              mitfahrt = null;
-              haltGewuenscht = false;
-              waechter.zuruecksetzen();
-              melde(MELDUNGEN.ausgestiegen);
-            }
+        // Bus-Szene: anfangen, wenn man an einem haltenden (oder gleich haltenden) Bus steht
+        szeneBus = szene ? fahrzeugListe.find((f) => f.id === szene!.bus) : undefined;
+        if (szene && (!szeneBus || (!szene.sz.mitIch && Math.hypot(szeneBus.x - ich.x, szeneBus.y - ich.y) > 24))) {
+          if (mitfahrt?.art === "bus") mitfahrt = null;
+          beendeSzene();
+        }
+        if (!szene && t >= unfallBis && !mitfahrt) {
+          const kandidat = fahrzeugListe.filter((f) => {
+            if (f.art !== "bus") return false;
+            const d = Math.hypot(f.x - ich.x, f.y - ich.y);
+            if (f.haltSeit != null) return d < 14;
+            // Kommt gerade an die Haltestelle, an der ich stehe
+            return d < 20 && f.tempo < 8 && s.halte.some((h) => h.art === "bushalt" && Math.hypot(h.p[0] - f.x, h.p[1] - f.y) < 30 && Math.hypot(h.p[0] - ich.x, h.p[1] - ich.y) < 12);
+          }).sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
+          if (kandidat) {
+            const sz = new Busszene(kandidat.id * 7919 + Math.floor(t), fuellung(), t);
+            const bild = new BusBild(sz);
+            szenenEbene.addChild(bild.c);
+            szene = { bus: kandidat.id, sz, bild, tempo: kandidat.tempo, bremse: 0 };
+            szeneBus = kandidat;
           }
+        }
+        szeneHinweis = null;
+        if (szene && szeneBus) {
+          const f = szeneBus, sz = szene.sz;
+          const phase = f.haltSeit != null ? tuerPhase(t - f.haltSeit) : "faehrt";
+          // Die Figur fangen: neben dem Bus auf dem Gehweg (Türseite), solange er hält
+          const [lx, ly] = zuBus(f, ich.x, ich.y);
+          if (!sz.mitIch && t >= unfallBis && phase !== "faehrt" && lx > RAND.x0 + 0.5 && lx < RAND.x1 - 0.5 && ly > AUSSEN_Y + 0.15 && ly < RAND.y1 - 0.5) {
+            sz.mitIch = true;
+            Object.assign(sz.ich, { x: lx, y: ly, weg: [], rucksack: rucksackAn, r: rucksackAn ? 0.27 : 0.23 });
+            mausZiel = null; mausWeg = [];
+            szenenEbene.addChild(figur);
+          }
+          if (sz.mitIch) {
+            // Tasten und Stick meinen den Bildschirm: in Bus-Richtung drehen
+            if (bx || by) {
+              const w = -(f.winkel + dreh), c = Math.cos(w), sn = Math.sin(w);
+              sz.laufe(bx * c - by * sn, bx * sn + by * c, tasten.rennen ? 2.4 : 1.5);
+            } else sz.laufe(0, 0, 1.5);
+          }
+          // Bremsen und Anfahren, dazu ab und zu eine scharfe Bremsung
+          const beschl = dt > 0 ? (szene.tempo - f.tempo) / dt : 0;
+          szene.tempo = f.tempo;
+          szene.bremse = szene.bremse * 0.85 + beschl * 0.15;
+          let ruck = szene.bremse;
+          if (phase === "faehrt" && sz.ich.drin && Math.random() < dt / 50) { ruck = 3.5; klang.hupe(); }
+          const halt = f.haltSeit != null ? `${f.id}@${f.haltRi}@${Math.round(f.haltSeit)}` : null;
+          const r = sz.schritt({ t, dt, phase, halt, beschleunigung: ruck, fuellung: fuellung() });
+          for (const m of r.meldungen) melde(MELDUNGEN[m]);
+          szeneHinweis = r.hinweis;
+          if (sz.mitIch) {
+            const [wx, wy] = zurWelt(f, sz.ich.x, sz.ich.y);
+            ich = { ...ich, x: wx, y: wy, tempo: sz.ich.weg.length ? 1.5 : 0, winkel: (sz.ich.winkel ?? 0) + f.winkel };
+            mitfahrt = sz.ich.drin ? { art: "bus", id: f.id, abRi: f.haltRi ?? 0 } : null;
+            if (r.eingestiegen !== undefined) {
+              haltGewuenscht = false;
+              ereignis({ typ: "eingestiegen", art: "bus", gut: r.meldungen.includes("gutEingestiegen") || r.meldungen.includes("rausRein"), linie: f.anzeige?.split(" ")[0] });
+            }
+            if (r.ausgestiegen) { haltGewuenscht = false; melde(MELDUNGEN.ausgestiegen); }
+            // Draußen und der Bus fährt, oder weit genug weg: frei laufen
+            if (!sz.ich.drin && (phase === "faehrt" || sz.ich.y > RAND.y1 - 0.45 || Math.abs(sz.ich.x) > RAND.x1 - 0.45)) lasseLos();
+          }
+          szene.bild.c.position.set(f.x, f.y);
+          szene.bild.c.rotation = f.winkel;
+          szene.bild.male(sz, phase, t, r.rampe, !sz.ich.drin);
+        }
+
+        // Ein- und Aussteigen (Bahnen; Busse macht die Szene)
+        if (mitfahrt?.art === "bus") {
+          if (!szene) mitfahrt = null;
         } else if (mitfahrt?.art === "bahn") {
           const b = bahnen[mitfahrt.i];
           const st = bahnStand(b, t, bahnTakt(b, takt({ art: b.art === "tram" ? "tram" : "bus", nr: b.art === "tram" ? "1" : "Zug" }, zeit)));
@@ -793,7 +941,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
             melde(MELDUNGEN.ausgestiegen);
           }
         } else if (t >= unfallBis) {
-          const { meldungen, einsteigen, bereit } = einstieg.pruefe(ich.x, ich.y, offene, willEinsteigen);
+          const { meldungen, einsteigen, bereit } = einstieg.pruefe(ich.x, ich.y, offene.filter((o) => !szene || o.id !== szene.bus), willEinsteigen);
           willEinsteigen = false;
           einstiegBereit = !!bereit;
           for (const m of meldungen) melde(m);
@@ -806,7 +954,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
             ereignis({ typ: "eingestiegen", art, gut: meldungen.some((m) => m.id === "gutEingestiegen"), linie: linieNr });
           }
         }
-        figur.visible = !mitfahrt;
+        figur.visible = !mitfahrt || !!szene?.sz.mitIch;
+        // In der Szene maßstäblich (sonst passt man nicht auf einen Sitz), draußen größer wie im ersten GTA
+        const massstab = figur.scale.x + ((szene?.sz.mitIch ? 1 : FIGUR_GROESSER) - figur.scale.x) * Math.min(1, dt * 4);
+        figur.scale.set(massstab);
+        ranzen.visible = rucksackAn && !(szene?.sz.mitIch && szene.sz.ich.sitz !== null);
         mensch.x = ich.x; mensch.y = ich.y;
         figur.position.set(ich.x, ich.y);
         if (ich.tempo) figur.rotation = ich.winkel;
@@ -861,8 +1013,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           ereignis({ typ: "ort", name: l.name! });
         }
 
-        // Regeln
-        if (unterwegs) {
+        // Regeln (in der Bus-Szene gelten die Regeln der Szene)
+        if (unterwegs && !szene?.sz.mitIch) {
           for (const m of waechter.pruefe(ich.x, ich.y, t, haltende)) {
             melde(m);
             if (m.id === "rot" || m.id === "nichtGeschaut") zeigeBlase("⚠️");
@@ -876,7 +1028,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         const pd = Math.hypot(zx - pinguinLage.x, zy - pinguinLage.y);
         if (pd > 25 || mitfahrt) { pinguinLage.x = zx; pinguinLage.y = zy; }
         else if (pd > 0.3) { const f = Math.min(1, dt * 2.5); pinguinLage.x += (zx - pinguinLage.x) * f; pinguinLage.y += (zy - pinguinLage.y) * f; }
-        pinguin.visible = !mitfahrt;
+        pinguin.visible = !mitfahrt && !szene?.sz.mitIch;
         pinguin.position.set(pinguinLage.x, pinguinLage.y);
         pinguin.rotation = Math.atan2(ich.y - pinguinLage.y, ich.x - pinguinLage.x) + (pd > 0.4 ? Math.sin(t * 12) * 0.25 : 0);
 
@@ -896,8 +1048,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         for (const o of tasterOrte) if (Math.hypot(o.p[0] - ich.x, o.p[1] - ich.y) < 2.5) { naherTaster = o.a; break; }
         nahesSchild = null;
         for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
-        const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …" : mitfahrt ? (mitfahrt.art === "bus"
-            ? (haltGewuenscht ? "🔔 Halt gewünscht — an der nächsten Haltestelle steigst du aus." : "Du fährst Bus — X drücken oder auf den Bus tippen, um auszusteigen.")
+        const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …"
+          : szeneHinweis ? szeneHinweis
+          : mitfahrt ? (mitfahrt.art === "bus"
+            ? (haltGewuenscht ? "🔔 Halt gewünscht — wenn die Türen aufgehen: zur Tür und hinaus." : "Im Bus: X = Halt wünschen · E = setzen/aufstehen · B = Rucksack · zum Aussteigen zur Tür gehen")
             : "Du fährst mit der Bahn …")
           : einstiegBereit ? "E drücken oder auf den Bus tippen: einsteigen"
           : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
@@ -929,18 +1083,32 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         // Kamera: an einer offenen Tür heranzoomen, damit man sieht, wo man steht.
         let tuerNah: Tuerstand | null = null, dMin = 9;
         if (!mitfahrt) for (const o of offene) {
+          if (szene && o.id === szene.bus) continue;
           const d = Math.hypot(o.tuer.p[0] - ich.x, o.tuer.p[1] - ich.y);
           if (d < dMin) { dMin = d; tuerNah = o; }
         }
         const nah = ZOOM_STUFEN[optionen.current.zoomStufe] ?? ZOOM_STUFEN[0];
-        zoom += ((tuerNah ? Math.max(TUER_ZOOM, nah) : optionen.current.ueberblick ? UEBERBLICK_ZOOM : nah) - zoom) * Math.min(1, dt * 3);
-        const blickX = tuerNah ? ich.x * 0.6 + tuerNah.tuer.p[0] * 0.4 : ich.x;
-        const blickY = tuerNah ? ich.y * 0.6 + tuerNah.tuer.p[1] * 0.4 : ich.y;
+        // Bus-Szene: der ganze Bus füllt das Bild, waagerecht, Türen unten
+        const szenenBlick = !!szene && !!szeneBus && (szene.sz.mitIch || Math.hypot(szeneBus.x - ich.x, szeneBus.y - ich.y) < 16);
+        const szenenZoom = Math.min(app.screen.width / 15.5, app.screen.height / 8.5);
+        zoom += ((szenenBlick ? szenenZoom : tuerNah ? Math.max(TUER_ZOOM, nah) : optionen.current.ueberblick ? UEBERBLICK_ZOOM : nah) - zoom) * Math.min(1, dt * 3);
+        const zielDreh = szenenBlick ? -szeneBus!.winkel : 0;
+        const dd = Math.atan2(Math.sin(zielDreh - dreh), Math.cos(zielDreh - dreh));
+        dreh += dd * Math.min(1, dt * 3);
+        if (Math.abs(dreh) < 0.001 && !szenenBlick) dreh = 0;
+        const [blickX, blickY] = szenenBlick ? zurWelt(szeneBus!, 0, 1.1)
+          : tuerNah ? [ich.x * 0.6 + tuerNah.tuer.p[0] * 0.4, ich.y * 0.6 + tuerNah.tuer.p[1] * 0.4] : [ich.x, ich.y];
         welt.scale.set(zoom);
-        welt.position.set(app.screen.width / 2 - blickX * zoom, app.screen.height / 2 - blickY * zoom);
+        welt.rotation = dreh;
+        // Baumkronen und Namen würden den Bus verdecken
+        kronen.alpha += ((szenenBlick ? 0 : 1) - kronen.alpha) * Math.min(1, dt * 4);
+        kronen.visible = kronen.alpha > 0.02;
+        const dc = Math.cos(dreh), ds = Math.sin(dreh);
+        welt.position.set(app.screen.width / 2 - (blickX * dc - blickY * ds) * zoom, app.screen.height / 2 - (blickX * ds + blickY * dc) * zoom);
 
         // Nacht: dieselbe Umrechnung für die Lichter
         nacht.licht.scale.set(zoom);
+        nacht.licht.rotation = dreh;
         nacht.licht.position.copyFrom(welt.position);
         nacht.stelle(hell, app.screen.width, app.screen.height,
           hell < 0.6 ? fahrzeugListe.filter((f) => Math.abs(f.x - ich.x) < 80 && Math.abs(f.y - ich.y) < 60).map((f) => ({ x: f.x, y: f.y, w: f.winkel, laenge: f.laenge })) : [],
@@ -961,6 +1129,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
 
         if (pruefhilfe) {
           el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
+          const bus = fahrzeugListe.filter((f) => f.art === "bus").sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
+          el.dataset.bus = bus ? `${bus.id}|${bus.x.toFixed(1)},${bus.y.toFixed(1)}|${bus.haltSeit != null ? "haelt" : bus.tempo.toFixed(1)}` : "";
+          el.dataset.szene = szene ? `${szene.bus}|${szene.sz.mitIch ? (szene.sz.ich.drin ? "drin" : "draussen") : "frei"}|${szene.sz.fahrgaeste.length}|${szeneHinweis ?? ""}` : "";
           const m = muell.naechstes(ich.x, ich.y, 60);
           el.dataset.muell = m ? `${m.p[0].toFixed(1)},${m.p[1].toFixed(1)}` : "";
         }

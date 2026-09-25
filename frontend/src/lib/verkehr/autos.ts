@@ -42,8 +42,8 @@ export type Fahrzeug = {
 /** Eine Buslinie als Rundkurs über die Kanten, mit den Haltestellen darauf. */
 export type Linie = { kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string };
 
-/** Busmaße und Türen (Abstand der Türmitten von der Busmitte). */
-export const BUS = { laenge: 12, breite: 2.55, tueren: [4.3, -0.6], farbe: 0xeeeeee } as const;
+/** Busmaße und Türen (Abstand der Türmitten von der Busmitte): vorn beim Fahrer, Mitte, hinten — wie in der Bus-Szene. */
+export const BUS = { laenge: 12, breite: 2.55, tueren: [4.85, 0.4, -3.6], farbe: 0xeeeeee } as const;
 
 /** Was der Verkehr über jeden Menschen auf der Karte wissen muss. */
 export type Fussgaenger = {

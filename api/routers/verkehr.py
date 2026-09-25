@@ -59,6 +59,9 @@ class Spieler:
     # Verbindung ohne sauberes Schließen) — sonst bliebe ein Geist Taktgeber
     # und alle Autos stünden still.
     zuletzt: float = field(default_factory=time.time)
+    # Letzte eigene Lage: kommt nur aus der Bildschleife. Ein Tab im Hintergrund
+    # pingt weiter, zeichnet aber nicht — als Taktgeber stünden alle Autos still.
+    bild_zuletzt: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -130,13 +133,24 @@ async def _schleife(code: str) -> None:
         if not raum.spieler:
             _raeume.pop(code, None)
             break
+        # Zeichnet der Taktgeber nicht mehr (Tab im Hintergrund)? Dann ein anderer.
+        tg = raum.spieler.get(raum.taktgeber or "")
+        if tg is None or time.time() - tg.bild_zuletzt > BILD_STILL:
+            await _neuer_taktgeber(code, raum)
         await mgr.broadcast(code, _stand(raum))
         await asyncio.sleep(TAKT)
 
 
+BILD_STILL = 3.0
+
+
 async def _neuer_taktgeber(code: str, raum: Raum) -> None:
-    lehrkraefte = [k for k in raum.reihenfolge if raum.spieler[k].lehrkraft]
-    neu = (lehrkraefte or raum.reihenfolge or [None])[0]
+    # Nur wer gerade zeichnet, rechnet den Verkehr — Lehrkraft zuerst.
+    jetzt = time.time()
+    aktiv = [k for k in raum.reihenfolge if jetzt - raum.spieler[k].bild_zuletzt < BILD_STILL]
+    wahl = aktiv or raum.reihenfolge
+    lehrkraefte = [k for k in wahl if raum.spieler[k].lehrkraft]
+    neu = (lehrkraefte or wahl or [None])[0]
     if neu != raum.taktgeber:
         raum.taktgeber = neu
         await mgr.broadcast(code, {"typ": "taktgeber", "key": neu})
@@ -196,6 +210,7 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
                 raum.reihenfolge.append(key)
             ich.zuletzt = time.time()
             if typ == "ich":
+                ich.bild_zuletzt = ich.zuletzt
                 try:
                     ich.x, ich.y, ich.w = float(n["x"]), float(n["y"]), float(n.get("w", 0))
                 except (KeyError, TypeError, ValueError):

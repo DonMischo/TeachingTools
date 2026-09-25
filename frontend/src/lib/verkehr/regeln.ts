@@ -12,7 +12,10 @@ export type RegelId =
   | "sicherGequert" | "gruenGequert" | "zebraGequert" | "beleidigung"
   | "tuerBlockiert" | "gutEingestiegen" | "eingestiegen" | "ausgestiegen" | "verdeckt" | "weisseLinie"
   | "gruppeWand" | "gruppeSchlange" | "schildRichtig" | "schildFalsch" | "dunkelOhneWeste"
-  | "muellWeg" | "muellFahrbahn" | "karmaGeheilt";
+  | "muellWeg" | "muellFahrbahn" | "karmaGeheilt"
+  // Im Bus (Bus-Szene)
+  | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben" | "snfFrei" | "snfBlockiert"
+  | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -41,6 +44,17 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   karmaGeheilt: { id: "karmaGeheilt", text: "Du räumst auf — die Autofahrer sind dir nicht mehr böse und lassen dich wieder vor.", punkte: 5 },
   schildRichtig: { id: "schildRichtig", text: "Richtig!", punkte: 5 },
   schildFalsch: { id: "schildFalsch", text: "Nicht ganz — lies die Erklärung.", punkte: 0 },
+  imWeg: { id: "imWeg", text: "Du hast an der Tür im Weg gestanden. Wenn andere raus müssen: kurz aussteigen, seitlich warten, wieder einsteigen.", punkte: -5 },
+  rausRein: { id: "rausRein", text: "Kurz raus, Platz gemacht, wieder rein — wie ein Profi!", punkte: 10 },
+  platzAngeboten: { id: "platzAngeboten", text: "Du bist aufgestanden und hast deinen Platz angeboten. Das ist richtig nett!", punkte: 15 },
+  sitzenGeblieben: { id: "sitzenGeblieben", text: "Sitzen geblieben, obwohl jemand deinen Platz dringender brauchte.", punkte: -5 },
+  snfFrei: { id: "snfFrei", text: "Du hast den Platz für Kinderwagen und Rollstuhl frei gemacht. Danke!", punkte: 5 },
+  snfBlockiert: { id: "snfBlockiert", text: "Der blaue Platz ist für Kinderwagen und Rollstühle — dort nicht stehen bleiben, wenn einer kommt.", punkte: -5 },
+  nichtFestgehalten: { id: "nichtFestgehalten", text: "Hoppla! Der Bus hat gebremst und du bist gestolpert. Im Stehen immer an einer Stange festhalten.", punkte: -5 },
+  rucksackAb: { id: "rucksackAb", text: "Rucksack ab — so hat im Bus jeder mehr Platz.", punkte: 3 },
+  rucksackAuf: { id: "rucksackAuf", text: "Mit Rucksack auf dem Rücken stößt du im vollen Bus alle an. Nimm ihn ab (B) und stell ihn zwischen die Füße.", punkte: -3 },
+  fahrkarte: { id: "fahrkarte", text: "Fahrkarte gezeigt. Gute Fahrt!", punkte: 2 },
+  tuerZu: { id: "tuerZu", text: "Nicht in der Tür stehen bleiben, wenn es piept — die Türen schließen!", punkte: -5 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },
 };
 

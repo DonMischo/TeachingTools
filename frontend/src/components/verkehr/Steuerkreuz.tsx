@@ -56,10 +56,12 @@ export function Steuerkreuz({ kanal, beleidigungen }: { kanal: React.MutableRefO
         <button type="button" className={`${rund} h-16 w-16 text-lg font-black`} onPointerDown={druecke("KeyE")} aria-label="Aktion">E</button>
         <button type="button" className={`${rund} h-14 w-14 text-2xl`} onPointerDown={druecke("KeyV")} aria-label="Warnweste">🦺</button>
         <button type="button" className={`${rund} h-14 w-14 text-2xl`} onPointerDown={() => setGesten((g) => !g)} aria-label="Gesten">😊</button>
+        <button type="button" className={`${rund} h-12 w-14 text-2xl`} onPointerDown={druecke("KeyB")} aria-label="Rucksack ab oder auf">🎒</button>
+        <button type="button" className={`${rund} h-12 w-14 text-2xl`} onPointerDown={druecke("KeyX")} aria-label="Halt wünschen">🔔</button>
         <button type="button" className={`${rund} col-span-2 h-12 w-full text-2xl`} onPointerDown={druecke("KeyL")} aria-label="LTB fragen">🐧</button>
       </div>
       {gesten && (
-        <div className="absolute bottom-60 right-5 z-10 flex gap-2">
+        <div className="absolute bottom-80 right-5 z-10 flex gap-2">
           {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => (
             <button key={g.id} type="button" className={`${rund} h-12 w-12 text-2xl`} aria-label={g.name}
               onPointerDown={() => { kanal.current.taste?.(`Digit${g.taste}`); setGesten(false); }}>
