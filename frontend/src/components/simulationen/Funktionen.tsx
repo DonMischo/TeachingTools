@@ -22,6 +22,7 @@ import { Tex } from "@/components/Tex";
 /* ── Zeichenfläche ─────────────────────────────────────────────────────────── */
 
 const W = 640, H = 460, M = 34;      // Innenrand für die Achsenbeschriftung
+const SNAP_PX = 14;                   // Einrastabstand zu Tabellenpunkten (viewBox)
 const PLOT_W = W - 2 * M, PLOT_H = H - 2 * M;
 const SAMPLES = 600;                 // Auflösung der Kurve
 
@@ -297,7 +298,17 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
     }
 
     const px = ((e.clientX - r.left) / r.width) * W;  // Bildschirm → viewBox
-    setHoverX(xAtPixel(px, view.x0, view.x1, W, M));
+    const py = ((e.clientY - r.top) / r.height) * H;
+    // Nah an einem Tabellenpunkt rastet der Zeiger dort ein — so trifft man
+    // die glatten Werte, statt x = 1,97 zu erwischen.
+    let snap: number | null = null;
+    let best = SNAP_PX;
+    for (const p of rows) {
+      if (p.y === null) continue;
+      const dist = Math.hypot(sx(p.x) - px, sy(p.y) - py);
+      if (dist < best) { best = dist; snap = p.x; }
+    }
+    setHoverX(snap ?? xAtPixel(px, view.x0, view.x1, W, M));
   }
 
   function onUp(e: React.PointerEvent<SVGSVGElement>) {
@@ -555,7 +566,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
                         onPointerEnter={() => setHoverRow(i)}
                         onPointerLeave={() => setHoverRow(null)}
                         className="px-2 py-1 border-l border-[var(--border)] whitespace-nowrap cursor-pointer text-center"
-                        style={hoverRow === i ? { background: "rgba(245,158,11,0.15)" } : undefined}
+                        style={hoverRow === i || hoverX === r.x ? { background: "rgba(245,158,11,0.15)" } : undefined}
                       >
                         {zeile.zelle(r)}
                       </td>
