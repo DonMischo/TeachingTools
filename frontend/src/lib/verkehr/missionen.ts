@@ -10,7 +10,8 @@ import { SCHILDER, type SchildArt } from "./schilder";
 
 export type MissionId =
   | "lidl" | "netto" | "ampel" | "taster" | "zebra" | "hand" | "bus" | "tram" | "zug" | "schilder" | "gruppe"
-  | "aldi" | "linie9" | "fahrplan" | "rush" | "nacht" | "muell";
+  | "aldi" | "linie9" | "fahrplan" | "rush" | "nacht" | "muell"
+  | "schlenky" | "platz" | "rausrein" | "rucksack" | "navi" | "polizei";
 
 export type Mission = { id: MissionId; icon: string; titel: string; text: string; pflicht: boolean };
 
@@ -31,6 +32,12 @@ export const MISSIONEN: Mission[] = [
   { id: "rush", icon: "🚗", titel: "Berufsverkehr", text: "Quere im Berufsverkehr (morgens oder nachmittags) sicher über die Straße.", pflicht: false },
   { id: "nacht", icon: "🦺", titel: "Im Dunkeln sichtbar", text: "Zieh im Dunkeln die Warnweste an (V) und quere sicher.", pflicht: false },
   { id: "muell", icon: "🗑️", titel: "Saubere Stadt", text: "Heb 5 Stück Müll auf (E) und wirf sie in einen Mülleimer — aber nie auf der Fahrbahn bücken!", pflicht: false },
+  { id: "schlenky", icon: "🚍", titel: "Mit dem Schlenky", text: "Fahr mit einem Gelenkbus (die Linie 9 hat welche) — richtig eingestiegen.", pflicht: false },
+  { id: "platz", icon: "👵", titel: "Platz anbieten", text: "Steh im Bus für eine ältere Person auf (E).", pflicht: false },
+  { id: "rausrein", icon: "🚪", titel: "Kurz raus, wieder rein", text: "Stehst du im vollen Bus an der Tür: kurz aussteigen, seitlich warten, wieder einsteigen.", pflicht: false },
+  { id: "rucksack", icon: "🎒", titel: "Rucksack ab", text: "Nimm im Bus den Rucksack ab (B).", pflicht: false },
+  { id: "navi", icon: "📱", titel: "Mit dem Handy ans Ziel", text: "Such im Handy (H) ein Ziel und lauf der blauen Linie nach — ohne zu beamen.", pflicht: false },
+  { id: "polizei", icon: "👮", titel: "Höflich bleiben", text: "Beende ein Gespräch mit der Polizei ohne Strafe.", pflicht: false },
   { id: "gruppe", icon: "🧱", titel: "Als Wand über die Straße", text: "Quert mit mindestens drei Leuten nebeneinander — alle gleichzeitig, nicht hintereinander.", pflicht: false },
 ];
 
@@ -42,7 +49,9 @@ export type Ereignis =
   | { typ: "ort"; name: string }
   | { typ: "taster"; t: number }
   | { typ: "hand"; t: number }
-  | { typ: "eingestiegen"; art: "bus" | "tram" | "zug"; gut: boolean; linie?: string }
+  | { typ: "eingestiegen"; art: "bus" | "tram" | "zug"; gut: boolean; linie?: string; gelenk?: boolean }
+  | { typ: "angekommen" }
+  | { typ: "polizei"; stufe: number }
   | { typ: "schild"; art: SchildArt; richtig: boolean }
   | { typ: "gruppe"; wand: boolean }
   | { typ: "weg"; meter: number }
@@ -133,6 +142,9 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (e.id === "sicherGequert" && n.handUm !== undefined && e.t - n.handUm < 15) erledige("hand");
       if (e.id === "gruenGequert" || e.id === "zebraGequert" || e.id === "sicherGequert") { st.querungen++; st.serie++; n.gequertUm = e.t; }
       if (e.id === "angefahren") st.unfaelle++;
+      if (e.id === "platzAngeboten") erledige("platz");
+      if (e.id === "rausRein") erledige("rausrein");
+      if (e.id === "rucksackAb") erledige("rucksack");
       if (SCHWER.includes(e.id)) { n.schwere++; st.serie = 0; }
       break;
     case "ort": {
@@ -150,6 +162,7 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (e.gut) {
         erledige(e.art);
         if (e.linie === "9") erledige("linie9");
+        if (e.gelenk) erledige("schlenky");
         if (e.art === "bus") st.busfahrten++;
         else st[e.art]++;
       }
@@ -176,6 +189,8 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (st.muell >= 5) erledige("muell");
       break;
     case "karmaGeheilt": st.karmaGeheilt++; break;
+    case "angekommen": erledige("navi"); break;
+    case "polizei": if (e.stufe === 0) erledige("polizei"); break;
   }
   for (const er of ERFOLGE) if (!n.erfolge!.includes(er.id) && er.erreicht(st, n)) n.erfolge!.push(er.id);
   return {

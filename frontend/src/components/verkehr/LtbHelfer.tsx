@@ -6,31 +6,18 @@
  */
 
 export function LtbBild({ groesse = 72 }: { groesse?: number }) {
+  // Tux von Larry Ewing (mit The GIMP), Lizenz: Nennung — dazu Warnweste und Helm, LTB ist im Verkehr unterwegs
   return (
-    <svg viewBox="0 0 100 110" width={groesse} height={groesse * 1.1} aria-hidden>
-      {/* Füße */}
-      <ellipse cx="36" cy="102" rx="12" ry="5" fill="#f59e0b" />
-      <ellipse cx="64" cy="102" rx="12" ry="5" fill="#f59e0b" />
-      {/* Körper */}
-      <ellipse cx="50" cy="62" rx="34" ry="40" fill="#1f2937" />
-      <ellipse cx="50" cy="68" rx="23" ry="30" fill="#f8fafc" />
-      {/* Warnweste */}
-      <path d="M27 58 Q50 50 73 58 L70 92 Q50 98 30 92 Z" fill="#d7ff1f" opacity="0.92" />
-      <rect x="29" y="72" width="42" height="4" fill="#e5e7eb" />
-      <rect x="47" y="56" width="6" height="38" fill="#e5e7eb" />
-      {/* Flügel, einer winkt */}
-      <ellipse cx="17" cy="66" rx="7" ry="18" fill="#111827" transform="rotate(12 17 66)" />
-      <ellipse cx="86" cy="48" rx="7" ry="18" fill="#111827" transform="rotate(-40 86 48)" />
-      {/* Kopf */}
-      <circle cx="50" cy="30" r="22" fill="#1f2937" />
-      <ellipse cx="50" cy="35" rx="15" ry="13" fill="#f8fafc" />
-      <circle cx="43" cy="30" r="4" fill="#111827" /><circle cx="44.3" cy="28.7" r="1.3" fill="#fff" />
-      <circle cx="57" cy="30" r="4" fill="#111827" /><circle cx="58.3" cy="28.7" r="1.3" fill="#fff" />
-      <path d="M44 37 L56 37 L50 45 Z" fill="#f59e0b" />
-      {/* Helm */}
-      <path d="M28 22 Q50 -4 72 22 Z" fill="#ef4444" />
-      <rect x="26" y="20" width="48" height="5" rx="2.5" fill="#dc2626" />
-    </svg>
+    <div className="relative" style={{ width: groesse, height: groesse * 1.1 }} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/verkehr/tux.svg" alt="" width={groesse} height={groesse * 1.1} className="h-full w-full object-contain" />
+      <svg viewBox="0 0 216 256" className="absolute inset-0 h-full w-full">
+        <path d="M58 150 Q108 128 158 150 L150 214 Q108 228 66 214 Z" fill="#d7ff1f" opacity="0.85" />
+        <rect x="62" y="176" width="92" height="7" fill="#e5e7eb" />
+        <path d="M58 52 Q108 -6 158 52 Z" fill="#ef4444" />
+        <rect x="52" y="48" width="112" height="9" rx="4" fill="#dc2626" />
+      </svg>
+    </div>
   );
 }
 

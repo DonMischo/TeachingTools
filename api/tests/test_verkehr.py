@@ -298,3 +298,22 @@ def test_gedrosselter_tab_gibt_den_verkehr_ab(client, teacher, teacher_token):
                 assert t["key"] == g["du"]
 
     asyncio.run(lauf())
+
+
+def test_aussehen_wird_geprueft_und_weitergegeben(client, teacher, teacher_token):
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            await bis(lk, "willkommen")
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                g = await bis(gast, "willkommen")
+                await gast.send_json({"typ": "aussehen", "a": {"shirt": "hoodie", "shirtFarbe": 0x123456, "muetze": "krone",
+                                                               "handy": "apple", "boese": "<script>", "rucksackFarbe": 0x1FFFFFF}})
+                stand = await bis(lk, "stand", lambda n: any(s["key"] == g["du"] and s.get("aussehen") for s in n["spieler"]))
+                a = next(s for s in stand["spieler"] if s["key"] == g["du"])["aussehen"]
+                assert a == {"shirt": "hoodie", "handy": "apple", "shirtFarbe": 0x123456, "rucksackFarbe": 0xFFFFFF}
+
+    asyncio.run(lauf())

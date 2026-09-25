@@ -12,7 +12,7 @@ export type StrassenArt = "secondary" | "tertiary" | "residential" | "unclassifi
 export type WegArt = "geh" | "rad" | "geh_rad" | "treppe" | "feldweg" | "querung";
 export type PunktArt =
   | "ampel" | "ampelUebergang" | "zebra" | "querung" | "bushalt" | "tramhalt" | "bahnhalt"
-  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort";
+  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort" | "adresse";
 
 export type KartenStrasse = {
   art: StrassenArt; linie: P[]; name?: string; spuren?: number; einbahn?: boolean;
@@ -28,7 +28,8 @@ export type Karte = {
   strassen: KartenStrasse[];
   wege: { art: WegArt; linie: P[] }[];
   gleise: { art: "tram" | "bahn"; linie: P[] }[];
-  gebaeude: { umriss: P[]; name?: string; art?: string; etagen?: number }[];
+  /** `adresse`: Straße und Hausnummer (für die Suche im Handy). */
+  gebaeude: { umriss: P[]; name?: string; art?: string; etagen?: number; adresse?: string }[];
   flaechen: { art: string; umriss: P[] }[];
   punkte: KartenPunkt[];
   /** Bus- und Tramlinien aus OSM, je Richtung die Haltestellen in Fahrtreihenfolge. */

@@ -55,6 +55,8 @@ class Spieler:
     karma_bis: float = 0.0
     hand: float = 0.0
     weste: bool = False
+    # Aussehen (Oberteil, Mütze, Rucksack, Handy) — nur geprüfte Felder
+    aussehen: dict = field(default_factory=dict)
     # Letztes Lebenszeichen: Wer 20 s nichts schickt, ist weg (abgerissene
     # Verbindung ohne sauberes Schließen) — sonst bliebe ein Geist Taktgeber
     # und alle Autos stünden still.
@@ -91,6 +93,25 @@ ZEIT_VERSATZ_GRENZE = 60 * 24 * 3600
 ZEIT_FAKTOR_MAX = 10
 
 
+AUSSEHEN_ARTEN = {
+    "shirt": {"tshirt", "hoodie", "jacke", "trikot"},
+    "muetze": {"keine", "cap", "beanie", "hut", "helm"},
+    "handy": {"android", "apple"},
+}
+AUSSEHEN_FARBEN = ("shirtFarbe", "muetzeFarbe", "rucksackFarbe")
+
+
+def _pruefe_aussehen(roh) -> dict:
+    """Nur bekannte Arten und Farben als Zahl 0..0xFFFFFF — alles andere fällt weg."""
+    if not isinstance(roh, dict):
+        return {}
+    aus = {k: roh[k] for k, erlaubt in AUSSEHEN_ARTEN.items() if roh.get(k) in erlaubt}
+    for k in AUSSEHEN_FARBEN:
+        if isinstance(roh.get(k), int) and not isinstance(roh.get(k), bool):
+            aus[k] = roh[k] & 0xFFFFFF
+    return aus
+
+
 def _uhr_stellung(raum: Raum) -> dict:
     return {"zeitVersatz": raum.zeit_versatz, "zeitFaktor": raum.zeit_faktor, "zeitAnker": raum.zeit_anker}
 
@@ -106,7 +127,7 @@ def _stand(raum: Raum) -> dict:
         "spieler": [
             {"key": k, "name": s.name, "x": round(s.x, 2), "y": round(s.y, 2), "w": round(s.w, 2),
              "farbe": s.farbe, "punkte": s.punkte, "strafeBis": s.strafe_bis, "karmaBis": s.karma_bis,
-             "hand": s.hand, "mitfahrt": s.mitfahrt, "weste": s.weste, "lehrkraft": s.lehrkraft, "verstoesse": s.verstoesse}
+             "hand": s.hand, "mitfahrt": s.mitfahrt, "weste": s.weste, "aussehen": s.aussehen, "lehrkraft": s.lehrkraft, "verstoesse": s.verstoesse}
             for k, s in raum.spieler.items()
         ],
     }
@@ -229,6 +250,8 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
                 ich.weste = bool(n.get("weste"))
                 if isinstance(n.get("farbe"), int):
                     ich.farbe = n["farbe"] & 0xFFFFFF
+            elif typ == "aussehen":
+                ich.aussehen = _pruefe_aussehen(n.get("a"))
             elif typ == "ping":
                 await websocket.send_json({"typ": "pong", "c": n.get("c"), "uhr": uhr()})
             elif typ == "geste" and n.get("id") in GESTEN:

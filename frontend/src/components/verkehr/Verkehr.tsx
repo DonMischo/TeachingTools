@@ -22,6 +22,13 @@ import { Steuerkreuz, type Steuerkanal } from "./Steuerkreuz";
 import { LtbHelfer } from "./LtbHelfer";
 import { BEGRUESSUNG, Ltb, type LtbAnlass, type LtbOrt } from "@/lib/verkehr/ltb";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
+import { handyKarma, pruefeAussehen, zufallsAussehen, type Aussehen } from "@/lib/verkehr/aussehen";
+import { AussehenTafel } from "./AussehenTafel";
+import { PolizeiDialog } from "./PolizeiDialog";
+import { antworte, beginne, type Anlass, type Gespraech } from "@/lib/verkehr/polizei";
+import { HandySim, type HandyRoute } from "./HandySim";
+import type { HandyKanal } from "./Spielfeld";
+import { BEAMEN_JE_SITZUNG } from "@/lib/verkehr/handy";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
 
@@ -37,7 +44,6 @@ const UNTERGRUND: Record<Untergrund["art"] | "bus", { text: string; farbe: strin
   haus: { text: "Haus", farbe: "#57534e", icon: "🏠" },
 };
 
-const JACKEN = [0x2f6fd6, 0xe63946, 0x2a9d8f, 0xf4a261, 0x8e44ad, 0xe9c46a, 0x06d6a0, 0xff6b9d];
 
 /** Kurze Namen der Verstöße für die Übersicht der Lehrkraft. */
 const KURZ: Partial<Record<RegelId, string>> = {
@@ -114,8 +120,32 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const zuletztGesagt = useRef(0);
   const zaehler = useRef(0);
   const steuerkanal = useRef<Steuerkanal>({ stick: { x: 0, y: 0 } });
-  // Jede Figur eine eigene Jackenfarbe, damit man sich in der Stadt findet.
-  const [farbe] = useState(() => JACKEN[Math.floor(Math.random() * JACKEN.length)]);
+  // Aussehen: zufällig für den Anfang (jede Figur anders), dann gemerkt
+  const [aussehen, setAussehen] = useState<Aussehen>(() => zufallsAussehen());
+  const [aussehenGeladen, setAussehenGeladen] = useState(false);
+  const [aussehenTafel, setAussehenTafel] = useState(false);
+  const aendereAussehen = (a: Aussehen) => { setAussehen(a); schreib("hp_verkehr_aussehen", a); };
+  // Handy Sim: Karte, Suche, Route, Beamen (2× je Sitzung)
+  const [handyOffen, setHandyOffen] = useState(false);
+  const [handyRoute, setHandyRoute] = useState<HandyRoute | null>(null);
+  const [lage, setLage] = useState({ x: 0, y: 0, w: 0 });
+  const handyKanal = useRef<HandyKanal>({});
+  const beamKey = `hp_verkehr_beamen_${zugang?.code ?? "solo"}`;
+  const [beamenUebrig, setBeamenUebrig] = useState(BEAMEN_JE_SITZUNG);
+  useEffect(() => {
+    try { const v = sessionStorage.getItem(beamKey); if (v !== null) setBeamenUebrig(Math.max(0, Number(v) || 0)); } catch { /* ohne Speicher: volle Zahl */ }
+  }, [beamKey]);
+  const zeigeRoute = (r: HandyRoute | null) => { setHandyRoute(r); handyKanal.current.route?.(r?.punkte ?? null); };
+  const beamen = (p: [number, number]) => {
+    if (beamenUebrig <= 0) return "Heute nicht mehr — zweimal je Sitzung.";
+    const grund = handyKanal.current.beame?.(p) ?? "Geht gerade nicht.";
+    if (!grund) {
+      const rest = beamenUebrig - 1;
+      setBeamenUebrig(rest);
+      try { sessionStorage.setItem(beamKey, String(rest)); } catch { /* egal */ }
+    }
+    return grund;
+  };
   const u = UNTERGRUND[untergrund];
 
   useEffect(() => {
@@ -123,6 +153,8 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     // Läuft die Begrüßung, erklärt LTB die Steuerung — die Hilfe bleibt dann zu.
     if (lies("hp_verkehr_ltb", true) && !lies("hp_verkehr_ltb_intro", false)) { setIntro(0); setHilfe(false); }
     setTonAn(lies("hp_verkehr_ton", true));
+    setAussehen((a) => pruefeAussehen(lies<unknown>("hp_verkehr_aussehen", null), a));
+    setAussehenGeladen(true);
     setTouch(window.matchMedia("(pointer: coarse)").matches);
     const t = setTimeout(() => setHilfe(false), 10000);
     const fs = () => setVollbild(document.fullscreenElement === huelle.current);
@@ -200,6 +232,33 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     clearTimeout(ltbZeit.current);
     ltbZeit.current = setTimeout(() => setLtbText(null), 12000);
   }, [intro]);
+
+  // Polizei-Gespräch, danach bei Stufe 3 die Wache
+  const [gespraech, setGespraech] = useState<Gespraech | null>(null);
+  const [wache, setWache] = useState(false);
+  const onPolizei = useCallback((anlass: Anlass) => setGespraech((g) => g ?? beginne(anlass)), []);
+  const gespraechFertig = useCallback(() => {
+    const e = gespraech?.ende;
+    setGespraech(null);
+    if (!e) return;
+    zeige({ ...MELDUNGEN.polizei, punkte: e.punkte, schwer: e.stufe === 3, text: `👮 ${e.text}` });
+    buche({ typ: "polizei", stufe: e.stufe });
+    netz.sendeMeldung("polizei", e.punkte);
+    if (e.stufe === 3) {
+      setWache(true);
+      setTimeout(() => { setWache(false); handyKanal.current.zurSchule?.(); zurBuehne(); }, 7000);
+    } else zurBuehne();
+  }, [gespraech, netz, zeige, buche]);
+  // Handy-Karma: Android +10, Apple −10 — beim Start einmal, beim Wechsel die Differenz
+  const karmaHandy = useRef<Aussehen["handy"] | null>(null);
+  useEffect(() => {
+    if (!aussehenGeladen || karmaHandy.current === aussehen.handy) return;
+    const delta = handyKarma(aussehen.handy) - (karmaHandy.current ? handyKarma(karmaHandy.current) : 0);
+    karmaHandy.current = aussehen.handy;
+    const name = aussehen.handy === "android" ? "Android" : "Apple";
+    zeige({ ...MELDUNGEN.handyKarma, punkte: delta, text: `${name}-Handy: ${delta > 0 ? "+" : "−"}${Math.abs(delta)} Karma` });
+    netz.sendeMeldung("handyKarma", delta);
+  }, [aussehen.handy, aussehenGeladen, netz, zeige]);
 
   const ltbUmschalten = () => {
     const an = !ltbAn;
@@ -294,11 +353,13 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
       <div ref={huelle} className={`relative flex gap-3 ${gross ? "h-full w-full bg-slate-950 p-0" : ""}`}>
         <div className={`relative flex-1 overflow-hidden ${gross ? "" : "h-[calc(100dvh-7rem)] min-h-[440px] rounded-2xl shadow-2xl ring-1 ring-black/20"}`}>
           <Suspense fallback={<div className="flex h-full items-center justify-center bg-slate-900 text-sm text-white/70">🏙️ Stadt wird gebaut …</div>}>
-            <Spielfeld netz={netz} farbe={farbe} steuerkanal={steuerkanal} ueberblick={ueberblick} zoomStufe={zoomStufe} onZoom={zoome} tonAn={tonAn}
+            <Spielfeld netz={netz} farbe={aussehen.shirtFarbe} aussehen={aussehen} handyOffen={handyOffen} steuerkanal={steuerkanal} ueberblick={ueberblick} zoomStufe={zoomStufe} onZoom={zoome} tonAn={tonAn}
               onUntergrund={onUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
               onEreignis={buche} onSchild={setQuiz} onZeit={onZeit} onHaltestelle={onHaltestelle} onWeste={setWeste}
               onTragen={setGetragen} onNaehe={(was) => ltbSag({ typ: "naehe", was })}
-              onUeberblick={() => setUeberblick((v) => !v)} onFrage={onFrage} />
+              onUeberblick={() => setUeberblick((v) => !v)} onFrage={onFrage}
+              handyKanal={handyKanal} onPolizei={onPolizei} polizeiOffen={!!gespraech || wache} onLage={setLage} onHandy={() => setHandyOffen((v) => !v)}
+              onAngekommen={() => { setHandyRoute(null); zeige({ id: "sicherGequert", punkte: 0, text: "📍 Ziel erreicht!" }); buche({ typ: "angekommen" }); }} />
           </Suspense>
 
           {/* Kopfzeile im Bild */}
@@ -319,6 +380,10 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             {weste && <div className="rounded-xl bg-lime-400 px-2 py-1.5 text-sm font-bold text-black shadow-lg">🦺 Weste</div>}
             {getragen > 0 && <div className="rounded-xl bg-emerald-600 px-2 py-1.5 text-sm font-bold text-white shadow-lg" title="Müll in der Hand">🗑️ {getragen}/3</div>}
             <div className="ml-auto flex gap-1.5">
+              <button type="button" className={`${hudKnopf} ${handyOffen ? "ring-2 ring-amber-400" : ""}`} title="Handy: Karte, Suche, Route (H)"
+                onClick={() => setHandyOffen((v) => !v)}>📱</button>
+              <button type="button" className={`${hudKnopf} ${aussehenTafel ? "ring-2 ring-amber-400" : ""}`} title="Aussehen"
+                onClick={() => { setAussehenTafel((v) => !v); setUhrTafel(false); }}>👕</button>
               <button type="button" className={`${hudKnopf} ${ueberblick ? "ring-2 ring-amber-400" : ""}`} title="Überblick: Straßennamen, Abfahrten, Karte (M)"
                 onClick={() => { setUeberblick((v) => !v); zurBuehne(); }}>🗺️</button>
               <button type="button" className={`${hudKnopf} ${zoomStufe > 0 && !ueberblick ? "ring-2 ring-amber-400" : ""}`}
@@ -337,6 +402,20 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             </div>
           </div>
 
+          {gespraech && <PolizeiDialog g={gespraech} onAntwort={(a) => setGespraech((g) => (g ? antworte(g, a) : g))} onFertig={gespraechFertig} />}
+          {wache && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-slate-950/90 p-6 text-center text-white">
+              <div className="text-6xl">🚓</div>
+              <div className="text-xl font-black">Auf der Polizeiwache</div>
+              <div className="max-w-sm text-sm opacity-90">📞 Deine Eltern werden angerufen und holen dich ab. Das Bußgeld zahlen sie — darüber redet ihr zu Hause noch.</div>
+              <div className="text-xs opacity-60">Danach geht es an der Schule weiter.</div>
+            </div>
+          )}
+          {aussehenTafel && <AussehenTafel a={aussehen} onA={aendereAussehen} onZu={() => { setAussehenTafel(false); zurBuehne(); }} />}
+          {handyOffen && (
+            <HandySim art={aussehen.handy} lage={lage} uhr={uhr?.text.split(" ")[1] ?? ""} route={handyRoute} onRoute={zeigeRoute}
+              beamenUebrig={beamenUebrig} onBeamen={beamen} onZu={() => { setHandyOffen(false); zurBuehne(); }} />
+          )}
           {uhrTafel && (
             <div className="absolute left-2 top-14 z-30 w-72 rounded-xl bg-slate-900/90 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
               <div className="mb-1 flex items-center justify-between">
@@ -435,7 +514,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           </div>
           {touch && <Steuerkreuz kanal={steuerkanal} beleidigungen={beleidigungen} />}
           <div className="pointer-events-none absolute bottom-1 right-2 text-[10px] text-white/80 [text-shadow:0_0_3px_#000]">
-            {KARTE.nachweis}
+            {KARTE.nachweis} · LTB: Tux von Larry Ewing und The GIMP
           </div>
         </div>
 

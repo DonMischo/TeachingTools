@@ -120,6 +120,7 @@ export function useVerkehrLive(zugang: Zugang | null) {
       sendeTaster: (anlage) => send({ typ: "taster", anlage }),
       sendeVerkehr: (f) => send({ typ: "verkehr", f }),
       sendeMeldung: (id, punkte) => send({ typ: "meldung", id, punkte }),
+      sendeAussehen: (a) => send({ typ: "aussehen", a }),
     };
   }, [send]);
 

@@ -98,7 +98,7 @@ export class Raster {
     const zielFrei = ziel >= 0 && this.frei[ziel] === 1 && !gesperrt?.(ziel);
     if (!zielFrei) ziel = this.naechsteFreie(nach[0], nach[1], gesperrt);
     if (ziel < 0) return null;
-    const endpunkt: P = zielFrei ? [nach[0], nach[1]] : this.mitte(ziel);
+    const endpunkt: P = zielFrei ? [nach[0], nach[1]] : [...this.mitte(ziel)];
     if (start === ziel) return [endpunkt];
 
     const n = this.spalten * this.zeilen;
@@ -134,7 +134,19 @@ export class Raster {
         if (ng < g[m]) { g[m] = ng; vor[m] = k; heap.rein(m, ng + h(m)); }
       }
     }
-    if (vor[ziel] < 0) return null;
+    if (vor[ziel] < 0) {
+      // Ziel unerreichbar (etwa ein Laden mitten im Haus, dahinter ein Hof): der
+      // erreichte Punkt, der am nächsten dran ist — A* hat dann alles abgesucht.
+      let best = -1, bd = Infinity;
+      for (let k = 0; k < n; k++) if (zu[k] && k !== start) {
+        const [mx, my] = this.mitte(k);
+        const d = Math.hypot(mx - nach[0], my - nach[1]);
+        if (d < bd) { bd = d; best = k; }
+      }
+      if (best < 0) return null;
+      ziel = best;
+      endpunkt[0] = this.mitte(best)[0]; endpunkt[1] = this.mitte(best)[1];
+    }
     const zellen: number[] = [];
     for (let k = ziel; k !== start; k = vor[k]) zellen.push(k);
     zellen.reverse();
@@ -321,8 +333,10 @@ export function stadtRaster(stadt: Stadt, a: P, b: P, rand = 25, zelle = 0.5): R
   const x0 = Math.floor((Math.min(a[0], b[0]) - rand) / zelle) * zelle, y0 = Math.floor((Math.min(a[1], b[1]) - rand) / zelle) * zelle;
   const spalten = Math.min(500, Math.ceil((Math.max(a[0], b[0]) + rand - x0) / zelle));
   const zeilen = Math.min(500, Math.ceil((Math.max(a[1], b[1]) + rand - y0) / zelle));
-  let gemerkt = KOSTEN.get(stadt);
-  if (!gemerkt) { gemerkt = new Map(); KOSTEN.set(stadt, gemerkt); }
+  let jeZelle = KOSTEN.get(stadt);
+  if (!jeZelle) { jeZelle = new Map(); KOSTEN.set(stadt, jeZelle); }
+  let gemerkt = jeZelle.get(zelle);
+  if (!gemerkt) { gemerkt = new Map(); jeZelle.set(zelle, gemerkt); }
   const kosten = (x: number, y: number) => {
     const k = Math.round(x / zelle) * 1_000_003 + Math.round(y / zelle);
     let v = gemerkt!.get(k);
@@ -338,4 +352,4 @@ export function stadtRaster(stadt: Stadt, a: P, b: P, rand = 25, zelle = 0.5): R
 }
 
 /** Kosten je Zelle (0 = Haus), je Stadt einmal gerechnet. */
-const KOSTEN = new WeakMap<Stadt, Map<number, number>>();
+const KOSTEN = new WeakMap<Stadt, Map<number, Map<number, number>>>();

@@ -5,11 +5,11 @@
  * Wird per React.lazy geladen — Pixi ist groß.
  */
 import { useEffect, useRef } from "react";
-import { Application, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
+import { Application, Assets, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
 import { BAHNSTEIG_AB, schulMitte, schulStart, stadt, startpunkt, winkelVon, type Halt, type Stadt, type Untergrund } from "@/lib/verkehr/stadt";
 import { eingabeAusTasten, KEINE_EINGABE, schritt, type Figur } from "@/lib/verkehr/bewegung";
 import {
-  beschriftung, kopfWinkel, zeichneSchild, zeichneAutoampel, zeichneFahrzeug, zeichneGelenkbus, zeichneFigur, zeichneFussampel, zeichnePolizist, zeichneStadt,
+  beschriftung, kopfWinkel, zeichneSchild, zeichneAutoampel, zeichneFahrzeug, zeichneGelenkbus, zeichneSpieler, type SpielerFigur, zeichneFussampel, zeichnePolizist, zeichneStadt,
 } from "@/lib/verkehr/zeichnen";
 import { GESTEN, gestenDeckkraft, gesteZuTaste, type Geste } from "@/lib/verkehr/gesten";
 import { autoLicht, baueAnlagen, fussGruen, FUSS_GRUEN, TASTER_WARTEN, type Anlage, type Licht } from "@/lib/verkehr/ampeln";
@@ -26,6 +26,7 @@ import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import type { LtbOrt } from "@/lib/verkehr/ltb";
 import { stadtRaster } from "@/lib/verkehr/wegsuche";
+import { pruefeAussehen, STANDARD_AUSSEHEN, zufallsAussehen, type Aussehen } from "@/lib/verkehr/aussehen";
 import { AUSSEN_Y, Busszene, LAYOUTS, type SzenenMeldung } from "@/lib/verkehr/busszene";
 import { BusBild } from "@/lib/verkehr/busbild";
 import type { P } from "@/lib/verkehr/geometrie";
@@ -141,6 +142,22 @@ function stellePolizei(p: Container, rest: number, x: number, y: number) {
 
 export type SpielfeldProps = {
   farbe?: number;
+  /** Wie die Figur aussieht (ändert sich ohne Neubau der Stadt). */
+  aussehen?: Aussehen;
+  /** Das Handy ist offen: die Figur hält es in der Hand. */
+  handyOffen?: boolean;
+  /** Vom Handy: Route in der Stadt zeigen, hinbeamen. */
+  handyKanal?: React.MutableRefObject<HandyKanal>;
+  /** Wo die Figur ist (fürs Handy), etwa zweimal je Sekunde. */
+  onLage?: (l: { x: number; y: number; w: number }) => void;
+  /** H gedrückt: Handy auf/zu. */
+  onHandy?: () => void;
+  /** Am Ende der Handy-Route angekommen. */
+  onAngekommen?: () => void;
+  /** Die Polizei hält einen an (Gespräch beginnt). */
+  onPolizei?: (anlass: "beleidigung" | "rot" | "gleis") => void;
+  /** Das Gespräch läuft: stehen bleiben, der Beamte steht daneben. */
+  polizeiOffen?: boolean;
   /** Wo die Figur steht; »bus« = sie fährt mit. */
   onUntergrund?: (u: Untergrund["art"] | "bus") => void;
   onGeste?: (g: Geste) => void;
@@ -175,12 +192,19 @@ export type SpielfeldProps = {
   onFrage?: (ort: LtbOrt) => void;
 };
 
-export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
+export type HandyKanal = {
+  route?: (punkte: P[] | null) => void;
+  beame?: (p: P) => string | null;
+  /** Nach der Wache: die Eltern bringen einen zur Schule. */
+  zurSchule?: () => void;
+};
+
+export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = false, handyKanal, polizeiOffen = false, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
   const huelle = useRef<HTMLDivElement>(null);
   const rueckruf = useRef(rueck);
   const netzRef = useRef(netz);
-  const optionen = useRef({ ueberblick, zoomStufe, tonAn, steuerkanal });
-  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, zoomStufe, tonAn, steuerkanal }; });
+  const optionen = useRef({ ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen });
+  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen }; });
 
   useEffect(() => {
     const el = huelle.current!;
@@ -250,9 +274,12 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const { c: tafelEbene, tafeln } = haltTafeln(s.halte);
       const infoEbene = new Container();
       infoEbene.addChild(namen, tafelEbene);
+      // Route vom Handy: blaue Linie auf dem Boden, mit Ziel-Nadel
+      const routeGrafik = new Graphics();
+      let routeEnde: P | null = null;
       // Die Bus-Szene liegt über den Fahrzeugen (Bus ohne Dach, Leute drin).
       const szenenEbene = new Container();
-      welt.addChild(boden, figuren, autoEbene, haltZeichen, ampelEbene, szenenEbene, kronen, infoEbene);
+      welt.addChild(boden, routeGrafik, figuren, autoEbene, haltZeichen, ampelEbene, szenenEbene, kronen, infoEbene);
       const nacht = new Nacht(laternen(s));
       const schule = schulMitte(s);
       const minikarte = new Minikarte(s, schule);
@@ -340,6 +367,16 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       // LTB watschelt hinterher
       const pinguin = zeichnePinguin();
       pinguin.scale.set(FIGUR_GROESSER);
+      // Tux (Larry Ewing, The GIMP) — steht aufrecht im Bild; bis er geladen ist, der gezeichnete
+      let tux: Sprite | null = null;
+      Assets.load({ src: "/verkehr/tux.svg", data: { resolution: 3 } }).then((tex: Texture) => {
+        if (aus) return;
+        tux = new Sprite(tex);
+        tux.anchor.set(0.5, 0.85);
+        tux.height = 0.62; tux.width = 0.62 * (216 / 256);
+        pinguin.removeChildren();
+        pinguin.addChild(tux);
+      }).catch(() => { /* dann bleibt der gezeichnete Pinguin */ });
       const pinguinLage = { x: 0, y: 0 };
       const querungsOrte = s.karte.punkte.filter((p) => p.art === "zebra" || p.art === "ampelUebergang");
       const naeheGemeldet = new Map<string, number>();
@@ -419,17 +456,19 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
       // Zum Prüfen (?takt): die Figur an einen Ort setzen — el.dispatchEvent(new CustomEvent("vk-setze", { detail: [x, y] }))
       if (pruefhilfe) el.addEventListener("vk-setze", (e) => { const [x, y] = (e as CustomEvent<[number, number]>).detail; ich = { ...ich, x, y }; });
-      const figur = zeichneFigur(farbe);
+      const startAussehen = optionen.current.aussehen ?? { ...zufallsAussehen(), shirtFarbe: optionen.current.farbe };
+      const figur = zeichneSpieler(startAussehen);
+      let letztesAussehen: Aussehen | undefined = optionen.current.aussehen;
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
       figur.scale.set(FIGUR_GROESSER);
       figuren.addChild(pinguin, figur);
       const weste = westeFuer();
-      figur.addChildAt(weste, 1);
+      // Über dem Oberteil, unter Handy und Kopf
+      figur.addChildAt(weste, 3);
       weste.visible = false;
       let westeAn = false;
       // Der Ranzen auf dem Rücken — B nimmt ihn ab (im Bus richtig)
-      const ranzen = new Graphics().roundRect(-0.36, -0.18, 0.16, 0.36, 0.05).fill(0xe0a100).stroke({ width: 0.03, color: 0x8a6200 });
-      figur.addChildAt(ranzen, 0);
+      const ranzen = figur.ranzen;
       let rucksackAn = true;
 
       // Bus-Szene: ein Bus ganz nah, ohne Dach, mit Leuten — sobald man an einem haltenden Bus steht oder mitfährt.
@@ -437,6 +476,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       let szeneBus: Fahrzeug | undefined;
       let szeneHinweis: string | null = null;
       let szeneFehltSeit: number | null = null;
+      let zuletztLage = -Infinity;
       let dreh = 0;
       const zuBus = (f: Fahrzeug, wx: number, wy: number): [number, number] => {
         const c = Math.cos(f.winkel), sn = Math.sin(f.winkel), dx = wx - f.x, dy = wy - f.y;
@@ -470,6 +510,40 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         Object.assign(szene.sz.ich, { x, y, weg: [], rucksack: rucksackAn });
         szenenEbene.addChild(figur);
       });
+      // Handy: Route malen und hinbeamen
+      if (optionen.current.handyKanal) {
+        optionen.current.handyKanal.current.route = (punkte) => {
+          routeGrafik.clear();
+          routeEnde = punkte && punkte.length > 1 ? punkte[punkte.length - 1] : null;
+          if (!punkte || punkte.length < 2) return;
+          routeGrafik.moveTo(punkte[0][0], punkte[0][1]);
+          for (const p of punkte.slice(1)) routeGrafik.lineTo(p[0], p[1]);
+          routeGrafik.stroke({ width: 1.3, color: 0x1a73e8, alpha: 0.75, cap: "round", join: "round" });
+          routeGrafik.moveTo(punkte[0][0], punkte[0][1]);
+          for (const p of punkte.slice(1)) routeGrafik.lineTo(p[0], p[1]);
+          routeGrafik.stroke({ width: 0.35, color: 0xffffff, alpha: 0.9, cap: "round", join: "round" });
+          const [zx, zy] = routeEnde!;
+          routeGrafik.circle(zx, zy, 1.4).fill(0xea4335).stroke({ width: 0.3, color: 0xffffff }).circle(zx, zy, 0.5).fill(0xffffff);
+        };
+        optionen.current.handyKanal.current.zurSchule = () => {
+          if (szene?.sz.mitIch) lasseLos();
+          mitfahrt = null;
+          ich = { ...ich, x: sx, y: sy };
+          mausZiel = null; mausWeg = [];
+          waechter.zuruecksetzen();
+        };
+        optionen.current.handyKanal.current.beame = (p) => {
+          if (mitfahrt) return "Im Bus geht das nicht — erst aussteigen.";
+          if ((netzRef.current.strafe()?.bis ?? 0) > uhr()) return "Die Polizei lässt dich nicht weg.";
+          if (szene?.sz.mitIch) lasseLos();
+          const [x, y] = startpunkt(s, p);
+          ich = { ...ich, x, y };
+          mausZiel = null; mausWeg = []; unfallZiel = null;
+          waechter.zuruecksetzen();
+          klang.grosserErfolg();
+          return null;
+        };
+      }
       /** Wie voll der Bus ist, nach der Uhrzeit. */
       const fuellung = () => ({ rushMorgen: 0.85, rushAbend: 0.8, tag: 0.45, frueh: 0.35, abend: 0.3, nacht: 0.12 } as const)[abschnitt(zeit)];
 
@@ -487,7 +561,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       let strafeGemeldet = 0;
 
       // Die anderen Spieler
-      const fremde = new Map<string, { figur: ReturnType<typeof zeichneFigur>; blase: ReturnType<typeof baueBlase>; schild: Text; polizei: Container; x: number; y: number }>();
+      const fremde = new Map<string, { figur: SpielerFigur; aussehen: string; blase: ReturnType<typeof baueBlase>; schild: Text; polizei: Container; x: number; y: number }>();
       let zuletztVerkehr = 0;
       const gezeigt = new Map<number, Fahrzeug>();
 
@@ -505,6 +579,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         rueckruf.current.onMeldung?.(m, spielUhr());
         netzRef.current.sendeMeldung(m.id, m.punkte);
         if (m.punkte > 0) klang.erfolg(); else if (m.punkte < 0 && m.id !== "angefahren" && m.id !== "beleidigung") klang.fehler();
+        // Manchmal hat eine Streife gesehen, wie man bei Rot oder über die Gleise ging
+        if ((m.id === "rot" || m.id === "gleis") && !optionen.current.polizeiOffen && Math.random() < 0.35) rueckruf.current.onPolizei?.(m.id);
         if (m.id === "gruenGequert" || m.id === "zebraGequert" || m.id === "sicherGequert")
           ereignis({ typ: "querung", nacht: hell < 0.35, weste: westeAn, rush: istRush(zeit) });
       };
@@ -530,6 +606,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         if (code === "KeyV") { westeAn = !westeAn; weste.visible = westeAn; mensch.weste = westeAn; rueckruf.current.onWeste?.(westeAn); }
         if (code === "KeyM") rueckruf.current.onUeberblick?.();
         if (code === "KeyL") frageLtb?.();
+        if (code === "KeyH") rueckruf.current.onHandy?.();
         // X im Bus: Haltewunsch — ausgestiegen wird erst, wenn die Türen offen sind.
         if (code === "KeyX" && mitfahrt?.art === "bus" && !haltGewuenscht) { haltGewuenscht = true; klang.ampelTick(true); }
         if (code === "Equal" || code === "NumpadAdd" || code === "BracketRight") rueckruf.current.onZoom?.(1);
@@ -661,7 +738,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         const dt = dtEcht * stellung.faktor;
         const t = inSpielzeit(tEcht);
         // Beim Umschauen, beim Mitfahren, bei der Polizei und nach einem Unfall bleibt die Figur stehen.
-        const festgehalten = (n.strafe()?.bis ?? 0) > tEcht;
+        const festgehalten = (n.strafe()?.bis ?? 0) > tEcht || optionen.current.polizeiOffen;
         const vorher = { x: ich.x, y: ich.y };
         const tasten = eingabeAusTasten(gedrueckt);
         // Tasten haben Vorrang: wer tippt, bricht den Mausweg ab.
@@ -705,6 +782,15 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           if (wegSeitMeldung > 10) { ereignis({ typ: "weg", meter: wegSeitMeldung }); wegSeitMeldung = 0; }
         }
 
+        // Fürs Handy: wo bin ich? Und bin ich am Ziel der Route?
+        if (tEcht - zuletztLage > 0.5) {
+          zuletztLage = tEcht;
+          rueckruf.current.onLage?.({ x: ich.x, y: ich.y, w: figur.rotation });
+          if (routeEnde && Math.hypot(routeEnde[0] - ich.x, routeEnde[1] - ich.y) < 8) {
+            routeGrafik.clear(); routeEnde = null;
+            rueckruf.current.onAngekommen?.();
+          }
+        }
         // Uhr: Tagesabschnitt, Verkehrsdichte, Takte, Helligkeit — einmal je Sekunde reicht.
         if (t - zuletztUhr >= 1) {
           zuletztUhr = t;
@@ -744,8 +830,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           klang.pfeife();
           mensch.karmaBis = inSpielzeit(strafe.karmaBis);
           melde(MELDUNGEN.beleidigung);
+          rueckruf.current.onPolizei?.("beleidigung");
         }
-        stellePolizei(polizei, bestraft ? strafe!.bis - tEcht : -1, ich.x, ich.y);
+        // Während des Gesprächs steht der Beamte neben einem
+        stellePolizei(polizei, optionen.current.polizeiOffen ? 5 : bestraft ? strafe!.bis - tEcht : -1, ich.x, ich.y);
 
         // Verkehr auf der Straße: der Taktgeber rechnet, die anderen zeigen, was er schickt.
         const unterwegs = t >= unfallBis && !mitfahrt && !bestraft;
@@ -808,16 +896,19 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           daSind.add(a.key);
           let d = fremde.get(a.key);
           if (!d) {
-            const fig = zeichneFigur(a.farbe);
+            const fig = zeichneSpieler(pruefeAussehen(a.aussehen, { ...STANDARD_AUSSEHEN, shirtFarbe: a.farbe }));
             fig.scale.set(FIGUR_GROESSER);
             const schild = beschriftung(a.name, 0xffffff, 0.9);
             const bl = baueBlase();
             const pol = zeichnePolizist();
             pol.scale.set(FIGUR_GROESSER);
             figuren.addChild(fig, schild, bl, pol);
-            d = { figur: fig, blase: bl, schild, polizei: pol, x: a.x, y: a.y };
+            d = { figur: fig, aussehen: JSON.stringify(a.aussehen ?? a.farbe), blase: bl, schild, polizei: pol, x: a.x, y: a.y };
             fremde.set(a.key, d);
           }
+          // Hat sich jemand umgezogen?
+          const aKey = JSON.stringify(a.aussehen ?? a.farbe);
+          if (aKey !== d.aussehen) { d.aussehen = aKey; d.figur.stelle(pruefeAussehen(a.aussehen, { ...STANDARD_AUSSEHEN, shirtFarbe: a.farbe })); }
           const f = Math.min(1, dtEcht * 10);
           if (Math.hypot(d.x - a.x, d.y - a.y) > 10) { d.x = a.x; d.y = a.y; }
           d.x += (a.x - d.x) * f; d.y += (a.y - d.y) * f;
@@ -991,7 +1082,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
             mitfahrt = sz.ich.drin ? { art: "bus", id: f.id, abRi: f.haltRi ?? 0 } : null;
             if (r.eingestiegen !== undefined) {
               haltGewuenscht = false;
-              ereignis({ typ: "eingestiegen", art: "bus", gut: r.meldungen.includes("gutEingestiegen") || r.meldungen.includes("rausRein"), linie: f.anzeige?.split(" ")[0] });
+              ereignis({ typ: "eingestiegen", art: "bus", gut: r.meldungen.includes("gutEingestiegen") || r.meldungen.includes("rausRein"), linie: f.anzeige?.split(" ")[0], gelenk: f.typ === "gelenk" });
             }
             if (r.ausgestiegen) { haltGewuenscht = false; melde(MELDUNGEN.ausgestiegen); }
             // Draußen und der Bus fährt, oder weit genug weg: frei laufen
@@ -1047,7 +1138,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         meineBlase.alpha = gestenDeckkraft(tEcht - gesteSeit);
         meineBlase.visible = meineBlase.alpha > 0 && !mitfahrt;
         meineBlase.position.set(ich.x, ich.y - 2);
-        n.sendeIch(ich.x, ich.y, figur.rotation, !!mitfahrt, farbe, westeAn);
+        // Neues Aussehen: umziehen und den anderen zeigen
+        const neuesAussehen = optionen.current.aussehen;
+        if (neuesAussehen && neuesAussehen !== letztesAussehen) { letztesAussehen = neuesAussehen; figur.stelle(neuesAussehen); n.sendeAussehen(neuesAussehen); }
+        figur.handy.visible = optionen.current.handyOffen && !mitfahrt;
+        n.sendeIch(ich.x, ich.y, figur.rotation, !!mitfahrt, optionen.current.aussehen?.shirtFarbe ?? optionen.current.farbe, westeAn);
 
         // Hupen und Motorbrummen des nächsten Autos
         let naechstes = Infinity, naechstesTempo = 0;
@@ -1109,7 +1204,12 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         else if (pd > 0.3) { const f = Math.min(1, dt * 2.5); pinguinLage.x += (zx - pinguinLage.x) * f; pinguinLage.y += (zy - pinguinLage.y) * f; }
         pinguin.visible = !mitfahrt && !szene?.sz.mitIch;
         pinguin.position.set(pinguinLage.x, pinguinLage.y);
-        pinguin.rotation = Math.atan2(ich.y - pinguinLage.y, ich.x - pinguinLage.x) + (pd > 0.4 ? Math.sin(t * 12) * 0.25 : 0);
+        if (tux) {
+          // Aufrecht auf dem Bildschirm (auch wenn die Welt gedreht ist), watschelnd, zur Figur schauend
+          pinguin.rotation = -dreh + (pd > 0.4 ? Math.sin(tEcht * 12) * 0.12 : 0);
+          const nachLinks = (ich.x - pinguinLage.x) * Math.cos(dreh) - (ich.y - pinguinLage.y) * Math.sin(dreh) < 0;
+          tux.scale.x = Math.abs(tux.scale.x) * (nachLinks ? -1 : 1);
+        } else pinguin.rotation = Math.atan2(ich.y - pinguinLage.y, ich.x - pinguinLage.x) + (pd > 0.4 ? Math.sin(t * 12) * 0.25 : 0);
 
         // Nähe für LTB: Überwege und Müll, je Ort höchstens alle 90 s
         if (!mitfahrt) {
@@ -1232,7 +1332,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       klang.schliesse();
       if (bereit) app.destroy(true, { children: true });
     };
-  }, [farbe]);
+    // Farbe und Aussehen kommen über `optionen` — die Stadt wird dafür nicht neu gebaut.
+  }, []);
 
   return (
     <div

@@ -15,7 +15,8 @@ export type RegelId =
   | "muellWeg" | "muellFahrbahn" | "karmaGeheilt"
   // Im Bus (Bus-Szene)
   | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben" | "snfFrei" | "snfBlockiert"
-  | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu";
+  | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu"
+  | "handyKarma" | "polizei";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -55,6 +56,8 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   rucksackAuf: { id: "rucksackAuf", text: "Mit Rucksack auf dem Rücken stößt du im vollen Bus alle an. Nimm ihn ab (B) und stell ihn zwischen die Füße.", punkte: -3 },
   fahrkarte: { id: "fahrkarte", text: "Fahrkarte gezeigt. Gute Fahrt!", punkte: 2 },
   tuerZu: { id: "tuerZu", text: "Nicht in der Tür stehen bleiben, wenn es piept — die Türen schließen!", punkte: -5 },
+  handyKarma: { id: "handyKarma", text: "Handy gewählt.", punkte: 0 },
+  polizei: { id: "polizei", text: "Gespräch mit der Polizei.", punkte: 0 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },
 };
 

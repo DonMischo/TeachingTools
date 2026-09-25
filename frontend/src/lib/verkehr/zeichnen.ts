@@ -6,6 +6,7 @@
 import { Container, Graphics, Text, Texture, TilingSprite } from "pixi.js";
 import type { P } from "./geometrie";
 import { bahnsteigUm, schulMitte, spurLagen, winkelVon, type Stadt } from "./stadt";
+import type { Aussehen } from "./aussehen";
 import type { SchildArt } from "./schilder";
 
 export const FARBE = {
@@ -413,6 +414,57 @@ export function zeichneFigur(farbe: number): Container & { kopf: Container } {
   kopf.addChild(k);
   c.addChild(g, kopf);
   c.kopf = kopf;
+  return c;
+}
+
+/** Die Spielfigur mit Aussehen: Oberteil, Mütze, Rucksack, Handy. `stelle` ändert es ohne Neubau. */
+export type SpielerFigur = Container & {
+  kopf: Container; ranzen: Graphics; handy: Graphics;
+  stelle: (a: Aussehen) => void;
+};
+
+export function zeichneSpieler(a: Aussehen): SpielerFigur {
+  const c = new Container() as SpielerFigur;
+  const schatten = new Graphics().ellipse(0.12, 0.12, 0.32, 0.38).fill({ color: FARBE.schatten, alpha: 0.3 });
+  const ranzen = new Graphics();
+  const koerper = new Graphics();
+  const handy = new Graphics();
+  handy.visible = false;
+  const kopf = new Container();
+  const k = new Graphics().circle(0.02, 0, 0.15).fill(0x5a3a22).circle(0.08, 0, 0.1).fill(0xe8b98f);
+  const muetze = new Graphics();
+  kopf.addChild(k, muetze);
+  c.addChild(schatten, ranzen, koerper, handy, kopf);
+  Object.assign(c, { kopf, ranzen, handy });
+  c.stelle = (x: Aussehen) => {
+    const f = x.shirtFarbe, d = dunkler(f);
+    koerper.clear().ellipse(0, 0, 0.2, 0.34).fill(f).stroke({ width: 0.04, color: d });
+    if (x.shirt === "hoodie") {
+      // Kapuze hinter dem Kopf, Kordeln vorn
+      koerper.ellipse(-0.1, 0, 0.13, 0.17).fill(d);
+      koerper.moveTo(0.14, -0.06).lineTo(0.2, -0.05).moveTo(0.14, 0.06).lineTo(0.2, 0.05).stroke({ width: 0.02, color: 0xffffff });
+    } else if (x.shirt === "jacke") {
+      // Reißverschluss und Kragen
+      koerper.moveTo(0.02, 0).lineTo(0.2, 0).stroke({ width: 0.025, color: 0xdddddd });
+      koerper.ellipse(0.02, -0.13, 0.07, 0.05).fill(d).ellipse(0.02, 0.13, 0.07, 0.05).fill(d);
+    } else if (x.shirt === "trikot") {
+      // Zwei helle Streifen über die Schultern
+      koerper.rect(-0.15, -0.24, 0.3, 0.05).fill(0xffffff).rect(-0.15, 0.19, 0.3, 0.05).fill(0xffffff);
+    }
+    ranzen.clear().roundRect(-0.36, -0.18, 0.16, 0.36, 0.05).fill(x.rucksackFarbe).stroke({ width: 0.03, color: dunkler(x.rucksackFarbe) });
+    const m = x.muetzeFarbe, md = dunkler(m);
+    muetze.clear();
+    if (x.muetze === "cap") muetze.circle(0, 0, 0.15).fill(m).roundRect(0.08, -0.12, 0.18, 0.24, 0.1).fill(md);
+    else if (x.muetze === "beanie") muetze.circle(0, 0, 0.16).fill(m).circle(0, 0, 0.1).stroke({ width: 0.02, color: md }).circle(-0.02, 0, 0.05).fill(0xffffff);
+    else if (x.muetze === "hut") muetze.circle(0, 0, 0.3).fill({ color: m, alpha: 0.95 }).stroke({ width: 0.02, color: md }).circle(0, 0, 0.15).fill(md);
+    else if (x.muetze === "helm") muetze.ellipse(0, 0, 0.2, 0.17).fill(m).stroke({ width: 0.03, color: md })
+      .moveTo(-0.15, 0).lineTo(0.15, 0).stroke({ width: 0.03, color: 0xffffff }).rect(-0.08, -0.12, 0.05, 0.05).fill(md).rect(-0.08, 0.07, 0.05, 0.05).fill(md);
+    // Handy in der Hand: Apple silbern, Android dunkel mit grünem Punkt
+    handy.clear().roundRect(0.16, 0.2, 0.1, 0.16, 0.025).fill(x.handy === "apple" ? 0xd4d4d8 : 0x262626)
+      .roundRect(0.175, 0.215, 0.07, 0.13, 0.015).fill(x.handy === "apple" ? 0x1e293b : 0x14532d);
+    if (x.handy === "android") handy.circle(0.21, 0.33, 0.012).fill(0x4ade80);
+  };
+  c.stelle(a);
   return c;
 }
 

@@ -189,7 +189,13 @@ simulationen:
       - Busse auf dem echten Linienweg aus OSM, Halt nur an den Steigen ihrer Richtung
       - Zoomstufen (+ / − oder Mausrad); Ampeln gelten nur für ihre eigene Straße
       - Bus-Szene: Bus ohne Dach ganz nah, Zonen wie im Schaubild, Fahrgäste mit Gedränge und Zurufen, Sitze/Vorrangsitze, Kinderwagen, Rollstuhl mit Rampe, Festhalten beim Bremsen, Rucksack (B)
-      - Zwei Bustypen: Stadtbus und »Schlenky« (Gelenkbus mit Drehgelenk, zwei Flächen für Kinderwagen/Rollstuhl)
+      - Zwei Bustypen: Stadtbus und »Schlenky« (Gelenkbus mit Drehgelenk, zwei Flächen für Kinderwagen/Rollstuhl); Linie 9 fährt Schlenky
+      - Busse nach Fahrplan (pünktlich am Halt), Abfahrtstafel nur mit der Richtung des Steigs
+      - Zeitraffer beschleunigt die ganze Stadt (Laufen, Autos, Ampeln, Bahnen)
+      - Handy Sim: Karten-App mit Suche (Adressen aus OSM), Fußweg-Route in Handy und Stadt, 2× Beamen je Sitzung
+      - Aussehen: Oberteil, Mütze, Rucksack (mit Farbwahl), Handy (Android +10 / Apple −10 Karma)
+      - Polizei-Gespräch (nett/grummelig, Frau/Mann) mit Antwortwahl, Stufen bis Wache + Eltern + Bußgeld
+      - LTB als Tux (Larry Ewing, The GIMP)
       - Wegsuche wie in Diablo 2 (Klick: um Häuser herum, über Gehwege und Überwege); mehrspurige Straßen mit Autos nebeneinander
       - Gemeinsame Live-Stadt für die Klasse, Lehrkraft-Übersicht
       - Gesten mit Emoji-Blase, Schimpfen mit Polizei (abschaltbar)

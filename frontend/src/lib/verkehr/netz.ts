@@ -12,6 +12,8 @@ export type FremderSpieler = {
   key: string; name: string; x: number; y: number; w: number; farbe: number; punkte: number; weste?: boolean;
   strafeBis: number; karmaBis: number; hand: number; mitfahrt: boolean; lehrkraft: boolean;
   verstoesse: Record<string, number>;
+  /** Wie er aussieht (vom Server durchgereicht, unbekannte Felder werden verworfen). */
+  aussehen?: unknown;
 };
 
 /** Ein Fahrzeug, wie es der Taktgeber verschickt: [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige]. */
@@ -70,6 +72,7 @@ export type Netz = {
   sendeTaster(anlage: number): void;
   sendeVerkehr(f: Gepackt[]): void;
   sendeMeldung(id: string, punkte: number): void;
+  sendeAussehen(a: object): void;
 };
 
 /** Allein spielen: eigene Uhr, eigener Verkehr, Beleidigung bestraft sich selbst. */
@@ -81,6 +84,7 @@ export function soloNetz(uhrStellung: () => UhrStellung = () => ECHTE_UHR): Netz
     uhr, taktgeber: () => true, ich: () => null, andere: () => [], fahrzeuge: () => null,
     taster: () => taster, beleidigungen: () => true, gesten: () => new Map(), strafe: () => strafe, uhrStellung,
     sendeIch() {},
+    sendeAussehen() {},
     sendeGeste(id) { if (id === "schimpfen") { const t = uhr(); strafe = { bis: t + 8, karmaBis: t + 60 }; } },
     sendeTaster(anlage) { const t = uhr(); if (t - (taster.get(anlage) ?? 0) > 25) taster.set(anlage, t); },
     sendeVerkehr() {},
