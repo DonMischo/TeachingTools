@@ -218,6 +218,21 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   }
   boden.addChild(haeuser);
 
+  // Unsere Turnhalle: weißes Metalldach mit einem Streifen Gründach zum Schulhof (nach Süden).
+  const halle = turnhalle(stadt);
+  if (halle) {
+    const g = new Graphics();
+    g.poly(flach(halle.umriss)).fill(0xe8ebee).stroke({ width: 0.3, color: 0x9aa3ab, join: "round" });
+    const { x0, x1, y0, y1 } = halle.box;
+    for (let x = x0 + 1.2; x < x1 - 0.6; x += 1.2) g.moveTo(x, y0 + 0.4).lineTo(x, y1 - 0.4).stroke({ width: 0.08, color: 0xc5ccd3 });
+    g.rect(x0 + 0.3, y1 - 4.5, x1 - x0 - 0.6, 4.2).fill(0x6b9a3f);
+    boden.addChild(g);
+    const t = beschriftung("Turnhalle", 0x334155, 1.8);
+    t.style.stroke = { color: 0xffffff, width: 8 };
+    t.position.set((x0 + x1) / 2, (y0 + y1) / 2 - 2);
+    boden.addChild(t);
+  }
+
   // Haltestellenschilder
   const schilder = new Graphics();
   for (const h of stadt.halte) {
@@ -267,6 +282,27 @@ export function beschriftung(text: string, farbe: number, hoeheM: number): Text 
   t.anchor.set(0.5);
   t.scale.set(hoeheM / 48);
   return t;
+}
+
+/**
+ * Die Turnhalle der Schule: das große Schulgebäude im Norden des Geländes
+ * (in OSM als building=school ohne Namen, etwa 50 × 38 m).
+ */
+export function turnhalle(stadt: Stadt): { umriss: P[]; box: { x0: number; x1: number; y0: number; y1: number } } | null {
+  const [mx, my] = schulMitte(stadt);
+  let best: { umriss: P[]; flaeche: number } | null = null;
+  for (const g of stadt.karte.gebaeude) {
+    if (g.art !== "school" || g.umriss.length < 3) continue;
+    const xs = g.umriss.map((p) => p[0]), ys = g.umriss.map((p) => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    // nördlich der Schulmitte, nah dran
+    if (cy > my - 5 || Math.hypot(cx - mx, cy - my) > 80) continue;
+    const flaeche = (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+    if (!best || flaeche > best.flaeche) best = { umriss: g.umriss, flaeche };
+  }
+  if (!best) return null;
+  const xs = best.umriss.map((p) => p[0]), ys = best.umriss.map((p) => p[1]);
+  return { umriss: best.umriss, box: { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) } };
 }
 
 /** Gras mit Flecken und Halmen — eine kleine Kachel, im Browser gemalt. */
