@@ -348,7 +348,11 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
                   <span className="tabular-nums">{a.inMinuten === 0 ? "jetzt" : `${a.inMinuten} min`}</span>
                 </div>
               ))}
-              <div className="mt-1 text-[10px] text-amber-500/60">Nach EVAG-Takt gerechnet, nicht der Echtzeit-Fahrplan</div>
+              <div className="mt-1 text-[10px] text-amber-500/60">
+                {tafel.abfahrten.some((a) => a.echt)
+                  ? "Linie 9: EVAG-Fahrplan (ab 17.08.2026), ohne Verspätungen"
+                  : "Nach EVAG-Takt gerechnet, nicht der Echtzeit-Fahrplan"}
+              </div>
             </div>
           )}
 

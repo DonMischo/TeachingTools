@@ -1,6 +1,10 @@
 /**
  * Uhrzeit, Tagesabschnitte und Fahrplan.
  *
+ * Für die Linie 9 (Steinplatz, Fritz-Büchner-Straße, Eislebener Straße) gilt
+ * der echte EVAG-Haltestellenfahrplan (`linie9.json`, ab 17.08.2026) mit
+ * Schul- und Ferientagen, Samstag und Sonn-/Feiertag.
+ *
  * Linien und Haltestellenfolgen stammen aus OpenStreetMap (`karte.linien`),
  * die Takte aus dem EVAG-Standardfahrplan (Stand 2025): Stadtbahn und Bus 9
  * montags bis freitags 6–18 Uhr alle 10 Minuten, sonst alle 20; Bus 35 etwa
@@ -9,6 +13,7 @@
  * sagt die Anzeige auch so.
  */
 import { KARTE, type Linie } from "./stadt";
+import LINIE9 from "./linie9.json";
 
 export type { Linie } from "./stadt";
 
@@ -71,9 +76,47 @@ export function helligkeit(z: Zeit): number {
   return 1;
 }
 
+export type Tagesart = "moDoSchule" | "frSchule" | "moDoFerien" | "frFerien" | "sa" | "so";
+
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Welche Spalte des EVAG-Fahrplans gilt an diesem Tag? */
+export function tagesart(datum: Date): Tagesart {
+  const tag = iso(datum), wt = datum.getDay();
+  if (wt === 0 || LINIE9.feiertage.includes(tag)) return "so";
+  if (wt === 6) return "sa";
+  const ferien = LINIE9.ferien.some(([von, bis]) => tag >= von && tag <= bis);
+  const freitag = wt === 5 || LINIE9.wieFreitag.includes(tag);
+  return freitag ? (ferien ? "frFerien" : "frSchule") : ferien ? "moDoFerien" : "moDoSchule";
+}
+
+type Stundenplan = Record<string, number[]>;
+const HALTE9 = LINIE9.halte as Record<string, Record<string, Partial<Record<Tagesart, Stundenplan>>>>;
+
+/** Echte Abfahrtsminuten (Minute des Tages) der Linie 9 an einem Halt in einer Richtung, oder null ohne Fahrplan. */
+function echteAbfahrten9(halt: string, richtung: string, datum: Date): number[] | null {
+  const plan = HALTE9[halt]?.[richtung]?.[tagesart(datum)];
+  if (!plan) return null;
+  const aus: number[] = [];
+  for (const [stunde, minuten] of Object.entries(plan)) {
+    // Die Stunde 0 gehört zum Ende des Betriebstags.
+    const h = Number(stunde) === 0 ? 24 : Number(stunde);
+    for (const m of minuten) aus.push(h * 60 + m);
+  }
+  return aus.sort((a, b) => a - b);
+}
+
 /** Takt einer Linie in Minuten zu dieser Zeit; null = fährt nicht. */
 export function takt(l: Pick<Linie, "art" | "nr">, z: Zeit): number | null {
   const m = z.minute, wt = werktag(z), sa = z.wochentag === 6;
+  if (l.nr === "9" && l.art === "bus") {
+    // Aus dem echten Fahrplan: Fahrten dieser Stunde an der Fritz-Büchner-Straße.
+    const ab = echteAbfahrten9("Fritz-Büchner-Straße", "Nordbahnhof", z.datum);
+    if (ab) {
+      const n = ab.filter((x) => x >= Math.floor(m / 60) * 60 && x < Math.floor(m / 60) * 60 + 60).length;
+      return n ? Math.round(60 / n) : null;
+    }
+  }
   if (l.art === "tram" || l.nr === "9") {
     if (wt && m >= 6 * 60 && m < 18 * 60) return 10;
     if (m >= 5 * 60 && m < 23 * 60) return 20;
@@ -95,7 +138,7 @@ function streu(text: string): number {
   return (h >>> 0) / 4294967296;
 }
 
-export type Abfahrt = { linie: string; art: "bus" | "tram"; ziel: string; inMinuten: number };
+export type Abfahrt = { linie: string; art: "bus" | "tram"; ziel: string; inMinuten: number; /** aus dem echten Fahrplan */ echt?: boolean };
 
 /**
  * Die nächsten Abfahrten an einer Haltestelle (nach Name). Je Linie und
@@ -105,6 +148,15 @@ export function abfahrten(haltName: string, z: Zeit, linien: Linie[], anzahl = 4
   const aus: Abfahrt[] = [];
   for (const l of linien) {
     if (tram !== (l.art === "tram")) continue;
+    // Linie 9: echter Fahrplan, soweit es ihn für diesen Halt gibt.
+    if (l.nr === "9" && HALTE9[haltName]) {
+      for (const richtung of Object.keys(HALTE9[haltName])) {
+        const ab = echteAbfahrten9(haltName, richtung, z.datum) ?? [];
+        for (const x of ab.filter((x) => x >= Math.floor(z.minute)).slice(0, anzahl))
+          aus.push({ linie: l.nr, art: l.art, ziel: richtung, inMinuten: Math.round(x - z.minute), echt: true });
+      }
+      continue;
+    }
     for (const r of l.richtungen) {
       if (!tram && !r.halte.includes(haltName)) continue;
       // Suche bis 3 Stunden voraus — der Takt kann sich unterwegs ändern.

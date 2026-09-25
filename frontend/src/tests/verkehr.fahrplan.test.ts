@@ -112,3 +112,35 @@ describe("Erfolge", () => {
     expect(new Set(ERFOLGE.map((e) => e.id)).size).toBe(ERFOLGE.length);
   });
 });
+
+describe("Linie 9 nach echtem EVAG-Fahrplan", () => {
+  it("unterscheidet Schultag, Ferien, Samstag und Feiertag", async () => {
+    const { tagesart } = await import("@/lib/verkehr/fahrplan");
+    expect(tagesart(new Date(2026, 8, 24))).toBe("moDoSchule"); // Do 24.9.2026
+    expect(tagesart(new Date(2026, 8, 25))).toBe("frSchule");
+    expect(tagesart(new Date(2026, 9, 14))).toBe("moDoFerien"); // Herbstferien
+    expect(tagesart(new Date(2026, 8, 26))).toBe("sa");
+    expect(tagesart(new Date(2026, 9, 3))).toBe("so"); // Tag der Deutschen Einheit (Sa, aber Feiertag)
+    expect(tagesart(new Date(2026, 8, 20))).toBe("so"); // Weltkindertag in Thüringen
+  });
+
+  it("zeigt an der Fritz-Büchner-Straße die echten Zeiten Richtung Nordbahnhof", () => {
+    // Do 24.9.2026, 6:00 — laut Fahrplan fährt der Bus um 6:02, 6:18, 6:26 …
+    const z = { wochentag: 4, minute: 6 * 60, datum: new Date(2026, 8, 24, 6, 0) };
+    const ab = abfahrten("Fritz-Büchner-Straße", z, linienImViertel(), 8).filter((a) => a.ziel === "Nordbahnhof");
+    expect(ab.slice(0, 3).map((a) => a.inMinuten)).toEqual([2, 18, 26]);
+    expect(ab.every((a) => a.echt)).toBe(true);
+  });
+
+  it("fährt nach Mitternacht noch (Stunde 0) und nachts dann nicht", () => {
+    const z = { wochentag: 4, minute: 23 * 60 + 55, datum: new Date(2026, 8, 24, 23, 55) };
+    const ab = abfahrten("Fritz-Büchner-Straße", z, linienImViertel(), 8).filter((a) => a.ziel === "Nordbahnhof");
+    expect(ab[0].inMinuten).toBe(41); // 0:36
+  });
+
+  it("leitet den Takt aus dem echten Fahrplan ab: zur Schulzeit dichter", () => {
+    const berufs = takt({ art: "bus", nr: "9" }, { wochentag: 4, minute: 7 * 60, datum: new Date(2026, 8, 24, 7, 0) });
+    const mittag = takt({ art: "bus", nr: "9" }, { wochentag: 4, minute: 11 * 60, datum: new Date(2026, 8, 24, 11, 0) });
+    expect(berufs).toBeLessThan(mittag!);
+  });
+});
