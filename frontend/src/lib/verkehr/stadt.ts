@@ -46,8 +46,13 @@ export type Linie = {
  */
 export const KARTE: Karte = (() => {
   const k = roh as unknown as Karte;
-  const e = ergaenzung as unknown as Pick<Karte, "strassen" | "punkte" | "flaechen">;
-  return { ...k, strassen: [...k.strassen, ...e.strassen], punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
+  const e = ergaenzung as unknown as Pick<Karte, "strassen" | "punkte" | "flaechen"> & {
+    tore?: { strasse: string; offenVon: number; offenBis: number }[];
+  };
+  // Tore an Straßen aus OSM, nach Namen
+  const tore = new Map((e.tore ?? []).map((t) => [t.strasse, { offenVon: t.offenVon, offenBis: t.offenBis }]));
+  const strassen = k.strassen.map((s) => (s.name && tore.has(s.name) ? { ...s, tore: tore.get(s.name) } : s));
+  return { ...k, strassen: [...strassen, ...e.strassen], punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
 })();
 
 export type Strasse = KartenStrasse & { breite: number; gehwegBreite: number };
@@ -113,7 +118,7 @@ export class Stadt {
   readonly schulZufahrten: { a: P; b: P; breite: number }[] = [];
 
   constructor(readonly karte: Karte = KARTE) {
-    this.strassen = karte.strassen.map((s) => ({ ...s, breite: fahrbahnBreite(s), gehwegBreite: gehwegBreite(s) }));
+    this.strassen = anschliessen(karte.strassen).map((s) => ({ ...s, breite: fahrbahnBreite(s), gehwegBreite: gehwegBreite(s) }));
     this.schulgelaende = karte.flaechen.filter((f) => f.art === "schulhof" && f.umriss.length >= 3).map((f) => f.umriss);
     const aufSchule = (p: P) => this.schulgelaende.some((u) => imVieleck(p[0], p[1], u));
     for (const s of this.strassen) this.einsortieren(s.linie, s.breite / 2 + s.gehwegBreite, (st) => {
@@ -141,13 +146,17 @@ export class Stadt {
     for (const p of karte.punkte)
       if (p.art === "zebra" || p.art === "ampelUebergang" || p.art === "querung") this.querungRaster.fuege(p, boxVon([p.p]), 12);
 
+    // Tore an den äußeren Enden einer Straße mit Toren (in OSM oft mehrere Stücke).
+    const gleich = (p: P, q: P) => p[0] === q[0] && p[1] === q[1];
     for (const s of this.strassen) if (s.tore) {
+      const geschwister = this.strassen.filter((x) => x !== s && x.name === s.name && x.tore);
+      const innen = (p: P) => geschwister.some((x) => x.linie.some((q) => gleich(p, q)));
       const [a, b] = [s.linie[0], s.linie[s.linie.length - 1]];
       const [a2, b2] = [s.linie[1], s.linie[s.linie.length - 2]];
       // etwas hinein ins Gelände, nicht mitten auf die Hauptstraße
       const hinein = (p: P, q: P): P => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; const f = Math.min(1, 8 / l); return [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]; };
-      this.tore.push({ p: hinein(a, a2), winkel: winkelVon({ a, b: a2 }), zeiten: s.tore });
-      this.tore.push({ p: hinein(b, b2), winkel: winkelVon({ a: b2, b }), zeiten: s.tore });
+      if (!innen(a)) this.tore.push({ p: hinein(a, a2), winkel: winkelVon({ a, b: a2 }), zeiten: s.tore });
+      if (!innen(b)) this.tore.push({ p: hinein(b, b2), winkel: winkelVon({ a: b2, b }), zeiten: s.tore });
     }
     this.halte = this.baueHalte();
     this.bahnsteige = [
@@ -340,4 +349,45 @@ export function schulStart(s: Stadt): P {
   const f = (best.halb + 1.3) / (Math.hypot(mx - px, my - py) || 1);
   const ziel: P = [px + (mx - px) * f, py + (my - py) * f];
   return s.untergrund(ziel[0], ziel[1]).art === "gehweg" ? ziel : startpunkt(s, ziel);
+}
+
+const BEFAHRBAR = new Set(["primary", "secondary", "tertiary", "residential", "unclassified", "living_street"]);
+
+/**
+ * Lose Enden anschließen: endet eine befahrbare Straße frei, aber keine 10 m
+ * neben dem Punkt einer anderen, wird das Ende dorthin gelegt. In OSM beginnt
+ * die Spielstraße an der Schule etwa auf dem Radweg, 7 m vor der Fahrbahn der
+ * Eugen-Richter-Straße — ohne Anschluss käme kein Auto hinein.
+ */
+export function anschliessen(strassen: KartenStrasse[]): KartenStrasse[] {
+  const key = (p: P) => `${p[0]},${p[1]}`;
+  const zahl = new Map<string, number>();
+  for (const s of strassen) if (BEFAHRBAR.has(s.art)) for (const p of s.linie) zahl.set(key(p), (zahl.get(key(p)) ?? 0) + 1);
+  // Der Reihe nach, mit mitgezählten Anschlüssen: treffen sich zwei lose
+  // Enden, wandert nur das erste — das zweite ist danach schon verbunden.
+  const aus = [...strassen];
+  aus.forEach((s, i) => {
+    if (!BEFAHRBAR.has(s.art)) return;
+    let linie = s.linie;
+    for (const ende of [0, s.linie.length - 1]) {
+      const p = linie[ende];
+      if ((zahl.get(key(p)) ?? 0) > 1) continue;
+      let best: { q: P; d: number } | null = null;
+      for (const o of aus) {
+        if (o === aus[i] || !BEFAHRBAR.has(o.art)) continue;
+        for (const q of o.linie) {
+          const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+          if (d > 0 && d <= 10 && (!best || d < best.d)) best = { q, d };
+        }
+      }
+      if (best) {
+        if (linie === s.linie) linie = [...s.linie];
+        linie[ende] = best.q;
+        zahl.set(key(p), (zahl.get(key(p)) ?? 1) - 1);
+        zahl.set(key(best.q), (zahl.get(key(best.q)) ?? 0) + 1);
+      }
+    }
+    if (linie !== s.linie) aus[i] = { ...s, linie };
+  });
+  return aus;
 }

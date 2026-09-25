@@ -212,7 +212,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🧱 Als Gruppe", text: "Gehen drei oder mehr gemeinsam über die Straße, wird verglichen: alle nebeneinander und zugleich (Wand) oder einer hinter dem anderen (Schlange). Die Meldung nennt, wie lange die Gruppe auf der Fahrbahn stand." },
       { label: "👩‍🏫 Lehrkraft", text: "Die Lehrkraft ist automatisch im Raum ihres Codes und rechnet die Autos für alle. Rechts steht, wer in der Stadt ist, mit Punkten und Verstößen, dazu der Schalter fürs Schimpfen; unter ❔ die Uhrzeit für alle." },
       { label: "🏫 Rund um die Schule", text: "Um die Schulgebäude führt eine Spielstraße — Einbahn von der Eugen-Richter-Straße zur Dortmunder Straße, mit Toren an beiden Enden (tagsüber offen). Hier dürfen Kinder laufen, Autos nur Schritttempo; zwischen Nordbau und Turnhalle ein Überweg, im Nordwesten der Spielplatz. Die Nebenstraßen sind ruhig — nur werktags zwischen 7:30 und 8:15 bringen viele Eltern ihre Kinder mit dem Auto." },
-      { label: "🗺️ Karte", text: "Straßen, Gehwege, Radwege, Gleise, Häuser, Laternen und Linien stammen aus OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL). Was dort noch fehlt (Spielstraße, Überweg, Spielplatz an der Schule), ist nach Angaben der Schule ergänzt." },
+      { label: "🗺️ Karte", text: "Straßen, Gehwege, Radwege, Gleise, Häuser, Laternen und Linien stammen aus OpenStreetMap (© OpenStreetMap-Mitwirkende, ODbL). Die Spielstraße an der Schule steht seit September 2026 in OSM; was dort noch fehlt (ihre Tore, der Überweg, der Spielplatz), ist nach Angaben der Schule ergänzt." },
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto." },
     ],
   },

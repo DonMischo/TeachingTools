@@ -6,9 +6,11 @@ import { Regelwaechter } from "@/lib/verkehr/regeln";
 import { turnhalle } from "@/lib/verkehr/zeichnen";
 
 const s = stadt();
-const spiel = s.strassen.find((x) => x.name === "Spielstraße an der Schule")!;
+// Seit 25.09.2026 in OSM, zwei Stücke: vom Eingang an der Eugen-Richter-Straße bis zur Dortmunder Straße.
+const stuecke = s.strassen.filter((x) => x.name === "Kiss and Ride Zone");
+const spiel = { ...stuecke[0], linie: [...stuecke[0].linie, ...stuecke[1].linie.slice(1)] };
 
-describe("Spielstraße an der Schule (Ergänzung zu OSM)", () => {
+describe("Spielstraße an der Schule (»Kiss and Ride Zone« aus OSM)", () => {
   it("ist in der Karte, Einbahn von der Eugen-Richter-Straße zur Dortmunder Straße", () => {
     expect(spiel).toBeTruthy();
     expect(spiel.art).toBe("living_street");
@@ -30,7 +32,7 @@ describe("Spielstraße an der Schule (Ergänzung zu OSM)", () => {
   });
 
   it("zählt als Spielstraße, nicht als Fahrbahn — dort gibt es keine Querungsregeln", () => {
-    const [x, y] = spiel.linie[8];
+    const [x, y] = [(spiel.linie[1][0] + spiel.linie[2][0]) / 2, (spiel.linie[1][1] + spiel.linie[2][1]) / 2];
     expect(s.untergrund(x, y).art).toBe("spielstrasse");
     const w = new Regelwaechter(s, baueAnlagen(s));
     w.pruefe(x - 5, y, 0);
@@ -50,7 +52,7 @@ describe("Spielstraße an der Schule (Ergänzung zu OSM)", () => {
       v.schule = schulMitte(s);
       v.elternzeit = elternzeit;
       v.stunde = stunde;
-      const i = v.kanten.findIndex((k) => k.a[0] === spiel.linie[0][0] && k.a[1] === spiel.linie[0][1] && k.strasse === spiel);
+      const i = v.kanten.findIndex((k) => k.a[0] === spiel.linie[0][0] && k.a[1] === spiel.linie[0][1] && k.strasse.name === "Kiss and Ride Zone");
       // Knoten vor der Einfahrt: wie oft biegen Autos dort ab?
       const vorher = v.kanten.findIndex((k) => k.nach === v.kanten[i].von && k.strasse.name === "Eugen-Richter-Straße");
       let rein = 0;
@@ -66,5 +68,26 @@ describe("Spielstraße an der Schule (Ergänzung zu OSM)", () => {
     const h = turnhalle(s)!;
     expect(h).toBeTruthy();
     expect((h.box.x0 + h.box.x1) / 2).toBeLessThan(schulMitte(s)[0]);
+  });
+});
+
+describe("Lose Enden anschließen", () => {
+  it("verbindet zwei lose Enden, statt sie zu vertauschen", async () => {
+    const { anschliessen } = await import("@/lib/verkehr/stadt");
+    const a = { art: "residential" as const, linie: [[0, 0], [100, 0]] as [number, number][] };
+    const b = { art: "residential" as const, linie: [[105, 3], [200, 0]] as [number, number][] };
+    const [x, y] = anschliessen([a, b]);
+    expect(x.linie[1]).toEqual(y.linie[0]);
+  });
+
+  it("lässt Straßen, die schon verbunden sind, in Ruhe", async () => {
+    const { anschliessen } = await import("@/lib/verkehr/stadt");
+    const a = { art: "residential" as const, linie: [[0, 0], [100, 0]] as [number, number][] };
+    const b = { art: "residential" as const, linie: [[100, 0], [200, 0]] as [number, number][] };
+    const c = { art: "residential" as const, linie: [[100, 5], [100, 50]] as [number, number][] };
+    const [x, y, z] = anschliessen([a, b, c]);
+    expect(x).toBe(a);
+    expect(y).toBe(b);
+    expect(z.linie[0]).toEqual([100, 0]);
   });
 });
