@@ -27,11 +27,16 @@ function mitte(umriss: P[]): P {
 /** Wo Mülleimer stehen. */
 export function baueEimer(stadt: Stadt): P[] {
   const orte: P[] = [];
+  const vorSchule: P[] = [];
   // Schule: gleich am Start vor dem Eingang. Läden: die Punkte liegen im
   // Gebäude — der Eimer steht auf dem nächsten Gehweg (ein Innenhof wäre
   // womöglich nicht erreichbar).
+  // Zwei Eimer vor der Schule, links und rechts vom Start längs der Straße.
   const [sx, sy] = schulStart(stadt);
-  orte.push([sx + 1.5, sy]);
+  const n = stadt.naechsteStrasse(sx, sy, 10);
+  const w = n ? Math.atan2(n.st.b[1] - n.st.a[1], n.st.b[0] - n.st.a[0]) : 0;
+  vorSchule.push([sx + Math.cos(w) * 2.5, sy + Math.sin(w) * 2.5], [sx - Math.cos(w) * 2.5, sy - Math.sin(w) * 2.5]);
+  orte.push(...vorSchule);
   const aufGehweg = (p: P): P | null => {
     for (let r = 0; r <= 60; r += 1.5)
       for (let i = 0; i < 24; i++) {
@@ -47,9 +52,10 @@ export function baueEimer(stadt: Stadt): P[] {
   for (const w of stadt.wartebereiche) { const [x, y] = mitte(w); orte.push([x + (w[1][0] - w[0][0]) * 0.35, y + (w[1][1] - w[0][1]) * 0.35]); }
   for (const f of stadt.karte.flaechen)
     if ((f.art === "spielplatz" || f.art === "gruen" || f.art === "sportplatz") && f.umriss.length >= 3) orte.push(mitte(f.umriss));
-  // Nur Orte, die man erreicht (nicht im Haus), und keine doppelten.
+  // Nur Orte, die man erreicht (nicht im Haus), und keine doppelten — die
+  // beiden vor der Schule stehen absichtlich nah beieinander.
   return orte.filter((p, i) => stadt.untergrund(p[0], p[1]).art !== "haus"
-    && !orte.slice(0, i).some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 15));
+    && (vorSchule.includes(p) || !orte.slice(0, i).some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 15)));
 }
 
 /** Kleiner fester Zufallsgenerator (Park–Miller). */

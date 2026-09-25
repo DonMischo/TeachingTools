@@ -5,7 +5,7 @@
  */
 import { Container, Graphics, Text, Texture, TilingSprite } from "pixi.js";
 import type { P } from "./geometrie";
-import { bahnsteigUm, winkelVon, type Stadt } from "./stadt";
+import { bahnsteigUm, schulMitte, winkelVon, type Stadt } from "./stadt";
 import type { SchildArt } from "./schilder";
 
 export const FARBE = {
@@ -135,6 +135,13 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   }
   boden.addChild(strassen);
 
+  // Einfahrt auf dem Schulgelände: Pflaster statt Asphalt — hier fahren keine Autos.
+  const schulPflaster = new Graphics();
+  for (const z of stadt.schulZufahrten) {
+    schulPflaster.moveTo(z.a[0], z.a[1]).lineTo(z.b[0], z.b[1]).stroke({ width: z.breite + 0.2, color: 0xc9b99a, cap: "round" });
+  }
+  boden.addChild(schulPflaster);
+
   // Übergänge: Zebrastreifen und Fußgängerfurten an Ampeln
   const querungen = new Graphics();
   for (const p of karte.punkte) {
@@ -177,6 +184,22 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     steige.moveTo(a[0] + nx * 0.2, a[1] + ny * 0.2).lineTo(b[0] + nx * 0.2, b[1] + ny * 0.2).stroke({ width: 0.3, color: 0xd9d9d0 });
   }
   boden.addChild(steige);
+
+  // Schultore: zwei Pfosten, dazwischen ein Gittertor
+  const tore = new Graphics();
+  // Nur an unserer Schule wissen wir von einem Tor.
+  const [smx, smy] = schulMitte(stadt);
+  for (const t of stadt.tore.filter((t) => Math.hypot(t.p[0] - smx, t.p[1] - smy) < 150)) {
+    const c = Math.cos(t.winkel + Math.PI / 2), sn = Math.sin(t.winkel + Math.PI / 2), h = 2.3;
+    const a: P = [t.p[0] - c * h, t.p[1] - sn * h], b: P = [t.p[0] + c * h, t.p[1] + sn * h];
+    tore.moveTo(a[0], a[1]).lineTo(b[0], b[1]).stroke({ width: 0.25, color: 0x4b5563 });
+    for (let i = 1; i < 8; i++) {
+      const f = i / 8;
+      tore.circle(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, 0.07).fill(0x9ca3af);
+    }
+    tore.circle(a[0], a[1], 0.25).fill(0x374151).circle(b[0], b[1], 0.25).fill(0x374151);
+  }
+  boden.addChild(tore);
 
   // Häuser: Schlagschatten, dann Dach
   const haeuser = new Graphics();

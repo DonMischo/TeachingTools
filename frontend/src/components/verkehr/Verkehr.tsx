@@ -269,7 +269,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
       )}
 
       <div ref={huelle} className={`relative flex gap-3 ${gross ? "h-full w-full bg-slate-950 p-0" : ""}`}>
-        <div className={`relative flex-1 overflow-hidden ${gross ? "" : "h-[72vh] min-h-[440px] rounded-2xl shadow-2xl ring-1 ring-black/20"}`}>
+        <div className={`relative flex-1 overflow-hidden ${gross ? "" : "h-[calc(100dvh-7rem)] min-h-[440px] rounded-2xl shadow-2xl ring-1 ring-black/20"}`}>
           <Suspense fallback={<div className="flex h-full items-center justify-center bg-slate-900 text-sm text-white/70">🏙️ Stadt wird gebaut …</div>}>
             <Spielfeld netz={netz} farbe={farbe} steuerkanal={steuerkanal} ueberblick={ueberblick} tonAn={tonAn}
               onUntergrund={onUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
@@ -302,14 +302,14 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
                 onClick={() => setTouch((v) => !v)}>🎮</button>
               <button type="button" className={hudKnopf} title="Hilfe zur Steuerung" onClick={() => setHilfe((v) => !v)}>❔</button>
               <button type="button" className={hudKnopf} title={gross ? "Vollbild verlassen" : "Vollbild"} onClick={vollbildUmschalten}>{gross ? "🗗" : "⛶"}</button>
-              {gross && <button type="button" className={hudKnopf} title="Aufträge" onClick={() => setSeite((v) => !v)}>🪪</button>}
+              <button type="button" className={`${hudKnopf} ${seite ? "ring-2 ring-amber-400" : ""}`} title={seite ? "Seitenleiste einklappen" : "Aufträge zeigen"} onClick={() => setSeite((v) => !v)}>🪪</button>
             </div>
           </div>
 
           {hilfe && !(ltbAn && (intro !== null || ltbText)) && (
             <div className="absolute left-2 top-14 z-10 max-w-xs rounded-xl bg-slate-900/85 px-4 py-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
               <div className="mb-1 font-black">Steuerung</div>
-              <div><b>Laufen:</b> Pfeiltasten oder WASD · <b>Rennen:</b> Umschalt</div>
+              <div><b>Laufen:</b> Pfeiltasten, WASD oder Maus (klicken = hingehen, gedrückt halten = folgen) · <b>Rennen:</b> Umschalt</div>
               <div><b>Umschauen:</b> Leertaste · <b>Taster / Schild:</b> E</div>
               <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Müll aufheben/einwerfen:</b> E</div>
               <div><b>Gesten:</b> {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => `${g.taste} ${g.emoji}`).join("  ")}</div>
@@ -383,9 +383,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           </div>
         </div>
 
-        {(!gross || seite) && (
+        {seite && (
           <aside className={`w-72 shrink-0 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg ${
-            gross ? "absolute right-3 top-14 bottom-3 z-20 max-h-none w-72 shadow-2xl" : "max-h-[72vh]"} ${touch && !gross ? "hidden lg:block" : ""}`}>
+            gross ? "absolute right-3 top-14 bottom-3 z-20 max-h-none w-72 shadow-2xl" : "max-h-[calc(100dvh-7rem)]"} ${touch && !gross ? "hidden lg:block" : ""}`}>
             {seitenleiste}
           </aside>
         )}

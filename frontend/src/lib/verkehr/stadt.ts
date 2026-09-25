@@ -70,7 +70,8 @@ export type Untergrund =
 
 export type Halt = { art: "bushalt" | "tramhalt" | "bahnhalt"; name: string; p: P; winkel: number; fiktiv?: boolean };
 
-type Stueck = { a: P; b: P; halb: number };
+/** `schule`: Stück einer Zufahrt auf dem Schulgelände — kein Autoverkehr, sicher wie der Schulhof. */
+type Stueck = { a: P; b: P; halb: number; schule?: boolean };
 type Haus = { umriss: P[]; name?: string };
 
 /** Wie weit um einen Übergangspunkt die Fahrbahn als Übergang zählt (Meter längs der Straße). */
@@ -89,10 +90,36 @@ export class Stadt {
   private querungRaster = new Raster<KartenPunkt>(20);
   private bahnsteigRaster = new Raster<P[]>(20);
   private warteRaster = new Raster<P[]>(20);
+  /** Schulgelände (amenity=school). Die Zufahrt darauf ist nur eine Einfahrt hinter einem Tor. */
+  readonly schulgelaende: P[][];
+  /** Tore: wo eine Zufahrt das Schulgelände verlässt. */
+  readonly tore: { p: P; winkel: number }[] = [];
+  /** Zufahrtsstücke auf dem Schulgelände (zum Zeichnen als Pflaster). */
+  readonly schulZufahrten: { a: P; b: P; breite: number }[] = [];
 
   constructor(readonly karte: Karte = KARTE) {
     this.strassen = karte.strassen.map((s) => ({ ...s, breite: fahrbahnBreite(s), gehwegBreite: gehwegBreite(s) }));
-    for (const s of this.strassen) this.einsortieren(s.linie, s.breite / 2 + s.gehwegBreite, (st) => this.strassenRaster.fuege({ s, st }, boxVon([st.a, st.b]), st.halb));
+    this.schulgelaende = karte.flaechen.filter((f) => f.art === "schulhof" && f.umriss.length >= 3).map((f) => f.umriss);
+    const aufSchule = (p: P) => this.schulgelaende.some((u) => imVieleck(p[0], p[1], u));
+    for (const s of this.strassen) this.einsortieren(s.linie, s.breite / 2 + s.gehwegBreite, (st) => {
+      if (s.art === "service") {
+        const drinA = aufSchule(st.a), drinB = aufSchule(st.b);
+        const m: P = [(st.a[0] + st.b[0]) / 2, (st.a[1] + st.b[1]) / 2];
+        st.schule = aufSchule(m);
+        if (st.schule) this.schulZufahrten.push({ a: st.a, b: st.b, breite: s.breite });
+        // Tor dort, wo die Zufahrt die Grenze kreuzt (Halbierungssuche).
+        if (drinA !== drinB) {
+          let lo = 0, hi = 1;
+          for (let i = 0; i < 20; i++) {
+            const mid = (lo + hi) / 2;
+            const q: P = [st.a[0] + (st.b[0] - st.a[0]) * mid, st.a[1] + (st.b[1] - st.a[1]) * mid];
+            if (aufSchule(q) === drinA) lo = mid; else hi = mid;
+          }
+          this.tore.push({ p: [st.a[0] + (st.b[0] - st.a[0]) * lo, st.a[1] + (st.b[1] - st.a[1]) * lo], winkel: winkelVon(st) });
+        }
+      }
+      this.strassenRaster.fuege({ s, st }, boxVon([st.a, st.b]), st.halb);
+    });
     for (const w of karte.wege) this.einsortieren(w.linie, w.art === "rad" || w.art === "geh_rad" ? 1.25 : 1, (st) => this.wegRaster.fuege({ art: w.art, st }, boxVon([st.a, st.b]), st.halb));
     for (const g of karte.gleise) this.einsortieren(g.linie, 1.5, (st) => this.gleisRaster.fuege({ art: g.art, st }, boxVon([st.a, st.b]), st.halb));
     for (const h of karte.gebaeude) if (h.umriss.length >= 3) this.hausRaster.fuege(h, boxVon(h.umriss));
@@ -184,8 +211,14 @@ export class Stadt {
       if (abstandZuStrecke(x, y, e.st.a, e.st.b).d <= 1.5) return { art: "gleis", gleis: e.art };
     // Fahrbahn: die breiteste Straße, auf der der Punkt liegt.
     let fahrbahn: Strasse | null = null;
-    for (const e of this.strassenRaster.bei(x, y))
-      if (abstandZuStrecke(x, y, e.st.a, e.st.b).d <= e.s.breite / 2 && (!fahrbahn || e.s.breite > fahrbahn.breite)) fahrbahn = e.s;
+    let schulZufahrt = false;
+    for (const e of this.strassenRaster.bei(x, y)) {
+      if (abstandZuStrecke(x, y, e.st.a, e.st.b).d > e.s.breite / 2) continue;
+      if (e.st.schule) { schulZufahrt = true; continue; }
+      if (!fahrbahn || e.s.breite > fahrbahn.breite) fahrbahn = e.s;
+    }
+    // Die Einfahrt auf dem Schulgelände ist Schulhof, keine Fahrbahn.
+    if (!fahrbahn && schulZufahrt) return { art: "gehweg" };
     if (fahrbahn) {
       let querung: KartenPunkt | undefined;
       for (const q of this.querungRaster.bei(x, y)) {

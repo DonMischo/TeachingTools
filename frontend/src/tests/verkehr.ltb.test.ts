@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BEGRUESSUNG, Ltb, PAUSE } from "@/lib/verkehr/ltb";
 import { baueEimer, Muell, TRAGEN } from "@/lib/verkehr/muell";
-import { stadt, schulStart } from "@/lib/verkehr/stadt";
+import { stadt, schulMitte, schulStart } from "@/lib/verkehr/stadt";
 import { LEER, verbuche, type Ereignis, type Fortschritt } from "@/lib/verkehr/missionen";
 
 describe("LTB, der Pinguin", () => {
@@ -73,5 +73,29 @@ describe("Müll", () => {
     expect(f.erledigt).toContain("muell");
     expect(alle(f, { typ: "muell", stueck: 5 }).erfolge).toContain("saubermann");
     expect(alle(LEER, { typ: "karmaGeheilt" }).erfolge).toContain("karmawende");
+  });
+});
+
+describe("Schulgelände", () => {
+  const s = stadt();
+
+  it("die Einfahrt auf unserem Schulgelände ist Schulhof, keine Fahrbahn", () => {
+    const [mx, my] = schulMitte(s);
+    const unsere = s.schulZufahrten.filter((z) => Math.hypot(z.a[0] - mx, z.a[1] - my) < 150);
+    expect(unsere.length).toBeGreaterThan(0);
+    for (const z of unsere) {
+      const m = [(z.a[0] + z.b[0]) / 2, (z.a[1] + z.b[1]) / 2] as const;
+      expect(s.untergrund(m[0], m[1]).art).not.toBe("fahrbahn");
+    }
+  });
+
+  it("hat ein Tor zur Eugen-Richter-Straße", () => {
+    const [x, y] = schulStart(s);
+    expect(s.tore.some((t) => Math.hypot(t.p[0] - x, t.p[1] - y) < 60)).toBe(true);
+  });
+
+  it("hat zwei Mülleimer vor der Schule", () => {
+    const [x, y] = schulStart(s);
+    expect(baueEimer(s).filter((e) => Math.hypot(e[0] - x, e[1] - y) < 4)).toHaveLength(2);
   });
 });

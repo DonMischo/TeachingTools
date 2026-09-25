@@ -22,9 +22,12 @@ export type Anlage = {
   signale: { p: P; achse: number; art: "auto" | "fuss" }[];
 };
 
-/** Umlauf einer Kreuzung in Sekunden: A grün 20, gelb 3, alles rot 2, B grün 20, gelb 3, alles rot 2. */
-export const UMLAUF = 50;
-const GRUEN = 20, GELB = 3, ROT_ALLE = 2, ROTGELB = 1.5;
+/**
+ * Umlauf einer Kreuzung in Sekunden: je Richtung eine Phase von 30 s (so an
+ * der Schule gemessen): grün 25, gelb 3, alles rot 2.
+ */
+export const UMLAUF = 60;
+const GRUEN = 25, GELB = 3, ROT_ALLE = 2, ROTGELB = 1.5;
 
 /** Fußgängerampel: so lange nach dem Drücken bis Fußgängergrün, und so lange grün. */
 export const TASTER_WARTEN = 5;

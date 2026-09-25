@@ -322,6 +322,30 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
 
       const [sx, sy] = schulStart(s);
       pinguinLage.x = sx - 1.5; pinguinLage.y = sy;
+
+      // Maus wie in Diablo: klicken = dorthin gehen, gedrückt halten = dem Zeiger folgen.
+      let mausZiel: { x: number; y: number } | null = null;
+      let mausHaelt = false;
+      const zielMarke = new Graphics().circle(0, 0, 0.6).stroke({ width: 0.12, color: 0xffd400 }).circle(0, 0, 0.15).fill(0xffd400);
+      zielMarke.visible = false;
+      figuren.addChild(zielMarke);
+      const weltPunkt = (e: PointerEvent) => {
+        const r = app.canvas.getBoundingClientRect();
+        return { x: (e.clientX - r.left - welt.position.x) / welt.scale.x, y: (e.clientY - r.top - welt.position.y) / welt.scale.y };
+      };
+      const mausRunter = (e: PointerEvent) => {
+        if (e.button !== 0 || e.pointerType === "touch") return;
+        klang.wecke();
+        mausHaelt = true;
+        mausZiel = weltPunkt(e);
+        app.canvas.setPointerCapture(e.pointerId);
+      };
+      const mausBewegt = (e: PointerEvent) => { if (mausHaelt) mausZiel = weltPunkt(e); };
+      const mausHoch = () => { mausHaelt = false; };
+      app.canvas.addEventListener("pointerdown", mausRunter);
+      app.canvas.addEventListener("pointermove", mausBewegt);
+      app.canvas.addEventListener("pointerup", mausHoch);
+      app.canvas.addEventListener("pointercancel", mausHoch);
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
       const figur = zeichneFigur(farbe);
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
@@ -462,8 +486,22 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         // Beim Umschauen, beim Mitfahren, bei der Polizei und nach einem Unfall bleibt die Figur stehen.
         const festgehalten = (n.strafe()?.bis ?? 0) > t;
         const vorher = { x: ich.x, y: ich.y };
-        const eingabe = { ...eingabeAusTasten(gedrueckt), stick: optionen.current.steuerkanal?.current.stick };
+        const tasten = eingabeAusTasten(gedrueckt);
+        // Tasten haben Vorrang: wer tippt, bricht den Mausweg ab.
+        if (tasten.hoch || tasten.runter || tasten.links || tasten.rechts) mausZiel = null;
+        let stick = optionen.current.steuerkanal?.current.stick;
+        if (mausZiel && (!stick || Math.hypot(stick.x, stick.y) < 0.15)) {
+          const dx = mausZiel.x - ich.x, dy = mausZiel.y - ich.y, d = Math.hypot(dx, dy);
+          if (d < 0.3 && !mausHaelt) mausZiel = null;
+          // Gehen (Stärke 0,9); Umschalt rennt wie bei den Tasten.
+          else if (d >= 0.3) stick = { x: (dx / d) * 0.9, y: (dy / d) * 0.9 };
+        }
+        const eingabe = { ...tasten, stick };
         if (t >= unfallBis && !mitfahrt && !festgehalten) ich = schritt(ich, t - umschauenSeit < UMSCHAUEN_DAUER ? KEINE_EINGABE : eingabe, dt, s);
+        // Hängt die Figur fest (Hauswand), gibt der Mausweg auf.
+        if (mausZiel && !mausHaelt && Math.hypot(ich.x - vorher.x, ich.y - vorher.y) < 0.002 && t - umschauenSeit >= UMSCHAUEN_DAUER) mausZiel = null;
+        zielMarke.visible = !!mausZiel && !mitfahrt;
+        if (mausZiel) zielMarke.position.set(mausZiel.x, mausZiel.y);
         // Weg und Schritte (Geräusch, Statistik)
         const gelaufen = Math.hypot(ich.x - vorher.x, ich.y - vorher.y);
         if (gelaufen > 0 && gelaufen < 2) {

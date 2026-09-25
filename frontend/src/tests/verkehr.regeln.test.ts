@@ -14,6 +14,14 @@ describe("Ampeln", () => {
     expect(anlagen.some((a) => a.achsen.length === 2)).toBe(true);
   });
 
+  it("schaltet je Richtung etwa 30 s (Grün + Gelb + alles Rot)", () => {
+    expect(UMLAUF).toBe(60);
+    const a = anlagen.find((a) => a.achsen.length === 2)!;
+    let gruen = 0;
+    for (let t = 0; t < UMLAUF; t += 0.5) if (autoLicht(a, 0, t) === "gruen") gruen += 0.5;
+    expect(gruen).toBe(25);
+  });
+
   it("gibt nie beiden Achsen einer Kreuzung gleichzeitig Grün", () => {
     for (const a of anlagen.filter((a) => a.achsen.length === 2))
       for (let t = 0; t < UMLAUF; t += 0.25) expect(autoLicht(a, 0, t) === "gruen" && autoLicht(a, 1, t) === "gruen").toBe(false);
