@@ -120,6 +120,46 @@ export function applyOp(eq: Equation, op: Op): Equation {
   }
 }
 
+// ── Von Hand legen (nur eine Seite) ───────────────────────────────────────────
+
+const sameSign = (a: number, b: number): boolean => (a < 0) === (b < 0);
+const dropZeros = (side: Side): Side => {
+  const out = side.filter(t => t.t === "g" || clean(t.n) !== 0);
+  return out.length ? out : [{ t: "n", n: 0 }];
+};
+
+/**
+ * Legt ein Teil auf eine Seite — ohne Zusammenfassen: ein Gewicht und eine
+ * Feder derselben Art bleiben nebeneinander liegen. Nur gleiche Vorzeichen
+ * wandern in denselben Term.
+ */
+export function putOn(side: Side, kind: "x" | "n", n: number): Side {
+  const i = side.findIndex(t => t.t === kind && clean(t.n) !== 0 && sameSign(t.n, n));
+  if (i < 0) return dropZeros([...side, { t: kind, n }]);
+  return side.map((t, j) => (j === i && t.t !== "g" ? { t: kind, n: clean(t.n + n) } : t));
+}
+
+/** Nimmt ein ganzes Teil (oder den Bruchrest) der Art von einer Seite. */
+export function takeOff(side: Side, kind: "x" | "n", neg: boolean): Side {
+  for (let i = side.length - 1; i >= 0; i--) {
+    const t = side[i];
+    if (t.t !== kind || clean(t.n) === 0 || (t.n < 0) !== neg) continue;
+    const a = Math.abs(t.n);
+    const rest = clean(a - Math.min(1, a)) * (neg ? -1 : 1);
+    return dropZeros(side.map((u, j) => (j === i ? { t: kind, n: rest } : u)));
+  }
+  return side;
+}
+
+/** Liegen Gewicht und Feder derselben Art nebeneinander (Nullpaare)? */
+export function hasPairs(side: Side): boolean {
+  for (const kind of ["x", "n"] as const) {
+    const ns = side.filter(t => t.t === kind).map(t => (t as XTerm | NTerm).n);
+    if (ns.some(n => n > 0) && ns.some(n => n < 0)) return true;
+  }
+  return false;
+}
+
 // ── Lösen ─────────────────────────────────────────────────────────────────────
 
 export type Solution = { kind: "one"; x: number } | { kind: "none" } | { kind: "all" };

@@ -7,18 +7,23 @@
  * zusammenhält; ihre Klötzchen tragen schon die ids, die sie nach dem
  * Ausmultiplizieren haben, und gleiten deshalb beim Auflösen an ihren Platz,
  * statt zu verschwinden.
+ *
+ * Aus dem Vorrat neben der Waage lassen sich Teile auf nur eine Schale ziehen
+ * (oder aus ihr heraus) — dann kippt die Waage, und die Gleichung stimmt nicht
+ * mehr. Gewicht und Feder derselben Art dürfen dabei nebeneinander liegen.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import {
   applyOp, clean, coeffs, equationToLatex, evalSide, fmtNum, formatOp, formatSide,
-  generateTask, isSolved, LEVELS, MINUS, parseEquation, sideToLatex, solve, suggestions,
-  type Equation, type Op, type Side,
+  generateTask, hasPairs, isSolved, LEVELS, MINUS, parseEquation, putOn, sideToLatex, simplify, solve,
+  suggestions, takeOff, type Equation, type Op, type Side,
 } from "@/lib/gleichung";
 import {
   Balance, bestLayout, flowLayout, GAP, Konfetti, Piece, Protokoll, tiltFor,
   useExitingItems, useWobble, type PanContent, type Placed,
 } from "./Balance";
 import { Tex } from "@/components/Tex";
+import { MOTIV_DEFS, MOTIVE, MotivShape, motivSize, type MotivId } from "./Motive";
 
 const XW = 48, XH = 46;
 const NW = 34, NH = 34;
@@ -43,7 +48,7 @@ type Unit = Placed & {
   inner: Blk[] | null; // gesetzt ⇒ Klammer
 };
 
-function layoutSide(side: Side, prefix: string): { units: Unit[]; scale: number } {
+function layoutSide(side: Side, prefix: string, motiv: MotivId): { units: Unit[]; scale: number } {
   // Fortlaufende ids je Art: dieselbe Kachel behält beim Umformen ihre id und
   // gleitet an den neuen Platz, statt zu verschwinden.
   const counters: Record<string, number> = {};
@@ -59,14 +64,16 @@ function layoutSide(side: Side, prefix: string): { units: Unit[]; scale: number 
     if (v === 0) return [];
     const neg = v < 0;
     const a = Math.abs(v);
-    const w = kind === "x" ? XW : NW;
-    const h = kind === "x" ? XH : NH;
+    const size = motivSize(motiv, kind, neg);
+    const w = size?.w ?? (kind === "x" ? XW : NW);
+    const h = size?.h ?? (kind === "x" ? XH : NH);
     const mk = (frac: number, label: string | null): Blk => ({
       id: nextId(kind, neg), kind, neg, frac, label, w, h, px: 0, py: 0,
     });
     if (a > COMPACT_AT) {
       const b = mk(1, `${fmtNum(v)}${kind === "x" ? "x" : ""}`);
       b.w = 78;
+      if (size) b.h = Math.max(h, 30);
       return [b];
     }
     const out: Blk[] = [];
@@ -108,6 +115,9 @@ function layoutSide(side: Side, prefix: string): { units: Unit[]; scale: number 
       for (const b of makeBlocks(t.t, t.n)) units.push(asUnit(b));
     }
   }
+
+  // Federn sind an der Schale eingehakt: sie kommen in die unterste Reihe.
+  if (motiv !== "kloetze") units.sort((a, b) => Number(!!b.blk?.neg) - Number(!!a.blk?.neg));
 
   const { scale } = bestLayout(units);
   return { units, scale };
@@ -153,7 +163,35 @@ function BlockShape({ b }: { b: Blk }) {
   );
 }
 
-function Units({ units }: { units: Unit[] }) {
+/** Ein Teil im gewählten Motiv — Klötzchen oder Alltagsding. */
+function Teil({ b, motiv }: { b: Blk; motiv: MotivId }) {
+  if (motiv === "kloetze") return <BlockShape b={b} />;
+  const v = Number(b.id.split("-").pop()) || 0;
+  return <MotivShape motiv={motiv} kind={b.kind} neg={b.neg} frac={b.frac} label={b.label} w={b.w} h={b.h} v={v} />;
+}
+
+/** Ein Musterteil für Vorrat und Ziehbild. */
+function sample(kind: "x" | "n", neg: boolean, motiv: MotivId): Blk {
+  const size = motivSize(motiv, kind, neg);
+  return {
+    id: "sample", kind, neg, frac: 1, label: null,
+    w: size?.w ?? (kind === "x" ? XW : NW), h: size?.h ?? (kind === "x" ? XH : NH), px: 0, py: 0,
+  };
+}
+
+function TeilSvg({ b, motiv, scale = 1 }: { b: Blk; motiv: MotivId; scale?: number }) {
+  return (
+    <svg width={b.w * scale} height={b.h * scale} viewBox={`-1 -1 ${b.w + 2} ${b.h + 2}`} overflow="visible">
+      <Teil b={b} motiv={motiv} />
+    </svg>
+  );
+}
+
+function Units({ units, motiv, onGrab }: {
+  units: Unit[];
+  motiv: MotivId;
+  onGrab: (b: Blk, e: RPointerEvent) => void;
+}) {
   const shown = useExitingItems(units);
   return (
     <>
@@ -169,12 +207,16 @@ function Units({ units }: { units: Unit[] }) {
                 fontSize={u.h * 0.95} fontWeight={300} fill="#38bdf8">)</text>
               {u.inner.map(b => (
                 <g key={b.id} transform={`translate(${PAREN_W + CRATE_PAD + b.px}, ${CRATE_PAD + b.py})`}>
-                  <BlockShape b={b} />
+                  <Teil b={b} motiv={motiv} />
                 </g>
               ))}
             </g>
           ) : (
-            u.blk && <BlockShape b={u.blk} />
+            u.blk && (
+              <g onPointerDown={e => !u.gone && onGrab(u.blk!, e)} onMouseDown={e => e.preventDefault()} style={{ cursor: "grab", touchAction: "none" }}>
+                <Teil b={u.blk} motiv={motiv} />
+              </g>
+            )
           )}
         </Piece>
       ))}
@@ -196,8 +238,15 @@ const DEFS = (
       <stop offset="0" stopColor="#fb7185" />
       <stop offset="1" stopColor="#e11d48" />
     </linearGradient>
+    {MOTIV_DEFS}
   </>
 );
+
+type PanSide = "L" | "R";
+const SIDE_NAME: Record<PanSide, string> = { L: "links", R: "rechts" };
+
+/** Ein Teil, das gerade gezogen wird — aus dem Vorrat (from null) oder aus einer Schale. */
+type Drag = { kind: "x" | "n"; neg: boolean; from: PanSide | null; x: number; y: number };
 
 const START: Equation = {
   left: [{ t: "x", n: 3 }, { t: "n", n: 4 }],
@@ -231,7 +280,10 @@ function parseValue(v: string): { kind: "x" | "n"; n: number } | null {
 export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => void }) {
   const [level, setLevel] = useState(3);
   const [chain, setChain] = useState<Equation[]>([START]);
-  const [ops, setOps] = useState<Op[]>([]);
+  const [ops, setOps] = useState<string[]>([]);
+  const [motiv, setMotiv] = useState<MotivId>("hoelzer");
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
   const [wobble, kick] = useWobble();
   const [sign, setSign] = useState<SignKey>(MINUS);
   const [value, setValue] = useState("");
@@ -241,14 +293,74 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
   const current = chain[chain.length - 1];
   const original = chain[0];
   const sol = solve(current);
-  const solvedX = isSolved(current);
-  const noX = coeffs(current.left).x === 0 && coeffs(current.right).x === 0;
 
-  const apply = useCallback((op: Op) => {
-    setChain(c => [...c, applyOp(c[c.length - 1], op)]);
-    setOps(o => [...o, op]);
+  // Das echte x steckt in der Ausgangsgleichung: die Schachtel enthält immer
+  // gleich viel, egal was man danach auf die Schalen legt.
+  const sol0 = solve(original);
+  const hiddenX = sol0.kind === "one" ? sol0.x : 1;
+  const balanced = (eq: Equation) =>
+    sol0.kind !== "one" || clean(evalSide(eq.left, hiddenX) - evalSide(eq.right, hiddenX)) === 0;
+  const broken = !balanced(current);
+  const solvedX = broken ? null : isSolved(current);
+  const noX = coeffs(current.left).x === 0 && coeffs(current.right).x === 0;
+  const pairs = hasPairs(current.left) || hasPairs(current.right);
+
+  const push = useCallback((eq: Equation, label: string) => {
+    setChain(c => [...c, eq]);
+    setOps(o => [...o, label]);
     kick();
   }, [kick]);
+
+  const apply = useCallback((op: Op) => {
+    push(applyOp(current, op), formatOp(op));
+  }, [current, push]);
+
+  /** Ein Teil nur auf einer Seite hinlegen, wegnehmen oder umlegen. */
+  const moveByHand = useCallback((kind: "x" | "n", neg: boolean, from: PanSide | null, to: PanSide | null) => {
+    if (from === to) return;
+    const piece = kind === "x" ? "x" : "1";
+    const key = (s: PanSide) => (s === "L" ? "left" : "right");
+    let eq = current;
+    const parts: string[] = [];
+    if (from) {
+      const side = takeOff(eq[key(from)], kind, neg);
+      if (side === eq[key(from)]) return;
+      eq = { ...eq, [key(from)]: side };
+      parts.push(`${SIDE_NAME[from]} ${neg ? "+" : MINUS} ${piece}`);
+    }
+    if (to) {
+      eq = { ...eq, [key(to)]: putOn(eq[key(to)], kind, neg ? -1 : 1) };
+      parts.push(`${SIDE_NAME[to]} ${neg ? MINUS : "+"} ${piece}`);
+    }
+    push(eq, parts.length === 1 ? `nur ${parts[0]}` : parts.join(", "));
+  }, [current, push]);
+
+  // Ziehen: die Fenster-Ereignisse hängen nur während eines Zugs — gleich beim
+  // Greifen, sonst geht ein schneller Zug verloren, bevor React neu zeichnet.
+  const moveRef = useRef(moveByHand);
+  moveRef.current = moveByHand;
+  const dropSide = (x: number, y: number): PanSide | null => {
+    const r = scaleRef.current?.getBoundingClientRect();
+    if (!r || x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
+    return x < r.left + r.width / 2 ? "L" : "R";
+  };
+  const grab = (kind: "x" | "n", neg: boolean, from: PanSide | null, e: RPointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setDrag({ kind, neg, from, x: e.clientX, y: e.clientY });
+    const move = (ev: PointerEvent) => setDrag(d => (d ? { ...d, x: ev.clientX, y: ev.clientY } : d));
+    const end = (ev: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+      setDrag(null);
+      if (ev.type === "pointerup") moveRef.current(kind, neg, from, dropSide(ev.clientX, ev.clientY));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  };
+  const hover = drag ? dropSide(drag.x, drag.y) : null;
 
   const start = useCallback((eq: Equation) => {
     setChain([eq]);
@@ -278,16 +390,17 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
 
   // Die Last ist der Wert der Seite für die echte Lösung: solange beide Seiten
   // gleich umgeformt werden, bleibt die Waage im Gleichgewicht.
-  const xVal = sol.kind === "one" ? sol.x : 1;
-  const tilt = tiltFor(evalSide(current.left, xVal), evalSide(current.right, xVal), wobble);
+  // Von Hand auf nur eine Seite gelegt, stimmt sie nicht mehr — dann kippt die Waage.
+  const tilt = tiltFor(evalSide(current.left, hiddenX), evalSide(current.right, hiddenX), wobble);
 
-  const leftLayout = useMemo(() => layoutSide(current.left, "L"), [current.left]);
-  const rightLayout = useMemo(() => layoutSide(current.right, "R"), [current.right]);
-  const chips = useMemo(() => (solvedX === null ? suggestions(current) : []), [current, solvedX]);
+  const leftLayout = useMemo(() => layoutSide(current.left, "L", motiv), [current.left, motiv]);
+  const rightLayout = useMemo(() => layoutSide(current.right, "R", motiv), [current.right, motiv]);
+  const chips = useMemo(() => (solvedX === null && !broken ? suggestions(current) : []), [current, solvedX, broken]);
   const preview = useMemo(() => parseEquation(customText), [customText]);
+  const motivInfo = MOTIVE.find(m => m.id === motiv)!;
 
-  const pan = (l: { units: Unit[]; scale: number }, side: Side): PanContent => ({
-    node: <Units units={l.units} />,
+  const pan = (l: { units: Unit[]; scale: number }, side: Side, ps: PanSide): PanContent => ({
+    node: <Units units={l.units} motiv={motiv} onGrab={(b, e) => grab(b.kind, b.neg, ps, e)} />,
     scale: l.scale,
     label: formatSide(side),
     empty: !l.units.length,
@@ -374,7 +487,17 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
         </div>
       )}
 
-      {solvedX === null && noX && (
+      {broken && (
+        <div className="gw-banner rounded-2xl border-2 border-[var(--red)] bg-[var(--red)]/10 px-5 py-4">
+          <div className="font-black text-[var(--red)]">⚖️ Aus dem Gleichgewicht — die Gleichung stimmt nicht mehr (≠).</div>
+          <div className="text-sm text-[var(--text-muted)] mt-1">
+            Du hast nur auf einer Seite etwas verändert. Leg auf der anderen Seite dasselbe dazu,
+            nimm es wieder weg — oder ↶ Zurück.
+          </div>
+        </div>
+      )}
+
+      {solvedX === null && noX && !broken && (
         <div className="gw-banner rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4">
           <div className="font-black">
             {sol.kind === "all" ? "♾️ Jede Zahl ist eine Lösung." : "🚫 Diese Gleichung hat keine Lösung."}
@@ -388,16 +511,71 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
       )}
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
-        <Balance tilt={tilt} defs={DEFS}
-          ariaLabel={`Waage: ${formatSide(current.left)} = ${formatSide(current.right)}`}
-          left={pan(leftLayout, current.left)} right={pan(rightLayout, current.right)} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <span className="text-xs text-[var(--text-muted)]">Motiv:</span>
+          <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-0.5">
+            {MOTIVE.map(m => (
+              <button key={m.id} onClick={() => setMotiv(m.id)} title={m.label}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  motiv === m.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                }`}>
+                {m.icon} <span className="hidden sm:inline">{m.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+          <div ref={scaleRef} className="relative flex-1 min-w-0">
+            {drag && (
+              <div className="pointer-events-none absolute inset-0 grid grid-cols-2">
+                {(["L", "R"] as const).map(s => (
+                  <div key={s} className={`rounded-xl transition-colors ${
+                    hover === s ? "bg-[var(--accent)]/15 outline-2 outline-dashed outline-[var(--accent)]" : ""
+                  }`} />
+                ))}
+              </div>
+            )}
+            <Balance tilt={tilt} defs={DEFS}
+              ariaLabel={`Waage: ${formatSide(current.left)} ${broken ? "≠" : "="} ${formatSide(current.right)}`}
+              left={pan(leftLayout, current.left, "L")} right={pan(rightLayout, current.right, "R")} />
+          </div>
+
+          <div className={`sm:w-28 shrink-0 rounded-xl border border-dashed p-2 flex flex-col gap-1 transition-colors ${
+            drag?.from && !hover ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)]"
+          }`}>
+            <div className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] text-center">Vorrat</div>
+            <div className="flex sm:flex-col flex-wrap items-center justify-center gap-2 flex-1">
+              {([["x", false], ["n", false], ["x", true], ["n", true]] as const).map(([kind, neg]) => (
+                <div key={`${kind}${neg}`} onPointerDown={e => grab(kind, neg, null, e)} onMouseDown={e => e.preventDefault()}
+                  title={`${neg ? "Feder" : kind === "x" ? motivInfo.x : motivInfo.one} — auf eine Schale ziehen`}
+                  className="cursor-grab select-none rounded-lg px-2 py-1.5 hover:bg-[var(--bg)] flex items-center justify-center min-w-[56px]"
+                  style={{ touchAction: "none" }}>
+                  <TeilSvg b={sample(kind, neg, motiv)} motiv={motiv} />
+                </div>
+              ))}
+            </div>
+            <div className="text-[10px] leading-tight text-[var(--text-muted)] text-center">
+              Auf eine Schale ziehen — oder aus der Schale hierher zurück.
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-x-5 gap-y-1 justify-center text-xs text-[var(--text-muted)] pt-1">
-          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#7c3aed" }} />x-Kiste (unbekannt)</span>
-          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#f59e0b" }} />1er-Gewicht</span>
-          <span><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: "#e11d48" }} />Minus-Ballon (zieht hoch)</span>
+          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#7c3aed" }} />{motivInfo.x}</span>
+          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#f59e0b" }} />{motivInfo.one}</span>
+          <span><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: "#e11d48" }} />
+            {motiv === "kloetze" ? "Minus-Ballon (zieht hoch)" : "Minus-Feder (zieht hoch)"}</span>
           <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5 border-2" style={{ borderColor: "#38bdf8" }} />Klammer</span>
         </div>
       </div>
+
+      {drag && (
+        <div className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg"
+          style={{ left: drag.x, top: drag.y }}>
+          <TeilSvg b={sample(drag.kind, drag.neg, motiv)} motiv={motiv} scale={1.3} />
+        </div>
+      )}
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
         <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Auf beiden Seiten …</div>
@@ -406,6 +584,18 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
           <p className="text-sm text-[var(--text-muted)]">Fertig — x steht allein. Hol dir mit 🎲 die nächste Aufgabe.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
+            {pairs && (
+              <button onClick={() => push({ left: simplify(current.left), right: simplify(current.right) }, "Nullpaare weg")}
+                title="Ein Gewicht und eine gleich starke Feder heben sich auf — beide dürfen weg."
+                className="px-3.5 py-2 rounded-xl text-base font-bold border border-[var(--green)] text-[var(--green)] bg-[var(--green)]/10 transition-all hover:scale-[1.04] active:scale-95">
+                🧹 Nullpaare wegräumen
+              </button>
+            )}
+            {broken && (
+              <span className="text-sm text-[var(--text-muted)] self-center">
+                Erst wieder ins Gleichgewicht bringen — dann gibt es Vorschläge.
+              </span>
+            )}
             {chips.map(op => (
               <button key={formatOp(op)} onClick={() => apply(op)}
                 className={`px-3.5 py-2 rounded-xl text-base font-bold border transition-all hover:scale-[1.04] active:scale-95 ${
@@ -439,7 +629,7 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
       </div>
 
       <Protokoll tex lines={chain.map((eq, i) => ({
-        left: sideToLatex(eq.left), right: sideToLatex(eq.right), op: ops[i] ? formatOp(ops[i]) : undefined,
+        left: sideToLatex(eq.left), right: sideToLatex(eq.right), op: ops[i], rel: balanced(eq) ? "=" : "≠",
       }))} />
     </>
   );

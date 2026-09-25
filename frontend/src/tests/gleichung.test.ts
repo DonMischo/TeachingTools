@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   applyOp, coeffs, evalSide, expandSide, formatEquation, formatOp, formatSide,
-  generateTask, isSolved, outerCoeffs, parseEquation, simplify, solve, suggestions,
-  type Equation,
+  generateTask, hasPairs, isSolved, outerCoeffs, parseEquation, putOn, simplify, solve, suggestions, takeOff,
+  type Equation, type Side,
 } from "@/lib/gleichung";
 
 const parse = (s: string): Equation => {
@@ -197,5 +197,28 @@ describe("generateTask", () => {
       expect(eq.left.some(t => t.t === "g")).toBe(true);
       expect(expandSide(eq.left).some(t => t.t === "g")).toBe(false);
     }
+  });
+});
+
+describe("von Hand legen", () => {
+  it("putOn legt Gewicht und Feder nebeneinander", () => {
+    const s = putOn([{ t: "x", n: 3 }, { t: "n", n: 4 }], "n", -1);
+    expect(s).toEqual([{ t: "x", n: 3 }, { t: "n", n: 4 }, { t: "n", n: -1 }]);
+    expect(hasPairs(s)).toBe(true);
+    expect(putOn(s, "n", 1)).toEqual([{ t: "x", n: 3 }, { t: "n", n: 5 }, { t: "n", n: -1 }]);
+    expect(formatSide(s)).toBe("3x + 4 − 1");
+  });
+
+  it("putOn ersetzt die leere Seite", () => {
+    expect(putOn([{ t: "n", n: 0 }], "x", 1)).toEqual([{ t: "x", n: 1 }]);
+  });
+
+  it("takeOff nimmt nur Teile mit passendem Vorzeichen", () => {
+    const s: Side = [{ t: "n", n: 4 }, { t: "n", n: -1 }];
+    expect(takeOff(s, "n", false)).toEqual([{ t: "n", n: 3 }, { t: "n", n: -1 }]);
+    expect(takeOff(s, "n", true)).toEqual([{ t: "n", n: 4 }]);
+    expect(takeOff([{ t: "n", n: 1 }], "n", false)).toEqual([{ t: "n", n: 0 }]);
+    expect(takeOff([{ t: "x", n: 1.5 }], "x", false)).toEqual([{ t: "x", n: 0.5 }]);
+    expect(takeOff(s, "x", false)).toBe(s);
   });
 });

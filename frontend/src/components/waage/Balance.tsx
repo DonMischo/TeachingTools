@@ -278,7 +278,7 @@ export function Konfetti({ seed }: { seed: number }) {
  * werden gesetzt — Brüche sehen dann aus wie im Heft.
  */
 export function Protokoll({ lines, tex = false }: {
-  lines: { left: string; right: string; op?: string }[];
+  lines: { left: string; right: string; op?: string; rel?: string }[];
   tex?: boolean;
 }) {
   return (
@@ -296,7 +296,7 @@ export function Protokoll({ lines, tex = false }: {
               <span className="text-right whitespace-nowrap">
                 {tex ? <Tex tex={l.left} /> : l.left}
               </span>
-              <span>=</span>
+              <span className={l.rel && l.rel !== "=" ? "text-[var(--red)] font-black" : ""}>{l.rel ?? "="}</span>
               <span className="whitespace-nowrap">{tex ? <Tex tex={l.right} /> : l.right}</span>
               <span className="text-[var(--accent)] whitespace-nowrap text-sm font-bold">
                 {l.op ? `| ${l.op}` : ""}
