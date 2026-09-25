@@ -157,6 +157,7 @@ export function Auftraege({ f, neuAnfangen, konto, code, onBestanden }: {
           <dt>Bus / Tram / Zug</dt><dd className="font-bold">{st.busfahrten} / {st.tram} / {st.zug}</dd>
           <dt>Haltestellen</dt><dd className="font-bold">{st.halte.length}</dd>
           <dt>Supermärkte</dt><dd className="font-bold">{st.laeden.length}/5</dd>
+          <dt>Müll entsorgt</dt><dd className="font-bold">{st.muell}</dd>
           <dt>Angefahren worden</dt><dd className="font-bold">{st.unfaelle}×</dd>
         </dl>
       )}

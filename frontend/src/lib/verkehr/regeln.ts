@@ -11,7 +11,8 @@ export type RegelId =
   | "rot" | "nichtGeschaut" | "umweg" | "troedeln" | "radweg" | "gleis" | "angefahren"
   | "sicherGequert" | "gruenGequert" | "zebraGequert" | "beleidigung"
   | "tuerBlockiert" | "gutEingestiegen" | "eingestiegen" | "ausgestiegen" | "verdeckt" | "weisseLinie"
-  | "gruppeWand" | "gruppeSchlange" | "schildRichtig" | "schildFalsch" | "dunkelOhneWeste";
+  | "gruppeWand" | "gruppeSchlange" | "schildRichtig" | "schildFalsch" | "dunkelOhneWeste"
+  | "muellWeg" | "muellFahrbahn" | "karmaGeheilt";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -35,6 +36,9 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   gruppeWand: { id: "gruppeWand", text: "Als Wand gequert — alle nebeneinander, alle zugleich.", punkte: 15 },
   gruppeSchlange: { id: "gruppeSchlange", text: "Als Schlange gequert — nebeneinander wärt ihr schneller drüben.", punkte: 0 },
   dunkelOhneWeste: { id: "dunkelOhneWeste", text: "Im Dunkeln sehen dich Autofahrer ohne helle Kleidung erst sehr spät. Zieh die Warnweste an (V)!", punkte: 0 },
+  muellWeg: { id: "muellWeg", text: "Müll in den Eimer — danke! Die Stadt ist ein Stück sauberer.", punkte: 3 },
+  muellFahrbahn: { id: "muellFahrbahn", text: "Nie auf der Fahrbahn bücken! Wer sich bückt, sieht keine Autos — und die Autos sehen dich nicht.", punkte: -5 },
+  karmaGeheilt: { id: "karmaGeheilt", text: "Du räumst auf — die Autofahrer sind dir nicht mehr böse und lassen dich wieder vor.", punkte: 5 },
   schildRichtig: { id: "schildRichtig", text: "Richtig!", punkte: 5 },
   schildFalsch: { id: "schildFalsch", text: "Nicht ganz — lies die Erklärung.", punkte: 0 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },

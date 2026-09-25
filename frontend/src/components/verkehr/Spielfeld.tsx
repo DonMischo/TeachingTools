@@ -25,6 +25,7 @@ import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
 import type { Steuerkanal } from "./Steuerkreuz";
+import { baueEimer, EIMER_NAH, GREIFEN, Muell, TRAGEN } from "@/lib/verkehr/muell";
 import { Einstiegsregeln, Regelwaechter, UMSCHAUEN_DAUER, MELDUNGEN, type Meldung, type OffeneTuer, type Verdecker } from "@/lib/verkehr/regeln";
 
 /** Pixel je Meter: etwa 80 m Stadt über die Breite eines Laptops. */
@@ -52,6 +53,21 @@ function vorDerLinie(s: Stadt, x: number, y: number) {
     const quer = -(x - h.p[0]) * Math.sin(h.winkel) + (y - h.p[1]) * Math.cos(h.winkel);
     return Math.hypot(x - h.p[0], y - h.p[1]) < 40 && quer < BAHNSTEIG_AB + 0.8;
   });
+}
+
+/** LTB von oben: schwarzer Rücken, weißer Bauch, gelbe Weste, roter Helm, oranger Schnabel (nach +x). */
+function zeichnePinguin(): Container {
+  const c = new Container();
+  const g = new Graphics();
+  g.ellipse(0.1, 0.1, 0.3, 0.26).fill({ color: 0x000000, alpha: 0.3 });
+  g.ellipse(-0.12, -0.16, 0.08, 0.05).fill(0xf59e0b).ellipse(-0.12, 0.16, 0.08, 0.05).fill(0xf59e0b);
+  g.ellipse(0, 0, 0.28, 0.24).fill(0x1f2937);
+  g.ellipse(0.06, 0, 0.18, 0.17).fill(0xd7ff1f);
+  g.circle(0.08, 0, 0.13).fill(0xef4444);
+  g.poly([0.2, -0.04, 0.34, 0, 0.2, 0.04]).fill(0xf59e0b);
+  g.ellipse(-0.02, -0.26, 0.12, 0.05).fill(0x111827).ellipse(-0.02, 0.26, 0.12, 0.05).fill(0x111827);
+  c.addChild(g);
+  return c;
 }
 
 /** Dunkler Rand ums Bild — lenkt den Blick zur Mitte. */
@@ -142,6 +158,10 @@ export type SpielfeldProps = {
   /** Abfahrtstafel der Haltestelle, an der man steht (null = keine). */
   onHaltestelle?: (h: { name: string; abfahrten: Abfahrt[] } | null) => void;
   onWeste?: (an: boolean) => void;
+  /** Wie viel Müll man gerade trägt. */
+  onTragen?: (n: number) => void;
+  /** Nähe zu etwas, wozu LTB etwas sagen kann. */
+  onNaehe?: (was: "zebra" | "ampel" | "muell") => void;
 };
 
 export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberblick = false, tonAn = true, ...rueck }: SpielfeldProps) {
@@ -264,12 +284,49 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const zuletztOrt = new Map<string, number>();
       const gruppe = new Gruppenblick();
 
+      // Mülleimer und Müll
+      const eimer = baueEimer(s);
+      const eimerBild = new Graphics();
+      for (const [x, y] of eimer) {
+        eimerBild.circle(x + 0.15, y + 0.15, 0.45).fill({ color: 0x000000, alpha: 0.3 });
+        eimerBild.circle(x, y, 0.45).fill(0x2e7d32).stroke({ width: 0.08, color: 0x1b5e20 });
+        eimerBild.circle(x, y, 0.28).fill(0x1b5e20);
+      }
+      ampelEbene.addChild(eimerBild);
+      const muell = new Muell(s, 42 + Math.floor(Date.now() / 86_400_000));
+      const muellBilder = new Map<number, Text>();
+      const muellEbene = new Container();
+      boden.addChild(muellEbene);
+      const zeigeMuell = () => {
+        const da = new Set(muell.stuecke.map((m) => m.id));
+        for (const [id, t] of muellBilder) if (!da.has(id)) { t.destroy(); muellBilder.delete(id); }
+        for (const m of muell.stuecke) if (!muellBilder.has(m.id)) {
+          const t = new Text({ text: m.art, style: { fontSize: 48 } });
+          t.anchor.set(0.5);
+          t.scale.set(0.85 / 48);
+          t.position.set(m.p[0], m.p[1]);
+          t.rotation = (m.id * 1.7) % (Math.PI * 2);
+          muellEbene.addChild(t);
+          muellBilder.set(m.id, t);
+        }
+      };
+      zeigeMuell();
+      let getragen = 0, muellSeitStrafe = 0, zuletztNachschub = 0;
+
+      // LTB watschelt hinterher
+      const pinguin = zeichnePinguin();
+      pinguin.scale.set(FIGUR_GROESSER);
+      const pinguinLage = { x: 0, y: 0 };
+      const querungsOrte = s.karte.punkte.filter((p) => p.art === "zebra" || p.art === "ampelUebergang");
+      const naeheGemeldet = new Map<string, number>();
+
       const [sx, sy] = schulStart(s);
+      pinguinLage.x = sx - 1.5; pinguinLage.y = sy;
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
       const figur = zeichneFigur(farbe);
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
       figur.scale.set(FIGUR_GROESSER);
-      figuren.addChild(figur);
+      figuren.addChild(pinguin, figur);
       const weste = westeFuer();
       figur.addChildAt(weste, 1);
       weste.visible = false;
@@ -335,6 +392,26 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           if (naherTaster) {
             if (t - tasterVon(naherTaster) > TASTER_WARTEN + FUSS_GRUEN + 6) { netzRef.current.sendeTaster(naherTaster.id); ereignis({ typ: "taster", t }); }
           } else if (nahesSchild) rueckruf.current.onSchild?.(nahesSchild);
+          else if (getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH)) {
+            melde(getragen === 1 ? MELDUNGEN.muellWeg
+              : { ...MELDUNGEN.muellWeg, punkte: MELDUNGEN.muellWeg.punkte * getragen, text: `${getragen} Stück Müll in den Eimer — danke! Die Stadt ist ein Stück sauberer.` });
+            ereignis({ typ: "muell", stueck: getragen });
+            if (mensch.karmaBis > t) {
+              muellSeitStrafe += getragen;
+              if (muellSeitStrafe >= 3) { mensch.karmaBis = 0; muellSeitStrafe = 0; melde(MELDUNGEN.karmaGeheilt); ereignis({ typ: "karmaGeheilt" }); klang.grosserErfolg(); }
+            }
+            getragen = 0;
+            rueckruf.current.onTragen?.(0);
+          } else {
+            const m = muell.naechstes(ich.x, ich.y, GREIFEN);
+            if (m && getragen < TRAGEN) {
+              muell.nimm(m.id);
+              zeigeMuell();
+              getragen++;
+              rueckruf.current.onTragen?.(getragen);
+              if (s.untergrund(ich.x, ich.y).art === "fahrbahn") melde(MELDUNGEN.muellFahrbahn);
+            }
+          }
         }
       };
 
@@ -681,6 +758,26 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           if (hell < 0.35 && !westeAn && !dunkelGewarnt && meinUntergrund === "fahrbahn") { dunkelGewarnt = true; melde(MELDUNGEN.dunkelOhneWeste); }
         }
 
+        // LTB folgt mit Abstand und watschelt dabei
+        const zx = ich.x - Math.cos(figur.rotation) * 1.6, zy = ich.y - Math.sin(figur.rotation) * 1.6;
+        const pd = Math.hypot(zx - pinguinLage.x, zy - pinguinLage.y);
+        if (pd > 25 || mitfahrt) { pinguinLage.x = zx; pinguinLage.y = zy; }
+        else if (pd > 0.3) { const f = Math.min(1, dt * 2.5); pinguinLage.x += (zx - pinguinLage.x) * f; pinguinLage.y += (zy - pinguinLage.y) * f; }
+        pinguin.visible = !mitfahrt;
+        pinguin.position.set(pinguinLage.x, pinguinLage.y);
+        pinguin.rotation = Math.atan2(ich.y - pinguinLage.y, ich.x - pinguinLage.x) + (pd > 0.4 ? Math.sin(t * 12) * 0.25 : 0);
+
+        // Nähe für LTB: Überwege und Müll, je Ort höchstens alle 90 s
+        if (!mitfahrt) {
+          for (const q of querungsOrte) {
+            if (Math.hypot(q.p[0] - ich.x, q.p[1] - ich.y) > 10) continue;
+            const key = `${q.p[0]},${q.p[1]}`;
+            if (t - (naeheGemeldet.get(key) ?? -Infinity) > 90) { naeheGemeldet.set(key, t); rueckruf.current.onNaehe?.(q.art === "zebra" ? "zebra" : "ampel"); }
+          }
+          if (muell.naechstes(ich.x, ich.y, 6) && t - (naeheGemeldet.get("muell") ?? -Infinity) > 120) { naeheGemeldet.set("muell", t); rueckruf.current.onNaehe?.("muell"); }
+        }
+        if (t - zuletztNachschub > 20) { zuletztNachschub = t; muell.nachschub(ich.x, ich.y); zeigeMuell(); }
+
         // Hinweise: Taster in Reichweite, Mitfahrt
         naherTaster = null;
         for (const o of tasterOrte) if (Math.hypot(o.p[0] - ich.x, o.p[1] - ich.y) < 2.5) { naherTaster = o.a; break; }
@@ -688,7 +785,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
         const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …" : mitfahrt ? (mitfahrt.art === "bus" ? "Du fährst Bus — an der nächsten Haltestelle steigst du aus." : "Du fährst mit der Bahn …")
           : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
-          : nahesSchild ? "E drücken: Schild ansehen" : null;
+          : nahesSchild ? "E drücken: Schild ansehen"
+          : getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH) ? `E drücken: Müll einwerfen (${getragen})`
+          : muell.naechstes(ich.x, ich.y, GREIFEN) ? (getragen < TRAGEN ? "E drücken: Müll aufheben" : "Hände voll — erst zum Mülleimer 🗑️") : null;
         if (hinweis !== letzterHinweis) { letzterHinweis = hinweis; rueckruf.current.onHinweis?.(hinweis); }
 
         // Abfahrtstafel: an der Haltestelle (≤ 12 m) für die Hülle, im Überblick über allen Haltestellen.

@@ -10,7 +10,7 @@ import { SCHILDER, type SchildArt } from "./schilder";
 
 export type MissionId =
   | "lidl" | "netto" | "ampel" | "taster" | "zebra" | "hand" | "bus" | "tram" | "zug" | "schilder" | "gruppe"
-  | "aldi" | "linie9" | "fahrplan" | "rush" | "nacht";
+  | "aldi" | "linie9" | "fahrplan" | "rush" | "nacht" | "muell";
 
 export type Mission = { id: MissionId; icon: string; titel: string; text: string; pflicht: boolean };
 
@@ -30,6 +30,7 @@ export const MISSIONEN: Mission[] = [
   { id: "zug", icon: "🚆", titel: "Zug", text: "Steig richtig in den Zug am Bahn-Haltepunkt.", pflicht: false },
   { id: "rush", icon: "🚗", titel: "Berufsverkehr", text: "Quere im Berufsverkehr (morgens oder nachmittags) sicher über die Straße.", pflicht: false },
   { id: "nacht", icon: "🦺", titel: "Im Dunkeln sichtbar", text: "Zieh im Dunkeln die Warnweste an (V) und quere sicher.", pflicht: false },
+  { id: "muell", icon: "🗑️", titel: "Saubere Stadt", text: "Heb 5 Stück Müll auf (E) und wirf sie in einen Mülleimer — aber nie auf der Fahrbahn bücken!", pflicht: false },
   { id: "gruppe", icon: "🧱", titel: "Als Wand über die Straße", text: "Quert mit mindestens drei Leuten nebeneinander — alle gleichzeitig, nicht hintereinander.", pflicht: false },
 ];
 
@@ -49,18 +50,20 @@ export type Ereignis =
   | { typ: "danke"; t: number }
   | { typ: "tafel"; halt: string }
   | { typ: "querung"; nacht: boolean; weste: boolean; rush: boolean }
-  | { typ: "fuehrerschein" };
+  | { typ: "fuehrerschein" }
+  | { typ: "muell"; stueck: number }
+  | { typ: "karmaGeheilt" };
 
 export type Statistik = {
   meter: number; blicke: number; querungen: number; zebra: number; gruen: number;
   busfahrten: number; tram: number; zug: number; danke: number; nachtWeste: number;
   rushQuerungen: number; unfaelle: number; serie: number; laeden: string[]; halte: string[];
-  wand: number; fuehrerschein: number;
+  wand: number; fuehrerschein: number; muell: number; karmaGeheilt: number;
 };
 
 export const LEERE_STATISTIK: Statistik = {
   meter: 0, blicke: 0, querungen: 0, zebra: 0, gruen: 0, busfahrten: 0, tram: 0, zug: 0, danke: 0, nachtWeste: 0,
-  rushQuerungen: 0, unfaelle: 0, serie: 0, laeden: [], halte: [], wand: 0, fuehrerschein: 0,
+  rushQuerungen: 0, unfaelle: 0, serie: 0, laeden: [], halte: [], wand: 0, fuehrerschein: 0, muell: 0, karmaGeheilt: 0,
 };
 
 export type Fortschritt = {
@@ -80,7 +83,7 @@ export const LEER: Fortschritt = { erledigt: [], schilder: [], schwere: 0 };
 export type ErfolgId =
   | "schritte" | "spaziergang" | "wanderer" | "adlerauge" | "zebrakoenig" | "gruenphase" | "sicher25" | "busfan"
   | "schiene" | "schildermeister" | "hoeflich" | "wandbauer" | "nachteule" | "rushprofi" | "supermarkt"
-  | "haltekenner" | "serie20" | "weisseWeste" | "fuehrerschein";
+  | "haltekenner" | "serie20" | "weisseWeste" | "fuehrerschein" | "saubermann" | "stadtputz" | "karmawende";
 
 export type Erfolg = { id: ErfolgId; icon: string; titel: string; text: string; erreicht: (s: Statistik, f: Fortschritt) => boolean };
 
@@ -104,6 +107,9 @@ export const ERFOLGE: Erfolg[] = [
   { id: "rushprofi", icon: "🚦", titel: "Rush-Hour-Profi", text: "10 sichere Querungen im Berufsverkehr", erreicht: (s) => s.rushQuerungen >= 10 },
   { id: "supermarkt", icon: "🛒", titel: "Supermarkt-Tour", text: "Lidl, Netto, Aldi, Penny und Norma besucht", erreicht: (s) => LAEDEN.every((l) => s.laeden.includes(l)) },
   { id: "haltekenner", icon: "🚏", titel: "Haltestellen-Kenner", text: "An 6 verschiedenen Haltestellen gewesen", erreicht: (s) => s.halte.length >= 6 },
+  { id: "saubermann", icon: "🧹", titel: "Saubermann", text: "10 Stück Müll entsorgt", erreicht: (s) => s.muell >= 10 },
+  { id: "stadtputz", icon: "♻️", titel: "Stadtputz", text: "50 Stück Müll entsorgt", erreicht: (s) => s.muell >= 50 },
+  { id: "karmawende", icon: "💚", titel: "Karma-Wende", text: "Nach dem Schimpfen durch Aufräumen wieder gutgemacht", erreicht: (s) => s.karmaGeheilt >= 1 },
   { id: "fuehrerschein", icon: "🪪", titel: "Führerschein", text: "Fußgänger-Führerschein bestanden", erreicht: (s) => s.fuehrerschein > 0 },
   { id: "weisseWeste", icon: "😇", titel: "Weiße Weste", text: "Führerschein ganz ohne schweren Verstoß", erreicht: (s, f) => s.fuehrerschein > 0 && f.schwere === 0 },
 ];
@@ -165,6 +171,11 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (e.nacht && e.weste) { erledige("nacht"); st.nachtWeste++; }
       break;
     case "fuehrerschein": st.fuehrerschein++; break;
+    case "muell":
+      st.muell += e.stueck;
+      if (st.muell >= 5) erledige("muell");
+      break;
+    case "karmaGeheilt": st.karmaGeheilt++; break;
   }
   for (const er of ERFOLGE) if (!n.erfolge!.includes(er.id) && er.erreicht(st, n)) n.erfolge!.push(er.id);
   return {

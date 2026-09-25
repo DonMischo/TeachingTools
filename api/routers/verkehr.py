@@ -150,7 +150,7 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
     if identity and identity[0] == "teacher":
         teacher = db.get(Teacher, identity[1])
         lehrkraft = bool(teacher and (sitzung.created_by == teacher.id or teacher.role == "admin"))
-        key, name = f"l{identity[1]}", (f"{teacher.first_name[:1]}. {teacher.last_name}" if teacher else "Lehrkraft")
+        key, name = f"l{identity[1]}", (" ".join(x for x in [f"{teacher.first_name[:1]}." if teacher.first_name else "", teacher.last_name] if x) if teacher else "Lehrkraft")
     elif identity:
         student = db.get(Student, identity[1])
         key, name = f"s{identity[1]}", short_name(student) if student else "?"
@@ -222,6 +222,9 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
                 rid, punkte = str(n.get("id", ""))[:30], n.get("punkte", 0)
                 if isinstance(punkte, int) and abs(punkte) <= MELDUNG_GRENZE:
                     ich.punkte += punkte
+                    # Aufräumen macht das Schimpfen wieder gut: die Autos lassen einen wieder vor.
+                    if rid == "karmaGeheilt":
+                        ich.karma_bis = 0.0
                     if punkte < 0:
                         ich.verstoesse[rid] = ich.verstoesse.get(rid, 0) + 1
             elif typ == "einstellungen" and lehrkraft:

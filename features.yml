@@ -190,7 +190,9 @@ simulationen:
       - Start vor der Schule, Uhrzeit mit Berufsverkehr, Dämmerung und Nacht (Warnweste)
       - Echte Linien (Bus 9, 35, Tram 1, 5) mit Abfahrtstafeln nach EVAG-Takt
       - Überblick mit Straßennamen und Minikarte, Vollbild, Stick-Steuerung am Handy
-      - Geräusche (Web Audio), 19 Erfolge und Statistik
+      - Geräusche (Web Audio), 22 Erfolge und Statistik
+      - LTB, der Pinguin-Begleiter mit Begrüßung und Sicherheitstipps
+      - Müll aufheben und einwerfen für Punkte und Karma (nie auf der Fahrbahn bücken)
 
 tools:
   - id: schreibraum

@@ -19,6 +19,8 @@ import { useVerkehrLive, type Zugang } from "./useVerkehrLive";
 import { Auftraege, useFortschritt } from "./Auftraege";
 import { SchildQuiz } from "./SchildQuiz";
 import { Steuerkreuz, type Steuerkanal } from "./Steuerkreuz";
+import { LtbHelfer } from "./LtbHelfer";
+import { BEGRUESSUNG, Ltb, type LtbAnlass } from "@/lib/verkehr/ltb";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
 
@@ -91,6 +93,14 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const [seite, setSeite] = useState(true);
   const [touch, setTouch] = useState(false);
   const [soloVersatz, setSoloVersatz] = useState(0);
+  const [getragen, setGetragen] = useState(0);
+  // LTB, der Pinguin: an/aus bleibt im Browser; die Begrüßung läuft einmal je Gerät.
+  const [ltbAn, setLtbAn] = useState(true);
+  const [ltbText, setLtbText] = useState<string | null>(null);
+  const [intro, setIntro] = useState<number | null>(null);
+  const ltb = useRef(new Ltb());
+  const ltbZeit = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const zuletztGesagt = useRef(0);
   const zaehler = useRef(0);
   const steuerkanal = useRef<Steuerkanal>({ stick: { x: 0, y: 0 } });
   // Jede Figur eine eigene Jackenfarbe, damit man sich in der Stadt findet.
@@ -98,6 +108,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const u = UNTERGRUND[untergrund];
 
   useEffect(() => {
+    setLtbAn(lies("hp_verkehr_ltb", true));
+    // Läuft die Begrüßung, erklärt LTB die Steuerung — die Hilfe bleibt dann zu.
+    if (lies("hp_verkehr_ltb", true) && !lies("hp_verkehr_ltb_intro", false)) { setIntro(0); setHilfe(false); }
     setTonAn(lies("hp_verkehr_ton", true));
     setTouch(window.matchMedia("(pointer: coarse)").matches);
     const t = setTimeout(() => setHilfe(false), 10000);
@@ -125,10 +138,57 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
 
   const fortschritt = useFortschritt(speicherSchluessel);
   const { buche } = fortschritt;
+
+  /** LTB etwas sagen lassen — er entscheidet selbst, ob es gerade passt. */
+  const ltbSag = useCallback((a: LtbAnlass) => {
+    if (!ltbAn || intro !== null) return;
+    const text = ltb.current.sag(a, performance.now() / 1000);
+    if (!text) return;
+    zuletztGesagt.current = performance.now();
+    setLtbText(text);
+    clearTimeout(ltbZeit.current);
+    ltbZeit.current = setTimeout(() => setLtbText(null), 9000);
+  }, [ltbAn, intro]);
+
+  // Ab und zu ein Tipp, wenn eine Weile nichts war
+  useEffect(() => {
+    const id = setInterval(() => { if (performance.now() - zuletztGesagt.current > 75_000) ltbSag({ typ: "leerlauf" }); }, 15_000);
+    return () => clearInterval(id);
+  }, [ltbSag]);
+
   const onMeldung = useCallback((m: Meldung, t: number) => {
     zeige(m);
     buche({ typ: "meldung", id: m.id, t });
-  }, [zeige, buche]);
+    ltbSag({ typ: "meldung", id: m.id });
+  }, [zeige, buche, ltbSag]);
+
+  const onUntergrund = useCallback((art: Untergrund["art"]) => { setUntergrund(art); ltbSag({ typ: "untergrund", art }); }, [ltbSag]);
+  // Vorige Werte als Ref: der Tipp kommt nur beim Wechsel, nicht bei jedem Update.
+  const vorher = useRef({ tafel: false, dunkel: false, rush: false });
+  const onHaltestelle = useCallback((h: { name: string; abfahrten: Abfahrt[] } | null) => {
+    if (h && !vorher.current.tafel) ltbSag({ typ: "haltestelle" });
+    vorher.current.tafel = !!h;
+    setTafel(h);
+  }, [ltbSag]);
+  const onZeit = useCallback((z: { text: string; abschnitt: string; rush: boolean; dunkel: boolean }) => {
+    if (z.dunkel && !vorher.current.dunkel) ltbSag({ typ: "dunkel" });
+    if (z.rush && !vorher.current.rush) ltbSag({ typ: "rush" });
+    vorher.current.dunkel = z.dunkel;
+    vorher.current.rush = z.rush;
+    setUhr(z);
+  }, [ltbSag]);
+
+  const ltbUmschalten = () => {
+    const an = !ltbAn;
+    schreib("hp_verkehr_ltb", an);
+    setLtbAn(an);
+    setIntro(an ? 0 : null);
+    setLtbText(null);
+  };
+  const introWeiter = () => {
+    if (intro === null) return;
+    if (intro + 1 >= BEGRUESSUNG.length) { schreib("hp_verkehr_ltb_intro", true); setIntro(null); } else setIntro(intro + 1);
+  };
 
   // Geschaffte Aufträge und neue Erfolge ansagen
   useEffect(() => {
@@ -212,8 +272,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
         <div className={`relative flex-1 overflow-hidden ${gross ? "" : "h-[72vh] min-h-[440px] rounded-2xl shadow-2xl ring-1 ring-black/20"}`}>
           <Suspense fallback={<div className="flex h-full items-center justify-center bg-slate-900 text-sm text-white/70">🏙️ Stadt wird gebaut …</div>}>
             <Spielfeld netz={netz} farbe={farbe} steuerkanal={steuerkanal} ueberblick={ueberblick} tonAn={tonAn}
-              onUntergrund={setUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
-              onEreignis={buche} onSchild={setQuiz} onZeit={setUhr} onHaltestelle={setTafel} onWeste={setWeste}
+              onUntergrund={onUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
+              onEreignis={buche} onSchild={setQuiz} onZeit={onZeit} onHaltestelle={onHaltestelle} onWeste={setWeste}
+              onTragen={setGetragen} onNaehe={(was) => ltbSag({ typ: "naehe", was })}
               onUeberblick={() => setUeberblick((v) => !v)} />
           </Suspense>
 
@@ -230,10 +291,13 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               ⭐ {punkte}
             </div>
             {weste && <div className="rounded-xl bg-lime-400 px-2 py-1.5 text-sm font-bold text-black shadow-lg">🦺 Weste</div>}
+            {getragen > 0 && <div className="rounded-xl bg-emerald-600 px-2 py-1.5 text-sm font-bold text-white shadow-lg" title="Müll in der Hand">🗑️ {getragen}/3</div>}
             <div className="ml-auto flex gap-1.5">
               <button type="button" className={`${hudKnopf} ${ueberblick ? "ring-2 ring-amber-400" : ""}`} title="Überblick: Straßennamen, Abfahrten, Karte (M)"
                 onClick={() => { setUeberblick((v) => !v); zurBuehne(); }}>🗺️</button>
               <button type="button" className={hudKnopf} title={tonAn ? "Ton aus" : "Ton an"} onClick={tonUmschalten}>{tonAn ? "🔊" : "🔇"}</button>
+              <button type="button" className={`${hudKnopf} ${ltbAn ? "ring-2 ring-sky-400" : "opacity-60"}`} title={ltbAn ? "LTB, den Pinguin, ausschalten" : "LTB, den Pinguin, einschalten"}
+                onClick={ltbUmschalten}>🐧</button>
               <button type="button" className={`${hudKnopf} ${touch ? "ring-2 ring-amber-400" : ""}`} title="Steuerung am Bildschirm (Handy/Tablet)"
                 onClick={() => setTouch((v) => !v)}>🎮</button>
               <button type="button" className={hudKnopf} title="Hilfe zur Steuerung" onClick={() => setHilfe((v) => !v)}>❔</button>
@@ -242,12 +306,12 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             </div>
           </div>
 
-          {hilfe && (
+          {hilfe && !(ltbAn && (intro !== null || ltbText)) && (
             <div className="absolute left-2 top-14 z-10 max-w-xs rounded-xl bg-slate-900/85 px-4 py-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
               <div className="mb-1 font-black">Steuerung</div>
               <div><b>Laufen:</b> Pfeiltasten oder WASD · <b>Rennen:</b> Umschalt</div>
               <div><b>Umschauen:</b> Leertaste · <b>Taster / Schild:</b> E</div>
-              <div><b>Warnweste:</b> V · <b>Überblick:</b> M</div>
+              <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Müll aufheben/einwerfen:</b> E</div>
               <div><b>Gesten:</b> {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => `${g.taste} ${g.emoji}`).join("  ")}</div>
               <div className="mt-1 opacity-70">Erst ins Bild klicken, dann laufen. Du startest vor der Schule.</div>
               {darfUhrStellen && (
@@ -288,6 +352,11 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             </div>
           )}
 
+          {ltbAn && intro !== null && (
+            <LtbHelfer text={BEGRUESSUNG[intro]} weiter={intro + 1 < BEGRUESSUNG.length ? introWeiter : undefined}
+              onZu={() => { schreib("hp_verkehr_ltb_intro", true); setIntro(null); zurBuehne(); }} />
+          )}
+          {ltbAn && intro === null && ltbText && <LtbHelfer text={ltbText} onZu={() => { setLtbText(null); zurBuehne(); }} />}
           {quiz && <SchildQuiz key={quiz} art={quiz} onAntwort={onAntwort} onZu={() => { setQuiz(null); zurBuehne(); }} />}
           {hinweis && (
             <div className="pointer-events-none absolute bottom-32 left-1/2 z-10 -translate-x-1/2 rounded-full bg-amber-400 px-4 py-1.5 text-sm font-bold text-black shadow-xl">
