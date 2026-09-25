@@ -204,7 +204,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       el.appendChild(app.canvas);
       // Prüfhilfe: mit ?takt läuft die Schleife am Zeitgeber statt an
       // requestAnimationFrame — ein verdecktes Browserfenster liefert keine
-      // Bilder — und die Lage der Figur steht in data-lage.
+      // Bilder — und die Lage der Figur steht in data-lage, der nächste Müll in data-muell.
       const pruefhilfe = new URLSearchParams(window.location.search).has("takt");
       if (pruefhilfe) {
         app.ticker.stop();
@@ -842,7 +842,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           { p: [ich.x, ich.y], farbe: 0xff3355, r: 5 },
         ]);
 
-        if (pruefhilfe) el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
+        if (pruefhilfe) {
+          el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
+          const m = muell.naechstes(ich.x, ich.y, 60);
+          el.dataset.muell = m ? `${m.p[0].toFixed(1)},${m.p[1].toFixed(1)}` : "";
+        }
         const u = s.untergrund(ich.x, ich.y).art;
         if (u !== letzterUntergrund) { letzterUntergrund = u; rueckruf.current.onUntergrund?.(u); }
       });

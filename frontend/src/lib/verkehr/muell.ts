@@ -9,7 +9,7 @@
  * nichts über die Leitung muss.
  */
 import type { P } from "./geometrie";
-import { schulMitte, type Stadt } from "./stadt";
+import { schulStart, type Stadt } from "./stadt";
 
 export const MUELL_ARTEN = ["🥤", "🍌", "📰", "🧃", "🍫", "🥫", "🧻"] as const;
 /** So viel kann man auf einmal tragen. */
@@ -27,18 +27,21 @@ function mitte(umriss: P[]): P {
 /** Wo Mülleimer stehen. */
 export function baueEimer(stadt: Stadt): P[] {
   const orte: P[] = [];
-  // Schule und Läden: die Punkte liegen im Gebäude — der Eimer steht draußen davor.
-  const draussen = (p: P): P | null => {
-    for (let r = 0; r <= 40; r += 1.5)
-      for (let i = 0; i < 16; i++) {
-        const w = (i / 16) * Math.PI * 2, x = p[0] + Math.cos(w) * r, y = p[1] + Math.sin(w) * r;
-        const u = stadt.untergrund(x, y).art;
-        if (u === "gehweg" || u === "gelaende") return [x, y];
+  // Schule: gleich am Start vor dem Eingang. Läden: die Punkte liegen im
+  // Gebäude — der Eimer steht auf dem nächsten Gehweg (ein Innenhof wäre
+  // womöglich nicht erreichbar).
+  const [sx, sy] = schulStart(stadt);
+  orte.push([sx + 1.5, sy]);
+  const aufGehweg = (p: P): P | null => {
+    for (let r = 0; r <= 60; r += 1.5)
+      for (let i = 0; i < 24; i++) {
+        const w = (i / 24) * Math.PI * 2, x = p[0] + Math.cos(w) * r, y = p[1] + Math.sin(w) * r;
+        if (stadt.untergrund(x, y).art === "gehweg") return [x, y];
       }
     return null;
   };
-  for (const p of [schulMitte(stadt), ...stadt.karte.punkte.filter((p) => p.shop === "supermarket").map((p) => p.p)]) {
-    const d = draussen(p);
+  for (const p of stadt.karte.punkte.filter((p) => p.shop === "supermarket")) {
+    const d = aufGehweg(p.p);
     if (d) orte.push(d);
   }
   for (const w of stadt.wartebereiche) { const [x, y] = mitte(w); orte.push([x + (w[1][0] - w[0][0]) * 0.35, y + (w[1][1] - w[0][1]) * 0.35]); }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BEGRUESSUNG, Ltb, PAUSE } from "@/lib/verkehr/ltb";
 import { baueEimer, Muell, TRAGEN } from "@/lib/verkehr/muell";
-import { stadt, schulMitte } from "@/lib/verkehr/stadt";
+import { stadt, schulStart } from "@/lib/verkehr/stadt";
 import { LEER, verbuche, type Ereignis, type Fortschritt } from "@/lib/verkehr/missionen";
 
 describe("LTB, der Pinguin", () => {
@@ -33,12 +33,18 @@ describe("Müll", () => {
 
   it("hat Eimer an der Schule, an Supermärkten und Haltestellen — nie im Haus", () => {
     const eimer = baueEimer(s);
-    const [sx, sy] = schulMitte(s);
-    expect(eimer.some((e) => Math.hypot(e[0] - sx, e[1] - sy) < 45)).toBe(true);
+    // Der Schul-Eimer steht direkt am Start vor der Schule — erreichbar.
+    const [sx, sy] = schulStart(s);
+    expect(eimer.some((e) => Math.hypot(e[0] - sx, e[1] - sy) < 3)).toBe(true);
     const lidl = s.karte.punkte.find((p) => p.name === "Lidl")!;
     expect(eimer.some((e) => Math.hypot(e[0] - lidl.p[0], e[1] - lidl.p[1]) < 45)).toBe(true);
     expect(eimer.length).toBeGreaterThan(10);
     for (const e of eimer) expect(s.untergrund(e[0], e[1]).art).not.toBe("haus");
+    // Die Läden-Eimer stehen auf dem Gehweg.
+    for (const laden of s.karte.punkte.filter((p) => p.shop === "supermarket")) {
+      const nah = eimer.filter((e) => Math.hypot(e[0] - laden.p[0], e[1] - laden.p[1]) < 62);
+      expect(nah.some((e) => s.untergrund(e[0], e[1]).art === "gehweg"), laden.name).toBe(true);
+    }
   });
 
   it("liegt auf Gehwegen und Wiesen, nur wenig auf der Fahrbahn, und ist je Saat gleich", () => {
