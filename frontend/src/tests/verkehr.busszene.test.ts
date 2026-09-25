@@ -183,3 +183,29 @@ describe("Schlenky (Gelenkbus)", () => {
     throw new Error("kein Kinderwagen");
   });
 });
+
+describe("Voller Bus", () => {
+  it("ist im Berufsverkehr richtig voll: alle Sitze besetzt, viele stehen dicht", () => {
+    const sz = new Busszene(9, 0.9, 0);
+    expect(sz.sitze.every((s) => s.belegt)).toBe(true);
+    const stehend = sz.fahrgaeste.filter((f) => f.sitz === null);
+    expect(stehend.length).toBeGreaterThan(25);
+    // Schulter an Schulter: jeder Stehende hat einen Nachbarn nah bei sich
+    const dicht = stehend.filter((f) => stehend.some((o) => o !== f && Math.hypot(o.x - f.x, o.y - f.y) < 0.75));
+    expect(dicht.length / stehend.length).toBeGreaterThan(0.8);
+  });
+
+  it("warnt wegen des Rucksacks nur im Gedränge", () => {
+    const leer = new Busszene(9, 0.3, 0);
+    leer.mitIch = true;
+    Object.assign(leer.ich, { x: 0.4, y: 0.6, rucksack: true });
+    const r = leer.schritt({ t: 1, dt: 0.05, phase: "faehrt", halt: null, beschleunigung: 0, fuellung: 0.3 });
+    expect(r.hinweis ?? "").not.toMatch(/Rucksack/);
+    const voll = new Busszene(9, 0.95, 0);
+    voll.mitIch = true;
+    const s = voll.fahrgaeste.find((f) => f.sitz === null && f.x > -2 && f.x < 3)!;
+    Object.assign(voll.ich, { x: s.x + 0.3, y: s.y, rucksack: true });
+    const r2 = voll.schritt({ t: 1, dt: 0.05, phase: "faehrt", halt: null, beschleunigung: 0, fuellung: 0.95 });
+    expect(r2.hinweis ?? "").toMatch(/Rucksack|festhalten|Stange/);
+  });
+});

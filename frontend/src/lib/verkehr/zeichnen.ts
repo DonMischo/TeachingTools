@@ -67,7 +67,7 @@ function strichel(g: Graphics, punkte: P[], strich: number, luecke: number) {
   }
 }
 
-export type Ebenen = { boden: Container; oben: Container };
+export type Ebenen = { boden: Container; oben: Container; haltZeichen: Container };
 
 /**
  * Baut die feste Karte. `boden` liegt unter den Figuren, `oben` (Baumkronen,
@@ -260,17 +260,17 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     boden.addChild(t);
   }
 
-  // Haltestellenschilder
+  // Haltestellenschilder: auf den Gehweg gerückt (der Bus hält am Bordstein und würde sie verdecken)
+  // und über den Fahrzeugen gezeichnet
+  const haltZeichen = new Container();
   const schilder = new Graphics();
+  haltZeichen.addChild(schilder);
   for (const h of stadt.halte) {
-    const [x, y] = h.p;
+    const [x, y] = haltAufGehweg(stadt, h.p);
     schilder.circle(x, y, 0.55).fill(0xf4c430).stroke({ width: 0.12, color: 0x1f7a3a });
-  }
-  boden.addChild(schilder);
-  for (const h of stadt.halte) {
     const t = beschriftung("H", 0x1f7a3a, 1);
-    t.position.set(h.p[0], h.p[1]);
-    boden.addChild(t);
+    t.position.set(x, y);
+    haltZeichen.addChild(t);
   }
 
   // Bäume über allem am Boden
@@ -311,7 +311,17 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     t.position.set(h.p[0], h.p[1] - 1.6);
     oben.addChild(t);
   }
-  return { boden, oben };
+  return { boden, oben, haltZeichen };
+}
+
+/** Der Punkt einer Haltestelle, mindestens 1,8 m vom Fahrbahnrand weg. */
+function haltAufGehweg(stadt: Stadt, p: P): P {
+  const n = stadt.naechsteStrasse(p[0], p[1], 15);
+  if (!n || n.s.art === "service") return p;
+  const q: P = [n.st.a[0] + (n.st.b[0] - n.st.a[0]) * n.t, n.st.a[1] + (n.st.b[1] - n.st.a[1]) * n.t];
+  const dx = p[0] - q[0], dy = p[1] - q[1], d = Math.hypot(dx, dy) || 1;
+  const soll = n.s.breite / 2 + 1.8;
+  return d >= soll ? p : [q[0] + (dx / d) * soll, q[1] + (dy / d) * soll];
 }
 
 /** Text in Metern: gerendert groß, dann verkleinert, damit er scharf bleibt. */

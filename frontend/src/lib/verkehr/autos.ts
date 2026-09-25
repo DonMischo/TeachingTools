@@ -54,6 +54,8 @@ export type Fahrzeug = {
 /** Eine Buslinie als Rundkurs über die Kanten, mit den Haltestellen darauf. */
 export type Linie = {
   kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string;
+  /** Welcher Bustyp auf der Linie fährt (sonst gemischt). */
+  bustyp?: Bustyp;
   /** Stellen i, nach denen der Bus springt: raus am Kartenrand, woanders wieder herein (die Fahrt dazwischen liegt außerhalb). */
   spruenge?: Set<number>;
 };
@@ -63,6 +65,8 @@ export const BUS = { laenge: 12, breite: 2.55, tueren: [4.85, 0.4, -3.6], farbe:
 
 /** Welche Busse Gelenkbusse (»Schlenky«) sind: zwei von fünf, fest nach der Nummer. */
 export const bustypFuer = (id: number): Bustyp => (id % 5 === 1 || id % 5 === 3 ? "gelenk" : "solo");
+/** Linien mit festem Bustyp: die 9 fährt mit Gelenkbussen (»Schlenky«). */
+export const BUSTYP_JE_LINIE: Record<string, Bustyp> = { "9": "gelenk", "35": "solo" };
 
 /** Was der Verkehr über jeden Menschen auf der Karte wissen muss. */
 export type Fussgaenger = {
@@ -526,8 +530,8 @@ export class Strassenverkehr {
 
   private neuerBus(linie: Linie, ri: number) {
     this.setze({
-      id: this.naechsteId, art: "bus", typ: bustypFuer(this.naechsteId), farbe: BUS.farbe,
-      laenge: LAYOUTS[bustypFuer(this.naechsteId++)].laenge, breite: BUS.breite,
+      id: this.naechsteId++, art: "bus", typ: linie.bustyp ?? bustypFuer(this.naechsteId - 1), farbe: BUS.farbe,
+      laenge: LAYOUTS[linie.bustyp ?? bustypFuer(this.naechsteId - 1)].laenge, breite: BUS.breite,
       kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
       x: 0, y: 0, winkel: 0, hupe: 0, wartetBis: 0, linie, ri, haltSeit: null, anzeige: linie.anzeige,
     });

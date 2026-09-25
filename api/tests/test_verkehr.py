@@ -278,3 +278,23 @@ def test_taktgeber_im_hintergrund_gibt_ab(client, teacher, teacher_token):
                 assert w["du"] in verkehr._raeume[code].spieler
 
     asyncio.run(lauf())
+
+
+def test_gedrosselter_tab_gibt_den_verkehr_ab(client, teacher, teacher_token):
+    """Ein Tab, der nur noch einmal je Sekunde zeichnet, rechnet den Verkehr in Zeitlupe — ein anderer übernimmt."""
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            w = await bis(lk, "willkommen")
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                g = await bis(gast, "willkommen")
+                await gast.send_json({"typ": "ich", "x": 1, "y": 2})
+                # Die Lehrkraft schickt zwar noch Lagen, aber nur etwa einmal je Sekunde
+                verkehr._raeume[code].spieler[w["du"]].bild_abstand = 1.0
+                t = await bis(gast, "taktgeber", lambda n: n["key"] == g["du"])
+                assert t["key"] == g["du"]
+
+    asyncio.run(lauf())

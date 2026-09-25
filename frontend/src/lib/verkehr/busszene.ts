@@ -259,19 +259,24 @@ export class Busszene {
   raster(): Raster { return this.phase === "aussteigen" || this.phase === "einsteigen" ? this.rasterOffen : this.rasterZu; }
 
   /** Stehplätze drinnen: freie Punkte, nicht vor Türen, nicht auf der Sondernutzungsfläche. */
-  private stehplatz(auchTuer = false, snf?: Rechteck): P | null {
+  /** `dicht`: Schulter an Schulter (voller Bus), sonst mit etwas Abstand. */
+  private stehplatz(auchTuer = false, snf?: Rechteck, dicht = false): P | null {
     const r = this.rasterZu;
     const alle = [...this.fahrgaeste.filter((f) => f.zustand !== "weg"), this.ich];
-    for (let versuch = 0; versuch < 60; versuch++) {
-      const x = this.l.innen.x0 + 0.4 + this.rnd() * (this.l.innen.x1 - this.l.innen.x0 - 0.8), y = this.l.innen.y0 + 0.3 + this.rnd() * (this.l.innen.y1 - this.l.innen.y0 - 0.6);
+    // Kandidaten auf einem feinen Raster, zufällig gemischt — so findet sich auch im vollen Bus noch die letzte Lücke
+    const kandidaten: P[] = [];
+    const I = this.l.innen;
+    for (let x = I.x0 + 0.3; x < I.x1 - 0.3; x += 0.2) for (let y = I.y0 + 0.25; y < I.y1 - 0.2; y += 0.2) kandidaten.push([x + (this.rnd() - 0.5) * 0.1, y]);
+    for (let i = kandidaten.length - 1; i > 0; i--) { const j = Math.floor(this.rnd() * (i + 1)); [kandidaten[i], kandidaten[j]] = [kandidaten[j], kandidaten[i]]; }
+    for (const [x, y] of kandidaten) {
       if (!r.begehbar(x, y)) continue;
       if (!snf && this.l.snf.some((f) => inRechteck(x, y, f, 0.2))) continue;
       if (snf && !inRechteck(x, y, snf, -0.35)) continue;
       if (!auchTuer && this.l.tuerX.some((_, i) => amAusgang(i, x, y, this.l))) continue;
-      if (this.l.gelenk && x > this.l.gelenk.x0 - 0.2 && x < this.l.gelenk.x1 + 0.2 && !snf) continue;
+      if (this.l.gelenk && x > this.l.gelenk.x0 - 0.2 && x < this.l.gelenk.x1 + 0.2 && !snf && !dicht) continue;
       // Nicht in die Beinfreiheit zwischen zwei Sitzreihen
       if (this.sitze.some((s) => Math.abs(s.p[0] - x) < 0.6 && Math.abs(s.p[1] - y) < 0.3)) continue;
-      if (alle.some((m) => Math.hypot(m.x - x, m.y - y) < m.r + 0.3)) continue;
+      if (alle.some((m) => Math.hypot(m.x - x, m.y - y) < m.r + (dicht ? 0.24 : 0.3))) continue;
       return [x, y];
     }
     return null;
@@ -295,16 +300,22 @@ export class Busszene {
   }
 
   /** Den Bus beim ersten Sehen füllen: Sitze zuerst, dann Stehplätze (bei voll auch an den Türen). */
+  /**
+   * Den Bus beim ersten Sehen füllen: erst die Sitze, ab halber Füllung stehen
+   * Leute — voll heißt richtig voll, Schulter an Schulter (auch an den Türen).
+   */
   private fuelle(fuellung: number, t: number) {
-    const anzahl = Math.round(fuellung * 46);
-    for (let i = 0; i < anzahl; i++) {
+    const sitzend = Math.round(this.sitze.length * Math.min(1, fuellung * 1.6));
+    const stehplaetze = Math.round(this.l.laenge * 3.4);
+    const stehend = Math.round(Math.max(0, (fuellung - 0.5) / 0.5) * stehplaetze);
+    for (let i = 0; i < sitzend + stehend; i++) {
       const art: FahrgastArt = this.rnd() < 0.12 ? "senior" : this.rnd() < 0.3 ? "kind" : "erwachsen";
-      const sitz = this.freierSitz(art === "senior");
-      if (sitz && this.rnd() < 0.92) {
+      const sitz = i < sitzend ? this.freierSitz(art === "senior") : null;
+      if (sitz) {
         const f = this.neuerFahrgast(art, sitz.p[0], sitz.p[1], "drin");
         this.setze(f, sitz);
       } else {
-        const p = this.stehplatz(fuellung > 0.7);
+        const p = this.stehplatz(fuellung > 0.7, undefined, fuellung > 0.7);
         if (!p) break;
         const f = this.neuerFahrgast(art === "senior" ? "erwachsen" : art, p[0], p[1], "drin");
         f.rucksack = f.rucksack && this.rnd() < 0.5;
@@ -549,9 +560,10 @@ export class Busszene {
         if (d > 7) this.einmal(`${hk}:snf`, "snfBlockiert", aus);
       } else if (braucht && this.seit.has("snf")) { this.einmal(`${hk}:snfFrei`, "snfFrei", aus); this.dauer("snf", false, t); }
 
-      // Rucksack im vollen Bus
-      if (imBus && ich.rucksack && ich.sitz === null && this.fuellung > 0.5) {
-        hinweis ??= "B drücken: Rucksack abnehmen (im vollen Bus stößt er alle an)";
+      // Rucksack im Gedränge: nur, wenn wirklich Leute dicht um einen stehen
+      const nachbarn = this.fahrgaeste.filter((f) => f.zustand !== "weg" && f.sitz === null && Math.hypot(f.x - ich.x, f.y - ich.y) < 1.1).length;
+      if (imBus && ich.rucksack && ich.sitz === null && nachbarn >= 3) {
+        hinweis ??= "B drücken: Rucksack abnehmen (im Gedränge stößt er alle an)";
         const d = this.dauer("rucksack", true, t);
         if (d > 6) this.rufe(this.naechster(ich), RUFE.rucksack, t);
         if (d > 16) this.einmal(`${hk}:rucksack`, "rucksackAuf", aus);

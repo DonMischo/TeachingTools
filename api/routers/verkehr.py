@@ -62,6 +62,9 @@ class Spieler:
     # Letzte eigene Lage: kommt nur aus der Bildschleife. Ein Tab im Hintergrund
     # pingt weiter, zeichnet aber nicht — als Taktgeber stünden alle Autos still.
     bild_zuletzt: float = field(default_factory=time.time)
+    # Mittlerer Abstand der Lagen: ein gedrosselter Hintergrund-Tab schickt nur
+    # noch etwa einmal je Sekunde — der rechnet den Verkehr in Zeitlupe.
+    bild_abstand: float = 0.1
 
 
 @dataclass
@@ -135,19 +138,25 @@ async def _schleife(code: str) -> None:
             break
         # Zeichnet der Taktgeber nicht mehr (Tab im Hintergrund)? Dann ein anderer.
         tg = raum.spieler.get(raum.taktgeber or "")
-        if tg is None or time.time() - tg.bild_zuletzt > BILD_STILL:
+        if tg is None or not _zeichnet(tg, time.time()):
             await _neuer_taktgeber(code, raum)
         await mgr.broadcast(code, _stand(raum))
         await asyncio.sleep(TAKT)
 
 
 BILD_STILL = 3.0
+# Wer seltener als etwa dreimal je Sekunde seine Lage schickt, zeichnet nicht flüssig.
+BILD_TAKT = 0.35
+
+
+def _zeichnet(s: "Spieler", jetzt: float) -> bool:
+    return jetzt - s.bild_zuletzt < BILD_STILL and s.bild_abstand < BILD_TAKT
 
 
 async def _neuer_taktgeber(code: str, raum: Raum) -> None:
     # Nur wer gerade zeichnet, rechnet den Verkehr — Lehrkraft zuerst.
     jetzt = time.time()
-    aktiv = [k for k in raum.reihenfolge if jetzt - raum.spieler[k].bild_zuletzt < BILD_STILL]
+    aktiv = [k for k in raum.reihenfolge if _zeichnet(raum.spieler[k], jetzt)]
     wahl = aktiv or raum.reihenfolge
     lehrkraefte = [k for k in wahl if raum.spieler[k].lehrkraft]
     neu = (lehrkraefte or wahl or [None])[0]
@@ -210,6 +219,7 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
                 raum.reihenfolge.append(key)
             ich.zuletzt = time.time()
             if typ == "ich":
+                ich.bild_abstand = ich.bild_abstand * 0.8 + min(5.0, ich.zuletzt - ich.bild_zuletzt) * 0.2
                 ich.bild_zuletzt = ich.zuletzt
                 try:
                     ich.x, ich.y, ich.w = float(n["x"]), float(n["y"]), float(n.get("w", 0))

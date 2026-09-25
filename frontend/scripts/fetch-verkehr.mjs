@@ -38,6 +38,7 @@ const ABFRAGE = `[out:json][timeout:120];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[amenity~"^(school|kindergarten|pharmacy|restaurant|fast_food|cafe)$"][name];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[natural=tree];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[highway=street_lamp];
+  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})["addr:housenumber"]["addr:street"];
 );
 out body;
 >;
@@ -126,6 +127,7 @@ function punktArt(t) {
   if (t.natural === "tree") return "baum";
   if (t.highway === "street_lamp") return "laterne";
   if (t.shop || t.amenity) return "ort";
+  if (t["addr:housenumber"] && t["addr:street"]) return "adresse";
   return null;
 }
 
@@ -159,6 +161,7 @@ for (const e of daten.elements) {
     if (!drin(p)) continue;
     const eintrag = { art, p };
     if (t.name) eintrag.name = t.name;
+    if (art === "adresse") eintrag.name = `${t["addr:street"]} ${t["addr:housenumber"]}`;
     if (t.shop) eintrag.shop = t.shop;
     if (art === "ort" && t.amenity) eintrag.amenity = t.amenity;
     karte.punkte.push(eintrag);
@@ -196,6 +199,8 @@ for (const e of daten.elements) {
     if (t.name) g.name = t.name;
     if (t.building !== "yes") g.art = t.building;
     if (t["building:levels"]) g.etagen = Number(t["building:levels"]) || undefined;
+    // Adresse fürs Handy (Suche)
+    if (t["addr:street"] && t["addr:housenumber"]) g.adresse = `${t["addr:street"]} ${t["addr:housenumber"]}`;
     karte.gebaeude.push(g);
   } else if (t.railway === "platform" || t.public_transport === "platform") {
     if (!roh.some(drin)) continue;
