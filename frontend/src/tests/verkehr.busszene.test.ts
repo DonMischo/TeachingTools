@@ -122,10 +122,64 @@ describe("Bus-Szene: der Spieler", () => {
     throw new Error("keine ältere Dame ohne Sitz gefunden");
   });
 
+  it("wer selbst aussteigt, blockiert nichts; wer weggeht, ist ausgestiegen", () => {
+    const sz = new Busszene(4, 0.3, 0);
+    sz.mitIch = true;
+    Object.assign(sz.ich, { x: TUER_X[1], y: 0.6, drin: true });
+    let raus = false, ausgestiegen = false;
+    const alle: SzenenMeldung[] = [];
+    const ende = HALT.oeffnen + HALT.aussteigen + HALT.einsteigen + HALT.schliessen + 2;
+    for (let a = 0; a < ende; a += DT) {
+      const phase = a < ende - 2 ? tuerPhase(a) : "faehrt";
+      // Gleich beim Öffnen hinaus und stehen bleiben
+      if (phase === "aussteigen" && !raus) { raus = true; sz.gehZu(TUER_X[1], AUSSEN_Y + 2.2); }
+      const r = sz.schritt({ t: a, dt: DT, phase, halt: "h", beschleunigung: 0, fuellung: 0.3 });
+      alle.push(...r.meldungen);
+      if (r.ausgestiegen) ausgestiegen = true;
+    }
+    expect(drin(sz.ich.x, sz.ich.y)).toBe(false);
+    expect(alle).not.toContain("tuerBlockiert");
+    expect(ausgestiegen).toBe(true);
+  });
+
   it("nimmt den Rucksack ab — im Bus gibt das Punkte", () => {
     const sz = new Busszene(2, 0.5, 0);
     Object.assign(sz.ich, { x: 0.4, y: 0.4 });
     expect(sz.rucksack()).toBe("rucksackAb");
     expect(sz.ich.rucksack).toBe(false);
+  });
+});
+
+describe("Schlenky (Gelenkbus)", () => {
+  it("ist 18 m lang, hat drei Türen und an beiden Türen hinter dem Fahrer Platz für Kinderwagen und Rollstuhl", async () => {
+    const { LAYOUTS } = await import("@/lib/verkehr/busszene");
+    const g = LAYOUTS.gelenk;
+    expect(g.laenge).toBe(18);
+    expect(g.tuerX).toHaveLength(3);
+    expect(g.snf.map((f) => f.tuer).sort()).toEqual([1, 2]);
+    // jede Fläche liegt gegenüber ihrer Tür
+    for (const f of g.snf) expect(g.tuerX[f.tuer]).toBeGreaterThan(f.x0 - 0.5), expect(g.tuerX[f.tuer]).toBeLessThan(f.x1 + 0.5);
+    expect(g.gelenk).toBeTruthy();
+    // Kein Sitz auf dem Gelenk, auf einer Fläche oder vor einer Tür (rechts)
+    for (const s of g.sitze) {
+      expect(s.p[0] > g.gelenk!.x0 - 0.3 && s.p[0] < g.gelenk!.x1 + 0.3).toBe(false);
+      expect(g.snf.some((f) => s.p[0] > f.x0 - 0.2 && s.p[0] < f.x1 + 0.2 && s.p[1] < 0)).toBe(false);
+      if (s.p[1] > 0) expect(g.tuerX.some((x) => Math.abs(s.p[0] - x) < 0.8)).toBe(false);
+    }
+  });
+
+  it("lässt an einem Halt alle aus- und einsteigen, Kinderwagen auf ihren Platz", async () => {
+    const { LAYOUTS } = await import("@/lib/verkehr/busszene");
+    for (let samen = 1; samen < 60; samen++) {
+      const sz = new Busszene(samen, 0.5, 0, "gelenk");
+      halt(sz, 0, 0.5);
+      // Drin sind alle (manche gehen noch zum Platz) — außer wer ausgestiegen ist und draußen weggeht
+      for (const f of sz.fahrgaeste) expect(drin(f.x, f.y, LAYOUTS.gelenk) ? f.zustand === "drin" || f.zustand === "steigtEin" : f.zustand === "steigtAus").toBe(true);
+      const kw = sz.fahrgaeste.find((f) => f.art === "kinderwagen" || f.art === "rollstuhl");
+      if (!kw) continue;
+      expect(LAYOUTS.gelenk.snf.some((f) => kw.x > f.x0 - 0.5 && kw.x < f.x1 + 0.5 && kw.y < 0)).toBe(true);
+      return;
+    }
+    throw new Error("kein Kinderwagen");
   });
 });

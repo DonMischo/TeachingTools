@@ -25,7 +25,8 @@ import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
 
-const UNTERGRUND: Record<Untergrund["art"], { text: string; farbe: string; icon: string }> = {
+const UNTERGRUND: Record<Untergrund["art"] | "bus", { text: string; farbe: string; icon: string }> = {
+  bus: { text: "Im Bus", farbe: "#0f766e", icon: "🚌" },
   gehweg: { text: "Gehweg", farbe: "#16a34a", icon: "🚶" },
   fahrbahn: { text: "Fahrbahn — Vorsicht!", farbe: "#dc2626", icon: "⚠️" },
   spielstrasse: { text: "Spielstraße — Autos nur Schritttempo", farbe: "#2563eb", icon: "🏠" },
@@ -80,7 +81,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   konto?: boolean;
 }) {
   const huelle = useRef<HTMLDivElement>(null);
-  const [untergrund, setUntergrund] = useState<Untergrund["art"]>("gehweg");
+  const [untergrund, setUntergrund] = useState<Untergrund["art"] | "bus">("gehweg");
   const [vollbild, setVollbild] = useState(false);
   const [ersatzVollbild, setErsatzVollbild] = useState(false);
   const [punkte, setPunkte] = useState(0);
@@ -175,7 +176,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     ltbSag({ typ: "meldung", id: m.id });
   }, [zeige, buche, ltbSag]);
 
-  const onUntergrund = useCallback((art: Untergrund["art"]) => { setUntergrund(art); ltbSag({ typ: "untergrund", art }); }, [ltbSag]);
+  const onUntergrund = useCallback((art: Untergrund["art"] | "bus") => { setUntergrund(art); ltbSag({ typ: "untergrund", art }); }, [ltbSag]);
   // Vorige Werte als Ref: der Tipp kommt nur beim Wechsel, nicht bei jedem Update.
   const vorher = useRef({ tafel: false, dunkel: false, rush: false });
   const onHaltestelle = useCallback((h: { name: string; abfahrten: Abfahrt[] } | null) => {

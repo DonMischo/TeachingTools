@@ -13,65 +13,101 @@ import type { P } from "./geometrie";
 import { gedraenge, Raster, type Mensch } from "./wegsuche";
 import type { TuerPhase } from "./tueren";
 
-export const BUS_L = 12, BUS_B = 2.55;
-/** Innenraum (ohne Wände). */
-const INNEN = { x0: -5.85, x1: 5.85, y0: -1.13, y1: 1.13 };
+export const BUS_B = 2.55;
 /** Außenkante auf der Türseite. */
 export const AUSSEN_Y = BUS_B / 2;
-/** Türmitten längs: vorn beim Fahrer, Mitte, hinten. */
-export const TUER_X = [4.85, 0.4, -3.6] as const;
 export const TUER_W = 1.2;
-/** Der Fahrerplatz vorn links. */
-export const FAHRER = { x0: 4.25, x1: 5.85, y0: -1.13, y1: -0.1 };
-/** Sondernutzungsfläche gegenüber der Mitteltür. */
-export const SNF = { x0: -0.7, x1: 1.6, y0: -1.13, y1: -0.25 };
-/** Der Bereich neben dem Bus, den die Szene kennt (Gehweg an der Haltestelle). */
-export const RAND = { x0: -7.8, x1: 7.8, y0: INNEN.y0 - 0.2, y1: AUSSEN_Y + 4.2 };
+
+type Rechteck = { x0: number; x1: number; y0: number; y1: number };
+export type Bustyp = "solo" | "gelenk";
+
+/**
+ * Wie ein Bus innen aussieht: Türen (die erste vorn beim Fahrer), Fahrerplatz,
+ * Sondernutzungsflächen (je gegenüber einer Tür), beim Gelenkbus die Drehscheibe.
+ */
+export type Layout = {
+  typ: Bustyp; name: string; laenge: number;
+  innen: Rechteck; tuerX: number[]; fahrer: Rechteck; fahrerSitz: P;
+  snf: (Rechteck & { tuer: number })[];
+  gelenk?: { x0: number; x1: number };
+  rand: Rechteck;
+  sitze: Sitz[]; stangen: P[];
+};
 
 export type Sitz = { id: number; p: P; vorrang: boolean; belegt: string | null };
 
-/** Sitze: links 2er-Reihen, rechts wo keine Tür ist, hinten die Bank. Die vorderen sind Vorrangsitze. */
-function baueSitze(): Sitz[] {
-  const reihen: { x: number; seite: -1 | 1 }[] = [];
-  for (const x of [3.6, 2.8, -1.1, -1.9, -2.7, -3.5, -4.3, -5.0]) reihen.push({ x, seite: -1 });
-  for (const x of [3.6, 2.8, 1.8, -1.2, -2.0]) reihen.push({ x, seite: 1 });
+function baueLayout(typ: Bustyp, name: string, laenge: number, tuerX: number[], snf: { tuer: number; x0: number; x1: number }[],
+  links: number[], rechts: number[], vorrangAb: number, gelenk?: { x0: number; x1: number }): Layout {
+  const h = laenge / 2;
+  const innen = { x0: -h + 0.15, x1: h - 0.15, y0: -1.13, y1: 1.13 };
+  // Sitze: 2er-Reihen links und rechts, hinten die Bank; vorn Vorrangsitze
   const sitze: Sitz[] = [];
-  for (const r of reihen) for (const y of [0.44, 0.88]) sitze.push({ id: sitze.length, p: [r.x, y * r.seite], vorrang: r.x > 2.5, belegt: null });
-  for (const y of [-0.88, -0.44, 0, 0.44, 0.88]) sitze.push({ id: sitze.length, p: [-5.55, y], vorrang: false, belegt: null });
-  return sitze;
+  const reihe = (x: number, seite: -1 | 1) => { for (const y of [0.44, 0.88]) sitze.push({ id: sitze.length, p: [x, y * seite], vorrang: x > vorrangAb, belegt: null }); };
+  links.forEach((x) => reihe(x, -1));
+  rechts.forEach((x) => reihe(x, 1));
+  for (const y of [-0.88, -0.44, 0, 0.44, 0.88]) sitze.push({ id: sitze.length, p: [innen.x0 + 0.3, y], vorrang: false, belegt: null });
+  const flaechen = snf.map((f) => ({ ...f, y0: -1.13, y1: -0.25 }));
+  // Haltestangen: an den Türen, an den Sondernutzungsflächen und am Gelenk; im Gang halten die Sitzgriffe
+  const stangen: P[] = [
+    ...tuerX.flatMap((x) => [[x - TUER_W / 2 - 0.1, 0.95], [x + TUER_W / 2 + 0.1, 0.95]] as P[]),
+    ...flaechen.flatMap((f) => [[f.x0, -0.3], [f.x1, -0.3], [(f.x0 + f.x1) / 2, -0.3]] as P[]),
+    ...(gelenk ? [[gelenk.x0 - 0.1, -0.35], [gelenk.x0 - 0.1, 0.35], [gelenk.x1 + 0.1, -0.35], [gelenk.x1 + 0.1, 0.35]] as P[] : []),
+    [innen.x1 - 2.6, -0.3], [innen.x1 - 2.6, 0.3], [innen.x0 + 1.2, -0.3], [innen.x0 + 1.2, 0.3],
+  ];
+  return {
+    typ, name, laenge, innen, tuerX,
+    fahrer: { x0: h - 1.75, x1: innen.x1, y0: -1.13, y1: -0.1 }, fahrerSitz: [h - 0.85, -0.62],
+    snf: flaechen, gelenk,
+    rand: { x0: -h - 1.8, x1: h + 1.8, y0: innen.y0 - 0.2, y1: AUSSEN_Y + 6 },
+    sitze, stangen,
+  };
 }
 
-/** Haltestangen: an den Türen, an der Sondernutzungsfläche und längs am Gang. */
-export const STANGEN: P[] = [
-  ...TUER_X.flatMap((x) => [[x - TUER_W / 2 - 0.1, 0.95], [x + TUER_W / 2 + 0.1, 0.95]] as P[]),
-  [SNF.x0, -0.3], [SNF.x1, -0.3], [0.45, -0.3], [3.2, -0.3], [3.2, 0.3], [-1.5, -0.3], [-2.3, 0.3], [-3.1, -0.3], [-4.7, -0.3], [-4.7, 0.3], [2.3, 0.3],
-];
+export const LAYOUTS: Record<Bustyp, Layout> = {
+  // Stadtbus, 12 m: vorn, Mitte (mit Platz für Kinderwagen und Rollstuhl), hinten
+  solo: baueLayout("solo", "Stadtbus", 12, [4.85, 0.4, -3.6], [{ tuer: 1, x0: -0.7, x1: 1.6 }],
+    [3.6, 2.8, -1.1, -1.9, -2.7, -3.5, -4.3, -5.0], [3.6, 2.8, 1.8, -1.2, -2.0], 2.5),
+  // »Schlenky«: Gelenkbus, 18 m, mit Drehscheibe; an beiden Türen hinter dem Fahrer Platz für Kinderwagen und Rollstuhl
+  gelenk: baueLayout("gelenk", "Schlenky (Gelenkbus)", 18, [7.85, 3.2, -4.0],
+    [{ tuer: 1, x0: 2.1, x1: 4.4 }, { tuer: 2, x0: -5.1, x1: -2.8 }],
+    [6.6, 5.8, 1.5, -1.3, -2.1, -6.0, -6.8, -7.6], [6.6, 5.8, 5.0, 1.6, 0.8, -1.3, -2.1, -2.9, -5.6, -6.4, -7.2], 5.5,
+    { x0: -0.6, x1: 0.5 }),
+};
+
+// Der Stadtbus, wie bisher (Tests, einfache Nutzer)
+const SOLO = LAYOUTS.solo;
+export const BUS_L = SOLO.laenge;
+export const TUER_X = SOLO.tuerX;
+export const FAHRER = SOLO.fahrer;
+export const SNF = SOLO.snf[0];
+export const RAND = SOLO.rand;
+export const STANGEN = SOLO.stangen;
 const HALTEN_NAH = 0.75;
 const SITZ_R = 0.12;
 
-const inRechteck = (x: number, y: number, r: { x0: number; x1: number; y0: number; y1: number }, rand = 0) =>
+const inRechteck = (x: number, y: number, r: Rechteck, rand = 0) =>
   x > r.x0 - rand && x < r.x1 + rand && y > r.y0 - rand && y < r.y1 + rand;
 
 /** Ist hier eine Wand, ein Sitz oder der Fahrer? `offen`: die Türen sind offen. */
-function frei(x: number, y: number, sitze: Sitz[], offen: boolean): boolean {
-  if (!inRechteck(x, y, RAND)) return false;
-  const drinnen = inRechteck(x, y, INNEN);
+function frei(x: number, y: number, sitze: Sitz[], offen: boolean, l: Layout): boolean {
+  if (!inRechteck(x, y, l.rand)) return false;
+  const drinnen = inRechteck(x, y, l.innen);
   if (drinnen) {
-    if (inRechteck(x, y, FAHRER)) return false;
+    if (inRechteck(x, y, l.fahrer)) return false;
     // Ein Sitzpaar ist ein Block (kein Spalt zwischen Fenster- und Gangsitz).
     return !sitze.some((s) => Math.abs(x - s.p[0]) < 0.21 && Math.abs(y - s.p[1]) < 0.23);
   }
   // Wand: zwischen Innenraum und Außenkante — außer in einer offenen Tür.
-  if (y > INNEN.y1 - 0.01 && y < AUSSEN_Y + 0.08) return offen && x > INNEN.x0 && x < INNEN.x1 && TUER_X.some((t) => Math.abs(x - t) < TUER_W / 2 - 0.05);
+  if (y > l.innen.y1 - 0.01 && y < AUSSEN_Y + 0.08) return offen && x > l.innen.x0 && x < l.innen.x1 && l.tuerX.some((t) => Math.abs(x - t) < TUER_W / 2 - 0.05);
   // Draußen nur auf der Türseite (die andere ist Fahrbahn).
   return y >= AUSSEN_Y + 0.08;
 }
 
-export const drin = (x: number, y: number) => inRechteck(x, y, INNEN, 0.02);
+export const drin = (x: number, y: number, l: Layout = SOLO) => inRechteck(x, y, l.innen, 0.02);
 
 /** Zonen an einer Tür, wie auf dem Schaubild: Fokus zum Einsteigen, seitlich warten, frei halten. */
-export function tuerZonen(i: number) {
-  const x = TUER_X[i];
+export function tuerZonen(i: number, l: Layout = SOLO) {
+  const x = l.tuerX[i];
   return {
     fokus: { x0: x - TUER_W / 2, x1: x + TUER_W / 2, y0: AUSSEN_Y + 0.05, y1: AUSSEN_Y + 0.85 },
     warten: [[x - 1.75, AUSSEN_Y + 1.1], [x + 1.75, AUSSEN_Y + 1.1]] as P[],
@@ -82,22 +118,22 @@ export function tuerZonen(i: number) {
 }
 
 /** Im Fächer vor der Tür (Frei-halten-Zone)? */
-export function imFreiraum(i: number, x: number, y: number): boolean {
-  const z = tuerZonen(i);
+export function imFreiraum(i: number, x: number, y: number, l: Layout = SOLO): boolean {
+  const z = tuerZonen(i, l);
   const dx = x - z.freiMitte[0], dy = y - z.freiMitte[1];
   if (dy < 0.05 || Math.hypot(dx, dy) > z.freiR) return false;
   return Math.abs(Math.atan2(dx, dy)) < z.freiBreite;
 }
 
 /** Seitlich neben der Tür, in einer der beiden Wartezonen? */
-export function inWartezone(i: number, x: number, y: number): boolean {
-  const z = tuerZonen(i);
-  return y > AUSSEN_Y && z.warten.some((w) => Math.hypot(x - w[0], y - w[1]) < z.wartenR) && !imFreiraum(i, x, y);
+export function inWartezone(i: number, x: number, y: number, l: Layout = SOLO): boolean {
+  const z = tuerZonen(i, l);
+  return y > AUSSEN_Y && z.warten.some((w) => Math.hypot(x - w[0], y - w[1]) < z.wartenR) && !imFreiraum(i, x, y, l);
 }
 
 /** Drinnen nah an einer Tür (Aussteigende kommen hier durch). */
-export function amAusgang(i: number, x: number, y: number) {
-  return drin(x, y) && Math.abs(x - TUER_X[i]) < TUER_W / 2 + 0.35 && y > 0.25;
+export function amAusgang(i: number, x: number, y: number, l: Layout = SOLO) {
+  return drin(x, y, l) && Math.abs(x - l.tuerX[i]) < TUER_W / 2 + 0.35 && y > 0.25;
 }
 
 export type FahrgastArt = "erwachsen" | "kind" | "senior" | "kinderwagen" | "rollstuhl";
@@ -119,7 +155,7 @@ export type Fahrgast = Mensch & {
 };
 
 export type SzenenMeldung =
-  | "tuerBlockiert" | "gutEingestiegen" | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben"
+  | "tuerBlockiert" | "gutEingestiegen" | "eingestiegen" | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben"
   | "snfFrei" | "snfBlockiert" | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu";
 
 export type Lage = {
@@ -141,8 +177,8 @@ export type Ausgang = {
   /** Die Figur ist gerade eingestiegen / ausgestiegen. */
   eingestiegen?: number;
   ausgestiegen?: boolean;
-  /** Rampe an der Mitteltür ist draußen (Rollstuhl). */
-  rampe: boolean;
+  /** An dieser Tür ist die Rampe draußen (Rollstuhl), sonst null. */
+  rampe: number | null;
 };
 
 /** Kleiner Zufall mit Samen. */
@@ -175,7 +211,9 @@ const RUFE = {
 } as const;
 
 export class Busszene {
-  readonly sitze = baueSitze();
+  /** Wie dieser Bus innen aussieht (Stadtbus oder Gelenkbus). */
+  readonly l: Layout;
+  readonly sitze: Sitz[];
   readonly fahrgaeste: Fahrgast[] = [];
   /** Die Spielfigur in Bus-Koordinaten. */
   readonly ich: Mensch & { sitz: number | null; rucksack: boolean; drin: boolean } =
@@ -196,15 +234,23 @@ export class Busszene {
   private fahrkarteSeit: number | null = null;
   private wartetBeimAussteigen = false;
   private rausFuerAndere = false;
+  /** Die Figur ist an diesem Halt aus dem Bus gestiegen (Halt-Schlüssel) — ob für immer oder nur kurz, zeigt sich noch. */
+  private selbstRaus: string | null = null;
+  /** Ausgestiegen und noch nicht gemeldet: gilt, sobald der Bus fährt oder die Figur weggeht. */
+  rausGekommen = false;
   private rampeBis = -Infinity;
+  private rampeTuer: number | null = null;
   private fuellung = 0.5;
 
-  constructor(samen: number, fuellung: number, t: number) {
+  constructor(samen: number, fuellung: number, t: number, typ: Bustyp = "solo") {
+    this.l = LAYOUTS[typ];
+    this.sitze = this.l.sitze.map((x) => ({ ...x, belegt: null }));
+    this.fahrer.x = this.l.fahrerSitz[0]; this.fahrer.y = this.l.fahrerSitz[1];
     this.rnd = zufall(samen);
     this.fuellung = fuellung;
     const z = 0.15;
-    const mache = (offen: boolean) => new Raster(RAND.x0, RAND.y0, Math.ceil((RAND.x1 - RAND.x0) / z), Math.ceil((RAND.y1 - RAND.y0) / z), z,
-      (x, y) => frei(x, y, this.sitze, offen));
+    const mache = (offen: boolean) => new Raster(this.l.rand.x0, this.l.rand.y0, Math.ceil((this.l.rand.x1 - this.l.rand.x0) / z), Math.ceil((this.l.rand.y1 - this.l.rand.y0) / z), z,
+      (x, y) => frei(x, y, this.sitze, offen, this.l));
     this.rasterZu = mache(false);
     this.rasterOffen = mache(true);
     this.fuelle(fuellung, t);
@@ -213,15 +259,16 @@ export class Busszene {
   raster(): Raster { return this.phase === "aussteigen" || this.phase === "einsteigen" ? this.rasterOffen : this.rasterZu; }
 
   /** Stehplätze drinnen: freie Punkte, nicht vor Türen, nicht auf der Sondernutzungsfläche. */
-  private stehplatz(auchTuer = false, snf = false): P | null {
+  private stehplatz(auchTuer = false, snf?: Rechteck): P | null {
     const r = this.rasterZu;
     const alle = [...this.fahrgaeste.filter((f) => f.zustand !== "weg"), this.ich];
     for (let versuch = 0; versuch < 60; versuch++) {
-      const x = INNEN.x0 + 0.4 + this.rnd() * (INNEN.x1 - INNEN.x0 - 0.8), y = INNEN.y0 + 0.3 + this.rnd() * (INNEN.y1 - INNEN.y0 - 0.6);
+      const x = this.l.innen.x0 + 0.4 + this.rnd() * (this.l.innen.x1 - this.l.innen.x0 - 0.8), y = this.l.innen.y0 + 0.3 + this.rnd() * (this.l.innen.y1 - this.l.innen.y0 - 0.6);
       if (!r.begehbar(x, y)) continue;
-      if (!snf && inRechteck(x, y, SNF, 0.2)) continue;
-      if (snf && !inRechteck(x, y, SNF, -0.35)) continue;
-      if (!auchTuer && TUER_X.some((_, i) => amAusgang(i, x, y))) continue;
+      if (!snf && this.l.snf.some((f) => inRechteck(x, y, f, 0.2))) continue;
+      if (snf && !inRechteck(x, y, snf, -0.35)) continue;
+      if (!auchTuer && this.l.tuerX.some((_, i) => amAusgang(i, x, y, this.l))) continue;
+      if (this.l.gelenk && x > this.l.gelenk.x0 - 0.2 && x < this.l.gelenk.x1 + 0.2 && !snf) continue;
       // Nicht in die Beinfreiheit zwischen zwei Sitzreihen
       if (this.sitze.some((s) => Math.abs(s.p[0] - x) < 0.6 && Math.abs(s.p[1] - y) < 0.3)) continue;
       if (alle.some((m) => Math.hypot(m.x - x, m.y - y) < m.r + 0.3)) continue;
@@ -323,13 +370,15 @@ export class Busszene {
     if (this.rnd() < 0.1) neu.push(this.neuerFahrgast("kinderwagen", 0, 0, "wartet"));
     if (this.rnd() < 0.05) neu.push(this.neuerFahrgast("rollstuhl", 0, 0, "wartet"));
     for (const f of neu) {
-      // Kinderwagen und Rollstuhl an die Mitteltür, sonst vorn oder Mitte
-      f.tuer = f.art === "kinderwagen" || f.art === "rollstuhl" ? 1 : this.rnd() < 0.5 ? 0 : 1;
-      const z = tuerZonen(f.tuer);
+      // Kinderwagen und Rollstuhl an eine Tür mit Platz für sie, sonst irgendeine
+      const snfTueren = this.l.snf.map((x) => x.tuer);
+      f.tuer = f.art === "kinderwagen" || f.art === "rollstuhl" ? snfTueren[Math.floor(this.rnd() * snfTueren.length)]
+        : Math.floor(this.rnd() * this.l.tuerX.length);
+      const z = tuerZonen(f.tuer, this.l);
       const w = z.warten[this.rnd() < 0.5 ? 0 : 1];
       f.x = w[0] + (this.rnd() - 0.5) * 3; f.y = AUSSEN_Y + 2.2 + this.rnd() * 1.5;
       f.draengler = f.art === "erwachsen" && this.rnd() < 0.12;
-      this.geh(f, f.draengler ? [TUER_X[f.tuer] + (this.rnd() - 0.5) * 0.4, AUSSEN_Y + 0.55] : [w[0] + (this.rnd() - 0.5) * 0.8, w[1] + this.rnd() * 0.5]);
+      this.geh(f, f.draengler ? [this.l.tuerX[f.tuer] + (this.rnd() - 0.5) * 0.4, AUSSEN_Y + 0.55] : [w[0] + (this.rnd() - 0.5) * 0.8, w[1] + this.rnd() * 0.5]);
     }
     this.wartetBeimAussteigen = false;
     this.rausFuerAndere = false;
@@ -357,106 +406,120 @@ export class Busszene {
       if (f.zustand === "drin" && f.raus && phase === "aussteigen") {
         // Zum Ausgang: Mitte oder hinten, vorn nur wer vorn sitzt
         if (f.sitz !== null) this.aufstehen(f);
-        const tuer = f.x > 3.6 ? 0 : f.x > -1.6 ? 1 : 2;
+        const tuer = this.l.tuerX.map((x, i) => ({ i, d: Math.abs(x - f.x) + (i === 0 ? 1.5 : 0) })).sort((a, b) => a.d - b.d)[0].i;
         f.tuer = tuer;
         f.zustand = "steigtAus";
         const seite = this.rnd() < 0.5 ? -1 : 1;
         // Zur Tür, gerade hinaus (durch den Freihalte-Fächer), dann zur Seite weg.
-        const innen: P = [TUER_X[tuer], INNEN.y1 - 0.35];
-        f.ziel = [TUER_X[tuer] + seite * 2.8, RAND.y1 - 0.3];
-        f.weg = [...(this.rasterZu.suche([f.x, f.y], innen) ?? [innen]), [TUER_X[tuer], AUSSEN_Y + 1.5], f.ziel];
-      } else if (f.zustand === "steigtAus" && (f.y > RAND.y1 - 0.6 || (!f.weg.length && f.y > AUSSEN_Y + 1))) {
+        const innen: P = [this.l.tuerX[tuer], this.l.innen.y1 - 0.35];
+        f.ziel = [this.l.tuerX[tuer] + seite * 2.8, this.l.rand.y1 - 0.3];
+        f.weg = [...(this.rasterZu.suche([f.x, f.y], innen) ?? [innen]), [this.l.tuerX[tuer], AUSSEN_Y + 1.5], f.ziel];
+      } else if (f.zustand === "steigtAus" && (f.y > this.l.rand.y1 - 0.6 || (!f.weg.length && f.y > AUSSEN_Y + 1))) {
         f.zustand = "weg";
       } else if (f.zustand === "wartet" && phase === "einsteigen") {
         f.zustand = "steigtEin";
         this.einsteigenLassen(f, t);
-      } else if (f.zustand === "steigtEin" && !f.weg.length && drin(f.x, f.y)) {
+      } else if (f.zustand === "steigtEin" && !f.weg.length && drin(f.x, f.y, this.l)) {
         f.zustand = "drin";
         const s = f.art === "kinderwagen" || f.art === "rollstuhl" ? null : this.sitzInReichweite(f);
         if (s) this.setze(f, s);
-      } else if (f.zustand === "steigtEin" && !f.weg.length && !drin(f.x, f.y) && phase === "einsteigen") {
+      } else if (f.zustand === "steigtEin" && !f.weg.length && !drin(f.x, f.y, this.l) && phase === "einsteigen") {
         this.einsteigenLassen(f, t);
       } else if (f.zustand === "machtPlatz" && phase === "einsteigen" && !f.weg.length) {
         f.zustand = "steigtEin";
         this.geh(f, f.zurueck ?? this.stehplatz(true) ?? [0, 0]);
       }
       // Bus fährt los, wer draußen steht, bleibt da (nächster Bus)
-      if ((phase === "faehrt" || phase === "zu") && (f.zustand === "wartet" || f.zustand === "steigtEin" || f.zustand === "machtPlatz") && !drin(f.x, f.y)) {
+      if ((phase === "faehrt" || phase === "zu") && (f.zustand === "wartet" || f.zustand === "steigtEin" || f.zustand === "machtPlatz") && !drin(f.x, f.y, this.l)) {
         if (this.vorPhase === "schliessen") f.zustand = "weg";
       }
-      if ((phase === "faehrt" || phase === "zu" || phase === "schliessen") && f.zustand === "steigtEin" && drin(f.x, f.y) && !f.weg.length) f.zustand = "drin";
+      if ((phase === "faehrt" || phase === "zu" || phase === "schliessen") && f.zustand === "steigtEin" && drin(f.x, f.y, this.l) && !f.weg.length) f.zustand = "drin";
+      // Nicht mehr rausgekommen, Türen zu: bleibt drin und steigt am nächsten Halt aus
+      if ((phase === "faehrt" || phase === "zu") && f.zustand === "steigtAus" && drin(f.x, f.y, this.l)) { f.zustand = "drin"; f.weg = []; f.ziel = undefined; }
     }
 
     // Aussteigen beginnt: wer drinnen an der Tür steht und nicht raus will, macht Platz
     if (phase === "aussteigen" && this.vorPhase !== "aussteigen") {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < this.l.tuerX.length; i++) {
         if (!this.fahrgaeste.some((f) => f.zustand === "steigtAus" && f.tuer === i)) continue;
         for (const f of this.fahrgaeste) {
-          if (f.zustand !== "drin" || f.sitz !== null || !amAusgang(i, f.x, f.y)) continue;
+          if (f.zustand !== "drin" || f.sitz !== null || !amAusgang(i, f.x, f.y, this.l)) continue;
           const platz = this.fuellung < 0.7 ? this.stehplatz(false) : null;
           if (platz) this.geh(f, platz);
           else {
             // Sehr voll: kurz raussteigen und seitlich warten, danach wieder rein
             f.zurueck = [f.x, f.y];
             f.zustand = "machtPlatz";
-            const z = tuerZonen(i);
-            this.geh(f, z.warten[f.x < TUER_X[i] ? 0 : 1]);
+            const z = tuerZonen(i, this.l);
+            this.geh(f, z.warten[f.x < this.l.tuerX[i] ? 0 : 1]);
           }
         }
       }
     }
 
     // --- Der Spieler ---
-    const imBus = drin(ich.x, ich.y);
+    const imBus = drin(ich.x, ich.y, this.l);
     ich.drin = imBus;
     if (this.mitIch) {
-      const aussteiger = (i: number) => this.fahrgaeste.filter((f) => f.zustand === "steigtAus" && f.tuer === i && (drin(f.x, f.y) || f.y < AUSSEN_Y + 1.2));
+      const aussteiger = (i: number) => this.fahrgaeste.filter((f) => f.zustand === "steigtAus" && f.tuer === i && (drin(f.x, f.y, this.l) || f.y < AUSSEN_Y + 1.2));
+      // Wer selbst gerade aus dem Bus kam, geht durch den Fächer — das ist richtig so.
+      const selbstRaus = this.selbstRaus === hk;
+      if (!imBus && selbstRaus && phase !== "faehrt")
+        hinweis = "Ausgestiegen. Weggehen — oder, wenn du nur Platz gemacht hast: seitlich warten und wieder einsteigen.";
       // Draußen während des Aussteigens: im Fächer vor der Tür = blockiert
-      if (!imBus && phase === "aussteigen") {
-        for (let i = 0; i < 3; i++) {
+      if (!imBus && phase === "aussteigen" && !selbstRaus) {
+        for (let i = 0; i < this.l.tuerX.length; i++) {
+          // Seitlich warten zählt immer — auch wenn an dieser Tür gerade keiner aussteigt
+          if (inWartezone(i, ich.x, ich.y, this.l)) this.wartetBeimAussteigen = true;
           if (!aussteiger(i).length) continue;
-          if (imFreiraum(i, ich.x, ich.y) && this.dauer(`frei${i}`, true, t) > 0.8) {
+          if (imFreiraum(i, ich.x, ich.y, this.l) && this.dauer(`frei${i}`, true, t) > 0.8) {
             this.einmal(`${hk}:blockiert`, "tuerBlockiert", aus);
             this.rufe(aussteiger(i)[0], RUFE.rausLassen, t);
-          } else if (!imFreiraum(i, ich.x, ich.y)) this.dauer(`frei${i}`, false, t);
-          if (inWartezone(i, ich.x, ich.y)) this.wartetBeimAussteigen = true;
+          } else if (!imFreiraum(i, ich.x, ich.y, this.l)) this.dauer(`frei${i}`, false, t);
         }
-        if (TUER_X.some((_, i) => inWartezone(i, ich.x, ich.y))) hinweis = "Gut so: seitlich warten, bis alle draußen sind.";
-        else if (TUER_X.some((_, i) => imFreiraum(i, ich.x, ich.y))) hinweis = "Du stehst im Weg! Stell dich seitlich neben die Tür (grüne Zone).";
+        if (this.l.tuerX.some((_, i) => inWartezone(i, ich.x, ich.y, this.l))) hinweis = "Gut so: seitlich warten, bis alle draußen sind.";
+        else if (this.l.tuerX.some((_, i) => imFreiraum(i, ich.x, ich.y, this.l))) hinweis = "Du stehst im Weg! Stell dich seitlich neben die Tür (grüne Zone).";
       }
       // Drinnen an der Tür, während andere aussteigen: raus und wieder rein
       if (imBus && phase === "aussteigen") {
-        for (let i = 0; i < 3; i++) {
-          if (!aussteiger(i).length || !amAusgang(i, ich.x, ich.y)) { this.dauer(`drinnen${i}`, false, t); continue; }
+        for (let i = 0; i < this.l.tuerX.length; i++) {
+          if (!aussteiger(i).length || !amAusgang(i, ich.x, ich.y, this.l)) { this.dauer(`drinnen${i}`, false, t); continue; }
           hinweis = "Du stehst an der Tür im Weg: kurz aussteigen, seitlich warten, dann wieder einsteigen.";
           const d = this.dauer(`drinnen${i}`, !ich.weg.length, t);
           if (d > 1) this.rufe(aussteiger(i)[0], this.fuellung > 0.6 ? RUFE.kurzRaus : RUFE.rausLassen, t);
           if (d > 3.5) this.einmal(`${hk}:imWeg`, "imWeg", aus);
         }
       }
-      if (warErDrin && !imBus && phase === "aussteigen" && this.fahrgaeste.some((f) => f.zustand === "steigtAus")) this.rausFuerAndere = true;
+      if (warErDrin && !imBus) {
+        this.selbstRaus = hk;
+        this.rausGekommen = true;
+        if (phase === "aussteigen" && this.fahrgaeste.some((f) => f.zustand === "steigtAus")) this.rausFuerAndere = true;
+      }
       // Einsteigen
       if (!warErDrin && imBus) {
-        eingestiegen = TUER_X.findIndex((x) => Math.abs(ich.x - x) < TUER_W);
-        if (phase === "aussteigen" && this.fahrgaeste.some((f) => f.zustand === "steigtAus" && drin(f.x, f.y))) {
+        eingestiegen = this.l.tuerX.findIndex((x) => Math.abs(ich.x - x) < TUER_W);
+        if (phase === "aussteigen" && this.fahrgaeste.some((f) => f.zustand === "steigtAus" && drin(f.x, f.y, this.l))) {
           this.einmal(`${hk}:blockiert`, "tuerBlockiert", aus);
           this.rufe(this.fahrgaeste.find((f) => f.zustand === "steigtAus"), RUFE.rausLassen, t);
-        } else if (this.rausFuerAndere) this.einmal(`${hk}:rausRein`, "rausRein", aus);
+        } else if (this.rausFuerAndere && this.selbstRaus === hk) this.einmal(`${hk}:rausRein`, "rausRein", aus);
         else if (this.wartetBeimAussteigen) this.einmal(`${hk}:gut`, "gutEingestiegen", aus);
+        else this.einmal(`${hk}:ein`, "eingestiegen", aus);
         if (eingestiegen === 0) {
           this.fahrkarteSeit = t;
           this.rufe(this.fahrer, RUFE.fahrkarte, t, 3.5);
         }
       }
-      if (warErDrin && !imBus && !this.rausFuerAndere) ausgestiegen = true;
+      // Wieder drin: war nur Platz machen. Draußen geblieben, bis der Bus fährt: ausgestiegen.
+      if (!warErDrin && imBus) this.rausGekommen = false;
+      if (this.rausGekommen && !imBus && phase === "faehrt") { ausgestiegen = true; this.rausGekommen = false; }
       if (this.fahrkarteSeit !== null) {
         hinweis = "E drücken: Fahrkarte zeigen";
         if (t - this.fahrkarteSeit > 8) this.fahrkarteSeit = null;
       }
 
       // An der Fokuszone: E steigt ein
-      if (!imBus && phase === "einsteigen" && TUER_X.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i).fokus, 0.3))) hinweis = "E drücken: einsteigen";
-      if (!imBus && phase === "aussteigen" && hinweis === null && TUER_X.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i).fokus, 0.2))) hinweis = "Erst aussteigen lassen — seitlich warten!";
+      if (!imBus && phase === "einsteigen" && this.l.tuerX.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i, this.l).fokus, 0.3))) hinweis = "E drücken: einsteigen";
+      if (!imBus && phase === "aussteigen" && hinweis === null && this.l.tuerX.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i, this.l).fokus, 0.2))) hinweis = "Erst aussteigen lassen — seitlich warten!";
 
       // Sitzen, Aufstehen
       if (imBus && ich.sitz === null && !this.fahrkarteSeit && this.sitzInReichweite(ich)) hinweis ??= "E drücken: hinsetzen";
@@ -478,7 +541,7 @@ export class Busszene {
 
       // Sondernutzungsfläche frei machen
       const braucht = this.fahrgaeste.find((f) => (f.art === "kinderwagen" || f.art === "rollstuhl") && (f.zustand === "steigtEin" || f.zustand === "wartet") && phase !== "faehrt");
-      const ichAufSnf = imBus && inRechteck(ich.x, ich.y, SNF, 0.25);
+      const ichAufSnf = imBus && this.l.snf.some((f) => inRechteck(ich.x, ich.y, f, 0.25));
       if (braucht && ichAufSnf) {
         hinweis = `Der ${braucht.art === "rollstuhl" ? "Rollstuhl" : "Kinderwagen"} braucht den Platz — geh da weg!`;
         const d = this.dauer("snf", true, t);
@@ -505,16 +568,16 @@ export class Busszene {
       }
       if (imBus && ich.sitz === null && l.phase === "faehrt") hinweis ??= this.haeltSich(ich) ? "Du hältst dich an der Stange fest. 👍" : "Halt dich fest! Stell dich an eine gelbe Stange oder setz dich.";
       // Tür schließt: wer in der Tür steht, wird hinein- oder hinausgeschoben
-      if (phase === "schliessen" && ich.y > INNEN.y1 - 0.05 && ich.y < AUSSEN_Y + 0.1 && TUER_X.some((x) => Math.abs(ich.x - x) < TUER_W / 2)) {
+      if (phase === "schliessen" && ich.y > this.l.innen.y1 - 0.05 && ich.y < AUSSEN_Y + 0.1 && this.l.tuerX.some((x) => Math.abs(ich.x - x) < TUER_W / 2)) {
         this.einmal(`${hk}:tuerZu`, "tuerZu", aus);
         this.rufe(this.fahrer, RUFE.tuerZu, t);
-        ich.y = ich.y < (INNEN.y1 + AUSSEN_Y) / 2 ? INNEN.y1 - 0.3 : AUSSEN_Y + 0.4;
+        ich.y = ich.y < (this.l.innen.y1 + AUSSEN_Y) / 2 ? this.l.innen.y1 - 0.3 : AUSSEN_Y + 0.4;
         ich.weg = [];
       }
     }
 
     // Drängler vor der Tür: die Aussteigenden beschweren sich
-    for (const f of this.fahrgaeste) if (f.draengler && phase === "aussteigen" && TUER_X.some((_, i) => imFreiraum(i, f.x, f.y)))
+    for (const f of this.fahrgaeste) if (f.draengler && phase === "aussteigen" && this.l.tuerX.some((_, i) => imFreiraum(i, f.x, f.y, this.l)))
       this.rufe(this.fahrgaeste.find((a) => a.zustand === "steigtAus" && Math.hypot(a.x - f.x, a.y - f.y) < 2.5), RUFE.draengler, t);
 
     // --- Gedränge: alle zusammen, der Spieler nur, wenn die Szene ihn hat ---
@@ -533,7 +596,7 @@ export class Busszene {
       if (f.sitz !== null) this.sitze[f.sitz].belegt = null;
       this.fahrgaeste.splice(i, 1);
     }
-    return { meldungen: aus, hinweis: this.mitIch ? hinweis : null, eingestiegen, ausgestiegen, rampe: t < this.rampeBis };
+    return { meldungen: aus, hinweis: this.mitIch ? hinweis : null, eingestiegen, ausgestiegen, rampe: t < this.rampeBis ? this.rampeTuer : null };
   }
 
   /** Der Fahrer ruft auch mal etwas (als Fahrgast ohne Bewegung geführt). */
@@ -544,10 +607,11 @@ export class Busszene {
 
   private einsteigenLassen(f: Fahrgast, t: number) {
     // Rollstuhl: erst die Rampe
-    if (f.art === "rollstuhl" && this.rampeBis < t) this.rampeBis = t + 5;
-    const ziel = f.art === "kinderwagen" || f.art === "rollstuhl" ? this.stehplatz(true, true) ?? [0.4, -0.7] as P
-      : (f.art === "senior" ? this.freierSitz(true, [TUER_X[f.tuer], 0])?.p : this.rnd() < 0.7 ? this.freierSitz(false, [TUER_X[f.tuer], 0])?.p : null)
-        ?? this.stehplatz(this.fuellung > 0.7) ?? [TUER_X[f.tuer], 0.6];
+    if (f.art === "rollstuhl" && this.rampeBis < t) { this.rampeBis = t + 5; this.rampeTuer = f.tuer; }
+    const flaeche = this.l.snf.find((x) => x.tuer === f.tuer) ?? this.l.snf[0];
+    const ziel = f.art === "kinderwagen" || f.art === "rollstuhl" ? this.stehplatz(true, flaeche) ?? [(flaeche.x0 + flaeche.x1) / 2, -0.7] as P
+      : (f.art === "senior" ? this.freierSitz(true, [this.l.tuerX[f.tuer], 0])?.p : this.rnd() < 0.7 ? this.freierSitz(false, [this.l.tuerX[f.tuer], 0])?.p : null)
+        ?? this.stehplatz(this.fuellung > 0.7) ?? [this.l.tuerX[f.tuer], 0.6];
     // Erst an die Tür, dann hinein zum Ziel (bei Sitzen in den Gang daneben)
     const vorSitz: P = this.sitze.some((s) => s.p[0] === ziel[0] && s.p[1] === ziel[1]) ? [ziel[0], 0] : ziel;
     f.ziel = vorSitz;
@@ -556,8 +620,8 @@ export class Busszene {
 
   /** Durch Tür `i` hinein und drinnen weiter zum Ziel (der Weg drinnen, als wären die Türen zu). */
   private hinein(i: number, ziel: P): P[] {
-    const innen: P = [TUER_X[i], INNEN.y1 - 0.35];
-    return [[TUER_X[i], AUSSEN_Y + 0.3], innen, ...(this.rasterZu.suche(innen, ziel) ?? [ziel])];
+    const innen: P = [this.l.tuerX[i], this.l.innen.y1 - 0.35];
+    return [[this.l.tuerX[i], AUSSEN_Y + 0.3], innen, ...(this.rasterZu.suche(innen, ziel) ?? [ziel])];
   }
 
   private sitzInReichweite(m: Mensch): Sitz | null {
@@ -579,7 +643,7 @@ export class Busszene {
   }
 
   haeltSich(m: Mensch): boolean {
-    if (STANGEN.some((s) => Math.hypot(s[0] - m.x, s[1] - m.y) < HALTEN_NAH)) return true;
+    if (this.l.stangen.some((s) => Math.hypot(s[0] - m.x, s[1] - m.y) < HALTEN_NAH)) return true;
     // Im Gang zwischen Sitzreihen hält man sich an den Griffen der Sitze
     return Math.abs(m.y) < 0.3 && this.sitze.some((s) => Math.abs(s.p[0] - m.x) < 0.5 && Math.abs(s.p[1]) < 0.5);
   }
@@ -602,14 +666,14 @@ export class Busszene {
       }
       return null;
     }
-    if (drin(ich.x, ich.y)) {
+    if (drin(ich.x, ich.y, this.l)) {
       const s = this.sitzInReichweite(ich);
       if (s) { s.belegt = "ich"; ich.sitz = s.id; ich.x = s.p[0]; ich.y = s.p[1]; ich.weg = []; ich.fest = true; ich.r = SITZ_R; }
       return null;
     }
-    if (this.phase === "einsteigen" && TUER_X.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i).fokus, 0.3))) {
-      const i = TUER_X.map((x, k) => ({ k, d: Math.abs(x - ich.x) })).sort((a, b) => a.d - b.d)[0].k;
-      const ziel = this.stehplatz(true) ?? [TUER_X[i], 0.5];
+    if (this.phase === "einsteigen" && this.l.tuerX.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i, this.l).fokus, 0.3))) {
+      const i = this.l.tuerX.map((x, k) => ({ k, d: Math.abs(x - ich.x) })).sort((a, b) => a.d - b.d)[0].k;
+      const ziel = this.stehplatz(true) ?? [this.l.tuerX[i], 0.5];
       ich.ziel = ziel;
       ich.weg = this.hinein(i, ziel);
     }
@@ -620,7 +684,7 @@ export class Busszene {
   rucksack(): SzenenMeldung | null {
     this.ich.rucksack = !this.ich.rucksack;
     this.ich.r = this.ich.rucksack ? 0.27 : 0.23;
-    return !this.ich.rucksack && drin(this.ich.x, this.ich.y) ? "rucksackAb" : null;
+    return !this.ich.rucksack && drin(this.ich.x, this.ich.y, this.l) ? "rucksackAb" : null;
   }
 
   /** Mausklick in der Szene: dorthin gehen (Wegsuche um Sitze, Leute und Wände). */

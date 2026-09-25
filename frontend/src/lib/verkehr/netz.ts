@@ -5,6 +5,7 @@
  */
 import type { Fahrzeug } from "./autos";
 import type { GestenId } from "./gesten";
+import { LAYOUTS } from "./busszene";
 import { ECHTE_UHR, type UhrStellung } from "./fahrplan";
 
 export type FremderSpieler = {
@@ -14,12 +15,13 @@ export type FremderSpieler = {
 };
 
 /** Ein Fahrzeug, wie es der Taktgeber verschickt: [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige]. */
-export type Gepackt = [number, 0 | 1, number, number, number, number, number, number, number, string?];
+export type Gepackt = [number, 0 | 1 | 2, number, number, number, number, number, number, number, string?];
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export function packe(f: Fahrzeug): Gepackt {
-  const g: Gepackt = [f.id, f.art === "bus" ? 1 : 0, f.farbe, r2(f.x), r2(f.y), r2(f.winkel), r2(f.tempo), f.haltSeit ?? -1, f.haltRi ?? -1];
+  // 0 = Auto, 1 = Stadtbus, 2 = Gelenkbus
+  const g: Gepackt = [f.id, f.art === "bus" ? (f.typ === "gelenk" ? 2 : 1) : 0, f.farbe, r2(f.x), r2(f.y), r2(f.winkel), r2(f.tempo), f.haltSeit ?? -1, f.haltRi ?? -1];
   if (f.anzeige) g.push(f.anzeige);
   return g;
 }
@@ -28,8 +30,8 @@ export function packe(f: Fahrzeug): Gepackt {
 export function entpacke(g: Gepackt, bus: { laenge: number; breite: number }): Fahrzeug {
   const [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige] = g;
   return {
-    id, art: art ? "bus" : "auto", farbe, x, y, winkel, tempo,
-    laenge: art ? bus.laenge : 4.4, breite: art ? bus.breite : 1.8,
+    id, art: art ? "bus" : "auto", typ: art === 2 ? "gelenk" : art ? "solo" : undefined, farbe, x, y, winkel, tempo,
+    laenge: art === 2 ? LAYOUTS.gelenk.laenge : art ? bus.laenge : 4.4, breite: art ? bus.breite : 1.8,
     kante: 0, s: 0, naechste: null, hupe: 0, wartetBis: 0,
     haltSeit: haltSeit >= 0 ? haltSeit : null, haltRi: haltRi >= 0 ? haltRi : undefined, anzeige,
   };

@@ -10,6 +10,7 @@ import type { P } from "./geometrie";
 import { achsenAbstand, autoLicht, type Anlage } from "./ampeln";
 import { spurLagen, type Halt, type Stadt, type Strasse } from "./stadt";
 import { HALT_DAUER } from "./tueren";
+import { LAYOUTS, type Bustyp } from "./busszene";
 
 export type Knoten = { p: P; aus: number[] };
 
@@ -31,6 +32,8 @@ export type Fahrzeug = {
   hupe: number;
   /** Hält für ein Handzeichen bis zu diesem Zeitpunkt. */
   wartetBis: number;
+  /** Nur Busse: Stadtbus oder Gelenkbus (»Schlenky«). */
+  typ?: Bustyp;
   /** Nur Busse: fährt die Linie ab und hält an ihren Haltestellen. */
   linie?: Linie;
   /** Zielanzeige des Busses, etwa »9 Nordbahnhof«. */
@@ -57,6 +60,9 @@ export type Linie = {
 
 /** Busmaße und Türen (Abstand der Türmitten von der Busmitte): vorn beim Fahrer, Mitte, hinten — wie in der Bus-Szene. */
 export const BUS = { laenge: 12, breite: 2.55, tueren: [4.85, 0.4, -3.6], farbe: 0xeeeeee } as const;
+
+/** Welche Busse Gelenkbusse (»Schlenky«) sind: zwei von fünf, fest nach der Nummer. */
+export const bustypFuer = (id: number): Bustyp => (id % 5 === 1 || id % 5 === 3 ? "gelenk" : "solo");
 
 /** Was der Verkehr über jeden Menschen auf der Karte wissen muss. */
 export type Fussgaenger = {
@@ -520,7 +526,8 @@ export class Strassenverkehr {
 
   private neuerBus(linie: Linie, ri: number) {
     this.setze({
-      id: this.naechsteId++, art: "bus", farbe: BUS.farbe, laenge: BUS.laenge, breite: BUS.breite,
+      id: this.naechsteId, art: "bus", typ: bustypFuer(this.naechsteId), farbe: BUS.farbe,
+      laenge: LAYOUTS[bustypFuer(this.naechsteId++)].laenge, breite: BUS.breite,
       kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
       x: 0, y: 0, winkel: 0, hupe: 0, wartetBis: 0, linie, ri, haltSeit: null, anzeige: linie.anzeige,
     });

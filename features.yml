@@ -188,6 +188,9 @@ simulationen:
       - Bus, Straßenbahn und Zug mit Türen (aussteigen lassen, seitlich warten, mit E einsteigen, im Bus X = Haltewunsch)
       - Busse auf dem echten Linienweg aus OSM, Halt nur an den Steigen ihrer Richtung
       - Zoomstufen (+ / − oder Mausrad); Ampeln gelten nur für ihre eigene Straße
+      - Bus-Szene: Bus ohne Dach ganz nah, Zonen wie im Schaubild, Fahrgäste mit Gedränge und Zurufen, Sitze/Vorrangsitze, Kinderwagen, Rollstuhl mit Rampe, Festhalten beim Bremsen, Rucksack (B)
+      - Zwei Bustypen: Stadtbus und »Schlenky« (Gelenkbus mit Drehgelenk, zwei Flächen für Kinderwagen/Rollstuhl)
+      - Wegsuche wie in Diablo 2 (Klick: um Häuser herum, über Gehwege und Überwege); mehrspurige Straßen mit Autos nebeneinander
       - Gemeinsame Live-Stadt für die Klasse, Lehrkraft-Übersicht
       - Gesten mit Emoji-Blase, Schimpfen mit Polizei (abschaltbar)
       - Aufträge, Schilder-Rallye, Gruppe als Wand, Fußgänger-Führerschein mit Hauspunkten

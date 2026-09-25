@@ -6,10 +6,7 @@
  * wie der Bus gedreht und verschoben.
  */
 import { Container, Graphics, Text } from "pixi.js";
-import {
-  AUSSEN_Y, BUS_B, BUS_L, FAHRER, SNF, STANGEN, TUER_W, TUER_X, tuerZonen,
-  type Busszene, type Fahrgast, type Lage,
-} from "./busszene";
+import { AUSSEN_Y, BUS_B, TUER_W, tuerZonen, type Busszene, type Fahrgast, type Lage } from "./busszene";
 import { zeichneFigur } from "./zeichnen";
 
 const GRUEN = 0x3fae49, ROT = 0xd93b3b;
@@ -82,24 +79,38 @@ export class BusBild {
   }
 
   private malInnen(sz: Busszene) {
-    const g = this.innen, l = BUS_L / 2, b = BUS_B / 2;
-    // Karosserie und Boden
-    g.roundRect(-l, -b, BUS_L, BUS_B, 0.3).fill(0xf2f2f2).stroke({ width: 0.08, color: 0x9aa0a6 });
-    g.roundRect(-l + 0.12, -b + 0.12, BUS_L - 0.24, BUS_B - 0.24, 0.2).fill(0x8e9aa6);
+    const L = sz.l, g = this.innen, l = L.laenge / 2, b = BUS_B / 2;
+    // Karosserie und Boden (beim Gelenkbus zwei Wagenteile)
+    const teile = L.gelenk ? [[-l, L.gelenk.x0], [L.gelenk.x1, l]] : [[-l, l]];
+    for (const [a, e] of teile) g.roundRect(a, -b, e - a, BUS_B, 0.3).fill(0xf2f2f2).stroke({ width: 0.08, color: 0x9aa0a6 });
+    g.roundRect(-l + 0.12, -b + 0.12, L.laenge - 0.24, BUS_B - 0.24, 0.2).fill(0x8e9aa6);
     // Rillen im Boden
     for (let x = -l + 0.4; x < l - 0.3; x += 0.5) g.moveTo(x, -b + 0.15).lineTo(x, b - 0.15).stroke({ width: 0.015, color: 0x7d8894 });
-    // Sondernutzungsfläche: blau mit Rollstuhl und Kinderwagen
-    g.rect(SNF.x0, SNF.y0, SNF.x1 - SNF.x0, SNF.y1 - SNF.y0).fill(0x2f6db3);
-    const sym = new Text({ text: "♿ 👶", style: { fontSize: 48, fill: 0xffffff } });
-    sym.anchor.set(0.5);
-    sym.scale.set(0.4 / 48);
-    sym.position.set((SNF.x0 + SNF.x1) / 2, (SNF.y0 + SNF.y1) / 2);
-    this.c.addChild(sym);
+    // Gelenk: Faltenbalg außen, drinnen die Drehscheibe
+    if (L.gelenk) {
+      const { x0, x1 } = L.gelenk;
+      for (let x = x0; x <= x1 + 0.01; x += 0.1) {
+        g.moveTo(x, -b).lineTo(x, -b + 0.14).stroke({ width: 0.035, color: 0x333333 });
+        g.moveTo(x, b - 0.14).lineTo(x, b).stroke({ width: 0.035, color: 0x333333 });
+      }
+      g.circle((x0 + x1) / 2, 0, 0.95).fill(0x6f7a85).stroke({ width: 0.05, color: 0x4a535c });
+      g.circle((x0 + x1) / 2, 0, 0.6).stroke({ width: 0.03, color: 0x4a535c });
+    }
+    // Sondernutzungsflächen: blau mit Rollstuhl und Kinderwagen
+    for (const f of L.snf) {
+      g.rect(f.x0, f.y0, f.x1 - f.x0, f.y1 - f.y0).fill(0x2f6db3);
+      const sym = new Text({ text: "♿ 👶", style: { fontSize: 48, fill: 0xffffff } });
+      sym.anchor.set(0.5);
+      sym.scale.set(0.4 / 48);
+      sym.position.set((f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2);
+      this.c.addChild(sym);
+    }
     // Fahrerplatz: Trennwand, Sitz, Lenkrad
-    g.rect(FAHRER.x0, FAHRER.y0, FAHRER.x1 - FAHRER.x0, FAHRER.y1 - FAHRER.y0).fill(0x5b6670);
-    g.rect(FAHRER.x0, FAHRER.y1 - 0.06, FAHRER.x1 - FAHRER.x0 - 0.3, 0.06).fill(0x2d3338);
-    g.roundRect(4.75, -0.9, 0.5, 0.55, 0.1).fill(0x1f2429);
-    g.circle(5.55, -0.62, 0.22).stroke({ width: 0.06, color: 0x111111 });
+    const F = L.fahrer;
+    g.rect(F.x0, F.y0, F.x1 - F.x0, F.y1 - F.y0).fill(0x5b6670);
+    g.rect(F.x0, F.y1 - 0.06, F.x1 - F.x0 - 0.3, 0.06).fill(0x2d3338);
+    g.roundRect(L.fahrerSitz[0] - 0.4, -0.9, 0.5, 0.55, 0.1).fill(0x1f2429);
+    g.circle(L.fahrerSitz[0] + 0.4, -0.62, 0.22).stroke({ width: 0.06, color: 0x111111 });
     // Frontscheibe, Heck
     g.roundRect(l - 0.14, -b + 0.2, 0.1, BUS_B - 0.4, 0.05).fill(0x9fd3ff);
     // Sitze
@@ -108,15 +119,16 @@ export class BusBild {
       g.roundRect(s.p[0] - 0.24, s.p[1] - 0.2, 0.1, 0.4, 0.04).fill(s.vorrang ? 0xb45e17 : 0x1c4486);
     }
     // Stangen
-    for (const [x, y] of STANGEN) g.circle(x, y, 0.06).fill(0xffd21f).stroke({ width: 0.02, color: 0x9a7a00 });
+    for (const [x, y] of L.stangen) g.circle(x, y, 0.06).fill(0xffd21f).stroke({ width: 0.02, color: 0x9a7a00 });
   }
 
   /** Jedes Bild: Türen, Zonen, Leute, Blasen. `ich`: wo die Spielfigur steht (für die Zonen). */
-  male(sz: Busszene, phase: Lage["phase"], t: number, rampe: boolean, zeigeZonen: boolean) {
+  male(sz: Busszene, phase: Lage["phase"], t: number, rampe: number | null, zeigeZonen: boolean) {
+    const L = sz.l;
     const offen = phase === "aussteigen" || phase === "einsteigen";
     // Türen: zu = dunkle Flügel, offen = Lücke mit gelber Kante
     const tg = this.tueren.clear();
-    for (const x of TUER_X) {
+    for (const x of L.tuerX) {
       if (offen) {
         tg.rect(x - TUER_W / 2, AUSSEN_Y - 0.14, TUER_W, 0.14).fill(0x8e9aa6);
         tg.rect(x - TUER_W / 2 - 0.08, AUSSEN_Y - 0.2, 0.08, 0.3).fill(0x444444).rect(x + TUER_W / 2, AUSSEN_Y - 0.2, 0.08, 0.3).fill(0x444444);
@@ -126,13 +138,13 @@ export class BusBild {
         tg.moveTo(x, AUSSEN_Y - 0.12).lineTo(x, AUSSEN_Y).stroke({ width: 0.03, color: 0x9aa0a6 });
       }
     }
-    if (rampe) tg.rect(TUER_X[1] - 0.45, AUSSEN_Y, 0.9, 0.9).fill(0x9aa0a6).stroke({ width: 0.03, color: 0x555555 });
+    if (rampe !== null) tg.rect(L.tuerX[rampe] - 0.45, AUSSEN_Y, 0.9, 0.9).fill(0x9aa0a6).stroke({ width: 0.03, color: 0x555555 });
 
     // Zonen wie auf dem Schaubild
     const z = this.zonen.clear();
     if (zeigeZonen && phase !== "faehrt") {
-      for (let i = 0; i < 3; i++) {
-        const zo = tuerZonen(i);
+      for (let i = 0; i < L.tuerX.length; i++) {
+        const zo = tuerZonen(i, L);
         const [mx, my] = zo.freiMitte;
         // Frei halten: Fächer, rot schraffiert (beim Aussteigen kräftig)
         const a0 = Math.PI / 2 - zo.freiBreite, a1 = Math.PI / 2 + zo.freiBreite;

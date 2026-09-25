@@ -434,6 +434,35 @@ export function zeichneFahrzeug(art: "auto" | "bus" | "tram" | "zug", farbe: num
   return c;
 }
 
+/**
+ * Gelenkbus (»Schlenky«) von oben, Front nach +x: vorderer Wagen fest, der
+ * hintere hängt am Gelenk bei `gelenkX` und lässt sich knicken (`heck.rotation`).
+ */
+export function zeichneGelenkbus(farbe: number, laenge: number, breite: number, gelenkX: number): Container & { heck: Container } {
+  const c = new Container() as Container & { heck: Container };
+  const l = laenge / 2, b = breite / 2, spalt = 0.45;
+  const vorn = new Graphics();
+  vorn.roundRect(gelenkX + spalt + 0.3, -b + 0.3, l - gelenkX - spalt, breite, 0.4).fill({ color: FARBE.schatten, alpha: 0.35 });
+  vorn.roundRect(gelenkX + spalt, -b, l - gelenkX - spalt, breite, 0.3).fill(farbe).stroke({ width: 0.06, color: dunkler(farbe) });
+  vorn.rect(l - 0.6, -b + 0.15, 0.4, breite - 0.3).fill(0x1d2a38);
+  for (let x = gelenkX + spalt + 0.6; x < l - 1.5; x += 2) vorn.rect(x, -b + 0.35, 1.2, breite - 0.7).fill(dunkler(farbe));
+  vorn.circle(l - 0.1, -b + 0.3, 0.15).fill(0xfff6c0).circle(l - 0.1, b - 0.3, 0.15).fill(0xfff6c0);
+  const heck = new Container();
+  heck.position.set(gelenkX, 0);
+  const h = new Graphics();
+  // Faltenbalg, dann der hintere Wagen (in Heck-Koordinaten: Gelenk bei 0)
+  h.rect(-spalt, -b + 0.1, spalt * 2, breite - 0.2).fill(0x2a2a2a);
+  for (let x = -spalt; x <= spalt; x += 0.12) h.moveTo(x, -b + 0.1).lineTo(x, b - 0.1).stroke({ width: 0.03, color: 0x555555 });
+  const rl = l + gelenkX - spalt;
+  h.roundRect(-spalt - rl + 0.3, -b + 0.3, rl, breite, 0.4).fill({ color: FARBE.schatten, alpha: 0.35 });
+  h.roundRect(-spalt - rl, -b, rl, breite, 0.3).fill(farbe).stroke({ width: 0.06, color: dunkler(farbe) });
+  for (let x = -spalt - rl + 0.6; x < -spalt - 0.8; x += 2) h.rect(x, -b + 0.35, 1.2, breite - 0.7).fill(dunkler(farbe));
+  heck.addChild(h);
+  c.addChild(heck, vorn);
+  c.heck = heck;
+  return c;
+}
+
 const LICHTFARBE = { an: { rot: 0xff2a1a, gelb: 0xffc21a, gruen: 0x2bdc4a }, aus: 0x2a2a2a };
 
 /** Autoampel: schwarzer Kasten mit drei Lichtern, zeigt zur Fahrbahn. */
