@@ -139,6 +139,8 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
   const [hoverX, setHoverX] = useState<number | null>(null);   // vom Graphen
   const [hoverRow, setHoverRow] = useState<number | null>(null); // von der Tabelle
   const [wegX, setWegX] = useState<number | null>(null);
+  const [tabelleOffen, setTabelleOffen] = useState(true);
+  const [schritteOffen, setSchritteOffen] = useState(true);
   // null = automatisch einpassen. Sobald jemand zoomt, steht hier sein Ausschnitt.
   const [zoom, setZoom] = useState<Viewport | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -514,15 +516,30 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
           und bei vielen Stellen wird waagerecht gescrollt statt in die Länge
           gezogen. Die Beschriftungsspalte bleibt dabei stehen. */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
-        <div className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">
-          Wertetabelle
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => setTabelleOffen(o => !o)}
+            aria-expanded={tabelleOffen}
+            className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text)]"
+          >
+            {tabelleOffen ? "▾" : "▸"} Wertetabelle
+          </button>
+          {tabelleOffen && (
+            <button
+              onClick={() => setSchritteOffen(o => !o)}
+              aria-expanded={schritteOffen}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              {schritteOffen ? "▾" : "▸"} Rechenschritte
+            </button>
+          )}
         </div>
 
-        {rows.length ? (
-          <div className="overflow-x-auto">
+        {!tabelleOffen ? null : rows.length ? (
+          <div className="overflow-x-auto mt-2">
             <table className="text-sm border-collapse" style={{ fontVariantNumeric: "tabular-nums" }}>
               <tbody>
-                {TABELLE.map(zeile => (
+                {TABELLE.filter(z => schritteOffen || (z.key !== "rechnung" && z.key !== "weg")).map(zeile => (
                   <tr key={zeile.key} className="border-t border-[var(--border)] first:border-t-0">
                     <th
                       scope="row"
@@ -549,12 +566,12 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
             </table>
           </div>
         ) : (
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-[var(--text-muted)] mt-2">
             Kein Bereich — »von« muss kleiner als »bis« sein.
           </p>
         )}
 
-        {rows.some(r => r.y === null) && (
+        {tabelleOffen && rows.some(r => r.y === null) && (
           <p className="text-xs text-[var(--text-muted)] mt-2">
             — heißt: dort ist die Funktion nicht definiert.
           </p>
