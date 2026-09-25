@@ -212,6 +212,31 @@ def test_lehrkraft_stellt_die_uhrzeit_fuer_alle(client, teacher, teacher_token):
     asyncio.run(lauf())
 
 
+def test_lehrkraft_stellt_den_zeitraffer_fuer_alle(client, teacher, teacher_token):
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            w = await bis(lk, "willkommen")
+            assert w["zeitFaktor"] == 1
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                await bis(gast, "willkommen")
+                jetzt = w["uhr"]
+                await lk.send_json({"typ": "einstellungen", "zeitVersatz": 120, "zeitFaktor": 5, "zeitAnker": jetzt})
+                e = await bis(gast, "einstellungen")
+                assert (e["zeitVersatz"], e["zeitFaktor"], e["zeitAnker"]) == (120, 5, jetzt)
+                # Zu schnell und ein Anker weit weg: Faktor bleibt, Anker = Server-Uhr.
+                await lk.send_json({"typ": "einstellungen", "zeitVersatz": 60, "zeitFaktor": 50, "zeitAnker": 5})
+                e = await bis(gast, "einstellungen")
+                assert e["zeitFaktor"] == 5 and abs(e["zeitAnker"] - jetzt) < 60
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast2:
+                assert (await bis(gast2, "willkommen"))["zeitFaktor"] == 5
+
+    asyncio.run(lauf())
+
+
 def test_stille_verbindungen_werden_entfernt(client, teacher, teacher_token):
     """Eine abgerissene Verbindung ohne Schließen darf nicht ewig Taktgeber bleiben."""
     code = _code(client, teacher_token)

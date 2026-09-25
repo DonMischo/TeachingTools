@@ -5,6 +5,7 @@
  */
 import type { Fahrzeug } from "./autos";
 import type { GestenId } from "./gesten";
+import { ECHTE_UHR, type UhrStellung } from "./fahrplan";
 
 export type FremderSpieler = {
   key: string; name: string; x: number; y: number; w: number; farbe: number; punkte: number; weste?: boolean;
@@ -57,8 +58,8 @@ export type Netz = {
   gesten(): Map<string, { id: GestenId; t: number }>;
   /** Eigene Strafe (Polizei), vom Server verhängt. */
   strafe(): { bis: number; karmaBis: number } | null;
-  /** Um so viele Sekunden weicht die Spieluhr von der echten ab (Lehrkraft stellt die Uhrzeit). */
-  zeitVersatz(): number;
+  /** Wie die Spieluhr zur echten steht (Lehrkraft stellt Uhrzeit und Zeitraffer). */
+  uhrStellung(): UhrStellung;
 
   sendeIch(x: number, y: number, w: number, mitfahrt: boolean, farbe: number, weste: boolean): void;
   sendeGeste(id: GestenId): void;
@@ -68,13 +69,13 @@ export type Netz = {
 };
 
 /** Allein spielen: eigene Uhr, eigener Verkehr, Beleidigung bestraft sich selbst. */
-export function soloNetz(zeitVersatz: () => number = () => 0): Netz {
+export function soloNetz(uhrStellung: () => UhrStellung = () => ECHTE_UHR): Netz {
   const taster = new Map<number, number>();
   let strafe: { bis: number; karmaBis: number } | null = null;
   const uhr = () => Date.now() / 1000;
   return {
     uhr, taktgeber: () => true, ich: () => null, andere: () => [], fahrzeuge: () => null,
-    taster: () => taster, beleidigungen: () => true, gesten: () => new Map(), strafe: () => strafe, zeitVersatz,
+    taster: () => taster, beleidigungen: () => true, gesten: () => new Map(), strafe: () => strafe, uhrStellung,
     sendeIch() {},
     sendeGeste(id) { if (id === "schimpfen") { const t = uhr(); strafe = { bis: t + 8, karmaBis: t + 60 }; } },
     sendeTaster(anlage) { const t = uhr(); if (t - (taster.get(anlage) ?? 0) > 25) taster.set(anlage, t); },

@@ -9,6 +9,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveSocket } from "@/hooks/useLiveSocket";
 import type { FremderSpieler, Gepackt, Netz } from "@/lib/verkehr/netz";
 import type { GestenId } from "@/lib/verkehr/gesten";
+import { ECHTE_UHR, type UhrStellung } from "@/lib/verkehr/fahrplan";
+
+/** Uhrstellung aus einer Servernachricht (ältere Räume kennen nur den Versatz). */
+function stellungAus(n: { zeitVersatz?: number; zeitFaktor?: number; zeitAnker?: number }): UhrStellung {
+  return { versatz: n.zeitVersatz ?? 0, faktor: n.zeitFaktor ?? 1, anker: n.zeitAnker ?? 0 };
+}
 
 export type Zugang = { code: string; token?: string | null };
 
@@ -23,12 +29,12 @@ export function useVerkehrLive(zugang: Zugang | null) {
     beleidigungen: true,
     gesten: new Map<string, { id: GestenId; t: number }>(),
     strafe: null as { bis: number; karmaBis: number } | null,
-    zeitVersatz: 0,
+    uhrStellung: ECHTE_UHR,
   });
   const [liste, setListe] = useState<FremderSpieler[]>([]);
   const [beleidigungen, setBeleidigungen] = useState(true);
   const [lehrkraft, setLehrkraft] = useState(false);
-  const [zeitVersatz, setZeitVersatz] = useState(0);
+  const [uhrStellung, setUhrStellung] = useState<UhrStellung>(ECHTE_UHR);
   const zuletztListe = useRef(0);
 
   const pfad = zugang
@@ -43,8 +49,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
         z.du = n.du;
         z.versatz = n.uhr - jetzt;
         z.beleidigungen = n.beleidigungen;
-        z.zeitVersatz = n.zeitVersatz ?? 0;
-        setZeitVersatz(z.zeitVersatz);
+        z.uhrStellung = stellungAus(n);
+        setUhrStellung(z.uhrStellung);
         z.taster = new Map(Object.entries(n.taster ?? {}).map(([k, v]) => [Number(k), v as number]));
         setBeleidigungen(n.beleidigungen);
         setLehrkraft(!!n.lehrkraft);
@@ -75,8 +81,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
       case "einstellungen":
         z.beleidigungen = n.beleidigungen;
         setBeleidigungen(n.beleidigungen);
-        z.zeitVersatz = n.zeitVersatz ?? 0;
-        setZeitVersatz(z.zeitVersatz);
+        z.uhrStellung = stellungAus(n);
+        setUhrStellung(z.uhrStellung);
         break;
     }
   });
@@ -103,7 +109,7 @@ export function useVerkehrLive(zugang: Zugang | null) {
       beleidigungen: () => z.beleidigungen,
       gesten: () => z.gesten,
       strafe: () => z.strafe,
-      zeitVersatz: () => z.zeitVersatz,
+      uhrStellung: () => z.uhrStellung,
       sendeIch(x, y, w, mitfahrt, farbe, weste) {
         const t = performance.now();
         if (t - zuletztIch < 100) return;
@@ -118,8 +124,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
   }, [send]);
 
   return {
-    netz, connected, liste, beleidigungen, lehrkraft, zeitVersatz,
+    netz, connected, liste, beleidigungen, lehrkraft, uhrStellung,
     setzeBeleidigungen: (an: boolean) => send({ typ: "einstellungen", beleidigungen: an }),
-    setzeZeitVersatz: (sekunden: number) => send({ typ: "einstellungen", zeitVersatz: sekunden }),
+    setzeUhr: (st: UhrStellung) => send({ typ: "einstellungen", zeitVersatz: st.versatz, zeitFaktor: st.faktor, zeitAnker: st.anker }),
   };
 }

@@ -70,11 +70,23 @@ class Raum:
     # Sekunden, um die die Spieluhr von der echten abweicht — die Lehrkraft
     # stellt so etwa 7:30 Uhr (Berufsverkehr) oder 21 Uhr (Dunkelheit) ein.
     zeit_versatz: float = 0.0
+    # Zeitraffer: ab `zeit_anker` (Server-Uhr) läuft die Spieluhr `zeit_faktor`-mal
+    # so schnell. Spielzeit = t + versatz + (t - anker) * (faktor - 1).
+    zeit_faktor: float = 1.0
+    zeit_anker: float = 0.0
     taster: dict[int, float] = field(default_factory=dict)
     schleife: asyncio.Task | None = None
 
 
 _raeume: dict[str, Raum] = {}
+
+# Die Uhr darf so weit von der echten weg (Zeitraffer schiebt sie mit der Zeit weiter).
+ZEIT_VERSATZ_GRENZE = 60 * 24 * 3600
+ZEIT_FAKTOR_MAX = 10
+
+
+def _uhr_stellung(raum: Raum) -> dict:
+    return {"zeitVersatz": raum.zeit_versatz, "zeitFaktor": raum.zeit_faktor, "zeitAnker": raum.zeit_anker}
 
 
 def uhr() -> float:
@@ -166,7 +178,7 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
     mgr.add_student(code, key, websocket)
     await websocket.send_json({
         "typ": "willkommen", "du": key, "uhr": uhr(), "lehrkraft": lehrkraft,
-        "beleidigungen": raum.beleidigungen, "zeitVersatz": raum.zeit_versatz, "taster": {str(k): v for k, v in raum.taster.items()},
+        "beleidigungen": raum.beleidigungen, **_uhr_stellung(raum), "taster": {str(k): v for k, v in raum.taster.items()},
     })
     await _neuer_taktgeber(code, raum)
     await websocket.send_json({"typ": "taktgeber", "key": raum.taktgeber})
@@ -230,11 +242,16 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
             elif typ == "einstellungen" and lehrkraft:
                 if isinstance(n.get("beleidigungen"), bool):
                     raum.beleidigungen = n["beleidigungen"]
-                versatz = n.get("zeitVersatz")
-                if isinstance(versatz, (int, float)) and abs(versatz) <= 8 * 24 * 3600:
+                versatz, faktor, anker = n.get("zeitVersatz"), n.get("zeitFaktor"), n.get("zeitAnker")
+                if isinstance(versatz, (int, float)) and abs(versatz) <= ZEIT_VERSATZ_GRENZE:
                     raum.zeit_versatz = float(versatz)
+                    # Der Anker ist »jetzt« beim Absender; weit daneben = Unsinn, dann unsere Uhr.
+                    jetzt = uhr()
+                    raum.zeit_anker = float(anker) if isinstance(anker, (int, float)) and abs(anker - jetzt) < 120 else jetzt
+                    if isinstance(faktor, (int, float)) and 1 <= faktor <= ZEIT_FAKTOR_MAX:
+                        raum.zeit_faktor = float(faktor)
                 await mgr.broadcast(code, {"typ": "einstellungen", "beleidigungen": raum.beleidigungen,
-                                           "zeitVersatz": raum.zeit_versatz})
+                                           **_uhr_stellung(raum)})
     except WebSocketDisconnect:
         pass
     finally:

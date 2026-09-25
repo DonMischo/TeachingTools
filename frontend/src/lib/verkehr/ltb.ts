@@ -6,6 +6,7 @@
  * ohnehin — LTB erklärt dazu das Warum, freundlich und kurz.
  */
 import type { RegelId } from "./regeln";
+import { SCHILDER, type SchildArt } from "./schilder";
 
 export type LtbAnlass =
   | { typ: "start" }
@@ -85,6 +86,79 @@ const SAETZE: Record<string, string[]> = {
   ],
 };
 
+/**
+ * Wo man steht, wenn man LTB fragt (Taste L oder auf ihn klicken). Die Bühne
+ * sucht das Wichtigste in der Nähe aus — Bus vor Schild vor Ampel vor Boden.
+ */
+export type LtbOrt =
+  | { wo: "bus"; haltGewuenscht: boolean }
+  | { wo: "bahn" }
+  | { wo: "tuer" }
+  | { wo: "haltestelle"; name: string; naechste?: { linie: string; ziel: string; inMinuten: number } }
+  | { wo: "schild"; art: SchildArt }
+  | { wo: "ampel" }
+  | { wo: "zebra" }
+  | { wo: "untergrund"; art: string }
+  | { wo: "eimer"; getragen: number }
+  | { wo: "muell" }
+  | { wo: "schule" }
+  | { wo: "sonst"; dunkel: boolean; weste: boolean };
+
+const ORT_SAETZE: Record<string, string[]> = {
+  bus: [
+    "Im Bus: festhalten oder hinsetzen! Wenn der Bus bremst, fliegt sonst alles — auch Pinguine.",
+    "Den Ranzen nimmst du im Bus ab und stellst ihn zwischen die Füße. Dann ist der Gang frei.",
+    "Nach dem Aussteigen nicht vor oder hinter dem Bus über die Straße — warte, bis er weg ist.",
+  ],
+  bahn: ["In der Bahn: festhalten und nicht an den Türen lehnen. Aussteigen erst, wenn sie ganz steht."],
+  tuer: [
+    "Die Tür ist offen: Erst steigen die Leute aus. Stell dich seitlich daneben, dann E drücken und einsteigen.",
+    "Nie in die Tür springen, wenn es piept — der nächste Bus kommt bestimmt.",
+  ],
+  haltestelle: [
+    "Warte mit Abstand zur Bordsteinkante. Der Bus schwenkt beim Einfahren aus — sein Heck kommt bis auf den Gehweg.",
+    "Nicht an der Haltestelle rennen oder schubsen. Wer drängelt, fällt schnell auf die Fahrbahn.",
+    "Die Tafel zeigt, wann der nächste Bus kommt. Lieber einen Bus später als über die Straße hetzen.",
+  ],
+  ampel: [
+    "Nur bei Grün gehen! Und auch bei Grün kurz schauen: Abbieger müssen dich lassen, sehen dich aber manchmal nicht.",
+    "Hat die Ampel einen Taster? Mit E drücken und warten, bis das grüne Männchen kommt.",
+    "Wird es Rot, während du auf der Straße bist? Zügig weitergehen, nicht umdrehen.",
+  ],
+  zebra: [
+    "Am Zebrastreifen: am Rand stehen bleiben und zeigen, dass du rüber willst — Hand raus mit 2.",
+    "Erst gehen, wenn die Autos wirklich stehen. Blickkontakt mit dem Fahrer hilft.",
+    "Hinterher danke winken (3) — dann halten die Autofahrer beim nächsten Mal noch lieber.",
+  ],
+  "untergrund:fahrbahn": [
+    "Du stehst auf der Fahrbahn! Schnell, aber ohne zu rennen, auf den Gehweg.",
+    "Auf der Straße niemals stehen bleiben und niemals etwas aufheben.",
+  ],
+  "untergrund:spielstrasse": [
+    "Spielstraße: Hier dürfen Kinder spielen, Autos fahren nur Schritttempo. Trotzdem Platz machen, wenn eins kommt.",
+    "Morgens von halb acht bis Viertel nach acht fahren hier viele Elterntaxis. Dann besonders aufpassen!",
+  ],
+  "untergrund:radweg": ["Das ist ein Radweg — Fahrräder sind schnell und leise. Geh lieber auf den Gehweg daneben."],
+  "untergrund:gleis": ["Runter von den Gleisen! Eine Bahn kann nicht ausweichen. Nur am Übergang drüber."],
+  "untergrund:bahnsteig": ["Am Bahnsteig hinter der weißen Linie bleiben. Fährt die Bahn ein, zieht der Wind ganz schön."],
+  "untergrund:gehweg": [
+    "Auf dem Gehweg bist du richtig. Geh lieber auf der Seite weg von der Straße.",
+    "Einfahrten auf dem Gehweg: Hier können Autos rückwärts rauskommen. Kurz schauen!",
+  ],
+  eimer: ["Da ist ein Mülleimer. Drück E, dann kommt dein Müll hinein — das bringt Punkte und Karma."],
+  muell: ["Da liegt Müll. Heb ihn mit E auf, aber nie auf der Fahrbahn!", "Bis zu drei Stück Müll kannst du tragen, dann ab zum Mülleimer."],
+  schule: [
+    "Hier ist deine Schule. Auf dem Schulhof fahren keine Autos — aber am Tor schon. Da gut schauen.",
+    "Vor der Schule halten morgens viele Elterntaxis. Steig nur auf der Gehwegseite aus!",
+    "Dein Schulweg ist am sichersten, wenn du ihn immer gleich gehst — mit Ampel oder Zebrastreifen.",
+  ],
+  sonst: [
+    "Frag mich an einer Haltestelle, an einem Schild oder an einer Ampel — da weiß ich besonders viel!",
+    "Geh am Straßenrand lieber mit Blick auf den Verkehr. Dann siehst du die Autos kommen.",
+    "Zwischen parkenden Autos sieht dich kein Fahrer. Quer lieber da, wo man dich gut sieht.",
+  ],
+};
+
 /** Mindestabstand zwischen zwei Tipps in Sekunden. */
 export const PAUSE = 9;
 /** So oft sagt LTB höchstens dasselbe zum selben Anlass. */
@@ -102,6 +176,43 @@ export function schluesselVon(a: LtbAnlass): string {
 export class Ltb {
   private zuletzt = -Infinity;
   private gesagt = new Map<string, number>();
+  private gefragt = new Map<string, number>();
+
+  /** Gefragt: immer eine Antwort — passend zum Ort, und bei jedem Fragen die nächste. */
+  frag(ort: LtbOrt, t: number): string {
+    this.zuletzt = t;
+    const key = ort.wo === "untergrund" ? `untergrund:${ort.art}` : ort.wo === "schild" ? `schild:${ort.art}` : ort.wo;
+    const n = this.gefragt.get(key) ?? 0;
+    this.gefragt.set(key, n + 1);
+    const reihum = (saetze: string[]) => saetze[n % saetze.length];
+    switch (ort.wo) {
+      case "bus":
+        return n % 2 === 0
+          ? ort.haltGewuenscht ? "Halt ist gewünscht! 🔔 Bleib sitzen, bis der Bus steht und die Tür aufgeht." : "Wenn du raus willst: X drücken oder auf den Bus tippen. Dann hält er an der nächsten Haltestelle."
+          : reihum(ORT_SAETZE.bus);
+      case "haltestelle": {
+        const b = ort.naechste;
+        if (n % 2 === 0 && b) return b.inMinuten === 0
+          ? `Hier ist ${ort.name}. Die ${b.linie} nach ${b.ziel} kommt jetzt! Abstand zur Kante — und erst aussteigen lassen.`
+          : `Hier ist ${ort.name}. Die nächste ${b.linie} nach ${b.ziel} kommt in ${b.inMinuten} Minute${b.inMinuten === 1 ? "" : "n"}. Genug Zeit — kein Grund zu rennen.`;
+        return reihum(ORT_SAETZE.haltestelle);
+      }
+      case "schild": {
+        const s = SCHILDER[ort.art];
+        // Erst ein Hinweis (das Quiz verrät er nicht gleich), beim nächsten Mal die Erklärung.
+        return n % 2 === 0 ? `Das ist Zeichen ${s.nummer}: »${s.name}«. Drück E — dann stell ich dir eine Frage dazu.` : s.erklaerung;
+      }
+      case "eimer":
+        return ort.getragen > 0 ? `Du trägst ${ort.getragen} Stück Müll — ab damit in den Eimer: E drücken!` : reihum(ORT_SAETZE.eimer);
+      case "untergrund":
+        return reihum(ORT_SAETZE[key] ?? ORT_SAETZE.sonst);
+      case "sonst":
+        if (ort.dunkel && !ort.weste && n % 2 === 0) return "Es ist dunkel — zieh die Warnweste an (V)! Ohne sehen dich Autos erst ganz spät.";
+        return reihum(ORT_SAETZE.sonst);
+      default:
+        return reihum(ORT_SAETZE[ort.wo]);
+    }
+  }
 
   /** Was sagt LTB jetzt? `null`, wenn nichts (zu früh, schon oft gesagt, kein Satz). */
   sag(a: LtbAnlass, t: number): string | null {

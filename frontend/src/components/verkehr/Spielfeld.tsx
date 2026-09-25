@@ -24,6 +24,7 @@ import { werktag, abfahrten, abschnitt, helligkeit, istRush, linienImViertel, sp
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
+import type { LtbOrt } from "@/lib/verkehr/ltb";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
 import type { Steuerkanal } from "./Steuerkreuz";
 import { baueEimer, EIMER_NAH, GREIFEN, Muell, TRAGEN } from "@/lib/verkehr/muell";
@@ -165,6 +166,8 @@ export type SpielfeldProps = {
   onTragen?: (n: number) => void;
   /** Nähe zu etwas, wozu LTB etwas sagen kann. */
   onNaehe?: (was: "zebra" | "ampel" | "muell") => void;
+  /** LTB wurde gefragt (L oder Klick auf den Pinguin) — hier steht man gerade. */
+  onFrage?: (ort: LtbOrt) => void;
 };
 
 export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
@@ -181,6 +184,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
     let bereit = false;
     const gedrueckt = new Set<string>();
     let einmal: ((code: string) => void) | null = null;
+    /** LTB fragen (L oder auf den Pinguin klicken) — steht erst, wenn die Stadt gebaut ist. */
+    let frageLtb: (() => void) | null = null;
     let zeitgeber: ReturnType<typeof setInterval> | undefined;
 
     const klang = new Klang();
@@ -350,6 +355,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           // Man steht an der Tür — das Fahrzeug ist direkt daneben.
           if (Math.hypot(w.x - ich.x, w.y - ich.y) < 8) { willEinsteigen = true; return; }
         }
+        // Auf den Pinguin klicken oder tippen = LTB fragen.
+        const w = weltPunkt(e);
+        if (pinguin.visible && Math.hypot(w.x - pinguinLage.x, w.y - pinguinLage.y) < 1.5) { klang.wecke(); frageLtb?.(); return; }
         if (e.button !== 0 || e.pointerType === "touch") return;
         klang.wecke();
         mausHaelt = true;
@@ -430,6 +438,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         if (code === "Space" && t - umschauenSeit > UMSCHAUEN_DAUER) { umschauenSeit = t; blickGezaehlt = false; }
         if (code === "KeyV") { westeAn = !westeAn; weste.visible = westeAn; mensch.weste = westeAn; rueckruf.current.onWeste?.(westeAn); }
         if (code === "KeyM") rueckruf.current.onUeberblick?.();
+        if (code === "KeyL") frageLtb?.();
         // X im Bus: Haltewunsch — ausgestiegen wird erst, wenn die Türen offen sind.
         if (code === "KeyX" && mitfahrt?.art === "bus" && !haltGewuenscht) { haltGewuenscht = true; klang.wecke(); }
         if (code === "Equal" || code === "NumpadAdd" || code === "BracketRight") rueckruf.current.onZoom?.(1);
@@ -477,7 +486,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         const fahrt = verkehr.baueBuslinie(s.halte.filter((h) => h.art === "bushalt"));
         if (fahrt) verkehr.setzeBusse(fahrt, 2);
       }
-      let zeit = spielzeit(uhr(), netzRef.current.zeitVersatz());
+      let zeit = spielzeit(uhr(), netzRef.current.uhrStellung());
       let hell = helligkeit(zeit);
       let zuletztUhr = -Infinity, letzteUhr = "";
       let wegSeitMeldung = 0, schrittWeg = 0;
@@ -491,6 +500,36 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       let haltGewuenscht = false;
       /** An einer offenen Tür: E (oder Tippen auf den Bus) steigt ein. */
       let einstiegBereit = false, willEinsteigen = false;
+
+      // Was LTB gefragt wird, hängt vom Ort ab: das Wichtigste in der Nähe zuerst.
+      let gehwegFragen = 0;
+      frageLtb = () => {
+        const nah = (p: readonly number[], r: number) => Math.hypot(p[0] - ich.x, p[1] - ich.y) < r;
+        const ort = ((): LtbOrt => {
+          if (mitfahrt) return mitfahrt.art === "bus" ? { wo: "bus", haltGewuenscht } : { wo: "bahn" };
+          if (einstiegBereit) return { wo: "tuer" };
+          const halt = s.halte.find((h) => h.art !== "bahnhalt" && nah(h.p, 12));
+          if (halt) {
+            const [b] = abfahrten(halt.name, zeit, linien, 1, halt.art === "tramhalt");
+            return { wo: "haltestelle", name: halt.name, naechste: b && { linie: b.linie, ziel: b.ziel, inMinuten: b.inMinuten } };
+          }
+          const schild = schilder.find((x) => nah(x.p, 5));
+          if (schild) return { wo: "schild", art: schild.art };
+          const u = s.untergrund(ich.x, ich.y).art;
+          if (u === "fahrbahn" || u === "gleis" || u === "radweg") return { wo: "untergrund", art: u };
+          const q = querungsOrte.find((x) => nah(x.p, 12));
+          if (q) return { wo: q.art === "zebra" ? "zebra" : "ampel" };
+          if (eimer.some((e) => nah(e, 4))) return { wo: "eimer", getragen };
+          if (muell.naechstes(ich.x, ich.y, 5)) return { wo: "muell" };
+          if (nah(schulMitte(s), 90)) return { wo: "schule" };
+          if (u === "spielstrasse" || u === "bahnsteig") return { wo: "untergrund", art: u };
+          if (hell < 0.35 && !westeAn) return { wo: "sonst", dunkel: true, weste: westeAn };
+          // Auf dem Gehweg im Wechsel: Gehweg-Tipp und allgemeiner Tipp.
+          if (u === "gehweg" && gehwegFragen++ % 2 === 0) return { wo: "untergrund", art: u };
+          return { wo: "sonst", dunkel: hell < 0.35, weste: westeAn };
+        })();
+        rueckruf.current.onFrage?.(ort);
+      };
 
       const fahrzeuge = new Map<string, Container>();
       const gesehen = new Set<string>();
@@ -543,7 +582,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         // Uhr: Tagesabschnitt, Verkehrsdichte, Takte, Helligkeit — einmal je Sekunde reicht.
         if (t - zuletztUhr >= 1) {
           zuletztUhr = t;
-          zeit = spielzeit(t, n.zeitVersatz());
+          zeit = spielzeit(t, n.uhrStellung());
           hell = helligkeit(zeit);
           verkehr.ziel = Math.round(28 * verkehrsFaktor(zeit));
           verkehr.dunkel = hell < 0.35;

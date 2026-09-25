@@ -13,14 +13,14 @@ import { GESTEN } from "@/lib/verkehr/gesten";
 import { MELDUNGEN, type Meldung, type RegelId } from "@/lib/verkehr/regeln";
 import { soloNetz } from "@/lib/verkehr/netz";
 import { ERFOLGE, MISSIONEN } from "@/lib/verkehr/missionen";
-import type { Abfahrt } from "@/lib/verkehr/fahrplan";
+import { ECHTE_UHR, FAKTOR_MAX, gestellt, mitFaktor, type Abfahrt, type UhrStellung } from "@/lib/verkehr/fahrplan";
 import type { SchildArt } from "@/lib/verkehr/schilder";
 import { useVerkehrLive, type Zugang } from "./useVerkehrLive";
 import { Auftraege, useFortschritt } from "./Auftraege";
 import { SchildQuiz } from "./SchildQuiz";
 import { Steuerkreuz, type Steuerkanal } from "./Steuerkreuz";
 import { LtbHelfer } from "./LtbHelfer";
-import { BEGRUESSUNG, Ltb, type LtbAnlass } from "@/lib/verkehr/ltb";
+import { BEGRUESSUNG, Ltb, type LtbAnlass, type LtbOrt } from "@/lib/verkehr/ltb";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
@@ -101,7 +101,8 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const [hilfe, setHilfe] = useState(true);
   const [seite, setSeite] = useState(true);
   const [touch, setTouch] = useState(false);
-  const [soloVersatz, setSoloVersatz] = useState(0);
+  const [soloUhr, setSoloUhr] = useState<UhrStellung>(ECHTE_UHR);
+  const [uhrTafel, setUhrTafel] = useState(false);
   const [getragen, setGetragen] = useState(0);
   // LTB, der Pinguin: an/aus bleibt im Browser; die Begrüßung läuft einmal je Gerät.
   const [ltbAn, setLtbAn] = useState(true);
@@ -129,14 +130,17 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   }, []);
 
   const live = useVerkehrLive(zugang);
-  const soloVersatzRef = useRef(0);
-  soloVersatzRef.current = soloVersatz;
-  const solo = useMemo(() => soloNetz(() => soloVersatzRef.current), []);
+  const soloUhrRef = useRef(soloUhr);
+  soloUhrRef.current = soloUhr;
+  const solo = useMemo(() => soloNetz(() => soloUhrRef.current), []);
   const netz = zugang ? live.netz : solo;
   const beleidigungen = zugang ? live.beleidigungen : true;
   const darfUhrStellen = !zugang || live.lehrkraft;
-  const versatz = zugang ? live.zeitVersatz : soloVersatz;
-  const stelleUhr = (v: number) => (zugang ? live.setzeZeitVersatz(v) : setSoloVersatz(v));
+  const uhrSt = zugang ? live.uhrStellung : soloUhr;
+  const setzeUhr = (st: UhrStellung) => (zugang ? live.setzeUhr(st) : setSoloUhr(st));
+  // »Echte Uhrzeit« heißt auch: echtes Tempo.
+  const stelleUhr = (v: number | null) => setzeUhr(v === null ? ECHTE_UHR : gestellt(uhrSt, netz.uhr(), v));
+  const stelleTempo = (f: number) => setzeUhr(mitFaktor(uhrSt, netz.uhr(), f));
 
   const zeige = useCallback((m: Meldung & { erfolg?: boolean }) => {
     const n = ++zaehler.current;
@@ -186,6 +190,15 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     vorher.current.rush = z.rush;
     setUhr(z);
   }, [ltbSag]);
+
+  // Gefragt antwortet LTB immer — auch wenn er gerade still sein soll.
+  const onFrage = useCallback((ort: LtbOrt) => {
+    if (intro !== null) return;
+    zuletztGesagt.current = performance.now();
+    setLtbText(ltb.current.frag(ort, performance.now() / 1000));
+    clearTimeout(ltbZeit.current);
+    ltbZeit.current = setTimeout(() => setLtbText(null), 12000);
+  }, [intro]);
 
   const ltbUmschalten = () => {
     const an = !ltbAn;
@@ -284,15 +297,18 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               onUntergrund={onUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
               onEreignis={buche} onSchild={setQuiz} onZeit={onZeit} onHaltestelle={onHaltestelle} onWeste={setWeste}
               onTragen={setGetragen} onNaehe={(was) => ltbSag({ typ: "naehe", was })}
-              onUeberblick={() => setUeberblick((v) => !v)} />
+              onUeberblick={() => setUeberblick((v) => !v)} onFrage={onFrage} />
           </Suspense>
 
           {/* Kopfzeile im Bild */}
           <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex flex-wrap items-start gap-2">
-            <div className="flex items-center gap-2 rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 ring-white/15 backdrop-blur">
+            <button type="button" title="Uhrzeit und Zeitraffer"
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 backdrop-blur hover:bg-slate-800/80 ${uhrTafel ? "ring-amber-400" : "ring-white/15"}`}
+              onClick={() => setUhrTafel((v) => !v)}>
               <span className="tabular-nums">{uhr?.dunkel ? "🌙" : "🕒"} {uhr?.text ?? "--:--"}</span>
               {uhr && <span className={`rounded-md px-1.5 text-xs ${uhr.rush ? "bg-amber-500 text-black" : "bg-white/15"}`}>{uhr.abschnitt}</span>}
-            </div>
+              {uhrSt.faktor > 1 && <span className="rounded-md bg-sky-500 px-1.5 text-xs text-black">⏩ ×{uhrSt.faktor}</span>}
+            </button>
             <div className="rounded-xl px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 ring-white/15" style={{ background: u.farbe }}>
               {u.icon} {u.text}
             </div>
@@ -320,30 +336,55 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             </div>
           </div>
 
-          {hilfe && !(ltbAn && (intro !== null || ltbText)) && (
+          {uhrTafel && (
+            <div className="absolute left-2 top-14 z-30 w-72 rounded-xl bg-slate-900/90 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="font-black">🕒 Uhr{zugang ? " für alle" : ""}</span>
+                <button type="button" className="underline opacity-80" onClick={() => { setUhrTafel(false); zurBuehne(); }}>schließen</button>
+              </div>
+              {darfUhrStellen ? (
+                <>
+                  <label className="block">
+                    <span className="font-bold">Uhrzeit:</span>
+                    <select className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-white"
+                      value={uhrSt.versatz === 0 && uhrSt.faktor === 1 ? "echt" : ZEITEN.find((z) => Math.abs(versatzFuer(z.tag, z.minute) - uhrSt.versatz) < 3600 * 3)?.name ?? "eigen"}
+                      onChange={(e) => {
+                        const z = ZEITEN.find((x) => x.name === e.target.value);
+                        stelleUhr(z ? versatzFuer(z.tag, z.minute) : null);
+                      }}>
+                      <option value="echt">🕒 Echte Uhrzeit</option>
+                      {ZEITEN.map((z) => <option key={z.name} value={z.name}>{z.name}</option>)}
+                      <option value="eigen" disabled hidden>gestellt</option>
+                    </select>
+                  </label>
+                  <div className="mt-3 font-bold">Zeitraffer: ×{uhrSt.faktor}</div>
+                  <div className="mt-1 flex gap-1.5">
+                    {[1, 2, 5, 10].map((f) => (
+                      <button key={f} type="button" onClick={() => stelleTempo(f)}
+                        className={`flex-1 rounded px-2 py-1 font-bold ${uhrSt.faktor === f ? "bg-sky-500 text-black" : "bg-slate-700 hover:bg-slate-600"}`}>
+                        {f === 1 ? "echt" : `×${f}`}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="range" min={1} max={FAKTOR_MAX} step={0.5} value={uhrSt.faktor} aria-label="Zeitraffer stufenlos"
+                    className="mt-2 w-full accent-sky-500" onChange={(e) => stelleTempo(Number(e.target.value))} />
+                  <div className="mt-1 opacity-70">Schneller laufen Uhr, Tag und Nacht, Berufsverkehr und Fahrplan — Autos und Ampeln bleiben echt schnell.</div>
+                </>
+              ) : (
+                <div className="opacity-80">Die Lehrkraft stellt die Uhr{uhrSt.faktor > 1 ? ` — gerade im Zeitraffer ×${uhrSt.faktor}` : ""}.</div>
+              )}
+            </div>
+          )}
+
+          {hilfe && !uhrTafel && !(ltbAn && intro !== null) && !ltbText && (
             <div className="absolute left-2 top-14 z-10 max-w-xs rounded-xl bg-slate-900/85 px-4 py-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
               <div className="mb-1 font-black">Steuerung</div>
               <div><b>Laufen:</b> Pfeiltasten, WASD oder Maus (klicken = hingehen, gedrückt halten = folgen) · <b>Rennen:</b> Umschalt</div>
               <div><b>Umschauen:</b> Leertaste · <b>Taster / Schild:</b> E</div>
-              <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Zoom:</b> + / − oder Mausrad · <b>Aussteigen:</b> X oder auf den Bus tippen · <b>Müll aufheben/einwerfen:</b> E</div>
+              <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Zoom:</b> + / − oder Mausrad · <b>Aussteigen:</b> X oder auf den Bus tippen · <b>LTB fragen:</b> L oder auf den Pinguin klicken · <b>Müll aufheben/einwerfen:</b> E</div>
               <div><b>Gesten:</b> {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => `${g.taste} ${g.emoji}`).join("  ")}</div>
               <div className="mt-1 opacity-70">Erst ins Bild klicken, dann laufen. Du startest vor der Schule.</div>
-              {darfUhrStellen && (
-                <label className="mt-2 block">
-                  <span className="font-bold">Uhrzeit{zugang ? " für alle" : ""}:</span>
-                  <select className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-white"
-                    value={versatz === 0 ? "echt" : ZEITEN.find((z) => Math.abs(versatzFuer(z.tag, z.minute) - versatz) < 3600 * 3)?.name ?? "eigen"}
-                    onChange={(e) => {
-                      const z = ZEITEN.find((x) => x.name === e.target.value);
-                      stelleUhr(z ? versatzFuer(z.tag, z.minute) : 0);
-                      zurBuehne();
-                    }}>
-                    <option value="echt">🕒 Echte Uhrzeit</option>
-                    {ZEITEN.map((z) => <option key={z.name} value={z.name}>{z.name}</option>)}
-                    <option value="eigen" disabled hidden>gestellt</option>
-                  </select>
-                </label>
-              )}
+              <div className="mt-1 opacity-70">🕒 Uhrzeit und Zeitraffer: oben links auf die Uhr klicken.</div>
               <button type="button" className="mt-2 underline opacity-80" onClick={() => setHilfe(false)}>schließen</button>
             </div>
           )}
@@ -374,7 +415,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             <LtbHelfer text={BEGRUESSUNG[intro]} weiter={intro + 1 < BEGRUESSUNG.length ? introWeiter : undefined}
               onZu={() => { schreib("hp_verkehr_ltb_intro", true); setIntro(null); zurBuehne(); }} />
           )}
-          {ltbAn && intro === null && ltbText && <LtbHelfer text={ltbText} onZu={() => { setLtbText(null); zurBuehne(); }} />}
+          {intro === null && ltbText && <LtbHelfer text={ltbText} onZu={() => { setLtbText(null); zurBuehne(); }} />}
           {quiz && <SchildQuiz key={quiz} art={quiz} onAntwort={onAntwort} onZu={() => { setQuiz(null); zurBuehne(); }} />}
           {hinweis && (
             <div className="pointer-events-none absolute bottom-32 left-1/2 z-10 -translate-x-1/2 rounded-full bg-amber-400 px-4 py-1.5 text-sm font-bold text-black shadow-xl">

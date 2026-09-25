@@ -99,3 +99,32 @@ describe("Schulgelände", () => {
     expect(baueEimer(s).filter((e) => Math.hypot(e[0] - x, e[1] - y) < 4)).toHaveLength(2);
   });
 });
+
+describe("LTB fragen", () => {
+  it("antwortet immer, passend zum Ort, und bei jedem Fragen etwas anderes", () => {
+    const l = new Ltb();
+    const a = l.frag({ wo: "ampel" }, 0), b = l.frag({ wo: "ampel" }, 0.5);
+    expect(a).toMatch(/Grün|Taster|Rot/);
+    expect(b).not.toBe(a);
+    expect(l.frag({ wo: "zebra" }, 1)).toMatch(/Zebrastreifen|Autos/);
+  });
+
+  it("sagt an der Haltestelle, wann der nächste Bus kommt", () => {
+    const l = new Ltb();
+    const t = l.frag({ wo: "haltestelle", name: "Fritz-Büchner-Straße", naechste: { linie: "9", ziel: "Nordbahnhof", inMinuten: 4 } }, 0);
+    expect(t).toMatch(/Fritz-Büchner-Straße/);
+    expect(t).toMatch(/9 nach Nordbahnhof kommt in 4 Minuten/);
+  });
+
+  it("erklärt ein Schild: erst Name und Nummer, dann das Warum", () => {
+    const l = new Ltb();
+    expect(l.frag({ wo: "schild", art: "stopp" }, 0)).toMatch(/Zeichen 206/);
+    expect(l.frag({ wo: "schild", art: "stopp" }, 1)).toMatch(/anhalten/);
+  });
+
+  it("erinnert im Bus an den Haltewunsch und im Dunkeln an die Weste", () => {
+    const l = new Ltb();
+    expect(l.frag({ wo: "bus", haltGewuenscht: false }, 0)).toMatch(/X drücken/);
+    expect(l.frag({ wo: "sonst", dunkel: true, weste: false }, 0)).toMatch(/Warnweste/);
+  });
+});

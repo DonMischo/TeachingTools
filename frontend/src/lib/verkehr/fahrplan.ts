@@ -28,9 +28,29 @@ export type Abschnitt = "nacht" | "frueh" | "rushMorgen" | "tag" | "rushAbend" |
 
 export type Zeit = { wochentag: number; minute: number; datum: Date };
 
-/** Spielzeit aus der gemeinsamen Uhr (Sekunden) plus einem Versatz, den die Lehrkraft stellt. */
-export function spielzeit(t: number, versatz = 0): Zeit {
-  const datum = new Date((t + versatz) * 1000);
+/**
+ * Wie die Spieluhr zur echten steht: `versatz` Sekunden daneben, und ab
+ * `anker` (gemeinsame Uhr) läuft sie `faktor`-mal so schnell (Zeitraffer).
+ */
+export type UhrStellung = { versatz: number; faktor: number; anker: number };
+export const ECHTE_UHR: UhrStellung = { versatz: 0, faktor: 1, anker: 0 };
+/** Schnellster Zeitraffer. */
+export const FAKTOR_MAX = 10;
+
+/** Spielsekunden zur gemeinsamen Uhr `t`. */
+export const spielSekunden = (t: number, st: UhrStellung) => t + st.versatz + (t - st.anker) * (st.faktor - 1);
+
+/** Anderes Tempo ab jetzt — die Uhr springt dabei nicht. */
+export function mitFaktor(st: UhrStellung, t: number, faktor: number): UhrStellung {
+  return { versatz: spielSekunden(t, st) - t, faktor: Math.max(1, Math.min(FAKTOR_MAX, faktor)), anker: t };
+}
+
+/** Uhr auf einen Versatz stellen, das Tempo bleibt. */
+export const gestellt = (st: UhrStellung, t: number, versatz: number): UhrStellung => ({ versatz, faktor: st.faktor, anker: t });
+
+/** Spielzeit aus der gemeinsamen Uhr (Sekunden), so wie die Lehrkraft sie gestellt hat. */
+export function spielzeit(t: number, st: UhrStellung = ECHTE_UHR): Zeit {
+  const datum = new Date(spielSekunden(t, st) * 1000);
   return { wochentag: datum.getDay(), minute: datum.getHours() * 60 + datum.getMinutes() + datum.getSeconds() / 60, datum };
 }
 

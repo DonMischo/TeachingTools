@@ -144,3 +144,26 @@ describe("Linie 9 nach echtem EVAG-Fahrplan", () => {
     expect(berufs).toBeLessThan(mittag!);
   });
 });
+
+describe("Zeitraffer", () => {
+  it("läuft ab dem Anker schneller, ohne dass die Uhr springt", async () => {
+    const { spielSekunden, mitFaktor, gestellt, ECHTE_UHR } = await import("@/lib/verkehr/fahrplan");
+    const t0 = 1_800_000_000;
+    expect(spielSekunden(t0, ECHTE_UHR)).toBe(t0);
+    const schnell = mitFaktor(ECHTE_UHR, t0, 5);
+    expect(spielSekunden(t0, schnell)).toBeCloseTo(t0);
+    expect(spielSekunden(t0 + 60, schnell) - spielSekunden(t0, schnell)).toBeCloseTo(300);
+    // Umstellen auf ×10 später: stetig weiter
+    const t1 = t0 + 100;
+    const zehn = mitFaktor(schnell, t1, 10);
+    expect(spielSekunden(t1, zehn)).toBeCloseTo(spielSekunden(t1, schnell));
+    expect(spielSekunden(t1 + 6, zehn) - spielSekunden(t1, zehn)).toBeCloseTo(60);
+    // Nicht über ×10, nicht unter ×1
+    expect(mitFaktor(ECHTE_UHR, t0, 50).faktor).toBe(10);
+    expect(mitFaktor(ECHTE_UHR, t0, 0.2).faktor).toBe(1);
+    // Uhrzeit stellen behält das Tempo
+    const g = gestellt(zehn, t1, 3600);
+    expect(g.faktor).toBe(10);
+    expect(spielSekunden(t1, g)).toBeCloseTo(t1 + 3600);
+  });
+});
