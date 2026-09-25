@@ -173,6 +173,9 @@ for (const e of daten.elements) {
       const s = { art: hw.replace("_link", ""), linie };
       if (t.name) s.name = t.name;
       if (t.lanes) s.spuren = Number(t.lanes) || undefined;
+      // Spuren je Richtung (fehlt oft — dann teilt die Simulation »lanes« auf)
+      if (t["lanes:forward"]) s.spurenHin = Number(t["lanes:forward"]) || undefined;
+      if (t["lanes:backward"]) s.spurenRueck = Number(t["lanes:backward"]) || undefined;
       if (t.oneway === "yes") s.einbahn = true;
       if (t.sidewalk) s.gehweg = t.sidewalk;
       if (t["cycleway:both"] || t["cycleway:left"] || t["cycleway:right"] || t.cycleway) s.radstreifen = true;

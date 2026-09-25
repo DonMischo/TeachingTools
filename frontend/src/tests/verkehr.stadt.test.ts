@@ -95,3 +95,28 @@ describe("Bushaltestellen", () => {
     }
   });
 });
+
+describe("Spuren", () => {
+  it("legt bei zwei Spuren je Richtung zwei Kanten nebeneinander", async () => {
+    const { Strassenverkehr } = await import("@/lib/verkehr/autos");
+    const { baueAnlagen } = await import("@/lib/verkehr/ampeln");
+    const s = stadt();
+    const v = new Strassenverkehr(s, baueAnlagen(s), 0);
+    const zwei = v.kanten.filter((k) => k.spuren >= 2);
+    expect(zwei.length).toBeGreaterThan(20);
+    // Parallele Spuren: gleiche Knoten, verschiedene Querlage, gut 3 m auseinander
+    const k = zwei[0];
+    const nachbar = v.kanten.find((x) => x !== k && x.von === k.von && x.nach === k.nach)!;
+    expect(Math.abs(nachbar.spur - k.spur)).toBeGreaterThan(2.5);
+  });
+
+  it("teilt Gegenverkehr nach lanes:forward/backward auf", async () => {
+    const { spurLagen } = await import("@/lib/verkehr/stadt");
+    const s = { art: "tertiary" as const, linie: [], spuren: 3, spurenHin: 2, spurenRueck: 1, breite: 9.75 };
+    expect(spurLagen(s, true).lagen).toHaveLength(2);
+    expect(spurLagen(s, false).lagen).toHaveLength(1);
+    // Alle Spurmitten liegen auf der Fahrbahn und rechts ihrer Richtung
+    for (const l of spurLagen(s, true).lagen) expect(Math.abs(l)).toBeLessThan(s.breite / 2);
+    expect(spurLagen(s, false).lagen[0]).toBeGreaterThan(0);
+  });
+});

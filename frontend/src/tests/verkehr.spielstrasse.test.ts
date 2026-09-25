@@ -6,8 +6,9 @@ import { Regelwaechter } from "@/lib/verkehr/regeln";
 import { turnhalle } from "@/lib/verkehr/zeichnen";
 
 const s = stadt();
-// Seit 25.09.2026 in OSM, zwei Stücke: vom Eingang an der Eugen-Richter-Straße bis zur Dortmunder Straße.
-const stuecke = s.strassen.filter((x) => x.name === "Kiss and Ride Zone");
+// Seit 25.09.2026 in OSM, zwei Stücke: vom Eingang an der Eugen-Richter-Straße bis zur Dortmunder Straße
+// (nur das erste trägt den Namen; beide haben die Tore).
+const stuecke = s.strassen.filter((x) => x.art === "living_street" && x.tore);
 const spiel = { ...stuecke[0], linie: [...stuecke[0].linie, ...stuecke[1].linie.slice(1)] };
 
 describe("Spielstraße an der Schule (»Kiss and Ride Zone« aus OSM)", () => {
@@ -41,7 +42,8 @@ describe("Spielstraße an der Schule (»Kiss and Ride Zone« aus OSM)", () => {
 
   it("hat Tore an beiden Enden, einen Überweg und einen Spielplatz", () => {
     expect(s.tore.filter((t) => t.zeiten)).toHaveLength(2);
-    expect(KARTE.punkte.some((p) => p.name === "Überweg Turnhalle" && p.art === "zebra")).toBe(true);
+    // Überweg zwischen Nordbau und Turnhalle (aus OSM)
+    expect(KARTE.punkte.some((p) => p.art === "zebra" && Math.hypot(p.p[0] + 7, p.p[1] + 33.3) < 3)).toBe(true);
     const [mx, my] = schulMitte(s);
     expect(KARTE.flaechen.some((f) => f.art === "spielplatz" && Math.hypot(f.umriss[0][0] - mx, f.umriss[0][1] - my) < 150)).toBe(true);
   });

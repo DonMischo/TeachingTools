@@ -16,6 +16,8 @@ export type PunktArt =
 
 export type KartenStrasse = {
   art: StrassenArt; linie: P[]; name?: string; spuren?: number; einbahn?: boolean;
+  /** Spuren in Richtung der Linie / dagegen (OSM lanes:forward/backward). */
+  spurenHin?: number; spurenRueck?: number;
   gehweg?: string; radstreifen?: boolean; tempo?: number;
   /** Tore an beiden Enden, offen von–bis (volle Stunden). */
   tore?: { offenVon: number; offenBis: number };
@@ -43,10 +45,30 @@ export type Linie = {
 };
 
 /**
- * Die Karte aus OSM plus das, was dort (noch) fehlt: die Spielstraße um die
- * Schule, ihr Überweg und der Spielplatz (`ergaenzungen.json`, nach Angaben
- * der Schule). Die Ergänzung liegt getrennt, damit sie ein Neuladen der
- * OSM-Daten übersteht.
+ * Spuren einer Straße in einer Richtung (`hin` = in Richtung der Linie): wie
+ * weit jede Spurmitte rechts von der Linie liegt, von innen nach außen. Bei
+ * Gegenverkehr liegt die Trennlinie `mitte` rechts der Linie (0, wenn beide
+ * Richtungen gleich viele Spuren haben).
+ */
+export function spurLagen(s: KartenStrasse & { breite: number }, hin: boolean): { lagen: number[]; breite: number; mitte: number } {
+  const alle = s.spuren ?? (s.einbahn ? 1 : 2);
+  if (s.einbahn) {
+    const n = Math.max(1, alle), w = s.breite / n;
+    return { lagen: Array.from({ length: n }, (_, i) => -s.breite / 2 + w * (i + 0.5)), breite: w, mitte: -s.breite / 2 };
+  }
+  const nh = Math.max(1, s.spurenHin ?? (s.spurenRueck ? alle - s.spurenRueck : Math.floor(alle / 2)));
+  const nr = Math.max(1, s.spurenRueck ?? alle - nh);
+  const w = s.breite / (nh + nr);
+  // Trennlinie rechts der Linie, aus Sicht der Hin-Richtung
+  const trenn = (nr - nh) * w / 2;
+  const [n, mitte] = hin ? [nh, trenn] : [nr, -trenn];
+  return { lagen: Array.from({ length: n }, (_, i) => mitte + w * (i + 0.5)), breite: w, mitte };
+}
+
+/**
+ * Die Karte aus OSM plus das, was dort (noch) fehlt: die Tore der Spielstraße
+ * (`ergaenzungen.json`, nach Angaben der Schule). Die Ergänzung liegt
+ * getrennt, damit sie ein Neuladen der OSM-Daten übersteht.
  */
 export const KARTE: Karte = (() => {
   const k = roh as unknown as Karte;
@@ -56,6 +78,17 @@ export const KARTE: Karte = (() => {
   // Tore an Straßen aus OSM, nach Namen
   const tore = new Map((e.tore ?? []).map((t) => [t.strasse, { offenVon: t.offenVon, offenBis: t.offenBis }]));
   const strassen = k.strassen.map((s) => (s.name && tore.has(s.name) ? { ...s, tore: tore.get(s.name) } : s));
+  // In OSM zerfällt eine Straße in Stücke (etwa am Überweg), nicht jedes trägt den Namen:
+  // namenlose Stücke gleicher Art, die an ein Stück mit Toren anschließen, gehören dazu.
+  const gleich = (p: P, q: P) => p[0] === q[0] && p[1] === q[1];
+  for (let dazu = true; dazu;) {
+    dazu = false;
+    strassen.forEach((s, i) => {
+      if (s.tore || s.name) return;
+      const nachbar = strassen.find((x) => x.tore && x.art === s.art && x.linie.some((q) => gleich(q, s.linie[0]) || gleich(q, s.linie[s.linie.length - 1])));
+      if (nachbar) { strassen[i] = { ...s, tore: nachbar.tore }; dazu = true; }
+    });
+  }
   return { ...k, strassen: [...strassen, ...e.strassen], punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
 })();
 
@@ -153,7 +186,7 @@ export class Stadt {
     // Tore an den äußeren Enden einer Straße mit Toren (in OSM oft mehrere Stücke).
     const gleich = (p: P, q: P) => p[0] === q[0] && p[1] === q[1];
     for (const s of this.strassen) if (s.tore) {
-      const geschwister = this.strassen.filter((x) => x !== s && x.name === s.name && x.tore);
+      const geschwister = this.strassen.filter((x) => x !== s && x.tore);
       const innen = (p: P) => geschwister.some((x) => x.linie.some((q) => gleich(p, q)));
       const [a, b] = [s.linie[0], s.linie[s.linie.length - 1]];
       const [a2, b2] = [s.linie[1], s.linie[s.linie.length - 2]];

@@ -218,6 +218,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       // requestAnimationFrame — ein verdecktes Browserfenster liefert keine
       // Bilder — und die Lage der Figur steht in data-lage, der nächste Müll in data-muell.
       const pruefhilfe = new URLSearchParams(window.location.search).has("takt");
+      // Zum Prüfen (?takt&allein): den Verkehr selbst rechnen, auch wenn ein anderer Taktgeber ist.
+      const allein = pruefhilfe && new URLSearchParams(window.location.search).has("allein");
       if (pruefhilfe) {
         app.ticker.stop();
         zeitgeber = setInterval(() => app.ticker.update(performance.now()), 16);
@@ -682,9 +684,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           verkehr.dunkel = hell < 0.35;
           verkehr.stunde = zeit.minute / 60;
           verkehr.elternzeit = werktag(zeit) && zeit.minute >= 7 * 60 + 30 && zeit.minute < 8 * 60 + 15;
-          if (n.taktgeber()) for (const b of buslinien) {
+          if (n.taktgeber() || allein) for (const b of buslinien) {
             const k = takt(b.linie, zeit);
-            verkehr.busseAnpassen(b.fahrt, k === null ? 0 : k <= 10 ? 2 : 1);
+            // Kein Bus verschwindet vor den Augen (oder unter den Füßen) eines Spielers
+            verkehr.busseAnpassen(b.fahrt, k === null ? 0 : k <= 10 ? 2 : 1, (f) => f.id === szene?.bus
+              || [{ x: ich.x, y: ich.y }, ...n.andere()].some((m) => Math.hypot(m.x - f.x, m.y - f.y) < 200));
           }
           const text = uhrText(zeit);
           if (text !== letzteUhr) {
@@ -714,7 +718,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         for (const a of andere) if (!a.mitfahrt) menschen.push({ id: a.key, x: a.x, y: a.y, hand: a.hand, karmaBis: a.karmaBis });
         let fahrzeugListe: Fahrzeug[];
         let unfaelle: { fussgaenger: string }[] = [];
-        if (n.taktgeber()) {
+        if (n.taktgeber() || allein) {
           unfaelle = verkehr.schritt(dt, t, menschen, tasterVon).filter((u) => u.fussgaenger === "ich");
           fahrzeugListe = verkehr.fahrzeuge;
           if (t - zuletztVerkehr > 0.2) { zuletztVerkehr = t; n.sendeVerkehr(verkehr.fahrzeuge.map(packe)); }

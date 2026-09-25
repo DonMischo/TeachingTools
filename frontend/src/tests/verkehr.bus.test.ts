@@ -55,11 +55,23 @@ describe("Buslinien auf dem echten Fahrweg", () => {
       expect(linie).toBeTruthy();
       for (let i = 0; i < linie.kanten.length; i++) {
         const a = v.kanten[linie.kanten[i]], b = v.kanten[linie.kanten[(i + 1) % linie.kanten.length]];
-        expect(b.von).toBe(a.nach);
+        // Springen darf der Bus nur am Kartenrand (raus und woanders wieder rein)
+        if (linie.spruenge?.has(i)) {
+          expect(Math.max(Math.abs(a.b[0]), Math.abs(a.b[1]))).toBeGreaterThan(600);
+          expect(Math.max(Math.abs(b.a[0]), Math.abs(b.a[1]))).toBeGreaterThan(600);
+        } else expect(b.von).toBe(a.nach);
       }
       const gefahren = [...linie.halte.entries()].sort((a, b) => a[0] - b[0]).map(([, h]) => `${h.halt.name}@${h.halt.p.join(",")}`);
       const soll = l.richtungen.flatMap((r) => (r.steige ?? []).map((st) => st.name));
       expect(gefahren.map((g) => g.split("@")[0])).toEqual(soll.filter((n) => s.halte.some((h) => h.name === n)));
+    }
+  });
+
+  it("fährt keine Schleifen (keine Kante zweimal im Umlauf)", () => {
+    const v = new Strassenverkehr(s, anlagen, 0);
+    for (const nr of ["9", "35"]) {
+      const { linie } = halteIn(v, nr);
+      expect(new Set(linie.kanten).size).toBe(linie.kanten.length);
     }
   });
 
@@ -147,5 +159,31 @@ describe("Aussteigen", () => {
     expect(aus.meldungen).toEqual([]);
     // Beim nächsten Halt gilt wieder alles.
     expect(r.pruefe(0, 2.4, [{ fahrzeug: "bus-1", halt: "8", phase: "aussteigen", tuer }]).meldungen.map((m) => m.id)).toEqual(["tuerBlockiert"]);
+  });
+});
+
+describe("Kein Stau für immer", () => {
+  it("löst Kreuzungen, in denen sich Abbieger gegenseitig blockieren", () => {
+    const v = new Strassenverkehr(s, anlagen);
+    let laengstes = 0;
+    for (let i = 0; i < 6000; i++) {
+      const t = i * 0.1;
+      v.schritt(0.1, t, [{ id: "ich", x: -130, y: 250, hand: -1, karmaBis: -1 }], () => -Infinity);
+      for (const f of v.fahrzeuge) if (f.stehtSeit !== undefined) laengstes = Math.max(laengstes, t - f.stehtSeit);
+    }
+    // Im Stau kriecht man auch mal ein paar Rotphasen lang — aber niemand steht für immer
+    expect(laengstes).toBeLessThan(150);
+  });
+});
+
+describe("Busse verschwinden nicht vor den Augen", () => {
+  it("nimmt beim Ausdünnen nur Busse, die niemand sieht", () => {
+    const v = new Strassenverkehr(s, anlagen, 0);
+    const linie = v.baueBuslinie(s.halte.filter((h) => h.art === "bushalt"))!;
+    v.busseAnpassen(linie, 2);
+    const [a, b] = v.fahrzeuge;
+    v.busseAnpassen(linie, 0, (f) => f === a);
+    expect(v.fahrzeuge).toEqual([a]);
+    void b;
   });
 });

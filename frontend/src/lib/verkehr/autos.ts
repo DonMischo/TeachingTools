@@ -8,13 +8,18 @@
  */
 import type { P } from "./geometrie";
 import { achsenAbstand, autoLicht, type Anlage } from "./ampeln";
-import type { Halt, Stadt, Strasse } from "./stadt";
+import { spurLagen, type Halt, type Stadt, type Strasse } from "./stadt";
 import { HALT_DAUER } from "./tueren";
 
 export type Knoten = { p: P; aus: number[] };
+
+/** So lange wartet ein Fahrzeug auf Querverkehr, der sich nicht rührt (Sekunden). */
+const STAU_GEDULD = 6;
 export type Kante = {
   von: number; nach: number; a: P; b: P; laenge: number; winkel: number;
   strasse: Strasse; spur: number; halte: Haltepunkt[];
+  /** Welche Spur (0 = innen, an der Mitte) von wie vielen in dieser Richtung. */
+  spurNr: number; spuren: number;
 };
 export type Haltepunkt = { s: number; art: "ampel" | "zebra"; anlage?: Anlage; achse?: number; p: P };
 
@@ -37,10 +42,18 @@ export type Fahrzeug = {
   haltRi?: number;
   /** Zuletzt bediente Stelle, damit er nicht zweimal hält. */
   bedientRi?: number;
+  /** Wo er quer auf der Straße fährt (gleitet beim Spurwechsel zur neuen Spur). */
+  quer?: number;
+  /** Seit wann er steht (nicht an einer Haltestelle). */
+  stehtSeit?: number;
 };
 
 /** Eine Buslinie als Rundkurs über die Kanten, mit den Haltestellen darauf. */
-export type Linie = { kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string };
+export type Linie = {
+  kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string;
+  /** Stellen i, nach denen der Bus springt: raus am Kartenrand, woanders wieder herein (die Fahrt dazwischen liegt außerhalb). */
+  spruenge?: Set<number>;
+};
 
 /** Busmaße und Türen (Abstand der Türmitten von der Busmitte): vorn beim Fahrer, Mitte, hinten — wie in der Bus-Szene. */
 export const BUS = { laenge: 12, breite: 2.55, tueren: [4.85, 0.4, -3.6], farbe: 0xeeeeee } as const;
@@ -97,21 +110,22 @@ export class Strassenverkehr {
       if (!FAHRBAR.has(s.art)) continue;
       for (let i = 0; i + 1 < s.linie.length; i++) {
         const a = knoten(s.linie[i]), b = knoten(s.linie[i + 1]);
-        this.kante(a, b, s);
-        if (!s.einbahn) this.kante(b, a, s);
+        // Je Spur eine eigene Kante: auf zweispurigen Straßen fahren Autos nebeneinander.
+        spurLagen(s, true).lagen.forEach((spur, nr, alle) => this.kante(a, b, s, spur, nr, alle.length));
+        if (!s.einbahn) spurLagen(s, false).lagen.forEach((spur, nr, alle) => this.kante(b, a, s, spur, nr, alle.length));
       }
     }
     this.haltepunkteEintragen();
   }
 
-  private kante(von: number, nach: number, strasse: Strasse) {
+  private kante(von: number, nach: number, strasse: Strasse, spur: number, spurNr: number, spuren: number) {
     const a = this.knoten[von].p, b = this.knoten[nach].p;
     const laenge = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if (laenge < 0.01) return;
     this.knoten[von].aus.push(this.kanten.length);
     this.kanten.push({
       von, nach, a, b, laenge, winkel: Math.atan2(b[1] - a[1], b[0] - a[0]), strasse,
-      spur: strasse.einbahn ? 0 : strasse.breite / 4, halte: [],
+      spur, spurNr, spuren, halte: [],
     });
   }
 
@@ -157,12 +171,19 @@ export class Strassenverkehr {
   private waehleNaechste(kante: number, f?: Fahrzeug): number | null {
     if (f?.linie) return f.linie.kanten[((f.ri ?? 0) + 1) % f.linie.kanten.length];
     const k = this.kanten[kante];
-    const aus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von && this.offen(this.kanten[i]));
-    if (aus.length) {
+    const alleAus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von && this.offen(this.kanten[i]));
+    if (alleAus.length) {
+      // Erst die Straße wählen (parallele Spuren zählen als eine), dann die Spur.
+      const aus = alleAus.filter((i) => this.kanten[i].spurNr === 0);
       const g = aus.map((i) => this.gewicht(this.kanten[i]));
       let r = Math.random() * g.reduce((a, b) => a + b, 0);
-      for (let i = 0; i < aus.length; i++) { r -= g[i]; if (r <= 0) return aus[i]; }
-      return aus[aus.length - 1];
+      let wahl = aus[aus.length - 1];
+      for (let i = 0; i < aus.length; i++) { r -= g[i]; if (r <= 0) { wahl = aus[i]; break; } }
+      const w = this.kanten[wahl];
+      const spuren = alleAus.filter((i) => this.kanten[i].nach === w.nach && this.kanten[i].strasse === w.strasse);
+      // In der Spur bleiben; ab und zu wechseln
+      const gleich = spuren.find((i) => this.kanten[i].spurNr === Math.min(k.spurNr, w.spuren - 1));
+      return Math.random() < 0.12 || gleich === undefined ? spuren[Math.floor(Math.random() * spuren.length)] : gleich;
     }
     const zurueck = this.knoten[k.nach].aus;
     return zurueck.length ? zurueck[0] : null;
@@ -171,8 +192,10 @@ export class Strassenverkehr {
   private setzeLage(f: Fahrzeug) {
     const k = this.kanten[f.kante];
     const c = Math.cos(k.winkel), s = Math.sin(k.winkel);
-    f.x = k.a[0] + c * f.s - s * k.spur;
-    f.y = k.a[1] + s * f.s + c * k.spur;
+    // Spurwechsel sanft hinübergleiten statt springen
+    f.quer = f.quer === undefined ? k.spur : f.quer + (k.spur - f.quer) * 0.08;
+    f.x = k.a[0] + c * f.s - s * f.quer;
+    f.y = k.a[1] + s * f.s + c * f.quer;
     f.winkel = k.winkel;
   }
 
@@ -258,11 +281,16 @@ export class Strassenverkehr {
       if (f.wartetBis > t && Math.abs(quer) < k.strasse.breite / 2 + 5 && laengs > 0) frei = Math.min(frei, laengs - f.laenge / 2 - 3);
     }
 
-    // Vorderwagen
+    // Vorderwagen. Wer schon lange steht, fährt an Querverkehr vorbei, der in der
+    // Kreuzung festhängt — sonst blockieren sich Abbieger gegenseitig für immer.
+    const ungeduldig = f.stehtSeit !== undefined && t - f.stehtSeit > STAU_GEDULD;
     for (const o of this.fahrzeuge) {
       if (o === f) continue;
+      if (ungeduldig && Math.abs(Math.atan2(Math.sin(o.winkel - f.winkel), Math.cos(o.winkel - f.winkel))) > 0.8) continue;
       const dx = o.x - f.x, dy = o.y - f.y;
       const laengs = dx * c + dy * s, quer = -dx * s + dy * c;
+      // Ineinander verkeilt (kaum Abstand): der Ungeduldige löst sich
+      if (ungeduldig && laengs < (f.laenge + o.laenge) / 2 - 1) continue;
       if (laengs > 0 && laengs < SICHT && Math.abs(quer) < 1.6) frei = Math.min(frei, laengs - (f.laenge + o.laenge) / 2 - 2);
     }
     return { d: frei, hupen };
@@ -393,7 +421,20 @@ export class Strassenverkehr {
   baueLinienweg(richtungen: { spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[]): Linie | null {
     const kern = this.kern();
     const imKern = (i: number) => kern.has(this.kanten[i].von) && kern.has(this.kanten[i].nach);
-    type Stelle = { kante: number; s: number; weit: number; halt?: Halt };
+    // Am Kartenrand: Einbahn-Fahrbahnen hinein (führen in den Kern) und hinaus (kommen aus ihm)
+    const ausbreiten = (vorwaerts: boolean) => {
+      const nachbarn = new Map<number, number[]>();
+      for (const k of this.kanten) {
+        const [a, b] = vorwaerts ? [k.von, k.nach] : [k.nach, k.von];
+        (nachbarn.get(a) ?? nachbarn.set(a, []).get(a)!).push(b);
+      }
+      const da = new Set(kern), offen = [...kern];
+      while (offen.length) for (const n of nachbarn.get(offen.pop()!) ?? []) if (!da.has(n)) { da.add(n); offen.push(n); }
+      return da;
+    };
+    const fuehrtHinein = ausbreiten(false), kommtHeraus = ausbreiten(true);
+    const amRandOk = (i: number) => fuehrtHinein.has(this.kanten[i].nach) || kommtHeraus.has(this.kanten[i].von);
+    type Stelle = { kante: number; s: number; weit: number; halt?: Halt; rand?: "rein" | "raus" };
     // Die Kante in Fahrtrichtung unter einem Punkt der Spur.
     // Für Bussteige: weiter weg (sie stehen am Gehweg) und nur rechts der Fahrtrichtung.
     const kanteBei = (p: P, rx: number, ry: number, steig = false) => {
@@ -401,7 +442,7 @@ export class Strassenverkehr {
       for (let i = 0; i < this.kanten.length; i++) {
         const k = this.kanten[i];
         const dx = (k.b[0] - k.a[0]) / k.laenge, dy = (k.b[1] - k.a[1]) / k.laenge;
-        if (dx * rx + dy * ry < 0.7 || !imKern(i)) continue;
+        if (dx * rx + dy * ry < 0.7 || !(steig ? imKern(i) : amRandOk(i))) continue;
         const t = Math.max(0, Math.min(k.laenge, (p[0] - k.a[0]) * dx + (p[1] - k.a[1]) * dy));
         const d = Math.hypot(k.a[0] + dx * t - p[0], k.a[1] + dy * t - p[1]);
         if (steig && -(p[0] - k.a[0]) * dy + (p[1] - k.a[1]) * dx <= 0) continue;
@@ -438,23 +479,33 @@ export class Strassenverkehr {
         if (vorhanden) { vorhanden.halt = halt; vorhanden.s = k.s; } else eigene.push({ kante: k.kante, s: k.s, weit: naechster.weit, halt });
       }
       eigene.sort((a, b) => a.weit - b.weit);
-      stellen.push(...eigene);
+      // Zwischen den Steigen der kürzeste Weg: OSM-Routen führen an Doppelfahrbahnen
+      // manchmal über beide Fahrbahnen (hin und zurück) — die Spur zählt nur für
+      // Ein- und Ausfahrt am Kartenrand.
+      const mitHalt = eigene.filter((e) => e.halt);
+      const ohne = eigene.filter((e) => !e.halt && (e.weit < (mitHalt[0]?.weit ?? Infinity) ? fuehrtHinein.has(this.kanten[e.kante].nach) : kommtHeraus.has(this.kanten[e.kante].von)));
+      const vorn = ohne.length && (!mitHalt.length || ohne[0].weit < mitHalt[0].weit) ? [ohne[0]] : [];
+      const hinten = ohne.length && (!mitHalt.length || ohne[ohne.length - 1].weit > mitHalt[mitHalt.length - 1].weit) ? [ohne[ohne.length - 1]] : [];
+      stellen.push(...vorn.map((e) => ({ ...e, rand: "rein" as const })), ...mitHalt, ...hinten.map((e) => ({ ...e, rand: "raus" as const })));
     }
     if (stellen.filter((x) => x.halt).length < 1 || stellen.length < 2) return null;
     // Von Stelle zu Stelle der kürzeste Weg — die Stellen liegen dicht, also ist das die Spur.
     const kanten: number[] = [];
     const haltAn = new Map<number, { s: number; halt: Halt }>();
+    const spruenge = new Set<number>();
     const n = stellen.length;
     for (let i = 0; i < n; i++) {
       const jetzt = stellen[i], dann = stellen[(i + 1) % n];
       if (jetzt.halt) haltAn.set(kanten.length, { s: jetzt.s, halt: jetzt.halt });
       kanten.push(jetzt.kante);
       if (dann.kante === jetzt.kante) continue;
+      // Am Kartenrand hinaus, woanders wieder herein: springen statt sichtbar zurückfahren
+      if (jetzt.rand === "raus" && dann.rand === "rein") { spruenge.add(kanten.length - 1); continue; }
       const pfad = this.weg(this.kanten[jetzt.kante].nach, this.kanten[dann.kante].von);
       if (!pfad) return null;
       kanten.push(...pfad);
     }
-    return { kanten, halte: haltAn };
+    return { kanten, halte: haltAn, spruenge };
   }
 
   /** Wie weit ein Autofahrer diesen Menschen sieht (m). */
@@ -480,7 +531,8 @@ export class Strassenverkehr {
    * dort auf die Linie, wo der Abstand zu den anderen am größten ist; weg
    * fällt einer, der gerade nicht an einer Haltestelle steht.
    */
-  busseAnpassen(linie: Linie, soll: number) {
+  /** `schonen`: diese Busse nicht wegnehmen (etwa: jemand sieht ihn oder fährt mit) — dann später. */
+  busseAnpassen(linie: Linie, soll: number, schonen: (f: Fahrzeug) => boolean = () => false) {
     const eigene = () => this.fahrzeuge.filter((f) => f.linie === linie);
     while (eigene().length < soll) {
       const n = linie.kanten.length;
@@ -496,7 +548,9 @@ export class Strassenverkehr {
       this.neuerBus(linie, ri);
     }
     while (eigene().length > soll) {
-      const weg = eigene().find((f) => f.haltSeit == null) ?? eigene()[0];
+      const frei = eigene().filter((f) => !schonen(f));
+      const weg = frei.find((f) => f.haltSeit == null) ?? frei[0];
+      if (!weg) break;
       this.fahrzeuge = this.fahrzeuge.filter((f) => f !== weg);
     }
   }
@@ -525,11 +579,16 @@ export class Strassenverkehr {
       if (f.tempo > soll) f.tempo = Math.max(soll, f.tempo - (d < 4 ? NOTBREMSE : BREMSEN * 1.5) * dt);
       else f.tempo = Math.min(soll, f.tempo + ANFAHREN * dt);
       if (d <= 0.05) f.tempo = 0;
+      // Kriechen zählt als Stehen: erst richtig Fahren setzt die Geduld zurück.
+      if (f.tempo < 1) f.stehtSeit ??= t;
+      else if (f.tempo > 2) f.stehtSeit = undefined;
 
       f.s += f.tempo * dt;
       while (f.s >= this.kanten[f.kante].laenge) {
         if (f.naechste === null) { f.s = this.kanten[f.kante].laenge; f.tempo = 0; break; }
         f.s -= this.kanten[f.kante].laenge;
+        // Sprung am Kartenrand: ohne seitliches Hinübergleiten neu ansetzen
+        if (f.linie?.spruenge?.has(f.ri ?? 0)) f.quer = undefined;
         f.kante = f.naechste;
         if (f.linie) f.ri = ((f.ri ?? 0) + 1) % f.linie.kanten.length;
         f.naechste = this.waehleNaechste(f.kante, f);

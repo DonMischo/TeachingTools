@@ -5,7 +5,7 @@
  */
 import { Container, Graphics, Text, Texture, TilingSprite } from "pixi.js";
 import type { P } from "./geometrie";
-import { bahnsteigUm, schulMitte, winkelVon, type Stadt } from "./stadt";
+import { bahnsteigUm, schulMitte, spurLagen, winkelVon, type Stadt } from "./stadt";
 import type { SchildArt } from "./schilder";
 
 export const FARBE = {
@@ -120,8 +120,19 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     linie(strassen, s.linie);
     strassen.stroke({ width: s.breite, color: s.art === "living_street" ? FARBE.spielstrasse : FARBE.fahrbahn, cap: "round", join: "round" });
   }
-  // Leitlinie in der Mitte, nur auf breiten Straßen in beide Richtungen
-  for (const s of stadt.strassen) if (!s.einbahn && s.breite >= 6.5) strichel(strassen, s.linie, 3, 6);
+  // Leitlinie zwischen den Richtungen (auf breiten Straßen) und zwischen den Spuren einer Richtung
+  for (const s of stadt.strassen) {
+    const hin = spurLagen(s, true);
+    const linien: number[] = [];
+    if (s.einbahn) for (let i = 1; i < hin.lagen.length; i++) linien.push(hin.mitte + hin.breite * i);
+    else {
+      const rueck = spurLagen(s, false);
+      if (s.breite >= 6.5) linien.push(hin.mitte);
+      for (let i = 1; i < hin.lagen.length; i++) linien.push(hin.mitte + hin.breite * i);
+      for (let i = 1; i < rueck.lagen.length; i++) linien.push(hin.mitte - rueck.breite * i);
+    }
+    for (const d of linien) strichel(strassen, d === 0 ? s.linie : versetzt(s.linie, d), 3, 6);
+  }
   strassen.stroke({ width: 0.15, color: FARBE.markierung });
   // Randlinien und Rinnstein auf Durchgangsstraßen
   for (const s of stadt.strassen) {
