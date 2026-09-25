@@ -183,7 +183,9 @@ simulationen:
       - Anzeige des Untergrunds (Gehweg, Radweg, Fahrbahn, Gleis)
       - Ampeln (Kreuzungen im Umlauf, Fußgängerampel mit Taster) und Autos
       - Regelprüfung beim Queren (Rot, Umschauen, Umweg, Bummeln, Radweg, Gleis)
-      - Bus, Straßenbahn und Zug mit Türen (aussteigen lassen, seitlich warten)
+      - Bus, Straßenbahn und Zug mit Türen (aussteigen lassen, seitlich warten, mit E einsteigen, im Bus X = Haltewunsch)
+      - Busse auf dem echten Linienweg aus OSM, Halt nur an den Steigen ihrer Richtung
+      - Zoomstufen (+ / − oder Mausrad); Ampeln gelten nur für ihre eigene Straße
       - Gemeinsame Live-Stadt für die Klasse, Lehrkraft-Übersicht
       - Gesten mit Emoji-Blase, Schimpfen mit Polizei (abschaltbar)
       - Aufträge, Schilder-Rallye, Gruppe als Wand, Fußgänger-Führerschein mit Hauspunkten

@@ -11,8 +11,9 @@
  * Datei und wird in der Simulation angezeigt.
  *
  * Aufruf:  node scripts/fetch-verkehr.mjs
+ *          node scripts/fetch-verkehr.mjs --nur-linien   (nur Bus-/Tramlinien neu, Rest bleibt)
  */
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 const ZIEL = "src/lib/verkehr/karte.json";
 const MITTE = { lat: 50.98967, lon: 11.03754 };
@@ -53,7 +54,7 @@ const LINIEN_ABFRAGE = `[out:json][timeout:120];
 node(around:${RADIUS + 500},${MITTE.lat},${MITTE.lon})[public_transport=platform]->.p;
 way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[railway=tram]->.w;
 (rel(bn.p)[type=route][route~"^(bus|tram)$"];rel(bw.w)[type=route][route=tram];)->.r;
-.r out body;
+.r out geom;
 node(r.r)[public_transport=platform];
 out tags;`;
 
@@ -128,11 +129,12 @@ function punktArt(t) {
   return null;
 }
 
-const daten = await hole();
+const NUR_LINIEN = process.argv.includes("--nur-linien");
+const daten = NUR_LINIEN ? { elements: [] } : await hole();
 const knoten = new Map();
 for (const e of daten.elements) if (e.type === "node") knoten.set(e.id, e);
 
-const karte = {
+const karte = NUR_LINIEN ? JSON.parse(readFileSync(ZIEL, "utf8")) : {
   nachweis: "Kartendaten © OpenStreetMap-Mitwirkende, ODbL 1.0 (openstreetmap.org/copyright)",
   stand: new Date().toISOString().slice(0, 10),
   mitte: MITTE,
@@ -202,7 +204,25 @@ for (const e of daten.elements) {
   }
 }
 
-// Linien: je Linie und Richtung die Haltestellen in Fahrtreihenfolge (nur Namen).
+/** Die Wege einer Route zu einem Zug aneinanderhängen (Wege liegen mal vorwärts, mal rückwärts). */
+function kette(wege) {
+  const gleich = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+  const aus = [];
+  wege.forEach((w, i) => {
+    let p = w;
+    if (!aus.length) {
+      // Den ersten so drehen, dass er am zweiten anschließt.
+      const n = wege[i + 1];
+      if (n && (gleich(p[0], n[0]) || gleich(p[0], n[n.length - 1]))) p = [...p].reverse();
+    } else if (gleich(p[p.length - 1], aus[aus.length - 1]) && !gleich(p[0], aus[aus.length - 1])) p = [...p].reverse();
+    aus.push(...(gleich(p[0], aus[aus.length - 1]) ? p.slice(1) : p));
+  });
+  return aus;
+}
+
+// Linien: je Linie und Richtung die Haltestellen in Fahrtreihenfolge — die Namen,
+// dazu im Quadrat der echte Fahrweg (`spur`, abgeschnittene Stücke) und die
+// Bussteige dieser Richtung (`steige`), damit der Bus die richtige Straßenseite nimmt.
 const routen = await hole(LINIEN_ABFRAGE);
 const namen = new Map(routen.elements.filter((e) => e.type === "node").map((e) => [e.id, e.tags?.name]));
 const linien = new Map();
@@ -212,7 +232,13 @@ for (const r of routen.elements) {
   const key = `${r.tags.route}|${r.tags.ref}`;
   const eintrag = linien.get(key) ?? { art: r.tags.route, nr: r.tags.ref, betreiber: r.tags.operator ?? r.tags.network ?? "", richtungen: [] };
   const ziel = r.tags.to ?? (r.tags.name ?? "").split("=>").pop().trim();
-  if (!eintrag.richtungen.some((x) => x.ziel === ziel)) eintrag.richtungen.push({ ziel, halte });
+  const wege = r.members.filter((m) => m.type === "way" && !m.role.startsWith("platform") && m.geometry)
+    .map((m) => m.geometry.map((g) => projiziere(g.lat, g.lon)));
+  const spur = schneide(kette(wege));
+  const steige = r.members.filter((m) => m.role.startsWith("platform") && namen.get(m.ref))
+    .map((m) => ({ name: namen.get(m.ref), p: m.type === "node" ? projiziere(m.lat, m.lon) : m.geometry ? projiziere(m.geometry[0].lat, m.geometry[0].lon) : null }))
+    .filter((x) => x.p && drin(x.p));
+  if (!eintrag.richtungen.some((x) => x.ziel === ziel)) eintrag.richtungen.push({ ziel, halte, ...(spur.length ? { spur } : {}), ...(steige.length ? { steige } : {}) });
   linien.set(key, eintrag);
 }
 karte.linien = [...linien.values()];

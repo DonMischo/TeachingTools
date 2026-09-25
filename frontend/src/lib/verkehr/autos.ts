@@ -384,6 +384,79 @@ export class Strassenverkehr {
     return { kanten, halte: haltAn };
   }
 
+  /**
+   * Eine Buslinie auf ihrem echten Fahrweg aus OSM: je Richtung die Spur
+   * entlang (Kanten in Fahrtrichtung), an den Bussteigen dieser Richtung
+   * halten; am Ende der einen Richtung kehrt der Bus am Kartenrand um und fährt
+   * die andere. So hält er nie auf der Gegenseite.
+   */
+  baueLinienweg(richtungen: { spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[]): Linie | null {
+    const kern = this.kern();
+    const imKern = (i: number) => kern.has(this.kanten[i].von) && kern.has(this.kanten[i].nach);
+    type Stelle = { kante: number; s: number; weit: number; halt?: Halt };
+    // Die Kante in Fahrtrichtung unter einem Punkt der Spur.
+    // Für Bussteige: weiter weg (sie stehen am Gehweg) und nur rechts der Fahrtrichtung.
+    const kanteBei = (p: P, rx: number, ry: number, steig = false) => {
+      let best: { kante: number; s: number; d: number } | null = null;
+      for (let i = 0; i < this.kanten.length; i++) {
+        const k = this.kanten[i];
+        const dx = (k.b[0] - k.a[0]) / k.laenge, dy = (k.b[1] - k.a[1]) / k.laenge;
+        if (dx * rx + dy * ry < 0.7 || !imKern(i)) continue;
+        const t = Math.max(0, Math.min(k.laenge, (p[0] - k.a[0]) * dx + (p[1] - k.a[1]) * dy));
+        const d = Math.hypot(k.a[0] + dx * t - p[0], k.a[1] + dy * t - p[1]);
+        if (steig && -(p[0] - k.a[0]) * dy + (p[1] - k.a[1]) * dx <= 0) continue;
+        if (d < k.strasse.breite / 2 + (steig ? 8 : 3) && (!best || d < best.d)) best = { kante: i, s: t, d };
+      }
+      return best;
+    };
+    const stellen: Stelle[] = [];
+    for (const r of richtungen) {
+      const eigene: Stelle[] = [];
+      const punkte: { p: P; rx: number; ry: number; weit: number }[] = [];
+      let weit = 0;
+      for (const stueck of r.spur ?? []) for (let i = 0; i + 1 < stueck.length; i++) {
+        const a = stueck[i], b = stueck[i + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (l < 0.01) continue;
+        const rx = (b[0] - a[0]) / l, ry = (b[1] - a[1]) / l;
+        for (let u = 0; u < l; u += 15) punkte.push({ p: [a[0] + rx * u, a[1] + ry * u], rx, ry, weit: weit + u });
+        weit += l;
+      }
+      for (const pk of punkte) {
+        const k = kanteBei(pk.p, pk.rx, pk.ry);
+        if (k && eigene[eigene.length - 1]?.kante !== k.kante) eigene.push({ kante: k.kante, s: k.s, weit: pk.weit });
+      }
+      // Bussteige: auf die Kante dieser Richtung, an deren rechtem Rand sie liegen.
+      for (const st of r.steige ?? []) {
+        const halt = halte.filter((h) => h.name === st.name && Math.hypot(h.p[0] - st.p[0], h.p[1] - st.p[1]) < 10)
+          .sort((a, b) => Math.hypot(a.p[0] - st.p[0], a.p[1] - st.p[1]) - Math.hypot(b.p[0] - st.p[0], b.p[1] - st.p[1]))[0];
+        if (!halt) continue;
+        const naechster = punkte.reduce<(typeof punkte)[number] | null>((m, pk) => !m || Math.hypot(pk.p[0] - st.p[0], pk.p[1] - st.p[1]) < Math.hypot(m.p[0] - st.p[0], m.p[1] - st.p[1]) ? pk : m, null);
+        if (!naechster) continue;
+        const k = kanteBei(halt.p, naechster.rx, naechster.ry, true);
+        if (!k) continue;
+        const vorhanden = eigene.find((e) => e.kante === k.kante);
+        if (vorhanden) { vorhanden.halt = halt; vorhanden.s = k.s; } else eigene.push({ kante: k.kante, s: k.s, weit: naechster.weit, halt });
+      }
+      eigene.sort((a, b) => a.weit - b.weit);
+      stellen.push(...eigene);
+    }
+    if (stellen.filter((x) => x.halt).length < 1 || stellen.length < 2) return null;
+    // Von Stelle zu Stelle der kürzeste Weg — die Stellen liegen dicht, also ist das die Spur.
+    const kanten: number[] = [];
+    const haltAn = new Map<number, { s: number; halt: Halt }>();
+    const n = stellen.length;
+    for (let i = 0; i < n; i++) {
+      const jetzt = stellen[i], dann = stellen[(i + 1) % n];
+      if (jetzt.halt) haltAn.set(kanten.length, { s: jetzt.s, halt: jetzt.halt });
+      kanten.push(jetzt.kante);
+      if (dann.kante === jetzt.kante) continue;
+      const pfad = this.weg(this.kanten[jetzt.kante].nach, this.kanten[dann.kante].von);
+      if (!pfad) return null;
+      kanten.push(...pfad);
+    }
+    return { kanten, halte: haltAn };
+  }
+
   /** Wie weit ein Autofahrer diesen Menschen sieht (m). */
   private sichtAuf(m: Fussgaenger) {
     return this.dunkel && !m.weste ? SICHT_DUNKEL : SICHT;

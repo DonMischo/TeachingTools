@@ -35,7 +35,11 @@ export type Karte = {
 
 export type Linie = {
   art: "bus" | "tram"; nr: string; betreiber: string;
-  richtungen: { ziel: string; halte: string[] }[];
+  /**
+   * `spur`: der echte Fahrweg im Kartenquadrat (abgeschnittene Stücke),
+   * `steige`: die Bussteige dieser Richtung in Fahrtreihenfolge.
+   */
+  richtungen: { ziel: string; halte: string[]; spur?: P[][]; steige?: { name: string; p: P }[] }[];
 };
 
 /**

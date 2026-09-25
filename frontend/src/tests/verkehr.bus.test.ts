@@ -40,6 +40,42 @@ describe("Buslinie", () => {
   });
 });
 
+describe("Buslinien auf dem echten Fahrweg", () => {
+  const linien = (s.karte.linien ?? []).filter((l) => l.art === "bus" && l.richtungen.some((r) => r.spur?.length && r.steige?.length));
+  const halteIn = (v: Strassenverkehr, nr: string) => {
+    const l = linien.find((x) => x.nr === nr)!;
+    const namen = new Set(l.richtungen.flatMap((r) => r.halte));
+    return { l, linie: v.baueLinienweg(l.richtungen, s.halte.filter((h) => h.art === "bushalt" && namen.has(h.name)))! };
+  };
+
+  it("halten Linie 9 und 35 an allen ihren Steigen, der Reihe nach, zusammenhängend", () => {
+    const v = new Strassenverkehr(s, anlagen, 0);
+    for (const nr of ["9", "35"]) {
+      const { l, linie } = halteIn(v, nr);
+      expect(linie).toBeTruthy();
+      for (let i = 0; i < linie.kanten.length; i++) {
+        const a = v.kanten[linie.kanten[i]], b = v.kanten[linie.kanten[(i + 1) % linie.kanten.length]];
+        expect(b.von).toBe(a.nach);
+      }
+      const gefahren = [...linie.halte.entries()].sort((a, b) => a[0] - b[0]).map(([, h]) => `${h.halt.name}@${h.halt.p.join(",")}`);
+      const soll = l.richtungen.flatMap((r) => (r.steige ?? []).map((st) => st.name));
+      expect(gefahren.map((g) => g.split("@")[0])).toEqual(soll.filter((n) => s.halte.some((h) => h.name === n)));
+    }
+  });
+
+  it("hält nie am Steig der Gegenrichtung: der Steig liegt rechts der Fahrtrichtung", () => {
+    const v = new Strassenverkehr(s, anlagen, 0);
+    for (const nr of ["9", "35"]) {
+      const { linie } = halteIn(v, nr);
+      for (const [ri, { halt }] of linie.halte) {
+        const k = v.kanten[linie.kanten[ri]];
+        const quer = (-(halt.p[0] - k.a[0]) * (k.b[1] - k.a[1]) + (halt.p[1] - k.a[1]) * (k.b[0] - k.a[0])) / k.laenge;
+        expect(quer).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
 describe("Türen", () => {
   const [tuer] = tueren(0, 0, 0, 2.5, [0]);
   it("gehen erst auf, lassen aussteigen, dann einsteigen, dann zu", () => {
@@ -71,7 +107,11 @@ describe("Türen", () => {
     expect(r.pruefe(0, 2.4, offen("aussteigen")).meldungen.map((m) => m.id)).toEqual(["tuerBlockiert"]);
     const r2 = new Einstiegsregeln();
     r2.pruefe(1.6, 2.2, offen("aussteigen"));
-    const e = r2.pruefe(0, 1.5, offen("einsteigen"));
+    const ohneE = r2.pruefe(0, 1.5, offen("einsteigen"));
+    expect(ohneE.einsteigen).toBeNull();
+    expect(ohneE.bereit).toBeTruthy();
+    expect(ohneE.meldungen).toEqual([]);
+    const e = r2.pruefe(0, 1.5, offen("einsteigen"), true);
     expect(e.einsteigen).toBeTruthy();
     expect(e.meldungen.map((m) => m.id)).toEqual(["gutEingestiegen"]);
   });

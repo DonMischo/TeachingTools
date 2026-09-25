@@ -8,7 +8,7 @@
  * jemand den Taster drückt.
  */
 import type { P } from "./geometrie";
-import { winkelVon, type Stadt } from "./stadt";
+import { winkelVon, type Stadt, type Strasse } from "./stadt";
 
 export type Licht = "gruen" | "gelb" | "rot" | "rotgelb";
 
@@ -20,7 +20,14 @@ export type Anlage = {
   /** Versatz im Umlauf, damit nicht alle Anlagen gleichzeitig umspringen. */
   versatz: number;
   signale: { p: P; achse: number; art: "auto" | "fuss" }[];
+  /** Die Straßen, an denen die Signale stehen — nur für sie gilt die Ampel. */
+  strassen?: Strasse[];
 };
+
+/** Regelt diese Ampel die Straße? Gleicher Name reicht (OSM zerteilt Straßen in Stücke). */
+export function regelt(a: Anlage, s: Strasse) {
+  return !a.strassen || a.strassen.some((x) => x === s || (!!s.name && x.name === s.name));
+}
 
 /**
  * Umlauf einer Kreuzung in Sekunden: je Richtung eine Phase von 30 s (so an
@@ -55,15 +62,17 @@ export function baueAnlagen(stadt: Stadt): Anlage[] {
   return haufen.map((h, id) => {
     const mitte: P = [h.reduce((s, q) => s + q.p[0], 0) / h.length, h.reduce((s, q) => s + q.p[1], 0) / h.length];
     const achsen: number[] = [];
+    const strassen: Strasse[] = [];
     const signale = h.flatMap((q) => {
       const n = stadt.naechsteStrasse(q.p[0], q.p[1], 12);
       if (!n) return [];
+      if (!strassen.includes(n.s)) strassen.push(n.s);
       const w = achsenwinkel(winkelVon(n.st));
       let i = achsen.findIndex((a) => achsenAbstand(a, w) < Math.PI / 5);
       if (i < 0) { if (achsen.length >= 2) i = achsenAbstand(achsen[0], w) < achsenAbstand(achsen[1], w) ? 0 : 1; else { achsen.push(w); i = achsen.length - 1; } }
       return [{ p: q.p, achse: i, art: q.art }];
     });
-    return { id, mitte, achsen, versatz: (id * 17) % UMLAUF, signale };
+    return { id, mitte, achsen, versatz: (id * 17) % UMLAUF, signale, strassen };
   });
 }
 
@@ -103,9 +112,11 @@ export function fussGruen(a: Anlage, achse: number, t: number, taster = -Infinit
 }
 
 /** Die Anlage und Achse, zu der ein Punkt auf einer Fahrbahn gehört (≤ 30 m zur Mitte, Richtung der Straße). */
-export function anlageAn(anlagen: Anlage[], x: number, y: number, strassenWinkel: number): { a: Anlage; achse: number } | null {
+export function anlageAn(anlagen: Anlage[], x: number, y: number, strassenWinkel: number, strasse?: Strasse): { a: Anlage; achse: number } | null {
   let best: { a: Anlage; d: number } | null = null;
   for (const a of anlagen) {
+    // Eine Einfahrt neben der Ampel gehört nicht dazu.
+    if (strasse && !regelt(a, strasse)) continue;
     const d = Math.min(...a.signale.map((s) => Math.hypot(s.p[0] - x, s.p[1] - y)), Math.hypot(a.mitte[0] - x, a.mitte[1] - y));
     if (d < 30 && (!best || d < best.d)) best = { a, d };
   }

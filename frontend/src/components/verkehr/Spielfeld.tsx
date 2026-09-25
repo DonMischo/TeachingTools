@@ -18,18 +18,17 @@ import { entpacke, packe, winkelZu, type Netz } from "@/lib/verkehr/netz";
 import { baueSchilder, type SchildArt } from "@/lib/verkehr/schilder";
 import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import type { Ereignis } from "@/lib/verkehr/missionen";
-import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
+import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerOffen, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, bahnTakt, baueBahnen, umlauf, wagenLagen } from "@/lib/verkehr/schiene";
 import { werktag, abfahrten, abschnitt, helligkeit, istRush, linienImViertel, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
+import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
 import type { Steuerkanal } from "./Steuerkreuz";
 import { baueEimer, EIMER_NAH, GREIFEN, Muell, TRAGEN } from "@/lib/verkehr/muell";
 import { Einstiegsregeln, Regelwaechter, UMSCHAUEN_DAUER, MELDUNGEN, type Meldung, type OffeneTuer, type Verdecker } from "@/lib/verkehr/regeln";
 
-/** Pixel je Meter: etwa 80 m Stadt über die Breite eines Laptops. */
-const ZOOM = 14;
 /** Figuren zeichnen wir 1,8-mal so groß wie echt; gerechnet wird mit echter Größe. */
 const FIGUR_GROESSER = 1.8;
 /** Nach einem Unfall so lange stehen, bevor es am Gehweg weitergeht. */
@@ -152,6 +151,10 @@ export type SpielfeldProps = {
   /** Überblick an (Straßennamen, Abfahrtstafeln, große Karte). */
   ueberblick?: boolean;
   onUeberblick?: () => void;
+  /** Index in ZOOM_STUFEN. */
+  zoomStufe?: number;
+  /** Näher (+1) oder weiter weg (-1): Tasten + und -, Mausrad. */
+  onZoom?: (richtung: 1 | -1) => void;
   tonAn?: boolean;
   /** Uhrzeit und Tagesabschnitt, einmal je Spielminute. */
   onZeit?: (z: { text: string; abschnitt: string; rush: boolean; dunkel: boolean }) => void;
@@ -164,12 +167,12 @@ export type SpielfeldProps = {
   onNaehe?: (was: "zebra" | "ampel" | "muell") => void;
 };
 
-export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberblick = false, tonAn = true, ...rueck }: SpielfeldProps) {
+export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
   const huelle = useRef<HTMLDivElement>(null);
   const rueckruf = useRef(rueck);
   const netzRef = useRef(netz);
-  const optionen = useRef({ ueberblick, tonAn, steuerkanal });
-  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, tonAn, steuerkanal }; });
+  const optionen = useRef({ ueberblick, zoomStufe, tonAn, steuerkanal });
+  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, zoomStufe, tonAn, steuerkanal }; });
 
   useEffect(() => {
     const el = huelle.current!;
@@ -220,7 +223,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const uhr = () => netzRef.current.uhr();
 
       const welt = new Container();
-      welt.scale.set(ZOOM);
+      welt.scale.set(ZOOM_STUFEN[0]);
       const { boden, oben: kronen } = zeichneStadt(s);
       const ampelEbene = new Container();
       const autoEbene = new Container();
@@ -335,6 +338,18 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         return { x: (e.clientX - r.left - welt.position.x) / welt.scale.x, y: (e.clientY - r.top - welt.position.y) / welt.scale.y };
       };
       const mausRunter = (e: PointerEvent) => {
+        // Im Bus: auf den Bus tippen oder klicken = Halt wünschen (wie X).
+        if (mitfahrt?.art === "bus") {
+          const w = weltPunkt(e);
+          if (Math.hypot(w.x - ich.x, w.y - ich.y) < 8) einmal?.("KeyX");
+          return;
+        }
+        // An der offenen Tür: aufs Fahrzeug tippen oder klicken = einsteigen (wie E).
+        if (einstiegBereit) {
+          const w = weltPunkt(e);
+          // Man steht an der Tür — das Fahrzeug ist direkt daneben.
+          if (Math.hypot(w.x - ich.x, w.y - ich.y) < 8) { willEinsteigen = true; return; }
+        }
         if (e.button !== 0 || e.pointerType === "touch") return;
         klang.wecke();
         mausHaelt = true;
@@ -347,6 +362,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       app.canvas.addEventListener("pointermove", mausBewegt);
       app.canvas.addEventListener("pointerup", mausHoch);
       app.canvas.addEventListener("pointercancel", mausHoch);
+      // Mausrad: näher heran oder weiter weg.
+      app.canvas.addEventListener("wheel", (e) => { e.preventDefault(); rueckruf.current.onZoom?.(e.deltaY < 0 ? 1 : -1); }, { passive: false });
       let ich: Figur = { x: sx, y: sy, winkel: 0, tempo: 0 };
       const figur = zeichneFigur(farbe);
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
@@ -413,8 +430,13 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         if (code === "Space" && t - umschauenSeit > UMSCHAUEN_DAUER) { umschauenSeit = t; blickGezaehlt = false; }
         if (code === "KeyV") { westeAn = !westeAn; weste.visible = westeAn; mensch.weste = westeAn; rueckruf.current.onWeste?.(westeAn); }
         if (code === "KeyM") rueckruf.current.onUeberblick?.();
+        // X im Bus: Haltewunsch — ausgestiegen wird erst, wenn die Türen offen sind.
+        if (code === "KeyX" && mitfahrt?.art === "bus" && !haltGewuenscht) { haltGewuenscht = true; klang.wecke(); }
+        if (code === "Equal" || code === "NumpadAdd" || code === "BracketRight") rueckruf.current.onZoom?.(1);
+        if (code === "Minus" || code === "NumpadSubtract" || code === "Slash") rueckruf.current.onZoom?.(-1);
         if (code === "KeyE") {
-          if (naherTaster) {
+          if (einstiegBereit && !mitfahrt) willEinsteigen = true;
+          else if (naherTaster) {
             if (t - tasterVon(naherTaster) > TASTER_WARTEN + FUSS_GRUEN + 6) { netzRef.current.sendeTaster(naherTaster.id); ereignis({ typ: "taster", t }); }
           } else if (nahesSchild) rueckruf.current.onSchild?.(nahesSchild);
           else if (getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH)) {
@@ -444,7 +466,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const linien = linienImViertel();
       const buslinien = linien.filter((l) => l.art === "bus").flatMap((l) => {
         const namenDerLinie = new Set(l.richtungen.flatMap((r) => r.halte));
-        const fahrt = verkehr.baueBuslinie(s.halte.filter((h) => h.art === "bushalt" && namenDerLinie.has(h.name)));
+        const busHalte = s.halte.filter((h) => h.art === "bushalt" && namenDerLinie.has(h.name));
+        // Auf dem echten Fahrweg; ohne Spur in den Daten wie bisher über die Haltestellen.
+        const fahrt = verkehr.baueLinienweg(l.richtungen, busHalte) ?? verkehr.baueBuslinie(busHalte);
         if (!fahrt) return [];
         fahrt.anzeige = `${l.nr} ${l.richtungen[0]?.ziel ?? ""}`.trim();
         return [{ linie: l, fahrt }];
@@ -463,6 +487,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const bahnen = baueBahnen(s);
       const einstieg = new Einstiegsregeln();
       let mitfahrt: { art: "bus"; id: number; abRi: number } | { art: "bahn"; i: number } | null = null;
+      /** Im Bus X gedrückt: an der nächsten Haltestelle aussteigen. */
+      let haltGewuenscht = false;
+      /** An einer offenen Tür: E (oder Tippen auf den Bus) steigt ein. */
+      let einstiegBereit = false, willEinsteigen = false;
 
       const fahrzeuge = new Map<string, Container>();
       const gesehen = new Set<string>();
@@ -476,7 +504,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       // Türen und Aussteigende werden jedes Bild neu gemalt.
       const tuerEbene = new Graphics();
       figuren.addChild(tuerEbene);
-      let zoom = ZOOM;
+      let zoom = ZOOM_STUFEN[0];
       let letzterUntergrund = "";
 
       app.ticker.add((tick) => {
@@ -700,11 +728,13 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           if (!bus) mitfahrt = null;
           else {
             ich = { ...ich, x: bus.x, y: bus.y };
-            if (bus.haltSeit != null && String(bus.haltRi) !== String(fahrt.abRi) && tuerPhase(t - bus.haltSeit) === "aussteigen") {
+            // Kein Aussteigen von allein: nur mit Haltewunsch (X / auf den Bus tippen) und offenen Türen.
+            if (haltGewuenscht && bus.haltSeit != null && tuerOffen(tuerPhase(t - bus.haltSeit))) {
               const [, mitte] = tueren(bus.x, bus.y, bus.winkel, BUS.breite, [...BUS.tueren]);
               ich = { ...ich, x: mitte.p[0] + mitte.raus[0] * 1.6, y: mitte.p[1] + mitte.raus[1] * 1.6 };
               einstieg.ausgestiegen(`bus-${bus.id}`, String(bus.haltRi));
               mitfahrt = null;
+              haltGewuenscht = false;
               waechter.zuruecksetzen();
               melde(MELDUNGEN.ausgestiegen);
             }
@@ -724,10 +754,13 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
             melde(MELDUNGEN.ausgestiegen);
           }
         } else if (t >= unfallBis) {
-          const { meldungen, einsteigen } = einstieg.pruefe(ich.x, ich.y, offene);
+          const { meldungen, einsteigen, bereit } = einstieg.pruefe(ich.x, ich.y, offene, willEinsteigen);
+          willEinsteigen = false;
+          einstiegBereit = !!bereit;
           for (const m of meldungen) melde(m);
           if (einsteigen) {
             const o = einsteigen as Tuerstand;
+            haltGewuenscht = false;
             mitfahrt = o.fahrzeug.startsWith("bus") ? { art: "bus", id: o.id, abRi: Number(o.halt) } : { art: "bahn", i: o.id - 1000 };
             const art = mitfahrt.art === "bus" ? "bus" : bahnen[mitfahrt.i].art;
             const linieNr = mitfahrt.art === "bus" ? fahrzeugListe.find((f) => f.id === o.id)?.anzeige?.split(" ")[0] : undefined;
@@ -824,7 +857,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         for (const o of tasterOrte) if (Math.hypot(o.p[0] - ich.x, o.p[1] - ich.y) < 2.5) { naherTaster = o.a; break; }
         nahesSchild = null;
         for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
-        const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …" : mitfahrt ? (mitfahrt.art === "bus" ? "Du fährst Bus — an der nächsten Haltestelle steigst du aus." : "Du fährst mit der Bahn …")
+        const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …" : mitfahrt ? (mitfahrt.art === "bus"
+            ? (haltGewuenscht ? "🔔 Halt gewünscht — an der nächsten Haltestelle steigst du aus." : "Du fährst Bus — X drücken oder auf den Bus tippen, um auszusteigen.")
+            : "Du fährst mit der Bahn …")
+          : einstiegBereit ? "E drücken oder auf den Bus tippen: einsteigen"
           : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
           : nahesSchild ? "E drücken: Schild ansehen"
           : getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH) ? `E drücken: Müll einwerfen (${getragen})`
@@ -857,7 +893,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           const d = Math.hypot(o.tuer.p[0] - ich.x, o.tuer.p[1] - ich.y);
           if (d < dMin) { dMin = d; tuerNah = o; }
         }
-        zoom += ((tuerNah ? TUER_ZOOM : optionen.current.ueberblick ? UEBERBLICK_ZOOM : ZOOM) - zoom) * Math.min(1, dt * 3);
+        const nah = ZOOM_STUFEN[optionen.current.zoomStufe] ?? ZOOM_STUFEN[0];
+        zoom += ((tuerNah ? Math.max(TUER_ZOOM, nah) : optionen.current.ueberblick ? UEBERBLICK_ZOOM : nah) - zoom) * Math.min(1, dt * 3);
         const blickX = tuerNah ? ich.x * 0.6 + tuerNah.tuer.p[0] * 0.4 : ich.x;
         const blickY = tuerNah ? ich.y * 0.6 + tuerNah.tuer.p[1] * 0.4 : ich.y;
         welt.scale.set(zoom);

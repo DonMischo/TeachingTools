@@ -2,9 +2,9 @@
  * Die Verkehrsregeln für Fußgänger — was beim Laufen geprüft wird und was
  * es bringt oder kostet. Rein aus Zuständen gerechnet, kein Pixi.
  */
-import { anlageAn, fussGruen, type Anlage } from "./ampeln";
+import { anlageAn, fussGruen, regelt, type Anlage } from "./ampeln";
 import { abstandZuStrecke } from "./geometrie";
-import { winkelVon, type Stadt, type Untergrund } from "./stadt";
+import { winkelVon, type Stadt, type Strasse, type Untergrund } from "./stadt";
 import { anDerTuer, imKorridor, seitlichDaneben, type Tuer, type TuerPhase } from "./tueren";
 
 export type RegelId =
@@ -97,8 +97,8 @@ export class Regelwaechter {
     if (u.art === "fahrbahn" && this.vorher !== "fahrbahn") {
       const n = this.stadt.naechsteStrasse(x, y, u.strasse.breite);
       const winkel = n ? winkelVon(n.st) : 0;
-      const ampel = u.querung?.art === "ampelUebergang" || !u.querung ? anlageAn(this.anlagen, x, y, winkel) : null;
-      if (ampel && (u.querung?.art === "ampelUebergang" || this.naheAmpelFurt(x, y))) {
+      const ampel = u.querung?.art === "ampelUebergang" || !u.querung ? anlageAn(this.anlagen, x, y, winkel, u.strasse) : null;
+      if (ampel && (u.querung?.art === "ampelUebergang" || this.naheAmpelFurt(x, y, u.strasse))) {
         const gruen = fussGruen(ampel.a, ampel.achse, t, this.taster(ampel.a));
         if (!gruen) melde("rot", 3);
         this.querung = { seit: t, art: "ampel", ok: gruen };
@@ -107,7 +107,7 @@ export class Regelwaechter {
         if (!geschaut) melde("nichtGeschaut", 3);
         const zebra = u.querung?.art === "zebra";
         let ok = geschaut;
-        if (!u.querung && this.ueberwegInDerNaehe(x, y)) { melde("umweg", 10); ok = false; }
+        if (!u.querung && this.ueberwegInDerNaehe(x, y, u.strasse)) { melde("umweg", 10); ok = false; }
         this.querung = { seit: t, art: zebra ? "zebra" : "frei", ok };
       }
       this.gemeldetTroedeln = false;
@@ -143,14 +143,17 @@ export class Regelwaechter {
     this.vorher = "gehweg";
   }
 
-  private naheAmpelFurt(x: number, y: number) {
-    return this.anlagen.some((a) => a.signale.some((s) => Math.hypot(s.p[0] - x, s.p[1] - y) < 12));
+  private naheAmpelFurt(x: number, y: number, s: Strasse) {
+    return this.anlagen.some((a) => regelt(a, s) && a.signale.some((s) => Math.hypot(s.p[0] - x, s.p[1] - y) < 12));
   }
 
-  private ueberwegInDerNaehe(x: number, y: number) {
-    return this.stadt.karte.punkte.some(
-      (p) => (p.art === "zebra" || p.art === "ampelUebergang") && Math.hypot(p.p[0] - x, p.p[1] - y) < UEBERWEG_NAH,
-    );
+  /** Ein Überweg über dieselbe Straße in der Nähe — einer an der Hauptstraße zählt nicht für die Einfahrt daneben. */
+  private ueberwegInDerNaehe(x: number, y: number, s: Strasse) {
+    return this.stadt.karte.punkte.some((p) => {
+      if ((p.art !== "zebra" && p.art !== "ampelUebergang") || Math.hypot(p.p[0] - x, p.p[1] - y) >= UEBERWEG_NAH) return false;
+      const dort = this.stadt.untergrund(p.p[0], p.p[1]);
+      return dort.art !== "fahrbahn" || dort.strasse === s || (!!s.name && dort.strasse.name === s.name);
+    });
   }
 
   private amBahnuebergang(x: number, y: number) {
@@ -177,20 +180,27 @@ export class Einstiegsregeln {
   /** Wer gerade selbst aus diesem Fahrzeug gestiegen ist, steht zwangsläufig vor der Tür. */
   ausgestiegen(fahrzeug: string, halt: string) { this.selbstRaus.add(`${fahrzeug}@${halt}`); }
 
-  pruefe(x: number, y: number, offene: OffeneTuer[]): { meldungen: Meldung[]; einsteigen: OffeneTuer | null } {
+  /**
+   * `will`: in diesem Bild E gedrückt (oder auf den Bus getippt) — eingestiegen
+   * wird nur dann; `bereit` ist die Tür, an der es gerade ginge.
+   */
+  pruefe(x: number, y: number, offene: OffeneTuer[], will = false): { meldungen: Meldung[]; einsteigen: OffeneTuer | null; bereit: OffeneTuer | null } {
     const meldungen: Meldung[] = [];
     let einsteigen: OffeneTuer | null = null;
+    let bereit: OffeneTuer | null = null;
     for (const o of offene) {
       const key = `${o.fahrzeug}@${o.halt}`;
       if (this.selbstRaus.has(key)) continue;
       if (o.phase === "aussteigen") {
         if (imKorridor(o.tuer, x, y) && !this.blockiert.has(key)) { this.blockiert.add(key); meldungen.push(MELDUNGEN.tuerBlockiert); }
         if (seitlichDaneben(o.tuer, x, y)) this.gewartet.add(key);
-      } else if (o.phase === "einsteigen" && anDerTuer(o.tuer, x, y) && !einsteigen) {
+      } else if (o.phase === "einsteigen" && anDerTuer(o.tuer, x, y) && !bereit) {
+        bereit = o;
+        if (!will) continue;
         einsteigen = o;
         meldungen.push(this.gewartet.has(key) && !this.blockiert.has(key) ? MELDUNGEN.gutEingestiegen : MELDUNGEN.eingestiegen);
       }
     }
-    return { meldungen, einsteigen };
+    return { meldungen, einsteigen, bereit };
   }
 }

@@ -10,6 +10,9 @@ export const RENNEN = 4;
 /** Halbe Schulterbreite: so nah darf die Figur an eine Hauswand. */
 export const FIGUR_RADIUS = 0.3;
 
+/** Pixel je Meter je Zoomstufe: normal etwa 80 m Stadt über die Breite eines Laptops, dann näher heran. */
+export const ZOOM_STUFEN = [14, 22, 32];
+
 export type Figur = { x: number; y: number; winkel: number; tempo: number };
 export type Eingabe = {
   hoch: boolean; runter: boolean; links: boolean; rechts: boolean; rennen: boolean;

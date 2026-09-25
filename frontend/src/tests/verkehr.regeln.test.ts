@@ -141,3 +141,34 @@ describe("Autos", () => {
     expect(v.fahrzeuge[0].tempo).toBe(0);
   });
 });
+
+describe("Ampel gilt nur für ihre Straße", () => {
+  it("kennt die Straßen, an denen ihre Signale stehen", () => {
+    for (const a of anlagen) expect(a.strassen?.length).toBeGreaterThan(0);
+  });
+
+  it("zählt Rot nicht, wer eine Einfahrt neben der Ampel quert", () => {
+    // Eine Einfahrt (service) mit Fahrbahn nahe an einem Signal, die die Ampel nicht regelt.
+    let fund: { a: (typeof anlagen)[number]; p: P } | null = null;
+    for (const a of anlagen) for (const st of s.strassen) {
+      if (fund || st.art !== "service" || a.strassen?.some((x) => x === st || (st.name && x.name === st.name))) continue;
+      const p = st.linie.find((q) => a.signale.some((g) => Math.hypot(g.p[0] - q[0], g.p[1] - q[1]) < 12)
+        && s.untergrund(q[0], q[1]).art === "fahrbahn" && (s.untergrund(q[0], q[1]) as { strasse: { art: string } }).strasse.art === "service");
+      if (p) fund = { a, p };
+    }
+    expect(fund).not.toBeNull();
+    const { a, p } = fund!;
+    // Ein Zeitpunkt, an dem die Fußgänger dieser Ampel Rot haben.
+    let t = 0;
+    while (fussGruen(a, 0, t) || fussGruen(a, 1, t)) t += 0.5;
+    const w = new Regelwaechter(s, anlagen);
+    w.geschaut(t);
+    // Vom Rand der Einfahrt auf ihre Fahrbahn treten.
+    const n = s.naechsteStrasse(p[0], p[1], 5)!;
+    const wi = winkelVon(n.st), qx = -Math.sin(wi), qy = Math.cos(wi);
+    let aussen: P = [p[0] + qx * (n.s.breite / 2 + 0.5), p[1] + qy * (n.s.breite / 2 + 0.5)];
+    if (s.untergrund(aussen[0], aussen[1]).art === "fahrbahn") aussen = [p[0] - qx * (n.s.breite / 2 + 0.5), p[1] - qy * (n.s.breite / 2 + 0.5)];
+    w.pruefe(aussen[0], aussen[1], t);
+    expect(w.pruefe(p[0], p[1], t + 0.1).map((m) => m.id)).not.toContain("rot");
+  });
+});

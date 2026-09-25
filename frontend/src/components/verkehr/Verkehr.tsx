@@ -21,6 +21,7 @@ import { SchildQuiz } from "./SchildQuiz";
 import { Steuerkreuz, type Steuerkanal } from "./Steuerkreuz";
 import { LtbHelfer } from "./LtbHelfer";
 import { BEGRUESSUNG, Ltb, type LtbAnlass } from "@/lib/verkehr/ltb";
+import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 
 const Spielfeld = lazy(() => import("./Spielfeld"));
 
@@ -88,6 +89,13 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const [uhr, setUhr] = useState<{ text: string; abschnitt: string; rush: boolean; dunkel: boolean } | null>(null);
   const [tafel, setTafel] = useState<{ name: string; abfahrten: Abfahrt[] } | null>(null);
   const [ueberblick, setUeberblick] = useState(false);
+  const [zoomStufe, setZoomStufe] = useState(0);
+  // Näher heran schaltet den Überblick ab; weiter weg als normal öffnet ihn.
+  const zoome = (r: 1 | -1) => {
+    if (r === 1 && ueberblick) return setUeberblick(false);
+    if (r === -1 && zoomStufe === 0) return setUeberblick(true);
+    setZoomStufe((z) => Math.max(0, Math.min(ZOOM_STUFEN.length - 1, z + r)));
+  };
   const [tonAn, setTonAn] = useState(true);
   const [weste, setWeste] = useState(false);
   const [hilfe, setHilfe] = useState(true);
@@ -272,7 +280,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
       <div ref={huelle} className={`relative flex gap-3 ${gross ? "h-full w-full bg-slate-950 p-0" : ""}`}>
         <div className={`relative flex-1 overflow-hidden ${gross ? "" : "h-[calc(100dvh-7rem)] min-h-[440px] rounded-2xl shadow-2xl ring-1 ring-black/20"}`}>
           <Suspense fallback={<div className="flex h-full items-center justify-center bg-slate-900 text-sm text-white/70">🏙️ Stadt wird gebaut …</div>}>
-            <Spielfeld netz={netz} farbe={farbe} steuerkanal={steuerkanal} ueberblick={ueberblick} tonAn={tonAn}
+            <Spielfeld netz={netz} farbe={farbe} steuerkanal={steuerkanal} ueberblick={ueberblick} zoomStufe={zoomStufe} onZoom={zoome} tonAn={tonAn}
               onUntergrund={onUntergrund} onMeldung={onMeldung} onHinweis={setHinweis}
               onEreignis={buche} onSchild={setQuiz} onZeit={onZeit} onHaltestelle={onHaltestelle} onWeste={setWeste}
               onTragen={setGetragen} onNaehe={(was) => ltbSag({ typ: "naehe", was })}
@@ -296,6 +304,11 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             <div className="ml-auto flex gap-1.5">
               <button type="button" className={`${hudKnopf} ${ueberblick ? "ring-2 ring-amber-400" : ""}`} title="Überblick: Straßennamen, Abfahrten, Karte (M)"
                 onClick={() => { setUeberblick((v) => !v); zurBuehne(); }}>🗺️</button>
+              <button type="button" className={`${hudKnopf} ${zoomStufe > 0 && !ueberblick ? "ring-2 ring-amber-400" : ""}`}
+                title="Näher heran (+ / − oder Mausrad)"
+                onClick={() => { setUeberblick(false); setZoomStufe((z) => (z + 1) % ZOOM_STUFEN.length); zurBuehne(); }}>
+                🔍{zoomStufe > 0 && !ueberblick ? <sup className="text-[10px]">{zoomStufe + 1}</sup> : null}
+              </button>
               <button type="button" className={hudKnopf} title={tonAn ? "Ton aus" : "Ton an"} onClick={tonUmschalten}>{tonAn ? "🔊" : "🔇"}</button>
               <button type="button" className={`${hudKnopf} ${ltbAn ? "ring-2 ring-sky-400" : "opacity-60"}`} title={ltbAn ? "LTB, den Pinguin, ausschalten" : "LTB, den Pinguin, einschalten"}
                 onClick={ltbUmschalten}>🐧</button>
@@ -312,7 +325,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               <div className="mb-1 font-black">Steuerung</div>
               <div><b>Laufen:</b> Pfeiltasten, WASD oder Maus (klicken = hingehen, gedrückt halten = folgen) · <b>Rennen:</b> Umschalt</div>
               <div><b>Umschauen:</b> Leertaste · <b>Taster / Schild:</b> E</div>
-              <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Müll aufheben/einwerfen:</b> E</div>
+              <div><b>Warnweste:</b> V · <b>Überblick:</b> M · <b>Zoom:</b> + / − oder Mausrad · <b>Aussteigen:</b> X oder auf den Bus tippen · <b>Müll aufheben/einwerfen:</b> E</div>
               <div><b>Gesten:</b> {GESTEN.filter((g) => beleidigungen || !g.beleidigung).map((g) => `${g.taste} ${g.emoji}`).join("  ")}</div>
               <div className="mt-1 opacity-70">Erst ins Bild klicken, dann laufen. Du startest vor der Schule.</div>
               {darfUhrStellen && (
