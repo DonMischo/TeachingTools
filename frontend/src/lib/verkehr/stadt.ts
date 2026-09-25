@@ -11,7 +11,7 @@ export type StrassenArt = "secondary" | "tertiary" | "residential" | "unclassifi
 export type WegArt = "geh" | "rad" | "geh_rad" | "treppe" | "feldweg" | "querung";
 export type PunktArt =
   | "ampel" | "ampelUebergang" | "zebra" | "querung" | "bushalt" | "tramhalt" | "bahnhalt"
-  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "ort";
+  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort";
 
 export type KartenStrasse = {
   art: StrassenArt; linie: P[]; name?: string; spuren?: number; einbahn?: boolean;
@@ -26,6 +26,13 @@ export type Karte = {
   gebaeude: { umriss: P[]; name?: string; art?: string; etagen?: number }[];
   flaechen: { art: string; umriss: P[] }[];
   punkte: KartenPunkt[];
+  /** Bus- und Tramlinien aus OSM, je Richtung die Haltestellen in Fahrtreihenfolge. */
+  linien?: Linie[];
+};
+
+export type Linie = {
+  art: "bus" | "tram"; nr: string; betreiber: string;
+  richtungen: { ziel: string; halte: string[] }[];
 };
 
 export const KARTE = roh as unknown as Karte;
@@ -246,4 +253,34 @@ export function startpunkt(s: Stadt, nahe: P = [0, 0]): P {
       if (s.untergrund(x, y).art === "gehweg") return [x, y];
     }
   return nahe;
+}
+
+/** Die Schule (Eugen-Richter-Straße 22): Mitte der Schulgebäude um den Kartenmittelpunkt. */
+export function schulMitte(s: Stadt): P {
+  const teile = s.karte.gebaeude.filter((g) => g.art === "school" && Math.hypot(g.umriss[0][0], g.umriss[0][1]) < 120);
+  if (!teile.length) return [0, 0];
+  const pk = teile.flatMap((g) => g.umriss);
+  return [pk.reduce((a, p) => a + p[0], 0) / pk.length, pk.reduce((a, p) => a + p[1], 0) / pk.length];
+}
+
+/**
+ * Start vor der Schule: auf dem Gehweg der Eugen-Richter-Straße, an der
+ * Stelle, die der Schule am nächsten ist, auf der Schulseite.
+ */
+export function schulStart(s: Stadt): P {
+  const [mx, my] = schulMitte(s);
+  let best: { p: P; d: number; halb: number } | null = null;
+  for (const st of s.strassen) {
+    if (st.name !== "Eugen-Richter-Straße") continue;
+    for (let i = 0; i + 1 < st.linie.length; i++) {
+      const a = st.linie[i], b = st.linie[i + 1];
+      const { d, t } = abstandZuStrecke(mx, my, a, b);
+      if (!best || d < best.d) best = { p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], d, halb: st.breite / 2 };
+    }
+  }
+  if (!best) return startpunkt(s, [mx, my]);
+  const [px, py] = best.p;
+  const f = (best.halb + 1.3) / (Math.hypot(mx - px, my - py) || 1);
+  const ziel: P = [px + (mx - px) * f, py + (my - py) * f];
+  return s.untergrund(ziel[0], ziel[1]).art === "gehweg" ? ziel : startpunkt(s, ziel);
 }

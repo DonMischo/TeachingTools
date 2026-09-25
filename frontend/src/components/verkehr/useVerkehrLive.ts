@@ -23,10 +23,12 @@ export function useVerkehrLive(zugang: Zugang | null) {
     beleidigungen: true,
     gesten: new Map<string, { id: GestenId; t: number }>(),
     strafe: null as { bis: number; karmaBis: number } | null,
+    zeitVersatz: 0,
   });
   const [liste, setListe] = useState<FremderSpieler[]>([]);
   const [beleidigungen, setBeleidigungen] = useState(true);
   const [lehrkraft, setLehrkraft] = useState(false);
+  const [zeitVersatz, setZeitVersatz] = useState(0);
   const zuletztListe = useRef(0);
 
   const pfad = zugang
@@ -41,6 +43,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
         z.du = n.du;
         z.versatz = n.uhr - jetzt;
         z.beleidigungen = n.beleidigungen;
+        z.zeitVersatz = n.zeitVersatz ?? 0;
+        setZeitVersatz(z.zeitVersatz);
         z.taster = new Map(Object.entries(n.taster ?? {}).map(([k, v]) => [Number(k), v as number]));
         setBeleidigungen(n.beleidigungen);
         setLehrkraft(!!n.lehrkraft);
@@ -71,6 +75,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
       case "einstellungen":
         z.beleidigungen = n.beleidigungen;
         setBeleidigungen(n.beleidigungen);
+        z.zeitVersatz = n.zeitVersatz ?? 0;
+        setZeitVersatz(z.zeitVersatz);
         break;
     }
   });
@@ -97,11 +103,12 @@ export function useVerkehrLive(zugang: Zugang | null) {
       beleidigungen: () => z.beleidigungen,
       gesten: () => z.gesten,
       strafe: () => z.strafe,
-      sendeIch(x, y, w, mitfahrt, farbe) {
+      zeitVersatz: () => z.zeitVersatz,
+      sendeIch(x, y, w, mitfahrt, farbe, weste) {
         const t = performance.now();
         if (t - zuletztIch < 100) return;
         zuletztIch = t;
-        send({ typ: "ich", x, y, w, mitfahrt, farbe });
+        send({ typ: "ich", x, y, w, mitfahrt, farbe, weste });
       },
       sendeGeste: (id) => send({ typ: "geste", id }),
       sendeTaster: (anlage) => send({ typ: "taster", anlage }),
@@ -111,7 +118,8 @@ export function useVerkehrLive(zugang: Zugang | null) {
   }, [send]);
 
   return {
-    netz, connected, liste, beleidigungen, lehrkraft, du: zustand.current.du,
+    netz, connected, liste, beleidigungen, lehrkraft, zeitVersatz,
     setzeBeleidigungen: (an: boolean) => send({ typ: "einstellungen", beleidigungen: an }),
+    setzeZeitVersatz: (sekunden: number) => send({ typ: "einstellungen", zeitVersatz: sekunden }),
   };
 }

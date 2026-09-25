@@ -185,3 +185,48 @@ def test_fuehrerschein_zu_viele_schwere_verstoesse(client, db, klass):
     ada = _schueler_mit_klasse(db, klass)
     r = client.post("/api/verkehr/pruefung", json={"erledigt": ALLE, "schwere": verkehr.MAX_SCHWERE + 1}, headers=als(ada))
     assert r.status_code == 400
+
+
+def test_lehrkraft_stellt_die_uhrzeit_fuer_alle(client, teacher, teacher_token):
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            await bis(lk, "willkommen")
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                g = await bis(gast, "willkommen")
+                assert g["zeitVersatz"] == 0
+                await gast.send_json({"typ": "einstellungen", "zeitVersatz": 999})
+                await lk.send_json({"typ": "einstellungen", "zeitVersatz": 3600})
+                e = await bis(gast, "einstellungen")
+                assert e["zeitVersatz"] == 3600
+                await gast.send_json({"typ": "ich", "x": 1, "y": 2, "weste": True})
+                stand = await bis(lk, "stand", lambda n: any(s.get("weste") for s in n["spieler"]))
+                assert stand
+            # Wer später kommt, bekommt die gestellte Uhr gleich mit.
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast2:
+                assert (await bis(gast2, "willkommen"))["zeitVersatz"] == 3600
+
+    asyncio.run(lauf())
+
+
+def test_stille_verbindungen_werden_entfernt(client, teacher, teacher_token):
+    """Eine abgerissene Verbindung ohne Schließen darf nicht ewig Taktgeber bleiben."""
+    code = _code(client, teacher_token)
+    client.cookies.clear()
+    token = create_guest_token(code, "Bo")
+
+    async def lauf():
+        async with connect_ws(app, _scope(code, bearer_headers(teacher.id, "teacher"))) as lk:
+            w = await bis(lk, "willkommen")
+            async with connect_ws(app, _scope(code, [], f"guest_token={token}".encode())) as gast:
+                g = await bis(gast, "willkommen")
+                # Die Lehrkraft »verstummt«: ihr letztes Lebenszeichen liegt lange zurück.
+                verkehr._raeume[code].spieler[w["du"]].zuletzt -= verkehr.STILL + 5
+                t = await bis(gast, "taktgeber", lambda n: n["key"] == g["du"])
+                assert t["key"] == g["du"]
+                assert w["du"] not in verkehr._raeume[code].spieler
+
+    asyncio.run(lauf())

@@ -44,7 +44,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
   sonnensystem: { title: "Sonnensystem", icon: "🪐", node: null },
   // Die Stadt ist ein Live-Raum je Code — dafür braucht sie Code und Gast-Token.
-  verkehr: { title: "Verkehrssicherheit", icon: "🚦", node: null },
+  verkehr: { title: "GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß", icon: "🚦", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.

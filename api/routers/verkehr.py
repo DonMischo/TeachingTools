@@ -54,6 +54,11 @@ class Spieler:
     strafe_bis: float = 0.0
     karma_bis: float = 0.0
     hand: float = 0.0
+    weste: bool = False
+    # Letztes Lebenszeichen: Wer 20 s nichts schickt, ist weg (abgerissene
+    # Verbindung ohne sauberes Schließen) — sonst bliebe ein Geist Taktgeber
+    # und alle Autos stünden still.
+    zuletzt: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -62,6 +67,9 @@ class Raum:
     reihenfolge: list[str] = field(default_factory=list)
     taktgeber: str | None = None
     beleidigungen: bool = True
+    # Sekunden, um die die Spieluhr von der echten abweicht — die Lehrkraft
+    # stellt so etwa 7:30 Uhr (Berufsverkehr) oder 21 Uhr (Dunkelheit) ein.
+    zeit_versatz: float = 0.0
     taster: dict[int, float] = field(default_factory=dict)
     schleife: asyncio.Task | None = None
 
@@ -80,16 +88,37 @@ def _stand(raum: Raum) -> dict:
         "spieler": [
             {"key": k, "name": s.name, "x": round(s.x, 2), "y": round(s.y, 2), "w": round(s.w, 2),
              "farbe": s.farbe, "punkte": s.punkte, "strafeBis": s.strafe_bis, "karmaBis": s.karma_bis,
-             "hand": s.hand, "mitfahrt": s.mitfahrt, "lehrkraft": s.lehrkraft, "verstoesse": s.verstoesse}
+             "hand": s.hand, "mitfahrt": s.mitfahrt, "weste": s.weste, "lehrkraft": s.lehrkraft, "verstoesse": s.verstoesse}
             for k, s in raum.spieler.items()
         ],
     }
 
 
+STILL = 20.0
+
+
+async def _raeume_geister(code: str, raum: Raum) -> None:
+    jetzt = time.time()
+    geister = [k for k, s in raum.spieler.items() if jetzt - s.zuletzt > STILL]
+    for k in geister:
+        raum.spieler.pop(k, None)
+        if k in raum.reihenfolge:
+            raum.reihenfolge.remove(k)
+        # 1012 statt 4xxx: lebt der Browser doch noch (Hintergrund-Tab), verbindet er sich neu.
+        await mgr.close_student(code, k, 1012)
+    if geister and raum.spieler:
+        await _neuer_taktgeber(code, raum)
+
+
 async def _schleife(code: str) -> None:
     """Verteilt die Stände, solange jemand im Raum ist."""
     while code in _raeume and _raeume[code].spieler:
-        await mgr.broadcast(code, _stand(_raeume[code]))
+        raum = _raeume[code]
+        await _raeume_geister(code, raum)
+        if not raum.spieler:
+            _raeume.pop(code, None)
+            break
+        await mgr.broadcast(code, _stand(raum))
         await asyncio.sleep(TAKT)
 
 
@@ -137,7 +166,7 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
     mgr.add_student(code, key, websocket)
     await websocket.send_json({
         "typ": "willkommen", "du": key, "uhr": uhr(), "lehrkraft": lehrkraft,
-        "beleidigungen": raum.beleidigungen, "taster": {str(k): v for k, v in raum.taster.items()},
+        "beleidigungen": raum.beleidigungen, "zeitVersatz": raum.zeit_versatz, "taster": {str(k): v for k, v in raum.taster.items()},
     })
     await _neuer_taktgeber(code, raum)
     await websocket.send_json({"typ": "taktgeber", "key": raum.taktgeber})
@@ -148,13 +177,19 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
         while True:
             n = await receive_json(websocket, db)
             typ = n.get("typ")
-            ich = raum.spieler[key]
+            ich = raum.spieler.get(key)
+            if ich is None:
+                # Als Geist entfernt, aber doch noch da: wieder aufnehmen.
+                ich = raum.spieler[key] = Spieler(name=name, lehrkraft=lehrkraft)
+                raum.reihenfolge.append(key)
+            ich.zuletzt = time.time()
             if typ == "ich":
                 try:
                     ich.x, ich.y, ich.w = float(n["x"]), float(n["y"]), float(n.get("w", 0))
                 except (KeyError, TypeError, ValueError):
                     continue
                 ich.mitfahrt = bool(n.get("mitfahrt"))
+                ich.weste = bool(n.get("weste"))
                 if isinstance(n.get("farbe"), int):
                     ich.farbe = n["farbe"] & 0xFFFFFF
             elif typ == "ping":
@@ -192,7 +227,11 @@ async def verkehr_ws(code: str, websocket: WebSocket, db: Session = Depends(get_
             elif typ == "einstellungen" and lehrkraft:
                 if isinstance(n.get("beleidigungen"), bool):
                     raum.beleidigungen = n["beleidigungen"]
-                    await mgr.broadcast(code, {"typ": "einstellungen", "beleidigungen": raum.beleidigungen})
+                versatz = n.get("zeitVersatz")
+                if isinstance(versatz, (int, float)) and abs(versatz) <= 8 * 24 * 3600:
+                    raum.zeit_versatz = float(versatz)
+                await mgr.broadcast(code, {"typ": "einstellungen", "beleidigungen": raum.beleidigungen,
+                                           "zeitVersatz": raum.zeit_versatz})
     except WebSocketDisconnect:
         pass
     finally:

@@ -18,8 +18,8 @@ export default function VerkehrPage() {
   }, [lehrkraft]);
 
   return (
-    <RequireAccount icon="🚦" title="Verkehrssicherheit">
-      <Verkehr action={<ToolSessionBar tool="verkehr" title="Verkehrssicherheit" />} zugang={code ? { code } : null}
+    <RequireAccount icon="🚦" title="GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß">
+      <Verkehr action={<ToolSessionBar tool="verkehr" title="GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß" />} zugang={code ? { code } : null}
         speicherSchluessel={auth ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}` : "geraet"}
         konto={auth?.user_type === "student"} />
     </RequireAccount>

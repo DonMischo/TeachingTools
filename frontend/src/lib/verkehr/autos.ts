@@ -28,6 +28,8 @@ export type Fahrzeug = {
   wartetBis: number;
   /** Nur Busse: fährt die Linie ab und hält an ihren Haltestellen. */
   linie?: Linie;
+  /** Zielanzeige des Busses, etwa »9 Nordbahnhof«. */
+  anzeige?: string;
   /** Stelle in `linie.kanten`. */
   ri?: number;
   /** Seit wann der Bus an einer Haltestelle steht; `haltRi` = an welcher. */
@@ -38,7 +40,7 @@ export type Fahrzeug = {
 };
 
 /** Eine Buslinie als Rundkurs über die Kanten, mit den Haltestellen darauf. */
-export type Linie = { kanten: number[]; halte: Map<number, { s: number; halt: Halt }> };
+export type Linie = { kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string };
 
 /** Busmaße und Türen (Abstand der Türmitten von der Busmitte). */
 export const BUS = { laenge: 12, breite: 2.55, tueren: [4.3, -0.6], farbe: 0xeeeeee } as const;
@@ -50,6 +52,8 @@ export type Fussgaenger = {
   hand: number;
   /** Bis wann Autofahrer ihn nicht vorlassen (nach Beleidigungen). */
   karmaBis: number;
+  /** Warnweste oder Reflektoren: im Dunkeln früh gesehen. */
+  weste?: boolean;
 };
 
 export type Unfall = { fahrzeug: number; fussgaenger: string; tempo: number };
@@ -59,6 +63,8 @@ const AUTOFARBEN = [0xc0392b, 0x2e86de, 0xf1c40f, 0xecf0f1, 0x2c3e50, 0x27ae60, 
 
 const BREMSEN = 4.5, NOTBREMSE = 9, ANFAHREN = 2.2;
 const SICHT = 40;
+/** Im Dunkeln ohne Warnweste sieht man einen Menschen erst auf diese Entfernung. */
+export const SICHT_DUNKEL = 14;
 
 export function tempoGrenze(s: Strasse): number {
   const kmh = s.tempo ?? (s.art === "living_street" ? 7 : s.art === "secondary" || s.art === "primary" ? 50 : s.art === "tertiary" ? 40 : 30);
@@ -69,9 +75,11 @@ export class Strassenverkehr {
   readonly knoten: Knoten[] = [];
   readonly kanten: Kante[] = [];
   fahrzeuge: Fahrzeug[] = [];
+  /** Im Dunkeln sehen Autofahrer Menschen ohne Warnweste erst spät. */
+  dunkel = false;
   private naechsteId = 1;
 
-  constructor(readonly stadt: Stadt, readonly anlagen: Anlage[], readonly ziel = 28) {
+  constructor(readonly stadt: Stadt, readonly anlagen: Anlage[], public ziel = 28) {
     const index = new Map<string, number>();
     const knoten = (p: P) => {
       const k = `${p[0]},${p[1]}`;
@@ -194,6 +202,7 @@ export class Strassenverkehr {
           // Wer am Zebrastreifen steht oder schon drauf ist, hat Vorrang.
           for (const m of menschen) {
             if (Math.hypot(m.x - h.p[0], m.y - h.p[1]) > kk.strasse.breite / 2 + 2.5) continue;
+            if (d > this.sichtAuf(m)) continue;
             if (m.karmaBis > t && !aufFahrbahnVor(this.stadt, m)) { hupen = true; continue; }
             frei = Math.min(frei, d);
           }
@@ -206,7 +215,7 @@ export class Strassenverkehr {
     for (const m of menschen) {
       const dx = m.x - f.x, dy = m.y - f.y;
       const laengs = dx * c + dy * s, quer = -dx * s + dy * c;
-      if (laengs < 0 || laengs > SICHT) continue;
+      if (laengs < 0 || laengs > this.sichtAuf(m)) continue;
       if (Math.abs(quer) < f.breite / 2 + 1 && aufFahrbahnVor(this.stadt, m)) {
         frei = Math.min(frei, laengs - f.laenge / 2 - 1.5);
         if (m.karmaBis > t) hupen = true;
@@ -343,15 +352,47 @@ export class Strassenverkehr {
     return { kanten, halte: haltAn };
   }
 
+  /** Wie weit ein Autofahrer diesen Menschen sieht (m). */
+  private sichtAuf(m: Fussgaenger) {
+    return this.dunkel && !m.weste ? SICHT_DUNKEL : SICHT;
+  }
+
   /** `anzahl` Busse gleichmäßig auf die Linie setzen. */
   setzeBusse(linie: Linie, anzahl: number) {
-    for (let i = 0; i < anzahl; i++) {
-      const ri = Math.floor((i * linie.kanten.length) / anzahl);
-      this.setze({
-        id: this.naechsteId++, art: "bus", farbe: BUS.farbe, laenge: BUS.laenge, breite: BUS.breite,
-        kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
-        x: 0, y: 0, winkel: 0, hupe: 0, wartetBis: 0, linie, ri, haltSeit: null,
-      });
+    for (let i = 0; i < anzahl; i++) this.neuerBus(linie, Math.floor((i * linie.kanten.length) / anzahl));
+  }
+
+  private neuerBus(linie: Linie, ri: number) {
+    this.setze({
+      id: this.naechsteId++, art: "bus", farbe: BUS.farbe, laenge: BUS.laenge, breite: BUS.breite,
+      kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
+      x: 0, y: 0, winkel: 0, hupe: 0, wartetBis: 0, linie, ri, haltSeit: null, anzeige: linie.anzeige,
+    });
+  }
+
+  /**
+   * Die Zahl der Busse einer Linie an den Takt anpassen: ein neuer Bus kommt
+   * dort auf die Linie, wo der Abstand zu den anderen am größten ist; weg
+   * fällt einer, der gerade nicht an einer Haltestelle steht.
+   */
+  busseAnpassen(linie: Linie, soll: number) {
+    const eigene = () => this.fahrzeuge.filter((f) => f.linie === linie);
+    while (eigene().length < soll) {
+      const n = linie.kanten.length;
+      const belegt = eigene().map((f) => f.ri ?? 0).sort((a, b) => a - b);
+      let ri = 0;
+      if (belegt.length) {
+        let luecke = -1;
+        belegt.forEach((r, i) => {
+          const weiter = (belegt[(i + 1) % belegt.length] - r + n) % n || n;
+          if (weiter > luecke) { luecke = weiter; ri = (r + Math.floor(weiter / 2)) % n; }
+        });
+      }
+      this.neuerBus(linie, ri);
+    }
+    while (eigene().length > soll) {
+      const weg = eigene().find((f) => f.haltSeit == null) ?? eigene()[0];
+      this.fahrzeuge = this.fahrzeuge.filter((f) => f !== weg);
     }
   }
 

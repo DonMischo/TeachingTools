@@ -3,7 +3,7 @@
  * Draufsicht wie im ersten GTA: Dächer mit Schlagschatten, graue Fahrbahnen,
  * helle Gehwege, rote Radwege.
  */
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Text, Texture, TilingSprite } from "pixi.js";
 import type { P } from "./geometrie";
 import { bahnsteigUm, winkelVon, type Stadt } from "./stadt";
 import type { SchildArt } from "./schilder";
@@ -78,9 +78,13 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   const boden = new Container();
   const oben = new Container();
 
-  const grund = new Graphics();
   const r = karte.radius + 40;
-  grund.rect(-r, -r, 2 * r, 2 * r).fill(FARBE.boden);
+  const rasen = new TilingSprite({ texture: rasenTextur(), width: 2 * r, height: 2 * r });
+  rasen.position.set(-r, -r);
+  // Die Kachel ist 128 px groß und soll 12 m decken.
+  rasen.tileScale.set(12 / 128);
+  boden.addChild(rasen);
+  const grund = new Graphics();
   for (const f of karte.flaechen) {
     const farbe = FLAECHE[f.art];
     if (farbe !== undefined && f.umriss.length >= 3) grund.poly(flach(f.umriss)).fill(farbe);
@@ -119,6 +123,16 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   // Leitlinie in der Mitte, nur auf breiten Straßen in beide Richtungen
   for (const s of stadt.strassen) if (!s.einbahn && s.breite >= 6.5) strichel(strassen, s.linie, 3, 6);
   strassen.stroke({ width: 0.15, color: FARBE.markierung });
+  // Randlinien und Rinnstein auf Durchgangsstraßen
+  for (const s of stadt.strassen) {
+    if (s.art !== "secondary" && s.art !== "tertiary" && s.art !== "primary") continue;
+    for (const seite of [-1, 1]) {
+      linie(strassen, versetzt(s.linie, seite * (s.breite / 2 - 0.35)));
+      strassen.stroke({ width: 0.12, color: FARBE.markierung, alpha: 0.8, join: "round" });
+      linie(strassen, versetzt(s.linie, seite * (s.breite / 2 - 0.1)));
+      strassen.stroke({ width: 0.2, color: 0x3a3a3e, join: "round" });
+    }
+  }
   boden.addChild(strassen);
 
   // Übergänge: Zebrastreifen und Fußgängerfurten an Ampeln
@@ -166,11 +180,18 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
 
   // Häuser: Schlagschatten, dann Dach
   const haeuser = new Graphics();
-  for (const h of karte.gebaeude) if (h.umriss.length >= 3) haeuser.poly(flach(h.umriss.map(([x, y]) => [x + 1.2, y + 1.2] as P))).fill({ color: FARBE.schatten, alpha: 0.35 });
+  const hoehe = (h: (typeof karte.gebaeude)[number]) => (h.etagen ?? (h.art === "apartments" ? 4 : h.art === "garages" ? 1 : 2)) * 0.7;
+  for (const h of karte.gebaeude) if (h.umriss.length >= 3) {
+    const d = hoehe(h);
+    haeuser.poly(flach(h.umriss.map(([x, y]) => [x + d, y + d] as P))).fill({ color: FARBE.schatten, alpha: 0.33 });
+  }
   for (const h of karte.gebaeude) {
     if (h.umriss.length < 3) continue;
     const farbe = DACH[h.art ?? ""] ?? 0x8e6e5e;
-    haeuser.poly(flach(h.umriss)).fill(farbe).stroke({ width: 0.25, color: dunkler(farbe), join: "round" });
+    haeuser.poly(flach(h.umriss)).fill(farbe).stroke({ width: 0.3, color: dunkler(farbe), join: "round" });
+    // Dachfläche: etwas hellerer Kern, als läge dort der First im Licht
+    const mx = h.umriss.reduce((a, p) => a + p[0], 0) / h.umriss.length, my = h.umriss.reduce((a, p) => a + p[1], 0) / h.umriss.length;
+    haeuser.poly(flach(h.umriss.map(([x, y]) => [mx + (x - mx) * 0.72, my + (y - my) * 0.72] as P))).fill({ color: heller(farbe), alpha: 0.35 });
   }
   boden.addChild(haeuser);
 
@@ -190,9 +211,11 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   // Bäume über allem am Boden
   const baeume = new Graphics();
   for (const p of karte.punkte) if (p.art === "baum") {
-    baeume.circle(p.p[0] + 0.8, p.p[1] + 0.8, 2.4).fill({ color: FARBE.schatten, alpha: 0.3 });
-    baeume.circle(p.p[0], p.p[1], 2.4).fill(FARBE.baumkrone);
-    baeume.circle(p.p[0] - 0.6, p.p[1] - 0.6, 1.2).fill(FARBE.baumlicht);
+    const r = 1.9 + (Math.abs(Math.sin(p.p[0] * 12.9898 + p.p[1] * 78.233)) * 1.2);
+    baeume.circle(p.p[0] + 1, p.p[1] + 1, r).fill({ color: FARBE.schatten, alpha: 0.3 });
+    baeume.circle(p.p[0], p.p[1], r).fill(FARBE.baumkrone);
+    baeume.circle(p.p[0] + r * 0.3, p.p[1] - r * 0.2, r * 0.55).fill({ color: 0x3a6b31, alpha: 0.9 });
+    baeume.circle(p.p[0] - r * 0.3, p.p[1] - r * 0.3, r * 0.45).fill(FARBE.baumlicht);
   }
   oben.addChild(baeume);
 
@@ -221,6 +244,35 @@ export function beschriftung(text: string, farbe: number, hoeheM: number): Text 
   t.anchor.set(0.5);
   t.scale.set(hoeheM / 48);
   return t;
+}
+
+/** Gras mit Flecken und Halmen — eine kleine Kachel, im Browser gemalt. */
+function rasenTextur(): Texture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#5f7a45";
+  g.fillRect(0, 0, 128, 128);
+  let z = 7;
+  const zufall = () => ((z = (z * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 90; i++) {
+    g.fillStyle = zufall() < 0.5 ? "rgba(80,110,55,0.5)" : "rgba(110,140,70,0.35)";
+    const x = zufall() * 128, y = zufall() * 128, r = 4 + zufall() * 12;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    // an den Rändern doppelt, damit die Kachel nahtlos ist
+    g.beginPath(); g.arc(x - 128, y, r, 0, Math.PI * 2); g.arc(x, y - 128, r, 0, Math.PI * 2); g.fill();
+  }
+  for (let i = 0; i < 500; i++) {
+    g.fillStyle = zufall() < 0.5 ? "rgba(140,170,90,0.4)" : "rgba(60,85,40,0.4)";
+    g.fillRect(zufall() * 128, zufall() * 128, 1, 2);
+  }
+  return Texture.from(c);
+}
+
+function heller(farbe: number): number {
+  const r = (farbe >> 16) & 255, g = (farbe >> 8) & 255, b = farbe & 255;
+  const h = (v: number) => Math.min(255, Math.round(v + (255 - v) * 0.35));
+  return (h(r) << 16) | (h(g) << 8) | h(b);
 }
 
 function dunkler(farbe: number): number {

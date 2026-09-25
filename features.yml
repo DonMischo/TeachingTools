@@ -176,7 +176,7 @@ simulationen:
       - Erdmagnetfeld mit Sonnensturm
       - Galerie mit rund 90 Bildern zum Freischalten
   - id: verkehr
-    name: Verkehrssicherheit
+    name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:
       - Echte Karte um die Schule (OpenStreetMap, 750 m)
       - Zu Fuß laufen in GTA-artiger Draufsicht (Pfeile/WASD)
@@ -187,6 +187,10 @@ simulationen:
       - Gemeinsame Live-Stadt für die Klasse, Lehrkraft-Übersicht
       - Gesten mit Emoji-Blase, Schimpfen mit Polizei (abschaltbar)
       - Aufträge, Schilder-Rallye, Gruppe als Wand, Fußgänger-Führerschein mit Hauspunkten
+      - Start vor der Schule, Uhrzeit mit Berufsverkehr, Dämmerung und Nacht (Warnweste)
+      - Echte Linien (Bus 9, 35, Tram 1, 5) mit Abfahrtstafeln nach EVAG-Takt
+      - Überblick mit Straßennamen und Minikarte, Vollbild, Stick-Steuerung am Handy
+      - Geräusche (Web Audio), 19 Erfolge und Statistik
 
 tools:
   - id: schreibraum

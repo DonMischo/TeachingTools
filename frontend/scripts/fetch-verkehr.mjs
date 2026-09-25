@@ -36,6 +36,7 @@ const ABFRAGE = `[out:json][timeout:120];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[shop][name];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[amenity~"^(school|kindergarten|pharmacy|restaurant|fast_food|cafe)$"][name];
   node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[natural=tree];
+  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[highway=street_lamp];
 );
 out body;
 >;
@@ -47,12 +48,24 @@ const r1 = (v) => Math.round(v * 10) / 10;
 const projiziere = (lat, lon) => [r1((lon - MITTE.lon) * M_JE_LON), r1((MITTE.lat - lat) * M_JE_LAT)];
 const drin = ([x, y]) => Math.abs(x) <= RAND && Math.abs(y) <= RAND;
 
-async function hole() {
-  for (let versuch = 1; versuch <= 5; versuch++) {
-    const antwort = await fetch("https://overpass-api.de/api/interpreter", {
+/** Linien (Bus/Tram) über die Haltestellen im Umkreis — mit den Namen ihrer Haltestellen. */
+const LINIEN_ABFRAGE = `[out:json][timeout:120];
+node(around:${RADIUS + 500},${MITTE.lat},${MITTE.lon})[public_transport=platform]->.p;
+way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[railway=tram]->.w;
+(rel(bn.p)[type=route][route~"^(bus|tram)$"];rel(bw.w)[type=route][route=tram];)->.r;
+.r out body;
+node(r.r)[public_transport=platform];
+out tags;`;
+
+/** Zwei Server im Wechsel — Overpass drosselt schnell. */
+const SERVER = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
+
+async function hole(abfrage = ABFRAGE) {
+  for (let versuch = 1; versuch <= 6; versuch++) {
+    const antwort = await fetch(SERVER[(versuch - 1) % SERVER.length], {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "TT-Teaching-Tools/1.0" },
-      body: "data=" + encodeURIComponent(ABFRAGE),
+      body: "data=" + encodeURIComponent(abfrage),
     });
     const text = await antwort.text();
     // Overpass drosselt gern mit einer leeren oder HTML-Antwort.
@@ -110,6 +123,7 @@ function punktArt(t) {
   if (t.highway === "stop") return "stopp";
   if (t.highway === "give_way") return "vorfahrtAchten";
   if (t.natural === "tree") return "baum";
+  if (t.highway === "street_lamp") return "laterne";
   if (t.shop || t.amenity) return "ort";
   return null;
 }
@@ -188,6 +202,22 @@ for (const e of daten.elements) {
   }
 }
 
+// Linien: je Linie und Richtung die Haltestellen in Fahrtreihenfolge (nur Namen).
+const routen = await hole(LINIEN_ABFRAGE);
+const namen = new Map(routen.elements.filter((e) => e.type === "node").map((e) => [e.id, e.tags?.name]));
+const linien = new Map();
+for (const r of routen.elements) {
+  if (r.type !== "relation" || !r.tags?.ref) continue;
+  const halte = r.members.filter((m) => m.type === "node" && m.role.startsWith("platform")).map((m) => namen.get(m.ref)).filter(Boolean);
+  const key = `${r.tags.route}|${r.tags.ref}`;
+  const eintrag = linien.get(key) ?? { art: r.tags.route, nr: r.tags.ref, betreiber: r.tags.operator ?? r.tags.network ?? "", richtungen: [] };
+  const ziel = r.tags.to ?? (r.tags.name ?? "").split("=>").pop().trim();
+  if (!eintrag.richtungen.some((x) => x.ziel === ziel)) eintrag.richtungen.push({ ziel, halte });
+  linien.set(key, eintrag);
+}
+karte.linien = [...linien.values()];
+
 writeFileSync(ZIEL, JSON.stringify(karte));
 const z = (k) => karte[k].length;
+console.log(`${karte.linien.map((l) => l.nr).join(", ")}: ${karte.linien.length} Linien`);
 console.log(`${ZIEL}: ${z("strassen")} Straßen, ${z("wege")} Wege, ${z("gleise")} Gleise, ${z("gebaeude")} Gebäude, ${z("flaechen")} Flächen, ${z("punkte")} Punkte`);

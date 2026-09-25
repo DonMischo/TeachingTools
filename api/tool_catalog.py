@@ -127,7 +127,7 @@ CATALOG: list[CatalogTool] = [
     }),
     # Verkehrssicherheit zu Fuß auf der echten Karte um die Schule
     # (OpenStreetMap), GTA-artige Draufsicht — rechnet im Browser.
-    CatalogTool("verkehr", "🚦 Verkehrssicherheit", "🚦", "simulationen", {
+    CatalogTool("verkehr", "🚦 GTA – Ganztagsaufmerksamkeit im Verkehr", "🚦", "simulationen", {
         "use": _cap(True, True),
     }),
     # ── Tools (teacher surface — students default off) ──

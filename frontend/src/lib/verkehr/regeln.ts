@@ -11,7 +11,7 @@ export type RegelId =
   | "rot" | "nichtGeschaut" | "umweg" | "troedeln" | "radweg" | "gleis" | "angefahren"
   | "sicherGequert" | "gruenGequert" | "zebraGequert" | "beleidigung"
   | "tuerBlockiert" | "gutEingestiegen" | "eingestiegen" | "ausgestiegen" | "verdeckt" | "weisseLinie"
-  | "gruppeWand" | "gruppeSchlange" | "schildRichtig" | "schildFalsch";
+  | "gruppeWand" | "gruppeSchlange" | "schildRichtig" | "schildFalsch" | "dunkelOhneWeste";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -34,6 +34,7 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   weisseLinie: { id: "weisseLinie", text: "Hinter der weißen Linie bleiben, wenn eine Bahn einfährt — der Fahrtwind kann dich mitreißen.", punkte: -10 },
   gruppeWand: { id: "gruppeWand", text: "Als Wand gequert — alle nebeneinander, alle zugleich.", punkte: 15 },
   gruppeSchlange: { id: "gruppeSchlange", text: "Als Schlange gequert — nebeneinander wärt ihr schneller drüben.", punkte: 0 },
+  dunkelOhneWeste: { id: "dunkelOhneWeste", text: "Im Dunkeln sehen dich Autofahrer ohne helle Kleidung erst sehr spät. Zieh die Warnweste an (V)!", punkte: 0 },
   schildRichtig: { id: "schildRichtig", text: "Richtig!", punkte: 5 },
   schildFalsch: { id: "schildFalsch", text: "Nicht ganz — lies die Erklärung.", punkte: 0 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },

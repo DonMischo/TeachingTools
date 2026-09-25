@@ -141,7 +141,9 @@ export type BahnStand = {
  * Fahrplan: anfahren mit Reisetempo, am Halt bremsen, halten, anfahren,
  * hinausfahren, bis zum nächsten Takt nicht da sein.
  */
-export function bahnStand(b: Bahn, t: number): BahnStand {
+export function bahnStand(b: Bahn, t: number, takt: number | null = b.takt): BahnStand {
+  // Kein Takt (nachts): keine Bahn.
+  if (takt === null) return { s: -1000, tempo: 0, haltAlter: null, sichtbar: false };
   const gesamt = b.laengen[b.laengen.length - 1];
   const v = b.tempo;
   const bremsweg = (v * v) / (2 * BREMS);
@@ -150,7 +152,7 @@ export function bahnStand(b: Bahn, t: number): BahnStand {
   const tAnfahrt = Math.max(0, (b.sHalt - bremsweg - s0) / v);
   const tAnkunft = tAnfahrt + tBremsen;
   const tAb = tAnkunft + HALT_DAUER;
-  const u = (((t + b.versatz) % b.takt) + b.takt) % b.takt;
+  const u = (((t + b.versatz) % takt) + takt) % takt;
   let s: number, tempo: number, haltAlter: number | null = null;
   if (u < tAnfahrt) { s = s0 + v * u; tempo = v; }
   else if (u < tAnkunft) { const a = u - tAnfahrt; s = b.sHalt - bremsweg + v * a - (BREMS * a * a) / 2; tempo = v - BREMS * a; }
@@ -177,4 +179,19 @@ export function wagenLagen(b: Bahn, stand: BahnStand): { p: P; winkel: number; l
     s -= l + 0.4;
   }
   return aus;
+}
+
+/** Der wievielte Umlauf das ist — für den Halt-Schlüssel und die Zielanzeige. */
+export function umlauf(b: Bahn, t: number, takt: number): number {
+  return Math.floor((t + b.versatz) / takt);
+}
+
+/**
+ * Takt der Bahn in Sekunden zur Spielzeit. Die Straßenbahn fährt hier für die
+ * Linien 1 und 5 im Wechsel, zusammen also doppelt so oft wie eine Linie; der
+ * (ausgedachte) Zug stündlich-ähnlich, fürs Spiel gestaucht.
+ */
+export function bahnTakt(b: Bahn, taktMinuten: number | null): number | null {
+  if (taktMinuten === null) return null;
+  return b.art === "tram" ? (taktMinuten * 60) / 2 : taktMinuten * 24;
 }
