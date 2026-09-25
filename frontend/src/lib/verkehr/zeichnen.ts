@@ -189,7 +189,7 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   const tore = new Graphics();
   // Nur an unserer Schule wissen wir von einem Tor.
   const [smx, smy] = schulMitte(stadt);
-  for (const t of stadt.tore.filter((t) => Math.hypot(t.p[0] - smx, t.p[1] - smy) < 150)) {
+  for (const t of stadt.tore.filter((t) => Math.hypot(t.p[0] - smx, t.p[1] - smy) < 200)) {
     const c = Math.cos(t.winkel + Math.PI / 2), sn = Math.sin(t.winkel + Math.PI / 2), h = 2.3;
     const a: P = [t.p[0] - c * h, t.p[1] - sn * h], b: P = [t.p[0] + c * h, t.p[1] + sn * h];
     tore.moveTo(a[0], a[1]).lineTo(b[0], b[1]).stroke({ width: 0.25, color: 0x4b5563 });
@@ -224,8 +224,24 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     const g = new Graphics();
     g.poly(flach(halle.umriss)).fill(0xe8ebee).stroke({ width: 0.3, color: 0x9aa3ab, join: "round" });
     const { x0, x1, y0, y1 } = halle.box;
-    for (let x = x0 + 1.2; x < x1 - 0.6; x += 1.2) g.moveTo(x, y0 + 0.4).lineTo(x, y1 - 0.4).stroke({ width: 0.08, color: 0xc5ccd3 });
-    g.rect(x0 + 0.3, y1 - 4.5, x1 - x0 - 0.6, 4.2).fill(0x6b9a3f);
+    // Gründach: Streifen an der Kante, die zur Schulmitte zeigt
+    const u = halle.umriss, [smx2, smy2] = schulMitte(stadt);
+    let beste = 0, bd = Infinity;
+    for (let i = 0; i < u.length; i++) {
+      const a = u[i], b = u[(i + 1) % u.length];
+      const d = Math.hypot((a[0] + b[0]) / 2 - smx2, (a[1] + b[1]) / 2 - smy2);
+      if (d < bd) { bd = d; beste = i; }
+    }
+    const a = u[beste], b = u[(beste + 1) % u.length];
+    const mx2 = u.reduce((s, p) => s + p[0], 0) / u.length, my2 = u.reduce((s, p) => s + p[1], 0) / u.length;
+    const nach = (p: P): P => { const l = Math.hypot(mx2 - p[0], my2 - p[1]) || 1; return [p[0] + (mx2 - p[0]) / l * 5, p[1] + (my2 - p[1]) / l * 5]; };
+    // Blechfalze längs der Halle
+    for (let f = 0.08; f < 0.95; f += 0.06) {
+      const p = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f] as P;
+      const q = [u[(beste + 3) % 4][0] + (u[(beste + 2) % 4][0] - u[(beste + 3) % 4][0]) * f, u[(beste + 3) % 4][1] + (u[(beste + 2) % 4][1] - u[(beste + 3) % 4][1]) * f] as P;
+      g.moveTo(p[0], p[1]).lineTo(q[0], q[1]).stroke({ width: 0.08, color: 0xc5ccd3 });
+    }
+    g.poly([...a, ...b, ...nach(b), ...nach(a)]).fill(0x6b9a3f);
     boden.addChild(g);
     const t = beschriftung("Turnhalle", 0x334155, 1.8);
     t.style.stroke = { color: 0xffffff, width: 8 };
@@ -257,6 +273,20 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   }
   oben.addChild(baeume);
 
+  // Spielplätze: Rutsche, Schaukel, Sand
+  for (const f of karte.flaechen) {
+    if (f.art !== "spielplatz" || f.umriss.length < 3) continue;
+    const mx = f.umriss.reduce((a, p) => a + p[0], 0) / f.umriss.length, my = f.umriss.reduce((a, p) => a + p[1], 0) / f.umriss.length;
+    const zeug = ["🛝", "⛱️", "🪀"];
+    zeug.forEach((z, i) => {
+      const t = new Text({ text: z, style: { fontSize: 48 } });
+      t.anchor.set(0.5);
+      t.scale.set(3.2 / 48);
+      t.position.set(mx + (i - 1) * 6, my + (i % 2) * 3);
+      oben.addChild(t);
+    });
+  }
+
   // Namen der Läden und Haltestellen
   for (const p of karte.punkte) {
     if (p.art !== "ort" || !p.name) continue;
@@ -285,8 +315,9 @@ export function beschriftung(text: string, farbe: number, hoeheM: number): Text 
 }
 
 /**
- * Die Turnhalle der Schule: das große Schulgebäude im Norden des Geländes
- * (in OSM als building=school ohne Namen, etwa 50 × 38 m).
+ * Die Turnhalle der Schule: das große rechteckige Gebäude im Westen des
+ * Geländes (in OSM als building=school ohne Namen). Weißes Metalldach, zur
+ * Hofseite (Osten, zur Schule hin) ein Streifen Gründach.
  */
 export function turnhalle(stadt: Stadt): { umriss: P[]; box: { x0: number; x1: number; y0: number; y1: number } } | null {
   const [mx, my] = schulMitte(stadt);
@@ -295,8 +326,8 @@ export function turnhalle(stadt: Stadt): { umriss: P[]; box: { x0: number; x1: n
     if (g.art !== "school" || g.umriss.length < 3) continue;
     const xs = g.umriss.map((p) => p[0]), ys = g.umriss.map((p) => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    // nördlich der Schulmitte, nah dran
-    if (cy > my - 5 || Math.hypot(cx - mx, cy - my) > 80) continue;
+    // ein großes Rechteck westlich der Schulmitte
+    if (g.umriss.length !== 4 || cx > mx - 10 || Math.hypot(cx - mx, cy - my) > 80) continue;
     const flaeche = (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
     if (!best || flaeche > best.flaeche) best = { umriss: g.umriss, flaeche };
   }

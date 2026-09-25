@@ -5,6 +5,7 @@
  * Koordinaten in Metern um die Schule, x nach Osten, y nach Süden.
  */
 import roh from "./karte.json";
+import ergaenzung from "./ergaenzungen.json";
 import { abstandZuStrecke, boxVon, imVieleck, naechsterRandpunkt, Raster, type P } from "./geometrie";
 
 export type StrassenArt = "secondary" | "tertiary" | "residential" | "unclassified" | "living_street" | "service" | "primary";
@@ -16,6 +17,8 @@ export type PunktArt =
 export type KartenStrasse = {
   art: StrassenArt; linie: P[]; name?: string; spuren?: number; einbahn?: boolean;
   gehweg?: string; radstreifen?: boolean; tempo?: number;
+  /** Tore an beiden Enden, offen von–bis (volle Stunden). */
+  tore?: { offenVon: number; offenBis: number };
 };
 export type KartenPunkt = { art: PunktArt; p: P; name?: string; shop?: string; amenity?: string };
 export type Karte = {
@@ -35,7 +38,17 @@ export type Linie = {
   richtungen: { ziel: string; halte: string[] }[];
 };
 
-export const KARTE = roh as unknown as Karte;
+/**
+ * Die Karte aus OSM plus das, was dort (noch) fehlt: die Spielstraße um die
+ * Schule, ihr Überweg und der Spielplatz (`ergaenzungen.json`, nach Angaben
+ * der Schule). Die Ergänzung liegt getrennt, damit sie ein Neuladen der
+ * OSM-Daten übersteht.
+ */
+export const KARTE: Karte = (() => {
+  const k = roh as unknown as Karte;
+  const e = ergaenzung as unknown as Pick<Karte, "strassen" | "punkte" | "flaechen">;
+  return { ...k, strassen: [...k.strassen, ...e.strassen], punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
+})();
 
 export type Strasse = KartenStrasse & { breite: number; gehwegBreite: number };
 
@@ -62,6 +75,8 @@ export function gehwegBreite(s: KartenStrasse): number {
 export type Untergrund =
   | { art: "haus" }
   | { art: "fahrbahn"; strasse: Strasse; querung?: KartenPunkt }
+  /** Verkehrsberuhigter Bereich: Autos im Schritttempo, Kinder dürfen hier laufen und spielen. */
+  | { art: "spielstrasse"; strasse: Strasse }
   | { art: "gleis"; gleis: "tram" | "bahn" }
   | { art: "radweg" }
   | { art: "gehweg" }
@@ -93,7 +108,7 @@ export class Stadt {
   /** Schulgelände (amenity=school). Die Zufahrt darauf ist nur eine Einfahrt hinter einem Tor. */
   readonly schulgelaende: P[][];
   /** Tore: wo eine Zufahrt das Schulgelände verlässt. */
-  readonly tore: { p: P; winkel: number }[] = [];
+  readonly tore: { p: P; winkel: number; zeiten?: { offenVon: number; offenBis: number } }[] = [];
   /** Zufahrtsstücke auf dem Schulgelände (zum Zeichnen als Pflaster). */
   readonly schulZufahrten: { a: P; b: P; breite: number }[] = [];
 
@@ -126,6 +141,14 @@ export class Stadt {
     for (const p of karte.punkte)
       if (p.art === "zebra" || p.art === "ampelUebergang" || p.art === "querung") this.querungRaster.fuege(p, boxVon([p.p]), 12);
 
+    for (const s of this.strassen) if (s.tore) {
+      const [a, b] = [s.linie[0], s.linie[s.linie.length - 1]];
+      const [a2, b2] = [s.linie[1], s.linie[s.linie.length - 2]];
+      // etwas hinein ins Gelände, nicht mitten auf die Hauptstraße
+      const hinein = (p: P, q: P): P => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; const f = Math.min(1, 8 / l); return [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]; };
+      this.tore.push({ p: hinein(a, a2), winkel: winkelVon({ a, b: a2 }), zeiten: s.tore });
+      this.tore.push({ p: hinein(b, b2), winkel: winkelVon({ a: b2, b }), zeiten: s.tore });
+    }
     this.halte = this.baueHalte();
     this.bahnsteige = [
       ...karte.flaechen.filter((f) => f.art === "bahnsteig").map((f) => f.umriss),
@@ -226,6 +249,7 @@ export class Stadt {
         // der Fahrbahn, egal wie weit quer.
         if (Math.hypot(q.p[0] - x, q.p[1] - y) <= fahrbahn.breite / 2 + QUERUNG_HALB) { querung = q; break; }
       }
+      if (fahrbahn.art === "living_street") return { art: "spielstrasse", strasse: fahrbahn };
       return { art: "fahrbahn", strasse: fahrbahn, querung };
     }
     for (const w of this.warteRaster.bei(x, y)) if (imVieleck(x, y, w)) return { art: "gehweg" };

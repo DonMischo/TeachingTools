@@ -20,7 +20,7 @@ import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import type { Ereignis } from "@/lib/verkehr/missionen";
 import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, bahnTakt, baueBahnen, umlauf, wagenLagen } from "@/lib/verkehr/schiene";
-import { abfahrten, abschnitt, helligkeit, istRush, linienImViertel, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
+import { werktag, abfahrten, abschnitt, helligkeit, istRush, linienImViertel, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
@@ -215,6 +215,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
       const anlagen = baueAnlagen(s);
       const tasterVon = (a: Anlage) => netzRef.current.taster().get(a.id) ?? -Infinity;
       const verkehr = new Strassenverkehr(s, anlagen);
+      verkehr.schule = schulMitte(s);
       const waechter = new Regelwaechter(s, anlagen, tasterVon);
       const uhr = () => netzRef.current.uhr();
 
@@ -518,6 +519,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           hell = helligkeit(zeit);
           verkehr.ziel = Math.round(28 * verkehrsFaktor(zeit));
           verkehr.dunkel = hell < 0.35;
+          verkehr.stunde = zeit.minute / 60;
+          verkehr.elternzeit = werktag(zeit) && zeit.minute >= 7 * 60 + 30 && zeit.minute < 8 * 60 + 15;
           if (n.taktgeber()) for (const b of buslinien) {
             const k = takt(b.linie, zeit);
             verkehr.busseAnpassen(b.fahrt, k === null ? 0 : k <= 10 ? 2 : 1);

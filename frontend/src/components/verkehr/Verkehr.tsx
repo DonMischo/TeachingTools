@@ -27,6 +27,7 @@ const Spielfeld = lazy(() => import("./Spielfeld"));
 const UNTERGRUND: Record<Untergrund["art"], { text: string; farbe: string; icon: string }> = {
   gehweg: { text: "Gehweg", farbe: "#16a34a", icon: "🚶" },
   fahrbahn: { text: "Fahrbahn — Vorsicht!", farbe: "#dc2626", icon: "⚠️" },
+  spielstrasse: { text: "Spielstraße — Autos nur Schritttempo", farbe: "#2563eb", icon: "🏠" },
   radweg: { text: "Radweg", farbe: "#ea580c", icon: "🚲" },
   gleis: { text: "Gleis — Lebensgefahr!", farbe: "#dc2626", icon: "🛤️" },
   bahnsteig: { text: "Bahnsteig", farbe: "#16a34a", icon: "🚉" },

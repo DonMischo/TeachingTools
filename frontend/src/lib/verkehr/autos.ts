@@ -77,6 +77,12 @@ export class Strassenverkehr {
   fahrzeuge: Fahrzeug[] = [];
   /** Im Dunkeln sehen Autofahrer Menschen ohne Warnweste erst spät. */
   dunkel = false;
+  /** Werktags 7:30–8:15: Eltern fahren ihre Kinder bis vor die Schule. */
+  elternzeit = false;
+  /** Spielzeit in Stunden (für Tore mit Öffnungszeiten). */
+  stunde = 12;
+  /** Mitte der Schule — Ziel der Elterntaxis. */
+  schule: P = [0, 0];
   private naechsteId = 1;
 
   constructor(readonly stadt: Stadt, readonly anlagen: Anlage[], public ziel = 28) {
@@ -129,11 +135,35 @@ export class Strassenverkehr {
     for (const k of this.kanten) k.halte.sort((x, y) => x.s - y.s);
   }
 
+  /** Ist die Kante gerade befahrbar (Tore geschlossen)? */
+  private offen(k: Kante) {
+    const t = k.strasse.tore;
+    return !t || (this.stunde >= t.offenVon && this.stunde < t.offenBis);
+  }
+
+  /**
+   * Wie gern ein Auto in diese Straße abbiegt. Wer von A nach B will, bleibt
+   * auf den Hauptstraßen; Wohnstraßen und die Spielstraße nimmt kaum jemand —
+   * außer morgens die Eltern auf dem Weg zur Schule.
+   */
+  private gewicht(k: Kante): number {
+    const art = k.strasse.art;
+    const nahSchule = Math.hypot(k.b[0] - this.schule[0], k.b[1] - this.schule[1]) < 180;
+    if (art === "primary" || art === "secondary" || art === "tertiary") return 1;
+    if (this.elternzeit && nahSchule) return art === "living_street" ? 0.7 : 0.9;
+    return art === "living_street" ? 0.03 : 0.12;
+  }
+
   private waehleNaechste(kante: number, f?: Fahrzeug): number | null {
     if (f?.linie) return f.linie.kanten[((f.ri ?? 0) + 1) % f.linie.kanten.length];
     const k = this.kanten[kante];
-    const aus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von);
-    if (aus.length) return aus[Math.floor(Math.random() * aus.length)];
+    const aus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von && this.offen(this.kanten[i]));
+    if (aus.length) {
+      const g = aus.map((i) => this.gewicht(this.kanten[i]));
+      let r = Math.random() * g.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < aus.length; i++) { r -= g[i]; if (r <= 0) return aus[i]; }
+      return aus[aus.length - 1];
+    }
     const zurueck = this.knoten[k.nach].aus;
     return zurueck.length ? zurueck[0] : null;
   }
@@ -161,6 +191,8 @@ export class Strassenverkehr {
       const kandidaten = this.kanten.map((k, i) => ({ k, i })).filter(({ k }) => k.strasse === n.s && (k.a === n.st.a || k.b === n.st.a));
       if (!kandidaten.length) continue;
       const { k, i } = kandidaten[Math.floor(Math.random() * kandidaten.length)];
+      // Auf ruhigen Straßen entstehen selten Autos — so selten, wie sie dort abbiegen.
+      if (!this.offen(k) || Math.random() > this.gewicht(k)) continue;
       if (nah(k.a[0], k.a[1], 60)) continue;
       if (this.fahrzeuge.some((f) => Math.hypot(f.x - k.a[0], f.y - k.a[1]) < 12)) continue;
       const f: Fahrzeug = {
@@ -446,5 +478,6 @@ export class Strassenverkehr {
 }
 
 function aufFahrbahnVor(stadt: Stadt, m: Fussgaenger) {
-  return stadt.untergrund(m.x, m.y).art === "fahrbahn";
+  const art = stadt.untergrund(m.x, m.y).art;
+  return art === "fahrbahn" || art === "spielstrasse";
 }

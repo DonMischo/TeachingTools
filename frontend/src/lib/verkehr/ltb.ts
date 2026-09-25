@@ -31,6 +31,10 @@ const SAETZE: Record<string, string[]> = {
     "Auf der Fahrbahn fahren Autos. Schnell und gerade rüber — nicht bummeln!",
     "Pinguine watscheln langsam. Du bitte nicht: auf der Straße zügig gehen, aber nicht rennen.",
   ],
+  "untergrund:spielstrasse": [
+    "Das ist eine Spielstraße: Hier dürfen Kinder laufen und spielen, Autos nur im Schritttempo. Trotzdem: Autos können kommen — Augen auf!",
+    "Morgens zwischen halb acht und Viertel nach acht bringen viele Eltern ihre Kinder mit dem Auto. Dann ist hier mehr los.",
+  ],
   "untergrund:radweg": ["Achtung, roter Belag: Das ist ein Radweg. Fahrräder sind leise — geh lieber auf den Gehweg."],
   "untergrund:gleis": ["Gleise! Eine Bahn kann nicht ausweichen und braucht einen sehr langen Bremsweg. Nur am Übergang drüber."],
   "untergrund:bahnsteig": ["Auf dem Bahnsteig: hinter der weißen Linie warten. Wenn die Bahn einfährt, zieht der Fahrtwind."],

@@ -190,6 +190,7 @@ simulationen:
       - Start vor der Schule, Uhrzeit mit Berufsverkehr, Dämmerung und Nacht (Warnweste)
       - Echte Linien (Bus 9, 35, Tram 1, 5); Bus 9 mit echtem EVAG-Fahrplan, sonst nach Takt
       - Maussteuerung wie Diablo (klicken/halten), Ampelphase 30 s, Schultor und Schulhof-Einfahrt
+      - Spielstraße um die Schule (Einbahn, Tore, Überweg, Spielplatz) als Ergänzung zu OSM; Elterntaxis 7:30–8:15
       - Überblick mit Straßennamen und Minikarte, Vollbild, Stick-Steuerung am Handy
       - Geräusche (Web Audio), 22 Erfolge und Statistik
       - LTB, der Pinguin-Begleiter mit Begrüßung und Sicherheitstipps
