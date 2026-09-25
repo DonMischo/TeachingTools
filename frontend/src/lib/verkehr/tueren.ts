@@ -11,11 +11,12 @@ export type TuerPhase = "zu" | "aussteigen" | "einsteigen" | "schliessen";
 export const HALT = { oeffnen: 1.5, aussteigen: 6, einsteigen: 12, schliessen: 2.5 } as const;
 export const HALT_DAUER = HALT.oeffnen + HALT.aussteigen + HALT.einsteigen + HALT.schliessen;
 
-export function tuerPhase(alter: number): TuerPhase {
+/** `dauer`: wie lange der Halt dauert — wer zu früh ist, wartet mit offenen Türen bis zur Abfahrtszeit. */
+export function tuerPhase(alter: number, dauer: number = HALT_DAUER): TuerPhase {
   if (alter < HALT.oeffnen) return "zu";
   if (alter < HALT.oeffnen + HALT.aussteigen) return "aussteigen";
-  if (alter < HALT.oeffnen + HALT.aussteigen + HALT.einsteigen) return "einsteigen";
-  if (alter < HALT_DAUER) return "schliessen";
+  if (alter < dauer - HALT.schliessen) return "einsteigen";
+  if (alter < dauer) return "schliessen";
   return "zu";
 }
 

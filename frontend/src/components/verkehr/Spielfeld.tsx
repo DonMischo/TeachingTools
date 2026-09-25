@@ -20,7 +20,7 @@ import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import type { Ereignis } from "@/lib/verkehr/missionen";
 import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, bahnTakt, baueBahnen, umlauf, wagenLagen } from "@/lib/verkehr/schiene";
-import { werktag, abfahrten, abschnitt, helligkeit, istRush, linienImViertel, spielSekunden, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
+import { werktag, abfahrten, abfahrtMinuten, richtungenAmSteig, abschnitt, helligkeit, istRush, linienImViertel, spielSekunden, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
@@ -573,6 +573,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
 
       // Busse: die echten Linien (aus OSM) über ihre Haltestellen im Viertel; Bahnen nach Fahrplan.
       const linien = linienImViertel();
+      // Wer mitfährt, dessen Bus verschwindet nicht am Kartenrand
+      verkehr.behalten = (f) => f.id === szene?.bus && !!szene?.sz.ich.drin;
       const buslinien = linien.filter((l) => l.art === "bus").flatMap((l) => {
         const namenDerLinie = new Set(l.richtungen.flatMap((r) => r.halte));
         const busHalte = s.halte.filter((h) => h.art === "bushalt" && namenDerLinie.has(h.name));
@@ -713,6 +715,12 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           verkehr.stunde = zeit.minute / 60;
           verkehr.elternzeit = werktag(zeit) && zeit.minute >= 7 * 60 + 30 && zeit.minute < 8 * 60 + 15;
           if (n.taktgeber() || allein) for (const b of buslinien) {
+            // Nach Fahrplan: jede Fahrt kommt vom Kartenrand und ist pünktlich am Halt
+            if (b.fahrt.abschnitte?.length) {
+              const tag = Math.floor((t - zeit.minute * 60) / 86400);
+              verkehr.fahrplan(b.fahrt, t, tag, (halt, ziel) => abfahrtMinuten(b.linie, halt, ziel, zeit, 3).map((x) => t + (x - zeit.minute) * 60));
+              continue;
+            }
             const k = takt(b.linie, zeit);
             // Kein Bus verschwindet vor den Augen (oder unter den Füßen) eines Spielers
             verkehr.busseAnpassen(b.fahrt, k === null ? 0 : k <= 10 ? 2 : 1, (f) => f.id === szene?.bus
@@ -838,7 +846,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           haltende.push({ x: f.x, y: f.y, winkel: f.winkel, laenge: f.laenge });
           const seit = t - f.haltSeit;
           tueren(f.x, f.y, f.winkel, BUS.breite, LAYOUTS[f.typ ?? "solo"].tuerX).forEach((tuer, i) =>
-            offene.push({ fahrzeug: `bus-${f.id}`, halt: String(f.haltRi), phase: tuerPhase(seit), tuer, alter: seit, nr: i, id: f.id }));
+            offene.push({ fahrzeug: `bus-${f.id}`, halt: String(f.haltRi), phase: tuerPhase(seit, f.haltDauer), tuer, alter: seit, nr: i, id: f.id }));
         }
         let bahnUnfall = false, bahnNah = false;
         bahnen.forEach((b, bi) => {
@@ -939,7 +947,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         szeneHinweis = null;
         if (szene && szeneBus) {
           const f = szeneBus, sz = szene.sz;
-          const phase = f.haltSeit != null ? tuerPhase(t - f.haltSeit) : "faehrt";
+          const phase = f.haltSeit != null ? tuerPhase(t - f.haltSeit, f.haltDauer) : "faehrt";
           if (f.haltSeit != null) szene.gehalten = true;
           // Die Figur fangen: neben dem Bus auf dem Gehweg (Türseite) — schon, während er heranfährt
           const [lx, ly] = zuBus(f, ich.x, ich.y);
@@ -1135,7 +1143,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
         // Abfahrtstafel: an der Haltestelle (≤ 12 m) für die Hülle, im Überblick über allen Haltestellen.
         if (t - zuletztTafel > 1) {
           zuletztTafel = t;
-          const tafelFuer = (h: Halt) => abfahrten(h.name, zeit, linien, 4, h.art === "tramhalt");
+          // Nur die Richtungen, die an diesem Steig halten
+          const tafelFuer = (h: Halt) => abfahrten(h.name, zeit, linien, 4, h.art === "tramhalt", richtungenAmSteig(h, linien));
           let nahe: Halt | null = null;
           if (!mitfahrt) for (const h of s.halte) if (h.art !== "bahnhalt" && Math.hypot(h.p[0] - ich.x, h.p[1] - ich.y) < 12) { nahe = h; break; }
           const name = nahe ? nahe.name : null;
@@ -1203,7 +1212,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, netz, steuerkanal, ueberbl
           el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
           const bus = fahrzeugListe.filter((f) => f.art === "bus").sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
           el.dataset.bus = bus ? `${bus.id}|${bus.x.toFixed(1)},${bus.y.toFixed(1)}|${bus.haltSeit != null ? "haelt" : bus.tempo.toFixed(1)}` : "";
-          el.dataset.szene = szene ? `${szene.bus}|${szene.sz.l.typ}|${szeneBus?.haltSeit != null ? tuerPhase(t - szeneBus.haltSeit) : "faehrt"}|${szene.sz.mitIch ? (szene.sz.ich.drin ? "drin" : "draussen") : "frei"}|${szene.sz.fahrgaeste.length}|${szeneHinweis ?? ""}|${szene.sz.ich.x.toFixed(2)},${szene.sz.ich.y.toFixed(2)},${szene.sz.ich.weg.length}` : "";
+          el.dataset.szene = szene ? `${szene.bus}|${szene.sz.l.typ}|${szeneBus?.haltSeit != null ? tuerPhase(t - szeneBus.haltSeit, szeneBus.haltDauer) : "faehrt"}|${szene.sz.mitIch ? (szene.sz.ich.drin ? "drin" : "draussen") : "frei"}|${szene.sz.fahrgaeste.length}|${szeneHinweis ?? ""}|${szene.sz.ich.x.toFixed(2)},${szene.sz.ich.y.toFixed(2)},${szene.sz.ich.weg.length}` : "";
           const m = muell.naechstes(ich.x, ich.y, 60);
           el.dataset.muell = m ? `${m.p[0].toFixed(1)},${m.p[1].toFixed(1)}` : "";
         }

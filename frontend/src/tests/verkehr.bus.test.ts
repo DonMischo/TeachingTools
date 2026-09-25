@@ -187,3 +187,34 @@ describe("Busse verschwinden nicht vor den Augen", () => {
     void b;
   });
 });
+
+describe("Busse nach Fahrplan", () => {
+  it("sind pünktlich am Halt und fahren nicht vor der Abfahrtszeit ab; am Kartenrand ist Schluss", () => {
+    const v = new Strassenverkehr(s, anlagen, 0);
+    const l = (s.karte.linien ?? []).find((x) => x.nr === "9")!;
+    const namen = new Set(l.richtungen.flatMap((r) => r.halte));
+    const linie = v.baueLinienweg(l.richtungen, s.halte.filter((h) => h.art === "bushalt" && namen.has(h.name)))!;
+    expect(linie.abschnitte?.length).toBe(2);
+    const a = linie.abschnitte![0];
+    const ref = [...linie.halte.keys()].filter((i) => i >= a.von && i <= a.bis).sort((x, y) => x - y)[0];
+    const refName = linie.halte.get(ref)!.halt.name;
+    const D = 400; // fällig in gut sechs Minuten
+    const abfahrten = (halt: string, ziel: string) => (halt === refName && ziel === a.ziel ? [D] : []);
+    let ankunft: number | null = null, abfahrt: number | null = null, weg = false, gesehen = false;
+    for (let i = 0; i < 12000 && !weg; i++) {
+      const t = i * 0.1;
+      if (i % 10 === 0) v.fahrplan(linie, t, 0, abfahrten);
+      v.schritt(0.1, t, [], () => -Infinity);
+      const bus = v.fahrzeuge.find((f) => f.art === "bus");
+      if (bus) gesehen = true;
+      if (gesehen && !bus) weg = true;
+      if (bus?.haltSeit != null && bus.haltRi === ref && ankunft === null) ankunft = t;
+      if (ankunft !== null && abfahrt === null && bus && bus.haltSeit == null) abfahrt = t;
+    }
+    expect(ankunft).not.toBeNull();
+    // Rechtzeitig da (höchstens eine Minute zu spät), nicht vor der Zeit weg
+    expect(ankunft!).toBeLessThan(D + 60);
+    expect(abfahrt!).toBeGreaterThanOrEqual(D - 0.5);
+    expect(weg).toBe(true);
+  });
+});

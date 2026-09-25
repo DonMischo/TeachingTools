@@ -167,3 +167,20 @@ describe("Zeitraffer", () => {
     expect(spielSekunden(t1, g)).toBeCloseTo(t1 + 3600);
   });
 });
+
+describe("Abfahrtstafel am Steig", () => {
+  it("zeigt nur die Richtung, die an diesem Steig hält", async () => {
+    const { richtungenAmSteig, abfahrten, linienImViertel } = await import("@/lib/verkehr/fahrplan");
+    const s = stadt();
+    const linien = linienImViertel();
+    const steige = s.halte.filter((h) => h.name === "Fritz-Büchner-Straße");
+    expect(steige).toHaveLength(2);
+    const ziele = steige.map((h) => [...(richtungenAmSteig(h, linien) ?? [])]);
+    expect(ziele.flat().sort()).toEqual(["9|Daberstedt", "9|Nordbahnhof"]);
+    for (const [i, h] of steige.entries()) {
+      const tafel = abfahrten(h.name, um(3, 10), linien, 4, false, richtungenAmSteig(h, linien));
+      expect(tafel.length).toBeGreaterThan(0);
+      expect(new Set(tafel.map((a) => `${a.linie}|${a.ziel}`))).toEqual(new Set(ziele[i]));
+    }
+  });
+});

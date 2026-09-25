@@ -45,6 +45,11 @@ export type Fahrzeug = {
   haltRi?: number;
   /** Zuletzt bediente Stelle, damit er nicht zweimal hält. */
   bedientRi?: number;
+  /** Nur Busse nach Fahrplan: Ende der Fahrt (Stelle am Kartenrand) und Abfahrtszeiten je Halt-Stelle. */
+  fahrtBis?: number;
+  planAb?: Map<number, number>;
+  /** Wie lange der laufende Halt dauert (Sekunden; früh dran = länger). */
+  haltDauer?: number;
   /** Wo er quer auf der Straße fährt (gleitet beim Spurwechsel zur neuen Spur). */
   quer?: number;
   /** Seit wann er steht (nicht an einer Haltestelle). */
@@ -56,6 +61,8 @@ export type Linie = {
   kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string;
   /** Welcher Bustyp auf der Linie fährt (sonst gemischt). */
   bustyp?: Bustyp;
+  /** Je Richtung: wo sie am Kartenrand beginnt und endet (Stellen in `kanten`). */
+  abschnitte?: { ziel: string; von: number; bis: number }[];
   /** Stellen i, nach denen der Bus springt: raus am Kartenrand, woanders wieder herein (die Fahrt dazwischen liegt außerhalb). */
   spruenge?: Set<number>;
 };
@@ -428,7 +435,7 @@ export class Strassenverkehr {
    * halten; am Ende der einen Richtung kehrt der Bus am Kartenrand um und fährt
    * die andere. So hält er nie auf der Gegenseite.
    */
-  baueLinienweg(richtungen: { spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[]): Linie | null {
+  baueLinienweg(richtungen: { ziel?: string; spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[]): Linie | null {
     const kern = this.kern();
     const imKern = (i: number) => kern.has(this.kanten[i].von) && kern.has(this.kanten[i].nach);
     // Am Kartenrand: Einbahn-Fahrbahnen hinein (führen in den Kern) und hinaus (kommen aus ihm)
@@ -444,7 +451,7 @@ export class Strassenverkehr {
     };
     const fuehrtHinein = ausbreiten(false), kommtHeraus = ausbreiten(true);
     const amRandOk = (i: number) => fuehrtHinein.has(this.kanten[i].nach) || kommtHeraus.has(this.kanten[i].von);
-    type Stelle = { kante: number; s: number; weit: number; halt?: Halt; rand?: "rein" | "raus" };
+    type Stelle = { kante: number; s: number; weit: number; halt?: Halt; rand?: "rein" | "raus"; r?: number };
     // Die Kante in Fahrtrichtung unter einem Punkt der Spur.
     // Für Bussteige: weiter weg (sie stehen am Gehweg) und nur rechts der Fahrtrichtung.
     const kanteBei = (p: P, rx: number, ry: number, steig = false) => {
@@ -461,7 +468,7 @@ export class Strassenverkehr {
       return best;
     };
     const stellen: Stelle[] = [];
-    for (const r of richtungen) {
+    for (const [ri, r] of richtungen.entries()) {
       const eigene: Stelle[] = [];
       const punkte: { p: P; rx: number; ry: number; weit: number }[] = [];
       let weit = 0;
@@ -496,17 +503,22 @@ export class Strassenverkehr {
       const ohne = eigene.filter((e) => !e.halt && (e.weit < (mitHalt[0]?.weit ?? Infinity) ? fuehrtHinein.has(this.kanten[e.kante].nach) : kommtHeraus.has(this.kanten[e.kante].von)));
       const vorn = ohne.length && (!mitHalt.length || ohne[0].weit < mitHalt[0].weit) ? [ohne[0]] : [];
       const hinten = ohne.length && (!mitHalt.length || ohne[ohne.length - 1].weit > mitHalt[mitHalt.length - 1].weit) ? [ohne[ohne.length - 1]] : [];
-      stellen.push(...vorn.map((e) => ({ ...e, rand: "rein" as const })), ...mitHalt, ...hinten.map((e) => ({ ...e, rand: "raus" as const })));
+      stellen.push(...vorn.map((e) => ({ ...e, rand: "rein" as const, r: ri })), ...mitHalt.map((e) => ({ ...e, r: ri })), ...hinten.map((e) => ({ ...e, rand: "raus" as const, r: ri })));
     }
     if (stellen.filter((x) => x.halt).length < 1 || stellen.length < 2) return null;
     // Von Stelle zu Stelle der kürzeste Weg — die Stellen liegen dicht, also ist das die Spur.
     const kanten: number[] = [];
     const haltAn = new Map<number, { s: number; halt: Halt }>();
     const spruenge = new Set<number>();
+    const abschnitte: { ziel: string; von: number; bis: number }[] = [];
     const n = stellen.length;
     for (let i = 0; i < n; i++) {
       const jetzt = stellen[i], dann = stellen[(i + 1) % n];
       if (jetzt.halt) haltAn.set(kanten.length, { s: jetzt.s, halt: jetzt.halt });
+      if (jetzt.rand && jetzt.r !== undefined) {
+        const a = (abschnitte[jetzt.r] ??= { ziel: richtungen[jetzt.r].ziel ?? "", von: -1, bis: -1 });
+        if (jetzt.rand === "rein") a.von = kanten.length; else a.bis = kanten.length;
+      }
       kanten.push(jetzt.kante);
       if (dann.kante === jetzt.kante) continue;
       // Am Kartenrand hinaus, woanders wieder herein: springen statt sichtbar zurückfahren
@@ -515,7 +527,8 @@ export class Strassenverkehr {
       if (!pfad) return null;
       kanten.push(...pfad);
     }
-    return { kanten, halte: haltAn, spruenge };
+    // Nur Richtungen, die am Rand beginnen und enden, lassen sich nach Fahrplan fahren
+    return { kanten, halte: haltAn, spruenge, abschnitte: abschnitte.filter((a) => a && a.von >= 0 && a.bis > a.von) };
   }
 
   /** Wie weit ein Autofahrer diesen Menschen sieht (m). */
@@ -528,8 +541,9 @@ export class Strassenverkehr {
     for (let i = 0; i < anzahl; i++) this.neuerBus(linie, Math.floor((i * linie.kanten.length) / anzahl));
   }
 
-  private neuerBus(linie: Linie, ri: number) {
+  private neuerBus(linie: Linie, ri: number, fahrt?: { bis: number; plan: Map<number, number> }) {
     this.setze({
+      ...(fahrt ? { fahrtBis: fahrt.bis, planAb: fahrt.plan } : {}),
       id: this.naechsteId++, art: "bus", typ: linie.bustyp ?? bustypFuer(this.naechsteId - 1), farbe: BUS.farbe,
       laenge: LAYOUTS[linie.bustyp ?? bustypFuer(this.naechsteId - 1)].laenge, breite: BUS.breite,
       kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
@@ -566,24 +580,76 @@ export class Strassenverkehr {
     }
   }
 
+  /** Schon losgeschickte Fahrten (Abschnitt|Tag|Minute), damit keine doppelt fährt. */
+  private gestartet = new Set<string>();
+  /** Busse, die nicht verschwinden dürfen (jemand fährt mit). */
+  behalten?: (f: Fahrzeug) => boolean;
+
+  /**
+   * Busse nach Fahrplan: Je Richtung (vom Kartenrand zum Kartenrand) startet
+   * eine Fahrt so, dass sie zur Abfahrtszeit am ersten Halt im Viertel ist.
+   * `abfahrten(halt, ziel)` liefert die nächsten Abfahrten in Spielsekunden.
+   * Wer früh dran ist, wartet am Halt; am Kartenrand endet die Fahrt.
+   */
+  fahrplan(linie: Linie, t: number, tag: number, abfahrten: (halt: string, ziel: string) => number[]) {
+    const V = 8; // Schnitt mit Anfahren, Ampeln und Abbiegen (m/s)
+    const laenge = (von: number, bis: number) => { let l = 0; for (let i = von; i < bis; i++) l += this.kanten[linie.kanten[i]].laenge; return l; };
+    (linie.abschnitte ?? []).forEach((a, ai) => {
+      const halteIdx = [...linie.halte.keys()].filter((i) => i >= a.von && i <= a.bis).sort((x, y) => x - y);
+      if (!halteIdx.length) return;
+      const ref = halteIdx[0];
+      const anfahrt = laenge(a.von, ref) / V;
+      for (const D of abfahrten(linie.halte.get(ref)!.halt.name, a.ziel)) {
+        const key = `${ai}|${tag}|${Math.round(D / 60)}`;
+        if (this.gestartet.has(key) || t < D - anfahrt) continue;
+        this.gestartet.add(key);
+        // Zu spät für diese Fahrt (etwa gerade erst geladen): nur, wenn noch genug Zeit bleibt
+        if (D - t < 15) continue;
+        // Schon unterwegs sein müssen? Dann weiter vorn einsetzen — pünktlich am Halt
+        let ri = a.von, vorlauf = laenge(a.von, ref) - (D - t) * V;
+        while (vorlauf > 0 && ri < ref) { vorlauf -= this.kanten[linie.kanten[ri]].laenge; ri++; }
+        // Abfahrtszeiten an allen Halten dieser Richtung: am ersten der Fahrplan, danach Fahrzeit plus Halte
+        const plan = new Map<number, number>();
+        let zeit = D, vorige = ref;
+        for (const hi of halteIdx) {
+          if (hi !== ref) zeit += laenge(vorige, hi) / V + HALT_DAUER;
+          // Auf den Fahrplan an diesem Halt einrasten, wenn es eine passende Abfahrt gibt
+          const passend = abfahrten(linie.halte.get(hi)!.halt.name, a.ziel).find((x) => Math.abs(x - zeit) < 150);
+          if (passend !== undefined) zeit = passend;
+          plan.set(hi, zeit);
+          vorige = hi;
+        }
+        this.neuerBus(linie, ri, { bis: a.bis, plan });
+      }
+    });
+  }
+
   /** Einen Takt weiterrechnen. Gibt Unfälle zurück (Auto trifft Menschen). */
   schritt(dt: number, t: number, menschen: Fussgaenger[], ampelTaster: (a: Anlage) => number = () => -Infinity): Unfall[] {
     this.bevoelkern(menschen);
     const unfaelle: Unfall[] = [];
+    const fertig = new Set<Fahrzeug>();
     for (const f of this.fahrzeuge) {
       const k = this.kanten[f.kante];
       const grenze = tempoGrenze(k.strasse);
       if (f.haltSeit != null) {
         // Bus an der Haltestelle: stehen, bis Türen zu sind.
         f.tempo = 0;
-        if (t - f.haltSeit < HALT_DAUER) continue;
+        if (t - f.haltSeit < (f.haltDauer ?? HALT_DAUER)) continue;
         f.bedientRi = f.haltRi;
         f.haltSeit = null;
+        f.haltDauer = undefined;
       }
       const { d: frei, hupen } = this.freieStrecke(f, t, menschen, ampelTaster);
       const halt = this.naechsterBushalt(f);
       const d = halt ? Math.min(frei, halt.d) : frei;
-      if (halt && halt.d < 0.4 && f.tempo < 0.5) { f.haltSeit = t; f.haltRi = halt.ri; f.tempo = 0; continue; }
+      if (halt && halt.d < 0.4 && f.tempo < 0.5) {
+        f.haltSeit = t; f.haltRi = halt.ri; f.tempo = 0;
+        // Zu früh dran? Mit offenen Türen bis zur Abfahrtszeit warten (höchstens 5 Minuten)
+        const ab = f.planAb?.get(halt.ri);
+        f.haltDauer = ab !== undefined ? Math.min(300, Math.max(HALT_DAUER, ab - t)) : HALT_DAUER;
+        continue;
+      }
       if (hupen) f.hupe = t + 1.5;
       const halteTempo = Math.sqrt(2 * BREMSEN * Math.max(0, d));
       const soll = Math.min(grenze, halteTempo);
@@ -602,6 +668,11 @@ export class Strassenverkehr {
         if (f.linie?.spruenge?.has(f.ri ?? 0)) f.quer = undefined;
         f.kante = f.naechste;
         if (f.linie) f.ri = ((f.ri ?? 0) + 1) % f.linie.kanten.length;
+        // Fahrt nach Fahrplan am Kartenrand zu Ende
+        if (f.fahrtBis !== undefined && f.ri === f.fahrtBis) {
+          // Sitzt noch jemand drin, wendet er wie an einer Endhaltestelle und fährt zurück
+          if (this.behalten?.(f)) { f.fahrtBis = undefined; f.planAb = undefined; } else { fertig.add(f); break; }
+        }
         f.naechste = this.waehleNaechste(f.kante, f);
       }
       this.setzeLage(f);
@@ -616,6 +687,7 @@ export class Strassenverkehr {
         }
       }
     }
+    if (fertig.size) this.fahrzeuge = this.fahrzeuge.filter((f) => !fertig.has(f));
     return unfaelle;
   }
 }

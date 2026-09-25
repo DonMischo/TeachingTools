@@ -14,6 +14,7 @@
  */
 import { KARTE, type Linie } from "./stadt";
 import LINIE9 from "./linie9.json";
+import type { P } from "./geometrie";
 
 export type { Linie } from "./stadt";
 
@@ -164,36 +165,60 @@ export type Abfahrt = { linie: string; art: "bus" | "tram"; ziel: string; inMinu
  * Die nächsten Abfahrten an einer Haltestelle (nach Name). Je Linie und
  * Richtung ein fester, aus dem Namen gestreuter Versatz im Takt.
  */
-export function abfahrten(haltName: string, z: Zeit, linien: Linie[], anzahl = 4, tram = false): Abfahrt[] {
+/**
+ * Die nächsten Abfahrten einer Linie in eine Richtung an einem Halt, als
+ * Minute des Tages (genau, nicht gerundet). Linie 9 nach echtem Fahrplan;
+ * sonst im Takt — die Phase hängt an Linie und Richtung, je Halt zwei Minuten
+ * weiter, damit ein Bus von Halt zu Halt zusammenpasst.
+ */
+export function abfahrtMinuten(l: Linie, haltName: string, ziel: string, z: Zeit, anzahl = 4): number[] {
+  if (l.nr === "9" && HALTE9[haltName]?.[ziel]) {
+    return (echteAbfahrten9(haltName, ziel, z.datum) ?? []).filter((x) => x >= z.minute - 0.5).slice(0, anzahl);
+  }
+  const r = l.richtungen.find((x) => x.ziel === ziel);
+  const nr = r ? r.halte.indexOf(haltName) : -1;
+  const phase = Math.floor(streu(`${l.nr}|${ziel}`) * 60) + Math.max(0, nr) * 2;
+  const aus: number[] = [];
+  // Suche bis 3 Stunden voraus — der Takt kann sich unterwegs ändern.
+  for (let m = Math.floor(z.minute); m < z.minute + 180 && aus.length < anzahl; m++) {
+    const k = takt(l, { ...z, minute: m });
+    if (k !== null && (((m - phase) % k) + k) % k === 0 && m >= z.minute - 0.5) aus.push(m);
+  }
+  return aus;
+}
+
+/**
+ * Abfahrtstafel: die nächsten Abfahrten an einem Halt. `nur`: welche
+ * Richtungen hier halten (»Linie|Ziel«) — ein Bussteig bedient nur eine Richtung.
+ */
+export function abfahrten(haltName: string, z: Zeit, linien: Linie[], anzahl = 4, tram = false, nur?: Set<string>): Abfahrt[] {
   const aus: Abfahrt[] = [];
   for (const l of linien) {
     if (tram !== (l.art === "tram")) continue;
-    // Linie 9: echter Fahrplan, soweit es ihn für diesen Halt gibt.
-    if (l.nr === "9" && HALTE9[haltName]) {
-      for (const richtung of Object.keys(HALTE9[haltName])) {
-        const ab = echteAbfahrten9(haltName, richtung, z.datum) ?? [];
-        for (const x of ab.filter((x) => x >= Math.floor(z.minute)).slice(0, anzahl))
-          aus.push({ linie: l.nr, art: l.art, ziel: richtung, inMinuten: Math.round(x - z.minute), echt: true });
-      }
-      continue;
-    }
-    for (const r of l.richtungen) {
-      if (!tram && !r.halte.includes(haltName)) continue;
-      // Suche bis 3 Stunden voraus — der Takt kann sich unterwegs ändern.
-      let m = Math.floor(z.minute), n = 0;
-      const phase = Math.floor(streu(`${l.nr}|${r.ziel}|${haltName}`) * 60);
-      while (m < z.minute + 180 && n < anzahl) {
-        const zt = { ...z, minute: m };
-        const k = takt(l, zt);
-        if (k !== null && (((m - phase) % k) + k) % k === 0 && m >= z.minute) {
-          aus.push({ linie: l.nr, art: l.art, ziel: r.ziel, inMinuten: Math.round(m - z.minute) });
-          n++;
-        }
-        m++;
-      }
+    const echt = l.nr === "9" && !!HALTE9[haltName];
+    const ziele = echt ? Object.keys(HALTE9[haltName]) : l.richtungen.filter((r) => tram || r.halte.includes(haltName)).map((r) => r.ziel);
+    for (const ziel of ziele) {
+      if (nur && !nur.has(`${l.nr}|${ziel}`)) continue;
+      for (const x of abfahrtMinuten(l, haltName, ziel, z, anzahl))
+        aus.push({ linie: l.nr, art: l.art, ziel, inMinuten: Math.max(0, Math.round(x - z.minute)), ...(echt ? { echt: true } : {}) });
     }
   }
   return aus.sort((a, b) => a.inMinuten - b.inMinuten).slice(0, anzahl);
+}
+
+/**
+ * Welche Richtungen an diesem Bussteig halten (»Linie|Ziel«), aus den Steigen
+ * der OSM-Routen. `undefined`, wenn es dazu keine Daten gibt (dann alle).
+ */
+export function richtungenAmSteig(halt: { name: string; p: P }, linien: Linie[]): Set<string> | undefined {
+  const aus = new Set<string>();
+  let daten = false;
+  for (const l of linien) for (const r of l.richtungen) {
+    if (!r.steige?.length) continue;
+    if (r.steige.some((st) => st.name === halt.name)) daten = true;
+    if (r.steige.some((st) => st.name === halt.name && Math.hypot(st.p[0] - halt.p[0], st.p[1] - halt.p[1]) < 15)) aus.add(`${l.nr}|${r.ziel}`);
+  }
+  return daten ? aus : undefined;
 }
 
 export function uhrText(z: Zeit): string {

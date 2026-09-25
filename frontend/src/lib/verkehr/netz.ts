@@ -15,25 +15,27 @@ export type FremderSpieler = {
 };
 
 /** Ein Fahrzeug, wie es der Taktgeber verschickt: [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige]. */
-export type Gepackt = [number, 0 | 1 | 2, number, number, number, number, number, number, number, string?];
+export type Gepackt = [number, 0 | 1 | 2, number, number, number, number, number, number, number, string?, number?];
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export function packe(f: Fahrzeug): Gepackt {
   // 0 = Auto, 1 = Stadtbus, 2 = Gelenkbus
   const g: Gepackt = [f.id, f.art === "bus" ? (f.typ === "gelenk" ? 2 : 1) : 0, f.farbe, r2(f.x), r2(f.y), r2(f.winkel), r2(f.tempo), f.haltSeit ?? -1, f.haltRi ?? -1];
-  if (f.anzeige) g.push(f.anzeige);
+  if (f.anzeige || f.haltDauer) g.push(f.anzeige ?? "");
+  // Wie lange er hält (früh dran = länger), damit alle dieselben Türphasen sehen
+  if (f.haltDauer) g.push(Math.round(f.haltDauer * 10) / 10);
   return g;
 }
 
 /** Aus dem Paket ein Fahrzeug, das zum Zeichnen, für Türen und Unfälle reicht. */
 export function entpacke(g: Gepackt, bus: { laenge: number; breite: number }): Fahrzeug {
-  const [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige] = g;
+  const [id, art, farbe, x, y, winkel, tempo, haltSeit, haltRi, anzeige, haltDauer] = g;
   return {
     id, art: art ? "bus" : "auto", typ: art === 2 ? "gelenk" : art ? "solo" : undefined, farbe, x, y, winkel, tempo,
     laenge: art === 2 ? LAYOUTS.gelenk.laenge : art ? bus.laenge : 4.4, breite: art ? bus.breite : 1.8,
     kante: 0, s: 0, naechste: null, hupe: 0, wartetBis: 0,
-    haltSeit: haltSeit >= 0 ? haltSeit : null, haltRi: haltRi >= 0 ? haltRi : undefined, anzeige,
+    haltSeit: haltSeit >= 0 ? haltSeit : null, haltRi: haltRi >= 0 ? haltRi : undefined, anzeige: anzeige || undefined, haltDauer,
   };
 }
 
