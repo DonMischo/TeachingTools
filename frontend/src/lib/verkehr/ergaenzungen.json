@@ -44,7 +44,8 @@
    ],
    "spuren": 1,
    "einbahn": true,
-   "tempo": 5
+   "tempo": 5,
+   "name": "Kiss and Ride Zone"
   }
  ],
  "punkte": [
