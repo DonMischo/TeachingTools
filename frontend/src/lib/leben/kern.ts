@@ -61,6 +61,11 @@ export function log(s: Spielstand, art: LogArt, text: string, betrag?: number): 
 
 export const r2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Zahl mit deutschem Komma (für Meldungen). */
+export function de(n: number, stellen = 2): string {
+  return n.toLocaleString("de-DE", { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
+}
+
 export function euro(n: number, vorzeichen = false): string {
   const t = Math.abs(n).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return `${n < 0 ? "−" : vorzeichen && n > 0 ? "+" : ""}${t} €`;

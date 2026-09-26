@@ -1163,6 +1163,14 @@ export type MausPruefungOut = { bestanden: boolean; punkte: number; schon_vergeb
 /** Beitritt über Code/QR; `token` nur für Gäste ohne Konto. */
 export type MausZugang = { code: string; token: string | null };
 
+// »Rock your Life« (siehe api/routers/leben.py)
+export type LebenLogZeile = { tag: number; stunde: number; datum: string; art: string; text: string; betrag?: number | null };
+export type LebenStandIn = { spiel_id: string; figur: string; zusammenfassung: Record<string, unknown>; neu: LebenLogZeile[]; neustart?: boolean };
+export type LebenUebersichtZeile = {
+  name: string; klasse: string | null; gast: boolean; figur: string;
+  zusammenfassung: Record<string, unknown>; protokoll_zeilen: number; aktualisiert_am: string;
+};
+
 export type WettschreibenTeilnehmer = {
   id: number;
   name: string;
@@ -1518,6 +1526,23 @@ export const api = {
     /** Prüfung melden — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
     pruefung: (body: MausPruefungIn) =>
       apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
+  },
+
+  // »Rock your Life«: Stand + Protokoll je Sitzung, Lehrer-Übersicht (siehe api/routers/leben.py)
+  leben: {
+    stand: (zugang: MausZugang, body: LebenStandIn) =>
+      apiFetch<{ ok: boolean; zeilen: number }>(`leben/sitzung/${encodeURIComponent(zugang.code)}/stand`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<LebenUebersichtZeile[]>(`leben/sitzung/${encodeURIComponent(code)}/uebersicht`),
+    protokoll: (code: string, name?: string) =>
+      apiFetch<{ name: string; figur: string; protokoll: LebenLogZeile[] }[]>(
+        `leben/sitzung/${encodeURIComponent(code)}/protokoll${name ? `?name=${encodeURIComponent(name)}` : ""}`),
+    /** Pfad für den CSV-Download (Cookie-Anmeldung der Lehrkraft). */
+    csvPfad: (code: string) => `/api/leben/sitzung/${encodeURIComponent(code)}/protokoll.csv`,
   },
 
   // Verkehrssicherheit (siehe api/routers/verkehr.py)

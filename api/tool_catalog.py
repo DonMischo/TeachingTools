@@ -130,6 +130,11 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("verkehr", "🚦 GTA – Ganztagsaufmerksamkeit im Verkehr", "🚦", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Lebenssimulation: fünf Jahre nach der 10. Klasse — Job, Wohnung, Geld,
+    # Steuern, Anträge. Rechnet im Browser; die Lehrkraft sieht Stand + Protokoll.
+    CatalogTool("leben", "🎸 Rock your Life", "🎸", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

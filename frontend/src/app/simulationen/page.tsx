@@ -65,6 +65,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#38bdf8",
   },
   {
+    slug: "leben",
+    href: "/simulationen/leben",
+    icon: "🎸",
+    title: "Rock your Life",
+    description: "Fünf Jahre nach der 10. Klasse in Erfurt: bewerben, Ausbildung, eigene Wohnung, Lohnabrechnung, Steuern, Einkauf, Verträge, Anträge — und was am Monatsende übrig bleibt.",
+    color: "#e11d48",
+  },
+  {
     slug: "verkehr",
     href: "/simulationen/verkehr",
     icon: "🚦",

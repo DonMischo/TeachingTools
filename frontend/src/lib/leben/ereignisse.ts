@@ -12,7 +12,7 @@
  * schreibt eine Lehre ins Protokoll.
  */
 import { BERUF } from "./berufe";
-import { alter, begrenzen, brief, buchen, effekt, ganz, hatMoebel, log, r2, uid, zufall, zwischen, volljaehrig } from "./kern";
+import { alter, begrenzen, brief, buchen, effekt, ganz, hatMoebel, log, r2, uid, zufall, zwischen, volljaehrig, de } from "./kern";
 import { abmahnungPruefen, aktiv, kuendigen, monatsbrutto } from "./motor";
 import type { Kategorie, Spielstand } from "./typen";
 import { jahrVon, kurzDatum, monatVon, tagImMonat } from "./zeit";
@@ -60,11 +60,11 @@ function zuzahlung(s: Spielstand, betrag: number, text: string): string {
   // Unter 18 keine Zuzahlungen
   if (alter(s) < 18) return "Unter 18 zahlst du in der Apotheke keine Zuzahlung.";
   zahlen(s, betrag, "gesundheit", text);
-  return `Zuzahlung ${betrag.toFixed(2)} €.`;
+  return `Zuzahlung ${de(betrag, 2)} €.`;
 }
 
 function rechnung(s: Spielstand, von: string, betreff: string, betrag: number, kat: Kategorie, tage = 14, text = ""): void {
-  brief(s, von, betreff, `${text}${text ? "\n\n" : ""}Betrag: ${betrag.toFixed(2)} €. Bitte überweisen bis ${kurzDatum(s.tag + tage)}.`,
+  brief(s, von, betreff, `${text}${text ? "\n\n" : ""}Betrag: ${de(betrag, 2)} €. Bitte überweisen bis ${kurzDatum(s.tag + tage)}.`,
     { art: "rechnung", betrag: r2(betrag), kategorie: kat, faellig: s.tag + tage });
 }
 
@@ -107,7 +107,7 @@ function spass(s: Spielstand, d: number): void {
 
 function kredit(s: Spielstand, art: "ratenkauf" | "bnpl" | "privat", text: string, summe: number, monate: number, zins: number, erstesFaellig: number): void {
   s.kredite.push({ uid: uid(s), art, text, rest: summe, rate: r2(summe / monate + (summe * zins) / 100 / 12), zins, faellig: erstesFaellig, mahnstufe: 0 });
-  log(s, "schulden", `${art === "bnpl" ? "Später bezahlen" : "Ratenkauf"}: ${text} (${summe.toFixed(2)} €, ${monate} Raten)`, -summe);
+  log(s, "schulden", `${art === "bnpl" ? "Später bezahlen" : "Ratenkauf"}: ${text} (${de(summe, 2)} €, ${monate} Raten)`, -summe);
 }
 
 // ───────────────────────────────────────────────────────────── Katalog
@@ -488,7 +488,7 @@ export const EREIGNISSE: Ereignis[] = [
     id: "weihnachtsgeld", titel: "Weihnachtsgeld", icon: "🎄", art: "arbeit", pMonat: 1, abstand: 300,
     wann: (s) => hatJob(s) && monatVon(s.tag) === 11 && tagImMonat(s.tag) === 20 && /Metall|TVAöD|Bank|Chemische|Versicherung|Energie|Papier/.test(BERUF.get(s.job!.beruf)?.tarif ?? ""),
     werte: (s) => ({ betrag: r2(monatsbrutto(s).brutto * 0.55) }),
-    text: (_s, w) => `Mit dem November-Lohn kommt die tarifliche Sonderzahlung: ${Number(w.betrag).toFixed(2)} € brutto.`,
+    text: (_s, w) => `Mit dem November-Lohn kommt die tarifliche Sonderzahlung: ${de(Number(w.betrag), 2)} € brutto.`,
     optionen: [{ text: "Klasse!", wirkung: (s, w) => { s.flags.sonderzahlung = r2(Number(s.flags.sonderzahlung ?? 0) + Number(w.betrag));
       return "Tarifverträge bringen oft Weihnachtsgeld, Urlaubsgeld und mehr Urlaub. Achtung: auf Sonderzahlungen gehen auch Steuern und SV ab."; } }],
   },
@@ -892,9 +892,9 @@ function abschluss(s: Spielstand): string {
     const brutto = r2(b.gehaltNach * Math.pow(1.03, Math.max(0, jahrVon(s.tag) - 2026)));
     s.job = { beruf: b.id, betrieb: job.betrieb, start: s.tag + 1, art: "fachkraft", brutto, urlaubstage: 28, urlaubGenommen: 0,
       probezeitBis: s.tag, leistung: job.leistung, abmahnungen: 0, krankTage: 0, fehlTage: 0 };
-    s.dokumente.push({ uid: uid(s), art: "arbeitsvertrag", titel: `Arbeitsvertrag ${b.name} — ${brutto.toFixed(0)} € brutto`, tag: s.tag });
+    s.dokumente.push({ uid: uid(s), art: "arbeitsvertrag", titel: `Arbeitsvertrag ${b.name} — ${de(brutto, 0)} € brutto`, tag: s.tag });
     s.kcalBedarf = 2000 + b.koerperlich * 350;
-    return `Bestanden mit ${punkte} Punkten! 🎉 Dein Betrieb übernimmt dich als Fachkraft: ${brutto.toFixed(0)} € brutto im Monat. ` +
+    return `Bestanden mit ${punkte} Punkten! 🎉 Dein Betrieb übernimmt dich als Fachkraft: ${de(brutto, 0)} € brutto im Monat. ` +
       `Ab jetzt: Kindergeld endet, Familienhaftpflicht der Eltern greift nicht mehr — eigene Haftpflicht abschließen!`;
   }
   s.job = null;
@@ -955,3 +955,12 @@ export function ereignisWahl(s: Spielstand, index: number, option: number): stri
   return text;
 }
 
+
+/** Wie `ereignisWahl`, aber auf einer Kopie — für die Oberfläche. */
+export function waehle(alt: Spielstand, index: number, option: number): { stand: Spielstand; meldung?: string; fehler?: string } {
+  const s = structuredClone(alt);
+  const vorher = s.offen.length;
+  const text = ereignisWahl(s, index, option);
+  if (s.offen.length === vorher) return { stand: alt, fehler: text };
+  return { stand: s, meldung: text };
+}

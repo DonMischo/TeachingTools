@@ -11,7 +11,7 @@
  * gekennzeichnet; der Link führt jeweils zum echten Antrag.
  */
 import { BERUF } from "./berufe";
-import { alter, brief, buchen, log, r2, uid, zufall } from "./kern";
+import { alter, brief, buchen, log, r2, uid, zufall, de } from "./kern";
 import { abrechnung } from "./lohn";
 import type { AntragArt, Dokument, Spielstand } from "./typen";
 import { werte } from "./werte";
@@ -91,7 +91,7 @@ export function babBerechnen(s: Spielstand): { anspruch: boolean; betrag: number
   const eltern = { niedrig: 0, mittel: 180, hoch: 450 }[s.herkunft.elternEinkommen];
   const betrag = Math.round(bedarf - einkommen - eltern);
   if (betrag < 10) return { anspruch: false, betrag: 0, grund: "Deine Vergütung und der Beitrag der Eltern decken den Bedarf.", bedarf, einkommen, eltern };
-  return { anspruch: true, betrag, grund: `Bedarf ${bedarf.toFixed(0)} € − Vergütung ${einkommen.toFixed(0)} € − Elternbeitrag ${eltern} €`, bedarf, einkommen, eltern };
+  return { anspruch: true, betrag, grund: `Bedarf ${de(bedarf, 0)} € − Vergütung ${de(einkommen, 0)} € − Elternbeitrag ${eltern} €`, bedarf, einkommen, eltern };
 }
 
 /**
@@ -129,7 +129,7 @@ export function algBerechnen(s: Spielstand): { anspruch: boolean; betrag: number
   const letzteKuendigung = s.dokumente.filter((d) => d.art === "kuendigung").at(-1)?.text ?? "";
   const sperre = /Abmahnung|Probezeit \(|selbst gekündigt/.test(letzteKuendigung);
   return { anspruch: true, betrag: r2(nettoSchnitt * 0.6), monate, sperre,
-    grund: `60 % deines durchschnittlichen Nettos (${nettoSchnitt.toFixed(0)} €) für ${monate} Monate${sperre ? " — wegen verhaltensbedingter Kündigung mit 12 Wochen Sperrzeit" : ""}.` };
+    grund: `60 % deines durchschnittlichen Nettos (${de(nettoSchnitt, 0)} €) für ${monate} Monate${sperre ? " — wegen verhaltensbedingter Kündigung mit 12 Wochen Sperrzeit" : ""}.` };
 }
 
 /** Bürgergeld/Grundsicherung (Regelbedarf 2026: 563 €) + angemessene Miete. */
@@ -282,7 +282,7 @@ export const ANTRAEGE: AntragDef[] = [
         s.kredite.push({ uid: uid(s), art: "privat", text: "Ratenplan über die Schuldnerberatung", rest: r2(summe), rate: Math.max(25, Math.round(summe / 24)), zins: 0,
           faellig: s.tag + 30, mahnstufe: 0 });
       }
-      return { bewilligt: true, grund: summe > 0 ? `Die Beratung hat für ${summe.toFixed(2)} € offene Rechnungen einen Ratenplan ausgehandelt.` : "Die Beraterin geht mit dir einen Haushaltsplan durch." };
+      return { bewilligt: true, grund: summe > 0 ? `Die Beratung hat für ${de(summe, 2)} € offene Rechnungen einen Ratenplan ausgehandelt.` : "Die Beraterin geht mit dir einen Haushaltsplan durch." };
     },
   },
 ];
@@ -344,7 +344,8 @@ export function einreichen(s: Spielstand, art: AntragArt, daten: Record<string, 
     ok: true,
     text: fehler.length
       ? `Eingereicht — aber die Behörde wird Rückfragen haben (${fehler.length} Probleme). Das kostet Zeit.`
-      : `Eingereicht. Bearbeitungszeit etwa ${Math.round(dauer / 7)} Wochen. Leistungen gibt es ab ${monatText(s)}.`,
+      : `Eingereicht. Bearbeitungszeit etwa ${Math.max(1, Math.round(dauer / 7))} Woche${Math.round(dauer / 7) > 1 ? "n" : ""}.` +
+        (["bab", "wohngeld", "kindergeld", "alg", "buergergeld"].includes(art) ? ` Geld gibt es rückwirkend ab ${monatText(s)} (Antragsmonat).` : ""),
   };
 }
 
@@ -383,7 +384,7 @@ function entscheiden(s: Spielstand, a: Spielstand["antraege"][number]): void {
     }
   }
   brief(s, def.behoerde, `Bescheid: ${def.titel}`, `${e.bewilligt ? "Ihr Antrag wurde bewilligt." : "Ihr Antrag wurde abgelehnt."}\n\n${e.grund}` +
-    (e.bewilligt && e.betrag ? `\n\nMonatlicher Betrag: ${e.betrag.toFixed(2)} €${e.monate ? ` für ${e.monate} Monate` : ""}.` : "") +
+    (e.bewilligt && e.betrag ? `\n\nMonatlicher Betrag: ${de(e.betrag, 2)} €${e.monate ? ` für ${e.monate} Monate` : ""}.` : "") +
     (!e.bewilligt ? "\n\nGegen diesen Bescheid können Sie innerhalb eines Monats Widerspruch einlegen." : ""));
   log(s, "antrag", `Bescheid ${def.titel}: ${e.bewilligt ? "bewilligt" : "abgelehnt"}${e.betrag ? ` (${e.betrag} €/Monat)` : ""}`, e.betrag);
 }

@@ -8,7 +8,7 @@
  */
 import { BERUF, helferBrutto, verguetung, type Beruf } from "./berufe";
 import { essen, verbrauchen, verderben, type Mahlzeit } from "./ernaehrung";
-import { alter, begrenzen, brief, buchen, effekt, klon, log, r2, uid, zufall, zwischen } from "./kern";
+import { alter, begrenzen, brief, buchen, effekt, klon, log, r2, uid, zufall, zwischen, de } from "./kern";
 import { abrechnung, type Abrechnung } from "./lohn";
 import type { Beduerfnisse, JobStand, Monatsbilanz, Spielstand, Vertrag, Wohnung } from "./typen";
 import { SPIELSTAND_VERSION } from "./typen";
@@ -200,7 +200,7 @@ function lohnZahlen(s: Spielstand): void {
   s.steuerjahre[jahr] = st;
   s.dokumente.push({ uid: uid(s), art: "lohnabrechnung", titel: `Lohnabrechnung ${monatText(s.tag)}`, tag: s.tag,
     daten: { ...a, text, mindest, beruf: b?.name ?? "", betrieb: job.betrieb, jahr } });
-  log(s, "geld", `Lohn: brutto ${a.brutto.toFixed(2)} €, netto ${a.netto.toFixed(2)} € (Steuern ${a.steuern.toFixed(2)} €, SV ${a.sv.toFixed(2)} €)`, a.netto);
+  log(s, "geld", `Lohn: brutto ${de(a.brutto, 2)} €, netto ${de(a.netto, 2)} € (Steuern ${de(a.steuern, 2)} €, SV ${de(a.sv, 2)} €)`, a.netto);
   if (b && (b.id === "friseur" || b.id.startsWith("helfer-gastro") || b.id === "gastro" || b.id === "helfer-lieferdienst")) {
     const trinkgeld = Math.round(zwischen(s, 40, 140));
     s.bargeld = r2(s.bargeld + trinkgeld);
@@ -483,9 +483,9 @@ function mahnen(s: Spielstand, p: Spielstand["post"][number]): void {
     const betrag = r2(a.betrag + 60);
     buchen(s, -betrag, "schulden", `Kontopfändung (Gerichtsvollzieher): ${titel}`);
     brief(s, "Amtsgericht Erfurt – Gerichtsvollzieher", `Pfändung: ${titel}`,
-      `Aufgrund eines Vollstreckungsbescheids wurde Ihr Konto gepfändet: ${betrag.toFixed(2)} € (inkl. Kosten). ` +
+      `Aufgrund eines Vollstreckungsbescheids wurde Ihr Konto gepfändet: ${de(betrag, 2)} € (inkl. Kosten). ` +
       `Tipp: Ein Pfändungsschutzkonto (P-Konto) schützt den Grundfreibetrag. Hilfe: Schuldnerberatung (Amt-Menü).`);
-    log(s, "schulden", `Kontopfändung: ${titel} (${betrag.toFixed(2)} €)`, -betrag);
+    log(s, "schulden", `Kontopfändung: ${titel} (${de(betrag, 2)} €)`, -betrag);
     return;
   }
   const gebuehr = stufe === 1 ? 5 : stufe === 2 ? 10 : stufe === 3 ? 55 : 40;
@@ -493,11 +493,11 @@ function mahnen(s: Spielstand, p: Spielstand["post"][number]): void {
   const wer = stufe >= 4 ? "Amtsgericht (Zentrales Mahngericht)" : stufe === 3 ? "Inkasso Mitteldeutschland (fiktiv)" : p.von;
   const kopf = stufe >= 4 ? "Mahnbescheid" : stufe === 3 ? "Inkasso" : `${stufe}. Mahnung`;
   brief(s, wer, `${kopf}: ${titel}`,
-    `Die Forderung ist noch offen. Neuer Betrag inkl. Gebühren: ${neu.betrag.toFixed(2)} €.` +
+    `Die Forderung ist noch offen. Neuer Betrag inkl. Gebühren: ${de(neu.betrag, 2)} €.` +
     (stufe === 3 ? "\n\nInkassokosten sind teuer. Bei weiterer Nichtzahlung: gerichtliches Mahnverfahren und SCHUFA-Eintrag." : "") +
     (stufe >= 4 ? "\n\nGegen den Mahnbescheid kann innerhalb von 2 Wochen Widerspruch eingelegt werden. Sonst folgt der Vollstreckungsbescheid." : ""),
     neu);
-  log(s, "schulden", `${kopf}: ${titel} (${neu.betrag.toFixed(2)} €)`);
+  log(s, "schulden", `${kopf}: ${titel} (${de(neu.betrag, 2)} €)`);
   if (stufe === 4 && !s.flags.schufaNegativ) {
     s.flags.schufaNegativ = true;
     log(s, "schulden", "SCHUFA-Negativeintrag: titulierte Forderung.");
@@ -541,7 +541,7 @@ function monatsWechsel(s: Spielstand): void {
   s.laufend = neueBilanz(monatsIndex(s.tag), s.konto.stand, s.beduerfnisse);
   const ein = Object.values(alt.ein).reduce((a, b) => a + (b ?? 0), 0);
   const aus = Object.values(alt.aus).reduce((a, b) => a + (b ?? 0), 0);
-  log(s, "monat", `Monatsbilanz: +${ein.toFixed(2)} € / −${aus.toFixed(2)} €, Konto ${s.konto.stand.toFixed(2)} €`, ein - aus);
+  log(s, "monat", `Monatsbilanz: +${de(ein, 2)} € / −${de(aus, 2)} €, Konto ${de(s.konto.stand, 2)} €`, ein - aus);
   s.flags.monatNeu = true;
   // Lohnsteuerbescheinigung im Februar für das Vorjahr
   if (monatVon(s.tag) === 2) {
@@ -550,8 +550,8 @@ function monatsWechsel(s: Spielstand): void {
     if (st) {
       s.dokumente.push({ uid: uid(s), art: "lohnsteuerbescheinigung", titel: `Lohnsteuerbescheinigung ${vorjahr}`, tag: s.tag, daten: { ...st } });
       brief(s, "Arbeitgeber", `Lohnsteuerbescheinigung ${vorjahr}`,
-        `Anbei deine elektronische Lohnsteuerbescheinigung für ${vorjahr}: Bruttolohn ${st.brutto.toFixed(2)} €, ` +
-        `einbehaltene Lohnsteuer ${st.lohnsteuer.toFixed(2)} €. Die Daten liegen dem Finanzamt schon vor — ` +
+        `Anbei deine elektronische Lohnsteuerbescheinigung für ${vorjahr}: Bruttolohn ${de(st.brutto, 2)} €, ` +
+        `einbehaltene Lohnsteuer ${de(st.lohnsteuer, 2)} €. Die Daten liegen dem Finanzamt schon vor — ` +
         `mit einer Steuererklärung bekommst du evtl. Geld zurück.`);
     }
   }
@@ -575,12 +575,12 @@ function stromJahresabrechnung(s: Spielstand): void {
   if (v) v.monatlich = neuerAbschlag;
   s.flags.stromAbgelesen = s.tag;
   brief(s, a.anbieter, "Ihre Stromjahresabrechnung",
-    `Verbrauch: ${Math.round(wo.kwh)} kWh. Kosten: ${kosten.toFixed(2)} €. Gezahlte Abschläge: ${gezahlt.toFixed(2)} €.\n\n` +
-    (diff >= 0 ? `Guthaben: ${diff.toFixed(2)} € — wir überweisen es Ihnen.` : `Nachzahlung: ${(-diff).toFixed(2)} €, fällig in 14 Tagen.`) +
+    `Verbrauch: ${Math.round(wo.kwh)} kWh. Kosten: ${de(kosten, 2)} €. Gezahlte Abschläge: ${de(gezahlt, 2)} €.\n\n` +
+    (diff >= 0 ? `Guthaben: ${de(diff, 2)} € — wir überweisen es Ihnen.` : `Nachzahlung: ${de((-diff), 2)} €, fällig in 14 Tagen.`) +
     `\n\nIhr neuer Abschlag: ${neuerAbschlag} € im Monat.`,
     diff < 0 ? { art: "rechnung", betrag: -diff, kategorie: "strom", faellig: s.tag + 14 } : undefined);
   if (diff >= 0) buchen(s, diff, "erstattung", "Guthaben Stromabrechnung");
-  log(s, "geld", `Stromabrechnung: ${Math.round(wo.kwh)} kWh, ${diff >= 0 ? "Guthaben" : "Nachzahlung"} ${Math.abs(diff).toFixed(2)} €`, diff);
+  log(s, "geld", `Stromabrechnung: ${Math.round(wo.kwh)} kWh, ${diff >= 0 ? "Guthaben" : "Nachzahlung"} ${de(Math.abs(diff), 2)} €`, diff);
   wo.kwh = 0;
 }
 
@@ -599,13 +599,13 @@ function nebenkostenabrechnung(s: Spielstand): void {
   const haushaltsnah = r2(wo.nebenkosten * monate * 0.18);
   s.flags[`haushaltsnah${jahr}`] = haushaltsnah;
   brief(s, "Hausverwaltung", `Betriebskostenabrechnung ${jahr}`,
-    `Vorauszahlungen: ${voraus.toFixed(2)} €. Tatsächliche Kosten: ${tatsaechlich.toFixed(2)} €.\n\n` +
-    (diff >= 0 ? `Guthaben: ${diff.toFixed(2)} €.` : `Nachzahlung: ${(-diff).toFixed(2)} €, fällig in 30 Tagen.`) +
-    `\n\nDarin enthalten: haushaltsnahe Dienstleistungen (Hausmeister, Treppenreinigung) ${haushaltsnah.toFixed(2)} € — ` +
+    `Vorauszahlungen: ${de(voraus, 2)} €. Tatsächliche Kosten: ${de(tatsaechlich, 2)} €.\n\n` +
+    (diff >= 0 ? `Guthaben: ${de(diff, 2)} €.` : `Nachzahlung: ${de((-diff), 2)} €, fällig in 30 Tagen.`) +
+    `\n\nDarin enthalten: haushaltsnahe Dienstleistungen (Hausmeister, Treppenreinigung) ${de(haushaltsnah, 2)} € — ` +
     `das kannst du in der Steuererklärung angeben (§ 35a EStG).`,
     diff < 0 ? { art: "rechnung", betrag: -diff, kategorie: "nebenkosten", faellig: s.tag + 30 } : undefined);
   if (diff >= 0) buchen(s, diff, "erstattung", `Guthaben Betriebskosten ${jahr}`);
-  log(s, "geld", `Nebenkostenabrechnung ${jahr}: ${diff >= 0 ? "Guthaben" : "Nachzahlung"} ${Math.abs(diff).toFixed(2)} €`, diff);
+  log(s, "geld", `Nebenkostenabrechnung ${jahr}: ${diff >= 0 ? "Guthaben" : "Nachzahlung"} ${de(Math.abs(diff), 2)} €`, diff);
 }
 
 function geburtstag(s: Spielstand): void {
@@ -625,7 +625,10 @@ function geburtstag(s: Spielstand): void {
 
 function bewerbungenTag(s: Spielstand): void {
   for (const b of s.bewerbungen) {
-    if (b.naechsterTag !== s.tag) continue;
+    // Termine gelten als verpasst, wenn der Tag vorbei ist
+    const verpasst = (b.status === "test" || b.status === "gespraech") && b.naechsterTag === s.tag - 1;
+    if (b.naechsterTag !== s.tag && !verpasst) continue;
+    if ((b.status === "test" || b.status === "gespraech") && !verpasst) continue;
     const beruf = BERUF.get(b.beruf);
     if (!beruf) continue;
     if (b.status === "versendet") {
@@ -633,7 +636,7 @@ function bewerbungenTag(s: Spielstand): void {
       const p = vorauswahl(s, beruf, b.qualitaet);
       if (zufall(s) < p) {
         b.status = beruf.einstellungstest ? "test" : "gespraech";
-        b.naechsterTag = s.tag + 3 + Math.floor(zufall(s) * 8);
+        b.naechsterTag = werktagAb(s.tag + 3 + Math.floor(zufall(s) * 8));
         brief(s, b.betrieb, beruf.einstellungstest ? "Einladung zum Einstellungstest" : "Einladung zum Vorstellungsgespräch",
           `Vielen Dank für Ihre Bewerbung als ${beruf.name}. Wir laden Sie ein am ${kurzDatum(b.naechsterTag)} um 10:00 Uhr.`);
         log(s, "bewerbung", `Einladung: ${beruf.name} bei ${b.betrieb}`);
@@ -653,6 +656,13 @@ function bewerbungenTag(s: Spielstand): void {
       log(s, "bewerbung", `Zusage verfallen: ${beruf.name}`);
     }
   }
+}
+
+/** Nächster Werktag ab einem Tag (Termine liegen nicht am Wochenende). */
+export function werktagAb(tag: number): number {
+  let t = tag;
+  while (!istArbeitstag(t)) t++;
+  return t;
 }
 
 /** Notendurchschnitt der relevanten Fächer (bzw. aller, falls keine genannt). */
@@ -762,6 +772,7 @@ export function arbeiten(alt: Spielstand): Ergebnis {
   job.leistung = begrenzen(job.leistung + delta);
   job.heuteErledigt = s.tag;
   job.zuletzt = s.tag;
+  s.flags[`arbeitstage${jahrVon(s.tag)}`] = Number(s.flags[`arbeitstage${jahrVon(s.tag)}`] ?? 0) + 1;
   let meldung = `${heute.schule ? "Berufsschule" : "Arbeit"} geschafft. ${mittag}`;
   if (zuSpaet > 0.1) {
     meldung += ` Du warst ${Math.round(zuSpaet * 60)} Minuten zu spät!`;
@@ -909,7 +920,7 @@ export function vertragAbschliessen(alt: Spielstand, angebotId: string, abschlag
   if (a.jaehrlich) buchen(s, -r2(a.monatlich * 12), "versicherung", `${a.name} (Jahresbeitrag)`);
   else if (a.art === "ticket") buchen(s, -monatlich, "mobilitaet", `${a.name} (erster Monat)`);
   s.dokumente.push({ uid: uid(s), art: "vertrag", titel: `Vertrag: ${a.name}`, tag: s.tag, text: a.details });
-  log(s, "vertrag", `Vertrag abgeschlossen: ${a.name} (${monatlich.toFixed(2)} €${a.jaehrlich ? "/Monat, jährlich bezahlt" : "/Monat"}, Laufzeit ${a.laufzeitMonate} Monate)`);
+  log(s, "vertrag", `Vertrag abgeschlossen: ${a.name} (${de(monatlich, 2)} €${a.jaehrlich ? "/Monat, jährlich bezahlt" : "/Monat"}, Laufzeit ${a.laufzeitMonate} Monate)`);
   return gibt(s, `Abgeschlossen: ${a.name}.`);
 }
 
@@ -934,7 +945,7 @@ export function rechnungBezahlen(alt: Spielstand, briefUid: number): Ergebnis {
   buchen(s, -a.betrag, a.kategorie, `Überweisung: ${b.betreff}`);
   a.bezahlt = true;
   log(s, "geld", `Rechnung bezahlt: ${b.betreff}`, -a.betrag);
-  return gibt(s, `${a.betrag.toFixed(2)} € überwiesen.`);
+  return gibt(s, `${de(a.betrag, 2)} € überwiesen.`);
 }
 
 export function bargeldAbheben(alt: Spielstand, betrag: number): Ergebnis {
@@ -979,6 +990,11 @@ export function routine(alt: Spielstand, tage: number): Ergebnis {
   while (s.tag < ziel && !s.beendet && schutz++ < 400) {
     // Tage enden abends: nicht in den nächsten Morgen hineinschlafen, wenn das Ziel erreicht ist
     if (s.stunde >= 12 && s.tag + 1 >= ziel && schutz > 1) break;
+    // Morgen ist ein Bewerbungstermin: nach dem Aufstehen anhalten
+    const terminBw = s.bewerbungen.find((b) => (b.status === "test" || b.status === "gespraech") && b.naechsterTag === (s.stunde >= 12 ? s.tag + 1 : s.tag)
+      && !s.flags[`terminErinnert${b.uid}`]);
+    const terminMorgen = !!terminBw;
+    if (terminBw) s.flags[`terminErinnert${terminBw.uid}`] = true;
     // Schlafen bis zum Aufstehen des (nächsten) Arbeitstags
     const morgen = s.stunde >= 12 ? s.tag + 1 : s.tag;
     const job = arbeitHeute(s, morgen);
@@ -987,6 +1003,7 @@ export function routine(alt: Spielstand, tage: number): Ergebnis {
     if (s.tag < morgen || s.stunde < aufstehen) s = schlafen(s, aufstehen).stand;
     if (s.beendet || s.tag >= ziel) break;
     s = mahlzeit(s, "fruehstueck").stand;
+    if (terminMorgen) { grund = "Heute um 10 Uhr ist dein Bewerbungstermin! (Jobs → Bewerbungen → Hingehen)"; break; }
     if (s.beduerfnisse.hygiene < 75) s = duschen(s).stand;
     const j2 = arbeitHeute(s);
     if (j2.muss && !j2.erledigt && !(s.zustand.krank && s.zustand.krank.bis >= s.tag)) {
@@ -1011,7 +1028,10 @@ export function routine(alt: Spielstand, tage: number): Ergebnis {
     else if (s.beduerfnisse.hunger < 25) grund = "Du hast Hunger — der Vorrat ist leer oder reicht nicht.";
     else if (s.beduerfnisse.gesundheit < 30) grund = "Dir geht es gesundheitlich schlecht.";
     else if (s.konto.stand < -s.konto.dispo) grund = "Dein Konto ist im Minus!";
-    else if (s.zustand.krank && s.zustand.krank.bis >= s.tag) grund = "Du bist krank.";
+    else if (s.zustand.krank && s.zustand.krank.bis >= s.tag && s.flags.krankGemeldetRoutine !== s.zustand.krank.bis) {
+      s.flags.krankGemeldetRoutine = s.zustand.krank.bis;
+      grund = s.zustand.krank.au ? "Du bist krankgeschrieben." : "Du bist krank — krankmelden (Jobs → Mein Job) und zum Arzt (Raus → Arzt)!";
+    }
     if (grund) break;
   }
   return { stand: s, meldung: grund || "Routine erledigt." };

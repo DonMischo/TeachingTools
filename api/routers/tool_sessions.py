@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 # Tools that can be joined this way — everything that runs purely client-side.
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
                  "vierecke", "binaerrechner", "funktionen", "rechenregeln", "uebung",
-                 "ki", "maus", "sonnensystem", "verkehr")
+                 "ki", "maus", "sonnensystem", "verkehr", "leben")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also

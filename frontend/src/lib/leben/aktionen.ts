@@ -5,9 +5,9 @@
  */
 import { BERUF, type Beruf } from "./berufe";
 import { einraeumen } from "./ernaehrung";
-import { alter, begrenzen, brief, buchen, ganz, kannZahlen, klon, log, MOEBEL_DEF, r2, uid, zufall, zwischen } from "./kern";
+import { alter, begrenzen, brief, buchen, ganz, kannZahlen, klon, log, MOEBEL_DEF, r2, uid, zufall, zwischen, de } from "./kern";
 import { MARKT, PRODUKT, preis, wochenangebote, type Variante } from "./laden";
-import { arbeitHeute, vergehe, vorauswahl, type Ergebnis } from "./motor";
+import { arbeitHeute, vergehe, vorauswahl, werktagAb, type Ergebnis } from "./motor";
 import { berechneBescheid, type Angaben } from "./steuer";
 import type { Spielstand, Wohnung } from "./typen";
 import { werte } from "./werte";
@@ -31,7 +31,7 @@ function fahrt(s: Spielstand, minuten: number, beschreibung: string): string {
   if (minuten <= 15) return " (zu Fuß)";
   if (s.flags.schwarzfahren) { s.flags.schwarzfahrer = true; return " (ohne Fahrschein …)"; }
   buchen(s, -EINZELFAHRT, "mobilitaet", `Einzelfahrschein (${beschreibung})`);
-  return ` (Einzelfahrschein ${EINZELFAHRT.toFixed(2)} €)`;
+  return ` (Einzelfahrschein ${de(EINZELFAHRT, 2)} €)`;
 }
 
 function wegMinuten(s: Spielstand, ziel: { x: number; y: number }): number {
@@ -150,7 +150,7 @@ export function moebelKaufenGebraucht(alt: Spielstand, anzeige: Kleinanzeige): E
       "Das Nutzerkonto des Verkäufers wurde gesperrt. Überweisungen und »PayPal Freunde« sind nicht geschützt — dein Geld ist weg. Anzeige bei der Polizei (Onlinewache Thüringen) erstatten.");
     return { stand: s, meldung: "Bezahlt … aber die Ware kommt nie. Das war ein Betrug." };
   }
-  if (s.bargeld < anzeige.preis) return { stand: alt, fehler: `Bei Abholung wird bar bezahlt — du hast nur ${s.bargeld.toFixed(2)} € dabei. Erst Geld abheben.` };
+  if (s.bargeld < anzeige.preis) return { stand: alt, fehler: `Bei Abholung wird bar bezahlt — du hast nur ${de(s.bargeld, 2)} € dabei. Erst Geld abheben.` };
   const transport = GROSS.has(anzeige.moebel) && !s.flags.transporter ? 25 : 0;
   fahrt(s, 30, "Kleinanzeigen-Abholung");
   vergehe(s, 1, "unterwegs");
@@ -215,6 +215,9 @@ export function wohnungBewerben(alt: Spielstand, w: Wohnung, buergschaft: boolea
   if (w.form === "azubiwohnheim" && s.job?.art !== "ausbildung" && !s.bewerbungen.some((b) => b.status === "angenommen")) {
     return { stand: alt, fehler: "Ins Azubi-Wohnheim kommen nur Azubis." };
   }
+  const gesehen = String(s.flags.besichtigt ?? "").split(",");
+  if (gesehen.includes(w.id)) return { stand: alt, fehler: "Diese Wohnung hast du schon besichtigt — der Vermieter hat sich entschieden." };
+  s.flags.besichtigt = [...gesehen.filter(Boolean).slice(-40), w.id].join(",");
   vergehe(s, 1.5, "unterwegs");
   const p = zusageChance(w, Math.max(einkommen, 1), { buergschaft, schufaNegativ: !!s.flags.schufaNegativ, minderjaehrig: minder });
   const zusage = zufall(s) < p;
@@ -399,9 +402,9 @@ export function ausgehen(alt: Spielstand, ortId: string, getraenke: Record<strin
   const spitze = promille(gramm, dauer / 2);
   const ende = promille(gramm, dauer);
   s.zustand.promille = r2(ende);
-  const zeilen: string[] = [`${o.name}: ${gesamt.toFixed(2)} € ausgegeben${hin}.`];
-  if (gramm > 0) zeilen.push(`Geschätzter Blutalkohol: bis zu ${spitze.toFixed(1)} ‰ (Faustregel: ein Bier ≈ 0,5 ‰, Abbau nur 0,1–0,2 ‰ pro Stunde).`);
-  log(s, "party", `${o.name}, ${dauer} h, ${gesamt.toFixed(2)} €, ${gramm} g Alkohol (≈${spitze.toFixed(1)} ‰)`, -gesamt);
+  const zeilen: string[] = [`${o.name}: ${de(gesamt, 2)} € ausgegeben${hin}.`];
+  if (gramm > 0) zeilen.push(`Geschätzter Blutalkohol: bis zu ${de(spitze, 1)} ‰ (Faustregel: ein Bier ≈ 0,5 ‰, Abbau nur 0,1–0,2 ‰ pro Stunde).`);
+  log(s, "party", `${o.name}, ${dauer} h, ${de(gesamt, 2)} €, ${gramm} g Alkohol (≈${de(spitze, 1)} ‰)`, -gesamt);
 
   // Jugendschutz: 16/17 nach 24 Uhr ohne Begleitung
   if (a < 18 && s.stunde > 0 && s.stunde < 6 && o.id !== "freunde" && zufall(s) < 0.35) {
@@ -424,7 +427,7 @@ export function ausgehen(alt: Spielstand, ortId: string, getraenke: Record<strin
     if (erwischt) {
       buchen(s, -600, "strafen", "Geldstrafe Trunkenheit im Verkehr (Fahrrad)");
       s.flags.mpu = true;
-      zeilen.push(`Mit ${ende.toFixed(1)} ‰ aufs Rad — die Polizei hält dich an. Ab 1,6 ‰ ist das eine Straftat: Geldstrafe, Punkte in Flensburg und eine MPU, bevor du je den Autoführerschein machen darfst.`);
+      zeilen.push(`Mit ${de(ende, 1)} ‰ aufs Rad — die Polizei hält dich an. Ab 1,6 ‰ ist das eine Straftat: Geldstrafe, Punkte in Flensburg und eine MPU, bevor du je den Autoführerschein machen darfst.`);
       log(s, "party", "Trunkenheit auf dem Fahrrad (≥ 1,6 ‰): Strafe, MPU");
     } else if (zufall(s) < 0.25) {
       zeilen.push("Auf dem Heimweg vom Rad gestürzt. Schürfwunden.");
@@ -467,8 +470,8 @@ function krankenhaus(s: Spielstand, spitze: number): string {
     buchen(s, -10, "gesundheit", "Zuzahlung Krankenhaus (1 Tag)");
   }
   s.flags.krankenhausAlkohol = Number(s.flags.krankenhausAlkohol ?? 0) + 1;
-  log(s, "party", `Alkoholvergiftung (≈${spitze.toFixed(1)} ‰): Rettungswagen, Nacht im Krankenhaus`);
-  brief(s, "Klinikum", "Entlassungsbrief", `Aufnahme mit Alkoholintoxikation (ca. ${spitze.toFixed(1)} ‰). Überwachung über Nacht.` +
+  log(s, "party", `Alkoholvergiftung (≈${de(spitze, 1)} ‰): Rettungswagen, Nacht im Krankenhaus`);
+  brief(s, "Klinikum", "Entlassungsbrief", `Aufnahme mit Alkoholintoxikation (ca. ${de(spitze, 1)} ‰). Überwachung über Nacht.` +
     (a < 18 ? "\n\nDa Sie minderjährig sind, wurden Ihre Eltern verständigt. Ihnen wird ein Gespräch im Präventionsprogramm »HaLT – Hart am Limit« angeboten." : "") +
     "\n\nArbeitsunfähig bis morgen.");
   return `Deine Freunde finden dich nicht mehr ansprechbar und rufen den Rettungswagen (112 — richtig so!). Alkoholvergiftung: Nacht im Krankenhaus.` +
@@ -477,12 +480,12 @@ function krankenhaus(s: Spielstand, spitze: number): string {
 
 function polizei(s: Spielstand, a: number, spitze: number): string {
   if (a < 18) {
-    log(s, "party", `Polizei: minderjährig und betrunken (≈${spitze.toFixed(1)} ‰), Eltern holen dich von der Wache`);
+    log(s, "party", `Polizei: minderjährig und betrunken (≈${de(spitze, 1)} ‰), Eltern holen dich von der Wache`);
     s.beduerfnisse.sozial = begrenzen(s.beduerfnisse.sozial - 15);
     return "Die Polizei greift dich betrunken auf. Unter 18: Du wirst mit auf die Wache genommen, bis deine Eltern dich abholen. Das Jugendamt bekommt eine Mitteilung.";
   }
   buchen(s, -100, "strafen", "Verwarnungsgeld (Ruhestörung/Wildpinkeln)");
-  log(s, "party", `Polizei: Ordnungswidrigkeit (≈${spitze.toFixed(1)} ‰), 100 €`);
+  log(s, "party", `Polizei: Ordnungswidrigkeit (≈${de(spitze, 1)} ‰), 100 €`);
   return "Beim Wildpinkeln erwischt — 100 € Verwarnungsgeld.";
 }
 
@@ -500,6 +503,12 @@ export const ANSCHREIBEN_BAUSTEINE = [
   { id: "emoji", text: "Lockere Mail mit Emojis 👋", wert: -0.3 },
 ] as const;
 
+/** Qualität des Anschreibens 0..0,95 — auch das beste Anschreiben ist keine Garantie. */
+export function anschreibenQualitaet(bausteine: string[]): number {
+  const summe = bausteine.reduce((a, id) => a + (ANSCHREIBEN_BAUSTEINE.find((x) => x.id === id)?.wert ?? 0), 0);
+  return Math.max(0, Math.min(0.95, 0.15 + summe * 0.75));
+}
+
 export function bewerben(alt: Spielstand, berufId: string, betrieb: string, bausteine: string[]): Ergebnis {
   const s = klon(alt);
   const b = BERUF.get(berufId);
@@ -507,7 +516,7 @@ export function bewerben(alt: Spielstand, berufId: string, betrieb: string, baus
   if (s.bewerbungen.some((x) => x.beruf === berufId && x.betrieb === betrieb && ["versendet", "test", "gespraech", "zusage"].includes(x.status))) {
     return { stand: alt, fehler: "Da hast du dich schon beworben." };
   }
-  const q = Math.max(0, Math.min(1, 0.2 + bausteine.reduce((a, id) => a + (ANSCHREIBEN_BAUSTEINE.find((x) => x.id === id)?.wert ?? 0), 0)));
+  const q = anschreibenQualitaet(bausteine);
   vergehe(s, 1.5, "wach");
   s.bewerbungen.push({ uid: uid(s), beruf: berufId, betrieb, tag: s.tag, status: "versendet", naechsterTag: s.tag + ganz(s, 5, 20), qualitaet: q });
   s.flags.bewerbungskosten = r2(Number(s.flags.bewerbungskosten ?? 0) + 2.5);
@@ -530,7 +539,7 @@ export function terminWahrnehmen(alt: Spielstand, buid: number, punkte: number):
   if (bw.status === "test") {
     if (wert >= 0.55) {
       bw.status = "gespraech";
-      bw.naechsterTag = s.tag + ganz(s, 3, 10);
+      bw.naechsterTag = werktagAb(s.tag + ganz(s, 3, 10));
       bw.punkte = wert;
       log(s, "bewerbung", `Einstellungstest bestanden (${Math.round(punkte * 100)} %): ${b.name}`);
       return { stand: s, meldung: `Test bestanden (${Math.round(punkte * 100)} %)! Einladung zum Gespräch am ${kurzDatum(bw.naechsterTag)}.` };
@@ -571,7 +580,10 @@ export function zusageAnnehmen(alt: Spielstand, buid: number): Ergebnis {
     s.jobHistorie.push({ ...s.job });
   }
   bw.status = "angenommen";
-  for (const x of s.bewerbungen) if (x !== bw && x.status === "zusage") x.status = "abgelehnt";
+  // Den anderen Betrieben absagen — das gehört sich so und gibt ihnen den Platz frei
+  const offen = s.bewerbungen.filter((x) => x !== bw && ["versendet", "test", "gespraech", "zusage"].includes(x.status));
+  for (const x of offen) x.status = "abgelehnt";
+  if (offen.length) log(s, "bewerbung", `${offen.length} andere Bewerbung(en) zurückgezogen.`);
   const art: Beruf["art"] = b.art;
   s.job = {
     beruf: b.id, betrieb: bw.betrieb, start: bw.startTag ?? s.tag, art: art === "helfer" ? "helfer" : art,
@@ -639,7 +651,7 @@ export function steuerAbgeben(alt: Spielstand, jahr: number, angaben: Angaben): 
   const warten = ganz(s, 35, 70);
   s.steuererklaerungen[jahr] = { angaben, bescheid, abgegeben: s.tag, erstattetAm: s.tag + warten };
   vergehe(s, 2, "wach");
-  log(s, "steuer", `Steuererklärung ${jahr} abgegeben (ELSTER), erwartete Erstattung ${bescheid.erstattung.toFixed(2)} €`);
+  log(s, "steuer", `Steuererklärung ${jahr} abgegeben (ELSTER), erwartete Erstattung ${de(bescheid.erstattung, 2)} €`);
   return { stand: s, meldung: `Über ELSTER verschickt. Der Bescheid kommt in etwa ${Math.round(warten / 7)} Wochen.` };
 }
 
@@ -651,12 +663,12 @@ export function nebenbei(s: Spielstand): void {
     s.dokumente.push({ uid: uid(s), art: "bescheid", titel: `Steuerbescheid ${jahr}`, tag: s.tag, daten: { ...b } });
     if (b.erstattung >= 0) {
       buchen(s, b.erstattung, "erstattung", `Steuererstattung ${jahr}`);
-      brief(s, "Finanzamt Erfurt", `Einkommensteuerbescheid ${jahr}`, `Festgesetzte Einkommensteuer: ${b.festgesetzt.toFixed(2)} €. Einbehalten: ${b.einbehalten.toFixed(2)} €.\n\nErstattung: ${b.erstattung.toFixed(2)} € — wird auf Ihr Konto überwiesen.`);
+      brief(s, "Finanzamt Erfurt", `Einkommensteuerbescheid ${jahr}`, `Festgesetzte Einkommensteuer: ${de(b.festgesetzt, 2)} €. Einbehalten: ${de(b.einbehalten, 2)} €.\n\nErstattung: ${de(b.erstattung, 2)} € — wird auf Ihr Konto überwiesen.`);
     } else {
-      brief(s, "Finanzamt Erfurt", `Einkommensteuerbescheid ${jahr}`, `Festgesetzte Einkommensteuer: ${b.festgesetzt.toFixed(2)} €. Einbehalten: ${b.einbehalten.toFixed(2)} €.\n\nNachzahlung: ${(-b.erstattung).toFixed(2)} €.`,
+      brief(s, "Finanzamt Erfurt", `Einkommensteuerbescheid ${jahr}`, `Festgesetzte Einkommensteuer: ${de(b.festgesetzt, 2)} €. Einbehalten: ${de(b.einbehalten, 2)} €.\n\nNachzahlung: ${de((-b.erstattung), 2)} €.`,
         { art: "rechnung", betrag: -b.erstattung, kategorie: "sonstiges", faellig: s.tag + 30 });
     }
-    log(s, "steuer", `Steuerbescheid ${jahr}: ${b.erstattung >= 0 ? "Erstattung" : "Nachzahlung"} ${Math.abs(b.erstattung).toFixed(2)} €`, b.erstattung);
+    log(s, "steuer", `Steuerbescheid ${jahr}: ${b.erstattung >= 0 ? "Erstattung" : "Nachzahlung"} ${de(Math.abs(b.erstattung), 2)} €`, b.erstattung);
   }
   if (s.flags.kautionZurueck !== undefined && s.tag === Number(s.flags.kautionZurueck)) {
     const betrag = Math.max(0, Number(s.flags.kautionBetrag ?? 0));
@@ -669,4 +681,56 @@ export function nebenbei(s: Spielstand): void {
     s.job = null;
     delete s.flags.kuendigungZum;
   }
+}
+
+// ───────────────────────────────────────────────────────────── Unterwegs: Eltern, Arzt, Sport
+
+export function elternBesuchen(alt: Spielstand, waescheMitnehmen: boolean): Ergebnis {
+  const s = klon(alt);
+  if (s.wohnung.form === "eltern") return { stand: alt, fehler: "Du wohnst doch bei ihnen." };
+  const e = ELTERN_ORTE[s.herkunft.eltern];
+  fahrt(s, wegMinuten(s, e), "Eltern");
+  vergehe(s, 3, "wach");
+  s.beduerfnisse.sozial = begrenzen(s.beduerfnisse.sozial + 25);
+  s.heute.kcal += 1000; s.heute.protein += 35; s.heute.obstGemuese += 3; s.heute.auswaerts++;
+  s.beduerfnisse.hunger = begrenzen(s.beduerfnisse.hunger + 45);
+  if (waescheMitnehmen) { s.zuletzt.waesche = s.tag; s.beduerfnisse.hygiene = begrenzen(s.beduerfnisse.hygiene + 10); }
+  fahrt(s, wegMinuten(s, e), "Eltern");
+  const zusteck = zufall(s) < 0.3 ? 20 : 0;
+  if (zusteck) s.bargeld = r2(s.bargeld + zusteck);
+  log(s, "start", "Eltern besucht.");
+  return { stand: s, meldung: `Essen bei Mama und Papa.${waescheMitnehmen ? " Wäsche gleich mitgewaschen." : ""}${zusteck ? " Sie stecken dir 20 € zu." : ""}` };
+}
+
+export function arztBesuch(alt: Spielstand): Ergebnis {
+  const s = klon(alt);
+  if (!istArbeitstag(s.tag) || s.stunde < 7.5 || s.stunde > 17) return { stand: alt, fehler: "Die Praxis hat gerade zu (Mo–Fr etwa 8–12 und 15–18 Uhr). Notfall: 116 117 oder 112." };
+  fahrt(s, 15, "Arzt");
+  vergehe(s, 1.5, "unterwegs");
+  if (s.zustand.krank && s.zustand.krank.bis >= s.tag) {
+    s.zustand.krank.au = true;
+    for (let t = s.tag; t <= s.zustand.krank.bis; t++) s.flags[`krankGemeldet${t}`] = true;
+    s.dokumente.push({ uid: uid(s), art: "au", titel: `Arbeitsunfähigkeitsbescheinigung bis ${kurzDatum(s.zustand.krank.bis)}`, tag: s.tag });
+    log(s, "gesundheit", `Beim Arzt: krankgeschrieben bis ${kurzDatum(s.zustand.krank.bis)}`);
+    return { stand: s, meldung: `Krankgeschrieben bis ${kurzDatum(s.zustand.krank.bis)}. Die Praxis übermittelt die eAU an die Krankenkasse — deinem Betrieb musst du trotzdem Bescheid sagen.` };
+  }
+  s.beduerfnisse.gesundheit = begrenzen(s.beduerfnisse.gesundheit + 5);
+  return { stand: s, meldung: "Check-up: alles in Ordnung. (Die Vorsorge zahlt die Krankenkasse.)" };
+}
+
+export function sportDraussen(alt: Spielstand, studio: boolean): Ergebnis {
+  const s = klon(alt);
+  if (studio && !s.vertraege.some((v) => v.art === "fitness" && (v.gekuendigtZum === undefined || s.tag <= v.gekuendigtZum))) {
+    return { stand: alt, fehler: "Du hast keinen Fitnessstudio-Vertrag." };
+  }
+  if (studio) fahrt(s, 12, "Fitnessstudio");
+  vergehe(s, 1.5, "unterwegs");
+  if (studio) fahrt(s, 12, "Fitnessstudio");
+  const b = s.beduerfnisse;
+  b.gesundheit = begrenzen(b.gesundheit + 3);
+  b.spass = begrenzen(b.spass + 12);
+  b.energie = begrenzen(b.energie - 12);
+  b.hygiene = begrenzen(b.hygiene - 25);
+  s.flags.sportMal = Number(s.flags.sportMal ?? 0) + 1;
+  return { stand: s, meldung: studio ? "Training im Studio. 💪 Danach duschen!" : "Joggen im Nordpark. Kostet nichts. Danach duschen!" };
 }

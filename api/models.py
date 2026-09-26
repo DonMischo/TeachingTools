@@ -2310,3 +2310,40 @@ class MausPruefung(Base):
     punkte: Mapped[int] = mapped_column(Integer, nullable=False)
     class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
     bestanden_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LebenStand(Base):
+    """»Rock your Life«: Spielstand-Zusammenfassung und Protokoll einer Person in
+    einer Sitzung — eine Zeile je Teilnehmer, damit die Lehrkraft sieht, wer wo
+    steht (Monat, Konto, Job, Wohnung) und was passiert ist (Protokoll).
+
+    Der eigentliche Spielstand liegt im Browser bzw. als JSON-Datei bei den
+    Schüler:innen; hier liegt nur, was die Übersicht braucht.
+    """
+    __tablename__ = "leben_staende"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_leben_stand_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_leben_stand_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_leben_stand_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # Name der Spielfigur und Id des Spielstands (ein Neustart = neue Id)
+    figur: Mapped[str] = mapped_column(String(80), nullable=False, default="", server_default="")
+    spiel_id: Mapped[str] = mapped_column(String(60), nullable=False, default="", server_default="")
+    # {"tag", "datum", "konto", "sparkonto", "schulden", "job", "wohnung", "beduerfnisse", "steuern_gesamt", ...}
+    zusammenfassung: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    # [{"tag", "stunde", "datum", "art", "text", "betrag"}]
+    protokoll: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

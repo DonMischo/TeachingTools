@@ -86,6 +86,8 @@ app.include_router(maus_router.router)
 app.include_router(maus_router.router_sitzung)
 from .routers import verkehr as verkehr_router
 app.include_router(verkehr_router.router)
+from .routers import leben as leben_router
+app.include_router(leben_router.router)
 
 from .routers import slideshow as slideshow_router
 app.include_router(slideshow_router.router)
