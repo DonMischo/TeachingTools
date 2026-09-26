@@ -38,8 +38,8 @@ export class Passanten {
     }
     for (const w of stadt.karte.wege) {
       if (w.art === "geh" || w.art === "geh_rad" || w.art === "geh_radfrei" || w.art === "feldweg") this.linien.push(w.linie);
-      // Getrennter Weg: Fußgänger auf ihrer Hälfte
-      else if (w.art === "geh_rad_getrennt") this.linien.push(versetzt(w.linie, -0.75));
+      // Getrennter Weg: Fußgänger auf ihrer Hälfte (gegenüber der Radhälfte)
+      else if (w.art === "geh_rad_getrennt") this.linien.push(versetzt(w.linie, -0.85 * stadt.radSeite(w.linie)));
     }
     this.linien.forEach((linie, l) => {
       linie.forEach((p, i) => {

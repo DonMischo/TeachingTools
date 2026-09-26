@@ -11,15 +11,15 @@ export function LtbBild({ groesse = 72 }: { groesse?: number }) {
     <div className="relative" style={{ width: groesse, height: groesse * 1.1 }} aria-hidden>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/verkehr/tux.svg" alt="" width={groesse} height={groesse * 1.1} className="h-full w-full object-contain" />
-      <svg viewBox="0 0 216 256" className="absolute inset-0 h-full w-full">
+      <svg viewBox="0 0 216 256" className="absolute inset-0 h-full w-full" overflow="visible">
         <path d="M58 150 Q108 128 158 150 L150 214 Q108 228 66 214 Z" fill="#d7ff1f" opacity="0.85" />
         <rect x="62" y="176" width="92" height="7" fill="#e5e7eb" />
-        {/* Fahrradhelm, anliegend am Kopf (Kopf etwa x 72–150, oben bei y 6), Riemen bis zu den Wangen */}
-        <path d="M73 42 Q74 62 82 76 M149 42 Q148 62 140 76" fill="none" stroke="#1f2937" strokeWidth="2.5" />
-        <path d="M68 42 C64 14 88 -1 111 -1 C134 -1 158 14 154 42 Q111 30 68 42 Z" fill="#ef4444" stroke="#991b1b" strokeWidth="2" />
-        <path d="M92 8 Q88 18 90 28 M111 4 L111 26 M130 8 Q134 18 132 28" fill="none" stroke="#7f1d1d" strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="94" cy="12" rx="10" ry="4" fill="#fff" opacity="0.35" transform="rotate(-20 94 12)" />
-        <path d="M68 42 Q111 30 154 42" fill="none" stroke="#7f1d1d" strokeWidth="3" />
+        {/* Fahrradhelm oben auf dem Kopf (Kopf etwa x 72–150, oben bei y 6, Augen ab y 38), Riemen bis zu den Wangen */}
+        <path d="M74 30 Q75 56 82 76 M148 30 Q147 56 140 76" fill="none" stroke="#1f2937" strokeWidth="2.5" />
+        <path d="M70 31 C66 2 90 -13 111 -13 C132 -13 156 2 152 31 Q111 21 70 31 Z" fill="#ef4444" stroke="#991b1b" strokeWidth="2" />
+        <path d="M92 -4 Q88 6 90 16 M111 -8 L111 14 M130 -4 Q134 6 132 16" fill="none" stroke="#7f1d1d" strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="94" cy="0" rx="10" ry="4" fill="#fff" opacity="0.35" transform="rotate(-20 94 0)" />
+        <path d="M70 31 Q111 21 152 31" fill="none" stroke="#7f1d1d" strokeWidth="3" />
       </svg>
     </div>
   );

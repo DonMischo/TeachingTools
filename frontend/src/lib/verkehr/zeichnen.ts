@@ -16,8 +16,9 @@ export const FARBE = {
   fahrbahn: 0x4a4a4f,
   spielstrasse: 0x7d7468,
   markierung: 0xf2f2f2,
-  radweg: 0xb0503f,
-  gehRad: 0xc0a090,
+  /** Radwege orange-rot wie der Belag in Erfurt; der gemeinsame Geh- und Radweg etwas blasser. */
+  radweg: 0xe0552b,
+  gehRad: 0xeb9a78,
   fussweg: 0xcdc6b4,
   gleisbett: 0x8a7f70,
   schiene: 0x3a3a3a,
@@ -110,17 +111,20 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 2 * s.gehwegBreite + 0.3, color: FARBE.bordstein, cap: "round", join: "round" }); }
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 2 * s.gehwegBreite, color: FARBE.gehweg, cap: "round", join: "round" }); }
   for (const w of karte.wege) {
-    const breite = w.art === "geh_rad_getrennt" ? 3 : w.art === "rad" || w.art === "geh_rad" ? 2.5 : w.art === "feldweg" ? 2.5 : 2;
+    const breite = w.art === "geh_rad_getrennt" ? 3.4 : w.art === "rad" || w.art === "geh_rad" ? 2.5 : w.art === "feldweg" ? 2.5 : 2;
     const farbe = w.art === "rad" ? FARBE.radweg : w.art === "geh_rad" ? FARBE.gehRad : FARBE.fussweg;
     linie(strassen, w.linie);
     strassen.stroke({ width: breite, color: farbe, cap: "round", join: "round" });
-    // Getrennter Geh- und Radweg: eine Hälfte roter Belag, dazwischen ein weißer Strich
+    // Getrennter Geh- und Radweg: zur Fahrbahn hin die orange-rote Radhälfte, ein weißer Strich dazwischen
     if (w.art === "geh_rad_getrennt") {
-      linie(strassen, versetzt(w.linie, 0.75));
-      strassen.stroke({ width: 1.5, color: FARBE.radweg, cap: "round", join: "round" });
+      const rad = versetzt(w.linie, 0.85 * stadt.radSeite(w.linie));
+      linie(strassen, rad);
+      strassen.stroke({ width: 1.7, color: FARBE.radweg, cap: "round", join: "round" });
       linie(strassen, w.linie);
-      strassen.stroke({ width: 0.12, color: FARBE.markierung });
+      strassen.stroke({ width: 0.15, color: FARBE.markierung });
+      radSymbole(strassen, rad);
     }
+    if (w.art === "rad") radSymbole(strassen, w.linie);
   }
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 0.3, color: FARBE.bordstein, cap: "round", join: "round" }); }
   // Schmale Straßen zuerst, damit Hauptstraßen an Kreuzungen oben liegen.
@@ -405,6 +409,28 @@ function heller(farbe: number): number {
 function dunkler(farbe: number): number {
   const r = (farbe >> 16) & 255, g = (farbe >> 8) & 255, b = farbe & 255;
   return ((r * 0.6) << 16) | ((g * 0.6) << 8) | (b * 0.6);
+}
+
+/** Weiße Fahrrad-Piktogramme auf dem Belag, etwa alle 30 m. */
+function radSymbole(g: Graphics, punkte: P[]) {
+  let bis = 8;
+  for (let i = 0; i + 1 < punkte.length; i++) {
+    const [a, b] = [punkte[i], punkte[i + 1]];
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const c = (b[0] - a[0]) / l, s = (b[1] - a[1]) / l;
+    for (; bis < l; bis += 30) {
+      const x = a[0] + c * bis, y = a[1] + s * bis;
+      // Zwei Räder längs des Weges
+      const p = (u: number, v: number): [number, number] => [x + c * u - s * v, y + s * u + c * v];
+      g.circle(...p(-0.42, 0), 0.26).circle(...p(0.42, 0), 0.26).stroke({ width: 0.07, color: FARBE.markierung });
+      // Seitenansicht wie auf der Straße: Hinterrad – Tretlager – Sattel, Oberrohr zum Lenker, Gabel
+      g.moveTo(...p(-0.42, 0)).lineTo(...p(0, 0)).lineTo(...p(-0.12, -0.38)).lineTo(...p(-0.42, 0)).stroke({ width: 0.07, color: FARBE.markierung });
+      g.moveTo(...p(-0.12, -0.38)).lineTo(...p(0.3, -0.38)).lineTo(...p(0, 0)).stroke({ width: 0.07, color: FARBE.markierung });
+      g.moveTo(...p(0.26, -0.5)).lineTo(...p(0.42, 0)).stroke({ width: 0.07, color: FARBE.markierung });
+      g.moveTo(...p(-0.24, -0.44)).lineTo(...p(0, -0.44)).stroke({ width: 0.09, color: FARBE.markierung });
+    }
+    bis -= l;
+  }
 }
 
 /** Linie seitlich versetzt (für Schienenpaare). */

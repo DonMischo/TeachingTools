@@ -288,6 +288,23 @@ export class Stadt {
     return false;
   }
 
+  /**
+   * Getrennter Geh- und Radweg: Auf welcher Seite liegt die Radhälfte (+1 rechts,
+   * −1 links in Linienrichtung)? OSM sagt es nicht — meist zur Fahrbahn hin.
+   */
+  radSeite(linie: P[]): 1 | -1 {
+    let summe = 0;
+    for (let i = 0; i + 1 < linie.length; i++) {
+      const [x, y] = [(linie[i][0] + linie[i + 1][0]) / 2, (linie[i][1] + linie[i + 1][1]) / 2];
+      const n = this.naechsteStrasse(x, y, 15);
+      if (!n) continue;
+      const qx = n.st.a[0] + (n.st.b[0] - n.st.a[0]) * n.t, qy = n.st.a[1] + (n.st.b[1] - n.st.a[1]) * n.t;
+      const w = Math.atan2(linie[i + 1][1] - linie[i][1], linie[i + 1][0] - linie[i][0]);
+      summe += Math.sign(-(qx - x) * Math.sin(w) + (qy - y) * Math.cos(w));
+    }
+    return summe < 0 ? -1 : 1;
+  }
+
   naechsteStrasse(x: number, y: number, maxD = 15): { s: Strasse; st: Stueck; d: number; t: number } | null {
     let best: { s: Strasse; st: Stueck; d: number; t: number } | null = null;
     const g = 20;
