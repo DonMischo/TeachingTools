@@ -4,8 +4,9 @@
  */
 import type { P } from "./geometrie";
 import { winkelVon, type Stadt } from "./stadt";
+import type { Kreuzung } from "./vorfahrt";
 
-export type SchildArt = "stopp" | "vorfahrtAchten" | "zebra" | "haltestelle" | "radweg" | "gehRad" | "spielstrasse";
+export type SchildArt = "stopp" | "vorfahrtAchten" | "vorfahrtstrasse" | "zebra" | "haltestelle" | "radweg" | "gehRad" | "gehRadGetrennt" | "radfrei" | "spielstrasse";
 
 export type Schild = { art: SchildArt; p: P };
 
@@ -25,6 +26,13 @@ export const SCHILDER: Record<SchildArt, Frage> = {
     antworten: ["Wer an diesem Schild steht", "Der Verkehr auf der anderen Straße", "Immer der Schnellere"],
     richtig: 1,
     erklaerung: "Das Dreieck mit der Spitze nach unten sagt: Die anderen haben Vorfahrt. Autos, die hier warten, schauen oft nur nach Autos — nicht nach Fußgängern. Blickkontakt suchen!",
+  },
+  vorfahrtstrasse: {
+    nummer: "306", name: "Vorfahrtstraße",
+    frage: "Du fährst mit dem Rad auf dieser Straße. Was gilt an der nächsten Kreuzung?",
+    antworten: ["Rechts vor links", "Du hast Vorfahrt vor den Seitenstraßen", "Du musst anhalten"],
+    richtig: 1,
+    erklaerung: "Die gelbe Raute sagt: Diese Straße hat Vorfahrt — die Seitenstraßen haben »Vorfahrt gewähren« oder »Stopp«. Trotzdem aufpassen: Nicht jeder hält sich daran, und Abbieger übersehen Radfahrer gern.",
   },
   zebra: {
     nummer: "350", name: "Fußgängerüberweg",
@@ -54,6 +62,20 @@ export const SCHILDER: Record<SchildArt, Frage> = {
     richtig: 2,
     erklaerung: "Ein waagerechter Strich: Geh- und Radweg gemeinsam. Beide dürfen hier sein, Räder müssen Rücksicht nehmen. (Ein senkrechter Strich hieße: getrennte Seiten.)",
   },
+  gehRadGetrennt: {
+    nummer: "241", name: "Getrennter Geh- und Radweg",
+    frage: "Auf welcher Seite fährst du mit dem Rad?",
+    antworten: ["Wo gerade Platz ist", "Auf der Seite mit dem Fahrrad-Symbol", "Auf der Fahrbahn"],
+    richtig: 1,
+    erklaerung: "Der senkrechte Strich teilt den Weg: Fußgänger auf ihrer Seite, Räder auf der anderen (meist roter Belag). Das Schild ist blau — also muss man den Radweg benutzen.",
+  },
+  radfrei: {
+    nummer: "239 + 1022-10", name: "Gehweg, Radfahrer frei",
+    frage: "Wie schnell darfst du hier mit dem Rad fahren?",
+    antworten: ["So schnell ich will", "Schrittgeschwindigkeit — Fußgänger haben Vorrang", "Radfahren ist hier verboten"],
+    richtig: 1,
+    erklaerung: "Das blaue Schild mit Fußgängern heißt Gehweg. Das Zusatzzeichen »Radfahrer frei« erlaubt Räder — aber nur im Schritttempo und mit Rücksicht. Du musst hier nicht fahren, die Fahrbahn geht auch.",
+  },
   spielstrasse: {
     nummer: "325.1", name: "Verkehrsberuhigter Bereich",
     frage: "Wie schnell dürfen Autos hier fahren?",
@@ -63,8 +85,8 @@ export const SCHILDER: Record<SchildArt, Frage> = {
   },
 };
 
-/** Wo in der Stadt welches Schild steht. */
-export function baueSchilder(stadt: Stadt): Schild[] {
+/** Wo in der Stadt welches Schild steht (mit `kreuzungen` auch die abgeleiteten Vorfahrtschilder). */
+export function baueSchilder(stadt: Stadt, kreuzungen: Kreuzung[] = []): Schild[] {
   const schilder: Schild[] = [];
   const amRand = (p: P, abstand: number): P => {
     const n = stadt.naechsteStrasse(p[0], p[1], 15);
@@ -84,8 +106,22 @@ export function baueSchilder(stadt: Stadt): Schild[] {
   for (const w of stadt.karte.wege) {
     if (w.art === "rad") schilder.push({ art: "radweg", p: w.linie[0] });
     else if (w.art === "geh_rad") schilder.push({ art: "gehRad", p: w.linie[0] });
+    else if (w.art === "geh_rad_getrennt") schilder.push({ art: "gehRadGetrennt", p: w.linie[0] });
+    else if (w.art === "geh_radfrei") schilder.push({ art: "radfrei", p: w.linie[0] });
+  }
+  // Vorfahrt an Kreuzungen: rechts neben dem Arm, ein paar Meter vor der Kreuzung
+  for (const k of kreuzungen) for (const a of k.arme) {
+    if (a.schild !== "abgeleitet") continue;
+    const art: SchildArt | null = a.regel === "warten" ? "vorfahrtAchten" : a.regel === "vorfahrt" ? "vorfahrtstrasse" : null;
+    if (!art) continue;
+    const d = k.kern + 3, seite = a.strasse.breite / 2 + 0.8;
+    // Wer auf die Kreuzung zufährt, blickt entgegen dem Arm; rechts davon steht das Schild
+    const zu = a.winkel + Math.PI;
+    schilder.push({ art, p: [k.p[0] + Math.cos(a.winkel) * d + Math.cos(zu + Math.PI / 2) * seite, k.p[1] + Math.sin(a.winkel) * d + Math.sin(zu + Math.PI / 2) * seite] });
   }
   for (const s of stadt.strassen) if (s.art === "living_street") schilder.push({ art: "spielstrasse", p: amRand(s.linie[0], 0.8) });
   // Doppelte (gleiche Art, dicht beieinander) weglassen.
-  return schilder.filter((a, i) => !schilder.slice(0, i).some((b) => b.art === a.art && Math.hypot(b.p[0] - a.p[0], b.p[1] - a.p[1]) < 8));
+  const behalten: Schild[] = [];
+  for (const a of schilder) if (!behalten.some((b) => b.art === a.art && Math.hypot(b.p[0] - a.p[0], b.p[1] - a.p[1]) < 8)) behalten.push(a);
+  return behalten;
 }

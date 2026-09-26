@@ -15,7 +15,7 @@ export type Steuerkanal = {
 
 const STICK = 56;
 
-export function Steuerkreuz({ kanal, beleidigungen }: { kanal: React.MutableRefObject<Steuerkanal>; beleidigungen: boolean }) {
+export function Steuerkreuz({ kanal, beleidigungen, rad = false }: { kanal: React.MutableRefObject<Steuerkanal>; beleidigungen: boolean; /** Knöpfe fürs Fahrrad (F, R, P). */ rad?: boolean }) {
   const [knauf, setKnauf] = useState({ x: 0, y: 0 });
   const mitte = useRef<{ x: number; y: number; id: number } | null>(null);
   const [gesten, setGesten] = useState(false);
@@ -59,6 +59,13 @@ export function Steuerkreuz({ kanal, beleidigungen }: { kanal: React.MutableRefO
         <button type="button" className={`${rund} h-12 w-14 text-2xl`} onPointerDown={druecke("KeyB")} aria-label="Rucksack ab oder auf">🎒</button>
         <button type="button" className={`${rund} h-12 w-14 text-2xl`} onPointerDown={druecke("KeyX")} aria-label="Halt wünschen">🔔</button>
         <button type="button" className={`${rund} col-span-2 h-12 w-full text-2xl`} onPointerDown={druecke("KeyL")} aria-label="LTB fragen">🐧</button>
+        {rad && (
+          <div className="col-span-2 flex justify-between gap-2">
+            <button type="button" className={`${rund} h-12 w-12 text-2xl`} onPointerDown={druecke("KeyF")} aria-label="Auf- oder absteigen">🚲</button>
+            <button type="button" className={`${rund} h-12 w-12 text-2xl`} onPointerDown={druecke("KeyR")} aria-label="Klingeln">🛎️</button>
+            <button type="button" className={`${rund} h-12 w-12 text-2xl`} onPointerDown={druecke("KeyP")} aria-label="Rad abstellen">🅿️</button>
+          </div>
+        )}
       </div>
       {gesten && (
         <div className="absolute bottom-80 right-5 z-10 flex gap-2">

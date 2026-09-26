@@ -201,10 +201,14 @@ for (const e of daten.elements) {
       karte.strassen.push(s);
     }
   } else if (hw === "cycleway" || (hw === "path" && t.bicycle === "designated") || (hw === "footway" && t.bicycle === "designated")) {
-    const art = t.foot === "designated" || t.segregated === "no" ? "geh_rad" : "rad";
+    // Zeichen 237 (nur Rad), 240 (gemeinsam), 241 (getrennt, segregated=yes)
+    const fuss = t.foot === "designated" || t.foot === "yes" || hw !== "cycleway";
+    const art = t.segregated === "yes" && fuss ? "geh_rad_getrennt" : fuss || t.segregated === "no" ? "geh_rad" : "rad";
     for (const linie of schneide(roh)) karte.wege.push({ art, linie });
   } else if (hw && WEGE.has(hw)) {
-    const art = hw === "steps" ? "treppe" : hw === "track" ? "feldweg" : t.footway === "crossing" ? "querung" : "geh";
+    // Gehweg mit »Radfahrer frei« (Zeichen 239 + 1022-10): Rad nur im Schritttempo
+    const radFrei = (hw === "footway" || hw === "pedestrian") && t.bicycle === "yes" && t.footway !== "crossing";
+    const art = hw === "steps" ? "treppe" : hw === "track" ? "feldweg" : t.footway === "crossing" ? "querung" : radFrei ? "geh_radfrei" : "geh";
     for (const linie of schneide(roh)) karte.wege.push({ art, linie });
   } else if (t.railway === "rail" || t.railway === "tram") {
     for (const linie of schneide(roh)) karte.gleise.push({ art: t.railway === "tram" ? "tram" : "bahn", linie });

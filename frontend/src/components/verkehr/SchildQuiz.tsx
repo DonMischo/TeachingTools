@@ -14,6 +14,12 @@ export function SchildBild({ art, groesse = 96 }: { art: SchildArt; groesse?: nu
         </>
       )}
       {art === "vorfahrtAchten" && <polygon points="-46,-40 46,-40 0,44" fill="#fff" stroke="#c8102e" strokeWidth="9" strokeLinejoin="round" />}
+      {art === "vorfahrtstrasse" && (
+        <>
+          <polygon points="0,-48 48,0 0,48 -48,0" fill="#fff" stroke="#555" strokeWidth="1.5" />
+          <polygon points="0,-33 33,0 0,33 -33,0" fill="#f4c430" />
+        </>
+      )}
       {art === "zebra" && (
         <>
           <rect x="-46" y="-46" width="92" height="92" rx="6" fill={blau} stroke="#fff" strokeWidth="3" />
@@ -39,6 +45,22 @@ export function SchildBild({ art, groesse = 96 }: { art: SchildArt; groesse?: nu
           <line x1="-38" y1="0" x2="38" y2="0" stroke="#fff" strokeWidth="3" />
           <text x="0" y="-8" textAnchor="middle" fontSize="30">🚶</text>
           <text x="0" y="34" textAnchor="middle" fontSize="30">🚲</text>
+        </>
+      )}
+      {art === "gehRadGetrennt" && (
+        <>
+          <circle r="46" fill={blau} stroke="#fff" strokeWidth="3" />
+          <line x1="0" y1="-38" x2="0" y2="38" stroke="#fff" strokeWidth="3" />
+          <text x="-20" y="11" textAnchor="middle" fontSize="28">🚶</text>
+          <text x="21" y="11" textAnchor="middle" fontSize="28">🚲</text>
+        </>
+      )}
+      {art === "radfrei" && (
+        <>
+          <circle cy="-12" r="36" fill={blau} stroke="#fff" strokeWidth="3" />
+          <text x="0" y="0" textAnchor="middle" fontSize="36">🚶</text>
+          <rect x="-34" y="27" width="68" height="21" fill="#fff" stroke="#222" strokeWidth="2" />
+          <text x="0" y="43" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#000">🚲 frei</text>
         </>
       )}
       {art === "spielstrasse" && (

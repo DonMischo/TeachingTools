@@ -35,6 +35,8 @@ import type { P } from "@/lib/verkehr/geometrie";
 import { haltTafeln, malTafel, Minikarte, strassenNamen } from "@/lib/verkehr/ueberblick";
 import type { Steuerkanal } from "./Steuerkreuz";
 import { baueEimer, EIMER_NAH, GREIFEN, Muell, TRAGEN } from "@/lib/verkehr/muell";
+import { baueKreuzungen, VorfahrtWaechter } from "@/lib/verkehr/vorfahrt";
+import { Passanten, type Passant } from "@/lib/verkehr/passanten";
 import { Einstiegsregeln, Regelwaechter, UMSCHAUEN_DAUER, MELDUNGEN, type Meldung, type OffeneTuer, type Verdecker } from "@/lib/verkehr/regeln";
 
 /** Figuren zeichnen wir 1,8-mal so groß wie echt; gerechnet wird mit echter Größe. */
@@ -339,7 +341,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       }
 
       // Verkehrszeichen am Straßenrand
-      const schilder = baueSchilder(s);
+      // Kreuzungen: wer hat Vorfahrt? Daraus auch die Schilder 205 und 306
+      const kreuzungen = baueKreuzungen(s, anlagen);
+      const schilder = baueSchilder(s, kreuzungen);
       for (const sch of schilder) {
         const c = zeichneSchild(sch.art);
         c.position.set(sch.p[0], sch.p[1]);
@@ -491,6 +495,33 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       let zuletztKlauProbe = -Infinity, helmGemeldet = false;
       let radHinweis: string | null = null, radHinweisBis = -Infinity;
       const radWaechter = new RadWaechter(s, anlagen, tasterVon);
+      const vorfahrtWaechter = new VorfahrtWaechter(kreuzungen);
+      // Klingel (R): Passanten gehen zur Seite
+      let klingel: { x: number; y: number; t: number } | null = null;
+      // Passanten: Statisten auf den Gehwegen, nur auf diesem Gerät
+      const passanten = new Passanten(s);
+      const passantenBilder = new Map<number, { fig: Container; ruf: Container | null }>();
+      const zeichnePassanten = (liste: Passant[]) => {
+        const da = new Set<number>();
+        for (const p of liste) {
+          da.add(p.id);
+          let b = passantenBilder.get(p.id);
+          if (!b) {
+            const fig = zeichneSpieler(zufallsAussehen());
+            fig.scale.set(FIGUR_GROESSER);
+            figuren.addChild(fig);
+            b = { fig, ruf: null };
+            passantenBilder.set(p.id, b);
+          }
+          const [x, y] = passanten.lage(p);
+          b.fig.position.set(x, y);
+          b.fig.rotation = p.winkel;
+          if (p.ruf && !b.ruf) { b.ruf = beschriftung(`💢 ${p.ruf.text}`, 0xffffff, 0.8); figuren.addChild(b.ruf); }
+          if (!p.ruf && b.ruf) { b.ruf.destroy(); b.ruf = null; }
+          b.ruf?.position.set(x, y - 1.6);
+        }
+        for (const [id, b] of passantenBilder) if (!da.has(id)) { b.fig.destroy({ children: true }); b.ruf?.destroy(); passantenBilder.delete(id); }
+      };
       const maleRad = (g: Graphics, farbe: number, geklappt: boolean) => {
         g.clear();
         if (geklappt) {
@@ -705,6 +736,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         if (code === "KeyF") radAufAb();
         if (code === "KeyP") radAbstellen();
         if (code === "KeyK") radKlappen();
+        if (code === "KeyR" && radModus !== "keins" && optionen.current.rad && !mitfahrt) {
+          if (optionen.current.rad.teile.klingel === "ok") { klingel = { x: ich.x, y: ich.y, t }; klang.fahrradKlingel(); zeigeBlase("🔔"); }
+          else radSagt("Deine Klingel fehlt oder ist kaputt — ab in die Werkstatt (🚲).");
+        }
         if (code === "KeyE" && abgestellt && !mitfahrt && Math.hypot(abgestellt.p[0] - ich.x, abgestellt.p[1] - ich.y) < 2.5) { radNehmen(); return; }
         const geste = gesteZuTaste(code);
         if (geste) {
@@ -1335,12 +1370,21 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
 
         // Regeln (in der Bus-Szene gelten die Regeln der Szene)
         const radFaehrt = radModus === "faehrt" && !!optionen.current.rad;
+        // Passanten laufen um die Figur herum (tagsüber mehr, nachts wenige)
+        passanten.schritt(dt, t, [ich.x, ich.y], mitfahrt || szene?.sz.mitIch ? 0 : Math.round(4 + 14 * hell), fahrzeugListe, klingel,
+          radFaehrt ? { x: ich.x, y: ich.y, tempo: ich.tempo } : null, [ich.x, ich.y]);
+        zeichnePassanten(passanten.liste);
         if (unterwegs && !szene?.sz.mitIch && radFaehrt) {
           // Auf dem Rad: Radregeln (Fußgängerregeln ruhen)
+          const leute = [...andere.filter((a) => !a.mitfahrt).map((a) => ({ x: a.x, y: a.y })), ...passanten.liste.map((p) => { const [x, y] = passanten.lage(p); return { x, y }; })];
           const r = radWaechter.pruefe({ x: ich.x, y: ich.y, winkel: figur.rotation, tempo: ich.tempo, t, alter: optionen.current.alter,
-            dunkel: hell < 0.35, lichtOk: lichtOk(optionen.current.rad!) });
+            dunkel: hell < 0.35, lichtOk: lichtOk(optionen.current.rad!), passanten: leute, seitKlingeln: klingel ? t - klingel.t : Infinity });
           for (const id of r.meldungen) melde(MELDUNGEN[id]);
           if (r.hinweis) radSagt(r.hinweis);
+          // Kreuzungen: Vorfahrt, Stopp, rechts vor links
+          const v = vorfahrtWaechter.pruefe({ x: ich.x, y: ich.y, winkel: figur.rotation, tempo: ich.tempo, t, schaut: t - umschauenSeit < UMSCHAUEN_DAUER }, fahrzeugListe);
+          for (const id of v.meldungen) { melde(MELDUNGEN[id]); if (id === "radVorfahrt") zeigeBlase("⚠️"); }
+          if (v.hinweis && v.regel !== "vorfahrt" && v.regel !== "ampel") radSagt(v.hinweis);
           waechter.zuruecksetzen();
         } else if (unterwegs && !szene?.sz.mitIch) {
           for (const m of waechter.pruefe(ich.x, ich.y, t, haltende)) {
@@ -1394,7 +1438,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           : nahesSchild ? "E drücken: Schild ansehen"
           : getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH) ? `E drücken: Müll einwerfen (${getragen})`
           : muell.naechstes(ich.x, ich.y, GREIFEN) ? (getragen < TRAGEN ? "E drücken: Müll aufheben" : "Hände voll — erst zum Mülleimer 🗑️")
-          : radModus === "faehrt" ? "Auf dem Rad: F = absteigen · P = abstellen · rechts fahren, Radweg nutzen"
+          : radModus === "faehrt" ? "Auf dem Rad: F = absteigen · P = abstellen · R = klingeln · Leertaste = schauen · rechts fahren, Radweg nutzen"
           : radModus === "schiebt" ? `Du schiebst dein Rad: F = aufsteigen · P = abstellen${optionen.current.rad && MODELLE[optionen.current.rad.modell].klappbar ? " · K = klappen" : ""}` : null;
         if (hinweis !== letzterHinweis) { letzterHinweis = hinweis; rueckruf.current.onHinweis?.(hinweis); }
 

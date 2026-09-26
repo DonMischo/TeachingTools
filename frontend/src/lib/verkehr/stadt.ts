@@ -9,7 +9,14 @@ import ergaenzung from "./ergaenzungen.json";
 import { abstandZuStrecke, boxVon, imVieleck, naechsterRandpunkt, Raster, type P } from "./geometrie";
 
 export type StrassenArt = "secondary" | "tertiary" | "residential" | "unclassified" | "living_street" | "service" | "primary";
-export type WegArt = "geh" | "rad" | "geh_rad" | "treppe" | "feldweg" | "querung";
+/**
+ * Wege: rad = Radweg (Zeichen 237), geh_rad = gemeinsamer Geh- und Radweg (240),
+ * geh_rad_getrennt = getrennter Geh- und Radweg (241), geh_radfrei = Gehweg mit
+ * »Radfahrer frei« (239 + Zusatz, Rad nur im Schritttempo).
+ */
+export type WegArt = "geh" | "rad" | "geh_rad" | "geh_rad_getrennt" | "geh_radfrei" | "treppe" | "feldweg" | "querung";
+/** Blaue Radwegschilder (237, 240, 241): Radfahrer müssen sie benutzen. */
+export const RADWEG_PFLICHT: ReadonlySet<WegArt> = new Set(["rad", "geh_rad", "geh_rad_getrennt"]);
 export type PunktArt =
   | "ampel" | "ampelUebergang" | "zebra" | "querung" | "bushalt" | "tramhalt" | "bahnhalt"
   | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort" | "adresse" | "radstaender";
@@ -80,7 +87,9 @@ export const KARTE: Karte = (() => {
   };
   // Tore an Straßen aus OSM, nach Namen
   const tore = new Map((e.tore ?? []).map((t) => [t.strasse, { offenVon: t.offenVon, offenBis: t.offenBis }]));
-  const strassen = k.strassen.map((s) => (s.name && tore.has(s.name) ? { ...s, tore: tore.get(s.name) } : s));
+  // Ergänzte Straßen nur, solange OSM sie nicht (wieder) unter dem Namen führt
+  const dazu = e.strassen.filter((x) => !x.name || !k.strassen.some((s) => s.name === x.name));
+  const strassen = [...k.strassen, ...dazu].map((s) => (s.name && tore.has(s.name) ? { ...s, tore: tore.get(s.name) } : s));
   // In OSM zerfällt eine Straße in Stücke (etwa am Überweg), nicht jedes trägt den Namen:
   // namenlose Stücke gleicher Art, die an ein Stück mit Toren anschließen, gehören dazu.
   const gleich = (p: P, q: P) => p[0] === q[0] && p[1] === q[1];
@@ -92,7 +101,7 @@ export const KARTE: Karte = (() => {
       if (nachbar) { strassen[i] = { ...s, tore: nachbar.tore }; dazu = true; }
     });
   }
-  return { ...k, strassen: [...strassen, ...e.strassen], punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
+  return { ...k, strassen, punkte: [...k.punkte, ...e.punkte], flaechen: [...k.flaechen, ...e.flaechen] };
 })();
 
 export type Strasse = KartenStrasse & { breite: number; gehwegBreite: number };
@@ -129,7 +138,8 @@ export type Untergrund =
   | { art: "spielstrasse"; strasse: Strasse }
   | { art: "gleis"; gleis: "tram" | "bahn" }
   | { art: "radweg" }
-  | { art: "gehweg" }
+  /** `rad`: auf diesem Gehweg dürfen auch Räder fahren — gemeinsam (240), getrennt (241) oder »frei« im Schritttempo. */
+  | { art: "gehweg"; rad?: "gemeinsam" | "getrennt" | "frei" }
   | { art: "bahnsteig" }
   | { art: "gelaende" };
 
@@ -185,7 +195,7 @@ export class Stadt {
       }
       this.strassenRaster.fuege({ s, st }, boxVon([st.a, st.b]), st.halb);
     });
-    for (const w of karte.wege) this.einsortieren(w.linie, w.art === "rad" || w.art === "geh_rad" ? 1.25 : 1, (st) => this.wegRaster.fuege({ art: w.art, st }, boxVon([st.a, st.b]), st.halb));
+    for (const w of karte.wege) this.einsortieren(w.linie, w.art === "geh_rad_getrennt" ? 1.5 : w.art === "rad" || w.art === "geh_rad" ? 1.25 : 1, (st) => this.wegRaster.fuege({ art: w.art, st }, boxVon([st.a, st.b]), st.halb));
     for (const g of karte.gleise) this.einsortieren(g.linie, 1.5, (st) => this.gleisRaster.fuege({ art: g.art, st }, boxVon([st.a, st.b]), st.halb));
     for (const h of karte.gebaeude) if (h.umriss.length >= 3) this.hausRaster.fuege(h, boxVon(h.umriss));
     for (const p of karte.punkte)
@@ -265,11 +275,16 @@ export class Stadt {
     return [punkt(-8, innen), punkt(8, innen), punkt(8, aussen), punkt(-8, aussen)];
   }
 
-  /** Gibt es in `r` Metern einen Radweg (auch gemeinsamen Geh- und Radweg)? */
-  radwegNah(x: number, y: number, r = 10): boolean {
+  /**
+   * Gibt es in `r` Metern einen Radweg mit blauem Schild (237, 240, 241)? Mit
+   * `winkel` nur einen, der in diese Richtung verläuft (daneben, nicht quer).
+   */
+  radwegNah(x: number, y: number, r = 10, winkel?: number): boolean {
     for (let dx = -20; dx <= 20; dx += 20) for (let dy = -20; dy <= 20; dy += 20)
-      for (const e of this.wegRaster.bei(x + dx, y + dy))
-        if ((e.art === "rad" || e.art === "geh_rad") && abstandZuStrecke(x, y, e.st.a, e.st.b).d <= r) return true;
+      for (const e of this.wegRaster.bei(x + dx, y + dy)) {
+        if (!RADWEG_PFLICHT.has(e.art) || abstandZuStrecke(x, y, e.st.a, e.st.b).d > r) continue;
+        if (winkel === undefined || Math.abs(Math.cos(winkel - winkelVon(e.st))) > 0.85) return true;
+      }
     return false;
   }
 
@@ -316,7 +331,11 @@ export class Stadt {
     }
     for (const w of this.warteRaster.bei(x, y)) if (imVieleck(x, y, w)) return { art: "gehweg" };
     for (const e of this.wegRaster.bei(x, y))
-      if (abstandZuStrecke(x, y, e.st.a, e.st.b).d <= e.st.halb) return e.art === "rad" ? { art: "radweg" } : { art: "gehweg" };
+      if (abstandZuStrecke(x, y, e.st.a, e.st.b).d <= e.st.halb) {
+        if (e.art === "rad") return { art: "radweg" };
+        return e.art === "geh_rad" ? { art: "gehweg", rad: "gemeinsam" } : e.art === "geh_rad_getrennt" ? { art: "gehweg", rad: "getrennt" }
+          : e.art === "geh_radfrei" ? { art: "gehweg", rad: "frei" } : { art: "gehweg" };
+      }
     for (const e of this.strassenRaster.bei(x, y))
       if (e.s.gehwegBreite > 0 && abstandZuStrecke(x, y, e.st.a, e.st.b).d <= e.st.halb) return { art: "gehweg" };
     return { art: "gelaende" };
@@ -425,6 +444,16 @@ export function anschliessen(strassen: KartenStrasse[]): KartenStrasse[] {
     for (const ende of [0, s.linie.length - 1]) {
       const p = linie[ende];
       if ((zahl.get(key(p)) ?? 0) > 1) continue;
+      // Liegt das Ende genau auf einer anderen Straße (zwischen zwei Stützpunkten), wird es dort ein Knoten
+      const auf = aus.findIndex((o, j) => j !== i && BEFAHRBAR.has(o.art) && o.linie.some((q, k) => k + 1 < o.linie.length
+        && abstandZuStrecke(p[0], p[1], q, o.linie[k + 1]).d < 1 && Math.hypot(q[0] - p[0], q[1] - p[1]) > 0.5 && Math.hypot(o.linie[k + 1][0] - p[0], o.linie[k + 1][1] - p[1]) > 0.5));
+      if (auf >= 0) {
+        const o = aus[auf];
+        const k = o.linie.findIndex((q, k) => k + 1 < o.linie.length && abstandZuStrecke(p[0], p[1], q, o.linie[k + 1]).d < 1);
+        aus[auf] = { ...o, linie: [...o.linie.slice(0, k + 1), p, ...o.linie.slice(k + 1)] };
+        zahl.set(key(p), (zahl.get(key(p)) ?? 0) + 1);
+        continue;
+      }
       let best: { q: P; d: number } | null = null;
       for (const o of aus) {
         if (o === aus[i] || !BEFAHRBAR.has(o.art)) continue;

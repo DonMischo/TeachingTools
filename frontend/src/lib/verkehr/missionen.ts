@@ -151,7 +151,7 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (e.id === "platzAngeboten") erledige("platz");
       if (e.id === "rausRein") erledige("rausrein");
       if (e.id === "rucksackAb") erledige("rucksack");
-      if (e.id === "radwegGut") erledige("radweg");
+      if (e.id === "radwegGut" || e.id === "radGemeinsamGut") erledige("radweg");
       if (e.id === "radOrdentlich") erledige("radParken");
       if (e.id === "radPlatzGemacht") erledige("radPlatz");
       if (SCHWER.includes(e.id)) { n.schwere++; st.serie = 0; }

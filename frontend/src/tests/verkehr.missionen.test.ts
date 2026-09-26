@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { bestanden, LEER, MAX_SCHWERE, MISSIONEN, pflichtErfuellt, verbuche, type Fortschritt } from "@/lib/verkehr/missionen";
 import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import { baueSchilder, SCHILDER, type SchildArt } from "@/lib/verkehr/schilder";
+import { baueKreuzungen } from "@/lib/verkehr/vorfahrt";
+import { baueAnlagen } from "@/lib/verkehr/ampeln";
 import { stadt } from "@/lib/verkehr/stadt";
 
 const alle = (f: Fortschritt, ...e: Parameters<typeof verbuche>[1][]) => e.reduce((x, y) => verbuche(x, y).f, f);
@@ -85,7 +87,9 @@ describe("Als Gruppe über die Straße", () => {
 
 describe("Schilder", () => {
   it("stehen in der Stadt, jede Art mindestens einmal", () => {
-    const arten = new Set(baueSchilder(stadt()).map((s) => s.art));
+    // Wie im Spiel: mit den Kreuzungen (Vorfahrtstraße, Vorfahrt gewähren)
+    const st = stadt();
+    const arten = new Set(baueSchilder(st, baueKreuzungen(st, baueAnlagen(st))).map((s) => s.art));
     for (const art of Object.keys(SCHILDER)) expect(arten, art).toContain(art);
   });
 

@@ -547,7 +547,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               </div>
             ))}
           </div>
-          {touch && <Steuerkreuz kanal={steuerkanal} beleidigungen={beleidigungen} />}
+          {touch && <Steuerkreuz kanal={steuerkanal} beleidigungen={beleidigungen} rad={!!rad} />}
           <div className="pointer-events-none absolute bottom-1 right-2 text-[10px] text-white/80 [text-shadow:0_0_3px_#000]">
             {KARTE.nachweis} · LTB: Tux von Larry Ewing und The GIMP
           </div>

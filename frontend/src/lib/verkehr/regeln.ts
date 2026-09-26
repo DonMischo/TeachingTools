@@ -19,7 +19,8 @@ export type RegelId =
   | "handyKarma" | "polizei"
   // Fahrrad
   | "radGehweg" | "radwegGut" | "fahrbahnGut" | "radGegenEinbahn" | "radLinks" | "radZebra" | "radRot" | "radOhneLicht"
-  | "radHelm" | "radOrdentlich" | "radAbgestellt" | "radBlockiert" | "radGeklaut" | "radImGang" | "radPlatzGemacht" | "radRepariert";
+  | "radHelm" | "radOrdentlich" | "radAbgestellt" | "radBlockiert" | "radGeklaut" | "radImGang" | "radPlatzGemacht" | "radRepariert"
+  | "radVorfahrt" | "radStopp" | "radNichtGeschaut" | "radVorfahrtGut" | "radSchritt" | "radRuecksicht" | "radBenutzungspflicht" | "radGemeinsamGut";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -76,6 +77,14 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   radGeklaut: { id: "radGeklaut", text: "😱 Dein Fahrrad wurde geklaut! Mit einem Bügelschloss am Ständer wäre das nicht so leicht passiert.", punkte: -10 },
   radImGang: { id: "radImGang", text: "Mit dem Rad im Gang steht es allen im Weg — Fahrräder gehören auf die blaue Mehrzweckfläche.", punkte: -3 },
   radPlatzGemacht: { id: "radPlatzGemacht", text: "🚲 Karma +: Du hast die Fläche für Kinderwagen/Rollstuhl frei gemacht und nimmst die nächste Bahn. Vorbildlich!", punkte: 10 },
+  radVorfahrt: { id: "radVorfahrt", text: "Vorfahrt genommen! Das Auto hatte Vorrang — an diesem Arm der Kreuzung musst du warten.", punkte: -12, schwer: true },
+  radStopp: { id: "radStopp", text: "Am Stoppschild nicht angehalten! Ganz stehen bleiben, schauen, dann fahren.", punkte: -5 },
+  radNichtGeschaut: { id: "radNichtGeschaut", text: "In die Kreuzung, ohne zu schauen (Leertaste)! Ohne Vorfahrt erst links – rechts – links.", punkte: -2 },
+  radVorfahrtGut: { id: "radVorfahrtGut", text: "🚲 Karma +: Vorfahrt gewährt — gewartet, geschaut, dann gefahren.", punkte: 3 },
+  radSchritt: { id: "radSchritt", text: "»Radfahrer frei« heißt Schritttempo! Auf dem Gehweg haben Fußgänger Vorrang.", punkte: -3 },
+  radRuecksicht: { id: "radRuecksicht", text: "Zu dicht und zu schnell an einem Fußgänger vorbei! Klingeln (R), langsam, mit Abstand.", punkte: -5 },
+  radBenutzungspflicht: { id: "radBenutzungspflicht", text: "Daneben ist ein Radweg mit blauem Schild — den musst du benutzen (StVO § 2 Abs. 4).", punkte: -3 },
+  radGemeinsamGut: { id: "radGemeinsamGut", text: "🚲 Karma +: Auf dem gemeinsamen Geh- und Radweg rücksichtsvoll unterwegs.", punkte: 2 },
   radRepariert: { id: "radRepariert", text: "🔧 Checkliste komplett — dein Rad ist verkehrssicher!", punkte: 10 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },
 };

@@ -110,10 +110,17 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 2 * s.gehwegBreite + 0.3, color: FARBE.bordstein, cap: "round", join: "round" }); }
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 2 * s.gehwegBreite, color: FARBE.gehweg, cap: "round", join: "round" }); }
   for (const w of karte.wege) {
-    const breite = w.art === "rad" || w.art === "geh_rad" ? 2.5 : w.art === "feldweg" ? 2.5 : 2;
+    const breite = w.art === "geh_rad_getrennt" ? 3 : w.art === "rad" || w.art === "geh_rad" ? 2.5 : w.art === "feldweg" ? 2.5 : 2;
     const farbe = w.art === "rad" ? FARBE.radweg : w.art === "geh_rad" ? FARBE.gehRad : FARBE.fussweg;
     linie(strassen, w.linie);
     strassen.stroke({ width: breite, color: farbe, cap: "round", join: "round" });
+    // Getrennter Geh- und Radweg: eine Hälfte roter Belag, dazwischen ein weißer Strich
+    if (w.art === "geh_rad_getrennt") {
+      linie(strassen, versetzt(w.linie, 0.75));
+      strassen.stroke({ width: 1.5, color: FARBE.radweg, cap: "round", join: "round" });
+      linie(strassen, w.linie);
+      strassen.stroke({ width: 0.12, color: FARBE.markierung });
+    }
   }
   for (const s of stadt.strassen) if (s.gehwegBreite) { linie(strassen, s.linie); strassen.stroke({ width: s.breite + 0.3, color: FARBE.bordstein, cap: "round", join: "round" }); }
   // Schmale Straßen zuerst, damit Hauptstraßen an Kreuzungen oben liegen.
@@ -592,6 +599,12 @@ export function zeichneSchild(art: SchildArt): Container {
       g.poly([-r, y - r * 0.8, r, y - r * 0.8, 0, y + r]).fill(0xffffff).stroke({ width: 0.09, color: 0xc8102e });
       c.addChild(g);
       return c;
+    case "vorfahrtstrasse":
+      // Gelbe Raute mit weißem Rand
+      g.poly([0, y - r * 1.05, r * 1.05, y, 0, y + r * 1.05, -r * 1.05, y]).fill(0xffffff).stroke({ width: 0.03, color: 0x555555 });
+      g.poly([0, y - r * 0.72, r * 0.72, y, 0, y + r * 0.72, -r * 0.72, y]).fill(0xf4c430);
+      c.addChild(g);
+      return c;
     case "zebra":
       g.rect(-r, y - r, 2 * r, 2 * r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
       g.poly([-r * 0.75, y + r * 0.6, r * 0.75, y + r * 0.6, 0, y - r * 0.75]).fill(0xffffff);
@@ -613,6 +626,24 @@ export function zeichneSchild(art: SchildArt): Container {
       g.moveTo(-r * 0.8, y).lineTo(r * 0.8, y).stroke({ width: 0.04, color: 0xffffff });
       c.addChild(g);
       bild("🚶\n🚲", 0xffffff, 0.3);
+      return c;
+    case "gehRadGetrennt":
+      g.circle(0, y, r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      g.moveTo(0, y - r * 0.8).lineTo(0, y + r * 0.8).stroke({ width: 0.04, color: 0xffffff });
+      c.addChild(g);
+      bild("🚶🚲", 0xffffff, 0.26);
+      return c;
+    case "radfrei":
+      // Gehweg (239) mit Zusatzzeichen »Radfahrer frei« darunter
+      g.circle(0, y, r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });
+      g.rect(-r * 0.9, y + r + 0.04, r * 1.8, r * 0.7).fill(0xffffff).stroke({ width: 0.03, color: 0x222222 });
+      c.addChild(g);
+      bild("🚶", 0xffffff, 0.4);
+      {
+        const t = new Text({ text: "🚲 frei", style: { fontFamily: "Arial", fontWeight: "bold", fontSize: 48, fill: 0x000000 } });
+        t.anchor.set(0.5); t.scale.set(0.22 / 48); t.position.set(0, y + r * 1.4);
+        c.addChild(t);
+      }
       return c;
     case "spielstrasse":
       g.rect(-r * 1.2, y - r * 0.8, 2.4 * r, 1.6 * r).fill(0x1f5fbf).stroke({ width: 0.04, color: 0xffffff });

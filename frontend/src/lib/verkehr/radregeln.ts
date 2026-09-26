@@ -1,6 +1,9 @@
 /**
  * Regeln beim Radfahren (StVO): Radweg oder Fahrbahn statt Gehweg (bis 10
- * Jahre darf man auf dem Gehweg fahren, unter 8 muss man), rechts fahren,
+ * Jahre darf man auf dem Gehweg fahren, unter 8 muss man). Radwege mit blauem
+ * Schild muss man benutzen (237 nur Rad, 240 gemeinsam mit Fußgängern, 241
+ * getrennt); auf dem Gehweg mit »Radfahrer frei« nur im Schritttempo. An
+ * Fußgängern mit Abstand und Klingel vorbei. Rechts fahren,
  * nicht gegen die Einbahnstraße, am Zebrastreifen absteigen und schieben,
  * rote Ampel gilt auch fürs Rad, im Dunkeln mit Licht. Wer es richtig macht,
  * sammelt Karma. Dazu: Wo darf das Rad abgestellt werden? Kein Pixi.
@@ -14,7 +17,14 @@ import type { Stadt } from "./stadt";
 export type RadLage = {
   x: number; y: number; winkel: number; tempo: number; t: number;
   alter: number; dunkel: boolean; lichtOk: boolean;
+  /** Fußgänger in der Nähe (Mitspieler und Passanten). */
+  passanten?: { x: number; y: number }[];
+  /** Sekunden seit dem letzten Klingeln. */
+  seitKlingeln?: number;
 };
+
+/** Schritttempo: etwa 7 km/h. */
+export const SCHRITT = 2;
 
 export class RadWaechter {
   private zuletzt = new Map<RegelId, number>();
@@ -39,18 +49,33 @@ export class RadWaechter {
     const u = this.stadt.untergrund(l.x, l.y);
     const faehrt = l.tempo > 0.5;
 
-    // Gehweg: bis 10 erlaubt (unter 8 Pflicht), danach nicht
+    // Gehweg: bis 10 erlaubt (unter 8 Pflicht), danach nicht — außer er ist auch fürs Rad freigegeben
     const gehwegVerboten = gehwegErlaubt(l.alter) === "nein";
-    this.melde(aus, "radGehweg", faehrt && u.art === "gehweg" && gehwegVerboten, t, 1.5, 20);
-    if (u.art === "gehweg" && gehwegVerboten && faehrt) hinweis = "Mit über 10 Jahren nicht auf dem Gehweg fahren — Radweg, Fahrbahn oder absteigen und schieben (F).";
-    // Radweg: gut so
-    this.melde(aus, "radwegGut", faehrt && u.art === "radweg", t, 5, 60);
+    const gehRad = u.art === "gehweg" ? u.rad : undefined;
+    this.melde(aus, "radGehweg", faehrt && u.art === "gehweg" && !gehRad && gehwegVerboten, t, 1.5, 20);
+    if (u.art === "gehweg" && !gehRad && gehwegVerboten && faehrt) hinweis = "Mit über 10 Jahren nicht auf dem Gehweg fahren — Radweg, Fahrbahn oder absteigen und schieben (F).";
+    // Radweg (237) und getrennter Geh- und Radweg (241): gut so
+    this.melde(aus, "radwegGut", faehrt && (u.art === "radweg" || gehRad === "getrennt"), t, 5, 60);
+    if (gehRad === "getrennt" && faehrt) hinweis ??= "Getrennter Geh- und Radweg (241): du fährst auf der roten Seite, Fußgänger auf ihrer.";
+    // Gemeinsamer Geh- und Radweg (240): erlaubt, aber mit Rücksicht
+    this.melde(aus, "radGemeinsamGut", faehrt && gehRad === "gemeinsam" && l.tempo <= 5, t, 6, 60);
+    if (gehRad === "gemeinsam" && faehrt) hinweis ??= "Gemeinsamer Geh- und Radweg (240): Fußgänger dürfen hier auch gehen — klingeln (R) und mit Abstand vorbei.";
+    // Gehweg mit »Radfahrer frei«: nur Schritttempo
+    this.melde(aus, "radSchritt", gehRad === "frei" && l.tempo > SCHRITT + 0.5, t, 2, 20);
+    if (gehRad === "frei" && faehrt) hinweis ??= "Gehweg, Radfahrer frei: fahren erlaubt, aber nur im Schritttempo (langsam, ohne Umschalt).";
+    // Zu dicht und zu schnell an Fußgängern vorbei (auf allen Gehwegen), ohne zu klingeln
+    if (u.art === "gehweg" && l.tempo > SCHRITT + 0.5 && (l.seitKlingeln ?? Infinity) > 4) {
+      const dicht = (l.passanten ?? []).some((p) => Math.hypot(p.x - l.x, p.y - l.y) < 1.3);
+      this.melde(aus, "radRuecksicht", dicht, t, 0, 15);
+    }
     // Fahrbahn
     if (u.art === "fahrbahn") {
-      const radweg = this.stadt.radwegNah(l.x, l.y, 10);
+      // Ein Radweg mit blauem Schild, der daneben in dieselbe Richtung läuft, ist Pflicht
+      const radweg = this.stadt.radwegNah(l.x, l.y, 9, l.winkel);
       // Ohne Radweg ist die Fahrbahn genau richtig
       this.melde(aus, "fahrbahnGut", faehrt && !radweg && !u.querung, t, 5, 60);
-      if (radweg && faehrt) hinweis = "Daneben ist ein Radweg — der ist sicherer.";
+      this.melde(aus, "radBenutzungspflicht", faehrt && radweg && !u.querung, t, 4, 30);
+      if (radweg && faehrt) hinweis = "Daneben ist ein Radweg mit blauem Schild — den musst du benutzen.";
       // Rechts fahren, nicht gegen die Einbahnstraße
       const n = this.stadt.naechsteStrasse(l.x, l.y, u.strasse.breite);
       if (n && faehrt) {
@@ -91,7 +116,7 @@ export function abstellen(stadt: Stadt, p: P): { ok: boolean; amStaender: boolea
   if (staender) return { ok: true, amStaender: true };
   const u = stadt.untergrund(p[0], p[1]);
   if (u.art === "fahrbahn" || u.art === "spielstrasse") return { ok: false, amStaender: false, grund: "Auf der Fahrbahn steht das Rad den Autos im Weg." };
-  if (u.art === "radweg") return { ok: false, amStaender: false, grund: "Auf dem Radweg stolpern andere über dein Rad." };
+  if (u.art === "radweg" || (u.art === "gehweg" && (u.rad === "gemeinsam" || u.rad === "getrennt"))) return { ok: false, amStaender: false, grund: "Auf dem Radweg stolpern andere über dein Rad." };
   if (u.art === "gleis" || u.art === "bahnsteig") return { ok: false, amStaender: false, grund: "Nicht auf Gleis oder Bahnsteig abstellen." };
   const nah = (art: string, r: number) => stadt.karte.punkte.some((q) => q.art === art && Math.hypot(q.p[0] - p[0], q.p[1] - p[1]) < r);
   if (nah("zebra", 5) || nah("ampelUebergang", 5) || nah("querung", 4)) return { ok: false, amStaender: false, grund: "Am Überweg versperrt es den Weg — auch für Rollstühle und Kinderwagen." };

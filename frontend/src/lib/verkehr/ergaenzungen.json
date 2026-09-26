@@ -1,8 +1,151 @@
 {
- "hinweis": "Ergänzungen zur OSM-Karte, die dort (noch) fehlen — nach Angaben der Schule. Spielstraße (»Kiss and Ride Zone«), Überweg zur Turnhalle und Spielplatz stehen inzwischen in OSM; hier nur noch die Tore der Spielstraße (tagsüber offen). Bleibt beim Neuladen der Karte erhalten.",
- "strassen": [],
- "punkte": [],
- "flaechen": [],
+ "hinweis": "Ergänzungen zur OSM-Karte, die dort (noch) fehlen — nach Angaben der Schule. Die Spielstraße (»Kiss and Ride Zone«) stand im September 2026 kurz in OSM und fehlt seit dem 26.09.2026 wieder; deshalb liegt sie hier (zwei Stücke, Einbahn von der Eugen-Richter-Straße zur Dortmunder Straße), dazu ihre Tore (tagsüber offen) der Überweg zwischen Nordbau und Turnhalle, der Spielplatz und drei Parkplätze am Schulgelände (am selben Tag aus OSM verschwunden). Taucht sie in OSM wieder mit Namen auf, gilt die OSM-Fassung. Bleibt beim Neuladen der Karte erhalten.",
+ "strassen": [
+  {
+   "art": "living_street",
+   "linie": [
+    [
+     105.9,
+     -5.7
+    ],
+    [
+     93.1,
+     -11.9
+    ],
+    [
+     4.2,
+     -55
+    ]
+   ],
+   "name": "Kiss and Ride Zone",
+   "spuren": 1,
+   "einbahn": true,
+   "tempo": 5
+  },
+  {
+   "art": "living_street",
+   "linie": [
+    [
+     4.2,
+     -55
+    ],
+    [
+     -7,
+     -33.3
+    ],
+    [
+     -46.9,
+     44.5
+    ],
+    [
+     -49.8,
+     50.2
+    ]
+   ],
+   "spuren": 1,
+   "einbahn": true,
+   "tempo": 5
+  }
+ ],
+ "punkte": [
+  {
+   "art": "zebra",
+   "p": [
+    -7,
+    -33.3
+   ]
+  }
+ ],
+ "flaechen": [
+  {
+   "art": "spielplatz",
+   "umriss": [
+    [
+     -15,
+     -31.4
+    ],
+    [
+     -2.5,
+     -54.3
+    ],
+    [
+     -47.6,
+     -75.1
+    ],
+    [
+     -63.9,
+     -45.3
+    ],
+    [
+     -20.7,
+     -24.9
+    ]
+   ]
+  },
+  {
+   "art": "parkplatz",
+   "umriss": [
+    [
+     -47.3,
+     39.7
+    ],
+    [
+     -40.2,
+     26.1
+    ],
+    [
+     -45.8,
+     23.3
+    ],
+    [
+     -53,
+     36.7
+    ]
+   ]
+  },
+  {
+   "art": "parkplatz",
+   "umriss": [
+    [
+     -38.3,
+     22.4
+    ],
+    [
+     -44.2,
+     19.7
+    ],
+    [
+     -20.7,
+     -24.9
+    ],
+    [
+     -15.3,
+     -22.4
+    ]
+   ]
+  },
+  {
+   "art": "parkplatz",
+   "umriss": [
+    [
+     49.2,
+     -31.5
+    ],
+    [
+     54,
+     -42.3
+    ],
+    [
+     89.5,
+     -26.2
+    ],
+    [
+     83.8,
+     -13.7
+    ]
+   ]
+  }
+ ],
  "tore": [
   {
    "strasse": "Kiss and Ride Zone",

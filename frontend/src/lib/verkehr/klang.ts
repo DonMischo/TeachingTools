@@ -98,6 +98,10 @@ export class Klang {
   tramKlingel() {
     for (const ab of [0, 0.25]) for (const [f, l] of [[1480, 0.12], [2960, 0.05], [4440, 0.03]]) this.ton(f, 0.6, { laut: l, ab });
   }
+  /** Fahrradklingel: zweimal hell »ring-ring«. */
+  fahrradKlingel() {
+    for (const ab of [0, 0.16]) for (const [f, l] of [[2600, 0.08], [3900, 0.03]]) this.ton(f, 0.25, { laut: l, ab });
+  }
   zugHorn() { this.ton(311, 1.2, { typ: "sawtooth", laut: 0.08 }); this.ton(370, 1.2, { typ: "sawtooth", laut: 0.07 }); }
   pfeife() {
     for (let i = 0; i < 8; i++) this.ton(i % 2 ? 2900 : 2700, 0.09, { laut: 0.1, ab: i * 0.09 });
