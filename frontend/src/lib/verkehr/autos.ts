@@ -6,7 +6,7 @@
  * Gerechnet wird nur bei einem Rechner der Sitzung (dem Taktgeber); die
  * anderen bekommen die Stände geschickt. Deshalb darf hier `Math.random` stehen.
  */
-import type { P } from "./geometrie";
+import { boxVon, Raster, type P } from "./geometrie";
 import { achsenAbstand, autoLicht, type Anlage } from "./ampeln";
 import { spurLagen, type Halt, type Stadt, type Strasse } from "./stadt";
 import { HALT_DAUER } from "./tueren";
@@ -21,11 +21,13 @@ export type Kante = {
   strasse: Strasse; spur: number; halte: Haltepunkt[];
   /** Welche Spur (0 = innen, an der Mitte) von wie vielen in dieser Richtung. */
   spurNr: number; spuren: number;
+  /** Straßenbahngleis: nur Bahnen fahren hier. */
+  schiene?: boolean;
 };
 export type Haltepunkt = { s: number; art: "ampel" | "zebra"; anlage?: Anlage; achse?: number; p: P };
 
 export type Fahrzeug = {
-  id: number; art: "auto" | "bus"; farbe: number; laenge: number; breite: number;
+  id: number; art: "auto" | "bus" | "tram"; farbe: number; laenge: number; breite: number;
   kante: number; s: number; tempo: number; naechste: number | null;
   x: number; y: number; winkel: number;
   /** Hupt bis zu diesem Zeitpunkt (Karma: will nicht halten, muss aber). */
@@ -59,8 +61,10 @@ export type Fahrzeug = {
 /** Eine Buslinie als Rundkurs über die Kanten, mit den Haltestellen darauf. */
 export type Linie = {
   kanten: number[]; halte: Map<number, { s: number; halt: Halt }>; anzeige?: string;
-  /** Welcher Bustyp auf der Linie fährt (sonst gemischt). */
+  /** Welcher Bustyp auf der Linie fährt (sonst gemischt); »tram« für Straßenbahnen. */
   bustyp?: Bustyp;
+  /** Straßenbahnlinie: fährt auf den Gleisen. */
+  schiene?: boolean;
   /** Je Richtung: wo sie am Kartenrand beginnt und endet (Stellen in `kanten`). */
   abschnitte?: { ziel: string; von: number; bis: number }[];
   /** Stellen i, nach denen der Bus springt: raus am Kartenrand, woanders wieder herein (die Fahrt dazwischen liegt außerhalb). */
@@ -132,7 +136,30 @@ export class Strassenverkehr {
         if (!s.einbahn) spurLagen(s, false).lagen.forEach((spur, nr, alle) => this.kante(b, a, s, spur, nr, alle.length));
       }
     }
+    // Straßenbahngleise: eigene Kanten in beide Richtungen (welche Richtung, sagt die Linie)
+    for (const g of stadt.karte.gleise) {
+      if (g.art !== "tram") continue;
+      const gleis: Strasse = { art: "tertiary", linie: g.linie, name: "Gleis", tempo: 50, breite: 2.6, gehwegBreite: 0 };
+      for (let i = 0; i + 1 < g.linie.length; i++) {
+        const a = knoten(g.linie[i]), b = knoten(g.linie[i + 1]);
+        for (const [von, nach] of [[a, b], [b, a]]) {
+          const vorher = this.kanten.length;
+          this.kante(von, nach, gleis, 0, 0, 1);
+          if (this.kanten.length > vorher) this.kanten[vorher].schiene = true;
+        }
+      }
+    }
     this.haltepunkteEintragen();
+  }
+
+  /** Kanten nach Lage (für die Suche beim Linienbau). */
+  private kantenRaster?: Raster<number>;
+  private kantenBei(x: number, y: number): readonly number[] {
+    if (!this.kantenRaster) {
+      this.kantenRaster = new Raster<number>(20);
+      this.kanten.forEach((k, i) => this.kantenRaster!.fuege(i, boxVon([k.a, k.b]), 12));
+    }
+    return this.kantenRaster.bei(x, y);
   }
 
   private kante(von: number, nach: number, strasse: Strasse, spur: number, spurNr: number, spuren: number) {
@@ -157,6 +184,8 @@ export class Strassenverkehr {
         if (Math.hypot(p[0] - qx, p[1] - qy) > k.strasse.breite / 2 + 4) continue;
         // Eine Ampel gilt nur für die Straße ihrer Achse, nicht für die Querstraße daneben.
         if (h.anlage && h.achse !== undefined && achsenAbstand(h.anlage.achsen[h.achse], k.winkel) > Math.PI / 5) continue;
+        // Straßenbahnen haben am Zebrastreifen Vorrang (§ 26 StVO gilt nicht für Schienenfahrzeuge)
+        if (k.schiene && h.art === "zebra") continue;
         // Haltelinie 3 m vor dem Punkt.
         k.halte.push({ ...h, s: Math.max(0, t * k.laenge - 3), p });
       }
@@ -188,7 +217,7 @@ export class Strassenverkehr {
   private waehleNaechste(kante: number, f?: Fahrzeug): number | null {
     if (f?.linie) return f.linie.kanten[((f.ri ?? 0) + 1) % f.linie.kanten.length];
     const k = this.kanten[kante];
-    const alleAus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von && this.offen(this.kanten[i]));
+    const alleAus = this.knoten[k.nach].aus.filter((i) => this.kanten[i].nach !== k.von && this.offen(this.kanten[i]) && !!this.kanten[i].schiene === !!k.schiene);
     if (alleAus.length) {
       // Erst die Straße wählen (parallele Spuren zählen als eine), dann die Spur.
       const aus = alleAus.filter((i) => this.kanten[i].spurNr === 0);
@@ -202,7 +231,7 @@ export class Strassenverkehr {
       const gleich = spuren.find((i) => this.kanten[i].spurNr === Math.min(k.spurNr, w.spuren - 1));
       return Math.random() < 0.12 || gleich === undefined ? spuren[Math.floor(Math.random() * spuren.length)] : gleich;
     }
-    const zurueck = this.knoten[k.nach].aus;
+    const zurueck = this.knoten[k.nach].aus.filter((i) => !!this.kanten[i].schiene === !!k.schiene);
     return zurueck.length ? zurueck[0] : null;
   }
 
@@ -221,7 +250,7 @@ export class Strassenverkehr {
     const nah = (x: number, y: number, r: number) => menschen.some((m) => Math.hypot(m.x - x, m.y - y) < r);
     // Ohne Menschen (etwa kurz nach einem Unfall) bleibt der Verkehr, wie er ist.
     if (!menschen.length) return;
-    this.fahrzeuge = this.fahrzeuge.filter((f) => f.art === "bus" || nah(f.x, f.y, 240));
+    this.fahrzeuge = this.fahrzeuge.filter((f) => f.art !== "auto" || nah(f.x, f.y, 240));
     for (let versuch = 0; versuch < 6 && this.fahrzeuge.length < this.ziel; versuch++) {
       const m = menschen[Math.floor(Math.random() * menschen.length)];
       const w = Math.random() * Math.PI * 2, r = 90 + Math.random() * 110;
@@ -325,9 +354,10 @@ export class Strassenverkehr {
   }
 
   /** Knoten, die vom größten Teil des Netzes erreichbar sind und ihn auch wieder erreichen. */
-  private kern(): Set<number> {
+  private kern(schiene = false): Set<number> {
     const rueck = new Map<number, number[]>();
-    for (const k of this.kanten) (rueck.get(k.nach) ?? rueck.set(k.nach, []).get(k.nach)!).push(k.von);
+    const passt = (k: Kante) => !!k.schiene === schiene;
+    for (const k of this.kanten) if (passt(k)) (rueck.get(k.nach) ?? rueck.set(k.nach, []).get(k.nach)!).push(k.von);
     const suche = (start: number, weiter: (u: number) => number[]) => {
       const seen = new Set([start]), offen = [start];
       while (offen.length) for (const n of weiter(offen.pop()!)) if (!seen.has(n)) { seen.add(n); offen.push(n); }
@@ -336,7 +366,8 @@ export class Strassenverkehr {
     let best = new Set<number>();
     // Ein paar Startpunkte probieren — der größte Kern gewinnt.
     for (let i = 0; i < this.knoten.length; i += Math.max(1, Math.floor(this.knoten.length / 12))) {
-      const vor = suche(i, (u) => this.knoten[u].aus.map((ki) => this.kanten[ki].nach));
+      if (!this.knoten[i].aus.some((ki) => passt(this.kanten[ki]))) continue;
+      const vor = suche(i, (u) => this.knoten[u].aus.filter((ki) => passt(this.kanten[ki])).map((ki) => this.kanten[ki].nach));
       const zur = suche(i, (u) => rueck.get(u) ?? []);
       const beide = new Set([...vor].filter((n) => zur.has(n)));
       if (beide.size > best.size) best = beide;
@@ -345,7 +376,8 @@ export class Strassenverkehr {
   }
 
   /** Kürzester Weg zwischen zwei Knoten über die Kanten (Dijkstra). */
-  weg(von: number, nach: number): number[] | null {
+  /** `schiene`: nur auf Gleisen (Bahn) bzw. nur auf Straßen (Bus, Auto) — an Bahnübergängen teilen sie Knoten. */
+  weg(von: number, nach: number, schiene = false): number[] | null {
     const dist = new Map<number, number>([[von, 0]]);
     const vorKante = new Map<number, number>();
     const offen = new Set([von]);
@@ -356,6 +388,7 @@ export class Strassenverkehr {
       if (u === nach) break;
       for (const ki of this.knoten[u].aus) {
         const k = this.kanten[ki];
+        if (!!k.schiene !== schiene) continue;
         const nd = du + k.laenge;
         if (nd < (dist.get(k.nach) ?? Infinity)) { dist.set(k.nach, nd); vorKante.set(k.nach, ki); offen.add(k.nach); }
       }
@@ -435,13 +468,14 @@ export class Strassenverkehr {
    * halten; am Ende der einen Richtung kehrt der Bus am Kartenrand um und fährt
    * die andere. So hält er nie auf der Gegenseite.
    */
-  baueLinienweg(richtungen: { ziel?: string; spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[]): Linie | null {
-    const kern = this.kern();
+  baueLinienweg(richtungen: { ziel?: string; spur?: P[][]; steige?: { name: string; p: P }[] }[], halte: Halt[], schiene = false): Linie | null {
+    const kern = this.kern(schiene);
     const imKern = (i: number) => kern.has(this.kanten[i].von) && kern.has(this.kanten[i].nach);
     // Am Kartenrand: Einbahn-Fahrbahnen hinein (führen in den Kern) und hinaus (kommen aus ihm)
     const ausbreiten = (vorwaerts: boolean) => {
       const nachbarn = new Map<number, number[]>();
       for (const k of this.kanten) {
+        if (!!k.schiene !== schiene) continue;
         const [a, b] = vorwaerts ? [k.von, k.nach] : [k.nach, k.von];
         (nachbarn.get(a) ?? nachbarn.set(a, []).get(a)!).push(b);
       }
@@ -456,13 +490,15 @@ export class Strassenverkehr {
     // Für Bussteige: weiter weg (sie stehen am Gehweg) und nur rechts der Fahrtrichtung.
     const kanteBei = (p: P, rx: number, ry: number, steig = false) => {
       let best: { kante: number; s: number; d: number } | null = null;
-      for (let i = 0; i < this.kanten.length; i++) {
+      for (const i of this.kantenBei(p[0], p[1])) {
         const k = this.kanten[i];
+        if (!!k.schiene !== schiene) continue;
         const dx = (k.b[0] - k.a[0]) / k.laenge, dy = (k.b[1] - k.a[1]) / k.laenge;
         if (dx * rx + dy * ry < 0.7 || !(steig ? imKern(i) : amRandOk(i))) continue;
         const t = Math.max(0, Math.min(k.laenge, (p[0] - k.a[0]) * dx + (p[1] - k.a[1]) * dy));
         const d = Math.hypot(k.a[0] + dx * t - p[0], k.a[1] + dy * t - p[1]);
-        if (steig && -(p[0] - k.a[0]) * dy + (p[1] - k.a[1]) * dx <= 0) continue;
+        // Bussteige rechts der Fahrtrichtung; Bahnsteige gibt es auch in der Mitte (dann links)
+        if (steig && !schiene && -(p[0] - k.a[0]) * dy + (p[1] - k.a[1]) * dx <= 0) continue;
         if (d < k.strasse.breite / 2 + (steig ? 8 : 3) && (!best || d < best.d)) best = { kante: i, s: t, d };
       }
       return best;
@@ -523,7 +559,7 @@ export class Strassenverkehr {
       if (dann.kante === jetzt.kante) continue;
       // Am Kartenrand hinaus, woanders wieder herein: springen statt sichtbar zurückfahren
       if (jetzt.rand === "raus" && dann.rand === "rein") { spruenge.add(kanten.length - 1); continue; }
-      const pfad = this.weg(this.kanten[jetzt.kante].nach, this.kanten[dann.kante].von);
+      const pfad = this.weg(this.kanten[jetzt.kante].nach, this.kanten[dann.kante].von, schiene);
       if (!pfad) return null;
       kanten.push(...pfad);
     }
@@ -544,7 +580,8 @@ export class Strassenverkehr {
   private neuerBus(linie: Linie, ri: number, fahrt?: { bis: number; plan: Map<number, number> }) {
     this.setze({
       ...(fahrt ? { fahrtBis: fahrt.bis, planAb: fahrt.plan } : {}),
-      id: this.naechsteId++, art: "bus", typ: linie.bustyp ?? bustypFuer(this.naechsteId - 1), farbe: BUS.farbe,
+      id: this.naechsteId++, art: linie.schiene ? "tram" : "bus", typ: linie.bustyp ?? bustypFuer(this.naechsteId - 1),
+      farbe: linie.schiene ? 0xd21f2b : BUS.farbe,
       laenge: LAYOUTS[linie.bustyp ?? bustypFuer(this.naechsteId - 1)].laenge, breite: BUS.breite,
       kante: linie.kanten[ri], s: 0, tempo: 0, naechste: linie.kanten[(ri + 1) % linie.kanten.length],
       x: 0, y: 0, winkel: 0, hupe: 0, wartetBis: 0, linie, ri, haltSeit: null, anzeige: linie.anzeige,

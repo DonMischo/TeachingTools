@@ -17,28 +17,34 @@ import { readFileSync, writeFileSync } from "fs";
 
 const ZIEL = "src/lib/verkehr/karte.json";
 const MITTE = { lat: 50.98967, lon: 11.03754 };
-const RADIUS = 750;
-/** Was außerhalb dieses Quadrats liegt, fällt weg. */
-const RAND = RADIUS + 30;
+/**
+ * Das Kartengebiet: von der Schule im Norden bis hinter den Hauptbahnhof im
+ * Süden, vom Petersberg/Domplatz im Westen bis zur Ostkante des Viertels —
+ * damit die Innenstadt (Anger, Fischmarkt, Domplatz, Hbf) mit drin ist.
+ */
+const BBOX = { sued: 50.9700, west: 11.0195, nord: 50.9965, ost: 11.0485 };
+const BB = `${BBOX.sued},${BBOX.west},${BBOX.nord},${BBOX.ost}`;
+/** Etwas Rand, damit Linien nicht direkt an der Kante enden. */
+const UEBER = 30;
 
-const ABFRAGE = `[out:json][timeout:120];
+const ABFRAGE = `[out:json][timeout:240];
 (
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[highway];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[building];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[railway~"^(rail|tram|platform)$"];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[public_transport=platform];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[landuse~"^(grass|allotments|meadow|forest|railway)$"];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[leisure~"^(park|pitch|playground|garden)$"];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[amenity~"^(parking|school|kindergarten)$"];
-  way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[natural~"^(scrub|wood|water)$"];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[highway~"^(crossing|traffic_signals|bus_stop|stop|give_way)$"];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[railway~"^(tram_stop|halt|station|level_crossing|crossing)$"];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[public_transport~"^(platform|stop_position)$"];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[shop][name];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[amenity~"^(school|kindergarten|pharmacy|restaurant|fast_food|cafe)$"][name];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[natural=tree];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})[highway=street_lamp];
-  node(around:${RADIUS},${MITTE.lat},${MITTE.lon})["addr:housenumber"]["addr:street"];
+  way(${BB})[highway];
+  way(${BB})[building];
+  way(${BB})[railway~"^(rail|tram|platform)$"];
+  way(${BB})[public_transport=platform];
+  way(${BB})[landuse~"^(grass|allotments|meadow|forest|railway)$"];
+  way(${BB})[leisure~"^(park|pitch|playground|garden)$"];
+  way(${BB})[amenity~"^(parking|school|kindergarten)$"];
+  way(${BB})[natural~"^(scrub|wood|water)$"];
+  node(${BB})[highway~"^(crossing|traffic_signals|bus_stop|stop|give_way)$"];
+  node(${BB})[railway~"^(tram_stop|halt|station|level_crossing|crossing)$"];
+  node(${BB})[public_transport~"^(platform|stop_position)$"];
+  node(${BB})[shop][name];
+  node(${BB})[amenity~"^(school|kindergarten|pharmacy|restaurant|fast_food|cafe)$"][name];
+  node(${BB})[natural=tree];
+  node(${BB})[highway=street_lamp];
+  node(${BB})["addr:housenumber"]["addr:street"];
 );
 out body;
 >;
@@ -48,15 +54,20 @@ const M_JE_LAT = 111_320;
 const M_JE_LON = 111_320 * Math.cos((MITTE.lat * Math.PI) / 180);
 const r1 = (v) => Math.round(v * 10) / 10;
 const projiziere = (lat, lon) => [r1((lon - MITTE.lon) * M_JE_LON), r1((MITTE.lat - lat) * M_JE_LAT)];
-const drin = ([x, y]) => Math.abs(x) <= RAND && Math.abs(y) <= RAND;
+const [X0, Y1] = projiziere(BBOX.sued, BBOX.west), [X1, Y0] = projiziere(BBOX.nord, BBOX.ost);
+/** Das Gebiet in Metern um die Schule (x nach Osten, y nach Süden). */
+const BEREICH = { x0: X0, x1: X1, y0: Y0, y1: Y1 };
+const drin = ([x, y]) => x >= X0 - UEBER && x <= X1 + UEBER && y >= Y0 - UEBER && y <= Y1 + UEBER;
 
 /** Linien (Bus/Tram) über die Haltestellen im Umkreis — mit den Namen ihrer Haltestellen. */
-const LINIEN_ABFRAGE = `[out:json][timeout:120];
-node(around:${RADIUS + 500},${MITTE.lat},${MITTE.lon})[public_transport=platform]->.p;
-way(around:${RADIUS},${MITTE.lat},${MITTE.lon})[railway=tram]->.w;
+const LINIEN_ABFRAGE = `[out:json][timeout:240];
+node(${BB})[public_transport=platform]->.p;
+way(${BB})[railway=tram]->.w;
 (rel(bn.p)[type=route][route~"^(bus|tram)$"];rel(bw.w)[type=route][route=tram];)->.r;
 .r out geom;
-node(r.r)[public_transport=platform];
+node(r.r)[name];
+out tags;
+way(r.r)[public_transport=platform][name];
 out tags;`;
 
 /** Zwei Server im Wechsel — Overpass drosselt schnell. */
@@ -140,7 +151,8 @@ const karte = NUR_LINIEN ? JSON.parse(readFileSync(ZIEL, "utf8")) : {
   nachweis: "Kartendaten © OpenStreetMap-Mitwirkende, ODbL 1.0 (openstreetmap.org/copyright)",
   stand: new Date().toISOString().slice(0, 10),
   mitte: MITTE,
-  radius: RADIUS,
+  radius: Math.max(-X0, X1, -Y0, Y1),
+  bereich: BEREICH,
   strassen: [],
   wege: [],
   gleise: [],
@@ -232,19 +244,23 @@ function kette(wege) {
 // dazu im Quadrat der echte Fahrweg (`spur`, abgeschnittene Stücke) und die
 // Bussteige dieser Richtung (`steige`), damit der Bus die richtige Straßenseite nimmt.
 const routen = await hole(LINIEN_ABFRAGE);
-const namen = new Map(routen.elements.filter((e) => e.type === "node").map((e) => [e.id, e.tags?.name]));
+// Namen der Halte: Knoten und Bahnsteig-Flächen (Schlüssel mit Typ, IDs können sich überschneiden)
+const namen = new Map(routen.elements.filter((e) => e.type !== "relation" && e.tags?.name).map((e) => [`${e.type}${e.id}`, e.tags.name]));
 const linien = new Map();
 for (const r of routen.elements) {
   if (r.type !== "relation" || !r.tags?.ref) continue;
-  const halte = r.members.filter((m) => m.type === "node" && m.role.startsWith("platform")).map((m) => namen.get(m.ref)).filter(Boolean);
+  // Bus: die Bussteige; Straßenbahn: die Haltepositionen am Gleis (Bahnsteige sind dort oft Flächen)
+  const tram = r.tags.route === "tram";
+  const rolle = (m) => (tram ? m.role.startsWith("stop") : m.role.startsWith("platform"));
+  const halte = r.members.filter((m) => m.type === "node" && rolle(m)).map((m) => namen.get(`node${m.ref}`)).filter(Boolean);
   const key = `${r.tags.route}|${r.tags.ref}`;
   const eintrag = linien.get(key) ?? { art: r.tags.route, nr: r.tags.ref, betreiber: r.tags.operator ?? r.tags.network ?? "", richtungen: [] };
   const ziel = r.tags.to ?? (r.tags.name ?? "").split("=>").pop().trim();
   const wege = r.members.filter((m) => m.type === "way" && !m.role.startsWith("platform") && m.geometry)
     .map((m) => m.geometry.map((g) => projiziere(g.lat, g.lon)));
   const spur = schneide(kette(wege));
-  const steige = r.members.filter((m) => m.role.startsWith("platform") && namen.get(m.ref))
-    .map((m) => ({ name: namen.get(m.ref), p: m.type === "node" ? projiziere(m.lat, m.lon) : m.geometry ? projiziere(m.geometry[0].lat, m.geometry[0].lon) : null }))
+  const steige = r.members.filter((m) => rolle(m) && namen.get(`${m.type}${m.ref}`))
+    .map((m) => ({ name: namen.get(`${m.type}${m.ref}`), p: m.type === "node" ? projiziere(m.lat, m.lon) : m.geometry ? projiziere(m.geometry[0].lat, m.geometry[0].lon) : null }))
     .filter((x) => x.p && drin(x.p));
   if (!eintrag.richtungen.some((x) => x.ziel === ziel)) eintrag.richtungen.push({ ziel, halte, ...(spur.length ? { spur } : {}), ...(steige.length ? { steige } : {}) });
   linien.set(key, eintrag);

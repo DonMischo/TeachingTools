@@ -71,6 +71,7 @@ export class BusBild {
   private leute = new Container();
   private blasen = new Container();
   private figuren = new Map<string, Container & { rucksack?: Container }>();
+  private schriften: Text[] = [];
   private blasenBilder = new Map<string, Container & { text: Text; grund: Graphics }>();
 
   constructor(sz: Busszene) {
@@ -104,6 +105,7 @@ export class BusBild {
       sym.scale.set(0.4 / 48);
       sym.position.set((f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2);
       this.c.addChild(sym);
+      this.schriften.push(sym);
     }
     // Fahrerplatz: Trennwand, Sitz, Lenkrad
     const F = L.fahrer;
@@ -195,6 +197,12 @@ export class BusBild {
     }
     for (const [id, fig] of this.figuren) if (!da.has(id)) { fig.destroy(); this.figuren.delete(id); }
     for (const [id, bl] of this.blasenBilder) if (!da.has(id)) { bl.destroy(); this.blasenBilder.delete(id); }
+  }
+
+  /** Gespiegelte Szene (Steig links): Schrift und Blasen wieder lesbar machen. */
+  spiegel(seite: 1 | -1) {
+    for (const bl of this.blasenBilder.values()) bl.scale.y = seite;
+    for (const t of this.schriften) t.scale.y = Math.abs(t.scale.y) * seite;
   }
 
   destroy() { this.c.destroy({ children: true }); }

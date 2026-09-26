@@ -138,9 +138,13 @@ export function takt(l: Pick<Linie, "art" | "nr">, z: Zeit): number | null {
       return n ? Math.round(60 / n) : null;
     }
   }
+  // EVAG-»CityTakt«: alle Straßenbahnen (und die 9) werktags 6–18 Uhr alle 10 Minuten,
+  // abends und am Wochenende tagsüber alle 15, sonst alle 20 Minuten bis gegen halb eins.
   if (l.art === "tram" || l.nr === "9") {
     if (wt && m >= 6 * 60 && m < 18 * 60) return 10;
-    if (m >= 5 * 60 && m < 23 * 60) return 20;
+    if (wt && m >= 18 * 60 && m < 20 * 60) return 15;
+    if (!wt && m >= 9 * 60 && m < 19 * 60) return 15;
+    if (m >= 5 * 60 || m < 30) return 20;
     return null;
   }
   if (l.nr === "35") {
@@ -149,7 +153,15 @@ export function takt(l: Pick<Linie, "art" | "nr">, z: Zeit): number | null {
     if (m >= 5 * 60 + 30 && m < 19 * 60) return 60;
     return null;
   }
-  if (m >= 5 * 60 && m < 21 * 60) return 60;
+  // Stadtbusse (Nummern unter 100): tagsüber alle 20, abends alle 30 Minuten
+  if (Number(l.nr) < 100) {
+    if (wt && m >= 6 * 60 && m < 19 * 60) return 20;
+    if (m >= 5 * 60 && m < 23 * 60) return 30;
+    return null;
+  }
+  // Regionalbusse: stündlich, samstags alle zwei Stunden, sonntags nicht
+  if (wt && m >= 5 * 60 && m < 20 * 60) return 60;
+  if (sa && m >= 7 * 60 && m < 18 * 60) return 120;
   return null;
 }
 

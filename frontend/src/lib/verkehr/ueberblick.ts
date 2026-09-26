@@ -5,7 +5,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import { beschriftung } from "./zeichnen";
 import type { P } from "./geometrie";
-import type { Halt, Stadt } from "./stadt";
+import { bereichVon, type Halt, type Stadt } from "./stadt";
 
 /** Straßennamen: auf jedem längeren Stück die Mitte, gleiche Namen mindestens 120 m auseinander. */
 export function strassenNamen(stadt: Stadt): Container {
@@ -68,8 +68,8 @@ export class Minikarte {
 
   constructor(stadt: Stadt, schule: P) {
     const g = new Graphics();
-    const r = stadt.karte.radius + 40;
-    g.rect(-r, -r, 2 * r, 2 * r).fill(0x2c3b24);
+    const b = bereichVon(stadt.karte);
+    g.rect(b.x0 - 40, b.y0 - 40, b.x1 - b.x0 + 80, b.y1 - b.y0 + 80).fill(0x2c3b24);
     for (const h of stadt.karte.gebaeude) if (h.umriss.length >= 3) g.poly(h.umriss.flat()).fill(0x6b5f55);
     for (const gl of stadt.karte.gleise) {
       g.moveTo(gl.linie[0][0], gl.linie[0][1]);

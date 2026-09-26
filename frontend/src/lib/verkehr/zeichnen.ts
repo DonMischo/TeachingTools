@@ -5,7 +5,7 @@
  */
 import { Container, Graphics, Text, Texture, TilingSprite } from "pixi.js";
 import type { P } from "./geometrie";
-import { bahnsteigUm, schulMitte, spurLagen, winkelVon, type Stadt } from "./stadt";
+import { bahnsteigUm, bereichVon, schulMitte, spurLagen, winkelVon, type Stadt } from "./stadt";
 import type { Aussehen } from "./aussehen";
 import type { SchildArt } from "./schilder";
 
@@ -79,9 +79,9 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
   const boden = new Container();
   const oben = new Container();
 
-  const r = karte.radius + 40;
-  const rasen = new TilingSprite({ texture: rasenTextur(), width: 2 * r, height: 2 * r });
-  rasen.position.set(-r, -r);
+  const b = bereichVon(karte);
+  const rasen = new TilingSprite({ texture: rasenTextur(), width: b.x1 - b.x0 + 80, height: b.y1 - b.y0 + 80 });
+  rasen.position.set(b.x0 - 40, b.y0 - 40);
   // Die Kachel ist 128 px groß und soll 12 m decken.
   rasen.tileScale.set(12 / 128);
   boden.addChild(rasen);

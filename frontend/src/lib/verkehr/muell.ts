@@ -9,7 +9,7 @@
  * nichts über die Leitung muss.
  */
 import type { P } from "./geometrie";
-import { schulStart, type Stadt } from "./stadt";
+import { bereichVon, schulStart, type Stadt } from "./stadt";
 
 export const MUELL_ARTEN = ["🥤", "🍌", "📰", "🧃", "🍫", "🥫", "🧻"] as const;
 /** So viel kann man auf einmal tragen. */
@@ -69,12 +69,14 @@ export class Muell {
   private naechsteId = 1;
   private z: () => number;
 
-  constructor(private stadt: Stadt, saat = 42, anzahl = 600) {
+  constructor(private stadt: Stadt, saat = 42, wieviel?: number) {
     this.z = zufall(saat);
-    const r = stadt.karte.radius;
+    const b = bereichVon(stadt.karte);
+    // Ohne Angabe so dicht wie früher im Viertel (600 auf 1,5 × 1,5 km)
+    const anzahl = wieviel ?? Math.round((270 * (b.x1 - b.x0) * (b.y1 - b.y0)) / 1e6);
     let versuche = 0;
     while (this.stuecke.length < anzahl && versuche++ < anzahl * 40) {
-      const p: P = [(this.z() * 2 - 1) * r, (this.z() * 2 - 1) * r];
+      const p: P = [b.x0 + this.z() * (b.x1 - b.x0), b.y0 + this.z() * (b.y1 - b.y0)];
       this.lege(p);
     }
   }

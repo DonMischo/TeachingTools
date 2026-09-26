@@ -45,7 +45,7 @@ describe("Buslinien auf dem echten Fahrweg", () => {
   const halteIn = (v: Strassenverkehr, nr: string) => {
     const l = linien.find((x) => x.nr === nr)!;
     const namen = new Set(l.richtungen.flatMap((r) => r.halte));
-    return { l, linie: v.baueLinienweg(l.richtungen, s.halte.filter((h) => h.art === "bushalt" && namen.has(h.name)))! };
+    return { l, linie: v.baueLinienweg(l.richtungen, s.halte.filter((h) => h.art !== "bahnhalt" && namen.has(h.name)))! };
   };
 
   it("halten Linie 9 und 35 an allen ihren Steigen, der Reihe nach, zusammenhängend", () => {
@@ -63,7 +63,12 @@ describe("Buslinien auf dem echten Fahrweg", () => {
       }
       const gefahren = [...linie.halte.entries()].sort((a, b) => a[0] - b[0]).map(([, h]) => `${h.halt.name}@${h.halt.p.join(",")}`);
       const soll = l.richtungen.flatMap((r) => (r.steige ?? []).map((st) => st.name));
-      expect(gefahren.map((g) => g.split("@")[0])).toEqual(soll.filter((n) => s.halte.some((h) => h.name === n)));
+      // In der Reihenfolge der Steige; ein, zwei Steige ohne Straße daneben (etwa am Hauptbahnhof) dürfen fehlen
+      const ist = gefahren.map((g) => g.split("@")[0]);
+      const erwartet = soll.filter((n) => s.halte.some((h) => h.name === n));
+      let j = 0;
+      for (const n of ist) { while (j < erwartet.length && erwartet[j] !== n) j++; expect(j, `${n} in Reihenfolge`).toBeLessThan(erwartet.length); j++; }
+      expect(ist.length).toBeGreaterThanOrEqual(erwartet.length - 2);
     }
   });
 
@@ -132,7 +137,8 @@ describe("Türen", () => {
 describe("Bahnen", () => {
   const bahnen = baueBahnen(s);
   it("gibt es als Straßenbahn und Zug auf echten Gleisen", () => {
-    expect(bahnen.map((b) => b.art).sort()).toEqual(["tram", "zug"]);
+    // Straßenbahnen fahren als Linien auf dem Gleisnetz; als Bahn am Halt bleibt nur der Zug
+    expect(bahnen.map((b) => b.art)).toEqual(["zug"]);
     for (const b of bahnen) expect(b.laengen[b.laengen.length - 1]).toBeGreaterThan(100);
   });
 
@@ -216,5 +222,56 @@ describe("Busse nach Fahrplan", () => {
     expect(ankunft!).toBeLessThan(D + 60);
     expect(abfahrt!).toBeGreaterThanOrEqual(D - 0.5);
     expect(weg).toBe(true);
+  });
+});
+
+describe("Straßenbahn", () => {
+  const v = new Strassenverkehr(s, anlagen, 0);
+  const linie = (nr: string) => {
+    const l = (s.karte.linien ?? []).find((x) => x.nr === nr && x.art === "tram")!;
+    const namen = new Set(l.richtungen.flatMap((r) => r.halte));
+    return v.baueLinienweg(l.richtungen, s.halte.filter((h) => h.art !== "bahnhalt" && namen.has(h.name)), true)!;
+  };
+
+  it("fährt auf den Gleisen durch die Innenstadt: Anger, Fischmarkt, Domplatz, Hauptbahnhof", () => {
+    for (const nr of ["1", "2", "3", "4", "6"]) {
+      const li = linie(nr);
+      expect(li, `Linie ${nr}`).toBeTruthy();
+      for (const [i, k] of li.kanten.entries()) if (!li.spruenge?.has(i - 1)) expect(v.kanten[k].schiene).toBe(true);
+      expect([...li.halte.values()].map((h) => h.halt.name)).toContain("Anger");
+    }
+    expect([...linie("3").halte.values()].map((h) => h.halt.name)).toEqual(expect.arrayContaining(["Fischmarkt/Rathaus", "Domplatz Nord", "Hauptbahnhof"]));
+  });
+
+  it("hält nicht am Zebrastreifen (Bahnen haben Vorrang), aber an Ampeln", () => {
+    const gleise = v.kanten.filter((k) => k.schiene);
+    expect(gleise.some((k) => k.halte.some((h) => h.art === "zebra"))).toBe(false);
+    expect(gleise.some((k) => k.halte.some((h) => h.art === "ampel"))).toBe(true);
+  });
+
+  it("ist ein Tramlink: 42 m, sieben Türen rechts, Plätze für Rollstuhl und Kinderwagen", async () => {
+    const { LAYOUTS } = await import("@/lib/verkehr/busszene");
+    const t = LAYOUTS.tram;
+    expect(t.laenge).toBe(42);
+    expect(t.tuerX).toHaveLength(7);
+    expect(t.snf.length).toBeGreaterThanOrEqual(2);
+    expect(t.sitze.length).toBeGreaterThan(80);
+  });
+
+  it("schickt Bahnen nach Fahrplan los, die auf den Gleisen bleiben", () => {
+    const li = linie("3");
+    li.bustyp = "tram"; li.schiene = true;
+    const a = li.abschnitte![0];
+    const ref = [...li.halte.keys()].filter((i) => i >= a.von && i <= a.bis).sort((x, y) => x - y)[0];
+    const ab = (halt: string, ziel: string) => (halt === li.halte.get(ref)!.halt.name && ziel === a.ziel ? [300] : []);
+    for (let t = 0; t < 300 && !v.fahrzeuge.some((f) => f.art === "tram"); t++) v.fahrplan(li, t, 0, ab);
+    const bahn = v.fahrzeuge.find((f) => f.art === "tram")!;
+    expect(bahn).toBeTruthy();
+    expect(bahn.laenge).toBe(42);
+    for (let i = 0; i < 300; i++) {
+      v.schritt(0.1, i * 0.1, []);
+      if (!v.fahrzeuge.includes(bahn)) break;
+      expect(v.kanten[bahn.kante].schiene).toBe(true);
+    }
   });
 });

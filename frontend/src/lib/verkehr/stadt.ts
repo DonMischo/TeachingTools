@@ -25,6 +25,8 @@ export type KartenStrasse = {
 export type KartenPunkt = { art: PunktArt; p: P; name?: string; shop?: string; amenity?: string };
 export type Karte = {
   nachweis: string; stand: string; mitte: { lat: number; lon: number }; radius: number;
+  /** Das Kartengebiet in Metern (seit die Innenstadt dazugehört ein Rechteck). */
+  bereich?: { x0: number; x1: number; y0: number; y1: number };
   strassen: KartenStrasse[];
   wege: { art: WegArt; linie: P[] }[];
   gleise: { art: "tram" | "bahn"; linie: P[] }[];
@@ -94,6 +96,11 @@ export const KARTE: Karte = (() => {
 })();
 
 export type Strasse = KartenStrasse & { breite: number; gehwegBreite: number };
+
+/** Das Kartengebiet in Metern; ältere Karten hatten nur einen Radius. */
+export function bereichVon(k: Karte): { x0: number; x1: number; y0: number; y1: number } {
+  return k.bereich ?? { x0: -k.radius, x1: k.radius, y0: -k.radius, y1: k.radius };
+}
 
 /** Fahrbahnbreite in Metern — aus den Spuren, sonst eine übliche Breite je Straßenart. */
 export function fahrbahnBreite(s: KartenStrasse): number {

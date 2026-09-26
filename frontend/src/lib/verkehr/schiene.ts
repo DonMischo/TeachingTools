@@ -98,9 +98,9 @@ export function aufWeg(b: Pick<Bahn, "weg" | "laengen">, s: number): { p: P; win
 export function baueBahnen(stadt: Stadt): Bahn[] {
   const bahnen: Bahn[] = [];
   for (const halt of stadt.halte) {
-    if (halt.art !== "tramhalt" && halt.art !== "bahnhalt") continue;
-    const tram = halt.art === "tramhalt";
-    const weg = gleisweg(stadt, tram ? "tram" : "bahn", halt);
+    // Straßenbahnen fahren als Linien auf dem Gleisnetz (autos.ts); hier nur noch der Zug
+    if (halt.art !== "bahnhalt") continue;
+    const weg = gleisweg(stadt, "bahn", halt);
     if (weg.length < 2) continue;
     const laengen = laengenVon(weg);
     // Mitte des Halts auf dem Weg
@@ -118,12 +118,10 @@ export function baueBahnen(stadt: Stadt): Bahn[] {
       const mx = steig.reduce((a, p) => a + p[0], 0) / steig.length, my = steig.reduce((a, p) => a + p[1], 0) / steig.length;
       seite = -(mx - halt.p[0]) * Math.sin(winkel) + (my - halt.p[1]) * Math.cos(winkel) >= 0 ? 1 : -1;
     }
-    const wagen = tram ? [10, 10, 10] : [17, 17, 17];
+    const wagen = [17, 17, 17];
     // Der Zug soll mittig am Bahnsteig stehen; `s` zählt aber die Mitte des vordersten Wagens.
     const sSpitze = sHalt + (wagen.reduce((x, l) => x + l + 0.4, -0.4)) / 2 - wagen[0] / 2;
-    bahnen.push(tram
-      ? { art: "tram", halt, weg, laengen, sHalt: sSpitze, wagen, breite: 2.3, tempo: 11, takt: 150, versatz: 20, tuerLagen: [-2.5, 2.5], seite }
-      : { art: "zug", halt, weg, laengen, sHalt: sSpitze, wagen, breite: 2.9, tempo: 17, takt: 210, versatz: 90, tuerLagen: [-5, 5], seite });
+    bahnen.push({ art: "zug", halt, weg, laengen, sHalt: sSpitze, wagen, breite: 2.9, tempo: 17, takt: 210, versatz: 90, tuerLagen: [-5, 5], seite });
   }
   return bahnen;
 }

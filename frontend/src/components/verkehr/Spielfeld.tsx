@@ -20,7 +20,7 @@ import { Gruppenblick } from "@/lib/verkehr/gruppe";
 import type { Ereignis } from "@/lib/verkehr/missionen";
 import { aussteigerLage, aussteigerZahl, TUER_BREITE, tuerPhase, tueren } from "@/lib/verkehr/tueren";
 import { bahnStand, bahnTakt, baueBahnen, umlauf, wagenLagen } from "@/lib/verkehr/schiene";
-import { werktag, abfahrten, abfahrtMinuten, richtungenAmSteig, abschnitt, helligkeit, istRush, linienImViertel, spielSekunden, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
+import { type UhrStellung, werktag, abfahrten, abfahrtMinuten, richtungenAmSteig, abschnitt, helligkeit, istRush, linienImViertel, spielSekunden, spielzeit, takt, uhrText, verkehrsFaktor, ABSCHNITT_NAME, type Abfahrt } from "@/lib/verkehr/fahrplan";
 import { Klang } from "@/lib/verkehr/klang";
 import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
@@ -253,16 +253,23 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       const s = stadt();
       const anlagen = baueAnlagen(s);
       // Tastendrücke kommen mit der Server-Uhr — in Spielzeit umrechnen
-      const tasterVon = (a: Anlage) => { const v = netzRef.current.taster().get(a.id); return v === undefined ? -Infinity : spielSekunden(v, netzRef.current.uhrStellung()); };
+      const tasterVon = (a: Anlage) => { const v = netzRef.current.taster().get(a.id); return v === undefined ? -Infinity : spielSekunden(v, stellungJetzt()); };
       const verkehr = new Strassenverkehr(s, anlagen);
       verkehr.schule = schulMitte(s);
       const waechter = new Regelwaechter(s, anlagen, tasterVon);
       const uhr = () => netzRef.current.uhr();
+      // Zum Prüfen (?takt): eigene Uhrstellung ohne Lehrkraft — el.dispatchEvent(new CustomEvent("vk-uhr", { detail: { versatz, faktor } }))
+      let pruefUhr: UhrStellung | null = null;
+      const stellungJetzt = () => pruefUhr ?? netzRef.current.uhrStellung();
+      if (pruefhilfe) el.addEventListener("vk-uhr", (e) => {
+        const d = (e as CustomEvent<{ versatz: number; faktor?: number }>).detail;
+        pruefUhr = { versatz: d.versatz, faktor: d.faktor ?? 1, anker: uhr() };
+      });
       /**
        * Spielzeit in Sekunden: läuft im Zeitraffer schneller. Die ganze Stadt rechnet damit
        * (Laufen, Autos, Busse, Ampeln, Bahnen) — nur Kamera und Server-Zeitstempel bleiben echt.
        */
-      const spielUhr = () => spielSekunden(uhr(), netzRef.current.uhrStellung());
+      const spielUhr = () => spielSekunden(uhr(), stellungJetzt());
 
       const welt = new Container();
       welt.scale.set(ZOOM_STUFEN[0]);
@@ -478,13 +485,29 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       let szeneFehltSeit: number | null = null;
       let zuletztLage = -Infinity;
       let dreh = 0;
+      /**
+       * Auf welcher Seite der Bahnsteig liegt (+1 rechts, −1 links: Mittelbahnsteig).
+       * Die Szene hat die Türen immer bei +y — liegt der Steig links, wird gespiegelt.
+       */
+      let szeneSeite: 1 | -1 = 1;
       const zuBus = (f: Fahrzeug, wx: number, wy: number): [number, number] => {
         const c = Math.cos(f.winkel), sn = Math.sin(f.winkel), dx = wx - f.x, dy = wy - f.y;
-        return [dx * c + dy * sn, -dx * sn + dy * c];
+        return [dx * c + dy * sn, (-dx * sn + dy * c) * szeneSeite];
       };
-      const zurWelt = (f: Fahrzeug, lx: number, ly: number): [number, number] => {
-        const c = Math.cos(f.winkel), sn = Math.sin(f.winkel);
+      const zurWelt = (f: Fahrzeug, lx: number, ly0: number): [number, number] => {
+        const c = Math.cos(f.winkel), sn = Math.sin(f.winkel), ly = ly0 * szeneSeite;
         return [f.x + lx * c - ly * sn, f.y + lx * sn + ly * c];
+      };
+      /** Seite des nächsten Halts (Bus- oder Bahnsteig) zum Fahrzeug. */
+      const steigSeite = (f: Fahrzeug): 1 | -1 => {
+        let best: Halt | null = null, bd = f.laenge / 2 + 15;
+        for (const h of s.halte) {
+          if (h.art === "bahnhalt") continue;
+          const d = Math.hypot(h.p[0] - f.x, h.p[1] - f.y);
+          if (d < bd) { bd = d; best = h; }
+        }
+        if (!best) return szeneSeite;
+        return -(best.p[0] - f.x) * Math.sin(f.winkel) + (best.p[1] - f.y) * Math.cos(f.winkel) >= 0 ? 1 : -1;
       };
       /** Die Figur verlässt die Szene und läuft wieder frei. */
       const lasseLos = () => {
@@ -652,28 +675,33 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       const linien = linienImViertel();
       // Wer mitfährt, dessen Bus verschwindet nicht am Kartenrand
       verkehr.behalten = (f) => f.id === szene?.bus && !!szene?.sz.ich.drin;
-      const buslinien = linien.filter((l) => l.art === "bus").flatMap((l) => {
+      // Busse und Straßenbahnen: die echten Linien aus OSM, Bahnen auf den Gleisen
+      const buslinien = linien.flatMap((l) => {
+        const tram = l.art === "tram";
         const namenDerLinie = new Set(l.richtungen.flatMap((r) => r.halte));
-        const busHalte = s.halte.filter((h) => h.art === "bushalt" && namenDerLinie.has(h.name));
-        // Auf dem echten Fahrweg; ohne Spur in den Daten wie bisher über die Haltestellen.
-        const fahrt = verkehr.baueLinienweg(l.richtungen, busHalte) ?? verkehr.baueBuslinie(busHalte);
+        // Gemeinsame Halte (Hauptbahnhof: Bus und Bahn am selben Steig) zählen für beide
+        const linienHalte = s.halte.filter((h) => h.art !== "bahnhalt" && namenDerLinie.has(h.name));
+        // Auf dem echten Fahrweg; Busse ohne Spur in den Daten wie bisher über die Haltestellen.
+        const fahrt = verkehr.baueLinienweg(l.richtungen, linienHalte, tram) ?? (tram ? null : verkehr.baueBuslinie(linienHalte));
         if (!fahrt) return [];
         fahrt.anzeige = `${l.nr} ${l.richtungen[0]?.ziel ?? ""}`.trim();
-        fahrt.bustyp = BUSTYP_JE_LINIE[l.nr];
+        fahrt.bustyp = tram ? "tram" : BUSTYP_JE_LINIE[l.nr];
+        fahrt.schiene = tram;
         return [{ linie: l, fahrt }];
       });
       if (!buslinien.length) {
         const fahrt = verkehr.baueBuslinie(s.halte.filter((h) => h.art === "bushalt"));
         if (fahrt) verkehr.setzeBusse(fahrt, 2);
       }
-      let zeit = spielzeit(uhr(), netzRef.current.uhrStellung());
+      let zeit = spielzeit(uhr(), stellungJetzt());
       let hell = helligkeit(zeit);
       let zuletztUhr = -Infinity, letzteUhr = "";
       let wegSeitMeldung = 0, schrittWeg = 0;
       let zuletztTafel = -Infinity;
       let naheHaltestelle: string | null = null;
       const tafelGelesen = new Map<string, number>();
-      const bahnen = baueBahnen(s);
+      // Die Straßenbahnen fahren jetzt als Linien auf den Gleisen; hier bleibt nur der Zug
+      const bahnen = baueBahnen(s).filter((b) => b.art === "zug");
       const einstieg = new Einstiegsregeln();
       let mitfahrt: { art: "bus"; id: number; abRi: number } | { art: "bahn"; i: number } | null = null;
       /** Im Bus X gedrückt: an der nächsten Haltestelle aussteigen. */
@@ -733,7 +761,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         // Echte Zeit für Kamera und Server-Zeitstempel, Spielzeit für alles in der Stadt
         const dtEcht = Math.min(tick.deltaMS / 1000, 0.1);
         const tEcht = uhr();
-        const stellung = n.uhrStellung();
+        const stellung = stellungJetzt();
         const inSpielzeit = (x: number) => spielSekunden(x, stellung);
         const dt = dtEcht * stellung.faktor;
         const t = inSpielzeit(tEcht);
@@ -933,7 +961,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         const offene: Tuerstand[] = [];
         const haltende: Verdecker[] = [];
         for (const f of fahrzeugListe) {
-          if (f.art !== "bus" || f.haltSeit == null) continue;
+          if (f.art === "auto" || f.haltSeit == null) continue;
           haltende.push({ x: f.x, y: f.y, winkel: f.winkel, laenge: f.laenge });
           const seit = t - f.haltSeit;
           tueren(f.x, f.y, f.winkel, BUS.breite, LAYOUTS[f.typ ?? "solo"].tuerX).forEach((tuer, i) =>
@@ -1021,11 +1049,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         }
         if (!szene && t >= unfallBis && !mitfahrt) {
           const kandidat = fahrzeugListe.filter((f) => {
-            if (f.art !== "bus") return false;
+            if (f.art === "auto") return false;
             const d = Math.hypot(f.x - ich.x, f.y - ich.y);
-            if (f.haltSeit != null) return d < 14;
+            if (f.haltSeit != null) return d < f.laenge / 2 + 8;
             // Kommt gerade an die Haltestelle, an der ich stehe
-            return d < 20 && f.tempo < 8 && s.halte.some((h) => h.art === "bushalt" && Math.hypot(h.p[0] - f.x, h.p[1] - f.y) < 30 && Math.hypot(h.p[0] - ich.x, h.p[1] - ich.y) < 12);
+            return d < f.laenge / 2 + 14 && f.tempo < 8 && s.halte.some((h) => (h.art === "bushalt" || h.art === "tramhalt") && Math.hypot(h.p[0] - f.x, h.p[1] - f.y) < 30 && Math.hypot(h.p[0] - ich.x, h.p[1] - ich.y) < 12);
           }).sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
           if (kandidat) {
             const sz = new Busszene(kandidat.id * 7919 + Math.floor(t), fuellung(), t, kandidat.typ ?? "solo");
@@ -1040,6 +1068,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           const f = szeneBus, sz = szene.sz;
           const phase = f.haltSeit != null ? tuerPhase(t - f.haltSeit, f.haltDauer) : "faehrt";
           if (f.haltSeit != null) szene.gehalten = true;
+          // Die Steigseite gilt, solange niemand drin ist oder der Bus hält (unterwegs nicht umklappen)
+          if (!sz.ich.drin || f.haltSeit != null || !sz.mitIch) szeneSeite = steigSeite(f);
           // Die Figur fangen: neben dem Bus auf dem Gehweg (Türseite) — schon, während er heranfährt
           const [lx, ly] = zuBus(f, ich.x, ich.y);
           const faehrtWeg = phase === "faehrt" && szene.gehalten;
@@ -1053,7 +1083,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
             // Tasten und Stick meinen den Bildschirm: in Bus-Richtung drehen
             if (bx || by) {
               const w = -(f.winkel + dreh), c = Math.cos(w), sn = Math.sin(w);
-              sz.laufe(bx * c - by * sn, bx * sn + by * c, tasten.rennen ? 2.4 : 1.5);
+              sz.laufe(bx * c - by * sn, (bx * sn + by * c) * szeneSeite, tasten.rennen ? 2.4 : 1.5);
             } else sz.laufe(0, 0, 1.5);
           }
           // Bremsen und Anfahren, dazu ab und zu eine scharfe Bremsung
@@ -1082,7 +1112,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
             mitfahrt = sz.ich.drin ? { art: "bus", id: f.id, abRi: f.haltRi ?? 0 } : null;
             if (r.eingestiegen !== undefined) {
               haltGewuenscht = false;
-              ereignis({ typ: "eingestiegen", art: "bus", gut: r.meldungen.includes("gutEingestiegen") || r.meldungen.includes("rausRein"), linie: f.anzeige?.split(" ")[0], gelenk: f.typ === "gelenk" });
+              ereignis({ typ: "eingestiegen", art: f.art === "tram" ? "tram" : "bus", gut: r.meldungen.includes("gutEingestiegen") || r.meldungen.includes("rausRein"), linie: f.anzeige?.split(" ")[0], gelenk: f.typ === "gelenk" });
             }
             if (r.ausgestiegen) { haltGewuenscht = false; melde(MELDUNGEN.ausgestiegen); }
             // Draußen und der Bus fährt, oder weit genug weg: frei laufen
@@ -1090,6 +1120,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           }
           szene.bild.c.position.set(f.x, f.y);
           szene.bild.c.rotation = f.winkel;
+          szene.bild.c.scale.y = szeneSeite;
+          szene.bild.spiegel(szeneSeite);
           szene.bild.male(sz, phase, t, r.rampe, !sz.ich.drin);
         }
 
@@ -1229,9 +1261,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
         const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …"
           : szeneHinweis ? szeneHinweis
-          : szene?.sz.mitIch && !mitfahrt ? "Bus-Szene: seitlich neben einer Tür warten (grün), erst aussteigen lassen, dann an die Tür und E drücken."
+          : szene?.sz.mitIch && !mitfahrt ? "Seitlich neben einer Tür warten (grün), erst aussteigen lassen, dann an die Tür und E drücken."
           : mitfahrt ? (mitfahrt.art === "bus"
-            ? (haltGewuenscht ? "🔔 Halt gewünscht — wenn die Türen aufgehen: zur Tür und hinaus." : "Im Bus: X = Halt wünschen · E = setzen/aufstehen · B = Rucksack · zum Aussteigen zur Tür gehen")
+            ? (haltGewuenscht ? "🔔 Halt gewünscht — wenn die Türen aufgehen: zur Tür und hinaus." : `${szeneBus?.art === "tram" ? "In der Bahn" : "Im Bus"}: X = Halt wünschen · E = setzen/aufstehen · B = Rucksack · zum Aussteigen zur Tür gehen`)
             : "Du fährst mit der Bahn …")
           : einstiegBereit ? "E drücken oder auf den Bus tippen: einsteigen"
           : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
@@ -1271,13 +1303,20 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         const nah = ZOOM_STUFEN[optionen.current.zoomStufe] ?? ZOOM_STUFEN[0];
         // Bus-Szene: der ganze Bus füllt das Bild, waagerecht, Türen unten
         const szenenBlick = !!szene && !!szeneBus && (szene.sz.mitIch || Math.hypot(szeneBus.x - ich.x, szeneBus.y - ich.y) < 16);
-        const szenenZoom = Math.min(app.screen.width / ((szeneBus?.laenge ?? 12) + 3.5), app.screen.height / 8.5);
+        // Lange Fahrzeuge (Straßenbahn): nicht alles ins Bild zwingen, sondern der Figur folgen
+        const szenenLaenge = Math.min(szeneBus?.laenge ?? 12, 20);
+        const szenenZoom = Math.min(app.screen.width / (szenenLaenge + 3.5), app.screen.height / 8.5);
         zoom += ((szenenBlick ? szenenZoom : tuerNah ? Math.max(TUER_ZOOM, nah) : optionen.current.ueberblick ? UEBERBLICK_ZOOM : nah) - zoom) * Math.min(1, dtEcht * 3);
-        const zielDreh = szenenBlick ? -szeneBus!.winkel : 0;
+        // Türen immer unten: liegt der Steig links, steht das Fahrzeug im Bild auf dem Kopf (Front links)
+        const zielDreh = szenenBlick ? -szeneBus!.winkel + (szeneSeite < 0 ? Math.PI : 0) : 0;
         const dd = Math.atan2(Math.sin(zielDreh - dreh), Math.cos(zielDreh - dreh));
         dreh += dd * Math.min(1, dtEcht * 3);
         if (Math.abs(dreh) < 0.001 && !szenenBlick) dreh = 0;
-        const [blickX, blickY] = szenenBlick ? zurWelt(szeneBus!, 0, 1.1)
+        const halbeLaenge = (szeneBus?.laenge ?? 12) / 2;
+        const blickLaengs = szenenBlick && halbeLaenge > 10
+          ? Math.max(-halbeLaenge + 10, Math.min(halbeLaenge - 10, szene!.sz.mitIch ? szene!.sz.ich.x : zuBus(szeneBus!, ich.x, ich.y)[0]))
+          : 0;
+        const [blickX, blickY] = szenenBlick ? zurWelt(szeneBus!, blickLaengs, 1.1)
           : tuerNah ? [ich.x * 0.6 + tuerNah.tuer.p[0] * 0.4, ich.y * 0.6 + tuerNah.tuer.p[1] * 0.4] : [ich.x, ich.y];
         welt.scale.set(zoom);
         welt.rotation = dreh;
@@ -1303,14 +1342,14 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         const r = gross ? Math.min(150, app.screen.height * 0.22) : 70;
         minikarte.c.position.set(r + 14, app.screen.height - r - 14);
         minikarte.stelle(ich.x, ich.y, r, gross ? 0.2 : 0.4, [
-          ...fahrzeugListe.filter((f) => f.art === "bus").map((f) => ({ p: [f.x, f.y] as [number, number], farbe: 0xffd400, r: 3 })),
+          ...fahrzeugListe.filter((f) => f.art !== "auto").map((f) => ({ p: [f.x, f.y] as [number, number], farbe: f.art === "tram" ? 0xff4d4d : 0xffd400, r: 3 })),
           ...andere.map((a) => ({ p: [a.x, a.y] as [number, number], farbe: a.farbe, r: 3 })),
           { p: [ich.x, ich.y], farbe: 0xff3355, r: 5 },
         ]);
 
         if (pruefhilfe) {
           el.dataset.lage = `${ich.x.toFixed(1)},${ich.y.toFixed(1)}`;
-          const bus = fahrzeugListe.filter((f) => f.art === "bus").sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
+          const bus = fahrzeugListe.filter((f) => f.art !== "auto").sort((a, b) => Math.hypot(a.x - ich.x, a.y - ich.y) - Math.hypot(b.x - ich.x, b.y - ich.y))[0];
           el.dataset.bus = bus ? `${bus.id}|${bus.x.toFixed(1)},${bus.y.toFixed(1)}|${bus.haltSeit != null ? "haelt" : bus.tempo.toFixed(1)}` : "";
           el.dataset.szene = szene ? `${szene.bus}|${szene.sz.l.typ}|${szeneBus?.haltSeit != null ? tuerPhase(t - szeneBus.haltSeit, szeneBus.haltDauer) : "faehrt"}|${szene.sz.mitIch ? (szene.sz.ich.drin ? "drin" : "draussen") : "frei"}|${szene.sz.fahrgaeste.length}|${szeneHinweis ?? ""}|${szene.sz.ich.x.toFixed(2)},${szene.sz.ich.y.toFixed(2)},${szene.sz.ich.weg.length}` : "";
           const m = muell.naechstes(ich.x, ich.y, 60);

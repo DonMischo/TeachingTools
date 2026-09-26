@@ -19,7 +19,7 @@ export const AUSSEN_Y = BUS_B / 2;
 export const TUER_W = 1.2;
 
 type Rechteck = { x0: number; x1: number; y0: number; y1: number };
-export type Bustyp = "solo" | "gelenk";
+export type Bustyp = "solo" | "gelenk" | "tram";
 
 /**
  * Wie ein Bus innen aussieht: Türen (die erste vorn beim Fahrer), Fahrerplatz,
@@ -63,7 +63,7 @@ function baueLayout(typ: Bustyp, name: string, laenge: number, tuerX: number[], 
   };
 }
 
-export const LAYOUTS: Record<Bustyp, Layout> = {
+export const LAYOUTS = {
   // Stadtbus, 12 m: vorn, Mitte (mit Platz für Kinderwagen und Rollstuhl), hinten
   solo: baueLayout("solo", "Stadtbus", 12, [4.85, 0.4, -3.6], [{ tuer: 1, x0: -0.7, x1: 1.6 }],
     [3.6, 2.8, -1.1, -1.9, -2.7, -3.5, -4.3, -5.0], [3.6, 2.8, 1.8, -1.2, -2.0], 2.5),
@@ -72,7 +72,24 @@ export const LAYOUTS: Record<Bustyp, Layout> = {
     [{ tuer: 1, x0: 2.1, x1: 4.4 }, { tuer: 2, x0: -5.1, x1: -2.8 }],
     [6.6, 5.8, 1.5, -1.3, -2.1, -6.0, -6.8, -7.6], [6.6, 5.8, 5.0, 1.6, 0.8, -1.3, -2.1, -2.9, -5.6, -6.4, -7.2], 5.5,
     { x0: -0.6, x1: 0.5 }),
-};
+} as Record<Bustyp, Layout>;
+
+/**
+ * Straßenbahn »Tramlink« der EVAG: rund 42 m, sieben Türen rechts (Einrichtungswagen,
+ * Erfurt wendet in Schleifen), zwei Rollstuhlplätze und Flächen für Kinderwagen.
+ */
+function tramLayout(): Layout {
+  const tueren = [17.6, 11.8, 6.0, 0.2, -5.6, -11.4, -17.2];
+  const snf = [{ tuer: 1, x0: 10.6, x1: 13.0 }, { tuer: 3, x0: -1.0, x1: 1.4 }, { tuer: 5, x0: -12.6, x1: -10.2 }];
+  const links: number[] = [], rechts: number[] = [];
+  for (let x = -19.9; x < 18.6; x += 0.8) {
+    if (!snf.some((f) => x > f.x0 - 0.25 && x < f.x1 + 0.25)) links.push(Math.round(x * 10) / 10);
+    if (!tueren.some((t) => Math.abs(x - t) < 1.0)) rechts.push(Math.round(x * 10) / 10);
+  }
+  return baueLayout("tram", "Straßenbahn (Tramlink)", 42, tueren, snf, links, rechts, 16.5);
+}
+
+LAYOUTS.tram = tramLayout();
 
 // Der Stadtbus, wie bisher (Tests, einfache Nutzer)
 const SOLO = LAYOUTS.solo;
@@ -515,7 +532,8 @@ export class Busszene {
         } else if (this.rausFuerAndere && this.selbstRaus === hk) this.einmal(`${hk}:rausRein`, "rausRein", aus);
         else if (this.wartetBeimAussteigen) this.einmal(`${hk}:gut`, "gutEingestiegen", aus);
         else this.einmal(`${hk}:ein`, "eingestiegen", aus);
-        if (eingestiegen === 0) {
+        // Fahrkarte zeigen nur vorn im Bus (in der Straßenbahn gibt es Automaten)
+        if (eingestiegen === 0 && this.l.typ !== "tram") {
           this.fahrkarteSeit = t;
           this.rufe(this.fahrer, RUFE.fahrkarte, t, 3.5);
         }

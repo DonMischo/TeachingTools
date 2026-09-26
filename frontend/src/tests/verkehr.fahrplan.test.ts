@@ -11,10 +11,9 @@ function um(tag: number, h: number, m = 0): Zeit {
 }
 
 describe("Linien im Viertel", () => {
-  it("sind die echten EVAG-Linien aus OSM: Bus 9 und 35, Tram 1 und 5", () => {
+  it("sind die echten EVAG-Linien aus OSM: alle sechs Straßenbahnen und die Busse durch Viertel und Innenstadt", () => {
     const nr = linienImViertel().map((l) => `${l.art} ${l.nr}`).sort();
-    expect(nr).toEqual(expect.arrayContaining(["bus 35", "bus 9", "tram 1", "tram 5"]));
-    expect(nr).not.toContain("bus 220");
+    expect(nr).toEqual(expect.arrayContaining(["bus 35", "bus 9", "bus 51", "bus 60", "tram 1", "tram 2", "tram 3", "tram 4", "tram 5", "tram 6"]));
   });
 
   it("halten an den Haltestellen der Karte", () => {
@@ -26,11 +25,13 @@ describe("Linien im Viertel", () => {
 });
 
 describe("Takt und Tageszeit", () => {
-  it("fährt tagsüber werktags alle 10, abends alle 20 Minuten, nachts nicht", () => {
+  it("fährt im CityTakt: werktags 6–18 alle 10, abends alle 15, später alle 20 Minuten, nachts nicht", () => {
     const tram = { art: "tram" as const, nr: "1" };
     expect(takt(tram, um(1, 9))).toBe(10);
-    expect(takt(tram, um(1, 20))).toBe(20);
-    expect(takt(tram, um(6, 9))).toBe(20);
+    expect(takt(tram, um(1, 19))).toBe(15);
+    expect(takt(tram, um(1, 21))).toBe(20);
+    expect(takt(tram, um(6, 12))).toBe(15);
+    expect(takt(tram, um(6, 7))).toBe(20);
     expect(takt(tram, um(1, 2))).toBeNull();
     expect(takt({ art: "bus", nr: "35" }, um(0, 12))).toBeNull();
   });
@@ -62,10 +63,10 @@ describe("Takt und Tageszeit", () => {
 });
 
 describe("Bahnen nach Fahrplan", () => {
-  it("fahren nachts nicht und tagsüber im halben Linientakt (Linie 1 und 5 im Wechsel)", () => {
-    const tram = baueBahnen(stadt()).find((b) => b.art === "tram")!;
-    expect(bahnTakt(tram, 10)).toBe(300);
-    expect(bahnStand(tram, 1000, null).sichtbar).toBe(false);
+  it("der Zug fährt nachts nicht", () => {
+    const zug = baueBahnen(stadt()).find((b) => b.art === "zug")!;
+    expect(bahnTakt(zug, 60)).toBeGreaterThan(0);
+    expect(bahnStand(zug, 1000, null).sichtbar).toBe(false);
   });
 });
 
