@@ -76,7 +76,7 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   radGeklaut: { id: "radGeklaut", text: "😱 Dein Fahrrad wurde geklaut! Mit einem Bügelschloss am Ständer wäre das nicht so leicht passiert.", punkte: -10 },
   radImGang: { id: "radImGang", text: "Mit dem Rad im Gang steht es allen im Weg — Fahrräder gehören auf die blaue Mehrzweckfläche.", punkte: -3 },
   radPlatzGemacht: { id: "radPlatzGemacht", text: "🚲 Karma +: Du hast die Fläche für Kinderwagen/Rollstuhl frei gemacht und nimmst die nächste Bahn. Vorbildlich!", punkte: 10 },
-  radRepariert: { id: "radRepariert", text: "🔧 Repariert!", punkte: 1 },
+  radRepariert: { id: "radRepariert", text: "🔧 Checkliste komplett — dein Rad ist verkehrssicher!", punkte: 10 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },
 };
 

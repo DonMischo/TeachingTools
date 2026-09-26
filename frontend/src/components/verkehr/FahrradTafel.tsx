@@ -1,42 +1,28 @@
 "use client";
 /**
  * Fahrrad-Tafel: Modell und Farbe wählen, Alter (für die Gehweg-Regel),
- * Schloss, und die Werkstatt — Werkzeug wählen, auf das Teil klicken. Dazu
- * die Prüfung nach StVZO mit Paragraf und Bußgeld.
+ * Schloss und die Mängel nach StVZO mit Paragraf und Bußgeld. Repariert wird
+ * im Werkstatt-Spiel (FahrradWerkstatt).
  */
 import { useState } from "react";
 import {
-  gebrauchtesRad, MODELLE, neuesRad, PFLEGE, PFLICHT, pruefe, repariere, SCHLOESSER, WERKZEUGE,
-  type Fahrrad, type Modell, type Schloss, type TeilId, type Werkzeug,
+  gebrauchtesRad, MODELLE, neuesRad, PFLEGE, pruefe, SCHLOESSER,
+  type Fahrrad, type Modell, type Schloss,
 } from "@/lib/verkehr/fahrrad";
 import { ausHex, hexFarbe } from "@/lib/verkehr/aussehen";
 import { FahrradBild } from "./FahrradBild";
 
 const knopf = (an: boolean) => `rounded-lg px-2 py-1 text-[11px] font-bold ${an ? "bg-sky-500 text-black" : "bg-slate-700 hover:bg-slate-600"}`;
-const NAME: Record<TeilId, string> = Object.fromEntries([...PFLICHT.map((p) => [p.teil, p.name]), ...PFLEGE.map((p) => [p.teil, p.name])]) as Record<TeilId, string>;
 
-export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onRepariert }: {
+export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onWerkstatt }: {
   rad: Fahrrad | null; onRad: (r: Fahrrad) => void;
   alter: number; onAlter: (a: number) => void;
   onZu: () => void;
-  /** Etwas repariert: für Punkte und Aufträge. */
-  onRepariert?: (teil: TeilId, neu: Fahrrad) => void;
+  /** Das Werkstatt-Spiel öffnen (mit dem Rad, das gerade gesetzt ist). */
+  onWerkstatt: () => void;
 }) {
-  const [werkzeug, setWerkzeug] = useState<Werkzeug | null>(null);
-  const [auswahl, setAuswahl] = useState<TeilId | null>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
   const check = rad ? pruefe(rad) : null;
-
-  const klick = (t: TeilId) => {
-    if (!rad) return;
-    setAuswahl(t);
-    if (!werkzeug) { setMeldung(`${NAME[t]}: ${rad.teile[t] === "ok" ? "in Ordnung" : rad.teile[t] === "kaputt" ? "kaputt/verschlissen" : "fehlt"} — wähle ein Werkzeug.`); return; }
-    const neu = repariere(rad, t, werkzeug);
-    if (!neu) { setMeldung(`${WERKZEUGE[werkzeug].name} hilft hier nicht.`); return; }
-    onRad(neu);
-    onRepariert?.(t, neu);
-    setMeldung(`${WERKZEUGE[werkzeug].icon} ${NAME[t]}: ${neu.teile[t] === "ok" ? "erledigt!" : "geflickt — jetzt noch aufpumpen."}`);
-  };
 
   return (
     <div className="absolute left-2 top-14 z-30 max-h-[calc(100%-4rem)] w-[340px] overflow-auto rounded-xl bg-slate-900/94 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
@@ -60,7 +46,7 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onRepariert }: 
             className="h-7 w-10 cursor-pointer rounded border-0 bg-transparent p-0" />
           <span className="opacity-70">Rahmenfarbe</span>
           <button type="button" className="ml-auto underline opacity-80" title="Ein gebrauchtes Rad mit ein paar Macken"
-            onClick={() => { onRad({ ...gebrauchtesRad(rad.modell, Math.random, rad.farbe), schloss: rad.schloss }); setMeldung("Aus dem Keller geholt — mal sehen, was alles kaputt ist."); }}>
+            onClick={() => { onRad({ ...gebrauchtesRad(rad.modell, Math.random, rad.farbe), schloss: rad.schloss }); onWerkstatt(); }}>
             🏚️ Rad aus dem Keller
           </button>
         </div>
@@ -76,17 +62,12 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onRepariert }: 
 
       {rad && (
         <>
-          <div className="mt-3 font-bold">Werkstatt</div>
-          <div className="mt-1 rounded-lg bg-white p-1"><FahrradBild rad={rad} auswahl={auswahl} onTeil={klick} breite={300} /></div>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {(Object.keys(WERKZEUGE) as Werkzeug[]).map((w) => (
-              <button key={w} type="button" className={knopf(werkzeug === w)} title={WERKZEUGE[w].text} onClick={() => setWerkzeug(werkzeug === w ? null : w)}>
-                {WERKZEUGE[w].icon} {WERKZEUGE[w].name}
-              </button>
-            ))}
-          </div>
-          <div className="mt-1 opacity-70">{werkzeug ? `${WERKZEUGE[werkzeug].text} Klick auf das Teil.` : "Klick auf ein Teil, um es anzusehen — oder wähle ein Werkzeug."}</div>
+          <div className="mt-3 rounded-lg bg-white p-1"><FahrradBild rad={rad} breite={300} /></div>
           {meldung && <div className="mt-1 font-bold text-sky-300">{meldung}</div>}
+          <button type="button" onClick={onWerkstatt}
+            className="mt-2 w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-black text-black hover:bg-amber-300">
+            🔧 Ab in die Werkstatt — Checkliste abarbeiten
+          </button>
 
           <div className="mt-3 font-bold">Schloss</div>
           <div className="mt-1 flex flex-wrap gap-1.5">

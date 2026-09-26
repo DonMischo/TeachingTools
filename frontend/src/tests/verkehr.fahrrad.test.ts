@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gebrauchtesRad, MODELLE, neuesRad, pruefe, repariere, tempoVon } from "@/lib/verkehr/fahrrad";
+import { benutze, CHECKLISTE, checkFertig, passendesWerkzeug, pruefeTeil, starteCheck, sterne } from "@/lib/verkehr/radcheck";
 import { abstellen, RadWaechter } from "@/lib/verkehr/radregeln";
 import { stadt, winkelVon } from "@/lib/verkehr/stadt";
 import { autoLicht, baueAnlagen } from "@/lib/verkehr/ampeln";
@@ -103,5 +104,63 @@ describe("Rad abstellen", () => {
     expect(abstellen(s, st.p)).toEqual({ ok: true, amStaender: true });
     const { p } = stelle("fahrbahn");
     expect(abstellen(s, p).ok).toBe(false);
+  });
+});
+
+describe("Werkstatt-Spiel: Rad nach Checkliste", () => {
+  it("die Checkliste hat jedes Teil genau einmal", () => {
+    expect(new Set(CHECKLISTE.map((p) => p.teil)).size).toBe(12);
+  });
+
+  it("erst prüfen, dann schrauben", () => {
+    const c = starteCheck({ ...neuesRad("herrenrad"), teile: { ...neuesRad("herrenrad").teile, reifenVorn: "kaputt" } }, 0);
+    const vorher = benutze(c, "reifenVorn", "luftpumpe");
+    expect(vorher.ok).toBe(false);
+    expect(vorher.c.fehler).toBe(0);
+    const { c: c2, text } = pruefeTeil(c, "reifenVorn");
+    expect(text).toMatch(/schlapp/);
+    expect(benutze(c2, "reifenVorn", "luftpumpe").c.rad.teile.reifenVorn).toBe("ok");
+  });
+
+  it("falsches Werkzeug und Arbeit an heilen Teilen zählen als Fehler", () => {
+    let c = starteCheck(neuesRad("bmx"), 0);
+    c = pruefeTeil(c, "klingel").c;
+    c = benutze(c, "klingel", "luftpumpe").c;
+    expect(c.fehler).toBe(1);
+    c = pruefeTeil(c, "bremseHinten").c;
+    c = benutze(c, "bremseHinten", "werkzeug").c;
+    expect(c.fehler).toBe(2);
+    expect(sterne(c)).toBe(2);
+  });
+
+  it("ein Platten braucht Flickzeug und dann die Luftpumpe", () => {
+    let c = starteCheck({ ...neuesRad("klapprad"), teile: { ...neuesRad("klapprad").teile, reifenHinten: "fehlt" } }, 0);
+    c = pruefeTeil(c, "reifenHinten").c;
+    c = benutze(c, "reifenHinten", "flickzeug").c;
+    expect(c.rad.teile.reifenHinten).toBe("kaputt");
+    c = benutze(c, "reifenHinten", "luftpumpe").c;
+    expect(c.rad.teile.reifenHinten).toBe("ok");
+  });
+
+  it("jedes Rad aus dem Keller lässt sich fehlerfrei fertig machen", () => {
+    let n = 7;
+    const rnd = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
+    for (const m of Object.keys(MODELLE) as (keyof typeof MODELLE)[]) {
+      let c = starteCheck(gebrauchtesRad(m, rnd), 0);
+      for (const p of CHECKLISTE) {
+        c = pruefeTeil(c, p.teil).c;
+        for (let i = 0; i < 3 && c.rad.teile[p.teil] !== "ok"; i++) c = benutze(c, p.teil, passendesWerkzeug(p.teil, c.rad.teile[p.teil])!).c;
+      }
+      expect(checkFertig(c), m).toBe(true);
+      expect(pruefe(c.rad).verkehrssicher).toBe(true);
+      expect(sterne(c)).toBe(3);
+    }
+  });
+
+  it("ist erst fertig, wenn auch alles geprüft ist", () => {
+    let c = starteCheck(neuesRad("herrenrad"), 0);
+    expect(checkFertig(c)).toBe(false);
+    for (const p of CHECKLISTE) c = pruefeTeil(c, p.teil).c;
+    expect(checkFertig(c)).toBe(true);
   });
 });

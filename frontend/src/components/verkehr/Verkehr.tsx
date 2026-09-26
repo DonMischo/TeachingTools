@@ -25,7 +25,8 @@ import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import { handyKarma, pruefeAussehen, zufallsAussehen, type Aussehen } from "@/lib/verkehr/aussehen";
 import { AussehenTafel } from "./AussehenTafel";
 import { FahrradTafel } from "./FahrradTafel";
-import { neuesRad, pruefe, pruefeRad, type Fahrrad } from "@/lib/verkehr/fahrrad";
+import { FahrradWerkstatt } from "./FahrradWerkstatt";
+import { gebrauchtesRad, neuesRad, pruefe, pruefeRad, type Fahrrad } from "@/lib/verkehr/fahrrad";
 import { PolizeiDialog } from "./PolizeiDialog";
 import { antworte, beginne, type Anlass, type Gespraech } from "@/lib/verkehr/polizei";
 import { HandySim, type HandyRoute } from "./HandySim";
@@ -130,6 +131,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const [rad, setRad] = useState<Fahrrad | null>(null);
   const [alter, setAlter] = useState(12);
   const [radTafel, setRadTafel] = useState(false);
+  const [werkstatt, setWerkstatt] = useState(false);
+  // Karma für die Werkstatt nur einmal je Sitzung — sonst holt man Rad um Rad aus dem Keller
+  const werkstattBelohnt = useRef(false);
   const aendereRad = (r: Fahrrad | null) => { setRad(r); schreib("hp_verkehr_rad", r); };
   const aendereAlter = (a: number) => { setAlter(a); schreib("hp_verkehr_alter", a); };
   const aendereAussehen = (a: Aussehen) => { setAussehen(a); schreib("hp_verkehr_aussehen", a); };
@@ -428,7 +432,19 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           {radTafel && (
             <FahrradTafel rad={rad} onRad={aendereRad} alter={alter} onAlter={aendereAlter}
               onZu={() => { setRadTafel(false); zurBuehne(); }}
-              onRepariert={(_, neu) => { zeige(MELDUNGEN.radRepariert); netz.sendeMeldung("radRepariert", MELDUNGEN.radRepariert.punkte); buche({ typ: "radRepariert", sicher: pruefe(neu).verkehrssicher }); }} />
+              onWerkstatt={() => setWerkstatt(true)} />
+          )}
+          {werkstatt && rad && (
+            <FahrradWerkstatt rad={rad} onRad={aendereRad}
+              onNochmal={() => aendereRad({ ...gebrauchtesRad(rad.modell, Math.random, rad.farbe), schloss: rad.schloss })}
+              onZu={() => { setWerkstatt(false); zurBuehne(); }}
+              onFertig={(c) => {
+                buche({ typ: "radRepariert", sicher: pruefe(c.rad).verkehrssicher });
+                if (c.reparaturen > 0 && !werkstattBelohnt.current) {
+                  werkstattBelohnt.current = true;
+                  zeige(MELDUNGEN.radRepariert); netz.sendeMeldung("radRepariert", MELDUNGEN.radRepariert.punkte);
+                }
+              }} />
           )}
           {aussehenTafel && <AussehenTafel a={aussehen} onA={aendereAussehen} onZu={() => { setAussehenTafel(false); zurBuehne(); }} />}
           {handyOffen && (
