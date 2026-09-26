@@ -238,6 +238,10 @@ export function einziehen(alt: Spielstand, kautionRaten: boolean, umzug: "freund
   const s = klon(alt);
   const w = zusage(s);
   if (!w) return { stand: alt, fehler: "Keine Wohnungszusage." };
+  const heute = arbeitHeute(s);
+  if (heute.muss && !heute.erledigt) {
+    return { stand: alt, fehler: "Heute musst du arbeiten — für den Umzug einen Urlaubstag nehmen (Jobs → Mein Job) oder am Wochenende umziehen." };
+  }
   const umzugKosten = { freunde: 40, transporter: 110, firma: 650 }[umzug];
   const kautionJetzt = kautionRaten ? Math.round(w.kaution / 3) : w.kaution;
   const summe = kautionJetzt + w.genossenschaftsanteile + umzugKosten + (w.ablöse ?? 0) + warmmiete(w);

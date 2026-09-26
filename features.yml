@@ -177,6 +177,30 @@ simulationen:
       - Größen, Entfernungen mit Lichtlauf, Kepler-Gesetze
       - Erdmagnetfeld mit Sonnensturm
       - Galerie mit rund 90 Bildern zum Freischalten
+  - id: leben
+    name: Rock your Life
+    kann:
+      - Lebenssimulation über fünf Jahre (Juli 2026 bis Juni 2031) nach der 10. Klasse in Erfurt
+      - Start mit Figur, Herkunft (Eltern in Erfurt oder auf dem Land, Einkommen, Kindergeld-Absprache) und selbst ausgefülltem Abschlusszeugnis
+      - Rund 55 Wege: Ausbildungen aus allen Bereichen (Vergütung nach dem Thüringer Verzeichnis 03/2026, gesetzliche Mindestvergütung als Untergrenze), Helferjobs, schulische Ausbildung, FSJ
+      - Bewerbung mit Anschreiben-Bausteinen, Chance nach Noten/Abschluss/Konkurrenz, Einstellungstest und Vorstellungsgespräch als Minispiel, Zusage annehmen
+      - Ausbildung mit Probezeit, Berufsschule, Urlaub, Abmahnung/Kündigung, Zwischen- und Abschlussprüfung, Übernahme als Fachkraft
+      - Lohnabrechnung 2026 (Lohnsteuer § 32a, Soli, Kirchensteuer, KV/PV/RV/AV), Werte ab 2027 als gekennzeichnete Annahme
+      - Wohnung von oben mit Möbeln, Unordnung und Tageszeit; sieben Bedürfnisse (Hunger, Energie, Hygiene, Soziales, Spaß, Gesundheit, Ordnung)
+      - Aktionen zu Hause und »Raus!« (Arbeit, Einkaufen, Möbel, Ausgehen, Eltern, Arzt, Amt, Sport); Routine für Tage und Wochen
+      - Supermärkte mit rund 200 Produkten (Eigenmarke, Marke, Bio, Nährwerte), simulierte Wochenangebote, Referenz-Wocheneinkauf, »Was fehlt?«
+      - Ernährung aus dem Vorrat (kcal, Obst/Gemüse, Eiweiß, Zucker), Verderb ohne Kühlschrank, Kochen nur mit Kochplatte
+      - Einrichten neu (IKEA-/Elektromarkt-Preise) oder über Kleinanzeigen (günstig, Defekte, Betrug bei Vorkasse)
+      - Wohnungsmarkt in echten Erfurter Stadtteilen, WG, Azubi-Wohnheim, Besichtigung, Kaution (auch in Raten), Umzug, Anmeldepflicht
+      - Verträge mit Bewertung: Strom (SWE-Grundversorgung), Internet, Handy, Versicherungen, Abos, Fitness, Deutschlandticket
+      - Behörden-Minispiel mit echten Links: Anmeldung, BAB, Wohngeld, Rundfunk, Kindergeld-Abzweigung, Krankenkasse, ALG I, Bürgergeld, Schuldnerberatung
+      - Steuer-App (Belegabruf, Anlage N, § 35a, Steuerampel) mit Erstattung
+      - Rund 60 Zufallsereignisse mit Häufigkeiten, dazu Fallen (Phishing, Fakeshop, Abofalle, BNPL, Ratenkauf, Krypto, Wetten) und Mahnwesen bis zur Kontopfändung
+      - Ausgehen mit Promille nach Widmark, Kater, Alkoholvergiftung, Polizei und Jugendschutz
+      - Bank-App mit Umsätzen, Monatsbilanz nach Kategorien, Brutto→Netto, Steuern & SV gesamt mit Rentenpunkten, Sparen, Kredite
+      - Recherche-Heft und Recherche-Preise im Laden (echte Werte mit Quelle eintragen und vergleichen)
+      - Spielstand im Browser und als JSON zum Herunter-/Hochladen (auch für Gäste)
+      - Klassenübersicht für die Lehrkraft mit Stand je Person und Protokoll als CSV
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

@@ -205,7 +205,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             <Balken icon="❤️" label="Gesundheit" wert={b.gesundheit} />
             <Balken icon="🧹" label="Ordnung" wert={b.ordnung} />
           </div>
-          <div className="relative h-[46vh] min-h-[300px] overflow-hidden rounded-xl bg-slate-800">
+          <div className="relative h-[32vh] min-h-[220px] overflow-hidden rounded-xl bg-slate-800 sm:h-[46vh] sm:min-h-[300px]">
             <Wohnungsbild s={s} platz={platz} />
             <div className="pointer-events-none absolute right-2 top-2 flex max-w-[70%] flex-col items-end gap-1">
               {meldungen.map((m) => (

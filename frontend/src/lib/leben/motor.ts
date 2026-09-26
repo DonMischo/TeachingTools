@@ -8,7 +8,7 @@
  */
 import { BERUF, helferBrutto, verguetung, type Beruf } from "./berufe";
 import { essen, verbrauchen, verderben, type Mahlzeit } from "./ernaehrung";
-import { alter, begrenzen, brief, buchen, effekt, klon, log, r2, uid, zufall, zwischen, de } from "./kern";
+import { alter, amStueck, begrenzen, brief, buchen, effekt, klon, log, r2, uid, zufall, zwischen, de } from "./kern";
 import { abrechnung, type Abrechnung } from "./lohn";
 import type { Beduerfnisse, JobStand, Monatsbilanz, Spielstand, Vertrag, Wohnung } from "./typen";
 import { SPIELSTAND_VERSION } from "./typen";
@@ -238,7 +238,8 @@ function stundeVergehen(s: Spielstand, h: number, modus: Modus): void {
       d.hunger = -4.2; d.energie = -4.5; d.hygiene = -1.8; d.sozial = -0.5; d.spass = -1; break;
     default:
       d.hunger = -4.2; d.energie = -4.3 - kater * 2; d.hygiene = -1.8; d.sozial = -1.2; d.spass = -1.4;
-      d.ordnung = effekt(s, "ordnung") >= 2 ? -0.45 : -0.8;
+      // Bei den Eltern räumt man nur das eigene Zimmer auf
+      d.ordnung = s.wohnung.form === "eltern" ? -0.3 : effekt(s, "ordnung") >= 2 ? -0.45 : -0.8;
   }
   for (const k of Object.keys(d) as (keyof Beduerfnisse)[]) b[k] = begrenzen(b[k] + d[k] * h);
 }
@@ -980,7 +981,12 @@ export type Routine = { bisTag: number; stopBeiPost?: boolean };
  * entscheiden sollte (Post, Ereignis, kein Essen, Monatswechsel …).
  */
 export function routine(alt: Spielstand, tage: number): Ergebnis {
-  let s = klon(alt);
+  const kopie = klon(alt);
+  return amStueck(() => routineAmStueck(kopie, tage));
+}
+
+function routineAmStueck(start: Spielstand, tage: number): Ergebnis {
+  let s = start;
   const ziel = Math.min(ENDE_TAG, s.tag + tage);
   const ungelesen = () => s.post.filter((p) => !p.gelesen).length;
   const postVorher = ungelesen();
@@ -1015,7 +1021,7 @@ export function routine(alt: Spielstand, tage: number): Ergebnis {
     }
     if (s.stunde < 18.5) s = freizeit(s, "chillen", 18.5 - s.stunde).stand;
     s = mahlzeit(s, "abend").stand;
-    if (s.wohnung.form !== "eltern" && s.beduerfnisse.ordnung < 35) s = putzen(s).stand;
+    if (s.beduerfnisse.ordnung < 35) s = putzen(s).stand;
     if (s.wohnung.form !== "eltern" && s.tag - Number(s.zuletzt.waesche ?? s.wohnung.einzug) > 7) {
       const w = waschen(s);
       if (!w.fehler) s = w.stand;

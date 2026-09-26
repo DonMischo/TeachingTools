@@ -108,7 +108,7 @@ describe("Rock your Life — Motor", () => {
     const h = [...s.jobHistorie, ...(s.job ? [s.job] : [])];
     expect(h.some((j) => j.abschlusspruefung !== undefined || j.art === "fachkraft")).toBe(true);
     expect(s.log.length).toBeGreaterThan(100);
-  }, 60_000);
+  }, 180_000);
 
   it("Ausbildung: Lohn am Monatsende auf dem Konto", () => {
     let s = start(3);

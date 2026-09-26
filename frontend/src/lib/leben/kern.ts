@@ -30,8 +30,23 @@ export type Effekt = "schlaf" | "kochen" | "kuehlen" | "tiefkuehlen" | "waschen"
 export const MOEBEL = MOEBEL_JSON as MoebelDef[];
 export const MOEBEL_DEF = new Map(MOEBEL.map((m) => [m.id, m]));
 
+// Innerhalb einer Routine hat der Aufrufer den Stand schon einmal kopiert —
+// die einzelnen Aktionen arbeiten dann direkt darauf (sonst würde der ganze
+// Spielstand für jede Mahlzeit neu kopiert, und eine Woche dauert Sekunden).
+let ohneKopie = 0;
+
 export function klon<T>(x: T): T {
-  return structuredClone(x);
+  return ohneKopie > 0 ? x : structuredClone(x);
+}
+
+/** Führt `f` aus, ohne dass Aktionen darin den Spielstand kopieren. */
+export function amStueck<T>(f: () => T): T {
+  ohneKopie++;
+  try {
+    return f();
+  } finally {
+    ohneKopie--;
+  }
 }
 
 /** Nächste Zufallszahl 0..1 (mulberry32, Zustand im Spielstand). */
