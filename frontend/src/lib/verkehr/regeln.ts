@@ -16,7 +16,10 @@ export type RegelId =
   // Im Bus (Bus-Szene)
   | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben" | "snfFrei" | "snfBlockiert"
   | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu"
-  | "handyKarma" | "polizei";
+  | "handyKarma" | "polizei"
+  // Fahrrad
+  | "radGehweg" | "radwegGut" | "fahrbahnGut" | "radGegenEinbahn" | "radLinks" | "radZebra" | "radRot" | "radOhneLicht"
+  | "radHelm" | "radOrdentlich" | "radAbgestellt" | "radBlockiert" | "radGeklaut" | "radImGang" | "radPlatzGemacht" | "radRepariert";
 
 export type Meldung = { id: RegelId; text: string; punkte: number; schwer?: boolean };
 
@@ -58,6 +61,22 @@ export const MELDUNGEN: Record<RegelId, Meldung> = {
   tuerZu: { id: "tuerZu", text: "Nicht in der Tür stehen bleiben, wenn es piept — die Türen schließen!", punkte: -5 },
   handyKarma: { id: "handyKarma", text: "Handy gewählt.", punkte: 0 },
   polizei: { id: "polizei", text: "Gespräch mit der Polizei.", punkte: 0 },
+  radGehweg: { id: "radGehweg", text: "Über 10 Jahre nicht auf dem Gehweg radeln — Fußgänger erschrecken. Radweg, Fahrbahn oder schieben.", punkte: -5 },
+  radwegGut: { id: "radwegGut", text: "🚲 Karma +: Du fährst auf dem Radweg — genau dort gehört das Rad hin.", punkte: 3 },
+  fahrbahnGut: { id: "fahrbahnGut", text: "🚲 Karma +: Kein Radweg da — also auf der Fahrbahn, rechts. Richtig so!", punkte: 2 },
+  radGegenEinbahn: { id: "radGegenEinbahn", text: "Gegen die Einbahnstraße! Die Autos rechnen nicht mit dir.", punkte: -5 },
+  radLinks: { id: "radLinks", text: "Auf der linken Straßenseite! Radfahrer fahren rechts.", punkte: -5 },
+  radZebra: { id: "radZebra", text: "Über den Zebrastreifen gefahren — Vorrang hat nur, wer schiebt. Absteigen (F)!", punkte: -3 },
+  radRot: { id: "radRot", text: "Bei Rot gefahren! Die Ampel gilt auch fürs Fahrrad (Erwachsene: ab 60 €).", punkte: -15, schwer: true },
+  radOhneLicht: { id: "radOhneLicht", text: "Im Dunkeln ohne Licht! Die Autos sehen dich nicht. Licht reparieren oder schieben.", punkte: -10 },
+  radHelm: { id: "radHelm", text: "⛑️ Mit Helm unterwegs — keine Pflicht, aber klug.", punkte: 2 },
+  radOrdentlich: { id: "radOrdentlich", text: "🅿️ Am Fahrradständer abgestellt — ordentlich!", punkte: 5 },
+  radAbgestellt: { id: "radAbgestellt", text: "Rad abgestellt — es steht niemandem im Weg.", punkte: 0 },
+  radBlockiert: { id: "radBlockiert", text: "Da steht dein Rad im Weg! Stell es an einen Ständer oder an den Rand.", punkte: -5 },
+  radGeklaut: { id: "radGeklaut", text: "😱 Dein Fahrrad wurde geklaut! Mit einem Bügelschloss am Ständer wäre das nicht so leicht passiert.", punkte: -10 },
+  radImGang: { id: "radImGang", text: "Mit dem Rad im Gang steht es allen im Weg — Fahrräder gehören auf die blaue Mehrzweckfläche.", punkte: -3 },
+  radPlatzGemacht: { id: "radPlatzGemacht", text: "🚲 Karma +: Du hast die Fläche für Kinderwagen/Rollstuhl frei gemacht und nimmst die nächste Bahn. Vorbildlich!", punkte: 10 },
+  radRepariert: { id: "radRepariert", text: "🔧 Repariert!", punkte: 1 },
   beleidigung: { id: "beleidigung", text: "Schimpfen hilft niemandem. Die Polizei hat das gesehen …", punkte: -15, schwer: true },
 };
 

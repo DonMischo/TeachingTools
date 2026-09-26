@@ -45,6 +45,8 @@ const ABFRAGE = `[out:json][timeout:240];
   node(${BB})[natural=tree];
   node(${BB})[highway=street_lamp];
   node(${BB})["addr:housenumber"]["addr:street"];
+  node(${BB})[amenity=bicycle_parking];
+  way(${BB})[amenity=bicycle_parking];
 );
 out body;
 >;
@@ -137,6 +139,7 @@ function punktArt(t) {
   if (t.highway === "give_way") return "vorfahrtAchten";
   if (t.natural === "tree") return "baum";
   if (t.highway === "street_lamp") return "laterne";
+  if (t.amenity === "bicycle_parking") return "radstaender";
   if (t.shop || t.amenity) return "ort";
   if (t["addr:housenumber"] && t["addr:street"]) return "adresse";
   return null;
@@ -214,6 +217,10 @@ for (const e of daten.elements) {
     // Adresse fürs Handy (Suche)
     if (t["addr:street"] && t["addr:housenumber"]) g.adresse = `${t["addr:street"]} ${t["addr:housenumber"]}`;
     karte.gebaeude.push(g);
+  } else if (t.amenity === "bicycle_parking") {
+    // Fahrradständer als Fläche: ein Punkt in der Mitte
+    const m = [r1(roh.reduce((a, p) => a + p[0], 0) / roh.length), r1(roh.reduce((a, p) => a + p[1], 0) / roh.length)];
+    if (drin(m)) karte.punkte.push({ art: "radstaender", p: m });
   } else if (t.railway === "platform" || t.public_transport === "platform") {
     if (!roh.some(drin)) continue;
     karte.flaechen.push({ art: "bahnsteig", umriss: roh.slice(0, -1) });

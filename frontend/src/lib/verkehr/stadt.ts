@@ -12,7 +12,7 @@ export type StrassenArt = "secondary" | "tertiary" | "residential" | "unclassifi
 export type WegArt = "geh" | "rad" | "geh_rad" | "treppe" | "feldweg" | "querung";
 export type PunktArt =
   | "ampel" | "ampelUebergang" | "zebra" | "querung" | "bushalt" | "tramhalt" | "bahnhalt"
-  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort" | "adresse";
+  | "bahnuebergang" | "stopp" | "vorfahrtAchten" | "baum" | "laterne" | "ort" | "adresse" | "radstaender";
 
 export type KartenStrasse = {
   art: StrassenArt; linie: P[]; name?: string; spuren?: number; einbahn?: boolean;
@@ -263,6 +263,14 @@ export class Stadt {
     const innen = n.s.breite / 2, aussen = innen + 2.5;
     const punkt = (l: number, q: number): P => [q0[0] + c * l - s * q * seite, q0[1] + s * l + c * q * seite];
     return [punkt(-8, innen), punkt(8, innen), punkt(8, aussen), punkt(-8, aussen)];
+  }
+
+  /** Gibt es in `r` Metern einen Radweg (auch gemeinsamen Geh- und Radweg)? */
+  radwegNah(x: number, y: number, r = 10): boolean {
+    for (let dx = -20; dx <= 20; dx += 20) for (let dy = -20; dy <= 20; dy += 20)
+      for (const e of this.wegRaster.bei(x + dx, y + dy))
+        if ((e.art === "rad" || e.art === "geh_rad") && abstandZuStrecke(x, y, e.st.a, e.st.b).d <= r) return true;
+    return false;
   }
 
   naechsteStrasse(x: number, y: number, maxD = 15): { s: Strasse; st: Stueck; d: number; t: number } | null {

@@ -24,6 +24,8 @@ import { BEGRUESSUNG, Ltb, type LtbAnlass, type LtbOrt } from "@/lib/verkehr/ltb
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import { handyKarma, pruefeAussehen, zufallsAussehen, type Aussehen } from "@/lib/verkehr/aussehen";
 import { AussehenTafel } from "./AussehenTafel";
+import { FahrradTafel } from "./FahrradTafel";
+import { neuesRad, pruefe, pruefeRad, type Fahrrad } from "@/lib/verkehr/fahrrad";
 import { PolizeiDialog } from "./PolizeiDialog";
 import { antworte, beginne, type Anlass, type Gespraech } from "@/lib/verkehr/polizei";
 import { HandySim, type HandyRoute } from "./HandySim";
@@ -124,6 +126,12 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const [aussehen, setAussehen] = useState<Aussehen>(() => zufallsAussehen());
   const [aussehenGeladen, setAussehenGeladen] = useState(false);
   const [aussehenTafel, setAussehenTafel] = useState(false);
+  // Fahrrad: gemerkt im Browser; Alter für die Gehweg-Regel
+  const [rad, setRad] = useState<Fahrrad | null>(null);
+  const [alter, setAlter] = useState(12);
+  const [radTafel, setRadTafel] = useState(false);
+  const aendereRad = (r: Fahrrad | null) => { setRad(r); schreib("hp_verkehr_rad", r); };
+  const aendereAlter = (a: number) => { setAlter(a); schreib("hp_verkehr_alter", a); };
   const aendereAussehen = (a: Aussehen) => { setAussehen(a); schreib("hp_verkehr_aussehen", a); };
   // Handy Sim: Karte, Suche, Route, Beamen (2× je Sitzung)
   const [handyOffen, setHandyOffen] = useState(false);
@@ -155,6 +163,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     setTonAn(lies("hp_verkehr_ton", true));
     setAussehen((a) => pruefeAussehen(lies<unknown>("hp_verkehr_aussehen", null), a));
     setAussehenGeladen(true);
+    const gemerktesRad = lies<unknown>("hp_verkehr_rad", null);
+    if (gemerktesRad) setRad(pruefeRad(gemerktesRad, neuesRad("herrenrad")));
+    setAlter(lies("hp_verkehr_alter", 12));
     setTouch(window.matchMedia("(pointer: coarse)").matches);
     const t = setTimeout(() => setHilfe(false), 10000);
     const fs = () => setVollbild(document.fullscreenElement === huelle.current);
@@ -358,6 +369,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               onEreignis={buche} onSchild={setQuiz} onZeit={onZeit} onHaltestelle={onHaltestelle} onWeste={setWeste}
               onTragen={setGetragen} onNaehe={(was) => ltbSag({ typ: "naehe", was })}
               onUeberblick={() => setUeberblick((v) => !v)} onFrage={onFrage}
+              rad={rad} alter={alter} onRadGeklaut={() => aendereRad(null)} onRadAendern={aendereRad}
               handyKanal={handyKanal} onPolizei={onPolizei} polizeiOffen={!!gespraech || wache} onLage={setLage} onHandy={() => setHandyOffen((v) => !v)}
               onAngekommen={() => { setHandyRoute(null); zeige({ id: "sicherGequert", punkte: 0, text: "📍 Ziel erreicht!" }); buche({ typ: "angekommen" }); }} />
           </Suspense>
@@ -382,6 +394,8 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             <div className="ml-auto flex gap-1.5">
               <button type="button" className={`${hudKnopf} ${handyOffen ? "ring-2 ring-amber-400" : ""}`} title="Handy: Karte, Suche, Route (H)"
                 onClick={() => setHandyOffen((v) => !v)}>📱</button>
+              <button type="button" className={`${hudKnopf} ${radTafel ? "ring-2 ring-amber-400" : ""}`} title="Fahrrad: Modell, Werkstatt, Schloss"
+                onClick={() => { setRadTafel((v) => !v); setAussehenTafel(false); setUhrTafel(false); }}>🚲</button>
               <button type="button" className={`${hudKnopf} ${aussehenTafel ? "ring-2 ring-amber-400" : ""}`} title="Aussehen"
                 onClick={() => { setAussehenTafel((v) => !v); setUhrTafel(false); }}>👕</button>
               <button type="button" className={`${hudKnopf} ${ueberblick ? "ring-2 ring-amber-400" : ""}`} title="Überblick: Straßennamen, Abfahrten, Karte (M)"
@@ -410,6 +424,11 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               <div className="max-w-sm text-sm opacity-90">📞 Deine Eltern werden angerufen und holen dich ab. Das Bußgeld zahlen sie — darüber redet ihr zu Hause noch.</div>
               <div className="text-xs opacity-60">Danach geht es an der Schule weiter.</div>
             </div>
+          )}
+          {radTafel && (
+            <FahrradTafel rad={rad} onRad={aendereRad} alter={alter} onAlter={aendereAlter}
+              onZu={() => { setRadTafel(false); zurBuehne(); }}
+              onRepariert={(_, neu) => { zeige(MELDUNGEN.radRepariert); netz.sendeMeldung("radRepariert", MELDUNGEN.radRepariert.punkte); buche({ typ: "radRepariert", sicher: pruefe(neu).verkehrssicher }); }} />
           )}
           {aussehenTafel && <AussehenTafel a={aussehen} onA={aendereAussehen} onZu={() => { setAussehenTafel(false); zurBuehne(); }} />}
           {handyOffen && (

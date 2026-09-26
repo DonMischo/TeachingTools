@@ -26,6 +26,8 @@ import { laternen, Nacht } from "@/lib/verkehr/nacht";
 import { ZOOM_STUFEN } from "@/lib/verkehr/bewegung";
 import type { LtbOrt } from "@/lib/verkehr/ltb";
 import { stadtRaster } from "@/lib/verkehr/wegsuche";
+import { lichtOk, MODELLE, pruefe, SCHLOESSER, tempoVon, type Fahrrad, type Schloss } from "@/lib/verkehr/fahrrad";
+import { abstellen, RadWaechter } from "@/lib/verkehr/radregeln";
 import { pruefeAussehen, STANDARD_AUSSEHEN, zufallsAussehen, type Aussehen } from "@/lib/verkehr/aussehen";
 import { AUSSEN_Y, Busszene, LAYOUTS, type SzenenMeldung } from "@/lib/verkehr/busszene";
 import { BusBild } from "@/lib/verkehr/busbild";
@@ -158,6 +160,13 @@ export type SpielfeldProps = {
   onPolizei?: (anlass: "beleidigung" | "rot" | "gleis") => void;
   /** Das Gespräch läuft: stehen bleiben, der Beamte steht daneben. */
   polizeiOffen?: boolean;
+  /** Das eigene Fahrrad (null = keins) und das Alter (Gehweg-Regel). */
+  rad?: Fahrrad | null;
+  alter?: number;
+  /** Das Rad wurde geklaut. */
+  onRadGeklaut?: () => void;
+  /** Das Rad hat sich geändert (zusammengeklappt). */
+  onRadAendern?: (r: Fahrrad) => void;
   /** Wo die Figur steht; »bus« = sie fährt mit. */
   onUntergrund?: (u: Untergrund["art"] | "bus") => void;
   onGeste?: (g: Geste) => void;
@@ -199,12 +208,12 @@ export type HandyKanal = {
   zurSchule?: () => void;
 };
 
-export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = false, handyKanal, polizeiOffen = false, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
+export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = false, handyKanal, polizeiOffen = false, rad = null, alter = 12, netz, steuerkanal, ueberblick = false, zoomStufe = 0, tonAn = true, ...rueck }: SpielfeldProps) {
   const huelle = useRef<HTMLDivElement>(null);
   const rueckruf = useRef(rueck);
   const netzRef = useRef(netz);
-  const optionen = useRef({ ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen });
-  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen }; });
+  const optionen = useRef({ ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen, rad, alter });
+  useEffect(() => { rueckruf.current = rueck; netzRef.current = netz; optionen.current = { ueberblick, zoomStufe, tonAn, steuerkanal, aussehen, handyOffen, farbe, handyKanal, polizeiOffen, rad, alter }; });
 
   useEffect(() => {
     const el = huelle.current!;
@@ -469,6 +478,81 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       // Wie im ersten GTA größer als maßstäblich — sonst ist das Kind ein Punkt.
       figur.scale.set(FIGUR_GROESSER);
       figuren.addChild(pinguin, figur);
+
+      // Fahrrad: von oben — unter der Figur (fahren) oder rechts daneben (schieben)
+      const radBild = new Graphics();
+      figur.addChildAt(radBild, 1);
+      let radModus: "keins" | "schiebt" | "faehrt" = "keins";
+      let letztesRad: Fahrrad | null = null;
+      let abgestellt: { p: P; w: number; schloss: Schloss; amStaender: boolean } | null = null;
+      const abgestelltBild = new Container();
+      abgestelltBild.visible = false;
+      figuren.addChild(abgestelltBild);
+      let zuletztKlauProbe = -Infinity, helmGemeldet = false;
+      let radHinweis: string | null = null, radHinweisBis = -Infinity;
+      const radWaechter = new RadWaechter(s, anlagen, tasterVon);
+      const maleRad = (g: Graphics, farbe: number, geklappt: boolean) => {
+        g.clear();
+        if (geklappt) {
+          g.circle(0, -0.08, 0.26).stroke({ width: 0.06, color: 0x222222 }).circle(0.06, 0.08, 0.26).stroke({ width: 0.06, color: 0x222222 })
+            .moveTo(-0.15, 0).lineTo(0.2, 0).stroke({ width: 0.08, color: farbe });
+          return;
+        }
+        g.ellipse(-0.55, 0, 0.34, 0.06).fill(0x1f2937).ellipse(0.55, 0, 0.34, 0.06).fill(0x1f2937)
+          .moveTo(-0.55, 0).lineTo(0.5, 0).stroke({ width: 0.09, color: farbe })
+          .moveTo(0.46, -0.3).lineTo(0.46, 0.3).stroke({ width: 0.06, color: 0x111827 })
+          .ellipse(-0.18, 0, 0.12, 0.07).fill(0x111827);
+      };
+      const zeigeRad = () => {
+        const r = optionen.current.rad;
+        radBild.visible = radModus !== "keins" && !!r;
+        if (!r) return;
+        maleRad(radBild, r.farbe, !!r.geklappt);
+        radBild.position.set(0, radModus === "schiebt" ? 0.45 : 0);
+      };
+      const radSagt = (text: string) => { radHinweis = text; radHinweisBis = uhr() + 4; };
+      const radAufAb = () => {
+        const r = optionen.current.rad;
+        if (!r || radModus === "keins" || mitfahrt || szene?.sz.mitIch) return;
+        if (radModus === "faehrt") { radModus = "schiebt"; zeigeRad(); return; }
+        if (r.geklappt) { radSagt("Erst aufklappen (K), dann aufsteigen."); return; }
+        if (!pruefe(r).fahrbar) { radSagt("Platter Reifen! Erst flicken und aufpumpen (🚲 Werkstatt)."); return; }
+        radModus = "faehrt";
+        zeigeRad();
+        if (!helmGemeldet && optionen.current.aussehen?.muetze === "helm") { helmGemeldet = true; melde(MELDUNGEN.radHelm); }
+      };
+      const maleAbgestellt = () => {
+        abgestelltBild.removeChildren();
+        if (!abgestellt || !optionen.current.rad) { abgestelltBild.visible = false; return; }
+        const g = new Graphics();
+        maleRad(g, optionen.current.rad.farbe, false);
+        g.scale.set(FIGUR_GROESSER);
+        abgestelltBild.addChild(g);
+        if (abgestellt.schloss !== "keins") {
+          const t = beschriftung("🔒", 0xffffff, 0.9);
+          t.position.set(0, -0.8);
+          abgestelltBild.addChild(t);
+        }
+        abgestelltBild.position.set(abgestellt.p[0], abgestellt.p[1]);
+        g.rotation = abgestellt.w;
+        abgestelltBild.visible = true;
+      };
+      const radAbstellen = () => {
+        const r = optionen.current.rad;
+        if (!r || radModus === "keins" || mitfahrt || szene?.sz.mitIch) return;
+        const p: P = [ich.x - Math.sin(figur.rotation) * 0.6, ich.y + Math.cos(figur.rotation) * 0.6];
+        const pr = abstellen(s, p);
+        abgestellt = { p, w: figur.rotation, schloss: r.schloss, amStaender: pr.amStaender };
+        radModus = "keins";
+        zeigeRad(); maleAbgestellt();
+        melde(pr.amStaender ? MELDUNGEN.radOrdentlich : pr.ok ? MELDUNGEN.radAbgestellt : { ...MELDUNGEN.radBlockiert, text: `${MELDUNGEN.radBlockiert.text} ${pr.grund ?? ""}` });
+      };
+      const radNehmen = () => { abgestellt = null; maleAbgestellt(); radModus = "schiebt"; zeigeRad(); };
+      const radKlappen = () => {
+        const r = optionen.current.rad;
+        if (!r || !MODELLE[r.modell].klappbar || radModus !== "schiebt") { if (r && !MODELLE[r.modell].klappbar) radSagt("Nur das Klapprad lässt sich zusammenklappen."); return; }
+        rueckruf.current.onRadAendern?.({ ...r, geklappt: !r.geklappt });
+      };
       const weste = westeFuer();
       // Über dem Oberteil, unter Handy und Kopf
       figur.addChildAt(weste, 3);
@@ -604,6 +688,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         if (m.punkte > 0) klang.erfolg(); else if (m.punkte < 0 && m.id !== "angefahren" && m.id !== "beleidigung") klang.fehler();
         // Manchmal hat eine Streife gesehen, wie man bei Rot oder über die Gleise ging
         if ((m.id === "rot" || m.id === "gleis") && !optionen.current.polizeiOffen && Math.random() < 0.35) rueckruf.current.onPolizei?.(m.id);
+        if (m.id === "radRot" && !optionen.current.polizeiOffen && Math.random() < 0.35) rueckruf.current.onPolizei?.("rot");
         if (m.id === "gruenGequert" || m.id === "zebraGequert" || m.id === "sicherGequert")
           ereignis({ typ: "querung", nacht: hell < 0.35, weste: westeAn, rush: istRush(zeit) });
       };
@@ -616,6 +701,11 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       if (optionen.current.steuerkanal) optionen.current.steuerkanal.current.taste = (code) => { klang.wecke(); einmal?.(code); };
       einmal = (code) => {
         const t = spielUhr();
+        // Fahrrad: F auf/ab, P abstellen, K klappen, E am abgestellten Rad nehmen
+        if (code === "KeyF") radAufAb();
+        if (code === "KeyP") radAbstellen();
+        if (code === "KeyK") radKlappen();
+        if (code === "KeyE" && abgestellt && !mitfahrt && Math.hypot(abgestellt.p[0] - ich.x, abgestellt.p[1] - ich.y) < 2.5) { radNehmen(); return; }
         const geste = gesteZuTaste(code);
         if (geste) {
           if (geste.beleidigung && !netzRef.current.beleidigungen()) return;
@@ -795,7 +885,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         }
         if (t >= unfallBis && !mitfahrt && !festgehalten && !szene?.sz.mitIch) {
           // Im Zeitraffer in Teilschritten, damit niemand durch Wände läuft
-          for (let rest = dt; rest > 1e-6; rest -= 0.05) ich = schritt(ich, t - umschauenSeit < UMSCHAUEN_DAUER ? KEINE_EINGABE : eingabe, Math.min(0.05, rest), s);
+          const r = optionen.current.rad;
+          const tempoJetzt = radModus === "faehrt" && r ? { gehen: tempoVon(r), rennen: tempoVon(r) * 1.35 } : radModus === "schiebt" ? { gehen: 1.3, rennen: 2.4 } : undefined;
+          for (let rest = dt; rest > 1e-6; rest -= 0.05) ich = schritt(ich, t - umschauenSeit < UMSCHAUEN_DAUER ? KEINE_EINGABE : eingabe, Math.min(0.05, rest), s, tempoJetzt);
         }
         // Hängt die Figur fest (Hauswand), gibt der Mausweg auf.
         if (mausZiel && !mausHaelt && Math.hypot(ich.x - vorher.x, ich.y - vorher.y) < 0.002 && t - umschauenSeit >= UMSCHAUEN_DAUER) mausZiel = null;
@@ -820,6 +912,25 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           }
         }
         // Uhr: Tagesabschnitt, Verkehrsdichte, Takte, Helligkeit — einmal je Sekunde reicht.
+        // Neues oder geändertes Rad aus der Tafel
+        const radJetzt = optionen.current.rad ?? null;
+        if (radJetzt !== letztesRad) {
+          if (!radJetzt) { radModus = "keins"; abgestellt = null; }
+          else if (!letztesRad || letztesRad.modell !== radJetzt.modell) { if (!abgestellt) radModus = "schiebt"; }
+          if (radJetzt?.geklappt && radModus === "faehrt") radModus = "schiebt";
+          letztesRad = radJetzt;
+          zeigeRad(); maleAbgestellt();
+        }
+        // Abgestellt und weit weg: wird es geklaut? Schloss und Ständer machen es seltener
+        if (abgestellt && Math.hypot(abgestellt.p[0] - ich.x, abgestellt.p[1] - ich.y) > 40 && t - zuletztKlauProbe > 20) {
+          zuletztKlauProbe = t;
+          const risiko = SCHLOESSER[abgestellt.schloss].klauRisiko * (abgestellt.amStaender ? 0.5 : 1) * 0.12;
+          if (Math.random() < risiko) {
+            abgestellt = null; maleAbgestellt();
+            melde(MELDUNGEN.radGeklaut);
+            rueckruf.current.onRadGeklaut?.();
+          }
+        }
         if (t - zuletztUhr >= 1) {
           zuletztUhr = t;
           zeit = spielzeit(tEcht, stellung);
@@ -1075,7 +1186,10 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           const faehrtWeg = phase === "faehrt" && szene.gehalten;
           if (!sz.mitIch && t >= unfallBis && !faehrtWeg && lx > szene!.sz.l.rand.x0 + 0.5 && lx < szene!.sz.l.rand.x1 - 0.5 && ly > AUSSEN_Y + 0.15 && ly < szene!.sz.l.rand.y1 - 0.5) {
             sz.mitIch = true;
-            Object.assign(sz.ich, { x: lx, y: ly, weg: [], rucksack: rucksackAn, r: rucksackAn ? 0.27 : 0.23 });
+            // Mit Rad (nicht geklappt) braucht man Platz wie ein Kinderwagen — und die blaue Fläche
+            const mitRad = radModus !== "keins" && !!optionen.current.rad && !optionen.current.rad.geklappt;
+            if (radModus === "faehrt") { radModus = "schiebt"; zeigeRad(); }
+            Object.assign(sz.ich, { x: lx, y: ly, weg: [], rucksack: rucksackAn, mitRad, r: mitRad ? 0.42 : rucksackAn ? 0.27 : 0.23 });
             mausZiel = null; mausWeg = [];
             szenenEbene.addChild(figur);
           }
@@ -1220,7 +1334,15 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         }
 
         // Regeln (in der Bus-Szene gelten die Regeln der Szene)
-        if (unterwegs && !szene?.sz.mitIch) {
+        const radFaehrt = radModus === "faehrt" && !!optionen.current.rad;
+        if (unterwegs && !szene?.sz.mitIch && radFaehrt) {
+          // Auf dem Rad: Radregeln (Fußgängerregeln ruhen)
+          const r = radWaechter.pruefe({ x: ich.x, y: ich.y, winkel: figur.rotation, tempo: ich.tempo, t, alter: optionen.current.alter,
+            dunkel: hell < 0.35, lichtOk: lichtOk(optionen.current.rad!) });
+          for (const id of r.meldungen) melde(MELDUNGEN[id]);
+          if (r.hinweis) radSagt(r.hinweis);
+          waechter.zuruecksetzen();
+        } else if (unterwegs && !szene?.sz.mitIch) {
           for (const m of waechter.pruefe(ich.x, ich.y, t, haltende)) {
             melde(m);
             if (m.id === "rot" || m.id === "nichtGeschaut") zeigeBlase("⚠️");
@@ -1261,6 +1383,8 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
         for (const sch of schilder) if (Math.hypot(sch.p[0] - ich.x, sch.p[1] - ich.y) < 3) { nahesSchild = sch.art; break; }
         const hinweis = festgehalten ? "👮 Die Polizei redet mit dir …"
           : szeneHinweis ? szeneHinweis
+          : radHinweis && uhr() < radHinweisBis ? radHinweis
+          : abgestellt && !mitfahrt && Math.hypot(abgestellt.p[0] - ich.x, abgestellt.p[1] - ich.y) < 2.5 ? "E drücken: Fahrrad nehmen"
           : szene?.sz.mitIch && !mitfahrt ? "Seitlich neben einer Tür warten (grün), erst aussteigen lassen, dann an die Tür und E drücken."
           : mitfahrt ? (mitfahrt.art === "bus"
             ? (haltGewuenscht ? "🔔 Halt gewünscht — wenn die Türen aufgehen: zur Tür und hinaus." : `${szeneBus?.art === "tram" ? "In der Bahn" : "Im Bus"}: X = Halt wünschen · E = setzen/aufstehen · B = Rucksack · zum Aussteigen zur Tür gehen`)
@@ -1269,7 +1393,9 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
           : naherTaster ? (t - tasterVon(naherTaster) < TASTER_WARTEN ? "Signal kommt — warten …" : "E drücken: Ampel-Taster")
           : nahesSchild ? "E drücken: Schild ansehen"
           : getragen > 0 && eimer.some((e) => Math.hypot(e[0] - ich.x, e[1] - ich.y) < EIMER_NAH) ? `E drücken: Müll einwerfen (${getragen})`
-          : muell.naechstes(ich.x, ich.y, GREIFEN) ? (getragen < TRAGEN ? "E drücken: Müll aufheben" : "Hände voll — erst zum Mülleimer 🗑️") : null;
+          : muell.naechstes(ich.x, ich.y, GREIFEN) ? (getragen < TRAGEN ? "E drücken: Müll aufheben" : "Hände voll — erst zum Mülleimer 🗑️")
+          : radModus === "faehrt" ? "Auf dem Rad: F = absteigen · P = abstellen · rechts fahren, Radweg nutzen"
+          : radModus === "schiebt" ? `Du schiebst dein Rad: F = aufsteigen · P = abstellen${optionen.current.rad && MODELLE[optionen.current.rad.modell].klappbar ? " · K = klappen" : ""}` : null;
         if (hinweis !== letzterHinweis) { letzterHinweis = hinweis; rueckruf.current.onHinweis?.(hinweis); }
 
         // Abfahrtstafel: an der Haltestelle (≤ 12 m) für die Hülle, im Überblick über allen Haltestellen.

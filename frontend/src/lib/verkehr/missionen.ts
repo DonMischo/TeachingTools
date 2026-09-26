@@ -11,7 +11,8 @@ import { SCHILDER, type SchildArt } from "./schilder";
 export type MissionId =
   | "lidl" | "netto" | "ampel" | "taster" | "zebra" | "hand" | "bus" | "tram" | "zug" | "schilder" | "gruppe"
   | "aldi" | "linie9" | "fahrplan" | "rush" | "nacht" | "muell"
-  | "schlenky" | "platz" | "rausrein" | "rucksack" | "navi" | "polizei";
+  | "schlenky" | "platz" | "rausrein" | "rucksack" | "navi" | "polizei"
+  | "radSicher" | "radweg" | "radParken" | "radPlatz";
 
 export type Mission = { id: MissionId; icon: string; titel: string; text: string; pflicht: boolean };
 
@@ -38,6 +39,10 @@ export const MISSIONEN: Mission[] = [
   { id: "rucksack", icon: "🎒", titel: "Rucksack ab", text: "Nimm im Bus den Rucksack ab (B).", pflicht: false },
   { id: "navi", icon: "📱", titel: "Mit dem Handy ans Ziel", text: "Such im Handy (H) ein Ziel und lauf der blauen Linie nach — ohne zu beamen.", pflicht: false },
   { id: "polizei", icon: "👮", titel: "Höflich bleiben", text: "Beende ein Gespräch mit der Polizei ohne Strafe.", pflicht: false },
+  { id: "radSicher", icon: "🔧", titel: "Rad verkehrssicher", text: "Mach dein Rad in der Werkstatt (🚲) verkehrssicher: Klingel, zwei Bremsen, Licht, Rückstrahler — alles nach StVZO.", pflicht: false },
+  { id: "radweg", icon: "🚲", titel: "Auf dem Radweg", text: "Fahr ein Stück auf dem Radweg (F zum Aufsteigen) — nicht auf dem Gehweg.", pflicht: false },
+  { id: "radParken", icon: "🅿️", titel: "Am Ständer abgestellt", text: "Stell dein Rad an einem Fahrradständer ab (P) — mit Schloss.", pflicht: false },
+  { id: "radPlatz", icon: "♿", titel: "Platz gemacht", text: "Steig im Bus oder in der Bahn mit deinem Rad aus, damit ein Kinderwagen oder Rollstuhl Platz hat.", pflicht: false },
   { id: "gruppe", icon: "🧱", titel: "Als Wand über die Straße", text: "Quert mit mindestens drei Leuten nebeneinander — alle gleichzeitig, nicht hintereinander.", pflicht: false },
 ];
 
@@ -51,6 +56,7 @@ export type Ereignis =
   | { typ: "hand"; t: number }
   | { typ: "eingestiegen"; art: "bus" | "tram" | "zug"; gut: boolean; linie?: string; gelenk?: boolean }
   | { typ: "angekommen" }
+  | { typ: "radRepariert"; sicher: boolean }
   | { typ: "polizei"; stufe: number }
   | { typ: "schild"; art: SchildArt; richtig: boolean }
   | { typ: "gruppe"; wand: boolean }
@@ -145,6 +151,9 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       if (e.id === "platzAngeboten") erledige("platz");
       if (e.id === "rausRein") erledige("rausrein");
       if (e.id === "rucksackAb") erledige("rucksack");
+      if (e.id === "radwegGut") erledige("radweg");
+      if (e.id === "radOrdentlich") erledige("radParken");
+      if (e.id === "radPlatzGemacht") erledige("radPlatz");
       if (SCHWER.includes(e.id)) { n.schwere++; st.serie = 0; }
       break;
     case "ort": {
@@ -190,6 +199,7 @@ export function verbuche(f: Fortschritt, e: Ereignis): { f: Fortschritt; neu: Mi
       break;
     case "karmaGeheilt": st.karmaGeheilt++; break;
     case "angekommen": erledige("navi"); break;
+    case "radRepariert": if (e.sicher) erledige("radSicher"); break;
     case "polizei": if (e.stufe === 0) erledige("polizei"); break;
   }
   for (const er of ERFOLGE) if (!n.erfolge!.includes(er.id) && er.erreicht(st, n)) n.erfolge!.push(er.id);

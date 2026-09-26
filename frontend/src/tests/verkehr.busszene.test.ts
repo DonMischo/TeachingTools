@@ -209,3 +209,39 @@ describe("Voller Bus", () => {
     expect(r2.hinweis ?? "").toMatch(/Rucksack|festhalten|Stange/);
   });
 });
+
+describe("Mit dem Fahrrad in Bus und Bahn", () => {
+  it("steigt man mit Rad nur an der Tür mit Mehrzweckfläche ein", () => {
+    const sz = new Busszene(3, 0.2, 0);
+    sz.mitIch = true;
+    Object.assign(sz.ich, { mitRad: true, r: 0.42, x: TUER_X[0], y: AUSSEN_Y + 0.4 });
+    // Vorn (ohne Fläche): der Fahrer sagt nein
+    for (let a = 0; a < 9; a += DT) sz.schritt({ t: a, dt: DT, phase: tuerPhase(a), halt: "h", beschleunigung: 0, fuellung: 0.2 });
+    sz.aktion(9);
+    expect(sz.ich.weg.length).toBe(0);
+    expect(sz.fahrer.ruf?.text).toMatch(/blauen Zeichen/);
+  });
+
+  it("gibt Karma, wer mit dem Rad für den Kinderwagen aussteigt", () => {
+    for (let samen = 1; samen < 200; samen++) {
+      const sz = new Busszene(samen, 0.2, 0);
+      sz.mitIch = true;
+      const f = sz.l.snf[0];
+      Object.assign(sz.ich, { mitRad: true, r: 0.42, x: (f.x0 + f.x1) / 2, y: -0.7, drin: true });
+      let hatKinderwagen = false, raus = false;
+      const alle: SzenenMeldung[] = [];
+      for (let a = 0; a < HALT.oeffnen + HALT.aussteigen + HALT.einsteigen; a += DT) {
+        const phase = tuerPhase(a);
+        if (sz.fahrgaeste.some((x) => x.art === "kinderwagen" || x.art === "rollstuhl")) hatKinderwagen = true;
+        // Sobald der Hinweis kommt: mit dem Rad raus
+        const r = sz.schritt({ t: a, dt: DT, phase, halt: "h", beschleunigung: 0, fuellung: 0.2 });
+        alle.push(...r.meldungen);
+        if (!raus && r.hinweis?.includes("Vorrang")) { raus = true; sz.gehZu(TUER_X[f.tuer], AUSSEN_Y + 3); }
+      }
+      if (!hatKinderwagen || !raus) continue;
+      expect(alle).toContain("radPlatzGemacht");
+      return;
+    }
+    throw new Error("kein Kinderwagen gefunden");
+  });
+});

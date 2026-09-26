@@ -22,16 +22,17 @@ export type Eingabe = {
 
 export const KEINE_EINGABE: Eingabe = { hoch: false, runter: false, links: false, rechts: false, rennen: false };
 
-export function schritt(f: Figur, e: Eingabe, dt: number, stadt: Stadt): Figur {
+/** `tempo`: auf dem Rad oder beim Schieben andere Geschwindigkeiten als zu Fuß. */
+export function schritt(f: Figur, e: Eingabe, dt: number, stadt: Stadt, tempo: { gehen: number; rennen: number } = { gehen: GEHEN, rennen: RENNEN }): Figur {
   const analog = e.stick && Math.hypot(e.stick.x, e.stick.y) > 0.15;
   const dx = analog ? e.stick!.x : (e.rechts ? 1 : 0) - (e.links ? 1 : 0);
   const dy = analog ? e.stick!.y : (e.runter ? 1 : 0) - (e.hoch ? 1 : 0);
   if (!dx && !dy) return { ...f, tempo: 0 };
   const laenge = Math.hypot(dx, dy);
   // Am Stick: weit ausgelenkt = rennen, wenig = langsam gehen.
-  const tempo = analog ? (laenge > 0.95 || e.rennen ? RENNEN : GEHEN * Math.min(1, laenge / 0.8)) : e.rennen ? RENNEN : GEHEN;
-  const [x, y] = stadt.ausHaeusern(f.x + (dx / laenge) * tempo * dt, f.y + (dy / laenge) * tempo * dt, FIGUR_RADIUS);
-  return { x, y, winkel: Math.atan2(dy, dx), tempo };
+  const v = analog ? (laenge > 0.95 || e.rennen ? tempo.rennen : tempo.gehen * Math.min(1, laenge / 0.8)) : e.rennen ? tempo.rennen : tempo.gehen;
+  const [x, y] = stadt.ausHaeusern(f.x + (dx / laenge) * v * dt, f.y + (dy / laenge) * v * dt, FIGUR_RADIUS);
+  return { x, y, winkel: Math.atan2(dy, dx), tempo: v };
 }
 
 /** Tastenbelegung: Pfeile und WASD, Umschalt zum Rennen. */

@@ -261,6 +261,14 @@ export function zeichneStadt(stadt: Stadt): Ebenen {
     boden.addChild(t);
   }
 
+  // Fahrradständer (aus OSM): drei Bügel nebeneinander
+  const staender = new Graphics();
+  for (const p of karte.punkte) if (p.art === "radstaender") {
+    for (let i = -1; i <= 1; i++) staender.roundRect(p.p[0] + i * 0.8 - 0.05, p.p[1] - 0.45, 0.1, 0.9, 0.05).fill(0x9ca3af).stroke({ width: 0.03, color: 0x4b5563 });
+    staender.roundRect(p.p[0] - 1.2, p.p[1] - 0.6, 2.4, 1.2, 0.2).stroke({ width: 0.06, color: 0x60a5fa, alpha: 0.7 });
+  }
+  boden.addChild(staender);
+
   // Haltestellenschilder: auf den Gehweg gerückt (der Bus hält am Bordstein und würde sie verdecken)
   // und über den Fahrzeugen gezeichnet
   const haltZeichen = new Container();

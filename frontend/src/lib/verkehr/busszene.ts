@@ -173,7 +173,8 @@ export type Fahrgast = Mensch & {
 
 export type SzenenMeldung =
   | "tuerBlockiert" | "gutEingestiegen" | "eingestiegen" | "imWeg" | "rausRein" | "platzAngeboten" | "sitzenGeblieben"
-  | "snfFrei" | "snfBlockiert" | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu";
+  | "snfFrei" | "snfBlockiert" | "nichtFestgehalten" | "rucksackAb" | "rucksackAuf" | "fahrkarte" | "tuerZu"
+  | "radImGang" | "radPlatzGemacht";
 
 export type Lage = {
   t: number; dt: number;
@@ -225,6 +226,7 @@ const RUFE = {
   draengler: ["Hey, erst aussteigen lassen!", "Nicht vor die Tür stellen!"],
   tuerZu: ["Achtung, Türen schließen!"],
   festhalten: ["Festhalten!", "Hoppla — halt dich fest!"],
+  radRaus: ["Mit dem Rad bitte raus — der Kinderwagen braucht den Platz!", "Rollstuhl geht vor — nimm mit dem Rad die nächste Bahn!"],
 } as const;
 
 export class Busszene {
@@ -233,8 +235,11 @@ export class Busszene {
   readonly sitze: Sitz[];
   readonly fahrgaeste: Fahrgast[] = [];
   /** Die Spielfigur in Bus-Koordinaten. */
-  readonly ich: Mensch & { sitz: number | null; rucksack: boolean; drin: boolean } =
+  /** `mitRad`: schiebt ein Fahrrad (nicht geklappt) — braucht die Mehrzweckfläche. */
+  readonly ich: Mensch & { sitz: number | null; rucksack: boolean; drin: boolean; mitRad?: boolean } =
     { id: "ich", x: 0, y: AUSSEN_Y + 2.5, r: 0.23, tempo: 1.5, weg: [], sitz: null, rucksack: true, drin: false };
+  /** Mit dem Rad muss man an diesem Halt raus, weil Kinderwagen/Rollstuhl die Fläche brauchen. */
+  private radMussRaus: string | null = null;
   /** Nimmt die Szene die Figur gerade (sonst läuft sie frei in der Stadt). */
   mitIch = false;
   private rasterZu: Raster;
@@ -519,6 +524,8 @@ export class Busszene {
         }
       }
       if (warErDrin && !imBus) {
+        // Mit dem Rad ausgestiegen, damit Kinderwagen/Rollstuhl Platz haben: Karma
+        if (ich.mitRad && this.radMussRaus === hk) this.einmal(`${hk}:radPlatz`, "radPlatzGemacht", aus);
         this.selbstRaus = hk;
         this.rausGekommen = true;
         if (phase === "aussteigen" && this.fahrgaeste.some((f) => f.zustand === "steigtAus")) this.rausFuerAndere = true;
@@ -571,12 +578,23 @@ export class Busszene {
       // Sondernutzungsfläche frei machen
       const braucht = this.fahrgaeste.find((f) => (f.art === "kinderwagen" || f.art === "rollstuhl") && (f.zustand === "steigtEin" || f.zustand === "wartet") && phase !== "faehrt");
       const ichAufSnf = imBus && this.l.snf.some((f) => inRechteck(ich.x, ich.y, f, 0.25));
-      if (braucht && ichAufSnf) {
+      if (braucht && ichAufSnf && ich.mitRad) {
+        // Mit dem Rad: Kinderwagen und Rollstuhl gehen vor — aussteigen und den nächsten nehmen
+        hinweis = `Der ${braucht.art === "rollstuhl" ? "Rollstuhl" : "Kinderwagen"} hat Vorrang auf der Fläche — steig mit deinem Rad aus und nimm den nächsten!`;
+        this.radMussRaus = hk;
+        if (this.dauer("snf", true, t) > 1) this.rufe(braucht, RUFE.radRaus, t);
+        if (this.dauer("snf", true, t) > 12) this.einmal(`${hk}:snf`, "snfBlockiert", aus);
+      } else if (braucht && ichAufSnf) {
         hinweis = `Der ${braucht.art === "rollstuhl" ? "Rollstuhl" : "Kinderwagen"} braucht den Platz — geh da weg!`;
         const d = this.dauer("snf", true, t);
         if (d > 1) this.rufe(braucht, RUFE.snf, t);
         if (d > 7) this.einmal(`${hk}:snf`, "snfBlockiert", aus);
       } else if (braucht && this.seit.has("snf")) { this.einmal(`${hk}:snfFrei`, "snfFrei", aus); this.dauer("snf", false, t); }
+
+      // Mit dem Rad gehört man auf die Mehrzweckfläche, nicht in den Gang
+      const radImGang = imBus && !!ich.mitRad && !ichAufSnf && !ich.weg.length;
+      if (radImGang) hinweis ??= "Mit dem Rad auf die blaue Mehrzweckfläche stellen!";
+      if (this.dauer("radGang", radImGang, t) > 8) this.einmal(`${hk}:radGang`, "radImGang", aus);
 
       // Rucksack im Gedränge: nur, wenn wirklich Leute dicht um einen stehen
       const nachbarn = this.fahrgaeste.filter((f) => f.zustand !== "weg" && f.sitz === null && Math.hypot(f.x - ich.x, f.y - ich.y) < 1.1).length;
@@ -697,12 +715,24 @@ export class Busszene {
       return null;
     }
     if (drin(ich.x, ich.y, this.l)) {
-      const s = this.sitzInReichweite(ich);
+      // Mit dem Rad bleibt man bei ihm stehen
+      const s = ich.mitRad ? null : this.sitzInReichweite(ich);
       if (s) { s.belegt = "ich"; ich.sitz = s.id; ich.x = s.p[0]; ich.y = s.p[1]; ich.weg = []; ich.fest = true; ich.r = SITZ_R; }
       return null;
     }
     if (this.phase === "einsteigen" && this.l.tuerX.some((_, i) => inRechteck(ich.x, ich.y, tuerZonen(i, this.l).fokus, 0.3))) {
       const i = this.l.tuerX.map((x, k) => ({ k, d: Math.abs(x - ich.x) })).sort((a, b) => a.d - b.d)[0].k;
+      if (ich.mitRad) {
+        // Mit dem Rad nur an einer Tür mit Mehrzweckfläche — und nur, wenn die frei ist
+        const flaeche = this.l.snf.find((f) => f.tuer === i);
+        if (!flaeche) { this.fahrer.ruf = { text: "Mit dem Rad bitte an die Tür mit dem blauen Zeichen!", bis: t + 3 }; return null; }
+        const belegt = this.fahrgaeste.some((f) => (f.art === "kinderwagen" || f.art === "rollstuhl") && f.zustand !== "weg" && inRechteck(f.x, f.y, flaeche, 0.3));
+        if (belegt) { this.fahrer.ruf = { text: "Leider kein Platz mehr für dein Rad — nimm den nächsten.", bis: t + 3 }; return null; }
+        const ziel: P = this.stehplatz(true, flaeche) ?? [(flaeche.x0 + flaeche.x1) / 2, -0.7];
+        ich.ziel = ziel;
+        ich.weg = this.hinein(i, ziel);
+        return null;
+      }
       const ziel = this.stehplatz(true) ?? [this.l.tuerX[i], 0.5];
       ich.ziel = ziel;
       ich.weg = this.hinein(i, ziel);
@@ -713,7 +743,7 @@ export class Busszene {
   /** B: Rucksack ab oder auf. Abnehmen im Bus ist richtig. */
   rucksack(): SzenenMeldung | null {
     this.ich.rucksack = !this.ich.rucksack;
-    this.ich.r = this.ich.rucksack ? 0.27 : 0.23;
+    this.ich.r = this.ich.mitRad ? 0.42 : this.ich.rucksack ? 0.27 : 0.23;
     return !this.ich.rucksack && drin(this.ich.x, this.ich.y, this.l) ? "rucksackAb" : null;
   }
 
