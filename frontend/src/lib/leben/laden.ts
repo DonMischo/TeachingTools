@@ -115,8 +115,99 @@ export const MAERKTE: Markt[] = [
 
 export const MARKT = new Map(MAERKTE.map((m) => [m.id, m]));
 
-export function imSortiment(m: Markt, p: Produkt): boolean {
+export function imSortiment(m: Markt, p: Produkt, monat?: number): boolean {
+  if (monat !== undefined && !verfuegbar(p, monat)) return false;
   return m.sortiment === "alles" || m.sortiment.includes(p.kategorie);
+}
+
+// ───────────────────────────────────────────────────────────── Saison
+
+/**
+ * Saisonware: heimisches Obst und Gemüse ist in der Saison günstiger (×0,8),
+ * außerhalb teurer (×1,3, Import/Gewächshaus). Manches gibt es nur in der
+ * Saison (Kürbis, Spargel, Federweißer, Lebkuchen). Orientiert an gängigen
+ * Saisonkalendern (Verbraucherzentrale, BZfE).
+ */
+export const SAISON: Record<string, { monate: number[]; nur?: boolean }> = {
+  "obst-erdbeeren-500g": { monate: [5, 6, 7] },
+  "obst-blaubeeren-200g": { monate: [7, 8] },
+  "obst-himbeeren-150g": { monate: [6, 7, 8] },
+  "obst-brombeeren-150g": { monate: [8, 9] },
+  "obst-johannisbeeren-150g": { monate: [6, 7] },
+  "obst-pfirsich-600g": { monate: [7, 8] },
+  "obst-trauben-500g": { monate: [8, 9, 10] },
+  "obst-apfel-1kg": { monate: [8, 9, 10, 11, 12] },
+  "obst-mandarinen-1kg": { monate: [11, 12, 1, 2] },
+  "obst-orangen-1kg": { monate: [12, 1, 2, 3] },
+  "gemuese-tomaten-500g": { monate: [7, 8, 9] },
+  "gemuese-gurke-stk": { monate: [6, 7, 8, 9] },
+  "gemuese-zucchini-500g": { monate: [6, 7, 8, 9] },
+  "gemuese-paprika-rot-500g": { monate: [7, 8, 9] },
+  "gemuese-blumenkohl-500g": { monate: [6, 7, 8, 9, 10] },
+  "gemuese-brokkoli-400g": { monate: [6, 7, 8, 9, 10] },
+  "gemuese-kohlrabi-400g": { monate: [5, 6, 7, 8, 9] },
+  "gemuese-spinat-300g": { monate: [4, 5, 9, 10] },
+  "gemuese-salat-200g": { monate: [5, 6, 7, 8, 9] },
+  "gemuese-radieschen-200g": { monate: [4, 5, 6, 7, 8, 9] },
+  "gemuese-lauch-400g": { monate: [9, 10, 11, 12, 1, 2, 3] },
+  "gemuese-porree-400g": { monate: [9, 10, 11, 12, 1, 2, 3] },
+  "gemuese-kohl-500g": { monate: [9, 10, 11, 12, 1, 2, 3] },
+  "gemuese-rote-beete-500g": { monate: [8, 9, 10, 11, 12, 1, 2, 3] },
+  "gemuese-pastinake-400g": { monate: [10, 11, 12, 1, 2, 3] },
+  "gemuese-kuerbis-hokkaido": { monate: [9, 10, 11], nur: true },
+  "gemuese-spargel-500g": { monate: [4, 5, 6], nur: true },
+  "alkohol-federweisser-1l": { monate: [9, 10], nur: true },
+  "suesses-lebkuchen-200g": { monate: [9, 10, 11, 12], nur: true },
+};
+
+export function verfuegbar(p: Produkt, monat: number): boolean {
+  const sa = SAISON[p.id];
+  return !sa?.nur || sa.monate.includes(monat);
+}
+
+export function saisonFaktor(p: Produkt, monat: number): number {
+  const sa = SAISON[p.id];
+  if (!sa || sa.nur) return 1;
+  return sa.monate.includes(monat) ? 0.8 : 1.3;
+}
+
+export function inSaison(p: Produkt, monat: number): boolean {
+  return !!SAISON[p.id]?.monate.includes(monat);
+}
+
+// ───────────────────────────────────────────────────────────── Echte Preise
+
+/**
+ * Echte Regalpreise aus zwei REWE-Kassenbons (Thüringen, 05.09. und
+ * 24.09.2026). Gelten für REWE und ersetzen dort den geschätzten Preis.
+ * Zwei Preise für dasselbe Produkt zeigen den Unterschied Angebot / regulär
+ * (Grünländer würzig: 1,69 € im Angebot, 2,69 € regulär).
+ */
+export const ECHTPREISE: { produkt: string; variante: Variante; preis: number; quelle: string }[] = [
+  { produkt: "milch-h-milch-1l", variante: "eigen", preis: 1.59, quelle: "REWE-Kassenbon 05.09.2026 (H-Milch 3,5 %)" },
+  { produkt: "obst-bananen-1kg", variante: "marke", preis: 1.99, quelle: "REWE-Kassenbon 05.09.2026 (Chiquita, 1,99 €/kg)" },
+  { produkt: "gemuese-moehren-1kg", variante: "eigen", preis: 1.49, quelle: "REWE-Kassenbon 05.09.2026 (Karotten)" },
+  { produkt: "gemuese-radieschen-200g", variante: "eigen", preis: 0.79, quelle: "REWE-Kassenbon 05.09.2026" },
+  { produkt: "gemuese-salat-200g", variante: "eigen", preis: 1.19, quelle: "REWE-Kassenbon 05.09.2026 (Wildkräutersalat)" },
+  { produkt: "eier-10er-karton", variante: "eigen", preis: 2.99, quelle: "REWE-Kassenbon 05.09.2026 (Bodenhaltung M/L)" },
+  { produkt: "milch-haferdrink-1l", variante: "marke", preis: 3.49, quelle: "REWE-Kassenbon 05.09. und 24.09.2026 (Oatly)" },
+  { produkt: "milch-haferdrink-1l", variante: "eigen", preis: 2.19, quelle: "REWE-Kassenbon 24.09.2026 (Haferdrink)" },
+  { produkt: "fisch-raeucherlachs-100g", variante: "eigen", preis: 3.99, quelle: "REWE-Kassenbon 24.09.2026" },
+  { produkt: "kaese-gouda-150g", variante: "marke", preis: 2.69, quelle: "REWE-Kassenbon 24.09.2026 (Grünländer würzig, regulär; am 05.09. im Angebot 1,69 €)" },
+  { produkt: "brot-vollkornbrot-500g", variante: "marke", preis: 2.49, quelle: "REWE-Kassenbon 05.09.2026 (Harry Körner Balance)" },
+  { produkt: "gemuese-kuerbis-hokkaido", variante: "eigen", preis: 1.69, quelle: "REWE-Kassenbon 24.09.2026 (1,69 €/kg)" },
+  { produkt: "gemuese-rote-beete-500g", variante: "eigen", preis: 0.7, quelle: "REWE-Kassenbon 24.09.2026 (1,39 €/kg)" },
+  { produkt: "gemuese-pakchoi-mini", variante: "eigen", preis: 1.19, quelle: "REWE-Kassenbon 24.09.2026" },
+  { produkt: "alkohol-federweisser-1l", variante: "eigen", preis: 2.99, quelle: "REWE-Kassenbon 24.09.2026" },
+  { produkt: "getraenke-saft-1l", variante: "eigen", preis: 1.89, quelle: "REWE-Kassenbon 24.09.2026 (Apfel-Birne-Saft)" },
+  { produkt: "fruehstueck-kakaopulver-300g", variante: "eigen", preis: 3.79, quelle: "REWE-Kassenbon 24.09.2026 (Holländischer Kakao)" },
+  { produkt: "fleisch-putenschnitzel-400g", variante: "eigen", preis: 4.89, quelle: "REWE-Kassenbon 24.09.2026 (Putenschnitzel)" },
+];
+
+export function echtpreis(p: Produkt, v: Variante, m: Markt): { preis: number; quelle: string } | null {
+  if (m.id !== "rewe") return null;
+  const e = ECHTPREISE.find((x) => x.produkt === p.id && x.variante === v);
+  return e ? { preis: e.preis, quelle: e.quelle } : null;
 }
 
 /** Einfacher, im Code eigener Zufall (mulberry32) — für stabile Wochenangebote. */
@@ -136,7 +227,9 @@ export type Angebot = { produkt: string; variante: Variante; rabatt: number };
 /** Wochenangebote eines Marktes (Woche = Spielwoche ab Start). */
 export function wochenangebote(markt: Markt, woche: number, seed: number): Angebot[] {
   const r = mulberry(seed * 7919 + woche * 104729 + markt.id.charCodeAt(0) * 31 + markt.id.length);
-  const kandidaten = PRODUKTE.filter((p) => imSortiment(markt, p));
+  const monat = new Date(Date.UTC(2026, 6, 1 + woche * 7)).getUTCMonth() + 1;
+  // Saisonware landet öfter im Prospekt
+  const kandidaten = PRODUKTE.filter((p) => imSortiment(markt, p, monat)).flatMap((p) => (inSaison(p, monat) ? [p, p, p] : [p]));
   const anzahl = markt.art === "Drogerie" ? 8 : 12 + Math.floor(r() * 7);
   const gewaehlt = new Map<string, Angebot>();
   for (let i = 0; i < anzahl * 3 && gewaehlt.size < anzahl; i++) {
@@ -150,16 +243,21 @@ export function wochenangebote(markt: Markt, woche: number, seed: number): Angeb
 }
 
 /** Regalpreis in einem Markt (ohne Angebot), inflationsbereinigt. */
-export function regalpreis(p: Produkt, v: Variante, m: Markt, preisindex: number): number | null {
+export function regalpreis(p: Produkt, v: Variante, m: Markt, preisindex: number, monat?: number): number | null {
+  const echt = echtpreis(p, v, m);
+  const saison = monat !== undefined ? saisonFaktor(p, monat) : 1;
+  // Echte Preise stammen aus dem September — Saisonware dann mit dem Faktor gegenüber dieser Zeit
+  if (echt) return Math.round(echt.preis * preisindex * (SAISON[p.id] ? saison / saisonFaktor(p, 9) : 1) * 100) / 100;
   const basis = v === "eigen" ? p.eigen : v === "marke" ? p.marke?.preis ?? null : p.bio;
   if (basis == null) return null;
+  if (saison !== 1) return Math.round(basis * m.faktor[v] * preisindex * saison * 100) / 100;
   const drogerie = !KATEGORIEN[p.kategorie].food;
   const f = (drogerie ? m.faktor.drogerie : 1) * m.faktor[v];
   return Math.round(basis * f * preisindex * 100) / 100;
 }
 
-export function preis(p: Produkt, v: Variante, m: Markt, preisindex: number, angebote: Angebot[]): { preis: number; alt: number | null; angebot: boolean } | null {
-  const r = regalpreis(p, v, m, preisindex);
+export function preis(p: Produkt, v: Variante, m: Markt, preisindex: number, angebote: Angebot[], monat?: number): { preis: number; alt: number | null; angebot: boolean } | null {
+  const r = regalpreis(p, v, m, preisindex, monat);
   if (r == null) return null;
   const a = angebote.find((x) => x.produkt === p.id && x.variante === v);
   if (!a) return { preis: glatt(r), alt: null, angebot: false };

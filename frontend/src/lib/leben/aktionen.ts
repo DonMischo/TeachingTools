@@ -6,7 +6,7 @@
 import { BERUF, type Beruf } from "./berufe";
 import { einraeumen } from "./ernaehrung";
 import { alter, begrenzen, brief, buchen, ganz, kannZahlen, klon, log, MOEBEL_DEF, r2, uid, zufall, zwischen, de } from "./kern";
-import { MARKT, PRODUKT, preis, preisindexFuer, wochenangebote, type Variante } from "./laden";
+import { MARKT, PRODUKT, preis, preisindexFuer, verfuegbar, wochenangebote, type Variante } from "./laden";
 import { arbeitHeute, fernVonErfurt, imAusland, vergehe, vorauswahl, werktagAb, type Ergebnis } from "./motor";
 import { berechneBescheid, type Angaben } from "./steuer";
 import type { JobStand, Spielstand, Wohnung } from "./typen";
@@ -61,7 +61,8 @@ export function einkaufen(alt: Spielstand, marktId: string, korb: Korbposten[], 
     const p = PRODUKT.get(k.produkt);
     if (!p || k.anzahl <= 0) continue;
     if (p.ab > alter(s)) return { stand: alt, fehler: `${p.name}: an der Kasse wird dein Ausweis kontrolliert — erst ab ${p.ab}.` };
-    const pr = preis(p, k.variante, m, pi, angebote);
+    if (!verfuegbar(p, monatVon(s.tag))) return { stand: alt, fehler: `${p.name} gibt es gerade nicht (Saisonware).` };
+    const pr = preis(p, k.variante, m, pi, angebote, monatVon(s.tag));
     if (!pr) continue;
     summe += pr.preis * k.anzahl;
   }

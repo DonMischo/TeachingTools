@@ -4,7 +4,7 @@
  * maßstäbliche Kästen mit Emoji, die Figur steht da, wo sie gerade etwas tut.
  * Unordnung wird sichtbar, nachts wird es dunkel (außer es gibt Licht).
  */
-import { useMemo } from "react";
+import { useMemo, useRef, useState, type PointerEvent } from "react";
 import { effekt, MOEBEL_DEF } from "@/lib/leben/kern";
 import type { Spielstand } from "@/lib/leben/typen";
 
@@ -80,6 +80,12 @@ function stellen(s: Spielstand, raeume: Raum[]): { gestellt: Gestellt[]; kisten:
     const d = MOEBEL_DEF.get(m.id);
     if (!d) continue;
     if (d.masse.b === 0 || d.masse.t === 0) { kisten.push(d.icon); continue; }
+    // Vom Spieler verschoben: feste Position (gedreht = Breite und Tiefe tauschen)
+    if (m.x !== undefined && m.y !== undefined) {
+      const b = m.gedreht ? d.masse.t : d.masse.b, tt = m.gedreht ? d.masse.b : d.masse.t;
+      gestellt.push({ uid: m.uid, id: m.id, x: m.x, y: m.y, b, t: tt, icon: d.icon, name: d.name, defekt: m.defekt });
+      continue;
+    }
     const ziele = (RAUM_FUER[d.raum] ?? ["wohnen"]).map((id) => raeume.find((r) => r.id === id)).filter((r): r is Raum => !!r);
     let platziert = false;
     for (const r of ziele) {
@@ -109,7 +115,19 @@ const ELTERN_MOEBEL: Gestellt[] = [
   { uid: -8, id: "e-wm", x: 760, y: 214, b: 60, t: 60, icon: "🫧", name: "Waschmaschine", defekt: false },
 ];
 
-export function Wohnungsbild({ s, platz }: { s: Spielstand; platz: Platz }) {
+export function Wohnungsbild({ s, platz, onVerschieben }: {
+  s: Spielstand; platz: Platz;
+  /** Möbel verschieben (x, y in cm) oder drehen. */
+  onVerschieben?: (uid: number, x: number, y: number, drehen?: boolean) => void;
+}) {
+  const svg = useRef<SVGSVGElement>(null);
+  const [zug, setZug] = useState<{ uid: number; dx: number; dy: number; x: number; y: number } | null>(null);
+  const punkt = (e: PointerEvent) => {
+    const m = svg.current?.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  };
   const raeume = useMemo(() => grundriss(s), [s.wohnung.id, s.wohnung.qm, s.wohnung.form, s.wohnung.zimmer, s.wohnung.ebk]); // eslint-disable-line react-hooks/exhaustive-deps
   const { gestellt, kisten } = useMemo(() => {
     const r = stellen(s, raeume);
@@ -152,7 +170,10 @@ export function Wohnungsbild({ s, platz }: { s: Spielstand; platz: Platz }) {
 
   return (
     <div className="relative h-full w-full">
-      <svg viewBox={`-40 -40 ${breite + 80} ${tiefe + 80}`} className="h-full w-full" role="img" aria-label={`Grundriss: ${s.wohnung.titel}`}>
+      <svg ref={svg} viewBox={`-40 -40 ${breite + 80} ${tiefe + 80}`} className="h-full w-full touch-none" role="img" aria-label={`Grundriss: ${s.wohnung.titel}`}
+        onPointerMove={(e) => { if (!zug) return; const p = punkt(e); setZug({ ...zug, x: p.x - zug.dx, y: p.y - zug.dy }); }}
+        onPointerUp={() => { if (zug && onVerschieben) onVerschieben(zug.uid, Math.round(zug.x), Math.round(zug.y)); setZug(null); }}
+        onPointerLeave={() => setZug(null)}>
         <defs>
           <pattern id="dielen" width="40" height="12" patternUnits="userSpaceOnUse">
             <rect width="40" height="12" fill="none" stroke="#0000001a" strokeWidth="1" />
@@ -180,14 +201,20 @@ export function Wohnungsbild({ s, platz }: { s: Spielstand; platz: Platz }) {
         })()}
         {/* Fenster */}
         <line x1={raeume[0].x + 60} y1={-2} x2={raeume[0].x + Math.min(raeume[0].b - 60, 220)} y2={-2} stroke="#7dd3fc" strokeWidth={12} />
-        {gestellt.map((g) => (
-          <g key={g.uid}>
-            <title>{g.name}{g.defekt ? " (defekt)" : ""}</title>
+        {gestellt.map((g0) => {
+          const g = zug?.uid === g0.uid ? { ...g0, x: zug.x, y: zug.y } : g0;
+          const beweglich = !!onVerschieben && g.uid > 0;
+          return (
+          <g key={g.uid} style={beweglich ? { cursor: zug?.uid === g.uid ? "grabbing" : "grab" } : undefined}
+            onPointerDown={beweglich ? (e) => { const p = punkt(e); setZug({ uid: g.uid, dx: p.x - g.x, dy: p.y - g.y, x: g.x, y: g.y }); } : undefined}
+            onDoubleClick={beweglich ? () => onVerschieben!(g.uid, g.x, g.y, true) : undefined}>
+            <title>{g.name}{g.defekt ? " (defekt)" : ""}{beweglich ? " — ziehen zum Verschieben, Doppelklick zum Drehen" : ""}</title>
             <rect x={g.x} y={g.y} width={g.b} height={g.t} rx={10} fill={g.defekt ? "#7f1d1d" : "#f8fafc"} stroke="#334155" strokeWidth={3} opacity={0.92} />
             <text x={g.x + g.b / 2} y={g.y + g.t / 2 + 14} fontSize={Math.min(44, Math.max(22, Math.min(g.b, g.t) * 0.55))} textAnchor="middle">{g.icon}</text>
             {g.defekt && <text x={g.x + g.b - 16} y={g.y + 24} fontSize={20}>⚠️</text>}
           </g>
-        ))}
+          );
+        })}
         {ohneBett && <text x={raeume[0].x + 60} y={raeume[0].y + raeume[0].t - 70} fontSize={48}>🛌</text>}
         {muell.map((m, i) => <text key={i} x={m.x} y={m.y} fontSize={26}>{m.z}</text>)}
         {ordnung < 15 && <text x={raeume[0].x + raeume[0].b / 2} y={raeume[0].y + 60} fontSize={30}>🪰</text>}

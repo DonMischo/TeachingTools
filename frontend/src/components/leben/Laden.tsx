@@ -8,10 +8,11 @@ import { useMemo, useState } from "react";
 import { alter } from "@/lib/leben/kern";
 import { reichweite, istEssbar } from "@/lib/leben/ernaehrung";
 import {
-  GRUNDBEDARF, imSortiment, KATEGORIEN, MAERKTE, MARKT, PRODUKT, PRODUKTE, preis, preisindexFuer, REFERENZ_WOCHE, variantenName, wochenangebote,
+  echtpreis, GRUNDBEDARF, imSortiment, inSaison, KATEGORIEN, MAERKTE, MARKT, PRODUKT, PRODUKTE, preis, preisindexFuer, REFERENZ_WOCHE, SAISON, variantenName, wochenangebote,
   type Kategorie, type Variante,
 } from "@/lib/leben/laden";
 import { spielwoche, type Korbposten } from "@/lib/leben/aktionen";
+import { monatVon } from "@/lib/leben/zeit";
 import type { Spielstand } from "@/lib/leben/typen";
 import { euro, Fenster, Hinweis, Knopf, Reiter, eingabe } from "./ui";
 
@@ -32,10 +33,11 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
   const [bar, setBar] = useState(false);
   const [recherche, setRecherche] = useState<string | null>(null);
   const pi = preisindexFuer(s);
+  const monat = monatVon(s.tag);
   const angebote = useMemo(() => wochenangebote(m, spielwoche(s.tag), s.seed), [m, s.tag, s.seed]);
   const gespeicherteRecherche: Recherche = useMemo(() => { try { return JSON.parse(String(s.flags.recherche ?? "{}")); } catch { return {}; } }, [s.flags.recherche]);
 
-  const imMarkt = PRODUKTE.filter((p) => imSortiment(m, p));
+  const imMarkt = PRODUKTE.filter((p) => imSortiment(m, p, monat));
   const treffer = imMarkt.filter((p) => (kat === "alle" || p.kategorie === kat)
     && (!suche.trim() || `${p.name} ${p.marke?.marke ?? ""} ${KATEGORIEN[p.kategorie].name}`.toLowerCase().includes(suche.toLowerCase())));
 
@@ -50,7 +52,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
   };
   const summe = korb.reduce((a, k) => {
     const p = PRODUKT.get(k.produkt);
-    const pr = p ? preis(p, k.variante, m, pi, angebote) : null;
+    const pr = p ? preis(p, k.variante, m, pi, angebote, monat) : null;
     return a + (pr?.preis ?? 0) * k.anzahl;
   }, 0);
   const kcal = korb.reduce((a, k) => a + (PRODUKT.get(k.produkt)?.kcal ?? 0) * k.anzahl, 0);
@@ -69,7 +71,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
 
   const produktZeile = (id: string, v: Variante) => {
     const p = PRODUKT.get(id)!;
-    const pr = preis(p, v, m, pi, angebote);
+    const pr = preis(p, v, m, pi, angebote, monat);
     if (!pr) return null;
     const imKorb = korb.find((k) => k.produkt === id && k.variante === v)?.anzahl ?? 0;
     const gesperrt = p.ab > alter(s);
@@ -82,6 +84,8 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
             {p.menge}{p.kcal > 0 ? ` · ${p.kcal} kcal` : ""}{p.obstGemuese > 0 ? ` · ${p.obstGemuese} Port. Obst/Gem.` : ""}
             {p.kochen ? " · 🔥 kochen" : ""}{p.kuehlen ? " · ❄️ kühlen" : ""}{p.haltbarTage < 8 ? ` · hält ${p.haltbarTage} Tage` : ""}
             {p.ab ? ` · ab ${p.ab}` : ""}
+            {inSaison(p, monat) ? " · 🌱 Saison" : SAISON[p.id] && !SAISON[p.id].nur ? " · außerhalb der Saison teurer" : ""}
+            {echtpreis(p, v, m) ? " · 🧾 echter Preis" : ""}
           </div>
         </div>
         <div className="text-right">
@@ -156,7 +160,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
             {REFERENZ_WOCHE.map((r) => {
               const p = PRODUKT.get(r.produkt);
               if (!p) return null;
-              const pr = imSortiment(m, p) ? preis(p, "eigen", m, pi, angebote) : null;
+              const pr = imSortiment(m, p) ? preis(p, "eigen", m, pi, angebote, monat) : null;
               return (
                 <div key={r.produkt} className="flex items-center gap-2 text-sm">
                   <span className="w-6">{KATEGORIEN[p.kategorie].icon}</span>
@@ -167,7 +171,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
             })}
           </div>
           <div className="mb-2 text-sm font-bold">
-            Richtwert pro Woche hier: {euro(REFERENZ_WOCHE.reduce((a, r) => { const p = PRODUKT.get(r.produkt); const pr = p && imSortiment(m, p) ? preis(p, "eigen", m, pi, angebote) : null; return a + (pr?.preis ?? 0) * r.menge; }, 0))}
+            Richtwert pro Woche hier: {euro(REFERENZ_WOCHE.reduce((a, r) => { const p = PRODUKT.get(r.produkt); const pr = p && imSortiment(m, p) ? preis(p, "eigen", m, pi, angebote, monat) : null; return a + (pr?.preis ?? 0) * r.menge; }, 0))}
             {" "}— im Monat etwa das 4,3-Fache.
           </div>
           <Knopf onClick={referenzKaufen}>Alles in den Wagen legen</Knopf>
@@ -208,7 +212,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
         const p = PRODUKT.get(recherche)!;
         const r = gespeicherteRecherche[recherche];
         return (
-          <RechercheDialog produkt={`${p.name} (${p.menge})`} spielpreis={preis(p, "eigen", m, pi, [])?.preis ?? 0} vorher={r}
+          <RechercheDialog produkt={`${p.name} (${p.menge})`} spielpreis={preis(p, "eigen", m, pi, [], monat)?.preis ?? 0} vorher={r}
             onZu={() => setRecherche(null)} onSpeichern={(preisEcht, quelle) => { onRecherche(recherche, preisEcht, quelle); setRecherche(null); }} />
         );
       })()}

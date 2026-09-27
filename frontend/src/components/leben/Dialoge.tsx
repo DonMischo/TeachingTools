@@ -5,7 +5,7 @@ import { EREIGNIS, waehle } from "@/lib/leben/ereignisse";
 import { wochenfazit } from "@/lib/leben/ernaehrung";
 import { alter } from "@/lib/leben/kern";
 import { MAERKTE } from "@/lib/leben/laden";
-import { arbeitHeute, type Ergebnis } from "@/lib/leben/motor";
+import { arbeitHeute, imAusland, minijob, type Ergebnis } from "@/lib/leben/motor";
 import { BERUF } from "@/lib/leben/berufe";
 import type { Kategorie, Monatsbilanz, Spielstand } from "@/lib/leben/typen";
 import { kurzDatum, uhrText, wochentag } from "@/lib/leben/zeit";
@@ -52,7 +52,7 @@ export function MonatsbilanzDialog({ s, b, onZu }: { s: Spielstand; b: Monatsbil
   );
 }
 
-export type Ziel = "arbeit" | "laden" | "moebel" | "ausgehen" | "amt" | "arzt" | "eltern" | "sport" | "studio" | "termin";
+export type Ziel = "arbeit" | "laden" | "moebel" | "ausgehen" | "amt" | "arzt" | "eltern" | "sport" | "studio" | "termin" | "stil" | "friseur" | "minijob";
 
 export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZiel: (z: Ziel, markt?: string) => void; onZu: () => void; onSchwarz: (an: boolean) => void }) {
   const [laden, setLaden] = useState(false);
@@ -61,6 +61,8 @@ export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZ
   const termin = s.bewerbungen.find((b) => (b.status === "test" || b.status === "gespraech") && b.naechsterTag === s.tag);
   const ticket = s.vertraege.some((v) => v.art === "ticket" && (v.gekuendigtZum === undefined || s.tag <= v.gekuendigtZum));
   const sonntag = wochentag(s.tag) === 6;
+  const ausland = imAusland(s);
+  const mj = minijob(s);
   const eintrag = (z: Ziel, icon: string, titel: string, text: string, aus = false) => (
     <button key={z} type="button" disabled={aus} onClick={() => (z === "laden" ? setLaden(true) : onZiel(z))}
       className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-left hover:bg-amber-500/20 disabled:opacity-40">
@@ -73,7 +75,7 @@ export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZ
         <div className="grid gap-2 sm:grid-cols-2">
           {job.muss && !job.erledigt && eintrag("arbeit", job.schule ? "🏫" : "💼", job.schule ? "Zur Berufsschule" : "Zur Arbeit", `Beginn ${uhrText(job.beginn)} · ${beruf?.name ?? ""}`)}
           {termin && eintrag("termin", "🤝", "Zum Bewerbungstermin", `${termin.betrieb}, 10:00 Uhr`)}
-          {eintrag("laden", "🛒", "Einkaufen", sonntag ? "Sonntag — alles zu" : "Supermarkt, Discounter, Drogerie", sonntag)}
+          {eintrag("laden", "🛒", "Einkaufen", ausland ? "Essen gibt es in der Gastfamilie/Unterkunft" : sonntag ? "Sonntag — alles zu" : s.wohnung.stadtteil === "Sylt" ? "Inselpreise: alles ~25 % teurer" : "Supermarkt, Discounter, Drogerie", sonntag || ausland)}
           {eintrag("moebel", "🛋️", "Möbel & Elektro", "Möbelhaus, Elektromarkt, Kleinanzeigen-Abholung", sonntag)}
           {eintrag("ausgehen", "🎉", "Ausgehen", "Kneipe, Club, Kino, Döner, Freunde …")}
           {eintrag("eltern", "👪", "Eltern besuchen", "Essen, Gesellschaft, Wäsche waschen", s.wohnung.form === "eltern")}
@@ -81,6 +83,9 @@ export function WohinDialog({ s, onZiel, onZu, onSchwarz }: { s: Spielstand; onZ
           {eintrag("amt", "🏛️", "Zum Amt", "Bürgeramt, Agentur für Arbeit (mit Termin)")}
           {eintrag("sport", "🏃", "Joggen", "Nordpark, kostenlos")}
           {eintrag("studio", "🏋️", "Fitnessstudio", "nur mit Vertrag", !s.vertraege.some((v) => v.art === "fitness"))}
+          {eintrag("stil", "👕", "Kleidung & Handy", ausland ? "im Ausland: später" : "Modeketten, Second-Hand, Elektromarkt", sonntag || ausland)}
+          {eintrag("friseur", "💇", "Zum Friseur", `Frisur ${Math.round(s.frisur)} %`, sonntag)}
+          {mj && wochentag(s.tag) === 5 && s.flags.minijobHeute !== s.tag && eintrag("minijob", "🧾", `Minijob: ${mj.name}`, `heute ab ${mj.beginn} Uhr`, s.stunde > mj.beginn + 1)}
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">

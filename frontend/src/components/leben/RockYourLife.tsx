@@ -11,7 +11,7 @@ import { arztBesuch, ausgehen, einkaufen, elternBesuchen, moebelKaufenGebraucht,
 import { BERUF } from "@/lib/leben/berufe";
 import { alter, klon, log } from "@/lib/leben/kern";
 import {
-  arbeiten, arbeitHeute, duschen, freizeit, mahlzeit, neuesSpiel, putzen, routine, schlafen, waschen,
+  arbeiten, arbeitHeute, duschen, freizeit, mahlzeit, minijob, minijobArbeiten, neuesSpiel, putzen, routine, schlafen, waschen,
   type Ergebnis, type Freizeit, type StartOptionen,
 } from "@/lib/leben/motor";
 import { herunterladen, hochladen, lokalLaden, lokalSpeichern, zusammenfassung } from "@/lib/leben/speichern";
@@ -30,19 +30,21 @@ import { SteuerApp } from "./SteuerApp";
 import { AmtApp, VertraegeApp } from "./VertraegeAmt";
 import { RechercheApp, WohnungApp } from "./WohnungApp";
 import { Wohnungsbild, type Platz } from "./Wohnungsbild";
+import { Checkliste } from "./Checkliste";
+import { MobilApp, Stil } from "./Stil";
 import { Balken, euro, Fenster, Knopf } from "./ui";
 
 export type LebenZugang = { code: string; token: string | null } | null;
 
-type App = "bank" | "post" | "ordner" | "vertraege" | "amt" | "steuer" | "jobs" | "wohnen" | "recherche" | "tagebuch";
+type App = "bank" | "post" | "ordner" | "vertraege" | "amt" | "steuer" | "jobs" | "wohnen" | "recherche" | "tagebuch" | "mobil";
 const APPS: { id: App; icon: string; name: string }[] = [
   { id: "jobs", icon: "💼", name: "Jobs" }, { id: "bank", icon: "🏦", name: "Bank" }, { id: "post", icon: "📬", name: "Post" },
   { id: "ordner", icon: "🗂️", name: "Ordner" }, { id: "wohnen", icon: "🏠", name: "Wohnen" }, { id: "vertraege", icon: "📄", name: "Verträge" },
   { id: "amt", icon: "🏛️", name: "Amt" }, { id: "steuer", icon: "🧮", name: "Steuer" }, { id: "recherche", icon: "🔎", name: "Recherche" },
-  { id: "tagebuch", icon: "📓", name: "Tagebuch" },
+  { id: "mobil", icon: "🚗", name: "Mobil" }, { id: "tagebuch", icon: "📓", name: "Tagebuch" },
 ];
 
-type Modal = null | { art: "wohin" } | { art: "laden"; markt: string } | { art: "moebel" } | { art: "ausgehen" } | { art: "app"; app: App } | { art: "lehrer" };
+type Modal = null | { art: "wohin" } | { art: "laden"; markt: string } | { art: "moebel" } | { art: "ausgehen" } | { art: "app"; app: App } | { art: "lehrer" } | { art: "stil"; start: "kleidung" | "friseur" | "handy" };
 
 export default function RockYourLife({ speicherSchluessel = "geraet", zugang = null, lehrkraft = false, name, action }: {
   speicherSchluessel?: string; zugang?: LebenZugang; lehrkraft?: boolean; name?: string; action?: ReactNode;
@@ -165,11 +167,21 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
       case "eltern": setModal(null); tu((x) => elternBesuchen(x, true), "tuer"); break;
       case "sport": setModal(null); tu((x) => sportDraussen(x, false), "tuer"); break;
       case "studio": setModal(null); tu((x) => sportDraussen(x, true), "tuer"); break;
+      case "stil": setModal({ art: "stil", start: "kleidung" }); break;
+      case "friseur": setModal({ art: "stil", start: "friseur" }); break;
+      case "minijob": setModal(null); tu(minijobArbeiten, "tuer"); break;
     }
   };
 
+  const checklisteZiel = (z: string) => {
+    if (z === "stil") setModal({ art: "stil", start: "kleidung" });
+    else if (z === "moebel") setModal({ art: "moebel" });
+    else if (z === "laden") setModal({ art: "wohin" });
+    else setModal({ art: "app", app: z as App });
+  };
+
   const aktion = (icon: string, text: string, f: (x: Spielstand) => Ergebnis, p: Platz, title?: string) => (
-    <button type="button" title={title ?? text} onClick={() => tu(f, p)}
+    <button key={text} type="button" title={title ?? text} onClick={() => tu(f, p)}
       className="flex min-w-[4.5rem] flex-col items-center gap-0.5 rounded-xl bg-slate-800 px-2 py-1.5 text-xs font-bold text-white shadow ring-1 ring-white/10 hover:bg-slate-700">
       <span className="text-xl">{icon}</span>{text}
     </button>
@@ -205,8 +217,21 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             <Balken icon="❤️" label="Gesundheit" wert={b.gesundheit} />
             <Balken icon="🧹" label="Ordnung" wert={b.ordnung} />
           </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs text-slate-300">
+            <button type="button" className="flex items-center gap-1.5 hover:text-white" onClick={() => setModal({ art: "stil", start: "kleidung" })} title="Kleidung (schlechtestes Teil)">
+              👕 <Mini wert={Math.min(s.kleidung.alltag.zustand, s.kleidung.unterwaesche.zustand, s.kleidung.schuhe.zustand)} /></button>
+            <button type="button" className="flex items-center gap-1.5 hover:text-white" onClick={() => setModal({ art: "stil", start: "friseur" })} title="Frisur">💇 <Mini wert={s.frisur} /></button>
+            <button type="button" className="flex items-center gap-1.5 hover:text-white" onClick={() => setModal({ art: "stil", start: "handy" })} title={`Handy: ${s.handy.modell}`}>📱 <Mini wert={s.handy.zustand} /></button>
+            {s.auto && <span title={s.auto.modell}>🚗 {Math.round(s.auto.zustand)} %</span>}
+            {s.wohnung.form === "unterkunft" && <span>📍 {s.wohnung.titel}</span>}
+            {minijob(s) && <span>🧾 Minijob samstags</span>}
+          </div>
           <div className="relative h-[32vh] min-h-[220px] overflow-hidden rounded-xl bg-slate-800 sm:h-[46vh] sm:min-h-[300px]">
-            <Wohnungsbild s={s} platz={platz} />
+            <Wohnungsbild s={s} platz={platz} onVerschieben={(uid, x, y, drehen) => tu((alt) => {
+              const neu = klon(alt); const m = neu.moebel.find((q) => q.uid === uid);
+              if (m) { if (drehen) m.gedreht = !m.gedreht; else { m.x = x; m.y = y; } }
+              return { stand: neu };
+            })} />
             <div className="pointer-events-none absolute right-2 top-2 flex max-w-[70%] flex-col items-end gap-1">
               {meldungen.map((m) => (
                 <div key={m.id} className={`rounded-xl px-3 py-2 text-sm font-bold shadow-lg ${m.fehler ? "bg-rose-600 text-white" : "bg-slate-900/90 text-white ring-1 ring-white/15"}`}>{m.text}</div>
@@ -243,6 +268,10 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
         <div className="w-full shrink-0 rounded-[2rem] bg-black p-2 ring-4 ring-slate-700 lg:w-72">
           <div className="rounded-[1.6rem] bg-gradient-to-b from-indigo-900 to-slate-900 p-3">
             <div className="mb-2 flex justify-between text-xs text-slate-300"><span>{uhrText(s.stunde)}</span><span>📶 🔋</span></div>
+            <div className="mb-3 rounded-xl bg-black/30 p-2">
+              <div className="mb-1 text-xs font-black text-white">📋 Nächste Schritte</div>
+              <Checkliste s={s} onZiel={checklisteZiel} />
+            </div>
             <div className="grid grid-cols-4 gap-2 lg:grid-cols-3">
               {APPS.map((a) => (
                 <button key={a.id} type="button" onClick={() => setModal({ art: "app", app: a.id })} className="relative flex flex-col items-center gap-0.5 text-[11px] text-white">
@@ -295,9 +324,16 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
           {modal.app === "wohnen" && <WohnungApp s={s} tu={tu} />}
           {modal.app === "recherche" && <RechercheApp s={s} tu={tu} />}
           {modal.app === "tagebuch" && <Tagebuch s={s} />}
+          {modal.app === "mobil" && <MobilApp s={s} tu={tu} />}
         </Fenster>
       )}
       {modal?.art === "lehrer" && zugang?.code && <LehrerUebersicht code={zugang.code} onZu={zu} />}
+      {modal?.art === "stil" && <Stil s={s} tu={tu} onZu={zu} start={modal.start} />}
     </div>
   );
+}
+
+function Mini({ wert }: { wert: number }) {
+  const f = wert > 60 ? "bg-emerald-500" : wert > 25 ? "bg-amber-400" : "bg-rose-500";
+  return <span className="inline-block h-2 w-12 overflow-hidden rounded-full bg-white/10"><span className={`block h-full ${f}`} style={{ width: `${Math.max(4, wert)}%` }} /></span>;
 }

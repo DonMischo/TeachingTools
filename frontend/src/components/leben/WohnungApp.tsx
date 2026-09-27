@@ -1,7 +1,7 @@
 "use client";
 /** Wohnungssuche in Erfurt: Anzeigen der Woche, Besichtigung, Mietvertrag, Umzug — und das Recherche-Heft. */
 import { useMemo, useState } from "react";
-import { einziehen, ersatzschluessel, schufaAuskunft, wohnungBewerben, wohnungsanzeigen, zurueckZuDenEltern, zusage } from "@/lib/leben/aktionen";
+import { einziehen, ersatzschluessel, nachsendeauftrag, schufaAuskunft, wohnungBewerben, wohnungsanzeigen, zurueckZuDenEltern, zusage } from "@/lib/leben/aktionen";
 import { BERUF } from "@/lib/leben/berufe";
 import { alter, klon, log } from "@/lib/leben/kern";
 import { monatsbrutto, type Ergebnis } from "@/lib/leben/motor";
@@ -89,6 +89,8 @@ export function WohnungApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) =
               </select>
             )}
             {w.form !== "eltern" && !s.flags.ersatzschluessel && <Knopf klein onClick={() => tu(ersatzschluessel)}>🔑 Ersatzschlüssel bei den Eltern hinterlegen (8 €)</Knopf>}
+            {!!s.flags.alteAdresse && Number(s.flags.nachsendeBis ?? -1) < s.tag && <Knopf klein onClick={() => tu(nachsendeauftrag)}>📮 Nachsendeauftrag (6 Monate, 34,90 €)</Knopf>}
+            {Number(s.flags.nachsendeBis ?? -1) >= s.tag && <span className="text-xs text-emerald-300">📮 Nachsendeauftrag läuft bis {kurzDatum(Number(s.flags.nachsendeBis))}</span>}
             {w.form !== "eltern" && <Knopf klein art="leise" onClick={() => tu((x) => { const y = klon(x); y.flags.stromSparen = !x.flags.stromSparen; return { stand: y, meldung: y.flags.stromSparen ? "Stromsparen: Licht aus, kein Stand-by, Deckel auf den Topf — ca. 15 % weniger." : "Wieder normal." }; })}>{s.flags.stromSparen ? "💡 Stromsparen an" : "💡 Strom sparen"}</Knopf>}
             {w.form !== "eltern" && <Knopf klein art="leise" onClick={() => tu((x) => { const y = klon(x); y.flags.heizenSparsam = !x.flags.heizenSparsam; delete y.flags.lueftenFalsch; return { stand: y, meldung: y.flags.heizenSparsam ? "20 °C tagsüber, 17 °C nachts, Stoßlüften: spart Heizkosten und verhindert Schimmel." : "Heizung wieder normal." }; })}>{s.flags.heizenSparsam ? "🌡️ sparsam heizen an" : "🌡️ sparsam heizen"}</Knopf>}
             {w.form !== "eltern" && <Knopf klein art="gefahr" onClick={() => { if (confirm("Wirklich zurück zu den Eltern? Die Wohnung wird gekündigt (3 Monate Frist).")) tu(zurueckZuDenEltern); }}>Zurück zu den Eltern</Knopf>}

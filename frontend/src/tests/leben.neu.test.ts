@@ -159,3 +159,23 @@ describe("Kleidung, Minijob, Führerschein, Wohngeld", () => {
     expect(wohngeldFormel(400, 2400, true).betrag).toBe(0);
   });
 });
+
+describe("Supermarkt: Saison und echte Preise", () => {
+  it("Erdbeeren sind im Juni billiger als im Dezember; Kürbis gibt es nur im Herbst", async () => {
+    const { PRODUKT, MARKT, preis, imSortiment } = await import("@/lib/leben/laden");
+    const erdbeere = PRODUKT.get("obst-erdbeeren-500g")!;
+    const lidl = MARKT.get("lidl")!;
+    expect(preis(erdbeere, "eigen", lidl, 1, [], 6)!.preis).toBeLessThan(preis(erdbeere, "eigen", lidl, 1, [], 12)!.preis);
+    const kuerbis = PRODUKT.get("gemuese-kuerbis-hokkaido")!;
+    expect(imSortiment(lidl, kuerbis, 5)).toBe(false);
+    expect(imSortiment(lidl, kuerbis, 10)).toBe(true);
+  });
+
+  it("REWE nutzt die Preise aus den echten Kassenbons", async () => {
+    const { PRODUKT, MARKT, preis } = await import("@/lib/leben/laden");
+    const milch = PRODUKT.get("milch-h-milch-1l")!;
+    expect(preis(milch, "eigen", MARKT.get("rewe")!, 1, [], 9)!.preis).toBeCloseTo(1.59, 1);
+    const kaese = PRODUKT.get("kaese-gouda-150g")!;
+    expect(kaese.marke?.marke).toBe("Grünländer");
+  });
+});
