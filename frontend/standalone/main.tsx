@@ -19,6 +19,7 @@ import Funktionen from "@/components/simulationen/Funktionen";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
+import Kueste from "@/components/kueste/Kueste";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -32,6 +33,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.
   { id: "leben", icon: "🎸", label: "Rock your Life", node: <RockYourLife speicherSchluessel="standalone" /> },
+  { id: "kueste", icon: "🌊", label: "Küstendynamik", node: <Kueste /> },
 ];
 
 function App() {

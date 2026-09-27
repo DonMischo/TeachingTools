@@ -193,6 +193,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
     ],
   },
+  kueste: {
+    title: "Küstendynamik",
+    intro: "Wie Wellen, Strömung, Wind und Gezeiten die Küste formen — und wie Menschen sie schützen. Ein Schulmodell mit echten Größenordnungen (Tidenhub, Deichmaße, Sandmengen von Sylt), rechnet ganz im Browser.",
+    sections: [
+      { label: "🏖️ Querschnitt", text: "Drei Küsten im Profil: Flachküste nach dem Vorbild Sylt (Sandriff, Strand, Düne), Steilküste nach dem Vorbild Kap Arkona (Kliff, Hohlkehle, Kliffhalde, Blockstrand, Abrasionsplattform) und Marsch mit altem Deich (Watt, Priel, Salzwiese, Koog). Die Wellen laufen sichtbar heran, brechen am Riff (Brecherzone), rollen weiter (Rollerzone) und laufen im Spülsaum aus." },
+      { label: "🌦️ Wetter und Zeitraffer", text: "Wind von Hand (0–12 Bft, auf- oder ablandig, Regen, Frost) oder »Jahreslauf« mit Winterstürmen und zufälligen Sturmfluten. Zeitraffer von 1 Minute bis 1 Jahr je Sekunde; ab einer Woche je Sekunde wird statt der flimmernden Tide der Bereich zwischen MNW und MHW gezeigt. »Sturmflut« und »Schwere Sturmflut« drücken das Wasser 30 Stunden lang hoch." },
+      { label: "💧 Was das Modell zeigt", text: "Sturm trägt Sand vom Strand ins Riff, ruhiges Wetter bringt ihn zurück, der Küstenlängsstrom nimmt einen Teil für immer mit. Wind weht Sand in die Düne, Strandhafer hält ihn fest. Am Kliff wächst die Hohlkehle, Frost und Regen lockern die Wand, dann bricht sie ab. Läuft Wasser über einen alten, innen steilen Deich, spült es die Binnenböschung aus — Deichbruch wie 1962." },
+      { label: "🏗️ Küstenschutz", text: "Sandaufspülung am Strand oder als Riff, Strandhafer und Sandfangzäune, Deckwerk/Tetrapoden, Deichverstärkung (1:6 außen, 1:3 innen, 8,5 m), Lahnungen, Häuser zurückverlegen, Kliffweg sperren. Jede Maßnahme zeigt Vor- und Nachteile und kostet (grobe Richtwerte für 1 km Küste); Schäden werden mitgezählt." },
+      { label: "🏷️ Begriffe und Quiz", text: "»Begriffe« beschriftet das Profil wie im Schulbuch — die Schilder wandern mit, wenn das Kliff zurückweicht. Antippen erklärt einen Begriff. Das »Beschriften-Quiz« fragt nach einem Begriff, man tippt die Stelle im Bild an." },
+      { label: "🧭 Draufsicht", text: "2 km Ostseeküste von oben: links ein Kliff als Sandquelle, rechts eine Bucht. Schräge Wellen treiben die Sandkörner im Zickzack den Strand entlang (Strandversetzung), am Ende wächst ein Haken. Buhnen, Deckwerk und Aufspülung per Klick setzen: Luv-Anlandung und Lee-Erosion, und ein gepanzertes Kliff lässt die Strände dahinter hungern." },
+      { label: "🌙 Gezeiten", text: "Erde und Mond von oben mit den zwei Flutbergen, Spring- und Nipptide, die Pegelkurve für Orte an Nord- und Ostsee mit Tidenkalender (jeden Tag etwa 50 Minuten später) und ein Watt-Querschnitt, in dem die Flut zuerst durch den Priel kommt." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet). Jede Schülerin und jeder Schüler hat eine eigene Küste." },
+    ],
+  },
   leben: {
     title: "Rock your Life",
     intro: "Lebenssimulation: Die 10. Klasse ist vorbei, jetzt beginnen fünf Jahre (Juli 2026 bis Juni 2031) in Erfurt. Bewerben, Ausbildung oder Job, bei den Eltern bleiben oder ausziehen, einrichten, einkaufen, Verträge, Versicherungen, Anträge, Steuererklärung — und am Monatsende sehen, was übrig bleibt und was der Staat genommen hat. Zahlen für 2026 sind recherchiert, spätere Jahre als Annahme fortgeschrieben.",

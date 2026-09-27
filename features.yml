@@ -206,6 +206,20 @@ simulationen:
       - Recherche-Heft und Recherche-Preise im Laden (echte Werte mit Quelle eintragen und vergleichen)
       - Spielstand im Browser und als JSON zum Herunter-/Hochladen (auch für Gäste)
       - Klassenübersicht für die Lehrkraft mit Stand je Person und Protokoll als CSV
+  - id: kueste
+    name: Küstendynamik
+    kann:
+      - Querschnitt durch drei Küsten: Flachküste (Vorbild Sylt), Steilküste (Vorbild Kap Arkona), Marsch mit altem Deich
+      - Laufende Wellen mit Brecherzone am Sandriff, Rollerzone und Spülsaum; Gezeiten, Windstau und Sturmfluten
+      - Erosion im Zeitraffer bis 1 Jahr/s: Sturm trägt Sand ins Riff, ruhiges Wetter baut den Strand auf, der Längsstrom nimmt Sand mit, Wind baut Dünen
+      - Kliff mit Brandungshohlkehle, Frost/Regen-Verwitterung, Abbruch, Kliffhalde, Blockstrand, Abrasionsplattform
+      - Deichüberlauf und Deichbruch (alter, innen steiler Deich), Überflutung des Koogs
+      - Küstenschutz mit Kosten, Vor- und Nachteilen: Sand- und Riffaufspülung, Strandhafer/Sandfangzäune, Deckwerk/Tetrapoden, Klimadeich, Lahnungen, Zurückweichen, Kliffweg sperren
+      - Wetter von Hand oder im Jahreslauf; Meldungen, Sandbilanz, Schäden
+      - Mitwandernde Profilbeschriftung wie im Schulbuch und Beschriften-Quiz
+      - Draufsicht: Küstenlängsstrom mit Strandversetzung, Buhnen (Luv/Lee), Deckwerk am Kliff, Aufspülung, wachsender Haken
+      - Gezeiten: Erde/Mond mit Flutbergen, Spring- und Nipptide, Pegelkurve und Tidenkalender für Nord- und Ostseeorte, Watt mit Priel
+      - Wissensteil mit Quellen
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

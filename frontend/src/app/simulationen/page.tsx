@@ -73,6 +73,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#e11d48",
   },
   {
+    slug: "kueste",
+    href: "/simulationen/kueste",
+    icon: "🌊",
+    title: "Küstendynamik",
+    description: "Steilküste, Flachküste und Deich im Querschnitt: Wellen, Sturmfluten, Kliffabbrüche und Küstenschutz im Zeitraffer. Dazu der Küstenlängsstrom mit Buhnen und Haken und die Gezeiten.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "verkehr",
     href: "/simulationen/verkehr",
     icon: "🚦",

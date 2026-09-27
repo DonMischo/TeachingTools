@@ -27,6 +27,7 @@ import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
 import Verkehr from "@/components/verkehr/Verkehr";
 import RockYourLife from "@/components/leben/RockYourLife";
+import Kueste from "@/components/kueste/Kueste";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -40,6 +41,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
+  kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
