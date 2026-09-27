@@ -106,6 +106,23 @@ describe("Steilküste im Zellmodell", () => {
     expect(d.saettigung).toBeLessThanOrEqual(0.45);
   });
 
+  it("auf der Kliffhalde reichert sich Feuerstein an, wenn das Feine ausgespült wird", () => {
+    const k = neuesKliff("kreide");
+    const anteil = () => {
+      let block = 0, schutt = 0;
+      const kante = spalteVon(k, kliffKante(k));
+      for (let r = zeileVon(k, -1); r < zeileVon(k, 8); r++) for (let c = kante - Math.round(15 / k.dx); c < kante + 4; c++) {
+        const m = k.mat[r * k.nx + c];
+        if (m === MAT.BLOCK) block++; else if (m === MAT.SCHUTT) schutt++;
+      }
+      return block / Math.max(1, block + schutt);
+    };
+    const vorher = anteil();
+    k.risse = 0;
+    lauf(k, { bft: 6, auflandig: true, regen: true, frost: false }, 8766, 6);
+    expect(anteil()).toBeGreaterThan(vorher * 1.5);
+  });
+
   it("Schutt rieselt bis zum Schüttwinkel ab", () => {
     const k = neuesKliff("kreide");
     // Eine Säule aus Schutt mitten in die Luft über der Plattform stellen
@@ -135,9 +152,27 @@ describe("Bäume an der Kante", () => {
     expect(t.fall).toBeUndefined();
     expect(t.liegt || t.weg).toBe(true);
     if (!t.weg) {
+      // unten am Fuß, nahe dem Meeresspiegel — nicht mitten am Hang hängen geblieben
       expect(zVon(k, t.r)).toBeLessThan(oben - 20);
+      expect(zVon(k, t.r)).toBeLessThan(6);
       expect(t.neigung).toBeGreaterThan(0); // Krone zum Meer
     }
+  });
+
+  it("wird der Schutt unter einem liegenden Stamm weggespült, fällt er weiter", () => {
+    const k = neuesKliff("kreide");
+    const t = k.baeume[0];
+    // Stamm auf einem Schuttsockel in 4 m Höhe vor der Wand
+    const c = spalteVon(k, 50);
+    for (let r = 0; r <= zeileVon(k, 4); r++) { k.mat[r * k.nx + c] = MAT.SCHUTT; k.herk[r * k.nx + c] = MAT.KREIDE; }
+    t.c = c; t.r = zeileVon(k, 4); t.liegt = true; t.tot = k.stunde; t.neigung = 1.4;
+    // Sockel weg (Brandung), ohne dass Schutt nachrutscht
+    for (let r = zeileVon(k, 0.5); r <= zeileVon(k, 4); r++) k.mat[r * k.nx + c] = MAT.LUFT;
+    k.version++;
+    kSchritt(k, RUHE, 1);
+    expect(t.fall).toBeDefined();
+    abschliessen(k);
+    expect(t.weg || zVon(k, t.r) < 1.5).toBe(true);
   });
 
   it("umgestürzte Bäume verrotten nach einigen Jahren", () => {

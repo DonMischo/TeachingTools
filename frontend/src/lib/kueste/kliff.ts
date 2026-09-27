@@ -564,6 +564,14 @@ function blockHaerte(k: Kliff, i: number) {
   return h === MAT.FEUER || h === MAT.KREIDE ? 0.8 : 12;
 }
 
+/**
+ * Anteil grober Steine im Schutt, der beim Ausspülen liegen bleibt:
+ * Feuersteinknollen aus der Kreide, Findlinge aus dem Geschiebemergel.
+ */
+const FEUER_IM_SCHUTT: Partial<Record<number, number>> = {
+  [MAT.FEUER]: 0.25, [MAT.KREIDE]: 0.03, [MAT.MERGEL]: 0.04, [MAT.LEHM]: 0.03, [MAT.LIMONIT]: 0.06,
+};
+
 function abtragen(k: Kliff, i: number, zuSchutt: boolean) {
   const m = k.mat[i];
   if (m === MAT.LUFT || m === MAT.DECKWERK) return;
@@ -582,6 +590,11 @@ function abtragen(k: Kliff, i: number, zuSchutt: boolean) {
     k.herk[i] = herk;
   } else if (m !== MAT.SCHUTT && zufall(k) < info.block) {
     k.mat[i] = MAT.BLOCK; k.herk[i] = herk;
+  } else if (m === MAT.SCHUTT && zufall(k) < (FEUER_IM_SCHUTT[herk] ?? 0)) {
+    // Das Feine wird ausgespült, die Feuersteinknolle (bzw. der Findling) bleibt
+    // liegen — so reichert sich die Kliffhalde oben mit Feuerstein an.
+    k.mat[i] = MAT.BLOCK; k.herk[i] = herk;
+    k.bilanz.weggespuelt += k.dx * k.dx * 0.8;
   } else {
     k.mat[i] = MAT.LUFT;
     k.bilanz.weggespuelt += k.dx * k.dx;
@@ -976,7 +989,21 @@ function baeumeBewegen(k: Kliff, dt: number) {
       t.neigung = Math.min(1.65, t.neigung + f.om * h);
       if (f.x < 0 || f.z < k.z0) { t.weg = true; t.fall = undefined; break; }
       if (fest(k, f.x, f.z - k.dx * 0.5)) {
-        // Aufgeschlagen: liegt jetzt auf dem Schutt, die Krone zum Meer
+        // Aufgeschlagen. Ist der Hang zum Meer hin steiler als etwa 35°,
+        // rutscht und rollt der Stamm weiter hinab — bis zum Strand oder ins Wasser.
+        const g = geometrie(k);
+        const c = Math.max(0, Math.min(k.nx - 1, spalteVon(k, f.x)));
+        const s = Math.max(1, Math.round(1 / k.dx));
+        const cs = c - s;
+        if (cs >= 0 && g.top[cs] >= 0 && (g.top[c] - g.top[cs]) * k.dx > 0.7 * s * k.dx) {
+          f.x = xVon(k, cs);
+          f.z = zVon(k, g.top[cs]) + k.dx;
+          f.vx = -1.5 - zufall(k);
+          f.vz = Math.min(f.vz, 0) * 0.3;
+          f.om = 0.6;
+          continue;
+        }
+        // Liegt jetzt, die Krone zum Meer
         t.c = Math.max(0, Math.min(k.nx - 1, spalteVon(k, f.x)));
         let r = Math.max(0, zeileVon(k, f.z));
         while (r < k.nz - 1 && k.mat[r * k.nx + t.c] !== MAT.LUFT) r++;
@@ -1008,6 +1035,8 @@ function baeumePruefen(k: Kliff, W: number, dt: number) {
       const z = zVon(k, t.r);
       const alter = (k.stunde - (t.tot ?? k.stunde)) / 8766;
       if (g.top[t.c] > t.r + Math.round(1.5 / k.dx)) { t.weg = true; continue; }
+      // Schutt darunter weggespült: der Stamm fällt bzw. rutscht weiter hinab
+      if (g.top[t.c] < t.r - fuss) { baumFaellt(k, t, -0.3); continue; }
       if (z < W + 1.2 && (k.flut || zufall(k) < dt / (24 * 25))) {
         t.weg = true;
         if (!k.merker.treibholz) { k.merker.treibholz = true; melde(k, "Die Brandung hat einen umgestürzten Baum als Treibholz fortgetragen."); }
