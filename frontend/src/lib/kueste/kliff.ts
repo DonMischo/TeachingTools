@@ -642,6 +642,57 @@ function brandung(k: Kliff, W: number, H0: number, wl: KWellen, dt: number) {
   }
 }
 
+/** Wie leicht ein Material an der Oberfläche abgetragen wird (Hangdiffusion) */
+const ABTRAG: Partial<Record<number, number>> = {
+  [MAT.BODEN]: 1, [MAT.SAND]: 1, [MAT.MERGEL]: 0.6, [MAT.LEHM]: 0.6, [MAT.TON]: 0.5,
+  [MAT.LIMONIT]: 0.25, [MAT.KREIDE]: 0.15, [MAT.FEUER]: 0.1,
+};
+
+/**
+ * Oberflächenabtrag an der Abbruchkante (Hangdiffusion): Eine Stelle wird
+ * umso schneller abgetragen, je weiter sie herausragt. Gemessen wird das am
+ * Anteil Gestein in einem Kreis von 2 m um die Oberflächenzelle: an einer
+ * rechtwinkligen Ecke ein Viertel, an einer geraden Fläche die Hälfte.
+ * Regen, Frost und Nässe beschleunigen, Bewuchs bremst. So rundet sich eine
+ * frische Abbruchkante in wenigen Jahren wieder ab.
+ */
+function kanteAbtragen(k: Kliff, w: Wetter, W: number, dt: number) {
+  const g = geometrie(k);
+  const kc = spalteVon(k, kliffKante(k));
+  if (kc <= 0 || kc >= k.nx) return;
+  const R = Math.max(2, Math.round(2 / k.dx));
+  const oben = g.top[kc];
+  const unten = Math.max(zeileVon(k, W + 2), oben - 4 * R);
+  const antrieb = 0.3 + (w.regen ? 2 : 0) + (w.frost ? 1 : 0) + Math.max(0, k.saettigung - 0.5) * 2;
+  let n = 0;
+  for (let r = Math.max(1, unten); r < k.nz - 1; r++) {
+    for (let c = Math.max(1, kc - 2 * R); c < Math.min(k.nx - 1, kc + 3 * R); c++) {
+      const i = r * k.nx + c;
+      const m = k.mat[i];
+      const e = ABTRAG[m];
+      if (!e) continue;
+      // nur freiliegende Zellen (oben oder zur See hin Luft)
+      if (k.mat[i + k.nx] !== MAT.LUFT && k.mat[i - 1] !== MAT.LUFT) continue;
+      let fest = 0, alle = 0;
+      for (let dr = -R; dr <= R; dr += 2) for (let dc = -R; dc <= R; dc += 2) {
+        if (dr * dr + dc * dc > R * R) continue;
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || cc >= k.nx) continue;
+        alle++;
+        if (rr < k.nz && k.mat[rr * k.nx + cc] !== MAT.LUFT) fest++;
+      }
+      const vorstehen = 0.46 - fest / alle;
+      if (vorstehen <= 0) continue;
+      const bremse = k.bewuchs[c] ? 0.5 : 1;
+      if (zufall(k) < 0.005 * vorstehen * e * antrieb * bremse * dt) {
+        k.mat[i] = MAT.SCHUTT; k.herk[i] = m; k.schaden[i] = 0;
+        aendern(k, i);
+        if (++n > 40) return;
+      }
+    }
+  }
+}
+
 function wetterWirkt(k: Kliff, w: Wetter, W: number, dt: number) {
   const g = geometrie(k);
   const rW = Math.max(0, zeileVon(k, W + 1.5));
@@ -716,6 +767,7 @@ function wetterWirkt(k: Kliff, w: Wetter, W: number, dt: number) {
       if (k.schaden[i] >= 1) abtragen(k, i, true);
     }
   }
+  kanteAbtragen(k, w, W, dt);
   // Bodenkriechen: nasser Boden und Lockermaterial an der Kante rutschen langsam nach
   if (k.saettigung > 0.6) {
     const kc = spalteVon(k, kliffKante(k));

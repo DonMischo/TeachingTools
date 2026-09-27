@@ -42,6 +42,22 @@ describe("Steilküste im Zellmodell", () => {
     expect(front(k, oben - 0.5) - front(k, oben - 6)).toBeGreaterThan(1.5);
   });
 
+  it("eine frische, scharfe Abbruchkante rundet sich mit der Zeit ab", () => {
+    const k = neuesKliff("kreide");
+    const g = geometrie(k);
+    const oben = zVon(k, g.top[k.nx - 1]);
+    // Frischer Abbruch: alles seewärts von x0 über 5 m Höhe weg — eine rechtwinklige Kante
+    const x0 = kliffKante(k) + 8;
+    for (let r = zeileVon(k, 5); r < k.nz; r++) for (let c = 0; c < spalteVon(k, x0); c++) k.mat[r * k.nx + c] = MAT.LUFT;
+    k.version++;
+    k.risse = 0;
+    expect(front(k, oben - 0.4)).toBeLessThan(x0 + 0.3);
+    lauf(k, REGEN, 8766 * 2, 12);
+    // Oben ist die Kante zurückgewichen, tiefer unten kaum: sie ist rund
+    expect(front(k, oben - 0.4) - x0).toBeGreaterThan(0.75);
+    expect(front(k, oben - 8) - x0).toBeLessThan(0.75);
+  });
+
   it("die Brandung frisst eine Hohlkehle knapp über dem Wasserspiegel", () => {
     const k = neuesKliff("kreide");
     fussFrei(k);

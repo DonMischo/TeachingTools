@@ -14,7 +14,7 @@ import {
 import { anwenden, massnahmenFuer, type MassnahmeId } from "@/lib/kueste/massnahmen";
 import { begriffe as begriffeVon, type Begriff } from "@/lib/kueste/begriffe";
 import { AUSSCHNITT, trefferBei, trifft, zeichne, type Ausschnitt, type QuizTreffer } from "./zeichnen";
-import { useZoom, ZOOM_KNOPF } from "./zoom";
+import { useZoom, ZOOM_KNOPF, ZOOM_KNOPF_AN } from "./zoom";
 import KliffAnsicht from "./KliffAnsicht";
 
 const ARTEN: { id: KuestenArt; icon: string; name: string; ort: string }[] = [
@@ -162,6 +162,7 @@ export default function ProfilAnsicht() {
             abbruchAlter: abbruchSeit.current ? (jetzt - abbruchSeit.current.t) / 1000 : 99,
             quizTreffer: tr,
           });
+          zoom.lupeZeichnen(ctx, c);
         }
       }
       if (++bild % 8 === 0) setTick(t => t + 1);
@@ -198,7 +199,7 @@ export default function ProfilAnsicht() {
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left, my = e.clientY - r.top;
     const dpr = window.devicePixelRatio || 1;
-    if (!zoom.klickZaehlt()) return;
+    if (!zoom.klickZaehlt() || zoom.lupenKlick(e)) return;
     const b = { ctx: c.getContext("2d")!, w: c.width / dpr, h: c.height / dpr, a: zoom.aktuell() };
     const best = trefferBei(b, zuletzt.current.begriffe, mx, my);
     if (quiz?.frage) {
@@ -279,7 +280,7 @@ export default function ProfilAnsicht() {
 
       {/* Bühne */}
       <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-[var(--border)]">
-        <canvas ref={canvas} onClick={klick} className="block w-full cursor-crosshair" aria-label="Querschnitt durch die Küste" />
+        <canvas ref={canvas} onClick={klick} className={`block w-full ${zoom.lupe ? "cursor-none" : "cursor-crosshair"}`} aria-label="Querschnitt durch die Küste" />
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-xs font-bold">
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">{MONATE[monat]} {jahrVon(p.stunde)}</span>
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">
@@ -296,11 +297,12 @@ export default function ProfilAnsicht() {
           </div>
         )}
         <div className="absolute bottom-2 left-2 flex gap-1">
-          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(null)} title="Ganzes Profil">⤢ Ganz</button>
-          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())} title="An die Wasserlinie heranzoomen">🔍 Wasserlinie</button>
+          <button className={zoom.lupe ? ZOOM_KNOPF_AN : ZOOM_KNOPF} onClick={() => zoom.setLupe(!zoom.lupe)} title="Lupe: zeigt vergrößert, was unter dem Zeiger liegt — Klick zoomt dorthin">🔍 Lupe</button>
+          {zoom.gezoomt && <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(null)} title="Ganzes Profil">⤢ Ganz</button>}
+          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())} title="An die Wasserlinie heranzoomen">🌊 Wasserlinie</button>
         </div>
       </div>
-      <p className="text-xs text-[var(--text-muted)] -mt-2">Mausrad zoomt, Ziehen verschiebt den Ausschnitt.</p>
+      <p className="text-xs text-[var(--text-muted)] -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt.</p>
 
       {/* Bedienung */}
       <div className="flex flex-wrap items-center gap-2">

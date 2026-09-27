@@ -15,7 +15,7 @@ import { tide, type Wetter } from "@/lib/kueste/profil";
 import type { Begriff } from "@/lib/kueste/begriffe";
 import { trefferBei, trefferZeigen, trifft, type Ausschnitt, type QuizTreffer } from "./zeichnen";
 import { zeichneKliff } from "./kliffZeichnen";
-import { useZoom, ZOOM_KNOPF } from "./zoom";
+import { useZoom, ZOOM_KNOPF, ZOOM_KNOPF_AN } from "./zoom";
 
 
 const TEMPI = [
@@ -181,6 +181,7 @@ export default function KliffAnsicht() {
         });
         const tr = quizTreffer.current;
         if (tr && tr.bis > jetzt) trefferZeigen(b, tr);
+        zoom.lupeZeichnen(ctx, c);
       }
       if (++bild % 8 === 0) setTick(x => x + 1);
       raf = requestAnimationFrame(frame);
@@ -213,7 +214,7 @@ export default function KliffAnsicht() {
 
   function klick(e: React.MouseEvent<HTMLCanvasElement>) {
     const c = canvas.current;
-    if (!c || !zoom.klickZaehlt()) return;
+    if (!c || !zoom.klickZaehlt() || zoom.lupenKlick(e)) return;
     const r = c.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     const b = { ctx: c.getContext("2d")!, w: c.width / dpr, h: c.height / dpr, a: zoom.aktuell() };
@@ -257,7 +258,7 @@ export default function KliffAnsicht() {
       </div>
 
       <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-[var(--border)] touch-none">
-        <canvas ref={canvas} onClick={klick} className="block w-full cursor-crosshair" aria-label="Querschnitt durch das Kliff" />
+        <canvas ref={canvas} onClick={klick} className={`block w-full ${zoom.lupe ? "cursor-none" : "cursor-crosshair"}`} aria-label="Querschnitt durch das Kliff" />
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-xs font-bold pointer-events-none">
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">{MONATE[monatVon(k.stunde)]} {jahrVon(k.stunde)}</span>
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">💨 {w.bft} Bft {w.auflandig ? "→ auflandig" : "← ablandig"}</span>
@@ -276,11 +277,12 @@ export default function KliffAnsicht() {
           </div>
         )}
         <div className="absolute bottom-2 left-2 flex gap-1">
-          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(null)}>⤢ Ganzes Kliff</button>
-          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())}>🔍 Wasserlinie</button>
+          <button className={zoom.lupe ? ZOOM_KNOPF_AN : ZOOM_KNOPF} onClick={() => zoom.setLupe(!zoom.lupe)} title="Lupe: zeigt vergrößert, was unter dem Zeiger liegt — Klick zoomt dorthin">🔍 Lupe</button>
+          {zoom.gezoomt && <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(null)}>⤢ Ganzes Kliff</button>}
+          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())}>🌊 Wasserlinie</button>
         </div>
       </div>
-      <p className="text-xs text-[var(--text-muted)] -mt-2">Mausrad zoomt, Ziehen verschiebt. Maßstab 1:1 — so steil ist das Kliff wirklich.</p>
+      <p className="text-xs text-[var(--text-muted)] -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt. Maßstab 1:1 — so steil ist das Kliff wirklich.</p>
 
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">{laeuft ? "⏸ Pause" : "▶ Weiter"}</button>
