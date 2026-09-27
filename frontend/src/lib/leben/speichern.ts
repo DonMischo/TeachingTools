@@ -4,6 +4,7 @@
  * Dazu die Zusammenfassung für die Lehrer-Übersicht.
  */
 import { BERUF } from "./berufe";
+import { startKleidung } from "./kleidung";
 import { alter } from "./kern";
 import type { Spielstand } from "./typen";
 import { SPIELSTAND_VERSION } from "./typen";
@@ -38,6 +39,19 @@ export function pruefen(x: unknown): Spielstand | null {
   if (typeof s.version !== "number" || s.version > SPIELSTAND_VERSION) return null;
   if (typeof s.tag !== "number" || typeof s.stunde !== "number" || !s.figur || !s.konto || !Array.isArray(s.log)) return null;
   if (!s.wohnung || !s.beduerfnisse || !Array.isArray(s.vorrat)) return null;
+  return ergaenzen(s);
+}
+
+/** Ältere Spielstände (vor Kleidung, Handy, Auto …) mit Startwerten auffüllen. */
+function ergaenzen(s: Spielstand): Spielstand {
+  s.kleidung ??= startKleidung();
+  s.frisur ??= 70;
+  s.handy ??= { modell: "Smartphone", zustand: 55, gekauft: s.tag - 730 };
+  s.auto ??= null;
+  s.fahrschule ??= null;
+  s.naechsterJob ??= null;
+  s.heimatWohnung ??= null;
+  if (typeof s.flags.minijob === "number") s.flags.minijob = "getraenke";
   return s;
 }
 

@@ -18,6 +18,7 @@
  * Entgeltatlas der Bundesagentur, kein Tarifwert.
  */
 import { mindestAzubi } from "./werte";
+import { UEBERGANG } from "./uebergang";
 
 export type Fach =
   | "Deutsch" | "Mathematik" | "Englisch" | "Biologie" | "Chemie" | "Physik" | "Geschichte"
@@ -41,7 +42,25 @@ export type Beruf = {
   id: string;
   name: string;
   bereich: Bereich;
-  art: "ausbildung" | "schulisch" | "helfer" | "freiwillig";
+  art: "ausbildung" | "schulisch" | "helfer" | "freiwillig" | "wehrdienst" | "ausland" | "eq";
+  /** Programm bei Freiwilligendiensten und Übergangsjahren (FSJ, FÖJ, BFD …). */
+  programm?: string;
+  /** Bewerbungsschluss für einen Start im selben Jahr — danach gilt der nächste Jahrgang. */
+  frist?: { monat: number; tag: number; text: string };
+  /** Fester Starttermin, z. B. 1. August oder 1. September. */
+  startTermin?: { monat: number; tag: number };
+  /** Unterkunft der Einsatzstelle (WG, Station, Kaserne, Gastfamilie). */
+  unterkunft?: { titel: string; adresse: string; stadtteil: string; qm: number; verpflegung: boolean; ausland?: boolean };
+  /** Zusätzliche Fahrzeit (min) von Erfurt, wenn gependelt wird. */
+  pendelMin?: number;
+  /** Einmalige Kosten vor dem Start (Visum, Flug, Ausrüstung …). */
+  vorab?: { text: string; betrag: number }[];
+  /** Läuft das Kindergeld weiter? (Freiwilligendienste ja, Wehrdienst/Work & Travel nein) */
+  kindergeld?: boolean;
+  /** Link zum echten Angebot bzw. Träger. */
+  link?: string;
+  /** EQ: in welche Ausbildung der Betrieb danach übernehmen kann. */
+  ausbildungDanach?: string;
   /** Dauer in Monaten (Helferjobs: 0 = unbefristet). */
   dauer: number;
   tarif: string;
@@ -471,13 +490,8 @@ export const BERUFE: Beruf[] = [
     faecher: [], konkurrenz: 1, einstellungstest: false, abAlter: 18, uebernahme: 0.2,
     berufsschule: 0, betriebe: [MUE("Essen-Lieferdienst (fiktiv)")],
     text: "Eigenes Fahrrad und Handy nötig. Regen, Kälte, Trinkgeld." },
-  { id: "fsj", name: "Freiwilliges Soziales Jahr (FSJ)", bereich: "Gesundheit & Soziales", art: "freiwillig", dauer: 12,
-    tarif: "Taschengeld + Verpflegungszuschuss (Richtwert)", taschengeld: 450, gehaltNach: 0,
-    stundenWoche: 39, beginn: 7, schicht: false, wochenende: false, koerperlich: 1, abschluss: "HSA", schnitt: 5,
-    faecher: [], konkurrenz: 1, einstellungstest: false, abAlter: 16, uebernahme: 0,
-    berufsschule: 0, betriebe: [MUE("Kita Sonnenschein"), MUE("Klinikum Erfurt (fiktiv)"), MUE("Sportverein Erfurt-Nord")],
-    text: "Ein Jahr in Kita, Klinik oder Verein ausprobieren. Kindergeld läuft weiter, Sozialversicherung zahlt die Einsatzstelle.",
-    hinweis: "Danach musst du dich wieder bewerben — ein FSJ macht jede Bewerbung besser." },
+  // Freiwilligendienste, Wehrdienst, Ausland, EQ, Schule: siehe uebergang.ts
+  ...UEBERGANG,
 ];
 
 export const BERUF = new Map(BERUFE.map((b) => [b.id, b]));

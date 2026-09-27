@@ -110,12 +110,27 @@ export function wohngeldBerechnen(s: Spielstand): { anspruch: boolean; betrag: n
   if (brutto === 0 && !s.antraege.some((a) => a.art === "alg")) {
     return { anspruch: false, betrag: 0, grund: "Ohne eigenes Einkommen ist Bürgergeld/Grundsicherung zuständig, nicht Wohngeld." };
   }
-  const y = brutto * 0.7; // pauschaler Abzug für Steuern + Sozialversicherung
-  const miete = Math.min(warmmiete(s.wohnung) - s.wohnung.heizung * 0.3, 560);
-  const betrag = Math.round(Math.max(0, 0.62 * miete - 0.31 * Math.max(0, y - 330)));
-  if (betrag < 10) return { anspruch: false, betrag: 0, grund: "Dein Einkommen ist zu hoch für Wohngeld." };
-  if (y < 400) return { anspruch: false, betrag: 0, grund: "Dein Einkommen reicht nicht zum Leben — dann ist das Jobcenter zuständig." };
-  return { anspruch: true, betrag, grund: `Richtwert für 1 Person in Erfurt bei ${Math.round(y)} € anrechenbarem Einkommen und ${Math.round(miete)} € Miete.` };
+  const w = wohngeldFormel(s.wohnung.kalt + s.wohnung.nebenkosten, brutto, true);
+  if (w.y < 400) return { anspruch: false, betrag: 0, grund: "Dein Einkommen reicht nicht zum Leben — dann ist das Jobcenter zuständig (Wohngeldstellen prüfen, ob das Einkommen plausibel ist)." };
+  if (w.betrag < 10) return { anspruch: false, betrag: 0, grund: `Dein Einkommen ist zu hoch für Wohngeld (anrechenbar ${de(w.y, 0)} € im Monat).` };
+  return { anspruch: true, betrag: w.betrag, grund: `Wohngeld nach § 19 WoGG für 1 Person, Erfurt (Mietstufe III): berücksichtigte Miete ${de(w.m, 2)} € (inkl. Heizkostenkomponente), anrechenbares Einkommen ${de(w.y, 0)} €.` };
+}
+
+/**
+ * Wohngeld nach § 19 WoGG (Stand 2025/2026) für einen 1-Personen-Haushalt:
+ * W = 1,15 · (M − (a + b·M + c·Y) · Y) mit a = 0,04, b = 0,0004797, c = 0,0000408 (Anlage 2).
+ * M = Bruttokaltmiete bis zum Höchstbetrag (Mietstufe III: 456 €, + Klimakomponente 19,20 €)
+ *     plus Heizkostenentlastung 110,40 € (§ 12 Abs. 6).
+ * Y = Jahresbrutto − Werbungskostenpauschale, davon 30 % Pauschalabzug (Steuern, KV, RV), je Monat.
+ * Vereinfachung: keine weiteren Freibeträge, Rundung auf ganze Euro.
+ */
+export function wohngeldFormel(bruttokalt: number, monatsbrutto: number, steuerpflichtig: boolean): { betrag: number; m: number; y: number } {
+  const m = Math.min(bruttokalt, 456 + 19.2) + 110.4;
+  const jahr = Math.max(0, monatsbrutto * 12 - 1230);
+  const y = (jahr * (steuerpflichtig ? 0.7 : 0.8)) / 12;
+  const a = 0.04, b = 0.0004797, c = 0.0000408;
+  const w = 1.15 * (m - (a + b * m + c * y) * y);
+  return { betrag: Math.max(0, Math.round(w)), m: r2(m), y: r2(y) };
 }
 
 /** Arbeitslosengeld I: 60 % des pauschalierten Nettos, Dauer nach Versicherungszeit. */
@@ -128,8 +143,14 @@ export function algBerechnen(s: Spielstand): { anspruch: boolean; betrag: number
   const monate = monateVersichert >= 24 ? 12 : monateVersichert >= 20 ? 10 : monateVersichert >= 16 ? 8 : 6;
   const letzteKuendigung = s.dokumente.filter((d) => d.art === "kuendigung").at(-1)?.text ?? "";
   const sperre = /Abmahnung|Probezeit \(|selbst gekündigt/.test(letzteKuendigung);
+  // Arbeitssuchend melden spätestens 3 Tage nach der Kündigung — sonst eine Woche Sperrzeit (§ 159 SGB III)
+  const seit = s.flags.arbeitslosSeit !== undefined ? Number(s.flags.arbeitslosSeit) : null;
+  const antrag = s.antraege.filter((a) => a.art === "alg").at(-1);
+  const zuSpaet = seit !== null && (antrag ? antrag.gestellt : s.tag) - seit > 3;
+  if (zuSpaet) s.flags.algMeldungZuSpaet = true;
   return { anspruch: true, betrag: r2(nettoSchnitt * 0.6), monate, sperre,
-    grund: `60 % deines durchschnittlichen Nettos (${de(nettoSchnitt, 0)} €) für ${monate} Monate${sperre ? " — wegen verhaltensbedingter Kündigung mit 12 Wochen Sperrzeit" : ""}.` };
+    grund: `60 % deines durchschnittlichen Nettos (${de(nettoSchnitt, 0)} €) für ${monate} Monate${sperre ? " — wegen verhaltensbedingter Kündigung mit 12 Wochen Sperrzeit" : ""}` +
+      `${zuSpaet ? ". Du hast dich zu spät arbeitssuchend gemeldet (mehr als 3 Tage): eine Woche Sperrzeit, im ersten Monat gibt es ein Viertel weniger" : ""}.` };
 }
 
 /** Bürgergeld/Grundsicherung (Regelbedarf 2026: 563 €) + angemessene Miete. */
@@ -422,7 +443,11 @@ export function amtTag(s: Spielstand): void {
       if (a.status !== "bewilligt" || !a.betrag || (a.bisTag !== undefined && s.tag > a.bisTag)) continue;
       if ((a.art === "alg" || a.art === "buergergeld") && s.job && s.tag >= s.job.start) { a.bisTag = s.tag; continue; }
       if (a.art === "alg" && algBerechnen(s).sperre && s.tag < a.gestellt + 84) continue;
-      if (a.art === "alg") buchen(s, a.betrag, "sonstiges_ein", "Arbeitslosengeld I");
+      if (a.art === "alg") {
+        const kuerzung = s.flags.algMeldungZuSpaet && !s.flags.algKuerzungErledigt ? 0.25 : 0;
+        if (kuerzung) s.flags.algKuerzungErledigt = true;
+        buchen(s, r2(a.betrag * (1 - kuerzung)), "sonstiges_ein", `Arbeitslosengeld I${kuerzung ? " (Sperrzeit wegen verspäteter Meldung)" : ""}`);
+      }
       if (a.art === "buergergeld") buchen(s, a.betrag, "sonstiges_ein", "Bürgergeld (Jobcenter)");
     }
   }

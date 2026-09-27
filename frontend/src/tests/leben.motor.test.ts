@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { neuesSpiel, routine, mahlzeit, arbeiten, schlafen, monatsbrutto, vertragAbschliessen } from "@/lib/leben/motor";
-import { bewerben, einkaufen, einziehen, terminWahrnehmen, zusageAnnehmen, wohnungsanzeigen, wohnungBewerben, ausgehen, promille, steuerAbgeben } from "@/lib/leben/aktionen";
+import { arbeitHeute, neuesSpiel, routine, mahlzeit, arbeiten, schlafen, monatsbrutto, vertragAbschliessen } from "@/lib/leben/motor";
+import { bewerben, einkaufen, einziehen, moebelKaufenNeu, terminWahrnehmen, zusageAnnehmen, wohnungsanzeigen, wohnungBewerben, ausgehen, promille, steuerAbgeben } from "@/lib/leben/aktionen";
 import { ereignisWahl } from "@/lib/leben/ereignisse";
 import { einreichen, babBerechnen } from "@/lib/leben/amt";
 import { LEERE_ANGABEN } from "@/lib/leben/steuer";
 import { REFERENZ_WOCHE } from "@/lib/leben/laden";
+import { friseur, kleidungKaufen } from "@/lib/leben/kleidung";
 import { ENDE_TAG, tagVon } from "@/lib/leben/zeit";
 import type { Spielstand } from "@/lib/leben/typen";
 
@@ -33,10 +34,15 @@ function ereignisseAbarbeiten(s: Spielstand): Spielstand {
   return t;
 }
 
+/** Der Arbeitstag ist vorbei (oder es gab keinen) und es ist Abend — dann darf der Testspieler noch los. */
+function feierabend(s: Spielstand): boolean {
+  const a = arbeitHeute(s);
+  return s.stunde >= 18 && (!a.muss || a.erledigt);
+}
+
 function wocheneinkauf(s: Spielstand): Spielstand {
   const korb = REFERENZ_WOCHE.map((r) => ({ produkt: r.produkt, variante: "eigen" as const, anzahl: Math.max(1, Math.round(r.menge)) }));
-  const t = { ...s, stunde: 10 };
-  const r = einkaufen(t, "lidl", korb);
+  const r = einkaufen({ ...s, stunde: 18 }, "lidl", korb);
   return r.fehler ? s : r.stand;
 }
 
@@ -45,7 +51,7 @@ describe("Rock your Life — Motor", () => {
     const s = start();
     expect(s.figur.steuerId).toMatch(/^\d{11}$/);
     expect(s.konto.stand).toBeGreaterThan(500);
-    expect(s.post.length).toBe(1);
+    expect(s.post.length).toBe(2);
   });
 
   it("Bewerbung → Test/Gespräch → Zusage → Vertrag", () => {
@@ -78,7 +84,7 @@ describe("Rock your Life — Motor", () => {
     let letzteWoche = -1;
     let schutz = 0;
     while (!s.beendet && schutz++ < 4000) {
-      if (Math.floor(s.tag / 7) !== letzteWoche && s.wohnung.form !== "eltern") { s = wocheneinkauf(s); letzteWoche = Math.floor(s.tag / 7); }
+      if (Math.floor(s.tag / 7) !== letzteWoche && s.wohnung.form !== "eltern" && feierabend(s)) { s = wocheneinkauf(s); letzteWoche = Math.floor(s.tag / 7); }
       // Nach einem Jahr ausziehen
       if (!umgezogen && s.tag > 400) {
         const w = wohnungsanzeigen(s).find((x) => x.form === "wohnung");
@@ -86,12 +92,28 @@ describe("Rock your Life — Motor", () => {
           const r = wohnungBewerben(s, w, true);
           if (!r.fehler && s.konto.stand > 3000) {
             const e = einziehen(r.stand, true, "freunde");
-            if (!e.fehler) { s = e.stand; umgezogen = true; }
+            if (!e.fehler) {
+              s = e.stand; umgezogen = true;
+              for (const id of ["matratze-140", "bettdecke-kissen-set", "kuehlschrank-kombi", "doppelkochplatte", "toepfe-set", "geschirr-set", "deckenlampe"]) {
+                const m = moebelKaufenNeu(s, id, true); if (!m.fehler) s = m.stand;
+              }
+            }
             else s = r.stand;
           } else s = r.stand;
         }
       }
+      // Wie eine vernünftige Schülerin: Kleidung ersetzen, Friseur, samstags weggehen
+      for (const teil of ["alltag", "unterwaesche", "schuhe", "jacke"] as const) {
+        if (s.kleidung[teil].zustand < 25) { const r = kleidungKaufen(s, "kette", [teil]); if (!r.fehler) s = r.stand; }
+      }
+      if (s.frisur < 25) { const r = friseur(s, "kurz"); if (!r.fehler) s = r.stand; }
+      if (s.flags.fehltZuhause && feierabend(s)) {
+        const korb = ["koerperpflege-duschgel-250ml", "koerperpflege-deo-150ml", "koerperpflege-zahnpasta-75ml", "hygiene-klopapier-8er", "putzen-spuelmittel-500ml", "haushalt-muellbeutel-50l-10er"]
+          .map((produkt) => ({ produkt, variante: "eigen" as const, anzahl: 1 }));
+        const r = einkaufen({ ...s, stunde: 18 }, "dm", korb); if (!r.fehler) s = r.stand;
+      }
       s = routine(s, 7).stand;
+      if (s.stunde >= 19) { const r = ausgehen({ ...s, stunde: 19 }, "kneipe", { cola: 2 }, "bahn", 3); if (!r.fehler) s = r.stand; }
       s = ereignisseAbarbeiten(s);
     }
     expect(s.beendet).toBe(true);
@@ -106,7 +128,11 @@ describe("Rock your Life — Motor", () => {
     expect(s.steuerjahre[2027].lohnsteuer).toBeLessThan(600);
     // Prüfung wurde geschrieben
     const h = [...s.jobHistorie, ...(s.job ? [s.job] : [])];
-    expect(h.some((j) => j.abschlusspruefung !== undefined || j.art === "fachkraft")).toBe(true);
+    const insolvenz = s.log.some((l) => l.text.includes("Insolvenz"));
+    expect(insolvenz || h.some((j) => j.abschlusspruefung !== undefined || j.art === "fachkraft")).toBe(true);
+    // Kleidung und Friseur kosten über fünf Jahre spürbar Geld
+    const kleidung = s.bilanzen.reduce((a, b) => a + (b.aus.kleidung ?? 0), 0);
+    expect(kleidung).toBeGreaterThan(900);
     expect(s.log.length).toBeGreaterThan(100);
   }, 180_000);
 

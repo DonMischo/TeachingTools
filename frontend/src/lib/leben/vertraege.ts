@@ -70,6 +70,7 @@ export const ARTEN: Record<VertragsArt, { name: string; icon: string; bewertung:
   konto: { name: "Girokonto", icon: "🏦", bewertung: "pflicht",
     erklaerung: "Ohne Konto kein Lohn. Für Schüler und Azubis oft kostenlos — danach nicht immer." },
   zeitung: { name: "Zeitung", icon: "📰", bewertung: "meist_unnoetig", erklaerung: "Digital-Abo der Lokalzeitung." },
+  verein: { name: "Verein & Hobby", icon: "⚽", bewertung: "je_nachdem", erklaerung: "Kostet Geld — bringt Freunde, Bewegung und gute Laune. Gegen Langeweile und Einsamkeit hilft kaum etwas besser." },
 };
 
 export const ANGEBOTE: Angebot[] = [
@@ -145,6 +146,10 @@ export const ANGEBOTE: Angebot[] = [
     einmalig: 29, laufzeitMonate: 1, ab18: true, details: "Monatlich kündbar, dafür 10 € teurer." },
   { id: "dticket", art: "ticket", anbieter: "Nahverkehr", name: "Deutschlandticket", monatlich: 63,
     laufzeitMonate: 1, details: "63 € (2026), monatlich kündbar. Ganz Erfurt und der Regionalverkehr inklusive." },
+  { id: "sportverein", art: "verein", anbieter: "Sportverein Erfurt (fiktiv)", name: "Sportverein (Training Di + Do)", monatlich: 18,
+    einmalig: 20, laufzeitMonate: 1, details: "Fußball, Handball, Volleyball … 18 € im Monat, Aufnahmegebühr 20 €. Training dienstags und donnerstags abends." },
+  { id: "musikschule", art: "verein", anbieter: "Musikschule (fiktiv)", name: "Gitarrenunterricht (30 min/Woche)", monatlich: 65,
+    laufzeitMonate: 6, details: "Einzelunterricht, 6 Monate Mindestlaufzeit." },
   { id: "zeitung", art: "zeitung", anbieter: "Lokalzeitung (fiktiv)", name: "Digital-Abo", monatlich: 9.9,
     laufzeitMonate: 12, details: "E-Paper der Lokalzeitung." },
 

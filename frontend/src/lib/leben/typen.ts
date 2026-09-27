@@ -41,7 +41,20 @@ export type Herkunft = {
   kindergeld: "weiter" | "halb" | "eltern";
 };
 
-export type Wohnform = "eltern" | "wg" | "wohnung" | "azubiwohnheim";
+export type KleidungsTeil = "alltag" | "unterwaesche" | "schuhe" | "jacke" | "schick" | "sport";
+
+export type AutoStand = {
+  modell: string;
+  baujahr: number;
+  km: number;
+  wert: number;
+  verbrauch: number; // Liter/100 km
+  tuevBis: number; // Spieltag
+  zustand: number; // 0..100
+  gekauft: number;
+};
+
+export type Wohnform = "eltern" | "wg" | "wohnung" | "azubiwohnheim" | "unterkunft";
 
 export type Wohnung = {
   id: string;
@@ -118,11 +131,13 @@ export type Vertrag = {
   gekuendigtZum?: number;
   /** Einmalige Gebühren beim Abschluss (Anschluss, Aufnahme). */
   zahltag: number;
+  /** Internet: Anschluss erst ab diesem Tag geschaltet. */
+  aktivAb?: number;
 };
 
 export type VertragsArt =
   | "strom" | "internet" | "handy" | "haftpflicht" | "hausrat" | "bu" | "unfall" | "handyversicherung"
-  | "rechtsschutz" | "zahnzusatz" | "streaming" | "musik" | "gaming" | "fitness" | "ticket" | "konto" | "zeitung";
+  | "rechtsschutz" | "zahnzusatz" | "streaming" | "musik" | "gaming" | "fitness" | "ticket" | "konto" | "zeitung" | "verein";
 
 export type Kredit = {
   uid: number;
@@ -140,7 +155,7 @@ export type JobStand = {
   betrieb: string;
   start: number;
   ende?: number;
-  art: "ausbildung" | "schulisch" | "helfer" | "freiwillig" | "fachkraft";
+  art: "ausbildung" | "schulisch" | "helfer" | "freiwillig" | "fachkraft" | "wehrdienst" | "ausland" | "eq";
   /** Monatsbrutto nach der Ausbildung (Fachkraft) — sonst wird es berechnet. */
   brutto?: number;
   urlaubstage: number;
@@ -172,6 +187,10 @@ export type Bewerbung = {
   qualitaet: number; // Anschreiben 0..1
   punkte?: number; // Test/Gespräch 0..1
   startTag?: number; // Ausbildungsbeginn bei Zusage
+  /** Bewerbung als Fachkraft: angebotenes Monatsbrutto. */
+  brutto?: number;
+  /** Gilt die Bewerbung erst für den nächsten Jahrgang (Frist verpasst)? */
+  jahrgang?: number;
 };
 
 export type AntragArt =
@@ -304,4 +323,17 @@ export type Spielstand = {
   /** Sitzung (für Lehrer-Übersicht) — nur Metadaten. */
   gemeldetBis?: number;
   beendet?: boolean;
+  /** Kleidung: Zustand je Teil 0..100 und Qualität (Haltbarkeit) der zuletzt gekauften Ware. */
+  kleidung: Record<KleidungsTeil, { zustand: number; guete: number }>;
+  /** Frisur 0..100 (100 = frisch vom Friseur). */
+  frisur: number;
+  /** Das eigene Smartphone. */
+  handy: { modell: string; zustand: number; gekauft: number };
+  /** Führerschein und Auto. */
+  auto: AutoStand | null;
+  fahrschule: { angemeldet: number; theorie?: number; praxis?: number; kosten: number; versuche: number } | null;
+  /** Unterschriebener nächster Job, der erst später beginnt (Kündigungsfrist, Ausbildungsstart). */
+  naechsterJob: JobStand | null;
+  /** Wohnung, die während einer Unterkunft (FÖJ-Station, Kaserne, Ausland) weiterläuft. */
+  heimatWohnung: Wohnung | null;
 };

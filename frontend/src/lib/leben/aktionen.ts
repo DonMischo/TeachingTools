@@ -6,14 +6,15 @@
 import { BERUF, type Beruf } from "./berufe";
 import { einraeumen } from "./ernaehrung";
 import { alter, begrenzen, brief, buchen, ganz, kannZahlen, klon, log, MOEBEL_DEF, r2, uid, zufall, zwischen, de } from "./kern";
-import { MARKT, PRODUKT, preis, wochenangebote, type Variante } from "./laden";
-import { arbeitHeute, vergehe, vorauswahl, werktagAb, type Ergebnis } from "./motor";
+import { MARKT, PRODUKT, preis, preisindexFuer, wochenangebote, type Variante } from "./laden";
+import { arbeitHeute, fernVonErfurt, imAusland, vergehe, vorauswahl, werktagAb, type Ergebnis } from "./motor";
 import { berechneBescheid, type Angaben } from "./steuer";
-import type { Spielstand, Wohnung } from "./typen";
+import type { JobStand, Spielstand, Wohnung } from "./typen";
 import { werte } from "./werte";
 import { istArbeitstag, jahrVon, kurzDatum, monatVon, tagVon, wochentag } from "./zeit";
 import { anzeigen, entfernung, ELTERN_ORTE, STADTTEIL, warmmiete, zusageChance } from "./wohnungen";
 import { mulberry } from "./laden";
+import { auftreten } from "./kleidung";
 
 const EINZELFAHRT = 2.6; // Erfurt Stadtgebiet, Richtwert 2026
 
@@ -49,10 +50,11 @@ export function einkaufen(alt: Spielstand, marktId: string, korb: Korbposten[], 
   const s = klon(alt);
   const m = MARKT.get(marktId);
   if (!m) return { stand: alt, fehler: "Unbekannter Markt." };
+  if (imAusland(s)) return { stand: alt, fehler: "Du bist im Ausland — gegessen wird bei der Gastfamilie bzw. vor Ort." };
   const tag = wochentag(s.tag);
   if (tag === 6 || !!istFeiertag(s.tag)) return { stand: alt, fehler: "Sonn- und feiertags haben Supermärkte in Thüringen zu." };
   if (s.stunde < 7 || s.stunde > 21.5) return { stand: alt, fehler: "Der Markt hat nur von 7 bis 22 Uhr geöffnet." };
-  const pi = werte(jahrVon(s.tag)).preisindex;
+  const pi = preisindexFuer(s);
   const angebote = wochenangebote(m, spielwoche(s.tag), s.seed);
   let summe = 0;
   for (const k of korb) {
@@ -306,6 +308,18 @@ export function ersatzschluessel(alt: Spielstand): Ergebnis {
   return { stand: s, meldung: "Ersatzschlüssel liegt jetzt bei den Eltern." };
 }
 
+/** Nachsendeauftrag bei der Post (6 Monate, Richtwert) — sonst gehen Briefe an die alte Adresse. */
+export function nachsendeauftrag(alt: Spielstand): Ergebnis {
+  const s = klon(alt);
+  if (!s.flags.alteAdresse) return { stand: alt, fehler: "Du bist noch nicht umgezogen." };
+  if (Number(s.flags.nachsendeBis ?? -1) >= s.tag) return { stand: alt, fehler: "Der Nachsendeauftrag läuft schon." };
+  if (!kannZahlen(s, 34.9)) return { stand: alt, fehler: "Nicht genug Geld." };
+  buchen(s, -34.9, "sonstiges", "Nachsendeauftrag Deutsche Post (6 Monate)");
+  s.flags.nachsendeBis = s.tag + 182;
+  log(s, "wohnung", "Nachsendeauftrag gestellt (6 Monate).");
+  return { stand: s, meldung: "Briefe an die alte Adresse werden jetzt 6 Monate lang nachgeschickt. Trotzdem: Bank, Arbeitgeber, Krankenkasse und Versicherungen selbst informieren!" };
+}
+
 // ───────────────────────────────────────────────────────────── Ausgehen
 
 export type Ausgehort = {
@@ -513,19 +527,94 @@ export function anschreibenQualitaet(bausteine: string[]): number {
   return Math.max(0, Math.min(0.95, 0.15 + summe * 0.75));
 }
 
-export function bewerben(alt: Spielstand, berufId: string, betrieb: string, bausteine: string[]): Ergebnis {
+/** Frist für einen Start im Jahr `startJahr` (Fristen im Herbst gelten fürs Vorjahr). */
+function fristTag(b: Beruf, startJahr: number): number | null {
+  if (!b.frist) return null;
+  const startMonat = b.startTermin?.monat ?? 9;
+  const jahr = b.frist.monat > startMonat ? startJahr - 1 : startJahr;
+  return tagVon(jahr, b.frist.monat, b.frist.tag);
+}
+
+/** Frühester Start, für den eine Bewerbung heute noch zählt (ggf. erst nächstes Jahr). */
+export function naechsterStart(s: Spielstand, b: Beruf, restplatz = false): { tag: number; jahrgang: number; spaet: boolean } {
+  const jahr = jahrVon(s.tag);
+  if (!b.startTermin) {
+    // Flexibel: zum nächsten Monatsersten (mindestens eine Woche Vorlauf)
+    const t = s.tag + 7;
+    const d = new Date(Date.UTC(2026, 6, 1 + t));
+    return { tag: b.art === "helfer" ? s.tag + 7 : tagVon(d.getUTCFullYear(), d.getUTCMonth() + 2, 1), jahrgang: jahr, spaet: false };
+  }
+  for (const j of [jahr, jahr + 1, jahr + 2]) {
+    const start = tagVon(j, b.startTermin.monat, b.startTermin.tag);
+    if (start < s.tag + 3) continue;
+    const frist = fristTag(b, j);
+    if (frist === null || s.tag <= frist || restplatz) return { tag: start, jahrgang: j, spaet: frist !== null && s.tag > frist };
+  }
+  return { tag: tagVon(jahr + 2, b.startTermin.monat, b.startTermin.tag), jahrgang: jahr + 2, spaet: false };
+}
+
+export function bewerben(alt: Spielstand, berufId: string, betrieb: string, bausteine: string[], fachkraftBrutto?: number): Ergebnis {
   const s = klon(alt);
   const b = BERUF.get(berufId);
   if (!b) return { stand: alt, fehler: "Unbekannter Beruf." };
   if (s.bewerbungen.some((x) => x.beruf === berufId && x.betrieb === betrieb && ["versendet", "test", "gespraech", "zusage"].includes(x.status))) {
     return { stand: alt, fehler: "Da hast du dich schon beworben." };
   }
+  if (fachkraftBrutto && !abschluesse(s).includes(berufId)) return { stand: alt, fehler: "Für diese Stelle brauchst du einen Abschluss in dem Beruf." };
   const q = anschreibenQualitaet(bausteine);
   vergehe(s, 1.5, "wach");
-  s.bewerbungen.push({ uid: uid(s), beruf: berufId, betrieb, tag: s.tag, status: "versendet", naechsterTag: s.tag + ganz(s, 5, 20), qualitaet: q });
+  // Frist verpasst? Dann zählt die Bewerbung fürs nächste Jahr — außer es wird ein Platz frei.
+  let jahrgang: number | undefined;
+  let hinweis = "";
+  if (!fachkraftBrutto) {
+    const regulaer = naechsterStart(s, b);
+    const frist = fristTag(b, jahrVon(s.tag));
+    const imJahr = b.startTermin ? tagVon(jahrVon(s.tag), b.startTermin.monat, b.startTermin.tag) : null;
+    if (frist !== null && imJahr !== null && s.tag > frist && imJahr > s.tag + 3) {
+      const restplatz = zufall(s) < 0.4 / b.konkurrenz;
+      if (restplatz) { jahrgang = jahrVon(s.tag); hinweis = " Die Frist ist vorbei — aber es ist gerade ein Platz frei geworden!"; }
+      else { jahrgang = regulaer.jahrgang; hinweis = ` Die Bewerbungsfrist (${b.frist!.text}) ist vorbei — deine Bewerbung gilt für den Start ${regulaer.jahrgang}.`; }
+    } else if (b.startTermin) jahrgang = regulaer.jahrgang;
+  }
+  s.bewerbungen.push({ uid: uid(s), beruf: berufId, betrieb, tag: s.tag, status: "versendet", naechsterTag: s.tag + ganz(s, 5, 20), qualitaet: q,
+    ...(fachkraftBrutto ? { brutto: fachkraftBrutto } : {}), ...(jahrgang !== undefined ? { jahrgang } : {}) });
   s.flags.bewerbungskosten = r2(Number(s.flags.bewerbungskosten ?? 0) + 2.5);
-  log(s, "bewerbung", `Bewerbung: ${b.name} bei ${betrieb} (Anschreiben ${Math.round(q * 100)} %)`);
-  return { stand: s, meldung: `Bewerbung an ${betrieb} verschickt. Chance auf Einladung etwa ${Math.round(vorauswahl(s, b, q) * 100)} %.` };
+  log(s, "bewerbung", `Bewerbung: ${b.name}${fachkraftBrutto ? " (Fachkraft)" : ""} bei ${betrieb} (Anschreiben ${Math.round(q * 100)} %)${jahrgang && jahrgang > jahrVon(s.tag) ? `, für ${jahrgang}` : ""}`);
+  const chance = fachkraftBrutto ? vorauswahlFachkraft(s, berufId, q) : vorauswahl(s, b, q);
+  return { stand: s, meldung: `Bewerbung an ${betrieb} verschickt. Chance auf Einladung etwa ${Math.round(chance * 100)} %.${hinweis}` };
+}
+
+/** Welche Berufe hat man abgeschlossen? */
+export function abschluesse(s: Spielstand): string[] {
+  return String(s.flags.abschluesse ?? "").split(",").filter(Boolean);
+}
+
+export function vorauswahlFachkraft(s: Spielstand, berufId: string, qualitaet: number): number {
+  const punkte = s.jobHistorie.filter((j) => j.beruf === berufId).reduce((a, j) => Math.max(a, j.abschlusspruefung ?? 0), 0);
+  const p = 0.55 + (punkte - 65) / 100 + (qualitaet - 0.5) * 0.3 - (s.flags.schufaNegativ ? 0 : 0);
+  return Math.max(0.1, Math.min(0.95, p));
+}
+
+/** Fachkraft-Stellen der Woche für abgeschlossene Berufe (andere Betriebe, andere Gehälter). */
+export function fachkraftStellen(s: Spielstand): { beruf: Beruf; betrieb: string; brutto: number; extras: string }[] {
+  const liste: { beruf: Beruf; betrieb: string; brutto: number; extras: string }[] = [];
+  const pi = Math.pow(1.03, Math.max(0, jahrVon(s.tag) - 2026));
+  for (const id of abschluesse(s)) {
+    const b = BERUF.get(id);
+    if (!b || !b.gehaltNach) continue;
+    const r = mulberry(s.seed + spielwoche(s.tag) * 57 + id.length * 13);
+    const firmen = [...b.betriebe, `${b.bereich === "Handel" ? "Handelskette" : "Betrieb"} in Weimar (fiktiv)`, `Großbetrieb Erfurter Kreuz (fiktiv)`];
+    const arten = [
+      { f: 0.92, extras: "nicht tarifgebunden, 26 Tage Urlaub" },
+      { f: 1.0, extras: "Tarif, Weihnachtsgeld, 28 Tage Urlaub" },
+      { f: 1.12, extras: "Schichtzulagen, Jobticket, 30 Tage Urlaub" },
+    ];
+    for (let i = 0; i < 3; i++) {
+      const a = arten[i];
+      liste.push({ beruf: b, betrieb: firmen[Math.floor(r() * firmen.length)], brutto: Math.round((b.gehaltNach * a.f * pi * (0.97 + r() * 0.06)) / 10) * 10, extras: a.extras });
+    }
+  }
+  return liste;
 }
 
 /** Test oder Gespräch absolvieren (Punkte 0..1 aus dem Minispiel). */
@@ -552,24 +641,38 @@ export function terminWahrnehmen(alt: Spielstand, buid: number, punkte: number):
     log(s, "bewerbung", `Einstellungstest nicht bestanden (${Math.round(punkte * 100)} %): ${b.name}`);
     return { stand: s, meldung: `Test: ${Math.round(punkte * 100)} % — das reicht leider nicht.` };
   }
-  const gesamt = wert * 0.6 + (bw.punkte ?? 0.6) * 0.2 + bw.qualitaet * 0.2;
-  const konkurrenz = [0, 0.3, 0.4, 0.5, 0.58, 0.66][b.konkurrenz];
+  // Auftreten: ordentliche Kleidung, Frisur, gepflegt
+  const auftritt = auftreten(s);
+  s.kleidung.schick.zustand = Math.max(0, s.kleidung.schick.zustand - 8);
+  const gesamt = wert * 0.5 + (bw.punkte ?? 0.6) * 0.15 + bw.qualitaet * 0.15 + auftritt * 0.2;
+  const konkurrenz = bw.brutto ? 0.45 : [0, 0.3, 0.4, 0.5, 0.58, 0.66][b.konkurrenz];
+  const auftrittText = auftritt < 0.5 ? " Tipp: Mit ordentlicher Kleidung und frischem Haarschnitt wirkst du deutlich besser." : "";
   if (gesamt + zwischen(s, -0.1, 0.1) >= konkurrenz) {
     bw.status = "zusage";
-    const jahr = jahrVon(s.tag);
-    const aug = tagVon(jahr, 8, 1), sep = tagVon(jahr, 9, 1);
-    const start = b.art === "ausbildung" || b.art === "schulisch"
-      ? (s.tag < aug - 3 ? aug : s.tag < sep - 3 ? sep : tagVon(jahr + (monatVon(s.tag) === 12 ? 1 : 0), monatVon(s.tag) === 12 ? 1 : monatVon(s.tag) + 1, 1))
-      : s.tag + 7;
+    let start: number;
+    if (bw.brutto) {
+      // Fachkraft: nächster Monatserster, bei laufendem Job nach 4 Wochen Kündigungsfrist
+      const ab = s.job && s.tag >= s.job.start ? s.tag + 28 : s.tag + 7;
+      const d = new Date(Date.UTC(2026, 6, 1 + ab));
+      start = tagVon(d.getUTCFullYear(), d.getUTCMonth() + 2, 1);
+    } else if (b.startTermin) {
+      start = bw.jahrgang ? tagVon(bw.jahrgang, b.startTermin.monat, b.startTermin.tag) : naechsterStart(s, b).tag;
+      if (start < s.tag + 3) start = naechsterStart(s, b).tag;
+    } else if (b.art === "ausbildung") {
+      const jahr = jahrVon(s.tag);
+      const aug = tagVon(jahr, 8, 1), sep = tagVon(jahr, 9, 1);
+      start = s.tag < aug - 3 ? aug : s.tag < sep - 3 ? sep : tagVon(jahr + (monatVon(s.tag) === 12 ? 1 : 0), monatVon(s.tag) === 12 ? 1 : monatVon(s.tag) + 1, 1);
+    } else start = naechsterStart(s, b).tag;
     bw.startTag = start;
     bw.naechsterTag = s.tag + 14;
-    log(s, "bewerbung", `ZUSAGE: ${b.name} bei ${bw.betrieb}, Start ${kurzDatum(start)}`);
-    brief(s, bw.betrieb, "Zusage! 🎉", `Wir freuen uns, Ihnen ${b.art === "helfer" ? "die Stelle" : "den Ausbildungsplatz"} als ${b.name} anbieten zu können. Beginn: ${kurzDatum(start)}. Bitte sagen Sie uns innerhalb von zwei Wochen Bescheid.`);
-    return { stand: s, meldung: `Das Gespräch lief gut — ZUSAGE! Start am ${kurzDatum(start)}. Du musst innerhalb von 2 Wochen annehmen.` };
+    log(s, "bewerbung", `ZUSAGE: ${b.name}${bw.brutto ? " (Fachkraft)" : ""} bei ${bw.betrieb}, Start ${kurzDatum(start)}`);
+    const was = bw.brutto ? `die Stelle als ${b.name} (${bw.brutto} € brutto)` : b.art === "helfer" ? `die Stelle als ${b.name}` : b.art === "ausbildung" ? `den Ausbildungsplatz als ${b.name}` : `den Platz: ${b.name}`;
+    brief(s, bw.betrieb, "Zusage! 🎉", `Wir freuen uns, Ihnen ${was} anbieten zu können. Beginn: ${kurzDatum(start)}. Bitte sagen Sie uns innerhalb von zwei Wochen Bescheid.`);
+    return { stand: s, meldung: `Das Gespräch lief gut — ZUSAGE! Start am ${kurzDatum(start)}. Du musst innerhalb von 2 Wochen annehmen.${auftrittText}` };
   }
   bw.status = "absage";
   log(s, "bewerbung", `Absage nach Gespräch: ${b.name}`);
-  return { stand: s, meldung: "Nach dem Gespräch kommt eine Absage. Übung macht's — beim nächsten Mal besser." };
+  return { stand: s, meldung: `Nach dem Gespräch kommt eine Absage. Übung macht's — beim nächsten Mal besser.${auftrittText}` };
 }
 
 export function zusageAnnehmen(alt: Spielstand, buid: number): Ergebnis {
@@ -577,37 +680,50 @@ export function zusageAnnehmen(alt: Spielstand, buid: number): Ergebnis {
   const bw = s.bewerbungen.find((x) => x.uid === buid);
   const b = bw ? BERUF.get(bw.beruf) : null;
   if (!bw || !b || bw.status !== "zusage") return { stand: alt, fehler: "Keine Zusage." };
-  if (s.job && s.job.art !== "helfer" && s.job.art !== "freiwillig") return { stand: alt, fehler: "Du hast schon einen Ausbildungs-/Arbeitsvertrag — erst kündigen." };
-  if (alter(s, bw.startTag) < b.abAlter) return { stand: alt, fehler: `Für diesen Job musst du bei Beginn mindestens ${b.abAlter} sein.` };
-  if (s.job) {
-    s.job.ende = (bw.startTag ?? s.tag) - 1;
-    s.jobHistorie.push({ ...s.job });
-  }
+  const laeuft = s.job && (s.job.ende === undefined || s.job.ende >= s.tag);
+  if (laeuft && s.job!.art === "ausbildung") return { stand: alt, fehler: "Du bist in einer Ausbildung — erst abschließen oder kündigen (Jobs → Mein Job)." };
+  if (s.naechsterJob) return { stand: alt, fehler: "Du hast schon einen neuen Vertrag unterschrieben." };
+  const start = bw.startTag ?? s.tag;
+  if (alter(s, start) < b.abAlter) return { stand: alt, fehler: `Dafür musst du bei Beginn mindestens ${b.abAlter} sein.` };
+  const vorab = (b.vorab ?? []).reduce((a, k) => a + k.betrag, 0);
+  if (vorab > 0 && !kannZahlen(s, vorab)) return { stand: alt, fehler: `Vorher fallen ${vorab} € an (${(b.vorab ?? []).map((k) => k.text).join(", ")}). So viel hast du nicht.` };
   bw.status = "angenommen";
   // Den anderen Betrieben absagen — das gehört sich so und gibt ihnen den Platz frei
   const offen = s.bewerbungen.filter((x) => x !== bw && ["versendet", "test", "gespraech", "zusage"].includes(x.status));
   for (const x of offen) x.status = "abgelehnt";
   if (offen.length) log(s, "bewerbung", `${offen.length} andere Bewerbung(en) zurückgezogen.`);
-  const art: Beruf["art"] = b.art;
-  s.job = {
-    beruf: b.id, betrieb: bw.betrieb, start: bw.startTag ?? s.tag, art: art === "helfer" ? "helfer" : art,
-    urlaubstage: alter(s) < 16 ? 30 : alter(s) < 17 ? 27 : alter(s) < 18 ? 25 : b.art === "helfer" ? 20 : 26,
-    urlaubGenommen: 0, probezeitBis: (bw.startTag ?? s.tag) + (art === "ausbildung" ? 120 : 180),
+  const fachkraft = !!bw.brutto;
+  const art: JobStand["art"] = fachkraft ? "fachkraft" : b.art;
+  const neu: JobStand = {
+    beruf: b.id, betrieb: bw.betrieb, start, art, ...(fachkraft ? { brutto: bw.brutto } : {}),
+    urlaubstage: alter(s) < 16 ? 30 : alter(s) < 17 ? 27 : alter(s) < 18 ? 25 : b.programm === "FÖJ" ? 30 : b.art === "helfer" ? 20 : 26,
+    urlaubGenommen: 0, probezeitBis: start + (art === "ausbildung" ? 120 : 180),
     leistung: 55, abmahnungen: 0, krankTage: 0, fehlTage: 0,
   };
+  for (const k of b.vorab ?? []) if (k.betrag > 0) buchen(s, -k.betrag, "sonstiges", k.text);
+  if (laeuft) {
+    // Der alte Job läuft bis zum Tag vor dem Start weiter (Kündigungsfrist)
+    s.job!.ende = start - 1;
+    s.naechsterJob = neu;
+    log(s, "beruf", `Gekündigt zum ${kurzDatum(start - 1)} — Wechsel zu ${bw.betrieb}`);
+  } else {
+    if (s.job) s.jobHistorie.push({ ...s.job, ende: s.job.ende ?? s.tag });
+    s.job = neu;
+  }
   s.kcalBedarf = 2000 + b.koerperlich * 350;
+  const vertrag = art === "ausbildung" ? "Ausbildungsvertrag" : art === "schulisch" ? "Schulvertrag" : art === "freiwillig" || art === "ausland" ? "Vereinbarung Freiwilligendienst" : "Arbeitsvertrag";
   s.dokumente.push({ uid: uid(s), art: art === "ausbildung" || art === "schulisch" ? "ausbildungsvertrag" : "arbeitsvertrag",
-    titel: `${art === "ausbildung" ? "Ausbildungsvertrag" : art === "schulisch" ? "Schulvertrag" : "Arbeitsvertrag"}: ${b.name}, ${bw.betrieb}`, tag: s.tag,
-    text: `Beginn ${kurzDatum(bw.startTag ?? s.tag)}, Probezeit ${art === "ausbildung" ? "4 Monate" : "6 Monate"}, ${b.stundenWoche} Std./Woche. ${b.tarif}.` });
-  for (const k of b.startkosten ?? []) buchen(s, -k.betrag, "arbeit", k.text);
-  s.flags.arbeitsmittel = r2(Number(s.flags.arbeitsmittel ?? 0) + (b.startkosten ?? []).reduce((a, k) => a + k.betrag, 0));
+    titel: `${vertrag}: ${b.name}, ${bw.betrieb}`, tag: s.tag,
+    text: `Beginn ${kurzDatum(start)}${fachkraft ? `, ${bw.brutto} € brutto` : ""}, Probezeit ${art === "ausbildung" ? "4 Monate" : "6 Monate"}, ${b.stundenWoche} Std./Woche. ${fachkraft ? "" : b.tarif + "."}` });
+  if (!fachkraft) for (const k of b.startkosten ?? []) buchen(s, -k.betrag, "arbeit", k.text);
+  s.flags.arbeitsmittel = r2(Number(s.flags.arbeitsmittel ?? 0) + (fachkraft ? 0 : (b.startkosten ?? []).reduce((a, k) => a + k.betrag, 0)));
   delete s.flags.arbeitslosSeit;
-  log(s, "beruf", `Vertrag unterschrieben: ${b.name} bei ${bw.betrieb}, Start ${kurzDatum(bw.startTag ?? s.tag)}`);
-  if (!s.figur.krankenkasse && b.art !== "schulisch") {
+  log(s, "beruf", `Vertrag unterschrieben: ${b.name}${fachkraft ? " (Fachkraft)" : ""} bei ${bw.betrieb}, Start ${kurzDatum(start)}`);
+  if (!s.figur.krankenkasse && !["schulisch", "freiwillig", "ausland", "wehrdienst"].includes(art)) {
     brief(s, bw.betrieb, "Bitte Krankenkasse mitteilen",
       "Für die Anmeldung zur Sozialversicherung brauchen wir deine Krankenkasse (Mitgliedsbescheinigung), deine Steuer-ID und deine IBAN. Wähle eine Krankenkasse (Amt → Krankenkasse).");
   }
-  return { stand: s, meldung: `Unterschrieben! ${b.name} bei ${bw.betrieb} ab ${kurzDatum(bw.startTag ?? s.tag)}.` };
+  return { stand: s, meldung: `Unterschrieben! ${b.name} bei ${bw.betrieb} ab ${kurzDatum(start)}.${vorab ? ` Vorab bezahlt: ${vorab} €.` : ""}` };
 }
 
 export function selbstKuendigen(alt: Spielstand): Ergebnis {
@@ -692,7 +808,20 @@ export function nebenbei(s: Spielstand): void {
 export function elternBesuchen(alt: Spielstand, waescheMitnehmen: boolean): Ergebnis {
   const s = klon(alt);
   if (s.wohnung.form === "eltern") return { stand: alt, fehler: "Du wohnst doch bei ihnen." };
+  if (imAusland(s)) return { stand: alt, fehler: "Aus dem Ausland? Videoanruf geht — besuchen erst nach dem Aufenthalt (oder im Urlaub)." };
   const e = ELTERN_ORTE[s.herkunft.eltern];
+  if (fernVonErfurt(s)) {
+    if (![4, 5].includes(wochentag(s.tag))) return { stand: alt, fehler: "So weit weg geht das nur am Wochenende (Freitag oder Samstag losfahren)." };
+    buchen(s, -2 * 79, "mobilitaet", "Heimfahrt mit der Bahn (hin und zurück)");
+    vergehe(s, 8, "unterwegs");
+    vergehe(s, 20, "wach");
+    s.beduerfnisse.sozial = 100;
+    s.heute.kcal += 1800; s.heute.obstGemuese += 5; s.beduerfnisse.hunger = 100;
+    s.zuletzt.waesche = s.tag;
+    vergehe(s, 8, "unterwegs");
+    log(s, "start", "Wochenende bei den Eltern (Heimfahrt).");
+    return { stand: s, meldung: "Ein Wochenende zu Hause — Mama kocht, die Wäsche ist gewaschen. Heimfahrt 158 €." };
+  }
   fahrt(s, wegMinuten(s, e), "Eltern");
   vergehe(s, 3, "wach");
   s.beduerfnisse.sozial = begrenzen(s.beduerfnisse.sozial + 25);

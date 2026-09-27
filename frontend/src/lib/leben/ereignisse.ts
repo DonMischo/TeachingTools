@@ -14,8 +14,9 @@
 import { BERUF } from "./berufe";
 import { alter, begrenzen, brief, buchen, effekt, ganz, hatMoebel, log, r2, uid, zufall, zwischen, volljaehrig, de } from "./kern";
 import { abmahnungPruefen, aktiv, kuendigen, monatsbrutto } from "./motor";
+import { fahrschuleAnmelden, fahrschuleKosten, probezeitVerstoss } from "./auto";
 import type { Kategorie, Spielstand } from "./typen";
-import { jahrVon, kurzDatum, monatVon, tagImMonat } from "./zeit";
+import { jahrVon, kurzDatum, monatVon, tagImMonat, tagVon } from "./zeit";
 
 export type Option = {
   text: string;
@@ -507,7 +508,7 @@ export const EREIGNISSE: Ereignis[] = [
     text: () => "Ein Bekannter sucht jemanden, der samstags im Getränkemarkt aushilft: 520 € im Monat, Minijob.",
     optionen: [
       { text: "Annehmen (samstags arbeiten)",
-        wirkung: (s) => { s.flags.minijob = 520; return s.job?.art === "ausbildung" ? "Als Azubi musst du den Nebenjob dem Betrieb melden, er darf die Ausbildung nicht gefährden. Minijob: kein Abzug, aber Samstage weg." : "Minijob bis zur Grenze: brutto = netto."; } },
+        wirkung: (s) => { s.flags.minijob = "getraenke"; return s.job?.art === "ausbildung" ? "Als Azubi musst du den Nebenjob dem Betrieb melden, er darf die Ausbildung nicht gefährden. Minijob: kein Abzug, aber Samstage weg." : "Minijob bis zur Grenze: brutto = netto."; } },
       { text: "Ablehnen", wirkung: nichts("Freizeit ist auch was wert.") },
     ],
   },
@@ -791,16 +792,87 @@ export const EREIGNISSE: Ereignis[] = [
   {
     id: "fuehrerschein", titel: "Führerschein?", icon: "🚗", art: "geld", pMonat: 0.2, abstand: 365,
     wann: (s) => alter(s) >= 17 && !s.flags.fuehrerschein && !s.flags.fuehrerscheinSparen,
-    text: () => "Alle machen gerade den Führerschein. In Erfurt kostet Klasse B inzwischen ~3.500–4.500 € (Theorie, 25–35 Fahrstunden, Prüfungen).",
+    text: () => `Alle machen gerade den Führerschein. Klasse B kostet inzwischen rund ${fahrschuleKosten()} € (Grundgebühr, Erste Hilfe, ~30 Fahrstunden, Sonderfahrten, Prüfungen).`,
     optionen: [
-      { text: "Jetzt anmelden (4.000 € in Raten über die Fahrschule)", gesperrt: (s) => (s.konto.stand < 800 ? "Die Fahrschule will 800 € Anzahlung." : null),
-        wirkung: (s) => { zahlen(s, 800, "mobilitaet", "Fahrschule Anzahlung"); kredit(s, "ratenkauf", "Führerschein Klasse B", 3200, 12, 0, s.tag + 30);
-          s.flags.fuehrerschein = s.tag + 180; return "In einem halben Jahr kannst du fahren — ein Auto kostet dann aber nochmal ~250 €/Monat (Versicherung, Sprit, Steuer, TÜV)."; } },
-      { text: "Sparziel anlegen", wirkung: (s) => { s.flags.fuehrerscheinSparen = true; return "Monatlich 150 € aufs Sparkonto — in etwa zwei Jahren ist das Geld zusammen. (Sparplan im Bank-Menü)"; } },
+      { text: "Bei der Fahrschule anmelden", gesperrt: (s) => (s.fahrschule ? "Schon angemeldet." : !kannZahlenEr(s, 640) ? "Für die Anmeldung brauchst du rund 640 €." : null),
+        wirkung: (s) => { const r = fahrschuleAnmelden(s); if (!r.fehler) Object.assign(s, r.stand); return r.fehler ?? r.meldung ?? ""; } },
+      { text: "Sparziel anlegen", wirkung: (s) => { s.flags.fuehrerscheinSparen = true; return "Rund 150 € im Monat aufs Sparkonto — in etwa zwei Jahren ist das Geld zusammen. (Sparplan in der Bank-App)"; } },
       { text: "Brauche ich in der Stadt nicht", wirkung: nichts("In Erfurt kommt man mit Tram, Rad und D-Ticket gut klar.") },
     ],
   },
+  {
+    id: "post_verloren", titel: "Wo ist der Brief?", icon: "✉️", art: "wohnung", pMonat: 0.35, abstand: 60,
+    wann: (s) => !!s.flags.alteAdresse && s.tag - s.wohnung.einzug < 150 && s.tag - s.wohnung.einzug > 10 && Number(s.flags.nachsendeBis ?? -1) < s.tag,
+    werte: (s) => ({ was: ["Rechnung vom Handyanbieter", "neue Bankkarte", "Brief der Krankenkasse"][Math.floor(zufall(s) * 3)] }),
+    text: (_s, w) => `Die ${w.was} ist an deine alte Adresse gegangen — und ohne Nachsendeauftrag kommt sie dort nie an.`,
+    optionen: [
+      { text: "Neue Adresse überall melden, Nachsendeauftrag stellen (34,90 €)", kosten: () => 34.9,
+        wirkung: (s, w) => { zahlen(s, 34.9, "sonstiges", "Nachsendeauftrag (6 Monate)"); s.flags.nachsendeBis = s.tag + 182;
+          if (w.was === "Rechnung vom Handyanbieter") zahlen(s, 5, "handy", "Mahngebühr (Rechnung nicht erhalten)");
+          if (w.was === "neue Bankkarte") zahlen(s, 15, "bank", "Ersatzkarte");
+          return "Adressänderung: Bank, Arbeitgeber, Krankenkasse, Versicherungen, Handyanbieter — der Nachsendeauftrag fängt den Rest ab."; } },
+      { text: "Ignorieren", wirkung: (s) => { zahlen(s, 5, "sonstiges", "Mahngebühr"); return "Nächstes Mal kommt vielleicht eine Mahnung nicht an …"; } },
+    ],
+  },
+  {
+    id: "einsam", titel: "Irgendwie allein", icon: "😶", art: "sozial", pMonat: 0.6, abstand: 60,
+    wann: (s) => s.beduerfnisse.sozial < 25 && s.beduerfnisse.spass < 35 && s.tag > 30,
+    text: () => "Seit Wochen nur Arbeit, Handy, Bett. Die alten Schulfreunde sieht man kaum noch.",
+    optionen: [
+      { text: "In einen Sportverein eintreten (18 €/Monat)", wirkung: (s) => {
+        if (!s.vertraege.some((v) => v.angebot === "sportverein" && aktiv(s, v))) {
+          s.vertraege.push({ uid: uid(s), angebot: "sportverein", art: "verein", name: "Sportverein (Training Di + Do)", monatlich: 18, start: s.tag, mindestBis: s.tag + 30, zahltag: 15 });
+          zahlen(s, 20, "freizeit", "Aufnahmegebühr Sportverein");
+        }
+        sozial(s, 20); spass(s, 10); return "Dienstags und donnerstags Training — da lernt man schnell Leute kennen."; } },
+      { text: "Mit Kolleg:innen nach Feierabend weggehen", kosten: () => 25, wirkung: (s) => { zahlen(s, 25, "ausgehen", "Feierabendbier mit Kolleg:innen"); sozial(s, 30); spass(s, 15); return "Das tat gut."; } },
+      { text: "Ist schon okay so", wirkung: (s) => { s.beduerfnisse.gesundheit = begrenzen(s.beduerfnisse.gesundheit - 5); return "Einsamkeit schlägt auf die Gesundheit. Wenn es schwer wird: Nummer gegen Kummer 116 111."; } },
+    ],
+  },
+  // ─────────────── Auto
+  {
+    id: "knoellchen", titel: "Knöllchen", icon: "🅿️", art: "behoerde", pMonat: 0.12, abstand: 25,
+    wann: (s) => !!s.auto,
+    text: () => "Kurz ohne Parkschein in der Innenstadt gestanden — Strafzettel an der Scheibe.",
+    optionen: [{ text: "Bezahlen", kosten: () => 25, wirkung: (s) => { zahlen(s, 25, "strafen", "Verwarnungsgeld Parken"); return "25 €. Anwohnerparkausweis oder Park & Ride wären günstiger."; } }],
+  },
+  {
+    id: "blitzer", titel: "Geblitzt", icon: "📸", art: "behoerde", pMonat: 0.04, abstand: 90,
+    wann: (s) => !!s.auto,
+    text: () => "Innerorts 23 km/h zu schnell — der Blitzer an der Stauffenbergallee hat dich erwischt.",
+    optionen: [{ text: "Bußgeldbescheid bezahlen", kosten: () => 115, wirkung: (s) => { zahlen(s, 115, "strafen", "Bußgeld 21–25 km/h zu schnell");
+      return "115 € und ein Punkt in Flensburg." + probezeitVerstoss(s, "einer Geschwindigkeitsüberschreitung über 20 km/h"); } }],
+  },
+  {
+    id: "autounfall", titel: "Blechschaden", icon: "💥", art: "technik", pMonat: 0.01, abstand: 365,
+    wann: (s) => !!s.auto,
+    text: () => "Beim Ausparken einen anderen Wagen touchiert. Dein Auto hat eine Beule, das andere auch.",
+    optionen: [{ text: "Unfallbericht ausfüllen, Versicherung melden", wirkung: (s) => {
+      zahlen(s, 450, "mobilitaet", "Reparatur eigenes Auto (Teilkasko zahlt keine selbst verursachten Schäden)");
+      const v = s.vertraege.find((x) => x.angebot === "kfz" && aktiv(s, x)); if (v) v.monatlich = r2(v.monatlich * 1.25);
+      if (s.auto) s.auto.zustand = begrenzen(s.auto.zustand - 15);
+      return "Den fremden Schaden zahlt deine Kfz-Haftpflicht — aber du wirst hochgestuft: die Versicherung wird 25 % teurer. Die eigene Beule zahlt nur eine Vollkasko."; } }],
+  },
+  {
+    id: "winterreifen", titel: "Winterreifen", icon: "❄️", art: "technik", pMonat: 1, abstand: 300,
+    wann: (s) => !!s.auto && monatVon(s.tag) === 10 && tagImMonat(s.tag) === 15 && !s.flags.winterreifen,
+    text: () => "Bei Glätte sind Winter- oder Ganzjahresreifen Pflicht. Deine Sommerreifen reichen nicht.",
+    optionen: [
+      { text: "Ganzjahresreifen kaufen und montieren (380 €)", kosten: () => 380, wirkung: (s) => { zahlen(s, 380, "mobilitaet", "Ganzjahresreifen + Montage"); s.flags.winterreifen = true; return "Einmal gekauft, nie wieder wechseln."; } },
+      { text: "Riskieren", wirkung: (s) => { s.flags.winterreifenRisiko = true; return "Bei Glätte mit Sommerreifen: 60 € Bußgeld, und die Versicherung kann Leistungen kürzen."; } },
+    ],
+  },
+  {
+    id: "marder", titel: "Marder im Motorraum", icon: "🦡", art: "technik", pMonat: 0.015, abstand: 365,
+    wann: (s) => !!s.auto,
+    text: () => "Morgens springt das Auto nicht an: Ein Marder hat Kabel angeknabbert.",
+    optionen: [{ text: "In die Werkstatt", wirkung: (s) => { zahlen(s, 150, "mobilitaet", "Marderschaden (Selbstbeteiligung Teilkasko)"); return "Die Teilkasko zahlt Marderbiss — bis auf 150 € Selbstbeteiligung."; } }],
+  },
 ];
+
+function kannZahlenEr(s: Spielstand, betrag: number): boolean {
+  return s.konto.stand - betrag >= -s.konto.dispo;
+}
 
 export const EREIGNIS = new Map(EREIGNISSE.map((e) => [e.id, e]));
 
@@ -824,7 +896,9 @@ function termine(s: Spielstand): void {
   if (job.art === "schulisch" && tage >= dauerTage && !s.offen.some((o) => o.id === "abschlusspruefung")) {
     s.offen.push({ id: "abschlusspruefung", tag: s.tag });
   }
-  if ((job.art === "helfer" || job.art === "freiwillig") && tage === 365 && !s.offen.some((o) => o.id === "vertragsende")) {
+  const befristet = ["freiwillig", "ausland", "wehrdienst", "eq"].includes(job.art);
+  const ende = befristet ? dauerTage : job.art === "helfer" ? 365 : -1;
+  if (ende > 0 && tage === ende && job.ende === undefined && !s.offen.some((o) => o.id === "vertragsende")) {
     s.offen.push({ id: "vertragsende", tag: s.tag });
   }
 }
@@ -849,9 +923,33 @@ export const TERMINE: Ereignis[] = [
   },
   {
     id: "vertragsende", titel: "Vertrag läuft aus", icon: "📄", art: "arbeit", pMonat: 0,
-    text: (s) => s.job?.art === "freiwillig" ? "Dein Freiwilliges Soziales Jahr ist vorbei. Zeit für die nächste Bewerbung!" : "Dein befristeter Vertrag läuft aus.",
+    text: (s) => {
+      const b = s.job ? BERUF.get(s.job.beruf) : null;
+      if (!s.job || !b) return "Dein Vertrag läuft aus.";
+      if (s.job.art === "eq") return `Deine Einstiegsqualifizierung bei ${s.job.betrieb} ist zu Ende. Jetzt entscheidet sich, ob der Betrieb dich in die Ausbildung übernimmt.`;
+      if (["freiwillig", "ausland", "wehrdienst"].includes(s.job.art)) return `Dein ${b.programm ?? "Dienst"} (${b.name}) ist vorbei. Eine Zeit, die bleibt — und die im Lebenslauf gut aussieht.`;
+      return "Dein befristeter Vertrag läuft aus.";
+    },
     optionen: [{ text: "Weiter", wirkung: (s) => {
-      if (s.job?.art === "freiwillig") { s.flags.fsjGemacht = true; kuendigen(s, "Ende des Freiwilligen Sozialen Jahres"); return "Mit FSJ im Lebenslauf klappen Bewerbungen besser. Kindergeld läuft weiter, solange du eine Ausbildung suchst."; }
+      const job = s.job;
+      const b = job ? BERUF.get(job.beruf) : null;
+      if (job && b && job.art === "eq") {
+        const ziel = BERUF.get(b.ausbildungDanach ?? "");
+        kuendigen(s, "Ende der Einstiegsqualifizierung");
+        if (ziel && zufall(s) < b.uebernahme * (job.leistung > 50 ? 1.2 : 0.6)) {
+          const jahr = jahrVon(s.tag);
+          const start = [tagVon(jahr, 8, 1), tagVon(jahr, 9, 1), tagVon(jahr + 1, 8, 1)].find((t) => t > s.tag + 3)!;
+          s.bewerbungen.push({ uid: uid(s), beruf: ziel.id, betrieb: job.betrieb, tag: s.tag, status: "zusage", naechsterTag: s.tag + 14, qualitaet: 0.8, startTag: start });
+          brief(s, job.betrieb, "Übernahme in die Ausbildung 🎉", `Du hast uns überzeugt: Wir bieten dir den Ausbildungsplatz als ${ziel.name} ab ${kurzDatum(start)} an. Die EQ-Zeit kann angerechnet werden.`);
+          return `Geschafft: Der Betrieb bietet dir eine Ausbildung als ${ziel.name} an (Jobs → Bewerbungen → Annehmen).`;
+        }
+        return "Leider keine Übernahme. Mit dem EQ-Zeugnis im Lebenslauf klappen andere Bewerbungen aber besser.";
+      }
+      if (job && ["freiwillig", "ausland", "wehrdienst"].includes(job.art)) {
+        s.flags.fsjGemacht = true;
+        kuendigen(s, `Ende: ${b?.programm ?? "Freiwilligendienst"}`);
+        return "Das zählt bei jeder Bewerbung. Kindergeld läuft weiter, solange du eine Ausbildung suchst (bis 25).";
+      }
       if (zufall(s) < 0.6) { if (s.job) s.job.start = s.tag - 1; return "Verlängert um ein Jahr."; }
       kuendigen(s, "Ende der Befristung"); return "Nicht verlängert. Arbeitslos melden (Agentur für Arbeit) und bewerben.";
     } }],
@@ -880,6 +978,7 @@ function abschluss(s: Spielstand): string {
     return `${punkte} Punkte — leider nicht bestanden. Du darfst zweimal wiederholen; die Ausbildung verlängert sich auf Antrag bis zur nächsten Prüfung (etwa 6 Monate). Lernen!`;
   }
   s.flags.erstausbildungFertig = true;
+  s.flags.abschluesse = [...String(s.flags.abschluesse ?? "").split(",").filter(Boolean), b.id].join(",");
   s.dokumente.push({ uid: uid(s), art: "zeugnis", titel: `Abschlusszeugnis ${b.name} (${punkte} Punkte)`, tag: s.tag });
   const uebernahme = zufall(s) < b.uebernahme * (job.leistung > 60 ? 1.1 : job.leistung < 40 ? 0.5 : 0.9);
   const altJob = { ...job, ende: s.tag };
@@ -927,10 +1026,6 @@ export function taeglicheEreignisse(s: Spielstand): void {
       log(s, "ereignis", `Ereignis: ${e.titel}`);
       return;
     }
-  }
-  // Minijob: jeden Samstag arbeiten, am Monatsende Geld
-  if (s.flags.minijob && tagImMonat(s.tag) === 28) {
-    buchen(s, Number(s.flags.minijob), "lohn", "Minijob (Getränkemarkt)");
   }
   if (s.flags.vwl && tagImMonat(s.tag) === 28) s.sparkonto = r2(s.sparkonto + Number(s.flags.vwl));
   if (s.flags.fuehrerschein && typeof s.flags.fuehrerschein === "number" && s.tag === s.flags.fuehrerschein) {

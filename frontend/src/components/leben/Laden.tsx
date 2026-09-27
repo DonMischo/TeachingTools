@@ -8,13 +8,11 @@ import { useMemo, useState } from "react";
 import { alter } from "@/lib/leben/kern";
 import { reichweite, istEssbar } from "@/lib/leben/ernaehrung";
 import {
-  GRUNDBEDARF, imSortiment, KATEGORIEN, MAERKTE, MARKT, PRODUKT, PRODUKTE, preis, REFERENZ_WOCHE, variantenName, wochenangebote,
+  GRUNDBEDARF, imSortiment, KATEGORIEN, MAERKTE, MARKT, PRODUKT, PRODUKTE, preis, preisindexFuer, REFERENZ_WOCHE, variantenName, wochenangebote,
   type Kategorie, type Variante,
 } from "@/lib/leben/laden";
 import { spielwoche, type Korbposten } from "@/lib/leben/aktionen";
 import type { Spielstand } from "@/lib/leben/typen";
-import { werte } from "@/lib/leben/werte";
-import { jahrVon } from "@/lib/leben/zeit";
 import { euro, Fenster, Hinweis, Knopf, Reiter, eingabe } from "./ui";
 
 type Recherche = Record<string, { preis: number; quelle: string }>;
@@ -33,7 +31,7 @@ export function Laden({ s, marktId, onKaufen, onZu, onRecherche }: {
   const [korb, setKorb] = useState<Korbposten[]>([]);
   const [bar, setBar] = useState(false);
   const [recherche, setRecherche] = useState<string | null>(null);
-  const pi = werte(jahrVon(s.tag)).preisindex;
+  const pi = preisindexFuer(s);
   const angebote = useMemo(() => wochenangebote(m, spielwoche(s.tag), s.seed), [m, s.tag, s.seed]);
   const gespeicherteRecherche: Recherche = useMemo(() => { try { return JSON.parse(String(s.flags.recherche ?? "{}")); } catch { return {}; } }, [s.flags.recherche]);
 

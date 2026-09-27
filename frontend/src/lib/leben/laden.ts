@@ -11,6 +11,7 @@
  * Online-Shop ein und vergleichen.
  */
 import PRODUKTE_JSON from "./daten/produkte.json";
+import { werte } from "./werte";
 
 export type Kategorie =
   | "obst" | "gemuese" | "brot" | "fruehstueck" | "milch" | "kaese" | "wurst" | "fleisch" | "fisch" | "vegetarisch"
@@ -221,3 +222,9 @@ export const GRUNDBEDARF: { art: VerbrauchsArt; name: string; wirkung: string }[
   { art: "waesche", name: "Waschmittel", wirkung: "saubere Kleidung" },
   { art: "muell", name: "Müllbeutel", wirkung: "Ordnung" },
 ];
+
+/** Preisniveau am Wohnort: auf Sylt ist Einkaufen spürbar teurer (Annahme +25 %). */
+export function preisindexFuer(s: { tag: number; wohnung: { stadtteil: string } }): number {
+  const jahr = new Date(Date.UTC(2026, 6, 1 + s.tag)).getUTCFullYear();
+  return werte(jahr).preisindex * (s.wohnung.stadtteil === "Sylt" ? 1.25 : 1);
+}

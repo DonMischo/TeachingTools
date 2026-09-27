@@ -9,7 +9,9 @@
 import { BERUF, helferBrutto, verguetung, type Beruf } from "./berufe";
 import { essen, verbrauchen, verderben, type Mahlzeit } from "./ernaehrung";
 import { alter, amStueck, begrenzen, brief, buchen, effekt, klon, log, r2, uid, zufall, zwischen, de } from "./kern";
-import { abrechnung, type Abrechnung } from "./lohn";
+import { abrechnung, lohnsteuerMonat, type Abrechnung } from "./lohn";
+import { handyAltersschwaeche, startKleidung, verschleiss } from "./kleidung";
+import { autoMonat, autoTag, fahrschuleTag } from "./auto";
 import type { Beduerfnisse, JobStand, Monatsbilanz, Spielstand, Vertrag, Wohnung } from "./typen";
 import { SPIELSTAND_VERSION } from "./typen";
 import { ANGEBOT, preisImMonat, stromAbschlag, stromVerbrauchJahr } from "./vertraege";
@@ -21,7 +23,7 @@ import {
 import { ELTERN_ORTE, warmmiete } from "./wohnungen";
 import { taeglicheEreignisse } from "./ereignisse";
 import { amtTag } from "./amt";
-import { nebenbei } from "./aktionen";
+import { nebenbei, vorauswahlFachkraft } from "./aktionen";
 import { MOEBEL_DEF } from "./kern";
 
 // ───────────────────────────────────────────────────────────── Start
@@ -107,7 +109,18 @@ export function neuesSpiel(o: StartOptionen): Spielstand {
     flags: { mittag: "mitnehmen" },
     zuletzt: {},
     naechsteUid: 1,
+    kleidung: startKleidung(),
+    frisur: 70,
+    handy: { modell: "Smartphone (2 Jahre alt, von der Jugendweihe)", zustand: 55, gekauft: -730 },
+    auto: null,
+    fahrschule: null,
+    naechsterJob: null,
+    heimatWohnung: null,
   };
+  // Angebrochene Körperpflege von zu Hause
+  for (const [produkt, rest] of [["koerperpflege-duschgel-250ml", 0.5], ["koerperpflege-zahnpasta-75ml", 0.4], ["koerperpflege-deo-150ml", 0.5]] as const) {
+    s.vorrat.push({ produkt, variante: "eigen", rest, gekauft: 0, haltbarBis: 9999 });
+  }
   // Startgeld: Erspartes von Jugendweihe/Konfirmation und Geburtstagen
   s.konto.stand = 0;
   buchen(s, 600 + Math.round(r() * 600), "eltern", "Erspartes (Jugendweihe, Geburtstage)");
@@ -121,6 +134,14 @@ export function neuesSpiel(o: StartOptionen): Spielstand {
     `Liebe/r ${s.figur.name},\n\nwir sind stolz auf dich! Jetzt geht's los: Such dir eine Ausbildung oder einen Job. ` +
     `Solange du noch bei uns wohnst, zahlst du ${o.herkunft.kindergeld === "eltern" ? "nichts, dafür behalten wir das Kindergeld" : "erst mal kein Kostgeld"}. ` +
     `Bewerbungen schreibst du am besten gleich — viele Betriebe fangen am 1. August oder 1. September an.\n\nDeine Eltern`);
+  brief(s, "Berufsberatung der Agentur für Arbeit", "Deine ersten Schritte",
+    "Hallo! Ich bin Frau Jahn von der Berufsberatung. Ein paar Tipps für den Start:\n\n" +
+    "1. 📱 Jobs: Bewirb dich auf mehrere Stellen gleichzeitig (10–20 sind normal). Auch ein FSJ, FÖJ oder eine Einstiegsqualifizierung sind gute Wege.\n" +
+    "2. 👔 Für Vorstellungsgespräche: ordentliche Kleidung (Raus → Kleidung) und ein frischer Haarschnitt helfen.\n" +
+    "3. 🏥 Sobald du einen Vertrag hast: Krankenkasse wählen (Amt).\n" +
+    "4. 🚋 Überleg, wie du hinkommst: Deutschlandticket, Fahrrad — oder später der Führerschein.\n" +
+    "5. 🐷 Leg früh einen Sparplan an (Bank). Ein Notgroschen rettet dich, wenn die Waschmaschine kaputtgeht.\n\n" +
+    "Oben rechts im Handy siehst du unter »Nächste Schritte« immer, was gerade wichtig ist. Viel Erfolg!");
   return s;
 }
 
@@ -150,6 +171,10 @@ export function monatsbrutto(s: Spielstand, tag = s.tag): { brutto: number; mind
   }
   if (!b) return { brutto: 0, mindest: false, text: "" };
   if (job.art === "helfer") return { brutto: helferBrutto(b, werte(jahr).mindestlohn), mindest: false, text: "Lohn" };
+  if (job.art === "freiwillig" || job.art === "ausland" || job.art === "wehrdienst" || job.art === "eq") {
+    const text = job.art === "wehrdienst" ? "Wehrsold" : job.art === "eq" ? "EQ-Vergütung" : "Taschengeld";
+    return { brutto: b.taschengeld ?? 0, mindest: false, text };
+  }
   const aj = ausbildungsjahr(job, tag);
   const v = verguetung(b, aj, jahr);
   return { brutto: v.betrag, mindest: v.mindest, text: `Ausbildungsvergütung ${aj}. Jahr` };
@@ -180,9 +205,18 @@ function lohnZahlen(s: Spielstand): void {
   const jahr = jahrVon(s.tag);
   let a: Abrechnung;
   if (job.art === "schulisch") return;
-  if (job.art === "freiwillig") {
+  if (job.art === "freiwillig" || job.art === "ausland") {
+    // Freiwilligendienste: Träger zahlen die Sozialversicherung allein, Taschengeld bleibt unter dem Grundfreibetrag
     a = { brutto, kv: 0, pv: 0, rv: 0, av: 0, sv: 0, lohnsteuer: 0, soli: 0, kirchensteuer: 0, steuern: 0, netto: brutto,
       arbeitgeber: r2(brutto * 0.42), geringverdiener: true, minijob: false };
+  } else if (job.art === "wehrdienst") {
+    // Vereinfacht: keine SV-Abzüge (Heilfürsorge der Truppe, Rentenbeiträge zahlt der Bund), nur Lohnsteuer
+    const lst = lohnsteuerMonat(brutto, jahr, 0);
+    const kist = s.figur.kirche ? r2(lst * 0.09) : 0;
+    a = { brutto, kv: 0, pv: 0, rv: 0, av: 0, sv: 0, lohnsteuer: lst, soli: 0, kirchensteuer: kist, steuern: r2(lst + kist),
+      netto: r2(brutto - lst - kist), arbeitgeber: 0, geringverdiener: false, minijob: false };
+  } else if (job.art === "eq") {
+    a = abrechnung(brutto, jahr, person(s, true));
   } else {
     a = abrechnung(brutto, jahr, person(s, job.art === "ausbildung"));
   }
@@ -208,13 +242,66 @@ function lohnZahlen(s: Spielstand): void {
   }
 }
 
+// ───────────────────────────────────────────────────────────── Minijobs (samstags)
+
+export const MINIJOBS = [
+  { id: "getraenke", name: "Aushilfe im Getränkemarkt", beginn: 8, stunden: 7, stundenlohn: 14, trinkgeld: 0, ab: 16, text: "Samstags Kisten schleppen, Leergut, Kasse." },
+  { id: "kellnern", name: "Kellnern im Restaurant", beginn: 17, stunden: 5, stundenlohn: 13.9, trinkgeld: 25, ab: 16, text: "Samstagabend Service — dazu Trinkgeld." },
+  { id: "nachhilfe", name: "Nachhilfe geben (Mathe/Deutsch)", beginn: 10, stunden: 2, stundenlohn: 15, trinkgeld: 0, ab: 15, text: "Samstagvormittag, zwei Schüler:innen." },
+  { id: "zeitung", name: "Zeitungen zustellen", beginn: 4, stunden: 3, stundenlohn: 13.9, trinkgeld: 0, ab: 15, text: "Wochenendausgabe, sehr früh — bei jedem Wetter." },
+] as const;
+
+export function minijob(s: Spielstand) {
+  const f = s.flags.minijob;
+  if (!f) return null;
+  return MINIJOBS.find((m) => m.id === f) ?? MINIJOBS[0];
+}
+
+export function minijobMonat(s: Spielstand): number {
+  const m = minijob(s);
+  if (!m) return 0;
+  const lohn = Math.max(m.stundenlohn, werte(jahrVon(s.tag)).mindestlohn);
+  return Math.min(werte(jahrVon(s.tag)).minijob, r2(lohn * m.stunden * 4.33));
+}
+
+/** Samstags zum Minijob (Zeit, Energie, Trinkgeld). */
+export function minijobArbeiten(alt: Spielstand): Ergebnis {
+  const s = klon(alt);
+  const m = minijob(s);
+  if (!m) return { stand: alt, fehler: "Du hast keinen Minijob." };
+  if (wochentag(s.tag) !== 5) return { stand: alt, fehler: "Dein Minijob ist samstags." };
+  if (s.flags.minijobHeute === s.tag) return { stand: alt, fehler: "Heute warst du schon da." };
+  if (s.stunde > m.beginn + 1) {
+    s.flags.minijobHeute = s.tag;
+    return { stand: s, fehler: `Zu spät — Schichtbeginn war ${m.beginn} Uhr. Der Tag wird nicht bezahlt.` };
+  }
+  vergehe(s, Math.max(0, m.beginn - s.stunde) + 0.3, "unterwegs");
+  vergehe(s, m.stunden, "arbeit");
+  vergehe(s, 0.3, "unterwegs");
+  s.flags.minijobHeute = s.tag;
+  s.flags.minijobTage = Number(s.flags.minijobTage ?? 0) + 1;
+  if (m.trinkgeld) s.bargeld = r2(s.bargeld + Math.round(m.trinkgeld * zwischen(s, 0.5, 1.5)));
+  return { stand: s, meldung: `${m.name}: ${m.stunden} Stunden gearbeitet.` };
+}
+
+function minijobZahlen(s: Spielstand): void {
+  const m = minijob(s);
+  if (!m) return;
+  const tage = Number(s.flags.minijobTage ?? 0);
+  s.flags.minijobTage = 0;
+  const betrag = r2(minijobMonat(s) * Math.min(1, tage / 4.33));
+  if (betrag > 0) buchen(s, betrag, "lohn", `Minijob: ${m.name} (${tage} Samstage)`);
+  if (tage === 0) log(s, "arbeit", `Minijob: diesen Monat keinen Samstag gearbeitet — kein Lohn.`);
+}
+
 export function kindergeldBerechtigt(s: Spielstand): boolean {
   const a = alter(s);
   if (a < 18) return true;
   if (a >= 25) return false;
   if (s.flags.erstausbildungFertig) return false;
   if (!s.job) return true; // ausbildungsplatzsuchend (bei der Agentur gemeldet)
-  return s.job.art === "ausbildung" || s.job.art === "schulisch" || s.job.art === "freiwillig";
+  if (["freiwillig", "ausland", "wehrdienst", "eq"].includes(s.job.art)) return BERUF.get(s.job.beruf)?.kindergeld ?? false;
+  return s.job.art === "ausbildung" || s.job.art === "schulisch";
 }
 
 // ───────────────────────────────────────────────────────────── Bedürfnisse
@@ -237,7 +324,7 @@ function stundeVergehen(s: Spielstand, h: number, modus: Modus): void {
     case "unterwegs":
       d.hunger = -4.2; d.energie = -4.5; d.hygiene = -1.8; d.sozial = -0.5; d.spass = -1; break;
     default:
-      d.hunger = -4.2; d.energie = -4.3 - kater * 2; d.hygiene = -1.8; d.sozial = -1.2; d.spass = -1.4;
+      d.hunger = -4.2; d.energie = -4.3 - kater * 2; d.hygiene = -1.8; d.sozial = -1.5; d.spass = -1.9;
       // Bei den Eltern räumt man nur das eigene Zimmer auf
       d.ordnung = s.wohnung.form === "eltern" ? -0.3 : effekt(s, "ordnung") >= 2 ? -0.45 : -0.8;
   }
@@ -274,7 +361,10 @@ function tagesWechsel(s: Spielstand): void {
     return;
   }
   if (tagImMonat(s.tag) === 1) monatsWechsel(s);
+  jobWechsel(s);
   zahlungen(s);
+  fahrschuleTag(s);
+  autoTag(s);
   if (istMonatsletzter(s.tag)) monatsEnde(s);
   geburtstag(s);
   amtTag(s);
@@ -304,17 +394,25 @@ function tagAuswerten(s: Spielstand, tag: number): void {
   b.gesundheit = begrenzen(b.gesundheit + g);
   s.heute = { kcal: 0, protein: 0, obstGemuese: 0, zucker: 0, auswaerts: 0 };
 
-  // Verbrauch: Hygieneartikel und Haushalt (bei den Eltern zahlen die)
-  if (s.wohnung.form !== "eltern") {
-    const fehlt: string[] = [];
-    if (!verbrauchen(s, "klopapier")) { fehlt.push("Klopapier"); b.hygiene = begrenzen(b.hygiene - 15); }
+  s.flags.freizeitHeute = 0;
+  verschleiss(s, beruf(s)?.koerperlich ?? 0);
+  handyAltersschwaeche(s);
+  // Verbrauch: Körperpflege kauft man selbst (außer die Eltern bekommen dafür das Kindergeld),
+  // Haushaltskram nur im eigenen Haushalt
+  const fehlt: string[] = [];
+  if (!(s.wohnung.form === "eltern" && s.herkunft.kindergeld === "eltern")) {
     if (!verbrauchen(s, "zaehne")) { fehlt.push("Zahnpasta"); b.gesundheit = begrenzen(b.gesundheit - 0.3); }
+    if (!verbrauchen(s, "deo")) { fehlt.push("Deo"); b.hygiene = begrenzen(b.hygiene - 4); }
+  }
+  if (eigenerHaushalt(s)) {
+    if (!verbrauchen(s, "klopapier")) { fehlt.push("Klopapier"); b.hygiene = begrenzen(b.hygiene - 15); }
     if (!verbrauchen(s, "spuelen")) { fehlt.push("Spülmittel"); b.ordnung = begrenzen(b.ordnung - 6); }
     if (!verbrauchen(s, "muell")) { fehlt.push("Müllbeutel"); b.ordnung = begrenzen(b.ordnung - 3); }
-    verbrauchen(s, "deo");
     verbrauchen(s, "kueche");
-    if (fehlt.length) s.flags.fehltZuhause = fehlt.join(", ");
-    else delete s.flags.fehltZuhause;
+  }
+  if (fehlt.length) s.flags.fehltZuhause = fehlt.join(", ");
+  else delete s.flags.fehltZuhause;
+  if (s.wohnung.form === "wohnung") {
     // Strom: Grundlast + Geräte
     const geraete = s.moebel.reduce((a, m) => a + (m.defekt ? 0 : MOEBEL_DEF.get(m.id)?.strom ?? 0), 0);
     const tagesKwh = (stromVerbrauchJahr(geraete) / 365) * (s.flags.stromSparen ? 0.85 : 1) * zwischen(s, 0.85, 1.15);
@@ -360,12 +458,84 @@ export function abmahnungPruefen(s: Spielstand, grund: string): void {
   log(s, "arbeit", `Abmahnung Nr. ${job.abmahnungen}: ${grund}`);
 }
 
+// ───────────────────────────────────────────────────────────── Jobwechsel & Unterkunft
+
+/** Wohnt man im eigenen Haushalt (kauft Klopapier, Spülmittel …)? */
+export function eigenerHaushalt(s: Spielstand): boolean {
+  if (s.wohnung.form === "eltern") return false;
+  if (s.wohnung.form === "unterkunft") return !s.flags.verpflegung;
+  return true;
+}
+
+/** Bekommt man das Essen gestellt (Eltern, Kaserne, Gastfamilie)? */
+export function verpflegt(s: Spielstand): boolean {
+  return s.wohnung.form === "eltern" || (s.wohnung.form === "unterkunft" && !!s.flags.verpflegung);
+}
+
+export function imAusland(s: Spielstand): boolean {
+  return s.wohnung.form === "unterkunft" && s.wohnung.stadtteil === "Ausland";
+}
+
+/** Fern von Erfurt (Sylt, Nordsee, Ausland …) — dann gibt es die Erfurter Läden nicht. */
+export function fernVonErfurt(s: Spielstand): boolean {
+  return s.wohnung.form === "unterkunft" && !["Mühlhausen", "Kaserne"].includes(s.wohnung.stadtteil);
+}
+
+/** Wenn ein neuer Job/Dienst beginnt: alten beenden, ggf. in die Unterkunft ziehen. */
+function jobWechsel(s: Spielstand): void {
+  const neu = s.naechsterJob;
+  if (neu && s.tag >= neu.start) {
+    if (s.job) {
+      s.job.ende = neu.start - 1;
+      s.jobHistorie.push({ ...s.job });
+      unterkunftVerlassen(s);
+    }
+    s.job = neu;
+    s.naechsterJob = null;
+    log(s, "beruf", `Erster Tag: ${BERUF.get(neu.beruf)?.name ?? neu.beruf} bei ${neu.betrieb}`);
+  }
+  const job = s.job;
+  if (job && s.tag === job.start) unterkunftBeziehen(s);
+}
+
+function unterkunftBeziehen(s: Spielstand): void {
+  const b = beruf(s);
+  const u = b?.unterkunft;
+  if (!u || s.wohnung.form === "unterkunft") return;
+  if (s.wohnung.form !== "eltern") s.heimatWohnung = { ...s.wohnung };
+  s.flags.verpflegung = u.verpflegung;
+  s.wohnung = {
+    id: `unterkunft-${b!.id}`, form: "unterkunft", titel: u.titel, adresse: u.adresse, stadtteil: u.stadtteil, qm: u.qm, zimmer: 1,
+    kalt: 0, nebenkosten: 0, heizung: 0, kaution: 0, genossenschaftsanteile: 0, ebk: true, moebliert: true, etage: 1,
+    fahrzeitArbeit: 10, entfernungKm: 1, einzug: s.tag, kwh: 0,
+  };
+  log(s, "wohnung", `Eingezogen: ${u.titel}`);
+  brief(s, s.job?.betrieb ?? "Einsatzstelle", "Willkommen!", `Dein Zimmer: ${u.titel}.${u.verpflegung ? " Essen gibt es vor Ort." : " Einkaufen und kochen musst du selbst."}` +
+    (s.heimatWohnung ? " Deine Wohnung in Erfurt läuft weiter — die Miete auch." : " Gemeldet bleibst du bei deinen Eltern (Hauptwohnsitz)."));
+}
+
+function unterkunftVerlassen(s: Spielstand): void {
+  if (s.wohnung.form !== "unterkunft") return;
+  const e = ELTERN_ORTE[s.herkunft.eltern];
+  delete s.flags.verpflegung;
+  if (s.heimatWohnung) {
+    s.wohnung = s.heimatWohnung;
+    s.heimatWohnung = null;
+  } else {
+    s.wohnung = { id: "eltern", form: "eltern", titel: "Kinderzimmer bei den Eltern", adresse: e.name, stadtteil: e.stadtteil, qm: 14, zimmer: 1,
+      kalt: 0, nebenkosten: 0, heizung: 0, kaution: 0, genossenschaftsanteile: 0, ebk: true, etage: 1, fahrzeitArbeit: 0, entfernungKm: 0,
+      einzug: s.tag, kostgeld: 0, kwh: 0 };
+  }
+  log(s, "wohnung", `Zurück: ${s.wohnung.titel}`);
+}
+
 export function kuendigen(s: Spielstand, grund: string): void {
   const job = s.job;
   if (!job) return;
   job.ende = s.tag;
   s.jobHistorie.push({ ...job });
   s.job = null;
+  unterkunftVerlassen(s);
   s.dokumente.push({ uid: uid(s), art: "kuendigung", titel: `Kündigung ${job.betrieb}`, tag: s.tag, text: grund });
   brief(s, job.betrieb, "Kündigung", `${grund}.\n\nIhr Arbeitsverhältnis endet am ${kurzDatum(s.tag)}. ` +
     `Melden Sie sich sofort bei der Agentur für Arbeit arbeitssuchend (Frist: 3 Tage nach Kenntnis).`);
@@ -386,12 +556,25 @@ function zahlungen(s: Spielstand): void {
       buchen(s, -(wo.kalt), "miete", `Miete ${wo.adresse}`);
       buchen(s, -(wo.nebenkosten + wo.heizung), "nebenkosten", `Nebenkosten-/Heizkostenvorauszahlung`);
     }
+    // Die Erfurter Wohnung läuft weiter, während man in der Unterkunft wohnt
+    const hw = s.heimatWohnung;
+    if (hw) {
+      buchen(s, -(hw.kalt), "miete", `Miete ${hw.adresse} (läuft weiter)`);
+      buchen(s, -(hw.nebenkosten + hw.heizung), "nebenkosten", `Nebenkosten ${hw.adresse} (läuft weiter)`);
+    }
   }
   // Verträge
   for (const v of s.vertraege) {
     if (v.gekuendigtZum !== undefined && s.tag > v.gekuendigtZum) continue;
     const a = ANGEBOT.get(v.angebot);
-    if (!a) continue;
+    if (!a) {
+      // Verträge aus Ereignissen und Käufen (Katze, Kfz, Abofalle …): fester Monatsbetrag
+      if (t !== v.zahltag || s.tag === v.start || v.monatlich <= 0 || s.tag < v.start) continue;
+      const kat = v.angebot === "kfz" ? "versicherung" : v.angebot === "kfzsteuer" ? "mobilitaet" : v.angebot === "katze" ? "sonstiges"
+        : v.angebot === "rentenvers" ? "versicherung" : "abos";
+      buchen(s, -v.monatlich, kat, v.name);
+      continue;
+    }
     if (v.jaehrlich) {
       const start = datum(v.start);
       const heute = datum(s.tag);
@@ -400,7 +583,7 @@ function zahlungen(s: Spielstand): void {
       }
       continue;
     }
-    if (t !== v.zahltag || s.tag === v.start) continue;
+    if (t !== v.zahltag || s.tag <= v.start) continue;
     let betrag = v.monatlich;
     if (a.art === "ticket") betrag = w.deutschlandticket - (s.flags.jobticket ? 20 : 0);
     else if (a.art !== "strom") {
@@ -411,7 +594,7 @@ function zahlungen(s: Spielstand): void {
     const kat = a.art === "strom" ? "strom" : a.art === "internet" ? "internet" : a.art === "handy" ? "handy"
       : a.art === "ticket" ? "mobilitaet" : a.art === "konto" ? "bank"
       : ["haftpflicht", "hausrat", "bu", "unfall", "handyversicherung", "rechtsschutz", "zahnzusatz"].includes(a.art) ? "versicherung"
-      : "abos";
+      : a.art === "verein" ? "freizeit" : "abos";
     buchen(s, -betrag, kat, `${v.name}${a.art === "strom" ? " (Abschlag)" : ""}`);
   }
   // Strom-Grundversorgung, wenn man in einer eigenen Wohnung keinen Vertrag hat
@@ -511,6 +694,10 @@ export function aktiv(s: Spielstand, v: Vertrag): boolean {
 
 function monatsEnde(s: Spielstand): void {
   lohnZahlen(s);
+  minijobZahlen(s);
+  const pendelKm = s.wohnung.form === "eltern" ? (s.herkunft.eltern === "land" ? 32 : 8) : Math.max(2, s.wohnung.entfernungKm);
+  autoMonat(s, Number(s.flags.autoTageMonat ?? 0), pendelKm);
+  s.flags.autoTageMonat = 0;
   // Dispozinsen
   if (s.konto.stand < 0) {
     const zins = r2((-s.konto.stand * 12.5) / 100 / 12);
@@ -634,7 +821,7 @@ function bewerbungenTag(s: Spielstand): void {
     if (!beruf) continue;
     if (b.status === "versendet") {
       // Erste Antwort: Absage, Einladung zum Test oder zum Gespräch
-      const p = vorauswahl(s, beruf, b.qualitaet);
+      const p = b.brutto ? vorauswahlFachkraft(s, beruf.id, b.qualitaet) : vorauswahl(s, beruf, b.qualitaet);
       if (zufall(s) < p) {
         b.status = beruf.einstellungstest ? "test" : "gespraech";
         b.naechsterTag = werktagAb(s.tag + 3 + Math.floor(zufall(s) * 8));
@@ -675,7 +862,13 @@ export function schnitt(z: Spielstand["zeugnis"], faecher?: string[]): number {
 
 /** Wahrscheinlichkeit, nach der schriftlichen Bewerbung eingeladen zu werden. */
 export function vorauswahl(s: Spielstand, b: Beruf, qualitaet: number): number {
-  if (b.art === "helfer" || b.art === "freiwillig") return 0.85;
+  if (b.art === "helfer") return 0.85;
+  if (b.art === "freiwillig" || b.art === "ausland" || b.art === "eq" || b.art === "wehrdienst") {
+    let p = 0.95 - (b.konkurrenz - 1) * 0.14 + (qualitaet - 0.5) * 0.3;
+    if (s.zeugnis.fehltageUnentschuldigt > 10) p -= 0.2;
+    if (b.schnitt < 5) p -= Math.max(0, (schnitt(s.zeugnis, b.faecher) - b.schnitt)) * 0.2;
+    return Math.max(0.05, Math.min(0.95, p));
+  }
   const gesamt = schnitt(s.zeugnis);
   const fach = schnitt(s.zeugnis, b.faecher);
   const note = gesamt * 0.5 + fach * 0.5;
@@ -712,7 +905,8 @@ export function arbeitHeute(s: Spielstand, tag = s.tag): { muss: boolean; schule
   const bs = b?.berufsschule ?? 0;
   const wt = wochentag(tag);
   const woche = Math.floor(tag / 7);
-  const schule = job.art === "schulisch" || (job.art === "ausbildung" && (wt === 0 || (bs >= 1.5 && wt === 1 && woche % 2 === 0)) && bs > 0);
+  const schule = job.art === "schulisch" || (job.art === "eq" && wt === 0)
+    || (job.art === "ausbildung" && (wt === 0 || (bs >= 1.5 && wt === 1 && woche % 2 === 0)) && bs > 0);
   let beginn = schule ? 7.5 : b?.beginn ?? 8;
   if (!schule && alter(s) < 18 && beginn < 6) beginn = alter(s) >= 17 ? 5 : 6; // Jugendarbeitsschutz
   return { muss: true, schule, beginn, erledigt: job.heuteErledigt === tag };
@@ -727,9 +921,8 @@ export function arbeiten(alt: Spielstand): Ergebnis {
   if (heute.erledigt) return { stand: alt, fehler: "Du warst heute schon da." };
   if (s.zustand.krank && s.zustand.krank.bis >= s.tag) return { stand: alt, fehler: "Du bist krank — bleib zu Hause und melde dich krank." };
   const b = BERUF.get(job.beruf);
-  const weg = (s.wohnung.form === "eltern"
-    ? ELTERN_ORTE[s.herkunft.eltern].extraMin + 25
-    : s.wohnung.fahrzeitArbeit || 25) / 60;
+  const weg = arbeitsweg(s) / 60;
+  const mitAuto = !!s.auto && !!s.flags.autoPendeln && s.wohnung.form !== "unterkunft" && fahrenErlaubt(s);
   const ankunft = s.stunde + weg;
   let zuSpaet = Math.max(0, ankunft - heute.beginn);
   if (s.flags.verschlafen !== undefined && Number(s.flags.verschlafen) === s.tag) {
@@ -738,7 +931,9 @@ export function arbeiten(alt: Spielstand): Ergebnis {
     vergehe(s, 1.5, "schlaf");
   }
   vergehe(s, weg, "unterwegs");
-  if (!s.vertraege.some((v) => v.art === "ticket" && aktiv(s, v)) && !s.moebel.some((m) => m.id === "fahrrad-schloss")) {
+  if (mitAuto) s.flags.autoTageMonat = Number(s.flags.autoTageMonat ?? 0) + 1;
+  else if (s.wohnung.form !== "unterkunft" && job.art !== "wehrdienst"
+    && !s.vertraege.some((v) => v.art === "ticket" && aktiv(s, v)) && !s.moebel.some((m) => m.id === "fahrrad-schloss")) {
     // Ohne Ticket und Rad: Einzelfahrschein (EVAG, Richtwert)
     buchen(s, -2 * 2.6, "mobilitaet", "Einzelfahrscheine hin und zurück");
   }
@@ -746,9 +941,13 @@ export function arbeiten(alt: Spielstand): Ergebnis {
   // Mittag
   const regel = String(s.flags.mittag ?? "mitnehmen");
   let mittag = "";
-  if (regel === "mitnehmen" && s.wohnung.form === "eltern") {
+  if (verpflegt(s)) {
     beiDenEltern(s, "mittag");
-    mittag = "Brotdose von zu Hause";
+    mittag = s.wohnung.form === "eltern" ? "Brotdose von zu Hause" : "Mittagessen vor Ort";
+  } else if (b?.unterkunft && s.wohnung.form === "unterkunft" && regel === "kaufen") {
+    buchen(s, -8.5, "lebensmittel", "Mittag unterwegs (teurer Ort)");
+    s.heute.kcal += 750; s.heute.protein += 25; s.heute.obstGemuese += 1; s.heute.auswaerts++;
+    mittag = "Mittag gekauft (8,50 €)";
   } else if (regel === "mitnehmen") {
     const e = essen(s, "mittag", false);
     mittag = e.kcal > 200 ? `Brotdose: ${e.produkte.slice(0, 3).join(", ")}` : "Brotdose leer — Hunger!";
@@ -769,7 +968,10 @@ export function arbeiten(alt: Spielstand): Ergebnis {
   const bd = s.beduerfnisse;
   let tagesform = (bd.energie + bd.hygiene + bd.hunger + bd.gesundheit) / 4;
   if (s.zustand.kater && s.zustand.kater >= s.tag) tagesform -= 25;
-  const delta = (tagesform - 45) / 12 - zuSpaet * 6;
+  // Stimmung und Auftreten zählen mit
+  if ((bd.spass + bd.sozial) / 2 < 20) tagesform -= 8;
+  if (s.kleidung.alltag.zustand < 25) tagesform -= 6;
+  const delta = (tagesform - 45) / 18 - zuSpaet * 6;
   job.leistung = begrenzen(job.leistung + delta);
   job.heuteErledigt = s.tag;
   job.zuletzt = s.tag;
@@ -786,6 +988,7 @@ export function arbeiten(alt: Spielstand): Ergebnis {
     meldung += " Kolleg:innen haben sich über deinen Geruch beschwert.";
     job.leistung = begrenzen(job.leistung - 5);
   }
+  if (s.kleidung.alltag.zustand < 25 && zufall(s) < 0.15) meldung += " Die Chefin schaut komisch auf deine löchrigen Klamotten.";
   if (b?.id === "friseur" || b?.id === "gastro" || b?.id === "helfer-gastro") {
     const tg = Math.round(zwischen(s, 0, 8));
     s.bargeld = r2(s.bargeld + tg);
@@ -814,7 +1017,7 @@ export function schlafen(alt: Spielstand, bisStunde: number): Ergebnis {
 
 export function duschen(alt: Spielstand): Ergebnis {
   const s = klon(alt);
-  const hatDuschgel = s.wohnung.form === "eltern" || verbrauchen(s, "duschen", 1);
+  const hatDuschgel = (s.wohnung.form === "eltern" && s.herkunft.kindergeld === "eltern") || verbrauchen(s, "duschen", 1);
   vergehe(s, 0.5, "wach");
   s.beduerfnisse.hygiene = begrenzen(s.beduerfnisse.hygiene + (hatDuschgel ? 70 : 35));
   s.zuletzt.duschen = s.tag;
@@ -824,7 +1027,7 @@ export function duschen(alt: Spielstand): Ergebnis {
 export function mahlzeit(alt: Spielstand, m: Mahlzeit): Ergebnis {
   const s = klon(alt);
   const kochen = m !== "snack";
-  const e = s.wohnung.form === "eltern" ? beiDenEltern(s, m) : essen(s, m, kochen);
+  const e = verpflegt(s) ? beiDenEltern(s, m) : essen(s, m, kochen);
   vergehe(s, kochen && effekt(s, "kochen") >= 2 ? 0.75 : 0.25, "wach");
   s.beduerfnisse.hunger = begrenzen(s.beduerfnisse.hunger + (e.kcal / s.kcalBedarf) * 110);
   if (e.kcal < 100) return gibt(s, "Nichts Essbares da. Einkaufen gehen — oder bei den Eltern vorbeischauen?");
@@ -835,7 +1038,9 @@ export function mahlzeit(alt: Spielstand, m: Mahlzeit): Ergebnis {
 function beiDenEltern(s: Spielstand, m: Mahlzeit) {
   const kcal = Math.round(s.kcalBedarf * { fruehstueck: 0.25, mittag: 0.35, abend: 0.35, snack: 0.1 }[m]);
   s.heute.kcal += kcal; s.heute.protein += kcal / 35; s.heute.obstGemuese += kcal / 450; s.heute.zucker += kcal / 60;
-  const was = { fruehstueck: "Frühstück zu Hause", mittag: "Mittag zu Hause", abend: "Abendessen mit der Familie", snack: "Snack aus dem Kühlschrank" }[m];
+  const was = s.wohnung.form === "eltern"
+    ? { fruehstueck: "Frühstück zu Hause", mittag: "Mittag zu Hause", abend: "Abendessen mit der Familie", snack: "Snack aus dem Kühlschrank" }[m]
+    : { fruehstueck: "Frühstück (Verpflegung)", mittag: "Mittagessen (Verpflegung)", abend: "Abendessen (Verpflegung)", snack: "Snack" }[m];
   return { kcal, produkte: [was], fehlt: 0 };
 }
 
@@ -870,29 +1075,55 @@ export function freizeit(alt: Spielstand, art: Freizeit, stunden: number): Ergeb
   vergehe(s, stunden, "wach");
   const b = s.beduerfnisse;
   const spass = effekt(s, "spass");
-  const inet = effekt(s, "internet") > 0 || s.vertraege.some((v) => v.art === "internet" && aktiv(s, v));
+  const inet = internetDa(s);
+  // Gratis-Freizeit nutzt sich ab: die dritte Serienfolge macht weniger Spaß als die erste
+  const schon = Number(s.flags.freizeitHeute ?? 0);
+  if (art !== "lernen") s.flags.freizeitHeute = schon + stunden;
+  const f = 1 / (1 + schon / 3);
   switch (art) {
     case "zocken":
       if (spass < 3) return gibt(s, "Ohne Konsole oder PC wird das nichts — du scrollst stattdessen am Handy.");
-      b.spass = begrenzen(b.spass + 12 * stunden); b.sozial = begrenzen(b.sozial + (inet ? 3 : 0) * stunden); break;
+      b.spass = begrenzen(b.spass + 12 * stunden * f); b.sozial = begrenzen(b.sozial + (inet ? 3 : 0) * stunden * f); break;
     case "serie":
-      b.spass = begrenzen(b.spass + (spass >= 2 && inet ? 9 : 4) * stunden); break;
+      b.spass = begrenzen(b.spass + (spass >= 2 && inet ? 9 : 4) * stunden * f); break;
     case "lesen":
-      b.spass = begrenzen(b.spass + 5 * stunden); break;
+      b.spass = begrenzen(b.spass + 5 * stunden * f); break;
     case "sport":
-      b.spass = begrenzen(b.spass + 6 * stunden); b.gesundheit = begrenzen(b.gesundheit + 1.5 * stunden);
-      b.energie = begrenzen(b.energie - 6 * stunden); b.hygiene = begrenzen(b.hygiene - 15 * stunden); break;
+      b.spass = begrenzen(b.spass + 6 * stunden * f); b.gesundheit = begrenzen(b.gesundheit + 1.5 * stunden);
+      b.energie = begrenzen(b.energie - 6 * stunden); b.hygiene = begrenzen(b.hygiene - 15 * stunden);
+      s.kleidung.sport.zustand = begrenzen(s.kleidung.sport.zustand - 1.5 * stunden); break;
     case "telefonieren":
-      b.sozial = begrenzen(b.sozial + 10 * stunden); break;
+      b.sozial = begrenzen(b.sozial + (s.handy.zustand > 5 ? 8 : 2) * stunden * f); break;
     case "lernen":
       s.flags.lernstunden = Number(s.flags.lernstunden ?? 0) + stunden;
       b.spass = begrenzen(b.spass - 3 * stunden);
       if (s.job) s.job.leistung = begrenzen(s.job.leistung + 0.8 * stunden);
       break;
     default:
-      b.spass = begrenzen(b.spass + 3 * stunden); b.energie = begrenzen(b.energie + 2 * stunden);
+      b.spass = begrenzen(b.spass + 3 * stunden * f); b.energie = begrenzen(b.energie + 2 * stunden);
   }
-  return gibt(s);
+  return gibt(s, f < 0.6 && art !== "lernen" ? "Irgendwie langweilig — heute schon genug rumgehangen. Raus mit dir!" : undefined);
+}
+
+/** Internet zu Hause: bei den Eltern, WG, Wohnheim, Unterkunft — oder mit geschaltetem Vertrag. */
+export function internetDa(s: Spielstand): boolean {
+  if (effekt(s, "internet") > 0 && s.wohnung.form !== "wohnung") return true;
+  return s.vertraege.some((v) => v.art === "internet" && aktiv(s, v) && s.tag >= (v.aktivAb ?? v.start));
+}
+
+/** Weg zur Arbeit in Minuten (ÖPNV, Auto oder Unterkunft vor Ort). */
+export function arbeitsweg(s: Spielstand): number {
+  const b = beruf(s);
+  if (s.wohnung.form === "unterkunft") return 10;
+  let min = s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern].extraMin + 25 : s.wohnung.fahrzeitArbeit || 25;
+  min += b?.pendelMin ?? 0;
+  if (s.auto && s.flags.autoPendeln && fahrenErlaubt(s)) min = Math.max(10, Math.round(min * 0.6));
+  return min;
+}
+
+/** Allein fahren darf man erst ab 18 (vorher Begleitetes Fahren). */
+export function fahrenErlaubt(s: Spielstand): boolean {
+  return s.flags.fuehrerschein === true && alter(s) >= 18;
 }
 
 // ───────────────────────────────────────────────────────────── Verträge
@@ -906,7 +1137,7 @@ export function vertragAbschliessen(alt: Spielstand, angebotId: string, abschlag
   }
   if (a.wohnung && s.wohnung.form === "eltern") return { stand: alt, fehler: "Das brauchst du erst mit eigener Wohnung." };
   // Nur ein Vertrag je Art (außer Abos)
-  const einzeln = !["streaming", "musik", "gaming", "zeitung"].includes(a.art);
+  const einzeln = !["streaming", "musik", "gaming", "zeitung", "verein"].includes(a.art);
   const alte = einzeln ? s.vertraege.filter((v) => v.art === a.art && aktiv(s, v)) : [];
   const gebunden = alte.find((v) => v.mindestBis > s.tag);
   if (gebunden) return { stand: alt, fehler: `Du hast schon »${gebunden.name}« — Mindestlaufzeit bis ${kurzDatum(gebunden.mindestBis)}.` };
@@ -916,6 +1147,11 @@ export function vertragAbschliessen(alt: Spielstand, angebotId: string, abschlag
     uid: uid(s), angebot: a.id, art: a.art, name: a.name, monatlich, jaehrlich: a.jaehrlich,
     start: s.tag, mindestBis: s.tag + Math.round(a.laufzeitMonate * 30.4), zahltag: a.art === "strom" || a.art === "ticket" ? 1 : 15,
   };
+  if (a.art === "internet" && a.id !== "lte-router") {
+    v.aktivAb = werktagAb(s.tag + 14 + Math.floor(zufall(s) * 15));
+    brief(s, a.anbieter, "Ihr Anschluss: Schalttermin", `Ihr Internetanschluss wird am ${kurzDatum(v.aktivAb)} geschaltet (Techniker zwischen 8 und 16 Uhr). ` +
+      "Bis dahin: mobiles Datenvolumen oder ein LTE-Router als Übergang.");
+  }
   s.vertraege.push(v);
   if (a.einmalig) buchen(s, -a.einmalig, a.art === "fitness" ? "abos" : "sonstiges", `${a.name}: einmalige Gebühr`);
   if (a.jaehrlich) buchen(s, -r2(a.monatlich * 12), "versicherung", `${a.name} (Jahresbeitrag)`);
@@ -1005,7 +1241,9 @@ function routineAmStueck(start: Spielstand, tage: number): Ergebnis {
     const morgen = s.stunde >= 12 ? s.tag + 1 : s.tag;
     const job = arbeitHeute(s, morgen);
     const weg = (s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern].extraMin + 25 : s.wohnung.fahrzeitArbeit || 25) / 60;
-    const aufstehen = job.muss ? Math.max(3, job.beginn - 1.5 - weg) : 8.5;
+    const mj = minijob(s);
+    const aufstehen = job.muss ? Math.max(3, job.beginn - 1.5 - weg)
+      : mj && wochentag(morgen) === 5 ? Math.max(3, mj.beginn - 1.5) : 8.5;
     if (s.tag < morgen || s.stunde < aufstehen) s = schlafen(s, aufstehen).stand;
     if (s.beendet || s.tag >= ziel) break;
     s = mahlzeit(s, "fruehstueck").stand;
@@ -1015,9 +1253,23 @@ function routineAmStueck(start: Spielstand, tage: number): Ergebnis {
     if (j2.muss && !j2.erledigt && !(s.zustand.krank && s.zustand.krank.bis >= s.tag)) {
       s = arbeiten(s).stand;
     } else {
+      // Samstags: Minijob
+      if (minijob(s) && wochentag(s.tag) === 5 && s.flags.minijobHeute !== s.tag) {
+        const m = minijob(s)!;
+        if (s.stunde < m.beginn) s = freizeit(s, "chillen", Math.max(0, m.beginn - 0.5 - s.stunde)).stand;
+        const r = minijobArbeiten(s);
+        if (!r.fehler) s = r.stand;
+      }
       s = freizeit(s, "chillen", 3).stand;
       s = mahlzeit(s, "mittag").stand;
       s = freizeit(s, s.beduerfnisse.sozial < 40 ? "telefonieren" : "serie", 3).stand;
+    }
+    // Vereinstraining dienstags und donnerstags
+    if (s.vertraege.some((v) => v.angebot === "sportverein" && aktiv(s, v)) && [1, 3].includes(wochentag(s.tag)) && s.stunde < 18.5) {
+      s = freizeit(s, "chillen", Math.max(0, 18 - s.stunde)).stand;
+      vergehe(s, 2, "ausgehen");
+      s.beduerfnisse.gesundheit = begrenzen(s.beduerfnisse.gesundheit + 2);
+      s.kleidung.sport.zustand = begrenzen(s.kleidung.sport.zustand - 2);
     }
     if (s.stunde < 18.5) s = freizeit(s, "chillen", 18.5 - s.stunde).stand;
     s = mahlzeit(s, "abend").stand;
@@ -1033,6 +1285,10 @@ function routineAmStueck(start: Spielstand, tage: number): Ergebnis {
     else if (ungelesen() > postVorher) grund = "Du hast Post.";
     else if (s.beduerfnisse.hunger < 25) grund = "Du hast Hunger — der Vorrat ist leer oder reicht nicht.";
     else if (s.beduerfnisse.gesundheit < 30) grund = "Dir geht es gesundheitlich schlecht.";
+    else if (s.flags.fehltZuhause && s.flags.fehltGemeldet !== s.flags.fehltZuhause) {
+      s.flags.fehltGemeldet = s.flags.fehltZuhause;
+      grund = `Dir fehlt: ${s.flags.fehltZuhause} — ab in die Drogerie!`;
+    }
     else if (s.konto.stand < -s.konto.dispo) grund = "Dein Konto ist im Minus!";
     else if (s.zustand.krank && s.zustand.krank.bis >= s.tag && s.flags.krankGemeldetRoutine !== s.zustand.krank.bis) {
       s.flags.krankGemeldetRoutine = s.zustand.krank.bis;

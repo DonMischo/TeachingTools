@@ -212,7 +212,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
                 <div key={m.id} className={`rounded-xl px-3 py-2 text-sm font-bold shadow-lg ${m.fehler ? "bg-rose-600 text-white" : "bg-slate-900/90 text-white ring-1 ring-white/15"}`}>{m.text}</div>
               ))}
             </div>
-            {fehlt && s.wohnung.form !== "eltern" && <div className="absolute bottom-2 right-2 rounded-lg bg-amber-500/90 px-2 py-1 text-xs font-bold text-black">Fehlt zu Hause: {fehlt}</div>}
+            {fehlt && <div className="absolute bottom-2 right-2 rounded-lg bg-amber-500/90 px-2 py-1 text-xs font-bold text-black">Fehlt zu Hause: {fehlt}</div>}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {aktion("😴", "Schlafen", (x) => schlafen(x, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).muss ? Math.max(4, arbeitHeute(x, x.stunde >= 12 ? x.tag + 1 : x.tag).beginn - 1.5) : 8.5), "bett", "Schlafen bis zum Aufstehen")}
