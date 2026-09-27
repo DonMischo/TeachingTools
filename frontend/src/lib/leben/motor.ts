@@ -865,7 +865,6 @@ export function vorauswahl(s: Spielstand, b: Beruf, qualitaet: number): number {
   if (b.art === "helfer") return 0.85;
   if (b.art === "freiwillig" || b.art === "ausland" || b.art === "eq" || b.art === "wehrdienst") {
     let p = 0.95 - (b.konkurrenz - 1) * 0.14 + (qualitaet - 0.5) * 0.3;
-    if (s.zeugnis.fehltageUnentschuldigt > 10) p -= 0.2;
     if (b.schnitt < 5) p -= Math.max(0, (schnitt(s.zeugnis, b.faecher) - b.schnitt)) * 0.2;
     return Math.max(0.05, Math.min(0.95, p));
   }
@@ -878,8 +877,6 @@ export function vorauswahl(s: Spielstand, b: Beruf, qualitaet: number): number {
   p += (qualitaet - 0.5) * 0.4;
   const rang = { HSA: 0, QHSA: 1, RSA: 2 } as const;
   if (rang[s.zeugnis.abschluss] < rang[b.abschluss]) p *= 0.25;
-  if (s.zeugnis.fehltageUnentschuldigt > 5) p -= 0.15;
-  if (s.zeugnis.verhalten >= 4) p -= 0.1;
   if (s.flags.fsjGemacht) p += 0.1;
   return Math.max(0.03, Math.min(0.95, p));
 }

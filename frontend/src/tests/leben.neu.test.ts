@@ -12,7 +12,7 @@ import type { Spielstand } from "@/lib/leben/typen";
 function start(seed = 42, geburtstag = "2010-03-15"): Spielstand {
   return neuesSpiel({
     name: "Kim", geburtstag, avatar: "🧑", farbe: "#f59e0b", kirche: false, seed,
-    zeugnis: { abschluss: "RSA", noten: { Deutsch: 2, Mathematik: 2, Englisch: 2, Biologie: 1, Geografie: 2 }, verhalten: 2, mitarbeit: 2, fehltageUnentschuldigt: 0 },
+    zeugnis: { abschluss: "RSA", noten: { Deutsch: 2, Mathematik: 2, Englisch: 2, Biologie: 1, Geografie: 2 } },
     herkunft: { eltern: "erfurt", elternEinkommen: "mittel", kindergeld: "weiter" },
   });
 }

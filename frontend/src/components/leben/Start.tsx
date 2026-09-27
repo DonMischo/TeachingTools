@@ -6,6 +6,7 @@
 import { useRef, useState } from "react";
 import { ABSCHLUESSE, FAECHER, type Abschluss, type Fach } from "@/lib/leben/berufe";
 import type { StartOptionen } from "@/lib/leben/motor";
+import { bestanden, zeugnisErzeugen, type ZeugnisStufe } from "@/lib/leben/zeugnis";
 import { hochladen } from "@/lib/leben/speichern";
 import type { Spielstand } from "@/lib/leben/typen";
 import { Feld, Hinweis, Knopf, eingabe } from "./ui";
@@ -26,9 +27,6 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
   const [kindergeld, setKindergeld] = useState<"weiter" | "halb" | "eltern">("halb");
   const [abschluss, setAbschluss] = useState<Abschluss>("RSA");
   const [noten, setNoten] = useState<Partial<Record<Fach, number>>>({});
-  const [verhalten, setVerhalten] = useState(2);
-  const [mitarbeit, setMitarbeit] = useState(2);
-  const [fehltage, setFehltage] = useState(0);
   const [fehler, setFehler] = useState<string | null>(null);
   const datei = useRef<HTMLInputElement>(null);
 
@@ -37,15 +35,18 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
     return n.length ? (n.reduce((a, b) => a + b, 0) / n.length).toFixed(1).replace(".", ",") : "–";
   })();
 
+  const pruefung = bestanden(noten);
+
   const los = () => {
     const fehlt = PFLICHT.filter((f) => !noten[f]);
     if (!name.trim()) return setFehler("Gib deiner Figur einen Namen.");
     if (fehlt.length) return setFehler(`Im Zeugnis fehlen noch Noten: ${fehlt.join(", ")}.`);
+    if (!pruefung.ok) return setFehler(`Mit diesen Noten wäre der Abschluss nicht bestanden (§ 51 ThürSchulO): ${pruefung.grund}`);
     const alterBeiStart = 2026 - Number(geburtstag.slice(0, 4)) - (geburtstag.slice(5) > "07-01" ? 1 : 0);
     if (alterBeiStart < 15 || alterBeiStart > 19) return setFehler("Nach der 10. Klasse ist man meist 15 bis 17 Jahre alt — wähle ein passendes Geburtsdatum.");
     onStart({
       name: name.trim(), geburtstag, avatar, farbe, kirche,
-      zeugnis: { abschluss, noten, verhalten, mitarbeit, fehltageUnentschuldigt: fehltage },
+      zeugnis: { abschluss, noten },
       herkunft: { eltern, elternEinkommen: einkommen, kindergeld },
     });
   };
@@ -134,21 +135,18 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
             </label>
           ))}
         </div>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Feld label="Verhalten (Kopfnote)">
-            <select className={eingabe} value={verhalten} onChange={(e) => setVerhalten(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{["sehr gut", "gut", "befriedigend", "ausreichend", "mangelhaft"][n - 1]}</option>)}
-            </select>
-          </Feld>
-          <Feld label="Mitarbeit (Kopfnote)">
-            <select className={eingabe} value={mitarbeit} onChange={(e) => setMitarbeit(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{["sehr gut", "gut", "befriedigend", "ausreichend", "mangelhaft"][n - 1]}</option>)}
-            </select>
-          </Feld>
-          <Feld label="Unentschuldigte Fehltage" hilfe="Betriebe schauen genau hin.">
-            <input type="number" min={0} max={60} className={eingabe} value={fehltage} onChange={(e) => setFehltage(Math.max(0, Number(e.target.value)))} />
-          </Feld>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-slate-300">🎲 Zeugnis erzeugen:</span>
+          {([["gut", "gut"], ["mittel", "mittel"], ["schlecht", "schlecht (knapp bestanden)"]] as [ZeugnisStufe, string][]).map(([st, text]) => (
+            <Knopf key={st} art="leise" onClick={() => { setNoten(zeugnisErzeugen(st)); setFehler(null); }}>{text}</Knopf>
+          ))}
+          {Object.keys(noten).length > 0 && (
+            <span className={`ml-auto rounded-lg px-2 py-1 font-bold ${pruefung.ok ? "bg-emerald-500/20 text-emerald-200" : "bg-rose-500/25 text-rose-200"}`} title={pruefung.grund}>
+              {pruefung.ok ? "✅ bestanden" : "❌ nicht bestanden"}
+            </span>
+          )}
         </div>
+        <p className="mt-1 text-xs text-slate-400">Thüringen (§ 51 ThürSchulO): eine Fünf ist erlaubt; zwei Fünfen oder eine Sechs nur mit Ausgleich (für eine 5 zwei Dreien oder eine Zwei, für eine 6 zwei Zweien oder eine Eins; Deutsch, Mathe und Englisch gleichen nur untereinander aus). Kopfnoten und Fehltage stehen nicht auf dem Abschlusszeugnis.</p>
       </section>
 
       {fehler && <Hinweis art="fehler">{fehler}</Hinweis>}

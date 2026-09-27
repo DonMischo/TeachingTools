@@ -90,8 +90,6 @@ function ZeugnisAnsicht({ s }: { s: Spielstand }) {
   return (
     <div>
       {Object.entries(s.zeugnis.noten).filter(([, n]) => n).map(([f, n]) => <Zeile key={f} links={f} rechts={String(n)} />)}
-      <Zeile links="Verhalten / Mitarbeit" rechts={`${s.zeugnis.verhalten} / ${s.zeugnis.mitarbeit}`} />
-      <Zeile links="Unentschuldigte Fehltage" rechts={String(s.zeugnis.fehltageUnentschuldigt)} />
     </div>
   );
 }

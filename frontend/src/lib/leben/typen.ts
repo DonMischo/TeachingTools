@@ -12,11 +12,8 @@ export type Beduerfnisse = Record<BeduerfnisName, number>; // 0..100, 100 = best
 
 export type Zeugnis = {
   abschluss: Abschluss;
+  /** Abschlusszeugnisse in Thüringen haben keine Kopfnoten und keine Fehltage. */
   noten: Partial<Record<Fach, number>>;
-  /** Kopfnoten (Thüringen: Verhalten, Mitarbeit, Ordnung, Fleiß) 1–5. */
-  verhalten: number;
-  mitarbeit: number;
-  fehltageUnentschuldigt: number;
 };
 
 export type Figur = {
