@@ -6,6 +6,7 @@
 import { useRef, useState } from "react";
 import { ABSCHLUESSE, FAECHER, type Abschluss, type Fach } from "@/lib/leben/berufe";
 import type { StartOptionen } from "@/lib/leben/motor";
+import { ELTERN_ORTE } from "@/lib/leben/wohnungen";
 import { bestanden, zeugnisErzeugen, type ZeugnisStufe } from "@/lib/leben/zeugnis";
 import { hochladen } from "@/lib/leben/speichern";
 import type { Spielstand } from "@/lib/leben/typen";
@@ -22,7 +23,7 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
   const [avatar, setAvatar] = useState(AVATARE[0]);
   const [farbe, setFarbe] = useState(FARBEN[0]);
   const [kirche, setKirche] = useState(false);
-  const [eltern, setEltern] = useState<"erfurt" | "land">("erfurt");
+  const [eltern, setEltern] = useState("erfurt");
   const [einkommen, setEinkommen] = useState<"niedrig" | "mittel" | "hoch">("mittel");
   const [kindergeld, setKindergeld] = useState<"weiter" | "halb" | "eltern">("halb");
   const [abschluss, setAbschluss] = useState<Abschluss>("RSA");
@@ -91,9 +92,13 @@ export function Start({ name: vorname, onStart, onLaden }: { name?: string; onSt
         <section className="rounded-xl bg-white/5 p-4">
           <h3 className="mb-2 font-black">2. Deine Familie</h3>
           <Feld label="Wo wohnen deine Eltern?" hilfe="Wichtig für die Berufsausbildungsbeihilfe: Unter 18 gibt es BAB für eine eigene Wohnung nur, wenn der Betrieb von zu Hause zu weit weg ist.">
-            <select className={eingabe} value={eltern} onChange={(e) => setEltern(e.target.value as "erfurt" | "land")}>
-              <option value="erfurt">In Erfurt (Herrenberg)</option>
-              <option value="land">Auf dem Land (Kölleda, 30 km, über 1 h Fahrt)</option>
+            <select className={eingabe} value={eltern} onChange={(e) => setEltern(e.target.value)}>
+              {([["stadt", "Erfurt – Stadtteile"], ["dorf", "Erfurt – Außenorte (Bus, längere Wege)"], ["land", "Außerhalb"]] as const).map(([art, titel]) => (
+                <optgroup key={art} label={titel}>
+                  {Object.entries(ELTERN_ORTE).filter(([, o]) => o.art === art).sort(([, a], [, b]) => a.stadtteil.localeCompare(b.stadtteil, "de"))
+                    .map(([id, o]) => <option key={id} value={id}>{o.stadtteil}{art === "dorf" ? ` (+${o.extraMin} min)` : art === "land" ? " (30 km, über 1 h Fahrt)" : ""}</option>)}
+                </optgroup>
+              ))}
             </select>
           </Feld>
           <Feld label="Einkommen der Eltern" hilfe="Bestimmt, ob die Eltern bei BAB mitzahlen müssen.">

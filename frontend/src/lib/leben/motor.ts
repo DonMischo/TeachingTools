@@ -20,7 +20,7 @@ import {
   datum, ENDE_TAG, istArbeitstag, istMonatsletzter, jahrVon, kurzDatum, monatsIndex, monatsLetzter, monatText, monatVon,
   tagImMonat, tagVon, wochentag,
 } from "./zeit";
-import { ELTERN_ORTE, warmmiete } from "./wohnungen";
+import { elternOrt, warmmiete } from "./wohnungen";
 import { taeglicheEreignisse } from "./ereignisse";
 import { amtTag } from "./amt";
 import { nebenbei, vorauswahlFachkraft } from "./aktionen";
@@ -57,7 +57,7 @@ export function neuesSpiel(o: StartOptionen): Spielstand {
   };
   const [gj, gm, gt] = o.geburtstag.split("-");
   const leer: Beduerfnisse = { hunger: 80, energie: 85, hygiene: 80, sozial: 70, spass: 70, gesundheit: 90, ordnung: 70 };
-  const eltern = ELTERN_ORTE[o.herkunft.eltern];
+  const eltern = elternOrt(o);
   const wohnung: Wohnung = {
     id: "eltern", form: "eltern", titel: "Kinderzimmer bei den Eltern", adresse: eltern.name, stadtteil: eltern.stadtteil,
     qm: 14, zimmer: 1, kalt: 0, nebenkosten: 0, heizung: 0, kaution: 0, genossenschaftsanteile: 0, ebk: true,
@@ -129,7 +129,7 @@ export function neuesSpiel(o: StartOptionen): Spielstand {
   s.vertraege.push({ uid: uid(s), angebot: "prepaid-disc", art: "handy", name: "Prepaid 10 GB", monatlich: 9.99,
     start: 0, mindestBis: 0, zahltag: 15 });
   s.dokumente.push({ uid: uid(s), art: "zeugnis", titel: "Abschlusszeugnis", tag: 0 });
-  log(s, "start", `${s.figur.name} startet ins Leben nach der 10. Klasse (${o.herkunft.eltern === "land" ? "Eltern auf dem Land" : "Eltern in Erfurt"}).`);
+  log(s, "start", `${s.figur.name} startet ins Leben nach der 10. Klasse (Eltern in ${eltern.stadtteil}).`);
   brief(s, "Mama & Papa", "Glückwunsch zum Abschluss! 🎓",
     `Liebe/r ${s.figur.name},\n\nwir sind stolz auf dich! Jetzt geht's los: Such dir eine Ausbildung oder einen Job. ` +
     `Solange du noch bei uns wohnst, zahlst du ${o.herkunft.kindergeld === "eltern" ? "nichts, dafür behalten wir das Kindergeld" : "erst mal kein Kostgeld"}. ` +
@@ -516,7 +516,7 @@ function unterkunftBeziehen(s: Spielstand): void {
 
 function unterkunftVerlassen(s: Spielstand): void {
   if (s.wohnung.form !== "unterkunft") return;
-  const e = ELTERN_ORTE[s.herkunft.eltern];
+  const e = elternOrt(s);
   delete s.flags.verpflegung;
   if (s.heimatWohnung) {
     s.wohnung = s.heimatWohnung;
@@ -695,7 +695,7 @@ export function aktiv(s: Spielstand, v: Vertrag): boolean {
 function monatsEnde(s: Spielstand): void {
   lohnZahlen(s);
   minijobZahlen(s);
-  const pendelKm = s.wohnung.form === "eltern" ? (s.herkunft.eltern === "land" ? 32 : 8) : Math.max(2, s.wohnung.entfernungKm);
+  const pendelKm = s.wohnung.form === "eltern" ? elternOrt(s).km : Math.max(2, s.wohnung.entfernungKm);
   autoMonat(s, Number(s.flags.autoTageMonat ?? 0), pendelKm);
   s.flags.autoTageMonat = 0;
   // Dispozinsen
@@ -1112,7 +1112,7 @@ export function internetDa(s: Spielstand): boolean {
 export function arbeitsweg(s: Spielstand): number {
   const b = beruf(s);
   if (s.wohnung.form === "unterkunft") return 10;
-  let min = s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern].extraMin + 25 : s.wohnung.fahrzeitArbeit || 25;
+  let min = s.wohnung.form === "eltern" ? elternOrt(s).extraMin + 25 : s.wohnung.fahrzeitArbeit || 25;
   min += b?.pendelMin ?? 0;
   if (s.auto && s.flags.autoPendeln && fahrenErlaubt(s)) min = Math.max(10, Math.round(min * 0.6));
   return min;
@@ -1237,7 +1237,7 @@ function routineAmStueck(start: Spielstand, tage: number): Ergebnis {
     // Schlafen bis zum Aufstehen des (nächsten) Arbeitstags
     const morgen = s.stunde >= 12 ? s.tag + 1 : s.tag;
     const job = arbeitHeute(s, morgen);
-    const weg = (s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern].extraMin + 25 : s.wohnung.fahrzeitArbeit || 25) / 60;
+    const weg = (s.wohnung.form === "eltern" ? elternOrt(s).extraMin + 25 : s.wohnung.fahrzeitArbeit || 25) / 60;
     const mj = minijob(s);
     const aufstehen = job.muss ? Math.max(3, job.beginn - 1.5 - weg)
       : mj && wochentag(morgen) === 5 ? Math.max(3, mj.beginn - 1.5) : 8.5;

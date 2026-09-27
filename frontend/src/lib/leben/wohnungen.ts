@@ -76,11 +76,46 @@ export const STADTTEILE: Stadtteil[] = [
 
 export const STADTTEIL = new Map(STADTTEILE.map((s) => [s.name, s]));
 
-/** Wo die Eltern wohnen. */
-export const ELTERN_ORTE = {
-  erfurt: { name: "Herrenberg (bei den Eltern)", stadtteil: "Herrenberg", x: 2.3, y: -3.2, extraMin: 0 },
-  land: { name: "Kölleda (bei den Eltern, 30 km)", stadtteil: "Kölleda", x: 8, y: 26, extraMin: 35 },
-} as const;
+/**
+ * Ortsteile der Stadt Erfurt außerhalb der Wohnungsanzeigen: weitere
+ * Stadtteile und die eingemeindeten Dörfer (»Außenorte«). Lage gerundet
+ * nach der Karte, in km vom Anger.
+ */
+const WEITERE_STADTTEILE: [string, number, number][] = [
+  ["Johannesvorstadt", 0.6, 0.9], ["Dittelstedt", 2.5, -2.0], ["Gispersleben", -2.1, 4.6],
+];
+const AUSSENORTE: [string, number, number][] = [
+  ["Alach", -6.3, 2.4], ["Azmannsdorf", 8.4, 0], ["Bindersleben", -4.9, 0.2], ["Büßleben", 5.6, -3.0],
+  ["Egstedt", 0.7, -6.4], ["Ermstedt", -10.5, 3.5], ["Frienstedt", -7.7, -2.0], ["Gottstedt", -9.8, 1.3],
+  ["Hochstedt", 8.4, -2.0], ["Hohenwinden", 3.0, 4.5], ["Kerspleben", 6.5, 2.5], ["Kühnhausen", -3.5, 5.8],
+  ["Linderbach", 3.5, 0], ["Marbach", -2.8, 1.3], ["Mittelhausen", -1.4, 8.0], ["Möbisburg-Rhoda", -3.5, -5.3],
+  ["Molsdorf", -4.9, -7.5], ["Niedernissa", 3.8, -3.0], ["Rohda (Haarberg)", 7.0, -5.3], ["Salomonsborn", -7.7, 1.3],
+  ["Schmira", -4.2, -2.5], ["Schwerborn", 4.0, 6.0], ["Stotternheim", 1.5, 8.5], ["Sulzer Siedlung", -2.0, -4.2],
+  ["Tiefthal", 0.5, 6.8], ["Töttelstädt", -7.7, 6.8], ["Töttleben", 6.5, 1.0], ["Urbich", 5.0, -2.5],
+  ["Vieselbach", 7.7, 1.2], ["Wallichen", 7.7, 3.5], ["Waltersleben", -0.7, -7.5], ["Windischholzhausen", 5.0, -4.8],
+];
+
+export type ElternOrt = { name: string; stadtteil: string; x: number; y: number; extraMin: number; art: "stadt" | "dorf" | "land"; km: number };
+
+function ort(name: string, x: number, y: number, art: ElternOrt["art"]): ElternOrt {
+  const weg = Math.hypot(x, y);
+  // Außenorte: Bus mit Umstieg, seltener Takt
+  return { name: `${name} (bei den Eltern)`, stadtteil: name, x, y, art, extraMin: art === "dorf" ? Math.round(5 + weg * 1.2) : 0, km: Math.max(4, Math.round(weg + 4)) };
+}
+
+/** Wo die Eltern wohnen — Schlüssel ist der Ortsname; »erfurt« und »land« bleiben für alte Spielstände. */
+export const ELTERN_ORTE: Record<string, ElternOrt> = {
+  erfurt: ort("Herrenberg", 2.3, -3.2, "stadt"),
+  land: { name: "Kölleda (bei den Eltern, 30 km)", stadtteil: "Kölleda", x: 8, y: 26, extraMin: 35, art: "land", km: 30 },
+  ...Object.fromEntries(STADTTEILE.filter((t) => t.name !== "Herrenberg").map((t) => [t.name, ort(t.name, t.x, t.y, "stadt")])),
+  ...Object.fromEntries(WEITERE_STADTTEILE.map(([n, x, y]) => [n, ort(n, x, y, "stadt")])),
+  ...Object.fromEntries(AUSSENORTE.map(([n, x, y]) => [n, ort(n, x, y, "dorf")])),
+};
+
+/** Elternhaus des Spielstands (unbekannter Schlüssel → Herrenberg). */
+export function elternOrt(s: { herkunft: { eltern: string } }): ElternOrt {
+  return ELTERN_ORTE[s.herkunft.eltern] ?? ELTERN_ORTE.erfurt;
+}
 
 type Rng = () => number;
 

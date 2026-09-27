@@ -16,7 +16,7 @@ import { abrechnung } from "./lohn";
 import type { AntragArt, Dokument, Spielstand } from "./typen";
 import { werte } from "./werte";
 import { istArbeitstag, jahrVon, kurzDatum, monatVon, tagVon } from "./zeit";
-import { warmmiete } from "./wohnungen";
+import { elternOrt, warmmiete } from "./wohnungen";
 import { monatsbrutto, person } from "./motor";
 
 export type Feld = {
@@ -80,7 +80,7 @@ export function babBerechnen(s: Spielstand): { anspruch: boolean; betrag: number
   if (!job || job.art !== "ausbildung") return { anspruch: false, betrag: 0, grund: "BAB gibt es nur für eine betriebliche Ausbildung (schulische: Schüler-BAföG).", ...leer };
   if (s.flags.erstausbildungFertig) return { anspruch: false, betrag: 0, grund: "BAB gibt es in der Regel nur für die erste Ausbildung.", ...leer };
   if (s.wohnung.form === "eltern") return { anspruch: false, betrag: 0, grund: "Wer bei den Eltern wohnt, bekommt keine BAB.", ...leer };
-  if (alter(s) < 18 && s.herkunft.eltern === "erfurt") {
+  if (alter(s) < 18 && elternOrt(s).art !== "land") {
     return { anspruch: false, betrag: 0, grund: "Unter 18 gibt es BAB für eine eigene Wohnung nur, wenn der Betrieb von den Eltern aus nicht in angemessener Zeit erreichbar ist.", ...leer };
   }
   const w = werte(jahrVon(s.tag));
@@ -102,7 +102,7 @@ export function babBerechnen(s: Spielstand): { anspruch: boolean; betrag: number
 export function wohngeldBerechnen(s: Spielstand): { anspruch: boolean; betrag: number; grund: string } {
   if (s.wohnung.form === "eltern") return { anspruch: false, betrag: 0, grund: "Wohngeld gibt es nur für den eigenen Haushalt." };
   const bab = babBerechnen(s);
-  const babDemGrundeNach = s.job?.art === "ausbildung" && !s.flags.erstausbildungFertig && !(alter(s) < 18 && s.herkunft.eltern === "erfurt");
+  const babDemGrundeNach = s.job?.art === "ausbildung" && !s.flags.erstausbildungFertig && !(alter(s) < 18 && elternOrt(s).art !== "land");
   if (babDemGrundeNach) {
     return { anspruch: false, betrag: 0, grund: `Azubis, die dem Grunde nach BAB bekommen können, sind vom Wohngeld ausgeschlossen — beantrage BAB.${bab.anspruch ? "" : " (Ausnahme: Wenn BAB nur wegen des Einkommens der Eltern abgelehnt wird, kann Wohngeld möglich sein.)"}` };
   }

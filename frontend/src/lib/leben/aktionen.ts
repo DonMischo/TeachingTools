@@ -12,7 +12,7 @@ import { berechneBescheid, type Angaben } from "./steuer";
 import type { JobStand, Spielstand, Wohnung } from "./typen";
 import { werte } from "./werte";
 import { istArbeitstag, jahrVon, kurzDatum, monatVon, tagVon, wochentag } from "./zeit";
-import { anzeigen, entfernung, ELTERN_ORTE, STADTTEIL, warmmiete, zusageChance } from "./wohnungen";
+import { anzeigen, elternOrt, entfernung, STADTTEIL, warmmiete, zusageChance } from "./wohnungen";
 import { mulberry } from "./laden";
 import { auftreten } from "./kleidung";
 
@@ -36,9 +36,9 @@ function fahrt(s: Spielstand, minuten: number, beschreibung: string): string {
 }
 
 function wegMinuten(s: Spielstand, ziel: { x: number; y: number }): number {
-  const hier = s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern] : STADTTEIL.get(s.wohnung.stadtteil) ?? { x: 0, y: 0 };
+  const hier = s.wohnung.form === "eltern" ? elternOrt(s) : STADTTEIL.get(s.wohnung.stadtteil) ?? { x: 0, y: 0 };
   const km = entfernung(hier.x, hier.y, ziel.x, ziel.y);
-  const extra = s.wohnung.form === "eltern" ? ELTERN_ORTE[s.herkunft.eltern].extraMin : 0;
+  const extra = s.wohnung.form === "eltern" ? elternOrt(s).extraMin : 0;
   return Math.round(Math.min(90, 6 + km * 3.2 + extra));
 }
 
@@ -292,7 +292,7 @@ export function zurueckZuDenEltern(alt: Spielstand): Ergebnis {
   buchen(s, -warmmiete(alte) * 2, "miete", "Miete bis Ende der Kündigungsfrist");
   s.flags.kautionZurueck = s.tag + 120;
   s.flags.kautionBetrag = alte.kaution + alte.genossenschaftsanteile - (s.beduerfnisse.ordnung < 40 ? 250 : 0);
-  const e = ELTERN_ORTE[s.herkunft.eltern];
+  const e = elternOrt(s);
   s.wohnung = { id: "eltern", form: "eltern", titel: "Kinderzimmer bei den Eltern", adresse: e.name, stadtteil: e.stadtteil, qm: 14, zimmer: 1,
     kalt: 0, nebenkosten: 0, heizung: 0, kaution: 0, genossenschaftsanteile: 0, ebk: true, etage: 1, fahrzeitArbeit: 0, entfernungKm: 0,
     einzug: s.tag, kostgeld: 150, kwh: 0 };
@@ -810,7 +810,7 @@ export function elternBesuchen(alt: Spielstand, waescheMitnehmen: boolean): Erge
   const s = klon(alt);
   if (s.wohnung.form === "eltern") return { stand: alt, fehler: "Du wohnst doch bei ihnen." };
   if (imAusland(s)) return { stand: alt, fehler: "Aus dem Ausland? Videoanruf geht — besuchen erst nach dem Aufenthalt (oder im Urlaub)." };
-  const e = ELTERN_ORTE[s.herkunft.eltern];
+  const e = elternOrt(s);
   if (fernVonErfurt(s)) {
     if (![4, 5].includes(wochentag(s.tag))) return { stand: alt, fehler: "So weit weg geht das nur am Wochenende (Freitag oder Samstag losfahren)." };
     buchen(s, -2 * 79, "mobilitaet", "Heimfahrt mit der Bahn (hin und zurück)");

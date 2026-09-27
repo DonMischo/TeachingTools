@@ -10,6 +10,7 @@ import { aktiv, type Ergebnis } from "@/lib/leben/motor";
 import { berechneBescheid, LEERE_ANGABEN, type Angaben } from "@/lib/leben/steuer";
 import type { Spielstand } from "@/lib/leben/typen";
 import { werte } from "@/lib/leben/werte";
+import { elternOrt } from "@/lib/leben/wohnungen";
 import { jahrVon, kurzDatum } from "@/lib/leben/zeit";
 import { euro, Feld, Hinweis, Knopf, Reiter, Zeile, eingabe } from "./ui";
 
@@ -77,7 +78,7 @@ export function SteuerApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) =>
               <div>
                 <p className="mb-2">Werbungskosten = alles, was du ausgibst, <b>um</b> arbeiten zu können. Bis {euro(werte(jahr).arbeitnehmerPauschbetrag)} zieht das Finanzamt automatisch ab — nur was darüber liegt, bringt Geld zurück.</p>
                 <div className="grid gap-x-3 sm:grid-cols-2">
-                  <Feld label="Entfernung Wohnung – Arbeit (einfach, km)" hilfe={`Pendlerpauschale ${werte(jahr).entfernungspauschale.toFixed(2).replace(".", ",")} € je km und Arbeitstag. Deine Wohnung: ca. ${s.wohnung.form === "eltern" ? (s.herkunft.eltern === "land" ? 30 : 8) : s.wohnung.entfernungKm} km.`}>
+                  <Feld label="Entfernung Wohnung – Arbeit (einfach, km)" hilfe={`Pendlerpauschale ${werte(jahr).entfernungspauschale.toFixed(2).replace(".", ",")} € je km und Arbeitstag. Deine Wohnung: ca. ${s.wohnung.form === "eltern" ? elternOrt(s).km : s.wohnung.entfernungKm} km.`}>
                     <input className={eingabe} inputMode="decimal" onChange={(e) => setZ("entfernungKm", e.target.value)} />
                   </Feld>
                   <Feld label="Tage, an denen du hingefahren bist" hilfe={`Laut deinem Kalender: ${Number(s.flags[`arbeitstage${jahr}`] ?? 0)} Tage (Urlaub und Krankheit zählen nicht).`}>

@@ -32,7 +32,8 @@ export type Figur = {
 
 export type Herkunft = {
   /** Wo die Eltern wohnen — entscheidet über BAB (Entfernung zum Betrieb). */
-  eltern: "erfurt" | "land";
+  /** Schlüssel in ELTERN_ORTE: Stadtteil, Außenort oder »land« (Kölleda). */
+  eltern: string;
   elternEinkommen: "niedrig" | "mittel" | "hoch";
   /** Was mit dem Kindergeld passiert (die Familienkasse zahlt an die Eltern). */
   kindergeld: "weiter" | "halb" | "eltern";
