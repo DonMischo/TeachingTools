@@ -212,7 +212,11 @@ simulationen:
       - Querschnitt durch drei Küsten: Flachküste (Vorbild Sylt), Steilküste (Vorbild Kap Arkona), Marsch mit altem Deich
       - Laufende Wellen mit Brecherzone am Sandriff, Rollerzone und Spülsaum; Gezeiten, Windstau und Sturmfluten
       - Erosion im Zeitraffer bis 1 Jahr/s: Sturm trägt Sand ins Riff, ruhiges Wetter baut den Strand auf, der Längsstrom nimmt Sand mit, Wind baut Dünen
-      - Kliff mit Brandungshohlkehle, Frost/Regen-Verwitterung, Abbruch, Kliffhalde, Blockstrand, Abrasionsplattform
+      - Steilküste als unverzerrtes 2D-Zellmodell mit vier Kliffen (Kreide/Jasmund, Møns Klint, Geschiebemergel/Brodtener Ufer, Sand/Rotes Kliff)
+      - Hohlkehle aus dem Brandungsband, Abbruch des Überhangs nach Biegespannung, Rutschungen und Gleitungen nach Standsicherheit (Gleitkreise, Schichtflächen, Grundwasserdruck)
+      - Frost, Regen, gerundete Abbruchkante, Quellhorizont, Schlammstrom, Abrieseln, Wind; Kliffhalde, Blockstrand, Abrasionsplattform; Physik-Tafel
+      - Bäume sterben an der Kante ab, stürzen seewärts und verrotten oder treiben als Treibholz fort
+      - Zoom (Mausrad, Ziehen, Wasserlinie) und ovale Trefferzonen im Beschriften-Quiz
       - Deichüberlauf und Deichbruch (alter, innen steiler Deich), Überflutung des Koogs
       - Küstenschutz mit Kosten, Vor- und Nachteilen: Sand- und Riffaufspülung, Strandhafer/Sandfangzäune, Deckwerk/Tetrapoden, Klimadeich, Lahnungen, Zurückweichen, Kliffweg sperren
       - Wetter von Hand oder im Jahreslauf; Meldungen, Sandbilanz, Schäden

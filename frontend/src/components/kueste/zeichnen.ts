@@ -10,7 +10,7 @@ import {
   BEWUCHS, SCHUTZ, auflauf, boden, hinterPegel, krone, mhw, mnw,
   type Profil, type Wellen, type Wetter,
 } from "@/lib/kueste/profil";
-import type { Begriff } from "@/lib/kueste/begriffe";
+import { zonenAbstand, type Begriff } from "@/lib/kueste/begriffe";
 
 export interface Ausschnitt { x0: number; x1: number; z0: number; z1: number }
 
@@ -44,7 +44,7 @@ export interface Szene {
   markiert: string | null;
   /** Sekunden seit dem letzten Kliffabbruch (für die Staubwolke) */
   abbruchAlter: number;
-  quizTreffer: { x: number; z: number; ok: boolean } | null;
+  quizTreffer: QuizTreffer | null;
 }
 
 const FARBE = {
@@ -59,7 +59,7 @@ const FARBE = {
   wasserHell: "rgba(120,190,235,0.9)",
 };
 
-function himmel(b: Bild, s: Szene) {
+export function himmel(b: Bild, s: Pick<Szene, "wetter" | "t">) {
   const { ctx, w, h } = b;
   const sturm = Math.min(1, Math.max(0, (s.wetter.bft - 5) / 5));
   const g = ctx.createLinearGradient(0, 0, 0, h);
@@ -444,7 +444,7 @@ function kliff(b: Bild, s: Szene) {
   }
 }
 
-function schilder(b: Bild, s: Szene) {
+export function schilder(b: Bild, s: Pick<Szene, "begriffe" | "markiert" | "W">) {
   if (!s.begriffe) return;
   const { ctx } = b;
   ctx.font = "bold 12px system-ui, sans-serif";
@@ -468,6 +468,19 @@ function schilder(b: Bild, s: Szene) {
     }
     belegt.push({ x0: lx, x1: lx + breite, y: ly });
     const hervor = s.markiert === be.id;
+    // Die Trefferzone als Oval zeigen, wenn der Begriff ausgewählt ist
+    if (hervor && be.rx && be.rz) {
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = "#f59e0b";
+      ctx.fillStyle = "rgba(245,158,11,0.12)";
+      ctx.lineWidth = 2;
+      const zx = X(b, be.zx ?? be.x), zy = Z(b, be.zz ?? be.z);
+      ctx.beginPath();
+      ctx.ellipse(zx, zy, Math.abs(X(b, (be.zx ?? be.x) + be.rx) - zx), Math.abs(Z(b, (be.zz ?? be.z) + be.rz) - zy), 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
     if (!linie) {
       ctx.strokeStyle = hervor ? "#f59e0b" : "rgba(30,30,30,0.75)";
       ctx.lineWidth = hervor ? 2.5 : 1.2;
@@ -510,6 +523,49 @@ function massstab(b: Bild) {
   ctx.fillText(`${meter} m  (Höhe überzeichnet)`, x + laenge, y - 3);
 }
 
+/** Nach einer Quizantwort: die Zone des gesuchten Begriffs grün (richtig) oder rot umranden */
+export interface QuizTreffer { x: number; z: number; ok: boolean; rx?: number; rz?: number; zx?: number; zz?: number }
+
+export function trefferZeigen(b: Bild, t: QuizTreffer) {
+  const { ctx } = b;
+  const mx = t.zx ?? t.x, mz = t.zz ?? t.z;
+  const ax = X(b, mx), ay = Z(b, mz);
+  ctx.save();
+  ctx.strokeStyle = t.ok ? "#16a34a" : "#dc2626";
+  ctx.fillStyle = t.ok ? "rgba(22,163,74,0.15)" : "rgba(220,38,38,0.15)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(ax, ay, Math.max(14, Math.abs(X(b, mx + (t.rx ?? 0)) - ax)), Math.max(14, Math.abs(Z(b, mz + (t.rz ?? 0)) - ay)), 0, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function welt(b: Bild, mx: number, my: number) {
+  return { x: b.a.x0 + (mx / b.w) * (b.a.x1 - b.a.x0), z: b.a.z1 - (my / b.h) * (b.a.z1 - b.a.z0) };
+}
+
+/** Liegt der Klick in der Zone dieses Begriffs oder nah an seinem Schildpunkt? */
+export function trifft(b: Bild, be: Begriff, mx: number, my: number) {
+  const { x, z } = welt(b, mx, my);
+  return Math.hypot(X(b, be.x) - mx, Z(b, be.z) - my) < 26 || zonenAbstand(be, x, z) <= 1;
+}
+
+/**
+ * Welcher Begriff liegt unter dem Klick (zum Nachlesen)? Liegen mehrere
+ * Zonen übereinander, gewinnt die kleinste — so bleibt ein Feuersteinband
+ * in der großen Kreide-Zone anwählbar. Im Quiz zählt dagegen `trifft`:
+ * jeder Klick in die Zone des gesuchten Begriffs ist richtig.
+ */
+export function trefferBei(b: Bild, liste: Begriff[], mx: number, my: number): Begriff | null {
+  let best: Begriff | null = null, flaeche = Infinity;
+  for (const be of liste) {
+    if (!trifft(b, be, mx, my)) continue;
+    const f = (be.rx ?? 3) * (be.rz ?? 1);
+    if (f < flaeche) { flaeche = f; best = be; }
+  }
+  return best;
+}
+
 export function zeichne(b: Bild, s: Szene) {
   b.ctx.clearRect(0, 0, b.w, b.h);
   himmel(b, s);
@@ -522,11 +578,6 @@ export function zeichne(b: Bild, s: Szene) {
   objekte(b, s);
   linien(b, s);
   schilder(b, s);
-  if (s.quizTreffer) {
-    const { ctx } = b;
-    ctx.strokeStyle = s.quizTreffer.ok ? "#16a34a" : "#dc2626";
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(X(b, s.quizTreffer.x), Z(b, s.quizTreffer.z), 16, 0, Math.PI * 2); ctx.stroke();
-  }
+  if (s.quizTreffer) trefferZeigen(b, s.quizTreffer);
   massstab(b);
 }

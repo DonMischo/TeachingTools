@@ -13,7 +13,9 @@ import {
 } from "@/lib/kueste/profil";
 import { anwenden, massnahmenFuer, type MassnahmeId } from "@/lib/kueste/massnahmen";
 import { begriffe as begriffeVon, type Begriff } from "@/lib/kueste/begriffe";
-import { AUSSCHNITT, X, Z, zeichne } from "./zeichnen";
+import { AUSSCHNITT, trefferBei, trifft, zeichne, type Ausschnitt, type QuizTreffer } from "./zeichnen";
+import { useZoom, ZOOM_KNOPF } from "./zoom";
+import KliffAnsicht from "./KliffAnsicht";
 
 const ARTEN: { id: KuestenArt; icon: string; name: string; ort: string }[] = [
   { id: "flach", icon: "🏖️", name: "Flachküste", ort: "Sandstrand und Düne, Vorbild: Sylt (Nordsee)" },
@@ -83,9 +85,10 @@ export default function ProfilAnsicht() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const huelle = useRef<HTMLDivElement>(null);
   const lage = useRef<WetterLage | null>(null);
-  const zustand = useRef({ laeuft, tempo, modus, hand, schilderAn, markiert, quiz });
-  zustand.current = { laeuft, tempo, modus, hand, schilderAn, markiert, quiz };
-  const quizTreffer = useRef<{ x: number; z: number; ok: boolean; bis: number } | null>(null);
+  const zustand = useRef({ laeuft, tempo, modus, hand, schilderAn, markiert, quiz, art });
+  zustand.current = { laeuft, tempo, modus, hand, schilderAn, markiert, quiz, art };
+  const quizTreffer = useRef<(QuizTreffer & { bis: number }) | null>(null);
+  const zoom = useZoom(canvas, () => AUSSCHNITT[profil.current.art]);
   const abbruchSeit = useRef<{ stunde: number; t: number } | null>(null);
   const zuletzt = useRef<{ W: number; H0: number; begriffe: Begriff[] }>({ W: 0, H0: 0, begriffe: [] });
 
@@ -100,6 +103,7 @@ export default function ProfilAnsicht() {
   }
 
   function neu(a: KuestenArt) {
+    zoom.setzen(null);
     profil.current = neuesProfil(a);
     lage.current = null;
     setArt(a);
@@ -120,6 +124,8 @@ export default function ProfilAnsicht() {
       vorher = jetzt;
       const z = zustand.current;
       const q = profil.current;
+      // Die Steilküste hat ihr eigenes Modell (KliffAnsicht)
+      if (z.art === "steil") { raf = requestAnimationFrame(frame); return; }
       const tempoH = TEMPI.find(x => x.id === z.tempo)!.h;
       if (z.laeuft) {
         rest += dtReal * tempoH;
@@ -149,7 +155,7 @@ export default function ProfilAnsicht() {
           const dpr = window.devicePixelRatio || 1;
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           const tr = quizTreffer.current && quizTreffer.current.bis > jetzt ? quizTreffer.current : null;
-          zeichne({ ctx, w: c.width / dpr, h: c.height / dpr, a: AUSSCHNITT[q.art] }, {
+          zeichne({ ctx, w: c.width / dpr, h: c.height / dpr, a: zoom.aktuell() }, {
             p: q, wetter: w, W, H0, wl, t: (jetzt - t0) / 1000, schnell,
             begriffe: z.quiz ? null : z.schilderAn ? liste : null,
             markiert: z.markiert,
@@ -192,21 +198,18 @@ export default function ProfilAnsicht() {
     const r = c.getBoundingClientRect();
     const mx = e.clientX - r.left, my = e.clientY - r.top;
     const dpr = window.devicePixelRatio || 1;
-    const b = { ctx: c.getContext("2d")!, w: c.width / dpr, h: c.height / dpr, a: AUSSCHNITT[profil.current.art] };
-    let best: Begriff | null = null, abstand = 34;
-    for (const be of zuletzt.current.begriffe) {
-      const d = Math.hypot(X(b, be.x) - mx, Z(b, be.z) - my);
-      if (d < abstand) { abstand = d; best = be; }
-    }
+    if (!zoom.klickZaehlt()) return;
+    const b = { ctx: c.getContext("2d")!, w: c.width / dpr, h: c.height / dpr, a: zoom.aktuell() };
+    const best = trefferBei(b, zuletzt.current.begriffe, mx, my);
     if (quiz?.frage) {
-      const ok = best?.id === quiz.frage.id;
-      const ziel = quiz.frage;
-      quizTreffer.current = { x: ziel.x, z: ziel.z, ok, bis: performance.now() + 1800 };
+      const ziel = zuletzt.current.begriffe.find(x => x.id === quiz.frage!.id) ?? quiz.frage;
+      const ok = trifft(b, ziel, mx, my);
+      quizTreffer.current = { ...ziel, ok, bis: performance.now() + 1800 };
       setQuiz({
         ...quiz,
         richtig: quiz.richtig + (ok ? 1 : 0),
         gefragt: quiz.gefragt + 1,
-        rueck: ok ? `Richtig: ${ziel.name}!` : best ? `Das war »${best.name}«. Der Kreis zeigt, wo ${ziel.name} liegt.` : `Daneben — der Kreis zeigt, wo ${ziel.name} liegt.`,
+        rueck: ok ? `Richtig: ${ziel.name}!` : best ? `Das war »${best.name}«. Das rote Oval zeigt, wo ${ziel.name} liegt.` : `Daneben — das rote Oval zeigt, wo ${ziel.name} liegt.`,
         frage: neueFrage(ziel.id),
       });
       return;
@@ -218,6 +221,15 @@ export default function ProfilAnsicht() {
     const liste = zuletzt.current.begriffe.filter(b => b.id !== nicht && !["mhw", "mnw", "mw"].includes(b.id));
     if (liste.length === 0) return null;
     return liste[Math.floor(Math.random() * liste.length)];
+  }
+
+  /** Ausschnitt um die Wasserlinie: 50 m breit, 10 m hoch */
+  function wasserlinie(): Ausschnitt {
+    const q = profil.current;
+    const w = wetterJetzt();
+    const Wz = wasserstand(q, w);
+    const u = wellen(q, Wz, wellenhoehe(q, w)).ufer;
+    return { x0: u - 30, x1: u + 20, z0: Wz - 5, z1: Wz + 5 };
   }
 
   function massnahme(id: MassnahmeId) {
@@ -238,9 +250,7 @@ export default function ProfilAnsicht() {
   const markierterBegriff = zuletzt.current.begriffe.find(b => b.id === markiert) ?? null;
   const erklaerung = lageText(p, w, W, H0, wl.amUfer);
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Küstenart */}
+  const auswahl = (
       <div className="flex flex-wrap gap-2">
         {ARTEN.map(a => (
           <button key={a.id} onClick={() => neu(a.id)} title={a.ort}
@@ -252,6 +262,20 @@ export default function ProfilAnsicht() {
         ))}
         <span className="self-center text-xs text-[var(--text-muted)]">{ARTEN.find(a => a.id === art)!.ort}</span>
       </div>
+  );
+
+  if (art === "steil") {
+    return (
+      <div className="flex flex-col gap-4">
+        {auswahl}
+        <KliffAnsicht />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {auswahl}
 
       {/* Bühne */}
       <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-[var(--border)]">
@@ -271,7 +295,12 @@ export default function ProfilAnsicht() {
             {quiz.rueck && <div className="text-xs mt-1">{quiz.rueck}</div>}
           </div>
         )}
+        <div className="absolute bottom-2 left-2 flex gap-1">
+          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(null)} title="Ganzes Profil">⤢ Ganz</button>
+          <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())} title="An die Wasserlinie heranzoomen">🔍 Wasserlinie</button>
+        </div>
       </div>
+      <p className="text-xs text-[var(--text-muted)] -mt-2">Mausrad zoomt, Ziehen verschiebt den Ausschnitt.</p>
 
       {/* Bedienung */}
       <div className="flex flex-wrap items-center gap-2">
@@ -350,11 +379,6 @@ export default function ProfilAnsicht() {
               <span>Düne</span><b className="text-[var(--text)]">{zahl(k.duene)} m hoch</b>
               <span>Hochwasserlinie</span><b className="text-[var(--text)]">{vz(start.hochwasserlinie - k.hochwasserlinie, 0)} m</b>
             </>}
-            {art === "steil" && <>
-              <span>Kliffkante</span><b className="text-[var(--text)]">{k.kante - start.kante} m zurückgewichen</b>
-              <span>Hohlkehle</span><b className="text-[var(--text)]">{Math.round(p.kehle * 100)} cm tief</b>
-              <span>Wand gelockert</span><b className="text-[var(--text)]">{Math.round(Math.min(1, p.verwitterung) * 100)} %</b>
-            </>}
             {art === "marsch" && <>
               <span>Deichkrone</span><b className="text-[var(--text)]">{zahl(k.duene)} m über NHN</b>
               <span>Binnenböschung</span><b className={p.deichGebrochen ? "text-red-500" : "text-[var(--text)]"}>{p.deichGebrochen ? "gebrochen!" : `${Math.round(Math.min(1, p.deichSchaden) * 100)} % ausgespült`}</b>
@@ -362,7 +386,6 @@ export default function ProfilAnsicht() {
             <span>Von Wellen abgetragen</span><b className="text-[var(--text)]">{Math.round(p.bilanz.abgetragen)} m³/m</b>
             <span>Vom Längsstrom weg</span><b className="text-[var(--text)]">{Math.round(p.bilanz.weggetragen)} m³/m</b>
             {art === "flach" && <><span>In die Düne geweht</span><b className="text-[var(--text)]">{Math.round(p.bilanz.angeweht)} m³/m</b></>}
-            {art === "steil" && <><span>Vom Kliff gestürzt</span><b className="text-[var(--text)]">{Math.round(p.bilanz.kliff)} m³/m</b></>}
             {p.bilanz.aufgespuelt > 0 && <><span>Aufgespült</span><b className="text-[var(--text)]">{Math.round(p.bilanz.aufgespuelt)} m³/m</b></>}
             <span>Kosten (1 km)</span><b className="text-[var(--text)]">{zahl(p.kosten, 2)} Mio. €</b>
             <span>Schäden</span><b className={p.schaden > 0 ? "text-red-500" : "text-[var(--text)]"}>{zahl(p.schaden, 1)} Mio. €</b>
@@ -437,18 +460,7 @@ export default function ProfilAnsicht() {
             {BEISPIEL[art].punkte.map(t => <li key={t}>{t}</li>)}
           </ul>
         </section>
-        {art === "steil" ? (
-          <section className="rounded-2xl border border-amber-500/50 bg-amber-500/10 p-4">
-            <h3 className="font-black mb-2">⚠️ Regeln an der Steilküste</h3>
-            <ul className="text-sm list-disc pl-5 flex flex-col gap-1">
-              <li>Abstand zur Kante halten — sie kann unterspült sein und ohne Warnung abbrechen.</li>
-              <li>Nicht direkt unter dem Kliff sitzen oder spielen: Steine und Erde können herabstürzen.</li>
-              <li>Gesperrte Wege und Warnschilder beachten.</li>
-              <li>Besonders gefährlich nach Regen, Frost, Tauwetter und Sturm.</li>
-              <li>Nicht am Kliff klettern und keine Steine herausbrechen.</li>
-            </ul>
-          </section>
-        ) : (
+        {(
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <h3 className="font-black mb-2">💡 Ausprobieren</h3>
             <ul className="text-sm list-disc pl-5 flex flex-col gap-1">
