@@ -393,19 +393,12 @@ export function zeichneKliff(b: Bild, s: KliffSzene) {
   ctx.imageSmoothingEnabled = px < 2;
   ctx.drawImage(bild, X(b, 0), Z(b, k.z0 + k.nz * k.dx), k.nx * k.dx * px, k.nz * k.dx * px);
   ctx.restore();
-  // Unterwasser-Tönung über dem Grund
+  // Tiefenabdunklung nur im Wasser selbst — der Meeresboden bleibt Gestein
   ctx.save();
   pfad();
   ctx.clip();
   ctx.fillStyle = "rgba(30,90,150,0.35)";
   ctx.fillRect(0, Z(b, s.W + 3), b.w, b.h);
-  ctx.restore();
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, Z(b, s.W), X(b, (s.wl.ufer - 1) * k.dx), b.h);
-  ctx.clip();
-  ctx.fillStyle = "rgba(25,80,140,0.28)";
-  ctx.fillRect(0, Z(b, s.W), b.w, b.h);
   ctx.restore();
   oberflaeche(b, s, ober, omega);
   // Bewuchs und Bäume
