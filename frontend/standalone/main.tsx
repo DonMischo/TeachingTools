@@ -20,6 +20,8 @@ import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Kueste from "@/components/kueste/Kueste";
+import ErdAufbau from "@/components/erde/ErdAufbau";
+import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -34,6 +36,8 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.
   { id: "leben", icon: "🎸", label: "Rock your Life", node: <RockYourLife speicherSchluessel="standalone" /> },
   { id: "kueste", icon: "🌊", label: "Küstendynamik", node: <Kueste /> },
+  { id: "erdaufbau", icon: "🌍", label: "Aufbau der Erde", node: <ErdAufbau /> },
+  { id: "wilson", icon: "🌋", label: "Wilson-Zyklus", node: <WilsonZyklus /> },
 ];
 
 function App() {

@@ -87,7 +87,7 @@ aktivitaeten:
     kann:
       - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
       - Anzeigen, einsortieren, Fehler finden
-      - JSON-Import, Vorlage, Beispiel-Zeitleisten
+      - JSON-Import, Vorlage, Beispiel-Zeitleisten (u. a. Entdeckungen der Geowissenschaften)
   - id: tippen
     name: Tippen (10-Finger-Trainer)
     faehigkeiten: {use: [true, true], host: [true, false], upload: [true, false]}
@@ -224,6 +224,29 @@ simulationen:
       - Draufsicht: Küstenlängsstrom mit Strandversetzung, Buhnen (Luv/Lee), Deckwerk am Kliff, Aufspülung, wachsender Haken
       - Gezeiten: Erde/Mond mit Flutbergen, Spring- und Nipptide, Pegelkurve und Tidenkalender für Nord- und Ostseeorte, Watt mit Priel
       - Wissensteil mit Quellen
+  - id: erdaufbau
+    name: Aufbau der Erde
+    kann:
+      - 3D-Erde mit herausgeschnittenem Keil (Achtel oder Pol zu Pol, Öffnung 30–180°), drehen und zoomen
+      - Schichten antippen: Tiefe, Dicke, Temperatur, Druck, Dichte, P-/S-Wellen, Zähigkeit, Anteil an Volumen und Masse, Gesteine, Minerale, Grenzen
+      - Schale für Schale abziehen bis zum inneren Kern; Außenschichten wahlweise überhöht
+      - Einfärben nach Schichten, Temperatur, Dichte oder fest/flüssig; Beschriftungen und Quiz »Schichten finden«
+      - Mantelkonvektion live auf den Schnittflächen (Stokes-Löser)
+      - Tiefenprofil nach PREM — Temperatur mit Schmelzkurve, Druck, Dichte, Wellen, Zähigkeit (log, mit Vergleichsstoffen), Schwere; Ablesen per Maus
+      - Erdbebenwellen: Strahlenverfolgung durch die Kugel, P- und S-Schatten, Laufzeit-Animation, drei Erdmodelle (homogen, flüssiger Kern, fester Innenkern)
+      - Konvektionslöser zum Ausprobieren: Zähigkeit/Rayleigh-Zahl, Heizung durch Kern und Radioaktivität, Kontinent als Deckel, heiße und kalte Flecken setzen; Strömung in cm/Jahr und Wärmetransport
+      - Wissensteil: Zusammensetzung, Woher wissen wir das, Wärmequellen, Geodynamo, Schichttabelle, Quellen
+  - id: wilson
+    name: Wilson-Zyklus
+    kann:
+      - Querschnitt eines ganzen Zyklus (560 Mio. Jahre) im Zeitraffer oder per Schieber, Phasenleiste zum Springen
+      - Superkontinent mit Plume, Grabenbruch mit Abschiebungen und Grabensee, junges Meer, Ozean mit Rücken, Subduktion, Schließen, Kollision, Abtragung
+      - Meeresbodenstreifen mit Magnetrichtung, Alter, Tiefe und Lithosphärendicke nach Alter; passive Ränder mit Schelf und Sedimenten
+      - Abtauchende Platte bis 660 km, Tiefseerinne, Vulkanbogen mit Magma, Abriss nach der Kollision
+      - Gebirge und Gebirgswurzel nach Isostasie, Sutur, Rumpfgebirge
+      - Mantelströmung, Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
+      - Phasenkarten mit heutigem Beispiel, Plattengrenzen und Begriffen; Quiz »Welche Phase?«
+      - Wissensteil: Tuzo Wilson, Superkontinente, Wilson-Zyklen in Deutschland, Antrieb der Platten, Beweise, Quellen
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

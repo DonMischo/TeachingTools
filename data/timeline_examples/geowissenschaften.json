@@ -1,0 +1,818 @@
+{
+  "title": "Entdeckungen der Geowissenschaften – Wie wir die Erde verstanden haben",
+  "description": "Von den ersten Fossilfunden in der Antike bis zur Erforschung des inneren Kerns: wie Menschen herausfanden, wie alt die Erde ist, wie sie innen aufgebaut ist, warum Kontinente wandern, Vulkane ausbrechen und das Klima sich ändert. Mit Forscherinnen und Forschern, Messgeräten, großen Naturereignissen und Bohrungen.",
+  "tags": [
+    "geowissenschaften",
+    "geologie",
+    "geophysik",
+    "plattentektonik",
+    "erdaufbau",
+    "seismologie",
+    "vulkane",
+    "klima",
+    "wissenschaftsgeschichte"
+  ],
+  "grades": [7, 8, 9, 10, 11, 12],
+  "axis": {
+    "kind": "year",
+    "min": -600,
+    "max": 2030
+  },
+  "lanes": [
+    { "id": "innen", "label": "Erdgestalt & Erdinneres", "color": "#f59e0b" },
+    { "id": "tektonik", "label": "Kontinente & Plattentektonik", "color": "#8b5cf6" },
+    { "id": "zeit", "label": "Erdalter & Erdgeschichte", "color": "#10b981" },
+    { "id": "gestein", "label": "Gesteine, Minerale & Fossilien", "color": "#a16207" },
+    { "id": "beben", "label": "Vulkane & Erdbeben", "color": "#ef4444" },
+    { "id": "klima", "label": "Klima, Eis & Ozeane", "color": "#3b82f6" },
+    { "id": "technik", "label": "Messgeräte, Bohrungen & Missionen", "color": "#64748b" },
+    { "id": "personen", "label": "Forscherinnen & Forscher", "color": "#ec4899" }
+  ],
+  "events": [
+    {
+      "id": "xenophanes-fossilien",
+      "label": "Xenophanes deutet Muschelfossilien",
+      "value": -500,
+      "lane": "gestein",
+      "category": "Fossilien",
+      "info": "Der griechische Denker Xenophanes findet Abdrücke von Meerestieren im Gebirge und schließt daraus, dass das Land einst unter dem Meer lag."
+    },
+    {
+      "id": "aristoteles-beben",
+      "label": "Aristoteles: Erdbeben durch Winde im Erdinneren",
+      "value": -340,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "In seiner »Meteorologie« erklärt Aristoteles Erdbeben mit Luft, die in Höhlen unter der Erde eingeschlossen ist — eine Erklärung, die fast 2000 Jahre lang gelehrt wurde."
+    },
+    {
+      "id": "eratosthenes",
+      "label": "Eratosthenes misst den Erdumfang",
+      "value": -240,
+      "lane": "innen",
+      "category": "Erdgestalt",
+      "info": "Aus dem Sonnenstand in Syene und Alexandria berechnet Eratosthenes den Erdumfang auf rund 40 000 km — erstaunlich nah am echten Wert von 40 075 km."
+    },
+    {
+      "id": "vesuv-79",
+      "label": "Vesuv begräbt Pompeji",
+      "value": 79,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "Plinius der Jüngere beschreibt den Ausbruch als Augenzeuge. Nach ihm heißen heute besonders heftige Ausbrüche mit hoher Aschesäule »plinianisch«.",
+      "exact_date": "24. August 79 (Überlieferung; Funde deuten auf Oktober)"
+    },
+    {
+      "id": "zhang-heng",
+      "label": "Zhang Heng baut das erste Seismoskop",
+      "value": 132,
+      "lane": "technik",
+      "category": "Messgeräte",
+      "info": "Ein Bronzegefäß mit acht Drachen: Bebt die Erde, fällt eine Kugel aus dem Maul eines Drachen in eine Kröte und zeigt die Richtung des Bebens an."
+    },
+    {
+      "id": "ibn-sina",
+      "label": "Ibn Sina: Gebirge entstehen durch Hebung und Abtragung",
+      "value": 1027,
+      "lane": "gestein",
+      "category": "Gebirgsbildung",
+      "info": "Im »Buch der Heilung« erklärt der persische Gelehrte, dass Gebirge langsam gehoben und von Wasser und Wind abgetragen werden, und dass Gesteinsschichten nacheinander abgelagert wurden."
+    },
+    {
+      "id": "shen-kuo",
+      "label": "Shen Kuo erkennt Land aus Flussschlamm",
+      "value": 1088,
+      "lane": "gestein",
+      "category": "Fossilien",
+      "info": "Der chinesische Beamte findet Muschelschichten weit im Inland und versteinerten Bambus im trockenen Norden — für ihn Belege dafür, dass sich Land und Klima über lange Zeiträume ändern."
+    },
+    {
+      "id": "agricola",
+      "label": "Agricola ordnet die Minerale",
+      "value": 1546,
+      "lane": "gestein",
+      "category": "Minerale",
+      "info": "Georgius Agricola, Arzt im sächsischen Bergbaurevier, beschreibt in »De natura fossilium« Minerale nach Farbe, Härte, Glanz und Form. Er gilt als Vater der Mineralogie; 1556 folgt »De re metallica« über den Bergbau."
+    },
+    {
+      "id": "gilbert",
+      "label": "Gilbert: Die Erde ist ein Magnet",
+      "value": 1600,
+      "lane": "innen",
+      "category": "Magnetfeld",
+      "info": "William Gilbert zeigt mit einer magnetischen Kugel (»Terrella«), dass sich eine Kompassnadel so verhält, als wäre die ganze Erde ein großer Magnet."
+    },
+    {
+      "id": "bacon",
+      "label": "Bacon bemerkt die passenden Küsten",
+      "value": 1620,
+      "lane": "tektonik",
+      "category": "Kontinentaldrift",
+      "info": "Francis Bacon fällt auf, dass die Küsten Afrikas und Südamerikas auf der Karte zueinander passen. Eine Erklärung dafür hat er nicht."
+    },
+    {
+      "id": "steno",
+      "label": "Steno: Grundregeln der Schichtenkunde",
+      "value": 1669,
+      "lane": "zeit",
+      "category": "Stratigrafie",
+      "info": "Nicolaus Steno erkennt: Schichten werden waagerecht abgelagert, die untere ist die ältere (Lagerungsregel). Damit kann man Gesteine in eine zeitliche Reihenfolge bringen."
+    },
+    {
+      "id": "newton-abplattung",
+      "label": "Newton sagt die Abplattung der Erde voraus",
+      "value": 1687,
+      "lane": "innen",
+      "category": "Erdgestalt",
+      "info": "Aus Schwerkraft und Drehung folgert Isaac Newton in den »Principia«, dass die Erde an den Polen abgeplattet sein muss."
+    },
+    {
+      "id": "gradmessung",
+      "label": "Gradmessungen in Lappland und Peru",
+      "value": 1735,
+      "end": 1744,
+      "lane": "technik",
+      "category": "Erdgestalt",
+      "info": "Französische Expeditionen vermessen die Länge eines Breitengrads nahe dem Pol und am Äquator. Ergebnis: Newton hatte recht, die Erde ist abgeplattet."
+    },
+    {
+      "id": "lissabon",
+      "label": "Erdbeben von Lissabon",
+      "value": 1755,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Beben, Tsunami und Brände zerstören Lissabon, Zehntausende sterben. Das Unglück erschüttert den Glauben an eine gute Weltordnung und löst die ersten systematischen Erdbebenuntersuchungen aus.",
+      "exact_date": "1755-11-01"
+    },
+    {
+      "id": "schiehallion",
+      "label": "Schiehallion-Versuch: die Erde wird »gewogen«",
+      "value": 1774,
+      "lane": "innen",
+      "category": "Dichte",
+      "info": "Nevil Maskelyne misst, wie stark ein schottischer Berg ein Lot zur Seite zieht. Daraus folgt eine mittlere Erddichte von etwa 4,5 g/cm³ — viel mehr als Gestein. Das Innere muss also schwerer sein."
+    },
+    {
+      "id": "buffon",
+      "label": "Buffon schätzt das Erdalter auf 75 000 Jahre",
+      "value": 1778,
+      "lane": "zeit",
+      "category": "Erdalter",
+      "info": "Georges-Louis Leclerc de Buffon erhitzt Eisenkugeln und misst, wie schnell sie abkühlen. Hochgerechnet auf die Erde ergibt sich ein Alter von rund 75 000 Jahren — damals unerhört viel."
+    },
+    {
+      "id": "hutton",
+      "label": "Hutton: die »Tiefe Zeit«",
+      "value": 1785,
+      "lane": "zeit",
+      "category": "Erdalter",
+      "info": "James Hutton erkennt, dass Abtragung, Ablagerung und Hebung sich endlos wiederholen. Die Erde müsse unvorstellbar alt sein: »kein Anzeichen eines Anfangs, keine Aussicht auf ein Ende«. 1788 findet er an der Siccar Point die berühmte Diskordanz."
+    },
+    {
+      "id": "werner",
+      "label": "Werner lehrt in Freiberg den Neptunismus",
+      "value": 1787,
+      "lane": "gestein",
+      "category": "Gesteine",
+      "info": "Abraham Gottlob Werner, Professor an der Bergakademie Freiberg, ordnet die Gesteine und glaubt, alle seien im Urmeer entstanden (Neptunismus). Der Streit mit den »Plutonisten«, die Basalt für erstarrte Schmelze halten, prägt die junge Geologie."
+    },
+    {
+      "id": "cavendish",
+      "label": "Cavendish bestimmt die Erddichte: 5,45 g/cm³",
+      "value": 1798,
+      "lane": "innen",
+      "category": "Dichte",
+      "info": "Mit einer Drehwaage misst Henry Cavendish die Anziehung zwischen Bleikugeln. Heraus kommt eine Erddichte von 5,45 g/cm³ — der heutige Wert ist 5,51. Die Erde muss einen schweren Kern haben."
+    },
+    {
+      "id": "mohs",
+      "label": "Mohs: Härteskala der Minerale",
+      "value": 1812,
+      "lane": "gestein",
+      "category": "Minerale",
+      "info": "Friedrich Mohs ordnet zehn Minerale danach, welches welches ritzt: von Talk (1) bis Diamant (10). Die Skala wird bis heute im Gelände benutzt."
+    },
+    {
+      "id": "smith-karte",
+      "label": "William Smith: erste geologische Landeskarte",
+      "value": 1815,
+      "lane": "zeit",
+      "category": "Stratigrafie",
+      "info": "Der Kanalbauer William Smith erkennt Schichten an ihren Leitfossilien wieder und zeichnet die erste geologische Karte eines ganzen Landes (England und Wales)."
+    },
+    {
+      "id": "tambora",
+      "label": "Ausbruch des Tambora",
+      "value": 1815,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "Der größte Vulkanausbruch der Neuzeit (Indonesien). Seine Asche und Schwefelgase kühlen das Klima: 1816 wird in Europa zum »Jahr ohne Sommer« mit Missernten und Hunger.",
+      "exact_date": "1815-04-10"
+    },
+    {
+      "id": "fourier",
+      "label": "Fourier beschreibt den Treibhauseffekt",
+      "value": 1824,
+      "lane": "klima",
+      "category": "Klimawandel",
+      "info": "Joseph Fourier rechnet aus, dass die Erde ohne ihre Lufthülle viel kälter sein müsste — die Atmosphäre hält Wärme zurück."
+    },
+    {
+      "id": "lyell",
+      "label": "Lyell: »Principles of Geology«",
+      "value": 1830,
+      "end": 1833,
+      "lane": "zeit",
+      "category": "Erdalter",
+      "info": "Charles Lyell zeigt: Die Kräfte, die heute wirken (Flüsse, Vulkane, Meer), reichen aus, um die ganze Erdgeschichte zu erklären — wenn man genug Zeit hat (Aktualismus). Darwin nimmt das Buch mit auf die Beagle."
+    },
+    {
+      "id": "agassiz",
+      "label": "Agassiz: Es gab Eiszeiten",
+      "value": 1837,
+      "lane": "klima",
+      "category": "Eiszeiten",
+      "info": "Louis Agassiz erklärt Findlinge und geschliffene Felsen mit riesigen Gletschern, die einst weite Teile Europas bedeckten. Auch die Findlinge in Norddeutschland kamen mit dem Eis aus Skandinavien."
+    },
+    {
+      "id": "phillips-zeitskala",
+      "label": "Phillips teilt die Erdgeschichte in Erdzeitalter",
+      "value": 1841,
+      "lane": "zeit",
+      "category": "Stratigrafie",
+      "info": "John Phillips führt die Begriffe Paläozoikum, Mesozoikum und Känozoikum ein — Erdaltertum, Erdmittelalter, Erdneuzeit, abgegrenzt durch große Massenaussterben."
+    },
+    {
+      "id": "mallet",
+      "label": "Mallet begründet die Seismologie",
+      "value": 1857,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Robert Mallet untersucht das Erdbeben von Neapel, schließt aus umgestürzten Mauern auf die Lage des Herdes und prägt die Wörter »Seismologie« und »Epizentrum«."
+    },
+    {
+      "id": "tyndall",
+      "label": "Tyndall: CO₂ und Wasserdampf halten Wärme",
+      "value": 1859,
+      "lane": "klima",
+      "category": "Klimawandel",
+      "info": "John Tyndall misst im Labor, dass Kohlendioxid und Wasserdampf Wärmestrahlung schlucken — die physikalische Grundlage des Treibhauseffekts."
+    },
+    {
+      "id": "kelvin",
+      "label": "Kelvin: Die Erde ist 20–400 Mio. Jahre alt",
+      "value": 1862,
+      "lane": "zeit",
+      "category": "Erdalter",
+      "info": "Lord Kelvin berechnet aus der Abkühlung einer anfangs glühenden Erde ihr Alter. Sein Wert ist viel zu klein — er wusste nichts von der Wärme aus radioaktivem Zerfall."
+    },
+    {
+      "id": "milne",
+      "label": "Milne baut Seismographen",
+      "value": 1880,
+      "lane": "technik",
+      "category": "Messgeräte",
+      "info": "In Japan entwickelt John Milne mit Kollegen Horizontalpendel, die Bodenbewegungen aufzeichnen. Später baut er ein weltweites Netz von Messstationen auf."
+    },
+    {
+      "id": "polarjahr",
+      "label": "Erstes Internationales Polarjahr",
+      "value": 1882,
+      "end": 1883,
+      "lane": "klima",
+      "category": "Polarforschung",
+      "info": "Elf Länder messen gleichzeitig Wetter, Magnetfeld und Polarlichter an Stationen in Arktis und Antarktis — der Beginn weltweiter Gemeinschaftsforschung."
+    },
+    {
+      "id": "krakatau",
+      "label": "Ausbruch des Krakatau",
+      "value": 1883,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "Die Explosionen sind noch in 4800 km Entfernung zu hören, Tsunamis töten über 36 000 Menschen. Die Druckwelle wird von Barometern auf der ganzen Welt mehrfach aufgezeichnet.",
+      "exact_date": "1883-08-27"
+    },
+    {
+      "id": "rebeur-paschwitz",
+      "label": "Erste Fernaufzeichnung eines Erdbebens (Potsdam)",
+      "value": 1889,
+      "lane": "technik",
+      "category": "Messgeräte",
+      "info": "Ernst von Rebeur-Paschwitz bemerkt auf seinen Pendelaufzeichnungen in Potsdam ein Beben aus Japan. Zum ersten Mal ist klar: Erdbebenwellen laufen durch die ganze Erde — man kann mit ihnen hineinschauen.",
+      "exact_date": "1889-04-17"
+    },
+    {
+      "id": "arrhenius",
+      "label": "Arrhenius berechnet die Erwärmung durch CO₂",
+      "value": 1896,
+      "lane": "klima",
+      "category": "Klimawandel",
+      "info": "Svante Arrhenius schätzt, dass eine Verdopplung des CO₂-Gehalts die Erde um mehrere Grad erwärmen würde — erstaunlich nah an heutigen Modellen."
+    },
+    {
+      "id": "wiechert-kern",
+      "label": "Wiechert: Die Erde hat einen Eisenkern",
+      "value": 1897,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Emil Wiechert in Göttingen erklärt die hohe mittlere Dichte mit einem Kern aus Eisen, umgeben von einem Gesteinsmantel. Er baut auch bahnbrechende Seismographen."
+    },
+    {
+      "id": "oldham",
+      "label": "Oldham findet den Erdkern in Bebenwellen",
+      "value": 1906,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Richard Dixon Oldham bemerkt, dass P-Wellen, die tief durch die Erde laufen, verspätet ankommen. Er schließt auf einen Kern, in dem die Wellen langsamer sind."
+    },
+    {
+      "id": "san-francisco",
+      "label": "Erdbeben von San Francisco",
+      "value": 1906,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Der San-Andreas-Graben verschiebt sich um bis zu 6 m. Harry Fielding Reid entwickelt daraus die Theorie des elastischen Rückpralls: Spannung baut sich auf, bis das Gestein bricht.",
+      "exact_date": "1906-04-18"
+    },
+    {
+      "id": "boltwood",
+      "label": "Boltwood: erste radiometrische Gesteinsalter",
+      "value": 1907,
+      "lane": "zeit",
+      "category": "Datierung",
+      "info": "Bertram Boltwood nutzt den Zerfall von Uran zu Blei als Uhr und findet Gesteine, die über eine Milliarde Jahre alt sind. Radioaktivität löst das Rätsel des Erdalters."
+    },
+    {
+      "id": "mohorovicic",
+      "label": "Mohorovičić entdeckt die Grenze Kruste–Mantel",
+      "value": 1909,
+      "lane": "innen",
+      "category": "Kruste & Mantel",
+      "info": "Bei einem Beben in Kroatien sieht Andrija Mohorovičić zwei Sorten P-Wellen: Eine lief durch langsameres, eine durch schnelleres Gestein darunter. Die Grenze in 30–70 km Tiefe heißt nach ihm »Moho«."
+    },
+    {
+      "id": "wegener-vortrag",
+      "label": "Wegener: Kontinentalverschiebung",
+      "value": 1912,
+      "lane": "tektonik",
+      "category": "Kontinentaldrift",
+      "info": "Alfred Wegener trägt in Frankfurt seine Idee vor: Alle Kontinente waren einst ein Urkontinent (später »Pangäa«) und sind auseinandergedriftet. Belege: passende Küsten, gleiche Fossilien und Gesteine auf beiden Seiten des Atlantiks, Spuren alter Vereisung in den Tropen.",
+      "exact_date": "1912-01-06"
+    },
+    {
+      "id": "gutenberg",
+      "label": "Gutenberg: Kerngrenze in 2900 km Tiefe",
+      "value": 1914,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Beno Gutenberg bestimmt in Göttingen aus der Schattenzone der Bebenwellen die Tiefe der Kern-Mantel-Grenze auf 2900 km — bis heute fast genau richtig (2891 km)."
+    },
+    {
+      "id": "wegener-buch",
+      "label": "»Die Entstehung der Kontinente und Ozeane«",
+      "value": 1915,
+      "lane": "tektonik",
+      "category": "Kontinentaldrift",
+      "info": "Wegeners Buch erscheint. Die meisten Geologen lehnen die Idee ab: Es fehlt eine Kraft, die Kontinente bewegen könnte."
+    },
+    {
+      "id": "milankovic",
+      "label": "Milanković: Erdbahn steuert die Eiszeiten",
+      "value": 1920,
+      "lane": "klima",
+      "category": "Eiszeiten",
+      "info": "Milutin Milanković berechnet, wie Schwankungen der Erdbahn und der Achsneigung die Sonneneinstrahlung verändern — der Takt der Eiszeiten. Bestätigt wird das erst 1976 an Tiefseebohrkernen."
+    },
+    {
+      "id": "jeffreys",
+      "label": "Jeffreys: Der äußere Kern ist flüssig",
+      "value": 1926,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Harold Jeffreys zeigt, dass keine S-Wellen durch den Kern kommen und dass Gezeitenmessungen eine starre Erde ausschließen: Der Kern ist flüssig."
+    },
+    {
+      "id": "wadati",
+      "label": "Wadati findet sehr tiefe Erdbeben",
+      "value": 1928,
+      "lane": "tektonik",
+      "category": "Subduktion",
+      "info": "Kiyoo Wadati zeigt, dass unter Japan Beben bis in Hunderte Kilometer Tiefe auf einer schrägen Fläche liegen. Heute weiß man: Es ist die abtauchende Pazifische Platte (Wadati-Benioff-Zone)."
+    },
+    {
+      "id": "matuyama",
+      "label": "Matuyama: Das Magnetfeld hat sich umgepolt",
+      "value": 1929,
+      "lane": "innen",
+      "category": "Magnetfeld",
+      "info": "Motonori Matuyama findet Basalte, deren Magnetisierung genau falsch herum zeigt. Das Erdmagnetfeld hat sich also früher umgekehrt — später der Schlüssel zu den Magnetstreifen am Meeresboden."
+    },
+    {
+      "id": "holmes-konvektion",
+      "label": "Holmes: Mantelkonvektion treibt die Kontinente",
+      "value": 1929,
+      "lane": "tektonik",
+      "category": "Mantelkonvektion",
+      "info": "Arthur Holmes schlägt vor, dass im Mantel Wärmeströmungen kreisen, die die Kontinente mitschleppen — die fehlende Kraft zu Wegeners Idee. Er wird lange kaum beachtet."
+    },
+    {
+      "id": "wegener-tod",
+      "label": "Wegener stirbt auf dem grönländischen Eis",
+      "value": 1930,
+      "lane": "klima",
+      "category": "Polarforschung",
+      "info": "Auf seiner dritten Grönland-Expedition kommt Wegener beim Versorgen der Station »Eismitte« ums Leben. Die Anerkennung seiner Theorie erlebt er nicht mehr."
+    },
+    {
+      "id": "richter",
+      "label": "Richter-Skala",
+      "value": 1935,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Charles Richter und Beno Gutenberg führen eine Magnitude ein, die die Stärke eines Bebens aus dem Ausschlag des Seismographen misst. Ein Punkt mehr heißt etwa 32-mal mehr Energie."
+    },
+    {
+      "id": "lehmann",
+      "label": "Inge Lehmann entdeckt den inneren Kern",
+      "value": 1936,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Die dänische Seismologin bemerkt schwache P-Wellen mitten in der Schattenzone, wo keine hätten ankommen dürfen. Ihre Erklärung: Im flüssigen Kern steckt ein fester innerer Kern. Ihr Aufsatz heißt einfach »P′«."
+    },
+    {
+      "id": "paricutin",
+      "label": "Ein Vulkan wächst aus einem Maisfeld (Parícutin)",
+      "value": 1943,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "In Mexiko öffnet sich im Acker eines Bauern ein Riss, aus dem in einem Jahr ein 336 m hoher Kegel wächst. Zum ersten Mal kann man die Geburt eines Vulkans von Anfang an beobachten.",
+      "exact_date": "1943-02-20"
+    },
+    {
+      "id": "libby",
+      "label": "Libby: Radiokarbon-Datierung",
+      "value": 1949,
+      "lane": "zeit",
+      "category": "Datierung",
+      "info": "Willard Libby zeigt, wie man mit dem Zerfall von Kohlenstoff-14 das Alter von Holz, Knochen und Torf bis etwa 50 000 Jahre bestimmen kann — ein Werkzeug für die jüngste Erdgeschichte und die Eiszeitforschung."
+    },
+    {
+      "id": "tharp",
+      "label": "Marie Tharp entdeckt den Graben im Mittelatlantischen Rücken",
+      "value": 1953,
+      "lane": "tektonik",
+      "category": "Meeresboden",
+      "info": "Beim Zeichnen von Echolot-Profilen findet Marie Tharp ein tiefes Tal in der Mitte des Rückens — ein Riss, an dem der Meeresboden auseinanderweicht. Ihr Kollege Bruce Heezen hielt es zuerst für »Frauengeschwätz«."
+    },
+    {
+      "id": "patterson",
+      "label": "Patterson: Die Erde ist 4,55 Milliarden Jahre alt",
+      "value": 1956,
+      "lane": "zeit",
+      "category": "Erdalter",
+      "info": "Clair Patterson misst Bleiisotope im Eisenmeteoriten Canyon Diablo und bestimmt das Alter des Sonnensystems und der Erde. Bei der Arbeit bemerkt er das Blei aus Autoabgasen überall — und kämpft danach erfolgreich für bleifreies Benzin."
+    },
+    {
+      "id": "igy",
+      "label": "Internationales Geophysikalisches Jahr",
+      "value": 1957,
+      "end": 1958,
+      "lane": "technik",
+      "category": "Messgeräte",
+      "info": "67 Länder erforschen gemeinsam Erde, Ozeane, Polargebiete und Weltraum. Es entstehen Stationen in der Antarktis, die ersten Satelliten fliegen, und die Meeresböden werden systematisch vermessen."
+    },
+    {
+      "id": "keeling",
+      "label": "Beginn der CO₂-Messung am Mauna Loa (Keeling-Kurve)",
+      "value": 1958,
+      "lane": "klima",
+      "category": "Klimawandel",
+      "info": "Charles David Keeling misst auf Hawaii fortlaufend den CO₂-Gehalt der Luft: 1958 rund 315 ppm, 2024 über 420 ppm. Die Zacken zeigen das Ein- und Ausatmen der Pflanzen im Jahreslauf.",
+      "exact_date": "1958-03-29"
+    },
+    {
+      "id": "valdivia",
+      "label": "Stärkstes gemessenes Erdbeben (Valdivia, Chile)",
+      "value": 1960,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Magnitude 9,5. Die ganze Erde schwingt danach tagelang wie eine Glocke — aus diesen Eigenschwingungen lässt sich der Aufbau des Erdinneren besonders genau bestimmen.",
+      "exact_date": "1960-05-22"
+    },
+    {
+      "id": "hess",
+      "label": "Hess und Dietz: Meeresbodenspreizung",
+      "value": 1962,
+      "lane": "tektonik",
+      "category": "Meeresboden",
+      "info": "Harry Hess (und unabhängig Robert Dietz, 1961) erklärt: Am Mittelozeanischen Rücken steigt Magma auf und bildet neuen Meeresboden, der zur Seite wandert und an Tiefseerinnen wieder abtaucht."
+    },
+    {
+      "id": "vine-matthews",
+      "label": "Vine & Matthews: Magnetstreifen am Meeresboden",
+      "value": 1963,
+      "lane": "tektonik",
+      "category": "Meeresboden",
+      "info": "Frederick Vine und Drummond Matthews (und unabhängig Lawrence Morley) erkennen, dass die gestreiften Magnetmuster spiegelbildlich zum Rücken liegen — der Meeresboden ist ein Tonband der Umpolungen. Der Beweis für die Spreizung."
+    },
+    {
+      "id": "wilson-hotspot",
+      "label": "Tuzo Wilson: Hawaii über einem Hotspot",
+      "value": 1963,
+      "lane": "tektonik",
+      "category": "Hotspots",
+      "info": "J. Tuzo Wilson erklärt die Inselkette von Hawaii: Die Platte wandert über eine ortsfeste heiße Stelle im Mantel, die immer neue Vulkane speist. Je weiter von der aktiven Insel, desto älter die Inseln."
+    },
+    {
+      "id": "alaska",
+      "label": "Karfreitagsbeben in Alaska",
+      "value": 1964,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Magnitude 9,2. George Plafker zeigt an gehobenen und gesenkten Küsten, dass sich eine ganze Platte unter Alaska geschoben hat — das erste klar erkannte Megathrust-Beben einer Subduktionszone.",
+      "exact_date": "1964-03-27"
+    },
+    {
+      "id": "wilson-transform",
+      "label": "Tuzo Wilson: Transformstörungen",
+      "value": 1965,
+      "lane": "tektonik",
+      "category": "Plattengrenzen",
+      "info": "Wilson beschreibt eine dritte Art von Plattengrenze, an der Platten aneinander vorbeigleiten, ohne dass Kruste entsteht oder verschwindet — etwa die San-Andreas-Verwerfung."
+    },
+    {
+      "id": "wilson-zyklus",
+      "label": "Tuzo Wilson: Hat sich der Atlantik geschlossen und wieder geöffnet?",
+      "value": 1966,
+      "lane": "tektonik",
+      "category": "Wilson-Zyklus",
+      "info": "Wilson erkennt, dass die Gesteine beiderseits des Atlantiks zu einem älteren, geschlossenen Ozean (Iapetus) gehören. Ozeane öffnen und schließen sich im Rhythmus von Hunderten Millionen Jahren — der Wilson-Zyklus."
+    },
+    {
+      "id": "plattentektonik",
+      "label": "Die Theorie der Plattentektonik steht",
+      "value": 1967,
+      "end": 1968,
+      "lane": "tektonik",
+      "category": "Plattengrenzen",
+      "info": "Dan McKenzie, Robert Parker, Jason Morgan und Xavier Le Pichon beschreiben die Erdoberfläche als Mosaik starrer Platten, die sich auf der Kugel drehen. Erdbeben, Vulkane und Gebirge ergeben plötzlich ein gemeinsames Bild."
+    },
+    {
+      "id": "glomar",
+      "label": "Tiefseebohrprogramm mit der »Glomar Challenger«",
+      "value": 1968,
+      "lane": "technik",
+      "category": "Bohrungen",
+      "info": "Das Bohrschiff holt Kerne aus dem Meeresboden. Die Sedimente sind am Rücken jung und werden zu den Rändern hin immer älter — nirgends älter als etwa 180 Mio. Jahre. Die Spreizung ist bestätigt."
+    },
+    {
+      "id": "kola",
+      "label": "Kola-Bohrung: das tiefste Loch der Welt",
+      "value": 1970,
+      "end": 1992,
+      "lane": "technik",
+      "category": "Bohrungen",
+      "info": "Auf der russischen Halbinsel Kola wird 22 Jahre lang gebohrt. 1989 erreicht man 12 262 m — nur 0,2 % des Wegs zum Erdmittelpunkt. Am Grund ist es 180 °C heiß, und das Gestein fließt fast wie Knete."
+    },
+    {
+      "id": "morgan-plumes",
+      "label": "Morgan: Manteldiapire (Plumes)",
+      "value": 1971,
+      "lane": "innen",
+      "category": "Mantelkonvektion",
+      "info": "W. Jason Morgan schlägt vor, dass Hotspots von schmalen Säulen heißen Gesteins gespeist werden, die von der Kern-Mantel-Grenze aufsteigen."
+    },
+    {
+      "id": "schwarze-raucher",
+      "label": "Heiße Quellen und Leben am Tiefseeboden",
+      "value": 1977,
+      "lane": "klima",
+      "category": "Ozeane",
+      "info": "Das Tauchboot »Alvin« findet am Galápagos-Rücken heiße Quellen mit Röhrenwürmern und Muscheln — Leben ohne Sonnenlicht, das von chemischer Energie aus dem Erdinneren lebt. 1979 folgen die »Schwarzen Raucher«."
+    },
+    {
+      "id": "alvarez",
+      "label": "Alvarez: Ein Einschlag beendete die Dinosaurierzeit",
+      "value": 1980,
+      "lane": "zeit",
+      "category": "Massenaussterben",
+      "info": "Luis und Walter Alvarez finden weltweit eine dünne Tonschicht mit viel Iridium an der Grenze Kreide–Paläogen, vor 66 Mio. Jahren. Iridium ist auf der Erde selten, in Asteroiden häufig."
+    },
+    {
+      "id": "st-helens",
+      "label": "Ausbruch des Mount St. Helens",
+      "value": 1980,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "Die Nordflanke rutscht ab, der Vulkan explodiert zur Seite. Der am besten beobachtete Ausbruch seiner Zeit verändert die Vulkanüberwachung.",
+      "exact_date": "1980-05-18"
+    },
+    {
+      "id": "prem",
+      "label": "PREM: das Referenzmodell der Erde",
+      "value": 1981,
+      "lane": "innen",
+      "category": "Kruste & Mantel",
+      "info": "Adam Dziewonski und Don Anderson fassen Tausende Laufzeiten und Eigenschwingungen zu einem Modell zusammen: Dichte, Druck und Wellengeschwindigkeit in jeder Tiefe. Auf ihm beruht die Simulation »Aufbau der Erde«."
+    },
+    {
+      "id": "tomographie",
+      "label": "Seismische Tomographie: ein Röntgenbild des Mantels",
+      "value": 1984,
+      "lane": "innen",
+      "category": "Mantelkonvektion",
+      "info": "Wie bei einer Computertomographie werden aus sehr vielen Bebenaufzeichnungen dreidimensionale Bilder berechnet. Man sieht kalte, abgetauchte Platten tief im Mantel und heiße Zonen unter Afrika und dem Pazifik."
+    },
+    {
+      "id": "ktb",
+      "label": "KTB: Kontinentale Tiefbohrung in der Oberpfalz",
+      "value": 1987,
+      "end": 1994,
+      "lane": "technik",
+      "category": "Bohrungen",
+      "info": "In Windischeschenbach wird bis 9101 m tief gebohrt, an der Naht zweier alter Kontinentteile des Variszischen Gebirges. Am Grund herrschen 265 °C — heißer als erwartet."
+    },
+    {
+      "id": "chicxulub",
+      "label": "Chicxulub-Krater als Einschlagstelle erkannt",
+      "value": 1991,
+      "lane": "zeit",
+      "category": "Massenaussterben",
+      "info": "Unter der Halbinsel Yucatán in Mexiko liegt ein 180 km großer, verschütteter Krater, genau 66 Mio. Jahre alt — der Einschlag, den Alvarez vorhergesagt hatte."
+    },
+    {
+      "id": "pinatubo",
+      "label": "Ausbruch des Pinatubo",
+      "value": 1991,
+      "lane": "beben",
+      "category": "Vulkane",
+      "info": "Die Schwefelwolke kühlt die Erde zwei Jahre lang um etwa 0,5 °C — ein natürlicher Test für Klimamodelle. Rechtzeitige Warnungen retten Zehntausende.",
+      "exact_date": "1991-06-15"
+    },
+    {
+      "id": "innenkern-rotation",
+      "label": "Dreht sich der innere Kern schneller als der Mantel?",
+      "value": 1996,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Xiaodong Song und Paul Richards finden Hinweise, dass sich der innere Kern etwas schneller dreht als der Rest der Erde. Die Frage bleibt umstritten."
+    },
+    {
+      "id": "grace",
+      "label": "GRACE-Satelliten wiegen Eis und Grundwasser",
+      "value": 2002,
+      "lane": "technik",
+      "category": "Missionen",
+      "info": "Zwei Satelliten (deutsch-amerikanisch, gestartet in Plessezk) messen winzige Schwankungen der Schwerkraft. So sieht man, wie viel Eis Grönland und die Antarktis jedes Jahr verlieren.",
+      "exact_date": "2002-03-17"
+    },
+    {
+      "id": "post-perowskit",
+      "label": "Post-Perowskit: das Mineral der D″-Schicht",
+      "value": 2004,
+      "lane": "gestein",
+      "category": "Minerale",
+      "info": "Im Hochdrucklabor entdecken Motohiko Murakami und Kollegen eine neue Form des Mantelminerals, die nur knapp über dem Kern stabil ist. Sie erklärt, warum die unterste Mantelschicht anders ist."
+    },
+    {
+      "id": "sumatra",
+      "label": "Sumatra-Andamanen-Beben und Tsunami",
+      "value": 2004,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Magnitude 9,1. Der Tsunami tötet rund 230 000 Menschen in 14 Ländern. Danach wird ein Tsunami-Warnsystem im Indischen Ozean aufgebaut — mit deutscher Beteiligung (GITEWS).",
+      "exact_date": "2004-12-26"
+    },
+    {
+      "id": "tohoku",
+      "label": "Tōhoku-Beben, Tsunami und Fukushima",
+      "value": 2011,
+      "lane": "beben",
+      "category": "Erdbeben",
+      "info": "Magnitude 9,0 vor Japan. Der Meeresboden verschiebt sich um bis zu 50 m, der Tsunami zerstört die Küste und das Kernkraftwerk Fukushima Daiichi.",
+      "exact_date": "2011-03-11"
+    },
+    {
+      "id": "bridgmanit",
+      "label": "Bridgmanit bekommt einen Namen",
+      "value": 2014,
+      "lane": "gestein",
+      "category": "Minerale",
+      "info": "Das häufigste Mineral der Erde (es macht den größten Teil des unteren Mantels aus) wird erstmals in einem Meteoriten gefunden und nach dem Hochdruckphysiker Percy Bridgman benannt."
+    },
+    {
+      "id": "ringwoodit",
+      "label": "Wasser in 500 km Tiefe: Ringwoodit im Diamanten",
+      "value": 2014,
+      "lane": "gestein",
+      "category": "Minerale",
+      "info": "In einem brasilianischen Diamanten steckt ein Körnchen Ringwoodit mit gebundenem Wasser. Die Übergangszone des Mantels könnte mehr Wasser enthalten als alle Ozeane zusammen."
+    },
+    {
+      "id": "insight",
+      "label": "InSight misst das erste Marsbeben",
+      "value": 2019,
+      "lane": "technik",
+      "category": "Missionen",
+      "info": "Der NASA-Lander horcht mit einem Seismometer in den Mars hinein. Mit denselben Methoden wie auf der Erde wird 2021 zum ersten Mal der Kern eines anderen Planeten vermessen.",
+      "exact_date": "2019-04-06"
+    },
+    {
+      "id": "innerster-kern",
+      "label": "Ein »innerster Kern« im Innenkern?",
+      "value": 2023,
+      "lane": "innen",
+      "category": "Kern",
+      "info": "Thanh-Son Phạm und Hrvoje Tkalčić werten Wellen aus, die bis zu fünfmal durch die Erde hin und her laufen. Sie deuten auf eine eigene Kugel von etwa 650 km Radius in der Mitte des inneren Kerns."
+    },
+    {
+      "id": "anthropozaen",
+      "label": "Anthropozän als Erdepoche abgelehnt",
+      "value": 2024,
+      "lane": "zeit",
+      "category": "Stratigrafie",
+      "info": "Nach 15 Jahren Diskussion lehnt die Internationale Union der Geologischen Wissenschaften es ab, eine eigene Epoche des Menschen in die Zeitskala aufzunehmen. Der Begriff bleibt trotzdem in Gebrauch."
+    },
+    {
+      "id": "p-agricola",
+      "label": "Georgius Agricola",
+      "value": 1494,
+      "end": 1555,
+      "lane": "personen",
+      "category": "Minerale",
+      "info": "Arzt und Bürgermeister in Chemnitz, Begründer der Mineralogie und Bergbaukunde."
+    },
+    {
+      "id": "p-hutton",
+      "label": "James Hutton",
+      "value": 1726,
+      "end": 1797,
+      "lane": "personen",
+      "category": "Erdalter",
+      "info": "Schottischer Arzt und Landwirt, »Vater der modernen Geologie«: Kreislauf der Gesteine und die unermessliche Tiefe der Zeit."
+    },
+    {
+      "id": "p-werner",
+      "label": "Abraham Gottlob Werner",
+      "value": 1749,
+      "end": 1817,
+      "lane": "personen",
+      "category": "Gesteine",
+      "info": "Lehrer an der Bergakademie Freiberg; zog Studenten aus ganz Europa an, darunter Alexander von Humboldt."
+    },
+    {
+      "id": "p-humboldt",
+      "label": "Alexander von Humboldt",
+      "value": 1769,
+      "end": 1859,
+      "lane": "personen",
+      "category": "Vulkane",
+      "info": "Erforscht auf seiner Amerikareise Vulkane der Anden, erkennt, dass sie in Reihen über Spalten liegen, und misst Erdmagnetfeld und Temperaturen weltweit."
+    },
+    {
+      "id": "p-wegener",
+      "label": "Alfred Wegener",
+      "value": 1880,
+      "end": 1930,
+      "lane": "personen",
+      "category": "Kontinentaldrift",
+      "info": "Meteorologe und Polarforscher aus Berlin, Vater der Kontinentalverschiebung. Starb auf dem Inlandeis Grönlands."
+    },
+    {
+      "id": "p-lehmann",
+      "label": "Inge Lehmann",
+      "value": 1888,
+      "end": 1993,
+      "lane": "personen",
+      "category": "Kern",
+      "info": "Dänische Seismologin, entdeckte 1936 den inneren Kern; wurde 104 Jahre alt."
+    },
+    {
+      "id": "p-gutenberg",
+      "label": "Beno Gutenberg",
+      "value": 1889,
+      "end": 1960,
+      "lane": "personen",
+      "category": "Kern",
+      "info": "Geboren in Darmstadt, bestimmte die Tiefe des Erdkerns, ging 1930 nach Kalifornien und entwickelte dort mit Richter die Magnitudenskala."
+    },
+    {
+      "id": "p-tharp",
+      "label": "Marie Tharp",
+      "value": 1920,
+      "end": 2006,
+      "lane": "personen",
+      "category": "Meeresboden",
+      "info": "US-amerikanische Geologin und Kartografin; zeichnete die ersten Karten des gesamten Ozeanbodens."
+    },
+    {
+      "id": "p-wilson",
+      "label": "J. Tuzo Wilson",
+      "value": 1908,
+      "end": 1993,
+      "lane": "personen",
+      "category": "Wilson-Zyklus",
+      "info": "Kanadischer Geophysiker; Hotspots, Transformstörungen und der nach ihm benannte Zyklus der Ozeane."
+    }
+  ]
+}

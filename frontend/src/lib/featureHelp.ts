@@ -193,6 +193,30 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein). »⛶« schaltet die Bühne auf Vollbild, fürs Smartboard." },
     ],
   },
+  erdaufbau: {
+    title: "Aufbau der Erde",
+    intro: "Der Schalenbau der Erde von der Kruste bis zum inneren Kern: Gesteine, Minerale, Zustand, Temperatur, Druck, Dichte und Zähigkeit — und wie man das mit Erdbebenwellen herausgefunden hat. Die Zahlen folgen dem Referenzmodell PREM; rechnet ganz im Browser.",
+    sections: [
+      { label: "🌍 Keilschnitt", text: "Die Erde in 3D mit herausgeschnittenem Keil (Achtel oder Pol zu Pol, Öffnung 30–180°). Ziehen dreht, Mausrad zoomt. Eine Schicht antippen zeigt Tiefe, Dicke, Temperatur, Druck, Dichte, Wellengeschwindigkeit, Zähigkeit, Anteil an Volumen und Masse, Gesteine und Minerale. »Schale abziehen« hebt die äußerste Schicht ab, bis nur der innere Kern bleibt. Farben nach Schichten, Temperatur, Dichte oder fest/flüssig; »Außen dicker« überhöht die in Wahrheit hauchdünne Kruste. Das Quiz fragt nach einer Schicht, man tippt sie an." },
+      { label: "🔥 Konvektion im Keil", text: "Auf den Schnittflächen des Mantels läuft eine echte Strömungsrechnung: Heißes Gestein steigt in Säulen auf, kaltes sinkt ab; die Punkte zeigen, wie der feste Mantel über Jahrmillionen fließt. Unten rechts stehen die vergangene Modellzeit und wie viele Millionen Jahre je Sekunde vergehen; der Regler »Tempo« (🐢–🐇) stellt den Zeitraffer ein, auch im Reiter »Mantelkonvektion«." },
+      { label: "📉 Tiefenprofil", text: "Temperatur (mit Schmelzkurve), Druck, Dichte, P- und S-Wellen, Zähigkeit (logarithmisch, mit Wasser, Honig, Asphalt und Gletschereis zum Vergleich) und Schwere nebeneinander von 0 bis 6371 km oder nur die oberen 1000 km. Mit der Maus über das Bild fahren liest alle Werte einer Tiefe ab. Daran sieht man, warum die Asthenosphäre fließt und der innere Kern trotz 5400 °C fest ist." },
+      { label: "〰️ Erdbebenwellen", text: "Ein Beben sendet P- und S-Wellen durch die Erde, gerechnet mit dem Brechungsgesetz für die Kugel. Sichtbar werden die gebogenen Bahnen, der S-Schatten ab 103° und der P-Schatten zwischen 103° und 142°. Drei Erdmodelle zeigen die Entdeckungsgeschichte: überall gleich (kein Schatten), mit flüssigem Kern (Oldham, Gutenberg) und mit festem Innenkern (Lehmann 1936)." },
+      { label: "🔥 Mantelkonvektion", text: "Der Strömungslöser zum Ausprobieren: Zähigkeit (Rayleigh-Zahl) einstellen, Heizung durch den Kern und/oder Radioaktivität, ein Kontinent als Deckel, unter dem sich Wärme staut. Ins Bild tippen setzt einen heißen Fleck, mit Umschalt oder Rechtsklick einen kalten. Angezeigt werden Modellzeit, Strömung in cm/Jahr und wie viel mehr Wärme als durch reine Leitung transportiert wird." },
+      { label: "📘 Wissen", text: "Zusammensetzung von Erde und Kruste, Woher wissen wir das, Wärmequellen, Geodynamo, alle Schichten als Tabelle und Quellen." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
+  wilson: {
+    title: "Wilson-Zyklus",
+    intro: "Wie Ozeane entstehen und wieder verschwinden: ein Superkontinent zerbricht, ein Ozean öffnet sich, wird verschluckt und endet als Gebirge. Kinematisches Schulmodell mit echten Größenordnungen (3–4 cm/Jahr, Meeresbodentiefe nach Alter, Gebirgshöhe nach Isostasie).",
+    sections: [
+      { label: "🌋 Querschnitt", text: "Ein ganzer Zyklus von 560 Mio. Jahren im Zeitraffer (5–40 Mio. Jahre je Sekunde) oder mit dem Schieber: Superkontinent mit Plume, Grabenbruch, junges Meer, Ozean mit Rücken, Subduktion mit Tiefseerinne und Vulkanbogen, Schließen, Kollision mit Gebirgswurzel und Abtragung zum Rumpfgebirge. Die bunte Leiste springt zu jeder Phase." },
+      { label: "🧲 Was man sieht", text: "Magnetstreifen, die spiegelbildlich zum Rücken wachsen; Meeresboden, der mit dem Alter tiefer wird; die abtauchende Platte bis 660 km; Erdbeben an Graben, Rücken, Benioff-Zone und Kollision; Mantelströmung; Plattengeschwindigkeiten in cm/Jahr. Jede Phase nennt ein heutiges Beispiel (Ostafrika, Rotes Meer, Atlantik, Anden, Mittelmeer, Himalaya, Harz)." },
+      { label: "🎯 Welche Phase?", text: "Zeigt einen Querschnitt ohne Beschriftung; man wählt die Phase und bekommt die Erklärung." },
+      { label: "📘 Wissen", text: "Die Idee von Tuzo Wilson (1966), Superkontinente, Wilson-Zyklen in Deutschland (Variszikum: Harz, Thüringer Wald; Oberrheingraben), Antrieb der Platten, Beweise für die Meeresbodenspreizung, Quellen." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   kueste: {
     title: "Küstendynamik",
     intro: "Wie Wellen, Strömung, Wind und Gezeiten die Küste formen — und wie Menschen sie schützen. Ein Schulmodell mit echten Größenordnungen (Tidenhub, Deichmaße, Sandmengen von Sylt), rechnet ganz im Browser.",

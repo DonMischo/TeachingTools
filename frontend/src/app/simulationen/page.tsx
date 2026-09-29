@@ -81,6 +81,22 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#0ea5e9",
   },
   {
+    slug: "erdaufbau",
+    href: "/simulationen/erdaufbau",
+    icon: "🌍",
+    title: "Aufbau der Erde",
+    description: "Die Erde im Keilschnitt: Schalen abziehen, Temperatur, Druck, Dichte und Zähigkeit bis zum Kern, Erdbebenwellen mit Schattenzonen und ein echter Löser für die Mantelkonvektion.",
+    color: "#ea580c",
+  },
+  {
+    slug: "wilson",
+    href: "/simulationen/wilson",
+    icon: "🌋",
+    title: "Wilson-Zyklus",
+    description: "Ein Superkontinent zerbricht, ein Ozean öffnet sich mit Magnetstreifen, wird verschluckt und endet als Gebirge — ein ganzer Zyklus im Zeitraffer, mit Quiz.",
+    color: "#7c3aed",
+  },
+  {
     slug: "verkehr",
     href: "/simulationen/verkehr",
     icon: "🚦",

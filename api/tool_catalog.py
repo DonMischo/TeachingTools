@@ -140,6 +140,15 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("kueste", "🌊 Küstendynamik", "🌊", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Aufbau der Erde: Keilschnitt, Tiefenprofil, Erdbebenwellen und
+    # Mantelkonvektion — rechnet ganz im Browser.
+    CatalogTool("erdaufbau", "🌍 Aufbau der Erde", "🌍", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    # Wilson-Zyklus: ein Ozean öffnet und schließt sich im Querschnitt.
+    CatalogTool("wilson", "🌋 Wilson-Zyklus", "🌋", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

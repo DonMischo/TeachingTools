@@ -28,6 +28,8 @@ import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
 import Verkehr from "@/components/verkehr/Verkehr";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Kueste from "@/components/kueste/Kueste";
+import ErdAufbau from "@/components/erde/ErdAufbau";
+import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -42,6 +44,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
+  erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },
+  wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.
