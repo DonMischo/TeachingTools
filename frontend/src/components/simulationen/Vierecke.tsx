@@ -18,6 +18,7 @@
  * Auf dem Smartboard ist das zuverlässiger als Ziehen und Ablegen.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { wahl, zahlen, type Vorgabe } from "@/lib/vorgabe";
 import {
   SHAPES, SHAPE_ORDER, bounds, defaults, fmt,
   type ShapeKey, type Vals,
@@ -261,10 +262,27 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "flaeche", label: "Fläche", icon: "🧱" },
 ];
 
-export default function Vierecke({ action }: { action?: ReactNode }) {
-  const [tab, setTab] = useState<Tab>("formen");
-  const [shapeKey, setShapeKey] = useState<ShapeKey>("quadrat");
-  const [vals, setVals] = useState<Vals>(() => defaults(SHAPES.quadrat));
+/**
+ * `vorgabe` (Exitgame-Station): { form: "trapez", masse: { a: 8, c: 4, h: 3 }, blatt?: "formen" | "umfang" | "flaeche",
+ * rechnung?: true }. Form, Maße und Blatt stehen dann fest; die fertige Rechnung (u = …, A = …) bleibt
+ * verborgen, außer `rechnung: true` — sonst stünde die Antwort schon da.
+ */
+export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festeForm = wahl(vorgabe, "form", SHAPE_ORDER);
+  const festesBlatt = festeForm ? (wahl(vorgabe, "blatt", TABS.map(t => t.id)) ?? "formen") : undefined;
+  const rechnungZeigen = !festeForm || vorgabe?.rechnung === true;
+  const [tab, setTab] = useState<Tab>(festesBlatt ?? "formen");
+  const [shapeKey, setShapeKey] = useState<ShapeKey>(festeForm ?? "quadrat");
+  const [vals, setVals] = useState<Vals>(() => {
+    if (!festeForm) return defaults(SHAPES.quadrat);
+    // Nur Maße übernehmen, die die Form kennt, und innerhalb ihrer Grenzen.
+    const d = defaults(SHAPES[festeForm]);
+    const m = zahlen(vorgabe, "masse") ?? {};
+    for (const f of SHAPES[festeForm].fields) {
+      if (m[f.key] !== undefined) d[f.key] = Math.min(f.max, Math.max(f.min, m[f.key]));
+    }
+    return d;
+  });
 
   const shape = SHAPES[shapeKey];
 
@@ -325,7 +343,7 @@ export default function Vierecke({ action }: { action?: ReactNode }) {
       </div>
 
       {/* Blätter */}
-      <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festeForm && <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -339,10 +357,10 @@ export default function Vierecke({ action }: { action?: ReactNode }) {
             {t.icon} {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Formwahl — gilt für alle Blätter */}
-      <div className="flex flex-wrap gap-2">
+      {!festeForm && <div className="flex flex-wrap gap-2">
         {SHAPE_ORDER.map(k => {
           const s = SHAPES[k];
           const dimmed = tab !== "formen" && !s.gridable;
@@ -361,7 +379,7 @@ export default function Vierecke({ action }: { action?: ReactNode }) {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {/* Maße */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -372,7 +390,7 @@ export default function Vierecke({ action }: { action?: ReactNode }) {
             </span>
             <input
               type="range" min={f.min} max={f.max} step={1}
-              value={vals[f.key]}
+              value={vals[f.key]} disabled={!!festeForm}
               onChange={e => setVals(v => ({ ...v, [f.key]: Number(e.target.value) }))}
               className="accent-[var(--accent)]"
             />
@@ -395,13 +413,13 @@ export default function Vierecke({ action }: { action?: ReactNode }) {
             <Figur shapeKey={shapeKey} vals={vals} />
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+          {rechnungZeigen && <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
             <div className="font-mono text-sm">{shape.stepsU(vals)}</div>
             <div className="font-mono text-sm">{shape.stepsA(vals)}</div>
             <div className="text-xs text-[var(--text-muted)] mt-1">
               Umfang u = {fmt(u)} · Fläche A = {fmt(A)}
             </div>
-          </div>
+          </div>}
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <div className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)] mb-2">

@@ -322,8 +322,14 @@ function ElementInfo({ symbol }: { symbol: string }) {
 
 const START = CHEM_PRESETS[0];
 
-export default function ChemieModus({ onMessage }: { onMessage: (m: string) => void }) {
+export default function ChemieModus({ onMessage, fest }: {
+  onMessage: (m: string) => void;
+  /** Feste Reaktion (Exitgame-Station): keine Vorlagen, keine eigenen Reaktionen. */
+  fest?: string;
+}) {
   const [reaction, setReaction] = useState<Reaction>(() => {
+    const f = fest ? parseReaction(fest) : null;
+    if (f?.ok) return f.r;
     const r = parseReaction(START.src);
     return r.ok ? r.r : { left: [], right: [] };
   });
@@ -371,7 +377,7 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {CHEM_PRESETS.map(p => (
+        {!fest && CHEM_PRESETS.map(p => (
           <button key={p.src} title={p.src}
             onClick={() => {
               const r = parseReaction(p.src);
@@ -381,10 +387,10 @@ export default function ChemieModus({ onMessage }: { onMessage: (m: string) => v
             {p.label}
           </button>
         ))}
-        <button onClick={() => setCustomOpen(o => !o)}
+        {!fest && <button onClick={() => setCustomOpen(o => !o)}
           className="px-3 py-1.5 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
           ✏️ Eigene Reaktion
-        </button>
+        </button>}
       </div>
 
       {customOpen && (

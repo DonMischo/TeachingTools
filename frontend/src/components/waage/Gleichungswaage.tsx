@@ -12,6 +12,7 @@ import { WaageStyles } from "./Balance";
 import ZahlenModus from "./ZahlenModus";
 import VariablenModus from "./VariablenModus";
 import ChemieModus from "./ChemieModus";
+import { text, wahl, zahlen, type Vorgabe } from "@/lib/vorgabe";
 
 const MODES = [
   { id: "zahlen", icon: "🔢", label: "Zahlen", sub: "Gleichungen mit x — dazu die Klammerregel." },
@@ -21,8 +22,20 @@ const MODES = [
 
 type ModeId = (typeof MODES)[number]["id"];
 
-export default function Gleichungswaage({ action }: { action?: ReactNode }) {
-  const [mode, setMode] = useState<ModeId>("zahlen");
+/**
+ * `vorgabe` (Exitgame-Station) legt Modus und Aufgabe fest:
+ *   { gleichung: "3x + 4 = 19" }                           → Zahlen
+ *   { formel: "E = m·g·h", nach: "h", werte: { m: 2 } }    → Variablen
+ *   { reaktion: "H2 + O2 -> H2O" }                          → Chemie
+ * Dann gibt es keinen Moduswechsel und keine anderen Aufgaben.
+ */
+export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const gleichung = text(vorgabe, "gleichung"), formel = text(vorgabe, "formel"), reaktion = text(vorgabe, "reaktion");
+  const fest: ModeId | null = vorgabe
+    ? wahl(vorgabe, "modus", ["zahlen", "variablen", "chemie"] as const)
+      ?? (reaktion ? "chemie" : formel ? "variablen" : "zahlen")
+    : null;
+  const [mode, setMode] = useState<ModeId>(fest ?? "zahlen");
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +61,7 @@ export default function Gleichungswaage({ action }: { action?: ReactNode }) {
         {action}
       </div>
 
-      <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!fest && <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {MODES.map(m => (
           <button key={m.id} onClick={() => { setMode(m.id); setMsg(null); }}
             className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -59,7 +72,7 @@ export default function Gleichungswaage({ action }: { action?: ReactNode }) {
             {m.icon} {m.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {msg && (
         <div className="gw-banner rounded-xl border border-[var(--red)] bg-[var(--red)]/10 px-4 py-2 text-sm text-[var(--red)] font-medium">
@@ -67,9 +80,10 @@ export default function Gleichungswaage({ action }: { action?: ReactNode }) {
         </div>
       )}
 
-      {mode === "zahlen" && <ZahlenModus onMessage={setMsg} />}
-      {mode === "variablen" && <VariablenModus onMessage={setMsg} />}
-      {mode === "chemie" && <ChemieModus onMessage={setMsg} />}
+      {mode === "zahlen" && <ZahlenModus onMessage={setMsg} fest={fest ? gleichung : undefined} />}
+      {mode === "variablen" && <VariablenModus onMessage={setMsg}
+        fest={fest && formel ? { formel, nach: text(vorgabe, "nach"), werte: zahlen(vorgabe, "werte") } : undefined} />}
+      {mode === "chemie" && <ChemieModus onMessage={setMsg} fest={fest ? reaktion : undefined} />}
     </div>
   );
 }

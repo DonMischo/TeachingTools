@@ -277,9 +277,16 @@ function parseValue(v: string): { kind: "x" | "n"; n: number } | null {
   return { kind: isX ? "x" : "n", n };
 }
 
-export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => void }) {
+export default function ZahlenModus({ onMessage, fest }: {
+  onMessage: (m: string) => void;
+  /** Feste Gleichung (Exitgame-Station): keine Stufen, keine neuen oder eigenen Aufgaben. */
+  fest?: string;
+}) {
   const [level, setLevel] = useState(3);
-  const [chain, setChain] = useState<Equation[]>([START]);
+  const [chain, setChain] = useState<Equation[]>(() => {
+    const r = fest ? parseEquation(fest) : null;
+    return [r?.ok ? r.eq : START];
+  });
   const [ops, setOps] = useState<string[]>([]);
   const [motiv, setMotiv] = useState<MotivId>("hoelzer");
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -413,7 +420,7 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {LEVELS.map(l => (
+        {!fest && LEVELS.map(l => (
           <button key={l.level} onClick={() => { setLevel(l.level); start(generateTask(l.level)); }} title={l.hint}
             className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
               level === l.level
@@ -423,6 +430,7 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
             <span className="font-black mr-1.5">{l.level}</span>{l.label}
           </button>
         ))}
+        {!fest && <>
         <button onClick={() => start(generateTask(level))}
           className="px-3 py-1.5 rounded-xl text-sm font-bold border border-[var(--border)] hover:border-[var(--accent)]">
           🎲 Neue Aufgabe
@@ -431,6 +439,7 @@ export default function ZahlenModus({ onMessage }: { onMessage: (m: string) => v
           className="px-3 py-1.5 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
           ✏️ Eigene Gleichung
         </button>
+        </>}
         <div className="flex-1" />
         <button onClick={() => { setChain(c => c.slice(0, -1)); setOps(o => o.slice(0, -1)); kick(); }}
           disabled={chain.length < 2}

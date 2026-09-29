@@ -17,6 +17,7 @@
  * Gerechnet wird in `@/lib/rechenregeln`; hier steht nur das Bild.
  */
 import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { text, wahl, zahl, type Vorgabe } from "@/lib/vorgabe";
 import {
   parse, render, wert, wertVonLinks, naechster, kandidaten, anwenden, begruendung,
   brauchtKlammer, opZeichen, fmt, wuerfelnTerm, wuerfelnZug, wuerfelnStufen,
@@ -346,10 +347,17 @@ function Bild({ n, pfad, dranPfad, frucht, onTipp }: {
   );
 }
 
-function Obstkorb({ melde }: { melde: (richtig: boolean) => void }) {
+/** Ein fester Term gilt nur, wenn er sich lesen und ausrechnen lässt. */
+function lesbar(term: string | undefined): string | undefined {
+  if (!term) return undefined;
+  try { return Number.isFinite(wert(parse(term))) ? term : undefined; } catch { return undefined; }
+}
+
+function Obstkorb({ melde, fest }: { melde: (richtig: boolean) => void; fest?: string }) {
+  const anfang = lesbar(fest) ?? "2 + 3 · 4";
   const [stufe, setStufe] = useState("1");
-  const [src, setSrc] = useState("2 + 3 · 4");
-  const [baum, setBaum] = useState<Node>(() => parse("2 + 3 · 4"));
+  const [src, setSrc] = useState(anfang);
+  const [baum, setBaum] = useState<Node>(() => parse(anfang));
   const [verlauf, setVerlauf] = useState<Node[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -412,10 +420,12 @@ function Obstkorb({ melde }: { melde: (richtig: boolean) => void }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {!fest && <>
       <Aufgabenleiste
         stufen={STUFEN} aktiv={stufe} onWaehle={wuerfeln} onNeu={() => wuerfeln(stufe)}
         hinweis={Number(stufe) <= 2 ? "Punkt vor Strich" : "mit Klammern"} />
       <Eigenes platzhalter="z. B. 2 + (3 + 4) · 5" onSubmit={eigenes} fehler={fehler} />
+      </>}
 
       {/* Termzeile */}
       <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
@@ -499,10 +509,14 @@ function Waggon({ v, an, onClick }: { v: number; an: boolean; onClick: () => voi
   );
 }
 
-function Rechenzug() {
+function Rechenzug({ fest }: { fest?: string }) {
   const [stufe, setStufe] = useState("1");
-  const [start, setStart] = useState<Zug>(() => zugAusTerm("3 · 4 + 5"));
-  const [zug, setZug] = useState<Zug>(() => zugAusTerm("3 · 4 + 5"));
+  const [anfang] = useState(() => {
+    if (fest) try { zugAusTerm(fest); return fest; } catch { /* dann die Vorlage */ }
+    return "3 · 4 + 5";
+  });
+  const [start, setStart] = useState<Zug>(() => zugAusTerm(anfang));
+  const [zug, setZug] = useState<Zug>(() => zugAusTerm(anfang));
   const [auswahl, setAuswahl] = useState<Auswahl>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
@@ -571,10 +585,12 @@ function Rechenzug() {
 
   return (
     <div className="flex flex-col gap-4">
+      {!fest && <>
       <Aufgabenleiste
         stufen={STUFEN} aktiv={stufe} onWaehle={wuerfeln} onNeu={() => wuerfeln(stufe)}
         hinweis={stufe === "1" ? "nur + und ·" : stufe === "2" ? "mit −" : stufe === "3" ? "mit :" : "alles gemischt"} />
       <Eigenes platzhalter="z. B. 3 · 4 + 5 − 2" onSubmit={eigenes} fehler={fehler} />
+      </>}
 
       <p className="text-sm text-[var(--text-muted)]">
         Zwei Waggons antippen → sie tauschen die Plätze. Auf das Dach eines Blocks tippen →
@@ -720,13 +736,17 @@ function zahlWort(kern: number, stellen: number): string {
 
 const stellenWort = (n: number) => (Math.abs(n) === 1 ? "1 Stelle" : `${Math.abs(n)} Stellen`);
 
-function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
+function Stufenzahlen({ melde, fest }: {
+  melde: (richtig: boolean) => void;
+  /** Feste Rechnung (Exitgame-Station): keine anderen Zahlen, kein »Lösung zeigen«. */
+  fest?: { a: number; b: number; art: Rechenart };
+}) {
   const [modus, setModus] = useState<StufenModus>("frei");
-  const [art, setArt] = useState<Rechenart>("*");
+  const [art, setArt] = useState<Rechenart>(fest?.art ?? "*");
   // Die Zahlen stehen als Text da, nicht als number: nur so darf man »0,3«
   // tippen, ohne dass das Komma beim Zwischenstand verschluckt wird.
-  const [aText, setAText] = useState("3");
-  const [bText, setBText] = useState("40");
+  const [aText, setAText] = useState(fest ? fmt(fest.a) : "3");
+  const [bText, setBText] = useState(fest ? fmt(fest.b) : "40");
   // Solange die Lösung verdeckt ist, gibt es etwas selbst zu rechnen.
   const [offen, setOffen] = useState(false);
 
@@ -747,7 +767,7 @@ function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
   }
 
   const feld = (wert: string, setzen: (s: string) => void, label: string) => (
-    <input value={wert} aria-label={label} inputMode="decimal"
+    <input value={wert} aria-label={label} inputMode="decimal" readOnly={!!fest}
       onChange={e => { setzen(e.target.value); setOffen(false); }}
       className="w-24 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-mono text-sm" />
   );
@@ -762,6 +782,7 @@ function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {!fest && <>
       <Aufgabenleiste
         stufen={MODI.map(m => ({ id: m, label: modusLabel(m, art) }))} aktiv={modus}
         onWaehle={id => wuerfeln(id as StufenModus)} onNeu={() => wuerfeln(modus)}
@@ -772,6 +793,7 @@ function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
         <Knopf an={art === "*"} onClick={() => wuerfeln(modus, "*")}>· mal</Knopf>
         <Knopf an={art === ":"} onClick={() => wuerfeln(modus, ":")}>: geteilt</Knopf>
       </div>
+      </>}
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Eigene Zahlen</span>
@@ -787,7 +809,7 @@ function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
           key={`${art}|${aText}|${bText}`}
           loesung={z.ergebnis}
           onGeprueft={r => { setOffen(true); melde(r); }}
-          onZeigen={() => setOffen(true)} />
+          onZeigen={fest ? undefined : () => setOffen(true)} />
       )}
 
       {z && !offen && (
@@ -868,8 +890,21 @@ function Stufenzahlen({ melde }: { melde: (richtig: boolean) => void }) {
 
 /* ───────────────────────────────────────────────────────────── Rahmen ── */
 
-export default function Rechenregeln({ action }: { action?: ReactNode }) {
-  const [reiter, setReiter] = useState<Reiter>("korb");
+/**
+ * `vorgabe` (Exitgame-Station) legt Reiter und Aufgabe fest:
+ *   { term: "2 + 3 · (4 − 1)" }                 → Obstkorb
+ *   { reiter: "zug", term: "12 : 4 + 5" }       → Rechenzug
+ *   { a: 3.5, b: 100, art: "*" }                → Stufenzahlen (art "*" oder ":")
+ */
+export default function Rechenregeln({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const va = zahl(vorgabe, "a"), vb = zahl(vorgabe, "b"), vterm = text(vorgabe, "term");
+  const festerReiter: Reiter | undefined = vorgabe
+    ? wahl(vorgabe, "reiter", ["korb", "zug", "stufen"] as const) ?? (va !== undefined && vb !== undefined ? "stufen" : "korb")
+    : undefined;
+  const stufenFest = va !== undefined && vb !== undefined
+    ? { a: va, b: vb, art: (wahl(vorgabe, "art", ["*", ":"] as const) ?? "*") as Rechenart }
+    : undefined;
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "korb");
   // Der Punktestand gehört hierher und nicht in die Reiter: die werden beim
   // Umschalten abgebaut, und ein Zähler, der beim Reiterwechsel auf 0 springt,
   // wäre keiner.
@@ -888,19 +923,19 @@ export default function Rechenregeln({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      {!festerReiter && <div className="flex gap-2 flex-wrap">
         {REITER.map(r => (
           <Knopf key={r.id} an={r.id === reiter} onClick={() => setReiter(r.id)}>
             {r.icon} {r.titel}
           </Knopf>
         ))}
-      </div>
+      </div>}
 
-      {reiter !== "zug" && <Punkteleiste p={punkte} onReset={() => setPunkte(LEER)} />}
+      {reiter !== "zug" && !festerReiter && <Punkteleiste p={punkte} onReset={() => setPunkte(LEER)} />}
 
-      {reiter === "korb" && <Obstkorb melde={melde} />}
-      {reiter === "zug" && <Rechenzug />}
-      {reiter === "stufen" && <Stufenzahlen melde={melde} />}
+      {reiter === "korb" && <Obstkorb melde={melde} fest={festerReiter ? vterm : undefined} />}
+      {reiter === "zug" && <Rechenzug fest={festerReiter ? vterm : undefined} />}
+      {reiter === "stufen" && <Stufenzahlen melde={melde} fest={festerReiter ? stufenFest : undefined} />}
     </div>
   );
 }

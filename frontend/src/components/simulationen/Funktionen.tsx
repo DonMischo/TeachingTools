@@ -11,6 +11,7 @@
  * Die Rechnung selbst liegt in @/lib/funktionen (dort auch getestet).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { text, zahl, type Vorgabe } from "@/lib/vorgabe";
 import {
   START, TEMPLATES, axisStep, evalAt, fmt, fmtPi, hasX, parseFunction, piAxisStep,
   fmtPiLatex, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
@@ -129,13 +130,27 @@ function ZoomBtn({ onClick, title, children }: {
 
 /* ── Werkzeug ──────────────────────────────────────────────────────────────── */
 
-export default function Funktionen({ action }: { action?: ReactNode }) {
-  const [src, setSrc] = useState(START.src);
-  const [from, setFrom] = useState(START.from);
-  const [to, setTo] = useState(START.to);
-  const [step, setStep] = useState(START.step);
+/**
+ * `vorgabe` (Exitgame-Station): { term: "x^2 - 4", von?, bis?, schritt?, pi? }.
+ * Der Term steht dann fest (keine Vorlagen, kein Umschalten der Form);
+ * Bereich und Ansicht bleiben einstellbar, sofern nicht vorgegeben.
+ */
+export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerTerm = text(vorgabe, "term");
+  const anfang = {
+    src: festerTerm ?? START.src,
+    from: zahl(vorgabe, "von") ?? START.from,
+    to: zahl(vorgabe, "bis") ?? START.to,
+    step: zahl(vorgabe, "schritt") ?? START.step,
+    pi: vorgabe?.pi === true ? true : festerTerm ? false : START.pi,
+  };
+  const bereichFest = festerTerm !== undefined && (zahl(vorgabe, "von") !== undefined || zahl(vorgabe, "bis") !== undefined);
+  const [src, setSrc] = useState(anfang.src);
+  const [from, setFrom] = useState(anfang.from);
+  const [to, setTo] = useState(anfang.to);
+  const [step, setStep] = useState(anfang.step);
   // Bei Winkelfunktionen zählen von/bis/Schritt in Vielfachen von π.
-  const [pi, setPi] = useState(START.pi);
+  const [pi, setPi] = useState(anfang.pi);
   const [tpl, setTpl] = useState<string | null>(null);
   const [hoverX, setHoverX] = useState<number | null>(null);   // vom Graphen
   const [hoverRow, setHoverRow] = useState<number | null>(null); // von der Tabelle
@@ -373,8 +388,8 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
   const vertexOf = useMemo(() => (quad ? vertex(quad) : { d: 0, e: 0 }), [quad]);
 
   const reset = () => {
-    setSrc(START.src); setFrom(START.from); setTo(START.to);
-    setStep(START.step); setPi(START.pi); setTpl(null); setZoom(null);
+    setSrc(anfang.src); setFrom(anfang.from); setTo(anfang.to);
+    setStep(anfang.step); setPi(anfang.pi); setTpl(null); setZoom(null);
   };
 
   return (
@@ -404,6 +419,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
           <input
             value={src}
             onChange={e => setSrc(e.target.value)}
+            readOnly={festerTerm !== undefined}
             spellCheck={false}
             aria-label="Funktionsterm"
             className="flex-1 min-w-[16rem] bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 font-mono text-lg"
@@ -421,7 +437,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
           : !hasX(node!)
             ? <p className="text-sm text-amber-500">In dem Term steht kein x — der Graph ist eine waagerechte Linie.</p>
             : null}
-        <div className="flex flex-wrap gap-1.5">
+        {festerTerm === undefined && <div className="flex flex-wrap gap-1.5">
           {TEMPLATES.map(t => (
             <button
               key={t.key}
@@ -436,8 +452,8 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
               {t.label}{tpl === t.key ? " ↻" : ""}
             </button>
           ))}
-        </div>
-        {formen && (
+        </div>}
+        {formen && festerTerm === undefined && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs text-[var(--text-muted)] mr-0.5">Form</span>
             {([["nf", "Normalform", formen.nf], ["spf", "Scheitelpunktform", formen.spf]] as const).map(
@@ -463,11 +479,11 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
         )}
 
         {/* Auch hier feste Höhe — sonst springt die Seite beim Vorlagenwechsel. */}
-        <p className="text-xs text-[var(--text-muted)] min-h-[2rem]">
+        {festerTerm === undefined && <p className="text-xs text-[var(--text-muted)] min-h-[2rem]">
           {tpl
             ? <>💡 {TEMPLATES.find(t => t.key === tpl)!.hint} <span className="opacity-70">Nochmal klicken: neue Zahlen.</span></>
             : "Eine Vorlage wählen — jeder weitere Klick auf dieselbe würfelt neue Zahlen."}
-        </p>
+        </p>}
       </div>
 
       {/* Bereich */}
@@ -480,7 +496,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
                 {label}{pi ? " · π" : ""}
               </span>
               <input
-                type="number" value={val}
+                type="number" value={val} disabled={bereichFest}
                 step={pi ? 0.25 : label === "Schritt" ? 0.5 : 1}
                 min={label === "Schritt" ? 0.05 : undefined}
                 onChange={e => {
@@ -495,7 +511,7 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
         </div>
 
         <label className="flex items-center gap-2 text-sm cursor-pointer pb-1.5">
-          <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} className="accent-[var(--accent)]" />
+          <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} disabled={festerTerm !== undefined} className="accent-[var(--accent)]" />
           in π rechnen
         </label>
 

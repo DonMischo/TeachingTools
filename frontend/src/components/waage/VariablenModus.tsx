@@ -208,17 +208,25 @@ type SignKey = (typeof SIGNS)[number];
 
 const START = PRESETS[0];
 
-export default function VariablenModus({ onMessage }: { onMessage: (m: string) => void }) {
-  const [chain, setChain] = useState<Feq[]>(() => {
-    const r = parseFormel(START.formel);
-    return [r.ok ? r.eq : { left: [], right: [] }];
+/** Feste Formel (Exitgame-Station): gesuchte Größe und Werte vorgegeben, keine anderen Formeln. */
+export interface FesteFormel { formel: string; nach?: string; werte?: Record<string, number> }
+
+export default function VariablenModus({ onMessage, fest }: { onMessage: (m: string) => void; fest?: FesteFormel }) {
+  // Die feste Formel gilt nur, wenn sie sich lesen lässt — sonst die übliche Vorlage.
+  const [anfang] = useState(() => {
+    const r = fest ? parseFormel(fest.formel) : null;
+    if (fest && r?.ok) {
+      const vs = varsOf(r.eq);
+      const t = fest.nach && vs.includes(fest.nach) ? fest.nach : vs[vs.length - 1];
+      return { eq: r.eq, target: t, values: fest.werte };
+    }
+    const s = parseFormel(START.formel);
+    return { eq: s.ok ? s.eq : { left: [], right: [] }, target: START.target, values: START.values };
   });
+  const [chain, setChain] = useState<Feq[]>([anfang.eq]);
   const [ops, setOps] = useState<FOp[]>([]);
-  const [target, setTarget] = useState(START.target);
-  const [values, setValues] = useState<Values>(() => {
-    const r = parseFormel(START.formel);
-    return r.ok ? initialValues(r.eq, START.target, START.values) : {};
-  });
+  const [target, setTarget] = useState(anfang.target);
+  const [values, setValues] = useState<Values>(() => initialValues(anfang.eq, anfang.target, anfang.values));
   const [wobble, kick] = useWobble();
   const [sign, setSign] = useState<SignKey>(":");
   const [input, setInput] = useState("");
@@ -252,7 +260,7 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
   }, [kick]);
 
   const chooseTarget = (v: string) => {
-    if (v === target) return;
+    if (v === target || fest) return;
     // Die bisher gesuchte Größe bekommt ihren errechneten Wert, damit die
     // Formel weiter durchgerechnet werden kann.
     setValues(old => ({ ...old, [target]: targetValue ?? 2, [v]: null }));
@@ -299,7 +307,7 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {PRESETS.map(p => (
+        {!fest && PRESETS.map(p => (
           <button key={p.formel} title={p.label}
             onClick={() => {
               const r = parseFormel(p.formel);
@@ -309,10 +317,10 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
             {p.formel}
           </button>
         ))}
-        <button onClick={() => setCustomOpen(o => !o)}
+        {!fest && <button onClick={() => setCustomOpen(o => !o)}
           className="px-3 py-1.5 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
           ✏️ Eigene Formel
-        </button>
+        </button>}
         <div className="flex-1" />
         <button onClick={() => { setChain(c => c.slice(0, -1)); setOps(o => o.slice(0, -1)); kick(); }}
           disabled={chain.length < 2}
@@ -374,7 +382,8 @@ export default function VariablenModus({ onMessage }: { onMessage: (m: string) =
                 <span className="text-[var(--text-muted)]">=</span>
                 {isTarget ? (
                   <span className="font-bold text-base tabular-nums text-[var(--accent)] min-w-[3rem] text-center">
-                    {targetValue === null ? "?" : fmtNum(targetValue)}
+                    {/* An der Station wird der Wert erst verraten, wenn die Größe allein steht. */}
+                    {targetValue === null || (fest && !done) ? "?" : fmtNum(targetValue)}
                   </span>
                 ) : (
                   <input
