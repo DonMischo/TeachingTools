@@ -226,6 +226,8 @@ simulationen:
       - Wissensteil mit Quellen
   - id: erdaufbau
     name: Aufbau der Erde
+      - Lupenzoom (Klick zoomt an die Lupenstelle), nie weiter hinaus als die Grundansicht
+      - Galerie »Echte Küsten«: 53 frei lizenzierte Commons-Fotos (Rügen, Møns Klint, Steilufer, Watt, Küstenschutz) mit Erklärung und Nachweis, passende Fotos unter jedem Kliff
     kann:
       - 3D-Erde mit herausgeschnittenem Keil (Achtel oder Pol zu Pol, Öffnung 30–180°), drehen und zoomen
       - Schichten antippen: Tiefe, Dicke, Temperatur, Druck, Dichte, P-/S-Wellen, Zähigkeit, Anteil an Volumen und Masse, Gesteine, Minerale, Grenzen

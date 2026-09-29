@@ -1,0 +1,424 @@
+{
+  "arkona": {
+    "datei": "/kueste/galerie/arkona.webp",
+    "titel": ".00 5010 Kap Arkona, Steilküste auf der Insel Rügen.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:.00_5010_Kap_Arkona,_Steilk%C3%BCste_auf_der_Insel_R%C3%BCgen.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "W. Bulach"
+  },
+  "arkona-blockstrand": {
+    "datei": "/kueste/galerie/arkona-blockstrand.webp",
+    "titel": "South of Kap Arkona 2021-09-16 15.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:South_of_Kap_Arkona_2021-09-16_15.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Leonhard Lenz"
+  },
+  "arkona-rutschung": {
+    "datei": "/kueste/galerie/arkona-rutschung.webp",
+    "titel": "South of Kap Arkona 2021-09-16 10.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:South_of_Kap_Arkona_2021-09-16_10.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Leonhard Lenz"
+  },
+  "brodten": {
+    "datei": "/kueste/galerie/brodten.webp",
+    "titel": "Brodtener Ufer Sept 2014b.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Brodtener_Ufer_Sept_2014b.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Holger.Ellgaard"
+  },
+  "brodten-luft": {
+    "datei": "/kueste/galerie/brodten-luft.webp",
+    "titel": "Brodtener Steilufer bei Niendorf Ostsee (50705369501).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Brodtener_Steilufer_bei_Niendorf_Ostsee_(50705369501).jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Federal Waterways Engineering and Research Institute"
+  },
+  "buhnen": {
+    "datei": "/kueste/galerie/buhnen.webp",
+    "titel": "Rostock Ostsee (49833109701).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rostock_Ostsee_(49833109701).jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "Federal Waterways Engineering and Research Institute"
+  },
+  "darsser-ort": {
+    "datei": "/kueste/galerie/darsser-ort.webp",
+    "titel": "Darßer Ort 01.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dar%C3%9Fer_Ort_01.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Christine Frei"
+  },
+  "darsser-ort-kernzone": {
+    "datei": "/kueste/galerie/darsser-ort-kernzone.webp",
+    "titel": "Darßer-Ort-Kernzone.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dar%C3%9Fer-Ort-Kernzone.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Bernd Nedo"
+  },
+  "deich-innen": {
+    "datei": "/kueste/galerie/deich-innen.webp",
+    "titel": "Büsum Deich Innenseite.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:B%C3%BCsum_Deich_Innenseite.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Xocolatl"
+  },
+  "deich-nordstrand": {
+    "datei": "/kueste/galerie/deich-nordstrand.webp",
+    "titel": "Deich-nordstrand.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Deich-nordstrand.jpg",
+    "lizenz": "CC BY-SA 2.0 de",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0/de/deed.en",
+    "urheber": "Dirk Ingo Franke"
+  },
+  "deich-schafe": {
+    "datei": "/kueste/galerie/deich-schafe.webp",
+    "titel": "Deichprofil friedrichsgabekoog.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Deichprofil_friedrichsgabekoog.JPG",
+    "lizenz": "CC BY-SA 2.0 de",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/2.0/de/deed.en",
+    "urheber": "Dirk Ingo Franke"
+  },
+  "deich-sturmflutmarken": {
+    "datei": "/kueste/galerie/deich-sturmflutmarken.webp",
+    "titel": "Seedeich Harlesiel, Höhenanzeiger Sturmfluten (1).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Seedeich_Harlesiel,_H%C3%B6henanzeiger_Sturmfluten_(1).jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Aagnverglaser"
+  },
+  "fischland": {
+    "datei": "/kueste/galerie/fischland.webp",
+    "titel": "Hohes Ufer zwischen Ahrenshoop und Wustrow.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hohes_Ufer_zwischen_Ahrenshoop_und_Wustrow.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Jörg Braukmann"
+  },
+  "geocenter": {
+    "datei": "/kueste/galerie/geocenter.webp",
+    "titel": "Mons Klint GeoCenter.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mons_Klint_GeoCenter.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Sintakso"
+  },
+  "geocenter-innen": {
+    "datei": "/kueste/galerie/geocenter-innen.webp",
+    "titel": "Mons Klint GeoCenter interior.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mons_Klint_GeoCenter_interior.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Sintakso"
+  },
+  "geocenter-mosasaurier": {
+    "datei": "/kueste/galerie/geocenter-mosasaurier.webp",
+    "titel": "GeoCenter3.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:GeoCenter3.JPG",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Ipigott"
+  },
+  "hiddensee": {
+    "datei": "/kueste/galerie/hiddensee.webp",
+    "titel": "Cliff at Swantevitschlucht Hiddensee NLP Vorpommersche Boddenlandschaft 2023-06-12 01.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cliff_at_Swantevitschlucht_Hiddensee_NLP_Vorpommersche_Boddenlandschaft_2023-06-12_01.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Leonhard Lenz"
+  },
+  "jasmund-feuersteinstrand": {
+    "datei": "/kueste/galerie/jasmund-feuersteinstrand.webp",
+    "titel": "FFH-Gebiet Jasmund Kreidefelsen Ostsee Felsen Sommer 2025-06 01.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:FFH-Gebiet_Jasmund_Kreidefelsen_Ostsee_Felsen_Sommer_2025-06_01.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Ichwarsnur"
+  },
+  "jasmund-findlinge": {
+    "datei": "/kueste/galerie/jasmund-findlinge.webp",
+    "titel": "Kreidefelsen with the sea below.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kreidefelsen_with_the_sea_below.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "NilsMargott"
+  },
+  "jasmund-hohlkehle": {
+    "datei": "/kueste/galerie/jasmund-hohlkehle.webp",
+    "titel": "Nationalpark Jasmund Wave-cut notch.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Nationalpark_Jasmund_Wave-cut_notch.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Unukorno"
+  },
+  "kampener-findling": {
+    "datei": "/kueste/galerie/kampener-findling.webp",
+    "titel": "Sylt Kampener Findling vom Roten Kliff 2012 PD.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sylt_Kampener_Findling_vom_Roten_Kliff_2012_PD.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Bin im Garten"
+  },
+  "koenigsstuhl": {
+    "datei": "/kueste/galerie/koenigsstuhl.webp",
+    "titel": "Kreidefelsen-am-Königsstuhl-Nationalpark-Jasmund.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kreidefelsen-am-K%C3%B6nigsstuhl-Nationalpark-Jasmund.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Alexander Grams"
+  },
+  "koenigsstuhl-aussicht": {
+    "datei": "/kueste/galerie/koenigsstuhl-aussicht.webp",
+    "titel": "Aussicht vom Königsstuhl auf majestätische Kreidefelsen.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Aussicht_vom_K%C3%B6nigsstuhl_auf_majest%C3%A4tische_Kreidefelsen.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Lena.Kloß"
+  },
+  "kreideabbruch-2007": {
+    "datei": "/kueste/galerie/kreideabbruch-2007.webp",
+    "titel": "Ruegen Kreideabbruch 2007-06-28.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ruegen_Kreideabbruch_2007-06-28.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Rüganer"
+  },
+  "lahnungen": {
+    "datei": "/kueste/galerie/lahnungen.webp",
+    "titel": "Schleswig Holsteinisches Wattenmeer Lahnungen.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Schleswig_Holsteinisches_Wattenmeer_Lahnungen.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "CaVaa23"
+  },
+  "lahnungen-hallig": {
+    "datei": "/kueste/galerie/lahnungen-hallig.webp",
+    "titel": "2009-05-01 Lahnungen im Wattenmeer mit der Neuwarft auf Hallig Nordstrandischmoor (IMG 2312).JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:2009-05-01_Lahnungen_im_Wattenmeer_mit_der_Neuwarft_auf_Hallig_Nordstrandischmoor_(IMG_2312).JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Goegeo"
+  },
+  "landunter": {
+    "datei": "/kueste/galerie/landunter.webp",
+    "titel": "Landunter auf Hallig Hooge am 29. Oktober 2013.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Landunter_auf_Hallig_Hooge_am_29._Oktober_2013.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Sebastian Martin Dicke"
+  },
+  "moen-1": {
+    "datei": "/kueste/galerie/moen-1.webp",
+    "titel": "Møns Klint chalk cliffs 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:M%C3%B8ns_Klint_chalk_cliffs_1.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "kallerna"
+  },
+  "moen-3": {
+    "datei": "/kueste/galerie/moen-3.webp",
+    "titel": "Møns Klint chalk cliffs 3.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:M%C3%B8ns_Klint_chalk_cliffs_3.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "kallerna"
+  },
+  "moen-dronningestolen": {
+    "datei": "/kueste/galerie/moen-dronningestolen.webp",
+    "titel": "Møns Klint - Dronningestolen og Forchhammers Pynt.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:M%C3%B8ns_Klint_-_Dronningestolen_og_Forchhammers_Pynt.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Peter Elfelt"
+  },
+  "moen-feuerstein": {
+    "datei": "/kueste/galerie/moen-feuerstein.webp",
+    "titel": "Feuersteinbänder Møns Klint.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Feuersteinb%C3%A4nder_M%C3%B8ns_Klint.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Martin Vogel"
+  },
+  "moen-klippen": {
+    "datei": "/kueste/galerie/moen-klippen.webp",
+    "titel": "Mons Klint Klippen.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mons_Klint_Klippen.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Andreas Egger"
+  },
+  "moen-schuttrinne": {
+    "datei": "/kueste/galerie/moen-schuttrinne.webp",
+    "titel": "Mons Klint 2017 30.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mons_Klint_2017_30.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Einsamer Schütze"
+  },
+  "moen-store-taler": {
+    "datei": "/kueste/galerie/moen-store-taler.webp",
+    "titel": "MoensKlint StoreTaler.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:MoensKlint_StoreTaler.JPG",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
+  },
+  "morsum-kliff": {
+    "datei": "/kueste/galerie/morsum-kliff.webp",
+    "titel": "Kliff+Dünen+Salzwiese direkt an der Nordsee im Naturschutzgebiet Morsum-Kliff auf Sylt.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kliff%2BD%C3%BCnen%2BSalzwiese_direkt_an_der_Nordsee_im_Naturschutzgebiet_Morsum-Kliff_auf_Sylt.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Leiflive"
+  },
+  "rotes-kliff": {
+    "datei": "/kueste/galerie/rotes-kliff.webp",
+    "titel": "Das rote Kliff auf Sylt (25232010288).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Das_rote_Kliff_auf_Sylt_(25232010288).jpg",
+    "lizenz": "CC BY 2.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/2.0",
+    "urheber": "dronepicr"
+  },
+  "rotes-kliff-1980": {
+    "datei": "/kueste/galerie/rotes-kliff-1980.webp",
+    "titel": "Rotes Kliff in Sylt 1980 HBdia00577.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rotes_Kliff_in_Sylt_1980_HBdia00577.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Hovers"
+  },
+  "rotes-kliff-treppe": {
+    "datei": "/kueste/galerie/rotes-kliff-treppe.webp",
+    "titel": "Rotes Kliff.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rotes_Kliff.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Andy Lippner"
+  },
+  "salzwiese": {
+    "datei": "/kueste/galerie/salzwiese.webp",
+    "titel": "Salzwiese plattform bei nebel amrum 05 2009.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Salzwiese_plattform_bei_nebel_amrum_05_2009.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Dirk Schmidt (Celsius auf Wikivoyage)"
+  },
+  "sandfangzaun": {
+    "datei": "/kueste/galerie/sandfangzaun.webp",
+    "titel": "Cuxhaven, Strand, Sandfangzaun -- 2024 -- 090459.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cuxhaven,_Strand,_Sandfangzaun_--_2024_--_090459.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Dietmar Rabich"
+  },
+  "sandfangzaun-1976": {
+    "datei": "/kueste/galerie/sandfangzaun-1976.webp",
+    "titel": "Sandfangzäune vor Dünenfuß-Sylt 1976 HBdia00571.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sandfangz%C3%A4une_vor_D%C3%BCnenfu%C3%9F-Sylt_1976_HBdia00571.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Hovers"
+  },
+  "strandhafer": {
+    "datei": "/kueste/galerie/strandhafer.webp",
+    "titel": "Dünenlandschaft mit Strandhafer (Ammophila arenaria) an der Küste Spiekeroogs.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:D%C3%BCnenlandschaft_mit_Strandhafer_(Ammophila_arenaria)_an_der_K%C3%BCste_Spiekeroogs.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Claudia Dieckow"
+  },
+  "stubbenkammer": {
+    "datei": "/kueste/galerie/stubbenkammer.webp",
+    "titel": "Kreidefelsen, Stubbenkammer (2011-05-21) 7.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kreidefelsen,_Stubbenkammer_(2011-05-21)_7.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Klugschnacker"
+  },
+  "sturmflut-sylt-1985": {
+    "datei": "/kueste/galerie/sturmflut-sylt-1985.webp",
+    "titel": "Sturmflut auf Sylt 1985 HBdia00585.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sturmflut_auf_Sylt_1985_HBdia00585.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "unbekannt"
+  },
+  "tetrapoden": {
+    "datei": "/kueste/galerie/tetrapoden.webp",
+    "titel": "Beton-Tetrapoden Hörnum-Sylt.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Beton-Tetrapoden_H%C3%B6rnum-Sylt.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "Otto Domes"
+  },
+  "tetrapoden-2": {
+    "datei": "/kueste/galerie/tetrapoden-2.webp",
+    "titel": "Tetrapoden Hoernum Sylt.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tetrapoden_Hoernum_Sylt.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "Unukorno"
+  },
+  "vorspuelung": {
+    "datei": "/kueste/galerie/vorspuelung.webp",
+    "titel": "Sandvorspülung auf Sylt Westerland 2012 PD 1.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sandvorsp%C3%BClung_auf_Sylt_Westerland_2012_PD_1.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Bin im Garten"
+  },
+  "vorspuelung-hoernum-1983": {
+    "datei": "/kueste/galerie/vorspuelung-hoernum-1983.webp",
+    "titel": "Strandvorspülung vor Hörnum-Sylt 1983-05-31 HBdia00583.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Strandvorsp%C3%BClung_vor_H%C3%B6rnum-Sylt_1983-05-31_HBdia00583.jpg",
+    "lizenz": "CC BY 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by/4.0",
+    "urheber": "unbekannt"
+  },
+  "vorspuelung-rohr": {
+    "datei": "/kueste/galerie/vorspuelung-rohr.webp",
+    "titel": "Sandvorspülung auf Sylt Westerland 2012 PD 4.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sandvorsp%C3%BClung_auf_Sylt_Westerland_2012_PD_4.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "urheber": "Bin im Garten"
+  },
+  "watt-priel": {
+    "datei": "/kueste/galerie/watt-priel.webp",
+    "titel": "Watt der Elbmündung am Trischendamm im Schleswig-Holsteinisches Wattenmeer.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Watt_der_Elbm%C3%BCndung_am_Trischendamm_im_Schleswig-Holsteinisches_Wattenmeer.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "lizenzUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "urheber": "16Exul82"
+  },
+  "watt-queller": {
+    "datei": "/kueste/galerie/watt-queller.webp",
+    "titel": "Das Watt vor Friedrichskoog-Spitze.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Das_Watt_vor_Friedrichskoog-Spitze.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "5snake5"
+  },
+  "wissow-schutthang": {
+    "datei": "/kueste/galerie/wissow-schutthang.webp",
+    "titel": "Beach at Wissower Klinken Jasmund 2021-09-14 02.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Beach_at_Wissower_Klinken_Jasmund_2021-09-14_02.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Leonhard Lenz"
+  },
+  "wissow-schuttkegel": {
+    "datei": "/kueste/galerie/wissow-schuttkegel.webp",
+    "titel": "Beach at Wissower Klinken Jasmund 2021-09-14 17.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Beach_at_Wissower_Klinken_Jasmund_2021-09-14_17.jpg",
+    "lizenz": "CC0",
+    "lizenzUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "urheber": "Leonhard Lenz"
+  }
+}

@@ -171,16 +171,19 @@ function wasser(b: Bild, s: KliffSzene) {
     phase += (2 * Math.PI * k.dx) / lambda;
     ober[c] = W + (wl.H[c] / 2) * Math.sin(phase - omega * s.t);
   }
+  // Seewärts des Modellgebiets läuft das Meer im Bild weiter
+  const links = Math.min(0, b.a.x0);
   const pfad = () => {
     ctx.beginPath();
-    ctx.moveTo(X(b, 0), Z(b, k.z0));
+    ctx.moveTo(X(b, links), Z(b, k.z0));
+    ctx.lineTo(X(b, 0), Z(b, k.z0));
     for (let r = 0; r <= rW; r++) {
       const c = g.front[r];
       ctx.lineTo(X(b, c * k.dx), Z(b, zVon(k, r) - k.dx / 2));
       ctx.lineTo(X(b, c * k.dx), Z(b, Math.min(W, zVon(k, r) + k.dx / 2)));
     }
     for (let c = ufer - 1; c >= 0; c--) ctx.lineTo(X(b, xVon(k, c)), Z(b, ober[c] ?? W));
-    ctx.lineTo(X(b, 0), Z(b, W));
+    ctx.lineTo(X(b, links), Z(b, ober[0] ?? W));
     ctx.closePath();
   };
   pfad();
@@ -197,7 +200,8 @@ function oberflaeche(b: Bild, s: KliffSzene, ober: number[], omega: number) {
   const { k, W, wl } = s;
   const ufer = Math.min(k.nx, wl.ufer);
   ctx.beginPath();
-  for (let c = 0; c < ufer; c++) (c ? ctx.lineTo : ctx.moveTo).call(ctx, X(b, xVon(k, c)), Z(b, ober[c]));
+  ctx.moveTo(X(b, Math.min(0, b.a.x0)), Z(b, ober[0] ?? W));
+  for (let c = 0; c < ufer; c++) ctx.lineTo(X(b, xVon(k, c)), Z(b, ober[c]));
   ctx.strokeStyle = "rgba(170,215,240,0.95)";
   ctx.lineWidth = 1.5;
   ctx.stroke();
@@ -391,7 +395,12 @@ export function zeichneKliff(b: Bild, s: KliffSzene) {
   const px = X(b, 1) - X(b, 0);
   ctx.save();
   ctx.imageSmoothingEnabled = px < 2;
-  ctx.drawImage(bild, X(b, 0), Z(b, k.z0 + k.nz * k.dx), k.nx * k.dx * px, k.nz * k.dx * px);
+  const oben = Z(b, k.z0 + k.nz * k.dx), hoehe = k.nz * k.dx * px, B = k.nx * k.dx;
+  ctx.drawImage(bild, X(b, 0), oben, B * px, hoehe);
+  // Über den Rand des Modellgebiets hinaus: Randspalten fortsetzen, damit
+  // die Bühne nie leer ist (Hochfläche landwärts, Meeresgrund seewärts)
+  if (b.a.x1 > B) ctx.drawImage(bild, k.nx - 1, 0, 1, k.nz, X(b, B) - 0.5, oben, X(b, b.a.x1) - X(b, B) + 1, hoehe);
+  if (b.a.x0 < 0) ctx.drawImage(bild, 0, 0, 1, k.nz, X(b, b.a.x0), oben, X(b, 0) - X(b, b.a.x0) + 0.5, hoehe);
   ctx.restore();
   // Tiefenabdunklung nur im Wasser selbst — der Meeresboden bleibt Gestein
   ctx.save();

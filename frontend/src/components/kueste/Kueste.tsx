@@ -17,13 +17,15 @@ import { useState, type ReactNode } from "react";
 import ProfilAnsicht from "./ProfilAnsicht";
 import Draufsicht from "./Draufsicht";
 import Gezeiten from "./Gezeiten";
+import KuestenGalerie from "./KuestenGalerie";
 
-type Reiter = "profil" | "draufsicht" | "gezeiten" | "wissen";
+type Reiter = "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "profil", icon: "🏖️", label: "Querschnitt" },
   { id: "draufsicht", icon: "🧭", label: "Draufsicht" },
   { id: "gezeiten", icon: "🌙", label: "Gezeiten" },
+  { id: "galerie", icon: "📷", label: "Echte Küsten" },
   { id: "wissen", icon: "📘", label: "Wissen" },
 ];
 
@@ -54,6 +56,7 @@ export default function Kueste({ action }: { action?: ReactNode }) {
       {reiter === "profil" && <ProfilAnsicht />}
       {reiter === "draufsicht" && <Draufsicht />}
       {reiter === "gezeiten" && <Gezeiten />}
+      {reiter === "galerie" && <KuestenGalerie />}
       {reiter === "wissen" && <Wissen />}
     </div>
   );

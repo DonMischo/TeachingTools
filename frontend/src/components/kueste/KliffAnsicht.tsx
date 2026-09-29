@@ -16,6 +16,8 @@ import type { Begriff } from "@/lib/kueste/begriffe";
 import { trefferBei, trefferZeigen, trifft, type Ausschnitt, type QuizTreffer } from "./zeichnen";
 import { zeichneKliff } from "./kliffZeichnen";
 import { useZoom, ZOOM_KNOPF, ZOOM_KNOPF_AN } from "./zoom";
+import { BildStreifen } from "./KuestenGalerie";
+import { bilderZuKliff } from "@/lib/kueste/galerie";
 
 
 const TEMPI = [
@@ -415,6 +417,7 @@ export default function KliffAnsicht() {
         <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
           <h3 className="font-black mb-2">📍 {FAKTEN[typ].titel}</h3>
           <ul className="text-sm list-disc pl-5 flex flex-col gap-1">{FAKTEN[typ].punkte.map(t => <li key={t}>{t}</li>)}</ul>
+          <div className="mt-3"><BildStreifen bilder={bilderZuKliff(typ)} /></div>
         </section>
         <section className="rounded-2xl border border-amber-500/50 bg-amber-500/10 p-4">
           <h3 className="font-black mb-2">⚠️ Regeln an der Steilküste</h3>

@@ -281,7 +281,7 @@ function objekt(k: Kliff, id: string, art: KObjekt["art"], name: string, x: numb
  * Schuttkegel und Feuerstein-Blockstrand.
  */
 function kreide(): Kliff {
-  const k = neu("kreide", 0.25, 140, -8, 58);
+  const k = neu("kreide", 0.25, 150, -8, 58);
   const see: [number, number][] = [[0, -8], [40, -2.5], [62, -0.7], [68, 0.5]];
   fuellen(k, (x, z) => {
     const face = 70 + 0.09 * Math.max(0, z) + 0.6 * Math.sin(z / 3.1);
@@ -302,7 +302,7 @@ function kreide(): Kliff {
   });
   herkunftSetzen(k, MAT.FEUER);
   kanteRunden(k, 4);
-  bepflanzen(k, 72, 140, 4.5, "buche", 3);
+  bepflanzen(k, 72, 150, 4.5, "buche", 3);
   objekt(k, "aussicht", "aussicht", "Aussichtsplattform", 80);
   objekt(k, "weg", "weg", "Hochuferweg", 84);
   k.hub = 0.1; k.stauMax = 1.6; k.wellenFaktor = 0.75;
@@ -320,7 +320,7 @@ function kreideSchicht(x: number, z: number, neig: number) {
  * alten Überschiebungsflächen — auf ihnen gleiten die großen Rutschungen.
  */
 function moen(): Kliff {
-  const k = neu("moen", 0.5, 240, -10, 140);
+  const k = neu("moen", 0.5, 360, -10, 140);
   const see: [number, number][] = [[0, -10], [80, -3], [106, -0.6], [113, 0.5]];
   const tan = Math.tan((38 * Math.PI) / 180), cos = Math.cos((38 * Math.PI) / 180);
   const fugen = [92, 101, 108, 160, 175];
@@ -359,7 +359,7 @@ function moen(): Kliff {
     }
   }
   k.version++;
-  bepflanzen(k, 124, 240, 5, "buche", 3);
+  bepflanzen(k, 124, 360, 5, "buche", 3);
   for (const x0 of fugen) k.ebenen.push({ x0, tan, c: 300, phi: 34 });
   ebenenEichen(k, 1.15);
   objekt(k, "aussicht", "aussicht", "Aussichtspunkt", 170);
