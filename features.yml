@@ -78,6 +78,7 @@ aktivitaeten:
       - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
       - Import als .json/.zip, Vorlage mit allen Bausteinen
       - Bearbeiten im Vorlagen-Format (JSON)
+      - Gebäude-Ansicht: isometrisches Haus (three.js), Abschnitt = Stockwerk, Folie = Zimmer, Tür = Treppenhaus; Grundriss wächst aus den Regeln des Regel-Labors, gleicher Code = gleiches Haus
   - id: lueckentext
     name: Lückentext
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}
@@ -240,6 +241,7 @@ simulationen:
       - Rätsel mit Regel-Limit und automatischer Prüfung (Schachbrett, Punktgitter, perfektes Labyrinth …)
       - Gleicher Zufall liefert das gleiche Bild — Ergebnisse lassen sich in der Klasse vergleichen
       - Labyrinth-Algorithmen Schritt für Schritt: Backtracker, Prim, Kruskal, Wilson; Löser Tiefensuche, Breitensuche, A* mit sichtbarem Stapel/Schlange/offener Liste und Vergleichstabelle; Rundwege per »Wände einreißen«
+      - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der Exitgame-Gebäudeansicht
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

@@ -7,20 +7,23 @@
  *   Rätsel   — Ziel vorgegeben, Regelzahl begrenzt, wird automatisch geprüft
  *   Labor    — freies Bauen
  *   Labyrinthe — Erzeuger und Löser Schritt für Schritt (Stapel, Schlange, A*)
+ *   Gebäude  — aus einer Wachstumsregel wird ein Haus mit Stockwerken (three.js)
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FARBEN, type Start } from "@/lib/regeln/maschine";
 import { RAETSEL, STATIONEN } from "@/lib/regeln/lehrgang";
 import Werkbank from "./Werkbank";
 import Labyrinthe from "./Labyrinthe";
+import GebaeudeDemo from "./GebaeudeDemo";
 
-type Reiter = "lehrgang" | "raetsel" | "labor" | "labyrinthe";
+type Reiter = "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "lehrgang", icon: "🎓", label: "Lehrgang" },
   { id: "raetsel", icon: "🧩", label: "Rätsel" },
   { id: "labor", icon: "🧪", label: "Freies Labor" },
   { id: "labyrinthe", icon: "🌀", label: "Labyrinthe" },
+  { id: "gebaeude", icon: "🏢", label: "Gebäude" },
 ];
 
 const chip = (an: boolean) =>
@@ -51,6 +54,7 @@ export default function RegelLabor({ action }: { action?: ReactNode }) {
       {reiter === "raetsel" && <Raetsel />}
       {reiter === "labor" && <Labor />}
       {reiter === "labyrinthe" && <Labyrinthe />}
+      {reiter === "gebaeude" && <GebaeudeDemo />}
     </div>
   );
 }
