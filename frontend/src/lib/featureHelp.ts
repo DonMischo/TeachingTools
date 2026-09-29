@@ -217,6 +217,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  regeln: {
+    title: "Regel-Labor",
+    intro: "Ersetzungsregeln auf einem Raster nach dem Vorbild von MarkovJunior: Eine Regel wie RBB=GGR ersetzt ein Farbmuster durch ein anderes, in allen vier Richtungen. Aus wenigen Regeln wachsen Labyrinthe, Muster und Grundrisse — Algorithmen, Stapel und Zufall zum Anfassen.",
+    sections: [
+      { label: "🎓 Lehrgang", text: "Fünf Stationen: eine Regel (Zufallslauf), »eins« gegen »alle«, zwei Regeln mit Vorrang ergeben den Backtracker (die grüne Spur ist ein Stapel), Blöcke nacheinander mit Schrittgrenze, zuletzt Zimmer, Flure und Türen. Jede Station endet mit einer Denkfrage." },
+      { label: "🧩 Rätsel", text: "Ziel und Höchstzahl an Regeln sind vorgegeben (alles weiß, Punktgitter, Schachbrett, perfektes Labyrinth, Labyrinth mit Rundwegen). Läuft das Programm bis zum Ende, prüft das Labor das Ergebnis und nennt, was noch nicht stimmt. Gelöste Rätsel merkt sich der Browser." },
+      { label: "🧪 Labor & Editor", text: "Regeln als Farbkästchen mit Pinsel (* = Joker) oder als Text, eine Zeile je Block: »markov: RBB=GGR, RGG=WWR«, Schrittgrenze »eins x12: …«. »Treffer zeigen« umrandet, wo die nächste Regel passen würde (blau) und was eben ersetzt wurde (gelb). Gleicher Zufall = gleiches Ergebnis; 🎲 wechselt ihn." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   kueste: {
     title: "Küstendynamik",
     intro: "Wie Wellen, Strömung, Wind und Gezeiten die Küste formen — und wie Menschen sie schützen. Ein Schulmodell mit echten Größenordnungen (Tidenhub, Deichmaße, Sandmengen von Sylt), rechnet ganz im Browser.",

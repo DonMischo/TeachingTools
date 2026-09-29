@@ -150,6 +150,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("wilson", "🌋 Wilson-Zyklus", "🌋", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Regel-Labor: Ersetzungsregeln lassen Labyrinthe und Grundrisse wachsen.
+    CatalogTool("regeln", "🧬 Regel-Labor", "🧬", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

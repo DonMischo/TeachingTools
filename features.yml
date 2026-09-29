@@ -230,6 +230,15 @@ simulationen:
       - Mantelströmung, Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
       - Phasenkarten mit heutigem Beispiel, Plattengrenzen und Begriffen; Quiz »Welche Phase?«
       - Wissensteil: Tuzo Wilson, Superkontinente, Wilson-Zyklen in Deutschland, Antrieb der Platten, Beweise, Quellen
+  - id: regeln
+    name: Regel-Labor
+    kann:
+      - Ersetzungsregeln auf einem Raster (nach MarkovJunior), automatisch in allen vier Richtungen, mit Joker
+      - Blöcke »eins«, »markov« (Vorrang) und »alle«, Schrittgrenzen, Programme aus mehreren Blöcken
+      - Editor als Farbkästchen oder als Text; Zähler je Regel, Treffer-Anzeige (mögliche und eben ersetzte Stellen)
+      - Lehrgang in fünf Stationen vom Zufallslauf über den Backtracker bis zum Grundriss mit Zimmern und Türen
+      - Rätsel mit Regel-Limit und automatischer Prüfung (Schachbrett, Punktgitter, perfektes Labyrinth …)
+      - Gleicher Zufall liefert das gleiche Bild — Ergebnisse lassen sich in der Klasse vergleichen
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:

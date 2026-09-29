@@ -33,6 +33,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   kueste: ["Geografie"],
   erdaufbau: ["Geografie", "Physik"],
   wilson: ["Geografie"],
+  regeln: ["Informatik", "Mathematik"],
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],
   rechenregeln: ["Mathematik"],

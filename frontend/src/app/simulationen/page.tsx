@@ -102,6 +102,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#7c3aed",
   },
   {
+    slug: "regeln",
+    href: "/simulationen/regeln",
+    icon: "🧬",
+    title: "Regel-Labor",
+    description: "Ein paar Ersetzungsregeln auf einem Raster — und daraus wachsen Labyrinthe, Muster und Grundrisse. Lehrgang in fünf Stationen, Rätsel mit Regel-Limit und freies Labor.",
+    color: "#e11d48",
+  },
+  {
     slug: "verkehr",
     href: "/simulationen/verkehr",
     icon: "🚦",
