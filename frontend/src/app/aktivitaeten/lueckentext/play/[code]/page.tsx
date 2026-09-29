@@ -379,7 +379,10 @@ function Gap({
           ref={setNodeRef}
           onClick={onSelectSlot}
           aria-label={value ? `Lücke, gefüllt mit ${value}` : "Leere Lücke"}
-          className={`inline-block min-w-[4rem] px-2 py-0.5 rounded-lg border-2 text-center cursor-pointer ${matchClass} ${isOver ? "bg-[var(--accent)]/20" : ""}`}
+          // Ziehlücke: Pille wie die Wortkärtchen, leer gestrichelt und getönt —
+          // klar anders als die Schreiblinie der Freitext-Lücke.
+          className={`inline-block min-w-[4rem] px-3 py-0.5 rounded-full border-2 text-center cursor-pointer ${matchClass} ${
+            !value && !attempt?.match ? "border-dashed bg-[var(--accent)]/5" : ""} ${isOver ? "bg-[var(--accent)]/20" : ""}`}
         >
           {value || " "}
         </button>
@@ -422,7 +425,10 @@ function Gap({
         // Grows with what's typed instead of clipping long answers at a fixed
         // width — the minimum keeps an empty gap visible as a gap.
         style={{ width: `${Math.min(Math.max(value.length + 2, 8), 28)}ch` }}
-        className={`inline-block max-w-full px-2 py-0.5 rounded-lg border-2 text-center bg-transparent ${matchClass}`}
+        placeholder="✎"
+        aria-label="Freitext-Lücke"
+        // Freitext: eine Schreiblinie statt eines Kastens.
+        className={`inline-block max-w-full px-1 py-0.5 rounded-none border-0 border-b-2 text-center bg-transparent placeholder:text-[var(--text-muted)] focus:outline-none focus:bg-[var(--accent)]/5 ${matchClass}`}
       />
       {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
       {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}

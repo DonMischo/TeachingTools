@@ -640,11 +640,12 @@ class TestWebSocketFlow:
                     for pos in range(3):
                         await s.send_json({"action": "mark", "position": pos})
                         await s.receive_json()  # mark_ack or bingo
-                        # Collect any events sent to teacher
+                        # Collect any events sent to teacher (line, results, ...)
                         try:
-                            msg = await asyncio.wait_for(t.receive_json(), timeout=0.5)
-                            if msg.get("event") == "line":
-                                line_event = msg
+                            while True:
+                                msg = await asyncio.wait_for(t.receive_json(), timeout=0.5)
+                                if msg.get("event") == "line":
+                                    line_event = msg
                         except asyncio.TimeoutError:
                             pass
 
@@ -737,3 +738,84 @@ class TestReopen:
 
         rows = client.get("/api/bingo", headers=self._auth(teacher_token)).json()
         assert next(r for r in rows if r["code"] == code)["awarded"] is True
+
+
+# ── Bearbeiten, Neustart, Auswertung ─────────────────────────────────────────
+
+class TestSetEditResetResults:
+    def _set_id(self, client, h):
+        return client.get("/api/bingo/sets", headers=h).json()[0]["id"]
+
+    def _body(self, **kw):
+        return {"title": "Neu", "grid_size": 3, "grid_cols": 3, "pairs": PAIRS_3x3, **kw}
+
+    def test_get_and_update_set(self, client, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        _create_session(client, teacher_token)
+        sid = self._set_id(client, h)
+        r = client.get(f"/api/bingo/sets/{sid}", headers=h)
+        assert r.status_code == 200
+        assert r.json()["can_edit"] is True
+        assert len(r.json()["pairs"]) == len(PAIRS_3x3)
+
+        pairs = [{"caller": "Q", "answer": "A"}] + PAIRS_3x3[1:]
+        r = client.put(f"/api/bingo/sets/{sid}", json=self._body(pairs=pairs, max_points=7, grade=[5, 6]), headers=h)
+        assert r.status_code == 200, r.text
+        d = client.get(f"/api/bingo/sets/{sid}", headers=h).json()
+        assert d["title"] == "Neu" and d["max_points"] == 7 and d["grades"] == [5, 6]
+        assert d["pairs"][0] == {"caller": "Q", "answer": "A"}
+
+    def test_update_forbidden_for_other_teacher(self, client, teacher_token, teacher2_token):
+        _create_session(client, teacher_token)
+        sid = self._set_id(client, {"Authorization": f"Bearer {teacher_token}"})
+        r = client.put(f"/api/bingo/sets/{sid}", json=self._body(),
+                       headers={"Authorization": f"Bearer {teacher2_token}"})
+        assert r.status_code == 403
+
+    def test_update_rejects_shape_change_with_open_cards(self, client, db, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        code = _create_session(client, teacher_token)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        db.add(BingoCard(session_id=s.id, anon_token="x", student_name="X", grid_indices=list(range(9))))
+        db.commit()
+        sid = self._set_id(client, h)
+        pairs16 = [{"caller": f"F{i}", "answer": f"A{i}"} for i in range(16)]
+        r = client.put(f"/api/bingo/sets/{sid}", json=self._body(grid_size=4, grid_cols=4, pairs=pairs16), headers=h)
+        assert r.status_code == 409
+        # Nach dem Beenden geht es.
+        client.post(f"/api/bingo/{code}/close", headers=h)
+        r = client.put(f"/api/bingo/sets/{sid}", json=self._body(grid_size=4, grid_cols=4, pairs=pairs16), headers=h)
+        assert r.status_code == 200
+
+    def test_full_reset_redeals_cards(self, client, db, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        code = _create_session(client, teacher_token)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        card = BingoCard(session_id=s.id, anon_token="x", student_name="X",
+                         grid_indices=list(range(9)), marked_positions=[0])
+        db.add(card)
+        s.called_indices = [0]
+        db.commit()
+        import random
+        random.seed(1)
+        r = client.post(f"/api/bingo/{code}/reset?full=true", headers=h)
+        assert r.status_code == 204
+        db.expire_all()
+        card = db.get(BingoCard, card.id)
+        assert card.marked_positions == []
+        assert len(card.grid_indices) == 9 and len(set(card.grid_indices)) == 9
+        assert card.grid_indices != list(range(9))
+
+    def test_results_count_only_called_on_own_card(self, db, teacher_token, client):
+        code = _create_session(client, teacher_token)
+        s = db.query(BingoSession).filter_by(code=code).first()
+        db.add(BingoCard(session_id=s.id, anon_token="a", student_name="A",
+                         grid_indices=list(range(9)), marked_positions=[0, 1]))
+        db.add(BingoCard(session_id=s.id, anon_token="b", student_name="B",
+                         grid_indices=list(range(6, 15)), marked_positions=[]))
+        s.called_indices = [0, 1, 2, 12]   # A: 3 auf der Karte, B: nur 12
+        db.commit()
+        db.refresh(s)
+        res = {r["name"]: r for r in bingo_router._results(s)}
+        assert (res["A"]["hits"], res["A"]["called_on_card"]) == (2, 3)
+        assert (res["B"]["hits"], res["B"]["called_on_card"]) == (0, 1)

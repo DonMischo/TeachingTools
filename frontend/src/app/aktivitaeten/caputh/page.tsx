@@ -350,7 +350,7 @@ function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOu
                 disabled={deleteMut.isPending}
                 title="Session löschen (Punkte bleiben erhalten)"
               >
-                ✕
+                🗑
               </SessionAction>
             </>
           );

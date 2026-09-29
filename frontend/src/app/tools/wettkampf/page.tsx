@@ -83,7 +83,7 @@ export default function WettkampfListPage() {
                   disabled={deleting === w.id}
                   className="text-gray-500 hover:text-red-400 transition-colors shrink-0 text-sm"
                 >
-                  ✕
+                  🗑
                 </button>
               )}
             </div>

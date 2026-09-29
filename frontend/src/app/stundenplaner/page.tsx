@@ -38,7 +38,7 @@ function PlanCard({ plan, onDelete }: { plan: LessonPlanOut; onDelete: () => voi
         </button>
         {plan.is_owner && (
           <button onClick={onDelete} className="text-xs px-2 py-1 rounded border border-red-400 text-red-400 hover:bg-red-400/10 transition-colors">
-            ✕
+            🗑
           </button>
         )}
       </div>

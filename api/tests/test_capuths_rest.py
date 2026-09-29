@@ -378,3 +378,52 @@ class TestSessionLock:
         r = client.delete(f"/api/capuths/{sitzung.quiz_id}/sessions", headers=fremd_head)
         assert r.status_code == 204
         assert db.query(QuizSession).filter_by(join_code="LOCK01").first() is not None
+
+
+# ---------------------------------------------------------------------------
+# Bearbeiten (Export im Upload-Format + PUT)
+# ---------------------------------------------------------------------------
+
+class TestEdit:
+    def _upload(self, client, token):
+        client.cookies.clear()
+        r = client.post("/api/capuths/upload",
+                        files={"file": ("quiz.json", json.dumps(MINIMAL_QUIZ).encode(), "application/json")},
+                        headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 201, r.text
+        return r.json()["id"]
+
+    def test_export_roundtrips_and_update_keeps_ids(self, client, db, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        qid = self._upload(client, teacher_token)
+        exported = client.get(f"/api/capuths/{qid}/export", headers=h).json()
+        assert exported["title"] == "Miniquiz"
+        assert exported["questions"][1]["answers"][1] == {"text": "4", "correct": True}
+
+        old_ids = [q.id for q in db.get(Quiz, qid).questions]
+        exported["title"] = "Neu"
+        exported["questions"][0]["question"] = "Was ist 1+2?"
+        exported["questions"].append({"type": "true_false", "question": "Wahr?",
+                                      "answers": [{"text": "Wahr", "correct": True}, {"text": "Falsch", "correct": False}]})
+        r = client.put(f"/api/capuths/{qid}", json=exported, headers=h)
+        assert r.status_code == 200, r.text
+        assert r.json()["question_count"] == 3
+        db.expire_all()
+        quiz = db.get(Quiz, qid)
+        assert quiz.title == "Neu"
+        assert [q.id for q in quiz.questions][:2] == old_ids
+        assert quiz.questions[0].question_text == "Was ist 1+2?"
+
+    def test_update_invalid_is_422(self, client, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        qid = self._upload(client, teacher_token)
+        r = client.put(f"/api/capuths/{qid}", json={"title": "x"}, headers=h)
+        assert r.status_code == 422
+
+    def test_update_blocked_while_session_running(self, client, db, teacher, teacher_token):
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        qid = self._upload(client, teacher_token)
+        db.add(QuizSession(quiz_id=qid, teacher_id=teacher.id, join_code="EDIT01", status="active"))
+        db.commit()
+        r = client.put(f"/api/capuths/{qid}", json=MINIMAL_QUIZ, headers=h)
+        assert r.status_code == 409

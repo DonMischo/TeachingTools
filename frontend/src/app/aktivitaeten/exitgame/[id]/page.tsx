@@ -7,6 +7,7 @@ import { api, ExitGameDetailOut, ExitGameSessionOut } from "@/lib/api";
 import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { JsonEditPanel } from "@/components/JsonEditPanel";
 
 export default function ExitgameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +66,17 @@ export default function ExitgameDetailPage() {
           {game.grade && <> · <span>Klasse {game.grade}</span></>}
         </div>
       </div>
+
+      <JsonEditPanel
+        load={() => api.exitgame.get(gameId).then(g => g.data)}
+        save={data => api.exitgame.update(gameId, data)}
+        fileName={`exitgame_${gameId}.json`}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["exitgame", gameId] });
+          qc.invalidateQueries({ queryKey: ["exitgames"] });
+          toast("Gespeichert", "success");
+        }}
+      />
 
       {!isTeacher && (
         <p className="text-sm text-[var(--text-muted)]">

@@ -1014,6 +1014,15 @@ export type BingoSetOut = {
   grid_size: number; grid_cols: number; total_pairs: number; created_at: string;
 };
 
+export type BingoSetDetail = BingoSetOut & {
+  grades: number[];
+  pairs: { caller: string; answer: string }[];
+  can_edit: boolean;
+};
+
+/** Auswertung je Karte: Treffer gegen das, was von der eigenen Karte gerufen wurde. */
+export type BingoResult = { name: string; hits: number; called_on_card: number; has_bingo: boolean };
+
 export type LueckentextGap = {
   id: string;
   answer: string;
@@ -1582,6 +1591,8 @@ export const api = {
     get: (id: number) => apiFetch<TippSammlung>(`tipptexte/${id}`),
     template: () => apiFetch<Record<string, unknown>>("tipptexte/template"),
     delete: (id: number) => apiFetch<void>(`tipptexte/${id}`, { method: "DELETE" }),
+    update: (id: number, data: unknown) =>
+      apiFetch<TippSammlung>(`tipptexte/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     upload: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -1793,6 +1804,10 @@ export const api = {
     list: () => apiFetch<QuizOut[]>("capuths"),
     get: (id: number) => apiFetch<QuizDetailOut>(`capuths/${id}`),
     delete: (id: number) => apiFetch<void>(`capuths/${id}`, { method: "DELETE" }),
+    /** Bearbeiten-Modus: Inhalt im Upload-Format laden und zurückschreiben. */
+    exportJson: (id: number) => apiFetch<Record<string, unknown>>(`capuths/${id}/export`),
+    update: (id: number, data: unknown) =>
+      apiFetch<QuizOut & { warning?: string | null }>(`capuths/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     upload: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -2198,6 +2213,8 @@ export const api = {
     get: (id: number) => apiFetch<ExitGameDetailOut>(`exitgames/${id}`),
     template: () => apiFetch<Record<string, unknown>>("exitgames/template"),
     delete: (id: number) => apiFetch<void>(`exitgames/${id}`, { method: "DELETE" }),
+    update: (id: number, data: unknown) =>
+      apiFetch<ExitGameOut>(`exitgames/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     upload: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -2436,12 +2453,16 @@ export const api = {
     /** Zu früh beendet — Karten und gezogene Zahlen bleiben. Nach der
      *  Auswertung lehnt der Server ab (409), dann hilft nur Zurücksetzen. */
     reopen: (code: string) => apiFetch<void>(`bingo/${code}/reopen`, { method: "POST" }),
-    reset: (code: string) => apiFetch<void>(`bingo/${code}/reset`, { method: "POST" }),
+    /** full = Neustart: jede Karte bekommt neue Felder. */
+    reset: (code: string, full = false) => apiFetch<void>(`bingo/${code}/reset${full ? "?full=true" : ""}`, { method: "POST" }),
     getOrCreateCard: (code: string, class_id?: number | null) =>
       apiFetch<BingoCardOut>(`bingo/${code}/card`, {
         method: "POST", body: JSON.stringify({ class_id: class_id ?? null }),
       }),
     listSets: () => apiFetch<BingoSetOut[]>("bingo/sets"),
+    getSet: (id: number) => apiFetch<BingoSetDetail>(`bingo/sets/${id}`),
+    updateSet: (id: number, body: { title: string; subject?: string | null; tags?: string[]; description?: string | null; max_points?: number; grid_size: number; grid_cols?: number; grade?: number[]; pairs: { caller: string; answer: string }[] }) =>
+      apiFetch<BingoSetDetail>(`bingo/sets/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     startSet: (setId: number, scope: ScopeBody = {}) =>
       apiFetch<{ id: number; code: string; class_id: number | null; group_id: number | null }>(`bingo/sets/${setId}/sessions`, {
         method: "POST", body: JSON.stringify({ class_id: null, group_id: null, ...scope }),

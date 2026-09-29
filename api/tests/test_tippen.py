@@ -209,3 +209,13 @@ def test_nur_der_ersteller_darf_loeschen(client, db, teacher, teacher_token, adm
     assert client.delete(f"/api/tipptexte/{fremd.id}", headers=auth(teacher_token)).status_code == 403
     assert client.delete(f"/api/tipptexte/{eigen['id']}", headers=auth(teacher_token)).status_code == 204
     assert client.get(f"/api/tipptexte/{eigen['id']}", headers=auth(teacher_token)).status_code == 404
+
+
+def test_sammlung_bearbeiten(client, teacher_token):
+    sid = _lade_hoch(client, teacher_token, _gueltig()).json()["id"]
+    r = client.put(f"/api/tipptexte/{sid}", json=_gueltig(title="Neu"), headers=auth(teacher_token))
+    assert r.status_code == 200, r.text
+    assert client.get(f"/api/tipptexte/{sid}", headers=auth(teacher_token)).json()["title"] == "Neu"
+    # Dieselben Prüfungen wie beim Hochladen.
+    r = client.put(f"/api/tipptexte/{sid}", json=_gueltig(texts=[]), headers=auth(teacher_token))
+    assert r.status_code == 400

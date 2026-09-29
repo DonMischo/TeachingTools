@@ -258,7 +258,7 @@ export default function BarometerPage() {
                   <button onClick={() => api.barometer.get(s.code).then(loadIntoForm)}
                     className="shrink-0 w-auto border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] rounded-lg px-2 py-1 text-xs transition-colors">✏️</button>
                   <button onClick={() => deleteMut.mutate(s.code)}
-                    className="shrink-0 w-auto text-red-400 hover:text-red-300 border border-red-400/40 rounded-lg px-2 py-1 text-xs transition-colors">✕</button>
+                    className="shrink-0 w-auto text-red-400 hover:text-red-300 border border-red-400/40 rounded-lg px-2 py-1 text-xs transition-colors">🗑</button>
                 </>
               )}
             </div>

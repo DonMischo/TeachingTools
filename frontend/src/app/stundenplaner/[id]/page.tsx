@@ -199,7 +199,7 @@ function MaterialChips({ planId, phaseId, readOnly }: { planId: number; phaseId:
             {materialIcon(m.original_filename)} {m.original_filename}
           </button>
           {!readOnly && (
-            <button onClick={() => handleDelete(m.id)} className="text-red-400 hover:underline">✕</button>
+            <button onClick={() => handleDelete(m.id)} className="text-red-400 hover:underline">🗑</button>
           )}
         </span>
       ))}
@@ -257,7 +257,7 @@ function PhaseCard({ phase, index, total, refs, planId, klasse, readOnly, onChan
         <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
           <button onClick={() => onMove(-1)} disabled={index === 0} className="text-xs px-1.5 py-0.5 rounded hover:bg-[var(--surface-hover)] disabled:opacity-30">↑</button>
           <button onClick={() => onMove(1)} disabled={index === total - 1} className="text-xs px-1.5 py-0.5 rounded hover:bg-[var(--surface-hover)] disabled:opacity-30">↓</button>
-          <button onClick={onDelete} className="text-xs px-1.5 py-0.5 rounded text-red-400 hover:bg-red-400/10">✕</button>
+          <button onClick={onDelete} className="text-xs px-1.5 py-0.5 rounded text-red-400 hover:bg-red-400/10">🗑</button>
         </div>
         <span className="text-xs text-[var(--text-muted)] shrink-0">{expanded ? "▾" : "▸"}</span>
       </div>

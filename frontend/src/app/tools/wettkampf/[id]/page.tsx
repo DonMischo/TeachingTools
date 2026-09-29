@@ -497,7 +497,7 @@ export default function WettkampfDetailPage() {
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            <button onClick={() => removeParticipant(p.id)} className="text-gray-600 hover:text-red-400 text-xs">✕</button>
+                            <button onClick={() => removeParticipant(p.id)} className="text-gray-600 hover:text-red-400 text-xs">🗑</button>
                           </td>
                         </tr>
                       ))}

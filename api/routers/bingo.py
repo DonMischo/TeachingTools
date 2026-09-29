@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user, get_player, Guest
 from ..availability import require_capability
-from ..authorship import author_fields, scope_to_student_pool, is_student
+from ..authorship import author_fields, can_modify, scope_to_student_pool, is_student
 from ..database import get_db
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_identity, ws_guest
@@ -109,6 +109,24 @@ def _session_state(session: BingoSession, db: Session, players: list | None = No
             if idx < len(session.pairs)
         ],
     }
+
+
+def _results(session: BingoSession) -> list[dict]:
+    """Auswertung je Karte: Treffer (richtig markiert) gegen das, was von der
+    eigenen Karte schon gerufen wurde — nicht gegen alles Gerufene."""
+    called = set(session.called_indices)
+    rows = []
+    for card in session.cards:
+        on_card = [pos for pos, idx in enumerate(card.grid_indices) if idx in called]
+        hits = len(set(card.marked_positions) & set(on_card))
+        rows.append({
+            "name": card.student_name,
+            "hits": hits,
+            "called_on_card": len(on_card),
+            "has_bingo": card.has_bingo,
+        })
+    rows.sort(key=lambda r: (-r["hits"], r["called_on_card"] - r["hits"], r["name"]))
+    return rows
 
 
 # ── Manager ───────────────────────────────────────────────────────────────────
@@ -323,6 +341,66 @@ def create_set(body: BingoCreate, db: Session = Depends(get_db), current=Depends
     )
 
 
+class BingoSetDetail(BingoSetOut):
+    pairs: list[dict]
+    can_edit: bool = False
+
+
+def _set_detail(s: BingoSet, current) -> BingoSetDetail:
+    return BingoSetDetail(
+        id=s.id, title=s.title, subject=s.subject, tags=s.tags or [], description=s.description,
+        max_points=s.max_points, grid_size=s.grid_size,
+        grid_cols=s.grid_cols if s.grid_cols > 0 else s.grid_size,
+        grades=s.grades or [], total_pairs=len(s.pairs), created_at=s.created_at,
+        pairs=s.pairs, can_edit=can_modify(s, current),
+    )
+
+
+@router.get("/sets/{set_id}", response_model=BingoSetDetail)
+def get_set(set_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    s = db.get(BingoSet, set_id)
+    if not s:
+        raise HTTPException(404, "Bingo-Set nicht gefunden")
+    return _set_detail(s, current)
+
+
+@router.put("/sets/{set_id}", response_model=BingoSetDetail)
+def update_set(set_id: int, body: BingoCreate, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    s = db.get(BingoSet, set_id)
+    if not s:
+        raise HTTPException(404, "Bingo-Set nicht gefunden")
+    if not can_modify(s, current):
+        raise HTTPException(403)
+    cols = body.grid_cols if body.grid_cols > 0 else body.grid_size
+    cells = body.grid_size * cols
+    if len(body.pairs) < cells:
+        raise HTTPException(400, f"Mindestens {cells} Paare für ein {body.grid_size}×{cols} Bingo benötigt")
+    # Karten offener Runden zeigen per Index auf die Paare. Aendert sich das
+    # Raster oder fallen Paare weg, auf die eine Karte zeigt, passt die Karte
+    # nicht mehr — dann erst die Runde beenden oder komplett neu starten.
+    old_cols = s.grid_cols if s.grid_cols > 0 else s.grid_size
+    shape_changed = (body.grid_size, cols) != (s.grid_size, old_cols)
+    for sess in s.sessions:
+        if sess.status == "closed":
+            continue
+        for card in sess.cards:
+            if shape_changed or any(i >= len(body.pairs) for i in card.grid_indices):
+                raise HTTPException(409, "Eine laufende Runde nutzt noch die alten Karten — "
+                                         "erst beenden oder komplett neu starten.")
+    s.title = body.title
+    s.subject = body.subject
+    s.tags = body.tags
+    s.description = body.description
+    s.max_points = body.max_points
+    s.grid_size = body.grid_size
+    s.grid_cols = cols
+    s.grades = parse_grades(body.grade)
+    s.pairs = [p.model_dump() for p in body.pairs]
+    db.commit()
+    db.refresh(s)
+    return _set_detail(s, current)
+
+
 def create_session_from_set(db: Session, set_id: int, created_by: int, class_id: int | None = None,
                             group_id: int | None = None) -> BingoSession:
     """Start a fresh session from a library set — shared by the REST endpoint
@@ -455,24 +533,39 @@ async def reopen_session_rest(code: str, db: Session = Depends(get_db), current=
     await _mgr.broadcast(code, _session_state(s, db, players=_mgr.infos(code)))
 
 
+async def _reset(session: BingoSession, db: Session, full: bool = False):
+    """Zuruecksetzen: gerufene Begriffe und Markierungen weg, die Runde wartet
+    wieder. Mit full=True (Neustart) bekommt jede Karte ausserdem neue Felder."""
+    session.called_indices = []
+    session.status = "waiting"
+    session.awarded_at = None      # frische Runde: darf spaeter neu ausgewertet werden
+    session.points_by_class = None
+    rows, cols = _dims(session)
+    for card in session.cards:
+        card.marked_positions = []
+        card.has_bingo = False
+        if full:
+            card.grid_indices = random.sample(range(len(session.pairs)), rows * cols)
+    db.commit()
+    db.refresh(session)
+    code = session.code
+    await _mgr.broadcast(code, {"event": "reset"})
+    await _mgr.broadcast(code, _session_state(session, db, players=_mgr.infos(code)))
+    if full:
+        # Schluessel wie beim Beitritt: angemeldete per student_id, sonst card.id.
+        for card in session.cards:
+            await _mgr.send_student(code, card.student_id or card.id, {"event": "card", **_card_dict(card, session)})
+    await _mgr.send_teachers(code, {"event": "results", "results": _results(session)})
+
+
 @router.post("/{code}/reset", status_code=204)
-async def reset_session_rest(code: str, db: Session = Depends(get_db), current=Depends(get_current_user)):
+async def reset_session_rest(code: str, full: bool = False, db: Session = Depends(get_db), current=Depends(get_current_user)):
     if is_student(current):
         raise HTTPException(403)
     s = db.query(BingoSession).filter_by(code=code).first()
     if not s:
         raise HTTPException(404)
-    s.called_indices = []
-    s.status = "waiting"
-    s.awarded_at = None      # frische Runde: darf spaeter neu ausgewertet werden
-    s.points_by_class = None
-    for card in s.cards:
-        card.marked_positions = []
-        card.has_bingo = False
-    db.commit()
-    db.refresh(s)
-    await _mgr.broadcast(code, {"event": "reset"})
-    await _mgr.broadcast(code, _session_state(s, db, players=_mgr.infos(code)))
+    await _reset(s, db, full)
 
 
 def _card_class_id(session: BingoSession, db: Session, student: Student | None, chosen_class_id: int | None) -> int | None:
@@ -618,6 +711,7 @@ async def bingo_ws(
     else:
         _mgr.add_teacher(code, ws)
         await ws.send_json(_session_state(session, db, players=_mgr.infos(code)))
+        await ws.send_json({"event": "results", "results": _results(session)})
 
     # For mark actions we need a stable card lookup key
     card_id = card.id if card else None
@@ -650,17 +744,10 @@ async def bingo_ws(
                         "called_count": len(session.called_indices),
                         "total_pairs": len(session.pairs),
                     })
+                    await _mgr.send_teachers(code, {"event": "results", "results": _results(session)})
 
                 elif action == "reset":
-                    session.called_indices = []
-                    session.status = "waiting"
-                    for card in session.cards:
-                        card.marked_positions = []
-                        card.has_bingo = False
-                    db.commit()
-                    db.refresh(session)
-                    await _mgr.broadcast(code, {"event": "reset"})
-                    await _mgr.broadcast(code, _session_state(session, db, players=_mgr.infos(code)))
+                    await _reset(session, db, full=bool(data.get("full")))
 
                 elif action == "close":
                     await _close_and_award(session, db)
@@ -702,6 +789,7 @@ async def bingo_ws(
                         else:
                             db.commit()
                             await ws.send_json({"event": "mark_ack", "marked_positions": card.marked_positions})
+                        await _mgr.send_teachers(code, {"event": "results", "results": _results(session)})
 
     except WebSocketDisconnect:
         pass

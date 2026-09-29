@@ -515,7 +515,7 @@ export function Sidebar({ iconOnly = false }: { iconOnly?: boolean }) {
                               disabled={deleteTxMut.isPending}
                               className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-300 px-1 py-0.5 rounded border border-red-400/40 transition-opacity"
                               title="Eintrag löschen"
-                            >✕</button>
+                            >🗑</button>
                           </td>
                         )}
                       </tr>

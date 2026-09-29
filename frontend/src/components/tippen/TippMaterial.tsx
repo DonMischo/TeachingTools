@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type TippSammlung } from "@/lib/api";
 import { useAvailability } from "@/hooks/useAvailability";
+import { JsonEditPanel } from "@/components/JsonEditPanel";
 
 export default function TippMaterial({
   gewaehlt,
@@ -122,6 +123,22 @@ export default function TippMaterial({
           >
             📄 Vorlage
           </button>
+          {gewaehlt && (
+            <JsonEditPanel
+              key={gewaehlt.id}
+              label="✎"
+              load={async () => {
+                const { title, description, texts, words, settings } = await api.tipptexte.get(gewaehlt.id);
+                return { title, description, texts, words, settings };
+              }}
+              save={data => api.tipptexte.update(gewaehlt.id, data)}
+              fileName={`tipptexte_${gewaehlt.id}.json`}
+              onSaved={neu => {
+                qc.invalidateQueries({ queryKey: ["tipptexte"] });
+                onWaehlen(neu);
+              }}
+            />
+          )}
           {gewaehlt && (
             <button
               onClick={() => loeschen.mutate(gewaehlt.id)}

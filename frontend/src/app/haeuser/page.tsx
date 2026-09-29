@@ -654,7 +654,7 @@ function HausCard({
                 onClick={() => { if (confirm(`„${haus.name}" wirklich löschen?`)) deleteMut.mutate(); }}
                 className="px-2 py-1.5 text-xs rounded-lg text-red-400 hover:bg-red-900/20 border border-red-900/40 transition-colors"
               >
-                ✕
+                🗑
               </button>
             </div>
           )}
@@ -1432,7 +1432,7 @@ function TrackingSection({
                             onClick={() => deleteTracker.mutate(t.id)}
                             className="text-[var(--text-muted)] hover:text-red-400 text-[10px] leading-none transition-colors"
                             title="Tracker löschen"
-                          >✕ löschen</button>
+                          >🗑 löschen</button>
                         )}
                       </div>
                     </th>

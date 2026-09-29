@@ -2,16 +2,20 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { JsonEditPanel } from "@/components/JsonEditPanel";
 
 export default function CaputhDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { auth } = useAuth();
   const quizId = Number(id);
+  const qc = useQueryClient();
+  const { toast } = useToast();
 
   const { data: quiz, isLoading } = useQuery({
     queryKey: ["caputh", quizId],
@@ -50,9 +54,22 @@ export default function CaputhDetailPage() {
 
       <h1 className="text-2xl font-bold mb-1 mt-2">{quiz.title}</h1>
       {quiz.description && <p className="text-[var(--text-muted)] mb-4">{quiz.description}</p>}
-      <p className="text-sm text-[var(--text-muted)] mb-6">
+      <p className="text-sm text-[var(--text-muted)] mb-4">
         {quiz.question_count} Fragen · Standard-Zeit {quiz.time_limit_default}s
       </p>
+
+      <div className="mb-6">
+        <JsonEditPanel
+          load={() => api.capuths.exportJson(quizId)}
+          save={data => api.capuths.update(quizId, data)}
+          fileName={`caputh_${quizId}.json`}
+          onSaved={r => {
+            qc.invalidateQueries({ queryKey: ["caputh", quizId] });
+            qc.invalidateQueries({ queryKey: ["capuths"] });
+            toast(r.warning ?? "Gespeichert", r.warning ? "error" : "success");
+          }}
+        />
+      </div>
 
       {/* Question list */}
       <div className="mb-8 space-y-2">

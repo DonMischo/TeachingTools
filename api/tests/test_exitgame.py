@@ -787,3 +787,20 @@ def test_sitzungsliste_zeigt_nur_die_eigenen_runden(client, db, teacher_token, k
     client.cookies.clear()
     assert client.get(f"/api/exitgames/{gid}/sessions", headers=_auth(fremd)).json() == []
     assert len(client.get(f"/api/exitgames/{gid}/sessions", headers=_auth(teacher_token)).json()) == 1
+
+
+def test_update_exitgame_replaces_content(client, teacher_token):
+    gid = _upload(client, teacher_token).json()["id"]
+    edited = {**SIMPLE_GAME, "title": "Neu"}
+    r = client.put(f"/api/exitgames/{gid}", json=edited, headers=_auth(teacher_token))
+    assert r.status_code == 200, r.text
+    assert client.get(f"/api/exitgames/{gid}", headers=_auth(teacher_token)).json()["data"]["title"] == "Neu"
+
+
+def test_update_exitgame_validates_and_blocks_open_session(client, teacher_token, klass):
+    gid = _upload(client, teacher_token).json()["id"]
+    r = client.put(f"/api/exitgames/{gid}", json={"title": "x"}, headers=_auth(teacher_token))
+    assert r.status_code == 422
+    client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token))
+    r = client.put(f"/api/exitgames/{gid}", json=SIMPLE_GAME, headers=_auth(teacher_token))
+    assert r.status_code == 409

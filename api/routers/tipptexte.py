@@ -199,6 +199,23 @@ def einzeln(sammlung_id: int, db: Session = Depends(get_db), _=Depends(get_curre
     return _to_out(s)
 
 
+@router.put("/{sammlung_id}", response_model=SammlungOut)
+def bearbeiten(sammlung_id: int, roh: dict, db: Session = Depends(get_db),
+               teacher: Teacher = Depends(get_current_teacher)):
+    """Bearbeiten: dasselbe JSON wie beim Hochladen, dieselben Prüfungen."""
+    s = db.get(TippSammlung, sammlung_id)
+    if not s:
+        raise HTTPException(404, "Sammlung nicht gefunden")
+    if s.created_by != teacher.id and teacher.role != "admin":
+        raise HTTPException(403, "Nur wer die Sammlung hochgeladen hat, darf sie bearbeiten.")
+    neu = _baue(roh, teacher)
+    s.title, s.description = neu.title, neu.description
+    s.texts, s.words, s.settings = neu.texts, neu.words, neu.settings
+    db.commit()
+    db.refresh(s)
+    return _to_out(s)
+
+
 @router.delete("/{sammlung_id}", status_code=204)
 def loeschen(sammlung_id: int, db: Session = Depends(get_db),
              teacher: Teacher = Depends(get_current_teacher)):

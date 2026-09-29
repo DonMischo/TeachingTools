@@ -553,7 +553,7 @@ export default function HostPage() {
                   {teams.map(t => (
                     <span key={t.id} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-lg">
                       {t.name}
-                      <button onClick={() => removeTeam(t.id)} className="text-red-400 hover:text-red-300 ml-0.5">✕</button>
+                      <button onClick={() => removeTeam(t.id)} className="text-red-400 hover:text-red-300 ml-0.5">🗑</button>
                     </span>
                   ))}
                 </div>

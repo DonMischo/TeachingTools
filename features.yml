@@ -57,6 +57,7 @@ aktivitaeten:
       - Bilder in Fragen, eingebettete Lückentexte und Zeitstrahlen
       - Gruppenauswertung
       - Import als .json/.zip, Vorlage
+      - Bearbeiten im Vorlagen-Format (JSON), frühere Auswertungen bleiben gültig
   - id: bingo
     name: Bingo
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true]}
@@ -64,6 +65,9 @@ aktivitaeten:
       - Rastergröße und Caller/Antwort-Paare frei wählbar
       - Eigene Karte für jede Person
       - JSON-Import, Vorlage, Prompt für externe KI
+      - Sets bearbeiten
+      - Zurücksetzen oder neu starten (alle Karten neu gemischt)
+      - Auswertung je Karte: Treffer gegen auf der eigenen Karte Gerufenes
   - id: exitgame
     name: Exitgame
     faehigkeiten: {use: [true, true], host: [true, false], upload: [true, true]}
@@ -73,11 +77,12 @@ aktivitaeten:
       - Serverseitige Fuzzy-Anpassung der Schwierigkeit (Hinweise, Zeitlimits, leichtere Aufgaben)
       - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
       - Import als .json/.zip, Vorlage mit allen Bausteinen
+      - Bearbeiten im Vorlagen-Format (JSON)
   - id: lueckentext
     name: Lückentext
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}
     kann:
-      - Lücken als Wortbank, Freitext oder Multiple Choice
+      - Lücken als Wortbank, Freitext oder Multiple Choice (Zieh- und Schreiblücken sehen unterschiedlich aus)
       - Live-Runde mit Rangliste, Einzelübung, Korrekturmodus
       - PDF-Export leer oder ausgefüllt
       - Einbettbar in Caputh und Exitgame
@@ -274,7 +279,7 @@ simulationen:
       - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
       - Anschläge pro Minute, Fehlerquote, schwächste Tasten
       - Bestenliste mit den besten hundert je Modus
-      - Eigene Texte per JSON
+      - Eigene Texte per JSON, nachträglich bearbeitbar
   - id: maus
     name: Maus-Führerschein
     faehigkeiten: {use: [true, true]}

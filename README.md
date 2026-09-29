@@ -67,22 +67,25 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Live-Sitzung mit Host-Screen und Beitritt per Code, optional im Team-Modus
 - Bilder in Fragen; Lückentexte und Zeitstrahlen lassen sich einbetten
 - Gruppenauswertung nach der Runde
-- Import als `.json` oder `.zip`, Vorlage zum Herunterladen
+- Import als `.json` oder `.zip`, Vorlage zum Herunterladen; nachträglich im Vorlagen-Format bearbeitbar
 
 ### 🎰 Bingo
 - Runden mit Rastergröße und Caller/Antwort-Paaren anlegen und sofort hosten
 - Jede Person bekommt eine eigene Karte; die Lehrkraft ruft auf, die Klasse markiert
 - JSON-Import, Vorlage und ein fertiger Prompt für externe KI (keine KI in der App selbst)
+- Sets nachträglich bearbeiten
+- Zurücksetzen (gleiche Karten) oder komplett neu starten (alle Karten neu gemischt)
+- Auswertung je Karte: Treffer gegen das, was von der eigenen Karte gerufen wurde
 
 ### 🗝️ Exitgame
 - Exit-Game im eigenen Tempo, die Lehrkraft sieht den Fortschritt live
 - Aufgaben vergeben Codeschnipsel, die an der Tür zusammengesetzt werden
 - Serverseitige Anpassung der Schwierigkeit (Fuzzy-DDA): Hinweise, Zeitlimits, leichtere Aufgaben je nach Verlauf
 - Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen
-- Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein
+- Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein; nachträglich im Vorlagen-Format bearbeitbar
 
 ### 🧩 Lückentext
-- Lücken mit Wortbank, Freitext oder Multiple Choice
+- Lücken mit Wortbank, Freitext oder Multiple Choice; Ziehlücken (gestrichelte Pille) und Schreiblücken (Linie) sind auf einen Blick zu unterscheiden
 - Live-Runde mit Rangliste, Einzelübung oder Korrekturmodus
 - PDF-Export (leer oder ausgefüllt); einbettbar in Caputh und Exitgame
 

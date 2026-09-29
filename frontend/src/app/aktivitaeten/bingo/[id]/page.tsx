@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, BingoSetOut, BingoOut } from "@/lib/api";
+import { api, BingoSetDetail, BingoOut } from "@/lib/api";
 import { SessionGrid, SessionAction, type SessionCardItem } from "@/components/SessionGrid";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,11 +22,11 @@ export default function BingoSetDetailPage() {
   const qc = useQueryClient();
   const canEdit = auth?.role === "teacher" || auth?.role === "admin";
 
-  const { data: sets = [], isLoading: setsLoading } = useQuery<BingoSetOut[]>({
-    queryKey: ["bingo-sets"],
-    queryFn: () => api.bingo.listSets(),
+  const { data: set, isLoading: setsLoading } = useQuery<BingoSetDetail>({
+    queryKey: ["bingo-set", setId],
+    queryFn: () => api.bingo.getSet(setId),
+    enabled: !!setId,
   });
-  const set = sets.find(s => s.id === setId);
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<BingoOut[]>({
     queryKey: ["bingo", setId],
@@ -75,7 +75,15 @@ export default function BingoSetDetailPage() {
     <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <Link href="/aktivitaeten/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo-Bibliothek</Link>
-        <h1 className="text-2xl font-black tracking-tight mt-1">🎰 {set.title}</h1>
+        <div className="flex items-center gap-3 flex-wrap mt-1">
+          <h1 className="text-2xl font-black tracking-tight">🎰 {set.title}</h1>
+          {set.can_edit && (
+            <Link href={`/aktivitaeten/bingo/${setId}/edit`}
+              className="text-xs px-3 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+              ✎ Bearbeiten
+            </Link>
+          )}
+        </div>
         <div className="text-xs text-[var(--text-muted)] flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
           {set.subject && <span>{set.subject}</span>}
           <span>{set.grid_size}×{set.grid_cols ?? set.grid_size} · {set.total_pairs} Paare</span>
@@ -148,7 +156,7 @@ export default function BingoSetDetailPage() {
                   </SessionAction>
                 )}
                 <SessionAction danger onClick={() => deleteMut.mutate(item.code)} disabled={deleteMut.isPending}>
-                  ✕
+                  🗑
                 </SessionAction>
               </>
             ) : undefined}

@@ -680,6 +680,104 @@ def get_caputh(quiz_id: int, db: Session = Depends(get_db), current=Depends(get_
     return o
 
 
+def _caputh_to_json(quiz: Quiz) -> dict:
+    """Das Caputh im Upload-Format — Grundlage fuer den Bearbeiten-Modus."""
+    questions = []
+    for q in quiz.questions:
+        d: dict = {"type": q.type, "question": q.question_text}
+        if q.image_path:
+            d["image"] = q.image_path
+        if q.time_limit is not None:
+            d["time_limit"] = q.time_limit
+        if q.preview_time is not None:
+            d["preview_time"] = q.preview_time
+        if q.type == "timeline":
+            d["timeline"] = q.content
+        else:
+            d["answers"] = [
+                {"text": a.text} if q.type == "survey" else {"text": a.text, "correct": bool(a.correct)}
+                for a in q.answers
+            ]
+        questions.append(d)
+    return {
+        "title": quiz.title,
+        "description": quiz.description,
+        "type": quiz.quiz_type,
+        "max_points": quiz.max_points,
+        "time_limit_default": quiz.time_limit_default,
+        "preview_time_default": quiz.preview_time_default,
+        "settings": {"randomize_answer_order": quiz.randomize_answers},
+        "tags": quiz.tags or [],
+        "grades": quiz.grades or [],
+        "questions": questions,
+    }
+
+
+@router.get("/api/capuths/{quiz_id}/export")
+def export_caputh(quiz_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    caputh = db.get(Quiz, quiz_id)
+    if not caputh or (is_student(current) and caputh.created_by_student is None):
+        raise HTTPException(404, "Caputh not found")
+    return _caputh_to_json(caputh)
+
+
+@router.put("/api/capuths/{quiz_id}", response_model=QuizOut)
+def update_caputh(quiz_id: int, raw: dict, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """Bearbeiten im Upload-Format. Fragen und Antworten werden nach Position
+    aktualisiert statt neu angelegt: gespeicherte Antworten frueherer Sessions
+    zeigen per ID auf sie und bleiben so gueltig."""
+    caputh = db.get(Quiz, quiz_id)
+    if not caputh:
+        raise HTTPException(404, "Caputh not found")
+    if is_student(current) and caputh.created_by_student is None:
+        raise HTTPException(403)
+    if any(s.status != "finished" for s in caputh.sessions):
+        raise HTTPException(409, "Eine Session läuft noch — erst beenden, dann bearbeiten.")
+    try:
+        quiz_fields, questions = _parse_caputh_json(raw)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+    existing = list(caputh.questions)
+    for q in existing[len(questions):]:
+        if q.responses:
+            raise HTTPException(409, f"Frage {q.order + 1} wurde schon beantwortet und kann nicht entfernt werden.")
+
+    for k, v in quiz_fields.items():
+        if k != "warning":
+            setattr(caputh, k, v)
+    for qd in questions:
+        answers = qd.pop("answers")
+        # Wie beim ZIP-Upload: gfx/-Pfade liegen im Ordner dieses Capuths.
+        if caputh.asset_path and qd["image_path"] and qd["image_path"].startswith("gfx/"):
+            qd["image_path"] = f"{caputh.id}/{qd['image_path']}"
+        if qd["order"] < len(existing):
+            q = existing[qd["order"]]
+            for k, v in qd.items():
+                setattr(q, k, v)
+        else:
+            q = QuizQuestion(quiz_id=caputh.id, **qd)
+            db.add(q)
+            db.flush()
+        old_answers = list(q.answers)
+        for ad in answers:
+            if ad["order"] < len(old_answers):
+                a = old_answers[ad["order"]]
+                a.text, a.correct = ad["text"], ad["correct"]
+            else:
+                db.add(QuizAnswer(question_id=q.id, **ad))
+        for a in old_answers[len(answers):]:
+            db.delete(a)
+    for q in existing[len(questions):]:
+        db.delete(q)
+    db.commit()
+    db.refresh(caputh)
+    o = QuizOut.model_validate(caputh)
+    o.question_count = len(caputh.questions)
+    o.warning = quiz_fields.get("warning")
+    return o
+
+
 @router.delete("/api/capuths/{quiz_id}", status_code=204)
 def delete_caputh(
     quiz_id: int,

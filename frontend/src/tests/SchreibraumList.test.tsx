@@ -92,14 +92,14 @@ describe("SchreibraumList — teacher view", () => {
     vi.spyOn(apiModule.api.schreibraum, "list").mockResolvedValue([makeRoom({ created_by: 1 })]);
     await renderAndWait();
     await waitFor(() => screen.getByText("Testroom"));
-    expect(screen.getByRole("button", { name: "✕" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "🗑" })).toBeInTheDocument();
   });
 
   it("hides delete button for other teachers' rooms", async () => {
     vi.spyOn(apiModule.api.schreibraum, "list").mockResolvedValue([makeRoom({ created_by: 99 })]);
     await renderAndWait();
     await waitFor(() => screen.getByText("Testroom"));
-    expect(screen.queryByRole("button", { name: "✕" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "🗑" })).not.toBeInTheDocument();
   });
 
   it("shows create form when button is clicked", async () => {
@@ -128,7 +128,7 @@ describe("SchreibraumList — teacher view", () => {
     vi.spyOn(apiModule.api.schreibraum, "delete").mockResolvedValue(undefined);
     await renderAndWait();
     await waitFor(() => screen.getByText("Testroom"));
-    await userEvent.click(screen.getByRole("button", { name: "✕" }));
+    await userEvent.click(screen.getByRole("button", { name: "🗑" }));
     expect(apiModule.api.schreibraum.delete).toHaveBeenCalledWith("room-1");
     await waitFor(() => expect(screen.queryByText("Testroom")).not.toBeInTheDocument());
   });

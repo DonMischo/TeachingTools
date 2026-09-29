@@ -26,6 +26,7 @@ type LiveState = {
 };
 
 type BingoEvent = { student_name: string; student_id: number };
+type Result = { name: string; hits: number; called_on_card: number; has_bingo: boolean };
 
 export default function BingoHostPage() {
   const { code } = useParams<{ code: string }>();
@@ -37,6 +38,7 @@ export default function BingoHostPage() {
   });
   const [winners, setWinners] = useState<BingoEvent[]>([]);
   const [lines, setLines] = useState<LineEvent[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
 
   const liveSocket = useLiveSocket(
     `/api/bingo/${code}/ws?role=teacher`,
@@ -66,10 +68,12 @@ export default function BingoHostPage() {
         setLive(prev => ({ ...prev, status: "closed" }));
       } else if (msg.event === "players") {
         setLive(prev => ({ ...prev, players: msg.players ?? [] }));
+      } else if (msg.event === "results") {
+        setResults(msg.results ?? []);
       } else if (msg.event === "reset") {
         setWinners([]);
         setLines([]);
-        setLive(prev => ({ ...prev, called_pairs: [] }));
+        setLive(prev => ({ ...prev, called_pairs: [], last_called: null }));
       }
     },
     { onRejected: () => toast("WebSocket-Fehler", "error") },
@@ -200,7 +204,51 @@ export default function BingoHostPage() {
             Zurücksetzen
           </button>
         )}
+        {live.status !== "waiting" && (
+          <button
+            onClick={() => {
+              if (confirm("Komplett neu starten? Alle Karten werden neu gemischt, Markierungen und Punkte-Auswertung verfallen.")) {
+                send({ action: "reset", full: true });
+              }
+            }}
+            title="Wie Zurücksetzen, aber jede Karte bekommt neue Felder"
+            className="text-sm border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+            ⟳ Neu starten
+          </button>
+        )}
       </div>
+
+      {/* Auswertung: Treffer gegen das, was von der eigenen Karte gerufen wurde */}
+      {results.length > 0 && live.called_count > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="font-semibold text-sm">📊 Auswertung</h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            Treffer = markierte Felder · gerufen = davon auf der eigenen Karte gerufene Begriffe
+          </p>
+          <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--surface)] text-xs text-[var(--text-muted)]">
+                <tr>
+                  <th className="text-left font-medium px-3 py-2">Name</th>
+                  <th className="text-right font-medium px-3 py-2">Treffer / gerufen</th>
+                  <th className="text-right font-medium px-3 py-2">Quote</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => (
+                  <tr key={i} className="border-t border-[var(--border)]">
+                    <td className="px-3 py-1.5">{r.name}{r.has_bingo && " 🎉"}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{r.hits} / {r.called_on_card}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-muted)]">
+                      {r.called_on_card > 0 ? `${Math.round((r.hits / r.called_on_card) * 100)} %` : "–"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Already called list */}
       {live.called_pairs.length > 0 && (

@@ -604,6 +604,27 @@ def get_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depend
     return {**_to_out(g).model_dump(), "data": g.data}
 
 
+@router.put("/api/exitgames/{exitgame_id}", response_model=ExitGameOut)
+def update_exitgame(exitgame_id: int, raw: dict, db: Session = Depends(get_db), current=Depends(get_current_user)):
+    """Bearbeiten: dasselbe JSON wie beim Hochladen, derselbe Validator.
+    Assets aus einem ZIP bleiben liegen und koennen weiter referenziert werden."""
+    g = db.get(ExitGame, exitgame_id)
+    if not g:
+        raise HTTPException(404, "Exitgame nicht gefunden")
+    if not can_modify(g, current):
+        raise HTTPException(403)
+    # Laufende Versuche merken sich ihren Fortschritt an den Slides — die
+    # duerfen nicht unter den Fuessen wegbrechen.
+    if db.query(ExitGameSession).filter_by(exitgame_id=g.id, status="open").first():
+        raise HTTPException(409, "Eine Session ist noch offen — erst schließen, dann bearbeiten.")
+    parsed = _parse_exitgame_json(raw)
+    g.title, g.description, g.subject = parsed.title, parsed.description, parsed.subject
+    g.grade, g.tags, g.data = parsed.grade, parsed.tags, parsed.data
+    db.commit()
+    db.refresh(g)
+    return _to_out(g)
+
+
 @router.delete("/api/exitgames/{exitgame_id}", status_code=204)
 def delete_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     g = db.get(ExitGame, exitgame_id)

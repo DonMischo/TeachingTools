@@ -407,7 +407,7 @@ function SessionHistory({ setId }: { setId: number }) {
                     if (confirm(what)) deleteMut.mutate(s.join_code);
                   }}
                 >
-                  ✕
+                  🗑
                 </SessionAction>
               </>
             );
