@@ -1,0 +1,238 @@
+{
+  "_ai_instructions": "Erstelle ein Caputh-Quiz im vorgegebenen JSON-Format. --- PFLICHTFELDER --- title (string), type, grade, tags, max_points, time_limit_default, questions. --- TYPEN (type-Feld) --- 'classic' (normales Quiz), 'tue' (Tägliche Übung, kurz & häufig), 'test' (Klassenarbeitsvorbereitung), 'assignment' (Aufgabenblatt), 'competition' (Wettbewerb), 'custom' (sonstiges). --- KLASSENSTUFEN (grade-Feld) --- Einzelne Zahl: 7 | Liste: '5,6,7' | Bereich: '5-10' | Alle Klassen: weglassen oder leer lassen. --- TAGS --- Freitextliste, z.B. ['mathe', 'erdkunde', 'sport', 'deutsch', 'biologie', 'physik', 'chemie', 'fun', 'geschichte', 'informatik']. --- FRAGETYPEN --- 'single' (1 richtige Antwort), 'multi' (mehrere richtig, Teilpunkte), 'true_false' (Wahr/Falsch), 'survey' (keine Wertung), 'sort' (Reihenfolge sortieren, 'order' beginnt bei 1), 'umrechnung' (Zahlenwert tippen, 1 Antwort: 'text' = Zahl + Leerzeichen + Zieleinheit z.B. '30000 cm'), 'timeline' (Zeitstrahl/Zahlenstrahl: statt 'answers' ein Feld 'timeline' = {mode, axis, items}). Umrechnung: Anzeige lautet 'Rechne um: [Frage] = [Eingabefeld] [Einheit]'. Schüler tippen die Zahl, Einheit wird automatisch daneben gezeigt. --- TIMELINE-FRAGEN --- timeline.mode 'sort': Schüler ziehen die items an die richtige Stelle (items [{id, label, value}]; value = korrekte Position, wird Schülern NICHT gezeigt). timeline.mode 'spot': items werden bei 'value' angezeigt; falsch platzierte tragen ihren wahren Wert zusätzlich in 'actual' — Schüler markieren die Fehler. axis: {kind: 'year'|'number', min, max, step?, unit?}; Jahre v. Chr. negativ (-753 = 753 v. Chr.). scoring 'position' (Standard) wertet die Stelle mit einer wählbaren tolerance = erlaubte Abweichung in Achseneinheiten (Jahren): 0 = exakt (Jahr bzw. exact_date muss genau stimmen), sonst z.B. 1, 2, 5, 10, 15, 100 (Jahrhundert), 1000 (Jahrtausend) oder 1000000 (1 Mio. Jahre, für erdgeschichtliche Achsen). scoring 'order' wertet nur die Reihenfolge (fair bei unsicheren Jahreszahlen; tolerance wird dann ignoriert). Teilpunkte gibt es pro richtig platziertem/markiertem Item. --- GENAUE DATEN IN TIMELINE-FRAGEN --- Ein item darf zusätzlich 'exact_date' tragen (ISO-8601 n. Chr.: 'JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', z.B. '1914-07-28'); das Jahr darin muss zu 'value' passen. Damit wird das item taggenau positioniert und bewertet — PFLICHT, sobald zwei items im selben Jahr liegen (z.B. Attentat von Sarajevo 1914-06-28 und Kriegserklärung 1914-07-28), sonst sitzen sie exakt übereinander und sind weder sortierbar noch bewertbar. Bei mode 'spot' gibt 'exact_date' die ANGEZEIGTE (evtl. falsche) Stelle an; die wahre Stelle kommt in 'actual' + optional 'exact_date_actual' — so lässt sich ein Fehler auch innerhalb desselben Jahres verstecken. Achse eng wählen (z.B. min 1914, max 1919), damit Tage sichtbar werden. --- PUNKTE --- max_points darf maximal Anzahl_Aufgaben × 2 betragen (Umfragen/sort zählen nicht). --- VORSCHAUZEIT (preview_time_default, preview_time) --- preview_time_default (Quiz-Ebene, Sekunden) gilt für jede Frage ohne eigenes 'preview_time'. Während der Vorschauzeit sehen Schüler nur die Frage (ohne Antwortoptionen); danach wird automatisch zu 'answering' gewechselt. 0 oder weglassen = kein automatischer Wechsel (Lehrer muss manuell weiterklicken). 'preview_time' pro Frage überschreibt den Default für diese eine Frage. --- MATHEMATISCHE FORMELN --- Inline-Formeln: $\\frac{a}{b}$, $x^2$, $3 \\cdot 4 =$. Abgesetzte Formel (zentriert, groß): $$u = 2 \\cdot (a + b)$$. KaTeX-Syntax. Einheiten: $\\text{mm}$, $\\text{cm}^2$. Dezimalkomma: $3{,}14$. --- BILDER --- Bilder liegen in gfx/ (z.B. 'gfx/karte.svg'). WICHTIG: Keine Hinweise auf die richtige Antwort in Bildern, Fragen oder Antwortoptionen. Bilder dienen nur der Illustration des Themas, nicht als Lösungshilfe.",
+  "title": "Gleichungen umstellen Klasse 9",
+  "description": "Übung zum Umstellen von Gleichungen: Allgemeines Vorgehen, spezielle Umformungsschritte und Ergebnisse.",
+  "type": "classic",
+  "grade": "9",
+  "tags": ["mathe", "algebra", "gleichungen"],
+  "max_points": 40,
+  "time_limit_default": 30,
+  "preview_time_default": 5,
+  "settings": {
+    "randomize_answer_order": true
+  },
+  "questions": [
+    {
+      "type": "single",
+      "question": "Was ist das oberste Ziel beim Umstellen einer Gleichung?",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "Die Variable auf einer Seite isolieren.", "correct": true},
+        {"text": "Alle Zahlen auf die rechte Seite bringen.", "correct": false},
+        {"text": "Die Gleichung so lang wie möglich machen.", "correct": false},
+        {"text": "Die Probe durchführen.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welche Äquivalenzumformung ist hier durchgeführt worden?  $3x + 5 = 17 \\quad \\Rightarrow \\quad 3x = 12$",
+      "image": null,
+      "time_limit": 25,
+      "answers": [
+        {"text": "Subtraktion von 5 auf beiden Seiten", "correct": true},
+        {"text": "Division durch 3 auf beiden Seiten", "correct": false},
+        {"text": "Addition von 5 auf beiden Seiten", "correct": false},
+        {"text": "Multiplikation mit 3 auf beiden Seiten", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welche Umformung ist korrekt, um die Gleichung  $5x = 20$  nach  $x$  aufzulösen?",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "Beide Seiten durch 5 teilen:  $x = 4$", "correct": true},
+        {"text": "Beide Seiten mit 5 multiplizieren:  $x = 100$", "correct": false},
+        {"text": "Auf beiden Seiten 5 subtrahieren:  $x = 15$", "correct": false},
+        {"text": "Auf beiden Seiten 5 addieren:  $x = 25$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Gegeben ist die Gleichung  $2x - 8 = 0$. Was ist der erste Schritt, um sie zu lösen?",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "$+8$  auf beiden Seiten", "correct": true},
+        {"text": "$\\cdot 2$  auf beiden Seiten", "correct": false},
+        {"text": "$-2$  auf beiden Seiten", "correct": false},
+        {"text": "$:2$  auf beiden Seiten", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $4x + 6 = 18$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 3$", "correct": true},
+        {"text": "$x = 4$", "correct": false},
+        {"text": "$x = 6$", "correct": false},
+        {"text": "$x = 12$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was ist das Ziel, wenn in einer Gleichung auf beiden Seiten die Variable vorkommt (z.B.  $3x + 2 = x + 10$)?",
+      "image": null,
+      "time_limit": 25,
+      "answers": [
+        {"text": "Die Variablen auf eine Seite bringen.", "correct": true},
+        {"text": "Die Variablen auf beiden Seiten belassen.", "correct": false},
+        {"text": "Die Gleichung durch 0 teilen.", "correct": false},
+        {"text": "Die Variablen ausmultiplizieren.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $3x + 2 = x + 10$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 4$", "correct": true},
+        {"text": "$x = 8$", "correct": false},
+        {"text": "$x = 2$", "correct": false},
+        {"text": "$x = 6$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $5x - 3 = 2x + 9$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 4$", "correct": true},
+        {"text": "$x = 2$", "correct": false},
+        {"text": "$x = 6$", "correct": false},
+        {"text": "$x = 12$", "correct": false}
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Wie wird eine Klammer in einer Gleichung korrekt aufgelöst?  $3(x+2) = 15$",
+      "image": null,
+      "time_limit": 25,
+      "answers": [
+        {"text": "Ausmultiplizieren:  $3x + 6 = 15$", "correct": true},
+        {"text": "3 zu x addieren:  $x + 5 = 15$", "correct": false},
+        {"text": "Die Klammer einfach weglassen:  $3x+2 = 15$", "correct": false},
+        {"text": "Durch 3 teilen, dann Klammer auflösen.", "correct": true}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $2(2x - 3) = 10$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 4$", "correct": true},
+        {"text": "$x = 2$", "correct": false},
+        {"text": "$x = 6$", "correct": false},
+        {"text": "$x = 3$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Gegeben ist die Gleichung  $\\frac{x}{4} = 8$. Wie wird sie korrekt umgestellt?",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "Beide Seiten mit 4 multiplizieren:  $x = 32$", "correct": true},
+        {"text": "Beide Seiten durch 4 teilen:  $x = 2$", "correct": false},
+        {"text": "Auf beiden Seiten 4 addieren:  $x = 12$", "correct": false},
+        {"text": "Auf beiden Seiten 4 subtrahieren:  $x = 4$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $\\frac{x}{5} + 2 = 7$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 25$", "correct": true},
+        {"text": "$x = 45$", "correct": false},
+        {"text": "$x = 5$", "correct": false},
+        {"text": "$x = 9$", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wann ist eine Gleichung nicht lösbar (keine Lösung)?",
+      "image": null,
+      "time_limit": 25,
+      "answers": [
+        {"text": "Wenn nach Umformung eine falsche Aussage entsteht (z.B.  $0 = 5$).", "correct": true},
+        {"text": "Wenn nach Umformung  $x=0$  dasteht.", "correct": false},
+        {"text": "Wenn die Variable auf beiden Seiten vorkommt.", "correct": false},
+        {"text": "Wenn die Gleichung eine Klammer enthält.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet es, wenn nach Umformung  $0=0$  oder  $3=3$  dasteht?",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "Die Gleichung hat unendlich viele Lösungen (allgemeingültig).", "correct": true},
+        {"text": "Die Gleichung hat keine Lösung.", "correct": false},
+        {"text": "Die Variable hat den Wert 0.", "correct": false},
+        {"text": "Die Gleichung ist falsch umgeformt worden.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Löse die Gleichung  $7x + 4 = 5x + 16$. Welches Ergebnis ist korrekt?",
+      "image": null,
+      "time_limit": 30,
+      "answers": [
+        {"text": "$x = 6$", "correct": true},
+        {"text": "$x = 10$", "correct": false},
+        {"text": "$x = 2$", "correct": false},
+        {"text": "$x = 12$", "correct": false}
+      ]
+    },
+    {
+      "type": "umrechnung",
+      "question": "$3x + 9 = 24$  (Lösung für  $x$)",
+      "time_limit": 25,
+      "answers": [
+        {"text": "5", "correct": true}
+      ]
+    },
+    {
+      "type": "umrechnung",
+      "question": "$6x - 12 = 18$  (Lösung für  $x$)",
+      "time_limit": 25,
+      "answers": [
+        {"text": "5", "correct": true}
+      ]
+    },
+    {
+      "type": "umrechnung",
+      "question": "$8x + 4 = 3x + 29$  (Lösung für  $x$)",
+      "time_limit": 30,
+      "answers": [
+        {"text": "5", "correct": true}
+      ]
+    },
+    {
+      "type": "umrechnung",
+      "question": "$4(x - 2) = 20$  (Lösung für  $x$)",
+      "time_limit": 30,
+      "answers": [
+        {"text": "7", "correct": true}
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Beim Umstellen einer Gleichung ist es erlaubt, auf beiden Seiten durch die Variable zu dividieren, auch wenn sie den Wert 0 annehmen könnte.",
+      "image": null,
+      "time_limit": 20,
+      "answers": [
+        {"text": "Wahr", "correct": false},
+        {"text": "Falsch", "correct": true}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,421 @@
+{
+  "_ai_instructions": "Erstelle ein Text-Exitgame im vorgegebenen JSON-Format. --- PFLICHTFELDER --- id (kleinbuchstaben-mit-bindestrichen), title, subject, slides. --- HEADER --- subject: Freitext (mathe, physik, deutsch, ...). grade wie Caputh: '7', '5,6,7' oder '5-10'. tags: Freitextliste. completion: {message, code} - der Exit-Code am Ende. --- STYLE --- style: {\"theme\": ..., \"font\": ..., \"customVars\": {...}} (alles optional). theme: eingebaute Presets 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk' — ohne theme gilt das normale App-Design. font: CSS-Schriftfamilie, z.B. 'Georgia, serif'. customVars: gezielte Farb-Overrides der App-Standardvariablen, z.B. {\"--accent\": \"#ff8800\", \"--bg\": \"#0a0a12\", \"--surface\": \"#12121f\", \"--text\": \"#e0f2fe\"} — customVars gewinnen über das theme-Preset. Gilt nur für die Spielansicht der Schüler. --- DDA (Differenzierung) --- dda: {\"enabled\": true, \"levels\": [...]} — 'levels' ist PFLICHT wenn enabled, und definiert die komplette Differenzierung DIESES Spiels: eine geordnete Liste von MINDESTENS 3, EMPFOHLEN 5 Stufen, sortiert von wenig zu viel Unterstützung. Jede Stufe: {\"name\": Freitext, \"hintCount\": ganze Zahl (wie viele der pro Slide angelegten hints maximal freigegeben werden), \"timeLimitSeconds\": Richtwert Bearbeitungszeit pro Aufgabe, \"extraExample\": true/false (Zusatzbeispiel zeigen), \"offerEasier\": true/false (leichtere Alternativaufgabe anbieten)}. Das Spiel stuft jeden Schüler laufend anhand seines Antwortverhaltens (Tempo, Fehler, Hinweisnutzung) in eine dieser Stufen ein — schnell+richtig -> niedrige Stufe (wenig Hilfe), viele Fehlversuche -> hohe Stufe (viel Hilfe). Ohne dda-Feld: statisches Spiel mit festem Budget von 2 Hinweisen pro Slide. --- SLIDE-TYPEN --- 'explanation' (Erklärung, Weiter-Button), 'example' (Beispiel, Weiter-Button), 'task' (muss gelöst werden; 'task': {...} für eine Aufgabe ODER 'tasks': [{...}] für mehrere Aufgaben auf einer Slide - alle müssen richtig sein), 'door' (Tür/Gate, schwerere Transferaufgabe; braucht task/tasks ODER code; onFailReview: Slide-IDs zur Wiederholung nach 2 Fehlversuchen). --- AUFGABEN-ARTEN (task.kind) --- 'single' (1 richtige Antwort), 'multi' (mehrere richtig, exakte Auswahl nötig), 'true_false' (2 Antworten Wahr/Falsch), 'input' (Freitext/Zahl; accept = Liste akzeptierter Antworten, Zahlen mit Komma ODER Punkt, Groß/Klein egal), 'timeline' (Zeitstrahl/Zahlenstrahl, Feld 'timeline': {mode, axis, items}). timeline mode 'sort': Schüler ziehen die items an die richtige Stelle der Achse; items [{id, label, value}]; axis {kind: 'year'|'number', min, max, step?, unit?}; scoring 'position' (Standard) wertet die Stelle mit wählbarer tolerance = erlaubte Abweichung in Achseneinheiten (Jahren): 0 = exakt, sonst z.B. 1, 2, 5, 10, 100 (Jahrhundert), 1000 (Jahrtausend) oder 1000000 (Mio. Jahre); scoring 'order' wertet nur die Reihenfolge (tolerance ignoriert). timeline mode 'spot': items werden bei 'value' ANGEZEIGT, falsch platzierte tragen ihren wahren Wert zusätzlich in 'actual' — Schüler markieren die falschen. Jahreszahlen v. Chr. = negativ (-753). Genaue Daten: ein item darf 'exact_date' tragen (ISO-8601 n. Chr.: 'JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', z.B. '1914-07-28'; das Jahr muss zu 'value' passen). Dann wird taggenau positioniert und bewertet — nötig, sobald zwei items im selben Jahr liegen, sonst liegen sie übereinander. Bei 'spot' ist 'exact_date' die angezeigte Stelle, die wahre kommt in 'actual' (+ optional 'exact_date_actual'). Nur diese fünf — prozedural erzeugte Aufgaben gibt es separat auf der Übungsseite. --- VARIANTEN (Abschreibschutz) --- Jede Aufgabe kann optional 'variants' tragen: eine Liste gleichwertiger Alternativen derselben Aufgabe (jeweils nur die abweichenden Felder, z.B. {\"question\": ..., \"accept\": [...]}). Jeder Schüler bekommt pro Versuch fest EINE Variante zugelost (beim Nachbarn abgucken lohnt nicht); Wiederaufnahme zeigt dieselbe. Schreibe 2-4 Varianten bei wichtigen Aufgaben. --- MEDIEN --- media: {kind: image|html|video, src, alt, height}. kind 'video': normaler YouTube-/Vimeo-Link, wird automatisch eingebettet. kind 'html': absolute URL einer einbettbaren Simulation (z.B. PhET), height in px. kind 'image': Dateiname einer Datei im assets/-Ordner des hochgeladenen ZIPs (z.B. 'waage.svg') oder eine absolute Bild-URL. --- HINWEISE & DIFFERENZIERUNG PRO SLIDE --- hints: geordnete Liste pro Slide, erster Hinweis = sanfter Schubser, letzter = fast die Lösung; schreibe ruhig 2-4, die dda-Stufe entscheidet, wie viele freigegeben werden. task.easierAlternative: (optional, gleicher Aufbau wie 'task') eine leichtere Version derselben Aufgabe; wird als Ja/Nein-Angebot vorgeschlagen, nachdem der Schüler mehrfach falsch lag und Hinweise aufgebraucht sind - kein automatischer Wechsel. --- MATHE --- KaTeX: inline $\\frac{a}{b}$, abgesetzt $$u = 2 \\cdot (a+b)$$. Dezimalkomma: $3{,}14$. WICHTIG: Die zu lösende Gleichung/Formel einer Aufgabe IMMER abgesetzt mit $$...$$ schreiben (eigene Zeile, besser lesbar); inline $...$ nur für einzelne Symbole im Fließtext wie $x$. --- REGELN --- Keine Lösungshinweise in Bildern/Fragen/Antwortoptionen. Slide-IDs eindeutig. Jede door braucht task oder code.",
+  "id": "finns-labor-chaos",
+  "title": "Finns Labor-Chaos",
+  "description": "Hilf Finn, den Chemieraum wieder sicher zu machen – bevor der Lehrer zurückkommt! Ein Exitgame zu den Sicherheitsregeln im Fachraum.",
+  "subject": "nawi",
+  "grade": "7-10",
+  "tags": [
+    "naturwissenschaften",
+    "sicherheit",
+    "experimentieren",
+    "chaos"
+  ],
+  "style": {
+    "theme": "cyberpunk",
+    "customVars": {
+      "--accent": "#ff6b6b",
+      "--bg": "#0a0e1a",
+      "--surface": "#141b2b",
+      "--text": "#e2e8f0"
+    }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "selbstständig",
+        "hintCount": 0,
+        "timeLimitSeconds": 60,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "leichte Unterstützung",
+        "hintCount": 1,
+        "timeLimitSeconds": 90,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "mittlere Unterstützung",
+        "hintCount": 2,
+        "timeLimitSeconds": 120,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "starke Unterstützung",
+        "hintCount": 3,
+        "timeLimitSeconds": 180,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "maximale Unterstützung",
+        "hintCount": 99,
+        "timeLimitSeconds": 300,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "Du hast Finn gerettet! Der Lehrer ist beeindruckt – und die Pause ist gerettet. 🧪✨",
+    "code": "FINN-RETTET-LABOR"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "🧪 Finns Labor-Chaos",
+      "text": "**Finn** ist der tollpatschigste Schüler der Schule. Heute sollte er im Chemieraum für den Lehrer die Geräte vorbereiten – aber es ist alles schiefgegangen! \n\n- Die Schutzbrillen liegen im Spülbecken.\n- Der Brenner steht auf einem Stapel Papier.\n- Jemand hat ein belegtes Brötchen auf dem Pult vergessen.\n\n**Hilf Finn, den Raum wieder sicher zu machen – bevor der Lehrer zurückkommt!**\n\nLöse die Aufgaben und sammle die Zahlen für den Türcode."
+    },
+    {
+      "id": "regel-essen",
+      "type": "task",
+      "title": "🍔 Das vergessene Brötchen",
+      "text": "Finn findet ein halb gegessenes Brötchen auf dem Laborpult. Er überlegt: **Darf man im Chemieraum eigentlich essen?**",
+      "task": {
+        "kind": "single",
+        "variants": [
+          {
+            "question": "Warum ist Essen im Fachraum gefährlich?",
+            "answers": [
+              {
+                "text": "Weil Krümel die Waage ungenau machen.",
+                "correct": false
+              },
+              {
+                "text": "Weil Chemikalien in die Lebensmittel gelangen könnten.",
+                "correct": true
+              },
+              {
+                "text": "Weil der Lehrer kein Essen mag.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Was ist das größte Problem, wenn man im Chemieraum isst?",
+            "answers": [
+              {
+                "text": "Man könnte etwas umstoßen.",
+                "correct": false
+              },
+              {
+                "text": "Essensreste locken Schädlinge an.",
+                "correct": false
+              },
+              {
+                "text": "Chemikalien könnten mit dem Essen in Berührung kommen.",
+                "correct": true
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Stell dir vor, auf dem Brötchen ist unsichtbares Pulver vom letzten Experiment.",
+        "Im Fachraum gelten besondere Regeln für Lebensmittel – sie sind dort tabu."
+      ]
+    },
+    {
+      "id": "schutzbrille",
+      "type": "task",
+      "title": "🥽 Die versteckte Schutzbrille",
+      "text": "Finn soll eine Schutzbrille aufsetzen, aber er findet sie nicht. Er sagt: *„Ach, das ist doch nur kurz – geht auch ohne!“* \n\n**Was ist richtig?**",
+      "task": {
+        "kind": "multi",
+        "variants": [
+          {
+            "question": "Wann **muss** man im Fachraum eine Schutzbrille tragen? (Wähle **alle** richtigen Antworten aus!)",
+            "answers": [
+              {
+                "text": "Beim Experimentieren mit Gasbrennern.",
+                "correct": true
+              },
+              {
+                "text": "Beim Umgang mit Chemikalien.",
+                "correct": true
+              },
+              {
+                "text": "Immer, wenn man den Raum betritt.",
+                "correct": false
+              },
+              {
+                "text": "Nur wenn der Lehrer es sagt.",
+                "correct": false
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Schau dir die **Sicherheitsregeln** an: Wann steht dort explizit die Schutzbrille?",
+        "Bei Feuer, Flamme und ätzenden Stoffen ist sie Pflicht – nicht bei jedem Schritt."
+      ]
+    },
+    {
+      "id": "brenner-brand",
+      "type": "task",
+      "title": "🔥 Der wackelige Brenner",
+      "text": "Finn hat den Gasbrenner auf einem Papierstapel abgestellt. Ein Blatt fängt an zu qualmen! \n\n**Was muss Finn sofort tun?**",
+      "task": {
+        "kind": "single",
+        "variants": [
+          {
+            "question": "Wie löscht Finn den kleinen Brand richtig?",
+            "answers": [
+              {
+                "text": "Er schüttet sein Wasserfläschchen darüber.",
+                "correct": false
+              },
+              {
+                "text": "Er nimmt die Löschdecke oder den Feuerlöscher.",
+                "correct": true
+              },
+              {
+                "text": "Er pustet kräftig, bis die Flamme ausgeht.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Welches Löschmittel ist für einen Papierbrand im Labor geeignet?",
+            "answers": [
+              {
+                "text": "Ein Eimer Wasser aus dem Putzeimer.",
+                "correct": false
+              },
+              {
+                "text": "Die Löschdecke oder ein Feuerlöscher (Pulver/CO₂).",
+                "correct": true
+              },
+              {
+                "text": "Ein nasser Lappen.",
+                "correct": false
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Wasser ist hier nicht die beste Idee – es könnte Chemikalien verteilen.",
+        "Schau, welche **Sicherheitseinrichtungen** der Raum bietet."
+      ],
+      "easierAlternative": {
+        "kind": "single",
+        "question": "Was gehört **nicht** zu den Löschmitteln im Fachraum?",
+        "answers": [
+          {
+            "text": "Löschdecke",
+            "correct": false
+          },
+          {
+            "text": "Feuerlöscher",
+            "correct": false
+          },
+          {
+            "text": "Gießkanne",
+            "correct": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "strom-gefahr",
+      "type": "task",
+      "title": "⚡ Strom aus der Steckdose?",
+      "text": "Finn will ein Gerät direkt an die Steckdose anschließen, weil die Batterien leer sind. \n\n**Stimmt das Vorgehen?**",
+      "task": {
+        "kind": "true_false",
+        "variants": [
+          {
+            "question": "Man darf im Schülerversuch Geräte immer direkt an die Steckdose anschließen.",
+            "answers": false
+          }
+        ]
+      },
+      "hints": [
+        "Was steht in den Regeln zum **Umgang mit Strom**?",
+        "Im Schülerversuch wird nur mit Batterien oder Netzgeräten (niedriger Spannung) gearbeitet."
+      ]
+    },
+    {
+      "id": "augendusche",
+      "type": "task",
+      "title": "👀 Die Augendusche",
+      "text": "Finn hat sich versehentlich mit einer Pipette ins Auge gespritzt. Er rennt panisch durch den Raum. \n\n**Was muss er als Erstes tun?**",
+      "task": {
+        "kind": "single",
+        "variants": [
+          {
+            "question": "Was ist die richtige Erste-Hilfe-Maßnahme bei einem Chemikalien-Spritzer ins Auge?",
+            "answers": [
+              {
+                "text": "Sofort zum Lehrer laufen.",
+                "correct": false
+              },
+              {
+                "text": "Das Auge mit der Augendusche ausspülen.",
+                "correct": true
+              },
+              {
+                "text": "Das Auge zuhalten und warten.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Welche Einrichtung hilft Finn jetzt am schnellsten?",
+            "answers": [
+              {
+                "text": "Der Not-Ausschalter.",
+                "correct": false
+              },
+              {
+                "text": "Die Augendusche.",
+                "correct": true
+              },
+              {
+                "text": "Der Abzug.",
+                "correct": false
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Im Text steht: *„Gelangen Fremdkörper ins Auge, muss schnell der Fremdkörper entfernt werden.“*",
+        "Die Augendusche ist genau für diesen Notfall da – sie spült das Auge aus."
+      ]
+    },
+    {
+      "id": "abzug-gase",
+      "type": "task",
+      "title": "💨 Giftige Gase",
+      "text": "Ein anderes Experiment erzeugt stechend riechende Dämpfe. Finn hustet und sagt: *„Das riecht doch nicht so schlimm!“*\n\n**Was sollte Finn tun?**",
+      "task": {
+        "kind": "single",
+        "variants": [
+          {
+            "question": "Wo müssen Experimente mit giftigen Gasen durchgeführt werden?",
+            "answers": [
+              {
+                "text": "Am offenen Fenster.",
+                "correct": false
+              },
+              {
+                "text": "Unter dem Abzug.",
+                "correct": true
+              },
+              {
+                "text": "Im Flur, damit der Raum nicht stinkt.",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "question": "Warum darf man giftige Gase nicht einfach im Raum einatmen?",
+            "answers": [
+              {
+                "text": "Weil sie nur unangenehm riechen.",
+                "correct": false
+              },
+              {
+                "text": "Weil sie gesundheitsschädlich sind und unter den Abzug gehören.",
+                "correct": true
+              },
+              {
+                "text": "Weil der Lehrer dann meckert.",
+                "correct": false
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Der **Abzug** ist kein Lagerplatz, sondern eine Absauganlage für gefährliche Dämpfe.",
+        "Gesundheit geht vor – solche Experimente führt nur die Lehrkraft unter dem Abzug durch."
+      ]
+    },
+    {
+      "id": "aufraeumen",
+      "type": "task",
+      "title": "🧹 Chaos am Arbeitsplatz",
+      "text": "Finns Platz sieht aus wie ein Schlachtfeld: verklebte Pipetten, offene Chemikalien, schmutziges Glas. \n\n**Was muss Finn nach dem Experimentieren tun?**",
+      "task": {
+        "kind": "multi",
+        "variants": [
+          {
+            "question": "Welche Schritte gehören zum **ordentlichen Aufräumen** im Fachraum? (Wähle alle richtigen aus!)",
+            "answers": [
+              {
+                "text": "Geräte säubern und zurückstellen.",
+                "correct": true
+              },
+              {
+                "text": "Chemikalienreste nach Anweisung entsorgen.",
+                "correct": true
+              },
+              {
+                "text": "Alles einfach in die Spüle kippen.",
+                "correct": false
+              },
+              {
+                "text": "Den Arbeitsplatz abwischen.",
+                "correct": true
+              }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Am Ende steht im Text: *„Die benutzten Geräte werden immer sauber zurückgestellt.“*",
+        "Nicht alles gehört in den Ausguss – Chemikalienreste müssen getrennt entsorgt werden."
+      ]
+    },
+    {
+      "id": "tuer",
+      "type": "door",
+      "title": "🚪 Die letzte Tür – Finns letzte Chance",
+      "text": "Fast geschafft! Der Lehrer kommt in 5 Minuten zurück. Finn muss den Raum abschließen – aber das Zahlenschloss braucht einen **Code**.\n\n**Finde die Antwort auf diese letzte Frage, um den Code zu erhalten:**",
+      "task": {
+        "kind": "input",
+        "variants": [
+          {
+            "question": "Welche **Nummer** hat der Not-Ausschalter im Fachraum? (Tipp: Es ist keine Zahl – lies genau!)",
+            "accept": ["rot", "ROT", "Rot", "R"]
+          }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Welche Farbe hat der Not-Ausschalter-Knopf?",
+          "answers": [
+            {
+              "text": "Grün",
+              "correct": false
+            },
+            {
+              "text": "Rot",
+              "correct": true
+            },
+            {
+              "text": "Blau",
+              "correct": false
+            }
+          ]
+        }
+      },
+      "hints": [
+        "Der Not-Ausschalter ist ein **roter Knopf** neben den Türen und am Lehrerpult.",
+        "Die Antwort ist eine Farbe – nicht die Zahl, die darauf steht."
+      ],
+      "onFailReview": [
+        "regel-essen",
+        "brenner-brand"
+      ]
+    }
+  ]
+}

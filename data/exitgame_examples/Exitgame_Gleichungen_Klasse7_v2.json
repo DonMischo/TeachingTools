@@ -1,0 +1,599 @@
+{
+  "_ai_instructions": "Fülle dieses JSON mit deinem eigenen Thema. Die Vorlage zeigt jeden Baustein des Formats genau einmal — kopiere, was du brauchst, und lösche den Rest. Pflicht sind nur title, subject, slides; subject/grade/tags sind Freitext (grade z.B. '7', '5,6,7' oder '5-10'), completion.code ist der Exit-Code am Ende. Ein Spiel hat meist 8-15 Slides und muss nicht alle Aufgabenarten nutzen. --- SLIDES --- 'explanation' und 'example': nur lesen, Weiter-Button. 'task': muss gelöst werden ('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). 'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; 'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen lassen — was fehlt, fällt spätestens an der Tür auf. --- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des Abschnitts davor (seit der vorigen Tür) in Lesereihenfolge; an der Tür tippt der Schüler ihn ein, geprüft wird serverseitig (Groß/Klein, Leerzeichen und Bindestriche egal). Abschreiben nützt nichts: die Tür geht nur auf, wenn der Schüler alle Schnipsel des Abschnitts selbst eingesammelt hat — sonst zeigt sie genau die offenen Aufgaben als Rücksprung-Links. Sinnvoll sind 3-6 Fragmente pro Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft zeigen. --- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' (accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' (Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. --- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, 0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode 'spot': Items stehen bei 'value', die falsch platzierten tragen ihren wahren Wert in 'actual' und sollen markiert werden (mindestens eines). Jahre v. Chr. sind negativ. 'exact_date' ('JJJJ', 'JJJJ-MM' oder 'JJJJ-MM-TT', nur n. Chr., Jahr muss zu 'value' passen) ist nötig, sobald zwei Items im selben Jahr liegen; bei 'spot' steht das wahre Datum in 'exact_date_actual'. --- HILFEN --- 'hints': geordnete Liste pro Slide (2-4), vom sanften Schubser bis fast zur Lösung; der Hinweis-Button erscheint erst nach einem Fehlversuch. 'easierAlternative' (Aufbau wie 'task'): leichtere Fassung, wird als Ja/Nein-Angebot vorgeschlagen, sobald der Schüler 2x falsch lag und seine Hinweise verbraucht hat. 'variants': gleichwertige Fassungen derselben Aufgabe (nur die abweichenden Felder); jeder Schüler bekommt fest eine zugelost — Abschreibschutz, lohnt sich bei wichtigen Aufgaben. 'extraExample' (Text pro Slide): ein zweites durchgerechnetes Beispiel für Schüler, deren Stufe es vorsieht. --- DDA --- dda.levels ist die Differenzierungsleiter dieses Spiels: mindestens 3, empfohlen 5 Stufen von wenig zu viel Unterstützung. Das Spiel stuft jeden Schüler laufend nach Antwortzeit, Fehlern und Hinweisnutzung in eine Stufe ein. Jede Stufe steuert: 'hintCount' = wie viele hints freigegeben werden, 'timeLimitSeconds' = sichtbare Richtzeit pro Aufgabe (kein Abbruch — läuft sie ab, wird ein Hinweis vorzeitig frei), 'extraExample' = ob das 'extraExample' der Slide nach einem Fehlversuch eingeblendet wird, 'offerEasier' = ob die easierAlternative überhaupt angeboten wird. Ohne dda-Feld: feste 2 Hinweise pro Slide, keine Richtzeit. --- MEDIEN --- media, eine pro Slide: 'image' (Dateiname aus dem assets/-Ordner des ZIPs oder Bild-URL), 'video' (YouTube-/Vimeo-Link), 'html' (URL einer einbettbaren Simulation). 'height' in px begrenzt die Höhe (bei Bildern die maximale Höhe — für Piktogramme z.B. 180, sonst füllen sie die ganze Spalte). --- STYLE --- theme: 'dark', 'christmas', 'halloween', 'pirate', 'cyberpunk'; font: CSS-Schriftfamilie; customVars: einzelne Farben ('--accent', '--bg', '--surface', '--text'), die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. --- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für einzelne Symbole, Dezimalkomma als $3{,}14$. --- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. --- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es nicht mehr). onFailReview nur auf vorhandene Slide-IDs.",
+  "id": "gleichungen-umstellen-7",
+  "title": "In der Zündholzfabrik – Gleichungen umstellen",
+  "description": "Exit-Game für Klasse 7: Gleichungen der Form ax + b = c und ax + b = cx + d umstellen. Mit Streichhölzern, Waage und Alltagsbezug.",
+  "subject": "mathematik",
+  "grade": "7",
+  "tags": [
+    "gleichungen",
+    "umstellen",
+    "klasse7",
+    "exitgame",
+    "streichholz"
+  ],
+  "style": {
+    "theme": "dark",
+    "font": "Trebuchet MS, sans-serif",
+    "customVars": {
+      "--accent": "#f97316",
+      "--bg": "#1a1410",
+      "--surface": "#2a221c",
+      "--text": "#f5efe8"
+    }
+  },
+  "dda": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "selbstständig",
+        "hintCount": 0,
+        "timeLimitSeconds": 60,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "leichte Unterstützung",
+        "hintCount": 1,
+        "timeLimitSeconds": 90,
+        "extraExample": false,
+        "offerEasier": false
+      },
+      {
+        "name": "mittlere Unterstützung",
+        "hintCount": 2,
+        "timeLimitSeconds": 120,
+        "extraExample": true,
+        "offerEasier": false
+      },
+      {
+        "name": "starke Unterstützung",
+        "hintCount": 3,
+        "timeLimitSeconds": 180,
+        "extraExample": true,
+        "offerEasier": true
+      },
+      {
+        "name": "maximale Unterstützung",
+        "hintCount": 99,
+        "timeLimitSeconds": 300,
+        "extraExample": true,
+        "offerEasier": true
+      }
+    ]
+  },
+  "completion": {
+    "message": "Geschafft! Du hast die Zündholzfabrik verlassen.",
+    "code": "STREICHHOLZ-7"
+  },
+  "slides": [
+    {
+      "id": "intro",
+      "type": "explanation",
+      "title": "Willkommen in der Zündholzfabrik",
+      "text": "Du bist im Lager der alten Zündholzfabrik eingeschlossen. Nur wer die Gleichungen richtig umstellt, sammelt alle Codeschnipsel und öffnet am Ende die Tür.\n\nJede gelöste Aufgabe gibt dir einen Schnipsel. An jeder Tür gibst du die Schnipsel des Abschnitts in der richtigen Reihenfolge ein.",
+      "media": {
+        "kind": "image",
+        "src": "streichholz.svg",
+        "alt": "Streichhölzer und eine Schachtel"
+      }
+    },
+    {
+      "id": "beispiel",
+      "type": "example",
+      "title": "So funktioniert das Umstellen",
+      "text": "Beim Umstellen hältst du die Waage im Gleichgewicht: Was du links tust, musst du auch rechts tun.\n\n$$2x + 3 = 11$$\nZiehe auf beiden Seiten $3$ ab:\n$$2x = 8$$\nTeile beide Seiten durch $2$:\n$$x = 4$$\n\nStell dir vor: $2$ volle Streichholzschachteln und $3$ lose Hölzer wiegen so viel wie $11$ Hölzer. Dann hat eine Schachtel $4$ Hölzer.",
+      "media": {
+        "kind": "image",
+        "src": "waage.svg",
+        "alt": "Waage mit Streichholzschachteln und losen Hölzern"
+      }
+    },
+    {
+      "id": "einfachauswahl",
+      "type": "task",
+      "title": "Aufgabe: eine richtige Antwort",
+      "text": "Wähle die richtige Antwort.",
+      "extraExample": "$$3x + 4 = 19$$: Ziehe $4$ ab → $3x = 15$. Teile durch $3$ → $x = 5$.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "STREICH",
+        "variants": [
+          {
+            "question": "Welchen Schritt machst du zuerst bei $$5x + 7 = 32$$?",
+            "answers": [
+              { "text": "auf beiden Seiten $7$ abziehen", "correct": true },
+              { "text": "beide Seiten durch $5$ teilen", "correct": false },
+              { "text": "auf beiden Seiten $7$ addieren", "correct": false }
+            ]
+          },
+          {
+            "question": "Bei $$4x - 6 = 18$$ — was hilft zuerst?",
+            "answers": [
+              { "text": "auf beiden Seiten $6$ addieren", "correct": true },
+              { "text": "auf beiden Seiten $6$ abziehen", "correct": false },
+              { "text": "beide Seiten durch $4$ teilen", "correct": false }
+            ]
+          },
+          {
+            "question": "Du hast $$7x = 42$$. Wie bekommst du $x$ allein?",
+            "answers": [
+              { "text": "beide Seiten durch $7$ teilen", "correct": true },
+              { "text": "beide Seiten mit $7$ malnehmen", "correct": false },
+              { "text": "auf beiden Seiten $7$ abziehen", "correct": false }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Denk an die Waage: Was du links tust, musst du auch rechts tun.",
+        "Zuerst die Zahl ohne $x$ wegbekommen, dann durch die Zahl vor dem $x$ teilen."
+      ]
+    },
+    {
+      "id": "mehrfachauswahl",
+      "type": "task",
+      "title": "Aufgabe: mehrere richtige Antworten",
+      "text": "Kreuze ALLE erlaubten Umformungen an.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "HOLZ",
+        "question": "Welche Umformungen sind erlaubt, ohne die Lösung zu verändern?",
+        "answers": [
+          { "text": "Auf beiden Seiten dieselbe Zahl addieren.", "correct": true },
+          { "text": "Auf beiden Seiten dieselbe Zahl (außer $0$) teilen.", "correct": true },
+          { "text": "Nur auf einer Seite eine Zahl abziehen.", "correct": false },
+          { "text": "Beide Seiten vertauschen.", "correct": true }
+        ]
+      },
+      "hints": [
+        "Was du links tust, muss rechts auch passieren.",
+        "Die Waage bleibt nur im Gleichgewicht, wenn beide Seiten gleich behandelt werden."
+      ]
+    },
+    {
+      "id": "arbeitsblatt",
+      "type": "task",
+      "title": "Kurzes Arbeitsblatt",
+      "text": "Löse beide Aufgaben — erst dann geht es weiter.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Um $$3x + 5 = 20$$ zu lösen, ziehst du zuerst auf beiden Seiten $5$ ab.",
+          "answers": [
+            { "text": "Wahr", "correct": true },
+            { "text": "Falsch", "correct": false }
+          ]
+        },
+        {
+          "kind": "input",
+          "codeFragment": "KOPF",
+          "question": "Löse $$4x + 9 = 33$$. Wie groß ist $x$?",
+          "accept": ["6"]
+        }
+      ],
+      "hints": [
+        "Stelle die Gleichung Schritt für Schritt um.",
+        "Ziehe zuerst $9$ ab: $$4x = 24$$."
+      ]
+    },
+    {
+      "id": "input-praxis",
+      "type": "task",
+      "title": "Rechne selbst",
+      "text": "Löse beide Aufgaben — erst dann geht es weiter.",
+      "tasks": [
+        {
+          "kind": "input",
+          "codeFragment": "WAAGE",
+          "question": "Löse $$5x + 4 = 24$$. Wie groß ist $x$?",
+          "accept": ["4"]
+        },
+        {
+          "kind": "input",
+          "question": "Eine Kerze ist anfangs $20$ cm lang und verliert pro Stunde $3$ cm. Nach wie vielen Stunden ist sie noch $11$ cm lang?\nStelle die Gleichung $$20 - 3x = 11$$ auf und löse.",
+          "accept": ["3"]
+        }
+      ],
+      "hints": [
+        "Ziehe zuerst die Zahl ohne $x$ auf beiden Seiten ab.",
+        "Teile am Ende durch die Zahl vor dem $x$."
+      ]
+    },
+    {
+      "id": "single-praxis",
+      "type": "task",
+      "title": "Prüfe dein Können",
+      "text": "Wähle jeweils die richtige Antwort.",
+      "tasks": [
+        {
+          "kind": "single",
+          "question": "Löse $$-2x + 10 = 4$$. Was ist $x$?",
+          "answers": [
+            { "text": "3", "correct": true },
+            { "text": "-3", "correct": false },
+            { "text": "7", "correct": false }
+          ]
+        },
+        {
+          "kind": "single",
+          "question": "Welche Zahl löst die Gleichung $$3x + 7 = 22$$?",
+          "answers": [
+            { "text": "5", "correct": true },
+            { "text": "4", "correct": false },
+            { "text": "6", "correct": false }
+          ]
+        }
+      ],
+      "hints": [
+        "Setze die Zahl zur Probe ein.",
+        "Bringe zuerst die Zahl ohne $x$ weg."
+      ]
+    },
+    {
+      "id": "zahlenstrahl-loesungen",
+      "type": "task",
+      "title": "Lösungen am Zahlenstrahl",
+      "text": "Ziehe jede Gleichung an die Stelle ihrer Lösung auf dem Zahlenstrahl.",
+      "task": {
+        "kind": "timeline",
+        "timeline": {
+          "mode": "sort",
+          "scoring": "position",
+          "tolerance": 0,
+          "axis": {
+            "kind": "number",
+            "min": 0,
+            "max": 10,
+            "step": 1
+          },
+          "items": [
+            { "id": "a", "label": "$$x + 3 = 7$$", "value": 4 },
+            { "id": "b", "label": "$$2x - 1 = 5$$", "value": 3 },
+            { "id": "c", "label": "$$3x + 2 = 20$$", "value": 6 }
+          ]
+        }
+      },
+      "hints": [
+        "Löse jede Gleichung zuerst im Kopf.",
+        "Die Lösung ist die Zahl, bei der die Gleichung stimmt."
+      ]
+    },
+    {
+      "id": "loesungsschritte",
+      "type": "task",
+      "title": "Lösungsschritte ordnen",
+      "text": "Bringe die Schritte zum Lösen von $$3x + 5 = 20$$ in die richtige Reihenfolge.",
+      "task": {
+        "kind": "timeline",
+        "timeline": {
+          "mode": "sort",
+          "scoring": "order",
+          "axis": {
+            "kind": "number",
+            "min": 1,
+            "max": 4,
+            "step": 1,
+            "unit": "Schritt"
+          },
+          "items": [
+            { "id": "s1", "label": "Gleichung notieren: $$3x + 5 = 20$$", "value": 1 },
+            { "id": "s2", "label": "Auf beiden Seiten $5$ abziehen", "value": 2 },
+            { "id": "s3", "label": "$$3x = 15$$ vereinfachen", "value": 3 },
+            { "id": "s4", "label": "Beide Seiten durch $3$ teilen", "value": 4 }
+          ]
+        }
+      },
+      "hints": [
+        "Was machst du zuerst, um die $+5$ wegzubekommen?",
+        "Erst die Zahl ohne $x$, dann der Faktor vor dem $x$."
+      ]
+    },
+    {
+      "id": "wahr-falsch-2",
+      "type": "task",
+      "title": "Wahr oder falsch?",
+      "text": "Prüfe die Aussage.",
+      "task": {
+        "kind": "true_false",
+        "question": "Beim Lösen von $$6x - 8 = 10$$ addierst du zuerst auf beiden Seiten $8$.",
+        "answers": [
+          { "text": "Wahr", "correct": true },
+          { "text": "Falsch", "correct": false }
+        ]
+      },
+      "hints": [
+        "Was steht auf der linken Seite neben dem $x$?",
+        "Die $-8$ muss weg, also $+8$ auf beiden Seiten."
+      ]
+    },
+    {
+      "id": "tuer1",
+      "type": "door",
+      "title": "Die Tür zum Streichholzlager",
+      "text": "Löse die letzte Aufgabe und gib die gesammelten Codeschnipsel ein.",
+      "task": {
+        "kind": "single",
+        "question": "Löse $$-3x + 20 = 5$$. Wie groß ist $x$?",
+        "answers": [
+          { "text": "5", "correct": true },
+          { "text": "-5", "correct": false },
+          { "text": "25", "correct": false }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Löse $$2x + 3 = 11$$. Wie groß ist $x$?",
+          "answers": [
+            { "text": "4", "correct": true },
+            { "text": "7", "correct": false },
+            { "text": "5", "correct": false }
+          ]
+        }
+      },
+      "hints": [
+        "Bringe zuerst die $+20$ weg.",
+        "Teile am Ende durch $-3$ — Achtung beim Vorzeichen."
+      ],
+      "onFailReview": [
+        "beispiel",
+        "einfachauswahl",
+        "arbeitsblatt",
+        "input-praxis",
+        "single-praxis"
+      ]
+    },
+    {
+      "id": "beidseitig",
+      "type": "explanation",
+      "title": "Jetzt mit $x$ auf beiden Seiten",
+      "text": "Manchmal steht $x$ auf beiden Seiten. Dann bringst du zuerst alle $x$-Terme auf eine Seite.\n\n$$5x + 3 = 2x + 12$$\nZiehe auf beiden Seiten $2x$ ab:\n$$3x + 3 = 12$$\nJetzt wie gewohnt: $3$ abziehen, durch $3$ teilen:\n$$x = 3$$\n\nStell dir zwei Streichholzschachteln vor, die auf beiden Waagschalen liegen — sie heben sich auf.",
+      "media": {
+        "kind": "image",
+        "src": "waage2.svg",
+        "alt": "Waage mit x auf beiden Seiten"
+      }
+    },
+    {
+      "id": "beispiel2",
+      "type": "example",
+      "title": "Beispiel mit Minus",
+      "text": "$$7x - 4 = 3x + 16$$\nZiehe auf beiden Seiten $3x$ ab:\n$$4x - 4 = 16$$\nAddiere auf beiden Seiten $4$:\n$$4x = 20$$\nTeile durch $4$:\n$$x = 5$$\n\nReal life: Zwei Anbieter verlangen unterschiedliche Grundgebühren und Preise pro Schachtel. Nach $x$ Schachteln sind die Kosten gleich — so findest du den Punkt, ab dem sich der Wechsel lohnt.",
+      "media": {
+        "kind": "image",
+        "src": "kerzen.svg",
+        "alt": "Zwei Kerzen mit unterschiedlicher Brenndauer"
+      }
+    },
+    {
+      "id": "single2",
+      "type": "task",
+      "title": "Aufgabe: $x$ auf beiden Seiten",
+      "text": "Wähle die richtige Antwort.",
+      "task": {
+        "kind": "single",
+        "codeFragment": "VOR",
+        "variants": [
+          {
+            "question": "Was ziehst du bei $$4x + 5 = 2x + 13$$ zuerst ab, um alle $x$ auf eine Seite zu bringen?",
+            "answers": [
+              { "text": "auf beiden Seiten $2x$", "correct": true },
+              { "text": "auf beiden Seiten $4x$", "correct": false },
+              { "text": "auf beiden Seiten $5$", "correct": false }
+            ]
+          },
+          {
+            "question": "Welche Umformung bringt bei $$6x - 2 = 2x + 10$$ alle $x$ auf die linke Seite?",
+            "answers": [
+              { "text": "auf beiden Seiten $2x$ abziehen", "correct": true },
+              { "text": "auf beiden Seiten $2x$ addieren", "correct": false },
+              { "text": "auf beiden Seiten $2$ addieren", "correct": false }
+            ]
+          },
+          {
+            "question": "Bei $$3x + 8 = 5x - 4$$ — was ist der erste geschickte Schritt?",
+            "answers": [
+              { "text": "auf beiden Seiten $3x$ abziehen", "correct": true },
+              { "text": "auf beiden Seiten $8$ abziehen", "correct": false },
+              { "text": "auf beiden Seiten $5x$ addieren", "correct": false }
+            ]
+          }
+        ]
+      },
+      "hints": [
+        "Bringe die $x$-Terme auf eine Seite, die Zahlen auf die andere.",
+        "Wähle die Seite mit dem kleineren $x$-Term, dann bleibt der Koeffizient positiv."
+      ]
+    },
+    {
+      "id": "multi2",
+      "type": "task",
+      "title": "Fehler finden",
+      "text": "Hier haben sich Fehler eingeschlichen. Kreuze ALLE falschen Umformungen an.",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "ZEICHEN",
+        "question": "Welche Umformungen sind FALSCH?",
+        "answers": [
+          { "text": "$$5x + 3 = 2x + 12 \\;\\Rightarrow\\; 7x + 3 = 12$$", "correct": true },
+          { "text": "$$5x + 3 = 2x + 12 \\;\\Rightarrow\\; 3x + 3 = 12$$", "correct": false },
+          { "text": "$$6x - 2 = 2x + 10 \\;\\Rightarrow\\; 8x - 2 = 10$$", "correct": true },
+          { "text": "$$7x - 4 = 3x + 16 \\;\\Rightarrow\\; 4x - 4 = 16$$", "correct": false },
+          { "text": "$$3x + 8 = 5x - 4 \\;\\Rightarrow\\; 8 = 2x - 4$$", "correct": false }
+        ]
+      },
+      "hints": [
+        "Prüfe, ob auf beiden Seiten dasselbe gemacht wurde.",
+        "Achte auf das Vorzeichen: $+2x$ auf beiden Seiten ist nicht dasselbe wie $-2x$."
+      ]
+    },
+    {
+      "id": "input2",
+      "type": "task",
+      "title": "Rechne selbst",
+      "text": "Löse die Gleichung.",
+      "task": {
+        "kind": "input",
+        "codeFragment": "WECHSEL",
+        "question": "Löse $$9x - 4 = 5x + 16$$. Wie groß ist $x$?",
+        "accept": ["5"]
+      },
+      "hints": [
+        "Bringe die $x$-Terme auf eine Seite.",
+        "$$4x = 20$$ — teile durch $4$."
+      ]
+    },
+    {
+      "id": "input3",
+      "type": "task",
+      "title": "Noch eine Gleichung",
+      "text": "Löse die Gleichung.",
+      "task": {
+        "kind": "input",
+        "codeFragment": "SEITE",
+        "question": "Löse $$7x + 2 = 3x + 18$$. Wie groß ist $x$?",
+        "accept": ["4"]
+      },
+      "hints": [
+        "Ziehe $3x$ auf beiden Seiten ab.",
+        "$$4x + 2 = 18$$ → $$4x = 16$$."
+      ]
+    },
+    {
+      "id": "arbeitsblatt2",
+      "type": "task",
+      "title": "Arbeitsblatt: gemischt",
+      "text": "Löse beide Aufgaben — erst dann geht es weiter.",
+      "tasks": [
+        {
+          "kind": "true_false",
+          "question": "Bei $$4x + 3 = 2x + 11$$ ziehst du zuerst $2x$ auf beiden Seiten ab.",
+          "answers": [
+            { "text": "Wahr", "correct": true },
+            { "text": "Falsch", "correct": false }
+          ]
+        },
+        {
+          "kind": "input",
+          "question": "Löse $$8x - 5 = 4x + 15$$. Wie groß ist $x$?",
+          "accept": ["5"]
+        }
+      ],
+      "hints": [
+        "Bringe zuerst alle $x$ auf eine Seite.",
+        "$$4x = 20$$ — teile durch $4$."
+      ]
+    },
+    {
+      "id": "single3",
+      "type": "task",
+      "title": "Welche Gleichung passt?",
+      "text": "Wähle die richtige Antwort.",
+      "task": {
+        "kind": "single",
+        "question": "Welche Gleichung hat die Lösung $x = 3$?",
+        "answers": [
+          { "text": "$$5x - 2 = 13$$", "correct": true },
+          { "text": "$$2x + 4 = 8$$", "correct": false },
+          { "text": "$$3x + 1 = 7$$", "correct": false }
+        ]
+      },
+      "hints": [
+        "Setze $x = 3$ in jede Gleichung ein.",
+        "Probiere: $5 \\cdot 3 - 2 = 13$?"
+      ]
+    },
+    {
+      "id": "timeline-steps2",
+      "type": "task",
+      "title": "Lösungsschritte mit $x$ auf beiden Seiten",
+      "text": "Bringe die Schritte zum Lösen von $$5x + 3 = 2x + 12$$ in die richtige Reihenfolge.",
+      "task": {
+        "kind": "timeline",
+        "timeline": {
+          "mode": "sort",
+          "scoring": "order",
+          "axis": {
+            "kind": "number",
+            "min": 1,
+            "max": 4,
+            "step": 1,
+            "unit": "Schritt"
+          },
+          "items": [
+            { "id": "t1", "label": "Gleichung: $$5x + 3 = 2x + 12$$", "value": 1 },
+            { "id": "t2", "label": "Auf beiden Seiten $2x$ abziehen: $$3x + 3 = 12$$", "value": 2 },
+            { "id": "t3", "label": "Auf beiden Seiten $3$ abziehen: $$3x = 9$$", "value": 3 },
+            { "id": "t4", "label": "Beide Seiten durch $3$ teilen", "value": 4 }
+          ]
+        }
+      },
+      "hints": [
+        "Zuerst alle $x$ auf eine Seite bringen.",
+        "Dann die Zahl ohne $x$ wegbekommen, zuletzt teilen."
+      ]
+    },
+    {
+      "id": "spot-error",
+      "type": "task",
+      "title": "Finde die falsche Lösung",
+      "text": "Eine Lösung ist falsch auf dem Zahlenstrahl platziert. Markiere sie.",
+      "task": {
+        "kind": "timeline",
+        "timeline": {
+          "mode": "spot",
+          "axis": {
+            "kind": "number",
+            "min": 0,
+            "max": 10,
+            "step": 1
+          },
+          "items": [
+            { "id": "e1", "label": "Lösung von $$2x + 3 = 11$$", "value": 4 },
+            { "id": "e2", "label": "Lösung von $$3x - 5 = 10$$", "value": 3, "actual": 5 },
+            { "id": "e3", "label": "Lösung von $$4x + 2 = 26$$", "value": 6 }
+          ]
+        }
+      },
+      "hints": [
+        "Löse jede Gleichung im Kopf und vergleiche mit der Position.",
+        "Eine der drei Gleichungen ergibt nicht die Zahl, bei der sie steht."
+      ]
+    },
+    {
+      "id": "tuer2",
+      "type": "door",
+      "title": "Die Tür zum Ausgang",
+      "text": "Löse die letzte Aufgabe und gib die Codeschnipsel des zweiten Abschnitts ein.",
+      "task": {
+        "kind": "single",
+        "question": "Löse $$10x - 7 = 6x + 13$$. Wie groß ist $x$?",
+        "answers": [
+          { "text": "5", "correct": true },
+          { "text": "4", "correct": false },
+          { "text": "3", "correct": false }
+        ],
+        "easierAlternative": {
+          "kind": "single",
+          "question": "Löse $$4x + 2 = 2x + 10$$. Wie groß ist $x$?",
+          "answers": [
+            { "text": "4", "correct": true },
+            { "text": "2", "correct": false },
+            { "text": "6", "correct": false }
+          ]
+        }
+      },
+      "hints": [
+        "Bringe zuerst alle $x$ auf eine Seite.",
+        "$$4x = 20$$ — teile durch $4$."
+      ],
+      "onFailReview": [
+        "beispiel2",
+        "single2",
+        "multi2",
+        "input2",
+        "input3",
+        "arbeitsblatt2"
+      ]
+    }
+  ]
+}

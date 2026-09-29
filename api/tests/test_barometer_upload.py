@@ -5,7 +5,7 @@ from pathlib import Path
 
 from api.routers.barometer import KINDS
 
-BEISPIEL_42 = Path(__file__).resolve().parents[2] / "data" / "umfrage_examples" / "das_leben_das_universum_und_die_schule.json"
+BEISPIEL_42 = Path(__file__).resolve().parents[2] / "data" / "umfrage_examples" / "Testumfrage_das_leben_das_universum_und_die_schule.json"
 
 
 def _auth(token: str) -> dict:
