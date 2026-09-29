@@ -35,6 +35,9 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   wilson: ["Geografie"],
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],
+  rechenregeln: ["Mathematik"],
+  tippen: ["Informatik"],
+  maus: ["Informatik"],
 };
 
 /** Die gültigen Fächer eines Werkzeugs: von Hand gesetzt, sonst Voreinstellung. */

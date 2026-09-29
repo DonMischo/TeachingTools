@@ -15,6 +15,14 @@ const nextConfig = {
     }
     return config;
   },
+  // Tippen und Maus-Führerschein lagen früher unter /aktivitaeten.
+  async redirects() {
+    return ["tippen", "maus"].map(slug => ({
+      source: `/aktivitaeten/${slug}`,
+      destination: `/simulationen/${slug}`,
+      permanent: false,
+    }));
+  },
   async rewrites() {
     return {
       beforeFiles: [

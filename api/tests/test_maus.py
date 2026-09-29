@@ -327,5 +327,5 @@ def test_katalog_und_sitzungswerkzeuge_kennen_maus():
     from api.routers.tool_sessions import SESSION_TOOLS
     from api.tool_catalog import BY_SLUG
 
-    assert BY_SLUG["maus"].surface == "aktivitaeten"
+    assert BY_SLUG["maus"].surface == "simulationen"
     assert "maus" in SESSION_TOOLS

@@ -88,33 +88,6 @@ aktivitaeten:
       - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
       - Anzeigen, einsortieren, Fehler finden
       - JSON-Import, Vorlage, Beispiel-Zeitleisten (u. a. Entdeckungen der Geowissenschaften)
-  - id: tippen
-    name: Tippen (10-Finger-Trainer)
-    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, false]}
-    kann:
-      - Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen
-      - Fehlersperre ohne Rücktaste
-      - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
-      - Anschläge pro Minute, Fehlerquote, schwächste Tasten
-      - Bestenliste mit den besten hundert je Modus
-      - Eigene Texte per JSON
-  - id: maus
-    name: Maus-Führerschein
-    faehigkeiten: {use: [true, true]}
-    kann:
-      - PC-Grundkurs in drei Teilen (Maus / Tastatur, Dateien, Fenster / Suchen, Apps, Aussehen)
-      - Nachgebautes Windows mit Explorer, Fenstern, Speichern-unter, Bildschirmfoto
-      - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
-      - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
-      - Klassenübersicht und Bestenlisten
-
-  - id: rechenregeln
-    name: Rechenregeln
-    kann:
-      - Punkt vor Strich am Obstkorb
-      - Vertauschungsgesetz am Rechenzug
-      - Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
-      - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
   - id: uebung
     name: Übung
     kann:
@@ -292,6 +265,32 @@ simulationen:
       - LTB, der Pinguin-Begleiter mit Begrüßung und Sicherheitstipps; fragen mit L oder Klick auf ihn (Tipp passend zum Ort)
       - Zeitraffer ×2/×5/×10 oder stufenlos bis ×10 (Lehrkraft für alle)
       - Müll aufheben und einwerfen für Punkte und Karma (nie auf der Fahrbahn bücken)
+  - id: tippen
+    name: Tippen (10-Finger-Trainer)
+    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, false]}
+    kann:
+      - Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen
+      - Fehlersperre ohne Rücktaste
+      - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
+      - Anschläge pro Minute, Fehlerquote, schwächste Tasten
+      - Bestenliste mit den besten hundert je Modus
+      - Eigene Texte per JSON
+  - id: maus
+    name: Maus-Führerschein
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - PC-Grundkurs in drei Teilen (Maus / Tastatur, Dateien, Fenster / Suchen, Apps, Aussehen)
+      - Nachgebautes Windows mit Explorer, Fenstern, Speichern-unter, Bildschirmfoto
+      - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
+      - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
+      - Klassenübersicht und Bestenlisten
+  - id: rechenregeln
+    name: Rechenregeln
+    kann:
+      - Punkt vor Strich am Obstkorb
+      - Vertauschungsgesetz am Rechenzug
+      - Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
+      - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
 
 tools:
   - id: schreibraum

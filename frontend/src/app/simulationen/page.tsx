@@ -117,6 +117,30 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     description: "Rechenrahmen zum Schieben — dieselben Kugeln im Modus »Alle gleich« (bis 100) oder nach Stellenwert. Zeigt den Wert in Ziffern.",
     color: "#ef4444",
   },
+  {
+    slug: "rechenregeln",
+    href: "/simulationen/rechenregeln",
+    icon: "🍎",
+    title: "Rechenregeln",
+    description: "Punkt vor Strich zum Ansehen: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten. Dazu der Rechenzug zum Vertauschen und die Stufenzahl-Rutsche — mal wie geteilt, auch mit Komma. Eigenes Ergebnis eintippen, prüfen lassen, Treffer zählen.",
+    color: "#e11d48",
+  },
+  {
+    slug: "tippen",
+    href: "/simulationen/tippen",
+    icon: "⌨️",
+    title: "Tippen",
+    description: "Zehnfingersystem üben: Lektionen mit Fingeranzeige, Wortregen und Tastenjagd — dazu das Klassenrennen »Wettschreiben« über Code/QR.",
+    color: "#38bdf8",
+  },
+  {
+    slug: "maus",
+    href: "/simulationen/maus",
+    icon: "🐭",
+    title: "Maus-Führerschein",
+    description: "Grundkurs am Computer: Klicken, Doppelklick, Rechtsklick, Ziehen, Markieren, Kopieren und Speichern — in sieben Stufen mit Vorführung und Bestenliste.",
+    color: "#fb7185",
+  },
 ];
 
 export default function SimulationenPage() {

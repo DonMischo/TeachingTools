@@ -91,26 +91,6 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Anzeigen, Ereignisse einsortieren, Fehler finden
 - JSON-Import, Vorlage und mitgelieferte Beispiele (u. a. Erdgeschichte, Antike, Entdeckungen der Geowissenschaften)
 
-### ⌨️ Tippen (10-Finger-Trainer)
-- Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen von der Grundstellung bis zu Zahlen und Satzzeichen
-- Fehlersperre: ein falscher Anschlag zählt als Fehler, aber es geht erst mit der richtigen Taste weiter
-- Modi: Lektionen, Wortregen, Tastenjagd (Reaktionszeit) und Wettschreiben (Klassenrennen mit eigenem Code, nur für Lehrkräfte)
-- Werte: Anschläge pro Minute, Fehlerquote, schwächste Tasten
-- Bestenliste mit den besten hundert je Modus
-- Eigene Texte per JSON-Upload
-
-### 🐭 Maus-Führerschein
-- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien und Fenster; Suchen, Apps und Aussehen
-- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, »Speichern unter« und Bildschirmfoto
-- Jede Stufe mit Vorführen, Vorlesen und 1 bis 3 Sternen; Hilfsmodus für langsame Mausnutzer
-- Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
-- Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
-
-### 🍎 Rechenregeln
-- Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
-- Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
-- Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
-
 ### 📚 Übung
 - Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan)
 - Die Schwierigkeit steigt nach drei richtigen und sinkt nach zwei falschen Lösungen
@@ -139,6 +119,27 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 | 🌍 **Aufbau der Erde** | Die Erde in 3D mit herausgeschnittenem Keil (Achtel oder Pol zu Pol): Schichten antippen für Tiefe, Temperatur, Druck, Dichte, Wellengeschwindigkeit, Zähigkeit, Gesteine und Minerale, Schale für Schale abziehen, Farben nach Temperatur/Dichte/Zustand, dazu live gerechnete Mantelkonvektion auf den Schnittflächen und ein Quiz. Tiefenprofil aller Größen nach PREM mit Schmelzkurve, Erdbebenwellen mit Strahlenverfolgung und Schattenzonen (drei Erdmodelle von 1900 bis Lehmann), Konvektionslöser zum Ausprobieren (Zähigkeit, Heizung, Kontinent als Deckel). |
 | 🌋 **Wilson-Zyklus** | Ein ganzer Zyklus im Querschnitt und Zeitraffer: Superkontinent mit Plume, Grabenbruch, junges Meer, Ozean mit Rücken und spiegelbildlichen Magnetstreifen, Subduktion mit Tiefseerinne, Vulkanbogen und Benioff-Beben, Kollision mit Gebirgswurzel und Abtragung zum Rumpfgebirge. Meeresboden wird mit dem Alter tiefer, Gebirgshöhe nach Isostasie, Mantelströmung und Plattengeschwindigkeiten; jede Phase mit heutigem Beispiel, Quiz »Welche Phase?« und Wissensteil (Tuzo Wilson, Superkontinente, Variszikum in Thüringen). |
 | 🚦 **GTA – Ganztagsaufmerksamkeit im Verkehr** (zu Fuß) | Zu Fuß durchs echte Viertel um die Schule bis in die Innenstadt (OpenStreetMap), die ganze Klasse in einer Live-Stadt: Start vor der Schule, Uhrzeit mit Berufsverkehr und Nacht (Warnweste), Ampeln mit Taster, Zebrastreifen, Autos, die echten Linien Bus 9/35 und Tram 1/5 mit Abfahrtstafeln, Türen (erst aussteigen lassen), Gesten und Polizei, Überblick mit Straßennamen und Minikarte, Vollbild, Handy-Stick, Geräusche, Schilder-Rallye, Gruppe als Wand, Müll sammeln für Karma, LTB der Pinguin als Begleiter mit Sicherheitstipps (auch auf Nachfrage, passend zum Ort), Zeitraffer bis ×10, Bus-Szene (Bus ohne Dach, Fahrgäste, Stadtbus und Gelenkbus »Schlenky«, Busse nach Fahrplan), Wegsuche per Klick, mehrspurige Straßen, Handy Sim (Karte, Suche, Route, Beamen), Aussehen, Polizei-Gespräche, Fahrrad mit Werkstatt, StVZO-Prüfung, Radregeln, Radwegarten und Vorfahrt an Kreuzungen, Passanten, 22 Erfolge und ein Fußgänger-Führerschein mit Hauspunkten. |
+
+
+### ⌨️ Tippen (10-Finger-Trainer)
+- Bildschirmtastatur mit Fingerfarben, neun Lektionsstufen von der Grundstellung bis zu Zahlen und Satzzeichen
+- Fehlersperre: ein falscher Anschlag zählt als Fehler, aber es geht erst mit der richtigen Taste weiter
+- Modi: Lektionen, Wortregen, Tastenjagd (Reaktionszeit) und Wettschreiben (Klassenrennen mit eigenem Code, nur für Lehrkräfte)
+- Werte: Anschläge pro Minute, Fehlerquote, schwächste Tasten
+- Bestenliste mit den besten hundert je Modus
+- Eigene Texte per JSON-Upload
+
+### 🐭 Maus-Führerschein
+- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien und Fenster; Suchen, Apps und Aussehen
+- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, »Speichern unter« und Bildschirmfoto
+- Jede Stufe mit Vorführen, Vorlesen und 1 bis 3 Sternen; Hilfsmodus für langsame Mausnutzer
+- Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
+- Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)
+
+### 🍎 Rechenregeln
+- Punkt vor Strich am Obstkorb: »3 · 4« sind drei Körbe mit je vier Äpfeln, Klammern sind Kisten
+- Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
+- Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
 
 ---
 

@@ -77,25 +77,26 @@ CATALOG: list[CatalogTool] = [
         "create": _cap(True, True),
         "upload": _cap(True, True),
     }),
+    # Übung ist ein Aufgabenformat, kein Modell zum Ausprobieren: eigenes
+    # Tempo, eigener QR, kein Host.
+    CatalogTool("uebung", "📚 Übung", "📚", "aktivitaeten", {
+        "use": _cap(True, True),
+    }),
+    # ── Simulationen (Modelle zum Ausprobieren — wie die Aktivitäten für alle offen) ──
     # Tippen rechnet im Browser: kein Hosten, kein Erstellen — die Sitzung ist
     # nur der Beitritts-Code (siehe routers/tool_sessions.py).
-    CatalogTool("tippen", "⌨️ Tippen", "⌨️", "aktivitaeten", {
+    CatalogTool("tippen", "⌨️ Tippen", "⌨️", "simulationen", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "upload": _cap(True, False),
     }),
     # Maus-Führerschein rechnet im Browser: kein Hosten, kein Erstellen — die
     # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
-    CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "aktivitaeten", {"use": _cap(True, True)}),
-    # Übung und Rechenregeln sind Aufgabenformate, keine Modelle zum
-    # Ausprobieren: eigenes Tempo, eigener QR, kein Host.
-    CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "aktivitaeten", {
+    CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "simulationen", {"use": _cap(True, True)}),
+    # Rechenregeln: eigenes Tempo, eigener QR, kein Host.
+    CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
         "use": _cap(True, True),
     }),
-    CatalogTool("uebung", "📚 Übung", "📚", "aktivitaeten", {
-        "use": _cap(True, True),
-    }),
-    # ── Simulationen (Modelle zum Ausprobieren — wie die Aktivitäten für alle offen) ──
     CatalogTool("gleichungswaage", "⚖️ Gleichungswaage", "⚖️", "simulationen", {
         "use": _cap(True, True),
     }),
