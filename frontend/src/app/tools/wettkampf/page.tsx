@@ -43,7 +43,7 @@ export default function WettkampfListPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto w-full">
+    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
       <h1 className="text-2xl font-bold mb-2 mt-1">Wettkämpfe</h1>
       {auth && can("wettkampf", "create") && (

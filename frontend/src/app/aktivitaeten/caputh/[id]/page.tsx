@@ -43,7 +43,7 @@ export default function CaputhDetailPage() {
   if (!quiz) return <p className="p-6 text-red-500">Caputh nicht gefunden.</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto w-full">
+    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <Link href="/aktivitaeten/caputh" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">
         ← Caputh-Bibliothek
       </Link>

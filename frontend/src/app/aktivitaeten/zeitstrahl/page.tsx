@@ -79,7 +79,7 @@ export default function ZeitstrahlPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📏 Zeitstrahl</h1>
@@ -117,7 +117,7 @@ export default function ZeitstrahlPage() {
           Noch keine Zeitstrahlen — lade die Beispiele oder eine eigene JSON-Datei hoch.
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {sets.map(s => (
             <div key={s.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
               <Link href={`/aktivitaeten/zeitstrahl/${s.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">

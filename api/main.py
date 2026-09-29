@@ -341,6 +341,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE maus_bestenliste ADD COLUMN IF NOT EXISTS hilfe BOOLEAN NOT NULL DEFAULT FALSE",
         # Laenge des Gastfensters, schulweit einstellbar (vorher fest 60 Minuten).
         "ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS guest_token_minutes INTEGER NOT NULL DEFAULT 90",
+        "ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS tool_faecher JSON NOT NULL DEFAULT '{}'",
         "ALTER TABLE sim_beitraege ADD COLUMN IF NOT EXISTS art VARCHAR(20) NOT NULL DEFAULT 'text'",
         # New tables in models.py need nothing here — Base.metadata.create_all()
         # (above) creates any table that doesn't exist yet. Only add a line here

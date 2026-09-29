@@ -168,7 +168,7 @@ export default function LueckentextDetailPage() {
 
   if (!canEdit) {
     return (
-      <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+      <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
         <h1 className="text-2xl font-black tracking-tight">{set.title}</h1>
         {set.description && <p className="text-sm text-[var(--text-muted)]">{set.description}</p>}
         <p className="whitespace-pre-wrap text-sm">
@@ -201,7 +201,7 @@ export default function LueckentextDetailPage() {
   if (!draft) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-black tracking-tight">📝 Lückentext bearbeiten</h1>
         <div className="flex gap-2 flex-nowrap items-center">

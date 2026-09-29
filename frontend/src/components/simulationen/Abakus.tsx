@@ -51,7 +51,7 @@ export default function Abakus({ action }: { action?: ReactNode }) {
   const reset = () => setActive(Array(ROWS).fill(0));
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧮 Abakus</h1>

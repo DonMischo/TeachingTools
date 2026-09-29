@@ -199,7 +199,7 @@ export default function Uebung({ action, zugang }: {
   const selectedTopic = topics.find(t => t.id === selected);
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📚 Übung</h1>

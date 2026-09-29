@@ -153,7 +153,7 @@ export default function ZeitstrahlDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)]">

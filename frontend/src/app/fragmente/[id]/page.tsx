@@ -634,7 +634,7 @@ export default function FragmentBoardPage() {
   };
 
   return (
-    <div className="mx-auto w-[92%] max-w-[1600px] p-6">
+    <div className="mx-auto w-[92%] max-w-[var(--seite-breite)] p-6">
       <button className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="min-w-0">

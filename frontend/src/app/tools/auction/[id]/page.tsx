@@ -51,7 +51,7 @@ export default function AuctionSetDetailPage() {
   if (!set) return <div className="p-6 text-red-500 text-sm">Auktion nicht gefunden.</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <Link href="/tools/auction" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Auktions-Bibliothek</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏷 {set.title}</h1>

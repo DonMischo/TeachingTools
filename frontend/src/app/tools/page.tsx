@@ -104,7 +104,7 @@ export default function ToolsPage() {
   }, [ready, CARDS.length, router]);
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black tracking-tight">🔨 Tools</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">
@@ -114,7 +114,7 @@ export default function ToolsPage() {
 
       <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
         {CARDS.map(card => (
           <Link
             key={card.href}

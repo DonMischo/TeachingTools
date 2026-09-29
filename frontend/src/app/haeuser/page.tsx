@@ -2288,7 +2288,7 @@ function KlassensprecherView({ classId }: { classId: number }) {
   const enabled = chores.filter(c => c.enabled);
 
   return (
-    <div className="p-6 flex flex-col gap-4 max-w-xl mx-auto w-full">
+    <div className="p-6 flex flex-col gap-4 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧹 Klassendienste</h1>
@@ -2416,7 +2416,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
   const sortedByPts = haeuser;
 
   return (
-    <div className="p-6 flex flex-col gap-6 min-h-full">
+    <div className="p-6 flex flex-col gap-6 min-h-full max-w-[var(--seite-breite)] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col gap-1">
       <div className="flex items-center gap-4 flex-wrap">

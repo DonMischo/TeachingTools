@@ -384,7 +384,7 @@ export default function MausFuehrerschein({
   return (
     <MausKontext.Provider value={{ pruefung: !!pruefung && !pruefung.fertig, hilfe }}>
     <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: benutzernameAus(name) }}>
-      <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-5xl mx-auto w-full">
+      <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
         <MausStile />
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">

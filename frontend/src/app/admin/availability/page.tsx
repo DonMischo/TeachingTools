@@ -37,7 +37,7 @@ export default function AdminAvailabilityPage() {
     : scope.startsWith("class:") ? Number(scope.split(":")[1]) : null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <Link href="/admin" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Admin</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🧩 Verfügbarkeit</h1>

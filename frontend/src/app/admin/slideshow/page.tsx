@@ -268,7 +268,7 @@ export default function AdminSlideshowPage() {
   };
 
   return (
-    <div className="p-6 space-y-4 max-w-6xl">
+    <div className="p-6 space-y-4 max-w-[var(--seite-breite)] mx-auto w-full">
       <h1 className="text-2xl font-bold">Startseiten-Slideshow</h1>
 
       <div

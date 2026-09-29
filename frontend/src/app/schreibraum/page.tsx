@@ -100,7 +100,7 @@ export default function SchreibraumListPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-[var(--seite-breite)] mx-auto px-4 py-8 w-full">
       <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
         ← Tools
       </button>

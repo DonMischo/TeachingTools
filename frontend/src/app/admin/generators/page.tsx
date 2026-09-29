@@ -75,7 +75,7 @@ export default function AdminGeneratorsPage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <Link href="/admin" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
       <div>
         <h1 className="text-2xl font-black tracking-tight">🧮 Aufgaben-Generatoren</h1>

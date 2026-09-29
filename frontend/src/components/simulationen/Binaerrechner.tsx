@@ -38,7 +38,7 @@ export default function Binaerrechner({ action }: { action?: ReactNode }) {
     setBits(prev => prev.map((b, j) => (j === i ? (b ? 0 : 1) : b)));
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">◈ Binär-Rechner</h1>

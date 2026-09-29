@@ -410,6 +410,9 @@ export type SchoolSettingsOut = {
   bundesland: string;
 };
 
+/** Von Hand gesetzte Fächer je Werkzeug (Slug → Fächer); fehlende Slugs nutzen lib/faecher.ts. */
+export type ToolFaecherOut = { faecher: Record<string, string[]> };
+
 /** Länge des Gastfensters in Minuten. Lesen darf jede Lehrkraft, setzen ein Admin. */
 export type GuestSettingsOut = {
   guest_minutes: number;
@@ -1866,6 +1869,12 @@ export const api = {
     setDisplaySettings: (show_geschlecht: boolean) =>
       apiFetch<DisplaySettingsOut>("school/display-settings", {
         method: "PUT", body: JSON.stringify({ show_geschlecht }),
+      }),
+    toolFaecher: () => apiFetch<ToolFaecherOut>("school/tool-faecher"),
+    /** null = zurück zur Voreinstellung. Nur Admins. */
+    setToolFaecher: (slug: string, faecher: string[] | null) =>
+      apiFetch<ToolFaecherOut>(`school/tool-faecher/${encodeURIComponent(slug)}`, {
+        method: "PUT", body: JSON.stringify({ faecher }),
       }),
     guestSettings: () => apiFetch<GuestSettingsOut>("school/guest-settings"),
     setGuestSettings: (guest_minutes: number) =>

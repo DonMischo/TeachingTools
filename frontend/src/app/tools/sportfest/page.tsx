@@ -10,13 +10,13 @@ export default function SportfestPage() {
   const { can } = useAvailability();
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏃 Sportfest</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">DLV Nationale Punktwertung</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
         <Link href="/tools/sportfest/ranking"
           className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
           <div className="text-2xl mb-2">🏆</div>

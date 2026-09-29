@@ -32,7 +32,7 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 export default function Kueste({ action }: { action?: ReactNode }) {
   const [reiter, setReiter] = useState<Reiter>("profil");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🌊 Küstendynamik</h1>

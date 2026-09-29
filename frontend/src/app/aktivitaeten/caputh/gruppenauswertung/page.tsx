@@ -98,7 +98,7 @@ export default function GruppenauswertungPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <button onClick={() => router.push("/aktivitaeten/caputh")} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-4">← Caputh-Bibliothek</button>
       <h1 className="text-2xl font-bold mb-1">Gruppenauswertung</h1>
       <p className="text-sm text-[var(--text-muted)] mb-6">

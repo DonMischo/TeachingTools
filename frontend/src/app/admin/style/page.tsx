@@ -318,7 +318,7 @@ export default function AdminStylePage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🎨 Style Pack</h1>

@@ -122,6 +122,9 @@ aktivitaeten:
       - Schwierigkeit steigt nach drei richtigen, sinkt nach zwei falschen
       - Prüfung auf dem Server, Fortschritt je Thema
 
+# Übersicht /simulationen: Fächer je Simulation (mehrere möglich), Filter nach
+# einem oder mehreren Fächern; Admins ändern Fächer schulweit oder legen eigene
+# an (school_settings.tool_faecher, Voreinstellungen in frontend/src/lib/faecher.ts).
 simulationen:
   - id: gleichungswaage
     name: Gleichungswaage
@@ -223,11 +226,11 @@ simulationen:
       - Mitwandernde Profilbeschriftung wie im Schulbuch und Beschriften-Quiz
       - Draufsicht: Küstenlängsstrom mit Strandversetzung, Buhnen (Luv/Lee), Deckwerk am Kliff, Aufspülung, wachsender Haken
       - Gezeiten: Erde/Mond mit Flutbergen, Spring- und Nipptide, Pegelkurve und Tidenkalender für Nord- und Ostseeorte, Watt mit Priel
+      - Lupenzoom (Klick zoomt an die Lupenstelle), nie weiter hinaus als die Grundansicht
+      - Galerie »Echte Küsten«: 53 frei lizenzierte Commons-Fotos (Rügen, Møns Klint, Steilufer, Watt, Küstenschutz) mit Erklärung und Nachweis, passende Fotos unter jedem Kliff
       - Wissensteil mit Quellen
   - id: erdaufbau
     name: Aufbau der Erde
-      - Lupenzoom (Klick zoomt an die Lupenstelle), nie weiter hinaus als die Grundansicht
-      - Galerie »Echte Küsten«: 53 frei lizenzierte Commons-Fotos (Rügen, Møns Klint, Steilufer, Watt, Küstenschutz) mit Erklärung und Nachweis, passende Fotos unter jedem Kliff
     kann:
       - 3D-Erde mit herausgeschnittenem Keil (Achtel oder Pol zu Pol, Öffnung 30–180°), drehen und zoomen
       - Schichten antippen: Tiefe, Dicke, Temperatur, Druck, Dichte, P-/S-Wellen, Zähigkeit, Anteil an Volumen und Masse, Gesteine, Minerale, Grenzen

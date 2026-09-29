@@ -321,7 +321,7 @@ export default function WettkampfDetailPage() {
   const doneMatches = totalMatches - openMatches.length;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto w-full">
+    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       {showAuswertung && finishResult && (
         <AuswertungView
           w={w}

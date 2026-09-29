@@ -56,7 +56,7 @@ export default function LueckentextHostPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
           <Link href="/aktivitaeten/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>

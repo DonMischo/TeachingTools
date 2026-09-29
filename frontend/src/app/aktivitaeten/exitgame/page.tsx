@@ -117,7 +117,7 @@ export default function ExitgamePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>
@@ -148,7 +148,7 @@ export default function ExitgamePage() {
       ) : games.length === 0 ? (
         <p className="text-sm text-[var(--text-muted)]">Noch keine Exitgames — lade eins hoch, um zu starten.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {games.map(g => (
             <div key={g.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
               <Link href={`/aktivitaeten/exitgame/${g.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">

@@ -80,7 +80,7 @@ export default function ExitTicketHostPage() {
   const maxCount = Math.max(...dist.map(d => d.count), 1);
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start gap-4 justify-between flex-wrap">
         <div>
           <Link href="/tools/exit-ticket" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Exit-Ticket</Link>

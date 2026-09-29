@@ -633,7 +633,7 @@ export default function StundenplanerEditor() {
   const lessonIsThisPlan = lessonSession.session?.plan_id === plan.id;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-[var(--seite-breite)] mx-auto px-4 py-6 w-full">
       {/* Top bar */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => router.push("/stundenplaner")} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors shrink-0">

@@ -80,7 +80,7 @@ export default function Tippen({
   const material = sammlung ? `sammlung-${sammlung.id}` : "eingebaut";
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-black tracking-tight">⌨️ Tippen</h1>
         <div className="flex-1" />

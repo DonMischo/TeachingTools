@@ -1340,6 +1340,11 @@ class SchoolSettings(Base):
     guest_token_minutes: Mapped[int] = mapped_column(
         Integer, nullable=False, default=90, server_default="90"
     )
+    # Von Hand gesetzte Fächer je Werkzeug ({slug: ["Physik", ...]}). Fehlt ein
+    # Slug, gelten die Voreinstellungen aus dem Frontend (lib/faecher.ts).
+    tool_faecher: Mapped[dict] = mapped_column(
+        JSON, nullable=False, default=dict, server_default="{}"
+    )
 
 
 # ---------------------------------------------------------------------------

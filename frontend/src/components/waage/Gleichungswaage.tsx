@@ -34,7 +34,7 @@ export default function Gleichungswaage({ action }: { action?: ReactNode }) {
   const active = MODES.find(m => m.id === mode)!;
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <WaageStyles />
 
       <div className="flex items-start justify-between gap-3 flex-wrap">

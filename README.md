@@ -122,6 +122,8 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 
 Modelle zum Ausprobieren. Alle sind für Schüler offen und haben einen eigenen Beitritts-Code mit QR.
 
+Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die Übersicht filtert nach einem oder mehreren Fächern, und ein Admin kann unter »🏷️ Fächer bearbeiten« Fächer schulweit ändern oder eigene hinzufügen.
+
 | Simulation | Was sie kann |
 |------------|--------------|
 | ⚖️ **Gleichungswaage** | Äquivalenzumformungen an einer Waage in drei Modi: Zahlen (sieben Stufen, Klammern, Brüche, Teile von Hand auf nur eine Seite ziehen, Motive wie Streichhölzer/Schachteln oder Gummibärchen/Tüten, Minus als Feder), Variablen (Formeln wie F = m·a umstellen) und Chemie (Reaktionsgleichungen ausgleichen, Ionen, Kernteilchen, Oxidationszahlen, Oktett-Hinweis). Rechenweg wie im Heft, LaTeX-Eingabe. |

@@ -204,7 +204,7 @@ export default function AdminPage() {
   const show = (feature: string) => isAdmin || has(feature);
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black tracking-tight">⚙️ Admin</h1>
         <p className="text-[var(--text-muted)] text-sm mt-1">
@@ -212,7 +212,7 @@ export default function AdminPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
         {(show("students") || show("teachers")) && (
           <Link href="/admin/users" className={CARD}>
             <div className="text-2xl mb-2">👤</div>

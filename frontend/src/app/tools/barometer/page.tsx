@@ -138,7 +138,7 @@ export default function BarometerPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
+    <div className="max-w-[var(--seite-breite)] mx-auto w-full px-6 py-8 flex flex-col gap-6">
       <button onClick={() => router.push("/tools")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
         ← Tools
       </button>

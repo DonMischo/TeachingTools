@@ -57,7 +57,7 @@ export default function KiWerkstatt({ action, zugang }: {
     : eigene ? { ...eigene, name } : undefined;
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🤖 KI-Werkstatt</h1>

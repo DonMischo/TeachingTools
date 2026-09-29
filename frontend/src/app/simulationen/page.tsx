@@ -6,6 +6,11 @@ import HelpButton from "@/components/HelpButton";
 import { ToolSuche, passtZurSuche } from "@/components/ToolSuche";
 import { RequireAccount } from "@/components/RequireAccount";
 import { StandaloneDownload } from "@/components/StandaloneDownload";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
+import { FachEditor, FachFilter, FachSchild } from "@/components/Faecher";
+import { alleFaecher, faecherFuer, istVonHand, passtZumFach } from "@/lib/faecher";
 
 const ALL_CARDS: { slug: string; href: string; icon: string; title: string; description: string; color: string }[] = [
   {
@@ -116,50 +121,105 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
 
 export default function SimulationenPage() {
   const { can, ready } = useAvailability();
+  const { isAdmin } = useAdminAccess();
+  const qc = useQueryClient();
   const [suche, setSuche] = useState("");
-  const ERLAUBT = ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [];
-  const CARDS = ERLAUBT.filter(c => passtZurSuche(c, suche));
+  const [faecherFilter, setFaecherFilter] = useState<string[]>([]);
+  const [bearbeiten, setBearbeiten] = useState(false);
+  const { data: vonHandDaten } = useQuery({ queryKey: ["tool-faecher"], queryFn: api.school.toolFaecher, staleTime: 60_000 });
+  const vonHand = vonHandDaten?.faecher;
+  const setzen = useMutation({
+    mutationFn: ({ slug, faecher }: { slug: string; faecher: string[] | null }) => api.school.setToolFaecher(slug, faecher),
+    onSuccess: d => qc.setQueryData(["tool-faecher"], d),
+  });
+
+  const ERLAUBT = (ready ? ALL_CARDS.filter(c => can(c.slug, "use")) : [])
+    .map(c => ({ ...c, faecher: faecherFuer(c.slug, vonHand) }));
+  const ALLE_FAECHER = alleFaecher(ERLAUBT.map(c => c.faecher));
+  // Die Suche findet auch das Fach; der Filter wählt eines oder mehrere.
+  const CARDS = ERLAUBT.filter(c =>
+    passtZurSuche({ title: c.title, description: `${c.description} ${c.faecher.join(" ")}` }, suche)
+    && passtZumFach(c.faecher, faecherFilter));
+  const nurDieses = (f: string) => setFaecherFilter(alt => alt.length === 1 && alt[0] === f ? [] : [f]);
+
   return (
     <RequireAccount>
-    <div className="flex flex-col gap-8 p-6 max-w-3xl mx-auto w-full">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">🔬 Simulationen</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
-          Modelle zum Anfassen: ausprobieren, verstellen und zusehen, was passiert.
-        </p>
+    <div className="flex flex-col gap-8 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">🔬 Simulationen</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">
+            Modelle zum Anfassen: ausprobieren, verstellen und zusehen, was passiert.
+          </p>
+        </div>
+        {isAdmin && (
+          <button type="button" onClick={() => setBearbeiten(b => !b)}
+            className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border ${bearbeiten
+              ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent"
+              : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+            {bearbeiten ? "✓ Fertig" : "🏷️ Fächer bearbeiten"}
+          </button>
+        )}
       </div>
 
-      <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
+      <div className="flex flex-col gap-3">
+        <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
+        <FachFilter faecher={ALLE_FAECHER} gewaehlt={faecherFilter} setzen={setFaecherFilter} />
+        {bearbeiten && (
+          <p className="text-xs text-[var(--text-muted)]">
+            Fächer gelten für die ganze Schule. Eigene Fächer einfach eintippen; ↺ stellt die Voreinstellung wieder her.
+          </p>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {CARDS.map(card => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
-              bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-all
-              hover:border-[var(--accent)] hover:shadow-lg"
-          >
-            <HelpButton slug={card.slug} className="absolute top-3 right-3" />
-            <div className="flex items-center gap-3">
-              <span style={{
-                fontSize: 40, lineHeight: 1,
-                filter: `drop-shadow(0 2px 6px ${card.color}66)`,
-              }}>
-                {card.icon}
-              </span>
-              <div>
-                <div className="font-black text-lg" style={{ color: card.color }}>
-                  {card.title}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
+        {CARDS.map(card => {
+          const inhalt = (
+            <>
+              <HelpButton slug={card.slug} className="absolute top-3 right-3" />
+              <div className="flex items-center gap-3">
+                <span style={{
+                  fontSize: 40, lineHeight: 1,
+                  filter: `drop-shadow(0 2px 6px ${card.color}66)`,
+                }}>
+                  {card.icon}
+                </span>
+                <div>
+                  <div className="font-black text-lg" style={{ color: card.color }}>
+                    {card.title}
+                  </div>
+                  <div className="text-xs text-[var(--text-muted)]">→ öffnen</div>
                 </div>
-                <div className="text-xs text-[var(--text-muted)]">→ öffnen</div>
               </div>
-            </div>
-            <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-              {card.description}
-            </p>
-          </Link>
-        ))}
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                {card.description}
+              </p>
+              {bearbeiten ? (
+                <FachEditor faecher={card.faecher} vonHand={istVonHand(card.slug, vonHand)} vorschlaege={ALLE_FAECHER}
+                  beschaeftigt={setzen.isPending}
+                  speichern={f => setzen.mutate({ slug: card.slug, faecher: f })}
+                  zuruecksetzen={() => setzen.mutate({ slug: card.slug, faecher: null })} />
+              ) : card.faecher.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {card.faecher.map(f => (
+                    <FachSchild key={f} name={f} aktiv={faecherFilter.includes(f)} onClick={() => nurDieses(f)} />
+                  ))}
+                </div>
+              )}
+            </>
+          );
+          const stil = `group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
+              bg-[var(--surface)] transition-all`;
+          // Beim Bearbeiten keine Links — sonst öffnet jeder Klick ins Eingabefeld die Simulation.
+          return bearbeiten ? (
+            <div key={card.href} className={stil}>{inhalt}</div>
+          ) : (
+            <Link key={card.href} href={card.href}
+              className={`${stil} hover:bg-[var(--surface-hover)] hover:border-[var(--accent)] hover:shadow-lg`}>
+              {inhalt}
+            </Link>
+          );
+        })}
       </div>
 
       <StandaloneDownload name="simulationen" />

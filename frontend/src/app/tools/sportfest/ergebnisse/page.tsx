@@ -106,7 +106,7 @@ export default function SportfestErgebnissePage() {
   if (!isTeacher) return null;
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center gap-4 flex-wrap">
         <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors shrink-0">← Sportfest</Link>
         <h1 className="text-xl font-black tracking-tight">✏️ Ergebnisse erfassen</h1>

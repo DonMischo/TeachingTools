@@ -16,13 +16,14 @@ unangemeldeter QR-Zugang gilt, ist eine Sicherheitsentscheidung der Schule, kein
 Knopf der einzelnen Lehrkraft. Lesen darf sie trotzdem jede — die Hostansicht
 schreibt die Zahl an den Schalter »Gäste erlauben«.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..auth import GUEST_MINUTES_MAX, GUEST_MINUTES_MIN, get_current_user, require_admin
 from ..database import get_db
 from ..models import SchoolSettings
+from ..tool_catalog import CATALOG
 
 router = APIRouter(prefix="/api/school", tags=["school"])
 
@@ -98,3 +99,58 @@ def set_guest_settings(
     row.guest_token_minutes = body.guest_minutes
     db.commit()
     return GuestSettingsOut(guest_minutes=row.guest_token_minutes)
+
+
+# ── Fächer je Werkzeug ──────────────────────────────────────────────────────
+# Die Übersichten (z. B. /simulationen) filtern nach Fach. Voreinstellungen
+# stehen im Frontend; hier liegen nur die Abweichungen, die ein Admin von Hand
+# gesetzt hat — schulweit, damit alle Lehrkräfte dieselben Fächer sehen.
+
+FAECHER_MAX = 8
+FACH_LAENGE_MAX = 30
+
+
+class ToolFaecherOut(BaseModel):
+    faecher: dict[str, list[str]]
+
+
+class ToolFaecherIn(BaseModel):
+    # None heißt: zurück zur Voreinstellung.
+    faecher: list[str] | None
+
+
+@router.get("/tool-faecher", response_model=ToolFaecherOut)
+def get_tool_faecher(db: Session = Depends(get_db), _=Depends(get_current_user)):
+    return ToolFaecherOut(faecher=_settings(db).tool_faecher or {})
+
+
+@router.put("/tool-faecher/{slug}", response_model=ToolFaecherOut)
+def set_tool_faecher(
+    slug: str,
+    body: ToolFaecherIn,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
+    if slug not in {t.slug for t in CATALOG}:
+        raise HTTPException(404, "Unbekanntes Werkzeug")
+    row = _settings(db)
+    neu = dict(row.tool_faecher or {})
+    if body.faecher is None:
+        neu.pop(slug, None)
+    else:
+        sauber: list[str] = []
+        for f in body.faecher:
+            f = " ".join(str(f).split())
+            if not f:
+                continue
+            if len(f) > FACH_LAENGE_MAX:
+                raise HTTPException(422, f"Fach zu lang (höchstens {FACH_LAENGE_MAX} Zeichen)")
+            if f.casefold() not in {x.casefold() for x in sauber}:
+                sauber.append(f)
+        if len(sauber) > FAECHER_MAX:
+            raise HTTPException(422, f"Höchstens {FAECHER_MAX} Fächer je Werkzeug")
+        neu[slug] = sauber
+    # Neues Objekt zuweisen — eine geänderte JSON-Spalte merkt SQLAlchemy sonst nicht.
+    row.tool_faecher = neu
+    db.commit()
+    return ToolFaecherOut(faecher=row.tool_faecher)

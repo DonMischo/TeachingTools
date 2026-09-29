@@ -140,7 +140,7 @@ export default function CaputhsPage() {
   const isTeacher = auth.role === "teacher" || auth.role === "admin";
 
   return (
-    <div className="p-6 max-w-3xl mx-auto w-full">
+    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
           <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>

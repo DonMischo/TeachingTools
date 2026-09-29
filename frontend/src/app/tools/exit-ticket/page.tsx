@@ -47,7 +47,7 @@ export default function ExitTicketPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <button onClick={() => router.push("/tools")} className="self-start text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
         ← Tools
       </button>

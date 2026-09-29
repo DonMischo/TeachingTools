@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Einheitliche Inhaltsbreite aller Seiten (max-w-[var(--seite-breite)]).
+   Hier an einer Stelle ändern; Kartenraster füllen die Breite selbst auf. */
+:root {
+  --seite-breite: 1440px;
+}
+
 /* ── Default (dark yellow) ─────────────────────────────────────────────── */
 :root,
 [data-theme="default"] {

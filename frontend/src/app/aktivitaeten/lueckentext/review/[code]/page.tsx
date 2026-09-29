@@ -29,7 +29,7 @@ export default function LueckentextReviewPage() {
   if (isError || !entries) return <div className="p-8 text-sm text-[var(--text-muted)]">Auswertung nicht gefunden.</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <Link href={`/aktivitaeten/lueckentext/host/${code}`} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Sitzung</Link>
