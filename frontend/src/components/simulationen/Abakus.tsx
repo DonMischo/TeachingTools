@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 
 const ROWS = 10;
 const COLS = 10;
@@ -23,10 +24,15 @@ function fmt(n: number) {
   return n.toLocaleString("de-DE");
 }
 
-export default function Abakus({ action }: { action?: ReactNode }) {
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "single" | "place" }` legt die Ansicht fest
+ * (»Alle gleich« / »Stellenwert«) und blendet die Umschaltung aus.
+ */
+export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerModus = wahl(vorgabe, "reiter", ["single", "place"] as const);
   // One physical abacus: how many beads are pushed to the active (left) side per row.
   const [active, setActive] = useState<number[]>(() => Array(ROWS).fill(0));
-  const [mode, setMode] = useState<Mode>("single");
+  const [mode, setMode] = useState<Mode>(festerModus ?? "single");
 
   // Value per bead for a given row. Bottom row = ones, magnitude grows upward.
   const perBead = (row: number) => (mode === "single" ? 1 : Math.pow(10, ROWS - 1 - row));
@@ -72,7 +78,7 @@ export default function Abakus({ action }: { action?: ReactNode }) {
       </div>
 
       {/* Mode switch */}
-      <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerModus && <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {([
           ["single", "Alle gleich", "jede Kugel = 1, zusammen bis 100"],
           ["place", "Stellenwert", "Reihen = Einer, Zehner, Hunderter …"],
@@ -90,7 +96,7 @@ export default function Abakus({ action }: { action?: ReactNode }) {
             {label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Digit readout */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5 flex items-baseline gap-3">

@@ -21,6 +21,7 @@
  * hält einen eigenen WebGL-Kontext.
  */
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { KOERPER_NACH_ID } from "@/lib/sonnensystem/daten";
 import { textur } from "@/lib/sonnensystem/bilder";
 import { Steckbrief } from "./Steckbrief";
@@ -46,14 +47,20 @@ const REITER: { id: Reiter; name: string }[] = [
   { id: "kodex", name: "📓 Kodex" },
 ];
 
-export default function Sonnensystem({ action, speicherSchluessel = "geraet", lehrkraft = false }: {
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "uebersicht" | "flug" | "groessen" | "entfernungen"
+ * | "kepler" | "galerie" | "kodex" }` legt den Reiter fest und blendet die Reiterleiste aus.
+ */
+export default function Sonnensystem({ action, speicherSchluessel = "geraet", lehrkraft = false, vorgabe }: {
   action?: ReactNode;
+  vorgabe?: Vorgabe;
   /** Wo der Forschungsstand abgelegt wird — je Konto oder Sitzungscode. */
   speicherSchluessel?: string;
   /** Lehrkräfte dürfen Galerie und Kodex ohne Scans ganz aufdecken. */
   lehrkraft?: boolean;
 }) {
-  const [reiter, setReiter] = useState<Reiter>("uebersicht");
+  const festerReiter = wahl(vorgabe, "reiter", ["uebersicht", "flug", "groessen", "entfernungen", "kepler", "galerie", "kodex"] as const);
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "uebersicht");
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
   const [steckbrief, setSteckbrief] = useState<string | null>(null);
   const [galerieOffen, setGalerieOffen] = useState<string | null>(null);
@@ -138,7 +145,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
       >
         <div className="flex items-center gap-2">
           <div className="flex gap-1 overflow-x-auto flex-1" role="tablist">
-            {REITER.map(r => (
+            {(festerReiter ? [] : REITER).map(r => (
               <button
                 key={r.id}
                 role="tab"

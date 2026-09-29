@@ -11,6 +11,7 @@
  *   Wissen          — Zusammensetzung, Merksätze, Quellen
  */
 import { lazy, Suspense, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import Tiefenprofil from "./Tiefenprofil";
 import Seismik from "./Seismik";
 import KonvektionsAnsicht from "./KonvektionsAnsicht";
@@ -29,8 +30,13 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "wissen", icon: "📘", label: "Wissen" },
 ];
 
-export default function ErdAufbau({ action }: { action?: ReactNode }) {
-  const [reiter, setReiter] = useState<Reiter>("keil");
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "keil" | "profil" | "wellen" | "konvektion" | "wissen" }`
+ * legt den Reiter fest und blendet die Reiterleiste aus.
+ */
+export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerReiter = wahl(vorgabe, "reiter", ["keil", "profil", "wellen", "konvektion", "wissen"] as const);
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "keil");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -43,7 +49,7 @@ export default function ErdAufbau({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -51,7 +57,7 @@ export default function ErdAufbau({ action }: { action?: ReactNode }) {
             {r.icon} {r.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {reiter === "keil" && (
         <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-sm text-[var(--text-muted)]">Lade 3D …</div>}>

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 
 /**
  * PBM / PGM / PPM (Netpbm-Textformate) zum Anfassen: links die Datei als Text,
@@ -241,8 +242,13 @@ function rebuild(src: string, p: Parsed): string {
 
 // ── Seite ─────────────────────────────────────────────────────────────────────
 
-export default function Bildformate({ action }: { action?: ReactNode }) {
-  const [tab, setTab] = useState<Magic>("P1");
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "P1" | "P2" | "P3" }` legt das Format fest
+ * (PBM / PGM / PPM) und blendet die Formatwahl aus.
+ */
+export default function Bildformate({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festesFormat = wahl(vorgabe, "reiter", ["P1", "P2", "P3"] as const);
+  const [tab, setTab] = useState<Magic>(festesFormat ?? "P1");
   const [texts, setTexts] = useState<Record<Magic, string>>(EXAMPLES);
   const [gray, setGray] = useState(0);
   const [rgb, setRgb] = useState<[number, number, number]>([255, 0, 0]);
@@ -364,7 +370,7 @@ export default function Bildformate({ action }: { action?: ReactNode }) {
 
       {/* Formatwahl — jedes Format hat sein eigenes Blatt, nichts geht verloren */}
       <div className="flex flex-wrap items-center gap-2">
-        {FORMATS.map(f => (
+        {!festesFormat && FORMATS.map(f => (
           <button
             key={f.magic}
             onClick={() => { setTab(f.magic); setCaret(null); setHover(null); }}

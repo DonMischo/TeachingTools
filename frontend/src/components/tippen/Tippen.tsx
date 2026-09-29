@@ -13,6 +13,7 @@
  * niemand angemeldet ist.
  */
 import { useCallback, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { LEKTIONEN, type Lektion } from "@/lib/tippen/lektionen";
 import { api, type TippModus, type TippSammlung } from "@/lib/api";
 import Lektionen from "@/components/tippen/Lektionen";
@@ -44,11 +45,17 @@ function alsLektionen(sammlung: TippSammlung): Lektion[] {
   }));
 }
 
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "lektionen" | "wortregen" | "tastenjagd" }`
+ * legt den Modus fest und blendet die Modus-Leiste aus.
+ */
 export default function Tippen({
   action,
   verwaltung,
+  vorgabe,
 }: {
   action?: ReactNode;
+  vorgabe?: Vorgabe;
   /**
    * Auf der Werkzeugseite mit eigenem Zugang: eigene Texte wählen, Bestenliste
    * sehen, Ergebnisse eintragen, Rennen anlegen. Auf der Beitrittsseite (Gäste
@@ -56,7 +63,8 @@ export default function Tippen({
    */
   verwaltung?: boolean;
 }) {
-  const [modus, setModus] = useState<Modus>("lektionen");
+  const festerModus = wahl(vorgabe, "reiter", ["lektionen", "wortregen", "tastenjagd"] as const);
+  const [modus, setModus] = useState<Modus>(festerModus ?? "lektionen");
   const [zeigeFinger, setZeigeFinger] = useState(true);
   const [sammlung, setSammlung] = useState<TippSammlung | null>(null);
 
@@ -91,7 +99,7 @@ export default function Tippen({
         {action}
       </div>
 
-      <div role="tablist" aria-label="Modus" className="flex flex-wrap gap-2">
+      {!festerModus && <div role="tablist" aria-label="Modus" className="flex flex-wrap gap-2">
         {MODI.filter(m => verwaltung || !m.nurHost).map(m => (
           <button
             key={m.id}
@@ -108,7 +116,7 @@ export default function Tippen({
             {m.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {verwaltung && modus !== "wettschreiben" && modus !== "bestenliste" && (
         <TippMaterial gewaehlt={sammlung} onWaehlen={setSammlung} />

@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FARBEN, type Start } from "@/lib/regeln/maschine";
 import { RAETSEL, STATIONEN } from "@/lib/regeln/lehrgang";
+import { wahl as vorWahl, type Vorgabe } from "@/lib/vorgabe";
 import Werkbank from "./Werkbank";
 import Labyrinthe from "./Labyrinthe";
 import GebaeudeDemo from "./GebaeudeDemo";
@@ -32,8 +33,16 @@ const chip = (an: boolean) =>
 const wahl = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`;
 
-export default function RegelLabor({ action }: { action?: ReactNode }) {
-  const [reiter, setReiter] = useState<Reiter>("lehrgang");
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude" }`
+ * legt den Reiter fest und blendet die Reiterleiste aus. Dazu `station: <Stations-Id>` (bei
+ * »lehrgang«) bzw. `raetsel: <Rätsel-Id>` (bei »raetsel«): startet dort und blendet die Auswahl aus.
+ */
+export default function RegelLabor({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerReiter = vorWahl(vorgabe, "reiter", REITER.map(r => r.id));
+  const festeStation = vorWahl(vorgabe, "station", STATIONEN.map(s => s.id));
+  const festesRaetsel = vorWahl(vorgabe, "raetsel", RAETSEL.map(r => r.id));
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "lehrgang");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -45,13 +54,13 @@ export default function RegelLabor({ action }: { action?: ReactNode }) {
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>
         ))}
-      </div>
-      {reiter === "lehrgang" && <Lehrgang />}
-      {reiter === "raetsel" && <Raetsel />}
+      </div>}
+      {reiter === "lehrgang" && <Lehrgang fest={festeStation} />}
+      {reiter === "raetsel" && <Raetsel fest={festesRaetsel} />}
       {reiter === "labor" && <Labor />}
       {reiter === "labyrinthe" && <Labyrinthe />}
       {reiter === "gebaeude" && <GebaeudeDemo />}
@@ -59,24 +68,24 @@ export default function RegelLabor({ action }: { action?: ReactNode }) {
   );
 }
 
-function Lehrgang() {
-  const [nr, setNr] = useState(0);
+function Lehrgang({ fest }: { fest?: string }) {
+  const [nr, setNr] = useState(() => Math.max(0, STATIONEN.findIndex(s => s.id === fest)));
   const [reset, setReset] = useState(0);
   const s = STATIONEN[nr];
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-1">
+      {!fest && <div className="flex flex-wrap gap-1">
         {STATIONEN.map((st, i) => (
           <button key={st.id} onClick={() => setNr(i)} className={wahl(i === nr)}>{st.titel}</button>
         ))}
-      </div>
+      </div>}
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed flex flex-col gap-2">
         <h2 className="font-black text-lg">{s.titel}</h2>
         {s.text.map((t, i) => <p key={i}>{t}</p>)}
         <p className="rounded-lg bg-[var(--bg)] border border-[var(--border)] p-2">🤔 {s.frage}</p>
         <div className="flex gap-2">
           <button onClick={() => setReset(r => r + 1)} className="text-xs underline text-[var(--text-muted)]">Programm dieser Station wiederherstellen</button>
-          {nr < STATIONEN.length - 1 && (
+          {!fest && nr < STATIONEN.length - 1 && (
             <button onClick={() => setNr(nr + 1)} className="ml-auto text-xs font-bold underline">weiter zu {STATIONEN[nr + 1].titel} →</button>
           )}
         </div>
@@ -88,8 +97,8 @@ function Lehrgang() {
 
 const SPEICHER = "hp_regeln_geloest";
 
-function Raetsel() {
-  const [nr, setNr] = useState(0);
+function Raetsel({ fest }: { fest?: string }) {
+  const [nr, setNr] = useState(() => Math.max(0, RAETSEL.findIndex(r => r.id === fest)));
   const [geloest, setGeloest] = useState<string[]>([]);
   useEffect(() => {
     try { setGeloest(JSON.parse(localStorage.getItem(SPEICHER) ?? "[]")); } catch { /* ohne Speicher geht es auch */ }
@@ -104,13 +113,13 @@ function Raetsel() {
   }, [r.id]);
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-1">
+      {!fest && <div className="flex flex-wrap gap-1">
         {RAETSEL.map((rt, i) => (
           <button key={rt.id} onClick={() => setNr(i)} className={wahl(i === nr)}>
             {geloest.includes(rt.id) ? "✅" : "🧩"} {rt.titel}
           </button>
         ))}
-      </div>
+      </div>}
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed">
         <h2 className="font-black text-lg">{r.titel}</h2>
         <p>{r.aufgabe}</p>

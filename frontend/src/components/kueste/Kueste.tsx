@@ -14,6 +14,7 @@
  * Flachküste, Ebbe/Flut-Stationen, Küstenschutz).
  */
 import { useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import ProfilAnsicht from "./ProfilAnsicht";
 import Draufsicht from "./Draufsicht";
 import Gezeiten from "./Gezeiten";
@@ -29,8 +30,13 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "wissen", icon: "📘", label: "Wissen" },
 ];
 
-export default function Kueste({ action }: { action?: ReactNode }) {
-  const [reiter, setReiter] = useState<Reiter>("profil");
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen" }`
+ * legt den Reiter fest und blendet die Reiterleiste aus.
+ */
+export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerReiter = wahl(vorgabe, "reiter", ["profil", "draufsicht", "gezeiten", "galerie", "wissen"] as const);
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "profil");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -43,7 +49,7 @@ export default function Kueste({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -51,7 +57,7 @@ export default function Kueste({ action }: { action?: ReactNode }) {
             {r.icon} {r.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {reiter === "profil" && <ProfilAnsicht />}
       {reiter === "draufsicht" && <Draufsicht />}

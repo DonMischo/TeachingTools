@@ -12,6 +12,7 @@
  * der App: das dunkle Terminal *ist* die Gestaltung.
  */
 import { useState, type ReactNode } from "react";
+import { zahl, type Vorgabe } from "@/lib/vorgabe";
 
 const POWERS = [128, 64, 32, 16, 8, 4, 2, 1];
 
@@ -28,8 +29,16 @@ const C = {
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
-export default function Binaerrechner({ action }: { action?: ReactNode }) {
-  const [bits, setBits] = useState<number[]>(() => Array(8).fill(0));
+/**
+ * `vorgabe` (Exitgame-Station): `{ zahl: 0–255 }` stellt die Bits auf diese Zahl
+ * (umschaltbar bleiben sie).
+ */
+export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const startzahl = zahl(vorgabe, "zahl");
+  const [bits, setBits] = useState<number[]>(() => {
+    const n = startzahl === undefined ? 0 : Math.max(0, Math.min(255, Math.round(startzahl)));
+    return Array.from({ length: 8 }, (_, i) => (n >> (7 - i)) & 1);
+  });
 
   const sum = bits.reduce((acc, b, i) => acc + b * POWERS[i], 0);
   const parts = bits.map((b, i) => (b ? POWERS[i] : null)).filter((v): v is number => v !== null);

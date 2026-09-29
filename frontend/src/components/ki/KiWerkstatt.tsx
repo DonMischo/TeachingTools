@@ -12,6 +12,7 @@
  * scannt, kommt in beide Hälften.
  */
 import { useEffect, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sprachmodell } from "@/components/ki/Sprachmodell";
@@ -24,12 +25,18 @@ export type KiZugang = { code: string; token?: string | null; name?: string };
 
 type Reiter = "sprache" | "bilder" | "lernen" | "echt";
 
-export default function KiWerkstatt({ action, zugang }: {
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "sprache" | "bilder" | "lernen" | "echt" }`
+ * legt den Reiter fest und blendet die Reiterleiste aus.
+ */
+export default function KiWerkstatt({ action, zugang, vorgabe }: {
   action?: ReactNode;
+  vorgabe?: Vorgabe;
   zugang?: KiZugang;
 }) {
   const { auth } = useAuth();
-  const [reiter, setReiter] = useState<Reiter>("sprache");
+  const festerReiter = wahl(vorgabe, "reiter", ["sprache", "bilder", "lernen", "echt"] as const);
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "sprache");
   const [signatur, setSignatur] = useState<string | null>(null);
   const [eigene, setEigene] = useState<KiZugang | undefined>(undefined);
 
@@ -70,12 +77,12 @@ export default function KiWerkstatt({ action, zugang }: {
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      {!festerReiter && <div className="flex gap-2 flex-wrap">
         <Knopf an={reiter === "sprache"} onClick={() => setReiter("sprache")}>🔤 Sprachmodell</Knopf>
         <Knopf an={reiter === "bilder"} onClick={() => setReiter("bilder")}>🖼️ Bilder</Knopf>
         <Knopf an={reiter === "lernen"} onClick={() => setReiter("lernen")}>🧠 Lernen</Knopf>
         <Knopf an={reiter === "echt"} onClick={() => setReiter("echt")}>🕵️ Echt oder KI</Knopf>
-      </div>
+      </div>}
 
       {/* Beide Reiter bleiben montiert: ein Text, an dem zehn Minuten gewählt
           wurde, darf nicht verschwinden, weil jemand kurz zu den Bildern schaut. */}

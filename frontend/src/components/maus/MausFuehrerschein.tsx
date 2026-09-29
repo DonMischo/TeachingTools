@@ -18,6 +18,7 @@
  * abgelehnter Eintrag soll keinem Kind die geschaffte Stufe verderben.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MausPruefungOut, type MausStufenStand, type MausZugang } from "@/lib/api";
 import {
@@ -137,10 +138,17 @@ function laden(schluessel: string): Gespeichert | null {
   }
 }
 
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: <Stufen-Id> }` legt die Stufe fest (klick, doppelklick,
+ * rechtsklick, ziehen, markieren, kopieren, scrollen, tastatur, explorer, fenster, screenshot,
+ * suche, apps, aussehen, bedienhilfe, taskleiste, profil) und blendet Stufenleiste, Prüfungen
+ * und »Weiter« aus.
+ */
 export default function MausFuehrerschein({
-  action, zugang, name = "", speicherSchluessel = "lokal", konto, klasse, verwaltung = false,
+  action, zugang, name = "", speicherSchluessel = "lokal", konto, klasse, verwaltung = false, vorgabe,
 }: {
   action?: ReactNode;
+  vorgabe?: Vorgabe;
   /** Beitritt über Code/QR — dann laufen Einträge und Fortschritt über den Code. */
   zugang?: MausZugang;
   /** Vorschlag für den Namen auf dem Führerschein. */
@@ -153,7 +161,8 @@ export default function MausFuehrerschein({
   /** Werkzeugseite einer Lehrkraft: mit Klassenübersicht. */
   verwaltung?: boolean;
 }) {
-  const [reiter, setReiter] = useState<ReiterId>("klick");
+  const festerReiter = wahl(vorgabe, "reiter", REITER.filter(r => r.teil && !r.id.startsWith("speichern")).map(r => r.id));
+  const [reiter, setReiter] = useState<ReiterId>(festerReiter ?? "klick");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [ergebnisse, setErgebnisse] = useState<Ergebnisse>({});
   const [bestanden, setBestanden] = useState<Teil[]>([]);
@@ -293,6 +302,7 @@ export default function MausFuehrerschein({
   // ── Navigation ─────────────────────────────────────────────────────────
   const sichtbar = REITER.filter(r => r.id !== "uebersicht" || verwaltung);
   const weiter = () => {
+    if (festerReiter) return;
     const nr = sichtbar.findIndex(r => r.id === reiter);
     setReiter(sichtbar[Math.min(nr + 1, sichtbar.length - 1)].id);
   };
@@ -424,7 +434,7 @@ export default function MausFuehrerschein({
               </button>
             )}
           </div>
-        ) : (
+        ) : festerReiter ? null : (
           <div role="tablist" aria-label="Stufe" className="flex flex-col gap-2">
             {([1, 2, 3] as const).map(t => (
               <div key={t} className="flex flex-wrap items-center gap-2">

@@ -13,6 +13,7 @@ import {
   PHASEN, ZYKLUS, phaseBei, streifen, zustand, type Phase,
 } from "@/lib/wilson/modell";
 import { spalten, zeichne } from "./zeichnen";
+import { wahl, type Vorgabe } from "@/lib/vorgabe";
 
 type Reiter = "schnitt" | "quiz" | "wissen";
 
@@ -27,8 +28,15 @@ const PHASE_FARBE: Record<string, string> = {
   subduktion: "#7c3aed", schliessen: "#9333ea", kollision: "#be123c", abtragung: "#4d7c0f",
 };
 
-export default function WilsonZyklus({ action }: { action?: ReactNode }) {
-  const [reiter, setReiter] = useState<Reiter>("schnitt");
+/**
+ * `vorgabe` (Exitgame-Station): `{ reiter: "schnitt" | "quiz" | "wissen" }` legt den Reiter fest
+ * und blendet die Reiterleiste aus; `{ phase: <Phasen-Id> }` stellt den Querschnitt auf den
+ * Beginn dieser Phase (Ids in PHASEN).
+ */
+export default function WilsonZyklus({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const festerReiter = wahl(vorgabe, "reiter", ["schnitt", "quiz", "wissen"] as const);
+  const phase = PHASEN.find(p => p.id === wahl(vorgabe, "phase", PHASEN.map(p => p.id)));
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "schnitt");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -40,7 +48,7 @@ export default function WilsonZyklus({ action }: { action?: ReactNode }) {
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -48,8 +56,8 @@ export default function WilsonZyklus({ action }: { action?: ReactNode }) {
             {r.icon} {r.label}
           </button>
         ))}
-      </div>
-      {reiter === "schnitt" && <Querschnitt />}
+      </div>}
+      {reiter === "schnitt" && <Querschnitt start={phase?.von} />}
       {reiter === "quiz" && <Quiz />}
       {reiter === "wissen" && <Wissen />}
     </div>
@@ -81,8 +89,8 @@ function Buehne({ t, schalter }: { t: number; schalter: Schalter }) {
 
 const TEMPI = [5, 10, 20, 40];
 
-function Querschnitt() {
-  const [t, setT] = useState(0);
+function Querschnitt({ start = 0 }: { start?: number }) {
+  const [t, setT] = useState(start);
   const [laeuft, setLaeuft] = useState(false);
   const [tempo, setTempo] = useState(10);
   const [schalter, setSchalter] = useState<Schalter>({ beschriftung: true, konvektion: true, magnet: true, beben: true });
