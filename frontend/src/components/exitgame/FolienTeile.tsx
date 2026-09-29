@@ -15,6 +15,7 @@ import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline
 import { specToBoard } from "@/components/timeline/game";
 import { toVideoEmbed } from "@/lib/embed";
 import { TimelineAnswer } from "@/components/timeline/types";
+import { SimKnopf } from "./SimStation";
 
 // ── Theming ────────────────────────────────────────────────────────────────
 // Presets override the app's standard CSS variables, scoped to the player
@@ -231,6 +232,7 @@ function SingleTaskWidget({
   return (
     <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
       {activeTask.question && <MathText text={activeTask.question} blockEquations className="text-sm font-medium" />}
+      {activeTask.sim && <SimKnopf sim={activeTask.sim} frage={activeTask.question} />}
 
       {(activeTask.kind === "single" || activeTask.kind === "true_false") && (
         <div className="flex flex-wrap gap-2">
