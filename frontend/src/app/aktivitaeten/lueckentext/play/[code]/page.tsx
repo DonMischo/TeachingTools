@@ -208,7 +208,9 @@ export default function LueckentextPlayPage() {
       {/* Wide screens put the word bank beside the text (sticky, so it stays in
           reach while scrolling); narrow ones stack it underneath as before. */}
       <div className="flex flex-col lg:flex-row lg:items-start gap-6 p-6 max-w-5xl mx-auto w-full">
-        <p className="flex-1 min-w-0 whitespace-pre-wrap leading-relaxed text-lg">
+        {/* max-h: Chromes Font Boosting lässt Blöcke mit begrenzter Höhe in Ruhe —
+            sonst schrumpfen Textstücke, sobald eine Lücke gefüllt wird. */}
+        <p className="flex-1 min-w-0 max-h-[999999px] whitespace-pre-wrap leading-relaxed text-lg">
           {parts.map((part, i) => {
             const m = part.match(/^\{\{([^{}]+)\}\}$/);
             if (!m) return <span key={i}>{part}</span>;

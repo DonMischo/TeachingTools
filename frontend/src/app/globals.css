@@ -8,6 +8,14 @@
   --seite-breite: 1440px;
 }
 
+/* Keine automatische Schriftvergrößerung auf Tablets/Handys in der
+   Desktop-Ansicht: sonst springen Textstücke nach jeder Layoutänderung
+   (z. B. Wort in eine Lücke gezogen) auf eine andere Größe. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 /* ── Default (dark yellow) ─────────────────────────────────────────────── */
 :root,
 [data-theme="default"] {
