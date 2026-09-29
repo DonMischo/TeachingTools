@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { begehbar, weg, type Plan, type Punkt } from "@/lib/gebaeude/plan";
-import { STOCK_H, baueStock, entsorge, figur, type RaumZustand } from "./szene";
+import { STOCK_H, baueStock, entsorge, feldAus, figur, welt as mitte, type RaumZustand } from "./szene";
 
 export type Ort = { art: "raum"; raum: number } | { art: "ziel" };
 
@@ -29,7 +29,7 @@ interface Props {
   onAnkunft: (ort: Ort) => void;
 }
 
-const TEMPO = 7; // Felder pro Sekunde
+const TEMPO = 9; // Welteinheiten pro Sekunde (ein Flurfeld ist 2,2 breit)
 const TASTEN: Record<string, number> = {
   ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3,
 };
@@ -66,6 +66,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
     szene.add(sonne);
     const welt = new THREE.Group();
     const spieler = figur(0xe11d48);
+    spieler.scale.setScalar(1.4);
     szene.add(welt, spieler);
     drei.current = { szene, welt, spieler };
 
@@ -102,12 +103,23 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       if (r === undefined) return;
       e.preventDefault();
       if (l.pfad.length) return;
-      // Bildschirmrichtung → nächste Rasterrichtung
-      const a = winkel() + Math.PI + Math.PI / 4 - (r * Math.PI) / 2;
+      // Bildschirmrichtung → nächste Rasterrichtung. »Oben« zeigt von der
+      // Kamera weg (plus 45°, damit die Pfeile den Fluren folgen); rechts/links
+      // drehen im Uhrzeigersinn weiter — so wie man es auf dem Bildschirm sieht.
+      const a = winkel() + Math.PI + Math.PI / 4 + (r * Math.PI) / 2;
       const dx = Math.round(Math.cos(a)), dz = Math.round(Math.sin(a));
+      const [sx, sy] = Math.abs(dx) >= Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz)];
       const [x, y] = l.feld;
-      const [nx, ny] = Math.abs(dx) >= Math.abs(dz) ? [x + Math.sign(dx), y] : [x, y + Math.sign(dz)];
-      if (begehbar(l.plan.R, l.plan.stockwerke[l.stock], [nx, ny])) l.pfad = [[nx, ny]];
+      const st = l.plan.stockwerke[l.stock];
+      // Ein Tastendruck = bis zur nächsten Kreuzung (über den kurzen Durchgang hinweg)
+      const schritte: Punkt[] = [];
+      for (let k = 1; k <= 2; k++) {
+        const p: Punkt = [x + sx * k, y + sy * k];
+        if (!begehbar(l.plan.R, st, p)) break;
+        schritte.push(p);
+        if (p[0] % 2 === 1 && p[1] % 2 === 1) break;
+      }
+      if (schritte.length) l.pfad = schritte;
     };
     window.addEventListener("keydown", tasten);
 
@@ -119,7 +131,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       const ebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(l.stock * STOCK_H + 0.25));
       const p = new THREE.Vector3();
       if (!zeiger.ray.intersectPlane(ebene, p)) return;
-      const ziel: Punkt = [Math.round(p.x), Math.round(p.z)];
+      const ziel: Punkt = [feldAus(p.x, l.plan.R), feldAus(p.z, l.plan.R)];
       const st = l.plan.stockwerke[l.stock];
       if (!begehbar(l.plan.R, st, ziel)) return;
       if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1]) { ankommen(); return; }
@@ -137,7 +149,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       // Laufen
       if (l.pfad.length) {
         const [nx, nz] = l.pfad[0];
-        const ziel = new THREE.Vector3(nx, boden, nz);
+        const ziel = new THREE.Vector3(mitte(nx), boden, mitte(nz));
         const rest = ziel.clone().sub(l.pos);
         const schritt = TEMPO * dt;
         if (rest.length() <= schritt) {
@@ -159,14 +171,14 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       const a = winkel();
       kamera.position.set(blick.x + Math.cos(a) * 50, blick.y + 42, blick.z + Math.sin(a) * 50);
       kamera.lookAt(blick);
-      const halb = 7.5 / l.zoom;
+      const halb = 9.5 / l.zoom;
       kamera.left = -halb * seitenverh; kamera.right = halb * seitenverh;
       kamera.top = halb; kamera.bottom = -halb;
       kamera.updateProjectionMatrix();
       renderer.render(szene, kamera);
     };
     // Startposition ohne Schwenk
-    lage.current.pos.set(lage.current.feld[0], lage.current.stock * STOCK_H + 0.25, lage.current.feld[1]);
+    lage.current.pos.set(mitte(lage.current.feld[0]), lage.current.stock * STOCK_H + 0.25, mitte(lage.current.feld[1]));
     blick.copy(lage.current.pos);
     id = requestAnimationFrame(bild);
 
@@ -204,8 +216,8 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
     const l = lage.current;
     l.feld = plan.stockwerke[stock].start;
     l.pfad = [];
-    l.pos.x = l.feld[0];
-    l.pos.z = l.feld[1];
+    l.pos.x = mitte(l.feld[0]);
+    l.pos.z = mitte(l.feld[1]);
   }, [plan, stock]);
 
   // Auftrag von außen: hinlaufen

@@ -54,13 +54,35 @@ function klotz(farbe: number, b: number, h: number, t: number, x: number, y: num
   return m;
 }
 
-/** Viele gleiche Klötze als eine InstancedMesh */
+/**
+ * Maße: Die ungeraden Rasterzeilen/-spalten (Flure, Zimmer, Kreuzungen) sind
+ * breit, die geraden (Wände und kurze Durchgänge dazwischen) schmal.
+ */
+export const WEIT = 2.2;
+export const SCHMAL = 0.3;
+
+export function breite(i: number): number {
+  return Math.abs(i) % 2 === 1 ? WEIT : SCHMAL;
+}
+
+/** Weltkoordinate der Mitte von Rasterspalte bzw. -zeile i */
+export function welt(i: number): number {
+  return Math.ceil(i / 2) * SCHMAL + Math.floor(i / 2) * WEIT + breite(i) / 2;
+}
+
+/** Umkehrung von `welt`: in welcher Rasterspalte liegt die Weltkoordinate w? */
+export function feldAus(w: number, R: number): number {
+  for (let i = 0; i < R; i++) if (w < welt(i) + breite(i) / 2) return i;
+  return R - 1;
+}
+
+/** Viele gleiche Klötze als eine InstancedMesh, je Feld in dessen Breite */
 function klotzReihe(felder: Punkt[], farbe: number, h: number, y: number): THREE.InstancedMesh {
   const m = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: farbe }), Math.max(1, felder.length));
   m.count = felder.length;
   const mat = new THREE.Matrix4();
   felder.forEach(([x, z], i) => {
-    mat.compose(new THREE.Vector3(x, y + h / 2, z), new THREE.Quaternion(), new THREE.Vector3(1, h, 1));
+    mat.compose(new THREE.Vector3(welt(x), y + h / 2, welt(z)), new THREE.Quaternion(), new THREE.Vector3(breite(x), h, breite(z)));
     m.setMatrixAt(i, mat);
   });
   return m;
@@ -83,8 +105,8 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   const waende: Punkt[] = [];
   const offen = (x: number, y: number) => x >= 0 && y >= 0 && x < R && y < R && st.boden[y * R + x];
   const sonder = new Set<string>([`${st.ziel}`, ...st.raeume.map(r => `${r.x},${r.y}`)]);
-  for (let y = -1; y <= R; y++) {
-    for (let x = -1; x <= R; x++) {
+  for (let y = 0; y < R; y++) {
+    for (let x = 0; x < R; x++) {
       if (offen(x, y)) {
         if (!sonder.has(`${x},${y}`)) boden.push([x, y]);
         continue;
@@ -97,46 +119,49 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   }
   const dunkel = (f: number) => (bild.unten ? new THREE.Color(f).multiplyScalar(0.55).getHex() : f);
   g.add(klotzReihe(boden, dunkel(FARBE.boden), 0.25, y0));
-  g.add(klotzReihe(waende, dunkel(FARBE.wand), bild.unten ? 0.5 : 0.9, y0));
-  if (!bild.unten) g.add(klotzReihe(waende, FARBE.wandOben, 0.06, y0 + 0.9));
+  g.add(klotzReihe(waende, dunkel(FARBE.wand), bild.unten ? 0.5 : 1.2, y0));
+  if (!bild.unten) g.add(klotzReihe(waende, FARBE.wandOben, 0.06, y0 + 1.2));
 
+  const rand = WEIT / 2 - 0.08;
   st.raeume.forEach((r, k) => {
     const z = bild.zustaende[k] ?? "offen";
-    g.add(klotz(dunkel(RAUM_FARBE[z]), 1, 0.3, 1, r.x, y0, r.y));
+    const rx = welt(r.x), rz = welt(r.y);
+    g.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz));
     if (bild.unten) return;
     // Pult mit Aufgabe
-    g.add(klotz(0x78350f, 0.5, 0.45, 0.35, r.x, y0 + 0.3, r.y));
-    // Türrahmen auf dem Flurfeld davor, quer zur Laufrichtung
+    g.add(klotz(0x78350f, 0.9, 0.5, 0.55, rx, y0 + 0.3, rz));
+    // Türrahmen im kurzen Durchgang davor, quer zur Laufrichtung
     const [tx, ty] = r.tuer;
-    const quer = tx !== r.x; // Tür in x-Richtung → Rahmen steht in z
-    const mx = (tx + r.x) / 2, mz = (ty + r.y) / 2;
-    for (const s of [-0.42, 0.42]) {
-      g.add(klotz(FARBE.tuer, quer ? 0.12 : 0.12, 1.1, 0.12, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
+    const quer = tx % 2 === 0; // Durchgang in x-Richtung → Rahmen steht entlang z
+    const mx = welt(tx), mz = welt(ty);
+    for (const s of [-rand, rand]) {
+      g.add(klotz(FARBE.tuer, 0.16, 1.5, 0.16, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
     }
-    g.add(klotz(FARBE.tuer, quer ? 0.14 : 0.96, 0.14, quer ? 0.96 : 0.14, mx, y0 + 1.3, mz));
+    g.add(klotz(FARBE.tuer, quer ? 0.18 : WEIT, 0.16, quer ? WEIT : 0.18, mx, y0 + 1.75, mz));
     const sp = schild(z === "info" || z === "gelesen" ? "i" : String(k + 1), "#111827",
       z === "geloest" ? "#bbf7d0" : z === "offen" ? "#fef3c7" : z === "info" ? "#dbeafe" : "#e2e8f0");
-    sp.position.set(r.x, y0 + 1.9, r.y);
+    sp.position.set(rx, y0 + 2.3, rz);
     g.add(sp);
   });
 
   // Treppe bzw. Ausgang
-  const [zx, zy] = st.ziel;
+  const [zx, zy] = [welt(st.ziel[0]), welt(st.ziel[1])];
   if (bild.zielArt === "treppe") {
+    const stufe = WEIT / 5;
     for (let s = 0; s < 5; s++) {
-      g.add(klotz(dunkel(FARBE.treppe), 1, 0.25 + s * (STOCK_H / 5), 0.2, zx, y0, zy - 0.4 + s * 0.2));
+      g.add(klotz(dunkel(FARBE.treppe), WEIT, 0.25 + s * (STOCK_H / 5), stufe, zx, y0, zy - WEIT / 2 + stufe / 2 + s * stufe));
     }
   } else {
-    g.add(klotz(dunkel(FARBE.ausgang), 1, 0.3, 1, zx, y0, zy));
+    g.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
     if (!bild.unten) {
-      for (const s of [-0.42, 0.42]) g.add(klotz(FARBE.ausgang, 0.12, 1.4, 0.12, zx + s, y0 + 0.3, zy));
-      g.add(klotz(FARBE.ausgang, 0.96, 0.14, 0.14, zx, y0 + 1.7, zy));
+      for (const s of [-rand, rand]) g.add(klotz(FARBE.ausgang, 0.16, 1.8, 0.16, zx + s, y0 + 0.3, zy));
+      g.add(klotz(FARBE.ausgang, WEIT, 0.16, 0.16, zx, y0 + 2.1, zy));
     }
   }
   if (!bild.unten) {
-    if (!bild.zielOffen) g.add(klotz(FARBE.gesperrt, 0.9, 0.12, 0.12, zx, y0 + 0.9, zy + 0.45));
+    if (!bild.zielOffen) g.add(klotz(FARBE.gesperrt, WEIT * 0.9, 0.14, 0.14, zx, y0 + 1.0, zy + WEIT / 2 - 0.1));
     const sp = schild(bild.zielOffen ? (bild.zielArt === "treppe" ? "⬆" : "EXIT") : "🔒", "#111827", bild.zielOffen ? "#bbf7d0" : "#fecdd3");
-    sp.position.set(zx, y0 + 2.4, zy);
+    sp.position.set(zx, y0 + 2.8, zy);
     g.add(sp);
   }
   return g;
