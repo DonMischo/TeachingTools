@@ -39,50 +39,42 @@ const STATIONEN: { id: Station; nr: number; titel: string }[] = [
 /** Ein gewähltes Wort samt der Wahrscheinlichkeit, mit der es angeboten wurde. */
 type Schritt = { wort: Wort; p: number };
 
-function Schritte({ station, auf }: { station: Station; auf: (s: Station) => void }) {
+const DANEBEN: { id: Station; titel: string }[] = [
+  { id: "trainieren", titel: "🧪 Trainieren" },
+  { id: "attention", titel: "🔎 Attention" },
+  { id: "raten", titel: "🎯 Raten" },
+];
+
+function Schritte({ station, lehrgang, auf }: {
+  station: Station;
+  /** Die zuletzt besuchte Station des Lehrgangs — dorthin führt »Prompt« zurück. */
+  lehrgang: Station;
+  auf: (s: Station) => void;
+}) {
+  const imLehrgang = STATIONEN.some(s => s.id === station);
+  const chip = (aktiv: boolean) => `px-2.5 py-1 rounded-lg border font-bold ${
+    aktiv
+      ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+      : "border-[var(--border)] bg-[var(--surface)]"
+  }`;
   return (
     <ol className="flex flex-wrap items-center gap-1 text-xs">
-      {/* Trainieren steht neben dem Lehrgang, nicht darin: die Station lässt
-          sich jederzeit öffnen und führt von sich aus zum Schreiben weiter. */}
+      {/* Prompt ist der Lehrgang 1–4; Trainieren, Attention und Raten stehen
+          daneben, nicht darin: sie lassen sich jederzeit öffnen. */}
       <li className="flex items-center gap-1 mr-1">
-        <button
-          type="button"
-          onClick={() => auf("trainieren")}
-          className={`px-2.5 py-1 rounded-lg border font-bold ${
-            station === "trainieren"
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-              : "border-[var(--border)] bg-[var(--surface)]"
-          }`}
-        >
-          🧪 Trainieren
+        <button type="button" onClick={() => auf(lehrgang)} className={chip(imLehrgang)}>
+          💬 Prompt
         </button>
-        <button
-          type="button"
-          onClick={() => auf("attention")}
-          className={`px-2.5 py-1 rounded-lg border font-bold ${
-            station === "attention"
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-              : "border-[var(--border)] bg-[var(--surface)]"
-          }`}
-        >
-          🔎 Attention
-        </button>
-        <button
-          type="button"
-          onClick={() => auf("raten")}
-          className={`px-2.5 py-1 rounded-lg border font-bold ${
-            station === "raten"
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-              : "border-[var(--border)] bg-[var(--surface)]"
-          }`}
-        >
-          🎯 Raten
-        </button>
+        {DANEBEN.map(d => (
+          <button key={d.id} type="button" onClick={() => auf(d.id)} className={chip(station === d.id)}>
+            {d.titel}
+          </button>
+        ))}
         <span className="text-[var(--text-muted)]">|</span>
       </li>
       {STATIONEN.map((s, i) => {
         const aktiv = s.id === station;
-        const erledigt = STATIONEN.findIndex(x => x.id === station) > i;
+        const erledigt = STATIONEN.findIndex(x => x.id === lehrgang) >= i && !aktiv;
         return (
           <li key={s.id} className="flex items-center gap-1">
             <button
@@ -139,6 +131,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
   onSignatur: (sig: string) => void;
 }) {
   const [station, setStation] = useState<Station>("auftrag");
+  const [lehrgang, setLehrgang] = useState<Station>("auftrag");
+  useEffect(() => { if (STATIONEN.some(s => s.id === station)) setLehrgang(station); }, [station]);
   const [thema, setThema] = useState(NETZE[0].slug);
   const [schritte, setSchritte] = useState<Schritt[]>([]);
   const [mut, setMut] = useState(3);
@@ -176,7 +170,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
 
   return (
     <div className="flex flex-col gap-5">
-      <Schritte station={station} auf={setStation} />
+      <Schritte station={station} lehrgang={lehrgang} auf={setStation} />
 
       {station === "auftrag" && (
         <div className="flex flex-col gap-4">
