@@ -804,3 +804,39 @@ def test_update_exitgame_validates_and_blocks_open_session(client, teacher_token
     client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id}, headers=_auth(teacher_token))
     r = client.put(f"/api/exitgames/{gid}", json=SIMPLE_GAME, headers=_auth(teacher_token))
     assert r.status_code == 409
+
+
+# ---------------------------------------------------------------------------
+# Werkzeug-Stationen (task.sim) und Objekte der Gebäude-Ansicht (slide.station)
+# ---------------------------------------------------------------------------
+
+def _mit_station(task_extra: dict, slide_extra: dict | None = None) -> dict:
+    task = {"kind": "input", "question": "x?", "accept": ["5"], **task_extra}
+    return {**SIMPLE_GAME, "slides": [{"id": "w", "type": "task", "text": "x", "task": task, **(slide_extra or {})}]}
+
+
+def test_upload_accepts_sim_and_station(client, teacher_token):
+    game = _mit_station({"sim": {"tool": "gleichungswaage", "config": {"gleichung": "3x + 4 = 19"}}}, {"station": "waage"})
+    assert _upload(client, teacher_token, game).status_code == 201
+
+
+def test_upload_rejects_unknown_sim_tool_and_bad_config(client, teacher_token):
+    r = _upload(client, teacher_token, _mit_station({"sim": {"tool": "toaster"}}))
+    assert r.status_code == 422
+    assert any("sim.tool" in e and "toaster" in e for e in r.json()["detail"]["errors"])
+    r = _upload(client, teacher_token, _mit_station({"sim": {"tool": "funktionen", "config": "x^2"}}))
+    assert r.status_code == 422
+    assert any("sim.config" in e for e in r.json()["detail"]["errors"])
+
+
+def test_upload_rejects_unknown_station(client, teacher_token):
+    r = _upload(client, teacher_token, _mit_station({}, {"station": "toaster"}))
+    assert r.status_code == 422
+    assert any("'station'" in e for e in r.json()["detail"]["errors"])
+
+
+def test_template_shows_a_sim_station(client, teacher_token):
+    tpl = client.get("/api/exitgames/template", headers=_auth(teacher_token)).json()
+    werkzeug = [s for s in tpl["slides"] if (s.get("task") or {}).get("sim")]
+    assert werkzeug and werkzeug[0]["station"] == "waage"
+    assert "WERKZEUG" in tpl["_ai_instructions"]

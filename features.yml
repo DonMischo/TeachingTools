@@ -79,6 +79,8 @@ aktivitaeten:
       - Import als .json/.zip, Vorlage mit allen Bausteinen
       - Bearbeiten im Vorlagen-Format (JSON)
       - Gebäude-Ansicht: isometrisches Haus (three.js), Abschnitt = Stockwerk, Folie = Zimmer, Tür = Treppenhaus; Grundriss wächst aus den Regeln des Regel-Labors, gleicher Code = gleiches Haus
+      - Stationen anklicken; 13 Objekte in den Zimmern (Computer, Kuckucksuhr, Globus, Tresor …), automatisch passend oder per "station"
+      - Werkzeug-Stationen: eine Aufgabe öffnet eine Simulation mit fester Vorgabe ("sim": {tool, config}) — Gleichungswaage, Funktionen, Vierecke, Rechenregeln mit genau einer Aufgabe, alle übrigen auf einen Reiter festgelegt; Antwort wird weiter serverseitig geprüft
   - id: lueckentext
     name: Lückentext
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}

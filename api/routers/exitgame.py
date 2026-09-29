@@ -69,6 +69,20 @@ router = APIRouter(tags=["exitgame"])
 EXITGAME_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "exitgames"
 
 ALLOWED_TASK_KINDS = {"single", "multi", "true_false", "input", "timeline"}
+
+# Werkzeuge, die eine Aufgabe mit "sim": {"tool": …, "config": {…}} öffnen kann.
+# Muss zu SIM_STATIONEN in frontend/src/components/exitgame/SimStation.tsx passen.
+SIM_TOOLS = {
+    "gleichungswaage", "abacus", "bildformate", "vierecke", "binaerrechner", "funktionen",
+    "rechenregeln", "tippen", "maus", "ki", "sonnensystem", "kueste", "erdaufbau", "wilson", "regeln",
+}
+
+# Was in der Gebäude-Ansicht im Zimmer steht ("station" an der Folie).
+# Muss zu OBJEKTE in frontend/src/lib/gebaeude/objekte.ts passen.
+STATION_OBJECTS = {
+    "pult", "computer", "kuckucksuhr", "globus", "regal", "mikroskop",
+    "tafel", "laborbank", "tresor", "teleskop", "kalender", "waage", "abakus",
+}
 DDA_HISTORY_LIMIT = 50
 DDA_RECENT_WINDOW = 10
 
@@ -165,6 +179,13 @@ def _task_errors(task: dict, where: str) -> list[str]:
             errors.append(f"{where}: task.kind 'input' braucht 'accept' (Liste akzeptierter Antworten)")
     elif kind == "timeline":
         errors.extend(timeline_engine.validate_game_spec(task.get("timeline"), f"{where}.timeline"))
+    sim = task.get("sim")
+    if sim is not None:
+        if not isinstance(sim, dict) or sim.get("tool") not in SIM_TOOLS:
+            tool = sim.get("tool") if isinstance(sim, dict) else sim
+            errors.append(f"{where}: 'sim.tool' '{tool}' gibt es nicht (erlaubt: {', '.join(sorted(SIM_TOOLS))})")
+        elif sim.get("config") is not None and not isinstance(sim.get("config"), dict):
+            errors.append(f"{where}: 'sim.config' muss ein Objekt sein, z.B. {{\"gleichung\": \"3x + 4 = 19\"}}")
     fragment = task.get("codeFragment")
     if fragment is not None and (not isinstance(fragment, str) or not fragment.strip()):
         errors.append(f"{where}: 'codeFragment' muss ein nicht-leerer Text sein")
@@ -230,6 +251,9 @@ def _validate_exitgame(data: dict) -> list[str]:
                           f"'codeFragment' an den Aufgaben vor der Tür, der Türcode setzt sich daraus zusammen")
         if stype == "task" and not (slide.get("task") or slide.get("tasks")):
             errors.append(f"{where}: 'task' braucht 'task' oder 'tasks'")
+        station = slide.get("station")
+        if station is not None and station not in STATION_OBJECTS:
+            errors.append(f"{where}: 'station' '{station}' gibt es nicht (erlaubt: {', '.join(sorted(STATION_OBJECTS))})")
 
         for j, task in enumerate(_iter_tasks(slide)):
             errors.extend(_task_errors(task, f"{where}.tasks[{j}]"))
@@ -372,6 +396,33 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. "
             "--- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für "
             "einzelne Symbole, Dezimalkomma als $3{,}14$. "
+            "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
+            "\"sim\": {\"tool\": …, \"config\": {…}} in der task. Die Simulation öffnet sich dann nur mit "
+            "dieser einen Vorgabe (keine anderen Aufgaben, kein Wechsel); die Antwort tippt der Schüler "
+            "danach wie gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. "
+            "Vorgaben: gleichungswaage {gleichung: '3x + 4 = 19'} oder {formel: 'E = m·g·h', nach: 'h', "
+            "werte: {E: 60, m: 2, g: 10}} (gesuchter Wert bleibt verdeckt, bis die Größe allein steht) "
+            "oder {reaktion: 'H2 + O2 -> H2O'}; funktionen {term: 'x^2 - 4', von?: -3, bis?: 3, schritt?: 1}; "
+            "vierecke {form: quadrat|rechteck|parallelogramm|trapez|raute|drachen, masse: {a: 8, c: 4, h: 3}, "
+            "blatt?: formen|umfang|flaeche, rechnung?: true — sonst bleiben u und A verborgen}; "
+            "rechenregeln {term: '2 + 3 · (4 − 1)'} (Obstkorb), {reiter: 'zug', term: '12 : 4 + 5'} oder "
+            "{a: 3.5, b: 100, art: '*' | ':'} (Stufenzahlen). "
+            "Weitere Werkzeuge mit {reiter: …} (öffnet genau diesen Reiter, andere sind gesperrt): "
+            "abacus single|place; bildformate P1|P2|P3; binaerrechner {zahl: 0-255}; "
+            "tippen lektionen|wortregen|tastenjagd; maus klick|doppelklick|rechtsklick|ziehen|markieren|"
+            "kopieren|scrollen|tastatur|explorer|fenster|screenshot|suche|apps|aussehen|bedienhilfe|"
+            "taskleiste|profil; ki sprache|bilder|lernen|echt; sonnensystem uebersicht|flug|groessen|"
+            "entfernungen|kepler|galerie|kodex; kueste profil|draufsicht|gezeiten|galerie|wissen; "
+            "erdaufbau keil|profil|wellen|konvektion|wissen; wilson schnitt|quiz|wissen (dazu phase: "
+            "ruhe|graben|jung|ozean|subduktion|schliessen|kollision|abtragung); regeln "
+            "lehrgang (station: lauf|wachsen|backtracker|bloecke|grundriss)|raetsel (raetsel: alles|"
+            "punkte|schach|labyrinth|rundwege)|labor|labyrinthe|gebaeude. "
+            "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
+            "--- GEBÄUDE --- Schüler können das Spiel auch als Haus spielen: jeder Abschnitt ein Stockwerk, "
+            "jede Slide ein Zimmer, jede Tür das Treppenhaus. 'station' an der Slide wählt das Objekt im "
+            "Zimmer: pult, computer, kuckucksuhr, globus, regal, mikroskop, tafel, laborbank, tresor, "
+            "teleskop, kalender, waage, abakus. Ohne Angabe passt es sich an (Werkzeug, Zeitstrahl → "
+            "kalender, Erklärung → tafel). "
             "--- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. "
             "--- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht "
             "eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es "
@@ -466,6 +517,21 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
              ],
              "hints": ["Stelle die Gleichung $$m_1 \\cdot a_1 = m_2 \\cdot a_2$$ auf.",
                        "$3 \\cdot 40 = m_2 \\cdot 60$ — teile durch $60$."]},
+
+            # Werkzeug-Station: die Aufgabe öffnet eine Simulation mit fester Vorgabe
+            # (hier die Gleichungswaage mit der Hebelformel); "station" wählt das
+            # Objekt im Zimmer der Gebäude-Ansicht.
+            {"id": "werkzeug", "type": "task", "title": "Werkzeug: die Gleichungswaage",
+             "station": "waage",
+             "text": "Öffne die Gleichungswaage und stelle die Hebelformel nach $m_2$ um.",
+             "task": {"kind": "input",
+                      "question": "Links hängen $4$ kg im Abstand $30$ cm, rechts wird bei $60$ cm "
+                                  "ausgeglichen. Wie viel kg hängen rechts?",
+                      "sim": {"tool": "gleichungswaage",
+                              "config": {"formel": "m1·a1 = m2·a2", "nach": "m2",
+                                         "werte": {"m1": 4, "a1": 30, "a2": 60}}},
+                      "accept": ["2"]},
+             "hints": ["Teile auf beiden Seiten durch $a_2$."]},
 
             # timeline: mode "sort", scoring "position" — Zahlenstrahl mit Einheit und Toleranz
             {"id": "zahlenstrahl", "type": "task", "title": "Zahlenstrahl",

@@ -78,7 +78,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Auswertung je Karte: Treffer gegen das, was von der eigenen Karte gerufen wurde
 
 ### 🗝️ Exitgame
-- Exit-Game im eigenen Tempo, die Lehrkraft sieht den Fortschritt live — wahlweise als Folien oder als isometrisches Gebäude (Abschnitt = Stockwerk, Aufgabe = Zimmer, Tür = Treppenhaus)
+- Exit-Game im eigenen Tempo, die Lehrkraft sieht den Fortschritt live — wahlweise als Folien oder als isometrisches Gebäude (Abschnitt = Stockwerk, Aufgabe = Zimmer, Tür = Treppenhaus, Objekte wie Computer oder Kuckucksuhr als Stationen); Aufgaben können eine Simulation als Werkzeug öffnen, festgelegt auf genau diese Aufgabe (z. B. Gleichungswaage mit einer Gleichung)
 - Aufgaben vergeben Codeschnipsel, die an der Tür zusammengesetzt werden
 - Serverseitige Anpassung der Schwierigkeit (Fuzzy-DDA): Hinweise, Zeitlimits, leichtere Aufgaben je nach Verlauf
 - Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
+import { parseFormel, varsOf } from "@/lib/formel";
 
 describe("Gleichungswaage an einer Exitgame-Station", () => {
   it("frei: Modi, Stufen, neue und eigene Aufgaben", () => {
@@ -32,5 +33,11 @@ describe("Gleichungswaage an einer Exitgame-Station", () => {
     const { container } = render(<Gleichungswaage vorgabe={{ reaktion: "H2 + O2 -> H2O" }} />);
     expect(screen.queryByText(/Eigene Reaktion/)).not.toBeInTheDocument();
     expect(container.textContent).toMatch(/H2O|H₂O/);
+  });
+
+  it("liest die Hebelformel der Exitgame-Vorlage (Größen mit Ziffern)", () => {
+    const r = parseFormel("m1·a1 = m2·a2");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(varsOf(r.eq)).toEqual(expect.arrayContaining(["m1", "a1", "m2", "a2"]));
   });
 });
