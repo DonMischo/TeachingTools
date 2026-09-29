@@ -11,7 +11,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { begehbar, weg, type Plan, type Punkt } from "@/lib/gebaeude/plan";
-import { STOCK_H, baueStock, entsorge, feldAus, figur, welt as mitte, type RaumZustand } from "./szene";
+import type { Objekt } from "@/lib/gebaeude/objekte";
+import { STOCK_H, baueStock, entsorge, feldAus, figur, ortAmStrahl, welt as mitte, type RaumZustand } from "./szene";
 
 export type Ort = { art: "raum"; raum: number } | { art: "ziel" };
 
@@ -22,6 +23,8 @@ interface Props {
   zustaende: RaumZustand[][];
   /** je Stockwerk: Treppe/Ausgang schon offen? */
   zielOffen: boolean[];
+  /** je Stockwerk, was in den Zimmern steht (Vorgabe: Schreibtisch) */
+  objekte?: Objekt[][];
   /** Tastatur an (aus, solange z. B. ein Aufgabenfenster offen ist) */
   aktiv: boolean;
   /** von außen: dorthin laufen (neue `nr` = neuer Auftrag) */
@@ -34,7 +37,7 @@ const TASTEN: Record<string, number> = {
   ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3,
 };
 
-export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auftrag, onAnkunft }: Props) {
+export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, aktiv, auftrag, onAnkunft }: Props) {
   const huelle = useRef<HTMLDivElement>(null);
   const [drehung, setDrehung] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -128,11 +131,20 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       const l = lage.current;
       const r = renderer.domElement.getBoundingClientRect();
       zeiger.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), kamera);
+      // Zuerst: ein Zimmer, Objekt, Schild oder die Treppe getroffen? Dann dorthin.
+      const st = l.plan.stockwerke[l.stock];
+      const hier = welt.children[l.stock];
+      const ort = hier ? ortAmStrahl(hier, zeiger) : null;
+      if (ort) {
+        const ziel: Punkt = ort.art === "ziel" ? st.ziel : [st.raeume[ort.raum].x, st.raeume[ort.raum].y];
+        if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1] && !l.pfad.length) ankommen();
+        else l.pfad = weg(l.plan.R, st, l.feld, ziel);
+        return;
+      }
       const ebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(l.stock * STOCK_H + 0.25));
       const p = new THREE.Vector3();
       if (!zeiger.ray.intersectPlane(ebene, p)) return;
       const ziel: Punkt = [feldAus(p.x, l.plan.R), feldAus(p.z, l.plan.R)];
-      const st = l.plan.stockwerke[l.stock];
       if (!begehbar(l.plan.R, st, ziel)) return;
       if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1]) { ankommen(); return; }
       l.pfad = weg(l.plan.R, st, l.feld, ziel);
@@ -195,7 +207,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
   }, []);
 
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
-  const schluessel = JSON.stringify([stock, zustaende, zielOffen]);
+  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
@@ -204,6 +216,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, aktiv, auf
       d.welt.add(baueStock(plan, i, {
         zustaende: zustaende[i] ?? [],
         zielOffen: zielOffen[i] ?? false,
+        objekte: objekte?.[i],
         zielArt: i < plan.stockwerke.length - 1 ? "treppe" : "ausgang",
         unten: i < stock,
       }));

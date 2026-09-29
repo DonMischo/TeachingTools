@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { abstaende, bauePlan, begehbar, weg } from "@/lib/gebaeude/plan";
-import { abschnitte, seedAus } from "@/lib/gebaeude/exitgame";
+import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
+import { istObjekt } from "@/lib/gebaeude/objekte";
 import type { ExitGameSlide } from "@/lib/api";
 
 describe("Gebäudeplan", () => {
@@ -73,5 +74,19 @@ describe("Exitgame als Gebäude", () => {
   it("macht aus dem Code einen festen Seed", () => {
     expect(seedAus("ABC123")).toBe(seedAus("ABC123"));
     expect(seedAus("ABC123")).not.toBe(seedAus("ABC124"));
+  });
+
+  it("sucht für jede Station ein passendes Objekt aus", () => {
+    const task = { kind: "input" as const, accept: ["5"] };
+    // Angabe im JSON gewinnt, Unsinn wird ignoriert
+    expect(stationsObjekt({ id: "a", type: "task", task, station: "kuckucksuhr" })).toBe("kuckucksuhr");
+    expect(istObjekt(stationsObjekt({ id: "a", type: "task", task, station: "toaster" }))).toBe(true);
+    // Werkzeug bestimmt das Objekt
+    expect(stationsObjekt({ id: "a", type: "task", task: { ...task, sim: { tool: "gleichungswaage" } } })).toBe("waage");
+    expect(stationsObjekt({ id: "a", type: "task", tasks: [task, { ...task, sim: { tool: "sonnensystem" } }] })).toBe("teleskop");
+    expect(stationsObjekt({ id: "a", type: "task", task: { kind: "timeline" } })).toBe("kalender");
+    expect(stationsObjekt({ id: "a", type: "explanation" })).toBe("tafel");
+    // sonst reihum, aber fest je Folie
+    expect(stationsObjekt({ id: "x7", type: "task", task })).toBe(stationsObjekt({ id: "x7", type: "task", task }));
   });
 });

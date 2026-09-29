@@ -801,7 +801,12 @@ export type ExitGameTask = {
   // Pool of equivalent alternatives; the server assigns one per attempt
   // (variant_choices) and checks answers against the same one.
   variants?: Partial<ExitGameTask>[];
+  // Ein Werkzeug aus den Simulationen, das an der Station mit fester
+  // Einstellung geöffnet wird (z. B. die Gleichungswaage mit einer
+  // bestimmten Gleichung). Nur Hilfsmittel — geprüft wird die Antwort.
+  sim?: ExitGameSim;
 };
+export type ExitGameSim = { tool: string; config?: Record<string, unknown> };
 export type ExitGameSlide = {
   id: string;
   type: "explanation" | "example" | "task" | "door";
@@ -814,6 +819,9 @@ export type ExitGameSlide = {
   onFailReview?: string[];
   // Shown to students whose DDA level asks for an extra example.
   extraExample?: string;
+  // Gebäude-Ansicht: welches Objekt im Zimmer steht (z. B. "kuckucksuhr");
+  // ohne Angabe wählt das Gebäude selbst.
+  station?: string;
 };
 
 // One fragment slot of a door's code. `fragment` is filled in only once the

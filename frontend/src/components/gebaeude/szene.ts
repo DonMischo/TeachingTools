@@ -4,6 +4,8 @@
  */
 import * as THREE from "three";
 import type { Plan, Punkt } from "@/lib/gebaeude/plan";
+import type { Objekt } from "@/lib/gebaeude/objekte";
+import { baueObjekt } from "./objekte3d";
 
 export type RaumZustand = "offen" | "geloest" | "info" | "gelesen";
 
@@ -26,7 +28,8 @@ const box = new THREE.BoxGeometry(1, 1, 1);
 export function schild(text: string, farbe = "#111827", hinter = "#fef3c7"): THREE.Sprite {
   const c = document.createElement("canvas");
   c.width = 128; c.height = 128;
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext("2d");
+  if (!ctx) return new THREE.Sprite(new THREE.SpriteMaterial({ depthTest: false })); // ohne Canvas (Tests)
   ctx.fillStyle = hinter;
   ctx.beginPath();
   ctx.arc(64, 64, 58, 0, Math.PI * 2);
@@ -92,6 +95,8 @@ export interface StockBild {
   zustaende: RaumZustand[];
   zielOffen: boolean;
   zielArt: "treppe" | "ausgang";
+  /** was in den Zimmern steht (Vorgabe: Schreibtisch) */
+  objekte?: Objekt[];
   /** Stockwerke unter dem aktuellen werden abgedunkelt */
   unten: boolean;
 }
@@ -124,47 +129,70 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
 
   const rand = WEIT / 2 - 0.08;
   st.raeume.forEach((r, k) => {
+    // Alles eines Zimmers in einer Gruppe: ein Klick auf irgendetwas darin
+    // (Boden, Objekt, Schild) schickt die Figur hierher.
+    const zg = new THREE.Group();
+    zg.userData.ort = { art: "raum", raum: k };
+    g.add(zg);
     const z = bild.zustaende[k] ?? "offen";
     const rx = welt(r.x), rz = welt(r.y);
-    g.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz));
+    zg.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz));
     if (bild.unten) return;
-    // Pult mit Aufgabe
-    g.add(klotz(0x78350f, 0.9, 0.5, 0.55, rx, y0 + 0.3, rz));
+    // Das Objekt schaut zur Tür.
+    const ding = baueObjekt(bild.objekte?.[k] ?? "pult");
+    ding.position.set(rx, y0 + 0.3, rz);
+    ding.rotation.y = Math.atan2(r.tuer[0] - r.x, r.tuer[1] - r.y);
+    zg.add(ding);
     // Türrahmen im kurzen Durchgang davor, quer zur Laufrichtung
     const [tx, ty] = r.tuer;
     const quer = tx % 2 === 0; // Durchgang in x-Richtung → Rahmen steht entlang z
     const mx = welt(tx), mz = welt(ty);
     for (const s of [-rand, rand]) {
-      g.add(klotz(FARBE.tuer, 0.16, 1.5, 0.16, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
+      zg.add(klotz(FARBE.tuer, 0.16, 1.5, 0.16, mx + (quer ? 0 : s), y0 + 0.25, mz + (quer ? s : 0)));
     }
-    g.add(klotz(FARBE.tuer, quer ? 0.18 : WEIT, 0.16, quer ? WEIT : 0.18, mx, y0 + 1.75, mz));
+    zg.add(klotz(FARBE.tuer, quer ? 0.18 : WEIT, 0.16, quer ? WEIT : 0.18, mx, y0 + 1.75, mz));
     const sp = schild(z === "info" || z === "gelesen" ? "i" : String(k + 1), "#111827",
       z === "geloest" ? "#bbf7d0" : z === "offen" ? "#fef3c7" : z === "info" ? "#dbeafe" : "#e2e8f0");
     sp.position.set(rx, y0 + 2.3, rz);
-    g.add(sp);
+    zg.add(sp);
   });
 
   // Treppe bzw. Ausgang
+  const zielG = new THREE.Group();
+  zielG.userData.ort = { art: "ziel" };
+  g.add(zielG);
   const [zx, zy] = [welt(st.ziel[0]), welt(st.ziel[1])];
   if (bild.zielArt === "treppe") {
     const stufe = WEIT / 5;
     for (let s = 0; s < 5; s++) {
-      g.add(klotz(dunkel(FARBE.treppe), WEIT, 0.25 + s * (STOCK_H / 5), stufe, zx, y0, zy - WEIT / 2 + stufe / 2 + s * stufe));
+      zielG.add(klotz(dunkel(FARBE.treppe), WEIT, 0.25 + s * (STOCK_H / 5), stufe, zx, y0, zy - WEIT / 2 + stufe / 2 + s * stufe));
     }
   } else {
-    g.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
+    zielG.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
     if (!bild.unten) {
-      for (const s of [-rand, rand]) g.add(klotz(FARBE.ausgang, 0.16, 1.8, 0.16, zx + s, y0 + 0.3, zy));
-      g.add(klotz(FARBE.ausgang, WEIT, 0.16, 0.16, zx, y0 + 2.1, zy));
+      for (const s of [-rand, rand]) zielG.add(klotz(FARBE.ausgang, 0.16, 1.8, 0.16, zx + s, y0 + 0.3, zy));
+      zielG.add(klotz(FARBE.ausgang, WEIT, 0.16, 0.16, zx, y0 + 2.1, zy));
     }
   }
   if (!bild.unten) {
-    if (!bild.zielOffen) g.add(klotz(FARBE.gesperrt, WEIT * 0.9, 0.14, 0.14, zx, y0 + 1.0, zy + WEIT / 2 - 0.1));
+    if (!bild.zielOffen) zielG.add(klotz(FARBE.gesperrt, WEIT * 0.9, 0.14, 0.14, zx, y0 + 1.0, zy + WEIT / 2 - 0.1));
     const sp = schild(bild.zielOffen ? (bild.zielArt === "treppe" ? "⬆" : "EXIT") : "🔒", "#111827", bild.zielOffen ? "#bbf7d0" : "#fecdd3");
     sp.position.set(zx, y0 + 2.8, zy);
-    g.add(sp);
+    zielG.add(sp);
   }
   return g;
+}
+
+/** Ort, auf den ein Klick zielt: das erste getroffene Zimmer bzw. die Treppe. */
+export type KlickOrt = { art: "raum"; raum: number } | { art: "ziel" };
+
+export function ortAmStrahl(stockwerk: THREE.Object3D, zeiger: THREE.Raycaster): KlickOrt | null {
+  for (const treffer of zeiger.intersectObject(stockwerk, true)) {
+    let o: THREE.Object3D | null = treffer.object;
+    while (o && !o.userData.ort) o = o.parent;
+    if (o) return o.userData.ort as KlickOrt;
+  }
+  return null;
 }
 
 export function figur(farbe: number): THREE.Group {

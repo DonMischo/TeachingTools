@@ -10,7 +10,8 @@ import {
   api, type DdaAdaptation, type ExitGameAttemptSummary, type ExitGameData, type ExitGameFragment,
 } from "@/lib/api";
 import { MathText } from "@/components/MathText";
-import { abschnitte, seedAus } from "@/lib/gebaeude/exitgame";
+import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
+import { OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand } from "@/components/gebaeude/szene";
@@ -35,6 +36,7 @@ export default function GebaeudeSpiel({
   const slides = data.slides;
   const teile = useMemo(() => abschnitte(slides), [slides]);
   const plan = useMemo(() => bauePlan(teile.map(t => t.raeume.length), seedAus(code)), [teile, code]);
+  const objekte = useMemo(() => teile.map(t => t.raeume.map(i => stationsObjekt(slides[i]))), [teile, slides]);
   const geloest = attempt.solved_slide_ids;
 
   /**
@@ -112,7 +114,7 @@ export default function GebaeudeSpiel({
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3 items-start">
         <div className="relative h-[70vh] min-h-[380px] rounded-2xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
-          <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen}
+          <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
             aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
           <div className="absolute top-2 left-2 rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
             🏢 Stockwerk {stock + 1} / {teile.length}
@@ -166,7 +168,7 @@ export default function GebaeudeSpiel({
             {abschnitt.raeume.map((idx, k) => {
               const z = zustand(idx);
               return (
-                <button key={idx} onClick={() => laufe({ art: "raum", raum: k })}
+                <button key={idx} onClick={() => laufe({ art: "raum", raum: k })} title={OBJEKT_NAME[objekte[stock][k]]}
                   className="text-left px-2 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] flex gap-2 items-center">
                   <span className="w-6 text-center">{z === "geloest" ? "✅" : z === "offen" ? "✏️" : z === "info" ? "📖" : "☑️"}</span>
                   <span className="truncate">{z === "info" || z === "gelesen" ? "" : `${k + 1}. `}{slides[idx].title ?? slides[idx].id}</span>

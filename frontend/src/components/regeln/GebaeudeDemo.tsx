@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { bauePlan, REGELN, type Plan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand } from "@/components/gebaeude/szene";
+import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 
 export default function GebaeudeDemo() {
   const [stockwerke, setStockwerke] = useState(3);
@@ -28,11 +29,13 @@ export default function GebaeudeDemo() {
 
   const zustaende: RaumZustand[][] = plan.stockwerke.map((st, i) => st.raeume.map((_, k) => (besucht[i]?.[k] ? "geloest" : "offen")));
   const zielOffen = plan.stockwerke.map((_, i) => (besucht[i] ?? []).every(Boolean));
+  // Reihum alle Objekte zeigen
+  const objekte = plan.stockwerke.map((st, i) => st.raeume.map((_, k) => OBJEKTE[(i * 5 + k) % OBJEKTE.length]));
 
   const ankunft = (ort: Ort) => {
     if (ort.art === "raum") {
       setBesucht(b => b.map((z, i) => (i === stock ? z.map((v, k) => v || k === ort.raum) : z)));
-      setMeldung(`Zimmer ${ort.raum + 1}: Im Exitgame wartet hier eine Aufgabe. Wer sie löst, bekommt einen Codeschnipsel.`);
+      setMeldung(`Zimmer ${ort.raum + 1} (${OBJEKT_NAME[objekte[stock][ort.raum]]}): Im Exitgame wartet hier eine Aufgabe. Wer sie löst, bekommt einen Codeschnipsel.`);
     } else if (!zielOffen[stock]) {
       setMeldung("🔒 Die Tür ist zu. Erst alle Zimmer dieses Stockwerks besuchen.");
     } else if (stock < plan.stockwerke.length - 1) {
@@ -62,7 +65,7 @@ export default function GebaeudeDemo() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         <div className="flex flex-col gap-2">
           <div className="h-[60vh] min-h-[360px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
-            <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} aktiv auftrag={auftrag} onAnkunft={ankunft} />
+            <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} aktiv auftrag={auftrag} onAnkunft={ankunft} />
           </div>
           <p className="text-sm text-center" data-meldung>{meldung}</p>
         </div>
