@@ -104,7 +104,8 @@ export default function Abakus({ action }: { action?: ReactNode }) {
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
         <svg
           viewBox={`0 0 ${VBW} ${VBH}`}
-          className="w-full h-auto"
+          className="w-full h-auto mx-auto"
+          style={{ maxWidth: `calc(60vh * ${VBW} / ${VBH})` }}
           role="group"
           aria-label="Abakus"
         >

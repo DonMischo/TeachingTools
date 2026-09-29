@@ -135,7 +135,10 @@ export function WortnetzBuehne({ netz, verlauf, mut, onMut, onWaehlen, wuerfel }
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-        <svg viewBox="0 0 400 300" className="w-full h-auto block" role="img"
+        {/* Bei voller Seitenbreite würde das Netz höher als der Bildschirm:
+            die Breite ist deshalb an 60 % der Fensterhöhe gebunden. */}
+        <svg viewBox="0 0 400 300" className="w-full h-auto block mx-auto" role="img"
+          style={{ maxWidth: "calc(60vh * 400 / 300)" }}
           aria-label={`Wortnetz: Fortsetzungen von ${mitteText}`}>
           <style>{BEWEGUNG}</style>
 

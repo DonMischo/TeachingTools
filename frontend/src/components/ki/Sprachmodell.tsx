@@ -94,7 +94,7 @@ function Schritte({ station, auf }: { station: Station; auf: (s: Station) => voi
                   ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
                   : erledigt
                     ? "border-[var(--border)] bg-[var(--surface)]"
-                    : "border-transparent text-[var(--text-muted)]"
+                    : "border-dashed border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed"
               }`}
             >
               {s.nr}. {s.titel}

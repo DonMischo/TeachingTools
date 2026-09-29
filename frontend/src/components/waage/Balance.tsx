@@ -195,7 +195,9 @@ export function Balance({
   defs?: ReactNode;
 }) {
   return (
-    <svg viewBox={`0 0 ${VBW} ${VBH}`} className="w-full h-auto" role="img" aria-label={ariaLabel}>
+    // Höhe ≤ 60vh über die Breite (nicht max-h): ZahlenModus rechnet Ablagen mit dem Rahmen des svg
+    <svg viewBox={`0 0 ${VBW} ${VBH}`} className="w-full h-auto mx-auto" style={{ maxWidth: `calc(60vh * ${VBW} / ${VBH})` }}
+      role="img" aria-label={ariaLabel}>
       <defs>
         <linearGradient id="gwMetal" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#cbd5e1" />

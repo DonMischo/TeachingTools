@@ -595,8 +595,9 @@ export default function Funktionen({ action }: { action?: ReactNode }) {
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
-            className="w-full h-auto"
-            style={{ touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
+            className="w-full h-auto mx-auto"
+            // Höhe ≤ 60vh über die Breite — max-h würde das Bild einrücken und die Zeigerumrechnung verschieben
+            style={{ maxWidth: `calc(60vh * ${W} / ${H})`, touchAction: "none", cursor: dragging ? "grabbing" : "grab" }}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
