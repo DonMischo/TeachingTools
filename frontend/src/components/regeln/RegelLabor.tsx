@@ -6,18 +6,21 @@
  *   Lehrgang — fünf Stationen von einer Regel bis zum Grundriss
  *   Rätsel   — Ziel vorgegeben, Regelzahl begrenzt, wird automatisch geprüft
  *   Labor    — freies Bauen
+ *   Labyrinthe — Erzeuger und Löser Schritt für Schritt (Stapel, Schlange, A*)
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FARBEN, type Start } from "@/lib/regeln/maschine";
 import { RAETSEL, STATIONEN } from "@/lib/regeln/lehrgang";
 import Werkbank from "./Werkbank";
+import Labyrinthe from "./Labyrinthe";
 
-type Reiter = "lehrgang" | "raetsel" | "labor";
+type Reiter = "lehrgang" | "raetsel" | "labor" | "labyrinthe";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "lehrgang", icon: "🎓", label: "Lehrgang" },
   { id: "raetsel", icon: "🧩", label: "Rätsel" },
   { id: "labor", icon: "🧪", label: "Freies Labor" },
+  { id: "labyrinthe", icon: "🌀", label: "Labyrinthe" },
 ];
 
 const chip = (an: boolean) =>
@@ -47,6 +50,7 @@ export default function RegelLabor({ action }: { action?: ReactNode }) {
       {reiter === "lehrgang" && <Lehrgang />}
       {reiter === "raetsel" && <Raetsel />}
       {reiter === "labor" && <Labor />}
+      {reiter === "labyrinthe" && <Labyrinthe />}
     </div>
   );
 }

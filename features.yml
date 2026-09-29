@@ -239,6 +239,7 @@ simulationen:
       - Lehrgang in fünf Stationen vom Zufallslauf über den Backtracker bis zum Grundriss mit Zimmern und Türen
       - Rätsel mit Regel-Limit und automatischer Prüfung (Schachbrett, Punktgitter, perfektes Labyrinth …)
       - Gleicher Zufall liefert das gleiche Bild — Ergebnisse lassen sich in der Klasse vergleichen
+      - Labyrinth-Algorithmen Schritt für Schritt: Backtracker, Prim, Kruskal, Wilson; Löser Tiefensuche, Breitensuche, A* mit sichtbarem Stapel/Schlange/offener Liste und Vergleichstabelle; Rundwege per »Wände einreißen«
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
     kann:
