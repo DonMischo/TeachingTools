@@ -328,6 +328,55 @@ def test_upload_requires_admin_feature(client, db):
     assert r.status_code == 403
 
 
+def test_replace_file_keeps_settings_and_removes_old_file(client, db, admin_token, tmp_path, monkeypatch):
+    from api.routers import slideshow as slideshow_router
+    monkeypatch.setattr(slideshow_router, "SLIDESHOW_DIR", tmp_path)
+    (tmp_path / "alt.png").write_bytes(b"\x89PNG")
+    it = _item(db, kind="file", media_type="image", stored_filename="alt.png",
+               original_filename="plan.png", title="plan.png", position=3,
+               duration_seconds=42, audience="teacher", slot_days=[1], slot_start="08:00", slot_end="09:00")
+
+    files = {"file": ("plan-neu.pdf", b"%PDF-1.4", "application/pdf")}
+    r = client.post(f"/api/slideshow/items/{it.id}/file", headers=auth(admin_token), files=files)
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["media_type"] == "pdf"
+    assert out["original_filename"] == "plan-neu.pdf"
+    assert out["title"] == "plan-neu.pdf"  # title was the old filename -> follows
+    assert (out["position"], out["duration_seconds"], out["audience"], out["slot_days"]) == (3, 42, "teacher", [1])
+    assert not (tmp_path / "alt.png").exists()
+    assert (tmp_path / out["file_url"].rsplit("/", 1)[1]).read_bytes() == b"%PDF-1.4"
+
+
+def test_replace_file_keeps_custom_title(client, db, admin_token, tmp_path, monkeypatch):
+    from api.routers import slideshow as slideshow_router
+    monkeypatch.setattr(slideshow_router, "SLIDESHOW_DIR", tmp_path)
+    it = _item(db, kind="file", media_type="image", stored_filename="alt.png",
+               original_filename="plan.png", title="Vertretungsplan")
+
+    files = {"file": ("neu.png", b"\x89PNG", "image/png")}
+    r = client.post(f"/api/slideshow/items/{it.id}/file", headers=auth(admin_token), files=files)
+    assert r.status_code == 200, r.text
+    assert r.json()["title"] == "Vertretungsplan"
+
+
+def test_replace_file_rejections(client, db, admin_token, tmp_path, monkeypatch):
+    from api.routers import slideshow as slideshow_router
+    monkeypatch.setattr(slideshow_router, "SLIDESHOW_DIR", tmp_path)
+    (tmp_path / "alt.png").write_bytes(b"\x89PNG")
+    f = _item(db, kind="file", media_type="image", stored_filename="alt.png", original_filename="alt.png")
+    link = _item(db, kind="link")
+    png = {"file": ("neu.png", b"\x89PNG", "image/png")}
+
+    assert client.post(f"/api/slideshow/items/{link.id}/file", headers=auth(admin_token), files=png).status_code == 400
+    assert client.post("/api/slideshow/items/999999/file", headers=auth(admin_token), files=png).status_code == 404
+    svg = {"file": ("bad.svg", b"<svg/>", "image/svg+xml")}
+    assert client.post(f"/api/slideshow/items/{f.id}/file", headers=auth(admin_token), files=svg).status_code == 400
+    assert (tmp_path / "alt.png").exists()  # rejected upload leaves the old file alone
+    client.cookies.clear()
+    assert client.post(f"/api/slideshow/items/{f.id}/file", files=png).status_code == 401
+
+
 # ---------------------------------------------------------------------------
 # Create (link / calendar / file rejected)
 # ---------------------------------------------------------------------------

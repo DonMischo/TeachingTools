@@ -2531,6 +2531,16 @@ export const api = {
           return r.json() as Promise<SlideshowItem[]>;
         });
     },
+    // Swap the file of a file item; its settings stay
+    replaceFile: (id: number, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch(`/api/slideshow/items/${id}/file`, { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json() as Promise<SlideshowItem>;
+        });
+    },
     create: (body: { kind: "link"; title?: string; url: string }) =>
       apiFetch<SlideshowItem>("slideshow/items", { method: "POST", body: JSON.stringify(body) }),
     update: (id: number, patch: SlideshowPatch) =>

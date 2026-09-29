@@ -237,6 +237,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 - Kiosk-Ansicht für den Bildschirm im Schulflur
 - Inhalte: hochgeladene Bilder, PDFs und Videos, externe Links, Termine aus dem Kalender, Wochenspruch, Hauspunkte und Uhr
 - Die Uhr erscheint nach jeweils zwei anderen Folien
+- Dateien lassen sich durch neue ersetzen; Dauer, Zielgruppe, Zeitfenster und Platz bleiben
 - Zeitfenster heften einen Eintrag fest, solange das Fenster läuft
 - Inhalte je nach Zielgruppe; Warnungen bei kaputten oder überlappenden Einträgen
 

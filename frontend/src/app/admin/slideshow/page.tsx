@@ -226,6 +226,11 @@ export default function AdminSlideshowPage() {
     mutationFn: (files: File[]) => api.slideshow.upload(files),
     onSuccess: invalidate, onError,
   });
+  const replaceMut = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => api.slideshow.replaceFile(id, file),
+    onSuccess: () => { invalidate(); toast("Datei ersetzt", "success"); },
+    onError,
+  });
   const createMut = useMutation({
     mutationFn: (body: Parameters<typeof api.slideshow.create>[0]) => api.slideshow.create(body),
     onSuccess: () => { invalidate(); setLinkUrl(""); setLinkTitle(""); },
@@ -240,6 +245,8 @@ export default function AdminSlideshowPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [replaceId, setReplaceId] = useState<number | null>(null);
 
   if (!auth || !ready || !allowed) return null;
 
@@ -285,6 +292,15 @@ export default function AdminSlideshowPage() {
           {uploadMut.isPending ? "Wird hochgeladen…" : "Dateien hierher ziehen oder klicken (Bilder, PDFs, Videos)"}
         </div>
       </div>
+
+      {/* one shared picker for "Ersetzen"; replaceId says which row asked */}
+      <input ref={replaceInputRef} type="file" hidden
+        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.mp4,.webm"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && replaceId !== null) replaceMut.mutate({ id: replaceId, file });
+          e.target.value = "";
+        }} />
 
       <form
         className="flex flex-wrap sm:flex-nowrap items-center gap-2"
@@ -406,9 +422,17 @@ export default function AdminSlideshowPage() {
                       </div>
                     )}
                   </td>
-                  <td className="p-2">
+                  <td className="p-2 whitespace-nowrap">
                     {(item.file_url || item.url) && (
                       <a href={item.file_url ?? item.url ?? "#"} target="_blank" rel="noreferrer" className="text-[var(--accent)]">Vorschau</a>
+                    )}
+                    {item.kind === "file" && (
+                      <button className="ml-3 text-[var(--accent)] disabled:opacity-40"
+                        title="Neue Datei hochladen; Dauer, Zielgruppe, Zeitfenster und Platz bleiben"
+                        disabled={replaceMut.isPending}
+                        onClick={() => { setReplaceId(item.id); replaceInputRef.current?.click(); }}>
+                        {replaceMut.isPending && replaceMut.variables?.id === item.id ? "Lädt…" : "Ersetzen"}
+                      </button>
                     )}
                   </td>
                 </tr>,

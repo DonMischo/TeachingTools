@@ -395,6 +395,7 @@ verwaltung:
     kann:
       - Bilder, PDFs, Videos, Links, Termine, Wochenspruch, Hauspunkte, Uhr
       - Zeitfenster zum Festheften, Inhalte je Zielgruppe
+      - Dateien ersetzen, Einstellungen bleiben
       - Warnungen bei kaputten oder überlappenden Einträgen
 
 admin:

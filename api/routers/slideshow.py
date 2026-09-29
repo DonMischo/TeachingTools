@@ -10,7 +10,7 @@ slides (see lib/slideshow.ts), because a screen in a hallway is looked at for
 the time first. A time slot pins an item while it is active; outside the slot
 the item rotates like any other. `/public` serves the rotation filtered
 by viewer audience level; the rest are admin-feature-gated management
-endpoints (create/patch/reorder/delete/upload) plus a pure `compute_warnings`
+endpoints (create/patch/reorder/delete/upload/replace-file) plus a pure `compute_warnings`
 helper that flags broken/overlapping items for the admin UI.
 """
 import logging
@@ -295,21 +295,24 @@ def list_items(
 # Admin: upload
 # ---------------------------------------------------------------------------
 
+async def _read_upload(file: UploadFile) -> tuple[str, bytes]:
+    """Extension and bytes of an allowed, not-too-large upload."""
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, f"Dateityp nicht erlaubt: {ext}")
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "Datei zu groß (max 100 MB)")
+    return ext, data
+
+
 @router.post("/items/upload", response_model=list[SlideshowItemOut])
 async def upload_items(
     files: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
     _admin=Depends(require_admin_feature("slideshow")),
 ):
-    validated = []
-    for file in files:
-        ext = Path(file.filename or "").suffix.lower()
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(400, f"Dateityp nicht erlaubt: {ext}")
-        data = await file.read(MAX_UPLOAD_BYTES + 1)
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(413, "Datei zu groß (max 100 MB)")
-        validated.append((file, ext, data))
+    validated = [(file, *await _read_upload(file)) for file in files]
 
     next_position = _next_position(db)
 
@@ -329,6 +332,37 @@ async def upload_items(
     for item in created:
         db.refresh(item)
     return [_out(it) for it in created]
+
+
+@router.post("/items/{item_id}/file", response_model=SlideshowItemOut)
+async def replace_file(
+    item_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin_feature("slideshow")),
+):
+    """Swap the file of an existing file item; position, duration, audience and
+    time slot stay. A title that was just the old filename follows the new one."""
+    item = db.query(SlideshowItem).filter_by(id=item_id).first()
+    if item is None:
+        raise HTTPException(404, "Nicht gefunden")
+    if item.kind != "file":
+        raise HTTPException(400, "Nur Datei-Einträge haben eine Datei")
+    ext, data = await _read_upload(file)
+
+    old_stored = item.stored_filename
+    stored_filename = uuid.uuid4().hex + ext
+    (SLIDESHOW_DIR / stored_filename).write_bytes(data)
+    if item.title == (item.original_filename or old_stored):
+        item.title = file.filename or stored_filename
+    item.stored_filename = stored_filename
+    item.original_filename = file.filename
+    item.media_type = ALLOWED_EXTENSIONS[ext]
+    db.commit()
+    db.refresh(item)
+    if old_stored:
+        (SLIDESHOW_DIR / old_stored).unlink(missing_ok=True)
+    return _out(item)
 
 
 # ---------------------------------------------------------------------------
