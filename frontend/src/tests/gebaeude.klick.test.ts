@@ -25,19 +25,24 @@ function klickAuf(stock: THREE.Object3D, k: THREE.Camera, punkt: THREE.Vector3) 
 describe("Klick im Gebäude", () => {
   const plan = bauePlan([OBJEKTE.length], 5);
   const st = plan.stockwerke[0];
-  const stock = baueStock(plan, 0, {
-    zustaende: st.raeume.map(() => "offen"), zielOffen: false, zielArt: "treppe", unten: false, objekte: [...OBJEKTE],
-  });
-  stock.updateMatrixWorld(true);
+  const bild = (zielArt: "treppe" | "ausgang") => {
+    const g = baueStock(plan, 0, { zustaende: st.raeume.map(() => "offen"), zielOffen: false, zielArt, unten: false, objekte: [...OBJEKTE] });
+    g.updateMatrixWorld(true);
+    return g;
+  };
+  const stock = bild("treppe");
 
   it("trifft jedes Zimmer über sein Schild und über sein Objekt", () => {
+    // Objekte prüfen ohne die hohe Treppe: sie kann ein Nachbarzimmer von schräg oben verdecken
+    // (dort bleibt das Schild zum Anklicken).
+    const flach = bild("ausgang");
     st.raeume.forEach((r, k) => {
       const mitte = new THREE.Vector3(welt(r.x), 0, welt(r.y));
       const cam = kamera(mitte);
       // Schild schwebt über dem Zimmer
       expect(klickAuf(stock, cam, mitte.clone().setY(2.3))).toEqual({ art: "raum", raum: k });
       // das Objekt (Computer, Kuckucksuhr …) etwa in halber Höhe
-      expect(klickAuf(stock, cam, mitte.clone().setY(0.8))).toEqual({ art: "raum", raum: k });
+      expect(klickAuf(flach, cam, mitte.clone().setY(0.8)), OBJEKTE[k]).toEqual({ art: "raum", raum: k });
     });
   });
 

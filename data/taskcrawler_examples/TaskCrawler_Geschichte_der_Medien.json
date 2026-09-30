@@ -82,9 +82,9 @@
     {
       "id": "intro",
       "type": "explanation",
-      "title": "Die Zeitmaschine",
-      "text": "Du betrittst eine alte Bibliothek. Mitten im Raum steht ein merkwürdiges Gerät – eine Zeitmaschine! Deine Mission: Reise durch sechs Epochen der Mediengeschichte, von der Höhlenmalerei bis zur Künstlichen Intelligenz. Jede Epoche ist ein Stockwerk, und in jedem Zimmer steht ein Medium seiner Zeit, das dir etwas erzählt oder eine Aufgabe stellt. Sammle Codeschnipsel und setze sie an der Treppe zusammen, um weiterzukommen. Dreht sich in einem Zimmer ein Globus, wartet dort eine freiwillige Aufgabe über Medien in anderen Teilen der Welt – sie bringt keinen Codeschnipsel, nur Wissen.",
-      "station": "kuckucksuhr"
+      "title": "Am Lagerfeuer – die Zeitmaschine startet",
+      "text": "Lange bevor es Schrift gab, saßen Menschen am Feuer und erzählten: Wissen wanderte von Mund zu Ohr. Hier beginnt deine Reise durch sechs Epochen der Mediengeschichte – von der Höhlenmalerei bis zur Künstlichen Intelligenz. Jede Epoche ist ein Stockwerk, und in jedem Zimmer steht ein Medium seiner Zeit, das dir etwas erzählt oder eine Aufgabe stellt. Sammle Codeschnipsel und setze sie an der Treppe zusammen, um weiterzukommen. Aufgaben mit 🌍 führen in andere Teile der Welt; sie sind freiwillig und bringen keinen Codeschnipsel, nur Wissen.",
+      "station": "lagerfeuer"
     },
     {
       "id": "beispiel-steinzeit",
@@ -132,7 +132,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Die Knotenschnüre der Inka",
       "text": "Die Inka in Südamerika (15.–16. Jahrhundert) regierten ein riesiges Reich – ganz ohne Schrift, wie wir sie kennen. Stattdessen nutzten sie Quipus: Bündel aus bunten Schnüren mit Knoten. Farbe, Art und Lage der Knoten standen für Zahlen.",
-      "station": "globus",
+      "station": "quipu",
       "task": {
         "kind": "single",
         "question": "Wofür nutzten die Inka ihre Quipus vor allem?",
@@ -172,7 +172,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Orakelknochen in China",
       "text": "Die ältesten bekannten chinesischen Schriftzeichen sind über 3000 Jahre alt (Shang-Dynastie, um 1250 v. Chr.). Wahrsager ritzten Fragen an die Ahnen ein – etwa zu Ernte, Wetter oder Krieg – und erhitzten das Material, bis Risse entstanden. Viele dieser Zeichen erkennt man in der heutigen chinesischen Schrift noch wieder.",
-      "station": "globus",
+      "station": "orakelknochen",
       "task": {
         "kind": "single",
         "question": "Worauf ritzten die Wahrsager der Shang-Dynastie diese Schriftzeichen?",
@@ -304,7 +304,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Gutenberg war nicht der Erste",
       "text": "In China druckte man schon im 9. Jahrhundert ganze Bücher mit geschnitzten Holzplatten. Um 1040 erfand Bi Sheng dort bewegliche Lettern aus gebranntem Ton. Das älteste erhaltene Buch, das mit beweglichen Lettern aus Metall gedruckt wurde, heißt »Jikji«: eine Sammlung buddhistischer Lehren von 1377 – rund 80 Jahre vor Gutenbergs Bibel.",
-      "station": "globus",
+      "station": "buch",
       "task": {
         "kind": "single",
         "question": "Wo wurde der »Jikji« gedruckt?",
@@ -371,7 +371,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Die Faltbücher der Maya",
       "text": "Die Maya in Mittelamerika hatten eine vollständige Schrift aus Hunderten Zeichen. Sie schrieben Bücher auf Papier aus der Rinde von Feigenbäumen, zickzack gefaltet wie ein Leporello. Nach der Eroberung durch die Spanier ließ der Mönch Diego de Landa 1562 viele davon verbrennen, weil er sie für Teufelswerk hielt. Eines der erhaltenen liegt heute in Dresden.",
-      "station": "globus",
+      "station": "faltbuch",
       "task": {
         "kind": "single",
         "question": "Wie viele Maya-Bücher sind nach heutigem Wissen erhalten geblieben?",
@@ -510,7 +510,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Vom Radio zur Telenovela",
       "text": "In Kuba liefen in den 1930er- und 40er-Jahren »Radionovelas«: Fortsetzungsgeschichten im Radio, die ganze Familien jeden Tag verfolgten. Mit dem Fernsehen wurden daraus Telenovelas. Sender aus Mexiko und Brasilien machten sie weltweit erfolgreich – heute laufen lateinamerikanische Telenovelas in über 100 Ländern.",
-      "station": "globus",
+      "station": "radio",
       "task": {
         "kind": "single",
         "question": "Was unterscheidet eine klassische Telenovela von einer Endlosserie (Soap)?",
@@ -616,7 +616,7 @@
       "type": "explanation",
       "title": "1971 – Die erste E‑Mail",
       "text": "Ray Tomlinson schickte die erste E‑Mail – zwischen zwei nebeneinanderstehenden Rechnern. Als Inhalt wählte er vermutlich die Zeichenfolge ‚QWERTYUIOP‘. Das @-Symbol wurde zum Trenner zwischen Nutzer und Rechner.",
-      "station": "computer"
+      "station": "retropc"
     },
     {
       "id": "email-aufgabe",
@@ -650,7 +650,7 @@
         "Es ist das At-Zeichen.",
         "Man nennt es auch ‚Klammeraffe‘."
       ],
-      "station": "computer"
+      "station": "retropc"
     },
     {
       "id": "internet-aufgabe",
@@ -691,7 +691,7 @@
       "type": "explanation",
       "title": "1991 – Das World Wide Web",
       "text": "Tim Berners‑Lee veröffentlichte das WWW – ein System von Hyperlinks, das das Internet für alle nutzbar machte. Die erste Website stand am CERN und erklärte, wie das Web funktioniert.",
-      "station": "computer"
+      "station": "retropc"
     },
     {
       "id": "www-aufgabe",
@@ -725,14 +725,14 @@
         "Er arbeitete am CERN in Genf.",
         "Sein System basierte auf Hyperlinks."
       ],
-      "station": "computer"
+      "station": "retropc"
     },
     {
       "id": "welt-emoji",
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Emojis aus Japan",
       "text": "1999 zeichnete Shigetaka Kurita für das Handy-Internet »i-mode« der japanischen Firma NTT Docomo 176 kleine Bildchen, jedes nur 12 × 12 Pixel groß: Sonne, Herz, Regenschirm, Gesichter. »Emoji« ist Japanisch und heißt »Bild-Schriftzeichen«. Heute gehören sie zum Unicode-Standard, und die Originale hängen im Museum of Modern Art in New York.",
-      "station": "globus",
+      "station": "tastenhandy",
       "task": {
         "kind": "single",
         "question": "Warum brauchte man die Emojis damals auf dem Handy?",
@@ -845,7 +845,7 @@
       "type": "task",
       "title": "🌍 Weltweit (freiwillig): Geld per SMS in Kenia",
       "text": "2007 startete in Kenia M-Pesa (»Pesa« heißt Geld auf Swahili): Geld verschicken per SMS, mit einem ganz einfachen Handy. Viele Menschen hatten kein Bankkonto, aber ein Mobiltelefon. Heute nutzen Millionen Menschen in Afrika mobiles Bezahlen – früher und selbstverständlicher als in Deutschland.",
-      "station": "globus",
+      "station": "tastenhandy",
       "task": {
         "kind": "single",
         "question": "Warum wurde M-Pesa in Kenia so schnell so erfolgreich?",
@@ -970,7 +970,7 @@
       "type": "task",
       "title": "Aufgabe: Fälschungen entlarven",
       "text": "Ein Video zeigt eine berühmte Person, die etwas Unglaubliches sagt. Es wird tausendfach geteilt.",
-      "station": "fernseher",
+      "station": "tablet",
       "task": {
         "kind": "multi",
         "codeFragment": "ECHT",

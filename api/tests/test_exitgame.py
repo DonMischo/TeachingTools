@@ -878,12 +878,34 @@ def test_upload_validates_gebaeude(client, teacher_token):
 
 def test_medien_example_has_one_style_per_epoch(client, teacher_token):
     """Zeitreise der Medien: sechs Abschnitte, sechs Epochen-Stile — und das Spiel lässt sich hochladen."""
-    pfad = Path(__file__).parents[2] / "data" / "exitgame_examples" / "Exitgame_Geschichte_der_Medien.json"
+    pfad = Path(__file__).parents[2] / "data" / "taskcrawler_examples" / "TaskCrawler_Geschichte_der_Medien.json"
     spiel = json.loads(pfad.read_text(encoding="utf-8"))
     tueren = sum(1 for s in spiel["slides"] if s["type"] == "door")
     assert len(spiel["gebaeude"]["stile"]) == tueren == 6
+    # Jede Station passt zu ihrer Epoche — in der Steinzeit kein Buch, keine Uhr, kein Globus
+    erster = spiel["slides"][:next(i for i, s in enumerate(spiel["slides"]) if s["type"] == "door")]
+    assert {s["station"] for s in erster} <= {"lagerfeuer", "hoehlenwand", "quipu", "tontafel", "orakelknochen", "schriftrolle"}
+    assert all(s.get("station") for s in spiel["slides"] if s["type"] != "door")
     r = _upload(client, teacher_token, spiel)
     assert r.status_code == 201, r.json()
+
+
+def test_zip_upload_takes_taskcrawler_json_and_old_exitgame_json(client, teacher_token):
+    import zipfile
+    for name in ("taskcrawler.json", "spiel/exitgame.json"):
+        puffer = io.BytesIO()
+        with zipfile.ZipFile(puffer, "w") as z:
+            z.writestr(name, json.dumps(SIMPLE_GAME))
+        client.cookies.clear()
+        r = client.post("/api/exitgames/upload", headers=_auth(teacher_token),
+                        files={"file": ("spiel.zip", puffer.getvalue(), "application/zip")})
+        assert r.status_code == 201, (name, r.json())
+    leer = io.BytesIO()
+    with zipfile.ZipFile(leer, "w") as z:
+        z.writestr("irgendwas.json", "{}")
+    client.cookies.clear()
+    r = client.post("/api/exitgames/upload", headers=_auth(teacher_token), files={"file": ("x.zip", leer.getvalue(), "application/zip")})
+    assert r.status_code == 400 and "taskcrawler.json" in r.json()["detail"]
 
 
 def test_monster_and_boss_are_station_objects(client, teacher_token):

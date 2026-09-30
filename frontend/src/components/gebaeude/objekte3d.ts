@@ -375,6 +375,88 @@ const BAU: Record<Objekt, (g: THREE.Group) => void> = {
     const stift = zyl(g, 0xf8fafc, 0.012, 0.008, 0.25, 0.25, h + 0.03, 0.15);
     stift.rotation.z = 1.3;
   },
+  lagerfeuer: g => {
+    // Steinkreis, Holzscheite, Flammen — hier wurde erzählt, bevor es Schrift gab
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      kugel(g, 0x78716c, 0.09, Math.cos(a) * 0.38, 0.06, Math.sin(a) * 0.38).scale.set(1, 0.6, 1);
+    }
+    for (let i = 0; i < 4; i++) {
+      const scheit = zyl(g, 0x57341c, 0.04, 0.05, 0.5, 0, 0.08);
+      scheit.rotation.set(Math.PI / 2 - 0.35, (i / 4) * Math.PI * 2, 0);
+      scheit.position.set(0, 0.12, 0);
+    }
+    const flamme = (farbe: number, r: number, h: number, y: number) => {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 10), new THREE.MeshLambertMaterial({ color: farbe, emissive: farbe, emissiveIntensity: 0.9 }));
+      m.position.set(0, y + h / 2, 0);
+      g.add(m);
+    };
+    flamme(0xea580c, 0.18, 0.5, 0.1);
+    flamme(0xfacc15, 0.1, 0.35, 0.12);
+    // ein Fell zum Sitzen
+    q(g, 0x92400e, 0.5, 0.03, 0.35, 0, 0, 0.6);
+  },
+  quipu: g => {
+    // Hauptschnur an einem Stab, bunte Knotenschnüre hängen herab
+    for (const s of [-0.5, 0.5]) q(g, HOLZ, 0.06, 1.5, 0.06, s, 0, -0.2);
+    // gewebtes Tuch dahinter (Inka-Muster) — gibt dem Objekt auch eine Fläche zum Anklicken
+    q(g, 0xb45309, 0.94, 1.0, 0.02, 0, 0.35, -0.3);
+    for (let r = 0; r < 4; r++) q(g, r % 2 ? 0xfacc15 : 0x7f1d1d, 0.94, 0.06, 0.01, 0, 0.45 + r * 0.25, -0.285);
+    const stab = zyl(g, HOLZ, 0.025, 0.025, 1.1, 0, 1.4, -0.2);
+    stab.rotation.z = Math.PI / 2;
+    stab.position.set(0, 1.4, -0.2);
+    const farben = [0xdc2626, 0xfacc15, 0x16a34a, 0xf8fafc, 0x2563eb, 0x92400e, 0xdc2626, 0x16a34a];
+    farben.forEach((f, i) => {
+      const x = -0.42 + i * 0.12, laenge = 0.55 + ((i * 7) % 4) * 0.12;
+      zyl(g, f, 0.012, 0.012, laenge, x, 1.4 - laenge, -0.2);
+      for (let k = 0; k < 1 + (i % 3); k++) kugel(g, f, 0.03, x, 1.25 - k * 0.15 - (i % 2) * 0.05, -0.2);
+    });
+  },
+  orakelknochen: g => {
+    // Schildkrötenpanzer und Schulterknochen mit Rissen und Zeichen, daneben ein Glutbecken
+    const h = tisch(g, 1.2, 0.7, 0.55, 0x57341c);
+    const panzer = kugel(g, 0xa8a29e, 0.26, -0.2, h, 0);
+    panzer.scale.set(1, 0.25, 0.8);
+    for (let i = 0; i < 4; i++) q(g, 0x44403c, 0.18, 0.01, 0.01, -0.25 + (i % 2) * 0.08, h + 0.06, -0.08 + i * 0.05).rotation.y = i * 0.7;
+    const knochen = q(g, 0xf5f0e1, 0.2, 0.03, 0.42, 0.25, h, 0);
+    knochen.rotation.y = 0.3;
+    for (let i = 0; i < 3; i++) q(g, 0x7c2d12, 0.06, 0.005, 0.02, 0.24, h + 0.035, -0.12 + i * 0.1);
+    zyl(g, 0x44403c, 0.12, 0.09, 0.12, 0.45, 0, 0.35);
+    const glut = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), new THREE.MeshLambertMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 0.8 }));
+    glut.position.set(0.45, 0.13, 0.35);
+    g.add(glut);
+  },
+  faltbuch: g => {
+    // Maya-Codex: zickzack gefaltete Seiten mit roten und schwarzen Zeichen auf einem Steinsockel
+    q(g, 0x78716c, 0.9, 0.7, 0.5, 0, 0, 0);
+    for (let i = 0; i < 6; i++) {
+      const seite = q(g, 0xf5ecd7, 0.15, 0.45, 0.01, -0.38 + i * 0.15, 0.7, 0);
+      seite.rotation.y = i % 2 ? 0.5 : -0.5;
+      q(g, i % 2 ? 0xb91c1c : 0x1f2937, 0.08, 0.08, 0.012, -0.38 + i * 0.15, 0.95, 0);
+      q(g, 0x1f2937, 0.1, 0.02, 0.012, -0.38 + i * 0.15, 0.8, 0);
+    }
+  },
+  tastenhandy: g => {
+    // Handy der 2000er mit Tasten und kleinem grünen Display auf einem Sockel
+    q(g, 0x374151, 0.5, 0.6, 0.5, 0, 0, 0);
+    const h = new THREE.Group();
+    h.position.set(0, 0.6, 0);
+    h.rotation.x = -0.2;
+    g.add(h);
+    q(h, 0x1e3a8a, 0.3, 0.7, 0.08, 0, 0, 0);
+    q(h, 0x86efac, 0.22, 0.18, 0.01, 0, 0.44, 0.045);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) q(h, 0xd1d5db, 0.05, 0.035, 0.01, -0.07 + c * 0.07, 0.08 + r * 0.07, 0.045);
+    zyl(h, SCHWARZ, 0.015, 0.015, 0.12, 0.1, 0.7, 0);
+  },
+  retropc: g => {
+    // beiger Röhrenmonitor mit grüner Schrift, Rechnergehäuse, Tastatur
+    const h = tisch(g, 1.2, 0.75);
+    q(g, 0xe7e0c9, 0.6, 0.12, 0.45, 0, h, -0.1);
+    q(g, 0xe7e0c9, 0.5, 0.42, 0.42, 0, h + 0.12, -0.12);
+    q(g, 0x052e16, 0.4, 0.3, 0.01, 0, h + 0.18, 0.095);
+    for (let r = 0; r < 4; r++) q(g, 0x4ade80, 0.1 + ((r * 5) % 3) * 0.08, 0.02, 0.005, -0.1, h + 0.4 - r * 0.06, 0.1);
+    q(g, 0xd6cfb4, 0.5, 0.04, 0.16, 0, h, 0.23);
+  },
   kikern: g => {
     // Server-Säule mit leuchtendem Netz aus Knoten
     q(g, 0x1f2937, 0.7, 0.6, 0.7, 0, 0, 0);

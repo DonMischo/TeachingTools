@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import * as THREE from "three";
-import { FORMEN, HAUT, KLASSEN, STANDARD_AVATAR, baueAvatar, istAvatar, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
+import { FORMEN, HAUT, KLASSEN, STANDARD_AVATAR, TIERE, baueAvatar, istAvatar, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
+import { AVATARS } from "@/components/AvatarPicker";
 import AvatarWahl from "@/components/gebaeude/AvatarWahl";
 
 afterEach(() => localStorage.clear());
@@ -14,6 +15,18 @@ describe("Spielfiguren", () => {
       expect(box.min.y, `${k.id}/${f.id}`).toBeGreaterThanOrEqual(-0.01);
       expect(box.max.y, `${k.id}/${f.id}`).toBeGreaterThan(1.2);
       expect(box.max.y, `${k.id}/${f.id}`).toBeLessThan(1.8);
+    }
+  });
+
+  it("jedes Tier der Plattform gibt es als Figur — steht (oder schwebt) über dem Boden, nicht zu groß", () => {
+    expect(TIERE.map(t => t.id).sort()).toEqual(AVATARS.map(a => a.id).sort());
+    for (const t of TIERE) {
+      const g = baueAvatar({ ...STANDARD_AVATAR, tier: t.id });
+      expect(g.children.length, t.id).toBeGreaterThan(5);
+      const box = new THREE.Box3().setFromObject(g);
+      expect(box.min.y, t.id).toBeGreaterThanOrEqual(-0.05);
+      expect(box.max.y, t.id).toBeGreaterThan(0.7);
+      expect(box.max.y, t.id).toBeLessThan(1.8);
     }
   });
 

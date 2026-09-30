@@ -12,7 +12,7 @@ import {
 import { MathText } from "@/components/MathText";
 import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
 import AvatarWahl from "@/components/gebaeude/AvatarWahl";
-import { STANDARD_AVATAR, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
+import { STANDARD_AVATAR, gespeicherterAvatar, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
 import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
@@ -83,7 +83,8 @@ export default function GebaeudeSpiel({
   });
   const [gelesen, setGelesen] = useState<Set<string>>(new Set());
   const [avatar, setAvatar] = useState<Avatar>(STANDARD_AVATAR);
-  useEffect(() => { setAvatar(ladeAvatar()); }, []);
+  const [ersteWahl, setErsteWahl] = useState(false);
+  useEffect(() => { setAvatar(ladeAvatar()); setErsteWahl(!gespeicherterAvatar()); }, []);
   const [offen, setOffen] = useState<number | null>(null);
   const [zurTuer, setZurTuer] = useState(false);
   const [auftrag, setAuftrag] = useState<{ ort: Ort; nr: number } | null>(null);
@@ -144,7 +145,7 @@ export default function GebaeudeSpiel({
             <div className="rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
               {W.icon} {W.stock} {stock + 1} / {teile.length}
             </div>
-            <AvatarWahl avatar={avatar} onWahl={setAvatar} />
+            <AvatarWahl avatar={avatar} onWahl={setAvatar} startOffen={ersteWahl} />
           </div>
 
           {s && offen !== null && (

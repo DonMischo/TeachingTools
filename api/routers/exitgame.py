@@ -444,7 +444,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "einzelne Symbole, Dezimalkomma als $3{,}14$. "
             "--- 2.5D --- Gebäude, Verlies, Ebene, Stationen und Werkzeuge (Simulationen) stehen in der "
             "»Vorlage interaktiv«. "
-            "--- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. "
+            "--- UPLOAD --- .json, oder .zip mit taskcrawler.json und einem Ordner assets/ für eigene Bilder. "
             "--- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht "
             "eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es "
             "nicht mehr). onFailReview nur auf vorhandene Slide-IDs."
@@ -633,9 +633,10 @@ def upload_exitgame(
         except zipfile.BadZipFile:
             raise HTTPException(400, "Invalid ZIP file")
         names = zf.namelist()
-        json_candidates = [n for n in names if n.endswith("exitgame.json") or n == "exitgame.json"]
+        # taskcrawler.json (neu) oder exitgame.json (ältere ZIPs)
+        json_candidates = [n for n in names if n.endswith(("taskcrawler.json", "exitgame.json"))]
         if not json_candidates:
-            raise HTTPException(400, "ZIP muss exitgame.json enthalten")
+            raise HTTPException(400, "ZIP muss taskcrawler.json enthalten")
         raw = json.loads(zf.read(json_candidates[0]))
         for name in names:
             if "assets/" in name and not name.endswith("/"):

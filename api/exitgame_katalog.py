@@ -73,6 +73,12 @@ OBJEKTE = {
     "kopfhoerer": "Kopfhörer auf einem Ständer (Musik, Streaming)",
     "grafiktablett": "Bildschirm mit Bildbearbeitung, Zeichenbrett und Stift",
     "kikern": "KI-Rechenzentrum: Server mit leuchtendem neuronalen Netz",
+    "lagerfeuer": "Lagerfeuer im Steinkreis (Erzählen vor der Schrift)",
+    "quipu": "Knotenschnüre der Inka an einem Stab",
+    "orakelknochen": "Orakelknochen und Schildkrötenpanzer mit Zeichen (China)",
+    "faltbuch": "Maya-Faltbuch (Codex) auf einem Steinsockel",
+    "tastenhandy": "Tastenhandy der 2000er mit grünem Display",
+    "retropc": "Röhren-PC der 70er/80er mit grüner Schrift",
 }
 
 # Jedes Werkzeug: was es ist und welche Schlüssel "config" kennt. Ein "?" am

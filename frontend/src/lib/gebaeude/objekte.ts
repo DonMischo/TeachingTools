@@ -10,6 +10,7 @@ export const OBJEKTE = [
   "hoehlenwand", "tontafel", "schriftrolle", "buch", "druckerpresse", "zeitung",
   "telegraph", "telefon", "radio", "filmprojektor", "fernseher", "grossrechner",
   "laptop", "smartphone", "tablet", "kopfhoerer", "grafiktablett", "kikern",
+  "lagerfeuer", "quipu", "orakelknochen", "faltbuch", "tastenhandy", "retropc",
 ] as const;
 
 export type Objekt = (typeof OBJEKTE)[number];
@@ -24,6 +25,8 @@ export const OBJEKT_NAME: Record<Objekt, string> = {
   telegraph: "Telegraf", telefon: "Kurbeltelefon", radio: "Röhrenradio", filmprojektor: "Filmprojektor",
   fernseher: "Röhrenfernseher", grossrechner: "Großrechner", laptop: "Laptop", smartphone: "Smartphone",
   tablet: "Tablet", kopfhoerer: "Kopfhörer", grafiktablett: "Bildbearbeitung", kikern: "KI-Rechenzentrum",
+  lagerfeuer: "Lagerfeuer", quipu: "Knotenschnüre (Quipu)", orakelknochen: "Orakelknochen", faltbuch: "Maya-Faltbuch",
+  tastenhandy: "Tastenhandy", retropc: "Röhren-PC",
 };
 
 export function istObjekt(x: unknown): x is Objekt {
@@ -68,4 +71,10 @@ export const OBJEKT_STIMME: Record<Objekt, { icon: string; info: string; aufgabe
   kopfhoerer: { icon: "🎧", info: "Du setzt die Kopfhörer auf und hörst", aufgabe: "Im Kopfhörer stellt jemand eine Frage" },
   grafiktablett: { icon: "🎨", info: "Auf dem Bildschirm ist ein Bild geöffnet", aufgabe: "Das Bild stellt dir eine Aufgabe" },
   kikern: { icon: "🤖", info: "Die KI meldet sich", aufgabe: "Die KI will dich prüfen" },
+  lagerfeuer: { icon: "🔥", info: "Am Lagerfeuer erzählt jemand eine Geschichte", aufgabe: "Am Feuer stellt dir die Älteste eine Frage" },
+  quipu: { icon: "🪢", info: "Du betastest die Knoten der bunten Schnüre", aufgabe: "Die Knotenschnüre verlangen eine Antwort" },
+  orakelknochen: { icon: "🦴", info: "In den Knochen sind Zeichen geritzt", aufgabe: "Das Orakel fragt zurück" },
+  faltbuch: { icon: "📙", info: "Du faltest das Maya-Buch auf", aufgabe: "Im Faltbuch wartet ein Rätsel" },
+  tastenhandy: { icon: "📟", info: "Piep! Eine SMS", aufgabe: "Eine SMS mit einer Frage" },
+  retropc: { icon: "🖥️", info: "Auf dem Röhrenmonitor blinkt grüne Schrift", aufgabe: "Der Rechner wartet auf deine Eingabe_" },
 };

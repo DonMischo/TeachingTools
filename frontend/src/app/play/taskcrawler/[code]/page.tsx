@@ -9,11 +9,12 @@ import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { MathText } from "@/components/MathText";
 import { CompletionCard, MediaView, TaskArea, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
+import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/components/gebaeude/avatar";
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
 import { STILE, type Stil } from "@/components/gebaeude/szene";
 
 type Ansicht = "folien" | "gebaeude" | "verlies" | "ebene";
-const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Folien"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"]];
+const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Text"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"]];
 const istAnsicht = (a: unknown): a is Ansicht => ANSICHTEN.some(([x]) => x === a);
 const istStil = (s: unknown): s is Stil => typeof s === "string" && s in STILE;
 /** je Sitzungscode: die eigene Wahl gilt nur für dieses Spiel */
@@ -37,7 +38,9 @@ export default function ExitgamePlayPage() {
   // the api module, so register it here (cleared for logged-in users).
   useEffect(() => { setActiveGuestToken(isGuest ? guest.token : null); }, [isGuest, guest.token]);
 
-  async function handleGuestJoin(name: string) {
+  async function handleGuestJoin(name: string, tier: string) {
+    // Das Tier vom Beitritt wird die Spielfigur im Gebäude — außer man hat schon eine gewählt.
+    if (!gespeicherterAvatar() && TIERE.some(t => t.id === tier)) speichereAvatar({ ...STANDARD_AVATAR, tier });
     try {
       await guest.join("exitgame", name);   // enables the start query once the token lands
     } catch (err: unknown) {
@@ -143,7 +146,7 @@ export default function ExitgamePlayPage() {
   if (isGuest && !guest.token) {
     return (
       <PlayerIdentityForm gameCode={code} gameIcon="🗝️" gameTitle="TaskCrawler"
-        error={joinError} onJoin={(name) => handleGuestJoin(name)} />
+        error={joinError} onJoin={(name, tier) => handleGuestJoin(name, tier)} />
     );
   }
   if (isLoading) return <div className="p-8 text-sm text-[var(--text-muted)]">Lade…</div>;
@@ -170,10 +173,13 @@ export default function ExitgamePlayPage() {
   const festerStil = istStil(stilDesSpiels) ? stilDesSpiels : null;
   // je Abschnitt ein Stil; wo einer fehlt, gilt "stil"
   const festeStile = Array.isArray(stileDesSpiels) ? stileDesSpiels.map(s => (istStil(s) ? s : undefined)) : null;
-  const aktiv: Ansicht = festeAnsicht ?? ansicht ?? "folien";
-  const umschalter = festeAnsicht ? null : (
+  // Legt das Spiel eine 2.5D-Ansicht fest, bleibt daneben immer die Textfassung (Folien) wählbar.
+  const erlaubt = festeAnsicht === null ? ANSICHTEN
+    : festeAnsicht === "folien" ? [] : ANSICHTEN.filter(([a]) => a === festeAnsicht || a === "folien");
+  const aktiv: Ansicht = ansicht && erlaubt.some(([a]) => a === ansicht) ? ansicht : festeAnsicht ?? "folien";
+  const umschalter = erlaubt.length < 2 ? null : (
     <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs" role="group" aria-label="Ansicht">
-      {ANSICHTEN.map(([a, t]) => (
+      {erlaubt.map(([a, t]) => (
         <button key={a} onClick={() => waehleAnsicht(a)} aria-pressed={aktiv === a}
           className={`px-2 py-0.5 rounded-md font-bold ${aktiv === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>
           {t}
