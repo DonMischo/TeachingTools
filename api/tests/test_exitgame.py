@@ -877,11 +877,11 @@ def test_upload_validates_gebaeude(client, teacher_token):
 
 
 def test_medien_example_has_one_style_per_epoch(client, teacher_token):
-    """Zeitreise der Medien: fünf Abschnitte, fünf Epochen-Stile — und das Spiel lässt sich hochladen."""
+    """Zeitreise der Medien: sechs Abschnitte, sechs Epochen-Stile — und das Spiel lässt sich hochladen."""
     pfad = Path(__file__).parents[2] / "data" / "exitgame_examples" / "Exitgame_Geschichte_der_Medien.json"
     spiel = json.loads(pfad.read_text(encoding="utf-8"))
     tueren = sum(1 for s in spiel["slides"] if s["type"] == "door")
-    assert len(spiel["gebaeude"]["stile"]) == tueren == 5
+    assert len(spiel["gebaeude"]["stile"]) == tueren == 6
     r = _upload(client, teacher_token, spiel)
     assert r.status_code == 201, r.json()
 

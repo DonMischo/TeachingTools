@@ -47,9 +47,15 @@ export function textur(m: Muster): THREE.CanvasTexture | null {
  * Material mit Muster in Weltkoordinaten: oben xz, an den Seiten xy bzw. zy.
  * `groesse` = wie viele Welteinheiten eine Musterkachel abdeckt.
  */
-export function musterMaterial(farbe: number, m: Muster | undefined, groesse = 2.2, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
+export function musterMaterial(farbe: number, m: Muster | undefined, groesse = 2.2, extra: THREE.MeshLambertMaterialParameters = {}, glut?: Muster): THREE.MeshLambertMaterial {
   const t = m ? textur(m) : null;
-  const mat = new THREE.MeshLambertMaterial({ color: farbe, ...extra, ...(t ? { map: t } : {}) });
+  // Glut: ein zweites Muster, das selbst leuchtet (Lavarisse) — auch im Dunkeln sichtbar
+  const g = t && glut ? textur(glut) : null;
+  const mat = new THREE.MeshLambertMaterial({
+    color: farbe, ...(t ? { map: t } : {}),
+    ...(g ? { emissiveMap: g, emissive: 0xffffff, emissiveIntensity: 1.4 } : {}),
+    ...extra,
+  });
   if (!t) return mat;
   const skala = (1 / groesse).toFixed(4);
   mat.onBeforeCompile = shader => {
@@ -66,13 +72,17 @@ export function musterMaterial(farbe: number, m: Muster | undefined, groesse = 2
         vHpNorm = normalize( mat3( modelMatrix ) * hpN );`);
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", "#include <common>\nvarying vec3 vHpWelt;\nvarying vec3 vHpNorm;")
-      .replace("#include <map_fragment>", `#ifdef USE_MAP
+      .replace("#include <map_fragment>", `
         vec3 hpA = abs( vHpNorm );
         vec2 hpUv = hpA.y > max( hpA.x, hpA.z ) ? vHpWelt.xz : ( hpA.x > hpA.z ? vHpWelt.zy : vHpWelt.xy );
-        diffuseColor *= texture2D( map, hpUv * ${skala} );
+        #ifdef USE_MAP
+          diffuseColor *= texture2D( map, hpUv * ${skala} );
+        #endif`)
+      .replace("#include <emissivemap_fragment>", `#ifdef USE_EMISSIVEMAP
+        totalEmissiveRadiance *= texture2D( emissiveMap, hpUv * ${skala} ).rgb;
       #endif`);
   };
-  mat.customProgramCacheKey = () => `hp-muster-${skala}`;
+  mat.customProgramCacheKey = () => `hp-muster-${skala}-${g ? "glut" : ""}`;
   return mat;
 }
 

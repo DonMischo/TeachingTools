@@ -1,7 +1,7 @@
 {
   "id": "zeitreise-medien-epochen",
   "title": "Zeitreise der Medien – Epochen",
-  "description": "Reise durch fünf Epochen der Mediengeschichte. Jede Epoche ist ein Stockwerk mit eigener Tür. Sammle Codeschnipsel und öffne die Treppen.",
+  "description": "Reise durch sechs Epochen der Mediengeschichte – von der Höhlenmalerei bis zur KI. Jede Epoche ist ein Stockwerk mit den Medien ihrer Zeit und eigener Tür; am Globus warten freiwillige Aufgaben aus aller Welt.",
   "subject": "medienkunde",
   "grade": "8,9,10",
   "tags": [
@@ -9,11 +9,20 @@
     "geschichte",
     "zeitreise",
     "kommunikation",
-    "epochen"
+    "epochen",
+    "ki",
+    "weltweit"
   ],
   "gebaeude": {
     "ansicht": "gebaeude",
-    "stile": ["steinzeit", "gotisch", "viktorianisch", "retro", "neon"]
+    "stile": [
+      "steinzeit",
+      "gotisch",
+      "viktorianisch",
+      "retro",
+      "neon",
+      "raumstation"
+    ]
   },
   "style": {
     "theme": "dark",
@@ -66,21 +75,23 @@
     ]
   },
   "completion": {
-    "message": "Glückwunsch! Du hast alle fünf Epochen bereist und den Code entschlüsselt: VON DER HÖHLE BIS ZUM NETZ – MEDIEN VERBINDEN DIE WELT.",
-    "code": "MEDIEN-25"
+    "message": "Glückwunsch! Du hast alle sechs Epochen bereist und den Code entschlüsselt: VON DER HÖHLE BIS ZUR KI – MEDIEN VERBINDEN DIE WELT. Und du weißt jetzt: Nicht alles, was echt aussieht, ist echt.",
+    "code": "MEDIEN-26"
   },
   "slides": [
     {
       "id": "intro",
       "type": "explanation",
       "title": "Die Zeitmaschine",
-      "text": "Du betrittst eine alte Bibliothek. Mitten im Raum steht ein merkwürdiges Gerät – eine Zeitmaschine! Deine Mission: Reise durch fünf Epochen der Mediengeschichte. Jede Epoche ist ein Stockwerk. Sammle in den Aufgaben Codeschnipsel und setze sie an der Treppe zusammen, um weiterzukommen."
+      "text": "Du betrittst eine alte Bibliothek. Mitten im Raum steht ein merkwürdiges Gerät – eine Zeitmaschine! Deine Mission: Reise durch sechs Epochen der Mediengeschichte, von der Höhlenmalerei bis zur Künstlichen Intelligenz. Jede Epoche ist ein Stockwerk, und in jedem Zimmer steht ein Medium seiner Zeit, das dir etwas erzählt oder eine Aufgabe stellt. Sammle Codeschnipsel und setze sie an der Treppe zusammen, um weiterzukommen. Dreht sich in einem Zimmer ein Globus, wartet dort eine freiwillige Aufgabe über Medien in anderen Teilen der Welt – sie bringt keinen Codeschnipsel, nur Wissen.",
+      "station": "kuckucksuhr"
     },
     {
       "id": "beispiel-steinzeit",
       "type": "example",
       "title": "Steinzeit – Die ersten Bilder",
-      "text": "Vor etwa 40.000 Jahren begannen Menschen, in Höhlen Tiere und Jagdszenen zu malen. Das war das erste Medium, das Geschichten festhielt – noch ohne Schrift. Ein berühmtes Beispiel sind die Höhlen von Lascaux in Frankreich."
+      "text": "Vor etwa 40.000 Jahren begannen Menschen, in Höhlen Tiere und Jagdszenen zu malen. Das war das erste Medium, das Geschichten festhielt – noch ohne Schrift. Ein berühmtes Beispiel sind die Höhlen von Lascaux in Frankreich.",
+      "station": "hoehlenwand"
     },
     {
       "id": "steinzeit-aufgabe",
@@ -113,13 +124,81 @@
       "hints": [
         "Die Bilder zeigen oft Tiere und Jagdszenen.",
         "Sie hatten eine kommunikative Funktion."
+      ],
+      "station": "hoehlenwand"
+    },
+    {
+      "id": "welt-quipu",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Die Knotenschnüre der Inka",
+      "text": "Die Inka in Südamerika (15.–16. Jahrhundert) regierten ein riesiges Reich – ganz ohne Schrift, wie wir sie kennen. Stattdessen nutzten sie Quipus: Bündel aus bunten Schnüren mit Knoten. Farbe, Art und Lage der Knoten standen für Zahlen.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Wofür nutzten die Inka ihre Quipus vor allem?",
+        "answers": [
+          {
+            "text": "Um Zahlen festzuhalten, etwa Abgaben, Vorräte oder Einwohner.",
+            "correct": true
+          },
+          {
+            "text": "Als Schmuck für Feste.",
+            "correct": false
+          },
+          {
+            "text": "Als Fischernetze.",
+            "correct": false
+          },
+          {
+            "text": "Als Musikinstrument.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Die Knoten standen für Einer, Zehner, Hunderter …",
+        "Ein großes Reich muss viel zählen."
       ]
     },
     {
       "id": "antike-schrift-erklaerung",
       "type": "explanation",
       "title": "Antike – Die Erfindung der Schrift",
-      "text": "Um 3300 v. Chr. entstanden in Mesopotamien die ersten Keilschriftzeichen, wenig später in Ägypten die Hieroglyphen. Die Schrift machte es möglich, Wissen unabhängig von Ort und Zeit festzuhalten – ein Quantensprung für die Menschheit."
+      "text": "Um 3300 v. Chr. entstanden in Mesopotamien die ersten Keilschriftzeichen, wenig später in Ägypten die Hieroglyphen. Die Schrift machte es möglich, Wissen unabhängig von Ort und Zeit festzuhalten – ein Quantensprung für die Menschheit.",
+      "station": "tontafel"
+    },
+    {
+      "id": "welt-orakelknochen",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Orakelknochen in China",
+      "text": "Die ältesten bekannten chinesischen Schriftzeichen sind über 3000 Jahre alt (Shang-Dynastie, um 1250 v. Chr.). Wahrsager ritzten Fragen an die Ahnen ein – etwa zu Ernte, Wetter oder Krieg – und erhitzten das Material, bis Risse entstanden. Viele dieser Zeichen erkennt man in der heutigen chinesischen Schrift noch wieder.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Worauf ritzten die Wahrsager der Shang-Dynastie diese Schriftzeichen?",
+        "answers": [
+          {
+            "text": "Auf Tierknochen und Schildkrötenpanzer.",
+            "correct": true
+          },
+          {
+            "text": "Auf Papier.",
+            "correct": false
+          },
+          {
+            "text": "Auf Seide.",
+            "correct": false
+          },
+          {
+            "text": "Auf Tontafeln.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Der Name der Aufgabe verrät es schon halb.",
+        "Papier wurde in China erst viel später erfunden (um 105 n. Chr.)."
+      ]
     },
     {
       "id": "antike-schrift-aufgabe",
@@ -152,13 +231,15 @@
       "hints": [
         "Das Wort für Papier leitet sich davon ab.",
         "Es wurde aus einer Pflanze hergestellt."
-      ]
+      ],
+      "station": "schriftrolle"
     },
     {
       "id": "antike-bibliothek",
       "type": "explanation",
       "title": "Antike – Die große Bibliothek von Alexandria",
-      "text": "Um 300 v. Chr. wurde in Alexandria die berühmteste Bibliothek der Antike gegründet. Sie sammelte alle bekannten Schriften der Welt – schätzungsweise 500.000 Papyrusrollen. Ein Brand zerstörte einen Großteil, aber die Idee einer zentralen Wissenssammlung blieb."
+      "text": "Um 300 v. Chr. wurde in Alexandria die berühmteste Bibliothek der Antike gegründet. Sie sammelte alle bekannten Schriften der Welt – schätzungsweise 500.000 Papyrusrollen. Ein Brand zerstörte einen Großteil, aber die Idee einer zentralen Wissenssammlung blieb.",
+      "station": "schriftrolle"
     },
     {
       "id": "tuer-1",
@@ -174,7 +255,8 @@
       "id": "mittelalter-kloster",
       "type": "explanation",
       "title": "Mittelalter – Bücher aus Klöstern",
-      "text": "Nach dem Untergang des Römischen Reichs bewahrten Klöster das Wissen. Mönche kopierten alte Texte von Hand – oft tagelang für ein einziges Buch. Diese Handschriften waren wertvoller als Gold und nur für wenige zugänglich."
+      "text": "Nach dem Untergang des Römischen Reichs bewahrten Klöster das Wissen. Mönche kopierten alte Texte von Hand – oft tagelang für ein einziges Buch. Diese Handschriften waren wertvoller als Gold und nur für wenige zugänglich.",
+      "station": "buch"
     },
     {
       "id": "mittelalter-buch-aufgabe",
@@ -207,13 +289,48 @@
       "hints": [
         "Die Herstellung war sehr aufwendig.",
         "Die Bücher waren oft reich verziert."
-      ]
+      ],
+      "station": "buch"
     },
     {
       "id": "gutenberg-erklaerung",
       "type": "explanation",
       "title": "1440 – Gutenbergs Buchdruck",
-      "text": "Johannes Gutenberg erfand den Buchdruck mit beweglichen Lettern. Erste gedruckte Bibel: um 1455. Plötzlich konnten Bücher schnell und preiswert hergestellt werden – das Wissen verbreitete sich wie nie zuvor."
+      "text": "Johannes Gutenberg erfand den Buchdruck mit beweglichen Lettern. Erste gedruckte Bibel: um 1455. Plötzlich konnten Bücher schnell und preiswert hergestellt werden – das Wissen verbreitete sich wie nie zuvor.",
+      "station": "druckerpresse"
+    },
+    {
+      "id": "welt-jikji",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Gutenberg war nicht der Erste",
+      "text": "In China druckte man schon im 9. Jahrhundert ganze Bücher mit geschnitzten Holzplatten. Um 1040 erfand Bi Sheng dort bewegliche Lettern aus gebranntem Ton. Das älteste erhaltene Buch, das mit beweglichen Lettern aus Metall gedruckt wurde, heißt »Jikji«: eine Sammlung buddhistischer Lehren von 1377 – rund 80 Jahre vor Gutenbergs Bibel.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Wo wurde der »Jikji« gedruckt?",
+        "answers": [
+          {
+            "text": "In Korea",
+            "correct": true
+          },
+          {
+            "text": "In Japan",
+            "correct": false
+          },
+          {
+            "text": "In Italien",
+            "correct": false
+          },
+          {
+            "text": "In Ägypten",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Das Land liegt zwischen China und Japan.",
+        "Der Jikji liegt heute in der Nationalbibliothek in Paris."
+      ]
     },
     {
       "id": "gutenberg-aufgabe",
@@ -246,13 +363,48 @@
       "hints": [
         "Vorher waren Bücher teuer und selten.",
         "Die Reformation wurde durch den Druck gefördert."
+      ],
+      "station": "druckerpresse"
+    },
+    {
+      "id": "welt-maya",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Die Faltbücher der Maya",
+      "text": "Die Maya in Mittelamerika hatten eine vollständige Schrift aus Hunderten Zeichen. Sie schrieben Bücher auf Papier aus der Rinde von Feigenbäumen, zickzack gefaltet wie ein Leporello. Nach der Eroberung durch die Spanier ließ der Mönch Diego de Landa 1562 viele davon verbrennen, weil er sie für Teufelswerk hielt. Eines der erhaltenen liegt heute in Dresden.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Wie viele Maya-Bücher sind nach heutigem Wissen erhalten geblieben?",
+        "answers": [
+          {
+            "text": "Vier",
+            "correct": true
+          },
+          {
+            "text": "Etwa 400",
+            "correct": false
+          },
+          {
+            "text": "Keines",
+            "correct": false
+          },
+          {
+            "text": "Über 4000",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Sehr, sehr wenige – man kann sie an einer Hand abzählen.",
+        "Man benennt sie nach den Städten, in denen sie liegen: Dresden, Madrid, Paris …"
       ]
     },
     {
       "id": "zeitung-erklaerung",
       "type": "explanation",
       "title": "1605 – Die erste Zeitung",
-      "text": "In Straßburg erschien die erste gedruckte Zeitung – die ‚Relation‘. Sie berichtete über aktuelle Ereignisse aus ganz Europa. Damit entstand ein neues Medium, das regelmäßig über Neuigkeiten informierte."
+      "text": "In Straßburg erschien die erste gedruckte Zeitung – die ‚Relation‘. Sie berichtete über aktuelle Ereignisse aus ganz Europa. Damit entstand ein neues Medium, das regelmäßig über Neuigkeiten informierte.",
+      "station": "zeitung"
     },
     {
       "id": "tuer-2",
@@ -268,7 +420,8 @@
       "id": "telegraph-erklaerung",
       "type": "explanation",
       "title": "1837 – Der elektrische Telegraph",
-      "text": "Samuel Morse entwickelte den ersten brauchbaren Telegraphen und den Morse-Code. Damit konnten Nachrichten in Sekundenschnelle über Kabel gesendet werden – die erste ‚digitale‘ Kommunikation."
+      "text": "Samuel Morse entwickelte den ersten brauchbaren Telegraphen und den Morse-Code. Damit konnten Nachrichten in Sekundenschnelle über Kabel gesendet werden – die erste ‚digitale‘ Kommunikation.",
+      "station": "telegraph"
     },
     {
       "id": "telegraph-aufgabe",
@@ -301,13 +454,15 @@
       "hints": [
         "Nachrichten brauchten vorher Tage oder Wochen.",
         "Morsen war die Sprache des Telegraphen."
-      ]
+      ],
+      "station": "telegraph"
     },
     {
       "id": "telefon-erklaerung",
       "type": "explanation",
       "title": "1876 – Das Telefon",
-      "text": "Alexander Graham Bell meldete das Telefon zum Patent an. Erstmals konnte man die menschliche Stimme über Kabel übertragen – ein neues Zeitalter der persönlichen Kommunikation begann."
+      "text": "Alexander Graham Bell meldete das Telefon zum Patent an. Erstmals konnte man die menschliche Stimme über Kabel übertragen – ein neues Zeitalter der persönlichen Kommunikation begann.",
+      "station": "telefon"
     },
     {
       "id": "telefon-aufgabe",
@@ -340,19 +495,55 @@
       "hints": [
         "Der Name Bell ist bekannt.",
         "Das Patent wurde 1876 angemeldet."
-      ]
+      ],
+      "station": "telefon"
     },
     {
       "id": "radio-erklaerung",
       "type": "explanation",
       "title": "1895 – Das Radio",
-      "text": "Guglielmo Marconi gelang die erste drahtlose Übertragung von Signalen. 1906 gab es die erste Radiosendung mit Musik und Sprache. Das Radio wurde zum Massenmedium – Nachrichten und Unterhaltung für alle."
+      "text": "Guglielmo Marconi gelang die erste drahtlose Übertragung von Signalen. 1906 gab es die erste Radiosendung mit Musik und Sprache. Das Radio wurde zum Massenmedium – Nachrichten und Unterhaltung für alle.",
+      "station": "radio"
+    },
+    {
+      "id": "welt-telenovela",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Vom Radio zur Telenovela",
+      "text": "In Kuba liefen in den 1930er- und 40er-Jahren »Radionovelas«: Fortsetzungsgeschichten im Radio, die ganze Familien jeden Tag verfolgten. Mit dem Fernsehen wurden daraus Telenovelas. Sender aus Mexiko und Brasilien machten sie weltweit erfolgreich – heute laufen lateinamerikanische Telenovelas in über 100 Ländern.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Was unterscheidet eine klassische Telenovela von einer Endlosserie (Soap)?",
+        "answers": [
+          {
+            "text": "Sie hat ein festes Ende, meist nach einigen Monaten.",
+            "correct": true
+          },
+          {
+            "text": "Sie hat keine Schauspieler.",
+            "correct": false
+          },
+          {
+            "text": "Sie wird nur im Radio gesendet.",
+            "correct": false
+          },
+          {
+            "text": "Sie läuft nur einmal im Jahr.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Das Wort »Novela« heißt Roman – und ein Roman endet irgendwann.",
+        "Soaps laufen oft jahrzehntelang."
+      ]
     },
     {
       "id": "film-erklaerung",
       "type": "explanation",
       "title": "1895 – Die Geburt des Films",
-      "text": "Die Brüder Lumière zeigten ihren ersten öffentlichen Film – ‚Arbeiter verlassen die Fabrik‘. Der Film wurde schnell zum wichtigsten visuellen Medium und veränderte Unterhaltung und Bildung."
+      "text": "Die Brüder Lumière zeigten ihren ersten öffentlichen Film – ‚Arbeiter verlassen die Fabrik‘. Der Film wurde schnell zum wichtigsten visuellen Medium und veränderte Unterhaltung und Bildung.",
+      "station": "filmprojektor"
     },
     {
       "id": "film-aufgabe",
@@ -385,19 +576,15 @@
       "hints": [
         "Stummfilme waren die Regel.",
         "Ton kam erst später dazu."
-      ]
+      ],
+      "station": "filmprojektor"
     },
     {
       "id": "fernsehen-erklaerung",
       "type": "explanation",
       "title": "1927 – Das Fernsehen",
-      "text": "Philo Farnsworth übertrug das erste elektronische Fernsehbild. 1936 gab es in Berlin die ersten regelmäßigen Fernsehsendungen. Das Fernsehen wurde zum Leitmedium des 20. Jahrhunderts – Bilder aus aller Welt ins Wohnzimmer."
-    },
-    {
-      "id": "fernsehen-funfact",
-      "type": "explanation",
-      "title": "Funfact: Fernsehweihnacht",
-      "text": "Die erste Weihnachtsansprache des deutschen Bundespräsidenten im Fernsehen war 1953. Schon wenige Jahre später gehörte der Fernseher zur Standardausstattung in Haushalten."
+      "text": "Philo Farnsworth übertrug das erste elektronische Fernsehbild. 1936 gab es in Berlin die ersten regelmäßigen Fernsehsendungen. Das Fernsehen wurde zum Leitmedium des 20. Jahrhunderts – Bilder aus aller Welt ins Wohnzimmer. Die erste Weihnachtsansprache des deutschen Bundespräsidenten im Fernsehen war 1953. Schon wenige Jahre später gehörte der Fernseher zur Standardausstattung in Haushalten.",
+      "station": "fernseher"
     },
     {
       "id": "tuer-3",
@@ -414,19 +601,22 @@
       "id": "computer-erklaerung",
       "type": "explanation",
       "title": "1940er – Die ersten Computer",
-      "text": "Große Rechenmaschinen wie der ENIAC (1945) waren die Vorläufer des PCs. Sie füllten ganze Räume und konnten nur einfache Berechnungen durchführen – doch sie legten den Grundstein für die digitale Revolution."
+      "text": "Große Rechenmaschinen wie der ENIAC (1945) waren die Vorläufer des PCs. Sie füllten ganze Räume und konnten nur einfache Berechnungen durchführen – doch sie legten den Grundstein für die digitale Revolution.",
+      "station": "grossrechner"
     },
     {
       "id": "internet-vorlaeufer",
       "type": "explanation",
       "title": "1969 – ARPANET",
-      "text": "Das ARPANET war der Vorläufer des Internets. Die erste Nachricht wurde von der UCLA an das Stanford Research Institute gesendet – nur die Buchstaben ‚LO‘, weil das System abstürzte. Der erste Funfact der Internetgeschichte!"
+      "text": "Das ARPANET war der Vorläufer des Internets. Die erste Nachricht wurde von der UCLA an das Stanford Research Institute gesendet – nur die Buchstaben ‚LO‘, weil das System abstürzte. Der erste Funfact der Internetgeschichte!",
+      "station": "grossrechner"
     },
     {
       "id": "email-erklaerung",
       "type": "explanation",
       "title": "1971 – Die erste E‑Mail",
-      "text": "Ray Tomlinson schickte die erste E‑Mail – zwischen zwei nebeneinanderstehenden Rechnern. Als Inhalt wählte er vermutlich die Zeichenfolge ‚QWERTYUIOP‘. Das @-Symbol wurde zum Trenner zwischen Nutzer und Rechner."
+      "text": "Ray Tomlinson schickte die erste E‑Mail – zwischen zwei nebeneinanderstehenden Rechnern. Als Inhalt wählte er vermutlich die Zeichenfolge ‚QWERTYUIOP‘. Das @-Symbol wurde zum Trenner zwischen Nutzer und Rechner.",
+      "station": "computer"
     },
     {
       "id": "email-aufgabe",
@@ -459,7 +649,8 @@
       "hints": [
         "Es ist das At-Zeichen.",
         "Man nennt es auch ‚Klammeraffe‘."
-      ]
+      ],
+      "station": "computer"
     },
     {
       "id": "internet-aufgabe",
@@ -492,13 +683,15 @@
       "hints": [
         "Es wurde vom US-Militär finanziert.",
         "Es sollte ausfallsicher sein."
-      ]
+      ],
+      "station": "grossrechner"
     },
     {
       "id": "www-erklaerung",
       "type": "explanation",
       "title": "1991 – Das World Wide Web",
-      "text": "Tim Berners‑Lee veröffentlichte das WWW – ein System von Hyperlinks, das das Internet für alle nutzbar machte. Die erste Website stand am CERN und erklärte, wie das Web funktioniert."
+      "text": "Tim Berners‑Lee veröffentlichte das WWW – ein System von Hyperlinks, das das Internet für alle nutzbar machte. Die erste Website stand am CERN und erklärte, wie das Web funktioniert.",
+      "station": "computer"
     },
     {
       "id": "www-aufgabe",
@@ -531,6 +724,40 @@
       "hints": [
         "Er arbeitete am CERN in Genf.",
         "Sein System basierte auf Hyperlinks."
+      ],
+      "station": "computer"
+    },
+    {
+      "id": "welt-emoji",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Emojis aus Japan",
+      "text": "1999 zeichnete Shigetaka Kurita für das Handy-Internet »i-mode« der japanischen Firma NTT Docomo 176 kleine Bildchen, jedes nur 12 × 12 Pixel groß: Sonne, Herz, Regenschirm, Gesichter. »Emoji« ist Japanisch und heißt »Bild-Schriftzeichen«. Heute gehören sie zum Unicode-Standard, und die Originale hängen im Museum of Modern Art in New York.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Warum brauchte man die Emojis damals auf dem Handy?",
+        "answers": [
+          {
+            "text": "Um in kurzen Nachrichten mit wenig Platz Gefühle und Dinge schnell auszudrücken.",
+            "correct": true
+          },
+          {
+            "text": "Weil Handys keine Buchstaben anzeigen konnten.",
+            "correct": false
+          },
+          {
+            "text": "Als Werbung für Firmen.",
+            "correct": false
+          },
+          {
+            "text": "Um Geheimnachrichten zu verschlüsseln.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Auf die Bildschirme passten nur wenige Zeichen.",
+        "Ein Herz sagt mehr als »ich mag das«."
       ]
     },
     {
@@ -545,10 +772,18 @@
       ]
     },
     {
+      "id": "wikipedia-erklaerung",
+      "type": "explanation",
+      "title": "2001 – Wikipedia: Ein Lexikon zum Mitschreiben",
+      "text": "Am 15. Januar 2001 startete die Wikipedia, im März folgte die deutsche Ausgabe. Das Neue: Jeder darf Artikel schreiben und verbessern, Quellen machen Aussagen überprüfbar. Heute ist sie eine der meistbesuchten Websites der Welt – und ein Beispiel dafür, dass im »Mitmach-Web« aus Lesern Autoren werden.",
+      "station": "laptop"
+    },
+    {
       "id": "soziale-medien-erklaerung",
       "type": "explanation",
       "title": "2004 – Facebook und die sozialen Netzwerke",
-      "text": "Mark Zuckerberg gründete Facebook – ursprünglich nur für Harvard-Studenten. Es folgten YouTube (2005) und Twitter (2006). Soziale Medien veränderten die Kommunikation: Jeder konnte jetzt Inhalte veröffentlichen und teilen."
+      "text": "Mark Zuckerberg gründete Facebook – ursprünglich nur für Harvard-Studenten. Es folgten YouTube (2005) und Twitter (2006). Soziale Medien veränderten die Kommunikation: Jeder konnte jetzt Inhalte veröffentlichen und teilen.",
+      "station": "laptop"
     },
     {
       "id": "soziale-medien-aufgabe",
@@ -581,25 +816,62 @@
       "hints": [
         "Die Nutzer selbst stellten die Inhalte ein.",
         "Die Plattformen wuchsen schnell."
-      ]
+      ],
+      "station": "laptop"
     },
     {
       "id": "smartphone-erklaerung",
       "type": "explanation",
       "title": "2007 – Das iPhone und die Smartphone-Ära",
-      "text": "Steve Jobs präsentierte das iPhone – ein Telefon, das auch Internet, Musik und Fotos vereinte. Damit wurde das Smartphone zum zentralen Medium, das alle vorherigen Medien in einer Tasche vereint."
+      "text": "Steve Jobs präsentierte das iPhone – ein Telefon, das auch Internet, Musik und Fotos vereinte. Damit wurde das Smartphone zum zentralen Medium, das alle vorherigen Medien in einer Tasche vereint.",
+      "station": "smartphone"
+    },
+    {
+      "id": "tablet-erklaerung",
+      "type": "explanation",
+      "title": "2010 – Das Tablet",
+      "text": "Mit dem iPad kam 2010 ein Bildschirm zum Anfassen ohne Tastatur: Bücher, Zeitungen, Filme und Spiele auf einer Glasscheibe. Tablets sind heute auch in vielen Schulen Arbeitsgeräte.",
+      "station": "tablet"
     },
     {
       "id": "streaming-erklaerung",
       "type": "explanation",
-      "title": "2008 – Spotify und der Musik-Streaming",
-      "text": "Mit Spotify und später Netflix veränderte sich der Konsum von Musik und Filmen. Statt CDs oder DVDs gab es nun Inhalte auf Abruf – immer und überall. Das lineare Fernsehen verlor an Bedeutung."
+      "title": "2008 – Spotify und das Streaming",
+      "text": "Mit Spotify und später Netflix veränderte sich der Konsum von Musik und Filmen. Statt CDs oder DVDs gab es nun Inhalte auf Abruf – immer und überall. Das lineare Fernsehen verlor an Bedeutung.",
+      "station": "kopfhoerer"
     },
     {
-      "id": "ki-erklaerung",
-      "type": "explanation",
-      "title": "2020er – Künstliche Intelligenz im Alltag",
-      "text": "Chatbots wie ChatGPT, Bildgeneratoren und Sprachassistenten nutzen KI. Sie durchdringen alle Medienbereiche – vom Schreiben von Texten bis zur Erstellung von Bildern. Eine neue Qualität der Informationsverarbeitung."
+      "id": "welt-mpesa",
+      "type": "task",
+      "title": "🌍 Weltweit (freiwillig): Geld per SMS in Kenia",
+      "text": "2007 startete in Kenia M-Pesa (»Pesa« heißt Geld auf Swahili): Geld verschicken per SMS, mit einem ganz einfachen Handy. Viele Menschen hatten kein Bankkonto, aber ein Mobiltelefon. Heute nutzen Millionen Menschen in Afrika mobiles Bezahlen – früher und selbstverständlicher als in Deutschland.",
+      "station": "globus",
+      "task": {
+        "kind": "single",
+        "question": "Warum wurde M-Pesa in Kenia so schnell so erfolgreich?",
+        "answers": [
+          {
+            "text": "Viele hatten ein Handy, aber kein Bankkonto.",
+            "correct": true
+          },
+          {
+            "text": "Es gab dort kein Bargeld.",
+            "correct": false
+          },
+          {
+            "text": "Smartphones waren dort billiger als in Europa.",
+            "correct": false
+          },
+          {
+            "text": "Die Regierung hat Banken verboten.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Es funktionierte schon mit einfachen Tastenhandys.",
+        "Denk daran, was man für eine Überweisung sonst braucht."
+      ]
     },
     {
       "id": "digital-aufgabe",
@@ -632,16 +904,216 @@
       "hints": [
         "Smartphones vereinen viele Funktionen.",
         "Streaming und On-Demand sind heute normal."
-      ]
+      ],
+      "station": "smartphone"
     },
     {
       "id": "tuer-5",
       "type": "door",
-      "title": "Die Zeitmaschine – letzte Tür",
-      "text": "Die Zeitmaschine ist fast startklar. Setze die Codeschnipsel der letzten Epoche in Lesereihenfolge zusammen und gib sie ein.",
+      "title": "Treppe ins Zeitalter der KI",
+      "text": "Oben wartet die Gegenwart: Bilder, die niemand fotografiert hat, und Texte, die niemand geschrieben hat. Setze die Codeschnipsel dieser Epoche in Lesereihenfolge zusammen und gib sie ein.",
       "onFailReview": [
         "soziale-medien-aufgabe",
         "digital-aufgabe"
+      ]
+    },
+    {
+      "id": "photoshop-erklaerung",
+      "type": "explanation",
+      "title": "1990 – Photoshop: Fotos werden formbar",
+      "text": "Die Brüder Thomas und John Knoll schrieben ein Programm zur Bildbearbeitung, 1990 kam es als Adobe Photoshop heraus. Ab 1994 gab es Ebenen: Bildteile liegen wie Folien übereinander und lassen sich einzeln verändern. Mit den Digitalkameras der 2000er konnte plötzlich jedes Foto retuschiert werden – Hautunreinheiten weg, Himmel blauer, Personen entfernt. »Photoshoppen« steht heute im Duden.",
+      "station": "grafiktablett"
+    },
+    {
+      "id": "photoshop-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Bearbeitet oder gefälscht?",
+      "text": "Nicht jede Bearbeitung ist eine Fälschung. Entscheidend ist, ob sich die Aussage des Fotos ändert.",
+      "station": "grafiktablett",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "PIXEL",
+        "question": "Welche Bearbeitungen verändern die Aussage eines Nachrichtenfotos? (Mehrere Antworten möglich.)",
+        "answers": [
+          {
+            "text": "Eine Person wird aus dem Bild entfernt.",
+            "correct": true
+          },
+          {
+            "text": "Das Foto wird etwas aufgehellt.",
+            "correct": false
+          },
+          {
+            "text": "Ein Schild mit anderer Aufschrift wird hineinmontiert.",
+            "correct": true
+          },
+          {
+            "text": "Das Foto wird gerade gerückt.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Frag dich: Würde jemand danach etwas anderes glauben?",
+        "Helligkeit und Ausrichtung ändern nicht, was passiert ist."
+      ]
+    },
+    {
+      "id": "filter-erklaerung",
+      "type": "explanation",
+      "title": "2010er – Filter, Beauty-Apps und Deepfakes",
+      "text": "2010 startete Instagram – mit Filtern, die jedes Handyfoto wie ein altes Polaroid aussehen ließen. Bald glätteten Beauty-Filter Haut und formten Gesichter, oft ohne dass man es merkt. 2017 tauchten die ersten »Deepfakes« auf: Eine KI setzt ein Gesicht in ein fremdes Video ein, samt Mimik – und manchmal auch mit nachgemachter Stimme.",
+      "station": "smartphone"
+    },
+    {
+      "id": "deepfake-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Fälschungen entlarven",
+      "text": "Ein Video zeigt eine berühmte Person, die etwas Unglaubliches sagt. Es wird tausendfach geteilt.",
+      "station": "fernseher",
+      "task": {
+        "kind": "multi",
+        "codeFragment": "ECHT",
+        "question": "Was hilft dir, eine Fälschung zu erkennen? (Mehrere Antworten möglich.)",
+        "answers": [
+          {
+            "text": "Prüfen, wer es zuerst veröffentlicht hat.",
+            "correct": true
+          },
+          {
+            "text": "Nachsehen, ob seriöse Nachrichtenseiten darüber berichten.",
+            "correct": true
+          },
+          {
+            "text": "Viele Likes und Shares zeigen, dass es echt ist.",
+            "correct": false
+          },
+          {
+            "text": "Mit der Bildrückwärtssuche nach dem Original suchen.",
+            "correct": true
+          },
+          {
+            "text": "Videos können nicht gefälscht werden.",
+            "correct": false
+          }
+        ]
+      },
+      "hints": [
+        "Beliebtheit sagt nichts über Wahrheit.",
+        "Fälschungen haben oft keine seriöse Quelle."
+      ]
+    },
+    {
+      "id": "chatgpt-erklaerung",
+      "type": "explanation",
+      "title": "2022 – ChatGPT: Die Maschine schreibt",
+      "text": "Am 30. November 2022 stellte die Firma OpenAI ChatGPT vor. Nach etwa zwei Monaten hatten es schätzungsweise 100 Millionen Menschen ausprobiert – so schnell wuchs vorher keine App. Dahinter steckt ein Sprachmodell: Es hat an riesigen Textmengen gelernt, welches Wort wahrscheinlich als Nächstes kommt. Deshalb klingen die Antworten überzeugend – und können trotzdem falsch sein (man sagt: die KI »halluziniert«).",
+      "station": "laptop"
+    },
+    {
+      "id": "ki-sprache-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Wie schreibt eine KI?",
+      "text": "Öffne die KI-Werkstatt und schreibe selbst einen Text so, wie ein Sprachmodell es tut.",
+      "station": "kikern",
+      "task": {
+        "kind": "single",
+        "codeFragment": "KI",
+        "question": "Wie entsteht der Text eines Sprachmodells wie ChatGPT?",
+        "answers": [
+          {
+            "text": "Es wählt Wort für Wort ein wahrscheinliches nächstes Wort.",
+            "correct": true
+          },
+          {
+            "text": "Es schlägt jede Antwort in einem Lexikon nach.",
+            "correct": false
+          },
+          {
+            "text": "Es kopiert immer einen fertigen Text aus dem Internet.",
+            "correct": false
+          },
+          {
+            "text": "Ein Mensch tippt die Antwort im Hintergrund.",
+            "correct": false
+          }
+        ],
+        "sim": {
+          "tool": "ki",
+          "config": {
+            "reiter": "sprache"
+          }
+        }
+      },
+      "hints": [
+        "In der Werkstatt wählst du immer das nächste Wort aus.",
+        "Je dicker der Faden, desto wahrscheinlicher das Wort."
+      ]
+    },
+    {
+      "id": "bildgenerator-erklaerung",
+      "type": "explanation",
+      "title": "2022 – Bilder aus Text",
+      "text": "Im selben Jahr kamen Bildgeneratoren wie DALL·E 2, Midjourney und Stable Diffusion: Man beschreibt ein Bild in Worten, und Sekunden später ist es da. Im März 2023 ging ein erzeugtes Bild des Papstes in einer weißen Daunenjacke um die Welt – viele hielten es für ein Foto. Seit 2023 kann auch Photoshop Bildteile per KI erzeugen: Der Kreis zur Bildbearbeitung schließt sich.",
+      "station": "grafiktablett"
+    },
+    {
+      "id": "ki-bilder-aufgabe",
+      "type": "task",
+      "title": "Aufgabe: Bilder aus Rauschen",
+      "text": "In der KI-Werkstatt siehst du, wie ein Bild Schritt für Schritt im Rauschen verschwindet – und wie es zurückgeht.",
+      "station": "kikern",
+      "task": {
+        "kind": "single",
+        "codeFragment": "BILD",
+        "question": "Womit beginnt ein Bildgenerator (Diffusionsmodell), wenn er ein neues Bild erzeugt?",
+        "answers": [
+          {
+            "text": "Mit reinem Rauschen, das Schritt für Schritt entfernt wird.",
+            "correct": true
+          },
+          {
+            "text": "Mit einem Foto aus dem Internet, das leicht verändert wird.",
+            "correct": false
+          },
+          {
+            "text": "Mit einem leeren weißen Bild, auf das er malt.",
+            "correct": false
+          },
+          {
+            "text": "Mit einer Skizze, die der Nutzer zeichnen muss.",
+            "correct": false
+          }
+        ],
+        "sim": {
+          "tool": "ki",
+          "config": {
+            "reiter": "bilder"
+          }
+        }
+      },
+      "hints": [
+        "Schau dir im Reiter »Bilder« den Rückweg an.",
+        "Am Anfang sieht das Bild aus wie ein gestörter Fernseher."
+      ]
+    },
+    {
+      "id": "kennzeichnung-erklaerung",
+      "type": "explanation",
+      "title": "Heute – Kennzeichnen, was erzeugt ist",
+      "text": "Die EU hat 2024 ein KI-Gesetz beschlossen. Seit August 2026 gilt daraus eine Pflicht: Wer Deepfakes und andere täuschend echte KI-Inhalte veröffentlicht, muss sie als künstlich erzeugt kennzeichnen. Trotzdem bleibt die wichtigste Frage deine eigene: Woher kommt das Bild – und wer hat ein Interesse daran, dass ich es glaube?",
+      "station": "smartphone"
+    },
+    {
+      "id": "tuer-6",
+      "type": "door",
+      "title": "Die Zeitmaschine – letzte Tür",
+      "text": "Die Zeitmaschine ist startklar. Setze die Codeschnipsel der letzten Epoche in Lesereihenfolge zusammen und gib sie ein.",
+      "onFailReview": [
+        "photoshop-aufgabe",
+        "deepfake-aufgabe",
+        "ki-sprache-aufgabe",
+        "ki-bilder-aufgabe"
       ]
     }
   ]

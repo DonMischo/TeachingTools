@@ -15,7 +15,7 @@ import { GEBAEUDE_SYNTHESE, farbenAus, resynthese, schreibePixel, type Bild } fr
 const auswahl = "rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1";
 
 /** Farbe, mit der ein graues Gebäude-Muster hier eingefärbt wird */
-const TOENUNG: Record<Muster, number> = {
+const TOENUNG: Record<Exclude<Muster, "glut">, number> = {
   fels: 0x9a8066, erde: 0xa07e58, sand: 0xf1d98a, eis: 0x9bd8f5, marmor: 0xf5f5f4, stein: 0x9c958e,
   holz: 0xd4a373, parkett: 0xa0694a, teppich: 0xe08a1e, fachwerk: 0xf5f0e1, metall: 0x8a9bb0,
   tapete: 0x3f8a5a, beton: 0xc8c4c0, putz: 0xece4d8,
@@ -37,7 +37,7 @@ function probeAus(q: Quelle): Bild | null {
   }
   const p = musterProbe(q.id, 48);
   if (!p) return null;
-  const t = TOENUNG[q.id];
+  const t = TOENUNG[q.id as keyof typeof TOENUNG] ?? 0xffffff;
   const farben = new Uint32Array(p.b * p.h);
   for (let i = 0; i < farben.length; i++) {
     const g = p.daten[i * 4] / 255;
@@ -57,7 +57,7 @@ function male(canvas: HTMLCanvasElement | null, b: number, h: number, farben: Ui
 
 export default function TexturSynthese({ startProbe }: { startProbe?: string }) {
   const start: Quelle = VORLAGEN.some(v => v.id === startProbe) ? { art: "vorlage", id: startProbe! }
-    : startProbe && startProbe in MUSTER_NAME ? { art: "muster", id: startProbe as Muster } : { art: "muster", id: "fels" };
+    : startProbe && startProbe in TOENUNG ? { art: "muster", id: startProbe as Muster } : { art: "muster", id: "fels" };
   const [quelle, setQuelle] = useState<Quelle>(start);
   const [n, setN] = useState(2);
   const [m, setM] = useState(8);
@@ -111,7 +111,7 @@ export default function TexturSynthese({ startProbe }: { startProbe?: string }) 
         <label className="flex items-center gap-1">Probe
           <select value={wert} onChange={e => { const [a, id] = e.target.value.split(":"); setQuelle(a === "m" ? { art: "muster", id: id as Muster } : { art: "vorlage", id }); }} className={auswahl}>
             <optgroup label="Oberflächen der Gebäude">
-              {(Object.keys(MUSTER_NAME) as Muster[]).map(k => <option key={k} value={`m:${k}`}>{MUSTER_NAME[k]}{MUSTER_SYNTHESE.includes(k) ? " ★" : ""}</option>)}
+              {(Object.keys(TOENUNG) as Muster[]).map(k => <option key={k} value={`m:${k}`}>{MUSTER_NAME[k]}{MUSTER_SYNTHESE.includes(k) ? " ★" : ""}</option>)}
             </optgroup>
             <optgroup label="Pixel-Vorlagen (wie im Reiter Vorlage)">
               {VORLAGEN.map(v => <option key={v.id} value={`v:${v.id}`}>{v.name}</option>)}

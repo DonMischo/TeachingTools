@@ -689,9 +689,12 @@ ANLEITUNG_25D = (
     "jede Slide davor ein Zimmer, die Tür wird Treppe bzw. Tür — bewacht von einem Boss im Verlies. "
     "Zurück geht es jederzeit. 3-6 Zimmer pro Abschnitt sind gut; die Zimmer sind 1-9 nummeriert "
     "(Zifferntasten laufen hin). 'station' an der Slide wählt das Objekt im Zimmer "
-    "(_katalog['slide.station']). Ohne Angabe passt es sich an: Werkzeug → passendes Gerät (Waage, "
-    "Tafel, Abakus …), Zeitstrahl → kalender, Erklärung → tafel, Beispiel → regal, im Verlies jede "
-    "übrige Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
+    "(_katalog['slide.station']) — das Objekt spricht dann selbst (»Das Telefon klingelt …«), also passt "
+    "es zum Inhalt: Telefon, Radio, Schriftrolle, Smartphone … Ohne Angabe: Werkzeug → passendes Gerät "
+    "(Waage, Abakus …), Zeitstrahl → kalender, sonst reihum wechselnde Objekte, im Verlies jede übrige "
+    "Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
+    "Eine Aufgabe ohne 'codeFragment' ist freiwillig: Sie hält keine Tür auf — gut für Zusatzwissen, "
+    "etwa »🌍 Weltweit (freiwillig): …« an einem globus. "
 )
 
 

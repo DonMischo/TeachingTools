@@ -54,6 +54,25 @@ OBJEKTE = {
     "abakus": "Abakus",
     "monster": "Monster — liegt besiegt am Boden, sobald gelöst (Standard für Aufgaben im Verlies)",
     "boss": "Bossmonster (steht im Verlies ohnehin vor jeder Treppe)",
+    # Medien durch die Zeit
+    "hoehlenwand": "Felswand mit Höhlenmalerei (Tiere in Ocker, Handabdruck)",
+    "tontafel": "Tontafel mit Keilschrift auf einem Holzblock",
+    "schriftrolle": "Papyrusrolle auf dem Tisch, Rollen im Korb",
+    "buch": "Handschrift mit bunter Initiale am Lesepult, Kerze",
+    "druckerpresse": "Gutenbergs Druckerpresse",
+    "zeitung": "Zeitungsständer mit Stapel und Schlagzeile",
+    "telegraph": "Telegraf mit Morsetaste und Papierstreifen",
+    "telefon": "Kurbeltelefon aus Holz an der Wand",
+    "radio": "Röhrenradio",
+    "filmprojektor": "Filmprojektor mit zwei Spulen und Lichtkegel",
+    "fernseher": "Röhrenfernseher der 50er mit Zimmerantenne",
+    "grossrechner": "Großrechner-Schränke mit Lämpchen (ENIAC-Zeit)",
+    "laptop": "Laptop",
+    "smartphone": "Smartphone mit App-Kacheln",
+    "tablet": "Tablet",
+    "kopfhoerer": "Kopfhörer auf einem Ständer (Musik, Streaming)",
+    "grafiktablett": "Bildschirm mit Bildbearbeitung, Zeichenbrett und Stift",
+    "kikern": "KI-Rechenzentrum: Server mit leuchtendem neuronalen Netz",
 }
 
 # Jedes Werkzeug: was es ist und welche Schlüssel "config" kennt. Ein "?" am

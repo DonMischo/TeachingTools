@@ -11,7 +11,7 @@ import {
 } from "@/lib/api";
 import { MathText } from "@/components/MathText";
 import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
-import { OBJEKT_NAME } from "@/lib/gebaeude/objekte";
+import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
@@ -145,10 +145,11 @@ export default function GebaeudeSpiel({
               <section className="w-full max-w-xl max-h-full overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-3 shadow-2xl">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-[var(--text-muted)]">
-                    {s.type === "explanation" ? "📖 Erklärung" : s.type === "example" ? "💡 Beispiel"
-                      : s.type === "task" ? (objekte[stock][teile[stock].raeume.indexOf(offen)] === "monster" ? "👾 Ein Monster stellt dir eine Aufgabe"
-                      : objekte[stock][teile[stock].raeume.indexOf(offen)] === "boss" ? "👹 Ein Bossmonster stellt dir eine Aufgabe" : "✏️ Aufgabe")
-                      : `${verlies ? "👹" : "🚪"} ${W.tuer}`}
+                    {s.type === "door" ? `${verlies ? "👹" : "🚪"} ${W.tuer}` : (() => {
+                      // Das Objekt im Zimmer spricht: das Telefon klingelt, das Radio sendet …
+                      const st = OBJEKT_STIMME[objekte[stock][teile[stock].raeume.indexOf(offen)]];
+                      return st ? `${st.icon} ${s.type === "task" ? st.aufgabe : st.info} …` : s.type === "task" ? "✏️ Aufgabe" : "📖 Erklärung";
+                    })()}
                   </span>
                   <button onClick={() => setOffen(null)} className="text-sm px-2 rounded hover:bg-[var(--surface-hover)]" aria-label="Zimmer verlassen">✕</button>
                 </div>

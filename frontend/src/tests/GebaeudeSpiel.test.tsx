@@ -109,7 +109,8 @@ describe("Exitgame als Gebäude", () => {
     spiel([], vi.fn(), frag, "verlies");
     const b = screen.getByTestId("buehne");
     expect(b.dataset.art).toBe("verlies");
-    expect(b.dataset.objekte).toBe("tafel,monster");
+    // Erklärung: ein Info-Objekt (reihum), Aufgabe: ein Monster
+    expect(b.dataset.objekte).toMatch(/^[a-z]+,monster$/);
     expect(b.dataset.waechter).toBe("true");
     fireEvent.click(screen.getByText("ankommen 1"));
     expect(screen.getByText(/Ein Monster stellt dir eine Aufgabe/)).toBeInTheDocument();

@@ -127,8 +127,11 @@ describe("Exitgame als Gebäude", () => {
     expect(stationsObjekt({ id: "a", type: "task", task: { ...task, sim: { tool: "gleichungswaage" } } })).toBe("waage");
     expect(stationsObjekt({ id: "a", type: "task", tasks: [task, { ...task, sim: { tool: "sonnensystem" } }] })).toBe("teleskop");
     expect(stationsObjekt({ id: "a", type: "task", task: { kind: "timeline" } })).toBe("kalender");
-    expect(stationsObjekt({ id: "a", type: "explanation" })).toBe("tafel");
-    // sonst reihum, aber fest je Folie
+    expect(stationsObjekt({ id: "a", type: "task", task: { ...task, sim: { tool: "ki" } } })).toBe("kikern");
+    // sonst reihum, aber fest je Folie — und nicht überall Tafel und Schreibtisch
     expect(stationsObjekt({ id: "x7", type: "task", task })).toBe(stationsObjekt({ id: "x7", type: "task", task }));
+    const ids = Array.from({ length: 30 }, (_, i) => `folie-${i}`);
+    expect(new Set(ids.map(id => stationsObjekt({ id, type: "explanation" }))).size).toBeGreaterThanOrEqual(5);
+    expect(new Set(ids.map(id => stationsObjekt({ id, type: "task", task }))).size).toBeGreaterThanOrEqual(6);
   });
 });

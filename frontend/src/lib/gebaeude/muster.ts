@@ -6,7 +6,7 @@
 
 export type Muster =
   | "fels" | "erde" | "stein" | "holz" | "parkett" | "marmor" | "teppich"
-  | "fachwerk" | "metall" | "eis" | "tapete" | "sand" | "beton" | "putz";
+  | "fachwerk" | "metall" | "eis" | "tapete" | "sand" | "beton" | "putz" | "glut";
 
 const GROESSE = 256;
 
@@ -191,6 +191,26 @@ export const MALER: Record<Muster, Malen> = {
       c.fillStyle = grau(160); c.beginPath(); c.arc(x, y, 4, 0, Math.PI * 2); c.fill();
     }
   },
+  glut: (c, z) => {
+    // schwarz mit glühenden Rissen (leuchtet selbst, kommt also nicht grau):
+    // breit dunkelrot, darüber schmal orange-gelb — über den Rand fortgesetzt, damit es nahtlos kachelt
+    c.fillStyle = "#000"; c.fillRect(0, 0, G, G);
+    const risse: [number, number][][] = [];
+    for (let i = 0; i < 5; i++) {
+      let x = z() * G, y = z() * G;
+      const r: [number, number][] = [[x, y]];
+      for (let k = 0; k < 7; k++) { x += (z() - 0.5) * 60; y += (z() - 0.5) * 60; r.push([x, y]); }
+      risse.push(r);
+    }
+    for (const [farbe, breite] of [["rgba(153,27,27,0.55)", 9], ["rgba(234,88,12,0.9)", 3.5], ["rgba(253,224,71,0.9)", 1.2]] as const) {
+      c.strokeStyle = farbe; c.lineWidth = breite; c.lineCap = "round"; c.lineJoin = "round";
+      for (const r of risse) for (const dx of [-G, 0, G]) for (const dy of [-G, 0, G]) {
+        c.beginPath();
+        r.forEach(([x, y], k) => (k ? c.lineTo(x + dx, y + dy) : c.moveTo(x + dx, y + dy)));
+        c.stroke();
+      }
+    }
+  },
   putz: (c, z) => {
     c.fillStyle = grau(245); c.fillRect(0, 0, G, G);
     flecken(c, z, 120, [3, 12], [215, 255], 0.25);
@@ -200,7 +220,7 @@ export const MALER: Record<Muster, Malen> = {
 export const MUSTER_NAME: Record<Muster, string> = {
   fels: "Fels", erde: "Erde", stein: "Mauerwerk", holz: "Dielen", parkett: "Fischgrät-Parkett",
   marmor: "Marmor", teppich: "70er-Teppich", fachwerk: "Fachwerk", metall: "Metallplatten",
-  eis: "Eis", tapete: "Damast-Tapete", sand: "Sand", beton: "Beton", putz: "Putz",
+  eis: "Eis", tapete: "Damast-Tapete", sand: "Sand", beton: "Beton", putz: "Putz", glut: "Glutrisse",
 };
 
 /** Die Größe der gemalten Kachel in Pixeln */

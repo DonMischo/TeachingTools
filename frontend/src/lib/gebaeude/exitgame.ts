@@ -41,12 +41,18 @@ export function seedAus(text: string): number {
 /** Welches Werkzeug zu welchem Objekt passt */
 const OBJEKT_FUER_SIM: Record<string, Objekt> = {
   gleichungswaage: "waage", zeitstrahl: "kalender", funktionen: "tafel", vierecke: "tafel",
-  rechenregeln: "abakus", abacus: "abakus", binaerrechner: "computer", bildformate: "computer",
-  ki: "computer", regeln: "computer", maus: "computer", tippen: "computer", uebung: "pult",
+  rechenregeln: "abakus", abacus: "abakus", binaerrechner: "grossrechner", bildformate: "grafiktablett",
+  ki: "kikern", regeln: "computer", maus: "computer", tippen: "computer", uebung: "pult",
   sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus", wfc: "computer",
 };
 
-const ABWECHSLUNG: Objekt[] = ["pult", "kuckucksuhr", "mikroskop", "tresor", "laborbank", "computer", "regal", "globus"];
+/** Reihum je Folienart — damit nicht jedes Zimmer Tafel oder Schreibtisch ist */
+const ABWECHSLUNG: Record<"explanation" | "example" | "task", Objekt[]> = {
+  explanation: ["tafel", "radio", "zeitung", "fernseher", "buch", "schriftrolle", "tontafel", "laptop", "telefon", "kopfhoerer"],
+  example: ["regal", "buch", "schriftrolle", "tablet", "filmprojektor", "zeitung"],
+  task: ["pult", "kuckucksuhr", "mikroskop", "tresor", "laborbank", "computer", "globus", "telegraph", "telefon",
+    "smartphone", "druckerpresse", "grafiktablett", "teleskop"],
+};
 
 /**
  * Objekt für eine Station: `station` aus dem JSON, sonst passend zum
@@ -59,8 +65,9 @@ export function stationsObjekt(slide: ExitGameSlide, verlies = false): Objekt {
   const sim = tasks.find(t => t.sim)?.sim?.tool;
   if (sim && OBJEKT_FUER_SIM[sim]) return OBJEKT_FUER_SIM[sim];
   if (tasks.some(t => t.kind === "timeline")) return "kalender";
-  if (slide.type === "explanation") return "tafel";
-  if (slide.type === "example") return "regal";
+  const reihum = (liste: Objekt[]) => liste[seedAus(slide.id) % liste.length];
+  if (slide.type === "explanation") return reihum(ABWECHSLUNG.explanation);
+  if (slide.type === "example") return reihum(ABWECHSLUNG.example);
   if (verlies) return "monster";
-  return ABWECHSLUNG[seedAus(slide.id) % ABWECHSLUNG.length];
+  return reihum(ABWECHSLUNG.task);
 }
