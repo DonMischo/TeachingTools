@@ -6,8 +6,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FARBEN, JOKER, kandidaten, laufeDurch, programm, programmText, regel, regelText, schritt, starte,
-  type Art, type Block, type Muster, type Programm, type Raster, type Start,
+  FARBEN, JOKER, blockText, kandidaten, laufeDurch, programm, programmText, regel, regelText, schritt, starte,
+  type Art, type Block, type Muster, type Programm, type Raster, type Start, type Symmetrie,
 } from "@/lib/regeln/maschine";
 import { zeichneRaster, zellPx } from "./zeichnen";
 
@@ -21,6 +21,7 @@ interface Props {
 
 const TEMPI: [number, string][] = [[1, "langsam"], [5, "mittel"], [40, "schnell"], [5000, "sofort"]];
 const ARTEN: [Art, string][] = [["eins", "eins – ein Treffer"], ["markov", "markov – erste Regel zuerst"], ["alle", "alle – alle Treffer"]];
+const SYMMETRIEN: [Symmetrie, string][] = [["alle", "↻ gedreht & gespiegelt"], ["spiegel", "⇆ nur gespiegelt"], ["fest", "• genau so"]];
 const PINSEL = [...Object.keys(FARBEN), JOKER];
 
 export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest }: Props) {
@@ -176,7 +177,9 @@ function TextEditor({ prog, onProg }: { prog: Programm; onProg: (p: Programm) =>
         className="font-mono text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2" />
       {fehler ? <p className="text-xs text-red-500">{fehler}</p> : (
         <p className="text-xs text-[var(--text-muted)]">
-          Eine Zeile je Block: <code>markov: RBB=GGR, RGG=WWR</code> · Schrittgrenze: <code>eins x12: …</code> · mehrzeilige Muster mit <code>/</code> · <code>*</code> = Joker.
+          Eine Zeile je Block: <code>markov: RBB=GGR, RGG=WWR</code> · Schrittgrenze: <code>eins x12: …</code> · mehrzeilige Muster mit <code>/</code> · <code>*</code> = Joker ·
+          gleichrangig in markov: <code>a | b</code> · Richtung: <code>spiegel</code>, <code>fest</code> · Chance: <code>alle p40: …</code> ·
+          Weg: <code>pfad: A → U über E = G</code> · Zellautomat: <code>nachbarn: A=D bei 5-8 D</code>.
           Farben: {Object.entries(FARBEN).map(([k, v]) => `${k} ${v.name}`).join(", ")}.
         </p>
       )}
@@ -188,13 +191,33 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
   block: Block; nr: number; aktiv: boolean; zaehler: number[]; pinsel: string; darfLoeschen: boolean;
   onAendere: (f: (b: Block) => void) => void; onLoeschen: () => void;
 }) {
+  const rahmen = `rounded-xl border-2 p-2 flex flex-col gap-2 ${aktiv ? "border-[var(--accent)]" : "border-[var(--border)]"}`;
+  if (block.art === "pfad" || block.art === "nachbarn") {
+    return (
+      <div className={rahmen}>
+        <div className="flex items-center gap-2 text-sm">
+          <b>Block {nr + 1}</b>
+          <span className="text-xs text-[var(--text-muted)]">{block.art === "pfad" ? "🧭 Weg (Breitensuche)" : "🧫 Nachbarn zählen (Zellautomat)"}</span>
+          <span className="text-xs text-[var(--text-muted)] font-mono ml-auto" title="so oft angewandt">{zaehler.reduce((a, b) => a + b, 0)}×</span>
+          {darfLoeschen && <button onClick={onLoeschen} className="text-xs" title="Block löschen">🗑</button>}
+        </div>
+        <code className="text-xs break-all">{blockText(block)}</code>
+        <p className="text-[11px] text-[var(--text-muted)]">Ändern im Text-Modus (⌨️ oben).</p>
+      </div>
+    );
+  }
   return (
-    <div className={`rounded-xl border-2 p-2 flex flex-col gap-2 ${aktiv ? "border-[var(--accent)]" : "border-[var(--border)]"}`}>
+    <div className={rahmen}>
       <div className="flex items-center gap-2 flex-wrap text-sm">
         <b>Block {nr + 1}</b>
         <select value={block.art} onChange={e => onAendere(b => { b.art = e.target.value as Art; })}
           className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-1 py-0.5 text-xs">
           {ARTEN.map(([a, l]) => <option key={a} value={a}>{l}</option>)}
+        </select>
+        <select value={block.sym ?? "alle"} title="In welchen Lagen gilt die Regel?"
+          onChange={e => onAendere(b => { if (e.target.value === "alle") delete b.sym; else b.sym = e.target.value as Symmetrie; })}
+          className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-1 py-0.5 text-xs">
+          {SYMMETRIEN.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
         </select>
         <label className="text-xs text-[var(--text-muted)] flex items-center gap-1">
           höchstens
@@ -222,6 +245,12 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
           </div>
           <span className="text-xs text-[var(--text-muted)] font-mono" title="so oft angewandt">{zaehler[ri] ?? 0}×</span>
           <span className="ml-auto flex gap-1">
+            {ri > 0 && block.art === "markov" && (
+              <Mini title={r.oder ? "gleichrangig mit der Regel davor — antippen für Nachrang" : "Nachrang — antippen: gleichrangig mit der Regel davor"}
+                onClick={() => onAendere(b => { if (b.regeln[ri].oder) delete b.regeln[ri].oder; else b.regeln[ri].oder = true; })}>
+                {r.oder ? "＝" : "↓"}
+              </Mini>
+            )}
             {ri > 0 && <Mini title="nach oben (bei markov: Vorrang)" onClick={() => onAendere(b => { [b.regeln[ri - 1], b.regeln[ri]] = [b.regeln[ri], b.regeln[ri - 1]]; })}>↑</Mini>}
             {block.regeln.length > 1 && <Mini title="Regel löschen" onClick={() => onAendere(b => { b.regeln.splice(ri, 1); })}>🗑</Mini>}
           </span>

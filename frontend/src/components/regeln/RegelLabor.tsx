@@ -16,13 +16,15 @@ import { wahl as vorWahl, type Vorgabe } from "@/lib/vorgabe";
 import Werkbank from "./Werkbank";
 import Labyrinthe from "./Labyrinthe";
 import GebaeudeDemo from "./GebaeudeDemo";
+import Beispiele from "./Beispiele";
 
-type Reiter = "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude";
+type Reiter = "lehrgang" | "raetsel" | "labor" | "beispiele" | "labyrinthe" | "gebaeude";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "lehrgang", icon: "🎓", label: "Lehrgang" },
   { id: "raetsel", icon: "🧩", label: "Rätsel" },
   { id: "labor", icon: "🧪", label: "Freies Labor" },
+  { id: "beispiele", icon: "🖼️", label: "Beispiele" },
   { id: "labyrinthe", icon: "🌀", label: "Labyrinthe" },
   { id: "gebaeude", icon: "🏢", label: "Gebäude" },
 ];
@@ -62,6 +64,7 @@ export default function RegelLabor({ action, vorgabe }: { action?: ReactNode; vo
       {reiter === "lehrgang" && <Lehrgang fest={festeStation} />}
       {reiter === "raetsel" && <Raetsel fest={festesRaetsel} />}
       {reiter === "labor" && <Labor />}
+      {reiter === "beispiele" && <Beispiele />}
       {reiter === "labyrinthe" && <Labyrinthe />}
       {reiter === "gebaeude" && <GebaeudeDemo />}
     </div>

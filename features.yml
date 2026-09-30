@@ -243,6 +243,8 @@ simulationen:
       - Rätsel mit Regel-Limit und automatischer Prüfung (Schachbrett, Punktgitter, perfektes Labyrinth …)
       - Gleicher Zufall liefert das gleiche Bild — Ergebnisse lassen sich in der Klasse vergleichen
       - Labyrinth-Algorithmen Schritt für Schritt: Backtracker, Prim, Kruskal, Wilson; Löser Tiefensuche, Breitensuche, A* mit sichtbarem Stapel/Schlange/offener Liste und Vergleichstabelle; Rundwege per »Wände einreißen«
+      - Beispielgalerie mit Vorschaubildern: Labyrinth, Blumen, Höhle (aus MarkovJunior), Platine, Verlies, Game of Life — alle im Editor veränderbar
+      - Weitere Bausteine: Symmetrie je Block (gedreht & gespiegelt / nur gespiegelt / fest), gleichrangige Regeln in markov, Chance je Treffer, Pfad (kürzester Weg, mit Abstand), Nachbarn (Zellautomat)
       - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der Exitgame-Gebäudeansicht
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß
