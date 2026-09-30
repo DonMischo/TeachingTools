@@ -6,6 +6,7 @@ import * as THREE from "three";
 import type { Plan, Punkt } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
 import { baueObjekt } from "./objekte3d";
+import { felsGeometrie, musterMaterial, zufallAus, type Muster } from "./stoff";
 
 export type RaumZustand = "offen" | "geloest" | "info" | "gelesen";
 
@@ -59,7 +60,7 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   burg: { name: "Burg", boden: 0xd6d3d1, boden2: 0xa8a29e, wand: 0x78716c, wandH: 1.6, oben: 0x991b1b, obenH: 0.25, tuer: 0x78350f, treppe: 0xa8a29e, stuetze: 0x57534e, sockel: 0x3f6212 },
   holz: { name: "Holzhütte", boden: 0xe9c99a, wand: 0x8b5a2b, wandH: 1.0, oben: 0x5c3317, obenH: 0.2, tuer: 0x3f2a14, treppe: 0xd4a373, stuetze: 0x6b4423, sockel: 0x4d7c0f },
   eis: { name: "Eispalast", boden: 0xf0f9ff, boden2: 0xe0f2fe, wand: 0x7dd3fc, wandH: 1.4, oben: 0xffffff, obenH: 0.35, tuer: 0x0369a1, treppe: 0xe0f2fe, stuetze: 0xbae6fd, sockel: 0x0c4a6e },
-  wueste: { name: "Wüstentempel", boden: 0xfde68a, boden2: 0xfcd34d, wand: 0xd97706, wandH: 1.1, oben: 0xfef3c7, obenH: 0.15, tuer: 0x1e3a8a, treppe: 0xfcd34d, stuetze: 0xb45309, sockel: 0xca8a04 },
+  wueste: { name: "Wüstentempel", boden: 0xfde68a, wand: 0xd97706, wandH: 1.1, oben: 0xfef3c7, obenH: 0.15, tuer: 0x1e3a8a, treppe: 0xfcd34d, stuetze: 0xb45309, sockel: 0xca8a04 },
   raumstation: { name: "Raumstation", boden: 0x475569, boden2: 0x334155, wand: 0x1e293b, wandH: 1.2, oben: 0x22d3ee, obenH: 0.05, tuer: 0x94a3b8, treppe: 0x64748b, stuetze: 0x64748b, sockel: 0x0f172a, leuchten: true, licht: 0x22d3ee },
   lava: { name: "Lavahöhle", boden: 0x292524, wand: 0x1c1917, wandH: 1.5, oben: 0xea580c, obenH: 0.08, tuer: 0x431407, treppe: 0x44403c, stuetze: 0x292524, sockel: 0x7c2d12, leuchten: true, licht: 0xf97316 },
   // Epochen — z. B. ein Abschnitt je Zeitalter (Exitgame "gebaeude": {"stile": […]})
@@ -67,8 +68,35 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   antike: { name: "Antiker Tempel", boden: 0xf5f5f4, boden2: 0xe7e5e4, wand: 0xfafaf9, wandH: 1.3, oben: 0xc2410c, obenH: 0.15, tuer: 0xa16207, treppe: 0xf5f5f4, stuetze: 0xe7e5e4, sockel: 0x0369a1 },
   mittelalter: { name: "Mittelalter (Fachwerk)", boden: 0xc8b89a, wand: 0xf5f0e1, wandH: 1.2, oben: 0x4a2c17, obenH: 0.18, tuer: 0x5c3a1a, treppe: 0x9c8a70, stuetze: 0x4a2c17, sockel: 0x57534e },
   gotisch: { name: "Gotik", boden: 0x57534e, boden2: 0x3f3a36, wand: 0x6b6560, wandH: 2.0, oben: 0x44403c, obenH: 0.1, tuer: 0x1c1917, treppe: 0x78716c, stuetze: 0x44403c, sockel: 0x1c1917, leuchten: true, licht: 0x8b5cf6 },
-  viktorianisch: { name: "Viktorianisch", boden: 0x6b3a2a, boden2: 0x5a2f22, wand: 0x14532d, wandH: 1.3, oben: 0xd4af37, obenH: 0.08, tuer: 0x3b1f14, treppe: 0x8b5a3c, stuetze: 0x1c1917, sockel: 0x44403c },
-  retro: { name: "Retro (70er)", boden: 0xd97706, boden2: 0xb45309, wand: 0xfef3c7, wandH: 1.0, oben: 0x92400e, obenH: 0.1, tuer: 0x65a30d, treppe: 0xfcd34d, stuetze: 0x78716c, sockel: 0x57534e },
+  viktorianisch: { name: "Viktorianisch", boden: 0x6b3a2a, wand: 0x14532d, wandH: 1.3, oben: 0xd4af37, obenH: 0.08, tuer: 0x3b1f14, treppe: 0x8b5a3c, stuetze: 0x1c1917, sockel: 0x44403c },
+  retro: { name: "Retro (70er)", boden: 0xd97706, wand: 0xfef3c7, wandH: 1.0, oben: 0x92400e, obenH: 0.1, tuer: 0x65a30d, treppe: 0xfcd34d, stuetze: 0x78716c, sockel: 0x57534e },
+};
+
+/** Verzierung auf den Eckpfeilern der Wände */
+type Ecke = "saeule" | "spitze" | "tropfstein" | "zinne" | "kristall";
+
+/**
+ * Oberflächen und Form je Stil: Muster für Boden und Wände, »organisch« =
+ * Wände aus unregelmäßigen Felsbrocken (Höhlen), Verzierung an den Ecken.
+ */
+export const AUSSEHEN: Record<Stil, { boden?: Muster; wand?: Muster; organisch?: boolean; ecken?: Ecke }> = {
+  klassisch: { boden: "parkett", wand: "putz" },
+  beton: { boden: "beton", wand: "beton" },
+  neon: { boden: "metall" },
+  garten: { boden: "sand", wand: "putz" },
+  verlies: { boden: "stein", wand: "stein" },
+  burg: { boden: "stein", wand: "stein", ecken: "zinne" },
+  holz: { boden: "holz", wand: "holz" },
+  eis: { boden: "eis", wand: "eis", ecken: "kristall" },
+  wueste: { boden: "sand", wand: "stein" },
+  raumstation: { boden: "metall", wand: "metall" },
+  lava: { boden: "fels", wand: "fels", organisch: true, ecken: "tropfstein" },
+  steinzeit: { boden: "erde", wand: "fels", organisch: true, ecken: "tropfstein" },
+  antike: { boden: "marmor", wand: "marmor", ecken: "saeule" },
+  mittelalter: { boden: "holz", wand: "fachwerk" },
+  gotisch: { boden: "stein", wand: "stein", ecken: "spitze" },
+  viktorianisch: { boden: "parkett", wand: "tapete" },
+  retro: { boden: "teppich", wand: "putz" },
 };
 
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -140,8 +168,9 @@ export function feldAus(w: number, R: number): number {
 }
 
 /** Viele gleiche Klötze als eine InstancedMesh, je Feld in dessen Breite */
-function klotzReihe(felder: Punkt[], farbe: number, h: number, y: number): THREE.InstancedMesh {
-  const m = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: farbe }), Math.max(1, felder.length));
+function klotzReihe(felder: Punkt[], farbe: number | THREE.Material, h: number, y: number): THREE.InstancedMesh {
+  const mat0 = typeof farbe === "number" ? new THREE.MeshLambertMaterial({ color: farbe }) : farbe;
+  const m = new THREE.InstancedMesh(box, mat0, Math.max(1, felder.length));
   m.count = felder.length;
   const mat = new THREE.Matrix4();
   felder.forEach(([x, z], i) => {
@@ -149,6 +178,85 @@ function klotzReihe(felder: Punkt[], farbe: number, h: number, y: number): THREE
     m.setMatrixAt(i, mat);
   });
   return m;
+}
+
+/** Zufall je Feld: jedes Feld sieht bei jedem Neuaufbau gleich aus */
+const feldZufall = (x: number, y: number, stock: number) => zufallAus(x * 73856093 ^ y * 19349663 ^ (stock + 1) * 83492791);
+
+/** Höhlenwände: je Wandfeld ein unregelmäßiger Felsbrocken, etwas größer als das Feld */
+function felsReihe(felder: Punkt[], mat: THREE.Material, h: number, y: number, stock: number): THREE.InstancedMesh {
+  // lange Wandstücke (ein Feld breit) bekommen drei Brocken nebeneinander statt eines langen
+  const TEILE = 3;
+  const m = new THREE.InstancedMesh(felsGeometrie(), mat, Math.max(1, felder.length * TEILE));
+  const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), farbe = new THREE.Color();
+  let k = 0;
+  for (const [x, z] of felder) {
+    const r = feldZufall(x, z, stock);
+    const langX = breite(x) === WEIT && breite(z) !== WEIT, langZ = breite(z) === WEIT && breite(x) !== WEIT;
+    const teile = langX || langZ ? TEILE : 1;
+    for (let t = 0; t < teile; t++) {
+      const versatz = teile > 1 ? (t - (teile - 1) / 2) * (WEIT / teile) : 0;
+      const bx = langX ? WEIT / teile : breite(x), bz = langZ ? WEIT / teile : breite(z);
+      const sy = h * (1.0 + r() * 0.6);
+      const s = new THREE.Vector3((bx + 0.6) * (0.95 + r() * 0.35), sy, (bz + 0.6) * (0.95 + r() * 0.35));
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * Math.PI * 2);
+      mx.compose(new THREE.Vector3(welt(x) + (langX ? versatz : 0), y + sy * 0.38, welt(z) + (langZ ? versatz : 0)), q, s);
+      m.setMatrixAt(k, mx);
+      m.setColorAt(k++, farbe.setScalar(0.78 + r() * 0.36));
+    }
+  }
+  m.count = k;
+  return m;
+}
+
+/** Verzierung auf den Eckpfeilern: Säulen, Turmspitzen, Tropfsteine, Zinnen, Eiskristalle */
+function verzierung(art: Ecke, felder: Punkt[], F: Palette, y0: number, oben: number, stock: number): THREE.Group {
+  const g = new THREE.Group();
+  const n = Math.max(1, felder.length);
+  const mx = new THREE.Matrix4(), q = new THREE.Quaternion();
+  const reihe = (geo: THREE.BufferGeometry, mat: THREE.Material, lage: (x: number, z: number, r: () => number) => [THREE.Vector3, THREE.Vector3, THREE.Quaternion?] | null) => {
+    const m = new THREE.InstancedMesh(geo, mat, n);
+    let k = 0;
+    for (const [x, z] of felder) {
+      const l = lage(welt(x), welt(z), feldZufall(x, z, stock + 17));
+      if (!l) continue;
+      mx.compose(l[0], l[2] ?? q.identity(), l[1]);
+      m.setMatrixAt(k++, mx);
+    }
+    m.count = k;
+    g.add(m);
+  };
+  const lambert = (color: number, extra: THREE.MeshLambertMaterialParameters = {}) => new THREE.MeshLambertMaterial({ color, ...extra });
+  if (art === "saeule") {
+    // vom Boden bis über die Mauer, mit Kapitell
+    const h = oben - y0 + 0.2;
+    reihe(new THREE.CylinderGeometry(0.24, 0.28, 1, 14), musterMaterial(F.stuetze, "marmor", 1.6), (x, z) =>
+      [new THREE.Vector3(x, y0 + h / 2, z), new THREE.Vector3(1, h, 1)]);
+    reihe(new THREE.BoxGeometry(1, 1, 1), lambert(F.stuetze), (x, z) =>
+      [new THREE.Vector3(x, oben + 0.26, z), new THREE.Vector3(0.72, 0.14, 0.72)]);
+  } else if (art === "spitze") {
+    reihe(new THREE.ConeGeometry(0.24, 1, 4), lambert(F.oben), (x, z, r) => {
+      const h = 0.8 + r() * 0.5;
+      return [new THREE.Vector3(x, oben + h / 2, z), new THREE.Vector3(1, h, 1), q.clone().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4)];
+    });
+  } else if (art === "tropfstein") {
+    const hell = new THREE.Color(F.wand).multiplyScalar(1.5).getHex();
+    reihe(new THREE.ConeGeometry(0.22, 1, 7), lambert(hell), (x, z, r) => {
+      if (r() < 0.45) return null;
+      const h = 0.5 + r() * 0.8;
+      return [new THREE.Vector3(x + (r() - 0.5) * 0.4, oben * 0.95 + h / 2 - 0.1, z + (r() - 0.5) * 0.4), new THREE.Vector3(1, h, 1)];
+    });
+  } else if (art === "zinne") {
+    reihe(new THREE.BoxGeometry(1, 1, 1), lambert(F.wand), (x, z) =>
+      [new THREE.Vector3(x, oben + 0.2, z), new THREE.Vector3(0.5, 0.4, 0.5)]);
+  } else {
+    reihe(new THREE.ConeGeometry(0.13, 1, 5), lambert(0xe0f2fe, { emissive: 0x38bdf8, emissiveIntensity: 0.35 }), (x, z, r) => {
+      const h = 0.6 + r() * 0.7;
+      const kipp = new THREE.Quaternion().setFromEuler(new THREE.Euler((r() - 0.5) * 0.6, 0, (r() - 0.5) * 0.6));
+      return [new THREE.Vector3(x, oben + h / 2 - 0.05, z), new THREE.Vector3(1, h, 1), kipp];
+    });
+  }
+  return g;
 }
 
 export interface StockBild {
@@ -231,17 +339,28 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
       if (amFlur && !tuerFelder.has(`${x},${y}`)) waende.push([x, y]);
     }
   }
-  const F = STILE[bild.stil ?? "klassisch"];
+  const stilName = bild.stil ?? "klassisch";
+  const F = STILE[stilName], A = AUSSEHEN[stilName];
   const dunkel = (f: number) => (bild.unten ? new THREE.Color(f).multiplyScalar(0.55).getHex() : f);
-  if (F.boden2 === undefined) g.add(klotzReihe(boden, dunkel(F.boden), 0.25, y0));
+  const bodenStoff = (f: number) => musterMaterial(dunkel(f), A.boden);
+  if (F.boden2 === undefined) g.add(klotzReihe(boden, bodenStoff(F.boden), 0.25, y0));
   else {
     // Fliesen: je ein breites Feld mit seinem schmalen Rand hat eine Farbe
     const hell = boden.filter(([x, y]) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 === 0);
-    g.add(klotzReihe(hell, dunkel(F.boden), 0.25, y0));
-    g.add(klotzReihe(boden.filter(p => !hell.includes(p)), dunkel(F.boden2), 0.25, y0));
+    g.add(klotzReihe(hell, bodenStoff(F.boden), 0.25, y0));
+    g.add(klotzReihe(boden.filter(p => !hell.includes(p)), bodenStoff(F.boden2), 0.25, y0));
   }
-  g.add(klotzReihe(waende, dunkel(F.wand), bild.unten ? 0.5 : F.wandH, y0));
-  if (!bild.unten) g.add(klotzReihe(waende, F.oben, F.obenH, y0 + F.wandH));
+  const wandStoff = musterMaterial(dunkel(F.wand), A.wand, 1.6);
+  if (A.organisch) {
+    g.add(felsReihe(waende, wandStoff, bild.unten ? 0.5 : F.wandH, y0, i));
+  } else {
+    g.add(klotzReihe(waende, wandStoff, bild.unten ? 0.5 : F.wandH, y0));
+    if (!bild.unten) g.add(klotzReihe(waende, F.oben, F.obenH, y0 + F.wandH));
+  }
+  if (A.ecken && !bild.unten) {
+    const ecken = waende.filter(([x, y]) => x % 2 === 0 && y % 2 === 0);
+    g.add(verzierung(A.ecken, ecken, F, y0, y0 + F.wandH + (A.organisch ? 0 : F.obenH), i));
+  }
 
   // Stützen: an den Eckpfeilern bis hinunter zum Stockwerk darunter — nur wo
   // dort kein Flur ist, damit nichts im Weg steht.
@@ -387,10 +506,12 @@ export function figur(farbe: number): THREE.Group {
 export function entsorge(o: THREE.Object3D) {
   o.traverse(k => {
     const m = k as THREE.Mesh;
-    if (m.geometry && m.geometry !== box) m.geometry.dispose();
+    // geteilte Geometrien und Muster (stoff.ts) bleiben für das nächste Stockwerk
+    if (m.geometry && m.geometry !== box && !m.geometry.userData.geteilt) m.geometry.dispose();
     const mats = Array.isArray(m.material) ? m.material : m.material ? [m.material] : [];
     for (const mat of mats) {
-      (mat as THREE.SpriteMaterial).map?.dispose();
+      const map = (mat as THREE.SpriteMaterial).map;
+      if (map && !map.userData.geteilt) map.dispose();
       mat.dispose();
     }
   });
