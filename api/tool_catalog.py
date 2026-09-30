@@ -154,6 +154,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("regeln", "🧬 Regel-Labor", "🧬", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Wellenfunktionskollaps (Wave Function Collapse): Kacheln und Vorlagen mit Randbedingungen.
+    CatalogTool("wfc", "🧩 Wellenfunktionskollaps", "🧩", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

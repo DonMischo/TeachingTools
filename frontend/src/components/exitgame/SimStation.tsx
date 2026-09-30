@@ -38,6 +38,7 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   erdaufbau: { name: "Aufbau der Erde", icon: "🌍", Komponente: laden(() => import("@/components/erde/ErdAufbau")) },
   wilson: { name: "Wilson-Zyklus", icon: "🌋", Komponente: laden(() => import("@/components/wilson/WilsonZyklus")) },
   regeln: { name: "Regel-Labor", icon: "🧬", Komponente: laden(() => import("@/components/regeln/RegelLabor")) },
+  wfc: { name: "Wellenfunktionskollaps", icon: "🧩", Komponente: laden(() => import("@/components/wfc/Wellenkollaps")) },
 };
 
 export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {

@@ -74,7 +74,7 @@ ALLOWED_TASK_KINDS = {"single", "multi", "true_false", "input", "timeline"}
 # Muss zu SIM_STATIONEN in frontend/src/components/exitgame/SimStation.tsx passen.
 SIM_TOOLS = {
     "gleichungswaage", "abacus", "bildformate", "vierecke", "binaerrechner", "funktionen",
-    "rechenregeln", "tippen", "maus", "ki", "sonnensystem", "kueste", "erdaufbau", "wilson", "regeln",
+    "rechenregeln", "tippen", "maus", "ki", "sonnensystem", "kueste", "erdaufbau", "wilson", "regeln", "wfc",
 }
 
 # Was in der Gebäude-Ansicht im Zimmer steht ("station" an der Folie).
@@ -694,7 +694,8 @@ ANLEITUNG_25D = (
             "erdaufbau keil|profil|wellen|konvektion|wissen; wilson schnitt|quiz|wissen (dazu phase: "
             "ruhe|graben|jung|ozean|subduktion|schliessen|kollision|abtragung); regeln "
             "lehrgang (station: lauf|wachsen|backtracker|bloecke|grundriss)|raetsel (raetsel: alles|"
-            "punkte|schach|labyrinth|rundwege)|labor|labyrinthe|gebaeude. "
+            "punkte|schach|labyrinth|rundwege)|labor|beispiele|labyrinthe|gebaeude; wfc kacheln (satz: "
+            "landschaft|strassen|rohre)|vorlage (vorlage: hoehlen|mauer|wege|insel|stadt)|erklaerung. "
             "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
             "--- GEBÄUDE --- Jedes Spiel lässt sich als Folien oder in 2.5D spielen; 'gebaeude' legt fest, "
             "womit es startet: {\"ansicht\": \"gebaeude\" (Haus, Treppen hinauf) | \"verlies\" (Ebenen "

@@ -102,6 +102,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#7c3aed",
   },
   {
+    slug: "wfc",
+    href: "/simulationen/wfc",
+    icon: "🧩",
+    title: "Wellenfunktionskollaps",
+    description: "Wave Function Collapse: Aus Nachbarschaftsregeln wächst ein Bild, das überall passt — mit Kacheln (Landschaft, Straßen & Flüsse, Rohre) oder aus einer selbst gemalten Vorlage. Zellen vorab festlegen, und WFC füllt den Rest.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "regeln",
     href: "/simulationen/regeln",
     icon: "🧬",

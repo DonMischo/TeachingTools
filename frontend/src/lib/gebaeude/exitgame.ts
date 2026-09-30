@@ -43,7 +43,7 @@ const OBJEKT_FUER_SIM: Record<string, Objekt> = {
   gleichungswaage: "waage", zeitstrahl: "kalender", funktionen: "tafel", vierecke: "tafel",
   rechenregeln: "abakus", abacus: "abakus", binaerrechner: "computer", bildformate: "computer",
   ki: "computer", regeln: "computer", maus: "computer", tippen: "computer", uebung: "pult",
-  sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus",
+  sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus", wfc: "computer",
 };
 
 const ABWECHSLUNG: Objekt[] = ["pult", "kuckucksuhr", "mikroskop", "tresor", "laborbank", "computer", "regal", "globus"];

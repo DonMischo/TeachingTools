@@ -219,6 +219,17 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  wfc: {
+    title: "Wellenfunktionskollaps",
+    intro: "Wave Function Collapse nach Maxim Gumin (github.com/mxgmn/WaveFunctionCollapse, MIT): Jede Zelle ist anfangs alles zugleich. Die Zelle mit der kleinsten Entropie wird zufällig festgelegt, die Nachbarn verlieren, was nicht mehr passt — Schritt für Schritt, bis alles stimmt. Wie beim Sudoku.",
+    sections: [
+      { label: "🧩 Kacheln", text: "Simple Tiled Model: Kacheln mit Anschlüssen an den Seiten, gleiche Anschlüsse passen aneinander. Drei Sätze: Landschaft (Wasser, Sand, Wiese über die Ecken — zwischen Wasser und Wiese liegt immer Strand), Straßen & Flüsse (Kreuzung nur mit Brücke), Rohre." },
+      { label: "🖼️ Vorlage", text: "Overlapping Model: aus einem kleinen Bild werden alle 2×2- bzw. 3×3-Ausschnitte gelernt (auf Wunsch auch gedreht und gespiegelt); die Ausgabe enthält nur Ausschnitte, die in der Vorlage vorkommen. Die Vorlage lässt sich selbst malen." },
+      { label: "📌 Festlegen", text: "Randbedingungen: Zellen vorab festlegen (Pinsel) oder den ganzen Rand — z. B. Rand = Wasser ergibt eine Insel. WFC füllt den Rest passend; passen Festlegungen nicht zusammen, kommt sofort eine Meldung." },
+      { label: "👀 Zuschauen", text: "Offene Zellen zeigen die Mischfarbe ihrer Möglichkeiten, »🔢 Möglichkeiten« die Anzahl. Gelb = zuletzt festgelegt, rot = Widerspruch (dann neu mit anderem Zufall). Tempo bis »super langsam«." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   regeln: {
     title: "Regel-Labor",
     intro: "Ersetzungsregeln auf einem Raster nach dem Vorbild von MarkovJunior: Eine Regel wie RBB=GGR ersetzt ein Farbmuster durch ein anderes, in allen vier Richtungen. Aus wenigen Regeln wachsen Labyrinthe, Muster und Grundrisse — Algorithmen, Stapel und Zufall zum Anfassen.",

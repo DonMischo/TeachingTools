@@ -145,6 +145,12 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
 - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
 
+### 🧩 Wellenfunktionskollaps
+- Wave Function Collapse nach **[WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)** von Maxim Gumin (MIT): Überlagerung, Entropie, Kollaps, Ausbreitung, Widerspruch — Schritt für Schritt, bis »super langsam«
+- Simple Tiled Model mit drei Kachelsätzen (Landschaft über Ecken, Straßen & Flüsse mit Brücken, Rohre) und Overlapping Model aus einer selbst malbaren Vorlage (2×2/3×3, gedreht/gespiegelt)
+- Randbedingungen: Zellen oder den ganzen Rand vorab festlegen (Rand = Wasser → Insel); unmögliche Festlegungen werden sofort gemeldet
+- Auch als Exitgame-Werkzeug (`"sim": {"tool": "wfc", "config": {"reiter": "kacheln", "satz": "landschaft"}}`)
+
 ### 🧬 Regel-Labor — Quellen und Inspiration
 - **[MarkovJunior](https://github.com/mxgmn/MarkovJunior)** von Maxim Gumin (MIT-Lizenz): Vorbild der Regelmaschine. Labyrinth, Blumen und Höhle sind übertragen, dazu 34 weitere Beispiele automatisch aus den Modelldateien des Repos (`scripts/mj-beispiele.py` → `frontend/src/lib/regeln/mj-beispiele.ts`, im Reiter »Beispiele« per Auswahlliste, jeweils mit Link aufs Original).
 - **[index.opensource auf Instagram](https://www.instagram.com/index.opensource/)**: die kurzen Clips zu MarkovJunior (Maze Backtracker, Apartemazements, Circuit, Flowers …), die den Anstoß zum Regel-Labor, zum Gebäude und zum Verlies gegeben haben.

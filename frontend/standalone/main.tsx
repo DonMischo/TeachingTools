@@ -23,6 +23,7 @@ import Kueste from "@/components/kueste/Kueste";
 import ErdAufbau from "@/components/erde/ErdAufbau";
 import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import RegelLabor from "@/components/regeln/RegelLabor";
+import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -40,6 +41,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "erdaufbau", icon: "🌍", label: "Aufbau der Erde", node: <ErdAufbau /> },
   { id: "wilson", icon: "🌋", label: "Wilson-Zyklus", node: <WilsonZyklus /> },
   { id: "regeln", icon: "🧬", label: "Regel-Labor", node: <RegelLabor /> },
+  { id: "wfc", icon: "🧩", label: "Wellenfunktionskollaps", node: <Wellenkollaps /> },
 ];
 
 function App() {

@@ -235,6 +235,14 @@ simulationen:
       - Mantelströmung, Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
       - Phasenkarten mit heutigem Beispiel, Plattengrenzen und Begriffen; Quiz »Welche Phase?«
       - Wissensteil: Tuzo Wilson, Superkontinente, Wilson-Zyklen in Deutschland, Antrieb der Platten, Beweise, Quellen
+  - id: wfc
+    name: Wellenfunktionskollaps
+    kann:
+      - Wave Function Collapse (nach github.com/mxgmn/WaveFunctionCollapse, MIT) Schritt für Schritt mit Mischfarben, Anzahl der Möglichkeiten, Tempo bis »super langsam«
+      - Simple Tiled Model: Landschaft (Ecken-Kacheln), Straßen & Flüsse mit Brücken, Rohre — Drehungen automatisch
+      - Overlapping Model aus selbst malbarer Vorlage (Höhlen, Ziegelmauer, Wege, Inseln, Stadtplan), 2×2/3×3, Symmetrie wählbar
+      - Randbedingungen: Zellen oder Rand festlegen, Widerspruch → Neustart mit neuem Zufall, unmögliche Festlegungen gemeldet
+      - Als Exitgame-Werkzeug mit festem Reiter/Satz/Vorlage
   - id: regeln
     name: Regel-Labor
     kann:
