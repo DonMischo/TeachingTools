@@ -15,8 +15,10 @@ import { STILE, type Stil } from "@/components/gebaeude/szene";
 type Ansicht = "folien" | "gebaeude" | "verlies" | "ebene";
 const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Folien"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"]];
 const istAnsicht = (a: unknown): a is Ansicht => ANSICHTEN.some(([x]) => x === a);
-/** je Sitzungscode: die eigene Wahl gilt nur für dieses Spiel, sonst hat die Vorgabe des Spiels Vorrang */
+const istStil = (s: unknown): s is Stil => typeof s === "string" && s in STILE;
+/** je Sitzungscode: die eigene Wahl gilt nur für dieses Spiel */
 const ansichtSchluessel = (code: string) => `hp_exitgame_ansicht_${code}`;
+const stilSchluessel = (code: string) => `hp_exitgame_stil_${code}`;
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -58,18 +60,27 @@ export default function ExitgamePlayPage() {
   const [finalSummary, setFinalSummary] = useState<ExitGameAttemptSummary | null>(null);
   const [fragments, setFragments] = useState<ExitGameFragment[]>([]);
   const [adaptation, setAdaptation] = useState<DdaAdaptation | null>(null);
-  // Folien, Gebäude, Verlies oder Ebene: jeder wählt selbst. Vorrang: ?ansicht=… ,
-  // dann die eigene Wahl für dieses Spiel, dann die Vorgabe des Spiels ("gebaeude": {"ansicht": …}).
+  // Ansicht und Stil: Legt das Spiel sie fest ("gebaeude": {"ansicht", "stil"}), gilt das
+  // und es gibt keine Auswahl. Sonst wählt jeder selbst (?ansicht=… oder die eigene Wahl).
   const [ansicht, setAnsicht] = useState<Ansicht | null>(null);
+  const [stil, setStil] = useState<Stil | null>(null);
   useEffect(() => {
-    let gemerkt: string | null = null;
-    try { gemerkt = localStorage.getItem(ansichtSchluessel(code)); } catch { /* ohne Speicher */ }
+    let gemerkt: string | null = null, stilGemerkt: string | null = null;
+    try {
+      gemerkt = localStorage.getItem(ansichtSchluessel(code));
+      stilGemerkt = localStorage.getItem(stilSchluessel(code));
+    } catch { /* ohne Speicher */ }
     const a = new URLSearchParams(window.location.search).get("ansicht") ?? gemerkt;
     if (istAnsicht(a)) setAnsicht(a);
+    if (istStil(stilGemerkt)) setStil(stilGemerkt);
   }, [code]);
   function waehleAnsicht(a: Ansicht) {
     setAnsicht(a);
     try { localStorage.setItem(ansichtSchluessel(code), a); } catch { /* egal */ }
+  }
+  function waehleStil(s: Stil) {
+    setStil(s);
+    try { localStorage.setItem(stilSchluessel(code), s); } catch { /* egal */ }
   }
 
   useEffect(() => {
@@ -154,9 +165,11 @@ export default function ExitgamePlayPage() {
       (old: typeof start | undefined) => old ? { ...old, attempt } : old);
     if (frags) setFragments(frags);
   }
-  const vorgabe = data.gebaeude?.ansicht;
-  const aktiv: Ansicht = ansicht ?? (istAnsicht(vorgabe) ? vorgabe : "folien");
-  const umschalter = (
+  const { ansicht: ansichtDesSpiels, stil: stilDesSpiels } = data.gebaeude ?? {};
+  const festeAnsicht = istAnsicht(ansichtDesSpiels) ? ansichtDesSpiels : null;
+  const festerStil = istStil(stilDesSpiels) ? stilDesSpiels : null;
+  const aktiv: Ansicht = festeAnsicht ?? ansicht ?? "folien";
+  const umschalter = festeAnsicht ? null : (
     <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs" role="group" aria-label="Ansicht">
       {ANSICHTEN.map(([a, t]) => (
         <button key={a} onClick={() => waehleAnsicht(a)} aria-pressed={aktiv === a}
@@ -166,19 +179,26 @@ export default function ExitgamePlayPage() {
       ))}
     </div>
   );
+  const stilWahl = festerStil ? null : (
+    <select value={stil ?? ""} onChange={e => waehleStil(e.target.value as Stil)} aria-label="Stil"
+      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-0.5 text-xs">
+      <option value="" disabled>🎨 Stil</option>
+      {(Object.keys(STILE) as Stil[]).map(s => <option key={s} value={s}>{STILE[s].name}</option>)}
+    </select>
+  );
 
   if (aktiv !== "folien") {
     return (
       <div className="h-full overflow-y-auto flex flex-col gap-3 p-4 max-w-[var(--seite-breite)] mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
         <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
           <span>{data.title}</span>
-          {umschalter}
+          <span className="flex items-center gap-2">{stilWahl}{umschalter}</span>
         </div>
         <GebaeudeSpiel code={code} attempt={start.attempt} exitgameId={start.exitgame_id} data={data}
           variantChoices={start.variant_choices ?? {}} fragments={fragments} adaptation={adaptation}
           onSlideSolved={slideSolved} onAdaptation={setAdaptation} onFinish={() => finishMut.mutate()}
           art={aktiv === "verlies" ? "verlies" : aktiv === "ebene" ? "ebene" : "haus"}
-          stil={data.gebaeude?.stil && data.gebaeude.stil in STILE ? (data.gebaeude.stil as Stil) : undefined} />
+          stil={festerStil ?? stil ?? undefined} />
       </div>
     );
   }

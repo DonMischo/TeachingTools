@@ -855,6 +855,10 @@ def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
     assert sum(1 for s in tpl["slides"] if s["type"] == "door") == 2
     anleitung = tpl["_ai_instructions"]
     assert "WERKZEUGE" in anleitung and "GEBÄUDE" in anleitung and "GRUNDLAGEN" in anleitung
+    kat = tpl["_katalog"]
+    assert {"lava", "burg", "verlies"} <= set(kat["gebaeude.stil"])
+    assert {"monster", "boss"} <= set(kat["slide.station"])
+    assert "gleichung" in kat["task.sim"]["gleichungswaage"]["config"]
     r = _upload(client, teacher_token, tpl)
     assert r.status_code == 201, r.json()
 

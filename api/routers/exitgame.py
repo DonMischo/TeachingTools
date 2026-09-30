@@ -47,6 +47,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .. import dda as dda_engine
+from .. import exitgame_katalog as katalog
 from .. import scoping
 from .. import timeline_engine
 from ..task_generators import check_input_answer
@@ -70,26 +71,12 @@ EXITGAME_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "exitgames"
 
 ALLOWED_TASK_KINDS = {"single", "multi", "true_false", "input", "timeline"}
 
-# Werkzeuge, die eine Aufgabe mit "sim": {"tool": …, "config": {…}} öffnen kann.
-# Muss zu SIM_STATIONEN in frontend/src/components/exitgame/SimStation.tsx passen.
-SIM_TOOLS = {
-    "gleichungswaage", "abacus", "bildformate", "vierecke", "binaerrechner", "funktionen",
-    "rechenregeln", "tippen", "maus", "ki", "sonnensystem", "kueste", "erdaufbau", "wilson", "regeln", "wfc",
-}
-
-# Was in der Gebäude-Ansicht im Zimmer steht ("station" an der Folie).
-# Muss zu OBJEKTE in frontend/src/lib/gebaeude/objekte.ts passen.
-STATION_OBJECTS = {
-    "pult", "computer", "kuckucksuhr", "globus", "regal", "mikroskop",
-    "tafel", "laborbank", "tresor", "teleskop", "kalender", "waage", "abakus",
-    "monster", "boss",
-}
-
-# 2.5D: mit welcher Ansicht ein Spiel startet ("gebaeude": {"ansicht": …, "stil": …}).
-# Muss zu ANSICHTEN im Spieler (frontend/src/app/play/exitgame/[code]/page.tsx)
-# und STILE in frontend/src/components/gebaeude/szene.ts passen.
-GEBAEUDE_ANSICHTEN = {"folien", "gebaeude", "verlies", "ebene"}
-GEBAEUDE_STILE = {"klassisch", "beton", "neon", "garten", "verlies"}
+# 2.5D: Werkzeuge ("sim": {"tool", "config"}), Objekte im Zimmer ("station"),
+# Ansicht und Stil ("gebaeude": {"ansicht", "stil"}) — alle aus exitgame_katalog.
+SIM_TOOLS = set(katalog.WERKZEUGE)
+STATION_OBJECTS = set(katalog.OBJEKTE)
+GEBAEUDE_ANSICHTEN = set(katalog.ANSICHTEN)
+GEBAEUDE_STILE = set(katalog.STILE)
 DDA_HISTORY_LIMIT = 50
 DDA_RECENT_WINDOW = 10
 
@@ -673,42 +660,28 @@ def upload_exitgame(
 ANLEITUNG_25D = (
     "Das ist die interaktive Vorlage: dasselbe Format wie die schlanke »Vorlage«, dazu alles für die "
     "2.5D-Ansicht. Das Beispiel ist ein spielbares Verlies mit zwei Ebenen — ersetze Thema, Aufgaben "
-    "und Codes, behalte den Aufbau. "
-            "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
-            "\"sim\": {\"tool\": …, \"config\": {…}} in der task. Die Simulation öffnet sich dann nur mit "
-            "dieser einen Vorgabe (keine anderen Aufgaben, kein Wechsel); die Antwort tippt der Schüler "
-            "danach wie gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. "
-            "Vorgaben: gleichungswaage {gleichung: '3x + 4 = 19'} oder {formel: 'E = m·g·h', nach: 'h', "
-            "werte: {E: 60, m: 2, g: 10}} (gesuchter Wert bleibt verdeckt, bis die Größe allein steht) "
-            "oder {reaktion: 'H2 + O2 -> H2O'}; funktionen {term: 'x^2 - 4', von?: -3, bis?: 3, schritt?: 1}; "
-            "vierecke {form: quadrat|rechteck|parallelogramm|trapez|raute|drachen, masse: {a: 8, c: 4, h: 3}, "
-            "blatt?: formen|umfang|flaeche, rechnung?: true — sonst bleiben u und A verborgen}; "
-            "rechenregeln {term: '2 + 3 · (4 − 1)'} (Obstkorb), {reiter: 'zug', term: '12 : 4 + 5'} oder "
-            "{a: 3.5, b: 100, art: '*' | ':'} (Stufenzahlen). "
-            "Weitere Werkzeuge mit {reiter: …} (öffnet genau diesen Reiter, andere sind gesperrt): "
-            "abacus single|place; bildformate P1|P2|P3; binaerrechner {zahl: 0-255}; "
-            "tippen lektionen|wortregen|tastenjagd; maus klick|doppelklick|rechtsklick|ziehen|markieren|"
-            "kopieren|scrollen|tastatur|explorer|fenster|screenshot|suche|apps|aussehen|bedienhilfe|"
-            "taskleiste|profil; ki sprache|bilder|lernen|echt; sonnensystem uebersicht|flug|groessen|"
-            "entfernungen|kepler|galerie|kodex; kueste profil|draufsicht|gezeiten|galerie|wissen; "
-            "erdaufbau keil|profil|wellen|konvektion|wissen; wilson schnitt|quiz|wissen (dazu phase: "
-            "ruhe|graben|jung|ozean|subduktion|schliessen|kollision|abtragung); regeln "
-            "lehrgang (station: lauf|wachsen|backtracker|bloecke|grundriss)|raetsel (raetsel: alles|"
-            "punkte|schach|labyrinth|rundwege)|labor|beispiele|labyrinthe|gebaeude; wfc kacheln (satz: "
-            "landschaft|strassen|rohre)|vorlage (vorlage: hoehlen|mauer|wege|insel|stadt)|erklaerung. "
-            "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
-            "--- GEBÄUDE --- Jedes Spiel lässt sich als Folien oder in 2.5D spielen; 'gebaeude' legt fest, "
-            "womit es startet: {\"ansicht\": \"gebaeude\" (Haus, Treppen hinauf) | \"verlies\" (Ebenen "
-            "hinab, dunkel mit Fackel, Monster und Bosse) | \"ebene\" (Abschnitte nebeneinander, Türen) | "
-            "\"folien\", \"stil\": klassisch|beton|neon|garten|verlies}. Schüler können trotzdem umschalten. "
-            "Jeder Abschnitt (alles bis einschließlich einer Tür) wird ein Stockwerk/eine Ebene/ein Bereich, "
-            "jede Slide davor ein Zimmer, die Tür wird Treppe bzw. Tür — bewacht von einem Boss im Verlies. "
-            "Zurück geht es jederzeit. 3-6 Zimmer pro Abschnitt sind gut; die Zimmer sind 1-9 nummeriert "
-            "(Zifferntasten laufen hin). 'station' an der Slide wählt das Objekt im Zimmer: pult, computer, "
-            "kuckucksuhr, globus, regal, mikroskop, tafel, laborbank, tresor, teleskop, kalender, waage, "
-            "abakus, monster, boss. Ohne Angabe passt es sich an: Werkzeug → passendes Gerät (Waage, Tafel, "
-            "Abakus …), Zeitstrahl → kalender, Erklärung → tafel, Beispiel → regal, im Verlies jede übrige "
-            "Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
+    "und Codes, behalte den Aufbau. Alle erlaubten Werte stehen in '_katalog' direkt unter dieser "
+    "Anleitung (Ansichten, Stile, Objekte, Werkzeuge mit ihren config-Schlüsseln). "
+    "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
+    "\"sim\": {\"tool\": …, \"config\": {…}} in der task (Werkzeuge und Schlüssel: _katalog['task.sim']; "
+    "'?' = optional, 'a|b' = einer dieser Werte). Die Simulation öffnet sich dann nur mit dieser einen "
+    "Vorgabe (keine anderen Aufgaben, kein Reiterwechsel); die Antwort tippt der Schüler danach wie "
+    "gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. Beispiele: "
+    "{\"tool\": \"gleichungswaage\", \"config\": {\"gleichung\": \"3x + 4 = 19\"}}, "
+    "{\"tool\": \"vierecke\", \"config\": {\"form\": \"trapez\", \"masse\": {\"a\": 8, \"c\": 4, \"h\": 3}}}, "
+    "{\"tool\": \"sonnensystem\", \"config\": {\"reiter\": \"kepler\"}}. "
+    "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
+    "--- GEBÄUDE --- Jedes Spiel lässt sich als Folien oder in 2.5D spielen. 'gebaeude' legt fest: "
+    "{\"ansicht\": …, \"stil\": …} (Werte: _katalog['gebaeude.ansicht'] und ['gebaeude.stil']). Was hier "
+    "steht, ist fest — die Schüler bekommen dafür keine Auswahl. Fehlt ein Feld, wählen die Schüler "
+    "selbst (Ansicht: Folien/Gebäude/Verlies/Ebene, Stil: alle Stile). "
+    "Jeder Abschnitt (alles bis einschließlich einer Tür) wird ein Stockwerk/eine Ebene/ein Bereich, "
+    "jede Slide davor ein Zimmer, die Tür wird Treppe bzw. Tür — bewacht von einem Boss im Verlies. "
+    "Zurück geht es jederzeit. 3-6 Zimmer pro Abschnitt sind gut; die Zimmer sind 1-9 nummeriert "
+    "(Zifferntasten laufen hin). 'station' an der Slide wählt das Objekt im Zimmer "
+    "(_katalog['slide.station']). Ohne Angabe passt es sich an: Werkzeug → passendes Gerät (Waage, "
+    "Tafel, Abakus …), Zeitstrahl → kalender, Erklärung → tafel, Beispiel → regal, im Verlies jede "
+    "übrige Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
 )
 
 
@@ -720,6 +693,7 @@ def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)
     grundlagen = download_template(teacher)["_ai_instructions"]
     return {
         "_ai_instructions": ANLEITUNG_25D + "--- GRUNDLAGEN --- " + grundlagen,
+        "_katalog": katalog.KATALOG,
         "id": "vorlage-interaktiv",
         "title": "Vorlage interaktiv: Das Verlies der Rechenkünste",
         "description": "Ein Verlies mit zwei Ebenen: Monster, Bosse, Stationen und Werkzeuge.",

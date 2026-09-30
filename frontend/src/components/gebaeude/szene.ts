@@ -34,13 +34,19 @@ const RAUM_FARBE: Record<RaumZustand, number> = {
  * Aussehen des Hauses. Beton und Neon nach den Bildern von MarkovJunior
  * (Apartemazements), Garten wie ein Palast mit Hecken am Wasser.
  */
-export type Stil = "klassisch" | "beton" | "neon" | "garten" | "verlies";
+export type Stil =
+  | "klassisch" | "beton" | "neon" | "garten" | "verlies"
+  | "burg" | "holz" | "eis" | "wueste" | "raumstation" | "lava";
 
 interface Palette {
   boden: number; wand: number; wandH: number; oben: number; obenH: number;
   tuer: number; treppe: number; stuetze: number; sockel: number;
+  /** zweite Bodenfarbe: Fliesen im Schachbrett */
+  boden2?: number;
   /** Zimmer leuchten (Neon) */
   leuchten?: boolean;
+  /** Farbe der Lichtsäule über leuchtenden Zimmern (Vorgabe: rot) */
+  licht?: number;
 }
 
 export const STILE: Record<Stil, Palette & { name: string }> = {
@@ -49,6 +55,12 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   neon: { name: "Glas & Neon", boden: 0xd4d4d8, wand: 0x27272a, wandH: 1.3, oben: 0xfafafa, obenH: 0.1, tuer: 0xfafafa, treppe: 0xe4e4e7, stuetze: 0xf4f4f5, sockel: 0x3f3f46, leuchten: true },
   garten: { name: "Gartenpalast", boden: 0xd9e4c8, wand: 0xf5ecd7, wandH: 0.8, oben: 0x3f6212, obenH: 0.45, tuer: 0x92400e, treppe: 0xf5ecd7, stuetze: 0xf5ecd7, sockel: 0x2563eb },
   verlies: { name: "Verlies", boden: 0x57534e, wand: 0x3f3a36, wandH: 1.5, oben: 0x78716c, obenH: 0.12, tuer: 0x44403c, treppe: 0x78716c, stuetze: 0x44403c, sockel: 0x1c1917 },
+  burg: { name: "Burg", boden: 0xd6d3d1, boden2: 0xa8a29e, wand: 0x78716c, wandH: 1.6, oben: 0x991b1b, obenH: 0.25, tuer: 0x78350f, treppe: 0xa8a29e, stuetze: 0x57534e, sockel: 0x3f6212 },
+  holz: { name: "Holzhütte", boden: 0xe9c99a, wand: 0x8b5a2b, wandH: 1.0, oben: 0x5c3317, obenH: 0.2, tuer: 0x3f2a14, treppe: 0xd4a373, stuetze: 0x6b4423, sockel: 0x4d7c0f },
+  eis: { name: "Eispalast", boden: 0xf0f9ff, boden2: 0xe0f2fe, wand: 0x7dd3fc, wandH: 1.4, oben: 0xffffff, obenH: 0.35, tuer: 0x0369a1, treppe: 0xe0f2fe, stuetze: 0xbae6fd, sockel: 0x0c4a6e },
+  wueste: { name: "Wüstentempel", boden: 0xfde68a, boden2: 0xfcd34d, wand: 0xd97706, wandH: 1.1, oben: 0xfef3c7, obenH: 0.15, tuer: 0x1e3a8a, treppe: 0xfcd34d, stuetze: 0xb45309, sockel: 0xca8a04 },
+  raumstation: { name: "Raumstation", boden: 0x475569, boden2: 0x334155, wand: 0x1e293b, wandH: 1.2, oben: 0x22d3ee, obenH: 0.05, tuer: 0x94a3b8, treppe: 0x64748b, stuetze: 0x64748b, sockel: 0x0f172a, leuchten: true, licht: 0x22d3ee },
+  lava: { name: "Lavahöhle", boden: 0x292524, wand: 0x1c1917, wandH: 1.5, oben: 0xea580c, obenH: 0.08, tuer: 0x431407, treppe: 0x44403c, stuetze: 0x292524, sockel: 0x7c2d12, leuchten: true, licht: 0xf97316 },
 };
 
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -213,7 +225,13 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   }
   const F = STILE[bild.stil ?? "klassisch"];
   const dunkel = (f: number) => (bild.unten ? new THREE.Color(f).multiplyScalar(0.55).getHex() : f);
-  g.add(klotzReihe(boden, dunkel(F.boden), 0.25, y0));
+  if (F.boden2 === undefined) g.add(klotzReihe(boden, dunkel(F.boden), 0.25, y0));
+  else {
+    // Fliesen: je ein breites Feld mit seinem schmalen Rand hat eine Farbe
+    const hell = boden.filter(([x, y]) => (Math.floor(x / 2) + Math.floor(y / 2)) % 2 === 0);
+    g.add(klotzReihe(hell, dunkel(F.boden), 0.25, y0));
+    g.add(klotzReihe(boden.filter(p => !hell.includes(p)), dunkel(F.boden2), 0.25, y0));
+  }
   g.add(klotzReihe(waende, dunkel(F.wand), bild.unten ? 0.5 : F.wandH, y0));
   if (!bild.unten) g.add(klotzReihe(waende, F.oben, F.obenH, y0 + F.wandH));
 
@@ -250,7 +268,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     zg.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz, F.leuchten && !bild.unten));
     if (F.leuchten && !bild.unten) {
       // Neon: eine Lichtsäule über dem Zimmer, wie die roten Räume im Bild
-      zg.add(klotz(0xff3b3b, WEIT * 0.96, 1.1, 0.08, rx, y0 + 0.3, rz - WEIT / 2 + 0.05, true));
+      zg.add(klotz(F.licht ?? 0xff3b3b, WEIT * 0.96, 1.1, 0.08, rx, y0 + 0.3, rz - WEIT / 2 + 0.05, true));
     }
     if (bild.unten) return;
     // Das Objekt schaut zur Tür.
