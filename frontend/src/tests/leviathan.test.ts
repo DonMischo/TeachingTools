@@ -134,3 +134,25 @@ describe("Leviathan – Rundenmotor", () => {
     expect(weiter.runde).toBe(z!.runde + 1);
   });
 });
+
+describe("Leviathan – Wirkungsnetz", () => {
+  it("jeder Pfeil verbindet zwei gezeichnete Knoten, jede Regel ist ein Pfeil", async () => {
+    const { KANTEN, KREIS, MITTE } = await import("@/lib/leviathan/netz");
+    const knoten = new Set([...KREIS, ...MITTE]);
+    for (const k of KANTEN) {
+      expect(knoten.has(k.von), k.von).toBe(true);
+      expect(knoten.has(k.nach), k.nach).toBe(true);
+      expect(QUELLEN[k.quelle], k.quelle).toBeDefined();
+    }
+    for (const r of REGELN) expect(KANTEN.some((k) => k.von === r.von && k.nach === r.nach)).toBe(true);
+  });
+
+  it("jede Schleife der Nachbesprechung läuft über echte Pfeile", async () => {
+    const { KANTEN, SCHLEIFEN_KANTEN } = await import("@/lib/leviathan/netz");
+    for (const s of SCHLEIFEN) {
+      const pfad = SCHLEIFEN_KANTEN[s.id];
+      expect(pfad, s.id).toBeDefined();
+      for (const [a, b] of pfad) expect(KANTEN.some((k) => k.von === a && k.nach === b), `${s.id}: ${a}→${b}`).toBe(true);
+    }
+  });
+});

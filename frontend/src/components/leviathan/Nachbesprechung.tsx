@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { TYP } from "@/lib/leviathan/laender";
 import { auswertung, leviathan, STARTJAHR } from "@/lib/leviathan/motor";
 import { QUELLEN } from "@/lib/leviathan/quellen";
@@ -8,6 +9,7 @@ import { Verlauf, ZONE_TEXT } from "./Anzeigen";
 import { Meldungskarte } from "./Spiel";
 import { KRISE_TEXT } from "./Start";
 import { Karte, QuelleLink } from "./ui";
+import Wirkungsnetz from "./Wirkungsnetz";
 
 export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }: {
   z: Zustand;
@@ -21,6 +23,7 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
   const zusammengebrochen = z.status === "zusammengebrochen";
   const kannWeiter = zusammengebrochen && z.runde < z.einst.runden && onWiederaufbau;
   const schleife = (id: string) => SCHLEIFEN.find((s) => s.id === id)!;
+  const [gezeigt, setGezeigt] = useState<string | null>(a.schleifen[0]?.id ?? null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -90,23 +93,33 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
       )}
 
       <Karte titel="Welche Schleifen haben dein Land bewegt?">
+        <p className="text-sm text-[var(--text-muted)] mb-3">Wähle eine Schleife – im Wirkungsnetz darunter leuchtet ihr Kreislauf auf.</p>
         {a.schleifen.length === 0 && <p className="text-sm text-[var(--text-muted)]">Keine der Schleifen war lange genug aktiv.</p>}
         <div className="flex flex-col gap-3">
           {a.schleifen.map(({ id, runden }) => {
             const s = schleife(id);
             return (
-              <div key={id} className="rounded-xl border p-3" style={{ borderColor: s.gut ? "var(--green)" : "var(--red)" }}>
+              <div key={id} className={`rounded-xl border p-3 ${gezeigt === id ? "bg-[var(--surface-hover)] border-2" : ""}`}
+                style={{ borderColor: s.gut ? "var(--green)" : "var(--red)" }}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="font-black">{s.gut ? "✅" : "⚠️"} {s.name} <span className="text-xs text-[var(--text-muted)]">({s.art === "verstaerkend" ? "verstärkend" : "ausgleichend"})</span></div>
                   <div className="text-xs text-[var(--text-muted)]">{runden} von {z.verlauf.length - 1} Runden aktiv</div>
                 </div>
                 <p className="text-sm mt-1">{s.ablauf}</p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">{QUELLEN[s.quelle].befund}</p>
-                <QuelleLink id={s.quelle} />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <QuelleLink id={s.quelle} />
+                  <button onClick={() => setGezeigt(id)} aria-pressed={gezeigt === id}
+                    className="text-xs font-bold px-2 py-1 rounded-lg border border-[var(--border)]">🕸️ im Netz zeigen</button>
+                </div>
               </div>
             );
           })}
         </div>
+      </Karte>
+
+      <Karte titel="🕸️ Wirkungsnetz am Ende">
+        <Wirkungsnetz z={z} schleife={gezeigt} />
       </Karte>
 
       <Karte titel="Alle Ereignisse">

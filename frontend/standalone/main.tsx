@@ -61,7 +61,7 @@ function App() {
 
       <header className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-[var(--border)] bg-[var(--surface)]">
         <span className="font-black tracking-tight mr-2">🔬 Simulationen</span>
-        <div className="inline-flex rounded-xl border border-[var(--border)] p-1">
+        <div className="inline-flex flex-wrap max-w-full rounded-xl border border-[var(--border)] p-1">
           {TOOLS.map(t => (
             <button
               key={t.id}

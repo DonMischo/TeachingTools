@@ -10,6 +10,7 @@ import { FOLGEN, HEBEL, type Hebel, type Verteilung, type Zustand } from "@/lib/
 import { LeviathanAnzeige, Verlauf } from "./Anzeigen";
 import { KRISE_TEXT } from "./Start";
 import { Balken, Karte, QuelleLink } from "./ui";
+import Wirkungsnetz from "./Wirkungsnetz";
 
 export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteilung) => void }) {
   const [v, setV] = useState<Verteilung>(leereVerteilung);
@@ -142,6 +143,10 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           </Karte>
         </div>
       </div>
+
+      <Karte titel="🕸️ Wirkungsnetz – wie hängt alles zusammen?">
+        <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} />
+      </Karte>
 
       <Karte titel={letzte.length ? `Nachrichten ${jahr}` : "Nachrichten"}>
         {letzte.length === 0 && <p className="text-sm text-[var(--text-muted)]">{z.runde === 0 ? "Noch ist alles ruhig. Verteile deine ersten Aktionspunkte." : "Zwei ruhige Jahre."}</p>}
