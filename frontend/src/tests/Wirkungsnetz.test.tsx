@@ -22,4 +22,10 @@ describe("Wirkungsnetz", () => {
     expect(plus).toEqual(["bildung"]);
     expect(minus).toEqual(["wirtschaft"]);
   });
+
+  it("zeigt beim Verteilen am Aktionspunkte-Knoten, was noch frei ist", () => {
+    render(<Wirkungsnetz z={neuesSpiel("industrie", STANDARD_EINSTELLUNGEN, 1)} einsatz={{ bildung: 3 }} frei={{ rest: 6, von: 9 }}
+      onPlus={() => {}} onMinus={() => {}} />);
+    expect(screen.getByRole("button", { name: "Aktionspunkte: 6/9" })).toBeInTheDocument();
+  });
 });

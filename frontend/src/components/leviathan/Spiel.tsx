@@ -30,7 +30,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
   const [v, setV] = useState<Verteilung>(leereVerteilung);
   const [ansicht, setAnsicht] = useState<"netz" | "rechenweg" | "zeitlupe">("netz");
   const [tempo, setTempo] = useState<Tempo>(() => vorliebe("hp_leviathan_tempo", "mittel", Object.keys(TEMPO) as Tempo[]));
-  const [zeitlupeAuto, setZeitlupeAuto] = useState(() => vorliebe("hp_leviathan_zeitlupe", "aus", ["an", "aus"] as const) === "an");
+  const [zeitlupeAuto, setZeitlupeAuto] = useState(() => vorliebe("hp_leviathan_zeitlupe", "an", ["an", "aus"] as const) === "an");
   const [autostart, setAutostart] = useState(false);
   const zusammenhang = useRef<HTMLDivElement>(null);
   // Neue Runde: Verteilung leeren; im Zeitlupen-Modus die Runde gleich abspielen.
@@ -169,7 +169,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           <label className="mt-2 flex items-center gap-2 text-sm">
             <input type="checkbox" checked={zeitlupeAuto}
               onChange={(e) => { setZeitlupeAuto(e.target.checked); merke("hp_leviathan_zeitlupe", e.target.checked ? "an" : "aus"); }} />
-            🎬 Jede Runde danach in Zeitlupe zeigen
+            🎬 Nach »Runde beenden« die Runde im Wirkungsnetz abspielen
           </label>
         </Karte>
 
@@ -211,12 +211,19 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
                 Runde beenden → {jahr + 2}
               </button>
             </div>
-            <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} onPlus={plus} onMinus={minus} />
+            <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} onPlus={plus} onMinus={minus}
+              frei={{ rest, von: verfuegbar }} />
           </div>
         )}
         {ansicht === "zeitlupe" && (
           <Zeitlupe key={`${z.runde}-${autostart}`} z={z} tempo={tempo} autostart={autostart}
-            onTempo={(t) => { setTempo(t); merke("hp_leviathan_tempo", t); }} />
+            onTempo={(t) => { setTempo(t); merke("hp_leviathan_tempo", t); }}
+            // Nach dem Abspielen geht es im Netz weiter: dort gleich die nächsten Punkte verteilen.
+            onFertig={autostart ? () => {
+              setAnsicht("netz");
+              setAutostart(false);
+              zusammenhang.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+            } : undefined} />
         )}
         {ansicht === "rechenweg" && <Rechenweg key={z.runde} z={z} />}
       </Karte>

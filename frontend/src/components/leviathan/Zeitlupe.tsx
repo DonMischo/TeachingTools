@@ -28,8 +28,10 @@ const SCHRITT_NAME: Record<string, string> = {
 const zahl = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(1).replace(".", ",")}`;
 const gut = (g: Groesse, x: number) => (HOCH_SCHLECHT.has(g) ? x < 0 : x > 0);
 
-export default function Zeitlupe({ z, tempo, onTempo, autostart = false }: {
+export default function Zeitlupe({ z, tempo, onTempo, autostart = false, onFertig }: {
   z: Zustand; tempo: Tempo; onTempo: (t: Tempo) => void; autostart?: boolean;
+  /** Nach dem letzten Takt (nur beim automatischen Abspielen): weiter zur nächsten Runde. */
+  onFertig?: () => void;
 }) {
   const r = z.rechnung;
   const ts = useMemo(() => (r ? takte(r) : []), [r]);
@@ -37,6 +39,8 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false }: {
   const pos = useRef({ i: 0, a: 0 });
   const [, zeichne] = useState(0);
   const [laeuft, setLaeuft] = useState(autostart);
+  const fertig = useRef(onFertig);
+  fertig.current = onFertig;
 
   // Bewegung: Werte laufen in 60 % der Taktzeit hinüber, dann eine kurze Pause.
   useEffect(() => {
@@ -49,8 +53,16 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false }: {
       p.a += (jetzt - (vorher ?? jetzt)) / (dauer * 0.6);
       vorher = jetzt;
       if (p.a >= 1 + 0.4 / 0.6) {
-        if (p.i + 1 >= ts.length) { p.a = 1; setLaeuft(false); }
-        else { p.i += 1; p.a = 0; }
+        if (p.i + 1 >= ts.length) {
+          // Ende: nicht weiterticken, sonst meldet sich »fertig« mehrfach.
+          p.a = 1;
+          zeichne((x) => x + 1);
+          setLaeuft(false);
+          if (fertig.current) setTimeout(() => fertig.current?.(), 400);
+          return;
+        }
+        p.i += 1;
+        p.a = 0;
       }
       zeichne((x) => x + 1);
       id = requestAnimationFrame(tick);
@@ -88,6 +100,9 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false }: {
           {laeuft ? "⏸ Pause" : "▶ Abspielen"}
         </button>
         <button onClick={() => gehe(i + 1)} disabled={i >= ts.length - 1} aria-label="Nächster Takt" className="w-9 h-9 rounded-lg border border-[var(--border)] font-black disabled:opacity-30">▶</button>
+        {onFertig && (
+          <button onClick={onFertig} className="px-3 h-9 rounded-lg text-sm font-bold border border-[var(--border)]">Weiter zur nächsten Runde ⏭</button>
+        )}
         <div className="inline-flex rounded-xl border border-[var(--border)] p-1 ml-auto" role="radiogroup" aria-label="Tempo">
           {(Object.keys(TEMPO) as Tempo[]).map((x) => (
             <button key={x} role="radio" aria-checked={tempo === x} onClick={() => onTempo(x)}

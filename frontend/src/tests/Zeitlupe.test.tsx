@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { act } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Zeitlupe from "@/components/leviathan/Zeitlupe";
 import { leereVerteilung, neuesSpiel, runde } from "@/lib/leviathan/motor";
@@ -34,5 +35,26 @@ describe("Zeitlupe – Ansicht", () => {
     expect(screen.getByRole("heading", { name: /Aktionspunkte in Bildung/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /langsam/ }));
     expect(tempo).toBe("langsam");
+  });
+
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+  it("spielt nach »Runde beenden« durch und geht dann von selbst zur nächsten Runde", () => {
+    vi.useFakeTimers();
+    let t = 0;
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => setTimeout(() => { t += 50; cb(t); }, 16) as unknown as number);
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
+    let weiter = 0;
+    render(<Zeitlupe z={z} tempo="schnell" onTempo={() => {}} autostart onFertig={() => { weiter++; }} />);
+    expect(screen.getByRole("button", { name: /Pause/ })).toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(20000); });
+    expect(weiter).toBe(1);
+  });
+
+  it("lässt sich überspringen", () => {
+    let weiter = 0;
+    render(<Zeitlupe z={z} tempo="mittel" onTempo={() => {}} autostart onFertig={() => { weiter++; }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Weiter zur nächsten Runde/ }));
+    expect(weiter).toBe(1);
   });
 });

@@ -59,7 +59,7 @@ function bahn(von: Knoten, nach: Knoten) {
 
 const schluessel = (k: Kante) => `${k.von}>${k.nach}`;
 
-export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, markiert, einsatz, onPlus, onMinus, werte, fliessen = 0 }: {
+export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, markiert, einsatz, onPlus, onMinus, werte, fliessen = 0, frei }: {
   z: Zustand;
   /** Bereiche, in die gerade Punkte fließen. */
   hervorheben?: Knoten[];
@@ -76,6 +76,8 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
   werte?: Partial<Record<Groesse, number>>;
   /** Markierte Pfeile »fließen« (Sekunden je Durchlauf, 0 = still). */
   fliessen?: number;
+  /** Beim Verteilen: noch freie und insgesamt verfügbare Aktionspunkte. */
+  frei?: { rest: number; von: number };
 }) {
   const [fokus, setFokus] = useState<Knoten | null>(null);
   const [hover, setHover] = useState<Knoten | null>(null);
@@ -181,7 +183,9 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
         {knotenListe.map((k) => {
           const p = lage(k);
           const ersatz = werte?.[k as Groesse];
-          const w = ersatz !== undefined ? { ring: ersatz, text: String(Math.round(ersatz)) } : knotenWert(z, k);
+          const w = ersatz !== undefined ? { ring: ersatz, text: String(Math.round(ersatz)) }
+            : k === "aktionspunkte" && frei ? { ring: (Math.max(0, frei.rest) / Math.max(1, frei.von)) * 100, text: `${frei.rest}/${frei.von}` }
+            : knotenWert(z, k);
           const istHebel = (HEBEL as Knoten[]).includes(k);
           const gewaehlt = aktiv === k || erste.has(k);
           const gut = HOCH_SCHLECHT.has(k as Groesse) ? 100 - w.ring : w.ring;
