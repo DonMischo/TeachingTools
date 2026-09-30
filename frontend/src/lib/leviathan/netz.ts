@@ -63,7 +63,7 @@ const ENTSCHEIDUNGEN: Kante[] = HEBEL.map((h) => ({
 }));
 
 const ERGEBNISSE: Kante[] = [
-  ...LQ_TEILE.map(([g, s]): Kante => ({ von: g, nach: "lq", staerke: (g === "klima" ? -s : s) * 10, verzoegerung: 0, quelle: "annahme", art: "ergebnis" })),
+  ...LQ_TEILE.map(([g, s]): Kante => ({ von: g, nach: "lq", staerke: (g === "klima" || g === "korruption" ? -s : s) * 10, verzoegerung: 0, quelle: "annahme", art: "ergebnis" })),
   { von: "staatskapazitaet", nach: "leviathan", staerke: 1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht des Staates." },
   { von: "demokratie", nach: "leviathan", staerke: -1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht der Gesellschaft hält den Staat in Schach." },
   { von: "zusammenhalt", nach: "leviathan", staerke: -1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht der Gesellschaft hält den Staat in Schach." },

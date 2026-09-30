@@ -9,7 +9,7 @@
  * Die Zahlen sind Spielgrößen, nicht die Effektstärken der Studien. Die Studie
  * legt Richtung, Verzögerung und grobe Rangfolge fest.
  */
-import type { Groesse } from "./typen";
+import type { Folge, Groesse, Hebel } from "./typen";
 
 export interface Regel {
   von: Groesse;
@@ -26,8 +26,8 @@ const r = (von: Groesse, nach: Groesse, staerke: number, quelle: string, verzoeg
 export const REGELN: Regel[] = [
   // Wirtschaft
   r("demokratie", "wirtschaft", 1.2, "acemoglu2019", 3),
-  r("bildung", "wirtschaft", 1.5, "annahme", 2),
-  r("energie", "wirtschaft", 0.8, "way2022", 2),
+  r("bildung", "wirtschaft", 2.5, "annahme", 2),
+  r("energie", "wirtschaft", 1.5, "way2022", 2),
   r("korruption", "wirtschaft", -1.5, "rothstein2005"),
   r("staatskapazitaet", "wirtschaft", 1.0, "korridor"),
   r("vertrauen", "wirtschaft", 0.5, "annahme", 1),
@@ -39,7 +39,7 @@ export const REGELN: Regel[] = [
   // Bildung
   r("wirtschaft", "bildung", 0.6, "annahme", 1),
   // Gleichheit
-  r("soziales", "gleichheit", 2.0, "rothstein2005"),
+  r("soziales", "gleichheit", 1.5, "rothstein2005"),
   r("korruption", "gleichheit", -1.2, "rothstein2005"),
   r("vertrauen", "gleichheit", 0.8, "rothstein2005", 1),
   r("bildung", "gleichheit", 1.0, "annahme", 2),
@@ -69,10 +69,31 @@ export const REGELN: Regel[] = [
   r("wirtschaft", "staatskapazitaet", 1.0, "annahme"),
   r("korruption", "staatskapazitaet", -1.8, "cpi2025"),
   // Korruption (hoch = schlecht)
-  r("rechtsstaat", "korruption", -2.2, "cpi2025"),
+  r("rechtsstaat", "korruption", -3.0, "cpi2025"),
   r("demokratie", "korruption", -1.5, "vdem2026"),
   r("gleichheit", "korruption", -1.0, "rothstein2005"),
 ];
+
+/**
+ * Sofortwirkung einer Investition: Programme, die direkt an einer Folgegröße
+ * ansetzen – je mehr Punkte, desto stärker (Faktor auf den Ertrag der Punkte).
+ * So hat man auch dann einen Hebel, wenn Teufelskreise gegen einen arbeiten.
+ */
+export const SOFORT: Record<Hebel, { nach: Folge; faktor: number; programm: string; quelle: string }[]> = {
+  wirtschaft: [],
+  energie: [{ nach: "klima", faktor: -0.15, programm: "Kraftwerke umrüsten", quelle: "way2022" }],
+  bildung: [{ nach: "desinformation", faktor: -0.4, programm: "Medienbildung und Prebunking", quelle: "roozenbeek2022" }],
+  soziales: [
+    { nach: "gleichheit", faktor: 0.3, programm: "Grundsicherung und Wohngeld", quelle: "rothstein2005" },
+    { nach: "zusammenhalt", faktor: 0.15, programm: "Treffpunkte und Pflege", quelle: "who2025" },
+  ],
+  rechtsstaat: [
+    { nach: "korruption", faktor: -0.3, programm: "Antikorruptionsbehörde", quelle: "cpi2025" },
+    { nach: "demokratie", faktor: 0.25, programm: "unabhängige Gerichte und Presse", quelle: "vdem2026" },
+    { nach: "vertrauen", faktor: 0.15, programm: "transparente Verwaltung", quelle: "oecd2024" },
+  ],
+  familie: [{ nach: "zusammenhalt", faktor: 0.3, programm: "Kitas, Vereine, Integrationskurse", quelle: "whr2025" }],
+};
 
 /** Was eine Größe außerhalb der Tabelle bewegt – für den »Warum?«-Knopf. */
 export const EIGENDYNAMIK: Partial<Record<Groesse, { text: string; quelle: string }[]>> = {

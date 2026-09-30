@@ -20,6 +20,8 @@ export interface Laendertyp {
   autokrat: boolean;
   /** Einparteienstaat: Wahlen erst ab Demokratie 40. */
   geschlossen: boolean;
+  /** Internationale Hilfe je Runde (Aktionspunkte, vor Korruption). */
+  hilfe: number;
   /** Anteil des Haushalts aus Rohstoffen (0–1). */
   rohstoff: number;
   /** Wie stark das eigene Wirtschaften die Klimalast treibt (große Emittenten 1). */
@@ -46,7 +48,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 45, gleichheit: 75, vertrauen: 66, zusammenhalt: 70, desinformation: 22, demokratie: 88,
       staatskapazitaet: 80, korruption: 12 }),
     bev: { jung: 1.3, erwerb: 3.3, alt: 1.2, tfr: 1.45 },
-    schulden: 3, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.3, kueste: false,
+    hilfe: 0, schulden: 3, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.3, kueste: false,
     tfrKorrektur: 0, jungSterb: 0, typisch: ["pflegenotstand", "energiepreis", "cyberangriff", "einsamkeit"],
   },
   {
@@ -58,7 +60,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 55, gleichheit: 58, vertrauen: 45, zusammenhalt: 55, desinformation: 35, demokratie: 78,
       staatskapazitaet: 70, korruption: 22 }),
     bev: { jung: 15, erwerb: 48, alt: 19, tfr: 1.3 },
-    schulden: 8, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.7, kueste: false,
+    hilfe: 0, schulden: 8, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.7, kueste: false,
     tfrKorrektur: -0.1, jungSterb: 0, typisch: ["energiepreis", "lieferkette", "automatisierung", "fachkraefte"],
   },
   {
@@ -70,7 +72,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 60, gleichheit: 35, vertrauen: 32, zusammenhalt: 40, desinformation: 55, demokratie: 62,
       staatskapazitaet: 58, korruption: 30 }),
     bev: { jung: 80, erwerb: 200, alt: 60, tfr: 1.6 },
-    schulden: 12, autokrat: false, geschlossen: false, rohstoff: 0.05, klimaGewicht: 1, kueste: false,
+    hilfe: 0, schulden: 12, autokrat: false, geschlossen: false, rohstoff: 0.05, klimaGewicht: 1, kueste: false,
     tfrKorrektur: 0.1, jungSterb: 0, typisch: ["deepfake", "algorithmus", "bankenkrise", "gewalt"],
   },
   {
@@ -82,7 +84,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 50, gleichheit: 45, vertrauen: 38, zusammenhalt: 45, desinformation: 62, demokratie: 32,
       staatskapazitaet: 58, korruption: 60 }),
     bev: { jung: 2, erwerb: 5.5, alt: 2, tfr: 1.5 },
-    schulden: 8, autokrat: true, geschlossen: false, rohstoff: 0, klimaGewicht: 0.3, kueste: false,
+    hilfe: 0.5, schulden: 8, autokrat: true, geschlossen: false, rohstoff: 0, klimaGewicht: 0.3, kueste: false,
     tfrKorrektur: 0, jungSterb: 0, typisch: ["proteste", "skandal", "whistleblower", "medienkauf", "braindrain"],
   },
   {
@@ -94,7 +96,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 52, gleichheit: 35, vertrauen: 45, zusammenhalt: 55, desinformation: 50, demokratie: 50,
       staatskapazitaet: 45, korruption: 55 }),
     bev: { jung: 450, erwerb: 900, alt: 110, tfr: 2.0 },
-    schulden: 6, autokrat: false, geschlossen: false, rohstoff: 0.05, klimaGewicht: 1, kueste: false,
+    hilfe: 0.5, schulden: 6, autokrat: false, geschlossen: false, rohstoff: 0.05, klimaGewicht: 1, kueste: false,
     tfrKorrektur: 0.2, jungSterb: 0.004, typisch: ["hitzewelle", "hochwasser", "kiwelle", "landflucht"],
   },
   {
@@ -106,7 +108,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 55, gleichheit: 30, vertrauen: 35, zusammenhalt: 35, desinformation: 60, demokratie: 25,
       staatskapazitaet: 48, korruption: 70 }),
     bev: { jung: 12, erwerb: 22, alt: 2, tfr: 2.8 },
-    schulden: 4, autokrat: false, geschlossen: false, rohstoff: 0.6, klimaGewicht: 0.6, kueste: false,
+    hilfe: 0, schulden: 4, autokrat: false, geschlossen: false, rohstoff: 0.6, klimaGewicht: 0.6, kueste: false,
     tfrKorrektur: 0.6, jungSterb: 0.006, typisch: ["rohstoffcrash", "rohstofffund", "skandal", "putsch"],
   },
   {
@@ -118,7 +120,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 65, gleichheit: 40, vertrauen: 55, zusammenhalt: 55, desinformation: 45, demokratie: 12,
       staatskapazitaet: 78, korruption: 45 }),
     bev: { jung: 250, erwerb: 950, alt: 220, tfr: 1.0 },
-    schulden: 10, autokrat: false, geschlossen: true, rohstoff: 0, klimaGewicht: 1, kueste: false,
+    hilfe: 0, schulden: 10, autokrat: false, geschlossen: true, rohstoff: 0, klimaGewicht: 1, kueste: false,
     tfrKorrektur: -0.45, jungSterb: 0, typisch: ["immobilienblase", "pandemie", "handelskrieg", "geburtenknick"],
   },
   {
@@ -130,7 +132,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 58, gleichheit: 35, vertrauen: 30, zusammenhalt: 50, desinformation: 55, demokratie: 30,
       staatskapazitaet: 18, korruption: 70 }),
     bev: { jung: 14, erwerb: 11, alt: 0.7, tfr: 6.0 },
-    schulden: 5, autokrat: false, geschlossen: false, rohstoff: 0.1, klimaGewicht: 0.05, kueste: false,
+    hilfe: 3, schulden: 5, autokrat: false, geschlossen: false, rohstoff: 0.1, klimaGewicht: 0.05, kueste: false,
     tfrKorrektur: 1.2, jungSterb: 0.02, typisch: ["duerre", "putsch", "flucht", "heuschrecken"],
   },
   {
@@ -142,7 +144,7 @@ export const LAENDERTYPEN: Laendertyp[] = [
       klima: 60, gleichheit: 40, vertrauen: 45, zusammenhalt: 65, desinformation: 40, demokratie: 55,
       staatskapazitaet: 40, korruption: 45 }),
     bev: { jung: 60, erwerb: 105, alt: 12, tfr: 2.0 },
-    schulden: 6, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.1, kueste: true,
+    hilfe: 1.5, schulden: 6, autokrat: false, geschlossen: false, rohstoff: 0, klimaGewicht: 0.1, kueste: true,
     tfrKorrektur: 0.3, jungSterb: 0.006, typisch: ["sturmflut", "versalzung", "klimafonds", "hochwasser"],
   },
 ];

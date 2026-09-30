@@ -4,7 +4,7 @@ import { BEREICH } from "@/lib/leviathan/bereiche";
 import { mio, gesamt } from "@/lib/leviathan/hilfen";
 import { TYP } from "@/lib/leviathan/laender";
 import {
-  budget, effizienz, ertrag, kipppunkte, leereVerteilung, lernfaktor, MAX_KREDIT, STARTJAHR, verteilt,
+  budget, effizienz, ertrag, kipppunkte, saettigung, leereVerteilung, lernfaktor, MAX_KREDIT, STARTJAHR, verteilt,
 } from "@/lib/leviathan/motor";
 import { FOLGEN, HEBEL, type Hebel, type Verteilung, type Zustand } from "@/lib/leviathan/typen";
 import { LeviathanAnzeige, Verlauf } from "./Anzeigen";
@@ -62,7 +62,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
         <Karte titel="Lebensqualität" rechts={<span className="text-3xl font-black tabular-nums">{Math.round(z.lq)}</span>}>
           <Verlauf verlauf={z.verlauf} wert={(s) => s.lq} />
           <p className="text-xs text-[var(--text-muted)] mt-1">
-            Sammelwert aus Wirtschaft, Gesundheit, Zusammenhalt, Gleichheit, Klima, Vertrauen, Demokratie und Bildung.
+            Sammelwert aus Wirtschaft, Gesundheit, Zusammenhalt, Demokratie, wenig Korruption, Vertrauen, Gleichheit, Klima und Bildung (angelehnt an den World Happiness Report).
             Fällt sie zwei Runden lang auf 12 oder darunter, bricht das Land zusammen.
           </p>
         </Karte>
@@ -74,7 +74,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           <div className="flex flex-col gap-2">
             {HEBEL.map((h) => {
               const gesperrt = (z.gesperrt[h] ?? 0) > 0;
-              let wirkung = v[h] ? ertrag(v[h]) * eff * Math.max(0.15, 1.1 - z.w[h] / 100) : 0;
+              let wirkung = v[h] ? ertrag(v[h]) * eff * saettigung(z.w[h]) : 0;
               if (h === "energie") wirkung *= lernfaktor(z.energieKumuliert);
               return (
                 <div key={h} className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${gesperrt ? "opacity-50" : ""}`}>
@@ -101,6 +101,8 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
               <div className="font-bold mb-1">Haushalt dieser Runde</div>
               <Posten name="Steuern" x={b.steuern} />
               {b.rohstoff > 0.4 && <Posten name="Rohstoffe" x={b.rohstoff} />}
+              {b.hilfe > 0.4 && <Posten name="Internationale Hilfe" x={b.hilfe} />}
+              {b.korruption < -0.4 && <Posten name="Korruption versickert" x={b.korruption} />}
               {b.rente > 0.4 && <Posten name="Renten" x={-b.rente} />}
               {b.zinsen > 0.4 && <Posten name="Zinsen" x={-b.zinsen} />}
               {b.korrektur !== 0 && <Posten name="Ereignisse" x={b.korrektur} />}

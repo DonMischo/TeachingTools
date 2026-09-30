@@ -159,7 +159,7 @@ function Lebensqualitaet({ r, lq }: { r: Rechnung; lq: number }) {
   const teile = r.lq.map((t) => ({ ...t, beitrag: t.gewicht * t.wert }));
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <p>Die Lebensqualität ist ein gewichteter Durchschnitt. Klima geht umgekehrt ein: wenig Klimalast ist gut.</p>
+      <p>Die Lebensqualität ist ein gewichteter Durchschnitt – angelehnt an die Größen, mit denen der World Happiness Report Zufriedenheit erklärt. Klimalast und Korruption gehen umgekehrt ein: wenig davon ist gut.</p>
       <table className="w-full tabular-nums">
         <thead className="text-[11px] text-[var(--text-muted)]">
           <tr><th className="text-left font-normal">Bereich</th><th className="text-right font-normal">Wert</th><th className="text-right font-normal">× Gewicht</th><th className="text-right font-normal">= Punkte</th></tr>
@@ -167,7 +167,7 @@ function Lebensqualitaet({ r, lq }: { r: Rechnung; lq: number }) {
         <tbody>
           {teile.map((t) => (
             <tr key={t.name} className="border-t border-[var(--border)]">
-              <td>{t.name === BEREICH.klima.name ? "Klima (100 − Klimalast)" : t.name}</td>
+              <td>{t.name}</td>
               <td className="text-right">{Math.round(t.wert)}</td>
               <td className="text-right">× {t.gewicht.toFixed(2).replace(".", ",")}</td>
               <td className="text-right font-bold">{t.beitrag.toFixed(1).replace(".", ",")}</td>

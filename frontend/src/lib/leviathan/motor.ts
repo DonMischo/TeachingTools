@@ -10,7 +10,7 @@ import { EREIGNIS, EREIGNISSE, anwenden, machtuebernahme, type Ereignis } from "
 import { BEREICH } from "./bereiche";
 import { altAnteil, erwerbAnteil, gesamt, klemme, mio, n, zufall } from "./hilfen";
 import { TYP } from "./laender";
-import { REGELN } from "./regeln";
+import { REGELN, SOFORT } from "./regeln";
 import {
   FOLGEN, GROESSEN, HEBEL, type Einstellungen, type Groesse, type Hebel, type Meldung,
   type Schnappschuss, type Schritt, type TypId, type Verteilung, type Werte, type Zone, type Zustand,
@@ -71,6 +71,9 @@ export function leviathan(w: Werte): Leviathan {
 export interface Budget {
   steuern: number;
   rohstoff: number;
+  hilfe: number;
+  /** Was durch Korruption versickert (negativ). */
+  korruption: number;
   rente: number;
   zinsen: number;
   korrektur: number;
@@ -80,15 +83,19 @@ export interface Budget {
 
 export function budget(z: Zustand): Budget {
   const t = TYP[z.typ];
-  const steuern = 3 + (z.w.wirtschaft / 100) * 14 * (erwerbAnteil(z.bev) / 0.6) * (0.7 + 0.3 * z.w.staatskapazitaet / 100);
+  // Ein handlungsfähiger Staat treibt Steuern ein – ein schwacher nicht.
+  const steuern = 4 + (z.w.wirtschaft / 100) * 15 * (erwerbAnteil(z.bev) / 0.6) * (0.55 + 0.45 * z.w.staatskapazitaet / 100);
   // Die Welt steigt langsam auf Erneuerbare um – Rohstoffeinnahmen schrumpfen.
   const rohstoff = t.rohstoff * 10 * Math.max(0.3, 1 - z.runde * 0.04);
+  const hilfe = t.hilfe;
+  // Korruption: ein Teil der Einnahmen kommt nie an (CPI).
+  const korruption = -(steuern + rohstoff + hilfe) * z.w.korruption / 250;
   const rente = Math.max(0, z.bev.alt / z.bev.erwerb - 0.15) * 10;
   const zinsen = z.schulden * 0.08;
-  const roh = steuern + rohstoff - rente - zinsen + z.apKorrektur;
+  const roh = steuern + rohstoff + hilfe + korruption - rente - zinsen + z.apKorrektur;
   const wiederaufbau = z.status === "wiederaufbau" ? -Math.round(roh * 0.4) : 0;
   return {
-    steuern, rohstoff, rente, zinsen, korrektur: z.apKorrektur, wiederaufbau,
+    steuern, rohstoff, hilfe, korruption, rente, zinsen, korrektur: z.apKorrektur, wiederaufbau,
     gesamt: Math.max(2, Math.round(roh + wiederaufbau)),
   };
 }
@@ -100,8 +107,19 @@ export function effizienz(z: Zustand): number {
   return (1 - z.w.korruption / 300) * (0.7 + 0.3 * z.w.staatskapazitaet / 100) * zf;
 }
 
-/** Abnehmender Ertrag: 1 AP ≈ +5, 3 AP ≈ +12, 6 AP ≈ +18 (vor Effizienz). */
-export const ertrag = (ap: number) => (6 * ap) / (1 + ap / 6);
+/** Abnehmender Ertrag: 1 AP ≈ +7, 3 AP ≈ +17, 6 AP ≈ +27 (vor Effizienz). */
+export const ertrag = (ap: number) => (8 * ap) / (1 + ap / 8);
+
+/** Je höher ein Bereich schon ist, desto weniger bringt jeder weitere Punkt. */
+export const saettigung = (wert: number) => Math.max(0.25, 1.2 - wert / 100);
+
+/** Verfall eines Hebels je Runde ohne Pflege. */
+export const VERFALL = 0.04;
+
+/** Wie kräftig das Wirkungsgefüge insgesamt ist (Faktor auf alle Regeln). */
+export const WIRKUNG = 1.2;
+/** Wie schnell Folgegrößen ohne Anstoß zur Mitte zurückkehren. */
+export const RUECKKEHR = 0.02;
 
 /** Lernkurve: die ersten Anlagen sind teuer, jede weitere wird billiger. */
 export const lernfaktor = (kumuliert: number) => 0.7 + 0.8 * (kumuliert / (kumuliert + 30));
@@ -123,14 +141,21 @@ export function neuesSpiel(typ: TypId, einst: Einstellungen, seed = Date.now() %
   return z;
 }
 
-/** Woraus sich die Lebensqualität zusammensetzt (Klima geht umgekehrt ein). */
+/**
+ * Woraus sich die Lebensqualität zusammensetzt – angelehnt an die sechs
+ * Erklärgrößen des World Happiness Report (Einkommen, soziale Unterstützung,
+ * gesunde Lebenserwartung, Freiheit, Großzügigkeit/Vertrauen, wahrgenommene
+ * Korruption), ergänzt um Gleichheit, Klima und Bildung.
+ * Klima und Korruption gehen umgekehrt ein.
+ */
 export const LQ_TEILE: [Groesse, number][] = [
-  ["wirtschaft", 0.2], ["soziales", 0.2], ["zusammenhalt", 0.15], ["gleichheit", 0.1],
-  ["klima", 0.1], ["vertrauen", 0.08], ["demokratie", 0.1], ["bildung", 0.07],
+  ["wirtschaft", 0.15], ["soziales", 0.15], ["zusammenhalt", 0.15], ["demokratie", 0.12],
+  ["korruption", 0.12], ["vertrauen", 0.08], ["gleichheit", 0.08], ["klima", 0.08], ["bildung", 0.07],
 ];
+const umgekehrt = (g: Groesse) => g === "klima" || g === "korruption";
 
 export function lebensqualitaet(z: Zustand): number {
-  const basis = LQ_TEILE.reduce((s, [g, gew]) => s + gew * (g === "klima" ? 100 - z.w.klima : z.w[g]), 0);
+  const basis = LQ_TEILE.reduce((s, [g, gew]) => s + gew * (umgekehrt(g) ? 100 - z.w[g] : z.w[g]), 0);
   return klemme(basis + z.lqSchock);
 }
 
@@ -193,8 +218,10 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
 
   beginne("budget", "Haushalt", "Aus Steuern, Rohstoffen, Renten und Zinsen ergeben sich die Aktionspunkte dieser Runde.");
   schritt!.details = [
-    `Steuern: 3 + Wirtschaft ${Math.round(z.w.wirtschaft)} × Erwerbstätige × Staatskapazität = ${b.steuern.toFixed(1)}`,
+    `Steuern: 4 + Wirtschaft ${Math.round(z.w.wirtschaft)} × Erwerbstätige × Staatskapazität = ${b.steuern.toFixed(1)}`,
     ...(b.rohstoff > 0.05 ? [`Rohstoffe: + ${b.rohstoff.toFixed(1)}`] : []),
+    ...(b.hilfe > 0.05 ? [`Internationale Hilfe: + ${b.hilfe.toFixed(1)}`] : []),
+    ...(b.korruption < -0.05 ? [`Korruption ${Math.round(z.w.korruption)} lässt versickern: − ${Math.abs(b.korruption).toFixed(1)}`] : []),
     ...(b.rente > 0.05 ? [`Renten (${Math.round((z.bev.alt / z.bev.erwerb) * 100)} Ältere je 100 Erwerbstätige): − ${b.rente.toFixed(1)}`] : []),
     ...(b.zinsen > 0.05 ? [`Zinsen auf ${alt.schulden} Schulden: − ${b.zinsen.toFixed(1)}`] : []),
     ...(b.korrektur ? [`Ereignisse der letzten Runde: ${b.korrektur > 0 ? "+" : "−"} ${Math.abs(b.korrektur)}`] : []),
@@ -216,9 +243,12 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
       zusatz = `, Lernkurve × ${lf.toFixed(2)}`;
       z.energieKumuliert += v[h];
     }
+    const grund = ertrag(v[h]) * eff;
     // Je höher ein Bereich schon ist, desto weniger bringt jeder weitere Punkt.
-    wert *= Math.max(0.15, 1.1 - z.w[h] / 100);
+    wert *= saettigung(z.w[h]);
     plus(h, wert, `${v[h]} Aktionspunkt${v[h] > 1 ? "e" : ""}${zusatz}`, "aktionspunkte", h === "energie" ? "way2022" : undefined);
+    // Sofortwirkung: Programme, die direkt an einer Folgegröße ansetzen.
+    for (const s of SOFORT[h]) plus(s.nach, grund * s.faktor, `Programm »${s.programm}« (${v[h]} AP in ${BEREICH[h].name})`, h, s.quelle);
   }
   const investiert = { ...d };
 
@@ -232,7 +262,7 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
     if (r.nurUeber50) x = Math.max(0, x);
     const k = r.von === "klima" && t.kueste ? 2 : 1;
     const wann = r.verzoegerung ? ` vor ${r.verzoegerung * 2} Jahren` : "";
-    plus(r.nach, r.staerke * x * k, `${BEREICH[r.von].name}${wann} bei ${Math.round(quelle[r.von])}${k > 1 ? " (Küste: doppelt)" : ""}`, r.von, r.quelle);
+    plus(r.nach, WIRKUNG * r.staerke * x * k, `${BEREICH[r.von].name}${wann} bei ${Math.round(quelle[r.von])}${k > 1 ? " (Küste: doppelt)" : ""}`, r.von, r.quelle);
   }
   // Arbeitslosigkeit kostet Vertrauen in die Institutionen (Algan 2017) – gemessen an der letzten Runde.
   const vorletzte = z.verlauf[z.verlauf.length - 2]?.w.wirtschaft ?? z.w.wirtschaft;
@@ -242,8 +272,8 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
   // 3. Eigendynamik
   beginne("eigen", "Eigendynamik",
     "Was ohne dein Zutun passiert: Bereiche verfallen ohne Pflege, Werte kehren zur Mitte zurück, Klima und Desinformation haben eigenen Schwung.");
-  for (const h of HEBEL) plus(h, -0.07 * (z.w[h] - 10), "Verfall ohne Pflege");
-  for (const f of FOLGEN) if (f !== "klima") plus(f, -0.02 * (z.w[f] - 50), "kehrt langsam zur Mitte zurück");
+  for (const h of HEBEL) plus(h, -VERFALL * (z.w[h] - 10), "Verfall ohne Pflege");
+  for (const f of FOLGEN) if (f !== "klima") plus(f, -RUECKKEHR * (z.w[f] - 50), "kehrt langsam zur Mitte zurück");
   plus("wirtschaft", 0.5, "technischer Fortschritt");
 
   // Klima: eigene Emissionen minus Wende plus Welttrend, Kipppunkte schieben nach.
@@ -260,8 +290,10 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
 
   // Autokrat: Demokratie und Pressefreiheit bröckeln, die Wirtschaft leidet langsam (Funke 2023).
   if (z.regierung.autokrat) {
-    plus("demokratie", -1.5, "Autokrat baut Kontrollen ab", "autokrat", "vdem2026");
-    plus("korruption", 1.5, "Autokrat: Vetternwirtschaft", "autokrat", "vdem2026");
+    plus("demokratie", -2 * (1 - z.w.rechtsstaat / 100), "Autokrat baut Kontrollen ab", "autokrat", "vdem2026");
+    // Unabhängige Gerichte begrenzen, was ein Autokrat anrichten kann.
+    const kontrolle = 1 - z.w.rechtsstaat / 100;
+    plus("korruption", 2 * kontrolle, `Autokrat: Vetternwirtschaft (Gerichte bremsen bei Rechtsstaat ${Math.round(z.w.rechtsstaat)})`, "autokrat", "vdem2026");
     plus("desinformation", 1, "Autokrat: Staatspropaganda", "autokrat", "vdem2026");
     plus("staatskapazitaet", 1, "Autokrat setzt schnell durch", "autokrat", "korridor");
     if (z.runde - z.regierung.seit >= 1) plus("wirtschaft", -0.8, "populistische Wirtschaftspolitik", "autokrat", "funke2023");
@@ -273,7 +305,7 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
     plus("wirtschaft", 1, "im Korridor: Staat und Gesellschaft im Gleichgewicht", "leviathan", "korridor");
     plus("vertrauen", 1, "im Korridor: Staat und Gesellschaft im Gleichgewicht", "leviathan", "korridor");
   }
-  if (zone === "despotisch") plus("korruption", 1.5, "despotischer Staat: niemand kontrolliert", "leviathan", "korridor");
+  if (zone === "despotisch") plus("korruption", 2 * (1 - z.w.rechtsstaat / 100), "despotischer Staat: niemand kontrolliert", "leviathan", "korridor");
 
   // Laufende Wirkungen
   for (const l of z.laufend) for (const [g, x] of Object.entries(l.wirkung) as [Groesse, number][]) plus(g, x, `läuft noch nach: ${l.titel}`, l.id);
@@ -343,7 +375,7 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
   z.verlauf.push(schnappschuss(z, b.gesamt));
   z.rechnung = {
     runde: z.runde, start, ende: { ...z.w }, schritte,
-    lq: LQ_TEILE.map(([g, gewicht]) => ({ name: BEREICH[g].name, gewicht, wert: g === "klima" ? 100 - z.w.klima : z.w[g] })),
+    lq: LQ_TEILE.map(([g, gewicht]) => ({ name: umgekehrt(g) ? `100 − ${BEREICH[g].name}` : BEREICH[g].name, gewicht, wert: umgekehrt(g) ? 100 - z.w[g] : z.w[g] })),
     lqSchock: z.lqSchock,
   };
 

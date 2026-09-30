@@ -181,6 +181,34 @@ describe("Leviathan – Rechenweg", () => {
       expect(s.erklaerung.length).toBeGreaterThan(10);
       for (const b of s.beitraege) if (b.quelle) expect(QUELLEN[b.quelle], b.quelle).toBeDefined();
     }
-    expect(z.rechnung!.schritte[1].beitraege.map((b) => b.nach).sort()).toEqual(["bildung", "energie"]);
+    const investiert = z.rechnung!.schritte[1].beitraege;
+    expect(investiert.filter((b) => b.von === "aktionspunkte").map((b) => b.nach).sort()).toEqual(["bildung", "energie"]);
+    // Sofortwirkungen: Medienbildung senkt Desinformation, Kraftwerke die Klimalast.
+    expect(investiert.find((b) => b.nach === "desinformation")!.wert).toBeLessThan(0);
+    expect(investiert.find((b) => b.nach === "klima")!.wert).toBeLessThan(0);
+  });
+});
+
+describe("Leviathan – Hebel gegen Teufelskreise", () => {
+  // Lage aus einem echten Spiel: Rohstoffstaat, Autokrat, Desinformation 100, kaum Vertrauen, 3 AP.
+  const festgefahren = () => {
+    const z = neuesSpiel("rohstoff", { ...STANDARD_EINSTELLUNGEN, aus: EREIGNISSE.map((e) => e.id) }, 1);
+    return { ...z, runde: 3, regierung: { autokrat: true, seit: 0, geschlossen: false },
+      w: { ...z.w, desinformation: 100, vertrauen: 7, demokratie: 17, korruption: 74, bildung: 71, rechtsstaat: 64, zusammenhalt: 24, gleichheit: 25 } };
+  };
+  const alles = (z: Zustand, h: (typeof HEBEL)[number]) => ({ ...leereVerteilung(), [h]: budget(z).gesamt });
+
+  it("Medienbildung senkt die Desinformation spürbar, auch wenn alles dagegen arbeitet", () => {
+    let z = festgefahren();
+    for (let i = 0; i < 3; i++) z = runde(z, alles(z, "bildung"));
+    expect(z.w.desinformation).toBeLessThan(95);
+  });
+
+  it("Rechtsstaat drückt die Korruption und hebt die Demokratie", () => {
+    let z = festgefahren();
+    const vorher = { ...z.w };
+    for (let i = 0; i < 3; i++) z = runde(z, alles(z, "rechtsstaat"));
+    expect(z.w.korruption).toBeLessThan(vorher.korruption);
+    expect(z.w.demokratie).toBeGreaterThan(vorher.demokratie);
   });
 });
