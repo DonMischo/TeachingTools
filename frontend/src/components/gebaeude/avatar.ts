@@ -385,8 +385,12 @@ const TIER_BAU: Record<string, (g: THREE.Group) => void> = {
     kugel(g, 0xf472b6, 0.34, 0, 0.8).scale.set(1, 1.15, 1);
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
-      const arm = zyl(g, 0xec4899, 0.03, 0.07, 0.5, Math.cos(a) * 0.2, 0.05, Math.sin(a) * 0.2);
-      arm.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4);
+      // oben dick unter dem Kopf, unten dünn und nach außen gespreizt, Spitze eingerollt
+      const T = 0.5;
+      const arm = zyl(g, 0xec4899, 0.075, 0.035, 0.5, Math.cos(a) * 0.2, 0.05, Math.sin(a) * 0.2);
+      arm.rotation.set(-Math.sin(a) * T, 0, Math.cos(a) * T);
+      const aussen = 0.2 + 0.25 * Math.sin(T) + 0.03;
+      kugel(g, 0xec4899, 0.045, Math.cos(a) * aussen, 0.3 - 0.25 * Math.cos(T), Math.sin(a) * aussen);
     }
     for (const s of [-1, 1]) { kugel(g, WEISS, 0.07, s * 0.12, 0.72, 0.28); kugel(g, SCHWARZ, 0.04, s * 0.12, 0.72, 0.34); }
   },
@@ -416,7 +420,17 @@ const TIER_BAU: Record<string, (g: THREE.Group) => void> = {
     }
     kegel(g, SCHWARZ, 0.04, 0.12, 0, 0.45, -0.38).rotation.x = -Math.PI / 2;
   },
-  turtle: g => { basis(g, 0x84cc16, 0xecfccb, 0x65a30d); const p = kappe(g, 0x166534, 0.33, 0, 0.3, -0.08); p.scale.set(1, 1.1, 1); for (const [x, y] of [[0, 0.52], [0.15, 0.42], [-0.15, 0.42]]) kugel(g, 0x14532d, 0.06, x, y, -0.3).scale.set(1, 1, 0.3); },
+  turtle: g => {
+    basis(g, 0x84cc16, 0xecfccb, 0x65a30d);
+    // Panzer als Kuppel auf dem Rücken: die Wölbung zeigt nach hinten (−z)
+    const panzer = kappe(g, 0x166534, 0.31, 0, 0.4, -0.08);
+    panzer.rotation.x = -Math.PI / 2;
+    panzer.scale.set(1, 0.75, 1.15);
+    teil(g, new THREE.TorusGeometry(0.31, 0.025, 6, 28), 0x14532d, 0, 0.4, -0.08).scale.set(1, 1.15, 1);
+    for (const [x, y, z] of [[0, 0.4, -0.32], [0.13, 0.55, -0.27], [-0.13, 0.55, -0.27], [0.13, 0.25, -0.27], [-0.13, 0.25, -0.27]]) {
+      kugel(g, 0x14532d, 0.065, x, y, z).scale.set(1, 1, 0.3);
+    }
+  },
   dino: g => {
     basis(g, 0x65a30d, 0xd9f99d);
     for (let i = 0; i < 5; i++) kegel(g, 0xf97316, 0.06, 0.12, 0, KY + 0.22 - i * 0.18, -0.2 - i * 0.03).rotation.x = -0.4;
@@ -430,7 +444,10 @@ const TIER_BAU: Record<string, (g: THREE.Group) => void> = {
   },
   dolphin: g => {
     schwimmer(g, 0x60a5fa, 0xe0f2fe, 0.8);
-    const s = kegel(g, 0x60a5fa, 0.07, 0.18, 0, 0.5, 0.5); s.rotation.x = Math.PI / 2; s.position.set(0, 0.5, 0.58);
+    // runder Schnabel (Rostrum), vorn am Kopf angesetzt und leicht nach unten
+    kugel(g, 0x60a5fa, 0.08, 0, 0.47, 0.44).scale.set(1, 0.7, 1.8);
+    const mund = teil(g, new THREE.TorusGeometry(0.06, 0.008, 6, 12, Math.PI), 0x1e3a8a, 0, 0.45, 0.5);
+    mund.rotation.set(Math.PI / 2, 0, Math.PI);
     const f = kegel(g, 0x3b82f6, 0.1, 0.22, 0, 0.75, -0.05); f.scale.set(0.3, 1, 1); f.rotation.x = -0.4;
   },
   otter: g => { basis(g, 0x92400e, 0xfde68a); ohrenRund(g, 0x92400e, 0.05, undefined, KY + 0.2, 0.2); schnauze(g, 0xfde68a); schnurrhaare(g); const t = kugel(g, 0x78350f, 0.1, 0, 0.12, -0.35); t.scale.set(0.8, 0.3, 2); },
