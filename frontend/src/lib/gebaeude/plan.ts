@@ -14,6 +14,10 @@
  * wie viele Zimmer jedes Stockwerk braucht.
  */
 import { laufeDurch, programm, starte } from "@/lib/regeln/maschine";
+import { verliesStockwerk } from "./verlies";
+
+/** haus: Stockwerke übereinander · ebene: Abschnitte nebeneinander · verlies: Säle und Gänge je Ebene */
+export type PlanArt = "haus" | "ebene" | "verlies";
 
 export type Punkt = [number, number];
 
@@ -25,6 +29,8 @@ export interface Raum {
   y: number;
   /** das Flurfeld davor — hier steht die Tür */
   tuer: Punkt;
+  /** Verlies: alle Felder des Saals (sonst ist das Zimmer nur ein Feld) */
+  flaeche?: Punkt[];
 }
 
 export interface Stockwerk {
@@ -133,9 +139,12 @@ function stockwerk(R: number, start: Punkt, zimmer: number, seed: number, flach 
 /**
  * Baut das Gebäude: `zimmer[i]` Zimmer im Stockwerk i. Gleicher Seed,
  * gleiches Gebäude — die ganze Klasse läuft durch dasselbe Haus.
- * `flach`: eine Ebene mit Abschnitten nebeneinander, verbunden durch Türen.
+ * `ebene`: Abschnitte nebeneinander, verbunden durch Türen. `verlies`: jede
+ * Ebene aus Sälen und Gängen (verlies.ts), die nächste liegt unter der Treppe.
  */
-export function bauePlan(zimmer: number[], seed: number, flach = false): Plan {
+export function bauePlan(zimmer: number[], seed: number, art: PlanArt = "haus"): Plan {
+  if (art === "verlies") return verliesPlan(zimmer, seed);
+  const flach = art === "ebene";
   const meiste = Math.max(1, ...zimmer);
   // Etwa jede dritte Kreuzung wird eine Sackgasse; großzügig anfangen.
   let n = Math.max(4, Math.ceil(Math.sqrt((meiste + 2) * 3.2)));
@@ -155,4 +164,22 @@ export function bauePlan(zimmer: number[], seed: number, flach = false): Plan {
     if (stockwerke.length === zimmer.length) return { R, stockwerke, ...(flach ? { flach } : {}) };
   }
   throw new Error("Gebäude zu groß");
+}
+
+function verliesPlan(zimmer: number[], seed: number): Plan {
+  const meiste = Math.max(1, ...zimmer);
+  // Ein Saal braucht mit Abstand etwa 4×4 Kreuzungen; großzügig anfangen.
+  for (let n = Math.max(9, Math.ceil(Math.sqrt((meiste + 2) * 20))); n <= 32; n++) {
+    const stockwerke: Stockwerk[] = [];
+    let start: Punkt | null = null;
+    for (let i = 0; i < zimmer.length; i++) {
+      let st: Stockwerk | null = null;
+      for (let v = 0; v < 10 && !st; v++) st = verliesStockwerk(n, start, zimmer[i], seed * 131 + i * 17 + v);
+      if (!st) break;
+      stockwerke.push(st);
+      start = st.ziel;
+    }
+    if (stockwerke.length === zimmer.length) return { R: 2 * n + 1, stockwerke };
+  }
+  throw new Error("Verlies zu groß");
 }

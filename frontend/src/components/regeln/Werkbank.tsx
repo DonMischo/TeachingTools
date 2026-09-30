@@ -255,7 +255,7 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
             {ri > 0 && <Mini title="nach oben (bei markov: Vorrang)" onClick={() => onAendere(b => { [b.regeln[ri - 1], b.regeln[ri]] = [b.regeln[ri], b.regeln[ri - 1]]; })}>↑</Mini>}
             {block.regeln.length > 1 && <Mini title="Regel löschen" onClick={() => onAendere(b => { b.regeln.splice(ri, 1); })}>🗑</Mini>}
           </span>
-          <code className="w-full text-[11px] text-[var(--text-muted)]">{regelText(r)}</code>
+          <code className="w-full min-w-0 break-all text-[11px] text-[var(--text-muted)]">{regelText(r)}</code>
         </div>
       ))}
       <button className="self-start text-xs underline text-[var(--text-muted)]"

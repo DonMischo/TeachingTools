@@ -193,7 +193,10 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   const boden: Punkt[] = [];
   const waende: Punkt[] = [];
   const offen = (x: number, y: number) => x >= 0 && y >= 0 && x < R && y < R && st.boden[y * R + x];
-  const sonder = new Set<string>([...st.raeume.map(r => `${r.x},${r.y}`), ...(flach ? [] : [`${st.ziel}`, ...(i > 0 ? [`${st.start}`] : [])])]);
+  const sonder = new Set<string>([
+    ...st.raeume.flatMap(r => (r.flaeche ?? [[r.x, r.y]]).map(([x, y]) => `${x},${y}`)),
+    ...(flach ? [] : [`${st.ziel}`, ...(i > 0 ? [`${st.start}`] : [])]),
+  ]);
   // Ebene: die Wandfelder, in denen Türen sitzen, bleiben frei
   const tuerFelder = new Set<string>(flach ? [`${R - 1},${st.ziel[1]}`, ...(i > 0 ? [`0,${st.start[1]}`] : [])] : []);
   for (let y = 0; y < R; y++) {
@@ -239,6 +242,11 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     g.add(zg);
     const z = bild.zustaende[k] ?? "offen";
     const rx = welt(r.x), rz = welt(r.y);
+    // Verlies: der ganze Saal in der Zimmerfarbe (gedämpft), die Mitte kräftig
+    if (r.flaeche) {
+      const rand = r.flaeche.filter(([x, y]) => x !== r.x || y !== r.y);
+      zg.add(klotzReihe(rand, dunkel(new THREE.Color(RAUM_FARBE[z]).lerp(new THREE.Color(F.boden), 0.6).getHex()), 0.27, y0));
+    }
     zg.add(klotz(dunkel(RAUM_FARBE[z]), WEIT, 0.3, WEIT, rx, y0, rz, F.leuchten && !bild.unten));
     if (F.leuchten && !bild.unten) {
       // Neon: eine Lichtsäule über dem Zimmer, wie die roten Räume im Bild

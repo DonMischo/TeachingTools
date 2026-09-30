@@ -38,7 +38,7 @@ describe("Gebäudeplan", () => {
 
   it.each([[[3, 4, 2]], [[6]], [[0, 5]]])("Ebene: Abschnitte nebeneinander, Tür am rechten Rand (%j)", zimmer => {
     for (const seed of [1, 2, 3, 42]) {
-      const plan = bauePlan(zimmer, seed, true);
+      const plan = bauePlan(zimmer, seed, "ebene");
       expect(plan.flach).toBe(true);
       plan.stockwerke.forEach((st, i) => {
         expect(st.raeume).toHaveLength(zimmer[i]);
@@ -54,6 +54,26 @@ describe("Gebäudeplan", () => {
         }
         // der nächste Abschnitt beginnt links in derselben Zeile
         if (i > 0) expect(st.start).toEqual([1, plan.stockwerke[i - 1].ziel[1]]);
+      });
+    }
+  });
+
+  it.each([[[3, 4, 2]], [[6]], [[1, 1]]])("Verlies: Säle, Gänge, Türen, Treppe im fernsten Saal (%j)", zimmer => {
+    for (const seed of [1, 2, 7, 42]) {
+      const plan = bauePlan(zimmer, seed, "verlies");
+      plan.stockwerke.forEach((st, i) => {
+        expect(st.raeume).toHaveLength(zimmer[i]);
+        const d = abstaende(plan.R, st, st.start);
+        // alles begehbare hängt zusammen, jeder Saal und die Treppe sind erreichbar
+        expect(st.boden.every((b, j) => !b || d[j] >= 0)).toBe(true);
+        for (const r of st.raeume) {
+          expect(r.flaeche).toHaveLength(25);
+          expect(r.flaeche!.every(([x, y]) => begehbar(plan.R, st, [x, y]))).toBe(true);
+          expect(begehbar(plan.R, st, r.tuer)).toBe(true);
+          expect(d[r.y * plan.R + r.x]).toBeLessThanOrEqual(d[st.ziel[1] * plan.R + st.ziel[0]]);
+        }
+        // die nächste Ebene beginnt unter der Treppe
+        if (i > 0) expect(st.start).toEqual(plan.stockwerke[i - 1].ziel);
       });
     }
   });

@@ -48,7 +48,7 @@ export default function GebaeudeSpiel({
   const verlies = art === "verlies";
   const W = WORTE[art];
   const teile = useMemo(() => abschnitte(slides), [slides]);
-  const plan = useMemo(() => bauePlan(teile.map(t => t.raeume.length), seedAus(code), art === "ebene"), [teile, code, art]);
+  const plan = useMemo(() => bauePlan(teile.map(t => t.raeume.length), seedAus(code), art), [teile, code, art]);
   const objekte = useMemo(() => teile.map(t => t.raeume.map(i => stationsObjekt(slides[i], verlies))), [teile, slides, verlies]);
   // Im Verlies bewacht an jeder Tür ein Boss die Treppe.
   const waechter = useMemo(() => teile.map(t => verlies && t.tuer !== null), [teile, verlies]);

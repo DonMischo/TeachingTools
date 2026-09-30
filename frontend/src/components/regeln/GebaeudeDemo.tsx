@@ -18,7 +18,7 @@ export default function GebaeudeDemo() {
   const [seed, setSeed] = useState(1);
   const [art, setArt] = useState<GebaeudeArt>("haus");
   const verlies = art === "verlies";
-  const plan = useMemo(() => bauePlan(Array(stockwerke).fill(zimmer), seed, art === "ebene"), [stockwerke, zimmer, seed, art]);
+  const plan = useMemo(() => bauePlan(Array(stockwerke).fill(zimmer), seed, art), [stockwerke, zimmer, seed, art]);
   const [stock, setStock] = useState(0);
   const [besucht, setBesucht] = useState<boolean[][]>([]);
   const [meldung, setMeldung] = useState("Klicke auf ein Feld, nutze die Pfeiltasten oder tippe eine Zimmernummer (1–9, 0 = Treppe bzw. Tür).");
@@ -111,11 +111,19 @@ export default function GebaeudeDemo() {
         <section className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed">
           <h3 className="font-black text-lg">{wort} {stock + 1} von {plan.stockwerke.length}</h3>
           <Grundriss plan={plan} stock={stock} besucht={besucht[stock] ?? []} />
-          <p>
-            Gewachsen mit einer einzigen Regel: <code className="font-mono">{REGELN}</code>. Von einer Kreuzung (weiß) wächst der Flur
-            zwei Felder weit ins Schwarze; das Stück dazwischen wird grau, damit nur Kreuzungen weiterwachsen. Es entsteht ein Baum —
-            und jede Sackgasse wird ein Zimmer mit genau einer Tür. Die weiteste Sackgasse ist das Treppenhaus.
-          </p>
+          {verlies ? (
+            <p>
+              Jede Ebene ist eine Verlies-Karte wie das Beispiel »Verlies«: Säle verteilen, dazwischen ein Labyrinth graben
+              (Backtracker), jedem Saal eine Tür geben, Sackgassen verschwinden lassen. Die Treppe liegt im Saal, der am weitesten weg
+              ist — und die Ebene darunter beginnt in einem Saal genau darunter.
+            </p>
+          ) : (
+            <p>
+              Gewachsen mit einer einzigen Regel: <code className="font-mono">{REGELN}</code>. Von einer Kreuzung (weiß) wächst der Flur
+              zwei Felder weit ins Schwarze; das Stück dazwischen wird grau, damit nur Kreuzungen weiterwachsen. Es entsteht ein Baum —
+              und jede Sackgasse wird ein Zimmer mit genau einer Tür. Die weiteste Sackgasse ist {art === "ebene" ? "rechts die Tür zum nächsten Abschnitt" : "das Treppenhaus"}.
+            </p>
+          )}
           <div className="flex flex-wrap gap-1">
             {plan.stockwerke[stock].raeume.map((_, k) => (
               <button key={k} onClick={() => setAuftrag(a => ({ ort: { art: "raum", raum: k }, nr: (a?.nr ?? 0) + 1 }))}
