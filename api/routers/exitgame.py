@@ -228,6 +228,14 @@ def _validate_exitgame(data: dict) -> list[str]:
                 errors.append(f"gebaeude.ansicht '{gebaeude['ansicht']}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_ANSICHTEN))})")
             if gebaeude.get("stil") is not None and gebaeude["stil"] not in GEBAEUDE_STILE:
                 errors.append(f"gebaeude.stil '{gebaeude['stil']}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_STILE))})")
+            stile = gebaeude.get("stile")
+            if stile is not None:
+                if not isinstance(stile, list):
+                    errors.append("gebaeude.stile muss eine Liste sein, ein Stil je Abschnitt, z.B. [\"steinzeit\", \"gotisch\"]")
+                else:
+                    for n, s in enumerate(stile, 1):
+                        if s not in GEBAEUDE_STILE:
+                            errors.append(f"gebaeude.stile[{n}] '{s}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_STILE))})")
     slides = data.get("slides") or []
     if not isinstance(slides, list) or not slides:
         errors.append("'slides' muss eine nicht-leere Liste sein")
@@ -674,7 +682,9 @@ ANLEITUNG_25D = (
     "--- GEBÄUDE --- Jedes Spiel lässt sich als Folien oder in 2.5D spielen. 'gebaeude' legt fest: "
     "{\"ansicht\": …, \"stil\": …} (Werte: _katalog['gebaeude.ansicht'] und ['gebaeude.stil']). Was hier "
     "steht, ist fest — die Schüler bekommen dafür keine Auswahl. Fehlt ein Feld, wählen die Schüler "
-    "selbst (Ansicht: Folien/Gebäude/Verlies/Ebene, Stil: alle Stile). "
+    "selbst (Ansicht: Folien/Gebäude/Verlies/Ebene, Stil: alle Stile). Jeder Abschnitt kann einen eigenen "
+    "Stil bekommen: \"stile\": [\"steinzeit\", \"gotisch\", \"viktorianisch\", \"retro\", \"neon\"] "
+    "(einer je Abschnitt in Reihenfolge; fehlt einer, gilt 'stil') — z.B. eine Reise durch die Epochen. "
     "Jeder Abschnitt (alles bis einschließlich einer Tür) wird ein Stockwerk/eine Ebene/ein Bereich, "
     "jede Slide davor ein Zimmer, die Tür wird Treppe bzw. Tür — bewacht von einem Boss im Verlies. "
     "Zurück geht es jederzeit. 3-6 Zimmer pro Abschnitt sind gut; die Zimmer sind 1-9 nummeriert "
@@ -700,7 +710,7 @@ def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)
         "subject": "mathe",
         "grade": "7,8",
         "tags": ["vorlage", "interaktiv", "verlies"],
-        "gebaeude": {"ansicht": "verlies", "stil": "verlies"},
+        "gebaeude": {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"]},
         "completion": {"message": "Der Endboss ist besiegt — du hast den Schatz gefunden!", "code": "SCHATZ-8"},
         "slides": [
             # ── Ebene 1 ──────────────────────────────────────────────────────────

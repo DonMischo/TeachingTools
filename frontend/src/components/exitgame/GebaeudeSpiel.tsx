@@ -31,6 +31,8 @@ interface Props {
   /** haus (Treppen hinauf), verlies (hinab, Monster und Bosse) oder ebene (Türen nebeneinander) */
   art?: GebaeudeArt;
   stil?: Stil;
+  /** je Abschnitt ein eigener Stil ("gebaeude": {"stile": […]}) */
+  stile?: (Stil | undefined)[];
 }
 
 /** Wörter je Art: wie heißen Stockwerk, Weiter und Zurück? */
@@ -42,7 +44,7 @@ const WORTE: Record<GebaeudeArt, { stock: string; icon: string; weiter: string; 
 
 export default function GebaeudeSpiel({
   code, attempt, exitgameId, data, variantChoices, fragments, adaptation, onSlideSolved, onAdaptation, onFinish,
-  art = "haus", stil,
+  art = "haus", stil, stile,
 }: Props) {
   const slides = data.slides;
   const verlies = art === "verlies";
@@ -132,7 +134,7 @@ export default function GebaeudeSpiel({
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3 items-start">
         <div className="relative h-[70vh] min-h-[380px] rounded-2xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
           <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
-            art={art} stil={stil} waechter={waechter}
+            art={art} stil={stil} stile={stile} waechter={waechter}
             aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
           <div className="absolute top-2 left-2 rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
             {W.icon} {W.stock} {stock + 1} / {teile.length}

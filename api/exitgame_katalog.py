@@ -29,6 +29,13 @@ STILE = {
     "wueste": "Wüstentempel: Sandstein, blaue Türen, gefliester Boden.",
     "raumstation": "Raumstation: dunkles Metall, türkis leuchtende Zimmer.",
     "lava": "Lavahöhle: schwarzer Fels, glühende Zimmer — passt zum Verlies.",
+    # Epochen — gut für "stile" (ein Stil je Abschnitt), z.B. eine Reise durch die Geschichte
+    "steinzeit": "Steinzeithöhle: Erdboden, grobe Felswände.",
+    "antike": "Antiker Tempel: Marmorfliesen, weiße Säulenwände, Terrakotta.",
+    "mittelalter": "Mittelalter: Fachwerk mit weißen Wänden und dunklen Balken.",
+    "gotisch": "Gotik: hohe dunkle Steinmauern, Zimmer leuchten violett wie Kirchenfenster.",
+    "viktorianisch": "Viktorianisch (19. Jh.): Parkett, grüne Tapete, Goldleisten, Gusseisen.",
+    "retro": "Retro (1970er): oranger Teppich, cremefarbene Wände, olivgrüne Türen.",
 }
 
 OBJEKTE = {
@@ -138,6 +145,7 @@ KATALOG = {
     "_lies_mich": "Nachschlageliste für die 2.5D-Felder. Nur lesen — beim Hochladen wird sie ignoriert.",
     "gebaeude.ansicht": ANSICHTEN,
     "gebaeude.stil": STILE,
+    "gebaeude.stile": "Liste mit einem Stil je Abschnitt (Werte wie gebaeude.stil), z.B. [\"steinzeit\", \"gotisch\", \"neon\"]; fehlt ein Eintrag, gilt gebaeude.stil.",
     "slide.station": OBJEKTE,
     "task.sim": WERKZEUGE,
 }

@@ -2,6 +2,8 @@
 self-paced attempts/events with server-side answer checking, hint budgeting,
 report/log endpoints, and the DDA fuzzy-inference module."""
 import io
+import json
+from pathlib import Path
 
 from api.models import Student, Class
 from api.auth import hash_password
@@ -847,7 +849,7 @@ def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
     """Die interaktive Vorlage ist ein spielbares Verlies — sie muss sich so,
     wie sie ist, hochladen lassen und alle 2.5D-Bausteine zeigen."""
     tpl = client.get("/api/exitgames/template-interaktiv", headers=_auth(teacher_token)).json()
-    assert tpl["gebaeude"] == {"ansicht": "verlies", "stil": "verlies"}
+    assert tpl["gebaeude"] == {"ansicht": "verlies", "stil": "verlies", "stile": ["verlies", "lava"]}
     stationen = {s.get("station") for s in tpl["slides"]}
     assert {"monster", "boss", "tafel"} <= stationen
     tools = {(t.get("sim") or {}).get("tool") for s in tpl["slides"] for t in ([s["task"]] if s.get("task") else [])}
@@ -866,10 +868,22 @@ def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
 def test_upload_validates_gebaeude(client, teacher_token):
     ok = {**SIMPLE_GAME, "gebaeude": {"ansicht": "ebene", "stil": "garten"}}
     assert _upload(client, teacher_token, ok).status_code == 201
-    for falsch in ({"ansicht": "keller"}, {"stil": "barock"}, "verlies"):
+    epochen = {**SIMPLE_GAME, "gebaeude": {"stile": ["steinzeit", "gotisch", "viktorianisch", "retro", "neon"]}}
+    assert _upload(client, teacher_token, epochen).status_code == 201
+    for falsch in ({"ansicht": "keller"}, {"stil": "barock"}, "verlies", {"stile": "gotisch"}, {"stile": ["gotisch", "barock"]}):
         r = _upload(client, teacher_token, {**SIMPLE_GAME, "gebaeude": falsch})
         assert r.status_code == 422, falsch
         assert any("gebaeude" in e for e in r.json()["detail"]["errors"])
+
+
+def test_medien_example_has_one_style_per_epoch(client, teacher_token):
+    """Zeitreise der Medien: fünf Abschnitte, fünf Epochen-Stile — und das Spiel lässt sich hochladen."""
+    pfad = Path(__file__).parents[2] / "data" / "exitgame_examples" / "Exitgame_Geschichte_der_Medien.json"
+    spiel = json.loads(pfad.read_text(encoding="utf-8"))
+    tueren = sum(1 for s in spiel["slides"] if s["type"] == "door")
+    assert len(spiel["gebaeude"]["stile"]) == tueren == 5
+    r = _upload(client, teacher_token, spiel)
+    assert r.status_code == 201, r.json()
 
 
 def test_monster_and_boss_are_station_objects(client, teacher_token):

@@ -13,7 +13,7 @@
   ],
   "gebaeude": {
     "ansicht": "gebaeude",
-    "stil": "holz"
+    "stile": ["steinzeit", "gotisch", "viktorianisch", "retro", "neon"]
   },
   "style": {
     "theme": "dark",

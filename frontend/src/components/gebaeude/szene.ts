@@ -36,7 +36,8 @@ const RAUM_FARBE: Record<RaumZustand, number> = {
  */
 export type Stil =
   | "klassisch" | "beton" | "neon" | "garten" | "verlies"
-  | "burg" | "holz" | "eis" | "wueste" | "raumstation" | "lava";
+  | "burg" | "holz" | "eis" | "wueste" | "raumstation" | "lava"
+  | "steinzeit" | "antike" | "mittelalter" | "gotisch" | "viktorianisch" | "retro";
 
 interface Palette {
   boden: number; wand: number; wandH: number; oben: number; obenH: number;
@@ -61,6 +62,13 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   wueste: { name: "Wüstentempel", boden: 0xfde68a, boden2: 0xfcd34d, wand: 0xd97706, wandH: 1.1, oben: 0xfef3c7, obenH: 0.15, tuer: 0x1e3a8a, treppe: 0xfcd34d, stuetze: 0xb45309, sockel: 0xca8a04 },
   raumstation: { name: "Raumstation", boden: 0x475569, boden2: 0x334155, wand: 0x1e293b, wandH: 1.2, oben: 0x22d3ee, obenH: 0.05, tuer: 0x94a3b8, treppe: 0x64748b, stuetze: 0x64748b, sockel: 0x0f172a, leuchten: true, licht: 0x22d3ee },
   lava: { name: "Lavahöhle", boden: 0x292524, wand: 0x1c1917, wandH: 1.5, oben: 0xea580c, obenH: 0.08, tuer: 0x431407, treppe: 0x44403c, stuetze: 0x292524, sockel: 0x7c2d12, leuchten: true, licht: 0xf97316 },
+  // Epochen — z. B. ein Abschnitt je Zeitalter (Exitgame "gebaeude": {"stile": […]})
+  steinzeit: { name: "Steinzeithöhle", boden: 0x8a6f4e, wand: 0x6b5844, wandH: 1.7, oben: 0x57473a, obenH: 0.3, tuer: 0xb45309, treppe: 0x7c6a55, stuetze: 0x57473a, sockel: 0x44403c },
+  antike: { name: "Antiker Tempel", boden: 0xf5f5f4, boden2: 0xe7e5e4, wand: 0xfafaf9, wandH: 1.3, oben: 0xc2410c, obenH: 0.15, tuer: 0xa16207, treppe: 0xf5f5f4, stuetze: 0xe7e5e4, sockel: 0x0369a1 },
+  mittelalter: { name: "Mittelalter (Fachwerk)", boden: 0xc8b89a, wand: 0xf5f0e1, wandH: 1.2, oben: 0x4a2c17, obenH: 0.18, tuer: 0x5c3a1a, treppe: 0x9c8a70, stuetze: 0x4a2c17, sockel: 0x57534e },
+  gotisch: { name: "Gotik", boden: 0x57534e, boden2: 0x3f3a36, wand: 0x6b6560, wandH: 2.0, oben: 0x44403c, obenH: 0.1, tuer: 0x1c1917, treppe: 0x78716c, stuetze: 0x44403c, sockel: 0x1c1917, leuchten: true, licht: 0x8b5cf6 },
+  viktorianisch: { name: "Viktorianisch", boden: 0x6b3a2a, boden2: 0x5a2f22, wand: 0x14532d, wandH: 1.3, oben: 0xd4af37, obenH: 0.08, tuer: 0x3b1f14, treppe: 0x8b5a3c, stuetze: 0x1c1917, sockel: 0x44403c },
+  retro: { name: "Retro (70er)", boden: 0xd97706, boden2: 0xb45309, wand: 0xfef3c7, wandH: 1.0, oben: 0x92400e, obenH: 0.1, tuer: 0x65a30d, treppe: 0xfcd34d, stuetze: 0x78716c, sockel: 0x57534e },
 };
 
 const box = new THREE.BoxGeometry(1, 1, 1);

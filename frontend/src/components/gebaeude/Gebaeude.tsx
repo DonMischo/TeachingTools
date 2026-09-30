@@ -36,6 +36,8 @@ interface Props {
   /** je Stockwerk, was in den Zimmern steht (Vorgabe: Schreibtisch) */
   objekte?: Objekt[][];
   stil?: Stil;
+  /** je Stockwerk ein eigener Stil (fehlt einer, gilt `stil`) */
+  stile?: (Stil | undefined)[];
   /** haus: nach oben · verlies: nach unten, nur die aktuelle Ebene, Fackellicht · ebene: Abschnitte nebeneinander mit Türen */
   art?: GebaeudeArt;
   /** je Stockwerk: bewacht ein Boss Treppe bzw. Ausgang? */
@@ -60,7 +62,7 @@ function feldVon(st: Stockwerk, ort: Ort): Punkt {
 }
 
 export default function Gebaeude({
-  plan, stock, zustaende, zielOffen, objekte, stil, art = "haus", waechter, aktiv, auftrag, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stil, stile, art = "haus", waechter, aktiv, auftrag, onAnkunft,
 }: Props) {
   const verlies = art === "verlies";
   const flach = art === "ebene";
@@ -270,7 +272,7 @@ export default function Gebaeude({
   }, [verlies]);
 
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
-  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, art, waechter]);
+  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, stile, art, waechter]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
@@ -283,7 +285,7 @@ export default function Gebaeude({
         zustaende: zustaende[i] ?? [],
         zielOffen: zielOffen[i] ?? false,
         objekte: objekte?.[i],
-        stil: stil ?? (verlies ? "verlies" : undefined),
+        stil: stile?.[i] ?? stil ?? (verlies ? "verlies" : undefined),
         zielArt: i < plan.stockwerke.length - 1 ? "treppe" : "ausgang",
         unten: flach ? i > stock : i < stock,
         richtung,

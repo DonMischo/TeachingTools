@@ -845,7 +845,7 @@ export type ExitGameData = {
   dda?: { enabled?: boolean; levels?: Record<string, unknown>[] };
   completion?: { message?: string; code?: string };
   // 2.5D: mit welcher Ansicht das Spiel startet und in welchem Stil das Haus gebaut ist
-  gebaeude?: { ansicht?: "folien" | "gebaeude" | "verlies" | "ebene"; stil?: string };
+  gebaeude?: { ansicht?: "folien" | "gebaeude" | "verlies" | "ebene"; stil?: string; stile?: string[] };
   slides: ExitGameSlide[];
 };
 export type ExitGameDetailOut = ExitGameOut & { data: ExitGameData };

@@ -165,9 +165,11 @@ export default function ExitgamePlayPage() {
       (old: typeof start | undefined) => old ? { ...old, attempt } : old);
     if (frags) setFragments(frags);
   }
-  const { ansicht: ansichtDesSpiels, stil: stilDesSpiels } = data.gebaeude ?? {};
+  const { ansicht: ansichtDesSpiels, stil: stilDesSpiels, stile: stileDesSpiels } = data.gebaeude ?? {};
   const festeAnsicht = istAnsicht(ansichtDesSpiels) ? ansichtDesSpiels : null;
   const festerStil = istStil(stilDesSpiels) ? stilDesSpiels : null;
+  // je Abschnitt ein Stil; wo einer fehlt, gilt "stil"
+  const festeStile = Array.isArray(stileDesSpiels) ? stileDesSpiels.map(s => (istStil(s) ? s : undefined)) : null;
   const aktiv: Ansicht = festeAnsicht ?? ansicht ?? "folien";
   const umschalter = festeAnsicht ? null : (
     <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs" role="group" aria-label="Ansicht">
@@ -179,7 +181,7 @@ export default function ExitgamePlayPage() {
       ))}
     </div>
   );
-  const stilWahl = festerStil ? null : (
+  const stilWahl = festerStil || festeStile ? null : (
     <select value={stil ?? ""} onChange={e => waehleStil(e.target.value as Stil)} aria-label="Stil"
       className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-0.5 text-xs">
       <option value="" disabled>🎨 Stil</option>
@@ -198,7 +200,7 @@ export default function ExitgamePlayPage() {
           variantChoices={start.variant_choices ?? {}} fragments={fragments} adaptation={adaptation}
           onSlideSolved={slideSolved} onAdaptation={setAdaptation} onFinish={() => finishMut.mutate()}
           art={aktiv === "verlies" ? "verlies" : aktiv === "ebene" ? "ebene" : "haus"}
-          stil={festerStil ?? stil ?? undefined} />
+          stil={festerStil ?? (festeStile ? undefined : stil) ?? undefined} stile={festeStile ?? undefined} />
       </div>
     );
   }
