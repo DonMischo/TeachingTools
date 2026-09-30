@@ -113,7 +113,7 @@ export default function AvatarWahl({ avatar, onWahl, startOffen = false }: {
               </div>
             )}
           </div>
-          <button onClick={() => setOffen(false)} className="btn-primary text-xs py-1 px-3 self-start">Fertig</button>
+          <button onClick={() => setOffen(false)} className="btn-primary !w-auto text-xs py-1 px-3 self-start">Fertig</button>
         </div>
       )}
     </div>

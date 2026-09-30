@@ -69,7 +69,7 @@ export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {
             <div className="flex-1 min-w-0 text-sm">
               {frage ? <MathText text={frage} className="font-medium" /> : <b>{eintrag.name}</b>}
             </div>
-            <button onClick={() => setOffen(false)} className="btn-primary text-sm py-1.5 px-4 shrink-0">✓ Zur Antwort</button>
+            <button onClick={() => setOffen(false)} className="btn-primary !w-auto text-sm py-1.5 px-4 shrink-0 whitespace-nowrap">✓ Zur Antwort</button>
           </div>
           <div className="flex-1 overflow-y-auto app-scroll">
             <Suspense fallback={<p className="p-6 text-sm text-[var(--text-muted)]">Lade {eintrag.name} …</p>}>

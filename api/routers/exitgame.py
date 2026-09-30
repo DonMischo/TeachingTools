@@ -262,6 +262,9 @@ def _validate_exitgame(data: dict) -> list[str]:
                           f"'codeFragment' an den Aufgaben vor der Tür, der Türcode setzt sich daraus zusammen")
         if stype == "task" and not (slide.get("task") or slide.get("tasks")):
             errors.append(f"{where}: 'task' braucht 'task' oder 'tasks'")
+        sicherung = slide.get("ergebnissicherung")
+        if sicherung is not None and (not isinstance(sicherung, str) or not sicherung.strip() or len(sicherung) > 3000):
+            errors.append(f"{where}: 'ergebnissicherung' muss ein Text sein (höchstens 3000 Zeichen)")
         station = slide.get("station")
         if station is not None and station not in STATION_OBJECTS:
             errors.append(f"{where}: 'station' '{station}' gibt es nicht (erlaubt: {', '.join(sorted(STATION_OBJECTS))})")
@@ -328,13 +331,14 @@ def _task_for_player(task: dict) -> dict:
 
 
 def _data_for_player(data: dict) -> dict:
-    """Was Schüler und Gäste beim Start bekommen: das Spiel ohne Lösungen und
-    ohne 'completion' (der Exit-Code kommt erst mit /finish)."""
+    """Was Schüler und Gäste beim Start bekommen: das Spiel ohne Lösungen,
+    ohne 'completion' (der Exit-Code kommt erst mit /finish) und ohne
+    'ergebnissicherung' (die verrät oft die Antwort — sie kommt mit /finish)."""
     slides = []
     for slide in data.get("slides") or []:
         if not isinstance(slide, dict):
             continue
-        s = dict(slide)
+        s = {k: v for k, v in slide.items() if k != "ergebnissicherung"}
         if isinstance(s.get("task"), dict):
             s["task"] = _task_for_player(s["task"])
         if isinstance(s.get("tasks"), list):
@@ -406,6 +410,11 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "Sinnvoll sind 3-6 Fragmente pro "
             "Abschnitt. Davon unabhängig ist completion.code: der Code, den die Schüler am Ende der Lehrkraft "
             "zeigen. "
+            "--- ERGEBNISSICHERUNG --- Jede Slide kann 'ergebnissicherung' tragen: 1-3 Sätze, was nach dem "
+            "Spiel hängen bleiben soll (Merksatz, Regel, Formel in $…$, Stichpunkte mit '- ' am Zeilenanfang). "
+            "Am Ende lädt der Schüler alle Merksätze als gestaltetes PDF herunter, nach Abschnitten sortiert. "
+            "Sie werden erst nach dem Spiel ausgeliefert, dürfen also die Lösung enthalten. Sinnvoll an jeder "
+            "Aufgabe und an wichtigen Erklärungen. "
             "--- AUFGABEN (task.kind) --- 'single' (genau eine Antwort richtig), 'multi' (die Auswahl muss "
             "exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' "
             "(accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl "
@@ -489,6 +498,8 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
              "text": "Wähle die richtige Antwort.",
              "extraExample": "Wippe: Ein Kind mit $20$ kg sitzt $2$ m vom Drehpunkt entfernt "
                              "($20 \\cdot 2 = 40$). Ein Kind mit $40$ kg muss dafür bei $1$ m sitzen.",
+             "ergebnissicherung": "Hebelgesetz: Je weiter weg vom Drehpunkt du drückst, desto weniger Kraft "
+                                  "brauchst du.\n- $\\text{Kraft} \\cdot \\text{Kraftarm} = \\text{Last} \\cdot \\text{Lastarm}$",
              "task": {"kind": "single", "codeFragment": "HE",
                       "variants": [
                           {"question": "Wo musst du drücken, damit es am leichtesten geht?",
@@ -1316,6 +1327,32 @@ async def post_event(
     return out
 
 
+def _ergebnissicherung(data: dict) -> list[dict]:
+    """Die Merksätze des Spiels in Folienreihenfolge, je Abschnitt (bis zur
+    Tür) gruppiert: [{abschnitt, titel, eintraege: [{titel, text}]}]."""
+    abschnitte: list[dict] = []
+    offen: list[dict] = []
+    for slide in data.get("slides") or []:
+        if not isinstance(slide, dict):
+            continue
+        text = slide.get("ergebnissicherung")
+        if isinstance(text, str) and text.strip():
+            offen.append({"titel": slide.get("title") or "", "text": text.strip()})
+        if slide.get("type") == "door":
+            if offen:
+                abschnitte.append({"abschnitt": len(abschnitte) + 1, "titel": slide.get("title") or "", "eintraege": offen})
+            offen = []
+    if offen:
+        abschnitte.append({"abschnitt": len(abschnitte) + 1, "titel": "", "eintraege": offen})
+    return abschnitte
+
+
+def _abschluss(attempt: ExitGameAttempt) -> dict:
+    data = attempt.session.exitgame.data
+    return {"attempt": _attempt_summary(attempt), "completion": data.get("completion"),
+            "title": data.get("title") or "", "ergebnissicherung": _ergebnissicherung(data)}
+
+
 @router.post("/api/exitgame-attempts/{attempt_id}/finish")
 async def finish_attempt(
     attempt_id: int, request: Request, db: Session = Depends(get_db),
@@ -1328,7 +1365,7 @@ async def finish_attempt(
     if current is None or not _attempt_belongs_to(attempt, current):
         raise HTTPException(404, "Attempt nicht gefunden")
     if attempt.status == "finished":
-        return {"attempt": _attempt_summary(attempt), "completion": attempt.session.exitgame.data.get("completion")}
+        return _abschluss(attempt)
 
     attempt.status = "finished"
     attempt.finished_at = datetime.now(timezone.utc)
@@ -1338,7 +1375,7 @@ async def finish_attempt(
     session = attempt.session
     await _broadcast_progress(session.join_code, attempt, len(session.exitgame.data["slides"]), "finished")
 
-    return {"attempt": _attempt_summary(attempt), "completion": session.exitgame.data.get("completion")}
+    return _abschluss(attempt)
 
 
 # ---------------------------------------------------------------------------

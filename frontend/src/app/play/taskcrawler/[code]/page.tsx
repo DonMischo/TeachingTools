@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, setActiveGuestToken, ExitGameData, ExitGameAttemptSummary, ExitGameFragment, DdaAdaptation } from "@/lib/api";
+import { api, setActiveGuestToken, ExitGameAbschluss, ExitGameData, ExitGameAttemptSummary, ExitGameFragment, DdaAdaptation } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { GuestExpired } from "@/components/GuestExpired";
@@ -60,6 +60,7 @@ export default function ExitgamePlayPage() {
   const [reviewReturn, setReviewReturn] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const [completion, setCompletion] = useState<{ message?: string; code?: string } | null>(null);
+  const [abschluss, setAbschluss] = useState<ExitGameAbschluss | null>(null);
   const [finalSummary, setFinalSummary] = useState<ExitGameAttemptSummary | null>(null);
   const [fragments, setFragments] = useState<ExitGameFragment[]>([]);
   const [adaptation, setAdaptation] = useState<DdaAdaptation | null>(null);
@@ -97,6 +98,7 @@ export default function ExitgamePlayPage() {
     mutationFn: () => api.exitgame.attempts.finish(start!.attempt.id),
     onSuccess: (res) => {
       setCompletion(res.completion);
+      setAbschluss(res);
       setFinalSummary(res.attempt);
       setFinished(true);
     },
@@ -155,7 +157,9 @@ export default function ExitgamePlayPage() {
   if (finished && finalSummary) {
     return (
       <div className="h-full overflow-y-auto flex flex-col gap-5 p-6 max-w-xl mx-auto w-full rounded-2xl" style={styleVars(start.exitgame_data.style)}>
-        <CompletionCard completion={completion} summary={finalSummary} />
+        <CompletionCard completion={completion} summary={finalSummary} sicherung={abschluss?.ergebnissicherung}
+          titel={abschluss?.title ?? start.exitgame_data.title} akzent={start.exitgame_data.style?.customVars?.["--accent"]}
+          name={isGuest ? guest.session?.name : auth?.student ? `${auth.student.vorname} ${auth.student.nachname}` : undefined} />
       </div>
     );
   }
@@ -246,11 +250,11 @@ export default function ExitgamePlayPage() {
             onReview={jumpToReview}
           />
         ) : (
-          <button onClick={advance} className="btn-primary text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
+          <button onClick={advance} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
         )}
 
         {isTaskSlide && (solvedSlideIds.includes(slide.id)) && (
-          <button onClick={advance} className="btn-primary text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
+          <button onClick={advance} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
         )}
 
         {/* A task may be left open — the missing code fragment is what stops

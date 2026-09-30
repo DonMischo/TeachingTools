@@ -125,7 +125,8 @@
         "Die Bilder zeigen oft Tiere und Jagdszenen.",
         "Sie hatten eine kommunikative Funktion."
       ],
-      "station": "hoehlenwand"
+      "station": "hoehlenwand",
+      "ergebnissicherung": "Höhlenmalereien (seit etwa 40.000 Jahren, z. B. Lascaux) sind das erste Medium: Sie hielten Jagdwissen und Geschichten fest – noch ohne Schrift."
     },
     {
       "id": "welt-quipu",
@@ -158,7 +159,8 @@
       "hints": [
         "Die Knoten standen für Einer, Zehner, Hunderter …",
         "Ein großes Reich muss viel zählen."
-      ]
+      ],
+      "ergebnissicherung": "Die Inka hielten Zahlen mit Knotenschnüren (Quipus) fest – ein Speichermedium ohne Schrift."
     },
     {
       "id": "antike-schrift-erklaerung",
@@ -198,7 +200,8 @@
       "hints": [
         "Der Name der Aufgabe verrät es schon halb.",
         "Papier wurde in China erst viel später erfunden (um 105 n. Chr.)."
-      ]
+      ],
+      "ergebnissicherung": "Die ältesten chinesischen Schriftzeichen stehen auf Orakelknochen und Schildkrötenpanzern (um 1250 v. Chr.)."
     },
     {
       "id": "antike-schrift-aufgabe",
@@ -232,7 +235,8 @@
         "Das Wort für Papier leitet sich davon ab.",
         "Es wurde aus einer Pflanze hergestellt."
       ],
-      "station": "schriftrolle"
+      "station": "schriftrolle",
+      "ergebnissicherung": "Um 3300 v. Chr. entstand in Mesopotamien die Keilschrift auf Tontafeln, in Ägypten schrieb man Hieroglyphen auf Papyrus.\n- Schrift macht Wissen unabhängig von Ort und Zeit.\n- Das Wort »Papier« kommt von Papyrus."
     },
     {
       "id": "antike-bibliothek",
@@ -290,7 +294,8 @@
         "Die Herstellung war sehr aufwendig.",
         "Die Bücher waren oft reich verziert."
       ],
-      "station": "buch"
+      "station": "buch",
+      "ergebnissicherung": "Im Mittelalter schrieben Mönche Bücher von Hand ab und verzierten sie kunstvoll – Bücher waren selten und sehr teuer."
     },
     {
       "id": "gutenberg-erklaerung",
@@ -330,7 +335,8 @@
       "hints": [
         "Das Land liegt zwischen China und Japan.",
         "Der Jikji liegt heute in der Nationalbibliothek in Paris."
-      ]
+      ],
+      "ergebnissicherung": "Gedruckt wurde in Asien schon vor Gutenberg: der »Jikji« aus Korea (1377) mit beweglichen Metalllettern."
     },
     {
       "id": "gutenberg-aufgabe",
@@ -364,7 +370,8 @@
         "Vorher waren Bücher teuer und selten.",
         "Die Reformation wurde durch den Druck gefördert."
       ],
-      "station": "druckerpresse"
+      "station": "druckerpresse",
+      "ergebnissicherung": "Um 1450 erfand Gutenberg den Buchdruck mit beweglichen Lettern. Folge: Wissen verbreitete sich schnell und billig an viele Menschen."
     },
     {
       "id": "welt-maya",
@@ -397,7 +404,8 @@
       "hints": [
         "Sehr, sehr wenige – man kann sie an einer Hand abzählen.",
         "Man benennt sie nach den Städten, in denen sie liegen: Dresden, Madrid, Paris …"
-      ]
+      ],
+      "ergebnissicherung": "Die Maya schrieben Faltbücher aus Baumrinde; nur vier sind erhalten, eines liegt in Dresden."
     },
     {
       "id": "zeitung-erklaerung",
@@ -455,7 +463,8 @@
         "Nachrichten brauchten vorher Tage oder Wochen.",
         "Morsen war die Sprache des Telegraphen."
       ],
-      "station": "telegraph"
+      "station": "telegraph",
+      "ergebnissicherung": "Telegraf (1837, Morse): Nachrichten in Sekunden über weite Strecken – die erste Echtzeit-Kommunikation über Kabel."
     },
     {
       "id": "telefon-erklaerung",
@@ -496,7 +505,8 @@
         "Der Name Bell ist bekannt.",
         "Das Patent wurde 1876 angemeldet."
       ],
-      "station": "telefon"
+      "station": "telefon",
+      "ergebnissicherung": "Telefon (1876, Bell): Zum ersten Mal wird die menschliche Stimme über Kabel übertragen."
     },
     {
       "id": "radio-erklaerung",
@@ -536,7 +546,8 @@
       "hints": [
         "Das Wort »Novela« heißt Roman – und ein Roman endet irgendwann.",
         "Soaps laufen oft jahrzehntelang."
-      ]
+      ],
+      "ergebnissicherung": "Aus kubanischen Radionovelas wurden Telenovelas – Serien mit festem Ende, heute in über 100 Ländern."
     },
     {
       "id": "film-erklaerung",
@@ -577,7 +588,8 @@
         "Stummfilme waren die Regel.",
         "Ton kam erst später dazu."
       ],
-      "station": "filmprojektor"
+      "station": "filmprojektor",
+      "ergebnissicherung": "Film (1895, Brüder Lumière): Die ersten Filme waren kurz und stumm – der Ton kam erst später."
     },
     {
       "id": "fernsehen-erklaerung",
@@ -650,7 +662,8 @@
         "Es ist das At-Zeichen.",
         "Man nennt es auch ‚Klammeraffe‘."
       ],
-      "station": "retropc"
+      "station": "retropc",
+      "ergebnissicherung": "E-Mail (1971, Ray Tomlinson): Das @ trennt Nutzername und Rechner."
     },
     {
       "id": "internet-aufgabe",
@@ -684,7 +697,8 @@
         "Es wurde vom US-Militär finanziert.",
         "Es sollte ausfallsicher sein."
       ],
-      "station": "grossrechner"
+      "station": "grossrechner",
+      "ergebnissicherung": "Das ARPANET (1969) war der Vorläufer des Internets: ein dezentrales Netz, das auch bei Ausfällen weiterläuft."
     },
     {
       "id": "www-erklaerung",
@@ -725,7 +739,8 @@
         "Er arbeitete am CERN in Genf.",
         "Sein System basierte auf Hyperlinks."
       ],
-      "station": "retropc"
+      "station": "retropc",
+      "ergebnissicherung": "Das World Wide Web (1991, Tim Berners-Lee am CERN) verbindet Seiten mit Hyperlinks und machte das Internet für alle nutzbar."
     },
     {
       "id": "welt-emoji",
@@ -758,7 +773,8 @@
       "hints": [
         "Auf die Bildschirme passten nur wenige Zeichen.",
         "Ein Herz sagt mehr als »ich mag das«."
-      ]
+      ],
+      "ergebnissicherung": "Emojis stammen aus Japan (1999): kleine Bildzeichen für kurze Handy-Nachrichten."
     },
     {
       "id": "tuer-4",
@@ -817,7 +833,8 @@
         "Die Nutzer selbst stellten die Inhalte ein.",
         "Die Plattformen wuchsen schnell."
       ],
-      "station": "laptop"
+      "station": "laptop",
+      "ergebnissicherung": "Soziale Medien (Facebook 2004, YouTube 2005, Twitter 2006): Alle können Inhalte veröffentlichen und teilen – Inhalte verbreiten sich viral."
     },
     {
       "id": "smartphone-erklaerung",
@@ -871,7 +888,8 @@
       "hints": [
         "Es funktionierte schon mit einfachen Tastenhandys.",
         "Denk daran, was man für eine Überweisung sonst braucht."
-      ]
+      ],
+      "ergebnissicherung": "In Kenia bezahlen Millionen per SMS (M-Pesa, 2007) – auch ohne Bankkonto."
     },
     {
       "id": "digital-aufgabe",
@@ -905,7 +923,8 @@
         "Smartphones vereinen viele Funktionen.",
         "Streaming und On-Demand sind heute normal."
       ],
-      "station": "smartphone"
+      "station": "smartphone",
+      "ergebnissicherung": "Heute verschmelzen alle Medien in digitalen Geräten: Das Smartphone ist Telefon, Kamera, Zeitung, Radio und Fernseher zugleich."
     },
     {
       "id": "tuer-5",
@@ -956,7 +975,8 @@
       "hints": [
         "Frag dich: Würde jemand danach etwas anderes glauben?",
         "Helligkeit und Ausrichtung ändern nicht, was passiert ist."
-      ]
+      ],
+      "ergebnissicherung": "Bildbearbeitung ist nicht immer Fälschung. Entscheidend: Ändert sich die Aussage des Bildes?\n- Aufhellen, gerade rücken: verändert die Aussage nicht.\n- Personen entfernen, Dinge hineinmontieren: verändert die Aussage."
     },
     {
       "id": "filter-erklaerung",
@@ -1001,7 +1021,8 @@
       "hints": [
         "Beliebtheit sagt nichts über Wahrheit.",
         "Fälschungen haben oft keine seriöse Quelle."
-      ]
+      ],
+      "ergebnissicherung": "So prüfst du, ob etwas echt ist:\n- Wer hat es zuerst veröffentlicht?\n- Berichten seriöse Medien darüber?\n- Bildrückwärtssuche nach dem Original.\nViele Likes beweisen nichts."
     },
     {
       "id": "chatgpt-erklaerung",
@@ -1048,7 +1069,8 @@
       "hints": [
         "In der Werkstatt wählst du immer das nächste Wort aus.",
         "Je dicker der Faden, desto wahrscheinlicher das Wort."
-      ]
+      ],
+      "ergebnissicherung": "Sprachmodelle wie ChatGPT (2022) schreiben Wort für Wort das wahrscheinlich nächste Wort. Das klingt überzeugend, kann aber falsch sein – Fakten immer prüfen."
     },
     {
       "id": "bildgenerator-erklaerung",
@@ -1095,14 +1117,16 @@
       "hints": [
         "Schau dir im Reiter »Bilder« den Rückweg an.",
         "Am Anfang sieht das Bild aus wie ein gestörter Fernseher."
-      ]
+      ],
+      "ergebnissicherung": "Bildgeneratoren (Diffusionsmodelle) beginnen mit reinem Rauschen und entfernen es Schritt für Schritt, bis ein Bild entsteht."
     },
     {
       "id": "kennzeichnung-erklaerung",
       "type": "explanation",
       "title": "Heute – Kennzeichnen, was erzeugt ist",
       "text": "Die EU hat 2024 ein KI-Gesetz beschlossen. Seit August 2026 gilt daraus eine Pflicht: Wer Deepfakes und andere täuschend echte KI-Inhalte veröffentlicht, muss sie als künstlich erzeugt kennzeichnen. Trotzdem bleibt die wichtigste Frage deine eigene: Woher kommt das Bild – und wer hat ein Interesse daran, dass ich es glaube?",
-      "station": "smartphone"
+      "station": "smartphone",
+      "ergebnissicherung": "Seit August 2026 müssen Deepfakes in der EU als KI-erzeugt gekennzeichnet sein. Trotzdem gilt: Woher kommt das Bild – und wer will, dass ich es glaube?"
     },
     {
       "id": "tuer-6",

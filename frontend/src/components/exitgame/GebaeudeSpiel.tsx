@@ -172,11 +172,11 @@ export default function GebaeudeSpiel({
                 )}
                 <div className="flex gap-2 flex-wrap">
                   {s.type === "door" && zielOffen[stock] ? (
-                    <button onClick={hoch} className="btn-primary text-sm py-1.5 px-4">
+                    <button onClick={hoch} className="btn-primary !w-auto text-sm py-1.5 px-4">
                       {letzter ? "🎉 Hinaus!" : W.hin}
                     </button>
                   ) : (
-                    <button onClick={() => setOffen(null)} className="btn-primary text-sm py-1.5 px-4">
+                    <button onClick={() => setOffen(null)} className="btn-primary !w-auto text-sm py-1.5 px-4">
                       {s.type === "task" && !geloest.includes(s.id) ? "Später lösen" : "Zurück in den Flur"}
                     </button>
                   )}

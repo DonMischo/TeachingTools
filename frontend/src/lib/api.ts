@@ -822,6 +822,15 @@ export type ExitGameSlide = {
   // Gebäude-Ansicht: welches Objekt im Zimmer steht (z. B. "kuckucksuhr");
   // ohne Angabe wählt das Gebäude selbst.
   station?: string;
+  // Merksatz fürs Ergebnissicherungs-PDF; der Server schickt ihn erst mit /finish.
+  ergebnissicherung?: string;
+};
+
+export type ExitGameAbschluss = {
+  attempt: ExitGameAttemptSummary;
+  completion: { message?: string; code?: string } | null;
+  title?: string;
+  ergebnissicherung?: { abschnitt: number; titel: string; eintraege: { titel: string; text: string }[] }[];
 };
 
 // One fragment slot of a door's code. `fragment` is filled in only once the
@@ -2271,7 +2280,7 @@ export const api = {
           { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ slide_id, action, payload }) },
         ),
       finish: (attemptId: number) =>
-        apiFetch<{ attempt: ExitGameAttemptSummary; completion: { message?: string; code?: string } | null }>(
+        apiFetch<ExitGameAbschluss>(
           `exitgame-attempts/${attemptId}/finish`, { method: "POST", headers: guestAuthHeaders() },
         ),
       log: (attemptId: number) => apiFetch<ExitGameAttemptLog>(`exitgame-attempts/${attemptId}/log`),

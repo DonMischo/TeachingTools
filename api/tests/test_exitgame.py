@@ -980,3 +980,43 @@ def test_answers_still_checked_after_redaction(client, db, teacher_token, klass)
     # Die gespeicherte Vorlage selbst bleibt vollständig (Lehrkraft-Ansicht)
     fin = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(student_token)).json()
     assert fin["completion"]["code"] == "ABC-123"
+
+
+# ---------------------------------------------------------------------------
+# Ergebnissicherung
+# ---------------------------------------------------------------------------
+
+SICHERUNG_GAME = {
+    **SIMPLE_GAME,
+    "slides": [
+        {**SIMPLE_GAME["slides"][0], "ergebnissicherung": "Addieren heißt zusammenzählen."},
+        {**SIMPLE_GAME["slides"][1], "ergebnissicherung": "1 + 1 = 2"},
+        {**SIMPLE_GAME["slides"][2], "title": "Die Tür"},
+        {"id": "danach", "type": "explanation", "title": "Oben", "text": "x", "ergebnissicherung": "Geschafft ist geschafft."},
+    ],
+}
+
+
+def test_ergebnissicherung_comes_only_with_finish(client, db, teacher_token, klass):
+    """Die Merksätze verraten Antworten: beim Start fehlen sie, mit /finish kommen sie je Abschnitt."""
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, SICHERUNG_GAME)
+    start = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    assert "ergebnissicherung" not in start.text
+    fin = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(student_token)).json()
+    assert fin["title"] == "Testspiel"
+    assert fin["ergebnissicherung"] == [
+        {"abschnitt": 1, "titel": "Die Tür", "eintraege": [
+            {"titel": "", "text": "Addieren heißt zusammenzählen."}, {"titel": "", "text": "1 + 1 = 2"}]},
+        {"abschnitt": 2, "titel": "", "eintraege": [{"titel": "Oben", "text": "Geschafft ist geschafft."}]},
+    ]
+    # zweites /finish liefert dasselbe (z. B. nach Neuladen)
+    again = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(student_token)).json()
+    assert again["ergebnissicherung"] == fin["ergebnissicherung"]
+
+
+def test_upload_validates_ergebnissicherung(client, teacher_token):
+    for falsch in ("", "   ", 42, "x" * 3001):
+        game = {**SIMPLE_GAME, "slides": [{**SIMPLE_GAME["slides"][0], "ergebnissicherung": falsch}, *SIMPLE_GAME["slides"][1:]]}
+        r = _upload(client, teacher_token, game)
+        assert r.status_code == 422, falsch
+        assert any("ergebnissicherung" in e for e in r.json()["detail"]["errors"])

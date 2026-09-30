@@ -42,13 +42,22 @@ export function MathText({ text, className, blockEquations = false }: {
     return <span className={className}>{text}</span>;
   }
   const segs = parse(text);
+  // Eine Gleichung rückt nur dann in eine eigene Zeile, wenn danach in dieser
+  // Zeile nichts mehr folgt (höchstens ein Satzzeichen) — mitten im Satz
+  // (»Löse $3x + 4 = 19$. Wie groß ist $x$?«) bliebe sonst ein Satzfetzen stehen.
+  const alleinInZeile = (i: number) => {
+    const nach = segs[i + 1];
+    if (!nach) return true;
+    if (nach.kind !== "text") return false;
+    return /^[\s.,;:!?]*(\n|$)/.test(nach.v);
+  };
   return (
     <span className={className}>
       {segs.map((seg, i) => {
         if (seg.kind === "text") return <span key={i}>{seg.v}</span>;
         try {
           const html = katex.renderToString(seg.v, {
-            displayMode: seg.kind === "display" || (blockEquations && isEquation(seg.v)),
+            displayMode: seg.kind === "display" || (blockEquations && isEquation(seg.v) && alleinInZeile(i)),
             throwOnError: false,
             strict: false,
           });

@@ -15,6 +15,7 @@ import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline
 import { specToBoard } from "@/components/timeline/game";
 import { toVideoEmbed } from "@/lib/embed";
 import { TimelineAnswer } from "@/components/timeline/types";
+import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import { SimKnopf } from "./SimStation";
 
 // ── Theming ────────────────────────────────────────────────────────────────
@@ -260,7 +261,7 @@ function SingleTaskWidget({
               <MathText text={a.text} />
             </label>
           ))}
-          <button onClick={submitMulti} className="btn-primary text-sm py-1 px-3 self-start">Prüfen</button>
+          <button onClick={submitMulti} className="btn-primary !w-auto text-sm py-1 px-3 self-start">Prüfen</button>
         </div>
       )}
 
@@ -271,7 +272,7 @@ function SingleTaskWidget({
             onKeyDown={e => { if (e.key === "Enter") submitInput(); }}
             placeholder="Deine Antwort…" />
           <button onClick={submitInput} disabled={!inputValue.trim() || answerMut.isPending}
-            className="btn-primary text-sm py-1.5 px-4 self-start disabled:opacity-40">Prüfen</button>
+            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">Prüfen</button>
         </div>
       )}
 
@@ -286,7 +287,7 @@ function SingleTaskWidget({
           <button
             onClick={() => answerMut.mutate(timelineAnswer)}
             disabled={answerMut.isPending || !timelineAnswerComplete(specToBoard(activeTask.timeline), timelineAnswer)}
-            className="btn-primary text-sm py-1.5 px-4 self-start disabled:opacity-40">
+            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">
             Prüfen
           </button>
         </div>
@@ -381,7 +382,7 @@ function DoorCodePanel({
             onChange={e => setValue(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && value.trim()) codeMut.mutate(); }} />
           <button onClick={() => codeMut.mutate()} disabled={!value.trim() || codeMut.isPending}
-            className="btn-primary text-sm py-1.5 px-4 self-start disabled:opacity-40">Tür öffnen</button>
+            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">Tür öffnen</button>
         </div>
       )}
 
@@ -461,11 +462,28 @@ export function TaskArea({
 
 // ── Completion ───────────────────────────────────────────────────────────
 
-export function CompletionCard({ completion, summary }: {
+export function CompletionCard({ completion, summary, sicherung, titel, akzent, name: startName }: {
   completion: { message?: string; code?: string } | null;
   summary: ExitGameAttemptSummary;
+  /** Merksätze aus /finish — dann gibt es das PDF */
+  sicherung?: SicherungsAbschnitt[];
+  titel?: string;
+  akzent?: string;
+  name?: string;
 }) {
   const minutes = Math.max(1, Math.round(summary.elapsed_seconds / 60));
+  const [name, setName] = useState(startName ?? "");
+  // kommt der Name erst später (Anmeldung lädt noch), übernehmen — solange nichts getippt wurde
+  useEffect(() => { if (startName) setName(n => n || startName); }, [startName]);
+  const [laedt, setLaedt] = useState(false);
+  const anzahl = sicherung?.reduce((n, a) => n + a.eintraege.length, 0) ?? 0;
+  async function pdf() {
+    setLaedt(true);
+    try {
+      const { speichereErgebnisPdf } = await import("@/lib/taskcrawler/ergebnisPdf");
+      await speichereErgebnisPdf({ titel: titel ?? "", abschnitte: sicherung ?? [], name: name.trim() || undefined, akzent });
+    } finally { setLaedt(false); }
+  }
   return (
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 flex flex-col items-center gap-3 text-center">
       <p className="text-4xl">🎉</p>
@@ -477,6 +495,17 @@ export function CompletionCard({ completion, summary }: {
         ~{minutes} min · {summary.errors_total} Fehlversuche · {summary.hints_total} Hinweise
         {summary.easier_taken_total > 0 && <> · {summary.easier_taken_total} erleichterte Aufgabe(n)</>}
       </p>
+      {anzahl > 0 && (
+        <div className="mt-3 w-full max-w-sm rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2 text-left" data-ergebnissicherung>
+          <p className="text-sm font-bold">📄 Ergebnissicherung</p>
+          <p className="text-xs text-[var(--text-muted)]">{anzahl} Merksätze aus diesem TaskCrawler als PDF zum Aufheben.</p>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Dein Name (steht oben im PDF)"
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm" aria-label="Name fürs PDF" />
+          <button onClick={pdf} disabled={laedt} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start">
+            {laedt ? "Erstelle PDF …" : "⬇️ PDF herunterladen"}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

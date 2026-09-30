@@ -30,6 +30,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     title: "TaskCrawler",
     intro: "Der TaskCrawler: Schüler lösen Aufgaben im eigenen Tempo, du siehst den Fortschritt live.",
     sections: [
+      { label: "📄 Ergebnissicherung", text: "Jede Folie kann einen Merksatz tragen: \"ergebnissicherung\": \"…\" (Regel, Formel in $…$, Stichpunkte mit »- «). Am Ende laden die Schüler alle als gestaltetes PDF herunter — nach Abschnitten sortiert, mit Namen und Datum. Die Merksätze kommen erst nach dem Spiel beim Schüler an, dürfen also die Lösung enthalten." },
       { label: "▶️ Starten", text: "Einen TaskCrawler hochladen und freigeben — Schüler spielen ihn über einen Code selbstständig." },
       { label: "👥 Beitreten", text: "Schüler starten das Spiel über den Code." },
       { label: "⬆️ Hochladen", text: "»+ TaskCrawler hochladen« akzeptiert .json oder .zip." },
