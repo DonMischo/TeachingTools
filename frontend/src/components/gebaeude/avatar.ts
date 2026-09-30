@@ -87,9 +87,11 @@ const quader = (g: THREE.Object3D, f: number, b: number, h: number, t: number, x
   teil(g, new THREE.BoxGeometry(b, h, t), f, x, y + h / 2, z);
 const kegel = (g: THREE.Object3D, f: number, r: number, h: number, x: number, y: number, z = 0) =>
   teil(g, new THREE.ConeGeometry(r, h, 16), f, x, y + h / 2, z);
-/** obere Halbkugel (Haare, Helm, Kappe) */
-const kappe = (g: THREE.Object3D, f: number, r: number, x: number, y: number, z = 0) =>
-  teil(g, new THREE.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), f, x, y, z);
+/** Kugelkappe von oben bis zum Winkel `bis` (π/2 = Halbkugel) — für Haare, Helm, Kappe */
+const kappe = (g: THREE.Object3D, f: number, r: number, x: number, y: number, z = 0, bis = Math.PI / 2) =>
+  teil(g, new THREE.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, bis), f, x, y, z);
+/** Kopfbedeckungen enden knapp über den Augen (die liegen etwas über der Kopfmitte) */
+const UEBER_AUGEN = 1.2;
 
 interface Kleidung {
   oben: number; unten: number; schuhe: number;
@@ -125,9 +127,16 @@ function koerper(g: THREE.Group, a: Avatar, k: Kleidung) {
   kugel(g, 0xb45309, 0.015, 0, KOPF_Y - 0.07, 0.16); // Mund
 }
 
-/** Frisur: kurz (m) oder lang mit Zopf (w); `lang` erzwingt lange Haare (Rocker) */
-function haare(g: THREE.Group, a: Avatar, farbe: number, lang = a.form === "w") {
-  kappe(g, farbe, KOPF_R + 0.015, 0, KOPF_Y + 0.01);
+/**
+ * Frisur: oben nur der Scheitelbereich (endet weit über den Augen), dazu der
+ * Hinterkopf bis zum Nacken. Kurz (m) oder lang mit Zopf (w); `lang` erzwingt
+ * lange Haare (Rocker). `oben: false` unter Hüten, damit nichts durchsticht.
+ */
+function haare(g: THREE.Group, a: Avatar, farbe: number, lang = a.form === "w", oben = true) {
+  const r = KOPF_R + 0.012;
+  if (oben) kappe(g, farbe, r, 0, KOPF_Y, 0, 1.0);
+  // Hinterkopf: hintere Hälfte (−z), vom Scheitel bis unter die Ohren
+  teil(g, new THREE.SphereGeometry(r, 16, 10, Math.PI, Math.PI, 0.5, 1.6), farbe, 0, KOPF_Y, 0);
   if (lang) {
     quader(g, farbe, 0.34, 0.32, 0.1, 0, KOPF_Y - 0.28, -0.12);
     if (a.form === "w") kugel(g, farbe, 0.07, 0, KOPF_Y + 0.05, -0.2);
@@ -147,7 +156,7 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
     if (a.form === "w") quader(g, 0xb45309, 0.08, 0.35, 0.06, 0, KOPF_Y - 0.4, -0.18); // Zopf unter dem Helm
     quader(g, 0x78350f, 0.38, 0.06, 0.36, 0, 0.5); // Gürtel
     // Helm mit Hörnern und Nasenschutz
-    kappe(g, METALL, KOPF_R + 0.03, 0, KOPF_Y + 0.02);
+    kappe(g, METALL, KOPF_R + 0.03, 0, KOPF_Y, 0, UEBER_AUGEN);
     quader(g, METALL, 0.03, 0.12, 0.03, 0, KOPF_Y - 0.06, 0.17);
     for (const s of [-1, 1]) {
       const horn = kegel(g, 0xf5f5f4, 0.04, 0.18, s * 0.18, KOPF_Y + 0.05);
@@ -163,7 +172,7 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
   magier: (g, a) => {
     const ROBE = 0x4c1d95;
     koerper(g, a, { oben: ROBE, unten: ROBE, schuhe: ROBE, robe: ROBE, haar: 0xe5e7eb });
-    haare(g, a, a.form === "w" ? 0xc0c0d0 : 0xe5e7eb);
+    haare(g, a, a.form === "w" ? 0xc0c0d0 : 0xe5e7eb, a.form === "w", false);
     if (a.form === "m") kegel(g, 0xe5e7eb, 0.1, 0.25, 0, KOPF_Y - 0.37, 0.12).rotation.x = Math.PI; // Bart
     // Spitzhut mit Krempe und Sternen
     zyl(g, ROBE, 0.3, 0.3, 0.02, 0, KOPF_Y + 0.08);
@@ -190,9 +199,9 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
   },
   rapper: (g, a) => {
     koerper(g, a, { oben: 0xdc2626, unten: 0x1f2937, schuhe: 0xf8fafc, haar: 0x111827 });
-    if (a.form === "w") haare(g, a, 0x111827);
+    if (a.form === "w") haare(g, a, 0x111827, true, false); // unter der Kappe nur Hinterkopf und lange Haare
     // Kappe verkehrt herum
-    kappe(g, 0x111827, KOPF_R + 0.02, 0, KOPF_Y + 0.02);
+    kappe(g, 0x111827, KOPF_R + 0.02, 0, KOPF_Y, 0, UEBER_AUGEN);
     quader(g, 0x111827, 0.2, 0.02, 0.14, 0, KOPF_Y + 0.05, -0.2);
     // Goldkette, Kapuze, Sonnenbrille, Mikro
     const kette = teil(g, new THREE.TorusGeometry(0.12, 0.018, 8, 20), 0xfacc15, 0, 0.88, 0.05, true);
@@ -208,7 +217,7 @@ const BAU: Record<Klasse, (g: THREE.Group, a: Avatar) => void> = {
     koerper(g, a, { oben: 0x111827, unten: 0x1e3a8a, schuhe: 0x111827, haar: 0x111827 });
     haare(g, a, a.form === "w" ? 0x7f1d1d : 0x292524, true);
     // Bandana, Nieten, Gitarre auf dem Rücken
-    zyl(g, 0xdc2626, KOPF_R + 0.02, KOPF_R + 0.02, 0.05, 0, KOPF_Y + 0.04);
+    zyl(g, 0xdc2626, KOPF_R + 0.005, KOPF_R + 0.015, 0.05, 0, KOPF_Y + 0.065);
     for (const x of [-0.1, 0, 0.1]) kugel(g, 0xd1d5db, 0.02, x, 0.88, 0.16);
     const gitarre = new THREE.Group();
     gitarre.position.set(0, 0.55, -0.2);
