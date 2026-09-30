@@ -840,3 +840,72 @@ def test_template_shows_a_sim_station(client, teacher_token):
     werkzeug = [s for s in tpl["slides"] if (s.get("task") or {}).get("sim")]
     assert werkzeug and werkzeug[0]["station"] == "waage"
     assert "WERKZEUG" in tpl["_ai_instructions"]
+
+
+# ---------------------------------------------------------------------------
+# Lösungen bleiben auf dem Server
+# ---------------------------------------------------------------------------
+
+LOESUNGEN_GAME = {
+    **SIMPLE_GAME,
+    "slides": SIMPLE_GAME["slides"][:2] + [
+        {"id": "varianten", "type": "task", "text": "x",
+         "task": {"kind": "input", "variants": [{"question": "2+2?", "accept": ["4"]}, {"question": "3+3?", "accept": ["6"]}]}},
+        {"id": "sortieren", "type": "task", "text": "x",
+         "task": {"kind": "timeline", "timeline": {
+             "mode": "sort", "scoring": "position", "tolerance": 0,
+             "axis": {"kind": "year", "min": 1900, "max": 2000},
+             "items": [{"id": "a", "label": "Mondlandung", "value": 1969, "exact_date": "1969-07-20"},
+                       {"id": "b", "label": "Mauerfall", "value": 1989}]}}},
+        {"id": "finden", "type": "task", "text": "x",
+         "task": {"kind": "timeline", "timeline": {
+             "mode": "spot", "axis": {"kind": "year", "min": 1900, "max": 2000},
+             "items": [{"id": "a", "label": "Mondlandung", "value": 1979, "actual": 1969, "info": "1969!"},
+                       {"id": "b", "label": "Mauerfall", "value": 1989}]}}},
+    ] + SIMPLE_GAME["slides"][2:],
+}
+
+
+def _schluessel(obj) -> set[str]:
+    if isinstance(obj, dict):
+        return set(obj) | set().union(*(_schluessel(v) for v in obj.values()))
+    if isinstance(obj, list):
+        return set().union(*(_schluessel(v) for v in obj)) if obj else set()
+    return set()
+
+
+def test_start_sends_no_solutions(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, LOESUNGEN_GAME)
+    r = client.post(f"/api/exitgame-sessions/{s['join_code']}/attempts", headers=_auth(student_token))
+    data = r.json()["exitgame_data"]
+    keys = _schluessel(data)
+    # Antwortlisten, richtige Antworten, wahre Zeitstrahl-Werte, Exit-Code
+    for verboten in ("correct", "accept", "actual", "exact_date_actual", "info", "completion"):
+        assert verboten not in keys, verboten
+    assert "ABC-123" not in r.text
+    slides = {sl["id"]: sl for sl in data["slides"]}
+    sortieren = slides["sortieren"]["task"]["timeline"]["items"]
+    assert all(set(it) == {"id", "label"} for it in sortieren)  # Wert und Datum sind die Antwort
+    finden = slides["finden"]["task"]["timeline"]["items"]
+    assert [it["value"] for it in finden] == [1979, 1989]  # angezeigte Lage bleibt
+    # Was der Spieler braucht, ist noch da
+    assert [a["text"] for a in slides["aufgabe-1"]["task"]["answers"]] == ["2", "3"]
+    assert slides["aufgabe-1"]["task"]["easierAlternative"]["answers"][0] == {"text": "1"}
+    assert [v["question"] for v in slides["varianten"]["task"]["variants"]] == ["2+2?", "3+3?"]
+    assert slides["aufgabe-1"]["hints"]
+
+
+def test_answers_still_checked_after_redaction(client, db, teacher_token, klass):
+    student_token, s, aid = _start_attempt(client, db, teacher_token, klass, LOESUNGEN_GAME)
+    ok = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "aufgabe-1", "action": "answer", "payload": {"task_index": 0, "answer": "2"},
+    }, headers=_auth(student_token)).json()
+    assert ok["correct"] is True
+    zeit = client.post(f"/api/exitgame-attempts/{aid}/events", json={
+        "slide_id": "sortieren", "action": "answer",
+        "payload": {"task_index": 0, "answer": {"placements": {"a": 1969.55, "b": 1989}}},
+    }, headers=_auth(student_token)).json()
+    assert zeit["correct"] is True
+    # Die gespeicherte Vorlage selbst bleibt vollständig (Lehrkraft-Ansicht)
+    fin = client.post(f"/api/exitgame-attempts/{aid}/finish", headers=_auth(student_token)).json()
+    assert fin["completion"]["code"] == "ABC-123"

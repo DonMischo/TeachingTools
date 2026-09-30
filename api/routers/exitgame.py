@@ -297,6 +297,41 @@ def _fragment_tasks(slides: list, door_index: int) -> list[tuple[str, int, dict]
     return out
 
 
+def _task_for_player(task: dict) -> dict:
+    """Eine Aufgabe ohne Lösung: keine 'correct'-Marken, keine 'accept'-Liste,
+    beim Zeitstrahl nur das Brett (wie bei Caputh). Geprüft wird ohnehin auf
+    dem Server — der Spieler braucht davon nichts. Gilt auch für 'variants'
+    (Teilaufgaben) und 'easierAlternative'. 'codeFragment' bleibt: die Tür
+    geht nur mit selbst verdienten Schnipseln auf, der Text allein hilft nicht."""
+    out = {k: v for k, v in task.items() if k != "accept"}
+    if isinstance(out.get("answers"), list):
+        out["answers"] = [{k: v for k, v in a.items() if k != "correct"} if isinstance(a, dict) else a
+                          for a in out["answers"]]
+    if isinstance(out.get("timeline"), dict):
+        out["timeline"] = timeline_engine.sanitized_board(out["timeline"])
+    if isinstance(out.get("variants"), list):
+        out["variants"] = [_task_for_player(v) if isinstance(v, dict) else v for v in out["variants"]]
+    if isinstance(out.get("easierAlternative"), dict):
+        out["easierAlternative"] = _task_for_player(out["easierAlternative"])
+    return out
+
+
+def _data_for_player(data: dict) -> dict:
+    """Was Schüler und Gäste beim Start bekommen: das Spiel ohne Lösungen und
+    ohne 'completion' (der Exit-Code kommt erst mit /finish)."""
+    slides = []
+    for slide in data.get("slides") or []:
+        if not isinstance(slide, dict):
+            continue
+        s = dict(slide)
+        if isinstance(s.get("task"), dict):
+            s["task"] = _task_for_player(s["task"])
+        if isinstance(s.get("tasks"), list):
+            s["tasks"] = [_task_for_player(t) if isinstance(t, dict) else t for t in s["tasks"]]
+        slides.append(s)
+    return {**{k: v for k, v in data.items() if k != "completion"}, "slides": slides}
+
+
 def _normalize_code(value) -> str:
     """Leerzeichen, Bindestriche und Groß/Kleinschreibung sind beim Türcode egal."""
     return re.sub(r"[\s\-_]", "", str(value or "")).lower()
@@ -872,7 +907,7 @@ def start_or_resume_attempt(
         # Needed to resolve media filenames from the uploaded ZIP's assets/
         # folder against /uploads/exitgames/<id>/assets/.
         "exitgame_id": s.exitgame_id,
-        "exitgame_data": s.exitgame.data,
+        "exitgame_data": _data_for_player(s.exitgame.data),
         "variant_choices": _variant_choices(s.exitgame.data, attempt.id),
         "code_fragments": _fragment_state(db, attempt.id, s.exitgame.data),
         # The level is needed before the first wrong answer too — hint budget,
