@@ -13,7 +13,7 @@ import { QUELLEN } from "@/lib/leviathan/quellen";
 import {
   druck, gutFuerZiel, KANTEN, KNOTEN_INFO, KREIS, knotenWert, MITTE, SCHLEIFEN_KANTEN, type Kante, type Knoten,
 } from "@/lib/leviathan/netz";
-import { HEBEL, HOCH_SCHLECHT, type Groesse, type Zustand } from "@/lib/leviathan/typen";
+import { HEBEL, HOCH_SCHLECHT, type Groesse, type Hebel, type Zustand } from "@/lib/leviathan/typen";
 import { QuelleLink } from "./ui";
 
 const B = 820;
@@ -59,7 +59,7 @@ function bahn(von: Knoten, nach: Knoten) {
 
 const schluessel = (k: Kante) => `${k.von}>${k.nach}`;
 
-export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, markiert, einsatz }: {
+export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, markiert, einsatz, onPlus, onMinus, werte, fliessen = 0 }: {
   z: Zustand;
   /** Bereiche, in die gerade Punkte fließen. */
   hervorheben?: Knoten[];
@@ -69,6 +69,13 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
   markiert?: [Knoten, Knoten][];
   /** Verteilte Punkte je Hebel, für die Dicke der Entscheidungs-Pfeile. */
   einsatz?: Partial<Record<Groesse, number>>;
+  /** Punkte direkt im Netz verteilen: + und − an den Hebeln. */
+  onPlus?: (h: Hebel) => void;
+  onMinus?: (h: Hebel) => void;
+  /** Werte, die statt des Spielstands gezeigt werden (Zeitlupe). */
+  werte?: Partial<Record<Groesse, number>>;
+  /** Markierte Pfeile »fließen« (Sekunden je Durchlauf, 0 = still). */
+  fliessen?: number;
 }) {
   const [fokus, setFokus] = useState<Knoten | null>(null);
   const [hover, setHover] = useState<Knoten | null>(null);
@@ -141,6 +148,7 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
       <svg viewBox={`0 0 ${B} ${B}`} className="w-full max-h-[80vh]" role="img"
         aria-label="Wirkungsnetz: Kreis aus allen Bereichen, Pfeile zeigen, wer wen beeinflusst">
         <defs>
+          <style>{"@keyframes lvFluss { to { stroke-dashoffset: -36; } }"}</style>
           {(Object.keys(FARBE) as Ton[]).map((t) => (
             <marker key={t} id={`lv-pfeil-${t}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" style={{ fill: FARBE[t] }} />
@@ -153,7 +161,9 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
           return (
             <g key={i} style={{ opacity: s.deck, transition: "opacity 200ms" }}>
               <path d={b.d} markerEnd={`url(#lv-pfeil-${s.ton})`}
-                style={{ fill: "none", stroke: FARBE[s.ton], strokeWidth: s.breite, strokeDasharray: k.verzoegerung > 0 ? "7 5" : undefined }} />
+                style={fliessen > 0 && pfad.has(schluessel(k))
+                  ? { fill: "none", stroke: FARBE[s.ton], strokeWidth: s.breite + 1, strokeDasharray: "10 8", animation: `lvFluss ${fliessen}s linear infinite` }
+                  : { fill: "none", stroke: FARBE[s.ton], strokeWidth: s.breite, strokeDasharray: k.verzoegerung > 0 ? "7 5" : undefined }} />
               {s.beschriften && k.art !== "entscheidung" && (
                 <g>
                   <circle cx={b.mitte.x} cy={b.mitte.y} r={k.verzoegerung ? 15 : 10} style={{ fill: "var(--surface)", stroke: FARBE[s.ton], strokeWidth: 1.5 }} />
@@ -170,7 +180,8 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
 
         {knotenListe.map((k) => {
           const p = lage(k);
-          const w = knotenWert(z, k);
+          const ersatz = werte?.[k as Groesse];
+          const w = ersatz !== undefined ? { ring: ersatz, text: String(Math.round(ersatz)) } : knotenWert(z, k);
           const istHebel = (HEBEL as Knoten[]).includes(k);
           const gewaehlt = aktiv === k || erste.has(k);
           const gut = HOCH_SCHLECHT.has(k as Groesse) ? 100 - w.ring : w.ring;
@@ -196,6 +207,18 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
               <text x={p.x} y={p.y - 3} textAnchor="middle" style={{ fontSize: 22 }}>{info.icon}</text>
               <text x={p.x} y={p.y + 17} textAnchor="middle" style={{ fill: "var(--text)", fontSize: 12, fontWeight: 900 }}>{w.text}</text>
               <text x={p.x} y={p.y + p.r + 15} textAnchor="middle" style={{ fill: "var(--text)", fontSize: 12, fontWeight: 700 }}>{kurzName(info.name)}</text>
+              {istHebel && (einsatz?.[k as Groesse] ?? 0) > 0 && (
+                <g>
+                  <circle cx={p.x - p.r + 2} cy={p.y - p.r + 2} r={11} style={{ fill: "var(--accent)" }} />
+                  <text x={p.x - p.r + 2} y={p.y - p.r + 6} textAnchor="middle" style={{ fill: "var(--accent-text,#111)", fontSize: 12, fontWeight: 900 }}>{einsatz?.[k as Groesse]}</text>
+                </g>
+              )}
+              {istHebel && onPlus && onMinus && !(z.gesperrt[k as Hebel] ?? 0) && (
+                <>
+                  <KnopfSvg x={p.x + p.r + 13} y={p.y - 12} zeichen="+" label={`${info.name}: ein Punkt dazu`} onClick={() => onPlus(k as Hebel)} />
+                  <KnopfSvg x={p.x + p.r + 13} y={p.y + 14} zeichen="−" label={`${info.name}: ein Punkt weniger`} onClick={() => onMinus(k as Hebel)} />
+                </>
+              )}
             </g>
           );
         })}
@@ -222,6 +245,17 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
         </p>
       )}
     </div>
+  );
+}
+
+function KnopfSvg({ x, y, zeichen, label, onClick }: { x: number; y: number; zeichen: string; label: string; onClick: () => void }) {
+  return (
+    <g role="button" tabIndex={0} aria-label={label} style={{ cursor: "pointer" }}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onClick(); } }}>
+      <circle cx={x} cy={y} r={11} style={{ fill: "var(--surface)", stroke: "var(--accent)", strokeWidth: 2 }} />
+      <text x={x} y={y + 5} textAnchor="middle" style={{ fill: "var(--text)", fontSize: 16, fontWeight: 900 }}>{zeichen}</text>
+    </g>
   );
 }
 

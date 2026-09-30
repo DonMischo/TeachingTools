@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BEREICH } from "@/lib/leviathan/bereiche";
+import { SOFORT } from "@/lib/leviathan/regeln";
 import { mio, gesamt } from "@/lib/leviathan/hilfen";
 import { TYP } from "@/lib/leviathan/laender";
 import {
-  budget, effizienz, ertrag, kipppunkte, saettigung, leereVerteilung, lernfaktor, MAX_KREDIT, STARTJAHR, verteilt,
+  budget, effizienz, ertrag, kipppunkte, saettigung, VERFALL, leereVerteilung, lernfaktor, MAX_KREDIT, STARTJAHR, verteilt,
 } from "@/lib/leviathan/motor";
 import { FOLGEN, HEBEL, type Hebel, type Verteilung, type Zustand } from "@/lib/leviathan/typen";
 import { LeviathanAnzeige, Verlauf } from "./Anzeigen";
@@ -12,12 +13,37 @@ import { KRISE_TEXT } from "./Start";
 import { Balken, Karte, QuelleLink } from "./ui";
 import Rechenweg from "./Rechenweg";
 import Wirkungsnetz from "./Wirkungsnetz";
+import Zeitlupe, { TEMPO, type Tempo } from "./Zeitlupe";
+
+/** Kleine Vorlieben im Browser (nur Komfort, darf fehlen). */
+function vorliebe<T extends string>(schluessel: string, standard: T, erlaubt: readonly T[]): T {
+  try {
+    const x = localStorage.getItem(schluessel) as T | null;
+    return x && erlaubt.includes(x) ? x : standard;
+  } catch { return standard; }
+}
+function merke(schluessel: string, wert: string) {
+  try { localStorage.setItem(schluessel, wert); } catch { /* egal */ }
+}
 
 export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteilung) => void }) {
   const [v, setV] = useState<Verteilung>(leereVerteilung);
-  const [ansicht, setAnsicht] = useState<"netz" | "rechenweg">("netz");
-  // Neue Runde: Verteilung leeren, die gewählte Ansicht bleibt.
-  useEffect(() => { setV(leereVerteilung()); }, [z.runde, z.status]);
+  const [ansicht, setAnsicht] = useState<"netz" | "rechenweg" | "zeitlupe">("netz");
+  const [tempo, setTempo] = useState<Tempo>(() => vorliebe("hp_leviathan_tempo", "mittel", Object.keys(TEMPO) as Tempo[]));
+  const [zeitlupeAuto, setZeitlupeAuto] = useState(() => vorliebe("hp_leviathan_zeitlupe", "aus", ["an", "aus"] as const) === "an");
+  const [autostart, setAutostart] = useState(false);
+  const zusammenhang = useRef<HTMLDivElement>(null);
+  // Neue Runde: Verteilung leeren; im Zeitlupen-Modus die Runde gleich abspielen.
+  const ersteRunde = useRef(z.runde);
+  useEffect(() => {
+    setV(leereVerteilung());
+    if (zeitlupeAuto && z.runde !== ersteRunde.current && z.rechnung) {
+      setAnsicht("zeitlupe");
+      setAutostart(true);
+      setTimeout(() => zusammenhang.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }), 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [z.runde, z.status]);
   const b = budget(z);
   const verfuegbar = b.gesamt + v.kredit;
   const rest = verfuegbar - verteilt(v);
@@ -74,8 +100,11 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           <div className="flex flex-col gap-2">
             {HEBEL.map((h) => {
               const gesperrt = (z.gesperrt[h] ?? 0) > 0;
-              let wirkung = v[h] ? ertrag(v[h]) * eff * saettigung(z.w[h]) : 0;
+              const grund = v[h] ? ertrag(v[h]) * eff : 0;
+              let wirkung = grund * saettigung(z.w[h]);
               if (h === "energie") wirkung *= lernfaktor(z.energieKumuliert);
+              const verfall = VERFALL * (z.w[h] - 10);
+              const sofort = SOFORT[h].map((s) => `${BEREICH[s.nach].name} ${s.faktor * grund > 0 ? "+" : "−"}${Math.abs(Math.round(s.faktor * grund))}`);
               return (
                 <div key={h} className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${gesperrt ? "opacity-50" : ""}`}>
                   <div className="flex-1 min-w-[min(100%,18rem)]">
@@ -91,6 +120,11 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
                       {gesperrt ? `🔒 ${z.gesperrt[h]} R.` : v[h] ? `≈ +${Math.round(wirkung)}` : ""}
                     </span>
                   </div>
+                  <p className="basis-full text-[11px] text-[var(--text-muted)] pl-8 -mt-0.5">
+                    {v[h]
+                      ? <>netto ≈ <b className="text-[var(--text)]">{wirkung - verfall >= 0 ? "+" : "−"}{Math.abs(Math.round(wirkung - verfall))}</b> (Verfall −{Math.round(verfall)}){sofort.length > 0 && <> · sofort: {sofort.join(", ")}</>}</>
+                      : `ohne Punkte: −${Math.round(verfall)} Verfall${SOFORT[h].length ? ` · Punkte wirken auch direkt auf ${SOFORT[h].map((s) => BEREICH[s.nach].name).join(", ")}` : ""}`}
+                  </p>
                 </div>
               );
             })}
@@ -132,6 +166,11 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
             className="mt-4 w-full px-5 py-3 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">
             Runde beenden → {jahr + 2}
           </button>
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={zeitlupeAuto}
+              onChange={(e) => { setZeitlupeAuto(e.target.checked); merke("hp_leviathan_zeitlupe", e.target.checked ? "an" : "aus"); }} />
+            🎬 Jede Runde danach in Zeitlupe zeigen
+          </label>
         </Karte>
 
         <div className="flex flex-col gap-4">
@@ -154,17 +193,34 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
         </div>
       </div>
 
+      <div ref={zusammenhang} className="scroll-mt-4">
       <Karte titel="Wie hängt alles zusammen?" rechts={
-        <div className="inline-flex rounded-xl border border-[var(--border)] p-1" role="tablist">
-          {([["netz", "🕸️ Wirkungsnetz"], ["rechenweg", "🧮 Rechenweg der letzten Runde"]] as const).map(([id, t]) => (
-            <button key={id} role="tab" aria-selected={ansicht === id} onClick={() => setAnsicht(id)}
+        <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-1" role="tablist">
+          {([["netz", "🕸️ Wirkungsnetz"], ["zeitlupe", "🎬 Zeitlupe"], ["rechenweg", "🧮 Rechenweg"]] as const).map(([id, t]) => (
+            <button key={id} role="tab" aria-selected={ansicht === id} onClick={() => { setAnsicht(id); setAutostart(false); }}
               className={`px-3 py-1 rounded-lg text-sm font-bold ${ansicht === id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>{t}</button>
           ))}
         </div>}>
-        {ansicht === "netz"
-          ? <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} />
-          : <Rechenweg key={z.runde} z={z} />}
+        {ansicht === "netz" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] px-3 py-2 text-sm">
+              <span>Verteile direkt im Netz: <b>+</b> und <b>−</b> an den eckigen Bereichen.</span>
+              <span className={`font-black tabular-nums ${rest < 0 ? "text-[var(--red)]" : ""}`}>{rest} von {verfuegbar} AP frei</span>
+              <button onClick={beenden} disabled={rest < 0}
+                className="ml-auto px-4 py-1.5 rounded-lg font-black bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">
+                Runde beenden → {jahr + 2}
+              </button>
+            </div>
+            <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} onPlus={plus} onMinus={minus} />
+          </div>
+        )}
+        {ansicht === "zeitlupe" && (
+          <Zeitlupe key={`${z.runde}-${autostart}`} z={z} tempo={tempo} autostart={autostart}
+            onTempo={(t) => { setTempo(t); merke("hp_leviathan_tempo", t); }} />
+        )}
+        {ansicht === "rechenweg" && <Rechenweg key={z.runde} z={z} />}
       </Karte>
+      </div>
 
       <Karte titel={letzte.length ? `Nachrichten ${jahr}` : "Nachrichten"}>
         {letzte.length === 0 && <p className="text-sm text-[var(--text-muted)]">{z.runde === 0 ? "Noch ist alles ruhig. Verteile deine ersten Aktionspunkte." : "Zwei ruhige Jahre."}</p>}
