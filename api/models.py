@@ -1992,6 +1992,9 @@ class ToolSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Einstellungen der Lehrkraft, die das Werkzeug selbst auslegt (Leviathan:
+    # Krisenstufe, Rundenzahl, Drehbuch, abgeschaltete Ereignisse).
+    settings: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}", default=dict)
 
     creator: Mapped["Teacher"] = relationship()
 

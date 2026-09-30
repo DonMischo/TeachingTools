@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
                  "vierecke", "binaerrechner", "funktionen", "rechenregeln", "uebung",
                  "ki", "maus", "sonnensystem", "verkehr", "leben", "kueste",
-                 "erdaufbau", "wilson", "regeln", "wfc")
+                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
@@ -40,6 +40,8 @@ class ToolSessionOut(BaseModel):
     status: str = "open"
     ref_id: int | None = None
     ref_title: str | None = None
+    # Einstellungen der Lehrkraft für das Werkzeug (Leviathan: Krisenstufe …).
+    settings: dict = {}
 
 
 class ToolSessionIn(BaseModel):
@@ -71,6 +73,7 @@ def _out(session: ToolSession, db: Session) -> ToolSessionOut:
         status=session.status,
         ref_id=session.ref_id,
         ref_title=_ref_title(session, db),
+        settings=session.settings or {},
     )
 
 
@@ -119,6 +122,35 @@ def get_session(code: str, db: Session = Depends(get_db)):
     session = db.query(ToolSession).filter_by(code=code.upper()).first()
     if not session:
         raise HTTPException(404, "Sitzung nicht gefunden")
+    return _out(session, db)
+
+
+# Obergrenze für die Einstellungen einer Sitzung – sie sind öffentlich lesbar
+# und sollen klein bleiben (Krisenstufe, Rundenzahl, ein kurzes Drehbuch).
+SETTINGS_MAX_BYTES = 4000
+
+
+@router.put("/{code}/settings", response_model=ToolSessionOut)
+def update_settings(
+    code: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+):
+    """Die Lehrkraft legt fest, wie ihre Sitzung läuft. Die Schüler:innen lesen
+    die Einstellungen beim Beitritt über ``GET /{code}`` mit."""
+    import json
+
+    session = db.query(ToolSession).filter_by(code=code.upper()).first()
+    if not session:
+        raise HTTPException(404, "Sitzung nicht gefunden")
+    if session.created_by != teacher.id:
+        raise HTTPException(403, "Das ist nicht deine Sitzung.")
+    if len(json.dumps(body)) > SETTINGS_MAX_BYTES:
+        raise HTTPException(413, "Die Einstellungen sind zu groß.")
+    session.settings = body
+    db.commit()
+    db.refresh(session)
     return _out(session, db)
 
 

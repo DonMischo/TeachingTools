@@ -27,6 +27,7 @@ import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
 import Verkehr from "@/components/verkehr/Verkehr";
 import RockYourLife from "@/components/leben/RockYourLife";
+import Leviathan from "@/components/leviathan/Leviathan";
 import Kueste from "@/components/kueste/Kueste";
 import ErdAufbau from "@/components/erde/ErdAufbau";
 import WilsonZyklus from "@/components/wilson/WilsonZyklus";
@@ -58,6 +59,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   verkehr: { title: "GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß", icon: "🚦", node: null },
   // Die Lebenssimulation meldet Stand und Protokoll an die Lehrkraft — dafür braucht sie Code und Gast-Token.
   leben: { title: "Rock your Life", icon: "🎸", node: null },
+  // Der Leviathan liest die Einstellungen der Lehrkraft über den Code.
+  leviathan: { title: "Leviathan", icon: "🐋", node: null },
   // Die KI-Werkstatt braucht den Code: an ihm hängt die gemeinsame Tafel.
   ki: { title: "KI-Werkstatt", icon: "🤖", node: null },
   // Übung holt ihre Aufgaben vom Server und braucht dafür Code und Gast-Token.
@@ -165,6 +168,11 @@ export default function SimulationJoinPage() {
           ? <RockYourLife zugang={{ code, token: guest.token }}
               name={auth?.student?.display_name ?? guest.session?.name}
               // Wie beim Maus-Führerschein: Angemeldete je Konto, Gäste je Code und Gast-Id.
+              speicherSchluessel={auth
+                ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
+        : session.tool_slug === "leviathan"
+          ? <Leviathan code={code}
               speicherSchluessel={auth
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />

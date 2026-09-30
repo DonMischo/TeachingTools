@@ -81,7 +81,7 @@ def test_lookup_is_public_and_says_which_tool(client, teacher_token):
     # beim Zeitstrahl, der immer eine bestimmte Zeitleiste teilt.
     assert r.json() == {
         "code": code, "tool_slug": "abacus", "allow_guests": False,
-        "status": "open", "ref_id": None, "ref_title": None,
+        "status": "open", "ref_id": None, "ref_title": None, "settings": {},
     }
 
 
@@ -135,3 +135,33 @@ def test_opt_in_is_stored_on_the_session(client, db, teacher_token):
     client.patch("/api/guest/allow", json={"code": code, "tool": "simulation", "allow": True},
                  headers=auth(teacher_token))
     assert db.query(ToolSession).filter_by(code=code).first().allow_guests is True
+
+
+# ── Einstellungen der Lehrkraft ──────────────────────────────────────────────
+
+def test_teacher_settings_are_stored_and_public(client, teacher_token):
+    code = _create(client, teacher_token, "leviathan").json()["code"]
+    einst = {"krise": "zusammenbruch", "runden": 10, "sichtbar": False, "aus": ["krieg"], "drehbuch": []}
+    r = client.put(f"/api/tool-sessions/{code}/settings", json=einst, headers=auth(teacher_token))
+    assert r.status_code == 200, r.text
+    # Der Beitritts-Screen liest sie ohne Anmeldung mit.
+    assert client.get(f"/api/tool-sessions/{code}").json()["settings"] == einst
+
+
+def test_new_session_has_empty_settings(client, teacher_token):
+    assert _create(client, teacher_token, "leviathan").json()["settings"] == {}
+
+
+def test_only_the_owner_changes_settings(client, teacher_token, admin_token):
+    # Im TestClient schlägt das Login-Cookie den Bearer-Header – also leeren.
+    client.cookies.clear()
+    code = _create(client, teacher_token, "leviathan").json()["code"]
+    r = client.put(f"/api/tool-sessions/{code}/settings", json={"krise": "ruhig"}, headers=auth(admin_token))
+    assert r.status_code == 403
+    assert client.put(f"/api/tool-sessions/{code}/settings", json={"krise": "ruhig"}).status_code in (401, 403)
+
+
+def test_oversized_settings_are_refused(client, teacher_token):
+    code = _create(client, teacher_token, "leviathan").json()["code"]
+    r = client.put(f"/api/tool-sessions/{code}/settings", json={"x": "a" * 5000}, headers=auth(teacher_token))
+    assert r.status_code == 413

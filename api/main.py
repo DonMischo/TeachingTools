@@ -299,6 +299,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS settings JSON NOT NULL DEFAULT '{}'",
         # Caputh-Sitzungen bekommen ein Anlagedatum fuer die Schuljahres-
         # bereinigung. Ohne DEFAULT anlegen, damit Postgres die Altbestaende
         # nicht auf den Migrationszeitpunkt datiert; DEFAULT danach fuer neue.

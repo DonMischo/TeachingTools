@@ -1355,6 +1355,8 @@ export type ToolSessionOut = {
   /** Geteilter Inhalt, wo das Werkzeug einen hat (Zeitstrahl: TimelineSet.id). */
   ref_id: number | null;
   ref_title: string | null;
+  /** Einstellungen der Lehrkraft, die das Werkzeug selbst auslegt (Leviathan: Krisenstufe …). */
+  settings?: Record<string, unknown>;
 };
 
 /** Ein abgegebener Text aus der KI-Werkstatt (siehe api/models.py::SimBeitrag). */
@@ -1620,6 +1622,11 @@ export const api = {
       apiFetch<ToolSessionOut>("tool-sessions", { method: "POST", body: JSON.stringify({ tool_slug, ref_id }) }),
     /** Öffentlich: der Beitritts-Screen liest das vor jedem Login. */
     get: (code: string) => apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}`),
+    /** Einstellungen der Sitzung festlegen — nur die Lehrkraft, der sie gehört. */
+    einstellungen: (code: string, settings: Record<string, unknown>) =>
+      apiFetch<ToolSessionOut>(`tool-sessions/${encodeURIComponent(code)}/settings`, {
+        method: "PUT", body: JSON.stringify(settings),
+      }),
     /** Der geteilte Inhalt (Zeitstrahl) — für Gäste der einzige Weg dorthin. */
     content: (code: string, guestToken?: string | null) =>
       apiFetch<TimelineSetDetail>(`tool-sessions/${encodeURIComponent(code)}/content`, {

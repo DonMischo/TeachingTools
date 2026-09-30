@@ -78,6 +78,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#e11d48",
   },
   {
+    slug: "leviathan",
+    href: "/simulationen/leviathan",
+    icon: "🐋",
+    title: "Leviathan – Kunst des Regierens",
+    description: "Regiere ein erfundenes Land durch Krisen, Wahlen und Rückkopplungen: Bildung, Vertrauen, Desinformation, Klima und Bevölkerung hängen zusammen. Neun Ländertypen, rund 70 Schocks, die Leviathan-Anzeige — und jede Regel mit Quelle.",
+    color: "#0f766e",
+  },
+  {
     slug: "kueste",
     href: "/simulationen/kueste",
     icon: "🌊",

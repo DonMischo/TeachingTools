@@ -158,6 +158,12 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("wfc", "🧩 Wellenfunktionskollaps", "🧩", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Leviathan – Kunst des Regierens: vernetzte Regierungssimulation (inspiriert
+    # von Vesters Vernetztem Denken). Rechnet im Browser; die Lehrkraft legt
+    # Krisenstufe, Drehbuch und heikle Ereignisse an der Sitzung fest.
+    CatalogTool("leviathan", "🐋 Leviathan", "🐋", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # ── Tools (teacher surface — students default off) ──
     CatalogTool("schreibraum", "📝 Schreibraum", "📝", "tools", {
         "use": _cap(True, False),

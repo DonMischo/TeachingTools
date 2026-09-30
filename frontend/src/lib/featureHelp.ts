@@ -289,6 +289,20 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "👩‍🏫 Lehrkraft", text: "Über »Zum Mitmachen« (Code/QR, Gäste erlauben) spielen Schüler:innen in der Sitzung der Lehrkraft. »Klassenübersicht« zeigt je Person Spieldatum, Job, Wohnung, Konto, Ersparnisse, Schulden, gezahlte Steuern/SV und das niedrigste Bedürfnis, dazu das Protokoll aller Entscheidungen — als CSV zum Herunterladen." },
     ],
   },
+  leviathan: {
+    title: "Leviathan – Kunst des Regierens",
+    intro: "Vernetzte Regierungssimulation: Ein erfundenes Land wird 16 bis 30 Jahre lang in Runden zu je zwei Jahren regiert. Jede Runde gehen Aktionspunkte in sechs Bereiche; acht weitere Größen, die Bevölkerung mit ihrer Altersstruktur und die Leviathan-Anzeige reagieren darauf. Inspiriert von Frederic Vesters Vernetztem Denken (Ökolopoly, 1980) — mit eigenen Regeln, auf den Stand der Forschung 2024–2026 gebracht.",
+    sections: [
+      { label: "🌍 Ländertypen", text: "Neun Typen mit eigenen Startwerten und typischen Schocks: nordisches Vertrauensmodell, alternde Industrienation, polarisierte Großdemokratie, Wahlautokratie, aufstrebendes Schwellenland, Rohstoffstaat, autoritärer Entwicklungsstaat, junge fragile Gesellschaft, klimabedrohter Küstenstaat. Das Land ist immer erfunden; reale Länder stehen nur als belegte Beispiele dabei." },
+      { label: "🎛️ Hebel", text: "Wirtschaft, Energiewende, Bildung & Medienkompetenz, Soziales & Gesundheit, Rechtsstaat & Transparenz, Familie & Integration. Jeder weitere Punkt bringt weniger, Bereiche verfallen ohne Pflege, Korruption und ein schwacher Staat fressen mit. Die Energiewende wird mit jeder Investition billiger (Lernkurve). Kredite geben mehr Punkte, kosten aber Zinsen." },
+      { label: "🐋 Leviathan", text: "Nach Acemoglu & Robinson (The Narrow Corridor): Ist der Staat schwächer als die Gesellschaft, zerfällt er (abwesend); ist er stärker, wird er despotisch. Dazwischen liegt ein Korridor, der enger wird, je stärker beide Seiten sind. Im Korridor wachsen Wirtschaft und Vertrauen schneller." },
+      { label: "⚡ Schocks und Wahlen", text: "Rund 70 Ereignisse in acht Gruppen (Politik, Informationsraum, Wirtschaft, Klima, Gesundheit, Demografie, Sicherheit, gute Nachrichten). Die meisten werden wahrscheinlicher, wenn das Land sie »vorbereitet« hat, und eine Größe federt sie ab. Alle vier Jahre wird gewählt: Wenig Vertrauen, Ungleichheit, Desinformation, eine Finanzkrise oder ein Deepfake machen einen autoritären Präsidenten wahrscheinlicher." },
+      { label: "❓ Warum?", text: "Neben jeder Größe erklärt ein »?«, welche Bereiche auf sie wirken, mit welcher Verzögerung und nach welcher Studie. Umstrittene Befunde (etwa soziale Medien und psychische Gesundheit) sind gekennzeichnet." },
+      { label: "🧑‍🏫 Krisenstufe", text: "Die Lehrkraft legt unter »Einstellungen für die Klasse« fest: Krisenstufe (ruhig, normal, stürmisch oder das Szenario »Zusammenbruch« mit fester Krisenkaskade), Rundenzahl, ob die Stufe sichtbar ist, welche heiklen Ereignisse (Krieg, Flucht, Putsch, Gewalt) ausbleiben, und ein Drehbuch mit festen Ereignissen je Runde. Scheitern darf gewollt sein: Nach einem Zusammenbruch geht es auf Wunsch im Wiederaufbau weiter." },
+      { label: "🏁 Nachbesprechung", text: "Am Ende: Punkte, Verlauf von Lebensqualität und Leviathan, der Wendepunkt mit seinen Ereignissen und die Rückkopplungsschleifen, die das Land bewegt haben — jeweils mit Quelle. Der Verlauf lässt sich als JSON speichern." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt Code und QR; mit »Gäste erlauben« geht es auch ohne Konto. Jede Schülerin und jeder Schüler regiert ein eigenes Land; der Spielstand bleibt im Browser." },
+    ],
+  },
   verkehr: {
     title: "GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß",
     intro: "Zu Fuß durch das Viertel um die Schule in der Eugen-Richter-Straße — auf der echten Karte aus OpenStreetMap, mit Lidl, Netto, Aldi, Bushaltestellen, Ampeln, Zebrastreifen, Straßenbahn und Bahn. Man startet vor der Schule (dort stehen zwei Mülleimer; die Einfahrt hinter dem Tor ist Schulhof, keine Straße); die ganze Klasse läuft in derselben Stadt.",

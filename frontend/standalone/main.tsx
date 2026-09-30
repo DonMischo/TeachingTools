@@ -19,6 +19,7 @@ import Funktionen from "@/components/simulationen/Funktionen";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
+import Leviathan from "@/components/leviathan/Leviathan";
 import Kueste from "@/components/kueste/Kueste";
 import ErdAufbau from "@/components/erde/ErdAufbau";
 import WilsonZyklus from "@/components/wilson/WilsonZyklus";
@@ -37,6 +38,8 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.
   { id: "leben", icon: "🎸", label: "Rock your Life", node: <RockYourLife speicherSchluessel="standalone" /> },
+  // Ohne Sitzung keine Vorgabe der Lehrkraft; die Krisenstufe ist frei wählbar.
+  { id: "leviathan", icon: "🐋", label: "Leviathan", node: <Leviathan speicherSchluessel="standalone" /> },
   { id: "kueste", icon: "🌊", label: "Küstendynamik", node: <Kueste /> },
   { id: "erdaufbau", icon: "🌍", label: "Aufbau der Erde", node: <ErdAufbau /> },
   { id: "wilson", icon: "🌋", label: "Wilson-Zyklus", node: <WilsonZyklus /> },

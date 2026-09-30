@@ -30,6 +30,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   ki: ["Informatik"],
   sonnensystem: ["Physik", "Astronomie", "Geografie"],
   leben: ["Wirtschaft und Recht", "Sozialkunde"],
+  leviathan: ["Sozialkunde", "Wirtschaft und Recht", "Geografie"],
   kueste: ["Geografie"],
   erdaufbau: ["Geografie", "Physik"],
   wilson: ["Geografie"],
