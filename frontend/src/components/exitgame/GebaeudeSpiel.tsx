@@ -13,8 +13,8 @@ import { MathText } from "@/components/MathText";
 import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
 import { OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
-import Gebaeude, { type Ort } from "@/components/gebaeude/Gebaeude";
-import type { RaumZustand } from "@/components/gebaeude/szene";
+import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
+import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { MediaView, TaskArea, levelOf } from "./FolienTeile";
 
 interface Props {
@@ -28,15 +28,30 @@ interface Props {
   onSlideSolved: (attempt: ExitGameAttemptSummary, fragments: ExitGameFragment[]) => void;
   onAdaptation: (a: DdaAdaptation | null) => void;
   onFinish: () => void;
+  /** haus (Treppen hinauf), verlies (hinab, Monster und Bosse) oder ebene (Türen nebeneinander) */
+  art?: GebaeudeArt;
+  stil?: Stil;
 }
+
+/** Wörter je Art: wie heißen Stockwerk, Weiter und Zurück? */
+const WORTE: Record<GebaeudeArt, { stock: string; icon: string; weiter: string; zurueck: string; pfeil: string; tuer: string; hin: string }> = {
+  haus: { stock: "Stockwerk", icon: "🏢", weiter: "Treppenhaus", zurueck: "⬇ Treppe hinunter", pfeil: "⬆", tuer: "Tür zum Treppenhaus", hin: "⬆ Die Treppe hinauf" },
+  verlies: { stock: "Ebene", icon: "🗝️", weiter: "Treppe hinab (Boss)", zurueck: "⬆ Treppe hinauf", pfeil: "⬇", tuer: "Der Boss bewacht die Treppe", hin: "⬇ Die Treppe hinab" },
+  ebene: { stock: "Abschnitt", icon: "🗺️", weiter: "Tür zum nächsten Abschnitt", zurueck: "⬅ Zurück durch die Tür", pfeil: "➡", tuer: "Verschlossene Tür", hin: "➡ Durch die Tür" },
+};
 
 export default function GebaeudeSpiel({
   code, attempt, exitgameId, data, variantChoices, fragments, adaptation, onSlideSolved, onAdaptation, onFinish,
+  art = "haus", stil,
 }: Props) {
   const slides = data.slides;
+  const verlies = art === "verlies";
+  const W = WORTE[art];
   const teile = useMemo(() => abschnitte(slides), [slides]);
-  const plan = useMemo(() => bauePlan(teile.map(t => t.raeume.length), seedAus(code)), [teile, code]);
-  const objekte = useMemo(() => teile.map(t => t.raeume.map(i => stationsObjekt(slides[i]))), [teile, slides]);
+  const plan = useMemo(() => bauePlan(teile.map(t => t.raeume.length), seedAus(code), art === "ebene"), [teile, code, art]);
+  const objekte = useMemo(() => teile.map(t => t.raeume.map(i => stationsObjekt(slides[i], verlies))), [teile, slides, verlies]);
+  // Im Verlies bewacht an jeder Tür ein Boss die Treppe.
+  const waechter = useMemo(() => teile.map(t => verlies && t.tuer !== null), [teile, verlies]);
   const geloest = attempt.solved_slide_ids;
 
   /**
@@ -91,6 +106,8 @@ export default function GebaeudeSpiel({
 
   const ankunft = (ort: Ort) => {
     if (ort.art === "raum") { setZurTuer(false); zeige(teile[stock].raeume[ort.raum]); return; }
+    // Zurück geht immer — die Türen darunter sind ja schon offen.
+    if (ort.art === "zurueck") { setOffen(null); setStock(s => Math.max(0, s - 1)); return; }
     if (zielOffen[stock]) { hoch(); return; }
     zeige(teile[stock].tuer!);
   };
@@ -115,9 +132,10 @@ export default function GebaeudeSpiel({
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-3 items-start">
         <div className="relative h-[70vh] min-h-[380px] rounded-2xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
           <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
+            art={art} stil={stil} waechter={waechter}
             aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
           <div className="absolute top-2 left-2 rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
-            🏢 Stockwerk {stock + 1} / {teile.length}
+            {W.icon} {W.stock} {stock + 1} / {teile.length}
           </div>
 
           {s && offen !== null && (
@@ -125,7 +143,10 @@ export default function GebaeudeSpiel({
               <section className="w-full max-w-xl max-h-full overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-3 shadow-2xl">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-[var(--text-muted)]">
-                    {s.type === "explanation" ? "📖 Erklärung" : s.type === "example" ? "💡 Beispiel" : s.type === "task" ? "✏️ Aufgabe" : "🚪 Tür zum Treppenhaus"}
+                    {s.type === "explanation" ? "📖 Erklärung" : s.type === "example" ? "💡 Beispiel"
+                      : s.type === "task" ? (objekte[stock][teile[stock].raeume.indexOf(offen)] === "monster" ? "👾 Ein Monster stellt dir eine Aufgabe"
+                      : objekte[stock][teile[stock].raeume.indexOf(offen)] === "boss" ? "👹 Ein Bossmonster stellt dir eine Aufgabe" : "✏️ Aufgabe")
+                      : `${verlies ? "👹" : "🚪"} ${W.tuer}`}
                   </span>
                   <button onClick={() => setOffen(null)} className="text-sm px-2 rounded hover:bg-[var(--surface-hover)]" aria-label="Zimmer verlassen">✕</button>
                 </div>
@@ -141,7 +162,7 @@ export default function GebaeudeSpiel({
                 <div className="flex gap-2 flex-wrap">
                   {s.type === "door" && zielOffen[stock] ? (
                     <button onClick={hoch} className="btn-primary text-sm py-1.5 px-4">
-                      {letzter ? "🎉 Hinaus!" : "⬆ Die Treppe hinauf"}
+                      {letzter ? "🎉 Hinaus!" : W.hin}
                     </button>
                   ) : (
                     <button onClick={() => setOffen(null)} className="btn-primary text-sm py-1.5 px-4">
@@ -161,8 +182,8 @@ export default function GebaeudeSpiel({
         <aside className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm">
           <h2 className="font-black">{data.title}</h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Klicke auf den Boden oder nutze die Pfeiltasten. In den Zimmern warten Erklärungen und Aufgaben; jede gelöste Aufgabe gibt einen
-            Codeschnipsel für die Tür zum Treppenhaus.
+            Klicke auf den Boden oder ein Zimmer, nutze die Pfeiltasten oder tippe die Zimmernummer (1–9, 0 = Treppe bzw. Tür). In den Zimmern warten Erklärungen und Aufgaben{verlies ? " — die Monster geben sich erst geschlagen, wenn du ihre Aufgabe löst" : ""}; jede gelöste Aufgabe gibt einen
+            Codeschnipsel für {art === "ebene" ? "die nächste Tür" : verlies ? "den Boss an der Treppe" : "die Tür zum Treppenhaus"}.
           </p>
           <div className="flex flex-col gap-1">
             {abschnitt.raeume.map((idx, k) => {
@@ -170,16 +191,22 @@ export default function GebaeudeSpiel({
               return (
                 <button key={idx} onClick={() => laufe({ art: "raum", raum: k })} title={OBJEKT_NAME[objekte[stock][k]]}
                   className="text-left px-2 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] flex gap-2 items-center">
-                  <span className="w-6 text-center">{z === "geloest" ? "✅" : z === "offen" ? "✏️" : z === "info" ? "📖" : "☑️"}</span>
+                  <span className="w-6 text-center">{z === "geloest" ? "✅" : z === "offen" ? (objekte[stock][k] === "monster" || objekte[stock][k] === "boss" ? "👾" : "✏️") : z === "info" ? "📖" : "☑️"}</span>
                   <span className="truncate">{z === "info" || z === "gelesen" ? "" : `${k + 1}. `}{slides[idx].title ?? slides[idx].id}</span>
                 </button>
               );
             })}
             <button onClick={() => laufe({ art: "ziel" })}
               className="text-left px-2 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] flex gap-2 items-center font-bold">
-              <span className="w-6 text-center">{zielOffen[stock] ? (letzter ? "🏁" : "⬆") : "🔒"}</span>
-              {letzter ? "Ausgang" : "Treppenhaus"}
+              <span className="w-6 text-center">{zielOffen[stock] ? (letzter ? "🏁" : W.pfeil) : "🔒"}</span>
+              {letzter ? "Ausgang" : W.weiter}
             </button>
+            {stock > 0 && (
+              <button onClick={() => laufe({ art: "zurueck" })}
+                className="text-left px-2 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] flex gap-2 items-center">
+                {W.zurueck}
+              </button>
+            )}
           </div>
           {schnipsel.length > 0 && (
             <div>

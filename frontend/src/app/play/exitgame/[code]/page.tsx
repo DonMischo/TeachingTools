@@ -10,9 +10,13 @@ import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { MathText } from "@/components/MathText";
 import { CompletionCard, MediaView, TaskArea, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
+import { STILE, type Stil } from "@/components/gebaeude/szene";
 
-type Ansicht = "folien" | "gebaeude";
-const ANSICHT_SPEICHER = "hp_exitgame_ansicht";
+type Ansicht = "folien" | "gebaeude" | "verlies" | "ebene";
+const ANSICHTEN: [Ansicht, string][] = [["folien", "📄 Folien"], ["gebaeude", "🏢 Gebäude"], ["verlies", "🗝️ Verlies"], ["ebene", "🗺️ Ebene"]];
+const istAnsicht = (a: unknown): a is Ansicht => ANSICHTEN.some(([x]) => x === a);
+/** je Sitzungscode: die eigene Wahl gilt nur für dieses Spiel, sonst hat die Vorgabe des Spiels Vorrang */
+const ansichtSchluessel = (code: string) => `hp_exitgame_ansicht_${code}`;
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
@@ -54,17 +58,18 @@ export default function ExitgamePlayPage() {
   const [finalSummary, setFinalSummary] = useState<ExitGameAttemptSummary | null>(null);
   const [fragments, setFragments] = useState<ExitGameFragment[]>([]);
   const [adaptation, setAdaptation] = useState<DdaAdaptation | null>(null);
-  // Folien oder Gebäude: jeder wählt selbst; ?ansicht=gebaeude legt den Anfang fest.
-  const [ansicht, setAnsicht] = useState<Ansicht>("folien");
+  // Folien, Gebäude, Verlies oder Ebene: jeder wählt selbst. Vorrang: ?ansicht=… ,
+  // dann die eigene Wahl für dieses Spiel, dann die Vorgabe des Spiels ("gebaeude": {"ansicht": …}).
+  const [ansicht, setAnsicht] = useState<Ansicht | null>(null);
   useEffect(() => {
     let gemerkt: string | null = null;
-    try { gemerkt = localStorage.getItem(ANSICHT_SPEICHER); } catch { /* ohne Speicher */ }
+    try { gemerkt = localStorage.getItem(ansichtSchluessel(code)); } catch { /* ohne Speicher */ }
     const a = new URLSearchParams(window.location.search).get("ansicht") ?? gemerkt;
-    if (a === "folien" || a === "gebaeude") setAnsicht(a);
-  }, []);
+    if (istAnsicht(a)) setAnsicht(a);
+  }, [code]);
   function waehleAnsicht(a: Ansicht) {
     setAnsicht(a);
-    try { localStorage.setItem(ANSICHT_SPEICHER, a); } catch { /* egal */ }
+    try { localStorage.setItem(ansichtSchluessel(code), a); } catch { /* egal */ }
   }
 
   useEffect(() => {
@@ -149,18 +154,20 @@ export default function ExitgamePlayPage() {
       (old: typeof start | undefined) => old ? { ...old, attempt } : old);
     if (frags) setFragments(frags);
   }
+  const vorgabe = data.gebaeude?.ansicht;
+  const aktiv: Ansicht = ansicht ?? (istAnsicht(vorgabe) ? vorgabe : "folien");
   const umschalter = (
     <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs" role="group" aria-label="Ansicht">
-      {([["folien", "📄 Folien"], ["gebaeude", "🏢 Gebäude"]] as [Ansicht, string][]).map(([a, t]) => (
-        <button key={a} onClick={() => waehleAnsicht(a)} aria-pressed={ansicht === a}
-          className={`px-2 py-0.5 rounded-md font-bold ${ansicht === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>
+      {ANSICHTEN.map(([a, t]) => (
+        <button key={a} onClick={() => waehleAnsicht(a)} aria-pressed={aktiv === a}
+          className={`px-2 py-0.5 rounded-md font-bold ${aktiv === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>
           {t}
         </button>
       ))}
     </div>
   );
 
-  if (ansicht === "gebaeude") {
+  if (aktiv !== "folien") {
     return (
       <div className="h-full overflow-y-auto flex flex-col gap-3 p-4 max-w-[var(--seite-breite)] mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
         <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
@@ -169,7 +176,9 @@ export default function ExitgamePlayPage() {
         </div>
         <GebaeudeSpiel code={code} attempt={start.attempt} exitgameId={start.exitgame_id} data={data}
           variantChoices={start.variant_choices ?? {}} fragments={fragments} adaptation={adaptation}
-          onSlideSolved={slideSolved} onAdaptation={setAdaptation} onFinish={() => finishMut.mutate()} />
+          onSlideSolved={slideSolved} onAdaptation={setAdaptation} onFinish={() => finishMut.mutate()}
+          art={aktiv === "verlies" ? "verlies" : aktiv === "ebene" ? "ebene" : "haus"}
+          stil={data.gebaeude?.stil && data.gebaeude.stil in STILE ? (data.gebaeude.stil as Stil) : undefined} />
       </div>
     );
   }

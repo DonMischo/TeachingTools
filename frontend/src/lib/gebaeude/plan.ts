@@ -40,6 +40,12 @@ export interface Plan {
   /** Seitenlänge des Rasters (für alle Stockwerke gleich, damit sie übereinanderpassen) */
   R: number;
   stockwerke: Stockwerk[];
+  /**
+   * Ebene statt Stockwerke: die Abschnitte liegen nebeneinander. Der Ausgang
+   * eines Abschnitts liegt am rechten Rand, dahinter (Tür in der Wand) beginnt
+   * der nächste am linken Rand in derselben Zeile.
+   */
+  flach?: boolean;
 }
 
 const NACHBARN: Punkt[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -83,7 +89,7 @@ export function weg(R: number, st: Stockwerk, von: Punkt, nach: Punkt): Punkt[] 
 }
 
 /** Ein Stockwerk wachsen lassen; `null`, wenn es nicht genug Sackgassen gibt. */
-function stockwerk(R: number, start: Punkt, zimmer: number, seed: number): Stockwerk | null {
+function stockwerk(R: number, start: Punkt, zimmer: number, seed: number, flach = false): Stockwerk | null {
   const p = programm(REGELN);
   const lauf = starte(p, { b: R, h: R, grund: "B" }, seed);
   lauf.raster.z[start[1] * R + start[0]] = "W";
@@ -100,10 +106,22 @@ function stockwerk(R: number, start: Punkt, zimmer: number, seed: number): Stock
       if (offen.length === 1) sackgassen.push({ p: [x, y], tuer: offen[0], d: d[y * R + x] });
     }
   }
-  if (sackgassen.length < zimmer + 1) return null;
   sackgassen.sort((a, b) => a.d - b.d);
-  const ziel = sackgassen.pop()!;
-  st.ziel = ziel.p;
+  if (flach) {
+    // Ausgang: das weiteste Feld der rechten Spalte — dort kommt die Tür in die Wand.
+    let ziel: Punkt | null = null;
+    for (let y = 1; y < R; y += 2) {
+      if (!ziel || d[y * R + R - 2] > d[ziel[1] * R + ziel[0]]) ziel = [R - 2, y];
+    }
+    st.ziel = ziel!;
+    const rest = sackgassen.filter(s => s.p[0] !== st.ziel[0] || s.p[1] !== st.ziel[1]);
+    sackgassen.length = 0;
+    sackgassen.push(...rest);
+    if (sackgassen.length < zimmer) return null;
+  } else {
+    if (sackgassen.length < zimmer + 1) return null;
+    st.ziel = sackgassen.pop()!.p;
+  }
   // Gleichmäßig verteilt auswählen, nach Entfernung sortiert: Zimmer 1 liegt am nächsten.
   for (let i = 0; i < zimmer; i++) {
     const s = sackgassen[Math.floor(((i + 0.5) * sackgassen.length) / zimmer)];
@@ -115,24 +133,26 @@ function stockwerk(R: number, start: Punkt, zimmer: number, seed: number): Stock
 /**
  * Baut das Gebäude: `zimmer[i]` Zimmer im Stockwerk i. Gleicher Seed,
  * gleiches Gebäude — die ganze Klasse läuft durch dasselbe Haus.
+ * `flach`: eine Ebene mit Abschnitten nebeneinander, verbunden durch Türen.
  */
-export function bauePlan(zimmer: number[], seed: number): Plan {
+export function bauePlan(zimmer: number[], seed: number, flach = false): Plan {
   const meiste = Math.max(1, ...zimmer);
   // Etwa jede dritte Kreuzung wird eine Sackgasse; großzügig anfangen.
   let n = Math.max(4, Math.ceil(Math.sqrt((meiste + 2) * 3.2)));
   for (; n <= 25; n++) {
     const R = 2 * n + 1;
     const stockwerke: Stockwerk[] = [];
-    let start: Punkt = [1, 1];
+    let start: Punkt = flach ? [1, n % 2 ? n : n - 1] : [1, 1];
     for (let i = 0; i < zimmer.length; i++) {
       // Mehrere Versuche je Größe, bevor das Haus wächst
       let st: Stockwerk | null = null;
-      for (let v = 0; v < 6 && !st; v++) st = stockwerk(R, start, zimmer[i], seed * 131 + i * 17 + v);
+      for (let v = 0; v < 6 && !st; v++) st = stockwerk(R, start, zimmer[i], seed * 131 + i * 17 + v, flach);
       if (!st) break;
       stockwerke.push(st);
-      start = st.ziel;
+      // Haus: das nächste Stockwerk beginnt über der Treppe. Ebene: hinter der Tür, links in derselben Zeile.
+      start = flach ? [1, st.ziel[1]] : st.ziel;
     }
-    if (stockwerke.length === zimmer.length) return { R, stockwerke };
+    if (stockwerke.length === zimmer.length) return { R, stockwerke, ...(flach ? { flach } : {}) };
   }
   throw new Error("Gebäude zu groß");
 }

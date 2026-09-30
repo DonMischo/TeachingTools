@@ -6,14 +6,17 @@ import type { Ort } from "@/components/gebaeude/Gebaeude";
 
 // jsdom kann kein WebGL: Die Bühne wird durch Knöpfe ersetzt, die »ankommen«.
 vi.mock("@/components/gebaeude/Gebaeude", () => ({
-  default: ({ stock, zielOffen, zustaende, onAnkunft }: {
-    stock: number; zielOffen: boolean[]; zustaende: string[][]; onAnkunft: (o: Ort) => void;
+  default: ({ stock, zielOffen, zustaende, objekte, waechter, art, onAnkunft }: {
+    stock: number; zielOffen: boolean[]; zustaende: string[][]; objekte: string[][]; waechter: boolean[]; art: string;
+    onAnkunft: (o: Ort) => void;
   }) => (
-    <div data-testid="buehne" data-stock={stock} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}>
+    <div data-testid="buehne" data-stock={stock} data-ziel={String(zielOffen[stock])} data-zustaende={zustaende[stock].join(",")}
+      data-objekte={objekte[stock].join(",")} data-waechter={String(waechter[stock])} data-art={art}>
       {zustaende[stock].map((_, k) => (
         <button key={k} onClick={() => onAnkunft({ art: "raum", raum: k })}>ankommen {k}</button>
       ))}
       <button onClick={() => onAnkunft({ art: "ziel" })}>ankommen ziel</button>
+      <button onClick={() => onAnkunft({ art: "zurueck" })}>ankommen zurueck</button>
     </div>
   ),
 }));
@@ -42,9 +45,9 @@ const attempt = (solved: string[]): ExitGameAttemptSummary =>
 
 const frag: ExitGameFragment[] = [{ door_id: "t1", slide_id: "a1", task_index: 0, earned: false, fragment: null }];
 
-function spiel(solved: string[], onFinish = vi.fn(), fragments = frag) {
+function spiel(solved: string[], onFinish = vi.fn(), fragments = frag, art: "haus" | "verlies" | "ebene" = "haus") {
   renderWithProviders(
-    <GebaeudeSpiel code="HAUS01" attempt={attempt(solved)} exitgameId={1} data={data} variantChoices={{}}
+    <GebaeudeSpiel code="HAUS01" attempt={attempt(solved)} exitgameId={1} data={data} variantChoices={{}} art={art}
       fragments={fragments} adaptation={null} onSlideSolved={vi.fn()} onAdaptation={vi.fn()} onFinish={onFinish} />,
   );
   return onFinish;
@@ -100,5 +103,39 @@ describe("Exitgame als Gebäude", () => {
     expect(screen.getByTestId("buehne").dataset.ziel).toBe("true");
     fireEvent.click(screen.getByText("ankommen ziel"));
     expect(fertig).toHaveBeenCalled();
+  });
+
+  it("Verlies: Monster in den Aufgabenzimmern, ein Boss bewacht die Tür", () => {
+    spiel([], vi.fn(), frag, "verlies");
+    const b = screen.getByTestId("buehne");
+    expect(b.dataset.art).toBe("verlies");
+    expect(b.dataset.objekte).toBe("tafel,monster");
+    expect(b.dataset.waechter).toBe("true");
+    fireEvent.click(screen.getByText("ankommen 1"));
+    expect(screen.getByText(/Ein Monster stellt dir eine Aufgabe/)).toBeInTheDocument();
+    expect(screen.getByText(/Treppe hinab \(Boss\)/)).toBeInTheDocument();
+  });
+
+  it("Haus: keine Monster, kein Boss", () => {
+    spiel([]);
+    const b = screen.getByTestId("buehne");
+    expect(b.dataset.objekte).not.toMatch(/monster/);
+    expect(b.dataset.waechter).toBe("false");
+  });
+
+  it("zurück geht jederzeit ein Stockwerk hinunter", () => {
+    spiel(["a1", "t1"]);
+    expect(screen.getByTestId("buehne").dataset.stock).toBe("1");
+    fireEvent.click(screen.getByText("⬇ Treppe hinunter"));
+    fireEvent.click(screen.getByText("ankommen zurueck"));
+    expect(screen.getByTestId("buehne").dataset.stock).toBe("0");
+    // im ersten Stockwerk gibt es kein Zurück mehr
+    expect(screen.queryByText("⬇ Treppe hinunter")).not.toBeInTheDocument();
+  });
+
+  it("Ebene: Türen statt Treppen", () => {
+    spiel([], vi.fn(), frag, "ebene");
+    expect(screen.getByText("Tür zum nächsten Abschnitt")).toBeInTheDocument();
+    expect(screen.getByText(/Abschnitt 1 \/ 2/)).toBeInTheDocument();
   });
 });

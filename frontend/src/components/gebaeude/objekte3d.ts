@@ -41,6 +41,8 @@ function tisch(g: THREE.Group, b = 1.2, t = 0.7, h = 0.7, farbe = HOLZ): number 
 }
 
 const BAU: Record<Objekt, (g: THREE.Group) => void> = {
+  monster: () => undefined, // unten gesetzt
+  boss: () => undefined,
   pult: g => {
     const h = tisch(g);
     q(g, 0xf8fafc, 0.35, 0.01, 0.45, -0.15, h, 0);
@@ -161,8 +163,56 @@ const BAU: Record<Objekt, (g: THREE.Group) => void> = {
   },
 };
 
-export function baueObjekt(art: Objekt): THREE.Group {
+/** Ein Monster aus Kugeln: Körper, Augen, Hörner, Arme. `gross` = Boss. */
+function ungeheuer(g: THREE.Group, haut: number, gross: boolean) {
+  const k = gross ? 1.55 : 1;
+  kugel(g, haut, 0.42 * k, 0, 0.5 * k).scale.set(1, 1.1, 0.9);
+  for (const s of [-1, 1]) {
+    kugel(g, 0xffffff, 0.1 * k, s * 0.15 * k, 0.68 * k, 0.33 * k);
+    kugel(g, gross ? 0xfacc15 : SCHWARZ, 0.05 * k, s * 0.15 * k, 0.68 * k, 0.42 * k);
+    const horn = zyl(g, gross ? 0x1f2937 : 0xe5e7eb, 0.01, 0.07 * k, 0.3 * k);
+    horn.position.set(s * 0.25 * k, 0.95 * k, 0);
+    horn.rotation.z = -s * 0.5;
+    const arm = zyl(g, haut, 0.06 * k, 0.08 * k, 0.4 * k);
+    arm.position.set(s * 0.45 * k, 0.45 * k, 0.1);
+    arm.rotation.z = s * 0.9;
+    zyl(g, haut, 0.09 * k, 0.1 * k, 0.2 * k, s * 0.18 * k, 0, 0);
+  }
+  q(g, 0x7f1d1d, 0.3 * k, 0.05 * k, 0.05, 0, 0.4 * k, 0.38 * k); // Maul
+  if (gross) {
+    // Krone und Keule
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      zyl(g, 0xfacc15, 0.01, 0.06, 0.2, Math.cos(a) * 0.22, 1.25, Math.sin(a) * 0.22);
+    }
+    zyl(g, 0xfacc15, 0.26, 0.26, 0.08, 0, 1.2, 0);
+    const keule = zyl(g, 0x78350f, 0.05, 0.12, 1.0);
+    keule.position.set(0.95, 0.7, 0.2);
+    keule.rotation.z = -0.5;
+  }
+}
+
+BAU.monster = g => ungeheuer(g, 0x65a30d, false);
+BAU.boss = g => ungeheuer(g, 0x9f1239, true);
+
+/**
+ * `besiegt`: Monster und Boss liegen grau am Boden — so sieht man im Verlies,
+ * welche Aufgabe schon gelöst ist.
+ */
+export function baueObjekt(art: Objekt, besiegt = false): THREE.Group {
   const g = new THREE.Group();
   (BAU[art] ?? BAU.pult)(g);
+  if (besiegt && (art === "monster" || art === "boss")) {
+    g.traverse(o => {
+      const m = (o as THREE.Mesh).material as THREE.MeshLambertMaterial | undefined;
+      if (m?.color) m.color.lerp(new THREE.Color(0x6b7280), 0.75);
+    });
+    const liegend = new THREE.Group();
+    g.rotation.x = -Math.PI / 2;
+    g.position.y = 0.25;
+    liegend.add(g);
+    liegend.userData.besiegt = true;
+    return liegend;
+  }
   return g;
 }

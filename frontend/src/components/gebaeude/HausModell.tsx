@@ -9,16 +9,21 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Plan } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
-import { STILE, STOCK_H, baueStock, entsorge, welt, type RaumZustand, type Stil } from "./szene";
+import { STILE, STOCK_H, abschnittBreite, baueStock, entsorge, welt, type RaumZustand, type Stil } from "./szene";
+import type { GebaeudeArt } from "./Gebaeude";
 
 interface Props {
   plan: Plan;
   stil: Stil;
   zustaende?: RaumZustand[][];
   objekte?: Objekt[][];
+  /** haus (nach oben), verlies (nach unten) oder ebene (nebeneinander) */
+  art?: GebaeudeArt;
+  waechter?: boolean[];
 }
 
-export default function HausModell({ plan, stil, zustaende, objekte }: Props) {
+export default function HausModell({ plan, stil, zustaende, objekte, art = "haus", waechter }: Props) {
+  const verlies = art === "verlies", flach = art === "ebene";
   const huelle = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const lage = useRef({ zoom, winkel: Math.PI / 4, dreht: true, ziehen: null as null | { x: number; w: number } });
@@ -105,7 +110,7 @@ export default function HausModell({ plan, stil, zustaende, objekte }: Props) {
   }, []);
 
   // Haus (neu) bauen
-  const schluessel = JSON.stringify([stil, zustaende, objekte]);
+  const schluessel = JSON.stringify([stil, zustaende, objekte, art, waechter]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
@@ -120,16 +125,21 @@ export default function HausModell({ plan, stil, zustaende, objekte }: Props) {
         unten: false,
         stil,
         ganz: true,
+        richtung: verlies ? -1 : 1,
+        flach,
+        waechter: waechter?.[i] ?? false,
       }));
     });
-    // Sockel unter dem Haus
+    // Sockel unter dem Haus — im Verlies unter der tiefsten Ebene, bei der Ebene unter allen Abschnitten.
     const breite = welt(plan.R - 1) + 1.5;
-    const sockel = new THREE.Mesh(new THREE.BoxGeometry(breite + 4, 0.6, breite + 4),
+    const lang = flach ? n * abschnittBreite(plan.R) + 1.5 : breite;
+    const sockel = new THREE.Mesh(new THREE.BoxGeometry(lang + 4, 0.6, breite + 4),
       new THREE.MeshLambertMaterial({ color: STILE[stil].sockel }));
-    sockel.position.set(breite / 2 - 0.75, -0.35, breite / 2 - 0.75);
+    const unten = verlies ? -(n - 1) * STOCK_H : 0;
+    sockel.position.set(lang / 2 - 0.75, unten - 0.35, breite / 2 - 0.75);
     d.welt.add(sockel);
-    d.mitte.set(breite / 2, (n * STOCK_H) / 2, breite / 2);
-    d.groesse = Math.max(breite * 1.1, n * STOCK_H * 1.6);
+    d.mitte.set(lang / 2, flach ? STOCK_H / 3 : verlies ? unten / 2 + STOCK_H / 2 : (n * STOCK_H) / 2, breite / 2);
+    d.groesse = Math.max(lang * (flach ? 0.75 : 1.1), flach ? 0 : n * STOCK_H * 1.6);
     lage.current.dreht = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, schluessel]);

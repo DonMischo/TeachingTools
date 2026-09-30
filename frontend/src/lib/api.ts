@@ -844,6 +844,8 @@ export type ExitGameData = {
   style?: ExitGameStyle;
   dda?: { enabled?: boolean; levels?: Record<string, unknown>[] };
   completion?: { message?: string; code?: string };
+  // 2.5D: mit welcher Ansicht das Spiel startet und in welchem Stil das Haus gebaut ist
+  gebaeude?: { ansicht?: "folien" | "gebaeude" | "verlies" | "ebene"; stil?: string };
   slides: ExitGameSlide[];
 };
 export type ExitGameDetailOut = ExitGameOut & { data: ExitGameData };
@@ -2220,6 +2222,7 @@ export const api = {
     list: () => apiFetch<ExitGameOut[]>("exitgames"),
     get: (id: number) => apiFetch<ExitGameDetailOut>(`exitgames/${id}`),
     template: () => apiFetch<Record<string, unknown>>("exitgames/template"),
+    templateInteraktiv: () => apiFetch<Record<string, unknown>>("exitgames/template-interaktiv"),
     delete: (id: number) => apiFetch<void>(`exitgames/${id}`, { method: "DELETE" }),
     update: (id: number, data: unknown) =>
       apiFetch<ExitGameOut>(`exitgames/${id}`, { method: "PUT", body: JSON.stringify(data) }),

@@ -36,6 +36,28 @@ describe("Gebäudeplan", () => {
     }
   });
 
+  it.each([[[3, 4, 2]], [[6]], [[0, 5]]])("Ebene: Abschnitte nebeneinander, Tür am rechten Rand (%j)", zimmer => {
+    for (const seed of [1, 2, 3, 42]) {
+      const plan = bauePlan(zimmer, seed, true);
+      expect(plan.flach).toBe(true);
+      plan.stockwerke.forEach((st, i) => {
+        expect(st.raeume).toHaveLength(zimmer[i]);
+        // Ausgang in der rechten Spalte, erreichbar, kein Zimmer
+        expect(st.ziel[0]).toBe(plan.R - 2);
+        const d = abstaende(plan.R, st, st.start);
+        expect(d[st.ziel[1] * plan.R + st.ziel[0]]).toBeGreaterThan(0);
+        expect(st.raeume.some(r => r.x === st.ziel[0] && r.y === st.ziel[1])).toBe(false);
+        expect(st.raeume.some(r => r.x === st.start[0] && r.y === st.start[1])).toBe(false);
+        for (const r of st.raeume) {
+          const offen = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => begehbar(plan.R, st, [r.x + dx, r.y + dy]));
+          expect(offen).toHaveLength(1);
+        }
+        // der nächste Abschnitt beginnt links in derselben Zeile
+        if (i > 0) expect(st.start).toEqual([1, plan.stockwerke[i - 1].ziel[1]]);
+      });
+    }
+  });
+
   it("gleicher Seed, gleiches Haus", () => {
     expect(bauePlan([4, 4], 7)).toEqual(bauePlan([4, 4], 7));
     expect(bauePlan([4, 4], 7)).not.toEqual(bauePlan([4, 4], 8));

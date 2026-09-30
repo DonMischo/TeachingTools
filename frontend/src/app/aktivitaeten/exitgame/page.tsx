@@ -105,13 +105,14 @@ export default function ExitgamePage() {
     }
   }
 
-  async function handleTemplate() {
-    const tpl = await api.exitgame.template();
+  /** Schlanke Vorlage (Folien) oder interaktive Vorlage (2.5D: Gebäude, Verlies, Stationen, Werkzeuge) */
+  async function handleTemplate(interaktiv = false) {
+    const tpl = interaktiv ? await api.exitgame.templateInteraktiv() : await api.exitgame.template();
     const blob = new Blob([JSON.stringify(tpl, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "exitgame-vorlage.json";
+    a.download = interaktiv ? "exitgame-vorlage-interaktiv.json" : "exitgame-vorlage.json";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -131,8 +132,13 @@ export default function ExitgamePage() {
             <button onClick={() => setShowGenerators(true)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
               🧮 Generatoren
             </button>
-            <button onClick={handleTemplate} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+            <button onClick={() => handleTemplate()} title="Schlanke Vorlage: alle Bausteine für Folien-Exitgames"
+              className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
               📄 Vorlage
+            </button>
+            <button onClick={() => handleTemplate(true)} title="Vorlage für die 2.5D-Ansicht: Gebäude, Verlies, Ebene, Stationen, Monster, Werkzeuge"
+              className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+              🏰 Vorlage interaktiv
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
               className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">

@@ -2,7 +2,13 @@
 /**
  * Isometrisches Gebäude (three.js, orthografische Kamera). Die Figur läuft
  * per Klick/Tippen (Wegsuche) oder mit Pfeiltasten/WASD; kommt sie in einem
- * Zimmer oder an der Treppe an, meldet `onAnkunft` den Ort.
+ * Zimmer, an der Treppe weiter oder an der Treppe zurück an, meldet
+ * `onAnkunft` den Ort.
+ *
+ * Drei Arten: Haus (Stockwerke nach oben, die unteren sieht man gedämpft),
+ * Verlies (Ebenen nach unten, nur die aktuelle ist zu sehen, dunkel mit
+ * einer Fackel um die Figur — wie in Diablo) und Ebene (alle Abschnitte
+ * nebeneinander auf einer Karte, verbunden durch Türen).
  *
  * Kennt keine Inhalte: Wer das Gebäude benutzt (Exitgame, Regel-Labor,
  * später Verkehr/Rock your Life), gibt Plan, Zustände und Stockwerk vor und
@@ -10,11 +16,15 @@
  */
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { begehbar, weg, type Plan, type Punkt } from "@/lib/gebaeude/plan";
+import { begehbar, weg, type Plan, type Punkt, type Stockwerk } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
-import { STOCK_H, baueStock, entsorge, feldAus, figur, ortAmStrahl, welt as mitte, type RaumZustand, type Stil } from "./szene";
+import {
+  baueStock, entsorge, feldAus, figur, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
+  type KlickOrt, type RaumZustand, type Richtung, type Stil,
+} from "./szene";
 
-export type Ort = { art: "raum"; raum: number } | { art: "ziel" };
+export type Ort = KlickOrt;
+export type GebaeudeArt = "haus" | "verlies" | "ebene";
 
 interface Props {
   plan: Plan;
@@ -26,6 +36,10 @@ interface Props {
   /** je Stockwerk, was in den Zimmern steht (Vorgabe: Schreibtisch) */
   objekte?: Objekt[][];
   stil?: Stil;
+  /** haus: nach oben · verlies: nach unten, nur die aktuelle Ebene, Fackellicht · ebene: Abschnitte nebeneinander mit Türen */
+  art?: GebaeudeArt;
+  /** je Stockwerk: bewacht ein Boss Treppe bzw. Ausgang? */
+  waechter?: boolean[];
   /** Tastatur an (aus, solange z. B. ein Aufgabenfenster offen ist) */
   aktiv: boolean;
   /** von außen: dorthin laufen (neue `nr` = neuer Auftrag) */
@@ -38,21 +52,38 @@ const TASTEN: Record<string, number> = {
   ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3,
 };
 
-export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, stil, aktiv, auftrag, onAnkunft }: Props) {
+/** Feld eines Ortes auf dem Stockwerk */
+function feldVon(st: Stockwerk, ort: Ort): Punkt {
+  if (ort.art === "ziel") return st.ziel;
+  if (ort.art === "zurueck") return st.start;
+  return [st.raeume[ort.raum].x, st.raeume[ort.raum].y];
+}
+
+export default function Gebaeude({
+  plan, stock, zustaende, zielOffen, objekte, stil, art = "haus", waechter, aktiv, auftrag, onAnkunft,
+}: Props) {
+  const verlies = art === "verlies";
+  const flach = art === "ebene";
   const huelle = useRef<HTMLDivElement>(null);
   const [drehung, setDrehung] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const richtung: Richtung = verlies ? -1 : 1;
 
   // Alles, was die Zeichenschleife liest, steht in einem Ref.
   const lage = useRef({
-    plan, stock, drehung, zoom, aktiv, onAnkunft,
+    plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach,
     feld: plan.stockwerke[stock].start as Punkt,
     pos: new THREE.Vector3(),
     pfad: [] as Punkt[],
+    /** die Gruppe des aktuellen Stockwerks (für Klicks) */
+    hier: null as THREE.Object3D | null,
   });
-  Object.assign(lage.current, { plan, stock, drehung, zoom, aktiv, onAnkunft });
+  Object.assign(lage.current, { plan, stock, drehung, zoom, aktiv, onAnkunft, richtung, flach });
 
-  const drei = useRef<{ szene: THREE.Scene; welt: THREE.Group; spieler: THREE.Group } | null>(null);
+  const drei = useRef<{
+    szene: THREE.Scene; welt: THREE.Group; spieler: THREE.Group;
+    himmel: THREE.HemisphereLight; sonne: THREE.DirectionalLight; fackel: THREE.PointLight;
+  } | null>(null);
 
   // ── einmalig: Renderer, Kamera, Licht, Schleife ─────────────────────────
   useEffect(() => {
@@ -64,15 +95,17 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
     renderer.domElement.style.touchAction = "none";
 
     const szene = new THREE.Scene();
-    szene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.6));
+    const himmel = new THREE.HemisphereLight(0xffffff, 0x445566, 1.6);
     const sonne = new THREE.DirectionalLight(0xffffff, 1.4);
     sonne.position.set(-6, 14, 4);
-    szene.add(sonne);
+    // Fackel: warmes Licht, das mit der Figur wandert (nur im Verlies an)
+    const fackel = new THREE.PointLight(0xffa24a, 0, 22, 1.2);
+    szene.add(himmel, sonne, fackel);
     const welt = new THREE.Group();
     const spieler = figur(0xe11d48);
     spieler.scale.setScalar(1.4);
     szene.add(welt, spieler);
-    drei.current = { szene, welt, spieler };
+    drei.current = { szene, welt, spieler, himmel, sonne, fackel };
 
     const kamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -200, 400);
     const blick = new THREE.Vector3();
@@ -89,12 +122,16 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
 
     // Blickrichtung (Welt, x/z) für »oben« auf dem Bildschirm
     const winkel = () => Math.PI / 4 + (lage.current.drehung * Math.PI) / 2;
+    const bodenHoehe = () => (lage.current.flach ? 0 : hoeheVon(lage.current.stock, lage.current.richtung)) + 0.25;
+    /** Ebene: Weltverschiebung des aktuellen Abschnitts */
+    const dx = () => versatzVon(lage.current.stock, lage.current.plan.R, lage.current.flach);
 
     const ankommen = () => {
       const l = lage.current;
       const st = l.plan.stockwerke[l.stock];
       const [x, y] = l.feld;
       if (x === st.ziel[0] && y === st.ziel[1]) l.onAnkunft({ art: "ziel" });
+      if (l.stock > 0 && x === st.start[0] && y === st.start[1]) l.onAnkunft({ art: "zurueck" });
       const k = st.raeume.findIndex(r => r.x === x && r.y === y);
       if (k >= 0) l.onAnkunft({ art: "raum", raum: k });
     };
@@ -103,6 +140,19 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
       const l = lage.current;
       const t = e.target as HTMLElement;
       if (!l.aktiv || t.closest("input, textarea, select, [contenteditable]")) return;
+      // Ziffern (Nummernblock oder obere Reihe): 1–9 läuft zum Zimmer mit dieser
+      // Nummer auf dem Schild, 0 zur Treppe bzw. Tür.
+      const ziffer = /^(?:Numpad|Digit)([0-9])$/.exec(e.code)?.[1] ?? (/^[0-9]$/.test(e.key) ? e.key : null);
+      if (ziffer !== null) {
+        const st = l.plan.stockwerke[l.stock];
+        const n = Number(ziffer);
+        const ziel: Punkt | null = n === 0 ? st.ziel : st.raeume[n - 1] ? [st.raeume[n - 1].x, st.raeume[n - 1].y] : null;
+        if (!ziel) return;
+        e.preventDefault();
+        if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1] && !l.pfad.length) ankommen();
+        else l.pfad = weg(l.plan.R, st, l.feld, ziel);
+        return;
+      }
       const r = TASTEN[e.key];
       if (r === undefined) return;
       e.preventDefault();
@@ -132,20 +182,19 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
       const l = lage.current;
       const r = renderer.domElement.getBoundingClientRect();
       zeiger.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), kamera);
-      // Zuerst: ein Zimmer, Objekt, Schild oder die Treppe getroffen? Dann dorthin.
+      // Zuerst: ein Zimmer, Objekt, Schild oder eine Treppe getroffen? Dann dorthin.
       const st = l.plan.stockwerke[l.stock];
-      const hier = welt.children[l.stock];
-      const ort = hier ? ortAmStrahl(hier, zeiger) : null;
-      if (ort) {
-        const ziel: Punkt = ort.art === "ziel" ? st.ziel : [st.raeume[ort.raum].x, st.raeume[ort.raum].y];
+      const ort = l.hier ? ortAmStrahl(l.hier, zeiger) : null;
+      if (ort && (ort.art !== "zurueck" || l.stock > 0)) {
+        const ziel = feldVon(st, ort);
         if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1] && !l.pfad.length) ankommen();
         else l.pfad = weg(l.plan.R, st, l.feld, ziel);
         return;
       }
-      const ebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(l.stock * STOCK_H + 0.25));
+      const ebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), -bodenHoehe());
       const p = new THREE.Vector3();
       if (!zeiger.ray.intersectPlane(ebene, p)) return;
-      const ziel: Punkt = [feldAus(p.x, l.plan.R), feldAus(p.z, l.plan.R)];
+      const ziel: Punkt = [feldAus(p.x - dx(), l.plan.R), feldAus(p.z, l.plan.R)];
       if (!begehbar(l.plan.R, st, ziel)) return;
       if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1]) { ankommen(); return; }
       l.pfad = weg(l.plan.R, st, l.feld, ziel);
@@ -158,11 +207,11 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
       const dt = Math.min(0.1, (jetzt - zuletzt) / 1000);
       zuletzt = jetzt;
       const l = lage.current;
-      const boden = l.stock * STOCK_H + 0.25;
+      const boden = bodenHoehe();
       // Laufen
       if (l.pfad.length) {
         const [nx, nz] = l.pfad[0];
-        const ziel = new THREE.Vector3(mitte(nx), boden, mitte(nz));
+        const ziel = new THREE.Vector3(dx() + mitte(nx), boden, mitte(nz));
         const rest = ziel.clone().sub(l.pos);
         const schritt = TEMPO * dt;
         if (rest.length() <= schritt) {
@@ -178,6 +227,9 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
       l.pos.y += (boden - l.pos.y) * Math.min(1, dt * 8);
       spieler.position.copy(l.pos);
       spieler.position.y += l.pfad.length ? Math.abs(Math.sin(jetzt / 90)) * 0.08 : 0;
+      // Die Fackel flackert ein wenig über dem Kopf
+      fackel.position.set(l.pos.x, l.pos.y + 3.2, l.pos.z);
+      if (fackel.intensity > 0) fackel.intensity = 38 + Math.sin(jetzt / 70) * 2.5 + Math.sin(jetzt / 23) * 1.5;
 
       // Kamera folgt weich
       blick.lerp(l.pos, Math.min(1, dt * 5));
@@ -191,7 +243,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
       renderer.render(szene, kamera);
     };
     // Startposition ohne Schwenk
-    lage.current.pos.set(mitte(lage.current.feld[0]), lage.current.stock * STOCK_H + 0.25, mitte(lage.current.feld[1]));
+    lage.current.pos.set(dx() + mitte(lage.current.feld[0]), bodenHoehe(), mitte(lage.current.feld[1]));
     blick.copy(lage.current.pos);
     id = requestAnimationFrame(bild);
 
@@ -207,32 +259,54 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
     };
   }, []);
 
+  // ── Licht: hell im Haus, dunkel mit Fackel im Verlies ───────────────────
+  useEffect(() => {
+    const d = drei.current;
+    if (!d) return;
+    d.himmel.intensity = verlies ? 0.12 : 1.6;
+    d.sonne.intensity = verlies ? 0.05 : 1.4;
+    d.fackel.intensity = verlies ? 38 : 0;
+    d.szene.background = verlies ? new THREE.Color(0x050403) : null;
+  }, [verlies]);
+
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
-  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil]);
+  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, art, waechter]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
     for (const k of [...d.welt.children]) { d.welt.remove(k); entsorge(k); }
-    for (let i = 0; i <= stock; i++) {
-      d.welt.add(baueStock(plan, i, {
+    // Verlies: nur die aktuelle Ebene. Haus: auch die darunter (gedämpft).
+    // Ebene: alle Abschnitte — die noch nicht erreichten gedämpft.
+    const bis = flach ? plan.stockwerke.length - 1 : stock;
+    for (let i = verlies ? stock : 0; i <= bis; i++) {
+      const g = baueStock(plan, i, {
         zustaende: zustaende[i] ?? [],
         zielOffen: zielOffen[i] ?? false,
         objekte: objekte?.[i],
-        stil,
+        stil: stil ?? (verlies ? "verlies" : undefined),
         zielArt: i < plan.stockwerke.length - 1 ? "treppe" : "ausgang",
-        unten: i < stock,
-      }));
+        unten: flach ? i > stock : i < stock,
+        richtung,
+        flach,
+        waechter: waechter?.[i] ?? false,
+      });
+      d.welt.add(g);
+      if (i === stock) lage.current.hier = g;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, schluessel]);
 
-  // Neues Stockwerk (oder neues Haus): Figur an dessen Anfang
+  // Stockwerk gewechselt: hinauf/hinab → an dessen Anfang; zurück → an dessen Treppe.
+  const vorher = useRef(stock);
   useEffect(() => {
     const l = lage.current;
-    l.feld = plan.stockwerke[stock].start;
+    const st = plan.stockwerke[stock];
+    l.feld = stock < vorher.current ? st.ziel : st.start;
+    vorher.current = stock;
     l.pfad = [];
-    l.pos.x = mitte(l.feld[0]);
+    l.pos.x = versatzVon(stock, plan.R, flach) + mitte(l.feld[0]);
     l.pos.z = mitte(l.feld[1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, stock]);
 
   // Auftrag von außen: hinlaufen
@@ -240,7 +314,8 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
     if (!auftrag) return;
     const l = lage.current;
     const st = plan.stockwerke[stock];
-    const ziel: Punkt = auftrag.ort.art === "ziel" ? st.ziel : [st.raeume[auftrag.ort.raum].x, st.raeume[auftrag.ort.raum].y];
+    if (auftrag.ort.art === "zurueck" && stock === 0) return;
+    const ziel = feldVon(st, auftrag.ort);
     if (ziel[0] === l.feld[0] && ziel[1] === l.feld[1] && !l.pfad.length) onAnkunft(auftrag.ort);
     else l.pfad = weg(plan.R, st, l.feld, ziel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,7 +324,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, s
   const knopf = "w-9 h-9 rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] font-bold hover:border-[var(--accent)]";
   return (
     <div className="relative w-full h-full min-h-[320px]">
-      <div ref={huelle} className="absolute inset-0" data-gebaeude data-stock={stock} />
+      <div ref={huelle} className="absolute inset-0" data-gebaeude data-stock={stock} data-art={art} />
       <div className="absolute top-2 right-2 flex flex-col gap-1">
         <button className={knopf} title="größer" aria-label="größer" onClick={() => setZoom(z => Math.min(3, z * 1.25))}>＋</button>
         <button className={knopf} title="kleiner" aria-label="kleiner" onClick={() => setZoom(z => Math.max(0.4, z / 1.25))}>－</button>

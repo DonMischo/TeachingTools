@@ -835,11 +835,42 @@ def test_upload_rejects_unknown_station(client, teacher_token):
     assert any("'station'" in e for e in r.json()["detail"]["errors"])
 
 
-def test_template_shows_a_sim_station(client, teacher_token):
+def test_slim_template_leaves_2_5d_to_the_interactive_one(client, teacher_token):
     tpl = client.get("/api/exitgames/template", headers=_auth(teacher_token)).json()
-    werkzeug = [s for s in tpl["slides"] if (s.get("task") or {}).get("sim")]
-    assert werkzeug and werkzeug[0]["station"] == "waage"
-    assert "WERKZEUG" in tpl["_ai_instructions"]
+    assert not [s for s in tpl["slides"] if (s.get("task") or {}).get("sim") or s.get("station")]
+    assert "gebaeude" not in tpl
+    assert "WERKZEUGE" not in tpl["_ai_instructions"]
+    assert "Vorlage interaktiv" in tpl["_ai_instructions"]
+
+
+def test_interactive_template_is_a_valid_2_5d_game(client, teacher_token):
+    """Die interaktive Vorlage ist ein spielbares Verlies — sie muss sich so,
+    wie sie ist, hochladen lassen und alle 2.5D-Bausteine zeigen."""
+    tpl = client.get("/api/exitgames/template-interaktiv", headers=_auth(teacher_token)).json()
+    assert tpl["gebaeude"] == {"ansicht": "verlies", "stil": "verlies"}
+    stationen = {s.get("station") for s in tpl["slides"]}
+    assert {"monster", "boss", "tafel"} <= stationen
+    tools = {(t.get("sim") or {}).get("tool") for s in tpl["slides"] for t in ([s["task"]] if s.get("task") else [])}
+    assert {"gleichungswaage", "funktionen", "vierecke", "rechenregeln"} <= tools
+    assert sum(1 for s in tpl["slides"] if s["type"] == "door") == 2
+    anleitung = tpl["_ai_instructions"]
+    assert "WERKZEUGE" in anleitung and "GEBÄUDE" in anleitung and "GRUNDLAGEN" in anleitung
+    r = _upload(client, teacher_token, tpl)
+    assert r.status_code == 201, r.json()
+
+
+def test_upload_validates_gebaeude(client, teacher_token):
+    ok = {**SIMPLE_GAME, "gebaeude": {"ansicht": "ebene", "stil": "garten"}}
+    assert _upload(client, teacher_token, ok).status_code == 201
+    for falsch in ({"ansicht": "keller"}, {"stil": "barock"}, "verlies"):
+        r = _upload(client, teacher_token, {**SIMPLE_GAME, "gebaeude": falsch})
+        assert r.status_code == 422, falsch
+        assert any("gebaeude" in e for e in r.json()["detail"]["errors"])
+
+
+def test_monster_and_boss_are_station_objects(client, teacher_token):
+    for obj in ("monster", "boss"):
+        assert _upload(client, teacher_token, _mit_station({}, {"station": obj})).status_code == 201
 
 
 # ---------------------------------------------------------------------------

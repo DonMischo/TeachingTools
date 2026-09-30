@@ -12,6 +12,14 @@ export type RaumZustand = "offen" | "geloest" | "info" | "gelesen";
 /** Höhe eines Stockwerks in Feldern */
 export const STOCK_H = 3;
 
+/** Haus: Stockwerke gehen nach oben (+1). Verlies: Ebenen gehen nach unten (−1). */
+export type Richtung = 1 | -1;
+
+/** Bodenhöhe von Stockwerk bzw. Ebene i */
+export function hoeheVon(i: number, richtung: Richtung = 1): number {
+  return i * STOCK_H * richtung;
+}
+
 const FARBE = {
   boden: 0xece4d8, bodenRand: 0x8b7e74, wand: 0x5b4b45, wandOben: 0xd9cfc4,
   offen: 0xf59e0b, geloest: 0x22c55e, info: 0x60a5fa, gelesen: 0x94a3b8,
@@ -26,7 +34,7 @@ const RAUM_FARBE: Record<RaumZustand, number> = {
  * Aussehen des Hauses. Beton und Neon nach den Bildern von MarkovJunior
  * (Apartemazements), Garten wie ein Palast mit Hecken am Wasser.
  */
-export type Stil = "klassisch" | "beton" | "neon" | "garten";
+export type Stil = "klassisch" | "beton" | "neon" | "garten" | "verlies";
 
 interface Palette {
   boden: number; wand: number; wandH: number; oben: number; obenH: number;
@@ -40,6 +48,7 @@ export const STILE: Record<Stil, Palette & { name: string }> = {
   beton: { name: "Beton", boden: 0xe7e5e4, wand: 0xa8a29e, wandH: 0.9, oben: 0xf5f5f4, obenH: 0.12, tuer: 0x57534e, treppe: 0xf5f5f4, stuetze: 0xd6d3d1, sockel: 0x78716c },
   neon: { name: "Glas & Neon", boden: 0xd4d4d8, wand: 0x27272a, wandH: 1.3, oben: 0xfafafa, obenH: 0.1, tuer: 0xfafafa, treppe: 0xe4e4e7, stuetze: 0xf4f4f5, sockel: 0x3f3f46, leuchten: true },
   garten: { name: "Gartenpalast", boden: 0xd9e4c8, wand: 0xf5ecd7, wandH: 0.8, oben: 0x3f6212, obenH: 0.45, tuer: 0x92400e, treppe: 0xf5ecd7, stuetze: 0xf5ecd7, sockel: 0x2563eb },
+  verlies: { name: "Verlies", boden: 0x57534e, wand: 0x3f3a36, wandH: 1.5, oben: 0x78716c, obenH: 0.12, tuer: 0x44403c, treppe: 0x78716c, stuetze: 0x44403c, sockel: 0x1c1917 },
 };
 
 const box = new THREE.BoxGeometry(1, 1, 1);
@@ -94,6 +103,16 @@ export function welt(i: number): number {
   return Math.ceil(i / 2) * SCHMAL + Math.floor(i / 2) * WEIT + breite(i) / 2;
 }
 
+/** Breite eines ganzen Abschnitts (R Rasterspalten) in Welteinheiten */
+export function abschnittBreite(R: number): number {
+  return welt(R - 1) + breite(R - 1) / 2;
+}
+
+/** Ebene: um wie viel Abschnitt i nach rechts versetzt liegt (sonst 0) */
+export function versatzVon(i: number, R: number, flach?: boolean): number {
+  return flach ? i * abschnittBreite(R) : 0;
+}
+
 /** Umkehrung von `welt`: in welcher Rasterspalte liegt die Weltkoordinate w? */
 export function feldAus(w: number, R: number): number {
   for (let i = 0; i < R; i++) if (w < welt(i) + breite(i) / 2) return i;
@@ -123,17 +142,60 @@ export interface StockBild {
   stil?: Stil;
   /** Gesamtansicht: Stützen bis zum Stockwerk darunter, keine Schilder */
   ganz?: boolean;
+  /** +1 Haus (nach oben), −1 Verlies (nach unten) */
+  richtung?: Richtung;
+  /** Ein Boss bewacht Treppe bzw. Ausgang (Verlies) */
+  waechter?: boolean;
+  /** Ebene: Abschnitte nebeneinander, Türen in der Wand statt Treppen */
+  flach?: boolean;
+}
+
+/** Tür in der Wand zwischen zwei Abschnitten; offen klappt sie zur Seite. */
+function wandtuer(g: THREE.Group, x: number, z: number, y0: number, offen: boolean, farbe: number, hoehe: number) {
+  if (offen) {
+    const fluegel = klotz(farbe, WEIT * 0.9, hoehe, 0.1, x + WEIT * 0.45, y0 + 0.25, z - WEIT / 2 + 0.1);
+    g.add(fluegel);
+  } else {
+    g.add(klotz(farbe, 2 * SCHMAL, hoehe, WEIT, x, y0 + 0.25, z));
+    g.add(klotz(0xfacc15, 2 * SCHMAL + 0.04, 0.12, 0.12, x, y0 + 0.25 + hoehe * 0.5, z + WEIT * 0.3));
+  }
+}
+
+/**
+ * Treppe in einem Feld: nach oben fünf Stufen, nach unten ein Schacht mit
+ * fünf Stufen hinab. `zurTuer` zeigt, von welcher Seite man hineinläuft.
+ */
+function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean, farbe: number) {
+  const stufe = WEIT / 5;
+  for (let s = 0; s < 5; s++) {
+    if (hoch) {
+      g.add(klotz(farbe, WEIT, 0.25 + s * (STOCK_H / 5), stufe, x, y0, z - WEIT / 2 + stufe / 2 + s * stufe));
+    } else {
+      // Stufen hinab: jede liegt tiefer; darunter ist es dunkel
+      const oben = y0 + 0.25 - (s + 1) * (STOCK_H / 5);
+      g.add(klotz(farbe, WEIT, 0.2, stufe, x, oben - 0.2, z - WEIT / 2 + stufe / 2 + s * stufe));
+    }
+  }
+  if (!hoch) {
+    // Schachtwände, damit das Loch als Loch zu sehen ist
+    for (const s of [-1, 1]) g.add(klotz(0x1c1917, 0.12, STOCK_H, WEIT, x + s * (WEIT / 2 - 0.06), y0 - STOCK_H + 0.25, z));
+  }
 }
 
 export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   const g = new THREE.Group();
   const st = plan.stockwerke[i];
   const R = plan.R;
-  const y0 = i * STOCK_H;
+  const richtung = bild.richtung ?? 1;
+  const flach = !!bild.flach;
+  const y0 = flach ? 0 : hoeheVon(i, richtung);
+  g.position.x = versatzVon(i, R, flach);
   const boden: Punkt[] = [];
   const waende: Punkt[] = [];
   const offen = (x: number, y: number) => x >= 0 && y >= 0 && x < R && y < R && st.boden[y * R + x];
-  const sonder = new Set<string>([`${st.ziel}`, ...st.raeume.map(r => `${r.x},${r.y}`)]);
+  const sonder = new Set<string>([...st.raeume.map(r => `${r.x},${r.y}`), ...(flach ? [] : [`${st.ziel}`, ...(i > 0 ? [`${st.start}`] : [])])]);
+  // Ebene: die Wandfelder, in denen Türen sitzen, bleiben frei
+  const tuerFelder = new Set<string>(flach ? [`${R - 1},${st.ziel[1]}`, ...(i > 0 ? [`0,${st.start[1]}`] : [])] : []);
   for (let y = 0; y < R; y++) {
     for (let x = 0; x < R; x++) {
       if (offen(x, y)) {
@@ -143,7 +205,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
       // Wände nur dort, wo sie an Flur grenzen — dazwischen bleibt Luft.
       let amFlur = false;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (offen(x + dx, y + dy)) amFlur = true;
-      if (amFlur) waende.push([x, y]);
+      if (amFlur && !tuerFelder.has(`${x},${y}`)) waende.push([x, y]);
     }
   }
   const F = STILE[bild.stil ?? "klassisch"];
@@ -162,7 +224,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     m.count = pfeiler.length;
     const mat = new THREE.Matrix4();
     pfeiler.forEach(([x, y], k) => {
-      mat.compose(new THREE.Vector3(welt(x), y0 - STOCK_H / 2, welt(y)), new THREE.Quaternion(), new THREE.Vector3(SCHMAL, STOCK_H, SCHMAL));
+      mat.compose(new THREE.Vector3(welt(x), y0 - (richtung * STOCK_H) / 2, welt(y)), new THREE.Quaternion(), new THREE.Vector3(SCHMAL, STOCK_H, SCHMAL));
       m.setMatrixAt(k, mat);
     });
     g.add(m);
@@ -184,7 +246,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     }
     if (bild.unten) return;
     // Das Objekt schaut zur Tür.
-    const ding = baueObjekt(bild.objekte?.[k] ?? "pult");
+    const ding = baueObjekt(bild.objekte?.[k] ?? "pult", z === "geloest");
     ding.position.set(rx, y0 + 0.3, rz);
     ding.rotation.y = Math.atan2(r.tuer[0] - r.x, r.tuer[1] - r.y);
     zg.add(ding);
@@ -208,11 +270,14 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
   zielG.userData.ort = { art: "ziel" };
   g.add(zielG);
   const [zx, zy] = [welt(st.ziel[0]), welt(st.ziel[1])];
-  if (bild.zielArt === "treppe") {
-    const stufe = WEIT / 5;
-    for (let s = 0; s < 5; s++) {
-      zielG.add(klotz(dunkel(F.treppe), WEIT, 0.25 + s * (STOCK_H / 5), stufe, zx, y0, zy - WEIT / 2 + stufe / 2 + s * stufe));
-    }
+  if (flach) {
+    const tx = welt(R - 1) + SCHMAL / 2; // Grenze zum nächsten Abschnitt
+    const letzte = bild.zielArt === "ausgang";
+    wandtuer(zielG, tx, zy, y0, bild.zielOffen, letzte ? FARBE.ausgang : F.tuer, F.wandH + 0.2);
+    // ein Streifen Boden unter der Tür, damit man sie auch offen trifft
+    zielG.add(klotz(dunkel(F.boden), 2 * SCHMAL, 0.25, WEIT, tx, y0, zy));
+  } else if (bild.zielArt === "treppe") {
+    treppe(zielG, zx, zy, y0, richtung === 1, dunkel(F.treppe));
   } else {
     zielG.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
     if (!bild.unten) {
@@ -220,17 +285,49 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
       zielG.add(klotz(FARBE.ausgang, WEIT, 0.16, 0.16, zx, y0 + 2.1, zy));
     }
   }
+  // Der Boss steht im Durchgang vor Treppe bzw. Ausgang; ist die Tür offen, liegt er besiegt da.
+  if (bild.waechter && !bild.unten) {
+    const vor = flach ? st.ziel : [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => [st.ziel[0] + dx, st.ziel[1] + dy] as Punkt)
+      .find(([x, y]) => offen(x, y));
+    if (vor && flach) {
+      const boss = baueObjekt("boss", bild.zielOffen);
+      boss.position.set(zx + 0.2, y0 + 0.25, zy + (bild.zielOffen ? WEIT * 0.3 : 0));
+      boss.rotation.y = -Math.PI / 2;
+      zielG.add(boss);
+    } else if (vor) {
+      const boss = baueObjekt("boss", bild.zielOffen);
+      boss.position.set(welt(vor[0]) + (welt(vor[0]) - zx) * 0.3, y0 + 0.25, welt(vor[1]) + (welt(vor[1]) - zy) * 0.3);
+      boss.rotation.y = Math.atan2(vor[0] - st.ziel[0], vor[1] - st.ziel[1]);
+      zielG.add(boss);
+    }
+  }
   if (!bild.unten && !bild.ganz) {
-    if (!bild.zielOffen) zielG.add(klotz(FARBE.gesperrt, WEIT * 0.9, 0.14, 0.14, zx, y0 + 1.0, zy + WEIT / 2 - 0.1));
-    const sp = schild(bild.zielOffen ? (bild.zielArt === "treppe" ? "⬆" : "EXIT") : "🔒", "#111827", bild.zielOffen ? "#bbf7d0" : "#fecdd3");
-    sp.position.set(zx, y0 + 2.8, zy);
+    if (!bild.zielOffen && !flach) zielG.add(klotz(FARBE.gesperrt, WEIT * 0.9, 0.14, 0.14, zx, y0 + 1.0, zy + WEIT / 2 - 0.1));
+    const pfeil = flach ? "➡" : richtung === 1 ? "⬆" : "⬇";
+    const sp = schild(bild.zielOffen ? (bild.zielArt === "treppe" ? pfeil : "EXIT") : "🔒", "#111827", bild.zielOffen ? "#bbf7d0" : "#fecdd3");
+    sp.position.set(flach ? welt(R - 1) + SCHMAL / 2 : zx, y0 + 2.8, zy);
     zielG.add(sp);
+  }
+
+  // Treppe zurück: dort, wo man auf diesem Stockwerk angekommen ist
+  if (i > 0) {
+    const zurueck = new THREE.Group();
+    zurueck.userData.ort = { art: "zurueck" };
+    g.add(zurueck);
+    const [sx, sz] = [welt(st.start[0]), welt(st.start[1])];
+    if (flach) zurueck.add(klotz(dunkel(F.boden), WEIT, 0.26, WEIT, sx, y0, sz));
+    else treppe(zurueck, sx, sz, y0, richtung === -1, dunkel(F.treppe));
+    if (!bild.unten && !bild.ganz) {
+      const sp = schild(flach ? "⬅" : richtung === 1 ? "⬇" : "⬆", "#111827", "#e2e8f0");
+      sp.position.set(sx, y0 + 2.4, sz);
+      zurueck.add(sp);
+    }
   }
   return g;
 }
 
-/** Ort, auf den ein Klick zielt: das erste getroffene Zimmer bzw. die Treppe. */
-export type KlickOrt = { art: "raum"; raum: number } | { art: "ziel" };
+/** Ort, auf den ein Klick zielt: das erste getroffene Zimmer, die Treppe weiter oder die zurück. */
+export type KlickOrt = { art: "raum"; raum: number } | { art: "ziel" } | { art: "zurueck" };
 
 export function ortAmStrahl(stockwerk: THREE.Object3D, zeiger: THREE.Raycaster): KlickOrt | null {
   for (const treffer of zeiger.intersectObject(stockwerk, true)) {

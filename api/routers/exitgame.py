@@ -82,7 +82,14 @@ SIM_TOOLS = {
 STATION_OBJECTS = {
     "pult", "computer", "kuckucksuhr", "globus", "regal", "mikroskop",
     "tafel", "laborbank", "tresor", "teleskop", "kalender", "waage", "abakus",
+    "monster", "boss",
 }
+
+# 2.5D: mit welcher Ansicht ein Spiel startet ("gebaeude": {"ansicht": …, "stil": …}).
+# Muss zu ANSICHTEN im Spieler (frontend/src/app/play/exitgame/[code]/page.tsx)
+# und STILE in frontend/src/components/gebaeude/szene.ts passen.
+GEBAEUDE_ANSICHTEN = {"folien", "gebaeude", "verlies", "ebene"}
+GEBAEUDE_STILE = {"klassisch", "beton", "neon", "garten", "verlies"}
 DDA_HISTORY_LIMIT = 50
 DDA_RECENT_WINDOW = 10
 
@@ -225,6 +232,15 @@ def _validate_exitgame(data: dict) -> list[str]:
         if not data.get(field):
             errors.append(f"Pflichtfeld fehlt: '{field}'")
     errors.extend(_validate_dda(data.get("dda") or {}))
+    gebaeude = data.get("gebaeude")
+    if gebaeude is not None:
+        if not isinstance(gebaeude, dict):
+            errors.append("'gebaeude' muss ein Objekt sein, z.B. {\"ansicht\": \"verlies\", \"stil\": \"verlies\"}")
+        else:
+            if gebaeude.get("ansicht") is not None and gebaeude["ansicht"] not in GEBAEUDE_ANSICHTEN:
+                errors.append(f"gebaeude.ansicht '{gebaeude['ansicht']}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_ANSICHTEN))})")
+            if gebaeude.get("stil") is not None and gebaeude["stil"] not in GEBAEUDE_STILE:
+                errors.append(f"gebaeude.stil '{gebaeude['stil']}' gibt es nicht (erlaubt: {', '.join(sorted(GEBAEUDE_STILE))})")
     slides = data.get("slides") or []
     if not isinstance(slides, list) or not slides:
         errors.append("'slides' muss eine nicht-leere Liste sein")
@@ -431,33 +447,8 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "die das theme überschreiben. Gilt nur für die Spielansicht der Schüler. "
             "--- MATHE --- KaTeX: die zu lösende Formel immer abgesetzt ($$...$$), inline ($...$) nur für "
             "einzelne Symbole, Dezimalkomma als $3{,}14$. "
-            "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
-            "\"sim\": {\"tool\": …, \"config\": {…}} in der task. Die Simulation öffnet sich dann nur mit "
-            "dieser einen Vorgabe (keine anderen Aufgaben, kein Wechsel); die Antwort tippt der Schüler "
-            "danach wie gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. "
-            "Vorgaben: gleichungswaage {gleichung: '3x + 4 = 19'} oder {formel: 'E = m·g·h', nach: 'h', "
-            "werte: {E: 60, m: 2, g: 10}} (gesuchter Wert bleibt verdeckt, bis die Größe allein steht) "
-            "oder {reaktion: 'H2 + O2 -> H2O'}; funktionen {term: 'x^2 - 4', von?: -3, bis?: 3, schritt?: 1}; "
-            "vierecke {form: quadrat|rechteck|parallelogramm|trapez|raute|drachen, masse: {a: 8, c: 4, h: 3}, "
-            "blatt?: formen|umfang|flaeche, rechnung?: true — sonst bleiben u und A verborgen}; "
-            "rechenregeln {term: '2 + 3 · (4 − 1)'} (Obstkorb), {reiter: 'zug', term: '12 : 4 + 5'} oder "
-            "{a: 3.5, b: 100, art: '*' | ':'} (Stufenzahlen). "
-            "Weitere Werkzeuge mit {reiter: …} (öffnet genau diesen Reiter, andere sind gesperrt): "
-            "abacus single|place; bildformate P1|P2|P3; binaerrechner {zahl: 0-255}; "
-            "tippen lektionen|wortregen|tastenjagd; maus klick|doppelklick|rechtsklick|ziehen|markieren|"
-            "kopieren|scrollen|tastatur|explorer|fenster|screenshot|suche|apps|aussehen|bedienhilfe|"
-            "taskleiste|profil; ki sprache|bilder|lernen|echt; sonnensystem uebersicht|flug|groessen|"
-            "entfernungen|kepler|galerie|kodex; kueste profil|draufsicht|gezeiten|galerie|wissen; "
-            "erdaufbau keil|profil|wellen|konvektion|wissen; wilson schnitt|quiz|wissen (dazu phase: "
-            "ruhe|graben|jung|ozean|subduktion|schliessen|kollision|abtragung); regeln "
-            "lehrgang (station: lauf|wachsen|backtracker|bloecke|grundriss)|raetsel (raetsel: alles|"
-            "punkte|schach|labyrinth|rundwege)|labor|labyrinthe|gebaeude. "
-            "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
-            "--- GEBÄUDE --- Schüler können das Spiel auch als Haus spielen: jeder Abschnitt ein Stockwerk, "
-            "jede Slide ein Zimmer, jede Tür das Treppenhaus. 'station' an der Slide wählt das Objekt im "
-            "Zimmer: pult, computer, kuckucksuhr, globus, regal, mikroskop, tafel, laborbank, tresor, "
-            "teleskop, kalender, waage, abakus. Ohne Angabe passt es sich an (Werkzeug, Zeitstrahl → "
-            "kalender, Erklärung → tafel). "
+            "--- 2.5D --- Gebäude, Verlies, Ebene, Stationen und Werkzeuge (Simulationen) stehen in der "
+            "»Vorlage interaktiv«. "
             "--- UPLOAD --- .json, oder .zip mit exitgame.json und einem Ordner assets/ für eigene Bilder. "
             "--- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht "
             "eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es "
@@ -552,21 +543,6 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
              ],
              "hints": ["Stelle die Gleichung $$m_1 \\cdot a_1 = m_2 \\cdot a_2$$ auf.",
                        "$3 \\cdot 40 = m_2 \\cdot 60$ — teile durch $60$."]},
-
-            # Werkzeug-Station: die Aufgabe öffnet eine Simulation mit fester Vorgabe
-            # (hier die Gleichungswaage mit der Hebelformel); "station" wählt das
-            # Objekt im Zimmer der Gebäude-Ansicht.
-            {"id": "werkzeug", "type": "task", "title": "Werkzeug: die Gleichungswaage",
-             "station": "waage",
-             "text": "Öffne die Gleichungswaage und stelle die Hebelformel nach $m_2$ um.",
-             "task": {"kind": "input",
-                      "question": "Links hängen $4$ kg im Abstand $30$ cm, rechts wird bei $60$ cm "
-                                  "ausgeglichen. Wie viel kg hängen rechts?",
-                      "sim": {"tool": "gleichungswaage",
-                              "config": {"formel": "m1·a1 = m2·a2", "nach": "m2",
-                                         "werte": {"m1": 4, "a1": 30, "a2": 60}}},
-                      "accept": ["2"]},
-             "hints": ["Teile auf beiden Seiten durch $a_2$."]},
 
             # timeline: mode "sort", scoring "position" — Zahlenstrahl mit Einheit und Toleranz
             {"id": "zahlenstrahl", "type": "task", "title": "Zahlenstrahl",
@@ -692,6 +668,131 @@ def upload_exitgame(
         db.refresh(game)
 
     return _to_out(game)
+
+
+ANLEITUNG_25D = (
+    "Das ist die interaktive Vorlage: dasselbe Format wie die schlanke »Vorlage«, dazu alles für die "
+    "2.5D-Ansicht. Das Beispiel ist ein spielbares Verlies mit zwei Ebenen — ersetze Thema, Aufgaben "
+    "und Codes, behalte den Aufbau. "
+            "--- WERKZEUGE --- Eine Aufgabe kann eine Simulation als Werkzeug öffnen: "
+            "\"sim\": {\"tool\": …, \"config\": {…}} in der task. Die Simulation öffnet sich dann nur mit "
+            "dieser einen Vorgabe (keine anderen Aufgaben, kein Wechsel); die Antwort tippt der Schüler "
+            "danach wie gewohnt ein — also immer zusätzlich kind 'input' oder 'single' mit Lösung angeben. "
+            "Vorgaben: gleichungswaage {gleichung: '3x + 4 = 19'} oder {formel: 'E = m·g·h', nach: 'h', "
+            "werte: {E: 60, m: 2, g: 10}} (gesuchter Wert bleibt verdeckt, bis die Größe allein steht) "
+            "oder {reaktion: 'H2 + O2 -> H2O'}; funktionen {term: 'x^2 - 4', von?: -3, bis?: 3, schritt?: 1}; "
+            "vierecke {form: quadrat|rechteck|parallelogramm|trapez|raute|drachen, masse: {a: 8, c: 4, h: 3}, "
+            "blatt?: formen|umfang|flaeche, rechnung?: true — sonst bleiben u und A verborgen}; "
+            "rechenregeln {term: '2 + 3 · (4 − 1)'} (Obstkorb), {reiter: 'zug', term: '12 : 4 + 5'} oder "
+            "{a: 3.5, b: 100, art: '*' | ':'} (Stufenzahlen). "
+            "Weitere Werkzeuge mit {reiter: …} (öffnet genau diesen Reiter, andere sind gesperrt): "
+            "abacus single|place; bildformate P1|P2|P3; binaerrechner {zahl: 0-255}; "
+            "tippen lektionen|wortregen|tastenjagd; maus klick|doppelklick|rechtsklick|ziehen|markieren|"
+            "kopieren|scrollen|tastatur|explorer|fenster|screenshot|suche|apps|aussehen|bedienhilfe|"
+            "taskleiste|profil; ki sprache|bilder|lernen|echt; sonnensystem uebersicht|flug|groessen|"
+            "entfernungen|kepler|galerie|kodex; kueste profil|draufsicht|gezeiten|galerie|wissen; "
+            "erdaufbau keil|profil|wellen|konvektion|wissen; wilson schnitt|quiz|wissen (dazu phase: "
+            "ruhe|graben|jung|ozean|subduktion|schliessen|kollision|abtragung); regeln "
+            "lehrgang (station: lauf|wachsen|backtracker|bloecke|grundriss)|raetsel (raetsel: alles|"
+            "punkte|schach|labyrinth|rundwege)|labor|labyrinthe|gebaeude. "
+            "Für Zeitstrahl-Aufgaben gibt es kein Werkzeug, sondern kind 'timeline' (siehe unten). "
+            "--- GEBÄUDE --- Jedes Spiel lässt sich als Folien oder in 2.5D spielen; 'gebaeude' legt fest, "
+            "womit es startet: {\"ansicht\": \"gebaeude\" (Haus, Treppen hinauf) | \"verlies\" (Ebenen "
+            "hinab, dunkel mit Fackel, Monster und Bosse) | \"ebene\" (Abschnitte nebeneinander, Türen) | "
+            "\"folien\", \"stil\": klassisch|beton|neon|garten|verlies}. Schüler können trotzdem umschalten. "
+            "Jeder Abschnitt (alles bis einschließlich einer Tür) wird ein Stockwerk/eine Ebene/ein Bereich, "
+            "jede Slide davor ein Zimmer, die Tür wird Treppe bzw. Tür — bewacht von einem Boss im Verlies. "
+            "Zurück geht es jederzeit. 3-6 Zimmer pro Abschnitt sind gut; die Zimmer sind 1-9 nummeriert "
+            "(Zifferntasten laufen hin). 'station' an der Slide wählt das Objekt im Zimmer: pult, computer, "
+            "kuckucksuhr, globus, regal, mikroskop, tafel, laborbank, tresor, teleskop, kalender, waage, "
+            "abakus, monster, boss. Ohne Angabe passt es sich an: Werkzeug → passendes Gerät (Waage, Tafel, "
+            "Abakus …), Zeitstrahl → kalender, Erklärung → tafel, Beispiel → regal, im Verlies jede übrige "
+            "Aufgabe → monster. Gelöste Monster liegen besiegt am Boden. "
+)
+
+
+@router.get("/api/exitgames/template-interaktiv")
+def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)):
+    """Die Vorlage für die 2.5D-Ansicht: ein spielbares Verlies mit Stationen,
+    Monstern, Bossen und Werkzeugen. Die Anleitung besteht aus dem 2.5D-Teil
+    und den Grundlagen der schlanken Vorlage."""
+    grundlagen = download_template(teacher)["_ai_instructions"]
+    return {
+        "_ai_instructions": ANLEITUNG_25D + "--- GRUNDLAGEN --- " + grundlagen,
+        "id": "vorlage-interaktiv",
+        "title": "Vorlage interaktiv: Das Verlies der Rechenkünste",
+        "description": "Ein Verlies mit zwei Ebenen: Monster, Bosse, Stationen und Werkzeuge.",
+        "subject": "mathe",
+        "grade": "7,8",
+        "tags": ["vorlage", "interaktiv", "verlies"],
+        "gebaeude": {"ansicht": "verlies", "stil": "verlies"},
+        "completion": {"message": "Der Endboss ist besiegt — du hast den Schatz gefunden!", "code": "SCHATZ-8"},
+        "slides": [
+            # ── Ebene 1 ──────────────────────────────────────────────────────────
+            {"id": "eingang", "type": "explanation", "title": "Am Eingang des Verlieses",
+             "station": "tafel",
+             "text": "Jedes Zimmer ist eine Station. Klicke ein Zimmer an oder tippe seine Nummer (1-9). "
+                     "Die Monster geben erst auf, wenn du ihre Aufgabe löst — und jede gelöste Aufgabe "
+                     "gibt dir einen Codeschnipsel für den Boss an der Treppe."},
+            {"id": "waage", "type": "task", "title": "Das Waagen-Monster",
+             "station": "monster",
+             "text": "Das Monster hält dir eine Waage hin. Bring sie ins Gleichgewicht.",
+             "task": {"kind": "input", "codeFragment": "DR",
+                      "question": "Löse die Gleichung $3x + 4 = 19$. Wie groß ist $x$?",
+                      "sim": {"tool": "gleichungswaage", "config": {"gleichung": "3x + 4 = 19"}},
+                      "accept": ["5"]},
+             "hints": ["Nimm auf beiden Seiten 4 weg.", "Teile dann beide Seiten durch 3."]},
+            {"id": "kalender", "type": "task", "title": "Der Wandkalender",
+             "text": "An der Wand hängt ein Kalender mit Rechen-Erfindungen.",
+             "task": {"kind": "timeline", "codeFragment": "A",
+                      "timeline": {"mode": "sort", "scoring": "order",
+                                   "axis": {"kind": "year", "min": -3000, "max": 2000},
+                                   "items": [{"id": "abakus", "label": "Abakus in Mesopotamien", "value": -2500},
+                                             {"id": "null", "label": "Die Null in Indien", "value": 628},
+                                             {"id": "rechner", "label": "Rechenmaschine von Pascal", "value": 1642}]}},
+             "hints": ["Der Abakus ist das älteste Rechenwerkzeug."]},
+            {"id": "obstkorb", "type": "task", "title": "Die Obstkorb-Rechnung",
+             "text": "Ein Abakus steht in der Ecke — und ein Rechenrätsel.",
+             "task": {"kind": "single", "codeFragment": "CHE",
+                      "question": "Wie viel ist $2 + 3 \\cdot 4$?",
+                      "sim": {"tool": "rechenregeln", "config": {"term": "2 + 3 · 4"}},
+                      "answers": [{"text": "14", "correct": True}, {"text": "20", "correct": False},
+                                  {"text": "9", "correct": False}]},
+             "hints": ["Punkt vor Strich: erst die Körbe auskippen."]},
+            {"id": "boss1", "type": "door", "title": "Der Wächter der Treppe",
+             "text": "Ein Bossmonster versperrt die Treppe hinab. Nenne ihm den Code aus deinen Schnipseln."},
+
+            # ── Ebene 2 ──────────────────────────────────────────────────────────
+            {"id": "beispiel", "type": "example", "title": "Ein Blick ins Bücherregal",
+             "text": "Beim Graphen von $f(x) = x^2 - 4$ liegen die Nullstellen dort, wo $f(x) = 0$ ist: "
+                     "$x^2 = 4$, also $x = 2$ oder $x = -2$."},
+            {"id": "graph", "type": "task", "title": "Die Graphen-Tafel",
+             "text": "An der Tafel steht ein Funktionsterm.",
+             "task": {"kind": "input", "codeFragment": "SCH",
+                      "question": "Wo schneidet der Graph von $g(x) = x^2 - 9$ die positive x-Achse?",
+                      "sim": {"tool": "funktionen", "config": {"term": "x^2 - 9", "von": -5, "bis": 5}},
+                      "accept": ["3"]},
+             "hints": ["Suche in der Wertetabelle die Stelle mit $g(x) = 0$."]},
+            {"id": "trapez", "type": "task", "title": "Das Trapez-Monster",
+             "station": "monster",
+             "text": "Das Monster bewacht ein Beet in Trapezform.",
+             "task": {"kind": "input", "codeFragment": "A",
+                      "question": "Wie groß ist die Fläche des Trapezes (in m²)?",
+                      "sim": {"tool": "vierecke", "config": {"form": "trapez", "masse": {"a": 8, "c": 4, "h": 3}}},
+                      "accept": ["18"]},
+             "hints": ["$A = \\frac{a + c}{2} \\cdot h$"]},
+            {"id": "zwischenboss", "type": "task", "title": "Der Zwischenboss",
+             "station": "boss",
+             "text": "Ein kleiner Boss stellt eine knifflige Frage.",
+             "task": {"kind": "multi", "codeFragment": "TZ",
+                      "question": "Welche Gleichungen haben die Lösung $x = 4$?",
+                      "answers": [{"text": "$2x = 8$", "correct": True}, {"text": "$x + 3 = 7$", "correct": True},
+                                  {"text": "$x - 4 = 4$", "correct": False}, {"text": "$4x = 1$", "correct": False}]},
+             "hints": ["Setze $x = 4$ ein und prüfe."]},
+            {"id": "endboss", "type": "door", "title": "Der Endboss",
+             "text": "Der Endboss bewacht den Ausgang. Nur der richtige Code lässt dich vorbei."},
+        ],
+    }
 
 
 @router.get("/api/exitgames/{exitgame_id}")

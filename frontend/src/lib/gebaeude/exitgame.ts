@@ -50,9 +50,10 @@ const ABWECHSLUNG: Objekt[] = ["pult", "kuckucksuhr", "mikroskop", "tresor", "la
 
 /**
  * Objekt für eine Station: `station` aus dem JSON, sonst passend zum
- * Werkzeug bzw. zur Folienart, sonst reihum (fest je Folien-Id).
+ * Werkzeug bzw. zur Folienart, sonst reihum (fest je Folien-Id). Im Verlies
+ * wartet in jedem Aufgabenzimmer ohne Werkzeug ein Monster.
  */
-export function stationsObjekt(slide: ExitGameSlide): Objekt {
+export function stationsObjekt(slide: ExitGameSlide, verlies = false): Objekt {
   if (istObjekt(slide.station)) return slide.station;
   const tasks = slide.tasks ?? (slide.task ? [slide.task] : []);
   const sim = tasks.find(t => t.sim)?.sim?.tool;
@@ -60,5 +61,6 @@ export function stationsObjekt(slide: ExitGameSlide): Objekt {
   if (tasks.some(t => t.kind === "timeline")) return "kalender";
   if (slide.type === "explanation") return "tafel";
   if (slide.type === "example") return "regal";
+  if (verlies) return "monster";
   return ABWECHSLUNG[seedAus(slide.id) % ABWECHSLUNG.length];
 }
