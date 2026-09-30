@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { begehbar, weg, type Plan, type Punkt } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
-import { STOCK_H, baueStock, entsorge, feldAus, figur, ortAmStrahl, welt as mitte, type RaumZustand } from "./szene";
+import { STOCK_H, baueStock, entsorge, feldAus, figur, ortAmStrahl, welt as mitte, type RaumZustand, type Stil } from "./szene";
 
 export type Ort = { art: "raum"; raum: number } | { art: "ziel" };
 
@@ -25,6 +25,7 @@ interface Props {
   zielOffen: boolean[];
   /** je Stockwerk, was in den Zimmern steht (Vorgabe: Schreibtisch) */
   objekte?: Objekt[][];
+  stil?: Stil;
   /** Tastatur an (aus, solange z. B. ein Aufgabenfenster offen ist) */
   aktiv: boolean;
   /** von außen: dorthin laufen (neue `nr` = neuer Auftrag) */
@@ -37,7 +38,7 @@ const TASTEN: Record<string, number> = {
   ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3,
 };
 
-export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, aktiv, auftrag, onAnkunft }: Props) {
+export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, stil, aktiv, auftrag, onAnkunft }: Props) {
   const huelle = useRef<HTMLDivElement>(null);
   const [drehung, setDrehung] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -207,7 +208,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, a
   }, []);
 
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
-  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte]);
+  const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil]);
   useEffect(() => {
     const d = drei.current;
     if (!d) return;
@@ -217,6 +218,7 @@ export default function Gebaeude({ plan, stock, zustaende, zielOffen, objekte, a
         zustaende: zustaende[i] ?? [],
         zielOffen: zielOffen[i] ?? false,
         objekte: objekte?.[i],
+        stil,
         zielArt: i < plan.stockwerke.length - 1 ? "treppe" : "ausgang",
         unten: i < stock,
       }));

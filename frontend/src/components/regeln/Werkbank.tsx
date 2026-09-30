@@ -58,7 +58,8 @@ export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest 
   const moeglich = zeigeTreffer && !laeuft ? kandidaten(prog, lauf) : [];
   useEffect(() => {
     const c = canvas.current;
-    if (c) zeichneRaster(c.getContext("2d")!, lauf.raster, px, zeigeTreffer ? lauf.letzte : [], moeglich);
+    // Hunderte gestrichelte Rahmen sind nur noch Schraffur — dann bleibt es bei der Zahl.
+    if (c) zeichneRaster(c.getContext("2d")!, lauf.raster, px, zeigeTreffer ? lauf.letzte : [], moeglich.length <= 150 ? moeglich : []);
   });
 
   const regelZahl = prog.bloecke.reduce((n, b) => n + b.regeln.length, 0);

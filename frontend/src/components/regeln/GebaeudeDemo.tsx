@@ -8,7 +8,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { bauePlan, REGELN, type Plan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type Ort } from "@/components/gebaeude/Gebaeude";
-import type { RaumZustand } from "@/components/gebaeude/szene";
+import HausModell from "@/components/gebaeude/HausModell";
+import { STILE, type RaumZustand, type Stil } from "@/components/gebaeude/szene";
 import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 
 export default function GebaeudeDemo() {
@@ -20,6 +21,8 @@ export default function GebaeudeDemo() {
   const [besucht, setBesucht] = useState<boolean[][]>([]);
   const [meldung, setMeldung] = useState("Klicke auf ein Feld oder nutze die Pfeiltasten.");
   const [auftrag, setAuftrag] = useState<{ ort: Ort; nr: number } | null>(null);
+  const [ansicht, setAnsicht] = useState<"laufen" | "haus">("laufen");
+  const [stil, setStil] = useState<Stil>("klassisch");
 
   useEffect(() => {
     setStock(0);
@@ -61,11 +64,26 @@ export default function GebaeudeDemo() {
           </select>
         </label>
         <button className={auswahl + " font-bold"} onClick={() => setSeed(s => s + 1)}>🎲 anderes Haus ({seed})</button>
+        <label className="flex items-center gap-1">Stil
+          <select value={stil} onChange={e => setStil(e.target.value as Stil)} className={auswahl}>
+            {(Object.keys(STILE) as Stil[]).map(s => <option key={s} value={s}>{STILE[s].name}</option>)}
+          </select>
+        </label>
+        <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5" role="group" aria-label="Ansicht">
+          {([["laufen", "🚶 durchlaufen"], ["haus", "🏛️ ganzes Haus"]] as const).map(([a, t]) => (
+            <button key={a} onClick={() => setAnsicht(a)} aria-pressed={ansicht === a}
+              className={`px-2 py-1 rounded-md text-xs font-bold ${ansicht === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         <div className="flex flex-col gap-2">
           <div className="h-[60vh] min-h-[360px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
-            <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} aktiv auftrag={auftrag} onAnkunft={ankunft} />
+            {ansicht === "laufen"
+              ? <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} stil={stil} aktiv auftrag={auftrag} onAnkunft={ankunft} />
+              : <HausModell plan={plan} stil={stil} zustaende={zustaende} objekte={objekte} />}
           </div>
           <p className="text-sm text-center" data-meldung>{meldung}</p>
         </div>
