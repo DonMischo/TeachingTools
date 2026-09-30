@@ -10,11 +10,15 @@ import { bauePlan, REGELN, type Plan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import HausModell from "@/components/gebaeude/HausModell";
 import { STILE, type RaumZustand, type Stil } from "@/components/gebaeude/szene";
+import AvatarWahl from "@/components/gebaeude/AvatarWahl";
+import { STANDARD_AVATAR, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
 import { OBJEKTE, OBJEKT_NAME } from "@/lib/gebaeude/objekte";
 
 export default function GebaeudeDemo() {
   const [stockwerke, setStockwerke] = useState(3);
   const [zimmer, setZimmer] = useState(4);
+  const [avatar, setAvatar] = useState<Avatar>(STANDARD_AVATAR);
+  useEffect(() => { setAvatar(ladeAvatar()); }, []);
   const [seed, setSeed] = useState(1);
   const [art, setArt] = useState<GebaeudeArt>("haus");
   const verlies = art === "verlies";
@@ -100,11 +104,12 @@ export default function GebaeudeDemo() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         <div className="flex flex-col gap-2">
-          <div className="h-[75vh] min-h-[480px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
+          <div className="relative h-[75vh] min-h-[480px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
             {ansicht === "laufen"
               ? <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} stil={stil}
-                  art={art} waechter={waechter} aktiv auftrag={auftrag} onAnkunft={ankunft} />
+                  art={art} waechter={waechter} avatar={avatar} aktiv auftrag={auftrag} onAnkunft={ankunft} />
               : <HausModell plan={plan} stil={stil} zustaende={zustaende} objekte={objekte} art={art} waechter={waechter} />}
+            {ansicht === "laufen" && <div className="absolute top-2 left-2"><AvatarWahl avatar={avatar} onWahl={setAvatar} /></div>}
           </div>
           <p className="text-sm text-center" data-meldung>{meldung}</p>
         </div>

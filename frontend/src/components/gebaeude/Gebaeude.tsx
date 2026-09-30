@@ -18,8 +18,9 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { begehbar, weg, type Plan, type Punkt, type Stockwerk } from "@/lib/gebaeude/plan";
 import type { Objekt } from "@/lib/gebaeude/objekte";
+import { STANDARD_AVATAR, baueAvatar, type Avatar } from "./avatar";
 import {
-  baueStock, entsorge, feldAus, figur, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
+  baueStock, entsorge, feldAus, hoeheVon, ortAmStrahl, versatzVon, welt as mitte,
   type KlickOrt, type RaumZustand, type Richtung, type Stil,
 } from "./szene";
 
@@ -38,6 +39,8 @@ interface Props {
   stil?: Stil;
   /** je Stockwerk ein eigener Stil (fehlt einer, gilt `stil`) */
   stile?: (Stil | undefined)[];
+  /** Spielfigur (Vorgabe: normal, männlich) */
+  avatar?: Avatar;
   /** haus: nach oben · verlies: nach unten, nur die aktuelle Ebene, Fackellicht · ebene: Abschnitte nebeneinander mit Türen */
   art?: GebaeudeArt;
   /** je Stockwerk: bewacht ein Boss Treppe bzw. Ausgang? */
@@ -62,7 +65,7 @@ function feldVon(st: Stockwerk, ort: Ort): Punkt {
 }
 
 export default function Gebaeude({
-  plan, stock, zustaende, zielOffen, objekte, stil, stile, art = "haus", waechter, aktiv, auftrag, onAnkunft,
+  plan, stock, zustaende, zielOffen, objekte, stil, stile, avatar = STANDARD_AVATAR, art = "haus", waechter, aktiv, auftrag, onAnkunft,
 }: Props) {
   const verlies = art === "verlies";
   const flach = art === "ebene";
@@ -104,7 +107,7 @@ export default function Gebaeude({
     const fackel = new THREE.PointLight(0xffa24a, 0, 22, 1.2);
     szene.add(himmel, sonne, fackel);
     const welt = new THREE.Group();
-    const spieler = figur(0xe11d48);
+    const spieler = new THREE.Group(); // die Figur selbst setzt der Effekt unten (Avatar)
     spieler.scale.setScalar(1.4);
     szene.add(welt, spieler);
     drei.current = { szene, welt, spieler, himmel, sonne, fackel };
@@ -270,6 +273,16 @@ export default function Gebaeude({
     d.fackel.intensity = verlies ? 38 : 0;
     d.szene.background = verlies ? new THREE.Color(0x050403) : null;
   }, [verlies]);
+
+  // ── Spielfigur: bei jeder neuen Wahl austauschen ─────────────────────────
+  const avatarSchluessel = JSON.stringify(avatar);
+  useEffect(() => {
+    const d = drei.current;
+    if (!d) return;
+    for (const k of [...d.spieler.children]) { d.spieler.remove(k); entsorge(k); }
+    d.spieler.add(baueAvatar(avatar));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avatarSchluessel]);
 
   // ── Stockwerke neu bauen, wenn sich etwas ändert ─────────────────────────
   const schluessel = JSON.stringify([stock, zustaende, zielOffen, objekte, stil, stile, art, waechter]);

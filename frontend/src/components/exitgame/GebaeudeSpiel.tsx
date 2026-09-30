@@ -5,12 +5,14 @@
  * wird wie in der Folienansicht auf dem Server (gleiche Ereignisse,
  * gleiche Aufgaben-Bausteine) — das Gebäude ist nur eine andere Ansicht.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   api, type DdaAdaptation, type ExitGameAttemptSummary, type ExitGameData, type ExitGameFragment,
 } from "@/lib/api";
 import { MathText } from "@/components/MathText";
 import { abschnitte, seedAus, stationsObjekt } from "@/lib/gebaeude/exitgame";
+import AvatarWahl from "@/components/gebaeude/AvatarWahl";
+import { STANDARD_AVATAR, ladeAvatar, type Avatar } from "@/components/gebaeude/avatar";
 import { OBJEKT_NAME, OBJEKT_STIMME } from "@/lib/gebaeude/objekte";
 import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
@@ -80,6 +82,8 @@ export default function GebaeudeSpiel({
     return i < 0 ? teile.length - 1 : i;
   });
   const [gelesen, setGelesen] = useState<Set<string>>(new Set());
+  const [avatar, setAvatar] = useState<Avatar>(STANDARD_AVATAR);
+  useEffect(() => { setAvatar(ladeAvatar()); }, []);
   const [offen, setOffen] = useState<number | null>(null);
   const [zurTuer, setZurTuer] = useState(false);
   const [auftrag, setAuftrag] = useState<{ ort: Ort; nr: number } | null>(null);
@@ -135,9 +139,12 @@ export default function GebaeudeSpiel({
         <div className="relative h-[70vh] min-h-[380px] rounded-2xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
           <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte}
             art={art} stil={stil} stile={stile} waechter={waechter}
-            aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
-          <div className="absolute top-2 left-2 rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
-            {W.icon} {W.stock} {stock + 1} / {teile.length}
+            avatar={avatar} aktiv={s === null} auftrag={auftrag} onAnkunft={ankunft} />
+          <div className="absolute top-2 left-2 flex items-start gap-2">
+            <div className="rounded-lg bg-[var(--surface)]/90 border border-[var(--border)] px-2 py-1 text-xs font-bold">
+              {W.icon} {W.stock} {stock + 1} / {teile.length}
+            </div>
+            <AvatarWahl avatar={avatar} onWahl={setAvatar} />
           </div>
 
           {s && offen !== null && (

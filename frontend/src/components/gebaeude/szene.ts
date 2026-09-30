@@ -513,16 +513,6 @@ export function ortAmStrahl(stockwerk: THREE.Object3D, zeiger: THREE.Raycaster):
   return null;
 }
 
-export function figur(farbe: number): THREE.Group {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({ color: farbe });
-  const koerper = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.7, 12), mat);
-  koerper.position.y = 0.6;
-  const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), new THREE.MeshLambertMaterial({ color: 0xfcd9b6 }));
-  kopf.position.y = 1.1;
-  g.add(koerper, kopf);
-  return g;
-}
 
 /** Alles unterhalb eines Objekts freigeben */
 export function entsorge(o: THREE.Object3D) {
