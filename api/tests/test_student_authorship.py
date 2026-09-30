@@ -1,6 +1,6 @@
 """
 Cross-cutting tests for the "shared student pool" authorship model on the
-reusable-content libraries (Caputh, Bingo, Exitgame, Lückentext, Zeitstrahl).
+reusable-content libraries (Caputh, Bingo, TaskCrawler, Lückentext, Zeitstrahl).
 
 Rules under test:
   - Students may CREATE content; it is tagged with created_by_student.
@@ -115,7 +115,7 @@ def test_bingo_student_cannot_host_session(client, student_token):
     assert r.status_code == 403
 
 
-# ── Exitgame (exitgames) ────────────────────────────────────────────────────
+# ── TaskCrawler (exitgames) ────────────────────────────────────────────────────
 
 def _upload_exitgame(client, token, title):
     client.cookies.clear()

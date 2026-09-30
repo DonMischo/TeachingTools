@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import Gleichungswaage from "@/components/waage/Gleichungswaage";
 import { parseFormel, varsOf } from "@/lib/formel";
 
-describe("Gleichungswaage an einer Exitgame-Station", () => {
+describe("Gleichungswaage an einer TaskCrawler-Station", () => {
   it("frei: Modi, Stufen, neue und eigene Aufgaben", () => {
     render(<Gleichungswaage />);
     expect(screen.getByText(/Neue Aufgabe/)).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("Gleichungswaage an einer Exitgame-Station", () => {
     expect(container.textContent).toMatch(/H2O|H₂O/);
   });
 
-  it("liest die Hebelformel der Exitgame-Vorlage (Größen mit Ziffern)", () => {
+  it("liest die Hebelformel der TaskCrawler-Vorlage (Größen mit Ziffern)", () => {
     const r = parseFormel("m1·a1 = m2·a2");
     expect(r.ok).toBe(true);
     if (r.ok) expect(varsOf(r.eq)).toEqual(expect.arrayContaining(["m1", "a1", "m2", "a2"]));

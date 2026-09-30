@@ -1,6 +1,6 @@
 // Upload validation errors, made readable.
 //
-// Every content upload (Caputh, Exitgame, Lückentext, Zeitstrahl, Umfrage)
+// Every content upload (Caputh, TaskCrawler, Lückentext, Zeitstrahl, Umfrage)
 // throws `new Error(<raw response body>)`. The body is one of:
 //   {"detail": {"message": "...", "errors": ["slides[2]: 'id' fehlt", ...]}}  ← our validators
 //   {"detail": "Ungültiges JSON: ..."}                                        ← plain HTTPException

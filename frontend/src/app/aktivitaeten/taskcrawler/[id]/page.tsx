@@ -16,7 +16,7 @@ export default function ExitgameDetailPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { auth } = useAuth();
-  // Students may author Exitgames but not host live sessions.
+  // Students may author TaskCrawler but not host live sessions.
   const isTeacher = auth?.user_type === "teacher";
   const [scope, setScope] = useState<Scope>(null);
 
@@ -32,7 +32,7 @@ export default function ExitgameDetailPage() {
     mutationFn: () => api.exitgame.sessions.create(gameId, scopeBody(scope)),
     onSuccess: (s) => {
       qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] });
-      router.push(`/aktivitaeten/exitgame/host/${s.join_code}`);
+      router.push(`/aktivitaeten/taskcrawler/host/${s.join_code}`);
     },
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
@@ -57,7 +57,7 @@ export default function ExitgameDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <Link href="/aktivitaeten/exitgame" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
+      <Link href="/aktivitaeten/taskcrawler" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
       <div>
         <h1 className="text-2xl font-black tracking-tight">{game.title}</h1>
         {game.description && <p className="text-[var(--text-muted)] text-sm mt-1">{game.description}</p>}
@@ -70,7 +70,7 @@ export default function ExitgameDetailPage() {
       <JsonEditPanel
         load={() => api.exitgame.get(gameId).then(g => g.data)}
         save={data => api.exitgame.update(gameId, data)}
-        fileName={`exitgame_${gameId}.json`}
+        fileName={`taskcrawler_${gameId}.json`}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["exitgame", gameId] });
           qc.invalidateQueries({ queryKey: ["exitgames"] });
@@ -80,7 +80,7 @@ export default function ExitgameDetailPage() {
 
       {!isTeacher && (
         <p className="text-sm text-[var(--text-muted)]">
-          Live-Sessions dieses Exitgames werden von Lehrkräften gestartet.
+          Live-Sessions dieses TaskCrawlers werden von Lehrkräften gestartet.
         </p>
       )}
 
@@ -117,7 +117,7 @@ export default function ExitgameDetailPage() {
                 )}
                 <span className="text-xs text-[var(--text-muted)]">{s.attempt_count} Versuch(e)</span>
                 <div className="flex-1" />
-                <Link href={`/aktivitaeten/exitgame/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
+                <Link href={`/aktivitaeten/taskcrawler/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
                 <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
                 {s.status === "open" ? (
                   <button onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}

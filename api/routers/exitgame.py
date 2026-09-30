@@ -1,8 +1,8 @@
 """
-Exitgame — self-paced, session-based exit game.
+TaskCrawler — self-paced, session-based exit game.
 
 Unlike Caputh (teacher-paced lockstep quiz over WebSocket), a student plays
-an Exitgame entirely on their own timeline: a teacher opens a session
+a TaskCrawler entirely on their own timeline: a teacher opens a session
 (join_code) nominally attached to a class, and ANY logged-in user with the
 code — student, teacher, or admin — can start/resume their own
 ExitGameAttempt via plain REST. The link is the only gate: session.class_id
@@ -607,7 +607,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
 def _parse_exitgame_json(raw: dict) -> ExitGame:
     errors = _validate_exitgame(raw)
     if errors:
-        raise HTTPException(422, {"message": "Ungültiges Exitgame-Format", "errors": errors})
+        raise HTTPException(422, {"message": "Ungültiges TaskCrawler-Format", "errors": errors})
     return ExitGame(
         title=raw["title"].strip(),
         description=raw.get("description"),
@@ -787,10 +787,10 @@ def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)
 def get_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     g = db.get(ExitGame, exitgame_id)
     if not g:
-        raise HTTPException(404, "Exitgame nicht gefunden")
+        raise HTTPException(404, "TaskCrawler nicht gefunden")
     # Students may only open games from the shared student pool.
     if is_student(current) and g.created_by_student is None:
-        raise HTTPException(404, "Exitgame nicht gefunden")
+        raise HTTPException(404, "TaskCrawler nicht gefunden")
     return {**_to_out(g).model_dump(), "data": g.data}
 
 
@@ -800,7 +800,7 @@ def update_exitgame(exitgame_id: int, raw: dict, db: Session = Depends(get_db), 
     Assets aus einem ZIP bleiben liegen und koennen weiter referenziert werden."""
     g = db.get(ExitGame, exitgame_id)
     if not g:
-        raise HTTPException(404, "Exitgame nicht gefunden")
+        raise HTTPException(404, "TaskCrawler nicht gefunden")
     if not can_modify(g, current):
         raise HTTPException(403)
     # Laufende Versuche merken sich ihren Fortschritt an den Slides — die
@@ -819,7 +819,7 @@ def update_exitgame(exitgame_id: int, raw: dict, db: Session = Depends(get_db), 
 def delete_exitgame(exitgame_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
     g = db.get(ExitGame, exitgame_id)
     if not g:
-        raise HTTPException(404, "Exitgame nicht gefunden")
+        raise HTTPException(404, "TaskCrawler nicht gefunden")
     if not can_modify(g, current):
         raise HTTPException(403)
     db.delete(g)
@@ -843,7 +843,7 @@ class SessionOut(BaseModel):
     exitgame_id: int
     class_id: int | None
     group_id: int | None = None
-    # »9a« bzw. »9 NaT«. Beim Exitgame reines Etikett — es vergibt keine Punkte.
+    # »9a« bzw. »9 NaT«. Beim TaskCrawler reines Etikett — er vergibt keine Punkte.
     scope_label: str = ""
     attempt_count: int
     created_at: datetime
@@ -869,7 +869,7 @@ def create_or_reuse_open_session(db: Session, exitgame_id: int, class_id: int | 
     Stundenplaner tool registry."""
     game = db.get(ExitGame, exitgame_id)
     if not game:
-        raise HTTPException(404, "Exitgame nicht gefunden")
+        raise HTTPException(404, "TaskCrawler nicht gefunden")
     scoping.validate_scope(class_id, group_id)
     if group_id is not None:
         scoping.load_group(db, group_id)
@@ -902,7 +902,7 @@ def create_session(
 
 @router.get("/api/exitgames/{exitgame_id}/sessions", response_model=list[SessionOut])
 def list_exitgame_sessions(exitgame_id: int, db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
-    """Die eigenen Runden zu diesem Exitgame (Admins sehen alle) — siehe
+    """Die eigenen Runden zu diesem TaskCrawler (Admins sehen alle) — siehe
     list_caputh_sessions: gemeinsame Bibliothek, eigene Runden."""
     sessions = db.query(ExitGameSession).filter_by(exitgame_id=exitgame_id).order_by(ExitGameSession.created_at.desc()).all()
     return [_session_out(s, db) for s in sessions if is_session_owner(s, current)]
@@ -1378,7 +1378,7 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
         from fastapi.responses import StreamingResponse
         return StreamingResponse(
             iter([buf.getvalue().encode("utf-8-sig")]), media_type="text/csv",
-            headers={"Content-Disposition": f'attachment; filename="exitgame_{code}.csv"'},
+            headers={"Content-Disposition": f'attachment; filename="taskcrawler_{code}.csv"'},
         )
 
     return {"session_code": code, "exitgame_title": s.exitgame.title, "status": s.status, "attempts": rows}

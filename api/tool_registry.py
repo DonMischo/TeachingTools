@@ -219,8 +219,8 @@ def _exitgame_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: 
         raise HTTPException(400, "Keine Klasse zugeordnet — bitte Klasse in der Planung angeben.")
     session = create_or_reuse_open_session(db, exitgame_id, cls.id, teacher.id)
     return LaunchResult(
-        host_url=f"/aktivitaeten/exitgame/host/{session.join_code}",
-        join_url=f"/play/exitgame/{session.join_code}",
+        host_url=f"/aktivitaeten/taskcrawler/host/{session.join_code}",
+        join_url=f"/play/taskcrawler/{session.join_code}",
         code=session.join_code,
     )
 
@@ -288,7 +288,7 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("barometer", "🧭 Umfrage", True, False, _barometer_refs, _barometer_launch),
         ToolDescriptor("exit-ticket", "🎫 Exit Ticket", True, False, _exit_ticket_refs, _exit_ticket_launch),
         ToolDescriptor("schreibraum", "📝 Schreibraum", True, True, _schreibraum_refs, _schreibraum_launch),
-        ToolDescriptor("exitgame", "🗝️ Exitgame", True, True, _exitgame_refs, _exitgame_launch),
+        ToolDescriptor("exitgame", "🗝️ TaskCrawler", True, True, _exitgame_refs, _exitgame_launch),
         ToolDescriptor("zeitstrahl", "📏 Zeitstrahl", True, False, _zeitstrahl_refs, _zeitstrahl_launch),
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
         ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),

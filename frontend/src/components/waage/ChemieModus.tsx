@@ -324,7 +324,7 @@ const START = CHEM_PRESETS[0];
 
 export default function ChemieModus({ onMessage, fest }: {
   onMessage: (m: string) => void;
-  /** Feste Reaktion (Exitgame-Station): keine Vorlagen, keine eigenen Reaktionen. */
+  /** Feste Reaktion (TaskCrawler-Station): keine Vorlagen, keine eigenen Reaktionen. */
   fest?: string;
 }) {
   const [reaction, setReaction] = useState<Reaction>(() => {

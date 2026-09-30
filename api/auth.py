@@ -288,7 +288,7 @@ def is_session_owner(session, user, *, owner_attr: str = "teacher_id") -> bool:
     der Kollegin nachlesen oder fernsteuern.
 
     `owner_attr`, weil die Werkzeuge ihre Besitzerspalte verschieden nennen:
-    ``teacher_id`` bei Caputh/Exitgame/Lueckentext, ``created_by`` beim
+    ``teacher_id`` bei Caputh/TaskCrawler/Lueckentext, ``created_by`` beim
     Exit-Ticket und beim Barometer.
     """
     if not isinstance(user, Teacher):

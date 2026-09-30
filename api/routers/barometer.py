@@ -421,7 +421,7 @@ def _is_num(v) -> bool:
 
 
 def _validate_umfrage(data) -> list[str]:
-    """Hand-rolled, German error list — same shape as the Caputh/Exitgame/
+    """Hand-rolled, German error list — same shape as the Caputh/TaskCrawler/
     Lückentext upload validators, so the frontend can show them all at once."""
     if not isinstance(data, dict):
         return ["Die Datei muss ein JSON-Objekt sein"]

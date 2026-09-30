@@ -1,8 +1,8 @@
 // Client-side mirror of api/timeline_engine.py's board/solution/scoring
 // helpers. Used where no server round-trip exists (local practice on the
-// tool page) and to render Exitgame specs, whose full JSON the client
-// already holds (same trust model as Exitgame's visible accept lists).
-// Authoritative scoring for Caputh/Exitgame/Übung stays on the server.
+// tool page) and to render TaskCrawler specs, whose full JSON the client
+// already holds (same trust model as TaskCrawler's visible accept lists).
+// Authoritative scoring for Caputh/TaskCrawler/Übung stays on the server.
 import {
   TimelineAnswer, TimelineBoard, TimelineGameSpec, TimelineSolution,
 } from "./types";

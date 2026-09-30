@@ -31,7 +31,7 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 ];
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "keil" | "profil" | "wellen" | "konvektion" | "wissen" }`
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "keil" | "profil" | "wellen" | "konvektion" | "wissen" }`
  * legt den Reiter fest und blendet die Reiterleiste aus.
  */
 export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

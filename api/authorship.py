@@ -1,6 +1,6 @@
 """
 Shared authorship helpers for the reusable-content libraries (Caputh quizzes,
-Bingo sets, Exitgames, Lückentexte, Zeitstrahl sets).
+Bingo sets, TaskCrawler, Lückentexte, Zeitstrahl sets).
 
 Content is authored by *either* a teacher (`created_by`) *or* a student
 (`created_by_student`) — never both. Student-authored rows form a shared

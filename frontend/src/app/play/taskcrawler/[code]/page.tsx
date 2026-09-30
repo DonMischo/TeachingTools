@@ -142,7 +142,7 @@ export default function ExitgamePlayPage() {
   // Unauthenticated visitor picks a username before starting.
   if (isGuest && !guest.token) {
     return (
-      <PlayerIdentityForm gameCode={code} gameIcon="🗝️" gameTitle="Exitgame"
+      <PlayerIdentityForm gameCode={code} gameIcon="🗝️" gameTitle="TaskCrawler"
         error={joinError} onJoin={(name) => handleGuestJoin(name)} />
     );
   }

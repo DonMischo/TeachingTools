@@ -16,12 +16,18 @@ const nextConfig = {
     return config;
   },
   // Tippen und Maus-Führerschein lagen früher unter /aktivitaeten.
+  // Das Exitgame heißt jetzt TaskCrawler — alte Links und QR-Codes führen weiter.
   async redirects() {
-    return ["tippen", "maus"].map(slug => ({
-      source: `/aktivitaeten/${slug}`,
-      destination: `/simulationen/${slug}`,
-      permanent: false,
-    }));
+    return [
+      ...["tippen", "maus"].map(slug => ({
+        source: `/aktivitaeten/${slug}`,
+        destination: `/simulationen/${slug}`,
+        permanent: false,
+      })),
+      { source: "/aktivitaeten/exitgame", destination: "/aktivitaeten/taskcrawler", permanent: false },
+      { source: "/aktivitaeten/exitgame/:rest*", destination: "/aktivitaeten/taskcrawler/:rest*", permanent: false },
+      { source: "/play/exitgame/:rest*", destination: "/play/taskcrawler/:rest*", permanent: false },
+    ];
   },
   async rewrites() {
     return {

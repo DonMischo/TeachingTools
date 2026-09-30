@@ -1,7 +1,7 @@
 """
 Whitelisted task-generator library — procedurally generated practice tasks
 for the Übungsseite, and a content source for other tools (Caputh, Bingo,
-Exitgames) via GET /api/generators/{id}/sample.
+TaskCrawler) via GET /api/generators/{id}/sample.
 
 Coverage maps to the Thüringer Lehrplan Mathematik Kl. 1-7 (Grundschule +
 Regelschule): Grundrechenarten (1-4), Größen (3-5), Geometrie (4-7, mit
@@ -38,7 +38,7 @@ Adding a topic = registering one GeneratorDescriptor here:
     (integers or short decimals/fractions) at every level.
 
 For subjects where procedural generation doesn't pay off (most non-math/
-physics topics), authored question pools (Exitgame `task.variants`, or a
+physics topics), authored question pools (TaskCrawler `task.variants`, or a
 future pool-backed generator that just draws from a JSON list) are the
 better tool — a generator is only worth it when parameters genuinely vary.
 """
@@ -54,7 +54,7 @@ DIFFICULTY_MAX = 5
 
 def check_input_answer(accept: list, given) -> bool:
     """Shared free-text/number answer check: case-insensitive, trimmed,
-    comma or point decimals, small numeric tolerance. Used by the Exitgame
+    comma or point decimals, small numeric tolerance. Used by the TaskCrawler
     events endpoint and the practice router so both check identically."""
     accepted = [str(a).strip().lower() for a in accept]
     given_raw = str(given).strip().lower()

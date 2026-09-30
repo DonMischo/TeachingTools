@@ -25,7 +25,7 @@ function fmt(n: number) {
 }
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "single" | "place" }` legt die Ansicht fest
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "single" | "place" }` legt die Ansicht fest
  * (»Alle gleich« / »Stellenwert«) und blendet die Umschaltung aus.
  */
 export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

@@ -1,7 +1,7 @@
 "use client";
 
 // Shared "der Upload hat nicht geklappt" dialog for every content upload
-// (Caputh, Exitgame, Lückentext, Zeitstrahl, Umfrage). A validation failure
+// (Caputh, TaskCrawler, Lückentext, Zeitstrahl, Umfrage). A validation failure
 // can list a dozen findings — far too much for a toast — so they get a real
 // dialog with a copy button: the teacher pastes the list back to the AI that
 // wrote the file and gets a corrected version.

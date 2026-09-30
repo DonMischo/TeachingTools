@@ -365,7 +365,7 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
       ? { type: "timeline", question: `Ordne die Ereignisse auf dem ${set.axis.kind === "year" ? "Zeitstrahl" : "Zahlenstrahl"} zu.`, timeline: s }
       : { id: "zeitstrahl-1", type: "task", title: "Zeitstrahl", text: "Ordne die Einträge richtig zu.", task: { kind: "timeline", timeline: s } };
     await navigator.clipboard.writeText(JSON.stringify(snippet, null, 2));
-    toast(target === "caputh" ? "Caputh-Frage kopiert — in dein Quiz-JSON einfügen" : "Exitgame-Slide kopiert — in dein Exitgame-JSON einfügen", "success");
+    toast(target === "caputh" ? "Caputh-Frage kopiert — in dein Quiz-JSON einfügen" : "TaskCrawler-Slide kopiert — in dein TaskCrawler-JSON einfügen", "success");
   }
 
   const board = spec ? specToBoard(spec) : null;
@@ -404,7 +404,7 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
               🏕️ Als Caputh-Frage kopieren
             </button>
             <button onClick={() => copySpec("exitgame")} className="text-xs border border-[var(--border)] rounded-lg px-2.5 py-1.5 hover:border-[var(--accent)]">
-              🗝️ Als Exitgame-Slide kopieren
+              🗝️ Als TaskCrawler-Slide kopieren
             </button>
           </span>
         )}

@@ -23,7 +23,7 @@ const MODES = [
 type ModeId = (typeof MODES)[number]["id"];
 
 /**
- * `vorgabe` (Exitgame-Station) legt Modus und Aufgabe fest:
+ * `vorgabe` (TaskCrawler-Station) legt Modus und Aufgabe fest:
  *   { gleichung: "3x + 4 = 19" }                           → Zahlen
  *   { formel: "E = m·g·h", nach: "h", werte: { m: 2 } }    → Variablen
  *   { reaktion: "H2 + O2 -> H2O" }                          → Chemie

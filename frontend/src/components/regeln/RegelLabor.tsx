@@ -36,7 +36,7 @@ const wahl = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`;
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude" }`
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude" }`
  * legt den Reiter fest und blendet die Reiterleiste aus. Dazu `station: <Stations-Id>` (bei
  * »lehrgang«) bzw. `raetsel: <Rätsel-Id>` (bei »raetsel«): startet dort und blendet die Auswahl aus.
  */

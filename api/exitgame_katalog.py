@@ -1,9 +1,9 @@
-"""Was ein Exitgame in 2.5D nutzen kann: Ansichten, Stile, Objekte, Werkzeuge.
+"""Was ein TaskCrawler in 2.5D nutzen kann: Ansichten, Stile, Objekte, Werkzeuge.
 
 Eine Quelle für beides: die Prüfung beim Hochladen (routers/exitgame.py) und
 die Liste `_katalog` in der interaktiven Vorlage, die eine KI beim Ausfüllen liest.
 Muss zum Frontend passen — ein Test dort vergleicht die Schlüssel:
-  ansichten  → ANSICHTEN in frontend/src/app/play/exitgame/[code]/page.tsx
+  ansichten  → ANSICHTEN in frontend/src/app/play/taskcrawler/[code]/page.tsx
   stile      → STILE in frontend/src/components/gebaeude/szene.ts
   objekte    → OBJEKTE in frontend/src/lib/gebaeude/objekte.ts
   werkzeuge  → SIM_STATIONEN in frontend/src/components/exitgame/SimStation.tsx

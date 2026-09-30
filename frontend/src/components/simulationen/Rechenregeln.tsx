@@ -738,7 +738,7 @@ const stellenWort = (n: number) => (Math.abs(n) === 1 ? "1 Stelle" : `${Math.abs
 
 function Stufenzahlen({ melde, fest }: {
   melde: (richtig: boolean) => void;
-  /** Feste Rechnung (Exitgame-Station): keine anderen Zahlen, kein »Lösung zeigen«. */
+  /** Feste Rechnung (TaskCrawler-Station): keine anderen Zahlen, kein »Lösung zeigen«. */
   fest?: { a: number; b: number; art: Rechenart };
 }) {
   const [modus, setModus] = useState<StufenModus>("frei");
@@ -891,7 +891,7 @@ function Stufenzahlen({ melde, fest }: {
 /* ───────────────────────────────────────────────────────────── Rahmen ── */
 
 /**
- * `vorgabe` (Exitgame-Station) legt Reiter und Aufgabe fest:
+ * `vorgabe` (TaskCrawler-Station) legt Reiter und Aufgabe fest:
  *   { term: "2 + 3 · (4 − 1)" }                 → Obstkorb
  *   { reiter: "zug", term: "12 : 4 + 5" }       → Rechenzug
  *   { a: 3.5, b: 100, art: "*" }                → Stufenzahlen (art "*" oder ":")

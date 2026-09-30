@@ -243,7 +243,7 @@ function rebuild(src: string, p: Parsed): string {
 // ── Seite ─────────────────────────────────────────────────────────────────────
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "P1" | "P2" | "P3" }` legt das Format fest
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "P1" | "P2" | "P3" }` legt das Format fest
  * (PBM / PGM / PPM) und blendet die Formatwahl aus.
  */
 export default function Bildformate({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

@@ -1,6 +1,6 @@
 """Authorship rules for the reusable content libraries.
 
-Every content library (Caputh quizzes, Bingo sets, Exitgames, Lückentexte,
+Every content library (Caputh quizzes, Bingo sets, TaskCrawler, Lückentexte,
 Zeitstrahl) shares these helpers, so one wrong branch would open teacher-only
 material to students — or hand a student edit rights on someone else's quiz —
 in five features at once.

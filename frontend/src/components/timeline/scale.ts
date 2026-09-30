@@ -164,7 +164,7 @@ export function isoHasMonth(iso: string | null | undefined): boolean {
 // ---------------------------------------------------------------------------
 //
 // The tolerance is chosen explicitly by the author — a dropdown in the tool,
-// a `tolerance` field in Caputh/Exitgame specs — in axis units (years):
+// a `tolerance` field in Caputh/TaskCrawler specs — in axis units (years):
 //   tolerance > 0   -> correct iff |placed - effective| <= tolerance
 //   tolerance === 0 -> exact: the year must match (and, on a short round where
 //                      months can actually be placed, a month-precise date's

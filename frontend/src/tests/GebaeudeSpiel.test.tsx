@@ -53,7 +53,7 @@ function spiel(solved: string[], onFinish = vi.fn(), fragments = frag, art: "hau
   return onFinish;
 }
 
-describe("Exitgame als Gebäude", () => {
+describe("TaskCrawler als Gebäude", () => {
   beforeEach(() => postEvent.mockReset().mockResolvedValue({}));
 
   it("macht aus den Folien Zimmer und hält die Tür zu, bis sie gelöst ist", () => {

@@ -29,7 +29,7 @@ const PHASE_FARBE: Record<string, string> = {
 };
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "schnitt" | "quiz" | "wissen" }` legt den Reiter fest
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "schnitt" | "quiz" | "wissen" }` legt den Reiter fest
  * und blendet die Reiterleiste aus; `{ phase: <Phasen-Id> }` stellt den Querschnitt auf den
  * Beginn dieser Phase (Ids in PHASEN).
  */

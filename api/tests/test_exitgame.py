@@ -1,4 +1,4 @@
-"""Tests for the Exitgame router: content upload/validation, sessions,
+"""Tests for the TaskCrawler router: content upload/validation, sessions,
 self-paced attempts/events with server-side answer checking, hint budgeting,
 report/log endpoints, and the DDA fuzzy-inference module."""
 import io
@@ -779,7 +779,7 @@ def test_bericht_gehoert_der_eigenen_lehrkraft(client, db, teacher_token, admin_
 
 
 def test_sitzungsliste_zeigt_nur_die_eigenen_runden(client, db, teacher_token, klass):
-    """Das Exitgame liegt in der gemeinsamen Bibliothek — seine Runden nicht."""
+    """Der TaskCrawler liegt in der gemeinsamen Bibliothek — seine Runden nicht."""
     up = _upload(client, teacher_token)
     gid = up.json()["id"]
     client.post(f"/api/exitgames/{gid}/sessions", json={"class_id": klass.id},

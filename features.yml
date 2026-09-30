@@ -36,7 +36,7 @@ kern:
       - Punkte an Klassen, Kurse, Wahlpflicht- und A/B-Gruppen
       - Punkte-Log je Klasse, Löschen nur für Admins
       - Klassen-Spitznamen
-      - Automatische Punkte aus Caputh, Bingo, Exitgame und Maus-Führerschein
+      - Automatische Punkte aus Caputh, Bingo, TaskCrawler und Maus-Führerschein
       - Kurs-/WPF-Sitzungen bewerten jede beteiligte Klasse nach eigener Quote
   - id: playhub
     name: Mitmachen per Code
@@ -69,7 +69,7 @@ aktivitaeten:
       - Zurücksetzen oder neu starten (alle Karten neu gemischt)
       - Auswertung je Karte: Treffer gegen auf der eigenen Karte Gerufenes
   - id: exitgame
-    name: Exitgame
+    name: TaskCrawler
     faehigkeiten: {use: [true, true], host: [true, false], upload: [true, true]}
     kann:
       - Spielen im eigenen Tempo, Fortschritt live für die Lehrkraft
@@ -94,7 +94,7 @@ aktivitaeten:
       - Lücken als Wortbank, Freitext oder Multiple Choice (Zieh- und Schreiblücken sehen unterschiedlich aus)
       - Live-Runde mit Rangliste, Einzelübung, Korrekturmodus
       - PDF-Export leer oder ausgefüllt
-      - Einbettbar in Caputh und Exitgame
+      - Einbettbar in Caputh und TaskCrawler
   - id: zeitstrahl
     name: Zeitstrahl
     faehigkeiten: {use: [true, true], create: [true, true], upload: [true, true]}
@@ -247,7 +247,7 @@ simulationen:
       - Overlapping Model aus selbst malbarer Vorlage (Höhlen, Ziegelmauer, Wege, Inseln, Stadtplan), 2×2/3×3, Symmetrie wählbar
       - Randbedingungen: Zellen oder Rand festlegen, Widerspruch → Neustart mit neuem Zufall, unmögliche Festlegungen gemeldet
       - Reiter Textur: Textur-Synthese nach Harrison (portiert aus github.com/mxgmn/TextureSynthesis, MIT) zum Zuschauen, nahtlos, Proben aus den Gebäude-Oberflächen und Pixel-Vorlagen; erzeugt auch die Fels/Erde/Sand/Eis-Texturen der Gebäude
-      - Als Exitgame-Werkzeug mit festem Reiter/Satz/Vorlage/Probe
+      - Als TaskCrawler-Werkzeug mit festem Reiter/Satz/Vorlage/Probe
   - id: regeln
     name: Regel-Labor
     kann:
@@ -262,7 +262,7 @@ simulationen:
       - 34 weitere MarkovJunior-Beispiele per Auswahlliste, automatisch übertragen (scripts/mj-beispiele.py), mit Link aufs Original; Quellen: github.com/mxgmn/MarkovJunior, instagram.com/index.opensource
       - Tempo von »super langsam« bis »sofort«; Programm-Schrittgrenze »grenze N«
       - Weitere Bausteine: Symmetrie je Block (gedreht & gespiegelt / nur gespiegelt / fest), gleichrangige Regeln in markov, Chance je Treffer, Pfad (kürzester Weg, mit Abstand), Nachbarn (Zellautomat)
-      - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der Exitgame-Gebäudeansicht
+      - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der TaskCrawler-Gebäudeansicht
       - Ganzes Haus als drehbares Modell (alle Stockwerke, Treppen, Stützen, Sockel) in 17 Stilen (Klassisch, Beton, Glas & Neon, Gartenpalast, Verlies, Burg, Holzhütte, Eispalast, Wüstentempel, Raumstation, Lavahöhle, Steinzeithöhle, Antiker Tempel, Mittelalter, Gotik, Viktorianisch, Retro)
   - id: verkehr
     name: GTA – Ganztagsaufmerksamkeit im Verkehr – zu Fuß

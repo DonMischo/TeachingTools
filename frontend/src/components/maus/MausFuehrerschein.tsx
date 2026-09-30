@@ -139,7 +139,7 @@ function laden(schluessel: string): Gespeichert | null {
 }
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: <Stufen-Id> }` legt die Stufe fest (klick, doppelklick,
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: <Stufen-Id> }` legt die Stufe fest (klick, doppelklick,
  * rechtsklick, ziehen, markieren, kopieren, scrollen, tastatur, explorer, fenster, screenshot,
  * suche, apps, aussehen, bedienhilfe, taskleiste, profil) und blendet Stufenleiste, Prüfungen
  * und »Weiter« aus.

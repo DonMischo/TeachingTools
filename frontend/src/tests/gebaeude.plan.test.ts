@@ -96,7 +96,7 @@ describe("Gebäudeplan", () => {
   });
 });
 
-describe("Exitgame als Gebäude", () => {
+describe("TaskCrawler als Gebäude", () => {
   const s = (id: string, type: ExitGameSlide["type"]): ExitGameSlide => ({ id, type });
 
   it("teilt die Folien an den Türen in Stockwerke", () => {

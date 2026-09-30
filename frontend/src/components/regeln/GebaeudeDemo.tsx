@@ -3,7 +3,7 @@
  * Reiter »Gebäude« des Regel-Labors: Aus der Wachstumsregel WBB=WAW wächst
  * ein Haus mit Stockwerken. Daneben der Grundriss, wie ihn die Regel liefert.
  * Besucht man alle Zimmer eines Stockwerks, geht die Treppe auf — so wie im
- * Exitgame, wo in den Zimmern Rätsel warten.
+ * TaskCrawler, wo in den Zimmern Rätsel warten.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { bauePlan, REGELN, type Plan } from "@/lib/gebaeude/plan";
@@ -43,8 +43,8 @@ export default function GebaeudeDemo() {
     if (ort.art === "raum") {
       setBesucht(b => b.map((z, i) => (i === stock ? z.map((v, k) => v || k === ort.raum) : z)));
       setMeldung(verlies
-        ? `Zimmer ${ort.raum + 1}: Im Exitgame ist das Monster eine Aufgabe — gelöst, liegt es besiegt am Boden.`
-        : `Zimmer ${ort.raum + 1} (${OBJEKT_NAME[objekte[stock][ort.raum]]}): Im Exitgame wartet hier eine Aufgabe. Wer sie löst, bekommt einen Codeschnipsel.`);
+        ? `Zimmer ${ort.raum + 1}: Im TaskCrawler ist das Monster eine Aufgabe — gelöst, liegt es besiegt am Boden.`
+        : `Zimmer ${ort.raum + 1} (${OBJEKT_NAME[objekte[stock][ort.raum]]}): Im TaskCrawler wartet hier eine Aufgabe. Wer sie löst, bekommt einen Codeschnipsel.`);
     } else if (ort.art === "zurueck") {
       setStock(s => s - 1);
       setMeldung(`Zurück auf ${wort} ${stock} — du stehst an der Treppe, über die du gekommen bist.`);

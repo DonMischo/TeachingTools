@@ -10,7 +10,7 @@
  * einer Fackel um die Figur — wie in Diablo) und Ebene (alle Abschnitte
  * nebeneinander auf einer Karte, verbunden durch Türen).
  *
- * Kennt keine Inhalte: Wer das Gebäude benutzt (Exitgame, Regel-Labor,
+ * Kennt keine Inhalte: Wer das Gebäude benutzt (TaskCrawler, Regel-Labor,
  * später Verkehr/Rock your Life), gibt Plan, Zustände und Stockwerk vor und
  * entscheidet selbst, was bei der Ankunft passiert.
  */

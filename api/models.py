@@ -1348,7 +1348,7 @@ class SchoolSettings(Base):
 
 
 # ---------------------------------------------------------------------------
-# Exitgame — self-paced, session-based exit game (see api/routers/exitgame.py)
+# TaskCrawler — self-paced, session-based exit game (see api/routers/exitgame.py)
 # ---------------------------------------------------------------------------
 
 class ExitGame(Base):
@@ -1374,7 +1374,7 @@ class ExitGame(Base):
 
     creator: Mapped["Teacher"] = relationship()
     student_creator: Mapped["Student"] = relationship()
-    # Ohne Kaskade versucht SQLAlchemy beim Löschen eines Exitgames, die
+    # Ohne Kaskade versucht SQLAlchemy beim Löschen eines TaskCrawlers, die
     # exitgame_id seiner Sitzungen auf NULL zu setzen — die Spalte ist NOT NULL
     # (und die FK steht auf RESTRICT), das Löschen scheiterte also immer, sobald
     # das Spiel einmal gehostet wurde. Die Versuche und deren Ereignisse hängen
@@ -1392,7 +1392,7 @@ class ExitGameSession(Base):
     exitgame_id: Mapped[int] = mapped_column(ForeignKey("exitgames.id", ondelete="RESTRICT"), nullable=False)
     class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="RESTRICT"), nullable=True)
     # Alternative zur Klasse: ein Kurs/WPF. Reines Berichtsetikett — das
-    # Exitgame vergibt keine Hauspunkte.
+    # TaskCrawler vergibt keine Hauspunkte.
     group_id: Mapped[int | None] = mapped_column(ForeignKey("student_groups.id", ondelete="RESTRICT"), nullable=True)
     teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     join_code: Mapped[str] = mapped_column(String(8), unique=True, nullable=False)
@@ -1467,7 +1467,7 @@ class TaskGeneratorDef(Base):
 
     `levels` is a JSON list (1-5 entries) of
     {template, vars: {name: [min,max]}, answer_expr, hint?}, indexed the
-    same way as Exitgame's dda.levels — position 0 = easiest."""
+    same way as TaskCrawler's dda.levels — position 0 = easiest."""
     __tablename__ = "task_generator_defs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -1542,7 +1542,7 @@ class PracticeTask(Base):
 class TimelineSet(Base):
     """Reusable Zeitstrahl content (axis, lanes, events) — the library, open
     to every teacher, following the BingoSet JSON-blob pattern. The set is
-    the presentation/editing source; games (Caputh/Exitgame/Übung) embed a
+    the presentation/editing source; games (Caputh/TaskCrawler/Übung) embed a
     TimelineGameSpec built from these events (see api/timeline_engine.py)."""
     __tablename__ = "timeline_sets"
 

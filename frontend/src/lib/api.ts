@@ -772,7 +772,7 @@ export type ToolInfo = {
 export type ToolRefs = ToolInfo[];
 export type ToolLaunchResult = { host_url: string; join_url: string | null; code: string | null };
 
-// ── Exitgame ────────────────────────────────────────────────────────────────
+// ── TaskCrawler ────────────────────────────────────────────────────────────────
 
 export type ExitGameOut = {
   id: number;

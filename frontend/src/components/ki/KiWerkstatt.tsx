@@ -26,7 +26,7 @@ export type KiZugang = { code: string; token?: string | null; name?: string };
 type Reiter = "sprache" | "bilder" | "lernen" | "echt";
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "sprache" | "bilder" | "lernen" | "echt" }`
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "sprache" | "bilder" | "lernen" | "echt" }`
  * legt den Reiter fest und blendet die Reiterleiste aus.
  */
 export default function KiWerkstatt({ action, zugang, vorgabe }: {

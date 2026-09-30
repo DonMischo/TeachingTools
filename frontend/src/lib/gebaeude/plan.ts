@@ -9,8 +9,8 @@
  * ein Zimmer mit genau einer Tür. Die weiteste Sackgasse wird das
  * Treppenhaus; das Stockwerk darüber beginnt genau dort.
  *
- * Reine Rechnung ohne Zeichnen und ohne Wissen über Exitgames: Wer das
- * Gebäude nutzt (Exitgame, später Verkehr oder Rock your Life), sagt nur,
+ * Reine Rechnung ohne Zeichnen und ohne Wissen über TaskCrawler: Wer das
+ * Gebäude nutzt (TaskCrawler, später Verkehr oder Rock your Life), sagt nur,
  * wie viele Zimmer jedes Stockwerk braucht.
  */
 import { laufeDurch, programm, starte } from "@/lib/regeln/maschine";

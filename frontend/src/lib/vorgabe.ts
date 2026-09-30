@@ -1,5 +1,5 @@
 /**
- * Vorgaben für Simulationen an Exitgame-Stationen (`task.sim.config`).
+ * Vorgaben für Simulationen an TaskCrawler-Stationen (`task.sim.config`).
  * Die kommen aus hochgeladenem JSON, also ohne Gewähr — hier wird
  * vorsichtig gelesen: Falscher Typ zählt wie »nicht angegeben«.
  */

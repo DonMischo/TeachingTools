@@ -24,10 +24,10 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
   },
   {
     slug: "exitgame",
-    href: "/aktivitaeten/exitgame",
+    href: "/aktivitaeten/taskcrawler",
     icon: "🗝️",
-    title: "Exitgame",
-    description: "Selbstständiges Exit-Game: Schüler lösen Aufgaben in ihrem eigenen Tempo, Lehrer sehen live den Fortschritt.",
+    title: "TaskCrawler",
+    description: "Der TaskCrawler: Schüler lösen Aufgaben in ihrem eigenen Tempo, Lehrer sehen live den Fortschritt.",
     color: "#16a34a",
   },
   {

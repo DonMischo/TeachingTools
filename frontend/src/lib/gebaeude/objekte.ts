@@ -1,5 +1,5 @@
 /**
- * Was in einem Zimmer steht. Das Gebäude zeichnet es, der Inhalt (Exitgame,
+ * Was in einem Zimmer steht. Das Gebäude zeichnet es, der Inhalt (TaskCrawler,
  * Demo, später Verkehr/Rock your Life) sucht es aus.
  */
 export const OBJEKTE = [

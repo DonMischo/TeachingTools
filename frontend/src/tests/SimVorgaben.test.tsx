@@ -4,7 +4,7 @@ import Funktionen from "@/components/simulationen/Funktionen";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 
-describe("Simulationen mit fester Vorgabe (Exitgame-Stationen)", () => {
+describe("Simulationen mit fester Vorgabe (TaskCrawler-Stationen)", () => {
   it("Funktionen: Term fest, keine Vorlagen", () => {
     render(<Funktionen vorgabe={{ term: "x^2 - 4", von: -3, bis: 3 }} />);
     const feld = screen.getByLabelText("Funktionsterm") as HTMLInputElement;

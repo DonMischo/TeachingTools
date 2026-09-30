@@ -5,7 +5,7 @@ any code-execution surface (see api/expr_eval.py for the safety contract).
 
 GET /api/generators is public-to-teachers (not just admin): it lists every
 registered generator, built-in (api/task_generators.py) and custom, for the
-Exitgame library's "welche Generatoren gibt es" hint panel.
+TaskCrawler library's "welche Generatoren gibt es" hint panel.
 """
 import random
 

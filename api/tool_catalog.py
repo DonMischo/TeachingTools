@@ -49,7 +49,7 @@ def _cap(teacher: bool, student: bool) -> dict[str, bool]:
 
 CATALOG: list[CatalogTool] = [
     # ── Aktivitäten ──
-    # Caputh & Exitgame author via file upload (no separate builder endpoint),
+    # Caputh & TaskCrawler author via file upload (no separate builder endpoint),
     # so their authoring capability is "upload", not "create".
     CatalogTool("caputh", "🎲 Caputh", "🎲", "aktivitaeten", {
         "use": _cap(True, True),
@@ -61,7 +61,7 @@ CATALOG: list[CatalogTool] = [
         "host": _cap(True, False),
         "create": _cap(True, True),
     }),
-    CatalogTool("exitgame", "🗝️ Exitgame", "🗝️", "aktivitaeten", {
+    CatalogTool("exitgame", "🗝️ TaskCrawler", "🗝️", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),
         "upload": _cap(True, True),

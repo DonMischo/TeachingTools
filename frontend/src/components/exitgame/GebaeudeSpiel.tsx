@@ -1,6 +1,6 @@
 "use client";
 /**
- * Ein Exitgame als isometrisches Gebäude: jeder Abschnitt ein Stockwerk,
+ * Ein TaskCrawler als isometrisches Gebäude: jeder Abschnitt ein Stockwerk,
  * jede Folie ein Zimmer, jede Tür ein verschlossenes Treppenhaus. Geprüft
  * wird wie in der Folienansicht auf dem Server (gleiche Ereignisse,
  * gleiche Aufgaben-Bausteine) — das Gebäude ist nur eine andere Ansicht.

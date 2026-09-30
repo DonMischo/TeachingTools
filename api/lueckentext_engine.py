@@ -5,7 +5,7 @@ payloads for the cloze/fill-in-the-blank tool.
 Content lives in LueckentextSet (JSON-blob pattern like BingoSet/TimelineSet):
 a text template with {{gap_id}} placeholders and a list of gap definitions.
 The library is open to every teacher; validation follows the same hand-rolled
-error-list style as Zeitstrahl/Caputh/Exitgame (German messages, no
+error-list style as Zeitstrahl/Caputh/TaskCrawler (German messages, no
 jsonschema).
 
 Gap types:
@@ -184,7 +184,7 @@ _ESCALATE = {"hard": "medium", "medium": "easy", "easy": "easy"}
 def reveal_state(difficulty: str, seconds_since_progress: float, attempts: int, miss_count: int = 0) -> dict:
     """Drive gap-reveal/hint decisions off api/dda.py's Mamdani engine: elapsed time
     without progress and failed-attempt count feed the same fuzzy inference used for
-    Exitgame's difficulty adjustment, mapped onto a 3-level reveal ladder per difficulty.
+    TaskCrawler's difficulty adjustment, mapped onto a 3-level reveal ladder per difficulty.
 
     dda.adapt() needs dda_cfg["levels"] (the authored ladder, converted internally by
     levels_to_matrix into ranges over the "scaffolding_level" fuzzy output) and a

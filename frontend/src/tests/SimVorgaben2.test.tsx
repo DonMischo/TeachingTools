@@ -25,7 +25,7 @@ vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect()
 // Sonnensystem und ErdAufbau: bewusst ohne Render-Test — beide ziehen three.js/WebGL
 // nach, das in jsdom nicht läuft. Die Sperre ist dort dieselbe wie überall (wahl + Leiste ausblenden).
 
-describe("Simulationen mit festem Reiter (Exitgame-Stationen)", () => {
+describe("Simulationen mit festem Reiter (TaskCrawler-Stationen)", () => {
   it("Abakus: Stellenwert fest, keine Umschaltung", () => {
     render(<Abakus vorgabe={{ reiter: "place" }} />);
     expect(screen.queryByRole("button", { name: "Alle gleich" })).not.toBeInTheDocument();

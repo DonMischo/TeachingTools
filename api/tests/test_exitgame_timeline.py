@@ -1,4 +1,4 @@
-"""Exitgame integration of the Zeitstrahl engine: task kind "timeline"."""
+"""TaskCrawler integration of the Zeitstrahl engine: task kind "timeline"."""
 import io
 import json
 

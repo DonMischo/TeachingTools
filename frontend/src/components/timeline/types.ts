@@ -108,7 +108,7 @@ export type TimelineAnswer = {
   flagged?: string[];
 };
 
-/** Full authoring spec (what teachers write in Caputh/Exitgame JSON). */
+/** Full authoring spec (what teachers write in Caputh/TaskCrawler JSON). */
 export type TimelineGameSpec = {
   mode: TimelineGameMode;
   axis: TimelineAxis;

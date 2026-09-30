@@ -73,7 +73,7 @@ export default function LueckentextePage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight">📝 Lückentext</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
-            Lückentexte mit Wortbank, Freitext oder Multiple-Choice — anzeigen, üben, in Caputh &amp; Exitgame einbauen.
+            Lückentexte mit Wortbank, Freitext oder Multiple-Choice — anzeigen, üben, in Caputh &amp; TaskCrawler einbauen.
           </p>
         </div>
         {can("lueckentext", "upload") && (

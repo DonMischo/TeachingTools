@@ -51,7 +51,7 @@ function mische(w: Welle, i: number, farbe: (p: number) => [number, number, numb
 }
 
 /**
- * `vorgabe` (Exitgame-Station): { reiter: "kacheln" | "vorlage" | "textur" | "erklaerung",
+ * `vorgabe` (TaskCrawler-Station): { reiter: "kacheln" | "vorlage" | "textur" | "erklaerung",
  * satz?: "landschaft" | "strassen" | "rohre", vorlage?: "hoehlen" | "mauer" | "wege" | "insel" | "stadt",
  * probe?: Oberfläche (fels, sand, eis …) oder Vorlage — für den Reiter Textur }.
  */
@@ -225,7 +225,7 @@ function Erklaerung() {
           Maxim Gumin (MIT-Lizenz) — dort gibt es auch das Simple Tiled Model und das Overlapping Model. Die Kachelsätze und Vorlagen hier sind eigene.
           Der Reiter »Textur« nutzt das Verfahren von P. F. Harrison aus{" "}
           <a className="underline" href="https://github.com/mxgmn/TextureSynthesis" target="_blank" rel="noreferrer">TextureSynthesis</a>{" "}
-          (ebenfalls Maxim Gumin, MIT) — damit entstehen auch die Fels-, Erd-, Sand- und Eisflächen der Gebäude im Regel-Labor und im Exitgame.
+          (ebenfalls Maxim Gumin, MIT) — damit entstehen auch die Fels-, Erd-, Sand- und Eisflächen der Gebäude im Regel-Labor und im TaskCrawler.
           Angestoßen von den Clips des Kanals <a className="underline" href="https://www.instagram.com/index.opensource/" target="_blank" rel="noreferrer">index.opensource</a>.
         </p>
       </section>

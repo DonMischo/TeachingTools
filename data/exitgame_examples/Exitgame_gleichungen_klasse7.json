@@ -15,7 +15,7 @@
       "id": "intro",
       "type": "explanation",
       "title": "Willkommen",
-      "text": "In diesem Exitgame lernst du, Gleichungen mit einer Variablen $x$ nach $x$ aufzulösen.\n\nDie wichtigste Regel: Was du auf der einen Seite der Gleichung machst, musst du auch auf der anderen Seite machen — sonst bleibt die Gleichung nicht mehr wahr. Löse alle Aufgaben, um die Tür zu öffnen."
+      "text": "In diesem TaskCrawler lernst du, Gleichungen mit einer Variablen $x$ nach $x$ aufzulösen.\n\nDie wichtigste Regel: Was du auf der einen Seite der Gleichung machst, musst du auch auf der anderen Seite machen — sonst bleibt die Gleichung nicht mehr wahr. Löse alle Aufgaben, um die Tür zu öffnen."
     },
     {
       "id": "video-erklaerung",

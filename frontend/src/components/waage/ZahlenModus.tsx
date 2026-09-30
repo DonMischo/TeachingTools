@@ -279,7 +279,7 @@ function parseValue(v: string): { kind: "x" | "n"; n: number } | null {
 
 export default function ZahlenModus({ onMessage, fest }: {
   onMessage: (m: string) => void;
-  /** Feste Gleichung (Exitgame-Station): keine Stufen, keine neuen oder eigenen Aufgaben. */
+  /** Feste Gleichung (TaskCrawler-Station): keine Stufen, keine neuen oder eigenen Aufgaben. */
   fest?: string;
 }) {
   const [level, setLevel] = useState(3);

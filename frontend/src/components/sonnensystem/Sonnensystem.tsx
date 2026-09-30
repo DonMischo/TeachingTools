@@ -48,7 +48,7 @@ const REITER: { id: Reiter; name: string }[] = [
 ];
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "uebersicht" | "flug" | "groessen" | "entfernungen"
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "uebersicht" | "flug" | "groessen" | "entfernungen"
  * | "kepler" | "galerie" | "kodex" }` legt den Reiter fest und blendet die Reiterleiste aus.
  */
 export default function Sonnensystem({ action, speicherSchluessel = "geraet", lehrkraft = false, vorgabe }: {

@@ -51,7 +51,7 @@ export default function ExitgameHostPage() {
   const { code } = useParams<{ code: string }>();
   const [roster, setRoster] = useState<RosterRow[]>([]);
   const [logAttemptId, setLogAttemptId] = useState<number | null>(null);
-  const joinUrl = useLanUrl(`/play/exitgame/${code}`);
+  const joinUrl = useLanUrl(`/play/taskcrawler/${code}`);
 
   const { data: session } = useQuery<ExitGameSessionOut>({
     queryKey: ["exitgame-session", code], queryFn: () => api.exitgame.sessions.get(code),
@@ -89,7 +89,7 @@ export default function ExitgameHostPage() {
     <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">🗝️ Exitgame — Live-Dashboard</h1>
+          <h1 className="text-2xl font-black tracking-tight">🗝️ TaskCrawler — Live-Dashboard</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
             Code: <span className="font-mono">{code}</span> · {connected ? "🟢 live" : "🔴 getrennt"}
           </p>
@@ -98,7 +98,7 @@ export default function ExitgameHostPage() {
           {joinUrl && (
             <div className="flex flex-col items-center gap-1">
               <JoinQR url={joinUrl} />
-              <span className="text-[10px] text-[var(--text-muted)]">/play/exitgame/{code}</span>
+              <span className="text-[10px] text-[var(--text-muted)]">/play/taskcrawler/{code}</span>
               <GuestAccessToggle tool="exitgame" code={code} />
             </div>
           )}
@@ -165,7 +165,7 @@ export default function ExitgameHostPage() {
         </section>
       )}
 
-      <Link href={`/aktivitaeten/exitgame/${session?.exitgame_id ?? ""}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Übersicht</Link>
+      <Link href={`/aktivitaeten/taskcrawler/${session?.exitgame_id ?? ""}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Übersicht</Link>
     </div>
   );
 }

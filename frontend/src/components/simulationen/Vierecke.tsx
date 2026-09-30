@@ -263,7 +263,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 ];
 
 /**
- * `vorgabe` (Exitgame-Station): { form: "trapez", masse: { a: 8, c: 4, h: 3 }, blatt?: "formen" | "umfang" | "flaeche",
+ * `vorgabe` (TaskCrawler-Station): { form: "trapez", masse: { a: 8, c: 4, h: 3 }, blatt?: "formen" | "umfang" | "flaeche",
  * rechnung?: true }. Form, Maße und Blatt stehen dann fest; die fertige Rechnung (u = …, A = …) bleibt
  * verborgen, außer `rechnung: true` — sonst stünde die Antwort schon da.
  */

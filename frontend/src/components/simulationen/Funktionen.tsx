@@ -131,7 +131,7 @@ function ZoomBtn({ onClick, title, children }: {
 /* ── Werkzeug ──────────────────────────────────────────────────────────────── */
 
 /**
- * `vorgabe` (Exitgame-Station): { term: "x^2 - 4", von?, bis?, schritt?, pi? }.
+ * `vorgabe` (TaskCrawler-Station): { term: "x^2 - 4", von?, bis?, schritt?, pi? }.
  * Der Term steht dann fest (keine Vorlagen, kein Umschalten der Form);
  * Bereich und Ansicht bleiben einstellbar, sofern nicht vorgegeben.
  */

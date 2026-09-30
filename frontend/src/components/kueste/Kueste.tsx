@@ -31,7 +31,7 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 ];
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen" }`
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "profil" | "draufsicht" | "gezeiten" | "galerie" | "wissen" }`
  * legt den Reiter fest und blendet die Reiterleiste aus.
  */
 export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

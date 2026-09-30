@@ -22,7 +22,7 @@ function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
     return (
       "Auf der Übungsseite dieser App gibt es bereits automatisch generierte Aufgaben zu folgenden Themen " +
       "(prozedural erzeugt, unbegrenzt viele Varianten, passen sich der Schwierigkeit an):\n" + lines.join("\n") +
-      "\n\nWenn eines dieser Themen zum Exitgame passt, kannst du im Text der Slides darauf verweisen " +
+      "\n\nWenn eines dieser Themen zum TaskCrawler passt, kannst du im Text der Slides darauf verweisen " +
       "(z.B. 'Übe danach weiter auf der Übungsseite: Thema \"" + (generators[0]?.label ?? "…") + "\"')."
     );
   }
@@ -41,7 +41,7 @@ function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-lg leading-none">×</button>
         </div>
         <p className="text-xs text-[var(--text-muted)]">
-          Diese Themen erzeugen auf der Übungsseite automatisch beliebig viele Aufgaben. Exitgame-Aufgaben
+          Diese Themen erzeugen auf der Übungsseite automatisch beliebig viele Aufgaben. TaskCrawler-Aufgaben
           selbst werden weiterhin fest im JSON geschrieben — hier siehst du, worauf du in Erklärtexten
           verweisen kannst, und kannst die Liste in einen KI-Prompt kopieren.
         </p>
@@ -96,7 +96,7 @@ export default function ExitgamePage() {
     try {
       const created = await api.exitgame.upload(file);
       qc.invalidateQueries({ queryKey: ["exitgames"] });
-      router.push(`/aktivitaeten/exitgame/${created.id}`);
+      router.push(`/aktivitaeten/taskcrawler/${created.id}`);
     } catch (err: unknown) {
       setUploadError(parseUploadError(err));
     } finally {
@@ -112,7 +112,7 @@ export default function ExitgamePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = interaktiv ? "exitgame-vorlage-interaktiv.json" : "exitgame-vorlage.json";
+    a.download = interaktiv ? "taskcrawler-vorlage-interaktiv.json" : "taskcrawler-vorlage.json";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -122,9 +122,9 @@ export default function ExitgamePage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <Link href="/aktivitaeten" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Aktivitäten</Link>
-          <h1 className="text-2xl font-black tracking-tight mt-1">🗝️ Exitgame</h1>
+          <h1 className="text-2xl font-black tracking-tight mt-1">🗝️ TaskCrawler</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
-            Selbstständiges Exit-Game — Schüler lösen Aufgaben in ihrem eigenen Tempo.
+            Der TaskCrawler — Schüler lösen Aufgaben in ihrem eigenen Tempo.
           </p>
         </div>
         {can("exitgame", "upload") && (
@@ -132,7 +132,7 @@ export default function ExitgamePage() {
             <button onClick={() => setShowGenerators(true)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
               🧮 Generatoren
             </button>
-            <button onClick={() => handleTemplate()} title="Schlanke Vorlage: alle Bausteine für Folien-Exitgames"
+            <button onClick={() => handleTemplate()} title="Schlanke Vorlage: alle Bausteine für Folien-TaskCrawler"
               className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
               📄 Vorlage
             </button>
@@ -142,7 +142,7 @@ export default function ExitgamePage() {
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
               className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
-              {uploading ? "Lade hoch…" : "+ Exitgame hochladen"}
+              {uploading ? "Lade hoch…" : "+ TaskCrawler hochladen"}
             </button>
             <input ref={fileRef} type="file" accept=".json,.zip" className="hidden" onChange={handleUpload} />
           </div>
@@ -152,12 +152,12 @@ export default function ExitgamePage() {
       {isLoading ? (
         <p className="text-sm text-[var(--text-muted)]">Lade…</p>
       ) : games.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">Noch keine Exitgames — lade eins hoch, um zu starten.</p>
+        <p className="text-sm text-[var(--text-muted)]">Noch keine TaskCrawler — lade einen hoch, um zu starten.</p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {games.map(g => (
             <div key={g.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
-              <Link href={`/aktivitaeten/exitgame/${g.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
+              <Link href={`/aktivitaeten/taskcrawler/${g.id}`} className="font-semibold hover:text-[var(--accent)] transition-colors">
                 {g.title}
               </Link>
               {g.description && <p className="text-xs text-[var(--text-muted)]">{g.description}</p>}

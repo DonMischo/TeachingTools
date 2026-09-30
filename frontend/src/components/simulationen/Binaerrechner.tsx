@@ -3,7 +3,7 @@
  * Binär-Rechner: acht Bits umschalten, den Dezimalwert ablesen.
  *
  * Übernommen aus `nova7_binaer_rechner.html`. Der Terminal-Look der Raumstation
- * bleibt — er gehört zum Exitgame-Zusammenhang und ist Absicht. Nur die
+ * bleibt — er gehört zum TaskCrawler-Zusammenhang und ist Absicht. Nur die
  * Google-Fonts-Einbindung ist raus: die Seite soll keine Schriften von fremden
  * Servern nachladen. Stattdessen der Monospace-Stapel des Systems, der denselben
  * Zweck erfüllt (Ziffern gleich breit, damit nichts springt).
@@ -30,7 +30,7 @@ const C = {
 const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
 /**
- * `vorgabe` (Exitgame-Station): `{ zahl: 0–255 }` stellt die Bits auf diese Zahl
+ * `vorgabe` (TaskCrawler-Station): `{ zahl: 0–255 }` stellt die Bits auf diese Zahl
  * (umschaltbar bleiben sie).
  */
 export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {

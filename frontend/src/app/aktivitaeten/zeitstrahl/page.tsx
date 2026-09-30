@@ -84,7 +84,7 @@ export default function ZeitstrahlPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight">📏 Zeitstrahl</h1>
           <p className="text-[var(--text-muted)] text-sm mt-1">
-            Zeitleisten mit parallelen Spuren, Zahlenstrahlen und Skalen — anzeigen, üben, in Caputh &amp; Exitgame einbauen.
+            Zeitleisten mit parallelen Spuren, Zahlenstrahlen und Skalen — anzeigen, üben, in Caputh &amp; TaskCrawler einbauen.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

@@ -1,5 +1,5 @@
 /**
- * Exitgame → Gebäude: Jeder Abschnitt (alles bis einschließlich einer Tür)
+ * TaskCrawler → Gebäude: Jeder Abschnitt (alles bis einschließlich einer Tür)
  * wird ein Stockwerk. Erklärungen, Beispiele und Aufgaben werden Zimmer, in
  * Lesereihenfolge; die Tür wird das verschlossene Treppenhaus. Was nach der
  * letzten Tür kommt, ist das oberste Stockwerk mit dem Ausgang.

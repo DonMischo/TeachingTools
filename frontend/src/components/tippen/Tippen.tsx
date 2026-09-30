@@ -46,7 +46,7 @@ function alsLektionen(sammlung: TippSammlung): Lektion[] {
 }
 
 /**
- * `vorgabe` (Exitgame-Station): `{ reiter: "lektionen" | "wortregen" | "tastenjagd" }`
+ * `vorgabe` (TaskCrawler-Station): `{ reiter: "lektionen" | "wortregen" | "tastenjagd" }`
  * legt den Modus fest und blendet die Modus-Leiste aus.
  */
 export default function Tippen({

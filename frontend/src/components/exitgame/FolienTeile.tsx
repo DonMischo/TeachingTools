@@ -1,7 +1,7 @@
 "use client";
 /**
- * Bausteine des Exitgame-Spielers: Thema, Medien, Aufgaben, Türcode,
- * Abschluss. Genutzt von der Folienansicht (play/exitgame/[code]) und vom
+ * Bausteine des TaskCrawler-Spielers: Thema, Medien, Aufgaben, Türcode,
+ * Abschluss. Genutzt von der Folienansicht (play/taskcrawler/[code]) und vom
  * Gebäude (GebaeudeSpiel).
  */
 import { useEffect, useMemo, useState } from "react";

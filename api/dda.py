@@ -1,10 +1,10 @@
 """
-Server-side fuzzy Dynamic Difficulty Adjustment (DDA) for Exitgame.
+Server-side fuzzy Dynamic Difficulty Adjustment (DDA) for TaskCrawler.
 
 A faithful Python port of the client-side reference implementation in the
 standalone Exitbuilder/Exitbuilder_text repos (frontend/game/dda/fuzzy.ts +
 DdaEngine.ts) — ported to run server-side instead of in the browser, since
-Exitgame results must be a trustworthy, teacher-auditable record and a
+TaskCrawler results must be a trustworthy, teacher-auditable record and a
 client-only engine can't be audited.
 
 Pipeline (Mamdani-style fuzzy inference): fuzzification -> rule evaluation

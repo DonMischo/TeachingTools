@@ -7,7 +7,7 @@ Content lives in TimelineSet (JSON-blob pattern like BingoSet): an axis, a
 list of lanes and a list of point/span events. The library is open to every
 teacher; students may READ a set (the viewer page is share-/beamerfähig).
 There is no live session — the game mechanics (sort/spot) run embedded in
-Caputh questions, Exitgame tasks and Übungs-Generatoren, all validated and
+Caputh questions, TaskCrawler tasks and Übungs-Generatoren, all validated and
 scored by api/timeline_engine.py.
 """
 import json
@@ -158,7 +158,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "Dieselbe category darf über mehrere Spuren hinweg vorkommen — dann zeigt der Filter "
             "z.B. die Epoche 'Reformation' und die passenden Deutschland-Ereignisse gemeinsam. "
             "--- SPIELMECHANIKEN --- Aus einem Set lassen sich im Tool Spielvorschauen erzeugen; "
-            "für Caputh-Fragen (type 'timeline') und Exitgame-Aufgaben (kind 'timeline') wird das "
+            "für Caputh-Fragen (type 'timeline') und TaskCrawler-Aufgaben (kind 'timeline') wird das "
             "separate TimelineGameSpec-Format verwendet: {mode: 'sort'|'spot', axis, items, "
             "tolerance?, scoring?}. mode 'sort': items [{id, label, value}] — Schüler ziehen die "
             "Begriffe an die richtige Stelle (scoring 'position' = Toleranzfenster, 'order' = nur "

@@ -1,11 +1,11 @@
 "use client";
 /**
- * Werkzeug an einer Exitgame-Station: Die Aufgabe nennt eine Simulation und
+ * Werkzeug an einer TaskCrawler-Station: Die Aufgabe nennt eine Simulation und
  * eine Vorgabe (`task.sim = { tool, config }`), hier wird sie im Vollbild
  * geöffnet. Die Simulation ist nur Hilfsmittel — die Antwort tippt man danach
  * in die Aufgabe, geprüft wird sie wie jede andere auf dem Server.
  *
- * Jede Simulation lädt erst, wenn man sie öffnet (lazy), damit das Exitgame
+ * Jede Simulation lädt erst, wenn man sie öffnet (lazy), damit der TaskCrawler
  * nicht alle Werkzeuge mitschleppt. Was eine Simulation mit `vorgabe` macht
  * (z. B. genau eine Gleichung, nur ein Reiter), entscheidet sie selbst; wer
  * `vorgabe` noch nicht kennt, öffnet sich frei.

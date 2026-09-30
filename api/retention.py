@@ -12,7 +12,7 @@ zweiten Mal nichts mehr.
 
 **Was bleibt:** vergebene Punkte. Transaction haengt an Klasse und Lehrkraft,
 nicht an der Sitzung — der Hauspokal-Stand ueberlebt die Bereinigung. Ebenso
-bleiben die Inhalte (Quizze, Exitgames, Lueckentexte): die sind Material, keine
+bleiben die Inhalte (Quizze, TaskCrawler, Lueckentexte): die sind Material, keine
 Schuelerdaten.
 
 **Was mitgeht:** alles unterhalb einer Sitzung. Teilnehmer, Antworten,

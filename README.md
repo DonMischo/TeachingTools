@@ -45,7 +45,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 - Punkte-Log je Klasse; Admins können Einträge löschen
 - Klassen-Spitznamen setzen
 
-**Punkte aus Aktivitäten:** Caputh, Bingo und Exitgame vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
+**Punkte aus Aktivitäten:** Caputh, Bingo und TaskCrawler vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
 
 ---
 
@@ -77,8 +77,8 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Zurücksetzen (gleiche Karten) oder komplett neu starten (alle Karten neu gemischt)
 - Auswertung je Karte: Treffer gegen das, was von der eigenen Karte gerufen wurde
 
-### 🗝️ Exitgame
-- Exit-Game im eigenen Tempo, die Lehrkraft sieht den Fortschritt live — wahlweise als Folien oder als isometrisches Gebäude (Abschnitt = Stockwerk, Aufgabe = Zimmer, Tür = Treppenhaus, Objekte wie Computer oder Kuckucksuhr als Stationen), als Verlies (Ebenen hinab im Fackelschein, Monster und Bosse) oder als Ebene mit verschlossenen Türen, in 17 Stilen (Klassisch, Beton, Glas & Neon, Gartenpalast, Verlies, Burg, Holzhütte, Eispalast, Wüstentempel, Raumstation, Lavahöhle, Steinzeithöhle, Antiker Tempel, Mittelalter, Gotik, Viktorianisch, Retro), auf Wunsch je Abschnitt ein anderer (`"stile"`, z. B. eine Zeitreise durch die Epochen); jeder Stil mit eigenen Oberflächen (Fels, Mauerwerk, Dielen, Fischgrät, Marmor, Fachwerk, Tapete, 70er-Teppich …), Höhlen aus unregelmäßigen Felsbrocken mit Tropfsteinen, in der Lavahöhle glühende Risse in Boden und Wänden, Säulen im Tempel, Turmspitzen in der Gotik, Zinnen auf der Burg; legt das Spiel Ansicht oder Stil fest, gibt es dafür keine Auswahl, sonst wählen die Schüler selbst; 33 Stationsobjekte, darunter Medien durch die Zeit (Höhlenmalerei, Tontafel, Schriftrolle, Handschrift, Druckerpresse, Zeitung, Telegraf, Kurbeltelefon, Röhrenradio, Filmprojektor, Röhrenfernseher, Großrechner, Laptop, Smartphone, Tablet, Kopfhörer, Bildbearbeitung, KI-Rechenzentrum) — das Objekt spricht selbst (»☎️ Das Telefon klingelt …«, »📻 Aus dem Radio tönt es …«); ohne Angabe wechseln die Objekte reihum statt überall Tafel und Schreibtisch; Beispiel »Zeitreise der Medien« in sechs Epochen bis zu Photoshop, Deepfakes und KI, mit freiwilligen 🌍-Aufgaben am Globus (Orakelknochen, Quipu, Jikji, Maya-Codices, Telenovela, Emoji, M-Pesa) ohne Codeschnipsel; schlanke und interaktive Vorlage (mit Nachschlageliste `_katalog`: Ansichten, Stile, Objekte, Werkzeuge und ihre Parameter); Aufgaben können eine Simulation als Werkzeug öffnen, festgelegt auf genau diese Aufgabe (z. B. Gleichungswaage mit einer Gleichung)
+### 🗝️ TaskCrawler
+- TaskCrawler im eigenen Tempo, die Lehrkraft sieht den Fortschritt live — wahlweise als Folien oder als isometrisches Gebäude (Abschnitt = Stockwerk, Aufgabe = Zimmer, Tür = Treppenhaus, Objekte wie Computer oder Kuckucksuhr als Stationen), als Verlies (Ebenen hinab im Fackelschein, Monster und Bosse) oder als Ebene mit verschlossenen Türen, in 17 Stilen (Klassisch, Beton, Glas & Neon, Gartenpalast, Verlies, Burg, Holzhütte, Eispalast, Wüstentempel, Raumstation, Lavahöhle, Steinzeithöhle, Antiker Tempel, Mittelalter, Gotik, Viktorianisch, Retro), auf Wunsch je Abschnitt ein anderer (`"stile"`, z. B. eine Zeitreise durch die Epochen); jeder Stil mit eigenen Oberflächen (Fels, Mauerwerk, Dielen, Fischgrät, Marmor, Fachwerk, Tapete, 70er-Teppich …), Höhlen aus unregelmäßigen Felsbrocken mit Tropfsteinen, in der Lavahöhle glühende Risse in Boden und Wänden, Säulen im Tempel, Turmspitzen in der Gotik, Zinnen auf der Burg; legt das Spiel Ansicht oder Stil fest, gibt es dafür keine Auswahl, sonst wählen die Schüler selbst; 33 Stationsobjekte, darunter Medien durch die Zeit (Höhlenmalerei, Tontafel, Schriftrolle, Handschrift, Druckerpresse, Zeitung, Telegraf, Kurbeltelefon, Röhrenradio, Filmprojektor, Röhrenfernseher, Großrechner, Laptop, Smartphone, Tablet, Kopfhörer, Bildbearbeitung, KI-Rechenzentrum) — das Objekt spricht selbst (»☎️ Das Telefon klingelt …«, »📻 Aus dem Radio tönt es …«); ohne Angabe wechseln die Objekte reihum statt überall Tafel und Schreibtisch; Beispiel »Zeitreise der Medien« in sechs Epochen bis zu Photoshop, Deepfakes und KI, mit freiwilligen 🌍-Aufgaben am Globus (Orakelknochen, Quipu, Jikji, Maya-Codices, Telenovela, Emoji, M-Pesa) ohne Codeschnipsel; schlanke und interaktive Vorlage (mit Nachschlageliste `_katalog`: Ansichten, Stile, Objekte, Werkzeuge und ihre Parameter); Aufgaben können eine Simulation als Werkzeug öffnen, festgelegt auf genau diese Aufgabe (z. B. Gleichungswaage mit einer Gleichung)
 - Aufgaben vergeben Codeschnipsel, die an der Tür zusammengesetzt werden
 - Serverseitige Anpassung der Schwierigkeit (Fuzzy-DDA): Hinweise, Zeitlimits, leichtere Aufgaben je nach Verlauf
 - Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen
@@ -87,7 +87,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 ### 🧩 Lückentext
 - Lücken mit Wortbank, Freitext oder Multiple Choice; Ziehlücken (gestrichelte Pille) und Schreiblücken (Linie) sind auf einen Blick zu unterscheiden
 - Live-Runde mit Rangliste, Einzelübung oder Korrekturmodus
-- PDF-Export (leer oder ausgefüllt); einbettbar in Caputh und Exitgame
+- PDF-Export (leer oder ausgefüllt); einbettbar in Caputh und TaskCrawler
 
 ### 📏 Zeitstrahl
 - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
@@ -150,7 +150,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Simple Tiled Model mit drei Kachelsätzen (Landschaft über Ecken, Straßen & Flüsse mit Brücken, Rohre) und Overlapping Model aus einer selbst malbaren Vorlage (2×2/3×3, gedreht/gespiegelt)
 - Randbedingungen: Zellen oder den ganzen Rand vorab festlegen (Rand = Wasser → Insel); unmögliche Festlegungen werden sofort gemeldet
 - Reiter »Textur«: Textur-Synthese nach P. F. Harrison, portiert aus **[TextureSynthesis](https://github.com/mxgmn/TextureSynthesis)** von Maxim Gumin (MIT; die Beispielbilder des Repos stehen nicht unter der Lizenz und werden nicht benutzt). Aus einer kleinen Probe wächst Pixel für Pixel ein nahtlos kachelndes Bild (Nachbarschaft, Zufallskandidaten, Polieren einstellbar, 2×2-Vorschau). Proben: die Oberflächen der Gebäude und die Pixel-Vorlagen — so entstehen auch die Fels-, Erd-, Sand- und Eisflächen der Gebäude.
-- Auch als Exitgame-Werkzeug (`"sim": {"tool": "wfc", "config": {"reiter": "kacheln", "satz": "landschaft"}}`)
+- Auch als TaskCrawler-Werkzeug (`"sim": {"tool": "wfc", "config": {"reiter": "kacheln", "satz": "landschaft"}}`)
 
 ### 🧬 Regel-Labor — Quellen und Inspiration
 - **[MarkovJunior](https://github.com/mxgmn/MarkovJunior)** von Maxim Gumin (MIT-Lizenz): Vorbild der Regelmaschine. Labyrinth, Blumen und Höhle sind übertragen, dazu 34 weitere Beispiele automatisch aus den Modelldateien des Repos (`scripts/mj-beispiele.py` → `frontend/src/lib/regeln/mj-beispiele.ts`, im Reiter »Beispiele« per Auswahlliste, jeweils mit Link aufs Original).

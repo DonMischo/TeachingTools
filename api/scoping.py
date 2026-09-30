@@ -1,6 +1,6 @@
 """Wem eine Sitzung gehoert: einer Klasse oder einem Kurs/WPF.
 
-Spiel-Sitzungen (Caputh, Bingo, Exitgame) hingen bisher an genau einer Klasse.
+Spiel-Sitzungen (Caputh, Bingo, TaskCrawler) hingen bisher an genau einer Klasse.
 Seit der A/B-Auswahl kann eine Sitzung auch nur einer Haelfte einer Klasse
 gehoeren. Kurse und Wahlpflichtgruppen sind dagegen klassenuebergreifend — in einem
 WPF »NaT« der Jahrgangsstufe 9 sitzen Schueler aus 9a, 9b und 9c.

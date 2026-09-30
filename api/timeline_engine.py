@@ -4,11 +4,11 @@ on a continuous line (historische Zeitleisten, Zahlenstrahlen, Skalen).
 
 Three consumers embed the same TimelineGameSpec JSON and call into here:
   - Caputh questions of type "timeline"      (api/routers/capuths.py)
-  - Exitgame tasks of kind "timeline"        (api/routers/exitgame.py)
+  - TaskCrawler tasks of kind "timeline"        (api/routers/exitgame.py)
   - the standalone Zeitstrahl tool sets      (api/routers/timelines.py)
 
 A spec is authored content and therefore validated with the same hand-rolled
-error-list style as Caputh/Exitgame uploads (German messages, no jsonschema).
+error-list style as Caputh/TaskCrawler uploads (German messages, no jsonschema).
 
 Game modes:
   sort — items are shown WITHOUT their value; the student places each one on
@@ -23,7 +23,7 @@ Game modes:
          Answer: {"flagged": [item_id, ...]}.
 
 Both scorers return a per-item result map plus a 0.0-1.0 ratio, so Caputh can
-give partial credit while Exitgame keeps its binary correct/incorrect.
+give partial credit while TaskCrawler keeps its binary correct/incorrect.
 """
 import math
 import re
@@ -156,7 +156,7 @@ def _validate_items(items, axis: dict, where: str) -> list[str]:
 
 
 def validate_game_spec(spec, where: str = "timeline") -> list[str]:
-    """Validate an embedded TimelineGameSpec (Caputh question / Exitgame task)."""
+    """Validate an embedded TimelineGameSpec (Caputh question / TaskCrawler task)."""
     if not isinstance(spec, dict):
         return [f"{where}: fehlt oder ist kein Objekt"]
     errors: list[str] = []
@@ -305,7 +305,7 @@ def default_tolerance(spec: dict) -> float:
 
 # Position-mode tolerance — mirror of scale.ts positionCorrect.
 # The tolerance is chosen explicitly by the author (a dropdown in the tool, a
-# `tolerance` field in Caputh/Exitgame specs), in axis units (years):
+# `tolerance` field in Caputh/TaskCrawler specs), in axis units (years):
 #   tolerance > 0   -> correct iff |placed - effective| <= tolerance
 #   tolerance == 0  -> exact: the year must match (and, on a short round where
 #                      months can actually be placed, a month-precise date's
@@ -406,7 +406,7 @@ def score_answer(spec: dict, answer) -> tuple[float, dict[str, bool]]:
 
 
 def check_answer(spec: dict, answer) -> bool:
-    """Binary correctness (Exitgame): every item right."""
+    """Binary correctness (TaskCrawler): every item right."""
     ratio, _ = score_answer(spec, answer)
     return ratio >= 1.0
 

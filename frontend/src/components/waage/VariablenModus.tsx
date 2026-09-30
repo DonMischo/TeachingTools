@@ -208,7 +208,7 @@ type SignKey = (typeof SIGNS)[number];
 
 const START = PRESETS[0];
 
-/** Feste Formel (Exitgame-Station): gesuchte Größe und Werte vorgegeben, keine anderen Formeln. */
+/** Feste Formel (TaskCrawler-Station): gesuchte Größe und Werte vorgegeben, keine anderen Formeln. */
 export interface FesteFormel { formel: string; nach?: string; werte?: Record<string, number> }
 
 export default function VariablenModus({ onMessage, fest }: { onMessage: (m: string) => void; fest?: FesteFormel }) {
