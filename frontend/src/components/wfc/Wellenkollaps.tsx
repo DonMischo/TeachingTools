@@ -6,6 +6,7 @@
  * Reiter:
  *   Kacheln  — Simple Tiled Model: Landschaft, Straßen & Flüsse, Rohre
  *   Vorlage  — Overlapping Model: aus einem kleinen, selbst malbaren Bild lernen
+ *   Textur   — Textur-Synthese (Harrison), aus github.com/mxgmn/TextureSynthesis (MIT)
  *   So geht's — Überlagerung, Entropie, Kollaps, Ausbreitung, Widerspruch
  * In beiden Modellen lassen sich Zellen vorab festlegen (Randbedingungen).
  */
@@ -16,12 +17,14 @@ import { VORLAGEN, farbenDerVorlage, lerneMuster } from "@/lib/wfc/ueberlappend"
 import { FARBEN } from "@/lib/regeln/maschine";
 import { text, wahl, type Vorgabe } from "@/lib/vorgabe";
 import Buehne, { type Pinsel } from "./Buehne";
+import TexturSynthese from "./TexturSynthese";
 import { zeichneKachel } from "./zeichnen";
 
-type Reiter = "kacheln" | "vorlage" | "erklaerung";
+type Reiter = "kacheln" | "vorlage" | "textur" | "erklaerung";
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "kacheln", icon: "🧩", label: "Kacheln" },
   { id: "vorlage", icon: "🖼️", label: "Vorlage" },
+  { id: "textur", icon: "🧵", label: "Textur" },
   { id: "erklaerung", icon: "📘", label: "So geht's" },
 ];
 const GROESSEN = [10, 16, 24, 32];
@@ -48,8 +51,9 @@ function mische(w: Welle, i: number, farbe: (p: number) => [number, number, numb
 }
 
 /**
- * `vorgabe` (Exitgame-Station): { reiter: "kacheln" | "vorlage" | "erklaerung",
- * satz?: "landschaft" | "strassen" | "rohre", vorlage?: "hoehlen" | "mauer" | "wege" | "insel" | "stadt" }.
+ * `vorgabe` (Exitgame-Station): { reiter: "kacheln" | "vorlage" | "textur" | "erklaerung",
+ * satz?: "landschaft" | "strassen" | "rohre", vorlage?: "hoehlen" | "mauer" | "wege" | "insel" | "stadt",
+ * probe?: Oberfläche (fels, sand, eis …) oder Vorlage — für den Reiter Textur }.
  */
 export default function Wellenkollaps({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
@@ -72,6 +76,7 @@ export default function Wellenkollaps({ action, vorgabe }: { action?: ReactNode;
       )}
       {reiter === "kacheln" && <Kacheln startSatz={text(vorgabe, "satz")} />}
       {reiter === "vorlage" && <VorlageModell startVorlage={text(vorgabe, "vorlage")} />}
+      {reiter === "textur" && <TexturSynthese startProbe={text(vorgabe, "probe")} />}
       {reiter === "erklaerung" && <Erklaerung />}
     </div>
   );
@@ -218,6 +223,9 @@ function Erklaerung() {
         <p>
           <a className="underline" href="https://github.com/mxgmn/WaveFunctionCollapse" target="_blank" rel="noreferrer">WaveFunctionCollapse</a> von
           Maxim Gumin (MIT-Lizenz) — dort gibt es auch das Simple Tiled Model und das Overlapping Model. Die Kachelsätze und Vorlagen hier sind eigene.
+          Der Reiter »Textur« nutzt das Verfahren von P. F. Harrison aus{" "}
+          <a className="underline" href="https://github.com/mxgmn/TextureSynthesis" target="_blank" rel="noreferrer">TextureSynthesis</a>{" "}
+          (ebenfalls Maxim Gumin, MIT) — damit entstehen auch die Fels-, Erd-, Sand- und Eisflächen der Gebäude im Regel-Labor und im Exitgame.
           Angestoßen von den Clips des Kanals <a className="underline" href="https://www.instagram.com/index.opensource/" target="_blank" rel="noreferrer">index.opensource</a>.
         </p>
       </section>

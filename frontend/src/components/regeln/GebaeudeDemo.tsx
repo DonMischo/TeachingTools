@@ -100,7 +100,7 @@ export default function GebaeudeDemo() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         <div className="flex flex-col gap-2">
-          <div className="h-[60vh] min-h-[360px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
+          <div className="h-[75vh] min-h-[480px] rounded-xl border border-[var(--border)] overflow-hidden bg-gradient-to-b from-sky-900/30 to-transparent">
             {ansicht === "laufen"
               ? <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} stil={stil}
                   art={art} waechter={waechter} aktiv auftrag={auftrag} onAnkunft={ankunft} />

@@ -134,9 +134,11 @@ WERKZEUGE = {
     "wfc": {
         "name": "Wellenfunktionskollaps",
         "config": {
-            "reiter": "kacheln|vorlage|erklaerung",
+            "reiter": "kacheln|vorlage|textur|erklaerung",
             "satz?": "bei kacheln: landschaft|strassen|rohre",
             "vorlage?": "bei vorlage: hoehlen|mauer|wege|insel|stadt",
+            "probe?": "bei textur: fels|erde|sand|eis|marmor|stein|holz|parkett|teppich|fachwerk|metall|tapete|beton|putz "
+                      "oder eine Vorlage (hoehlen|mauer|wege|insel|stadt)",
         },
     },
 }

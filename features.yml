@@ -244,7 +244,8 @@ simulationen:
       - Simple Tiled Model: Landschaft (Ecken-Kacheln), Straßen & Flüsse mit Brücken, Rohre — Drehungen automatisch
       - Overlapping Model aus selbst malbarer Vorlage (Höhlen, Ziegelmauer, Wege, Inseln, Stadtplan), 2×2/3×3, Symmetrie wählbar
       - Randbedingungen: Zellen oder Rand festlegen, Widerspruch → Neustart mit neuem Zufall, unmögliche Festlegungen gemeldet
-      - Als Exitgame-Werkzeug mit festem Reiter/Satz/Vorlage
+      - Reiter Textur: Textur-Synthese nach Harrison (portiert aus github.com/mxgmn/TextureSynthesis, MIT) zum Zuschauen, nahtlos, Proben aus den Gebäude-Oberflächen und Pixel-Vorlagen; erzeugt auch die Fels/Erde/Sand/Eis-Texturen der Gebäude
+      - Als Exitgame-Werkzeug mit festem Reiter/Satz/Vorlage/Probe
   - id: regeln
     name: Regel-Labor
     kann:

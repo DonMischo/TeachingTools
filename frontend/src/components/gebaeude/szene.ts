@@ -291,23 +291,35 @@ function wandtuer(g: THREE.Group, x: number, z: number, y0: number, offen: boole
 
 /**
  * Treppe in einem Feld: nach oben fünf Stufen, nach unten ein Schacht mit
- * fünf Stufen hinab. `zurTuer` zeigt, von welcher Seite man hineinläuft.
+ * fünf Stufen hinab. `zu` = Richtung (dx, dz) zum offenen Nachbarfeld, von dem
+ * man hineinläuft: dort liegt die unterste (bzw. beim Hinab die oberste) Stufe.
  */
-function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean, farbe: number) {
+function treppe(g: THREE.Group, x: number, z: number, y0: number, hoch: boolean, farbe: number, zu: Punkt = [0, -1]) {
+  const t = new THREE.Group();
   const stufe = WEIT / 5;
+  // gebaut mit dem Eingang bei −z, dann gedreht
   for (let s = 0; s < 5; s++) {
     if (hoch) {
-      g.add(klotz(farbe, WEIT, 0.25 + s * (STOCK_H / 5), stufe, x, y0, z - WEIT / 2 + stufe / 2 + s * stufe));
+      t.add(klotz(farbe, WEIT, 0.25 + s * (STOCK_H / 5), stufe, 0, y0, -WEIT / 2 + stufe / 2 + s * stufe));
     } else {
       // Stufen hinab: jede liegt tiefer; darunter ist es dunkel
       const oben = y0 + 0.25 - (s + 1) * (STOCK_H / 5);
-      g.add(klotz(farbe, WEIT, 0.2, stufe, x, oben - 0.2, z - WEIT / 2 + stufe / 2 + s * stufe));
+      t.add(klotz(farbe, WEIT, 0.2, stufe, 0, oben - 0.2, -WEIT / 2 + stufe / 2 + s * stufe));
     }
   }
   if (!hoch) {
     // Schachtwände, damit das Loch als Loch zu sehen ist
-    for (const s of [-1, 1]) g.add(klotz(0x1c1917, 0.12, STOCK_H, WEIT, x + s * (WEIT / 2 - 0.06), y0 - STOCK_H + 0.25, z));
+    for (const s of [-1, 1]) t.add(klotz(0x1c1917, 0.12, STOCK_H, WEIT, s * (WEIT / 2 - 0.06), y0 - STOCK_H + 0.25, 0));
   }
+  t.rotation.y = Math.atan2(-zu[0], -zu[1]);
+  t.position.set(x, 0, z);
+  g.add(t);
+}
+
+/** Richtung zum einzigen offenen Nachbarn eines Feldes (Treppen liegen in Sackgassen) */
+function eingang(offen: (x: number, y: number) => boolean, [x, y]: Punkt): Punkt {
+  for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as Punkt[]) if (offen(x + dx, y + dy)) return [dx, dy];
+  return [0, -1];
 }
 
 export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
@@ -430,7 +442,7 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     // ein Streifen Boden unter der Tür, damit man sie auch offen trifft
     zielG.add(klotz(dunkel(F.boden), 2 * SCHMAL, 0.25, WEIT, tx, y0, zy));
   } else if (bild.zielArt === "treppe") {
-    treppe(zielG, zx, zy, y0, richtung === 1, dunkel(F.treppe));
+    treppe(zielG, zx, zy, y0, richtung === 1, dunkel(F.treppe), eingang(offen, st.ziel));
   } else {
     zielG.add(klotz(dunkel(FARBE.ausgang), WEIT, 0.3, WEIT, zx, y0, zy));
     if (!bild.unten) {
@@ -469,7 +481,15 @@ export function baueStock(plan: Plan, i: number, bild: StockBild): THREE.Group {
     g.add(zurueck);
     const [sx, sz] = [welt(st.start[0]), welt(st.start[1])];
     if (flach) zurueck.add(klotz(dunkel(F.boden), WEIT, 0.26, WEIT, sx, y0, sz));
-    else treppe(zurueck, sx, sz, y0, richtung === -1, dunkel(F.treppe));
+    else if (richtung === 1) {
+      // Haus: das Stockwerk darunter wird immer mitgezeichnet — seine Treppe kommt
+      // hier durchs Loch herauf. Eine zweite Treppe im selben Raum flimmerte
+      // (gleiche Flächen); darum nur eine unsichtbare Klickfläche über dem Loch.
+      const flaeche = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+      flaeche.scale.set(WEIT, 0.05, WEIT);
+      flaeche.position.set(sx, y0 + 0.25, sz);
+      zurueck.add(flaeche);
+    } else treppe(zurueck, sx, sz, y0, true, dunkel(F.treppe), eingang(offen, st.start));
     if (!bild.unten && !bild.ganz) {
       const sp = schild(flach ? "⬅" : richtung === 1 ? "⬇" : "⬆", "#111827", "#e2e8f0");
       sp.position.set(sx, y0 + 2.4, sz);
