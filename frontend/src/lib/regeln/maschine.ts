@@ -47,6 +47,13 @@ export const FARBEN: Record<string, { name: string; hex: string }> = {
   C: { name: "Cyan", hex: "#00e5ff" },
   H: { name: "Honig", hex: "#e4bb40" },
   J: { name: "Dschungel", hex: "#4b692f" },
+  L: { name: "Hellgrau", hex: "#847e87" },
+  M: { name: "Magenta", hex: "#ff00ff" },
+  Q: { name: "Aqua", hex: "#9badb7" },
+  T: { name: "Türkis", hex: "#37946e" },
+  V: { name: "Oliv", hex: "#8f974a" },
+  X: { name: "Knallrot", hex: "#ff0000" },
+  Z: { name: "Reinweiß", hex: "#ffffff" },
 };
 
 export interface Muster { b: number; h: number; z: string }
@@ -79,7 +86,11 @@ export interface Block {
   pfad?: Pfad;
   nachbarn?: Nachbarregel[];
 }
-export interface Programm { bloecke: Block[] }
+export interface Programm {
+  bloecke: Block[];
+  /** höchstens so viele Schritte insgesamt (Zeile `grenze 1000`) */
+  grenze?: number;
+}
 export interface Raster { b: number; h: number; z: string[] }
 export interface Start { b: number; h: number; grund: string; mitte?: string }
 
@@ -140,9 +151,12 @@ export function regelText(r: Regel): string {
  */
 export function programm(text: string): Programm {
   const bloecke: Block[] = [];
+  let grenze: number | undefined;
   for (const roh of text.split("\n")) {
     const zeile = roh.trim();
     if (!zeile || zeile.startsWith("#")) continue;
+    const g = zeile.match(/^grenze\s+(\d+)$/i);
+    if (g) { grenze = +g[1]; continue; }
     const m = zeile.match(/^(eins|markov|alle|pfad|nachbarn)\b([^:]*):\s*(.*)$/i);
     if (!m) throw new Error(`Zeile nicht verstanden: ${zeile}`);
     const art = m[1].toLowerCase() as Art;
@@ -182,7 +196,7 @@ export function programm(text: string): Programm {
     }
     bloecke.push(block);
   }
-  return { bloecke };
+  return grenze !== undefined ? { bloecke, grenze } : { bloecke };
 }
 
 export function blockText(b: Block): string {
@@ -198,7 +212,7 @@ export function blockText(b: Block): string {
 }
 
 export function programmText(p: Programm): string {
-  return p.bloecke.map(blockText).join("\n");
+  return [...(p.grenze !== undefined ? [`grenze ${p.grenze}`] : []), ...p.bloecke.map(blockText)].join("\n");
 }
 
 // ── Drehungen ────────────────────────────────────────────────────────────
@@ -521,7 +535,7 @@ function schrittImBlock(p: Programm, l: Lauf): boolean {
 
 /** Ein Schritt des ganzen Programms; springt über fertige Blöcke. `false` = Programm fertig. */
 export function schritt(p: Programm, l: Lauf): boolean {
-  while (l.block < p.bloecke.length) {
+  while (l.block < p.bloecke.length && (p.grenze === undefined || l.gesamt < p.grenze)) {
     if (schrittImBlock(p, l)) return true;
     l.block++;
     l.schritt = 0;

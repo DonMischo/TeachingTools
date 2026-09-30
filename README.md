@@ -145,6 +145,11 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Vertauschungsgesetz am Rechenzug, Stufenzahlen und Kommaverschiebung an der Stellenwerttafel
 - Schrittweise lösen, Aufgaben würfeln, eigene Terme, Punktestand
 
+### 🧬 Regel-Labor — Quellen und Inspiration
+- **[MarkovJunior](https://github.com/mxgmn/MarkovJunior)** von Maxim Gumin (MIT-Lizenz): Vorbild der Regelmaschine. Labyrinth, Blumen und Höhle sind übertragen, dazu 34 weitere Beispiele automatisch aus den Modelldateien des Repos (`scripts/mj-beispiele.py` → `frontend/src/lib/regeln/mj-beispiele.ts`, im Reiter »Beispiele« per Auswahlliste, jeweils mit Link aufs Original).
+- **[index.opensource auf Instagram](https://www.instagram.com/index.opensource/)**: die kurzen Clips zu MarkovJunior (Maze Backtracker, Apartemazements, Circuit, Flowers …), die den Anstoß zum Regel-Labor, zum Gebäude und zum Verlies gegeben haben.
+- Die Tempo-Stufen reichen von »super langsam« (etwa zwei Schritte pro Sekunde, zum Mitdenken) bis »sofort«.
+
 ---
 
 ## 🔨 Tools

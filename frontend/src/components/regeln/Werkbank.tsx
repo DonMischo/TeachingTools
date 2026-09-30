@@ -19,7 +19,10 @@ interface Props {
   onGeloest?: () => void;
 }
 
-const TEMPI: [number, string][] = [[1, "langsam"], [5, "mittel"], [40, "schnell"], [5000, "sofort"]];
+// Schritte je Bild (60 Bilder/s); unter 1 heißt: nur in manchen Bildern ein Schritt
+const TEMPI: [number, string][] = [
+  [0.03, "super langsam"], [0.2, "sehr langsam"], [1, "langsam"], [5, "mittel"], [40, "schnell"], [5000, "sofort"],
+];
 const ARTEN: [Art, string][] = [["eins", "eins – ein Treffer"], ["markov", "markov – erste Regel zuerst"], ["alle", "alle – alle Treffer"]];
 const SYMMETRIEN: [Symmetrie, string][] = [["alle", "↻ gedreht & gespiegelt"], ["spiegel", "⇆ nur gespiegelt"], ["fest", "• genau so"]];
 const PINSEL = [...Object.keys(FARBEN), JOKER];
@@ -43,8 +46,10 @@ export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest 
   useEffect(() => {
     if (!laeuft) return;
     let id = 0;
+    let guthaben = 1; // der erste Schritt kommt sofort
     const tick = () => {
-      for (let i = 0; i < tempo; i++) if (!schritt(prog, lauf)) break;
+      guthaben += tempo;
+      for (; guthaben >= 1; guthaben--) if (!schritt(prog, lauf)) break;
       neuZeichnen();
       if (lauf.fertig) setLaeuft(false);
       else id = requestAnimationFrame(tick);

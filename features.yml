@@ -246,6 +246,8 @@ simulationen:
       - Gleicher Zufall liefert das gleiche Bild — Ergebnisse lassen sich in der Klasse vergleichen
       - Labyrinth-Algorithmen Schritt für Schritt: Backtracker, Prim, Kruskal, Wilson; Löser Tiefensuche, Breitensuche, A* mit sichtbarem Stapel/Schlange/offener Liste und Vergleichstabelle; Rundwege per »Wände einreißen«
       - Beispielgalerie mit Vorschaubildern: Labyrinth, Blumen, Höhle (aus MarkovJunior), Platine, Verlies, Game of Life — alle im Editor veränderbar
+      - 34 weitere MarkovJunior-Beispiele per Auswahlliste, automatisch übertragen (scripts/mj-beispiele.py), mit Link aufs Original; Quellen: github.com/mxgmn/MarkovJunior, instagram.com/index.opensource
+      - Tempo von »super langsam« bis »sofort«; Programm-Schrittgrenze »grenze N«
       - Weitere Bausteine: Symmetrie je Block (gedreht & gespiegelt / nur gespiegelt / fest), gleichrangige Regeln in markov, Chance je Treffer, Pfad (kürzester Weg, mit Abstand), Nachbarn (Zellautomat)
       - Gebäude aus einer Wachstumsregel (WBB=WAW): Stockwerke in 3D zum Durchlaufen, daneben der Grundriss als Raster; Grundlage der Exitgame-Gebäudeansicht
       - Ganzes Haus als drehbares Modell (alle Stockwerke, Treppen, Stützen, Sockel) in vier Stilen: Klassisch, Beton, Glas & Neon, Gartenpalast

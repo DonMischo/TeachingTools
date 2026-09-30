@@ -41,7 +41,9 @@ const FARBE: Record<number, string> = {
   [K.RAND]: "#38bdf8", [K.BESUCHT]: "#c4b5fd", [K.WEG]: "#eab308",
 };
 
-const TEMPI: [number, string][] = [[1, "langsam"], [4, "mittel"], [25, "schnell"], [100000, "sofort"]];
+const TEMPI: [number, string][] = [
+  [0.03, "super langsam"], [0.2, "sehr langsam"], [1, "langsam"], [4, "mittel"], [25, "schnell"], [100000, "sofort"],
+];
 const GROESSEN = [8, 12, 16, 24, 32];
 const RUNDWEGE = [0, 5, 20, 60];
 
@@ -101,9 +103,11 @@ export default function Labyrinthe() {
   useEffect(() => {
     if (!laeuft) return;
     let id = 0;
+    let guthaben = 1; // der erste Schritt kommt sofort
     const tick = () => {
       let weiter = true;
-      for (let i = 0; i < tempo && weiter; i++) weiter = schritt();
+      guthaben += tempo;
+      for (; guthaben >= 1 && weiter; guthaben--) weiter = schritt();
       neuZeichnen();
       if (weiter) id = requestAnimationFrame(tick);
       else setLaeuft(false);

@@ -172,6 +172,7 @@ function Labor() {
       <Werkbank key={laden} vorlage={vorlage} start={start} />
       <p className="text-xs text-[var(--text-muted)]">
         Idee nach <a className="underline" href="https://github.com/mxgmn/MarkovJunior" target="_blank" rel="noreferrer">MarkovJunior</a> von Maxim Gumin (MIT-Lizenz) — hier stark vereinfacht nachgebaut.
+        Angestoßen von den Clips des Kanals <a className="underline" href="https://www.instagram.com/index.opensource/" target="_blank" rel="noreferrer">index.opensource</a>.
       </p>
     </div>
   );
