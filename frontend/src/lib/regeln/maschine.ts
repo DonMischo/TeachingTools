@@ -62,7 +62,11 @@ export type Symmetrie = "alle" | "spiegel" | "fest";
  * Weg von einer Farbe über andere zu einer Ziel-Farbe. `abstand`: der Weg
  * läuft nicht direkt neben schon gemalten Wegen (Leiterbahnen mit Lücke).
  */
-export interface Pfad { von: string; nach: string; ueber: string; male: string; abstand?: boolean }
+export interface Pfad {
+  von: string; nach: string; ueber: string; male: string; abstand?: boolean;
+  /** Farbe des Startfelds, sobald es angeschlossen ist (sonst die erste Zielfarbe) */
+  start?: string;
+}
 /** Zellautomat: Zelle `aus` wird `ein`, wenn min…max ihrer acht Nachbarn die Farbe(n) `zaehlt` haben */
 export interface Nachbarregel { aus: string; ein: string; min: number; max: number; zaehlt: string }
 export interface Block {
@@ -154,9 +158,12 @@ export function programm(text: string): Programm {
     if (zusatz) throw new Error(`»${zusatz}« verstehe ich nicht: ${zeile}`);
     const rumpf = m[3].trim();
     if (art === "pfad") {
-      const w = rumpf.match(/^(\S+)\s*(?:→|->|>)\s*(\S+)\s+über\s+(\S+)\s*=\s*(\S)$/i);
-      if (!w) throw new Error(`Pfad so schreiben: »pfad: A → U über E = G« — ${zeile}`);
-      block.pfad = { von: w[1].toUpperCase(), nach: w[2].toUpperCase(), ueber: w[3].toUpperCase(), male: w[4].toUpperCase(), ...(abstand ? { abstand } : {}) };
+      const w = rumpf.match(/^(\S+)\s*(?:→|->|>)\s*(\S+)\s+über\s+(\S+)\s*=\s*(\S)(?:\s*,\s*start\s+(\S))?$/i);
+      if (!w) throw new Error(`Pfad so schreiben: »pfad: A → U über E = G« (optional », start K«) — ${zeile}`);
+      block.pfad = {
+        von: w[1].toUpperCase(), nach: w[2].toUpperCase(), ueber: w[3].toUpperCase(), male: w[4].toUpperCase(),
+        ...(abstand ? { abstand } : {}), ...(w[5] ? { start: w[5].toUpperCase() } : {}),
+      };
     } else if (art === "nachbarn") {
       block.nachbarn = rumpf.split(/[,;]/).map(s => s.trim()).filter(Boolean).map(s => {
         const n = s.match(/^(\S)\s*=\s*(\S)\s+bei\s+(\d)(?:\s*-\s*(\d))?\s+(\S+)$/i);
@@ -181,7 +188,9 @@ export function programm(text: string): Programm {
 export function blockText(b: Block): string {
   const kopf = [b.art, b.grenze !== undefined ? `x${b.grenze}` : "", b.p !== undefined ? `p${Math.round(b.p * 100)}` : "",
     b.sym && b.sym !== "alle" ? b.sym : "", b.pfad?.abstand ? "abstand" : ""].filter(Boolean).join(" ");
-  if (b.art === "pfad" && b.pfad) return `${kopf}: ${b.pfad.von} → ${b.pfad.nach} über ${b.pfad.ueber} = ${b.pfad.male}`;
+  if (b.art === "pfad" && b.pfad) {
+    return `${kopf}: ${b.pfad.von} → ${b.pfad.nach} über ${b.pfad.ueber} = ${b.pfad.male}${b.pfad.start ? `, start ${b.pfad.start}` : ""}`;
+  }
   if (b.art === "nachbarn" && b.nachbarn) {
     return `${kopf}: ${b.nachbarn.map(n => `${n.aus}=${n.ein} bei ${n.min === n.max ? n.min : `${n.min}-${n.max}`} ${n.zaehlt}`).join(", ")}`;
   }
@@ -371,14 +380,17 @@ function nachbarSchritt(r: Raster, regeln: Nachbarregel[]): number[] | null {
 function pfadSchritt(r: Raster, pf: Pfad, rng: () => number): boolean {
   const n = r.b * r.h;
   const d = new Int32Array(n).fill(-1);
-  // Mit Abstand: Felder neben schon gemalten Wegen sind gesperrt.
+  // Mit Abstand: Felder neben schon gemalten Wegen und neben Zielen sind gesperrt —
+  // nur der letzte Schritt ins Ziel darf daran vorbei (siehe unten).
   const frei = (j: number) => {
     if (!pf.ueber.includes(r.z[j])) return false;
     if (!pf.abstand) return true;
     const x = j % r.b, y = (j - x) / r.b;
     for (const [dx, dy] of RINGS) {
       const nx = x + dx, ny = y + dy;
-      if (nx >= 0 && ny >= 0 && nx < r.b && ny < r.h && r.z[ny * r.b + nx] === pf.male) return false;
+      if (nx < 0 || ny < 0 || nx >= r.b || ny >= r.h) continue;
+      const c = r.z[ny * r.b + nx];
+      if (c === pf.male || pf.nach.includes(c)) return false;
     }
     return true;
   };
@@ -430,7 +442,7 @@ function pfadSchritt(r: Raster, pf: Pfad, rng: () => number): boolean {
     if (min === 0) break;
     r.z[y * r.b + x] = pf.male;
   }
-  r.z[start] = pf.nach[0];
+  r.z[start] = pf.start ?? pf.nach[0];
   return true;
 }
 

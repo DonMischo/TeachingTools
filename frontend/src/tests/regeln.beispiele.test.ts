@@ -116,12 +116,29 @@ describe("Beispielgalerie", () => {
     expect(hell).toBeLessThan(0.8);
   });
 
-  it("Platine: Chips, Leiterbahnen, angeschlossene und rote Anschlüsse", () => {
-    const { r } = lauf("platine");
-    expect(zaehle(r, "N")).toBe(7 * 16); // sieben Chips à 4×4
-    expect(zaehle(r, "G")).toBeGreaterThan(40);
-    expect(zaehle(r, "A")).toBeGreaterThan(8);
-    expect(zaehle(r, "U")).toBe(0);
+  it("Platine: Lochraster, Chips aufs Raster, Leiterbahnen in den Kanälen", () => {
+    for (const seed of [1, 5]) {
+      const { r } = lauf("platine", seed);
+      // regelmäßiges Lochraster: Löcher nur dort, wo Zeile und Spalte die Parität der Mitte haben
+      const mitte = Math.floor(r.b / 2) % 2;
+      r.z.forEach((c, i) => {
+        if (c === "I") expect((i % r.b) % 2 === mitte && Math.floor(i / r.b) % 2 === mitte).toBe(true);
+      });
+      const chips = zaehle(r, "N") / 25;
+      expect(Number.isInteger(chips) && chips >= 4).toBe(true);
+      expect(zaehle(r, "G")).toBeGreaterThan(60);
+      expect(zaehle(r, "A")).toBeGreaterThan(chips * 2); // die meisten Anschlüsse hängen am Netz
+      for (const zwischen of ["U", "K", "C", "F"]) expect(zaehle(r, zwischen)).toBe(0);
+    }
+  });
+
+  it("Pfad mit »start«: das Startfeld bekommt die eigene Farbe", () => {
+    const p = programm("pfad: A → U über E = G, start K");
+    const l = starte(p, { b: 5, h: 1, grund: "E" }, 1);
+    l.raster.z = [..."AEEEU"];
+    laufeDurch(p, l);
+    expect(l.raster.z.join("")).toBe("KGGGU");
+    expect(programm(programmText(p))).toEqual(p);
   });
 
   it("Verlies: Zimmer mit Türen, keine Sackgassen mehr", () => {
