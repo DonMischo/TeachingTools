@@ -59,12 +59,14 @@ function bahn(von: Knoten, nach: Knoten) {
 
 const schluessel = (k: Kante) => `${k.von}>${k.nach}`;
 
-export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, einsatz }: {
+export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, markiert, einsatz }: {
   z: Zustand;
   /** Bereiche, in die gerade Punkte fließen. */
   hervorheben?: Knoten[];
   /** Id einer Rückkopplungsschleife (R1 …), deren Pfeile leuchten sollen. */
   schleife?: string | null;
+  /** Pfeile, die leuchten sollen (Rechenweg: wer in diesem Schritt gewirkt hat). */
+  markiert?: [Knoten, Knoten][];
   /** Verteilte Punkte je Hebel, für die Dicke der Entscheidungs-Pfeile. */
   einsatz?: Partial<Record<Groesse, number>>;
 }) {
@@ -74,7 +76,8 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, ein
   const [ergebnisse, setErgebnisse] = useState(false);
   const aktiv = hover ?? fokus;
 
-  const pfad = useMemo(() => new Set((schleife ? SCHLEIFEN_KANTEN[schleife] ?? [] : []).map(([a, b]) => `${a}>${b}`)), [schleife]);
+  const pfad = useMemo(() => new Set([...(schleife ? SCHLEIFEN_KANTEN[schleife] ?? [] : []), ...(markiert ?? [])]
+    .map(([a, b]) => `${a}>${b}`)), [schleife, markiert]);
   const erste = useMemo(() => new Set(hervorheben), [hervorheben]);
   const zweite = useMemo(() => {
     const s = new Set<Knoten>();

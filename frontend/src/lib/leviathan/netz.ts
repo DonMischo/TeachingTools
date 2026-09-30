@@ -8,7 +8,7 @@
  */
 import { BEREICH } from "./bereiche";
 import { erwerbAnteil, n } from "./hilfen";
-import { budget, leviathan } from "./motor";
+import { budget, leviathan, LQ_TEILE } from "./motor";
 import { REGELN } from "./regeln";
 import { GROESSEN, HEBEL, HOCH_SCHLECHT, type Groesse, type Zustand } from "./typen";
 
@@ -62,12 +62,8 @@ const ENTSCHEIDUNGEN: Kante[] = HEBEL.map((h) => ({
   text: "Deine Entscheidung: Aktionspunkte in diesen Bereich stecken.",
 }));
 
-const LQ_GEWICHTE: [Groesse, number][] = [
-  ["wirtschaft", 0.2], ["soziales", 0.2], ["zusammenhalt", 0.15], ["gleichheit", 0.1], ["klima", -0.1],
-  ["vertrauen", 0.08], ["demokratie", 0.1], ["bildung", 0.07],
-];
 const ERGEBNISSE: Kante[] = [
-  ...LQ_GEWICHTE.map(([g, s]): Kante => ({ von: g, nach: "lq", staerke: s * 10, verzoegerung: 0, quelle: "annahme", art: "ergebnis" })),
+  ...LQ_TEILE.map(([g, s]): Kante => ({ von: g, nach: "lq", staerke: (g === "klima" ? -s : s) * 10, verzoegerung: 0, quelle: "annahme", art: "ergebnis" })),
   { von: "staatskapazitaet", nach: "leviathan", staerke: 1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht des Staates." },
   { von: "demokratie", nach: "leviathan", staerke: -1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht der Gesellschaft hält den Staat in Schach." },
   { von: "zusammenhalt", nach: "leviathan", staerke: -1, verzoegerung: 0, quelle: "korridor", art: "ergebnis", neutral: true, text: "Die Macht der Gesellschaft hält den Staat in Schach." },

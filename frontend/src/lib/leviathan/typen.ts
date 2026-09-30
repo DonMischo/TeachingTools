@@ -100,6 +100,35 @@ export interface Schnappschuss {
 
 export type Status = "laeuft" | "zusammengebrochen" | "wiederaufbau" | "fertig";
 
+/** Ein Rechenschritt-Beitrag: um wie viel sich eine Größe verändert – und warum. */
+export interface Beitrag {
+  nach: Groesse;
+  wert: number;
+  grund: string;
+  /** Wer wirkt (Größe, "aktionspunkte", Ereignis-Id …), für das Wirkungsnetz. */
+  von?: string;
+  quelle?: string;
+}
+
+export interface Schritt {
+  id: string;
+  titel: string;
+  erklaerung: string;
+  beitraege: Beitrag[];
+  /** Zusätzliche Rechenzeilen (Budget, Bevölkerung …). */
+  details?: string[];
+}
+
+/** Der Rechenweg einer Runde, Schritt für Schritt. Start + alle Beiträge = Ende. */
+export interface Rechnung {
+  runde: number;
+  start: Werte;
+  ende: Werte;
+  schritte: Schritt[];
+  lq: { name: string; gewicht: number; wert: number }[];
+  lqSchock: number;
+}
+
 export interface Zustand {
   typ: TypId;
   land: string;
@@ -137,6 +166,8 @@ export interface Zustand {
   /** Runde, in der das Land zusammenbrach. */
   zusammenbruch: number | null;
   verlauf: Schnappschuss[];
+  /** Rechenweg der letzten Runde. */
+  rechnung?: Rechnung | null;
   meldungen: Meldung[];
   /** Ereignisse, die einmalig sind und schon vorkamen. */
   gewesen: string[];

@@ -156,3 +156,31 @@ describe("Leviathan – Wirkungsnetz", () => {
     }
   });
 });
+
+describe("Leviathan – Rechenweg", () => {
+  it("Startwert plus alle Beiträge ergibt genau den Endwert – in jeder Runde, für jede Größe", () => {
+    for (const t of LAENDERTYPEN) {
+      let z = neuesSpiel(t.id, { ...STANDARD_EINSTELLUNGEN, krise: "stuermisch" }, 5);
+      while (z.status === "laeuft") {
+        z = runde(z, gleich(z));
+        const r = z.rechnung!;
+        expect(r.runde).toBe(z.runde);
+        for (const g of GROESSEN) {
+          const summe = r.schritte.flatMap((s) => s.beitraege).filter((b) => b.nach === g).reduce((a, b) => a + b.wert, r.start[g]);
+          expect(summe, `${t.id} Runde ${z.runde} ${g}`).toBeCloseTo(z.w[g], 6);
+        }
+      }
+    }
+  });
+
+  it("jeder Schritt erklärt sich, Quellen sind bekannt", () => {
+    const z = runde(neuesSpiel("industrie", STANDARD_EINSTELLUNGEN, 2), { ...leereVerteilung(), bildung: 3, energie: 2 });
+    const ids = z.rechnung!.schritte.map((s) => s.id);
+    expect(ids).toEqual(["budget", "investition", "wirkung", "eigen", "traegheit", "bevoelkerung", "ereignisse", "wahl"]);
+    for (const s of z.rechnung!.schritte) {
+      expect(s.erklaerung.length).toBeGreaterThan(10);
+      for (const b of s.beitraege) if (b.quelle) expect(QUELLEN[b.quelle], b.quelle).toBeDefined();
+    }
+    expect(z.rechnung!.schritte[1].beitraege.map((b) => b.nach).sort()).toEqual(["bildung", "energie"]);
+  });
+});

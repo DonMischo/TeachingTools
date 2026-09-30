@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BEREICH } from "@/lib/leviathan/bereiche";
 import { mio, gesamt } from "@/lib/leviathan/hilfen";
 import { TYP } from "@/lib/leviathan/laender";
@@ -10,10 +10,14 @@ import { FOLGEN, HEBEL, type Hebel, type Verteilung, type Zustand } from "@/lib/
 import { LeviathanAnzeige, Verlauf } from "./Anzeigen";
 import { KRISE_TEXT } from "./Start";
 import { Balken, Karte, QuelleLink } from "./ui";
+import Rechenweg from "./Rechenweg";
 import Wirkungsnetz from "./Wirkungsnetz";
 
 export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteilung) => void }) {
   const [v, setV] = useState<Verteilung>(leereVerteilung);
+  const [ansicht, setAnsicht] = useState<"netz" | "rechenweg">("netz");
+  // Neue Runde: Verteilung leeren, die gewählte Ansicht bleibt.
+  useEffect(() => { setV(leereVerteilung()); }, [z.runde, z.status]);
   const b = budget(z);
   const verfuegbar = b.gesamt + v.kredit;
   const rest = verfuegbar - verteilt(v);
@@ -26,13 +30,17 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
   const kp = kipppunkte(z.einst);
   const wahlJahr = (z.runde + 1) % 2 === 0;
 
-  const setze = (h: Hebel | "kredit", n: number) => setV((alt) => ({ ...alt, [h]: Math.max(0, n) }));
-  const plus = (h: Hebel) => rest > 0 && setze(h, v[h] + 1);
-  const minus = (h: Hebel) => setze(h, v[h] - 1);
+  // Funktional aktualisieren: schnelle Mehrfachklicks sehen sonst einen veralteten Stand.
+  const aendere = (h: Hebel | "kredit", schritt: number) => setV((alt) => {
+    const neu = { ...alt, [h]: Math.max(0, alt[h] + schritt) };
+    if (h === "kredit") neu.kredit = Math.min(MAX_KREDIT, neu.kredit);
+    return h !== "kredit" && schritt > 0 && verteilt(neu) > b.gesamt + neu.kredit ? alt : neu;
+  });
+  const plus = (h: Hebel) => aendere(h, 1);
+  const minus = (h: Hebel) => aendere(h, -1);
 
   function beenden() {
     onRunde(v);
-    setV(leereVerteilung());
   }
 
   return (
@@ -105,10 +113,10 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
             <div className="rounded-xl border border-[var(--border)] p-3">
               <div className="font-bold mb-1">Kredit aufnehmen</div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setze("kredit", v.kredit - 1)} disabled={v.kredit === 0}
+                <button onClick={() => aendere("kredit", -1)} disabled={v.kredit === 0}
                   aria-label="Kredit verringern" className="w-7 h-7 rounded-lg border border-[var(--border)] font-black disabled:opacity-30">−</button>
                 <span className="w-6 text-center font-black">{v.kredit}</span>
-                <button onClick={() => setze("kredit", Math.min(MAX_KREDIT, v.kredit + 1))} disabled={v.kredit >= MAX_KREDIT}
+                <button onClick={() => aendere("kredit", 1)} disabled={v.kredit >= MAX_KREDIT}
                   aria-label="Kredit erhöhen" className="w-7 h-7 rounded-lg border border-[var(--border)] font-black disabled:opacity-30">+</button>
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -144,8 +152,16 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
         </div>
       </div>
 
-      <Karte titel="🕸️ Wirkungsnetz – wie hängt alles zusammen?">
-        <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} />
+      <Karte titel="Wie hängt alles zusammen?" rechts={
+        <div className="inline-flex rounded-xl border border-[var(--border)] p-1" role="tablist">
+          {([["netz", "🕸️ Wirkungsnetz"], ["rechenweg", "🧮 Rechenweg der letzten Runde"]] as const).map(([id, t]) => (
+            <button key={id} role="tab" aria-selected={ansicht === id} onClick={() => setAnsicht(id)}
+              className={`px-3 py-1 rounded-lg text-sm font-bold ${ansicht === id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>{t}</button>
+          ))}
+        </div>}>
+        {ansicht === "netz"
+          ? <Wirkungsnetz z={z} hervorheben={HEBEL.filter((h) => v[h] > 0)} einsatz={v} />
+          : <Rechenweg key={z.runde} z={z} />}
       </Karte>
 
       <Karte titel={letzte.length ? `Nachrichten ${jahr}` : "Nachrichten"}>

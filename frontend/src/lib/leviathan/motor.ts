@@ -7,12 +7,13 @@
  * Alles ist deterministisch bei gleichem Seed und gleicher Verteilung.
  */
 import { EREIGNIS, EREIGNISSE, anwenden, machtuebernahme, type Ereignis } from "./ereignisse";
-import { altAnteil, erwerbAnteil, gesamt, klemme, n, zufall } from "./hilfen";
+import { BEREICH } from "./bereiche";
+import { altAnteil, erwerbAnteil, gesamt, klemme, mio, n, zufall } from "./hilfen";
 import { TYP } from "./laender";
 import { REGELN } from "./regeln";
 import {
   FOLGEN, GROESSEN, HEBEL, type Einstellungen, type Groesse, type Hebel, type Meldung,
-  type Schnappschuss, type TypId, type Verteilung, type Werte, type Zone, type Zustand,
+  type Schnappschuss, type Schritt, type TypId, type Verteilung, type Werte, type Zone, type Zustand,
 } from "./typen";
 
 export const STARTJAHR = 2026;
@@ -122,10 +123,14 @@ export function neuesSpiel(typ: TypId, einst: Einstellungen, seed = Date.now() %
   return z;
 }
 
+/** Woraus sich die Lebensqualität zusammensetzt (Klima geht umgekehrt ein). */
+export const LQ_TEILE: [Groesse, number][] = [
+  ["wirtschaft", 0.2], ["soziales", 0.2], ["zusammenhalt", 0.15], ["gleichheit", 0.1],
+  ["klima", 0.1], ["vertrauen", 0.08], ["demokratie", 0.1], ["bildung", 0.07],
+];
+
 export function lebensqualitaet(z: Zustand): number {
-  const w = z.w;
-  const basis = 0.2 * w.wirtschaft + 0.2 * w.soziales + 0.15 * w.zusammenhalt + 0.1 * w.gleichheit
-    + 0.1 * (100 - w.klima) + 0.08 * w.vertrauen + 0.1 * w.demokratie + 0.07 * w.bildung;
+  const basis = LQ_TEILE.reduce((s, [g, gew]) => s + gew * (g === "klima" ? 100 - z.w.klima : z.w[g]), 0);
   return klemme(basis + z.lqSchock);
 }
 
@@ -161,80 +166,141 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
   z.schulden = Math.max(0, z.schulden + kredit - (verfuegbar - summe));
   z.apKorrektur = 0;
 
-  const vorher = { ...z.w };
+  // Der Rechenweg: jede Veränderung wird mit Grund und Quelle mitgeschrieben.
+  const start = { ...z.w };
+  const schritte: Schritt[] = [];
+  let schritt: Schritt;
+  const beginne = (id: string, titel: string, erklaerung: string) => {
+    schritt = { id, titel, erklaerung, beitraege: [] };
+    schritte.push(schritt);
+  };
   const d: Werte = Object.fromEntries(GROESSEN.map((g) => [g, 0])) as Werte;
+  /** Beitrag in die Summe dieser Runde (wird gemeinsam mit Trägheit angewandt). */
+  const plus = (nach: Groesse, wert: number, grund: string, von?: string, quelle?: string) => {
+    if (Math.abs(wert) < 1e-9) return;
+    d[nach] += wert;
+    schritt.beitraege.push({ nach, wert, grund, von, quelle });
+  };
+  /** Führt eine Änderung direkt aus und schreibt den Unterschied mit. */
+  const direkt = (grund: string, von: string | undefined, quelle: string | undefined, f: () => void) => {
+    const vor = { ...z.w };
+    f();
+    for (const g of GROESSEN) {
+      const diff = z.w[g] - vor[g];
+      if (Math.abs(diff) > 1e-9) schritt.beitraege.push({ nach: g, wert: diff, grund, von, quelle });
+    }
+  };
+
+  beginne("budget", "Haushalt", "Aus Steuern, Rohstoffen, Renten und Zinsen ergeben sich die Aktionspunkte dieser Runde.");
+  schritt!.details = [
+    `Steuern: 3 + Wirtschaft ${Math.round(z.w.wirtschaft)} × Erwerbstätige × Staatskapazität = ${b.steuern.toFixed(1)}`,
+    ...(b.rohstoff > 0.05 ? [`Rohstoffe: + ${b.rohstoff.toFixed(1)}`] : []),
+    ...(b.rente > 0.05 ? [`Renten (${Math.round((z.bev.alt / z.bev.erwerb) * 100)} Ältere je 100 Erwerbstätige): − ${b.rente.toFixed(1)}`] : []),
+    ...(b.zinsen > 0.05 ? [`Zinsen auf ${alt.schulden} Schulden: − ${b.zinsen.toFixed(1)}`] : []),
+    ...(b.korrektur ? [`Ereignisse der letzten Runde: ${b.korrektur > 0 ? "+" : "−"} ${Math.abs(b.korrektur)}`] : []),
+    ...(b.wiederaufbau ? [`Wiederaufbau: − ${Math.abs(b.wiederaufbau)}`] : []),
+    `= ${b.gesamt} Aktionspunkte${kredit ? ` + ${kredit} Kredit` : ""}; verteilt: ${summe}`,
+  ];
 
   // 1. Investitionen mit abnehmendem Ertrag
   const eff = effizienz(z);
+  beginne("investition", "Deine Investitionen",
+    `Jeder Aktionspunkt wirkt zu ${Math.round(eff * 100)} % (Korruption und Staatskapazität). Jeder weitere Punkt bringt weniger, und je höher ein Bereich schon ist, desto weniger.`);
   for (const h of HEBEL) {
     if (v[h] <= 0) continue;
-    let plus = ertrag(v[h]) * eff;
+    let wert = ertrag(v[h]) * eff;
+    let zusatz = "";
     if (h === "energie") {
-      plus *= lernfaktor(z.energieKumuliert);
+      const lf = lernfaktor(z.energieKumuliert);
+      wert *= lf;
+      zusatz = `, Lernkurve × ${lf.toFixed(2)}`;
       z.energieKumuliert += v[h];
     }
     // Je höher ein Bereich schon ist, desto weniger bringt jeder weitere Punkt.
-    d[h] += plus * Math.max(0.15, 1.1 - z.w[h] / 100);
+    wert *= Math.max(0.15, 1.1 - z.w[h] / 100);
+    plus(h, wert, `${v[h]} Aktionspunkt${v[h] > 1 ? "e" : ""}${zusatz}`, "aktionspunkte", h === "energie" ? "way2022" : undefined);
   }
   const investiert = { ...d };
 
   // 2. Wirkungsgefüge (mit Verzögerung aus dem Verlauf)
+  beginne("wirkung", "Wirkungsgefüge",
+    "Jeder Bereich wirkt auf andere: über 50 schiebt er in Pfeilrichtung, unter 50 zieht er dagegen. Manche Wirkungen kommen erst Jahre später an.");
   for (const r of REGELN) {
     const idx = Math.max(0, z.verlauf.length - 1 - r.verzoegerung);
     const quelle = r.verzoegerung === 0 ? z.w : z.verlauf[idx].w;
     let x = n(quelle[r.von]);
     if (r.nurUeber50) x = Math.max(0, x);
     const k = r.von === "klima" && t.kueste ? 2 : 1;
-    d[r.nach] += r.staerke * x * k;
+    const wann = r.verzoegerung ? ` vor ${r.verzoegerung * 2} Jahren` : "";
+    plus(r.nach, r.staerke * x * k, `${BEREICH[r.von].name}${wann} bei ${Math.round(quelle[r.von])}${k > 1 ? " (Küste: doppelt)" : ""}`, r.von, r.quelle);
   }
+  // Arbeitslosigkeit kostet Vertrauen in die Institutionen (Algan 2017) – gemessen an der letzten Runde.
+  const vorletzte = z.verlauf[z.verlauf.length - 2]?.w.wirtschaft ?? z.w.wirtschaft;
+  const einbruch = Math.min(0, z.w.wirtschaft - vorletzte);
+  plus("vertrauen", 0.35 * einbruch, `Wirtschaft ist um ${Math.round(-einbruch)} geschrumpft (Arbeitslosigkeit)`, "wirtschaft", "algan2017");
 
   // 3. Eigendynamik
-  // Hebel verfallen ohne Pflege, Folgen ziehen langsam zur Mitte.
-  for (const h of HEBEL) d[h] -= 0.07 * (z.w[h] - 10);
-  for (const f of FOLGEN) if (f !== "klima") d[f] -= 0.02 * (z.w[f] - 50);
-  d.wirtschaft += 0.5; // technischer Fortschritt
+  beginne("eigen", "Eigendynamik",
+    "Was ohne dein Zutun passiert: Bereiche verfallen ohne Pflege, Werte kehren zur Mitte zurück, Klima und Desinformation haben eigenen Schwung.");
+  for (const h of HEBEL) plus(h, -0.07 * (z.w[h] - 10), "Verfall ohne Pflege");
+  for (const f of FOLGEN) if (f !== "klima") plus(f, -0.02 * (z.w[f] - 50), "kehrt langsam zur Mitte zurück");
+  plus("wirtschaft", 0.5, "technischer Fortschritt");
 
   // Klima: eigene Emissionen minus Wende plus Welttrend, Kipppunkte schieben nach.
-  const emission = t.klimaGewicht * (z.w.wirtschaft / 100) * (1 - z.w.energie / 100) * 5;
-  const reduktion = t.klimaGewicht * (z.w.energie / 100) * 2.5;
+  plus("klima", t.klimaGewicht * (z.w.wirtschaft / 100) * (1 - z.w.energie / 100) * 5, "eigene Emissionen (Wirtschaft ohne Energiewende)", "wirtschaft", "armstrongMcKay2022");
+  plus("klima", -t.klimaGewicht * (z.w.energie / 100) * 2.5, "Energiewende senkt Emissionen", "energie", "way2022");
   const welt = Math.max(0.2, 0.9 - 0.02 * z.runde) + (z.einst.krise === "stuermisch" ? 0.5 : 0);
-  d.klima += emission - reduktion + welt - 0.6 + 0.4 * z.kipppunkte.length;
+  plus("klima", welt, "weltweiter Trend (die anderen Länder)", undefined, "armstrongMcKay2022");
+  plus("klima", -0.6, "Natur nimmt einen Teil auf");
+  plus("klima", 0.4 * z.kipppunkte.length, "überschrittene Kipppunkte heizen nach", undefined, "armstrongMcKay2022");
 
   // Desinformation wächst von selbst (Vosoughi), KI macht Fälschungen billig (WEF).
-  d.desinformation += 0.015 * z.w.desinformation + (z.runde >= 3 ? 0.3 : 0.1);
+  plus("desinformation", 0.015 * z.w.desinformation, "Falschmeldungen verbreiten sich von selbst", "desinformation", "vosoughi2018");
+  plus("desinformation", z.runde >= 3 ? 0.3 : 0.1, "KI macht Fälschungen billiger", undefined, "wef2025");
 
   // Autokrat: Demokratie und Pressefreiheit bröckeln, die Wirtschaft leidet langsam (Funke 2023).
   if (z.regierung.autokrat) {
-    d.demokratie -= 1.5;
-    d.korruption += 1.5;
-    d.desinformation += 1;
-    d.staatskapazitaet += 1;
-    if (z.runde - z.regierung.seit >= 1) d.wirtschaft -= 0.8;
+    plus("demokratie", -1.5, "Autokrat baut Kontrollen ab", "autokrat", "vdem2026");
+    plus("korruption", 1.5, "Autokrat: Vetternwirtschaft", "autokrat", "vdem2026");
+    plus("desinformation", 1, "Autokrat: Staatspropaganda", "autokrat", "vdem2026");
+    plus("staatskapazitaet", 1, "Autokrat setzt schnell durch", "autokrat", "korridor");
+    if (z.runde - z.regierung.seit >= 1) plus("wirtschaft", -0.8, "populistische Wirtschaftspolitik", "autokrat", "funke2023");
   }
 
   // Leviathan-Zone
   const zone = leviathan(z.w).zone;
-  if (zone === "gefesselt") { d.wirtschaft += 1; d.vertrauen += 1; }
-  if (zone === "despotisch") d.korruption += 1.5;
+  if (zone === "gefesselt") {
+    plus("wirtschaft", 1, "im Korridor: Staat und Gesellschaft im Gleichgewicht", "leviathan", "korridor");
+    plus("vertrauen", 1, "im Korridor: Staat und Gesellschaft im Gleichgewicht", "leviathan", "korridor");
+  }
+  if (zone === "despotisch") plus("korruption", 1.5, "despotischer Staat: niemand kontrolliert", "leviathan", "korridor");
 
   // Laufende Wirkungen
-  for (const l of z.laufend) for (const [g, x] of Object.entries(l.wirkung) as [Groesse, number][]) d[g] += x;
+  for (const l of z.laufend) for (const [g, x] of Object.entries(l.wirkung) as [Groesse, number][]) plus(g, x, `läuft noch nach: ${l.titel}`, l.id);
   z.laufend = z.laufend.map((l) => ({ ...l, runden: l.runden - 1 })).filter((l) => l.runden > 0);
 
   // Trägheit an den Rändern: Gesellschaften kippen selten ganz auf 0 oder 100.
   // Nur die Eigendynamik wird gedämpft, nicht die eigenen Investitionen.
+  beginne("traegheit", "Trägheit und Grenzen",
+    "Nahe 0 und 100 bremsen Gesellschaften: Was von selbst passiert, wirkt dort schwächer. Kein Wert fällt unter 0 oder steigt über 100, und über einem Kipppunkt bleibt die Klimalast.");
+  const summeVorher = { ...z.w };
   for (const g of GROESSEN) {
     const rest = d[g] - investiert[g];
-    const v = z.w[g];
-    const daempf = rest > 0 ? Math.min(1, 2 * (100 - v) / 100) : Math.min(1, 2 * v / 100);
-    z.w[g] = klemme(v + investiert[g] + rest * daempf);
+    const w = z.w[g];
+    const daempf = rest > 0 ? Math.min(1, 2 * (100 - w) / 100) : Math.min(1, 2 * w / 100);
+    z.w[g] = klemme(w + investiert[g] + rest * daempf);
   }
-  // Arbeitslosigkeit kostet Vertrauen in die Institutionen (Algan 2017).
-  z.w.vertrauen = klemme(z.w.vertrauen + 0.35 * Math.min(0, z.w.wirtschaft - vorher.wirtschaft));
   for (const k of z.kipppunkte) z.w.klima = Math.max(z.w.klima, k);
+  for (const g of GROESSEN) {
+    const korrektur = z.w[g] - summeVorher[g] - d[g];
+    if (Math.abs(korrektur) > 1e-9) {
+      schritt!.beitraege.push({ nach: g, wert: korrektur, grund: korrektur > 0 && g === "klima" && z.kipppunkte.length ? "Kipppunkt: sinkt nicht mehr darunter" : "gebremst nahe 0 bzw. 100" });
+    }
+  }
 
   // 4. Bevölkerung (zwei Jahre)
-  bevoelkerung(z);
+  beginne("bevoelkerung", "Bevölkerung", "Geburten, Älterwerden, Sterbefälle und Wanderung in zwei Jahren.");
+  schritt!.details = bevoelkerung(z);
 
   // Sperren laufen ab
   for (const h of HEBEL) if (z.gesperrt[h]) z.gesperrt[h] = Math.max(0, (z.gesperrt[h] ?? 0) - 1);
@@ -242,16 +308,22 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
   z.runde += 1;
 
   // 5. Ereignisse
+  beginne("ereignisse", "Ereignisse", "Schocks und gute Nachrichten. Die meisten werden wahrscheinlicher, wenn das Land sie »vorbereitet« hat, und ein Bereich federt sie ab.");
   const meldungen = z.meldungen;
   for (const e of ereignisseDerRunde(z)) {
     if (e.id === "autokrat" && z.regierung.autokrat) continue;
-    meldungen.push(anwenden(z, e));
+    direkt(`${e.icon} ${e.titel}`, e.id, e.quelle, () => { meldungen.push(anwenden(z, e)); });
   }
 
   // 6. Wahl alle zwei Runden (vier Jahre)
+  beginne("wahl", "Wahl", z.runde % 2 === 0
+    ? `Alle vier Jahre wird gewählt. ${z.regierung.autokrat ? `Chance auf Abwahl des Autokraten: ${Math.round(abwahlChance(z) * 100)} %.` : `Chance, dass ein Populist gewinnt: ${Math.round(populismusChance(z) * 100)} % – aus Vertrauen, Gleichheit, Desinformation, Krisen und Deepfakes.`}`
+    : "In dieser Runde wird nicht gewählt.");
   if (z.runde % 2 === 0) {
-    const m = wahl(z);
-    if (m) meldungen.push(m);
+    direkt("🗳️ Wahlergebnis", "wahl", "funke2016", () => {
+      const m = wahl(z);
+      if (m) meldungen.push(m);
+    });
   }
 
   // 7. Kipppunkte
@@ -269,6 +341,11 @@ export function runde(alt: Zustand, v: Verteilung): Zustand {
   z.lqSchock *= 0.5;
   z.lq = lebensqualitaet(z);
   z.verlauf.push(schnappschuss(z, b.gesamt));
+  z.rechnung = {
+    runde: z.runde, start, ende: { ...z.w }, schritte,
+    lq: LQ_TEILE.map(([g, gewicht]) => ({ name: BEREICH[g].name, gewicht, wert: g === "klima" ? 100 - z.w.klima : z.w[g] })),
+    lqSchock: z.lqSchock,
+  };
 
   // 9. Zusammenbruch oder Ende
   if (z.status === "laeuft") {
@@ -290,7 +367,7 @@ export function wiederaufbau(alt: Zustand): Zustand {
   return { ...structuredClone(alt), status: "wiederaufbau", kritisch: 0 };
 }
 
-function bevoelkerung(z: Zustand) {
+function bevoelkerung(z: Zustand): string[] {
   const t = TYP[z.typ];
   const b = z.bev;
   const jungAnteil = b.jung / gesamt(b);
@@ -308,7 +385,17 @@ function bevoelkerung(z: Zustand) {
   b.alt = Math.max(0.01, b.alt + rente - todAlt);
   // Geburtenrate folgt der Bildung mit Verzögerung (Lutz 2014).
   const ziel = 1.15 + 6 * Math.exp(-z.w.bildung / 22) + t.tfrKorrektur + 0.3 * n(z.w.familie);
+  const tfrAlt = b.tfr;
   b.tfr = Math.max(0.6, b.tfr + (ziel - b.tfr) * 0.15);
+  const m = (x: number) => mio(x);
+  return [
+    `Geburten: ${tfrAlt.toFixed(2)} Kinder je Frau → ${m(geburten)}`,
+    `Erwachsen geworden: ${m(erwachsen)} · in Rente gegangen: ${m(rente)}`,
+    `Gestorben: ${m(todAlt + todJung + todErwerb)}${hitze > 1 ? " (Hitze erhöht die Sterblichkeit der Alten)" : ""}`,
+    `Wanderung: ${wanderung >= 0 ? "+" : "−"} ${m(Math.abs(wanderung))} (Wirtschaft und Integration ziehen an)`,
+    `Geburtenrate strebt mit Bildung ${Math.round(z.w.bildung)} zu ${ziel.toFixed(2)} → jetzt ${b.tfr.toFixed(2)} (Lutz 2014)`,
+    `Bevölkerung: ${m(gesamt(b))} – davon ${Math.round(altAnteil(b) * 100)} % über 65`,
+  ];
 }
 
 function ereignisseDerRunde(z: Zustand): Ereignis[] {

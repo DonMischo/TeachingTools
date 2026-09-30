@@ -127,7 +127,7 @@ export default function Leviathan({ action, code, lehrkraft = false, speicherSch
 
       {stand.fuer !== schluessel ? null
         : !z ? <Start key={JSON.stringify(einst)} einst={einst} krisenWahl={krisenWahl} onStart={starten} />
-        : z.status === "laeuft" || z.status === "wiederaufbau" ? <Spiel key={z.runde} z={z} onRunde={weiter} />
+        : z.status === "laeuft" || z.status === "wiederaufbau" ? <Spiel z={z} onRunde={weiter} />
         : <Nachbesprechung z={z} onNeu={neu} onDownload={herunterladen} onWiederaufbau={() => setZ(wiederaufbau(z))} />}
     </div>
   );
