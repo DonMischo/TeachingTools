@@ -14,6 +14,7 @@ import { einstellungenAus, neuesSpiel, runde, wiederaufbau } from "@/lib/leviath
 import { STANDARD_EINSTELLUNGEN, type Einstellungen, type TypId, type Verteilung, type Zustand } from "@/lib/leviathan/typen";
 import LehrkraftPanel from "./LehrkraftPanel";
 import Nachbesprechung from "./Nachbesprechung";
+import Quellen from "./Quellen";
 import Spiel from "./Spiel";
 import Start from "./Start";
 
@@ -43,6 +44,7 @@ export default function Leviathan({ action, code, lehrkraft = false, speicherSch
   const [stand, setStand] = useState<{ fuer: string | null; z: Zustand | null }>({ fuer: null, z: null });
   const [vorgabe, setVorgabe] = useState<Einstellungen | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [quellenOffen, setQuellenOffen] = useState(false);
 
   useEffect(() => {
     setStand({ fuer: schluessel, z: laden(schluessel) });
@@ -114,10 +116,14 @@ export default function Leviathan({ action, code, lehrkraft = false, speicherSch
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setQuellenOffen((o) => !o)} aria-expanded={quellenOffen}
+            className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)]">📚 Quellen</button>
           {z && <button onClick={neu} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)]">Neues Land</button>}
           {action}
         </div>
       </div>
+
+      {quellenOffen && <Quellen onSchliessen={() => setQuellenOffen(false)} />}
 
       {lehrkraft && code && !z && (
         <LehrkraftPanel key={JSON.stringify(vorgabe)} einst={vorgabe ?? STANDARD_EINSTELLUNGEN} onSpeichern={speichern} />

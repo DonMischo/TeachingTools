@@ -212,3 +212,16 @@ describe("Leviathan – Hebel gegen Teufelskreise", () => {
     expect(z.w.demokratie).toBeGreaterThan(vorher.demokratie);
   });
 });
+
+describe("Leviathan – Quellenverzeichnis", () => {
+  it("jede Quelle hat eine vollständige Angabe und ein Thema", async () => {
+    const { ZITATE, THEMEN } = await import("@/lib/leviathan/quellen");
+    for (const id of Object.keys(QUELLEN)) {
+      expect(ZITATE[id], id).toBeDefined();
+      expect(THEMEN[ZITATE[id].thema], id).toBeDefined();
+      expect(ZITATE[id].zitat.length, id).toBeGreaterThan(20);
+      const url = ZITATE[id].url ?? QUELLEN[id].url;
+      if (id !== "annahme") expect(url, id).toMatch(/^https:\/\//);
+    }
+  });
+});
