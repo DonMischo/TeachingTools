@@ -2,6 +2,7 @@ import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
+import type { Katalog as KartenKatalog } from "@/lib/karten/stil";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1570,6 +1571,11 @@ export const api = {
     /** Prüfung melden — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
     pruefung: (body: MausPruefungIn) =>
       apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
+  },
+
+  // Kartentool: Ebenen-Katalog (die GeoJSONs lädt MapLibre selbst, siehe lib/karten/stil.ts)
+  karten: {
+    katalog: () => apiFetch<KartenKatalog>("karten/ebenen"),
   },
 
   // »Rock your Life«: Stand + Protokoll je Sitzung, Lehrer-Übersicht (siehe api/routers/leben.py)

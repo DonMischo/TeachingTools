@@ -6,6 +6,8 @@
  *   data/karten/ebenen/<id>.geojson   Vektorebenen (WGS84), liest das Backend
  *   data/karten/ebenen.json           Katalog: Name, Gruppe, Geometrie, Quelle
  *   public/karten/hoehen/*.webp       Höhenschichten (Web-Mercator-Kacheln)
+ *   public/karten/schriften/…/*.pbf   Glyphen für MapLibre-Beschriftungen
+ *                                     (Noto Sans, SIL OFL; sonst lädt MapLibre sie von fremden Servern)
  *
  * Quellen:
  *   BKG Open Data, dl-de/by-2.0, »© GeoBasis-DE / BKG (Jahr)«:
@@ -33,6 +35,7 @@ const HIER = dirname(fileURLToPath(import.meta.url));
 const ROH = resolve(HIER, "../.karten-roh");
 const ZIEL = resolve(HIER, "../../data/karten");
 const HOEHEN = resolve(HIER, "../public/karten/hoehen");
+const SCHRIFTEN = resolve(HIER, "../public/karten/schriften");
 const force = process.argv.includes("--force");
 
 const BKG = "https://daten.gdz.bkg.bund.de/produkte";
@@ -387,6 +390,27 @@ async function hoehen(dgm, land) {
   console.log(`  de-hoehen              ${B}×${H} px  ${(bytes / 1e6).toFixed(2)} MB`);
 }
 
+// ── Schriften ────────────────────────────────────────────────────────
+
+/** Latein, Latein-Erweiterung A (Nachbarländer) und Satzzeichen (– „ “). */
+const BEREICHE = ["0-255", "256-511", "8192-8447"];
+export const SCHRIFTARTEN = ["Noto Sans Regular", "Noto Sans Bold", "Noto Sans Italic"];
+
+async function schriften() {
+  for (const art of SCHRIFTARTEN) for (const bereich of BEREICHE) {
+    const datei = join(SCHRIFTEN, art, `${bereich}.pbf`);
+    if (existsSync(datei) && !force) continue;
+    mkdirSync(dirname(datei), { recursive: true });
+    for (let versuch = 1; ; versuch++) {
+      const antwort = await fetch(`https://demotiles.maplibre.org/font/${encodeURIComponent(art)}/${bereich}.pbf`).catch(() => null);
+      if (antwort?.ok) { writeFileSync(datei, Buffer.from(await antwort.arrayBuffer())); break; }
+      if (versuch === 4) throw new Error(`Schrift ${art} ${bereich} nicht ladbar`);
+      await new Promise((weiter) => setTimeout(weiter, 2000 * versuch));
+    }
+  }
+  console.log(`  Schriften: ${SCHRIFTARTEN.join(", ")}`);
+}
+
 // ── Ablauf ───────────────────────────────────────────────────────────
 
 mkdirSync(ROH, { recursive: true });
@@ -404,6 +428,7 @@ await fluesse(ordner.dlm1000);
 await gewaesserflaechen(ordner.dlm1000);
 await staaten(ordner.ne_staaten);
 await hoehen(ordner.dgm200, land);
+await schriften();
 
 writeFileSync(join(ZIEL, "ebenen.json"), JSON.stringify({ stand: new Date().toISOString().slice(0, 10), ebenen: KATALOG }, null, 2));
 console.log(`Katalog: ${join(ZIEL, "ebenen.json")}`);
