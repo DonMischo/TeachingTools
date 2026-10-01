@@ -13,7 +13,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { auswahlFuer, baueStil, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
+import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "@/lib/karten/satz";
 import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
@@ -161,14 +161,17 @@ export default function Karten({ action }: { action?: ReactNode }) {
                     onChange={() => setInhalt((v) => ({ ...v, beschriftung: !v.beschriftung }))} />
                   Namen zeigen
                 </label>
-                {(["politisch", "topographisch"] as const).map((gruppe) => (
-                  <EbenenGruppe key={gruppe} titel={gruppe === "politisch" ? "Politisch" : "Topographisch"}
-                    ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))
-                      .map((e) => (bereich === "de" && e.id === "welt-staedte" ? { ...e, name: "Hauptstädte der Nachbarländer" } : e))}
-                    an={inhalt.ebenen} schalte={schalteEbene} />
-                ))}
+                {GRUPPEN.map((gruppe) => {
+                  const ebenen = katalog.ebenen
+                    .filter((e) => e.gruppe === gruppe.id && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))
+                    .map((e) => (bereich === "de" && e.id === "welt-staedte" ? { ...e, name: "Hauptstädte der Nachbarländer" } : e));
+                  return ebenen.length > 0 && (
+                    <EbenenGruppe key={gruppe.id} titel={gruppe.name} ebenen={ebenen} an={inhalt.ebenen} schalte={schalteEbene} />
+                  );
+                })}
                 <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
                   schalte={schalteEbene} lehrkraft={lehrkraft} />
+                {katalog.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />)}
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>
             )}
@@ -189,6 +192,24 @@ function EbenenGruppe({ titel, ebenen, an, schalte }: { titel: string; ebenen: E
           <span>{e.name}</span>
         </label>
       ))}
+    </div>
+  );
+}
+
+function Themenlegende({ ebene }: { ebene: Ebene }) {
+  const d = ebene.darstellung!;
+  const stufen = d.art === "stufen";
+  return (
+    <div className="flex flex-col gap-1">
+      <h3 className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">{ebene.name}{d.einheit ? ` (${d.einheit})` : ""}</h3>
+      {d.werte.map((w, i) => (
+        <div key={String(w.wert)} className="flex items-center gap-2 text-xs">
+          <span className={`w-6 h-3.5 border border-black/20 ${ebene.geometrie === "punkt" ? "rounded-full w-3.5" : "rounded-sm"}`}
+            style={{ background: w.farbe }} />
+          {stufen && !w.text ? `${i === 0 ? "unter" : "ab"} ${Number(i === 0 ? d.werte[1]?.wert : w.wert).toLocaleString("de-DE")}` : w.text}
+        </div>
+      ))}
+      {d.groesse && <p className="text-[10px] text-[var(--text-muted)]">Kreisgröße nach {d.groesse.feld === "leistung" ? "Leistung (MW)" : d.groesse.feld}</p>}
     </div>
   );
 }

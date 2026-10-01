@@ -27,7 +27,7 @@ export type EbenenBereich = Bereich | "eigen";
 export type Ebene = {
   id: string;
   name: string;
-  gruppe: "politisch" | "topographisch" | "eigen";
+  gruppe: Gruppe;
   bereich: EbenenBereich;
   geometrie: Geometrie;
   quiz: boolean;
@@ -40,11 +40,37 @@ export type Ebene = {
   kachelUrl?: string;
   maxzoom?: number;
   stufen?: { ab: number; farbe: string }[];
+  darstellung?: Darstellung;
   /** Nur bei hochgeladenen Ebenen (api/routers/karten.py::_eigen_eintrag) */
   eigen?: { id: number; eigen: boolean; geteilt: boolean; namensfeld: string; felder: string[]; dateiname: string };
 };
 
 export type Katalog = { stand: string; ebenen: Ebene[] };
+
+export type Gruppe = "politisch" | "topographisch" | "wirtschaft" | "bevoelkerung" | "stadt" | "eigen";
+export const GRUPPEN: { id: Gruppe; name: string }[] = [
+  { id: "politisch", name: "Politisch" },
+  { id: "topographisch", name: "Topographisch" },
+  { id: "wirtschaft", name: "Wirtschaft" },
+  { id: "bevoelkerung", name: "Bevölkerung" },
+  { id: "stadt", name: "Stadt" },
+];
+
+/**
+ * Themenkarte: Farbe nach einem Feld — Kategorien (Energieträger, Nutzung)
+ * oder Stufen (Dichte, BIP; `wert` = Untergrenze, aufsteigend).
+ */
+export type Darstellung = {
+  feld: string;
+  art: "kategorie" | "stufen";
+  werte: { wert: string | number; text: string; farbe: string }[];
+  /** Punkte: Kreisgröße nach einem Zahlenfeld (Fläche ∝ Wert) */
+  groesse?: { feld: string; max: number };
+  /** Einheit für die Legende, z. B. »Einw./km²« */
+  einheit?: string;
+  /** Färbt die Landfläche darunter (Bodennutzung: Ackerland ist der Normalfall, keine eigenen Flächen) */
+  grundfarbe?: string;
+};
 
 export type Kartenart = "politisch" | "topographisch" | "stumm";
 
@@ -138,6 +164,15 @@ const KONTINENT_FARBE: Record<string, string> = {
 };
 const kontinentFarbe = ["match", ["get", "id"], ...Object.entries(KONTINENT_FARBE).flat(), "#eeeeee"] as unknown as ExpressionSpecification;
 
+/** Farbe einer Themenebene: Kategorie per match, Stufen per step. */
+export function themaFarbe(d: Darstellung): ExpressionSpecification {
+  if (d.art === "stufen") {
+    const [erste, ...rest] = d.werte;
+    return ["step", ["to-number", ["get", d.feld], 0], erste.farbe, ...rest.flatMap((w) => [w.wert, w.farbe])] as unknown as ExpressionSpecification;
+  }
+  return ["match", ["to-string", ["get", d.feld]], ...d.werte.flatMap((w) => [String(w.wert), w.farbe]), "#bbbbbb"] as unknown as ExpressionSpecification;
+}
+
 // ── Stil ─────────────────────────────────────────────────────────────
 
 const SCHRIFT = { normal: ["Noto Sans Regular"], fett: ["Noto Sans Bold"], kursiv: ["Noto Sans Italic"] };
@@ -149,7 +184,7 @@ export const quelleAusApi: Quelle = (e) =>
   `/api/karten/ebenen/${e.id}${e.eigen ? `?namen=${encodeURIComponent(e.eigen.namensfeld)}` : ""}`;
 
 type Rolle = "staaten" | "kontinente" | "laender" | "hoehen" | "wasserflaeche" | "meere" | "seen" | "fluesse"
-  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen";
+  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen" | "thema";
 
 const ROLLE: Record<string, Rolle> = {
   "welt-staaten": "staaten", "welt-kontinente": "kontinente", "de-laender": "laender",
@@ -175,7 +210,8 @@ export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelle: Quelle = quelleAusApi): StyleSpecification {
-  const rolle = (e: Ebene): Rolle | undefined => ROLLE[e.id] ?? (e.bereich === "eigen" ? "eigen" : undefined);
+  const rolle = (e: Ebene): Rolle | undefined =>
+    ROLLE[e.id] ?? (e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
   const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
@@ -209,9 +245,17 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     layers.push({ id: `${e.id}-${i}:bild`, type: "raster", source: `${e.id}-${i}`, paint: { "raster-fade-duration": 0 } });
   });
 
+  const grundfarbe = mit("thema").find((e) => e.darstellung?.grundfarbe)?.darstellung?.grundfarbe;
   for (const e of mit("laender")) {
     layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: {
-      "fill-color": art === "politisch" ? landFarbe : "#f7f4ee", "fill-opacity": hatRelief ? 0 : 1 } });
+      "fill-color": grundfarbe ?? (art === "politisch" ? landFarbe : "#f7f4ee"), "fill-opacity": hatRelief && !grundfarbe ? 0 : 1 } });
+  }
+
+  for (const e of mit("thema")) if (e.geometrie === "flaeche") {
+    layers.push(
+      { id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": themaFarbe(e.darstellung!), "fill-opacity": 0.8 } },
+      { id: `${e.id}:rand`, type: "line", source: e.id, paint: { "line-color": "#ffffff", "line-width": 0.4, "line-opacity": 0.6 } },
+    );
   }
 
   for (const e of [...mit("wasserflaeche"), ...mit("seen")]) {
@@ -311,6 +355,29 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 8, 15],
           "text-max-width": 8, "text-padding": 20 },
         paint: { "text-color": "#57534e", "text-opacity": 0.75 } });
+    }
+  }
+
+  for (const e of mit("thema")) {
+    const d = e.darstellung!;
+    if (e.geometrie === "linie") {
+      layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, layout: linie,
+        paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2, 9, 3] } });
+    }
+    if (e.geometrie === "punkt") {
+      const r: ExpressionSpecification | number = d.groesse
+        ? ["interpolate", ["linear"], ["sqrt", ["max", 0, ["to-number", ["get", d.groesse.feld], 0]]], 0, 2.5, Math.sqrt(d.groesse.max), 14]
+        : 5;
+      layers.push({ id: `${e.id}:punkt`, type: "circle", source: e.id,
+        ...(d.groesse ? { layout: { "circle-sort-key": ["-", 0, ["to-number", ["get", d.groesse.feld], 0]] } } : {}),
+        paint: { "circle-radius": r, "circle-color": themaFarbe(d), "circle-opacity": 0.9,
+          "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
+      if (text) {
+        layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: 7,
+          layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-size": 10.5, "text-anchor": "left",
+            "text-offset": [0.9, 0], "text-optional": true },
+          paint: schrift("#333333") });
+      }
     }
   }
 

@@ -447,6 +447,396 @@
       "kachelUrl": "/karten/welt-hoehen/{z}/{x}/{y}.webp",
       "maxzoom": 5,
       "bytes": 2990032
+    },
+    {
+      "id": "de-kraftwerke",
+      "name": "Kraftwerke (ab 100 MW)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Open Power System Data (Stand 01.10.2020; BNetzA, UBA)",
+        "lizenz": "CC-BY 4.0",
+        "url": "https://data.open-power-system-data.org/conventional_power_plants/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "braunkohle",
+            "text": "Braunkohle",
+            "farbe": "#8b5a2b"
+          },
+          {
+            "wert": "steinkohle",
+            "text": "Steinkohle",
+            "farbe": "#333333"
+          },
+          {
+            "wert": "erdgas",
+            "text": "Erdgas",
+            "farbe": "#f2a33a"
+          },
+          {
+            "wert": "erdoel",
+            "text": "Erdöl",
+            "farbe": "#7b3294"
+          },
+          {
+            "wert": "kernenergie",
+            "text": "Kernenergie",
+            "farbe": "#e41a1c"
+          },
+          {
+            "wert": "wasser",
+            "text": "Wasserkraft",
+            "farbe": "#2b83ba"
+          },
+          {
+            "wert": "biomasse",
+            "text": "Biomasse",
+            "farbe": "#4daf4a"
+          },
+          {
+            "wert": "abfall",
+            "text": "Abfall",
+            "farbe": "#999999"
+          }
+        ],
+        "groesse": {
+          "feld": "leistung",
+          "max": 4000
+        }
+      },
+      "anzahl": 147,
+      "bytes": 27818
+    },
+    {
+      "id": "de-bergbau",
+      "name": "Bergbau und Rohstoffe",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "braunkohle",
+            "text": "Braunkohle (Tagebau)",
+            "farbe": "#8b5a2b"
+          },
+          {
+            "wert": "kali",
+            "text": "Kali und Salz",
+            "farbe": "#d6604d"
+          },
+          {
+            "wert": "steine",
+            "text": "Steine und Erden, Kalk",
+            "farbe": "#bababa"
+          },
+          {
+            "wert": "torf",
+            "text": "Torf",
+            "farbe": "#a6761d"
+          },
+          {
+            "wert": "steinkohle",
+            "text": "Steinkohle (stillgelegt, bis 2018)",
+            "farbe": "#333333"
+          },
+          {
+            "wert": "erz",
+            "text": "Erz, Graphit, Spat",
+            "farbe": "#542788"
+          },
+          {
+            "wert": "historisch",
+            "text": "Besucherbergwerk, alte Grube",
+            "farbe": "#c7c7c7"
+          }
+        ]
+      },
+      "anzahl": 225,
+      "bytes": 38109
+    },
+    {
+      "id": "de-industrie",
+      "name": "Industrie- und Gewerbeflächen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "industrie",
+            "text": "Industrie und Gewerbe",
+            "farbe": "#b2182b"
+          }
+        ]
+      },
+      "anzahl": 3646,
+      "bytes": 1337998
+    },
+    {
+      "id": "de-sonderkulturen",
+      "name": "Sonderkulturen (Wein, Obst, Hopfen)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "wein",
+            "text": "Weinbau",
+            "farbe": "#7b2d8b"
+          },
+          {
+            "wert": "obst",
+            "text": "Obstbau",
+            "farbe": "#e7298a"
+          },
+          {
+            "wert": "hopfen",
+            "text": "Hopfen",
+            "farbe": "#66a61e"
+          }
+        ]
+      },
+      "anzahl": 3029,
+      "bytes": 881770
+    },
+    {
+      "id": "de-autobahnen",
+      "name": "Autobahnen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "autobahn",
+            "text": "Autobahn",
+            "farbe": "#e6550d"
+          }
+        ]
+      },
+      "anzahl": 120,
+      "bytes": 359600
+    },
+    {
+      "id": "de-bahn",
+      "name": "Fernbahnstrecken",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "fernbahn",
+            "text": "Fernbahn",
+            "farbe": "#404040"
+          }
+        ]
+      },
+      "anzahl": 1,
+      "bytes": 232804
+    },
+    {
+      "id": "de-flughaefen",
+      "name": "Flughäfen",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "international",
+            "text": "Internationaler Flughafen",
+            "farbe": "#08519c"
+          },
+          {
+            "wert": "regional",
+            "text": "Regionalflughafen",
+            "farbe": "#6baed6"
+          }
+        ]
+      },
+      "anzahl": 37,
+      "bytes": 5746
+    },
+    {
+      "id": "de-dichte",
+      "name": "Bevölkerungsdichte (Kreise)",
+      "gruppe": "bevoelkerung",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "dichte",
+        "art": "stufen",
+        "einheit": "Einw./km²",
+        "werte": [
+          {
+            "wert": 0,
+            "text": "unter 100",
+            "farbe": "#fff5eb"
+          },
+          {
+            "wert": 100,
+            "text": "100 – 200",
+            "farbe": "#fdd0a2"
+          },
+          {
+            "wert": 200,
+            "text": "200 – 500",
+            "farbe": "#fd8d3c"
+          },
+          {
+            "wert": 500,
+            "text": "500 – 1 000",
+            "farbe": "#e6550d"
+          },
+          {
+            "wert": 1000,
+            "text": "1 000 – 2 000",
+            "farbe": "#a63603"
+          },
+          {
+            "wert": 2000,
+            "text": "über 2 000",
+            "farbe": "#5a1d02"
+          }
+        ]
+      },
+      "anzahl": 400,
+      "bytes": 1254239
+    },
+    {
+      "id": "de-bodennutzung",
+      "name": "Bodennutzung (CORINE 2018)",
+      "gruppe": "wirtschaft",
+      "bereich": "de",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026), CORINE Land Cover 2018",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "ackerland",
+            "text": "Ackerland",
+            "farbe": "#f3e08a"
+          },
+          {
+            "wert": "gruenland",
+            "text": "Grünland",
+            "farbe": "#a6d96a"
+          },
+          {
+            "wert": "sonderkultur",
+            "text": "Wein- und Obstbau",
+            "farbe": "#b15928"
+          },
+          {
+            "wert": "wald",
+            "text": "Wald",
+            "farbe": "#33a02c"
+          },
+          {
+            "wert": "heide",
+            "text": "Heide, Gebüsch",
+            "farbe": "#c2a5cf"
+          },
+          {
+            "wert": "moor",
+            "text": "Moor, Sumpf",
+            "farbe": "#8073ac"
+          },
+          {
+            "wert": "kueste",
+            "text": "Watt, Strand, Salzwiesen",
+            "farbe": "#e0d3b8"
+          },
+          {
+            "wert": "siedlung",
+            "text": "Siedlung",
+            "farbe": "#e31a1c"
+          },
+          {
+            "wert": "industrie",
+            "text": "Industrie, Gewerbe, Verkehr",
+            "farbe": "#7a0177"
+          },
+          {
+            "wert": "abbau",
+            "text": "Abbauflächen (Tagebau)",
+            "farbe": "#6a3d0a"
+          }
+        ],
+        "grundfarbe": "#f3e08a"
+      },
+      "anzahl": 3428,
+      "bytes": 4429018
     }
   ]
 }

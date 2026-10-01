@@ -56,6 +56,10 @@ const PAKETE = {
   ne_10m_geography_marine_polys: { url: `${NE}/10m/physical/ne_10m_geography_marine_polys.zip`, md5: false },
   // Atlasfarben mit Schummerung, 10800x5400, gemeinfrei
   ne_hyp: { url: `${NE}/50m/raster/HYP_50M_SR_W.zip`, md5: false },
+  dlm250: { url: `${BKG}/dlm/dlm250/aktuell/dlm250.utm32s.shape.ebenen.zip`, md5: true },
+  vg250ew: { url: `${BKG}/vg/vg250-ew_ebenen_1231/aktuell/vg250-ew_12-31.utm32s.shape.ebenen.zip`, md5: false },
+  // CORINE Land Cover 2018, 5 ha (1,4 GB gepackt, 4,8 GB entpackt)
+  clc5: { url: `${BKG}/dlm/clc5_2018/aktuell/clc5_2018.utm32s.shape.zip`, md5: true },
 };
 
 const JAHR = new Date().getFullYear();
@@ -92,6 +96,17 @@ async function lade(schluessel) {
   }
   writeFileSync(join(ordner, ".fertig"), "");
   return ordner;
+}
+
+/** Lädt eine einzelne Datei (CSV) in den Rohordner, falls sie fehlt. */
+async function ladeDatei(name, url) {
+  const ziel = join(ROH, name);
+  if (!existsSync(ziel) || force) {
+    const antwort = await fetch(url);
+    if (!antwort.ok) throw new Error(`${url}: HTTP ${antwort.status}`);
+    writeFileSync(ziel, Buffer.from(await antwort.arrayBuffer()));
+  }
+  return ziel;
 }
 
 /** Findet eine Datei unter `ordner` (die Zips verschachteln unterschiedlich tief). */
@@ -573,6 +588,184 @@ async function hoehen(dgm, land) {
   console.log(`  de-hoehen              ${B}×${H} px  ${(bytes / 1e6).toFixed(2)} MB`);
 }
 
+// ── Wirtschaft und Bevölkerung (Deutschland) ─────────────────────────
+
+const QUELLE_OPSD = { name: "Open Power System Data (Stand 01.10.2020; BNetzA, UBA)", lizenz: "CC-BY 4.0",
+  url: "https://data.open-power-system-data.org/conventional_power_plants/" };
+
+/** Einfacher CSV-Leser (Felder in Anführungszeichen dürfen Kommas enthalten). */
+function liesCsv(text) {
+  const zeilen = text.split(/\r?\n/).filter(Boolean);
+  const teile = (z) => { const o = []; let c = "", q = false; for (const ch of z) { if (ch === '"') q = !q; else if (ch === "," && !q) { o.push(c); c = ""; } else c += ch; } o.push(c); return o; };
+  const kopf = teile(zeilen[0]);
+  return zeilen.slice(1).map((z) => Object.fromEntries(teile(z).map((w, i) => [kopf[i], w])));
+}
+
+const ENERGIE = {
+  "Lignite": "braunkohle", "Hard coal": "steinkohle", "Natural gas": "erdgas", "Nuclear": "kernenergie", "Oil": "erdoel",
+  "Hydro": "wasser", "Biomass and biogas": "biomasse", "Bioenergy": "biomasse", "Waste": "abfall", "Non-renewable waste": "abfall",
+};
+export const ENERGIE_LEGENDE = [
+  { wert: "braunkohle", text: "Braunkohle", farbe: "#8b5a2b" }, { wert: "steinkohle", text: "Steinkohle", farbe: "#333333" },
+  { wert: "erdgas", text: "Erdgas", farbe: "#f2a33a" }, { wert: "erdoel", text: "Erdöl", farbe: "#7b3294" },
+  { wert: "kernenergie", text: "Kernenergie", farbe: "#e41a1c" }, { wert: "wasser", text: "Wasserkraft", farbe: "#2b83ba" },
+  { wert: "biomasse", text: "Biomasse", farbe: "#4daf4a" }, { wert: "abfall", text: "Abfall", farbe: "#999999" },
+];
+
+/**
+ * Große Kraftwerke (≥ 100 MW, in Betrieb). Die Liste führt einzelne Blöcke —
+ * zusammengefasst wird je Standort, Energieträger und Koordinate.
+ * Die deutschen Kernkraftwerke sind seit dem 15.04.2023 abgeschaltet.
+ */
+function kraftwerke(csv, laender, id, name, bereich) {
+  const standorte = new Map();
+  for (const z of liesCsv(readFileSync(csv, "utf8"))) {
+    const art = ENERGIE[z.energy_source];
+    const leistung = Number(z.capacity_net_bnetza || z.capacity);
+    const [lat, lon] = [Number(z.lat), Number(z.lon)];
+    const land = (z.country || "").trim();
+    if (!art || !lat || !lon || !(leistung > 0)) continue;
+    if (z.status && z.status !== "operating") continue;
+    if (laender && !laender.includes(land)) continue;
+    if (art === "kernenergie" && land === "DE") continue; // Atomausstieg 2023
+    const ort = (z.name_bnetza || z.name || z.name_uba || "Kraftwerk").trim();
+    const schluessel = `${ort}|${art}|${lat.toFixed(3)}|${lon.toFixed(3)}`;
+    const s = standorte.get(schluessel) ?? { ort, art, lat, lon, land, leistung: 0 };
+    s.leistung += leistung;
+    standorte.set(schluessel, s);
+  }
+  const fs = [...standorte.values()].filter((s) => s.leistung >= 100)
+    .sort((a, b) => b.leistung - a.leistung)
+    .map((s) => feature({ type: "Point", coordinates: [s.lon, s.lat] }, {
+      id: `kw-${slug(`${s.ort}-${s.art}`)}`, name: s.ort, art: s.art, leistung: Math.round(s.leistung),
+      ...(bereich === "welt" ? { land: s.land } : {}),
+    }));
+  schreibe(id, { name, gruppe: "wirtschaft", bereich, geometrie: "punkt", quiz: true, quelle: QUELLE_OPSD,
+    darstellung: { feld: "art", art: "kategorie", werte: ENERGIE_LEGENDE, groesse: { feld: "leistung", max: 4000 } } }, fs);
+}
+
+const BERGBAU_LEGENDE = [
+  { wert: "braunkohle", text: "Braunkohle (Tagebau)", farbe: "#8b5a2b" }, { wert: "kali", text: "Kali und Salz", farbe: "#d6604d" },
+  { wert: "steine", text: "Steine und Erden, Kalk", farbe: "#bababa" }, { wert: "torf", text: "Torf", farbe: "#a6761d" },
+  { wert: "steinkohle", text: "Steinkohle (stillgelegt, bis 2018)", farbe: "#333333" },
+  { wert: "erz", text: "Erz, Graphit, Spat", farbe: "#542788" },
+  { wert: "historisch", text: "Besucherbergwerk, alte Grube", farbe: "#c7c7c7" },
+];
+
+/** Bergbau: Tagebaue (DLM1000, Mittelpunkt) und Bergbaubetriebe (GN250). */
+async function bergbau(dlm, gn) {
+  const AGT = { 4021: "braunkohle", 4010: "torf", 1000: "steine", 2000: "steine" };
+  const tagebaue = await lies(finde(dlm, "sie02_f.shp"), `-filter "OBJART_TXT=='AX_TagebauGrubeSteinbruch' && NAM != ''" -dissolve NAM copy-fields=AGT -points inner`);
+  const betriebe = await lies(finde(gn, "GN250_p.shp"), `-filter "OBA=='AX_BauwerkOderAnlageFuerIndustrieUndGewerbe' && OBA_WERT=='Bergbaubetrieb'"`);
+  const art = (n) => /kali|salz/i.test(n) ? "kali"
+    : /braunkohle|tagebau/i.test(n) ? "braunkohle"
+    : /besucher|schau|museum/i.test(n) ? "historisch"
+    : /zeche|steinkohle|prosper|walsum|auguste victoria|göttelborn|ensdorf|ibbenbüren|merlebach|haard/i.test(n) ? "steinkohle"
+    : /erz|zinn|silber|blei|uran|wismut|graphit|spat|kupfer/i.test(n) ? "erz"
+    : /kalk|kies|sand|stein|ton|kaolin|gips|quarz/i.test(n) ? "steine" : "historisch";
+  const fs = [
+    ...tagebaue.map((f) => feature(f.geometry, { id: `tb-${slug(f.properties.NAM)}`, name: f.properties.NAM, art: AGT[f.properties.AGT] ?? art(f.properties.NAM) })),
+    ...betriebe.map((f) => feature(f.geometry, { id: f.properties.NNID, name: f.properties.NAME, art: art(f.properties.NAME) })),
+  ];
+  schreibe("de-bergbau", { name: "Bergbau und Rohstoffe", gruppe: "wirtschaft", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", werte: BERGBAU_LEGENDE } }, fs);
+}
+
+/** Industrie- und Gewerbeflächen (DLM250), zusammengefasst und vereinfacht. */
+async function industrie(dlm250) {
+  const fs = await lies(finde(dlm250, "sie02_f.shp"),
+    `-filter "OBJART_TXT=='AX_IndustrieUndGewerbeflaeche'" -each "art='industrie'" -dissolve2 art -explode -filter "this.area > 400000" -simplify 30% keep-shapes`);
+  schreibe("de-industrie", { name: "Industrie- und Gewerbeflächen", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_BKG, darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "industrie", text: "Industrie und Gewerbe", farbe: "#b2182b" }] } },
+    fs.map((f, i) => feature(f.geometry, { id: `ind-${i + 1}`, name: "", art: "industrie" })));
+}
+
+/** Sonderkulturen: Wein, Obst, Hopfen (DLM250, VEG 1040/1050/1012). */
+async function sonderkulturen(dlm250) {
+  const fs = await lies(finde(dlm250, "veg01_f.shp"), `-each "art=({1040:'wein',1050:'obst',1012:'hopfen'})[VEG] || ''" -filter "art !== ''" -dissolve2 art -explode -simplify 30% keep-shapes`);
+  schreibe("de-sonderkulturen", { name: "Sonderkulturen (Wein, Obst, Hopfen)", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: QUELLE_BKG, darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "wein", text: "Weinbau", farbe: "#7b2d8b" }, { wert: "obst", text: "Obstbau", farbe: "#e7298a" }, { wert: "hopfen", text: "Hopfen", farbe: "#66a61e" }] } },
+    fs.map((f, i) => feature(f.geometry, { id: `sk-${i + 1}`, name: "", art: f.properties.art })));
+
+}
+
+/** Verkehr: Autobahnen, Fernbahn (VKD 1000 = überregional), Flughäfen. */
+async function verkehr(dlm, dlm250) {
+  const ab = await lies(finde(dlm, "ver01_l.shp"), `-filter "WDM=='1301'" -each "nr=(BEZ||'').split('#').find(function(b){return /^A/.test(b)})||''" -dissolve nr -simplify 30%`);
+  schreibe("de-autobahnen", { name: "Autobahnen", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: true, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "autobahn", text: "Autobahn", farbe: "#e6550d" }] } },
+    ab.filter((f) => f.properties.nr).map((f) => feature(f.geometry, { id: slug(f.properties.nr), name: f.properties.nr, art: "autobahn" })));
+
+  const bahn = await lies(finde(dlm, "ver03_l.shp"), `-filter "OBJART_TXT=='AX_Bahnstrecke' && VKD=='1000'" -each "art='fernbahn'" -dissolve art -simplify 30%`);
+  schreibe("de-bahn", { name: "Fernbahnstrecken", gruppe: "wirtschaft", bereich: "de", geometrie: "linie", quiz: false, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "fernbahn", text: "Fernbahn", farbe: "#404040" }] } },
+    bahn.map((f) => feature(f.geometry, { id: "fernbahn", name: "", art: "fernbahn" })));
+
+  const fh = await lies(finde(dlm250, "ver04_f.shp"), `-filter "(ART=='5511' || ART=='5512') && NAM != ''" -dissolve NAM copy-fields=ART -points inner`);
+  schreibe("de-flughaefen", { name: "Flughäfen", gruppe: "wirtschaft", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG,
+    darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "international", text: "Internationaler Flughafen", farbe: "#08519c" }, { wert: "regional", text: "Regionalflughafen", farbe: "#6baed6" }] } },
+    fh.map((f) => feature(f.geometry, { id: slug(f.properties.NAM), name: f.properties.NAM, art: f.properties.ART === "5511" ? "international" : "regional" })));
+}
+
+/** CORINE-Klassen → Kategorien der Schulatlas-Karte »Bodennutzung«. */
+const CLC_SCHULE = {
+  111: "siedlung", 112: "siedlung", 121: "industrie", 122: "industrie", 123: "industrie", 124: "industrie",
+  131: "abbau", 132: "abbau", 133: "abbau", 141: "siedlung", 142: "siedlung",
+  211: "ackerland", 242: "ackerland", 221: "sonderkultur", 222: "sonderkultur", 231: "gruenland", 243: "gruenland",
+  311: "wald", 312: "wald", 313: "wald", 321: "heide", 322: "heide", 324: "heide", 333: "heide",
+  411: "moor", 412: "moor", 421: "kueste", 423: "kueste", 331: "kueste",
+};
+export const BODEN_LEGENDE = [
+  { wert: "ackerland", text: "Ackerland", farbe: "#f3e08a" }, { wert: "gruenland", text: "Grünland", farbe: "#a6d96a" },
+  { wert: "sonderkultur", text: "Wein- und Obstbau", farbe: "#b15928" }, { wert: "wald", text: "Wald", farbe: "#33a02c" },
+  { wert: "heide", text: "Heide, Gebüsch", farbe: "#c2a5cf" }, { wert: "moor", text: "Moor, Sumpf", farbe: "#8073ac" },
+  { wert: "kueste", text: "Watt, Strand, Salzwiesen", farbe: "#e0d3b8" }, { wert: "siedlung", text: "Siedlung", farbe: "#e31a1c" },
+  { wert: "industrie", text: "Industrie, Gewerbe, Verkehr", farbe: "#7a0177" }, { wert: "abbau", text: "Abbauflächen (Tagebau)", farbe: "#6a3d0a" },
+];
+
+/**
+ * Bodennutzung aus CORINE Land Cover 2018 (BKG, 5 ha). Die Rohdaten sind
+ * 4,8 GB groß und nach Hauptklassen in fünf Dateien geteilt: jede zuerst auf
+ * 1,2 km vereinfachen, dann nach Schulkategorie zusammenfassen, Flecken unter
+ * 6 km² weglassen. Ackerland bleibt die Grundfarbe der Landfläche.
+ */
+async function bodennutzung(clc) {
+  const teile = [];
+  for (const klasse of ["1xx", "2xx", "3xx", "4xx"]) {
+    const shp = finde(clc, `clc5_class${klasse}.shp`).replace(/\\/g, "/");
+    // Stufe 1 (UTM): vereinfachen, je CORINE-Code zusammenfassen
+    const roh = await mapshaper.applyCommands(`-i "${shp}" -simplify interval=1200 planar keep-shapes -dissolve2 CLC18 -o format=geojson out.json`);
+    // Ackerland nicht als Fläche: es ist die Grundfarbe (Darstellung.grundfarbe) — spart 2 MB
+    const nachCode = JSON.parse(roh["out.json"].toString()).features
+      .map((f) => ({ ...f, properties: { art: CLC_SCHULE[f.properties.CLC18] ?? "" } }))
+      .filter((f) => f.properties.art && f.properties.art !== "ackerland");
+    // Stufe 2: je Schulkategorie zusammenfassen, kleine Flecken weg, nach WGS84
+    const aus = await mapshaper.applyCommands(
+      `-i in.json -dissolve2 art -explode -filter "this.area > 6000000" -simplify interval=900 planar keep-shapes -proj wgs84 from="+proj=utm +zone=32 +ellps=GRS80 +units=m" ` +
+      `-o format=geojson precision=0.001 out.json`, { "in.json": { type: "FeatureCollection", features: nachCode } });
+    teile.push(...JSON.parse(aus["out.json"].toString()).features);
+    console.log(`    CORINE ${klasse}: ${teile.length} Flächen`);
+  }
+  schreibe("de-bodennutzung", { name: "Bodennutzung (CORINE 2018)", gruppe: "wirtschaft", bereich: "de", geometrie: "flaeche", quiz: false,
+    quelle: { ...QUELLE_BKG, name: `${QUELLE_BKG.name}, CORINE Land Cover 2018` },
+    darstellung: { feld: "art", art: "kategorie", werte: BODEN_LEGENDE, grundfarbe: BODEN_LEGENDE[0].farbe } },
+    teile.map((f, i) => feature(f.geometry, { id: `bn-${i + 1}`, name: "", art: f.properties.art })));
+}
+
+/** Bevölkerungsdichte der Kreise (VG250-EW: Einwohner, Fläche in km²). */
+async function bevoelkerung(vgew) {
+  const fs = await lies(finde(vgew, "VG250_KRS.shp"), `-filter "GF==4" -simplify 12% keep-shapes`);
+  schreibe("de-dichte", { name: "Bevölkerungsdichte (Kreise)", gruppe: "bevoelkerung", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG,
+    darstellung: { feld: "dichte", art: "stufen", einheit: "Einw./km²", werte: [
+      { wert: 0, text: "unter 100", farbe: "#fff5eb" }, { wert: 100, text: "100 – 200", farbe: "#fdd0a2" },
+      { wert: 200, text: "200 – 500", farbe: "#fd8d3c" }, { wert: 500, text: "500 – 1 000", farbe: "#e6550d" },
+      { wert: 1000, text: "1 000 – 2 000", farbe: "#a63603" }, { wert: 2000, text: "über 2 000", farbe: "#5a1d02" }] } },
+    fs.map((f) => feature(f.geometry, { id: f.properties.AGS, name: `${f.properties.GEN}${/Landkreis|Kreis$/.test(f.properties.BEZ) ? " (Kreis)" : ""}`,
+      einwohner: f.properties.EWZ, dichte: Math.round(f.properties.EWZ / f.properties.KFL) })));
+}
+
 // ── Schriften ────────────────────────────────────────────────────────
 
 /** Latein, Latein-Erweiterung A (Nachbarländer) und Satzzeichen (– „ “). */
@@ -602,20 +795,41 @@ mkdirSync(join(ZIEL, "ebenen"), { recursive: true });
 const ordner = {};
 for (const k of Object.keys(PAKETE)) ordner[k] = await lade(k);
 
-console.log("Ebenen:");
-const land = await laender(ordner.vg2500);
-await staedte(ordner.gn250);
-await gipfel(ordner.gn250);
-await landschaften(ordner.dlm1000);
-await fluesse(ordner.dlm1000);
-await gewaesserflaechen(ordner.dlm1000);
-await hoehen(ordner.dgm200, land);
-const kontinentVon = await staaten(ordner.ne_staaten);
-await weltStaedte(ordner.ne_10m_populated_places, kontinentVon);
-await weltGewaesser(ordner);
-await weltRegionen(ordner);
-await weltHoehen(ordner);
-await schriften();
+// `--nur boden,kraftwerke` baut nur diese Schritte neu und ergänzt den bestehenden Katalog
+const nurStelle = process.argv.indexOf("--nur");
+const nur = nurStelle > 0 ? process.argv[nurStelle + 1].split(",") : null;
+const schritt = async (name, f) => { if (!nur || nur.includes(name)) await f(); };
+let land, kontinentVon;
 
-writeFileSync(join(ZIEL, "ebenen.json"), JSON.stringify({ stand: new Date().toISOString().slice(0, 10), ebenen: KATALOG }, null, 2));
+console.log("Ebenen:");
+await schritt("laender", async () => { land = await laender(ordner.vg2500); });
+await schritt("staedte", () => staedte(ordner.gn250));
+await schritt("gipfel", () => gipfel(ordner.gn250));
+await schritt("landschaften", () => landschaften(ordner.dlm1000));
+await schritt("fluesse", () => fluesse(ordner.dlm1000));
+await schritt("gewaesser", () => gewaesserflaechen(ordner.dlm1000));
+await schritt("hoehen", async () => hoehen(ordner.dgm200, land ?? await laender(ordner.vg2500)));
+await schritt("staaten", async () => { kontinentVon = await staaten(ordner.ne_staaten); });
+await schritt("weltstaedte", async () => weltStaedte(ordner.ne_10m_populated_places, kontinentVon ?? await staaten(ordner.ne_staaten)));
+await schritt("weltgewaesser", () => weltGewaesser(ordner));
+await schritt("weltregionen", () => weltRegionen(ordner));
+await schritt("welthoehen", () => weltHoehen(ordner));
+await schritt("kraftwerke", async () => kraftwerke(await ladeDatei("opsd_de.csv",
+  "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_DE.csv"),
+  null, "de-kraftwerke", "Kraftwerke (ab 100 MW)", "de"));
+await schritt("bergbau", () => bergbau(ordner.dlm1000, ordner.gn250));
+await schritt("industrie", () => industrie(ordner.dlm250));
+await schritt("sonderkulturen", () => sonderkulturen(ordner.dlm250));
+await schritt("verkehr", () => verkehr(ordner.dlm1000, ordner.dlm250));
+await schritt("bevoelkerung", () => bevoelkerung(ordner.vg250ew));
+await schritt("boden", () => bodennutzung(ordner.clc5));
+await schritt("schriften", () => schriften());
+
+let ebenen = KATALOG;
+if (nur) {
+  const alt = JSON.parse(readFileSync(join(ZIEL, "ebenen.json"), "utf8")).ebenen;
+  const neu = new Map(KATALOG.map((e) => [e.id, e]));
+  ebenen = [...alt.map((e) => neu.get(e.id) ?? e), ...KATALOG.filter((e) => !alt.some((a) => a.id === e.id))];
+}
+writeFileSync(join(ZIEL, "ebenen.json"), JSON.stringify({ stand: new Date().toISOString().slice(0, 10), ebenen }, null, 2));
 console.log(`Katalog: ${join(ZIEL, "ebenen.json")}`);
