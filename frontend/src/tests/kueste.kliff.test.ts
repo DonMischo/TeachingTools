@@ -51,6 +51,7 @@ describe("Steilküste im Zellmodell", () => {
     for (let r = zeileVon(k, 5); r < k.nz; r++) for (let c = 0; c < spalteVon(k, x0); c++) k.mat[r * k.nx + c] = MAT.LUFT;
     k.version++;
     k.risse = 0;
+    k.kluft = null; // nur die Rundung prüfen, keine Kluftabbrüche
     expect(front(k, oben - 0.4)).toBeLessThan(x0 + 0.3);
     lauf(k, REGEN, 8766 * 2, 12);
     // Oben ist die Kante zurückgewichen, tiefer unten kaum: sie ist rund
@@ -61,7 +62,7 @@ describe("Steilküste im Zellmodell", () => {
   it("die Brandung frisst eine Hohlkehle knapp über dem Wasserspiegel", () => {
     const k = neuesKliff("kreide");
     fussFrei(k);
-    k.risse = 0; // kein Abbruch während des Tests
+    k.risse = 0; k.kluft = null; // kein Abbruch während des Tests
     lauf(k, STURM, 1500);
     const u = ueberhang(k, 0.1);
     expect(u.kehle).toBeGreaterThan(0.5);
@@ -150,6 +151,21 @@ describe("Steilküste im Zellmodell", () => {
         expect(frei, `${typ}: Zelle ${c}/${r} schwebt`).toBe(false);
       }
     }
+  });
+
+  it("nasse Kreide mit Frostrissen bricht an einer steilen Kluft ab und zerfällt zu Schutt", () => {
+    const k = neuesKliff("kreide");
+    expect(standsicherheit(k, 0, false)).toBeGreaterThan(1.2);
+    const oben = zVon(k, geometrie(k).top[k.nx - 1]);
+    const vorher = front(k, oben - 3);
+    k.saettigung = 1; k.risse = 1;
+    expect(standsicherheit(k, 0, true)).toBeLessThan(1);
+    expect(k.analyse.fsArt).toBe("kluft");
+    abschliessen(k);
+    // Die Felswand oben ist zurückgewichen (Schutt zählt nicht)
+    expect(front(k, oben - 3)).toBeGreaterThan(vorher + 1);
+    // Keine Scholle bleibt liegen: alles ist Schutt geworden
+    expect(k.gestoert.some(x => x > 0)).toBe(false);
   });
 
   it("Gleitflächen zählen nur, wo sie an der Wand frei ausstreichen", () => {

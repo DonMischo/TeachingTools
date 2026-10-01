@@ -355,7 +355,7 @@ export default function KliffAnsicht() {
           <div className="text-sm">
             <div className="flex justify-between"><span>Standsicherheit (FS)</span><b style={{ color: fsFarbe }}>{fs > 9 ? "hoch" : zahl(fs, 2)}</b></div>
             <Balken wert={Math.min(fs, 2)} max={2} farbe={fsFarbe} marke={1} />
-            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">FS = haltende ÷ treibende Kräfte auf der ungünstigsten {k.analyse.fsArt === "ebene" ? "Schichtfläche" : "Gleitfläche"}. Unter 1 rutscht es.</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">FS = haltende ÷ treibende Kräfte auf der ungünstigsten {k.analyse.fsArt === "ebene" ? "Schichtfläche" : k.analyse.fsArt === "kluft" ? "Kluft" : "Gleitfläche"}. Unter 1 rutscht es.</p>
           </div>
           <div className="text-sm">
             <div className="flex justify-between"><span>Grundwasser</span><b>{Math.round(k.saettigung * 100)} %</b></div>

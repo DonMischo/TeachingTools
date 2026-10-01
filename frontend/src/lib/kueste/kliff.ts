@@ -135,7 +135,9 @@ export interface Kliff {
   kosten: number; schadenEuro: number;
   meldungen: Meldung[];
   version: number;
-  analyse: { spannung: number; fs: number; fsArt: "" | "kreis" | "ebene"; kehle: number };
+  analyse: { spannung: number; fs: number; fsArt: "" | "kreis" | "ebene" | "kluft"; kehle: number };
+  /** Kreide: Scherfestigkeit der steilen Klüfte parallel zur Wand (geeicht) */
+  kluft: { c: number; phi: number } | null;
   startKante: number;
   /** Höhe, ab der eine Spalte zur Hochfläche zählt (m) */
   kantenHoehe: number;
@@ -174,7 +176,7 @@ function neu(typ: KliffTyp, dx: number, breite: number, z0: number, hoehe: numbe
     schutz: { drainage: false, gesperrt: false, bepflanzt: false },
     bilanz: { abgestuerzt: 0, weggespuelt: 0, ereignisse: 0 },
     kosten: 0, schadenEuro: 0, meldungen: [], version: 1,
-    analyse: { spannung: 0, fs: 9, fsArt: "", kehle: 0 },
+    analyse: { spannung: 0, fs: 9, fsArt: "", kehle: 0 }, kluft: null,
     startKante: 0, kantenHoehe: 0, festFaktor: 1,
     cache: { version: 0, top: new Int16Array(nx), front: new Int16Array(nz), ton: new Int16Array(nx) },
     unruhig: true, aktiv: { c0: 0, c1: nx - 1, r0: 1, r1: nz - 1 }, seitVerbindung: 99, pruefen: true, seitStabil: 999, satGeprueft: -1, merker: {}, laufId: 0,
@@ -449,7 +451,7 @@ function fertig(k: Kliff) {
   for (let c = 0; c < k.nx; c++) hoch = Math.max(hoch, zVon(k, g.top[c]));
   k.kantenHoehe = 0.8 * hoch;
   k.startKante = kliffKante(k);
-  kreiseEichen(k, 1.2);
+  if (k.typ === "kreide") kluftEichen(k, 1.3); else kreiseEichen(k, 1.2);
   return k;
 }
 
@@ -978,7 +980,7 @@ function rutschLage(k: Kliff, b: Bewegung) {
 }
 
 /** Reibbeiwert auf dem Vorland (Strand, Schutt), wo die Scholle ausläuft */
-const REIB_VORLAND = 0.6;
+const REIB_VORLAND = 0.9;
 
 /** Eine stürzende Masse zerschellt: Zellen werden Schutt (und Blöcke) */
 function aufschlagen(k: Kliff, b: Bewegung) {
@@ -1306,7 +1308,7 @@ function sturzPruefen(k: Kliff, W: number) {
   return true;
 }
 
-interface Flaeche { fs: number; art: "kreis" | "ebene"; zs: (x: number) => number; von: number; bis: number; cx?: number; cz?: number; rad?: number; tan?: number }
+interface Flaeche { fs: number; art: "kreis" | "ebene" | "kluft"; zs: (x: number) => number; von: number; bis: number; cx?: number; cz?: number; rad?: number; tan?: number }
 
 /** Grundwasserspiegel in Spalte c (m): steigt von der Wand landeinwärts an; über Ton gestaut */
 function grundwasser(k: Kliff, c: number, W: number, ufer: number) {
@@ -1385,14 +1387,36 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
   let best: Flaeche | null = null;
   // Füße: am Wandfuß und auf halber Höhe
   const fuesse: [number, number][] = [];
-  for (const q of [0, 0.2, 0.45]) {
+  for (const q of [0, 0.2]) {
     const r = Math.min(k.nz - 1, rw + Math.round(((hoch - W) * q + 0.3) / k.dx));
     if (g.front[r] < k.nx) fuesse.push([xVon(k, g.front[r]) - k.dx, zVon(k, r)]);
   }
-  for (const [xt, zt] of fuesse) {
+  // Kreide ist spröde: Sie rutscht nicht auf Kreisen, sondern bricht entlang
+  // fast senkrechter Klüfte parallel zur Wand ab (wie am Königsstuhl).
+  if (k.kluft) for (const q of [0, 0.2, 0.4]) {
+    // Fuß der Kluft ist die Felswand selbst, nicht die Schutthalde davor
+    const r = Math.min(k.nz - 1, rw + Math.round(((hoch - W) * q + 0.3) / k.dx));
+    let c = 0;
+    while (c < k.nx && (k.mat[r * k.nx + c] === MAT.LUFT || LOSE(k.mat[r * k.nx + c]))) c++;
+    if (c >= k.nx) continue;
+    const xt = xVon(k, c) - k.dx, zt = zVon(k, r);
+    if (hoch - zt < 3) continue;
+    // Fast senkrechte Klüfte: Es lösen sich dünne Wandscheiben
+    for (const grad of [78, 83, 87]) {
+      const tan = Math.tan((grad * Math.PI) / 180);
+      const e: Ebene = { x0: xt - zt / tan, tan, c: k.kluft.c, phi: k.kluft.phi };
+      const zs = (x: number) => (x - e.x0) * e.tan;
+      const von = spalteVon(k, xt), bis = Math.min(k.nx - 1, spalteVon(k, e.x0 + hoch / tan) + 1);
+      const { fs, flaeche } = fsFlaeche(k, zs, von, bis, W, ufer, e);
+      if (flaeche < 4) continue;
+      if (!best || fs < best.fs) best = { fs, art: "kluft", zs, von, bis, tan };
+    }
+  }
+  // Gleitkreise: steil und tief, mit dem Fuß am Wandfuß oder knapp darüber
+  else for (const [xt, zt] of fuesse) {
     const Hc = hoch - zt;
     if (Hc < 3) continue;
-    for (const a of [-0.3, 0, 0.3, 0.6, 0.9]) for (const bb of [0.5, 0.9, 1.4, 2.2]) {
+    for (const a of [-0.3, 0, 0.3, 0.6]) for (const bb of [0.5, 0.9, 1.4]) {
       const cx = xt + a * Hc, cz = zt + bb * Hc;
       const rad = Math.hypot(cx - xt, cz - zt);
       const zs = (x: number) => { const d = x - cx; return Math.abs(d) >= rad ? Infinity : cz - Math.sqrt(rad * rad - d * d); };
@@ -1430,6 +1454,17 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
     }
   }
   if (zellen.length < 8) return best.fs;
+  if (best.art === "kluft") {
+    // Die Wand löst sich an der Kluft, kippt leicht vor und zerfällt beim
+    // ersten Aufsetzen — der Schutt fließt als Schuttkegel ab.
+    const b = masseAus(k, zellen, "fall");
+    b.vx = -0.6; b.omega = 0.15;
+    melde(k, `Abbruch: Eine Kreidewand von rund ${Math.round(b.volumen)} m³ je Meter löst sich an einer steilen Kluft und zerfällt zu einem Schuttkegel (Standsicherheit ${best.fs.toFixed(2).replace(".", ",")}).`, "warnung");
+    k.saettigung *= 0.8;
+    k.risse *= 0.5;
+    if (!k.schutz.gesperrt) melde(k, "Kreideabbrüche kommen oft im Frühjahr nach Frost und Regen — Strand unter dem Kliff meiden!", "warnung");
+    return best.fs;
+  }
   const b = masseAus(k, zellen, best.art === "kreis" ? "rutsch" : "gleit");
   const vol = Math.round(b.volumen);
   if (best.art === "kreis") {
@@ -1437,13 +1472,13 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
     // Nach dem Bruch bleibt nur die Restreibung: je kleiner die Standsicherheit,
     // desto weiter rutscht die Scholle, bis die Reibung sie wieder hält.
     const neig = Math.max(0.05, (b.mx - b.pivX) / Math.max(1, b.pivZ - b.mz));
-    b.reib = neig * Math.max(0.3, Math.min(0.9, best.fs));
+    b.reib = neig * Math.max(0.55, Math.min(0.95, best.fs));
     b.ausX = xVon(k, best.von);
     melde(k, `Rutschung: Eine Scholle von rund ${vol} m³ je Meter gleitet auf einer gekrümmten Fläche ab und kippt nach hinten (Standsicherheit ${best.fs.toFixed(2).replace(".", ",")}).`, "warnung");
   } else {
     const len = Math.hypot(1, best.tan!);
     b.dirX = -1 / len; b.dirZ = -best.tan! / len;
-    b.reib = best.tan! * Math.max(0.3, Math.min(0.9, best.fs));
+    b.reib = best.tan! * Math.max(0.55, Math.min(0.95, best.fs));
     b.ausX = xVon(k, best.von);
     melde(k, `Gleitung: Eine Kreidescholle von rund ${vol} m³ je Meter rutscht auf einer alten Überschiebungsfläche ins Meer — wie 2007 an der Store Taler auf Møn (Standsicherheit ${best.fs.toFixed(2).replace(".", ",")}).`, "warnung");
   }
@@ -1491,6 +1526,25 @@ function kreiseEichen(k: Kliff, ziel: number) {
   }
   k.festFaktor = Math.max(1, hi);
   k.saettigung = sat; k.risse = risse; k.ebenen = ebenen;
+  k.analyse.fs = standsicherheit(k, 0, false);
+}
+
+/**
+ * Wie kreiseEichen, für die Klüfte der Kreide — aber bei voller Nässe: Die
+ * steilen Wände stehen am Jasmund jahrelang. Abbrechen sollen sie erst, wenn
+ * Frost die Klüfte öffnet (Risse) oder die Hohlkehle sie untergräbt.
+ */
+function kluftEichen(k: Kliff, ziel: number) {
+  const sat = k.saettigung, risse = k.risse;
+  k.saettigung = 1; k.risse = 0.15;
+  k.kluft = { c: 0, phi: 35 };
+  let lo = 0, hi = 2000;
+  for (let s = 0; s < 30; s++) {
+    k.kluft.c = (lo + hi) / 2;
+    if (standsicherheit(k, 0, false) < ziel) lo = k.kluft.c; else hi = k.kluft.c;
+  }
+  k.kluft.c = hi;
+  k.saettigung = sat; k.risse = risse;
   k.analyse.fs = standsicherheit(k, 0, false);
 }
 
