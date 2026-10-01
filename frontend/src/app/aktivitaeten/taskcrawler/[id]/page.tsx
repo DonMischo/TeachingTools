@@ -7,7 +7,8 @@ import { api, ExitGameDetailOut, ExitGameSessionOut } from "@/lib/api";
 import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useToast } from "@/contexts/ToastContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { JsonEditPanel } from "@/components/JsonEditPanel";
+import { VorlagenEditor } from "@/components/vorlagen/VorlagenEditor";
+import { TaskCrawlerForm } from "@/components/vorlagen/TaskCrawlerForm";
 
 export default function ExitgameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -67,8 +68,10 @@ export default function ExitgameDetailPage() {
         </div>
       </div>
 
-      <JsonEditPanel
+      <VorlagenEditor
+        title="TaskCrawler bearbeiten"
         load={() => api.exitgame.get(gameId).then(g => g.data)}
+        render={(v, set) => <TaskCrawlerForm value={v} onChange={set} exitgameId={gameId} />}
         save={data => api.exitgame.update(gameId, data)}
         fileName={`taskcrawler_${gameId}.json`}
         onSaved={() => {

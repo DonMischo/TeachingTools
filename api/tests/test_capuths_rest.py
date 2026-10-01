@@ -427,3 +427,26 @@ class TestEdit:
         db.commit()
         r = client.put(f"/api/capuths/{qid}", json=MINIMAL_QUIZ, headers=h)
         assert r.status_code == 409
+
+
+class TestAssets:
+    def test_upload_image_lands_in_gfx(self, client, db, teacher_token, tmp_path, monkeypatch):
+        import api.routers.capuths as cap
+        monkeypatch.setattr(cap, "QUIZ_DATA_ROOT", tmp_path)
+        h = {"Authorization": f"Bearer {teacher_token}"}
+        qid = TestEdit()._upload(client, teacher_token)
+        r = client.post(f"/api/capuths/{qid}/assets", files={"file": ("Mein Bild.png", b"\x89PNG", "image/png")}, headers=h)
+        assert r.status_code == 201, r.text
+        assert r.json()["path"] == f"{qid}/gfx/Mein_Bild.png"
+        assert (tmp_path / str(qid) / "gfx" / "Mein_Bild.png").read_bytes() == b"\x89PNG"
+        # Gleicher Name überschreibt nicht.
+        r2 = client.post(f"/api/capuths/{qid}/assets", files={"file": ("Mein Bild.png", b"x", "image/png")}, headers=h)
+        assert r2.json()["path"] == f"{qid}/gfx/Mein_Bild-2.png"
+
+    def test_rejects_non_images(self, client, teacher_token, tmp_path, monkeypatch):
+        import api.routers.capuths as cap
+        monkeypatch.setattr(cap, "QUIZ_DATA_ROOT", tmp_path)
+        qid = TestEdit()._upload(client, teacher_token)
+        r = client.post(f"/api/capuths/{qid}/assets", files={"file": ("x.exe", b"MZ", "application/octet-stream")},
+                        headers={"Authorization": f"Bearer {teacher_token}"})
+        assert r.status_code == 400

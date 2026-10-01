@@ -11,7 +11,8 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type TippSammlung } from "@/lib/api";
 import { useAvailability } from "@/hooks/useAvailability";
-import { JsonEditPanel } from "@/components/JsonEditPanel";
+import { VorlagenEditor } from "@/components/vorlagen/VorlagenEditor";
+import { TipptexteForm, type TipptexteJson } from "@/components/vorlagen/TipptexteForm";
 
 export default function TippMaterial({
   gewaehlt,
@@ -124,10 +125,12 @@ export default function TippMaterial({
             📄 Vorlage
           </button>
           {gewaehlt && (
-            <JsonEditPanel
+            <VorlagenEditor
               key={gewaehlt.id}
               label="✎"
-              load={async () => {
+              title={`»${gewaehlt.title}« bearbeiten`}
+              render={(v, set) => <TipptexteForm value={v} onChange={set} />}
+              load={async (): Promise<TipptexteJson> => {
                 const { title, description, texts, words, settings } = await api.tipptexte.get(gewaehlt.id);
                 return { title, description, texts, words, settings };
               }}

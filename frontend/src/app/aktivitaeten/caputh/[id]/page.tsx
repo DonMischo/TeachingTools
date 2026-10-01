@@ -7,7 +7,8 @@ import { api } from "@/lib/api";
 import { Scope, ScopeSelect, scopeBody } from "@/components/ScopeSelect";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { JsonEditPanel } from "@/components/JsonEditPanel";
+import { VorlagenEditor } from "@/components/vorlagen/VorlagenEditor";
+import { CaputhForm, type CaputhJson } from "@/components/vorlagen/CaputhForm";
 
 export default function CaputhDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -59,8 +60,10 @@ export default function CaputhDetailPage() {
       </p>
 
       <div className="mb-6">
-        <JsonEditPanel
-          load={() => api.capuths.exportJson(quizId)}
+        <VorlagenEditor
+          title="Caputh bearbeiten"
+          load={() => api.capuths.exportJson(quizId) as Promise<CaputhJson>}
+          render={(v, set) => <CaputhForm value={v} onChange={set} upload={file => api.capuths.uploadAsset(quizId, file)} />}
           save={data => api.capuths.update(quizId, data)}
           fileName={`caputh_${quizId}.json`}
           onSaved={r => {

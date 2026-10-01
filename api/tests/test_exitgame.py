@@ -1020,3 +1020,21 @@ def test_upload_validates_ergebnissicherung(client, teacher_token):
         r = _upload(client, teacher_token, game)
         assert r.status_code == 422, falsch
         assert any("ergebnissicherung" in e for e in r.json()["detail"]["errors"])
+
+
+def test_katalog_for_editor(client, teacher_token):
+    r = client.get("/api/exitgames/katalog", headers=_auth(teacher_token))
+    assert r.status_code == 200
+    k = r.json()
+    assert {"ansichten", "stile", "objekte", "werkzeuge"} <= set(k)
+    assert "verlies" in k["ansichten"] and "name" in k["werkzeuge"]["gleichungswaage"]
+
+
+def test_upload_asset_lands_in_assets(client, teacher_token, tmp_path, monkeypatch):
+    import api.routers.exitgame as eg
+    monkeypatch.setattr(eg, "EXITGAME_DATA_ROOT", tmp_path)
+    gid = _upload(client, teacher_token).json()["id"]
+    r = client.post(f"/api/exitgames/{gid}/assets", files={"file": ("karte.jpg", b"jpg", "image/jpeg")}, headers=_auth(teacher_token))
+    assert r.status_code == 201, r.text
+    assert r.json() == {"path": "karte.jpg", "url": f"/uploads/exitgames/{gid}/assets/karte.jpg"}
+    assert (tmp_path / str(gid) / "assets" / "karte.jpg").exists()

@@ -57,7 +57,7 @@ aktivitaeten:
       - Bilder in Fragen, eingebettete Lückentexte und Zeitstrahlen
       - Gruppenauswertung
       - Import als .json/.zip, Vorlage
-      - Bearbeiten im Vorlagen-Format (JSON), frühere Auswertungen bleiben gültig
+      - Bearbeiten per Formular (alle Fragetypen inkl. Zeitstrahl, Bilder direkt hochladen), frühere Auswertungen bleiben gültig
   - id: bingo
     name: Bingo
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true]}
@@ -77,7 +77,7 @@ aktivitaeten:
       - Serverseitige Fuzzy-Anpassung der Schwierigkeit (Hinweise, Zeitlimits, leichtere Aufgaben)
       - Aufgaben aus Generatoren, eingebettete Lückentexte und Zeitstrahlen
       - Import als .json/.zip, Vorlage mit allen Bausteinen
-      - Bearbeiten im Vorlagen-Format (JSON)
+      - Bearbeiten per Formular: Folien, Aufgaben, Codeschnipsel, Hinweise, Objekte, Werkzeuge, Bilder direkt hochladen
       - Gebäude-Ansicht: isometrisches Haus (three.js), Abschnitt = Stockwerk, Folie = Zimmer, Tür = Treppenhaus; Grundriss wächst aus den Regeln des Regel-Labors, gleicher Code = gleiches Haus
       - Drei 2.5D-Arten: Gebäude (Treppen hinauf), Verlies (Ebenen hinab, nur die aktuelle sichtbar, Fackellicht, Monster und Bosse, die besiegt am Boden liegen) und Ebene (Abschnitte nebeneinander, verschlossene Türen); jederzeit zurück; Zifferntasten 1–9/0 laufen zu Zimmer bzw. Treppe
       - Zwei Vorlagen: schlank (Folien-Bausteine) und interaktiv (spielbares Verlies mit Stationen, Monstern, Bossen, Werkzeugen, »gebaeude«-Startansicht)
@@ -333,7 +333,7 @@ simulationen:
       - Modi Lektionen, Wortregen, Tastenjagd, Wettschreiben (Klassenrennen)
       - Anschläge pro Minute, Fehlerquote, schwächste Tasten
       - Bestenliste mit den besten hundert je Modus
-      - Eigene Texte per JSON, nachträglich bearbeitbar
+      - Eigene Texte per JSON, nachträglich per Formular bearbeitbar
   - id: maus
     name: Maus-Führerschein
     faehigkeiten: {use: [true, true]}

@@ -67,7 +67,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Live-Sitzung mit Host-Screen und Beitritt per Code, optional im Team-Modus
 - Bilder in Fragen; Lückentexte und Zeitstrahlen lassen sich einbetten
 - Gruppenauswertung nach der Runde
-- Import als `.json` oder `.zip`, Vorlage zum Herunterladen; nachträglich im Vorlagen-Format bearbeitbar
+- Import als `.json` oder `.zip`, Vorlage zum Herunterladen; nachträglich per Formular bearbeitbar, Bilder direkt hochladen (JSON nur im Expertenmodus)
 
 ### 🎰 Bingo
 - Runden mit Rastergröße und Caller/Antwort-Paaren anlegen und sofort hosten
@@ -82,7 +82,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Aufgaben vergeben Codeschnipsel, die an der Tür zusammengesetzt werden
 - Serverseitige Anpassung der Schwierigkeit (Fuzzy-DDA): Hinweise, Zeitlimits, leichtere Aufgaben je nach Verlauf
 - Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen
-- Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein; nachträglich im Vorlagen-Format bearbeitbar
+- Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein; nachträglich per Formular bearbeitbar, Bilder direkt hochladen (JSON nur im Expertenmodus)
 
 ### 🧩 Lückentext
 - Lücken mit Wortbank, Freitext oder Multiple Choice; Ziehlücken (gestrichelte Pille) und Schreiblücken (Linie) sind auf einen Blick zu unterscheiden

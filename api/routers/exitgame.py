@@ -60,6 +60,7 @@ from ..auth import (
 )
 from ..availability import require_capability
 from ..authorship import author_fields, scope_to_student_pool, can_modify, is_student
+from ..upload_utils import save_image
 from ..utils import gen_code
 from ..ws_auth import ws_teacher
 from ..ws_manager import RoomManager, reject, release_db
@@ -710,6 +711,17 @@ ANLEITUNG_25D = (
 )
 
 
+@router.get("/api/exitgames/katalog")
+def get_katalog(_=Depends(get_current_user)):
+    """Erlaubte Werte samt Beschreibung — für die Auswahllisten im Formular-Editor."""
+    return {
+        "ansichten": katalog.ANSICHTEN,
+        "stile": katalog.STILE,
+        "objekte": katalog.OBJEKTE,
+        "werkzeuge": katalog.WERKZEUGE,
+    }
+
+
 @router.get("/api/exitgames/template-interaktiv")
 def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)):
     """Die Vorlage für die 2.5D-Ansicht: ein spielbares Verlies mit Stationen,
@@ -825,6 +837,23 @@ def update_exitgame(exitgame_id: int, raw: dict, db: Session = Depends(get_db), 
     db.commit()
     db.refresh(g)
     return _to_out(g)
+
+
+@router.post("/api/exitgames/{exitgame_id}/assets", status_code=201)
+def upload_exitgame_asset(exitgame_id: int, file: UploadFile = File(...), db: Session = Depends(get_db),
+                          current=Depends(get_current_user)):
+    """Bild für eine Folie hochladen — landet wie beim ZIP-Import unter
+    data/exitgames/{id}/assets/. Zurück kommt der Dateiname fürs Feld »media.src«."""
+    g = db.get(ExitGame, exitgame_id)
+    if not g:
+        raise HTTPException(404, "Exitgame nicht gefunden")
+    if not can_modify(g, current):
+        raise HTTPException(403)
+    fname = save_image(file, EXITGAME_DATA_ROOT / str(exitgame_id) / "assets")
+    if not g.asset_path:
+        g.asset_path = str(EXITGAME_DATA_ROOT / str(exitgame_id))
+        db.commit()
+    return {"path": fname, "url": f"/uploads/exitgames/{exitgame_id}/assets/{fname}"}
 
 
 @router.delete("/api/exitgames/{exitgame_id}", status_code=204)

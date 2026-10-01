@@ -33,6 +33,7 @@ from ..schemas import QuizOut, QuizDetailOut, QuizQuestionOut, QuizAnswerOut, Se
 from ..auth import get_current_teacher, get_current_user, get_player, Guest, is_session_owner, require_session_owner
 from ..availability import require_capability
 from ..authorship import scope_to_student_pool, is_student
+from ..upload_utils import save_image
 from .. import scoping
 from ..utils import gen_code, parse_grades
 from ..ws_auth import ws_teacher, ws_identity, ws_guest
@@ -776,6 +777,24 @@ def update_caputh(quiz_id: int, raw: dict, db: Session = Depends(get_db), curren
     o.question_count = len(caputh.questions)
     o.warning = quiz_fields.get("warning")
     return o
+
+
+@router.post("/api/capuths/{quiz_id}/assets", status_code=201)
+def upload_caputh_asset(quiz_id: int, file: UploadFile = File(...), db: Session = Depends(get_db),
+                        current=Depends(get_current_user)):
+    """Bild für eine Frage hochladen — landet wie beim ZIP-Import unter
+    data/quizzes/{id}/gfx/. Zurück kommt der Pfad fürs Feld »image«."""
+    caputh = db.get(Quiz, quiz_id)
+    if not caputh:
+        raise HTTPException(404, "Caputh not found")
+    if is_student(current) and caputh.created_by_student is None:
+        raise HTTPException(403)
+    fname = save_image(file, QUIZ_DATA_ROOT / str(quiz_id) / "gfx")
+    if not caputh.asset_path:
+        caputh.asset_path = str(QUIZ_DATA_ROOT / str(quiz_id))
+        db.commit()
+    path = f"{quiz_id}/gfx/{fname}"
+    return {"path": path, "url": f"/uploads/quizzes/{path}"}
 
 
 @router.delete("/api/capuths/{quiz_id}", status_code=204)

@@ -481,6 +481,17 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+/** Ein Bild für einen Vorlagen-Editor hochladen; `path` kommt ins Inhalts-JSON. */
+export type AssetOut = { path: string; url: string };
+function uploadAsset(path: string, file: File): Promise<AssetOut> {
+  const fd = new FormData();
+  fd.append("file", file);
+  return fetch(`/api/${path}`, { method: "POST", credentials: "include", body: fd }).then(async (r) => {
+    if (!r.ok) throw new Error(await r.text());
+    return r.json() as Promise<AssetOut>;
+  });
+}
+
 // Guest requests (Fragmente, Übung): authenticate with a scoped Bearer token
 // (guests have no cookie) and, unlike apiFetch, never clear the logged-in user's
 // stored credentials on 401 — a guest's expired token must not log anyone out.
@@ -1832,6 +1843,7 @@ export const api = {
     delete: (id: number) => apiFetch<void>(`capuths/${id}`, { method: "DELETE" }),
     /** Bearbeiten-Modus: Inhalt im Upload-Format laden und zurückschreiben. */
     exportJson: (id: number) => apiFetch<Record<string, unknown>>(`capuths/${id}/export`),
+    uploadAsset: (id: number, file: File) => uploadAsset(`capuths/${id}/assets`, file),
     update: (id: number, data: unknown) =>
       apiFetch<QuizOut & { warning?: string | null }>(`capuths/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     upload: (file: File) => {
@@ -2238,6 +2250,12 @@ export const api = {
     list: () => apiFetch<ExitGameOut[]>("exitgames"),
     get: (id: number) => apiFetch<ExitGameDetailOut>(`exitgames/${id}`),
     template: () => apiFetch<Record<string, unknown>>("exitgames/template"),
+    uploadAsset: (id: number, file: File) => uploadAsset(`exitgames/${id}/assets`, file),
+    /** Erlaubte Ansichten, Stile, Objekte und Werkzeuge — für die Auswahllisten im Editor. */
+    katalog: () => apiFetch<{
+      ansichten: Record<string, string>; stile: Record<string, string>; objekte: Record<string, string>;
+      werkzeuge: Record<string, { name: string; config?: Record<string, string>; hinweis?: string }>;
+    }>("exitgames/katalog"),
     templateInteraktiv: () => apiFetch<Record<string, unknown>>("exitgames/template-interaktiv"),
     delete: (id: number) => apiFetch<void>(`exitgames/${id}`, { method: "DELETE" }),
     update: (id: number, data: unknown) =>
