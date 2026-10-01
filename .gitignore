@@ -39,6 +39,8 @@ Konzeptideen.yml
 # frontend
 # Snap! wird per `npm run fetch:snap` geholt (~90 MB, nicht ins Repo)
 frontend/public/snap/
+# Rohdaten des Kartentools (node scripts/fetch-karten.mjs, ~150 MB)
+frontend/.karten-roh/
 frontend/public/EGE_logo.png
 frontend/public/favicon.ico
 frontend/node_modules/

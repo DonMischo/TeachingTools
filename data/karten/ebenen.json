@@ -1,0 +1,290 @@
+{
+  "stand": "2026-10-01",
+  "ebenen": [
+    {
+      "id": "de-laender",
+      "name": "Bundesländer",
+      "gruppe": "politisch",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 16,
+      "bytes": 54264
+    },
+    {
+      "id": "de-staedte",
+      "name": "Städte",
+      "gruppe": "politisch",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 706,
+      "bytes": 130966
+    },
+    {
+      "id": "de-gipfel",
+      "name": "Berge und Gipfel",
+      "gruppe": "topographisch",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 6588,
+      "bytes": 1053426
+    },
+    {
+      "id": "de-gebirge",
+      "name": "Gebirge",
+      "gruppe": "topographisch",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 109,
+      "bytes": 157448
+    },
+    {
+      "id": "de-landschaften",
+      "name": "Landschaften",
+      "gruppe": "topographisch",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 789,
+      "bytes": 533218
+    },
+    {
+      "id": "de-fluesse",
+      "name": "Flüsse",
+      "gruppe": "topographisch",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 1023,
+      "bytes": 893998
+    },
+    {
+      "id": "de-fluesse-klein",
+      "name": "Kleine Flüsse und Bäche",
+      "gruppe": "topographisch",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 16236,
+      "bytes": 5353936
+    },
+    {
+      "id": "de-seen",
+      "name": "Seen",
+      "gruppe": "topographisch",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 2230,
+      "bytes": 657304
+    },
+    {
+      "id": "de-gewaesser",
+      "name": "Meere und weitere Gewässer",
+      "gruppe": "topographisch",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "anzahl": 599,
+      "bytes": 263907
+    },
+    {
+      "id": "eu-staaten",
+      "name": "Staaten Europas",
+      "gruppe": "politisch",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 71,
+      "bytes": 374383
+    },
+    {
+      "id": "de-hoehen",
+      "name": "Höhenschichten",
+      "gruppe": "topographisch",
+      "geometrie": "raster",
+      "quiz": false,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "kacheln": [
+        {
+          "datei": "de-00.webp",
+          "ecken": [
+            [
+              5.5,
+              55.2
+            ],
+            [
+              10.50146,
+              55.2
+            ],
+            [
+              10.50146,
+              51.28212
+            ],
+            [
+              5.5,
+              51.28212
+            ]
+          ]
+        },
+        {
+          "datei": "de-01.webp",
+          "ecken": [
+            [
+              10.50146,
+              55.2
+            ],
+            [
+              15.50014,
+              55.2
+            ],
+            [
+              15.50014,
+              51.28212
+            ],
+            [
+              10.50146,
+              51.28212
+            ]
+          ]
+        },
+        {
+          "datei": "de-10.webp",
+          "ecken": [
+            [
+              5.5,
+              51.28212
+            ],
+            [
+              10.50146,
+              51.28212
+            ],
+            [
+              10.50146,
+              46.99905
+            ],
+            [
+              5.5,
+              46.99905
+            ]
+          ]
+        },
+        {
+          "datei": "de-11.webp",
+          "ecken": [
+            [
+              10.50146,
+              51.28212
+            ],
+            [
+              15.50014,
+              51.28212
+            ],
+            [
+              15.50014,
+              46.99905
+            ],
+            [
+              10.50146,
+              46.99905
+            ]
+          ]
+        }
+      ],
+      "stufen": [
+        {
+          "ab": -50,
+          "farbe": "rgb(92,152,96)"
+        },
+        {
+          "ab": 0,
+          "farbe": "rgb(120,172,104)"
+        },
+        {
+          "ab": 100,
+          "farbe": "rgb(160,196,120)"
+        },
+        {
+          "ab": 200,
+          "farbe": "rgb(206,218,140)"
+        },
+        {
+          "ab": 300,
+          "farbe": "rgb(234,226,150)"
+        },
+        {
+          "ab": 500,
+          "farbe": "rgb(226,196,128)"
+        },
+        {
+          "ab": 750,
+          "farbe": "rgb(208,160,104)"
+        },
+        {
+          "ab": 1000,
+          "farbe": "rgb(184,128,88)"
+        },
+        {
+          "ab": 1500,
+          "farbe": "rgb(156,104,80)"
+        },
+        {
+          "ab": 2000,
+          "farbe": "rgb(140,120,112)"
+        },
+        {
+          "ab": 2500,
+          "farbe": "rgb(236,236,240)"
+        }
+      ],
+      "bytes": 1017344
+    }
+  ]
+}
