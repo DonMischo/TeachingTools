@@ -366,7 +366,7 @@ function moen(): Kliff {
   k.version++;
   bepflanzen(k, 124, 360, 5, "buche", 3);
   for (const x0 of fugen) k.ebenen.push({ x0, tan, c: 300, phi: 34 });
-  ebenenEichen(k, 1.15);
+  ebenenEichen(k, 1.3);
   objekt(k, "aussicht", "aussicht", "Aussichtspunkt", 170);
   objekt(k, "weg", "weg", "Klintweg", 182);
   k.hub = 0.1; k.stauMax = 1.6; k.wellenFaktor = 0.75;
@@ -451,7 +451,7 @@ function fertig(k: Kliff) {
   for (let c = 0; c < k.nx; c++) hoch = Math.max(hoch, zVon(k, g.top[c]));
   k.kantenHoehe = 0.8 * hoch;
   k.startKante = kliffKante(k);
-  if (k.typ === "kreide") kluftEichen(k, 1.3); else kreiseEichen(k, 1.2);
+  if (k.typ === "kreide" || k.typ === "moen") kluftEichen(k, 1.3); else kreiseEichen(k, 1.2);
   return k;
 }
 
@@ -562,6 +562,13 @@ function aendern(k: Kliff, i?: number) {
   a.r0 = Math.max(1, Math.min(a.r0, r - 1)); a.r1 = Math.min(k.nz - 1, Math.max(a.r1, r + 3));
 }
 
+/**
+ * Verrutschtes Gestein ist zerrüttet: Frost, Regen und Brandung zerlegen es
+ * viel schneller als die gewachsene Wand — die Rutschmasse wird abgeräumt,
+ * und das Kliff steht wieder steil.
+ */
+const zerruettet = (k: Kliff, i: number) => (k.gestoert[i] ? 5 : 1);
+
 /** Zelle abtragen: Feines geht ins Meer, Feuerstein/Findlinge bleiben */
 /** Feuersteingeröll wird gerollt und verfrachtet, Findlinge bleiben lange liegen */
 function blockHaerte(k: Kliff, i: number) {
@@ -641,7 +648,7 @@ function brandung(k: Kliff, W: number, H0: number, wl: KWellen, dt: number) {
     // Weit vor der Uferlinie unter Wasser: dort schleift die Welle nur (Plattform), sie schlägt nicht auf
     const a = c < vorn - Math.round(1.5 / k.dx) ? 0.08 : Math.exp(-(Math.max(0, c - vorn) * k.dx) / 3.5);
     const herk = m === MAT.SCHUTT ? k.herk[i] : m;
-    const haerte = m === MAT.BLOCK ? blockHaerte(k, i) : m === MAT.SCHUTT ? 0.25 * (herk === MAT.KREIDE || herk === MAT.FEUER ? 1.6 : 1) : MATERIAL[m].haerte * (k.gestoert[i] ? 0.4 : 1);
+    const haerte = m === MAT.BLOCK ? blockHaerte(k, i) : m === MAT.SCHUTT ? 0.25 * (herk === MAT.KREIDE || herk === MAT.FEUER ? 1.6 : 1) : MATERIAL[m].haerte / zerruettet(k, i);
     k.schaden[i] += (K_WELLE * e * f * a * dt * (0.7 + 0.6 * zufall(k))) / haerte;
     if (k.schaden[i] >= 1) abtragen(k, i, false);
   }
@@ -724,7 +731,7 @@ function wetterWirkt(k: Kliff, w: Wetter, W: number, dt: number) {
       if (LOSE(m) || m === MAT.DECKWERK) continue;
       // An der Ecke greift der Frost von zwei Seiten an
       const ecke = r < k.nz - 1 && k.mat[i + k.nx] === MAT.LUFT ? 2 : 1;
-      k.schaden[i] += (K_FROST * ecke * MATERIAL[m].frost * dt * (0.5 + zufall(k))) / MATERIAL[m].haerte;
+      k.schaden[i] += (K_FROST * ecke * MATERIAL[m].frost * dt * (0.5 + zufall(k)) * zerruettet(k, i)) / MATERIAL[m].haerte;
       if (k.schaden[i] >= 1) abtragen(k, i, true);
     }
     k.risse = Math.min(1, k.risse + 0.00008 * dt);
@@ -741,7 +748,7 @@ function wetterWirkt(k: Kliff, w: Wetter, W: number, dt: number) {
       const info = MATERIAL[m === MAT.SCHUTT ? k.herk[i] : m];
       if (info.regen <= 0 || m === MAT.BLOCK || m === MAT.DECKWERK) continue;
       const schutz = k.bewuchs[c] ? 0.25 : 1;
-      k.schaden[i] += (K_REGEN * info.regen * Math.min(2, steil) * schutz * dt) / info.haerte;
+      k.schaden[i] += (K_REGEN * info.regen * Math.min(2, steil) * schutz * dt * zerruettet(k, i)) / info.haerte;
       if (k.schaden[i] >= 1) abtragen(k, i, true);
     }
     // Das Wasser von der Hochfläche stürzt über die Kante und spült ihre
@@ -1136,6 +1143,8 @@ function ablegen(k: Kliff, b: Bewegung) {
     t.c = Math.max(0, Math.min(k.nx - 1, spalteVon(k, x)));
     t.r = k.cache.top[t.c];
     t.neigung += b.theta + (b.art === "gleit" ? (zufall(k) - 0.5) * 0.3 : 0);
+    // Die Wurzeln reißen beim Abrutschen: der Baum steht schief und stirbt ab
+    t.tot ??= k.stunde;
   }
 }
 
@@ -1496,7 +1505,9 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
 function ebenenEichen(k: Kliff, ziel: number) {
   const kreise = k.ebenen;
   const sat = k.saettigung, risse = k.risse;
-  k.saettigung = 0.75; k.risse = 0.15;
+  // Wie die Klüfte bei voller Nässe: Die großen Gleitungen brauchen dazu
+  // noch Frostrisse oder einen untergrabenen Fuß.
+  k.saettigung = 1; k.risse = 0.15;
   let lo = 50, hi = 3000;
   const nur = () => {
     const alle = k.ebenen;
@@ -1535,8 +1546,8 @@ function kreiseEichen(k: Kliff, ziel: number) {
  * Frost die Klüfte öffnet (Risse) oder die Hohlkehle sie untergräbt.
  */
 function kluftEichen(k: Kliff, ziel: number) {
-  const sat = k.saettigung, risse = k.risse;
-  k.saettigung = 1; k.risse = 0.15;
+  const sat = k.saettigung, risse = k.risse, ebenen = k.ebenen;
+  k.saettigung = 1; k.risse = 0.15; k.ebenen = [];
   k.kluft = { c: 0, phi: 35 };
   let lo = 0, hi = 2000;
   for (let s = 0; s < 30; s++) {
@@ -1544,7 +1555,7 @@ function kluftEichen(k: Kliff, ziel: number) {
     if (standsicherheit(k, 0, false) < ziel) lo = k.kluft.c; else hi = k.kluft.c;
   }
   k.kluft.c = hi;
-  k.saettigung = sat; k.risse = risse;
+  k.saettigung = sat; k.risse = risse; k.ebenen = ebenen;
   k.analyse.fs = standsicherheit(k, 0, false);
 }
 

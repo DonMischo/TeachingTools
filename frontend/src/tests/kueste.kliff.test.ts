@@ -219,6 +219,25 @@ describe("Bäume an der Kante", () => {
     expect(t.weg || zVon(k, t.r) < 1.5).toBe(true);
   });
 
+  it("Bäume auf einer abgerutschten Scholle sterben ab", () => {
+    const k = neuesKliff("mergel");
+    // Junge Bäume bis dicht an die Kante
+    const g = geometrie(k);
+    for (let x = kliffKante(k) - 4; x < kliffKante(k) + 30; x += 2) {
+      const c = spalteVon(k, x);
+      k.baeume.push({ id: 1000 + c, c, r: g.top[c], neigung: 0, liegt: false, weg: false, groesse: 0.6, art: "busch" });
+    }
+    k.saettigung = 1; k.risse = 1; k.festFaktor *= 0.3;
+    standsicherheit(k, kWasser(k, REGEN), true);
+    const ids = k.bewegungen.flatMap(b => b.art === "fall" ? [] : b.baeume.map(x => x.id));
+    expect(ids.length).toBeGreaterThan(0);
+    abschliessen(k);
+    for (const id of ids) {
+      const t = k.baeume.find(x => x.id === id)!;
+      expect(t.weg || t.tot !== undefined, `Baum ${id}`).toBe(true);
+    }
+  });
+
   it("umgestürzte Bäume verrotten nach einigen Jahren", () => {
     const k = neuesKliff("kreide");
     const t = k.baeume[0];
