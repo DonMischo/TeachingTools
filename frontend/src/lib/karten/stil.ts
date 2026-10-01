@@ -6,26 +6,37 @@
  * Nur eingeschaltete Ebenen bekommen eine Quelle; MapLibre lädt sonst jedes
  * GeoJSON, auch unsichtbare. Beim Umschalten reicht `map.setStyle(neu)`,
  * MapLibre rechnet den Unterschied selbst aus.
+ *
+ * Deutschland- und Weltebenen teilen sich die Darstellung über ihre ROLLE
+ * (Flüsse, Seen, Städte …). Stil-Ebenen heißen »<ebene>:<teil>«, so findet
+ * ein Klick zurück zur Daten-Ebene.
  */
 import type {
   ExpressionSpecification,
+  FilterSpecification,
   LayerSpecification,
   SourceSpecification,
   StyleSpecification,
 } from "maplibre-gl";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster";
+export type Bereich = "de" | "welt";
 
 export type Ebene = {
   id: string;
   name: string;
   gruppe: "politisch" | "topographisch";
+  bereich: Bereich;
   geometrie: Geometrie;
   quiz: boolean;
   anzahl?: number;
   bytes: number;
   quelle: { name: string; lizenz: string; url: string };
+  /** Deutschland-Höhen: vier Bilder mit Eckkoordinaten */
   kacheln?: { datei: string; ecken: [number, number][] }[];
+  /** Welt-Relief: XYZ-Kacheln */
+  kachelUrl?: string;
+  maxzoom?: number;
   stufen?: { ab: number; farbe: string }[];
 };
 
@@ -39,25 +50,53 @@ export type Auswahl = {
   beschriftung: boolean;
 };
 
-export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: string[] }[] = [
+// ── Regionen ─────────────────────────────────────────────────────────
+
+export type Region = { id: string; name: string; bereich: Bereich; ausschnitt: [number, number, number, number] };
+
+/** Ausschnitt als [West, Süd, Ost, Nord]. Der Bereich entscheidet, welche Ebenen passen. */
+export const REGIONEN: Region[] = [
+  { id: "deutschland", name: "Deutschland", bereich: "de", ausschnitt: [5.6, 47.2, 15.3, 55.1] },
+  { id: "thueringen", name: "Thüringen", bereich: "de", ausschnitt: [9.8, 50.15, 12.7, 51.7] },
+  { id: "europa", name: "Europa", bereich: "welt", ausschnitt: [-25, 34, 45, 71] },
+  { id: "welt", name: "Welt", bereich: "welt", ausschnitt: [-170, -58, 178, 78] },
+  { id: "afrika", name: "Afrika", bereich: "welt", ausschnitt: [-20, -36, 55, 38] },
+  { id: "asien", name: "Asien", bereich: "welt", ausschnitt: [25, -11, 150, 78] },
+  { id: "nordamerika", name: "Nordamerika", bereich: "welt", ausschnitt: [-170, 7, -50, 75] },
+  { id: "suedamerika", name: "Südamerika", bereich: "welt", ausschnitt: [-85, -56, -33, 13] },
+  { id: "ozeanien", name: "Australien und Ozeanien", bereich: "welt", ausschnitt: [110, -48, 180, 2] },
+];
+export const region = (id: string | null | undefined) => REGIONEN.find((r) => r.id === id) ?? REGIONEN[0];
+
+export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: Record<Bereich, string[]> }[] = [
   {
     id: "politisch", icon: "🏛️", name: "Politisch",
-    ebenen: ["eu-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-staedte"],
+    ebenen: {
+      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-staedte"],
+      welt: ["welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-meere", "welt-staedte"],
+    },
   },
   {
     id: "topographisch", icon: "⛰️", name: "Topographisch",
-    ebenen: ["eu-staaten", "de-hoehen", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-fluesse-klein",
-      "de-gebirge", "de-landschaften", "de-gipfel", "de-staedte"],
+    ebenen: {
+      de: ["welt-staaten", "welt-hoehen", "de-hoehen", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-fluesse-klein",
+        "de-gebirge", "de-landschaften", "de-gipfel", "de-staedte"],
+      welt: ["welt-hoehen", "welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-meere", "welt-gebirge",
+        "welt-landschaften", "welt-gipfel", "welt-staedte"],
+    },
   },
   {
     id: "stumm", icon: "🔢", name: "Stumme Karte",
-    ebenen: ["eu-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse"],
+    ebenen: {
+      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse"],
+      welt: ["welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse"],
+    },
   },
 ];
 
-export function auswahlFuer(art: Kartenart): Auswahl {
+export function auswahlFuer(art: Kartenart, bereich: Bereich = "de"): Auswahl {
   const vorlage = KARTENARTEN.find((k) => k.id === art)!;
-  return { ebenen: [...vorlage.ebenen], beschriftung: art !== "stumm" };
+  return { ebenen: [...vorlage.ebenen[bereich]], beschriftung: art !== "stumm" };
 }
 
 // ── Farben ───────────────────────────────────────────────────────────
@@ -81,10 +120,17 @@ const LAND_FARBE: Record<string, string> = {
   HE: "#f4c2c2", RP: "#f1e3a0", SL: "#c9d7f0", BW: "#cfe6b8", BY: "#c9d7f0", TH: "#f6d7a7",
   ST: "#cfe6b8", SN: "#f1e3a0", BB: "#f6d7a7", BE: "#f4c2c2",
 };
+const landFarbe = ["match", ["get", "kurz"], ...Object.entries(LAND_FARBE).flat(), "#eeeeee"] as unknown as ExpressionSpecification;
 
-const landFarbe: ExpressionSpecification = [
-  "match", ["get", "kurz"], ...Object.entries(LAND_FARBE).flat(), "#eeeeee",
-] as unknown as ExpressionSpecification;
+/** Natural Earth MAPCOLOR7: 1–7, Nachbarn haben verschiedene Werte. */
+const STAAT_FARBE = ["#f6d7a7", "#cfe6b8", "#f4c2c2", "#c9d7f0", "#f1e3a0", "#dccbe8", "#c8e6e0"];
+const staatFarbe = ["match", ["get", "farbe"], ...STAAT_FARBE.flatMap((f, i) => [i + 1, f]), "#eeeeee"] as unknown as ExpressionSpecification;
+
+const KONTINENT_FARBE: Record<string, string> = {
+  europa: "#c9d7f0", asien: "#f6d7a7", afrika: "#f1e3a0", nordamerika: "#cfe6b8", suedamerika: "#f4c2c2",
+  ozeanien: "#dccbe8", antarktis: "#f2f2f2",
+};
+const kontinentFarbe = ["match", ["get", "id"], ...Object.entries(KONTINENT_FARBE).flat(), "#eeeeee"] as unknown as ExpressionSpecification;
 
 // ── Stil ─────────────────────────────────────────────────────────────
 
@@ -94,111 +140,165 @@ const SCHRIFT = { normal: ["Noto Sans Regular"], fett: ["Noto Sans Bold"], kursi
 export type Quelle = (ebene: Ebene) => string;
 export const quelleAusApi: Quelle = (e) => `/api/karten/ebenen/${e.id}`;
 
+type Rolle = "staaten" | "kontinente" | "laender" | "hoehen" | "wasserflaeche" | "meere" | "seen" | "fluesse"
+  | "gebirge" | "landschaften" | "gipfel" | "staedte";
+
+const ROLLE: Record<string, Rolle> = {
+  "welt-staaten": "staaten", "welt-kontinente": "kontinente", "de-laender": "laender",
+  "welt-hoehen": "hoehen", "de-hoehen": "hoehen",
+  "de-gewaesser": "wasserflaeche", "welt-gewaesser": "wasserflaeche", "welt-meere": "meere",
+  "de-seen": "seen", "welt-seen": "seen",
+  "de-fluesse": "fluesse", "de-fluesse-klein": "fluesse", "welt-fluesse": "fluesse",
+  "de-gebirge": "gebirge", "welt-gebirge": "gebirge",
+  "de-landschaften": "landschaften", "welt-landschaften": "landschaften",
+  "de-gipfel": "gipfel", "welt-gipfel": "gipfel",
+  "de-staedte": "staedte", "welt-staedte": "staedte",
+};
+
+/** Städte nach Rang: die kleinen erst ab einer Zoomstufe. */
+const STADT_STUFEN: Record<string, { raenge: string[]; minzoom: number }[]> = {
+  "de-staedte": [{ raenge: ["hauptstadt", "landeshauptstadt", "grossstadt"], minzoom: 0 }, { raenge: ["mittelstadt"], minzoom: 7 }],
+  "welt-staedte": [{ raenge: ["hauptstadt", "weltstadt"], minzoom: 0 }, { raenge: ["millionenstadt"], minzoom: 3 }, { raenge: ["grossstadt"], minzoom: 4.5 }],
+};
+
+/** Teil-Namen, deren Objekte ein Klick findet (auch unsichtbare Flächen, z. B. Gebirge über dem Relief). */
+const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2"]);
+export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
+export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
+
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelle: Quelle = quelleAusApi): StyleSpecification {
-  const an = new Set(auswahl.ebenen);
-  const ebene = (id: string) => (an.has(id) ? katalog.ebenen.find((e) => e.id === id) : undefined);
+  const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && ROLLE[e.id]);
+  const mit = (r: Rolle) => an.filter((e) => ROLLE[e.id] === r);
   const sources: Record<string, SourceSpecification> = {};
   const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": FARBE.meer } }];
   const text = auswahl.beschriftung;
-  const geojson = (e: Ebene) => { sources[e.id] = { type: "geojson", data: quelle(e), promoteId: "id" }; return e.id; };
+  const hatRelief = mit("hoehen").length > 0;
+  const hatLaender = mit("laender").length > 0;
+  for (const e of an) if (e.geometrie !== "raster") sources[e.id] = { type: "geojson", data: quelle(e), promoteId: "id" };
+  const schrift = (farbe: string, halo = "#ffffffcc") => ({ "text-color": farbe, "text-halo-color": halo, "text-halo-width": 1.2 });
 
-  // Nachbarstaaten (Deutschland selbst liegt darunter, die Länder decken es zu)
-  const staaten = ebene("eu-staaten");
-  if (staaten) {
-    const s = geojson(staaten);
-    layers.push(
-      { id: "staaten-flaeche", type: "fill", source: s, paint: { "fill-color": FARBE.ausland } },
-      { id: "staaten-rand", type: "line", source: s, paint: { "line-color": FARBE.auslandRand, "line-width": 0.8 } },
-    );
+  // Welt-Relief ganz unten
+  for (const e of mit("hoehen")) if (e.kachelUrl) {
+    sources[e.id] = { type: "raster", tiles: [e.kachelUrl], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
+    layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id, paint: { "raster-fade-duration": 0 } });
   }
 
-  const hoehen = ebene("de-hoehen");
-  hoehen?.kacheln?.forEach((k, i) => {
-    sources[`hoehen-${i}`] = { type: "image", url: `/karten/hoehen/${k.datei}`, coordinates: k.ecken as never };
-    layers.push({ id: `hoehen-${i}`, type: "raster", source: `hoehen-${i}`, paint: { "raster-fade-duration": 0 } });
+  for (const e of mit("staaten")) {
+    layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: {
+      // Politische Weltkarte: bunt; um Deutschland: neutral; über Relief: durchsichtig
+      "fill-color": art === "politisch" && !hatLaender ? staatFarbe : FARBE.ausland,
+      "fill-opacity": hatRelief ? 0 : 1,
+    } });
+  }
+  for (const e of mit("kontinente")) {
+    layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": kontinentFarbe, "fill-opacity": hatRelief ? 0.35 : 0.8 } });
+  }
+
+  // Deutschland-Höhen (vier Bilder) über dem Weltrelief
+  for (const e of mit("hoehen")) e.kacheln?.forEach((k, i) => {
+    sources[`${e.id}-${i}`] = { type: "image", url: `/karten/hoehen/${k.datei}`, coordinates: k.ecken as never };
+    layers.push({ id: `${e.id}-${i}:bild`, type: "raster", source: `${e.id}-${i}`, paint: { "raster-fade-duration": 0 } });
   });
 
-  const laender = ebene("de-laender");
-  if (laender) {
-    const s = geojson(laender);
-    layers.push({
-      id: "laender-flaeche", type: "fill", source: s,
-      paint: {
-        "fill-color": art === "politisch" ? landFarbe : "#f7f4ee",
-        // Topographisch scheinen die Höhenschichten durch
-        "fill-opacity": hoehen ? 0 : 1,
-      },
-    });
+  for (const e of mit("laender")) {
+    layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: {
+      "fill-color": art === "politisch" ? landFarbe : "#f7f4ee", "fill-opacity": hatRelief ? 0 : 1 } });
   }
 
-  const gewaesser = ebene("de-gewaesser");
-  if (gewaesser) layers.push({ id: "gewaesser", type: "fill", source: geojson(gewaesser), paint: { "fill-color": FARBE.wasser } });
-  const seen = ebene("de-seen");
-  if (seen) layers.push({ id: "seen", type: "fill", source: geojson(seen), paint: { "fill-color": FARBE.wasser } });
+  for (const e of [...mit("wasserflaeche"), ...mit("seen")]) {
+    layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": FARBE.wasser } });
+  }
+  // Meere: nur zum Anklicken und Beschriften (das Meer ist der Hintergrund)
+  for (const e of mit("meere")) layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-opacity": 0 } });
 
   const breite = (dick: number): ExpressionSpecification =>
-    ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "klasse"], 1, 1.4 * dick, 2, 0.8 * dick, 0.5 * dick],
+    ["interpolate", ["linear"], ["zoom"], 2, ["match", ["get", "klasse"], 1, 0.9 * dick, 2, 0.5 * dick, 0.4 * dick],
+      5, ["match", ["get", "klasse"], 1, 1.4 * dick, 2, 0.8 * dick, 0.5 * dick],
       10, ["match", ["get", "klasse"], 1, 3.5 * dick, 2, 2.2 * dick, 1.2 * dick]];
-  const kleine = ebene("de-fluesse-klein");
-  if (kleine) {
-    layers.push({ id: "fluesse-klein", type: "line", source: geojson(kleine), minzoom: 7,
-      layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": FARBE.fluss, "line-width": breite(1) } });
-  }
-  const fluesse = ebene("de-fluesse");
-  if (fluesse) {
-    layers.push({ id: "fluesse", type: "line", source: geojson(fluesse),
-      layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": FARBE.fluss, "line-width": breite(1) } });
-  }
-
-  const gebirge = ebene("de-gebirge");
-  if (gebirge) {
-    const s = geojson(gebirge);
-    layers.push({ id: "gebirge-rand", type: "line", source: s,
-      paint: { "line-color": FARBE.gebirgeSchrift, "line-opacity": hoehen ? 0.35 : 0.7, "line-width": 1, "line-dasharray": [2, 2] } });
+  const linie = { "line-join": "round", "line-cap": "round" } as const;
+  for (const e of mit("fluesse")) {
+    // Kleine Flüsse erst beim Heranzoomen: Deutschland-Bäche ab 7, Welt-Nebenflüsse ab 3,5
+    const klein = e.id === "de-fluesse-klein";
+    if (klein) {
+      layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, minzoom: 7, layout: linie, paint: { "line-color": FARBE.fluss, "line-width": breite(1) } });
+    } else {
+      layers.push(
+        { id: `${e.id}:linie`, type: "line", source: e.id, filter: ["<=", ["get", "klasse"], 2], layout: linie,
+          paint: { "line-color": FARBE.fluss, "line-width": breite(1) } },
+        { id: `${e.id}:linie-klein`, type: "line", source: e.id, filter: [">", ["get", "klasse"], 2], minzoom: e.bereich === "welt" ? 3.5 : 0,
+          layout: linie, paint: { "line-color": FARBE.fluss, "line-width": breite(1) } },
+      );
+    }
   }
 
-  if (laender) {
-    layers.push({ id: "laender-rand", type: "line", source: "de-laender",
+  for (const e of mit("gebirge")) {
+    layers.push(
+      { id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-opacity": 0 } },
+      { id: `${e.id}:rand`, type: "line", source: e.id,
+        paint: { "line-color": FARBE.gebirgeSchrift, "line-opacity": hatRelief ? 0.35 : 0.7, "line-width": 1, "line-dasharray": [2, 2] } },
+    );
+  }
+  for (const e of mit("landschaften")) layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-opacity": 0 } });
+
+  for (const e of mit("staaten")) {
+    layers.push({ id: `${e.id}:rand`, type: "line", source: e.id,
+      paint: { "line-color": hatLaender ? FARBE.auslandRand : FARBE.grenze, "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.4, 5, 0.9, 9, 1.6] } });
+  }
+  for (const e of mit("kontinente")) {
+    layers.push({ id: `${e.id}:rand`, type: "line", source: e.id, paint: { "line-color": "#57534e", "line-width": 1.6 } });
+  }
+  for (const e of mit("laender")) {
+    layers.push({ id: `${e.id}:rand`, type: "line", source: e.id,
       paint: { "line-color": FARBE.grenze, "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.8, 9, 2] } });
   }
 
-  // ── Beschriftungen (unten wichtig, oben wichtiger: MapLibre zeichnet später Kommendes obenauf) ──
+  // ── Beschriftungen (später = obenauf) ──
   if (text) {
-    const landschaften = ebene("de-landschaften");
-    if (landschaften) {
-      layers.push({ id: "landschaften-name", type: "symbol", source: geojson(landschaften), minzoom: 7,
-        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11, "text-max-width": 8 },
-        paint: { "text-color": "#5b5b5b", "text-halo-color": "#ffffffaa", "text-halo-width": 1 } });
+    for (const e of mit("landschaften")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 7 : 2,
+        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11, "text-max-width": 8,
+          ...(e.bereich === "welt" ? { "symbol-sort-key": ["get", "rang"] } : {}) },
+        paint: schrift("#5b5b5b", "#ffffffaa") });
     }
-    if (fluesse || kleine) {
-      for (const [id, e] of [["fluesse-klein", kleine], ["fluesse", fluesse]] as const) {
-        if (!e) continue;
-        layers.push({ id: `${id}-name`, type: "symbol", source: e.id, minzoom: id === "fluesse" ? 5.5 : 8,
-          layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
-            "text-size": ["match", ["get", "klasse"], 1, 13, 2, 11.5, 10.5], "symbol-spacing": 400,
-            "symbol-sort-key": ["get", "klasse"] },
-          paint: { "text-color": FARBE.wasserSchrift, "text-halo-color": "#ffffffcc", "text-halo-width": 1.2 } });
-      }
+    for (const e of mit("meere")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "symbol-sort-key": ["get", "rang"], "text-max-width": 7,
+          "text-size": ["match", ["get", "art"], "ozean", 15, "meer", 12.5, 11], "text-letter-spacing": ["match", ["get", "art"], "ozean", 0.25, 0.05] },
+        paint: schrift(FARBE.wasserSchrift, "#ffffff88") });
     }
-    if (seen) {
-      layers.push({ id: "seen-name", type: "symbol", source: "de-seen", minzoom: 7,
-        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11 },
-        paint: { "text-color": FARBE.wasserSchrift, "text-halo-color": "#ffffffcc", "text-halo-width": 1 } });
+    for (const e of mit("fluesse")) {
+      const klein = e.id === "de-fluesse-klein";
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: klein ? 8 : e.bereich === "welt" ? 3 : 5.5,
+        layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
+          "text-size": ["match", ["get", "klasse"], 1, 13, 2, 11.5, 10.5], "symbol-spacing": 400, "symbol-sort-key": ["get", "klasse"] },
+        paint: schrift(FARBE.wasserSchrift) });
     }
-    if (gebirge) {
-      layers.push({ id: "gebirge-name", type: "symbol", source: "de-gebirge",
-        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.kursiv, "text-letter-spacing": 0.15,
-          "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 9, 15], "text-max-width": 7 },
-        paint: { "text-color": FARBE.gebirgeSchrift, "text-halo-color": "#ffffffaa", "text-halo-width": 1.2 } });
+    for (const e of mit("seen")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 7 : 3.5,
+        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11 }, paint: schrift(FARBE.wasserSchrift) });
     }
-    if (staaten) {
-      layers.push({ id: "staaten-name", type: "symbol", source: "eu-staaten",
-        filter: ["!=", ["get", "id"], "DEU"],
-        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.normal, "text-size": 12, "text-letter-spacing": 0.1 },
-        paint: { "text-color": "#8a847c" } });
+    for (const e of mit("gebirge")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.kursiv, "text-letter-spacing": 0.15, "text-max-width": 7,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 2, 9, 5, 10, 9, 15],
+          ...(e.bereich === "welt" ? { "symbol-sort-key": ["get", "rang"] } : {}) },
+        paint: schrift(FARBE.gebirgeSchrift, "#ffffffaa") });
     }
-    if (laender && art === "politisch") {
-      layers.push({ id: "laender-name", type: "symbol", source: "de-laender",
+    for (const e of mit("staaten")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+        // Neben Deutschland-Ländern nur die Nachbarn beschriften
+        ...(hatLaender ? { filter: ["!=", ["get", "id"], "DEU"] as FilterSpecification } : {}),
+        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-max-width": 7,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 2, 9.5, 5, 12], "text-transform": hatLaender ? "uppercase" : "none" },
+        paint: { "text-color": hatLaender ? "#8a847c" : "#3f3a35", "text-halo-color": "#ffffffaa", "text-halo-width": 1 } });
+    }
+    for (const e of mit("kontinente")) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.fett, "text-size": 16, "text-letter-spacing": 0.3 },
+        paint: schrift("#44403c") });
+    }
+    for (const e of mit("laender")) if (art === "politisch") {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 8, 15],
           "text-max-width": 8, "text-padding": 20 },
         paint: { "text-color": "#57534e", "text-opacity": 0.75 } });
@@ -206,41 +306,47 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   }
 
   // Punkte immer zeigen (auf stummen Karten ohne Namen — Lage ist Teil der Frage)
-  const gipfel = ebene("de-gipfel");
-  if (gipfel) {
-    layers.push({ id: "gipfel", type: "symbol", source: geojson(gipfel),
+  for (const e of mit("gipfel")) {
+    // Welt: die höchsten Berge zuerst, der Rest beim Heranzoomen
+    const stufen = e.bereich === "welt"
+      ? [{ ab: 5000, minzoom: 0 }, { ab: 3000, minzoom: 3 }, { ab: -1000, minzoom: 4.5 }]
+      : [{ ab: 1000, minzoom: 0 }, { ab: 500, minzoom: 7 }, { ab: -1000, minzoom: 9 }];
+    stufen.forEach((stufe, i) => layers.push({ id: `${e.id}:symbol${i ? `-${i}` : ""}`, type: "symbol", source: e.id,
+      ...(stufe.minzoom ? { minzoom: stufe.minzoom } : {}),
+      filter: ["all", [">=", ["get", "hoehe"], stufe.ab], ["<", ["get", "hoehe"], stufen[i - 1]?.ab ?? 99999]],
       layout: {
-        "icon-image": "gipfel", "icon-size": 0.9,
-        "symbol-sort-key": ["-", 0, ["get", "hoehe"]],
+        "icon-image": "gipfel", "icon-size": 0.9, "symbol-sort-key": ["-", 0, ["get", "hoehe"]],
         ...(text ? {
           "text-field": ["concat", ["get", "name"], "\n", ["to-string", ["get", "hoehe"]], " m"],
           "text-font": SCHRIFT.normal, "text-size": 10.5, "text-anchor": "top", "text-offset": [0, 0.6], "text-optional": true,
         } : {}),
       },
-      paint: { "text-color": FARBE.gebirgeSchrift, "text-halo-color": "#ffffffcc", "text-halo-width": 1 } });
+      paint: schrift(FARBE.gebirgeSchrift) }));
   }
-  const staedte = ebene("de-staedte");
-  if (staedte) {
-    const s = geojson(staedte);
-    const stadt = (id: string, mittel: boolean): LayerSpecification => ({
-      id, type: "symbol", source: s,
-      // Mittelstädte erst beim Heranzoomen
-      ...(mittel ? { minzoom: 7 } : {}),
-      filter: [mittel ? "==" : "!=", ["get", "rang"], "mittelstadt"],
-      layout: {
-        "icon-image": ["match", ["get", "rang"], "hauptstadt", "hauptstadt", "landeshauptstadt", "landeshauptstadt", "stadt"],
-        "icon-allow-overlap": !mittel,
-        "symbol-sort-key": ["match", ["get", "rang"], "hauptstadt", 0, "landeshauptstadt", 1, "grossstadt", 2, 3],
-        ...(text ? {
-          "text-field": ["get", "name"],
-          "text-font": mittel ? SCHRIFT.normal : SCHRIFT.fett,
-          "text-size": ["match", ["get", "rang"], "hauptstadt", 14, "landeshauptstadt", 12.5, "grossstadt", 11.5, 10.5],
-          "text-anchor": "left", "text-offset": [0.7, 0], "text-optional": true,
-        } : {}),
-      },
-      paint: { "text-color": FARBE.schrift, "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
+  for (const e of mit("staedte")) {
+    const stufen = STADT_STUFEN[e.id] ?? [{ raenge: [], minzoom: 0 }];
+    stufen.forEach((stufe, i) => {
+      const gross = i === 0;
+      layers.push({
+        id: `${e.id}:symbol${gross ? "" : `-${i}`}`, type: "symbol", source: e.id,
+        ...(stufe.minzoom ? { minzoom: stufe.minzoom } : {}),
+        ...(stufe.raenge.length ? { filter: ["in", ["get", "rang"], ["literal", stufe.raenge]] as FilterSpecification } : {}),
+        layout: {
+          "icon-image": ["match", ["get", "rang"], "hauptstadt", "hauptstadt", ["landeshauptstadt", "weltstadt"], "landeshauptstadt", "stadt"],
+          // Deutschland: große Städte immer zeigen; Welt: Symbole verdrängen sich, sonst ein Teppich aus Punkten
+          "icon-allow-overlap": gross && e.bereich === "de",
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 1, 0.55, 4, 0.8, 6, 1],
+          "symbol-sort-key": ["-", 0, ["coalesce", ["get", "ew"], 0]],
+          ...(text ? {
+            "text-field": ["get", "name"],
+            "text-font": gross ? SCHRIFT.fett : SCHRIFT.normal,
+            "text-size": ["match", ["get", "rang"], "hauptstadt", 13.5, ["landeshauptstadt", "weltstadt"], 12.5, "grossstadt", 11, 10.5],
+            "text-anchor": "left", "text-offset": [0.7, 0], "text-optional": true,
+          } : {}),
+        },
+        paint: { "text-color": FARBE.schrift, "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
+      });
     });
-    layers.push(stadt("staedte-mittel", true), stadt("staedte", false));
   }
 
   return {
@@ -250,12 +356,6 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     layers,
   };
 }
-
-/** Ebenen, deren Objekte man anklicken kann (Name zeigen, später: fürs Quiz wählen). */
-export const KLICK_EBENEN: Record<string, string> = {
-  "staedte": "de-staedte", "staedte-mittel": "de-staedte", "gipfel": "de-gipfel", "fluesse": "de-fluesse", "fluesse-klein": "de-fluesse-klein",
-  "seen": "de-seen", "gebirge-rand": "de-gebirge", "laender-flaeche": "de-laender", "staaten-flaeche": "eu-staaten",
-};
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
 export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray } | null {

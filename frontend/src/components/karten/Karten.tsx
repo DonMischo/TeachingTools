@@ -13,7 +13,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { auswahlFuer, baueStil, KARTENARTEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
+import { auswahlFuer, baueStil, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "@/lib/karten/satz";
 import KartenAnsicht, { type Treffer } from "./KartenAnsicht";
@@ -22,7 +22,9 @@ import AuswahlPanel from "./AuswahlPanel";
 import Arbeitsblatt from "./Arbeitsblatt";
 
 const START_ART: Kartenart = "topographisch";
-const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, ...auswahlFuer(art), ausschnitt: null, auswahl: {} });
+const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
+/** Um Deutschland herum sind diese Weltebenen der Rahmen */
+const UMLAND = ["welt-staaten", "welt-hoehen"];
 
 export default function Karten({ action }: { action?: ReactNode }) {
   const { auth } = useAuth();
@@ -63,7 +65,14 @@ export default function Karten({ action }: { action?: ReactNode }) {
     return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten });
   }, [katalog, inhalt, nummern, bearbeiten, datenStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art) }));
+  const bereich = region(inhalt.region).bereich;
+  const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art, region(v.region).bereich) }));
+  const waehleRegion = (id: string) => {
+    const r = region(id);
+    setInhalt((v) => ({ ...v, region: r.id, ...(region(v.region).bereich !== r.bereich ? auswahlFuer(v.art, r.bereich) : {}) }));
+    const [west, sued, ost, nord] = r.ausschnitt;
+    setZiel({ west, sued, ost, nord });
+  };
   const schalteEbene = (id: string) => setInhalt((v) => ({
     ...v, ebenen: v.ebenen.includes(id) ? v.ebenen.filter((e) => e !== id) : [...v.ebenen, id],
   }));
@@ -73,7 +82,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
   };
   const lade = (s: KartenSatz | null) => {
     setSatz(s && { id: s.id, titel: s.titel, geteilt: s.geteilt, eigen: s.eigen });
-    setInhalt(s ? s.inhalt : neuerInhalt(START_ART));
+    setInhalt(s ? { ...s.inhalt, region: s.inhalt.region ?? "deutschland" } : neuerInhalt(START_ART));
     setZiel(s?.inhalt.ausschnitt ?? null);
   };
 
@@ -95,6 +104,10 @@ export default function Karten({ action }: { action?: ReactNode }) {
         onGespeichert={(s) => setSatz({ id: s.id, titel: s.titel, geteilt: s.geteilt, eigen: s.eigen })} />}
 
       <div className="flex flex-wrap items-center gap-3">
+        <select value={inhalt.region} onChange={(e) => waehleRegion(e.target.value)} aria-label="Region"
+          className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold">
+          {REGIONEN.map((r) => <option key={r.id} value={r.id}>🌍 {r.name}</option>)}
+        </select>
         <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
           {KARTENARTEN.map((k) => (
             <button key={k.id} onClick={() => waehleArt(k.id)}
@@ -136,7 +149,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 </label>
                 {(["politisch", "topographisch"] as const).map((gruppe) => (
                   <EbenenGruppe key={gruppe} titel={gruppe === "politisch" ? "Politisch" : "Topographisch"}
-                    ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe)} an={inhalt.ebenen} schalte={schalteEbene} />
+                    ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))}
+                    an={inhalt.ebenen} schalte={schalteEbene} />
                 ))}
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>

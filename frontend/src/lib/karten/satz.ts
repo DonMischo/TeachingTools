@@ -9,6 +9,8 @@ export type Ausschnitt = { west: number; sued: number; ost: number; nord: number
 
 export type SatzInhalt = {
   art: Kartenart;
+  /** Region aus REGIONEN (lib/karten/stil.ts); bestimmt Deutschland- oder Welt-Ebenen */
+  region: string;
   ebenen: string[];
   beschriftung: boolean;
   ausschnitt: Ausschnitt | null;

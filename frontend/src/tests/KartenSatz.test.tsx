@@ -8,9 +8,9 @@ import type { Katalog } from "@/lib/karten/stil";
 const KATALOG: Katalog = {
   stand: "2026-10-01",
   ebenen: [
-    { id: "de-laender", name: "Bundesländer", gruppe: "politisch", geometrie: "flaeche", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
-    { id: "de-staedte", name: "Städte", gruppe: "politisch", geometrie: "punkt", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
-    { id: "de-fluesse", name: "Flüsse", gruppe: "topographisch", geometrie: "linie", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
+    { id: "de-laender", name: "Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "flaeche", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
+    { id: "de-staedte", name: "Städte", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
+    { id: "de-fluesse", name: "Flüsse", gruppe: "topographisch", bereich: "de", geometrie: "linie", quiz: true, bytes: 1, quelle: { name: "BKG", lizenz: "dl-de/by-2.0", url: "" } },
   ],
 };
 const STAEDTE = { type: "FeatureCollection", features: [

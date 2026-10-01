@@ -46,6 +46,16 @@ const PAKETE = {
   gn250: { url: `${BKG}/sonstige/gn250/aktuell/gn250.utm32s.shape.zip`, md5: true },
   dgm200: { url: `${BKG}/dgm/dgm200/aktuell/dgm200.utm32s.geotiff.zip`, md5: true },
   ne_staaten: { url: `${NE}/10m/cultural/ne_10m_admin_0_countries.zip`, md5: false },
+  ne_10m_populated_places: { url: `${NE}/10m/cultural/ne_10m_populated_places.zip`, md5: false },
+  ne_10m_rivers_lake_centerlines: { url: `${NE}/10m/physical/ne_10m_rivers_lake_centerlines.zip`, md5: false },
+  ne_10m_rivers_europe: { url: `${NE}/10m/physical/ne_10m_rivers_europe.zip`, md5: false },
+  ne_10m_lakes: { url: `${NE}/10m/physical/ne_10m_lakes.zip`, md5: false },
+  ne_10m_lakes_europe: { url: `${NE}/10m/physical/ne_10m_lakes_europe.zip`, md5: false },
+  ne_10m_geography_regions_polys: { url: `${NE}/10m/physical/ne_10m_geography_regions_polys.zip`, md5: false },
+  ne_10m_geography_regions_elevation_points: { url: `${NE}/10m/physical/ne_10m_geography_regions_elevation_points.zip`, md5: false },
+  ne_10m_geography_marine_polys: { url: `${NE}/10m/physical/ne_10m_geography_marine_polys.zip`, md5: false },
+  // Atlasfarben mit Schummerung, 10800x5400, gemeinfrei
+  ne_hyp: { url: `${NE}/50m/raster/HYP_50M_SR_W.zip`, md5: false },
 };
 
 const JAHR = new Date().getFullYear();
@@ -107,6 +117,7 @@ async function lies(shp, befehle = "") {
 
 const slug = (s) => s.toLowerCase()
   .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+  .normalize("NFD").replace(/\p{M}/gu, "") // Rhône → rhone
   .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** Vergibt eindeutige ids: doppelte bekommen -2, -3, … */
@@ -125,6 +136,8 @@ const feature = (geometry, properties) => ({ type: "Feature", geometry, properti
 
 const KATALOG = [];
 function schreibe(id, meta, features) {
+  // Vereinfachen kann winzige Flächen ganz verschwinden lassen
+  features = features.filter((f) => f.geometry);
   eindeutig(features);
   const datei = join(ZIEL, "ebenen", `${id}.geojson`);
   writeFileSync(datei, JSON.stringify({ type: "FeatureCollection", features }));
@@ -139,7 +152,7 @@ async function laender(vg) {
   // GF 9 = Landfläche (GF 4 wären auch Bodensee- und Küstengewässer)
   const fs = await lies(finde(vg, "VG2500_LAN.shp"), `-filter "GF==9" -simplify 15% keep-shapes`);
   const land = fs.map((f) => feature(f.geometry, { id: f.properties.AGS, name: f.properties.GEN, kurz: f.properties.LKZ }));
-  schreibe("de-laender", { name: "Bundesländer", gruppe: "politisch", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG }, land);
+  schreibe("de-laender", { name: "Bundesländer", gruppe: "politisch", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG }, land);
   return land;
 }
 
@@ -158,13 +171,13 @@ async function staedte(gn) {
   const fehlt = LANDESHAUPTSTAEDTE.filter((n) => !fs.some((f) => f.properties.name === n));
   if (fehlt.length) throw new Error(`Landeshauptstädte fehlen: ${fehlt.join(", ")}`);
   fs.sort((a, b) => b.properties.ew - a.properties.ew);
-  schreibe("de-staedte", { name: "Städte", gruppe: "politisch", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG }, fs);
+  schreibe("de-staedte", { name: "Städte", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG }, fs);
 }
 
 async function gipfel(gn) {
   const fs = await lies(finde(gn, "GN250_p.shp"), `-filter "OBA=='Besonderer_Hoehenpunkt' && HOEHE > 0"`);
   fs.sort((a, b) => b.properties.HOEHE - a.properties.HOEHE);
-  schreibe("de-gipfel", { name: "Berge und Gipfel", gruppe: "topographisch", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-gipfel", { name: "Berge und Gipfel", gruppe: "topographisch", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG },
     fs.map((f) => feature(f.geometry, { id: f.properties.NNID, name: f.properties.NAME, hoehe: Math.round(f.properties.HOEHE), land: f.properties.BUNDESLAND })));
 }
 
@@ -175,9 +188,9 @@ const LANDSCHAFT = { 1100: "gebirge", 1200: "berg", 1300: "becken", 1400: "tal",
 async function landschaften(dlm) {
   const fs = await lies(finde(dlm, "geb02_f.shp"), `-filter "NAM != ''" -simplify 15% keep-shapes`);
   const alle = fs.map((f) => feature(f.geometry, { id: f.properties.OBJID, name: f.properties.NAM, art: LANDSCHAFT[f.properties.LTP] ?? "sonstige" }));
-  schreibe("de-gebirge", { name: "Gebirge", gruppe: "topographisch", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-gebirge", { name: "Gebirge", gruppe: "topographisch", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
     alle.filter((f) => f.properties.art === "gebirge"));
-  schreibe("de-landschaften", { name: "Landschaften", gruppe: "topographisch", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-landschaften", { name: "Landschaften", gruppe: "topographisch", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
     alle.filter((f) => f.properties.art !== "gebirge"));
 }
 
@@ -265,9 +278,9 @@ async function fluesse(dlm) {
   const fertig = JSON.parse(vereinfacht["out.json"].toString()).features;
   fertig.sort((a, b) => a.properties.klasse - b.properties.klasse);
   // Große Flüsse (Klasse 1–2) immer, kleine erst beim Heranzoomen
-  schreibe("de-fluesse", { name: "Flüsse", gruppe: "topographisch", geometrie: "linie", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-fluesse", { name: "Flüsse", gruppe: "topographisch", bereich: "de", geometrie: "linie", quiz: true, quelle: QUELLE_BKG },
     fertig.filter((f) => f.properties.klasse <= 2));
-  schreibe("de-fluesse-klein", { name: "Kleine Flüsse und Bäche", gruppe: "topographisch", geometrie: "linie", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-fluesse-klein", { name: "Kleine Flüsse und Bäche", gruppe: "topographisch", bereich: "de", geometrie: "linie", quiz: true, quelle: QUELLE_BKG },
     fertig.filter((f) => f.properties.klasse > 2));
 }
 
@@ -277,18 +290,188 @@ async function gewaesserflaechen(dlm) {
   const alle = fs.map((f) => feature(f.geometry, {
     id: f.properties.OBJID, name: f.properties.NAM || "", art: ART[f.properties.OBJART_TXT] ?? "see",
   }));
-  schreibe("de-seen", { name: "Seen", gruppe: "topographisch", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
+  schreibe("de-seen", { name: "Seen", gruppe: "topographisch", bereich: "de", geometrie: "flaeche", quiz: true, quelle: QUELLE_BKG },
     alle.filter((f) => f.properties.art === "see" && f.properties.name));
   // Unbenannte Seen, Meere und breite Flüsse: nur zum Zeichnen
-  schreibe("de-gewaesser", { name: "Meere und weitere Gewässer", gruppe: "topographisch", geometrie: "flaeche", quiz: false, quelle: QUELLE_BKG },
+  schreibe("de-gewaesser", { name: "Meere und weitere Gewässer", gruppe: "topographisch", bereich: "de", geometrie: "flaeche", quiz: false, quelle: QUELLE_BKG },
     alle.filter((f) => f.properties.art !== "see" || !f.properties.name));
 }
 
+const KONTINENT = {
+  "Europe": "Europa", "Asia": "Asien", "Africa": "Afrika", "North America": "Nordamerika", "South America": "Südamerika",
+  "Oceania": "Ozeanien", "Antarctica": "Antarktis", "Seven seas (open ocean)": "Ozeanien",
+};
+
+/** Staaten der Welt (deutsche Namen in NAME_DE, MAPCOLOR7 = Färbung ohne gleichfarbige Nachbarn). */
 async function staaten(ne) {
-  // Europa samt Rand; deutsche Namen stehen bei Natural Earth in NAME_DE
-  const fs = await lies(finde(ne, "ne_10m_admin_0_countries.shp"), `-clip bbox=-25,33,46,72 -simplify 20% keep-shapes`);
-  schreibe("eu-staaten", { name: "Staaten Europas", gruppe: "politisch", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
-    fs.map((f) => feature(f.geometry, { id: f.properties.ADM0_A3, name: f.properties.NAME_DE || f.properties.NAME })));
+  const fs = await lies(finde(ne, "ne_10m_admin_0_countries.shp"), `-simplify 12% keep-shapes`);
+  const welt = fs.map((f) => feature(f.geometry, {
+    id: f.properties.ADM0_A3, name: f.properties.NAME_DE || f.properties.NAME,
+    kontinent: KONTINENT[f.properties.CONTINENT] ?? f.properties.CONTINENT, farbe: f.properties.MAPCOLOR7,
+  }));
+  schreibe("welt-staaten", { name: "Staaten", gruppe: "politisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE }, welt);
+
+  // Kontinente = Staaten zusammengefasst (genauer als die groben Natural-Earth-Kontinentflächen)
+  const zusammen = await mapshaper.applyCommands(
+    "-i in.json -dissolve kontinent -o format=geojson precision=0.0001 out.json",
+    { "in.json": { type: "FeatureCollection", features: welt } },
+  );
+  schreibe("welt-kontinente", { name: "Kontinente", gruppe: "politisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
+    JSON.parse(zusammen["out.json"].toString()).features
+      .filter((f) => f.properties.kontinent)
+      .map((f) => feature(f.geometry, { id: slug(f.properties.kontinent), name: f.properties.kontinent })));
+  return Object.fromEntries(welt.map((f) => [f.properties.id, f.properties.kontinent]));
+}
+
+/** Deutscher Name, sonst der Originalname. */
+const nameDe = (p) => (p.name_de || p.NAME_DE || p.name || p.NAME || "").trim();
+
+async function weltStaedte(ne, kontinentVon) {
+  const fs = await lies(finde(ne, "ne_10m_populated_places.shp"));
+  const auswahl = fs.filter((f) => {
+    const p = f.properties;
+    if (p.ADM0_A3 === "DEU") return false; // Deutschland kommt genauer vom BKG
+    const hauptstadt = /^Admin-0 capital/.test(p.FEATURECLA);
+    const europa = kontinentVon[p.ADM0_A3] === "Europa";
+    return hauptstadt || p.POP_MAX >= 1_000_000 || (europa && p.POP_MAX >= 150_000);
+  });
+  const staedte = auswahl.map((f) => {
+    const p = f.properties;
+    const rang = p.FEATURECLA === "Admin-0 capital" ? "hauptstadt" : p.POP_MAX >= 5_000_000 ? "weltstadt"
+      : p.POP_MAX >= 1_000_000 ? "millionenstadt" : "grossstadt";
+    return feature(f.geometry, { id: `gn${p.GEONAMESID > 0 ? p.GEONAMESID : slug(p.NAME)}`, name: nameDe(p), ew: p.POP_MAX, rang,
+      land: p.ADM0NAME, kontinent: kontinentVon[p.ADM0_A3] ?? "" });
+  }).sort((a, b) => b.properties.ew - a.properties.ew);
+  schreibe("welt-staedte", { name: "Städte der Welt", gruppe: "politisch", bereich: "welt", geometrie: "punkt", quiz: true, quelle: QUELLE_NE }, staedte);
+}
+
+/**
+ * Flussstücke gleichen Namens, die sich berühren (oder ≤ luecke km auseinanderliegen,
+ * etwa durch einen See), werden ein Fluss. `klasseVon` gibt je Stück 1 (groß) … 4.
+ */
+function fasseFluesseZusammen(stuecke, klasseVon, luecke) {
+  const linien = (g) => (g.type === "LineString" ? [g.coordinates] : g.coordinates);
+  const km = ([x1, y1], [x2, y2]) => Math.hypot((x1 - x2) * 111 * Math.cos((y1 * Math.PI) / 180), (y1 - y2) * 111);
+  const nachName = new Map();
+  for (const s of stuecke) {
+    const n = nameDe(s.properties);
+    if (!n) continue;
+    if (!nachName.has(n)) nachName.set(n, []);
+    nachName.get(n).push(s);
+  }
+  const ergebnis = [];
+  for (const [name, teile] of nachName) {
+    const enden = teile.map((t) => linien(t.geometry).flatMap((l) => [l[0], l[l.length - 1]]));
+    const eltern = teile.map((_, i) => i);
+    const wurzel = (i) => (eltern[i] === i ? i : (eltern[i] = wurzel(eltern[i])));
+    for (let i = 0; i < teile.length; i++) for (let j = i + 1; j < teile.length; j++) {
+      // Große Ströme (Kongo, Nil) haben in den Daten weite Lücken, etwa an Stauseen
+      const grenze = klasseVon(teile[i]) <= 2 && klasseVon(teile[j]) <= 2 ? 60 : luecke;
+      if (wurzel(i) !== wurzel(j) && enden[i].some((p) => enden[j].some((q) => km(p, q) <= grenze))) eltern[wurzel(j)] = wurzel(i);
+    }
+    const gruppen = new Map();
+    teile.forEach((t, i) => { const w = wurzel(i); if (!gruppen.has(w)) gruppen.set(w, []); gruppen.get(w).push(t); });
+    for (const g of [...gruppen.values()].sort((a, b) => b.length - a.length)) {
+      ergebnis.push(feature(
+        { type: "MultiLineString", coordinates: g.flatMap((t) => linien(t.geometry)) },
+        { id: slug(name), name, klasse: Math.min(...g.map(klasseVon)) },
+      ));
+    }
+  }
+  return ergebnis.sort((a, b) => a.properties.klasse - b.properties.klasse);
+}
+
+async function weltGewaesser(ordner) {
+  const fluss = (f) => /River|Canal|Lake Centerline/.test(f.properties.featurecla);
+  const haupt = (await lies(finde(ordner.ne_10m_rivers_lake_centerlines, "ne_10m_rivers_lake_centerlines.shp"))).filter(fluss);
+  const europa = (await lies(finde(ordner.ne_10m_rivers_europe, "ne_10m_rivers_europe.shp"))).filter(fluss);
+  const klasse = (f) => { const r = f.properties.scalerank; return r <= 3 ? 1 : r <= 5 ? 2 : r <= 7 ? 3 : 4; };
+  const fluesse = fasseFluesseZusammen([...haupt, ...europa], klasse, 15);
+  const vereinfacht = await mapshaper.applyCommands("-i in.json -simplify 40% -o format=geojson precision=0.0001 out.json",
+    { "in.json": { type: "FeatureCollection", features: fluesse } });
+  schreibe("welt-fluesse", { name: "Flüsse der Welt", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: true, quelle: QUELLE_NE },
+    JSON.parse(vereinfacht["out.json"].toString()).features);
+
+  const seen = [
+    ...(await lies(finde(ordner.ne_10m_lakes, "ne_10m_lakes.shp"), "-simplify 30% keep-shapes")),
+    ...(await lies(finde(ordner.ne_10m_lakes_europe, "ne_10m_lakes_europe.shp"), "-simplify 30% keep-shapes")),
+  ].map((f) => feature(f.geometry, { id: slug(nameDe(f.properties) || "see"), name: nameDe(f.properties),
+    art: f.properties.featurecla === "Reservoir" ? "stausee" : "see" }));
+  schreibe("welt-seen", { name: "Seen der Welt", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
+    seen.filter((f) => f.properties.name));
+  schreibe("welt-gewaesser", { name: "Weitere Seen", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: false, quelle: QUELLE_NE },
+    seen.filter((f) => !f.properties.name));
+
+  const meere = await lies(finde(ordner.ne_10m_geography_marine_polys, "ne_10m_geography_marine_polys.shp"), "-simplify 30% keep-shapes");
+  const MEER = { ocean: "ozean", sea: "meer", bay: "bucht", gulf: "golf", strait: "meerenge", channel: "meerenge", sound: "meerenge", fjord: "fjord", lagoon: "lagune" };
+  schreibe("welt-meere", { name: "Ozeane und Meere", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
+    meere.filter((f) => MEER[f.properties.featurecla] && nameDe(f.properties))
+      .map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), art: MEER[f.properties.featurecla],
+        rang: f.properties.scalerank })));
+}
+
+/** Natural-Earth-Regionen: Gebirge, Wüsten, Halbinseln, Inseln … */
+const REGION = {
+  "Range/mtn": "gebirge", "Desert": "wueste", "Plateau": "hochland", "Plain": "ebene", "Lowland": "tiefland", "Basin": "becken",
+  "Depression": "senke", "Valley": "tal", "Delta": "delta", "Tundra": "tundra", "Wetlands": "feuchtgebiet", "Pen/cape": "halbinsel",
+  "Peninsula": "halbinsel", "Isthmus": "landenge", "Island": "insel", "Island group": "inseln", "Coast": "kueste", "Geoarea": "region",
+  "Foothills": "vorland", "Gorge": "schlucht",
+};
+
+async function weltRegionen(ordner) {
+  const fs = await lies(finde(ordner.ne_10m_geography_regions_polys, "ne_10m_geography_regions_polys.shp"), "-simplify 25% keep-shapes");
+  const alle = fs.filter((f) => REGION[f.properties.FEATURECLA])
+    .map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), art: REGION[f.properties.FEATURECLA],
+      rang: f.properties.SCALERANK }));
+  schreibe("welt-gebirge", { name: "Gebirge der Welt", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
+    alle.filter((f) => f.properties.art === "gebirge"));
+  schreibe("welt-landschaften", { name: "Wüsten, Halbinseln, Inseln …", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
+    alle.filter((f) => f.properties.art !== "gebirge"));
+
+  const gipfel = await lies(finde(ordner.ne_10m_geography_regions_elevation_points, "ne_10m_geography_regions_elevation_points.shp"));
+  schreibe("welt-gipfel", { name: "Berge der Welt", gruppe: "topographisch", bereich: "welt", geometrie: "punkt", quiz: true, quelle: QUELLE_NE },
+    gipfel.filter((f) => f.properties.featurecla === "mountain" && nameDe(f.properties))
+      .sort((a, b) => b.properties.elevation - a.properties.elevation)
+      .map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), hoehe: Math.round(f.properties.elevation) })));
+}
+
+/**
+ * Natural-Earth-Atlasraster (Plattkarte) → Web-Mercator-Kacheln z0–5,
+ * /karten/welt-hoehen/{z}/{x}/{y}.webp
+ */
+async function weltHoehen(ordner) {
+  const ZIEL_W = resolve(HIER, "../public/karten/welt-hoehen");
+  const tif = await (await fromFile(finde(ordner.ne_hyp, "HYP_50M_SR_W.tif"))).getImage();
+  const [B, H] = [tif.getWidth(), tif.getHeight()];
+  const rgb = await tif.readRasters({ interleave: true });
+  const kanaele = tif.getSamplesPerPixel();
+  const MAXZ = 5, T = 256;
+  rmSync(ZIEL_W, { recursive: true, force: true });
+  let bytes = 0, anzahl = 0;
+  for (let z = 0; z <= MAXZ; z++) {
+    const n = 2 ** z;
+    for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
+      const bild = Buffer.alloc(T * T * 3);
+      for (let py = 0; py < T; py++) {
+        const my = Math.PI * (1 - (2 * (ty * T + py + 0.5)) / (n * T));
+        const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
+        const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
+        for (let px = 0; px < T; px++) {
+          const lon = ((tx * T + px + 0.5) / (n * T)) * 360 - 180;
+          const sx = Math.min(B - 1, Math.floor(((lon + 180) / 360) * B));
+          const q = (sy * B + sx) * kanaele, k = (py * T + px) * 3;
+          bild[k] = rgb[q]; bild[k + 1] = rgb[q + 1]; bild[k + 2] = rgb[q + 2];
+        }
+      }
+      const datei = join(ZIEL_W, String(z), String(tx), `${ty}.webp`);
+      mkdirSync(dirname(datei), { recursive: true });
+      await sharp(bild, { raw: { width: T, height: T, channels: 3 } }).webp({ quality: 72 }).toFile(datei);
+      bytes += readFileSync(datei).length; anzahl++;
+    }
+  }
+  KATALOG.push({ id: "welt-hoehen", name: "Relief (Welt)", gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false,
+    quelle: QUELLE_NE, kachelUrl: "/karten/welt-hoehen/{z}/{x}/{y}.webp", maxzoom: MAXZ, bytes });
+  console.log(`  welt-hoehen            ${anzahl} Kacheln  ${(bytes / 1e6).toFixed(2)} MB`);
 }
 
 // ── Höhenschichten ───────────────────────────────────────────────────
@@ -385,7 +568,7 @@ async function hoehen(dgm, land) {
     kacheln.push({ datei, ecken: [ecke(left, top), ecke(left + width, top), ecke(left + width, top + height), ecke(left, top + height)] });
   }
   const bytes = kacheln.reduce((s, k) => s + readFileSync(join(HOEHEN, k.datei)).length, 0);
-  KATALOG.push({ id: "de-hoehen", name: "Höhenschichten", gruppe: "topographisch", geometrie: "raster", quiz: false,
+  KATALOG.push({ id: "de-hoehen", name: "Höhenschichten", gruppe: "topographisch", bereich: "de", geometrie: "raster", quiz: false,
     quelle: QUELLE_BKG, kacheln, stufen: HOEHENSTUFEN.map(([m, c]) => ({ ab: m, farbe: `rgb(${c.join(",")})` })), bytes });
   console.log(`  de-hoehen              ${B}×${H} px  ${(bytes / 1e6).toFixed(2)} MB`);
 }
@@ -426,8 +609,12 @@ await gipfel(ordner.gn250);
 await landschaften(ordner.dlm1000);
 await fluesse(ordner.dlm1000);
 await gewaesserflaechen(ordner.dlm1000);
-await staaten(ordner.ne_staaten);
 await hoehen(ordner.dgm200, land);
+const kontinentVon = await staaten(ordner.ne_staaten);
+await weltStaedte(ordner.ne_10m_populated_places, kontinentVon);
+await weltGewaesser(ordner);
+await weltRegionen(ordner);
+await weltHoehen(ordner);
 await schriften();
 
 writeFileSync(join(ZIEL, "ebenen.json"), JSON.stringify({ stand: new Date().toISOString().slice(0, 10), ebenen: KATALOG }, null, 2));

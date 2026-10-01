@@ -63,6 +63,17 @@ def test_grosse_fluesse_sind_je_ein_objekt(name):
     assert treffer
 
 
+def test_welt_inhalte_sind_da():
+    namen = lambda e: {f["properties"]["name"] for f in _lade(e)["features"]}  # noqa: E731
+    assert {"New York City", "Paris", "Tokio", "Kairo"} <= namen("welt-staedte")
+    assert {"Donau", "Nil", "Amazonas", "Rhein"} <= namen("welt-fluesse")
+    assert {"Alpen", "Himalaya", "Anden", "Ural"} <= namen("welt-gebirge")
+    assert {"Mittelmeer", "Nordsee", "Ostsee"} <= namen("welt-meere")
+    assert {"Europa", "Afrika", "Asien", "Nordamerika", "Südamerika", "Ozeanien"} <= namen("welt-kontinente")
+    # Deutsche Städte kommen vom BKG, nicht doppelt aus Natural Earth
+    assert not ({"Berlin", "München"} & namen("welt-staedte"))
+
+
 def test_thueringer_inhalte_sind_da():
     gebirge = {f["properties"]["name"] for f in _lade("de-gebirge")["features"]}
     assert {"Thüringer Wald", "Harz", "Rhön", "Thüringer Schiefergebirge"} <= gebirge

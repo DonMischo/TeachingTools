@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { KLICK_EBENEN, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
+import { ebeneVonStilEbene, istKlickbar, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 
@@ -46,7 +46,9 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         container: behaelter.current,
         style: ersterStil.current,
         bounds: START,
-        maxBounds: [[-20, 33], [40, 70]],
+        // Kein maxBounds über die ganze Welt: MapLibre stürzt dann beim Start ab (_calcMatrices)
+        renderWorldCopies: false,
+        minZoom: 0.5,
         attributionControl: false,
         dragRotate: false,
         pitchWithRotate: false,
@@ -60,7 +62,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         const bild = zeichneSymbol(e.id);
         if (bild && !m!.hasImage(e.id)) m!.addImage(e.id, bild, { pixelRatio: 1 });
       });
-      const klickbar = () => Object.keys(KLICK_EBENEN).filter((l) => m!.getLayer(l));
+      const klickbar = () => m!.getLayersOrder().filter(istKlickbar);
       m.on("mousemove", (e) => {
         const t = m!.queryRenderedFeatures(e.point, { layers: klickbar() });
         m!.getCanvas().style.cursor = t.length ? "pointer" : "";
@@ -72,7 +74,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         const gefunden = m!.queryRenderedFeatures(box, { layers: klickbar() }) as MapGeoJSONFeature[];
         popup.current?.remove();
         const treffer: Treffer[] = gefunden.map((f) => ({
-          ebene: KLICK_EBENEN[f.layer.id], id: String(f.properties.id), name: String(f.properties.name ?? ""),
+          ebene: ebeneVonStilEbene(f.layer.id), id: String(f.properties.id), name: String(f.properties.name ?? ""),
           eigenschaften: f.properties,
         }));
         if (!treffer.length) return;

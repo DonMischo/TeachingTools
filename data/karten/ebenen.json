@@ -5,6 +5,7 @@
       "id": "de-laender",
       "name": "Bundesländer",
       "gruppe": "politisch",
+      "bereich": "de",
       "geometrie": "flaeche",
       "quiz": true,
       "quelle": {
@@ -19,6 +20,7 @@
       "id": "de-staedte",
       "name": "Städte",
       "gruppe": "politisch",
+      "bereich": "de",
       "geometrie": "punkt",
       "quiz": true,
       "quelle": {
@@ -33,6 +35,7 @@
       "id": "de-gipfel",
       "name": "Berge und Gipfel",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "punkt",
       "quiz": true,
       "quelle": {
@@ -47,6 +50,7 @@
       "id": "de-gebirge",
       "name": "Gebirge",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "flaeche",
       "quiz": true,
       "quelle": {
@@ -61,6 +65,7 @@
       "id": "de-landschaften",
       "name": "Landschaften",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "flaeche",
       "quiz": true,
       "quelle": {
@@ -75,6 +80,7 @@
       "id": "de-fluesse",
       "name": "Flüsse",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "linie",
       "quiz": true,
       "quelle": {
@@ -89,6 +95,7 @@
       "id": "de-fluesse-klein",
       "name": "Kleine Flüsse und Bäche",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "linie",
       "quiz": true,
       "quelle": {
@@ -103,6 +110,7 @@
       "id": "de-seen",
       "name": "Seen",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "flaeche",
       "quiz": true,
       "quelle": {
@@ -117,6 +125,7 @@
       "id": "de-gewaesser",
       "name": "Meere und weitere Gewässer",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "flaeche",
       "quiz": false,
       "quelle": {
@@ -128,23 +137,10 @@
       "bytes": 263907
     },
     {
-      "id": "eu-staaten",
-      "name": "Staaten Europas",
-      "gruppe": "politisch",
-      "geometrie": "flaeche",
-      "quiz": true,
-      "quelle": {
-        "name": "Natural Earth",
-        "lizenz": "gemeinfrei",
-        "url": "https://www.naturalearthdata.com/"
-      },
-      "anzahl": 71,
-      "bytes": 374383
-    },
-    {
       "id": "de-hoehen",
       "name": "Höhenschichten",
       "gruppe": "topographisch",
+      "bereich": "de",
       "geometrie": "raster",
       "quiz": false,
       "quelle": {
@@ -285,6 +281,172 @@
         }
       ],
       "bytes": 1017344
+    },
+    {
+      "id": "welt-staaten",
+      "name": "Staaten",
+      "gruppe": "politisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 258,
+      "bytes": 1403858
+    },
+    {
+      "id": "welt-kontinente",
+      "name": "Kontinente",
+      "gruppe": "politisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 7,
+      "bytes": 923224
+    },
+    {
+      "id": "welt-staedte",
+      "name": "Städte der Welt",
+      "gruppe": "politisch",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 944,
+      "bytes": 190239
+    },
+    {
+      "id": "welt-fluesse",
+      "name": "Flüsse der Welt",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 1474,
+      "bytes": 2339204
+    },
+    {
+      "id": "welt-seen",
+      "name": "Seen der Welt",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 1074,
+      "bytes": 933255
+    },
+    {
+      "id": "welt-gewaesser",
+      "name": "Weitere Seen",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": false,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 1048,
+      "bytes": 408157
+    },
+    {
+      "id": "welt-meere",
+      "name": "Ozeane und Meere",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 287,
+      "bytes": 408119
+    },
+    {
+      "id": "welt-gebirge",
+      "name": "Gebirge der Welt",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 222,
+      "bytes": 203124
+    },
+    {
+      "id": "welt-landschaften",
+      "name": "Wüsten, Halbinseln, Inseln …",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 814,
+      "bytes": 867569
+    },
+    {
+      "id": "welt-gipfel",
+      "name": "Berge der Welt",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "anzahl": 632,
+      "bytes": 93621
+    },
+    {
+      "id": "welt-hoehen",
+      "name": "Relief (Welt)",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "raster",
+      "quiz": false,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "kachelUrl": "/karten/welt-hoehen/{z}/{x}/{y}.webp",
+      "maxzoom": 5,
+      "bytes": 2990032
     }
   ]
 }
