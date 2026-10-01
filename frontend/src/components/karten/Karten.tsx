@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { auswahlFuer, baueStil, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "@/lib/karten/satz";
-import KartenAnsicht, { type Treffer } from "./KartenAnsicht";
+import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
 import SatzLeiste from "./SatzLeiste";
 import AuswahlPanel from "./AuswahlPanel";
 import Arbeitsblatt from "./Arbeitsblatt";
@@ -36,6 +36,18 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const [aktiveEbene, setAktiveEbene] = useState("de-staedte");
   const [ziel, setZiel] = useState<Ausschnitt | null>(null);
   const ausschnitt = useRef<Ausschnitt | null>(null);
+  // Export: Karte kurz ohne Namen und ohne Auswahl-Markierung zeichnen, dann das Bild abgreifen
+  const [druck, setDruck] = useState(false);
+  const bildRef = useRef<KartenBild | null>(null);
+  const holeBild = async () => {
+    setDruck(true);
+    try {
+      await new Promise((weiter) => setTimeout(weiter, 80)); // React setzt den Druck-Stil
+      return await bildRef.current!();
+    } finally {
+      setDruck(false);
+    }
+  };
 
   // Objektlisten der Ebenen mit Auswahl (für Namen, Suche und Markenpunkte)
   const benoetigt = useMemo(() => [...new Set([...Object.keys(inhalt.auswahl), ...(bearbeiten ? [aktiveEbene] : [])])],
@@ -52,7 +64,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
 
   const stil = useMemo(() => {
     if (!katalog) return null;
-    const grund = baueStil(katalog, inhalt, inhalt.art);
+    const grund = baueStil(katalog, { ...inhalt, beschriftung: inhalt.beschriftung && !druck }, inhalt.art);
     const anker: FeatureCollection = { type: "FeatureCollection", features: [] };
     for (const [ebene, marken] of Object.entries(nummern)) {
       if (!inhalt.ebenen.includes(ebene)) continue;
@@ -62,8 +74,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
         if (p) anker.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { marke } });
       }
     }
-    return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten });
-  }, [katalog, inhalt, nummern, bearbeiten, datenStand]); // eslint-disable-line react-hooks/exhaustive-deps
+    return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck });
+  }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bereich = region(inhalt.region).bereich;
   const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art, region(v.region).bereich) }));
@@ -133,8 +145,9 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
-              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} />
-            <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"} />
+              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} />
+            <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}
+              holeBild={lehrkraft ? holeBild : undefined} />
           </div>
           <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4 text-sm">
             {bearbeiten ? (

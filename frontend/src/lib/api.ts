@@ -3,7 +3,7 @@ import type {
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Katalog as KartenKatalog } from "@/lib/karten/stil";
-import type { KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
+import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1584,6 +1584,16 @@ export const api = {
     aendern: (id: number, body: KartenSatzIn) =>
       apiFetch<KartenSatz>(`karten/saetze/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     loeschen: (id: number) => apiFetch<void>(`karten/saetze/${id}`, { method: "DELETE" }),
+    /** Arbeitsblatt als Datei (PDF/DOCX/ODT/LaTeX-ZIP); Name aus Content-Disposition */
+    export: async (body: KartenExportIn): Promise<{ datei: Blob; name: string }> => {
+      const r = await fetch("/api/karten/export", {
+        method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error((await r.text()) || r.statusText);
+      const kopf = r.headers.get("content-disposition") ?? "";
+      const name = decodeURIComponent(/filename\*=UTF-8''([^;]+)/.exec(kopf)?.[1] ?? `karte.${body.format === "tex" ? "zip" : body.format}`);
+      return { datei: await r.blob(), name };
+    },
   },
 
   // »Rock your Life«: Stand + Protokoll je Sitzung, Lehrer-Übersicht (siehe api/routers/leben.py)

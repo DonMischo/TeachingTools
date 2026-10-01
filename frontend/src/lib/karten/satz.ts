@@ -35,3 +35,13 @@ export function aufgeraeumt(inhalt: SatzInhalt): SatzInhalt {
   const auswahl = Object.fromEntries(Object.entries(inhalt.auswahl).filter(([, w]) => w.objekte.length));
   return { ...inhalt, auswahl };
 }
+
+export type KartenExportIn = {
+  format: "pdf" | "docx" | "odt" | "tex";
+  variante: "aufgabe" | "loesung" | "beide";
+  titel: string;
+  aufgabe: string;
+  /** PNG als data-URL (MapLibre-Canvas) */
+  karte: string;
+  gruppen: { name: string; eintraege: { marke: string; name: string }[] }[];
+};

@@ -7,19 +7,23 @@ Gäste bekommen Karten nur über ein Quiz, und dort ohne Namen.
 Ein Kartensatz ist die Auswahl einer Lehrkraft: Kartenart, Ebenen, je Ebene
 die gezeigten/nummerierten Objekte (ids) und das Nummernschema.
 """
+import base64
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Union
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_teacher, get_current_user
 from ..database import get_db
+from ..karten_export import MEDIENTYP, exportiere
 from ..models import KartenSatz, Student, Teacher
 
 router = APIRouter(prefix="/api/karten", tags=["karten"])
@@ -160,3 +164,47 @@ def satz_aendern(satz_id: int, body: SatzIn, db: Session = Depends(get_db), ich:
 def satz_loeschen(satz_id: int, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
     db.delete(_lade_satz(db, satz_id, ich, schreiben=True))
     db.commit()
+
+
+# ── Arbeitsblatt-Export ──────────────────────────────────────────────
+
+MAX_BILD = 12 * 1024 * 1024
+
+
+class ExportEintrag(BaseModel):
+    marke: str = Field(max_length=12)
+    name: str = Field(max_length=200)
+
+
+class ExportGruppe(BaseModel):
+    name: str = Field(max_length=100)
+    eintraege: list[ExportEintrag] = Field(max_length=MAX_OBJEKTE)
+
+
+class ExportIn(BaseModel):
+    format: Literal["pdf", "docx", "odt", "tex"]
+    variante: Literal["aufgabe", "loesung", "beide"] = "aufgabe"
+    titel: str = Field(min_length=1, max_length=200)
+    aufgabe: str = Field(max_length=1000)
+    gruppen: list[ExportGruppe] = Field(max_length=30)
+    # MapLibre-Canvas als data:image/png;base64,…
+    karte: str = Field(max_length=MAX_BILD * 4 // 3 + 100)
+
+
+@router.post("/export")
+def export(body: ExportIn, _: Teacher = Depends(get_current_teacher)):
+    treffer = re.fullmatch(r"data:image/png;base64,([A-Za-z0-9+/=]+)", body.karte)
+    if not treffer:
+        raise HTTPException(422, "Kartenbild fehlt oder ist kein PNG")
+    png = base64.b64decode(treffer.group(1))
+    if not png.startswith(b"\x89PNG"):
+        raise HTTPException(422, "Kartenbild ist kein PNG")
+    quelle = " · ".join(dict.fromkeys(e["quelle"]["name"] for e in katalog()["ebenen"]))
+    ergebnis = exportiere(body.format, body.titel, body.aufgabe, [g.model_dump() for g in body.gruppen],
+                          body.variante, png, quelle)
+    if ergebnis is None:
+        raise HTTPException(503, "Umwandlung fehlgeschlagen (LibreOffice/pandoc)")
+    inhalt, endung = ergebnis
+    datei = re.sub(r"[^A-Za-z0-9ÄÖÜäöüß_-]+", "_", body.titel).strip("_") or "karte"
+    return Response(inhalt, media_type=MEDIENTYP[body.format],
+                    headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(datei)}.{endung}"})

@@ -18,7 +18,8 @@ const STAEDTE = { type: "FeatureCollection", features: [
   { type: "Feature", geometry: { type: "Point", coordinates: [11.59, 50.93] }, properties: { id: "16053000", name: "Jena", ew: 110000 } },
 ] };
 
-const { anlegen } = vi.hoisted(() => ({
+const { anlegen, exportieren } = vi.hoisted(() => ({
+  exportieren: vi.fn(async (_body?: unknown) => ({ datei: new Blob(["%PDF"]), name: "karte.pdf" })),
   anlegen: vi.fn(async (body?: { inhalt: unknown }) => ({ id: 7, titel: "Test", geteilt: false, eigen: true, autor: "", aktualisiert_am: "", inhalt: body?.inhalt })),
 }));
 vi.mock("@/lib/api", () => ({
@@ -27,18 +28,22 @@ vi.mock("@/lib/api", () => ({
     ebene: async (id: string) => (id === "de-staedte" ? STAEDTE : { type: "FeatureCollection", features: [] }),
     saetze: async () => [],
     anlegen: (b: { inhalt: unknown }) => anlegen(b),
+    export: (b: unknown) => exportieren(b),
   } },
 }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ auth: { user_type: "teacher", role: "teacher" }, ready: true }) }));
 vi.mock("@/components/karten/KartenAnsicht", () => ({
-  default: ({ onKlick }: { onKlick: (t: unknown[]) => void }) => (
+  default: ({ onKlick, bildRef }: { onKlick: (t: unknown[]) => void; bildRef?: { current: unknown } }) => {
+    if (bildRef) bildRef.current = async () => "data:image/png;base64,iVBORw0KGgo=";
+    return (
     <div>
       <button onClick={() => onKlick([
         { ebene: "de-laender", id: "16", name: "Thüringen", eigenschaften: {} },
         { ebene: "de-staedte", id: "16053000", name: "Jena", eigenschaften: {} },
       ])}>Klick auf Jena</button>
     </div>
-  ),
+    );
+  },
 }));
 
 import Karten from "@/components/karten/Karten";
@@ -82,5 +87,25 @@ describe("Kartensatz-Editor", () => {
       expect.arrayContaining([expect.stringContaining("Erfurt"), expect.stringContaining("Jena")]));
     fireEvent.click(screen.getByText("Klick auf Jena"));
     expect(screen.queryByText("Jena", { selector: "span" })).toBeNull();
+  });
+});
+
+describe("Arbeitsblatt-Export", () => {
+  it("schickt Kartenbild, Aufgabe und Marken mit Namen an den Server", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:x");
+    URL.revokeObjectURL = vi.fn();
+    zeige();
+    fireEvent.click(await screen.findByText("🎯 Auswählen"));
+    fireEvent.change(screen.getByDisplayValue("keine"), { target: { value: "zahl" } });
+    fireEvent.click(screen.getByText("Klick auf Jena"));
+    fireEvent.change(await screen.findByLabelText("Variante"), { target: { value: "aufgabe" } });
+    fireEvent.click(screen.getByText(/^\s*PDF$/));
+    await waitFor(() => expect(exportieren).toHaveBeenCalled());
+    const body = exportieren.mock.calls[0][0] as Record<string, unknown>;
+    expect(body).toMatchObject({
+      format: "pdf", variante: "aufgabe", karte: "data:image/png;base64,iVBORw0KGgo=",
+      gruppen: [{ name: "Städte", eintraege: [{ marke: "1", name: "Jena" }] }],
+    });
+    expect(String(body.aufgabe)).toMatch(/Finde und benenne/);
   });
 });

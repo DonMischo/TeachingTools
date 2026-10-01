@@ -15,7 +15,10 @@ export type Treffer = { ebene: string; id: string; name: string; eigenschaften: 
 /** Deutschland mit etwas Rand */
 const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt }: {
+/** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
+export type KartenBild = () => Promise<string>;
+
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -25,6 +28,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   ziel?: Ausschnitt | null;
   /** Meldet den sichtbaren Ausschnitt nach jedem Verschieben/Zoomen */
   onAusschnitt?: (a: Ausschnitt) => void;
+  /** Für den Export: hier hinterlegt die Karte ihre Bild-Funktion */
+  bildRef?: { current: KartenBild | null };
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
@@ -34,6 +39,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt });
   aktuell.current = { namenZeigen, onKlick, onAusschnitt };
   const ersterStil = useRef(stil);
+  // Wird nach jedem Stilwechsel erst erfüllt, wenn die Karte wieder ruht (alles gezeichnet)
+  const gezeichnet = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let weg = false;
@@ -102,8 +109,21 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
 
   // Neuer Stil: MapLibre gleicht nur die Unterschiede ab (Quellen bleiben geladen)
   useEffect(() => {
-    if (bereit) karte.current?.setStyle(stil);
+    const m = karte.current;
+    if (!bereit || !m) return;
+    gezeichnet.current = new Promise((fertig) => m.once("idle", () => fertig()));
+    m.setStyle(stil);
+    m.triggerRepaint(); // ändert der neue Stil nichts, käme sonst kein »idle«
   }, [stil, bereit]);
+
+  useEffect(() => {
+    if (!bildRef) return;
+    bildRef.current = async () => {
+      await gezeichnet.current;
+      return karte.current!.getCanvas().toDataURL("image/png");
+    };
+    return () => { bildRef.current = null; };
+  }, [bildRef]);
 
   useEffect(() => {
     if (bereit && ziel) karte.current?.fitBounds([[ziel.west, ziel.sued], [ziel.ost, ziel.nord]], { duration: 0 });
