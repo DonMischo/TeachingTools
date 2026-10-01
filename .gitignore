@@ -41,6 +41,8 @@ Konzeptideen.yml
 frontend/public/snap/
 # Rohdaten des Kartentools (node scripts/fetch-karten.mjs, ~150 MB)
 frontend/.karten-roh/
+# Hochgeladene Kartenebenen der Lehrkräfte (Kartentool)
+data/karten/eigene/
 frontend/public/EGE_logo.png
 frontend/public/favicon.ico
 frontend/node_modules/

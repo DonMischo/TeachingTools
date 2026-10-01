@@ -2,7 +2,7 @@ import type {
   TimelineBoard, TimelineGameSpec, TimelineSetDetail, TimelineSetOut,
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
-import type { Katalog as KartenKatalog } from "@/lib/karten/stil";
+import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
@@ -1584,6 +1584,18 @@ export const api = {
     aendern: (id: number, body: KartenSatzIn) =>
       apiFetch<KartenSatz>(`karten/saetze/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     loeschen: (id: number) => apiFetch<void>(`karten/saetze/${id}`, { method: "DELETE" }),
+    /** Eigene Ebene hochladen (GeoJSON/KML/KMZ/GPX); Antwort ist ihr Katalog-Eintrag */
+    eigeneHochladen: async (datei: File, titel: string): Promise<KartenEbene> => {
+      const fd = new FormData();
+      fd.append("datei", datei);
+      fd.append("titel", titel);
+      const r = await fetch("/api/karten/eigene", { method: "POST", credentials: "include", body: fd });
+      if (!r.ok) throw new Error((await r.text()) || r.statusText);
+      return r.json();
+    },
+    eigeneAendern: (id: number, body: { titel: string; geteilt: boolean; namensfeld: string }) =>
+      apiFetch<KartenEbene>(`karten/eigene/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    eigeneLoeschen: (id: number) => apiFetch<void>(`karten/eigene/${id}`, { method: "DELETE" }),
     /** Arbeitsblatt als Datei (PDF/DOCX/ODT/LaTeX-ZIP); Name aus Content-Disposition */
     export: async (body: KartenExportIn): Promise<{ datei: Blob; name: string }> => {
       const r = await fetch("/api/karten/export", {

@@ -31,8 +31,14 @@ SEITE_A4 = ('<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
             '</w:sectPr>')
 
 
-def _auf_a4(docx: Path) -> None:
-    """pandoc schreibt ein leeres <w:sectPr />, Word nimmt dann US Letter: A4 mit 2-cm-Rändern setzen."""
+# Serifenlos fürs Arbeitsblatt (Wunsch der Lehrkräfte). Im API-Container ersetzt
+# LibreOffice Arial beim PDF durch DejaVu Sans — ebenfalls serifenlos.
+SCHRIFT = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/>'
+
+
+def _anpassen(docx: Path) -> None:
+    """pandoc schreibt ein leeres <w:sectPr /> (Word nimmt dann US Letter) und Serifenschrift:
+    A4 mit 2-cm-Rändern und Arial setzen."""
     ein = zipfile.ZipFile(io.BytesIO(docx.read_bytes()))
     aus = io.BytesIO()
     with zipfile.ZipFile(aus, "w", zipfile.ZIP_DEFLATED) as z:
@@ -41,6 +47,8 @@ def _auf_a4(docx: Path) -> None:
             if name == "word/document.xml":
                 xml = daten.decode("utf-8")
                 daten = re.sub(r"<w:sectPr[^>]*/>|<w:sectPr.*?</w:sectPr>", SEITE_A4, xml, flags=re.S).encode("utf-8")
+            elif name == "word/styles.xml":
+                daten = re.sub(r"<w:rFonts[^>]*/>", SCHRIFT, daten.decode("utf-8")).encode("utf-8")
             z.writestr(name, daten)
     docx.write_bytes(aus.getvalue())
 
@@ -77,7 +85,7 @@ def _grid_tabelle(eintraege: list[dict], loesung: bool) -> str:
 def _docx(md: str, ordner: Path) -> Path:
     ziel = ordner / "arbeitsblatt.docx"
     pypandoc.convert_text(md, "docx", format="markdown", outputfile=str(ziel), extra_args=[f"--resource-path={ordner}"])
-    _auf_a4(ziel)
+    _anpassen(ziel)
     return ziel
 
 
@@ -133,6 +141,8 @@ def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: s
         r"\usepackage[utf8]{inputenc}",
         r"\usepackage[T1]{fontenc}",
         r"\usepackage[ngerman]{babel}",
+        r"\usepackage[scaled]{helvet}",
+        r"\renewcommand{\familydefault}{\sfdefault}",
         r"\usepackage[margin=2cm]{geometry}",
         r"\usepackage{graphicx}",
         r"\usepackage{tabularx,array}",

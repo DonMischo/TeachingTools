@@ -20,6 +20,7 @@ import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
 import SatzLeiste from "./SatzLeiste";
 import AuswahlPanel from "./AuswahlPanel";
 import Arbeitsblatt from "./Arbeitsblatt";
+import EigeneEbenen from "./EigeneEbenen";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
@@ -165,6 +166,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
                     ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))}
                     an={inhalt.ebenen} schalte={schalteEbene} />
                 ))}
+                <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
+                  schalte={schalteEbene} lehrkraft={lehrkraft} />
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>
             )}

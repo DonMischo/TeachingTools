@@ -19,14 +19,16 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 
-export type Geometrie = "flaeche" | "linie" | "punkt" | "raster";
+export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
+/** Hochgeladene Ebenen gehören zu keiner Region */
+export type EbenenBereich = Bereich | "eigen";
 
 export type Ebene = {
   id: string;
   name: string;
-  gruppe: "politisch" | "topographisch";
-  bereich: Bereich;
+  gruppe: "politisch" | "topographisch" | "eigen";
+  bereich: EbenenBereich;
   geometrie: Geometrie;
   quiz: boolean;
   anzahl?: number;
@@ -38,6 +40,8 @@ export type Ebene = {
   kachelUrl?: string;
   maxzoom?: number;
   stufen?: { ab: number; farbe: string }[];
+  /** Nur bei hochgeladenen Ebenen (api/routers/karten.py::_eigen_eintrag) */
+  eigen?: { id: number; eigen: boolean; geteilt: boolean; namensfeld: string; felder: string[]; dateiname: string };
 };
 
 export type Katalog = { stand: string; ebenen: Ebene[] };
@@ -112,6 +116,7 @@ export const FARBE = {
   wasserSchrift: "#1f5f99",
   gebirgeSchrift: "#6b3f1d",
   hervor: "#e11d48",
+  eigen: "#7c3aed",
 };
 
 /** Sechs Pastelltöne, so verteilt, dass Nachbarländer verschieden sind. */
@@ -138,10 +143,12 @@ const SCHRIFT = { normal: ["Noto Sans Regular"], fett: ["Noto Sans Bold"], kursi
 
 /** Wo die Ebene geladen wird. Für Quizze tauscht der Aufrufer die Adresse (Gäste, ohne Namen). */
 export type Quelle = (ebene: Ebene) => string;
-export const quelleAusApi: Quelle = (e) => `/api/karten/ebenen/${e.id}`;
+// Eigene Ebenen: das Namensfeld in der Adresse, damit MapLibre nach dem Umstellen neu lädt
+export const quelleAusApi: Quelle = (e) =>
+  `/api/karten/ebenen/${e.id}${e.eigen ? `?namen=${encodeURIComponent(e.eigen.namensfeld)}` : ""}`;
 
 type Rolle = "staaten" | "kontinente" | "laender" | "hoehen" | "wasserflaeche" | "meere" | "seen" | "fluesse"
-  | "gebirge" | "landschaften" | "gipfel" | "staedte";
+  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen";
 
 const ROLLE: Record<string, Rolle> = {
   "welt-staaten": "staaten", "welt-kontinente": "kontinente", "de-laender": "laender",
@@ -162,13 +169,14 @@ const STADT_STUFEN: Record<string, { raenge: string[]; minzoom: number }[]> = {
 };
 
 /** Teil-Namen, deren Objekte ein Klick findet (auch unsichtbare Flächen, z. B. Gebirge über dem Relief). */
-const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2"]);
+const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2", "punkt"]);
 export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelle: Quelle = quelleAusApi): StyleSpecification {
-  const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && ROLLE[e.id]);
-  const mit = (r: Rolle) => an.filter((e) => ROLLE[e.id] === r);
+  const rolle = (e: Ebene): Rolle | undefined => ROLLE[e.id] ?? (e.bereich === "eigen" ? "eigen" : undefined);
+  const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
+  const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
   const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": FARBE.meer } }];
   const text = auswahl.beschriftung;
@@ -305,6 +313,30 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     }
   }
 
+  // Eigene Ebenen: violett, Flächen/Linien/Punkte gemischt möglich
+  const typ = (t: string): FilterSpecification => ["==", ["geometry-type"], t];
+  for (const e of mit("eigen")) {
+    layers.push(
+      { id: `${e.id}:flaeche`, type: "fill", source: e.id, filter: typ("Polygon"), paint: { "fill-color": FARBE.eigen, "fill-opacity": 0.18 } },
+      { id: `${e.id}:rand`, type: "line", source: e.id, filter: typ("Polygon"), paint: { "line-color": FARBE.eigen, "line-width": 1.5 } },
+      { id: `${e.id}:linie`, type: "line", source: e.id, filter: typ("LineString"), layout: linie,
+        paint: { "line-color": FARBE.eigen, "line-width": 2.5 } },
+      { id: `${e.id}:punkt`, type: "circle", source: e.id, filter: typ("Point"),
+        paint: { "circle-radius": 5, "circle-color": FARBE.eigen, "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } },
+    );
+    if (text) {
+      layers.push(
+        { id: `${e.id}:name`, type: "symbol", source: e.id, filter: ["!=", ["geometry-type"], "LineString"],
+          layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": 11.5, "text-anchor": "left", "text-offset": [0.8, 0],
+            "text-optional": true },
+          paint: schrift(FARBE.eigen) },
+        { id: `${e.id}:name-linie`, type: "symbol", source: e.id, filter: typ("LineString"),
+          layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": 11.5 },
+          paint: schrift(FARBE.eigen) },
+      );
+    }
+  }
+
   // Punkte immer zeigen (auf stummen Karten ohne Namen — Lage ist Teil der Frage)
   for (const e of mit("gipfel")) {
     // Welt: die höchsten Berge zuerst, der Rest beim Heranzoomen
@@ -419,9 +451,14 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
       if (!e || !stil.sources[ebeneId] || !wahl.objekte.length) continue;
       const filter = inListe(wahl.objekte);
       const id = `wahl-${ebeneId}`;
-      zusatz.push(e.geometrie === "punkt"
-        ? { id, type: "circle", source: ebeneId, filter, paint: { "circle-radius": 9, "circle-color": "transparent", "circle-stroke-color": FARBE.hervor, "circle-stroke-width": 2.5 } }
-        : { id, type: "line", source: ebeneId, filter, paint: { "line-color": FARBE.hervor, "line-width": e.geometrie === "linie" ? 4 : 2.5, "line-opacity": 0.8 } });
+      if (e.geometrie === "punkt" || e.geometrie === "gemischt") {
+        zusatz.push({ id: `${id}-punkt`, type: "circle", source: ebeneId, filter: ["all", filter, ["==", ["geometry-type"], "Point"]],
+          paint: { "circle-radius": 9, "circle-color": "transparent", "circle-stroke-color": FARBE.hervor, "circle-stroke-width": 2.5 } });
+      }
+      if (e.geometrie !== "punkt") {
+        zusatz.push({ id, type: "line", source: ebeneId, filter,
+          paint: { "line-color": FARBE.hervor, "line-width": e.geometrie === "linie" ? 4 : 2.5, "line-opacity": 0.8 } });
+      }
     }
   }
   // Hervorhebung unter die Beschriftungen, Marken ganz nach oben

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Literal, Union
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import or_
@@ -23,8 +23,9 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_teacher, get_current_user
 from ..database import get_db
+from ..karten_eigene import MAX_BYTES, UploadFehler, geometrie_von, lies_upload, mit_namen
 from ..karten_export import MEDIENTYP, exportiere
-from ..models import KartenSatz, Student, Teacher
+from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
 
 router = APIRouter(prefix="/api/karten", tags=["karten"])
 
@@ -36,13 +37,50 @@ def katalog() -> dict:
     return json.loads((DATEN / "ebenen.json").read_text(encoding="utf-8"))
 
 
+EIGENE = DATEN / "eigene"
+EIGEN_PRAEFIX = "eigen-"
+
+
+def _sichtbare_eigene(db: Session, wer: Union[Teacher, Student]):
+    """Eigene Ebenen, die jemand sehen darf: die eigenen und alle geteilten."""
+    q = db.query(KartenEbeneEigen)
+    if isinstance(wer, Teacher):
+        q = q.filter(or_(KartenEbeneEigen.created_by == wer.id, KartenEbeneEigen.geteilt.is_(True)))
+    else:
+        q = q.filter(KartenEbeneEigen.geteilt.is_(True))
+    return q.order_by(KartenEbeneEigen.titel).all()
+
+
+def _eigen_eintrag(e: KartenEbeneEigen, wer: Union[Teacher, Student]) -> dict:
+    autor = f"{e.autor.first_name} {e.autor.last_name}".strip() if e.autor else ""
+    return {
+        "id": f"{EIGEN_PRAEFIX}{e.id}", "name": e.titel, "gruppe": "eigen", "bereich": "eigen",
+        "geometrie": e.geometrie, "quiz": True, "anzahl": e.anzahl, "bytes": 0,
+        "quelle": {"name": f"Eigene Daten ({autor})" if autor else "Eigene Daten", "lizenz": "", "url": ""},
+        "eigen": {"id": e.id, "eigen": isinstance(wer, Teacher) and e.created_by == wer.id, "geteilt": e.geteilt,
+                  "namensfeld": e.namensfeld, "felder": e.felder, "dateiname": e.dateiname},
+    }
+
+
+def _eigene_ebene(db: Session, ebene_id: str, wer: Union[Teacher, Student]) -> KartenEbeneEigen:
+    nummer = ebene_id.removeprefix(EIGEN_PRAEFIX)
+    e = db.get(KartenEbeneEigen, int(nummer)) if nummer.isdigit() else None
+    if e is None or e not in _sichtbare_eigene(db, wer):
+        raise HTTPException(404, "Unbekannte Ebene")
+    return e
+
+
 @router.get("/ebenen")
-def ebenen(_: Union[Teacher, Student] = Depends(get_current_user)):
-    return katalog()
+def ebenen(db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends(get_current_user)):
+    basis = katalog()
+    return {**basis, "ebenen": basis["ebenen"] + [_eigen_eintrag(e, wer) for e in _sichtbare_eigene(db, wer)]}
 
 
 @router.get("/ebenen/{ebene_id}")
-def ebene(ebene_id: str, _: Union[Teacher, Student] = Depends(get_current_user)):
+def ebene(ebene_id: str, db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends(get_current_user)):
+    if ebene_id.startswith(EIGEN_PRAEFIX):
+        e = _eigene_ebene(db, ebene_id, wer)
+        return FileResponse(EIGENE / f"{e.id}.geojson", media_type="application/geo+json", headers={"Cache-Control": "no-cache"})
     eintrag = next((e for e in katalog()["ebenen"] if e["id"] == ebene_id), None)
     if eintrag is None or eintrag["geometrie"] == "raster":
         raise HTTPException(404, "Unbekannte Ebene")
@@ -90,15 +128,18 @@ class SatzInhalt(BaseModel):
 
     @model_validator(mode="after")
     def _ids_pruefen(self):
+        # Eigene Ebenen (»eigen-…«) prüft _pruefe_eigene mit Datenbank und Rechten
         bekannt = {e["id"]: e for e in katalog()["ebenen"]}
         for e in self.ebenen:
-            if e not in bekannt:
+            if e not in bekannt and not e.startswith(EIGEN_PRAEFIX):
                 raise ValueError(f"Unbekannte Ebene: {e}")
         for e, wahl in self.auswahl.items():
-            if e not in bekannt or bekannt[e]["geometrie"] == "raster":
-                raise ValueError(f"Unbekannte Ebene: {e}")
             if len(set(wahl.objekte)) != len(wahl.objekte):
                 raise ValueError(f"{e}: Objekt doppelt gewählt")
+            if e.startswith(EIGEN_PRAEFIX):
+                continue
+            if e not in bekannt or bekannt[e]["geometrie"] == "raster":
+                raise ValueError(f"Unbekannte Ebene: {e}")
             fremd = set(wahl.objekte) - objekt_ids(e)
             if fremd:
                 raise ValueError(f"{e}: unbekannte Objekte {sorted(fremd)[:3]}")
@@ -109,6 +150,19 @@ class SatzIn(BaseModel):
     titel: str = Field(min_length=1, max_length=200)
     geteilt: bool = False
     inhalt: SatzInhalt
+
+
+def _pruefe_eigene(inhalt: SatzInhalt, db: Session, ich: Teacher) -> None:
+    for e in {*inhalt.ebenen, *inhalt.auswahl} - {k["id"] for k in katalog()["ebenen"]}:
+        try:
+            eigen = _eigene_ebene(db, e, ich)
+        except HTTPException:
+            raise HTTPException(422, f"Unbekannte Ebene: {e}") from None
+        if e in inhalt.auswahl:
+            ids = {f["properties"]["id"] for f in json.loads((EIGENE / f"{eigen.id}.geojson").read_text(encoding="utf-8"))["features"]}
+            fremd = set(inhalt.auswahl[e].objekte) - ids
+            if fremd:
+                raise HTTPException(422, f"{e}: unbekannte Objekte {sorted(fremd)[:3]}")
 
 
 def _kurz(s: KartenSatz, ich: Teacher) -> dict:
@@ -144,6 +198,7 @@ def satz(satz_id: int, db: Session = Depends(get_db), ich: Teacher = Depends(get
 
 @router.post("/saetze", status_code=201)
 def satz_anlegen(body: SatzIn, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    _pruefe_eigene(body.inhalt, db, ich)
     s = KartenSatz(titel=body.titel.strip(), geteilt=body.geteilt, inhalt=body.inhalt.model_dump(), created_by=ich.id)
     db.add(s)
     db.commit()
@@ -154,6 +209,7 @@ def satz_anlegen(body: SatzIn, db: Session = Depends(get_db), ich: Teacher = Dep
 @router.put("/saetze/{satz_id}")
 def satz_aendern(satz_id: int, body: SatzIn, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
     s = _lade_satz(db, satz_id, ich, schreiben=True)
+    _pruefe_eigene(body.inhalt, db, ich)
     s.titel, s.geteilt, s.inhalt = body.titel.strip(), body.geteilt, body.inhalt.model_dump()
     db.commit()
     db.refresh(s)
@@ -208,3 +264,69 @@ def export(body: ExportIn, _: Teacher = Depends(get_current_teacher)):
     datei = re.sub(r"[^A-Za-z0-9ÄÖÜäöüß_-]+", "_", body.titel).strip("_") or "karte"
     return Response(inhalt, media_type=MEDIENTYP[body.format],
                     headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(datei)}.{endung}"})
+
+
+# ── Eigene Ebenen (Upload) ───────────────────────────────────────────
+
+def _schreibe_eigene(e: KartenEbeneEigen, features: list[dict]) -> None:
+    EIGENE.mkdir(parents=True, exist_ok=True)
+    (EIGENE / f"{e.id}.geojson").write_text(
+        json.dumps({"type": "FeatureCollection", "features": mit_namen(features, e.namensfeld)}, ensure_ascii=False),
+        encoding="utf-8")
+
+
+def _meine_eigene(db: Session, eigen_id: int, ich: Teacher) -> KartenEbeneEigen:
+    e = db.get(KartenEbeneEigen, eigen_id)
+    if e is None or (e.created_by != ich.id and not e.geteilt):
+        raise HTTPException(404, "Ebene nicht gefunden")
+    if e.created_by != ich.id:
+        raise HTTPException(403, "Nur die Ersteller:in darf die Ebene ändern")
+    return e
+
+
+@router.post("/eigene", status_code=201)
+async def eigene_hochladen(datei: UploadFile = File(...), titel: str = Form("", max_length=200),
+                           db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    roh = await datei.read(MAX_BYTES + 1)
+    try:
+        features, felder, namensfeld = lies_upload(datei.filename or "", roh)
+    except UploadFehler as fehler:
+        raise HTTPException(422, str(fehler)) from None
+    name = (datei.filename or "Ebene")[:200]
+    e = KartenEbeneEigen(titel=(titel.strip() or name.rsplit(".", 1)[0])[:200], dateiname=name, namensfeld=namensfeld,
+                         felder=felder, geometrie=geometrie_von(features), anzahl=len(features), created_by=ich.id)
+    db.add(e)
+    db.flush()
+    _schreibe_eigene(e, features)
+    db.commit()
+    db.refresh(e)
+    return _eigen_eintrag(e, ich)
+
+
+class EigeneIn(BaseModel):
+    titel: str = Field(min_length=1, max_length=200)
+    geteilt: bool = False
+    namensfeld: str = Field(default="", max_length=60)
+
+
+@router.put("/eigene/{eigen_id}")
+def eigene_aendern(eigen_id: int, body: EigeneIn, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    e = _meine_eigene(db, eigen_id, ich)
+    if body.namensfeld and body.namensfeld not in e.felder:
+        raise HTTPException(422, "Dieses Feld gibt es in der Datei nicht")
+    e.titel, e.geteilt = body.titel.strip(), body.geteilt
+    if body.namensfeld != e.namensfeld:
+        e.namensfeld = body.namensfeld
+        features = json.loads((EIGENE / f"{e.id}.geojson").read_text(encoding="utf-8"))["features"]
+        _schreibe_eigene(e, features)
+    db.commit()
+    db.refresh(e)
+    return _eigen_eintrag(e, ich)
+
+
+@router.delete("/eigene/{eigen_id}", status_code=204)
+def eigene_loeschen(eigen_id: int, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    e = _meine_eigene(db, eigen_id, ich)
+    (EIGENE / f"{e.id}.geojson").unlink(missing_ok=True)
+    db.delete(e)
+    db.commit()

@@ -2378,3 +2378,26 @@ class KartenSatz(Base):
     )
 
     autor: Mapped["Teacher"] = relationship()
+
+
+class KartenEbeneEigen(Base):
+    """Eine von einer Lehrkraft hochgeladene Kartenebene (GeoJSON/KML/KMZ/GPX).
+
+    Die Daten liegen umgewandelt unter data/karten/eigene/<id>.geojson —
+    getrennt von den Grundebenen. Im Katalog heißt sie »eigen-<id>«.
+    """
+    __tablename__ = "karten_ebenen_eigen"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titel: Mapped[str] = mapped_column(String(200), nullable=False)
+    dateiname: Mapped[str] = mapped_column(String(200), nullable=False)
+    # Welches Feld der Datei als Name gilt; mögliche Felder stehen in »felder«
+    namensfeld: Mapped[str] = mapped_column(String(60), nullable=False, default="", server_default="")
+    felder: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    geometrie: Mapped[str] = mapped_column(String(20), nullable=False)  # punkt | linie | flaeche | gemischt
+    anzahl: Mapped[int] = mapped_column(Integer, nullable=False)
+    geteilt: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sql_expr.false())
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    autor: Mapped["Teacher"] = relationship()

@@ -44,7 +44,10 @@ def test_docx_hat_aufgabe_karte_tabellen_und_loesung(client, teacher_token):
     assert "Finde und benenne" in xml
     assert "Lösung" in xml and "Erfurt" in xml and "Saale" in xml  # »beide«: Lösung hängt an
     assert 'w:pgSz w:w="11906" w:h="16838"' in xml  # A4
-    assert any(n.startswith("word/media/") for n in zipfile.ZipFile(io.BytesIO(r.content)).namelist())
+    archiv = zipfile.ZipFile(io.BytesIO(r.content))
+    assert any(n.startswith("word/media/") for n in archiv.namelist())
+    stile = archiv.read("word/styles.xml").decode("utf-8")
+    assert 'w:ascii="Arial"' in stile and "Cambria" not in stile  # serifenlos
 
 
 def test_aufgabe_ohne_loesung_verraet_keine_namen(client, teacher_token):
@@ -62,6 +65,7 @@ def test_tex_ist_zip_mit_bild_und_maskierten_zeichen(client, teacher_token):
     tex = z.read("arbeitsblatt.tex").decode("utf-8")
     assert r"Flüsse \& Städte" in tex
     assert r"\includegraphics" in tex and "Saale" in tex
+    assert r"\sfdefault" in tex
 
 
 @pytest.mark.parametrize("format_,anfang", [("pdf", b"%PDF"), ("odt", b"PK")])
