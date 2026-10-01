@@ -34,6 +34,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
     let m: MapLibreMap | null = null;
     import("maplibre-gl").then((maplibre) => {
       if (weg || !behaelter.current) return;
+      // Eigene Kopie des Workers (scripts/copy-maplibre-worker.mjs): webpack verbiegt den Standardpfad
+      maplibre.setWorkerUrl("/karten/maplibre/maplibre-gl-worker.mjs");
       m = new maplibre.Map({
         container: behaelter.current,
         style: ersterStil.current,
@@ -74,7 +76,10 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
         }
       });
       m.on("load", () => setBereit(true));
+      m.on("error", (e) => console.error("Karte:", e.error?.message ?? e));
       karte.current = m;
+      // Prüf-Hook für Browser-Tests (Quellen/Ebenen abfragen)
+      (window as unknown as { __karte?: MapLibreMap }).__karte = m;
     });
     return () => { weg = true; m?.remove(); karte.current = null; setBereit(false); };
   }, []);
