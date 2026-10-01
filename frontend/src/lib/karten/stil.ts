@@ -275,3 +275,71 @@ export function zeichneSymbol(name: string): { width: number; height: number; da
   }
   return { width: groesse, height: groesse, data: g.getImageData(0, 0, groesse, groesse).data };
 }
+
+// ── Kartensatz: Auswahl, Nummern, Hervorhebung ───────────────────────
+
+export type SatzAnsicht = {
+  auswahl: Record<string, { zeigen: "alle" | "auswahl"; objekte: string[] }>;
+  /** ebene → (id → Marke), siehe lib/karten/nummern.ts */
+  nummern: Record<string, Record<string, string>>;
+  /** Punkte für die Marken: Feature-Eigenschaften { marke, geometrie } */
+  anker: GeoJSON.FeatureCollection;
+  /** Im Bearbeiten-Modus: alles zeigen und Ausgewähltes rot hervorheben */
+  bearbeiten: boolean;
+};
+
+const inListe = (ids: string[]): ExpressionSpecification => ["in", ["get", "id"], ["literal", ids]];
+
+/**
+ * Legt einen Kartensatz über einen fertigen Stil. Die Ebenen bleiben dabei
+ * vollständig geladen; ausgeblendet wird per Filter, nicht durch Kürzen der Daten.
+ */
+export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: SatzAnsicht): StyleSpecification {
+  const layers = stil.layers.map((l) => {
+    if (!("source" in l) || typeof l.source !== "string") return l;
+    const wahl = satz.auswahl[l.source];
+    const nummern = satz.nummern[l.source];
+    let neu: LayerSpecification = l;
+    if (wahl?.zeigen === "auswahl" && !satz.bearbeiten) {
+      const nur = inListe(wahl.objekte);
+      neu = { ...neu, filter: ("filter" in neu && neu.filter ? ["all", neu.filter, nur] : nur) as never };
+    }
+    // Nummerierte Objekte tragen ihre Marke statt des Namens
+    if (nummern && neu.type === "symbol" && neu.layout?.["text-field"]) {
+      neu = { ...neu, layout: { ...neu.layout,
+        "text-field": ["case", inListe(Object.keys(nummern)), "", neu.layout["text-field"]] as never } };
+    }
+    return neu;
+  });
+
+  const zusatz: LayerSpecification[] = [];
+  if (satz.bearbeiten) {
+    for (const [ebeneId, wahl] of Object.entries(satz.auswahl)) {
+      const e = katalog.ebenen.find((x) => x.id === ebeneId);
+      if (!e || !stil.sources[ebeneId] || !wahl.objekte.length) continue;
+      const filter = inListe(wahl.objekte);
+      const id = `wahl-${ebeneId}`;
+      zusatz.push(e.geometrie === "punkt"
+        ? { id, type: "circle", source: ebeneId, filter, paint: { "circle-radius": 9, "circle-color": "transparent", "circle-stroke-color": FARBE.hervor, "circle-stroke-width": 2.5 } }
+        : { id, type: "line", source: ebeneId, filter, paint: { "line-color": FARBE.hervor, "line-width": e.geometrie === "linie" ? 4 : 2.5, "line-opacity": 0.8 } });
+    }
+  }
+  // Hervorhebung unter die Beschriftungen, Marken ganz nach oben
+  const ersteSchrift = layers.findIndex((l) => l.type === "symbol");
+  const mitHervor = ersteSchrift < 0 ? [...layers, ...zusatz] : [...layers.slice(0, ersteSchrift), ...zusatz, ...layers.slice(ersteSchrift)];
+
+  const sources = { ...stil.sources };
+  if (satz.anker.features.length) {
+    sources["nummern"] = { type: "geojson", data: satz.anker };
+    mitHervor.push(
+      { id: "nummern-kreis", type: "circle", source: "nummern",
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 9, 12], "circle-color": "#ffffff",
+          "circle-stroke-color": FARBE.hervor, "circle-stroke-width": 2 } },
+      { id: "nummern-text", type: "symbol", source: "nummern",
+        layout: { "text-field": ["get", "marke"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 9, 14],
+          "text-allow-overlap": true, "text-ignore-placement": true },
+        paint: { "text-color": FARBE.hervor } },
+    );
+  }
+  return { ...stil, sources, layers: mitHervor };
+}

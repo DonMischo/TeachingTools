@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { KLICK_EBENEN, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
+import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 
 export type Treffer = { ebene: string; id: string; name: string; eigenschaften: Record<string, unknown> };
@@ -14,19 +15,24 @@ export type Treffer = { ebene: string; id: string; name: string; eigenschaften: 
 /** Deutschland mit etwas Rand */
 const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
-  onKlick?: (t: Treffer) => void;
+  /** Alle Objekte unter dem Klick, oberstes zuerst */
+  onKlick?: (treffer: Treffer[]) => void;
+  /** Dorthin springen, sobald sich das Objekt ändert (geladener Kartensatz) */
+  ziel?: Ausschnitt | null;
+  /** Meldet den sichtbaren Ausschnitt nach jedem Verschieben/Zoomen */
+  onAusschnitt?: (a: Ausschnitt) => void;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
-  const aktuell = useRef({ namenZeigen, onKlick });
-  aktuell.current = { namenZeigen, onKlick };
+  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt });
+  aktuell.current = { namenZeigen, onKlick, onAusschnitt };
   const ersterStil = useRef(stil);
 
   useEffect(() => {
@@ -60,14 +66,18 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
         m!.getCanvas().style.cursor = t.length ? "pointer" : "";
       });
       m.on("click", (e) => {
-        const [f] = m!.queryRenderedFeatures(e.point, { layers: klickbar() }) as MapGeoJSONFeature[];
+        // Ein paar Pixel Spielraum: Flüsse sind dünn
+        const r = 5;
+        const box: [[number, number], [number, number]] = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+        const gefunden = m!.queryRenderedFeatures(box, { layers: klickbar() }) as MapGeoJSONFeature[];
         popup.current?.remove();
-        if (!f) return;
-        const t: Treffer = {
+        const treffer: Treffer[] = gefunden.map((f) => ({
           ebene: KLICK_EBENEN[f.layer.id], id: String(f.properties.id), name: String(f.properties.name ?? ""),
           eigenschaften: f.properties,
-        };
-        aktuell.current.onKlick?.(t);
+        }));
+        if (!treffer.length) return;
+        aktuell.current.onKlick?.(treffer);
+        const t = treffer[0];
         if (aktuell.current.namenZeigen && t.name) {
           const zusatz = t.eigenschaften.hoehe ? ` (${t.eigenschaften.hoehe} m)`
             : t.eigenschaften.ew ? ` (${Number(t.eigenschaften.ew).toLocaleString("de-DE")} Einw.)` : "";
@@ -76,6 +86,10 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
         }
       });
       m.on("load", () => setBereit(true));
+      m.on("moveend", () => {
+        const b = m!.getBounds();
+        aktuell.current.onAusschnitt?.({ west: b.getWest(), sued: b.getSouth(), ost: b.getEast(), nord: b.getNorth() });
+      });
       m.on("error", (e) => console.error("Karte:", e.error?.message ?? e));
       karte.current = m;
       // Prüf-Hook für Browser-Tests (Quellen/Ebenen abfragen)
@@ -88,6 +102,10 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick }: {
   useEffect(() => {
     if (bereit) karte.current?.setStyle(stil);
   }, [stil, bereit]);
+
+  useEffect(() => {
+    if (bereit && ziel) karte.current?.fitBounds([[ziel.west, ziel.sued], [ziel.ost, ziel.nord]], { duration: 0 });
+  }, [ziel, bereit]);
 
   const quellen = [...new Map(katalog.ebenen.map((e) => [e.quelle.name, e.quelle])).values()];
   return (

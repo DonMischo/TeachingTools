@@ -3,6 +3,7 @@ import type {
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Katalog as KartenKatalog } from "@/lib/karten/stil";
+import type { KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1576,6 +1577,13 @@ export const api = {
   // Kartentool: Ebenen-Katalog (die GeoJSONs lädt MapLibre selbst, siehe lib/karten/stil.ts)
   karten: {
     katalog: () => apiFetch<KartenKatalog>("karten/ebenen"),
+    ebene: (id: string) => apiFetch<GeoJSON.FeatureCollection>(`karten/ebenen/${encodeURIComponent(id)}`),
+    saetze: () => apiFetch<KartenSatzKurz[]>("karten/saetze"),
+    satz: (id: number) => apiFetch<KartenSatz>(`karten/saetze/${id}`),
+    anlegen: (body: KartenSatzIn) => apiFetch<KartenSatz>("karten/saetze", { method: "POST", body: JSON.stringify(body) }),
+    aendern: (id: number, body: KartenSatzIn) =>
+      apiFetch<KartenSatz>(`karten/saetze/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    loeschen: (id: number) => apiFetch<void>(`karten/saetze/${id}`, { method: "DELETE" }),
   },
 
   // »Rock your Life«: Stand + Protokoll je Sitzung, Lehrer-Übersicht (siehe api/routers/leben.py)

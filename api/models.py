@@ -2355,3 +2355,26 @@ class LebenStand(Base):
     aktualisiert_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class KartenSatz(Base):
+    """Eine gespeicherte Karte der Lehrkraft (Kartentool »karten«).
+
+    Hält nur die Auswahl — welche Ebenen, welche Objekte, wie nummeriert —
+    als ids in die Ebenen unter data/karten/. Die Ebenen selbst bleiben
+    unangetastet. Aufbau von ``inhalt`` siehe ``routers/karten.py::SatzInhalt``.
+    """
+    __tablename__ = "karten_saetze"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    titel: Mapped[str] = mapped_column(String(200), nullable=False)
+    inhalt: Mapped[dict] = mapped_column(JSON, nullable=False)
+    # Für alle Lehrkräfte sichtbar (nur die Besitzerin darf ändern)
+    geteilt: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sql_expr.false())
+    created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    autor: Mapped["Teacher"] = relationship()
