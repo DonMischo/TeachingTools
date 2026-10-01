@@ -101,8 +101,11 @@ export interface Bewegung {
   pivX: number; pivZ: number;
   theta: number; tx: number; tz: number;
   vx: number; vz: number; omega: number;
-  ziel: number; dirX: number; dirZ: number;
-  fort: number; dauer: number; zeit: number;
+  /** Rutschen: Gleitrichtung, Reibbeiwert, Weg und Tempo auf der Fläche,
+   *  Schwerpunkt der Masse zu Beginn, Austritt der Gleitfläche (x) */
+  dirX: number; dirZ: number; reib: number;
+  fort: number; tempo: number; mx: number; mz: number; ausX: number;
+  dauer: number; zeit: number;
   volumen: number;
   baeume: { id: number; j: number }[];
   objekte: string[];
@@ -904,7 +907,7 @@ function masseAus(k: Kliff, zellen: number[], art: Bewegung["art"]): Bewegung {
     art, idx, mMat, mHerk, bbox: { c0, c1, r0, r1 },
     pivX: xVon(k, sx / idx.length), pivZ: zVon(k, sz / idx.length),
     theta: 0, tx: 0, tz: 0, vx: 0, vz: 0, omega: 0,
-    ziel: 0, dirX: 0, dirZ: 0, fort: 0, dauer: 3, zeit: 0,
+    dirX: 0, dirZ: 0, reib: 0, fort: 0, tempo: 0, mx: xVon(k, sx / idx.length), mz: zVon(k, sz / idx.length), ausX: -Infinity, dauer: 12, zeit: 0,
     volumen: idx.length * k.dx * k.dx, baeume: [], objekte: [], id: ++k.laufId,
   };
   const lage = new Map<number, number>();
@@ -947,6 +950,35 @@ function fest(k: Kliff, x: number, z: number) {
   if (r >= k.nz) return false;
   return k.mat[r * k.nx + c] !== MAT.LUFT;
 }
+
+function hart(k: Kliff, x: number, z: number) {
+  const c = spalteVon(k, x), r = zeileVon(k, z);
+  if (c < 0 || c >= k.nx || r >= k.nz) return false;
+  if (r < 0) return true;
+  const m = k.mat[r * k.nx + c];
+  return m !== MAT.LUFT && !LOSE(m);
+}
+
+/**
+ * Rutschende Masse: Stößt sie an Fels (mehr als eine Zelle tief — die
+ * Treppenstufen des Rasters unter der Gleitfläche zählen nicht)? Und welcher
+ * Anteil ist schon über den Austritt der Gleitfläche hinaus aufs Vorland
+ * geschoben? Losen Schutt schiebt sie vor sich her.
+ */
+function rutschLage(k: Kliff, b: Bewegung) {
+  const n = b.idx.length, schritt = Math.max(1, Math.floor(n / 600));
+  let treffer = 0, proben = 0, vorne = 0;
+  for (let j = 0; j < n; j += schritt) {
+    proben++;
+    const [x, z] = lage(k, b, j);
+    if (x < b.ausX) vorne++;
+    if (hart(k, x, z) && hart(k, x, z + k.dx)) treffer++;
+  }
+  return { stoesst: treffer > Math.max(2, proben * 0.015), vorne: vorne / Math.max(1, proben) };
+}
+
+/** Reibbeiwert auf dem Vorland (Strand, Schutt), wo die Scholle ausläuft */
+const REIB_VORLAND = 0.6;
 
 /** Eine stürzende Masse zerschellt: Zellen werden Schutt (und Blöcke) */
 function aufschlagen(k: Kliff, b: Bewegung) {
@@ -1125,11 +1157,44 @@ function bewegen(k: Kliff, dt: number) {
       }
       if (fertig) aufschlagen(k, b);
     } else {
-      b.fort = Math.min(1, b.zeit / b.dauer);
-      const e = b.fort < 0.5 ? 2 * b.fort * b.fort : 1 - (-2 * b.fort + 2) ** 2 / 2;
-      if (b.art === "rutsch") b.theta = b.ziel * e;
-      else { b.tx = b.dirX * b.ziel * e; b.tz = b.dirZ * b.ziel * e; }
-      if (b.fort >= 1) { fertig = true; ablegen(k, b); }
+      // Gleitklotz mit Reibung: Die Schwerkraft treibt, die Restreibung auf
+      // der Gleitfläche bremst. Die Scholle kommt zur Ruhe, wenn die Reibung
+      // siegt oder sie an Fels stößt — kein vorgegebener Weg.
+      // Der Teil, der schon aufs Vorland geschoben ist, treibt nicht mehr
+      // mit, sondern bremst — so läuft die Scholle aus.
+      for (let s = 0; s < 4 && !fertig; s++) {
+        const h = dt / 4;
+        const vorher = [b.theta, b.tx, b.tz, b.fort];
+        const vorne = b.zeit > 0 ? rutschLage(k, b).vorne : 0;
+        if (b.art === "rutsch") {
+          // Drehung um den Kreismittelpunkt wie ein gebremstes Pendel
+          const x = b.mx - b.pivX, z = b.mz - b.pivZ;
+          const co = Math.cos(b.theta), si = Math.sin(b.theta);
+          const xs = co * x - si * z, zs = si * x + co * z;
+          const R = Math.max(1, Math.hypot(xs, zs));
+          const a = (1 - vorne) * (xs / R - b.reib * (-zs / R)) - vorne * REIB_VORLAND;
+          b.omega -= (9.81 / R) * a * h;
+          if (b.omega >= 0) { b.omega = 0; fertig = b.zeit > 0.2; if (fertig) break; }
+          b.theta += b.omega * h;
+        } else {
+          // Ebene Gleitfläche: a = g (sin β − μ cos β); auf dem Vorland dreht
+          // die Bahn in die Waagerechte
+          const a = (1 - vorne) * (-b.dirZ - b.reib * -b.dirX) - vorne * REIB_VORLAND;
+          b.tempo += 9.81 * a * h;
+          if (b.tempo <= 0) { b.tempo = 0; fertig = b.zeit > 0.2; if (fertig) break; }
+          const len = Math.hypot((1 - vorne) * b.dirX - vorne, (1 - vorne) * b.dirZ);
+          b.tx += (((1 - vorne) * b.dirX - vorne) / len) * b.tempo * h;
+          b.tz += (((1 - vorne) * b.dirZ) / len) * b.tempo * h;
+          b.fort += b.tempo * h;
+        }
+        if (rutschLage(k, b).stoesst) { [b.theta, b.tx, b.tz, b.fort] = vorher; fertig = true; }
+      }
+      if (fertig || b.zeit > b.dauer) {
+        fertig = true;
+        ablegen(k, b);
+        // Was jetzt über Luft hängt, bricht ab und fällt gleich nach
+        verbindungPruefen(k);
+      }
     }
     if (fertig) {
       k.bewegungen.splice(k.bewegungen.indexOf(b), 1);
@@ -1255,6 +1320,22 @@ function grundwasser(k: Kliff, c: number, W: number, ufer: number) {
   return Math.min(z, oben);
 }
 
+/**
+ * Wo tritt eine Gleitfläche an der Wand aus? Erste Spalte von See her, in
+ * der sie über dem Wasser und unter Gestein liegt. Sie muss frei ausstreichen:
+ * Liegt davor auf ihrer Höhe noch Fels, kann darauf nichts abgleiten (-1).
+ */
+function austritt(k: Kliff, e: Ebene, W: number) {
+  const g = k.cache;
+  for (let c = 0; c < k.nx; c++) {
+    const z = (xVon(k, c) - e.x0) * e.tan;
+    if (z > W - 1 && g.top[c] >= 0 && zVon(k, g.top[c]) > z) {
+      return hart(k, xVon(k, c) - 1, z + 0.5) ? -1 : c;
+    }
+  }
+  return -1;
+}
+
 /** Lamellenverfahren nach Fellenius für eine Gleitfläche z = zs(x) */
 function fsFlaeche(k: Kliff, zs: (x: number) => number, von: number, bis: number, W: number, ufer: number, ebene?: Ebene) {
   const g = k.cache;
@@ -1324,12 +1405,7 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
   for (const e of k.ebenen) {
     for (const hinten of [12, 22, 35]) {
       const zs = (x: number) => (x - e.x0) * e.tan;
-      // Wo tritt die Fläche an der Wand aus? Erste Spalte, in der sie über dem Grund liegt
-      let von = -1;
-      for (let c = 0; c < k.nx; c++) {
-        const z = zs(xVon(k, c));
-        if (z > W - 1 && g.top[c] >= 0 && zVon(k, g.top[c]) > z) { von = c; break; }
-      }
+      const von = austritt(k, e, W);
       if (von < 0) continue;
       const bis = Math.min(k.nx - 1, von + Math.round(hinten / k.dx));
       const { fs, flaeche } = fsFlaeche(k, zs, von, bis, W, ufer, e);
@@ -1344,9 +1420,11 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
   // Masse über der Gleitfläche
   const zellen: number[] = [];
   for (let c = Math.max(0, best.von); c <= Math.min(k.nx - 1, best.bis); c++) {
-    const z = best.zs(xVon(k, c));
+    const x = xVon(k, c), z = best.zs(x);
     if (!Number.isFinite(z)) continue;
     for (let r = Math.max(0, zeileVon(k, z) + 1); r <= g.top[c]; r++) {
+      // Nur was im Gleitkreis liegt, dreht mit; darüber bleibt die Wand stehen
+      if (best.art === "kreis" && Math.hypot(x - best.cx!, zVon(k, r) - best.cz!) >= best.rad!) break;
       const i = r * k.nx + c;
       if (k.mat[i] !== MAT.LUFT && k.mat[i] !== MAT.DECKWERK) zellen.push(i);
     }
@@ -1356,15 +1434,17 @@ export function standsicherheit(k: Kliff, W: number, ausloesen = true): number {
   const vol = Math.round(b.volumen);
   if (best.art === "kreis") {
     b.pivX = best.cx!; b.pivZ = best.cz!;
-    const weg = Math.max(2, Math.min(12, 1.5 + (1 - best.fs) * 30 + vol / 150));
-    b.ziel = -weg / best.rad!;
-    b.dauer = Math.min(7, 2.5 + vol / 400);
+    // Nach dem Bruch bleibt nur die Restreibung: je kleiner die Standsicherheit,
+    // desto weiter rutscht die Scholle, bis die Reibung sie wieder hält.
+    const neig = Math.max(0.05, (b.mx - b.pivX) / Math.max(1, b.pivZ - b.mz));
+    b.reib = neig * Math.max(0.3, Math.min(0.9, best.fs));
+    b.ausX = xVon(k, best.von);
     melde(k, `Rutschung: Eine Scholle von rund ${vol} m³ je Meter gleitet auf einer gekrümmten Fläche ab und kippt nach hinten (Standsicherheit ${best.fs.toFixed(2).replace(".", ",")}).`, "warnung");
   } else {
     const len = Math.hypot(1, best.tan!);
     b.dirX = -1 / len; b.dirZ = -best.tan! / len;
-    b.ziel = Math.max(3, Math.min(25, 4 + (1 - best.fs) * 40 + vol / 400));
-    b.dauer = Math.min(8, 3 + vol / 600);
+    b.reib = best.tan! * Math.max(0.3, Math.min(0.9, best.fs));
+    b.ausX = xVon(k, best.von);
     melde(k, `Gleitung: Eine Kreidescholle von rund ${vol} m³ je Meter rutscht auf einer alten Überschiebungsfläche ins Meer — wie 2007 an der Store Taler auf Møn (Standsicherheit ${best.fs.toFixed(2).replace(".", ",")}).`, "warnung");
   }
   k.saettigung *= 0.8;
@@ -1420,11 +1500,7 @@ function ebenenFs(k: Kliff) {
   let min = 99;
   for (const e of k.ebenen) for (const hinten of [12, 22, 35]) {
     const zs = (x: number) => (x - e.x0) * e.tan;
-    let von = -1;
-    for (let c = 0; c < k.nx; c++) {
-      const z = zs(xVon(k, c));
-      if (z > W - 1 && g.top[c] >= 0 && zVon(k, g.top[c]) > z) { von = c; break; }
-    }
+    const von = austritt(k, e, W);
     if (von < 0) continue;
     const { fs, flaeche } = fsFlaeche(k, zs, von, Math.min(k.nx - 1, von + Math.round(hinten / k.dx)), W, ufer, e);
     if (flaeche >= 4) min = Math.min(min, fs);
@@ -1439,14 +1515,21 @@ function verbindungPruefen(k: Kliff) {
   const halt = new Uint8Array(n);
   const stapel: number[] = [];
   for (let c = 0; c < nx; c++) if (mat[c] !== MAT.LUFT) { halt[c] = 1; stapel.push(c); }
+  // Gewachsener Fels hält in alle Richtungen. Verrutschtes Gestein (gestört)
+  // ist zerrüttet und trägt nur, wenn es aufliegt — es hängt nicht seitlich
+  // an der Wand. Schutt trägt, was auf ihm liegt.
   while (stapel.length) {
     const i = stapel.pop()!;
     const c = i % nx;
+    const lose = LOSE(mat[i]);
     const nb = [i + nx, i - nx, c > 0 ? i - 1 : -1, c < nx - 1 ? i + 1 : -1];
-    for (const j of nb) {
+    for (let q = 0; q < 4; q++) {
+      const j = nb[q];
       if (j < 0 || j >= n || halt[j]) continue;
       const m = mat[j];
-      if (m === MAT.LUFT || LOSE(m)) continue;
+      if (m === MAT.LUFT) continue;
+      const aufliegen = q === 0;
+      if (!aufliegen && (lose || LOSE(m) || k.gestoert[j])) continue;
       halt[j] = 1; stapel.push(j);
     }
   }

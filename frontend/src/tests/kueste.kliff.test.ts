@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAT, abschliessen, geometrie, kBegriffe, kMassnahme, kSchritt, kliffKante, neuesKliff, rieseln,
+  MAT, abschliessen, geometrie, kBegriffe, kMassnahme, kSchritt, kWasser, kliffKante, neuesKliff, rieseln,
   spalteVon, standsicherheit, ueberhang, xVon, zVon, zeileVon, type Kliff,
 } from "@/lib/kueste/kliff";
 import { zonenAbstand } from "@/lib/kueste/begriffe";
@@ -133,6 +133,34 @@ describe("Steilküste im Zellmodell", () => {
     const g = geometrie(k);
     // keine Stufe steiler als 45° (eine Zelle je Zelle)
     for (let q = c - 20; q < c + 20; q++) expect(Math.abs(g.top[q + 1] - g.top[q])).toBeLessThanOrEqual(2);
+  });
+  it("nach einer Rutschung hängt kein verrutschtes Gestein in der Luft", () => {
+    for (const typ of ["kreide", "moen", "mergel", "sand"] as const) {
+      const k = neuesKliff(typ);
+      k.saettigung = 1; k.risse = 1; k.festFaktor *= 0.3;
+      expect(standsicherheit(k, kWasser(k, REGEN), true), typ).toBeLessThan(1);
+      expect(k.bewegungen.length, typ).toBeGreaterThan(0);
+      abschliessen(k);
+      const luft = Math.round(1 / k.dx);
+      for (let r = luft + 1; r < k.nz; r++) for (let c = 0; c < k.nx; c++) {
+        const i = r * k.nx + c;
+        if (!k.gestoert[i] || k.mat[i] === MAT.LUFT || k.mat[i] === MAT.SCHUTT || k.mat[i] === MAT.BLOCK) continue;
+        let frei = true;
+        for (let q = 1; q <= luft; q++) if (k.mat[i - q * k.nx] !== MAT.LUFT) frei = false;
+        expect(frei, `${typ}: Zelle ${c}/${r} schwebt`).toBe(false);
+      }
+    }
+  });
+
+  it("Gleitflächen zählen nur, wo sie an der Wand frei ausstreichen", () => {
+    const k = neuesKliff("moen");
+    for (const e of k.ebenen) e.c *= 0.1;
+    k.saettigung = 1;
+    standsicherheit(k, 0, true);
+    const b = k.bewegungen[0];
+    expect(b?.art).toBe("gleit");
+    // Die Masse beginnt an der Wand, nicht tief im Fels dahinter
+    expect(b.ausX).toBeLessThan(kliffKante(k) + 1);
   });
 });
 

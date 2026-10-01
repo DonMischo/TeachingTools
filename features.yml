@@ -223,7 +223,7 @@ simulationen:
       - Laufende Wellen mit Brecherzone am Sandriff, Rollerzone und Spülsaum; Gezeiten, Windstau und Sturmfluten
       - Erosion im Zeitraffer bis 1 Jahr/s: Sturm trägt Sand ins Riff, ruhiges Wetter baut den Strand auf, der Längsstrom nimmt Sand mit, Wind baut Dünen
       - Steilküste als unverzerrtes 2D-Zellmodell mit vier Kliffen (Kreide/Jasmund, Møns Klint, Geschiebemergel/Brodtener Ufer, Sand/Rotes Kliff)
-      - Hohlkehle aus dem Brandungsband, Abbruch des Überhangs nach Biegespannung, Rutschungen und Gleitungen nach Standsicherheit (Gleitkreise, Schichtflächen, Grundwasserdruck)
+      - Hohlkehle aus dem Brandungsband, Abbruch des Überhangs nach Biegespannung, Rutschungen und Gleitungen nach Standsicherheit (Gleitkreise, frei ausstreichende Schichtflächen, Grundwasserdruck), Ablauf als Gleitklotz mit Restreibung und Auslauf; Überhängendes bricht danach ab
       - Frost, Regen, gerundete Abbruchkante, Quellhorizont, Schlammstrom, Abrieseln, Wind; Kliffhalde, Blockstrand, Abrasionsplattform; Physik-Tafel
       - Bäume sterben an der Kante ab, stürzen seewärts und verrotten oder treiben als Treibholz fort
       - Zoom (Mausrad, Ziehen, Wasserlinie) und ovale Trefferzonen im Beschriften-Quiz
