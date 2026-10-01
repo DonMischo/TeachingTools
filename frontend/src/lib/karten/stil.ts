@@ -76,7 +76,7 @@ export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: R
   {
     id: "politisch", icon: "🏛️", name: "Politisch",
     ebenen: {
-      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-staedte"],
+      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "welt-staedte", "de-staedte"],
       welt: ["welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-meere", "welt-staedte"],
     },
   },
@@ -84,7 +84,7 @@ export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: R
     id: "topographisch", icon: "⛰️", name: "Topographisch",
     ebenen: {
       de: ["welt-staaten", "welt-hoehen", "de-hoehen", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "de-fluesse-klein",
-        "de-gebirge", "de-landschaften", "de-gipfel", "de-staedte"],
+        "de-gebirge", "de-landschaften", "de-gipfel", "welt-staedte", "de-staedte"],
       welt: ["welt-hoehen", "welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-meere", "welt-gebirge",
         "welt-landschaften", "welt-gipfel", "welt-staedte"],
     },
@@ -92,8 +92,9 @@ export const KARTENARTEN: { id: Kartenart; icon: string; name: string; ebenen: R
   {
     id: "stumm", icon: "🔢", name: "Stumme Karte",
     ebenen: {
-      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse"],
-      welt: ["welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse"],
+      // Ohne Namen bleiben von den Städten nur die Punkte
+      de: ["welt-staaten", "de-laender", "de-gewaesser", "de-seen", "de-fluesse", "welt-staedte", "de-staedte"],
+      welt: ["welt-staaten", "welt-gewaesser", "welt-seen", "welt-fluesse", "welt-staedte"],
     },
   },
 ];
@@ -356,7 +357,10 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
       paint: schrift(FARBE.gebirgeSchrift) }));
   }
   for (const e of mit("staedte")) {
-    const stufen = STADT_STUFEN[e.id] ?? [{ raenge: [], minzoom: 0 }];
+    // Um Deutschland (Länder sichtbar) von der Welt nur die Hauptstädte der Nachbarn
+    const stufen = e.id === "welt-staedte" && hatLaender
+      ? [{ raenge: ["hauptstadt"], minzoom: 0 }]
+      : STADT_STUFEN[e.id] ?? [{ raenge: [], minzoom: 0 }];
     stufen.forEach((stufe, i) => {
       const gross = i === 0;
       layers.push({

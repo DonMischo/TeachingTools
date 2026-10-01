@@ -25,7 +25,7 @@ import EigeneEbenen from "./EigeneEbenen";
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
 /** Um Deutschland herum sind diese Weltebenen der Rahmen */
-const UMLAND = ["welt-staaten", "welt-hoehen"];
+const UMLAND = ["welt-staaten", "welt-hoehen", "welt-staedte"];
 
 export default function Karten({ action }: { action?: ReactNode }) {
   const { auth } = useAuth();
@@ -163,7 +163,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 </label>
                 {(["politisch", "topographisch"] as const).map((gruppe) => (
                   <EbenenGruppe key={gruppe} titel={gruppe === "politisch" ? "Politisch" : "Topographisch"}
-                    ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))}
+                    ebenen={katalog.ebenen.filter((e) => e.gruppe === gruppe && (e.bereich === bereich || (bereich === "de" && UMLAND.includes(e.id))))
+                      .map((e) => (bereich === "de" && e.id === "welt-staedte" ? { ...e, name: "Hauptstädte der Nachbarländer" } : e))}
                     an={inhalt.ebenen} schalte={schalteEbene} />
                 ))}
                 <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
