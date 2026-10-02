@@ -267,7 +267,11 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
       "fill-color": grundfarbe ?? (art === "politisch" ? landFarbe : "#f7f4ee"), "fill-opacity": hatRelief && !grundfarbe ? 0 : 1 } });
   }
 
-  for (const e of mit("thema")) if (e.geometrie === "flaeche") {
+  for (const e of mit("thema")) if (e.geometrie === "raster" && e.kachelUrl) {
+    // Raster-Themenkarte (Klimazonen): fertig eingefärbte Kacheln, Legende aus der Darstellung
+    sources[e.id] = { type: "raster", tiles: [e.kachelUrl], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
+    layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id, paint: { "raster-opacity": 0.85, "raster-fade-duration": 0 } });
+  } else if (e.geometrie === "flaeche") {
     layers.push(
       { id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": themaFarbe(e.darstellung!), "fill-opacity": 0.8 } },
       { id: `${e.id}:rand`, type: "line", source: e.id, paint: { "line-color": "#ffffff", "line-width": 0.4, "line-opacity": 0.6 } },
@@ -376,6 +380,13 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   for (const e of mit("thema")) {
     const d = e.darstellung!;
+    if (text && e.quiz && e.geometrie === "flaeche") {
+      // Namen thematischer Flächen (Platten, Wüsten, Kreise) — Kreise erst nah
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 8 : 1.5,
+        layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11, "text-max-width": 8,
+          ...(e.bereich === "welt" ? { "symbol-sort-key": ["coalesce", ["get", "rang"], 0] } : {}) },
+        paint: schrift("#4a3b2a", "#ffffffaa") });
+    }
     if (e.geometrie === "linie") {
       layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, layout: linie,
         paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2, 9, 3] } });

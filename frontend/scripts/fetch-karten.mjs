@@ -60,6 +60,8 @@ const PAKETE = {
   vg250ew: { url: `${BKG}/vg/vg250-ew_ebenen_1231/aktuell/vg250-ew_12-31.utm32s.shape.ebenen.zip`, md5: false },
   // CORINE Land Cover 2018, 5 ha (1,4 GB gepackt, 4,8 GB entpackt)
   clc5: { url: `${BKG}/dlm/clc5_2018/aktuell/clc5_2018.utm32s.shape.zip`, md5: true },
+  // Köppen-Geiger 1991–2020 (Beck et al. 2023), GeoTIFFs in mehreren Auflösungen
+  koeppen: { url: "https://ndownloader.figshare.com/files/61012822", md5: false },
 };
 
 const JAHR = new Date().getFullYear();
@@ -796,6 +798,141 @@ async function bevoelkerung(vgew) {
       einwohner: f.properties.EWZ, dichte: Math.round(f.properties.EWZ / f.properties.KFL) })));
 }
 
+// ── Physische Geografie: Platten, Wüsten, Klimazonen ──────────────────
+
+const QUELLE_BIRD = { name: "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)", lizenz: "ODC-BY 1.0",
+  url: "https://github.com/fraxen/tectonicplates" };
+const QUELLE_KOEPPEN = { name: "Beck et al. (2023), Köppen-Geiger 1991–2020", lizenz: "CC BY 4.0",
+  url: "https://doi.org/10.6084/m9.figshare.21789074" };
+
+const PLATTE_DE = {
+  "Africa": "Afrikanische Platte", "Antarctica": "Antarktische Platte", "Somalia": "Somalische Platte", "India": "Indische Platte",
+  "Australia": "Australische Platte", "Eurasia": "Eurasische Platte", "North America": "Nordamerikanische Platte",
+  "South America": "Südamerikanische Platte", "Nazca": "Nazca-Platte", "Pacific": "Pazifische Platte", "Arabia": "Arabische Platte",
+  "Sunda": "Sunda-Platte", "Caribbean": "Karibische Platte", "Cocos": "Cocos-Platte", "Okhotsk": "Ochotskische Platte",
+  "Juan de Fuca": "Juan-de-Fuca-Platte", "Philippine Sea": "Philippinische Platte", "Amur": "Amur-Platte", "Scotia": "Scotia-Platte",
+  "Anatolia": "Anatolische Platte", "Aegean Sea": "Ägäische Platte", "Yangtze": "Jangtse-Platte", "Caroline": "Karolinen-Platte",
+  "Mariana": "Marianen-Platte", "Panama": "Panama-Platte", "Rivera": "Rivera-Platte", "Burma": "Burma-Platte", "Tonga": "Tonga-Platte",
+};
+
+const GRENZE = { OSR: "divergent", CRB: "divergent", OTF: "transform", CTF: "transform", SUB: "subduktion", OCB: "kollision", CCB: "kollision" };
+
+async function platten(roh) {
+  const p = JSON.parse(readFileSync(await roh("PB2002_plates.json", "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json"), "utf8"));
+  // Mehrteilige Platten (Kermadec, Balmoral Reef) haben zwei Einträge — zusammenfassen
+  const zusammen = await mapshaper.applyCommands("-i in.json -dissolve Code copy-fields=PlateName -o format=geojson precision=0.001 out.json",
+    { "in.json": p });
+  const grosse = new Set(["AF", "AN", "IN", "AU", "EU", "NA", "SA", "NZ", "PA"]);
+  schreibe("welt-platten", { name: "Lithosphärenplatten", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_BIRD,
+    darstellung: { feld: "groesse", art: "kategorie", werte: [
+      { wert: "gross", text: "große Platte", farbe: "#d9c7a3" }, { wert: "klein", text: "kleinere Platte", farbe: "#efe3c8" }] } },
+    JSON.parse(zusammen["out.json"].toString()).features.map((f) => feature(f.geometry, {
+      id: slug(f.properties.Code), name: PLATTE_DE[f.properties.PlateName] ?? `${f.properties.PlateName} (Mikroplatte)`,
+      groesse: grosse.has(f.properties.Code) ? "gross" : "klein" })));
+
+  // Grenzen: Birds Schritte (wenige km) je Grenze und Art zu Linien zusammenfassen
+  const s = JSON.parse(readFileSync(await roh("PB2002_steps.json", "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_steps.json"), "utf8"));
+  const schritte = s.features.map((f) => ({ ...f, properties: { grenze: f.properties.PLATEBOUND, art: GRENZE[f.properties.STEPCLASS] ?? "transform",
+    v: f.properties.VELOCITYLE } }));
+  const linien = await mapshaper.applyCommands("-i in.json -dissolve grenze,art calc='mm=Math.round(average(v))' -simplify 15% -o format=geojson precision=0.01 out.json",
+    { "in.json": { type: "FeatureCollection", features: schritte } });
+  const namen = Object.fromEntries(p.features.map((f) => [f.properties.Code, PLATTE_DE[f.properties.PlateName] ?? f.properties.PlateName]));
+  schreibe("welt-plattengrenzen", { name: "Plattengrenzen", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: false, quelle: QUELLE_BIRD,
+    darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "divergent", text: "divergent (Rücken, Grabenbruch)", farbe: "#d7301f" },
+      { wert: "subduktion", text: "konvergent: Subduktion", farbe: "#2b6cb0" },
+      { wert: "kollision", text: "konvergent: Kollision", farbe: "#6a3d9a" },
+      { wert: "transform", text: "Transformstörung", farbe: "#1a9850" }] } },
+    JSON.parse(linien["out.json"].toString()).features.map((f, i) => {
+      const [a, b] = f.properties.grenze.split(/[-\/\\]/);
+      return feature(f.geometry, { id: `pg-${i + 1}`, name: `${namen[a] ?? a} / ${namen[b] ?? b}`, art: f.properties.art, mm: f.properties.mm });
+    }));
+}
+
+/** Große Wüsten als eigene Ebene (aus den Natural-Earth-Regionen). */
+async function wuesten(ordner) {
+  const fs = await lies(finde(ordner.ne_10m_geography_regions_polys, "ne_10m_geography_regions_polys.shp"), `-filter "FEATURECLA=='Desert'" -simplify 25% keep-shapes`);
+  schreibe("welt-wuesten", { name: "Wüsten", gruppe: "topographisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "wueste", text: "Wüste", farbe: "#f2c879" }] } },
+    fs.map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), art: "wueste", rang: f.properties.SCALERANK })));
+}
+
+/** Köppen-Geiger 1991–2020: Klassen 1–30 → Farbe (Beck et al.) und Hauptzone A–E. */
+const KOEPPEN = [
+  [null], ["Af", [0, 0, 255]], ["Am", [0, 120, 255]], ["Aw", [70, 170, 250]], ["BWh", [255, 0, 0]], ["BWk", [255, 150, 150]],
+  ["BSh", [245, 165, 0]], ["BSk", [255, 220, 100]], ["Csa", [255, 255, 0]], ["Csb", [200, 200, 0]], ["Csc", [150, 150, 0]],
+  ["Cwa", [150, 255, 150]], ["Cwb", [100, 200, 100]], ["Cwc", [50, 150, 50]], ["Cfa", [200, 255, 80]], ["Cfb", [100, 255, 80]],
+  ["Cfc", [50, 200, 0]], ["Dsa", [255, 0, 255]], ["Dsb", [200, 0, 200]], ["Dsc", [150, 50, 150]], ["Dsd", [150, 100, 150]],
+  ["Dwa", [170, 175, 255]], ["Dwb", [90, 120, 220]], ["Dwc", [75, 80, 180]], ["Dwd", [50, 0, 135]], ["Dfa", [0, 255, 255]],
+  ["Dfb", [55, 200, 255]], ["Dfc", [0, 125, 125]], ["Dfd", [0, 70, 95]], ["ET", [178, 178, 178]], ["EF", [102, 102, 102]],
+];
+const KOEPPEN_TEXT = {
+  Af: "tropisches Regenwaldklima", Am: "tropisches Monsunklima", Aw: "Savannenklima", BWh: "heißes Wüstenklima", BWk: "kaltes Wüstenklima",
+  BSh: "heißes Steppenklima", BSk: "kaltes Steppenklima", Csa: "Mittelmeerklima, heißer Sommer", Csb: "Mittelmeerklima, warmer Sommer",
+  Csc: "Mittelmeerklima, kühler Sommer", Cwa: "wintertrocken, heißer Sommer", Cwb: "wintertrocken, warmer Sommer",
+  Cwc: "wintertrocken, kühler Sommer", Cfa: "feucht, heißer Sommer", Cfb: "feucht, warmer Sommer (Seeklima)", Cfc: "feucht, kühler Sommer",
+  Dsa: "kontinental, sommertrocken, heiß", Dsb: "kontinental, sommertrocken, warm", Dsc: "kontinental, sommertrocken, kühl",
+  Dsd: "kontinental, sommertrocken, sehr kalter Winter", Dwa: "kontinental, wintertrocken, heiß", Dwb: "kontinental, wintertrocken, warm",
+  Dwc: "kontinental, wintertrocken, kühl", Dwd: "kontinental, wintertrocken, sehr kalter Winter", Dfa: "kontinental, feucht, heißer Sommer",
+  Dfb: "kontinental, feucht, warmer Sommer", Dfc: "subarktisch (boreal)", Dfd: "subarktisch, sehr kalter Winter",
+  ET: "Tundrenklima", EF: "Eisklima",
+};
+const HAUPTZONEN = [
+  { wert: "A", text: "A – tropisches Klima", farbe: [36, 99, 214] }, { wert: "B", text: "B – Trockenklima", farbe: [232, 131, 58] },
+  { wert: "C", text: "C – warmgemäßigtes Klima", farbe: [91, 180, 70] }, { wert: "D", text: "D – kaltgemäßigtes (boreales) Klima", farbe: [122, 92, 196] },
+  { wert: "E", text: "E – Polarklima", farbe: [170, 170, 170] },
+];
+
+async function klimazonen(koeppen) {
+  const pfad = finde(join(koeppen, "1991_2020"), "koppen_geiger_0p1.tif");
+  const bild = await (await fromFile(pfad)).getImage();
+  const [B, H] = [bild.getWidth(), bild.getHeight()];
+  const raster = (await bild.readRasters())[0];
+  const hauptzone = (k) => (k >= 1 && k <= 3 ? 0 : k <= 7 ? 1 : k <= 16 ? 2 : k <= 28 ? 3 : 4);
+  for (const [id, name, farbeVon, legende] of [
+    ["welt-klima-haupt", "Klimazonen (Köppen, Hauptzonen)", (k) => HAUPTZONEN[hauptzone(k)].farbe,
+      HAUPTZONEN.map((z) => ({ wert: z.wert, text: z.text, farbe: `rgb(${z.farbe.join(",")})` }))],
+    ["welt-klima-typen", "Klimatypen (Köppen-Geiger)", (k) => KOEPPEN[k][1],
+      KOEPPEN.slice(1).map(([c, f]) => ({ wert: c, text: `${c} – ${KOEPPEN_TEXT[c]}`, farbe: `rgb(${f.join(",")})` }))],
+  ]) {
+    const ziel = resolve(HIER, `../public/karten/${id}`);
+    rmSync(ziel, { recursive: true, force: true });
+    let bytes = 0, anzahl = 0;
+    const MAXZ = 5, T = 256;
+    for (let z = 0; z <= MAXZ; z++) {
+      const n = 2 ** z;
+      for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
+        const px = Buffer.alloc(T * T * 4);
+        let leer = true;
+        for (let y = 0; y < T; y++) {
+          const my = Math.PI * (1 - (2 * (ty * T + y + 0.5)) / (n * T));
+          const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
+          const sy = Math.min(H - 1, Math.max(0, Math.floor((90 - lat) / 0.1)));
+          for (let x = 0; x < T; x++) {
+            const lon = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
+            const sx = Math.min(B - 1, Math.max(0, Math.floor((lon + 180) / 0.1)));
+            const k = raster[sy * B + sx];
+            if (!k) continue;
+            const c = farbeVon(k);
+            const o = (y * T + x) * 4;
+            px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; px[o + 3] = 255;
+            leer = false;
+          }
+        }
+        if (leer) continue; // reine Meereskacheln weglassen (404 = durchsichtig)
+        const datei = join(ziel, String(z), String(tx), `${ty}.png`);
+        mkdirSync(dirname(datei), { recursive: true });
+        await sharp(px, { raw: { width: T, height: T, channels: 4 } }).png({ palette: true, compressionLevel: 9 }).toFile(datei);
+        bytes += readFileSync(datei).length; anzahl++;
+      }
+    }
+    KATALOG.push({ id, name, gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false, quelle: QUELLE_KOEPPEN,
+      kachelUrl: `/karten/${id}/{z}/{x}/{y}.png`, maxzoom: MAXZ, bytes,
+      darstellung: { feld: "klasse", art: "kategorie", werte: legende } });
+    console.log(`  ${id.padEnd(22)} ${anzahl} Kacheln  ${(bytes / 1e6).toFixed(2)} MB`);
+  }
+}
+
 // ── Schriften ────────────────────────────────────────────────────────
 
 /** Latein, Latein-Erweiterung A (Nachbarländer) und Satzzeichen (– „ “). */
@@ -853,6 +990,9 @@ await schritt("sonderkulturen", () => sonderkulturen(ordner.dlm250));
 await schritt("verkehr", () => verkehr(ordner.dlm1000, ordner.dlm250));
 await schritt("bevoelkerung", () => bevoelkerung(ordner.vg250ew));
 await schritt("boden", () => bodennutzung(ordner.clc5));
+await schritt("platten", () => platten(ladeDatei));
+await schritt("wuesten", () => wuesten(ordner));
+await schritt("klima", () => klimazonen(ordner.koeppen));
 await schritt("schriften", () => schriften());
 
 let ebenen = KATALOG;

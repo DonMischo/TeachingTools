@@ -943,6 +943,323 @@
       },
       "anzahl": 44081,
       "bytes": 9079074
+    },
+    {
+      "id": "welt-platten",
+      "name": "Lithosphärenplatten",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)",
+        "lizenz": "ODC-BY 1.0",
+        "url": "https://github.com/fraxen/tectonicplates"
+      },
+      "darstellung": {
+        "feld": "groesse",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "gross",
+            "text": "große Platte",
+            "farbe": "#d9c7a3"
+          },
+          {
+            "wert": "klein",
+            "text": "kleinere Platte",
+            "farbe": "#efe3c8"
+          }
+        ]
+      },
+      "anzahl": 52,
+      "bytes": 205888
+    },
+    {
+      "id": "welt-plattengrenzen",
+      "name": "Plattengrenzen",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)",
+        "lizenz": "ODC-BY 1.0",
+        "url": "https://github.com/fraxen/tectonicplates"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "divergent",
+            "text": "divergent (Rücken, Grabenbruch)",
+            "farbe": "#d7301f"
+          },
+          {
+            "wert": "subduktion",
+            "text": "konvergent: Subduktion",
+            "farbe": "#2b6cb0"
+          },
+          {
+            "wert": "kollision",
+            "text": "konvergent: Kollision",
+            "farbe": "#6a3d9a"
+          },
+          {
+            "wert": "transform",
+            "text": "Transformstörung",
+            "farbe": "#1a9850"
+          }
+        ]
+      },
+      "anzahl": 338,
+      "bytes": 745346
+    },
+    {
+      "id": "welt-wuesten",
+      "name": "Wüsten",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "wueste",
+            "text": "Wüste",
+            "farbe": "#f2c879"
+          }
+        ]
+      },
+      "anzahl": 58,
+      "bytes": 58413
+    },
+    {
+      "id": "welt-klima-haupt",
+      "name": "Klimazonen (Köppen, Hauptzonen)",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "raster",
+      "quiz": false,
+      "quelle": {
+        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020",
+        "lizenz": "CC BY 4.0",
+        "url": "https://doi.org/10.6084/m9.figshare.21789074"
+      },
+      "kachelUrl": "/karten/welt-klima-haupt/{z}/{x}/{y}.png",
+      "maxzoom": 5,
+      "bytes": 594636,
+      "darstellung": {
+        "feld": "klasse",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "A",
+            "text": "A – tropisches Klima",
+            "farbe": "rgb(36,99,214)"
+          },
+          {
+            "wert": "B",
+            "text": "B – Trockenklima",
+            "farbe": "rgb(232,131,58)"
+          },
+          {
+            "wert": "C",
+            "text": "C – warmgemäßigtes Klima",
+            "farbe": "rgb(91,180,70)"
+          },
+          {
+            "wert": "D",
+            "text": "D – kaltgemäßigtes (boreales) Klima",
+            "farbe": "rgb(122,92,196)"
+          },
+          {
+            "wert": "E",
+            "text": "E – Polarklima",
+            "farbe": "rgb(170,170,170)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "welt-klima-typen",
+      "name": "Klimatypen (Köppen-Geiger)",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "raster",
+      "quiz": false,
+      "quelle": {
+        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020",
+        "lizenz": "CC BY 4.0",
+        "url": "https://doi.org/10.6084/m9.figshare.21789074"
+      },
+      "kachelUrl": "/karten/welt-klima-typen/{z}/{x}/{y}.png",
+      "maxzoom": 5,
+      "bytes": 786210,
+      "darstellung": {
+        "feld": "klasse",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "Af",
+            "text": "Af – tropisches Regenwaldklima",
+            "farbe": "rgb(0,0,255)"
+          },
+          {
+            "wert": "Am",
+            "text": "Am – tropisches Monsunklima",
+            "farbe": "rgb(0,120,255)"
+          },
+          {
+            "wert": "Aw",
+            "text": "Aw – Savannenklima",
+            "farbe": "rgb(70,170,250)"
+          },
+          {
+            "wert": "BWh",
+            "text": "BWh – heißes Wüstenklima",
+            "farbe": "rgb(255,0,0)"
+          },
+          {
+            "wert": "BWk",
+            "text": "BWk – kaltes Wüstenklima",
+            "farbe": "rgb(255,150,150)"
+          },
+          {
+            "wert": "BSh",
+            "text": "BSh – heißes Steppenklima",
+            "farbe": "rgb(245,165,0)"
+          },
+          {
+            "wert": "BSk",
+            "text": "BSk – kaltes Steppenklima",
+            "farbe": "rgb(255,220,100)"
+          },
+          {
+            "wert": "Csa",
+            "text": "Csa – Mittelmeerklima, heißer Sommer",
+            "farbe": "rgb(255,255,0)"
+          },
+          {
+            "wert": "Csb",
+            "text": "Csb – Mittelmeerklima, warmer Sommer",
+            "farbe": "rgb(200,200,0)"
+          },
+          {
+            "wert": "Csc",
+            "text": "Csc – Mittelmeerklima, kühler Sommer",
+            "farbe": "rgb(150,150,0)"
+          },
+          {
+            "wert": "Cwa",
+            "text": "Cwa – wintertrocken, heißer Sommer",
+            "farbe": "rgb(150,255,150)"
+          },
+          {
+            "wert": "Cwb",
+            "text": "Cwb – wintertrocken, warmer Sommer",
+            "farbe": "rgb(100,200,100)"
+          },
+          {
+            "wert": "Cwc",
+            "text": "Cwc – wintertrocken, kühler Sommer",
+            "farbe": "rgb(50,150,50)"
+          },
+          {
+            "wert": "Cfa",
+            "text": "Cfa – feucht, heißer Sommer",
+            "farbe": "rgb(200,255,80)"
+          },
+          {
+            "wert": "Cfb",
+            "text": "Cfb – feucht, warmer Sommer (Seeklima)",
+            "farbe": "rgb(100,255,80)"
+          },
+          {
+            "wert": "Cfc",
+            "text": "Cfc – feucht, kühler Sommer",
+            "farbe": "rgb(50,200,0)"
+          },
+          {
+            "wert": "Dsa",
+            "text": "Dsa – kontinental, sommertrocken, heiß",
+            "farbe": "rgb(255,0,255)"
+          },
+          {
+            "wert": "Dsb",
+            "text": "Dsb – kontinental, sommertrocken, warm",
+            "farbe": "rgb(200,0,200)"
+          },
+          {
+            "wert": "Dsc",
+            "text": "Dsc – kontinental, sommertrocken, kühl",
+            "farbe": "rgb(150,50,150)"
+          },
+          {
+            "wert": "Dsd",
+            "text": "Dsd – kontinental, sommertrocken, sehr kalter Winter",
+            "farbe": "rgb(150,100,150)"
+          },
+          {
+            "wert": "Dwa",
+            "text": "Dwa – kontinental, wintertrocken, heiß",
+            "farbe": "rgb(170,175,255)"
+          },
+          {
+            "wert": "Dwb",
+            "text": "Dwb – kontinental, wintertrocken, warm",
+            "farbe": "rgb(90,120,220)"
+          },
+          {
+            "wert": "Dwc",
+            "text": "Dwc – kontinental, wintertrocken, kühl",
+            "farbe": "rgb(75,80,180)"
+          },
+          {
+            "wert": "Dwd",
+            "text": "Dwd – kontinental, wintertrocken, sehr kalter Winter",
+            "farbe": "rgb(50,0,135)"
+          },
+          {
+            "wert": "Dfa",
+            "text": "Dfa – kontinental, feucht, heißer Sommer",
+            "farbe": "rgb(0,255,255)"
+          },
+          {
+            "wert": "Dfb",
+            "text": "Dfb – kontinental, feucht, warmer Sommer",
+            "farbe": "rgb(55,200,255)"
+          },
+          {
+            "wert": "Dfc",
+            "text": "Dfc – subarktisch (boreal)",
+            "farbe": "rgb(0,125,125)"
+          },
+          {
+            "wert": "Dfd",
+            "text": "Dfd – subarktisch, sehr kalter Winter",
+            "farbe": "rgb(0,70,95)"
+          },
+          {
+            "wert": "ET",
+            "text": "ET – Tundrenklima",
+            "farbe": "rgb(178,178,178)"
+          },
+          {
+            "wert": "EF",
+            "text": "EF – Eisklima",
+            "farbe": "rgb(102,102,102)"
+          }
+        ]
+      }
     }
   ]
 }
