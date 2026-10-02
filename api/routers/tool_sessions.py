@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_teacher, get_player
-from ..models import SimBeitrag, Student, Teacher, TimelineSet, ToolSession
+from ..models import KartenSatz, SimBeitrag, Student, Teacher, TimelineSet, ToolSession
 from ..utils import gen_code
 from .. import availability, tool_catalog
 
@@ -25,12 +25,12 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
                  "vierecke", "binaerrechner", "funktionen", "rechenregeln", "uebung",
                  "ki", "maus", "sonnensystem", "verkehr", "leben", "kueste",
-                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan")
+                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
 # gehoert ihre Id zur Sitzung — und je Zeitleiste gibt es einen eigenen Code.
-REF_TOOLS = {"zeitstrahl": TimelineSet}
+REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz}
 
 
 class ToolSessionOut(BaseModel):
@@ -62,7 +62,8 @@ def _ref_title(session: ToolSession, db: Session) -> str | None:
     if not model or session.ref_id is None:
         return None
     row = db.get(model, session.ref_id)
-    return row.title if row else None
+    # Zeitleisten heißen »title«, Kartensätze »titel«
+    return (getattr(row, "title", None) or getattr(row, "titel", None)) if row else None
 
 
 def _out(session: ToolSession, db: Session) -> ToolSessionOut:

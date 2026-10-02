@@ -56,6 +56,14 @@ CATALOG: list[CatalogTool] = [
         "host": _cap(True, False),
         "upload": _cap(True, True),
     }),
+    # Karten: Atlas mit Themenebenen, Kartensätze, Arbeitsblätter, Kartenquiz per Code.
+    # Erscheint auch auf der Tools-Übersicht (Karte dort von Hand eingetragen).
+    CatalogTool("karten", "🗺️ Karten", "🗺️", "aktivitaeten", {
+        "use": _cap(True, True),
+        "host": _cap(True, False),
+        "create": _cap(True, False),
+        "upload": _cap(True, False),
+    }),
     CatalogTool("bingo", "🎰 Bingo", "🎰", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),

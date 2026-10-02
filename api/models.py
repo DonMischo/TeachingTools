@@ -2401,3 +2401,27 @@ class KartenEbeneEigen(Base):
     erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     autor: Mapped["Teacher"] = relationship()
+
+
+class KartenQuizStand(Base):
+    """Fortschritt eines Teilnehmers im Kartenquiz (ToolSession »karten«).
+
+    Teilnehmer ist ein Schüler, eine Lehrkraft oder ein Gast (guest_id aus dem
+    Gast-Token) — wie bei SimBeitrag. ``antworten`` hält je Aufgabennummer
+    {"richtig": bool, "versuche": int}.
+    """
+    __tablename__ = "karten_quiz_staende"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, default="")
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    antworten: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    richtig: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    erfolge: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
