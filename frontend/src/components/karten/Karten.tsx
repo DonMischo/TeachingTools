@@ -16,13 +16,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import HelpButton from "@/components/HelpButton";
 import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
-import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "@/lib/karten/satz";
+import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt, type SuchTreffer } from "@/lib/karten/satz";
 import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
 import SatzLeiste from "./SatzLeiste";
 import AuswahlPanel from "./AuswahlPanel";
 import Arbeitsblatt from "./Arbeitsblatt";
 import EigeneEbenen from "./EigeneEbenen";
 import KartenQuizLehrkraft from "./KartenQuizLehrkraft";
+import SiedlungsFilter from "./SiedlungsFilter";
+import OrtSuche from "./OrtSuche";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
@@ -39,6 +41,19 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const [aktiveEbene, setAktiveEbene] = useState("de-staedte");
   const [ziel, setZiel] = useState<Ausschnitt | null>(null);
   const ausschnitt = useRef<Ausschnitt | null>(null);
+  const [fundort, setFundort] = useState<{ punkt: [number, number]; text: string; zoom: number } | null>(null);
+  // Suchtreffer zeigen: Ebene (und bei Siedlungen die Größenklasse) zuschalten, hinfliegen
+  const zeigeTreffer = (t: SuchTreffer) => {
+    if (!t.punkt) return;
+    setInhalt((v) => {
+      const ebenen = v.ebenen.includes(t.ebene) ? v.ebenen : [...v.ebenen, t.ebene];
+      const e = katalog?.ebenen.find((x) => x.id === t.ebene);
+      if (!e?.filter || !t.rang) return { ...v, ebenen };
+      const alt = v.filter?.[t.ebene] ?? e.filter.werte.filter((w) => w.standard).map((w) => w.wert);
+      return { ...v, ebenen, filter: { ...(v.filter ?? {}), [t.ebene]: [...new Set([...alt, t.rang])] } };
+    });
+    setFundort({ punkt: t.punkt, text: t.zusatz ? `${t.name} (${t.zusatz})` : t.name, zoom: t.rang === "ortsteil" ? 11 : 9 });
+  };
   // Export: Karte kurz ohne Namen und ohne Auswahl-Markierung zeichnen, dann das Bild abgreifen
   const [druck, setDruck] = useState(false);
   const bildRef = useRef<KartenBild | null>(null);
@@ -148,7 +163,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
-              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} />
+              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}
               holeBild={lehrkraft ? holeBild : undefined} />
             {/* Quiz gibt es für gespeicherte Sätze: der Code zeigt auf den Satz auf dem Server */}
@@ -160,6 +175,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 inhalt={inhalt} setInhalt={setInhalt} daten={daten} nummern={nummern} />
             ) : (
               <>
+                <OrtSuche bereich={bereich} onWahl={zeigeTreffer} />
                 <label className="flex items-center gap-2 font-bold">
                   <input type="checkbox" checked={inhalt.beschriftung}
                     onChange={() => setInhalt((v) => ({ ...v, beschriftung: !v.beschriftung }))} />
@@ -175,6 +191,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 })}
                 <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
                   schalte={schalteEbene} lehrkraft={lehrkraft} />
+                {bereich === "de" && <SiedlungsFilter ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />}
                 {katalog.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />)}
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>

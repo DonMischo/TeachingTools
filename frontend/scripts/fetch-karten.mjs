@@ -174,19 +174,49 @@ async function laender(vg) {
 const LANDESHAUPTSTAEDTE = ["Kiel", "Hamburg", "Schwerin", "Bremen", "Hannover", "Magdeburg", "Potsdam", "Düsseldorf",
   "Wiesbaden", "Erfurt", "Dresden", "Mainz", "Saarbrücken", "Stuttgart", "München", "Berlin"];
 
+/** Größenklassen der Siedlungen; `standard` = beim Öffnen angehakt (nur die großen Städte). */
+export const SIEDLUNG_KLASSEN = [
+  { wert: "hauptstadt", text: "Hauptstadt", standard: true },
+  { wert: "landeshauptstadt", text: "Landeshauptstädte", standard: true },
+  { wert: "grossstadt", text: "Großstädte (ab 100 000)", standard: true },
+  { wert: "mittelstadt", text: "Mittelstädte (20 000 – 100 000)", standard: false },
+  { wert: "kleinstadt", text: "Kleinstädte und Gemeinden (5 000 – 20 000)", standard: false },
+  { wert: "landgemeinde", text: "Gemeinden unter 5 000", standard: false },
+  { wert: "ortsteil", text: "Ortsteile", standard: false },
+];
+
+/**
+ * Alle Siedlungen (GN250): jede Gemeinde (AGS, Einwohner) und jeder Ortsteil
+ * (Ortslage, die Teil einer Gemeinde ist — z. B. Trusen in Brotterode-Trusetal).
+ * Geteilt in zwei Dateien, damit die 44 000 kleinen Orte erst laden, wenn man
+ * sie anhakt: de-staedte (ab 5 000 Einwohnern) und de-orte (der Rest).
+ */
 async function staedte(gn) {
-  const alle = await lies(finde(gn, "GN250_p.shp"), `-filter "OBA=='AX_Gemeinde' && EWZ >= 20000"`);
-  const fs = alle.map((f) => {
+  const shp = finde(gn, "GN250_p.shp");
+  const gemeinden = (await lies(shp, `-filter "OBA=='AX_Gemeinde'"`)).map((f) => {
     const p = f.properties;
+    const ew = p.EWZ ?? 0;
     const rang = p.NAME === "Berlin" ? "hauptstadt"
       : LANDESHAUPTSTAEDTE.includes(p.NAME) ? "landeshauptstadt"
-      : p.EWZ >= 100000 ? "grossstadt" : "mittelstadt";
-    return feature(f.geometry, { id: p.AGS, name: p.NAME, ew: p.EWZ, rang, land: p.BUNDESLAND });
+      : ew >= 100000 ? "grossstadt" : ew >= 20000 ? "mittelstadt" : ew >= 5000 ? "kleinstadt" : "landgemeinde";
+    return feature(f.geometry, { id: p.AGS, name: p.NAME, ew, rang, land: p.BUNDESLAND });
   });
-  const fehlt = LANDESHAUPTSTAEDTE.filter((n) => !fs.some((f) => f.properties.name === n));
+  const fehlt = LANDESHAUPTSTAEDTE.filter((n) => !gemeinden.some((f) => f.properties.name === n));
   if (fehlt.length) throw new Error(`Landeshauptstädte fehlen: ${fehlt.join(", ")}`);
-  fs.sort((a, b) => b.properties.ew - a.properties.ew);
-  schreibe("de-staedte", { name: "Städte", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG }, fs);
+  // Ortsteile: Ortslagen, die zu einer Gemeinde gehören (der Hauptort steckt schon in der Gemeinde)
+  const ortsteile = (await lies(shp, `-filter "OBA=='AX_Ortslage' && GEMTEIL=='Ja' && VIRTUELL=='Nein'"`)).map((f) => {
+    const p = f.properties;
+    return feature(f.geometry, { id: p.NNID, name: p.NAME, ew: p.EWZ_GER ?? 0, rang: "ortsteil", gemeinde: p.GEMEINDE, land: p.BUNDESLAND });
+  });
+  const nachEw = (a, b) => b.properties.ew - a.properties.ew;
+  // `vorhanden`: welche Klassen in dieser Datei stecken — die Legende schaltet danach die Datei zu
+  const filter = (vorhanden) => ({ feld: "rang", werte: SIEDLUNG_KLASSEN, vorhanden });
+  schreibe("de-staedte", { name: "Städte und Gemeinden", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG,
+    filter: filter(["hauptstadt", "landeshauptstadt", "grossstadt", "mittelstadt", "kleinstadt"]) },
+    gemeinden.filter((f) => f.properties.ew >= 5000).sort(nachEw));
+  schreibe("de-orte", { name: "Kleine Gemeinden und Ortsteile", gruppe: "politisch", bereich: "de", geometrie: "punkt", quiz: true, quelle: QUELLE_BKG,
+    filter: filter(["landgemeinde", "ortsteil"]) },
+    [...gemeinden.filter((f) => f.properties.ew < 5000), ...ortsteile].sort(nachEw));
 }
 
 async function gipfel(gn) {

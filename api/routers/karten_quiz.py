@@ -9,12 +9,13 @@ Einstellungen der Sitzung (ToolSession.settings, öffentlich lesbar):
   modus "benennen" | "finden", wortbank bool, max_punkte int,
   punkte_vergeben (Zeitstempel, verhindert doppelte Buchung)
 """
+import gzip
 import hashlib
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -186,13 +187,16 @@ def spiel(code: str, db: Session = Depends(get_db), spieler=Depends(get_player))
 
 
 @router.get("/{code}/ebene/{ebene_id}")
-def ebene(code: str, ebene_id: str, db: Session = Depends(get_db), _spieler=Depends(get_player)):
+def ebene(code: str, ebene_id: str, request: Request, db: Session = Depends(get_db), _spieler=Depends(get_player)):
     s = _sitzung(db, code)
     satz = _satz(db, s)
     if ebene_id not in satz.inhalt.get("ebenen", []):
         raise HTTPException(404, "Diese Ebene gehört nicht zum Quiz")
-    return JSONResponse(engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim(s)),
-                        media_type="application/geo+json")
+    daten = json.dumps(engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim(s)), ensure_ascii=False).encode("utf-8")
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
+                        headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+    return Response(daten, media_type="application/geo+json")
 
 
 class AntwortIn(BaseModel):

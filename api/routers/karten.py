@@ -8,6 +8,7 @@ Ein Kartensatz ist die Auswahl einer Lehrkraft: Kartenart, Ebenen, je Ebene
 die gezeigten/nummerierten Objekte (ids) und das Nummernschema.
 """
 import base64
+import gzip
 import json
 import re
 from functools import lru_cache
@@ -15,7 +16,7 @@ from pathlib import Path
 from typing import Literal, Union
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import or_
@@ -23,6 +24,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_teacher, get_current_user
 from ..database import get_db
+from ..karten_quiz import ankerpunkt, normalisiere
 from ..karten_eigene import MAX_BYTES, UploadFehler, geometrie_von, lies_upload, mit_namen
 from ..karten_export import MEDIENTYP, exportiere
 from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
@@ -30,6 +32,20 @@ from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
 router = APIRouter(prefix="/api/karten", tags=["karten"])
 
 DATEN = Path(__file__).resolve().parents[2] / "data" / "karten"
+
+
+@lru_cache(maxsize=64)
+def _gzip(pfad: Path, stand: float) -> bytes:
+    """Gepackte Ebene, je Datei und Änderungszeit einmal (GeoJSON schrumpft auf ein Fünftel)."""
+    return gzip.compress(pfad.read_bytes(), compresslevel=6)
+
+
+def geojson_antwort(pfad: Path, request: Request, cache: str) -> Response:
+    """Ebene ausliefern — gepackt, wenn der Browser es kann (de-orte: 9 MB → 1,2 MB)."""
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(_gzip(pfad, pfad.stat().st_mtime), media_type="application/geo+json",
+                        headers={"Content-Encoding": "gzip", "Cache-Control": cache, "Vary": "Accept-Encoding"})
+    return FileResponse(pfad, media_type="application/geo+json", headers={"Cache-Control": cache})
 
 
 @lru_cache(maxsize=1)
@@ -77,18 +93,14 @@ def ebenen(db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends
 
 
 @router.get("/ebenen/{ebene_id}")
-def ebene(ebene_id: str, db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends(get_current_user)):
+def ebene(ebene_id: str, request: Request, db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends(get_current_user)):
     if ebene_id.startswith(EIGEN_PRAEFIX):
         e = _eigene_ebene(db, ebene_id, wer)
-        return FileResponse(EIGENE / f"{e.id}.geojson", media_type="application/geo+json", headers={"Cache-Control": "no-cache"})
+        return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache")
     eintrag = next((e for e in katalog()["ebenen"] if e["id"] == ebene_id), None)
     if eintrag is None or eintrag["geometrie"] == "raster":
         raise HTTPException(404, "Unbekannte Ebene")
-    return FileResponse(
-        DATEN / "ebenen" / f"{ebene_id}.geojson",
-        media_type="application/geo+json",
-        headers={"Cache-Control": "private, max-age=86400"},
-    )
+    return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400")
 
 
 # ── Kartensätze ──────────────────────────────────────────────────────
@@ -125,6 +137,8 @@ class SatzInhalt(BaseModel):
     beschriftung: bool = True
     ausschnitt: Ausschnitt | None = None
     auswahl: dict[str, EbenenAuswahl] = Field(default_factory=dict)
+    # Größenklassen-Filter je Ebene (Siedlungen: welche »rang«-Werte gezeigt werden)
+    filter: dict[str, list[str]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _ids_pruefen(self):
@@ -330,3 +344,51 @@ def eigene_loeschen(eigen_id: int, db: Session = Depends(get_db), ich: Teacher =
     (EIGENE / f"{e.id}.geojson").unlink(missing_ok=True)
     db.delete(e)
     db.commit()
+
+
+# ── Ortssuche ────────────────────────────────────────────────────────
+
+def _suchname(s: str) -> str:
+    return normalisiere(s)
+
+
+@lru_cache(maxsize=1)
+def _suchindex() -> list[tuple[str, dict]]:
+    """Alle benannten Objekte der Grundebenen (Quiz-Ebenen): (Suchname, Treffer)."""
+    index = []
+    for e in katalog()["ebenen"]:
+        if e["geometrie"] == "raster" or not e.get("quiz"):
+            continue
+        for f in json.loads((DATEN / "ebenen" / f"{e['id']}.geojson").read_text(encoding="utf-8"))["features"]:
+            p = f["properties"]
+            if not p.get("name"):
+                continue
+            zusatz = p.get("gemeinde") or p.get("land") or (f"{p['hoehe']} m" if p.get("hoehe") else "")
+            index.append((_suchname(p["name"]), {
+                "ebene": e["id"], "ebene_name": e["name"], "bereich": e["bereich"], "id": p["id"], "name": p["name"],
+                "zusatz": zusatz, "rang": p.get("rang"), "_geometrie": f["geometry"],
+                "_gemeinde": _suchname(p.get("gemeinde") or ""), "_ew": p.get("ew") or 0,
+            }))
+    return index
+
+
+@router.get("/suche")
+def suche(q: str, bereich: str | None = None, _: Union[Teacher, Student] = Depends(get_current_user)):
+    """Orte, Flüsse, Berge … nach Namen. Ortsteile werden auch über ihre Gemeinde gefunden
+    (»Trusetal« → Brotterode-Trusetal mit Trusen, Elmenthal …)."""
+    n = _suchname(q)
+    if len(n) < 2:
+        return []
+    treffer = []
+    for name, t in _suchindex():
+        if bereich and t["bereich"] != bereich:
+            continue
+        if name.startswith(n):
+            treffer.append((0, -t["_ew"], t))
+        elif n in name:
+            treffer.append((1, -t["_ew"], t))
+        elif n in t["_gemeinde"]:
+            treffer.append((2, -t["_ew"], t))
+    treffer.sort(key=lambda x: (x[0], x[1], x[2]["name"]))
+    # Ankerpunkt nur für die gezeigten Treffer (bei Staaten teuer)
+    return [{**{k: v for k, v in t.items() if not k.startswith("_")}, "punkt": ankerpunkt(t["_geometrie"])} for _, _, t in treffer[:15]]

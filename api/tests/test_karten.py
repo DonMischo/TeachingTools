@@ -85,3 +85,22 @@ def test_ebenendatei_bleibt_unveraendert(client, teacher_token):
     vorher = (DATEN / "ebenen" / "de-fluesse.geojson").read_bytes()
     client.post("/api/karten/saetze", json=_satz(), headers=auth(teacher_token))
     assert (DATEN / "ebenen" / "de-fluesse.geojson").read_bytes() == vorher
+
+
+def test_ebene_kommt_gepackt_wenn_der_browser_es_kann(client, teacher_token):
+    r = client.get("/api/karten/ebenen/de-laender", headers={**auth(teacher_token), "Accept-Encoding": "gzip"})
+    assert r.status_code == 200
+    assert r.headers["content-encoding"] == "gzip"
+    assert len(r.json()["features"]) == 16  # httpx entpackt selbst
+
+
+def test_ortssuche_findet_kleine_orte_und_ortsteile_ueber_die_gemeinde(client, teacher_token):
+    h = auth(teacher_token)
+    borkwalde = client.get("/api/karten/suche?q=borkwalde", headers=h).json()
+    assert borkwalde[0]["name"] == "Borkwalde" and borkwalde[0]["ebene"] == "de-orte" and len(borkwalde[0]["punkt"]) == 2
+    trusetal = client.get("/api/karten/suche?q=Trusetal", headers=h).json()
+    namen = [t["name"] for t in trusetal]
+    assert "Brotterode-Trusetal" in namen and "Trusen" in namen
+    assert client.get("/api/karten/suche?q=e", headers=h).json() == []
+    welt = client.get("/api/karten/suche?q=new york&bereich=welt", headers=h).json()
+    assert welt[0]["name"] == "New York City"

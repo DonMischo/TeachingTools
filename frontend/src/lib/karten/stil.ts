@@ -41,6 +41,8 @@ export type Ebene = {
   maxzoom?: number;
   stufen?: { ab: number; farbe: string }[];
   darstellung?: Darstellung;
+  /** Filter nach einem Feld (Siedlungen: Größenklasse); `vorhanden` = Werte in dieser Datei */
+  filter?: { feld: string; werte: { wert: string; text: string; standard: boolean }[]; vorhanden: string[] };
   /** Nur bei hochgeladenen Ebenen (api/routers/karten.py::_eigen_eintrag) */
   eigen?: { id: number; eigen: boolean; geteilt: boolean; namensfeld: string; felder: string[]; dateiname: string };
 };
@@ -78,7 +80,19 @@ export type Auswahl = {
   ebenen: string[];
   /** Namen auf der Karte zeigen (aus für stumme Karten und Arbeitsblätter) */
   beschriftung: boolean;
+  /** Je Ebene die gezeigten Filterwerte (fehlt = Voreinstellung `standard`) */
+  filter?: Record<string, string[]>;
 };
+
+/** Welche Filterwerte einer Ebene gerade gezeigt werden. */
+export function erlaubteWerte(e: Ebene, filter: Record<string, string[]> | undefined): string[] {
+  if (!e.filter) return [];
+  const { vorhanden } = e.filter;
+  const standard = e.filter.werte.filter((w) => w.standard && vorhanden.includes(w.wert)).map((w) => w.wert);
+  // Ohne Vorgabe: die Standardklassen — hat die Datei keine (kleine Orte), dann alle ihre Klassen
+  const gewaehlt = filter?.[e.id] ?? (standard.length ? standard : vorhanden);
+  return gewaehlt.filter((w) => vorhanden.includes(w));
+}
 
 // ── Regionen ─────────────────────────────────────────────────────────
 
@@ -195,17 +209,19 @@ const ROLLE: Record<string, Rolle> = {
   "de-gebirge": "gebirge", "welt-gebirge": "gebirge",
   "de-landschaften": "landschaften", "welt-landschaften": "landschaften",
   "de-gipfel": "gipfel", "welt-gipfel": "gipfel",
-  "de-staedte": "staedte", "welt-staedte": "staedte",
+  "de-staedte": "staedte", "de-orte": "staedte", "welt-staedte": "staedte",
 };
 
 /** Städte nach Rang: die kleinen erst ab einer Zoomstufe. */
 const STADT_STUFEN: Record<string, { raenge: string[]; minzoom: number }[]> = {
-  "de-staedte": [{ raenge: ["hauptstadt", "landeshauptstadt", "grossstadt"], minzoom: 0 }, { raenge: ["mittelstadt"], minzoom: 7 }],
+  "de-staedte": [{ raenge: ["hauptstadt", "landeshauptstadt", "grossstadt"], minzoom: 0 }, { raenge: ["mittelstadt"], minzoom: 6 },
+    { raenge: ["kleinstadt"], minzoom: 7.5 }],
+  "de-orte": [{ raenge: ["landgemeinde"], minzoom: 8.5 }, { raenge: ["ortsteil"], minzoom: 9.5 }],
   "welt-staedte": [{ raenge: ["hauptstadt", "weltstadt"], minzoom: 0 }, { raenge: ["millionenstadt"], minzoom: 3 }, { raenge: ["grossstadt"], minzoom: 4.5 }],
 };
 
 /** Teil-Namen, deren Objekte ein Klick findet (auch unsichtbare Flächen, z. B. Gebirge über dem Relief). */
-const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2", "punkt"]);
+const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2", "symbol-3", "punkt"]);
 export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
@@ -425,13 +441,20 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   }
   for (const e of mit("staedte")) {
     // Um Deutschland (Länder sichtbar) von der Welt nur die Hauptstädte der Nachbarn
-    const stufen = e.id === "welt-staedte" && hatLaender
+    const alle = e.id === "welt-staedte" && hatLaender
       ? [{ raenge: ["hauptstadt"], minzoom: 0 }]
       : STADT_STUFEN[e.id] ?? [{ raenge: [], minzoom: 0 }];
+    // Größenklassen-Filter aus der Legende: abgewählte Klassen fallen weg
+    const erlaubt = e.filter ? erlaubteWerte(e, auswahl.filter) : null;
+    const stufen = erlaubt
+      ? alle.map((st) => ({ ...st, raenge: st.raenge.filter((r) => erlaubt.includes(r)) })).filter((st) => st.raenge.length)
+      : alle;
+    const GROSS = ["hauptstadt", "landeshauptstadt", "grossstadt", "weltstadt"];
     stufen.forEach((stufe, i) => {
-      const gross = i === 0;
+      // Große Städte: fett und (in Deutschland) immer sichtbar
+      const gross = stufe.raenge.length === 0 || stufe.raenge.some((r) => GROSS.includes(r));
       layers.push({
-        id: `${e.id}:symbol${gross ? "" : `-${i}`}`, type: "symbol", source: e.id,
+        id: `${e.id}:symbol${i ? `-${i}` : ""}`, type: "symbol", source: e.id,
         ...(stufe.minzoom ? { minzoom: stufe.minzoom } : {}),
         ...(stufe.raenge.length ? { filter: ["in", ["get", "rang"], ["literal", stufe.raenge]] as FilterSpecification } : {}),
         layout: {

@@ -3,7 +3,7 @@ import type {
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
-import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
+import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SuchTreffer } from "@/lib/karten/satz";
 import type { QuizAntwortOut, QuizSpiel, QuizUebersicht } from "@/lib/karten/quiz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
@@ -1579,6 +1579,8 @@ export const api = {
   karten: {
     katalog: () => apiFetch<KartenKatalog>("karten/ebenen"),
     ebene: (id: string) => apiFetch<GeoJSON.FeatureCollection>(`karten/ebenen/${encodeURIComponent(id)}`),
+    suche: (q: string, bereich?: string) =>
+      apiFetch<SuchTreffer[]>(`karten/suche?q=${encodeURIComponent(q)}${bereich ? `&bereich=${bereich}` : ""}`),
     saetze: () => apiFetch<KartenSatzKurz[]>("karten/saetze"),
     satz: (id: number) => apiFetch<KartenSatz>(`karten/saetze/${id}`),
     anlegen: (body: KartenSatzIn) => apiFetch<KartenSatz>("karten/saetze", { method: "POST", body: JSON.stringify(body) }),

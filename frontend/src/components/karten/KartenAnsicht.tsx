@@ -18,7 +18,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -32,6 +32,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   bildRef?: { current: KartenBild | null };
   /** Kartenquiz für Gäste: Token für die Ebenen-Anfragen an /api (Gäste haben kein Cookie) */
   gastToken?: string | null;
+  /** Suchtreffer: hinfliegen und mit Namen markieren */
+  fundort?: { punkt: [number, number]; text: string; zoom: number } | null;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
@@ -134,6 +136,17 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   useEffect(() => {
     if (bereit && ziel) karte.current?.fitBounds([[ziel.west, ziel.sued], [ziel.ost, ziel.nord]], { duration: 0 });
   }, [ziel, bereit]);
+
+  const fundPopup = useRef<Popup | null>(null);
+  useEffect(() => {
+    const m = karte.current;
+    if (!bereit || !m || !fundort) return;
+    m.flyTo({ center: fundort.punkt, zoom: Math.max(m.getZoom(), fundort.zoom) });
+    import("maplibre-gl").then(({ Popup: P }) => {
+      fundPopup.current?.remove();
+      fundPopup.current = new P({ closeButton: true, offset: 10 }).setLngLat(fundort.punkt).setText(`📍 ${fundort.text}`).addTo(m);
+    });
+  }, [fundort, bereit]);
 
   const quellen = [...new Map(katalog.ebenen.map((e) => [e.quelle.name, e.quelle])).values()];
   return (

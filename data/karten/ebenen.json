@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-01",
+  "stand": "2026-10-02",
   "ebenen": [
     {
       "id": "de-laender",
@@ -18,7 +18,7 @@
     },
     {
       "id": "de-staedte",
-      "name": "Städte",
+      "name": "Städte und Gemeinden",
       "gruppe": "politisch",
       "bereich": "de",
       "geometrie": "punkt",
@@ -28,8 +28,55 @@
         "lizenz": "dl-de/by-2.0",
         "url": "https://www.govdata.de/dl-de/by-2-0"
       },
-      "anzahl": 706,
-      "bytes": 130966
+      "filter": {
+        "feld": "rang",
+        "werte": [
+          {
+            "wert": "hauptstadt",
+            "text": "Hauptstadt",
+            "standard": true
+          },
+          {
+            "wert": "landeshauptstadt",
+            "text": "Landeshauptstädte",
+            "standard": true
+          },
+          {
+            "wert": "grossstadt",
+            "text": "Großstädte (ab 100 000)",
+            "standard": true
+          },
+          {
+            "wert": "mittelstadt",
+            "text": "Mittelstädte (20 000 – 100 000)",
+            "standard": false
+          },
+          {
+            "wert": "kleinstadt",
+            "text": "Kleinstädte und Gemeinden (5 000 – 20 000)",
+            "standard": false
+          },
+          {
+            "wert": "landgemeinde",
+            "text": "Gemeinden unter 5 000",
+            "standard": false
+          },
+          {
+            "wert": "ortsteil",
+            "text": "Ortsteile",
+            "standard": false
+          }
+        ],
+        "vorhanden": [
+          "hauptstadt",
+          "landeshauptstadt",
+          "grossstadt",
+          "mittelstadt",
+          "kleinstadt"
+        ]
+      },
+      "anzahl": 2943,
+      "bytes": 538945
     },
     {
       "id": "de-gipfel",
@@ -837,6 +884,65 @@
       },
       "anzahl": 3428,
       "bytes": 4429018
+    },
+    {
+      "id": "de-orte",
+      "name": "Kleine Gemeinden und Ortsteile",
+      "gruppe": "politisch",
+      "bereich": "de",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "© GeoBasis-DE / BKG (2026)",
+        "lizenz": "dl-de/by-2.0",
+        "url": "https://www.govdata.de/dl-de/by-2-0"
+      },
+      "filter": {
+        "feld": "rang",
+        "werte": [
+          {
+            "wert": "hauptstadt",
+            "text": "Hauptstadt",
+            "standard": true
+          },
+          {
+            "wert": "landeshauptstadt",
+            "text": "Landeshauptstädte",
+            "standard": true
+          },
+          {
+            "wert": "grossstadt",
+            "text": "Großstädte (ab 100 000)",
+            "standard": true
+          },
+          {
+            "wert": "mittelstadt",
+            "text": "Mittelstädte (20 000 – 100 000)",
+            "standard": false
+          },
+          {
+            "wert": "kleinstadt",
+            "text": "Kleinstädte und Gemeinden (5 000 – 20 000)",
+            "standard": false
+          },
+          {
+            "wert": "landgemeinde",
+            "text": "Gemeinden unter 5 000",
+            "standard": false
+          },
+          {
+            "wert": "ortsteil",
+            "text": "Ortsteile",
+            "standard": false
+          }
+        ],
+        "vorhanden": [
+          "landgemeinde",
+          "ortsteil"
+        ]
+      },
+      "anzahl": 44081,
+      "bytes": 9079074
     }
   ]
 }

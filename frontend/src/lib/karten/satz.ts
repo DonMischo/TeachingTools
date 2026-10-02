@@ -15,6 +15,13 @@ export type SatzInhalt = {
   beschriftung: boolean;
   ausschnitt: Ausschnitt | null;
   auswahl: Record<string, EbenenAuswahl>;
+  /** Größenklassen-Filter je Ebene (Siedlungen) */
+  filter?: Record<string, string[]>;
+};
+
+export type SuchTreffer = {
+  ebene: string; ebene_name: string; bereich: string; id: string; name: string; zusatz: string;
+  rang?: string | null; punkt: [number, number] | null;
 };
 
 export type KartenSatzKurz = { id: number; titel: string; geteilt: boolean; eigen: boolean; autor: string; aktualisiert_am: string };
