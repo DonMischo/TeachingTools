@@ -50,6 +50,8 @@ from .. import dda as dda_engine
 from .. import exitgame_katalog as katalog
 from .. import scoping
 from .. import timeline_engine
+from .. import karten_quiz as karten_engine
+from .karten_quiz import karten_aufloesen
 from ..task_generators import check_input_answer
 from ..database import get_db
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
@@ -70,7 +72,7 @@ router = APIRouter(tags=["exitgame"])
 
 EXITGAME_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "exitgames"
 
-ALLOWED_TASK_KINDS = {"single", "multi", "true_false", "input", "timeline"}
+ALLOWED_TASK_KINDS = {"single", "multi", "true_false", "input", "timeline", "karte"}
 
 # 2.5D: Werkzeuge ("sim": {"tool", "config"}), Objekte im Zimmer ("station"),
 # Ansicht und Stil ("gebaeude": {"ansicht", "stil"}) — alle aus exitgame_katalog.
@@ -174,6 +176,8 @@ def _task_errors(task: dict, where: str) -> list[str]:
             errors.append(f"{where}: task.kind 'input' braucht 'accept' (Liste akzeptierter Antworten)")
     elif kind == "timeline":
         errors.extend(timeline_engine.validate_game_spec(task.get("timeline"), f"{where}.timeline"))
+    elif kind == "karte":
+        errors.extend(karten_engine.pruefe_einbettung(task.get("karte"), f"{where}.karte"))
     sim = task.get("sim")
     if sim is not None:
         if not isinstance(sim, dict) or sim.get("tool") not in SIM_TOOLS:
@@ -324,6 +328,9 @@ def _task_for_player(task: dict) -> dict:
                           for a in out["answers"]]
     if isinstance(out.get("timeline"), dict):
         out["timeline"] = timeline_engine.sanitized_board(out["timeline"])
+    if out.get("kind") == "karte" and isinstance(out.get("karte"), dict):
+        # Karte ohne Namen und ohne Geheimnis, Objekte als Token
+        out["karte"] = karten_engine.brett_fuer_spieler(out["karte"])
     if isinstance(out.get("variants"), list):
         out["variants"] = [_task_for_player(v) if isinstance(v, dict) else v for v in out["variants"]]
     if isinstance(out.get("easierAlternative"), dict):
@@ -420,7 +427,9 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "exakt der Menge der richtigen Antworten entsprechen), 'true_false' (zwei Antworten), 'input' "
             "(accept = Liste akzeptierter Antworten; Groß/Klein und Komma vs. Punkt sind egal, pro Zahl "
             "reicht eine Schreibweise, bei Wörtern alle sinnvollen Formulierungen auflisten), 'timeline' "
-            "(Zeit-/Zahlenstrahl). Andere Arten gibt es nicht. "
+            "(Zeit-/Zahlenstrahl), 'karte' (Kartenquiz: \"karte\": {\"satz\": <Kartensatz-Id>, \"modus\": "
+            "\"benennen\"|\"finden\", \"wortbank\": true|false, \"mindestens\": 0.5–1.0} — gelöst ab diesem Anteil "
+            "richtiger Objekte). Andere Arten gibt es nicht. "
             "--- TIMELINE --- axis: {kind 'year'|'number', min, max, step?, unit?}. mode 'sort': Items an die "
             "richtige Stelle ziehen — scoring 'position' (tolerance = erlaubte Abweichung in Achseneinheiten, "
             "0 = exakt) oder 'order' (nur die Reihenfolge zählt, fair bei unsicheren Jahreszahlen). mode "
@@ -659,6 +668,7 @@ def upload_exitgame(
         except json.JSONDecodeError as e:
             raise HTTPException(400, f"Ungültiges JSON: {e}")
 
+    karten_aufloesen(raw, db, current)
     game = _parse_exitgame_json(raw)
     for k, v in author_fields(current).items():
         setattr(game, k, v)
@@ -831,6 +841,7 @@ def update_exitgame(exitgame_id: int, raw: dict, db: Session = Depends(get_db), 
     # duerfen nicht unter den Fuessen wegbrechen.
     if db.query(ExitGameSession).filter_by(exitgame_id=g.id, status="open").first():
         raise HTTPException(409, "Eine Session ist noch offen — erst schließen, dann bearbeiten.")
+    karten_aufloesen(raw, db, current)
     parsed = _parse_exitgame_json(raw)
     g.title, g.description, g.subject = parsed.title, parsed.description, parsed.subject
     g.grade, g.tags, g.data = parsed.grade, parsed.tags, parsed.data
@@ -1066,6 +1077,10 @@ def _check_task_answer(task: dict, answer) -> bool:
         return check_input_answer(task.get("accept", []), answer)
     if kind == "timeline":
         return timeline_engine.check_answer(task.get("timeline") or {}, answer)
+    if kind == "karte":
+        spec = task.get("karte") or {}
+        ratio, _ = karten_engine.bewerte(spec, answer)
+        return ratio >= spec.get("mindestens", 1.0)
     return False
 
 

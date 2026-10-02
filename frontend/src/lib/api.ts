@@ -802,12 +802,14 @@ export type ExitGameOut = {
 export type ExitGameMedia = { kind: "image" | "html" | "video"; src: string; alt?: string; height?: number };
 export type ExitGameAnswer = { text: string; correct?: boolean };
 export type ExitGameTask = {
-  kind: "single" | "multi" | "true_false" | "input" | "timeline";
+  kind: "single" | "multi" | "true_false" | "input" | "timeline" | "karte";
   question?: string;
   answers?: ExitGameAnswer[];
   accept?: string[];
   // kind "timeline": the Zeitstrahl game spec (sort/spot), checked server-side.
   timeline?: TimelineGameSpec;
+  // kind "karte": Verweis {satz, modus, …} oder (vom Server) das Spielerbrett ohne Namen
+  karte?: Record<string, unknown>;
   // Awarded when this task is solved; the door's code is the section's
   // fragments in reading order.
   codeFragment?: string;

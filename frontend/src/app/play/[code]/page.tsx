@@ -15,6 +15,8 @@ import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { MathText } from "@/components/MathText";
 import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline/TimelineGameBoard";
 import { TimelineAnswer, TimelineBoard, TimelineSolution } from "@/components/timeline/types";
+import KartenBrett, { kartenAntwortVollstaendig } from "@/components/karten/KartenBrett";
+import type { KartenAntwort, KartenBrettDaten, KartenLoesung } from "@/lib/karten/quiz";
 
 type Answer = { id: number; text: string; order: number };
 type Question = {
@@ -25,6 +27,7 @@ type Question = {
   time_limit: number | null;
   answers: Answer[];
   timeline?: TimelineBoard | null;
+  karte?: KartenBrettDaten | null;
 };
 
 type Phase =
@@ -32,7 +35,7 @@ type Phase =
   | { kind: "waiting"; participantId: number; name: string; avatar: string }
   | { kind: "preview"; participantId: number; avatar: string; questionText: string; imagePath: string | null; timeLimit: number; questionType: string }
   | { kind: "question"; question: Question; participantId: number; chosen: number[]; avatar: string; answered: boolean; timeLimit: number }
-  | { kind: "reveal"; question: Question; chosen: number[]; correct: number[] | null; isCorrect: boolean | null; scoreRatio: number | null; counts: Record<number, number>; avatar: string; myRank: number | null; myDelta: number | null; timelineSolution: TimelineSolution | null }
+  | { kind: "reveal"; question: Question; chosen: number[]; correct: number[] | null; isCorrect: boolean | null; scoreRatio: number | null; counts: Record<number, number>; avatar: string; myRank: number | null; myDelta: number | null; timelineSolution: TimelineSolution | null; kartenLoesung: KartenLoesung | null }
   | { kind: "finished"; points: number; title: string; avatar: string; finalRanking: RankEntry[]; scoreRatio: number };
 
 type RankEntry = { pid: number; name: string; avatar: string; score: number; delta: number; rank: number };
@@ -147,6 +150,7 @@ export default function PlayPage() {
   const [connecting, setConnecting] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [tlAnswer, setTlAnswer] = useState<TimelineAnswer>({});
+  const [kartenAntwort, setKartenAntwort] = useState<KartenAntwort>({ antworten: {} });
   const [teamMode, setTeamMode] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [sessionLoaded, setSessionLoaded] = useState(false);
@@ -234,6 +238,7 @@ export default function PlayPage() {
             time_limit: msg.time_limit,
             answers,
             timeline: msg.timeline ?? null,
+            karte: msg.karte ?? null,
           },
           participantId,
           chosen: [],
@@ -258,13 +263,13 @@ export default function PlayPage() {
           const ratios: Record<string, number> = msg.score_ratios ?? {};
           const scoreRatio = ratios[String(participantId)] ?? null;
           const isCorrect =
-            question.type === "timeline"
+            question.type === "timeline" || question.type === "karte"
               ? scoreRatio !== null && scoreRatio >= 0.999
             : correct === null ? null
             : question.type === "umrechnung"
               ? scoreRatio !== null && scoreRatio > 0
               : correct.length === chosen.length && chosen.every((id: number) => correct.includes(id));
-          return { kind: "reveal", question, chosen, correct, isCorrect, scoreRatio, counts: msg.answer_counts, avatar: av, myRank: null, myDelta: null, timelineSolution: msg.timeline_solution ?? null };
+          return { kind: "reveal", question, chosen, correct, isCorrect, scoreRatio, counts: msg.answer_counts, avatar: av, myRank: null, myDelta: null, timelineSolution: msg.timeline_solution ?? null, kartenLoesung: msg.karte_loesung ?? null };
         });
 
       } else if (msg.event === "ranking") {
@@ -374,7 +379,7 @@ export default function PlayPage() {
   }
 
   useEffect(() => {
-    if (phase.kind === "question") { setTextInput(""); setTlAnswer({}); }
+    if (phase.kind === "question") { setTextInput(""); setTlAnswer({}); setKartenAntwort({ antworten: {} }); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.kind === "question" ? (phase as Extract<Phase, { kind: "question" }>).question.id : null]);
 
@@ -475,6 +480,32 @@ export default function PlayPage() {
                 disabled={!timelineAnswerComplete(board, tlAnswer)}
                 className="w-full py-3 bg-yellow-400 text-black font-bold text-lg rounded-2xl disabled:opacity-40">
                 Antwort abschicken ✓
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (q.type === "karte" && q.karte) {
+      const brett = q.karte;
+      return (
+        <div className="flex flex-col h-dvh bg-indigo-800 text-white overflow-hidden">
+          <StudentCountdown seconds={phase.timeLimit} stopped={phase.answered} />
+          <div className="flex-1 min-h-0 flex flex-col gap-3 p-4 overflow-y-auto">
+            {q.question_text && (
+              <h2 className="text-xl font-bold text-center whitespace-pre-line leading-snug"><MathText text={q.question_text} /></h2>
+            )}
+            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+              <KartenBrett brett={brett} antwort={kartenAntwort} onChange={setKartenAntwort} disabled={phase.answered} />
+            </div>
+            {phase.answered ? (
+              <p className="text-yellow-300 text-sm animate-pulse text-center">✓ Antwort gesendet</p>
+            ) : (
+              <button onClick={() => live.send({ action: "answer", karte_answer: kartenAntwort })}
+                disabled={!Object.values(kartenAntwort.antworten).some(Boolean)}
+                className="w-full py-3 bg-yellow-400 text-black font-bold text-lg rounded-2xl disabled:opacity-40">
+                {kartenAntwortVollstaendig(brett, kartenAntwort) ? "Antwort abschicken ✓" : "Abschicken (noch nicht alles ausgefüllt)"}
               </button>
             )}
           </div>
@@ -650,6 +681,15 @@ export default function PlayPage() {
             </div>
           )}
         </div>
+
+        {/* Kartenfrage: Auflösung mit eigenen Antworten */}
+        {q.type === "karte" && q.karte && phase.kartenLoesung && (
+          <div className="px-4 pb-4">
+            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+              <KartenBrett brett={q.karte} antwort={kartenAntwort} disabled loesung={phase.kartenLoesung} />
+            </div>
+          </div>
+        )}
 
         {/* Timeline reveal: own placements vs. correct positions */}
         {q.type === "timeline" && phase.timelineSolution?.axis && (

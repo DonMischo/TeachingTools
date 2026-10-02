@@ -24,6 +24,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .. import timeline_engine
+from .. import karten_quiz as karten_engine
+from .karten_quiz import karten_aufloesen
 from ..database import get_db
 from ..models import (
     Quiz, QuizQuestion, QuizAnswer, QuizSession, QuizParticipant, QuizResponse, QuizTeam, Transaction, Teacher, Class,
@@ -179,7 +181,7 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
     if "questions" not in data or not isinstance(data["questions"], list):
         raise ValueError("Missing or invalid 'questions'")
 
-    VALID_TYPES = {"single", "multi", "survey", "true_false", "sort", "umrechnung", "timeline"}
+    VALID_TYPES = {"single", "multi", "survey", "true_false", "sort", "umrechnung", "timeline", "karte"}
     questions = []
     for i, q in enumerate(data["questions"]):
         qtype = q.get("type", "single")
@@ -193,8 +195,14 @@ def _parse_caputh_json(data: dict) -> tuple[dict, list[dict]]:
             spec_errors = timeline_engine.validate_game_spec(content, f"Question {i}.timeline")
             if spec_errors:
                 raise ValueError("; ".join(spec_errors))
+        elif qtype == "karte":
+            # Kartenquiz: beim Hochladen aus dem Kartensatz aufgelöst (karten_quiz.loese_einbettungen)
+            content = q.get("karte")
+            spec_errors = karten_engine.pruefe_einbettung(content, f"Question {i}.karte")
+            if spec_errors:
+                raise ValueError("; ".join(spec_errors))
         answers = []
-        for j, a in enumerate(q.get("answers", []) if qtype != "timeline" else []):
+        for j, a in enumerate(q.get("answers", []) if qtype not in ("timeline", "karte") else []):
             answers.append({
                 "order": j,
                 "text": a.get("text", ""),
@@ -345,12 +353,15 @@ def _question_answering_msg(
         # Students get the board without solutions (sort: values stripped,
         # spot: displayed positions only, never which are misplaced).
         msg["timeline"] = timeline_engine.sanitized_board(q.content)
+    if q.type == "karte" and q.content:
+        # Karte ohne Namen, Objekte nur als Token — geprüft wird auf dem Server
+        msg["karte"] = karten_engine.brett_fuer_spieler(q.content)
     return msg
 
 
 def _answer_counts(s: QuizSession, q: QuizQuestion, db: Session) -> dict:
-    if q.type == "timeline":
-        # Timeline responses store the board answer payload, not answer ids.
+    if q.type in ("timeline", "karte"):
+        # Timeline/Karte responses store the board answer payload, not answer ids.
         return {}
     responses = db.query(QuizResponse).filter_by(session_id=s.id, question_id=q.id).all()
     counts: dict[int, int] = {a.id: 0 for a in q.answers}
@@ -466,7 +477,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "'single' (1 richtige Antwort), 'multi' (mehrere richtig, Teilpunkte), "
             "'true_false' (Wahr/Falsch), 'survey' (keine Wertung), 'sort' (Reihenfolge sortieren, 'order' beginnt bei 1), "
             "'umrechnung' (Zahlenwert tippen, 1 Antwort: 'text' = Zahl + Leerzeichen + Zieleinheit z.B. '30000 cm'), "
-            "'timeline' (Zeitstrahl/Zahlenstrahl: statt 'answers' ein Feld 'timeline' = {mode, axis, items}). "
+            "'timeline' (Zeitstrahl/Zahlenstrahl: statt 'answers' ein Feld 'timeline' = {mode, axis, items}). 'karte' (Kartenquiz: statt 'answers' ein Feld 'karte' = {\"satz\": <Kartensatz-Id>, \"modus\": \"benennen\"|\"finden\", \"wortbank\": true|false} — Nummern benennen oder Orte anklicken, Teilpunkte je richtigem Objekt). "
             "Umrechnung: Anzeige lautet 'Rechne um: [Frage] = [Eingabefeld] [Einheit]'. Schüler tippen die Zahl, Einheit wird automatisch daneben gezeigt. "
             "--- TIMELINE-FRAGEN --- timeline.mode 'sort': Schüler ziehen die items an die richtige Stelle "
             "(items [{id, label, value}]; value = korrekte Position, wird Schülern NICHT gezeigt). "
@@ -629,6 +640,7 @@ def upload_caputh(
         if not json_candidates:
             raise HTTPException(400, "ZIP must contain quiz.json")
         raw = json.loads(zf.read(json_candidates[0]))
+        karten_aufloesen(raw, db, current)
 
         try:
             quiz_fields, questions = _parse_caputh_json(raw)
@@ -656,6 +668,7 @@ def upload_caputh(
             raw = json.loads(content)
         except json.JSONDecodeError:
             raise HTTPException(400, "Invalid JSON")
+        karten_aufloesen(raw, db, current)
         try:
             quiz_fields, questions = _parse_caputh_json(raw)
         except ValueError as e:
@@ -694,6 +707,8 @@ def _caputh_to_json(quiz: Quiz) -> dict:
             d["preview_time"] = q.preview_time
         if q.type == "timeline":
             d["timeline"] = q.content
+        elif q.type == "karte":
+            d["karte"] = q.content
         else:
             d["answers"] = [
                 {"text": a.text} if q.type == "survey" else {"text": a.text, "correct": bool(a.correct)}
@@ -734,6 +749,7 @@ def update_caputh(quiz_id: int, raw: dict, db: Session = Depends(get_db), curren
         raise HTTPException(403)
     if any(s.status != "finished" for s in caputh.sessions):
         raise HTTPException(409, "Eine Session läuft noch — erst beenden, dann bearbeiten.")
+    karten_aufloesen(raw, db, current)
     try:
         quiz_fields, questions = _parse_caputh_json(raw)
     except ValueError as e:
@@ -1517,7 +1533,7 @@ async def _resync_teacher(s: QuizSession, db: Session, code: str, ws: WebSocket)
             correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         elif q.type == "umrechnung":
             correct_ids = [q.answers[0].id] if q.answers else None
-        elif q.type not in ("survey", "timeline"):
+        elif q.type not in ("survey", "timeline", "karte"):
             correct_ids = [a.id for a in q.answers if a.correct]
         else:
             correct_ids = None
@@ -1532,6 +1548,8 @@ async def _resync_teacher(s: QuizSession, db: Session, code: str, ws: WebSocket)
         }
         if q.type == "timeline" and q.content:
             msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+        if q.type == "karte" and q.content:
+            msg["karte_loesung"] = karten_engine.loesung(q.content)
         await ws.send_json(msg)
         if ph["phase"] == "ranking":
             ranking = _build_ranking(s, ph.get("scores", {}), ph.get("last_delta", {}))
@@ -1568,7 +1586,7 @@ async def _resync_student(s: QuizSession, db: Session, code: str, pid: int, ws: 
             correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         elif q.type == "umrechnung":
             correct_ids = [q.answers[0].id] if q.answers else None
-        elif q.type not in ("survey", "timeline"):
+        elif q.type not in ("survey", "timeline", "karte"):
             correct_ids = [a.id for a in q.answers if a.correct]
         else:
             correct_ids = None
@@ -1587,6 +1605,8 @@ async def _resync_student(s: QuizSession, db: Session, code: str, pid: int, ws: 
         }
         if q.type == "timeline" and q.content:
             msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+        if q.type == "karte" and q.content:
+            msg["karte_loesung"] = karten_engine.loesung(q.content)
         await ws.send_json(msg)
         if ph["phase"] == "ranking":
             ranking = _build_ranking(s, scores, ph.get("last_delta", {}))
@@ -1757,6 +1777,10 @@ def _score_ratio(q: QuizQuestion, resp: QuizResponse) -> float:
         answer = resp.chosen_answer_ids if isinstance(resp.chosen_answer_ids, dict) else {}
         ratio, _ = timeline_engine.score_answer(q.content or {}, answer)
         return ratio
+    if q.type == "karte":
+        answer = resp.chosen_answer_ids if isinstance(resp.chosen_answer_ids, dict) else {}
+        ratio, _ = karten_engine.bewerte(q.content or {}, answer)
+        return ratio
     if q.type == "sort":
         correct_order = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
         submitted = resp.chosen_answer_ids or []
@@ -1783,7 +1807,7 @@ async def _do_reveal(s: QuizSession, db: Session, code: str):
 
     questions = s.quiz.questions
     q = questions[s.current_question_idx]
-    if q.type in ("survey", "timeline"):
+    if q.type in ("survey", "timeline", "karte"):
         correct_ids = None
     elif q.type == "sort":
         correct_ids = [a.id for a in sorted(q.answers, key=lambda a: a.order)]
@@ -1840,6 +1864,8 @@ async def _do_reveal(s: QuizSession, db: Session, code: str):
     }
     if q.type == "timeline" and q.content:
         msg["timeline_solution"] = timeline_engine.solution_payload(q.content)
+    if q.type == "karte" and q.content:
+        msg["karte_loesung"] = karten_engine.loesung(q.content)
     await mgr.broadcast(code, msg)
 
 
@@ -2000,6 +2026,14 @@ async def _handle_student_action(action: str, data: dict, s: QuizSession, db: Se
         if not isinstance(payload, dict):
             payload = {}
         ratio, _ = timeline_engine.score_answer(cur_q.content or {}, payload)
+        is_correct = ratio >= 1.0
+        chosen_ids = payload
+    elif cur_q.type == "karte":
+        # {"antworten": {nr: Name | Token}} — wie beim Zeitstrahl als Ganzes gespeichert
+        payload = data.get("karte_answer")
+        if not isinstance(payload, dict):
+            payload = {}
+        ratio, _ = karten_engine.bewerte(cur_q.content or {}, payload)
         is_correct = ratio >= 1.0
         chosen_ids = payload
     elif cur_q.type == "umrechnung":

@@ -15,6 +15,8 @@ import { TimelineGameBoard, timelineAnswerComplete } from "@/components/timeline
 import { specToBoard } from "@/components/timeline/game";
 import { toVideoEmbed } from "@/lib/embed";
 import { TimelineAnswer } from "@/components/timeline/types";
+import KartenBrett from "@/components/karten/KartenBrett";
+import type { KartenAntwort, KartenBrettDaten } from "@/lib/karten/quiz";
 import type { SicherungsAbschnitt } from "@/lib/taskcrawler/ergebnisPdf";
 import { SimKnopf } from "./SimStation";
 
@@ -146,6 +148,7 @@ function SingleTaskWidget({
   const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [inputValue, setInputValue] = useState("");
   const [timelineAnswer, setTimelineAnswer] = useState<TimelineAnswer>({});
+  const [kartenAntwort, setKartenAntwort] = useState<KartenAntwort>({ antworten: {} });
   const [feedback, setFeedback] = useState<"right" | "wrong" | null>(alreadySolved ? "right" : null);
   const [attempts, setAttempts] = useState(0);
   const [hintsShown, setHintsShown] = useState(0);
@@ -204,6 +207,7 @@ function SingleTaskWidget({
       setMultiSelected(new Set());
       setInputValue("");
       setTimelineAnswer({});
+      setKartenAntwort({ antworten: {} });
     },
   });
 
@@ -287,6 +291,19 @@ function SingleTaskWidget({
           <button
             onClick={() => answerMut.mutate(timelineAnswer)}
             disabled={answerMut.isPending || !timelineAnswerComplete(specToBoard(activeTask.timeline), timelineAnswer)}
+            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">
+            Prüfen
+          </button>
+        </div>
+      )}
+
+      {activeTask.kind === "karte" && activeTask.karte && (
+        <div className="flex flex-col gap-2">
+          <KartenBrett brett={activeTask.karte as unknown as KartenBrettDaten} antwort={kartenAntwort}
+            onChange={setKartenAntwort} disabled={answerMut.isPending} />
+          <button
+            onClick={() => answerMut.mutate(kartenAntwort)}
+            disabled={answerMut.isPending || !Object.values(kartenAntwort.antworten).some(Boolean)}
             className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">
             Prüfen
           </button>

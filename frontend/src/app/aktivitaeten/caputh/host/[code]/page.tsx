@@ -10,6 +10,8 @@ import { useLiveSocket } from "@/hooks/useLiveSocket";
 import { ClassPoints } from "@/lib/api";
 import { TimelineGameBoard } from "@/components/timeline/TimelineGameBoard";
 import { TimelineBoard, TimelineSolution } from "@/components/timeline/types";
+import KartenBrett from "@/components/karten/KartenBrett";
+import type { KartenBrettDaten, KartenLoesung } from "@/lib/karten/quiz";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,7 +44,7 @@ type HostPhase =
   | { kind: "waiting"; participantCount: number; participants: Participant[] }
   | { kind: "preview"; q: QuestionInfo; participantCount: number }
   | { kind: "answering"; q: QuestionInfo; answers: Answer[]; timeLimit: number; counts: Record<number, number>; responses: number; participantCount: number; timeline: TimelineBoard | null }
-  | { kind: "revealed"; q: QuestionInfo; answers: Answer[]; correctIds: number[] | null; counts: Record<number, number>; isLast: boolean; timelineSolution: TimelineSolution | null }
+  | { kind: "revealed"; q: QuestionInfo; answers: Answer[]; correctIds: number[] | null; counts: Record<number, number>; isLast: boolean; timelineSolution: TimelineSolution | null; karte?: KartenBrettDaten | null; kartenLoesung?: KartenLoesung | null }
   | { kind: "ranking"; ranking: RankEntry[]; isLast: boolean }
   | { kind: "finished"; pointsAwarded: number; title: string; finalRanking: RankEntry[]; scoreRatio: number; isReplay: boolean;
       pointsByClass: ClassPoints[]; scopeLabel: string; isGroupScope: boolean };
@@ -206,6 +208,8 @@ export default function HostPage() {
   // Store current question+answers across phase transitions
   const currentQ = useRef<QuestionInfo | null>(null);
   const currentAnswers = useRef<Answer[]>([]);
+  // Kartenfrage: das Brett der laufenden Frage (für die Auflösung)
+  const currentKarte = useRef<KartenBrettDaten | null>(null);
 
   useEffect(() => {
     // Fetch real LAN IP so QR works even when teacher opened via localhost
@@ -292,6 +296,7 @@ export default function HostPage() {
       } else if (msg.event === "question_answering") {
         const answers: Answer[] = msg.answers;
         currentAnswers.current = answers;
+        currentKarte.current = msg.karte ?? null;
         const q = currentQ.current!;
         setPhase((prev) => ({
           kind: "answering",
@@ -324,6 +329,8 @@ export default function HostPage() {
           counts: msg.answer_counts,
           isLast: msg.is_last,
           timelineSolution: msg.timeline_solution ?? null,
+          karte: currentKarte.current,
+          kartenLoesung: msg.karte_loesung ?? null,
         });
 
       } else if (msg.event === "ranking") {
@@ -708,7 +715,14 @@ export default function HostPage() {
         </div>
 
         {/* Answer grid with live bars */}
-        {q.type === "timeline" && phase.timeline ? (
+        {q.type === "karte" && currentKarte.current ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
+            <p className="text-gray-400 text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
+            <div className="w-full max-w-4xl bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+              <KartenBrett brett={currentKarte.current} antwort={{ antworten: {} }} disabled />
+            </div>
+          </div>
+        ) : q.type === "timeline" && phase.timeline ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
             <p className="text-gray-400 text-sm">
               {phase.timeline.mode === "sort"
@@ -800,7 +814,11 @@ export default function HostPage() {
         <div className="flex-1 flex flex-col gap-4 p-6 min-h-0 overflow-y-auto">
           <h2 className="text-2xl font-bold whitespace-pre-line leading-snug"><MathText text={q.text} /></h2>
           <div className="flex flex-col gap-3 flex-1 justify-center">
-            {q.type === "timeline" && phase.timelineSolution?.axis ? (
+            {q.type === "karte" && phase.karte && phase.kartenLoesung ? (
+              <div className="w-full max-w-4xl mx-auto bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+                <KartenBrett brett={phase.karte} antwort={{ antworten: {} }} disabled loesung={phase.kartenLoesung} />
+              </div>
+            ) : q.type === "timeline" && phase.timelineSolution?.axis ? (
               <div className="w-full max-w-3xl mx-auto bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
                 <TimelineGameBoard
                   board={{

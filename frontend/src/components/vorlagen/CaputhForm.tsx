@@ -3,15 +3,17 @@
 import type { TimelineGameSpec } from "@/components/timeline/types";
 import { AntwortListe, BildFeld, Feld, Gruppe, Karte, ListenFeld, StufenFeld, ZahlFeld, ZeilenKnoepfe, move, type Antwort } from "./felder";
 import { LEERES_ZEITSTRAHL_SPIEL, ZeitstrahlSpielForm } from "./ZeitstrahlSpielForm";
+import { KarteFrageForm, LEERE_KARTE, type KarteVerweis } from "./KarteFrageForm";
 
 export type CaputhFrage = {
-  type: "single" | "multi" | "survey" | "true_false" | "sort" | "umrechnung" | "timeline";
+  type: "single" | "multi" | "survey" | "true_false" | "sort" | "umrechnung" | "timeline" | "karte";
   question: string;
   image?: string | null;
   time_limit?: number | null;
   preview_time?: number | null;
   answers?: Antwort[];
   timeline?: TimelineGameSpec;
+  karte?: KarteVerweis;
 };
 
 export type CaputhJson = {
@@ -39,6 +41,7 @@ export const FRAGE_TYPEN: [CaputhFrage["type"], string][] = [
   ["sort", "Reihenfolge sortieren"],
   ["umrechnung", "Einheiten umrechnen"],
   ["timeline", "Zeitstrahl"],
+  ["karte", "Karte (benennen/finden)"],
   ["survey", "Umfrage (ohne Wertung)"],
 ];
 
@@ -47,11 +50,14 @@ export function frageAlsTyp(q: CaputhFrage, type: CaputhFrage["type"]): CaputhFr
   const alt = q.answers ?? [];
   const rest = { ...q };
   delete rest.timeline;
+  delete rest.karte;
   delete rest.answers;
   const texte = alt.map(a => a.text).filter(Boolean);
   switch (type) {
     case "timeline":
       return { ...rest, type, timeline: q.timeline ?? structuredClone(LEERES_ZEITSTRAHL_SPIEL) };
+    case "karte":
+      return { ...rest, type, karte: q.karte ?? { ...LEERE_KARTE } };
     case "true_false":
       return { ...rest, type, answers: [{ text: "Wahr", correct: true }, { text: "Falsch", correct: false }] };
     case "umrechnung":
@@ -62,7 +68,7 @@ export function frageAlsTyp(q: CaputhFrage, type: CaputhFrage["type"]): CaputhFr
       return { ...rest, type, answers: t.map(text => ({ text })) };
     }
     default: {
-      const base = alt.length && q.type !== "umrechnung" && q.type !== "timeline" ? alt : [{ text: "" }, { text: "" }];
+      const base = alt.length && !["umrechnung", "timeline", "karte"].includes(q.type) ? alt : [{ text: "" }, { text: "" }];
       let answers = base.map(a => ({ text: a.text, correct: !!a.correct }));
       if (type === "single") {
         const first = Math.max(0, answers.findIndex(a => a.correct));
@@ -119,6 +125,10 @@ function FrageForm({ q, i, onChange, upload }: { q: CaputhFrage; i: number; onCh
           </div>
         );
       })()}
+
+      {q.type === "karte" && (
+        <KarteFrageForm karte={q.karte ?? LEERE_KARTE} onChange={karte => onChange({ ...q, karte })} />
+      )}
 
       {q.type === "timeline" && (
         <ZeitstrahlSpielForm spec={q.timeline ?? LEERES_ZEITSTRAHL_SPIEL} onChange={timeline => onChange({ ...q, timeline })} />

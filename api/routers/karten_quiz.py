@@ -12,6 +12,7 @@ Einstellungen der Sitzung (ToolSession.settings, öffentlich lesbar):
 import gzip
 import hashlib
 import json
+import secrets
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -24,7 +25,7 @@ from ..auth import get_current_teacher, get_player
 from ..config import settings
 from ..database import get_db
 from ..display_names import short_name
-from ..models import Class, KartenEbeneEigen, KartenQuizStand, KartenSatz, Student, Teacher, ToolSession, Transaction
+from ..models import Class, KartenBrett, KartenEbeneEigen, KartenQuizStand, KartenSatz, Student, Teacher, ToolSession, Transaction
 from .karten import DATEN, EIGEN_PRAEFIX, EIGENE, katalog
 
 router = APIRouter(prefix="/api/karten/quiz", tags=["karten-quiz"])
@@ -155,6 +156,25 @@ def _neue_erfolge(st: KartenQuizStand, vorgaben: list[dict], aufgaben_liste: lis
     return neu
 
 
+def _katalog_meta(db: Session, inhalt: dict) -> list[dict]:
+    """Ebenen-Metadaten für den Kartenstil (Gäste dürfen den Katalog sonst nicht lesen)."""
+    meta = [k for k in katalog()["ebenen"] if k["id"] in inhalt["ebenen"]]
+    for k in inhalt["ebenen"]:
+        nummer = k.removeprefix(EIGEN_PRAEFIX)
+        eigen = db.get(KartenEbeneEigen, int(nummer)) if k.startswith(EIGEN_PRAEFIX) and nummer.isdigit() else None
+        if eigen:
+            meta.append({"id": k, "name": eigen.titel, "gruppe": "eigen", "bereich": "eigen", "geometrie": eigen.geometrie,
+                         "quiz": True, "bytes": 0, "quelle": {"name": "Eigene Daten", "lizenz": "", "url": ""}})
+    return meta
+
+
+def _karte(inhalt: dict) -> dict:
+    """Was die Spielerkarte zeigt — ohne Objekt-ids (die stecken als Token in »spiel.auswahl«)."""
+    return {"art": inhalt["art"], "region": inhalt.get("region", "deutschland"), "ebenen": inhalt["ebenen"],
+            "ausschnitt": inhalt.get("ausschnitt"), "filter": inhalt.get("filter", {}),
+            "auswahl": {k: {"zeigen": v.get("zeigen", "alle")} for k, v in inhalt.get("auswahl", {}).items()}}
+
+
 # ── Spieler ──────────────────────────────────────────────────────────
 
 @router.get("/{code}")
@@ -167,19 +187,8 @@ def spiel(code: str, db: Session = Depends(get_db), spieler=Depends(get_player))
     liste = aufgaben(db, satz)
     mischen = int(hashlib.sha256(json.dumps(_wer(spieler)).encode()).hexdigest()[:8], 16)
     inhalt = satz.inhalt
-    # Ebenen-Metadaten für den Kartenstil (Gäste dürfen den Katalog sonst nicht lesen)
-    meta = [k for k in katalog()["ebenen"] if k["id"] in inhalt["ebenen"]]
-    for k in inhalt["ebenen"]:
-        nummer = k.removeprefix(EIGEN_PRAEFIX)
-        eigen = db.get(KartenEbeneEigen, int(nummer)) if k.startswith(EIGEN_PRAEFIX) and nummer.isdigit() else None
-        if eigen:
-            meta.append({"id": k, "name": eigen.titel, "gruppe": "eigen", "bereich": "eigen", "geometrie": eigen.geometrie,
-                         "quiz": True, "bytes": 0, "quelle": {"name": "Eigene Daten", "lizenz": "", "url": ""}})
     return {
-        "titel": satz.titel, "einstellungen": e, "katalog": meta,
-        "karte": {"art": inhalt["art"], "region": inhalt.get("region", "deutschland"), "ebenen": inhalt["ebenen"],
-                  "ausschnitt": inhalt.get("ausschnitt"),
-                  "auswahl": {k: {"zeigen": v.get("zeigen", "alle")} for k, v in inhalt.get("auswahl", {}).items()}},
+        "titel": satz.titel, "einstellungen": e, "katalog": _katalog_meta(db, inhalt), "karte": _karte(inhalt),
         "spiel": engine.fuer_spieler(liste, e["modus"], _geheim(s), wortbank=e["wortbank"], mischen=mischen),
         "erfolge": [{k: v[k] for k in ("id", "name", "icon")} for v in erfolge_fuer(inhalt, liste)],
         "stand": _stand_out(_stand(db, s, spieler, anlegen=False)),
@@ -301,3 +310,69 @@ def zuruecksetzen(code: str, db: Session = Depends(get_db), lehrkraft: Teacher =
     db.query(KartenQuizStand).filter_by(session_id=s.id).delete()
     s.settings = {k: v for k, v in (s.settings or {}).items() if k != "punkte_vergeben"}
     db.commit()
+
+
+
+# ── Einbettung in Caputh und TaskCrawler ─────────────────────────────
+
+def einbettung(db: Session, satz_id: int, wer: Teacher | Student, modus: str = "benennen", wortbank: bool = False,
+               mindestens: float = 1.0) -> dict:
+    """Schnappschuss eines Kartensatzes für eine Frage/Aufgabe (siehe karten_quiz.pruefe_einbettung).
+    Lehrkräfte: eigene und geteilte Sätze; Schüler:innen (Caputh-Pool): nur geteilte."""
+    satz = db.get(KartenSatz, satz_id)
+    eigen = isinstance(wer, Teacher) and satz is not None and satz.created_by == wer.id
+    if satz is None or not (eigen or satz.geteilt):
+        raise ValueError(f"Kartensatz {satz_id} nicht gefunden (eigene oder geteilte Sätze)")
+    liste = aufgaben(db, satz)
+    if not liste:
+        raise ValueError(f"Kartensatz »{satz.titel}« hat keine ausgewählten Objekte")
+    geheim = secrets.token_hex(16)
+    schluessel = secrets.token_hex(8)
+    db.add(KartenBrett(schluessel=schluessel, geheim=geheim, ebenen=satz.inhalt["ebenen"]))
+    return {"satz_id": satz.id, "titel": satz.titel, "modus": modus if modus in engine.MODI else "benennen",
+            "wortbank": bool(wortbank), "mindestens": max(0.1, min(1.0, float(mindestens))),
+            "geheim": geheim, "brett": schluessel, "katalog": _katalog_meta(db, satz.inhalt), "karte": _karte(satz.inhalt),
+            "aufgaben": liste}
+
+
+def loese_einbettungen(daten, db: Session, lehrkraft: Teacher | Student) -> None:
+    """Ersetzt in hochgeladenem JSON jeden Verweis {"satz": id, "modus": …} unter »karte«
+    (bei type/kind == "karte") durch den Schnappschuss. Schon aufgelöste bleiben, ihr Brett wird gesichert."""
+    if isinstance(daten, list):
+        for x in daten:
+            loese_einbettungen(x, db, lehrkraft)
+        return
+    if not isinstance(daten, dict):
+        return
+    if "karte" in (daten.get("type"), daten.get("kind")) and isinstance(daten.get("karte"), dict):
+        ref = daten["karte"]
+        if "aufgaben" in ref and ref.get("brett") and ref.get("geheim"):
+            if db.get(KartenBrett, ref["brett"]) is None:
+                db.add(KartenBrett(schluessel=ref["brett"], geheim=ref["geheim"], ebenen=ref.get("karte", {}).get("ebenen", [])))
+        elif "satz" in ref:
+            daten["karte"] = einbettung(db, int(ref["satz"]), lehrkraft, ref.get("modus", "benennen"),
+                                        ref.get("wortbank", False), ref.get("mindestens", 1.0))
+    for wert in daten.values():
+        loese_einbettungen(wert, db, lehrkraft)
+
+
+@router.get("/brett/{schluessel}/ebene/{ebene_id}")
+def brett_ebene(schluessel: str, ebene_id: str, request: Request, db: Session = Depends(get_db)):
+    """Entschärfte Ebene (ohne Namen, Token statt id) für eine eingebettete Kartenfrage — öffentlich:
+    wer in Caputh/TaskCrawler spielt, hat oft kein Konto, und ohne Namen verrät die Geometrie nichts."""
+    brett = db.get(KartenBrett, schluessel)
+    if brett is None or ebene_id not in brett.ebenen:
+        raise HTTPException(404, "Ebene nicht gefunden")
+    daten = json.dumps(engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, brett.geheim), ensure_ascii=False).encode("utf-8")
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
+                        headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": "public, max-age=3600"})
+    return Response(daten, media_type="application/geo+json", headers={"Cache-Control": "public, max-age=3600"})
+
+
+def karten_aufloesen(daten, db: Session, wer: Teacher | Student) -> None:
+    """Für die Upload-Endpunkte von Caputh/TaskCrawler: Verweise auflösen, Fehler als 422."""
+    try:
+        loese_einbettungen(daten, db, wer)
+    except (ValueError, TypeError) as fehler:
+        raise HTTPException(422, f"Kartenfrage: {fehler}") from None

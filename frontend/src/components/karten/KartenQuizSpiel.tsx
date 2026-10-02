@@ -46,7 +46,8 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
     return je;
   }, [aufgaben, loesungen, spiel]);
 
-  const stil = useMemo(() => (spiel ? quizStil(code, spiel, stand, hervor) : null), [code, spiel, stand, hervor]);
+  const stil = useMemo(() => (spiel ? quizStil(`/api/karten/quiz/${encodeURIComponent(code)}`, spiel, stand, hervor) : null),
+    [code, spiel, stand, hervor]);
 
   const sende = async (a: QuizAufgabe, antwort: string) => {
     const r = await api.karten.quizAntwort(code, a.nr, antwort, token);

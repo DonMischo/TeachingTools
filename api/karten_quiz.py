@@ -239,3 +239,43 @@ def pruefe(aufgabe: dict, modus: str, antwort, geheim: str) -> bool:
     if modus == "benennen":
         return isinstance(antwort, str) and name_passt(antwort, aufgabe)
     return isinstance(antwort, str) and hmac.compare_digest(antwort, token(geheim, aufgabe["ebene"], aufgabe["id"]))
+
+
+# ── Einbettung in Caputh und TaskCrawler ─────────────────────────────
+#
+# Eine Frage/Aufgabe »karte« trägt einen Schnappschuss (beim Hochladen aus
+# einem Kartensatz gebaut, siehe routers/karten_quiz.py::loese_einbettungen):
+#   {satz_id, titel, modus, wortbank, mindestens, geheim, brett, karte, katalog, aufgaben}
+# »geheim« bleibt auf dem Server; Spieler laden die Ebenen über das Brett
+# (öffentlicher Schlüssel) und antworten gesammelt: {"antworten": {nr: text|token}}.
+
+def pruefe_einbettung(spec, wo: str) -> list[str]:
+    if not isinstance(spec, dict):
+        return [f"{wo}: 'karte' fehlt"]
+    fehler = []
+    if spec.get("modus") not in MODI:
+        fehler.append(f"{wo}: 'modus' muss benennen oder finden sein")
+    for feld in ("geheim", "brett", "karte", "aufgaben"):
+        if not spec.get(feld):
+            fehler.append(f"{wo}: '{feld}' fehlt — Verweis {{\"satz\": <id>}} beim Hochladen nicht aufgelöst?")
+    return fehler
+
+
+def brett_fuer_spieler(spec: dict) -> dict:
+    return {
+        "titel": spec.get("titel", ""), "brett": spec["brett"], "karte": spec["karte"], "katalog": spec.get("katalog", []),
+        "spiel": fuer_spieler(spec["aufgaben"], spec["modus"], spec["geheim"], wortbank=spec.get("wortbank", False)),
+    }
+
+
+def bewerte(spec: dict, antwort) -> tuple[float, dict[str, bool]]:
+    """Anteil richtiger Antworten (0–1) und je Aufgabennummer richtig/falsch."""
+    antworten = (antwort or {}).get("antworten", {}) if isinstance(antwort, dict) else {}
+    je = {str(a["nr"]): pruefe(a, spec["modus"], antworten.get(str(a["nr"]), ""), spec["geheim"]) for a in spec["aufgaben"]}
+    return (sum(je.values()) / len(je) if je else 0.0), je
+
+
+def loesung(spec: dict) -> dict:
+    """Für die Auflösung: je Nummer Name und Token (finden: Objekt hervorheben)."""
+    return {str(a["nr"]): {"name": a["name"], "marke": a["marke"], "token": token(spec["geheim"], a["ebene"], a["id"]), "ebene": a["ebene"]}
+            for a in spec["aufgaben"]}

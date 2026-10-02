@@ -32,6 +32,7 @@ export type QuizSpiel = {
     ebenen: string[];
     ausschnitt: { west: number; sued: number; ost: number; nord: number } | null;
     auswahl: Record<string, { zeigen: "alle" | "auswahl" }>;
+    filter?: Record<string, string[]>;
   };
   spiel: { modus: QuizModus; aufgaben: QuizAufgabe[]; auswahl: Record<string, string[]>; wortbank?: string[] };
   erfolge: { id: string; name: string; icon: string }[];
@@ -55,10 +56,12 @@ const FARBE_STATUS = { offen: "#e11d48", richtig: "#16a34a", geloest: "#9ca3af" 
  * im Modus »benennen« die Marken (grün = gelöst). Im Modus »finden« wird
  * eine aufgelöste Lösung rot umrandet.
  */
-export function quizStil(code: string, s: QuizSpiel, stand: QuizStand, loesungen: Record<string, string[]>): StyleSpecification {
+export function quizStil(basis: string, s: Pick<QuizSpiel, "katalog" | "karte" | "spiel">, stand: QuizStand,
+  loesungen: Record<string, string[]>): StyleSpecification {
   const katalog = { stand: "", ebenen: s.katalog };
-  const grund = baueStil(katalog, { ebenen: s.karte.ebenen, beschriftung: false }, s.karte.art,
-    (e) => `/api/karten/quiz/${encodeURIComponent(code)}/ebene/${e.id}`);
+  // basis: /api/karten/quiz/<code> (eigenes Spiel) oder /api/karten/quiz/brett/<schlüssel> (Caputh/TaskCrawler)
+  const grund = baueStil(katalog, { ebenen: s.karte.ebenen, beschriftung: false, filter: s.karte.filter }, s.karte.art,
+    (e) => `${basis}/ebene/${e.id}`);
   const anker: FeatureCollection = { type: "FeatureCollection", features: [] };
   if (s.spiel.modus === "benennen") {
     for (const a of s.spiel.aufgaben) {
@@ -75,3 +78,8 @@ export function quizStil(code: string, s: QuizSpiel, stand: QuizStand, loesungen
   // Im »finden«-Modus die aufgedeckten Lösungen rot umranden
   return wendeSatzAn(grund, katalog, { auswahl, nummern: {}, anker, bearbeiten: false, hervor: loesungen });
 }
+
+/** Eingebettete Kartenfrage (Caputh/TaskCrawler): Brett vom Server, Antworten gesammelt. */
+export type KartenBrettDaten = Pick<QuizSpiel, "titel" | "katalog" | "karte" | "spiel"> & { brett: string };
+export type KartenAntwort = { antworten: Record<string, string> };
+export type KartenLoesung = Record<string, { name: string; marke: string; token: string; ebene: string }>;

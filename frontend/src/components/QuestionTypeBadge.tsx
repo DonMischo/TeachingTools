@@ -1,6 +1,6 @@
 // Icons and labels for each quiz question type.
 
-type QuestionType = "single" | "multi" | "true_false" | "survey" | "sort" | "umrechnung" | "timeline";
+type QuestionType = "single" | "multi" | "true_false" | "survey" | "sort" | "umrechnung" | "timeline" | "karte";
 
 const CONFIG: Record<QuestionType, { label: string; icon: React.ReactNode; color: string }> = {
   single: {
@@ -72,6 +72,16 @@ const CONFIG: Record<QuestionType, { label: string; icon: React.ReactNode; color
         <line x1="15" y1="11" x2="15" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         <circle cx="7.5" cy="6" r="2.2" />
         <path d="M7.5 8.2V13" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+    ),
+  },
+  karte: {
+    label: "Karte",
+    color: "#0d9488",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" className="w-full h-full">
+        <path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2z" />
+        <path d="M7 3v12M13 5v12" />
       </svg>
     ),
   },

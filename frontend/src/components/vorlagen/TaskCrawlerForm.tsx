@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type ExitGameData, type ExitGameSlide, type ExitGameTask } from "@/lib/api";
 import { AntwortListe, BildFeld, Feld, Gruppe, Karte, ListenFeld, TextListe, ZeilenKnoepfe, eindeutigeId, move } from "./felder";
 import { LEERES_ZEITSTRAHL_SPIEL, ZeitstrahlSpielForm } from "./ZeitstrahlSpielForm";
+import { KarteFrageForm, LEERE_KARTE } from "./KarteFrageForm";
 import { mediaUrl } from "@/components/exitgame/FolienTeile";
 
 /** Bild hochladen (landet in data/exitgames/{id}/assets) und Vorschau-Adresse. */
@@ -24,11 +25,12 @@ const AUFGABEN_ARTEN: [ExitGameTask["kind"], string][] = [
   ["true_false", "Wahr oder falsch"],
   ["input", "Eingabe (Antwort eintippen)"],
   ["timeline", "Zeitstrahl"],
+  ["karte", "Karte (benennen/finden)"],
 ];
 
 export function neueAufgabe(kind: ExitGameTask["kind"] = "single", alt?: ExitGameTask): ExitGameTask {
   const base: ExitGameTask = { ...alt, kind };
-  delete base.answers; delete base.accept; delete base.timeline;
+  delete base.answers; delete base.accept; delete base.timeline; delete base.karte;
   if (kind === "single" || kind === "multi") {
     const antworten = alt?.answers?.length && alt.kind !== "true_false" ? alt.answers : [{ text: "", correct: true }, { text: "", correct: false }];
     base.answers = antworten.map(a => ({ ...a, correct: !!a.correct }));
@@ -36,6 +38,8 @@ export function neueAufgabe(kind: ExitGameTask["kind"] = "single", alt?: ExitGam
     base.answers = [{ text: "Wahr", correct: true }, { text: "Falsch", correct: false }];
   } else if (kind === "input") {
     base.accept = alt?.accept ?? [""];
+  } else if (kind === "karte") {
+    base.karte = alt?.karte ?? { ...LEERE_KARTE, mindestens: 1 };
   } else {
     base.timeline = alt?.timeline ?? structuredClone(LEERES_ZEITSTRAHL_SPIEL);
   }
@@ -105,6 +109,9 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
       )}
       {task.kind === "timeline" && (
         <ZeitstrahlSpielForm spec={task.timeline ?? LEERES_ZEITSTRAHL_SPIEL} onChange={timeline => onChange({ ...task, timeline })} />
+      )}
+      {task.kind === "karte" && (
+        <KarteFrageForm karte={task.karte ?? LEERE_KARTE} mitMindestens onChange={karte => onChange({ ...task, karte })} />
       )}
 
       <Feld label="Codeschnipsel (optional)" hint="Wer die Aufgabe löst, bekommt ihn. Die Schnipsel eines Abschnitts ergeben zusammen den Türcode.">

@@ -2425,3 +2425,13 @@ class KartenQuizStand(Base):
     aktualisiert_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class KartenBrett(Base):
+    """Öffentlicher Zugang zu den entschärften Ebenen einer eingebetteten Kartenfrage
+    (Caputh/TaskCrawler). ``schluessel`` steht im Spielerbrett, ``geheim`` nie."""
+    __tablename__ = "karten_bretter"
+
+    schluessel: Mapped[str] = mapped_column(String(32), primary_key=True)
+    geheim: Mapped[str] = mapped_column(String(64), nullable=False)
+    ebenen: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
