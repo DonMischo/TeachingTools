@@ -7,12 +7,14 @@ import { aufgeraeumt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "
 
 type Aktuell = Pick<KartenSatz, "id" | "titel" | "geteilt" | "eigen"> | null;
 
-export default function SatzLeiste({ satz, inhalt, ausschnitt, onLaden, onGespeichert }: {
+export default function SatzLeiste({ satz, inhalt, ausschnitt, onLaden, onGespeichert, vorschlag }: {
   satz: Aktuell;
   inhalt: SatzInhalt;
   ausschnitt: () => Ausschnitt | null;
   onLaden: (s: KartenSatz | null) => void;
   onGespeichert: (s: KartenSatz) => void;
+  /** Titel einer geladenen JSON-Vorlage (noch nicht gespeichert) */
+  vorschlag?: string;
 }) {
   const qc = useQueryClient();
   const { data: liste = [] } = useQuery({ queryKey: ["karten", "saetze"], queryFn: api.karten.saetze });
@@ -20,6 +22,7 @@ export default function SatzLeiste({ satz, inhalt, ausschnitt, onLaden, onGespei
   const [geteilt, setGeteilt] = useState(satz?.geteilt ?? false);
   const [meldung, setMeldung] = useState("");
   useEffect(() => { setTitel(satz?.titel ?? ""); setGeteilt(satz?.geteilt ?? false); }, [satz?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (vorschlag) setTitel(vorschlag); }, [vorschlag]);
 
   const laden = async (id: string) => {
     setMeldung("");

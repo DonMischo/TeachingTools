@@ -17,7 +17,11 @@ export type SatzInhalt = {
   auswahl: Record<string, EbenenAuswahl>;
   /** Größenklassen-Filter je Ebene (Siedlungen) */
   filter?: Record<string, string[]>;
+  /** Erfolge im Kartenquiz (leer = je Ebene »alles richtig«) */
+  erfolge?: KartenErfolg[];
 };
+
+export type KartenErfolg = { id: string; name: string; icon: string; ebenen: string[]; schwelle: number };
 
 export type SuchTreffer = {
   ebene: string; ebene_name: string; bereich: string; id: string; name: string; zusatz: string;
@@ -40,7 +44,11 @@ export function schalteObjekt(inhalt: SatzInhalt, ebene: string, id: string): Sa
 /** Leere Auswahlen nicht mitspeichern. */
 export function aufgeraeumt(inhalt: SatzInhalt): SatzInhalt {
   const auswahl = Object.fromEntries(Object.entries(inhalt.auswahl).filter(([, w]) => w.objekte.length));
-  return { ...inhalt, auswahl };
+  // Erfolge zählen nur Ebenen mit Auswahl — sonst lehnt der Server den Satz ab
+  const erfolge = (inhalt.erfolge ?? [])
+    .map((e) => ({ ...e, ebenen: e.ebenen.filter((x) => x in auswahl) }))
+    .filter((e) => e.ebenen.length);
+  return { ...inhalt, auswahl, erfolge };
 }
 
 export type KartenExportIn = {

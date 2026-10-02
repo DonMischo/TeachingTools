@@ -3,7 +3,7 @@ import type {
 } from "@/components/timeline/types";
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
-import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SuchTreffer } from "@/lib/karten/satz";
+import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
 import type { QuizAntwortOut, QuizSpiel, QuizUebersicht } from "@/lib/karten/quiz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
@@ -1587,6 +1587,11 @@ export const api = {
     aendern: (id: number, body: KartenSatzIn) =>
       apiFetch<KartenSatz>(`karten/saetze/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     loeschen: (id: number) => apiFetch<void>(`karten/saetze/${id}`, { method: "DELETE" }),
+    /** JSON-Vorlage: alle Kandidaten der Ebenen mit »aktiv« (zum Filtern, auch per LLM) */
+    vorlageExport: (body: { titel: string; inhalt: SatzInhaltKarten; ebenen: string[]; nur_ausschnitt: boolean }) =>
+      apiFetch<Record<string, unknown>>("karten/vorlage/export", { method: "POST", body: JSON.stringify(body) }),
+    vorlageImport: (vorlage: unknown) =>
+      apiFetch<{ titel: string; inhalt: SatzInhaltKarten }>("karten/vorlage/import", { method: "POST", body: JSON.stringify(vorlage) }),
     /** Eigene Ebene hochladen (GeoJSON/KML/KMZ/GPX); Antwort ist ihr Katalog-Eintrag */
     eigeneHochladen: async (datei: File, titel: string): Promise<KartenEbene> => {
       const fd = new FormData();

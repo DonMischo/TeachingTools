@@ -25,6 +25,8 @@ import EigeneEbenen from "./EigeneEbenen";
 import KartenQuizLehrkraft from "./KartenQuizLehrkraft";
 import SiedlungsFilter from "./SiedlungsFilter";
 import OrtSuche from "./OrtSuche";
+import ErfolgeEditor from "./ErfolgeEditor";
+import VorlageJson from "./VorlageJson";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
@@ -41,6 +43,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const [aktiveEbene, setAktiveEbene] = useState("de-staedte");
   const [ziel, setZiel] = useState<Ausschnitt | null>(null);
   const ausschnitt = useRef<Ausschnitt | null>(null);
+  const [vorschlagTitel, setVorschlagTitel] = useState("");
   const [fundort, setFundort] = useState<{ punkt: [number, number]; text: string; zoom: number } | null>(null);
   // Suchtreffer zeigen: Ebene (und bei Siedlungen die Größenklasse) zuschalten, hinfliegen
   const zeigeTreffer = (t: SuchTreffer) => {
@@ -130,8 +133,18 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="flex items-center gap-2">{action}<HelpButton slug="karten" /></div>
       </div>
 
-      {lehrkraft && <SatzLeiste satz={satz} inhalt={inhalt} ausschnitt={() => ausschnitt.current} onLaden={lade}
+      {lehrkraft && <SatzLeiste satz={satz} inhalt={inhalt} ausschnitt={() => ausschnitt.current} onLaden={lade} vorschlag={vorschlagTitel}
         onGespeichert={(s) => setSatz({ id: s.id, titel: s.titel, geteilt: s.geteilt, eigen: s.eigen })} />}
+      {lehrkraft && katalog && (
+        <VorlageJson titel={satz?.titel ?? ""} inhalt={inhalt} ausschnitt={() => ausschnitt.current} ebenen={quizEbenen}
+          onImport={(titel, neu) => {
+            // Geladene Vorlage: neuer (ungespeicherter) Satz mit diesem Titel
+            setSatz(null);
+            setInhalt(neu);
+            setZiel(neu.ausschnitt ?? null);
+            setVorschlagTitel(titel);
+          }} />
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={inhalt.region} onChange={(e) => waehleRegion(e.target.value)} aria-label="Region"
@@ -171,8 +184,11 @@ export default function Karten({ action }: { action?: ReactNode }) {
           </div>
           <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4 text-sm">
             {bearbeiten ? (
-              <AuswahlPanel ebenen={quizEbenen} aktiv={aktiveEbene} setAktiv={setAktiveEbene}
-                inhalt={inhalt} setInhalt={setInhalt} daten={daten} nummern={nummern} />
+              <>
+                <AuswahlPanel ebenen={quizEbenen} aktiv={aktiveEbene} setAktiv={setAktiveEbene}
+                  inhalt={inhalt} setInhalt={setInhalt} daten={daten} nummern={nummern} />
+                <ErfolgeEditor ebenen={quizEbenen} inhalt={inhalt} setInhalt={setInhalt} />
+              </>
             ) : (
               <>
                 <OrtSuche bereich={bereich} onWahl={zeigeTreffer} />

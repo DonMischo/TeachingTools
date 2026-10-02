@@ -104,3 +104,38 @@ def test_ortssuche_findet_kleine_orte_und_ortsteile_ueber_die_gemeinde(client, t
     assert client.get("/api/karten/suche?q=e", headers=h).json() == []
     welt = client.get("/api/karten/suche?q=new york&bereich=welt", headers=h).json()
     assert welt[0]["name"] == "New York City"
+
+
+# ── JSON-Vorlage ──
+
+def test_vorlage_export_import_rundreise(client, teacher_token):
+    h = auth(teacher_token)
+    inhalt = {**_satz()["inhalt"], "ausschnitt": {"west": 9.8, "sued": 50.15, "ost": 12.7, "nord": 51.7}}
+    r = client.post("/api/karten/vorlage/export", json={"titel": "Thüringen", "inhalt": inhalt, "ebenen": ["de-fluesse"]}, headers=h)
+    assert r.status_code == 200, r.text
+    vorlage = r.json()
+    liste = vorlage["objekte"]["de-fluesse"]["liste"]
+    assert {o["id"] for o in liste if o["aktiv"]} == {"saale-56", "werra-41"}
+    assert any(o["name"] == "Ilm" for o in liste)  # Kandidat im Ausschnitt, nicht aktiv
+    assert not any(o["name"] == "Isar" for o in liste)  # außerhalb des Ausschnitts
+    assert "aktiv" in vorlage["_hinweis"]
+
+    # »LLM« schaltet Ilm dazu und Werra ab, ergänzt einen Erfolg
+    for o in liste:
+        o["aktiv"] = o["name"] in ("Saale", "Ilm") and o["id"] != "ilm-1368"
+    vorlage["erfolge"] = [{"id": "fluesse", "name": "Flussprofi", "icon": "🌊", "ebenen": ["de-fluesse"], "schwelle": 0.5}]
+    r = client.post("/api/karten/vorlage/import", json=vorlage, headers=h)
+    assert r.status_code == 200, r.text
+    neu = r.json()["inhalt"]
+    assert neu["auswahl"]["de-fluesse"]["objekte"] == [o["id"] for o in liste if o["aktiv"]]
+    assert neu["erfolge"][0]["schwelle"] == 0.5
+    assert client.post("/api/karten/saetze", json={"titel": "x", "inhalt": neu}, headers=h).status_code == 201
+
+
+def test_vorlage_import_lehnt_falsche_ids_und_erfolge_ab(client, teacher_token):
+    h = auth(teacher_token)
+    falsch = {"objekte": {"de-fluesse": {"liste": [{"id": "amazonas", "aktiv": True}]}}}
+    assert client.post("/api/karten/vorlage/import", json=falsch, headers=h).status_code == 422
+    erfolg = {"objekte": {"de-fluesse": {"liste": [{"id": "saale-56", "aktiv": True}]}},
+              "erfolge": [{"id": "x", "name": "X", "ebenen": ["de-seen"]}]}
+    assert client.post("/api/karten/vorlage/import", json=erfolg, headers=h).status_code == 422

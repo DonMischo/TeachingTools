@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ankerpunkt, marke, vergibNummern } from "@/lib/karten/nummern";
+import { aufgeraeumt } from "@/lib/karten/satz";
 
 describe("marke", () => {
   it("zählt in allen Schemata", () => {
@@ -53,5 +54,20 @@ describe("ankerpunkt", () => {
     const [x, y] = ankerpunkt(g)!;
     expect(x).toBeGreaterThan(10);
     expect(y).toBeGreaterThan(10);
+  });
+});
+
+describe("aufgeraeumt", () => {
+  it("lässt leere Auswahlen und Erfolge ohne Ebene weg", () => {
+    const aus = aufgeraeumt({
+      art: "stumm", region: "deutschland", ebenen: [], beschriftung: false, ausschnitt: null,
+      auswahl: { "de-fluesse": { zeigen: "alle", objekte: ["saale"], nummerierung: "zahl" }, "de-seen": { zeigen: "alle", objekte: [], nummerierung: "keine" } },
+      erfolge: [
+        { id: "a", name: "A", icon: "🌊", ebenen: ["de-fluesse", "de-seen"], schwelle: 1 },
+        { id: "b", name: "B", icon: "💧", ebenen: ["de-seen"], schwelle: 1 },
+      ],
+    });
+    expect(Object.keys(aus.auswahl)).toEqual(["de-fluesse"]);
+    expect(aus.erfolge).toEqual([{ id: "a", name: "A", icon: "🌊", ebenen: ["de-fluesse"], schwelle: 1 }]);
   });
 });

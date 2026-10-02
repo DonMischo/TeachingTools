@@ -129,6 +129,15 @@ class Ausschnitt(BaseModel):
     nord: float = Field(ge=-90, le=90)
 
 
+class Erfolg(BaseModel):
+    """Erfolg im Kartenquiz: geschafft, wenn der Anteil richtiger Aufgaben der Ebenen ≥ schwelle."""
+    id: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9-]+$")
+    name: str = Field(min_length=1, max_length=60)
+    icon: str = Field(default="🏅", max_length=8)
+    ebenen: list[str] = Field(min_length=1, max_length=20)
+    schwelle: float = Field(default=1.0, ge=0.1, le=1.0)
+
+
 class SatzInhalt(BaseModel):
     art: Literal["politisch", "topographisch", "stumm"]
     # Region aus frontend/src/lib/karten/stil.ts::REGIONEN (Deutschland, Europa, Welt …)
@@ -139,6 +148,8 @@ class SatzInhalt(BaseModel):
     auswahl: dict[str, EbenenAuswahl] = Field(default_factory=dict)
     # Größenklassen-Filter je Ebene (Siedlungen: welche »rang«-Werte gezeigt werden)
     filter: dict[str, list[str]] = Field(default_factory=dict)
+    # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
+    erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
 
     @model_validator(mode="after")
     def _ids_pruefen(self):
@@ -157,6 +168,12 @@ class SatzInhalt(BaseModel):
             fremd = set(wahl.objekte) - objekt_ids(e)
             if fremd:
                 raise ValueError(f"{e}: unbekannte Objekte {sorted(fremd)[:3]}")
+        if len({e.id for e in self.erfolge}) != len(self.erfolge):
+            raise ValueError("Zwei Erfolge haben dieselbe id")
+        for erfolg in self.erfolge:
+            fremd = set(erfolg.ebenen) - set(self.auswahl)
+            if fremd:
+                raise ValueError(f"Erfolg »{erfolg.name}«: Ebene ohne Auswahl {sorted(fremd)}")
         return self
 
 
@@ -392,3 +409,105 @@ def suche(q: str, bereich: str | None = None, _: Union[Teacher, Student] = Depen
     treffer.sort(key=lambda x: (x[0], x[1], x[2]["name"]))
     # Ankerpunkt nur für die gezeigten Treffer (bei Staaten teuer)
     return [{**{k: v for k, v in t.items() if not k.startswith("_")}, "punkt": ankerpunkt(t["_geometrie"])} for _, _, t in treffer[:15]]
+
+
+# ── JSON-Vorlage: Kandidaten mit »aktiv« zum Filtern (auch per LLM) ───
+
+VORLAGE_HINWEIS = (
+    "Kartensatz-Vorlage für das Kartentool. Unter »objekte« steht je Ebene die Liste aller Kandidaten. "
+    "Setze »aktiv« auf true bei allen Objekten, die auf der Karte nummeriert und abgefragt werden sollen, "
+    "sonst auf false. Ändere »id« nicht; »name« und »info« dienen nur zur Orientierung. "
+    "Nummerierung je Ebene: keine | zahl | klein | gross | roemisch. »zeigen«: alle | auswahl. "
+    "Erfolge: je Eintrag die Ebenen und der Anteil richtiger Antworten (schwelle 0.1–1.0)."
+)
+
+
+def _info(p: dict) -> str:
+    teile = [p.get("rang"), p.get("gemeinde"), p.get("land"), f"{p['hoehe']} m" if p.get("hoehe") else None,
+             f"{p['ew']:,} Einw.".replace(",", ".") if p.get("ew") else None, f"Klasse {p['klasse']}" if p.get("klasse") else None]
+    return ", ".join(str(t) for t in teile if t)
+
+
+def _im_ausschnitt(f: dict, a: Ausschnitt | None) -> bool:
+    if a is None:
+        return True
+    pkt = ankerpunkt(f["geometry"])
+    return bool(pkt) and a.west <= pkt[0] <= a.ost and a.sued <= pkt[1] <= a.nord
+
+
+class VorlageAnfrage(BaseModel):
+    titel: str = Field(default="Kartensatz", max_length=200)
+    inhalt: SatzInhalt
+    # Nur Kandidaten im Ausschnitt (sonst wird z. B. »alle Orte« riesig)
+    nur_ausschnitt: bool = True
+    ebenen: list[str] = Field(min_length=1, max_length=20)
+
+
+@router.post("/vorlage/export")
+def vorlage_export(body: VorlageAnfrage, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    """Vorlage aus dem aktuellen Stand: alle Kandidaten der gewählten Ebenen, die gewählten »aktiv«."""
+    _pruefe_eigene(body.inhalt, db, ich)
+    bekannt = {e["id"]: e for e in katalog()["ebenen"]}
+    ausschnitt = body.inhalt.ausschnitt if body.nur_ausschnitt else None
+    objekte = {}
+    for ebene in body.ebenen:
+        if ebene.startswith(EIGEN_PRAEFIX):
+            eigen = _eigene_ebene(db, ebene, ich)
+            pfad = EIGENE / f"{eigen.id}.geojson"
+        elif ebene in bekannt and bekannt[ebene]["geometrie"] != "raster":
+            pfad = DATEN / "ebenen" / f"{ebene}.geojson"
+        else:
+            raise HTTPException(422, f"Unbekannte Ebene: {ebene}")
+        wahl = body.inhalt.auswahl.get(ebene, EbenenAuswahl())
+        aktiv = set(wahl.objekte)
+        liste = [{"id": f["properties"]["id"], "name": f["properties"].get("name", ""), "info": _info(f["properties"]),
+                  "aktiv": f["properties"]["id"] in aktiv}
+                 for f in json.loads(pfad.read_text(encoding="utf-8"))["features"]
+                 if f["properties"].get("name") and (f["properties"]["id"] in aktiv or _im_ausschnitt(f, ausschnitt))]
+        objekte[ebene] = {"ebene": bekannt.get(ebene, {}).get("name", ebene), "nummerierung": wahl.nummerierung,
+                          "zeigen": wahl.zeigen, "liste": liste}
+    inhalt = body.inhalt.model_dump(exclude={"auswahl"})
+    return {"_hinweis": VORLAGE_HINWEIS, "format": "karten-vorlage/1", "titel": body.titel, **inhalt, "objekte": objekte}
+
+
+class VorlageObjekt(BaseModel):
+    id: str
+    aktiv: bool = False
+
+
+class VorlageEbene(BaseModel):
+    nummerierung: Literal["keine", "zahl", "klein", "gross", "roemisch"] = "keine"
+    zeigen: Literal["alle", "auswahl"] = "alle"
+    liste: list[VorlageObjekt] = Field(default_factory=list)
+
+
+class VorlageIn(BaseModel):
+    titel: str = Field(default="Kartensatz", min_length=1, max_length=200)
+    art: Literal["politisch", "topographisch", "stumm"] = "stumm"
+    region: str = Field(default="deutschland", max_length=30, pattern=r"^[a-z]+$")
+    ebenen: list[str] = Field(default_factory=list, max_length=50)
+    beschriftung: bool = False
+    ausschnitt: Ausschnitt | None = None
+    filter: dict[str, list[str]] = Field(default_factory=dict)
+    erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
+    objekte: dict[str, VorlageEbene] = Field(default_factory=dict)
+
+
+@router.post("/vorlage/import")
+def vorlage_import(body: VorlageIn, db: Session = Depends(get_db), ich: Teacher = Depends(get_current_teacher)):
+    """Vorlage → Kartensatz-Inhalt (geprüft wie beim Speichern); der Browser lädt ihn in den Editor."""
+    auswahl = {}
+    for ebene, e in body.objekte.items():
+        aktiv = list(dict.fromkeys(o.id for o in e.liste if o.aktiv))
+        if len(aktiv) > MAX_OBJEKTE:
+            raise HTTPException(422, f"{ebene}: höchstens {MAX_OBJEKTE} aktive Objekte (hier {len(aktiv)})")
+        if aktiv:
+            auswahl[ebene] = {"zeigen": e.zeigen, "objekte": aktiv, "nummerierung": e.nummerierung}
+    ebenen = list(dict.fromkeys([*body.ebenen, *auswahl]))
+    try:
+        inhalt = SatzInhalt(art=body.art, region=body.region, ebenen=ebenen, beschriftung=body.beschriftung,
+                            ausschnitt=body.ausschnitt, filter=body.filter, erfolge=body.erfolge, auswahl=auswahl)
+    except ValueError as fehler:
+        raise HTTPException(422, str(fehler)) from None
+    _pruefe_eigene(inhalt, db, ich)
+    return {"titel": body.titel, "inhalt": inhalt.model_dump()}
