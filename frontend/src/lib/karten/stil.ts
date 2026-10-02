@@ -489,6 +489,8 @@ export type SatzAnsicht = {
   anker: GeoJSON.FeatureCollection;
   /** Im Bearbeiten-Modus: alles zeigen und Ausgewähltes rot hervorheben */
   bearbeiten: boolean;
+  /** Außerhalb des Bearbeitens rot umranden (Quiz: aufgedeckte Lösung) — Filter bleiben */
+  hervor?: Record<string, string[]>;
 };
 
 const inListe = (ids: string[]): ExpressionSpecification => ["in", ["get", "id"], ["literal", ids]];
@@ -516,11 +518,14 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
   });
 
   const zusatz: LayerSpecification[] = [];
-  if (satz.bearbeiten) {
-    for (const [ebeneId, wahl] of Object.entries(satz.auswahl)) {
+  const markiert = satz.bearbeiten
+    ? Object.fromEntries(Object.entries(satz.auswahl).map(([k, w]) => [k, w.objekte]))
+    : satz.hervor ?? {};
+  {
+    for (const [ebeneId, objekte] of Object.entries(markiert)) {
       const e = katalog.ebenen.find((x) => x.id === ebeneId);
-      if (!e || !stil.sources[ebeneId] || !wahl.objekte.length) continue;
-      const filter = inListe(wahl.objekte);
+      if (!e || !stil.sources[ebeneId] || !objekte.length) continue;
+      const filter = inListe(objekte);
       const id = `wahl-${ebeneId}`;
       if (e.geometrie === "punkt" || e.geometrie === "gemischt") {
         zusatz.push({ id: `${id}-punkt`, type: "circle", source: ebeneId, filter: ["all", filter, ["==", ["geometry-type"], "Point"]],
@@ -542,11 +547,11 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
     mitHervor.push(
       { id: "nummern-kreis", type: "circle", source: "nummern",
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 9, 12], "circle-color": "#ffffff",
-          "circle-stroke-color": FARBE.hervor, "circle-stroke-width": 2 } },
+          "circle-stroke-color": ["coalesce", ["get", "farbe"], FARBE.hervor], "circle-stroke-width": 2 } },
       { id: "nummern-text", type: "symbol", source: "nummern",
         layout: { "text-field": ["get", "marke"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 9, 14],
           "text-allow-overlap": true, "text-ignore-placement": true },
-        paint: { "text-color": FARBE.hervor } },
+        paint: { "text-color": ["coalesce", ["get", "farbe"], FARBE.hervor] } },
     );
   }
   return { ...stil, sources, layers: mitHervor };

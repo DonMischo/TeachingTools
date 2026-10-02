@@ -70,6 +70,7 @@ def test_benennen_gast_sieht_keine_namen_und_bekommt_loesung_nach_zwei_fehlern(c
     roh = json.dumps(spiel["spiel"])
     assert "Erfurt" not in roh and "Saale" not in roh and "16051000" not in roh
     assert [a["marke"] for a in spiel["spiel"]["aufgaben"]] == ["1", "2", "a"]
+    assert {k["id"] for k in spiel["katalog"]} == {"de-laender", "de-staedte", "de-fluesse"}
 
     ebene = client.get(f"/api/karten/quiz/{code}/ebene/de-staedte", headers=auth(gast)).json()
     assert all("name" not in f["properties"] for f in ebene["features"])

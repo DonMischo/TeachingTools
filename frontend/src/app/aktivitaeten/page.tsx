@@ -39,6 +39,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#c084fc",
   },
   {
+    slug: "karten",
+    href: "/aktivitaeten/karten",
+    icon: "🗺️",
+    title: "Karten",
+    description: "Atlas für Deutschland, Europa und die Welt: politisch, topographisch, Wirtschaft — Objekte nummerieren, Arbeitsblätter exportieren, Kartenquiz per Code.",
+    color: "#0d9488",
+  },
+  {
     slug: "zeitstrahl",
     href: "/aktivitaeten/zeitstrahl",
     icon: "📏",

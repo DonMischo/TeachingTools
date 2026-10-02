@@ -166,13 +166,19 @@ def spiel(code: str, db: Session = Depends(get_db), spieler=Depends(get_player))
     liste = aufgaben(db, satz)
     mischen = int(hashlib.sha256(json.dumps(_wer(spieler)).encode()).hexdigest()[:8], 16)
     inhalt = satz.inhalt
-    namen = _ebenen_namen(db)
+    # Ebenen-Metadaten für den Kartenstil (Gäste dürfen den Katalog sonst nicht lesen)
+    meta = [k for k in katalog()["ebenen"] if k["id"] in inhalt["ebenen"]]
+    for k in inhalt["ebenen"]:
+        nummer = k.removeprefix(EIGEN_PRAEFIX)
+        eigen = db.get(KartenEbeneEigen, int(nummer)) if k.startswith(EIGEN_PRAEFIX) and nummer.isdigit() else None
+        if eigen:
+            meta.append({"id": k, "name": eigen.titel, "gruppe": "eigen", "bereich": "eigen", "geometrie": eigen.geometrie,
+                         "quiz": True, "bytes": 0, "quelle": {"name": "Eigene Daten", "lizenz": "", "url": ""}})
     return {
-        "titel": satz.titel, "einstellungen": e,
+        "titel": satz.titel, "einstellungen": e, "katalog": meta,
         "karte": {"art": inhalt["art"], "region": inhalt.get("region", "deutschland"), "ebenen": inhalt["ebenen"],
-                  "ausschnitt": inhalt.get("ausschnitt"), "auswahl": {k: {"zeigen": v.get("zeigen", "alle")} for k, v in inhalt.get("auswahl", {}).items()},
-                  # Eigene Ebenen haben keinen Katalogeintrag beim Gast — Name und Geometrie mitgeben
-                  "eigene": {k: {"name": namen.get(k, k)} for k in inhalt["ebenen"] if k.startswith(EIGEN_PRAEFIX)}},
+                  "ausschnitt": inhalt.get("ausschnitt"),
+                  "auswahl": {k: {"zeigen": v.get("zeigen", "alle")} for k, v in inhalt.get("auswahl", {}).items()}},
         "spiel": engine.fuer_spieler(liste, e["modus"], _geheim(s), wortbank=e["wortbank"], mischen=mischen),
         "erfolge": [{k: v[k] for k in ("id", "name", "icon")} for v in erfolge_fuer(inhalt, liste)],
         "stand": _stand_out(_stand(db, s, spieler, anlegen=False)),

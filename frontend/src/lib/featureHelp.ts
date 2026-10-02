@@ -51,6 +51,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📄 Vorlage", text: "»Vorlage« lädt eine leere lueckentext-vorlage.json herunter. Zusätzlich: PDF-Export (leer oder gefüllt)." },
     ],
   },
+  karten: {
+    title: "Karten",
+    intro: "Atlas für Deutschland, Thüringen, Europa und die Welt — mit eigenen Daten, Arbeitsblättern und Kartenquiz.",
+    sections: [
+      { label: "🗺️ Ansehen", text: "Region und Kartenart wählen (politisch, topographisch, stumm), Ebenen einzeln zuschalten: Flüsse, Gebirge, Städte, Bodennutzung, Kraftwerke, Bevölkerungsdichte … »Namen zeigen« aus = stumme Karte." },
+      { label: "🎯 Auswählen", text: "Ebene wählen, Objekte auf der Karte anklicken oder suchen. Je Ebene: alle zeigen oder nur die Auswahl, Nummern 1/a/A/I. Darunter die Tabelle zum Ausfüllen." },
+      { label: "💾 Kartensätze", text: "Auswahl mit Namen speichern, für das Kollegium teilen. Gespeichert werden nur die Auswahl — die Kartendaten bleiben unverändert." },
+      { label: "⬇️ Arbeitsblatt", text: "PDF, Word, LibreOffice oder LaTeX: Seite 1 Karte mit Aufgabe »Finde und benenne …«, danach Tabelle — auch mit Lösung." },
+      { label: "🎮 Kartenquiz", text: "Gespeicherten Kartensatz per Code/QR teilen: Nummern benennen oder Orte anklicken. Erfolge je Kategorie, Hauspunkte je Klasse nach Trefferquote." },
+      { label: "⬆️ Eigene Ebenen", text: "GeoJSON, KML/KMZ (z. B. Google My Maps) oder GPX hochladen — nur Lehrkräfte." },
+    ],
+  },
   zeitstrahl: {
     title: "Zeitstrahl",
     intro: "Zeitleisten mit parallelen Spuren und Zahlenstrahlen — anzeigen, einsortieren, Fehler finden.",

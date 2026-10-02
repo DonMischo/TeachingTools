@@ -22,6 +22,7 @@ export const FAECHER: { name: string; farbe: string }[] = [
 
 /** Voreinstellung: welche Fächer ein Werkzeug hat, solange niemand sie ändert. */
 export const STANDARD_FAECHER: Record<string, string[]> = {
+  karten: ["Geografie", "Geschichte", "Sozialkunde", "Wirtschaft und Recht"],
   gleichungswaage: ["Mathematik", "Physik", "Chemie"],
   bildformate: ["Informatik"],
   vierecke: ["Mathematik"],

@@ -18,7 +18,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -30,14 +30,16 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   onAusschnitt?: (a: Ausschnitt) => void;
   /** Für den Export: hier hinterlegt die Karte ihre Bild-Funktion */
   bildRef?: { current: KartenBild | null };
+  /** Kartenquiz für Gäste: Token für die Ebenen-Anfragen an /api (Gäste haben kein Cookie) */
+  gastToken?: string | null;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
-  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt });
-  aktuell.current = { namenZeigen, onKlick, onAusschnitt };
+  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken });
+  aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken };
   const ersterStil = useRef(stil);
   // Wird nach jedem Stilwechsel erst erfüllt, wenn die Karte wieder ruht (alles gezeichnet)
   const gezeichnet = useRef<Promise<void>>(Promise.resolve());
@@ -61,6 +63,10 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         pitchWithRotate: false,
         // Für den PDF-Druck muss das Bild nach dem Zeichnen lesbar bleiben
         canvasContextAttributes: { preserveDrawingBuffer: true },
+        transformRequest: (url) => {
+          const token = aktuell.current.gastToken;
+          return token && url.includes("/api/") ? { url, headers: { Authorization: `Bearer ${token}` } } : { url };
+        },
       });
       m.touchZoomRotate.disableRotation();
       m.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");

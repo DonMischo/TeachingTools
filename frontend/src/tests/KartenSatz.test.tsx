@@ -29,7 +29,10 @@ vi.mock("@/lib/api", () => ({
     saetze: async () => [],
     anlegen: (b: { inhalt: unknown }) => anlegen(b),
     export: (b: unknown) => exportieren(b),
-  } },
+    quizUebersicht: async () => ({ aufgaben: 0, einstellungen: {}, je_aufgabe: [], teilnehmer: [], punkte: [] }),
+  },
+  // Nach dem Speichern erscheint das Quiz-Panel und legt die Sitzung an
+  toolSessions: { create: async () => ({ code: "KQ1", tool_slug: "karten", allow_guests: false, status: "open", settings: {} }) } },
 }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ auth: { user_type: "teacher", role: "teacher" }, ready: true }) }));
 vi.mock("@/components/karten/KartenAnsicht", () => ({

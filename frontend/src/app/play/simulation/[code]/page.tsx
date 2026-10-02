@@ -36,6 +36,7 @@ import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
+import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
@@ -68,6 +69,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   // Der Zeitstrahl teilt eine bestimmte Zeitleiste — die haengt am Code, nicht
   // am Werkzeug, und wird deshalb erst hier nachgeladen.
   zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
+  // Das Kartenquiz teilt einen Kartensatz und prüft auf dem Server — Code und Gast-Token.
+  karten: { title: "Kartenquiz", icon: "🗺️", node: null },
 };
 
 /**
@@ -146,6 +149,8 @@ export default function SimulationJoinPage() {
 
   const body = session.tool_slug === "zeitstrahl"
     ? <SharedTimeline code={code} guestToken={guest.token} />
+    : session.tool_slug === "karten"
+      ? <KartenQuizSpiel code={code} token={auth ? null : guest.token} />
     : session.tool_slug === "uebung"
       ? <Uebung zugang={guest.token ? { code, token: guest.token } : undefined} />
       : session.tool_slug === "ki"

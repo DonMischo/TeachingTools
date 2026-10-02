@@ -1,0 +1,107 @@
+"use client";
+/**
+ * Lehrkraft: einen gespeicherten Kartensatz als Quiz teilen (Code/QR), Modus
+ * und Punkte einstellen, live mitverfolgen, Hauspunkte vergeben, neue Runde.
+ */
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type ToolSessionOut } from "@/lib/api";
+import { ToolSessionBar } from "@/components/ToolSessionBar";
+
+export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number; titel: string }) {
+  const qc = useQueryClient();
+  const [sitzung, setSitzung] = useState<ToolSessionOut | null>(null);
+  const [meldung, setMeldung] = useState("");
+  useEffect(() => {
+    setSitzung(null);
+    api.toolSessions.create("karten", satzId).then(setSitzung).catch(() => setMeldung("Quiz-Sitzung ließ sich nicht anlegen."));
+  }, [satzId]);
+  const code = sitzung?.code;
+  const { data: ueb } = useQuery({
+    queryKey: ["karten", "quiz", code], queryFn: () => api.karten.quizUebersicht(code!), enabled: !!code, refetchInterval: 5000,
+  });
+
+  if (!sitzung) return meldung ? <p className="text-sm text-[var(--red)]">{meldung}</p> : null;
+  const e = { modus: "benennen", wortbank: false, max_punkte: 10, ...sitzung.settings } as Record<string, unknown>;
+  const setze = async (aenderung: Record<string, unknown>) => {
+    setSitzung(await api.toolSessions.einstellungen(sitzung.code, { ...sitzung.settings, ...aenderung }));
+    qc.invalidateQueries({ queryKey: ["karten", "quiz", code] });
+  };
+  const vergeben = async () => {
+    if (!window.confirm("Hauspunkte für dieses Quiz jetzt vergeben? Das geht je Runde nur einmal.")) return;
+    try {
+      const r = await api.karten.quizPunkte(sitzung.code);
+      setMeldung(r.vergeben.map((z) => `${z.klasse}: ${z.punkte} P.`).join(" · ") || "Keine Klasse hat teilgenommen.");
+      setSitzung(await api.toolSessions.get(sitzung.code));
+    } catch (err) {
+      setMeldung((err as Error).message);
+    }
+  };
+  const neueRunde = async () => {
+    if (!window.confirm("Alle Ergebnisse dieser Runde löschen und neu beginnen?")) return;
+    await api.karten.quizZuruecksetzen(sitzung.code);
+    setSitzung(await api.toolSessions.get(sitzung.code));
+    qc.invalidateQueries({ queryKey: ["karten", "quiz", code] });
+    setMeldung("Neue Runde gestartet.");
+  };
+  const vergebenAm = sitzung.settings?.punkte_vergeben as string | undefined;
+
+  return (
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3 text-sm" aria-label="Kartenquiz">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="font-black text-base">🎮 Kartenquiz: {titel}</h2>
+        <ToolSessionBar tool="karten" title={`Kartenquiz: ${titel}`} refId={satzId} />
+      </div>
+      <div className="flex flex-wrap items-center gap-4">
+        {([["benennen", "Nummern benennen"], ["finden", "Orte finden (anklicken)"]] as const).map(([wert, text]) => (
+          <label key={wert} className="flex items-center gap-1.5">
+            <input type="radio" name="quizmodus" checked={e.modus === wert} onChange={() => setze({ modus: wert })} /> {text}
+          </label>
+        ))}
+        {e.modus === "benennen" && (
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={!!e.wortbank} onChange={() => setze({ wortbank: !e.wortbank })} /> Wortbank
+          </label>
+        )}
+        <label className="flex items-center gap-1.5">
+          Hauspunkte bis
+          <input type="number" min={0} max={100} value={Number(e.max_punkte)} onChange={(ev) => setze({ max_punkte: Number(ev.target.value) })}
+            className="w-16 px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg)]" />
+        </label>
+      </div>
+
+      {ueb && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <table className="w-full">
+            <thead><tr className="text-left text-xs text-[var(--text-muted)]"><th>Name</th><th>Klasse</th><th>richtig</th><th>🏆</th></tr></thead>
+            <tbody>
+              {ueb.teilnehmer.map((t, i) => (
+                <tr key={i} className="border-t border-[var(--border)]">
+                  <td>{t.name}</td><td>{t.klasse}</td><td>{t.richtig} / {ueb.aufgaben}</td><td>{t.erfolge || ""}</td>
+                </tr>
+              ))}
+              {!ueb.teilnehmer.length && <tr><td colSpan={4} className="text-[var(--text-muted)]">Noch niemand dabei.</td></tr>}
+            </tbody>
+          </table>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-[var(--text-muted)]">Am schwersten</span>
+            {[...ueb.je_aufgabe].filter((a) => a.versucht).sort((x, y) => x.richtig / x.versucht - y.richtig / y.versucht).slice(0, 5).map((a) => (
+              <span key={a.nr}>{a.marke && <b className="text-[var(--red)]">{a.marke}</b>} {a.name}: {Math.round((100 * a.richtig) / a.versucht)} % richtig</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border)]">
+        {ueb?.punkte.length ? <span>Vorschau: {ueb.punkte.map((z) => `${z.klasse} ${z.punkte} P.`).join(" · ")}</span> : null}
+        <button onClick={vergeben} disabled={!!vergebenAm}
+          className="px-3 py-1.5 rounded-lg font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-40">
+          🏠 Hauspunkte vergeben
+        </button>
+        <button onClick={neueRunde} className="px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]">↻ Neue Runde</button>
+        {vergebenAm && <span className="text-xs text-[var(--text-muted)]">vergeben am {new Date(vergebenAm).toLocaleString("de-DE")}</span>}
+        {meldung && <span className="text-xs">{meldung}</span>}
+      </div>
+    </section>
+  );
+}

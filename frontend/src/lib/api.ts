@@ -4,6 +4,7 @@ import type {
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz } from "@/lib/karten/satz";
+import type { QuizAntwortOut, QuizSpiel, QuizUebersicht } from "@/lib/karten/quiz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1596,6 +1597,14 @@ export const api = {
     eigeneAendern: (id: number, body: { titel: string; geteilt: boolean; namensfeld: string }) =>
       apiFetch<KartenEbene>(`karten/eigene/${id}`, { method: "PUT", body: JSON.stringify(body) }),
     eigeneLoeschen: (id: number) => apiFetch<void>(`karten/eigene/${id}`, { method: "DELETE" }),
+    // Kartenquiz (api/routers/karten_quiz.py): Spieler mit Konto oder Gast-Token
+    quiz: (code: string, token?: string | null) => ffetch<QuizSpiel>(`karten/quiz/${encodeURIComponent(code)}`, undefined, token ?? undefined),
+    quizAntwort: (code: string, nr: number, antwort: string, token?: string | null) =>
+      ffetch<QuizAntwortOut>(`karten/quiz/${encodeURIComponent(code)}/antwort`,
+        { method: "POST", body: JSON.stringify({ nr, antwort }) }, token ?? undefined),
+    quizUebersicht: (code: string) => apiFetch<QuizUebersicht>(`karten/quiz/${encodeURIComponent(code)}/uebersicht`),
+    quizPunkte: (code: string) => apiFetch<{ vergeben: QuizUebersicht["punkte"] }>(`karten/quiz/${encodeURIComponent(code)}/punkte`, { method: "POST" }),
+    quizZuruecksetzen: (code: string) => apiFetch<void>(`karten/quiz/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),
     /** Arbeitsblatt als Datei (PDF/DOCX/ODT/LaTeX-ZIP); Name aus Content-Disposition */
     export: async (body: KartenExportIn): Promise<{ datei: Blob; name: string }> => {
       const r = await fetch("/api/karten/export", {

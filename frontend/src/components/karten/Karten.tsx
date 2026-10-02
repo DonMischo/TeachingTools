@@ -13,6 +13,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import HelpButton from "@/components/HelpButton";
 import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt } from "@/lib/karten/satz";
@@ -21,6 +22,7 @@ import SatzLeiste from "./SatzLeiste";
 import AuswahlPanel from "./AuswahlPanel";
 import Arbeitsblatt from "./Arbeitsblatt";
 import EigeneEbenen from "./EigeneEbenen";
+import KartenQuizLehrkraft from "./KartenQuizLehrkraft";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
@@ -110,7 +112,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
             Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern.
           </p>
         </div>
-        <div className="flex items-center gap-2">{action}</div>
+        <div className="flex items-center gap-2">{action}<HelpButton slug="karten" /></div>
       </div>
 
       {lehrkraft && <SatzLeiste satz={satz} inhalt={inhalt} ausschnitt={() => ausschnitt.current} onLaden={lade}
@@ -149,6 +151,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
               ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}
               holeBild={lehrkraft ? holeBild : undefined} />
+            {/* Quiz gibt es für gespeicherte Sätze: der Code zeigt auf den Satz auf dem Server */}
+            {lehrkraft && satz && <KartenQuizLehrkraft satzId={satz.id} titel={satz.titel} />}
           </div>
           <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4 text-sm">
             {bearbeiten ? (
