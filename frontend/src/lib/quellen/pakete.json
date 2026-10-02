@@ -1,0 +1,268 @@
+[
+  {
+    "name": "@dnd-kit/core",
+    "version": "6.3.1",
+    "lizenz": "MIT",
+    "url": "https://github.com/clauderic/dnd-kit",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tanstack/react-query",
+    "version": "5.101.1",
+    "lizenz": "MIT",
+    "url": "https://tanstack.com/query",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tanstack/react-query-devtools",
+    "version": "5.101.1",
+    "lizenz": "MIT",
+    "url": "https://tanstack.com/query",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-collaboration",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-collaboration-cursor",
+    "version": "2.26.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-color",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-highlight",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-image",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-text-align",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-text-style",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/extension-underline",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/pm",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/react",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "@tiptap/starter-kit",
+    "version": "2.27.2",
+    "lizenz": "MIT",
+    "url": "https://tiptap.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "clsx",
+    "version": "2.1.1",
+    "lizenz": "MIT",
+    "url": "lukeed/clsx",
+    "art": "laufzeit"
+  },
+  {
+    "name": "geotiff",
+    "version": "3.0.5",
+    "lizenz": "MIT",
+    "url": "https://github.com/geotiffjs/geotiff.js",
+    "art": "build"
+  },
+  {
+    "name": "http-proxy",
+    "version": "1.18.1",
+    "lizenz": "MIT",
+    "url": "https://github.com/http-party/node-http-proxy",
+    "art": "laufzeit"
+  },
+  {
+    "name": "jspdf",
+    "version": "4.2.1",
+    "lizenz": "MIT",
+    "url": "https://github.com/parallax/jsPDF",
+    "art": "laufzeit"
+  },
+  {
+    "name": "jszip",
+    "version": "3.10.1",
+    "lizenz": "(MIT OR GPL-3.0-or-later)",
+    "url": "https://github.com/Stuk/jszip",
+    "art": "laufzeit"
+  },
+  {
+    "name": "katex",
+    "version": "0.17.0",
+    "lizenz": "MIT",
+    "url": "https://katex.org",
+    "art": "laufzeit"
+  },
+  {
+    "name": "lucide-react",
+    "version": "0.460.0",
+    "lizenz": "ISC",
+    "url": "https://lucide.dev",
+    "art": "laufzeit"
+  },
+  {
+    "name": "maplibre-gl",
+    "version": "6.11.2",
+    "lizenz": "BSD-3-Clause",
+    "url": "https://maplibre.org/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "mapshaper",
+    "version": "0.7.72",
+    "lizenz": "MPL-2.0",
+    "url": "https://github.com/mbloch/mapshaper#readme",
+    "art": "build"
+  },
+  {
+    "name": "next",
+    "version": "16.2.9",
+    "lizenz": "MIT",
+    "url": "https://nextjs.org",
+    "art": "laufzeit"
+  },
+  {
+    "name": "pdfjs-dist",
+    "version": "4.10.38",
+    "lizenz": "Apache-2.0",
+    "url": "https://mozilla.github.io/pdf.js/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "pixi.js",
+    "version": "8.19.0",
+    "lizenz": "MIT",
+    "url": "http://pixijs.com/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "proj4",
+    "version": "2.22.0",
+    "lizenz": "MIT",
+    "url": "https://proj4js.github.io/proj4js/",
+    "art": "build"
+  },
+  {
+    "name": "qrcode.react",
+    "version": "4.2.0",
+    "lizenz": "ISC",
+    "url": "http://zpao.github.io/qrcode.react",
+    "art": "laufzeit"
+  },
+  {
+    "name": "react",
+    "version": "19.2.7",
+    "lizenz": "MIT",
+    "url": "https://react.dev/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "react-dom",
+    "version": "19.2.7",
+    "lizenz": "MIT",
+    "url": "https://react.dev/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "recharts",
+    "version": "3.10.1",
+    "lizenz": "MIT",
+    "url": "https://github.com/recharts/recharts",
+    "art": "laufzeit"
+  },
+  {
+    "name": "sharp",
+    "version": "0.34.5",
+    "lizenz": "Apache-2.0",
+    "url": "https://sharp.pixelplumbing.com",
+    "art": "build"
+  },
+  {
+    "name": "tailwind-merge",
+    "version": "2.6.1",
+    "lizenz": "MIT",
+    "url": "https://github.com/dcastil/tailwind-merge",
+    "art": "laufzeit"
+  },
+  {
+    "name": "three",
+    "version": "0.186.0",
+    "lizenz": "MIT",
+    "url": "https://threejs.org/",
+    "art": "laufzeit"
+  },
+  {
+    "name": "tiptap-markdown",
+    "version": "0.8.10",
+    "lizenz": "MIT",
+    "url": "https://github.com/aguingand/tiptap-markdown",
+    "art": "laufzeit"
+  },
+  {
+    "name": "y-prosemirror",
+    "version": "1.3.7",
+    "lizenz": "MIT",
+    "url": "https://github.com/yjs/y-prosemirror#readme",
+    "art": "laufzeit"
+  },
+  {
+    "name": "y-websocket",
+    "version": "3.0.0",
+    "lizenz": "MIT",
+    "url": "https://github.com/yjs/y-websocket#readme",
+    "art": "laufzeit"
+  },
+  {
+    "name": "yjs",
+    "version": "13.6.31",
+    "lizenz": "MIT",
+    "url": "https://docs.yjs.dev",
+    "art": "laufzeit"
+  }
+]

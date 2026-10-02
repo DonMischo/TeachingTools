@@ -303,6 +303,13 @@ export default function AdminPage() {
           </Link>
         )}
         {isAdmin && (
+          <Link href="/admin/quellen" className={CARD}>
+            <div className="text-2xl mb-2">📚</div>
+            <div className="font-semibold">Quellen und Lizenzen</div>
+            <div className="text-xs text-[var(--text-muted)] mt-1">Daten, Bilder, Schriften und Bibliotheken je Werkzeug · offene Rechte</div>
+          </Link>
+        )}
+        {isAdmin && (
           <Link href="/admin/permissions" className={CARD}>
             <div className="text-2xl mb-2">🔑</div>
             <div className="font-semibold">Berechtigungen</div>

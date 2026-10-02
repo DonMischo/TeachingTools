@@ -503,7 +503,7 @@
       "geometrie": "punkt",
       "quiz": true,
       "quelle": {
-        "name": "Open Power System Data (Stand 01.10.2020; BNetzA, UBA)",
+        "name": "Open Power System Data (Stand 01.10.2020; BNetzA, UBA), bearbeitet",
         "lizenz": "CC-BY 4.0",
         "url": "https://data.open-power-system-data.org/conventional_power_plants/"
       },
@@ -952,7 +952,7 @@
       "geometrie": "flaeche",
       "quiz": true,
       "quelle": {
-        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)",
+        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates), bearbeitet",
         "lizenz": "ODC-BY 1.0",
         "url": "https://github.com/fraxen/tectonicplates"
       },
@@ -983,7 +983,7 @@
       "geometrie": "linie",
       "quiz": false,
       "quelle": {
-        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)",
+        "name": "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates), bearbeitet",
         "lizenz": "ODC-BY 1.0",
         "url": "https://github.com/fraxen/tectonicplates"
       },
@@ -1050,7 +1050,7 @@
       "geometrie": "raster",
       "quiz": false,
       "quelle": {
-        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020",
+        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020, bearbeitet",
         "lizenz": "CC BY 4.0",
         "url": "https://doi.org/10.6084/m9.figshare.21789074"
       },
@@ -1097,7 +1097,7 @@
       "geometrie": "raster",
       "quiz": false,
       "quelle": {
-        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020",
+        "name": "Beck et al. (2023), Köppen-Geiger 1991–2020, bearbeitet",
         "lizenz": "CC BY 4.0",
         "url": "https://doi.org/10.6084/m9.figshare.21789074"
       },

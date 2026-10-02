@@ -622,7 +622,7 @@ async function hoehen(dgm, land) {
 
 // ── Wirtschaft und Bevölkerung (Deutschland) ─────────────────────────
 
-const QUELLE_OPSD = { name: "Open Power System Data (Stand 01.10.2020; BNetzA, UBA)", lizenz: "CC-BY 4.0",
+const QUELLE_OPSD = { name: "Open Power System Data (Stand 01.10.2020; BNetzA, UBA), bearbeitet", lizenz: "CC-BY 4.0",
   url: "https://data.open-power-system-data.org/conventional_power_plants/" };
 
 /** Einfacher CSV-Leser (Felder in Anführungszeichen dürfen Kommas enthalten). */
@@ -800,9 +800,9 @@ async function bevoelkerung(vgew) {
 
 // ── Physische Geografie: Platten, Wüsten, Klimazonen ──────────────────
 
-const QUELLE_BIRD = { name: "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates)", lizenz: "ODC-BY 1.0",
+const QUELLE_BIRD = { name: "Bird (2003), PB2002 / Ahlenius (fraxen/tectonicplates), bearbeitet", lizenz: "ODC-BY 1.0",
   url: "https://github.com/fraxen/tectonicplates" };
-const QUELLE_KOEPPEN = { name: "Beck et al. (2023), Köppen-Geiger 1991–2020", lizenz: "CC BY 4.0",
+const QUELLE_KOEPPEN = { name: "Beck et al. (2023), Köppen-Geiger 1991–2020, bearbeitet", lizenz: "CC BY 4.0",
   url: "https://doi.org/10.6084/m9.figshare.21789074" };
 
 const PLATTE_DE = {
