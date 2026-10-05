@@ -31,7 +31,7 @@ function newestMtime(dir, extensions = [".ts", ".tsx", ".js", ".json", ".css"]) 
     let entries;
     try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
-      if (e.name.startsWith(".") || e.name === "node_modules") continue;
+      if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "tests") continue;
       const full = path.join(d, e.name);
       if (e.isDirectory()) { walk(full); }
       else if (extensions.some(x => e.name.endsWith(x))) {
@@ -62,6 +62,7 @@ function needsBuild() {
   const cfgTime = Math.max(
     fs.existsSync("next.config.ts") ? fs.statSync("next.config.ts").mtimeMs : 0,
     fs.existsSync("next.config.js") ? fs.statSync("next.config.js").mtimeMs : 0,
+    fs.existsSync("next.config.mjs") ? fs.statSync("next.config.mjs").mtimeMs : 0,
     fs.existsSync("tailwind.config.ts") ? fs.statSync("tailwind.config.ts").mtimeMs : 0,
     fs.existsSync("package.json") ? fs.statSync("package.json").mtimeMs : 0,
   );

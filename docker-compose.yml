@@ -44,6 +44,7 @@ services:
     environment:
       PORT: ${APP_PORT:-1339}
       NEXT_PORT: 3000
+      NEXT_SKIP_TYPECHECK: ${NEXT_SKIP_TYPECHECK:-1}
       API_HOST: api
       API_PORT: 8000
       HOST_IP: ${HOST_IP:-}

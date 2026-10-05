@@ -9,6 +9,9 @@ const API_PORT = process.env.API_PORT ?? "8000";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  // Der Docker-Start baut bei jeder Quelländerung neu; die Typprüfung dauert dort
+  // wegen des Windows-Bind-Mounts ~50 s und doppelt nur `npx tsc --noEmit`.
+  typescript: { ignoreBuildErrors: process.env.NEXT_SKIP_TYPECHECK === "1" },
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = { poll: 500, aggregateTimeout: 200 };
