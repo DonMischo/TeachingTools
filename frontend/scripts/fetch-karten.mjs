@@ -32,6 +32,7 @@ import proj4 from "proj4";
 import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
+import { eeZurueck } from "./karten-daten/projektion.mjs";
 
 
 const HIER = dirname(fileURLToPath(import.meta.url));
@@ -489,40 +490,68 @@ async function weltRegionen(ordner) {
       .map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), hoehe: Math.round(f.properties.elevation) })));
 }
 
+// ── Rasterkacheln (Mercator und Equal Earth) ─────────────────────────
+
+/**
+ * Schreibt XYZ-Kacheln z0–5 nach `ziel` (Mercator) und `ziel-ee` (Equal Earth).
+ * `pixel(lon, lat)` liefert [r, g, b] in echten Koordinaten oder null (durchsichtig).
+ * Equal Earth: jede Kachelposition ist eine Schein-Länge/Breite (siehe
+ * api/karten_projektion.py) und wird zurückgerechnet; außerhalb der Erde bleibt sie leer.
+ * `deckend`: Mercator ohne Alphakanal (Relief deckt die ganze Welt).
+ */
+async function kachelSaetze(ziel, endung, pixel, deckend = false) {
+  const MAXZ = 5, T = 256;
+  let bytes = 0, anzahl = 0;
+  for (const ee of [false, true]) {
+    const ordner = ee ? `${ziel}-ee` : ziel;
+    rmSync(ordner, { recursive: true, force: true });
+    for (let z = 0; z <= MAXZ; z++) {
+      const n = 2 ** z;
+      for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
+        const px = Buffer.alloc(T * T * 4);
+        let leer = true;
+        for (let y = 0; y < T; y++) {
+          const my = Math.PI * (1 - (2 * (ty * T + y + 0.5)) / (n * T));
+          const fy = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
+          for (let x = 0; x < T; x++) {
+            const fx = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
+            const q = ee ? eeZurueck(fx, fy) : [fx, fy];
+            if (!q) continue;
+            const c = pixel(q[0], q[1]);
+            if (!c) continue;
+            const o = (y * T + x) * 4;
+            px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; px[o + 3] = 255;
+            leer = false;
+          }
+        }
+        if (leer) continue; // leere Kacheln weglassen (404 = durchsichtig)
+        const datei = join(ordner, String(z), String(tx), `${ty}.${endung}`);
+        mkdirSync(dirname(datei), { recursive: true });
+        let bild = sharp(px, { raw: { width: T, height: T, channels: 4 } });
+        if (deckend && !ee) bild = bild.removeAlpha();
+        await (endung === "png" ? bild.png({ palette: true, compressionLevel: 9 }) : bild.webp({ quality: 72, alphaQuality: 100 })).toFile(datei);
+        if (!ee) { bytes += readFileSync(datei).length; anzahl++; }
+      }
+    }
+  }
+  return { bytes, anzahl, maxzoom: MAXZ };
+}
+
 /**
  * Natural-Earth-Atlasraster (Plattkarte) → Web-Mercator-Kacheln z0–5,
  * /karten/welt-hoehen/{z}/{x}/{y}.webp
  */
 async function weltHoehen(ordner) {
-  const ZIEL_W = resolve(HIER, "../public/karten/welt-hoehen");
   const tif = await (await fromFile(finde(ordner.ne_hyp, "HYP_50M_SR_W.tif"))).getImage();
   const [B, H] = [tif.getWidth(), tif.getHeight()];
   const rgb = await tif.readRasters({ interleave: true });
   const kanaele = tif.getSamplesPerPixel();
-  const MAXZ = 5, T = 256;
-  rmSync(ZIEL_W, { recursive: true, force: true });
-  let bytes = 0, anzahl = 0;
-  for (let z = 0; z <= MAXZ; z++) {
-    const n = 2 ** z;
-    for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
-      const bild = Buffer.alloc(T * T * 3);
-      for (let py = 0; py < T; py++) {
-        const my = Math.PI * (1 - (2 * (ty * T + py + 0.5)) / (n * T));
-        const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
-        const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
-        for (let px = 0; px < T; px++) {
-          const lon = ((tx * T + px + 0.5) / (n * T)) * 360 - 180;
-          const sx = Math.min(B - 1, Math.floor(((lon + 180) / 360) * B));
-          const q = (sy * B + sx) * kanaele, k = (py * T + px) * 3;
-          bild[k] = rgb[q]; bild[k + 1] = rgb[q + 1]; bild[k + 2] = rgb[q + 2];
-        }
-      }
-      const datei = join(ZIEL_W, String(z), String(tx), `${ty}.webp`);
-      mkdirSync(dirname(datei), { recursive: true });
-      await sharp(bild, { raw: { width: T, height: T, channels: 3 } }).webp({ quality: 72 }).toFile(datei);
-      bytes += readFileSync(datei).length; anzahl++;
-    }
-  }
+  const { bytes, anzahl, maxzoom: MAXZ } = await kachelSaetze(resolve(HIER, "../public/karten/welt-hoehen"), "webp", (lon, lat) => {
+    const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
+    const sx = Math.min(B - 1, Math.max(0, Math.floor(((lon + 180) / 360) * B)));
+    const q = (sy * B + sx) * kanaele;
+    return [rgb[q], rgb[q + 1], rgb[q + 2]];
+  }, true);
   KATALOG.push({ id: "welt-hoehen", name: "Relief (Welt)", gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false,
     quelle: QUELLE_NE, kachelUrl: "/karten/welt-hoehen/{z}/{x}/{y}.webp", maxzoom: MAXZ, bytes });
   console.log(`  welt-hoehen            ${anzahl} Kacheln  ${(bytes / 1e6).toFixed(2)} MB`);
@@ -902,37 +931,12 @@ async function klimazonen(koeppen) {
     ["welt-klima-typen", "Klimatypen (Köppen-Geiger)", (k) => KOEPPEN[k][1],
       KOEPPEN.slice(1).map(([c, f]) => ({ wert: c, text: `${c} – ${KOEPPEN_TEXT[c]}`, farbe: `rgb(${f.join(",")})` }))],
   ]) {
-    const ziel = resolve(HIER, `../public/karten/${id}`);
-    rmSync(ziel, { recursive: true, force: true });
-    let bytes = 0, anzahl = 0;
-    const MAXZ = 5, T = 256;
-    for (let z = 0; z <= MAXZ; z++) {
-      const n = 2 ** z;
-      for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
-        const px = Buffer.alloc(T * T * 4);
-        let leer = true;
-        for (let y = 0; y < T; y++) {
-          const my = Math.PI * (1 - (2 * (ty * T + y + 0.5)) / (n * T));
-          const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
-          const sy = Math.min(H - 1, Math.max(0, Math.floor((90 - lat) / 0.1)));
-          for (let x = 0; x < T; x++) {
-            const lon = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
-            const sx = Math.min(B - 1, Math.max(0, Math.floor((lon + 180) / 0.1)));
-            const k = raster[sy * B + sx];
-            if (!k) continue;
-            const c = farbeVon(k);
-            const o = (y * T + x) * 4;
-            px[o] = c[0]; px[o + 1] = c[1]; px[o + 2] = c[2]; px[o + 3] = 255;
-            leer = false;
-          }
-        }
-        if (leer) continue; // reine Meereskacheln weglassen (404 = durchsichtig)
-        const datei = join(ziel, String(z), String(tx), `${ty}.png`);
-        mkdirSync(dirname(datei), { recursive: true });
-        await sharp(px, { raw: { width: T, height: T, channels: 4 } }).png({ palette: true, compressionLevel: 9 }).toFile(datei);
-        bytes += readFileSync(datei).length; anzahl++;
-      }
-    }
+    const { bytes, anzahl, maxzoom: MAXZ } = await kachelSaetze(resolve(HIER, `../public/karten/${id}`), "png", (lon, lat) => {
+      const sy = Math.min(H - 1, Math.max(0, Math.floor((90 - lat) / 0.1)));
+      const sx = Math.min(B - 1, Math.max(0, Math.floor((lon + 180) / 0.1)));
+      const k = raster[sy * B + sx];
+      return k ? farbeVon(k) : null;
+    });
     KATALOG.push({ id, name, gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false, quelle: QUELLE_KOEPPEN,
       kachelUrl: `/karten/${id}/{z}/{x}/{y}.png`, maxzoom: MAXZ, bytes,
       darstellung: { feld: "klasse", art: "kategorie", werte: legende } });
@@ -1034,38 +1038,16 @@ async function meeresboden(ordner) {
     console.log(`    Tiefe ${name}: ${fs.length} Flächen`);
   }
 
-  const ziel = resolve(HIER, "../public/karten/welt-meeresboden");
-  rmSync(ziel, { recursive: true, force: true });
-  const MAXZ = 5, T = 256;
-  let bytes = 0, anzahl = 0;
-  for (let z = 0; z <= MAXZ; z++) {
-    const n = 2 ** z;
-    for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
-      const px = Buffer.alloc(T * T * 4);
-      let leer = true;
-      for (let y = 0; y < T; y++) {
-        const my = Math.PI * (1 - (2 * (ty * T + y + 0.5)) / (n * T));
-        const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
-        const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
-        for (let x = 0; x < T; x++) {
-          const lon = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
-          const sx = Math.min(B - 1, Math.floor(((lon + 180) / 360) * B));
-          const st = stufe[sy * B + sx];
-          if (!st) continue;
-          // Schummerung um ihren Mittelwert (~129) als Helligkeitsfaktor
-          const f = Math.min(1.35, Math.max(0.6, schummer[(sy * B + sx) * kanaele] / 129));
-          const c = TIEFEN[st - 1][2], o = (y * T + x) * 4;
-          px[o] = Math.min(255, c[0] * f); px[o + 1] = Math.min(255, c[1] * f); px[o + 2] = Math.min(255, c[2] * f); px[o + 3] = 255;
-          leer = false;
-        }
-      }
-      if (leer) continue;
-      const datei = join(ziel, String(z), String(tx), `${ty}.webp`);
-      mkdirSync(dirname(datei), { recursive: true });
-      await sharp(px, { raw: { width: T, height: T, channels: 4 } }).webp({ quality: 72, alphaQuality: 100 }).toFile(datei);
-      bytes += readFileSync(datei).length; anzahl++;
-    }
-  }
+  const { bytes, anzahl, maxzoom: MAXZ } = await kachelSaetze(resolve(HIER, "../public/karten/welt-meeresboden"), "webp", (lon, lat) => {
+    const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
+    const sx = Math.min(B - 1, Math.max(0, Math.floor(((lon + 180) / 360) * B)));
+    const st = stufe[sy * B + sx];
+    if (!st) return null;
+    // Schummerung um ihren Mittelwert (~129) als Helligkeitsfaktor
+    const f = Math.min(1.35, Math.max(0.6, schummer[(sy * B + sx) * kanaele] / 129));
+    const c = TIEFEN[st - 1][2];
+    return [Math.min(255, c[0] * f), Math.min(255, c[1] * f), Math.min(255, c[2] * f)];
+  });
   const css = (c) => `rgb(${c.join(",")})`;
   KATALOG.push({ id: "welt-meeresboden", name: "Meeresboden (Tiefen)", gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false,
     quelle: QUELLE_NE, kachelUrl: "/karten/welt-meeresboden/{z}/{x}/{y}.webp", maxzoom: MAXZ, bytes,

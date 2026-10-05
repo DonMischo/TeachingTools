@@ -53,6 +53,7 @@ export default function KartenBrett({ brett, antwort, onChange, disabled, loesun
   return (
     <div className="flex flex-col gap-3">
       <KartenAnsicht stil={stil} katalog={{ stand: "", ebenen: brett.katalog }} namenZeigen={false} onKlick={klick}
+        projektion={brett.karte.projektion ?? "equalearth"}
         ziel={brett.karte.ausschnitt} />
       {finden && jetzt && !disabled && !loesung && (
         <p className="text-lg font-black">Finde: {jetzt.name} <span className="text-xs font-normal opacity-70">({jetzt.kategorie}) — auf der Karte antippen</span></p>

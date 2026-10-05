@@ -1056,7 +1056,7 @@
       },
       "kachelUrl": "/karten/welt-klima-haupt/{z}/{x}/{y}.png",
       "maxzoom": 5,
-      "bytes": 594636,
+      "bytes": 594575,
       "darstellung": {
         "feld": "klasse",
         "art": "kategorie",
@@ -1103,7 +1103,7 @@
       },
       "kachelUrl": "/karten/welt-klima-typen/{z}/{x}/{y}.png",
       "maxzoom": 5,
-      "bytes": 786210,
+      "bytes": 786151,
       "darstellung": {
         "feld": "klasse",
         "art": "kategorie",

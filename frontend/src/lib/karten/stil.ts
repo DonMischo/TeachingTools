@@ -19,6 +19,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
+import { erdUmriss, vor, type Projektion } from "./projektion";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
@@ -85,6 +86,8 @@ export type Auswahl = {
   beschriftung: boolean;
   /** Je Ebene die gezeigten Filterwerte (fehlt = Voreinstellung `standard`) */
   filter?: Record<string, string[]>;
+  /** Kartennetz (fehlt = Equal Earth) */
+  projektion?: Projektion;
 };
 
 /** Welche Filterwerte einer Ebene gerade gezeigt werden. */
@@ -160,6 +163,8 @@ export const FARBE = {
   wasserSchrift: "#1f5f99",
   gebirgeSchrift: "#6b3f1d",
   hervor: "#e11d48",
+  /** Equal Earth: um das Erd-Oval herum */
+  weltraum: "#f3f1ec",
   eigen: "#7c3aed",
 };
 
@@ -238,13 +243,28 @@ export const istLauflicht = (id: string) => id.endsWith(":fluss");
 export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
-export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelle: Quelle = quelleAusApi): StyleSpecification {
+/** Rasterkacheln gibt es je Kartennetz: Equal Earth liegt unter »<ebene>-ee« */
+const kachelnFuer = (url: string, id: string, p: Projektion) => (p === "equalearth" ? url.replace(`/karten/${id}/`, `/karten/${id}-ee/`) : url);
+
+export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelleRoh: Quelle = quelleAusApi): StyleSpecification {
+  const projektion = auswahl.projektion ?? "equalearth";
+  // Vektordaten rechnet der Server um (api/karten_projektion.py)
+  const quelle: Quelle = (e) => {
+    const url = quelleRoh(e);
+    return projektion === "equalearth" ? `${url}${url.includes("?") ? "&" : "?"}projektion=equalearth` : url;
+  };
   const rolle = (e: Ebene): Rolle | undefined =>
     ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
   const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
-  const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": FARBE.meer } }];
+  const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": projektion === "equalearth" ? FARBE.weltraum : FARBE.meer } }];
+  if (projektion === "equalearth") {
+    // Equal Earth ist ein Oval: Meer nur innerhalb des Erdumrisses
+    sources["erde"] = { type: "geojson", data: { type: "FeatureCollection", features: [erdUmriss()] } };
+    layers.push({ id: "erde", type: "fill", source: "erde", paint: { "fill-color": FARBE.meer } },
+      { id: "erde-rand", type: "line", source: "erde", paint: { "line-color": "#8aa9c2", "line-width": 1 } });
+  }
   const text = auswahl.beschriftung;
   const hatRelief = mit("hoehen").length > 0;
   const hatLaender = mit("laender").length > 0;
@@ -253,7 +273,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   // Welt-Relief ganz unten
   for (const e of mit("hoehen")) if (e.kachelUrl) {
-    sources[e.id] = { type: "raster", tiles: [e.kachelUrl], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
+    sources[e.id] = { type: "raster", tiles: [kachelnFuer(e.kachelUrl, e.id, projektion)], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
     layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id, paint: { "raster-fade-duration": 0 } });
   }
 
@@ -270,7 +290,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   // Deutschland-Höhen (vier Bilder) über dem Weltrelief
   for (const e of mit("hoehen")) e.kacheln?.forEach((k, i) => {
-    sources[`${e.id}-${i}`] = { type: "image", url: `/karten/hoehen/${k.datei}`, coordinates: k.ecken as never };
+    // Ecken umrechnen: bei Equal Earth leicht verzerrt, für Deutschland unsichtbar
+    sources[`${e.id}-${i}`] = { type: "image", url: `/karten/hoehen/${k.datei}`, coordinates: k.ecken.map((q) => vor(q, projektion)) as never };
     layers.push({ id: `${e.id}-${i}:bild`, type: "raster", source: `${e.id}-${i}`, paint: { "raster-fade-duration": 0 } });
   });
 
@@ -282,7 +303,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   for (const e of mit("thema")) if (e.geometrie === "raster" && e.kachelUrl) {
     // Raster-Themenkarte (Klimazonen): fertig eingefärbte Kacheln, Legende aus der Darstellung
-    sources[e.id] = { type: "raster", tiles: [e.kachelUrl], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
+    sources[e.id] = { type: "raster", tiles: [kachelnFuer(e.kachelUrl, e.id, projektion)], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
     // Meeresboden deckt nur das Meer (Land ist durchsichtig) — dort voll; Klimazonen leicht durchscheinend
     layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id,
       paint: { "raster-opacity": e.id === "welt-meeresboden" ? 1 : 0.85, "raster-fade-duration": 0 } });
@@ -596,6 +617,8 @@ export type SatzAnsicht = {
   bearbeiten: boolean;
   /** Außerhalb des Bearbeitens rot umranden (Quiz: aufgedeckte Lösung) — Filter bleiben */
   hervor?: Record<string, string[]>;
+  /** Kartennetz: Anker kommen in echten Koordinaten und werden hier umgerechnet */
+  projektion?: Projektion;
 };
 
 const inListe = (ids: string[]): ExpressionSpecification => ["in", ["get", "id"], ["literal", ids]];
@@ -653,7 +676,8 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
     const versatz = spreizen(satz.anker.features.map((f) => ({
       p: (f.geometry as GeoJSON.Point).coordinates, vorrang: geo(f) === "punkt" })));
     const daten: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: satz.anker.features.map((f, i) => ({
-      ...f, properties: { ...f.properties, versatz: versatz[i], versatzEm: versatz[i].map((v) => v / 14),
+      ...f, geometry: { type: "Point", coordinates: vor((f.geometry as GeoJSON.Point).coordinates, satz.projektion ?? "equalearth") },
+      properties: { ...f.properties, versatz: versatz[i], versatzEm: versatz[i].map((v) => v / 14),
         verschoben: versatz[i][0] !== 0 || versatz[i][1] !== 0 } })) };
     sources["nummern"] = { type: "geojson", data: daten };
     const farbe: ExpressionSpecification = ["coalesce", ["get", "farbe"], FARBE.hervor];

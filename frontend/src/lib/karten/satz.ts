@@ -4,6 +4,7 @@
  */
 import type { Kartenart } from "./stil";
 import type { EbenenAuswahl } from "./nummern";
+import type { Projektion } from "./projektion";
 
 export type Ausschnitt = { west: number; sued: number; ost: number; nord: number };
 
@@ -19,6 +20,8 @@ export type SatzInhalt = {
   filter?: Record<string, string[]>;
   /** Erfolge im Kartenquiz (leer = je Ebene »alles richtig«) */
   erfolge?: KartenErfolg[];
+  /** Kartennetz (fehlt = Equal Earth) */
+  projektion?: Projektion;
 };
 
 export type ErfolgsArt = "anteil" | "fehlerfrei" | "objekte" | "serie" | "tempo" | "beide" | "aufgeholt" | "dranbleiben" | "komplett";

@@ -5,6 +5,7 @@
 import type { FeatureCollection } from "geojson";
 import type { StyleSpecification } from "maplibre-gl";
 import { baueStil, wendeSatzAn, type Ebene, type Kartenart } from "./stil";
+import type { Projektion } from "./projektion";
 
 export type QuizModus = "benennen" | "finden";
 
@@ -33,6 +34,8 @@ export type QuizSpiel = {
     ausschnitt: { west: number; sued: number; ost: number; nord: number } | null;
     auswahl: Record<string, { zeigen: "alle" | "auswahl" }>;
     filter?: Record<string, string[]>;
+    /** Kartennetz (fehlt = Equal Earth) */
+    projektion?: Projektion;
   };
   spiel: { modus: QuizModus; aufgaben: QuizAufgabe[]; auswahl: Record<string, string[]>; wortbank?: string[] };
   erfolge: { id: string; name: string; icon: string; text?: string }[];
@@ -78,7 +81,7 @@ export function quizStil(basis: string, s: Pick<QuizSpiel, "katalog" | "karte" |
   uebung?: { anker?: [number, number] | null; ebene: string; hervor: Record<string, string[]> }): StyleSpecification {
   const katalog = { stand: "", ebenen: s.katalog };
   // basis: /api/karten/quiz/<code> (eigenes Spiel) oder /api/karten/quiz/brett/<schlüssel> (Caputh/TaskCrawler)
-  const grund = baueStil(katalog, { ebenen: s.karte.ebenen, beschriftung: false, filter: s.karte.filter }, s.karte.art,
+  const grund = baueStil(katalog, { ebenen: s.karte.ebenen, beschriftung: false, filter: s.karte.filter, projektion: s.karte.projektion }, s.karte.art,
     (e) => `${basis}/ebene/${e.id}`);
   const anker: FeatureCollection = { type: "FeatureCollection", features: [] };
   if (uebung) {
@@ -97,7 +100,8 @@ export function quizStil(basis: string, s: Pick<QuizSpiel, "katalog" | "karte" |
     auswahl[ebene] = { zeigen: s.karte.auswahl[ebene]?.zeigen ?? "alle", objekte: tokens };
   }
   // Im »finden«-Modus die aufgedeckten Lösungen rot umranden
-  return wendeSatzAn(grund, katalog, { auswahl, nummern: {}, anker, bearbeiten: false, hervor: uebung?.hervor ?? loesungen });
+  return wendeSatzAn(grund, katalog, { auswahl, nummern: {}, anker, bearbeiten: false, hervor: uebung?.hervor ?? loesungen,
+    projektion: s.karte.projektion });
 }
 
 /** Eingebettete Kartenfrage (Caputh/TaskCrawler): Brett vom Server, Antworten gesammelt. */

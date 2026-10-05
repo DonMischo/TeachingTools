@@ -32,6 +32,7 @@ from ..auth import get_current_teacher, get_player
 from ..config import settings
 from ..database import get_db
 from ..display_names import short_name
+from ..karten_projektion import transformiere
 from ..models import Class, KartenBrett, KartenEbeneEigen, KartenLernstand, KartenQuizStand, KartenSatz, Student, Teacher, ToolSession, Transaction
 from .karten import DATEN, EIGEN_PRAEFIX, EIGENE, katalog
 
@@ -222,6 +223,7 @@ def _katalog_meta(db: Session, inhalt: dict) -> list[dict]:
 def _karte(inhalt: dict) -> dict:
     """Was die Spielerkarte zeigt — ohne Objekt-ids (die stecken als Token in »spiel.auswahl«)."""
     return {"art": inhalt["art"], "region": inhalt.get("region", "deutschland"), "ebenen": inhalt["ebenen"],
+            "projektion": inhalt.get("projektion", "equalearth"),
             "ausschnitt": inhalt.get("ausschnitt"), "filter": inhalt.get("filter", {}),
             "auswahl": {k: {"zeigen": v.get("zeigen", "alle")} for k, v in inhalt.get("auswahl", {}).items()}}
 
@@ -248,12 +250,14 @@ def spiel(code: str, db: Session = Depends(get_db), spieler=Depends(get_player))
 
 
 @router.get("/{code}/ebene/{ebene_id}")
-def ebene(code: str, ebene_id: str, request: Request, db: Session = Depends(get_db), _spieler=Depends(get_player)):
+def ebene(code: str, ebene_id: str, request: Request, projektion: str | None = None, db: Session = Depends(get_db),
+          _spieler=Depends(get_player)):
     s = _sitzung(db, code)
     satz = _satz(db, s)
     if ebene_id not in satz.inhalt.get("ebenen", []):
         raise HTTPException(404, "Diese Ebene gehört nicht zum Quiz")
-    daten = json.dumps(engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim(s)), ensure_ascii=False).encode("utf-8")
+    sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim(s))
+    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
                         headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
@@ -516,13 +520,14 @@ def loese_einbettungen(daten, db: Session, lehrkraft: Teacher | Student) -> None
 
 
 @router.get("/brett/{schluessel}/ebene/{ebene_id}")
-def brett_ebene(schluessel: str, ebene_id: str, request: Request, db: Session = Depends(get_db)):
+def brett_ebene(schluessel: str, ebene_id: str, request: Request, projektion: str | None = None, db: Session = Depends(get_db)):
     """Entschärfte Ebene (ohne Namen, Token statt id) für eine eingebettete Kartenfrage — öffentlich:
     wer in Caputh/TaskCrawler spielt, hat oft kein Konto, und ohne Namen verrät die Geometrie nichts."""
     brett = db.get(KartenBrett, schluessel)
     if brett is None or ebene_id not in brett.ebenen:
         raise HTTPException(404, "Ebene nicht gefunden")
-    daten = json.dumps(engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, brett.geheim), ensure_ascii=False).encode("utf-8")
+    sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, brett.geheim)
+    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
                         headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": "public, max-age=3600"})

@@ -28,9 +28,11 @@ import Monatsregler from "./Monatsregler";
 import OrtSuche from "./OrtSuche";
 import ErfolgeEditor from "./ErfolgeEditor";
 import VorlageJson from "./VorlageJson";
+import KartenMenue from "./KartenMenue";
 
 const START_ART: Kartenart = "topographisch";
-const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {} });
+const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {},
+  projektion: "equalearth" });
 /** Um Deutschland herum sind diese Weltebenen der Rahmen */
 const UMLAND = ["welt-staaten", "welt-hoehen", "welt-staedte"];
 
@@ -97,7 +99,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
         if (p) anker.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { marke, ebene } });
       }
     }
-    return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck });
+    return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck, projektion: inhalt.projektion });
   }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bereich = region(inhalt.region).bereich;
@@ -178,6 +180,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
+              projektion={inhalt.projektion ?? "equalearth"}
+              menue={<KartenMenue projektion={inhalt.projektion ?? "equalearth"} setProjektion={(p) => setInhalt((v) => ({ ...v, projektion: p }))} />}
               ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort}
               partikel={partikelAn ? { ebenen: inhalt.ebenen, monat: monatVon(inhalt.filter, inhalt.ebenen.find((e) => katalog.ebenen.find((k) => k.id === e)?.monate) ?? "") } : null} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}

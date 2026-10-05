@@ -27,6 +27,7 @@ from ..database import get_db
 from ..karten_quiz import ankerpunkt, normalisiere
 from ..karten_eigene import MAX_BYTES, UploadFehler, geometrie_von, lies_upload, mit_namen
 from ..karten_export import MEDIENTYP, exportiere
+from ..karten_projektion import transformiere
 from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
 
 router = APIRouter(prefix="/api/karten", tags=["karten"])
@@ -40,8 +41,25 @@ def _gzip(pfad: Path, stand: float) -> bytes:
     return gzip.compress(pfad.read_bytes(), compresslevel=6)
 
 
-def geojson_antwort(pfad: Path, request: Request, cache: str) -> Response:
-    """Ebene ausliefern — gepackt, wenn der Browser es kann (de-orte: 9 MB → 1,2 MB)."""
+@lru_cache(maxsize=48)
+def _projiziert(pfad: Path, stand: float) -> bytes:
+    """Ebene in Equal Earth (Schein-Koordinaten für MapLibre), gepackt — je Datei und Stand einmal."""
+    sammlung = transformiere(json.loads(pfad.read_text(encoding="utf-8")))
+    return gzip.compress(json.dumps(sammlung, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
+
+
+def gepackt(daten: bytes, request: Request, headers: dict) -> Response:
+    """Fertig gepackte GeoJSON-Bytes ausliefern (oder entpackt, wenn der Browser kein gzip will)."""
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(daten, media_type="application/geo+json", headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding", **headers})
+    return Response(gzip.decompress(daten), media_type="application/geo+json", headers=headers)
+
+
+def geojson_antwort(pfad: Path, request: Request, cache: str, projektion: str | None = None) -> Response:
+    """Ebene ausliefern — gepackt, wenn der Browser es kann (de-orte: 9 MB → 1,2 MB);
+    mit projektion=equalearth umgerechnet (api/karten_projektion.py)."""
+    if projektion == "equalearth":
+        return gepackt(_projiziert(pfad, pfad.stat().st_mtime), request, {"Cache-Control": cache})
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(_gzip(pfad, pfad.stat().st_mtime), media_type="application/geo+json",
                         headers={"Content-Encoding": "gzip", "Cache-Control": cache, "Vary": "Accept-Encoding"})
@@ -93,14 +111,15 @@ def ebenen(db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends
 
 
 @router.get("/ebenen/{ebene_id}")
-def ebene(ebene_id: str, request: Request, db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends(get_current_user)):
+def ebene(ebene_id: str, request: Request, projektion: str | None = None, db: Session = Depends(get_db),
+          wer: Union[Teacher, Student] = Depends(get_current_user)):
     if ebene_id.startswith(EIGEN_PRAEFIX):
         e = _eigene_ebene(db, ebene_id, wer)
-        return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache")
+        return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache", projektion)
     eintrag = next((e for e in katalog()["ebenen"] if e["id"] == ebene_id), None)
     if eintrag is None or eintrag["geometrie"] == "raster":
         raise HTTPException(404, "Unbekannte Ebene")
-    return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400")
+    return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400", projektion)
 
 
 # ── Kartensätze ──────────────────────────────────────────────────────
@@ -165,6 +184,8 @@ class SatzInhalt(BaseModel):
     filter: dict[str, list[str]] = Field(default_factory=dict)
     # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
+    # Kartennetz: Equal Earth (flächentreu, Standard) oder Mercator
+    projektion: Literal["equalearth", "mercator"] = "equalearth"
 
     @model_validator(mode="before")
     @classmethod

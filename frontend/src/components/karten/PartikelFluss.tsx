@@ -5,9 +5,10 @@
  * Eine Canvas-Ebene über MapLibre; beim Verschieben/Zoomen fangen die Schweife neu an.
  */
 import { useEffect } from "react";
-import type { FeatureCollection } from "geojson";
+import type { Feature, FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { baueFeld, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
+import { vor, zurueck, type Projektion } from "@/lib/karten/projektion";
 
 /** Je Ebene: Wirkradius des Felds (Grad), Partikelzahl, Tempo (Pixel je Bild) */
 const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; farbe: (warm: number) => string }> = {
@@ -19,7 +20,18 @@ const LEBEN = 90; // Bilder, dann neu geboren
 
 type Partikel = { lon: number; lat: number; alter: number };
 
-export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibreMap; ebenen: string[]; monat: string }) {
+/** Linien aus Kartenkoordinaten (Equal Earth) zurück in echte Längen/Breiten */
+function linienZurueck(f: Feature): Feature {
+  const g = f.geometry;
+  const z = (l: number[][]) => l.map((q) => zurueck(q) ?? q);
+  if (g?.type === "LineString") return { ...f, geometry: { ...g, coordinates: z(g.coordinates) } };
+  if (g?.type === "MultiLineString") return { ...f, geometry: { ...g, coordinates: g.coordinates.map(z) } };
+  return f;
+}
+
+export default function PartikelFluss({ karte, ebenen, monat, projektion = "equalearth" }: {
+  karte: MapLibreMap; ebenen: string[]; monat: string; projektion?: Projektion;
+}) {
   const schluessel = ebenen.filter((e) => ART[e]).join(",");
   useEffect(() => {
     if (!schluessel) return;
@@ -55,7 +67,8 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
         if (!quelle) continue;
         const daten = (await quelle.getData().catch(() => null)) as FeatureCollection | null;
         if (!daten?.features || weg) continue;
-        const feld = baueFeld(daten.features, monat, ART[id].radius);
+        // Die Quelle liegt im Kartennetz vor — das Feld rechnet in echten Längen und Breiten
+        const feld = baueFeld(projektion === "equalearth" ? daten.features.map(linienZurueck) : daten.features, monat, ART[id].radius);
         const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p); return p; });
         felder.push({ id, feld, teile });
       }
@@ -86,7 +99,7 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
           const k = Math.max(0.2, Math.cos((p.lat * Math.PI) / 180));
           const lon = p.lon + (u * tempo * gradJePixel) / k, lat = p.lat + v * tempo * gradJePixel;
           if (lon < -180 || lon > 180 || lat < -85 || lat > 85) { neu(feld, p); continue; }
-          const a = karte.project([p.lon, p.lat]), b = karte.project([lon, lat]);
+          const a = karte.project(vor([p.lon, p.lat], projektion)), b = karte.project(vor([lon, lat], projektion));
           const f = farbe(warm);
           let pfad = pfade.get(f);
           if (!pfad) pfade.set(f, (pfad = new Path2D()));
@@ -106,6 +119,6 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
       karte.off("move", leeren); karte.off("resize", passend); karte.off("sourcedata", quelleDa);
       leinwand.remove();
     };
-  }, [karte, schluessel, monat]);
+  }, [karte, schluessel, monat, projektion]);
   return null;
 }

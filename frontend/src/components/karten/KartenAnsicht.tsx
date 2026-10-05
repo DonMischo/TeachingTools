@@ -3,20 +3,25 @@
  * Die Kartenfläche: MapLibre mit dem Stil aus lib/karten/stil.ts.
  * Klick auf ein Objekt zeigt seinen Namen (wenn Namen an sind).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 import PartikelFluss from "./PartikelFluss";
-import { massstab, meterJePixel, zeichneMassstab } from "@/lib/karten/massstab";
+import { massstab, zeichneMassstab } from "@/lib/karten/massstab";
+import { abstand, ausschnittVor, ausschnittZurueck, vor, zurueck, type Projektion } from "@/lib/karten/projektion";
 
 /** Unter dieser Zoomstufe (ganze Welt) gilt kein einheitlicher Maßstab — dann keine Leiste */
 const MASSSTAB_AB_ZOOM = 2.5;
-/** Aktuelle Leiste der Karte (Mitte des Ausschnitts) oder null */
-function leisteVon(m: MapLibreMap) {
-  return m.getZoom() < MASSSTAB_AB_ZOOM ? null : massstab(meterJePixel(m.getZoom(), m.getCenter().lat));
+/** Aktuelle Leiste: Meter je Pixel in der Kartenmitte, gemessen über echte Koordinaten (jedes Kartennetz) */
+function leisteVon(m: MapLibreMap, p: Projektion) {
+  if (m.getZoom() < MASSSTAB_AB_ZOOM) return null;
+  const c = m.getCanvas(), x = c.clientWidth / 2, y = c.clientHeight / 2;
+  const a = m.unproject([x - 50, y]), b = m.unproject([x + 50, y]);
+  const pa = zurueck([a.lng, a.lat], p), pb = zurueck([b.lng, b.lat], p);
+  return pa && pb ? massstab(abstand(pa, pb) / 100) : null;
 }
 
 export type Treffer = { ebene: string; id: string; name: string; eigenschaften: Record<string, unknown> };
@@ -31,7 +36,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -51,14 +56,18 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   blick?: [number, number] | null;
   /** Partikelfluss über Wind/Strömungen (nur diese Ebenen, im gewählten Monat) */
   partikel?: { ebenen: string[]; monat: string } | null;
+  /** Kartennetz des Stils — für alles, was hier in echten Koordinaten ankommt */
+  projektion?: Projektion;
+  /** Bedienelemente oben links auf der Karte (☰-Menü) */
+  menue?: ReactNode;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
-  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken, katalog });
-  aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken, katalog };
+  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken, katalog, projektion });
+  aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken, katalog, projektion };
   // Angeklickte Strömung bzw. Windgürtel bleibt hervorgehoben (feature-state »aktiv«)
   const hervor = useRef<{ source: string; id: string } | null>(null);
   const ersterStil = useRef(stil);
@@ -135,7 +144,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         c.width = 240 * dpr; c.height = 44 * dpr;
         const g = c.getContext("2d")!;
         g.clearRect(0, 0, c.width, c.height);
-        const l = leisteVon(m!);
+        const l = leisteVon(m!, aktuell.current.projektion);
         if (l) zeichneMassstab(g, l, 12 * dpr, 38 * dpr, dpr);
       };
       m.on("move", leiste);
@@ -143,7 +152,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       m.on("load", () => setBereit(true));
       m.on("moveend", () => {
         const b = m!.getBounds();
-        aktuell.current.onAusschnitt?.({ west: b.getWest(), sued: b.getSouth(), ost: b.getEast(), nord: b.getNorth() });
+        aktuell.current.onAusschnitt?.(ausschnittZurueck({ west: b.getWest(), sued: b.getSouth(), ost: b.getEast(), nord: b.getNorth() },
+          aktuell.current.projektion));
       });
       m.on("error", (e) => console.error("Karte:", e.error?.message ?? e));
       karte.current = m;
@@ -194,7 +204,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       bild.width = quelle.width; bild.height = quelle.height;
       const g = bild.getContext("2d")!;
       g.drawImage(quelle, 0, 0);
-      const l = leisteVon(m), s = quelle.width / quelle.clientWidth;
+      const l = leisteVon(m, aktuell.current.projektion), s = quelle.width / quelle.clientWidth;
       if (l) zeichneMassstab(g, l, 18 * s, quelle.height - 14 * s, s);
       return bild.toDataURL("image/png");
     };
@@ -202,27 +212,31 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   }, [bildRef]);
 
   useEffect(() => {
-    if (bereit && ziel) karte.current?.fitBounds([[ziel.west, ziel.sued], [ziel.ost, ziel.nord]], { duration: 0 });
-  }, [ziel, bereit]);
+    if (!bereit || !ziel) return;
+    const z = ausschnittVor(ziel, projektion);
+    karte.current?.fitBounds([[z.west, z.sued], [z.ost, z.nord]], { duration: 0 });
+  }, [ziel, bereit, projektion]);
 
   useEffect(() => {
     const m = karte.current;
     if (!bereit || !m || !blick) return;
     // Nur schwenken, wenn der Punkt nicht schon gut zu sehen ist (Rand: 10 % je Seite)
-    const p = m.project(blick), { width, height } = m.getCanvas().getBoundingClientRect();
-    if (p.x < width * 0.1 || p.x > width * 0.9 || p.y < height * 0.1 || p.y > height * 0.9) m.easeTo({ center: blick, duration: 600 });
-  }, [blick, bereit]);
+    const ort = vor(blick, projektion);
+    const p = m.project(ort), { width, height } = m.getCanvas().getBoundingClientRect();
+    if (p.x < width * 0.1 || p.x > width * 0.9 || p.y < height * 0.1 || p.y > height * 0.9) m.easeTo({ center: ort, duration: 600 });
+  }, [blick, bereit, projektion]);
 
   const fundPopup = useRef<Popup | null>(null);
   useEffect(() => {
     const m = karte.current;
     if (!bereit || !m || !fundort) return;
-    m.flyTo({ center: fundort.punkt, zoom: Math.max(m.getZoom(), fundort.zoom) });
+    const ort = vor(fundort.punkt, projektion);
+    m.flyTo({ center: ort, zoom: Math.max(m.getZoom(), fundort.zoom) });
     import("maplibre-gl").then(({ Popup: P }) => {
       fundPopup.current?.remove();
-      fundPopup.current = new P({ closeButton: true, offset: 10 }).setLngLat(fundort.punkt).setText(`📍 ${fundort.text}`).addTo(m);
+      fundPopup.current = new P({ closeButton: true, offset: 10 }).setLngLat(ort).setText(`📍 ${fundort.text}`).addTo(m);
     });
-  }, [fundort, bereit]);
+  }, [fundort, bereit, projektion]);
 
   // Nur Quellen der Ebenen, die gerade gezeichnet werden (Bildquellen heißen »<ebene>-0« …)
   const sichtbar = new Set(Object.keys(stil.sources).map((k) => k.replace(/-\d+$/, "")));
@@ -233,7 +247,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
       <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />
-      {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} />}
+      {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} projektion={projektion} />}
+      {menue && <div className="absolute left-2 top-2 z-10">{menue}</div>}
     </div>
       {/* Quellenangaben unter der Karte (Namensnennung nach Lizenz) */}
       <p className="text-[11px] leading-snug text-[var(--text-muted)] px-1" aria-label="Quellen">

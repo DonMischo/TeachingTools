@@ -136,6 +136,7 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
         <KartenAnsicht stil={stil} katalog={{ stand: "", ebenen: spiel.katalog }} namenZeigen={false} gastToken={token}
+          projektion={spiel.karte.projektion ?? "equalearth"}
           onKlick={klick} ziel={a} blick={uebAnsicht?.anker ?? null} />
 
         <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3 text-sm">
