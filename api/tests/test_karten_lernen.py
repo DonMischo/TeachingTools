@@ -53,6 +53,9 @@ def test_ablenker_frueher_verwechselt_vor_nah_vor_aehnlich():
     e = _eintrag([0], verwechselt={"s:rostock": 2})
     namen = [c["name"] for c in lernen.ablenker(ziel, kandidaten, e, random.Random(3))]
     assert namen[0] == "Rostock" and set(namen[1:]) == {"Weimar", "Erlangen"}
+    # Andere Ebenen nur, wenn die eigene nicht genug hergibt
+    mit_land = [*kandidaten, {"ebene": "l", "id": "th", "name": "Thüringen", "anker": [11.0, 50.9]}]
+    assert "Thüringen" not in [c["name"] for c in lernen.ablenker(ziel, mit_land, e, random.Random(3))]
 
 
 def test_verbuche_merkt_richtung_und_verwechslung():

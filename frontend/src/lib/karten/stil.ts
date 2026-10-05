@@ -44,6 +44,8 @@ export type Ebene = {
   darstellung?: Darstellung;
   /** Filter nach einem Feld (Siedlungen: Größenklasse); `vorhanden` = Werte in dieser Datei */
   filter?: { feld: string; werte: { wert: string; text: string; standard: boolean }[]; vorhanden: string[] };
+  /** Je Monat andere Objekte (Wind, Strömungen): Eigenschaft »monate« = ",6,7," oder »alle« */
+  monate?: boolean;
   /** Nur bei hochgeladenen Ebenen (api/routers/karten.py::_eigen_eintrag) */
   eigen?: { id: number; eigen: boolean; geteilt: boolean; namensfeld: string; felder: string[]; dateiname: string };
 };
@@ -199,7 +201,15 @@ export const quelleAusApi: Quelle = (e) =>
   `/api/karten/ebenen/${e.id}${e.eigen ? `?namen=${encodeURIComponent(e.eigen.namensfeld)}` : ""}`;
 
 type Rolle = "staaten" | "kontinente" | "laender" | "hoehen" | "wasserflaeche" | "meere" | "seen" | "fluesse"
-  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen" | "thema";
+  | "gebirge" | "landschaften" | "gipfel" | "staedte" | "eigen" | "thema" | "zirkulation";
+
+/** Monat für Wind und Strömungen, solange niemand den Regler bewegt hat (Juli, wie im Atlas) */
+export const MONAT_STANDARD = "7";
+export const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+/** Gewählter Monat (»1« … »12«) einer monatsabhängigen Ebene */
+export const monatVon = (filter: Record<string, string[]> | undefined, ebene: string) => filter?.[ebene]?.[0] ?? MONAT_STANDARD;
+/** Druckgürtel und ITC sind Grenzen, keine Strömung: ohne Pfeile und Lauflicht */
+const GURT = ["itc", "hoch", "tief"];
 
 const ROLLE: Record<string, Rolle> = {
   "welt-staaten": "staaten", "welt-kontinente": "kontinente", "de-laender": "laender",
@@ -222,13 +232,15 @@ const STADT_STUFEN: Record<string, { raenge: string[]; minzoom: number }[]> = {
 };
 
 /** Teil-Namen, deren Objekte ein Klick findet (auch unsichtbare Flächen, z. B. Gebirge über dem Relief). */
-const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "symbol", "symbol-1", "symbol-2", "symbol-3", "punkt"]);
+const KLICK_TEILE = new Set(["flaeche", "linie", "linie-klein", "gurt", "symbol", "symbol-1", "symbol-2", "symbol-3", "punkt"]);
+/** Stil-Ebenen mit Lauflicht (KartenAnsicht schiebt das Strichmuster weiter) */
+export const istLauflicht = (id: string) => id.endsWith(":fluss");
 export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelle: Quelle = quelleAusApi): StyleSpecification {
   const rolle = (e: Ebene): Rolle | undefined =>
-    ROLLE[e.id] ?? (e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
+    ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
   const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
@@ -410,6 +422,36 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     }
   }
 
+  // Wind und Meeresströmungen: Linie, Lauflicht in Fließrichtung, Pfeile; je Monat (Regler in der Legende)
+  // Strömungen über den Windpfeilen: dicker, und ein Klick soll zuerst sie treffen
+  for (const e of mit("zirkulation").sort((x, y) => Number(x.id === "welt-stroemungen") - Number(y.id === "welt-stroemungen"))) {
+    const zeit: FilterSpecification = ["any", ["==", ["get", "monate"], "alle"], ["in", `,${monatVon(auswahl.filter, e.id)},`, ["get", "monate"]]];
+    const gurt: ExpressionSpecification = ["in", ["get", "art"], ["literal", GURT]];
+    const fliesst: FilterSpecification = ["all", zeit, ["!", gurt]];
+    const farbe = themaFarbe(e.darstellung!);
+    const meer = e.id === "welt-stroemungen";
+    const aktiv: ExpressionSpecification = ["boolean", ["feature-state", "aktiv"], false];
+    const dicke = (a: number, b: number): ExpressionSpecification =>
+      ["interpolate", ["linear"], ["zoom"], 1, ["case", aktiv, a * 2, a], 5, ["case", aktiv, b * 2, b]];
+    layers.push(
+      { id: `${e.id}:linie`, type: "line", source: e.id, filter: fliesst, layout: linie,
+        paint: { "line-color": farbe, "line-opacity": 0.85, "line-width": meer ? dicke(2.6, 5) : dicke(1.6, 2.6) } },
+      { id: `${e.id}:gurt`, type: "line", source: e.id, filter: ["all", zeit, gurt],
+        paint: { "line-color": farbe, "line-width": dicke(1.8, 3), "line-opacity": 0.8, "line-dasharray": [3, 2] } },
+      { id: `${e.id}:fluss`, type: "line", source: e.id, filter: fliesst, layout: linie,
+        paint: { "line-color": "#ffffff", "line-opacity": 0.9, "line-width": meer ? 1.6 : 1.1, "line-dasharray": [0, 4, 3] } },
+      { id: `${e.id}:pfeil`, type: "symbol", source: e.id, filter: fliesst,
+        layout: { "symbol-placement": meer ? "line" : "line-center", "symbol-spacing": 120, "icon-image": ["concat", "pfeil-", farbe],
+          "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true, "icon-size": meer ? 1 : 0.8 } },
+    );
+    if (text) {
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, filter: meer ? fliesst : ["all", zeit, gurt],
+        layout: { "symbol-placement": "line", "symbol-spacing": 500, "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
+          "text-size": 11, "text-offset": [0, -1] },
+        paint: { "text-color": farbe, "text-halo-color": "#ffffffdd", "text-halo-width": 1.4 } });
+    }
+  }
+
   // Eigene Ebenen: violett, Flächen/Linien/Punkte gemischt möglich
   const typ = (t: string): FilterSpecification => ["==", ["geometry-type"], t];
   for (const e of mit("eigen")) {
@@ -498,6 +540,15 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
 export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray } | null {
+  if (name.startsWith("pfeil-")) {
+    // Pfeilspitze nach rechts (= Linienrichtung), Farbe aus dem Namen
+    const c = document.createElement("canvas");
+    c.width = c.height = 16;
+    const g = c.getContext("2d")!;
+    g.fillStyle = name.slice(6); g.strokeStyle = "#ffffff"; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(15, 8); g.lineTo(3, 2); g.lineTo(6, 8); g.lineTo(3, 14); g.closePath(); g.stroke(); g.fill();
+    return { width: 16, height: 16, data: g.getImageData(0, 0, 16, 16).data };
+  }
   if (name.startsWith("marke-")) {
     // Nummernkreis: weiß mit farbigem Ring (»marke-#e11d48«)
     const c = document.createElement("canvas");

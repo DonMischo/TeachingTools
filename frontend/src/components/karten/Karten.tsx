@@ -24,6 +24,7 @@ import Arbeitsblatt from "./Arbeitsblatt";
 import EigeneEbenen from "./EigeneEbenen";
 import KartenQuizLehrkraft from "./KartenQuizLehrkraft";
 import SiedlungsFilter from "./SiedlungsFilter";
+import Monatsregler from "./Monatsregler";
 import OrtSuche from "./OrtSuche";
 import ErfolgeEditor from "./ErfolgeEditor";
 import VorlageJson from "./VorlageJson";
@@ -208,6 +209,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
                   schalte={schalteEbene} lehrkraft={lehrkraft} />
                 {bereich === "de" && <SiedlungsFilter ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />}
+                <Monatsregler ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />
                 {katalog.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />)}
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>

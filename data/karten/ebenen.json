@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-02",
+  "stand": "2026-10-05",
   "ebenen": [
     {
       "id": "de-laender",
@@ -1260,6 +1260,95 @@
           }
         ]
       }
+    },
+    {
+      "id": "welt-stroemungen",
+      "name": "Meeresströmungen",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "eigene Daten",
+        "url": ""
+      },
+      "monate": true,
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "warm",
+            "text": "warme Strömung",
+            "farbe": "#d7301f"
+          },
+          {
+            "wert": "kalt",
+            "text": "kalte Strömung",
+            "farbe": "#2b6cb0"
+          }
+        ]
+      },
+      "anzahl": 28,
+      "bytes": 9178
+    },
+    {
+      "id": "welt-winde",
+      "name": "Windsysteme und ITC",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "eigene Daten",
+        "url": ""
+      },
+      "monate": true,
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "passat",
+            "text": "Passat",
+            "farbe": "#e07b00"
+          },
+          {
+            "wert": "westwind",
+            "text": "Westwinde",
+            "farbe": "#2f855a"
+          },
+          {
+            "wert": "polarost",
+            "text": "Polare Ostwinde",
+            "farbe": "#6b46c1"
+          },
+          {
+            "wert": "monsun",
+            "text": "Monsun",
+            "farbe": "#0e9f9a"
+          },
+          {
+            "wert": "itc",
+            "text": "ITC (Innertropische Konvergenzzone)",
+            "farbe": "#b91c1c"
+          },
+          {
+            "wert": "hoch",
+            "text": "Hochdruckgürtel",
+            "farbe": "#92400e"
+          },
+          {
+            "wert": "tief",
+            "text": "Tiefdruckrinne",
+            "farbe": "#1e3a8a"
+          }
+        ]
+      },
+      "anzahl": 141,
+      "bytes": 219751
     }
   ]
 }

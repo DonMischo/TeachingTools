@@ -105,7 +105,7 @@ function randAbstand(p: Position, poly: Position[][]): number {
  * Marken von Punkt-Ebenen (vorrang) bleiben auf ihrem Punkt, die anderen weichen
  * im Kreis aus. `naehe` in Grad (Breite); Länge wird mit cos(Breite) gestaucht.
  */
-export function spreizen(punkte: { p: Position; vorrang: boolean }[], naehe = 0.35, abstand = 22): [number, number][] {
+export function spreizen(punkte: { p: Position; vorrang: boolean }[], naehe = 0.35, abstand = 26): [number, number][] {
   const versatz: [number, number][] = punkte.map(() => [0, 0]);
   const reihe = punkte.map((_, i) => i).sort((a, b) => Number(punkte[b].vorrang) - Number(punkte[a].vorrang));
   const kopf: number[] = []; // je Gruppe die Marke, die stehen bleibt

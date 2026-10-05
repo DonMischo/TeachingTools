@@ -6,11 +6,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { ebeneVonStilEbene, istKlickbar, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
+import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 
 export type Treffer = { ebene: string; id: string; name: string; eigenschaften: Record<string, unknown> };
+
+/** Strichmuster, die nacheinander ein Wandern ergeben (Strich 3, Lücke 4) */
+const LAUFLICHT: number[][] = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
+  [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]];
 
 /** Deutschland mit etwas Rand */
 const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
@@ -18,7 +22,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -34,14 +38,18 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   gastToken?: string | null;
   /** Suchtreffer: hinfliegen und mit Namen markieren */
   fundort?: { punkt: [number, number]; text: string; zoom: number } | null;
+  /** Diesen Punkt ins Bild holen (ohne Namen, z. B. das gefragte Objekt beim Üben) */
+  blick?: [number, number] | null;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
-  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken });
-  aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken };
+  const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken, katalog });
+  aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken, katalog };
+  // Angeklickte Strömung bzw. Windgürtel bleibt hervorgehoben (feature-state »aktiv«)
+  const hervor = useRef<{ source: string; id: string } | null>(null);
   const ersterStil = useRef(stil);
   // Wird nach jedem Stilwechsel erst erfüllt, wenn die Karte wieder ruht (alles gezeichnet)
   const gezeichnet = useRef<Promise<void>>(Promise.resolve());
@@ -92,11 +100,17 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
           ebene: ebeneVonStilEbene(f.layer.id), id: String(f.properties.id), name: String(f.properties.name ?? ""),
           eigenschaften: f.properties,
         }));
+        if (hervor.current) m!.removeFeatureState(hervor.current, "aktiv");
+        hervor.current = null;
         if (!treffer.length) return;
         aktuell.current.onKlick?.(treffer);
         const t = treffer[0];
+        if (aktuell.current.katalog.ebenen.find((x) => x.id === t.ebene)?.monate) {
+          hervor.current = { source: t.ebene, id: t.id };
+          m!.setFeatureState(hervor.current, { aktiv: true });
+        }
         if (aktuell.current.namenZeigen && t.name) {
-          const zusatz = t.eigenschaften.hoehe ? ` (${t.eigenschaften.hoehe} m)`
+          const zusatz = t.eigenschaften.info ? ` — ${t.eigenschaften.info}` : t.eigenschaften.hoehe ? ` (${t.eigenschaften.hoehe} m)`
             : t.eigenschaften.ew ? ` (${Number(t.eigenschaften.ew).toLocaleString("de-DE")} Einw.)` : "";
           popup.current = new maplibre.Popup({ closeButton: false, offset: 8 })
             .setLngLat(e.lngLat).setText(t.name + zusatz).addTo(m!);
@@ -124,6 +138,21 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     m.triggerRepaint(); // ändert der neue Stil nichts, käme sonst kein »idle«
   }, [stil, bereit]);
 
+  // Lauflicht: das Strichmuster der »:fluss«-Ebenen wandert in Linienrichtung (Wind, Strömungen)
+  useEffect(() => {
+    const m = karte.current;
+    if (!bereit || !m) return;
+    const ebenen = (stil.layers ?? []).map((l) => l.id).filter(istLauflicht);
+    if (!ebenen.length) return;
+    let schritt = 0;
+    const uhr = setInterval(() => {
+      if (document.hidden) return;
+      schritt = (schritt + 1) % LAUFLICHT.length;
+      for (const id of ebenen) if (m.getLayer(id)) m.setPaintProperty(id, "line-dasharray", LAUFLICHT[schritt]);
+    }, 80);
+    return () => clearInterval(uhr);
+  }, [stil, bereit]);
+
   useEffect(() => {
     if (!bildRef) return;
     bildRef.current = async () => {
@@ -136,6 +165,14 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   useEffect(() => {
     if (bereit && ziel) karte.current?.fitBounds([[ziel.west, ziel.sued], [ziel.ost, ziel.nord]], { duration: 0 });
   }, [ziel, bereit]);
+
+  useEffect(() => {
+    const m = karte.current;
+    if (!bereit || !m || !blick) return;
+    // Nur schwenken, wenn der Punkt nicht schon gut zu sehen ist (Rand: 10 % je Seite)
+    const p = m.project(blick), { width, height } = m.getCanvas().getBoundingClientRect();
+    if (p.x < width * 0.1 || p.x > width * 0.9 || p.y < height * 0.1 || p.y > height * 0.9) m.easeTo({ center: blick, duration: 600 });
+  }, [blick, bereit]);
 
   const fundPopup = useRef<Popup | null>(null);
   useEffect(() => {

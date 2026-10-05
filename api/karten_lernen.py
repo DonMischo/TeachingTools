@@ -128,6 +128,10 @@ def ablenker(ziel: dict, kandidaten: list[dict], e: dict | None, rng: random.Ran
     Punkte: frühere Verwechslungen ≫ Nähe auf der Karte > ähnlicher Name, dazu etwas Zufall.
     """
     verwechselt = (e or {}).get("verwechselt", {})
+    # Eine Stadt mit Bundesländern als Auswahl wäre zu leicht: dieselbe Ebene, solange genug da sind
+    gleiche = [c for c in kandidaten if c["ebene"] == ziel["ebene"] and normalisiere(c["name"]) != normalisiere(ziel["name"])]
+    if len({normalisiere(c["name"]) for c in gleiche}) >= k:
+        kandidaten = gleiche
     gesehen, wertung = {normalisiere(ziel["name"])}, []
     for c in kandidaten:
         n = normalisiere(c["name"])

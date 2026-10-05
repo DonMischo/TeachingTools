@@ -30,6 +30,8 @@ import mapshaper from "mapshaper";
 import { fromFile } from "geotiff";
 import proj4 from "proj4";
 import sharp from "sharp";
+import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
+
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const ROH = resolve(HIER, "../.karten-roh");
@@ -933,6 +935,45 @@ async function klimazonen(koeppen) {
   }
 }
 
+// ── Meeresströmungen und Windsysteme ─────────────────────────────────
+
+const QUELLE_ZIRKULATION = { name: "TT, schematisch nach Schulatlas-Wissen", lizenz: "eigene Daten", url: "" };
+
+/** Punkt in einer der Kontinentflächen (welt-kontinente, schon gebaut)? */
+function landPruefer() {
+  const k = JSON.parse(readFileSync(join(ZIEL, "ebenen", "welt-kontinente.geojson"), "utf8"));
+  const ringe = k.features.flatMap((f) => (f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates));
+  const imRing = (x, y, ring) => {
+    let drin = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) drin = !drin;
+    }
+    return drin;
+  };
+  return (x, y) => ringe.some((poly) => imRing(x, y, poly[0]) && !poly.slice(1).some((loch) => imRing(x, y, loch)));
+}
+
+/** Monatsabhängige Ebene: der Monatsregler in der Legende wählt, was zu sehen ist (Eigenschaft »monate«). */
+async function zirkulation() {
+  schreibe("welt-stroemungen", { name: "Meeresströmungen", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: true,
+    quelle: QUELLE_ZIRKULATION, monate: true,
+    darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "warm", text: "warme Strömung", farbe: "#d7301f" }, { wert: "kalt", text: "kalte Strömung", farbe: "#2b6cb0" }] } },
+    stroemungsObjekte());
+  schreibe("welt-winde", { name: "Windsysteme und ITC", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: true,
+    quelle: QUELLE_ZIRKULATION, monate: true,
+    darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "passat", text: "Passat", farbe: "#e07b00" },
+      { wert: "westwind", text: "Westwinde", farbe: "#2f855a" },
+      { wert: "polarost", text: "Polare Ostwinde", farbe: "#6b46c1" },
+      { wert: "monsun", text: "Monsun", farbe: "#0e9f9a" },
+      { wert: "itc", text: "ITC (Innertropische Konvergenzzone)", farbe: "#b91c1c" },
+      { wert: "hoch", text: "Hochdruckgürtel", farbe: "#92400e" },
+      { wert: "tief", text: "Tiefdruckrinne", farbe: "#1e3a8a" }] } },
+    windObjekte(landPruefer()));
+}
+
 // ── Schriften ────────────────────────────────────────────────────────
 
 /** Latein, Latein-Erweiterung A (Nachbarländer) und Satzzeichen (– „ “). */
@@ -993,6 +1034,7 @@ await schritt("boden", () => bodennutzung(ordner.clc5));
 await schritt("platten", () => platten(ladeDatei));
 await schritt("wuesten", () => wuesten(ordner));
 await schritt("klima", () => klimazonen(ordner.koeppen));
+await schritt("zirkulation", () => zirkulation());
 await schritt("schriften", () => schriften());
 
 let ebenen = KATALOG;

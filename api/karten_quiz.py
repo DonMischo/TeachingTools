@@ -181,7 +181,7 @@ def _tokens_je_ebene(aufgaben: list[dict], geheim: str) -> dict[str, list[str]]:
 
 
 # Eigenschaften, die auf der Spielerkarte bleiben dürfen (Darstellung), alles andere fällt weg
-ERLAUBTE_EIGENSCHAFTEN = {"klasse", "rang", "hoehe", "ew", "art", "farbe", "dichte", "leistung"}
+ERLAUBTE_EIGENSCHAFTEN = {"klasse", "rang", "hoehe", "ew", "art", "farbe", "dichte", "leistung", "monate"}
 
 
 def entschaerfe_ebene(sammlung: dict, ebene: str, geheim: str) -> dict:
