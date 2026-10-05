@@ -104,7 +104,8 @@ export function erlaubteWerte(e: Ebene, filter: Record<string, string[]> | undef
 
 // ── Regionen ─────────────────────────────────────────────────────────
 
-export type Region = { id: string; name: string; bereich: Bereich; ausschnitt: [number, number, number, number] };
+/** `extra`: Ebenen, die mit der Region angehen (Stadtmodelle) */
+export type Region = { id: string; name: string; bereich: Bereich; ausschnitt: [number, number, number, number]; extra?: string[] };
 
 /** Ausschnitt als [West, Süd, Ost, Nord]. Der Bereich entscheidet, welche Ebenen passen. */
 export const REGIONEN: Region[] = [
@@ -117,6 +118,9 @@ export const REGIONEN: Region[] = [
   { id: "nordamerika", name: "Nordamerika", bereich: "welt", ausschnitt: [-170, 7, -50, 75] },
   { id: "suedamerika", name: "Südamerika", bereich: "welt", ausschnitt: [-85, -56, -33, 13] },
   { id: "ozeanien", name: "Australien und Ozeanien", bereich: "welt", ausschnitt: [110, -48, 180, 2] },
+  { id: "berlin", name: "Stadtmodell Berlin", bereich: "welt", ausschnitt: [13.08, 52.33, 13.77, 52.68], extra: ["berlin-zonen", "berlin-bezirke"] },
+  { id: "paris", name: "Stadtmodell Paris", bereich: "welt", ausschnitt: [2.12, 48.71, 2.62, 49.02], extra: ["paris-zonen"] },
+  { id: "newyork", name: "Stadtmodell New York", bereich: "welt", ausschnitt: [-74.26, 40.49, -73.69, 40.92], extra: ["newyork-zonen", "newyork-boroughs"] },
 ];
 export const region = (id: string | null | undefined) => REGIONEN.find((r) => r.id === id) ?? REGIONEN[0];
 
@@ -220,6 +224,8 @@ const GURT = ["itc", "hoch", "tief"];
 
 const ROLLE: Record<string, Rolle> = {
   "welt-staaten": "staaten", "welt-kontinente": "kontinente", "de-laender": "laender",
+  // Stadtbezirke: Umriss und Name wie Bundesländer
+  "berlin-bezirke": "laender", "newyork-boroughs": "laender",
   "welt-hoehen": "hoehen", "de-hoehen": "hoehen",
   "de-gewaesser": "wasserflaeche", "welt-gewaesser": "wasserflaeche", "welt-meere": "meere",
   "de-seen": "seen", "welt-seen": "seen",

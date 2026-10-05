@@ -115,6 +115,7 @@ aktivitaeten:
       - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr
       - USA-Wirtschaft - Landwirtschaft und Viehhaltung je Bundesstaat, Manufacturing Belt und Sun Belt, Industriestandorte (schematisch)
+      - Stadtmodelle Berlin, Paris, New York - Zentrum, Innenstadt, Stadtrand aus amtlichen Bezirken
       - Alle Siedlungen Deutschlands mit Größenklassen-Filter in der Legende, Ortssuche
       - Meeresboden mit Tiefenstufen und Schummerung, Tiefseegräben und Rücken (quizfähig)
       - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler, Partikelfluss

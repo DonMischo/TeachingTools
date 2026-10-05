@@ -33,6 +33,7 @@ import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
 import { eeZurueck } from "./karten-daten/projektion.mjs";
+import { BERLIN, NEW_YORK, PARIS, ZONEN_LEGENDE } from "./karten-daten/staedte.mjs";
 import { INDUSTRIE, INDUSTRIE_LEGENDE, LANDWIRTSCHAFT, LANDWIRTSCHAFT_LEGENDE, RAEUME, RAEUME_LEGENDE } from "./karten-daten/usa.mjs";
 
 
@@ -600,6 +601,77 @@ async function usa(ordner) {
   schreibe("us-industrie", { name: "USA: Industriestandorte", gruppe: "wirtschaft", bereich: "welt", geometrie: "punkt", quiz: true,
     quelle: QUELLE_USA, darstellung: { feld: "art", art: "kategorie", werte: INDUSTRIE_LEGENDE } },
     INDUSTRIE.map(([name, lon, lat, art]) => feature({ type: "Point", coordinates: [lon, lat] }, { id: `ind-${slug(name)}`, name, art })));
+}
+
+// ── Stadtmodelle ─────────────────────────────────────────────────────
+
+const QUELLEN_STADT = {
+  berlin: { name: "Geoportal Berlin / Amt für Statistik Berlin-Brandenburg (LOR-Ortsteile, Bezirke)", lizenz: "dl-de/zero-2.0",
+    url: "https://daten.berlin.de" },
+  paris: { name: "Ville de Paris (Arrondissements, ODbL); IGN/Etalab via geo.api.gouv.fr (Gemeinden)", lizenz: "ODbL 1.0 / Licence Ouverte 2.0",
+    url: "https://opendata.paris.fr" },
+  newyork: { name: "NYC Department of City Planning (Neighborhood Tabulation Areas 2020)", lizenz: "NYC Open Data (frei nutzbar)",
+    url: "https://data.cityofnewyork.us" },
+};
+
+/** Lädt eine Stadt-Datei, vereinfacht sie und liefert die Features (WGS84). */
+async function stadtDatei(name, url, befehle = "-simplify 12% keep-shapes") {
+  const pfad = join(ROH, name);
+  if (!existsSync(pfad) || force) {
+    const antwort = await fetch(url, { headers: { "Accept-Encoding": "gzip" } });
+    if (!antwort.ok) throw new Error(`${url}: HTTP ${antwort.status}`);
+    writeFileSync(pfad, Buffer.from(await antwort.arrayBuffer()));
+  }
+  return lies(pfad, befehle);
+}
+
+const zonen = (stadt, name) => ({ name: `Stadtmodell ${stadt}: Zentrum, Innenstadt, Rand`, gruppe: "stadt", bereich: "welt", geometrie: "flaeche",
+  quiz: true, darstellung: { feld: "art", art: "kategorie", werte: ZONEN_LEGENDE }, ...(name ? { name } : {}) });
+
+async function stadtmodelle() {
+  // Berlin: 96 Ortsteile mit Zone, 12 Bezirke als Umrisse
+  const ot = await stadtDatei("berlin_ortsteile.geojson", "https://tsb-opendata.s3.eu-central-1.amazonaws.com/ortsteile/lor_ortsteile.geojson");
+  schreibe("berlin-zonen", { ...zonen("Berlin"), quelle: QUELLEN_STADT.berlin },
+    ot.map((f) => {
+      const n = f.properties.OTEIL;
+      const art = BERLIN.zentrum.includes(n) ? "zentrum" : BERLIN.innenstadt.includes(n) ? "innenstadt" : "rand";
+      return feature(f.geometry, { id: `be-${slug(n)}`, name: n, bezirk: f.properties.BEZIRK, art });
+    }));
+  const bz = await stadtDatei("berlin_bezirke.geojson", "https://tsb-opendata.s3.eu-central-1.amazonaws.com/bezirksgrenzen/bezirksgrenzen.geojson");
+  schreibe("berlin-bezirke", { name: "Berlin: Bezirke", gruppe: "stadt", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLEN_STADT.berlin },
+    bz.map((f) => feature(f.geometry, { id: `bez-${f.properties.Gemeinde_schluessel}`, name: f.properties.Gemeinde_name, art: "bezirk" })));
+
+  // Paris: 20 Arrondissements + Gemeinden der Petite Couronne (92, 93, 94)
+  const arr = await stadtDatei("paris_arr.geojson", "https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/arrondissements/exports/geojson");
+  const gemeinden = [];
+  for (const d of ["92", "93", "94"]) {
+    gemeinden.push(...await stadtDatei(`paris_${d}.geojson`, `https://geo.api.gouv.fr/departements/${d}/communes?format=geojson&geometry=contour`));
+  }
+  schreibe("paris-zonen", { ...zonen("Paris"), quelle: QUELLEN_STADT.paris }, [
+    ...arr.map((f) => {
+      const nr = String(f.properties.c_ar);
+      return feature(f.geometry, { id: `pa-${nr}`, name: `${nr}. Arrondissement`, quartier: f.properties.l_aroff,
+        art: PARIS.zentrum.includes(nr) ? "zentrum" : "innenstadt" });
+    }),
+    ...gemeinden.map((f) => feature(f.geometry, { id: `pa-${f.properties.code}`, name: f.properties.nom,
+      ew: f.properties.population, art: PARIS.buerostadt.includes(f.properties.nom) ? "buerostadt" : "rand" })),
+  ]);
+
+  // New York: Stadtviertel (NTA 2020) mit Zone, Boroughs zusammengefasst
+  const nta = await stadtDatei("nyc_nta.geojson", "https://data.cityofnewyork.us/api/geospatial/9nt8-h7nd?method=export&format=GeoJSON");
+  const km = ([x, y]) => Math.hypot((x - NEW_YORK.mitte[0]) * 111.3 * Math.cos((y * Math.PI) / 180), (y - NEW_YORK.mitte[1]) * 111.3);
+  schreibe("newyork-zonen", { ...zonen("New York"), quelle: QUELLEN_STADT.newyork },
+    nta.map((f) => {
+      const p = f.properties, c = ankerGrob(f.geometry);
+      const art = p.ntatype !== "0" ? "gruen"
+        : p.boroname === "Manhattan" && c[1] < NEW_YORK.cbdNordgrenze ? "zentrum"
+        : p.boroname === "Manhattan" || km(c) < NEW_YORK.innenstadtKm ? "innenstadt" : "rand";
+      return feature(f.geometry, { id: `ny-${p.nta2020}`, name: p.ntaname, bezirk: p.boroname, art });
+    }));
+  const boroughs = await lies(join(ROH, "nyc_nta.geojson"), "-dissolve boroname -simplify 12% keep-shapes");
+  const BORO_DE = { Manhattan: "Manhattan", Brooklyn: "Brooklyn", Queens: "Queens", Bronx: "Bronx", "Staten Island": "Staten Island" };
+  schreibe("newyork-boroughs", { name: "New York: Boroughs", gruppe: "stadt", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLEN_STADT.newyork },
+    boroughs.map((f) => feature(f.geometry, { id: `boro-${slug(f.properties.boroname)}`, name: BORO_DE[f.properties.boroname] ?? f.properties.boroname, art: "borough" })));
 }
 
 // ── Rasterkacheln (Mercator und Equal Earth) ─────────────────────────
@@ -1239,6 +1311,7 @@ await schritt("zirkulation", () => zirkulation());
 await schritt("meeresboden", () => meeresboden(ordner));
 await schritt("europa", () => europa());
 await schritt("usa", () => usa(ordner));
+await schritt("stadtmodelle", () => stadtmodelle());
 await schritt("europaverkehr", () => europaVerkehr(ordner));
 await schritt("eukraftwerke", async () => kraftwerke([await ladeDatei("opsd_eu.csv",
   "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_EU.csv"), await ladeDatei("opsd_de.csv",

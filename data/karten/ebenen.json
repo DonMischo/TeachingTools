@@ -1909,6 +1909,174 @@
       },
       "anzahl": 22,
       "bytes": 3372
+    },
+    {
+      "id": "berlin-zonen",
+      "name": "Stadtmodell Berlin: Zentrum, Innenstadt, Rand",
+      "gruppe": "stadt",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "zentrum",
+            "text": "Zentrum / City (Geschäfte, Büros, Regierung)",
+            "farbe": "#b2182b"
+          },
+          {
+            "wert": "innenstadt",
+            "text": "Innenstadt (dicht bebaut, Altbau, gemischt)",
+            "farbe": "#f4a582"
+          },
+          {
+            "wert": "buerostadt",
+            "text": "Bürostadt am Rand (La Défense)",
+            "farbe": "#762a83"
+          },
+          {
+            "wert": "rand",
+            "text": "Stadtrand / Vororte (lockerer, mehr Wohnen)",
+            "farbe": "#d1e5f0"
+          },
+          {
+            "wert": "gruen",
+            "text": "Parks, Friedhöfe, Flughäfen",
+            "farbe": "#a6dba0"
+          }
+        ]
+      },
+      "quelle": {
+        "name": "Geoportal Berlin / Amt für Statistik Berlin-Brandenburg (LOR-Ortsteile, Bezirke)",
+        "lizenz": "dl-de/zero-2.0",
+        "url": "https://daten.berlin.de"
+      },
+      "anzahl": 96,
+      "bytes": 208607
+    },
+    {
+      "id": "berlin-bezirke",
+      "name": "Berlin: Bezirke",
+      "gruppe": "stadt",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Geoportal Berlin / Amt für Statistik Berlin-Brandenburg (LOR-Ortsteile, Bezirke)",
+        "lizenz": "dl-de/zero-2.0",
+        "url": "https://daten.berlin.de"
+      },
+      "anzahl": 12,
+      "bytes": 60848
+    },
+    {
+      "id": "paris-zonen",
+      "name": "Stadtmodell Paris: Zentrum, Innenstadt, Rand",
+      "gruppe": "stadt",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "zentrum",
+            "text": "Zentrum / City (Geschäfte, Büros, Regierung)",
+            "farbe": "#b2182b"
+          },
+          {
+            "wert": "innenstadt",
+            "text": "Innenstadt (dicht bebaut, Altbau, gemischt)",
+            "farbe": "#f4a582"
+          },
+          {
+            "wert": "buerostadt",
+            "text": "Bürostadt am Rand (La Défense)",
+            "farbe": "#762a83"
+          },
+          {
+            "wert": "rand",
+            "text": "Stadtrand / Vororte (lockerer, mehr Wohnen)",
+            "farbe": "#d1e5f0"
+          },
+          {
+            "wert": "gruen",
+            "text": "Parks, Friedhöfe, Flughäfen",
+            "farbe": "#a6dba0"
+          }
+        ]
+      },
+      "quelle": {
+        "name": "Ville de Paris (Arrondissements, ODbL); IGN/Etalab via geo.api.gouv.fr (Gemeinden)",
+        "lizenz": "ODbL 1.0 / Licence Ouverte 2.0",
+        "url": "https://opendata.paris.fr"
+      },
+      "anzahl": 142,
+      "bytes": 83124
+    },
+    {
+      "id": "newyork-zonen",
+      "name": "Stadtmodell New York: Zentrum, Innenstadt, Rand",
+      "gruppe": "stadt",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "zentrum",
+            "text": "Zentrum / City (Geschäfte, Büros, Regierung)",
+            "farbe": "#b2182b"
+          },
+          {
+            "wert": "innenstadt",
+            "text": "Innenstadt (dicht bebaut, Altbau, gemischt)",
+            "farbe": "#f4a582"
+          },
+          {
+            "wert": "buerostadt",
+            "text": "Bürostadt am Rand (La Défense)",
+            "farbe": "#762a83"
+          },
+          {
+            "wert": "rand",
+            "text": "Stadtrand / Vororte (lockerer, mehr Wohnen)",
+            "farbe": "#d1e5f0"
+          },
+          {
+            "wert": "gruen",
+            "text": "Parks, Friedhöfe, Flughäfen",
+            "farbe": "#a6dba0"
+          }
+        ]
+      },
+      "quelle": {
+        "name": "NYC Department of City Planning (Neighborhood Tabulation Areas 2020)",
+        "lizenz": "NYC Open Data (frei nutzbar)",
+        "url": "https://data.cityofnewyork.us"
+      },
+      "anzahl": 262,
+      "bytes": 387663
+    },
+    {
+      "id": "newyork-boroughs",
+      "name": "New York: Boroughs",
+      "gruppe": "stadt",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "NYC Department of City Planning (Neighborhood Tabulation Areas 2020)",
+        "lizenz": "NYC Open Data (frei nutzbar)",
+        "url": "https://data.cityofnewyork.us"
+      },
+      "anzahl": 5,
+      "bytes": 164566
     }
   ]
 }

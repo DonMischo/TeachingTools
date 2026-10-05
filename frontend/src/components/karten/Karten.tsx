@@ -107,7 +107,11 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art, region(v.region).bereich) }));
   const waehleRegion = (id: string) => {
     const r = region(id);
-    setInhalt((v) => ({ ...v, region: r.id, ...(region(v.region).bereich !== r.bereich ? auswahlFuer(v.art, r.bereich) : {}) }));
+    setInhalt((v) => {
+      const basis = region(v.region).bereich !== r.bereich ? auswahlFuer(v.art, r.bereich) : { ebenen: v.ebenen };
+      // Stadtmodelle: ihre Ebenen gleich mit anschalten
+      return { ...v, ...basis, region: r.id, ebenen: [...new Set([...basis.ebenen, ...(r.extra ?? [])])] };
+    });
     const [west, sued, ost, nord] = r.ausschnitt;
     setZiel({ west, sued, ost, nord });
   };
