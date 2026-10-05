@@ -212,7 +212,7 @@ export default function BingoEditor({ editId }: { editId?: number }) {
         </select>
         <div className="flex gap-2">
           <a href="/api/bingo/template" download="bingo_vorlage.json"
-            className="text-xs px-3 py-1.5 border border-line rounded-lg text-muted hover:border-gray-500 transition-colors">
+            className="text-xs px-3 py-1.5 border border-line rounded-lg text-muted hover:border-muted transition-colors">
             Vorlage
           </a>
           <label className="btn-primary text-xs px-3 py-1.5 cursor-pointer">

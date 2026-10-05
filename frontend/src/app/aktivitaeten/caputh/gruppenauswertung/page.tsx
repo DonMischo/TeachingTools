@@ -11,7 +11,7 @@ const QUIZ_TYPES = [
   { key: "test",        label: "Test",             desc: "Ø Score · Direktes Ranking",          color: "text-orange-300 border-orange-700" },
   { key: "assignment",  label: "Aufgabe",          desc: "Ø Score · Direktes Ranking",          color: "text-purple-300 border-purple-700" },
   { key: "competition", label: "Wettbewerb",       desc: "Ø Score · Direktes Ranking",          color: "text-yellow-300 border-yellow-700" },
-  { key: "custom",      label: "Benutzerdefiniert",desc: "Ø Score · Direktes Ranking",          color: "text-gray-300 border-gray-600" },
+  { key: "custom",      label: "Benutzerdefiniert",desc: "Ø Score · Direktes Ranking",          color: "text-fg border-line" },
 ];
 
 export default function GruppenauswertungPage() {

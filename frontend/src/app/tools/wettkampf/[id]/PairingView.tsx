@@ -27,33 +27,33 @@ function MatchRow({ m, canEdit, onSelectMatch, onDeleteMatch }: {
     <div
       onClick={canClick ? () => onSelectMatch?.(m) : undefined}
       className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-        isDone && canClick ? "border-gray-600 cursor-pointer hover:border-yellow-600 opacity-80"
-        : isDone ? "border-gray-700/60 opacity-80"
-        : canClick ? "border-indigo-600 cursor-pointer hover:border-indigo-400 shadow-xs shadow-indigo-900/30"
+        isDone && canClick ? "border-line cursor-pointer hover:border-yellow-600 opacity-80"
+        : isDone ? "border-line opacity-80"
+        : canClick ? "border-accent cursor-pointer hover:border-accent"
         : "border-line"
       }`}
     >
-      <span className={`flex-1 text-sm font-medium text-right ${m.winner_id === m.p1?.id ? "text-green-300" : "text-gray-300"}`}>
+      <span className={`flex-1 text-sm font-medium text-right ${m.winner_id === m.p1?.id ? "text-green-300" : "text-fg"}`}>
         {m.p1?.name ?? "—"}
       </span>
-      <span className="text-xs text-gray-500 shrink-0 w-16 text-center">
+      <span className="text-xs text-muted shrink-0 w-16 text-center">
         {m.is_draw
           ? `${m.score_p1 ?? "—"} : ${m.score_p2 ?? "—"} 🤝`
           : m.score_p1 != null && m.score_p2 != null ? `${m.score_p1} : ${m.score_p2}` : "vs"}
       </span>
-      <span className={`flex-1 text-sm font-medium ${m.winner_id === m.p2?.id ? "text-green-300" : "text-gray-300"}`}>
+      <span className={`flex-1 text-sm font-medium ${m.winner_id === m.p2?.id ? "text-green-300" : "text-fg"}`}>
         {m.p2?.name ?? "—"}
       </span>
       <div className="flex items-center gap-1 shrink-0">
         {isDone
           ? <span className="text-green-500 text-xs">✓</span>
           : canEdit && m.p1 && m.p2
-          ? <span className="text-indigo-400 text-xs">→</span>
+          ? <span className="text-accent text-xs">→</span>
           : null}
         {canEdit && (
           <button
             onClick={e => { e.stopPropagation(); if (confirm("Paarung löschen?")) onDeleteMatch?.(m.id); }}
-            className="text-gray-600 hover:text-red-400 text-xs ml-1 transition-colors"
+            className="text-muted hover:text-red-400 text-xs ml-1 transition-colors"
             title="Paarung löschen"
           >🗑</button>
         )}
@@ -108,7 +108,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
           <option value="">— Teilnehmer 1 —</option>
           {groupParticipants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <span className="text-gray-500 text-sm shrink-0 font-bold">vs</span>
+        <span className="text-muted text-sm shrink-0 font-bold">vs</span>
         <select className="input flex-1 text-sm" value={addState.p2}
           onChange={e => setAddState(s => s ? { ...s, p2: e.target.value } : s)}>
           <option value="">— Teilnehmer 2 —</option>
@@ -118,10 +118,10 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
         </select>
         <button onClick={() => confirmAdd(groupParticipants)}
           disabled={!addState.p1 || !addState.p2 || addState.p1 === addState.p2}
-          className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-40 transition-colors">
+          className="btn-primary shrink-0 px-3 py-1.5 text-sm">
           +
         </button>
-        <button onClick={() => setAddState(null)} className="text-gray-500 hover:text-white text-lg shrink-0 leading-none">×</button>
+        <button onClick={() => setAddState(null)} className="text-muted hover:text-fg text-lg shrink-0 leading-none">×</button>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
         <div className="flex justify-end">
           <button
             onClick={() => allCollapsed ? expandAll() : collapseAll(groups)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-muted hover:text-fg transition-colors"
           >
             {allCollapsed ? "▶ Alle aufklappen" : "▼ Alle zuklappen"}
           </button>
@@ -166,15 +166,15 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
             <div key={g} className="border border-line rounded-2xl overflow-hidden">
               {/* Group header */}
               <div
-                className="flex items-center justify-between px-4 py-3 bg-gray-800/60 border-b border-line cursor-pointer select-none"
+                className="flex items-center justify-between px-4 py-3 bg-surface-hover border-b border-line cursor-pointer select-none"
                 onClick={() => toggleCollapse(g)}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500 text-xs w-3">{isCollapsed ? "▶" : "▼"}</span>
-                  <span className="font-bold text-gray-100">{g}</span>
-                  <span className="text-xs text-gray-500">{gParticipants.length} Teams</span>
+                  <span className="text-muted text-xs w-3">{isCollapsed ? "▶" : "▼"}</span>
+                  <span className="font-bold text-fg">{g}</span>
+                  <span className="text-xs text-muted">{gParticipants.length} Teams</span>
                   {gMatches.length > 0 && (
-                    <span className="text-xs text-gray-600">{done}/{gMatches.length} gespielt</span>
+                    <span className="text-xs text-muted">{done}/{gMatches.length} gespielt</span>
                   )}
                 </div>
                 {!isCollapsed && canEdit && addState?.groupKey !== g && (
@@ -183,14 +183,14 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                       <button
                         onClick={async () => { setAutopairingGroup(g); await onAutoPair(g); setAutopairingGroup(undefined); }}
                         disabled={autopairingGroup !== undefined}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-40"
+                        className="text-xs text-accent hover:text-accent transition-colors disabled:opacity-40"
                         title="Jeder gegen Jeden automatisch erstellen"
                       >
                         {autopairingGroup === g ? "⏳" : "⚡"} Auto
                       </button>
                     )}
                     <button onClick={() => openAdd(g)}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                      className="text-xs text-accent hover:text-accent transition-colors">
                       + Paarung
                     </button>
                   </div>
@@ -206,14 +206,14 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-600 italic">Noch keine Paarungen.</p>
+                  <p className="text-xs text-muted italic">Noch keine Paarungen.</p>
                 )}
                 <AddForm groupKey={g} groupParticipants={gParticipants} />
 
                 {/* Mini standings */}
                 {gParticipants.length >= 2 && gMatches.some(m => m.winner_id || m.is_draw) && (
                   <div className="border-t border-line pt-3">
-                    <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Zwischenstand</p>
+                    <p className="text-xs text-muted uppercase tracking-wide mb-2">Zwischenstand</p>
                     <div className="space-y-1">
                       {[...gParticipants].sort((a, b) => {
                         const sa = stats[a.id] ?? { pts: 0, gd: 0, gf: 0 };
@@ -223,11 +223,11 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                         const s = stats[p.id] ?? { w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
                         return (
                           <div key={p.id} className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-600 text-xs w-4">{i + 1}</span>
-                            <span className="flex-1 text-gray-300 font-medium">{p.name}</span>
-                            <span className="text-gray-500 text-xs">{s.w}S {hasDraw ? `${s.d}U ` : ""}{s.l}N</span>
-                            {(s.gf > 0 || s.ga > 0) && <span className="text-gray-600 text-xs">{s.gf}:{s.ga}</span>}
-                            <span className="text-white font-bold text-xs w-8 text-right">{s.pts} Pkt</span>
+                            <span className="text-muted text-xs w-4">{i + 1}</span>
+                            <span className="flex-1 text-fg font-medium">{p.name}</span>
+                            <span className="text-muted text-xs">{s.w}S {hasDraw ? `${s.d}U ` : ""}{s.l}N</span>
+                            {(s.gf > 0 || s.ga > 0) && <span className="text-muted text-xs">{s.gf}:{s.ga}</span>}
+                            <span className="text-fg font-bold text-xs w-8 text-right">{s.pts} Pkt</span>
                           </div>
                         );
                       })}
@@ -242,7 +242,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
         {/* Cross-group matches */}
         {crossGroupMatches.length > 0 && (
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">Gruppenübergreifend</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">Gruppenübergreifend</h3>
             <div className="space-y-2">
               {crossGroupMatches.map(m => (
                 <MatchRow key={m.id} m={m} canEdit={canEdit} onSelectMatch={onSelectMatch} onDeleteMatch={onDeleteMatch} />
@@ -258,7 +258,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
               <AddForm groupKey="__cross__" groupParticipants={participants} />
             ) : (
               <button onClick={() => openAdd("__cross__")}
-                className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-600 rounded-xl text-sm text-gray-500 hover:border-gray-500 hover:text-gray-300 transition-colors">
+                className="flex items-center gap-2 px-4 py-2 border border-dashed border-line rounded-xl text-sm text-muted hover:border-muted hover:text-fg transition-colors">
                 + Gruppenübergreifende Paarung
               </button>
             )}
@@ -284,9 +284,9 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
         {rounds.map(r => (
           <div key={r}>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">Runde {r + 1}</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-muted">Runde {r + 1}</h3>
               {canEdit && addState?.groupKey !== String(r) && (
-                <button onClick={() => openAdd(String(r))} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                <button onClick={() => openAdd(String(r))} className="text-xs text-accent hover:text-accent transition-colors">
                   + Paarung
                 </button>
               )}
@@ -303,7 +303,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                   <option value="">— Teilnehmer 1 —</option>
                   {participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                <span className="text-gray-500 text-sm shrink-0 font-bold">vs</span>
+                <span className="text-muted text-sm shrink-0 font-bold">vs</span>
                 <select className="input flex-1 text-sm" value={addState.p2}
                   onChange={e => setAddState(s => s ? { ...s, p2: e.target.value } : s)}>
                   <option value="">— Teilnehmer 2 —</option>
@@ -316,8 +316,8 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                   onAddMatch?.(r, Number(addState.p1), Number(addState.p2));
                   setAddState(prev => prev ? { ...prev, p1: "", p2: "" } : null);
                 }} disabled={!addState.p1 || !addState.p2}
-                  className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-40 transition-colors">+</button>
-                <button onClick={() => setAddState(null)} className="text-gray-500 hover:text-white text-lg shrink-0 leading-none">×</button>
+                  className="btn-primary shrink-0 px-3 py-1.5 text-sm">+</button>
+                <button onClick={() => setAddState(null)} className="text-muted hover:text-fg text-lg shrink-0 leading-none">×</button>
               </div>
             )}
           </div>
@@ -327,14 +327,14 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
       {canEdit && (
         addState?.groupKey === `r${nextRoundNo}` ? (
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">Runde {nextRoundNo + 1}</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">Runde {nextRoundNo + 1}</h3>
             <div className="flex items-center gap-2 p-3 rounded-xl border border-dashed border-indigo-700 bg-indigo-950/20">
               <select className="input flex-1 text-sm" value={addState.p1}
                 onChange={e => setAddState(s => s ? { ...s, p1: e.target.value } : s)} autoFocus>
                 <option value="">— Teilnehmer 1 —</option>
                 {participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <span className="text-gray-500 text-sm shrink-0 font-bold">vs</span>
+              <span className="text-muted text-sm shrink-0 font-bold">vs</span>
               <select className="input flex-1 text-sm" value={addState.p2}
                 onChange={e => setAddState(s => s ? { ...s, p2: e.target.value } : s)}>
                 <option value="">— Teilnehmer 2 —</option>
@@ -347,13 +347,13 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
                 onAddMatch?.(nextRoundNo, Number(addState.p1), Number(addState.p2));
                 setAddState(prev => prev ? { ...prev, p1: "", p2: "" } : null);
               }} disabled={!addState.p1 || !addState.p2}
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-40 transition-colors">+</button>
-              <button onClick={() => setAddState(null)} className="text-gray-500 hover:text-white text-lg shrink-0 leading-none">×</button>
+                className="btn-primary shrink-0 px-3 py-1.5 text-sm">+</button>
+              <button onClick={() => setAddState(null)} className="text-muted hover:text-fg text-lg shrink-0 leading-none">×</button>
             </div>
           </div>
         ) : (
           <button onClick={() => openAdd(`r${nextRoundNo}`)}
-            className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-600 rounded-xl text-sm text-gray-400 hover:border-indigo-600 hover:text-indigo-400 transition-colors">
+            className="flex items-center gap-2 px-4 py-2 border border-dashed border-line rounded-xl text-sm text-muted hover:border-accent hover:text-accent transition-colors">
             + Runde {nextRoundNo + 1} hinzufügen
           </button>
         )
@@ -361,7 +361,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
 
       {participants.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">Zwischenstand</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">Zwischenstand</h3>
           <StandingsTable participants={participants} showGroup={false} stats={stats} hasDraw={hasDraw} />
         </div>
       )}
@@ -388,7 +388,7 @@ function StandingsTable({ participants, showGroup, stats, hasDraw }: {
     <div className="border border-line rounded-xl overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-800/60 text-gray-400 text-xs">
+          <tr className="bg-surface-hover text-muted text-xs">
             <th className="text-left px-3 py-2">#</th>
             <th className="text-left px-3 py-2">Name</th>
             {showGroup && <th className="text-left px-3 py-2">Gruppe</th>}
@@ -399,7 +399,7 @@ function StandingsTable({ participants, showGroup, stats, hasDraw }: {
             <th className="px-3 py-2 text-center">+</th>
             <th className="px-3 py-2 text-center">−</th>
             <th className="px-3 py-2 text-center">Diff</th>
-            <th className="px-3 py-2 text-center font-bold text-white">Pkt</th>
+            <th className="px-3 py-2 text-center font-bold text-fg">Pkt</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -407,19 +407,19 @@ function StandingsTable({ participants, showGroup, stats, hasDraw }: {
             const s = stats[p.id] ?? { w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
             return (
               <tr key={p.id} className={i === 0 && s.pts > 0 ? "bg-yellow-900/10" : ""}>
-                <td className="px-3 py-2 text-gray-400 text-xs">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
+                <td className="px-3 py-2 text-muted text-xs">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</td>
                 <td className="px-3 py-2 font-medium">{p.name}</td>
-                {showGroup && <td className="px-3 py-2 text-xs text-gray-500">{p.group ?? "—"}</td>}
-                <td className="px-3 py-2 text-center text-gray-500">{s.w + s.d + s.l}</td>
+                {showGroup && <td className="px-3 py-2 text-xs text-muted">{p.group ?? "—"}</td>}
+                <td className="px-3 py-2 text-center text-muted">{s.w + s.d + s.l}</td>
                 <td className="px-3 py-2 text-center text-green-400 font-semibold">{s.w}</td>
                 {hasDraw && <td className="px-3 py-2 text-center text-yellow-400">{s.d}</td>}
                 <td className="px-3 py-2 text-center text-red-400">{s.l}</td>
-                <td className="px-3 py-2 text-center text-gray-300">{s.gf}</td>
-                <td className="px-3 py-2 text-center text-gray-500">{s.ga}</td>
-                <td className={`px-3 py-2 text-center font-semibold ${s.gd > 0 ? "text-green-400" : s.gd < 0 ? "text-red-400" : "text-gray-500"}`}>
+                <td className="px-3 py-2 text-center text-fg">{s.gf}</td>
+                <td className="px-3 py-2 text-center text-muted">{s.ga}</td>
+                <td className={`px-3 py-2 text-center font-semibold ${s.gd > 0 ? "text-green-400" : s.gd < 0 ? "text-red-400" : "text-muted"}`}>
                   {s.gd > 0 ? "+" : ""}{s.gd}
                 </td>
-                <td className="px-3 py-2 text-center font-bold text-white">{s.pts}</td>
+                <td className="px-3 py-2 text-center font-bold text-fg">{s.pts}</td>
               </tr>
             );
           })}
@@ -492,7 +492,7 @@ function GesamtstandTable({ participants, groups, stats, hasDraw }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">Gesamtstand</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wide text-muted">Gesamtstand</h3>
         <div className="flex items-center gap-2">
           {dropdownOptions.length > 1 && (
             <select value={filter} onChange={e => setFilter(e.target.value)} className="input text-xs py-1 px-2">
@@ -503,7 +503,7 @@ function GesamtstandTable({ participants, groups, stats, hasDraw }: {
           {canMerge && (
             <button
               onClick={toggleMerged}
-              className={`text-xs px-2 py-1 rounded-lg border transition-colors ${merged ? "border-indigo-500 bg-indigo-900/30 text-indigo-300" : "border-line text-gray-500 hover:border-indigo-500 hover:text-indigo-300"}`}
+              className={`text-xs px-2 py-1 rounded-lg border transition-colors ${merged ? "border-indigo-500 bg-accent/15 text-accent" : "border-line text-muted hover:border-accent hover:text-accent"}`}
             >
               {merged ? "⊕ Zusammengefasst" : "⊕ Zusammenfassen"}
             </button>

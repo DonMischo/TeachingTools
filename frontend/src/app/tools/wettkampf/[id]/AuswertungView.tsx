@@ -106,10 +106,10 @@ export default function AuswertungView({ w, awarded, classAwarded, onClose }: Pr
       <div className="w-full max-w-3xl">
         {/* Toolbar — hidden on print */}
         <div className="no-print flex items-center justify-between mb-4">
-          <button onClick={onClose} className="text-sm text-gray-400 hover:text-white">← Zurück</button>
+          <button onClick={onClose} className="text-sm text-muted hover:text-fg">← Zurück</button>
           <button
             onClick={exportPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
           >
             📄 Als PDF exportieren
           </button>

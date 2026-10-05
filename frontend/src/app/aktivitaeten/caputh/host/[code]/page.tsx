@@ -91,7 +91,7 @@ function Countdown({
       >
         {remaining}
       </div>
-      <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div className="w-24 h-2 bg-surface-hover rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-1000"
           style={{ width: `${pct * 100}%`, backgroundColor: color }}
@@ -403,7 +403,7 @@ export default function HostPage() {
           style={{ display: "block", width: "min(70vw, 55vh)", height: "auto" }}
         />
         <p className="text-2xl font-black font-mono text-indigo-900 tracking-widest">{code}</p>
-        <p className="text-gray-400 text-xs">{joinUrl}</p>
+        <p className="text-muted text-xs">{joinUrl}</p>
         <GuestAccessToggle tool="caputh" code={code} />
       </div>
     </div>
@@ -412,7 +412,7 @@ export default function HostPage() {
   const qrBtn = (
     <button
       onClick={() => setShowJoinQR(true)}
-      className="fixed top-3 left-14 z-40 w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-gray-300 hover:text-white shadow-lg"
+      className="fixed top-3 left-14 z-40 w-8 h-8 rounded-lg bg-surface-hover hover:bg-surface-hover flex items-center justify-center text-fg hover:text-fg shadow-lg"
       title="QR-Code zeigen"
     >
       <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -424,7 +424,7 @@ export default function HostPage() {
   // ── Connecting ─────────────────────────────────────────────────────────────
   if (phase.kind === "connecting") {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
+      <div className="flex items-center justify-center h-screen text-muted">
         {connectError ?? `Verbinde mit Session ${code}…`}
       </div>
     );
@@ -433,7 +433,7 @@ export default function HostPage() {
   // ── Finished ───────────────────────────────────────────────────────────────
   if (phase.kind === "finished") {
     return (
-      <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
+      <div className="flex h-screen bg-page text-fg overflow-hidden">
         <Confetti ratio={phase.scoreRatio} />
         {confirmModal}
         {qrBtn}
@@ -444,21 +444,21 @@ export default function HostPage() {
           <p className="text-6xl">🏆</p>
           <h1 className="text-4xl font-bold text-center">{phase.title}</h1>
           {phase.isReplay ? (
-            <p className="text-base text-gray-400 text-center bg-gray-800 rounded-xl px-4 py-2">
+            <p className="text-base text-muted text-center bg-surface rounded-xl px-4 py-2">
               🔁 Wiederholung — keine weiteren Punkte (bereits {phase.pointsAwarded} vergeben)
             </p>
           ) : phase.isGroupScope ? (
             <div className="flex flex-col items-center gap-2">
-              <p className="text-lg text-gray-300 text-center">
+              <p className="text-lg text-fg text-center">
                 {phase.scopeLabel} — Punkte je Klasse:
               </p>
               <table className="text-lg">
                 <tbody>
                   {phase.pointsByClass.map((c) => (
                     <tr key={c.class_id}>
-                      <td className="pr-4 py-0.5 text-gray-300 text-right">{c.class_code}</td>
+                      <td className="pr-4 py-0.5 text-fg text-right">{c.class_code}</td>
                       {c.ratio != null && (
-                        <td className="pr-4 py-0.5 text-gray-500 text-sm">{Math.round(c.ratio * 100)} %</td>
+                        <td className="pr-4 py-0.5 text-muted text-sm">{Math.round(c.ratio * 100)} %</td>
                       )}
                       <td className="py-0.5 font-bold text-yellow-400">{c.points} Punkte</td>
                     </tr>
@@ -466,13 +466,13 @@ export default function HostPage() {
                 </tbody>
               </table>
               {phase.pointsByClass.length === 0 && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted">
                   Keine Punkte vergeben — kein Teilnehmer war einer Klasse zugeordnet.
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-xl text-gray-300 text-center">
+            <p className="text-xl text-fg text-center">
               Klasse erhält{" "}
               <span className="font-bold text-yellow-400">{phase.pointsAwarded} Hauspunkte</span>!
             </p>
@@ -480,14 +480,14 @@ export default function HostPage() {
           <div className="flex gap-3 flex-wrap justify-center mt-2">
             <button
               onClick={() => setConfirmDialog({ msg: "Session zurücksetzen und nochmal spielen?", onYes: () => send("restart") })}
-              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-xl"
+              className="px-6 py-3 bg-surface-hover hover:bg-surface-hover text-fg font-semibold rounded-xl"
             >
               ↺ Nochmal spielen
             </button>
             <a
               href={`/api/sessions/${code}/report?fmt=csv`}
               download
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center gap-2"
+              className="btn-primary px-6 py-3 flex items-center gap-2"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                 <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
@@ -499,11 +499,11 @@ export default function HostPage() {
 
         {/* Slim ranking sidebar */}
         {phase.finalRanking.length > 0 && (
-          <div className="w-52 border-l border-gray-700 flex flex-col relative z-20 shrink-0">
-            <div className="text-xs font-bold uppercase tracking-wide text-gray-400 px-3 py-2 border-b border-gray-700 shrink-0">
+          <div className="w-52 border-l border-line flex flex-col relative z-20 shrink-0">
+            <div className="text-xs font-bold uppercase tracking-wide text-muted px-3 py-2 border-b border-line shrink-0">
               🏆 Ranking
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-800">
+            <div className="flex-1 overflow-y-auto divide-y divide-line">
               {phase.finalRanking.map((r) => (
                 <div key={r.pid} className="flex items-center gap-2 px-3 py-2">
                   <span className="text-sm font-black w-5 text-center text-yellow-400 shrink-0">
@@ -524,11 +524,11 @@ export default function HostPage() {
   // ── Waiting room ───────────────────────────────────────────────────────────
   if (phase.kind === "waiting") {
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white p-6">
+      <div className="flex flex-col h-screen bg-page text-fg p-6">
         {confirmModal}
         <div className="flex items-center gap-3 mb-6">
-          <span className="text-sm bg-gray-700 px-3 py-1 rounded-sm font-mono">{code}</span>
-          <span className="text-sm text-gray-400">{phase.participantCount} Teilnehmer</span>
+          <span className="text-sm bg-surface-hover px-3 py-1 rounded-sm font-mono">{code}</span>
+          <span className="text-sm text-muted">{phase.participantCount} Teilnehmer</span>
         </div>
 
         <div className="flex-1 flex gap-8 items-start justify-center pt-4 px-4">
@@ -543,22 +543,22 @@ export default function HostPage() {
             >
               <QRCodeSVG value={joinUrl} size={220} bgColor="#ffffff" fgColor="#1e1b4b" level="M" />
             </button>
-            <p className="text-gray-400 text-sm">oder Code eingeben:</p>
+            <p className="text-muted text-sm">oder Code eingeben:</p>
             <p className="text-5xl font-black font-mono tracking-[0.2em] text-yellow-400">{code}</p>
-            <p className="text-gray-500 text-xs break-all max-w-[240px] text-center">{joinUrl}</p>
+            <p className="text-muted text-xs break-all max-w-[240px] text-center">{joinUrl}</p>
             {/* Wie auf jeder anderen Hostseite direkt am QR — vorher steckte der
                 Schalter nur im QR-Overlay und war praktisch nicht zu finden. */}
-            <GuestAccessToggle tool="caputh" code={code} className="text-sm text-gray-300 hover:text-white" />
+            <GuestAccessToggle tool="caputh" code={code} className="text-sm text-fg hover:text-fg" />
           </div>
 
           {/* Participants + start */}
           <div className="flex flex-col gap-4 min-w-0 flex-1 max-w-lg">
             {teamMode && (
-              <div className="bg-gray-800 rounded-2xl p-4 flex flex-col gap-2">
+              <div className="bg-surface rounded-2xl p-4 flex flex-col gap-2">
                 <p className="text-yellow-400 text-sm font-semibold">👥 Team-Modus</p>
                 <div className="flex flex-wrap gap-2">
                   {teams.map(t => (
-                    <span key={t.id} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-lg">
+                    <span key={t.id} className="flex items-center gap-1 text-xs bg-surface-hover px-2 py-1 rounded-lg">
                       {t.name}
                       <button onClick={() => removeTeam(t.id)} className="text-red-400 hover:text-red-300 ml-0.5">🗑</button>
                     </span>
@@ -566,7 +566,7 @@ export default function HostPage() {
                 </div>
                 <div className="flex gap-2">
                   <input
-                    className="flex-1 bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 outline-hidden"
+                    className="flex-1 bg-surface-hover text-fg text-sm rounded-lg px-3 py-1.5 outline-hidden"
                     placeholder="Team-Name…"
                     value={newTeamName}
                     onChange={e => setNewTeamName(e.target.value)}
@@ -576,14 +576,14 @@ export default function HostPage() {
                 </div>
               </div>
             )}
-            <p className="text-gray-300 text-lg font-semibold">
+            <p className="text-fg text-lg font-semibold">
               {phase.participantCount === 0 ? "Warte auf Teilnehmer…" : `${phase.participantCount} Teilnehmer beigetreten`}
             </p>
             <div className="flex flex-wrap gap-3 min-h-[80px]">
               {phase.participants.map((p) => (
                 <div key={p.id} className="flex flex-col items-center gap-1 group relative">
                   <AvatarDisplay avatarId={p.avatar} size="md" />
-                  <span className="text-xs text-gray-400 max-w-[56px] truncate text-center">{p.name}</span>
+                  <span className="text-xs text-muted max-w-[56px] truncate text-center">{p.name}</span>
                   <div className="absolute -top-1 -right-1 hidden group-hover:flex gap-0.5">
                     <button
                       title="Umbenennen"
@@ -628,15 +628,15 @@ export default function HostPage() {
   if (phase.kind === "preview") {
     const { q } = phase;
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <div className="flex flex-col h-screen bg-page text-fg">
         {qrOverlay}
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-          <button onClick={() => setShowJoinQR(true)} className="font-mono text-gray-400 hover:text-white transition-colors" title="QR zeigen">{code}</button>
-          <span className="text-gray-300 font-semibold">
+        <div className="flex items-center justify-between px-6 py-3 bg-surface border-b border-line">
+          <button onClick={() => setShowJoinQR(true)} className="font-mono text-muted hover:text-fg transition-colors" title="QR zeigen">{code}</button>
+          <span className="text-fg font-semibold">
             Frage {q.idx + 1} / {q.total}
           </span>
-          <span className="text-gray-500 text-sm">{phase.participantCount} Teilnehmer</span>
+          <span className="text-muted text-sm">{phase.participantCount} Teilnehmer</span>
         </div>
 
         {/* Question content — large for beamer */}
@@ -652,16 +652,16 @@ export default function HostPage() {
           <h2 className="text-4xl font-bold text-center max-w-3xl leading-snug whitespace-pre-line"><MathText text={q.text} /></h2>
           <div className="flex items-center gap-3 mt-1">
             <QuestionTypeBadge type={q.type} size="md" />
-            <span className="text-gray-500 text-sm">Antwortzeit: {q.timeLimit}s</span>
+            <span className="text-muted text-sm">Antwortzeit: {q.timeLimit}s</span>
           </div>
         </div>
 
         {/* Bottom controls */}
-        <div className="flex items-center justify-center gap-4 px-6 py-5 bg-gray-800 border-t border-gray-700">
+        <div className="flex items-center justify-center gap-4 px-6 py-5 bg-surface border-t border-line">
           {q.previewTime ? (
             <div className="flex items-center gap-4">
               <Countdown key={q.id} seconds={q.previewTime} onZero={() => send("show_answers")} />
-              <span className="text-gray-400 text-sm">Antworten erscheinen gleich…</span>
+              <span className="text-muted text-sm">Antworten erscheinen gleich…</span>
             </div>
           ) : (
             <button
@@ -688,19 +688,19 @@ export default function HostPage() {
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <div className="flex flex-col h-screen bg-page text-fg">
         {qrOverlay}
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-          <button onClick={() => setShowJoinQR(true)} className="font-mono text-gray-400 hover:text-white transition-colors" title="QR zeigen">{code}</button>
-          <span className="text-gray-300 font-semibold">Frage {q.idx + 1} / {q.total}</span>
+        <div className="flex items-center justify-between px-6 py-3 bg-surface border-b border-line">
+          <button onClick={() => setShowJoinQR(true)} className="font-mono text-muted hover:text-fg transition-colors" title="QR zeigen">{code}</button>
+          <span className="text-fg font-semibold">Frage {q.idx + 1} / {q.total}</span>
           <span className="text-green-400 text-sm font-medium">
             {responses} / {participantCount} geantwortet
           </span>
         </div>
 
         {/* Question + countdown */}
-        <div className="flex items-center justify-between px-8 py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between px-8 py-4 border-b border-line">
           <div className="flex-1">
             {q.imagePath && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -717,14 +717,14 @@ export default function HostPage() {
         {/* Answer grid with live bars */}
         {q.type === "karte" && currentKarte.current ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
-            <p className="text-gray-400 text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
+            <p className="text-muted text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
             <div className="w-full max-w-4xl bg-page text-fg rounded-2xl p-4">
               <KartenBrett brett={currentKarte.current} antwort={{ antworten: {} }} disabled />
             </div>
           </div>
         ) : q.type === "timeline" && phase.timeline ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
-            <p className="text-gray-400 text-sm">
+            <p className="text-muted text-sm">
               {phase.timeline.mode === "sort"
                 ? "Schüler ziehen die Karten an die richtige Stelle…"
                 : "Schüler suchen die falsch platzierten Einträge…"}
@@ -735,9 +735,9 @@ export default function HostPage() {
           </div>
         ) : q.type === "sort" ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
-            <p className="text-gray-400 text-sm mb-2">Schüler sortieren die Antworten…</p>
+            <p className="text-muted text-sm mb-2">Schüler sortieren die Antworten…</p>
             {answers.map((a, i) => (
-              <div key={a.id} className="flex items-center gap-3 w-full max-w-lg bg-gray-800 rounded-xl px-4 py-3">
+              <div key={a.id} className="flex items-center gap-3 w-full max-w-lg bg-surface rounded-xl px-4 py-3">
                 <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
                   style={{ backgroundColor: COLORS[i % COLORS.length] }}>{i + 1}</span>
                 <span className="flex-1 font-semibold"><MathText text={a.text} /></span>
@@ -746,14 +746,14 @@ export default function HostPage() {
           </div>
         ) : q.type === "umrechnung" ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-            <p className="text-gray-400 text-base">Schüler geben einen Zahlenwert ein…</p>
-            <div className="flex items-center gap-3 bg-gray-800 rounded-2xl px-8 py-5">
-              <span className="text-gray-400 text-xl font-bold">=</span>
-              <span className="text-white/30 text-4xl font-black w-32 text-center border-2 border-dashed border-gray-600 rounded-xl py-2">?</span>
+            <p className="text-muted text-base">Schüler geben einen Zahlenwert ein…</p>
+            <div className="flex items-center gap-3 bg-surface rounded-2xl px-8 py-5">
+              <span className="text-muted text-xl font-bold">=</span>
+              <span className="text-white/30 text-4xl font-black w-32 text-center border-2 border-dashed border-line rounded-xl py-2">?</span>
               {answers[0] && (() => {
                 const parts = answers[0].text.split(" ");
                 const unit = parts.length > 1 && !/^\d+$/.test(parts[parts.length - 1]) ? parts[parts.length - 1] : "";
-                return unit ? <span className="text-white text-2xl font-semibold">{unit}</span> : null;
+                return unit ? <span className="text-fg text-2xl font-semibold">{unit}</span> : null;
               })()}
             </div>
             <p className="text-green-400 font-bold text-lg">{counts[answers[0]?.id ?? 0] ?? 0} richtig</p>
@@ -785,7 +785,7 @@ export default function HostPage() {
         )}
 
         {/* Controls */}
-        <div className="flex justify-center px-6 py-4 bg-gray-800 border-t border-gray-700">
+        <div className="flex justify-center px-6 py-4 bg-surface border-t border-line">
           <button
             onClick={() => send("next")}
             className="px-8 py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-400"
@@ -803,11 +803,11 @@ export default function HostPage() {
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <div className="flex flex-col h-screen bg-page text-fg">
         {qrOverlay}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-          <button onClick={() => setShowJoinQR(true)} className="font-mono text-gray-400 hover:text-white transition-colors" title="QR zeigen">{code}</button>
-          <span className="text-gray-300 font-semibold">Auflösung – Frage {q.idx + 1} / {q.total}</span>
+        <div className="flex items-center justify-between px-6 py-3 bg-surface border-b border-line">
+          <button onClick={() => setShowJoinQR(true)} className="font-mono text-muted hover:text-fg transition-colors" title="QR zeigen">{code}</button>
+          <span className="text-fg font-semibold">Auflösung – Frage {q.idx + 1} / {q.total}</span>
           <div />
         </div>
 
@@ -837,10 +837,10 @@ export default function HostPage() {
             ) : q.type === "umrechnung" ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="bg-green-900/40 border border-green-700 rounded-2xl px-8 py-5 text-center">
-                  <p className="text-gray-400 text-sm mb-1">Richtige Antwort:</p>
+                  <p className="text-muted text-sm mb-1">Richtige Antwort:</p>
                   <p className="text-4xl font-black text-green-300"><MathText text={answers[0]?.text ?? ""} /></p>
                 </div>
-                <p className="text-gray-300 text-base">
+                <p className="text-fg text-base">
                   <span className="text-green-400 font-bold text-xl">{counts[answers[0]?.id ?? 0] ?? 0}</span>
                   {" Schüler hatten die richtige Zahl"}
                 </p>
@@ -872,9 +872,9 @@ export default function HostPage() {
                     </div>
                     <span className="font-semibold text-lg whitespace-pre-line leading-snug flex-1"><MathText text={a.text} /></span>
                     <span className="font-mono font-bold text-xl">{count}</span>
-                    <span className="text-gray-400 text-base w-12 text-right">{pct}%</span>
+                    <span className="text-muted text-base w-12 text-right">{pct}%</span>
                   </div>
-                  <div className="h-5 bg-gray-700 rounded-full overflow-hidden ml-9">
+                  <div className="h-5 bg-surface-hover rounded-full overflow-hidden ml-9">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${pct}%`, backgroundColor: barColor }}
@@ -887,7 +887,7 @@ export default function HostPage() {
           </div>
         </div>
 
-        <div className="flex justify-center px-6 py-4 bg-gray-800 border-t border-gray-700">
+        <div className="flex justify-center px-6 py-4 bg-surface border-t border-line">
           <button
             onClick={() => send("next")}
             className="btn-primary px-8 py-3 font-bold rounded-xl text-lg"
@@ -903,11 +903,11 @@ export default function HostPage() {
   if (phase.kind === "ranking") {
     const { ranking, isLast } = phase;
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <div className="flex flex-col h-screen bg-page text-fg">
         {qrOverlay}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-          <button onClick={() => setShowJoinQR(true)} className="font-mono text-gray-400 hover:text-white transition-colors" title="QR zeigen">{code}</button>
-          <span className="text-gray-300 font-semibold text-xl">🏆 Zwischenranking</span>
+        <div className="flex items-center justify-between px-6 py-3 bg-surface border-b border-line">
+          <button onClick={() => setShowJoinQR(true)} className="font-mono text-muted hover:text-fg transition-colors" title="QR zeigen">{code}</button>
+          <span className="text-fg font-semibold text-xl">🏆 Zwischenranking</span>
           <div />
         </div>
 
@@ -915,7 +915,7 @@ export default function HostPage() {
           {ranking.slice(0, 10).map((r) => (
             <div
               key={r.pid}
-              className="flex items-center gap-4 bg-gray-800 rounded-2xl px-5 py-3 w-full max-w-lg"
+              className="flex items-center gap-4 bg-surface rounded-2xl px-5 py-3 w-full max-w-lg"
             >
               <span className="text-2xl font-black w-10 text-center text-yellow-400">
                 {r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : r.rank}
@@ -930,7 +930,7 @@ export default function HostPage() {
           ))}
         </div>
 
-        <div className="flex justify-center px-6 py-4 bg-gray-800 border-t border-gray-700">
+        <div className="flex justify-center px-6 py-4 bg-surface border-t border-line">
           <button
             onClick={() => send("next")}
             className="btn-primary px-8 py-3 font-bold rounded-xl text-lg"

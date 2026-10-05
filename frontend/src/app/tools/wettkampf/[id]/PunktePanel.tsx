@@ -118,7 +118,7 @@ export default function PunktePanel({ w, canEdit }: Props) {
                   className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
                     maxPts === v
                       ? "border-accent bg-accent/15 text-accent"
-                      : "border-line text-muted hover:border-gray-500"
+                      : "border-line text-muted hover:border-muted"
                   }`}
                 >
                   {v}
@@ -157,7 +157,7 @@ export default function PunktePanel({ w, canEdit }: Props) {
                 className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${
                   places === v
                     ? "border-accent bg-accent/15 text-accent"
-                    : "border-line text-muted hover:border-gray-500"
+                    : "border-line text-muted hover:border-muted"
                 }`}
               >
                 {v}
@@ -193,7 +193,7 @@ export default function PunktePanel({ w, canEdit }: Props) {
                   className={`text-left px-3 py-2.5 rounded-xl border transition-colors ${
                     rankMode === m.key
                       ? "border-accent bg-accent/10"
-                      : "border-line hover:border-gray-500"
+                      : "border-line hover:border-muted"
                   }`}
                 >
                   <div className="flex items-start gap-2">

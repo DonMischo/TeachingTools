@@ -14,7 +14,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  draft: { label: "Entwurf", color: "text-gray-400" },
+  draft: { label: "Entwurf", color: "text-muted" },
   active: { label: "Läuft", color: "text-green-400" },
   finished: { label: "Abgeschlossen", color: "text-blue-400" },
 };
@@ -81,7 +81,7 @@ export default function WettkampfListPage() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(w); }}
                   disabled={deleting === w.id}
-                  className="text-gray-500 hover:text-red-400 transition-colors shrink-0 text-sm"
+                  className="text-muted hover:text-red-400 transition-colors shrink-0 text-sm"
                 >
                   🗑
                 </button>

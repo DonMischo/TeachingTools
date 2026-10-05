@@ -509,7 +509,7 @@ function HausVerwaltenModal({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={haus.logo_path} alt="" className="w-14 h-14 rounded-xl object-cover border border-line" />
                   ) : (
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-2xl border border-line"
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-fg font-black text-2xl border border-line"
                       style={{ background: color }}>
                       {haus.name[0]}
                     </div>
@@ -548,7 +548,7 @@ function HausVerwaltenModal({
                     memberIds.has(cls.id)
                       ? "border-accent bg-accent/15 text-accent"
                       : "border-line text-muted"
-                  } ${isAdmin ? "cursor-pointer hover:border-gray-500" : "cursor-default"}`}
+                  } ${isAdmin ? "cursor-pointer hover:border-muted" : "cursor-default"}`}
                 >
                   {cls.symbol_emoji ?? ""} {cls.code}
                 </button>
@@ -632,7 +632,7 @@ function HausCard({
             <img src={haus.logo_path} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
           ) : (
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-lg shrink-0"
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-fg font-black text-lg shrink-0"
               style={{ backgroundColor: haus.color }}
             >
               {haus.name[0]}
@@ -732,7 +732,7 @@ function HausCard({
                     className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                       memberIds.has(cls.id)
                         ? "border-accent bg-accent/15 text-accent"
-                        : "border-line text-muted hover:border-gray-500"
+                        : "border-line text-muted hover:border-muted"
                     }`}
                   >
                     {cls.symbol_emoji ?? ""} {cls.code}

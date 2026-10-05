@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
  * `className` traegt die Schriftfarben: die Vorgabe passt auf helle Flaechen,
  * dunkle Hostansichten (Caputh-Lobby) reichen helle Toene herein.
  */
-export function GuestAccessToggle({ tool, code, className = "text-sm text-gray-600 hover:text-gray-900" }: {
+export function GuestAccessToggle({ tool, code, className = "text-sm text-muted hover:text-gray-900" }: {
   tool: string;
   code: string;
   className?: string;

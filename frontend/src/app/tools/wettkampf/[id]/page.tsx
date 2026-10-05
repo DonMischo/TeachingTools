@@ -32,33 +32,33 @@ function ResultModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-gray-800 rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
         <h2 className="font-bold text-lg">Ergebnis eintragen</h2>
 
-        <div className="text-sm text-gray-400 text-center font-medium">
-          {match.p1?.name} <span className="text-gray-600">vs</span> {match.p2?.name}
+        <div className="text-sm text-muted text-center font-medium">
+          {match.p1?.name} <span className="text-muted">vs</span> {match.p2?.name}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <p className="text-xs text-gray-500 mb-1 text-center">{match.p1?.name}</p>
+            <p className="text-xs text-muted mb-1 text-center">{match.p1?.name}</p>
             <input className="input text-center" placeholder="0" value={s1} onChange={e => setS1(e.target.value)} />
           </div>
           <div>
-            <p className="text-xs text-gray-500 mb-1 text-center">{match.p2?.name}</p>
+            <p className="text-xs text-muted mb-1 text-center">{match.p2?.name}</p>
             <input className="input text-center" placeholder="0" value={s2} onChange={e => setS2(e.target.value)} />
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-gray-400">Ergebnis:</p>
+          <p className="text-sm text-muted">Ergebnis:</p>
           {[match.p1, match.p2].map(p => p && (
             <button key={p.id}
               onClick={() => { setWinnerId(p.id); setIsDraw(false); }}
               className={`py-2 rounded-xl border text-sm font-semibold transition-colors ${
                 !isDraw && winnerId === p.id
                   ? "border-green-500 bg-green-900/30 text-green-300"
-                  : "border-gray-600 text-gray-300 hover:border-gray-400"
+                  : "border-line text-fg hover:border-muted"
               }`}>
               🏆 {p.name} gewinnt
             </button>
@@ -67,7 +67,7 @@ function ResultModal({
             <button
               onClick={() => { setIsDraw(true); setWinnerId(null); }}
               className={`py-2 rounded-xl border text-sm font-semibold transition-colors ${
-                isDraw ? "border-yellow-500 bg-yellow-900/30 text-yellow-300" : "border-gray-600 text-gray-300 hover:border-gray-400"
+                isDraw ? "border-yellow-500 bg-yellow-900/30 text-yellow-300" : "border-line text-fg hover:border-muted"
               }`}>
               🤝 Unentschieden
             </button>
@@ -75,7 +75,7 @@ function ResultModal({
         </div>
 
         <div className="flex gap-3 justify-end mt-2">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 text-sm">Abbrechen</button>
+          <button onClick={onClose} className="px-4 py-2 bg-surface-hover text-fg rounded-lg hover:bg-surface-hover text-sm">Abbrechen</button>
           <button
             disabled={!canSave}
             onClick={() => canSave && onSave(isDraw ? null : winnerId, isDraw, s1, s2)}
@@ -340,16 +340,16 @@ export default function WettkampfDetailPage() {
       )}
 
       <div className="flex items-start gap-4 mb-6">
-        <button onClick={() => router.back()} className="text-sm text-muted hover:text-white mt-1">←</button>
+        <button onClick={() => router.back()} className="text-sm text-muted hover:text-fg mt-1">←</button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{w.title}</h1>
           {w.description && <p className="text-muted text-sm mt-1">{w.description}</p>}
-          <div className="flex gap-3 mt-2 text-sm text-gray-500 flex-wrap">
+          <div className="flex gap-3 mt-2 text-sm text-muted flex-wrap">
             <span>{w.type === "knockout" ? "K.O.-System" : w.type === "round_robin" ? "Jeder gegen Jeden" : "Paarungsturnier"}</span>
             <span>·</span>
             <span>Max {w.max_points} Pkte · Trostpreis {w.trostpreis_points} Pkte</span>
             <span>·</span>
-            <span className={isActive ? "text-green-400" : isFinished ? "text-blue-400" : "text-gray-400"}>
+            <span className={isActive ? "text-green-400" : isFinished ? "text-blue-400" : "text-muted"}>
               {isDraft ? "Entwurf" : isActive ? "Läuft" : "Abgeschlossen"}
             </span>
           </div>
@@ -380,7 +380,7 @@ export default function WettkampfDetailPage() {
               }
               setShowAuswertung(true);
             }}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="btn-primary shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm"
           >
             📄 Auswertung
           </button>
@@ -396,7 +396,7 @@ export default function WettkampfDetailPage() {
             <p className="font-bold text-green-300">🏆 Wettkampf abgeschlossen – Punkte vergeben!</p>
             <button
               onClick={() => setShowAuswertung(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-colors"
+              className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs"
             >
               📄 Auswertung
             </button>
@@ -406,8 +406,8 @@ export default function WettkampfDetailPage() {
               const hasClass = w.participants.find(p => p.name === r.participant.name)?.class_id != null;
               return (
                 <div key={i} className="flex justify-between text-sm gap-2">
-                  <span className="text-gray-200 flex-1">{r.participant.name}</span>
-                  <span className="text-gray-400">{r.stage?.name ?? "Teilnahme"}</span>
+                  <span className="text-fg flex-1">{r.participant.name}</span>
+                  <span className="text-muted">{r.stage?.name ?? "Teilnahme"}</span>
                   <span className="text-yellow-400 font-bold">{r.points} Pkte</span>
                   {!hasClass && <span className="text-orange-400 text-xs" title="Kein Klassenlink – keine Hauspunkte gebucht">⚠ kein Klasse</span>}
                 </div>
@@ -430,7 +430,7 @@ export default function WettkampfDetailPage() {
                 <div className="mb-4 border border-line rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-800/40 text-gray-500 text-xs">
+                      <tr className="bg-surface-hover text-muted text-xs">
                         <th className="text-left px-3 py-2">Name</th>
                         <th className="px-3 py-2 text-center">⚥</th>
                         <th className="text-left px-3 py-2">Gruppe</th>
@@ -442,7 +442,7 @@ export default function WettkampfDetailPage() {
                         <tr key={p.id}>
                           <td className="px-3 py-2 font-medium">
                             {p.name}
-                            {p.class_name && <span className="ml-2 text-xs text-gray-500">{p.class_name}</span>}
+                            {p.class_name && <span className="ml-2 text-xs text-muted">{p.class_name}</span>}
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="flex gap-0.5 justify-center">
@@ -453,7 +453,7 @@ export default function WettkampfDetailPage() {
                                   className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${
                                     p.gender === g
                                       ? g === "m" ? "border-blue-500 bg-blue-900/30 text-blue-300" : "border-pink-500 bg-pink-900/30 text-pink-300"
-                                      : "border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-400"
+                                      : "border-line text-muted hover:border-muted hover:text-muted"
                                   }`}
                                 >
                                   {g === "m" ? "♂" : "♀"}
@@ -473,7 +473,7 @@ export default function WettkampfDetailPage() {
                                   placeholder="Gruppenname…"
                                 />
                                 <button onClick={() => saveGroup(p.id, groupDraft)} className="text-xs px-2 py-0.5 bg-accent text-white rounded-sm">✓</button>
-                                <button onClick={() => { setNewGroupInput(null); setEditingGroupFor(null); }} className="text-xs text-gray-500">✕</button>
+                                <button onClick={() => { setNewGroupInput(null); setEditingGroupFor(null); }} className="text-xs text-muted">✕</button>
                               </div>
                             ) : (
                               <select
@@ -497,7 +497,7 @@ export default function WettkampfDetailPage() {
                             )}
                           </td>
                           <td className="px-3 py-2">
-                            <button onClick={() => removeParticipant(p.id)} className="text-gray-600 hover:text-red-400 text-xs">🗑</button>
+                            <button onClick={() => removeParticipant(p.id)} className="text-muted hover:text-red-400 text-xs">🗑</button>
                           </td>
                         </tr>
                       ))}
@@ -511,10 +511,10 @@ export default function WettkampfDetailPage() {
               <div className="mb-4 border border-line rounded-xl overflow-hidden">
                 <button
                   onClick={() => setAutoGroupOpen(v => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-800/40 text-sm text-gray-300 hover:bg-gray-800/60 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 bg-surface-hover text-sm text-fg hover:bg-surface-hover transition-colors"
                 >
                   <span className="font-medium">🗂 Gruppen auto-zuweisen</span>
-                  <span className="text-gray-500 text-xs">{autoGroupOpen ? "▲" : "▼"}</span>
+                  <span className="text-muted text-xs">{autoGroupOpen ? "▲" : "▼"}</span>
                 </button>
                 {autoGroupOpen && (
                   <div className="p-3 space-y-3">
@@ -522,13 +522,13 @@ export default function WettkampfDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => applyAutoGroups("grade")}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-fg hover:border-accent hover:text-accent transition-colors"
                       >
                         Nach Klassenstufe
                       </button>
                       <button
                         onClick={() => applyAutoGroups("grade_gender")}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-fg hover:border-accent hover:text-accent transition-colors"
                       >
                         Nach Klassenstufe + Geschlecht
                       </button>
@@ -540,12 +540,12 @@ export default function WettkampfDetailPage() {
                         const ungrouped = w.participants.filter(p => !p.group);
                         return (
                           <>
-                            <p className="text-xs text-gray-500 mb-2">
+                            <p className="text-xs text-muted mb-2">
                               Eigene Auswahl{ungrouped.length < w.participants.length ? ` (${w.participants.length - ungrouped.length} bereits in Gruppen ausgeblendet)` : ""}:
                             </p>
                             <div className="space-y-1 mb-2 max-h-40 overflow-y-auto">
                               {ungrouped.length === 0 ? (
-                                <p className="text-xs text-gray-600 italic">Alle Teilnehmer haben bereits eine Gruppe.</p>
+                                <p className="text-xs text-muted italic">Alle Teilnehmer haben bereits eine Gruppe.</p>
                               ) : ungrouped.map(p => (
                                 <label key={p.id} className="flex items-center gap-2 cursor-pointer">
                                   <input
@@ -562,7 +562,7 @@ export default function WettkampfDetailPage() {
                                     }}
                                     className="rounded-sm"
                                   />
-                                  <span className="text-sm text-gray-300">{p.name}</span>
+                                  <span className="text-sm text-fg">{p.name}</span>
                                 </label>
                               ))}
                             </div>
@@ -595,7 +595,7 @@ export default function WettkampfDetailPage() {
             {classes.length > 0 && (
               <div className="mb-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500">Klassen hinzufügen:</p>
+                  <p className="text-xs text-muted">Klassen hinzufügen:</p>
                   {/* Select-all buttons */}
                   <div className="flex gap-1">
                     {(["mixed", "male", "female"] as const).map(v => {
@@ -618,7 +618,7 @@ export default function WettkampfDetailPage() {
                           className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                             allOn
                               ? "border-accent bg-accent/15 text-accent"
-                              : "border-line text-gray-500 hover:border-gray-400 hover:text-gray-300"
+                              : "border-line text-muted hover:border-muted hover:text-fg"
                           }`}
                         >
                           {LABEL[v]}
@@ -633,7 +633,7 @@ export default function WettkampfDetailPage() {
                   const LABEL = { mixed: "Gesamt", male: "♂", female: "♀" };
                   return (
                     <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300 w-28 shrink-0 truncate">{c.display_name}</span>
+                      <span className="text-sm text-fg w-28 shrink-0 truncate">{c.display_name}</span>
                       {(["mixed", "male", "female"] as const).map(v => {
                         const key = `${c.id}:${v}`;
                         const name = c.display_name + SUFFIX[v];
@@ -646,10 +646,10 @@ export default function WettkampfDetailPage() {
                             onClick={() => !done && toggle(key)}
                             className={`text-xs px-2 py-1 rounded-md border transition-colors select-none ${
                               done
-                                ? "border-gray-700 text-gray-600 cursor-not-allowed"
+                                ? "border-line text-muted cursor-not-allowed"
                                 : on
                                 ? "border-accent bg-accent/15 text-accent"
-                                : "border-line text-gray-400 hover:border-gray-500"
+                                : "border-line text-muted hover:border-muted"
                             }`}
                           >
                             {done ? "✓ " : ""}{LABEL[v]}
@@ -672,10 +672,10 @@ export default function WettkampfDetailPage() {
                     onClick={() => !done && toggle("teacher")}
                     className={`text-xs px-3 py-1.5 rounded-md border transition-colors select-none ${
                       done
-                        ? "border-gray-700 text-gray-600 cursor-not-allowed"
+                        ? "border-line text-muted cursor-not-allowed"
                         : on
                         ? "border-accent bg-accent/15 text-accent"
-                        : "border-line text-gray-400 hover:border-gray-500"
+                        : "border-line text-muted hover:border-muted"
                     }`}
                   >
                     {done ? "✓ " : ""}👩‍🏫 Lehrerteam
@@ -685,9 +685,9 @@ export default function WettkampfDetailPage() {
             </div>
             {/* Custom teams */}
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-gray-500">Eigene Teams</span>
+              <span className="text-xs text-muted">Eigene Teams</span>
               <span
-                className="text-xs text-gray-600 cursor-help border border-gray-700 rounded-full w-4 h-4 flex items-center justify-center leading-none hover:border-gray-400 hover:text-gray-400 transition-colors"
+                className="text-xs text-muted cursor-help border border-line rounded-full w-4 h-4 flex items-center justify-center leading-none hover:border-muted hover:text-muted transition-colors"
                 title="Mehrere Teams auf einmal: Namen mit Semikolon trennen, z.B. »5a; 5b; 5c«"
               >?</span>
             </div>
@@ -721,7 +721,7 @@ export default function WettkampfDetailPage() {
             return (
               <section>
                 <h2 className="text-lg font-semibold mb-1">Auto-Paarung</h2>
-                <p className="text-xs text-gray-500 mb-3">Erzeugt Jeder-gegen-Jeden-Begegnungen innerhalb einer Gruppe.</p>
+                <p className="text-xs text-muted mb-3">Erzeugt Jeder-gegen-Jeden-Begegnungen innerhalb einer Gruppe.</p>
                 <div className="flex flex-wrap gap-2">
                   {pairableGroups.map(g => {
                     const count = w.participants.filter(p => p.group === g).length;
@@ -731,7 +731,7 @@ export default function WettkampfDetailPage() {
                         key={g}
                         onClick={() => autoPair(g)}
                         disabled={autopairingGroup !== undefined}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-700 bg-indigo-900/20 text-indigo-300 text-sm hover:bg-indigo-800/30 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-700 bg-accent/15 text-accent text-sm hover:bg-indigo-800/30 disabled:opacity-50 transition-colors"
                       >
                         {running ? "⏳" : "⚡"} {g} <span className="text-xs text-indigo-500">({count} Teams)</span>
                       </button>
@@ -741,9 +741,9 @@ export default function WettkampfDetailPage() {
                     <button
                       onClick={() => autoPair(null)}
                       disabled={autopairingGroup !== undefined}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-600 text-gray-400 text-sm hover:border-gray-500 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line text-muted text-sm hover:border-muted disabled:opacity-50 transition-colors"
                     >
-                      {autopairingGroup === null ? "⏳" : "⚡"} Ohne Gruppe <span className="text-xs text-gray-600">({ungrouped.length} Teams)</span>
+                      {autopairingGroup === null ? "⏳" : "⚡"} Ohne Gruppe <span className="text-xs text-muted">({ungrouped.length} Teams)</span>
                     </button>
                   )}
                 </div>
@@ -767,10 +767,10 @@ export default function WettkampfDetailPage() {
                         Vorschau & starten →
                       </button>
                       {w.participants.length < 2 && (
-                        <p className="text-xs text-gray-500 mt-1">Mindestens 2 Teilnehmer benötigt.</p>
+                        <p className="text-xs text-muted mt-1">Mindestens 2 Teilnehmer benötigt.</p>
                       )}
                       {needsConfig && (
-                        <p className="text-xs text-gray-500 mt-1">Bitte erst „Belohnte Plätze" festlegen und Punkte speichern.</p>
+                        <p className="text-xs text-muted mt-1">Bitte erst „Belohnte Plätze" festlegen und Punkte speichern.</p>
                       )}
                     </>
                   );
@@ -783,7 +783,7 @@ export default function WettkampfDetailPage() {
                   <h2 className="text-lg font-semibold">Vorschau</h2>
                   <button
                     onClick={() => setShowPreview(false)}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-sm text-muted hover:text-fg transition-colors"
                   >
                     ← Zurück zu Gruppen
                   </button>
@@ -791,18 +791,18 @@ export default function WettkampfDetailPage() {
 
                 {/* Summary chips */}
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
+                  <span className="px-2 py-1 rounded-full bg-surface border border-line text-fg">
                     {w.participants.length} Teilnehmer
                   </span>
-                  <span className="px-2 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
+                  <span className="px-2 py-1 rounded-full bg-surface border border-line text-fg">
                     {w.type === "knockout" ? "K.O.-System" : w.type === "round_robin" ? "Jeder gegen Jeden" : "Paarungsturnier"}
                   </span>
                   {w.stages.length > 0 && (
-                    <span className="px-2 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
+                    <span className="px-2 py-1 rounded-full bg-surface border border-line text-fg">
                       {w.stages.length} Stufen · Max {w.max_points} Pkte
                     </span>
                   )}
-                  <span className="px-2 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
+                  <span className="px-2 py-1 rounded-full bg-surface border border-line text-fg">
                     {w.scoring_system} ({w.win_points}-{w.draw_points}-{w.loss_points})
                   </span>
                 </div>
@@ -814,10 +814,10 @@ export default function WettkampfDetailPage() {
                   if (!hasGroups) {
                     return (
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Teilnehmer</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Teilnehmer</p>
                         <div className="flex flex-wrap gap-2">
                           {w.participants.map(p => (
-                            <span key={p.id} className="text-sm px-2 py-1 bg-gray-800 rounded-lg border border-gray-700 text-gray-300">{p.name}</span>
+                            <span key={p.id} className="text-sm px-2 py-1 bg-surface rounded-lg border border-line text-fg">{p.name}</span>
                           ))}
                         </div>
                       </div>
@@ -825,18 +825,18 @@ export default function WettkampfDetailPage() {
                   }
                   return (
                     <div className="space-y-3">
-                      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Gruppen</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted">Gruppen</p>
                       {groups.map(g => {
                         const members = w.participants.filter(p => (p.group ?? "") === g);
                         return (
                           <div key={g} className="rounded-xl border border-line overflow-hidden">
-                            <div className="px-3 py-2 bg-gray-800/60 flex items-center justify-between">
-                              <span className="text-sm font-semibold text-gray-200">{g || "Ohne Gruppe"}</span>
-                              <span className="text-xs text-gray-500">{members.length} Teams</span>
+                            <div className="px-3 py-2 bg-surface-hover flex items-center justify-between">
+                              <span className="text-sm font-semibold text-fg">{g || "Ohne Gruppe"}</span>
+                              <span className="text-xs text-muted">{members.length} Teams</span>
                             </div>
                             <div className="px-3 py-2 flex flex-wrap gap-2">
                               {members.map(p => (
-                                <span key={p.id} className="text-xs px-2 py-0.5 bg-gray-900 rounded-md border border-gray-700 text-gray-300">{p.name}</span>
+                                <span key={p.id} className="text-xs px-2 py-0.5 bg-page rounded-md border border-line text-fg">{p.name}</span>
                               ))}
                             </div>
                           </div>
@@ -849,7 +849,7 @@ export default function WettkampfDetailPage() {
                 {/* Draft matches (pairing) */}
                 {w.type === "pairing" && w.matches && w.matches.length > 0 && (
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
                       Geplante Begegnungen ({w.matches.length})
                     </p>
                     {(() => {
@@ -858,13 +858,13 @@ export default function WettkampfDetailPage() {
                       for (const m of w.matches) (byRound[m.round_number] ??= []).push(m);
                       return rounds.map(r => (
                         <div key={r} className="mb-2">
-                          <p className="text-xs text-gray-600 mb-1">Runde {r + 1}</p>
+                          <p className="text-xs text-muted mb-1">Runde {r + 1}</p>
                           <div className="space-y-1">
                             {byRound[r].map(m => (
-                              <div key={m.id} className="flex items-center gap-2 text-sm text-gray-400 px-2">
-                                <span className="flex-1 text-right text-gray-300">{m.p1?.name ?? "—"}</span>
-                                <span className="text-gray-600 text-xs">vs</span>
-                                <span className="flex-1 text-gray-300">{m.p2?.name ?? "—"}</span>
+                              <div key={m.id} className="flex items-center gap-2 text-sm text-muted px-2">
+                                <span className="flex-1 text-right text-fg">{m.p1?.name ?? "—"}</span>
+                                <span className="text-muted text-xs">vs</span>
+                                <span className="flex-1 text-fg">{m.p2?.name ?? "—"}</span>
                               </div>
                             ))}
                           </div>
@@ -877,14 +877,14 @@ export default function WettkampfDetailPage() {
                 {/* Stages */}
                 {w.stages.length > 0 && (
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Punktestufen</p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Punktestufen</p>
                     <div className="flex flex-wrap gap-2">
                       {[...w.stages].sort((a,b) => b.points - a.points).map(s => (
                         <span key={s.id} className="text-xs px-2 py-1 rounded-lg border border-yellow-800 bg-yellow-900/20 text-yellow-300">
                           {s.name}: {s.points} Pkte
                         </span>
                       ))}
-                      <span className="text-xs px-2 py-1 rounded-lg border border-gray-700 text-gray-500">
+                      <span className="text-xs px-2 py-1 rounded-lg border border-line text-muted">
                         Trostpreis: {w.trostpreis_points} Pkte
                       </span>
                     </div>
@@ -904,7 +904,7 @@ export default function WettkampfDetailPage() {
                   </button>
                   <button
                     onClick={() => setShowPreview(false)}
-                    className="px-4 py-2 border border-line rounded-xl text-sm text-gray-400 hover:border-gray-500 hover:text-gray-200 transition-colors"
+                    className="px-4 py-2 border border-line rounded-xl text-sm text-muted hover:border-muted hover:text-fg transition-colors"
                   >
                     ← Zurück
                   </button>
@@ -921,13 +921,13 @@ export default function WettkampfDetailPage() {
           {/* Progress */}
           {isActive && totalMatches > 0 && (
             <div className="flex items-center gap-4">
-              <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-surface-hover rounded-full overflow-hidden">
                 <div
                   className="h-full bg-green-500 rounded-full transition-all"
                   style={{ width: `${(doneMatches / totalMatches) * 100}%` }}
                 />
               </div>
-              <span className="text-sm text-gray-400 shrink-0">{doneMatches} / {totalMatches} gespielt</span>
+              <span className="text-sm text-muted shrink-0">{doneMatches} / {totalMatches} gespielt</span>
             </div>
           )}
 
@@ -961,17 +961,17 @@ export default function WettkampfDetailPage() {
           {/* Stages summary */}
           {w.stages.length > 0 && (
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">Punktestufen</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">Punktestufen</h3>
               <div className="flex flex-wrap gap-2">
                 {w.stages.map(s => (
-                  <div key={s.id} className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg text-sm border border-gray-700">
-                    <span className="text-gray-300">{s.name}</span>
+                  <div key={s.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-sm border border-line">
+                    <span className="text-fg">{s.name}</span>
                     <span className="text-yellow-400 font-bold">{s.points}</span>
                   </div>
                 ))}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg text-sm border border-gray-700">
-                  <span className="text-gray-500">Trostpreis</span>
-                  <span className="text-gray-400 font-bold">{w.trostpreis_points}</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg text-sm border border-line">
+                  <span className="text-muted">Trostpreis</span>
+                  <span className="text-muted font-bold">{w.trostpreis_points}</span>
                 </div>
               </div>
             </div>
@@ -983,7 +983,7 @@ export default function WettkampfDetailPage() {
               {w.type === "pairing" ? (
                 manualPointsMode ? (
                   <div className="space-y-3">
-                    <p className="text-sm font-semibold text-gray-300">Punkte manuell vergeben:</p>
+                    <p className="text-sm font-semibold text-fg">Punkte manuell vergeben:</p>
                     <div className="space-y-2">
                       {w.participants.map(p => (
                         <div key={p.id} className="flex items-center gap-3">
@@ -997,7 +997,7 @@ export default function WettkampfDetailPage() {
                             value={manualPts[p.id] ?? ""}
                             onChange={e => setManualPts(prev => ({ ...prev, [p.id]: e.target.value }))}
                           />
-                          <span className="text-xs text-gray-500 w-8">Pkte</span>
+                          <span className="text-xs text-muted w-8">Pkte</span>
                         </div>
                       ))}
                     </div>
@@ -1005,7 +1005,7 @@ export default function WettkampfDetailPage() {
                       <button onClick={() => finish(true)} disabled={finishing} className="btn-primary w-full">
                         {finishing ? "Verarbeite…" : "Punkte vergeben & abschließen 🏆"}
                       </button>
-                      <button onClick={() => setManualPointsMode(false)} className="text-sm text-gray-400 hover:text-white">
+                      <button onClick={() => setManualPointsMode(false)} className="text-sm text-muted hover:text-fg">
                         Abbrechen
                       </button>
                     </div>
@@ -1018,7 +1018,7 @@ export default function WettkampfDetailPage() {
                     {w.stages.length > 0 || true ? (
                       <button
                         onClick={() => { setManualPointsMode(true); setManualPts({}); }}
-                        className="px-4 py-2 border border-line rounded-lg text-sm text-gray-300 hover:border-gray-500 transition-colors"
+                        className="px-4 py-2 border border-line rounded-lg text-sm text-fg hover:border-muted transition-colors"
                       >
                         Punkte selbst eintragen…
                       </button>
@@ -1030,7 +1030,7 @@ export default function WettkampfDetailPage() {
                   {finishing ? "Verarbeite…" : "Wettkampf abschließen & Punkte vergeben 🏆"}
                 </button>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted">
                   Noch {openMatches.length} Begegnung{openMatches.length !== 1 ? "en" : ""} ausstehend.
                 </p>
               )}

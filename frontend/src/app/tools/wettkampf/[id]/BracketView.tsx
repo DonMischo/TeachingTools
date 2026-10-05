@@ -10,7 +10,7 @@ interface Props {
 function ParticipantSlot({ p, isWinner }: { p: WettkampfParticipant | null; isWinner: boolean }) {
   if (!p) {
     return (
-      <div className="h-8 flex items-center px-3 rounded-sm bg-gray-800/50 text-gray-600 text-sm italic">
+      <div className="h-8 flex items-center px-3 rounded-sm bg-surface-hover text-muted text-sm italic">
         Freilos / offen
       </div>
     );
@@ -20,7 +20,7 @@ function ParticipantSlot({ p, isWinner }: { p: WettkampfParticipant | null; isWi
       className={`h-8 flex items-center justify-between px-3 rounded text-sm font-medium transition-colors ${
         isWinner
           ? "bg-green-800/60 border border-green-600 text-green-200"
-          : "bg-gray-800 text-gray-300"
+          : "bg-surface text-fg"
       }`}
     >
       <span className="truncate">{p.name}</span>
@@ -46,25 +46,25 @@ function MatchCard({
       onClick={canClick ? onClick : undefined}
       className={`w-48 rounded-xl border overflow-hidden ${
         isDone
-          ? "border-gray-700 opacity-80"
+          ? "border-line opacity-80"
           : canClick
-          ? "border-indigo-600 cursor-pointer hover:border-indigo-400 shadow-lg shadow-indigo-900/20"
-          : "border-gray-700"
+          ? "border-accent cursor-pointer hover:border-accent"
+          : "border-line"
       }`}
     >
-      <div className="bg-gray-800/80 px-2 py-0.5 text-xs text-gray-500 border-b border-gray-700 flex justify-between">
+      <div className="bg-surface-hover px-2 py-0.5 text-xs text-muted border-b border-line flex justify-between">
         <span>Begegnung</span>
         {match.score_p1 && match.score_p2 && (
-          <span className="text-gray-400">{match.score_p1}:{match.score_p2}</span>
+          <span className="text-muted">{match.score_p1}:{match.score_p2}</span>
         )}
       </div>
       <div className="flex flex-col gap-1 p-2">
         <ParticipantSlot p={match.p1} isWinner={match.winner_id === match.p1?.id} />
-        <div className="text-center text-xs text-gray-600">vs</div>
+        <div className="text-center text-xs text-muted">vs</div>
         <ParticipantSlot p={match.p2} isWinner={match.winner_id === match.p2?.id} />
       </div>
       {canClick && (
-        <div className="bg-indigo-900/20 px-2 py-1 text-xs text-indigo-400 text-center">
+        <div className="bg-accent/15 px-2 py-1 text-xs text-accent text-center">
           Ergebnis eintragen
         </div>
       )}
@@ -90,7 +90,7 @@ export default function BracketView({ matches, onSelectMatch, canEdit }: Props) 
           const roundName = rMatches[0]?.stage_name ?? `Runde ${r + 1}`;
           return (
             <div key={r} className="flex flex-col gap-2">
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 text-center mb-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted text-center mb-2">
                 {roundName}
               </p>
               <div
