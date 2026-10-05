@@ -1349,6 +1349,120 @@
       },
       "anzahl": 141,
       "bytes": 219751
+    },
+    {
+      "id": "welt-meeresboden",
+      "name": "Meeresboden (Tiefen)",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "raster",
+      "quiz": false,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "kachelUrl": "/karten/welt-meeresboden/{z}/{x}/{y}.webp",
+      "maxzoom": 5,
+      "bytes": 3356376,
+      "darstellung": {
+        "feld": "tiefe",
+        "art": "kategorie",
+        "einheit": "Meerestiefe",
+        "werte": [
+          {
+            "wert": 0,
+            "text": "0 – 200 m",
+            "farbe": "rgb(198,232,247)"
+          },
+          {
+            "wert": 200,
+            "text": "200 – 1.000 m",
+            "farbe": "rgb(160,210,238)"
+          },
+          {
+            "wert": 1000,
+            "text": "1.000 – 2.000 m",
+            "farbe": "rgb(125,188,228)"
+          },
+          {
+            "wert": 2000,
+            "text": "2.000 – 3.000 m",
+            "farbe": "rgb(98,166,215)"
+          },
+          {
+            "wert": 3000,
+            "text": "3.000 – 4.000 m",
+            "farbe": "rgb(76,143,200)"
+          },
+          {
+            "wert": 4000,
+            "text": "4.000 – 5.000 m",
+            "farbe": "rgb(58,120,183)"
+          },
+          {
+            "wert": 5000,
+            "text": "5.000 – 6.000 m",
+            "farbe": "rgb(44,99,165)"
+          },
+          {
+            "wert": 6000,
+            "text": "6.000 – 7.000 m",
+            "farbe": "rgb(33,80,145)"
+          },
+          {
+            "wert": 7000,
+            "text": "7.000 – 8.000 m",
+            "farbe": "rgb(25,62,124)"
+          },
+          {
+            "wert": 8000,
+            "text": "8.000 – 9.000 m",
+            "farbe": "rgb(19,48,104)"
+          },
+          {
+            "wert": 9000,
+            "text": "9.000 – 10.000 m",
+            "farbe": "rgb(14,37,88)"
+          },
+          {
+            "wert": 10000,
+            "text": "über 10.000 m",
+            "farbe": "rgb(10,28,72)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "welt-meeresboden-formen",
+      "name": "Tiefseegräben und Rücken",
+      "gruppe": "topographisch",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": true,
+      "quelle": {
+        "name": "TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "eigene Daten",
+        "url": ""
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "graben",
+            "text": "Tiefseegraben",
+            "farbe": "#be185d"
+          },
+          {
+            "wert": "ruecken",
+            "text": "Mittelozeanischer Rücken",
+            "farbe": "#ea580c"
+          }
+        ]
+      },
+      "anzahl": 18,
+      "bytes": 5818
     }
   ]
 }

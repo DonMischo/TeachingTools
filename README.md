@@ -96,6 +96,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 
 ### 🗺️ Karten
 - Selbst gehostete Karten (MapLibre, Schriften und Daten auf dem eigenen Server): Deutschland, Thüringen, Europa, Welt und Kontinente; politisch, topographisch, stumm, Wirtschaft und physische Geografie (Platten, Plattengrenzen, Wüsten, Köppen-Geiger-Klimazonen)
+- Meeresboden: Tiefenstufen von 0 bis über 10 000 m mit Schummerung (Natural Earth), dazu 13 Tiefseegräben mit größter Tiefe und 5 mittelozeanische Rücken als anklickbare, quizfähige Linien
 - Meeresströmungen (warm/kalt) und Windsysteme mit ITC, Druckgürteln und Monsun als animierte Linien mit Fließrichtung; jede Strömung und jeder Gürtel anklickbar (Erklärung, Hervorhebung, quizfähig); Monatsregler mit ▶ spielt das Jahr ab — ITC und Gürtel wandern, Monsun und Somalistrom kehren um
 - Offene Daten mit Quellenangabe auf der Karte: BKG (dl-de/by-2.0), Natural Earth, Open Power System Data, CORINE, Bird PB2002, Beck et al. 2023 — Übersicht unter Admin → Quellen
 - Alle Siedlungen Deutschlands (Gemeinden und Ortsteile) mit Größenklassen-Filter in der Legende und Ortssuche

@@ -283,7 +283,9 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   for (const e of mit("thema")) if (e.geometrie === "raster" && e.kachelUrl) {
     // Raster-Themenkarte (Klimazonen): fertig eingefärbte Kacheln, Legende aus der Darstellung
     sources[e.id] = { type: "raster", tiles: [e.kachelUrl], tileSize: 256, maxzoom: e.maxzoom ?? 5 };
-    layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id, paint: { "raster-opacity": 0.85, "raster-fade-duration": 0 } });
+    // Meeresboden deckt nur das Meer (Land ist durchsichtig) — dort voll; Klimazonen leicht durchscheinend
+    layers.push({ id: `${e.id}:raster`, type: "raster", source: e.id,
+      paint: { "raster-opacity": e.id === "welt-meeresboden" ? 1 : 0.85, "raster-fade-duration": 0 } });
   } else if (e.geometrie === "flaeche") {
     layers.push(
       { id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": themaFarbe(e.darstellung!), "fill-opacity": 0.8 } },
@@ -404,6 +406,13 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     if (e.geometrie === "linie") {
       layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, layout: linie,
         paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2, 9, 3] } });
+      if (text && e.quiz) {
+        // Benannte Linien (Tiefseegräben, Rücken): Name entlang der Linie
+        layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+          layout: { "symbol-placement": "line", "symbol-spacing": 400, "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
+            "text-size": 11, "text-offset": [0, -0.9] },
+          paint: { "text-color": themaFarbe(d), "text-halo-color": "#ffffffdd", "text-halo-width": 1.4 } });
+      }
     }
     if (e.geometrie === "punkt") {
       const r: ExpressionSpecification | number = d.groesse

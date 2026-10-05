@@ -31,6 +31,7 @@ import { fromFile } from "geotiff";
 import proj4 from "proj4";
 import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
+import { formenObjekte } from "./karten-daten/meeresboden.mjs";
 
 
 const HIER = dirname(fileURLToPath(import.meta.url));
@@ -58,6 +59,10 @@ const PAKETE = {
   ne_10m_geography_marine_polys: { url: `${NE}/10m/physical/ne_10m_geography_marine_polys.zip`, md5: false },
   // Atlasfarben mit Schummerung, 10800x5400, gemeinfrei
   ne_hyp: { url: `${NE}/50m/raster/HYP_50M_SR_W.zip`, md5: false },
+  // Meeresboden: Schummerung der Tiefsee (gemeinfrei)
+  ne_ob: { url: `${NE}/50m/raster/OB_50M.zip`, md5: false },
+  // Tiefenstufen 0–10 000 m als Flächen (gemeinfrei)
+  ne_bathy: { url: `${NE}/10m/physical/ne_10m_bathymetry_all.zip`, md5: false },
   dlm250: { url: `${BKG}/dlm/dlm250/aktuell/dlm250.utm32s.shape.ebenen.zip`, md5: true },
   vg250ew: { url: `${BKG}/vg/vg250-ew_ebenen_1231/aktuell/vg250-ew_12-31.utm32s.shape.ebenen.zip`, md5: false },
   // CORINE Land Cover 2018, 5 ha (1,4 GB gepackt, 4,8 GB entpackt)
@@ -974,6 +979,107 @@ async function zirkulation() {
     windObjekte(landPruefer()));
 }
 
+// ── Meeresboden ──────────────────────────────────────────────────────
+
+/** Tiefenstufen von Natural Earth (Fläche »tiefer als«) und ihre Atlasfarbe */
+const TIEFEN = [
+  ["L_0", 0, [198, 232, 247]], ["K_200", 200, [160, 210, 238]], ["J_1000", 1000, [125, 188, 228]], ["I_2000", 2000, [98, 166, 215]],
+  ["H_3000", 3000, [76, 143, 200]], ["G_4000", 4000, [58, 120, 183]], ["F_5000", 5000, [44, 99, 165]], ["E_6000", 6000, [33, 80, 145]],
+  ["D_7000", 7000, [25, 62, 124]], ["C_8000", 8000, [19, 48, 104]], ["B_9000", 9000, [14, 37, 88]], ["A_10000", 10000, [10, 28, 72]],
+];
+
+/**
+ * Füllt Polygone (Ringe in Pixeln) zeilenweise nach der Gerade-Ungerade-Regel — so
+ * werden Löcher und Inseln richtig. `setze(i)` bekommt jeden Index im Raster.
+ */
+function fuelle(ringe, B, H, setze) {
+  const kanten = [];
+  for (const ring of ringe) for (let i = 1; i < ring.length; i++) {
+    const [x0, y0] = ring[i - 1], [x1, y1] = ring[i];
+    if (y0 === y1) continue;
+    const [a, b] = y0 < y1 ? [[x0, y0], [x1, y1]] : [[x1, y1], [x0, y0]];
+    const von = Math.max(0, Math.ceil(a[1] - 0.5)), bis = Math.min(H - 1, Math.ceil(b[1] - 0.5) - 1);
+    if (von <= bis) kanten.push({ von, bis, x: a[0], y: a[1], dxdy: (b[0] - a[0]) / (b[1] - a[1]) });
+  }
+  kanten.sort((k, l) => k.von - l.von);
+  let aktiv = [], naechste = 0;
+  for (let y = 0; y < H; y++) {
+    while (naechste < kanten.length && kanten[naechste].von === y) aktiv.push(kanten[naechste++]);
+    aktiv = aktiv.filter((k) => k.bis >= y);
+    if (!aktiv.length) continue;
+    const xs = aktiv.map((k) => k.x + (y + 0.5 - k.y) * k.dxdy).sort((p, q) => p - q);
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      const x0 = Math.max(0, Math.ceil(xs[i] - 0.5)), x1 = Math.min(B - 1, Math.ceil(xs[i + 1] - 0.5) - 1);
+      for (let x = x0; x <= x1; x++) setze(y * B + x);
+    }
+  }
+}
+
+/** Meeresboden: Tiefenstufen (gefärbt) × Schummerung (OB_50M), Land durchsichtig; dazu Gräben und Rücken. */
+async function meeresboden(ordner) {
+  const ob = await (await fromFile(finde(ordner.ne_ob, "OB_50M.tif"))).getImage();
+  const [B, H] = [ob.getWidth(), ob.getHeight()]; // 1/30 Grad, wie HYP_50M
+  const schummer = await ob.readRasters({ interleave: true });
+  const kanaele = ob.getSamplesPerPixel();
+  const stufe = new Uint8Array(B * H); // 0 = Land, 1 … 12 = Tiefenstufe
+  for (const [i, [name]] of TIEFEN.entries()) {
+    const fs = await lies(finde(ordner.ne_bathy, `ne_10m_bathymetry_${name}.shp`), "-simplify 30% keep-shapes");
+    const ringe = [];
+    for (const f of fs) {
+      if (!f.geometry) continue;
+      const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+      for (const poly of polys) for (const ring of poly) ringe.push(ring.map(([lon, lat]) => [((lon + 180) / 360) * B, ((90 - lat) / 180) * H]));
+    }
+    fuelle(ringe, B, H, (k) => { stufe[k] = i + 1; });
+    console.log(`    Tiefe ${name}: ${fs.length} Flächen`);
+  }
+
+  const ziel = resolve(HIER, "../public/karten/welt-meeresboden");
+  rmSync(ziel, { recursive: true, force: true });
+  const MAXZ = 5, T = 256;
+  let bytes = 0, anzahl = 0;
+  for (let z = 0; z <= MAXZ; z++) {
+    const n = 2 ** z;
+    for (let tx = 0; tx < n; tx++) for (let ty = 0; ty < n; ty++) {
+      const px = Buffer.alloc(T * T * 4);
+      let leer = true;
+      for (let y = 0; y < T; y++) {
+        const my = Math.PI * (1 - (2 * (ty * T + y + 0.5)) / (n * T));
+        const lat = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
+        const sy = Math.min(H - 1, Math.max(0, Math.floor(((90 - lat) / 180) * H)));
+        for (let x = 0; x < T; x++) {
+          const lon = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
+          const sx = Math.min(B - 1, Math.floor(((lon + 180) / 360) * B));
+          const st = stufe[sy * B + sx];
+          if (!st) continue;
+          // Schummerung um ihren Mittelwert (~129) als Helligkeitsfaktor
+          const f = Math.min(1.35, Math.max(0.6, schummer[(sy * B + sx) * kanaele] / 129));
+          const c = TIEFEN[st - 1][2], o = (y * T + x) * 4;
+          px[o] = Math.min(255, c[0] * f); px[o + 1] = Math.min(255, c[1] * f); px[o + 2] = Math.min(255, c[2] * f); px[o + 3] = 255;
+          leer = false;
+        }
+      }
+      if (leer) continue;
+      const datei = join(ziel, String(z), String(tx), `${ty}.webp`);
+      mkdirSync(dirname(datei), { recursive: true });
+      await sharp(px, { raw: { width: T, height: T, channels: 4 } }).webp({ quality: 72, alphaQuality: 100 }).toFile(datei);
+      bytes += readFileSync(datei).length; anzahl++;
+    }
+  }
+  const css = (c) => `rgb(${c.join(",")})`;
+  KATALOG.push({ id: "welt-meeresboden", name: "Meeresboden (Tiefen)", gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false,
+    quelle: QUELLE_NE, kachelUrl: "/karten/welt-meeresboden/{z}/{x}/{y}.webp", maxzoom: MAXZ, bytes,
+    darstellung: { feld: "tiefe", art: "kategorie", einheit: "Meerestiefe",
+      werte: TIEFEN.map(([, m, c], i) => ({ wert: m, text: i + 1 < TIEFEN.length ? `${m.toLocaleString("de-DE")} – ${TIEFEN[i + 1][1].toLocaleString("de-DE")} m` : `über ${m.toLocaleString("de-DE")} m`, farbe: css(c) })) } });
+  console.log(`  welt-meeresboden       ${anzahl} Kacheln  ${(bytes / 1e6).toFixed(2)} MB`);
+
+  schreibe("welt-meeresboden-formen", { name: "Tiefseegräben und Rücken", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: true,
+    quelle: { name: "TT, schematisch nach Schulatlas-Wissen", lizenz: "eigene Daten", url: "" },
+    darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "graben", text: "Tiefseegraben", farbe: "#be185d" }, { wert: "ruecken", text: "Mittelozeanischer Rücken", farbe: "#ea580c" }] } },
+    formenObjekte());
+}
+
 // ── Schriften ────────────────────────────────────────────────────────
 
 /** Latein, Latein-Erweiterung A (Nachbarländer) und Satzzeichen (– „ “). */
@@ -1035,6 +1141,7 @@ await schritt("platten", () => platten(ladeDatei));
 await schritt("wuesten", () => wuesten(ordner));
 await schritt("klima", () => klimazonen(ordner.koeppen));
 await schritt("zirkulation", () => zirkulation());
+await schritt("meeresboden", () => meeresboden(ordner));
 await schritt("schriften", () => schriften());
 
 let ebenen = KATALOG;
