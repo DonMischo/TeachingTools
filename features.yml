@@ -10,7 +10,7 @@ projekt:
     Aktivitäten, Simulationen, Unterrichtswerkzeuge, Klassenverwaltung, Kalender
     und Startseiten-Slideshow, alles auf dem eigenen Schulserver.
   stack:
-    frontend: [Next.js 16, React 19, Tailwind CSS, TanStack Query, KaTeX, three.js]
+    frontend: [Next.js 16, React 19, Tailwind CSS 4, TanStack Query, KaTeX, three.js]
     backend: [FastAPI, SQLAlchemy, WebSockets]
     datenbank: PostgreSQL 17
     betrieb: Docker Compose (postgres, api, frontend), LibreOffice für PDF-Exporte

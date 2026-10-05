@@ -8,7 +8,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 
 | Schicht | Technologie |
 |---------|-------------|
-| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS, TanStack Query, KaTeX, three.js |
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS 4, TanStack Query, KaTeX, three.js |
 | Backend | FastAPI (Python), SQLAlchemy, WebSockets |
 | Datenbank | PostgreSQL 17 |
 | Betrieb | Docker Compose (Postgres, API, Frontend); LibreOffice im API-Container für PDF-Exporte |
@@ -336,6 +336,10 @@ Das Skript installiert Docker, falls es fehlt (Linux: Docker Engine und Compose;
 Beim ersten Start legt ein **Setup-Dialog** den ersten Admin und die Klassen an.
 
 > Für den Produktivbetrieb in `.env` einen echten `SECRET_KEY` setzen, sonst sind gespeicherte Zugangsdaten nicht geschützt.
+
+### Gestaltung
+
+Alle Farben und Grundbausteine stehen in `frontend/src/styles/theme.css`, die App und die Offline-Datei nutzen dieselbe Datei. Statt fester Farben (`text-gray-400`) oder `[var(--…)]` gibt es Tokens, die mit dem gewählten Theme wechseln: `bg-page`, `bg-surface`, `bg-surface-hover`, `text-fg`, `text-muted`, `border-line`, `bg-accent`/`text-accent-fg`, `text-ok`/`text-bad`, `max-w-seite`. Wiederkehrende Formen sind Bausteine: `.page`, `.card`, `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.chip`/`.chip-on`, `.input`, `.label`. Tailwind-Klassen daneben überschreiben sie (z. B. `btn-primary px-3 py-1 text-xs`). Simulationen mit eigener Bühne (Sonnensystem, Rock your Life, Verkehr) behalten ihre festen Farben. Tailwind 4 braucht Chrome/Edge 111+, Firefox 128+ oder Safari 16.4+.
 
 ---
 
