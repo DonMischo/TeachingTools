@@ -1,0 +1,317 @@
+{
+  "title": "Stoffe, Eigenschaften und GHS",
+  "description": "Stoff und Gegenstand, sensorische Stoffeigenschaften, Teilchenmodell und die GHS-Gefahrenpiktogramme (Klasse 7)",
+  "type": "classic",
+  "grade": 7,
+  "tags": ["chemie"],
+  "max_points": 40,
+  "time_limit_default": 20,
+  "preview_time_default": 3,
+  "settings": {"randomize_answer_order": true},
+  "questions": [
+    {
+      "type": "single",
+      "question": "Wie nennt man in den Naturwissenschaften das Material, aus dem ein Gegenstand besteht?",
+      "answers": [
+        {"text": "Stoff", "correct": true},
+        {"text": "Körper", "correct": false},
+        {"text": "Teilchen", "correct": false},
+        {"text": "Aggregatzustand", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Welcher Begriff wird in der Wissenschaft auch für einen Gegenstand verwendet?",
+      "answers": [
+        {"text": "Körper", "correct": true},
+        {"text": "Stoff", "correct": false},
+        {"text": "Lösung", "correct": false},
+        {"text": "Material", "correct": false}
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche der folgenden Begriffe sind Stoffe (keine Gegenstände)?",
+      "time_limit": 25,
+      "answers": [
+        {"text": "Eisen", "correct": true},
+        {"text": "Helium", "correct": true},
+        {"text": "Holz", "correct": true},
+        {"text": "Nagel", "correct": false},
+        {"text": "Löffel", "correct": false},
+        {"text": "Ballon", "correct": false}
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Ein und derselbe Gegenstand kann aus ganz verschiedenen Stoffen hergestellt sein.",
+      "time_limit": 12,
+      "answers": [
+        {"text": "Wahr", "correct": true},
+        {"text": "Falsch", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wovon hängt die Wahl des passenden Stoffes für einen Gegenstand ab?",
+      "answers": [
+        {"text": "Von seiner Verwendung und den Eigenschaften des Stoffes", "correct": true},
+        {"text": "Nur von der Farbe des Stoffes", "correct": false},
+        {"text": "Nur vom Preis des Gegenstandes", "correct": false},
+        {"text": "Von der Größe des Gegenstandes", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Eigenschaften, die man mit den Sinnen erfassen kann, nennt man …",
+      "answers": [
+        {"text": "sensorische Stoffeigenschaften", "correct": true},
+        {"text": "messbare Stoffeigenschaften", "correct": false},
+        {"text": "chemische Reaktionen", "correct": false},
+        {"text": "Aggregatzustände", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Stoff fällt auf den Boden und klingt dabei hell. Um welchen Stoff handelt es sich wahrscheinlich?",
+      "answers": [
+        {"text": "Metall", "correct": true},
+        {"text": "Holz", "correct": false},
+        {"text": "Watte", "correct": false},
+        {"text": "Gummi", "correct": false}
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Ein Metalllöffel fühlt sich bei gleicher Raumtemperatur oft kühler an als ein Holzlöffel.",
+      "time_limit": 12,
+      "answers": [
+        {"text": "Wahr", "correct": true},
+        {"text": "Falsch", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie prüft man im Labor den Geruch eines Stoffes richtig?",
+      "answers": [
+        {"text": "Durch Zufächeln mit der Hand", "correct": true},
+        {"text": "Direkt mit der Nase am Gefäß riechen", "correct": false},
+        {"text": "Tief einatmen, damit man es besser riecht", "correct": false},
+        {"text": "Den Stoff erhitzen und dann riechen", "correct": false}
+      ]
+    },
+    {
+      "type": "true_false",
+      "question": "Im Chemieraum darf man Stoffe probieren, wenn sie aussehen wie Zucker oder Mehl.",
+      "time_limit": 12,
+      "answers": [
+        {"text": "Wahr", "correct": false},
+        {"text": "Falsch", "correct": true}
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche Stoffeigenschaften erkennt man mit den Augen?",
+      "answers": [
+        {"text": "Farbe", "correct": true},
+        {"text": "Glanz der Oberfläche", "correct": true},
+        {"text": "Temperatur", "correct": false},
+        {"text": "Geruch", "correct": false},
+        {"text": "Klang", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was besagt das Teilchenmodell?",
+      "answers": [
+        {"text": "Alle Stoffe bestehen aus vielen kleinen, unsichtbaren Teilchen.", "correct": true},
+        {"text": "Nur Flüssigkeiten bestehen aus Teilchen.", "correct": false},
+        {"text": "Teilchen kann man mit der Lupe gut erkennen.", "correct": false},
+        {"text": "Jeder Stoff besteht aus genau einem großen Teilchen.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie sind die Teilchen in einem festen Stoff angeordnet?",
+      "answers": [
+        {"text": "Dicht und regelmäßig", "correct": true},
+        {"text": "Dicht, aber unregelmäßig", "correct": false},
+        {"text": "Weit voneinander entfernt und ungeordnet", "correct": false},
+        {"text": "Es gibt keine Teilchen in festen Stoffen", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Ein Zuckerwürfel wird in Wasser gelegt. Was passiert nach dem Teilchenmodell?",
+      "time_limit": 25,
+      "answers": [
+        {"text": "Die Wasserteilchen schieben sich zwischen die Zuckerteilchen, beide verteilen sich gleichmäßig.", "correct": true},
+        {"text": "Die Zuckerteilchen verschwinden für immer.", "correct": false},
+        {"text": "Die Zuckerteilchen verwandeln sich in Wasserteilchen.", "correct": false},
+        {"text": "Der Zucker sinkt nur nach unten und bleibt ein Würfel.", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie kann man den Zucker aus Zuckerwasser zurückgewinnen?",
+      "answers": [
+        {"text": "Durch Verdunsten des Wassers", "correct": true},
+        {"text": "Durch Umrühren", "correct": false},
+        {"text": "Durch Abkühlen im Kühlschrank", "correct": false},
+        {"text": "Gar nicht, der Zucker ist weg", "correct": false}
+      ]
+    },
+    {
+      "type": "sort",
+      "question": "Ordne die Aggregatzustände von Wasser: vom kältesten zum wärmsten Zustand.",
+      "time_limit": 20,
+      "answers": [
+        {"text": "fest (Eis)"},
+        {"text": "flüssig (Wasser)"},
+        {"text": "gasförmig (Wasserdampf)"}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wofür steht die Abkürzung GHS?",
+      "answers": [
+        {"text": "Global Harmonisiertes System zur Kennzeichnung von Chemikalien", "correct": true},
+        {"text": "Gefährliche Haushalts-Stoffe", "correct": false},
+        {"text": "Gesetz für Hygiene und Sicherheit", "correct": false},
+        {"text": "Giftstoff-Hinweis-Schild", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Wie sehen GHS-Gefahrenpiktogramme aus?",
+      "answers": [
+        {"text": "Schwarzes Symbol auf weißem Grund in einer rot umrandeten Raute", "correct": true},
+        {"text": "Schwarzes Symbol in einem orangefarbenen Quadrat", "correct": false},
+        {"text": "Weißes Symbol in einem blauen Kreis", "correct": false},
+        {"text": "Rotes Symbol in einem gelben Dreieck", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-flamme.svg",
+      "answers": [
+        {"text": "Entzündbar", "correct": true},
+        {"text": "Brandfördernd", "correct": false},
+        {"text": "Explosiv", "correct": false},
+        {"text": "Ätzend", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-rondflam.svg",
+      "answers": [
+        {"text": "Brandfördernd (oxidierend)", "correct": true},
+        {"text": "Entzündbar", "correct": false},
+        {"text": "Umweltgefährlich", "correct": false},
+        {"text": "Gas unter Druck", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-acid.svg",
+      "answers": [
+        {"text": "Ätzend", "correct": true},
+        {"text": "Reizend", "correct": false},
+        {"text": "Giftig", "correct": false},
+        {"text": "Explosiv", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-skull.svg",
+      "answers": [
+        {"text": "Akut giftig (Lebensgefahr)", "correct": true},
+        {"text": "Gesundheitsschädlich / reizend", "correct": false},
+        {"text": "Umweltgefährlich", "correct": false},
+        {"text": "Ätzend", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-exclam.svg",
+      "answers": [
+        {"text": "Reizend / gesundheitsschädlich", "correct": true},
+        {"text": "Akut giftig", "correct": false},
+        {"text": "Explosiv", "correct": false},
+        {"text": "Schwere Gesundheitsgefahr", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-silhouette.svg",
+      "answers": [
+        {"text": "Schwere Gesundheitsgefahr (z. B. Organschäden, krebserzeugend)", "correct": true},
+        {"text": "Reizend", "correct": false},
+        {"text": "Gas unter Druck", "correct": false},
+        {"text": "Entzündbar", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-pollu.svg",
+      "answers": [
+        {"text": "Umweltgefährlich", "correct": true},
+        {"text": "Akut giftig", "correct": false},
+        {"text": "Ätzend", "correct": false},
+        {"text": "Brandfördernd", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-explos.svg",
+      "answers": [
+        {"text": "Explosiv", "correct": true},
+        {"text": "Entzündbar", "correct": false},
+        {"text": "Gas unter Druck", "correct": false},
+        {"text": "Brandfördernd", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Was bedeutet dieses Gefahrenpiktogramm?",
+      "image": "gfx/ghs-bottle.svg",
+      "answers": [
+        {"text": "Gas unter Druck", "correct": true},
+        {"text": "Explosiv", "correct": false},
+        {"text": "Entzündbar", "correct": false},
+        {"text": "Umweltgefährlich", "correct": false}
+      ]
+    },
+    {
+      "type": "single",
+      "question": "Auf einer Flasche Spiritus (Brennspiritus) findest du welches Piktogramm am ehesten?",
+      "time_limit": 25,
+      "answers": [
+        {"text": "Flamme (entzündbar)", "correct": true},
+        {"text": "Gasflasche (Gas unter Druck)", "correct": false},
+        {"text": "Toter Baum und Fisch (umweltgefährlich)", "correct": false},
+        {"text": "Explodierende Bombe (explosiv)", "correct": false}
+      ]
+    },
+    {
+      "type": "multi",
+      "question": "Welche Regeln gelten beim Umgang mit gekennzeichneten Gefahrstoffen im Chemieraum?",
+      "time_limit": 30,
+      "answers": [
+        {"text": "Schutzbrille tragen", "correct": true},
+        {"text": "Nur nach Anweisung der Lehrkraft arbeiten", "correct": true},
+        {"text": "Geruch nur durch Zufächeln prüfen", "correct": true},
+        {"text": "Stoffe kurz probieren, um sie zu erkennen", "correct": false},
+        {"text": "Reste zurück in die Vorratsflasche gießen", "correct": false}
+      ]
+    }
+  ]
+}
