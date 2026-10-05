@@ -14,7 +14,7 @@ import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import HelpButton from "@/components/HelpButton";
-import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
+import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, monatVon, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt, type SuchTreffer } from "@/lib/karten/satz";
 import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
@@ -60,6 +60,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
   };
   // Export: Karte kurz ohne Namen und ohne Auswahl-Markierung zeichnen, dann das Bild abgreifen
   const [druck, setDruck] = useState(false);
+  const [partikelAn, setPartikelAn] = useState(true);
   const bildRef = useRef<KartenBild | null>(null);
   const holeBild = async () => {
     setDruck(true);
@@ -177,7 +178,8 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
-              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort} />
+              ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort}
+              partikel={partikelAn ? { ebenen: inhalt.ebenen, monat: monatVon(inhalt.filter, inhalt.ebenen.find((e) => katalog.ebenen.find((k) => k.id === e)?.monate) ?? "") } : null} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}
               holeBild={lehrkraft ? holeBild : undefined} />
             {/* Quiz gibt es für gespeicherte Sätze: der Code zeigt auf den Satz auf dem Server */}
@@ -209,7 +211,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
                 <EigeneEbenen ebenen={katalog.ebenen.filter((e) => e.bereich === "eigen")} an={inhalt.ebenen}
                   schalte={schalteEbene} lehrkraft={lehrkraft} />
                 {bereich === "de" && <SiedlungsFilter ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />}
-                <Monatsregler ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} />
+                <Monatsregler ebenen={katalog.ebenen} inhalt={inhalt} setInhalt={setInhalt} partikel={partikelAn} setPartikel={setPartikelAn} />
                 {katalog.ebenen.filter((e) => e.darstellung && inhalt.ebenen.includes(e.id)).map((e) => <Themenlegende key={e.id} ebene={e} />)}
                 {inhalt.ebenen.includes("de-hoehen") && <Hoehenlegende ebene={katalog.ebenen.find((e) => e.id === "de-hoehen")} />}
               </>

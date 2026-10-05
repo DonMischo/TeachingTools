@@ -9,10 +9,13 @@ import type { SatzInhalt } from "@/lib/karten/satz";
 
 const TAKT_MS = 1500;
 
-export default function Monatsregler({ ebenen, inhalt, setInhalt }: {
+export default function Monatsregler({ ebenen, inhalt, setInhalt, partikel, setPartikel }: {
   ebenen: Ebene[];
   inhalt: SatzInhalt;
   setInhalt: Dispatch<SetStateAction<SatzInhalt>>;
+  /** Partikelfluss an/aus (nur Ansicht, wird nicht gespeichert) */
+  partikel?: boolean;
+  setPartikel?: (an: boolean) => void;
 }) {
   const ids = ebenen.filter((e) => e.monate && inhalt.ebenen.includes(e.id)).map((e) => e.id);
   const schluessel = ids.join(",");
@@ -41,6 +44,11 @@ export default function Monatsregler({ ebenen, inhalt, setInhalt }: {
           onChange={(e) => { setLaeuft(false); setze(Number(e.target.value)); }} />
         <span className="w-20 text-right font-bold text-xs">{MONATE[monat - 1]}</span>
       </div>
+      {setPartikel && (
+        <label className="flex items-center gap-2 text-xs">
+          <input type="checkbox" checked={!!partikel} onChange={() => setPartikel(!partikel)} /> Partikelfluss
+        </label>
+      )}
       <p className="text-[10px] text-[var(--text-muted)]">Windgürtel und ITC wandern mit dem Sonnenstand; Monsun und Somalistrom wechseln die Richtung.</p>
     </div>
   );

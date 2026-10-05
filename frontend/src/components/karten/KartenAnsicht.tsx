@@ -9,6 +9,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
+import PartikelFluss from "./PartikelFluss";
 
 export type Treffer = { ebene: string; id: string; name: string; eigenschaften: Record<string, unknown> };
 
@@ -22,7 +23,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -40,6 +41,8 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   fundort?: { punkt: [number, number]; text: string; zoom: number } | null;
   /** Diesen Punkt ins Bild holen (ohne Namen, z. B. das gefragte Objekt beim Üben) */
   blick?: [number, number] | null;
+  /** Partikelfluss über Wind/Strömungen (nur diese Ebenen, im gewählten Monat) */
+  partikel?: { ebenen: string[]; monat: string } | null;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
@@ -190,6 +193,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     <div className="relative w-full h-[72vh] min-h-[420px] rounded-2xl overflow-hidden border border-[var(--border)]">
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
+      {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} />}
       <div className="absolute bottom-0 right-0 bg-white/80 text-[10px] text-neutral-700 px-1.5 py-0.5 rounded-tl">
         {quellen.map((q, i) => (
           <span key={q.name}>{i > 0 && " · "}<a href={q.url} target="_blank" rel="noreferrer" className="hover:underline">{q.name}</a></span>

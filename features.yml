@@ -114,7 +114,7 @@ aktivitaeten:
       - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Alle Siedlungen Deutschlands mit Größenklassen-Filter in der Legende, Ortssuche
       - Meeresboden mit Tiefenstufen und Schummerung, Tiefseegräben und Rücken (quizfähig)
-      - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler
+      - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler, Partikelfluss
       - Kartensätze: Objekte auswählen, nummerieren (1 2 3, a b c, A B C, I II III), auf dem Server speichern und teilen; der volle Datensatz bleibt unverändert
       - Nummern, die aufeinanderliegen (Berlin als Stadt und Land), rücken auseinander; Landesnamen weichen Stadtnamen aus
       - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX (Karte auf Seite 1, leer oder mit Lösung)
