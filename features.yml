@@ -113,6 +113,7 @@ aktivitaeten:
       - Kartennetz Equal Earth (Standard) oder Mercator im ☰-Menü, je Kartensatz gespeichert; schwarz-weiße Maßstabsleiste, Quellen unter der Karte
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
       - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
+      - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr
       - Alle Siedlungen Deutschlands mit Größenklassen-Filter in der Legende, Ortssuche
       - Meeresboden mit Tiefenstufen und Schummerung, Tiefseegräben und Rücken (quizfähig)
       - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler, Partikelfluss

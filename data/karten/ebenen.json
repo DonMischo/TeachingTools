@@ -1463,6 +1463,299 @@
       },
       "anzahl": 18,
       "bytes": 5834
+    },
+    {
+      "id": "eu-bip",
+      "name": "Europa: BIP pro Kopf (KKS, 2022)",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© EuroGeographics (Grenzen); Eurostat (Daten), bearbeitet",
+        "lizenz": "CC BY 4.0 (Daten), Grenzen nicht-kommerziell mit Nennung",
+        "url": "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics"
+      },
+      "darstellung": {
+        "feld": "bip",
+        "art": "stufen",
+        "einheit": "KKS je Einw., EU = 100",
+        "werte": [
+          {
+            "wert": 0,
+            "text": "unter 50",
+            "farbe": "#d7191c"
+          },
+          {
+            "wert": 50,
+            "text": "50 – 75",
+            "farbe": "#fdae61"
+          },
+          {
+            "wert": 75,
+            "text": "75 – 100",
+            "farbe": "#ffffbf"
+          },
+          {
+            "wert": 100,
+            "text": "100 – 125",
+            "farbe": "#a6d96a"
+          },
+          {
+            "wert": 125,
+            "text": "125 – 150",
+            "farbe": "#1a9641"
+          },
+          {
+            "wert": 150,
+            "text": "über 150",
+            "farbe": "#005a32"
+          }
+        ]
+      },
+      "anzahl": 267,
+      "bytes": 456432
+    },
+    {
+      "id": "eu-dichte",
+      "name": "Europa: Bevölkerungsdichte (2022)",
+      "gruppe": "bevoelkerung",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© EuroGeographics (Grenzen); Eurostat (Daten), bearbeitet",
+        "lizenz": "CC BY 4.0 (Daten), Grenzen nicht-kommerziell mit Nennung",
+        "url": "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics"
+      },
+      "darstellung": {
+        "feld": "dichte",
+        "art": "stufen",
+        "einheit": "Einw./km²",
+        "werte": [
+          {
+            "wert": 0,
+            "text": "unter 25",
+            "farbe": "#fff5eb"
+          },
+          {
+            "wert": 25,
+            "text": "25 – 50",
+            "farbe": "#fdd0a2"
+          },
+          {
+            "wert": 50,
+            "text": "50 – 100",
+            "farbe": "#fdae6b"
+          },
+          {
+            "wert": 100,
+            "text": "100 – 200",
+            "farbe": "#fd8d3c"
+          },
+          {
+            "wert": 200,
+            "text": "200 – 500",
+            "farbe": "#e6550d"
+          },
+          {
+            "wert": 500,
+            "text": "über 500",
+            "farbe": "#a63603"
+          }
+        ]
+      },
+      "anzahl": 278,
+      "bytes": 489214
+    },
+    {
+      "id": "eu-mitglieder",
+      "name": "Europa: EU, Eurozone, EFTA",
+      "gruppe": "politisch",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "© EuroGeographics (Grenzen); Eurostat (Daten), bearbeitet",
+        "lizenz": "CC BY 4.0 (Daten), Grenzen nicht-kommerziell mit Nennung",
+        "url": "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "eurozone",
+            "text": "EU mit Euro (Eurozone)",
+            "farbe": "#2c5fb3"
+          },
+          {
+            "wert": "eu",
+            "text": "EU ohne Euro",
+            "farbe": "#8db3e8"
+          },
+          {
+            "wert": "efta",
+            "text": "EFTA",
+            "farbe": "#f2c14e"
+          },
+          {
+            "wert": "kandidat",
+            "text": "Beitrittskandidat",
+            "farbe": "#d9d9d9"
+          }
+        ]
+      },
+      "anzahl": 37,
+      "bytes": 270824
+    },
+    {
+      "id": "eu-strassen",
+      "name": "Europa: Fernstraßen",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "fernstrasse",
+            "text": "Fernstraße",
+            "farbe": "#e6550d"
+          }
+        ]
+      },
+      "anzahl": 1,
+      "bytes": 153401
+    },
+    {
+      "id": "eu-bahn",
+      "name": "Europa: Eisenbahn",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "linie",
+      "quiz": false,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "bahn",
+            "text": "Eisenbahn",
+            "farbe": "#404040"
+          }
+        ]
+      },
+      "anzahl": 1,
+      "bytes": 792422
+    },
+    {
+      "id": "eu-haefen-flughaefen",
+      "name": "Europa: Häfen und Flughäfen",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth",
+        "lizenz": "gemeinfrei",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "hafen",
+            "text": "Seehafen",
+            "farbe": "#08519c"
+          },
+          {
+            "wert": "flughafen",
+            "text": "Flughafen",
+            "farbe": "#6a3d9a"
+          }
+        ]
+      },
+      "anzahl": 210,
+      "bytes": 31051
+    },
+    {
+      "id": "eu-kraftwerke",
+      "name": "Europa: Kraftwerke (ab 100 MW)",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Open Power System Data (Stand 01.10.2020; BNetzA, UBA), bearbeitet",
+        "lizenz": "CC-BY 4.0",
+        "url": "https://data.open-power-system-data.org/conventional_power_plants/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "braunkohle",
+            "text": "Braunkohle",
+            "farbe": "#8b5a2b"
+          },
+          {
+            "wert": "steinkohle",
+            "text": "Steinkohle",
+            "farbe": "#333333"
+          },
+          {
+            "wert": "erdgas",
+            "text": "Erdgas",
+            "farbe": "#f2a33a"
+          },
+          {
+            "wert": "erdoel",
+            "text": "Erdöl",
+            "farbe": "#7b3294"
+          },
+          {
+            "wert": "kernenergie",
+            "text": "Kernenergie",
+            "farbe": "#e41a1c"
+          },
+          {
+            "wert": "wasser",
+            "text": "Wasserkraft",
+            "farbe": "#2b83ba"
+          },
+          {
+            "wert": "biomasse",
+            "text": "Biomasse",
+            "farbe": "#4daf4a"
+          },
+          {
+            "wert": "abfall",
+            "text": "Abfall",
+            "farbe": "#999999"
+          }
+        ],
+        "groesse": {
+          "feld": "leistung",
+          "max": 4000
+        }
+      },
+      "anzahl": 1060,
+      "bytes": 209688
     }
   ]
 }

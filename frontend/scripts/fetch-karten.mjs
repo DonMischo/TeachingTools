@@ -64,6 +64,11 @@ const PAKETE = {
   ne_ob: { url: `${NE}/50m/raster/OB_50M.zip`, md5: false },
   // Tiefenstufen 0–10 000 m als Flächen (gemeinfrei)
   ne_bathy: { url: `${NE}/10m/physical/ne_10m_bathymetry_all.zip`, md5: false },
+  // Verkehr in Europa (Natural Earth)
+  ne_10m_roads: { url: `${NE}/10m/cultural/ne_10m_roads.zip`, md5: false },
+  ne_10m_railroads: { url: `${NE}/10m/cultural/ne_10m_railroads.zip`, md5: false },
+  ne_10m_ports: { url: `${NE}/10m/cultural/ne_10m_ports.zip`, md5: false },
+  ne_10m_airports: { url: `${NE}/10m/cultural/ne_10m_airports.zip`, md5: false },
   dlm250: { url: `${BKG}/dlm/dlm250/aktuell/dlm250.utm32s.shape.ebenen.zip`, md5: true },
   vg250ew: { url: `${BKG}/vg/vg250-ew_ebenen_1231/aktuell/vg250-ew_12-31.utm32s.shape.ebenen.zip`, md5: false },
   // CORINE Land Cover 2018, 5 ha (1,4 GB gepackt, 4,8 GB entpackt)
@@ -490,6 +495,90 @@ async function weltRegionen(ordner) {
       .map((f) => feature(f.geometry, { id: slug(nameDe(f.properties)), name: nameDe(f.properties), hoehe: Math.round(f.properties.elevation) })));
 }
 
+// ── Europa genauer ───────────────────────────────────────────────────
+
+const QUELLE_GISCO = { name: "© EuroGeographics (Grenzen); Eurostat (Daten), bearbeitet", lizenz: "CC BY 4.0 (Daten), Grenzen nicht-kommerziell mit Nennung",
+  url: "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics" };
+const EUROSTAT = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
+const GISCO = "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson";
+
+/** Eurostat-Tabelle (JSON-stat, eine Zeit) → Map geo → Wert. */
+async function eurostat(datei, abfrage) {
+  const pfad = await ladeDatei(datei, `${EUROSTAT}/${abfrage}&format=JSON&lang=de`);
+  const d = JSON.parse(readFileSync(pfad, "utf8"));
+  const geo = d.dimension.geo.category.index, groessen = d.size, ids = d.id;
+  const schritt = ids.slice(ids.indexOf("geo") + 1).reduce((a, k) => a * groessen[ids.indexOf(k)], 1);
+  const werte = new Map();
+  for (const [code, i] of Object.entries(geo)) {
+    const v = d.value[String(i * schritt)];
+    if (v != null) werte.set(code, v);
+  }
+  return werte;
+}
+
+/** Stand 2026: Euro auch in Bulgarien */
+const EUROZONE = ["AT", "BE", "BG", "HR", "CY", "EE", "FI", "FR", "DE", "EL", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES"];
+const EU_SONST = ["CZ", "DK", "HU", "PL", "RO", "SE"];
+const EFTA = ["CH", "IS", "LI", "NO"];
+
+async function europa() {
+  const nuts2 = JSON.parse(readFileSync(await ladeDatei("nuts2_2021.geojson", `${GISCO}/NUTS_RG_20M_2021_4326_LEVL_2.geojson`), "utf8"));
+  const bip = await eurostat("eurostat_bip_2022.json", "nama_10r_2gdp?unit=PPS_EU27_2020_HAB&time=2022");
+  const dichte = await eurostat("eurostat_dichte_2022.json", "demo_r_d3dens?time=2022");
+  // Übersee (Kanaren ja, Französisch-Guayana/Réunion … nein): nur, was im Europa-Ausschnitt liegt
+  const inEuropa = (f) => { const [x, y] = ankerGrob(f.geometry); return x > -32 && x < 46 && y > 27 && y < 72; };
+  const regionen = nuts2.features.filter(inEuropa).map((f) => ({ f, id: f.properties.NUTS_ID }));
+  const regionFeature = (f, id, extra) => feature(f.geometry, { id, name: f.properties.NAME_LATN, land: f.properties.CNTR_CODE, ...extra });
+
+  schreibe("eu-bip", { name: "Europa: BIP pro Kopf (KKS, 2022)", gruppe: "wirtschaft", bereich: "welt", geometrie: "flaeche", quiz: true,
+    quelle: QUELLE_GISCO, darstellung: { feld: "bip", art: "stufen", einheit: "KKS je Einw., EU = 100", werte: [
+      { wert: 0, text: "unter 50", farbe: "#d7191c" }, { wert: 50, text: "50 – 75", farbe: "#fdae61" }, { wert: 75, text: "75 – 100", farbe: "#ffffbf" },
+      { wert: 100, text: "100 – 125", farbe: "#a6d96a" }, { wert: 125, text: "125 – 150", farbe: "#1a9641" }, { wert: 150, text: "über 150", farbe: "#005a32" }] } },
+    regionen.filter(({ id }) => bip.has(id)).map(({ f, id }) => regionFeature(f, id, {
+      // KKS je Einwohner → Index EU27 = 100 (anschaulicher für die Schule)
+      bip: Math.round((bip.get(id) / bip.get("EU27_2020")) * 100) })));
+
+  schreibe("eu-dichte", { name: "Europa: Bevölkerungsdichte (2022)", gruppe: "bevoelkerung", bereich: "welt", geometrie: "flaeche", quiz: true,
+    quelle: QUELLE_GISCO, darstellung: { feld: "dichte", art: "stufen", einheit: "Einw./km²", werte: [
+      { wert: 0, text: "unter 25", farbe: "#fff5eb" }, { wert: 25, text: "25 – 50", farbe: "#fdd0a2" }, { wert: 50, text: "50 – 100", farbe: "#fdae6b" },
+      { wert: 100, text: "100 – 200", farbe: "#fd8d3c" }, { wert: 200, text: "200 – 500", farbe: "#e6550d" }, { wert: 500, text: "über 500", farbe: "#a63603" }] } },
+    regionen.filter(({ id }) => dichte.has(id)).map(({ f, id }) => regionFeature(f, id, { dichte: Math.round(dichte.get(id)) })));
+
+  const laender = JSON.parse(readFileSync(await ladeDatei("nuts0_2021.geojson", `${GISCO}/NUTS_RG_20M_2021_4326_LEVL_0.geojson`), "utf8"));
+  const gruppe = (c) => (EUROZONE.includes(c) ? "eurozone" : EU_SONST.includes(c) ? "eu" : EFTA.includes(c) ? "efta" : "kandidat");
+  schreibe("eu-mitglieder", { name: "Europa: EU, Eurozone, EFTA", gruppe: "politisch", bereich: "welt", geometrie: "flaeche", quiz: true,
+    quelle: QUELLE_GISCO, darstellung: { feld: "art", art: "kategorie", werte: [
+      { wert: "eurozone", text: "EU mit Euro (Eurozone)", farbe: "#2c5fb3" }, { wert: "eu", text: "EU ohne Euro", farbe: "#8db3e8" },
+      { wert: "efta", text: "EFTA", farbe: "#f2c14e" }, { wert: "kandidat", text: "Beitrittskandidat", farbe: "#d9d9d9" }] } },
+    laender.features.map((f) => feature(f.geometry, { id: f.properties.CNTR_CODE, name: f.properties.NAME_LATN, art: gruppe(f.properties.CNTR_CODE) })));
+}
+
+/** Grober Mittelpunkt (Mittel der Außenring-Ecken des größten Teils) — reicht zum Aussortieren. */
+function ankerGrob(g) {
+  const teile = g.type === "Polygon" ? [g.coordinates] : g.coordinates;
+  const ring = teile.reduce((a, b) => (b[0].length > a[0].length ? b : a))[0];
+  return [ring.reduce((x, p) => x + p[0], 0) / ring.length, ring.reduce((y, p) => y + p[1], 0) / ring.length];
+}
+
+/** Verkehr in Europa (Natural Earth): Hauptstraßen, Eisenbahn, große Häfen und Flughäfen. */
+async function europaVerkehr(ordner) {
+  const box = "-clip bbox=-25,34,45,72";
+  const strassen = await lies(finde(ordner.ne_10m_roads, "ne_10m_roads.shp"), `${box} -filter "continent=='Europe' && (type=='Major Highway')" -dissolve type -simplify 20%`);
+  schreibe("eu-strassen", { name: "Europa: Fernstraßen", gruppe: "wirtschaft", bereich: "welt", geometrie: "linie", quiz: false, quelle: QUELLE_NE,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "fernstrasse", text: "Fernstraße", farbe: "#e6550d" }] } },
+    strassen.map((f, i) => feature(f.geometry, { id: `str-${i}`, name: "", art: "fernstrasse" })));
+  const bahn = await lies(finde(ordner.ne_10m_railroads, "ne_10m_railroads.shp"), `${box} -filter "continent=='Europe'" -each "art='bahn'" -dissolve art -simplify 6%`);
+  schreibe("eu-bahn", { name: "Europa: Eisenbahn", gruppe: "wirtschaft", bereich: "welt", geometrie: "linie", quiz: false, quelle: QUELLE_NE,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "bahn", text: "Eisenbahn", farbe: "#404040" }] } },
+    bahn.map((f, i) => feature(f.geometry, { id: `bahn-${i}`, name: "", art: "bahn" })));
+  const haefen = await lies(finde(ordner.ne_10m_ports, "ne_10m_ports.shp"), `${box} -filter "scalerank<=6"`);
+  const flug = await lies(finde(ordner.ne_10m_airports, "ne_10m_airports.shp"), `${box} -filter "scalerank<=4 && type!='military'"`);
+  schreibe("eu-haefen-flughaefen", { name: "Europa: Häfen und Flughäfen", gruppe: "wirtschaft", bereich: "welt", geometrie: "punkt", quiz: true, quelle: QUELLE_NE,
+    darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "hafen", text: "Seehafen", farbe: "#08519c" }, { wert: "flughafen", text: "Flughafen", farbe: "#6a3d9a" }] } },
+    [...haefen.map((f) => feature(f.geometry, { id: `hafen-${slug(f.properties.name)}`, name: f.properties.name, art: "hafen" })),
+     ...flug.map((f) => feature(f.geometry, { id: `flug-${f.properties.iata_code || slug(f.properties.name)}`, name: f.properties.name, art: "flughafen" }))]);
+}
+
 // ── Rasterkacheln (Mercator und Equal Earth) ─────────────────────────
 
 /**
@@ -687,7 +776,8 @@ export const ENERGIE_LEGENDE = [
  */
 function kraftwerke(csv, laender, id, name, bereich) {
   const standorte = new Map();
-  for (const z of liesCsv(readFileSync(csv, "utf8"))) {
+  const zeilen = [csv].flat().flatMap((datei) => liesCsv(readFileSync(datei, "utf8")));
+  for (const z of zeilen) {
     const art = ENERGIE[z.energy_source];
     const leistung = Number(z.capacity_net_bnetza || z.capacity);
     const [lat, lon] = [Number(z.lat), Number(z.lon)];
@@ -1124,6 +1214,12 @@ await schritt("wuesten", () => wuesten(ordner));
 await schritt("klima", () => klimazonen(ordner.koeppen));
 await schritt("zirkulation", () => zirkulation());
 await schritt("meeresboden", () => meeresboden(ordner));
+await schritt("europa", () => europa());
+await schritt("europaverkehr", () => europaVerkehr(ordner));
+await schritt("eukraftwerke", async () => kraftwerke([await ladeDatei("opsd_eu.csv",
+  "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_EU.csv"), await ladeDatei("opsd_de.csv",
+  "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_DE.csv")],
+  null, "eu-kraftwerke", "Europa: Kraftwerke (ab 100 MW)", "welt"));
 await schritt("schriften", () => schriften());
 
 let ebenen = KATALOG;
