@@ -152,7 +152,7 @@ export default function NewWettkampfPage() {
               <div className="flex gap-1 mt-1 flex-wrap">
                 {[50, 100, 200, 500].map(v => (
                   <button key={v} onClick={() => setMaxPoints(v)}
-                    className={`px-2 py-1 text-xs rounded-lg border transition-colors ${maxPoints === v ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"}`}
+                    className={`chip px-2 rounded-lg ${maxPoints === v ? "chip-on" : ""}`}
                   >{v}</button>
                 ))}
                 <input type="number" min={2} className="input w-20 text-sm" value={maxPoints} onChange={e => setMaxPoints(Number(e.target.value))} />
@@ -169,7 +169,7 @@ export default function NewWettkampfPage() {
             <div className="flex gap-1.5 mt-1 flex-wrap">
               {[1, 2, 3, 4, 5, 6, 8, 10].map(v => (
                 <button key={v} onClick={() => setRewardedPlaces(v)}
-                  className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${rewardedPlaces === v ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"}`}
+                  className={`chip w-9 h-9 text-sm font-semibold rounded-xl ${rewardedPlaces === v ? "chip-on" : ""}`}
                 >{v}</button>
               ))}
             </div>

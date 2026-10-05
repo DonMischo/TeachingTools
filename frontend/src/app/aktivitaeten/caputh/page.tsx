@@ -176,15 +176,15 @@ export default function CaputhsPage() {
         {/* Type filter */}
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setTypeFilter(null)}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-              !typeFilter ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
+            className={`chip ${
+              !typeFilter ? "chip-on" : ""
             }`}>
             Alle Typen <span className="opacity-60">{capuths.length}</span>
           </button>
           {ALL_TYPE_KEYS.filter(t => typeCounts[t]).map(t => (
             <button key={t} onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                typeFilter === t ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
+              className={`chip ${
+                typeFilter === t ? "chip-on" : ""
               }`}>
               {QUIZ_TYPE_LABELS[t]} <span className="opacity-60">{typeCounts[t]}</span>
             </button>
@@ -196,15 +196,15 @@ export default function CaputhsPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-xs text-muted mr-1">Klasse:</span>
             <button onClick={() => setGradeFilter(null)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                gradeFilter == null ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
+              className={`chip ${
+                gradeFilter == null ? "chip-on" : ""
               }`}>
               Alle
             </button>
             {GRADES.filter(g => gradeCounts[g]).map(g => (
               <button key={g} onClick={() => setGradeFilter(gradeFilter === g ? null : g)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                  gradeFilter === g ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
+                className={`chip ${
+                  gradeFilter === g ? "chip-on" : ""
                 }`}>
                 {g}. Klasse <span className="opacity-60">{gradeCounts[g]}</span>
               </button>
@@ -218,8 +218,8 @@ export default function CaputhsPage() {
             <span className="text-xs text-muted mr-1">Tags:</span>
             {allTags.map(tag => (
               <button key={tag} onClick={() => toggleTag(tag)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  activeTags.has(tag) ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
+                className={`chip px-2.5 ${
+                  activeTags.has(tag) ? "chip-on" : ""
                 }`}>
                 {tag}
               </button>
@@ -397,10 +397,10 @@ function QuizCard({
             </p>
             {quiz.tags.map(tag => (
               <button key={tag} onClick={() => onTagClick(tag)}
-                className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                className={`chip px-2 py-0.5 ${
                   activeTagFilter.has(tag)
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-line text-muted hover:border-muted"
+                    ? "chip-on"
+                    : ""
                 }`}>
                 {tag}
               </button>

@@ -729,10 +729,10 @@ function HausCard({
                   <button
                     key={cls.id}
                     onClick={() => toggleMember(cls.id)}
-                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                    className={`chip px-2.5 ${
                       memberIds.has(cls.id)
-                        ? "border-accent bg-accent/15 text-accent"
-                        : "border-line text-muted hover:border-muted"
+                        ? "chip-on"
+                        : ""
                     }`}
                   >
                     {cls.symbol_emoji ?? ""} {cls.code}

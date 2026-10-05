@@ -644,12 +644,12 @@ export default function WettkampfDetailPage() {
                             key={v}
                             disabled={done}
                             onClick={() => !done && toggle(key)}
-                            className={`text-xs px-2 py-1 rounded-md border transition-colors select-none ${
+                            className={`chip px-2 rounded-md select-none ${
                               done
                                 ? "border-line text-muted cursor-not-allowed"
                                 : on
-                                ? "border-accent bg-accent/15 text-accent"
-                                : "border-line text-muted hover:border-muted"
+                                ? "chip-on"
+                                : ""
                             }`}
                           >
                             {done ? "✓ " : ""}{LABEL[v]}
@@ -670,12 +670,12 @@ export default function WettkampfDetailPage() {
                   <button
                     disabled={done}
                     onClick={() => !done && toggle("teacher")}
-                    className={`text-xs px-3 py-1.5 rounded-md border transition-colors select-none ${
+                    className={`chip py-1.5 rounded-md select-none ${
                       done
                         ? "border-line text-muted cursor-not-allowed"
                         : on
-                        ? "border-accent bg-accent/15 text-accent"
-                        : "border-line text-muted hover:border-muted"
+                        ? "chip-on"
+                        : ""
                     }`}
                   >
                     {done ? "✓ " : ""}👩‍🏫 Lehrerteam

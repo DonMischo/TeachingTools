@@ -129,10 +129,10 @@ export default function GruppenauswertungPage() {
           <div className="flex flex-wrap gap-2">
             {availableTags.map(tag => (
               <button key={tag} onClick={() => toggleTag(tag)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                className={`chip ${
                   activeTags.has(tag)
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-line text-muted hover:border-muted"
+                    ? "chip-on"
+                    : ""
                 }`}>
                 {tag}
               </button>

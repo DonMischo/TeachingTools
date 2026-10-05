@@ -115,10 +115,10 @@ export default function PunktePanel({ w, canEdit }: Props) {
             <div className="flex items-center gap-1 mt-1">
               {[50, 100, 200, 500].map(v => (
                 <button key={v} onClick={() => canEdit && setMaxPts(v)}
-                  className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
+                  className={`chip px-2 rounded-lg ${
                     maxPts === v
-                      ? "border-accent bg-accent/15 text-accent"
-                      : "border-line text-muted hover:border-muted"
+                      ? "chip-on"
+                      : ""
                   }`}
                 >
                   {v}
@@ -154,10 +154,10 @@ export default function PunktePanel({ w, canEdit }: Props) {
           <div className="flex flex-wrap gap-1.5 mt-1">
             {[1, 2, 3, 4, 5, 6, 8, 10].map(v => (
               <button key={v} onClick={() => canEdit && setPlaces(v)}
-                className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${
+                className={`chip w-9 h-9 text-sm font-semibold rounded-xl ${
                   places === v
-                    ? "border-accent bg-accent/15 text-accent"
-                    : "border-line text-muted hover:border-muted"
+                    ? "chip-on"
+                    : ""
                 }`}
               >
                 {v}
