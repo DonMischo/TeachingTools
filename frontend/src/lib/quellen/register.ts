@@ -34,8 +34,8 @@ export const REGISTER: WerkzeugQuellen[] = [
     eintraege: [
       { quelle: "OpenStreetMap", urheber: "© OpenStreetMap-Mitwirkende", lizenz: "ODbL 1.0", url: "https://www.openstreetmap.org/copyright",
         verwendung: "Straßen, Wege, Gebäude, Haltestellen, Linienwege (src/lib/verkehr/karte.json)" },
-      { quelle: "EVAG-Haltestellenfahrplan Linie 9 (ab 17.08.2026)", urheber: "Erfurter Verkehrsbetriebe AG", lizenz: "nicht angegeben",
-        url: "https://www.evag-erfurt.de", verwendung: "Abfahrtszeiten (src/lib/verkehr/linie9.json) und Takte", pruefen: true },
+      { quelle: "EVAG-Haltestellenfahrplan Linie 9 (ab 17.08.2026)", urheber: "Erfurter Verkehrsbetriebe AG", lizenz: "Open Data (Fahrplandaten)",
+        url: "https://www.evag-erfurt.de", verwendung: "Abfahrtszeiten (src/lib/verkehr/linie9.json) und Takte" },
       { quelle: "Luftbild zur Kontrolle der Schulumgebung (Esri)", lizenz: "nur angesehen, nicht übernommen", verwendung: "Abgleich beim Erstellen der Karte" },
     ],
   },

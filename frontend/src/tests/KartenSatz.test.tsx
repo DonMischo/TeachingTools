@@ -34,7 +34,11 @@ vi.mock("@/lib/api", () => ({
   // Nach dem Speichern erscheint das Quiz-Panel und legt die Sitzung an
   toolSessions: { create: async () => ({ code: "KQ1", tool_slug: "karten", allow_guests: false, status: "open", settings: {} }) } },
 }));
-vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ auth: { user_type: "teacher", role: "teacher" }, ready: true }) }));
+vi.mock("@/contexts/AuthContext", () => {
+  // stabil wie der echte AuthContext (Seiten laden bei jeder Änderung von auth neu)
+  const wert = { auth: { user_type: "teacher", role: "teacher" }, ready: true };
+  return { useAuth: () => wert };
+});
 vi.mock("@/components/karten/KartenAnsicht", () => ({
   default: ({ onKlick, bildRef }: { onKlick: (t: unknown[]) => void; bildRef?: { current: unknown } }) => {
     if (bildRef) bildRef.current = async () => "data:image/png;base64,iVBORw0KGgo=";

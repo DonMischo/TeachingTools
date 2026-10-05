@@ -85,6 +85,9 @@ try {
 
 if (needsBuild()) {
   console.log("Source changed — building Next.js...");
+  // Alte Typen eines früheren `next dev` (tsconfig bindet .next/dev/types ein) verweisen auf
+  // Seiten, die es nicht mehr gibt — der Typcheck des Builds bricht dann ab. Der Build braucht sie nicht.
+  fs.rmSync(path.join(".next", "dev"), { recursive: true, force: true });
   execSync("npx next build", { stdio: "inherit" });
   console.log("Build complete.");
 } else {

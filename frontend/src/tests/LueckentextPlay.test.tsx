@@ -20,9 +20,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
 
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ auth: { user_type: "student" } }),
-}));
+vi.mock("@/contexts/AuthContext", () => {
+  // stabil wie der echte AuthContext (Seiten laden bei jeder Änderung von auth neu)
+  const wert = { auth: { user_type: "student" } };
+  return { useAuth: () => wert };
+});
 
 // Hoisted: vi.mock factories run before the module body.
 const { BOARD, submitAttempt } = vi.hoisted(() => ({

@@ -19,9 +19,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
 
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ auth: { user_type: "student" }, ready: true }),
-}));
+vi.mock("@/contexts/AuthContext", () => {
+  // stabil wie der echte AuthContext (Seiten laden bei jeder Änderung von auth neu)
+  const wert = { auth: { user_type: "student" }, ready: true };
+  return { useAuth: () => wert };
+});
 
 const { joinSession } = vi.hoisted(() => ({ joinSession: vi.fn() }));
 vi.mock("@/lib/api", () => ({

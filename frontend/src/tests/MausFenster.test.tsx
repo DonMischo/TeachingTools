@@ -48,21 +48,23 @@ describe("Maus-Führerschein: Fenster", () => {
     } as DOMRect);
 
     const warten = (ms: number) => new Promise(r => setTimeout(r, ms));
+    // Unter Last (ganze Suite parallel) braucht die Rückmeldung länger als die üblichen 1 s
+    const LANGSAM = { timeout: 5000 };
 
     render(<StufeFenster avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);
 
     // maximieren → wiederherstellen → minimieren → zurückholen
     fireEvent.click(screen.getByLabelText("Maximieren / Wiederherstellen"));
-    await screen.findByText("Maximiert!");
+    await screen.findByText("Maximiert!", undefined, LANGSAM);
     await warten(950);
     fireEvent.click(screen.getByLabelText("Maximieren / Wiederherstellen"));
-    await screen.findByText("Wiederhergestellt!");
+    await screen.findByText("Wiederhergestellt!", undefined, LANGSAM);
     await warten(950);
     fireEvent.click(screen.getByLabelText("Minimieren"));
-    await screen.findByText("Minimiert!");
+    await screen.findByText("Minimiert!", undefined, LANGSAM);
     await warten(950);
     fireEvent.click(document.querySelector('[data-taskleiste="editor"]')!);
-    await screen.findByText("Zurückgeholt!");
+    await screen.findByText("Zurückgeholt!", undefined, LANGSAM);
     await warten(950);
 
     // verschieben
@@ -71,7 +73,7 @@ describe("Maus-Führerschein: Fenster", () => {
     fireEvent.pointerDown(titelleiste, { button: 0, pointerId: 1, clientX: 0, clientY: 0 });
     fireEvent.pointerMove(desktop, { pointerId: 1, clientX: 220, clientY: 110 });
     fireEvent.pointerUp(desktop, { pointerId: 1 });
-    await screen.findByText("Genau richtig hingeschoben!");
+    await screen.findByText("Genau richtig hingeschoben!", undefined, LANGSAM);
     await warten(950);
 
     // Größe ändern
@@ -79,14 +81,14 @@ describe("Maus-Führerschein: Fenster", () => {
     fireEvent.pointerDown(ecke, { button: 0, pointerId: 1, clientX: 0, clientY: 0 });
     fireEvent.pointerMove(desktop, { pointerId: 1, clientX: 220, clientY: 120 });
     fireEvent.pointerUp(desktop, { pointerId: 1 });
-    await screen.findByText("Groß genug!");
+    await screen.findByText("Groß genug!", undefined, LANGSAM);
     await warten(950);
 
     // Alt + Tab
     fireEvent(window, new Event("blur"));
     await warten(550);
     fireEvent(window, new Event("focus"));
-    await screen.findByText("Zurück — Alt + Tab hat geklappt!");
+    await screen.findByText("Zurück — Alt + Tab hat geklappt!", undefined, LANGSAM);
     await warten(950);
 
     // Fenster schließen → »Speichern« im Dialog
@@ -98,7 +100,7 @@ describe("Maus-Führerschein: Fenster", () => {
     const nameFeld = within(dialog).getByTestId("dateiname") as HTMLInputElement;
     fireEvent.change(nameFeld, { target: { value: "Meine Notizen" } });
     fireEvent.click(within(dialog).getByTestId("speichern-knopf"));
-    await screen.findByText("Gespeichert!");
+    await screen.findByText("Gespeichert!", undefined, LANGSAM);
     await warten(950);
 
     // nächste Aufgabe: Datei wiederfinden

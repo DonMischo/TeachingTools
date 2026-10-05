@@ -35,19 +35,22 @@ const makeRoom = (overrides: Partial<apiModule.SchreibraumRoom> = {}): apiModule
 
 let mockAuth: apiModule.MeOut | null = null;
 
+// Wie der echte AuthContext: dasselbe auth-Objekt über Renders hinweg (die Seite lädt bei jeder Änderung neu)
+let stabil: { von: apiModule.MeOut | null; auth: unknown } = { von: null, auth: null };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    auth: mockAuth
-      ? {
-          user_type: mockAuth.user_type,
-          role: mockAuth.user_type === "student" ? "student" : (mockAuth.teacher?.role ?? "teacher"),
-          teacher: mockAuth.teacher,
-          student: mockAuth.student,
-        }
-      : null,
-    login: vi.fn(),
-    logout: vi.fn(),
-  }),
+  useAuth: () => {
+    if (stabil.von !== mockAuth) {
+      stabil = { von: mockAuth, auth: mockAuth
+        ? {
+            user_type: mockAuth.user_type,
+            role: mockAuth.user_type === "student" ? "student" : (mockAuth.teacher?.role ?? "teacher"),
+            teacher: mockAuth.teacher,
+            student: mockAuth.student,
+          }
+        : null };
+    }
+    return { auth: stabil.auth, login: vi.fn(), logout: vi.fn() };
+  },
 }));
 
 beforeEach(() => {
@@ -129,7 +132,8 @@ describe("SchreibraumList — teacher view", () => {
     await renderAndWait();
     await waitFor(() => screen.getByText("Testroom"));
     await userEvent.click(screen.getByRole("button", { name: "🗑" }));
-    expect(apiModule.api.schreibraum.delete).toHaveBeenCalledWith("room-1");
+    // Der Klick löscht asynchron (Bestätigung, dann API) — unter Last nicht sofort
+    await waitFor(() => expect(apiModule.api.schreibraum.delete).toHaveBeenCalledWith("room-1"));
     await waitFor(() => expect(screen.queryByText("Testroom")).not.toBeInTheDocument());
   });
 

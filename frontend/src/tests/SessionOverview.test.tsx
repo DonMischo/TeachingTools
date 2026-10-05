@@ -11,9 +11,11 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ auth: { role: "admin" } }),
-}));
+vi.mock("@/contexts/AuthContext", () => {
+  // stabil wie der echte AuthContext (Seiten laden bei jeder Änderung von auth neu)
+  const wert = { auth: { role: "admin" } };
+  return { useAuth: () => wert };
+});
 vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 const sessions = vi.fn();
