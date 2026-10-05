@@ -33,6 +33,7 @@ import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
 import { eeZurueck } from "./karten-daten/projektion.mjs";
+import { INDUSTRIE, INDUSTRIE_LEGENDE, LANDWIRTSCHAFT, LANDWIRTSCHAFT_LEGENDE, RAEUME, RAEUME_LEGENDE } from "./karten-daten/usa.mjs";
 
 
 const HIER = dirname(fileURLToPath(import.meta.url));
@@ -69,6 +70,8 @@ const PAKETE = {
   ne_10m_railroads: { url: `${NE}/10m/cultural/ne_10m_railroads.zip`, md5: false },
   ne_10m_ports: { url: `${NE}/10m/cultural/ne_10m_ports.zip`, md5: false },
   ne_10m_airports: { url: `${NE}/10m/cultural/ne_10m_airports.zip`, md5: false },
+  // Bundesstaaten der USA
+  ne_50m_admin_1: { url: `${NE}/50m/cultural/ne_50m_admin_1_states_provinces.zip`, md5: false },
   dlm250: { url: `${BKG}/dlm/dlm250/aktuell/dlm250.utm32s.shape.ebenen.zip`, md5: true },
   vg250ew: { url: `${BKG}/vg/vg250-ew_ebenen_1231/aktuell/vg250-ew_12-31.utm32s.shape.ebenen.zip`, md5: false },
   // CORINE Land Cover 2018, 5 ha (1,4 GB gepackt, 4,8 GB entpackt)
@@ -577,6 +580,26 @@ async function europaVerkehr(ordner) {
     darstellung: { feld: "art", art: "kategorie", werte: [{ wert: "hafen", text: "Seehafen", farbe: "#08519c" }, { wert: "flughafen", text: "Flughafen", farbe: "#6a3d9a" }] } },
     [...haefen.map((f) => feature(f.geometry, { id: `hafen-${slug(f.properties.name)}`, name: f.properties.name, art: "hafen" })),
      ...flug.map((f) => feature(f.geometry, { id: `flug-${f.properties.iata_code || slug(f.properties.name)}`, name: f.properties.name, art: "flughafen" }))]);
+}
+
+// ── USA-Wirtschaft ───────────────────────────────────────────────────
+
+const QUELLE_USA = { name: "Natural Earth (Grenzen); TT, schematisch nach Schulatlas-Wissen", lizenz: "gemeinfrei / eigene Daten",
+  url: "https://www.naturalearthdata.com/" };
+
+async function usa(ordner) {
+  const staaten = (await lies(finde(ordner.ne_50m_admin_1, "ne_50m_admin_1_states_provinces.shp"), `-filter "adm0_a3=='USA'"`))
+    .map((f) => ({ f, kurz: f.properties.postal, name: f.properties.name_de || f.properties.name }));
+  const von = (tabelle, k, sonst) => Object.keys(tabelle).find((art) => tabelle[art].includes(k)) ?? sonst;
+  schreibe("us-landwirtschaft", { name: "USA: Landwirtschaft und Viehhaltung", gruppe: "wirtschaft", bereich: "welt", geometrie: "flaeche", quiz: true,
+    quelle: QUELLE_USA, darstellung: { feld: "art", art: "kategorie", werte: LANDWIRTSCHAFT_LEGENDE } },
+    staaten.map(({ f, kurz, name }) => feature(f.geometry, { id: `us-${kurz}`, name, kurz, art: von(LANDWIRTSCHAFT, kurz, "misch") })));
+  schreibe("us-wirtschaftsraeume", { name: "USA: Manufacturing Belt und Sun Belt", gruppe: "wirtschaft", bereich: "welt", geometrie: "flaeche", quiz: true,
+    quelle: QUELLE_USA, darstellung: { feld: "art", art: "kategorie", werte: RAEUME_LEGENDE } },
+    staaten.map(({ f, kurz, name }) => feature(f.geometry, { id: `us-${kurz}`, name, kurz, art: von(RAEUME, kurz, "sonstige") })));
+  schreibe("us-industrie", { name: "USA: Industriestandorte", gruppe: "wirtschaft", bereich: "welt", geometrie: "punkt", quiz: true,
+    quelle: QUELLE_USA, darstellung: { feld: "art", art: "kategorie", werte: INDUSTRIE_LEGENDE } },
+    INDUSTRIE.map(([name, lon, lat, art]) => feature({ type: "Point", coordinates: [lon, lat] }, { id: `ind-${slug(name)}`, name, art })));
 }
 
 // ── Rasterkacheln (Mercator und Equal Earth) ─────────────────────────
@@ -1215,6 +1238,7 @@ await schritt("klima", () => klimazonen(ordner.koeppen));
 await schritt("zirkulation", () => zirkulation());
 await schritt("meeresboden", () => meeresboden(ordner));
 await schritt("europa", () => europa());
+await schritt("usa", () => usa(ordner));
 await schritt("europaverkehr", () => europaVerkehr(ordner));
 await schritt("eukraftwerke", async () => kraftwerke([await ladeDatei("opsd_eu.csv",
   "https://data.open-power-system-data.org/conventional_power_plants/latest/conventional_power_plants_EU.csv"), await ladeDatei("opsd_de.csv",

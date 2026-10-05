@@ -1756,6 +1756,159 @@
       },
       "anzahl": 1060,
       "bytes": 209688
+    },
+    {
+      "id": "us-landwirtschaft",
+      "name": "USA: Landwirtschaft und Viehhaltung",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth (Grenzen); TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "gemeinfrei / eigene Daten",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "mais",
+            "text": "Corn Belt: Mais, Soja, Schweinemast",
+            "farbe": "#e6c229"
+          },
+          {
+            "wert": "weizen",
+            "text": "Weizen (Great Plains)",
+            "farbe": "#f1e2a4"
+          },
+          {
+            "wert": "milch",
+            "text": "Milchvieh, Futterbau (Dairy Belt)",
+            "farbe": "#9ecae1"
+          },
+          {
+            "wert": "rinder",
+            "text": "Rinder-Weidewirtschaft (Ranching)",
+            "farbe": "#d9a066"
+          },
+          {
+            "wert": "baumwolle",
+            "text": "Baumwolle, Geflügel, Erdnüsse",
+            "farbe": "#f4a6a6"
+          },
+          {
+            "wert": "sonderkultur",
+            "text": "Obst, Gemüse, Wein (oft bewässert)",
+            "farbe": "#74c476"
+          },
+          {
+            "wert": "misch",
+            "text": "Mischbetriebe, Tabak",
+            "farbe": "#c7b9e2"
+          },
+          {
+            "wert": "wald",
+            "text": "Wald- und Holzwirtschaft",
+            "farbe": "#2e7d32"
+          }
+        ]
+      },
+      "anzahl": 51,
+      "bytes": 223299
+    },
+    {
+      "id": "us-wirtschaftsraeume",
+      "name": "USA: Manufacturing Belt und Sun Belt",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "flaeche",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth (Grenzen); TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "gemeinfrei / eigene Daten",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "manufacturing",
+            "text": "Manufacturing Belt (heute »Rust Belt«): alte Schwerindustrie",
+            "farbe": "#8c6d62"
+          },
+          {
+            "wert": "sunbelt",
+            "text": "Sun Belt: Wachstum, High-Tech, Erdöl, Dienstleistungen",
+            "farbe": "#f6b26b"
+          },
+          {
+            "wert": "sonstige",
+            "text": "übrige Bundesstaaten",
+            "farbe": "#eeeeee"
+          }
+        ]
+      },
+      "anzahl": 51,
+      "bytes": 223431
+    },
+    {
+      "id": "us-industrie",
+      "name": "USA: Industriestandorte",
+      "gruppe": "wirtschaft",
+      "bereich": "welt",
+      "geometrie": "punkt",
+      "quiz": true,
+      "quelle": {
+        "name": "Natural Earth (Grenzen); TT, schematisch nach Schulatlas-Wissen",
+        "lizenz": "gemeinfrei / eigene Daten",
+        "url": "https://www.naturalearthdata.com/"
+      },
+      "darstellung": {
+        "feld": "art",
+        "art": "kategorie",
+        "werte": [
+          {
+            "wert": "auto",
+            "text": "Autoindustrie",
+            "farbe": "#d62728"
+          },
+          {
+            "wert": "stahl",
+            "text": "Eisen und Stahl (teils stillgelegt)",
+            "farbe": "#555555"
+          },
+          {
+            "wert": "maschinen",
+            "text": "Maschinenbau, Lebensmittel",
+            "farbe": "#8c564b"
+          },
+          {
+            "wert": "petrochemie",
+            "text": "Erdöl und Petrochemie",
+            "farbe": "#000000"
+          },
+          {
+            "wert": "hightech",
+            "text": "High-Tech, Elektronik, Forschung",
+            "farbe": "#1f77b4"
+          },
+          {
+            "wert": "luftfahrt",
+            "text": "Luft- und Raumfahrt",
+            "farbe": "#9467bd"
+          },
+          {
+            "wert": "dienstleistung",
+            "text": "Finanzen und Dienstleistungen",
+            "farbe": "#2ca02c"
+          }
+        ]
+      },
+      "anzahl": 22,
+      "bytes": 3372
     }
   ]
 }

@@ -101,6 +101,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Meeresströmungen (warm/kalt) und Windsysteme mit ITC, Druckgürteln und Monsun als animierte Linien mit Fließrichtung; jede Strömung und jeder Gürtel anklickbar (Erklärung, Hervorhebung, quizfähig); Monatsregler mit ▶ spielt das Jahr ab — ITC und Gürtel wandern, Monsun und Somalistrom kehren um; Partikelfluss wie bei earth.nullschool (Strömungen rot/blau, Wind fein) aus einem Feld, das aus den Linien berechnet wird
 - Offene Daten mit Quellenangabe auf der Karte: BKG (dl-de/by-2.0), Natural Earth, Open Power System Data, CORINE, Bird PB2002, Beck et al. 2023 — Übersicht unter Admin → Quellen
 - Europa genauer: BIP pro Kopf (KKS, EU = 100) und Bevölkerungsdichte je NUTS-2-Region (Eurostat, © EuroGeographics), EU/Eurozone/EFTA/Kandidaten, Kraftwerke ab 100 MW (OPSD), Fernstraßen, Eisenbahn, Häfen und Flughäfen
+- USA-Wirtschaft (schematisch wie im Schulatlas): Landwirtschaft und Viehhaltung je Bundesstaat (Corn Belt, Weizen, Dairy Belt, Ranching, Baumwolle, Sonderkulturen), Manufacturing Belt und Sun Belt, 22 Industriestandorte
 - Alle Siedlungen Deutschlands (Gemeinden und Ortsteile) mit Größenklassen-Filter in der Legende und Ortssuche
 - Kartensätze: Objekte auswählen und nummerieren (1 2 3, a b c, A B C, I II III), mit Namen auf dem Server speichern und teilen; liegen zwei Nummern fast aufeinander (Berlin als Stadt und als Land), rücken sie auseinander
 - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX mit der Karte auf Seite 1, leer oder mit Lösung
