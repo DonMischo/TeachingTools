@@ -89,7 +89,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
 
   const stil = useMemo(() => {
     if (!katalog) return null;
-    const grund = baueStil(katalog, { ...inhalt, beschriftung: inhalt.beschriftung && !druck }, inhalt.art);
+    const grund = baueStil(katalog, { ...inhalt, beschriftung: inhalt.beschriftung && !druck, partikel: partikelAn && !druck }, inhalt.art);
     const anker: FeatureCollection = { type: "FeatureCollection", features: [] };
     for (const [ebene, marken] of Object.entries(nummern)) {
       if (!inhalt.ebenen.includes(ebene)) continue;
@@ -100,7 +100,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
       }
     }
     return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck, projektion: inhalt.projektion });
-  }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [katalog, inhalt, nummern, bearbeiten, druck, datenStand, partikelAn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bereich = region(inhalt.region).bereich;
   const waehleArt = (art: Kartenart) => setInhalt((v) => ({ ...v, art, ...auswahlFuer(art, region(v.region).bereich) }));

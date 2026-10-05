@@ -11,12 +11,13 @@ import { baueFeld, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
 import { vor, zurueck, type Projektion } from "@/lib/karten/projektion";
 
 /** Je Ebene: Wirkradius des Felds (Grad), Partikelzahl, Tempo (Pixel je Bild) */
-const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; farbe: (warm: number) => string }> = {
+const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; leben: number; farbe: (warm: number) => string }> = {
   // Kräftig und mit dunklem Saum: auf hellem und dunklem Meer (Meeresboden) gut zu sehen
-  "welt-stroemungen": { radius: 4, anzahl: 2000, tempo: 0.9, breite: 1.6, farbe: (w) => (w > 0.5 ? "rgb(255,96,48)" : "rgb(40,190,255)") },
-  "welt-winde": { radius: 11, anzahl: 1400, tempo: 1.4, breite: 1.2, farbe: () => "rgba(255,255,255,0.85)" },
+  // Dünne Stromfäden mit langem Schweif, eng an der Strömung; hell getönt: warm orange, kalt eisblau
+  "welt-stroemungen": { radius: 2.5, anzahl: 3200, tempo: 0.7, breite: 1.3, leben: 180,
+    farbe: (w) => (w > 0.5 ? "rgba(255,160,100,0.95)" : "rgba(110,200,255,0.95)") },
+  "welt-winde": { radius: 11, anzahl: 1400, tempo: 1.4, breite: 1.2, leben: 90, farbe: () => "rgba(255,255,255,0.85)" },
 };
-const LEBEN = 90; // Bilder, dann neu geboren
 
 type Partikel = { lon: number; lat: number; alter: number };
 
@@ -53,10 +54,10 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
     karte.on("resize", passend);
 
     const felder: { id: string; feld: Feld; teile: Partikel[] }[] = [];
-    const neu = (feld: Feld, p: Partikel) => {
+    const neu = (feld: Feld, p: Partikel, leben: number) => {
       const s = startpunkt(feld);
       if (s) { p.lon = s[0]; p.lat = s[1]; }
-      p.alter = Math.floor(Math.random() * LEBEN);
+      p.alter = Math.floor(Math.random() * leben);
     };
     // Daten aus der Kartenquelle (auch mit Gast-Token schon geladen); fehlt sie noch, sobald die Quelle meldet.
     // Nicht auf »idle« warten: das Lauflicht hält die Karte ständig in Bewegung.
@@ -69,7 +70,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
         if (!daten?.features || weg) continue;
         // Die Quelle liegt im Kartennetz vor — das Feld rechnet in echten Längen und Breiten
         const feld = baueFeld(projektion === "equalearth" ? daten.features.map(linienZurueck) : daten.features, monat, ART[id].radius);
-        const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p); return p; });
+        const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p, ART[id].leben); return p; });
         felder.push({ id, feld, teile });
       }
     };
@@ -85,20 +86,21 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
       if (document.hidden || !felder.length) return;
       // Schweife verblassen lassen
       g.globalCompositeOperation = "destination-in";
-      g.fillStyle = "rgba(0,0,0,0.95)";
+      // Langsam verblassende Schweife (Stromfäden)
+      g.fillStyle = "rgba(0,0,0,0.97)";
       g.fillRect(0, 0, leinwand.width, leinwand.height);
       g.globalCompositeOperation = "source-over";
       const gradJePixel = 360 / (512 * 2 ** karte.getZoom());
       for (const { id, feld, teile } of felder) {
-        const { tempo, farbe, breite } = ART[id];
+        const { tempo, farbe, breite, leben } = ART[id];
         // Ein Pfad je Farbe statt ein Strich je Partikel
         const pfade = new Map<string, Path2D>();
         for (const p of teile) {
           const [u, v, warm] = wind(feld, p.lon, p.lat);
-          if (++p.alter > LEBEN || Math.hypot(u, v) < 0.05) { neu(feld, p); continue; }
+          if (++p.alter > leben || Math.hypot(u, v) < 0.05) { neu(feld, p, leben); continue; }
           const k = Math.max(0.2, Math.cos((p.lat * Math.PI) / 180));
           const lon = p.lon + (u * tempo * gradJePixel) / k, lat = p.lat + v * tempo * gradJePixel;
-          if (lon < -180 || lon > 180 || lat < -85 || lat > 85) { neu(feld, p); continue; }
+          if (lon < -180 || lon > 180 || lat < -85 || lat > 85) { neu(feld, p, leben); continue; }
           const a = karte.project(vor([p.lon, p.lat], projektion)), b = karte.project(vor([lon, lat], projektion));
           const f = farbe(warm);
           let pfad = pfade.get(f);
@@ -107,7 +109,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
           p.lon = lon; p.lat = lat;
         }
         for (const [f, pfad] of pfade) {
-          g.lineWidth = breite + 1.2; g.strokeStyle = "rgba(15,23,42,0.3)"; g.stroke(pfad);
+          g.lineWidth = breite + 1; g.strokeStyle = "rgba(15,23,42,0.28)"; g.stroke(pfad);
           g.lineWidth = breite; g.strokeStyle = f; g.stroke(pfad);
         }
       }

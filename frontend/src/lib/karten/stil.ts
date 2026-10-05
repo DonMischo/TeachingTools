@@ -88,6 +88,8 @@ export type Auswahl = {
   filter?: Record<string, string[]>;
   /** Kartennetz (fehlt = Equal Earth) */
   projektion?: Projektion;
+  /** Partikelfluss läuft: Strömungslinien treten zurück (blass, ohne Lauflicht) */
+  partikel?: boolean;
 };
 
 /** Welche Filterwerte einer Ebene gerade gezeigt werden. */
@@ -465,11 +467,12 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
       ["interpolate", ["linear"], ["zoom"], 1, ["case", aktiv, a * 2, a], 5, ["case", aktiv, b * 2, b]];
     layers.push(
       { id: `${e.id}:linie`, type: "line", source: e.id, filter: fliesst, layout: linie,
-        paint: { "line-color": farbe, "line-opacity": 0.85, "line-width": meer ? dicke(2.6, 5) : dicke(1.6, 2.6) } },
+        paint: { "line-color": farbe, "line-opacity": auswahl.partikel ? 0.3 : 0.85, "line-width": meer ? dicke(2.6, 5) : dicke(1.6, 2.6) } },
       { id: `${e.id}:gurt`, type: "line", source: e.id, filter: ["all", zeit, gurt],
         paint: { "line-color": farbe, "line-width": dicke(1.8, 3), "line-opacity": 0.8, "line-dasharray": [3, 2] } },
-      { id: `${e.id}:fluss`, type: "line", source: e.id, filter: fliesst, layout: linie,
-        paint: { "line-color": "#ffffff", "line-opacity": 0.9, "line-width": meer ? 1.6 : 1.1, "line-dasharray": [0, 4, 3] } },
+      // Lauflicht nur ohne Partikel — sonst bewegt sich die Strömung doppelt
+      ...(auswahl.partikel ? [] : [{ id: `${e.id}:fluss`, type: "line", source: e.id, filter: fliesst, layout: linie,
+        paint: { "line-color": "#ffffff", "line-opacity": 0.9, "line-width": meer ? 1.6 : 1.1, "line-dasharray": [0, 4, 3] } } as LayerSpecification]),
       { id: `${e.id}:pfeil`, type: "symbol", source: e.id, filter: fliesst,
         layout: { "symbol-placement": meer ? "line" : "line-center", "symbol-spacing": 120, "icon-image": ["concat", "pfeil-", farbe],
           "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true, "icon-size": meer ? 1 : 0.8 } },
