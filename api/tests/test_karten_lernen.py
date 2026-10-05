@@ -172,3 +172,40 @@ def test_ueben_laesst_sich_ausschalten(client, teacher_token):
     code = _quiz_mit(client, teacher_token, [], ueben=False)
     gast = auth(_gast(client, teacher_token, code))
     assert client.get(f"/api/karten/quiz/{code}/ueben", headers=gast).status_code == 403
+
+
+# ── Selbst üben (ohne Sitzung) ───────────────────────────────────────
+
+def _schueler(db, klass):
+    from api.auth import create_access_token
+    from api.models import Student
+    s = Student(vorname="Kim", nachname="Test", klasse="5a", class_id=klass.id, active=True)
+    db.add(s)
+    db.flush()
+    return auth(create_access_token({"sub": str(s.id), "type": "student"}))
+
+
+def test_schueler_ueben_geteilte_saetze_ohne_code(client, db, teacher_token, klass):
+    lk = auth(teacher_token)
+    erfolge = [{"id": "drei-tage", "name": "Dranbleiben", "art": "dranbleiben", "anzahl": 1},
+               {"id": "profi", "name": "Profi", "art": "anteil", "ebenen": ["de-staedte"]}]
+    geteilt = client.post("/api/karten/saetze", json={**SATZ, "geteilt": True, "inhalt": {**SATZ["inhalt"], "erfolge": erfolge}}, headers=lk).json()["id"]
+    privat = client.post("/api/karten/saetze", json={**SATZ, "titel": "Privat"}, headers=lk).json()["id"]
+    client.cookies.clear()
+    sch = _schueler(db, klass)
+
+    liste = client.get("/api/karten/quiz/ueben/saetze", headers=sch).json()
+    assert [s["id"] for s in liste] == [geteilt] and liste[0]["aufgaben"] == 3
+    assert client.get(f"/api/karten/quiz/ueben/{privat}", headers=sch).status_code == 404
+
+    satz = client.get(f"/api/karten/quiz/ueben/{geteilt}", headers=sch).json()
+    assert [e["id"] for e in satz["erfolge"]] == ["drei-tage"]  # nur Lern-Erfolge
+    ebene = client.get(f"/api/karten/quiz/ueben/{geteilt}/ebene/de-staedte", headers=sch).json()
+    assert all("name" not in f["properties"] for f in ebene["features"])
+
+    a = client.get(f"/api/karten/quiz/ueben/{geteilt}/naechste", headers=sch).json()
+    namen = {1: "Erfurt", 2: "Jena", 3: "Saale"}
+    r = client.post(f"/api/karten/quiz/ueben/{geteilt}", json={"nr": a["nr"], "richtung": a["richtung"],
+                    "antwort": namen[a["nr"]] if a["richtung"] == "benennen" else a.get("token", "x")}, headers=sch).json()
+    assert r["neue_erfolge"] == ["drei-tage"] and r["erreicht"] == ["drei-tage"]
+    assert client.get("/api/karten/quiz/ueben/saetze", headers=sch).json()[0]["geuebt"] == 1

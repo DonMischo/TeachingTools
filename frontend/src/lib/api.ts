@@ -4,7 +4,7 @@ import type {
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
-import type { QuizAntwortOut, QuizSpiel, QuizUebersicht, UebenAntwortOut, UebenAufgabe } from "@/lib/karten/quiz";
+import type { QuizAntwortOut, QuizSpiel, QuizUebersicht, SelbstUebenKurz, SelbstUebenSatz, UebenAntwortOut, UebenAufgabe } from "@/lib/karten/quiz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1616,6 +1616,12 @@ export const api = {
       ffetch<UebenAufgabe>(`karten/quiz/${encodeURIComponent(code)}/ueben`, undefined, token ?? undefined),
     uebenAntwort: (code: string, body: { nr: number; richtung: string; antwort: string }, token?: string | null) =>
       ffetch<UebenAntwortOut>(`karten/quiz/${encodeURIComponent(code)}/ueben`, { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
+    // Üben ohne Sitzungscode (Konto nötig): geteilte Kartensätze
+    selbstSaetze: () => apiFetch<SelbstUebenKurz[]>("karten/quiz/ueben/saetze"),
+    selbstSatz: (id: number) => apiFetch<SelbstUebenSatz>(`karten/quiz/ueben/${id}`),
+    selbstNaechste: (id: number) => apiFetch<UebenAufgabe>(`karten/quiz/ueben/${id}/naechste`),
+    selbstAntwort: (id: number, body: { nr: number; richtung: string; antwort: string }) =>
+      apiFetch<UebenAntwortOut & { erreicht: string[] }>(`karten/quiz/ueben/${id}`, { method: "POST", body: JSON.stringify(body) }),
     quizUebersicht: (code: string) => apiFetch<QuizUebersicht>(`karten/quiz/${encodeURIComponent(code)}/uebersicht`),
     quizPunkte: (code: string) => apiFetch<{ vergeben: QuizUebersicht["punkte"] }>(`karten/quiz/${encodeURIComponent(code)}/punkte`, { method: "POST" }),
     quizZuruecksetzen: (code: string) => apiFetch<void>(`karten/quiz/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),

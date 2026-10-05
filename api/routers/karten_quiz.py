@@ -24,11 +24,12 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import karten_lernen as lernen
 from .. import karten_quiz as engine
-from ..auth import get_current_teacher, get_player
+from ..auth import get_current_teacher, get_current_user, get_player
 from ..config import settings
 from ..database import get_db
 from ..display_names import short_name
@@ -339,10 +340,8 @@ def _pool(liste: list[dict], ziel: dict, rng: random.Random) -> list[dict]:
     return pool
 
 
-@router.get("/{code}/ueben")
-def ueben_naechste(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
+def _ueben_aufgabe(db: Session, satz: KartenSatz, liste: list[dict], geheim: str, spieler) -> dict:
     """Nächste Übungsaufgabe: was am meisten Übung braucht; unsicher → Auswahl mit Ablenkern, sicher → frei."""
-    s, satz, liste = _ueben_sitzung(db, code)
     ls = _lernstand(db, satz.id, spieler, anlegen=True)
     rng = random.Random()
     a = lernen.waehle(liste, ls.objekte, ls.letzte, datetime.now(timezone.utc), rng)
@@ -351,7 +350,6 @@ def ueben_naechste(code: str, db: Session = Depends(get_db), spieler=Depends(get
     eintrag = ls.objekte.get(lernen.schluessel(a))
     art = lernen.richtung(eintrag, rng)
     hilfe = lernen.hilfe(eintrag, art)
-    geheim = _geheim(s)
     aus = {"nr": a["nr"], "richtung": art, "hilfe": hilfe, "kategorie": a["kategorie"], "ebene": a["ebene"],
            "sicherheit": round(lernen.sicherheit(eintrag), 2)}
     if art == "benennen":
@@ -371,6 +369,12 @@ def ueben_naechste(code: str, db: Session = Depends(get_db), spieler=Depends(get
     return aus
 
 
+@router.get("/{code}/ueben")
+def ueben_naechste(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    s, satz, liste = _ueben_sitzung(db, code)
+    return _ueben_aufgabe(db, satz, liste, _geheim(s), spieler)
+
+
 class UebenIn(BaseModel):
     nr: int = Field(ge=1)
     richtung: Literal["benennen", "finden"]
@@ -381,13 +385,8 @@ class UebenIn(BaseModel):
 def ueben_antwort(code: str, body: UebenIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
     """Übungsantwort: zählt nicht fürs Quiz, aber für Lernstand und Erfolge; die Lösung kommt immer mit."""
     s, satz, liste = _ueben_sitzung(db, code)
-    aufgabe = next((a for a in liste if a["nr"] == body.nr), None)
-    if aufgabe is None:
-        raise HTTPException(404, "Aufgabe nicht gefunden")
     geheim = _geheim(s)
-    richtig = engine.pruefe(aufgabe, body.richtung, body.antwort, geheim)
-    ls = _lernstand(db, satz.id, spieler, anlegen=True)
-    _verbuche(ls, aufgabe, richtig, body.richtung, None if richtig else _verwechselt(liste, aufgabe, body.richtung, body.antwort, geheim))
+    aufgabe, richtig, ls = _ueben_pruefen(db, satz, liste, geheim, spieler, body)
     st = _stand(db, s, spieler, anlegen=True)
     neue = _neue_erfolge(st, erfolge_fuer(satz.inhalt, liste), liste, ls)
     if neue:
@@ -396,6 +395,110 @@ def ueben_antwort(code: str, body: UebenIn, db: Session = Depends(get_db), spiel
     return {"richtig": richtig, "name": aufgabe["name"], "token": engine.token(geheim, aufgabe["ebene"], aufgabe["id"]),
             "sicherheit": round(lernen.sicherheit(ls.objekte.get(lernen.schluessel(aufgabe))), 2),
             "neue_erfolge": neue, "stand": _stand_out(st), "lernen": _lern_out(ls, liste)}
+
+
+def _ueben_pruefen(db: Session, satz: KartenSatz, liste: list[dict], geheim: str, spieler, body: UebenIn):
+    """Übungsantwort prüfen und im Lernstand verbuchen (mit Verwechslung)."""
+    aufgabe = next((a for a in liste if a["nr"] == body.nr), None)
+    if aufgabe is None:
+        raise HTTPException(404, "Aufgabe nicht gefunden")
+    richtig = engine.pruefe(aufgabe, body.richtung, body.antwort, geheim)
+    ls = _lernstand(db, satz.id, spieler, anlegen=True)
+    _verbuche(ls, aufgabe, richtig, body.richtung, None if richtig else _verwechselt(liste, aufgabe, body.richtung, body.antwort, geheim))
+    return aufgabe, richtig, ls
+
+
+# ── Selbst üben (ohne Sitzung, mit Konto) ────────────────────────────
+#
+# Eingeloggte üben geteilte Kartensätze (Lehrkräfte auch eigene) direkt, ohne
+# Code. Gleiche Logik wie »Üben« im Quiz; Erfolge, die aus dem Lernstand
+# kommen (beide, aufgeholt, dranbleiben), stehen im Lernstand.
+
+LERN_ARTEN = ("beide", "aufgeholt", "dranbleiben")
+
+
+def _uebungssatz(db: Session, satz_id: int, wer) -> tuple[KartenSatz, list[dict]]:
+    satz = db.get(KartenSatz, satz_id)
+    eigen = isinstance(wer, Teacher) and satz is not None and satz.created_by == wer.id
+    if satz is None or not (eigen or satz.geteilt):
+        raise HTTPException(404, "Kartensatz nicht gefunden")
+    liste = aufgaben(db, satz)
+    if not liste:
+        raise HTTPException(404, "Dieser Kartensatz hat keine Aufgaben")
+    return satz, liste
+
+
+def _geheim_satz(satz: KartenSatz) -> str:
+    return f"{settings.secret_key}:karten-ueben:{satz.id}"
+
+
+def _lern_erfolge(satz: KartenSatz, liste: list[dict]) -> list[dict]:
+    return [v for v in erfolge_fuer(satz.inhalt, liste) if v.get("art") in LERN_ARTEN]
+
+
+@router.get("/ueben/saetze")
+def selbst_saetze(db: Session = Depends(get_db), wer=Depends(get_current_user)):
+    """Kartensätze zum Üben: geteilte, für Lehrkräfte auch die eigenen — mit eigenem Lernstand."""
+    q = db.query(KartenSatz)
+    q = q.filter(or_(KartenSatz.geteilt.is_(True), KartenSatz.created_by == wer.id)) if isinstance(wer, Teacher) else q.filter(KartenSatz.geteilt.is_(True))
+    aus = []
+    for satz in q.order_by(KartenSatz.titel).all():
+        n = sum(len(w.get("objekte", [])) for w in (satz.inhalt or {}).get("auswahl", {}).values())
+        if not n:
+            continue
+        ls = _lernstand(db, satz.id, wer, anlegen=False)
+        sicher = [lernen.sicherheit(e) for e in (ls.objekte.values() if ls else [])]
+        aus.append({"id": satz.id, "titel": satz.titel, "aufgaben": n, "geuebt": len(sicher),
+                    "sicher": sum(1 for x in sicher if x >= 0.8)})
+    return aus
+
+
+@router.get("/ueben/{satz_id}")
+def selbst_satz(satz_id: int, db: Session = Depends(get_db), wer=Depends(get_current_user)):
+    satz, liste = _uebungssatz(db, satz_id, wer)
+    ls = _lernstand(db, satz.id, wer, anlegen=False)
+    spiel = engine.fuer_spieler(liste, "finden", _geheim_satz(satz))
+    return {"titel": satz.titel, "katalog": _katalog_meta(db, satz.inhalt), "karte": _karte(satz.inhalt),
+            "spiel": {"modus": "finden", "aufgaben": [], "auswahl": spiel["auswahl"]},
+            "erfolge": _erfolge_out(_lern_erfolge(satz, liste), _ebenen_namen(db)),
+            "erreicht": ls.erfolge if ls else [], "lernen": _lern_out(ls, liste)}
+
+
+@router.get("/ueben/{satz_id}/ebene/{ebene_id}")
+def selbst_ebene(satz_id: int, ebene_id: str, request: Request, projektion: str | None = None, db: Session = Depends(get_db),
+                 wer=Depends(get_current_user)):
+    satz, _ = _uebungssatz(db, satz_id, wer)
+    if ebene_id not in satz.inhalt.get("ebenen", []):
+        raise HTTPException(404, "Diese Ebene gehört nicht zum Kartensatz")
+    sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim_satz(satz))
+    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
+                        headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+    return Response(daten, media_type="application/geo+json")
+
+
+@router.get("/ueben/{satz_id}/naechste")
+def selbst_naechste(satz_id: int, db: Session = Depends(get_db), wer=Depends(get_current_user)):
+    satz, liste = _uebungssatz(db, satz_id, wer)
+    return _ueben_aufgabe(db, satz, liste, _geheim_satz(satz), wer)
+
+
+@router.post("/ueben/{satz_id}")
+def selbst_antwort(satz_id: int, body: UebenIn, db: Session = Depends(get_db), wer=Depends(get_current_user)):
+    satz, liste = _uebungssatz(db, satz_id, wer)
+    geheim = _geheim_satz(satz)
+    aufgabe, richtig, ls = _ueben_pruefen(db, satz, liste, geheim, wer, body)
+    # Lern-Erfolge gegen einen leeren Quizstand prüfen (nur Lernstand zählt)
+    erreicht, alle = set(ls.erfolge), _lern_erfolge(satz, liste)
+    neue = [v["id"] for v in alle if v["id"] not in erreicht and lernen.erfolg_erreicht(
+        v, liste, {}, {}, ls.objekte, ls.tage, erreicht, [x["id"] for x in alle])]
+    if neue:
+        ls.erfolge = [*ls.erfolge, *neue]
+    db.commit()
+    return {"richtig": richtig, "name": aufgabe["name"], "token": engine.token(geheim, aufgabe["ebene"], aufgabe["id"]),
+            "sicherheit": round(lernen.sicherheit(ls.objekte.get(lernen.schluessel(aufgabe))), 2),
+            "neue_erfolge": neue, "erreicht": ls.erfolge, "lernen": _lern_out(ls, liste)}
 
 
 # ── Lehrkraft ────────────────────────────────────────────────────────

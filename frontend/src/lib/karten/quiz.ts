@@ -48,6 +48,10 @@ export type QuizLernen = { sicherheit: Record<string, number>; schwach: number; 
 
 export type QuizAntwortOut = { richtig: boolean; versuche: number; neue_erfolge: string[]; stand: QuizStand; loesung?: string; lernen?: QuizLernen };
 
+/** Üben ohne Sitzung: ein Kartensatz (api/routers/karten_quiz.py::selbst_satz) */
+export type SelbstUebenSatz = Pick<QuizSpiel, "titel" | "katalog" | "karte" | "spiel" | "erfolge"> & { erreicht: string[]; lernen: QuizLernen };
+export type SelbstUebenKurz = { id: number; titel: string; aufgaben: number; geuebt: number; sicher: number };
+
 /** Lernhelfer: eine Übungsaufgabe (api/routers/karten_quiz.py::ueben_naechste) */
 export type UebenAufgabe = {
   nr: number; richtung: QuizModus; hilfe: "auswahl" | "frei"; kategorie: string; ebene: string; sicherheit: number;

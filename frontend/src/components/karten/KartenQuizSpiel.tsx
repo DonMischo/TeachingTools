@@ -209,7 +209,7 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
 }
 
 /** Seitenleiste im Übungsmodus: Aufgabe, Hilfe (Auswahl) oder freie Eingabe, Sicherheit. */
-function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, senden, weiter }: {
+export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, senden, weiter }: {
   uebung: UebenAufgabe | null; ergebnis: UebenAntwortOut | null; lernen: QuizLernen | null;
   eingabe: string; setEingabe: (s: string) => void; senden: (antwort: string) => Promise<void>; weiter: () => Promise<void>;
 }) {

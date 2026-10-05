@@ -29,6 +29,7 @@ import OrtSuche from "./OrtSuche";
 import ErfolgeEditor from "./ErfolgeEditor";
 import VorlageJson from "./VorlageJson";
 import KartenMenue from "./KartenMenue";
+import UebenListe from "./UebenListe";
 
 const START_ART: Kartenart = "topographisch";
 const neuerInhalt = (art: Kartenart): SatzInhalt => ({ art, region: "deutschland", ...auswahlFuer(art, "de"), ausschnitt: null, auswahl: {},
@@ -198,6 +199,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
               </>
             ) : (
               <>
+                <UebenListe />
                 <OrtSuche bereich={bereich} onWahl={zeigeTreffer} />
                 <label className="flex items-center gap-2 font-bold">
                   <input type="checkbox" checked={inhalt.beschriftung}

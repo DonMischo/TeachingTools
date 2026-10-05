@@ -143,6 +143,7 @@ def _run_migrations(db_engine):
     migrations = [
         "ALTER TABLE classes ADD COLUMN IF NOT EXISTS class_name VARCHAR(100)",
         "ALTER TABLE karten_quiz_staende ADD COLUMN IF NOT EXISTS verlauf JSON NOT NULL DEFAULT '{}'",
+        "ALTER TABLE karten_lernstaende ADD COLUMN IF NOT EXISTS erfolge JSON NOT NULL DEFAULT '[]'",
         "ALTER TABLE slideshow_items ADD COLUMN IF NOT EXISTS calendar_categories JSON NOT NULL DEFAULT '[]'",
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS mode VARCHAR(20) NOT NULL DEFAULT 'next-free-line'",
         "ALTER TABLE students ADD COLUMN IF NOT EXISTS extra_fields JSON NOT NULL DEFAULT '{}'",

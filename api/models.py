@@ -2445,6 +2445,8 @@ class KartenLernstand(Base):
     objekte: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
     tage: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     letzte: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    # Erfolge aus dem Üben ohne Sitzung (beide, aufgeholt, dranbleiben)
+    erfolge: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     aktualisiert_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
