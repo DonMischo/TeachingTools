@@ -37,7 +37,7 @@ export function Sperrbildschirm({
       data-testid="sperrbildschirm"
       onClick={() => setAnmelden(true)}
       onKeyDown={() => setAnmelden(true)}
-      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center text-white outline-none select-none"
+      className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center text-white outline-hidden select-none"
       style={{ background: hintergrundCss(aussehen.sperrBild), cursor: "default" }}
     >
       {!anmelden ? (

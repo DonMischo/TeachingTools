@@ -84,7 +84,7 @@ export function Kontextmenue({
             aria-disabled={e.aus || undefined}
             disabled={e.aus}
             onClick={() => { e.onWahl?.(); onZu(); }}
-            className="w-full flex items-center gap-3 h-8 px-3 rounded text-left enabled:hover:bg-black/[0.06] enabled:active:bg-black/[0.04]"
+            className="w-full flex items-center gap-3 h-8 px-3 rounded-sm text-left enabled:hover:bg-black/6 enabled:active:bg-black/4"
             style={{ color: e.aus ? "rgba(0,0,0,0.36)" : undefined }}
           >
             <span className="w-4 h-4 flex items-center justify-center shrink-0">{e.symbol}</span>

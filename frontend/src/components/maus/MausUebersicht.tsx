@@ -27,7 +27,7 @@ function vor(iso: string): string {
 }
 
 function Sterne({ n }: { n: number | undefined }) {
-  if (!n) return <span className="text-[var(--text-muted)]">·</span>;
+  if (!n) return <span className="text-(--text-muted)">·</span>;
   return <span className="text-amber-500 tracking-tighter" title={`${n} von 3 Sternen`}>{"★".repeat(n)}</span>;
 }
 
@@ -59,7 +59,7 @@ export default function MausUebersicht() {
   });
 
   if (sitzungFehler) {
-    return <p className="text-sm text-[var(--red)]">Die Sitzung ließ sich nicht öffnen.</p>;
+    return <p className="text-sm text-(--red)">Die Sitzung ließ sich nicht öffnen.</p>;
   }
 
   const kopf = (teil: Teil) => (
@@ -73,22 +73,22 @@ export default function MausUebersicht() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-[var(--text-muted)]">
-        Alle, die über den Code <b className="text-[var(--text)] tracking-widest">{code ?? "…"}</b> mitmachen.
+      <p className="text-sm text-(--text-muted)">
+        Alle, die über den Code <b className="text-(--text) tracking-widest">{code ?? "…"}</b> mitmachen.
         Die Liste aktualisiert sich alle fünf Sekunden; 🤝 heißt Hilfsmodus.
       </p>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
-        {isLoading && <p className="text-sm text-[var(--text-muted)] p-6 text-center">wird geladen …</p>}
-        {isError && <p className="text-sm text-[var(--red)] p-6 text-center">Die Übersicht ließ sich nicht laden.</p>}
+      <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto">
+        {isLoading && <p className="text-sm text-(--text-muted) p-6 text-center">wird geladen …</p>}
+        {isError && <p className="text-sm text-(--red) p-6 text-center">Die Übersicht ließ sich nicht laden.</p>}
         {!isLoading && !isError && zeilen.length === 0 && (
-          <p className="text-sm text-[var(--text-muted)] p-6 text-center">
+          <p className="text-sm text-(--text-muted) p-6 text-center">
             Noch niemand da. Zeig den Code oder QR über »Zum Mitmachen«.
           </p>
         )}
         {zeilen.length > 0 && (
           <table className="w-full text-sm" data-testid="maus-uebersicht">
-            <thead className="text-[var(--text-muted)] border-b border-[var(--border)]">
+            <thead className="text-(--text-muted) border-b border-(--border)">
               <tr>
                 <th className="px-3 py-2 text-left font-normal">Name</th>
                 {kopf(1)}
@@ -101,11 +101,11 @@ export default function MausUebersicht() {
             </thead>
             <tbody>
               {zeilen.map((z, i) => (
-                <tr key={`${z.name}-${i}`} className="border-b border-[var(--border)] last:border-0">
+                <tr key={`${z.name}-${i}`} className="border-b border-(--border) last:border-0">
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className="font-bold">{z.name}</span>
-                    {z.klasse && <span className="text-xs text-[var(--text-muted)] ml-2">{z.klasse}</span>}
-                    {z.gast && <span className="text-xs text-[var(--text-muted)] ml-2">Gast</span>}
+                    {z.klasse && <span className="text-xs text-(--text-muted) ml-2">{z.klasse}</span>}
+                    {z.gast && <span className="text-xs text-(--text-muted) ml-2">Gast</span>}
                     {z.hilfe && <span className="ml-2" title="Hilfsmodus">🤝</span>}
                   </td>
                   <Teilzellen z={z} teil={1} />
@@ -113,7 +113,7 @@ export default function MausUebersicht() {
                   <Teilzellen z={z} teil={2} />
                   <td />
                   <Teilzellen z={z} teil={3} />
-                  <td className="px-3 py-2 text-right text-xs text-[var(--text-muted)] whitespace-nowrap">{vor(z.aktualisiert_am)}</td>
+                  <td className="px-3 py-2 text-right text-xs text-(--text-muted) whitespace-nowrap">{vor(z.aktualisiert_am)}</td>
                 </tr>
               ))}
             </tbody>

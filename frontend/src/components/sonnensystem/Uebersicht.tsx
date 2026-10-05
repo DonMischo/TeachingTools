@@ -364,7 +364,7 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
             className="absolute left-0 top-0 pointer-events-auto flex items-center gap-1.5 whitespace-nowrap"
             style={{ display: "none" }}
           >
-            <span className="block rounded-full -ml-[4px]" style={{
+            <span className="block rounded-full ml-[-4px]" style={{
               width: k.art === "mond" ? 6 : 8, height: k.art === "mond" ? 6 : 8,
               background: k.farbe, boxShadow: `0 0 8px ${k.farbe}`,
               outline: k.id === ausgewaehlt ? "2px solid white" : undefined, outlineOffset: 2,
@@ -384,7 +384,7 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
 
       {/* Zeit */}
       <div className="absolute left-3 top-3 right-3 flex flex-wrap items-center gap-2 pointer-events-none">
-        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-xl bg-black/55 backdrop-blur px-2 py-1.5 border border-white/10">
+        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-xl bg-black/55 backdrop-blur-sm px-2 py-1.5 border border-white/10">
           <button
             onClick={() => setLaeuft(l => !l)}
             className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white"
@@ -395,7 +395,7 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
             aria-label="Datum"
             value={datum.toISOString().slice(0, 10)}
             onChange={e => { if (e.target.value) springe(new Date(`${e.target.value}T12:00:00`)); }}
-            className="bg-transparent text-white text-sm font-bold tabular-nums [color-scheme:dark] w-[8.5rem]"
+            className="bg-transparent text-white text-sm font-bold tabular-nums scheme-dark w-34"
           />
           <button onClick={() => springe(new Date())} className="text-xs text-sky-300 hover:text-sky-200 px-1">Heute</button>
           <Knopfgruppe
@@ -408,7 +408,7 @@ export default function Uebersicht({ ausgewaehlt, onWaehle, onKepler }: {
 
       {/* Ansicht */}
       <div className="absolute left-3 bottom-3 flex flex-col gap-2 items-start pointer-events-none max-w-[calc(100%-1.5rem)]">
-        <div className="pointer-events-auto flex flex-wrap gap-2 rounded-xl bg-black/55 backdrop-blur px-2 py-1.5 border border-white/10">
+        <div className="pointer-events-auto flex flex-wrap gap-2 rounded-xl bg-black/55 backdrop-blur-sm px-2 py-1.5 border border-white/10">
           <Knopfgruppe
             werte={[{ wert: "gestaucht", name: "Abstände gestaucht" }, { wert: "echt", name: "Abstände echt" }]}
             aktiv={optionen.abstaende}

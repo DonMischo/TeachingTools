@@ -127,11 +127,11 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
   const himmel = textur("milchstrasse")?.datei;
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🪐 Sonnensystem</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1 max-w-2xl">
+          <p className="text-(--text-muted) text-sm mt-1 max-w-2xl">
             Sonne, Planeten und ihre wichtigsten Monde — auf echten Bahnen, maßstabsgetreu verglichen und zum Selberfliegen.
             Mit Bildern von Hubble, Webb, Raumsonden, Rovern und Astronauten.
           </p>
@@ -141,7 +141,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
 
       <div
         ref={rahmenRef}
-        className={`flex flex-col gap-2 ${vollbild ? "h-[100dvh] p-2 bg-black" : ""}`}
+        className={`flex flex-col gap-2 ${vollbild ? "h-dvh p-2 bg-black" : ""}`}
       >
         <div className="flex items-center gap-2">
           <div className="flex gap-1 overflow-x-auto flex-1" role="tablist">
@@ -153,8 +153,8 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
                 onClick={() => setReiter(r.id)}
                 className={`shrink-0 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${
                   reiter === r.id
-                    ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)]"
+                    ? "bg-(--accent) text-(--accent-text,#111)"
+                    : "text-(--text-muted) hover:text-(--text) border border-(--border)"
                 }`}
               >{r.name}</button>
             ))}
@@ -162,7 +162,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
           {vollbildMoeglich && (
             <button
               onClick={umschaltenVollbild}
-              className="shrink-0 px-3 py-2 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
+              className="shrink-0 px-3 py-2 rounded-xl text-sm border border-(--border) text-(--text-muted) hover:text-(--text)"
               title={vollbild ? "Vollbild verlassen" : "Vollbild"}
             >{vollbild ? "⤡" : "⛶"}</button>
           )}
@@ -208,7 +208,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         </div>
 
         {reiter === "flug" && imBrowser && (
-          <div className="fixed inset-0 h-[100dvh] z-40 bg-black">
+          <div className="fixed inset-0 h-dvh z-40 bg-black">
             <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Lade 3D …</div>}>
               <Flug
                 onSteckbrief={waehle}
@@ -226,7 +226,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         )}
 
         {reiter === "flug" && kodexUeberFlug && (
-          <div className="fixed inset-0 h-[100dvh] z-[45] bg-slate-950/95 backdrop-blur">
+          <div className="fixed inset-0 h-dvh z-45 bg-slate-950/95 backdrop-blur-sm">
             <div className="h-full max-w-5xl mx-auto">
               <Kodex
                 fortschritt={fortschritt} alleZeigen={zeigeAlles} bereich={kodexUeberFlug}
@@ -250,8 +250,8 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
         {naechsterErfolg && (
           <button
             onClick={() => forschung.gesehen(naechsterErfolg.id)}
-            className="fixed left-1/2 top-4 -translate-x-1/2 z-[60] flex items-center gap-3 rounded-2xl border border-amber-300/60
-              bg-slate-950/90 backdrop-blur px-4 py-3 text-left shadow-[0_0_30px_rgba(252,211,77,0.35)] animate-[erfolg_0.5s_ease-out]"
+            className="fixed left-1/2 top-4 -translate-x-1/2 z-60 flex items-center gap-3 rounded-2xl border border-amber-300/60
+              bg-slate-950/90 backdrop-blur-sm px-4 py-3 text-left shadow-[0_0_30px_rgba(252,211,77,0.35)] animate-[erfolg_0.5s_ease-out]"
             role="status"
           >
             <style>{"@keyframes erfolg { from { opacity: 0; transform: translate(-50%, -20px) scale(.95) } to { opacity: 1; transform: translate(-50%, 0) } }"}</style>

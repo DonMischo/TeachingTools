@@ -101,14 +101,14 @@ export function FahrradWerkstatt({ rad, onRad, onFertig, onNochmal, onZu }: {
               <span key={s} className={`rounded-full px-2.5 py-0.5 ${schritt === i + 1 ? "bg-sky-500 text-black" : schritt > i + 1 ? "bg-emerald-600/60" : "bg-slate-700"}`}>{i + 1}. {s}</span>
             ))}
           </div>
-          <div className="relative flex min-h-0 flex-1 items-center justify-center rounded-xl bg-gradient-to-b from-slate-100 to-slate-300 p-2"
+          <div className="relative flex min-h-0 flex-1 items-center justify-center rounded-xl bg-linear-to-b from-slate-100 to-slate-300 p-2"
             style={{ cursor: werkzeug ? "crosshair" : "zoom-in" }}>
             <div className="w-full max-w-[900px]">
               <FahrradBild rad={check.rad} auswahl={auswahl} onTeil={klick} breite="voll" geprueft={ende ? undefined : check.geprueft} />
             </div>
             {werkzeug && <div className="pointer-events-none absolute left-3 top-2 rounded-lg bg-slate-900/80 px-2 py-1 text-xs font-bold">{WERKZEUGE[werkzeug].icon} {WERKZEUGE[werkzeug].name} in der Hand</div>}
           </div>
-          <div className={`min-h-[2.5rem] rounded-lg px-3 py-2 text-sm font-bold ${meldung.gut === true ? "bg-emerald-700/40 text-emerald-100" : meldung.gut === false ? "bg-rose-700/40 text-rose-100" : "bg-slate-800 text-sky-200"}`}>
+          <div className={`min-h-10 rounded-lg px-3 py-2 text-sm font-bold ${meldung.gut === true ? "bg-emerald-700/40 text-emerald-100" : meldung.gut === false ? "bg-rose-700/40 text-rose-100" : "bg-slate-800 text-sky-200"}`}>
             {meldung.text}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ export function FahrradWerkstatt({ rad, onRad, onFertig, onNochmal, onZu }: {
             <span className="font-black">📋 Checkliste</span>
             <span className="text-xs opacity-80">geprüft {geprueft}/{CHECKLISTE.length} · in Ordnung {inOrdnung}/{CHECKLISTE.length}</span>
           </div>
-          <div className="mb-2 h-1.5 overflow-hidden rounded bg-slate-700">
+          <div className="mb-2 h-1.5 overflow-hidden rounded-sm bg-slate-700">
             <div className="h-full bg-emerald-500 transition-all" style={{ width: `${(inOrdnung / CHECKLISTE.length) * 100}%` }} />
           </div>
           <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-auto pr-1">

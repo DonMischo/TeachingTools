@@ -94,11 +94,11 @@ export default function Tiefenprofil() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <button onClick={() => setNurOben(false)} className={`px-3 py-1 rounded-lg font-bold ${!nurOben ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "border border-[var(--border)]"}`}>ganze Erde</button>
-        <button onClick={() => setNurOben(true)} className={`px-3 py-1 rounded-lg font-bold ${nurOben ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "border border-[var(--border)]"}`}>obere 1000 km</button>
-        <span className="text-[var(--text-muted)]">Mit der Maus (oder dem Finger) über das Bild fahren.</span>
+        <button onClick={() => setNurOben(false)} className={`px-3 py-1 rounded-lg font-bold ${!nurOben ? "bg-(--accent) text-(--accent-text,#111)" : "border border-(--border)"}`}>ganze Erde</button>
+        <button onClick={() => setNurOben(true)} className={`px-3 py-1 rounded-lg font-bold ${nurOben ? "bg-(--accent) text-(--accent-text,#111)" : "border border-(--border)"}`}>obere 1000 km</button>
+        <span className="text-(--text-muted)">Mit der Maus (oder dem Finger) über das Bild fahren.</span>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="overflow-x-auto rounded-2xl border border-(--border) bg-(--surface)">
         <svg ref={svgRef} viewBox={`0 0 ${breite} ${OBEN + HOEHE + 30}`} className="w-full min-w-[760px] touch-none select-none"
           onPointerMove={bewegen} onPointerDown={bewegen}>
           {/* Schichtbalken */}
@@ -169,7 +169,7 @@ export default function Tiefenprofil() {
       </div>
 
       {tiefe != null && sch && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 text-sm grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 text-sm grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           <Wert k="Tiefe" v={`${fmt(tiefe, 0)} km`} />
           <Wert k="Schicht" v={sch.name} />
           <Wert k="Temperatur" v={`${fmt(profilWert("temperatur", tiefe), 0)} °C`} />
@@ -202,7 +202,7 @@ export default function Tiefenprofil() {
 function Wert({ k, v }: { k: string; v: string }) {
   return (
     <div>
-      <div className="text-[11px] text-[var(--text-muted)]">{k}</div>
+      <div className="text-[11px] text-(--text-muted)">{k}</div>
       <div className="font-bold">{v}</div>
     </div>
   );
@@ -210,7 +210,7 @@ function Wert({ k, v }: { k: string; v: string }) {
 
 function Hinweis({ titel, children }: { titel: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 leading-relaxed">
+    <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 leading-relaxed">
       <h4 className="font-black mb-1">{titel}</h4>
       <p>{children}</p>
     </div>

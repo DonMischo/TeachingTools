@@ -182,7 +182,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
 
   const aktion = (icon: string, text: string, f: (x: Spielstand) => Ergebnis, p: Platz, title?: string) => (
     <button key={text} type="button" title={title ?? text} onClick={() => tu(f, p)}
-      className="flex min-w-[4.5rem] flex-col items-center gap-0.5 rounded-xl bg-slate-800 px-2 py-1.5 text-xs font-bold text-white shadow ring-1 ring-white/10 hover:bg-slate-700">
+      className="flex min-w-18 flex-col items-center gap-0.5 rounded-xl bg-slate-800 px-2 py-1.5 text-xs font-bold text-white shadow-sm ring-1 ring-white/10 hover:bg-slate-700">
       <span className="text-xl">{icon}</span>{text}
     </button>
   );
@@ -251,7 +251,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
               { serie: "Serie", zocken: "Zocken", lesen: "Lesen", telefonieren: "Anrufen", lernen: "Lernen", sport: "Workout", chillen: "Chillen" }[f],
               (x) => freizeit(x, f, f === "sport" ? 1 : 2), f === "lernen" ? "tisch" : f === "sport" ? "mitte" : "sofa"))}
             <button type="button" onClick={() => setModal({ art: "wohin" })}
-              className="flex min-w-[5rem] flex-col items-center gap-0.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-black shadow hover:bg-amber-400">
+              className="flex min-w-20 flex-col items-center gap-0.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-black shadow-sm hover:bg-amber-400">
               <span className="text-xl">🚪</span>Raus!
             </button>
           </div>
@@ -265,8 +265,8 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
         </div>
 
         {/* Rechts: Handy */}
-        <div className="w-full shrink-0 rounded-[2rem] bg-black p-2 ring-4 ring-slate-700 lg:w-72">
-          <div className="rounded-[1.6rem] bg-gradient-to-b from-indigo-900 to-slate-900 p-3">
+        <div className="w-full shrink-0 rounded-4xl bg-black p-2 ring-4 ring-slate-700 lg:w-72">
+          <div className="rounded-[1.6rem] bg-linear-to-b from-indigo-900 to-slate-900 p-3">
             <div className="mb-2 flex justify-between text-xs text-slate-300"><span>{uhrText(s.stunde)}</span><span>📶 🔋</span></div>
             <div className="mb-3 rounded-xl bg-black/30 p-2">
               <div className="mb-1 text-xs font-black text-white">📋 Nächste Schritte</div>
@@ -275,7 +275,7 @@ export default function RockYourLife({ speicherSchluessel = "geraet", zugang = n
             <div className="grid grid-cols-4 gap-2 lg:grid-cols-3">
               {APPS.map((a) => (
                 <button key={a.id} type="button" onClick={() => setModal({ art: "app", app: a.id })} className="relative flex flex-col items-center gap-0.5 text-[11px] text-white">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow ring-1 ring-white/10">{a.icon}</span>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-2xl shadow-sm ring-1 ring-white/10">{a.icon}</span>
                   {a.name}
                   {a.id === "post" && ungelesen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-rose-600 px-1.5 text-[10px] font-black">{ungelesen}</span>}
                   {a.id === "bank" && offeneRechnungen > 0 && <span className="absolute -right-0.5 -top-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-black">!</span>}

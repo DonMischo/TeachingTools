@@ -1074,7 +1074,7 @@ export default function Flug({
             >
               {istZiel && (
                 // Über dem Zielmarker: Flugstrecke und geschätzte Flugzeit.
-                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
+                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded-sm bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
                   {!gemessen ? "…" : gestauchtesZiel && !nahbereich ? flugzeitText(restzeit) : `${zielStrecke} · ${flugzeitText(restzeit)}`}
                 </span>
               )}
@@ -1100,7 +1100,7 @@ export default function Flug({
               style={{ display: "none" }}
             >
               {istZiel && (
-                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
+                <span className="absolute bottom-full mb-1 whitespace-nowrap rounded-sm bg-black/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-100">
                   {gemessen ? flugzeitText(restzeit) : "…"}
                 </span>
               )}
@@ -1161,11 +1161,11 @@ export default function Flug({
         onClick={() => setMenue(m => !m)}
         aria-label="Menü"
         aria-expanded={menue}
-        className={`absolute left-3 top-3 z-30 w-12 h-12 rounded-xl border backdrop-blur flex flex-col items-center justify-center gap-[5px] ${
+        className={`absolute left-3 top-3 z-30 w-12 h-12 rounded-xl border backdrop-blur-sm flex flex-col items-center justify-center gap-[5px] ${
           menue ? "bg-cyan-400/25 border-cyan-300/70" : "bg-black/55 border-white/15 hover:bg-white/10"
         }`}
       >
-        {[0, 1, 2].map(i => <span key={i} className="block w-5 h-0.5 rounded bg-cyan-100" />)}
+        {[0, 1, 2].map(i => <span key={i} className="block w-5 h-0.5 rounded-sm bg-cyan-100" />)}
       </button>
       {menue && (
         <Menue
@@ -1191,8 +1191,8 @@ export default function Flug({
           }}
         />
       )}
-      <div className="absolute left-[4.25rem] top-3 pointer-events-none">
-        <div className={`rounded-xl bg-black/50 backdrop-blur border px-3 py-2 w-[9.5rem] sm:w-auto sm:min-w-[12rem] ${hud.overdrive > 0 ? "border-fuchsia-300/60" : "border-cyan-300/20"}`}>
+      <div className="absolute left-17 top-3 pointer-events-none">
+        <div className={`rounded-xl bg-black/50 backdrop-blur-sm border px-3 py-2 w-38 sm:w-auto sm:min-w-48 ${hud.overdrive > 0 ? "border-fuchsia-300/60" : "border-cyan-300/20"}`}>
           <div className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] ${
             hud.modus === "overdrive" ? "text-fuchsia-200" : hud.modus === "puls" ? "text-sky-300" : hud.modus === "autopilot" ? "text-amber-300" : "text-cyan-200"
           }`}>
@@ -1238,7 +1238,7 @@ export default function Flug({
       {/* Mitte oben: Ziel */}
       {zielTitel && (
         <div className="absolute left-1/2 -translate-x-1/2 top-3 pointer-events-auto max-w-[min(28rem,calc(100%-26rem))] hidden md:block">
-          <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 text-center">
+          <div className="rounded-xl bg-black/55 backdrop-blur-sm border border-amber-300/30 px-3 py-2 text-center">
             <div className="text-xs font-black uppercase tracking-[0.2em] text-amber-200">🎯 {zielTitel}</div>
             <div className="text-sm font-bold text-amber-50 tabular-nums mt-0.5" title="Geschätzt für einen Flug per Autopilot (G)">
               {zielZeile}
@@ -1253,7 +1253,7 @@ export default function Flug({
       )}
 
       {/* Rechts oben: vorgeschlagener Auftrag. Auf dem Telefon unter der Antriebsanzeige. */}
-      <div className="absolute right-3 top-[7.5rem] sm:top-3 flex flex-col items-end gap-2 pointer-events-auto">
+      <div className="absolute right-3 top-30 sm:top-3 flex flex-col items-end gap-2 pointer-events-auto">
         {vorschlag && gestartet && (
           <AuftragKarte auftrag={vorschlag} geloest={fortschritt.erledigt.length} onListe={() => setListe(true)} />
         )}
@@ -1271,7 +1271,7 @@ export default function Flug({
         {hud.scan !== null ? (
           <div className="w-56 rounded-lg bg-black/60 border border-cyan-300/30 px-3 py-2">
             <div className="text-[11px] uppercase tracking-widest text-cyan-200">Scanne …</div>
-            <div className="mt-1 h-1.5 rounded bg-white/10 overflow-hidden"><div className="h-full bg-cyan-300" style={{ width: `${hud.scan * 100}%` }} /></div>
+            <div className="mt-1 h-1.5 rounded-sm bg-white/10 overflow-hidden"><div className="h-full bg-cyan-300" style={{ width: `${hud.scan * 100}%` }} /></div>
           </div>
         ) : hud.scanBereit && gestartet && !unfall ? (
           <button onClick={() => befehl("scan")} className="pointer-events-auto rounded-lg bg-cyan-500/20 border border-cyan-300/50 px-3 py-1.5 text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">
@@ -1521,8 +1521,8 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
       <div className="absolute inset-0 z-20 bg-black/40" onClick={onSchliessen} />
       <nav
         aria-label="Flugmenü"
-        className="absolute left-3 top-[4.25rem] z-30 w-[min(20rem,calc(100%-1.5rem))] max-h-[calc(100%-5.5rem)] overflow-y-auto overscroll-contain
-          rounded-2xl border border-cyan-300/30 bg-slate-950/95 backdrop-blur p-2 shadow-2xl"
+        className="absolute left-3 top-17 z-30 w-[min(20rem,calc(100%-1.5rem))] max-h-[calc(100%-5.5rem)] overflow-y-auto overscroll-contain
+          rounded-2xl border border-cyan-300/30 bg-slate-950/95 backdrop-blur-sm p-2 shadow-2xl"
       >
         <div className="px-3 pt-1 pb-2 text-[10px] font-black uppercase tracking-[0.25em] text-cyan-300">Ziel</div>
         <div className="px-2 pb-2">
@@ -1574,7 +1574,7 @@ function Menue({ onSchliessen, ziel, onZiel, erforscht, geloest, erfolge, zeitst
 function AuftragKarte({ auftrag, geloest, onListe }: { auftrag: Auftrag; geloest: number; onListe: () => void }) {
   const [offen, setOffen] = useState(true);
   return (
-    <div className="rounded-xl bg-black/55 backdrop-blur border border-amber-300/30 px-3 py-2 max-w-[17rem] text-left">
+    <div className="rounded-xl bg-black/55 backdrop-blur-sm border border-amber-300/30 px-3 py-2 max-w-68 text-left">
       <button onClick={() => setOffen(o => !o)} className="w-full flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-widest text-amber-200">
         <span>🛰️ Auftrag · {"◆".repeat(auftrag.stufe)} <span className="text-amber-200/60">{geloest}/{AUFTRAEGE.length}</span></span>
         <span>{offen ? "–" : "+"}</span>

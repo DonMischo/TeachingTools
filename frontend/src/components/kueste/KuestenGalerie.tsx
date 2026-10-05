@@ -24,7 +24,7 @@ function Bild({ id, alt, className }: { id: string; alt: string; className: stri
   const n = nachweisFuer(id);
   if (!n || fehlt) {
     return (
-      <div className={`${className} flex items-center justify-center bg-[var(--surface-hover)] text-xs text-[var(--text-muted)] p-3 text-center`}>
+      <div className={`${className} flex items-center justify-center bg-(--surface-hover) text-xs text-(--text-muted) p-3 text-center`}>
         Bild nur in der Online-Fassung
       </div>
     );
@@ -72,7 +72,7 @@ export function BildStreifen({ bilder }: { bilder: GalerieBild[] }) {
       <div className="flex gap-2 overflow-x-auto pb-1">
         {bilder.map((b, i) => (
           <button key={b.id} onClick={() => setOffen(i)} className="shrink-0 w-36 text-left group" title={b.titel}>
-            <Bild id={b.id} alt={b.titel} className="w-36 h-24 object-cover rounded-lg border border-[var(--border)] group-hover:border-[var(--accent)]" />
+            <Bild id={b.id} alt={b.titel} className="w-36 h-24 object-cover rounded-lg border border-(--border) group-hover:border-(--accent)" />
             <div className="text-[11px] mt-1 leading-tight line-clamp-2">{b.titel}</div>
           </button>
         ))}
@@ -90,16 +90,16 @@ export default function KuestenGalerie() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-[var(--text-muted)] max-w-3xl">
+      <p className="text-sm text-(--text-muted) max-w-3xl">
         So sehen die Küsten aus, die im Querschnitt simuliert werden: Kreidefelsen auf Rügen und Møn, Steilufer aus Mergel und Sand,
         Watt, Dünen — und was Menschen zum Schutz bauen. Antippen vergrößert; mit ← → blätterst du.
       </p>
       <div className="flex flex-wrap gap-1.5">
-        <button onClick={() => setBereich(null)} className={`px-3 py-1 rounded-full text-sm font-bold border ${!bereich ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] hover:bg-[var(--surface-hover)]"}`}>
+        <button onClick={() => setBereich(null)} className={`px-3 py-1 rounded-full text-sm font-bold border ${!bereich ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) hover:bg-(--surface-hover)"}`}>
           Alle ({GALERIE.length})
         </button>
         {BEREICHE.map(b => (
-          <button key={b.id} onClick={() => setBereich(b.id)} className={`px-3 py-1 rounded-full text-sm font-bold border ${bereich === b.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] hover:bg-[var(--surface-hover)]"}`}>
+          <button key={b.id} onClick={() => setBereich(b.id)} className={`px-3 py-1 rounded-full text-sm font-bold border ${bereich === b.id ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) hover:bg-(--surface-hover)"}`}>
             {b.icon} {b.name}
           </button>
         ))}
@@ -111,11 +111,11 @@ export default function KuestenGalerie() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {liste.filter(b => b.bereich === ber.id).map(b => (
               <button key={b.id} onClick={() => setOffen(liste.indexOf(b))}
-                className="text-left rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden hover:border-[var(--accent)] transition-colors">
-                <Bild id={b.id} alt={b.titel} className="w-full aspect-[3/2] object-cover" />
+                className="text-left rounded-xl border border-(--border) bg-(--surface) overflow-hidden hover:border-(--accent) transition-colors">
+                <Bild id={b.id} alt={b.titel} className="w-full aspect-3/2 object-cover" />
                 <div className="p-2">
                   <div className="text-sm font-bold leading-tight">{b.titel}</div>
-                  <div className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{b.text}</div>
+                  <div className="text-xs text-(--text-muted) mt-1 line-clamp-2">{b.text}</div>
                 </div>
               </button>
             ))}
@@ -123,14 +123,14 @@ export default function KuestenGalerie() {
         </section>
       ))}
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm">
         <button onClick={() => setNachweise(!nachweise)} className="font-black">📷 Bildnachweise {nachweise ? "▾" : "▸"}</button>
         {nachweise && (
-          <ul className="mt-2 flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-            {GALERIE.map(b => <li key={b.id}><b className="text-[var(--text)]">{b.titel}:</b> <Nachweiszeile id={b.id} /></li>)}
+          <ul className="mt-2 flex flex-col gap-1 text-xs text-(--text-muted)">
+            {GALERIE.map(b => <li key={b.id}><b className="text-(--text)">{b.titel}:</b> <Nachweiszeile id={b.id} /></li>)}
           </ul>
         )}
-        <p className="text-xs text-[var(--text-muted)] mt-2">Alle Fotos stammen von Wikimedia Commons und stehen unter freien Lizenzen (gemeinfrei, CC0, CC BY, CC BY-SA). Sie liegen verkleinert auf dem Schulserver.</p>
+        <p className="text-xs text-(--text-muted) mt-2">Alle Fotos stammen von Wikimedia Commons und stehen unter freien Lizenzen (gemeinfrei, CC0, CC BY, CC BY-SA). Sie liegen verkleinert auf dem Schulserver.</p>
       </section>
 
       {offen !== null && <Leuchtkasten liste={liste} index={offen} setIndex={setOffen} />}

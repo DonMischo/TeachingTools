@@ -35,37 +35,37 @@ function CollectionCard({
       : `${coll.grants.length} Gruppe${coll.grants.length === 1 ? "" : "n"}`;
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] p-4 flex flex-col gap-2 hover:border-[var(--accent)] transition-colors">
+    <div className="rounded-xl border border-(--border) bg-(--bg) p-4 flex flex-col gap-2 hover:border-(--accent) transition-colors">
       <div className="flex items-start justify-between gap-2">
         <button className="text-left flex-1 min-w-0" onClick={onOpen}>
           <div className="font-semibold truncate">{coll.name}</div>
-          {coll.subject && <div className="text-xs text-[var(--text-muted)]">{coll.subject}</div>}
+          {coll.subject && <div className="text-xs text-(--text-muted)">{coll.subject}</div>}
         </button>
         {coll.my_permission !== "manage" && (
-          <span className="text-[10px] shrink-0 px-2 py-0.5 rounded-full bg-[var(--surface-hover)] text-[var(--text-muted)]">
+          <span className="text-[10px] shrink-0 px-2 py-0.5 rounded-full bg-(--surface-hover) text-(--text-muted)">
             {PERM_LABEL[coll.my_permission as FragmentPermission] ?? "—"}
           </span>
         )}
       </div>
 
-      {coll.description && <p className="text-xs text-[var(--text-muted)] line-clamp-2">{coll.description}</p>}
+      {coll.description && <p className="text-xs text-(--text-muted) line-clamp-2">{coll.description}</p>}
 
-      <div className="text-xs text-[var(--text-muted)] flex items-center gap-3 mt-auto pt-1">
+      <div className="text-xs text-(--text-muted) flex items-center gap-3 mt-auto pt-1">
         <span>📝 {coll.fragment_count}</span>
         <span>📎 {coll.research_count}</span>
         <span className="truncate">· {audience}</span>
         {coll.allow_guests && <span title="Gastzugang aktiv">🔗</span>}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] pt-2 mt-1">
-        <span className="text-[10px] text-[var(--text-muted)] truncate">{coll.is_owner ? "Deine Sammlung" : coll.owner_name}</span>
+      <div className="flex items-center justify-between gap-2 border-t border-(--border) pt-2 mt-1">
+        <span className="text-[10px] text-(--text-muted) truncate">{coll.is_owner ? "Deine Sammlung" : coll.owner_name}</span>
         <div className="flex gap-1">
-          <button className="text-xs px-2 py-1 rounded hover:bg-[var(--surface-hover)]" onClick={onOpen}>Öffnen</button>
+          <button className="text-xs px-2 py-1 rounded-sm hover:bg-(--surface-hover)" onClick={onOpen}>Öffnen</button>
           {canManage && (
-            <button className="text-xs px-2 py-1 rounded hover:bg-[var(--surface-hover)]" onClick={onEdit}
+            <button className="text-xs px-2 py-1 rounded-sm hover:bg-(--surface-hover)" onClick={onEdit}
               title="Einstellungen" aria-label="Einstellungen">⚙️</button>
           )}
-          {coll.is_owner && <button className="text-xs px-2 py-1 rounded hover:bg-red-500/10 text-red-500" onClick={onDelete}>Löschen</button>}
+          {coll.is_owner && <button className="text-xs px-2 py-1 rounded-sm hover:bg-red-500/10 text-red-500" onClick={onDelete}>Löschen</button>}
         </div>
       </div>
     </div>
@@ -126,20 +126,20 @@ export default function FragmentsLandingPage() {
   const chip = (key: string, label: string) => (
     <button key={key} onClick={() => setFilter(f => f === key ? "" : key)}
       className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-        filter === key ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"}`}>
+        filter === key ? "bg-(--accent) text-black border-(--accent)" : "border-(--border) text-(--text-muted) hover:bg-(--surface-hover)"}`}>
       {label}
     </button>
   );
 
   return (
-    <div className="mx-auto w-[92%] max-w-[var(--seite-breite)] p-6">
+    <div className="mx-auto w-[92%] max-w-(--seite-breite) p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold">Fragmente</h1>
-          <p className="text-sm text-[var(--text-muted)]">Pinnwände mit Karten & Clippings</p>
+          <p className="text-sm text-(--text-muted)">Pinnwände mit Karten & Clippings</p>
         </div>
         {isTeacher && (
-          <button className="px-4 py-2 text-sm rounded-lg bg-[var(--accent)] text-black font-semibold hover:opacity-90"
+          <button className="px-4 py-2 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90"
             onClick={() => setModal({ collection: null })}>
             + Neue Sammlung
           </button>
@@ -154,24 +154,24 @@ export default function FragmentsLandingPage() {
           {isTeacher && chip("geteilt", "Geteilt")}
           {classChips.map(c => chip(`class:${c.id}`, `Klasse ${c.code}`))}
           {chip("alle", "Alle")}
-          <div className="ml-auto flex items-center rounded-lg border border-[var(--border)] overflow-hidden">
-            <button className={`px-2 py-1 text-sm ${view === "grid" ? "bg-[var(--surface-hover)] text-[var(--text)]" : "text-[var(--text-muted)]"}`}
+          <div className="ml-auto flex items-center rounded-lg border border-(--border) overflow-hidden">
+            <button className={`px-2 py-1 text-sm ${view === "grid" ? "bg-(--surface-hover) text-(--text)" : "text-(--text-muted)"}`}
               onClick={() => setView("grid")} title="Raster">▦</button>
-            <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-[var(--surface-hover)] text-[var(--text)]" : "text-[var(--text-muted)]"}`}
+            <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-(--surface-hover) text-(--text)" : "text-(--text-muted)"}`}
               onClick={() => setView("list")} title="Liste">☰</button>
           </div>
         </div>
       )}
 
       {isLoading ? (
-        <p className="text-[var(--text-muted)]">Lädt…</p>
+        <p className="text-(--text-muted)">Lädt…</p>
       ) : collections.length === 0 ? (
-        <div className="text-center py-24 text-[var(--text-muted)]">
+        <div className="text-center py-24 text-(--text-muted)">
           <p>Noch keine Sammlungen.</p>
           {isTeacher && <p className="text-sm mt-1">Erstelle deine erste Pinnwand.</p>}
         </div>
       ) : shown.length === 0 ? (
-        <p className="text-[var(--text-muted)] text-sm py-16 text-center">Keine Sammlungen für diesen Filter.</p>
+        <p className="text-(--text-muted) text-sm py-16 text-center">Keine Sammlungen für diesen Filter.</p>
       ) : (
         <div className={view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "flex flex-col gap-2"}>
           {shown.map(c => (
@@ -186,15 +186,15 @@ export default function FragmentsLandingPage() {
 
       {modal && <CollectionModal initial={modal.collection} onClose={() => setModal(null)} />}
       {confirmDel && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDel(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] p-5 shadow-2xl"
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDel(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-(--border) p-5 shadow-2xl"
             style={{ background: "var(--bg)" }} onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-3">Sammlung löschen?</h3>
-            <p className="text-sm text-[var(--text-muted)] mb-5">
+            <p className="text-sm text-(--text-muted) mb-5">
               „{confirmDel.name}" wird mit allen {confirmDel.fragment_count} Karten und {confirmDel.research_count} Clippings dauerhaft gelöscht.
             </p>
             <div className="flex justify-end gap-2">
-              <button className="px-4 py-2 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+              <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)"
                 onClick={() => setConfirmDel(null)}>Abbrechen</button>
               <button className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white font-semibold hover:opacity-90"
                 onClick={() => { del.mutate(confirmDel.id); setConfirmDel(null); }}>Löschen</button>

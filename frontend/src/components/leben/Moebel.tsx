@@ -71,7 +71,7 @@ export function Moebel({ s, onNeu, onGebraucht, onVerkaufen, onZu }: {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold">{m.name} {hat(m.id) && <span className="text-emerald-300">✓</span>}</div>
                 <div className="text-xs text-slate-400">
-                  <span className={`mr-1 rounded px-1 font-bold ${STUFE_FARBE[m.stufe]}`}>{STUFE[m.stufe]}</span>
+                  <span className={`mr-1 rounded-sm px-1 font-bold ${STUFE_FARBE[m.stufe]}`}>{STUFE[m.stufe]}</span>
                   {m.neu.laden}{m.aufbau ? ` · Aufbau ${m.aufbau} h` : ""}{m.strom ? ` · ${m.strom} kWh/Jahr` : ""}
                 </div>
                 {m.hinweis && <div className="text-xs text-sky-300">{m.hinweis}</div>}
@@ -129,7 +129,7 @@ function Anzeigen({ s, id, onKaufen }: { s: Spielstand; id: string; onKaufen: (a
     <div className="mt-2 space-y-1 border-t border-white/10 pt-2">
       {liste.map((a) => (
         <div key={a.id} className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="rounded bg-white/10 px-1 text-xs">{a.zustand}</span>
+          <span className="rounded-sm bg-white/10 px-1 text-xs">{a.zustand}</span>
           <span className="flex-1 text-slate-300">„{a.text}“ <span className="text-xs text-slate-400">— {a.ort}</span></span>
           <b>{euro(a.preis)}</b>
           <Knopf klein art={a.betrug ? "leise" : "normal"} onClick={() => onKaufen(a)}>{a.versand ? "Überweisen" : "Abholen (bar)"}</Knopf>

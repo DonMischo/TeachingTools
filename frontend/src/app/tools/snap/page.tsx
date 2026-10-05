@@ -104,9 +104,9 @@ export default function SnapPage() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center gap-2 flex-wrap px-4 py-2 border-b border-[var(--border)] bg-[var(--surface)]">
+      <div className="flex items-center gap-2 flex-wrap px-4 py-2 border-b border-(--border) bg-(--surface)">
         <span className="font-black tracking-tight">🧱 Snap!</span>
-        <span className="text-sm text-[var(--text-muted)] truncate max-w-[16rem]">
+        <span className="text-sm text-(--text-muted) truncate max-w-[16rem]">
           {current ? current.title : "Unbenannt"}
           {current && !current.mine && " (Vorlage)"}
         </span>
@@ -124,22 +124,22 @@ export default function SnapPage() {
       </div>
 
       {showOpen && (
-        <div className="border-b border-[var(--border)] bg-[var(--surface)] max-h-64 overflow-y-auto">
+        <div className="border-b border-(--border) bg-(--surface) max-h-64 overflow-y-auto">
           {projekte.length === 0 && (
-            <p className="p-4 text-sm text-[var(--text-muted)]">Noch keine Programme gespeichert.</p>
+            <p className="p-4 text-sm text-(--text-muted)">Noch keine Programme gespeichert.</p>
           )}
           {projekte.map(p => (
-            <div key={p.id} className="flex items-center gap-3 px-4 py-2 hover:bg-[var(--surface-hover)]">
+            <div key={p.id} className="flex items-center gap-3 px-4 py-2 hover:bg-(--surface-hover)">
               <button onClick={() => oeffnen(p)} className="flex-1 text-left">
                 <span className="font-semibold">{p.title}</span>
-                {p.is_template && <span className="ml-2 text-xs text-[var(--accent)]">Vorlage</span>}
+                {p.is_template && <span className="ml-2 text-xs text-(--accent)">Vorlage</span>}
                 {!p.mine && p.author && (
-                  <span className="ml-2 text-xs text-[var(--text-muted)]">von {p.author}</span>
+                  <span className="ml-2 text-xs text-(--text-muted)">von {p.author}</span>
                 )}
               </button>
               {p.mine && (
                 <button onClick={() => loeschen(p)}
-                        className="text-xs text-[var(--text-muted)] hover:text-red-500">
+                        className="text-xs text-(--text-muted) hover:text-red-500">
                   löschen
                 </button>
               )}
@@ -158,5 +158,5 @@ export default function SnapPage() {
   );
 }
 
-const BTN = "px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-50";
-const BTN_PRIMARY = "px-3 py-1.5 rounded-lg text-sm font-semibold bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 disabled:opacity-50";
+const BTN = "px-3 py-1.5 rounded-lg text-sm border border-(--border) hover:bg-(--surface-hover) disabled:opacity-50";
+const BTN_PRIMARY = "px-3 py-1.5 rounded-lg text-sm font-semibold bg-(--accent) text-(--accent-text) hover:opacity-90 disabled:opacity-50";

@@ -41,7 +41,7 @@ export function Knopf({ children, onClick, art = "normal", disabled, title, klei
   }[art];
   return (
     <button type={typ} onClick={onClick} disabled={disabled} title={title}
-      className={`${farben} ${klein ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"} rounded-xl font-bold shadow transition disabled:cursor-not-allowed disabled:opacity-40`}>
+      className={`${farben} ${klein ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"} rounded-xl font-bold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40`}>
       {children}
     </button>
   );
@@ -97,4 +97,4 @@ export function Feld({ label, children, hilfe }: { label: string; children: Reac
   );
 }
 
-export const eingabe = "w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white ring-1 ring-white/15 focus:outline-none focus:ring-amber-400";
+export const eingabe = "w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white ring-1 ring-white/15 focus:outline-hidden focus:ring-amber-400";

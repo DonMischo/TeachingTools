@@ -93,10 +93,10 @@ function Hinweis({ icon, title, text }: { icon: string; title: string; text: str
     // h-full statt flex-1 aus demselben Grund wie in `Buehne`: sonst ist die
     // Karte nur innerhalb ihrer eigenen Inhaltshöhe zentriert, klebt also oben.
     <div className="h-full flex items-center justify-center p-6">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-8 max-w-md text-center">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-8 max-w-md text-center">
         <div className="text-4xl mb-2">{icon}</div>
         <h1 className="text-xl font-black">{title}</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">{text}</p>
+        <p className="text-sm text-(--text-muted) mt-2 leading-relaxed">{text}</p>
       </div>
     </div>
   );

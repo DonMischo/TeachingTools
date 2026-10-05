@@ -36,13 +36,13 @@ export default function ClassAvailabilityPage() {
   const groups = [...(abGroups ?? [])].sort((a, b) => a.name.localeCompare(b.name, "de"));
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Start</Link>
+        <Link href="/" className="text-xs text-(--text-muted) hover:text-(--text)">← Start</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">
           🧩 Verfügbarkeit · {auth.teacher?.klasse ?? "meine Klasse"}
         </h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
+        <p className="text-(--text-muted) text-sm mt-1">
           Schalte Werkzeuge für deine Klasse frei oder sperre sie. „Standard" folgt der
           nächsthöheren Ebene; „Ja"/„Nein" überschreiben sie nur für den gewählten
           Geltungsbereich.
@@ -50,7 +50,7 @@ export default function ClassAvailabilityPage() {
       </div>
 
       {groups.length > 0 && (
-        <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)] max-w-xs">
+        <label className="flex flex-col gap-1.5 text-xs text-(--text-muted) max-w-xs">
           Geltungsbereich
           <select className="input text-sm py-2" value={scope} onChange={e => setScope(e.target.value)}>
             <option value="class">Ganze Klasse</option>

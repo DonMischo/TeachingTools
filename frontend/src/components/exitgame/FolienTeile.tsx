@@ -235,7 +235,7 @@ function SingleTaskWidget({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+    <div className="rounded-xl border border-(--border) p-3 flex flex-col gap-2">
       {activeTask.question && <MathText text={activeTask.question} blockEquations className="text-sm font-medium" />}
       {activeTask.sim && <SimKnopf sim={activeTask.sim} frage={activeTask.question} />}
 
@@ -244,7 +244,7 @@ function SingleTaskWidget({
           {answerOptions.map(a => (
             <button key={a.text} onClick={() => submitSingle(a.text)}
               className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
-                selected === a.text && feedback === "wrong" ? "border-red-400 text-red-400" : "border-[var(--border)] hover:border-[var(--accent)]"
+                selected === a.text && feedback === "wrong" ? "border-red-400 text-red-400" : "border-(--border) hover:border-(--accent)"
               }`}>
               <MathText text={a.text} />
             </button>
@@ -265,7 +265,7 @@ function SingleTaskWidget({
               <MathText text={a.text} />
             </label>
           ))}
-          <button onClick={submitMulti} className="btn-primary !w-auto text-sm py-1 px-3 self-start">Prüfen</button>
+          <button onClick={submitMulti} className="btn-primary w-auto! text-sm py-1 px-3 self-start">Prüfen</button>
         </div>
       )}
 
@@ -276,7 +276,7 @@ function SingleTaskWidget({
             onKeyDown={e => { if (e.key === "Enter") submitInput(); }}
             placeholder="Deine Antwort…" />
           <button onClick={submitInput} disabled={!inputValue.trim() || answerMut.isPending}
-            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">Prüfen</button>
+            className="btn-primary w-auto! text-sm py-1.5 px-4 self-start disabled:opacity-40">Prüfen</button>
         </div>
       )}
 
@@ -291,7 +291,7 @@ function SingleTaskWidget({
           <button
             onClick={() => answerMut.mutate(timelineAnswer)}
             disabled={answerMut.isPending || !timelineAnswerComplete(specToBoard(activeTask.timeline), timelineAnswer)}
-            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">
+            className="btn-primary w-auto! text-sm py-1.5 px-4 self-start disabled:opacity-40">
             Prüfen
           </button>
         </div>
@@ -304,7 +304,7 @@ function SingleTaskWidget({
           <button
             onClick={() => answerMut.mutate(kartenAntwort)}
             disabled={answerMut.isPending || !Object.values(kartenAntwort.antworten).some(Boolean)}
-            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">
+            className="btn-primary w-auto! text-sm py-1.5 px-4 self-start disabled:opacity-40">
             Prüfen
           </button>
         </div>
@@ -313,33 +313,33 @@ function SingleTaskWidget({
       {feedback === "wrong" && <p className="text-xs text-red-400">Nicht ganz — versuch's nochmal.</p>}
 
       {secondsLeft != null && (
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           {timeUp ? "⏱ Richtzeit vorbei — lass dir Zeit, ein Hinweis ist frei." : `⏱ Richtzeit ${mmss(secondsLeft)}`}
         </p>
       )}
 
       {extraExample && level?.extraExample === true && (attempts > 0 || timeUp) && (
-        <div className="rounded-lg border border-[var(--border)] p-2 text-xs flex flex-col gap-1">
-          <span className="text-[var(--text-muted)]">Noch ein Beispiel:</span>
+        <div className="rounded-lg border border-(--border) p-2 text-xs flex flex-col gap-1">
+          <span className="text-(--text-muted)">Noch ein Beispiel:</span>
           <MathText text={extraExample} blockEquations />
         </div>
       )}
 
       {hints.length > 0 && (attempts > hintsShown || timeUp) && hintsShown < hintBudget && (
         <button onClick={() => hintMut.mutate(hintsShown)} disabled={hintMut.isPending}
-          className="text-xs text-[var(--accent)] hover:underline self-start">
+          className="text-xs text-(--accent) hover:underline self-start">
           💡 Hinweis anzeigen ({hintsShown}/{hintBudget})
         </button>
       )}
       {hints.slice(0, hintsShown).map((h, i) => (
-        <p key={i} className="text-xs text-[var(--text-muted)] italic">💡 {h}</p>
+        <p key={i} className="text-xs text-(--text-muted) italic">💡 {h}</p>
       ))}
 
       {showEasierOffer && (
-        <div className="rounded-lg border border-[var(--border)] p-2 flex items-center gap-2 text-xs">
+        <div className="rounded-lg border border-(--border) p-2 flex items-center gap-2 text-xs">
           <span>Möchtest du eine leichtere Aufgabe probieren?</span>
-          <button onClick={() => easierMut.mutate()} className="text-[var(--accent)] hover:underline">Ja</button>
-          <button onClick={() => setShowEasierOffer(false)} className="text-[var(--text-muted)] hover:underline">Nein</button>
+          <button onClick={() => easierMut.mutate()} className="text-(--accent) hover:underline">Ja</button>
+          <button onClick={() => setShowEasierOffer(false)} className="text-(--text-muted) hover:underline">Nein</button>
         </div>
       )}
     </div>
@@ -377,14 +377,14 @@ function DoorCodePanel({
   });
 
   return (
-    <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+    <div className="rounded-xl border border-(--border) p-3 flex flex-col gap-2">
       <p className="text-sm font-medium">🔑 Türcode</p>
       <div className="flex gap-1.5 flex-wrap">
         {fragments.map(f => (
           <button key={`${f.slide_id}:${f.task_index}`} onClick={() => onReview(f.slide_id)} disabled={f.earned}
             title={f.earned ? "Eingesammelt" : "Diese Aufgabe ist noch offen — hier tippen"}
             className={`font-mono text-sm px-2 py-1 rounded-lg border ${
-              f.earned ? "border-[var(--border)]" : "border-dashed border-[var(--accent)] text-[var(--accent)]"
+              f.earned ? "border-(--border)" : "border-dashed border-(--accent) text-(--accent)"
             }`}>
             {f.earned ? f.fragment : "?"}
           </button>
@@ -399,17 +399,17 @@ function DoorCodePanel({
             onChange={e => setValue(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && value.trim()) codeMut.mutate(); }} />
           <button onClick={() => codeMut.mutate()} disabled={!value.trim() || codeMut.isPending}
-            className="btn-primary !w-auto text-sm py-1.5 px-4 self-start disabled:opacity-40">Tür öffnen</button>
+            className="btn-primary w-auto! text-sm py-1.5 px-4 self-start disabled:opacity-40">Tür öffnen</button>
         </div>
       )}
 
       {wrong && <p className="text-xs text-red-400">Der Code passt nicht.</p>}
       {openSlides.length > 0 && (
         <div className="text-xs flex flex-col gap-1">
-          <span className="text-[var(--text-muted)]">Diese Aufgaben fehlen dir noch:</span>
+          <span className="text-(--text-muted)">Diese Aufgaben fehlen dir noch:</span>
           <div className="flex gap-2 flex-wrap">
             {openSlides.map(target => (
-              <button key={target} onClick={() => onReview(target)} className="text-[var(--accent)] hover:underline">
+              <button key={target} onClick={() => onReview(target)} className="text-(--accent) hover:underline">
                 ↩ {target}
               </button>
             ))}
@@ -462,11 +462,11 @@ export function TaskArea({
       )}
 
       {slide.type === "door" && totalAttempts >= 2 && !allSolved && slide.onFailReview && slide.onFailReview.length > 0 && (
-        <div className="rounded-lg border border-[var(--border)] p-2 text-xs flex flex-col gap-1">
-          <span className="text-[var(--text-muted)]">Vielleicht hilft eine Wiederholung:</span>
+        <div className="rounded-lg border border-(--border) p-2 text-xs flex flex-col gap-1">
+          <span className="text-(--text-muted)">Vielleicht hilft eine Wiederholung:</span>
           <div className="flex gap-2 flex-wrap">
             {slide.onFailReview.map(target => (
-              <button key={target} onClick={() => onReview(target)} className="text-[var(--accent)] hover:underline">
+              <button key={target} onClick={() => onReview(target)} className="text-(--accent) hover:underline">
                 ↩ {target}
               </button>
             ))}
@@ -502,23 +502,23 @@ export function CompletionCard({ completion, summary, sicherung, titel, akzent, 
     } finally { setLaedt(false); }
   }
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 flex flex-col items-center gap-3 text-center">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-8 flex flex-col items-center gap-3 text-center">
       <p className="text-4xl">🎉</p>
       <h2 className="text-xl font-bold">{completion?.message ?? "Geschafft! Du bist entkommen!"}</h2>
       {completion?.code && (
         <p className="text-sm">Dein Exit-Code: <span className="font-mono font-bold">{completion.code}</span></p>
       )}
-      <p className="text-xs text-[var(--text-muted)] mt-2">
+      <p className="text-xs text-(--text-muted) mt-2">
         ~{minutes} min · {summary.errors_total} Fehlversuche · {summary.hints_total} Hinweise
         {summary.easier_taken_total > 0 && <> · {summary.easier_taken_total} erleichterte Aufgabe(n)</>}
       </p>
       {anzahl > 0 && (
-        <div className="mt-3 w-full max-w-sm rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2 text-left" data-ergebnissicherung>
+        <div className="mt-3 w-full max-w-sm rounded-xl border border-(--border) p-3 flex flex-col gap-2 text-left" data-ergebnissicherung>
           <p className="text-sm font-bold">📄 Ergebnissicherung</p>
-          <p className="text-xs text-[var(--text-muted)]">{anzahl} Merksätze aus diesem TaskCrawler als PDF zum Aufheben.</p>
+          <p className="text-xs text-(--text-muted)">{anzahl} Merksätze aus diesem TaskCrawler als PDF zum Aufheben.</p>
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Dein Name (steht oben im PDF)"
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm" aria-label="Name fürs PDF" />
-          <button onClick={pdf} disabled={laedt} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start">
+            className="rounded-lg border border-(--border) bg-(--bg) px-2 py-1 text-sm" aria-label="Name fürs PDF" />
+          <button onClick={pdf} disabled={laedt} className="btn-primary w-auto! text-sm py-1.5 px-4 self-start">
             {laedt ? "Erstelle PDF …" : "⬇️ PDF herunterladen"}
           </button>
         </div>

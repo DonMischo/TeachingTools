@@ -243,7 +243,7 @@ export default function Klickspiel({
             {art === "klick"
               ? <>Klicke mit der <b>linken</b> Maustaste auf: <b>{tierName(runde.ziel)}</b></>
               : <><b>Doppelklick</b> auf das blinkende Tier: <b>{tierName(runde.ziel)}</b></>}
-            <div data-zusatz className="text-xs text-[var(--text-muted)] mt-1 tabular-nums">
+            <div data-zusatz className="text-xs text-(--text-muted) mt-1 tabular-nums">
               Treffer {treffer} / {spiel.ziele} · Stufe {stufe + 1} von {spiel.stufen.length} · {sekunden(zeitMs)} je Tier
             </div>
           </>
@@ -263,18 +263,18 @@ export default function Klickspiel({
         </div>
       </Stufenkopf>
 
-      <div className="h-2 rounded-full bg-[var(--surface-hover)] overflow-hidden" aria-hidden>
+      <div className="h-2 rounded-full bg-(--surface-hover) overflow-hidden" aria-hidden>
         {phase === "laeuft" && (
           <div
             key={`${runde.nr}-${stufe}`}
-            className="h-full bg-[var(--accent)]"
+            className="h-full bg-(--accent)"
             style={{ animation: `maus-zeit ${zeitMs}ms linear forwards` }}
           />
         )}
       </div>
       <style>{"@keyframes maus-zeit { from { width: 100% } to { width: 0% } }"}</style>
 
-      <div className="min-h-[1.5rem] text-center text-sm font-bold" aria-live="polite"
+      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
         style={{ color: hinweis?.ton === "gut" ? "var(--green, #16a34a)" : hinweis?.ton === "schlecht" ? "var(--red, #dc2626)" : "var(--text-muted)" }}>
         {hinweis?.text}
       </div>
@@ -301,7 +301,7 @@ export default function Klickspiel({
                 onDoubleClick={() => doppelklick(id)}
                 className={
                   "aspect-square rounded-2xl flex items-center justify-center select-none cursor-pointer " +
-                  (istZiel ? "maus-blinken ring-4 ring-[var(--accent)] " : "") +
+                  (istZiel ? "maus-blinken ring-4 ring-(--accent) " : "") +
                   (wackelt?.id === id ? "maus-wackeln" : "")
                 }
                 style={{ backgroundColor: a.bg, fontSize: `min(${48 / spalten}vw, ${300 / spalten}px)` }}
@@ -315,16 +315,16 @@ export default function Klickspiel({
         {phase !== "laeuft" && !demo.aktiv && (
           <div className="absolute inset-0 flex items-center justify-center">
             {phase === "bereit" ? (
-              <button onClick={los} className="rounded-2xl bg-[var(--accent)] text-[var(--bg)] px-8 py-4 text-xl font-black shadow-xl">
+              <button onClick={los} className="rounded-2xl bg-(--accent) text-(--bg) px-8 py-4 text-xl font-black shadow-xl">
                 ▶ Los geht&apos;s
               </button>
             ) : (
-              <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl px-8 py-6 text-center">
+              <div className="rounded-2xl bg-(--surface) border border-(--border) shadow-xl px-8 py-6 text-center">
                 <div className="text-4xl">🏅</div>
                 <div className="text-2xl font-black mt-1">{punkte} Punkte</div>
                 <div className="flex gap-2 justify-center mt-4">
-                  <button onClick={nochmal} className="rounded-lg px-4 py-2 border border-[var(--border)] hover:border-[var(--accent)]">↺ Nochmal</button>
-                  <button onClick={onWeiter} className="rounded-lg px-4 py-2 bg-[var(--accent)] text-[var(--bg)] font-bold">Weiter →</button>
+                  <button onClick={nochmal} className="rounded-lg px-4 py-2 border border-(--border) hover:border-(--accent)">↺ Nochmal</button>
+                  <button onClick={onWeiter} className="rounded-lg px-4 py-2 bg-(--accent) text-(--bg) font-bold">Weiter →</button>
                 </div>
               </div>
             )}

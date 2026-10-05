@@ -88,11 +88,11 @@ export default function Tippen({
   const material = sammlung ? `sammlung-${sammlung.id}` : "eingebaut";
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-black tracking-tight">⌨️ Tippen</h1>
         <div className="flex-1" />
-        <label className="text-xs flex items-center gap-1.5 cursor-pointer text-[var(--text-muted)]">
+        <label className="text-xs flex items-center gap-1.5 cursor-pointer text-(--text-muted)">
           <input type="checkbox" checked={zeigeFinger} onChange={e => setZeigeFinger(e.target.checked)} />
           Fingerfarben
         </label>
@@ -109,8 +109,8 @@ export default function Tippen({
             className={
               "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
               (modus === m.id
-                ? "border-[var(--accent)] text-[var(--accent)] font-bold"
-                : "border-[var(--border)] hover:border-[var(--accent)]")
+                ? "border-(--accent) text-(--accent) font-bold"
+                : "border-(--border) hover:border-(--accent)")
             }
           >
             {m.label}

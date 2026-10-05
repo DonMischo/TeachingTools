@@ -313,49 +313,49 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
               const r = parseFormel(p.formel);
               if (r.ok) start(r.eq, p.target, p.values);
             }}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
+            className="px-3 py-1.5 rounded-xl text-sm font-medium border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)">
             {p.formel}
           </button>
         ))}
         {!fest && <button onClick={() => setCustomOpen(o => !o)}
-          className="px-3 py-1.5 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
+          className="px-3 py-1.5 rounded-xl text-sm border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)">
           ✏️ Eigene Formel
         </button>}
         <div className="flex-1" />
         <button onClick={() => { setChain(c => c.slice(0, -1)); setOps(o => o.slice(0, -1)); kick(); }}
           disabled={chain.length < 2}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
           ↶ Zurück
         </button>
         <button onClick={() => { setChain([chain[0]]); setOps([]); kick(); }} disabled={chain.length < 2}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
           ↺ Von vorn
         </button>
       </div>
 
       {customOpen && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2 items-center">
             <input value={customText} onChange={e => setCustomText(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") applyCustom(); }}
               placeholder="z. B. E = m·g·h"
-              className="flex-1 min-w-[220px] bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-base font-mono" />
+              className="flex-1 min-w-[220px] bg-(--bg) border border-(--border) rounded-lg px-3 py-2 text-base font-mono" />
             <button onClick={applyCustom}
-              className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">
+              className="px-4 py-2 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111)">
               Auf die Waage
             </button>
           </div>
-          <div className="text-sm min-h-[1.75rem]">
+          <div className="text-sm min-h-7">
             {preview.ok ? (
               <>
-                <span className="text-[var(--text-muted)]">So lese ich das: </span>
+                <span className="text-(--text-muted)">So lese ich das: </span>
                 <Tex tex={feqToLatex(preview.eq)} />
               </>
             ) : (
-              <span className="text-[var(--red)]">{preview.error}</span>
+              <span className="text-(--red)">{preview.error}</span>
             )}
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Variablen sind einzelne Buchstaben, gern mit Index (<code>v0</code>, <code>s_1</code>).
             Erlaubt sind + − · : ^ und Klammern — <code>E = 0,5·m·v^2</code>, <code>p = F/A</code>.
             LaTeX geht auch: <code>p = \frac{"{F}"}{"{A}"}</code>, <code>E = m \cdot c^{"{2}"}</code>.
@@ -365,8 +365,8 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
       )}
 
       {/* Größen */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
-        <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <div className="text-xs uppercase tracking-widest text-(--text-muted)">
           Größen — tippe auf 🔍, um eine andere zu suchen
         </div>
         <div className="flex flex-wrap gap-2">
@@ -375,13 +375,13 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
             return (
               <div key={v}
                 className={`flex items-center gap-2 rounded-xl border px-2.5 py-1.5 ${
-                  isTarget ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)]"
+                  isTarget ? "border-(--accent) bg-(--accent)/10" : "border-(--border)"
                 }`}>
-                <span className="w-3.5 h-3.5 rounded" style={{ background: colors[v] }} />
+                <span className="w-3.5 h-3.5 rounded-sm" style={{ background: colors[v] }} />
                 <span className="font-black text-base">{v}</span>
-                <span className="text-[var(--text-muted)]">=</span>
+                <span className="text-(--text-muted)">=</span>
                 {isTarget ? (
-                  <span className="font-bold text-base tabular-nums text-[var(--accent)] min-w-[3rem] text-center">
+                  <span className="font-bold text-base tabular-nums text-(--accent) min-w-12 text-center">
                     {/* An der Station wird der Wert erst verraten, wenn die Größe allein steht. */}
                     {targetValue === null || (fest && !done) ? "?" : fmtNum(targetValue)}
                   </span>
@@ -394,10 +394,10 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
                       const n = raw === "" ? null : Number(raw);
                       setValues(old => ({ ...old, [v]: raw !== "" && isFinite(n as number) ? (n as number) : null }));
                     }}
-                    className="w-16 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-2 py-1 text-base font-bold text-center" />
+                    className="w-16 bg-(--bg) border border-(--border) rounded-lg px-2 py-1 text-base font-bold text-center" />
                 )}
                 <button onClick={() => chooseTarget(v)} title={`Nach ${v} umstellen`}
-                  className={`text-sm ${isTarget ? "opacity-40" : "text-[var(--text-muted)] hover:text-[var(--accent)]"}`}>
+                  className={`text-sm ${isTarget ? "opacity-40" : "text-(--text-muted) hover:text-(--accent)"}`}>
                   🔍
                 </button>
               </div>
@@ -405,7 +405,7 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
           })}
         </div>
         {targetValue === null && (
-          <p className="text-xs text-[var(--red)]">
+          <p className="text-xs text-(--red)">
             Für {target} lässt sich hier kein eindeutiger Wert ausrechnen — die Waage zeigt {target} = 1.
             Fehlt vielleicht noch ein Wert?
           </p>
@@ -413,69 +413,69 @@ export default function VariablenModus({ onMessage, fest }: { onMessage: (m: str
       </div>
 
       {done && (
-        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-[var(--green)] bg-[var(--green)]/10 px-5 py-4">
+        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-(--green) bg-(--green)/10 px-5 py-4">
           <Konfetti seed={chain.length} />
           <div className="relative">
-            <div className="text-xl font-black text-[var(--green)]">
+            <div className="text-xl font-black text-(--green)">
               🎉 Nach {target} umgestellt: {target} = {formatExpr(resultSide)}
             </div>
-            <div className="text-sm text-[var(--text-muted)] mt-1">
+            <div className="text-sm text-(--text-muted) mt-1">
               Werte eingesetzt: {target} = {targetValue === null ? "?" : fmtNum(targetValue)}
             </div>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 sm:p-4">
         <Balance tilt={tilt} defs={DEFS}
           ariaLabel={`Waage: ${formatExpr(current.left)} = ${formatExpr(current.right)}`}
           left={pan(leftPan, current.left)} right={pan(rightPan, current.right)} />
-        <p className="text-center text-xs text-[var(--text-muted)] pt-1">
+        <p className="text-center text-xs text-(--text-muted) pt-1">
           Ein Produkt ist ein Rechteck: die Kantenfarben zeigen, welche Größe wie oft zählt.
           Jedes Kästchen wiegt 1.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
-        <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <div className="text-xs uppercase tracking-widest text-(--text-muted)">
           Auf beiden Seiten … (Ziel: {target} steht allein)
         </div>
         {done ? (
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-(--text-muted)">
             Fertig — {target} steht allein. Wähle mit 🔍 eine andere Größe oder eine neue Formel.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {chips.map(op => (
               <button key={formatFOp(op)} onClick={() => apply(op)}
-                className="px-3.5 py-2 rounded-xl text-base font-bold border border-[var(--border)] hover:border-[var(--accent)] transition-all hover:scale-[1.04] active:scale-95">
+                className="px-3.5 py-2 rounded-xl text-base font-bold border border-(--border) hover:border-(--accent) transition-all hover:scale-[1.04] active:scale-95">
                 {formatFOp(op)}
               </button>
             ))}
             {!chips.length && (
-              <span className="text-sm text-[var(--text-muted)]">
+              <span className="text-sm text-(--text-muted)">
                 Hier weiß ich keinen Schritt — nimm die freie Eingabe.
               </span>
             )}
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--border)] mt-1">
-          <span className="text-sm text-[var(--text-muted)] pt-3">oder selbst:</span>
-          <div className="inline-flex rounded-xl border border-[var(--border)] p-1 mt-2">
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-(--border) mt-1">
+          <span className="text-sm text-(--text-muted) pt-3">oder selbst:</span>
+          <div className="inline-flex rounded-xl border border-(--border) p-1 mt-2">
             {SIGNS.map(s => (
               <button key={s} onClick={() => setSign(s)}
                 className={`w-9 h-8 rounded-lg text-lg font-black transition-colors ${
-                  sign === s ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  sign === s ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"
                 }`}>{s}</button>
             ))}
           </div>
           <input value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") applyManual(); }}
             placeholder="a" aria-label="Term für die Umformung"
-            className="mt-2 w-24 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-base font-bold text-center" />
+            className="mt-2 w-24 bg-(--bg) border border-(--border) rounded-lg px-3 py-1.5 text-base font-bold text-center" />
           <button onClick={applyManual}
-            className="mt-2 px-4 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:border-[var(--accent)]">
+            className="mt-2 px-4 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:border-(--accent)">
             Anwenden
           </button>
         </div>

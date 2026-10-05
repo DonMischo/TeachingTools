@@ -10,7 +10,7 @@ interface Props {
 function ParticipantSlot({ p, isWinner }: { p: WettkampfParticipant | null; isWinner: boolean }) {
   if (!p) {
     return (
-      <div className="h-8 flex items-center px-3 rounded bg-gray-800/50 text-gray-600 text-sm italic">
+      <div className="h-8 flex items-center px-3 rounded-sm bg-gray-800/50 text-gray-600 text-sm italic">
         Freilos / offen
       </div>
     );

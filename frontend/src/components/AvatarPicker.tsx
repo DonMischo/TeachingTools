@@ -66,7 +66,7 @@ export function AvatarPicker({ selected, onSelect }: Props) {
         >
           <span className={selected === av.id ? av.anim : ""}>{av.emoji}</span>
           {selected === av.id && (
-            <span className="avatar-check absolute -top-1 -right-1 bg-white text-black text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold shadow">
+            <span className="avatar-check absolute -top-1 -right-1 bg-white text-black text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
               ✓
             </span>
           )}
@@ -87,7 +87,7 @@ export function AvatarDisplay({
   const sizeClass = size === "sm" ? "w-8 h-8 text-lg" : size === "lg" ? "w-20 h-20 text-5xl" : "w-12 h-12 text-2xl";
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-2xl ${sizeClass} flex-shrink-0`}
+      className={`inline-flex items-center justify-center rounded-2xl ${sizeClass} shrink-0`}
       style={{ backgroundColor: av.bg }}
     >
       <span className={av.anim}>{av.emoji}</span>

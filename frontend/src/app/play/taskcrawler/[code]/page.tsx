@@ -151,7 +151,7 @@ export default function ExitgamePlayPage() {
         error={joinError} onJoin={(name, tier) => handleGuestJoin(name, tier)} />
     );
   }
-  if (isLoading) return <div className="p-8 text-sm text-[var(--text-muted)]">Lade…</div>;
+  if (isLoading) return <div className="p-8 text-sm text-(--text-muted)">Lade…</div>;
   if (isError || !start) return <div className="p-8 text-sm text-red-400">Diese Sitzung ist nicht verfügbar (geschlossen oder nicht gefunden).</div>;
 
   if (finished && finalSummary) {
@@ -182,10 +182,10 @@ export default function ExitgamePlayPage() {
     : festeAnsicht === "folien" ? [] : ANSICHTEN.filter(([a]) => a === festeAnsicht || a === "folien");
   const aktiv: Ansicht = ansicht && erlaubt.some(([a]) => a === ansicht) ? ansicht : festeAnsicht ?? "folien";
   const umschalter = erlaubt.length < 2 ? null : (
-    <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs" role="group" aria-label="Ansicht">
+    <div className="inline-flex rounded-lg border border-(--border) p-0.5 text-xs" role="group" aria-label="Ansicht">
       {erlaubt.map(([a, t]) => (
         <button key={a} onClick={() => waehleAnsicht(a)} aria-pressed={aktiv === a}
-          className={`px-2 py-0.5 rounded-md font-bold ${aktiv === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>
+          className={`px-2 py-0.5 rounded-md font-bold ${aktiv === a ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>
           {t}
         </button>
       ))}
@@ -193,7 +193,7 @@ export default function ExitgamePlayPage() {
   );
   const stilWahl = festerStil || festeStile ? null : (
     <select value={stil ?? ""} onChange={e => waehleStil(e.target.value as Stil)} aria-label="Stil"
-      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-0.5 text-xs">
+      className="rounded-lg border border-(--border) bg-(--surface) px-1.5 py-0.5 text-xs">
       <option value="" disabled>🎨 Stil</option>
       {(Object.keys(STILE) as Stil[]).map(s => <option key={s} value={s}>{STILE[s].name}</option>)}
     </select>
@@ -201,8 +201,8 @@ export default function ExitgamePlayPage() {
 
   if (aktiv !== "folien") {
     return (
-      <div className="h-full overflow-y-auto flex flex-col gap-3 p-4 max-w-[var(--seite-breite)] mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
-        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+      <div className="h-full overflow-y-auto flex flex-col gap-3 p-4 max-w-(--seite-breite) mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
+        <div className="flex items-center justify-between text-xs text-(--text-muted)">
           <span>{data.title}</span>
           <span className="flex items-center gap-2">{stilWahl}{umschalter}</span>
         </div>
@@ -221,20 +221,20 @@ export default function ExitgamePlayPage() {
 
   return (
     <div className="h-full overflow-y-auto flex flex-col gap-5 p-6 max-w-xl mx-auto w-full rounded-2xl" style={styleVars(data.style)}>
-      <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+      <div className="flex items-center justify-between text-xs text-(--text-muted)">
         <span>{data.title}</span>
         <span className="flex items-center gap-2">{umschalter}{idx + 1}/{data.slides.length}</span>
       </div>
 
       {reviewReturn != null && (
         <button onClick={() => { setReviewReturn(null); viewSlide(reviewReturn); }}
-          className="self-start text-xs text-[var(--accent)] hover:underline">
+          className="self-start text-xs text-(--accent) hover:underline">
           🚪 Zurück zur Tür
         </button>
       )}
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-3">
-        <div className="text-xs text-[var(--text-muted)]">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-3">
+        <div className="text-xs text-(--text-muted)">
           {slide.type === "explanation" ? "📖 Erklärung" : slide.type === "example" ? "💡 Beispiel" : slide.type === "task" ? "✏️ Aufgabe" : "🚪 Tür"}
         </div>
         {slide.title && <h2 className="font-semibold">{slide.title}</h2>}
@@ -250,17 +250,17 @@ export default function ExitgamePlayPage() {
             onReview={jumpToReview}
           />
         ) : (
-          <button onClick={advance} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
+          <button onClick={advance} className="btn-primary w-auto! text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
         )}
 
         {isTaskSlide && (solvedSlideIds.includes(slide.id)) && (
-          <button onClick={advance} className="btn-primary !w-auto text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
+          <button onClick={advance} className="btn-primary w-auto! text-sm py-1.5 px-4 self-start mt-1">Weiter →</button>
         )}
 
         {/* A task may be left open — the missing code fragment is what stops
             the student at the door, and the door links back here. */}
         {slide.type === "task" && !solvedSlideIds.includes(slide.id) && (
-          <button onClick={skipSlide} className="text-xs text-[var(--text-muted)] hover:underline self-start">
+          <button onClick={skipSlide} className="text-xs text-(--text-muted) hover:underline self-start">
             Später lösen →
           </button>
         )}

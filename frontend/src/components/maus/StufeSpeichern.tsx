@@ -196,7 +196,7 @@ const MENUE: Record<Browser, string[]> = {
 };
 
 function Kbd({ children }: { children: string }) {
-  return <kbd className="inline-block rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
+  return <kbd className="inline-block rounded-md border border-(--border) bg-(--surface-hover) px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
 }
 
 export default function StufeSpeichern({
@@ -325,18 +325,18 @@ export default function StufeSpeichern({
               value={blattName}
               onChange={e => setBlattName(e.target.value.slice(0, 40))}
               placeholder="Dein Vorname"
-              className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+              className="rounded-lg border border-(--border) bg-(--bg) px-3 py-2"
             />
           </label>
           <button
             type="button"
             onClick={alsPdf}
             data-testid="pdf-knopf"
-            className="self-start text-sm rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]"
+            className="self-start text-sm rounded-lg px-3 py-1.5 border border-(--border) hover:border-(--accent)"
           >
             📄 Als PDF herunterladen
           </button>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex justify-center">
+          <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex justify-center">
             {bild ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -347,18 +347,18 @@ export default function StufeSpeichern({
                 data-testid="fuehrerschein"
               />
             ) : (
-              <div className="h-64 flex items-center justify-center text-[var(--text-muted)]">Führerschein wird gezeichnet …</div>
+              <div className="h-64 flex items-center justify-center text-(--text-muted)">Führerschein wird gezeichnet …</div>
             )}
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+          <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <h3 className="font-black flex-1">A · Speichern</h3>
               {(["chrome", "firefox"] as const).map(b => (
                 <button key={b} onClick={() => setBrowser(b)} aria-pressed={browser === b}
-                  className={"text-xs rounded-lg px-2 py-1 border " + (browser === b ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "border-[var(--border)]")}>
+                  className={"text-xs rounded-lg px-2 py-1 border " + (browser === b ? "border-(--accent) text-(--accent) font-bold" : "border-(--border)")}>
                   {b === "chrome" ? "Chrome" : "Firefox"}
                 </button>
               ))}
@@ -377,7 +377,7 @@ export default function StufeSpeichern({
               }}
             >
               {MENUE[browser].map((t, i) => (
-                <div key={t} data-speichern={i === 1 || undefined} className="h-7 px-3 flex items-center rounded"
+                <div key={t} data-speichern={i === 1 || undefined} className="h-7 px-3 flex items-center rounded-sm"
                   style={i === 1 ? { background: "rgba(37,99,235,.15)", fontWeight: 700 } : undefined}>
                   {t}
                 </div>
@@ -390,7 +390,7 @@ export default function StufeSpeichern({
             </ol>
           </section>
 
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+          <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
             <h3 className="font-black">B · Wiederfinden</h3>
             <ol className="list-decimal pl-5 text-sm flex flex-col gap-1.5 leading-snug">
               <li>Öffne den <b>Explorer</b>: <Kbd>⊞ Windows</Kbd> + <Kbd>E</Kbd> drücken — oder unten in der Taskleiste auf den gelben Ordner 📁 klicken.</li>
@@ -406,7 +406,7 @@ export default function StufeSpeichern({
               data-testid="ablage"
               className={
                 "rounded-2xl border-4 border-dashed p-6 text-center transition-colors " +
-                (ueber ? "border-[var(--accent)] bg-[var(--surface-hover)]" : fund?.ok ? "border-[var(--green,#16a34a)]" : "border-[var(--border)]")
+                (ueber ? "border-(--accent) bg-(--surface-hover)" : fund?.ok ? "border-(--green,#16a34a)" : "border-(--border)")
               }
             >
               {fund?.ok ? (
@@ -415,7 +415,7 @@ export default function StufeSpeichern({
                   <div className="text-lg font-black">Gefunden! Das ist dein Führerschein.</div>
                   <div className="text-sm">Du hast den Maus-Führerschein bestanden.</div>
                   {nichtssagenderName(fund.datei) && (
-                    <div className="text-xs text-[var(--text-muted)] max-w-sm">
+                    <div className="text-xs text-(--text-muted) max-w-sm">
                       💡 Deine Datei heißt »{fund.datei}«. Gib Dateien beim Speichern lieber einen Namen, den du wiedererkennst.
                     </div>
                   )}
@@ -424,15 +424,15 @@ export default function StufeSpeichern({
                 <div className="flex flex-col gap-2 items-center">
                   <div className="text-4xl">📥</div>
                   <div className="font-bold">Datei hierher ziehen</div>
-                  <button onClick={() => waehler.current?.click()} className="text-xs underline text-[var(--text-muted)]">
+                  <button onClick={() => waehler.current?.click()} className="text-xs underline text-(--text-muted)">
                     … oder hier klicken und die Datei auswählen
                   </button>
-                  {fund && !fund.ok && <div className="text-sm font-bold text-[var(--red,#dc2626)]">{fund.text}</div>}
+                  {fund && !fund.ok && <div className="text-sm font-bold text-(--red,#dc2626)">{fund.text}</div>}
                 </div>
               )}
               <input ref={waehler} type="file" accept="image/*" hidden onChange={e => { pruefe(e.target.files?.[0]); e.target.value = ""; }} />
             </div>
-            <p className="text-xs text-[var(--text-muted)]">Die Datei bleibt auf deinem Computer — sie wird nur hier im Browser verglichen, nicht hochgeladen.</p>
+            <p className="text-xs text-(--text-muted)">Die Datei bleibt auf deinem Computer — sie wird nur hier im Browser verglichen, nicht hochgeladen.</p>
           </section>
         </div>
       </div>

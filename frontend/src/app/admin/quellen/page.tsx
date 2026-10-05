@@ -72,31 +72,31 @@ export default function QuellenSeite() {
 
   if (auth?.role !== "admin") return null;
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black">📚 Quellen und Lizenzen</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        <p className="text-sm text-(--text-muted) mt-1">
           Fremde Daten, Bilder, Schriften und Programme, nach Werkzeug. Lizenzen mit Namensnennung (CC BY, dl-de/by, ODbL, ODC-BY)
           verlangen die Quellenangabe dort, wo das Werk zu sehen ist — die Werkzeuge zeigen sie an. ⚠ = Rechte noch nicht geklärt.
         </p>
       </div>
 
       {werkzeuge.map((w) => (
-        <section key={w.slug} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+        <section key={w.slug} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
           <h2 className="font-black text-lg">{w.name}</h2>
           {w.eintraege.length > 0 && (
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-xs text-[var(--text-muted)]"><th>Quelle</th><th>Lizenz</th><th>Verwendung</th></tr></thead>
+              <thead><tr className="text-left text-xs text-(--text-muted)"><th>Quelle</th><th>Lizenz</th><th>Verwendung</th></tr></thead>
               <tbody>
                 {w.eintraege.map((e, i) => (
-                  <tr key={i} className="border-t border-[var(--border)] align-top">
+                  <tr key={i} className="border-t border-(--border) align-top">
                     <td className="py-1.5 pr-3">
                       {e.url ? <a href={e.url} target="_blank" rel="noreferrer" className="underline">{e.quelle}</a> : e.quelle}
-                      {e.urheber && <div className="text-xs text-[var(--text-muted)]">{e.urheber}</div>}
+                      {e.urheber && <div className="text-xs text-(--text-muted)">{e.urheber}</div>}
                     </td>
                     <td className="py-1.5 pr-3 whitespace-nowrap">
                       {e.pruefen && <span title="Rechte prüfen">⚠ </span>}{e.lizenz}
-                      {NENNUNG_PFLICHT.test(e.lizenz) && <div className="text-[10px] text-[var(--text-muted)]">Namensnennung</div>}
+                      {NENNUNG_PFLICHT.test(e.lizenz) && <div className="text-[10px] text-(--text-muted)">Namensnennung</div>}
                     </td>
                     <td className="py-1.5 text-xs">{e.verwendung}</td>
                   </tr>
@@ -124,17 +124,17 @@ export default function QuellenSeite() {
         </section>
       ))}
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         <h2 className="font-black text-lg">🧰 Programmbibliotheken (npm)</h2>
-        <p className="text-xs text-[var(--text-muted)]">Aus node_modules gelesen (npm run quellen:pakete). »build« = nur zum Erzeugen der Kartendaten.</p>
+        <p className="text-xs text-(--text-muted)">Aus node_modules gelesen (npm run quellen:pakete). »build« = nur zum Erzeugen der Kartendaten.</p>
         <table className="w-full text-sm">
           <tbody>
             {PAKETE.map((p) => (
-              <tr key={p.name} className="border-t border-[var(--border)]">
+              <tr key={p.name} className="border-t border-(--border)">
                 <td className="py-1 pr-3">{p.url ? <a href={p.url} target="_blank" rel="noreferrer" className="underline">{p.name}</a> : p.name}</td>
                 <td className="py-1 pr-3 text-xs">{p.version}</td>
                 <td className="py-1 pr-3">{p.lizenz}</td>
-                <td className="py-1 text-xs text-[var(--text-muted)]">{p.art === "build" ? "build" : ""}</td>
+                <td className="py-1 text-xs text-(--text-muted)">{p.art === "build" ? "build" : ""}</td>
               </tr>
             ))}
           </tbody>

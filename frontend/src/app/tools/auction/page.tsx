@@ -36,21 +36,21 @@ export default function AuctionLibraryPage() {
   });
 
   if (!canEdit) {
-    return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
+    return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
+        <Link href="/tools" className="text-sm text-(--text-muted) hover:text-(--text)">← Tools</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏷 Auktions-Bibliothek</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
+        <p className="text-(--text-muted) text-sm mt-1">
           Häuser bieten Hauspunkte für einen Preis. Nur Haussprecher können mitbieten. Von allen Kolleg·innen nutzbar.
         </p>
       </div>
 
       {canEdit && can("auktion", "host") && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
           <h2 className="font-semibold text-sm">Neue Auktion</h2>
           <input className="input" placeholder="Titel (z. B. Freistunde freiwählen)" value={title}
             onChange={e => setTitle(e.target.value)} />
@@ -70,9 +70,9 @@ export default function AuctionLibraryPage() {
       )}
 
       {isLoading ? (
-        <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+        <div className="text-(--text-muted) text-sm">Laden…</div>
       ) : sets.length === 0 ? (
-        <div className="flex items-center justify-center h-32 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)] text-sm">
+        <div className="flex items-center justify-center h-32 border border-dashed border-(--border) rounded-2xl text-(--text-muted) text-sm">
           Noch keine Auktionen.
         </div>
       ) : (
@@ -81,11 +81,11 @@ export default function AuctionLibraryPage() {
             <li key={s.id}>
               <Link
                 href={`/tools/auction/${s.id}`}
-                className="block rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--accent)] transition-colors"
+                className="block rounded-xl border border-(--border) bg-(--surface) p-4 hover:border-(--accent) transition-colors"
               >
                 <div className="font-semibold text-sm truncate">{s.title}</div>
                 {s.prize_description && (
-                  <div className="text-xs text-[var(--text-muted)] truncate">🏆 {s.prize_description}</div>
+                  <div className="text-xs text-(--text-muted) truncate">🏆 {s.prize_description}</div>
                 )}
               </Link>
             </li>

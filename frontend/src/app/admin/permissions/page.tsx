@@ -58,11 +58,11 @@ export default function AdminPermissionsPage() {
   const individuals = teachers.filter(t => t.role !== "admin");
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/admin" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Admin</Link>
+        <Link href="/admin" className="text-xs text-(--text-muted) hover:text-(--text)">← Admin</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🔑 Berechtigungen</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
+        <p className="text-(--text-muted) text-sm mt-1">
           Gib einzelne Admin-Bereiche für Lehrergruppen oder namentlich ausgewählte Lehrkräfte frei.
           Administratoren haben stets vollen Zugriff.
         </p>
@@ -72,12 +72,12 @@ export default function AdminPermissionsPage() {
         {features.map(f => {
           const indivCount = individuals.filter(t => hasTeacher(f.slug, t.id)).length;
           return (
-            <div key={f.slug} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+            <div key={f.slug} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
               <div className="font-semibold">{f.icon} {f.label}</div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-[var(--text-muted)] w-24 shrink-0">Lehrergruppen</span>
-                {roles.length === 0 && <span className="text-xs text-[var(--text-muted)]">keine Rollen</span>}
+                <span className="text-xs text-(--text-muted) w-24 shrink-0">Lehrergruppen</span>
+                {roles.length === 0 && <span className="text-xs text-(--text-muted)">keine Rollen</span>}
                 {roles.map(r => {
                   const on = hasRole(f.slug, r.id);
                   return (
@@ -85,8 +85,8 @@ export default function AdminPermissionsPage() {
                       key={r.id}
                       onClick={() => toggleRole(f.slug, r.id)}
                       className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                        on ? "bg-[var(--accent)] text-white border-transparent"
-                           : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+                        on ? "bg-(--accent) text-white border-transparent"
+                           : "border-(--border) text-(--text-muted) hover:border-(--accent)"
                       }`}
                     >{on ? "✓ " : ""}{r.name}</button>
                   );
@@ -94,18 +94,18 @@ export default function AdminPermissionsPage() {
               </div>
 
               <details className="text-xs">
-                <summary className="cursor-pointer text-[var(--text-muted)] select-none">
+                <summary className="cursor-pointer text-(--text-muted) select-none">
                   Einzelne Lehrkräfte{indivCount > 0 ? ` · ${indivCount} ausgewählt` : ""}
                 </summary>
                 <div className="mt-2 flex flex-col gap-1 max-h-56 overflow-y-auto pl-1">
-                  {individuals.length === 0 && <span className="text-[var(--text-muted)]">Keine Lehrkräfte.</span>}
+                  {individuals.length === 0 && <span className="text-(--text-muted)">Keine Lehrkräfte.</span>}
                   {individuals.map(t => (
                     <label key={t.id} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={hasTeacher(f.slug, t.id)}
                         onChange={() => toggleTeacher(f.slug, t.id)}
-                        className="accent-[var(--accent)] w-4 h-4"
+                        className="accent-(--accent) w-4 h-4"
                       />
                       {t.first_name} {t.last_name}
                     </label>

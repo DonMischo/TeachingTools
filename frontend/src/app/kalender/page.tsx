@@ -94,32 +94,32 @@ function EntryModal({ draft, categories, tags, onClose, onSaved, onCreateTag, on
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[28rem] max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 flex flex-col gap-3 z-[70]">
+      <div className="fixed inset-0 bg-black/40 z-60" onClick={onClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-md max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-3 z-70">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">{d.id ? "Eintrag bearbeiten" : "Neuer Eintrag"}</h3>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-lg leading-none">×</button>
         </div>
 
         <input className="input text-sm py-2" placeholder="Titel" value={d.title}
           onChange={e => setD({ ...d, title: e.target.value })} />
 
-        <textarea className="input text-sm py-2 min-h-[3.5rem]" placeholder="Beschreibung (optional)"
+        <textarea className="input text-sm py-2 min-h-14" placeholder="Beschreibung (optional)"
           value={d.description} onChange={e => setD({ ...d, description: e.target.value })} />
 
-        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer">
           <input type="checkbox" checked={d.all_day} onChange={e => setD({ ...d, all_day: e.target.checked })} />
           Ganztägig / mehrtägig
         </label>
 
         <div className="flex gap-2">
-          <label className="flex-1 flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+          <label className="flex-1 flex flex-col gap-1 text-xs text-(--text-muted)">
             {d.all_day ? "Start" : "Datum"}
             <input type="date" className="input text-sm py-1.5" value={d.start_date}
               onChange={e => setD({ ...d, start_date: e.target.value, end_date: e.target.value > d.end_date ? e.target.value : d.end_date })} />
           </label>
           {d.all_day && (
-            <label className="flex-1 flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+            <label className="flex-1 flex flex-col gap-1 text-xs text-(--text-muted)">
               Ende
               <input type="date" className="input text-sm py-1.5" value={d.end_date} min={d.start_date}
                 onChange={e => setD({ ...d, end_date: e.target.value })} />
@@ -129,12 +129,12 @@ function EntryModal({ draft, categories, tags, onClose, onSaved, onCreateTag, on
 
         {!d.all_day && (
           <div className="flex gap-2">
-            <label className="flex-1 flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+            <label className="flex-1 flex flex-col gap-1 text-xs text-(--text-muted)">
               Uhrzeit von
               <input type="time" className="input text-sm py-1.5" value={d.start_time}
                 onChange={e => setD({ ...d, start_time: e.target.value })} />
             </label>
-            <label className="flex-1 flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+            <label className="flex-1 flex flex-col gap-1 text-xs text-(--text-muted)">
               bis
               <input type="time" className="input text-sm py-1.5" value={d.end_time}
                 onChange={e => setD({ ...d, end_time: e.target.value })} />
@@ -142,7 +142,7 @@ function EntryModal({ draft, categories, tags, onClose, onSaved, onCreateTag, on
           </div>
         )}
 
-        <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
           Kategorie (wer sieht diesen Eintrag)
           <select className="input text-sm py-1.5" value={d.category} onChange={e => setD({ ...d, category: e.target.value })}>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -150,7 +150,7 @@ function EntryModal({ draft, categories, tags, onClose, onSaved, onCreateTag, on
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-[var(--text-muted)]">Tags</span>
+          <span className="text-xs text-(--text-muted)">Tags</span>
           <div className="flex flex-wrap gap-1.5">
             {tags.map(t => {
               const active = d.tags.includes(t.name);
@@ -164,16 +164,16 @@ function EntryModal({ draft, categories, tags, onClose, onSaved, onCreateTag, on
             })}
           </div>
           {!showNewTag ? (
-            <button type="button" onClick={() => setShowNewTag(true)} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] underline self-start mt-0.5">
+            <button type="button" onClick={() => setShowNewTag(true)} className="text-xs text-(--text-muted) hover:text-(--accent) underline self-start mt-0.5">
               + neuer Tag
             </button>
           ) : (
             <div className="flex gap-1.5 items-center mt-1">
-              <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border border-[var(--border)]" />
+              <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="w-7 h-7 rounded-sm cursor-pointer border border-(--border)" />
               <input className="input text-xs py-1 flex-1" placeholder="Tag-Name…" value={newTagName}
                 onChange={e => setNewTagName(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitNewTag(); } }} />
-              <button type="button" onClick={submitNewTag} className="text-xs px-2 py-1 rounded border border-[var(--border)] hover:border-[var(--accent)]">+</button>
+              <button type="button" onClick={submitNewTag} className="text-xs px-2 py-1 rounded-sm border border-(--border) hover:border-(--accent)">+</button>
             </div>
           )}
         </div>
@@ -218,11 +218,11 @@ function MonthGrid({ year, month, entries, tagColors, isTeacher, onDayClick, onE
   const holidays = useMemo(() => new Map([...thuringenHolidays(year - 1), ...thuringenHolidays(year), ...thuringenHolidays(year + 1)]), [year]);
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-      <div className={`grid ${GRID_COLS} border-b border-[var(--border)] bg-[var(--bg)]`}>
-        <div className="text-center text-xs font-semibold py-1.5 text-[var(--text-muted)]">KW</div>
+    <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+      <div className={`grid ${GRID_COLS} border-b border-(--border) bg-(--bg)`}>
+        <div className="text-center text-xs font-semibold py-1.5 text-(--text-muted)">KW</div>
         {WEEKDAYS.map((w, i) => (
-          <div key={w} className={`text-center text-xs font-semibold py-1.5 ${i >= 5 ? "text-green-600" : "text-[var(--text-muted)]"}`}>{w}</div>
+          <div key={w} className={`text-center text-xs font-semibold py-1.5 ${i >= 5 ? "text-green-600" : "text-(--text-muted)"}`}>{w}</div>
         ))}
       </div>
       <div className={`grid ${GRID_COLS}`}>
@@ -231,13 +231,13 @@ function MonthGrid({ year, month, entries, tagColors, isTeacher, onDayClick, onE
           const weekCell = i % 7 === 0 ? (() => {
             const kw = isoWoche(new Date(year, month, 1 - startOffset + i));
             return (
-              <div key={`kw${i}`} className="min-h-[5.5rem] border-b border-r border-[var(--border)]/30 bg-[var(--bg)] flex flex-col items-center pt-1 leading-tight">
-                <span className="text-xs font-semibold text-[var(--text-muted)]">{kw}</span>
-                <span className="text-[10px] font-bold text-[var(--accent)]">{abWoche(kw)}</span>
+              <div key={`kw${i}`} className="min-h-22 border-b border-r border-(--border)/30 bg-(--bg) flex flex-col items-center pt-1 leading-tight">
+                <span className="text-xs font-semibold text-(--text-muted)">{kw}</span>
+                <span className="text-[10px] font-bold text-(--accent)">{abWoche(kw)}</span>
               </div>
             );
           })() : null;
-          if (day == null) return <Fragment key={i}>{weekCell}<div className="min-h-[5.5rem] border-b border-r border-[var(--border)]/30" /></Fragment>;
+          if (day == null) return <Fragment key={i}>{weekCell}<div className="min-h-22 border-b border-r border-(--border)/30" /></Fragment>;
           const dateStr = fmtDate(new Date(year, month, day));
           const dayEntries = entriesForDay(day);
           const isToday = dateStr === todayStr;
@@ -250,21 +250,21 @@ function MonthGrid({ year, month, entries, tagColors, isTeacher, onDayClick, onE
             <div
               onClick={() => isTeacher && onDayClick(dateStr)}
               title={holidayName}
-              className={`min-h-[5.5rem] border-b border-r border-[var(--border)]/30 p-1 flex flex-col gap-0.5 ${isTeacher ? "cursor-pointer hover:bg-[var(--surface-hover)]" : ""} ${
-                holidayName ? "bg-green-500/10" : isWeekend ? "bg-[var(--bg)]" : ""
+              className={`min-h-22 border-b border-r border-(--border)/30 p-1 flex flex-col gap-0.5 ${isTeacher ? "cursor-pointer hover:bg-(--surface-hover)" : ""} ${
+                holidayName ? "bg-green-500/10" : isWeekend ? "bg-(--bg)" : ""
               }`}>
-              <span className={`text-xs px-1 ${holidayName ? "font-bold text-green-600" : isToday ? "font-bold text-[var(--accent)]" : "text-[var(--text-muted)]"}`}>
+              <span className={`text-xs px-1 ${holidayName ? "font-bold text-green-600" : isToday ? "font-bold text-(--accent)" : "text-(--text-muted)"}`}>
                 {day}
               </span>
               {dayEntries.slice(0, 3).map(e => (
                 <button key={e.id} onClick={(ev) => { ev.stopPropagation(); onEntryClick(e); }}
-                  className="text-[10px] leading-tight text-left px-1 py-0.5 rounded truncate text-white"
+                  className="text-[10px] leading-tight text-left px-1 py-0.5 rounded-sm truncate text-white"
                   style={{ background: entryColor(e, tagColors) }}
                   title={e.title}>
                   {!e.all_day && e.start_time ? `${e.start_time} ` : ""}{e.title}
                 </button>
               ))}
-              {dayEntries.length > 3 && <span className="text-[10px] text-[var(--text-muted)] px-1">+{dayEntries.length - 3} mehr</span>}
+              {dayEntries.length > 3 && <span className="text-[10px] text-(--text-muted) px-1">+{dayEntries.length - 3} mehr</span>}
             </div>
             </Fragment>
           );
@@ -512,26 +512,26 @@ export default function KalenderPage() {
   }
 
   if (!auth) {
-    return <div className="p-8 text-[var(--text-muted)] text-sm">Bitte einloggen, um den Kalender zu sehen.</div>;
+    return <div className="p-8 text-(--text-muted) text-sm">Bitte einloggen, um den Kalender zu sehen.</div>;
   }
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📅 Kalender</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">Schuljahr {getSchoolYearLabel(new Date(schoolYearStart, 8, 1))}</p>
+          <p className="text-(--text-muted) text-sm mt-1">Schuljahr {getSchoolYearLabel(new Date(schoolYearStart, 8, 1))}</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setModalDraft(blankDraft(fmtDate(new Date(viewMonth.year, viewMonth.month, new Date().getDate()))))}
               className="btn-primary text-sm py-1.5 px-4">+ Neuer Termin</button>
             <button onClick={() => setShowExportPanel(v => !v)}
-              className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
               📤 Import / Export
             </button>
             <button onClick={() => printYearCalendar(entries, schoolYearStart, tagColors)}
-              className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
               🖨 Jahresplaner (A3 PDF)
             </button>
           </div>
@@ -539,19 +539,19 @@ export default function KalenderPage() {
       </div>
 
       {!isTeacher && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-muted)] flex items-start gap-2">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted) flex items-start gap-2">
           <span aria-hidden>ℹ️</span>
           <span>Es werden nur Termine der Schulgemeinschaft und Ferien angezeigt — interne Termine der Lehrkräfte sind nicht sichtbar.</span>
         </div>
       )}
 
       {showExportPanel && isTeacher && (
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
           <div className="flex flex-wrap gap-4">
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">ICS-Import</span>
+              <span className="text-xs font-semibold text-(--text-muted)">ICS-Import</span>
               <button onClick={() => fileRef.current?.click()} disabled={importMut.isPending}
-                className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+                className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
                 {importMut.isPending ? "Importiere…" : "📂 .ics-Datei wählen"}
               </button>
               <input ref={fileRef} type="file" accept=".ics,text/calendar" className="hidden" onChange={handleFileChange} />
@@ -559,19 +559,19 @@ export default function KalenderPage() {
 
             {isAdmin && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-[var(--text-muted)]">Feriendaten</span>
+                <span className="text-xs font-semibold text-(--text-muted)">Feriendaten</span>
                 <button onClick={() => fetchHolidaysMut.mutate()} disabled={fetchHolidaysMut.isPending}
-                  className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+                  className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
                   {fetchHolidaysMut.isPending ? "Lade…" : `🏖 Ferien ${schoolYearStart}/${schoolYearStart + 1} laden`}
                 </button>
-                <span className="text-[10px] text-[var(--text-muted)]">Bundesland unter Admin → Kalender-Einstellungen</span>
+                <span className="text-[10px] text-(--text-muted)">Bundesland unter Admin → Kalender-Einstellungen</span>
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">ICS-Export</span>
+              <span className="text-xs font-semibold text-(--text-muted)">ICS-Export</span>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-[var(--text-muted)]">Kategorie</span>
+                <span className="text-[10px] text-(--text-muted)">Kategorie</span>
                 <div className="flex flex-wrap gap-1.5 max-w-xs">
                   {categories.map(c => (
                     <button key={c} onClick={() => toggleSet(exportCategories, setExportCategories, c)}
@@ -581,7 +581,7 @@ export default function KalenderPage() {
                     </button>
                   ))}
                 </div>
-                <span className="text-[10px] text-[var(--text-muted)] mt-1">Tag</span>
+                <span className="text-[10px] text-(--text-muted) mt-1">Tag</span>
                 <div className="flex flex-wrap gap-1.5 max-w-xs">
                   {tags.map(t => (
                     <button key={t.name} onClick={() => toggleSet(exportTags, setExportTags, t.name)}
@@ -593,7 +593,7 @@ export default function KalenderPage() {
                 </div>
               </div>
               <a href={api.calendar.exportIcsUrl([...exportTags], [...exportCategories])} target="_blank" rel="noreferrer"
-                className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] text-center mt-1">
+                className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) text-center mt-1">
                 ⬇️ Exportieren
               </a>
             </div>
@@ -604,7 +604,7 @@ export default function KalenderPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-[var(--text-muted)] mr-1">Kategorie:</span>
+          <span className="text-xs text-(--text-muted) mr-1">Kategorie:</span>
           {categories.map(c => (
             <button key={c} onClick={() => toggleSet(categoryFilter, setCategoryFilter, c)}
               className="text-xs px-2.5 py-1 rounded-full border transition-colors"
@@ -614,7 +614,7 @@ export default function KalenderPage() {
           ))}
         </div>
         <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-[var(--text-muted)] mr-1">Tag:</span>
+          <span className="text-xs text-(--text-muted) mr-1">Tag:</span>
           {tags.map(t => (
             <button key={t.name} onClick={() => toggleSet(tagFilter, setTagFilter, t.name)}
               className="text-xs px-2.5 py-1 rounded-full border transition-colors"
@@ -628,19 +628,19 @@ export default function KalenderPage() {
       {/* Month navigator */}
       <div className="flex items-center gap-3">
         <button onClick={() => setViewMonth(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { year: v.year, month: v.month - 1 })}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">←</button>
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">←</button>
         <span className="font-semibold text-sm w-40 text-center">{MONTH_NAMES[viewMonth.month]} {viewMonth.year}</span>
         <button onClick={() => setViewMonth(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { year: v.year, month: v.month + 1 })}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">→</button>
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">→</button>
         <button onClick={() => {
           const now = new Date();
           setViewMonth({ year: now.getFullYear(), month: now.getMonth() });
           setSchoolYearStart(getSchoolYearStart(now));
-        }} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] underline ml-2">Heute</button>
+        }} className="text-xs text-(--text-muted) hover:text-(--text) underline ml-2">Heute</button>
         <div className="flex-1" />
-        <button onClick={() => setSchoolYearStart(y => y - 1)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">« Schuljahr</button>
-        <span className="text-xs text-[var(--text-muted)]">{schoolYearStart}/{schoolYearStart + 1}</span>
-        <button onClick={() => setSchoolYearStart(y => y + 1)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">Schuljahr »</button>
+        <button onClick={() => setSchoolYearStart(y => y - 1)} className="text-xs text-(--text-muted) hover:text-(--text)">« Schuljahr</button>
+        <span className="text-xs text-(--text-muted)">{schoolYearStart}/{schoolYearStart + 1}</span>
+        <button onClick={() => setSchoolYearStart(y => y + 1)} className="text-xs text-(--text-muted) hover:text-(--text)">Schuljahr »</button>
       </div>
 
       <MonthGrid
@@ -650,20 +650,20 @@ export default function KalenderPage() {
       />
 
       {/* Upcoming list */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Termine im Schuljahr</h2>
         {visibleEntries.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Keine Termine.</p>
+          <p className="text-sm text-(--text-muted)">Keine Termine.</p>
         ) : (
-          <ul className="divide-y divide-[var(--border)]">
+          <ul className="divide-y divide-(--border)">
             {visibleEntries.map(e => (
               <li key={e.id} className="py-2 flex items-center gap-3">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: entryColor(e, tagColors) }} />
                 <div className="flex-1 min-w-0">
-                  <button onClick={() => setModalDraft(draftFromEntry(e))} className="text-sm font-medium hover:text-[var(--accent)] transition-colors text-left">
+                  <button onClick={() => setModalDraft(draftFromEntry(e))} className="text-sm font-medium hover:text-(--accent) transition-colors text-left">
                     {e.title}
                   </button>
-                  <div className="text-xs text-[var(--text-muted)]">
+                  <div className="text-xs text-(--text-muted)">
                     {e.start_date}{e.end_date !== e.start_date ? ` – ${e.end_date}` : ""}
                     {!e.all_day && e.start_time ? ` · ${e.start_time}–${e.end_time}` : ""} · {e.category}
                     {e.tags.length > 0 && ` · ${e.tags.join(", ")}`}

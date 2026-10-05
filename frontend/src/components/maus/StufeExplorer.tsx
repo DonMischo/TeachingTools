@@ -312,7 +312,7 @@ export default function StufeExplorer({
         titel="📁 Teil 2 · Dateien ordnen"
         auftrag={fertig
           ? <>Toll gemacht! Du kennst dich jetzt im Explorer aus.</>
-          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 Rechtsklick, F2, Strg+X/C/V oder Ziehen — was du kannst!</div></>}
+          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 Rechtsklick, F2, Strg+X/C/V oder Ziehen — was du kannst!</div></>}
         punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -321,54 +321,54 @@ export default function StufeExplorer({
 
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
         <div
-          className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden select-none"
+          className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden select-none"
           onContextMenu={rechtsklickFlaeche}
         >
           {/* Titelleiste */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] text-sm font-bold">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-(--border) text-sm font-bold">
             📁 {stand.aktuellerOrdner ? "Schule" : "Dokumente"}
           </div>
 
           {/* Werkzeugleiste */}
-          <div className="flex items-center gap-1 px-2 py-1.5 border-b border-[var(--border)] flex-wrap">
+          <div className="flex items-center gap-1 px-2 py-1.5 border-b border-(--border) flex-wrap">
             <button ref={neuRef} type="button" title="Neuer Ordner" onClick={() => aendern(neuerOrdner)}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] font-bold">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) font-bold">
               ＋ Neu
             </button>
-            <span className="w-px h-5 bg-[var(--border)] mx-1" />
+            <span className="w-px h-5 bg-(--border) mx-1" />
             <button ref={ausschneidenRef} type="button" title="Ausschneiden" disabled={stand.auswahl.length === 0}
               onClick={() => aendern(ausschneiden)}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) disabled:opacity-30">
               ✂️ Ausschneiden
             </button>
             <button type="button" title="Kopieren" disabled={stand.auswahl.length === 0}
               onClick={() => aendern(kopieren)}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) disabled:opacity-30">
               📋 Kopieren
             </button>
             <button ref={einfuegenRef} type="button" title="Einfügen" disabled={!stand.zwischenablage}
               onClick={handleEinfuegen}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) disabled:opacity-30">
               📌 Einfügen
             </button>
             <button type="button" title="Umbenennen" disabled={stand.auswahl.length !== 1}
               onClick={() => anF2(stand.auswahl[0])}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) disabled:opacity-30">
               ✏️ Umbenennen
             </button>
             <button type="button" title="Löschen" disabled={stand.auswahl.length === 0}
               onClick={handleLoeschen}
-              className="text-xs rounded-lg px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-30">
+              className="text-xs rounded-lg px-2 py-1 border border-(--border) hover:border-(--accent) disabled:opacity-30">
               🗑️ Löschen
             </button>
             <span className="flex-1" />
-            <span className="text-xs text-[var(--text-muted)]" title="Papierkorb">🗑️ {stand.papierkorb}</span>
+            <span className="text-xs text-(--text-muted)" title="Papierkorb">🗑️ {stand.papierkorb}</span>
           </div>
 
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] text-xs text-[var(--text-muted)]">
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-(--border) text-xs text-(--text-muted)">
             {stand.aktuellerOrdner && (
-              <button type="button" onClick={() => aendern(zurueck)} className="rounded px-1.5 py-0.5 border border-[var(--border)] hover:border-[var(--accent)]">
+              <button type="button" onClick={() => aendern(zurueck)} className="rounded-sm px-1.5 py-0.5 border border-(--border) hover:border-(--accent)">
                 ← Zurück
               </button>
             )}
@@ -377,10 +377,10 @@ export default function StufeExplorer({
 
           {/* Navigation + Inhalt */}
           <div className="flex">
-            <div className="w-28 shrink-0 border-r border-[var(--border)] p-2 flex flex-col gap-1 text-xs">
+            <div className="w-28 shrink-0 border-r border-(--border) p-2 flex flex-col gap-1 text-xs">
               {NAV.map(n => (
                 <div key={n.id}
-                  className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 " + (n.id === "dokumente" ? "bg-[var(--surface-hover)] font-bold" : "text-[var(--text-muted)]")}>
+                  className={"rounded-lg px-2 py-1.5 flex items-center gap-1.5 " + (n.id === "dokumente" ? "bg-(--surface-hover) font-bold" : "text-(--text-muted)")}>
                   <span>{n.icon}</span>{n.label}
                 </div>
               ))}
@@ -388,7 +388,7 @@ export default function StufeExplorer({
 
             <div
               ref={gitterRef}
-              className="flex-1 min-h-[16rem] p-4 flex flex-wrap content-start"
+              className="flex-1 min-h-64 p-4 flex flex-wrap content-start"
               style={{ gap: `${1.25 * groesse}rem` }}
               onClick={() => { if (!demo.aktiv && !fertig) aendern(leeren); }}
             >
@@ -432,7 +432,7 @@ export default function StufeExplorer({
                           else if (e.key === "Escape") setUmbenennenId(null);
                         }}
                         onBlur={nameSpeichern}
-                        className="w-full text-xs text-center rounded border border-[var(--accent)] bg-[var(--bg)] px-1"
+                        className="w-full text-xs text-center rounded-sm border border-(--accent) bg-(--bg) px-1"
                       />
                     ) : (
                       <span className="text-xs break-all leading-tight">{d.name}</span>
@@ -444,17 +444,17 @@ export default function StufeExplorer({
           </div>
         </div>
 
-        <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3 h-fit">
+        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           <ul className="flex flex-col gap-1.5">
             {AUFGABEN.map((a, i) => (
-              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-[var(--text-muted)]" : "")}>
+              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : "")}>
                 <span>{i < schritt ? "✅" : i === schritt ? "👉" : "⬜"}</span>
                 <span>{a}</span>
               </li>
             ))}
           </ul>
-          <div className="min-h-[2.5rem] text-sm font-bold" aria-live="polite"
+          <div className="min-h-10 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
           </div>

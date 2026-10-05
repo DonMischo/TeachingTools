@@ -20,8 +20,8 @@ const ANKER: Record<string, [number, number]> = {
 const Knopf = ({ an, onClick, children, titel }: { an?: boolean; onClick: () => void; children: React.ReactNode; titel?: string }) => (
   <button onClick={onClick} title={titel}
     className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${an
-      ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent"
-      : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+      ? "bg-(--accent) text-(--accent-text,#111) border-transparent"
+      : "border-(--border) text-(--text-muted) hover:text-(--text)"}`}>
     {children}
   </button>
 );
@@ -105,30 +105,30 @@ export default function Keil3D() {
   }
 
   if (fehlt) {
-    return <p className="text-sm text-[var(--text-muted)]">Dieser Browser kann kein WebGL — die 3D-Ansicht geht leider nicht. Die anderen Reiter funktionieren.</p>;
+    return <p className="text-sm text-(--text-muted)">Dieser Browser kann kein WebGL — die 3D-Ansicht geht leider nicht. Die anderen Reiter funktionieren.</p>;
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
       <div className="flex flex-col gap-2">
-        <div ref={buehneRef} className="relative w-full aspect-[4/3] min-h-[340px] rounded-2xl overflow-hidden border border-[var(--border)] bg-[radial-gradient(circle_at_50%_45%,#1b2740,#070b14)]">
+        <div ref={buehneRef} className="relative w-full aspect-4/3 min-h-[340px] rounded-2xl overflow-hidden border border-(--border) bg-[radial-gradient(circle_at_50%_45%,#1b2740,#070b14)]">
           {SCHICHTEN.map(s => (
             <div key={s.id} ref={el => { labelRefs.current[s.id] = el; }}
-              className="absolute left-0 top-0 pointer-events-none text-[11px] font-bold px-1.5 py-0.5 rounded bg-black/60 text-white whitespace-nowrap transition-opacity"
+              className="absolute left-0 top-0 pointer-events-none text-[11px] font-bold px-1.5 py-0.5 rounded-sm bg-black/60 text-white whitespace-nowrap transition-opacity"
               style={{ opacity: 0 }}>
               {s.name}
             </div>
           ))}
-          <div className="absolute left-2 top-2 text-[11px] text-white/80 bg-black/40 rounded px-2 py-1 pointer-events-none">
+          <div className="absolute left-2 top-2 text-[11px] text-white/80 bg-black/40 rounded-sm px-2 py-1 pointer-events-none">
             {hover ? SCHICHT_NACH_ID[hover].name : "ziehen = drehen · Rad = zoomen · antippen = Infos"}
           </div>
           {konvektion && abgezogen <= 2 && (
-            <div className="absolute right-2 bottom-2 text-[11px] text-white/80 bg-black/40 rounded px-2 py-1 pointer-events-none">
+            <div className="absolute right-2 bottom-2 text-[11px] text-white/80 bg-black/40 rounded-sm px-2 py-1 pointer-events-none">
               🔥 Mantelkonvektion · Modellzeit ≈ <span ref={jahreRef}>0</span> Mio. Jahre (<span ref={rateRef}>0</span> Mio. J/s)
             </div>
           )}
           {ueberhoeht && (
-            <div className="absolute left-2 bottom-2 text-[11px] text-white/70 bg-black/40 rounded px-2 py-1 pointer-events-none">
+            <div className="absolute left-2 bottom-2 text-[11px] text-white/70 bg-black/40 rounded-sm px-2 py-1 pointer-events-none">
               Außenschichten überhöht — nicht maßstäblich
             </div>
           )}
@@ -145,46 +145,46 @@ export default function Keil3D() {
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setAbgezogen(a => Math.min(SCHICHTEN.length - 1, a + 1))}
             disabled={abgezogen >= SCHICHTEN.length - 1}
-            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">
+            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
             🧅 Schale abziehen
           </button>
           <button onClick={() => setAbgezogen(a => Math.max(0, a - 1))} disabled={abgezogen === 0}
-            className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] disabled:opacity-40">
+            className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) disabled:opacity-40">
             ↩ zurücklegen
           </button>
           <button onClick={() => setAbgezogen(0)} disabled={abgezogen === 0}
-            className="px-3 py-1.5 rounded-lg text-sm border border-[var(--border)] disabled:opacity-40">
+            className="px-3 py-1.5 rounded-lg text-sm border border-(--border) disabled:opacity-40">
             alle zurück
           </button>
-          <span className="text-sm text-[var(--text-muted)]">außen liegt jetzt: <b className="text-[var(--text)]">{oben.name}</b> ({oben.von.toLocaleString("de-DE")} km tief)</span>
+          <span className="text-sm text-(--text-muted)">außen liegt jetzt: <b className="text-(--text)">{oben.name}</b> ({oben.von.toLocaleString("de-DE")} km tief)</span>
         </div>
       </div>
 
       <aside className="flex flex-col gap-3">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2 text-sm">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2 text-sm">
           <div className="flex flex-wrap gap-1 items-center">
-            <span className="text-xs text-[var(--text-muted)] w-16">Schnitt</span>
+            <span className="text-xs text-(--text-muted) w-16">Schnitt</span>
             <Knopf an={form === "achtel"} onClick={() => setForm("achtel")}>Achtel</Knopf>
             <Knopf an={form === "keil"} onClick={() => setForm("keil")}>Keil (Pol zu Pol)</Knopf>
           </div>
           <label className="flex items-center gap-2 text-xs">
-            <span className="text-[var(--text-muted)] w-16">Öffnung</span>
+            <span className="text-(--text-muted) w-16">Öffnung</span>
             <input type="range" min={30} max={180} step={5} value={winkel} onChange={e => setWinkel(+e.target.value)} className="flex-1" />
             <span className="w-9 text-right font-bold">{winkel}°</span>
           </label>
           <div className="flex flex-wrap gap-1 items-center">
-            <span className="text-xs text-[var(--text-muted)] w-16">Farben</span>
+            <span className="text-xs text-(--text-muted) w-16">Farben</span>
             {FARBMODI.map(f => <Knopf key={f.id} an={farbmodus === f.id} onClick={() => setFarbmodus(f.id)}>{f.label}</Knopf>)}
           </div>
           <div className="flex flex-wrap gap-1 items-center">
-            <span className="text-xs text-[var(--text-muted)] w-16">Zeigen</span>
+            <span className="text-xs text-(--text-muted) w-16">Zeigen</span>
             <Knopf an={konvektion} onClick={() => setKonvektion(k => !k)} titel="Der Mantel strömt — gerechnet mit einem echten Konvektionslöser">🔥 Konvektion</Knopf>
             <Knopf an={beschriftung} onClick={() => setBeschriftung(b => !b)}>🏷️ Namen</Knopf>
             <Knopf an={ueberhoeht} onClick={() => setUeberhoeht(u => !u)} titel="Kruste und oberer Mantel sind in Wahrheit hauchdünn">🔍 Außen dicker</Knopf>
           </div>
           {konvektion && (
             <label className="flex items-center gap-2 text-xs" title="Wie schnell die Mantelkonvektion abläuft">
-              <span className="text-[var(--text-muted)] w-16">Tempo</span>
+              <span className="text-(--text-muted) w-16">Tempo</span>
               <span>🐢</span>
               <input type="range" min={0} max={100} value={tempoStufe} onChange={e => setTempoStufe(+e.target.value)} className="flex-1" />
               <span>🐇</span>
@@ -197,8 +197,8 @@ export default function Keil3D() {
               : <Knopf onClick={quizStarten}>🎯 Quiz: Schichten finden</Knopf>}
           </div>
         </section>
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
-          {info ? <SchichtInfo schicht={info} /> : <p className="text-sm text-[var(--text-muted)]">Tippe eine Schicht an.</p>}
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3">
+          {info ? <SchichtInfo schicht={info} /> : <p className="text-sm text-(--text-muted)">Tippe eine Schicht an.</p>}
         </section>
       </aside>
     </div>
@@ -220,9 +220,9 @@ function Legende({ modus }: { modus: Farbmodus }) {
   if (modus === "zustand") {
     return (
       <div className="flex gap-3 text-xs">
-        <span><i className="inline-block w-3 h-3 rounded-sm align-middle mr-1" style={{ background: "#8c94a3" }} />fest</span>
-        <span><i className="inline-block w-3 h-3 rounded-sm align-middle mr-1" style={{ background: "#ed8c33" }} />fest, aber fließend</span>
-        <span><i className="inline-block w-3 h-3 rounded-sm align-middle mr-1" style={{ background: "#339ef2" }} />flüssig</span>
+        <span><i className="inline-block w-3 h-3 rounded-xs align-middle mr-1" style={{ background: "#8c94a3" }} />fest</span>
+        <span><i className="inline-block w-3 h-3 rounded-xs align-middle mr-1" style={{ background: "#ed8c33" }} />fest, aber fließend</span>
+        <span><i className="inline-block w-3 h-3 rounded-xs align-middle mr-1" style={{ background: "#339ef2" }} />flüssig</span>
       </div>
     );
   }
@@ -233,7 +233,7 @@ function Skala({ links, rechts, bild }: { links: string; rechts: string; bild: s
   return (
     <div className="text-xs">
       <div className="h-2.5 rounded-full" style={{ background: bild }} />
-      <div className="flex justify-between text-[var(--text-muted)] mt-0.5"><span>{links}</span><span>{rechts}</span></div>
+      <div className="flex justify-between text-(--text-muted) mt-0.5"><span>{links}</span><span>{rechts}</span></div>
     </div>
   );
 }

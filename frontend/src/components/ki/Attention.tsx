@@ -136,7 +136,7 @@ export function Attention() {
 
     return (
       <div className="flex flex-col gap-4">
-        <div className="p-4 rounded-2xl border border-[var(--accent)] bg-[var(--surface)] flex flex-col gap-3">
+        <div className="p-4 rounded-2xl border border-(--accent) bg-(--surface) flex flex-col gap-3">
           <h2 className="font-black">🔎 Auswertung</h2>
           <p className="text-lg font-black">
             {treffer} von {ergebnisse.length} Bögen richtig gezogen.
@@ -146,9 +146,9 @@ export function Attention() {
             {arten.map(z => (
               <li key={z.art} className="flex items-center gap-2 text-sm">
                 <span className="w-44 shrink-0">{ART_TITEL[z.art]}</span>
-                <span className="flex-1 h-2 rounded-full bg-[var(--surface-hover)] overflow-hidden">
+                <span className="flex-1 h-2 rounded-full bg-(--surface-hover) overflow-hidden">
                   <span
-                    className="block h-full bg-[var(--accent)]"
+                    className="block h-full bg-(--accent)"
                     style={{ width: `${(z.richtig / z.gesamt) * 100}%` }}
                   />
                 </span>
@@ -159,14 +159,14 @@ export function Attention() {
 
           {daneben.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
+              <span className="text-xs uppercase tracking-wide text-(--text-muted)">
                 Die hier waren knifflig
               </span>
               <ul className="flex flex-col gap-1 text-sm">
                 {daneben.map(a => (
-                  <li key={a.id} className="text-[var(--text-muted)]">
+                  <li key={a.id} className="text-(--text-muted)">
                     »{a.woerter.join(" ")}« —{" "}
-                    <b className="text-[var(--text)]">{a.woerter[a.ziel].replace(/[.,]$/, "")}</b>
+                    <b className="text-(--text)">{a.woerter[a.ziel].replace(/[.,]$/, "")}</b>
                   </li>
                 ))}
               </ul>
@@ -183,7 +183,7 @@ export function Attention() {
           <button
             type="button"
             onClick={nochmal}
-            className="self-start px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+            className="self-start px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
           >
             ↺ Noch einmal
           </button>
@@ -196,18 +196,18 @@ export function Attention() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
+      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <h2 className="font-black">🔎 Worauf schaut das Modell?</h2>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-(--text-muted)">
             Satz {nr + 1} von {ATTENTION_AUFGABEN.length} ·{" "}
             {ergebnisse.filter(e => e.richtig).length} richtig
           </span>
         </div>
 
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="px-2 py-0.5 rounded-lg border border-[var(--border)] text-[10px]
-            uppercase tracking-wide text-[var(--text-muted)]">
+          <span className="px-2 py-0.5 rounded-lg border border-(--border) text-[10px]
+            uppercase tracking-wide text-(--text-muted)">
             {ART_TITEL[aufgabe.art]}
           </span>
           <p className="text-sm font-bold">{frageZu(aufgabe)}</p>
@@ -310,21 +310,21 @@ export function Attention() {
           <div className="flex flex-col gap-2">
             <p className="text-sm font-bold">
               {richtig ? "✓ Genau." : "✗ Knapp daneben."}{" "}
-              <span className="font-normal text-[var(--text-muted)]">{aufgabe.erklaerung}</span>
+              <span className="font-normal text-(--text-muted)">{aufgabe.erklaerung}</span>
             </p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setZeigeModell(z => !z)}
-                className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]
-                  hover:bg-[var(--surface-hover)] text-sm font-bold"
+                className="px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface)
+                  hover:bg-(--surface-hover) text-sm font-bold"
               >
                 {zeigeModell ? "Bögen verbergen" : "🧠 Was ein Modell ansieht"}
               </button>
               <button
                 type="button"
                 onClick={weiter}
-                className="px-3 py-1.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] text-sm"
+                className="px-3 py-1.5 rounded-xl font-black bg-(--accent) text-(--accent-text) text-sm"
               >
                 {nr + 1 >= ATTENTION_AUFGABEN.length ? "Zur Auswertung →" : "Nächster Satz →"}
               </button>
@@ -333,7 +333,7 @@ export function Attention() {
         )}
 
         {zeigeModell && (
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             So sieht Attention aus: Das fragende Wort verteilt seine Aufmerksamkeit auf alle
             übrigen Wörter — dicker Bogen, mehr Gewicht. Ein echtes Modell hat davon Dutzende
             solcher Bogenbilder nebeneinander (»Köpfe«), und jedes achtet auf etwas anderes.
@@ -342,7 +342,7 @@ export function Attention() {
       </div>
 
       {paarFertig && gegenstueck && (
-        <div className="p-4 rounded-2xl border border-[var(--accent)] bg-[var(--surface)] flex flex-col gap-2">
+        <div className="p-4 rounded-2xl border border-(--accent) bg-(--surface) flex flex-col gap-2">
           <h3 className="font-black text-sm">Ein Wort — andere Antwort</h3>
           {[aufgabe, gegenstueck].map(a => (
             <p key={a.id} className="text-sm">
@@ -350,7 +350,7 @@ export function Attention() {
                 <span
                   key={i}
                   className={
-                    i === a.schluesselwort ? "font-black text-[var(--accent)]"
+                    i === a.schluesselwort ? "font-black text-(--accent)"
                       : i === a.ziel ? "underline decoration-2" : undefined
                   }
                 >
@@ -359,7 +359,7 @@ export function Attention() {
               ))}
             </p>
           ))}
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             Beide Sätze sind bis auf ein Wort gleich, und trotzdem ist etwas anderes gemeint.
             Ein Netz, das nur zählt, welches Wort auf welches folgt, müsste hier zweimal
             dasselbe antworten — es hat den Anfang des Satzes längst vergessen.

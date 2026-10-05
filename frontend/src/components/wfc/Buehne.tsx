@@ -150,49 +150,49 @@ export default function Buehne({ modell, b, h, pinsel, zeichneZelle, mischfarbe 
 
   const { w, versuche, unmoeglich } = lauf.current!;
   const offen = w.zahl.reduce((n, z) => n + (z > 1 ? 1 : 0), 0);
-  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] disabled:opacity-40";
-  const chip = (an: boolean) => `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)]"}`;
+  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) bg-(--surface) hover:border-(--accent) disabled:opacity-40";
+  const chip = (an: boolean) => `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) text-(--text-muted)"}`;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
       <div className="flex flex-col gap-2 min-w-0">
         <canvas ref={canvas} width={b * g} height={h * g} onClick={klick} data-wfc data-offen={offen} data-fertig={w.fertig ? "1" : "0"}
-          className={`w-full max-w-[560px] self-center rounded-xl border border-[var(--border)] [image-rendering:pixelated] ${modus === "festlegen" ? "cursor-crosshair" : ""}`} />
+          className={`w-full max-w-[560px] self-center rounded-xl border border-(--border) [image-rendering:pixelated] ${modus === "festlegen" ? "cursor-crosshair" : ""}`} />
         <div className="flex flex-wrap items-center gap-2 justify-center">
           <button onClick={() => setLaeuft(l => !l)} disabled={w.fertig || unmoeglich}
-            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">
+            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
             {laeuft ? "⏸ anhalten" : "▶ abspielen"}
           </button>
           <button className={knopf} disabled={w.fertig || unmoeglich} onClick={() => { setLaeuft(false); einSchritt(); neuZeichnen(); }}>⏭ ein Schritt</button>
           <button className={knopf} disabled={w.fertig || unmoeglich} onClick={() => { setLaeuft(false); while (einSchritt()); neuZeichnen(); }}>⏩ bis zum Ende</button>
           <button className={knopf} onClick={() => { setLaeuft(false); setNeustart(n => n + 1); }}>↺ neu</button>
           <button className={knopf} onClick={() => { setLaeuft(false); setSeed(s => s + 1); }}>🎲 Zufall {seed}</button>
-          <select value={tempo} onChange={e => setTempo(+e.target.value)} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm">
+          <select value={tempo} onChange={e => setTempo(+e.target.value)} className="rounded-lg border border-(--border) bg-(--surface) px-2 py-1.5 text-sm">
             {TEMPI.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
           </select>
           <button onClick={() => setZahlen(z => !z)} className={chip(zahlen)}>🔢 Möglichkeiten</button>
         </div>
-        <p className="text-sm text-center text-[var(--text-muted)]" data-status>
+        <p className="text-sm text-center text-(--text-muted)" data-status>
           {unmoeglich ? <b className="text-red-500">❌ Diese Festlegungen passen nicht zusammen — entferne eine.</b>
-            : w.fertig ? <><b className="text-[var(--text)]">fertig</b> nach {w.schritte} Schritten{versuche > 1 && <> · {versuche - 1}× Widerspruch, neu begonnen</>}</>
-            : <>Schritt <b className="text-[var(--text)]">{w.schritte}</b> · noch <b className="text-[var(--text)]">{offen}</b> Zellen offen{versuche > 1 && <> · {versuche - 1}× Widerspruch</>}</>}
+            : w.fertig ? <><b className="text-(--text)">fertig</b> nach {w.schritte} Schritten{versuche > 1 && <> · {versuche - 1}× Widerspruch, neu begonnen</>}</>
+            : <>Schritt <b className="text-(--text)">{w.schritte}</b> · noch <b className="text-(--text)">{offen}</b> Zellen offen{versuche > 1 && <> · {versuche - 1}× Widerspruch</>}</>}
         </p>
       </div>
-      <section className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm">
-        <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 self-start">
-          <button onClick={() => setModus("schauen")} className={`px-2 py-1 rounded-md text-xs font-bold ${modus === "schauen" ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>👀 zuschauen</button>
-          <button onClick={() => setModus("festlegen")} className={`px-2 py-1 rounded-md text-xs font-bold ${modus === "festlegen" ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>📌 festlegen</button>
+      <section className="flex flex-col gap-3 rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm">
+        <div className="inline-flex rounded-lg border border-(--border) p-0.5 self-start">
+          <button onClick={() => setModus("schauen")} className={`px-2 py-1 rounded-md text-xs font-bold ${modus === "schauen" ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>👀 zuschauen</button>
+          <button onClick={() => setModus("festlegen")} className={`px-2 py-1 rounded-md text-xs font-bold ${modus === "festlegen" ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>📌 festlegen</button>
         </div>
         {modus === "festlegen" ? (
           <>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               Tippe Zellen an, um sie vorab festzulegen — WFC füllt den Rest so, dass alles passt. Noch einmal tippen löst die Festlegung.
             </p>
             <div className="flex flex-wrap gap-1">
               {pinsel.map((p, k) => (
                 <button key={p.name} onClick={() => setPinselNr(k)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-lg border-2 text-xs font-bold ${pinselNr === k ? "border-[var(--accent)]" : "border-[var(--border)]"}`}>
-                  <span className="w-4 h-4 rounded" style={{ background: p.farbe }} />{p.name}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg border-2 text-xs font-bold ${pinselNr === k ? "border-(--accent)" : "border-(--border)"}`}>
+                  <span className="w-4 h-4 rounded-sm" style={{ background: p.farbe }} />{p.name}
                 </button>
               ))}
             </div>
@@ -200,10 +200,10 @@ export default function Buehne({ modell, b, h, pinsel, zeichneZelle, mischfarbe 
               <button className={knopf} onClick={randFestlegen}>🖼️ ganzer Rand</button>
               <button className={knopf} disabled={!festgelegt.size} onClick={() => { setLaeuft(false); setFestgelegt(new Map()); }}>🗑 alle lösen</button>
             </div>
-            <p className="text-xs text-[var(--text-muted)]">{festgelegt.size} Zellen festgelegt.</p>
+            <p className="text-xs text-(--text-muted)">{festgelegt.size} Zellen festgelegt.</p>
           </>
         ) : (
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             Offene Zellen zeigen die Mischung aller Muster, die dort noch möglich sind — je klarer die Farbe, desto weniger bleibt übrig.
             Gelb umrandet ist die Zelle, die zuletzt festgelegt wurde: immer eine mit der kleinsten Entropie.
           </p>

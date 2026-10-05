@@ -229,7 +229,7 @@ export function Entfernungen({ onWaehle }: { onWaehle: (id: string) => void }) {
       </p>
 
       <div className="flex-1 overflow-auto px-4 py-3">
-        <table className="w-full text-sm min-w-[40rem]">
+        <table className="w-full text-sm min-w-160">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wider text-slate-400">
               <th className="py-1 pr-3">Von der Sonne bis</th>

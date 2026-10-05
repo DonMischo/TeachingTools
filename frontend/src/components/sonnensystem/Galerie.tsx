@@ -64,7 +64,7 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
           <select
             value={filter ?? ""}
             onChange={e => setFilter(e.target.value || null)}
-            className="rounded-lg bg-black/50 border border-white/15 px-2 py-1.5 text-sm font-bold [color-scheme:dark]"
+            className="rounded-lg bg-black/50 border border-white/15 px-2 py-1.5 text-sm font-bold scheme-dark"
             aria-label="Nach Himmelskörper filtern"
           >
             <option value="">alle Himmelskörper</option>
@@ -95,8 +95,8 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
           if (!offenFuer(g)) {
             const fehlt = benoetigt(g).filter(id => !erforscht.includes(id)).map(zielName);
             return (
-              <div key={g.id} className="rounded-xl overflow-hidden border border-dashed border-white/15 bg-white/[0.03]">
-                <div className="aspect-[4/3] relative overflow-hidden bg-black">
+              <div key={g.id} className="rounded-xl overflow-hidden border border-dashed border-white/15 bg-white/3">
+                <div className="aspect-4/3 relative overflow-hidden bg-black">
                   {bild && <img src={bild.datei} alt="" loading="lazy" className="w-full h-full object-cover blur-xl opacity-25 scale-110" />}
                   <div className="absolute inset-0 flex items-center justify-center text-3xl">🔒</div>
                 </div>
@@ -109,7 +109,7 @@ export function Galerie({ offen, onOeffne, onWaehle, erforscht, alleZeigen, onAl
           }
           return (
             <button key={g.id} onClick={() => onOeffne(g.id)} className="group text-left rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-sky-300/50">
-              <div className="aspect-[4/3] bg-black overflow-hidden">
+              <div className="aspect-4/3 bg-black overflow-hidden">
                 <img src={bild?.datei} alt={g.titel} loading="lazy"
                   className={`w-full h-full ${g.portraet ? "object-contain" : "object-cover"} group-hover:scale-105 transition-transform duration-500`} />
               </div>
@@ -168,7 +168,7 @@ function Grossansicht({ eintrag, index, anzahl, paarFrei, onWeiter, onOeffne, on
   const nachweis = bildFuer(eintrag);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur flex flex-col" role="dialog" aria-label={eintrag.titel}>
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col" role="dialog" aria-label={eintrag.titel}>
       <div className="flex items-center justify-between px-4 py-2 text-slate-200">
         <span className="text-xs text-slate-400">{index + 1} / {anzahl}</span>
         <div className="flex gap-2">

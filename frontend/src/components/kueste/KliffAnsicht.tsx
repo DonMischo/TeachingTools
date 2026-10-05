@@ -73,7 +73,7 @@ const FAKTEN: Record<KliffTyp, { titel: string; punkte: string[] }> = {
 
 function Balken({ wert, max, farbe, marke }: { wert: number; max: number; farbe: string; marke?: number }) {
   return (
-    <div className="relative h-2.5 rounded-full bg-[var(--border)] overflow-hidden">
+    <div className="relative h-2.5 rounded-full bg-(--border) overflow-hidden">
       <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (wert / max) * 100)}%`, background: farbe }} />
       {marke !== undefined && <div className="absolute top-0 bottom-0 w-0.5 bg-black/70" style={{ left: `${(marke / max) * 100}%` }} />}
     </div>
@@ -252,14 +252,14 @@ export default function KliffAnsicht() {
       <div className="flex flex-wrap gap-2 items-center">
         {KLIFF_TYPEN.map(t => (
           <button key={t.id} onClick={() => neu(t.id)} title={t.ort}
-            className={`px-3 py-1.5 rounded-lg border text-sm font-bold ${typ === t.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"}`}>
+            className={`px-3 py-1.5 rounded-lg border text-sm font-bold ${typ === t.id ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"}`}>
             {t.icon} {t.name}
           </button>
         ))}
-        <span className="text-xs text-[var(--text-muted)]">{KLIFF_TYPEN.find(t => t.id === typ)!.ort}</span>
+        <span className="text-xs text-(--text-muted)">{KLIFF_TYPEN.find(t => t.id === typ)!.ort}</span>
       </div>
 
-      <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-[var(--border)] touch-none">
+      <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-(--border) touch-none">
         <canvas ref={canvas} onClick={klick} className={`block w-full ${zoom.lupe ? "cursor-none" : "cursor-crosshair"}`} aria-label="Querschnitt durch das Kliff" />
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-xs font-bold pointer-events-none">
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">{MONATE[monatVon(k.stunde)]} {jahrVon(k.stunde)}</span>
@@ -272,7 +272,7 @@ export default function KliffAnsicht() {
           </span>}
         </div>
         {quiz && (
-          <div className="absolute top-2 right-2 max-w-[55%] px-3 py-2 rounded-xl bg-white/95 text-gray-900 text-sm shadow">
+          <div className="absolute top-2 right-2 max-w-[55%] px-3 py-2 rounded-xl bg-white/95 text-gray-900 text-sm shadow-sm">
             {quiz.frage ? <div className="font-black">Tippe auf: {quiz.frage.name}</div> : <div>Keine Begriffe sichtbar.</div>}
             <div className="text-xs text-gray-600">{quiz.richtig} von {quiz.gefragt} richtig</div>
             {quiz.rueck && <div className="text-xs mt-1">{quiz.rueck}</div>}
@@ -284,22 +284,22 @@ export default function KliffAnsicht() {
           <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())}>🌊 Wasserlinie</button>
         </div>
       </div>
-      <p className="text-xs text-[var(--text-muted)] -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt. Maßstab 1:1 — so steil ist das Kliff wirklich.</p>
+      <p className="text-xs text-(--text-muted) -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt. Maßstab 1:1 — so steil ist das Kliff wirklich.</p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">{laeuft ? "⏸ Pause" : "▶ Weiter"}</button>
-        <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">{laeuft ? "⏸ Pause" : "▶ Weiter"}</button>
+        <div className="inline-flex flex-wrap rounded-xl border border-(--border) p-1 bg-(--surface)">
           {TEMPI.map(t => (
-            <button key={t.id} onClick={() => setTempo(t.id)} className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}>{t.label}</button>
+            <button key={t.id} onClick={() => setTempo(t.id)} className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>{t.label}</button>
           ))}
         </div>
-        <button onClick={() => kSturmflut(kliff.current, 0.6)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">🌊 Sturmflut</button>
-        <button onClick={() => kSturmflut(kliff.current, 1)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-red-500/50 text-red-600 dark:text-red-400 hover:bg-[var(--surface-hover)]">🌪️ Schwere Sturmflut</button>
-        <button onClick={() => { kliff.current.saettigung = 1; setModus("hand"); setHand({ ...hand, regen: true }); }} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]" title="Wochenlanger Regen: das Grundwasser steigt auf 100 %">🌧️ Dauerregen</button>
-        <button onClick={() => neu(typ)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">↺ Neu</button>
+        <button onClick={() => kSturmflut(kliff.current, 0.6)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">🌊 Sturmflut</button>
+        <button onClick={() => kSturmflut(kliff.current, 1)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-red-500/50 text-red-600 dark:text-red-400 hover:bg-(--surface-hover)">🌪️ Schwere Sturmflut</button>
+        <button onClick={() => { kliff.current.saettigung = 1; setModus("hand"); setHand({ ...hand, regen: true }); }} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)" title="Wochenlanger Regen: das Grundwasser steigt auf 100 %">🌧️ Dauerregen</button>
+        <button onClick={() => neu(typ)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">↺ Neu</button>
         <label className="flex items-center gap-1.5 text-sm ml-auto"><input type="checkbox" checked={schilderAn} onChange={e => setSchilderAn(e.target.checked)} /> Begriffe</label>
         <button onClick={() => setQuiz(quiz ? null : { frage: neueFrage(), richtig: 0, gefragt: 0, rueck: null })}
-          className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${quiz ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] hover:bg-[var(--surface-hover)]"}`}>❓ Beschriften-Quiz</button>
+          className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${quiz ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) hover:bg-(--surface-hover)"}`}>❓ Beschriften-Quiz</button>
       </div>
 
       {markierterBegriff && !quiz && (
@@ -309,23 +309,23 @@ export default function KliffAnsicht() {
         <div className="flex flex-wrap gap-1.5">
           {zuletzt.current.begriffe.map(b => (
             <button key={b.id} onClick={() => setMarkiert(markiert === b.id ? null : b.id)}
-              className={`px-2 py-0.5 rounded-full text-xs border ${markiert === b.id ? "bg-amber-400 text-black border-amber-500" : "border-[var(--border)] hover:bg-[var(--surface-hover)]"}`}>{b.name}</button>
+              className={`px-2 py-0.5 rounded-full text-xs border ${markiert === b.id ? "bg-amber-400 text-black border-amber-500" : "border-(--border) hover:bg-(--surface-hover)"}`}>{b.name}</button>
           ))}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-black">🌦️ Wetter</h3>
-            <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 text-xs font-bold">
-              <button onClick={() => setModus("hand")} className={`px-2 py-1 rounded-md ${modus === "hand" ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : ""}`}>von Hand</button>
-              <button onClick={() => { setModus("jahr"); if (tempo === "std" || tempo === "tag") setTempo("monat"); }} className={`px-2 py-1 rounded-md ${modus === "jahr" ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : ""}`}>Jahreslauf</button>
+            <div className="inline-flex rounded-lg border border-(--border) p-0.5 text-xs font-bold">
+              <button onClick={() => setModus("hand")} className={`px-2 py-1 rounded-md ${modus === "hand" ? "bg-(--accent) text-(--accent-text,#111)" : ""}`}>von Hand</button>
+              <button onClick={() => { setModus("jahr"); if (tempo === "std" || tempo === "tag") setTempo("monat"); }} className={`px-2 py-1 rounded-md ${modus === "jahr" ? "bg-(--accent) text-(--accent-text,#111)" : ""}`}>Jahreslauf</button>
             </div>
           </div>
           {modus === "hand" ? (
             <>
-              <label className="text-sm">Wind: <b>{hand.bft} Bft</b> <span className="text-[var(--text-muted)]">({BEAUFORT[hand.bft]})</span>
+              <label className="text-sm">Wind: <b>{hand.bft} Bft</b> <span className="text-(--text-muted)">({BEAUFORT[hand.bft]})</span>
                 <input type="range" min={0} max={12} value={hand.bft} onChange={e => setHand({ ...hand, bft: Number(e.target.value) })} className="w-full" />
               </label>
               <div className="flex flex-wrap gap-3 text-sm">
@@ -336,26 +336,26 @@ export default function KliffAnsicht() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-[var(--text-muted)]">Wetter wie im echten Jahr: Winterstürme, Dauerregen im Spätherbst, Frost im Winter, trockene Sommer. Gerade: <b className="text-[var(--text)]">{w.bft} Bft{w.regen ? ", Regen" : ""}{w.frost ? ", Frost" : ""}</b>.</p>
+            <p className="text-sm text-(--text-muted)">Wetter wie im echten Jahr: Winterstürme, Dauerregen im Spätherbst, Frost im Winter, trockene Sommer. Gerade: <b className="text-(--text)">{w.bft} Bft{w.regen ? ", Regen" : ""}{w.frost ? ", Frost" : ""}</b>.</p>
           )}
-          <div className="text-xs text-[var(--text-muted)] grid grid-cols-2 gap-x-3 gap-y-1">
-            <span>Wellen draußen</span><b className="text-[var(--text)]">{zahl(H0)} m</b>
-            <span>Tide</span><b className="text-[var(--text)]">{zahl(tide(k.hub, k.stunde), 2)} m</b>
-            <span>Windstau/Sturmflut</span><b className="text-[var(--text)]">{zahl(kStau(k, w))} m</b>
+          <div className="text-xs text-(--text-muted) grid grid-cols-2 gap-x-3 gap-y-1">
+            <span>Wellen draußen</span><b className="text-(--text)">{zahl(H0)} m</b>
+            <span>Tide</span><b className="text-(--text)">{zahl(tide(k.hub, k.stunde), 2)} m</b>
+            <span>Windstau/Sturmflut</span><b className="text-(--text)">{zahl(kStau(k, w))} m</b>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2.5">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2.5">
           <h3 className="font-black">🧮 Physik der Wand</h3>
           <div className="text-sm">
             <div className="flex justify-between"><span>Biegespannung im Überhang</span><b>{Math.round(sp * 100)} %</b></div>
             <Balken wert={sp} max={1.5} farbe={sp >= 1 ? "#dc2626" : sp > 0.7 ? "#f59e0b" : "#16a34a"} marke={1} />
-            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Hohlkehle {zahl(k.analyse.kehle)} m tief. Bei 100 % der Zugfestigkeit bricht der Überhang ab.</p>
+            <p className="text-[11px] text-(--text-muted) mt-0.5">Hohlkehle {zahl(k.analyse.kehle)} m tief. Bei 100 % der Zugfestigkeit bricht der Überhang ab.</p>
           </div>
           <div className="text-sm">
             <div className="flex justify-between"><span>Standsicherheit (FS)</span><b style={{ color: fsFarbe }}>{fs > 9 ? "hoch" : zahl(fs, 2)}</b></div>
             <Balken wert={Math.min(fs, 2)} max={2} farbe={fsFarbe} marke={1} />
-            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">FS = haltende ÷ treibende Kräfte auf der ungünstigsten {k.analyse.fsArt === "ebene" ? "Schichtfläche" : k.analyse.fsArt === "kluft" ? "Kluft" : "Gleitfläche"}. Unter 1 rutscht es.</p>
+            <p className="text-[11px] text-(--text-muted) mt-0.5">FS = haltende ÷ treibende Kräfte auf der ungünstigsten {k.analyse.fsArt === "ebene" ? "Schichtfläche" : k.analyse.fsArt === "kluft" ? "Kluft" : "Gleitfläche"}. Unter 1 rutscht es.</p>
           </div>
           <div className="text-sm">
             <div className="flex justify-between"><span>Grundwasser</span><b>{Math.round(k.saettigung * 100)} %</b></div>
@@ -365,48 +365,48 @@ export default function KliffAnsicht() {
             <div className="flex justify-between"><span>Klüfte und Risse</span><b>{Math.round(k.risse * 100)} %</b></div>
             <Balken wert={k.risse} max={1} farbe="#a16207" />
           </div>
-          <div className="text-xs text-[var(--text-muted)] grid grid-cols-2 gap-x-3 gap-y-1 mt-1">
-            <span>Kante zurückgewichen</span><b className="text-[var(--text)]">{zahl(Math.max(0, zurueck))} m</b>
-            <span>Abgestürzt/abgerutscht</span><b className="text-[var(--text)]">{Math.round(k.bilanz.abgestuerzt)} m³/m</b>
-            <span>Vom Meer fortgespült</span><b className="text-[var(--text)]">{Math.round(k.bilanz.weggespuelt)} m³/m</b>
-            <span>Kosten / Schäden</span><b className="text-[var(--text)]">{zahl(k.kosten, 2)} / {zahl(k.schadenEuro, 1)} Mio. €</b>
+          <div className="text-xs text-(--text-muted) grid grid-cols-2 gap-x-3 gap-y-1 mt-1">
+            <span>Kante zurückgewichen</span><b className="text-(--text)">{zahl(Math.max(0, zurueck))} m</b>
+            <span>Abgestürzt/abgerutscht</span><b className="text-(--text)">{Math.round(k.bilanz.abgestuerzt)} m³/m</b>
+            <span>Vom Meer fortgespült</span><b className="text-(--text)">{Math.round(k.bilanz.weggespuelt)} m³/m</b>
+            <span>Kosten / Schäden</span><b className="text-(--text)">{zahl(k.kosten, 2)} / {zahl(k.schadenEuro, 1)} Mio. €</b>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2 max-h-[360px] overflow-y-auto">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2 max-h-[360px] overflow-y-auto">
           <h3 className="font-black">📰 Meldungen</h3>
-          {k.meldungen.length === 0 && <p className="text-sm text-[var(--text-muted)]">Noch ist alles ruhig. Dreh den Wind auf, lass es regnen oder frieren — oder nimm den Jahreslauf.</p>}
+          {k.meldungen.length === 0 && <p className="text-sm text-(--text-muted)">Noch ist alles ruhig. Dreh den Wind auf, lass es regnen oder frieren — oder nimm den Jahreslauf.</p>}
           {[...k.meldungen].reverse().slice(0, 12).map((m, i) => (
             <div key={`${m.stunde}-${i}`} className={`text-sm rounded-lg px-2 py-1 border-l-4 ${m.art === "schaden" ? "border-red-500 bg-red-500/10" : m.art === "warnung" ? "border-amber-500 bg-amber-500/10" : m.art === "gut" ? "border-green-500 bg-green-500/10" : "border-sky-500 bg-sky-500/10"}`}>
-              <span className="text-[11px] text-[var(--text-muted)] mr-1">{MONATE[monatVon(m.stunde)].slice(0, 3)} {jahrVon(m.stunde)}</span>{m.text}
+              <span className="text-[11px] text-(--text-muted) mr-1">{MONATE[monatVon(m.stunde)].slice(0, 3)} {jahrVon(m.stunde)}</span>{m.text}
             </div>
           ))}
         </section>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         <h3 className="font-black">🔨 Was dieses Kliff zerstört</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[...PROZESSE].filter(p => p.st[typ] > 0).sort((a, b) => b.st[typ] - a.st[typ]).map(p => (
-            <div key={p.name} className="rounded-xl border border-[var(--border)] p-2.5 text-sm">
+            <div key={p.name} className="rounded-xl border border-(--border) p-2.5 text-sm">
               <div className="flex justify-between gap-2"><b>{p.icon} {p.name}</b><span className="text-amber-500 tracking-widest" title="Wie wichtig an diesem Kliff">{"●".repeat(p.st[typ])}<span className="opacity-25">{"●".repeat(3 - p.st[typ])}</span></span></div>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{p.text}</p>
+              <p className="text-xs text-(--text-muted) mt-1">{p.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
         <h3 className="font-black">🏗️ Schutz — oder nicht?</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {KLIFF_MASSNAHMEN.filter(m => m.typen.includes(typ)).map(m => (
-            <div key={m.id} className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between gap-2"><b>{m.icon} {m.name}</b><span className="text-xs text-[var(--text-muted)] whitespace-nowrap">≈ {zahl(m.kosten, m.kosten < 1 ? 2 : 0)} Mio. €/km</span></div>
-              <p className="text-xs text-[var(--text-muted)]">{m.was}</p>
+            <div key={m.id} className="rounded-xl border border-(--border) p-3 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-2"><b>{m.icon} {m.name}</b><span className="text-xs text-(--text-muted) whitespace-nowrap">≈ {zahl(m.kosten, m.kosten < 1 ? 2 : 0)} Mio. €/km</span></div>
+              <p className="text-xs text-(--text-muted)">{m.was}</p>
               {offen === m.id && <div className="text-xs flex flex-col gap-1"><p><b className="text-green-600 dark:text-green-400">＋</b> {m.plus}</p><p><b className="text-red-600 dark:text-red-400">－</b> {m.minus}</p></div>}
               <div className="flex gap-2 mt-1">
-                <button onClick={() => { kMassnahme(kliff.current, m.id); setTick(x => x + 1); }} className="px-3 py-1 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">Bauen</button>
-                <button onClick={() => setOffen(offen === m.id ? null : m.id)} className="px-3 py-1 rounded-lg text-sm border border-[var(--border)] hover:bg-[var(--surface-hover)]">{offen === m.id ? "weniger" : "Vor- und Nachteile"}</button>
+                <button onClick={() => { kMassnahme(kliff.current, m.id); setTick(x => x + 1); }} className="px-3 py-1 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111)">Bauen</button>
+                <button onClick={() => setOffen(offen === m.id ? null : m.id)} className="px-3 py-1 rounded-lg text-sm border border-(--border) hover:bg-(--surface-hover)">{offen === m.id ? "weniger" : "Vor- und Nachteile"}</button>
               </div>
             </div>
           ))}
@@ -414,7 +414,7 @@ export default function KliffAnsicht() {
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4">
           <h3 className="font-black mb-2">📍 {FAKTEN[typ].titel}</h3>
           <ul className="text-sm list-disc pl-5 flex flex-col gap-1">{FAKTEN[typ].punkte.map(t => <li key={t}>{t}</li>)}</ul>
           <div className="mt-3"><BildStreifen bilder={bilderZuKliff(typ)} /></div>

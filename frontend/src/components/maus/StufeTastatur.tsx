@@ -218,7 +218,7 @@ export default function StufeTastatur({
         titel="⌨️ Teil 2 · Tastatur"
         auftrag={fertig
           ? <>Alle Tastatur-Aufgaben geschafft!</>
-          : <>{aufgabe.auftrag}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 {aufgabe.tipp}</div></>}
+          : <>{aufgabe.auftrag}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 {aufgabe.tipp}</div></>}
         punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -230,7 +230,7 @@ export default function StufeTastatur({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 max-w-3xl">
           {!fertig && (
-            <div className={erfolg ? "ring-4 ring-[var(--green,#16a34a)] rounded-2xl transition-shadow" : ""}>
+            <div className={erfolg ? "ring-4 ring-(--green,#16a34a) rounded-2xl transition-shadow" : ""}>
               {aufgabe.art === "textarea" ? (
                 <textarea
                   key={nr}
@@ -239,7 +239,7 @@ export default function StufeTastatur({
                   onKeyDown={tasteRunter}
                   onKeyUp={tasteHoch}
                   onInput={eingabe}
-                  className={`w-full min-h-[6rem] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 leading-relaxed ${schriftgroesse}`}
+                  className={`w-full min-h-24 rounded-xl border border-(--border) bg-(--surface) p-3 leading-relaxed ${schriftgroesse}`}
                 />
               ) : (
                 <input
@@ -251,7 +251,7 @@ export default function StufeTastatur({
                   onInput={eingabe}
                   onCut={ausgeschnitten}
                   onPaste={eingefuegt}
-                  className={`w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 ${schriftgroesse}`}
+                  className={`w-full rounded-xl border border-(--border) bg-(--surface) px-4 py-3 ${schriftgroesse}`}
                 />
               )}
             </div>
@@ -264,14 +264,14 @@ export default function StufeTastatur({
                 onClick={aufAnfang}
                 disabled={demo.aktiv || erfolg}
                 title="Stellt den Starttext dieser Aufgabe wieder her — falls du dich vertippt oder zu viel gelöscht hast."
-                className="text-xs text-[var(--text-muted)] underline decoration-dotted underline-offset-2 hover:text-[var(--text)] disabled:opacity-40"
+                className="text-xs text-(--text-muted) underline decoration-dotted underline-offset-2 hover:text-(--text) disabled:opacity-40"
               >
                 ↺ Text zurücksetzen
               </button>
             </div>
           )}
 
-          <div className="min-h-[2.5rem] text-sm font-bold" aria-live="polite"
+          <div className="min-h-10 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
           </div>
@@ -283,21 +283,21 @@ export default function StufeTastatur({
             Liste steht daneben und nicht mehr weit oben neben dem Eingabefeld. */}
         {!fertig && (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_14rem] items-start">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
+            <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
               <div className="flex flex-wrap gap-1.5" aria-hidden>
-                <span className="text-xs text-[var(--text-muted)] self-center mr-1">Diese Taste(n) brauchst du:</span>
+                <span className="text-xs text-(--text-muted) self-center mr-1">Diese Taste(n) brauchst du:</span>
                 {aufgabe.tastenHinweis.map((t, i) => (
-                  <span key={i} className="text-xs font-bold rounded-md border border-[var(--accent)] px-2 py-1">{t}</span>
+                  <span key={i} className="text-xs font-bold rounded-md border border-(--accent) px-2 py-1">{t}</span>
                 ))}
               </div>
               <Tastatur gedrueckt={gedrueckt} zeigeFinger={false} bloecke />
             </div>
 
-            <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-1 h-fit">
+            <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-1 h-fit">
               <h3 className="font-black mb-1">Aufgaben</h3>
               <ul className="flex flex-col gap-1">
                 {TASTATUR_AUFGABEN.map((a, i) => (
-                  <li key={a.id} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-[var(--text-muted)]" : "")}>
+                  <li key={a.id} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-(--text-muted)" : "")}>
                     <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
                     <span className="truncate">{a.kurz}</span>
                   </li>

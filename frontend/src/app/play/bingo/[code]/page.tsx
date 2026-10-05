@@ -177,7 +177,7 @@ export default function BingoPlayPage() {
   if (phase.kind === "join" && auth?.student) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[var(--text-muted)] text-sm animate-pulse">Verbinde…</p>
+        <p className="text-(--text-muted) text-sm animate-pulse">Verbinde…</p>
       </div>
     );
   }
@@ -185,13 +185,13 @@ export default function BingoPlayPage() {
   // ── Waiting screen ───────────────────────────────────────────────────────────
   if (phase.kind === "waiting") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)]">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg)">
         <div className="text-5xl">🎰</div>
         <p className="font-semibold text-lg">{phase.name}</p>
-        <p className="text-[var(--text-muted)] text-sm animate-pulse">Warte auf Spielstart…</p>
+        <p className="text-(--text-muted) text-sm animate-pulse">Warte auf Spielstart…</p>
         {players.length > 0 && (
           <div className="w-full max-w-xs mt-2">
-            <p className="text-xs text-[var(--text-muted)] text-center mb-2">{players.length} Spieler beigetreten</p>
+            <p className="text-xs text-(--text-muted) text-center mb-2">{players.length} Spieler beigetreten</p>
             <div className="flex flex-wrap gap-3 justify-center">
               {players.map((p, i) => (
                 <div key={i} className="flex flex-col items-center gap-1">
@@ -209,18 +209,18 @@ export default function BingoPlayPage() {
   // ── Closed screen ────────────────────────────────────────────────────────────
   if (phase.kind === "closed") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)] text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg) text-center">
         <div className="text-4xl">🎰</div>
-        {bingo && <p className="font-black text-xl text-[var(--accent)]">🎉 BINGO!</p>}
-        <p className="text-[var(--text-muted)] text-sm">Spiel beendet.</p>
+        {bingo && <p className="font-black text-xl text-(--accent)">🎉 BINGO!</p>}
+        <p className="text-(--text-muted) text-sm">Spiel beendet.</p>
         {score && (
-          <div className="w-full max-w-xs rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col items-center gap-2 mt-2">
+          <div className="w-full max-w-xs rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col items-center gap-2 mt-2">
             <p className="text-4xl font-black" style={{ color: "var(--accent)" }}>{score.points}</p>
             <p className="text-sm font-semibold">von {score.max_points} Punkten</p>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               {score.correct} von {score.total_called} gerufenen Feldern markiert ({Math.round(score.ratio * 100)} %)
             </p>
-            <div className="w-full h-2 rounded-full bg-[var(--border)] mt-1 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-(--border) mt-1 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${score.ratio * 100}%`, background: "var(--accent)" }} />
             </div>
@@ -234,12 +234,12 @@ export default function BingoPlayPage() {
   const cols = card?.grid_cols ?? card?.grid_size ?? 4;
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-5 p-5 pb-10 bg-[var(--bg)]">
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-center min-h-[72px] flex items-center justify-center mt-2">
+    <div className="min-h-screen flex flex-col items-center gap-5 p-5 pb-10 bg-(--bg)">
+      <div className="w-full max-w-sm rounded-2xl border border-(--border) bg-(--surface) p-4 text-center min-h-[72px] flex items-center justify-center mt-2">
         {game.last_called ? (
-          <div className="text-2xl font-black text-[var(--accent)]">{game.last_called.caller}</div>
+          <div className="text-2xl font-black text-(--accent)">{game.last_called.caller}</div>
         ) : (
-          <span className="text-[var(--text-muted)] text-sm animate-pulse">Noch nichts gerufen…</span>
+          <span className="text-(--text-muted) text-sm animate-pulse">Noch nichts gerufen…</span>
         )}
       </div>
 
@@ -261,10 +261,10 @@ export default function BingoPlayPage() {
                   key={pos}
                   onClick={() => markCell(pos)}
                   disabled={isMarked || isWrong}
-                  className={`aspect-square min-w-0 overflow-hidden rounded-xl border-2 font-semibold transition-all duration-150 flex items-center justify-center p-1 text-center leading-tight break-words hyphens-auto ${
-                    isMarked ? "scale-95 border-[var(--accent)]"
+                  className={`aspect-square min-w-0 overflow-hidden rounded-xl border-2 font-semibold transition-all duration-150 flex items-center justify-center p-1 text-center leading-tight wrap-break-word hyphens-auto ${
+                    isMarked ? "scale-95 border-(--accent)"
                     : isWrong ? "scale-95 border-red-500 cursor-not-allowed"
-                    : "border-[var(--border)] text-[var(--text-muted)] cursor-pointer hover:scale-105"
+                    : "border-(--border) text-(--text-muted) cursor-pointer hover:scale-105"
                   }`}
                   style={{
                     fontSize: cell.answer.length > 12 ? "9px" : cell.answer.length > 8 ? "10px" : "12px",
@@ -278,12 +278,12 @@ export default function BingoPlayPage() {
               );
             })}
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-3">
+          <p className="text-xs text-(--text-muted) mt-3">
             Felder antippen wenn der Begriff gerufen wurde
           </p>
         </div>
       ) : (
-        <p className="text-[var(--text-muted)] text-sm">Lade Karte…</p>
+        <p className="text-(--text-muted) text-sm">Lade Karte…</p>
       )}
     </div>
   );

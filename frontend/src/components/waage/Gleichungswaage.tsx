@@ -47,13 +47,13 @@ export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNod
   const active = MODES.find(m => m.id === mode)!;
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <WaageStyles />
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
         <h1 className="text-2xl font-black tracking-tight">⚖️ Gleichungswaage</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1 max-w-2xl">
+        <p className="text-(--text-muted) text-sm mt-1 max-w-2xl">
           Beide Seiten liegen in den Schalen. Was du auf der einen Seite tust, musst du auch auf
           der anderen tun — sonst kippt die Waage. {active.sub}
         </p>
@@ -61,13 +61,13 @@ export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNod
         {action}
       </div>
 
-      {!fest && <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!fest && <div className="inline-flex self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
         {MODES.map(m => (
           <button key={m.id} onClick={() => { setMode(m.id); setMsg(null); }}
             className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
               mode === m.id
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                ? "bg-(--accent) text-(--accent-text,#111)"
+                : "text-(--text-muted) hover:text-(--text)"
             }`}>
             {m.icon} {m.label}
           </button>
@@ -75,7 +75,7 @@ export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNod
       </div>}
 
       {msg && (
-        <div className="gw-banner rounded-xl border border-[var(--red)] bg-[var(--red)]/10 px-4 py-2 text-sm text-[var(--red)] font-medium">
+        <div className="gw-banner rounded-xl border border-(--red) bg-(--red)/10 px-4 py-2 text-sm text-(--red) font-medium">
           {msg}
         </div>
       )}

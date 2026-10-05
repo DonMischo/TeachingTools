@@ -10,9 +10,9 @@ export default function KartenMenue({ projektion, setProjektion }: { projektion:
   return (
     <div className="flex flex-col items-start gap-1">
       <button onClick={() => setOffen((x) => !x)} aria-label="Kartenmenü" aria-expanded={offen}
-        className="w-9 h-9 rounded-lg bg-white/95 border border-black/20 shadow text-lg leading-none text-neutral-800">☰</button>
+        className="w-9 h-9 rounded-lg bg-white/95 border border-black/20 shadow-sm text-lg leading-none text-neutral-800">☰</button>
       {offen && (
-        <div role="radiogroup" aria-label="Kartennetz" className="rounded-xl bg-white/95 border border-black/20 shadow p-2 flex flex-col gap-1 text-sm text-neutral-800 w-60">
+        <div role="radiogroup" aria-label="Kartennetz" className="rounded-xl bg-white/95 border border-black/20 shadow-sm p-2 flex flex-col gap-1 text-sm text-neutral-800 w-60">
           <span className="text-[10px] font-black uppercase tracking-wide text-neutral-500">Kartennetz</span>
           {PROJEKTIONEN.map((p) => (
             <label key={p.id} className="flex items-start gap-2 cursor-pointer">

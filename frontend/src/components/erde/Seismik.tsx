@@ -48,9 +48,9 @@ export default function Seismik() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
       <div className="flex flex-col gap-2">
-        <canvas ref={leinwandRef} width={900} height={760} className="w-full rounded-2xl border border-[var(--border)] bg-[#0b1120]" />
+        <canvas ref={leinwandRef} width={900} height={760} className="w-full rounded-2xl border border-(--border) bg-[#0b1120]" />
         <div className="flex items-center gap-2 text-sm">
-          <button onClick={() => setLaeuft(l => !l)} className="px-3 py-1 rounded-lg font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">
+          <button onClick={() => setLaeuft(l => !l)} className="px-3 py-1 rounded-lg font-bold bg-(--accent) text-(--accent-text,#111)">
             {laeuft ? "⏸ anhalten" : "▶ abspielen"}
           </button>
           <input type="range" min={0} max={1500} value={Math.round(zeit)} className="flex-1"
@@ -59,20 +59,20 @@ export default function Seismik() {
         </div>
       </div>
       <aside className="flex flex-col gap-3 text-sm">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
           <b>Wie sieht die Erde innen aus?</b>
           {MODELLE.map(m => (
             <label key={m.id} className="flex items-start gap-2 cursor-pointer">
               <input type="radio" checked={modell === m.id} onChange={() => setModell(m.id)} className="mt-1" />
-              <span><b>{m.label}</b><br /><span className="text-xs text-[var(--text-muted)]">{m.jahr}</span></span>
+              <span><b>{m.label}</b><br /><span className="text-xs text-(--text-muted)">{m.jahr}</span></span>
             </label>
           ))}
         </section>
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
           <div className="flex gap-1">
             {(["P", "S", "PS"] as Auswahl[]).map(a => (
               <button key={a} onClick={() => setAuswahl(a)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold ${auswahl === a ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "border border-[var(--border)]"}`}>
+                className={`px-3 py-1 rounded-lg text-xs font-bold ${auswahl === a ? "bg-(--accent) text-(--accent-text,#111)" : "border border-(--border)"}`}>
                 {a === "PS" ? "beide" : `${a}-Wellen`}
               </button>
             ))}
@@ -87,7 +87,7 @@ export default function Seismik() {
             <span><i className="inline-block w-4 h-1 align-middle mr-1" style={{ background: INNENKERN_FARBE }} />durch den inneren Kern</span>
           </div>
         </section>
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 leading-relaxed">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 leading-relaxed">
           <b>Was man sieht</b>
           <ul className="list-disc pl-5 mt-1 flex flex-col gap-1">
             <li>Die Wellen laufen auf <b>gebogenen Bahnen</b>: nach unten werden sie schneller und werden wie Licht in Glas gebrochen.</li>

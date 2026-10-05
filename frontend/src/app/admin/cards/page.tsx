@@ -38,17 +38,17 @@ function StudentCard({
 
   return (
     <div
-      className="student-card rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden"
+      className="student-card rounded-xl border border-(--border) bg-(--surface) overflow-hidden"
       style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
     >
-      <div className="bg-[var(--accent)] px-4 pt-3 pb-2.5">
-        <div className="font-black text-[var(--accent-text)] text-base leading-tight tracking-wide uppercase">
+      <div className="bg-(--accent) px-4 pt-3 pb-2.5">
+        <div className="font-black text-(--accent-text) text-base leading-tight tracking-wide uppercase">
           {student.nachname}
         </div>
-        <div className="font-semibold text-[var(--accent-text)] text-sm opacity-90">
+        <div className="font-semibold text-(--accent-text) text-sm opacity-90">
           {student.vorname}
         </div>
-        <div className="text-[var(--accent-text)] text-xs opacity-70 mt-0.5 font-mono">
+        <div className="text-(--accent-text) text-xs opacity-70 mt-0.5 font-mono">
           {student.klasse}
         </div>
       </div>
@@ -56,7 +56,7 @@ function StudentCard({
         <div className="px-4 py-2.5 flex flex-col gap-1.5">
           {rows.map(f => (
             <div key={f.id} className="flex gap-2 text-xs">
-              <span className="text-[var(--text-muted)] shrink-0 w-28 truncate">
+              <span className="text-(--text-muted) shrink-0 w-28 truncate">
                 {f.alias || f.dbKey}:
               </span>
               <span className="font-mono font-medium break-all">{student.fields[f.dbKey]}</span>
@@ -130,20 +130,20 @@ function FieldBuilder({
     <div className="flex flex-col gap-2">
       {/* Active fields list */}
       {cardFields.length === 0 ? (
-        <p className="text-xs text-[var(--text-muted)] italic py-1">
+        <p className="text-xs text-(--text-muted) italic py-1">
           Noch keine Felder gewählt — unten hinzufügen.
         </p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {cardFields.map((f, i) => (
-            <div key={f.id} className="flex items-center gap-2 bg-[var(--bg)] rounded-lg px-2 py-1.5 border border-[var(--border)]">
+            <div key={f.id} className="flex items-center gap-2 bg-(--bg) rounded-lg px-2 py-1.5 border border-(--border)">
               <div className="flex flex-col gap-0.5 shrink-0">
                 <button onClick={() => move(i, -1)} disabled={i === 0}
-                  className="text-[8px] leading-none text-[var(--text-muted)] hover:text-[var(--text)] disabled:opacity-20 px-0.5" title="Nach oben">▲</button>
+                  className="text-[8px] leading-none text-(--text-muted) hover:text-(--text) disabled:opacity-20 px-0.5" title="Nach oben">▲</button>
                 <button onClick={() => move(i, 1)} disabled={i === cardFields.length - 1}
-                  className="text-[8px] leading-none text-[var(--text-muted)] hover:text-[var(--text)] disabled:opacity-20 px-0.5" title="Nach unten">▼</button>
+                  className="text-[8px] leading-none text-(--text-muted) hover:text-(--text) disabled:opacity-20 px-0.5" title="Nach unten">▼</button>
               </div>
-              <span className="text-xs font-mono text-[var(--text-muted)] w-32 shrink-0 truncate" title={f.dbKey}>{f.dbKey}</span>
+              <span className="text-xs font-mono text-(--text-muted) w-32 shrink-0 truncate" title={f.dbKey}>{f.dbKey}</span>
               <input
                 type="text"
                 value={f.alias}
@@ -153,7 +153,7 @@ function FieldBuilder({
                 title="Bezeichnung auf der Karte"
               />
               <button onClick={() => removeField(f.id)}
-                className="text-[var(--text-muted)] hover:text-red-400 transition-colors text-sm px-1 shrink-0" title="Entfernen">×</button>
+                className="text-(--text-muted) hover:text-red-400 transition-colors text-sm px-1 shrink-0" title="Entfernen">×</button>
             </div>
           ))}
         </div>
@@ -164,12 +164,12 @@ function FieldBuilder({
         ref={btnRef}
         onClick={toggleDropdown}
         disabled={availableKeys.length === 0}
-        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${dropdownRect ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${dropdownRect ? "border-(--accent) text-(--accent)" : "border-(--border) hover:border-(--accent) hover:text-(--accent)"}`}
       >
         <span className="text-base leading-none">+</span>
         Feld hinzufügen
-        {unused.length > 0 && <span className="text-[var(--text-muted)]">({unused.length} verfügbar)</span>}
-        {availableKeys.length === 0 && <span className="text-[var(--text-muted)]">(Schüler laden…)</span>}
+        {unused.length > 0 && <span className="text-(--text-muted)">({unused.length} verfügbar)</span>}
+        {availableKeys.length === 0 && <span className="text-(--text-muted)">(Schüler laden…)</span>}
       </button>
 
       {/* Fixed-position dropdown — escapes any overflow:hidden parent */}
@@ -183,21 +183,21 @@ function FieldBuilder({
             minWidth: Math.max(dropdownRect.width, 260),
             zIndex: 9999,
           }}
-          className="bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden"
+          className="bg-(--surface) border border-(--border) rounded-xl shadow-xl overflow-hidden"
         >
           {unused.length === 0 ? (
-            <div className="px-4 py-3 text-xs text-[var(--text-muted)]">Alle verfügbaren Felder bereits hinzugefügt.</div>
+            <div className="px-4 py-3 text-xs text-(--text-muted)">Alle verfügbaren Felder bereits hinzugefügt.</div>
           ) : (
             <div className="max-h-64 overflow-y-auto">
               {unused.map(key => (
                 <button
                   key={key}
                   onClick={() => addField(key)}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--surface-hover)] flex items-center gap-3 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-(--surface-hover) flex items-center gap-3 transition-colors"
                 >
-                  <span className="font-mono text-xs text-[var(--text-muted)] w-36 shrink-0 truncate">{key}</span>
+                  <span className="font-mono text-xs text-(--text-muted) w-36 shrink-0 truncate">{key}</span>
                   {FIELD_SUGGESTIONS[key] && (
-                    <span className="text-[var(--text-muted)] text-xs">→ {FIELD_SUGGESTIONS[key]}</span>
+                    <span className="text-(--text-muted) text-xs">→ {FIELD_SUGGESTIONS[key]}</span>
                   )}
                 </button>
               ))}
@@ -225,16 +225,16 @@ function StudentListRow({
   return (
     <tr
       onClick={onToggle}
-      className={`border-b border-[var(--border)]/40 cursor-pointer transition-colors hover:bg-[var(--surface-hover)] ${selected ? "bg-[var(--accent)]/5" : ""}`}
+      className={`border-b border-(--border)/40 cursor-pointer transition-colors hover:bg-(--surface-hover) ${selected ? "bg-(--accent)/5" : ""}`}
     >
       <td className="py-2 px-3">
-        <input type="checkbox" checked={selected} onChange={onToggle} onClick={e => e.stopPropagation()} className="accent-[var(--accent)]" />
+        <input type="checkbox" checked={selected} onChange={onToggle} onClick={e => e.stopPropagation()} className="accent-(--accent)" />
       </td>
       <td className="py-2 px-3 font-medium">{student.nachname}</td>
       <td className="py-2 px-3">{student.vorname}</td>
       <td className="py-2 px-3 font-mono text-xs">{student.klasse}</td>
       {cardFields.map(f => (
-        <td key={f.id} className="py-2 px-3 font-mono text-xs text-[var(--text-muted)]">
+        <td key={f.id} className="py-2 px-3 font-mono text-xs text-(--text-muted)">
           {student.fields[f.dbKey] ?? "–"}
         </td>
       ))}
@@ -341,36 +341,36 @@ export default function StudentCardsPage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
       {/* Header */}
       <div>
-        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🪪 Schülerkarten</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">Felder wählen · Karten auswählen · PDF drucken</p>
+        <p className="text-(--text-muted) text-sm mt-1">Felder wählen · Karten auswählen · PDF drucken</p>
       </div>
 
       {/* Field builder panel */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
         <button
           onClick={() => setShowFieldPanel(p => !p)}
-          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--surface-hover)] transition-colors text-left"
+          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-(--surface-hover) transition-colors text-left"
         >
           <div className="flex items-center gap-3">
             <span className="font-semibold text-sm">Kartenfelder</span>
             {cardFields.length > 0 ? (
-              <span className="text-xs text-[var(--accent)]">
+              <span className="text-xs text-(--accent)">
                 {cardFields.map(f => f.alias || f.dbKey).join(" · ")}
               </span>
             ) : (
-              <span className="text-xs text-[var(--text-muted)]">Keine Felder — nur Name &amp; Klasse</span>
+              <span className="text-xs text-(--text-muted)">Keine Felder — nur Name &amp; Klasse</span>
             )}
           </div>
-          <span className="text-[var(--text-muted)] text-xs">{showFieldPanel ? "▲" : "▼"}</span>
+          <span className="text-(--text-muted) text-xs">{showFieldPanel ? "▲" : "▼"}</span>
         </button>
 
         {showFieldPanel && (
-          <div className="px-5 pb-5 pt-1 border-t border-[var(--border)]">
-            <p className="text-xs text-[var(--text-muted)] mb-3">
+          <div className="px-5 pb-5 pt-1 border-t border-(--border)">
+            <p className="text-xs text-(--text-muted) mb-3">
               Wähle, welche Datenbankfelder auf der Karte erscheinen und wie sie beschriftet werden. Reihenfolge per ▲▼ anpassen.
             </p>
             <FieldBuilder
@@ -397,19 +397,19 @@ export default function StudentCardsPage() {
           <button onClick={selectAll} className="underline opacity-70 hover:opacity-100">Alle</button>
           <button onClick={selectNone} className="underline opacity-70 hover:opacity-100">Keine</button>
           {selected.size > 0 && (
-            <span className="text-[var(--accent)] font-medium">{selected.size} ausgewählt</span>
+            <span className="text-(--accent) font-medium">{selected.size} ausgewählt</span>
           )}
         </div>
 
         <div className="flex-1" />
 
         {/* View toggle */}
-        <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+        <div className="flex rounded-lg border border-(--border) overflow-hidden">
           {(["cards", "list"] as const).map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-3 py-1.5 text-sm transition-colors ${view === v ? "bg-[var(--accent)] text-[var(--accent-text)]" : "hover:bg-[var(--surface-hover)]"}`}
+              className={`px-3 py-1.5 text-sm transition-colors ${view === v ? "bg-(--accent) text-(--accent-text)" : "hover:bg-(--surface-hover)"}`}
             >
               {v === "cards" ? "⊞ Karten" : "≡ Liste"}
             </button>
@@ -427,9 +427,9 @@ export default function StudentCardsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="text-[var(--text-muted)] text-sm">Lade Schülerdaten…</div>
+        <div className="text-(--text-muted) text-sm">Lade Schülerdaten…</div>
       ) : students.length === 0 ? (
-        <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)] text-sm">
+        <div className="flex items-center justify-center h-40 border border-dashed border-(--border) rounded-2xl text-(--text-muted) text-sm">
           Keine Schüler gefunden. Erst CSV importieren.
         </div>
       ) : view === "cards" ? (
@@ -445,10 +445,10 @@ export default function StudentCardsPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--border)] text-[var(--text-muted)] text-xs">
+              <tr className="border-b border-(--border) text-(--text-muted) text-xs">
                 <th className="w-8 py-2 px-3" />
                 <th className="text-left py-2 px-3">Nachname</th>
                 <th className="text-left py-2 px-3">Vorname</th>
@@ -474,7 +474,7 @@ export default function StudentCardsPage() {
       )}
 
       {students.length > 0 && selected.size === 0 && (
-        <p className="text-xs text-[var(--text-muted)] text-center">
+        <p className="text-xs text-(--text-muted) text-center">
           Karte anklicken zum Auswählen · ohne Auswahl werden alle {students.length} Karten gedruckt
         </p>
       )}

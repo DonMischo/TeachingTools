@@ -16,7 +16,7 @@ export default function Home() {
   });
 
   if (setupLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-[var(--text-muted)]">Laden…</div>;
+    return <div className="min-h-screen flex items-center justify-center text-(--text-muted)">Laden…</div>;
   }
 
   if (setupError) {
@@ -24,7 +24,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-2">
           <p className="text-red-400 font-semibold">API nicht erreichbar</p>
-          <p className="text-[var(--text-muted)] text-sm">Ist der Server gestartet? <code>start.bat</code></p>
+          <p className="text-(--text-muted) text-sm">Ist der Server gestartet? <code>start.bat</code></p>
           <button className="btn-primary mt-4 w-48" onClick={() => window.location.reload()}>Neu laden</button>
         </div>
       </div>

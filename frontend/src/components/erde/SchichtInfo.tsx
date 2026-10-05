@@ -23,8 +23,8 @@ export const ZUSTAND_STIL: Record<string, string> = {
 
 function Zeile({ k, children }: { k: string; children: ReactNode }) {
   return (
-    <div className="flex justify-between gap-3 py-0.5 border-b border-[var(--border)] last:border-0">
-      <span className="text-[var(--text-muted)]">{k}</span>
+    <div className="flex justify-between gap-3 py-0.5 border-b border-(--border) last:border-0">
+      <span className="text-(--text-muted)">{k}</span>
       <span className="font-semibold text-right">{children}</span>
     </div>
   );
@@ -69,13 +69,13 @@ export default function SchichtInfo({ schicht }: { schicht: Schicht }) {
         <b>Minerale:</b>
         <div className="flex flex-wrap gap-1 mt-1">
           {s.minerale.map(m => (
-            <span key={m} className="text-xs px-2 py-0.5 rounded-full border border-[var(--border)] bg-[var(--bg)]">{m}</span>
+            <span key={m} className="text-xs px-2 py-0.5 rounded-full border border-(--border) bg-(--bg)">{m}</span>
           ))}
         </div>
       </div>
       <p><b>Zähigkeit:</b> {s.vergleich}</p>
       {s.grenzeUnten && <p><b>Grenze unten:</b> {s.grenzeUnten}</p>}
-      <p className="rounded-lg bg-[var(--surface-hover)] px-3 py-2">💡 {s.merke}</p>
+      <p className="rounded-lg bg-(--surface-hover) px-3 py-2">💡 {s.merke}</p>
     </div>
   );
 }

@@ -344,7 +344,7 @@ export default function MausFuehrerschein({
         onClick={() => setReiter(r.id)}
         className={
           "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
-          (aktiv ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "border-[var(--border)] hover:border-[var(--accent)]")
+          (aktiv ? "border-(--accent) text-(--accent) font-bold" : "border-(--border) hover:border-(--accent)")
         }
       >
         {r.icon} {r.label}
@@ -394,42 +394,42 @@ export default function MausFuehrerschein({
   return (
     <MausKontext.Provider value={{ pruefung: !!pruefung && !pruefung.fertig, hilfe }}>
     <WindowsKontext.Provider value={{ aussehen, setAussehen, benutzer: benutzernameAus(name) }}>
-      <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+      <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
         <MausStile />
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
             <MausBild groesse={30} /> Maus-Führerschein
           </h1>
           <div className="flex-1" />
-          <label className="text-xs flex items-center gap-1.5 cursor-pointer text-[var(--text-muted)]" title="Größere Ziele und mehr Zeit">
+          <label className="text-xs flex items-center gap-1.5 cursor-pointer text-(--text-muted)" title="Größere Ziele und mehr Zeit">
             <input type="checkbox" checked={hilfe} onChange={e => setHilfe(e.target.checked)} />
             🤝 Hilfsmodus
           </label>
-          <span className="rounded-full bg-[var(--surface-hover)] px-3 py-1 text-sm font-black tabular-nums" title="Punkte aller Stufen">
+          <span className="rounded-full bg-(--surface-hover) px-3 py-1 text-sm font-black tabular-nums" title="Punkte aller Stufen">
             ⭐ {gesamt(ergebnisse).toLocaleString("de-DE")}
           </span>
           {action}
         </div>
 
         {nurTouch && (
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm">
+          <div className="rounded-xl border border-(--border) bg-(--surface) px-4 py-3 text-sm">
             🖱️ Dieses Training ist für die <b>Maus</b> gemacht. Rechtsklick, Doppelklick und Markieren gehen auf einem Tablet anders — nimm am besten einen Computer.
           </div>
         )}
 
         {pruefung ? (
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface)] px-4 py-3" data-testid="pruefung">
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-(--accent) bg-(--surface) px-4 py-3" data-testid="pruefung">
             <span className="text-2xl">🎓</span>
             <div className="flex-1">
               <div className="font-black">Prüfung Teil {pruefung.teil}</div>
-              <div className="text-xs text-[var(--text-muted)]">
+              <div className="text-xs text-(--text-muted)">
                 {pruefung.fertig
                   ? "Fertig!"
                   : `Stufe ${pruefung.nr + 1} von ${TEILE[pruefung.teil].length} · ohne Vorführung · nicht überspringen!`}
               </div>
             </div>
             {!pruefung.fertig && (
-              <button onClick={() => setPruefung(null)} className="text-sm rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]">
+              <button onClick={() => setPruefung(null)} className="text-sm rounded-lg px-3 py-1.5 border border-(--border) hover:border-(--accent)">
                 Prüfung abbrechen
               </button>
             )}
@@ -438,11 +438,11 @@ export default function MausFuehrerschein({
           <div role="tablist" aria-label="Stufe" className="flex flex-col gap-2">
             {([1, 2, 3] as const).map(t => (
               <div key={t} className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-black text-[var(--text-muted)] w-12">Teil {t}</span>
+                <span className="text-xs font-black text-(--text-muted) w-12">Teil {t}</span>
                 {REITER.filter(r => r.teil === t).map(reiterKnopf)}
                 <button
                   onClick={() => starte(t)}
-                  className="text-sm rounded-lg px-3 py-1.5 border-2 border-dashed border-[var(--accent)] text-[var(--accent)] font-bold hover:bg-[var(--surface-hover)]"
+                  className="text-sm rounded-lg px-3 py-1.5 border-2 border-dashed border-(--accent) text-(--accent) font-bold hover:bg-(--surface-hover)"
                 >
                   🎓 Prüfung{bestanden.includes(t) && " ✅"}
                 </button>
@@ -485,7 +485,7 @@ function PruefungsErgebnis({
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 flex flex-col items-center gap-4 text-center" data-testid="pruefungsergebnis">
+    <div className="rounded-2xl border border-(--border) bg-(--surface) p-8 flex flex-col items-center gap-4 text-center" data-testid="pruefungsergebnis">
       <div className="text-6xl">{bestanden ? "🎓" : "💪"}</div>
       <h2 className="text-2xl font-black">
         {bestanden ? `Prüfung Teil ${teil} bestanden!` : "Noch nicht bestanden"}
@@ -501,7 +501,7 @@ function PruefungsErgebnis({
           const e = pruefung.ergebnisse[id];
           const n = e ? sterne(id, e.punkte) : 0;
           return (
-            <li key={id} className="rounded-lg border border-[var(--border)] px-3 py-1.5">
+            <li key={id} className="rounded-lg border border-(--border) px-3 py-1.5">
               {NAMEN[id]} <span className="text-amber-500">{n ? "★".repeat(n) : "–"}</span>
             </li>
           );
@@ -509,15 +509,15 @@ function PruefungsErgebnis({
       </ul>
       <div className="flex flex-wrap gap-2 justify-center">
         {bestanden ? (
-          <button onClick={onUrkunde} className="rounded-lg px-4 py-2 bg-[var(--accent)] text-[var(--bg)] font-bold">
+          <button onClick={onUrkunde} className="rounded-lg px-4 py-2 bg-(--accent) text-(--bg) font-bold">
             💾 Zur Urkunde
           </button>
         ) : (
-          <button onClick={onNochmal} className="rounded-lg px-4 py-2 bg-[var(--accent)] text-[var(--bg)] font-bold">
+          <button onClick={onNochmal} className="rounded-lg px-4 py-2 bg-(--accent) text-(--bg) font-bold">
             ↺ Nochmal versuchen
           </button>
         )}
-        <button onClick={onZurueck} className="rounded-lg px-4 py-2 border border-[var(--border)] hover:border-[var(--accent)]">
+        <button onClick={onZurueck} className="rounded-lg px-4 py-2 border border-(--border) hover:border-(--accent)">
           Zurück zum Üben
         </button>
       </div>

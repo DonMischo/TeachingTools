@@ -1549,7 +1549,7 @@ export default function Spielfeld({ farbe = 0x2f6fd6, aussehen, handyOffen = fal
       ref={huelle}
       tabIndex={0}
       aria-label="Spielfeld — mit Pfeiltasten oder WASD laufen"
-      className="absolute inset-0 outline-none"
+      className="absolute inset-0 outline-hidden"
       onPointerDown={() => huelle.current?.focus()}
     />
   );

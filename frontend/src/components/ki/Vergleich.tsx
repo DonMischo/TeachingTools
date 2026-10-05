@@ -80,7 +80,7 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
 
   if (!code) {
     return (
-      <p className="text-sm text-[var(--text-muted)] p-4 rounded-2xl border border-dashed border-[var(--border)]">
+      <p className="text-sm text-(--text-muted) p-4 rounded-2xl border border-dashed border-(--border)">
         📱 Die gemeinsame Tafel gibt es in einer Sitzung: Wer über den QR-Code der Lehrkraft
         hereinkommt, sieht dort alle Texte der Klasse nebeneinander.
       </p>
@@ -116,27 +116,27 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
           placeholder="Dein Name"
           aria-label="Dein Name"
           maxLength={100}
-          className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm"
+          className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm"
         />
         <button
           type="button"
           onClick={abgeben}
           disabled={sendet}
-          className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] disabled:opacity-50"
+          className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text) disabled:opacity-50"
         >
           {schonAbgegeben ? "↻ Neu abgeben" : "📌 An die Tafel"}
         </button>
         {schonAbgegeben && (
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-(--text-muted)">
             Ein zweiter Text ersetzt deinen ersten.
           </span>
         )}
       </div>
 
-      {fehler && <p className="text-sm text-[var(--red)]">{fehler}</p>}
+      {fehler && <p className="text-sm text-(--red)">{fehler}</p>}
 
       {zeilen.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">Noch nichts an der Tafel.</p>
+        <p className="text-sm text-(--text-muted)">Noch nichts an der Tafel.</p>
       ) : (
         <>
           <ol className="flex flex-col gap-2">
@@ -144,23 +144,23 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
               <li
                 key={z.id}
                 className={`p-3 rounded-2xl border ${
-                  z.selbst ? "border-[var(--accent)]" : "border-[var(--border)]"
-                } bg-[var(--surface)]`}
+                  z.selbst ? "border-(--accent)" : "border-(--border)"
+                } bg-(--surface)`}
               >
-                <div className="flex items-baseline gap-2 flex-wrap text-xs text-[var(--text-muted)]">
-                  <span className="font-black text-sm text-[var(--text)]">{i + 1}.</span>
-                  <span className="font-bold text-[var(--text)]">{z.name}</span>
+                <div className="flex items-baseline gap-2 flex-wrap text-xs text-(--text-muted)">
+                  <span className="font-black text-sm text-(--text)">{i + 1}.</span>
+                  <span className="font-bold text-(--text)">{z.name}</span>
                   <span>{Math.round(z.wert * 100)} % erwartbar</span>
                   <span>Auswahl {z.mut + 1}</span>
                   <span className="font-mono">{z.signatur}</span>
-                  {z.selbst && <span className="font-bold text-[var(--accent)]">du</span>}
+                  {z.selbst && <span className="font-bold text-(--accent)">du</span>}
                 </div>
                 <p className="text-sm mt-1 leading-relaxed">{z.text}</p>
               </li>
             ))}
           </ol>
 
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             Oben steht der Text, den die Maschine am ehesten selbst geschrieben hätte, unten der
             eigenwilligste. Lest beide laut vor: Der obere klingt richtig — und beliebig. Genau so
             klingen KI-Texte, wenn niemand am Regler dreht.
@@ -169,13 +169,13 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
       )}
 
       {istLehrkraft && zeilen.length > 0 && (
-        <div className="flex flex-col gap-2 p-3 rounded-2xl border border-dashed border-[var(--border)]">
+        <div className="flex flex-col gap-2 p-3 rounded-2xl border border-dashed border-(--border)">
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => { setRateminute(r => !r); setAufgedeckt(false); }}
-              className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]
-                hover:bg-[var(--surface-hover)] text-sm font-bold"
+              className="px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface)
+                hover:bg-(--surface-hover) text-sm font-bold"
             >
               {rateminute ? "✓ Rateminute beenden" : "🕵️ Rateminute"}
             </button>
@@ -185,13 +185,13 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
                   value={menschensatz}
                   onChange={e => { setMenschensatz(e.target.value); setAufgedeckt(false); }}
                   placeholder="Ein selbst geschriebener Satz zum Untermischen"
-                  className="flex-1 min-w-[14rem] px-3 py-2 rounded-xl border border-[var(--border)]
-                    bg-[var(--surface)] text-sm"
+                  className="flex-1 min-w-56 px-3 py-2 rounded-xl border border-(--border)
+                    bg-(--surface) text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setAufgedeckt(a => !a)}
-                  className="px-3 py-1.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)] text-sm"
+                  className="px-3 py-1.5 rounded-xl font-black bg-(--accent) text-(--accent-text) text-sm"
                 >
                   {aufgedeckt ? "↺ Wieder verdecken" : "🔎 Auflösen"}
                 </button>
@@ -201,7 +201,7 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
 
           {rateminute && (
             <>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              <p className="text-xs text-(--text-muted) leading-relaxed">
                 Namen verdeckt, Reihenfolge gemischt. Vorlesen lassen und abstimmen: Welcher Text
                 ist von Hand geschrieben? Nichts davon wird gespeichert — die Rateminute läuft nur
                 auf diesem Bildschirm.
@@ -210,14 +210,14 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
                 {gemischt.map((e, i) => (
                   <li
                     key={e.id}
-                    className={`p-3 rounded-2xl border bg-[var(--surface)] ${
-                      aufgedeckt && e.mensch ? "border-[var(--accent)]" : "border-[var(--border)]"
+                    className={`p-3 rounded-2xl border bg-(--surface) ${
+                      aufgedeckt && e.mensch ? "border-(--accent)" : "border-(--border)"
                     }`}
                   >
-                    <div className="flex items-baseline gap-2 text-xs text-[var(--text-muted)]">
-                      <span className="font-black text-sm text-[var(--text)]">{String.fromCharCode(65 + i)}</span>
+                    <div className="flex items-baseline gap-2 text-xs text-(--text-muted)">
+                      <span className="font-black text-sm text-(--text)">{String.fromCharCode(65 + i)}</span>
                       {aufgedeckt && (
-                        <span className={e.mensch ? "font-black text-[var(--accent)]" : "font-bold"}>
+                        <span className={e.mensch ? "font-black text-(--accent)" : "font-bold"}>
                           {e.mensch ? "✋ von Hand" : `🤖 ${e.name}`}
                         </span>
                       )}
@@ -232,7 +232,7 @@ export function Vergleich({ zugang, thema, text, wert, mut, signatur }: {
           <button
             type="button"
             onClick={leeren}
-            className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--red)]"
+            className="text-xs font-bold text-(--text-muted) hover:text-(--red)"
           >
             🧹 Runde leeren
           </button>

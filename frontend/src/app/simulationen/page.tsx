@@ -192,19 +192,19 @@ export default function SimulationenPage() {
 
   return (
     <RequireAccount>
-    <div className="flex flex-col gap-8 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🔬 Simulationen</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Modelle zum Anfassen: ausprobieren, verstellen und zusehen, was passiert.
           </p>
         </div>
         {isAdmin && (
           <button type="button" onClick={() => setBearbeiten(b => !b)}
             className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border ${bearbeiten
-              ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent"
-              : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+              ? "bg-(--accent) text-(--accent-text,#111) border-transparent"
+              : "border-(--border) text-(--text-muted) hover:text-(--text)"}`}>
             {bearbeiten ? "✓ Fertig" : "🏷️ Fächer bearbeiten"}
           </button>
         )}
@@ -214,7 +214,7 @@ export default function SimulationenPage() {
         <ToolSuche wert={suche} setzen={setSuche} treffer={CARDS.length} gesamt={ERLAUBT.length} />
         <FachFilter faecher={ALLE_FAECHER} gewaehlt={faecherFilter} setzen={setFaecherFilter} />
         {bearbeiten && (
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Fächer gelten für die ganze Schule. Eigene Fächer einfach eintippen; ↺ stellt die Voreinstellung wieder her.
           </p>
         )}
@@ -236,10 +236,10 @@ export default function SimulationenPage() {
                   <div className="font-black text-lg" style={{ color: card.color }}>
                     {card.title}
                   </div>
-                  <div className="text-xs text-[var(--text-muted)]">→ öffnen</div>
+                  <div className="text-xs text-(--text-muted)">→ öffnen</div>
                 </div>
               </div>
-              <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+              <p className="text-sm text-(--text-muted) leading-relaxed">
                 {card.description}
               </p>
               {bearbeiten ? (
@@ -256,14 +256,14 @@ export default function SimulationenPage() {
               )}
             </>
           );
-          const stil = `group relative flex flex-col gap-4 p-6 rounded-2xl border border-[var(--border)]
-              bg-[var(--surface)] transition-all`;
+          const stil = `group relative flex flex-col gap-4 p-6 rounded-2xl border border-(--border)
+              bg-(--surface) transition-all`;
           // Beim Bearbeiten keine Links — sonst öffnet jeder Klick ins Eingabefeld die Simulation.
           return bearbeiten ? (
             <div key={card.href} className={stil}>{inhalt}</div>
           ) : (
             <Link key={card.href} href={card.href}
-              className={`${stil} hover:bg-[var(--surface-hover)] hover:border-[var(--accent)] hover:shadow-lg`}>
+              className={`${stil} hover:bg-(--surface-hover) hover:border-(--accent) hover:shadow-lg`}>
               {inhalt}
             </Link>
           );

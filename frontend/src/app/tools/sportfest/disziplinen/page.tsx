@@ -37,9 +37,9 @@ export default function SportfestDisziplinenPage() {
   }, {});
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/tools/sportfest" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">📊 Disziplinranking</h1>
       </div>
 
@@ -51,42 +51,42 @@ export default function SportfestDisziplinenPage() {
         </select>
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="checkbox" checked={overall} onChange={e => setOverall(e.target.checked)}
-            className="accent-[var(--accent)]" />
+            className="accent-(--accent)" />
           Jahrgangsübergreifend
         </label>
       </div>
 
       {isLoading ? (
-        <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+        <div className="text-(--text-muted) text-sm">Laden…</div>
       ) : Object.keys(byDisc).length === 0 ? (
-        <div className="flex items-center justify-center h-32 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)]">
+        <div className="flex items-center justify-center h-32 border border-dashed border-(--border) rounded-2xl text-(--text-muted)">
           Noch keine Ergebnisse vorhanden.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Object.entries(byDisc).map(([discId, byGeschlecht]) => (
-            <div key={discId} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-              <div className="px-4 py-3 border-b border-[var(--border)] font-semibold text-sm">
+            <div key={discId} className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+              <div className="px-4 py-3 border-b border-(--border) font-semibold text-sm">
                 {DISC_LABELS[discId] ?? discId}
               </div>
               {Object.entries(byGeschlecht).map(([g, list]) => (
                 <div key={g}>
-                  <div className="px-4 py-1.5 bg-[var(--surface-hover)] text-[11px] uppercase tracking-wide text-[var(--text-muted)]">
+                  <div className="px-4 py-1.5 bg-(--surface-hover) text-[11px] uppercase tracking-wide text-(--text-muted)">
                     {GESCHLECHT_LABEL[g] ?? "Ohne Angabe"}
                   </div>
                   <table className="w-full text-xs">
                     <tbody>
                       {list.map(e => (
-                        <tr key={`${g}-${e.rank}`} className="border-b border-[var(--border)]/50">
+                        <tr key={`${g}-${e.rank}`} className="border-b border-(--border)/50">
                           <td className="px-3 py-2 w-8 text-center">{MEDALS[e.rank - 1] ?? e.rank}</td>
                           <td className="px-2 py-2">
                             <div>{e.name ?? "Schüler/in"}</div>
-                            <div className="text-[var(--text-muted)]">{e.klasse}</div>
+                            <div className="text-(--text-muted)">{e.klasse}</div>
                           </td>
                           <td className="px-3 py-2 text-right font-mono">
                             {e.value != null ? e.value : "—"}
                           </td>
-                          <td className="px-3 py-2 text-right font-bold text-[var(--accent)]">
+                          <td className="px-3 py-2 text-right font-bold text-(--accent)">
                             {e.points ?? "—"}
                           </td>
                         </tr>

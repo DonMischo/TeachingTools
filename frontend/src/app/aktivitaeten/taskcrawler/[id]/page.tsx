@@ -54,15 +54,15 @@ export default function ExitgameDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exitgame-sessions", gameId] }),
   });
 
-  if (!game) return <div className="p-6 text-sm text-[var(--text-muted)]">Lade…</div>;
+  if (!game) return <div className="p-6 text-sm text-(--text-muted)">Lade…</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <Link href="/aktivitaeten/taskcrawler" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+      <Link href="/aktivitaeten/taskcrawler" className="text-xs text-(--text-muted) hover:text-(--text)">← Zurück</Link>
       <div>
         <h1 className="text-2xl font-black tracking-tight">{game.title}</h1>
-        {game.description && <p className="text-[var(--text-muted)] text-sm mt-1">{game.description}</p>}
-        <div className="flex flex-wrap gap-1.5 text-xs text-[var(--text-muted)] mt-2">
+        {game.description && <p className="text-(--text-muted) text-sm mt-1">{game.description}</p>}
+        <div className="flex flex-wrap gap-1.5 text-xs text-(--text-muted) mt-2">
           <span>{game.subject}</span> · <span>{game.slide_count} Slides</span>
           {game.grade && <> · <span>Klasse {game.grade}</span></>}
         </div>
@@ -82,13 +82,13 @@ export default function ExitgameDetailPage() {
       />
 
       {!isTeacher && (
-        <p className="text-sm text-[var(--text-muted)]">
+        <p className="text-sm text-(--text-muted)">
           Live-Sessions dieses TaskCrawlers werden von Lehrkräften gestartet.
         </p>
       )}
 
       {isTeacher && (
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
         <h2 className="font-semibold text-sm">▶ Neue Session starten</h2>
         <div className="flex gap-2">
           <ScopeSelect value={scope} onChange={setScope} />
@@ -101,34 +101,34 @@ export default function ExitgameDetailPage() {
       )}
 
       {isTeacher && (
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Sessions</h2>
         {sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine Sessions.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine Sessions.</p>
         ) : (
-          <ul className="divide-y divide-[var(--border)]">
+          <ul className="divide-y divide-(--border)">
             {sessions.map(s => (
               <li key={s.id} className="py-2 flex items-center gap-3 flex-wrap">
-                <span className={`text-xs px-2 py-0.5 rounded-full border ${s.status === "open" ? "border-green-500/40 text-green-500" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full border ${s.status === "open" ? "border-green-500/40 text-green-500" : "border-(--border) text-(--text-muted)"}`}>
                   {s.status === "open" ? "offen" : "geschlossen"}
                 </span>
                 <span className="text-sm font-mono">{s.join_code}</span>
                 {s.scope_label && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg)] text-[var(--text-muted)]">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-(--bg) text-(--text-muted)">
                     {s.scope_label}
                   </span>
                 )}
-                <span className="text-xs text-[var(--text-muted)]">{s.attempt_count} Versuch(e)</span>
+                <span className="text-xs text-(--text-muted)">{s.attempt_count} Versuch(e)</span>
                 <div className="flex-1" />
-                <Link href={`/aktivitaeten/taskcrawler/host/${s.join_code}`} className="text-xs text-[var(--accent)] hover:underline">Dashboard</Link>
-                <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-[var(--text-muted)] hover:underline">CSV</a>
+                <Link href={`/aktivitaeten/taskcrawler/host/${s.join_code}`} className="text-xs text-(--accent) hover:underline">Dashboard</Link>
+                <a href={api.exitgame.sessions.reportCsvUrl(s.join_code)} className="text-xs text-(--text-muted) hover:underline">CSV</a>
                 {s.status === "open" ? (
                   <button onClick={() => closeMut.mutate(s.join_code)} disabled={closeMut.isPending}
-                    className="text-xs text-[var(--text-muted)] hover:underline disabled:opacity-40">Schließen</button>
+                    className="text-xs text-(--text-muted) hover:underline disabled:opacity-40">Schließen</button>
                 ) : (
                   <button onClick={() => reopenMut.mutate(s.join_code)} disabled={reopenMut.isPending}
                     title="Wieder öffnen — der Code bleibt derselbe"
-                    className="text-xs text-[var(--text-muted)] hover:underline disabled:opacity-40">Wieder öffnen</button>
+                    className="text-xs text-(--text-muted) hover:underline disabled:opacity-40">Wieder öffnen</button>
                 )}
                 <button onClick={() => { if (confirm("Session löschen?")) deleteSessionMut.mutate(s.join_code); }} className="text-xs text-red-400 hover:underline">Löschen</button>
               </li>

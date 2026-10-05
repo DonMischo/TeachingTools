@@ -86,12 +86,12 @@ export default function BingoHostPage() {
   const remaining = live.total_pairs - live.called_count;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
-          <Link href="/aktivitaeten/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo</Link>
+          <Link href="/aktivitaeten/bingo" className="text-sm text-(--text-muted) hover:text-(--text)">← Bingo</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">🎰 {live.title || "…"}</h1>
-          <div className="text-xs text-[var(--text-muted)] mt-1 flex gap-3">
+          <div className="text-xs text-(--text-muted) mt-1 flex gap-3">
             <span>{live.grid_size}×{live.grid_size}</span>
             <span>{live.called_count}/{live.total_pairs} Begriffe gerufen</span>
             <span>{live.bingo_count} Bingo{live.bingo_count !== 1 ? "s" : ""}</span>
@@ -100,25 +100,25 @@ export default function BingoHostPage() {
         {joinUrl && (
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
-            <span className="text-xs text-[var(--text-muted)]">/play/bingo/{code}</span>
+            <span className="text-xs text-(--text-muted)">/play/bingo/{code}</span>
             <GuestAccessToggle tool="bingo" code={code} />
           </div>
         )}
       </div>
 
       {/* Currently called */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center min-h-[120px] flex flex-col items-center justify-center">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-6 text-center min-h-[120px] flex flex-col items-center justify-center">
         {live.last_called ? (
           <>
-            <div className="text-3xl font-black tracking-tight text-[var(--accent)]">
+            <div className="text-3xl font-black tracking-tight text-(--accent)">
               {live.last_called.caller}
             </div>
-            <div className="text-sm text-[var(--text-muted)] mt-1">
-              Antwort: <span className="text-[var(--text)] font-medium">{live.last_called.answer}</span>
+            <div className="text-sm text-(--text-muted) mt-1">
+              Antwort: <span className="text-(--text) font-medium">{live.last_called.answer}</span>
             </div>
           </>
         ) : (
-          <div className="text-[var(--text-muted)] text-sm">Noch nichts gerufen</div>
+          <div className="text-(--text-muted) text-sm">Noch nichts gerufen</div>
         )}
       </div>
 
@@ -128,7 +128,7 @@ export default function BingoHostPage() {
           <h2 className="font-semibold text-sm">📋 Reihen</h2>
           <div className="flex flex-wrap gap-1.5">
             {lines.map((l, i) => (
-              <div key={i} className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/8 px-3 py-1.5 text-xs font-medium text-[var(--accent)]">
+              <div key={i} className="rounded-xl border border-(--accent)/30 bg-(--accent)/8 px-3 py-1.5 text-xs font-medium text-(--accent)">
                 <span className="font-bold">{l.student_name}</span> · {l.line}
               </div>
             ))}
@@ -141,7 +141,7 @@ export default function BingoHostPage() {
         <div className="flex flex-col gap-1.5">
           <h2 className="font-semibold text-sm">🎉 Bingo!</h2>
           {winners.map((w, i) => (
-            <div key={i} className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-3 py-2 text-sm font-medium text-[var(--accent)]">
+            <div key={i} className="rounded-xl border border-(--accent)/40 bg-(--accent)/10 px-3 py-2 text-sm font-medium text-(--accent)">
               {w.student_name}
             </div>
           ))}
@@ -150,7 +150,7 @@ export default function BingoHostPage() {
 
       {/* Lobby — player list (waiting) */}
       {live.status === "waiting" && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
           <p className="text-sm font-semibold">
             {live.players.length === 0
               ? "Warte auf Schüler…"
@@ -196,11 +196,11 @@ export default function BingoHostPage() {
           </>
         )}
         {live.status === "closed" && (
-          <div className="text-[var(--text-muted)] text-sm">Spiel beendet.</div>
+          <div className="text-(--text-muted) text-sm">Spiel beendet.</div>
         )}
         {live.status !== "waiting" && (
           <button onClick={() => send({ action: "reset" })}
-            className="text-sm border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+            className="text-sm border border-(--border) text-(--text-muted) hover:border-(--accent) hover:text-(--accent) rounded-xl px-4 py-1.5 transition-colors">
             Zurücksetzen
           </button>
         )}
@@ -212,7 +212,7 @@ export default function BingoHostPage() {
               }
             }}
             title="Wie Zurücksetzen, aber jede Karte bekommt neue Felder"
-            className="text-sm border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+            className="text-sm border border-(--border) text-(--text-muted) hover:border-(--accent) hover:text-(--accent) rounded-xl px-4 py-1.5 transition-colors">
             ⟳ Neu starten
           </button>
         )}
@@ -222,12 +222,12 @@ export default function BingoHostPage() {
       {results.length > 0 && live.called_count > 0 && (
         <div className="flex flex-col gap-2">
           <h2 className="font-semibold text-sm">📊 Auswertung</h2>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Treffer = markierte Felder · gerufen = davon auf der eigenen Karte gerufene Begriffe
           </p>
-          <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+          <div className="rounded-xl border border-(--border) overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-[var(--surface)] text-xs text-[var(--text-muted)]">
+              <thead className="bg-(--surface) text-xs text-(--text-muted)">
                 <tr>
                   <th className="text-left font-medium px-3 py-2">Name</th>
                   <th className="text-right font-medium px-3 py-2">Treffer / gerufen</th>
@@ -236,10 +236,10 @@ export default function BingoHostPage() {
               </thead>
               <tbody>
                 {results.map((r, i) => (
-                  <tr key={i} className="border-t border-[var(--border)]">
+                  <tr key={i} className="border-t border-(--border)">
                     <td className="px-3 py-1.5">{r.name}{r.has_bingo && " 🎉"}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{r.hits} / {r.called_on_card}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-[var(--text-muted)]">
+                    <td className="px-3 py-1.5 text-right tabular-nums text-(--text-muted)">
                       {r.called_on_card > 0 ? `${Math.round((r.hits / r.called_on_card) * 100)} %` : "–"}
                     </td>
                   </tr>
@@ -256,10 +256,10 @@ export default function BingoHostPage() {
           <h2 className="font-semibold text-sm">Bereits gerufen ({live.called_pairs.length})</h2>
           <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
             {[...live.called_pairs].reverse().map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm px-3 py-2 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-                <span className="font-semibold min-w-0 truncate text-[var(--accent)]">{item.caller}</span>
-                <span className="text-[var(--text-muted)] shrink-0">→</span>
-                <span className="text-[var(--text)] truncate">{item.answer}</span>
+              <div key={i} className="flex items-center gap-3 text-sm px-3 py-2 rounded-xl bg-(--surface) border border-(--border)">
+                <span className="font-semibold min-w-0 truncate text-(--accent)">{item.caller}</span>
+                <span className="text-(--text-muted) shrink-0">→</span>
+                <span className="text-(--text) truncate">{item.answer}</span>
               </div>
             ))}
           </div>

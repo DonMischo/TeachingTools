@@ -51,8 +51,8 @@ export function JobApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) => Er
       {reiter === "stellen" && (
         <>
           <div className="mb-2 flex flex-wrap gap-2">
-            <input className={`${eingabe} max-w-[12rem]`} placeholder="Suchen: FÖJ, Kfz, Bank …" value={suche} onChange={(e) => setSuche(e.target.value)} />
-            <select className={`${eingabe} max-w-[14rem]`} value={bereich} onChange={(e) => setBereich(e.target.value as Bereich | "alle")}>
+            <input className={`${eingabe} max-w-48`} placeholder="Suchen: FÖJ, Kfz, Bank …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+            <select className={`${eingabe} max-w-56`} value={bereich} onChange={(e) => setBereich(e.target.value as Bereich | "alle")}>
               <option value="alle">Alle Bereiche</option>{bereiche.map((b) => <option key={b}>{b}</option>)}
             </select>
             <select className={`${eingabe} max-w-[16rem]`} value={art} onChange={(e) => setArt(e.target.value as Filter)}>
@@ -78,7 +78,7 @@ export function JobApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) => Er
                 <div key={b.id} className={`rounded-lg p-2 ${uebergang ? "bg-emerald-500/10 ring-1 ring-emerald-400/20" : "bg-white/5"}`}>
                   <div className="flex flex-wrap items-center gap-2">
                     <b className="flex-1">{b.name}</b>
-                    <span className="rounded bg-white/10 px-1.5 text-xs">{artText}</span>
+                    <span className="rounded-sm bg-white/10 px-1.5 text-xs">{artText}</span>
                     {b.link && <a href={b.link} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-300 underline" title="Echtes Angebot / Träger">🔗 echt</a>}
                     <Knopf klein art="haupt" onClick={() => setBewerbenFuer({ b })}>Bewerben</Knopf>
                   </div>

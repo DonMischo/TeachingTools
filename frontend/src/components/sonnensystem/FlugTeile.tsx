@@ -26,7 +26,7 @@ export function HudKnopf({ onClick, children, titel, aktiv }: { onClick: () => v
       onClick={onClick}
       title={titel}
       aria-label={titel}
-      className={`w-12 h-12 rounded-xl border text-xl backdrop-blur ${aktiv ? "bg-sky-400/30 border-sky-300/70" : "bg-black/50 border-white/15 hover:bg-white/10"}`}
+      className={`w-12 h-12 rounded-xl border text-xl backdrop-blur-sm ${aktiv ? "bg-sky-400/30 border-sky-300/70" : "bg-black/50 border-white/15 hover:bg-white/10"}`}
     >{children}</button>
   );
 }
@@ -59,7 +59,7 @@ export function Stick({ eingabe }: { eingabe: Eingabe }) {
   const los = () => { eingabe.stick.x = 0; eingabe.stick.y = 0; setKnauf({ x: 0, y: 0 }); };
   return (
     <div
-      className="absolute left-4 bottom-4 w-32 h-32 rounded-full border border-white/15 bg-black/35 backdrop-blur touch-none pointer-events-auto"
+      className="absolute left-4 bottom-4 w-32 h-32 rounded-full border border-white/15 bg-black/35 backdrop-blur-sm touch-none pointer-events-auto"
       onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); bewege(e); }}
       onPointerMove={e => { if (e.buttons || e.pointerType === "touch") bewege(e); }}
       onPointerUp={los}
@@ -86,7 +86,7 @@ export function ZielAuswahl({ ziel, onWahl, erforscht }: { ziel: string | null; 
       value={ziel ?? ""}
       // Danach den Fokus abgeben: sonst lenken die Pfeiltasten nicht, sondern wechseln das Ziel.
       onChange={e => { onWahl(e.target.value || null); e.target.blur(); }}
-      className="h-11 w-full rounded-xl bg-black/60 backdrop-blur border border-white/15 text-sm font-bold px-2 text-slate-100 [color-scheme:dark]"
+      className="h-11 w-full rounded-xl bg-black/60 backdrop-blur-sm border border-white/15 text-sm font-bold px-2 text-slate-100 scheme-dark"
     >
       <option value="">🎯 Ziel wählen …</option>
       {gruppen.map(g => (
@@ -141,7 +141,7 @@ export function Steuerungstabelle({ beruehrung }: { beruehrung: boolean }) {
 
 export function Einblendung({ children, onSchliessen, breit }: { children: ReactNode; onSchliessen?: () => void; breit?: boolean }) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm pointer-events-auto">
+    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs pointer-events-auto">
       <div className={`relative w-full ${breit ? "max-w-xl" : "max-w-md"} max-h-full overflow-y-auto overscroll-contain rounded-2xl border border-cyan-300/25 bg-slate-950/90 p-5 shadow-2xl`}>
         {onSchliessen && (
           <button onClick={onSchliessen} className="absolute right-3 top-3 w-8 h-8 rounded-lg hover:bg-white/10" aria-label="Schließen">✕</button>

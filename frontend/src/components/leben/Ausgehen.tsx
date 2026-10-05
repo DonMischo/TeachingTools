@@ -57,9 +57,9 @@ export function Ausgehen({ s, onLos, onZu }: {
                 return (
                   <div key={g.id} className={`flex items-center gap-2 py-0.5 text-sm ${gesperrt ? "opacity-40" : ""}`}>
                     <span className="flex-1">{g.name} <span className="text-xs text-slate-400">{euro(g.preis)}{g.alkoholG ? ` · ${g.alkoholG} g Alkohol` : ""}{g.ab ? ` · ab ${g.ab}` : ""}</span></span>
-                    <button type="button" className="h-6 w-6 rounded bg-white/10" onClick={() => setGetraenke({ ...getraenke, [g.id]: Math.max(0, n - 1) })}>−</button>
+                    <button type="button" className="h-6 w-6 rounded-sm bg-white/10" onClick={() => setGetraenke({ ...getraenke, [g.id]: Math.max(0, n - 1) })}>−</button>
                     <span className="w-5 text-center">{n}</span>
-                    <button type="button" disabled={gesperrt} className="h-6 w-6 rounded bg-amber-500 text-black disabled:opacity-30" onClick={() => setGetraenke({ ...getraenke, [g.id]: n + 1 })}>+</button>
+                    <button type="button" disabled={gesperrt} className="h-6 w-6 rounded-sm bg-amber-500 text-black disabled:opacity-30" onClick={() => setGetraenke({ ...getraenke, [g.id]: n + 1 })}>+</button>
                   </div>
                 );
               })}

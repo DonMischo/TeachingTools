@@ -56,12 +56,12 @@ export default function LueckentextHostPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
-          <Link href="/aktivitaeten/lueckentexte" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Lückentexte</Link>
+          <Link href="/aktivitaeten/lueckentexte" className="text-sm text-(--text-muted) hover:text-(--text)">← Lückentexte</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">📝 Lückentext-Sitzung</h1>
-          <div className="text-xs text-[var(--text-muted)] mt-1 flex gap-3">
+          <div className="text-xs text-(--text-muted) mt-1 flex gap-3">
             <span className="font-mono tracking-widest">{code}</span>
             <span>{status === "waiting" ? "Wartet auf Start" : status === "active" ? "Aktiv" : "Beendet"}</span>
           </div>
@@ -69,7 +69,7 @@ export default function LueckentextHostPage() {
         {joinUrl && (
           <div className="flex flex-col items-center gap-1">
             <JoinQR url={joinUrl} />
-            <span className="text-xs text-[var(--text-muted)]">/aktivitaeten/lueckentext/play/{code}</span>
+            <span className="text-xs text-(--text-muted)">/aktivitaeten/lueckentext/play/{code}</span>
             <GuestAccessToggle tool="lueckentext" code={code} />
           </div>
         )}
@@ -87,7 +87,7 @@ export default function LueckentextHostPage() {
         )}
         {status === "finished" && (
           <div className="flex gap-3 items-center flex-wrap text-sm">
-            <Link href={`/aktivitaeten/lueckentext/review/${code}`} className="text-[var(--accent)] hover:underline">
+            <Link href={`/aktivitaeten/lueckentext/review/${code}`} className="text-(--accent) hover:underline">
               Auswertung →
             </Link>
           </div>
@@ -97,12 +97,12 @@ export default function LueckentextHostPage() {
       <div className="flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Rangliste</h2>
         {ranking.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine Teilnehmer.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine Teilnehmer.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {ranking.map((r) => (
-              <div key={r.pid} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
-                <span className="w-6 text-center font-black text-[var(--accent)]">{r.rank}</span>
+              <div key={r.pid} className="flex items-center gap-3 rounded-xl border border-(--border) bg-(--surface) px-3 py-2">
+                <span className="w-6 text-center font-black text-(--accent)">{r.rank}</span>
                 <AvatarDisplay avatarId={r.avatar} size="sm" />
                 <span className="flex-1 font-medium truncate">{r.name}</span>
                 <span className="font-semibold">{r.score}</span>

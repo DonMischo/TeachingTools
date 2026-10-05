@@ -185,11 +185,11 @@ export default function StufeTaskleiste({
 
   const aufgabenTexte = [
     <>Hefte <b>»{APPS[zielAn.current].name}«</b> an die Taskleiste.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Start öffnen, dann Rechtsklick auf die App.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Start öffnen, dann Rechtsklick auf die App.</span></>,
     <>Löse <b>»{APPS[zielLos.current].name}«</b> von der Taskleiste.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Rechtsklick auf das Symbol unten in der Taskleiste.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Rechtsklick auf das Symbol unten in der Taskleiste.</span></>,
     <>Stell die Taskleiste auf <b>»{zielAusr.current === "links" ? "Links" : "Mitte"}«</b>.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Einstellungen › Taskleiste › Ausrichtung.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Taskleiste › Ausrichtung.</span></>,
     <>Räum den Desktop auf: <b>Rechtsklick auf eine freie Stelle → Sortieren nach: Name</b>.</>,
   ];
 
@@ -259,13 +259,13 @@ export default function StufeTaskleiste({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {AUFGABEN.map((a, i) => (
-          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-[var(--text-muted)]" : ""}>
+          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : ""}>
             {i < schritt ? "✅" : i === schritt ? "👉" : "⬜"} {a}
           </li>
         ))}
       </ul>
 
-      <div className="min-h-[1.5rem] text-center text-sm font-bold" aria-live="polite"
+      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
         style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
         {hinweis?.text}
       </div>
@@ -310,7 +310,7 @@ export default function StufeTaskleiste({
             <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32, background: aussehen.dunkel ? "#2b2b2b" : "#ffffff", borderBottom: `1px solid ${aussehen.dunkel ? "#ffffff1a" : "#0000001a"}` }}>
               <AppSymbol id="einstellungen" groesse={18} titel={false} />
               <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>Einstellungen</span>
-              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
+              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded-sm hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
             </div>
             <div className="flex-1 overflow-hidden">
               <Einstellungen

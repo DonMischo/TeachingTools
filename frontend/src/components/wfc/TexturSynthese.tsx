@@ -12,7 +12,7 @@ import { VORLAGEN } from "@/lib/wfc/ueberlappend";
 import { FARBEN } from "@/lib/regeln/maschine";
 import { GEBAEUDE_SYNTHESE, farbenAus, resynthese, schreibePixel, type Bild } from "@/lib/wfc/textur";
 
-const auswahl = "rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1";
+const auswahl = "rounded-lg border border-(--border) bg-(--surface) px-2 py-1";
 
 /** Farbe, mit der ein graues Gebäude-Muster hier eingefärbt wird */
 const TOENUNG: Record<Exclude<Muster, "glut">, number> = {
@@ -104,10 +104,10 @@ export default function TexturSynthese({ startProbe }: { startProbe?: string }) 
   }, [probe, groesse, n, m, polieren, seed, tempo]);
 
   const wert = quelle.art === "muster" ? `m:${quelle.id}` : `v:${quelle.id}`;
-  const pixel = "[image-rendering:pixelated] rounded-lg border border-[var(--border)]";
+  const pixel = "[image-rendering:pixelated] rounded-lg border border-(--border)";
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
         <label className="flex items-center gap-1">Probe
           <select value={wert} onChange={e => { const [a, id] = e.target.value.split(":"); setQuelle(a === "m" ? { art: "muster", id: id as Muster } : { art: "vorlage", id }); }} className={auswahl}>
             <optgroup label="Oberflächen der Gebäude">
@@ -143,17 +143,17 @@ export default function TexturSynthese({ startProbe }: { startProbe?: string }) 
             {TEMPI.map(([t, name]) => <option key={t} value={t}>{name}</option>)}
           </select>
         </label>
-        <button onClick={() => setSeed(s => s + 1)} className="px-3 py-1 rounded-lg border border-[var(--border)] font-bold hover:bg-[var(--surface-hover)]">🎲 Neu</button>
-        <span className="text-xs text-[var(--text-muted)]" data-textur-stand>
+        <button onClick={() => setSeed(s => s + 1)} className="px-3 py-1 rounded-lg border border-(--border) font-bold hover:bg-(--surface-hover)">🎲 Neu</button>
+        <span className="text-xs text-(--text-muted)" data-textur-stand>
           {stand.fertig ? "fertig" : `Runde ${stand.runde + 1}/${polieren + 1} · ${Math.round(stand.anteil * 100)} %`}
         </span>
       </div>
 
-      <div className="grid gap-4 items-start [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
-          <p className="text-xs font-bold text-[var(--text-muted)]">Probe {probe ? `(${probe.b}×${probe.h})` : ""}</p>
+      <div className="grid gap-4 items-start grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
+          <p className="text-xs font-bold text-(--text-muted)">Probe {probe ? `(${probe.b}×${probe.h})` : ""}</p>
           <canvas ref={probeRef} className={pixel} style={{ width: 160, height: 160 }} data-textur-probe />
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             {quelle.art === "muster"
               ? MUSTER_SYNTHESE.includes(quelle.id)
                 ? `★ So entsteht diese Fläche auch im Gebäude: Probe ${GEBAEUDE_SYNTHESE.probe}×${GEBAEUDE_SYNTHESE.probe}, Ergebnis ${GEBAEUDE_SYNTHESE.aus}×${GEBAEUDE_SYNTHESE.aus}, Nachbarschaft ${2 * GEBAEUDE_SYNTHESE.n + 1}×${2 * GEBAEUDE_SYNTHESE.n + 1}, ${GEBAEUDE_SYNTHESE.m} Zufallskandidaten, ${GEBAEUDE_SYNTHESE.polieren}× polieren.`
@@ -161,17 +161,17 @@ export default function TexturSynthese({ startProbe }: { startProbe?: string }) 
               : "Dieselbe Vorlage wie im Reiter »Vorlage«: Vergleiche mit dem Wellenfunktionskollaps."}
           </p>
         </section>
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
-          <p className="text-xs font-bold text-[var(--text-muted)]">Ergebnis ({groesse}×{groesse})</p>
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
+          <p className="text-xs font-bold text-(--text-muted)">Ergebnis ({groesse}×{groesse})</p>
           <canvas ref={ausRef} className={pixel} style={{ width: ANZEIGE, maxWidth: "100%", aspectRatio: "1" }} data-textur-ergebnis />
         </section>
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
-          <p className="text-xs font-bold text-[var(--text-muted)]">Nahtlos? 2×2 aneinandergelegt</p>
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
+          <p className="text-xs font-bold text-(--text-muted)">Nahtlos? 2×2 aneinandergelegt</p>
           <canvas ref={kachelRef} className={pixel} style={{ width: ANZEIGE, maxWidth: "100%", aspectRatio: "1" }} />
         </section>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
         <h3 className="font-black">🧵 So geht Textur-Synthese</h3>
         <p>
           Jedes Pixel des Ergebnisses merkt sich, <b>aus welcher Stelle der Probe</b> es stammt. Die Pixel werden in zufälliger
@@ -188,7 +188,7 @@ export default function TexturSynthese({ startProbe }: { startProbe?: string }) 
           das Beste, was sie findet. Unregelmäßiges wie Fels oder Sand gelingt so sehr gut, gerade Linien wie Fugen oder Balken
           bekommen Versätze.
         </p>
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           Verfahren von P. F. Harrison (»Resynthesizer«, 2005), portiert aus{" "}
           <a className="underline" href="https://github.com/mxgmn/TextureSynthesis" target="_blank" rel="noreferrer">TextureSynthesis</a>{" "}
           von Maxim Gumin (MIT-Lizenz). Die Proben hier sind eigene; die Beispielbilder aus dem Projekt stehen nicht unter dieser Lizenz und werden nicht benutzt.

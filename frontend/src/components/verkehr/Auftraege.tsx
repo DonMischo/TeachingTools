@@ -83,14 +83,14 @@ export function Auftraege({ f, neuAnfangen, konto, code, onBestanden }: {
 
   const knopf = (id: Reiter, text: string) => (
     <button type="button" onClick={() => setReiter(id)}
-      className={`flex-1 rounded-md px-1 py-1 text-xs font-bold ${reiter === id ? "bg-[var(--accent)] text-white" : "text-[var(--text-muted)] hover:bg-[var(--border)]/40"}`}>
+      className={`flex-1 rounded-md px-1 py-1 text-xs font-bold ${reiter === id ? "bg-(--accent) text-white" : "text-(--text-muted) hover:bg-(--border)/40"}`}>
       {text}
     </button>
   );
 
   return (
     <div className="text-sm">
-      <div className="mb-3 flex gap-1 rounded-lg border border-[var(--border)] p-1">
+      <div className="mb-3 flex gap-1 rounded-lg border border-(--border) p-1">
         {knopf("auftraege", `🪪 Aufträge ${f.erledigt.length}/${MISSIONEN.length}`)}
         {knopf("erfolge", `🏆 ${erfolge.length}/${ERFOLGE.length}`)}
         {knopf("zahlen", "📊")}
@@ -102,18 +102,18 @@ export function Auftraege({ f, neuAnfangen, konto, code, onBestanden }: {
             {MISSIONEN.map((m) => {
               const fertig = f.erledigt.includes(m.id);
               return (
-                <li key={m.id} className={`rounded-lg border px-2 py-1 ${fertig ? "border-green-600 bg-green-600/10" : "border-[var(--border)]"}`}>
+                <li key={m.id} className={`rounded-lg border px-2 py-1 ${fertig ? "border-green-600 bg-green-600/10" : "border-(--border)"}`}>
                   <div className="font-bold">
                     {fertig ? "✅" : m.icon} {m.titel}
-                    {!m.pflicht && <span className="ml-1 text-xs font-normal text-[var(--text-muted)]">(Extra)</span>}
+                    {!m.pflicht && <span className="ml-1 text-xs font-normal text-(--text-muted)">(Extra)</span>}
                     {m.id === "schilder" && !fertig && <span className="ml-1 text-xs font-normal">{f.schilder.length}/{alleSchilder}</span>}
                   </div>
-                  {!fertig && <div className="text-xs text-[var(--text-muted)]">{m.text}</div>}
+                  {!fertig && <div className="text-xs text-(--text-muted)">{m.text}</div>}
                 </li>
               );
             })}
           </ul>
-          <p className={`mt-3 text-xs ${f.schwere > MAX_SCHWERE ? "text-red-600 font-bold" : "text-[var(--text-muted)]"}`}>
+          <p className={`mt-3 text-xs ${f.schwere > MAX_SCHWERE ? "text-red-600 font-bold" : "text-(--text-muted)"}`}>
             Schwere Verstöße: {f.schwere} (erlaubt: höchstens {MAX_SCHWERE})
           </p>
           {pflichtErfuellt(f) && (
@@ -122,7 +122,7 @@ export function Auftraege({ f, neuAnfangen, konto, code, onBestanden }: {
               : <p className="mt-2 text-xs">Alle Aufträge geschafft, aber zu viele schwere Verstöße. Fang neu an und zeig, dass es sicher geht!</p>
           )}
           {ergebnis && <p className="mt-2 font-bold">{ergebnis}</p>}
-          <button type="button" className="mt-3 text-xs underline text-[var(--text-muted)]"
+          <button type="button" className="mt-3 text-xs underline text-(--text-muted)"
             onClick={() => { if (confirm("Alle Aufträge zurücksetzen? (Erfolge bleiben.)")) { neuAnfangen(); setErgebnis(null); } }}>
             Neu anfangen
           </button>
@@ -134,11 +134,11 @@ export function Auftraege({ f, neuAnfangen, konto, code, onBestanden }: {
           {ERFOLGE.map((e) => {
             const da = erfolge.includes(e.id);
             return (
-              <li key={e.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1 ${da ? "border-amber-500 bg-amber-400/15" : "border-[var(--border)] opacity-60"}`}>
+              <li key={e.id} className={`flex items-center gap-2 rounded-lg border px-2 py-1 ${da ? "border-amber-500 bg-amber-400/15" : "border-(--border) opacity-60"}`}>
                 <span className={`text-xl ${da ? "" : "grayscale"}`}>{e.icon}</span>
                 <span>
                   <span className="block font-bold leading-tight">{e.titel}</span>
-                  <span className="block text-xs text-[var(--text-muted)]">{e.text}</span>
+                  <span className="block text-xs text-(--text-muted)">{e.text}</span>
                 </span>
               </li>
             );

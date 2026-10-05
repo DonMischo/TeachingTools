@@ -161,7 +161,7 @@ export default function StufeSuche({
         titel="🔍 Teil 3 · Suchen"
         auftrag={fertig
           ? <>Super — du findest jetzt alles über die Suche!</>
-          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-[var(--text-muted)] mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>}
+          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>}
         punkte={wertung({ stufe: "suche", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN, dauerMs: Math.round(performance.now() - start.current), fehler }).punkte}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -207,24 +207,24 @@ export default function StufeSuche({
             >
               <div className="flex items-center gap-2 px-2 py-1.5 border-b border-[#0000001a] bg-[#f3f3f3] text-sm font-bold">
                 <span className="flex-1 truncate">{f.titel}</span>
-                <button type="button" aria-label={`${f.titel} schließen`} onClick={() => schliesseFenster(f.id)} className="w-6 h-6 rounded hover:bg-[#00000014]">✕</button>
+                <button type="button" aria-label={`${f.titel} schließen`} onClick={() => schliesseFenster(f.id)} className="w-6 h-6 rounded-sm hover:bg-[#00000014]">✕</button>
               </div>
               <div className="p-4 text-sm text-[#555]">{f.titel}</div>
             </div>
           ))}
         </WindowsDesktop>
 
-        <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3 h-fit">
+        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           <ul className="flex flex-col gap-1.5">
             {AUFGABEN.map((a, i) => (
-              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-[var(--text-muted)]" : "")}>
+              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : "")}>
                 <span>{i < schritt ? "✅" : i === schritt ? "👉" : "⬜"}</span>
                 <span>{a}</span>
               </li>
             ))}
           </ul>
-          <div className="min-h-[2.5rem] text-sm font-bold" aria-live="polite"
+          <div className="min-h-10 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
             {hinweis?.text}
           </div>

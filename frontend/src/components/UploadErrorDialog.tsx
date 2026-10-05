@@ -40,8 +40,8 @@ export function UploadErrorDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-2xl border border-[var(--border)] p-5 shadow-2xl flex flex-col gap-3"
+    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl border border-(--border) p-5 shadow-2xl flex flex-col gap-3"
         style={{ background: "var(--bg)" }} onClick={e => e.stopPropagation()}>
         <h3 className="text-base font-semibold text-red-400">⚠️ {title}</h3>
 
@@ -49,19 +49,19 @@ export function UploadErrorDialog({
 
         {error.errors.length > 0 && (
           <>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               {error.errors.length === 1 ? "1 Fehler in der Datei:" : `${error.errors.length} Fehler in der Datei:`}
             </p>
-            <ol className="max-h-72 overflow-y-auto rounded-lg border border-[var(--border)] divide-y divide-[var(--border)] text-xs">
+            <ol className="max-h-72 overflow-y-auto rounded-lg border border-(--border) divide-y divide-(--border) text-xs">
               {error.errors.map((e, i) => (
-                <li key={i} className="px-3 py-2 font-mono break-words whitespace-pre-wrap">{e}</li>
+                <li key={i} className="px-3 py-2 font-mono wrap-break-word whitespace-pre-wrap">{e}</li>
               ))}
             </ol>
           </>
         )}
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <button onClick={copy} className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]">
+          <button onClick={copy} className="text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:border-(--accent)">
             {copied ? "✓ Kopiert" : "Fehler kopieren"}
           </button>
           <button onClick={onClose} className="btn-primary text-sm py-1.5 px-4">Schließen</button>

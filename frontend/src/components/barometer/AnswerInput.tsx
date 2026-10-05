@@ -31,7 +31,7 @@ export function QuestionInput({ question, value, onChange }: {
     return (
       <div className="flex flex-col gap-1">
         {(q.scale_min_label || q.scale_max_label) && (
-          <div className="flex justify-between text-xs text-[var(--text-muted)]">
+          <div className="flex justify-between text-xs text-(--text-muted)">
             <span>{q.scale_min_label}</span>
             <span>{q.scale_max_label}</span>
           </div>
@@ -41,7 +41,7 @@ export function QuestionInput({ question, value, onChange }: {
             const selected = value === v;
             return (
               <button key={v} type="button" aria-pressed={selected} onClick={() => onChange(v)}
-                className={`flex-1 aspect-square rounded-xl text-sm font-bold border-2 ${selected ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+                className={`flex-1 aspect-square rounded-xl text-sm font-bold border-2 ${selected ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) text-(--text-muted)"}`}>
                 {scaleLabel(q, v)}
               </button>
             );
@@ -71,7 +71,7 @@ export function QuestionInput({ question, value, onChange }: {
           const checked = selected.includes(i);
           const disabled = !checked && maxReached;
           return (
-            <label key={i} className={`flex items-center gap-2 text-sm ${disabled ? "text-[var(--text-muted)] opacity-60" : "cursor-pointer"}`}>
+            <label key={i} className={`flex items-center gap-2 text-sm ${disabled ? "text-(--text-muted) opacity-60" : "cursor-pointer"}`}>
               <input type="checkbox" checked={checked} disabled={disabled}
                 onChange={e => {
                   const next = e.target.checked ? [...selected, i] : selected.filter(v => v !== i);
@@ -82,7 +82,7 @@ export function QuestionInput({ question, value, onChange }: {
           );
         })}
         {q.max_choices != null && (
-          <span className="text-xs text-[var(--text-muted)]">höchstens {q.max_choices}</span>
+          <span className="text-xs text-(--text-muted)">höchstens {q.max_choices}</span>
         )}
       </div>
     );
@@ -95,7 +95,7 @@ export function QuestionInput({ question, value, onChange }: {
           min={q.num_min ?? undefined} max={q.num_max ?? undefined}
           value={typeof value === "number" ? value : ""}
           onChange={e => onChange(e.target.value === "" ? undefined : Number(e.target.value))} />
-        {q.unit && <span className="text-sm text-[var(--text-muted)]">{q.unit}</span>}
+        {q.unit && <span className="text-sm text-(--text-muted)">{q.unit}</span>}
       </div>
     );
   }
@@ -117,7 +117,7 @@ export function BlockInput({ questions, answers, onChange }: {
     <div className="flex flex-col gap-3">
       {first.intro && <div className="font-semibold text-sm">{first.intro}</div>}
       {(first.scale_min_label || first.scale_max_label) && (
-        <div className="flex justify-between text-xs text-[var(--text-muted)]">
+        <div className="flex justify-between text-xs text-(--text-muted)">
           <span>{first.scale_min_label}</span>
           <span>{first.scale_max_label}</span>
         </div>
@@ -135,7 +135,7 @@ export function BlockInput({ questions, answers, onChange }: {
                   <button key={v} type="button" aria-pressed={selected}
                     aria-label={`${q.text}: ${stepLabel}`}
                     onClick={() => onChange(q.id, v)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold border-2 ${selected ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+                    className={`w-8 h-8 rounded-lg text-xs font-bold border-2 ${selected ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) text-(--text-muted)"}`}>
                     {stepLabel}
                   </button>
                 );
@@ -156,7 +156,7 @@ export function SlideForm({ questions, answers, onChange }: {
   );
 
   if (segments.length === 0) {
-    return <div className="text-sm text-[var(--text-muted)]">Hier gibt es für dich nichts zu beantworten.</div>;
+    return <div className="text-sm text-(--text-muted)">Hier gibt es für dich nichts zu beantworten.</div>;
   }
 
   return (
@@ -164,15 +164,15 @@ export function SlideForm({ questions, answers, onChange }: {
       {segments.map(seg => {
         if (seg.type === "block") {
           return (
-            <div key={seg.block} className="border border-[var(--border)] rounded-xl p-4">
+            <div key={seg.block} className="border border-(--border) rounded-xl p-4">
               <BlockInput questions={seg.questions} answers={answers} onChange={onChange} />
             </div>
           );
         }
         const q = seg.question;
         return (
-          <div key={q.id} className="border border-[var(--border)] rounded-xl p-4 flex flex-col gap-2">
-            {q.intro && <div className="text-sm text-[var(--text-muted)]">{q.intro}</div>}
+          <div key={q.id} className="border border-(--border) rounded-xl p-4 flex flex-col gap-2">
+            {q.intro && <div className="text-sm text-(--text-muted)">{q.intro}</div>}
             <div className="font-semibold text-sm">{q.text}</div>
             <QuestionInput question={q} value={answers[q.id]} onChange={v => onChange(q.id, v)} />
           </div>

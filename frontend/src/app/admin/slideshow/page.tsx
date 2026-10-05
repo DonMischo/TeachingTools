@@ -32,9 +32,9 @@ const VISIBLE_CATEGORIES: Record<SlideshowItem["audience"], string[] | null> = {
   teacher: null,
 };
 
-const CHIP = "px-2 py-1 rounded text-xs border";
-const CHIP_ON = "bg-[var(--accent)] text-[var(--accent-text)] border-[var(--accent)]";
-const CHIP_OFF = "border-[var(--border)]";
+const CHIP = "px-2 py-1 rounded-sm text-xs border";
+const CHIP_ON = "bg-(--accent) text-(--accent-text) border-(--accent)";
+const CHIP_OFF = "border-(--border)";
 
 function slotSummary(item: SlideshowItem): string {
   if (item.slot_days.length === 0) return "—";
@@ -59,8 +59,8 @@ function SlotEditor({ item, onSave, onClose }: {
   const [until, setUntil] = useState(item.slot_until ?? "");
 
   return (
-    <div className="absolute z-20 mt-1 right-0 w-72 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg space-y-2">
-      <div className="text-xs text-[var(--text-muted)]">Im Zeitfenster bleibt der Eintrag stehen, sonst läuft er normal mit.</div>
+    <div className="absolute z-20 mt-1 right-0 w-72 rounded-lg border border-(--border) bg-(--surface) p-3 shadow-lg space-y-2">
+      <div className="text-xs text-(--text-muted)">Im Zeitfenster bleibt der Eintrag stehen, sonst läuft er normal mit.</div>
       <div className="flex flex-wrap gap-1">
         {WEEKDAYS.map((label, i) => (
           <button key={i} onClick={() => setDays((cur) => toggle(cur, i).sort())}
@@ -89,8 +89,8 @@ function SlotEditor({ item, onSave, onClose }: {
           onClose();
         }}>Zeitfenster entfernen</button>
         <div className="flex gap-2">
-          <button className="text-xs text-[var(--text-muted)]" onClick={onClose}>Abbrechen</button>
-          <button className="btn-primary !w-auto text-xs px-3 py-1" onClick={() => {
+          <button className="text-xs text-(--text-muted)" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary w-auto! text-xs px-3 py-1" onClick={() => {
             onSave({ slot_days: days, slot_start: start, slot_end: end, slot_from: from || null, slot_until: until || null });
             onClose();
           }}>Speichern</button>
@@ -116,10 +116,10 @@ function CalendarConfig({ item, meta, onChange }: {
   const ddmm = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`;
 
   return (
-    <div className="grid lg:grid-cols-2 gap-4 p-3 rounded-lg bg-[var(--surface)]">
+    <div className="grid lg:grid-cols-2 gap-4 p-3 rounded-lg bg-(--surface)">
       <div className="space-y-3">
         <div>
-          <div className="text-xs text-[var(--text-muted)] mb-1">Kategorien</div>
+          <div className="text-xs text-(--text-muted) mb-1">Kategorien</div>
           <div className="flex flex-wrap gap-1">
             {categories.map((c) => (
               <button key={c} onClick={() => onChange({ calendar_categories: toggle(item.calendar_categories, c) })}
@@ -130,7 +130,7 @@ function CalendarConfig({ item, meta, onChange }: {
           </div>
         </div>
         <div>
-          <div className="text-xs text-[var(--text-muted)] mb-1">Tags</div>
+          <div className="text-xs text-(--text-muted) mb-1">Tags</div>
           <div className="flex flex-wrap gap-1">
             {tags.map((t) => (
               <button key={t.name} onClick={() => onChange({ calendar_tags: toggle(item.calendar_tags, t.name) })}
@@ -143,33 +143,33 @@ function CalendarConfig({ item, meta, onChange }: {
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span>Tage im Voraus</span>
-          <input key={item.calendar_days_ahead} type="number" min={1} max={365} className="input !w-20"
+          <input key={item.calendar_days_ahead} type="number" min={1} max={365} className="input w-20!"
             defaultValue={item.calendar_days_ahead}
             onBlur={(e) => {
               const v = Number(e.target.value);
               if (v !== item.calendar_days_ahead) onChange({ calendar_days_ahead: v });
             }} />
         </div>
-        <div className="text-xs text-[var(--text-muted)]">
+        <div className="text-xs text-(--text-muted)">
           Nichts ausgewählt = keine Einschränkung. Private Termine erscheinen nie.
         </div>
       </div>
 
       <div>
-        <div className="text-xs text-[var(--text-muted)] mb-1">
+        <div className="text-xs text-(--text-muted) mb-1">
           Vorschau ({events.length} Termine){isFetching && " · lädt…"}
         </div>
-        <div className="max-h-64 overflow-y-auto rounded border border-[var(--border)] divide-y divide-[var(--border)]">
-          {events.length === 0 && <div className="p-2 text-sm text-[var(--text-muted)]">Keine passenden Termine</div>}
+        <div className="max-h-64 overflow-y-auto rounded-sm border border-(--border) divide-y divide-(--border)">
+          {events.length === 0 && <div className="p-2 text-sm text-(--text-muted)">Keine passenden Termine</div>}
           {events.map((ev, i) => {
             const hidden = visible !== null && !visible.includes(ev.category);
             return (
               <div key={i} className={`p-2 text-sm flex flex-wrap items-baseline gap-x-2 ${hidden ? "opacity-50" : ""}`}>
-                <span className="tabular-nums text-[var(--text-muted)]">
+                <span className="tabular-nums text-(--text-muted)">
                   {ddmm(ev.start_date)}{ev.end_date !== ev.start_date && `–${ddmm(ev.end_date)}`}
                 </span>
                 <span className="font-medium">{ev.title}</span>
-                <span className="text-xs text-[var(--text-muted)]">{ev.category}</span>
+                <span className="text-xs text-(--text-muted)">{ev.category}</span>
                 {hidden && <span className="text-xs text-amber-500">nicht sichtbar für {AUDIENCE_LABEL[item.audience]}</span>}
               </div>
             );
@@ -275,7 +275,7 @@ export default function AdminSlideshowPage() {
   };
 
   return (
-    <div className="p-6 space-y-4 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="p-6 space-y-4 max-w-(--seite-breite) mx-auto w-full">
       <h1 className="text-2xl font-bold">Startseiten-Slideshow</h1>
 
       <div
@@ -283,12 +283,12 @@ export default function AdminSlideshowPage() {
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
-        className={`rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors ${dragOver ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--border)]"}`}
+        className={`rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors ${dragOver ? "border-(--accent) bg-(--accent)/5" : "border-(--border)"}`}
       >
         <input ref={fileInputRef} type="file" multiple hidden
           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.mp4,.webm"
           onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
-        <div className="text-[var(--text-muted)]">
+        <div className="text-(--text-muted)">
           {uploadMut.isPending ? "Wird hochgeladen…" : "Dateien hierher ziehen oder klicken (Bilder, PDFs, Videos)"}
         </div>
       </div>
@@ -311,19 +311,19 @@ export default function AdminSlideshowPage() {
       >
         <span aria-hidden>🔗</span>
         {/* .input/.btn-primary are w-full globally — widths need ! to win */}
-        <input className="input !w-auto flex-1 min-w-[12rem]" type="url" placeholder="Link hinzufügen: https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
-        <input className="input sm:!w-56 shrink-0" placeholder="Titel (optional)" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
-        <button type="submit" className="btn-primary !w-auto shrink-0 whitespace-nowrap px-4 disabled:opacity-40" disabled={!linkUrl || createMut.isPending}>Hinzufügen</button>
+        <input className="input w-auto! flex-1 min-w-48" type="url" placeholder="Link hinzufügen: https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+        <input className="input sm:w-56! shrink-0" placeholder="Titel (optional)" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
+        <button type="submit" className="btn-primary w-auto! shrink-0 whitespace-nowrap px-4 disabled:opacity-40" disabled={!linkUrl || createMut.isPending}>Hinzufügen</button>
       </form>
 
       {selected.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--accent)]/60 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-(--accent)/60 px-3 py-2 text-sm">
           <span className="font-semibold">{selected.length} ausgewählt</span>
           {selected.length > 1 && (
-            <span className="text-[var(--text-muted)]">Zielgruppe, Dauer, Zeitfenster und Aktiv gelten für alle ausgewählten</span>
+            <span className="text-(--text-muted)">Zielgruppe, Dauer, Zeitfenster und Aktiv gelten für alle ausgewählten</span>
           )}
           <span className="flex-1" />
-          <button className="text-[var(--text-muted)] hover:text-[var(--text)]" onClick={() => setSelected([])}>Auswahl aufheben</button>
+          <button className="text-(--text-muted) hover:text-(--text)" onClick={() => setSelected([])}>Auswahl aufheben</button>
           <button className="text-red-400 disabled:opacity-40" disabled={deletable.length === 0} onClick={() => {
             if (confirm(`${deletable.length} Einträge wirklich löschen?`)) removeMut.mutate(deletable);
           }}>
@@ -335,7 +335,7 @@ export default function AdminSlideshowPage() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="border-b border-[var(--border)] text-left text-[var(--text-muted)]">
+            <tr className="border-b border-(--border) text-left text-(--text-muted)">
               <th className="p-2"><input type="checkbox" checked={items.length > 0 && selected.length === items.length}
                 onChange={() => setSelected(selected.length === items.length ? [] : items.map((i) => i.id))} /></th>
               <th className="p-2"></th>
@@ -353,7 +353,7 @@ export default function AdminSlideshowPage() {
             {items.map((item, idx) => {
               const isSelected = selected.includes(item.id);
               return [
-                <tr key={item.id} className={`border-b border-[var(--border)] ${isSelected ? "bg-[var(--surface)]" : ""}`}>
+                <tr key={item.id} className={`border-b border-(--border) ${isSelected ? "bg-(--surface)" : ""}`}>
                   <td className="p-2">
                     <input type="checkbox" checked={isSelected} onChange={() => setSelected((cur) => toggle(cur, item.id))} />
                   </td>
@@ -362,12 +362,12 @@ export default function AdminSlideshowPage() {
                     <button disabled={idx === items.length - 1} onClick={() => move(idx, 1)} className="px-1 disabled:opacity-30">↓</button>
                   </td>
                   <td className="p-2">{kindIcon(item)}</td>
-                  <td className="p-2 min-w-[12rem]">
+                  <td className="p-2 min-w-48">
                     <div className="flex items-center gap-2">
                       <input key={item.title} className="input w-full" defaultValue={item.title}
                         onBlur={(e) => { if (e.target.value !== item.title) updateMut.mutate({ id: item.id, patch: { title: e.target.value } }); }} />
                       {item.kind === "calendar" && (
-                        <button className="text-xs whitespace-nowrap text-[var(--accent)]"
+                        <button className="text-xs whitespace-nowrap text-(--accent)"
                           onClick={() => setOpenCalendar(openCalendar === item.id ? null : item.id)}>
                           {openCalendar === item.id ? "Schließen ▴" : "Anpassen ▾"}
                         </button>
@@ -375,7 +375,7 @@ export default function AdminSlideshowPage() {
                       {/* Die Uhr haelt sich nicht an ihren Listenplatz — ohne den
                           Hinweis schiebt man sie hoch und runter und wundert sich. */}
                       {item.kind === "clock" && (
-                        <span className="text-xs whitespace-nowrap text-[var(--text-muted)]">
+                        <span className="text-xs whitespace-nowrap text-(--text-muted)">
                           kommt nach je 2 Folien
                         </span>
                       )}
@@ -389,16 +389,16 @@ export default function AdminSlideshowPage() {
                   </td>
                   <td className="p-2 whitespace-nowrap">
                     {item.media_type === "video" ? (
-                      <input className="input !w-20" disabled value="bis Ende" />
+                      <input className="input w-20!" disabled value="bis Ende" />
                     ) : (
                       <>
-                        <input key={item.duration_seconds} type="number" min={3} max={3600} className="input !w-20"
+                        <input key={item.duration_seconds} type="number" min={3} max={3600} className="input w-20!"
                           defaultValue={item.duration_seconds}
                           onBlur={(e) => {
                             const v = Number(e.target.value);
                             if (v !== item.duration_seconds) change(item, { duration_seconds: v });
                           }} />
-                        <span className="ml-1 text-xs text-[var(--text-muted)]">{item.media_type === "pdf" ? "s/Seite" : "s"}</span>
+                        <span className="ml-1 text-xs text-(--text-muted)">{item.media_type === "pdf" ? "s/Seite" : "s"}</span>
                       </>
                     )}
                   </td>
@@ -417,17 +417,17 @@ export default function AdminSlideshowPage() {
                         onClick={() => setOpenWarn(openWarn === item.id ? null : item.id)}>⚠</button>
                     )}
                     {openWarn === item.id && (
-                      <div className="absolute z-20 mt-1 right-0 w-64 rounded-lg border border-amber-500/50 bg-[var(--surface)] p-2 text-xs space-y-1">
+                      <div className="absolute z-20 mt-1 right-0 w-64 rounded-lg border border-amber-500/50 bg-(--surface) p-2 text-xs space-y-1">
                         {item.warnings.map((w, i) => <div key={i}>{w}</div>)}
                       </div>
                     )}
                   </td>
                   <td className="p-2 whitespace-nowrap">
                     {(item.file_url || item.url) && (
-                      <a href={item.file_url ?? item.url ?? "#"} target="_blank" rel="noreferrer" className="text-[var(--accent)]">Vorschau</a>
+                      <a href={item.file_url ?? item.url ?? "#"} target="_blank" rel="noreferrer" className="text-(--accent)">Vorschau</a>
                     )}
                     {item.kind === "file" && (
-                      <button className="ml-3 text-[var(--accent)] disabled:opacity-40"
+                      <button className="ml-3 text-(--accent) disabled:opacity-40"
                         title="Neue Datei hochladen; Dauer, Zielgruppe, Zeitfenster und Platz bleiben"
                         disabled={replaceMut.isPending}
                         onClick={() => { setReplaceId(item.id); replaceInputRef.current?.click(); }}>
@@ -437,7 +437,7 @@ export default function AdminSlideshowPage() {
                   </td>
                 </tr>,
                 item.kind === "calendar" && openCalendar === item.id && (
-                  <tr key={`${item.id}-config`} className="border-b border-[var(--border)]">
+                  <tr key={`${item.id}-config`} className="border-b border-(--border)">
                     <td colSpan={10} className="p-2">
                       <CalendarConfig item={item} meta={calMeta} onChange={(patch) => updateMut.mutate({ id: item.id, patch })} />
                     </td>

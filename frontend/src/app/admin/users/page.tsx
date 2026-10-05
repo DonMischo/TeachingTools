@@ -29,8 +29,8 @@ function apiErr(e: any): string {
 function Hint({ text }: { text: string }) {
   return (
     <span className="relative group inline-flex">
-      <span className="w-4 h-4 rounded-full border border-[var(--border)] text-[var(--text-muted)] text-[10px] flex items-center justify-center cursor-default select-none hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">?</span>
-      <span className="absolute left-5 top-0 z-50 hidden group-hover:block w-72 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3 text-xs text-[var(--text-muted)] shadow-lg leading-relaxed">
+      <span className="w-4 h-4 rounded-full border border-(--border) text-(--text-muted) text-[10px] flex items-center justify-center cursor-default select-none hover:border-(--accent) hover:text-(--accent) transition-colors">?</span>
+      <span className="absolute left-5 top-0 z-50 hidden group-hover:block w-72 bg-(--surface) border border-(--border) rounded-xl p-3 text-xs text-(--text-muted) shadow-lg leading-relaxed">
         {text}
       </span>
     </span>
@@ -41,17 +41,17 @@ const ACTION_LABEL: Record<string, string> = { new: "NEU", update: "GEÄNDERT", 
 const ACTION_COLOR: Record<string, string> = {
   new: "bg-green-900/40 text-green-300",
   update: "bg-yellow-900/40 text-yellow-300",
-  unchanged: "text-[var(--text-muted)]",
+  unchanged: "text-(--text-muted)",
 };
 const FIELD_LABELS: Record<string, string> = { nummer: "Nr.", email: "E-Mail", klasse: "Klasse", role: "Rolle", geschlecht: "Geschl.", geburtsdatum: "Geb." };
 
 function FieldDiff({ field, csvVal, dbVal }: { field: string; csvVal: string; dbVal: string | undefined }) {
   const label = FIELD_LABELS[field] ?? field;
   return (
-    <span className="inline-flex items-center gap-1 text-xs bg-[var(--bg)] rounded px-1.5 py-0.5 mr-1 mb-1">
-      <span className="text-[var(--text-muted)]">{label}:</span>
+    <span className="inline-flex items-center gap-1 text-xs bg-(--bg) rounded-sm px-1.5 py-0.5 mr-1 mb-1">
+      <span className="text-(--text-muted)">{label}:</span>
       {dbVal ? <><span className="line-through opacity-50">{dbVal}</span><span>→</span></> : null}
-      <span className="text-[var(--accent)]">{csvVal || "(leer)"}</span>
+      <span className="text-(--accent)">{csvVal || "(leer)"}</span>
     </span>
   );
 }
@@ -64,7 +64,7 @@ function CredTable({ rows }: { rows: CredResult[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-xs border-collapse">
         <thead>
-          <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+          <tr className="border-b border-(--border) text-(--text-muted)">
             <th className="text-left py-2 pr-4">Typ</th>
             <th className="text-left py-2 pr-4">Name</th>
             <th className="text-left py-2 pr-4">Benutzername</th>
@@ -73,7 +73,7 @@ function CredTable({ rows }: { rows: CredResult[] }) {
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} className="border-b border-[var(--border)]/50">
+            <tr key={i} className="border-b border-(--border)/50">
               <td className="py-1.5 pr-4">{r.sub}</td>
               <td className="py-1.5 pr-4">{r.label}</td>
               <td className="py-1.5 pr-4 font-mono">{r.username}</td>
@@ -183,31 +183,31 @@ function StudentImportSection() {
     : Object.values(enrich).filter(c => c.include && c.chosenId != null).length;
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <h2 className="font-semibold text-sm">Schüler-CSV-Import</h2>
         <Hint text={"Zwei Modi. — JAHRESLISTE: Spalten Nachname, Vorname, Klasse, Geschlecht, Geburtsdatum (Pflicht: Nachname, Klasse). Fügt neue Schüler hinzu, aktualisiert bestehende (Abgleich über Name + Klasse bzw. AK-Code über den Jahrgangswechsel hinweg) und zeigt Schüler der enthaltenen Klassen, die NICHT in der Liste stehen, zum optionalen Löschen. — ZUSATZFELDER: beliebige Liste mit Extra-Spalten (z. B. Benutzername, Passwort). Findet bestehende Schüler über den Namen — ein Vorname genügt, Reihenfolge Vorname/Nachname wird automatisch erkannt, fehlende oder veraltete Klasse ist ok. Wähle das Schuljahr der Liste, damit eine veraltete Klasse dem heutigen Jahrgang zugeordnet werden kann. Es werden NUR die Zusatzspalten übernommen; Name und Klasse bleiben unverändert. Bei mehrdeutigen Namen bzw. abweichenden Feldern kannst du je Zeile entscheiden. — Trennzeichen: Komma, Semikolon oder Tab."} />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-[var(--text-muted)]">Modus</span>
+        <span className="text-xs text-(--text-muted)">Modus</span>
         <div className="flex gap-2 flex-wrap">
           {([["roster", "📋 Jahresliste"], ["enrichment", "➕ Zusatzfelder"]] as const).map(([m, label]) => (
             <button key={m} onClick={() => { setMode(m); reset(); }}
               className={`text-sm px-4 py-2 rounded-full border transition-colors ${
-                mode === m ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                mode === m ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
               }`}>
               {label}
             </button>
           ))}
         </div>
-        <p className="text-xs text-[var(--text-muted)] mt-1">
+        <p className="text-xs text-(--text-muted) mt-1">
           {mode === "roster"
             ? "Standard-Klassenliste: hinzufügen, aktualisieren, fehlende zum Löschen markieren."
             : "Zusatzspalten zu bestehenden Schülern ergänzen — Name & Klasse werden nicht verändert."}
         </p>
         {mode === "enrichment" && (
-          <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1">
+          <label className="flex items-center gap-2 text-xs text-(--text-muted) mt-1">
             Schuljahr der Liste
             <select className="input text-xs py-1" value={listYear} onChange={e => setListYear(Number(e.target.value))}>
               {[0, 1, 2].map(off => {
@@ -236,7 +236,7 @@ function StudentImportSection() {
       {preview?.mode === "roster" && (
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between flex-wrap gap-3">
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               {preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert · {preview.summary.absent} nicht in der Liste
               {preview.extra_columns.length > 0 && <> · Zusatzfelder: {preview.extra_columns.join(", ")}</>}
             </p>
@@ -244,7 +244,7 @@ function StudentImportSection() {
               {(["all", "new", "update"] as Filter[]).map(f => (
                 <button key={f} onClick={() => setFilter(f)}
                   className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    filter === f ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                    filter === f ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
                   }`}>
                   {f === "all" ? "Alle" : f === "new" ? "Nur neu" : "Nur geändert"}
                 </button>
@@ -256,10 +256,10 @@ function StudentImportSection() {
             <button onClick={() => setSelected(new Set())} className="underline opacity-70 hover:opacity-100">Keine</button>
             <span className="opacity-50">{selected.size} ausgewählt</span>
           </div>
-          <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+          <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-(--border)">
             <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 bg-[var(--surface)] z-10">
-                <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+              <thead className="sticky top-0 bg-(--surface) z-10">
+                <tr className="border-b border-(--border) text-(--text-muted)">
                   <th className="w-8 py-2 px-2"></th>
                   <th className="text-left py-2 px-2 w-24">Status</th>
                   <th className="text-left py-2 px-2">Nachname</th>
@@ -271,12 +271,12 @@ function StudentImportSection() {
               <tbody>
                 {visibleRows.map((row) => (
                   <tr key={row.key} onClick={() => toggleRow(row.key)}
-                    className={`border-b border-[var(--border)]/40 cursor-pointer transition-colors hover:bg-[var(--surface-hover)] ${selected.has(row.key) ? "bg-[var(--accent)]/5" : ""}`}>
+                    className={`border-b border-(--border)/40 cursor-pointer transition-colors hover:bg-(--surface-hover) ${selected.has(row.key) ? "bg-(--accent)/5" : ""}`}>
                     <td className="py-1.5 px-2 text-center">
-                      <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-[var(--accent)]" />
+                      <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-(--accent)" />
                     </td>
                     <td className="py-1.5 px-2">
-                      <span className={`inline-block rounded px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
+                      <span className={`inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
                     </td>
                     <td className="py-1.5 px-2 font-medium">{row.csv_data.nachname}</td>
                     <td className="py-1.5 px-2">{row.csv_data.vorname}</td>
@@ -299,14 +299,14 @@ function StudentImportSection() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold text-red-300">Nicht in der Liste ({preview.absent.length})</h3>
-                <span className="text-xs text-[var(--text-muted)]">— nur in Klassen der Datei; Häkchen zum Löschen setzen (standardmäßig aus).</span>
+                <span className="text-xs text-(--text-muted)">— nur in Klassen der Datei; Häkchen zum Löschen setzen (standardmäßig aus).</span>
                 <button onClick={() => setDeleteIds(new Set(preview.absent.map(a => a.id)))} className="text-xs underline opacity-70 hover:opacity-100">Alle</button>
                 <button onClick={() => setDeleteIds(new Set())} className="text-xs underline opacity-70 hover:opacity-100">Keine</button>
               </div>
               <div className="overflow-x-auto max-h-[30vh] overflow-y-auto rounded-lg border border-red-900/40">
                 <table className="w-full text-xs border-collapse">
-                  <thead className="sticky top-0 bg-[var(--surface)] z-10">
-                    <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                  <thead className="sticky top-0 bg-(--surface) z-10">
+                    <tr className="border-b border-(--border) text-(--text-muted)">
                       <th className="w-16 py-2 px-2 text-left">
                         <label className="inline-flex items-center gap-1 cursor-pointer" title="Alle zum Löschen auswählen">
                           <input type="checkbox" className="accent-red-500"
@@ -324,7 +324,7 @@ function StudentImportSection() {
                   <tbody>
                     {preview.absent.map(a => (
                       <tr key={a.id} onClick={() => toggleDelete(a.id)}
-                        className={`border-b border-[var(--border)]/40 cursor-pointer hover:bg-[var(--surface-hover)] ${deleteIds.has(a.id) ? "bg-red-900/20" : ""}`}>
+                        className={`border-b border-(--border)/40 cursor-pointer hover:bg-(--surface-hover) ${deleteIds.has(a.id) ? "bg-red-900/20" : ""}`}>
                         <td className="py-1.5 px-2 text-center">
                           <input type="checkbox" checked={deleteIds.has(a.id)} onChange={() => toggleDelete(a.id)} onClick={e => e.stopPropagation()} className="accent-red-500" />
                         </td>
@@ -351,19 +351,19 @@ function StudentImportSection() {
 
       {preview?.mode === "enrichment" && (
         <div className="flex flex-col gap-3">
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             {preview.summary.matched} Treffer · {preview.summary.ambiguous} mehrdeutig · {preview.summary.unmatched} kein Treffer
             {preview.extra_columns.length > 0 && <> · Zusatzfelder: {preview.extra_columns.join(", ")}</>}
           </p>
           {preview.names_swapped && (
-            <p className="text-xs text-orange-300 bg-orange-900/20 rounded px-2 py-1">
+            <p className="text-xs text-orange-300 bg-orange-900/20 rounded-sm px-2 py-1">
               ↔ Spaltenreihenfolge erkannt: Nachname &amp; Vorname waren vertauscht und wurden automatisch korrekt zugeordnet.
             </p>
           )}
-          <div className="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+          <div className="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-lg border border-(--border)">
             <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 bg-[var(--surface)] z-10">
-                <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+              <thead className="sticky top-0 bg-(--surface) z-10">
+                <tr className="border-b border-(--border) text-(--text-muted)">
                   <th className="w-8 py-2 px-2"></th>
                   <th className="text-left py-2 px-2 w-28">Status</th>
                   <th className="text-left py-2 px-2">CSV-Zeile</th>
@@ -376,13 +376,13 @@ function StudentImportSection() {
                   const c = enrich[row.key];
                   const selectable = row.status !== "unmatched";
                   return (
-                    <tr key={row.key} className={`border-b border-[var(--border)]/40 align-top ${c?.include ? "bg-[var(--accent)]/5" : ""} ${row.status === "unmatched" ? "opacity-50" : ""}`}>
+                    <tr key={row.key} className={`border-b border-(--border)/40 align-top ${c?.include ? "bg-(--accent)/5" : ""} ${row.status === "unmatched" ? "opacity-50" : ""}`}>
                       <td className="py-1.5 px-2 text-center">
                         <input type="checkbox" disabled={!selectable} checked={!!c?.include}
-                          onChange={() => patchEnrich(row.key, { include: !c?.include })} className="accent-[var(--accent)]" />
+                          onChange={() => patchEnrich(row.key, { include: !c?.include })} className="accent-(--accent)" />
                       </td>
                       <td className="py-1.5 px-2">
-                        <span className={`inline-block rounded px-1.5 py-0.5 font-mono font-bold text-[10px] ${STATUS_COLOR[row.status]}`}>{STATUS_LABEL[row.status]}</span>
+                        <span className={`inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] ${STATUS_COLOR[row.status]}`}>{STATUS_LABEL[row.status]}</span>
                       </td>
                       <td className="py-1.5 px-2">
                         <span className="font-medium">{row.csv_data.nachname}</span>{row.csv_data.vorname ? `, ${row.csv_data.vorname}` : ""}
@@ -392,7 +392,7 @@ function StudentImportSection() {
                         {row.status === "matched" && row.match && (
                           <span>
                             {row.match.nachname}, {row.match.vorname} <span className="font-mono opacity-60">({row.match.klasse})</span>
-                            {row.outdated && <span className="ml-1 inline-block rounded px-1.5 py-0.5 font-mono font-bold text-[10px] bg-orange-900/40 text-orange-300" title={`Liste nennt Klasse ${row.csv_data.klasse}`}>KLASSE VERALTET</span>}
+                            {row.outdated && <span className="ml-1 inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] bg-orange-900/40 text-orange-300" title={`Liste nennt Klasse ${row.csv_data.klasse}`}>KLASSE VERALTET</span>}
                           </span>
                         )}
                         {row.status === "ambiguous" && (
@@ -409,20 +409,20 @@ function StudentImportSection() {
                       <td className="py-1.5 px-2">
                         <div className="flex flex-wrap gap-1 items-center">
                           {Object.entries(row.extra_writes).map(([k, v]) => (
-                            <span key={k} className="inline-flex items-center gap-1 text-xs bg-[var(--bg)] rounded px-1.5 py-0.5">
-                              <span className="text-[var(--text-muted)]">{k}:</span><span className="text-[var(--accent)]">{v}</span>
+                            <span key={k} className="inline-flex items-center gap-1 text-xs bg-(--bg) rounded-sm px-1.5 py-0.5">
+                              <span className="text-(--text-muted)">{k}:</span><span className="text-(--accent)">{v}</span>
                             </span>
                           ))}
                           {row.conflicts.map(cf => {
                             const takeCsv = c?.take.has(cf.field);
                             return (
-                              <span key={cf.field} className="inline-flex items-center gap-1 text-xs bg-yellow-900/20 rounded px-1.5 py-0.5">
+                              <span key={cf.field} className="inline-flex items-center gap-1 text-xs bg-yellow-900/20 rounded-sm px-1.5 py-0.5">
                                 <span className="text-yellow-300">{FIELD_LABELS[cf.field] ?? cf.field}:</span>
                                 <button onClick={() => patchEnrich(row.key, { take: setWithout(c!.take, cf.field) })}
-                                  className={`px-1 rounded ${!takeCsv ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "opacity-60"}`} title="DB behalten">{cf.db_val || "(leer)"}</button>
+                                  className={`px-1 rounded-sm ${!takeCsv ? "bg-(--accent) text-(--accent-text,#111)" : "opacity-60"}`} title="DB behalten">{cf.db_val || "(leer)"}</button>
                                 <span>→</span>
                                 <button onClick={() => patchEnrich(row.key, { take: setWith(c!.take, cf.field) })}
-                                  className={`px-1 rounded ${takeCsv ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "opacity-60"}`} title="CSV übernehmen">{cf.csv_val || "(leer)"}</button>
+                                  className={`px-1 rounded-sm ${takeCsv ? "bg-(--accent) text-(--accent-text,#111)" : "opacity-60"}`} title="CSV übernehmen">{cf.csv_val || "(leer)"}</button>
                               </span>
                             );
                           })}
@@ -519,7 +519,7 @@ function RevealPassword({ teacherId, name }: { teacherId: number; name: string }
   return (
     <div className="flex flex-col gap-1">
       {passwort ? (
-        <code className="text-xs bg-[var(--surface-hover)] rounded px-1.5 py-0.5 break-all">{passwort}</code>
+        <code className="text-xs bg-(--surface-hover) rounded-sm px-1.5 py-0.5 break-all">{passwort}</code>
       ) : (
         <div className="flex items-center gap-1">
           <input
@@ -763,23 +763,23 @@ export default function AdminUsersPage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">👤 Benutzerverwaltung</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">Konten anlegen · Zugänge generieren · Lehrer- &amp; Schüler-CSV · Passwörter · Löschen</p>
+        <p className="text-(--text-muted) text-sm mt-1">Konten anlegen · Zugänge generieren · Lehrer- &amp; Schüler-CSV · Passwörter · Löschen</p>
       </div>
 
       {/* ── Manual create ─────────────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <h2 className="font-semibold text-sm">Benutzer manuell anlegen</h2>
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-[var(--text-muted)]">Rolle</span>
+          <span className="text-xs text-(--text-muted)">Rolle</span>
           <div className="flex gap-2 flex-wrap">
             {(["student", "teacher", "admin"] as UserType[]).map(t => (
               <button key={t} onClick={() => setType(t)}
                 className={`text-sm px-4 py-2 rounded-full border transition-colors ${
-                  type === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                  type === t ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
                 }`}>
                 {TYPE_LABEL[t]}
               </button>
@@ -788,25 +788,25 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+          <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
             Vorname
             <input className="input text-sm py-2" value={vorname} onChange={e => setVorname(e.target.value)} />
           </label>
-          <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+          <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
             Nachname
             <input className="input text-sm py-2" value={nachname} onChange={e => setNachname(e.target.value)} />
           </label>
 
           {type === "student" && (
             <>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 Klasse
                 <select className="input text-sm py-2" value={klasse} onChange={e => setKlasse(e.target.value)}>
                   <option value="">— wählen —</option>
                   {classes.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                 </select>
               </label>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 Geschlecht
                 <select className="input text-sm py-2" value={geschlecht} onChange={e => setGeschlecht(e.target.value)}>
                   <option value="">— wählen —</option>
@@ -819,11 +819,11 @@ export default function AdminUsersPage() {
 
           {type !== "student" && (
             <>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 E-Mail <span className="opacity-60">(optional)</span>
                 <input className="input text-sm py-2" type="email" value={email} onChange={e => setEmail(e.target.value)} />
               </label>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 Profession <span className="opacity-60">(optional)</span>
                 <select className="input text-sm py-2" value={profession} onChange={e => setProfession(e.target.value)}>
                   <option value="">— keine —</option>
@@ -844,30 +844,30 @@ export default function AdminUsersPage() {
 
         {created.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-[var(--text-muted)]">Passwörter werden nur hier angezeigt — bitte notieren.</p>
+            <p className="text-xs text-(--text-muted)">Passwörter werden nur hier angezeigt — bitte notieren.</p>
             <CredTable rows={created} />
           </div>
         )}
       </section>
 
       {/* ── Credential generation ─────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Zugangsdaten generieren</h2>
           <Hint text={"Erzeugt Benutzernamen und Passwörter für alle Schüler bzw. Lehrkräfte ohne Zugang. Standard-Passwörter bestehen aus Farbe + Tier + Zahl (z. B. BlaueTiger042). Bei Schülern kannst du stattdessen ein Zusatzfeld als Quelle wählen (z. B. Office-Benutzername / Passwort) — dann werden diese als Login übernommen; ist das Feld bei einem Schüler leer, gelten die Standardregeln. Übernommene Passwörter werden verschlüsselt gespeichert (nur mit dem SECRET_KEY lesbar) und können weiterhin auf Karten/Export angezeigt werden. Doppelte Benutzernamen werden übersprungen und gemeldet."} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-[var(--text-muted)]">Schüler</span>
+            <span className="text-xs font-semibold text-(--text-muted)">Schüler</span>
             <div className="grid grid-cols-2 gap-2">
-              <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
                 Benutzername aus
                 <select className="input text-xs py-1.5" value={usernameField} onChange={e => setUsernameField(e.target.value)}>
                   <option value="">Automatisch generieren</option>
                   {fieldKeys.map(k => <option key={k} value={k}>{k}</option>)}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
                 Passwort aus
                 <select className="input text-xs py-1.5" value={passwordField} onChange={e => setPasswordField(e.target.value)}>
                   <option value="">Automatisch generieren</option>
@@ -883,7 +883,7 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-[var(--text-muted)]">Lehrkräfte</span>
+            <span className="text-xs font-semibold text-(--text-muted)">Lehrkräfte</span>
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => teacherGenMut.mutate()} disabled={teacherGenMut.isPending} className="btn-primary text-sm py-2 px-4">
                 {teacherGenMut.isPending ? "Generiere…" : "🔑 Generieren"}
@@ -894,14 +894,14 @@ export default function AdminUsersPage() {
         </div>
 
         {fieldKeys.length > 0 && (
-          <div className="flex flex-col gap-1.5 border-t border-[var(--border)] pt-3">
+          <div className="flex flex-col gap-1.5 border-t border-(--border) pt-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[var(--text-muted)]">Zusatzfelder</span>
+              <span className="text-xs font-semibold text-(--text-muted)">Zusatzfelder</span>
               <Hint text={"Importierte Zusatzspalten. Klicke auf 🗑, um ein Feld bei allen Schüler:innen zu löschen (z. B. veraltete oder sensible Spalten)."} />
             </div>
             <div className="flex flex-wrap gap-1.5">
               {fieldKeys.map(k => (
-                <span key={k} className="inline-flex items-center gap-1 text-xs bg-[var(--bg)] rounded-full pl-2.5 pr-1 py-0.5">
+                <span key={k} className="inline-flex items-center gap-1 text-xs bg-(--bg) rounded-full pl-2.5 pr-1 py-0.5">
                   {k}
                   <button
                     onClick={() => { if (window.confirm(`Feld „${k}" bei allen Schüler:innen löschen? Das kann nicht rückgängig gemacht werden.`)) deleteFieldMut.mutate(k); }}
@@ -928,7 +928,7 @@ export default function AdminUsersPage() {
       </section>
 
       {/* ── Teacher CSV import ─────────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Lehrer-CSV-Import</h2>
           <Hint text={"Spalten: # (Nummer), Nachname, Vorname, E-Mail, Klasse, Rolle. Pflichtfelder: Nachname, Vorname. Nummer wird als stabiler Abgleichschlüssel genutzt, sonst der Name. Klasse leer oder eine bestehende Klasse (dann Klassenleitung). Rolle 'Lehrer' oder 'SPF'. Trennzeichen: Komma, Semikolon oder Tab. Bestehende Lehrkräfte werden nicht gelöscht."} />
@@ -949,14 +949,14 @@ export default function AdminUsersPage() {
         {preview && (
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between flex-wrap gap-3">
-              <p className="text-xs text-[var(--text-muted)]">
+              <p className="text-xs text-(--text-muted)">
                 {preview.summary.new} neu · {preview.summary.update} geändert · {preview.summary.unchanged} unverändert
               </p>
               <div className="flex gap-2 flex-wrap">
                 {(["all", "new", "update"] as Filter[]).map(f => (
                   <button key={f} onClick={() => setFilter(f)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                      filter === f ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                      filter === f ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
                     }`}>
                     {f === "all" ? "Alle" : f === "new" ? "Nur neu" : "Nur geändert"}
                   </button>
@@ -968,10 +968,10 @@ export default function AdminUsersPage() {
               <button onClick={() => setSelected(new Set())} className="underline opacity-70 hover:opacity-100">Keine</button>
               <span className="opacity-50">{selected.size} ausgewählt</span>
             </div>
-            <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+            <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-(--border)">
               <table className="w-full text-xs border-collapse">
-                <thead className="sticky top-0 bg-[var(--surface)] z-10">
-                  <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                <thead className="sticky top-0 bg-(--surface) z-10">
+                  <tr className="border-b border-(--border) text-(--text-muted)">
                     <th className="w-8 py-2 px-2"></th>
                     <th className="text-left py-2 px-2 w-24">Status</th>
                     <th className="text-left py-2 px-2">Nachname</th>
@@ -984,12 +984,12 @@ export default function AdminUsersPage() {
                 <tbody>
                   {visibleRows.map((row) => (
                     <tr key={row.key} onClick={() => toggleRow(row.key)}
-                      className={`border-b border-[var(--border)]/40 cursor-pointer transition-colors hover:bg-[var(--surface-hover)] ${selected.has(row.key) ? "bg-[var(--accent)]/5" : ""}`}>
+                      className={`border-b border-(--border)/40 cursor-pointer transition-colors hover:bg-(--surface-hover) ${selected.has(row.key) ? "bg-(--accent)/5" : ""}`}>
                       <td className="py-1.5 px-2 text-center">
-                        <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-[var(--accent)]" />
+                        <input type="checkbox" checked={selected.has(row.key)} onChange={() => toggleRow(row.key)} onClick={e => e.stopPropagation()} className="accent-(--accent)" />
                       </td>
                       <td className="py-1.5 px-2">
-                        <span className={`inline-block rounded px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
+                        <span className={`inline-block rounded-sm px-1.5 py-0.5 font-mono font-bold text-[10px] ${ACTION_COLOR[row.action]}`}>{ACTION_LABEL[row.action]}</span>
                       </td>
                       <td className="py-1.5 px-2 font-medium">{row.csv_data.nachname}</td>
                       <td className="py-1.5 px-2">{row.csv_data.vorname}</td>
@@ -1022,7 +1022,7 @@ export default function AdminUsersPage() {
       <StudentImportSection />
 
       {/* ── Password reset ─────────────────────────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Passwort zurücksetzen</h2>
           <Hint text={"Erzeugt ein neues zufälliges Passwort für eine einzelne Person. Das alte Passwort wird ungültig. Fehlt ein Benutzername, wird er dabei ebenfalls erzeugt."} />
@@ -1031,7 +1031,7 @@ export default function AdminUsersPage() {
           {(["teacher", "student"] as ResetType[]).map(t => (
             <button key={t} onClick={() => { setResetType(t); setResetResult(null); }}
               className={`text-sm px-4 py-2 rounded-full border transition-colors ${
-                resetType === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                resetType === t ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
               }`}>
               {t === "teacher" ? "Lehrkraft" : "Schüler:in"}
             </button>
@@ -1040,7 +1040,7 @@ export default function AdminUsersPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {resetType === "teacher" ? (
-            <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)] sm:col-span-2">
+            <label className="flex flex-col gap-1.5 text-xs text-(--text-muted) sm:col-span-2">
               Lehrkraft
               <select className="input text-sm py-2" value={resetTeacherId} onChange={e => setResetTeacherId(e.target.value)}>
                 <option value="">— wählen —</option>
@@ -1049,14 +1049,14 @@ export default function AdminUsersPage() {
             </label>
           ) : (
             <>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 Klasse
                 <select className="input text-sm py-2" value={resetClass} onChange={e => { setResetClass(e.target.value); setResetStudentId(""); }}>
                   <option value="">— wählen —</option>
                   {classes.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                 </select>
               </label>
-              <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
+              <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
                 Schüler:in
                 <select className="input text-sm py-2" value={resetStudentId} onChange={e => setResetStudentId(e.target.value)} disabled={!resetClass}>
                   <option value="">— wählen —</option>
@@ -1077,7 +1077,7 @@ export default function AdminUsersPage() {
       </section>
 
       {/* ── User management (username + reset) ──────────────────────────────── */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Benutzer verwalten</h2>
           <Hint text={"Benutzernamen ändern (✏️), Passwörter zurücksetzen und Konten löschen. Nach Rolle und Klasse gefiltert — Admins sind Lehrkräfte mit Admin-Rechten. Löschen ist endgültig; Lehrkräfte mit erstellten Inhalten oder vergebenen Punkten lassen sich nicht löschen."} />
@@ -1087,7 +1087,7 @@ export default function AdminUsersPage() {
             {(["student", "teacher", "admin"] as UserType[]).map(t => (
               <button key={t} onClick={() => setMgmtRole(t)}
                 className={`text-sm px-4 py-2 rounded-full border transition-colors ${
-                  mgmtRole === t ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] hover:border-[var(--accent)]"
+                  mgmtRole === t ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) hover:border-(--accent)"
                 }`}>
                 {TYPE_LABEL[t]}
               </button>
@@ -1100,10 +1100,10 @@ export default function AdminUsersPage() {
           </select>
         </div>
 
-        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[var(--border)]">
+        <div className="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-(--border)">
           <table className="w-full text-xs border-collapse">
-            <thead className="sticky top-0 bg-[var(--surface)] z-10">
-              <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+            <thead className="sticky top-0 bg-(--surface) z-10">
+              <tr className="border-b border-(--border) text-(--text-muted)">
                 <th className="text-left py-2 px-2">Name</th>
                 <th className="text-left py-2 px-2">Benutzername</th>
                 <th className="text-left py-2 px-2 w-28">Passwort</th>
@@ -1112,7 +1112,7 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {mgmtRows.map(r => (
-                <tr key={`${r.kind}-${r.id}`} className="border-b border-[var(--border)]/40">
+                <tr key={`${r.kind}-${r.id}`} className="border-b border-(--border)/40">
                   <td className="py-1.5 px-2">{r.name}</td>
                   <td className="py-1.5 px-2">
                     <UsernameCell value={r.username} onSave={(name) => setUsernameMut.mutateAsync({ kind: r.kind, id: r.id, username: name })} />
@@ -1133,7 +1133,7 @@ export default function AdminUsersPage() {
                 </tr>
               ))}
               {mgmtRows.length === 0 && (
-                <tr><td colSpan={4} className="py-6 text-center text-[var(--text-muted)]">Keine Einträge.</td></tr>
+                <tr><td colSpan={4} className="py-6 text-center text-(--text-muted)">Keine Einträge.</td></tr>
               )}
             </tbody>
           </table>
@@ -1141,7 +1141,7 @@ export default function AdminUsersPage() {
 
         {mgmtCreds.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-[var(--text-muted)]">Neue Passwörter — bitte notieren.</p>
+            <p className="text-xs text-(--text-muted)">Neue Passwörter — bitte notieren.</p>
             <CredTable rows={mgmtCreds} />
           </div>
         )}

@@ -66,7 +66,7 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3" aria-label="Arbeitsblatt">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3" aria-label="Arbeitsblatt">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="font-black text-base">📝 {titel} — Tabelle</h2>
         <label className="flex items-center gap-2 text-sm">
@@ -79,12 +79,12 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
           return (
             <table key={e.id} className="text-sm w-full border-collapse">
               <thead>
-                <tr><th colSpan={2} className="text-left font-black pb-1 border-b border-[var(--border)]">{e.name}</th></tr>
+                <tr><th colSpan={2} className="text-left font-black pb-1 border-b border-(--border)">{e.name}</th></tr>
               </thead>
               <tbody>
                 {inhalt.auswahl[e.id].objekte.map((id) => (
-                  <tr key={id} className="border-b border-[var(--border)]">
-                    <td className="w-10 py-1.5 font-black text-[var(--red)]">{nummern[e.id][id]}</td>
+                  <tr key={id} className="border-b border-(--border)">
+                    <td className="w-10 py-1.5 font-black text-(--red)">{nummern[e.id][id]}</td>
                     <td className="py-1.5">{loesung ? namen.get(id) ?? "…" : ""}</td>
                   </tr>
                 ))}
@@ -95,29 +95,29 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
       </div>
 
       {holeBild && (
-        <div className="flex flex-col gap-2 pt-3 border-t border-[var(--border)] text-sm">
+        <div className="flex flex-col gap-2 pt-3 border-t border-(--border) text-sm">
           <h3 className="font-black">⬇️ Als Arbeitsblatt exportieren</h3>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-[var(--text-muted)]">Aufgabe (steht auf Seite 1 über der Karte)</span>
+            <span className="text-xs text-(--text-muted)">Aufgabe (steht auf Seite 1 über der Karte)</span>
             <textarea value={aufgabe} onChange={(e) => setAufgabe(e.target.value)} rows={2} maxLength={1000}
-              className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]" />
+              className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)" />
           </label>
           <div className="flex flex-wrap items-center gap-2">
             <select value={variante} onChange={(e) => setVariante(e.target.value as typeof variante)} aria-label="Variante"
-              className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]">
+              className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)">
               <option value="beide">Arbeitsblatt + Lösung</option>
               <option value="aufgabe">nur Arbeitsblatt</option>
               <option value="loesung">nur Lösung</option>
             </select>
             {FORMATE.map((f) => (
               <button key={f.id} onClick={() => exportiere(f.id)} disabled={laeuft !== null}
-                className="px-3 py-1.5 rounded-lg font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-40">
+                className="px-3 py-1.5 rounded-lg font-bold border border-(--border) hover:bg-(--surface-hover) disabled:opacity-40">
                 {laeuft === f.id ? "⏳" : ""} {f.name}
               </button>
             ))}
           </div>
-          <p className="text-xs text-[var(--text-muted)]">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen.</p>
-          {fehler && <p className="text-[var(--red)]">{fehler}</p>}
+          <p className="text-xs text-(--text-muted)">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen.</p>
+          {fehler && <p className="text-(--red)">{fehler}</p>}
         </div>
       )}
     </section>

@@ -56,54 +56,54 @@ export function ToolSessionBar({ tool, title, refId }: {
       <button
         onClick={show}
         title="Beitritts-Code und QR für die Schüler"
-        className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]"
+        className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
       >
         📱 Zum Mitmachen
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-6"
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 p-6"
           onClick={() => setOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label={`Beitritt zu ${title}`}
-            className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-md
+            className="bg-(--surface) border border-(--border) rounded-2xl w-full max-w-md
               max-h-[85vh] overflow-y-auto shadow-2xl text-left"
             onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-(--border)">
               <span className="font-black text-base flex-1">{title} — zum Mitmachen</span>
               <button onClick={() => setOpen(false)} aria-label="Schließen"
-                className="text-[var(--text-muted)] hover:text-[var(--text)] text-xl leading-none px-1">×</button>
+                className="text-(--text-muted) hover:text-(--text) text-xl leading-none px-1">×</button>
             </div>
 
             <div className="p-5 flex flex-col gap-4">
-              {error && <p className="text-sm text-[var(--red)]">{error}</p>}
+              {error && <p className="text-sm text-(--red)">{error}</p>}
 
-              {!session && !error && <p className="text-sm text-[var(--text-muted)]">Code wird geholt …</p>}
+              {!session && !error && <p className="text-sm text-(--text-muted)">Code wird geholt …</p>}
 
               {session && (
                 <>
                   <div className="flex items-center gap-4">
                     <JoinQR url={joinUrl} size={120} />
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Code</span>
-                      <span className="text-3xl font-black tracking-[0.2em] text-[var(--accent)]">
+                      <span className="text-xs uppercase tracking-widest text-(--text-muted)">Code</span>
+                      <span className="text-3xl font-black tracking-[0.2em] text-(--accent)">
                         {session.code}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs bg-[var(--bg)] border border-[var(--border)] rounded-lg px-2 py-1.5 truncate">
+                    <code className="flex-1 text-xs bg-(--bg) border border-(--border) rounded-lg px-2 py-1.5 truncate">
                       {joinUrl || "…"}
                     </code>
                     <button onClick={copy}
-                      className="text-xs border border-[var(--border)] rounded-lg px-2.5 py-1.5 hover:border-[var(--accent)]">
+                      className="text-xs border border-(--border) rounded-lg px-2.5 py-1.5 hover:border-(--accent)">
                       {copied ? "kopiert ✓" : "kopieren"}
                     </button>
                   </div>
 
-                  <div className="border-t border-[var(--border)] pt-3 flex flex-col gap-2">
+                  <div className="border-t border-(--border) pt-3 flex flex-col gap-2">
                     <GuestAccessToggle tool="simulation" code={session.code} />
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                    <p className="text-xs text-(--text-muted) leading-relaxed">
                       Ohne diesen Schalter brauchen die Schüler ein eigenes Konto. Mit ihm kommt
                       jeder, der den Code scannt, ohne Anmeldung hinein — für die am Schalter
                       genannte Zeit. Der Code bleibt derselbe, ein ausgedruckter QR gilt also weiter.

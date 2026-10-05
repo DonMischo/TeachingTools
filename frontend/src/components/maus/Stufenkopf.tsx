@@ -60,7 +60,7 @@ export function Vorlesen({ ziel }: { ziel: RefObject<HTMLElement | null> }) {
       onClick={umschalten}
       aria-pressed={spricht}
       title={spricht ? "Vorlesen stoppen" : "Auftrag vorlesen"}
-      className="shrink-0 text-lg rounded-lg w-9 h-9 border border-[var(--border)] hover:border-[var(--accent)]"
+      className="shrink-0 text-lg rounded-lg w-9 h-9 border border-(--border) hover:border-(--accent)"
     >
       {spricht ? "⏹" : "🔊"}
     </button>
@@ -98,14 +98,14 @@ export function Stufenkopf({
         <h2 className="text-xl font-black">{titel}</h2>
         <div className="flex-1" />
         {punkte !== undefined && (
-          <span className="rounded-full bg-[var(--surface-hover)] px-3 py-1 text-sm font-black tabular-nums" data-testid="punkte">
+          <span className="rounded-full bg-(--surface-hover) px-3 py-1 text-sm font-black tabular-nums" data-testid="punkte">
             ⭐ {punkte}
           </span>
         )}
         {zeigeDemo && (
           <button
             onClick={onDemo}
-            className="text-sm rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]"
+            className="text-sm rounded-lg px-3 py-1.5 border border-(--border) hover:border-(--accent)"
           >
             ▶ Vorführen
           </button>
@@ -115,14 +115,14 @@ export function Stufenkopf({
           className={
             "text-sm rounded-lg px-3 py-1.5 border font-bold " +
             (hervor
-              ? "bg-[var(--accent)] border-[var(--accent)] text-[var(--bg)]"
-              : "border-[var(--border)] hover:border-[var(--accent)]")
+              ? "bg-(--accent) border-(--accent) text-(--bg)"
+              : "border-(--border) hover:border-(--accent)")
           }
         >
           {knopfText}
         </button>
       </div>
-      <div className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+      <div className="flex items-center gap-4 rounded-2xl border border-(--border) bg-(--surface) px-4 py-3">
         {children}
         <div ref={auftragRef} className="flex-1 text-base leading-snug">{auftrag}</div>
         <Vorlesen ziel={auftragRef} />

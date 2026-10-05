@@ -28,7 +28,7 @@ export default function Rechenweg({ z }: { z: Zustand }) {
   const r = z.rechnung;
   const [i, setI] = useState(0);
   const [verfolgt, setVerfolgt] = useState<Groesse>("vertrauen");
-  if (!r) return <p className="text-sm text-[var(--text-muted)]">Nach der ersten Runde steht hier, wie jede Zahl zustande kam.</p>;
+  if (!r) return <p className="text-sm text-(--text-muted)">Nach der ersten Runde steht hier, wie jede Zahl zustande kam.</p>;
 
   const schritte = [...r.schritte, { id: "lq", titel: "Lebensqualität", erklaerung: "", beitraege: [] as Beitrag[] }];
   const s = schritte[Math.min(i, schritte.length - 1)];
@@ -43,7 +43,7 @@ export default function Rechenweg({ z }: { z: Zustand }) {
         {schritte.map((x, j) => (
           <li key={x.id}>
             <button onClick={() => setI(j)} aria-current={j === i ? "step" : undefined}
-              className={`px-2.5 py-1 rounded-lg text-sm font-bold border ${j === i ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+              className={`px-2.5 py-1 rounded-lg text-sm font-bold border ${j === i ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) text-(--text-muted)"}`}>
               {j + 1}. {ICON[x.id]} {x.titel}
             </button>
           </li>
@@ -56,16 +56,16 @@ export default function Rechenweg({ z }: { z: Zustand }) {
             <h3 className="font-black text-lg">{i + 1}. {ICON[s.id]} {s.titel}</h3>
             <div className="flex gap-1">
               <button onClick={() => setI((j) => Math.max(0, j - 1))} disabled={i === 0} aria-label="Voriger Schritt"
-                className="w-9 h-9 rounded-lg border border-[var(--border)] font-black disabled:opacity-30">◀</button>
+                className="w-9 h-9 rounded-lg border border-(--border) font-black disabled:opacity-30">◀</button>
               <button onClick={() => setI((j) => Math.min(schritte.length - 1, j + 1))} disabled={i === schritte.length - 1} aria-label="Nächster Schritt"
-                className="w-9 h-9 rounded-lg border border-[var(--border)] font-black disabled:opacity-30">▶</button>
+                className="w-9 h-9 rounded-lg border border-(--border) font-black disabled:opacity-30">▶</button>
             </div>
           </div>
           {s.id === "lq" ? <Lebensqualitaet r={r} lq={z.lq} /> : (
             <>
               <p className="text-sm">{s.erklaerung}</p>
               {"details" in s && s.details && (
-                <ul className="text-sm rounded-xl border border-[var(--border)] p-3 space-y-1 tabular-nums">
+                <ul className="text-sm rounded-xl border border-(--border) p-3 space-y-1 tabular-nums">
                   {s.details.map((d, j) => <li key={j}>{d}</li>)}
                 </ul>
               )}
@@ -108,22 +108,22 @@ function SchrittBeitraege({ beitraege, laufend, vorher, onVerfolgen }: {
       .filter((x) => x.bs.some((b) => Math.abs(b.wert) >= 0.01))
       .sort((a, b) => GROESSEN.indexOf(a.g) - GROESSEN.indexOf(b.g));
   }, [beitraege]);
-  if (!gruppen.length) return <p className="text-sm text-[var(--text-muted)]">In diesem Schritt hat sich an den Bereichen nichts verändert.</p>;
+  if (!gruppen.length) return <p className="text-sm text-(--text-muted)">In diesem Schritt hat sich an den Bereichen nichts verändert.</p>;
   const max = Math.max(1, ...gruppen.map((x) => Math.abs(x.summe)));
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="grid grid-cols-[minmax(0,11rem)_1fr_4.5rem_5.5rem] gap-2 text-[11px] text-[var(--text-muted)] px-1">
+      <div className="grid grid-cols-[minmax(0,11rem)_1fr_4.5rem_5.5rem] gap-2 text-[11px] text-(--text-muted) px-1">
         <span>Bereich</span><span className="text-center">Veränderung in diesem Schritt</span><span className="text-right">Summe</span><span className="text-right">Stand</span>
       </div>
       {gruppen.map(({ g, bs, summe }) => (
-        <div key={g} className="rounded-lg border border-[var(--border)]">
+        <div key={g} className="rounded-lg border border-(--border)">
           <button onClick={() => setOffen((o) => (o === g ? null : g))} aria-expanded={offen === g}
             className="w-full grid grid-cols-[minmax(0,11rem)_1fr_4.5rem_5.5rem] gap-2 items-center px-1 py-1 text-sm text-left">
             <span className="truncate">{BEREICH[g].icon} {BEREICH[g].name}</span>
             <MittelBalken wert={summe} max={max} gut={gut(g, summe)} />
             <span className="text-right font-bold tabular-nums" style={{ color: gut(g, summe) ? "var(--green)" : "var(--red)" }}>{zahl(summe)}</span>
-            <span className="text-right tabular-nums text-[var(--text-muted)]">{Math.round(vorher[g])} → <b className="text-[var(--text)]">{Math.round(laufend[g])}</b></span>
+            <span className="text-right tabular-nums text-(--text-muted)">{Math.round(vorher[g])} → <b className="text-(--text)">{Math.round(laufend[g])}</b></span>
           </button>
           {offen === g && (
             <ul className="px-3 pb-2 space-y-1 text-sm">
@@ -134,12 +134,12 @@ function SchrittBeitraege({ beitraege, laufend, vorher, onVerfolgen }: {
                   {b.quelle && b.quelle !== "annahme" && <QuelleLink id={b.quelle} />}
                 </li>
               ))}
-              <li><button onClick={() => onVerfolgen(g)} className="text-xs underline text-[var(--text-muted)]">{BEREICH[g].name} durch die ganze Runde verfolgen ↓</button></li>
+              <li><button onClick={() => onVerfolgen(g)} className="text-xs underline text-(--text-muted)">{BEREICH[g].name} durch die ganze Runde verfolgen ↓</button></li>
             </ul>
           )}
         </div>
       ))}
-      <p className="text-xs text-[var(--text-muted)]">Tippe auf einen Bereich, um die einzelnen Beiträge und ihre Quellen zu sehen.</p>
+      <p className="text-xs text-(--text-muted)">Tippe auf einen Bereich, um die einzelnen Beiträge und ihre Quellen zu sehen.</p>
     </div>
   );
 }
@@ -147,8 +147,8 @@ function SchrittBeitraege({ beitraege, laufend, vorher, onVerfolgen }: {
 function MittelBalken({ wert, max, gut }: { wert: number; max: number; gut: boolean }) {
   const breite = Math.min(50, (Math.abs(wert) / max) * 50);
   return (
-    <div className="relative h-3 rounded-full bg-[var(--surface-hover)]">
-      <div className="absolute top-0 bottom-0 w-px bg-[var(--text-muted)]" style={{ left: "50%" }} />
+    <div className="relative h-3 rounded-full bg-(--surface-hover)">
+      <div className="absolute top-0 bottom-0 w-px bg-(--text-muted)" style={{ left: "50%" }} />
       <div className="absolute top-0 bottom-0 rounded-full"
         style={{ left: wert >= 0 ? "50%" : `${50 - breite}%`, width: `${breite}%`, background: gut ? "var(--green)" : "var(--red)" }} />
     </div>
@@ -161,12 +161,12 @@ function Lebensqualitaet({ r, lq }: { r: Rechnung; lq: number }) {
     <div className="flex flex-col gap-2 text-sm">
       <p>Die Lebensqualität ist ein gewichteter Durchschnitt – angelehnt an die Größen, mit denen der World Happiness Report Zufriedenheit erklärt. Klimalast und Korruption gehen umgekehrt ein: wenig davon ist gut.</p>
       <table className="w-full tabular-nums">
-        <thead className="text-[11px] text-[var(--text-muted)]">
+        <thead className="text-[11px] text-(--text-muted)">
           <tr><th className="text-left font-normal">Bereich</th><th className="text-right font-normal">Wert</th><th className="text-right font-normal">× Gewicht</th><th className="text-right font-normal">= Punkte</th></tr>
         </thead>
         <tbody>
           {teile.map((t) => (
-            <tr key={t.name} className="border-t border-[var(--border)]">
+            <tr key={t.name} className="border-t border-(--border)">
               <td>{t.name}</td>
               <td className="text-right">{Math.round(t.wert)}</td>
               <td className="text-right">× {t.gewicht.toFixed(2).replace(".", ",")}</td>
@@ -174,9 +174,9 @@ function Lebensqualitaet({ r, lq }: { r: Rechnung; lq: number }) {
             </tr>
           ))}
           {Math.abs(r.lqSchock) >= 0.05 && (
-            <tr className="border-t border-[var(--border)]"><td colSpan={3}>Nachklang von Ereignissen (halbiert sich jede Runde)</td><td className="text-right font-bold">{zahl(r.lqSchock)}</td></tr>
+            <tr className="border-t border-(--border)"><td colSpan={3}>Nachklang von Ereignissen (halbiert sich jede Runde)</td><td className="text-right font-bold">{zahl(r.lqSchock)}</td></tr>
           )}
-          <tr className="border-t-2 border-[var(--text)]"><td colSpan={3} className="font-black">Lebensqualität</td><td className="text-right font-black">{Math.round(lq)}</td></tr>
+          <tr className="border-t-2 border-(--text)"><td colSpan={3} className="font-black">Lebensqualität</td><td className="text-right font-black">{Math.round(lq)}</td></tr>
         </tbody>
       </table>
     </div>
@@ -201,11 +201,11 @@ function Wasserfall({ r, g, onWahl }: { r: Rechnung; g: Groesse; onWahl: (g: Gro
   const x = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] p-3">
+    <div className="rounded-2xl border border-(--border) p-3">
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <h3 className="font-black">Eine Größe verfolgen:</h3>
         <select value={g} onChange={(e) => onWahl(e.target.value as Groesse)}
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-sm">
+          className="rounded-lg border border-(--border) bg-(--bg) px-2 py-1 text-sm">
           {GROESSEN.map((x) => <option key={x} value={x}>{BEREICH[x].icon} {BEREICH[x].name}</option>)}
         </select>
         <span className="text-sm tabular-nums">{Math.round(r.start[g])} → <b>{Math.round(ende)}</b> ({zahl(ende - r.start[g])})</span>
@@ -216,15 +216,15 @@ function Wasserfall({ r, g, onWahl }: { r: Rechnung; g: Groesse; onWahl: (g: Gro
           const g0 = gut(g, z.wert ?? 0);
           const links = Math.min(z.von, z.bis), rechts = Math.max(z.von, z.bis);
           return (
-            <Zeile key={j} label={<>{z.label} <span className="text-[11px] text-[var(--text-muted)]">· {z.schritt}</span>{z.quelle && z.quelle !== "annahme" && <> · <QuelleLink id={z.quelle} /></>}</>}
-              balken={<div className="absolute top-1 bottom-1 rounded-sm" style={{ left: x(links), width: `max(2px, calc(${x(rechts)} - ${x(links)}))`, background: g0 ? "var(--green)" : "var(--red)" }} />}
+            <Zeile key={j} label={<>{z.label} <span className="text-[11px] text-(--text-muted)">· {z.schritt}</span>{z.quelle && z.quelle !== "annahme" && <> · <QuelleLink id={z.quelle} /></>}</>}
+              balken={<div className="absolute top-1 bottom-1 rounded-xs" style={{ left: x(links), width: `max(2px, calc(${x(rechts)} - ${x(links)}))`, background: g0 ? "var(--green)" : "var(--red)" }} />}
               rechts={<span style={{ color: g0 ? "var(--green)" : "var(--red)" }}>{zahl(z.wert ?? 0)}</span>} />
           );
         })}
         <Zeile label={<b>Ende der Runde</b>} balken={<Punkt x={x(ende)} />} rechts={<b>{Math.round(ende)}</b>} />
       </div>
-      <div className="flex justify-between text-[11px] text-[var(--text-muted)] mt-1 pl-[45%] pr-14"><span>{lo}</span><span>{hi}</span></div>
-      <p className="text-xs text-[var(--text-muted)] mt-2">
+      <div className="flex justify-between text-[11px] text-(--text-muted) mt-1 pl-[45%] pr-14"><span>{lo}</span><span>{hi}</span></div>
+      <p className="text-xs text-(--text-muted) mt-2">
         Jede Zeile ist ein Sprung: grün hilft, rot schadet. {HOCH_SCHLECHT.has(g) && "Bei dieser Größe ist hoch schlecht – ein Sprung nach oben ist also rot."}
       </p>
     </div>
@@ -235,12 +235,12 @@ function Zeile({ label, balken, rechts }: { label: ReactNode; balken: ReactNode;
   return (
     <div className="grid grid-cols-[45%_1fr_3.5rem] gap-2 items-center">
       <span className="min-w-0 truncate" title={typeof label === "string" ? label : undefined}>{label}</span>
-      <div className="relative h-5 rounded bg-[var(--surface-hover)]">{balken}</div>
+      <div className="relative h-5 rounded-sm bg-(--surface-hover)">{balken}</div>
       <span className="text-right tabular-nums font-bold">{rechts}</span>
     </div>
   );
 }
 
 function Punkt({ x }: { x: string }) {
-  return <div className="absolute top-0.5 bottom-0.5 w-1.5 rounded-full bg-[var(--text)]" style={{ left: `calc(${x} - 3px)` }} />;
+  return <div className="absolute top-0.5 bottom-0.5 w-1.5 rounded-full bg-(--text)" style={{ left: `calc(${x} - 3px)` }} />;
 }

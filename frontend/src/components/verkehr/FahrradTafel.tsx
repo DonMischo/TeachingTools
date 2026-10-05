@@ -25,7 +25,7 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onWerkstatt }: 
   const check = rad ? pruefe(rad) : null;
 
   return (
-    <div className="absolute left-2 top-14 z-30 max-h-[calc(100%-4rem)] w-[340px] overflow-auto rounded-xl bg-slate-900/94 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
+    <div className="absolute left-2 top-14 z-30 max-h-[calc(100%-4rem)] w-[340px] overflow-auto rounded-xl bg-slate-900/94 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur-sm">
       <div className="mb-2 flex items-center justify-between">
         <span className="font-black">🚲 Fahrrad</span>
         <button type="button" className="underline opacity-80" onClick={onZu}>schließen</button>
@@ -43,7 +43,7 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onWerkstatt }: 
       {rad && (
         <div className="mt-1.5 flex items-center gap-2">
           <input type="color" value={hexFarbe(rad.farbe)} aria-label="Rahmenfarbe" onChange={(e) => onRad({ ...rad, farbe: ausHex(e.target.value) })}
-            className="h-7 w-10 cursor-pointer rounded border-0 bg-transparent p-0" />
+            className="h-7 w-10 cursor-pointer rounded-sm border-0 bg-transparent p-0" />
           <span className="opacity-70">Rahmenfarbe</span>
           <button type="button" className="ml-auto underline opacity-80" title="Ein gebrauchtes Rad mit ein paar Macken"
             onClick={() => { onRad({ ...gebrauchtesRad(rad.modell, Math.random, rad.farbe), schloss: rad.schloss }); onWerkstatt(); }}>
@@ -54,7 +54,7 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onWerkstatt }: 
 
       <div className="mt-3 flex items-center gap-2">
         <span className="font-bold">Dein Alter:</span>
-        <select value={alter} onChange={(e) => onAlter(Number(e.target.value))} className="rounded bg-slate-800 px-2 py-0.5">
+        <select value={alter} onChange={(e) => onAlter(Number(e.target.value))} className="rounded-sm bg-slate-800 px-2 py-0.5">
           {Array.from({ length: 12 }, (_, i) => i + 6).map((a) => <option key={a} value={a}>{a} Jahre</option>)}
         </select>
         <span className="opacity-70">{alter < 8 ? "Gehweg ist Pflicht" : alter <= 10 ? "Gehweg erlaubt" : "Radweg oder Fahrbahn"}</span>
@@ -80,7 +80,7 @@ export function FahrradTafel({ rad, onRad, alter, onAlter, onZu, onWerkstatt }: 
 
           <div className="mt-3 font-bold">Verkehrssicher nach StVZO?</div>
           {check!.verkehrssicher
-            ? <div className="mt-1 rounded bg-emerald-600/30 px-2 py-1 font-bold text-emerald-200">✅ Alles dran und in Ordnung — ab auf die Straße!</div>
+            ? <div className="mt-1 rounded-sm bg-emerald-600/30 px-2 py-1 font-bold text-emerald-200">✅ Alles dran und in Ordnung — ab auf die Straße!</div>
             : (
               <ul className="mt-1 flex flex-col gap-0.5">
                 {check!.maengel.map((m) => (

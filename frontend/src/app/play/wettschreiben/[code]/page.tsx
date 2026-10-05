@@ -30,10 +30,10 @@ const TAKT_MS = 250;
 function Hinweis({ icon, title, text }: { icon: string; title: string; text: string }) {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-8 max-w-md text-center">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-8 max-w-md text-center">
         <div className="text-4xl mb-2">{icon}</div>
         <h1 className="text-xl font-black">{title}</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">{text}</p>
+        <p className="text-sm text-(--text-muted) mt-2 leading-relaxed">{text}</p>
       </div>
     </div>
   );
@@ -196,7 +196,7 @@ export default function WettschreibenPlayPage() {
     <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-4xl mx-auto w-full">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-black tracking-tight flex-1">🏁 {rennen.title}</h1>
-        <span className="text-xs text-[var(--text-muted)]">
+        <span className="text-xs text-(--text-muted)">
           {status === "lobby" && "warten auf den Start …"}
           {status === "laeuft" && "los!"}
           {status === "fertig" && "Rennen beendet"}
@@ -206,10 +206,10 @@ export default function WettschreibenPlayPage() {
       <div
         {...feldProps}
         aria-label="Renntext tippen"
-        className="relative outline-none rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6
-          focus:border-[var(--accent)] cursor-text"
+        className="relative outline-hidden rounded-2xl border border-(--border) bg-(--surface) p-4 sm:p-6
+          focus:border-(--accent) cursor-text"
       >
-        <p className="font-mono text-lg sm:text-xl leading-relaxed whitespace-pre-wrap break-words">
+        <p className="font-mono text-lg sm:text-xl leading-relaxed whitespace-pre-wrap wrap-break-word">
           {rennen.text.split("").map((c, i) => {
             const erledigt = i < stand.pos;
             const aktuell = i === stand.pos && status === "laeuft";
@@ -218,7 +218,7 @@ export default function WettschreibenPlayPage() {
                 key={i}
                 data-index={i}
                 data-aktuell={aktuell || undefined}
-                className={erledigt ? "text-[var(--green)]" : aktuell ? "rounded-sm" : "text-[var(--text-muted)]"}
+                className={erledigt ? "text-(--green)" : aktuell ? "rounded-xs" : "text-(--text-muted)"}
                 style={aktuell ? { background: verfehlt ? "var(--red)" : "var(--accent)", color: "var(--bg)" } : undefined}
               >
                 {c}
@@ -228,7 +228,7 @@ export default function WettschreibenPlayPage() {
         </p>
 
         {status === "lobby" && (
-          <div className="absolute inset-0 rounded-2xl bg-[var(--surface)]/90 flex items-center justify-center text-sm">
+          <div className="absolute inset-0 rounded-2xl bg-(--surface)/90 flex items-center justify-center text-sm">
             Gleich geht es los — Finger auf die Grundstellung.
           </div>
         )}

@@ -28,7 +28,7 @@ const SCHRITT_3_TEXT =
   "4. Zieh die gespeicherte Datei hierher.";
 
 function Kbd({ children }: { children: string }) {
-  return <kbd className="inline-block rounded-md border border-[var(--border)] bg-[var(--surface-hover)] px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
+  return <kbd className="inline-block rounded-md border border-(--border) bg-(--surface-hover) px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
 }
 
 function bildLaden(datei: File): Promise<Vorschau> {
@@ -191,8 +191,8 @@ export default function StufeScreenshot({
         {aufgaben.map((a, i) => (
           <li key={i} className={
             "rounded-lg px-3 py-1.5 border " +
-            (i < nr ? "border-[var(--green,#16a34a)] text-[var(--green,#16a34a)]"
-              : i === nr ? "border-[var(--accent)] font-bold" : "border-[var(--border)] text-[var(--text-muted)]")
+            (i < nr ? "border-(--green,#16a34a) text-(--green,#16a34a)"
+              : i === nr ? "border-(--accent) font-bold" : "border-(--border) text-(--text-muted)")
           }>
             {i < nr ? "✅" : i === nr ? "👉" : "⬜"} {a.text}
           </li>
@@ -209,7 +209,7 @@ export default function StufeScreenshot({
             style={{ background: av.bg }}
           >
             <span className={hilfe ? "text-8xl" : "text-7xl"}>{av.emoji}</span>
-            <span className={"font-black text-white drop-shadow " + (hilfe ? "text-5xl" : "text-4xl")} data-testid="karte-zahl">{zahl}</span>
+            <span className={"font-black text-white drop-shadow-sm " + (hilfe ? "text-5xl" : "text-4xl")} data-testid="karte-zahl">{zahl}</span>
             {demoRahmen && (
               <div aria-hidden className="absolute inset-0 rounded-3xl border-4 border-dashed border-white" />
             )}
@@ -225,8 +225,8 @@ export default function StufeScreenshot({
             onDrop={e => { if (nr === 2) { e.preventDefault(); setUeber(false); abgelegt(e.dataTransfer.files[0]); } }}
             data-testid="einfuegen-feld"
             className={
-              "rounded-2xl border-4 border-dashed p-4 flex flex-col items-center gap-2 text-center min-h-[10rem] justify-center outline-none " +
-              (ueber ? "border-[var(--accent)] bg-[var(--surface-hover)]" : "border-[var(--border)]")
+              "rounded-2xl border-4 border-dashed p-4 flex flex-col items-center gap-2 text-center min-h-40 justify-center outline-hidden " +
+              (ueber ? "border-(--accent) bg-(--surface-hover)" : "border-(--border)")
             }
           >
             {nr === 2 ? (
@@ -248,17 +248,17 @@ export default function StufeScreenshot({
                   <img
                     src={(nr === 0 ? bild1 : bild2)!.url}
                     alt="Eingefügtes Bildschirmfoto"
-                    className="max-h-40 rounded-lg shadow"
+                    className="max-h-40 rounded-lg shadow-sm"
                     data-testid={nr === 0 ? "vorschau-1" : "vorschau-2"}
                   />
                 ) : demoVorschau ? (
-                  <div aria-hidden className="w-32 h-20 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] flex items-center justify-center text-2xl">🖼️</div>
+                  <div aria-hidden className="w-32 h-20 rounded-lg bg-(--surface-hover) border border-(--border) flex items-center justify-center text-2xl">🖼️</div>
                 ) : (
                   <div className="font-bold">Hier einfügen: Klick hinein und drücke <Kbd>Strg</Kbd> + <Kbd>V</Kbd></div>
                 )}
               </>
             )}
-            <p className="text-sm font-bold min-h-[1.5rem]" aria-live="polite"
+            <p className="text-sm font-bold min-h-6" aria-live="polite"
               style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--red, #dc2626)" }}>
               {hinweis?.text}
             </p>
@@ -269,13 +269,13 @@ export default function StufeScreenshot({
           )}
           {nr === 1 && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-[var(--text-muted)]">Deine Tastatur hat vielleicht keine echte Druck-Taste:</span>
-              <span className="inline-block rounded-md border border-[var(--accent)] bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold">Druck</span>
-              <span className="text-[var(--text-muted)]">oder <Kbd>⊞</Kbd> + <span className="inline-block rounded-md border border-[var(--accent)] bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold">Druck</span></span>
+              <span className="text-(--text-muted)">Deine Tastatur hat vielleicht keine echte Druck-Taste:</span>
+              <span className="inline-block rounded-md border border-(--accent) bg-(--surface-hover) px-2 py-1 text-xs font-bold">Druck</span>
+              <span className="text-(--text-muted)">oder <Kbd>⊞</Kbd> + <span className="inline-block rounded-md border border-(--accent) bg-(--surface-hover) px-2 py-1 text-xs font-bold">Druck</span></span>
             </div>
           )}
           {nr === 2 && (
-            <ol className="flex flex-col gap-1 text-sm text-[var(--text-muted)] list-decimal list-inside">
+            <ol className="flex flex-col gap-1 text-sm text-(--text-muted) list-decimal list-inside">
               <li>Mach wie in Schritt 1 einen Ausschnitt (⊞ Windows + Umschalt + S).</li>
               <li>Unten rechts erscheint eine Meldung — klick darin auf »Markup und Freigabe«.</li>
               <li>Erst jetzt öffnet sich das Fenster mit dem Speichern-Knopf 💾 (oder Strg + S): speichere das Bild.</li>

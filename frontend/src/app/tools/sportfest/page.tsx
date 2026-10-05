@@ -10,39 +10,39 @@ export default function SportfestPage() {
   const { can } = useAvailability();
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
+        <Link href="/tools" className="text-sm text-(--text-muted) hover:text-(--text)">← Tools</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏃 Sportfest</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">DLV Nationale Punktwertung</p>
+        <p className="text-(--text-muted) text-sm mt-1">DLV Nationale Punktwertung</p>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
         <Link href="/tools/sportfest/ranking"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          className="p-4 rounded-2xl border border-(--border) bg-(--surface) hover:bg-(--surface-hover) transition-colors">
           <div className="text-2xl mb-2">🏆</div>
           <div className="font-semibold">Gesamtranking</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Punkteübersicht aller Schüler</div>
+          <div className="text-xs text-(--text-muted) mt-1">Punkteübersicht aller Schüler</div>
         </Link>
         <Link href="/tools/sportfest/disziplinen"
-          className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+          className="p-4 rounded-2xl border border-(--border) bg-(--surface) hover:bg-(--surface-hover) transition-colors">
           <div className="text-2xl mb-2">📊</div>
           <div className="font-semibold">Disziplinranking</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">Sprint · Ausdauer · Weitsprung · Ballwurf</div>
+          <div className="text-xs text-(--text-muted) mt-1">Sprint · Ausdauer · Weitsprung · Ballwurf</div>
         </Link>
         {isTeacher && can("sportfest", "create") && (
           <Link href="/tools/sportfest/ergebnisse"
-            className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+            className="p-4 rounded-2xl border border-(--border) bg-(--surface) hover:bg-(--surface-hover) transition-colors">
             <div className="text-2xl mb-2">✏️</div>
             <div className="font-semibold">Ergebnisse erfassen</div>
-            <div className="text-xs text-[var(--text-muted)] mt-1">Leistungen pro Klasse eintragen</div>
+            <div className="text-xs text-(--text-muted) mt-1">Leistungen pro Klasse eintragen</div>
           </Link>
         )}
         {auth?.role === "admin" && (
           <Link href="/tools/sportfest/setup"
-            className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
+            className="p-4 rounded-2xl border border-(--border) bg-(--surface) hover:bg-(--surface-hover) transition-colors">
             <div className="text-2xl mb-2">⚙️</div>
             <div className="font-semibold">Setup</div>
-            <div className="text-xs text-[var(--text-muted)] mt-1">Disziplinen aktivieren</div>
+            <div className="text-xs text-(--text-muted) mt-1">Disziplinen aktivieren</div>
           </Link>
         )}
       </div>

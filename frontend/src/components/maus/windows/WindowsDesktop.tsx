@@ -13,7 +13,7 @@
  * durch; was klickbar sein soll, trägt selbst `pointer-events-auto`.
  *
  * Farben mit Transparenz stehen als Hex-Alpha im Klassennamen — die Form
- * `bg-[var(--x)]/90` ergab bei der alten Taskleiste gar keinen Hintergrund.
+ * `bg-(--x)/90` ergab bei der alten Taskleiste gar keinen Hintergrund.
  */
 import { useEffect, useState, type CSSProperties, type PointerEventHandler, type ReactNode, type Ref } from "react";
 import { AppSymbol } from "./AppSymbol";
@@ -190,7 +190,7 @@ export function WindowsDesktop({
             aria-label="Start"
             aria-expanded={startOffen}
             onClick={onStart}
-            className={"flex items-center justify-center rounded " + (startOffen ? (dunkel ? "bg-[#ffffff1f]" : "bg-[#0000000f]") : (dunkel ? "hover:bg-[#ffffff14]" : "hover:bg-[#0000000a]"))}
+            className={"flex items-center justify-center rounded-sm " + (startOffen ? (dunkel ? "bg-[#ffffff1f]" : "bg-[#0000000f]") : (dunkel ? "hover:bg-[#ffffff14]" : "hover:bg-[#0000000a]"))}
             style={{ width: cq(40), height: cq(40), padding: cq(9) }}
           >
             <StartLogo farbe={akzent} />
@@ -219,7 +219,7 @@ export function WindowsDesktop({
                 aria-label={`${APPS[id].name}${istOffen ? " (geöffnet)" : ""}`}
                 onClick={() => onTaskleiste?.(id)}
                 onContextMenu={e => { if (onTaskleisteKontext) { e.preventDefault(); onTaskleisteKontext(id, e.clientX, e.clientY); } }}
-                className={"relative flex items-center justify-center rounded " + (istAktiv ? (dunkel ? "bg-[#ffffff1f]" : "bg-[#0000000f]") : (dunkel ? "hover:bg-[#ffffff14]" : "hover:bg-[#0000000a]"))}
+                className={"relative flex items-center justify-center rounded-sm " + (istAktiv ? (dunkel ? "bg-[#ffffff1f]" : "bg-[#0000000f]") : (dunkel ? "hover:bg-[#ffffff14]" : "hover:bg-[#0000000a]"))}
                 style={{ width: cq(40), height: cq(40), padding: cq(8) }}
               >
                 <AppSymbol id={id} groesse="100%" />

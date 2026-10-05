@@ -16,15 +16,15 @@ export default function OrtSuche({ bereich, onWahl }: { bereich?: string; onWahl
   return (
     <div className="flex flex-col gap-1">
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Ort, Fluss, Berg suchen …" aria-label="Auf der Karte suchen"
-        className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]" />
+        className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)" />
       {treffer.length > 0 && (
-        <ul className="rounded-lg border border-[var(--border)] bg-[var(--bg)] divide-y divide-[var(--border)] max-h-64 overflow-auto">
+        <ul className="rounded-lg border border-(--border) bg-(--bg) divide-y divide-(--border) max-h-64 overflow-auto">
           {treffer.map((t) => (
             <li key={`${t.ebene}:${t.id}`}>
-              <button className="w-full text-left px-2 py-1 hover:bg-[var(--surface-hover)] flex justify-between gap-2"
+              <button className="w-full text-left px-2 py-1 hover:bg-(--surface-hover) flex justify-between gap-2"
                 onClick={() => { onWahl(t); setQ(""); setTreffer([]); }}>
-                <span>{t.name}{t.zusatz ? <span className="text-[var(--text-muted)]"> ({t.zusatz})</span> : null}</span>
-                <span className="text-[10px] text-[var(--text-muted)] shrink-0">{t.ebene_name}</span>
+                <span>{t.name}{t.zusatz ? <span className="text-(--text-muted)"> ({t.zusatz})</span> : null}</span>
+                <span className="text-[10px] text-(--text-muted) shrink-0">{t.ebene_name}</span>
               </button>
             </li>
           ))}

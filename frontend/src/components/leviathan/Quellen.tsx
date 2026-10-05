@@ -35,7 +35,7 @@ export default function Quellen({ onSchliessen }: { onSchliessen?: () => void })
 
   return (
     <Karte titel="📚 Quellen" rechts={onSchliessen && (
-      <button onClick={onSchliessen} className="text-sm underline text-[var(--text-muted)]">schließen</button>)}>
+      <button onClick={onSchliessen} className="text-sm underline text-(--text-muted)">schließen</button>)}>
       <p className="text-sm mb-4">
         Alle {anzahl} Belege, auf denen die Regeln des Spiels beruhen. Die Studien legen Richtung, Verzögerung und grobe
         Stärke einer Wirkung fest – die Zahlen im Spiel sind vereinfacht und nicht die Effektgrößen der Studien.
@@ -56,19 +56,19 @@ export default function Quellen({ onSchliessen }: { onSchliessen?: () => void })
                   const url = z.url ?? q.url;
                   const stellen = wo.get(id) ?? [];
                   return (
-                    <li key={id} id={`quelle-${id}`} className="rounded-xl border border-[var(--border)] p-3 text-sm">
+                    <li key={id} id={`quelle-${id}`} className="rounded-xl border border-(--border) p-3 text-sm">
                       <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">{z.art}</span>
-                        {q.umstritten && <span className="text-[11px] font-bold text-[var(--accent)]">Forschung uneins</span>}
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-(--text-muted)">{z.art}</span>
+                        {q.umstritten && <span className="text-[11px] font-bold text-(--accent)">Forschung uneins</span>}
                       </div>
                       <p className="mt-0.5">{z.zitat}</p>
-                      <p className="text-[var(--text-muted)] mt-1">{q.befund}</p>
+                      <p className="text-(--text-muted) mt-1">{q.befund}</p>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
                         {url && <a href={url} target="_blank" rel="noreferrer" className="underline font-bold break-all">{url.startsWith("https://doi.org/") ? `DOI ${url.slice(16)}` : "Zur Quelle"}</a>}
                         {z.weitere?.map((w) => <a key={w.url} href={w.url} target="_blank" rel="noreferrer" className="underline">{w.titel}</a>)}
                       </div>
                       {stellen.length > 0 && (
-                        <details className="mt-1 text-xs text-[var(--text-muted)]">
+                        <details className="mt-1 text-xs text-(--text-muted)">
                           <summary className="cursor-pointer">Im Spiel verwendet ({stellen.length})</summary>
                           <ul className="mt-1 list-disc pl-5">{stellen.map((s, i) => <li key={i}>{s}</li>)}</ul>
                         </details>
@@ -85,17 +85,17 @@ export default function Quellen({ onSchliessen }: { onSchliessen?: () => void })
           <h3 className="font-black mb-2">Hintergrund</h3>
           <ul className="flex flex-col gap-3">
             {HINTERGRUND.map((h) => (
-              <li key={h.titel} className="rounded-xl border border-[var(--border)] p-3 text-sm">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">{h.titel}</div>
+              <li key={h.titel} className="rounded-xl border border-(--border) p-3 text-sm">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-(--text-muted)">{h.titel}</div>
                 <p className="mt-0.5">{h.zitat}</p>
-                <p className="text-[var(--text-muted)] mt-1">{h.hinweis}</p>
+                <p className="text-(--text-muted) mt-1">{h.hinweis}</p>
                 {h.url && <a href={h.url} target="_blank" rel="noreferrer" className="underline font-bold break-all">{h.url.startsWith("https://doi.org/") ? `DOI ${h.url.slice(16)}` : "Zur Quelle"}</a>}
               </li>
             ))}
           </ul>
         </section>
 
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           Die ausführliche Recherche mit allen Befunden steht in <code>docs/leviathan-recherche.md</code>. Ländereinträge
           (Geburtenraten, V-Dem-Einstufungen) sind gerundet, Stand ca. 2024/25.
         </p>

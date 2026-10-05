@@ -381,8 +381,8 @@ export default function HostPage() {
 
   const confirmModal = confirmDialog ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setConfirmDialog(null)}>
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
-        <p className="text-[var(--text)] text-base">{confirmDialog.msg}</p>
+      <div className="bg-(--surface) border border-(--border) rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+        <p className="text-(--text) text-base">{confirmDialog.msg}</p>
         <div className="flex gap-3 justify-end">
           <button onClick={() => setConfirmDialog(null)} className="btn-secondary px-4 py-2">Abbrechen</button>
           <button onClick={() => { confirmDialog.onYes(); setConfirmDialog(null); }} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 font-semibold">Ja</button>
@@ -527,13 +527,13 @@ export default function HostPage() {
       <div className="flex flex-col h-screen bg-gray-900 text-white p-6">
         {confirmModal}
         <div className="flex items-center gap-3 mb-6">
-          <span className="text-sm bg-gray-700 px-3 py-1 rounded font-mono">{code}</span>
+          <span className="text-sm bg-gray-700 px-3 py-1 rounded-sm font-mono">{code}</span>
           <span className="text-sm text-gray-400">{phase.participantCount} Teilnehmer</span>
         </div>
 
         <div className="flex-1 flex gap-8 items-start justify-center pt-4 px-4">
           {/* QR Code */}
-          <div className="flex flex-col items-center gap-4 flex-shrink-0">
+          <div className="flex flex-col items-center gap-4 shrink-0">
             <button
               type="button"
               onClick={() => setShowJoinQR(true)}
@@ -566,7 +566,7 @@ export default function HostPage() {
                 </div>
                 <div className="flex gap-2">
                   <input
-                    className="flex-1 bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 outline-none"
+                    className="flex-1 bg-gray-700 text-white text-sm rounded-lg px-3 py-1.5 outline-hidden"
                     placeholder="Team-Name…"
                     value={newTeamName}
                     onChange={e => setNewTeamName(e.target.value)}
@@ -591,12 +591,12 @@ export default function HostPage() {
                         const name = prompt("Neuer Name:", p.name);
                         if (name?.trim()) send("rename", { participant_id: p.id, name: name.trim() });
                       }}
-                      className="bg-blue-600 text-white text-xs px-1 rounded"
+                      className="bg-blue-600 text-white text-xs px-1 rounded-sm"
                     >✎</button>
                     <button
                       title="Rauswerfen"
                       onClick={() => { if (confirm(`${p.name} rauswerfen?`)) send("kick", { participant_id: p.id }); }}
-                      className="bg-red-600 text-white text-xs px-1 rounded"
+                      className="bg-red-600 text-white text-xs px-1 rounded-sm"
                     >✕</button>
                   </div>
                 </div>
@@ -709,7 +709,7 @@ export default function HostPage() {
             <h2 className="text-2xl font-bold whitespace-pre-line leading-snug"><MathText text={q.text} /></h2>
             <div className="mt-1"><QuestionTypeBadge type={q.type} size="sm" /></div>
           </div>
-          <div className="ml-8 flex-shrink-0">
+          <div className="ml-8 shrink-0">
             <Countdown seconds={timeLimit} onZero={() => send("next")} />
           </div>
         </div>
@@ -718,7 +718,7 @@ export default function HostPage() {
         {q.type === "karte" && currentKarte.current ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
             <p className="text-gray-400 text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
-            <div className="w-full max-w-4xl bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+            <div className="w-full max-w-4xl bg-(--bg) text-(--text) rounded-2xl p-4">
               <KartenBrett brett={currentKarte.current} antwort={{ antworten: {} }} disabled />
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function HostPage() {
                 ? "Schüler ziehen die Karten an die richtige Stelle…"
                 : "Schüler suchen die falsch platzierten Einträge…"}
             </p>
-            <div className="w-full max-w-3xl bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+            <div className="w-full max-w-3xl bg-(--bg) text-(--text) rounded-2xl p-4">
               <TimelineGameBoard board={phase.timeline} answer={{}} disabled />
             </div>
           </div>
@@ -738,7 +738,7 @@ export default function HostPage() {
             <p className="text-gray-400 text-sm mb-2">Schüler sortieren die Antworten…</p>
             {answers.map((a, i) => (
               <div key={a.id} className="flex items-center gap-3 w-full max-w-lg bg-gray-800 rounded-xl px-4 py-3">
-                <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
                   style={{ backgroundColor: COLORS[i % COLORS.length] }}>{i + 1}</span>
                 <span className="flex-1 font-semibold"><MathText text={a.text} /></span>
               </div>
@@ -815,11 +815,11 @@ export default function HostPage() {
           <h2 className="text-2xl font-bold whitespace-pre-line leading-snug"><MathText text={q.text} /></h2>
           <div className="flex flex-col gap-3 flex-1 justify-center">
             {q.type === "karte" && phase.karte && phase.kartenLoesung ? (
-              <div className="w-full max-w-4xl mx-auto bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+              <div className="w-full max-w-4xl mx-auto bg-(--bg) text-(--text) rounded-2xl p-4">
                 <KartenBrett brett={phase.karte} antwort={{ antworten: {} }} disabled loesung={phase.kartenLoesung} />
               </div>
             ) : q.type === "timeline" && phase.timelineSolution?.axis ? (
-              <div className="w-full max-w-3xl mx-auto bg-[var(--bg)] text-[var(--text)] rounded-2xl p-4">
+              <div className="w-full max-w-3xl mx-auto bg-(--bg) text-(--text) rounded-2xl p-4">
                 <TimelineGameBoard
                   board={{
                     mode: phase.timelineSolution.mode,
@@ -852,7 +852,7 @@ export default function HostPage() {
                 if (!a) return null;
                 return (
                   <div key={cid} className="flex items-center gap-3 bg-green-900/40 border border-green-700 rounded-xl px-4 py-3">
-                    <span className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-base font-black flex-shrink-0">{pos + 1}</span>
+                    <span className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-base font-black shrink-0">{pos + 1}</span>
                     <span className="flex-1 font-semibold text-lg">{a.text}</span>
                   </div>
                 );
@@ -866,7 +866,7 @@ export default function HostPage() {
               return (
                 <div key={a.id} className={`${!isCorrect && correctIds !== null ? "opacity-55" : ""}`}>
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-black"
+                    <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-sm font-black"
                       style={{ backgroundColor: isCorrect ? "#26890c" : COLORS[i % COLORS.length] }}>
                       {isCorrect ? "✓" : ""}
                     </div>

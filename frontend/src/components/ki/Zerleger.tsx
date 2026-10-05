@@ -29,14 +29,14 @@ function Balken({ zustand, onClick }: {
       onClick={onClick}
       disabled={!onClick}
       aria-label="Schnittstelle"
-      className="relative h-8 w-3 shrink-0 rounded disabled:cursor-default"
+      className="relative h-8 w-3 shrink-0 rounded-sm disabled:cursor-default"
       style={{ background: "transparent" }}
     >
       {/* Der Balken ist im Ruhezustand nur ein kurzer, blasser Strich in der
           Mitte: eine volle Linie zwischen jedem Buchstabenpaar sähe aus, als
           wäre schon überall geschnitten. */}
       <span
-        className="absolute left-1/2 -translate-x-1/2 rounded"
+        className="absolute left-1/2 -translate-x-1/2 rounded-sm"
         style={{
           width: zustand === "leer" ? 2 : 3,
           top: zustand === "leer" ? "38%" : 0,
@@ -76,7 +76,7 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-lg font-black">✂️ Wo schneidet die Maschine?</h2>
-        <p className="text-sm text-[var(--text-muted)] mt-1 leading-relaxed">
+        <p className="text-sm text-(--text-muted) mt-1 leading-relaxed">
           Ein Sprachmodell liest keine Buchstaben, sondern <b>Stücke</b> aus einer festen Liste —
           jedes mit einer Nummer. Tippe zwischen die Buchstaben, wo du einen Schnitt vermutest.
         </p>
@@ -84,14 +84,14 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
 
       {/* Der Satz mit Lücken zum Antippen. Leerzeichen werden sichtbar gemacht,
           sonst sieht man nicht, zu welchem Stück sie gehören. */}
-      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto">
         {/* Umbrechen statt schieben: auf dem Telefon passt der Satz sonst nicht
             in eine Zeile, und wer scrollen muss, verliert die Übersicht. */}
         <div className="flex flex-wrap items-center font-mono text-lg leading-none">
           {[...text].map((c, i) => (
             <span key={i} className="flex items-center">
               {i > 0 && <Balken zustand={zustand(i)} onClick={geprueft ? undefined : () => umschalten(i)} />}
-              <span className={c === " " ? "text-[var(--text-muted)]" : ""}>
+              <span className={c === " " ? "text-(--text-muted)" : ""}>
                 {c === " " ? "␣" : c}
               </span>
             </span>
@@ -104,30 +104,30 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
           <button
             type="button"
             onClick={() => setGeprueft(true)}
-            className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+            className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
           >
             Prüfen
           </button>
           <button
             type="button"
             onClick={() => setEigene(new Set())}
-            className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold"
+            className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold"
           >
             ↺ Zurücksetzen
           </button>
-          <span className="text-sm text-[var(--text-muted)]">
+          <span className="text-sm text-(--text-muted)">
             {eigene.size} {eigene.size === 1 ? "Schnitt" : "Schnitte"} gesetzt
           </span>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="px-3 py-1 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]">
+            <span className="px-3 py-1 rounded-xl font-black bg-(--accent) text-(--accent-text)">
               {wertung.quote} %
             </span>
-            <span><b className="text-[var(--green)]">{wertung.treffer.length}</b> getroffen</span>
+            <span><b className="text-(--green)">{wertung.treffer.length}</b> getroffen</span>
             <span><b>{wertung.verpasst.length}</b> übersehen</span>
-            <span><b className="text-[var(--red)]">{wertung.daneben.length}</b> zu viel</span>
+            <span><b className="text-(--red)">{wertung.daneben.length}</b> zu viel</span>
           </div>
 
           {/* Die Stücke der Maschine, jedes mit seiner Nummer. */}
@@ -143,12 +143,12 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
                 >
                   {t.text.replace(/ /g, "␣")}
                 </span>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">{t.id}</span>
+                <span className="text-[10px] text-(--text-muted) font-mono">{t.id}</span>
               </span>
             ))}
           </div>
 
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             🔢 Ab hier zählt nur noch die untere Zeile: <b>{tokens.length} Zahlen</b>. Buchstaben,
             Wörter und Sinn sind weg — das Modell rechnet nur mit Nummern.
             Häufige Wörter (»␣Katze«) sind ein einziges Stück, seltenere zerfallen in Stamm und
@@ -161,7 +161,7 @@ export function Zerleger({ text, onWeiter }: { text: string; onWeiter: (quote: n
             <button
               type="button"
               onClick={() => onWeiter(wertung.quote)}
-              className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+              className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
             >
               Weiter zum Netz →
             </button>

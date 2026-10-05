@@ -83,7 +83,7 @@ export function AvailabilityGrid(
   });
 
   if (!catalog || !scopeRows) {
-    return <div className="text-sm text-[var(--text-muted)]">Lade…</div>;
+    return <div className="text-sm text-(--text-muted)">Lade…</div>;
   }
 
   const bySurface: Record<string, CatalogToolOut[]> = { aktivitaeten: [], simulationen: [], tools: [] };
@@ -125,7 +125,7 @@ export function AvailabilityGrid(
       { key: "off", label: "Nein" },
     ];
     return (
-      <div className="inline-flex rounded-lg border border-[var(--border)] overflow-hidden text-[11px]">
+      <div className="inline-flex rounded-lg border border-(--border) overflow-hidden text-[11px]">
         {opts.map(o => {
           const active = state === o.key;
           return (
@@ -136,8 +136,8 @@ export function AvailabilityGrid(
               onClick={() => apply(slug, cap, audience, o.key)}
               className={`px-2 py-1 leading-none transition-colors ${
                 active
-                  ? "bg-[var(--accent)] text-white font-semibold"
-                  : "bg-[var(--surface)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+                  ? "bg-(--accent) text-white font-semibold"
+                  : "bg-(--surface) text-(--text-muted) hover:bg-(--surface-hover)"
               } ${!canEdit ? "cursor-not-allowed opacity-60" : ""}`}
             >
               {o.label}
@@ -149,19 +149,19 @@ export function AvailabilityGrid(
   }
 
   const renderTool = (t: CatalogToolOut) => (
-    <div key={t.slug} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+    <div key={t.slug} className="rounded-xl border border-(--border) bg-(--surface) p-3">
       <div className="font-semibold text-sm mb-2">{t.label}</div>
       <div className="flex flex-col gap-3">
         {t.capabilities.map(c => (
           <div key={c.capability} className="flex flex-col gap-1.5">
-            <div className="text-xs font-medium text-[var(--text)]">{c.label}</div>
+            <div className="text-xs font-medium text-(--text)">{c.label}</div>
             <div className="flex flex-col gap-1 pl-1">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-[var(--text-muted)] w-14 shrink-0">Lehrer</span>
+                <span className="text-[11px] text-(--text-muted) w-14 shrink-0">Lehrer</span>
                 <Segmented slug={t.slug} cap={c.capability} audience="teacher" catalogDefault={c.teacher_default} />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-[var(--text-muted)] w-14 shrink-0">Schüler</span>
+                <span className="text-[11px] text-(--text-muted) w-14 shrink-0">Schüler</span>
                 <Segmented slug={t.slug} cap={c.capability} audience="student" catalogDefault={c.student_default} />
               </div>
             </div>
@@ -175,7 +175,7 @@ export function AvailabilityGrid(
     <div className="flex flex-col gap-6">
       {(["aktivitaeten", "simulationen", "tools"] as const).map(surface => (
         <div key={surface} className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold text-[var(--text-muted)]">{SURFACE_LABEL[surface]}</h3>
+          <h3 className="text-sm font-bold text-(--text-muted)">{SURFACE_LABEL[surface]}</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {bySurface[surface].map(renderTool)}
           </div>

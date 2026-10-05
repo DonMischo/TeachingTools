@@ -75,17 +75,17 @@ export default function AdminGeneratorsPage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <Link href="/admin" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück</Link>
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+      <Link href="/admin" className="text-xs text-(--text-muted) hover:text-(--text)">← Zurück</Link>
       <div>
         <h1 className="text-2xl font-black tracking-tight">🧮 Aufgaben-Generatoren</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
+        <p className="text-(--text-muted) text-sm mt-1">
           Neue Übungsthemen ohne Programmierung registrieren — eine Frage-Vorlage mit Variablen und einer
           Rechenformel für die Lösung. Kein Code, nur Zahlen und die vier Grundrechenarten (sicher gegen Missbrauch).
         </p>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
         <h2 className="font-semibold text-sm">Neuer Generator</h2>
         <div className="grid grid-cols-2 gap-2">
           <input className="input text-sm py-1.5" placeholder="slug (z.B. bruchrechnen)" value={slug} onChange={e => setSlug(e.target.value)} />
@@ -93,10 +93,10 @@ export default function AdminGeneratorsPage() {
           <input className="input text-sm py-1.5" placeholder="Fach (z.B. mathe)" value={subject} onChange={e => setSubject(e.target.value)} />
           <input className="input text-sm py-1.5" placeholder="Beschreibung" value={description} onChange={e => setDescription(e.target.value)} />
         </div>
-        <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
           Stufen (JSON, 1–5 Einträge, aufsteigend schwerer). Vorlagen-Platzhalter: <code>{"{{name}}"}</code> (Doppelklammern,
           nicht mit KaTeX-<code>{"{...}"}</code> verwechseln). answer_expr: nur Variablen, + − * / ( ).
-          <textarea className="input text-xs py-2 font-mono min-h-[16rem]" value={levelsJson} onChange={e => setLevelsJson(e.target.value)} />
+          <textarea className="input text-xs py-2 font-mono min-h-64" value={levelsJson} onChange={e => setLevelsJson(e.target.value)} />
         </label>
         {errors.length > 0 && (
           <ul className="text-xs text-red-400 flex flex-col gap-0.5">
@@ -109,16 +109,16 @@ export default function AdminGeneratorsPage() {
         </button>
       </section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Registrierte Generatoren</h2>
         {defs.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine eigenen Generatoren.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine eigenen Generatoren.</p>
         ) : (
-          <ul className="divide-y divide-[var(--border)]">
+          <ul className="divide-y divide-(--border)">
             {defs.map(d => (
               <li key={d.id} className="py-2 flex items-center gap-3">
                 <span className="text-sm font-medium">{d.label}</span>
-                <span className="text-xs text-[var(--text-muted)]">({d.slug} · {d.subject} · {d.levels.length} Stufen)</span>
+                <span className="text-xs text-(--text-muted)">({d.slug} · {d.subject} · {d.levels.length} Stufen)</span>
                 <div className="flex-1" />
                 <button onClick={() => { if (confirm(`"${d.label}" löschen?`)) deleteMut.mutate(d.slug); }}
                   className="text-xs text-red-400 hover:underline">Löschen</button>

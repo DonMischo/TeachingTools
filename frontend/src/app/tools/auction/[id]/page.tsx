@@ -46,17 +46,17 @@ export default function AuctionSetDetailPage() {
     onError: (e: any) => toast(e.message ?? "Fehler", "error"),
   });
 
-  if (!canEdit) return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
-  if (setsLoading) return <div className="p-6 text-[var(--text-muted)] text-sm">Laden…</div>;
+  if (!canEdit) return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
+  if (setsLoading) return <div className="p-6 text-(--text-muted) text-sm">Laden…</div>;
   if (!set) return <div className="p-6 text-red-500 text-sm">Auktion nicht gefunden.</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/tools/auction" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Auktions-Bibliothek</Link>
+        <Link href="/tools/auction" className="text-sm text-(--text-muted) hover:text-(--text)">← Auktions-Bibliothek</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏷 {set.title}</h1>
-        {set.prize_description && <div className="text-sm text-[var(--text-muted)] mt-1">🏆 {set.prize_description}</div>}
-        {set.description && <p className="text-sm text-[var(--text-muted)] mt-2">{set.description}</p>}
+        {set.prize_description && <div className="text-sm text-(--text-muted) mt-1">🏆 {set.prize_description}</div>}
+        {set.description && <p className="text-sm text-(--text-muted) mt-2">{set.description}</p>}
       </div>
 
       {canEdit && (
@@ -70,16 +70,16 @@ export default function AuctionSetDetailPage() {
       )}
 
       <div className="flex flex-col gap-3">
-        <div className="font-semibold text-sm text-[var(--text-muted)] uppercase tracking-wide">Durchläufe</div>
+        <div className="font-semibold text-sm text-(--text-muted) uppercase tracking-wide">Durchläufe</div>
         {sessionsLoading ? (
-          <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+          <div className="text-(--text-muted) text-sm">Laden…</div>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine Auktion gestartet.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine Auktion gestartet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {sessions.map(s => (
-              <li key={s.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 flex items-center gap-3">
-                <span className="flex-1 text-sm text-[var(--text-muted)]">
+              <li key={s.id} className="rounded-xl border border-(--border) bg-(--surface) p-3 flex items-center gap-3">
+                <span className="flex-1 text-sm text-(--text-muted)">
                   {STATUS_LABEL[s.status] ?? s.status}
                   {s.winning_bid && <> · Gewonnen mit {s.winning_bid} Pts</>}
                   {" · "}{new Date(s.created_at).toLocaleDateString("de-DE")}

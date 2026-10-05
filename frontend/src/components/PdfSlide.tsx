@@ -99,7 +99,7 @@ export function PdfSlide({ url, pageMs, loop, onDone }: {
   return (
     <div ref={boxRef} className="relative w-full h-full flex items-center justify-center overflow-hidden">
       {failed ? (
-        <div className="text-[var(--text-muted)]">PDF konnte nicht geladen werden</div>
+        <div className="text-(--text-muted)">PDF konnte nicht geladen werden</div>
       ) : (
         <canvas ref={canvasRef} className="bg-white shadow-lg" />
       )}

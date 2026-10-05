@@ -94,7 +94,7 @@ export function Startmenue({
           onChange={e => onSuchText(e.target.value)}
           onKeyDown={nachTaste}
           placeholder="Programme, Einstellungen und Dokumente durchsuchen"
-          className={"rounded-full px-4 py-2 text-sm outline-none border " + (dunkel ? "bg-[#ffffff14] border-[#ffffff1f]" : "bg-white border-[#0000001a]")}
+          className={"rounded-full px-4 py-2 text-sm outline-hidden border " + (dunkel ? "bg-[#ffffff14] border-[#ffffff1f]" : "bg-white border-[#0000001a]")}
         />
 
         {!suchText.trim() ? (

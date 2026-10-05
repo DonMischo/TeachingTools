@@ -67,29 +67,29 @@ export default function BingoSetDetailPage() {
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
 
-  if (!canEdit) return <div className="p-8 text-[var(--text-muted)]">Nur für Lehrkräfte.</div>;
-  if (setsLoading) return <div className="p-6 text-[var(--text-muted)] text-sm">Laden…</div>;
+  if (!canEdit) return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
+  if (setsLoading) return <div className="p-6 text-(--text-muted) text-sm">Laden…</div>;
   if (!set) return <div className="p-6 text-red-500 text-sm">Bingo-Set nicht gefunden.</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href="/aktivitaeten/bingo" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo-Bibliothek</Link>
+        <Link href="/aktivitaeten/bingo" className="text-sm text-(--text-muted) hover:text-(--text)">← Bingo-Bibliothek</Link>
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <h1 className="text-2xl font-black tracking-tight">🎰 {set.title}</h1>
           {set.can_edit && (
             <Link href={`/aktivitaeten/bingo/${setId}/edit`}
-              className="text-xs px-3 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+              className="text-xs px-3 py-1.5 border border-(--border) rounded-lg text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors">
               ✎ Bearbeiten
             </Link>
           )}
         </div>
-        <div className="text-xs text-[var(--text-muted)] flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+        <div className="text-xs text-(--text-muted) flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
           {set.subject && <span>{set.subject}</span>}
           <span>{set.grid_size}×{set.grid_cols ?? set.grid_size} · {set.total_pairs} Paare</span>
           {set.max_points > 0 && <span>{set.max_points} Pkt.</span>}
         </div>
-        {set.description && <p className="text-sm text-[var(--text-muted)] mt-2">{set.description}</p>}
+        {set.description && <p className="text-sm text-(--text-muted) mt-2">{set.description}</p>}
       </div>
 
       {canEdit && (
@@ -98,11 +98,11 @@ export default function BingoSetDetailPage() {
           <button
             onClick={() => startMut.mutate()}
             disabled={startMut.isPending}
-            className="text-sm px-5 py-2 bg-[var(--accent)] text-[var(--accent-text,#111)] font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="text-sm px-5 py-2 bg-(--accent) text-(--accent-text,#111) font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {startMut.isPending ? "Startet…" : "▶ Neue Runde starten"}
           </button>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-(--text-muted)">
             {scope?.kind === "group"
               ? "Klassenübergreifend: Punkte gehen an die Klasse, die jeder Spieler beim Beitritt wählt."
               : "Gäste-Punkte gehen an die gewählte Klasse."}
@@ -111,9 +111,9 @@ export default function BingoSetDetailPage() {
       )}
 
       <div className="flex flex-col gap-3">
-        <div className="font-semibold text-sm text-[var(--text-muted)] uppercase tracking-wide">Runden</div>
+        <div className="font-semibold text-sm text-(--text-muted) uppercase tracking-wide">Runden</div>
         {sessionsLoading ? (
-          <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+          <div className="text-(--text-muted) text-sm">Laden…</div>
         ) : (
           <SessionGrid
             items={sessions.map((s): SessionCardItem => ({

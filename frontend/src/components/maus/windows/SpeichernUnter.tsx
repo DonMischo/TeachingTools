@@ -86,11 +86,11 @@ export function SpeichernUnter({
           onChange={e => { setName(e.target.value); setFehler(null); }}
           onFocus={e => e.currentTarget.select()}
           onKeyDown={e => { if (e.key === "Enter") speichern(); if (e.key === "Escape") onAbbrechen(); }}
-          className="rounded px-2 py-1 border outline-none focus:border-[#0078d7]"
+          className="rounded-sm px-2 py-1 border outline-hidden focus:border-[#0078d7]"
           style={{ background: farben.feld, color: farben.text, borderColor: farben.linie, fontSize: hilfe ? 16 : undefined }}
         />
         <span>Dateityp:</span>
-        <select disabled className="rounded px-2 py-1 border opacity-80" style={{ background: farben.feld, color: farben.text, borderColor: farben.linie }}>
+        <select disabled className="rounded-sm px-2 py-1 border opacity-80" style={{ background: farben.feld, color: farben.text, borderColor: farben.linie }}>
           <option>{dateityp}</option>
         </select>
       </div>
@@ -100,10 +100,10 @@ export function SpeichernUnter({
       )}
 
       <div className="flex justify-end gap-2 px-4 pb-3">
-        <button type="button" onClick={speichern} data-testid="speichern-knopf" className="rounded px-5 py-1.5 bg-[#0078d7] text-white font-semibold hover:bg-[#006cc1]">
+        <button type="button" onClick={speichern} data-testid="speichern-knopf" className="rounded-sm px-5 py-1.5 bg-[#0078d7] text-white font-semibold hover:bg-[#006cc1]">
           Speichern
         </button>
-        <button type="button" onClick={onAbbrechen} className="rounded px-5 py-1.5 border" style={{ borderColor: farben.linie, background: farben.feld }}>
+        <button type="button" onClick={onAbbrechen} className="rounded-sm px-5 py-1.5 border" style={{ borderColor: farben.linie, background: farben.feld }}>
           Abbrechen
         </button>
       </div>

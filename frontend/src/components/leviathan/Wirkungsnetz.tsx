@@ -134,17 +134,17 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <div className="inline-flex rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+        <div className="inline-flex rounded-xl border border-(--border) p-1 bg-(--surface)">
           {([[true, "⚡ Jetzt"], [false, "📘 Regeln"]] as const).map(([w, t]) => (
             <button key={t} onClick={() => setLive(w)} aria-pressed={live === w}
-              className={`px-3 py-1 rounded-lg font-bold ${live === w ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)]"}`}>{t}</button>
+              className={`px-3 py-1 rounded-lg font-bold ${live === w ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>{t}</button>
           ))}
         </div>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={ergebnisse} onChange={(e) => setErgebnisse(e.target.checked)} />
           Pfeile zu Lebensqualität und Leviathan
         </label>
-        {fokus && <button onClick={() => setFokus(null)} className="underline text-[var(--text-muted)]">Auswahl aufheben</button>}
+        {fokus && <button onClick={() => setFokus(null)} className="underline text-(--text-muted)">Auswahl aufheben</button>}
       </div>
 
       <svg viewBox={`0 0 ${B} ${B}`} className="w-full max-h-[80vh]" role="img"
@@ -228,7 +228,7 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
         })}
       </svg>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-(--text-muted)">
         <span><Strich ton="gut" /> {live ? "drückt gerade in die gute Richtung" : "steigt die Quelle, wird das Ziel besser"}</span>
         <span><Strich ton="schlecht" /> {live ? "drückt gerade in die schlechte Richtung" : "steigt die Quelle, wird das Ziel schlechter"}</span>
         <span><Strich ton="neutral" /> weder gut noch schlecht</span>
@@ -244,7 +244,7 @@ export default function Wirkungsnetz({ z, hervorheben = [], schleife = null, mar
         </div>
       )}
       {!aktiv && (
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           Tippe auf einen Bereich, um seine Pfeile zu sehen. {hervorheben.length > 0 && "Die Bereiche, in die du gerade Punkte steckst, leuchten mit ihren Folgen auf – blasser die Folgen der Folgen."}
         </p>
       )}
@@ -280,9 +280,9 @@ function Liste({ titel, kanten, z, richtung, live }: {
   titel: string; kanten: Kante[]; z: Zustand; richtung: "von" | "nach"; live: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] p-3">
+    <div className="rounded-xl border border-(--border) p-3">
       <div className="font-bold mb-1">{titel}</div>
-      {kanten.length === 0 && <div className="text-[var(--text-muted)]">nichts direkt</div>}
+      {kanten.length === 0 && <div className="text-(--text-muted)">nichts direkt</div>}
       <ul className="space-y-1.5">
         {kanten.map((k, i) => {
           const d = druck(z, k);
@@ -292,11 +292,11 @@ function Liste({ titel, kanten, z, richtung, live }: {
             <li key={i}>
               <span className="font-bold">{andere.icon} {andere.name}</span>{" "}
               <span style={{ color: g === null ? FARBE.neutral : g ? FARBE.gut : FARBE.schlecht }}>{k.staerke > 0 ? "(+)" : "(−)"}</span>
-              {k.verzoegerung > 0 && <span className="text-[var(--text-muted)]"> nach {k.verzoegerung * 2} J.</span>}
+              {k.verzoegerung > 0 && <span className="text-(--text-muted)"> nach {k.verzoegerung * 2} J.</span>}
               {live && k.art !== "entscheidung" && k.art !== "ergebnis" && Math.abs(d) >= 0.15 && (
-                <span className="text-[var(--text-muted)]"> · drückt gerade {d > 0 ? "hoch" : "runter"}</span>
+                <span className="text-(--text-muted)"> · drückt gerade {d > 0 ? "hoch" : "runter"}</span>
               )}
-              <div className="text-xs text-[var(--text-muted)]">{k.text ?? QUELLEN[k.quelle]?.befund}</div>
+              <div className="text-xs text-(--text-muted)">{k.text ?? QUELLEN[k.quelle]?.befund}</div>
               {k.quelle !== "annahme" && <QuelleLink id={k.quelle} />}
             </li>
           );

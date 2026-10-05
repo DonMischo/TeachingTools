@@ -39,16 +39,16 @@ export function Steuerkreuz({ kanal, beleidigungen, rad = false }: { kanal: Reac
   const los = () => { mitte.current = null; setze(0, 0); };
   const druecke = (code: string) => () => kanal.current.taste?.(code);
 
-  const rund = "flex items-center justify-center rounded-full border-2 border-white/60 bg-black/45 text-white shadow-lg backdrop-blur-sm active:scale-95 select-none touch-none";
+  const rund = "flex items-center justify-center rounded-full border-2 border-white/60 bg-black/45 text-white shadow-lg backdrop-blur-xs active:scale-95 select-none touch-none";
 
   return (
     <>
       <div
-        className="absolute bottom-5 left-5 z-10 h-36 w-36 rounded-full border-2 border-white/50 bg-black/30 backdrop-blur-sm touch-none select-none"
+        className="absolute bottom-5 left-5 z-10 h-36 w-36 rounded-full border-2 border-white/50 bg-black/30 backdrop-blur-xs touch-none select-none"
         onPointerDown={runter} onPointerMove={zieh} onPointerUp={los} onPointerCancel={los}
         aria-label="Stick zum Laufen"
       >
-        <div className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-white/80 shadow"
+        <div className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-white/80 shadow-sm"
           style={{ transform: `translate(calc(-50% + ${knauf.x}px), calc(-50% + ${knauf.y}px))` }} />
       </div>
       <div className="absolute bottom-5 right-5 z-10 grid grid-cols-2 gap-3">

@@ -146,22 +146,22 @@ export default function AuctionPlayPage() {
   // ── Join screen (only when not logged in) ───────────────────────────────
   if (!mounted || !connected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 bg-[var(--bg)]">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 p-6 bg-(--bg)">
         <div className="text-5xl">🏷</div>
         <h1 className="text-2xl font-black tracking-tight text-center">Auktion beitreten</h1>
-        <p className="text-sm text-[var(--text-muted)] font-mono tracking-widest">{code}</p>
+        <p className="text-sm text-(--text-muted) font-mono tracking-widest">{code}</p>
 
         {joinError && <p className="text-red-400 text-sm text-center">{joinError}</p>}
 
         {auth?.student && !joinError && (
-          <p className="text-[var(--text-muted)] text-sm animate-pulse">Verbinde…</p>
+          <p className="text-(--text-muted) text-sm animate-pulse">Verbinde…</p>
         )}
 
         {!auth?.student && (
           <div className="w-full max-w-xs flex flex-col gap-3">
             <input
               autoFocus
-              className="w-full border border-[var(--border)] bg-[var(--surface)] rounded-xl px-4 py-3 text-center text-lg font-semibold outline-none focus:border-[var(--accent)]"
+              className="w-full border border-(--border) bg-(--surface) rounded-xl px-4 py-3 text-center text-lg font-semibold outline-hidden focus:border-(--accent)"
               placeholder="Dein Name"
               maxLength={30}
               value={nameInput}
@@ -189,18 +189,18 @@ export default function AuctionPlayPage() {
   // ── Closed / awarded ─────────────────────────────────────────────────────
   if (status === "closed" || winner_house_id) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)] text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg) text-center">
         {winner_house_id ? (
           <>
             <div className="text-5xl">🏆</div>
             <h1 className="text-xl font-bold">{winner_name} gewinnt!</h1>
-            <p className="text-[var(--text-muted)] text-sm">mit {winning_bid} Punkten</p>
+            <p className="text-(--text-muted) text-sm">mit {winning_bid} Punkten</p>
           </>
         ) : (
           <>
             <div className="text-5xl">🔒</div>
             <h1 className="text-xl font-bold">Auktion geschlossen</h1>
-            <p className="text-[var(--text-muted)] text-sm animate-pulse">Warte auf Ergebnis…</p>
+            <p className="text-(--text-muted) text-sm animate-pulse">Warte auf Ergebnis…</p>
           </>
         )}
       </div>
@@ -209,26 +209,26 @@ export default function AuctionPlayPage() {
 
   // ── Active (waiting / bidding) ────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--bg)]">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-(--bg)">
       <div className="w-full max-w-sm flex flex-col gap-6">
 
         <div className="text-center">
           <div className="text-4xl mb-3">🏷</div>
           <h1 className="text-xl font-bold">{title}</h1>
-          {description && <p className="text-[var(--text-muted)] text-sm mt-1">{description}</p>}
+          {description && <p className="text-(--text-muted) text-sm mt-1">{description}</p>}
           {prize_description && (
-            <div className="mt-2 text-sm font-medium text-[var(--accent)]">🏆 {prize_description}</div>
+            <div className="mt-2 text-sm font-medium text-(--accent)">🏆 {prize_description}</div>
           )}
         </div>
 
         {status === "waiting" && (
           <>
-            <div className="text-center text-[var(--text-muted)] text-sm animate-pulse">
+            <div className="text-center text-(--text-muted) text-sm animate-pulse">
               Warte auf Auktionsstart…
             </div>
             {players.length > 0 && (
               <div>
-                <p className="text-xs text-[var(--text-muted)] text-center mb-2">{players.length} Teilnehmer</p>
+                <p className="text-xs text-(--text-muted) text-center mb-2">{players.length} Teilnehmer</p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {players.map((p, i) => (
                     <span
@@ -265,14 +265,14 @@ export default function AuctionPlayPage() {
                 Bieten
               </button>
             </div>
-            <p className="text-xs text-[var(--text-muted)] text-center">
+            <p className="text-xs text-(--text-muted) text-center">
               Gebote können bis zum Schließen aktualisiert werden.
             </p>
           </div>
         )}
 
         {status === "bidding" && !is_haussprecher && (
-          <div className="text-center text-[var(--text-muted)] text-sm">
+          <div className="text-center text-(--text-muted) text-sm">
             Auktion läuft — Gebote werden abgegeben…
           </div>
         )}

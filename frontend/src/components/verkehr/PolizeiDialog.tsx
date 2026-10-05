@@ -46,7 +46,7 @@ export function PolizeiDialog({ g, onAntwort, onFertig }: { g: Gespraech; onAntw
             {g.antworten.map((a, i) => (
               <button key={a.text} type="button" onClick={() => onAntwort(a)}
                 className="flex items-start gap-2 rounded-xl bg-slate-100 px-3 py-2 text-left text-sm hover:bg-sky-100">
-                <span className="rounded bg-slate-700 px-1.5 text-xs font-black text-white">{i + 1}</span>{a.text}
+                <span className="rounded-sm bg-slate-700 px-1.5 text-xs font-black text-white">{i + 1}</span>{a.text}
               </button>
             ))}
           </div>

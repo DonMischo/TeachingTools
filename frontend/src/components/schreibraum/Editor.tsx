@@ -588,7 +588,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     editorProps: {
       attributes: {
         style:
-          "min-height: 400px; outline: none; padding: 16px; font-size: 16px; line-height: 1.7; color: var(--text-primary);",
+          "min-height: 400px; outline-solid: none; padding: 16px; font-size: 16px; line-height: 1.7; color: var(--text-primary);",
       },
       handleKeyDown(view, event) {
         // Bracket wrapping

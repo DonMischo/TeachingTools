@@ -185,14 +185,14 @@ export default function BingoEditor({ editId }: { editId?: number }) {
   });
 
   if (!auth) {
-    return <div className="p-8 text-[var(--text-muted)]">Bitte einloggen.</div>;
+    return <div className="p-8 text-(--text-muted)">Bitte einloggen.</div>;
   }
-  if (!loaded) return <div className="p-6 text-[var(--text-muted)] text-sm">Laden…</div>;
+  if (!loaded) return <div className="p-6 text-(--text-muted) text-sm">Laden…</div>;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <Link href={editId ? `/aktivitaeten/bingo/${editId}` : "/aktivitaeten/bingo"} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Bingo</Link>
+        <Link href={editId ? `/aktivitaeten/bingo/${editId}` : "/aktivitaeten/bingo"} className="text-sm text-(--text-muted) hover:text-(--text)">← Bingo</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">{editId ? "Bingo bearbeiten" : "Neue Bingo-Runde"}</h1>
       </div>
 
@@ -212,10 +212,10 @@ export default function BingoEditor({ editId }: { editId?: number }) {
         </select>
         <div className="flex gap-2">
           <a href="/api/bingo/template" download="bingo_vorlage.json"
-            className="text-xs px-3 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:border-gray-500 transition-colors">
+            className="text-xs px-3 py-1.5 border border-(--border) rounded-lg text-(--text-muted) hover:border-gray-500 transition-colors">
             Vorlage
           </a>
-          <label className="text-xs px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+          <label className="text-xs px-3 py-1.5 bg-(--accent) text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
             JSON importieren
             <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleJsonFile} />
           </label>
@@ -233,7 +233,7 @@ export default function BingoEditor({ editId }: { editId?: number }) {
         <div className="flex gap-3 flex-wrap">
           <input className="input flex-1" placeholder="Tags, kommagetrennt (z. B. Vokabeln, A1, Tiere)"
             value={tagsInput} onChange={e => setTagsInput(e.target.value)} />
-          <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] shrink-0">
+          <label className="flex items-center gap-2 text-sm text-(--text-muted) shrink-0">
             Punkte (bei 100% richtig)
             <input className="input w-20" type="number" min={0} title="Punkte, die bei vollständig korrekt markierter Karte vergeben werden"
               value={maxPoints} onChange={e => setMaxPoints(Number(e.target.value))} />
@@ -245,7 +245,7 @@ export default function BingoEditor({ editId }: { editId?: number }) {
 
       {/* Pairs */}
       <div className="flex flex-col gap-1.5 max-h-96 overflow-y-auto pr-1">
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-[var(--text-muted)] px-1">
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-(--text-muted) px-1">
           <span>Aufrufen (Frage/Begriff)</span>
           <span>Antwort (auf Karte)</span>
           <span />
@@ -257,11 +257,11 @@ export default function BingoEditor({ editId }: { editId?: number }) {
             <input className="input text-sm py-1" placeholder={`Antwort ${i + 1}`}
               value={p.answer} onChange={e => updatePair(i, "answer", e.target.value)} />
             <button onClick={() => setPairs(prev => prev.filter((_, idx) => idx !== i))}
-              className="text-[var(--text-muted)] hover:text-red-400 text-lg w-6">🗑</button>
+              className="text-(--text-muted) hover:text-red-400 text-lg w-6">🗑</button>
           </div>
         ))}
         <button onClick={() => setPairs(prev => [...prev, BLANK()])}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] self-start mt-1">
+          className="text-xs text-(--text-muted) hover:text-(--text) self-start mt-1">
           + Paar hinzufügen
         </button>
       </div>
@@ -275,30 +275,30 @@ export default function BingoEditor({ editId }: { editId?: number }) {
         >
           {createMut.isPending ? (editId ? "Speichere…" : "Erstelle…") : editId ? "Speichern" : "Bingo starten"}
         </button>
-        <span className="text-xs text-[var(--text-muted)]">{validCount}/{cells} Paare ausgefüllt</span>
+        <span className="text-xs text-(--text-muted)">{validCount}/{cells} Paare ausgefüllt</span>
       </div>
 
       {/* AI instructions — at bottom */}
-      <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+      <div className="rounded-xl border border-(--border) overflow-hidden">
         <button
           onClick={() => setShowAi(o => !o)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-hover)] transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-(--text-muted) hover:bg-(--surface-hover) transition-colors"
         >
           <span>🤖 Mit KI erstellen</span>
           <span>{showAi ? "▲" : "▼"}</span>
         </button>
         {showAi && (
-          <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[var(--border)]">
-            <p className="text-xs text-[var(--text-muted)] pt-3 leading-relaxed">
+          <div className="px-4 pb-4 flex flex-col gap-3 border-t border-(--border)">
+            <p className="text-xs text-(--text-muted) pt-3 leading-relaxed">
               Kopiere den Prompt, füge ihn in ChatGPT, Claude oder ein anderes KI-Tool ein,
               passe das Thema am Ende an, und importiere die erzeugte JSON-Datei oben.
             </p>
-            <pre className="text-xs bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 whitespace-pre-wrap leading-relaxed text-[var(--text-muted)] max-h-48 overflow-y-auto">
+            <pre className="text-xs bg-(--bg) border border-(--border) rounded-lg p-3 whitespace-pre-wrap leading-relaxed text-(--text-muted) max-h-48 overflow-y-auto">
               {AI_PROMPT}
             </pre>
             <button
               onClick={copyPrompt}
-              className="self-start text-xs px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="self-start text-xs px-3 py-1.5 bg-(--accent) text-white rounded-lg hover:opacity-90 transition-opacity"
             >
               {copied ? "✓ Kopiert!" : "Prompt kopieren"}
             </button>

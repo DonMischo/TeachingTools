@@ -23,14 +23,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-[999] pointer-events-none">
+      <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-999 pointer-events-none">
         {toasts.map(t => (
           <div
             key={t.id}
             className={`pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-200 ${
               t.type === "success" ? "bg-green-600 text-white" :
               t.type === "error"   ? "bg-red-600 text-white" :
-                                     "bg-[var(--surface)] border border-[var(--border)] text-[var(--text)]"
+                                     "bg-(--surface) border border-(--border) text-(--text)"
             }`}
           >
             {t.message}

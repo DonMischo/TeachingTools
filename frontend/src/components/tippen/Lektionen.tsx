@@ -96,24 +96,24 @@ export default function Lektionen({
           value={lektion}
           onChange={e => neu(Number(e.target.value))}
           aria-label="Lektion"
-          className="text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5"
+          className="text-sm bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5"
         >
           {texte.map((l, i) => (
             <option key={l.id} value={i}>{i + 1}. {l.titel}</option>
           ))}
         </select>
         {texte[lektion].neueZeichen && (
-          <span className="text-xs text-[var(--text-muted)]">
-            neue Tasten: <b className="text-[var(--text)]">{texte[lektion].neueZeichen}</b>
+          <span className="text-xs text-(--text-muted)">
+            neue Tasten: <b className="text-(--text)">{texte[lektion].neueZeichen}</b>
           </span>
         )}
         {!sperre && (
-          <span className="text-xs text-[var(--text-muted)]">ohne Fehlersperre</span>
+          <span className="text-xs text-(--text-muted)">ohne Fehlersperre</span>
         )}
         <div className="flex-1" />
         <button
           onClick={() => neu(lektion)}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]"
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
         >
           ↺ Neu
         </button>
@@ -122,10 +122,10 @@ export default function Lektionen({
       <div
         {...feldProps}
         aria-label="Übungstext tippen"
-        className="relative outline-none rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6
-          focus:border-[var(--accent)] cursor-text"
+        className="relative outline-hidden rounded-2xl border border-(--border) bg-(--surface) p-4 sm:p-6
+          focus:border-(--accent) cursor-text"
       >
-        <p className="font-mono text-lg sm:text-xl leading-relaxed whitespace-pre-wrap break-words">
+        <p className="font-mono text-lg sm:text-xl leading-relaxed whitespace-pre-wrap wrap-break-word">
           {stand.text.split("").map((c, i) => {
             const erledigt = i < stand.pos;
             const aktuell = i === stand.pos;
@@ -134,7 +134,7 @@ export default function Lektionen({
                 key={i}
                 data-index={i}
                 data-aktuell={aktuell || undefined}
-                className={erledigt ? "text-[var(--green)]" : aktuell ? "rounded-sm" : "text-[var(--text-muted)]"}
+                className={erledigt ? "text-(--green)" : aktuell ? "rounded-xs" : "text-(--text-muted)"}
                 style={aktuell ? { background: verfehlt ? "var(--red)" : "var(--accent)", color: "var(--bg)" } : undefined}
               >
                 {c}
@@ -157,9 +157,9 @@ export default function Lektionen({
         <Wert label="Fehler" wert={String(stand.fehler)} />
       </div>
 
-      <div className="h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+      <div className="h-1.5 rounded-full bg-(--border) overflow-hidden">
         <div
-          className="h-full bg-[var(--accent)] transition-[width] duration-150"
+          className="h-full bg-(--accent) transition-[width] duration-150"
           style={{ width: `${w.fortschritt * 100}%` }}
         />
       </div>
@@ -167,9 +167,9 @@ export default function Lektionen({
       <Tastatur naechste={naechste} gedrueckt={gedrueckt} zeigeFinger={zeigeFinger} />
 
       {w.fertig && (
-        <div className="rounded-2xl border border-[var(--accent)] bg-[var(--surface)] p-5 flex flex-col gap-3 text-center">
+        <div className="rounded-2xl border border-(--accent) bg-(--surface) p-5 flex flex-col gap-3 text-center">
           <div className="text-lg font-black">🎉 Lektion geschafft</div>
-          <div className="text-sm text-[var(--text-muted)]">
+          <div className="text-sm text-(--text-muted)">
             {w.anschlaegeProMinute} Anschläge pro Minute bei {Math.round(w.fehlerquote * 100)} % Fehlern.
           </div>
           {schwach.length > 0 && (
@@ -185,14 +185,14 @@ export default function Lektionen({
           <div className="flex gap-2 justify-center">
             <button
               onClick={() => neu(lektion)}
-              className="border border-[var(--border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--accent)]"
+              className="border border-(--border) rounded-lg px-4 py-2 text-sm hover:border-(--accent)"
             >
               ↺ Nochmal
             </button>
             {lektion + 1 < texte.length && (
               <button
                 onClick={() => neu(lektion + 1)}
-                className="border border-[var(--accent)] text-[var(--accent)] rounded-lg px-4 py-2 text-sm font-bold"
+                className="border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
               >
                 Weiter →
               </button>

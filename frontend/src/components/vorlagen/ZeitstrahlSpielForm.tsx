@@ -17,7 +17,7 @@ export function ZeitstrahlSpielForm({ spec, onChange }: { spec: TimelineGameSpec
     onChange({ ...spec, items: spec.items.map((it, j) => j === i ? { ...it, ...patch } : it) });
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-dashed border-[var(--border)] p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-dashed border-(--border) p-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <Feld label="Spielart">
           <select className="input" value={spec.mode}
@@ -65,7 +65,7 @@ export function ZeitstrahlSpielForm({ spec, onChange }: { spec: TimelineGameSpec
         ? "»Steht bei« ist die angezeigte Position. Für falsch platzierte Ereignisse »richtig wäre« ausfüllen — mindestens eines."
         : "Die Schüler sehen nur die Bezeichnung und ziehen sie an die richtige Stelle."}>
         {spec.items.map((it, i) => (
-          <div key={i} className="flex flex-wrap gap-2 items-end border-b border-[var(--border)] pb-2">
+          <div key={i} className="flex flex-wrap gap-2 items-end border-b border-(--border) pb-2">
             <Feld label="Bezeichnung" className="flex-[2_1_12rem]">
               <input className="input text-sm" value={it.label} onChange={e => setItem(i, { label: e.target.value })} />
             </Feld>
@@ -91,7 +91,7 @@ export function ZeitstrahlSpielForm({ spec, onChange }: { spec: TimelineGameSpec
               onRemove={() => onChange({ ...spec, items: spec.items.filter((_, j) => j !== i) })} />
           </div>
         ))}
-        <button type="button" className="text-xs text-[var(--accent)] hover:underline self-start"
+        <button type="button" className="text-xs text-(--accent) hover:underline self-start"
           onClick={() => onChange({
             ...spec,
             items: [...spec.items, { id: eindeutigeId("e", spec.items.map(x => x.id), "e"), label: "", value: spec.axis.min }],

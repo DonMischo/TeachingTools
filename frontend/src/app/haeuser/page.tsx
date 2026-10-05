@@ -118,7 +118,7 @@ function kursBadgeClasses(name: string): string {
     case "I":   return "bg-red-500/10 text-red-400 border-red-500/20";
     case "II":  return "bg-blue-500/10 text-blue-400 border-blue-500/20";
     case "III": return "bg-green-500/10 text-green-400 border-green-500/20";
-    default:    return "bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)]";
+    default:    return "bg-(--surface) text-(--text-muted) border-(--border)";
   }
 }
 const AB_PRESETS = ["A", "B"];
@@ -192,13 +192,13 @@ function GroupTabSection({
   return (
     <div className="flex flex-col gap-2">
       {groups.length === 0 && (
-        <p className="text-xs text-[var(--text-muted)]">Noch keine Gruppen.</p>
+        <p className="text-xs text-(--text-muted)">Noch keine Gruppen.</p>
       )}
       {groups.map(g => (
-        <div key={g.id} className="rounded-lg border border-[var(--border)] p-2">
+        <div key={g.id} className="rounded-lg border border-(--border) p-2">
           <div className="text-xs font-semibold mb-1">
             {g.name}{" "}
-            <span className="text-[var(--text-muted)] font-normal">
+            <span className="text-(--text-muted) font-normal">
               ({g.member_ids.length}){!scopedToClass && g.grade == null ? " · schulweit" : ""}
             </span>
           </div>
@@ -211,8 +211,8 @@ function GroupTabSection({
                   onClick={() => toggleMut.mutate({ groupId: g.id, studentId: s.id, member })}
                   className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                     member
-                      ? "bg-[var(--accent)]/15 border-[var(--accent)]/30 text-[var(--accent)]"
-                      : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
+                      ? "bg-(--accent)/15 border-(--accent)/30 text-(--accent)"
+                      : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
                   }`}
                 >
                   {s.vorname} {s.nachname[0]}.
@@ -223,7 +223,7 @@ function GroupTabSection({
         </div>
       ))}
       {groups.length > 0 && (
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           {unassigned.length === 0
             ? "Alle zugeordnet ✓"
             : `Ohne Gruppe (${unassigned.length}): ${unassigned.map(s => `${s.vorname} ${s.nachname[0]}.`).join(", ")}`}
@@ -236,7 +236,7 @@ function GroupTabSection({
               key={p}
               onClick={() => createMut.mutate(p)}
               disabled={createMut.isPending}
-              className="text-xs px-2 py-1 rounded-lg border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="text-xs px-2 py-1 rounded-lg border border-dashed border-(--border) text-(--text-muted) hover:border-(--accent) hover:text-(--accent)"
             >+ {p}</button>
           ))}
         </div>
@@ -270,8 +270,8 @@ function GroupsManager({ cls, students }: { cls: ClassOut; students: StudentOut[
             onClick={() => setTab(t.key)}
             className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
               tab === t.key
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]"
-                : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]"
+                ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)"
+                : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
             }`}
           >{t.label}</button>
         ))}
@@ -440,12 +440,12 @@ function HausVerwaltenModal({
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col gap-0 overflow-hidden">
+      <div className="bg-(--surface) border border-(--border) rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col gap-0 overflow-hidden">
         {/* Header */}
         <div className="h-1.5" style={{ backgroundColor: color }} />
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-(--border)">
           <h2 className="font-bold text-base">{haus.name} verwalten</h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-xl leading-none">✕</button>
         </div>
 
         <div className="flex flex-col gap-5 p-5">
@@ -453,7 +453,7 @@ function HausVerwaltenModal({
             <>
               {/* Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Name</label>
+                <label className="text-xs font-semibold text-(--text-muted) uppercase tracking-wide">Name</label>
                 <div className="flex gap-2">
                   <input
                     className="input flex-1 text-sm"
@@ -464,7 +464,7 @@ function HausVerwaltenModal({
                   <button
                     onClick={() => updateMut.mutate()}
                     disabled={!name.trim() || updateMut.isPending}
-                    className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40"
+                    className="px-3 py-1.5 text-xs font-semibold bg-(--accent) text-white rounded-lg disabled:opacity-40"
                   >
                     Speichern
                   </button>
@@ -473,18 +473,18 @@ function HausVerwaltenModal({
 
               {/* Color */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Farbe</label>
+                <label className="text-xs font-semibold text-(--text-muted) uppercase tracking-wide">Farbe</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={color}
                     onChange={e => setColor(e.target.value)}
-                    className="w-10 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-[var(--bg)]"
+                    className="w-10 h-9 rounded-lg border border-(--border) cursor-pointer bg-(--bg)"
                   />
                   <button
                     onClick={() => updateMut.mutate()}
                     disabled={updateMut.isPending}
-                    className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40"
+                    className="px-3 py-1.5 text-xs font-semibold bg-(--accent) text-white rounded-lg disabled:opacity-40"
                   >
                     Übernehmen
                   </button>
@@ -503,13 +503,13 @@ function HausVerwaltenModal({
 
               {/* Avatar / Logo */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Avatar / Logo</label>
+                <label className="text-xs font-semibold text-(--text-muted) uppercase tracking-wide">Avatar / Logo</label>
                 <div className="flex items-center gap-3">
                   {haus.logo_path ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={haus.logo_path} alt="" className="w-14 h-14 rounded-xl object-cover border border-[var(--border)]" />
+                    <img src={haus.logo_path} alt="" className="w-14 h-14 rounded-xl object-cover border border-(--border)" />
                   ) : (
-                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-2xl border border-[var(--border)]"
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-2xl border border-(--border)"
                       style={{ background: color }}>
                       {haus.name[0]}
                     </div>
@@ -524,7 +524,7 @@ function HausVerwaltenModal({
                     />
                     <button
                       onClick={() => logoRef.current?.click()}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) transition-colors"
                     >
                       {logoMut.isPending ? "Lade hoch…" : "Bild hochladen"}
                     </button>
@@ -537,7 +537,7 @@ function HausVerwaltenModal({
 
           {/* Member classes — visible to all, editable only for admins */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Mitglieds-Klassen</label>
+            <label className="text-xs font-semibold text-(--text-muted) uppercase tracking-wide">Mitglieds-Klassen</label>
             <div className="flex flex-wrap gap-2">
               {classes.map(cls => (
                 <button
@@ -546,22 +546,22 @@ function HausVerwaltenModal({
                   disabled={!isAdmin}
                   className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                     memberIds.has(cls.id)
-                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                      : "border-[var(--border)] text-[var(--text-muted)]"
+                      ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
+                      : "border-(--border) text-(--text-muted)"
                   } ${isAdmin ? "cursor-pointer hover:border-gray-500" : "cursor-default"}`}
                 >
                   {cls.symbol_emoji ?? ""} {cls.code}
                 </button>
               ))}
               {classes.length === 0 && (
-                <span className="text-xs text-[var(--text-muted)]">Keine Klassen angelegt.</span>
+                <span className="text-xs text-(--text-muted)">Keine Klassen angelegt.</span>
               )}
             </div>
           </div>
         </div>
 
         <div className="px-5 pb-5">
-          <button onClick={onClose} className="w-full py-2 text-sm rounded-xl border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors">
+          <button onClick={onClose} className="w-full py-2 text-sm rounded-xl border border-(--border) hover:bg-(--surface-hover) transition-colors">
             Schließen
           </button>
         </div>
@@ -620,7 +620,7 @@ function HausCard({
   const isAdmin = auth?.teacher?.role === "admin";
 
   return (
-    <div className="border border-[var(--border)] rounded-2xl overflow-hidden bg-[var(--surface)]">
+    <div className="border border-(--border) rounded-2xl overflow-hidden bg-(--surface)">
       {/* Header bar */}
       <div className="h-2" style={{ backgroundColor: haus.color }} />
 
@@ -640,13 +640,13 @@ function HausCard({
           )}
           <div className="flex-1 min-w-0">
             <p className="font-bold text-base truncate">{haus.name}</p>
-            <p className="text-xs text-[var(--text-muted)]">{haus.total_points} Punkte · {haus.class_ids.length} Klassen</p>
+            <p className="text-xs text-(--text-muted)">{haus.total_points} Punkte · {haus.class_ids.length} Klassen</p>
           </div>
           {isAdmin && (
             <div className="flex gap-1 shrink-0">
               <button
                 onClick={() => setEditing(!editing)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-[var(--bg)] hover:bg-[var(--surface-hover)] border border-[var(--border)] transition-colors"
+                className="px-3 py-1.5 text-xs rounded-lg bg-(--bg) hover:bg-(--surface-hover) border border-(--border) transition-colors"
               >
                 {editing ? "Schließen" : "Bearbeiten"}
               </button>
@@ -662,7 +662,7 @@ function HausCard({
 
         {/* Edit form */}
         {editing && isAdmin && (
-          <div className="flex flex-col gap-3 pt-2 border-t border-[var(--border)]">
+          <div className="flex flex-col gap-3 pt-2 border-t border-(--border)">
             {/* Name + color */}
             <div className="flex gap-2">
               <input
@@ -675,13 +675,13 @@ function HausCard({
                 type="color"
                 value={color}
                 onChange={e => setColor(e.target.value)}
-                className="w-10 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-[var(--bg)]"
+                className="w-10 h-9 rounded-lg border border-(--border) cursor-pointer bg-(--bg)"
                 title="Farbe"
               />
               <button
                 onClick={() => updateMut.mutate()}
                 disabled={!name.trim() || updateMut.isPending}
-                className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40"
+                className="px-3 py-1.5 text-xs font-semibold bg-(--accent) text-white rounded-lg disabled:opacity-40"
               >
                 Speichern
               </button>
@@ -712,7 +712,7 @@ function HausCard({
               />
               <button
                 onClick={() => logoRef.current?.click()}
-                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) transition-colors"
               >
                 {logoMut.isPending ? "Lade hoch…" : "Logo hochladen"}
               </button>
@@ -723,7 +723,7 @@ function HausCard({
 
             {/* Member classes */}
             <div>
-              <p className="text-xs font-semibold text-[var(--text-muted)] mb-2">Mitglieds-Klassen:</p>
+              <p className="text-xs font-semibold text-(--text-muted) mb-2">Mitglieds-Klassen:</p>
               <div className="flex flex-wrap gap-2">
                 {classes.map(cls => (
                   <button
@@ -731,8 +731,8 @@ function HausCard({
                     onClick={() => toggleMember(cls.id)}
                     className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
                       memberIds.has(cls.id)
-                        ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                        : "border-[var(--border)] text-[var(--text-muted)] hover:border-gray-500"
+                        ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
+                        : "border-(--border) text-(--text-muted) hover:border-gray-500"
                     }`}
                   >
                     {cls.symbol_emoji ?? ""} {cls.code}
@@ -749,7 +749,7 @@ function HausCard({
             {haus.class_ids.map(cid => {
               const cls = classes.find(c => c.id === cid);
               return cls ? (
-                <span key={cid} className="px-2 py-0.5 text-xs rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)]">
+                <span key={cid} className="px-2 py-0.5 text-xs rounded-full bg-(--bg) border border-(--border) text-(--text-muted)">
                   {cls.symbol_emoji ?? ""} {cls.code}
                 </span>
               ) : null;
@@ -777,7 +777,7 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
   });
 
   return (
-    <div className="border border-dashed border-[var(--accent)]/50 rounded-2xl p-4 flex flex-col gap-3 bg-[var(--accent)]/5">
+    <div className="border border-dashed border-(--accent)/50 rounded-2xl p-4 flex flex-col gap-3 bg-(--accent)/5">
       <p className="text-sm font-semibold">Neues Haus anlegen</p>
       <div className="flex gap-2">
         <input
@@ -791,13 +791,13 @@ function AddHausForm({ classes, onDone }: { classes: ClassOut[]; onDone: () => v
           type="color"
           value={color}
           onChange={e => setColor(e.target.value)}
-          className="w-10 h-9 rounded-lg border border-[var(--border)] cursor-pointer bg-[var(--bg)]"
+          className="w-10 h-9 rounded-lg border border-(--border) cursor-pointer bg-(--bg)"
           title="Farbe wählen"
         />
         <button
           onClick={() => mut.mutate()}
           disabled={!name.trim() || mut.isPending}
-          className="px-4 py-2 text-sm font-semibold bg-[var(--accent)] text-white rounded-lg disabled:opacity-40 hover:opacity-90"
+          className="px-4 py-2 text-sm font-semibold bg-(--accent) text-white rounded-lg disabled:opacity-40 hover:opacity-90"
         >
           {mut.isPending ? "…" : "+ Anlegen"}
         </button>
@@ -860,28 +860,28 @@ function StudentChorePopover({
         onClick={() => setOpen(o => !o)}
         title={`${totalCompleted} Dienste erledigt — Verlauf anzeigen`}
         className={`min-w-6 h-6 px-1.5 rounded-full border text-xs font-bold flex items-center justify-center transition-colors tabular-nums
-          ${open ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+          ${open ? "bg-(--accent) border-(--accent) text-white" : "border-(--border) text-(--text-muted) hover:border-(--accent) hover:text-(--accent)"}`}
       >{totalCompleted}×</button>
 
       {open && (
-        <div className="absolute right-0 top-8 z-20 w-56 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl p-3 flex flex-col gap-2">
-          <div className="text-xs font-semibold text-[var(--text-muted)] mb-1">
+        <div className="absolute right-0 top-8 z-20 w-56 bg-(--bg) border border-(--border) rounded-xl shadow-xl p-3 flex flex-col gap-2">
+          <div className="text-xs font-semibold text-(--text-muted) mb-1">
             {student.vorname} — Dienst-Verlauf
           </div>
           {!hasAny ? (
-            <p className="text-xs text-[var(--text-muted)]">Noch keine abgeschlossenen Dienste.</p>
+            <p className="text-xs text-(--text-muted)">Noch keine abgeschlossenen Dienste.</p>
           ) : (
             <>
               {Object.entries(stats).map(([name, count]) => (
                 <div key={name} className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-[var(--text)]">{name}</span>
+                  <span className="text-xs text-(--text)">{name}</span>
                   <span className="text-xs font-bold tabular-nums" style={{ color: "var(--accent)" }}>×{count}</span>
                 </div>
               ))}
               {activeAssignments.filter(a => !a.counted).map(a => (
                 <div key={a.chore_name} className="flex items-center justify-between gap-2 opacity-50">
-                  <span className="text-xs text-[var(--text)]">{a.chore_name}</span>
-                  <span className="text-xs tabular-nums text-[var(--text-muted)]">noch {a.daysLeft}d</span>
+                  <span className="text-xs text-(--text)">{a.chore_name}</span>
+                  <span className="text-xs tabular-nums text-(--text-muted)">noch {a.daysLeft}d</span>
                 </div>
               ))}
             </>
@@ -921,39 +921,39 @@ function ChoreSelector({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--border)] rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] w-full"
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-(--border) rounded-lg bg-(--surface) hover:bg-(--surface-hover) w-full"
       >
-        <span className="flex-1 text-left text-[var(--text-muted)]">
+        <span className="flex-1 text-left text-(--text-muted)">
           🧹 Dienste auswählen
         </span>
-        <span className="text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5">{activeCount} aktiv</span>
-        <span className="text-[var(--text-muted)]">{open ? "▲" : "▼"}</span>
+        <span className="text-xs bg-(--accent) text-white rounded-full px-2 py-0.5">{activeCount} aktiv</span>
+        <span className="text-(--text-muted)">{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-(--bg) border border-(--border) rounded-xl shadow-xl overflow-hidden">
           <div className="max-h-60 overflow-y-auto">
             {allNames.map(name => {
               const checked = enabledNames.has(name);
               return (
-                <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface)] cursor-pointer">
+                <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-(--surface) cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onToggle(name, !checked)}
-                    className="accent-[var(--accent)] w-4 h-4"
+                    className="accent-(--accent) w-4 h-4"
                   />
                   <span className="text-sm">{name}</span>
                 </label>
               );
             })}
           </div>
-          <div className="border-t border-[var(--border)] p-2 flex gap-2">
+          <div className="border-t border-(--border) p-2 flex gap-2">
             <input
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Eigener Dienst…"
-              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5 text-sm"
               onKeyDown={e => {
                 if (e.key === "Enter" && newName.trim()) {
                   onAddCustom(newName.trim());
@@ -963,7 +963,7 @@ function ChoreSelector({
             />
             <button
               onClick={() => { if (newName.trim()) { onAddCustom(newName.trim()); setNewName(""); } }}
-              className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+              className="px-3 py-1.5 text-sm bg-(--accent) text-white rounded-lg hover:opacity-90"
             >+</button>
           </div>
         </div>
@@ -1014,39 +1014,39 @@ function RoleSelector({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--border)] rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] w-full"
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-(--border) rounded-lg bg-(--surface) hover:bg-(--surface-hover) w-full"
       >
-        <span className="flex-1 text-left text-[var(--text-muted)]">👑 Rollen auswählen</span>
-        <span className="text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5">{active.length} aktiv</span>
-        <span className="text-[var(--text-muted)]">{open ? "▲" : "▼"}</span>
+        <span className="flex-1 text-left text-(--text-muted)">👑 Rollen auswählen</span>
+        <span className="text-xs bg-(--accent) text-white rounded-full px-2 py-0.5">{active.length} aktiv</span>
+        <span className="text-(--text-muted)">{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-(--bg) border border-(--border) rounded-xl shadow-xl overflow-hidden">
           <div className="max-h-60 overflow-y-auto">
             {catalog.map(name => (
-              <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface)] cursor-pointer">
+              <label key={name} className="flex items-center gap-3 px-4 py-2.5 hover:bg-(--surface) cursor-pointer">
                 <input
                   type="checkbox"
                   checked={activeSet.has(name.toLowerCase())}
                   onChange={() => toggle(name)}
-                  className="accent-[var(--accent)] w-4 h-4"
+                  className="accent-(--accent) w-4 h-4"
                 />
                 <span className="text-sm">{name}</span>
               </label>
             ))}
           </div>
-          <div className="border-t border-[var(--border)] p-2 flex gap-2">
+          <div className="border-t border-(--border) p-2 flex gap-2">
             <input
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Eigene Rolle…"
-              className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5 text-sm"
               onKeyDown={e => { if (e.key === "Enter") addCustom(); }}
             />
             <button
               onClick={addCustom}
-              className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+              className="px-3 py-1.5 text-sm bg-(--accent) text-white rounded-lg hover:opacity-90"
             >+</button>
           </div>
         </div>
@@ -1091,7 +1091,7 @@ function KlassenlisteSection({
   );
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)] text-center py-6">Noch keine Schüler:innen zugeordnet.</p>;
+    return <p className="text-sm text-(--text-muted) text-center py-6">Noch keine Schüler:innen zugeordnet.</p>;
   }
 
   return (
@@ -1113,7 +1113,7 @@ function KlassenlisteSection({
           </button>
         ))}
         {activeFilters.has("gruppen") && (
-          <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] ml-1">
+          <span className="flex items-center gap-1.5 text-xs text-(--text-muted) ml-1">
             <span className="px-1.5 py-0.5 rounded-md border bg-red-500/10 text-red-400 border-red-500/20">Kurs I</span>
             <span className="px-1.5 py-0.5 rounded-md border bg-blue-500/10 text-blue-400 border-blue-500/20">Kurs II</span>
             <span className="px-1.5 py-0.5 rounded-md border bg-green-500/10 text-green-400 border-green-500/20">Kurs III</span>
@@ -1123,18 +1123,18 @@ function KlassenlisteSection({
 
       {/* Reset row */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[var(--text-muted)]">{checked.size > 0 ? `${checked.size} markiert` : ""}</span>
+        <span className="text-xs text-(--text-muted)">{checked.size > 0 ? `${checked.size} markiert` : ""}</span>
         {checked.size > 0 && (
           <button
             onClick={() => setChecked(new Set())}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] border border-[var(--border)] rounded-lg px-3 py-1 transition-colors"
+            className="text-xs text-(--text-muted) hover:text-(--text) border border-(--border) rounded-lg px-3 py-1 transition-colors"
           >
             ↺ Zurücksetzen
           </button>
         )}
       </div>
 
-      <div className="flex flex-col divide-y divide-[var(--border)]">
+      <div className="flex flex-col divide-y divide-(--border)">
         {sorted.map(s => {
           const studentRoles = roles.filter(r => r.student_id === s.id);
           const studentChores = chores.filter(c => c.enabled && c.student_id === s.id);
@@ -1152,9 +1152,9 @@ function KlassenlisteSection({
                   next.has(s.id) ? next.delete(s.id) : next.add(s.id);
                   return next;
                 })}
-                className="accent-[var(--accent)] w-4 h-4 shrink-0"
+                className="accent-(--accent) w-4 h-4 shrink-0"
               />
-              <span className={`text-sm font-semibold shrink-0 transition-colors ${isChecked ? "line-through text-[var(--text-muted)]" : ""}`}>
+              <span className={`text-sm font-semibold shrink-0 transition-colors ${isChecked ? "line-through text-(--text-muted)" : ""}`}>
                 {s.nachname}, {s.vorname}
               </span>
               {/* Roles in accent */}
@@ -1175,7 +1175,7 @@ function KlassenlisteSection({
                   ? Math.floor((Date.now() - new Date(c.assigned_at).getTime()) / 86_400_000)
                   : 0;
                 return (
-                  <span key={c.id} className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] shrink-0">
+                  <span key={c.id} className="text-xs px-1.5 py-0.5 rounded-md bg-(--surface) border border-(--border) text-(--text-muted) shrink-0">
                     {c.chore_name}{days > 0 ? ` · ${days}d` : ""}
                   </span>
                 );
@@ -1253,9 +1253,9 @@ function BirthdayMark({ date }: { date: string }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="text-[var(--text-muted)] text-xs">
+          <tr className="text-(--text-muted) text-xs">
             <th className="text-left py-2 px-2">Name</th>
-            <th className="text-left py-2 px-2 min-w-[10rem]">Alias (Sitzplan)</th>
+            <th className="text-left py-2 px-2 min-w-40">Alias (Sitzplan)</th>
             {[1, 2, 3, 4, 5].map(n => (
               <th key={n} className="py-2 px-1.5 text-center w-8" title={`Nachteilsausgleich ${n}`}>{n}</th>
             ))}
@@ -1266,7 +1266,7 @@ function BirthdayMark({ date }: { date: string }) {
             const tokens = firstNameTokens(s.vorname);
             const isCustom = customMode.has(s.id) || (!!s.alias && !tokens.includes(s.alias));
             return (
-              <tr key={s.id} className="border-t border-[var(--border)]">
+              <tr key={s.id} className="border-t border-(--border)">
                 <td className="py-1.5 px-2 whitespace-nowrap">
                   <span className="font-medium">{s.nachname}</span>, {s.vorname}
                   {s.geburtsdatum && <BirthdayMark date={s.geburtsdatum} />}
@@ -1286,7 +1286,7 @@ function BirthdayMark({ date }: { date: string }) {
                           save.mutate({ id: s.id, alias: v || null, nta: s.nta });
                         }
                       }}
-                      className="bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-xs"
+                      className="bg-(--surface) border border-(--border) rounded-sm px-1.5 py-1 text-xs"
                     >
                       <option value="">— (Vorname)</option>
                       {tokens.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1300,7 +1300,7 @@ function BirthdayMark({ date }: { date: string }) {
                         onChange={e => setCustomText(prev => ({ ...prev, [s.id]: e.target.value }))}
                         onBlur={e => save.mutate({ id: s.id, alias: e.target.value.trim() || null, nta: s.nta })}
                         onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                        className="w-24 bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-xs"
+                        className="w-24 bg-(--surface) border border-(--border) rounded-sm px-1.5 py-1 text-xs"
                       />
                     )}
                   </div>
@@ -1312,7 +1312,7 @@ function BirthdayMark({ date }: { date: string }) {
                       disabled={!canEdit}
                       checked={s.nta.includes(n)}
                       onChange={() => toggleNta(s, n)}
-                      className="w-4 h-4 accent-[var(--accent)] cursor-pointer disabled:cursor-default"
+                      className="w-4 h-4 accent-(--accent) cursor-pointer disabled:cursor-default"
                     />
                   </td>
                 ))}
@@ -1320,11 +1320,11 @@ function BirthdayMark({ date }: { date: string }) {
             );
           })}
           {sorted.length === 0 && (
-            <tr><td colSpan={7} className="py-6 text-center text-[var(--text-muted)] text-sm">Keine Schüler:innen.</td></tr>
+            <tr><td colSpan={7} className="py-6 text-center text-(--text-muted) text-sm">Keine Schüler:innen.</td></tr>
           )}
         </tbody>
       </table>
-      <p className="text-xs text-[var(--text-muted)] mt-3">
+      <p className="text-xs text-(--text-muted) mt-3">
         Alias steuert den im Sitzplan angezeigten Namen. Spalten 1–5 = Nachteilsausgleiche (frei belegbar).
       </p>
     </div>
@@ -1390,19 +1390,19 @@ function TrackingSection({
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Neues Tracking-Element… (z. B. Materialgeld)"
-            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm"
             onKeyDown={e => { if (e.key === "Enter" && newName.trim()) createTracker.mutate(newName.trim()); }}
           />
           <button
             onClick={() => { if (newName.trim()) createTracker.mutate(newName.trim()); }}
             disabled={!newName.trim() || createTracker.isPending}
-            className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
+            className="px-3 py-2 text-sm bg-(--accent) text-white rounded-lg hover:opacity-90 disabled:opacity-40"
           >+</button>
         </div>
       )}
 
       {trackers.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)] text-center py-4">
+        <p className="text-sm text-(--text-muted) text-center py-4">
           {canEdit ? "Noch keine Tracking-Elemente. Oben hinzufügen." : "Noch keine Tracking-Elemente."}
         </p>
       ) : (
@@ -1411,26 +1411,26 @@ function TrackingSection({
             value={filter}
             onChange={e => setFilter(e.target.value)}
             placeholder="Schüler:in filtern…"
-            className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm"
+            className="bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5 text-sm"
           />
 
           {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+          <div className="overflow-x-auto rounded-xl border border-(--border)">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--surface)]">
-                  <th className="text-left px-3 py-2 font-semibold text-[var(--text-muted)] whitespace-nowrap">Name</th>
+                <tr className="border-b border-(--border) bg-(--surface)">
+                  <th className="text-left px-3 py-2 font-semibold text-(--text-muted) whitespace-nowrap">Name</th>
                   {trackers.map(t => (
-                    <th key={t.id} className="px-3 py-2 text-center font-semibold whitespace-nowrap min-w-[6rem]">
+                    <th key={t.id} className="px-3 py-2 text-center font-semibold whitespace-nowrap min-w-24">
                       <div className="flex flex-col items-center gap-0.5">
                         <span>{t.name}</span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-normal tabular-nums">
+                        <span className="text-[10px] text-(--text-muted) font-normal tabular-nums">
                           {t.checked_student_ids.length}/{sorted.length}
                         </span>
                         {canEdit && (
                           <button
                             onClick={() => deleteTracker.mutate(t.id)}
-                            className="text-[var(--text-muted)] hover:text-red-400 text-[10px] leading-none transition-colors"
+                            className="text-(--text-muted) hover:text-red-400 text-[10px] leading-none transition-colors"
                             title="Tracker löschen"
                           >🗑 löschen</button>
                         )}
@@ -1443,7 +1443,7 @@ function TrackingSection({
                 {visible.map((s, i) => (
                   <tr
                     key={s.id}
-                    className={i % 2 === 0 ? "" : "bg-[var(--surface)]"}
+                    className={i % 2 === 0 ? "" : "bg-(--surface)"}
                     style={{ borderBottom: "1px solid var(--border)" }}
                   >
                     <td className="px-3 py-2 whitespace-nowrap font-medium">{s.nachname}, {s.vorname}</td>
@@ -1456,7 +1456,7 @@ function TrackingSection({
                             checked={done}
                             disabled={!canEdit}
                             onChange={() => toggleCheck.mutate({ tracker_id: t.id, student_id: s.id })}
-                            className="accent-[var(--accent)] w-4 h-4 cursor-pointer disabled:cursor-default disabled:opacity-60"
+                            className="accent-(--accent) w-4 h-4 cursor-pointer disabled:cursor-default disabled:opacity-60"
                           />
                         </td>
                       );
@@ -1465,7 +1465,7 @@ function TrackingSection({
                 ))}
                 {visible.length === 0 && (
                   <tr>
-                    <td colSpan={trackers.length + 1} className="text-center text-[var(--text-muted)] py-4 text-sm">
+                    <td colSpan={trackers.length + 1} className="text-center text-(--text-muted) py-4 text-sm">
                       Keine Treffer.
                     </td>
                   </tr>
@@ -1527,15 +1527,15 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
           Admins und an die Klassenleitung dieser einen Klasse — und schreibt
           jeden Abruf ins Protokoll. */}
       {canEdit && (
-        <div className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+        <div className="rounded-xl border border-(--border) p-3 flex flex-col gap-2">
           <div className="text-sm font-semibold">🔑 Zugangsdaten</div>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Benutzernamen und Passwörter der Klasse {cls.code} als CSV. Enthält Klartext-Passwörter —
             bitte nicht per Mail weitergeben. Jeder Abruf wird protokolliert.
           </p>
           <a
             href={`/api/students/credentials/download?klasse=${encodeURIComponent(cls.code)}`}
-            className="self-start text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)]"
+            className="self-start text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)"
           >
             CSV herunterladen
           </a>
@@ -1549,7 +1549,7 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploadMut.isPending}
-              className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+              className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) transition-colors"
             >
               {uploadMut.isPending ? "Lade hoch…" : "🖼 Bild hochladen"}
             </button>
@@ -1580,12 +1580,12 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
             disabled={nameMut.isPending}
             className="btn-primary text-xs py-1 px-2"
           >✓</button>
-          <button onClick={() => setEditingAlias(false)} className="text-[var(--text-muted)] text-xs">✕</button>
+          <button onClick={() => setEditingAlias(false)} className="text-(--text-muted) text-xs">✕</button>
         </div>
       ) : (
         <button
           onClick={() => { setAliasInput(cls.class_name ?? ""); setEditingAlias(true); }}
-          className="self-start text-xs text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-1"
+          className="self-start text-xs text-(--text-muted) hover:text-(--text) flex items-center gap-1"
         >
           ✏️ {cls.class_name ? `„${cls.class_name}" ändern` : "Klassenname festlegen"}
         </button>
@@ -1593,12 +1593,12 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
 
       {/* Klassensprecher edit-grant */}
       {canEdit && (
-        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-(--text-muted) mt-1 cursor-pointer">
           <input
             type="checkbox"
             checked={ksEdit}
             onChange={e => { setKsEdit(e.target.checked); ksprecherMut.mutate(e.target.checked); }}
-            className="accent-[var(--accent)] w-4 h-4"
+            className="accent-(--accent) w-4 h-4"
           />
           👑 Klassensprecher dürfen Dienste &amp; Sitzpläne bearbeiten
         </label>
@@ -1607,29 +1607,29 @@ function EinstellungenSection({ cls, canEdit }: { cls: ClassOut; canEdit: boolea
       {/* Log */}
       <button
         onClick={() => setShowLog(v => !v)}
-        className="self-start text-xs text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-1"
+        className="self-start text-xs text-(--text-muted) hover:text-(--text) flex items-center gap-1"
       >
         📋 {showLog ? "Punkte-Log ausblenden" : "Punkte-Log anzeigen"}
       </button>
       {showLog && (
-        <div className="rounded-lg border border-[var(--border)] overflow-hidden text-xs max-h-60 overflow-y-auto">
+        <div className="rounded-lg border border-(--border) overflow-hidden text-xs max-h-60 overflow-y-auto">
           {logQuery.isLoading ? (
-            <div className="p-3 text-[var(--text-muted)]">Laden…</div>
+            <div className="p-3 text-(--text-muted)">Laden…</div>
           ) : !logQuery.data?.length ? (
-            <div className="p-3 text-[var(--text-muted)]">Keine Einträge.</div>
+            <div className="p-3 text-(--text-muted)">Keine Einträge.</div>
           ) : (
             <table className="w-full border-collapse">
               <tbody>
                 {logQuery.data.map(tx => (
-                  <tr key={tx.id} className="border-b border-[var(--border)]/50 last:border-0">
-                    <td className="py-1.5 px-2 text-[var(--text-muted)] whitespace-nowrap">
+                  <tr key={tx.id} className="border-b border-(--border)/50 last:border-0">
+                    <td className="py-1.5 px-2 text-(--text-muted) whitespace-nowrap">
                       {new Date(tx.ts).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
                     </td>
                     <td className={`py-1.5 px-2 font-mono font-bold whitespace-nowrap ${tx.points >= 0 ? "text-green-400" : "text-red-400"}`}>
                       {tx.points > 0 ? "+" : ""}{tx.points}
                     </td>
-                    <td className="py-1.5 px-2 text-[var(--text-muted)] truncate max-w-[12rem]">{tx.reason ?? "–"}</td>
-                    <td className="py-1.5 px-2 text-[var(--text-muted)] whitespace-nowrap">{tx.teacher_name}</td>
+                    <td className="py-1.5 px-2 text-(--text-muted) truncate max-w-48">{tx.reason ?? "–"}</td>
+                    <td className="py-1.5 px-2 text-(--text-muted) whitespace-nowrap">{tx.teacher_name}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1684,24 +1684,24 @@ function GroupEinstellungenSection({
   return (
     <div className="flex flex-col gap-6 max-w-lg">
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-semibold text-[var(--text-muted)]">Name</label>
+        <label className="text-xs font-semibold text-(--text-muted)">Name</label>
         <div className="flex gap-2">
           <input
             value={name}
             disabled={!canEdit}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && name.trim() && name !== group.name) rename.mutate(); }}
-            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+            className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm"
           />
           <button
             onClick={() => rename.mutate()}
             disabled={!canEdit || !name.trim() || name === group.name || rename.isPending}
-            className="px-3 py-2 text-sm bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40"
+            className="px-3 py-2 text-sm bg-(--accent) text-white rounded-lg hover:opacity-90 disabled:opacity-40"
           >
             Speichern
           </button>
         </div>
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-xs text-(--text-muted)">
           {group.grade != null
             ? `Die Klassenstufe ${group.grade} steht fest: Kurse gibt es einmal pro Jahrgang.`
             : "Schulweit — eine freie Auswahl von Schüler:innen aus allen Klassen, ohne Jahrgang."}
@@ -1710,13 +1710,13 @@ function GroupEinstellungenSection({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold text-[var(--text-muted)]">Beteiligte Klassen</span>
+        <span className="text-xs font-semibold text-(--text-muted)">Beteiligte Klassen</span>
         {memberClasses.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine — der Kurs ist leer.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine — der Kurs ist leer.</p>
         ) : (
           <div className="flex flex-wrap gap-1">
             {memberClasses.map(c => (
-              <span key={c.id} className="text-xs px-2 py-1 rounded-md bg-[var(--surface)] border border-[var(--border)]">
+              <span key={c.id} className="text-xs px-2 py-1 rounded-md bg-(--surface) border border-(--border)">
                 {c.code}
               </span>
             ))}
@@ -1725,7 +1725,7 @@ function GroupEinstellungenSection({
       </div>
 
       {canEdit && (
-        <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+        <div className="flex flex-col gap-2 border-t border-(--border) pt-4">
           <button
             onClick={() => {
               if (confirm(`„${group.name}" wirklich löschen? Tracking und Sitzpläne dieses Kurses gehen mit.`))
@@ -1736,7 +1736,7 @@ function GroupEinstellungenSection({
           >
             🗑 Kurs löschen
           </button>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Die Schüler:innen bleiben in ihrer Klasse — nur die Kurszuordnung verschwindet.
           </p>
         </div>
@@ -1784,29 +1784,29 @@ function GroupDetailDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-(--bg) border border-(--border) flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-(--border) shrink-0">
           <span className={`text-sm font-bold px-2.5 py-1.5 rounded-lg border shrink-0 ${kursBadgeClasses(group.name)}`}>
             {groupTag(group)}
           </span>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-lg truncate">{group.name}</div>
-            <div className="text-xs text-[var(--text-muted)]">
+            <div className="text-xs text-(--text-muted)">
               {typeLabel}
               {group.grade != null ? ` · Jahrgang ${group.grade}` : " · schulweit"}
               {` · ${students.length} Schüler:innen`}
               {memberClasses.length > 0 ? ` · ${memberClasses.map(c => c.code).join(", ")}` : ""}
             </div>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-2xl leading-none px-1">×</button>
+          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-2xl leading-none px-1">×</button>
         </div>
 
         {/* Tabs — no Rollen/Gruppen/Dienste: those belong to a Klasse. */}
-        <div className="flex border-b border-[var(--border)] shrink-0">
+        <div className="flex border-b border-(--border) shrink-0">
           {(["schüler", "tracking", "nta", "sitzplan", "einstellungen"] as const).map(t => (
             <button
               key={t}
@@ -1830,7 +1830,7 @@ function GroupDetailDialog({
                 <div className="flex justify-end">
                   <button
                     onClick={() => exportRosterList(fullTitle, students)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) transition-colors"
                   >
                     🖨 Liste exportieren
                   </button>
@@ -1860,14 +1860,14 @@ function GroupDetailDialog({
               <div className="text-5xl">🪑</div>
               <div>
                 <p className="font-semibold">Sitzplan-Editor</p>
-                <p className="text-sm text-[var(--text-muted)] max-w-sm mt-1">
+                <p className="text-sm text-(--text-muted) max-w-sm mt-1">
                   Eigene Räume für {groupTag(group)} — Tische und Inventar frei platzieren,
                   Namen aus dem Kurs zuweisen und als A4-PDF drucken.
                 </p>
               </div>
               <button
                 onClick={() => router.push(`/haeuser/sitzplan/kurs/${group.id}`)}
-                className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90"
+                className="px-5 py-2.5 text-sm font-semibold bg-(--accent) text-white rounded-xl hover:opacity-90"
               >
                 Sitzplan-Editor öffnen →
               </button>
@@ -2015,22 +2015,22 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] flex flex-col shadow-2xl">
+      <div className="relative w-full sm:w-[95vw] sm:max-w-[95vw] max-h-[92dvh] sm:h-[95vh] sm:max-h-[95vh] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-(--bg) border border-(--border) flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-(--border) shrink-0">
           <ClassIcon cls={cls} />
           <div className="flex-1 min-w-0">
             <div className="font-bold text-lg truncate">{cls.code}{cls.class_name ? ` — „${cls.class_name}"` : ""}</div>
-            <div className="text-xs text-[var(--text-muted)]">{students.length} Schüler:innen</div>
+            <div className="text-xs text-(--text-muted)">{students.length} Schüler:innen</div>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text)] text-2xl leading-none px-1">×</button>
+          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-2xl leading-none px-1">×</button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[var(--border)] shrink-0">
+        <div className="flex border-b border-(--border) shrink-0">
           {(["schüler", "rollen", "gruppen", "dienste", "tracking", "nta", "sitzplan", "einstellungen"] as const).map(s => (
             <button
               key={s}
@@ -2050,7 +2050,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
         <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-4">
 
           {!canEdit && (
-            <div className="text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 flex items-center gap-2">
+            <div className="text-xs text-(--text-muted) bg-(--surface) border border-(--border) rounded-lg px-3 py-2 flex items-center gap-2">
               🔒 Nur die Klassenleitung von {cls.code} kann diese Klasse bearbeiten — Ansicht schreibgeschützt.
             </div>
           )}
@@ -2062,7 +2062,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 <div className="flex justify-end">
                   <button
                     onClick={() => exportRosterList(`Klasse ${cls.code}`, students)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) transition-colors"
                   >
                     🖨 Liste exportieren
                   </button>
@@ -2090,7 +2090,7 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
               )}
 
               {roleTypes.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)] text-center py-6">
+                <p className="text-sm text-(--text-muted) text-center py-6">
                   Noch keine Rollen aktiviert. Oben Rollen auswählen.
                 </p>
               ) : (
@@ -2098,11 +2098,11 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                   const existing = getRoleFor(role_type);
                   return (
                     <div key={role_type} className="flex items-center gap-3">
-                      <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)] capitalize">{role_type}</div>
+                      <div className="w-36 shrink-0 text-sm font-semibold text-(--text-muted) capitalize">{role_type}</div>
                       {canEdit ? (
                         <>
                           <select
-                            className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                            className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm"
                             value={existing?.student_id ?? ""}
                             onChange={e => {
                               const sid = e.target.value ? Number(e.target.value) : null;
@@ -2121,13 +2121,13 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                                 setRoleTypes.mutate(roleTypes.filter(t => t !== role_type));
                             }}
                             title="Rolle löschen"
-                            className="shrink-0 px-2 py-2 text-sm rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
+                            className="shrink-0 px-2 py-2 text-sm rounded-lg border border-(--border) text-(--text-muted) hover:bg-(--surface-hover)"
                           >
                             🗑
                           </button>
                         </>
                       ) : (
-                        <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{existing?.student_name ?? "— niemand —"}</div>
+                        <div className="flex-1 text-sm py-2 text-(--text-muted)">{existing?.student_name ?? "— niemand —"}</div>
                       )}
                     </div>
                   );
@@ -2155,14 +2155,14 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => clearChores.mutate()}
-                    className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+                    className="px-3 py-1.5 text-xs border border-(--border) rounded-lg hover:bg-(--surface-hover) text-(--text-muted)"
                   >
                     🗑 Zuweisungen löschen
                   </button>
                   <button
                     onClick={() => randomAssign.mutate()}
                     disabled={randomAssign.isPending}
-                    className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs bg-(--accent) text-white rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
                     🎲 Zufällig zuweisen
                   </button>
@@ -2171,16 +2171,16 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
 
               {/* Assignment rows — only enabled chores */}
               {enabledChores.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)] text-center py-6">
+                <p className="text-sm text-(--text-muted) text-center py-6">
                   Noch keine Dienste aktiviert. Oben Dienste auswählen.
                 </p>
               ) : (
                 enabledChores.map(chore => (
                   <div key={chore.id} className="flex items-center gap-3">
-                    <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore.chore_name}</div>
+                    <div className="w-36 shrink-0 text-sm font-semibold text-(--text-muted)">{chore.chore_name}</div>
                     {canEdit ? (
                       <select
-                        className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                        className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm"
                         value={chore.student_id ?? ""}
                         onChange={e => {
                           const sid = e.target.value ? Number(e.target.value) : null;
@@ -2198,10 +2198,10 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
                         })}
                       </select>
                     ) : (
-                      <div className="flex-1 text-sm py-2 text-[var(--text-muted)]">{chore.student_name ?? "— niemand —"}</div>
+                      <div className="flex-1 text-sm py-2 text-(--text-muted)">{chore.student_name ?? "— niemand —"}</div>
                     )}
                     {/* How often the assigned student already completed this chore */}
-                    <span className="w-16 shrink-0 text-xs text-right tabular-nums text-[var(--text-muted)]" title="Bereits erledigt">
+                    <span className="w-16 shrink-0 text-xs text-right tabular-nums text-(--text-muted)" title="Bereits erledigt">
                       {chore.student_id != null
                         ? `${choreStats[chore.student_id]?.[chore.chore_name] ?? 0}× erledigt`
                         : ""}
@@ -2235,14 +2235,14 @@ function ClassDetailDialog({ cls, onClose }: { cls: ClassOut; onClose: () => voi
               <div className="text-5xl">🪑</div>
               <div>
                 <p className="font-semibold">Sitzplan-Editor</p>
-                <p className="text-sm text-[var(--text-muted)] max-w-sm mt-1">
+                <p className="text-sm text-(--text-muted) max-w-sm mt-1">
                   Tische, Stühle und Inventar frei platzieren, Namen zuweisen und als A4-PDF drucken.
                   Mehrere Räume pro Klasse möglich.
                 </p>
               </div>
               <button
                 onClick={() => router.push(`/haeuser/sitzplan/${cls.id}`)}
-                className="px-5 py-2.5 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90"
+                className="px-5 py-2.5 text-sm font-semibold bg-(--accent) text-white rounded-xl hover:opacity-90"
               >
                 Sitzplan-Editor öffnen →
               </button>
@@ -2288,22 +2288,22 @@ function KlassensprecherView({ classId }: { classId: number }) {
   const enabled = chores.filter(c => c.enabled);
 
   return (
-    <div className="p-6 flex flex-col gap-4 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="p-6 flex flex-col gap-4 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧹 Klassendienste</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Als Klassensprecher:in darfst du die Dienste eurer Klasse verteilen.
           </p>
         </div>
         <Link
           href={`/haeuser/sitzplan/${classId}`}
-          className="shrink-0 text-sm px-3 py-2 rounded-xl border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-2"
+          className="shrink-0 text-sm px-3 py-2 rounded-xl border border-(--border) hover:border-(--accent) hover:text-(--accent) flex items-center gap-2"
         >🪑 Sitzplan</Link>
       </div>
 
       {enabled.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)] py-6 text-center">
+        <p className="text-sm text-(--text-muted) py-6 text-center">
           Die Klassenleitung hat noch keine Dienste aktiviert.
         </p>
       ) : (
@@ -2311,19 +2311,19 @@ function KlassensprecherView({ classId }: { classId: number }) {
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => clear.mutate()}
-              className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] text-[var(--text-muted)]"
+              className="px-3 py-1.5 text-xs border border-(--border) rounded-lg hover:bg-(--surface-hover) text-(--text-muted)"
             >🗑 Zuweisungen löschen</button>
             <button
               onClick={() => random.mutate()}
               disabled={random.isPending}
-              className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-(--accent) text-white rounded-lg hover:opacity-90 disabled:opacity-50"
             >🎲 Zufällig zuweisen</button>
           </div>
           {enabled.map(chore => (
             <div key={chore.id} className="flex items-center gap-3">
-              <div className="w-36 shrink-0 text-sm font-semibold text-[var(--text-muted)]">{chore.chore_name}</div>
+              <div className="w-36 shrink-0 text-sm font-semibold text-(--text-muted)">{chore.chore_name}</div>
               <select
-                className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
+                className="flex-1 bg-(--surface) border border-(--border) rounded-lg px-3 py-2 text-sm"
                 value={chore.student_id ?? ""}
                 onChange={e => upsert.mutate({ chore_name: chore.chore_name, student_id: e.target.value ? Number(e.target.value) : null })}
               >
@@ -2416,13 +2416,13 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
   const sortedByPts = haeuser;
 
   return (
-    <div className="p-6 flex flex-col gap-6 min-h-full max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="p-6 flex flex-col gap-6 min-h-full max-w-(--seite-breite) mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col gap-1">
       <div className="flex items-center gap-4 flex-wrap">
         <h1 className="text-2xl font-bold">{mode === "klassen" ? "🎓 Klassenverwaltung" : "🛡️ Häuser & Klassen"}</h1>
         {mode === "haeuser" && (
-          <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
+          <div className="flex gap-1 bg-(--surface) border border-(--border) rounded-xl p-1">
             {([
               ["charts",  "📊 Übersicht"],
               ["manage",  "⚙️ Verwaltung"],
@@ -2432,8 +2432,8 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                 onClick={() => setTab(t)}
                 className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
                   tab === t
-                    ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                    ? "bg-(--accent) text-(--accent-text,#111)"
+                    : "text-(--text-muted) hover:text-(--text)"
                 }`}
               >
                 {label}
@@ -2448,19 +2448,19 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
       {mode === "haeuser" && tab === "charts" && (
         <div className="flex flex-col gap-8">
           {/* Houses 3D chart */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4">
+          <div className="bg-(--surface) border border-(--border) rounded-2xl p-4">
             {hLoading ? (
-              <div className="h-32 flex items-center justify-center text-[var(--text-muted)]">Laden…</div>
+              <div className="h-32 flex items-center justify-center text-(--text-muted)">Laden…</div>
             ) : (
               <HaeuserDiagram haeuser={haeuser} />
             )}
           </div>
 
           {/* Classes bar chart */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5">
+          <div className="bg-(--surface) border border-(--border) rounded-2xl p-5">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><SiegetreppeIcon size={22} /> Klassen-Übersicht</h2>
             {cLoading ? (
-              <div className="h-32 flex items-center justify-center text-[var(--text-muted)]">Laden…</div>
+              <div className="h-32 flex items-center justify-center text-(--text-muted)">Laden…</div>
             ) : (
               <KlassenDiagram classes={classes} />
             )}
@@ -2473,7 +2473,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
         <div className="flex flex-col gap-4">
           {/* Filter: Klassen / Kurs / Wahlpflicht */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1">
+            <div className="flex gap-1 bg-(--surface) border border-(--border) rounded-xl p-1">
               {([
                 ["klassen", "🎓 Klassen"],
                 ["kurs", "📘 Kurse"],
@@ -2484,15 +2484,15 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                   onClick={() => setGridFilter(f)}
                   className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
                     gridFilter === f
-                      ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                      ? "bg-(--accent) text-(--accent-text,#111)"
+                      : "text-(--text-muted) hover:text-(--text)"
                   }`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="text-sm text-(--text-muted)">
               {gridFilter === "klassen"
                 ? `${classes.length} Klassen · Klasse anklicken zum Konfigurieren`
                 : gridFilter === "kurs"
@@ -2502,10 +2502,10 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
           </div>
 
           {cLoading ? (
-            <div className="text-[var(--text-muted)] text-sm">Laden…</div>
+            <div className="text-(--text-muted) text-sm">Laden…</div>
           ) : gridFilter === "klassen" ? (
             classes.length === 0 ? (
-              <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)]">
+              <div className="flex items-center justify-center h-40 border border-dashed border-(--border) rounded-2xl text-(--text-muted)">
                 Noch keine Klassen angelegt.
               </div>
             ) : (
@@ -2518,7 +2518,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                       <button
                         key={cls.id}
                         onClick={() => setDetailClass(cls)}
-                        className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
+                        className="rounded-2xl border bg-(--surface) flex items-center gap-4 p-4 transition-all text-left hover:bg-(--surface-hover)"
                         style={{ borderColor: "var(--border)" }}
                       >
                         <ClassIcon cls={cls} />
@@ -2526,13 +2526,13 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                           <div className="font-bold truncate">
                             {cls.code}
                             {cls.class_name && (
-                              <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">
+                              <span className="ml-2 text-(--text-muted) font-normal text-sm">
                                 „{cls.class_name}"
                               </span>
                             )}
                           </div>
                           {cls.display_name && (
-                            <div className="text-xs text-[var(--text-muted)] truncate">{cls.display_name}</div>
+                            <div className="text-xs text-(--text-muted) truncate">{cls.display_name}</div>
                           )}
                           {/* Kurse / WPF badges: "7 Fr", "10 K1" */}
                           {badges.length > 0 && (
@@ -2549,7 +2549,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                           <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
                             {cls.total_points}
                           </div>
-                          <div className="text-xs text-[var(--text-muted)]">Pkt</div>
+                          <div className="text-xs text-(--text-muted)">Pkt</div>
                         </div>
                       </button>
                     );
@@ -2562,7 +2562,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
               const list = gridFilter === "kurs" ? kursGroups : wpfGroups;
               if (list.length === 0) {
                 return (
-                  <div className="flex items-center justify-center h-40 border border-dashed border-[var(--border)] rounded-2xl text-[var(--text-muted)] text-sm text-center px-6">
+                  <div className="flex items-center justify-center h-40 border border-dashed border-(--border) rounded-2xl text-(--text-muted) text-sm text-center px-6">
                     Noch keine {gridFilter === "kurs" ? "Kurse" : "Wahlpflicht-Gruppen"} angelegt. In einer Klasse → Tab „Gruppen" anlegen &amp; zuordnen.
                   </div>
                 );
@@ -2579,7 +2579,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                         <button
                           key={g.id}
                           onClick={() => setDetailGroup(g)}
-                          className="rounded-2xl border bg-[var(--surface)] flex items-center gap-4 p-4 transition-all text-left hover:bg-[var(--surface-hover)]"
+                          className="rounded-2xl border bg-(--surface) flex items-center gap-4 p-4 transition-all text-left hover:bg-(--surface-hover)"
                           style={{ borderColor: "var(--border)" }}
                         >
                           <span className={`text-xs font-bold px-2 py-1 rounded-md border shrink-0 ${kursBadgeClasses(g.name)}`}>
@@ -2589,12 +2589,12 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                             <div className="font-bold truncate">
                               {g.name}
                               {g.grade != null ? (
-                                <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">Jg. {g.grade}</span>
+                                <span className="ml-2 text-(--text-muted) font-normal text-sm">Jg. {g.grade}</span>
                               ) : (
-                                <span className="ml-2 text-[var(--text-muted)] font-normal text-sm">schulweit</span>
+                                <span className="ml-2 text-(--text-muted) font-normal text-sm">schulweit</span>
                               )}
                             </div>
-                            <div className="text-xs text-[var(--text-muted)] truncate">
+                            <div className="text-xs text-(--text-muted) truncate">
                               {memberClasses.length > 0 ? memberClasses.map(c => c.code).join(", ") : "keine Klassen"}
                             </div>
                           </div>
@@ -2602,7 +2602,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
                             <div className="text-lg font-bold" style={{ color: "var(--accent)" }}>
                               {g.member_ids.length}
                             </div>
-                            <div className="text-xs text-[var(--text-muted)]">SuS</div>
+                            <div className="text-xs text-(--text-muted)">SuS</div>
                           </div>
                         </button>
                       );
@@ -2624,7 +2624,7 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
             ) : (
               <button
                 onClick={() => setShowAddForm(true)}
-                className="self-start px-4 py-2 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl hover:opacity-90"
+                className="self-start px-4 py-2 text-sm font-semibold bg-(--accent) text-white rounded-xl hover:opacity-90"
               >
                 + Neues Haus
               </button>
@@ -2632,9 +2632,9 @@ export function KlassenHaeuserView({ mode }: { mode: "haeuser" | "klassen" }) {
           )}
 
           {hLoading ? (
-            <p className="text-[var(--text-muted)]">Laden…</p>
+            <p className="text-(--text-muted)">Laden…</p>
           ) : sortedByPts.length === 0 ? (
-            <div className="text-center py-12 text-[var(--text-muted)] border border-dashed border-[var(--border)] rounded-2xl">
+            <div className="text-center py-12 text-(--text-muted) border border-dashed border-(--border) rounded-2xl">
               Noch keine Häuser angelegt.
               {isAdmin && (
                 <p className="mt-2 text-sm">Klick auf „+ Neues Haus" um zu starten.</p>

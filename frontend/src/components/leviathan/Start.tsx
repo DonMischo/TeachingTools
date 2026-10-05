@@ -42,19 +42,19 @@ export default function Start({ einst, krisenWahl, onStart }: {
           {LAENDERTYPEN.map((t) => (
             <button key={t.id} onClick={() => { setTyp(t.id); setLand(t.landname); }}
               aria-pressed={typ === t.id}
-              className={`text-left rounded-2xl border-2 p-4 bg-[var(--surface)] transition-colors hover:bg-[var(--surface-hover)] ${
-                typ === t.id ? "border-[var(--accent)]" : "border-[var(--border)]"}`}>
+              className={`text-left rounded-2xl border-2 p-4 bg-(--surface) transition-colors hover:bg-(--surface-hover) ${
+                typ === t.id ? "border-(--accent)" : "border-(--border)"}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="font-black">{t.icon} {t.name}</div>
                 <Punkte n={t.schwierigkeit} />
               </div>
               <p className="text-sm mt-2">{t.profil}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-2"><b>Ähnlich wie:</b> {t.beispiele}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1"><b>Gefahr:</b> {t.gefahr}</p>
+              <p className="text-xs text-(--text-muted) mt-2"><b>Ähnlich wie:</b> {t.beispiele}</p>
+              <p className="text-xs text-(--text-muted) mt-1"><b>Gefahr:</b> {t.gefahr}</p>
             </button>
           ))}
         </div>
-        <p className="text-xs text-[var(--text-muted)] mt-2">
+        <p className="text-xs text-(--text-muted) mt-2">
           Dein Land ist erfunden. Die echten Länder zeigen nur, wo es solche Lagen gibt (Stand ca. 2024/25).
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function Start({ einst, krisenWahl, onStart }: {
             <label className="text-sm flex flex-col gap-1 max-w-sm">
               Name deines Landes
               <input value={land} onChange={(e) => setLand(e.target.value.slice(0, 40))}
-                className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2" />
+                className="rounded-lg border border-(--border) bg-(--bg) px-3 py-2" />
             </label>
             {krisenWahl ? (
               <fieldset className="flex flex-col gap-2">
@@ -74,20 +74,20 @@ export default function Start({ einst, krisenWahl, onStart }: {
                   {(Object.keys(KRISE_TEXT) as Krisenstufe[]).map((k) => (
                     <button key={k} onClick={() => setKrise(k)} aria-pressed={krise === k}
                       className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${
-                        krise === k ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)]"}`}>
+                        krise === k ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border)"}`}>
                       {KRISE_TEXT[k].icon} {KRISE_TEXT[k].name}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-[var(--text-muted)]">{KRISE_TEXT[krise].text}</p>
+                <p className="text-xs text-(--text-muted)">{KRISE_TEXT[krise].text}</p>
               </fieldset>
             ) : einst.sichtbar ? (
               <p className="text-sm">Krisenstufe (von deiner Lehrkraft): <b>{KRISE_TEXT[einst.krise].icon} {KRISE_TEXT[einst.krise].name}</b></p>
             ) : (
-              <p className="text-sm text-[var(--text-muted)]">Die Krisenstufe hat deine Lehrkraft festgelegt – du erfährst sie am Ende.</p>
+              <p className="text-sm text-(--text-muted)">Die Krisenstufe hat deine Lehrkraft festgelegt – du erfährst sie am Ende.</p>
             )}
             <button onClick={() => onStart(gewaehlt.id, land, { ...einst, krise: krisenWahl ? krise : einst.krise })}
-              className="self-start px-5 py-2.5 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text,#111)]">
+              className="self-start px-5 py-2.5 rounded-xl font-black bg-(--accent) text-(--accent-text,#111)">
               {gewaehlt.icon} {land || gewaehlt.landname} regieren
             </button>
           </div>

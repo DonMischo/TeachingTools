@@ -14,7 +14,7 @@ import { QRCodeSVG } from "qrcode.react";
  * QR sie bekommt. `zoomable={false}` ist für den einen Fall gedacht, in dem der
  * QR schon in einem Button steckt (verschachtelte Buttons sind ungültig).
  */
-export function JoinQR({ url, size = 90, className = "rounded-xl border border-[var(--border)]", zoomable = true }: {
+export function JoinQR({ url, size = 90, className = "rounded-xl border border-(--border)", zoomable = true }: {
   url: string | null | undefined;
   size?: number;
   className?: string;
@@ -45,7 +45,7 @@ export function JoinQR({ url, size = 90, className = "rounded-xl border border-[
         title="QR-Code vergrößern"
         aria-label="QR-Code vergrößern"
         className="block cursor-zoom-in leading-none transition-transform hover:scale-105
-          focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+          focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-(--accent)"
       >
         {qr}
       </button>
@@ -79,7 +79,7 @@ function QRLightbox({ url, onClose }: { url: string; onClose: () => void }) {
       aria-modal="true"
       aria-label="QR-Code vergrößert"
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-5 bg-black/80 p-6 cursor-zoom-out"
+      className="fixed inset-0 z-100 flex flex-col items-center justify-center gap-5 bg-black/80 p-6 cursor-zoom-out"
     >
       {/* Weißer Rahmen: viele Scanner tun sich auf dunklem Grund schwer. */}
       <div className="rounded-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>

@@ -54,7 +54,7 @@ export function Steckbrief({ koerper, onWaehle, onSchliessen, onGalerie, erforsc
   return (
     <aside
       className="fixed inset-x-0 bottom-0 top-auto sm:top-0 sm:left-auto sm:w-[420px] max-h-[82dvh] sm:max-h-none z-50 flex flex-col
-        bg-slate-950/95 backdrop-blur text-slate-100 border-t sm:border-t-0 sm:border-l border-white/10 shadow-2xl rounded-t-2xl sm:rounded-none"
+        bg-slate-950/95 backdrop-blur-sm text-slate-100 border-t sm:border-t-0 sm:border-l border-white/10 shadow-2xl rounded-t-2xl sm:rounded-none"
       aria-label={`Steckbrief ${k.name}`}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">

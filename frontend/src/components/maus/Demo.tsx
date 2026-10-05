@@ -92,7 +92,7 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
   const drueckt = schritt.taste === "links" || schritt.taste === "rechts" || schritt.taste === "doppel";
 
   return (
-    <div className="fixed inset-0 z-[60]" data-testid="demo" onContextMenu={e => e.preventDefault()}>
+    <div className="fixed inset-0 z-60" data-testid="demo" onContextMenu={e => e.preventDefault()}>
       <div className="absolute inset-0 bg-black/5" />
 
       <div
@@ -106,7 +106,7 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
           {drueckt && (
             <span
               key={`${lauf.nr}-welle`}
-              className="absolute left-0 top-0 w-16 h-16 rounded-full border-4 border-[var(--accent)]"
+              className="absolute left-0 top-0 w-16 h-16 rounded-full border-4 border-(--accent)"
               style={{ animation: `maus-welle ${schritt.taste === "doppel" ? 600 : 900}ms ease-out infinite` }}
             />
           )}
@@ -116,7 +116,7 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
               <MausBild taste={schritt.taste ?? null} groesse={54} />
             </div>
             {/* w-max: der Rahmen ist nur so breit wie der Zeiger — ohne bräche jedes Wort um. */}
-            <div className="w-max rounded-xl bg-[var(--surface)] text-[var(--text)] shadow-lg border border-[var(--border)] px-3 py-2 text-sm font-bold max-w-[220px] leading-snug">
+            <div className="w-max rounded-xl bg-(--surface) text-(--text) shadow-lg border border-(--border) px-3 py-2 text-sm font-bold max-w-[220px] leading-snug">
               {schritt.text}
             </div>
           </div>
@@ -125,17 +125,17 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
 
       <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2 pointer-events-none">
         {schritt.tasten && (
-          <div className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl p-3">
+          <div className="w-full max-w-2xl rounded-2xl bg-(--surface) border border-(--border) shadow-xl p-3">
             <Tastatur gedrueckt={new Set(schritt.tasten)} zeigeFinger={false} />
           </div>
         )}
         <div className="flex items-center gap-3 pointer-events-auto">
-          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+          <span className="text-xs text-(--text-muted) tabular-nums">
             Schritt {lauf.nr + 1} von {lauf.von}
           </span>
           <button
             onClick={stopp}
-            className="text-sm rounded-lg px-3 py-1.5 border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]"
+            className="text-sm rounded-lg px-3 py-1.5 border border-(--border) bg-(--surface) hover:border-(--accent)"
           >
             ⏹ Vorführung beenden
           </button>

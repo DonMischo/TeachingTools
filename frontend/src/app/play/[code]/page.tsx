@@ -410,7 +410,7 @@ export default function PlayPage() {
   // ── Waiting ────────────────────────────────────────────────────────
   if (phase.kind === "waiting") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center gap-6 p-6">
+      <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center gap-6 p-6">
         <AvatarDisplay avatarId={phase.avatar} size="lg" />
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">{phase.name}</h2>
@@ -432,7 +432,7 @@ export default function PlayPage() {
   // ── Preview ────────────────────────────────────────────────────────
   if (phase.kind === "preview") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center gap-5 p-6 text-white">
+      <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center gap-5 p-6 text-white">
         <QuestionTypeBadge type={phase.questionType} size="lg" />
         {phase.imagePath && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -470,7 +470,7 @@ export default function PlayPage() {
               </h2>
             )}
             <div className="self-center"><QuestionTypeBadge type={q.type} size="sm" /></div>
-            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
               <TimelineGameBoard board={board} answer={tlAnswer} onChange={setTlAnswer} disabled={phase.answered} />
             </div>
             {phase.answered ? (
@@ -496,7 +496,7 @@ export default function PlayPage() {
             {q.question_text && (
               <h2 className="text-xl font-bold text-center whitespace-pre-line leading-snug"><MathText text={q.question_text} /></h2>
             )}
-            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
               <KartenBrett brett={brett} antwort={kartenAntwort} onChange={setKartenAntwort} disabled={phase.answered} />
             </div>
             {phase.answered ? (
@@ -543,7 +543,7 @@ export default function PlayPage() {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && submitText()}
-                  className="bg-white/20 text-white text-2xl font-bold text-center rounded-xl px-4 py-3 w-40 outline-none focus:ring-2 focus:ring-yellow-400 placeholder:text-white/30"
+                  className="bg-white/20 text-white text-2xl font-bold text-center rounded-xl px-4 py-3 w-40 outline-hidden focus:ring-2 focus:ring-yellow-400 placeholder:text-white/30"
                   placeholder="?"
                   // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
@@ -601,7 +601,7 @@ export default function PlayPage() {
                   }`}
                   style={{ backgroundColor: COLORS[i % COLORS.length] }}
                 >
-                  <span className="w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-base font-black flex-shrink-0">
+                  <span className="w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-base font-black shrink-0">
                     {isRanked ? rank + 1 : "○"}
                   </span>
                   <span className="flex-1 text-lg"><MathText text={a.text} /></span>
@@ -685,7 +685,7 @@ export default function PlayPage() {
         {/* Kartenfrage: Auflösung mit eigenen Antworten */}
         {q.type === "karte" && q.karte && phase.kartenLoesung && (
           <div className="px-4 pb-4">
-            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
               <KartenBrett brett={q.karte} antwort={kartenAntwort} disabled loesung={phase.kartenLoesung} />
             </div>
           </div>
@@ -694,7 +694,7 @@ export default function PlayPage() {
         {/* Timeline reveal: own placements vs. correct positions */}
         {q.type === "timeline" && phase.timelineSolution?.axis && (
           <div className="px-4 pb-4">
-            <div className="bg-[var(--bg)] text-[var(--text)] rounded-2xl p-3">
+            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
               <TimelineGameBoard
                 board={{
                   mode: phase.timelineSolution.mode,
@@ -729,7 +729,7 @@ export default function PlayPage() {
                 const gotIt = myPos === pos;
                 return (
                   <div key={cid} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${gotIt ? "bg-green-700" : "bg-gray-700"}`}>
-                    <span className="w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-sm font-black flex-shrink-0">{pos + 1}</span>
+                    <span className="w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-sm font-black shrink-0">{pos + 1}</span>
                     <span className="flex-1 font-bold text-base"><MathText text={a.text} /></span>
                     {myPos !== -1 && <span className="text-sm font-mono text-white/60">dein Platz: {myPos + 1}</span>}
                     <span className="text-lg">{gotIt ? "✓" : myPos !== -1 ? "✗" : ""}</span>
@@ -767,13 +767,13 @@ export default function PlayPage() {
   // ── Finished ───────────────────────────────────────────────────────
   if (phase.kind === "finished") {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-500 flex flex-col items-center justify-center gap-4 p-6 text-center overflow-hidden">
+      <div className="relative min-h-screen bg-linear-to-br from-yellow-400 via-orange-400 to-pink-500 flex flex-col items-center justify-center gap-4 p-6 text-center overflow-hidden">
         <Confetti ratio={phase.scoreRatio} />
         <AvatarDisplay avatarId={phase.avatar} size="lg" />
-        <h1 className="text-3xl font-bold text-white drop-shadow relative z-20">{phase.title}</h1>
-        <div className="bg-white/20 backdrop-blur rounded-3xl px-8 py-4 relative z-20">
+        <h1 className="text-3xl font-bold text-white drop-shadow-sm relative z-20">{phase.title}</h1>
+        <div className="bg-white/20 backdrop-blur-sm rounded-3xl px-8 py-4 relative z-20">
           <p className="text-white text-lg">Eure Klasse hat</p>
-          <p className="text-6xl font-black text-white drop-shadow">{phase.points}</p>
+          <p className="text-6xl font-black text-white drop-shadow-sm">{phase.points}</p>
           <p className="text-white text-lg">Punkte gewonnen! 🎉</p>
         </div>
         {phase.finalRanking.length > 0 && (

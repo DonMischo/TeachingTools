@@ -57,11 +57,11 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
   const reset = () => setActive(Array(ROWS).fill(0));
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧮 Abakus</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Schiebe die Kugeln und lies die Zahl ab. Wechsle zwischen „Alle gleich" und
             „Stellenwert" — dieselben Kugeln, zwei Zahlen.
           </p>
@@ -70,7 +70,7 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
           {action}
           <button
             onClick={reset}
-            className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]"
+            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
           >
             ↺ Zurücksetzen
           </button>
@@ -78,7 +78,7 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
       </div>
 
       {/* Mode switch */}
-      {!festerModus && <div className="inline-flex self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerModus && <div className="inline-flex self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
         {([
           ["single", "Alle gleich", "jede Kugel = 1, zusammen bis 100"],
           ["place", "Stellenwert", "Reihen = Einer, Zehner, Hunderter …"],
@@ -89,8 +89,8 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
             title={hint}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               mode === m
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                ? "bg-(--accent) text-(--accent-text,#111)"
+                : "text-(--text-muted) hover:text-(--text)"
             }`}
           >
             {label}
@@ -99,15 +99,15 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
       </div>}
 
       {/* Digit readout */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5 flex items-baseline gap-3">
-        <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Wert</span>
+      <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-5 flex items-baseline gap-3">
+        <span className="text-xs uppercase tracking-widest text-(--text-muted)">Wert</span>
         <span className="text-4xl sm:text-5xl font-black tabular-nums" style={{ color: "var(--accent)" }}>
           {fmt(total)}
         </span>
       </div>
 
       {/* Abacus board — one scalable SVG, fits any width without a scrollbar */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
         <svg
           viewBox={`0 0 ${VBW} ${VBH}`}
           className="w-full h-auto mx-auto"
@@ -189,7 +189,7 @@ export default function Abakus({ action, vorgabe }: { action?: ReactNode; vorgab
         </svg>
       </div>
 
-      <p className="text-xs text-[var(--text-muted)]">
+      <p className="text-xs text-(--text-muted)">
         {mode === "single"
           ? "Jede der 100 Kugeln zählt 1 — zusammen ergeben alle 100."
           : "Jede Reihe ist eine Stelle: unten die Einer, darüber Zehner, Hunderter und so weiter."}

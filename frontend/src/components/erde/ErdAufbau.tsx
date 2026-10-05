@@ -38,29 +38,29 @@ export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vor
   const festerReiter = wahl(vorgabe, "reiter", ["keil", "profil", "wellen", "konvektion", "wissen"] as const);
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "keil");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🌍 Aufbau der Erde</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Von der Kruste bis zum Kern: Schichten, Gesteine, Minerale, Temperatur, Druck, Zähigkeit — und wie man das ohne Bohrloch herausgefunden hat.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-              reiter === r.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+              reiter === r.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
             {r.icon} {r.label}
           </button>
         ))}
       </div>}
 
       {reiter === "keil" && (
-        <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-sm text-[var(--text-muted)]">Lade 3D …</div>}>
+        <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-sm text-(--text-muted)">Lade 3D …</div>}>
           <Keil3D />
         </Suspense>
       )}
@@ -74,7 +74,7 @@ export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vor
 
 function Karte({ titel, children }: { titel: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed flex flex-col gap-2">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
       <h3 className="font-black text-base">{titel}</h3>
       {children}
     </section>
@@ -95,13 +95,13 @@ function Wissen() {
             <div key={e.symbol} className="grid grid-cols-[70px_1fr] items-center gap-2 text-xs">
               <span><b>{e.symbol}</b> {e.name}</span>
               <div className="flex flex-col gap-0.5">
-                <div className="h-2 rounded bg-amber-600" style={{ width: `${(e.erde / max) * 100}%` }} title={`ganze Erde ${e.erde} %`} />
-                <div className="h-2 rounded bg-slate-400" style={{ width: `${(e.kruste / max) * 100}%` }} title={`Kruste ${e.kruste} %`} />
+                <div className="h-2 rounded-sm bg-amber-600" style={{ width: `${(e.erde / max) * 100}%` }} title={`ganze Erde ${e.erde} %`} />
+                <div className="h-2 rounded-sm bg-slate-400" style={{ width: `${(e.kruste / max) * 100}%` }} title={`Kruste ${e.kruste} %`} />
               </div>
             </div>
           ))}
         </div>
-        <p className="text-xs"><span className="inline-block w-3 h-2 bg-amber-600 rounded mr-1" />ganze Erde <span className="inline-block w-3 h-2 bg-slate-400 rounded ml-3 mr-1" />Erdkruste (Massenprozent). Die Erde als Ganzes ist vor allem Eisen, die Kruste vor allem Sauerstoff und Silizium — Quarz und Feldspat.</p>
+        <p className="text-xs"><span className="inline-block w-3 h-2 bg-amber-600 rounded-sm mr-1" />ganze Erde <span className="inline-block w-3 h-2 bg-slate-400 rounded-sm ml-3 mr-1" />Erdkruste (Massenprozent). Die Erde als Ganzes ist vor allem Eisen, die Kruste vor allem Sauerstoff und Silizium — Quarz und Feldspat.</p>
       </Karte>
       <Karte titel="🔎 Woher wissen wir das?">
         <ul className="list-disc pl-5 flex flex-col gap-1">
@@ -124,7 +124,7 @@ function Wissen() {
       <Karte titel="📋 Alle Schichten im Überblick">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead><tr className="text-left text-[var(--text-muted)]"><th className="pr-2">Schicht</th><th className="pr-2">Tiefe km</th><th className="pr-2">Zustand</th><th>Hauptmineral</th></tr></thead>
+            <thead><tr className="text-left text-(--text-muted)"><th className="pr-2">Schicht</th><th className="pr-2">Tiefe km</th><th className="pr-2">Zustand</th><th>Hauptmineral</th></tr></thead>
             <tbody className="align-top">
               {SCHICHTEN.map(s => (
                 <tr key={s.id}>

@@ -44,7 +44,7 @@ export function Scoreboard({ classes }: Props) {
             className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
               merged
                 ? "border-indigo-500 bg-indigo-900/30 text-indigo-300"
-                : "border-[var(--border)] text-[var(--text-muted)] hover:border-indigo-500 hover:text-indigo-300"
+                : "border-(--border) text-(--text-muted) hover:border-indigo-500 hover:text-indigo-300"
             }`}
           >
             {merged ? "⊕ Klassen zusammengefasst" : "⊕ Klassen zusammenfassen"}
@@ -54,7 +54,7 @@ export function Scoreboard({ classes }: Props) {
 
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-[var(--text-muted)] border-b border-[var(--border)]">
+          <tr className="text-(--text-muted) border-b border-(--border)">
             <th className="text-left py-2 w-8">#</th>
             <th className="text-left py-2">Klasse</th>
             <th className="text-right py-2">Punkte</th>
@@ -63,12 +63,12 @@ export function Scoreboard({ classes }: Props) {
         <tbody>
           {merged
             ? mergedRows.map((row, i) => (
-                <tr key={row.key} className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)]">
-                  <td className="py-2 text-[var(--text-muted)]">{i + 1}</td>
+                <tr key={row.key} className="border-b border-(--border) hover:bg-(--surface-hover)">
+                  <td className="py-2 text-(--text-muted)">{i + 1}</td>
                   <td className="py-2 font-medium">
                     {row.key}
                     {row.parts.length > 1 && (
-                      <span className="ml-2 text-xs text-[var(--text-muted)]">
+                      <span className="ml-2 text-xs text-(--text-muted)">
                         ({row.parts.map(p => p.display_name || p.code).join(" + ")})
                       </span>
                     )}
@@ -77,8 +77,8 @@ export function Scoreboard({ classes }: Props) {
                 </tr>
               ))
             : sorted.map((cls, i) => (
-                <tr key={cls.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)]">
-                  <td className="py-2 text-[var(--text-muted)]">{i + 1}</td>
+                <tr key={cls.id} className="border-b border-(--border) hover:bg-(--surface-hover)">
+                  <td className="py-2 text-(--text-muted)">{i + 1}</td>
                   <td className="py-2 font-medium">{cls.display_name || cls.code}</td>
                   <td className="py-2 text-right font-bold">{cls.total_points}</td>
                 </tr>

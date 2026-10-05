@@ -56,7 +56,7 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
       <span className="text-4xl">📦</span>
       <div>
         <p className="font-semibold text-sm">ZIP hier hineinziehen</p>
-        <p className="text-xs text-[var(--text-muted)] mt-1">oder klicken zum Auswählen</p>
+        <p className="text-xs text-(--text-muted) mt-1">oder klicken zum Auswählen</p>
       </div>
       <input ref={ref} type="file" accept=".zip,application/zip" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onFile(f); }} />
@@ -131,7 +131,7 @@ function ColorEditor({ onSaved }: { onSaved: () => void }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {COLOR_VARS.map(({ key, label, hint }) => (
-          <div key={key} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)]">
+          <div key={key} className="flex items-center gap-3 p-3 rounded-xl bg-(--bg) border border-(--border)">
             <input
               type="color"
               value={colors[key] ?? "#888888"}
@@ -141,9 +141,9 @@ function ColorEditor({ onSaved }: { onSaved: () => void }) {
             />
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium">{label}</div>
-              <div className="text-xs text-[var(--text-muted)] font-mono">{colors[key] ?? ""} · {hint}</div>
+              <div className="text-xs text-(--text-muted) font-mono">{colors[key] ?? ""} · {hint}</div>
             </div>
-            <div className="w-6 h-6 rounded-full border border-[var(--border)] shrink-0"
+            <div className="w-6 h-6 rounded-full border border-(--border) shrink-0"
               style={{ backgroundColor: colors[key] }} />
           </div>
         ))}
@@ -171,7 +171,7 @@ function StyleStatus({ manifest, onReset }: { manifest: StyleManifest; onReset: 
 
   if (!hasAnything) {
     return (
-      <p className="text-sm text-[var(--text-muted)] italic">Kein benutzerdefiniertes Style Pack aktiv.</p>
+      <p className="text-sm text-(--text-muted) italic">Kein benutzerdefiniertes Style Pack aktiv.</p>
     );
   }
 
@@ -179,28 +179,28 @@ function StyleStatus({ manifest, onReset }: { manifest: StyleManifest; onReset: 
     <div className="flex flex-col gap-3">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-[var(--text-muted)] w-16 shrink-0">Logo</span>
+        <span className="text-xs text-(--text-muted) w-16 shrink-0">Logo</span>
         {manifest.logo ? (
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={manifest.logo} alt="custom logo" className="h-8 w-auto rounded" />
+            <img src={manifest.logo} alt="custom logo" className="h-8 w-auto rounded-sm" />
             <span className="text-xs text-green-400">✓ aktiv</span>
           </div>
         ) : (
-          <span className="text-xs text-[var(--text-muted)]">–</span>
+          <span className="text-xs text-(--text-muted)">–</span>
         )}
       </div>
 
       {/* Icons */}
       <div className="flex items-start gap-3">
-        <span className="text-xs text-[var(--text-muted)] w-16 shrink-0 pt-0.5">Icons</span>
+        <span className="text-xs text-(--text-muted) w-16 shrink-0 pt-0.5">Icons</span>
         <div className="flex flex-wrap gap-1.5">
           {NAV_KEYS.map(k => (
             <span key={k}
               className={`text-xs px-2 py-0.5 rounded-full border ${
                 manifest.icons.includes(k)
                   ? "border-green-700 bg-green-900/30 text-green-300"
-                  : "border-[var(--border)] text-[var(--text-muted)] opacity-40"
+                  : "border-(--border) text-(--text-muted) opacity-40"
               }`}>
               {k}
             </span>
@@ -210,18 +210,18 @@ function StyleStatus({ manifest, onReset }: { manifest: StyleManifest; onReset: 
 
       {/* Theme colors */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-[var(--text-muted)] w-16 shrink-0">Farben</span>
+        <span className="text-xs text-(--text-muted) w-16 shrink-0">Farben</span>
         {Object.keys(manifest.theme).length > 0 ? (
           <div className="flex gap-1.5 flex-wrap items-center">
             {Object.entries(manifest.theme).map(([k, v]) => (
               <div key={k} title={`--${k}: ${v}`}
-                className="w-5 h-5 rounded-full border border-[var(--border)]"
+                className="w-5 h-5 rounded-full border border-(--border)"
                 style={{ backgroundColor: v }} />
             ))}
             <span className="text-xs text-green-400 ml-1">✓ {Object.keys(manifest.theme).length} Variablen</span>
           </div>
         ) : (
-          <span className="text-xs text-[var(--text-muted)]">–</span>
+          <span className="text-xs text-(--text-muted)">–</span>
         )}
       </div>
 
@@ -239,9 +239,9 @@ function StyleStatus({ manifest, onReset }: { manifest: StyleManifest; onReset: 
 
 function ZipFormatDocs() {
   return (
-    <details className="text-xs text-[var(--text-muted)]">
-      <summary className="cursor-pointer hover:text-[var(--text)] select-none">ZIP-Format anzeigen</summary>
-      <pre className="mt-2 p-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] font-mono leading-relaxed overflow-x-auto text-[11px]">{`style-pack.zip
+    <details className="text-xs text-(--text-muted)">
+      <summary className="cursor-pointer hover:text-(--text) select-none">ZIP-Format anzeigen</summary>
+      <pre className="mt-2 p-3 rounded-lg bg-(--bg) border border-(--border) font-mono leading-relaxed overflow-x-auto text-[11px]">{`style-pack.zip
 ├── theme.json          ← Farbvariablen
 ├── logo.svg            ← oder .png / .jpg / .webp
 └── icons/
@@ -318,21 +318,21 @@ export default function AdminStylePage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🎨 Style Pack</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">Logo · Icons · Farben anpassen</p>
+        <p className="text-(--text-muted) text-sm mt-1">Logo · Icons · Farben anpassen</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-1 self-start">
+      <div className="flex gap-1 bg-(--surface) border border-(--border) rounded-xl p-1 self-start">
         {([["pack", "📦 Style Pack"], ["colors", "🎨 Farben"]] as const).map(([t, label]) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
               tab === t
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                ? "bg-(--accent) text-(--accent-text,#111)"
+                : "text-(--text-muted) hover:text-(--text)"
             }`}>{label}</button>
         ))}
       </div>
@@ -340,11 +340,11 @@ export default function AdminStylePage() {
       {/* ── Pack tab ── */}
       {tab === "pack" && (
         <div className="flex flex-col gap-5">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+          <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
             <h2 className="font-semibold text-sm">ZIP hochladen</h2>
             <ZipFormatDocs />
             <DropZone onFile={handleZip} />
-            {uploading && <p className="text-sm text-[var(--text-muted)] animate-pulse">Verarbeite ZIP…</p>}
+            {uploading && <p className="text-sm text-(--text-muted) animate-pulse">Verarbeite ZIP…</p>}
             {uploadResult && !uploadResult.error && (
               <div className="text-sm rounded-lg p-3 bg-green-900/30 text-green-300">
                 <strong>Erfolgreich importiert:</strong>
@@ -363,7 +363,7 @@ export default function AdminStylePage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+          <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
             <h2 className="font-semibold text-sm">Aktives Style Pack</h2>
             <StyleStatus manifest={style} onReset={handleReset} />
           </section>
@@ -372,10 +372,10 @@ export default function AdminStylePage() {
 
       {/* ── Colors tab ── */}
       {tab === "colors" && (
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
           <div>
             <h2 className="font-semibold text-sm">Farbvariablen</h2>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
+            <p className="text-xs text-(--text-muted) mt-1">
               Änderungen werden sofort in der Vorschau angezeigt und nach dem Speichern
               für alle Nutzer übernommen. Sie überschreiben das gewählte Farbschema.
             </p>

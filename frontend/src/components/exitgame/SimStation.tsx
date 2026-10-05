@@ -59,20 +59,20 @@ export function SimKnopf({ sim, frage }: { sim: ExitGameSim; frage?: string }) {
   return (
     <>
       <button onClick={() => setOffen(true)}
-        className="self-start text-sm px-3 py-1.5 rounded-lg border-2 border-[var(--accent)] font-bold hover:bg-[var(--surface-hover)]">
+        className="self-start text-sm px-3 py-1.5 rounded-lg border-2 border-(--accent) font-bold hover:bg-(--surface-hover)">
         {eintrag.icon} {eintrag.name} öffnen
       </button>
       {offen && createPortal(
-        <div className="fixed inset-0 z-[100] bg-[var(--bg)] flex flex-col" role="dialog" aria-label={eintrag.name} data-sim-station={sim.tool}>
-          <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2">
+        <div className="fixed inset-0 z-100 bg-(--bg) flex flex-col" role="dialog" aria-label={eintrag.name} data-sim-station={sim.tool}>
+          <div className="flex items-center gap-3 border-b border-(--border) bg-(--surface) px-4 py-2">
             <span className="text-xl">{eintrag.icon}</span>
             <div className="flex-1 min-w-0 text-sm">
               {frage ? <MathText text={frage} className="font-medium" /> : <b>{eintrag.name}</b>}
             </div>
-            <button onClick={() => setOffen(false)} className="btn-primary !w-auto text-sm py-1.5 px-4 shrink-0 whitespace-nowrap">✓ Zur Antwort</button>
+            <button onClick={() => setOffen(false)} className="btn-primary w-auto! text-sm py-1.5 px-4 shrink-0 whitespace-nowrap">✓ Zur Antwort</button>
           </div>
           <div className="flex-1 overflow-y-auto app-scroll">
-            <Suspense fallback={<p className="p-6 text-sm text-[var(--text-muted)]">Lade {eintrag.name} …</p>}>
+            <Suspense fallback={<p className="p-6 text-sm text-(--text-muted)">Lade {eintrag.name} …</p>}>
               <Komponente vorgabe={sim.config} />
             </Suspense>
           </div>

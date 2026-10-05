@@ -10,8 +10,8 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 function Hint({ text }: { text: string }) {
   return (
     <span className="relative group inline-flex">
-      <span className="w-4 h-4 rounded-full border border-[var(--border)] text-[var(--text-muted)] text-[10px] flex items-center justify-center cursor-default select-none hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">?</span>
-      <span className="absolute left-5 top-0 z-50 hidden group-hover:block w-72 bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3 text-xs text-[var(--text-muted)] shadow-lg leading-relaxed">
+      <span className="w-4 h-4 rounded-full border border-(--border) text-(--text-muted) text-[10px] flex items-center justify-center cursor-default select-none hover:border-(--accent) hover:text-(--accent) transition-colors">?</span>
+      <span className="absolute left-5 top-0 z-50 hidden group-hover:block w-72 bg-(--surface) border border-(--border) rounded-xl p-3 text-xs text-(--text-muted) shadow-lg leading-relaxed">
         {text}
       </span>
     </span>
@@ -37,7 +37,7 @@ function KlassenleitungCell({ teacher, classes }: { teacher: TeacherOut; classes
     onSuccess: () => qc.invalidateQueries({ queryKey: ["teachers"] }),
   });
   return (
-    <td className="py-1 px-1.5 border-l border-[var(--border)]/30">
+    <td className="py-1 px-1.5 border-l border-(--border)/30">
       <select
         className="input text-xs py-1 w-20"
         value={teacher.klasse_id ?? ""}
@@ -53,7 +53,7 @@ function KlassenleitungCell({ teacher, classes }: { teacher: TeacherOut; classes
 /** Diff of contracted hours (AvSt) vs assigned WS: green = fully spent,
  * orange = hours still open, red = over the contract limit. */
 function avstDiffClass(diff: number | null): string {
-  if (diff == null) return "text-[var(--text-muted)]";
+  if (diff == null) return "text-(--text-muted)";
   if (diff === 0) return "text-green-500";
   if (diff > 0) return "text-orange-400";
   return "text-red-500";
@@ -84,7 +84,7 @@ function KorrekturNotizCells({ teacher }: { teacher: TeacherOut }) {
 
   return (
     <>
-      <td className="py-1 px-1.5 border-l border-[var(--border)]/30">
+      <td className="py-1 px-1.5 border-l border-(--border)/30">
         <input type="number" className="input text-xs py-1 w-14 text-center"
           defaultValue={teacher.korrektur}
           onBlur={e => korrekturMut.mutate(Number(e.target.value) || 0)}
@@ -95,7 +95,7 @@ function KorrekturNotizCells({ teacher }: { teacher: TeacherOut }) {
           value={notiz} onChange={e => setNotiz(e.target.value)} onBlur={() => notizMut.mutate()}
         />
       </td>
-      <td className="py-1 px-1.5 border-l border-[var(--border)]/30">
+      <td className="py-1 px-1.5 border-l border-(--border)/30">
         <input type="number" min={0} className="input text-xs py-1 w-14 text-center"
           defaultValue={teacher.av_stunden ?? ""}
           placeholder="–"
@@ -103,11 +103,11 @@ function KorrekturNotizCells({ teacher }: { teacher: TeacherOut }) {
           onBlur={e => avMut.mutate(e.target.value === "" ? null : Number(e.target.value))}
         />
       </td>
-      <td className={`py-1 px-1.5 text-center font-semibold tabular-nums border-l border-[var(--border)]/30 ${avstDiffClass(diff)}`}
+      <td className={`py-1 px-1.5 text-center font-semibold tabular-nums border-l border-(--border)/30 ${avstDiffClass(diff)}`}
         title={diff == null ? "AvSt nicht gesetzt" : diff === 0 ? "voll verplant" : diff > 0 ? `${diff} WS offen` : `${-diff} WS über AvSt`}>
         {diff == null ? "–" : diff > 0 ? `+${diff}` : diff}
       </td>
-      <td className="py-1 px-3 text-sm font-semibold text-right tabular-nums border-l border-[var(--border)]/30">
+      <td className="py-1 px-3 text-sm font-semibold text-right tabular-nums border-l border-(--border)/30">
         {teacher.total_ws}
       </td>
     </>
@@ -160,26 +160,26 @@ function ClassCheckboxCell({ teacher, subject, classes, teachers }: {
   }
 
   return (
-    <td className="py-1 px-1.5 border-l border-[var(--border)]/30 relative">
+    <td className="py-1 px-1.5 border-l border-(--border)/30 relative">
       <button onClick={() => setOpen(v => !v)}
-        className="w-full text-xs text-left px-1.5 py-1 rounded border border-transparent hover:border-[var(--border)] transition-colors min-h-[1.75rem]">
+        className="w-full text-xs text-left px-1.5 py-1 rounded-sm border border-transparent hover:border-(--border) transition-colors min-h-7">
         {myAssignments.length > 0
           ? (
             <span className="flex flex-col gap-0.5">
               {myAssignments.map(a => <span key={a.id} className="whitespace-nowrap">{a.class_code}</span>)}
             </span>
           )
-          : <span className="text-[var(--text-muted)]">—</span>}
+          : <span className="text-(--text-muted)">—</span>}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 z-50 mt-1 w-40 max-h-56 overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl p-2 flex flex-col gap-0.5">
+          <div className="absolute top-full left-0 z-50 mt-1 w-40 max-h-56 overflow-y-auto bg-(--surface) border border-(--border) rounded-lg shadow-xl p-2 flex flex-col gap-0.5">
             {selectable.length === 0 && (
-              <span className="text-xs text-[var(--text-muted)] px-1 py-1">Keine Klassen offen</span>
+              <span className="text-xs text-(--text-muted) px-1 py-1">Keine Klassen offen</span>
             )}
             {selectable.map(c => (
-              <label key={c.id} className="flex items-center gap-2 text-xs px-1 py-0.5 rounded hover:bg-[var(--surface-hover)] cursor-pointer">
+              <label key={c.id} className="flex items-center gap-2 text-xs px-1 py-0.5 rounded-sm hover:bg-(--surface-hover) cursor-pointer">
                 <input type="checkbox" checked={myClassIds.has(c.id)} onChange={() => toggle(c)} />
                 {c.code}
               </label>
@@ -243,22 +243,22 @@ function FaecherverteilungTable({ teachers, classes }: { teachers: TeacherOut[];
       <table className="text-xs border-collapse">
         <thead>
           <tr>
-            <th className="py-2 px-3 text-left sticky left-0 z-20 bg-[var(--surface)] text-[var(--text-muted)] font-semibold">Lehrkraft</th>
-            <th className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30">Klassenleitung</th>
+            <th className="py-2 px-3 text-left sticky left-0 z-20 bg-(--surface) text-(--text-muted) font-semibold">Lehrkraft</th>
+            <th className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30">Klassenleitung</th>
             {SUBJECTS.map(s => (
-              <th key={s} className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30 min-w-[48px]">{s}</th>
+              <th key={s} className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30 min-w-[48px]">{s}</th>
             ))}
-            <th className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30">Korrektur</th>
-            <th className="py-2 px-1.5 text-left text-[var(--text-muted)] font-semibold">Notiz</th>
-            <th className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30" title="Stunden nach Arbeitsvertrag">AvSt</th>
-            <th className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30" title="AvSt minus zugewiesene WS">Diff</th>
-            <th className="py-2 px-3 text-right text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30">Gesamt-WS</th>
+            <th className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30">Korrektur</th>
+            <th className="py-2 px-1.5 text-left text-(--text-muted) font-semibold">Notiz</th>
+            <th className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30" title="Stunden nach Arbeitsvertrag">AvSt</th>
+            <th className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30" title="AvSt minus zugewiesene WS">Diff</th>
+            <th className="py-2 px-3 text-right text-(--text-muted) font-semibold border-l border-(--border)/30">Gesamt-WS</th>
           </tr>
         </thead>
         <tbody>
           {teachers.map(t => (
-            <tr key={t.id} className="border-t border-[var(--border)]/40">
-              <td className="py-1 px-3 whitespace-nowrap sticky left-0 z-20 bg-[var(--bg)] font-medium">{t.last_name}, {t.first_name}</td>
+            <tr key={t.id} className="border-t border-(--border)/40">
+              <td className="py-1 px-3 whitespace-nowrap sticky left-0 z-20 bg-(--bg) font-medium">{t.last_name}, {t.first_name}</td>
               <KlassenleitungCell teacher={t} classes={classes} />
               {SUBJECTS.map(s => (
                 <ClassCheckboxCell key={s} teacher={t} subject={s} classes={classes} teachers={teachers} />
@@ -268,23 +268,23 @@ function FaecherverteilungTable({ teachers, classes }: { teachers: TeacherOut[];
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-[var(--border)]">
-            <td className="py-2 px-3 font-semibold sticky left-0 z-20 bg-[var(--surface)]">Summe WS</td>
-            <td className="border-l border-[var(--border)]/30" />
+          <tr className="border-t-2 border-(--border)">
+            <td className="py-2 px-3 font-semibold sticky left-0 z-20 bg-(--surface)">Summe WS</td>
+            <td className="border-l border-(--border)/30" />
             {SUBJECTS.map(s => (
-              <td key={s} className="py-2 px-1.5 text-center font-semibold tabular-nums border-l border-[var(--border)]/30">
+              <td key={s} className="py-2 px-1.5 text-center font-semibold tabular-nums border-l border-(--border)/30">
                 {subjectTotals[s] || ""}
               </td>
             ))}
-            <td className="border-l border-[var(--border)]/30" />
+            <td className="border-l border-(--border)/30" />
             <td />
-            <td className="py-2 px-1.5 text-center font-semibold tabular-nums border-l border-[var(--border)]/30" title="Summe AvSt">
+            <td className="py-2 px-1.5 text-center font-semibold tabular-nums border-l border-(--border)/30" title="Summe AvSt">
               {avTotal || ""}
             </td>
-            <td className={`py-2 px-1.5 text-center font-semibold tabular-nums border-l border-[var(--border)]/30 ${avstDiffClass(avTotal ? diffTotal : null)}`}>
+            <td className={`py-2 px-1.5 text-center font-semibold tabular-nums border-l border-(--border)/30 ${avstDiffClass(avTotal ? diffTotal : null)}`}>
               {avTotal ? (diffTotal > 0 ? `+${diffTotal}` : diffTotal) : ""}
             </td>
-            <td className="py-2 px-3 text-right font-bold tabular-nums border-l border-[var(--border)]/30">{grandTotal}</td>
+            <td className="py-2 px-3 text-right font-bold tabular-nums border-l border-(--border)/30">{grandTotal}</td>
           </tr>
         </tfoot>
       </table>
@@ -317,12 +317,12 @@ function WochenstundenTable({ teachers, classes }: { teachers: TeacherOut[]; cla
       <table className="text-xs border-collapse">
         <thead>
           <tr>
-            <th className="py-2 px-3 text-left text-[var(--text-muted)] font-semibold">Fach</th>
+            <th className="py-2 px-3 text-left text-(--text-muted) font-semibold">Fach</th>
             {GRADES.map(g => (
-              <th key={g} className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30 w-20">{g}</th>
+              <th key={g} className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30 w-20">{g}</th>
             ))}
-            <th className="py-2 px-1.5 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30">Summe</th>
-            <th className="py-2 px-3 text-[var(--text-muted)] font-semibold border-l border-[var(--border)]/30">Zugewiesen / Gesamt</th>
+            <th className="py-2 px-1.5 text-(--text-muted) font-semibold border-l border-(--border)/30">Summe</th>
+            <th className="py-2 px-3 text-(--text-muted) font-semibold border-l border-(--border)/30">Zugewiesen / Gesamt</th>
           </tr>
         </thead>
         <tbody>
@@ -331,10 +331,10 @@ function WochenstundenTable({ teachers, classes }: { teachers: TeacherOut[]; cla
             const assigned = assignedTotals[s] ?? 0;
             const fullyAssigned = assigned >= needed;
             return (
-              <tr key={s} className="border-t border-[var(--border)]/40">
+              <tr key={s} className="border-t border-(--border)/40">
                 <td className="py-1 px-3 font-medium">{s}</td>
                 {GRADES.map(g => (
-                  <td key={g} className="py-1 px-1.5 border-l border-[var(--border)]/30">
+                  <td key={g} className="py-1 px-1.5 border-l border-(--border)/30">
                     {/* Uncontrolled input: without the value in the key it keeps the
                         0 it mounted with before the query resolved — the key forces
                         a remount once the saved value arrives. */}
@@ -346,11 +346,11 @@ function WochenstundenTable({ teachers, classes }: { teachers: TeacherOut[]; cla
                     />
                   </td>
                 ))}
-                <td className="py-1 px-1.5 text-center font-semibold tabular-nums border-l border-[var(--border)]/30">
+                <td className="py-1 px-1.5 text-center font-semibold tabular-nums border-l border-(--border)/30">
                   {needed || ""}
                 </td>
-                <td className={`py-1 px-3 text-center font-semibold tabular-nums border-l border-[var(--border)]/30 ${
-                  needed === 0 ? "text-[var(--text-muted)]" : fullyAssigned ? "text-green-500" : "text-red-500"
+                <td className={`py-1 px-3 text-center font-semibold tabular-nums border-l border-(--border)/30 ${
+                  needed === 0 ? "text-(--text-muted)" : fullyAssigned ? "text-green-500" : "text-red-500"
                 }`}>
                   {needed === 0 ? "–" : `${assigned}/${needed}`}
                   {needed > 0 && !fullyAssigned && <span className="ml-1" title="Nicht vollständig zugewiesen">⚠️</span>}
@@ -491,18 +491,18 @@ export default function AdminTeachersPage() {
   if (!auth || !aReady || !allowed) return null;
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div>
-        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Zurück</button>
+        <button onClick={() => router.push("/admin")} className="mb-2 text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Zurück</button>
         <h1 className="text-2xl font-black tracking-tight">🧑‍🏫 Lehrerdaten</h1>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
+        <p className="text-(--text-muted) text-sm mt-1">
           Klassenleitung · Fächerverteilung · Wochenstunden. Lehrkräfte anlegen &amp; per CSV importieren unter{" "}
-          <button onClick={() => router.push("/admin/users")} className="underline hover:text-[var(--accent)]">Benutzerverwaltung</button>.
+          <button onClick={() => router.push("/admin/users")} className="underline hover:text-(--accent)">Benutzerverwaltung</button>.
         </p>
       </div>
 
       {/* Teachersetup: Klassenleitung + Fächerverteilung + Korrektur/Gesamt-WS (admin only) */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Fächerverteilung</h2>
           <Hint text={"Klassenleitung: berechtigt zum Bearbeiten der eigenen Klasse (Name, Symbol). Zwei Lehrkräfte mit derselben Klasse bilden ein Klassenleitungsteam.\n\nPro Lehrkraft und Fach: Klassen per Checkbox zuweisen. Bereits einer anderen Lehrkraft zugewiesene Klassen werden für dieses Fach ausgeblendet — offene Zellen zeigen, was noch unbesetzt ist. Klasse 9/10: Ma, De, En laufen im Kurssystem und werden hier nicht als Klasse zugewiesen.\n\nKorrektur: manuelle Anpassung der Gesamt-Wochenstunden (+/-), z. B. Abminderung für eine Funktion. Notiz erklärt den Grund. Gesamt-WS = Summe aus der Fächerverteilung + Korrektur. Die Summenzeile zeigt die Gesamtstunden je Fach und die Schulgesamtsumme."} />
@@ -510,26 +510,26 @@ export default function AdminTeachersPage() {
           <button
             onClick={async () => printTeacherSheets(teachers, new Map((await api.teachers.getWochenstunden()).map(r => [`${r.subject}|${r.grade}`, r.hours])))}
             disabled={teachers.length === 0}
-            className="shrink-0 w-auto rounded-lg border border-[var(--border)] text-xs font-semibold py-1.5 px-3 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40"
+            className="shrink-0 w-auto rounded-lg border border-(--border) text-xs font-semibold py-1.5 px-3 hover:border-(--accent) hover:text-(--accent) transition-colors disabled:opacity-40"
           >
             🖨 Zuweisungsplan drucken (PDF)
           </button>
         </div>
         {teachers.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch keine Lehrkräfte — erst per CSV importieren.</p>
+          <p className="text-sm text-(--text-muted)">Noch keine Lehrkräfte — erst per CSV importieren.</p>
         ) : (
           <FaecherverteilungTable teachers={teachers} classes={classes} />
         )}
       </section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-sm">Wochenstunden</h2>
           <Hint text={"Wochenstunden je Fach und Klassenstufe — bestimmt die Gesamt-WS jeder Lehrkraft aus ihrer Fächerverteilung.\n\nStandardwerte: Hauptfächer (Ma, De, En) 4 · Nebenfächer 1 · Religion 2 · Sport 2 · Wahlpflicht 3. Hier anpassbar.\n\n'Summe' = benötigte Wochenstunden für das Fach (Stunden × Klassenanzahl je Stufe). 'Zugewiesen / Gesamt' zeigt, wie viel davon bereits Lehrkräften zugewiesen ist — rot mit ⚠️ bei unvollständiger Zuweisung, grün wenn vollständig gedeckt."} />
           <div className="flex-1" />
           <button
             onClick={async () => printWochenstunden(teachers, classes, new Map((await api.teachers.getWochenstunden()).map(r => [`${r.subject}|${r.grade}`, r.hours])))}
-            className="shrink-0 w-auto rounded-lg border border-[var(--border)] text-xs font-semibold py-1.5 px-3 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="shrink-0 w-auto rounded-lg border border-(--border) text-xs font-semibold py-1.5 px-3 hover:border-(--accent) hover:text-(--accent) transition-colors"
           >
             🖨 Übersicht drucken (PDF)
           </button>

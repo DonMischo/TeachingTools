@@ -82,11 +82,11 @@ export function SchildQuiz({ art, onAntwort, onZu }: {
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={`Zeichen ${f.nummer}`}>
-      <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-2xl">
         <div className="flex items-center gap-4">
           <SchildBild art={art} />
           <div>
-            <div className="text-xs text-[var(--text-muted)]">Zeichen {f.nummer}</div>
+            <div className="text-xs text-(--text-muted)">Zeichen {f.nummer}</div>
             <div className="font-black">{gewaehlt === null ? "Welches Schild ist das?" : f.name}</div>
           </div>
         </div>
@@ -94,8 +94,8 @@ export function SchildQuiz({ art, onAntwort, onZu }: {
         <div className="mt-3 flex flex-col gap-2">
           {f.antworten.map((a, i) => {
             const zeigen = gewaehlt !== null;
-            const farbe = !zeigen ? "border-[var(--border)] hover:border-[var(--accent)]"
-              : i === f.richtig ? "border-green-600 bg-green-600/15" : i === gewaehlt ? "border-red-600 bg-red-600/15" : "border-[var(--border)] opacity-60";
+            const farbe = !zeigen ? "border-(--border) hover:border-(--accent)"
+              : i === f.richtig ? "border-green-600 bg-green-600/15" : i === gewaehlt ? "border-red-600 bg-red-600/15" : "border-(--border) opacity-60";
             return (
               <button key={a} type="button" disabled={zeigen}
                 className={`rounded-lg border px-3 py-2 text-left text-sm ${farbe}`}
@@ -107,7 +107,7 @@ export function SchildQuiz({ art, onAntwort, onZu }: {
         </div>
         {gewaehlt !== null && <p className="mt-3 text-sm leading-relaxed">{f.erklaerung}</p>}
         <div className="mt-4 flex justify-end">
-          <button type="button" autoFocus={gewaehlt !== null} className="rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-bold text-white" onClick={onZu}>
+          <button type="button" autoFocus={gewaehlt !== null} className="rounded-lg bg-(--accent) px-4 py-1.5 text-sm font-bold text-white" onClick={onZu}>
             {gewaehlt === null ? "Später" : "Weiter"}
           </button>
         </div>

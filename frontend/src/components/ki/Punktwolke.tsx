@@ -103,12 +103,12 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-5 items-start">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-3">
           <canvas
             ref={canvas}
             width={GROESSE}
             height={GROESSE}
-            className="block rounded-xl text-[var(--accent)]"
+            className="block rounded-xl text-(--accent)"
             style={{ width: GROESSE, maxWidth: "100%" }}
             aria-label={`Punktwolke, Schritt ${t} von ${SCHRITTE}, Ähnlichkeit ${Math.round(passt * 100)} Prozent`}
           />
@@ -125,8 +125,8 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
                 onClick={() => { setFormNr(i); zuruecksetzen(); }}
                 className={`px-3 py-1.5 rounded-xl border text-sm font-bold ${
                   i === formNr
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-                    : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+                    ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+                    : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
                 }`}
               >
                 {f.icon} {f.titel}
@@ -137,7 +137,7 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-bold">
               🎚️ Prompt-Stärke: {staerke.toFixed(1)}
-              <span className="ml-2 font-normal text-[var(--text-muted)]">
+              <span className="ml-2 font-normal text-(--text-muted)">
                 {staerke === 0 ? "hört gar nicht auf den Wunsch"
                   : staerke <= 2 ? "gut so"
                     : staerke <= 6 ? "drängt schon" : "viel zu viel"}
@@ -147,24 +147,24 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
               type="range" min={0} max={12} step={0.5}
               value={staerke}
               onChange={e => { setStaerke(Number(e.target.value)); zuruecksetzen(); }}
-              className="w-full accent-[var(--accent)]"
+              className="w-full accent-(--accent)"
               aria-label="Prompt-Stärke"
             />
           </label>
 
-          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-(--text-muted) flex-wrap">
             <span>Schritt {SCHRITTE - t} von {SCHRITTE}</span>
             <span>·</span>
             <span>trifft die Form zu {Math.round(passt * 100)} %</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
-            <span>🎲 Seed <b className="font-mono text-[var(--text)]">{seed}</b> ({herkunft})</span>
+          <div className="flex items-center gap-2 text-xs text-(--text-muted) flex-wrap">
+            <span>🎲 Seed <b className="font-mono text-(--text)">{seed}</b> ({herkunft})</span>
             <button
               type="button"
               onClick={() => { setEigenerSeed(Math.floor(Math.random() * 100000)); }}
-              className="px-2 py-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)]
-                hover:bg-[var(--surface-hover)] font-bold"
+              className="px-2 py-0.5 rounded-lg border border-(--border) bg-(--surface)
+                hover:bg-(--surface-hover) font-bold"
             >
               neuer Seed
             </button>
@@ -172,8 +172,8 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
               <button
                 type="button"
                 onClick={() => setEigenerSeed(null)}
-                className="px-2 py-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)]
-                  hover:bg-[var(--surface-hover)] font-bold"
+                className="px-2 py-0.5 rounded-lg border border-(--border) bg-(--surface)
+                  hover:bg-(--surface-hover) font-bold"
               >
                 zurück zum Text
               </button>
@@ -185,21 +185,21 @@ export function Punktwolke({ signatur }: { signatur: string | null }) {
             <button
               type="button"
               onClick={() => { if (t <= 0) zuruecksetzen(); setLaeuft(l => !l); }}
-              className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+              className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
             >
               {laeuft ? "⏸ Anhalten" : t <= 0 ? "↺ Noch einmal" : "▶︎ Entrauschen"}
             </button>
             <button
               type="button"
               onClick={zuruecksetzen}
-              className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)]
-                hover:bg-[var(--surface-hover)] text-sm font-bold"
+              className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)
+                hover:bg-(--surface-hover) text-sm font-bold"
             >
               ↺ Zurück zum Rauschen
             </button>
           </div>
 
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          <p className="text-xs text-(--text-muted) leading-relaxed">
             Hier wird nichts abgespielt: Jeder Schritt wird gerade ausgerechnet. Das geht nur,
             weil das Ziel bekannt ist — eine Handvoll Punkte statt aller Bilder der Welt. Ein
             echtes Bildmodell muss diese Richtung aus Milliarden Bildern schätzen, den Rest macht

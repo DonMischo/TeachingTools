@@ -167,9 +167,9 @@ export default function LueckentextPlayPage() {
   // ── Waiting screen ───────────────────────────────────────────────────────
   if (phase === "waiting" || (phase === "active" && !board)) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)]">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg)">
         <div className="text-5xl">📝</div>
-        <p className="text-[var(--text-muted)] text-sm animate-pulse">Warte auf Start…</p>
+        <p className="text-(--text-muted) text-sm animate-pulse">Warte auf Start…</p>
       </div>
     );
   }
@@ -177,7 +177,7 @@ export default function LueckentextPlayPage() {
   // ── Finished screen ──────────────────────────────────────────────────────
   if (phase === "finished") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-[var(--bg)] text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg) text-center">
         <div className="text-5xl">🎉</div>
         <p className="font-black text-xl">Fertig!</p>
         {exportToken && (
@@ -244,10 +244,10 @@ export default function LueckentextPlayPage() {
 
         {hasWordBank && (
           <>
-            <p className="lg:hidden text-sm text-[var(--text-muted)]">
+            <p className="lg:hidden text-sm text-(--text-muted)">
               Tippe auf eine Lücke, um ein Wort aus der Wortbank zu wählen.
             </p>
-            <aside className="hidden lg:block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 lg:w-60 lg:shrink-0 lg:sticky lg:top-6">
+            <aside className="hidden lg:block rounded-2xl border border-(--border) bg-(--surface) p-4 lg:w-60 lg:shrink-0 lg:sticky lg:top-6">
               <h2 className="text-sm font-semibold mb-2">Wortbank</h2>
               <div className="flex flex-wrap gap-2">
                 {wordBankOrder.map((word, i) => (
@@ -294,25 +294,25 @@ function remainingWords(order: string[], usedUp: string[]): string[] {
  *  long. Hidden on wide screens, where the sidebar is always in view. */
 function WordPicker({ words, onPick, onClose }: { words: string[]; onPick: (word: string) => void; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[70] flex items-end bg-black/50 lg:hidden" onClick={onClose}>
+    <div className="fixed inset-0 z-70 flex items-end bg-black/50 lg:hidden" onClick={onClose}>
       <div
-        className="w-full max-h-[60vh] flex flex-col gap-3 rounded-t-2xl border-t border-[var(--border)] p-4"
+        className="w-full max-h-[60vh] flex flex-col gap-3 rounded-t-2xl border-t border-(--border) p-4"
         style={{ background: "var(--bg)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between shrink-0">
           <h2 className="text-sm font-semibold">Wortbank</h2>
-          <button onClick={onClose} className="text-xs text-[var(--text-muted)]">Schließen</button>
+          <button onClick={onClose} className="text-xs text-(--text-muted)">Schließen</button>
         </div>
         {words.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Alle Wörter sind vergeben.</p>
+          <p className="text-sm text-(--text-muted)">Alle Wörter sind vergeben.</p>
         ) : (
           <div className="flex flex-col gap-2 overflow-y-auto">
             {words.map((word, i) => (
               <button
                 key={i}
                 onClick={() => onPick(word)}
-                className="w-full rounded-xl border-2 border-[var(--border)] px-3 py-2.5 text-left active:border-[var(--accent)]"
+                className="w-full rounded-xl border-2 border-(--border) px-3 py-2.5 text-left active:border-(--accent)"
               >
                 {word}
               </button>
@@ -342,7 +342,7 @@ function WordChip({ index, word, selected, onClick }: { index: number; word: str
       onClick={onClick}
       style={style}
       className={`px-3 py-1.5 rounded-xl text-sm font-medium border-2 cursor-grab active:cursor-grabbing transition-colors ${
-        selected ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)]"
+        selected ? "border-(--accent) bg-(--accent)/10" : "border-(--border)"
       }`}
     >
       {word}
@@ -365,7 +365,7 @@ function Gap({
     attempt?.match === "exact" ? "border-green-500 bg-green-500/10 text-green-600"
     : attempt?.match === "near" ? "border-amber-500 bg-amber-500/10 text-amber-600 border-dashed"
     : attempt?.match === "wrong" ? "border-red-500 bg-red-500/10 text-red-600"
-    : "border-[var(--border)]";
+    : "border-(--border)";
 
   const { setNodeRef, isOver } = useDroppable({ id: gap.id });
 
@@ -381,13 +381,13 @@ function Gap({
           aria-label={value ? `Lücke, gefüllt mit ${value}` : "Leere Lücke"}
           // Ziehlücke: Pille wie die Wortkärtchen, leer gestrichelt und getönt —
           // klar anders als die Schreiblinie der Freitext-Lücke.
-          className={`inline-block min-w-[4rem] px-3 py-0.5 rounded-full border-2 text-center cursor-pointer ${matchClass} ${
-            !value && !attempt?.match ? "border-dashed bg-[var(--accent)]/5" : ""} ${isOver ? "bg-[var(--accent)]/20" : ""}`}
+          className={`inline-block min-w-16 px-3 py-0.5 rounded-full border-2 text-center cursor-pointer ${matchClass} ${
+            !value && !attempt?.match ? "border-dashed bg-(--accent)/5" : ""} ${isOver ? "bg-(--accent)/20" : ""}`}
         >
           {value || " "}
         </button>
         {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
-        {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}
+        {attempt?.revealed && attempt.hint && <span className="text-xs text-(--text-muted)">{attempt.hint}</span>}
       </span>
     );
   }
@@ -402,14 +402,14 @@ function Gap({
             <button
               key={choice}
               onClick={() => onSubmit(choice)}
-              className={`px-2 py-0.5 rounded-lg border-2 text-sm ${choice === value ? matchClass : "border-[var(--border)]"}`}
+              className={`px-2 py-0.5 rounded-lg border-2 text-sm ${choice === value ? matchClass : "border-(--border)"}`}
             >
               {choice}
             </button>
           ))}
         </span>
         {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
-        {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}
+        {attempt?.revealed && attempt.hint && <span className="text-xs text-(--text-muted)">{attempt.hint}</span>}
       </span>
     );
   }
@@ -428,10 +428,10 @@ function Gap({
         placeholder="✎"
         aria-label="Freitext-Lücke"
         // Freitext: eine Schreiblinie statt eines Kastens.
-        className={`inline-block max-w-full px-1 py-0.5 rounded-none border-0 border-b-2 text-center bg-transparent placeholder:text-[var(--text-muted)] focus:outline-none focus:bg-[var(--accent)]/5 ${matchClass}`}
+        className={`inline-block max-w-full px-1 py-0.5 rounded-none border-0 border-b-2 text-center bg-transparent placeholder:text-(--text-muted) focus:outline-hidden focus:bg-(--accent)/5 ${matchClass}`}
       />
       {attempt?.match === "near" && <span className="text-xs text-amber-600">fast richtig!</span>}
-      {attempt?.revealed && attempt.hint && <span className="text-xs text-[var(--text-muted)]">{attempt.hint}</span>}
+      {attempt?.revealed && attempt.hint && <span className="text-xs text-(--text-muted)">{attempt.hint}</span>}
     </span>
   );
 }

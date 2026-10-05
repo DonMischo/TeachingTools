@@ -356,11 +356,11 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
   const complete = !p.error && w > 0 && values.length === expected;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🖼️ Bildformate</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             PBM, PGM und PPM sind Bilddateien aus lauter Zahlen. Links tippen, rechts sofort sehen —
             oder ins Bild klicken und zusehen, wie sich die Zahlen ändern.
           </p>
@@ -376,26 +376,26 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
             onClick={() => { setTab(f.magic); setCaret(null); setHover(null); }}
             className={`px-4 py-2 rounded-xl border text-left transition-colors ${
               tab === f.magic
-                ? "border-[var(--accent)] bg-[var(--surface)]"
-                : "border-[var(--border)] hover:border-[var(--accent)]"
+                ? "border-(--accent) bg-(--surface)"
+                : "border-(--border) hover:border-(--accent)"
             }`}
           >
             <div className="font-black text-sm" style={{ color: f.color }}>{f.name}</div>
-            <div className="text-xs text-[var(--text-muted)]">{f.sub}</div>
+            <div className="text-xs text-(--text-muted)">{f.sub}</div>
           </button>
         ))}
         <div className="flex-1" />
         <button
           onClick={() => setSrc(rebuild(src, p))}
           disabled={w < 1 || !!p.error}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40"
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40"
           title={`Werte auf ${w} × ${h} bringen und je ${w} Werte pro Zeile untereinander setzen`}
         >
           ↹ Aufräumen
         </button>
         <button
           onClick={() => { setSrc(EXAMPLES[tab]); setCaret(null); }}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]"
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
         >
           ↺ Beispiel
         </button>
@@ -411,15 +411,15 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
             onBlur={() => setCaret(null)}
             spellCheck={false}
             rows={20}
-            className="w-full font-mono text-sm leading-relaxed rounded-2xl border border-[var(--border)]
-              bg-[var(--surface)] p-4 resize-y focus:outline-none focus:border-[var(--accent)]"
+            className="w-full font-mono text-sm leading-relaxed rounded-2xl border border-(--border)
+              bg-(--surface) p-4 resize-y focus:outline-hidden focus:border-(--accent)"
             aria-label="Bilddatei als Text"
           />
 
           {p.error ? (
             <p className="text-sm rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2">⚠️ {p.error}</p>
           ) : (
-            <p className="text-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+            <p className="text-sm rounded-xl border border-(--border) bg-(--surface) px-3 py-2">
               {complete ? "✅ " : "✏️ "}
               {magic} · {w} × {h} Pixel · {expected} Werte
               {magic !== "P1" && ` · Maximalwert ${max}`}
@@ -430,17 +430,17 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
           ))}
 
           {/* Aufbau der Datei */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <div className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-3">Aufbau</div>
+          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+            <div className="text-xs uppercase tracking-widest text-(--text-muted) mb-3">Aufbau</div>
             <div className="flex flex-col gap-1.5">
               {STRUCTURE[tab].map(([code, text]) => (
                 <div key={code} className="flex gap-3 text-sm">
-                  <code className="font-mono shrink-0 w-24 text-[var(--accent)]">{code}</code>
-                  <span className="text-[var(--text-muted)]">{text}</span>
+                  <code className="font-mono shrink-0 w-24 text-(--accent)">{code}</code>
+                  <span className="text-(--text-muted)">{text}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-3 leading-relaxed">
+            <p className="text-xs text-(--text-muted) mt-3 leading-relaxed">
               Zeilenumbrüche sind egal: Die Werte werden der Reihe nach gelesen und nach je{" "}
               {w > 0 ? w : "Breite"} Werten in die nächste Bildzeile umgebrochen. Zeilen mit{" "}
               <code className="font-mono">#</code> sind Kommentare.
@@ -450,8 +450,8 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
 
         {/* Bild */}
         <div className="flex flex-col gap-3">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
-            <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Bild</div>
+          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+            <div className="text-xs uppercase tracking-widest text-(--text-muted)">Bild</div>
             {w > 0 ? (
               <div className="overflow-x-auto">
                 <canvas
@@ -459,23 +459,23 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
                   onClick={e => { const i = pixelAt(e); if (i !== null) paint(i); }}
                   onMouseMove={e => setHover(pixelAt(e))}
                   onMouseLeave={() => setHover(null)}
-                  className="border border-[var(--border)] rounded-lg cursor-crosshair"
+                  className="border border-(--border) rounded-lg cursor-crosshair"
                   style={{ imageRendering: "pixelated" }}
                 />
               </div>
             ) : (
-              <p className="text-sm text-[var(--text-muted)]">Noch kein Bild — der Kopf der Datei stimmt nicht.</p>
+              <p className="text-sm text-(--text-muted)">Noch kein Bild — der Kopf der Datei stimmt nicht.</p>
             )}
-            <p className="text-xs text-[var(--text-muted)] font-mono min-h-[1.25rem]">
+            <p className="text-xs text-(--text-muted) font-mono min-h-5">
               {hover !== null ? describe(hover) : ""}
             </p>
           </div>
 
           {/* Werkzeug zum Klicken */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
-            <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Ins Bild klicken</div>
+          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+            <div className="text-xs uppercase tracking-widest text-(--text-muted)">Ins Bild klicken</div>
             {tab === "P1" && (
-              <p className="text-sm text-[var(--text-muted)]">
+              <p className="text-sm text-(--text-muted)">
                 Ein Klick schaltet das Pixel zwischen <code className="font-mono">0</code> (weiß) und{" "}
                 <code className="font-mono">1</code> (schwarz) um.
               </p>
@@ -487,7 +487,7 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
                     <button
                       key={v}
                       onClick={() => setGray(v)}
-                      className={`w-11 h-11 rounded-lg border-2 ${gray === v ? "border-[var(--accent)]" : "border-[var(--border)]"}`}
+                      className={`w-11 h-11 rounded-lg border-2 ${gray === v ? "border-(--accent)" : "border-(--border)"}`}
                       style={{ background: `rgb(${v},${v},${v})` }}
                       title={`Grauwert ${Math.round((v / 255) * max)}`}
                       aria-label={`Grauwert ${Math.round((v / 255) * max)}`}
@@ -496,11 +496,11 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
                   <input
                     type="range" min={0} max={255} value={gray}
                     onChange={e => setGray(Number(e.target.value))}
-                    className="flex-1 min-w-[8rem]"
+                    className="flex-1 min-w-32"
                     aria-label="Grauwert"
                   />
                 </div>
-                <p className="text-sm text-[var(--text-muted)]">
+                <p className="text-sm text-(--text-muted)">
                   Gewählter Wert: <span className="font-mono font-bold">{Math.round((gray / 255) * max)}</span> von {max}
                 </p>
               </>
@@ -515,12 +515,12 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
                         key={name}
                         onClick={() => setRgb([r, g, b])}
                         className={`rounded-lg border-2 px-2 py-2 flex items-center gap-2 text-xs ${
-                          on ? "border-[var(--accent)]" : "border-[var(--border)]"
+                          on ? "border-(--accent)" : "border-(--border)"
                         }`}
                         title={`${r} ${g} ${b}`}
                       >
                         <span
-                          className="w-5 h-5 rounded shrink-0 border border-black/20"
+                          className="w-5 h-5 rounded-sm shrink-0 border border-black/20"
                           style={{ background: `rgb(${r},${g},${b})` }}
                         />
                         {name}
@@ -528,7 +528,7 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
                     );
                   })}
                 </div>
-                <p className="text-sm text-[var(--text-muted)]">
+                <p className="text-sm text-(--text-muted)">
                   Gewählte Farbe:{" "}
                   <span className="font-mono font-bold">{rgb.map(c => Math.round((c / 255) * max)).join(" ")}</span>{" "}
                   (Rot Grün Blau, je 0 bis {max})
@@ -536,7 +536,7 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
               </>
             )}
             {!complete && (
-              <p className="text-xs text-[var(--text-muted)]">
+              <p className="text-xs text-(--text-muted)">
                 Malen geht nur bei Pixeln, für die schon ein Wert dasteht — »↹ Aufräumen« füllt den Rest mit 0 auf.
               </p>
             )}
@@ -544,7 +544,7 @@ export default function Bildformate({ action, vorgabe }: { action?: ReactNode; v
         </div>
       </div>
 
-      <p className="text-xs text-[var(--text-muted)]">
+      <p className="text-xs text-(--text-muted)">
         P1, P2 und P3 sind die Text-Varianten. Dieselben Bilder gibt es als P4, P5 und P6 —
         dort stehen dieselben Zahlen platzsparend als Bytes statt als lesbare Ziffern.
       </p>

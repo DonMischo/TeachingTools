@@ -59,7 +59,7 @@ export function ExplorerInhalt({
         type="button"
         onClick={() => onOrdner(id)}
         data-nav={id}
-        className={"flex items-center gap-2 rounded px-2 py-1 text-left border " + (aktiv ? BLAU_MARKIERT : `border-transparent ${BLAU_HOVER}`)}
+        className={"flex items-center gap-2 rounded-sm px-2 py-1 text-left border " + (aktiv ? BLAU_MARKIERT : `border-transparent ${BLAU_HOVER}`)}
         style={{ paddingLeft: eingerueckt ? "1.5em" : undefined }}
       >
         <Symbol k={k} groesse={18} />
@@ -78,19 +78,19 @@ export function ExplorerInhalt({
           title="Eine Ebene nach oben"
           disabled={!hoch}
           onClick={() => hoch && onOrdner(hoch)}
-          className={`rounded w-7 h-7 flex items-center justify-center disabled:opacity-30 ${BLAU_HOVER}`}
+          className={`rounded-sm w-7 h-7 flex items-center justify-center disabled:opacity-30 ${BLAU_HOVER}`}
         >
           ↑
         </button>
         <div
-          className="flex-1 min-w-0 flex items-center gap-0.5 rounded px-1.5 py-1 overflow-x-auto whitespace-nowrap"
+          className="flex-1 min-w-0 flex items-center gap-0.5 rounded-sm px-1.5 py-1 overflow-x-auto whitespace-nowrap"
           style={{ background: farben.grund, border: `1px solid ${farben.linie}` }}
           data-testid="adressleiste"
         >
           {kette.map((k, i) => (
             <span key={k.id} className="flex items-center gap-0.5">
               {i > 0 && <span style={{ color: farben.leise }}>›</span>}
-              <button type="button" onClick={() => onOrdner(k.id)} className={`rounded px-1 ${BLAU_HOVER}`} data-pfad={k.id}>
+              <button type="button" onClick={() => onOrdner(k.id)} className={`rounded-sm px-1 ${BLAU_HOVER}`} data-pfad={k.id}>
                 {k.name}
               </button>
             </span>
@@ -118,7 +118,7 @@ export function ExplorerInhalt({
                 <p className="leading-snug">{aktuell.gesperrt}</p>
               </div>
               {hoch && (
-                <button type="button" onClick={() => onOrdner(hoch)} className="self-start rounded px-3 py-1.5 bg-[#0078d7] text-white font-semibold">
+                <button type="button" onClick={() => onOrdner(hoch)} className="self-start rounded-sm px-3 py-1.5 bg-[#0078d7] text-white font-semibold">
                   ← Zurück
                 </button>
               )}
@@ -138,7 +138,7 @@ export function ExplorerInhalt({
                   style={{ width: hilfe ? 112 : 92 }}
                 >
                   <Symbol k={k} groesse={icon} />
-                  <span className="leading-tight break-words w-full" style={{ fontSize: "0.92em" }}>{k.name}</span>
+                  <span className="leading-tight wrap-break-word w-full" style={{ fontSize: "0.92em" }}>{k.name}</span>
                   {k.art === "laufwerk" && (
                     <span className="w-full flex flex-col gap-0.5" aria-label="120 GB frei von 237 GB">
                       <span className="h-1.5 w-full rounded-full bg-[#0000001f] overflow-hidden"><span className="block h-full w-1/2 bg-[#0078d7]" /></span>

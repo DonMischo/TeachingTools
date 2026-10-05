@@ -54,7 +54,7 @@ export function VertraegeApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand)
       {art !== "meine" && (
         <div className="text-sm">
           <div className="mb-2 flex items-center gap-2">
-            <span className={`rounded px-2 py-0.5 text-xs font-bold ${BEWERTUNG[ARTEN[art].bewertung][1]}`}>{BEWERTUNG[ARTEN[art].bewertung][0]}</span>
+            <span className={`rounded-sm px-2 py-0.5 text-xs font-bold ${BEWERTUNG[ARTEN[art].bewertung][1]}`}>{BEWERTUNG[ARTEN[art].bewertung][0]}</span>
             <span className="text-slate-300">{ARTEN[art].erklaerung}</span>
           </div>
           {art === "strom" && <Hinweis>Dein geschätzter Verbrauch: <b>{kwh} kWh</b> im Jahr (Grundlast ~600 kWh + deine Geräte {geraeteKwh} kWh). Der Abschlag wird daraus berechnet — die Jahresabrechnung zeigt, ob es gereicht hat.</Hinweis>}

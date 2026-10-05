@@ -55,8 +55,8 @@ function Knopf({ an, onClick, children, klein, aus }: {
       className={`rounded-xl border font-bold transition-colors disabled:opacity-40
         ${klein ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm"} ${
         an
-          ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-          : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+          ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+          : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
       }`}
     >
       {children}
@@ -168,9 +168,9 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
+      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
         <h2 className="font-black">🧪 Woher kommen die Zahlen?</h2>
-        <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+        <p className="text-sm text-(--text-muted) leading-relaxed">
           Das fertige Wortnetz hat jemand von Hand eingetragen. Hier machst du es selbst — und zwar
           genau so, wie eine Maschine es macht: einen Text lesen und mitzählen, welches Wort auf
           welches folgt. Mehr ist Training nicht.
@@ -195,11 +195,11 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
         </div>
 
         {quelle.art === "mitgeliefert" && text && (
-          <details className="rounded-xl border border-[var(--border)] bg-[var(--bg)]">
+          <details className="rounded-xl border border-(--border) bg-(--bg)">
             <summary className="cursor-pointer px-3 py-2 text-sm font-bold">
               📄 Der Text ({woerterImText} Wörter)
             </summary>
-            <p className="px-3 pb-3 text-sm leading-relaxed whitespace-pre-line text-[var(--text-muted)]">
+            <p className="px-3 pb-3 text-sm leading-relaxed whitespace-pre-line text-(--text-muted)">
               {text}
             </p>
           </details>
@@ -211,14 +211,14 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
             onChange={e => setEigener(e.target.value)}
             rows={5}
             placeholder="Hier einen Text einfügen — ein Kapitel, ein Liedtext, ein Aufsatz. Je mehr, desto besser; unter 100 Wörtern plappert das Netz nur nach."
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] p-3 text-sm"
+            className="w-full rounded-xl border border-(--border) bg-(--bg) p-3 text-sm"
           />
         )}
 
         {quelle.art === "klasse" && (
           <div className="flex flex-col gap-2">
             {!zugang?.code ? (
-              <p className="text-sm text-[var(--text-muted)]">
+              <p className="text-sm text-(--text-muted)">
                 Den Klassenkorpus gibt es in einer Sitzung: Über »Zum Mitmachen« den Code ausgeben,
                 dann schreibt jede und jeder einen Satz dazu.
               </p>
@@ -231,15 +231,15 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
                     onKeyDown={e => { if (e.key === "Enter") void satzAbgeben(); }}
                     maxLength={200}
                     placeholder="Dein Satz für das Klassenmodell"
-                    className="flex-1 min-w-[12rem] rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm"
+                    className="flex-1 min-w-48 rounded-xl border border-(--border) bg-(--bg) px-3 py-2 text-sm"
                   />
                   <Knopf onClick={() => void satzAbgeben()} aus={sendet || !eigenerSatz.trim()}>
                     ＋ Beitragen
                   </Knopf>
                   <Knopf klein onClick={() => void korpusLaden()}>↻</Knopf>
                 </div>
-                {fehler && <p className="text-xs text-[var(--red)]">{fehler}</p>}
-                <p className="text-xs text-[var(--text-muted)]">
+                {fehler && <p className="text-xs text-(--red)">{fehler}</p>}
+                <p className="text-xs text-(--text-muted)">
                   {saetze.length === 0
                     ? "Noch kein Satz. Jede und jeder gibt einen ab — dann wird gezählt."
                     : `${saetze.length} ${saetze.length === 1 ? "Satz" : "Sätze"}, zusammen ${woerterImText} Wörter.`}
@@ -248,7 +248,7 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
                   <ul className="flex flex-col gap-1 max-h-40 overflow-y-auto text-sm">
                     {saetze.map(s => (
                       <li key={s.id} className="flex gap-2">
-                        <span className="text-[var(--text-muted)] shrink-0">{s.name}:</span>
+                        <span className="text-(--text-muted) shrink-0">{s.name}:</span>
                         <span>{s.text}</span>
                       </li>
                     ))}
@@ -263,7 +263,7 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
           <Knopf an onClick={zaehlen} aus={laeuft || !text.trim()}>
             {laeuft ? "zählt …" : "▶︎ Zählen"}
           </Knopf>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-(--text-muted)">
             {laeuft
               ? `${gelesen} von ${woerterImText} Wörtern gelesen`
               : `${woerterImText} Wörter im Text`}
@@ -271,9 +271,9 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
         </div>
 
         {laeuft && (
-          <div className="h-1.5 rounded-full bg-[var(--surface-hover)] overflow-hidden">
+          <div className="h-1.5 rounded-full bg-(--surface-hover) overflow-hidden">
             <div
-              className="h-full bg-[var(--accent)] transition-all duration-75"
+              className="h-full bg-(--accent) transition-all duration-75"
               style={{ width: `${woerterImText ? (gelesen / woerterImText) * 100 : 0}%` }}
             />
           </div>
@@ -281,7 +281,7 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
       </div>
 
       {sicht && netz && (
-        <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
+        <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <span><b>{netz.statistik!.woerter}</b> Wörter gelesen</span>
             <span><b>{netz.statistik!.verschiedene}</b> verschiedene</span>
@@ -295,14 +295,14 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
                 type="range" min={1} max={3} step={1}
                 value={rueckblick}
                 onChange={e => setRueckblick(Number(e.target.value))}
-                className="flex-1 min-w-[8rem] accent-[var(--accent)]"
+                className="flex-1 min-w-32 accent-(--accent)"
                 aria-label="Rückblick"
               />
-              <span className="text-xs text-[var(--text-muted)]">
+              <span className="text-xs text-(--text-muted)">
                 {rueckblick === 1 ? "gar keiner" : rueckblick === 2 ? "ein Wort" : "zwei Wörter"}
               </span>
             </div>
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+            <p className="text-xs text-(--text-muted) leading-relaxed">
               {rueckblick === 1
                 ? "Ohne Rückblick würfelt das Netz nur nach Worthäufigkeit — Wortsalat."
                 : rueckblick === 2
@@ -311,9 +311,9 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
             </p>
           </div>
 
-          <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--bg)]">
+          <div className="p-3 rounded-xl border border-(--border) bg-(--bg)">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
+              <span className="text-xs uppercase tracking-wide text-(--text-muted)">
                 So schreibt dein Netz
               </span>
               <Knopf klein onClick={() => setProbeSeed(s => s + 1)}>🎲 noch mal</Knopf>
@@ -324,7 +324,7 @@ export function Trainieren({ zugang, onNetz, aktiv }: {
           <div className="flex flex-wrap gap-2 items-center">
             <Knopf an onClick={() => onNetz(sicht)}>Mit diesem Netz schreiben →</Knopf>
             {aktiv && (
-              <span className="text-xs text-[var(--text-muted)]">
+              <span className="text-xs text-(--text-muted)">
                 In der Schreibstation liegt gerade: {aktiv.quelle} (Rückblick {aktiv.n})
               </span>
             )}

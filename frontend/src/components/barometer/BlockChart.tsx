@@ -39,10 +39,10 @@ export function BlockChart({ questions, results, chart }: {
             <div key={q.id} className="flex flex-col gap-1">
               <div className="text-sm">{q.text}</div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-4 rounded-full bg-[var(--border)] overflow-hidden">
-                  {mean != null && <div className="h-full bg-[var(--accent)]" style={{ width: `${frac * 100}%` }} />}
+                <div className="flex-1 h-4 rounded-full bg-(--border) overflow-hidden">
+                  {mean != null && <div className="h-full bg-(--accent)" style={{ width: `${frac * 100}%` }} />}
                 </div>
-                <span className="text-xs text-[var(--text-muted)] w-10 text-right">
+                <span className="text-xs text-(--text-muted) w-10 text-right">
                   {mean == null ? "–" : mean.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </span>
               </div>
@@ -63,9 +63,9 @@ export function BlockChart({ questions, results, chart }: {
         return (
           <div key={q.id} className="flex flex-col gap-1">
             <div className="text-sm">{q.text}</div>
-            <div className="flex w-full h-5 rounded-full overflow-hidden border border-[var(--border)]">
+            <div className="flex w-full h-5 rounded-full overflow-hidden border border-(--border)">
               {total === 0
-                ? <div className="w-full h-full bg-[var(--border)]" />
+                ? <div className="w-full h-full bg-(--border)" />
                 : steps.map((v, i) => {
                   const c = r.distribution[String(v)] ?? 0;
                   if (c === 0) return null;
@@ -75,13 +75,13 @@ export function BlockChart({ questions, results, chart }: {
                   );
                 })}
             </div>
-            <div className="text-xs text-[var(--text-muted)]">
+            <div className="text-xs text-(--text-muted)">
               {total === 0 ? "–" : <>Ø {mean!.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · {total}</>}
             </div>
           </div>
         );
       })}
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-(--text-muted)">
         {(first.scale_min_label || first.scale_max_label) && (
           <span>{first.scale_min_label} → {first.scale_max_label}</span>
         )}

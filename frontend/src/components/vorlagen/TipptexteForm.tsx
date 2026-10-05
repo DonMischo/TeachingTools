@@ -17,7 +17,7 @@ export function TipptexteForm({ value, onChange }: { value: TipptexteJson; onCha
       <Gruppe label={`Texte (${texts.length})`} hint="Ganze Sätze, 100–600 Zeichen. Nicht erlaubt: ^ ´ ` sowie @ € [ ] { } \ ~ | ² ³ µ.">
         {texts.map((t, i) => (
           <Karte key={i} offen={texts.length <= 3 || !t.text}
-            titel={<>{i + 1}. {t.title || <em className="text-[var(--text-muted)]">ohne Titel</em>}</>}
+            titel={<>{i + 1}. {t.title || <em className="text-(--text-muted)">ohne Titel</em>}</>}
             knoepfe={<ZeilenKnoepfe index={i} count={texts.length} what="Text"
               onMove={d => set({ texts: move(texts, i, d) })}
               onRemove={() => set({ texts: texts.filter((_, j) => j !== i) })} />}>
@@ -30,7 +30,7 @@ export function TipptexteForm({ value, onChange }: { value: TipptexteJson; onCha
             </Feld>
           </Karte>
         ))}
-        <button type="button" className="text-xs text-[var(--accent)] hover:underline self-start"
+        <button type="button" className="text-xs text-(--accent) hover:underline self-start"
           onClick={() => set({ texts: [...texts, { title: "", text: "" }] })}>+ Text</button>
       </Gruppe>
       <Feld label="Wörter für den Wortregen (optional)" hint="Einzelne Wörter, durch Kommas getrennt.">

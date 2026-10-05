@@ -46,8 +46,8 @@ export function FachFilter({ faecher, gewaehlt, setzen }: {
     <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Nach Fach filtern">
       <button type="button" onClick={() => setzen([])}
         className={`text-xs font-bold px-2.5 py-1 rounded-full border ${gewaehlt.length === 0
-          ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent"
-          : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+          ? "bg-(--accent) text-(--accent-text,#111) border-transparent"
+          : "border-(--border) text-(--text-muted) hover:text-(--text)"}`}>
         Alle Fächer
       </button>
       {faecher.map(f => <FachSchild key={f} name={f} aktiv={an(f)} onClick={() => umschalten(f)} />)}
@@ -77,7 +77,7 @@ export function FachEditor({ faecher, vonHand, vorschlaege, speichern, zurueckse
   return (
     <div className="flex flex-col gap-1.5" onClick={e => e.stopPropagation()}>
       <div className="flex flex-wrap gap-1">
-        {faecher.length === 0 && <span className="text-xs text-[var(--text-muted)]">kein Fach</span>}
+        {faecher.length === 0 && <span className="text-xs text-(--text-muted)">kein Fach</span>}
         {faecher.map(f => (
           <FachSchild key={f} name={f} onEntfernen={() => speichern(faecher.filter(x => x !== f))} />
         ))}
@@ -86,12 +86,12 @@ export function FachEditor({ faecher, vonHand, vorschlaege, speichern, zurueckse
         <input value={neu} onChange={e => setNeu(e.target.value)} list={listenId} maxLength={30}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); hinzu(); } }}
           placeholder="Fach hinzufügen …" aria-label="Fach hinzufügen"
-          className="flex-1 min-w-0 text-xs px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg)]" />
+          className="flex-1 min-w-0 text-xs px-2 py-1 rounded-lg border border-(--border) bg-(--bg)" />
         <button type="button" onClick={hinzu} disabled={beschaeftigt || !neu.trim()}
-          className="text-xs font-bold px-2 py-1 rounded-lg bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">+</button>
+          className="text-xs font-bold px-2 py-1 rounded-lg bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">+</button>
         {vonHand && (
           <button type="button" onClick={zuruecksetzen} disabled={beschaeftigt} title="Zurück zur Voreinstellung"
-            className="text-xs px-2 py-1 rounded-lg border border-[var(--border)] disabled:opacity-40">↺</button>
+            className="text-xs px-2 py-1 rounded-lg border border-(--border) disabled:opacity-40">↺</button>
         )}
       </div>
       <datalist id={listenId}>

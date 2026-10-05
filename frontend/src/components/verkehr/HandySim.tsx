@@ -79,7 +79,7 @@ export function HandySim({ art, lage, uhr, route, onRoute, beamenUebrig, onBeame
   return (
     <div className="absolute bottom-3 right-3 z-30 select-none" role="dialog" aria-label="Handy">
       {/* Gehäuse */}
-      <div className={`relative w-[260px] rounded-[2.2rem] p-2.5 shadow-2xl ring-1 ${apple ? "bg-gradient-to-b from-zinc-200 to-zinc-400 ring-zinc-500" : "bg-zinc-900 ring-black"}`}>
+      <div className={`relative w-[260px] rounded-[2.2rem] p-2.5 shadow-2xl ring-1 ${apple ? "bg-linear-to-b from-zinc-200 to-zinc-400 ring-zinc-500" : "bg-zinc-900 ring-black"}`}>
         <div className="relative overflow-hidden rounded-[1.7rem] bg-white text-slate-900">
           {/* Statuszeile mit Kamera: Apple = Insel, Android = Loch */}
           <div className="relative flex h-7 items-center justify-between px-4 text-[11px] font-bold">
@@ -93,7 +93,7 @@ export function HandySim({ art, lage, uhr, route, onRoute, beamenUebrig, onBeame
           <div className={`px-3 pb-1 text-sm font-black ${apple ? "text-slate-800" : "text-emerald-700"}`}>{apple ? " Karten" : "🗺️ Maps"}</div>
           <div className="relative px-3">
             <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Adresse, Laden, Haltestelle …"
-              className={`w-full rounded-full px-3 py-1.5 text-xs outline-none ring-1 ${apple ? "bg-zinc-100 ring-zinc-300" : "bg-emerald-50 ring-emerald-300"}`} />
+              className={`w-full rounded-full px-3 py-1.5 text-xs outline-hidden ring-1 ${apple ? "bg-zinc-100 ring-zinc-300" : "bg-emerald-50 ring-emerald-300"}`} />
             {treffer.length > 0 && (
               <ul className="absolute inset-x-3 top-9 z-10 max-h-56 overflow-auto rounded-xl bg-white text-xs shadow-xl ring-1 ring-slate-200">
                 {treffer.map((z) => (
@@ -120,8 +120,8 @@ export function HandySim({ art, lage, uhr, route, onRoute, beamenUebrig, onBeame
               </g>
             </svg>
             <div className="absolute right-1.5 top-1.5 flex flex-col gap-1">
-              <button type="button" className="h-6 w-6 rounded-full bg-white text-sm font-bold shadow" onClick={() => setMassstab((m) => Math.max(120, m / 1.5))} aria-label="Näher">+</button>
-              <button type="button" className="h-6 w-6 rounded-full bg-white text-sm font-bold shadow" onClick={() => setMassstab((m) => Math.min(1800, m * 1.5))} aria-label="Weiter weg">−</button>
+              <button type="button" className="h-6 w-6 rounded-full bg-white text-sm font-bold shadow-sm" onClick={() => setMassstab((m) => Math.max(120, m / 1.5))} aria-label="Näher">+</button>
+              <button type="button" className="h-6 w-6 rounded-full bg-white text-sm font-bold shadow-sm" onClick={() => setMassstab((m) => Math.min(1800, m * 1.5))} aria-label="Weiter weg">−</button>
             </div>
           </div>
           {/* Route und Knöpfe */}

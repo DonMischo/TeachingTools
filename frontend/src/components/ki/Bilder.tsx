@@ -236,7 +236,7 @@ export function Bilder({ signatur }: { signatur: string | null }) {
 
       {!punktmodus && (
       <div className="flex flex-col sm:flex-row gap-5 items-start">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-3">
           {zeigtFolge ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -272,7 +272,7 @@ export function Bilder({ signatur }: { signatur: string | null }) {
               max={maxSchritt}
               value={Math.min(t, maxSchritt)}
               onChange={e => { setLaeuft(false); setT(Number(e.target.value)); }}
-              className="w-full accent-[var(--accent)]"
+              className="w-full accent-(--accent)"
               aria-label="Schritt"
             />
           </label>
@@ -285,11 +285,11 @@ export function Bilder({ signatur }: { signatur: string | null }) {
                 setT(richtung === "vor" ? 0 : maxSchritt);
                 setLaeuft(true);
               }}
-              className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+              className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
             >
               {laeuft ? "⏸ Anhalten" : "▶︎ Abspielen"}
             </button>
-            <label className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold cursor-pointer">
+            <label className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold cursor-pointer">
               📦 Bildfolge (ZIP)
               <input
                 type="file"
@@ -311,16 +311,16 @@ export function Bilder({ signatur }: { signatur: string | null }) {
                   setT(folgen[nr].bilder.length - 1);
                   setLaeuft(false);
                 }}
-                className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
+                className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)"
               >
                 {folgen.map((f, i) => <option key={f.name} value={i}>{f.name}</option>)}
               </select>
             </label>
           )}
 
-          {zipFehler && <p className="text-sm text-[var(--red)]">{zipFehler}</p>}
+          {zipFehler && <p className="text-sm text-(--red)">{zipFehler}</p>}
 
-          <div className="text-xs text-[var(--text-muted)] leading-relaxed flex flex-col gap-2">
+          <div className="text-xs text-(--text-muted) leading-relaxed flex flex-col gap-2">
             <p>
               🎲 <b>Seed {signatur ?? "—"}</b>
               {signatur
@@ -361,8 +361,8 @@ function Umschalter({ an, onClick, children }: {
       onClick={onClick}
       className={`px-3.5 py-1.5 rounded-xl border font-bold text-sm ${
         an
-          ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-          : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+          ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+          : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
       }`}
     >
       {children}

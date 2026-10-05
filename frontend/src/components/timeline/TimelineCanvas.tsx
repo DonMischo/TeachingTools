@@ -275,7 +275,7 @@ export function TimelineCanvas({
 
         {hoverItem && (
           <div
-            className="pointer-events-none absolute z-20 rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg p-2 text-xs"
+            className="pointer-events-none absolute z-20 rounded-lg border border-(--border) bg-(--surface) shadow-lg p-2 text-xs"
             style={{
               left: clamp((hoverItem.x0 + hoverItem.x1) / 2, TOOLTIP_W / 2 + 4, Math.max(width - TOOLTIP_W / 2 - 4, TOOLTIP_W / 2 + 4)),
               top: Math.max(hoverItem.ey - 6, 4),
@@ -284,9 +284,9 @@ export function TimelineCanvas({
             }}
           >
             <div className="font-semibold">{hoverItem.ev.label}</div>
-            <div className="text-[var(--text-muted)]">{eventDateLabel(hoverItem.ev, axis)}</div>
+            <div className="text-(--text-muted)">{eventDateLabel(hoverItem.ev, axis)}</div>
             {hoverItem.ev.info && (
-              <p className="text-[var(--text-muted)] mt-1"
+              <p className="text-(--text-muted) mt-1"
                 style={{ display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {hoverItem.ev.info}
               </p>
@@ -316,8 +316,8 @@ function truncate(s: string, maxChars: number): string {
 function ZoomBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-7 h-7 rounded-lg border border-[var(--border)] text-sm
-        hover:border-[var(--accent)] transition-colors">
+      className="w-7 h-7 rounded-lg border border-(--border) text-sm
+        hover:border-(--accent) transition-colors">
       {label}
     </button>
   );

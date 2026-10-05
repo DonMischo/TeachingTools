@@ -151,12 +151,12 @@ export default function Labyrinthe() {
 
   const info = loeser ? LOESER[loeser] : ERZEUGER[erzeuger];
   const aktiv = gen.current !== null;
-  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] disabled:opacity-40";
-  const auswahl = "rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1";
+  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) bg-(--surface) hover:border-(--accent) disabled:opacity-40";
+  const auswahl = "rounded-lg border border-(--border) bg-(--surface) px-2 py-1";
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
         <label className="flex items-center gap-1">Erzeuger
           <select value={erzeuger} onChange={e => setErzeuger(e.target.value as Erzeuger)} className={auswahl}>
             {Object.entries(ERZEUGER).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
@@ -178,10 +178,10 @@ export default function Labyrinthe() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-4 items-start">
         <div className="flex flex-col gap-2 min-w-0">
           <canvas ref={canvas} width={l.R * px} height={l.R * px} data-fertig={fertig.current ? "1" : "0"}
-            className="w-full max-w-[640px] max-h-[60vh] object-contain rounded-xl border border-[var(--border)] [image-rendering:pixelated] self-center" />
+            className="w-full max-w-[640px] max-h-[60vh] object-contain rounded-xl border border-(--border) [image-rendering:pixelated] self-center" />
           <div className="flex flex-wrap items-center gap-2 justify-center">
             <button onClick={() => setLaeuft(x => !x)} disabled={!aktiv}
-              className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)] disabled:opacity-40">
+              className="px-3 py-1.5 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
               {laeuft ? "⏸ anhalten" : "▶ abspielen"}
             </button>
             <button className={knopf} disabled={!aktiv} onClick={() => { setLaeuft(false); schritt(); neuZeichnen(); }}>⏭ ein Schritt</button>
@@ -191,7 +191,7 @@ export default function Labyrinthe() {
               {TEMPI.map(([v, t]) => <option key={v} value={v}>{t}</option>)}
             </select>
           </div>
-          <p className="text-sm text-center text-[var(--text-muted)] min-h-[1.5em]">{l.notiz}</p>
+          <p className="text-sm text-center text-(--text-muted) min-h-[1.5em]">{l.notiz}</p>
           {fertig.current && (
             <div className="flex flex-wrap items-center gap-2 justify-center">
               <span className="text-sm">Weg suchen von <b className="text-green-600">Start</b> (oben links) zum <b className="text-rose-600">Ziel</b>:</span>
@@ -202,25 +202,25 @@ export default function Labyrinthe() {
           )}
         </div>
 
-        <section className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed">
+        <section className="flex flex-col gap-3 rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed">
           <h3 className="font-black text-lg">{info.name}</h3>
           <p>{info.text}</p>
           <div>
-            <p className="text-xs font-bold text-[var(--text-muted)] mb-1">{info.liste}{l.liste.length > 0 && ` · ${l.liste.length}`}</p>
+            <p className="text-xs font-bold text-(--text-muted) mb-1">{info.liste}{l.liste.length > 0 && ` · ${l.liste.length}`}</p>
             <div className="flex flex-wrap gap-1 font-mono text-[11px] max-h-40 overflow-auto" data-liste>
               {l.liste.slice(0, 40).map((e, i) => (
-                <span key={i} className={`px-1.5 py-0.5 rounded border ${i === 0 ? "border-[var(--accent)] font-bold" : "border-[var(--border)]"}`}>{e}</span>
+                <span key={i} className={`px-1.5 py-0.5 rounded-sm border ${i === 0 ? "border-(--accent) font-bold" : "border-(--border)"}`}>{e}</span>
               ))}
-              {l.liste.length > 40 && <span className="text-[var(--text-muted)]">… {l.liste.length - 40} mehr</span>}
+              {l.liste.length > 40 && <span className="text-(--text-muted)">… {l.liste.length - 40} mehr</span>}
             </div>
           </div>
           <Legende />
           {vergleich.length > 0 && (
             <table className="text-xs w-full">
-              <thead><tr className="text-left text-[var(--text-muted)]"><th>Löser</th><th className="text-right">angeschaut</th><th className="text-right">Weglänge</th></tr></thead>
+              <thead><tr className="text-left text-(--text-muted)"><th>Löser</th><th className="text-right">angeschaut</th><th className="text-right">Weglänge</th></tr></thead>
               <tbody>
                 {vergleich.map((z, i) => (
-                  <tr key={i} className="border-t border-[var(--border)]">
+                  <tr key={i} className="border-t border-(--border)">
                     <td>{LOESER[z.loeser].name}</td><td className="text-right font-mono">{z.besucht}</td><td className="text-right font-mono">{z.weg}</td>
                   </tr>
                 ))}
@@ -228,7 +228,7 @@ export default function Labyrinthe() {
             </table>
           )}
           {fertig.current && vergleich.length === 0 && (
-            <p className="text-xs rounded-lg bg-[var(--bg)] border border-[var(--border)] p-2">
+            <p className="text-xs rounded-lg bg-(--bg) border border-(--border) p-2">
               🤔 Lass alle drei Löser laufen und vergleiche. Stelle dann »Wände einreißen« auf 20: Welcher Löser findet jetzt nicht mehr den kürzesten Weg?
             </p>
           )}
@@ -241,9 +241,9 @@ export default function Labyrinthe() {
 function Legende() {
   const eintraege: [number, string][] = [[K.KOPF, "Kopf / aktuelle Zelle"], [K.SPUR, "Spur (auf dem Stapel)"], [K.RAND, "Rand / wartet"], [K.BESUCHT, "angeschaut"], [K.WEG, "gefundener Weg"]];
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-(--text-muted)">
       {eintraege.map(([k, t]) => (
-        <span key={k} className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: FARBE[k] }} />{t}</span>
+        <span key={k} className="flex items-center gap-1"><span className="w-3 h-3 rounded-xs inline-block" style={{ background: FARBE[k] }} />{t}</span>
       ))}
     </div>
   );

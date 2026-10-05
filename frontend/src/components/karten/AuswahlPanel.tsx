@@ -50,15 +50,15 @@ export default function AuswahlPanel({ ebenen, aktiv, setAktiv, inhalt, setInhal
     setze({ objekte: o });
   };
 
-  if (!ebenen.length) return <p className="text-[var(--text-muted)]">Zuerst unter »Ansehen« eine Ebene einschalten.</p>;
+  if (!ebenen.length) return <p className="text-(--text-muted)">Zuerst unter »Ansehen« eine Ebene einschalten.</p>;
   const aktivDa = ebenen.some((e) => e.id === aktiv);
 
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">Ebene</span>
+        <span className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Ebene</span>
         <select value={aktivDa ? aktiv : ""} onChange={(e) => { setAktiv(e.target.value); setSuche(""); }}
-          className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]">
+          className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)">
           {!aktivDa && <option value="">— wählen —</option>}
           {ebenen.map((e) => (
             <option key={e.id} value={e.id}>{e.name}{inhalt.auswahl[e.id]?.objekte.length ? ` (${inhalt.auswahl[e.id].objekte.length})` : ""}</option>
@@ -67,10 +67,10 @@ export default function AuswahlPanel({ ebenen, aktiv, setAktiv, inhalt, setInhal
       </label>
 
       {aktivDa && <>
-        <p className="text-xs text-[var(--text-muted)]">Klick auf die Karte wählt ein Objekt aus oder wieder ab. Rot umrandet = ausgewählt.</p>
+        <p className="text-xs text-(--text-muted)">Klick auf die Karte wählt ein Objekt aus oder wieder ab. Rot umrandet = ausgewählt.</p>
 
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">Auf der Karte</span>
+          <span className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Auf der Karte</span>
           {([["alle", "alle zeigen"], ["auswahl", "nur Auswahl zeigen"]] as const).map(([w, t]) => (
             <label key={w} className="flex items-center gap-2">
               <input type="radio" name="zeigen" checked={wahl.zeigen === w} onChange={() => setze({ zeigen: w })} /> {t}
@@ -79,27 +79,27 @@ export default function AuswahlPanel({ ebenen, aktiv, setAktiv, inhalt, setInhal
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">Nummern</span>
+          <span className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Nummern</span>
           <select value={wahl.nummerierung} onChange={(e) => setze({ nummerierung: e.target.value as Nummerierung })}
-            className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]">
+            className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)">
             {NUMMERIERUNGEN.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
           </select>
         </label>
 
         <div className="flex flex-col gap-1 relative">
           <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suchen und hinzufügen …"
-            className="px-2 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)]" />
+            className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)" />
           {treffer.length > 0 && (
-            <ul className="rounded-lg border border-[var(--border)] bg-[var(--bg)] divide-y divide-[var(--border)]">
+            <ul className="rounded-lg border border-(--border) bg-(--bg) divide-y divide-(--border)">
               {treffer.map((f) => {
                 const id = String(f.properties?.id);
                 const drin = wahl.objekte.includes(id);
                 return (
                   <li key={id}>
-                    <button className="w-full text-left px-2 py-1 hover:bg-[var(--surface-hover)] flex justify-between gap-2"
+                    <button className="w-full text-left px-2 py-1 hover:bg-(--surface-hover) flex justify-between gap-2"
                       onClick={() => { setInhalt((v) => schalteObjekt(v, aktiv, id)); setSuche(""); }}>
                       <span>{drin ? "✓ " : ""}{f.properties?.name}</span>
-                      <span className="text-[var(--text-muted)] text-xs">{zusatz(f)}</span>
+                      <span className="text-(--text-muted) text-xs">{zusatz(f)}</span>
                     </button>
                   </li>
                 );
@@ -111,7 +111,7 @@ export default function AuswahlPanel({ ebenen, aktiv, setAktiv, inhalt, setInhal
         <ol className="flex flex-col gap-1">
           {wahl.objekte.map((id, i) => (
             <li key={id} className="flex items-center gap-2">
-              <span className="w-8 text-right font-black text-[var(--red)]">{nummern[aktiv]?.[id] ?? "·"}</span>
+              <span className="w-8 text-right font-black text-(--red)">{nummern[aktiv]?.[id] ?? "·"}</span>
               <span className="flex-1 truncate" title={zusatz(nachId.get(id))}>{String(nachId.get(id)?.properties?.name ?? id)}</span>
               <button aria-label="nach oben" disabled={i === 0} onClick={() => schiebe(i, -1)} className="px-1 disabled:opacity-30">↑</button>
               <button aria-label="nach unten" disabled={i === wahl.objekte.length - 1} onClick={() => schiebe(i, 1)} className="px-1 disabled:opacity-30">↓</button>
@@ -120,7 +120,7 @@ export default function AuswahlPanel({ ebenen, aktiv, setAktiv, inhalt, setInhal
           ))}
         </ol>
         {wahl.objekte.length > 0 && (
-          <button className="self-start text-xs text-[var(--text-muted)] hover:underline" onClick={() => setze({ objekte: [] })}>
+          <button className="self-start text-xs text-(--text-muted) hover:underline" onClick={() => setze({ objekte: [] })}>
             Auswahl dieser Ebene leeren
           </button>
         )}

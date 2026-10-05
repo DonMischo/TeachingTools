@@ -37,16 +37,16 @@ function PlacementPreview({ n, max, trost }: { n: number; max: number; trost: nu
           i === 0 ? "border-yellow-500/40 bg-yellow-500/10" :
           i === 1 ? "border-gray-400/40 bg-gray-400/10" :
           i === 2 ? "border-amber-600/40 bg-amber-600/10" :
-          "border-[var(--border)] bg-[var(--bg)]"
+          "border-(--border) bg-(--bg)"
         }`}>
           <span className="text-base">{medals[i] ?? `#${i + 1}`}</span>
           <span className="text-xs font-bold mt-0.5">{p} Pkt</span>
         </div>
       ))}
-      <div className="flex flex-col items-center rounded-xl px-3 py-2 border border-[var(--border)] bg-[var(--bg)] opacity-60">
+      <div className="flex flex-col items-center rounded-xl px-3 py-2 border border-(--border) bg-(--bg) opacity-60">
         <span className="text-base">…</span>
         <span className="text-xs font-bold mt-0.5">{trost} Pkt</span>
-        <span className="text-[10px] text-[var(--text-muted)]">Rest</span>
+        <span className="text-[10px] text-(--text-muted)">Rest</span>
       </div>
     </div>
   );
@@ -101,9 +101,9 @@ export default function PunktePanel({ w, canEdit }: Props) {
   const hasGroupData = w.participants.some(p => p.group);
 
   return (
-    <div className="border border-[var(--border)] rounded-2xl bg-[var(--surface)] overflow-hidden">
+    <div className="border border-(--border) rounded-2xl bg-(--surface) overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-[var(--border)] flex items-center gap-2">
+      <div className="px-5 py-3 border-b border-(--border) flex items-center gap-2">
         <span className="font-bold text-sm">🏅 Punkte & Ranking</span>
       </div>
 
@@ -117,8 +117,8 @@ export default function PunktePanel({ w, canEdit }: Props) {
                 <button key={v} onClick={() => canEdit && setMaxPts(v)}
                   className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
                     maxPts === v
-                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                      : "border-[var(--border)] text-[var(--text-muted)] hover:border-gray-500"
+                      ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
+                      : "border-(--border) text-(--text-muted) hover:border-gray-500"
                   }`}
                 >
                   {v}
@@ -156,8 +156,8 @@ export default function PunktePanel({ w, canEdit }: Props) {
               <button key={v} onClick={() => canEdit && setPlaces(v)}
                 className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${
                   places === v
-                    ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                    : "border-[var(--border)] text-[var(--text-muted)] hover:border-gray-500"
+                    ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
+                    : "border-(--border) text-(--text-muted) hover:border-gray-500"
                 }`}
               >
                 {v}
@@ -173,7 +173,7 @@ export default function PunktePanel({ w, canEdit }: Props) {
               disabled={!canEdit}
             />
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-1.5">
+          <p className="text-xs text-(--text-muted) mt-1.5">
             Alle übrigen Teilnehmer erhalten {trost} Trostpunkte.
           </p>
 
@@ -192,21 +192,21 @@ export default function PunktePanel({ w, canEdit }: Props) {
                   disabled={!canEdit}
                   className={`text-left px-3 py-2.5 rounded-xl border transition-colors ${
                     rankMode === m.key
-                      ? "border-[var(--accent)] bg-[var(--accent)]/10"
-                      : "border-[var(--border)] hover:border-gray-500"
+                      ? "border-(--accent) bg-(--accent)/10"
+                      : "border-(--border) hover:border-gray-500"
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <span className={`text-sm font-semibold ${rankMode === m.key ? "text-[var(--accent)]" : ""}`}>
+                    <span className={`text-sm font-semibold ${rankMode === m.key ? "text-(--accent)" : ""}`}>
                       {m.label}
                     </span>
                     {warn && (
-                      <span className="text-[10px] text-amber-400 border border-amber-400/40 rounded px-1 py-0.5 shrink-0 mt-0.5">
+                      <span className="text-[10px] text-amber-400 border border-amber-400/40 rounded-sm px-1 py-0.5 shrink-0 mt-0.5">
                         {m.needsGender && !hasGenderData ? "kein Geschlecht" : "keine Gruppen"}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{m.desc}</p>
+                  <p className="text-xs text-(--text-muted) mt-0.5">{m.desc}</p>
                 </button>
               );
             })}
@@ -231,7 +231,7 @@ export default function PunktePanel({ w, canEdit }: Props) {
             <button
               onClick={save}
               disabled={saving}
-              className="px-4 py-2 text-sm font-semibold bg-[var(--accent)] text-white rounded-xl disabled:opacity-40 hover:opacity-90"
+              className="px-4 py-2 text-sm font-semibold bg-(--accent) text-white rounded-xl disabled:opacity-40 hover:opacity-90"
             >
               {saving ? "Speichere…" : "Punkte-Einstellungen speichern"}
             </button>

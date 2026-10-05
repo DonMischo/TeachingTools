@@ -43,21 +43,21 @@ export function Wissen({ thema }: { thema: keyof typeof WISSEN | string }) {
   if (!eintrag) return null;
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+    <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
       <button
         type="button"
         onClick={() => setOffen(o => !o)}
         aria-expanded={offen}
         className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-sm font-bold
-          hover:bg-[var(--surface-hover)] transition-colors"
+          hover:bg-(--surface-hover) transition-colors"
       >
         <span aria-hidden>📖</span>
         <span className="flex-1">Mehr dazu: {eintrag.titel}</span>
-        <span className="text-[var(--text-muted)]" aria-hidden>{offen ? "▲" : "▼"}</span>
+        <span className="text-(--text-muted)" aria-hidden>{offen ? "▲" : "▼"}</span>
       </button>
 
       {offen && (
-        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[var(--border)] pt-3">
+        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-(--border) pt-3">
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Lesestufe">
             {LESESTUFEN.map(s => (
               <button
@@ -68,8 +68,8 @@ export function Wissen({ thema }: { thema: keyof typeof WISSEN | string }) {
                 aria-pressed={s.id === stufe}
                 className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-colors ${
                   s.id === stufe
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-                    : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+                    ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+                    : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
                 }`}
               >
                 {s.label}
@@ -78,12 +78,12 @@ export function Wissen({ thema }: { thema: keyof typeof WISSEN | string }) {
           </div>
 
           {eintrag.stufen[stufe].map((absatz, i) => (
-            <p key={i} className="text-sm leading-relaxed text-[var(--text-muted)]">
+            <p key={i} className="text-sm leading-relaxed text-(--text-muted)">
               <MitFachworten text={absatz} />
             </p>
           ))}
 
-          <p className="text-[10px] text-[var(--text-muted)]">
+          <p className="text-[10px] text-(--text-muted)">
             Unterstrichene Wörter erklären sich beim Antippen.
           </p>
         </div>

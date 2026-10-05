@@ -135,7 +135,7 @@ export function Kodex({ fortschritt, alleZeigen = false, onAlleZeigen, bereich: 
 function OrtEintrag({ ort: o, bekannt }: { ort: Ort; bekannt: boolean }) {
   if (!bekannt) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3 text-sm">
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/2 p-3 text-sm">
         <div className="w-14 h-14 shrink-0 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-xl">?</div>
         <div>
           <div className="font-bold text-slate-300">{o.name}</div>
@@ -172,7 +172,7 @@ function Eintrag({ koerper: k, bekannt, gross = false, monde, onSteckbrief }: {
   const kante = gross ? "w-20 h-20 sm:w-24 sm:h-24" : "w-14 h-14";
   if (!bekannt) {
     return (
-      <div className={`flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3 ${gross ? "" : "text-sm"}`}>
+      <div className={`flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/2 p-3 ${gross ? "" : "text-sm"}`}>
         <div className={`${kante} shrink-0 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 text-xl`}>?</div>
         <div>
           <div className="font-bold text-slate-300">{k.name}</div>

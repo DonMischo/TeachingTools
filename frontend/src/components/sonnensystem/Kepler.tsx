@@ -95,7 +95,7 @@ function Abschnitt({ nummer, titel, satz, children }: {
   nummer: number; titel: string; satz: string; children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <section className="rounded-2xl border border-white/10 bg-white/3 p-4">
       <div className="flex items-baseline gap-3 flex-wrap">
         <span className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">{nummer}. Gesetz</span>
         <h2 className="text-lg font-black">{titel}</h2>
@@ -124,7 +124,7 @@ function ErstesGesetz({ e, onE, t }: { e: number; onE: (v: number) => void; t: n
       satz="Die Planeten laufen auf Ellipsen, in deren einem Brennpunkt die Sonne steht."
     >
       <div className="flex flex-col lg:flex-row gap-4">
-        <svg viewBox={kasten(a, c)} className="w-full max-w-lg max-h-[21rem] bg-black/40 rounded-xl">
+        <svg viewBox={kasten(a, c)} className="w-full max-w-lg max-h-84 bg-black/40 rounded-xl">
           {/* Die Ellipse; Mittelpunkt links vom Brennpunkt */}
           <ellipse cx={-c} cy={0} rx={a} ry={b} fill="rgba(56,189,248,0.06)" stroke="#7dd3fc" strokeWidth={1.5} />
           {/* Große Halbachse a und kleine Halbachse b */}
@@ -224,7 +224,7 @@ function ZweitesGesetz({ e, t, laeuft, onLaeuft, onZuruecksetzen }: {
       satz="Der Strahl von der Sonne zum Planeten überstreicht in gleichen Zeiten gleich große Flächen."
     >
       <div className="flex flex-col lg:flex-row gap-4">
-        <svg viewBox={kasten(a, c)} className="w-full max-w-lg max-h-[21rem] bg-black/40 rounded-xl">
+        <svg viewBox={kasten(a, c)} className="w-full max-w-lg max-h-84 bg-black/40 rounded-xl">
           {sektoren.map((p, i) => (
             <polygon
               key={i}

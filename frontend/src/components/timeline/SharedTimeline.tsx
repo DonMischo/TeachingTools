@@ -23,15 +23,15 @@ export function SharedTimeline({ code, guestToken }: { code: string; guestToken?
     return () => { alive = false; };
   }, [code, guestToken]);
 
-  if (error) return <p className="p-6 text-sm text-[var(--text-muted)]">{error}</p>;
-  if (!set) return <p className="p-6 text-sm text-[var(--text-muted)] animate-pulse">Zeitleiste wird geladen …</p>;
+  if (error) return <p className="p-6 text-sm text-(--text-muted)">{error}</p>;
+  if (!set) return <p className="p-6 text-sm text-(--text-muted) animate-pulse">Zeitleiste wird geladen …</p>;
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <div>
         <h1 className="text-xl font-black tracking-tight">📏 {set.title}</h1>
         {set.description && (
-          <p className="text-sm text-[var(--text-muted)] mt-1">{set.description}</p>
+          <p className="text-sm text-(--text-muted) mt-1">{set.description}</p>
         )}
       </div>
       <TimelineCanvas axis={set.axis} lanes={set.lanes} events={set.events} />

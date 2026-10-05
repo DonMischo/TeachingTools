@@ -54,25 +54,25 @@ export default function KartenSelbstUeben({ satzId }: { satzId: number }) {
     if (t) void senden(t.id);
   };
 
-  if (fehler) return <p className="p-6 text-center text-[var(--red)]">{fehler}</p>;
-  if (!satz || !stil) return <p className="p-6 text-center text-[var(--text-muted)]">Wird geladen …</p>;
+  if (fehler) return <p className="p-6 text-center text-(--red)">{fehler}</p>;
+  if (!satz || !stil) return <p className="p-6 text-center text-(--text-muted)">Wird geladen …</p>;
   return (
-    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-xl font-black">🎯 {satz.titel}</h1>
-        <Link href="/aktivitaeten/karten" className="text-sm underline text-[var(--text-muted)]">← Karten</Link>
+        <Link href="/aktivitaeten/karten" className="text-sm underline text-(--text-muted)">← Karten</Link>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
         <KartenAnsicht stil={stil} katalog={{ stand: "", ebenen: satz.katalog }} namenZeigen={false} onKlick={klick}
           ziel={satz.karte.ausschnitt} blick={ansicht?.anker ?? null} projektion={satz.karte.projektion ?? "equalearth"} />
-        <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3 text-sm">
-          {meldung && <p className={`font-bold ${meldung.gut ? "text-[var(--green)]" : "text-[var(--red)]"}`}>{meldung.text}</p>}
+        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 text-sm">
+          {meldung && <p className={`font-bold ${meldung.gut ? "text-(--green)" : "text-(--red)"}`}>{meldung.text}</p>}
           <UebenPanel uebung={uebung} ergebnis={ergebnis} lernen={lernen} eingabe={eingabe} setEingabe={setEingabe} senden={senden} weiter={naechste} />
           {satz.erfolge.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[var(--border)]">
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-(--border)">
               {satz.erfolge.map((e) => (
                 <span key={e.id} title={e.text ? `${e.name}: ${e.text}` : e.name}
-                  className={`px-2 py-0.5 rounded-full text-xs border border-[var(--border)] ${erreicht.includes(e.id) ? "" : "opacity-40 grayscale"}`}>
+                  className={`px-2 py-0.5 rounded-full text-xs border border-(--border) ${erreicht.includes(e.id) ? "" : "opacity-40 grayscale"}`}>
                   {e.icon} {e.name}
                 </span>
               ))}

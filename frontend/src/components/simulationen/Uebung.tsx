@@ -35,9 +35,9 @@ function Fortschritt({ p }: { p: { difficulty: number; tasks_done: number; tasks
       <DifficultyStars level={p.difficulty} />
       <span className="font-bold">{p.tasks_correct} von {p.tasks_done} richtig</span>
       {p.tasks_done > 0 && (
-        <span className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span className="w-24 h-1.5 rounded-full bg-[var(--surface-hover)] overflow-hidden">
-            <span className="block h-full bg-[var(--accent)]" style={{ width: `${quote}%` }} />
+        <span className="flex items-center gap-2 text-xs text-(--text-muted)">
+          <span className="w-24 h-1.5 rounded-full bg-(--surface-hover) overflow-hidden">
+            <span className="block h-full bg-(--accent)" style={{ width: `${quote}%` }} />
           </span>
           {quote}%
         </span>
@@ -95,12 +95,12 @@ function PracticePanel({ topic, zugang }: { topic: PracticeTopicOut; zugang?: Pr
   const progress = result?.progress ?? task?.progress ?? topic.progress;
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-4">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="font-semibold">{topic.label}</h2>
         {progress && <Fortschritt p={progress} />}
       </div>
-      <p className="text-xs text-[var(--text-muted)]">{topic.description}</p>
+      <p className="text-xs text-(--text-muted)">{topic.description}</p>
 
       {!task ? (
         <button onClick={() => newTaskMut.mutate()} disabled={newTaskMut.isPending}
@@ -143,12 +143,12 @@ function PracticePanel({ topic, zugang }: { topic: PracticeTopicOut; zugang?: Pr
                 </button>
               </div>
               {task.hint && !showHint && (
-                <button onClick={() => setShowHint(true)} className="text-xs text-[var(--accent)] hover:underline self-start">
+                <button onClick={() => setShowHint(true)} className="text-xs text-(--accent) hover:underline self-start">
                   💡 Hinweis anzeigen
                 </button>
               )}
               {showHint && task.hint && (
-                <p className="text-xs text-[var(--text-muted)] italic"><MathText text={`💡 ${task.hint}`} /></p>
+                <p className="text-xs text-(--text-muted) italic"><MathText text={`💡 ${task.hint}`} /></p>
               )}
             </>
           ) : (
@@ -199,11 +199,11 @@ export default function Uebung({ action, zugang }: {
   const selectedTopic = topics.find(t => t.id === selected);
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📚 Übung</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Aufgaben zum Trainieren — die Schwierigkeit passt sich deinem Können an.
           </p>
         </div>
@@ -211,12 +211,12 @@ export default function Uebung({ action, zugang }: {
       </div>
 
       {isError ? (
-        <p className="text-sm text-[var(--text-muted)]">
+        <p className="text-sm text-(--text-muted)">
           Die Themen ließen sich nicht laden. Melde dich an oder tritt über den Code deiner Lehrkraft bei.
         </p>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="uebung-thema" className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">
+          <label htmlFor="uebung-thema" className="text-xs font-bold text-(--text-muted) uppercase tracking-wide">
             Thema
           </label>
           <select
@@ -245,7 +245,7 @@ export default function Uebung({ action, zugang }: {
       {selectedTopic
         ? <PracticePanel key={selectedTopic.id} topic={selectedTopic} zugang={zugang} />
         : !isLoading && !isError && (
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="text-sm text-(--text-muted)">
               Wähle oben ein Thema — darunter erscheinen die Aufgaben und dein Zählerstand.
             </p>
           )}

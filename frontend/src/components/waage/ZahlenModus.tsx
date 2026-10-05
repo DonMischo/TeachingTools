@@ -424,57 +424,57 @@ export default function ZahlenModus({ onMessage, fest }: {
           <button key={l.level} onClick={() => { setLevel(l.level); start(generateTask(l.level)); }} title={l.hint}
             className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
               level === l.level
-                ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-[var(--accent)]"
-                : "border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]"
+                ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)"
+                : "border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)"
             }`}>
             <span className="font-black mr-1.5">{l.level}</span>{l.label}
           </button>
         ))}
         {!fest && <>
         <button onClick={() => start(generateTask(level))}
-          className="px-3 py-1.5 rounded-xl text-sm font-bold border border-[var(--border)] hover:border-[var(--accent)]">
+          className="px-3 py-1.5 rounded-xl text-sm font-bold border border-(--border) hover:border-(--accent)">
           🎲 Neue Aufgabe
         </button>
         <button onClick={() => setCustomOpen(o => !o)}
-          className="px-3 py-1.5 rounded-xl text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]">
+          className="px-3 py-1.5 rounded-xl text-sm border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)">
           ✏️ Eigene Gleichung
         </button>
         </>}
         <div className="flex-1" />
         <button onClick={() => { setChain(c => c.slice(0, -1)); setOps(o => o.slice(0, -1)); kick(); }}
           disabled={chain.length < 2}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
           ↶ Zurück
         </button>
         <button onClick={() => { setChain([original]); setOps([]); kick(); }} disabled={chain.length < 2}
-          className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] disabled:opacity-40">
+          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
           ↺ Von vorn
         </button>
       </div>
 
       {customOpen && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2 items-center">
             <input value={customText} onChange={e => setCustomText(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") applyCustom(); }}
               placeholder="z. B. 2(x + 3) = 4x − 2"
-              className="flex-1 min-w-[220px] bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-base font-mono" />
+              className="flex-1 min-w-[220px] bg-(--bg) border border-(--border) rounded-lg px-3 py-2 text-base font-mono" />
             <button onClick={applyCustom}
-              className="px-4 py-2 rounded-lg text-sm font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">
+              className="px-4 py-2 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111)">
               Auf die Waage
             </button>
           </div>
-          <div className="text-sm min-h-[1.75rem]">
+          <div className="text-sm min-h-7">
             {preview.ok ? (
               <>
-                <span className="text-[var(--text-muted)]">So lese ich das: </span>
+                <span className="text-(--text-muted)">So lese ich das: </span>
                 <Tex tex={equationToLatex(preview.eq)} />
               </>
             ) : (
-              <span className="text-[var(--red)]">{preview.error}</span>
+              <span className="text-(--red)">{preview.error}</span>
             )}
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-(--text-muted)">
             Erlaubt sind Zahlen, x, + − · : und Klammern — z. B. <code>3x - 4 = x + 2</code> oder <code>2(x + 3) = 14</code>.
             LaTeX geht auch: <code>\frac{"{x}"}{"{2}"} = 3</code>, <code>2 \cdot (x+3) = 14</code>.
           </p>
@@ -482,12 +482,12 @@ export default function ZahlenModus({ onMessage, fest }: {
       )}
 
       {solvedX !== null && (
-        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-[var(--green)] bg-[var(--green)]/10 px-5 py-4">
+        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-(--green) bg-(--green)/10 px-5 py-4">
           <Konfetti seed={chain.length} />
           <div className="relative">
-            <div className="text-xl font-black text-[var(--green)]">🎉 Gelöst! x = {fmtNum(solvedX)}</div>
+            <div className="text-xl font-black text-(--green)">🎉 Gelöst! x = {fmtNum(solvedX)}</div>
             {probe && (
-              <div className="text-sm text-[var(--text-muted)] mt-1">
+              <div className="text-sm text-(--text-muted) mt-1">
                 Probe mit der Ausgangsgleichung {formatSide(original.left)} = {formatSide(original.right)}:
                 links {fmtNum(probe.l)}, rechts {fmtNum(probe.r)} — {probe.l === probe.r ? "passt ✓" : "passt nicht ✗"}
               </div>
@@ -497,9 +497,9 @@ export default function ZahlenModus({ onMessage, fest }: {
       )}
 
       {broken && (
-        <div className="gw-banner rounded-2xl border-2 border-[var(--red)] bg-[var(--red)]/10 px-5 py-4">
-          <div className="font-black text-[var(--red)]">⚖️ Aus dem Gleichgewicht — die Gleichung stimmt nicht mehr (≠).</div>
-          <div className="text-sm text-[var(--text-muted)] mt-1">
+        <div className="gw-banner rounded-2xl border-2 border-(--red) bg-(--red)/10 px-5 py-4">
+          <div className="font-black text-(--red)">⚖️ Aus dem Gleichgewicht — die Gleichung stimmt nicht mehr (≠).</div>
+          <div className="text-sm text-(--text-muted) mt-1">
             Du hast nur auf einer Seite etwas verändert. Leg auf der anderen Seite dasselbe dazu,
             nimm es wieder weg — oder ↶ Zurück.
           </div>
@@ -507,11 +507,11 @@ export default function ZahlenModus({ onMessage, fest }: {
       )}
 
       {solvedX === null && noX && !broken && (
-        <div className="gw-banner rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4">
+        <div className="gw-banner rounded-2xl border border-(--border) bg-(--surface) px-5 py-4">
           <div className="font-black">
             {sol.kind === "all" ? "♾️ Jede Zahl ist eine Lösung." : "🚫 Diese Gleichung hat keine Lösung."}
           </div>
-          <div className="text-sm text-[var(--text-muted)] mt-1">
+          <div className="text-sm text-(--text-muted) mt-1">
             {sol.kind === "all"
               ? "Beide Seiten sind gleich schwer, egal was x ist."
               : "Das x ist weg und übrig bleibt eine falsche Aussage — die Waage kann nicht ins Gleichgewicht kommen."}
@@ -519,14 +519,14 @@ export default function ZahlenModus({ onMessage, fest }: {
         </div>
       )}
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:p-4">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <span className="text-xs text-[var(--text-muted)]">Motiv:</span>
-          <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-0.5">
+          <span className="text-xs text-(--text-muted)">Motiv:</span>
+          <div className="inline-flex flex-wrap rounded-xl border border-(--border) p-0.5">
             {MOTIVE.map(m => (
               <button key={m.id} onClick={() => setMotiv(m.id)} title={m.label}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  motiv === m.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  motiv === m.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"
                 }`}>
                 {m.icon} <span className="hidden sm:inline">{m.label}</span>
               </button>
@@ -540,7 +540,7 @@ export default function ZahlenModus({ onMessage, fest }: {
               <div className="pointer-events-none absolute inset-0 grid grid-cols-2">
                 {(["L", "R"] as const).map(s => (
                   <div key={s} className={`rounded-xl transition-colors ${
-                    hover === s ? "bg-[var(--accent)]/15 outline-2 outline-dashed outline-[var(--accent)]" : ""
+                    hover === s ? "bg-(--accent)/15 outline-2 outline-dashed outline-(--accent)" : ""
                   }`} />
                 ))}
               </div>
@@ -551,31 +551,31 @@ export default function ZahlenModus({ onMessage, fest }: {
           </div>
 
           <div className={`sm:w-28 shrink-0 rounded-xl border border-dashed p-2 flex flex-col gap-1 transition-colors ${
-            drag?.from && !hover ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)]"
+            drag?.from && !hover ? "border-(--accent) bg-(--accent)/10" : "border-(--border)"
           }`}>
-            <div className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] text-center">Vorrat</div>
+            <div className="text-[10px] uppercase tracking-widest text-(--text-muted) text-center">Vorrat</div>
             <div className="flex sm:flex-col flex-wrap items-center justify-center gap-2 flex-1">
               {([["x", false], ["n", false], ["x", true], ["n", true]] as const).map(([kind, neg]) => (
                 <div key={`${kind}${neg}`} onPointerDown={e => grab(kind, neg, null, e)} onMouseDown={e => e.preventDefault()}
                   title={`${neg ? "Feder" : kind === "x" ? motivInfo.x : motivInfo.one} — auf eine Schale ziehen`}
-                  className="cursor-grab select-none rounded-lg px-2 py-1.5 hover:bg-[var(--bg)] flex items-center justify-center min-w-[56px]"
+                  className="cursor-grab select-none rounded-lg px-2 py-1.5 hover:bg-(--bg) flex items-center justify-center min-w-[56px]"
                   style={{ touchAction: "none" }}>
                   <TeilSvg b={sample(kind, neg, motiv)} motiv={motiv} />
                 </div>
               ))}
             </div>
-            <div className="text-[10px] leading-tight text-[var(--text-muted)] text-center">
+            <div className="text-[10px] leading-tight text-(--text-muted) text-center">
               Auf eine Schale ziehen — oder aus der Schale hierher zurück.
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-x-5 gap-y-1 justify-center text-xs text-[var(--text-muted)] pt-1">
-          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#7c3aed" }} />{motivInfo.x}</span>
-          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5" style={{ background: "#f59e0b" }} />{motivInfo.one}</span>
+        <div className="flex flex-wrap gap-x-5 gap-y-1 justify-center text-xs text-(--text-muted) pt-1">
+          <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5" style={{ background: "#7c3aed" }} />{motivInfo.x}</span>
+          <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5" style={{ background: "#f59e0b" }} />{motivInfo.one}</span>
           <span><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: "#e11d48" }} />
             {motiv === "kloetze" ? "Minus-Ballon (zieht hoch)" : "Minus-Feder (zieht hoch)"}</span>
-          <span><span className="inline-block w-3 h-3 rounded align-middle mr-1.5 border-2" style={{ borderColor: "#38bdf8" }} />Klammer</span>
+          <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5 border-2" style={{ borderColor: "#38bdf8" }} />Klammer</span>
         </div>
       </div>
 
@@ -586,29 +586,29 @@ export default function ZahlenModus({ onMessage, fest }: {
         </div>
       )}
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-3">
-        <div className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Auf beiden Seiten …</div>
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <div className="text-xs uppercase tracking-widest text-(--text-muted)">Auf beiden Seiten …</div>
 
         {solvedX !== null ? (
-          <p className="text-sm text-[var(--text-muted)]">Fertig — x steht allein. Hol dir mit 🎲 die nächste Aufgabe.</p>
+          <p className="text-sm text-(--text-muted)">Fertig — x steht allein. Hol dir mit 🎲 die nächste Aufgabe.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {pairs && (
               <button onClick={() => push({ left: simplify(current.left), right: simplify(current.right) }, "Nullpaare weg")}
                 title="Ein Gewicht und eine gleich starke Feder heben sich auf — beide dürfen weg."
-                className="px-3.5 py-2 rounded-xl text-base font-bold border border-[var(--green)] text-[var(--green)] bg-[var(--green)]/10 transition-all hover:scale-[1.04] active:scale-95">
+                className="px-3.5 py-2 rounded-xl text-base font-bold border border-(--green) text-(--green) bg-(--green)/10 transition-all hover:scale-[1.04] active:scale-95">
                 🧹 Nullpaare wegräumen
               </button>
             )}
             {broken && (
-              <span className="text-sm text-[var(--text-muted)] self-center">
+              <span className="text-sm text-(--text-muted) self-center">
                 Erst wieder ins Gleichgewicht bringen — dann gibt es Vorschläge.
               </span>
             )}
             {chips.map(op => (
               <button key={formatOp(op)} onClick={() => apply(op)}
                 className={`px-3.5 py-2 rounded-xl text-base font-bold border transition-all hover:scale-[1.04] active:scale-95 ${
-                  op.op === "expand" ? "border-[#38bdf8] text-[#38bdf8] bg-[#38bdf8]/10" : "border-[var(--border)] hover:border-[var(--accent)]"
+                  op.op === "expand" ? "border-[#38bdf8] text-[#38bdf8] bg-[#38bdf8]/10" : "border-(--border) hover:border-(--accent)"
                 }`}>
                 {op.op === "expand" ? "❰❱ Klammern auflösen" : formatOp(op)}
               </button>
@@ -616,22 +616,22 @@ export default function ZahlenModus({ onMessage, fest }: {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--border)] mt-1">
-          <span className="text-sm text-[var(--text-muted)] pt-3">oder selbst:</span>
-          <div className="inline-flex rounded-xl border border-[var(--border)] p-1 mt-2">
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-(--border) mt-1">
+          <span className="text-sm text-(--text-muted) pt-3">oder selbst:</span>
+          <div className="inline-flex rounded-xl border border-(--border) p-1 mt-2">
             {SIGNS.map(s => (
               <button key={s.s} onClick={() => setSign(s.s)} title={s.title}
                 className={`w-9 h-8 rounded-lg text-lg font-black transition-colors ${
-                  sign === s.s ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  sign === s.s ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"
                 }`}>{s.s}</button>
             ))}
           </div>
           <input value={value} onChange={e => setValue(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") applyManual(); }}
             placeholder="4" aria-label="Wert für die Umformung"
-            className="mt-2 w-24 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-base font-bold text-center" />
+            className="mt-2 w-24 bg-(--bg) border border-(--border) rounded-lg px-3 py-1.5 text-base font-bold text-center" />
           <button onClick={applyManual} disabled={solvedX !== null}
-            className="mt-2 px-4 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)] hover:border-[var(--accent)] disabled:opacity-40">
+            className="mt-2 px-4 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:border-(--accent) disabled:opacity-40">
             Anwenden
           </button>
         </div>

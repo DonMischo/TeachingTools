@@ -27,7 +27,7 @@ const STANDARD: Partial<Record<ErfolgsArt, Partial<KartenErfolg>>> = {
   serie: { anzahl: 5 }, tempo: { sekunden: 120 }, aufgeholt: { anzahl: 3 }, dranbleiben: { anzahl: 3 },
 };
 
-const feld = "px-1 py-0.5 rounded border border-[var(--border)] bg-[var(--bg)]";
+const feld = "px-1 py-0.5 rounded-sm border border-(--border) bg-(--bg)";
 
 export default function ErfolgeEditor({ ebenen, inhalt, setInhalt, daten, nummern }: {
   ebenen: Ebene[];
@@ -59,13 +59,13 @@ export default function ErfolgeEditor({ ebenen, inhalt, setInhalt, daten, nummer
   });
 
   return (
-    <div className="flex flex-col gap-2 pt-3 border-t border-[var(--border)]">
-      <h3 className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">🏆 Erfolge im Quiz</h3>
-      {!erfolge.length && <p className="text-xs text-[var(--text-muted)]">Ohne eigene Erfolge gibt es je Ebene einen: alles richtig.</p>}
+    <div className="flex flex-col gap-2 pt-3 border-t border-(--border)">
+      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">🏆 Erfolge im Quiz</h3>
+      {!erfolge.length && <p className="text-xs text-(--text-muted)">Ohne eigene Erfolge gibt es je Ebene einen: alles richtig.</p>}
       {erfolge.map((e, i) => {
         const art = e.art ?? "anteil";
         return (
-          <div key={e.id} className="flex flex-col gap-1 p-2 rounded-lg border border-[var(--border)]">
+          <div key={e.id} className="flex flex-col gap-1 p-2 rounded-lg border border-(--border)">
             <div className="flex gap-1">
               <input value={e.icon} maxLength={8} onChange={(ev) => aendere(i, { icon: ev.target.value })} aria-label="Symbol"
                 className={`w-10 text-center ${feld}`} />
@@ -118,7 +118,7 @@ export default function ErfolgeEditor({ ebenen, inhalt, setInhalt, daten, nummer
                   return (
                     <button key={o.schluessel} aria-pressed={an}
                       onClick={() => aendere(i, { objekte: an ? (e.objekte ?? []).filter((x) => x !== o.schluessel) : [...(e.objekte ?? []), o.schluessel] })}
-                      className={`px-1.5 py-0.5 rounded border ${an ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text,#111)] font-bold" : "border-[var(--border)]"}`}>
+                      className={`px-1.5 py-0.5 rounded-sm border ${an ? "border-(--accent) bg-(--accent) text-(--accent-text,#111) font-bold" : "border-(--border)"}`}>
                       {o.marke && <><b>{o.marke}</b>{" "}</>}{o.name}
                     </button>
                   );
@@ -129,7 +129,7 @@ export default function ErfolgeEditor({ ebenen, inhalt, setInhalt, daten, nummer
         );
       })}
       <button onClick={neu} disabled={!mitAuswahl.length}
-        className="self-start px-2 py-1 rounded-lg text-xs font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-40">
+        className="self-start px-2 py-1 rounded-lg text-xs font-bold border border-(--border) hover:bg-(--surface-hover) disabled:opacity-40">
         + Erfolg
       </button>
     </div>

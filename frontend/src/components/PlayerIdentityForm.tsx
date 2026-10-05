@@ -133,7 +133,7 @@ export function PlayerIdentityForm({
       ) : (
         <input
           autoFocus
-          className="w-full rounded-xl px-4 py-3 text-center text-lg font-semibold outline-none border border-white/20 bg-white/10 text-white placeholder-white/40 focus:border-indigo-400"
+          className="w-full rounded-xl px-4 py-3 text-center text-lg font-semibold outline-hidden border border-white/20 bg-white/10 text-white placeholder-white/40 focus:border-indigo-400"
           placeholder="Dein Name"
           maxLength={30}
           value={nameInput}

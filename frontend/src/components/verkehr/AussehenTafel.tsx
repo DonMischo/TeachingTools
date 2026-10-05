@@ -12,7 +12,7 @@ function Farbe({ wert, onWert, label }: { wert: number; onWert: (n: number) => v
   return (
     <label className="flex items-center gap-2">
       <input type="color" value={hexFarbe(wert)} aria-label={label} onChange={(e) => onWert(ausHex(e.target.value))}
-        className="h-7 w-10 cursor-pointer rounded border-0 bg-transparent p-0" />
+        className="h-7 w-10 cursor-pointer rounded-sm border-0 bg-transparent p-0" />
       <span className="opacity-70">{label}</span>
     </label>
   );
@@ -21,7 +21,7 @@ function Farbe({ wert, onWert, label }: { wert: number; onWert: (n: number) => v
 export function AussehenTafel({ a, onA, onZu }: { a: Aussehen; onA: (a: Aussehen) => void; onZu: () => void }) {
   const setze = (neu: Partial<Aussehen>) => onA({ ...a, ...neu });
   return (
-    <div className="absolute left-2 top-14 z-30 w-80 rounded-xl bg-slate-900/92 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
+    <div className="absolute left-2 top-14 z-30 w-80 rounded-xl bg-slate-900/92 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur-sm">
       <div className="mb-2 flex items-center justify-between">
         <span className="font-black">👕 Aussehen</span>
         <button type="button" className="underline opacity-80" onClick={onZu}>schließen</button>

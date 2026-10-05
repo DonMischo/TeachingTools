@@ -57,11 +57,11 @@ export default function VorlageJson({ titel, inhalt, ausschnitt, ebenen, onImpor
 
   return (
     <details className="text-sm">
-      <summary className="cursor-pointer px-3 py-1.5 rounded-lg font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)] inline-block">
+      <summary className="cursor-pointer px-3 py-1.5 rounded-lg font-bold border border-(--border) hover:bg-(--surface-hover) inline-block">
         {"{ }"} JSON
       </summary>
-      <div className="mt-2 flex flex-col gap-2 p-3 rounded-xl border border-[var(--border)] bg-[var(--bg)] max-w-md">
-        <p className="text-xs text-[var(--text-muted)]">
+      <div className="mt-2 flex flex-col gap-2 p-3 rounded-xl border border-(--border) bg-(--bg) max-w-md">
+        <p className="text-xs text-(--text-muted)">
           Vorlage mit allen Kandidaten und »aktiv« je Objekt — z. B. einem Sprachmodell geben, filtern lassen, wieder laden.
         </p>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -78,10 +78,10 @@ export default function VorlageJson({ titel, inhalt, ausschnitt, ebenen, onImpor
           nur Objekte im sichtbaren Ausschnitt
         </label>
         <div className="flex gap-2">
-          <button onClick={exportieren} className="px-2 py-1 rounded-lg text-xs font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">
+          <button onClick={exportieren} className="px-2 py-1 rounded-lg text-xs font-bold border border-(--border) hover:bg-(--surface-hover)">
             ⬇️ Vorlage herunterladen
           </button>
-          <button onClick={() => datei.current?.click()} className="px-2 py-1 rounded-lg text-xs font-bold border border-[var(--border)] hover:bg-[var(--surface-hover)]">
+          <button onClick={() => datei.current?.click()} className="px-2 py-1 rounded-lg text-xs font-bold border border-(--border) hover:bg-(--surface-hover)">
             ⬆️ JSON laden
           </button>
           <input ref={datei} type="file" accept=".json,application/json" className="hidden" aria-label="JSON-Vorlage laden"

@@ -126,12 +126,12 @@ export default function StufeProfil({
   const andereSperrbilder = HINTERGRUENDE.filter(h => h.id !== startAussehen.current.sperrBild);
   const aufgabenTexte = [
     <>Mach <b>»{tierName(zielTier.current)}«</b> zu deinem Profilbild.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Einstellungen › Konten › Profilbild.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Konten › Profilbild.</span></>,
     <>Such dir ein <b>neues Bild für den Sperrbildschirm</b> aus.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Einstellungen › Sperrbildschirm.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Sperrbildschirm.</span></>,
     <>Schreib eine <b>Begrüßung</b> für deinen Sperrbildschirm und drücke Enter.</>,
     <><b>Sperre den Computer</b> und melde dich wieder an.
-      <span data-zusatz className="block text-xs text-[var(--text-muted)]">Tipp: Start › auf deinen Namen klicken › Sperren.</span></>,
+      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Start › auf deinen Namen klicken › Sperren.</span></>,
   ];
 
   // Vorführen zeigt nur — gelöst wird keine Aufgabe, danach steht alles wie vorher.
@@ -184,13 +184,13 @@ export default function StufeProfil({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {AUFGABEN.map((a, i) => (
-          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-[var(--text-muted)]" : ""}>
+          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : ""}>
             {i < schritt ? "✅" : i === schritt ? "👉" : "⬜"} {a}
           </li>
         ))}
       </ul>
 
-      <div className="min-h-[1.5rem] text-center text-sm font-bold" aria-live="polite"
+      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
         style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
         {hinweis?.text}
       </div>
@@ -238,7 +238,7 @@ export default function StufeProfil({
             <div className="flex items-center gap-2 px-2 shrink-0" style={{ height: 32, background: aussehen.dunkel ? "#2b2b2b" : "#ffffff", borderBottom: `1px solid ${aussehen.dunkel ? "#ffffff1a" : "#0000001a"}` }}>
               <AppSymbol id="einstellungen" groesse={18} titel={false} />
               <span className="text-sm font-bold flex-1" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>Einstellungen</span>
-              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
+              <button type="button" onClick={() => setFensterOffen(false)} aria-label="Schließen" className="rounded-sm hover:bg-red-500 hover:text-white w-6 h-6" style={{ color: aussehen.dunkel ? "#fff" : "#1a1a1a" }}>✕</button>
             </div>
             <div className="flex-1 overflow-hidden">
               <Einstellungen

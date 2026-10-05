@@ -10,10 +10,10 @@ export function Karte({ titel, children, rechts, className = "" }: {
   titel?: ReactNode; children: ReactNode; rechts?: ReactNode; className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 ${className}`}>
+    <section className={`rounded-2xl border border-(--border) bg-(--surface) p-4 ${className}`}>
       {(titel || rechts) && (
         <div className="flex items-center justify-between gap-2 mb-3">
-          <h2 className="text-sm font-black uppercase tracking-wide text-[var(--text-muted)]">{titel}</h2>
+          <h2 className="text-sm font-black uppercase tracking-wide text-(--text-muted)">{titel}</h2>
           {rechts}
         </div>
       )}
@@ -29,7 +29,7 @@ export function farbe(g: Groesse, wert: number): string {
 }
 
 export function Trend({ g, delta }: { g: Groesse; delta: number }) {
-  if (Math.abs(delta) < 0.5) return <span className="text-[var(--text-muted)] text-xs w-8 text-right">±0</span>;
+  if (Math.abs(delta) < 0.5) return <span className="text-(--text-muted) text-xs w-8 text-right">±0</span>;
   const gut = HOCH_SCHLECHT.has(g) ? delta < 0 : delta > 0;
   return (
     <span className="text-xs font-bold w-8 text-right tabular-nums" style={{ color: gut ? "var(--green)" : "var(--red)" }}>
@@ -46,11 +46,11 @@ export function Balken({ g, wert, delta, markierungen = [] }: {
     <div className="flex items-center gap-2 text-sm" title={b.kurz}>
       <span className="w-6 text-center" aria-hidden>{b.icon}</span>
       <span className="w-28 sm:w-40 shrink-0 truncate">{b.name}</span>
-      <div className="relative flex-1 min-w-[3rem] h-3 rounded-full bg-[var(--surface-hover)] overflow-hidden" role="meter"
+      <div className="relative flex-1 min-w-12 h-3 rounded-full bg-(--surface-hover) overflow-hidden" role="meter"
         aria-label={b.name} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(wert)}>
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${wert}%`, background: farbe(g, wert) }} />
         {markierungen.map((m) => (
-          <div key={m} className="absolute top-0 bottom-0 w-0.5 bg-[var(--text)] opacity-60" style={{ left: `${m}%` }}
+          <div key={m} className="absolute top-0 bottom-0 w-0.5 bg-(--text) opacity-60" style={{ left: `${m}%` }}
             title={`Kipppunkt bei ${m}`} />
         ))}
       </div>
@@ -66,9 +66,9 @@ export function QuelleLink({ id }: { id?: string }) {
   const q = QUELLEN[id];
   if (!q) return null;
   return (
-    <span className="text-xs text-[var(--text-muted)]">
-      {q.umstritten && <span className="font-bold text-[var(--accent)]">Forschung uneins · </span>}
-      {q.url ? <a href={q.url} target="_blank" rel="noreferrer" className="underline hover:text-[var(--text)]">{q.kurz}</a> : q.kurz}
+    <span className="text-xs text-(--text-muted)">
+      {q.umstritten && <span className="font-bold text-(--accent)">Forschung uneins · </span>}
+      {q.url ? <a href={q.url} target="_blank" rel="noreferrer" className="underline hover:text-(--text)">{q.kurz}</a> : q.kurz}
     </span>
   );
 }
@@ -81,37 +81,37 @@ export function Warum({ g }: { g: Groesse }) {
   return (
     <span className="relative">
       <button onClick={() => setOffen((o) => !o)} aria-expanded={offen} aria-label={`Warum ändert sich ${BEREICH[g].name}?`}
-        className="w-5 h-5 rounded-full border border-[var(--border)] text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text)]">?</button>
+        className="w-5 h-5 rounded-full border border-(--border) text-[10px] font-black text-(--text-muted) hover:text-(--text)">?</button>
       {offen && (
-        <div className="absolute right-0 top-6 z-20 w-80 max-w-[85vw] rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-xl p-3 text-xs space-y-2">
+        <div className="absolute right-0 top-6 z-20 w-80 max-w-[85vw] rounded-xl border border-(--border) bg-(--surface) shadow-xl p-3 text-xs space-y-2">
           <div className="font-bold text-sm">Was wirkt auf {BEREICH[g].name}?</div>
           {regeln.map((r, i) => {
             const plus = r.staerke > 0;
             return (
-              <div key={i} className="border-t border-[var(--border)] pt-2">
+              <div key={i} className="border-t border-(--border) pt-2">
                 <div>
                   <b>{BEREICH[r.von].icon} {BEREICH[r.von].name}</b>{" "}
                   {r.nurUeber50 ? "(ab 50) " : ""}
                   <span style={{ color: plus ? "var(--green)" : "var(--red)" }}>{plus ? "hoch → steigt" : "hoch → sinkt"}</span>
-                  {r.verzoegerung > 0 && <span className="text-[var(--text-muted)]"> · wirkt nach {r.verzoegerung * 2} Jahren</span>}
+                  {r.verzoegerung > 0 && <span className="text-(--text-muted)"> · wirkt nach {r.verzoegerung * 2} Jahren</span>}
                 </div>
-                <div className="text-[var(--text-muted)] mt-0.5">{QUELLEN[r.quelle]?.befund}</div>
+                <div className="text-(--text-muted) mt-0.5">{QUELLEN[r.quelle]?.befund}</div>
                 <QuelleLink id={r.quelle} />
               </div>
             );
           })}
           {eigen.map((x, i) => (
-            <div key={`e${i}`} className="border-t border-[var(--border)] pt-2">
+            <div key={`e${i}`} className="border-t border-(--border) pt-2">
               <div>{x.text}</div>
               <QuelleLink id={x.quelle} />
             </div>
           ))}
           {g !== "klima" && (
-            <div className="border-t border-[var(--border)] pt-2 text-[var(--text-muted)]">
+            <div className="border-t border-(--border) pt-2 text-(--text-muted)">
               {istHebel(g) ? "Ohne Investitionen verfällt dieser Bereich langsam." : "Ohne Anstoß kehrt der Wert langsam zur Mitte zurück."}
             </div>
           )}
-          <button onClick={() => setOffen(false)} className="text-[var(--text-muted)] underline">schließen</button>
+          <button onClick={() => setOffen(false)} className="text-(--text-muted) underline">schließen</button>
         </div>
       )}
     </span>

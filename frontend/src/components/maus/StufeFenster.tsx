@@ -447,13 +447,13 @@ export default function StufeFenster({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {AUFGABEN.map((a, i) => (
-          <li key={a.id} className={i === nr ? "font-bold" : i < nr ? "text-[var(--text-muted)]" : ""}>
+          <li key={a.id} className={i === nr ? "font-bold" : i < nr ? "text-(--text-muted)" : ""}>
             {i < nr ? "✅" : i === nr ? "👉" : "⬜"} {a.text}
           </li>
         ))}
       </ul>
 
-      <div className="min-h-[1.5rem] text-center text-sm font-bold" aria-live="polite"
+      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
         style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
         {hinweis?.text ?? altTabHinweisText}
       </div>
@@ -475,19 +475,19 @@ export default function StufeFenster({
         overlay={<>
           {dialog && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-auto">
-              <div className="rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xl p-4 flex flex-col gap-3 max-w-[260px]">
+              <div className="rounded-2xl bg-(--surface) border border-(--border) shadow-xl p-4 flex flex-col gap-3 max-w-[260px]">
                 <p className="text-sm font-bold">Möchtest du die Änderungen speichern?</p>
                 <div className="flex flex-col gap-2 text-sm">
                   <button ref={speichernRef} type="button" onClick={() => dialogAntwort("speichern")}
-                    className="rounded-lg px-3 py-1.5 border border-[var(--accent)] bg-[var(--accent)] text-[var(--bg)] font-bold">
+                    className="rounded-lg px-3 py-1.5 border border-(--accent) bg-(--accent) text-(--bg) font-bold">
                     Speichern
                   </button>
                   <button type="button" onClick={() => dialogAntwort("nicht")}
-                    className="rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]">
+                    className="rounded-lg px-3 py-1.5 border border-(--border) hover:border-(--accent)">
                     Nicht speichern
                   </button>
                   <button type="button" onClick={() => dialogAntwort("abbrechen")}
-                    className="rounded-lg px-3 py-1.5 border border-[var(--border)] hover:border-[var(--accent)]">
+                    className="rounded-lg px-3 py-1.5 border border-(--border) hover:border-(--accent)">
                     Abbrechen
                   </button>
                 </div>
@@ -515,7 +515,7 @@ export default function StufeFenster({
       >
         {zustand.modus !== "geschlossen" && zustand.modus !== "minimiert" && (
           <div
-            className="absolute rounded-xl shadow-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden pointer-events-auto"
+            className="absolute rounded-xl shadow-xl border border-(--border) bg-(--surface) flex flex-col overflow-hidden pointer-events-auto"
             style={zustand.modus === "maximiert"
               ? { left: 0, top: 0, width: "100%", height: `calc(100% - ${(TASKLEISTE_HOEHE / DESKTOP.h) * 100}%)` }
               : {
@@ -529,24 +529,24 @@ export default function StufeFenster({
               ref={titelRef}
               onPointerDown={titelGreifen}
               onDoubleClick={doppelklickTitel}
-              className="flex items-center gap-2 px-2 shrink-0 bg-[var(--surface-hover)] border-b border-[var(--border)] cursor-grab"
+              className="flex items-center gap-2 px-2 shrink-0 bg-(--surface-hover) border-b border-(--border) cursor-grab"
               style={{ height: 32 * hilfeGroesse }}
             >
               <span>✏️</span>
               <span className="text-sm font-bold flex-1 truncate">{titel} – Editor</span>
               <button ref={minRef} type="button" onClick={klickMinimieren}
-                className="rounded hover:bg-[var(--surface)] flex items-center justify-center"
+                className="rounded-sm hover:bg-(--surface) flex items-center justify-center"
                 style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Minimieren">─</button>
               <button ref={maxRef} type="button" onClick={klickMaximieren}
-                className="rounded hover:bg-[var(--surface)] flex items-center justify-center"
+                className="rounded-sm hover:bg-(--surface) flex items-center justify-center"
                 style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Maximieren / Wiederherstellen">▢</button>
               <button ref={schliessenRef} type="button" onClick={klickSchliessen}
-                className="rounded hover:bg-red-500 hover:text-white flex items-center justify-center"
+                className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
                 style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Schließen">✕</button>
             </div>
             <div className="flex-1 p-3 text-sm leading-relaxed overflow-hidden flex items-center justify-center gap-3">
               <span className="text-3xl">{AVATARS.find(a => a.id === avatar)?.emoji ?? "📝"}</span>
-              <p className="text-[var(--text-muted)]">Das ist dein Notizen-Fenster.</p>
+              <p className="text-(--text-muted)">Das ist dein Notizen-Fenster.</p>
             </div>
             {zustand.modus === "normal" && (
               <div
@@ -594,14 +594,14 @@ export default function StufeFenster({
 
         {explorerOffen && (
           <div
-            className="absolute rounded-xl shadow-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden pointer-events-auto"
+            className="absolute rounded-xl shadow-xl border border-(--border) bg-(--surface) flex flex-col overflow-hidden pointer-events-auto"
             style={{ left: "8%", top: "12%", width: "72%", height: "68%" }}
           >
-            <div className="flex items-center gap-2 px-2 shrink-0 bg-[var(--surface-hover)] border-b border-[var(--border)]" style={{ height: 32 * hilfeGroesse }}>
+            <div className="flex items-center gap-2 px-2 shrink-0 bg-(--surface-hover) border-b border-(--border)" style={{ height: 32 * hilfeGroesse }}>
               <AppSymbol id="explorer" groesse={18} titel={false} />
               <span className="text-sm font-bold flex-1 truncate">Explorer</span>
               <button type="button" onClick={() => setExplorerOffen(false)}
-                className="rounded hover:bg-red-500 hover:text-white flex items-center justify-center"
+                className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
                 style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Explorer schließen">✕</button>
             </div>
             <div className="flex-1 min-h-0">

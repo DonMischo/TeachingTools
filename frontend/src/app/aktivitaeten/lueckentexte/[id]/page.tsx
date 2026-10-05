@@ -163,20 +163,20 @@ export default function LueckentextDetailPage() {
     setDraft({ ...draft, distractors: draft.distractors.filter((_, i) => i !== idx) });
   }
 
-  if (isLoading) return <div className="p-8 text-sm text-[var(--text-muted)]">Lade…</div>;
-  if (isError || !set) return <div className="p-8 text-sm text-[var(--text-muted)]">Lückentext nicht gefunden.</div>;
+  if (isLoading) return <div className="p-8 text-sm text-(--text-muted)">Lade…</div>;
+  if (isError || !set) return <div className="p-8 text-sm text-(--text-muted)">Lückentext nicht gefunden.</div>;
 
   if (!canEdit) {
     return (
-      <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+      <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
         <h1 className="text-2xl font-black tracking-tight">{set.title}</h1>
-        {set.description && <p className="text-sm text-[var(--text-muted)]">{set.description}</p>}
+        {set.description && <p className="text-sm text-(--text-muted)">{set.description}</p>}
         <p className="whitespace-pre-wrap text-sm">
           {set.text.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (_, gid) => `[${gid}]`)}
         </p>
-        <table className="text-sm border border-[var(--border)] rounded-lg overflow-hidden">
+        <table className="text-sm border border-(--border) rounded-lg overflow-hidden">
           <thead>
-            <tr className="bg-[var(--surface)]">
+            <tr className="bg-(--surface)">
               <th className="text-left p-2">Lücke</th>
               <th className="text-left p-2">Antwort</th>
               <th className="text-left p-2">Typ</th>
@@ -185,7 +185,7 @@ export default function LueckentextDetailPage() {
           </thead>
           <tbody>
             {set.gaps.map(g => (
-              <tr key={g.id} className="border-t border-[var(--border)]">
+              <tr key={g.id} className="border-t border-(--border)">
                 <td className="p-2">{g.id}</td>
                 <td className="p-2">{g.answer}</td>
                 <td className="p-2">{g.type}</td>
@@ -201,21 +201,21 @@ export default function LueckentextDetailPage() {
   if (!draft) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-black tracking-tight">📝 Lückentext bearbeiten</h1>
         <div className="flex gap-2 flex-nowrap items-center">
           <a href={`/api/lueckentexte/${setId}/export.pdf?filled=0`}
-            className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] whitespace-nowrap">
+            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) whitespace-nowrap">
             📄 PDF (leer)
           </a>
           <a href={`/api/lueckentexte/${setId}/export.pdf?filled=1`}
-            className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)] whitespace-nowrap">
+            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) whitespace-nowrap">
             📄 PDF (gefüllt)
           </a>
           {isTeacher && (
             <button onClick={() => startSessionMut.mutate()} disabled={startSessionMut.isPending}
-              className="text-sm border border-[var(--border)] rounded-lg px-6 py-1.5 hover:border-[var(--accent)] disabled:opacity-40 whitespace-nowrap">
+              className="text-sm border border-(--border) rounded-lg px-6 py-1.5 hover:border-(--accent) disabled:opacity-40 whitespace-nowrap">
               {startSessionMut.isPending ? "Starte…" : "▶ Sitzung starten"}
             </button>
           )}
@@ -236,54 +236,54 @@ export default function LueckentextDetailPage() {
         <label className="flex flex-col gap-1 text-sm">
           Titel
           <input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 bg-transparent" />
+            className="border border-(--border) rounded-lg px-3 py-1.5 bg-transparent" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Beschreibung
           <input value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 bg-transparent" />
+            className="border border-(--border) rounded-lg px-3 py-1.5 bg-transparent" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Tags (kommagetrennt)
           <input value={draft.tags} onChange={e => setDraft({ ...draft, tags: e.target.value })}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 bg-transparent" />
+            className="border border-(--border) rounded-lg px-3 py-1.5 bg-transparent" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Klassenstufen (kommagetrennt)
           <input value={draft.grades} onChange={e => setDraft({ ...draft, grades: e.target.value })}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 bg-transparent" />
+            className="border border-(--border) rounded-lg px-3 py-1.5 bg-transparent" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Text ({"{{gap_id}}"} für Lücken)
           <textarea value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })}
-            rows={8} className="border border-[var(--border)] rounded-lg px-3 py-1.5 bg-transparent font-mono text-xs" />
+            rows={8} className="border border-(--border) rounded-lg px-3 py-1.5 bg-transparent font-mono text-xs" />
         </label>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm">Lücken</h2>
-          <button onClick={addGap} className="text-xs border border-[var(--border)] rounded-lg px-2 py-1 hover:border-[var(--accent)]">
+          <button onClick={addGap} className="text-xs border border-(--border) rounded-lg px-2 py-1 hover:border-(--accent)">
             + Lücke
           </button>
         </div>
         {draft.gaps.map((g, idx) => (
-          <div key={idx} className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+          <div key={idx} className="rounded-xl border border-(--border) p-3 flex flex-col gap-2">
             <div className="flex gap-2 flex-wrap items-end">
               <label className="flex flex-col gap-1 text-xs">
                 ID
                 <input value={g.id} onChange={e => patchGap(idx, { id: e.target.value })}
-                  className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent w-28" />
+                  className="border border-(--border) rounded-lg px-2 py-1 bg-transparent w-28" />
               </label>
               <label className="flex flex-col gap-1 text-xs">
                 Antwort
                 <input value={g.answer} onChange={e => patchGap(idx, { answer: e.target.value })}
-                  className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent w-40" />
+                  className="border border-(--border) rounded-lg px-2 py-1 bg-transparent w-40" />
               </label>
               <label className="flex flex-col gap-1 text-xs">
                 Typ
                 <select value={g.type} onChange={e => patchGap(idx, { type: e.target.value as LueckentextGap["type"] })}
-                  className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent">
+                  className="border border-(--border) rounded-lg px-2 py-1 bg-transparent">
                   <option value="word_bank">word_bank</option>
                   <option value="free_type">free_type</option>
                   <option value="multiple_choice">multiple_choice</option>
@@ -292,7 +292,7 @@ export default function LueckentextDetailPage() {
               <label className="flex flex-col gap-1 text-xs">
                 Schwierigkeit
                 <select value={g.difficulty} onChange={e => patchGap(idx, { difficulty: e.target.value as LueckentextGap["difficulty"] })}
-                  className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent">
+                  className="border border-(--border) rounded-lg px-2 py-1 bg-transparent">
                   <option value="easy">easy</option>
                   <option value="medium">medium</option>
                   <option value="hard">hard</option>
@@ -301,21 +301,21 @@ export default function LueckentextDetailPage() {
               <label className="flex flex-col gap-1 text-xs">
                 Hinweis
                 <input value={g.hint ?? ""} onChange={e => patchGap(idx, { hint: e.target.value || null })}
-                  className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent w-40" />
+                  className="border border-(--border) rounded-lg px-2 py-1 bg-transparent w-40" />
               </label>
               <button onClick={() => removeGap(idx)} className="text-xs text-red-400 hover:underline mb-1">Löschen</button>
             </div>
             {g.type === "multiple_choice" && (
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-[var(--text-muted)]">Antwortmöglichkeiten (2–4)</span>
+                <span className="text-xs text-(--text-muted)">Antwortmöglichkeiten (2–4)</span>
                 {(g.choices ?? []).map((c, cIdx) => (
                   <div key={cIdx} className="flex gap-2 items-center">
                     <input value={c} onChange={e => patchChoice(idx, cIdx, e.target.value)}
-                      className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent text-xs w-48" />
+                      className="border border-(--border) rounded-lg px-2 py-1 bg-transparent text-xs w-48" />
                     <button onClick={() => removeChoice(idx, cIdx)} className="text-xs text-red-400 hover:underline">×</button>
                   </div>
                 ))}
-                <button onClick={() => addChoice(idx)} className="text-xs border border-[var(--border)] rounded-lg px-2 py-0.5 w-fit hover:border-[var(--accent)]">
+                <button onClick={() => addChoice(idx)} className="text-xs border border-(--border) rounded-lg px-2 py-0.5 w-fit hover:border-(--accent)">
                   + Antwortmöglichkeit
                 </button>
               </div>
@@ -326,15 +326,15 @@ export default function LueckentextDetailPage() {
 
       <div className="flex flex-col gap-2">
         <h2 className="font-semibold text-sm">Distraktoren</h2>
-        <p className="text-xs text-[var(--text-muted)]">Zusätzliche Wörter für die Wortbank (nie eine richtige Antwort).</p>
+        <p className="text-xs text-(--text-muted)">Zusätzliche Wörter für die Wortbank (nie eine richtige Antwort).</p>
         {draft.distractors.map((d, idx) => (
           <div key={idx} className="flex gap-2 items-center">
             <input value={d} onChange={e => patchDistractor(idx, e.target.value)}
-              className="border border-[var(--border)] rounded-lg px-2 py-1 bg-transparent text-sm w-48" />
+              className="border border-(--border) rounded-lg px-2 py-1 bg-transparent text-sm w-48" />
             <button onClick={() => removeDistractor(idx)} className="text-xs text-red-400 hover:underline">×</button>
           </div>
         ))}
-        <button onClick={addDistractor} className="text-xs border border-[var(--border)] rounded-lg px-2 py-1 w-fit hover:border-[var(--accent)]">
+        <button onClick={addDistractor} className="text-xs border border-(--border) rounded-lg px-2 py-1 w-fit hover:border-(--accent)">
           + Distraktor
         </button>
       </div>
@@ -370,10 +370,10 @@ function SessionHistory({ setId }: { setId: number }) {
   });
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
       <h2 className="font-semibold text-sm">Sitzungen</h2>
       {isLoading ? (
-        <p className="text-sm text-[var(--text-muted)]">Lade…</p>
+        <p className="text-sm text-(--text-muted)">Lade…</p>
       ) : (
         <SessionGrid
           items={sessions.map((s): SessionCardItem => ({

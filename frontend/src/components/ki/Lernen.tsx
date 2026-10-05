@@ -40,8 +40,8 @@ export function Lernen() {
             onClick={() => setTeil(id)}
             className={`px-3.5 py-1.5 rounded-xl border font-bold text-sm ${
               teil === id
-                ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-                : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+                ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+                : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
             }`}
           >
             {label}

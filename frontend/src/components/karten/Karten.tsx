@@ -131,11 +131,11 @@ export default function Karten({ action }: { action?: ReactNode }) {
   const quizEbenen = katalog?.ebenen.filter((e) => e.quiz && inhalt.ebenen.includes(e.id)) ?? [];
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🗺️ Karten</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Deutschland politisch und topographisch — Objekte auswählen, nummerieren und als Kartensatz speichern.
           </p>
         </div>
@@ -157,30 +157,30 @@ export default function Karten({ action }: { action?: ReactNode }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={inhalt.region} onChange={(e) => waehleRegion(e.target.value)} aria-label="Region"
-          className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold">
+          className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold">
           {REGIONEN.map((r) => <option key={r.id} value={r.id}>🌍 {r.name}</option>)}
         </select>
-        <div className="inline-flex flex-wrap rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+        <div className="inline-flex flex-wrap rounded-xl border border-(--border) p-1 bg-(--surface)">
           {KARTENARTEN.map((k) => (
             <button key={k.id} onClick={() => waehleArt(k.id)}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-                inhalt.art === k.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+                inhalt.art === k.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
               {k.icon} {k.name}
             </button>
           ))}
         </div>
-        {lehrkraft && <div className="inline-flex rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+        {lehrkraft && <div className="inline-flex rounded-xl border border-(--border) p-1 bg-(--surface)">
           {([[false, "👁️ Ansehen"], [true, "🎯 Auswählen"]] as const).map(([wert, text]) => (
             <button key={text} onClick={() => setBearbeiten(wert)}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-                bearbeiten === wert ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+                bearbeiten === wert ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
               {text}
             </button>
           ))}
         </div>}
       </div>
 
-      {error && <p className="text-[var(--red)] text-sm">Karten konnten nicht geladen werden.</p>}
+      {error && <p className="text-(--red) text-sm">Karten konnten nicht geladen werden.</p>}
       {katalog && stil && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
@@ -194,7 +194,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
             {/* Quiz gibt es für gespeicherte Sätze: der Code zeigt auf den Satz auf dem Server */}
             {lehrkraft && satz && <KartenQuizLehrkraft satzId={satz.id} titel={satz.titel} />}
           </div>
-          <aside className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4 text-sm">
+          <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-4 text-sm">
             {bearbeiten ? (
               <>
                 <AuswahlPanel ebenen={quizEbenen} aktiv={aktiveEbene} setAktiv={setAktiveEbene}
@@ -236,7 +236,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
 function EbenenGruppe({ titel, ebenen, an, schalte }: { titel: string; ebenen: Ebene[]; an: string[]; schalte: (id: string) => void }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <h3 className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">{titel}</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">{titel}</h3>
       {ebenen.map((e) => (
         <label key={e.id} className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={an.includes(e.id)} onChange={() => schalte(e.id)} />
@@ -252,15 +252,15 @@ function Themenlegende({ ebene }: { ebene: Ebene }) {
   const stufen = d.art === "stufen";
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">{ebene.name}{d.einheit ? ` (${d.einheit})` : ""}</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">{ebene.name}{d.einheit ? ` (${d.einheit})` : ""}</h3>
       {d.werte.map((w, i) => (
         <div key={String(w.wert)} className="flex items-center gap-2 text-xs">
-          <span className={`w-6 h-3.5 border border-black/20 ${ebene.geometrie === "punkt" ? "rounded-full w-3.5" : "rounded-sm"}`}
+          <span className={`w-6 h-3.5 border border-black/20 ${ebene.geometrie === "punkt" ? "rounded-full w-3.5" : "rounded-xs"}`}
             style={{ background: w.farbe }} />
           {stufen && !w.text ? `${i === 0 ? "unter" : "ab"} ${Number(i === 0 ? d.werte[1]?.wert : w.wert).toLocaleString("de-DE")}` : w.text}
         </div>
       ))}
-      {d.groesse && <p className="text-[10px] text-[var(--text-muted)]">Kreisgröße nach {d.groesse.feld === "leistung" ? "Leistung (MW)" : d.groesse.feld}</p>}
+      {d.groesse && <p className="text-[10px] text-(--text-muted)">Kreisgröße nach {d.groesse.feld === "leistung" ? "Leistung (MW)" : d.groesse.feld}</p>}
     </div>
   );
 }
@@ -271,10 +271,10 @@ function Hoehenlegende({ ebene }: { ebene?: Ebene }) {
   const stufen = ebene.stufen.filter((s) => s.ab >= 0).reverse();
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="text-xs font-black uppercase tracking-wide text-[var(--text-muted)]">Höhe über NN</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Höhe über NN</h3>
       {stufen.map((s) => (
         <div key={s.ab} className="flex items-center gap-2 text-xs">
-          <span className="w-6 h-3.5 rounded-sm border border-black/20" style={{ background: s.farbe }} />
+          <span className="w-6 h-3.5 rounded-xs border border-black/20" style={{ background: s.farbe }} />
           ab {s.ab.toLocaleString("de-DE")} m
         </div>
       ))}

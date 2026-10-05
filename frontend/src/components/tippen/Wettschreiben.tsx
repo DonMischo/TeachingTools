@@ -90,9 +90,9 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   // sie ist der Weg der Code der Lehrkraft, nicht eine Fehlermeldung vom Server.
   if (ready && !can("tippen", "host")) {
     return (
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-6 text-center">
         <div className="text-4xl mb-2">🏁</div>
-        <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto leading-relaxed">
+        <p className="text-sm text-(--text-muted) max-w-md mx-auto leading-relaxed">
           Ein Rennen startet deine Lehrkraft. Du bekommst dann einen Code oder einen QR-Code
           zum Scannen — darüber kommst du an den Start.
         </p>
@@ -102,10 +102,10 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
 
   if (!rennen) {
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+      <div className="flex flex-col gap-4 rounded-2xl border border-(--border) bg-(--surface) p-6">
         <div>
           <div className="text-lg font-black">🏁 Wettschreiben</div>
-          <p className="text-sm text-[var(--text-muted)] mt-1 max-w-lg">
+          <p className="text-sm text-(--text-muted) mt-1 max-w-lg">
             Alle tippen denselben Text, die Balken laufen nebeneinander. Du legst das Rennen an,
             teilst Code oder QR und startest, wenn alle da sind.
           </p>
@@ -116,7 +116,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
             aria-label="Text für das Rennen"
             value={auswahl}
             onChange={e => setAuswahl(Number(e.target.value))}
-            className="text-sm bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5"
+            className="text-sm bg-(--bg) border border-(--border) rounded-lg px-3 py-1.5"
           >
             {texte.map((t, i) => (
               <option key={t.id} value={i}>{t.titel} ({t.text.length} Zeichen)</option>
@@ -125,13 +125,13 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
           <button
             onClick={anlegen}
             disabled={laedt}
-            className="border border-[var(--accent)] text-[var(--accent)] rounded-lg px-4 py-1.5 text-sm font-bold disabled:opacity-50"
+            className="border border-(--accent) text-(--accent) rounded-lg px-4 py-1.5 text-sm font-bold disabled:opacity-50"
           >
             {laedt ? "…" : "Rennen anlegen"}
           </button>
         </div>
 
-        {fehler && <p className="text-sm text-[var(--red)]">{fehler}</p>}
+        {fehler && <p className="text-sm text-(--red)">{fehler}</p>}
       </div>
     );
   }
@@ -139,13 +139,13 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
   const imZiel = laeufer.filter(l => l.dauer_ms !== null).length;
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+    <div className="flex flex-col gap-4 rounded-2xl border border-(--border) bg-(--surface) p-5">
       <div className="flex flex-wrap items-start gap-4">
         <JoinQR url={beitrittsUrl} size={110} />
         <div className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-widest text-[var(--text-muted)]">Code</span>
-          <span className="text-3xl font-black tracking-[0.2em] text-[var(--accent)]">{rennen.code}</span>
-          <span className="text-sm text-[var(--text-muted)]">
+          <span className="text-xs uppercase tracking-widest text-(--text-muted)">Code</span>
+          <span className="text-3xl font-black tracking-[0.2em] text-(--accent)">{rennen.code}</span>
+          <span className="text-sm text-(--text-muted)">
             {rennen.title} · {rennen.text.length} Zeichen
           </span>
           <GuestAccessToggle tool="wettschreiben" code={rennen.code} />
@@ -157,7 +157,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
           {rennen.status === "lobby" && (
             <button
               onClick={starten}
-              className="border border-[var(--accent)] text-[var(--accent)] rounded-lg px-4 py-2 text-sm font-bold"
+              className="border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
             >
               ▶ Start
             </button>
@@ -165,7 +165,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
           {rennen.status === "laeuft" && (
             <button
               onClick={beenden}
-              className="border border-[var(--border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--red)]"
+              className="border border-(--border) rounded-lg px-4 py-2 text-sm hover:border-(--red)"
             >
               ⏹ Beenden
             </button>
@@ -173,12 +173,12 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
           {rennen.status === "fertig" && (
             <button
               onClick={verwerfen}
-              className="border border-[var(--border)] rounded-lg px-4 py-2 text-sm hover:border-[var(--accent)]"
+              className="border border-(--border) rounded-lg px-4 py-2 text-sm hover:border-(--accent)"
             >
               Neues Rennen
             </button>
           )}
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-(--text-muted)">
             {rennen.status === "lobby" && `${laeufer.length} warten`}
             {rennen.status === "laeuft" && `${imZiel} von ${laeufer.length} im Ziel`}
             {rennen.status === "fertig" && "gelaufen"}
@@ -186,7 +186,7 @@ export default function Wettschreiben({ texte }: { texte: Lektion[] }) {
         </div>
       </div>
 
-      {fehler && <p className="text-sm text-[var(--red)]">{fehler}</p>}
+      {fehler && <p className="text-sm text-(--red)">{fehler}</p>}
 
       <Rennbahn laeufer={laeufer} laenge={rennen.text.length} />
     </div>

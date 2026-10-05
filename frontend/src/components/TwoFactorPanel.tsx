@@ -58,14 +58,14 @@ export default function TwoFactorPanel() {
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm">
-          <span className="font-semibold text-[var(--ok,#1c6a56)]">✅ Aktiv.</span>{" "}
+          <span className="font-semibold text-(--ok,#1c6a56)">✅ Aktiv.</span>{" "}
           Noch {status.recovery_left} Wiederherstellungscode(s) übrig.
         </p>
         {recovery && <RecoveryList codes={recovery} />}
         <details className="text-sm">
-          <summary className="cursor-pointer text-[var(--text-muted)]">Abschalten</summary>
+          <summary className="cursor-pointer text-(--text-muted)">Abschalten</summary>
           <div className="flex flex-col gap-2 mt-2">
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               Mit dem eigenen Passwort, nicht mit einem Code — wer das Telefon verloren hat,
               käme sonst nicht mehr heran. Danach ist der Export von Zugangsdaten gesperrt.
             </p>
@@ -75,7 +75,7 @@ export default function TwoFactorPanel() {
             />
             <button
               onClick={() => disableMut.mutate()} disabled={!password || disableMut.isPending}
-              className="self-start text-sm px-3 py-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
+              className="self-start text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) disabled:opacity-50"
             >
               Zwei-Faktor abschalten
             </button>
@@ -88,7 +88,7 @@ export default function TwoFactorPanel() {
   // ── Einrichtung ──────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-[var(--text-muted)]">
+      <p className="text-sm text-(--text-muted)">
         Nötig, um Zugangsdaten mit Klartext-Passwörtern zu exportieren. Du brauchst eine
         Authenticator-App auf dem Telefon (z. B. Aegis, FreeOTP, Google Authenticator).
       </p>
@@ -107,13 +107,13 @@ export default function TwoFactorPanel() {
             dangerouslySetInnerHTML={{ __html: setup.qr_svg }}
           />
           <div className="flex flex-col gap-2 min-w-0">
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-(--text-muted)">
               QR scannen — oder den Schlüssel abtippen:
             </p>
-            <code className="text-xs break-all bg-[var(--surface-hover)] rounded px-2 py-1">
+            <code className="text-xs break-all bg-(--surface-hover) rounded-sm px-2 py-1">
               {setup.secret}
             </code>
-            <label className="text-xs text-[var(--text-muted)] flex flex-col gap-1">
+            <label className="text-xs text-(--text-muted) flex flex-col gap-1">
               Sechsstelliger Code aus der App
               <input
                 value={code} onChange={e => setCode(e.target.value)}
@@ -137,11 +137,11 @@ export default function TwoFactorPanel() {
 
 function RecoveryList({ codes }: { codes: string[] }) {
   return (
-    <div className="rounded-lg border border-[var(--warn,#86610c)] bg-[var(--surface-hover)] p-3 flex flex-col gap-2">
+    <div className="rounded-lg border border-(--warn,#86610c) bg-(--surface-hover) p-3 flex flex-col gap-2">
       <p className="text-xs font-semibold">
         ⚠️ Wiederherstellungscodes — jetzt notieren, sie werden nie wieder angezeigt.
       </p>
-      <p className="text-xs text-[var(--text-muted)]">
+      <p className="text-xs text-(--text-muted)">
         Jeder gilt einmal und schaltet Zwei-Faktor ab, falls das Telefon weg ist.
       </p>
       <div className="grid grid-cols-2 gap-1 font-mono text-xs">

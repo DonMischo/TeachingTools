@@ -28,7 +28,7 @@ export default function LehrkraftPanel({ einst, onSpeichern }: {
 
   return (
     <Karte titel="🧑‍🏫 Einstellungen für die Klasse" rechts={
-      <button onClick={() => setOffen((o) => !o)} className="text-sm underline text-[var(--text-muted)]">
+      <button onClick={() => setOffen((o) => !o)} className="text-sm underline text-(--text-muted)">
         {offen ? "zuklappen" : `${KRISE_TEXT[e.krise].icon} ${KRISE_TEXT[e.krise].name} · ${e.runden} Runden – ändern`}
       </button>}>
       {offen && (
@@ -39,19 +39,19 @@ export default function LehrkraftPanel({ einst, onSpeichern }: {
               {(Object.keys(KRISE_TEXT) as Krisenstufe[]).map((k) => (
                 <button key={k} onClick={() => setE({ ...e, krise: k })} aria-pressed={e.krise === k}
                   className={`px-3 py-1.5 rounded-lg font-bold border ${
-                    e.krise === k ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)]"}`}>
+                    e.krise === k ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border)"}`}>
                   {KRISE_TEXT[k].icon} {KRISE_TEXT[k].name}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-1">{KRISE_TEXT[e.krise].text}</p>
+            <p className="text-xs text-(--text-muted) mt-1">{KRISE_TEXT[e.krise].text}</p>
           </fieldset>
 
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2">
               Runden (je 2 Jahre)
               <select value={e.runden} onChange={(x) => setE({ ...e, runden: Number(x.target.value) })}
-                className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1">
+                className="rounded-lg border border-(--border) bg-(--bg) px-2 py-1">
                 {[8, 10, 12, 15].map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </label>
@@ -81,11 +81,11 @@ export default function LehrkraftPanel({ einst, onSpeichern }: {
                 <div key={i} className="flex flex-wrap items-center gap-2">
                   Runde
                   <select value={d.runde} onChange={(x) => setE({ ...e, drehbuch: e.drehbuch.map((y, j) => j === i ? { ...y, runde: Number(x.target.value) } : y) })}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1">
+                    className="rounded-lg border border-(--border) bg-(--bg) px-2 py-1">
                     {Array.from({ length: e.runden }, (_, r) => r + 1).map((r) => <option key={r} value={r}>{r} ({2026 + 2 * r})</option>)}
                   </select>
                   <select value={d.ereignis} onChange={(x) => setE({ ...e, drehbuch: e.drehbuch.map((y, j) => j === i ? { ...y, ereignis: x.target.value } : y) })}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1 max-w-[16rem]">
+                    className="rounded-lg border border-(--border) bg-(--bg) px-2 py-1 max-w-[16rem]">
                     {(Object.keys(GRUPPEN) as (keyof typeof GRUPPEN)[]).map((g) => (
                       <optgroup key={g} label={GRUPPEN[g]}>
                         {waehlbar.filter((x) => x.gruppe === g).map((x) => <option key={x.id} value={x.id}>{x.icon} {x.titel}</option>)}
@@ -101,12 +101,12 @@ export default function LehrkraftPanel({ einst, onSpeichern }: {
                   className="self-start text-sm underline">+ Ereignis hinzufügen</button>
               )}
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Alle Gruppen erleben diese Ereignisse in derselben Runde – gut zum Vergleichen.</p>
+            <p className="text-xs text-(--text-muted) mt-1">Alle Gruppen erleben diese Ereignisse in derselben Runde – gut zum Vergleichen.</p>
           </fieldset>
 
           <div className="flex items-center gap-3">
-            <button onClick={speichern} className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text,#111)]">Speichern</button>
-            {status && <span className="text-[var(--text-muted)]">{status}</span>}
+            <button onClick={speichern} className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text,#111)">Speichern</button>
+            {status && <span className="text-(--text-muted)">{status}</span>}
           </div>
         </div>
       )}

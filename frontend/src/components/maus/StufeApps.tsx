@@ -132,9 +132,9 @@ export default function StufeApps({
           ? <>Super, du kennst dich mit den Apps aus!</>
           : runde === 1
             ? <>Welche App brauchst du dafür? Ziehe die Karte auf die passende App — oder klicke erst die Karte, dann die App an.
-                <span data-zusatz className="text-xs text-[var(--text-muted)] ml-2">{erledigt1.size} von {karten1.length}</span></>
+                <span data-zusatz className="text-xs text-(--text-muted) ml-2">{erledigt1.size} von {karten1.length}</span></>
             : <>Welche App öffnet diese Datei?
-                <span data-zusatz className="text-xs text-[var(--text-muted)] ml-2">{erledigt2.size} von {karten2.length}</span></>}
+                <span data-zusatz className="text-xs text-(--text-muted) ml-2">{erledigt2.size} von {karten2.length}</span></>}
         punkte={wertung({
           stufe: "apps", geloest: erledigt1.size + erledigt2.size, anzahl: gesamtAnzahl,
           dauerMs: performance.now() - start.current, fehler: fehler.current,
@@ -144,7 +144,7 @@ export default function StufeApps({
         hervor={fertigAlles}
       />
 
-      <div className="min-h-[1.5rem] text-center text-sm font-bold" aria-live="polite"
+      <div className="min-h-6 text-center text-sm font-bold" aria-live="polite"
         style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>
         {hinweis?.text}
       </div>
@@ -166,7 +166,7 @@ export default function StufeApps({
                   aria-pressed={ausgewaehlt}
                   className={
                     "rounded-xl border px-3 py-2 text-sm font-bold text-left cursor-grab " +
-                    (ausgewaehlt ? "border-[var(--accent)] bg-[var(--surface-hover)]" : "border-[var(--border)] hover:border-[var(--accent)]")
+                    (ausgewaehlt ? "border-(--accent) bg-(--surface-hover)" : "border-(--border) hover:border-(--accent)")
                   }
                 >
                   {kartenText(karte)}
@@ -185,7 +185,7 @@ export default function StufeApps({
                 onDrop={e => aufKachelFallen(e, id)}
                 onClick={() => kachelKlick(id)}
                 className={
-                  "flex flex-col items-center gap-1 rounded-xl border p-2 border-[var(--border)] hover:border-[var(--accent)] " +
+                  "flex flex-col items-center gap-1 rounded-xl border p-2 border-(--border) hover:border-(--accent) " +
                   (wackelId === id ? "maus-wackeln" : "")
                 }
               >

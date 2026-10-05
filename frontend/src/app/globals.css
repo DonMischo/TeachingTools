@@ -1,6 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+@source "../../src";
+@source "../../standalone";
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 /* Einheitliche Inhaltsbreite aller Seiten (max-w-[var(--seite-breite)]).
    Hier an einer Stelle ändern; Kartenraster füllen die Breite selbst auf. */
@@ -181,19 +199,19 @@ body {
 *::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 .input {
-  @apply w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)];
+  @apply w-full rounded-lg border border-(--border) bg-(--bg) px-3 py-2 text-sm text-(--text) outline-hidden focus:border-(--accent);
 }
 
 .label {
-  @apply text-xs text-[var(--text-muted)] mb-1 block;
+  @apply text-xs text-(--text-muted) mb-1 block;
 }
 
 .btn-primary {
-  @apply w-full rounded-lg bg-[var(--accent)] text-black font-semibold py-2 text-sm hover:opacity-90 transition-opacity;
+  @apply w-full rounded-lg bg-(--accent) text-black font-semibold py-2 text-sm hover:opacity-90 transition-opacity;
 }
 
 .btn-secondary {
-  @apply w-full rounded-lg border border-[var(--border)] text-[var(--text)] font-semibold py-2 text-sm hover:bg-[var(--surface-hover)] transition-colors;
+  @apply w-full rounded-lg border border-(--border) text-(--text) font-semibold py-2 text-sm hover:bg-(--surface-hover) transition-colors;
 }
 
 /* ── Avatar animations ─────────────────────────────────────────── */

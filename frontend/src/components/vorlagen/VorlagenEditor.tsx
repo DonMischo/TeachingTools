@@ -22,7 +22,7 @@ export function formatApiError(e: unknown): string[] {
   return [raw];
 }
 
-const BTN = "text-xs px-3 py-1.5 border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40";
+const BTN = "text-xs px-3 py-1.5 border border-(--border) rounded-lg text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors disabled:opacity-40";
 
 export function VorlagenEditor<T, R>({
   load, save, onSaved, render, fileName = "inhalt.json", label = "✎ Bearbeiten", title = "Bearbeiten",
@@ -126,7 +126,7 @@ export function VorlagenEditor<T, R>({
   }
 
   return (
-    <div className="w-full flex flex-col gap-4 rounded-2xl border border-[var(--accent)]/40 bg-[var(--surface)] p-4">
+    <div className="w-full flex flex-col gap-4 rounded-2xl border border-(--accent)/40 bg-(--surface) p-4">
       <div className="flex items-center gap-2 flex-wrap">
         <h2 className="font-semibold flex-1">{title}</h2>
         <button onClick={download} className={BTN} title="Als Vorlagen-Datei sichern">⬇ Herunterladen</button>
@@ -146,7 +146,7 @@ export function VorlagenEditor<T, R>({
       )}
 
       {/* Bleibt bei langen Formularen am unteren Rand sichtbar. */}
-      <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-3 bg-[var(--surface)] border-t border-[var(--border)] rounded-b-2xl flex flex-col gap-2">
+      <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-3 bg-(--surface) border-t border-(--border) rounded-b-2xl flex flex-col gap-2">
         {errors.length > 0 && (
           <ul className="text-xs text-red-500 list-disc pl-5">
             {errors.map((m, i) => <li key={i}>{m}</li>)}

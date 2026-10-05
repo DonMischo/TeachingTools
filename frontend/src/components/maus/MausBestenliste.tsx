@@ -56,7 +56,7 @@ export default function MausBestenliste({
 
   const knopf = (aktiv: boolean) =>
     "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
-    (aktiv ? "border-[var(--accent)] text-[var(--accent)] font-bold" : "border-[var(--border)] hover:border-[var(--accent)]");
+    (aktiv ? "border-(--accent) text-(--accent) font-bold" : "border-(--border) hover:border-(--accent)");
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,7 +70,7 @@ export default function MausBestenliste({
 
       {(sitzungCode || klasse) && (
         <div className="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="Eingrenzen">
-          <span className="text-xs text-[var(--text-muted)]">Zeigen:</span>
+          <span className="text-xs text-(--text-muted)">Zeigen:</span>
           <button onClick={() => setBereich("alle")} aria-pressed={bereich === "alle"} className={knopf(bereich === "alle")}>
             Ganze Schule
           </button>
@@ -87,11 +87,11 @@ export default function MausBestenliste({
         </div>
       )}
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-        {isLoading && <p className="text-sm text-[var(--text-muted)] p-6 text-center">wird geladen …</p>}
-        {isError && <p className="text-sm text-[var(--red)] p-6 text-center">Die Bestenliste ließ sich nicht laden.</p>}
+      <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+        {isLoading && <p className="text-sm text-(--text-muted) p-6 text-center">wird geladen …</p>}
+        {isError && <p className="text-sm text-(--red) p-6 text-center">Die Bestenliste ließ sich nicht laden.</p>}
         {!isLoading && !isError && eintraege.length === 0 && (
-          <p className="text-sm text-[var(--text-muted)] p-6 text-center">Noch kein Eintrag. Wer eine Stufe schafft, steht hier.</p>
+          <p className="text-sm text-(--text-muted) p-6 text-center">Noch kein Eintrag. Wer eine Stufe schafft, steht hier.</p>
         )}
         {eintraege.length > 0 && (
           <ol>
@@ -99,19 +99,19 @@ export default function MausBestenliste({
               <li
                 key={e.id}
                 data-selbst={e.selbst || undefined}
-                className={"flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] last:border-0 " + (e.selbst ? "bg-[var(--surface-hover)]" : "")}
+                className={"flex items-center gap-3 px-4 py-2 border-b border-(--border) last:border-0 " + (e.selbst ? "bg-(--surface-hover)" : "")}
               >
-                <span className="w-8 text-right tabular-nums text-sm text-[var(--text-muted)]">{e.platz}.</span>
-                <span className={"flex-1 truncate text-sm " + (e.selbst ? "font-black text-[var(--accent)]" : "")}>
+                <span className="w-8 text-right tabular-nums text-sm text-(--text-muted)">{e.platz}.</span>
+                <span className={"flex-1 truncate text-sm " + (e.selbst ? "font-black text-(--accent)" : "")}>
                   {e.name}
-                  {e.klasse && <span className="text-[var(--text-muted)] ml-2 text-xs">{e.klasse}</span>}
-                  {e.gast && <span className="text-[var(--text-muted)] ml-2 text-xs">Gast</span>}
+                  {e.klasse && <span className="text-(--text-muted) ml-2 text-xs">{e.klasse}</span>}
+                  {e.gast && <span className="text-(--text-muted) ml-2 text-xs">Gast</span>}
                   {e.hilfe && <span className="ml-2 text-xs" title="Im Hilfsmodus erspielt">🤝</span>}
                 </span>
-                {e.kontext && <span className="hidden sm:block w-56 truncate text-xs text-[var(--text-muted)]">{e.kontext}</span>}
+                {e.kontext && <span className="hidden sm:block w-56 truncate text-xs text-(--text-muted)">{e.kontext}</span>}
                 <span className="w-24 text-right font-black tabular-nums">
                   {Math.round(e.wert).toLocaleString("de-DE")}
-                  <span className="text-[10px] font-normal text-[var(--text-muted)] ml-1">P.</span>
+                  <span className="text-[10px] font-normal text-(--text-muted) ml-1">P.</span>
                 </span>
                 {admin && (
                   <button
@@ -129,7 +129,7 @@ export default function MausBestenliste({
         )}
       </div>
 
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+      <p className="text-xs text-(--text-muted) leading-relaxed">
         Je Person zählt nur die beste Runde. Gäste über den QR-Code stehen mit ihrem eingegebenen Namen in der Liste.
       </p>
     </div>

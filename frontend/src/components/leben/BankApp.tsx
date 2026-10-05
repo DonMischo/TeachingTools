@@ -90,7 +90,7 @@ export function BankApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) => E
 
   return (
     <div>
-      <div className="mb-3 rounded-2xl bg-gradient-to-br from-rose-700 to-rose-900 p-4">
+      <div className="mb-3 rounded-2xl bg-linear-to-br from-rose-700 to-rose-900 p-4">
         <div className="text-xs opacity-80">Girokonto · {s.figur.iban}</div>
         <div className={`text-3xl font-black ${s.konto.stand < 0 ? "text-rose-200" : ""}`}>{euro(s.konto.stand)}</div>
         <div className="text-xs opacity-80">Sparkonto {euro(s.sparkonto)} · Bargeld {euro(s.bargeld)}{s.konto.dispo ? ` · Dispo bis −${euro(s.konto.dispo)}` : ""}</div>
@@ -155,7 +155,7 @@ export function BankApp({ s, tu }: { s: Spielstand; tu: (f: (s: Spielstand) => E
       {reiter === "sparen" && (
         <div className="space-y-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            <input className={`${eingabe} max-w-[8rem]`} value={betrag} onChange={(e) => setBetrag(e.target.value)} inputMode="decimal" aria-label="Betrag" />
+            <input className={`${eingabe} max-w-32`} value={betrag} onChange={(e) => setBetrag(e.target.value)} inputMode="decimal" aria-label="Betrag" />
             <Knopf onClick={() => tu((x) => sparen(x, zahl))}>→ aufs Sparkonto</Knopf>
             <Knopf art="leise" onClick={() => tu((x) => sparen(x, -zahl))}>← vom Sparkonto</Knopf>
             <Knopf art="leise" onClick={() => tu((x) => bargeldAbheben(x, zahl))}>💶 Bargeld abheben</Knopf>

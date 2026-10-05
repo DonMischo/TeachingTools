@@ -200,25 +200,25 @@ export default function BarometerHostPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
-          <Link href="/tools/barometer" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Barometer</Link>
+          <Link href="/tools/barometer" className="text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Barometer</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">📊 {session?.title ?? "…"}</h1>
-          <div className="flex gap-3 mt-1 text-xs text-[var(--text-muted)]">
-            <span>Code: <b className="text-[var(--text)]">{code}</b></span>
+          <div className="flex gap-3 mt-1 text-xs text-(--text-muted)">
+            <span>Code: <b className="text-(--text)">{code}</b></span>
             <span>{live.participants} Teilnehmer</span>
             {live.status === "closed" && <span className="text-amber-400">Abgeschlossen</span>}
           </div>
           {live.mode === "self" && (
-            <div className="text-xs text-[var(--text-muted)] mt-1">
+            <div className="text-xs text-(--text-muted) mt-1">
               Selbst ausfüllen: Die Teilnehmenden sehen alle Fragen auf einmal.
             </div>
           )}
         </div>
         <div className="flex flex-col items-center gap-1">
           <JoinQR url={joinUrl} />
-          <span className="text-xs text-[var(--text-muted)]">/play/barometer/{code}</span>
+          <span className="text-xs text-(--text-muted)">/play/barometer/{code}</span>
           <GuestAccessToggle tool="barometer" code={code} />
           <label className="flex items-center gap-2 text-xs cursor-pointer mt-1">
             <button type="button" onClick={handleToggleResultsPublic}
@@ -232,7 +232,7 @@ export default function BarometerHostPage() {
           {resultsPublic && resultsUrl && (
             <div className="flex flex-col items-center gap-1 mt-1">
               <JoinQR url={resultsUrl} size={70} />
-              <span className="text-xs text-[var(--text-muted)]">Ergebnisse</span>
+              <span className="text-xs text-(--text-muted)">Ergebnisse</span>
             </div>
           )}
         </div>
@@ -246,9 +246,9 @@ export default function BarometerHostPage() {
             const showResults = live.mode === "self" || isActive || slide.some(q => (live.results[q.id]?.count ?? 0) > 0);
             return (
               <div key={i}
-                className={`border rounded-2xl p-4 flex flex-col gap-3 transition-colors ${isActive ? "border-[var(--accent)] bg-[var(--surface)]" : "border-[var(--border)] bg-[var(--bg)]"}`}>
+                className={`border rounded-2xl p-4 flex flex-col gap-3 transition-colors ${isActive ? "border-(--accent) bg-(--surface)" : "border-(--border) bg-(--bg)"}`}>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-bold text-[var(--text-muted)]">Folie {i + 1}/{slides.length}</span>
+                  <span className="text-xs font-bold text-(--text-muted)">Folie {i + 1}/{slides.length}</span>
                   {live.mode === "live" && (
                     <div className="flex gap-2 shrink-0">
                       {!isActive && live.status !== "closed" && (
@@ -272,15 +272,15 @@ export default function BarometerHostPage() {
                     const first = seg.questions[0];
                     const chartValue = chartOverrides[first.id] ?? first.chart ?? BLOCK_CHART_TYPES[0].id;
                     return (
-                      <div key={seg.block} className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--surface)]">
+                      <div key={seg.block} className="border border-(--border) rounded-xl p-3 flex flex-col gap-2 bg-(--surface)">
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">
                             {first.intro && <div className="font-semibold text-sm">{first.intro}</div>}
-                            <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Aussagen-Block</span>
+                            <span className="text-[10px] uppercase tracking-wide text-(--text-muted)">Aussagen-Block</span>
                           </div>
                           <select aria-label="Darstellung" value={chartValue}
                             onChange={e => handleSetChart(seg.questions.map(q => q.id), e.target.value)}
-                            className="input !w-auto !text-xs !py-1 !px-2 shrink-0">
+                            className="input w-auto! text-xs! py-1! px-2! shrink-0">
                             {BLOCK_CHART_TYPES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                           </select>
                         </div>
@@ -293,18 +293,18 @@ export default function BarometerHostPage() {
                   const chartValue = chartOverrides[q.id] ?? q.chart ?? "";
                   const badge = followUpBadge(q);
                   return (
-                    <div key={q.id} className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--surface)]">
+                    <div key={q.id} className="border border-(--border) rounded-xl p-3 flex flex-col gap-2 bg-(--surface)">
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
                           <div className="font-semibold text-sm">{q.text}</div>
-                          <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{KIND_LABELS[q.kind]}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-(--text-muted)">{KIND_LABELS[q.kind]}</span>
                           {badge && (
-                            <div className="text-[10px] text-[var(--text-muted)] bg-[var(--bg)] w-fit rounded-md px-2 py-0.5 mt-1">{badge}</div>
+                            <div className="text-[10px] text-(--text-muted) bg-(--bg) w-fit rounded-md px-2 py-0.5 mt-1">{badge}</div>
                           )}
                         </div>
                         <select aria-label="Darstellung" value={chartValue || CHART_TYPES[q.kind][0].id}
                           onChange={e => handleSetChart([q.id], e.target.value)}
-                          className="input !w-auto !text-xs !py-1 !px-2 shrink-0">
+                          className="input w-auto! text-xs! py-1! px-2! shrink-0">
                           {CHART_TYPES[q.kind].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                         </select>
                       </div>
@@ -324,12 +324,12 @@ export default function BarometerHostPage() {
 
       <div className="flex gap-2 flex-wrap">
         <Link href={`/tools/barometer?edit=${code}`}
-          className="self-start text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+          className="self-start text-sm border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent) rounded-xl px-4 py-1.5 transition-colors">
           ✏️ Bearbeiten
         </Link>
         {live.status === "closed" ? (
           <button onClick={() => send({ action: "restart" })}
-            className="self-start text-sm border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-xl px-4 py-1.5 transition-colors">
+            className="self-start text-sm border border-(--accent) text-(--accent) hover:bg-(--accent)/10 rounded-xl px-4 py-1.5 transition-colors">
             🔁 Neu starten
           </button>
         ) : (
@@ -339,35 +339,35 @@ export default function BarometerHostPage() {
           </button>
         )}
         <button onClick={handleExport}
-          className="self-start text-sm border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] rounded-xl px-4 py-1.5 transition-colors">
+          className="self-start text-sm border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent) rounded-xl px-4 py-1.5 transition-colors">
           ⬇️ Ergebnisse (JSON)
         </button>
       </div>
 
       {hasTextQuestion && (
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+        <div className="rounded-xl border border-(--border) overflow-hidden">
           <button onClick={openAiPanel}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-hover)] transition-colors">
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-(--text-muted) hover:bg-(--surface-hover) transition-colors">
             <span>🤖 KI-Auswertung</span>
             <span>{showAi ? "▲" : "▼"}</span>
           </button>
           {showAi && (
-            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[var(--border)]">
-              <ol className="text-xs text-[var(--text-muted)] pt-3 leading-relaxed list-decimal list-inside">
+            <div className="px-4 pb-4 flex flex-col gap-3 border-t border-(--border)">
+              <ol className="text-xs text-(--text-muted) pt-3 leading-relaxed list-decimal list-inside">
                 <li>Prompt kopieren – oder gleich die Datei »Ergebnisse (JSON)« an die KI geben, der Auftrag steht darin ganz oben</li>
                 <li>in ChatGPT/Claude/… einfügen</li>
                 <li>die JSON-Antwort als .json speichern und hier hochladen — pro Frage erscheint die Essenz als Balkendiagramm, auch auf der geteilten Ergebnisseite</li>
               </ol>
-              <pre className="text-xs bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 whitespace-pre-wrap leading-relaxed text-[var(--text-muted)] max-h-48 overflow-y-auto">
+              <pre className="text-xs bg-(--bg) border border-(--border) rounded-lg p-3 whitespace-pre-wrap leading-relaxed text-(--text-muted) max-h-48 overflow-y-auto">
                 {aiPrompt}
               </pre>
               <div className="flex gap-2">
                 <button onClick={copyPrompt}
-                  className="text-xs px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg hover:opacity-90 transition-opacity">
+                  className="text-xs px-3 py-1.5 bg-(--accent) text-white rounded-lg hover:opacity-90 transition-opacity">
                   {copied ? "✓ Kopiert!" : "Prompt kopieren"}
                 </button>
                 <button onClick={() => analysisFileRef.current?.click()}
-                  className="text-xs px-3 py-1.5 border border-[var(--border)] rounded-lg hover:border-[var(--accent)] transition-colors">
+                  className="text-xs px-3 py-1.5 border border-(--border) rounded-lg hover:border-(--accent) transition-colors">
                   ⬆️ Auswertung hochladen
                 </button>
                 <input ref={analysisFileRef} type="file" accept=".json" className="hidden" onChange={handleAnalysisUpload} />

@@ -22,11 +22,11 @@ export function ClassTile({ cls, selected, onClick }: Props) {
         className={cn(
           "relative flex flex-col items-center justify-between rounded-2xl border-2 p-3 w-[180px] h-[180px] transition-colors cursor-pointer",
           selected
-            ? "bg-[var(--surface-hover)] border-[var(--border-selected)]"
-            : "bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-hover)]"
+            ? "bg-(--surface-hover) border-(--border-selected)"
+            : "bg-(--surface) border-(--border) hover:bg-(--surface-hover)"
         )}
       >
-        <span className="text-sm font-semibold text-[var(--text)]">{cls.code}</span>
+        <span className="text-sm font-semibold text-(--text)">{cls.code}</span>
 
         <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
           {cls.symbol_emoji ? (
@@ -43,12 +43,12 @@ export function ClassTile({ cls, selected, onClick }: Props) {
           )}
         </div>
 
-        <span className="text-xs text-[var(--text-muted)]">{cls.total_points} Punkte</span>
+        <span className="text-xs text-(--text-muted)">{cls.total_points} Punkte</span>
 
         {/* Log button */}
         <button
           onClick={(e) => { e.stopPropagation(); setShowLog(true); }}
-          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--text-muted)] text-xs flex items-center justify-center leading-none transition-colors"
+          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-(--bg) border border-(--border) text-(--text-muted) hover:text-white hover:border-(--text-muted) text-xs flex items-center justify-center leading-none transition-colors"
           title="Punktehistorie"
         >
           ?
@@ -71,31 +71,31 @@ function TransactionLog({ cls, onClose }: { cls: ClassOut; onClose: () => void }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl flex flex-col max-h-[70vh]"
+        className="w-full max-w-md bg-(--surface) border border-(--border) rounded-xl shadow-2xl flex flex-col max-h-[70vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-(--border) shrink-0">
           <div>
             <h2 className="font-semibold">{cls.display_name}</h2>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">Punktehistorie · {cls.total_points} gesamt</p>
+            <p className="text-xs text-(--text-muted) mt-0.5">Punktehistorie · {cls.total_points} gesamt</p>
           </div>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-(--text-muted) hover:text-white text-xl leading-none">×</button>
         </div>
 
         {/* List */}
         <div className="overflow-y-auto flex-1">
           {isLoading ? (
-            <p className="p-4 text-sm text-[var(--text-muted)]">Laden…</p>
+            <p className="p-4 text-sm text-(--text-muted)">Laden…</p>
           ) : txs.length === 0 ? (
-            <p className="p-4 text-sm text-[var(--text-muted)]">Noch keine Einträge.</p>
+            <p className="p-4 text-sm text-(--text-muted)">Noch keine Einträge.</p>
           ) : (
-            <ul className="divide-y divide-[var(--border)]">
+            <ul className="divide-y divide-(--border)">
               {txs.map((tx) => (
                 <li key={tx.id} className="flex items-start justify-between gap-3 px-5 py-3">
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-sm truncate">{tx.reason || <span className="text-[var(--text-muted)] italic">Kein Grund angegeben</span>}</span>
-                    <span className="text-xs text-[var(--text-muted)]">
+                    <span className="text-sm truncate">{tx.reason || <span className="text-(--text-muted) italic">Kein Grund angegeben</span>}</span>
+                    <span className="text-xs text-(--text-muted)">
                       {tx.teacher_name} · {new Date(tx.ts).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </span>
                   </div>

@@ -171,8 +171,8 @@ export default function BarometerPlayPage() {
 
   if (error) {
     return (
-      <div className="h-full overflow-y-auto flex items-center justify-center p-6 bg-[var(--bg)]">
-        <div className="text-center text-[var(--text-muted)] text-sm">{error}</div>
+      <div className="h-full overflow-y-auto flex items-center justify-center p-6 bg-(--bg)">
+        <div className="text-center text-(--text-muted) text-sm">{error}</div>
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function BarometerPlayPage() {
   const hasAnyAnswer = (questions: Question[]) => questions.some(q => answers[q.id] !== undefined);
 
   return (
-    <div className="h-full overflow-y-auto bg-[var(--bg)]">
+    <div className="h-full overflow-y-auto bg-(--bg)">
       <div className="min-h-full flex flex-col items-center justify-start p-6">
       <div className="w-full max-w-md flex flex-col gap-6">
 
@@ -188,13 +188,13 @@ export default function BarometerPlayPage() {
           <div className="text-center flex flex-col items-center gap-4">
             <div className="text-5xl animate-pulse">📊</div>
             <h1 className="text-xl font-bold">Umfrage beigetreten</h1>
-            <p className="text-[var(--text-muted)] text-sm">
+            <p className="text-(--text-muted) text-sm">
               Warte auf die erste Frage…
               {phase.total_slides > 0 && <> ({phase.total_slides} Folie{phase.total_slides !== 1 ? "n" : ""})</>}
             </p>
             <div className="flex gap-1 mt-2">
               {[0,1,2].map(i => (
-                <div key={i} className="w-2 h-2 rounded-full bg-[var(--accent)]"
+                <div key={i} className="w-2 h-2 rounded-full bg-(--accent)"
                   style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
               ))}
             </div>
@@ -203,7 +203,7 @@ export default function BarometerPlayPage() {
 
         {phase.type === "slide" && (
           <div className="flex flex-col gap-4">
-            <div className="text-center text-xs text-[var(--text-muted)]">
+            <div className="text-center text-xs text-(--text-muted)">
               Folie {phase.index + 1} von {phase.total}
             </div>
             <SlideForm questions={phase.questions} answers={answers} onChange={setAnswer} />
@@ -213,7 +213,7 @@ export default function BarometerPlayPage() {
               </button>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <div className="text-center text-sm text-[var(--text-muted)]">
+                <div className="text-center text-sm text-(--text-muted)">
                   Antworten gespeichert ✓ — du kannst sie bis zur Auswertung ändern
                 </div>
                 <button className="btn-secondary" onClick={submitSlide}>Aktualisieren</button>
@@ -237,10 +237,10 @@ export default function BarometerPlayPage() {
               const r = phase.results[q.id] ?? { distribution: {}, count: 0 };
               return (
                 <div key={q.id} className="flex flex-col gap-2">
-                  {q.intro && <div className="text-sm text-[var(--text-muted)]">{q.intro}</div>}
+                  {q.intro && <div className="text-sm text-(--text-muted)">{q.intro}</div>}
                   <h2 className="text-lg font-bold leading-snug">{q.text}</h2>
                   {q.kind === "text" ? (
-                    <p className="text-center text-xs text-[var(--text-muted)]">{r.count} Antwort{r.count !== 1 ? "en" : ""} — Die Lehrkraft wertet die Antworten aus.</p>
+                    <p className="text-center text-xs text-(--text-muted)">{r.count} Antwort{r.count !== 1 ? "en" : ""} — Die Lehrkraft wertet die Antworten aus.</p>
                   ) : (
                     <ResultChart question={q} distribution={r.distribution} count={r.count} />
                   )}
@@ -254,7 +254,7 @@ export default function BarometerPlayPage() {
           return (
             <div className="flex flex-col gap-6">
               {slidesOf(phase.questions).map((slideQuestions, i) => (
-                <div key={i} className={i > 0 ? "pt-6 border-t border-[var(--border)]" : ""}>
+                <div key={i} className={i > 0 ? "pt-6 border-t border-(--border)" : ""}>
                   <SlideForm questions={slideQuestions} answers={answers} onChange={setAnswer} />
                 </div>
               ))}
@@ -268,7 +268,7 @@ export default function BarometerPlayPage() {
         {phase.type === "self" && phase.submitted && (
           <div className="text-center flex flex-col items-center gap-4">
             <div className="text-5xl">✅</div>
-            <p className="text-[var(--text-muted)] text-sm">Danke! Deine Antworten sind gespeichert.</p>
+            <p className="text-(--text-muted) text-sm">Danke! Deine Antworten sind gespeichert.</p>
             <button className="btn-secondary text-sm" onClick={() => setPhase(prev => prev.type === "self" ? { ...prev, submitted: false } : prev)}>
               Antworten ändern
             </button>
@@ -279,7 +279,7 @@ export default function BarometerPlayPage() {
           <div className="text-center flex flex-col items-center gap-4">
             <div className="text-5xl">✅</div>
             <h1 className="text-xl font-bold">Umfrage beendet</h1>
-            <p className="text-[var(--text-muted)] text-sm">Danke für deine Teilnahme!</p>
+            <p className="text-(--text-muted) text-sm">Danke für deine Teilnahme!</p>
           </div>
         )}
       </div>

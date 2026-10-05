@@ -86,11 +86,11 @@ export default function ExitgameHostPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🗝️ TaskCrawler — Live-Dashboard</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Code: <span className="font-mono">{code}</span> · {connected ? "🟢 live" : "🔴 getrennt"}
           </p>
         </div>
@@ -98,21 +98,21 @@ export default function ExitgameHostPage() {
           {joinUrl && (
             <div className="flex flex-col items-center gap-1">
               <JoinQR url={joinUrl} />
-              <span className="text-[10px] text-[var(--text-muted)]">/play/taskcrawler/{code}</span>
+              <span className="text-[10px] text-(--text-muted)">/play/taskcrawler/{code}</span>
               <GuestAccessToggle tool="exitgame" code={code} />
             </div>
           )}
-          <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-[var(--border)] rounded-lg px-3 py-1.5 hover:border-[var(--accent)]">
+          <a href={api.exitgame.sessions.reportCsvUrl(code)} className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
             📊 Ergebnisse (CSV)
           </a>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
         {roster.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Noch niemand gestartet.</p>
+          <p className="text-sm text-(--text-muted)">Noch niemand gestartet.</p>
         ) : (
-          <ul className="divide-y divide-[var(--border)]">
+          <ul className="divide-y divide-(--border)">
             {roster.map(r => {
               // current_slide_idx is 0-based; a student on the last slide is on
               // slide total_slides, not total_slides - 1.
@@ -123,17 +123,17 @@ export default function ExitgameHostPage() {
               return (
                 <li key={r.participant_key} className="py-2.5 flex items-center gap-3">
                   <span className="text-sm font-medium w-32 truncate" title={r.student_class}>{r.student_name}</span>
-                  <span className="text-xs text-[var(--text-muted)] w-10 shrink-0">{r.student_class}</span>
-                  <div className="flex-1 h-2 rounded-full bg-[var(--bg)] overflow-hidden">
-                    <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+                  <span className="text-xs text-(--text-muted) w-10 shrink-0">{r.student_class}</span>
+                  <div className="flex-1 h-2 rounded-full bg-(--bg) overflow-hidden">
+                    <div className="h-full bg-(--accent)" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-xs text-[var(--text-muted)] w-16 text-right">{position}/{r.total_slides}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${r.status === "finished" ? "border-green-500/40 text-green-500" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+                  <span className="text-xs text-(--text-muted) w-16 text-right">{position}/{r.total_slides}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${r.status === "finished" ? "border-green-500/40 text-green-500" : "border-(--border) text-(--text-muted)"}`}>
                     {r.status === "finished" ? "fertig" : "läuft"}
                   </span>
-                  <span className="text-xs text-[var(--text-muted)]">❌{r.errors_total} 💡{r.hints_total}</span>
+                  <span className="text-xs text-(--text-muted)">❌{r.errors_total} 💡{r.hints_total}</span>
                   <button onClick={() => setLogAttemptId(prev => prev === r.attempt_id ? null : r.attempt_id)}
-                    className="text-xs text-[var(--accent)] hover:underline">Log</button>
+                    className="text-xs text-(--accent) hover:underline">Log</button>
                 </li>
               );
             })}
@@ -142,18 +142,18 @@ export default function ExitgameHostPage() {
       </section>
 
       {logAttemptId != null && log && (
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-2">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-sm">Detailliertes Log — {log.student_name} ({log.student_class})</h2>
-            <button onClick={() => setLogAttemptId(null)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">✕ schließen</button>
+            <button onClick={() => setLogAttemptId(null)} className="text-xs text-(--text-muted) hover:text-(--text)">✕ schließen</button>
           </div>
           <ul className="flex flex-col gap-1 max-h-96 overflow-y-auto text-xs">
             {log.events.map((e, i) => {
               const d = describeEvent(e);
               return (
-                <li key={i} className="flex gap-2 py-1 border-b border-[var(--border)]/30 items-baseline"
+                <li key={i} className="flex gap-2 py-1 border-b border-(--border)/30 items-baseline"
                   title={JSON.stringify(e.payload)}>
-                  <span className="text-[var(--text-muted)] w-16 shrink-0">
+                  <span className="text-(--text-muted) w-16 shrink-0">
                     {new Date(e.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                   </span>
                   <span className="shrink-0">{d.icon}</span>
@@ -165,7 +165,7 @@ export default function ExitgameHostPage() {
         </section>
       )}
 
-      <Link href={`/aktivitaeten/taskcrawler/${session?.exitgame_id ?? ""}`} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">← Zurück zur Übersicht</Link>
+      <Link href={`/aktivitaeten/taskcrawler/${session?.exitgame_id ?? ""}`} className="text-xs text-(--text-muted) hover:text-(--text)">← Zurück zur Übersicht</Link>
     </div>
   );
 }

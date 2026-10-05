@@ -35,7 +35,7 @@ export default function RoundRobinView({ participants, matches, stats, onSelectM
       {/* Standings */}
       <div>
         <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">Tabelle</h3>
-        <div className="border border-[var(--border)] rounded-xl overflow-x-auto">
+        <div className="border border-(--border) rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-800/60 text-gray-400 text-xs">
@@ -52,7 +52,7 @@ export default function RoundRobinView({ participants, matches, stats, onSelectM
                 <th className="px-3 py-2 text-center font-bold text-white" title="Punkte">Pkt</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border)]">
+            <tbody className="divide-y divide-(--border)">
               {sorted.map((p, i) => {
                 const s = stats[p.id] ?? { w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
                 return (
@@ -95,7 +95,7 @@ export default function RoundRobinView({ participants, matches, stats, onSelectM
                       isDone && canClick ? "border-gray-600 cursor-pointer hover:border-yellow-600 opacity-80"
                       : isDone ? "border-gray-700 opacity-75"
                       : canClick ? "border-indigo-600 cursor-pointer hover:border-indigo-400"
-                      : "border-[var(--border)]"
+                      : "border-(--border)"
                     }`}>
                     <span className={`flex-1 text-sm font-medium text-right ${m.winner_id === m.p1?.id ? "text-green-300" : "text-gray-300"}`}>
                       {m.p1?.name ?? "—"}

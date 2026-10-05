@@ -43,8 +43,8 @@ export default function WettkampfListPage() {
   }
 
   return (
-    <div className="p-6 max-w-[var(--seite-breite)] mx-auto w-full">
-      <Link href="/tools" className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">← Tools</Link>
+    <div className="p-6 max-w-(--seite-breite) mx-auto w-full">
+      <Link href="/tools" className="text-sm text-(--text-muted) hover:text-(--text)">← Tools</Link>
       <h1 className="text-2xl font-bold mb-2 mt-1">Wettkämpfe</h1>
       {auth && can("wettkampf", "create") && (
         <button
@@ -55,10 +55,10 @@ export default function WettkampfListPage() {
         </button>
       )}
 
-      {isLoading && <p className="text-[var(--text-muted)]">Wird geladen…</p>}
+      {isLoading && <p className="text-(--text-muted)">Wird geladen…</p>}
 
       {!isLoading && list.length === 0 && (
-        <p className="text-[var(--text-muted)]">Noch keine Wettkämpfe vorhanden.</p>
+        <p className="text-(--text-muted)">Noch keine Wettkämpfe vorhanden.</p>
       )}
 
       <div className="space-y-3">
@@ -67,12 +67,12 @@ export default function WettkampfListPage() {
           return (
             <div
               key={w.id}
-              className="flex items-center gap-4 p-4 border border-[var(--border)] bg-[var(--surface)] rounded-xl hover:border-[var(--accent)] transition-colors cursor-pointer"
+              className="flex items-center gap-4 p-4 border border-(--border) bg-(--surface) rounded-xl hover:border-(--accent) transition-colors cursor-pointer"
               onClick={() => router.push(`/tools/wettkampf/${w.id}`)}
             >
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{w.title}</p>
-                <p className="text-sm text-[var(--text-muted)]">
+                <p className="text-sm text-(--text-muted)">
                   {TYPE_LABELS[w.type] ?? w.type} · {w.participants.length} Teilnehmer
                 </p>
               </div>

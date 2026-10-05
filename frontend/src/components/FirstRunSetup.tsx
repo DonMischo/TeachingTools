@@ -32,10 +32,10 @@ export function FirstRunSetup({ onComplete }: { onComplete: () => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-      <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-(--bg)">
+      <div className="w-full max-w-md bg-(--surface) border border-(--border) rounded-2xl p-8">
         <h1 className="text-2xl font-bold mb-1">Willkommen bei Hauspunkte</h1>
-        <p className="text-[var(--text-muted)] text-sm mb-6">
+        <p className="text-(--text-muted) text-sm mb-6">
           Erstelle den ersten Admin-Account um loszulegen.
         </p>
 

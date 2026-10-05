@@ -107,18 +107,18 @@ export default function Leviathan({ action, code, lehrkraft = false, speicherSch
   }
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🐋 Leviathan – Kunst des Regierens</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Regiere ein Land durch Krisen, Wahlen und Rückkopplungen – und halte Staat und Gesellschaft im Gleichgewicht.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setQuellenOffen((o) => !o)} aria-expanded={quellenOffen}
-            className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)]">📚 Quellen</button>
-          {z && <button onClick={neu} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-[var(--border)]">Neues Land</button>}
+            className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border)">📚 Quellen</button>
+          {z && <button onClick={neu} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border)">Neues Land</button>}
           {action}
         </div>
       </div>

@@ -15,7 +15,7 @@ export function ConditionFields<T extends DraftItem>({ item, index, items, onCha
 
   return (
     <div className="flex flex-col gap-2 ml-7">
-      <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
+      <label className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer">
         <input
           type="checkbox"
           checked={enabled}
@@ -33,7 +33,7 @@ export function ConditionFields<T extends DraftItem>({ item, index, items, onCha
         Nur zeigen, wenn …
       </label>
       {enabled && eligible.length === 0 && (
-        <span className="text-xs text-[var(--text-muted)]">
+        <span className="text-xs text-(--text-muted)">
           Folgefragen brauchen davor eine Auswahl- oder Mehrfachauswahl-Frage.
         </span>
       )}
@@ -85,9 +85,9 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
   function updateOption(oi: number, value: string) { onChange({ options: item.options.map((o, j) => j === oi ? value : o) }); }
 
   return (
-    <div className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--bg)]">
+    <div className="border border-(--border) rounded-xl p-3 flex flex-col gap-2 bg-(--bg)">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-[var(--text-muted)] w-5 shrink-0">{index + 1}.</span>
+        <span className="text-xs text-(--text-muted) w-5 shrink-0">{index + 1}.</span>
         <input
           value={item.text}
           onChange={e => onChange({ text: e.target.value })}
@@ -95,12 +95,12 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
           className="input text-sm py-1.5 flex-1"
         />
         {canRemove && (
-          <button onClick={onRemove} className="text-[var(--text-muted)] hover:text-red-400 text-sm px-1">✕</button>
+          <button onClick={onRemove} className="text-(--text-muted) hover:text-red-400 text-sm px-1">✕</button>
         )}
       </div>
 
       <div className="flex gap-3 flex-wrap items-center ml-7">
-        <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+        <label className="flex items-center gap-1.5 text-xs text-(--text-muted)">
           Typ
           <select aria-label="Fragetyp" value={item.kind}
             onChange={e => onChange({ kind: e.target.value as BarometerKind, chart: "" })}
@@ -110,7 +110,7 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+        <label className="flex items-center gap-1.5 text-xs text-(--text-muted)">
           Auswertung
           <select aria-label="Darstellung" value={item.chart || CHART_TYPES[item.kind][0].id}
             onChange={e => onChange({ chart: e.target.value })}
@@ -125,7 +125,7 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
       {item.kind === "scale" && (
         <div className="flex flex-col gap-2 ml-7">
           <div className="flex gap-2 flex-wrap items-center">
-            <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <div className="flex items-center gap-1 text-xs text-(--text-muted)">
               Skala
               <input type="number" min={1} max={5} value={item.scale_min}
                 onChange={e => onChange({ scale_min: Number(e.target.value) })}
@@ -139,7 +139,7 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
               placeholder={`Beschriftung ${item.scale_min}`} className="input text-xs py-0.5 px-2 w-28" />
             <input value={item.scale_max_label} onChange={e => onChange({ scale_max_label: e.target.value })}
               placeholder={`Beschriftung ${item.scale_max}`} className="input text-xs py-0.5 px-2 w-28" />
-            <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+            <label className="flex items-center gap-1.5 text-xs text-(--text-muted)">
               Anzeige
               <select aria-label="Anzeige" value={item.scale_style}
                 onChange={e => onChange({ scale_style: e.target.value as DraftQuestion["scale_style"] })}
@@ -170,19 +170,19 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
               <input value={opt} onChange={e => updateOption(oi, e.target.value)}
                 placeholder={`Option ${oi + 1}`} className="input text-xs py-1 flex-1" />
               <button onClick={() => removeOption(oi)}
-                className="text-[var(--text-muted)] hover:text-red-400 text-xs px-1">✕</button>
+                className="text-(--text-muted) hover:text-red-400 text-xs px-1">✕</button>
             </div>
           ))}
           <button onClick={addOption}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] self-start">+ Option</button>
-          <span className="text-xs text-[var(--text-muted)]">mindestens 2 Optionen</span>
+            className="text-xs text-(--text-muted) hover:text-(--text) self-start">+ Option</button>
+          <span className="text-xs text-(--text-muted)">mindestens 2 Optionen</span>
           {item.kind === "multi" && (
             <div className="flex items-center gap-2">
               <input type="number" aria-label="Höchstzahl" placeholder="unbegrenzt" min={1} max={item.options.length || undefined}
                 value={item.max_choices ?? ""}
                 onChange={e => onChange({ max_choices: e.target.value === "" ? null : Number(e.target.value) })}
                 className="input text-xs py-1 w-24" />
-              <span className="text-xs text-[var(--text-muted)]">höchstens … ankreuzen</span>
+              <span className="text-xs text-(--text-muted)">höchstens … ankreuzen</span>
             </div>
           )}
         </div>
@@ -203,13 +203,13 @@ export function QuestionDraftCard({ item, index, items, onChange, onRemove, canR
       )}
 
       {item.kind === "text" && (
-        <div className="text-xs text-[var(--text-muted)] ml-7">
+        <div className="text-xs text-(--text-muted) ml-7">
           Die Antworten siehst nur du. Über »KI-Auswertung« werden sie zu kurzen Antworten mit Anzahl verdichtet.
         </div>
       )}
 
       {index > 0 && (
-        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer ml-7">
+        <label className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer ml-7">
           <input type="checkbox" checked={item.same_slide} onChange={e => onChange({ same_slide: e.target.checked })} />
           Auf derselben Folie wie davor
         </label>

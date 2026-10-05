@@ -16,12 +16,12 @@ export function BlockDraftCard({ item, index, items, onChange, onRemove, canRemo
   }
 
   return (
-    <div className="border border-[var(--border)] rounded-xl p-3 flex flex-col gap-2 bg-[var(--bg)]">
+    <div className="border border-(--border) rounded-xl p-3 flex flex-col gap-2 bg-(--bg)">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-[var(--text-muted)] w-5 shrink-0">{index + 1}.</span>
+        <span className="text-xs text-(--text-muted) w-5 shrink-0">{index + 1}.</span>
         <span className="text-sm font-semibold">Aussagen-Block</span>
         {canRemove && (
-          <button onClick={onRemove} className="ml-auto text-[var(--text-muted)] hover:text-red-400 text-sm px-1">✕</button>
+          <button onClick={onRemove} className="ml-auto text-(--text-muted) hover:text-red-400 text-sm px-1">✕</button>
         )}
       </div>
 
@@ -36,7 +36,7 @@ export function BlockDraftCard({ item, index, items, onChange, onRemove, canRemo
       </div>
 
       <div className="flex gap-2 flex-wrap items-center ml-7">
-        <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+        <div className="flex items-center gap-1 text-xs text-(--text-muted)">
           Skala
           <input type="number" min={1} max={5} value={item.scale_min}
             onChange={e => onChange({ scale_min: Number(e.target.value) })}
@@ -50,7 +50,7 @@ export function BlockDraftCard({ item, index, items, onChange, onRemove, canRemo
           placeholder={`Beschriftung ${item.scale_min}`} className="input text-xs py-0.5 px-2 w-28" />
         <input value={item.scale_max_label} onChange={e => onChange({ scale_max_label: e.target.value })}
           placeholder={`Beschriftung ${item.scale_max}`} className="input text-xs py-0.5 px-2 w-28" />
-        <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+        <label className="flex items-center gap-1.5 text-xs text-(--text-muted)">
           Anzeige
           <select aria-label="Anzeige" value={item.scale_style}
             onChange={e => onChange({ scale_style: e.target.value as DraftBlock["scale_style"] })}
@@ -58,7 +58,7 @@ export function BlockDraftCard({ item, index, items, onChange, onRemove, canRemo
             {SCALE_STYLES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+        <label className="flex items-center gap-1.5 text-xs text-(--text-muted)">
           Darstellung
           <select aria-label="Darstellung" value={item.chart || BLOCK_CHART_TYPES[0].id}
             onChange={e => onChange({ chart: e.target.value })}
@@ -77,15 +77,15 @@ export function BlockDraftCard({ item, index, items, onChange, onRemove, canRemo
             <input value={s} onChange={e => updateStatement(si, e.target.value)}
               placeholder={`Aussage ${si + 1}`} className="input text-xs py-1 flex-1" />
             <button onClick={() => removeStatement(si)}
-              className="text-[var(--text-muted)] hover:text-red-400 text-xs px-1">✕</button>
+              className="text-(--text-muted) hover:text-red-400 text-xs px-1">✕</button>
           </div>
         ))}
         <button onClick={addStatement}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] self-start">+ Aussage</button>
+          className="text-xs text-(--text-muted) hover:text-(--text) self-start">+ Aussage</button>
       </div>
 
       {index > 0 && (
-        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer ml-7">
+        <label className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer ml-7">
           <input type="checkbox" checked={item.same_slide} onChange={e => onChange({ same_slide: e.target.checked })} />
           Auf derselben Folie wie davor
         </label>

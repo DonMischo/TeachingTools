@@ -36,25 +36,25 @@ export default function Bestenliste() {
             className={
               "text-sm rounded-lg px-3 py-1.5 border transition-colors " +
               (modus === l.id
-                ? "border-[var(--accent)] text-[var(--accent)] font-bold"
-                : "border-[var(--border)] hover:border-[var(--accent)]")
+                ? "border-(--accent) text-(--accent) font-bold"
+                : "border-(--border) hover:border-(--accent)")
             }
           >
             {l.label}
           </button>
         ))}
-        <span className="text-xs text-[var(--text-muted)]">{gewaehlt.hinweis}</span>
+        <span className="text-xs text-(--text-muted)">{gewaehlt.hinweis}</span>
       </div>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-        {isLoading && <p className="text-sm text-[var(--text-muted)] p-6 text-center">wird geladen …</p>}
+      <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+        {isLoading && <p className="text-sm text-(--text-muted) p-6 text-center">wird geladen …</p>}
         {isError && (
-          <p className="text-sm text-[var(--red)] p-6 text-center">
+          <p className="text-sm text-(--red) p-6 text-center">
             Die Bestenliste ließ sich nicht laden.
           </p>
         )}
         {!isLoading && !isError && eintraege.length === 0 && (
-          <p className="text-sm text-[var(--text-muted)] p-6 text-center">
+          <p className="text-sm text-(--text-muted) p-6 text-center">
             Noch kein Eintrag. Wer die erste Runde zu Ende bringt, steht hier.
           </p>
         )}
@@ -67,19 +67,19 @@ export default function Bestenliste() {
                 data-platz={e.platz}
                 data-selbst={e.selbst || undefined}
                 className={
-                  "flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] last:border-0 " +
-                  (e.selbst ? "bg-[var(--surface-hover)]" : "")
+                  "flex items-center gap-3 px-4 py-2 border-b border-(--border) last:border-0 " +
+                  (e.selbst ? "bg-(--surface-hover)" : "")
                 }
               >
-                <span className="w-8 text-right tabular-nums text-sm text-[var(--text-muted)]">
+                <span className="w-8 text-right tabular-nums text-sm text-(--text-muted)">
                   {e.platz}.
                 </span>
-                <span className={"flex-1 truncate text-sm " + (e.selbst ? "font-black text-[var(--accent)]" : "")}>
+                <span className={"flex-1 truncate text-sm " + (e.selbst ? "font-black text-(--accent)" : "")}>
                   {e.name}
-                  {e.klasse && <span className="text-[var(--text-muted)] ml-2 text-xs">{e.klasse}</span>}
+                  {e.klasse && <span className="text-(--text-muted) ml-2 text-xs">{e.klasse}</span>}
                 </span>
                 {e.kontext && (
-                  <span className="hidden sm:block w-40 truncate text-xs text-[var(--text-muted)]">
+                  <span className="hidden sm:block w-40 truncate text-xs text-(--text-muted)">
                     {e.kontext}
                   </span>
                 )}
@@ -92,7 +92,7 @@ export default function Bestenliste() {
                 </span>
                 <span className="w-24 text-right font-black tabular-nums">
                   {Math.round(e.wert)}
-                  <span className="text-[10px] font-normal text-[var(--text-muted)] ml-1">
+                  <span className="text-[10px] font-normal text-(--text-muted) ml-1">
                     {gewaehlt.einheit}
                   </span>
                 </span>
@@ -102,7 +102,7 @@ export default function Bestenliste() {
         )}
       </div>
 
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+      <p className="text-xs text-(--text-muted) leading-relaxed">
         Eingetragen wird nur mit eigenem Zugang und nur die jeweils beste Runde — Gäste
         über den QR-Code spielen mit, stehen aber nicht in der Liste.
       </p>

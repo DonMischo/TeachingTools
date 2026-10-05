@@ -323,7 +323,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
   const gross = vollbild || ersatzVollbild;
 
   const tonUmschalten = () => { setTonAn((a) => { schreib("hp_verkehr_ton", !a); return !a; }); zurBuehne(); };
-  const hudKnopf = "pointer-events-auto flex h-9 min-w-9 items-center justify-center rounded-xl bg-slate-900/70 px-2 text-base text-white shadow-lg ring-1 ring-white/15 backdrop-blur hover:bg-slate-800/80";
+  const hudKnopf = "pointer-events-auto flex h-9 min-w-9 items-center justify-center rounded-xl bg-slate-900/70 px-2 text-base text-white shadow-lg ring-1 ring-white/15 backdrop-blur-sm hover:bg-slate-800/80";
 
   const seitenleiste = zugang && live.lehrkraft ? (
     <div className="text-sm">
@@ -333,13 +333,13 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
         Schimpfen erlauben (🤬 → Polizei)
       </label>
       {live.liste.filter((s) => !s.lehrkraft).length === 0 && (
-        <p className="text-[var(--text-muted)]">Noch niemand da. »Zum Mitmachen« zeigt den Code.</p>
+        <p className="text-(--text-muted)">Noch niemand da. »Zum Mitmachen« zeigt den Code.</p>
       )}
       <ul className="flex flex-col gap-2">
         {[...live.liste].filter((s) => !s.lehrkraft).sort((a, b) => b.punkte - a.punkte).map((s) => (
-          <li key={s.key} className="rounded-lg border border-[var(--border)] px-2 py-1">
+          <li key={s.key} className="rounded-lg border border-(--border) px-2 py-1">
             <div className="flex justify-between font-bold"><span>{s.name}</span><span>⭐ {s.punkte}</span></div>
-            <div className="text-xs text-[var(--text-muted)]">
+            <div className="text-xs text-(--text-muted)">
               {Object.entries(s.verstoesse).map(([id, n]) => `${KURZ[id as RegelId] ?? id} ×${n}`).join(" · ") || "keine Verstöße"}
             </div>
           </li>
@@ -355,9 +355,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     <div className={ersatzVollbild ? "fixed inset-0 z-50 flex flex-col bg-slate-950" : "flex flex-col gap-3 p-4"}>
       {!gross && (
         <div className="flex flex-wrap items-center gap-3 px-1">
-          <h1 className="text-xl font-black">🚦 <span className="text-amber-500">GTA</span> – Ganztagsaufmerksamkeit im Verkehr <span className="font-bold text-[var(--text-muted)]">· zu Fuß</span></h1>
+          <h1 className="text-xl font-black">🚦 <span className="text-amber-500">GTA</span> – Ganztagsaufmerksamkeit im Verkehr <span className="font-bold text-(--text-muted)">· zu Fuß</span></h1>
           {zugang && (
-            <span className="text-xs text-[var(--text-muted)]" title="Live-Raum">
+            <span className="text-xs text-(--text-muted)" title="Live-Raum">
               {live.connected ? `🟢 ${live.liste.length} in der Stadt` : "🟠 verbinde …"}
             </span>
           )}
@@ -381,7 +381,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           {/* Kopfzeile im Bild */}
           <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex flex-wrap items-start gap-2">
             <button type="button" title="Uhrzeit und Zeitraffer"
-              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 backdrop-blur hover:bg-slate-800/80 ${uhrTafel ? "ring-amber-400" : "ring-white/15"}`}
+              className={`pointer-events-auto flex items-center gap-2 rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 backdrop-blur-sm hover:bg-slate-800/80 ${uhrTafel ? "ring-amber-400" : "ring-white/15"}`}
               onClick={() => setUhrTafel((v) => !v)}>
               <span className="tabular-nums">{uhr?.dunkel ? "🌙" : "🕒"} {uhr?.text ?? "--:--"}</span>
               {uhr && <span className={`rounded-md px-1.5 text-xs ${uhr.rush ? "bg-amber-500 text-black" : "bg-white/15"}`}>{uhr.abschnitt}</span>}
@@ -390,7 +390,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
             <div className="rounded-xl px-3 py-1.5 text-sm font-bold text-white shadow-lg ring-1 ring-white/15" style={{ background: u.farbe }}>
               {u.icon} {u.text}
             </div>
-            <div className="rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-black text-amber-300 shadow-lg ring-1 ring-white/15 backdrop-blur" title="Punkte in dieser Runde">
+            <div className="rounded-xl bg-slate-900/70 px-3 py-1.5 text-sm font-black text-amber-300 shadow-lg ring-1 ring-white/15 backdrop-blur-sm" title="Punkte in dieser Runde">
               ⭐ {punkte}
             </div>
             {weste && <div className="rounded-xl bg-lime-400 px-2 py-1.5 text-sm font-bold text-black shadow-lg">🦺 Weste</div>}
@@ -452,7 +452,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               beamenUebrig={beamenUebrig} onBeamen={beamen} onZu={() => { setHandyOffen(false); zurBuehne(); }} />
           )}
           {uhrTafel && (
-            <div className="absolute left-2 top-14 z-30 w-72 rounded-xl bg-slate-900/90 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
+            <div className="absolute left-2 top-14 z-30 w-72 rounded-xl bg-slate-900/90 px-4 py-3 text-xs text-white shadow-xl ring-1 ring-white/15 backdrop-blur-sm">
               <div className="mb-1 flex items-center justify-between">
                 <span className="font-black">🕒 Uhr{zugang ? " für alle" : ""}</span>
                 <button type="button" className="underline opacity-80" onClick={() => { setUhrTafel(false); zurBuehne(); }}>schließen</button>
@@ -461,7 +461,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
                 <>
                   <label className="block">
                     <span className="font-bold">Uhrzeit:</span>
-                    <select className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-white"
+                    <select className="mt-1 w-full rounded-sm bg-slate-800 px-2 py-1 text-white"
                       value={uhrSt.versatz === 0 && uhrSt.faktor === 1 ? "echt" : ZEITEN.find((z) => Math.abs(versatzFuer(z.tag, z.minute) - uhrSt.versatz) < 3600 * 3)?.name ?? "eigen"}
                       onChange={(e) => {
                         const z = ZEITEN.find((x) => x.name === e.target.value);
@@ -476,7 +476,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
                   <div className="mt-1 flex gap-1.5">
                     {[1, 2, 5, 10].map((f) => (
                       <button key={f} type="button" onClick={() => stelleTempo(f)}
-                        className={`flex-1 rounded px-2 py-1 font-bold ${uhrSt.faktor === f ? "bg-sky-500 text-black" : "bg-slate-700 hover:bg-slate-600"}`}>
+                        className={`flex-1 rounded-sm px-2 py-1 font-bold ${uhrSt.faktor === f ? "bg-sky-500 text-black" : "bg-slate-700 hover:bg-slate-600"}`}>
                         {f === 1 ? "echt" : `×${f}`}
                       </button>
                     ))}
@@ -492,7 +492,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           )}
 
           {hilfe && !uhrTafel && !(ltbAn && intro !== null) && !ltbText && (
-            <div className="absolute left-2 top-14 z-10 max-w-xs rounded-xl bg-slate-900/85 px-4 py-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/15 backdrop-blur">
+            <div className="absolute left-2 top-14 z-10 max-w-xs rounded-xl bg-slate-900/85 px-4 py-3 text-xs leading-relaxed text-white shadow-xl ring-1 ring-white/15 backdrop-blur-sm">
               <div className="mb-1 font-black">Steuerung</div>
               <div><b>Laufen:</b> Pfeiltasten, WASD oder Maus (klicken = hingehen, gedrückt halten = folgen) · <b>Rennen:</b> Umschalt</div>
               <div><b>Umschauen:</b> Leertaste · <b>Taster / Schild:</b> E</div>
@@ -513,7 +513,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
               {tafel.abfahrten.length === 0 && <div className="py-1 text-amber-500/80">Heute keine Abfahrten mehr</div>}
               {tafel.abfahrten.map((a, i) => (
                 <div key={i} className="flex gap-2 py-0.5">
-                  <span className="w-7 rounded bg-amber-400 px-1 text-center font-bold text-black">{a.linie}</span>
+                  <span className="w-7 rounded-sm bg-amber-400 px-1 text-center font-bold text-black">{a.linie}</span>
                   <span className="flex-1 truncate">{a.ziel}</span>
                   <span className="tabular-nums">{a.inMinuten === 0 ? "jetzt" : `${a.inMinuten} min`}</span>
                 </div>
@@ -540,8 +540,8 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
           <div className="pointer-events-none absolute bottom-6 left-1/2 z-10 flex w-[min(92%,560px)] -translate-x-1/2 flex-col gap-2">
             {meldungen.map((m) => (
               <div key={m.n} role="status"
-                className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-xl ring-1 ring-white/20 backdrop-blur ${
-                  m.erfolg ? "bg-gradient-to-r from-amber-400 to-yellow-300 text-black"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-xl ring-1 ring-white/20 backdrop-blur-sm ${
+                  m.erfolg ? "bg-linear-to-r from-amber-400 to-yellow-300 text-black"
                     : m.punkte > 0 ? "bg-green-600/95 text-white" : m.schwer ? "bg-red-600/95 text-white" : m.punkte < 0 ? "bg-orange-500/95 text-white" : "bg-slate-800/90 text-white"}`}>
                 {m.punkte !== 0 && <span className="mr-2 font-black">{m.punkte > 0 ? `+${m.punkte}` : m.punkte}</span>}{m.text}
               </div>
@@ -554,7 +554,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
         </div>
 
         {seite && (
-          <aside className={`w-72 shrink-0 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg ${
+          <aside className={`w-72 shrink-0 overflow-y-auto rounded-2xl border border-(--border) bg-(--surface) p-3 shadow-lg ${
             gross ? "absolute right-3 top-14 bottom-3 z-20 max-h-none w-72 shadow-2xl" : "max-h-[calc(100dvh-7rem)]"} ${touch && !gross ? "hidden lg:block" : ""}`}>
             {seitenleiste}
           </aside>

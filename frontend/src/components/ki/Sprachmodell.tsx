@@ -54,8 +54,8 @@ function Schritte({ station, lehrgang, auf }: {
   const imLehrgang = STATIONEN.some(s => s.id === station);
   const chip = (aktiv: boolean) => `px-2.5 py-1 rounded-lg border font-bold ${
     aktiv
-      ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
-      : "border-[var(--border)] bg-[var(--surface)]"
+      ? "border-(--accent) bg-(--accent) text-(--accent-text)"
+      : "border-(--border) bg-(--surface)"
   }`;
   return (
     <ol className="flex flex-wrap items-center gap-1 text-xs">
@@ -70,7 +70,7 @@ function Schritte({ station, lehrgang, auf }: {
             {d.titel}
           </button>
         ))}
-        <span className="text-[var(--text-muted)]">|</span>
+        <span className="text-(--text-muted)">|</span>
       </li>
       {STATIONEN.map((s, i) => {
         const aktiv = s.id === station;
@@ -83,15 +83,15 @@ function Schritte({ station, lehrgang, auf }: {
               disabled={!erledigt}
               className={`px-2.5 py-1 rounded-lg border font-bold ${
                 aktiv
-                  ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]"
+                  ? "border-(--accent) bg-(--accent) text-(--accent-text)"
                   : erledigt
-                    ? "border-[var(--border)] bg-[var(--surface)]"
-                    : "border-dashed border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed"
+                    ? "border-(--border) bg-(--surface)"
+                    : "border-dashed border-(--border) text-(--text-muted) cursor-not-allowed"
               }`}
             >
               {s.nr}. {s.titel}
             </button>
-            {i < STATIONEN.length - 1 && <span className="text-[var(--text-muted)]">→</span>}
+            {i < STATIONEN.length - 1 && <span className="text-(--text-muted)">→</span>}
           </li>
         );
       })}
@@ -102,7 +102,7 @@ function Schritte({ station, lehrgang, auf }: {
 /** Der Text, wie er wächst — antippen nimmt ab hier alles zurück. */
 function Textband({ schritte, onZurueck }: { schritte: Schritt[]; onZurueck: (n: number) => void }) {
   if (!schritte.length) {
-    return <p className="text-sm text-[var(--text-muted)]">Noch kein Wort gewählt.</p>;
+    return <p className="text-sm text-(--text-muted)">Noch kein Wort gewählt.</p>;
   }
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -112,11 +112,11 @@ function Textband({ schritte, onZurueck }: { schritte: Schritt[]; onZurueck: (n:
           type="button"
           onClick={() => onZurueck(i)}
           title={`${Math.round(s.p * 100)} % — antippen nimmt ab hier zurück`}
-          className="px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--surface)]
-            hover:border-[var(--red)] text-sm font-bold"
+          className="px-2 py-1 rounded-lg border border-(--border) bg-(--surface)
+            hover:border-(--red) text-sm font-bold"
         >
           {s.wort.text}
-          <span className="ml-1 text-[10px] font-normal text-[var(--text-muted)]">
+          <span className="ml-1 text-[10px] font-normal text-(--text-muted)">
             {Math.round(s.p * 100)}%
           </span>
         </button>
@@ -174,8 +174,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
 
       {station === "auftrag" && (
         <div className="flex flex-col gap-4">
-          <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-            <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-2">
+          <div className="p-5 rounded-2xl border border-(--border) bg-(--surface)">
+            <div className="text-xs uppercase tracking-wide text-(--text-muted) mb-2">
               Dein Auftrag an die Maschine
             </div>
             <p className="text-lg font-bold">»{netz.prompt}«</p>
@@ -187,7 +187,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
               <select
                 value={thema}
                 onChange={e => { setThema(e.target.value); setSchritte([]); }}
-                className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
+                className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)"
               >
                 {NETZE.map(n => (
                   <option key={n.slug} value={n.slug}>{n.icon} {n.titel}</option>
@@ -196,7 +196,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
             </label>
           )}
 
-          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+          <p className="text-sm text-(--text-muted) leading-relaxed">
             Diesen Satz bekommt gleich niemand zu lesen. Er wird erst in Stücke geschnitten, die
             Stücke werden zu Nummern, und aus den Nummern sucht ein Netz aus Wahrscheinlichkeiten
             das nächste Wort. Du übernimmst dabei den letzten Schritt: das Würfeln.
@@ -206,7 +206,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
             <button
               type="button"
               onClick={() => setStation("zerlegen")}
-              className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]"
+              className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
             >
               Los →
             </button>
@@ -242,7 +242,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
         <div className="flex flex-col gap-4">
           {gelernt && (
             <div className="flex items-center gap-2 flex-wrap text-sm p-3 rounded-2xl
-              border border-[var(--accent)] bg-[var(--surface)]">
+              border border-(--accent) bg-(--surface)">
               <span aria-hidden>🧪</span>
               <span>
                 Du schreibst mit einem <b>selbst gezählten</b> Netz:
@@ -251,8 +251,8 @@ export function Sprachmodell({ zugang, onSignatur }: {
               <button
                 type="button"
                 onClick={() => { setGelernt(null); setSchritte([]); }}
-                className="px-2.5 py-1 rounded-lg border border-[var(--border)]
-                  bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-xs font-bold"
+                className="px-2.5 py-1 rounded-lg border border-(--border)
+                  bg-(--surface) hover:bg-(--surface-hover) text-xs font-bold"
               >
                 zurück zum fertigen Netz
               </button>
@@ -273,9 +273,9 @@ export function Sprachmodell({ zugang, onSignatur }: {
             <Wissen thema="auswahl" />
           </div>
 
-          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
+          <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
-              <span className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
+              <span className="text-xs uppercase tracking-wide text-(--text-muted)">
                 Dein Text ({woerter.length} {woerter.length === 1 ? "Wort" : "Wörter"},
                 {" "}{saetze} {saetze === 1 ? "Satz" : "Sätze"})
               </span>
@@ -283,7 +283,7 @@ export function Sprachmodell({ zugang, onSignatur }: {
                 <button
                   type="button"
                   onClick={() => setSchritte(alt => alt.slice(0, -1))}
-                  className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text)]"
+                  className="text-xs font-bold text-(--text-muted) hover:text-(--text)"
                 >
                   ↶ letztes Wort zurück
                 </button>
@@ -298,13 +298,13 @@ export function Sprachmodell({ zugang, onSignatur }: {
               type="button"
               disabled={!fertigMoeglich}
               onClick={() => setStation("ergebnis")}
-              className="px-4 py-2 rounded-xl font-black bg-[var(--accent)] text-[var(--accent-text)]
+              className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)
                 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ✓ Fertig
             </button>
             {!fertigMoeglich && (
-              <span className="text-xs text-[var(--text-muted)]">
+              <span className="text-xs text-(--text-muted)">
                 Fertig wird möglich, sobald ein Satz mit einem Punkt endet.
               </span>
             )}
@@ -350,8 +350,8 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="p-5 rounded-2xl border border-[var(--accent)] bg-[var(--surface)]">
-        <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-2">Dein Text</div>
+      <div className="p-5 rounded-2xl border border-(--accent) bg-(--surface)">
+        <div className="text-xs uppercase tracking-wide text-(--text-muted) mb-2">Dein Text</div>
         <p className="text-xl font-bold leading-relaxed">{text}</p>
       </div>
 
@@ -363,33 +363,33 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
         <Kachel titel="Tokens" wert={`${tokens.length}`} hinweis="So viele Stücke sieht die Maschine" />
       </div>
 
-      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-2">
+      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-2">
         <p className="text-sm">
           🎲 Dein Text ist <b>{woerterAnzahl}</b> {woerterAnzahl === 1 ? "Wort" : "Wörter"} lang.
           {" "}Genauso lange Texte könnte dieses Netz <b>{zahlwort(moeglich)}</b> verschiedene
           schreiben — und du hast einen davon ausgesucht.
         </p>
-        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+        <p className="text-xs text-(--text-muted) leading-relaxed">
           So entsteht der Eindruck, die Maschine denke sich etwas aus: Bei jedem Wort verzweigt
           sich der Weg, und schon nach wenigen Wörtern gibt es mehr Möglichkeiten als Menschen
           auf der Erde. Gewählt wird trotzdem nur — nach Häufigkeit, mit einem Würfel.
         </p>
       </div>
 
-      <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-2">
+      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-2">
         <p className="text-sm">
           ⚠️ <b>Sicher heißt nicht wahr.</b> Die Erwartbarkeit sagt nur, wie gewöhnlich dein Text
           klingt. Ob etwas davon stimmt, hat das Netz nie geprüft — es hat keine Stelle, an der so
           etwas geprüft würde.
         </p>
-        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+        <p className="text-xs text-(--text-muted) leading-relaxed">
           Genau das steckt hinter dem Wort »Halluzination«: Ein Sprachmodell schreibt einen
           falschen Satz mit derselben Selbstsicherheit wie einen richtigen, weil beide gleich
           wahrscheinlich klingen. Wer eine KI nach Tatsachen fragt, muss sie nachschlagen.
         </p>
       </div>
 
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+      <p className="text-xs text-(--text-muted) leading-relaxed">
         🔎 <b>Erwartbarkeit</b> ist der Durchschnitt der Wahrscheinlichkeiten, die deine Wörter
         hatten. Hoch heißt: naheliegend, wie aus dem Lehrbuch — genau das, was ein Sprachmodell von
         allein schreibt. Niedrig heißt: überraschend. Beides ist weder richtig noch falsch, aber es
@@ -402,14 +402,14 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
         <button
           type="button"
           onClick={onWeiterschreiben}
-          className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold"
+          className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold"
         >
           ✎ Weiterschreiben
         </button>
         <button
           type="button"
           onClick={onNochmal}
-          className="px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-bold"
+          className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold"
         >
           ↺ Neuer Durchgang
         </button>
@@ -422,9 +422,9 @@ function Ergebnis({ netz, text, wert, mut, sig, quote, zugang, onNochmal, onWeit
 
 function Kachel({ titel, wert, hinweis }: { titel: string; wert: string; hinweis: string }) {
   return (
-    <div className="p-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]" title={hinweis}>
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{titel}</div>
-      <div className="text-lg font-black break-words">{wert}</div>
+    <div className="p-3 rounded-2xl border border-(--border) bg-(--surface)" title={hinweis}>
+      <div className="text-[10px] uppercase tracking-wide text-(--text-muted)">{titel}</div>
+      <div className="text-lg font-black wrap-break-word">{wert}</div>
     </div>
   );
 }

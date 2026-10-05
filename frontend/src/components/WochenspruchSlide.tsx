@@ -111,7 +111,7 @@ export function WochenspruchSlide({ ws }: { ws: SlideshowWochenspruch }) {
             {ws.hymns.map((hymn) => {
               const [number, ...rest] = hymn.split(": ");
               return (
-                <span key={hymn} className="rounded-full bg-white/10 border border-white/15 backdrop-blur-sm"
+                <span key={hymn} className="rounded-full bg-white/10 border border-white/15 backdrop-blur-xs"
                   style={{ padding: "0.8cqmin 2cqmin", fontSize: "1.9cqmin" }}>
                   <span style={{ color: accent }}>♪</span> <span className="font-semibold">{number}</span>
                   {rest.length > 0 && <span className="text-white/80"> · {rest.join(": ")}</span>}
@@ -119,7 +119,7 @@ export function WochenspruchSlide({ ws }: { ws: SlideshowWochenspruch }) {
               );
             })}
             {ws.psalm && (
-              <span className="rounded-full bg-white/10 border border-white/15 backdrop-blur-sm" style={{ padding: "0.8cqmin 2cqmin", fontSize: "1.9cqmin" }}>
+              <span className="rounded-full bg-white/10 border border-white/15 backdrop-blur-xs" style={{ padding: "0.8cqmin 2cqmin", fontSize: "1.9cqmin" }}>
                 <span className="text-white/70">Wochenpsalm</span> <span className="font-semibold">{ws.psalm}</span>
               </span>
             )}

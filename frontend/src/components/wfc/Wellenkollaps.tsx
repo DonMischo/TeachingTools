@@ -30,8 +30,8 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 const GROESSEN = [10, 16, 24, 32];
 
 const chip = (an: boolean) =>
-  `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`;
-const auswahl = "rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1";
+  `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`;
+const auswahl = "rounded-lg border border-(--border) bg-(--surface) px-2 py-1";
 
 function rgb(hex: string): [number, number, number] {
   return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
@@ -59,18 +59,18 @@ export default function Wellenkollaps({ action, vorgabe }: { action?: ReactNode;
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "kacheln");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧩 Wellenfunktionskollaps</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Aus wenigen Nachbarschaftsregeln entsteht Stück für Stück ein Bild, das überall zusammenpasst — wie beim Sudoku.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
       {!fest && (
-        <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+        <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
           {REITER.map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}
         </div>
       )}
@@ -106,7 +106,7 @@ function Kacheln({ startSatz }: { startSatz?: string }) {
   const farben = useMemo(() => v.map(x => kachelFarbe(satz.id, x)), [satz, v]);
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
         <label className="flex items-center gap-1">Kachelsatz
           <select value={satzId} onChange={e => setSatzId(e.target.value)} className={auswahl}>
             {KACHELSAETZE.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -117,9 +117,9 @@ function Kacheln({ startSatz }: { startSatz?: string }) {
             {GROESSEN.map(g => <option key={g} value={g}>{g}×{g}</option>)}
           </select>
         </label>
-        <span className="text-xs text-[var(--text-muted)]">{v.length} Kacheln (mit Drehungen)</span>
+        <span className="text-xs text-(--text-muted)">{v.length} Kacheln (mit Drehungen)</span>
       </div>
-      <p className="text-sm text-[var(--text-muted)]">{satz.text}</p>
+      <p className="text-sm text-(--text-muted)">{satz.text}</p>
       <Buehne key={`${satzId}-${groesse}`} modell={modell} b={groesse} h={groesse} pinsel={pinsel}
         zeichneZelle={(ctx, p, x, y, g) => zeichneKachel(ctx, satz.id, v[p], x, y, g)}
         mischfarbe={(w, i) => mische(w, i, p => farben[p])} />
@@ -151,7 +151,7 @@ function VorlageModell({ startVorlage }: { startVorlage?: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
         <label className="flex items-center gap-1">Vorlage
           <select value={vorlageId} onChange={e => { const v = VORLAGEN.find(x => x.id === e.target.value)!; setVorlageId(v.id); setZeilen(v.zeilen); }} className={auswahl}>
             {VORLAGEN.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
@@ -163,7 +163,7 @@ function VorlageModell({ startVorlage }: { startVorlage?: string }) {
           </select>
         </label>
         <label className="flex items-center gap-1 cursor-pointer">
-          <input type="checkbox" checked={symmetrie} onChange={e => setSymmetrie(e.target.checked)} className="accent-[var(--accent)]" />
+          <input type="checkbox" checked={symmetrie} onChange={e => setSymmetrie(e.target.checked)} className="accent-(--accent)" />
           auch gedreht & gespiegelt
         </label>
         <label className="flex items-center gap-1">Feld
@@ -171,12 +171,12 @@ function VorlageModell({ startVorlage }: { startVorlage?: string }) {
             {GROESSEN.map(g => <option key={g} value={g}>{g}×{g}</option>)}
           </select>
         </label>
-        <span className="text-xs text-[var(--text-muted)]">{gelernt.modell.anzahl} verschiedene Ausschnitte gelernt</span>
+        <span className="text-xs text-(--text-muted)">{gelernt.modell.anzahl} verschiedene Ausschnitte gelernt</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-[auto_minmax(0,1fr)] gap-4 items-start">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 flex flex-col gap-2">
-          <p className="text-xs font-bold text-[var(--text-muted)]">Vorlage — zum Malen antippen</p>
-          <div className="grid gap-px self-start bg-[var(--border)] p-px rounded" style={{ gridTemplateColumns: `repeat(${zeilen[0].length}, 16px)` }} data-vorlage>
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-2">
+          <p className="text-xs font-bold text-(--text-muted)">Vorlage — zum Malen antippen</p>
+          <div className="grid gap-px self-start bg-(--border) p-px rounded-sm" style={{ gridTemplateColumns: `repeat(${zeilen[0].length}, 16px)` }} data-vorlage>
             {zeilen.flatMap((zeile, y) => [...zeile].map((c, x) => (
               <button key={`${x},${y}`} onClick={() => male(x, y)} aria-label={`Feld ${x + 1},${y + 1}`}
                 style={{ background: FARBEN[c]?.hex ?? "#f0f", width: 16, height: 16 }} />
@@ -185,11 +185,11 @@ function VorlageModell({ startVorlage }: { startVorlage?: string }) {
           <div className="flex flex-wrap gap-1 max-w-[210px]">
             {MALFARBEN.map(c => (
               <button key={c} onClick={() => setFarbe(c)} title={FARBEN[c].name}
-                className={`w-6 h-6 rounded border-2 ${farbe === c ? "border-[var(--accent)] scale-110" : "border-[var(--border)]"}`}
+                className={`w-6 h-6 rounded-sm border-2 ${farbe === c ? "border-(--accent) scale-110" : "border-(--border)"}`}
                 style={{ background: FARBEN[c].hex }} />
             ))}
           </div>
-          <p className="text-xs text-[var(--text-muted)] max-w-[210px]">{vorlage.text}</p>
+          <p className="text-xs text-(--text-muted) max-w-[210px]">{vorlage.text}</p>
         </section>
         <Buehne key={`${groesse}`} modell={gelernt.modell} b={groesse} h={groesse} pinsel={pinsel}
           zeichneZelle={(ctx, p, x, y, g) => { ctx.fillStyle = FARBEN[gelernt.pixel[p][0]]?.hex ?? "#f0f"; ctx.fillRect(x, y, g, g); }}
@@ -211,14 +211,14 @@ function Erklaerung() {
     ["📌 Randbedingungen", "Du kannst Zellen vorab festlegen — zum Beispiel den ganzen Rand als Wasser: Dann muss WFC eine Insel bauen. Passen Festlegungen gar nicht zusammen, meldet WFC das sofort."],
   ];
   return (
-    <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+    <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
       {schritte.map(([t, s]) => (
-        <section key={t} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed">
+        <section key={t} className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed">
           <h3 className="font-black mb-1">{t}</h3>
           <p>{s}</p>
         </section>
       ))}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed">
         <h3 className="font-black mb-1">📚 Quellen</h3>
         <p>
           <a className="underline" href="https://github.com/mxgmn/WaveFunctionCollapse" target="_blank" rel="noreferrer">WaveFunctionCollapse</a> von

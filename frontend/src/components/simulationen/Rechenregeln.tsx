@@ -54,8 +54,8 @@ function Knopf({ an, onClick, children, klein }: {
       onClick={onClick}
       className={`rounded-xl border font-bold transition-colors ${klein ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"} ${
         an
-          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-          : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
+          ? "border-(--accent) bg-(--accent) text-white"
+          : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
       }`}
     >
       {children}
@@ -82,11 +82,11 @@ function Aufgabenleiste({ stufen, aktiv, onWaehle, onNeu, hinweis }: {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Knopf an onClick={onNeu}>🎲 Neue Aufgabe</Knopf>
-      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Sorte</span>
+      <span className="text-xs font-bold text-(--text-muted) uppercase tracking-wide">Sorte</span>
       {stufen.map(s => (
         <Knopf key={s.id} an={s.id === aktiv} onClick={() => onWaehle(s.id)}>{s.label}</Knopf>
       ))}
-      {hinweis && <span className="text-xs text-[var(--text-muted)]">{hinweis}</span>}
+      {hinweis && <span className="text-xs text-(--text-muted)">{hinweis}</span>}
     </div>
   );
 }
@@ -106,8 +106,8 @@ function Eigenes({ platzhalter, onSubmit, fehler }: {
           onChange={e => setText(e.target.value)}
           placeholder={platzhalter}
           aria-label="Eigener Term"
-          className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)]
-            text-sm font-mono w-56 focus:outline-none focus:border-[var(--accent)]"
+          className="px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface)
+            text-sm font-mono w-56 focus:outline-hidden focus:border-(--accent)"
         />
         <Knopf onClick={() => onSubmit(text)}>Übernehmen</Knopf>
       </form>
@@ -153,10 +153,10 @@ function Loesungsfeld({ loesung, onGeprueft, onZeigen }: {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 p-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+    <div className="flex flex-col gap-1.5 p-3 rounded-2xl border border-(--border) bg-(--surface)">
       <form className="flex flex-wrap items-center gap-2"
         onSubmit={e => { e.preventDefault(); pruefe(); }}>
-        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Dein Ergebnis</span>
+        <span className="text-xs font-bold text-(--text-muted) uppercase tracking-wide">Dein Ergebnis</span>
         <input
           value={text}
           onChange={e => { setText(e.target.value); setUrteil(null); }}
@@ -166,8 +166,8 @@ function Loesungsfeld({ loesung, onGeprueft, onZeigen }: {
           inputMode="decimal"
           placeholder="?"
           aria-label="Dein Ergebnis"
-          className="px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface-hover)]
-            text-sm font-mono w-28 focus:outline-none focus:border-[var(--accent)]"
+          className="px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface-hover)
+            text-sm font-mono w-28 focus:outline-hidden focus:border-(--accent)"
         />
         <Knopf onClick={pruefe} klein>Prüfen</Knopf>
         {onZeigen && !urteil && <Knopf onClick={onZeigen} klein>Lösung zeigen</Knopf>}
@@ -203,7 +203,7 @@ function zaehle(p: Punktestand, richtig: boolean): Punktestand {
 function Punkteleiste({ p, onReset }: { p: Punktestand; onReset: () => void }) {
   if (!p.gesamt) {
     return (
-      <p className="text-xs text-[var(--text-muted)]">
+      <p className="text-xs text-(--text-muted)">
         Tipp dein Ergebnis ein, bevor du nachsiehst — dann wird mitgezählt.
       </p>
     );
@@ -213,7 +213,7 @@ function Punkteleiste({ p, onReset }: { p: Punktestand; onReset: () => void }) {
       <span aria-label="Punktestand" className="font-black">
         ✔ {p.richtig} von {p.gesamt} richtig
       </span>
-      <span className="text-[var(--text-muted)]">
+      <span className="text-(--text-muted)">
         · Serie {p.serie}{p.beste > p.serie && ` (beste ${p.beste})`}
       </span>
       <Knopf onClick={onReset} klein>↺ Zähler</Knopf>
@@ -227,13 +227,13 @@ function Punkteleiste({ p, onReset }: { p: Punktestand; onReset: () => void }) {
 function Haufen({ n, frucht }: { n: number; frucht: string }) {
   if (n > 24) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--surface-hover)] text-sm font-bold">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-(--surface-hover) text-sm font-bold">
         {n} × <span className="text-lg">{frucht}</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex flex-wrap justify-center gap-0.5 max-w-[7.5rem]" aria-hidden>
+    <span className="inline-flex flex-wrap justify-center gap-0.5 max-w-30" aria-hidden>
       {Array.from({ length: n }, (_, i) => <span key={i} className="text-lg leading-none">{frucht}</span>)}
     </span>
   );
@@ -279,7 +279,7 @@ function Rechnung({ op, a, b, frucht }: { op: Op; a: number; b: number; frucht: 
     // Wegnehmen: die letzten b Früchte liegen blass da — sie kommen weg.
     const zeigbar = a <= 24;
     return zeigbar
-      ? <span className="inline-flex flex-wrap justify-center gap-0.5 max-w-[9rem]">
+      ? <span className="inline-flex flex-wrap justify-center gap-0.5 max-w-36">
           {Array.from({ length: a }, (_, i) => (
             <span key={i} className={`text-lg leading-none ${i >= a - b ? "opacity-25 grayscale" : ""}`}>{frucht}</span>
           ))}
@@ -289,7 +289,7 @@ function Rechnung({ op, a, b, frucht }: { op: Op; a: number; b: number; frucht: 
   return (
     <span className="flex items-center gap-1.5">
       <Haufen n={a} frucht={frucht} />
-      <span className="text-lg font-black text-[var(--text-muted)]">+</span>
+      <span className="text-lg font-black text-(--text-muted)">+</span>
       <Haufen n={b} frucht={frucht} />
     </span>
   );
@@ -315,8 +315,8 @@ function Bild({ n, pfad, dranPfad, frucht, onTipp }: {
         title="Antippen und ausrechnen"
         className={`flex flex-col items-center gap-1 px-2.5 py-2 rounded-2xl border-2 transition-all ${
           dran
-            ? "border-[var(--accent)] bg-[var(--accent)]/10 shadow-lg animate-pulse"
-            : "border-dashed border-[var(--border)] hover:border-[var(--accent)]/60"
+            ? "border-(--accent) bg-(--accent)/10 shadow-lg animate-pulse"
+            : "border-dashed border-(--border) hover:border-(--accent)/60"
         }`}
       >
         <Rechnung op={n.op} a={n.a.v} b={n.b.v} frucht={frucht} />
@@ -341,7 +341,7 @@ function Bild({ n, pfad, dranPfad, frucht, onTipp }: {
   return (
     <span className="flex items-center gap-2 flex-wrap justify-center">
       {seite(n.a, "a")}
-      <span className="text-3xl sm:text-4xl font-black text-[var(--text-muted)] px-1">{opZeichen(n.op)}</span>
+      <span className="text-3xl sm:text-4xl font-black text-(--text-muted) px-1">{opZeichen(n.op)}</span>
       {seite(n.b, "b")}
     </span>
   );
@@ -428,10 +428,10 @@ function Obstkorb({ melde, fest }: { melde: (richtig: boolean) => void; fest?: s
       </>}
 
       {/* Termzeile */}
-      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl border border-(--border) bg-(--surface)">
         <span aria-label="Term" className="text-2xl sm:text-3xl font-black font-mono tracking-tight">{render(baum)}</span>
         {dran && (
-          <span className="px-2.5 py-1 rounded-lg bg-[var(--accent)]/15 text-[var(--accent)] text-xs font-bold">
+          <span className="px-2.5 py-1 rounded-lg bg-(--accent)/15 text-(--accent) text-xs font-bold">
             als Nächstes: {fmt(dran.a)} {opZeichen(dran.op)} {fmt(dran.b)} — {grund}
           </span>
         )}
@@ -447,7 +447,7 @@ function Obstkorb({ melde, fest }: { melde: (richtig: boolean) => void; fest?: s
       )}
 
       {/* Bühne */}
-      <div className="p-4 sm:p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+      <div className="p-4 sm:p-6 rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto">
         <div className="min-w-fit flex justify-center">
           <Bild n={baum} pfad="" dranPfad={dran?.pfad ?? null} frucht={frucht} onTipp={tipp} />
         </div>
@@ -461,7 +461,7 @@ function Obstkorb({ melde, fest }: { melde: (richtig: boolean) => void; fest?: s
         <div className="p-4 rounded-2xl border-2 border-green-500/50 bg-green-500/10 flex flex-col gap-1">
           <p className="font-black text-lg">✅ {src} = {render(baum)}</p>
           {linksRechts !== null && richtig !== null && linksRechts !== richtig && (
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="text-sm text-(--text-muted)">
               Wer stur von links nach rechts rechnet, kommt auf {fmt(linksRechts)} — falsch.
               Die Körbe müssen erst ausgekippt werden: {fmt(richtig)}.
             </p>
@@ -470,12 +470,12 @@ function Obstkorb({ melde, fest }: { melde: (richtig: boolean) => void; fest?: s
       )}
 
       {!fertig && verlauf.length > 0 && (
-        <ol className="text-sm font-mono text-[var(--text-muted)] flex flex-col gap-0.5">
+        <ol className="text-sm font-mono text-(--text-muted) flex flex-col gap-0.5">
           {verlauf.map((v, i) => <li key={i}>{render(v)}</li>)}
         </ol>
       )}
 
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+      <p className="text-xs text-(--text-muted) leading-relaxed">
         🧺 Ein Malpunkt ist ein Korb: »3 · 4« sind drei Körbe mit je vier Früchten. Zusammenzählen
         lässt sich erst, was auf dem Tisch liegt — deshalb Punkt vor Strich. Eine Klammer ist eine
         Kiste: was drin ist, wird zuerst gepackt.
@@ -496,14 +496,14 @@ function Waggon({ v, an, onClick }: { v: number; an: boolean; onClick: () => voi
     >
       <span className={`flex items-center justify-center w-16 h-14 rounded-lg border-2 text-2xl font-black ${
         an
-          ? "border-[var(--accent)] bg-[var(--accent)]/15 shadow-lg"
-          : "border-[var(--border)] bg-[var(--surface-hover)] hover:border-[var(--accent)]/60"
+          ? "border-(--accent) bg-(--accent)/15 shadow-lg"
+          : "border-(--border) bg-(--surface-hover) hover:border-(--accent)/60"
       }`}>
         {fmt(v)}
       </span>
       <span className="flex gap-5 -mt-1.5" aria-hidden>
-        <span className="w-3.5 h-3.5 rounded-full bg-[var(--text-muted)]/60" />
-        <span className="w-3.5 h-3.5 rounded-full bg-[var(--text-muted)]/60" />
+        <span className="w-3.5 h-3.5 rounded-full bg-(--text-muted)/60" />
+        <span className="w-3.5 h-3.5 rounded-full bg-(--text-muted)/60" />
       </span>
     </button>
   );
@@ -592,23 +592,23 @@ function Rechenzug({ fest }: { fest?: string }) {
       <Eigenes platzhalter="z. B. 3 · 4 + 5 − 2" onSubmit={eigenes} fehler={fehler} />
       </>}
 
-      <p className="text-sm text-[var(--text-muted)]">
+      <p className="text-sm text-(--text-muted)">
         Zwei Waggons antippen → sie tauschen die Plätze. Auf das Dach eines Blocks tippen →
         der ganze Block zieht um. <strong>Feste Kupplung</strong> (· und :) hält zusammen,
         <strong> lose Kupplung</strong> (+ und −) lässt los.
       </p>
 
       {/* Zug */}
-      <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+      <div className="p-5 rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto">
         <div className="min-w-fit flex items-end justify-center gap-1 pb-1">
           {gs.map((g, gi) => (
             <div key={gi} className="flex items-end gap-1">
               {gi > 0 && (
                 <span className="flex flex-col items-center pb-4 px-1">
-                  <span className="text-2xl font-black text-[var(--text-muted)]">
+                  <span className="text-2xl font-black text-(--text-muted)">
                     {opZeichen(zug.ops[gs[gi][0] - 1])}
                   </span>
-                  <span className="text-[9px] uppercase tracking-wide text-[var(--text-muted)]">lose</span>
+                  <span className="text-[9px] uppercase tracking-wide text-(--text-muted)">lose</span>
                 </span>
               )}
               <div className="flex flex-col items-center gap-1">
@@ -616,8 +616,8 @@ function Rechenzug({ fest }: { fest?: string }) {
                   onClick={() => tippGruppe(gi)}
                   className={`w-full px-2 py-0.5 rounded-t-lg border-2 border-b-0 text-[10px] font-bold uppercase tracking-wide transition-colors ${
                     auswahl?.art === "gruppe" && auswahl.i === gi
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                      : "border-[var(--border)] bg-[var(--surface-hover)] text-[var(--text-muted)] hover:border-[var(--accent)]/60"
+                      ? "border-(--accent) bg-(--accent) text-white"
+                      : "border-(--border) bg-(--surface-hover) text-(--text-muted) hover:border-(--accent)/60"
                   }`}
                 >
                   Block {gi + 1}
@@ -649,15 +649,15 @@ function Rechenzug({ fest }: { fest?: string }) {
 
       {/* Waage: wiegt der Zug noch dasselbe? */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="p-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Am Anfang</p>
+        <div className="p-3 rounded-2xl border border-(--border) bg-(--surface)">
+          <p className="text-xs font-bold uppercase tracking-wide text-(--text-muted)">Am Anfang</p>
           <p className="font-mono text-lg font-black">{zugTerm(start)} = {fmt(wertStart)}</p>
         </div>
         <div className={`p-3 rounded-2xl border-2 ${
-          !veraendert ? "border-[var(--border)] bg-[var(--surface)]"
+          !veraendert ? "border-(--border) bg-(--surface)"
             : gleich ? "border-green-500/60 bg-green-500/10" : "border-red-500/60 bg-red-500/10"
         }`}>
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">Jetzt</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-(--text-muted)">Jetzt</p>
           <p className="font-mono text-lg font-black">{zugTerm(zug)} = {fmt(wertJetzt)}</p>
         </div>
       </div>
@@ -692,14 +692,14 @@ function Tafel({ zahl, von, bis, hervor = [] }: {
       {spalten.map((e, i) => (
         <Fragment key={e}>
           {e === -1 && (
-            <span className="self-end px-0.5 pb-1.5 text-2xl font-black text-[var(--accent)]" aria-hidden>,</span>
+            <span className="self-end px-0.5 pb-1.5 text-2xl font-black text-(--accent)" aria-hidden>,</span>
           )}
-          <div className="flex flex-col items-center w-11 border-l border-[var(--border)] last:border-r">
-            <span className="w-full text-center text-[10px] font-bold uppercase text-[var(--text-muted)] bg-[var(--surface-hover)] py-0.5">
+          <div className="flex flex-col items-center w-11 border-l border-(--border) last:border-r">
+            <span className="w-full text-center text-[10px] font-bold uppercase text-(--text-muted) bg-(--surface-hover) py-0.5">
               {STELLEN_NAMEN[e]}
             </span>
             <span className={`w-full text-center text-2xl font-black py-1.5 font-mono ${
-              hervor.includes(e) && ziffern[i] !== "" ? "text-[var(--accent)]"
+              hervor.includes(e) && ziffern[i] !== "" ? "text-(--accent)"
                 : ziffern[i] === "" ? "text-transparent" : ""
             }`}>
               {ziffern[i] === "" ? "·" : ziffern[i]}
@@ -769,7 +769,7 @@ function Stufenzahlen({ melde, fest }: {
   const feld = (wert: string, setzen: (s: string) => void, label: string) => (
     <input value={wert} aria-label={label} inputMode="decimal" readOnly={!!fest}
       onChange={e => { setzen(e.target.value); setOffen(false); }}
-      className="w-24 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-mono text-sm" />
+      className="w-24 px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface) font-mono text-sm" />
   );
 
   const zeichen = opZeichen(art);
@@ -789,14 +789,14 @@ function Stufenzahlen({ melde, fest }: {
         hinweis={modusHinweis(modus, art)} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Rechenart</span>
+        <span className="text-xs font-bold text-(--text-muted) uppercase tracking-wide">Rechenart</span>
         <Knopf an={art === "*"} onClick={() => wuerfeln(modus, "*")}>· mal</Knopf>
         <Knopf an={art === ":"} onClick={() => wuerfeln(modus, ":")}>: geteilt</Knopf>
       </div>
       </>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Eigene Zahlen</span>
+        <span className="text-xs font-bold text-(--text-muted) uppercase tracking-wide">Eigene Zahlen</span>
         {feld(aText, setAText, "erste Zahl")}
         <span className="text-xl font-black">{zeichen}</span>
         {feld(bText, setBText, "zweite Zahl")}
@@ -813,20 +813,20 @@ function Stufenzahlen({ melde, fest }: {
       )}
 
       {z && !offen && (
-        <p className="p-4 rounded-2xl border border-dashed border-[var(--border)] text-sm text-[var(--text-muted)]">
+        <p className="p-4 rounded-2xl border border-dashed border-(--border) text-sm text-(--text-muted)">
           🙈 Der Rechenweg ist verdeckt. Rechne erst selbst — dann steht hier, wie die Rutsche geht.
         </p>
       )}
 
       {z && offen && bereich && (
         <>
-          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col gap-3">
+          <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
             <p className="text-2xl sm:text-3xl font-black font-mono">
-              {fmt(z.a)} {zeichen} {fmt(z.b)} = <span className="text-[var(--accent)]">{fmt(z.ergebnis)}</span>
+              {fmt(z.a)} {zeichen} {fmt(z.b)} = <span className="text-(--accent)">{fmt(z.ergebnis)}</span>
             </p>
             <ol className="flex flex-col gap-2 text-sm">
               <li className="flex gap-2">
-                <span className="font-black text-[var(--accent)]">1.</span>
+                <span className="font-black text-(--accent)">1.</span>
                 <span>
                   {teile.length === 0
                     ? <>Nichts abzutrennen — hier steht keine Stufenzahl.</>
@@ -835,7 +835,7 @@ function Stufenzahlen({ melde, fest }: {
                 </span>
               </li>
               <li className="flex gap-2">
-                <span className="font-black text-[var(--accent)]">2.</span>
+                <span className="font-black text-(--accent)">2.</span>
                 <span>
                   {z.kernB === 1
                     // Bei reinen Stufenzahlen gibt es nichts auszurechnen — das ist
@@ -848,7 +848,7 @@ function Stufenzahlen({ melde, fest }: {
                 </span>
               </li>
               <li className="flex gap-2">
-                <span className="font-black text-[var(--accent)]">3.</span>
+                <span className="font-black text-(--accent)">3.</span>
                 <span>
                   {z.stellen === 0
                     ? <>Nichts zu rutschen — fertig: <span className="font-mono font-bold">{fmt(z.ergebnis)}</span></>
@@ -861,12 +861,12 @@ function Stufenzahlen({ melde, fest }: {
           </div>
 
           {/* Stellenwerttafel: erst der Kern, dann derselbe Kern eine Etage höher (oder tiefer) */}
-          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-x-auto">
+          <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto">
             <div className="min-w-fit flex flex-col items-center gap-1">
               <Tafel zahl={z.kern} von={bereich.von} bis={bereich.bis} />
               {z.stellen !== 0 && (
                 <>
-                  <span className="text-sm font-bold text-[var(--accent)]">
+                  <span className="text-sm font-bold text-(--accent)">
                     {z.stellen > 0 ? "⬅︎" : "➡︎"} {stellenWort(z.stellen)} rutschen
                   </span>
                   <Tafel zahl={z.ergebnis} von={bereich.von} bis={bereich.bis}
@@ -878,7 +878,7 @@ function Stufenzahlen({ melde, fest }: {
         </>
       )}
 
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+      <p className="text-xs text-(--text-muted) leading-relaxed">
         🎚️ »Mal 10« heißt nicht »eine Null anhängen«, sondern: jede Ziffer rückt eine Stelle nach
         links. Aus Einern werden Zehner, aus Zehnern Hunderter — die Null füllt nur den frei
         gewordenen Platz. Geteilt geht dieselbe Rutsche rückwärts: aus 45 : 10 wird 4,5, die
@@ -912,11 +912,11 @@ export default function Rechenregeln({ action, vorgabe }: { action?: ReactNode; 
   const melde = (richtig: boolean) => setPunkte(p => zaehle(p, richtig));
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🍎 Rechenregeln</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Klammern vor Punkt vor Strich, Vertauschen und Stufenzahlen — zum Ansehen statt zum Auswendiglernen.
           </p>
         </div>

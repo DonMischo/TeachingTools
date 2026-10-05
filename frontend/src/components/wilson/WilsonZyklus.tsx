@@ -38,21 +38,21 @@ export default function WilsonZyklus({ action, vorgabe }: { action?: ReactNode; 
   const phase = PHASEN.find(p => p.id === wahl(vorgabe, "phase", PHASEN.map(p => p.id)));
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "schnitt");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[var(--seite-breite)] mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🌋 Wilson-Zyklus</h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1">
+          <p className="text-(--text-muted) text-sm mt-1">
             Ein Kontinent zerbricht, ein Ozean öffnet sich — und schließt sich nach Hunderten Millionen Jahren wieder zu einem Gebirge.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-[var(--border)] p-1 bg-[var(--surface)]">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-              reiter === r.id ? "bg-[var(--accent)] text-[var(--accent-text,#111)]" : "text-[var(--text-muted)] hover:text-[var(--text)]"}`}>
+              reiter === r.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
             {r.icon} {r.label}
           </button>
         ))}
@@ -84,7 +84,7 @@ function Buehne({ t, schalter }: { t: number; schalter: Schalter }) {
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
   }, []);
-  return <canvas ref={ref} width={1200} height={600} className="w-full rounded-2xl border border-[var(--border)]" />;
+  return <canvas ref={ref} width={1200} height={600} className="w-full rounded-2xl border border-(--border)" />;
 }
 
 const TEMPI = [5, 10, 20, 40];
@@ -134,19 +134,19 @@ function Querschnitt({ start = 0 }: { start?: number }) {
           <div className="absolute top-0 bottom-0 w-0.5 bg-white pointer-events-none" style={{ left: `${(t / ZYKLUS) * 100}%` }} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <button onClick={() => setLaeuft(l => !l)} className="px-3 py-1 rounded-lg font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">
+          <button onClick={() => setLaeuft(l => !l)} className="px-3 py-1 rounded-lg font-bold bg-(--accent) text-(--accent-text,#111)">
             {laeuft ? "⏸ anhalten" : "▶ abspielen"}
           </button>
           <input type="range" min={0} max={ZYKLUS - 0.1} step={0.1} value={t} onChange={e => { setLaeuft(false); setT(+e.target.value); }} className="flex-1 min-w-[200px]" />
           <span className="font-mono w-36 text-right">{Math.round(t)} Mio. Jahre</span>
-          <select value={tempo} onChange={e => setTempo(+e.target.value)} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs">
+          <select value={tempo} onChange={e => setTempo(+e.target.value)} className="rounded-lg border border-(--border) bg-(--surface) px-2 py-1 text-xs">
             {TEMPI.map(v => <option key={v} value={v}>{v} Mio. J/s</option>)}
           </select>
         </div>
         <div className="flex flex-wrap gap-1">
           {([["beschriftung", "🏷️ Namen"], ["konvektion", "🔥 Mantelströmung"], ["magnet", "🧲 Magnetstreifen"], ["beben", "💥 Erdbeben"]] as [keyof Schalter, string][]).map(([k, l]) => (
             <button key={k} onClick={() => umschalten(k)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${schalter[k] ? "bg-[var(--accent)] text-[var(--accent-text,#111)] border-transparent" : "border-[var(--border)] text-[var(--text-muted)]"}`}>
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${schalter[k] ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) text-(--text-muted)"}`}>
               {l}
             </button>
           ))}
@@ -155,13 +155,13 @@ function Querschnitt({ start = 0 }: { start?: number }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3">
         <PhasenKarte phase={ph} />
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm flex flex-col gap-1">
+        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm flex flex-col gap-1">
           <Zahl k="Breite des Ozeans" v={z.ozeanBreite > 0 ? `${Math.round(z.ozeanBreite).toLocaleString("de-DE")} km` : "—"} />
           <Zahl k="ältester Meeresboden" v={aeltester > 0 ? `${Math.round(aeltester)} Mio. Jahre` : "—"} />
           <Zahl k="höchster Gipfel" v={`${gipfel.toLocaleString("de-DE", { maximumFractionDigits: 1 })} km`} />
           <Zahl k="Rücken" v={z.ruecken != null ? "aktiv" : "—"} />
           <Zahl k="Tiefseerinne" v={z.rinne != null ? "aktiv" : "—"} />
-          <p className="text-xs text-[var(--text-muted)] mt-2">Höhen und Tiefen sind überhöht, die Tiefe nach unten gestaucht (Skala links).</p>
+          <p className="text-xs text-(--text-muted) mt-2">Höhen und Tiefen sind überhöht, die Tiefe nach unten gestaucht (Skala links).</p>
         </section>
       </div>
     </div>
@@ -170,8 +170,8 @@ function Querschnitt({ start = 0 }: { start?: number }) {
 
 function Zahl({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex justify-between border-b border-[var(--border)] last:border-0 py-1">
-      <span className="text-[var(--text-muted)]">{k}</span><b>{v}</b>
+    <div className="flex justify-between border-b border-(--border) last:border-0 py-1">
+      <span className="text-(--text-muted)">{k}</span><b>{v}</b>
     </div>
   );
 }
@@ -179,16 +179,16 @@ function Zahl({ k, v }: { k: string; v: string }) {
 function PhasenKarte({ phase }: { phase: Phase }) {
   const nr = PHASEN.indexOf(phase) + 1;
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed flex flex-col gap-2">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black" style={{ background: PHASE_FARBE[phase.id] }}>{nr}</span>
         <h3 className="font-black text-lg">{phase.name}</h3>
-        <span className="text-xs text-[var(--text-muted)]">heute zu sehen: <b className="text-[var(--text)]">{phase.beispiel}</b></span>
+        <span className="text-xs text-(--text-muted)">heute zu sehen: <b className="text-(--text)">{phase.beispiel}</b></span>
       </div>
       <p>{phase.text}</p>
       <p className="text-xs"><b>Plattengrenzen:</b> {phase.grenzen}</p>
       <div className="flex flex-wrap gap-1">
-        {phase.begriffe.map(b => <span key={b} className="text-xs px-2 py-0.5 rounded-full border border-[var(--border)] bg-[var(--bg)]">{b}</span>)}
+        {phase.begriffe.map(b => <span key={b} className="text-xs px-2 py-0.5 rounded-full border border-(--border) bg-(--bg)">{b}</span>)}
       </div>
     </section>
   );
@@ -218,9 +218,9 @@ function Quiz() {
       <Buehne t={t} schalter={AUS} />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {PHASEN.map(p => {
-          const stil = !antwort ? "border-[var(--border)] hover:bg-[var(--surface-hover)]"
+          const stil = !antwort ? "border-(--border) hover:bg-(--surface-hover)"
             : p.id === richtig.id ? "bg-green-600 text-white border-transparent"
-            : p.id === antwort ? "bg-red-600 text-white border-transparent" : "border-[var(--border)] opacity-60";
+            : p.id === antwort ? "bg-red-600 text-white border-transparent" : "border-(--border) opacity-60";
           return (
             <button key={p.id} onClick={() => waehle(p.id)} className={`rounded-xl border px-3 py-2 text-sm font-bold text-left ${stil}`}>
               {p.name}
@@ -231,7 +231,7 @@ function Quiz() {
       {antwort && (
         <div className="flex flex-col gap-2">
           <PhasenKarte phase={richtig} />
-          <button onClick={() => { setT(neu()); setAntwort(null); }} className="self-start px-4 py-2 rounded-lg font-bold bg-[var(--accent)] text-[var(--accent-text,#111)]">Nächstes Bild →</button>
+          <button onClick={() => { setT(neu()); setAntwort(null); }} className="self-start px-4 py-2 rounded-lg font-bold bg-(--accent) text-(--accent-text,#111)">Nächstes Bild →</button>
         </div>
       )}
     </div>
@@ -240,7 +240,7 @@ function Quiz() {
 
 function Karte({ titel, children }: { titel: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-relaxed flex flex-col gap-2">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
       <h3 className="font-black text-base">{titel}</h3>
       {children}
     </section>
