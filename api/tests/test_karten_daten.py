@@ -82,3 +82,43 @@ def test_thueringer_inhalte_sind_da():
     assert staedte["Berlin"] == "hauptstadt"
     gipfel = {f["properties"]["name"] for f in _lade("de-gipfel")["features"]}
     assert {"Großer Beerberg", "Brocken", "Zugspitze"} <= gipfel
+
+
+def _an_land():
+    """Punkt-in-Fläche gegen die Staaten (Natural Earth)."""
+    polys = []
+    for f in _lade("welt-staaten")["features"]:
+        g = f["geometry"]
+        polys += [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+
+    def im_ring(x, y, ring):
+        drin, j = False, len(ring) - 1
+        for i in range(len(ring)):
+            (xi, yi), (xj, yj) = ring[i][:2], ring[j][:2]
+            if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+                drin = not drin
+            j = i
+        return drin
+
+    return lambda x, y: any(im_ring(x, y, p[0]) and not any(im_ring(x, y, h) for h in p[1:]) for p in polys)
+
+
+# Rücken dürfen auftauchen: der Mittelatlantische Rücken liegt in Island an Land
+AN_LAND_ERLAUBT = {"mittelatlantischer-ruecken"}
+
+
+@pytest.mark.parametrize("ebene_id", ["welt-stroemungen", "welt-meeresboden-formen"])
+def test_meereslinien_laufen_nicht_ueber_land(ebene_id):
+    an_land = _an_land()
+    fehler = []
+    for f in _lade(ebene_id)["features"]:
+        if f["properties"]["id"] in AN_LAND_ERLAUBT:
+            continue
+        g = f["geometry"]
+        for linie in [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]:
+            for (x0, y0), (x1, y1) in zip(linie, linie[1:]):
+                n = max(1, int(max(abs(x1 - x0), abs(y1 - y0)) / 0.25))
+                if any(an_land(x0 + (x1 - x0) * t / n, y0 + (y1 - y0) * t / n) for t in range(n + 1)):
+                    fehler.append(f["properties"]["id"])
+                    break
+    assert not fehler, f"über Land: {sorted(set(fehler))}"

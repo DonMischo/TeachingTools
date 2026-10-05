@@ -31,7 +31,7 @@ export const GRAEBEN = [
   { id: "sundagraben", name: "Sundagraben (Javagraben)", tiefe: 7192, info: "tiefste Stelle des Indischen Ozeans — Sumatra-Beben 2004",
     linie: [[94, 4], [96, 0], [99, -4], [103, -7.5], [108, -10], [113, -10.8], [118, -11]] },
   { id: "hellenischer-graben", name: "Hellenischer Graben", tiefe: 5267, info: "tiefste Stelle des Mittelmeers, südlich von Griechenland",
-    linie: [[20, 37.5], [22, 36], [25, 35], [28, 35.5]] },
+    linie: [[20.5, 37.5], [21.5, 36], [23, 34.6], [25, 34.3], [27.4, 35]] },
 ];
 
 export const RUECKEN = [
