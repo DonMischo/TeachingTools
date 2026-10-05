@@ -7,7 +7,7 @@ Beitritt; bereits ausgegebene Token tragen ihr Ablaufdatum im JWT.
 """
 from datetime import datetime, timezone
 
-from jose import jwt
+import jwt
 
 from api.auth import GUEST_MINUTES_MAX, GUEST_MINUTES_MIN, create_guest_token
 from api.config import settings

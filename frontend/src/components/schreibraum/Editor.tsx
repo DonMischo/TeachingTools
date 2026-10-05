@@ -7,10 +7,9 @@ import { Fragment, Slice } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Collaboration from "@tiptap/extension-collaboration";
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
-import TextStyle from "@tiptap/extension-text-style";
+import CollaborationCaret from "@tiptap/extension-collaboration-caret";
+import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
-import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import { Markdown } from "tiptap-markdown";
@@ -494,16 +493,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   const extensions = useMemo(
     () => [
-      StarterKit.configure({ history: false }),
+      // v3: Unterstreichen und Links sind in StarterKit; Verlauf übernimmt Collaboration (yjs)
+      StarterKit.configure({ undoRedo: false }),
       Image.configure({ allowBase64: false }),
       TextStyle,
       Color,
-      Underline,
       Highlight,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Markdown.configure({ html: false, transformPastedText: true }),
       Collaboration.configure({ document: ydoc }),
-      CollaborationCursor.configure({
+      CollaborationCaret.configure({
         provider,
         user: { name: participant.name, color: participant.color },
       }),
@@ -583,6 +582,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   const editor = useEditor({
     extensions,
+    // v3 zeichnet sonst nicht bei jeder Änderung neu — die Werkzeugleiste zeigt »aktiv« aus dem Editor
+    shouldRerenderOnTransaction: true,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         style:

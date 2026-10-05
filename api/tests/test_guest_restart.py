@@ -9,7 +9,7 @@ Login-Cookie mitschleppt: das Cookie würde den Bearer-Header schlagen.
 """
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
+import jwt
 
 from api.config import settings
 from api.auth import create_guest_token, decode_guest_token, guest_access_restarted

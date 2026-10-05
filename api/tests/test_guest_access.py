@@ -5,7 +5,7 @@ login cookie — guest requests then authenticate purely off the Bearer guest
 token (a lingering teacher cookie would otherwise beat the header)."""
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
+import jwt
 
 from api.config import settings
 from api.auth import create_guest_token, decode_guest_token

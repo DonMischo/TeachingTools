@@ -416,6 +416,48 @@ def _backfill_encrypted_passwords():
         db.close()
 
 
+def _check_secret_key():
+    """Loud warning when the JWT/encryption secret is the public default or too short:
+    anyone who knows it can forge logins (incl. admin) and decrypt stored passwords."""
+    from .config import settings
+    log = logging.getLogger(__name__)
+    if settings.secret_key == "change-me-in-production" or len(settings.secret_key.encode()) < 32:
+        log.warning("SECRET_KEY ist der Standardwert oder kürzer als 32 Byte — Logins sind fälschbar! "
+                    "In .env einen zufälligen Wert setzen (z. B. python -c \"import secrets; print(secrets.token_urlsafe(48))\") "
+                    "und den alten als SECRET_KEY_ALT eintragen, damit gespeicherte Passwörter lesbar bleiben.")
+
+
+def _rotate_encrypted_credentials():
+    """After a key change (SECRET_KEY_ALT set): re-encrypt stored passwords with the new key."""
+    from .config import settings
+    if not settings.secret_key_alt:
+        return
+    from .database import SessionLocal
+    from .models import Student, Teacher
+    from .pw_crypto import rotate
+    db = SessionLocal()
+    try:
+        n = 0
+        for model in (Student, Teacher):
+            for obj in db.query(model).filter(model.password_enc.isnot(None)).all():
+                neu = rotate(obj.password_enc)
+                if neu != obj.password_enc:
+                    obj.password_enc, n = neu, n + 1
+        for s in db.query(Student).all():
+            extra = s.extra_fields or {}
+            neu = {k: rotate(v) if isinstance(v, str) else v for k, v in extra.items()}
+            if neu != extra:
+                s.extra_fields, n = neu, n + 1
+        db.commit()
+        if n:
+            logging.getLogger(__name__).info("Re-encrypted %d stored credentials with the new SECRET_KEY", n)
+    except Exception as e:
+        db.rollback()
+        logging.getLogger(__name__).warning("Credential re-encryption skipped: %s", e)
+    finally:
+        db.close()
+
+
 def _repair_calendar_tags():
     """Idempotent: clean tags broken by the old ICS import (see calendar.repair_calendar_tags)."""
     from .database import SessionLocal
@@ -512,7 +554,9 @@ def _purge_last_school_year():
 async def startup():
     Base.metadata.create_all(bind=engine)
     _run_migrations(engine)
+    _check_secret_key()
     _backfill_encrypted_passwords()
+    _rotate_encrypted_credentials()
     _backfill_group_grades()
     _purge_last_school_year()
     ensure_classes()

@@ -15,7 +15,7 @@ import hashlib
 import logging
 import re
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 from .config import settings
 
@@ -28,10 +28,18 @@ _SENSITIVE_RE = re.compile(r"passw|kennwort|credential|secret|geheim|\bpwd\b|\bp
 _log = logging.getLogger(__name__)
 
 
-def _fernet() -> Fernet:
+def _schluessel(geheim: str) -> Fernet:
     # A stable 32-byte urlsafe-base64 Fernet key derived from the app secret.
-    key = base64.urlsafe_b64encode(hashlib.sha256(settings.secret_key.encode()).digest())
-    return Fernet(key)
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(geheim.encode()).digest()))
+
+
+def _fernet() -> MultiFernet:
+    """Encrypts with the current secret; decrypts with it or, during a key change,
+    with the previous one (settings.secret_key_alt)."""
+    keys = [_schluessel(settings.secret_key)]
+    if settings.secret_key_alt and settings.secret_key_alt != settings.secret_key:
+        keys.append(_schluessel(settings.secret_key_alt))
+    return MultiFernet(keys)
 
 
 def encrypt(plain: str) -> str:
@@ -53,6 +61,17 @@ def decrypt(value: str) -> str:
     except InvalidToken:
         _log.warning("Could not decrypt a stored credential (secret_key changed?)")
         return ""
+
+
+def rotate(value: str) -> str:
+    """Re-encrypt a stored value with the current secret (after a key change).
+    Plaintext and undecryptable values are returned unchanged."""
+    if not isinstance(value, str) or not value.startswith(_PREFIX):
+        return value
+    try:
+        return _PREFIX + _fernet().rotate(value[len(_PREFIX):].encode()).decode()
+    except InvalidToken:
+        return value
 
 
 def display_password(obj) -> str:

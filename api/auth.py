@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 import bcrypt as _bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session

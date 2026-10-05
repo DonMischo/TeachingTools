@@ -77,7 +77,7 @@ def _guest_token(code: str, name: str, sub: str) -> str:
     """A guest token with a caller-controlled `sub` so reconnecting with the same
     `token` key resolves to the same guest id → the same anon bingo card."""
     from datetime import datetime, timedelta, timezone
-    from jose import jwt
+    import jwt
     from api.config import settings
     payload = {"sub": sub, "type": "guest", "name": name, "scope": code,
                "exp": datetime.now(timezone.utc) + timedelta(minutes=60)}

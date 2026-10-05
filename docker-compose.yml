@@ -25,6 +25,8 @@ services:
     environment:
       DATABASE_URL: postgresql://hauspokal:hauspokal@postgres:5432/hauspokal
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      # Nur beim Schlüsselwechsel: der bisherige Schlüssel (gespeicherte Passwörter werden umgeschlüsselt)
+      SECRET_KEY_ALT: ${SECRET_KEY_ALT:-}
     volumes:
       - ./api:/workspace/api
       - ./data:/workspace/data

@@ -1,6 +1,6 @@
 """Auth security tests: jti revocation, algorithm pinning, cookie handling."""
 import pytest
-from jose import jwt
+import jwt
 
 from api.config import settings
 from api.auth import create_access_token, hash_password
@@ -42,8 +42,10 @@ def test_me_unauthenticated(client):
 
 def test_algorithm_only_hs256_accepted(client, teacher):
     # Craft token with alg=none (classic attack)
-    from jose.utils import base64url_encode
-    import json, hmac, hashlib
+    import base64, json
+
+    def base64url_encode(b: bytes) -> bytes:
+        return base64.urlsafe_b64encode(b).rstrip(b"=")
 
     header = base64url_encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).decode()
     payload_data = base64url_encode(
