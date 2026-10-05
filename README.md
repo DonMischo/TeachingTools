@@ -152,8 +152,9 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 - Eigene Texte per JSON-Upload
 
 ### 🐭 Maus-Führerschein
-- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien und Fenster; Suchen, Apps und Aussehen
-- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, »Speichern unter« und Bildschirmfoto
+- PC-Grundkurs für Kinder ab etwa zehn Jahren in drei Teilen: Maus; Tastatur, Dateien, Fenster und Speichern; Suchen, Apps, Bildschirmfoto und Aussehen
+- Nachgebautes Windows mit Explorer, Fenstern, Taskleiste, Editor mit »Speichern unter«, USB-Stick, Herunterfahren und Bildschirmfoto
+- Tasten als Tastenkappen im Text — beim Draufzeigen zeigt eine Tastatur, wo sie liegt
 - Jede Stufe mit Vorführen, Vorlesen und 1 bis 3 Sternen; Hilfsmodus für langsame Mausnutzer
 - Prüfung je Teil: beim ersten Bestehen 5 Hauspunkte für die Klasse, Urkunde als Bild und PDF
 - Klassenübersicht für die Lehrkraft und Bestenlisten (Gäste mit Namen)

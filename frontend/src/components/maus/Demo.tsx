@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { MausBild, type MausTaste } from "./MausBild";
+import { brauchtBloecke } from "./Taste";
 
 export type Ort = { x: number; y: number };
 
@@ -55,7 +56,8 @@ export function useDemo(onEnde?: () => void) {
   const abspielen = useCallback((schritte: DemoSchritt[]) => {
     uhren.current.forEach(clearTimeout);
     uhren.current = [];
-    let ort: Ort = { x: window.innerWidth / 2, y: window.innerHeight - 80 };
+    // Start mitten im Bild — unten läge der Text hinter Tastatur und »Beenden«.
+    let ort: Ort = { x: window.innerWidth / 2, y: window.innerHeight * 0.4 };
     let zeit = 0;
     schritte.forEach((schritt, nr) => {
       const dauer = schritt.ms ?? SCHRITT_MS;
@@ -90,11 +92,35 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
   // Auch mit gehaltener Taste wird gefahren — das ist das Ziehen.
   const faehrt = !!schritt.zu;
   const drueckt = schritt.taste === "links" || schritt.taste === "rechts" || schritt.taste === "doppel";
+  // Steht der Zeiger weit unten, kommt der Text über den Zeiger — sonst
+  // verdeckten ihn die Tastatur und der Knopf »Vorführung beenden«.
+  const unten = typeof window !== "undefined" && ort.y > window.innerHeight * (schritt.tasten ? 0.45 : 0.65);
+  const rechts = typeof window !== "undefined" && ort.x > window.innerWidth - 380;
 
   return (
-    <div className="fixed inset-0 z-60" data-testid="demo" onContextMenu={e => e.preventDefault()}>
+    <div className="fixed inset-0 z-[60]" data-testid="demo" onContextMenu={e => e.preventDefault()}>
       <div className="absolute inset-0 bg-black/5" />
 
+      <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2 pointer-events-none">
+        {schritt.tasten && (
+          <div className={"w-full rounded-2xl bg-surface border border-line shadow-xl p-3 " + (brauchtBloecke(schritt.tasten) ? "max-w-5xl" : "max-w-2xl")}>
+            <Tastatur gedrueckt={new Set(schritt.tasten)} zeigeFinger={false} bloecke={brauchtBloecke(schritt.tasten)} />
+          </div>
+        )}
+        <div className="flex items-center gap-3 pointer-events-auto">
+          <span className="text-xs text-muted tabular-nums">
+            Schritt {lauf.nr + 1} von {lauf.von}
+          </span>
+          <button
+            onClick={stopp}
+            className="text-sm rounded-lg px-3 py-1.5 border border-line bg-surface hover:border-accent"
+          >
+            ⏹ Vorführung beenden
+          </button>
+        </div>
+      </div>
+
+      {/* Nach der unteren Leiste, damit der Text immer obenauf liegt. */}
       <div
         className="absolute left-0 top-0 pointer-events-none"
         style={{
@@ -111,34 +137,23 @@ export function DemoBuehne({ demo }: { demo: ReturnType<typeof useDemo> }) {
             />
           )}
           <Zeiger />
-          <div className="absolute left-7 top-7 flex items-start gap-2">
-            <div className="rounded-2xl bg-white/95 shadow-lg p-1.5 border border-gray-200">
+          <div
+            className={"absolute flex items-start gap-2 " + (rechts ? "flex-row-reverse " : "")}
+            style={{
+              left: rechts ? undefined : 28,
+              right: rechts ? 8 : undefined,
+              top: unten ? undefined : 28,
+              bottom: unten ? 44 : undefined,
+            }}
+          >
+            <div className="rounded-2xl bg-white/95 shadow-lg p-1.5 border border-gray-200 shrink-0">
               <MausBild taste={schritt.taste ?? null} groesse={54} />
             </div>
             {/* w-max: der Rahmen ist nur so breit wie der Zeiger — ohne bräche jedes Wort um. */}
-            <div className="w-max rounded-xl bg-surface text-fg shadow-lg border border-line px-3 py-2 text-sm font-bold max-w-[220px] leading-snug">
+            <div className="w-max rounded-xl bg-surface text-fg shadow-2xl border-2 border-accent px-4 py-3 text-base font-black max-w-[320px] leading-snug">
               {schritt.text}
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col items-center gap-2 pointer-events-none">
-        {schritt.tasten && (
-          <div className="card w-full max-w-2xl shadow-xl p-3">
-            <Tastatur gedrueckt={new Set(schritt.tasten)} zeigeFinger={false} />
-          </div>
-        )}
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <span className="text-xs text-muted tabular-nums">
-            Schritt {lauf.nr + 1} von {lauf.von}
-          </span>
-          <button
-            onClick={stopp}
-            className="text-sm rounded-lg px-3 py-1.5 border border-line bg-surface hover:border-accent"
-          >
-            ⏹ Vorführung beenden
-          </button>
         </div>
       </div>
     </div>

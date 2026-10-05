@@ -46,6 +46,7 @@ export function anfangsStand(): ExplorerStand {
     { id: "einkaufsliste", name: "Einkaufsliste.txt", art: "txt", parent: WURZEL },
     { id: "ferien", name: "Ferien.docx", art: "docx", parent: WURZEL },
     { id: "geburtstag", name: "Geburtstag.docx", art: "docx", parent: WURZEL },
+    { id: "technik", name: "Technik.docx", art: "docx", parent: WURZEL },
   ];
   return {
     dateien,
@@ -58,11 +59,16 @@ export function anfangsStand(): ExplorerStand {
   };
 }
 
-/** Reihenfolge, wie sie angezeigt wird: Ordner zuerst, sonst wie angelegt. */
+/**
+ * Reihenfolge, wie sie angezeigt wird: Ordner zuerst, dann alphabetisch — wie
+ * im echten Explorer. Dadurch liegen die Fächer verstreut zwischen anderen
+ * Dateien, und man sieht, warum es für sie Strg braucht und nicht Umschalt.
+ */
 export function sichtbareDateien(stand: ExplorerStand): Datei[] {
   const hier = stand.dateien.filter(d => d.parent === stand.aktuellerOrdner);
-  const ordner = hier.filter(d => d.art === "ordner");
-  const rest = hier.filter(d => d.art !== "ordner");
+  const abc = (a: Datei, b: Datei) => a.name.localeCompare(b.name, "de");
+  const ordner = hier.filter(d => d.art === "ordner").sort(abc);
+  const rest = hier.filter(d => d.art !== "ordner").sort(abc);
   return [...ordner, ...rest];
 }
 

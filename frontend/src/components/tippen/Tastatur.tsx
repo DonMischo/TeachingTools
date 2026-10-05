@@ -32,13 +32,15 @@ type Props = {
    * das Kind auch nicht suchen.
    */
   bloecke?: boolean;
+  /** Tasten, die eine Aufgabe braucht — bekommen denselben Ring wie die nächste Taste. */
+  markiert?: ReadonlySet<string>;
 };
 
-function KeyCap({ taste, platz, naechste, gedrueckt, zeigeFinger }: Props & { taste: Taste; platz: CSSProperties }) {
+function KeyCap({ taste, platz, naechste, gedrueckt, zeigeFinger, markiert }: Props & { taste: Taste; platz: CSSProperties }) {
   const farbe = FINGER_FARBEN[taste.finger];
   const istNaechste = naechste?.code === taste.code;
   const istUmschalt = !!naechste?.shift && taste.code === umschaltFuer(naechste.finger);
-  const hervor = istNaechste || istUmschalt;
+  const hervor = istNaechste || istUmschalt || !!markiert?.has(taste.code);
   const istGedrueckt = gedrueckt.has(taste.code);
 
   return (

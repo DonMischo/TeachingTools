@@ -18,59 +18,101 @@ import type { StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
 import { AvatarDisplay } from "@/components/AvatarPicker";
 import { Stufenkopf } from "./Stufenkopf";
-import { DemoBuehne, useDemo, type DemoSchritt } from "./Demo";
+import { DemoBuehne, useDemo, type DemoSchritt, type Ort } from "./Demo";
+import { Taste, codeFuer, mitTasten } from "./Taste";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { useMausKontext } from "./MausKontext";
 
 type Feld = HTMLInputElement | HTMLTextAreaElement;
 
-function demoSchritte(aufgabe: Aufgabe, setWert: (w: string) => void): DemoSchritt[] {
+/**
+ * Bildschirmort eines Zeichens im Feld — damit der Vorführ-Zeiger wirklich
+ * auf »Zoo« oder vor den Punkt zeigt. Gemessen über ein Canvas mit der
+ * Schrift des Felds; das Feld zeigt nur eine Zeile, das reicht.
+ */
+function zeichenOrt(el: Feld | null, text: string, index: number): Ort | null {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const st = getComputedStyle(el);
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  ctx.font = `${st.fontWeight} ${st.fontSize} ${st.fontFamily}`;
+  const ganz = Math.floor(index);
+  const breite = ctx.measureText(text.slice(0, ganz)).width
+    + (index - ganz) * ctx.measureText(text.charAt(ganz)).width;
+  const x = r.left + parseFloat(st.borderLeftWidth) + parseFloat(st.paddingLeft) + breite - el.scrollLeft;
+  const zeile = parseFloat(st.lineHeight) || parseFloat(st.fontSize) * 1.4;
+  const y = el instanceof HTMLTextAreaElement
+    ? r.top + parseFloat(st.borderTopWidth) + parseFloat(st.paddingTop) + zeile / 2
+    : r.top + r.height / 2;
+  return { x, y };
+}
+
+type DemoFeld = {
+  el: () => Feld | null;
+  setWert: (w: string) => void;
+  /** Sichtbar markieren (von, bis) — oder nur den Cursor setzen. */
+  markiere: (von: number, bis?: number) => void;
+};
+
+function demoSchritte(aufgabe: Aufgabe, f: DemoFeld): DemoSchritt[] {
+  const bei = (text: string, index: number) => () => zeichenOrt(f.el(), text, index);
   switch (aufgabe.id) {
     case "umschalt":
       return [
         { text: "Halte Umschalt ⇧ fest …", tasten: ["ShiftLeft"] },
-        { text: "… und tippe H.", tasten: ["ShiftLeft", "KeyH"], aktion: () => setWert("H") },
-        { text: "Umschalt loslassen, »und« tippen.", aktion: () => setWert("Hund") },
+        { text: "… und tippe H.", tasten: ["ShiftLeft", "KeyH"], aktion: () => f.setWert("H") },
+        { text: "Umschalt loslassen, »und« tippen.", tasten: ["KeyU", "KeyN", "KeyD"], aktion: () => f.setWert("Hund") },
       ];
     case "ruecktaste":
       return [
-        { text: "Der Cursor steht hinter dem zweiten e.", aktion: () => setWert("Katzee") },
-        { text: "Rücktaste ⟵ drücken: das e verschwindet.", tasten: ["Backspace"], aktion: () => setWert("Katze") },
+        { text: "Der Cursor steht hinter dem zweiten e.", zu: bei("Katzee", 6), aktion: () => { f.setWert("Katzee"); f.markiere(6); } },
+        { text: "Rücktaste ⟵ drücken: das e links vom Cursor verschwindet.", tasten: ["Backspace"], aktion: () => { f.setWert("Katze"); f.markiere(5); } },
       ];
     case "entf":
       return [
-        { text: "Der Cursor steht vor dem ersten M.", aktion: () => setWert("MMaus") },
-        { text: "Entf drücken: das M verschwindet.", aktion: () => setWert("Maus") },
+        { text: "Der Cursor steht vor dem ersten M.", zu: bei("MMaus", 0), aktion: () => { f.setWert("MMaus"); f.markiere(0); } },
+        { text: "Entf drücken (rechts neben dem großen Tastenfeld): das M rechts vom Cursor verschwindet.", tasten: ["Delete"], aktion: () => { f.setWert("Maus"); f.markiere(0); } },
       ];
     case "pfeiltasten":
       return [
-        { text: "Der Cursor steht ganz hinten.", aktion: () => setWert("Bll") },
-        { text: "Mit ← einmal nach links …", aktion: () => setWert("Bll") },
-        { text: "… und das fehlende a eintippen.", aktion: () => setWert("Ball") },
+        { text: "Der Cursor steht ganz hinten.", zu: bei("Bll", 3), aktion: () => { f.setWert("Bll"); f.markiere(3); } },
+        { text: "Mit ← einmal nach links …", tasten: ["ArrowLeft"], aktion: () => f.markiere(2) },
+        { text: "… und das fehlende a eintippen.", tasten: ["KeyA"], aktion: () => { f.setWert("Ball"); f.markiere(3); } },
       ];
     case "pos1":
       return [
-        { text: "Pos1 drücken: der Cursor springt an den Anfang.", aktion: () => setWert("pfel") },
-        { text: "A eintippen.", aktion: () => setWert("Apfel") },
+        { text: "Der Cursor steht ganz hinten.", zu: bei("pfel", 4), aktion: () => { f.setWert("pfel"); f.markiere(4); } },
+        { text: "Pos1 drücken: der Cursor springt an den Anfang.", tasten: ["Home"], aktion: () => f.markiere(0) },
+        { text: "A eintippen (mit Umschalt).", tasten: ["ShiftLeft", "KeyA"], aktion: () => { f.setWert("Apfel"); f.markiere(1); } },
       ];
     case "ende":
       return [
-        { text: "Ende drücken: der Cursor springt ans Ende.", aktion: () => setWert("Hallo") },
-        { text: "! eintippen.", aktion: () => setWert("Hallo!") },
+        { text: "Der Cursor steht ganz vorn.", zu: bei("Hallo", 0), aktion: () => { f.setWert("Hallo"); f.markiere(0); } },
+        { text: "Ende drücken: der Cursor springt ans Ende.", tasten: ["End"], aktion: () => f.markiere(5) },
+        { text: "! eintippen (Umschalt + 1).", tasten: ["ShiftLeft", "Digit1"], aktion: () => { f.setWert("Hallo!"); f.markiere(6); } },
       ];
-    case "strgz":
+    case "strgz": {
+      const satz = aufgabe.start;
+      const wort = satz.indexOf("Maus");
       return [
-        { text: "Den Satz markieren …", aktion: () => setWert(aufgabe.start) },
-        { text: "… und mit Entf löschen.", aktion: () => setWert("") },
-        { text: "Strg + Z: der Satz ist wieder da!", tasten: ["ControlLeft", "KeyZ"], aktion: () => setWert(aufgabe.start) },
+        { text: "Zeige auf den Satz.", zu: bei(satz, wort + 2), aktion: () => { f.setWert(satz); f.markiere(satz.length); } },
+        { text: "Ein Doppelklick markiert nur ein Wort …", taste: "doppel", aktion: () => f.markiere(wort, wort + 5) },
+        { text: "… dreimal schnell klicken markiert den ganzen Satz.", taste: "doppel", aktion: () => f.markiere(0, satz.length) },
+        { text: "Entf drücken: der Satz ist weg.", tasten: ["Delete"], aktion: () => f.setWert("") },
+        { text: "Strg + Z: der Satz ist wieder da!", tasten: ["ControlLeft", "KeyZ"], aktion: () => f.setWert(satz) },
       ];
-    case "ausschneiden":
+    }
+    case "ausschneiden": {
+      const ohne = "Ich war im .";
       return [
-        { text: "»Zoo« markieren …", aktion: () => setWert("Zoo Ich war im .") },
-        { text: "Strg + X: ausschneiden.", tasten: ["ControlLeft", "KeyX"], aktion: () => setWert("Ich war im .") },
-        { text: "Vor den Punkt klicken …", aktion: () => setWert("Ich war im .") },
-        { text: "Strg + V: einfügen!", tasten: ["ControlLeft", "KeyV"], aktion: () => setWert("Ich war im Zoo.") },
+        { text: "Zeige mit der Maus auf »Zoo«.", zu: bei(aufgabe.start, 1.5), aktion: () => { f.setWert(aufgabe.start); f.markiere(aufgabe.start.length); } },
+        { text: "Doppelklick: das Wort ist markiert.", taste: "doppel", aktion: () => f.markiere(0, 4) },
+        { text: "Strg + X: ausschneiden (oder Rechtsklick › Ausschneiden).", tasten: ["ControlLeft", "KeyX"], aktion: () => { f.setWert(ohne); f.markiere(0); } },
+        { text: "Mit der Maus genau vor den Punkt klicken.", zu: bei(ohne, ohne.length - 1), taste: "links", aktion: () => f.markiere(ohne.length - 1) },
+        { text: "Strg + V: einfügen (oder Rechtsklick › Einfügen)!", tasten: ["ControlLeft", "KeyV"], aktion: () => { f.setWert("Ich war im Zoo."); f.markiere(14); } },
       ];
+    }
   }
 }
 
@@ -202,8 +244,16 @@ export default function StufeTastatur({
 
   function vorfuehren() {
     vorDemo.current = feld.current?.value ?? aufgabe.start;
-    const setWert = (w: string) => { if (feld.current) feld.current.value = w; };
-    demo.abspielen(demoSchritte(aufgabe, setWert));
+    demo.abspielen(demoSchritte(aufgabe, {
+      el: () => feld.current,
+      setWert: w => { if (feld.current) feld.current.value = w; },
+      markiere: (von, bis = von) => {
+        const el = feld.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(von, bis);
+      },
+    }));
   }
 
   const schriftgroesse = hilfe ? "text-lg" : "text-base";
@@ -218,7 +268,7 @@ export default function StufeTastatur({
         titel="⌨️ Teil 2 · Tastatur"
         auftrag={fertig
           ? <>Alle Tastatur-Aufgaben geschafft!</>
-          : <>{aufgabe.auftrag}<div data-zusatz className="text-xs text-muted mt-1">💡 {aufgabe.tipp}</div></>}
+          : <>{mitTasten(aufgabe.auftrag)}<div data-zusatz className="text-sm text-muted mt-1.5">💡 {mitTasten(aufgabe.tipp)}</div></>}
         punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -283,17 +333,21 @@ export default function StufeTastatur({
             Liste steht daneben und nicht mehr weit oben neben dem Eingabefeld. */}
         {!fertig && (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_14rem] items-start">
-            <div className="card p-3 flex flex-col gap-2">
-              <div className="flex flex-wrap gap-1.5" aria-hidden>
-                <span className="text-xs text-muted self-center mr-1">Diese Taste(n) brauchst du:</span>
-                {aufgabe.tastenHinweis.map((t, i) => (
-                  <span key={i} className="text-xs font-bold rounded-md border border-accent px-2 py-1">{t}</span>
-                ))}
+            <div className="rounded-2xl border border-line bg-surface p-3 flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold mr-1">Diese Taste(n) brauchst du:</span>
+                {aufgabe.tastenHinweis.map((t, i) => <Taste key={i} gross>{t}</Taste>)}
+                <span className="text-xs text-muted">— auf der Tastatur unten mit Ring markiert</span>
               </div>
-              <Tastatur gedrueckt={gedrueckt} zeigeFinger={false} bloecke />
+              <Tastatur
+                gedrueckt={gedrueckt}
+                zeigeFinger={false}
+                bloecke
+                markiert={new Set(aufgabe.tastenHinweis.map(codeFuer).filter((c): c is string => !!c))}
+              />
             </div>
 
-            <aside className="card p-4 flex flex-col gap-1 h-fit">
+            <aside className="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-1 h-fit">
               <h3 className="font-black mb-1">Aufgaben</h3>
               <ul className="flex flex-col gap-1">
                 {TASTATUR_AUFGABEN.map((a, i) => (

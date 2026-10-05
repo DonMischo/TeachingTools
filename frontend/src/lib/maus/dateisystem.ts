@@ -10,7 +10,7 @@
 import type { AppId } from "./windows";
 
 export type KnotenArt = "pc" | "laufwerk" | "ordner" | "datei";
-export type OrdnerArt = "normal" | "desktop" | "dokumente" | "downloads" | "bilder" | "musik" | "videos" | "benutzer" | "system";
+export type OrdnerArt = "normal" | "desktop" | "dokumente" | "downloads" | "bilder" | "musik" | "videos" | "benutzer" | "system" | "usb";
 
 export type Knoten = {
   id: string;
@@ -22,6 +22,9 @@ export type Knoten = {
   /** Statt des Inhalts erscheint diese Warnung (Systemordner). */
   gesperrt?: string;
   groesse?: string;
+  /** Laufwerke: freier Platz als Text und belegter Anteil (0–1). */
+  frei?: string;
+  belegt?: number;
 };
 
 export type Dateisystem = Record<string, Knoten>;
@@ -52,12 +55,18 @@ export function benutzernameAus(name: string | null | undefined): string {
   return sauber || "Schüler";
 }
 
-export function baueDateisystem(benutzer: string): Dateisystem {
+/** Der USB-Stick — Laufwerk D:, erscheint erst, wenn er »eingesteckt« wird. */
+export const USB: Knoten = {
+  id: "usb", name: "USB-Stick (D:)", art: "laufwerk", eltern: "pc", ordnerArt: "usb", frei: "14,2 GB frei", belegt: 0.1,
+};
+
+export function baueDateisystem(benutzer: string, mitUsb = false): Dateisystem {
   const fs: Dateisystem = {};
   const neu = (k: Knoten) => { fs[k.id] = k; };
 
   neu({ id: "pc", name: "Dieser PC", art: "pc", eltern: null });
-  neu({ id: "c", name: "Lokaler Datenträger (C:)", art: "laufwerk", eltern: "pc" });
+  neu({ id: "c", name: "Lokaler Datenträger (C:)", art: "laufwerk", eltern: "pc", frei: "120 GB frei", belegt: 0.5 });
+  if (mitUsb) neu(USB);
   neu({ id: "c-benutzer", name: "Benutzer", art: "ordner", eltern: "c", ordnerArt: "normal" });
   neu({ id: "c-programme", name: "Programme", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: WARNUNG_PROGRAMME });
   neu({ id: "c-programme86", name: "Programme (x86)", art: "ordner", eltern: "c", ordnerArt: "system", gesperrt: WARNUNG_PROGRAMME });
@@ -82,7 +91,7 @@ export function baueDateisystem(benutzer: string): Dateisystem {
 
 /** Inhalt eines Ordners: Ordner vor Dateien, alphabetisch. »Dieser PC« zeigt die eigenen Ordner und C:. */
 export function kinder(fs: Dateisystem, id: string): Knoten[] {
-  if (id === "pc") return [...EIGENE_ORDNER.map(o => fs[o.id]), fs.c].filter(Boolean);
+  if (id === "pc") return [...EIGENE_ORDNER.map(o => fs[o.id]), fs.c, fs.usb].filter(Boolean);
   const k = fs[id];
   if (!k || k.gesperrt) return [];
   return Object.values(fs)
@@ -105,13 +114,20 @@ export function pfad(fs: Dateisystem, id: string): Knoten[] {
 export function pfadText(fs: Dateisystem, id: string): string {
   const teile = pfad(fs, id).filter(k => k.art !== "pc");
   if (teile.length === 0) return "Dieser PC";
-  return teile.map(k => (k.art === "laufwerk" ? "C:" : k.name)).join(TRENNER);
+  return teile.map(k => (k.art === "laufwerk" ? laufwerksBuchstabe(k) : k.name)).join(TRENNER);
 }
 
-/** Gespeichert werden darf nur im eigenen Benutzerordner. */
+/** »USB-Stick (D:)« → »D:« */
+export function laufwerksBuchstabe(k: Knoten): string {
+  return /\(([A-Z]:)\)/.exec(k.name)?.[1] ?? "C:";
+}
+
+/** Gespeichert werden darf nur im eigenen Benutzerordner — und auf dem USB-Stick. */
 export function darfSpeichern(fs: Dateisystem, ordnerId: string): boolean {
   const k = fs[ordnerId];
-  return !!k && k.art === "ordner" && !k.gesperrt && pfad(fs, ordnerId).some(x => x.id === "benutzer");
+  if (!k || k.gesperrt) return false;
+  if (k.id === "usb") return true;
+  return k.art === "ordner" && pfad(fs, ordnerId).some(x => x.id === "benutzer" || x.id === "usb");
 }
 
 export const VERBOTENE_ZEICHEN = '/:*?"<>|' + TRENNER;
@@ -141,4 +157,23 @@ export function neueDatei(
   while (fs[`neu-${nr}`]) nr += 1;
   const id = `neu-${nr}`;
   return { fs: { ...fs, [id]: { id, name: name.trim(), art: "datei", eltern: ordnerId, app, groesse } }, id };
+}
+
+/**
+ * Datei in einen anderen Ordner ziehen: auf ein anderes Laufwerk (USB-Stick)
+ * wird kopiert, sonst verschoben — wie in Windows. Gibt es den Namen dort
+ * schon, passiert nichts (`null`).
+ */
+export function ablegen(
+  fs: Dateisystem, dateiId: string, zielId: string,
+): { fs: Dateisystem; id: string; kopiert: boolean } | null {
+  const datei = fs[dateiId];
+  if (!datei || datei.art !== "datei" || !darfSpeichern(fs, zielId) || datei.eltern === zielId) return null;
+  if (kinder(fs, zielId).some(k => k.name.toLowerCase() === datei.name.toLowerCase())) return null;
+  const laufwerk = (id: string) => pfad(fs, id).find(k => k.art === "laufwerk")?.id;
+  if (laufwerk(datei.eltern ?? "") !== laufwerk(zielId)) {
+    const { fs: neu, id } = neueDatei(fs, zielId, datei.name, datei.app ?? "editor", datei.groesse);
+    return { fs: neu, id, kopiert: true };
+  }
+  return { fs: { ...fs, [dateiId]: { ...datei, eltern: zielId } }, id: dateiId, kopiert: false };
 }

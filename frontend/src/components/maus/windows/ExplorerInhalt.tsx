@@ -8,6 +8,7 @@
  * Systemordner (Windows, Programme, Öffentlich) zeigen keine Dateien, nur
  * eine Warnung mit dem Weg zurück.
  */
+import { useState, type DragEvent } from "react";
 import { AppSymbol } from "./AppSymbol";
 import { OrdnerSymbol } from "./OrdnerSymbol";
 import { EIGENE_ORDNER, kinder, pfad, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
@@ -21,8 +22,10 @@ function Symbol({ k, groesse }: { k: Knoten; groesse: number | string }) {
   return <OrdnerSymbol knoten={k} groesse={groesse} />;
 }
 
+const ZIEH_TYP = "application/x-maus-datei";
+
 export function ExplorerInhalt({
-  fs, ordner, onOrdner, onOeffnen, markiert = null, onMarkieren, dunkel = false, hilfe = false,
+  fs, ordner, onOrdner, onOeffnen, markiert = null, onMarkieren, onAblegen, dunkel = false, hilfe = false,
 }: {
   fs: Dateisystem;
   ordner: string;
@@ -31,6 +34,8 @@ export function ExplorerInhalt({
   onOeffnen?: (datei: Knoten) => void;
   markiert?: string | null;
   onMarkieren?: (k: Knoten | null) => void;
+  /** Datei auf einen Ordner oder ein Laufwerk gezogen (Liste oder Navigationsbereich). Ohne: kein Ziehen. */
+  onAblegen?: (dateiId: string, zielId: string) => void;
   dunkel?: boolean;
   hilfe?: boolean;
 }) {
@@ -39,6 +44,28 @@ export function ExplorerInhalt({
   const hoch = aktuell.eltern;
   const inhalt = kinder(fs, aktuell.id);
   const icon = hilfe ? 52 : 40;
+  const [ueber, setUeber] = useState<string | null>(null);
+
+  // Ablegen geht auf Ordner und Laufwerke — in der Liste wie im Navigationsbereich.
+  function ablage(zielId: string) {
+    if (!onAblegen) return {};
+    return {
+      onDragOver: (e: DragEvent) => {
+        if (!e.dataTransfer.types.includes(ZIEH_TYP)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setUeber(zielId);
+      },
+      onDragLeave: () => setUeber(u => (u === zielId ? null : u)),
+      onDrop: (e: DragEvent) => {
+        const id = e.dataTransfer.getData(ZIEH_TYP);
+        setUeber(null);
+        if (!id) return;
+        e.preventDefault();
+        onAblegen(id, zielId);
+      },
+    };
+  }
 
   const farben = dunkel
     ? { grund: "#202020", leiste: "#2b2b2b", text: "#ffffff", leise: "#a3a3a3", linie: "#ffffff1f" }
@@ -52,13 +79,14 @@ export function ExplorerInhalt({
   function navKnopf(id: string, eingerueckt = false) {
     const k = fs[id];
     if (!k) return null;
-    const aktiv = aktuell.id === id;
+    const aktiv = aktuell.id === id || ueber === id;
     return (
       <button
         key={id}
         type="button"
         onClick={() => onOrdner(id)}
         data-nav={id}
+        {...ablage(id)}
         className={"flex items-center gap-2 rounded-sm px-2 py-1 text-left border " + (aktiv ? BLAU_MARKIERT : `border-transparent ${BLAU_HOVER}`)}
         style={{ paddingLeft: eingerueckt ? "1.5em" : undefined }}
       >
@@ -104,6 +132,7 @@ export function ExplorerInhalt({
           <div className="my-1 h-px" style={{ background: farben.linie }} />
           {navKnopf("pc")}
           {navKnopf("c", true)}
+          {navKnopf("usb", true)}
         </nav>
 
         <div
@@ -134,15 +163,23 @@ export function ExplorerInhalt({
                   data-knoten={k.id}
                   onClick={() => onMarkieren?.(k)}
                   onDoubleClick={() => oeffnen(k)}
-                  className={"flex flex-col items-center gap-1 rounded-md border p-1.5 text-center " + (markiert === k.id ? BLAU_MARKIERT : `border-transparent ${BLAU_HOVER}`)}
+                  draggable={!!onAblegen && k.art === "datei"}
+                  onDragStart={e => {
+                    if (!onAblegen || k.art !== "datei") return;
+                    e.dataTransfer.setData(ZIEH_TYP, k.id);
+                    e.dataTransfer.effectAllowed = "copyMove";
+                    onMarkieren?.(k);
+                  }}
+                  {...(k.art !== "datei" ? ablage(k.id) : {})}
+                  className={"flex flex-col items-center gap-1 rounded-md border p-1.5 text-center " + (markiert === k.id || ueber === k.id ? BLAU_MARKIERT : `border-transparent ${BLAU_HOVER}`)}
                   style={{ width: hilfe ? 112 : 92 }}
                 >
                   <Symbol k={k} groesse={icon} />
                   <span className="leading-tight wrap-break-word w-full" style={{ fontSize: "0.92em" }}>{k.name}</span>
                   {k.art === "laufwerk" && (
-                    <span className="w-full flex flex-col gap-0.5" aria-label="120 GB frei von 237 GB">
-                      <span className="h-1.5 w-full rounded-full bg-[#0000001f] overflow-hidden"><span className="block h-full w-1/2 bg-[#0078d7]" /></span>
-                      <span style={{ color: farben.leise, fontSize: "0.8em" }}>120 GB frei</span>
+                    <span className="w-full flex flex-col gap-0.5" aria-label={k.frei}>
+                      <span className="h-1.5 w-full rounded-full bg-[#0000001f] overflow-hidden"><span className="block h-full bg-[#0078d7]" style={{ width: `${(k.belegt ?? 0.5) * 100}%` }} /></span>
+                      <span style={{ color: farben.leise, fontSize: "0.8em" }}>{k.frei}</span>
                     </span>
                   )}
                 </button>

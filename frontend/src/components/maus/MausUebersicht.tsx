@@ -15,7 +15,7 @@ const TAKT_MS = 5000;
 
 const ICON: Record<StufeId, string> = {
   klick: "👆", doppelklick: "✌️", rechtsklick: "📋", ziehen: "✋", markieren: "🖍️", kopieren: "📄",
-  scrollen: "🖱️", tastatur: "⌨️", explorer: "📁", fenster: "🪟", screenshot: "📸",
+  scrollen: "🖱️", tastatur: "⌨️", explorer: "📁", fenster: "🪟", datei: "💽", screenshot: "📸",
   suche: "🔍", apps: "🧰", aussehen: "🎨", bedienhilfe: "🔎", taskleiste: "📌", profil: "🔒",
 };
 

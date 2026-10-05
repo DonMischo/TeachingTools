@@ -1,35 +1,32 @@
 "use client";
 /**
- * Teil 2, Stufe: Bildschirmfoto (Windows 11, Snipping Tool).
+ * Teil 3, Stufe: Bildschirmfoto (Windows 11, Snipping Tool, IrfanView).
  *
  * Der Browser sieht die Windows-Taste nie — Tastendrücke außerhalb des
  * Fensters erreichen die Seite nicht. Geprüft wird deshalb ausschließlich
- * am Ergebnis: kommt per Einfügen oder Ablegen ein Bild an, hat es
- * funktioniert. Die Bildschirmtastatur zeigt die Tasten nur als Anleitung.
+ * am Ergebnis: kommt per Strg + V ein Bild an, hat es funktioniert. Die
+ * Bildschirmtastatur zeigt die Tasten nur als Anleitung.
+ *
+ * Schritt 3 (speichern, in IrfanView öffnen, dort kopieren) endet ebenfalls
+ * mit Strg + V — kein Ziehen von Dateien. Damit niemand einfach das Bild aus
+ * Schritt 1 noch einmal einfügt, wird es an seiner Prüfsumme wiedererkannt.
  */
 import { useEffect, useRef, useState } from "react";
 import { AVATARS } from "@/components/AvatarPicker";
-import { PUNKTE_TEIL2, type StufenErgebnis } from "@/lib/maus/ergebnis";
+import { PUNKTE_TEIL2, pruefsumme, type StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
 import { bildAusDaten, istBildschirmgroesse, istText } from "@/lib/maus/screenshot";
 import { Tastatur } from "@/components/tippen/Tastatur";
 import { Stufenkopf } from "./Stufenkopf";
-import { DemoBuehne, useDemo } from "./Demo";
+import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
+import { Taste } from "./Taste";
 
 type Vorschau = { url: string; breite: number; hoehe: number };
 
 const ANZAHL = 3;
 
-const SCHRITT_3_TEXT =
-  "1. Mach wie in Schritt 1 einen Ausschnitt (⊞ Windows + Umschalt + S). " +
-  "2. Unten rechts erscheint eine Meldung — klick darin auf »Markup und Freigabe«. " +
-  "3. Erst jetzt öffnet sich das Fenster mit dem Speichern-Knopf 💾 (oder Strg + S): speichere das Bild. " +
-  "4. Zieh die gespeicherte Datei hierher.";
-
-function Kbd({ children }: { children: string }) {
-  return <kbd className="inline-block rounded-md border border-line bg-surface-hover px-1.5 py-0.5 text-xs font-bold shadow-[0_2px_0_var(--border)]">{children}</kbd>;
-}
+const SCHRITT_3_TEXT = "Speichern und in IrfanView öffnen: Ausschnitt, »Markup und Freigabe«, speichern, mit IrfanView öffnen, dort Strg + C — hier Strg + V.";
 
 function bildLaden(datei: File): Promise<Vorschau> {
   return new Promise((resolve, reject) => {
@@ -50,9 +47,9 @@ export default function StufeScreenshot({
   const [nr, setNr] = useState(0);
   const [bild1, setBild1] = useState<Vorschau | null>(null);
   const [bild2, setBild2] = useState<Vorschau | null>(null);
-  const [datei3, setDatei3] = useState<string | null>(null);
+  const [bild3, setBild3] = useState<Vorschau | null>(null);
   const [hinweis, setHinweis] = useState<{ text: string; gut: boolean } | null>(null);
-  const [ueber, setUeber] = useState(false);
+  const summen = useRef<string[]>([]);
   const [demoRahmen, setDemoRahmen] = useState(false);
   const [demoVorschau, setDemoVorschau] = useState(false);
   const kartenRef = useRef<HTMLDivElement>(null);
@@ -67,6 +64,7 @@ export default function StufeScreenshot({
     return () => {
       if (bild1) URL.revokeObjectURL(bild1.url);
       if (bild2) URL.revokeObjectURL(bild2.url);
+      if (bild3) URL.revokeObjectURL(bild3.url);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -89,7 +87,21 @@ export default function StufeScreenshot({
     // an, und beide warteten sonst gleichzeitig auf das Bild.
     gezaehlt.current = nr;
     let vorschau: Vorschau;
-    try { vorschau = await bildLaden(datei); } catch { gezaehlt.current = -1; return; }
+    let summe: string;
+    try {
+      summe = pruefsumme(await datei.arrayBuffer());
+      vorschau = await bildLaden(datei);
+    } catch { gezaehlt.current = -1; return; }
+    if (nr === 2 && summen.current.includes(summe)) {
+      fehler.current += 1;
+      setHinweis({
+        text: "Das ist noch das Bild von vorhin. Mach einen neuen Ausschnitt, speichere ihn, öffne ihn in IrfanView und kopiere ihn dort mit Strg + C.",
+        gut: false,
+      });
+      URL.revokeObjectURL(vorschau.url);
+      gezaehlt.current = -1;
+      return;
+    }
     if (nr === 0) {
       setBild1(vorschau);
       setHinweis({ text: "Klasse! Das ist dein Ausschnitt. ⭐", gut: true });
@@ -105,7 +117,11 @@ export default function StufeScreenshot({
       }
       setBild2(vorschau);
       setHinweis({ text: "Super, der ganze Bildschirm ist da! ⭐", gut: true });
+    } else {
+      setBild3(vorschau);
+      setHinweis({ text: "Gespeichert, in IrfanView geöffnet und eingefügt! ⭐", gut: true });
     }
+    summen.current.push(summe);
     const naechste = nr + 1;
     setTimeout(() => {
       setNr(naechste);
@@ -116,7 +132,7 @@ export default function StufeScreenshot({
   }
 
   function einfuegen(daten: DataTransfer | null | undefined) {
-    if (!daten || demo.aktiv || fertig || nr === 2) return;
+    if (!daten || demo.aktiv || fertig) return;
     const bilddatei = bildAusDaten(daten);
     if (bilddatei) { bildEingefuegt(bilddatei); return; }
     if (istText(daten)) {
@@ -132,28 +148,6 @@ export default function StufeScreenshot({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nr, fertig, bild1, demo.aktiv]);
 
-  // Daneben fallen gelassene Dateien soll der Browser nicht öffnen.
-  useEffect(() => {
-    const halt = (e: DragEvent) => e.preventDefault();
-    window.addEventListener("dragover", halt);
-    window.addEventListener("drop", halt);
-    return () => { window.removeEventListener("dragover", halt); window.removeEventListener("drop", halt); };
-  }, []);
-
-  function abgelegt(datei: File | undefined) {
-    if (!datei || fertig || nr !== 2 || gezaehlt.current === nr) return;
-    if (!datei.type.startsWith("image/")) {
-      fehler.current += 1;
-      setHinweis({ text: `»${datei.name}« ist kein Bild — zieh die gespeicherte Bilddatei hierher.`, gut: false });
-      return;
-    }
-    gezaehlt.current = nr;
-    setDatei3(datei.name);
-    setHinweis({ text: "Gefunden und hineingezogen! ⭐", gut: true });
-    const naechste = nr + 1;
-    setTimeout(() => { setNr(naechste); fertigMelden(naechste); }, 900);
-  }
-
   function vorfuehren() {
     const ecke = (start: boolean) => () => {
       const el = kartenRef.current;
@@ -161,13 +155,34 @@ export default function StufeScreenshot({
       const r = el.getBoundingClientRect();
       return start ? { x: r.left + 8, y: r.top + 8 } : { x: r.right - 8, y: r.bottom - 8 };
     };
-    demo.abspielen([
+    const feld = () => mitte(document.querySelector('[data-testid="einfuegen-feld"]'));
+    const ausschnitt: DemoSchritt[] = [
       { text: "Drücke ⊞ Windows + Umschalt + S.", tasten: ["MetaLeft", "ShiftLeft", "KeyS"] },
       { text: "Zieh mit gedrückter Maustaste einen Rahmen um die Karte.", taste: "halten", zu: ecke(true), aktion: () => setDemoRahmen(true) },
       { text: "Bis zur anderen Ecke — dann loslassen.", taste: "halten", zu: ecke(false) },
-      { text: "Klick in dieses Feld und drücke Strg + V.", tasten: ["ControlLeft", "KeyV"], aktion: () => { setDemoRahmen(false); setDemoVorschau(true); } },
+    ];
+    const einfuegenSchritte: DemoSchritt[] = [
+      { text: "Klick in dieses Feld …", zu: feld, taste: "links", aktion: () => setDemoRahmen(false) },
+      { text: "… und drücke Strg + V.", tasten: ["ControlLeft", "KeyV"], aktion: () => setDemoVorschau(true) },
       { text: "Da ist das Bild!", taste: null },
-    ]);
+    ];
+    if (nr === 0) {
+      demo.abspielen([...ausschnitt, ...einfuegenSchritte]);
+    } else if (nr === 1) {
+      demo.abspielen([
+        { text: "Drücke die Druck-Taste — oben rechts auf der Tastatur.", tasten: ["PrintScreen"] },
+        ...einfuegenSchritte,
+      ]);
+    } else {
+      demo.abspielen([
+        ...ausschnitt,
+        { text: "Unten rechts auf die Meldung klicken: »Markup und Freigabe«.", taste: "links", aktion: () => setDemoRahmen(false) },
+        { text: "Im Snipping Tool speichern: Strg + S, z. B. in »Bilder«.", tasten: ["ControlLeft", "KeyS"] },
+        { text: "Die Datei im Explorer mit Rechtsklick › Öffnen mit › IrfanView öffnen.", taste: "rechts" },
+        { text: "In IrfanView Strg + C drücken: das Bild ist kopiert.", tasten: ["ControlLeft", "KeyC"] },
+        ...einfuegenSchritte,
+      ]);
+    }
   }
 
   const aufgaben = [
@@ -179,10 +194,10 @@ export default function StufeScreenshot({
   return (
     <div className="flex flex-col gap-4">
       <Stufenkopf
-        titel="📸 Teil 2 · Bildschirmfoto"
-        auftrag={<>Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann speichern und wiederfinden.</>}
+        titel="📸 Teil 3 · Bildschirmfoto"
+        auftrag={<>Mach ein Bildschirmfoto von der bunten Karte — Ausschnitt, ganzer Bildschirm, dann speichern und in IrfanView öffnen. Eingefügt wird immer mit <Taste>Strg</Taste> + <Taste>V</Taste>.</>}
         punkte={Math.round((PUNKTE_TEIL2 * Math.min(nr, ANZAHL)) / ANZAHL)}
-        onDemo={nr < 2 ? vorfuehren : undefined}
+        onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
         hervor={fertig}
       />
@@ -220,44 +235,22 @@ export default function StufeScreenshot({
           <div
             tabIndex={0}
             onPaste={e => einfuegen(e.clipboardData)}
-            onDragOver={e => { if (nr === 2) { e.preventDefault(); setUeber(true); } }}
-            onDragLeave={() => setUeber(false)}
-            onDrop={e => { if (nr === 2) { e.preventDefault(); setUeber(false); abgelegt(e.dataTransfer.files[0]); } }}
             data-testid="einfuegen-feld"
-            className={
-              "rounded-2xl border-4 border-dashed p-4 flex flex-col items-center gap-2 text-center min-h-40 justify-center outline-hidden " +
-              (ueber ? "border-accent bg-surface-hover" : "border-line")
-            }
+            className="rounded-2xl border-4 border-dashed border-line p-4 flex flex-col items-center gap-2 text-center min-h-40 justify-center outline-hidden focus:border-accent"
           >
-            {nr === 2 ? (
-              datei3 ? (
-                <div className="flex flex-col items-center gap-1">
-                  <div className="text-4xl">🏆</div>
-                  <div className="font-bold">Gefunden: »{datei3}«</div>
-                </div>
-              ) : (
-                <>
-                  <div className="text-4xl">📥</div>
-                  <div className="font-bold">Datei hierher ziehen</div>
-                </>
-              )
-            ) : (
-              <>
-                {(nr === 0 ? bild1 : bild2) ? (
+            {(() => {
+              const bild = [bild1, bild2, bild3][Math.min(nr, 2)];
+              if (bild) {
+                return (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={(nr === 0 ? bild1 : bild2)!.url}
-                    alt="Eingefügtes Bildschirmfoto"
-                    className="max-h-40 rounded-lg shadow-sm"
-                    data-testid={nr === 0 ? "vorschau-1" : "vorschau-2"}
-                  />
-                ) : demoVorschau ? (
-                  <div aria-hidden className="w-32 h-20 rounded-lg bg-surface-hover border border-line flex items-center justify-center text-2xl">🖼️</div>
-                ) : (
-                  <div className="font-bold">Hier einfügen: Klick hinein und drücke <Kbd>Strg</Kbd> + <Kbd>V</Kbd></div>
-                )}
-              </>
-            )}
+                  <img src={bild.url} alt="Eingefügtes Bildschirmfoto" className="max-h-40 rounded-lg shadow-sm" data-testid={`vorschau-${Math.min(nr, 2) + 1}`} />
+                );
+              }
+              if (demoVorschau) {
+                return <div aria-hidden className="w-32 h-20 rounded-lg bg-surface-hover border border-line flex items-center justify-center text-2xl">🖼️</div>;
+              }
+              return <div className="font-bold">Hier einfügen: Klick hinein und drücke <Taste>Strg</Taste> + <Taste>V</Taste></div>;
+            })()}
             <p className="text-sm font-bold min-h-6" aria-live="polite"
               style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--red, #dc2626)" }}>
               {hinweis?.text}
@@ -271,15 +264,17 @@ export default function StufeScreenshot({
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted">Deine Tastatur hat vielleicht keine echte Druck-Taste:</span>
               <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span>
-              <span className="text-muted">oder <Kbd>⊞</Kbd> + <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span></span>
+              <span className="text-muted">oder <Taste>⊞</Taste> + <span className="inline-block rounded-md border border-accent bg-surface-hover px-2 py-1 text-xs font-bold">Druck</span></span>
             </div>
           )}
           {nr === 2 && (
-            <ol className="flex flex-col gap-1 text-sm text-muted list-decimal list-inside">
-              <li>Mach wie in Schritt 1 einen Ausschnitt (⊞ Windows + Umschalt + S).</li>
-              <li>Unten rechts erscheint eine Meldung — klick darin auf »Markup und Freigabe«.</li>
-              <li>Erst jetzt öffnet sich das Fenster mit dem Speichern-Knopf 💾 (oder Strg + S): speichere das Bild.</li>
-              <li>Zieh die gespeicherte Datei hierher.</li>
+            <ol className="flex flex-col gap-1.5 text-sm list-decimal list-inside">
+              <li>Mach wie in Schritt 1 einen Ausschnitt (<Taste>⊞</Taste> + <Taste>Umschalt</Taste> + <Taste>S</Taste>).</li>
+              <li>Unten rechts erscheint eine Meldung — klick darin auf <b>»Markup und Freigabe«</b>.</li>
+              <li>Speichere das Bild mit 💾 (oder <Taste>Strg</Taste> + <Taste>S</Taste>), z. B. in »Bilder«.</li>
+              <li>Öffne die gespeicherte Datei im Explorer: Rechtsklick › <b>Öffnen mit</b> › <b>IrfanView</b>.</li>
+              <li>In IrfanView <Taste>Strg</Taste> + <Taste>C</Taste> drücken (kopieren) …</li>
+              <li>… und hier ins Feld klicken und <Taste>Strg</Taste> + <Taste>V</Taste> drücken.</li>
             </ol>
           )}
         </div>

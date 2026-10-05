@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import StufeFenster from "@/components/maus/StufeFenster";
 
 // jsdom kennt weder PointerEvent noch setPointerCapture. Ohne PointerEvent
@@ -21,7 +21,7 @@ describe("Maus-Führerschein: Fenster", () => {
     HTMLElement.prototype.setPointerCapture = fangen;
 
     render(<StufeFenster avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);
-    const knopf = screen.getByLabelText("Maximieren / Wiederherstellen");
+    const knopf = screen.getByLabelText("Maximieren");
     fireEvent.pointerDown(knopf, { button: 0, pointerId: 1 });
     fireEvent.click(knopf);
 
@@ -40,7 +40,7 @@ describe("Maus-Führerschein: Fenster", () => {
     expect(fangen).toHaveBeenCalledTimes(1);
   });
 
-  it("führt durch den Speichern-Dialog: Frage → Speichern unter → nächste Aufgabe", async () => {
+  it("führt durch alle Aufgaben — der Knopf wird zu »Wiederherstellen«, Schließen fragt nicht", async () => {
     vi.stubGlobal("PointerEvent", Zeigerereignis);
     HTMLElement.prototype.setPointerCapture = vi.fn();
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
@@ -51,13 +51,14 @@ describe("Maus-Führerschein: Fenster", () => {
     // Unter Last (ganze Suite parallel) braucht die Rückmeldung länger als die üblichen 1 s
     const LANGSAM = { timeout: 5000 };
 
-    render(<StufeFenster avatar="cat" onFertig={() => {}} onWeiter={() => {}} />);
+    const fertig = vi.fn();
+    render(<StufeFenster avatar="cat" onFertig={fertig} onWeiter={() => {}} />);
 
     // maximieren → wiederherstellen → minimieren → zurückholen
-    fireEvent.click(screen.getByLabelText("Maximieren / Wiederherstellen"));
+    fireEvent.click(screen.getByLabelText("Maximieren"));
     await screen.findByText("Maximiert!", undefined, LANGSAM);
     await warten(950);
-    fireEvent.click(screen.getByLabelText("Maximieren / Wiederherstellen"));
+    fireEvent.click(screen.getByLabelText("Wiederherstellen"));
     await screen.findByText("Wiederhergestellt!", undefined, LANGSAM);
     await warten(950);
     fireEvent.click(screen.getByLabelText("Minimieren"));
@@ -91,21 +92,12 @@ describe("Maus-Führerschein: Fenster", () => {
     await screen.findByText("Zurück — Alt + Tab hat geklappt!", undefined, LANGSAM);
     await warten(950);
 
-    // Fenster schließen → »Speichern« im Dialog
+    // Fenster schließen: nichts verändert, also keine Rückfrage
     fireEvent.click(screen.getByLabelText("Schließen"));
-    fireEvent.click(screen.getByText("Möchtest du die Änderungen speichern?").parentElement!.querySelector("button")!);
-
-    // Speichern-unter-Dialog: eigener Name, dann Speichern
-    const dialog = await screen.findByTestId("speichern-unter");
-    const nameFeld = within(dialog).getByTestId("dateiname") as HTMLInputElement;
-    fireEvent.change(nameFeld, { target: { value: "Meine Notizen" } });
-    fireEvent.click(within(dialog).getByTestId("speichern-knopf"));
-    await screen.findByText("Gespeichert!", undefined, LANGSAM);
+    expect(screen.queryByText(/Änderungen speichern/)).not.toBeInTheDocument();
+    await screen.findByText(/Geschlossen!/, undefined, LANGSAM);
     await warten(950);
-
-    // nächste Aufgabe: Datei wiederfinden
-    const naechste = await screen.findByText("Datei wiederfinden", { exact: false });
-    expect(naechste.closest("li")).toHaveTextContent("👉");
-    expect(screen.queryByTestId("speichern-unter")).not.toBeInTheDocument();
+    expect(fertig).toHaveBeenCalledTimes(1);
+    expect(fertig.mock.calls[0][0].details[0]).toBe("8 von 8 Aufgaben");
   }, 20000);
 });

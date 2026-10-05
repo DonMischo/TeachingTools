@@ -61,3 +61,24 @@ describe("apps: Datengrundlage", () => {
     expect(AUSWAHL_APPS).not.toContain("explorer");
   });
 });
+
+describe("Dateitypen und App-Infos", () => {
+  it("jedes Beispiel hat eine bekannte Art, und jede Art kommt vor", async () => {
+    const { DATEI_ARTEN, DATEI_BEISPIELE, artVon } = await import("@/lib/maus/apps");
+    const arten = DATEI_BEISPIELE.map(artVon);
+    expect(arten).not.toContain(null);
+    for (const a of DATEI_ARTEN) expect(arten).toContain(a.id);
+  });
+
+  it("liest die Endung ohne Rücksicht auf Groß- und Kleinschreibung", async () => {
+    const { artVon, endungVon } = await import("@/lib/maus/apps");
+    expect(endungVon("Urlaub.JPG")).toBe(".jpg");
+    expect(artVon("Mein.Referat.pptx")).toBe("praesentation");
+    expect(artVon("ohne-endung")).toBeNull();
+  });
+
+  it("jede wählbare App hat eine Kurzinfo", async () => {
+    const { APP_INFO, AUSWAHL_APPS } = await import("@/lib/maus/apps");
+    for (const id of AUSWAHL_APPS) expect(APP_INFO[id]?.was, id).toBeTruthy();
+  });
+});

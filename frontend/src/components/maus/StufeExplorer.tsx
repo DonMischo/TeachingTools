@@ -19,6 +19,7 @@ import { Stufenkopf } from "./Stufenkopf";
 import { Kontextmenue, SYMBOLE } from "./Kontextmenue";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
+import { mitTasten } from "./Taste";
 
 const ANZAHL_SCHRITTE = 6;
 /** Schritt-Index der Aufgabe »Verschiebe die drei Dateien in den Ordner Schule«. */
@@ -35,13 +36,41 @@ const NAV = [
   { id: "musik", label: "Musik", icon: "🎵" },
 ];
 
-const AUFGABEN = [
-  "Lege einen neuen Ordner an.",
-  "Benenne ihn in »Schule« um.",
-  "Markiere mit Strg + Klick: Mathe, Deutsch und Englisch.",
-  "Verschiebe die drei Dateien in den Ordner »Schule«.",
-  "Markiere mit Umschalt + Klick von »Klassenfoto« bis »Einkaufsliste«.",
-  "Öffne den Ordner »Schule« mit Doppelklick.",
+const FAECHER = ["deutsch", "englisch", "mathe", "technik"];
+const BEREICH = ["ferien", "geburtstag", "klassenfoto"];
+
+/**
+ * Jede Aufgabe mit denselben Schritten, die auch die Vorführung zeigt — wer
+ * nicht vorführen lässt, soll trotzdem wissen, wie es geht. `merke` hebt den
+ * Unterschied zwischen Strg- und Umschalt-Klick hervor.
+ */
+const AUFGABEN: { titel: string; schritte: string[]; merke?: string }[] = [
+  {
+    titel: "Lege einen neuen Ordner an.",
+    schritte: ["Rechtsklick auf eine freie Stelle im Fenster.", "»Neuer Ordner« anklicken — oder oben auf »＋ Neu«."],
+  },
+  {
+    titel: "Benenne ihn in »Schule« um.",
+    schritte: ["Den neuen Ordner einmal anklicken.", "[[F2]] drücken — oder Rechtsklick › Umbenennen.", "»Schule« tippen und [[Enter]] drücken."],
+  },
+  {
+    titel: "Markiere mit Strg + Klick alle vier Fächer: Deutsch, Englisch, Mathe und Technik.",
+    schritte: ["»Deutsch« anklicken.", "[[Strg]] festhalten …", "… und nacheinander »Englisch«, »Mathe« und »Technik« anklicken.", "Erst dann [[Strg]] loslassen."],
+    merke: "Strg + Klick nimmt nur die Dateien, die du anklickst. Was dazwischen liegt — »Einkaufsliste«, »Ferien« … — bleibt frei.",
+  },
+  {
+    titel: "Verschiebe die vier Fächer in den Ordner »Schule«.",
+    schritte: ["Eine der markierten Dateien mit gedrückter Maustaste auf den Ordner »Schule« ziehen.", "Oder: [[Strg]] + [[X]], »Schule« doppelklicken, [[Strg]] + [[V]]."],
+  },
+  {
+    titel: "Markiere mit Umschalt + Klick von »Ferien« bis »Klassenfoto«.",
+    schritte: ["»Ferien« anklicken.", "[[Umschalt]] festhalten …", "… und »Klassenfoto« anklicken."],
+    merke: "Umschalt + Klick nimmt alles von der ersten bis zur zweiten Datei — auch »Geburtstag« dazwischen, ohne dass du es anklickst.",
+  },
+  {
+    titel: "Öffne den Ordner »Schule« mit Doppelklick.",
+    schritte: ["Zweimal schnell auf den Ordner »Schule« klicken."],
+  },
 ];
 
 type Menue = { x: number; y: number; ziel: string | "leer" };
@@ -122,18 +151,18 @@ export default function StufeExplorer({
       if (ordner) { schulordner.current = ordner.id; s = 2; }
     }
     if (s === 2 && strgBenutzt.current) {
-      const ziel = new Set(["mathe", "deutsch", "englisch"]);
-      if (neu.auswahl.length === 3 && neu.auswahl.every(id => ziel.has(id))) s = 3;
+      const ziel = new Set(FAECHER);
+      if (neu.auswahl.length === FAECHER.length && neu.auswahl.every(id => ziel.has(id))) s = 3;
     }
     if (s === 3 && schulordner.current) {
-      const drin = ["mathe", "deutsch", "englisch"].every(
+      const drin = FAECHER.every(
         id => neu.dateien.find(d => d.id === id)?.parent === schulordner.current,
       );
       if (drin) s = 4;
     }
     if (s === 4 && umschaltBenutzt.current) {
-      const ziel = new Set(["klassenfoto", "schullied", "einkaufsliste"]);
-      if (neu.auswahl.length === 3 && neu.auswahl.every(id => ziel.has(id))) s = 5;
+      const ziel = new Set(BEREICH);
+      if (neu.auswahl.length === BEREICH.length && neu.auswahl.every(id => ziel.has(id))) s = 5;
     }
     if (s === 5 && doppelBenutzt.current && neu.aktuellerOrdner === schulordner.current) {
       s = 6;
@@ -271,16 +300,19 @@ export default function StufeExplorer({
         { text: "»Neuer Ordner« auswählen.", taste: "links", aktion: () => { setMenue(null); aendern(neuerOrdner); } },
       );
     } else if (schritt === 1) {
+      const neu = () => standRef.current.dateien.find(d => d.art === "ordner" && d.parent === standRef.current.aktuellerOrdner)?.id;
       schritte.push(
+        { text: "Den neuen Ordner einmal anklicken.", zu: () => { const id = neu(); return id ? mitte(dateiRef.current[id]) : null; }, taste: "links", aktion: () => { const id = neu(); if (id) aendern(s => klick(s, id)); } },
         { text: "Drücke F2 …", tasten: ["F2"] },
-        { text: "… und tippe »Schule«.", aktion: () => { const id = standRef.current.auswahl[0]; if (id) aendern(s => umbenennen(s, id, "Schule").stand); } },
+        { text: "… und tippe »Schule«.", tasten: ["ShiftLeft", "KeyS"], aktion: () => { const id = neu(); if (id) aendern(s => umbenennen(s, id, "Schule").stand); } },
+        { text: "Mit Enter bestätigen.", tasten: ["Enter"] },
       );
     } else if (schritt === 2) {
-      const zeigen = ["mathe", "deutsch", "englisch"];
-      schritte.push({ text: "Klicke auf »Mathe«.", zu: () => mitte(dateiRef.current["mathe"]), taste: "links", aktion: () => aendern(s => klick(s, "mathe")) });
-      for (const id of zeigen.slice(1)) {
+      schritte.push({ text: "Klicke auf »Deutsch«.", zu: () => mitte(dateiRef.current["deutsch"]), taste: "links", aktion: () => aendern(s => klick(s, "deutsch")) });
+      for (const id of FAECHER.slice(1)) {
         schritte.push({ text: `Strg halten und auf »${stand.dateien.find(d => d.id === id)?.name}« klicken.`, zu: () => mitte(dateiRef.current[id]), taste: "links", tasten: ["ControlLeft"], aktion: () => aendern(s => strgKlick(s, id)) });
       }
+      schritte.push({ text: "Nur die vier Fächer sind markiert — alles dazwischen bleibt frei.", taste: null });
     } else if (schritt === 3) {
       const ordnerOrt = () => mitte(Object.values(dateiRef.current).find(el => el?.dataset.ordner === schulordner.current) ?? null);
       schritte.push(
@@ -290,8 +322,9 @@ export default function StufeExplorer({
       );
     } else if (schritt === 4) {
       schritte.push(
-        { text: "Klicke auf »Klassenfoto«.", zu: () => mitte(dateiRef.current["klassenfoto"]), taste: "links", aktion: () => aendern(s => klick(s, "klassenfoto")) },
-        { text: "Umschalt halten und auf »Einkaufsliste« klicken.", zu: () => mitte(dateiRef.current["einkaufsliste"]), taste: "links", tasten: ["ShiftLeft"], aktion: () => aendern(s => umschaltKlick(s, "einkaufsliste")) },
+        { text: "Klicke auf »Ferien«.", zu: () => mitte(dateiRef.current["ferien"]), taste: "links", aktion: () => aendern(s => klick(s, "ferien")) },
+        { text: "Umschalt halten und auf »Klassenfoto« klicken.", zu: () => mitte(dateiRef.current["klassenfoto"]), taste: "links", tasten: ["ShiftLeft"], aktion: () => aendern(s => umschaltKlick(s, "klassenfoto")) },
+        { text: "Alles von »Ferien« bis »Klassenfoto« ist markiert — auch »Geburtstag« dazwischen.", taste: null },
       );
     } else if (schritt === 5) {
       const ordnerOrt = () => mitte(Object.values(dateiRef.current).find(el => el?.dataset.ordner === schulordner.current) ?? null);
@@ -312,7 +345,17 @@ export default function StufeExplorer({
         titel="📁 Teil 2 · Dateien ordnen"
         auftrag={fertig
           ? <>Toll gemacht! Du kennst dich jetzt im Explorer aus.</>
-          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-muted mt-1">💡 Rechtsklick, F2, Strg+X/C/V oder Ziehen — was du kannst!</div></>}
+          : <>
+              {AUFGABEN[schritt].titel}
+              <ol className="list-decimal list-inside text-sm font-normal mt-1.5 flex flex-col gap-0.5">
+                {AUFGABEN[schritt].schritte.map((t, i) => <li key={i}>{mitTasten(t)}</li>)}
+              </ol>
+              {AUFGABEN[schritt].merke && (
+                <div className="mt-2 rounded-lg border-l-4 border-accent bg-surface-hover px-3 py-1.5 text-sm font-bold">
+                  💡 {AUFGABEN[schritt].merke}
+                </div>
+              )}
+            </>}
         punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -321,7 +364,7 @@ export default function StufeExplorer({
 
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
         <div
-          className="card overflow-hidden select-none"
+          className="rounded-2xl border border-line bg-surface overflow-hidden select-none"
           onContextMenu={rechtsklickFlaeche}
         >
           {/* Titelleiste */}
@@ -444,13 +487,13 @@ export default function StufeExplorer({
           </div>
         </div>
 
-        <aside className="card p-4 flex flex-col gap-3 h-fit">
+        <aside className="rounded-2xl border border-line bg-surface p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           <ul className="flex flex-col gap-1.5">
             {AUFGABEN.map((a, i) => (
               <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-muted" : "")}>
                 <span>{i < schritt ? "✅" : i === schritt ? "👉" : "⬜"}</span>
-                <span>{a}</span>
+                <span>{a.titel}</span>
               </li>
             ))}
           </ul>

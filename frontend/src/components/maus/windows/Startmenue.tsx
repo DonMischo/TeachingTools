@@ -10,6 +10,14 @@ import { AvatarDisplay } from "@/components/AvatarPicker";
 import { AppSymbol } from "./AppSymbol";
 import { APPS, SUCH_DATEIEN, suche, type AppId, type Treffer } from "@/lib/maus/windows";
 
+export type EinAus = "energiesparen" | "herunterfahren" | "neustart";
+
+const EIN_AUS: { id: EinAus; text: string; symbol: string }[] = [
+  { id: "energiesparen", text: "Energie sparen", symbol: "🌙" },
+  { id: "herunterfahren", text: "Herunterfahren", symbol: "⏻" },
+  { id: "neustart", text: "Neu starten", symbol: "↻" },
+];
+
 const GRUPPEN_TITEL: Record<Treffer["art"], string> = { app: "Apps", einstellung: "Einstellungen", datei: "Dokumente" };
 
 function TrefferZeile({ t, gross = false, onWahl, onKontext }: {
@@ -41,6 +49,7 @@ function TrefferZeile({ t, gross = false, onWahl, onKontext }: {
 export function Startmenue({
   suchText, onSuchText, angeheftet, onApp, onTreffer, onAppKontext,
   benutzer, profilTier = null, onSperren, dunkel, akzent, hilfe = false, autoFocusSuche = false, onSchliessen,
+  onEinAus, einAusOffen,
 }: {
   suchText: string;
   onSuchText: (t: string) => void;
@@ -56,9 +65,15 @@ export function Startmenue({
   hilfe?: boolean;
   autoFocusSuche?: boolean;
   onSchliessen?: () => void;
+  /** Ein/Aus-Knopf unten rechts. Ohne: nur ein Bild. */
+  onEinAus?: (wahl: EinAus) => void;
+  /** Ein/Aus-Menü von außen öffnen (Vorführung). */
+  einAusOffen?: boolean;
 }) {
   const eingabeRef = useRef<HTMLInputElement>(null);
   const [profilMenue, setProfilMenue] = useState(false);
+  const [einAusMenue, setEinAusMenue] = useState(false);
+  const einAusZeigen = einAusOffen ?? einAusMenue;
 
   useEffect(() => {
     if (autoFocusSuche) eingabeRef.current?.focus();
@@ -180,10 +195,39 @@ export function Startmenue({
           </button>
         )}
         <span className="flex-1" />
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          <path d="M12 3v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
+        <button
+          type="button"
+          data-einaus
+          aria-label="Ein/Aus"
+          title="Ein/Aus"
+          disabled={!onEinAus}
+          onClick={() => setEinAusMenue(m => !m)}
+          className={"rounded-lg p-2 " + (onEinAus ? "hover:bg-[#0000000f]" : "cursor-default")}
+        >
+          <svg viewBox="0 0 24 24" width={hilfe ? 24 : 18} height={hilfe ? 24 : 18} aria-hidden>
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M12 3v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        {einAusZeigen && onEinAus && (
+          <div
+            role="menu"
+            className={"absolute right-2 bottom-full mb-1 rounded-lg py-1 shadow-xl border flex flex-col min-w-[11em] " + (dunkel ? "bg-[#2b2b2b] border-[#ffffff1f]" : "bg-white border-[#0000001a]")}
+          >
+            {EIN_AUS.map(w => (
+              <button
+                key={w.id}
+                type="button"
+                role="menuitem"
+                data-einaus-wahl={w.id}
+                onClick={() => { setEinAusMenue(false); onEinAus(w.id); }}
+                className="flex items-center gap-3 px-3 py-1.5 text-sm text-left hover:bg-[#0000000f]"
+              >
+                <span className="w-4 text-center" aria-hidden>{w.symbol}</span>{w.text}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

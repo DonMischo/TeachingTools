@@ -34,7 +34,7 @@ import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Tippen from "@/components/tippen/Tippen";
-import MausFuehrerschein, { schluesselFuerGast } from "@/components/maus/MausFuehrerschein";
+import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
 
@@ -185,10 +185,14 @@ export default function SimulationJoinPage() {
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}
               name={auth?.student?.display_name ?? guest.session?.name}
-              // Angemeldete behalten ihren Stand je Konto, Gäste je Code und Gast-Id.
+              // Angemeldete behalten ihren Stand je Konto, Gäste je Namen (über
+              // Codes und Gast-Tokens hinweg); ein Stand unter der alten
+              // Gast-Id wird beim ersten Mal übernommen.
               speicherSchluessel={auth
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
-                : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`}
+                : schluesselFuerGastName(guest.session?.name ?? "")
+                  ?? (guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`)}
+              ersatzSchluessel={!auth && guest.token ? schluesselFuerGast(code, guest.token) : undefined}
               konto={auth ? { typ: auth.user_type === "student" ? "student" : "teacher" } : undefined}
               klasse={auth?.student?.klasse ?? null}
             />

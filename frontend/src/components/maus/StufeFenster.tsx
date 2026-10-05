@@ -3,12 +3,13 @@
  * Stufe »Fenster bedienen«: ein echter Windows-11-Bildschirm (WindowsDesktop)
  * mit einem Editor-Fenster.
  *
- * Zehn Aufgaben nacheinander — maximieren, wiederherstellen, minimieren,
- * zurückholen, verschieben, Größe ändern, Alt+Tab, schließen, Speichern
- * unter, die Datei im Explorer wiederfinden. Jede Aufgabe baut auf der
- * vorherigen auf, zählt aber einzeln.
+ * Acht Aufgaben nacheinander — maximieren, wiederherstellen, minimieren,
+ * zurückholen, verschieben, Größe ändern, Alt+Tab, schließen. Jede Aufgabe
+ * baut auf der vorherigen auf, zählt aber einzeln. Geschlossen wird ohne
+ * Rückfrage: im Fenster wurde nichts verändert. Schreiben, Speichern und
+ * Wiederfinden übt die nächste Stufe (StufeDatei).
  */
-import { useEffect, useRef, useState, type PointerEvent as ZeigerEreignis } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ZeigerEreignis, type ReactNode } from "react";
 import { AVATARS } from "@/components/AvatarPicker";
 import {
   DESKTOP, START_FENSTER, TASKLEISTE_HOEHE,
@@ -18,32 +19,75 @@ import {
 } from "@/lib/maus/fenster";
 import { type StufenErgebnis } from "@/lib/maus/ergebnis";
 import { wertung } from "@/lib/maus/wertung";
-import { baueDateisystem, neueDatei, type Dateisystem, type Knoten } from "@/lib/maus/dateisystem";
+import { baueDateisystem } from "@/lib/maus/dateisystem";
 import type { AppId } from "@/lib/maus/windows";
 import { useMausKontext, HILFE_GROESSE } from "./MausKontext";
 import { useWindows } from "./windows/WindowsKontext";
 import { WindowsDesktop } from "./windows/WindowsDesktop";
 import { AppSymbol } from "./windows/AppSymbol";
 import { ExplorerInhalt } from "./windows/ExplorerInhalt";
-import { SpeichernUnter } from "./windows/SpeichernUnter";
+import { FensterSymbol, KnopfImText } from "./windows/FensterSymbol";
 import { Stufenkopf } from "./Stufenkopf";
+import { Taste } from "./Taste";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 
 type AufgabeId =
   | "maximieren" | "wiederherstellen" | "minimieren" | "zurueckholen"
-  | "verschieben" | "groesse" | "altTab" | "schliessen" | "speichern" | "wiederfinden";
+  | "verschieben" | "groesse" | "altTab" | "schliessen";
 
-const AUFGABEN: { id: AufgabeId; text: string }[] = [
-  { id: "maximieren", text: "Fenster maximieren" },
-  { id: "wiederherstellen", text: "Fenster wiederherstellen" },
-  { id: "minimieren", text: "Fenster minimieren" },
-  { id: "zurueckholen", text: "Aus der Taskleiste zurückholen" },
-  { id: "verschieben", text: "Fenster verschieben" },
-  { id: "groesse", text: "Größe ändern" },
-  { id: "altTab", text: "Mit Alt + Tab wechseln" },
-  { id: "schliessen", text: "Fenster schließen" },
-  { id: "speichern", text: "Speichern unter" },
-  { id: "wiederfinden", text: "Datei wiederfinden" },
+/** Kleines Bild der Ecke unten rechts — wie im Fenster. */
+function EckeImText() {
+  return (
+    <span className="inline-flex items-center justify-center align-middle rounded-sm border-2 border-accent mx-0.5 w-6 h-6">
+      <svg viewBox="0 0 10 10" width="14" height="14" aria-hidden>
+        <path d="M9 1 L1 9 M9 5 L5 9" style={{ stroke: "currentColor" }} strokeWidth="1.4" />
+      </svg>
+    </span>
+  );
+}
+
+function TitelleisteImText() {
+  return (
+    <span className="inline-flex items-center align-middle rounded-sm border-2 border-accent bg-surface-hover mx-0.5 px-1.5 h-6 text-xs font-bold">
+      ✏️ Notizen – Editor
+    </span>
+  );
+}
+
+const AUFGABEN: { id: AufgabeId; text: string; symbol: ReactNode; auftrag: ReactNode }[] = [
+  {
+    id: "maximieren", text: "Fenster maximieren", symbol: <KnopfImText art="maximieren" />,
+    auftrag: <>Klick oben rechts im Fenster auf <KnopfImText art="maximieren" /> (<b>Maximieren</b>) — das Fenster füllt dann den ganzen Bildschirm.</>,
+  },
+  {
+    id: "wiederherstellen", text: "Fenster wiederherstellen", symbol: <KnopfImText art="wiederherstellen" />,
+    auftrag: <>Der Knopf sieht jetzt anders aus: zwei Rechtecke <KnopfImText art="wiederherstellen" />. Klick darauf (<b>Wiederherstellen</b>) — das Fenster bekommt seine alte Größe zurück.</>,
+  },
+  {
+    id: "minimieren", text: "Fenster minimieren", symbol: <KnopfImText art="minimieren" />,
+    auftrag: <>Klick auf <KnopfImText art="minimieren" /> (<b>Minimieren</b>) — das Fenster verschwindet in die Taskleiste.</>,
+  },
+  {
+    id: "zurueckholen", text: "Aus der Taskleiste zurückholen",
+    symbol: <span className="inline-flex align-middle mx-0.5"><AppSymbol id="editor" groesse={22} titel={false} /></span>,
+    auftrag: <>Hol das Fenster zurück: Klick unten in der <b>Taskleiste</b> auf das Editor-Symbol <span className="inline-flex align-middle mx-0.5"><AppSymbol id="editor" groesse={22} titel={false} /></span>.</>,
+  },
+  {
+    id: "verschieben", text: "Fenster verschieben", symbol: <TitelleisteImText />,
+    auftrag: <>Greif das Fenster an der <b>Titelleiste</b> <TitelleisteImText /> (Maustaste gedrückt halten) und zieh es in das gestrichelte Feld.</>,
+  },
+  {
+    id: "groesse", text: "Größe ändern", symbol: <EckeImText />,
+    auftrag: <>Das Fenster ist zurück in der Mitte — greif die <b>Ecke unten rechts</b> <EckeImText /> und zieh, bis es den gestrichelten Rahmen ausfüllt.</>,
+  },
+  {
+    id: "altTab", text: "Mit Alt + Tab wechseln", symbol: <><Taste>Alt</Taste>+<Taste>Tab</Taste></>,
+    auftrag: <>Halte <Taste>Alt</Taste> gedrückt und drücke <Taste>Tab</Taste>, um zu einem anderen Programm zu wechseln — und komm dann wieder hierher zurück.</>,
+  },
+  {
+    id: "schliessen", text: "Fenster schließen", symbol: <KnopfImText art="schliessen" />,
+    auftrag: <>Schließ das Fenster mit <KnopfImText art="schliessen" /> (<b>Schließen</b>). Du hast nichts hineingeschrieben — deshalb geht es ohne Rückfrage zu.</>,
+  },
 ];
 
 type Hinweis = { text: string; gut: boolean } | null;
@@ -55,16 +99,12 @@ export default function StufeFenster({
   const { aussehen, benutzer } = useWindows();
   const [nr, setNr] = useState(0);
   const [zustand, setZustand] = useState<FensterZustand>({ modus: "normal", pos: START_FENSTER });
-  const [titel, setTitel] = useState("Notizen");
   const [hinweis, setHinweis] = useState<Hinweis>(null);
-  const [dialog, setDialog] = useState(false);
-  const [speichernOffen, setSpeichernOffen] = useState(false);
   const [explorerOffen, setExplorerOffen] = useState(false);
   const [explorerOrdner, setExplorerOrdner] = useState("pc");
   const [aktivFenster, setAktivFenster] = useState<AppId | null>("editor");
-  const [fs, setFs] = useState<Dateisystem>(() => baueDateisystem(benutzer));
+  const [fs] = useState(() => baueDateisystem(benutzer));
   const [altTabHinweisText, setAltTabHinweisText] = useState<string | null>(null);
-  const gespeicherteDatei = useRef<{ ordner: string; id: string; name: string } | null>(null);
   const start = useRef(performance.now());
   const geloesteAufgaben = useRef(0);
   const fehlerZahl = useRef(0);
@@ -74,22 +114,15 @@ export default function StufeFenster({
   const minRef = useRef<HTMLButtonElement>(null);
   const schliessenRef = useRef<HTMLButtonElement>(null);
   const eckeRef = useRef<HTMLDivElement>(null);
-  const speichernRef = useRef<HTMLButtonElement>(null);
   const weggegangenSeit = useRef<number | null>(null);
   const zug = useRef<{ art: "verschieben" | "groesse"; x: number; y: number } | null>(null);
   // Nach der Vorführung steht alles wieder so da wie vorher — sonst wäre das
   // Fenster z. B. schon maximiert, oder der Explorer bliebe offen.
-  const vorDemo = useRef<{
-    zustand: FensterZustand; dialog: boolean; speichernOffen: boolean;
-    explorerOffen: boolean; explorerOrdner: string; aktivFenster: AppId | null;
-  } | null>(null);
+  const vorDemo = useRef<{ zustand: FensterZustand; explorerOffen: boolean; aktivFenster: AppId | null } | null>(null);
   const demo = useDemo(() => {
     if (vorDemo.current) {
       setZustand(vorDemo.current.zustand);
-      setDialog(vorDemo.current.dialog);
-      setSpeichernOffen(vorDemo.current.speichernOffen);
       setExplorerOffen(vorDemo.current.explorerOffen);
-      setExplorerOrdner(vorDemo.current.explorerOrdner);
       setAktivFenster(vorDemo.current.aktivFenster);
     }
     vorDemo.current = null;
@@ -139,13 +172,9 @@ export default function StufeFenster({
     return el.getBoundingClientRect().width / DESKTOP.w;
   }
 
-  function bildschirmOrt(el: Element | null) {
-    return mitte(el);
-  }
-
   // ── Kopfzeilen-Knöpfe ───────────────────────────────────────────────
   function klickMaximieren() {
-    if (demo.aktiv || dialog) return;
+    if (demo.aktiv) return;
     if (zustand.modus === "maximiert") {
       setZustand(wiederherstellen(zustand));
       geschafft("wiederherstellen", "Wiederhergestellt!");
@@ -156,93 +185,34 @@ export default function StufeFenster({
   }
 
   function doppelklickTitel() {
-    if (demo.aktiv || dialog || zustand.modus !== "maximiert") return;
+    if (demo.aktiv || zustand.modus !== "maximiert") return;
     setZustand(wiederherstellen(zustand));
     geschafft("wiederherstellen", "Wiederhergestellt!");
   }
 
   function klickMinimieren() {
-    if (demo.aktiv || dialog || zustand.modus === "minimiert") return;
+    if (demo.aktiv || zustand.modus === "minimiert") return;
     setZustand(minimieren(zustand));
     geschafft("minimieren", "Minimiert!");
   }
 
   function klickSchliessen() {
     if (demo.aktiv || zustand.modus === "minimiert") return;
-    setDialog(true);
-    setAktivFenster("editor");
-  }
-
-  function dialogAntwort(taste: "speichern" | "nicht" | "abbrechen") {
-    if (taste === "abbrechen") {
-      fehlerZahl.current += 1;
-      setHinweis({ text: "»Abbrechen« lässt das Fenster offen — wähle »Speichern«, um weiterzumachen.", gut: false });
+    if (aufgabe.id !== "schliessen") {
+      setHinweis({ text: "Noch nicht schließen — erst die anderen Aufgaben.", gut: false });
       return;
     }
-    if (taste === "nicht") {
-      setHinweis({ text: "Dann wären deine Notizen weg — wähle »Speichern«.", gut: false });
-      return;
-    }
-    setDialog(false);
-    setSpeichernOffen(true);
-    // Sofort weiter (kein Verzögerungs-Häkchen) — sonst wäre der Speichern-Dialog
-    // schon offen, während die Aufgabenliste noch bei »Fenster schließen« steht.
-    if (aufgabe.id === "schliessen") {
-      geloesteAufgaben.current += 1;
-      setNr(nr + 1);
-    }
-  }
-
-  function speichernAbgeschlossen(ordnerId: string, dateiname: string) {
-    if (aufgabe.id !== "speichern") return;
-    if (dateiname.toLowerCase() === "unbenannt.txt") {
-      fehlerZahl.current += 1;
-      setHinweis({ text: "Nimm lieber einen eigenen Namen, zum Beispiel »Meine Notizen« — nicht »Unbenannt«.", gut: false });
-      return;
-    }
-    const { fs: neuFs, id } = neueDatei(fs, ordnerId, dateiname, "editor");
-    setFs(neuFs);
-    gespeicherteDatei.current = { ordner: ordnerId, id, name: dateiname };
-    setSpeichernOffen(false);
     setZustand(schliessen(zustand));
     setAktivFenster(null);
-    geschafft("speichern", "Gespeichert!");
+    geschafft("schliessen", "Geschlossen! Nichts verändert — also auch keine Frage nach dem Speichern.");
   }
 
-  function speichernFehlgeschlagen() {
-    fehlerZahl.current += 1;
-  }
-
-  // ── Explorer ─────────────────────────────────────────────────────
+  // ── Explorer (zum Ausprobieren, keine Aufgabe) ─────────────────────
   function explorerOeffnen() {
     if (demo.aktiv) return;
     setExplorerOffen(true);
     setExplorerOrdner("pc");
     setAktivFenster("explorer");
-  }
-
-  function explorerOrdnerWechsel(id: string) {
-    if (fs[id]?.gesperrt) fehlerZahl.current += 1;
-    setExplorerOrdner(id);
-  }
-
-  function explorerDateiOeffnen(k: Knoten) {
-    if (aufgabe.id !== "wiederfinden") return;
-    if (gespeicherteDatei.current && k.id === gespeicherteDatei.current.id) {
-      setExplorerOffen(false);
-      setZustand({ modus: "normal", pos: START_FENSTER });
-      setTitel(k.name);
-      setAktivFenster("editor");
-      geschafft("wiederfinden", "Wiedergefunden!");
-    } else {
-      fehlerZahl.current += 1;
-      setHinweis({ text: "Das ist nicht deine gespeicherte Datei — schau noch einmal genau hin.", gut: false });
-    }
-  }
-
-  // ── Symbole & Taskleiste ──────────────────────────────────────────
-  function symbolDoppelklick(id: AppId) {
-    if (id === "dieserpc") explorerOeffnen();
   }
 
   function taskleisteKlick(id: AppId) {
@@ -260,10 +230,10 @@ export default function StufeFenster({
 
   // ── Verschieben & Größe ändern ────────────────────────────────────
   function titelGreifen(e: ZeigerEreignis) {
-    if (demo.aktiv || dialog || zustand.modus !== "normal" || e.button !== 0) return;
-    // Die Knöpfe ─ ▢ ✕ sitzen in der Titelleiste. Holte sich die Leiste den
-    // Zeiger schon beim Drücken auf einen Knopf, landete der Klick bei der
-    // Leiste statt beim Knopf — Maximieren tat dann nichts.
+    if (demo.aktiv || zustand.modus !== "normal" || e.button !== 0) return;
+    // Die Knöpfe sitzen in der Titelleiste. Holte sich die Leiste den Zeiger
+    // schon beim Drücken auf einen Knopf, landete der Klick bei der Leiste
+    // statt beim Knopf — Maximieren tat dann nichts.
     if ((e.target as HTMLElement).closest("button")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     zug.current = { art: "verschieben", x: e.clientX, y: e.clientY };
@@ -271,7 +241,7 @@ export default function StufeFenster({
   }
 
   function eckeGreifen(e: ZeigerEreignis) {
-    if (demo.aktiv || dialog || zustand.modus !== "normal" || e.button !== 0) return;
+    if (demo.aktiv || zustand.modus !== "normal" || e.button !== 0) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     zug.current = { art: "groesse", x: e.clientX, y: e.clientY };
@@ -339,26 +309,26 @@ export default function StufeFenster({
 
   // ── Vorführung je Aufgabe ────────────────────────────────────────
   function vorfuehren() {
-    vorDemo.current = { zustand, dialog, speichernOffen, explorerOffen, explorerOrdner, aktivFenster };
+    vorDemo.current = { zustand, explorerOffen, aktivFenster };
     let schritte: DemoSchritt[] = [];
     if (aufgabe.id === "maximieren") {
       schritte = [
-        { text: "Zeige auf den mittleren Knopf ▢ in der Titelleiste.", zu: () => bildschirmOrt(maxRef.current) },
+        { text: "Zeige oben rechts auf den mittleren Knopf: ein Rechteck.", zu: () => mitte(maxRef.current) },
         { text: "Klick — das Fenster füllt den Bildschirm.", taste: "links", aktion: () => setZustand(z => maximieren(z)) },
       ];
     } else if (aufgabe.id === "wiederherstellen") {
       schritte = [
-        { text: "Zeige wieder auf ▢.", zu: () => bildschirmOrt(maxRef.current) },
+        { text: "Der Knopf zeigt jetzt zwei Rechtecke: »Wiederherstellen«.", zu: () => mitte(maxRef.current) },
         { text: "Klick — das Fenster hat wieder seine alte Größe.", taste: "links", aktion: () => setZustand(z => wiederherstellen(z)) },
       ];
     } else if (aufgabe.id === "minimieren") {
       schritte = [
-        { text: "Zeige auf den linken Knopf ─.", zu: () => bildschirmOrt(minRef.current) },
+        { text: "Zeige auf den linken Knopf: der Strich.", zu: () => mitte(minRef.current) },
         { text: "Klick — das Fenster verschwindet in die Taskleiste.", taste: "links", aktion: () => setZustand(z => minimieren(z)) },
       ];
     } else if (aufgabe.id === "zurueckholen") {
       schritte = [
-        { text: "Zeige auf das Symbol in der Taskleiste.", zu: () => bildschirmOrt(document.querySelector('[data-taskleiste="editor"]')) },
+        { text: "Zeige unten in der Taskleiste auf das Editor-Symbol.", zu: () => mitte(document.querySelector('[data-taskleiste="editor"]')) },
         { text: "Klick — das Fenster ist wieder da.", taste: "links", aktion: () => setZustand(z => zurueckholen(z)) },
       ];
     } else if (aufgabe.id === "verschieben") {
@@ -370,14 +340,14 @@ export default function StufeFenster({
         return { x: r.left + (ZIEL_POSITION.x + zustand.pos.w / 2) * s, y: r.top + (ZIEL_POSITION.y + 20) * s };
       };
       schritte = [
-        { text: "Zeige auf die Titelleiste.", zu: () => bildschirmOrt(titelRef.current) },
+        { text: "Zeige auf die Titelleiste.", zu: () => mitte(titelRef.current) },
         { text: "Taste festhalten …", taste: "halten" },
         { text: "… und zum gestrichelten Feld ziehen.", taste: "halten", zu: zielOrt, ms: 1600 },
         { text: "Loslassen — das Fenster liegt im Ziel.", taste: null },
       ];
     } else if (aufgabe.id === "groesse") {
       schritte = [
-        { text: "Zeige auf die untere rechte Ecke.", zu: () => bildschirmOrt(eckeRef.current) },
+        { text: "Zeige auf die untere rechte Ecke.", zu: () => mitte(eckeRef.current) },
         { text: "Taste festhalten und nach außen ziehen …", taste: "halten" },
         { text: "… bis das Fenster den gestrichelten Rahmen ausfüllt.", taste: "halten", ms: 1600 },
         { text: "Loslassen. Groß genug!", taste: null },
@@ -390,23 +360,8 @@ export default function StufeFenster({
       ];
     } else if (aufgabe.id === "schliessen") {
       schritte = [
-        { text: "Zeige auf das ✕ oben rechts.", zu: () => bildschirmOrt(schliessenRef.current) },
-        { text: "Klick — es erscheint eine Frage.", taste: "links", aktion: () => setDialog(true) },
-        { text: "»Speichern« macht weiter, deine Notizen bleiben erhalten.", zu: () => bildschirmOrt(speichernRef.current), aktion: () => setDialog(true) },
-      ];
-    } else if (aufgabe.id === "speichern") {
-      schritte = [
-        { text: "Zeige im Dialog auf »Dokumente«.", zu: () => bildschirmOrt(document.querySelector('[data-nav="dokumente"]')) },
-        { text: "Klick — der Ordner ist ausgewählt.", taste: "links" },
-        { text: "Zeige auf das Namensfeld und gib einen eigenen Namen ein, z. B. »Meine Notizen«.", zu: () => bildschirmOrt(document.querySelector('[data-testid="dateiname"]')) },
-        { text: "Zeige auf »Speichern« und klick.", zu: () => bildschirmOrt(document.querySelector('[data-testid="speichern-knopf"]')), taste: "links" },
-      ];
-    } else if (aufgabe.id === "wiederfinden") {
-      schritte = [
-        { text: "Zeige auf »Dieser PC« auf dem Desktop.", zu: () => bildschirmOrt(document.querySelector('[data-desktop-symbol="dieserpc"]')), aktion: () => { setExplorerOffen(true); setExplorerOrdner("pc"); } },
-        { text: "Doppelklick — der Explorer öffnet sich.", taste: "doppel" },
-        { text: "Öffne »Dokumente« …", zu: () => bildschirmOrt(document.querySelector('[data-nav="dokumente"]')), aktion: () => setExplorerOrdner("dokumente") },
-        { text: "… und doppelklicke deine gespeicherte Datei.", taste: "doppel" },
+        { text: "Zeige oben rechts auf das ✕.", zu: () => mitte(schliessenRef.current) },
+        { text: "Klick — das Fenster ist zu. Nichts verändert, also keine Frage.", taste: "links", aktion: () => setZustand(z => schliessen(z)) },
       ];
     }
     demo.abspielen(schritte);
@@ -414,6 +369,7 @@ export default function StufeFenster({
 
   const hilfeGroesse = hilfe ? HILFE_GROESSE : 1;
   const knopfGroesse = 22 * hilfeGroesse;
+  const knopfSymbol = Math.round(11 * hilfeGroesse);
 
   const offenListe: AppId[] = [
     ...(zustand.modus !== "geschlossen" ? (["editor"] as AppId[]) : []),
@@ -424,19 +380,7 @@ export default function StufeFenster({
     <div className="flex flex-col gap-3">
       <Stufenkopf
         titel="🪟 Teil 2 · Fenster"
-        auftrag={fertig
-          ? <>Alle Aufgaben rund ums Fenster geschafft!</>
-          : <>{AUFGABEN[nr].id === "verschieben"
-              ? <>Ziehe das Fenster an der <b>Titelleiste</b> in das gestrichelte Feld.</>
-              : AUFGABEN[nr].id === "groesse"
-                ? <>Das Fenster ist zurück in der Mitte — zieh jetzt die <b>untere rechte Ecke</b>, bis es den gestrichelten Rahmen ausfüllt.</>
-                : AUFGABEN[nr].id === "altTab"
-                  ? <>Halte <b>Alt</b> gedrückt und drücke <b>Tab</b>, um zu einem anderen Programm zu wechseln — und komm dann wieder hierher zurück.</>
-                  : AUFGABEN[nr].id === "speichern"
-                    ? <>Speichere in <b>Dokumente</b> (oder einem anderen eigenen Ordner) unter einem eigenen Namen, z. B. »Meine Notizen«.</>
-                    : AUFGABEN[nr].id === "wiederfinden"
-                      ? <>Öffne den <b>Explorer</b> — über »Dieser PC« auf dem Desktop oder das Symbol in der Taskleiste — und öffne deine Datei wieder.</>
-                      : <>Aufgabe: <b>{AUFGABEN[nr].text}</b></>}</>}
+        auftrag={fertig ? <>Alle Aufgaben rund ums Fenster geschafft!</> : aufgabe.auftrag}
         punkte={punkteStand()}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -445,10 +389,10 @@ export default function StufeFenster({
         <span className="text-4xl">🪟</span>
       </Stufenkopf>
 
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm items-center">
         {AUFGABEN.map((a, i) => (
-          <li key={a.id} className={i === nr ? "font-bold" : i < nr ? "text-muted" : ""}>
-            {i < nr ? "✅" : i === nr ? "👉" : "⬜"} {a.text}
+          <li key={a.id} className={"flex items-center gap-1 " + (i === nr ? "font-bold" : i < nr ? "text-muted" : "")}>
+            {i < nr ? "✅" : i === nr ? "👉" : "⬜"} {a.symbol} {a.text}
           </li>
         ))}
       </ul>
@@ -464,7 +408,7 @@ export default function StufeFenster({
         taskleiste={["explorer"]}
         offen={offenListe}
         aktiv={aktivFenster}
-        onSymbol={symbolDoppelklick}
+        onSymbol={id => { if (id === "dieserpc") explorerOeffnen(); }}
         onTaskleiste={taskleisteKlick}
         rahmenRef={rahmenRef}
         className="mx-auto"
@@ -472,46 +416,6 @@ export default function StufeFenster({
         onPointerMove={zeigerBewegt}
         onPointerUp={zeigerLos}
         onPointerCancel={zeigerLos}
-        overlay={<>
-          {dialog && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-auto">
-              <div className="card shadow-xl p-4 flex flex-col gap-3 max-w-[260px]">
-                <p className="text-sm font-bold">Möchtest du die Änderungen speichern?</p>
-                <div className="flex flex-col gap-2 text-sm">
-                  <button ref={speichernRef} type="button" onClick={() => dialogAntwort("speichern")}
-                    className="btn-primary px-3 py-1.5 border border-accent">
-                    Speichern
-                  </button>
-                  <button type="button" onClick={() => dialogAntwort("nicht")}
-                    className="rounded-lg px-3 py-1.5 border border-line hover:border-accent">
-                    Nicht speichern
-                  </button>
-                  <button type="button" onClick={() => dialogAntwort("abbrechen")}
-                    className="rounded-lg px-3 py-1.5 border border-line hover:border-accent">
-                    Abbrechen
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {speichernOffen && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-auto">
-              <div style={{ width: "min(90%, 30em)" }}>
-                <SpeichernUnter
-                  fs={fs}
-                  startOrdner="dokumente"
-                  vorschlag="Unbenannt"
-                  endung=".txt"
-                  dunkel={aussehen.dunkel}
-                  hilfe={hilfe}
-                  onSpeichern={speichernAbgeschlossen}
-                  onAbbrechen={() => setSpeichernOffen(false)}
-                  onFehler={speichernFehlgeschlagen}
-                />
-              </div>
-            </div>
-          )}
-        </>}
       >
         {zustand.modus !== "geschlossen" && zustand.modus !== "minimiert" && (
           <div
@@ -533,16 +437,24 @@ export default function StufeFenster({
               style={{ height: 32 * hilfeGroesse }}
             >
               <span>✏️</span>
-              <span className="text-sm font-bold flex-1 truncate">{titel} – Editor</span>
+              <span className="text-sm font-bold flex-1 truncate">Notizen – Editor</span>
               <button ref={minRef} type="button" onClick={klickMinimieren}
                 className="rounded-sm hover:bg-surface flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Minimieren">─</button>
+                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Minimieren">
+                <FensterSymbol art="minimieren" groesse={knopfSymbol} />
+              </button>
               <button ref={maxRef} type="button" onClick={klickMaximieren}
                 className="rounded-sm hover:bg-surface flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Maximieren / Wiederherstellen">▢</button>
+                style={{ width: knopfGroesse, height: knopfGroesse }}
+                aria-label={zustand.modus === "maximiert" ? "Wiederherstellen" : "Maximieren"}
+                title={zustand.modus === "maximiert" ? "Wiederherstellen" : "Maximieren"}>
+                <FensterSymbol art={zustand.modus === "maximiert" ? "wiederherstellen" : "maximieren"} groesse={knopfSymbol} />
+              </button>
               <button ref={schliessenRef} type="button" onClick={klickSchliessen}
                 className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Schließen">✕</button>
+                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Schließen">
+                <FensterSymbol art="schliessen" groesse={knopfSymbol} />
+              </button>
             </div>
             <div className="flex-1 p-3 text-sm leading-relaxed overflow-hidden flex items-center justify-center gap-3">
               <span className="text-3xl">{AVATARS.find(a => a.id === avatar)?.emoji ?? "📝"}</span>
@@ -557,7 +469,7 @@ export default function StufeFenster({
                 aria-label="Größe ändern"
               >
                 <svg viewBox="0 0 10 10" className="w-full h-full opacity-60">
-                  <path d="M9 1 L1 9 M9 5 L5 9" stroke="var(--text-muted)" strokeWidth="1.2" />
+                  <path d="M9 1 L1 9 M9 5 L5 9" style={{ stroke: "var(--text-muted)" }} strokeWidth="1.2" />
                 </svg>
               </div>
             )}
@@ -600,16 +512,17 @@ export default function StufeFenster({
             <div className="flex items-center gap-2 px-2 shrink-0 bg-surface-hover border-b border-line" style={{ height: 32 * hilfeGroesse }}>
               <AppSymbol id="explorer" groesse={18} titel={false} />
               <span className="text-sm font-bold flex-1 truncate">Explorer</span>
-              <button type="button" onClick={() => setExplorerOffen(false)}
+              <button type="button" onClick={() => { setExplorerOffen(false); setAktivFenster("editor"); }}
                 className="rounded-sm hover:bg-red-500 hover:text-white flex items-center justify-center"
-                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Explorer schließen">✕</button>
+                style={{ width: knopfGroesse, height: knopfGroesse }} aria-label="Explorer schließen">
+                <FensterSymbol art="schliessen" groesse={knopfSymbol} />
+              </button>
             </div>
             <div className="flex-1 min-h-0">
               <ExplorerInhalt
                 fs={fs}
                 ordner={explorerOrdner}
-                onOrdner={explorerOrdnerWechsel}
-                onOeffnen={explorerDateiOeffnen}
+                onOrdner={setExplorerOrdner}
                 dunkel={aussehen.dunkel}
                 hilfe={hilfe}
               />

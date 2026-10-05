@@ -20,8 +20,8 @@ from api.tests.test_maus import als, schueler, _eintrag, _gast, _sitzung
 HAUSPUNKTE_JE_TEIL = 5
 
 TEIL_1_STUFEN = ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"]
-TEIL_2_STUFEN = ["scrollen", "tastatur", "explorer", "fenster", "screenshot"]
-TEIL_3_STUFEN = ["suche", "apps", "aussehen", "bedienhilfe", "taskleiste", "profil"]
+TEIL_2_STUFEN = ["scrollen", "tastatur", "explorer", "fenster", "datei"]
+TEIL_3_STUFEN = ["suche", "apps", "screenshot", "aussehen", "bedienhilfe", "taskleiste", "profil"]
 _TEILE = {1: TEIL_1_STUFEN, 2: TEIL_2_STUFEN, 3: TEIL_3_STUFEN}
 
 

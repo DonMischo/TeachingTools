@@ -62,7 +62,27 @@ describe("Maus-Führerschein: Bildschirmfoto", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
     act(() => { pasteBild(feld, bilddatei("bildschirm.png")); });
     await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
-    expect(screen.getAllByText(/Zieh die gespeicherte Datei hierher/)[0].closest("li")).toHaveClass("font-bold");
+    expect(screen.getByText(/Speichern und in IrfanView öffnen/).closest("li")).toHaveClass("font-bold");
+    vi.useRealTimers();
+  });
+
+  it("Aufgabe 3: dasselbe Bild noch einmal zählt nicht, ein neues per Strg + V schon", async () => {
+    vi.useFakeTimers();
+    naechsteGroesse = { breite: 1920, hoehe: 1080 };
+    const fertig = vi.fn();
+    render(<StufeScreenshot avatar="cat" onFertig={fertig} onWeiter={() => {}} />);
+    const feld = screen.getByTestId("einfuegen-feld");
+    act(() => { pasteBild(feld, new File(["eins"], "a.png", { type: "image/png" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    act(() => { pasteBild(feld, new File(["zwei"], "b.png", { type: "image/png" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    act(() => { pasteBild(feld, new File(["eins"], "a.png", { type: "image/png" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(screen.getByText(/noch das Bild von vorhin/)).toBeInTheDocument();
+    expect(fertig).not.toHaveBeenCalled();
+    act(() => { pasteBild(feld, new File(["drei"], "c.png", { type: "image/png" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    expect(fertig).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
 

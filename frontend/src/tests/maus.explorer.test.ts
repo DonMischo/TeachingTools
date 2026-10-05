@@ -40,6 +40,13 @@ describe("Explorer: Markieren", () => {
     expect(s.auswahl).toEqual(ids.slice(1, 5));
   });
 
+  it("zeigt alphabetisch — die vier Fächer liegen nicht nebeneinander", () => {
+    const ids = sichtbareDateien(anfangsStand()).map(d => d.id);
+    expect(ids).toEqual([
+      "deutsch", "einkaufsliste", "englisch", "ferien", "geburtstag", "klassenfoto", "mathe", "schullied", "technik",
+    ]);
+  });
+
   it("ohne Anker verhält sich Umschalt+Klick wie ein normaler Klick", () => {
     let s = anfangsStand();
     s = umschaltKlick(s, "mathe");

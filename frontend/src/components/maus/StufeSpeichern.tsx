@@ -41,11 +41,12 @@ export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: stri
     { id: "tastatur", icon: "⌨️", titel: "Tastatur" },
     { id: "explorer", icon: "📁", titel: "Dateien ordnen" },
     { id: "fenster", icon: "🪟", titel: "Fenster" },
-    { id: "screenshot", icon: "📸", titel: "Bildschirmfoto" },
+    { id: "datei", icon: "💽", titel: "Speichern & USB-Stick" },
   ],
   3: [
     { id: "suche", icon: "🔍", titel: "Windows-Suche" },
     { id: "apps", icon: "🧰", titel: "Welche App wofür?" },
+    { id: "screenshot", icon: "📸", titel: "Bildschirmfoto" },
     { id: "aussehen", icon: "🎨", titel: "Hintergrund & Farben" },
     { id: "bedienhilfe", icon: "🔎", titel: "Zeiger & Textgröße" },
     { id: "taskleiste", icon: "📌", titel: "Taskleiste & Start" },
@@ -55,8 +56,8 @@ export const BLATT_STUFEN: Record<Teil, { id: StufeId; icon: string; titel: stri
 
 const UNTERTITEL: Record<Teil, string> = {
   1: "Grundkurs: Maus und Tastatur",
-  2: "Teil 2: Tastatur, Dateien und Fenster",
-  3: "Teil 3: Suchen, Apps und Aussehen",
+  2: "Teil 2: Tastatur, Dateien, Fenster und Speichern",
+  3: "Teil 3: Suchen, Apps, Bildschirmfoto und Aussehen",
 };
 
 const zahl = (n: number) => n.toLocaleString("de-DE");

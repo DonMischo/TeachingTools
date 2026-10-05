@@ -242,8 +242,8 @@ router_sitzung = APIRouter(prefix="/api/maus", tags=["maus"])
 # Stufen je Teil des Führerscheins.
 TEILE: dict[int, list[str]] = {
     1: ["klick", "doppelklick", "rechtsklick", "ziehen", "markieren", "kopieren"],
-    2: ["scrollen", "tastatur", "explorer", "fenster", "screenshot"],
-    3: ["suche", "apps", "aussehen", "bedienhilfe", "taskleiste", "profil"],
+    2: ["scrollen", "tastatur", "explorer", "fenster", "datei"],
+    3: ["suche", "apps", "screenshot", "aussehen", "bedienhilfe", "taskleiste", "profil"],
 }
 STUFEN: set[str] = {sid for ids in TEILE.values() for sid in ids}
 

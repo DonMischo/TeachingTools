@@ -23,6 +23,7 @@ export const RICHTZEIT_S: Partial<Record<StufeId, number>> = {
   tastatur: 120,
   explorer: 120,
   fenster: 180,
+  datei: 180,
   screenshot: 150,
   suche: 90,
   apps: 180,

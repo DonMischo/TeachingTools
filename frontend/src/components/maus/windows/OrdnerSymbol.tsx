@@ -36,6 +36,17 @@ function Aufdruck({ art }: { art: OrdnerArt }) {
 }
 
 export function OrdnerSymbol({ knoten, groesse = 40 }: { knoten: Pick<Knoten, "art" | "ordnerArt">; groesse?: number | string }) {
+  if (knoten.art === "laufwerk" && knoten.ordnerArt === "usb") {
+    return (
+      <svg viewBox="0 0 48 48" width={groesse} height={groesse} aria-hidden>
+        <rect x="16" y="4" width="16" height="12" rx="1.5" fill="#cbd5e1" stroke="#64748b" strokeWidth="1.5" />
+        <rect x="20" y="7" width="3" height="3" fill="#64748b" />
+        <rect x="25" y="7" width="3" height="3" fill="#64748b" />
+        <rect x="12" y="15" width="24" height="29" rx="4" fill="#2563eb" stroke="#1e3a8a" strokeWidth="1.5" />
+        <circle cx="24" cy="37" r="2" fill="#bfdbfe" />
+      </svg>
+    );
+  }
   if (knoten.art === "laufwerk") {
     return (
       <svg viewBox="0 0 48 48" width={groesse} height={groesse} aria-hidden>

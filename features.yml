@@ -366,8 +366,9 @@ simulationen:
     name: Maus-Führerschein
     faehigkeiten: {use: [true, true]}
     kann:
-      - PC-Grundkurs in drei Teilen (Maus / Tastatur, Dateien, Fenster / Suchen, Apps, Aussehen)
-      - Nachgebautes Windows mit Explorer, Fenstern, Speichern-unter, Bildschirmfoto
+      - PC-Grundkurs in drei Teilen (Maus / Tastatur, Dateien, Fenster, Speichern / Suchen, Apps, Bildschirmfoto, Aussehen)
+      - Nachgebautes Windows mit Explorer, Fenstern, Editor mit Speichern-unter, USB-Stick, Herunterfahren, Bildschirmfoto
+      - Tastenkappen im Aufgabentext mit Tastatur beim Draufzeigen
       - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
       - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
       - Klassenübersicht und Bestenlisten

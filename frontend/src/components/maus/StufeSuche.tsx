@@ -127,6 +127,8 @@ export default function StufeSuche({
   }
 
   function vorfuehren() {
+    // Die Vorführung zeigt nur — sie löst keine Aufgabe (onEnde räumt Fenster und Startmenü weg).
+    const treffpunkt = (id: string) => () => mitte(rahmen.current?.querySelector(`[data-treffer="${id}"]`) ?? null);
     const schritte: DemoSchritt[] = [
       { text: "Zeige auf die Suche.", zu: () => mitte(rahmen.current?.querySelector("[data-suche]") ?? null), aktion: () => setStartOffen(true) },
       { text: "Klicken …", taste: "links" },
@@ -134,22 +136,22 @@ export default function StufeSuche({
     if (schritt === 0) {
       schritte.push(
         { text: "»paint« tippen.", tasten: ["KeyP", "KeyA", "KeyI", "KeyN", "KeyT"], aktion: () => setSuchText("paint") },
-        { text: "Auf Paint klicken.", taste: "links", aktion: () => { oeffneFenster("app:paint", "Paint", "paint"); weiterSchritt("Paint ist offen! ⭐"); } },
+        { text: "Auf Paint klicken.", zu: treffpunkt("app:paint"), taste: "links", aktion: () => { schliesseStart(); oeffneFenster("app:paint", "Paint", "paint"); } },
       );
     } else if (schritt === 1) {
       schritte.push(
         { text: "»referat« tippen.", tasten: ["KeyR", "KeyE", "KeyF"], aktion: () => setSuchText("referat") },
-        { text: "Auf die Datei klicken.", taste: "links", aktion: () => { oeffneFenster("datei:referat", "Referat Planeten.docx", "word"); weiterSchritt("Gefunden und geöffnet! ⭐"); } },
+        { text: "Auf die Datei klicken.", zu: treffpunkt("datei:referat"), taste: "links", aktion: () => { schliesseStart(); oeffneFenster("datei:referat", "Referat Planeten.docx", "word"); } },
       );
     } else if (schritt === 2) {
       schritte.push(
         { text: "»dunkel« tippen.", tasten: ["KeyD", "KeyU"], aktion: () => setSuchText("dunkel") },
-        { text: "Auf »Farben« klicken.", taste: "links", aktion: () => { oeffneFenster("einstellung:farben", "Einstellungen – Farben", "einstellungen"); weiterSchritt("Die Einstellung ist offen! ⭐"); } },
+        { text: "Auf »Farben« klicken.", zu: treffpunkt("einstellung:farben"), taste: "links", aktion: () => { schliesseStart(); oeffneFenster("einstellung:farben", "Einstellungen – Farben", "einstellungen"); } },
       );
     } else {
       schritte.push(
         { text: "»rech« tippen — mehr braucht es nicht.", tasten: ["KeyR", "KeyE", "KeyC", "KeyH"], aktion: () => setSuchText("rech") },
-        { text: "Eingabetaste drücken.", tasten: ["Enter"], aktion: () => { oeffneFenster("app:rechner", "Rechner", "rechner"); weiterSchritt("Nur ein paar Buchstaben reichen! ⭐"); } },
+        { text: "Eingabetaste drücken.", tasten: ["Enter"], aktion: () => { schliesseStart(); oeffneFenster("app:rechner", "Rechner", "rechner"); } },
       );
     }
     demo.abspielen(schritte);

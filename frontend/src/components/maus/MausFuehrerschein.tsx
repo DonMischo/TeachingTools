@@ -3,7 +3,8 @@
  * Der Maus-Führerschein — Grundkurs am Computer für Kinder ab etwa zehn.
  *
  * Teil 1: Klicken, Doppelklick, Rechtsklick, Ziehen, Markieren, Kopieren —
- * Teil 2: Scrollen, Tastatur, Dateien ordnen, Fenster, Bildschirmfoto. Jeder
+ * Teil 2: Scrollen, Tastatur, Dateien ordnen, Fenster, Speichern & USB-Stick;
+ * Teil 3: Suchen, Apps, Bildschirmfoto, Aussehen. Jeder
  * Teil endet mit einem Blatt zum Speichern. Jede Stufe hat »Vorführen« und
  * »Weiter«; Sterne zeigen, wie gut sie lief.
  *
@@ -37,6 +38,7 @@ import StufeScrollen from "./StufeScrollen";
 import StufeTastatur from "./StufeTastatur";
 import StufeExplorer from "./StufeExplorer";
 import StufeFenster from "./StufeFenster";
+import StufeDatei from "./StufeDatei";
 import StufeScreenshot from "./StufeScreenshot";
 import StufeSuche from "./StufeSuche";
 import StufeApps from "./StufeApps";
@@ -64,10 +66,11 @@ const REITER: { id: ReiterId; icon: string; label: string; teil: Teil | 0 }[] = 
   { id: "tastatur", icon: "⌨️", label: "Tastatur", teil: 2 },
   { id: "explorer", icon: "📁", label: "Dateien", teil: 2 },
   { id: "fenster", icon: "🪟", label: "Fenster", teil: 2 },
-  { id: "screenshot", icon: "📸", label: "Bildschirmfoto", teil: 2 },
+  { id: "datei", icon: "💽", label: "Speichern & USB-Stick", teil: 2 },
   { id: "speichern2", icon: "💾", label: "Urkunde", teil: 2 },
   { id: "suche", icon: "🔍", label: "Suchen", teil: 3 },
   { id: "apps", icon: "🧰", label: "Welche App?", teil: 3 },
+  { id: "screenshot", icon: "📸", label: "Bildschirmfoto", teil: 3 },
   { id: "aussehen", icon: "🎨", label: "Hintergrund & Farben", teil: 3 },
   { id: "bedienhilfe", icon: "🔎", label: "Zeiger & Text", teil: 3 },
   { id: "taskleiste", icon: "📌", label: "Taskleiste & Start", teil: 3 },
@@ -110,6 +113,18 @@ export function schluesselFuerGast(code: string, token: string): string {
   }
 }
 
+/**
+ * Speicherschlüssel für einen Gast nach seinem Namen — so findet ein Kind
+ * seinen Stand wieder, auch mit neuem Code oder nach Ablauf des Gast-Tokens.
+ * Groß-/Kleinschreibung und Leerzeichen zählen nicht (»mia « = »Mia«). Gilt
+ * nur in diesem Browser; zwei gleichnamige Kinder am selben Rechner teilen
+ * sich den Stand (so gewollt, ohne Rückfrage).
+ */
+export function schluesselFuerGastName(name: string): string | null {
+  const n = name.trim().toLowerCase().replace(/\s+/g, " ");
+  return n ? `gast-name-${n}` : null;
+}
+
 function stand(ergebnisse: Ergebnisse): MausStufenStand {
   const aus: MausStufenStand = {};
   for (const [id, e] of Object.entries(ergebnisse)) {
@@ -140,12 +155,12 @@ function laden(schluessel: string): Gespeichert | null {
 
 /**
  * `vorgabe` (TaskCrawler-Station): `{ reiter: <Stufen-Id> }` legt die Stufe fest (klick, doppelklick,
- * rechtsklick, ziehen, markieren, kopieren, scrollen, tastatur, explorer, fenster, screenshot,
- * suche, apps, aussehen, bedienhilfe, taskleiste, profil) und blendet Stufenleiste, Prüfungen
+ * rechtsklick, ziehen, markieren, kopieren, scrollen, tastatur, explorer, fenster, datei,
+ * suche, apps, screenshot, aussehen, bedienhilfe, taskleiste, profil) und blendet Stufenleiste, Prüfungen
  * und »Weiter« aus.
  */
 export default function MausFuehrerschein({
-  action, zugang, name = "", speicherSchluessel = "lokal", konto, klasse, verwaltung = false, vorgabe,
+  action, zugang, name = "", speicherSchluessel = "lokal", ersatzSchluessel, konto, klasse, verwaltung = false, vorgabe,
 }: {
   action?: ReactNode;
   vorgabe?: Vorgabe;
@@ -155,6 +170,8 @@ export default function MausFuehrerschein({
   name?: string;
   /** Wessen Fortschritt im Browser liegt (Konto oder Gast). */
   speicherSchluessel?: string;
+  /** Älterer Schlüssel, aus dem ein noch leerer Stand einmalig übernommen wird. */
+  ersatzSchluessel?: string;
   /** Angemeldet? Nur Schülerkonten bekommen Hauspunkte. */
   konto?: { typ: "student" | "teacher" };
   klasse?: string | null;
@@ -194,7 +211,7 @@ export default function MausFuehrerschein({
   // Fortschritt laden — und als schon gemeldet vormerken, sonst ginge jede
   // Neuladung erneut an die Bestenliste.
   useEffect(() => {
-    const g = laden(schluessel);
+    const g = laden(schluessel) ?? (ersatzSchluessel ? laden(`hp_maus_${ersatzSchluessel}`) : null);
     setErgebnisse(g?.ergebnisse ?? {});
     setBestanden(g?.bestanden ?? []);
     setHilfe(g?.hilfe ?? false);
@@ -205,7 +222,7 @@ export default function MausFuehrerschein({
       ziehen: e.ziehen?.punkte ?? 0, gesamt: gesamt(e),
     };
     setGeladen(true);
-  }, [schluessel]);
+  }, [schluessel, ersatzSchluessel]);
 
   useEffect(() => {
     if (!geladen) return;
@@ -231,7 +248,7 @@ export default function MausFuehrerschein({
         modus,
         wert: Math.min(wert, GRENZEN[modus]),
         dauer_ms: e ? e.dauerMs : Object.values(ergebnisse).reduce((s, x) => s + (x?.dauerMs ?? 0), 0),
-        kontext: e ? e.details[0] ?? "" : `Teil 1: ${anzahl(1)}/6 · Teil 2: ${anzahl(2)}/5 · Teil 3: ${anzahl(3)}/6`,
+        kontext: e ? e.details[0] ?? "" : ([1, 2, 3] as Teil[]).map(t => `Teil ${t}: ${anzahl(t)}/${TEILE[t].length}`).join(" · "),
         hilfe,
       }, zugang).catch(() => {});
     }
@@ -322,6 +339,7 @@ export default function MausFuehrerschein({
       case "tastatur": return <StufeTastatur key={key} {...p} avatar={tier} />;
       case "explorer": return <StufeExplorer key={key} {...p} avatar={tier} />;
       case "fenster": return <StufeFenster key={key} {...p} avatar={tier} />;
+      case "datei": return <StufeDatei key={key} {...p} avatar={tier} />;
       case "screenshot": return <StufeScreenshot key={key} {...p} avatar={tier} />;
       case "suche": return <StufeSuche key={key} {...p} avatar={tier} />;
       case "apps": return <StufeApps key={key} {...p} avatar={tier} />;
