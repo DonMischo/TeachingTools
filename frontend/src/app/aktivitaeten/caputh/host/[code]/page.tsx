@@ -381,8 +381,8 @@ export default function HostPage() {
 
   const confirmModal = confirmDialog ? (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center" onClick={() => setConfirmDialog(null)}>
-      <div className="bg-(--surface) border border-(--border) rounded-2xl p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
-        <p className="text-(--text) text-base">{confirmDialog.msg}</p>
+      <div className="card p-6 flex flex-col gap-4 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+        <p className="text-fg text-base">{confirmDialog.msg}</p>
         <div className="flex gap-3 justify-end">
           <button onClick={() => setConfirmDialog(null)} className="btn-secondary px-4 py-2">Abbrechen</button>
           <button onClick={() => { confirmDialog.onYes(); setConfirmDialog(null); }} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 font-semibold">Ja</button>
@@ -606,7 +606,7 @@ export default function HostPage() {
               <button
                 onClick={() => send("start")}
                 disabled={phase.participantCount === 0}
-                className="btn-primary px-10 py-4 text-xl font-bold rounded-2xl disabled:opacity-40"
+                className="btn-primary px-10 py-4 text-xl font-bold rounded-2xl"
               >
                 Caputh starten 🚀
               </button>
@@ -718,7 +718,7 @@ export default function HostPage() {
         {q.type === "karte" && currentKarte.current ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 min-h-0 overflow-y-auto">
             <p className="text-gray-400 text-sm">Schüler benennen oder finden die Objekte auf der Karte…</p>
-            <div className="w-full max-w-4xl bg-(--bg) text-(--text) rounded-2xl p-4">
+            <div className="w-full max-w-4xl bg-page text-fg rounded-2xl p-4">
               <KartenBrett brett={currentKarte.current} antwort={{ antworten: {} }} disabled />
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function HostPage() {
                 ? "Schüler ziehen die Karten an die richtige Stelle…"
                 : "Schüler suchen die falsch platzierten Einträge…"}
             </p>
-            <div className="w-full max-w-3xl bg-(--bg) text-(--text) rounded-2xl p-4">
+            <div className="w-full max-w-3xl bg-page text-fg rounded-2xl p-4">
               <TimelineGameBoard board={phase.timeline} answer={{}} disabled />
             </div>
           </div>
@@ -815,11 +815,11 @@ export default function HostPage() {
           <h2 className="text-2xl font-bold whitespace-pre-line leading-snug"><MathText text={q.text} /></h2>
           <div className="flex flex-col gap-3 flex-1 justify-center">
             {q.type === "karte" && phase.karte && phase.kartenLoesung ? (
-              <div className="w-full max-w-4xl mx-auto bg-(--bg) text-(--text) rounded-2xl p-4">
+              <div className="w-full max-w-4xl mx-auto bg-page text-fg rounded-2xl p-4">
                 <KartenBrett brett={phase.karte} antwort={{ antworten: {} }} disabled loesung={phase.kartenLoesung} />
               </div>
             ) : q.type === "timeline" && phase.timelineSolution?.axis ? (
-              <div className="w-full max-w-3xl mx-auto bg-(--bg) text-(--text) rounded-2xl p-4">
+              <div className="w-full max-w-3xl mx-auto bg-page text-fg rounded-2xl p-4">
                 <TimelineGameBoard
                   board={{
                     mode: phase.timelineSolution.mode,

@@ -64,7 +64,7 @@ function ResultCell({
         }}
         className="input text-xs py-1 px-2 w-24"
       />
-      <span className="absolute right-1 top-1 text-[10px] text-(--text-muted)">
+      <span className="absolute right-1 top-1 text-[10px] text-muted">
         {saving ? "⏳" : saved ? "✓" : result?.points != null ? result.points : ""}
       </span>
     </div>
@@ -106,9 +106,9 @@ export default function SportfestErgebnissePage() {
   if (!isTeacher) return null;
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 max-w-seite mx-auto w-full">
       <div className="flex items-center gap-4 flex-wrap">
-        <Link href="/tools/sportfest" className="text-sm text-(--text-muted) hover:text-(--text) transition-colors shrink-0">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-muted hover:text-fg transition-colors shrink-0">← Sportfest</Link>
         <h1 className="text-xl font-black tracking-tight">✏️ Ergebnisse erfassen</h1>
         <select value={klasse} onChange={e => setKlasse(e.target.value)} className="input text-sm py-1.5 w-24">
           {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -116,14 +116,14 @@ export default function SportfestErgebnissePage() {
       </div>
 
       {students.length === 0 ? (
-        <div className="text-(--text-muted) text-sm p-4 border border-dashed border-(--border) rounded-2xl text-center">
+        <div className="text-muted text-sm p-4 border border-dashed border-line rounded-2xl text-center">
           Keine Schüler für Klasse {klasse}. Bitte zuerst CSV importieren.
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-(--border) text-xs text-(--text-muted)">
+              <tr className="border-b border-line text-xs text-muted">
                 <th className="text-left px-3 py-2">Nr</th>
                 <th className="text-left px-3 py-2">Name</th>
                 <th className="text-left px-3 py-2">Geschl.</th>
@@ -134,10 +134,10 @@ export default function SportfestErgebnissePage() {
             </thead>
             <tbody>
               {students.map(s => (
-                <tr key={s.id} className="border-b border-(--border)/50">
-                  <td className="px-3 py-1.5 text-(--text-muted)">{s.nummer ?? ""}</td>
+                <tr key={s.id} className="border-b border-line/50">
+                  <td className="px-3 py-1.5 text-muted">{s.nummer ?? ""}</td>
                   <td className="px-3 py-1.5 font-medium whitespace-nowrap">{s.nachname}, {s.vorname}</td>
-                  <td className="px-3 py-1.5 text-(--text-muted)">
+                  <td className="px-3 py-1.5 text-muted">
                     {/* Ohne den Schalter »Geschlecht anzeigen« liefert das
                         Backend hier null — dann »—« statt fälschlich »w«. */}
                     {s.geschlecht === "männlich" ? "m" : s.geschlecht === "weiblich" ? "w" : "—"}

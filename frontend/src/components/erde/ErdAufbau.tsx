@@ -38,29 +38,29 @@ export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vor
   const festerReiter = wahl(vorgabe, "reiter", ["keil", "profil", "wellen", "konvektion", "wissen"] as const);
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "keil");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🌍 Aufbau der Erde</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Von der Kruste bis zum Kern: Schichten, Gesteine, Minerale, Temperatur, Druck, Zähigkeit — und wie man das ohne Bohrloch herausgefunden hat.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-              reiter === r.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
+              reiter === r.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
             {r.icon} {r.label}
           </button>
         ))}
       </div>}
 
       {reiter === "keil" && (
-        <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-sm text-(--text-muted)">Lade 3D …</div>}>
+        <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-sm text-muted">Lade 3D …</div>}>
           <Keil3D />
         </Suspense>
       )}
@@ -74,7 +74,7 @@ export default function ErdAufbau({ action, vorgabe }: { action?: ReactNode; vor
 
 function Karte({ titel, children }: { titel: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
+    <section className="card p-4 text-sm leading-relaxed flex flex-col gap-2">
       <h3 className="font-black text-base">{titel}</h3>
       {children}
     </section>
@@ -124,7 +124,7 @@ function Wissen() {
       <Karte titel="📋 Alle Schichten im Überblick">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead><tr className="text-left text-(--text-muted)"><th className="pr-2">Schicht</th><th className="pr-2">Tiefe km</th><th className="pr-2">Zustand</th><th>Hauptmineral</th></tr></thead>
+            <thead><tr className="text-left text-muted"><th className="pr-2">Schicht</th><th className="pr-2">Tiefe km</th><th className="pr-2">Zustand</th><th>Hauptmineral</th></tr></thead>
             <tbody className="align-top">
               {SCHICHTEN.map(s => (
                 <tr key={s.id}>

@@ -26,7 +26,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl border border-(--border) p-5 shadow-2xl"
+      <div className="w-full max-w-sm rounded-2xl border border-line p-5 shadow-2xl"
         style={{ background: "var(--bg)" }} onClick={e => e.stopPropagation()}>
         <h3 className="text-base font-semibold mb-3">{title}</h3>
         {children}
@@ -40,9 +40,9 @@ function ConfirmDialog({
 }: { title: string; message: string; confirmLabel?: string; onConfirm: () => void; onClose: () => void }) {
   return (
     <Modal title={title} onClose={onClose}>
-      <p className="text-sm text-(--text-muted) mb-5">{message}</p>
+      <p className="text-sm text-muted mb-5">{message}</p>
       <div className="flex justify-end gap-2">
-        <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)" onClick={onClose}>Abbrechen</button>
+        <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
         <button className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white font-semibold hover:opacity-90"
           onClick={() => { onConfirm(); onClose(); }}>{confirmLabel}</button>
       </div>
@@ -62,10 +62,10 @@ function AddTabDialog({ existing, onAdd, onClose }: { existing: string[]; onAdd:
         placeholder="z. B. Quellen" maxLength={50}
         onKeyDown={e => { if (e.key === "Enter" && valid) { onAdd(trimmed); onClose(); } }} />
       {dupe && <p className="text-xs text-red-500 mt-1">Dieser Tab existiert bereits.</p>}
-      <p className="text-[11px] text-(--text-muted) mt-2">Neue Tabs erscheinen vor „Archiv".</p>
+      <p className="text-[11px] text-muted mt-2">Neue Tabs erscheinen vor „Archiv".</p>
       <div className="flex justify-end gap-2 mt-5">
-        <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)" onClick={onClose}>Abbrechen</button>
-        <button className="px-4 py-2 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+        <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
+        <button className="btn-primary px-4 py-2 text-sm"
           disabled={!valid} onClick={() => { onAdd(trimmed); onClose(); }}>Hinzufügen</button>
       </div>
     </Modal>
@@ -96,8 +96,8 @@ function TabBar({
   };
 
   return (
-    <div className="flex items-stretch h-12 border-b border-(--border) mb-4 select-none">
-      <button className="px-1.5 text-(--text-muted) hover:text-(--text) shrink-0" onClick={() => scrollByPx(-180)} title="Zurück">‹</button>
+    <div className="flex items-stretch h-12 border-b border-line mb-4 select-none">
+      <button className="px-1.5 text-muted hover:text-fg shrink-0" onClick={() => scrollByPx(-180)} title="Zurück">‹</button>
       {/* overflow-hidden on BOTH axes: setting only overflow-x:hidden makes the
           browser compute overflow-y as auto, which adds a stray vertical scrollbar.
           Scrolling still works here because it is driven programmatically. */}
@@ -105,22 +105,22 @@ function TabBar({
         {tabs.map(t => (
           <button key={t} data-tab={t}
             className={`px-3 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors shrink-0 ${
-              active === t ? "border-(--accent) text-(--text) font-semibold" : "border-transparent text-(--text-muted) hover:text-(--text)"}`}
+              active === t ? "border-accent text-fg font-semibold" : "border-transparent text-muted hover:text-fg"}`}
             onClick={() => onSelect(t)}>
             {tabLabel(t)}
           </button>
         ))}
       </div>
-      <button className="px-1.5 text-(--text-muted) hover:text-(--text) shrink-0" onClick={() => scrollByPx(180)} title="Weiter">›</button>
+      <button className="px-1.5 text-muted hover:text-fg shrink-0" onClick={() => scrollByPx(180)} title="Weiter">›</button>
       <div className="relative shrink-0">
-        <button className="px-1.5 h-full text-(--text-muted) hover:text-(--text)" onClick={() => setMenuOpen(v => !v)} title="Alle Tabs">▾</button>
+        <button className="px-1.5 h-full text-muted hover:text-fg" onClick={() => setMenuOpen(v => !v)} title="Alle Tabs">▾</button>
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-lg border border-(--border) bg-(--bg) shadow-xl py-1 min-w-[160px]">
+            <div className="absolute right-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-lg border border-line bg-page shadow-xl py-1 min-w-[160px]">
               {tabs.map(t => (
                 <button key={t} onClick={() => selectAndReveal(t)}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-(--surface-hover) ${active === t ? "text-(--accent) font-semibold" : "text-(--text)"}`}>
+                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover ${active === t ? "text-accent font-semibold" : "text-fg"}`}>
                   {tabLabel(t)}
                 </button>
               ))}
@@ -129,7 +129,7 @@ function TabBar({
         )}
       </div>
       {canManage && onAdd && (
-        <button className="px-2 shrink-0 text-(--text-muted) hover:text-(--accent)" onClick={onAdd} title="Tab hinzufügen">＋</button>
+        <button className="px-2 shrink-0 text-muted hover:text-accent" onClick={onAdd} title="Tab hinzufügen">＋</button>
       )}
     </div>
   );
@@ -172,7 +172,7 @@ function FragmentCard({
 
   return (
     <div
-      className={`group relative rounded-xl border border-(--border) bg-(--bg) p-3 flex flex-col ${layout === "list" ? "h-32" : "h-52"}`}
+      className={`group relative rounded-xl border border-line bg-page p-3 flex flex-col ${layout === "list" ? "h-32" : "h-52"}`}
       onDragOver={canReorder ? (e) => e.preventDefault() : undefined}
       onDrop={canReorder ? () => onDropCard?.() : undefined}
     >
@@ -180,7 +180,7 @@ function FragmentCard({
         <span
           draggable
           onDragStart={onDragStartCard}
-          className="absolute top-1 right-1.5 cursor-grab select-none text-(--text-muted) opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-1 right-1.5 cursor-grab select-none text-muted opacity-0 group-hover:opacity-100 transition-opacity"
           title="Ziehen zum Sortieren"
         >⠿</span>
       )}
@@ -193,25 +193,25 @@ function FragmentCard({
         onBlur={() => title !== (frag.title ?? "") && save({ title: title.trim() || null })}
       />
       <textarea
-        className="flex-1 resize-none bg-transparent text-sm outline-hidden text-(--text) placeholder:text-(--text-muted)"
+        className="flex-1 resize-none bg-transparent text-sm outline-hidden text-fg placeholder:text-muted"
         value={content}
         disabled={!editable}
         placeholder={editable ? "Text…" : ""}
         onChange={e => { setContent(e.target.value); scheduleSave(e.target.value); }}
         onBlur={() => { if (timer.current) clearTimeout(timer.current); if (content !== (frag.content ?? "")) save({ content }); }}
       />
-      <div className="flex items-center justify-between text-[10px] text-(--text-muted) pt-1 gap-2">
+      <div className="flex items-center justify-between text-[10px] text-muted pt-1 gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           {editingCat ? (
             <input autoFocus value={category} onChange={e => setCategory(e.target.value)}
               onBlur={() => { setEditingCat(false); if (category !== (frag.category ?? "")) save({ category: category.trim() || null }); }}
               onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") (e.target as HTMLInputElement).blur(); }}
-              placeholder="Label…" className="bg-(--surface-hover) rounded-sm px-1.5 py-0.5 outline-hidden w-20 text-[10px]" />
+              placeholder="Label…" className="bg-surface-hover rounded-sm px-1.5 py-0.5 outline-hidden w-20 text-[10px]" />
           ) : category ? (
-            <button className="bg-(--accent)/15 text-(--accent) px-1.5 py-0.5 rounded-full"
+            <button className="bg-accent/15 text-accent px-1.5 py-0.5 rounded-full"
               onClick={() => editable && setEditingCat(true)}>{category}</button>
           ) : editable ? (
-            <button className="opacity-0 group-hover:opacity-100 hover:text-(--text) transition-opacity"
+            <button className="opacity-0 group-hover:opacity-100 hover:text-fg transition-opacity"
               onClick={() => setEditingCat(true)}>+ Label</button>
           ) : null}
           <span className="truncate">{frag.author_name ?? ""}</span>
@@ -278,7 +278,7 @@ function ClippingModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-(--border) p-6 shadow-2xl"
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-line p-6 shadow-2xl"
         style={{ background: "var(--bg)" }} onClick={e => e.stopPropagation()}>
         <h2 className="text-lg font-semibold mb-4">{isEdit ? "Clipping bearbeiten" : "Neues Clipping"}</h2>
         <div className="space-y-3">
@@ -287,7 +287,7 @@ function ClippingModal({
             <div>
               <label className="label">URL</label>
               <input className="input" type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
-              <p className="text-[10px] text-(--text-muted) mt-0.5">Titel & Vorschau werden automatisch geladen.</p>
+              <p className="text-[10px] text-muted mt-0.5">Titel & Vorschau werden automatisch geladen.</p>
             </div>
           )}
           <div><label className="label">Text</label><textarea className="input min-h-[80px] resize-y" value={text} onChange={e => setText(e.target.value)} placeholder="Zitat, Notiz…" /></div>
@@ -296,12 +296,12 @@ function ClippingModal({
             <div className="flex gap-2">
               <input className="input flex-1" value={tagInput} onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} placeholder="Tag…" />
-              <button className="px-3 rounded-lg border border-(--border) text-sm" onClick={addTag} type="button">+</button>
+              <button className="px-3 rounded-lg border border-line text-sm" onClick={addTag} type="button">+</button>
             </div>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(t => (
-                  <span key={t} className="text-[10px] bg-(--accent)/15 text-(--accent) px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span key={t} className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full flex items-center gap-1">
                     {t}<button onClick={() => setTags(tags.filter(x => x !== t))}>×</button>
                   </span>
                 ))}
@@ -312,13 +312,13 @@ function ClippingModal({
             <label className="label">Bilder / PDFs</label>
             <input type="file" multiple accept="image/*,application/pdf"
               onChange={e => setFiles(Array.from(e.target.files ?? []))}
-              className="text-xs text-(--text-muted)" />
-            {files.length > 0 && <p className="text-[10px] text-(--text-muted) mt-1">{files.length} Datei(en) ausgewählt</p>}
+              className="text-xs text-muted" />
+            {files.length > 0 && <p className="text-[10px] text-muted mt-1">{files.length} Datei(en) ausgewählt</p>}
           </div>
         </div>
         <div className="mt-6 flex gap-2 justify-end">
-          <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)" onClick={onClose}>Abbrechen</button>
-          <button className="px-4 py-2 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+          <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary px-4 py-2 text-sm"
             disabled={!canSave} onClick={() => save.mutate()}>
             {save.isPending ? "Speichern…" : "Speichern"}
           </button>
@@ -352,10 +352,10 @@ function PdfModal({ url, onClose }: { url: string; onClose: () => void }) {
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div className="relative bg-(--bg) rounded-lg shadow-2xl w-[min(92vw,900px)] h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-end gap-3 p-2 border-b border-(--border)">
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-(--text-muted) hover:text-(--text)">In neuem Tab ↗</a>
-          <button className="text-(--text-muted) hover:text-(--text) text-lg leading-none" onClick={onClose}>×</button>
+      <div className="relative bg-page rounded-lg shadow-2xl w-[min(92vw,900px)] h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-3 p-2 border-b border-line">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted hover:text-fg">In neuem Tab ↗</a>
+          <button className="text-muted hover:text-fg text-lg leading-none" onClick={onClose}>×</button>
         </div>
         <iframe src={url} className="flex-1 w-full rounded-b-lg" title="PDF" />
       </div>
@@ -402,9 +402,9 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
   };
 
   return (
-    <div className="group rounded-xl border border-(--border) bg-(--bg) p-3 flex flex-col gap-2">
+    <div className="group rounded-xl border border-line bg-page p-3 flex flex-col gap-2">
       {active && (
-        <div className="relative rounded-lg overflow-hidden bg-(--surface-hover) aspect-4/3">
+        <div className="relative rounded-lg overflow-hidden bg-surface-hover aspect-4/3">
           <img src={active.path} alt="" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setLightbox(true)} />
           {gallery.length > 1 && (
             <>
@@ -431,22 +431,22 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
           onConfirm={() => del.mutate()} onClose={() => setConfirmDel(false)} />
       )}
       <div className="flex items-start justify-between gap-2">
-        <button className="text-sm font-semibold text-left line-clamp-2 hover:text-(--accent)" onClick={onEdit}>{displayTitle}</button>
+        <button className="text-sm font-semibold text-left line-clamp-2 hover:text-accent" onClick={onEdit}>{displayTitle}</button>
         {item.can_edit && (
-          <button className="opacity-0 group-hover:opacity-100 text-(--text-muted) hover:text-red-500 text-xs transition-opacity"
+          <button className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-500 text-xs transition-opacity"
             onClick={() => setConfirmDel(true)} title="Löschen">×</button>
         )}
       </div>
       {item.url && (
-        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-(--accent) truncate hover:underline">{item.url}</a>
+        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent truncate hover:underline">{item.url}</a>
       )}
-      {item.text_content && <p className="text-xs text-(--text-muted) line-clamp-4 border-l-2 border-(--border) pl-2 italic">{item.text_content}</p>}
+      {item.text_content && <p className="text-xs text-muted line-clamp-4 border-l-2 border-line pl-2 italic">{item.text_content}</p>}
 
       {/* PDFs + extra media */}
       {item.media.filter(m => m.kind === "pdf").length > 0 && (
         <div className="flex flex-wrap gap-1">
           {item.media.filter(m => m.kind === "pdf").map(m => (
-            <span key={m.id} className="inline-flex items-center gap-1 text-[10px] bg-(--surface-hover) px-2 py-0.5 rounded-sm">
+            <span key={m.id} className="inline-flex items-center gap-1 text-[10px] bg-surface-hover px-2 py-0.5 rounded-sm">
               <button onClick={() => setPdfUrl(m.path)} className="hover:underline">📄 PDF</button>
               {item.can_edit && <button onClick={() => delMedia.mutate(m.id)} className="hover:text-red-500">×</button>}
             </span>
@@ -455,15 +455,15 @@ function ClippingCard({ item, onEdit }: { item: ResearchItemOut; onEdit: () => v
       )}
       {item.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {item.tags.map(t => <span key={t} className="text-[10px] bg-(--accent)/15 text-(--accent) px-1.5 py-0.5 rounded-full">{t}</span>)}
+          {item.tags.map(t => <span key={t} className="text-[10px] bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">{t}</span>)}
         </div>
       )}
       <div className="flex items-center justify-between mt-auto pt-1">
-        {item.author_name ? <span className="text-[10px] text-(--text-muted) truncate">{item.author_name}</span> : <span />}
+        {item.author_name ? <span className="text-[10px] text-muted truncate">{item.author_name}</span> : <span />}
         {item.can_edit && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="text-[10px] text-(--text-muted) hover:text-(--accent)" onClick={() => pickFile("image/*")} title="Bild anhängen">+ Bild</button>
-            <button className="text-[10px] text-(--text-muted) hover:text-(--accent)" onClick={() => pickFile("application/pdf")} title="PDF anhängen">+ PDF</button>
+            <button className="text-[10px] text-muted hover:text-accent" onClick={() => pickFile("image/*")} title="Bild anhängen">+ Bild</button>
+            <button className="text-[10px] text-muted hover:text-accent" onClick={() => pickFile("application/pdf")} title="PDF anhängen">+ PDF</button>
           </div>
         )}
       </div>
@@ -565,25 +565,25 @@ export default function FragmentBoardPage() {
   if (isError) {
     return auth ? (
       <div className="mx-auto max-w-md p-6 mt-10 text-center">
-        <div className="rounded-2xl border border-(--border) p-6" style={{ background: "var(--bg)" }}>
+        <div className="rounded-2xl border border-line p-6" style={{ background: "var(--bg)" }}>
           <div className="text-4xl mb-2">🔒</div>
           <h1 className="text-lg font-bold">Keine Berechtigung</h1>
-          <p className="text-sm text-(--text-muted) mt-2">
+          <p className="text-sm text-muted mt-2">
             Diese Pinnwand ist nicht für dich freigegeben.
           </p>
-          <button className="btn-primary mt-5" onClick={() => router.push("/fragmente")}>Zu den Sammlungen</button>
+          <button className="btn-primary mt-5 w-full" onClick={() => router.push("/fragmente")}>Zu den Sammlungen</button>
         </div>
       </div>
     ) : (
       <div className="mx-auto max-w-md p-6 mt-10 text-center">
-        <div className="rounded-2xl border border-(--border) p-6" style={{ background: "var(--bg)" }}>
+        <div className="rounded-2xl border border-line p-6" style={{ background: "var(--bg)" }}>
           <div className="text-4xl mb-2">🗂️</div>
           <h1 className="text-lg font-bold">Diese Pinnwand ist nicht öffentlich</h1>
-          <p className="text-sm text-(--text-muted) mt-2 leading-relaxed">
+          <p className="text-sm text-muted mt-2 leading-relaxed">
             Der Link allein reicht nicht. Als Gast kommst du mit dem Beitritts-Code
             deiner Lehrkraft herein — oder du meldest dich links unten an.
           </p>
-          <button className="btn-primary mt-5" onClick={() => router.push("/fragmente/join")}>Mit Code beitreten</button>
+          <button className="btn-primary mt-5 w-full" onClick={() => router.push("/fragmente/join")}>Mit Code beitreten</button>
         </div>
       </div>
     );
@@ -592,7 +592,7 @@ export default function FragmentBoardPage() {
   // Bis die Sammlung da ist, kein leeres Brett zeigen — das sah aus wie eine
   // Pinnwand ohne Inhalt.
   if (!collection) {
-    return <div className="mx-auto max-w-md p-6 mt-10 text-center text-sm text-(--text-muted)">Einen Moment …</div>;
+    return <div className="mx-auto max-w-md p-6 mt-10 text-center text-sm text-muted">Einen Moment …</div>;
   }
 
   const tabFragments = fragments.filter(f => effTab(f.tab) === activeTab);
@@ -634,18 +634,18 @@ export default function FragmentBoardPage() {
   };
 
   return (
-    <div className="mx-auto w-[92%] max-w-(--seite-breite) p-6">
-      <button className="text-sm text-(--text-muted) hover:text-(--text) mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
+    <div className="mx-auto w-[92%] max-w-seite p-6">
+      <button className="text-sm text-muted hover:text-fg mb-2" onClick={() => router.push("/fragmente")}>← Sammlungen</button>
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold truncate">{collection?.name ?? "…"}</h1>
-          {collection?.subject && <p className="text-sm text-(--text-muted)">{collection.subject}</p>}
+          {collection?.subject && <p className="text-sm text-muted">{collection.subject}</p>}
         </div>
         {/* Actions grouped so the QR sits next to the settings wheel rather than
             being spread out by justify-between. */}
         <div className="shrink-0 flex items-center gap-2">
           {collection && !guestToken && (
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+            <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
               onClick={() => setQrOpen(true)}
               title={collection.allow_guests ? "QR-Codes anzeigen" : "QR-Code zum Öffnen der Sammlung"}>
               {/* Sitzt schon in einem Button, der die QR-Ansicht öffnet — keine zweite Lupe. */}
@@ -656,7 +656,7 @@ export default function FragmentBoardPage() {
             </button>
           )}
           {canManage && collection && (
-            <button className="px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+            <button className="px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover"
               onClick={() => setSettingsOpen(true)} title="Einstellungen" aria-label="Einstellungen">⚙️</button>
           )}
         </div>
@@ -674,24 +674,24 @@ export default function FragmentBoardPage() {
             <div className="flex flex-col items-center gap-2">
               <p className="text-xs font-semibold">Sammlung öffnen</p>
               <JoinQR url={directUrl} size={180} />
-              <p className="text-[11px] text-(--text-muted) text-center">
+              <p className="text-[11px] text-muted text-center">
                 Nur für angemeldete Berechtigte — Login und Freigabe bleiben nötig.
               </p>
-              <button className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+              <button className="text-xs px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover"
                 onClick={() => { if (directUrl) { navigator.clipboard?.writeText(directUrl); toast("Link kopiert", "success"); } }}>
                 Link kopieren
               </button>
             </div>
 
             {collection.allow_guests && collection.guest_code && (
-              <div className="flex flex-col items-center gap-2 border-t border-(--border) pt-4">
+              <div className="flex flex-col items-center gap-2 border-t border-line pt-4">
                 <p className="text-xs font-semibold">Gastzugang</p>
                 <JoinQR url={guestUrl} size={180} />
                 <p className="font-mono text-lg tracking-wider">{collection.guest_code}</p>
-                <p className="text-[11px] text-(--text-muted)">
+                <p className="text-[11px] text-muted">
                   Gäste dürfen: {collection.guest_permission === "contribute" ? "beitragen" : "nur lesen"}
                 </p>
-                <button className="text-xs px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+                <button className="text-xs px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover"
                   onClick={() => { if (guestUrl) { navigator.clipboard?.writeText(guestUrl); toast("Gast-Link kopiert", "success"); } }}>
                   Gast-Link kopieren
                 </button>
@@ -718,27 +718,27 @@ export default function FragmentBoardPage() {
       {/* Toolbar — per-tab add buttons move into the columns in column view */}
       <div className="mb-3 flex items-center gap-2 flex-wrap">
         {canContribute && !isColumns && (
-          <button className="px-3 py-1.5 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+          <button className="btn-primary px-3 py-1.5 text-sm"
             disabled={addFragment.isPending} onClick={() => addFragment.mutate(activeTab)}>+ Karte</button>
         )}
         {canContribute && !isColumns && (
-          <button className="px-3 py-1.5 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
             onClick={() => setClippingModal({ item: null, tab: activeTab })}>+ Clipping</button>
         )}
         {canManage && isColumns && (
-          <button className="px-3 py-1.5 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover"
             onClick={() => setAddTabOpen(true)}>+ Tab</button>
         )}
         {canContribute && !guestToken && (
-          <button className="px-3 py-1.5 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover) disabled:opacity-50"
+          <button className="px-3 py-1.5 text-sm rounded-lg border border-line hover:bg-surface-hover disabled:opacity-50"
             disabled={importFrag.isPending} onClick={pickImport} title="Markdown-/Textdateien importieren">Import</button>
         )}
-        <div className="ml-auto flex items-center rounded-lg border border-(--border) overflow-hidden">
-          <button className={`px-2 py-1 text-sm ${view === "grid" ? "bg-(--surface-hover) text-(--text)" : "text-(--text-muted)"}`}
+        <div className="ml-auto flex items-center rounded-lg border border-line overflow-hidden">
+          <button className={`px-2 py-1 text-sm ${view === "grid" ? "bg-surface-hover text-fg" : "text-muted"}`}
             onClick={() => setView("grid")} title="Raster">▦</button>
-          <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-(--surface-hover) text-(--text)" : "text-(--text-muted)"}`}
+          <button className={`px-2 py-1 text-sm ${view === "list" ? "bg-surface-hover text-fg" : "text-muted"}`}
             onClick={() => setView("list")} title="Liste">☰</button>
-          <button className={`px-2 py-1 text-sm ${view === "columns" ? "bg-(--surface-hover) text-(--text)" : "text-(--text-muted)"}`}
+          <button className={`px-2 py-1 text-sm ${view === "columns" ? "bg-surface-hover text-fg" : "text-muted"}`}
             onClick={() => setView("columns")} title="Spalten (alle Tabs nebeneinander)">▥</button>
         </div>
       </div>
@@ -749,13 +749,13 @@ export default function FragmentBoardPage() {
           {visibleTags.map(t => (
             <button key={t} onClick={() => setTagFilter(f => f === t ? null : t)}
               className={`text-[11px] px-2.5 py-0.5 rounded-full border transition-colors ${
-                tagFilter === t ? "bg-(--accent) text-black border-(--accent)"
-                                : "border-(--border) text-(--text-muted) hover:bg-(--surface-hover)"}`}>
+                tagFilter === t ? "bg-accent text-black border-accent"
+                                : "border-line text-muted hover:bg-surface-hover"}`}>
               {t}
             </button>
           ))}
           {tagFilter && (
-            <button className="text-[11px] text-(--text-muted) hover:text-(--text) underline ml-1"
+            <button className="text-[11px] text-muted hover:text-fg underline ml-1"
               onClick={() => setTagFilter(null)}>Filter zurücksetzen</button>
           )}
         </div>
@@ -769,23 +769,23 @@ export default function FragmentBoardPage() {
             const colRes = research.filter(r => effTab(r.tab) === t && (!tagFilter || r.tags.includes(tagFilter)));
             const empty = colFrags.length === 0 && colRes.length === 0;
             return (
-              <div key={t} className="shrink-0 w-80 rounded-xl border border-(--border) bg-(--surface-hover)/30 p-3 flex flex-col gap-3">
+              <div key={t} className="shrink-0 w-80 rounded-xl border border-line bg-surface-hover/30 p-3 flex flex-col gap-3">
                 {/* Column header + its own add buttons */}
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold truncate">{tabLabel(t)}</h3>
-                  <span className="text-[10px] text-(--text-muted) shrink-0">{colFrags.length + colRes.length}</span>
+                  <span className="text-[10px] text-muted shrink-0">{colFrags.length + colRes.length}</span>
                 </div>
                 {canContribute && (
                   <div className="flex gap-1.5">
-                    <button className="flex-1 px-2 py-1 text-xs rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+                    <button className="btn-primary flex-1 px-2 py-1 text-xs"
                       disabled={addFragment.isPending} onClick={() => addFragment.mutate(t)}>+ Karte</button>
-                    <button className="flex-1 px-2 py-1 text-xs rounded-lg border border-(--border) bg-(--bg) hover:bg-(--surface-hover)"
+                    <button className="flex-1 px-2 py-1 text-xs rounded-lg border border-line bg-page hover:bg-surface-hover"
                       onClick={() => setClippingModal({ item: null, tab: t })}>+ Clipping</button>
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
                   {empty ? (
-                    <p className="text-[11px] text-(--text-muted) text-center py-6">Leer</p>
+                    <p className="text-[11px] text-muted text-center py-6">Leer</p>
                   ) : (
                     <>
                       {colFrags.map(f => <FragmentCard key={`f${f.id}`} frag={f} layout="list" />)}
@@ -800,7 +800,7 @@ export default function FragmentBoardPage() {
           })}
         </div>
       ) : tabEmpty ? (
-        <p className="text-(--text-muted) text-sm py-16 text-center">
+        <p className="text-muted text-sm py-16 text-center">
           {tagFilter ? "Keine Clippings mit diesem Tag." : "Noch nichts in diesem Tab."}
         </p>
       ) : (

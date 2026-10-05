@@ -65,22 +65,22 @@ export default function KartenBrett({ brett, antwort, onChange, disabled, loesun
           const ok = istRichtig(a.nr);
           return (
             <li key={a.nr} className="flex items-center gap-2">
-              <span className="w-8 text-right font-black text-(--red)">{finden ? "•" : a.marke}</span>
+              <span className="w-8 text-right font-black text-bad">{finden ? "•" : a.marke}</span>
               {finden ? (
                 <button disabled={disabled || !!loesung} onClick={() => setAktuell(a.nr)}
-                  className={`flex-1 text-left px-2 py-1 rounded-lg border ${jetzt?.nr === a.nr ? "border-(--accent)" : "border-(--border)"}`}>
+                  className={`flex-1 text-left px-2 py-1 rounded-lg border ${jetzt?.nr === a.nr ? "border-accent" : "border-line"}`}>
                   {a.name} {wert ? (ok === null ? "✓ gesetzt" : ok ? "✅" : "❌") : ""}
                 </button>
               ) : brett.spiel.wortbank ? (
                 <select value={wert} disabled={disabled} aria-label={`Name für ${a.marke}`} onChange={(e) => setze(a.nr, e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-(--border) bg-(--bg) text-(--text)">
+                  className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page text-fg">
                   <option value="">— wählen —</option>
                   {brett.spiel.wortbank.map((w) => <option key={w}>{w}</option>)}
                 </select>
               ) : (
                 <input value={wert} disabled={disabled} placeholder={a.kategorie} aria-label={`Name für ${a.marke}`}
                   onChange={(e) => setze(a.nr, e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-(--border) bg-(--bg) text-(--text)" />
+                  className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page text-fg" />
               )}
               {l && !finden && <span className="text-xs font-bold">→ {l.name}</span>}
             </li>

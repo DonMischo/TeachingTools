@@ -126,12 +126,12 @@ export default function StufeProfil({
   const andereSperrbilder = HINTERGRUENDE.filter(h => h.id !== startAussehen.current.sperrBild);
   const aufgabenTexte = [
     <>Mach <b>»{tierName(zielTier.current)}«</b> zu deinem Profilbild.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Konten › Profilbild.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Einstellungen › Konten › Profilbild.</span></>,
     <>Such dir ein <b>neues Bild für den Sperrbildschirm</b> aus.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Sperrbildschirm.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Einstellungen › Sperrbildschirm.</span></>,
     <>Schreib eine <b>Begrüßung</b> für deinen Sperrbildschirm und drücke Enter.</>,
     <><b>Sperre den Computer</b> und melde dich wieder an.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Start › auf deinen Namen klicken › Sperren.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Start › auf deinen Namen klicken › Sperren.</span></>,
   ];
 
   // Vorführen zeigt nur — gelöst wird keine Aufgabe, danach steht alles wie vorher.
@@ -184,7 +184,7 @@ export default function StufeProfil({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {AUFGABEN.map((a, i) => (
-          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : ""}>
+          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-muted" : ""}>
             {i < schritt ? "✅" : i === schritt ? "👉" : "⬜"} {a}
           </li>
         ))}

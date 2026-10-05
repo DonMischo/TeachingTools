@@ -128,9 +128,9 @@ export function Neuron2() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
+      <div className="card p-4 flex flex-col gap-3">
         <h2 className="font-black">🧠🧠 Zwei Neuronen</h2>
-        <p className="text-sm text-(--text-muted) leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Ein Neuron zieht eine Gerade — beim kniffligen Datensatz reicht das nie. Jetzt ziehen
           <b> zwei</b> Neuronen je eine Gerade, und ein drittes entscheidet, was daraus folgt.
           Sieh zu, wie aus zwei Geraden ein Streifen wird.
@@ -144,8 +144,8 @@ export function Neuron2() {
               onClick={() => zuruecksetzen(i)}
               className={`px-3 py-1.5 rounded-xl border text-sm font-bold ${
                 i === nr
-                  ? "border-(--accent) bg-(--accent) text-(--accent-text)"
-                  : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
+                  ? "border-accent bg-accent text-accent-fg"
+                  : "border-line bg-surface hover:bg-surface-hover"
               }`}
             >
               {d.icon} {d.titel}
@@ -155,7 +155,7 @@ export function Neuron2() {
 
         <div className="flex flex-col sm:flex-row gap-4 items-start">
           <div
-            className="relative rounded-xl border border-(--border) bg-(--bg) overflow-hidden shrink-0 touch-none cursor-crosshair"
+            className="relative rounded-xl border border-line bg-page overflow-hidden shrink-0 touch-none cursor-crosshair"
             style={{ width: FELD, height: FELD, maxWidth: "100%" }}
             onPointerDown={setzeProbe}
             onPointerMove={e => { if (e.buttons === 1) setzeProbe(e); }}
@@ -229,19 +229,19 @@ export function Neuron2() {
           <div className="flex-1 flex flex-col gap-3 w-full">
             <div className="text-sm">
               <b>{richtig} von {satz.punkte.length}</b> richtig
-              <span className="text-(--text-muted)">
+              <span className="text-muted">
                 {" "}· Fehler {fehler.toFixed(3)} · {durchgaenge} Durchgänge
               </span>
             </div>
 
-            <div className="h-1.5 rounded-full bg-(--surface-hover) overflow-hidden">
+            <div className="h-1.5 rounded-full bg-surface-hover overflow-hidden">
               <div
-                className="h-full bg-(--accent) transition-all duration-100"
+                className="h-full bg-accent transition-all duration-100"
                 style={{ width: `${Math.max(0, 100 - fehler * 400)}%` }}
               />
             </div>
 
-            <div className="flex gap-3 text-xs text-(--text-muted) flex-wrap">
+            <div className="flex gap-3 text-xs text-muted flex-wrap">
               <span>⬤ {satz.klassen[0]}</span>
               <span>◼ {satz.klassen[1]}</span>
               <span>— Neuron 1</span>
@@ -254,29 +254,29 @@ export function Neuron2() {
               <button
                 type="button"
                 onClick={() => setLaeuft(l => !l)}
-                className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
+                className="btn-primary px-4 py-2"
               >
                 {laeuft ? "⏸ Anhalten" : austrainiert ? "🤖 Weiter üben" : "🤖 Maschine übt"}
               </button>
               <button
                 type="button"
                 onClick={() => zuruecksetzen(nr, Math.floor(Math.random() * 100))}
-                className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)
-                  hover:bg-(--surface-hover) text-sm font-bold"
+                className="px-3 py-2 rounded-xl border border-line bg-surface
+                  hover:bg-surface-hover text-sm font-bold"
               >
                 🎲 Neuer Startwert
               </button>
               <button
                 type="button"
                 onClick={() => zuruecksetzen(nr, START_SEED)}
-                className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)
-                  hover:bg-(--surface-hover) text-sm font-bold"
+                className="px-3 py-2 rounded-xl border border-line bg-surface
+                  hover:bg-surface-hover text-sm font-bold"
               >
                 ↺ Zurück
               </button>
             </div>
 
-            <p className="text-xs text-(--text-muted) leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               <MitFachworten text={fertig
                 ? "✓ Alle Punkte richtig — mit einem einzigen Neuron war genau das unmöglich. Die beiden Geraden schneiden gemeinsam einen Streifen aus der Fläche, und der Streifen passt."
                 : steckt
@@ -284,7 +284,7 @@ export function Neuron2() {
                   : "Jeder Durchgang rechnet im Full Batch alle Punkte durch, misst den Fehler und verteilt ihn rückwärts auf die Gewichte. Diesen Rückwärtsschritt nennt man Backpropagation — er ist der Grund, warum tiefe Netze überhaupt trainierbar sind."} />
             </p>
 
-            <p className="text-xs text-(--text-muted) leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               🎲 Startwert <b className="font-mono">{seed}</b> — derselbe Startwert ergibt denselben
               Trainingsverlauf.
             </p>
@@ -292,14 +292,14 @@ export function Neuron2() {
         </div>
 
         {/* Der Bauplan: Erst hier wird »Schicht« etwas Sichtbares. */}
-        <div className="pt-3 border-t border-(--border) flex flex-col gap-2">
+        <div className="pt-3 border-t border-line flex flex-col gap-2">
           <h3 className="text-sm font-black">🧩 So ist das Netz gebaut</h3>
-          <p className="text-xs text-(--text-muted) leading-relaxed">
+          <p className="text-xs text-muted leading-relaxed">
             Tippe oder ziehe den gestrichelten Prüfpunkt im Feld herum. Der Bauplan zeigt für
             genau diesen Punkt, was durch das Netz läuft.
           </p>
           <div className="flex flex-col md:flex-row gap-4 items-start">
-            <div className="text-(--text) w-full md:w-auto md:shrink-0">
+            <div className="text-fg w-full md:w-auto md:shrink-0">
               <Netzbild
                 schichten={[
                   {
@@ -328,13 +328,13 @@ export function Neuron2() {
               />
             </div>
             <div className="flex-1 flex flex-col gap-2">
-              <p className="text-xs text-(--text-muted) leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 <MitFachworten text="Die Zahl im Kreis sagt, wie laut dieses Neuron gerade »ja« sagt — 0 heißt nein, 100 heißt ja. Die Striche sind die Gewichte: Ein dicker Strich zählt viel, ein gestrichelter spricht dagegen. Beim Üben ändern sich genau diese Striche." />
               </p>
-              <p className="text-xs leading-relaxed p-3 rounded-xl border border-(--accent)">
+              <p className="text-xs leading-relaxed p-3 rounded-xl border border-accent">
                 <MitFachworten text="Und das ist der ganze Trick an der Tiefe: Die letzte Schicht sieht deinen Punkt gar nicht mehr. Bei ihr kommen nur zwei Zahlen an — was Neuron 1 und Neuron 2 dazu gesagt haben. Jede Schicht arbeitet also nicht mit den Daten weiter, sondern mit der Meinung der Schicht davor. Zwei Schichten ergeben einen Streifen. Echte Bildmodelle haben Dutzende, Sprachmodelle über hundert." />
               </p>
-              <p className="text-xs text-(--text-muted) leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 Beim einzelnen Neuron gab es diese mittlere Spalte nicht: Eingang, ein Neuron,
                 Antwort. <b>Eine</b> Schicht — deshalb blieb die Grenze eine Gerade.
               </p>

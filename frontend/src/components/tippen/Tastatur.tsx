@@ -62,7 +62,7 @@ function KeyCap({ taste, platz, naechste, gedrueckt, zeigeFinger }: Props & { ta
       className={
         "relative m-[1.5px] flex flex-col items-center justify-center overflow-hidden rounded-md border " +
         "text-[10px] sm:text-xs leading-none select-none transition-colors duration-75 " +
-        (taste.mod ? "text-(--text-muted)" : "font-bold")
+        (taste.mod ? "text-muted" : "font-bold")
       }
     >
       {taste.shift && <span className="opacity-50 text-[9px]">{taste.shift}</span>}

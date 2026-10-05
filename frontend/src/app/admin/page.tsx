@@ -41,12 +41,12 @@ function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-60" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 max-w-[calc(100vw-2rem)] bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-70">
+      <div className="card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 max-w-[calc(100vw-2rem)] shadow-2xl p-5 flex flex-col gap-4 z-70">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">📅 Kalender-Einstellungen</h3>
-          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-muted hover:text-fg text-lg leading-none">×</button>
         </div>
-        <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1.5 text-xs text-muted">
           Bundesland (für Feriendaten-Import im Kalender)
           <select className="input text-sm py-2" value={value} onChange={e => setBundesland(e.target.value)}>
             {Object.entries(bundeslaender).map(([code, name]) => (
@@ -57,7 +57,7 @@ function KalenderSettingsPanel({ onClose }: { onClose: () => void }) {
         <button
           onClick={() => saveMut.mutate(value)}
           disabled={saveMut.isPending}
-          className="btn-primary text-sm py-2 disabled:opacity-40"
+          className="btn-primary text-sm py-2 w-full"
         >
           {saveMut.isPending ? "Speichere & lade Ferien…" : "Speichern"}
         </button>
@@ -86,10 +86,10 @@ function DatenschutzPanel({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-60" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-104 max-w-[calc(100vw-2rem)] bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-70">
+      <div className="card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-104 max-w-[calc(100vw-2rem)] shadow-2xl p-5 flex flex-col gap-4 z-70">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">🔐 Datenfreigabe</h3>
-          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text)">✕</button>
+          <button onClick={onClose} className="text-muted hover:text-fg">✕</button>
         </div>
         <label className="flex items-start gap-3 text-sm cursor-pointer">
           <input
@@ -97,11 +97,11 @@ function DatenschutzPanel({ onClose }: { onClose: () => void }) {
             checked={data?.show_geschlecht ?? false}
             disabled={saveMut.isPending}
             onChange={e => saveMut.mutate(e.target.checked)}
-            className="accent-(--accent) w-4 h-4 mt-0.5"
+            className="accent-accent w-4 h-4 mt-0.5"
           />
           <span>
             <span className="font-medium">Geschlecht ausliefern</span>
-            <span className="block text-xs text-(--text-muted) mt-1">
+            <span className="block text-xs text-muted mt-1">
               Aus: Das Geschlecht steht in keiner Antwort des Servers, und der Sitzplan
               bietet »Junge/Mädchen abwechselnd« nicht an. Die Sportfest-Wertung rechnet
               intern weiter damit. An: nur für Lehrkräfte sichtbar.
@@ -148,12 +148,12 @@ function GastzugangPanel({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-60" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-104 max-w-[calc(100vw-2rem)] bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-70">
+      <div className="card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-104 max-w-[calc(100vw-2rem)] shadow-2xl p-5 flex flex-col gap-4 z-70">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">⏱️ Gastzugang</h3>
-          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text)">✕</button>
+          <button onClick={onClose} className="text-muted hover:text-fg">✕</button>
         </div>
-        <label className="flex flex-col gap-1.5 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1.5 text-xs text-muted">
           Gültigkeit in Minuten ({data.min_minutes}–{data.max_minutes})
           <input
             type="number"
@@ -172,7 +172,7 @@ function GastzugangPanel({ onClose }: { onClose: () => void }) {
         <button
           onClick={() => saveMut.mutate(zahl)}
           disabled={!gueltig || saveMut.isPending || zahl === data.guest_minutes}
-          className="btn-primary text-sm py-2 disabled:opacity-40"
+          className="btn-primary text-sm py-2 w-full"
         >
           {saveMut.isPending ? "Speichere…" : "Speichern"}
         </button>
@@ -181,7 +181,7 @@ function GastzugangPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-const CARD = "p-4 rounded-2xl border border-(--border) bg-(--surface) hover:bg-(--surface-hover) transition-colors";
+const CARD = "card p-4 hover:bg-surface-hover transition-colors";
 
 export default function AdminPage() {
   const { auth } = useAuth();
@@ -204,10 +204,10 @@ export default function AdminPage() {
   const show = (feature: string) => isAdmin || has(feature);
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div>
         <h1 className="text-2xl font-black tracking-tight">⚙️ Admin</h1>
-        <p className="text-(--text-muted) text-sm mt-1">
+        <p className="text-muted text-sm mt-1">
           {isAdmin ? "Verwaltung nur für Administratoren" : "Dir freigeschaltete Verwaltungsbereiche"}
         </p>
       </div>
@@ -217,103 +217,103 @@ export default function AdminPage() {
           <Link href="/admin/users" className={CARD}>
             <div className="text-2xl mb-2">👤</div>
             <div className="font-semibold">Benutzerverwaltung</div>
-            <div className="text-xs text-(--text-muted) mt-1">Konten anlegen · Zugänge generieren · CSV-Import · Passwort-Reset · Löschen</div>
+            <div className="text-xs text-muted mt-1">Konten anlegen · Zugänge generieren · CSV-Import · Passwort-Reset · Löschen</div>
           </Link>
         )}
         {show("students") && (
           <Link href="/admin/cards" className={CARD}>
             <div className="text-2xl mb-2">🪪</div>
             <div className="font-semibold">Schülerkarten</div>
-            <div className="text-xs text-(--text-muted) mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
+            <div className="text-xs text-muted mt-1">Zugangskarten drucken · Felder wählen · PDF</div>
           </Link>
         )}
         {show("teachers") && (
           <Link href="/admin/teachers" className={CARD}>
             <div className="text-2xl mb-2">🧑‍🏫</div>
             <div className="font-semibold">Lehrerdaten</div>
-            <div className="text-xs text-(--text-muted) mt-1">CSV-Import · Rolle &amp; Klassenleitung</div>
+            <div className="text-xs text-muted mt-1">CSV-Import · Rolle &amp; Klassenleitung</div>
           </Link>
         )}
         {show("calendar_settings") && (
           <button onClick={() => setShowKalenderSettings(true)} className={`${CARD} text-left`}>
             <div className="text-2xl mb-2">📅</div>
             <div className="font-semibold">Kalender-Einstellungen</div>
-            <div className="text-xs text-(--text-muted) mt-1">Bundesland für Feriendaten-Import</div>
+            <div className="text-xs text-muted mt-1">Bundesland für Feriendaten-Import</div>
           </button>
         )}
         <button onClick={() => setShow2fa(true)} className={`${CARD} text-left`}>
           <div className="text-2xl mb-2">🔐</div>
           <div className="font-semibold">Zwei-Faktor</div>
-          <div className="text-xs text-(--text-muted) mt-1">Nötig für den Export von Zugangsdaten</div>
+          <div className="text-xs text-muted mt-1">Nötig für den Export von Zugangsdaten</div>
         </button>
         {isAdmin && (
           <button onClick={() => setShowDatenschutz(true)} className={`${CARD} text-left`}>
             <div className="text-2xl mb-2">🔐</div>
             <div className="font-semibold">Datenfreigabe</div>
-            <div className="text-xs text-(--text-muted) mt-1">Welche Schülerdaten der Server überhaupt herausgibt</div>
+            <div className="text-xs text-muted mt-1">Welche Schülerdaten der Server überhaupt herausgibt</div>
           </button>
         )}
         {isAdmin && (
           <button onClick={() => setShowGastzugang(true)} className={`${CARD} text-left`}>
             <div className="text-2xl mb-2">⏱️</div>
             <div className="font-semibold">Gastzugang</div>
-            <div className="text-xs text-(--text-muted) mt-1">Wie lange ein QR-Beitritt ohne Konto gilt</div>
+            <div className="text-xs text-muted mt-1">Wie lange ein QR-Beitritt ohne Konto gilt</div>
           </button>
         )}
         {isAdmin && (
           <button onClick={() => setShowTheme(true)} className={`${CARD} text-left`}>
             <div className="text-2xl mb-2">🎨</div>
             <div className="font-semibold">Darstellung</div>
-            <div className="text-xs text-(--text-muted) mt-1">Farbschema · Icon-Stil · Theme wechseln</div>
+            <div className="text-xs text-muted mt-1">Farbschema · Icon-Stil · Theme wechseln</div>
           </button>
         )}
         {show("style_pack") && (
           <Link href="/admin/style" className={CARD}>
             <div className="text-2xl mb-2">📦</div>
             <div className="font-semibold">Style Pack</div>
-            <div className="text-xs text-(--text-muted) mt-1">Logo · Icons · Farbanpassung als ZIP hochladen</div>
+            <div className="text-xs text-muted mt-1">Logo · Icons · Farbanpassung als ZIP hochladen</div>
           </Link>
         )}
         {show("generators") && (
           <Link href="/admin/generators" className={CARD}>
             <div className="text-2xl mb-2">🧮</div>
             <div className="font-semibold">Aufgaben-Generatoren</div>
-            <div className="text-xs text-(--text-muted) mt-1">Neue Übungsthemen ohne Code registrieren</div>
+            <div className="text-xs text-muted mt-1">Neue Übungsthemen ohne Code registrieren</div>
           </Link>
         )}
         {show("slideshow") && (
           <Link href="/admin/slideshow" className={CARD}>
             <div className="text-2xl mb-2">🖼️</div>
             <div className="font-semibold">Startseiten-Slideshow</div>
-            <div className="text-xs text-(--text-muted) mt-1">Bilder · PDFs · Videos · Links · Termine</div>
+            <div className="text-xs text-muted mt-1">Bilder · PDFs · Videos · Links · Termine</div>
           </Link>
         )}
         {isAdmin && (
           <Link href="/haeuser" className={CARD}>
             <div className="text-2xl mb-2">🛡️</div>
             <div className="font-semibold">Häuser &amp; Klassen</div>
-            <div className="text-xs text-(--text-muted) mt-1">Häuser-Übersicht · Häuser verwalten · Klassen zuordnen</div>
+            <div className="text-xs text-muted mt-1">Häuser-Übersicht · Häuser verwalten · Klassen zuordnen</div>
           </Link>
         )}
         {isAdmin && (
           <Link href="/admin/availability" className={CARD}>
             <div className="text-2xl mb-2">🧩</div>
             <div className="font-semibold">Verfügbarkeit</div>
-            <div className="text-xs text-(--text-muted) mt-1">Werkzeuge freischalten · pro Gruppe &amp; Klasse · Hosten/Erstellen/Hochladen</div>
+            <div className="text-xs text-muted mt-1">Werkzeuge freischalten · pro Gruppe &amp; Klasse · Hosten/Erstellen/Hochladen</div>
           </Link>
         )}
         {isAdmin && (
           <Link href="/admin/quellen" className={CARD}>
             <div className="text-2xl mb-2">📚</div>
             <div className="font-semibold">Quellen und Lizenzen</div>
-            <div className="text-xs text-(--text-muted) mt-1">Daten, Bilder, Schriften und Bibliotheken je Werkzeug · offene Rechte</div>
+            <div className="text-xs text-muted mt-1">Daten, Bilder, Schriften und Bibliotheken je Werkzeug · offene Rechte</div>
           </Link>
         )}
         {isAdmin && (
           <Link href="/admin/permissions" className={CARD}>
             <div className="text-2xl mb-2">🔑</div>
             <div className="font-semibold">Berechtigungen</div>
-            <div className="text-xs text-(--text-muted) mt-1">Admin-Bereiche für Lehrergruppen &amp; einzelne Lehrer freigeben</div>
+            <div className="text-xs text-muted mt-1">Admin-Bereiche für Lehrergruppen &amp; einzelne Lehrer freigeben</div>
           </Link>
         )}
       </div>
@@ -325,10 +325,10 @@ export default function AdminPage() {
       {show2fa && (
         <>
           <div className="fixed inset-0 bg-black/40 z-60" onClick={() => setShow2fa(false)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-4 z-70">
+          <div className="card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-120 max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto shadow-2xl p-5 flex flex-col gap-4 z-70">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">🔐 Zwei-Faktor</h3>
-              <button onClick={() => setShow2fa(false)} className="text-(--text-muted) hover:text-(--text)">✕</button>
+              <button onClick={() => setShow2fa(false)} className="text-muted hover:text-fg">✕</button>
             </div>
             <TwoFactorPanel />
           </div>

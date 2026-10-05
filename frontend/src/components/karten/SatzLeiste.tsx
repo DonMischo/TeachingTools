@@ -48,25 +48,25 @@ export default function SatzLeiste({ satz, inhalt, ausschnitt, onLaden, onGespei
     setMeldung("Gelöscht.");
   };
 
-  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover) disabled:opacity-40";
+  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover disabled:opacity-40";
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-wrap items-center gap-2 text-sm">
+    <div className="card p-3 flex flex-wrap items-center gap-2 text-sm">
       <select value={satz?.id ?? ""} onChange={(e) => laden(e.target.value)} aria-label="Kartensatz laden"
-        className="px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg) max-w-[260px]">
+        className="px-2 py-1.5 rounded-lg border border-line bg-page max-w-[260px]">
         <option value="">— neuer Kartensatz —</option>
         {liste.map((s) => (
           <option key={s.id} value={s.id}>{s.titel}{s.eigen ? "" : ` (${s.autor})`}</option>
         ))}
       </select>
       <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="Name, z. B. »Flüsse Thüringens – Test 7b«"
-        className="flex-1 min-w-[200px] px-2 py-1.5 rounded-lg border border-(--border) bg-(--bg)" />
+        className="flex-1 min-w-[200px] px-2 py-1.5 rounded-lg border border-line bg-page" />
       <label className="flex items-center gap-1.5" title="Andere Lehrkräfte können ihn laden (aber nicht ändern)">
         <input type="checkbox" checked={geteilt} onChange={() => setGeteilt((g) => !g)} /> für Kollegium
       </label>
       <button className={knopf} onClick={() => speichern(false)}>💾 {satz?.eigen ? "Speichern" : "Speichern als neu"}</button>
       {satz?.eigen && <button className={knopf} onClick={() => speichern(true)}>Kopie speichern</button>}
       {satz?.eigen && <button className={knopf} onClick={loeschen} aria-label="Kartensatz löschen">🗑</button>}
-      {meldung && <span className="text-(--text-muted)">{meldung}</span>}
+      {meldung && <span className="text-muted">{meldung}</span>}
     </div>
   );
 }

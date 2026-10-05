@@ -41,13 +41,13 @@ export function ToolSessionList({ slug }: { slug: string }) {
   if (!isTeacher) return null;
 
   return (
-    <section className="flex flex-col gap-2 rounded-2xl border border-(--border) bg-(--surface) p-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-(--text-muted)">
+    <section className="card flex flex-col gap-2 p-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
         Laufende Sitzungen
       </h2>
 
       {isLoading ? (
-        <p className="text-xs text-(--text-muted)">Laden…</p>
+        <p className="text-xs text-muted">Laden…</p>
       ) : (
         <SessionGrid
           items={sessions.map((s): SessionCardItem => ({

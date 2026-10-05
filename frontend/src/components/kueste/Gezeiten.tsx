@@ -88,10 +88,10 @@ export default function Gezeiten() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-wrap items-center gap-3">
+      <div className="card p-4 flex flex-wrap items-center gap-3">
         <button
           onClick={() => setPlaying((p) => !p)}
-          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)"
+          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover"
         >
           {playing ? "⏸" : "▶"}
         </button>
@@ -101,8 +101,8 @@ export default function Gezeiten() {
             <button
               key={s.id}
               onClick={() => setSpeedId(s.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover) ${
-                speedId === s.id ? "bg-(--accent) text-(--accent-text,#111)" : ""
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover ${
+                speedId === s.id ? "bg-accent text-accent-fg" : ""
               }`}
             >
               {s.label}
@@ -113,7 +113,7 @@ export default function Gezeiten() {
         <select
           value={ortId}
           onChange={(e) => setOrtId(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) bg-transparent"
+          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line bg-transparent"
         >
           {ORTE.map((o) => (
             <option key={o.id} value={o.id}>
@@ -132,10 +132,10 @@ export default function Gezeiten() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+        <div className="card p-4">
           <h3 className="font-bold mb-2">Erde und Mond</h3>
           <ErdeMondSvg stunde={stunde} />
-          <p className="text-sm text-(--text-muted) mt-2">
+          <p className="text-sm text-muted mt-2">
             Die Anziehungskraft des Mondes zieht das Wasser auf der ihm zugewandten Seite an –
             dort entsteht ein Flutberg. Auf der gegenüberliegenden Seite entsteht durch die
             Fliehkraft ein zweiter Flutberg. Weil sich die Erde unter diesen Flutbergen
@@ -147,13 +147,13 @@ export default function Gezeiten() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+        <div className="card p-4">
           <h3 className="font-bold mb-2">Pegelkurve</h3>
           <PegelkurveSvg hub={ort.hub} stunde={stunde} />
           <h4 className="font-bold mt-3 mb-1 text-sm">Tidenkalender</h4>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-(--text-muted)">
+              <tr className="text-left text-muted">
                 <th>Uhrzeit</th>
                 <th>Art</th>
                 <th>Pegel</th>
@@ -169,12 +169,12 @@ export default function Gezeiten() {
               ))}
             </tbody>
           </table>
-          <p className="text-sm text-(--text-muted) mt-2">
+          <p className="text-sm text-muted mt-2">
             Jeden Tag kommt das Hochwasser etwa 50 Minuten später.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 md:col-span-2">
+        <div className="card p-4 md:col-span-2">
           <h3 className="font-bold mb-2">Watt bei Ebbe und Flut</h3>
           <WattSvg hub={ort.hub} pegelWert={aktuellerPegel} phase={aktuellePhase} />
           <BegriffeBox phase={aktuellePhase} />
@@ -400,7 +400,7 @@ const BEGRIFFE: { begriff: string; erklaerung: string; phasen: Phase[] }[] = [
 
 function BegriffeBox({ phase: aktPhase }: { phase: Phase }) {
   return (
-    <div className="mt-3 rounded-xl border border-(--border) p-3 text-sm">
+    <div className="mt-3 rounded-xl border border-line p-3 text-sm">
       <h4 className="font-bold mb-1">Begriffe</h4>
       <ul className="flex flex-col gap-1">
         {BEGRIFFE.map((b) => (
@@ -408,8 +408,8 @@ function BegriffeBox({ phase: aktPhase }: { phase: Phase }) {
             key={b.begriff}
             className={
               b.phasen.includes(aktPhase)
-                ? "font-bold text-(--accent)"
-                : "text-(--text-muted)"
+                ? "font-bold text-accent"
+                : "text-muted"
             }
           >
             <span className="font-bold">{b.begriff}</span> = {b.erklaerung}

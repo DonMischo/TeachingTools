@@ -336,7 +336,7 @@ export default function Gebaeude({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auftrag?.nr]);
 
-  const knopf = "w-9 h-9 rounded-lg bg-(--surface)/90 border border-(--border) font-bold hover:border-(--accent)";
+  const knopf = "w-9 h-9 rounded-lg bg-surface/90 border border-line font-bold hover:border-accent";
   return (
     <div className="relative w-full h-full min-h-[320px]">
       <div ref={huelle} className="absolute inset-0" data-gebaeude data-stock={stock} data-art={art} />

@@ -37,23 +37,23 @@ export function TeacherPicker({
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl border border-(--border) p-5 shadow-2xl"
+      <div className="w-full max-w-md rounded-2xl border border-line p-5 shadow-2xl"
         style={{ background: "var(--bg)" }} onClick={e => e.stopPropagation()}>
         <h3 className="text-base font-semibold mb-3">Lehrer hinzufügen</h3>
 
         <input className="input mb-2" placeholder="Suchen…" value={q} onChange={e => setQ(e.target.value)} autoFocus />
 
-        <div className="flex items-center justify-between mb-2 text-xs text-(--text-muted)">
-          <button className="hover:text-(--text) underline"
+        <div className="flex items-center justify-between mb-2 text-xs text-muted">
+          <button className="hover:text-fg underline"
             onClick={() => setSel(new Set(shown.map(t => t.id)))}>Alle auswählen</button>
-          <button className="hover:text-(--text) underline" onClick={() => setSel(new Set())}>Auswahl aufheben</button>
+          <button className="hover:text-fg underline" onClick={() => setSel(new Set())}>Auswahl aufheben</button>
         </div>
 
-        <div className="max-h-64 overflow-y-auto rounded-lg border border-(--border) divide-y divide-(--border)">
+        <div className="max-h-64 overflow-y-auto rounded-lg border border-line divide-y divide-line">
           {shown.length === 0 ? (
-            <p className="text-sm text-(--text-muted) p-3">Keine Lehrer gefunden.</p>
+            <p className="text-sm text-muted p-3">Keine Lehrer gefunden.</p>
           ) : shown.map(t => (
-            <label key={t.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-(--surface-hover)">
+            <label key={t.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-surface-hover">
               <input type="checkbox" checked={sel.has(t.id)} onChange={() => toggle(t.id)} />
               <span>{t.first_name} {t.last_name}</span>
             </label>
@@ -70,8 +70,8 @@ export function TeacherPicker({
         </div>
 
         <div className="flex justify-end gap-2 mt-5">
-          <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)" onClick={onClose}>Abbrechen</button>
-          <button className="px-4 py-2 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+          <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary px-4 py-2 text-sm"
             disabled={sel.size === 0} onClick={() => onConfirm([...sel], permission)}>
             {sel.size > 0 ? `${sel.size} hinzufügen` : "Hinzufügen"}
           </button>
@@ -182,7 +182,7 @@ export function CollectionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-(--surface,var(--bg)) border border-(--border) p-6 shadow-2xl"
+        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-surface) border border-line p-6 shadow-2xl"
         style={{ background: "var(--bg)" }}
         onClick={e => e.stopPropagation()}
       >
@@ -210,7 +210,7 @@ export function CollectionModal({
         <div className="mt-5">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold">Zugriff</h3>
-            <span className="text-xs text-(--text-muted)">Ohne Einträge: nur du (privat)</span>
+            <span className="text-xs text-muted">Ohne Einträge: nur du (privat)</span>
           </div>
           <div className="space-y-2">
             {grants.map((g, i) => (
@@ -272,18 +272,18 @@ export function CollectionModal({
                   <option value="contribute">Beitragen</option>
                   <option value="manage">Verwalten</option>
                 </select>
-                <button className="text-(--text-muted) hover:text-red-500 px-2 text-lg shrink-0" onClick={() => removeGrant(i)} title="Entfernen">×</button>
+                <button className="text-muted hover:text-red-500 px-2 text-lg shrink-0" onClick={() => removeGrant(i)} title="Entfernen">×</button>
               </div>
             ))}
           </div>
           <div className="flex gap-2 mt-2">
             {!hasAllTeachers && (
-              <button className="text-xs px-2 py-1 rounded-sm border border-(--border) hover:bg-(--surface-hover)"
+              <button className="text-xs px-2 py-1 rounded-sm border border-line hover:bg-surface-hover"
                 onClick={() => addGrant({ grantee_type: "all_teachers", class_id: null, permission: "read" })}>
                 + Alle Lehrer
               </button>
             )}
-            <button className="text-xs px-2 py-1 rounded-sm border border-(--border) hover:bg-(--surface-hover)"
+            <button className="text-xs px-2 py-1 rounded-sm border border-line hover:bg-surface-hover"
               onClick={() => {
                 const free = classes.find(c => !usedClassIds.has(c.id));
                 if (!free) { toast("Alle Klassen bereits hinzugefügt", "info"); return; }
@@ -291,7 +291,7 @@ export function CollectionModal({
               }}>
               + Klasse / Gruppe
             </button>
-            <button className="text-xs px-2 py-1 rounded-sm border border-(--border) hover:bg-(--surface-hover)"
+            <button className="text-xs px-2 py-1 rounded-sm border border-line hover:bg-surface-hover"
               onClick={() => setTeacherPicker(true)}>
               + Lehrer…
             </button>
@@ -309,7 +309,7 @@ export function CollectionModal({
 
         {/* Guests — only meaningful once the collection exists */}
         {isEdit && (
-          <div className="mt-5 border-t border-(--border) pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
               <input type="checkbox" checked={allowGuests} onChange={e => setAllowGuests(e.target.checked)} />
               Gastzugang per QR / Link
@@ -326,16 +326,16 @@ export function CollectionModal({
                     </select>
                   </div>
                   {initial?.guest_code ? (
-                    <div className="text-xs text-(--text-muted) break-all">
-                      Code: <span className="font-mono text-(--text)">{initial.guest_code}</span>
+                    <div className="text-xs text-muted break-all">
+                      Code: <span className="font-mono text-fg">{initial.guest_code}</span>
                       {guestUrl && <div className="mt-1">{guestUrl}</div>}
-                      <button className="mt-1 underline hover:text-(--text)"
+                      <button className="mt-1 underline hover:text-fg"
                         onClick={() => regenGuest.mutate()} disabled={regenGuest.isPending}>
                         Code neu erzeugen
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xs text-(--text-muted)">Speichern erzeugt einen Gastcode.</p>
+                    <p className="text-xs text-muted">Speichern erzeugt einen Gastcode.</p>
                   )}
                 </div>
                 {guestUrl && <JoinQR url={guestUrl} size={110} />}
@@ -345,8 +345,8 @@ export function CollectionModal({
         )}
 
         <div className="mt-6 flex gap-2 justify-end">
-          <button className="px-4 py-2 text-sm rounded-lg border border-(--border) hover:bg-(--surface-hover)" onClick={onClose}>Abbrechen</button>
-          <button className="px-4 py-2 text-sm rounded-lg bg-(--accent) text-black font-semibold hover:opacity-90 disabled:opacity-50"
+          <button className="px-4 py-2 text-sm rounded-lg border border-line hover:bg-surface-hover" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary px-4 py-2 text-sm"
             disabled={!name.trim() || save.isPending} onClick={() => save.mutate()}>
             {save.isPending ? "Speichern…" : isEdit ? "Speichern" : "Erstellen"}
           </button>

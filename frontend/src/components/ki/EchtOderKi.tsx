@@ -133,8 +133,8 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
               onClick={() => setTeil(id)}
               className={`px-3.5 py-1.5 rounded-xl border font-bold text-sm ${
                 teil === id
-                  ? "border-(--accent) bg-(--accent) text-(--accent-text)"
-                  : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
+                  ? "border-accent bg-accent text-accent-fg"
+                  : "border-line bg-surface hover:bg-surface-hover"
               }`}
             >
               {label}
@@ -143,27 +143,27 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
         </div>
       )}
 
-      {fehler && <p className="text-sm text-(--red)">{fehler}</p>}
+      {fehler && <p className="text-sm text-bad">{fehler}</p>}
 
       {/* ─────────────────────────────────────────────────────── Raten ── */}
       {(teil === "raten" || !istLehrkraft) && (
-        <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
+        <div className="card p-4 flex flex-col gap-3">
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
             <h2 className="font-black">🕵️ Echt oder KI?</h2>
             {paare.length > 0 && (
-              <span className="text-xs text-(--text-muted)">
+              <span className="text-xs text-muted">
                 {Math.min(nr + 1, paare.length)} von {paare.length} · {punkte.richtig} von {punkte.gesamt} richtig
               </span>
             )}
           </div>
 
           {!code ? (
-            <p className="text-sm text-(--text-muted)">
+            <p className="text-sm text-muted">
               📱 Diese Station braucht eine Sitzung: Über »Zum Mitmachen« den Code ausgeben, dann
               rät die Klasse die Bildpaare auf dem eigenen Gerät durch.
             </p>
           ) : paare.length === 0 ? (
-            <p className="text-sm text-(--text-muted)">
+            <p className="text-sm text-muted">
               Noch keine Bildpaare in der Sammlung.{" "}
               {istLehrkraft
                 ? "Unter »Paare sammeln« zwei Bilder ablegen und das echte anklicken."
@@ -182,7 +182,7 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
               <button
                 type="button"
                 onClick={spielLaden}
-                className="self-start px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
+                className="btn-primary self-start px-4 py-2"
               >
                 ↺ Noch einmal
               </button>
@@ -202,9 +202,9 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
                       onClick={() => tippe(seite)}
                       disabled={!!antwort}
                       className={`relative rounded-2xl border-4 overflow-hidden transition-colors ${
-                        !antwort ? "border-(--border) hover:border-(--accent)"
-                          : istEcht ? "border-(--green,#22c55e)"
-                            : gewaehlt ? "border-(--red,#ef4444)" : "border-(--border) opacity-60"
+                        !antwort ? "border-line hover:border-accent"
+                          : istEcht ? "border-ok"
+                            : gewaehlt ? "border-bad" : "border-line opacity-60"
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -214,7 +214,7 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
                       </span>
                       {antwort && (
                         <span className={`absolute bottom-2 left-2 px-2 py-0.5 rounded-lg text-white text-xs font-black ${
-                          istEcht ? "bg-(--green,#22c55e)" : "bg-(--red,#ef4444)"
+                          istEcht ? "bg-ok" : "bg-bad"
                         }`}>
                           {istEcht ? "✓ echt" : "🤖 von einer KI"}
                         </span>
@@ -229,26 +229,26 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
                   <p className="text-sm font-bold">
                     {antwort.seite === antwort.echt ? "✓ Richtig erkannt." : "✗ Daneben."}
                     {antwort.hinweis && (
-                      <span className="font-normal text-(--text-muted)"> {antwort.hinweis}</span>
+                      <span className="font-normal text-muted"> {antwort.hinweis}</span>
                     )}
                   </p>
                   <button
                     type="button"
                     onClick={naechstes}
-                    className="self-start px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text)"
+                    className="btn-primary self-start px-4 py-2"
                   >
                     {nr + 1 >= paare.length ? "Zum Ergebnis →" : "Nächstes Paar →"}
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-(--text-muted)">
+                <p className="text-sm text-muted">
                   Welches der beiden ist eine Fotografie? Tippe es an.
                 </p>
               )}
             </>
           )}
 
-          <details className="text-xs text-(--text-muted)">
+          <details className="text-xs text-muted">
             <summary className="cursor-pointer font-bold">🔍 Worauf man achten kann</summary>
             <ul className="mt-2 flex flex-col gap-1">
               {MERKMALE.map(m => <li key={m}>{m}</li>)}
@@ -264,9 +264,9 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
 
       {/* ──────────────────────────────────────────────────── Sammeln ── */}
       {teil === "sammeln" && istLehrkraft && (
-        <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
+        <div className="card p-4 flex flex-col gap-3">
           <h2 className="font-black">📥 Paare sammeln</h2>
-          <p className="text-sm text-(--text-muted) leading-relaxed">
+          <p className="text-sm text-muted leading-relaxed">
             Zwei Bilder ablegen — eine Fotografie und ein erzeugtes Bild. Dann das <b>echte</b>
             {" "}anklicken; das andere gilt damit als KI-Bild. Das Paar bleibt in deiner Sammlung.
           </p>
@@ -276,7 +276,7 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
             onDragLeave={() => setUeberZiel(false)}
             onDrop={e => { e.preventDefault(); setUeberZiel(false); dateienNehmen(e.dataTransfer.files); }}
             className={`p-6 rounded-2xl border-2 border-dashed text-center cursor-pointer transition-colors ${
-              ueberZiel ? "border-(--accent) bg-(--surface-hover)" : "border-(--border)"
+              ueberZiel ? "border-accent bg-surface-hover" : "border-line"
             }`}
           >
             <input
@@ -302,7 +302,7 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
                     type="button"
                     onClick={() => anlegen(i as 0 | 1)}
                     disabled={sendet}
-                    className="rounded-2xl border-2 border-(--border) hover:border-(--green,#22c55e)
+                    className="rounded-2xl border-2 border-line hover:border-ok
                       overflow-hidden disabled:opacity-50"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -320,14 +320,14 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
                   onChange={e => setTitel(e.target.value)}
                   maxLength={120}
                   placeholder="Titel (freiwillig, z. B. »Hände«)"
-                  className="px-3 py-2 rounded-xl border border-(--border) bg-(--bg) text-sm"
+                  className="px-3 py-2 rounded-xl border border-line bg-page text-sm"
                 />
                 <input
                   value={hinweis}
                   onChange={e => setHinweis(e.target.value)}
                   maxLength={300}
                   placeholder="Woran man es erkennt — wird nach dem Raten gezeigt"
-                  className="px-3 py-2 rounded-xl border border-(--border) bg-(--bg) text-sm"
+                  className="px-3 py-2 rounded-xl border border-line bg-page text-sm"
                 />
               </div>
             </>
@@ -335,24 +335,24 @@ export function EchtOderKi({ zugang }: { zugang?: KiZugang }) {
 
           {meine.length > 0 && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-wide text-(--text-muted)">
+              <span className="text-xs uppercase tracking-wide text-muted">
                 Deine Sammlung ({meine.length})
               </span>
               <ul className="flex flex-col gap-2">
                 {meine.map(p => (
-                  <li key={p.id} className="flex items-center gap-2 p-2 rounded-xl border border-(--border)">
+                  <li key={p.id} className="flex items-center gap-2 p-2 rounded-xl border border-line">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.echt_url} alt="echt" className="w-12 h-12 object-cover rounded-lg" />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.ki_url} alt="KI" className="w-12 h-12 object-cover rounded-lg opacity-70" />
                     <span className="flex-1 text-sm">
                       {p.titel || "ohne Titel"}
-                      {p.hinweis && <span className="block text-xs text-(--text-muted)">{p.hinweis}</span>}
+                      {p.hinweis && <span className="block text-xs text-muted">{p.hinweis}</span>}
                     </span>
                     <button
                       type="button"
                       onClick={async () => { await api.bildpaare.loeschen(p.id); await meineLaden(); await spielLaden(); }}
-                      className="text-xs font-bold text-(--text-muted) hover:text-(--red)"
+                      className="text-xs font-bold text-muted hover:text-bad"
                     >
                       🗑️
                     </button>

@@ -132,9 +132,9 @@ export default function StufeApps({
           ? <>Super, du kennst dich mit den Apps aus!</>
           : runde === 1
             ? <>Welche App brauchst du dafür? Ziehe die Karte auf die passende App — oder klicke erst die Karte, dann die App an.
-                <span data-zusatz className="text-xs text-(--text-muted) ml-2">{erledigt1.size} von {karten1.length}</span></>
+                <span data-zusatz className="text-xs text-muted ml-2">{erledigt1.size} von {karten1.length}</span></>
             : <>Welche App öffnet diese Datei?
-                <span data-zusatz className="text-xs text-(--text-muted) ml-2">{erledigt2.size} von {karten2.length}</span></>}
+                <span data-zusatz className="text-xs text-muted ml-2">{erledigt2.size} von {karten2.length}</span></>}
         punkte={wertung({
           stufe: "apps", geloest: erledigt1.size + erledigt2.size, anzahl: gesamtAnzahl,
           dauerMs: performance.now() - start.current, fehler: fehler.current,
@@ -166,7 +166,7 @@ export default function StufeApps({
                   aria-pressed={ausgewaehlt}
                   className={
                     "rounded-xl border px-3 py-2 text-sm font-bold text-left cursor-grab " +
-                    (ausgewaehlt ? "border-(--accent) bg-(--surface-hover)" : "border-(--border) hover:border-(--accent)")
+                    (ausgewaehlt ? "border-accent bg-surface-hover" : "border-line hover:border-accent")
                   }
                 >
                   {kartenText(karte)}
@@ -185,7 +185,7 @@ export default function StufeApps({
                 onDrop={e => aufKachelFallen(e, id)}
                 onClick={() => kachelKlick(id)}
                 className={
-                  "flex flex-col items-center gap-1 rounded-xl border p-2 border-(--border) hover:border-(--accent) " +
+                  "flex flex-col items-center gap-1 rounded-xl border p-2 border-line hover:border-accent " +
                   (wackelId === id ? "maus-wackeln" : "")
                 }
               >

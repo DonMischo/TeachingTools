@@ -78,7 +78,7 @@ export default function TippMaterial({
         aria-label="Material"
         value={gewaehlt?.id ?? ""}
         onChange={e => waehlen(e.target.value)}
-        className="text-sm bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5"
+        className="text-sm bg-surface border border-line rounded-lg px-3 py-1.5"
       >
         <option value="">📚 Eingebaute Lektionen</option>
         {sammlungen.map(s => (
@@ -89,7 +89,7 @@ export default function TippMaterial({
       </select>
 
       {gewaehlt && (
-        <span className="text-xs text-(--text-muted)">
+        <span className="text-xs text-muted">
           {gewaehlt.words.length > 0 && `${gewaehlt.words.length} Wörter fürs Spiel · `}
           {gewaehlt.settings.lock_on_error === false ? "ohne Fehlersperre" : "mit Fehlersperre"}
         </span>
@@ -113,14 +113,14 @@ export default function TippMaterial({
           <button
             onClick={() => dateiRef.current?.click()}
             disabled={hochladen.isPending}
-            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-50"
+            className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent disabled:opacity-50"
           >
             {hochladen.isPending ? "lädt …" : "⬆️ Hochladen"}
           </button>
           <button
             onClick={vorlage}
             title="Leere JSON-Vorlage mit Anleitung herunterladen"
-            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
+            className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent"
           >
             📄 Vorlage
           </button>
@@ -146,7 +146,7 @@ export default function TippMaterial({
             <button
               onClick={() => loeschen.mutate(gewaehlt.id)}
               title={`»${gewaehlt.title}« löschen`}
-              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--red)"
+              className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-bad"
             >
               🗑️
             </button>
@@ -154,7 +154,7 @@ export default function TippMaterial({
         </>
       )}
 
-      {fehler && <p className="w-full text-sm text-(--red)">{fehler}</p>}
+      {fehler && <p className="w-full text-sm text-bad">{fehler}</p>}
     </div>
   );
 }

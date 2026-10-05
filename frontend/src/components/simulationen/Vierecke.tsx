@@ -330,11 +330,11 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
   }, [fenceDone, segCount]);
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📐 Vierecke</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Sechs Vierecke mit Formeln und Eigenschaften — und zwei Aufgaben zum Anfassen:
             die Weide einzäunen (Umfang) und die Fläche auslegen.
           </p>
@@ -343,15 +343,15 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       </div>
 
       {/* Blätter */}
-      {!festeForm && <div className="inline-flex self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
+      {!festeForm && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
               tab === t.id
-                ? "bg-(--accent) text-(--accent-text,#111)"
-                : "text-(--text-muted) hover:text-(--text)"
+                ? "bg-accent text-accent-fg"
+                : "text-muted hover:text-fg"
             }`}
           >
             {t.icon} {t.label}
@@ -371,8 +371,8 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
               title={dimmed ? `${s.title}: nur auf dem Blatt »Formen«` : s.title}
               className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                 shapeKey === k
-                  ? "border-(--accent) bg-(--accent)/10 font-bold"
-                  : "border-(--border) hover:border-(--accent)"
+                  ? "border-accent bg-accent/10 font-bold"
+                  : "border-line hover:border-accent"
               } ${dimmed ? "opacity-45" : ""}`}
             >
               <span className="mr-1">{s.icon}</span>{s.title}
@@ -385,14 +385,14 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {shape.fields.map(f => (
           <label key={f.key} className="flex flex-col gap-1">
-            <span className="text-xs text-(--text-muted)">
-              {f.label} = <strong className="text-(--text)">{fmt(vals[f.key])}</strong>
+            <span className="text-xs text-muted">
+              {f.label} = <strong className="text-fg">{fmt(vals[f.key])}</strong>
             </span>
             <input
               type="range" min={f.min} max={f.max} step={1}
               value={vals[f.key]} disabled={!!festeForm}
               onChange={e => setVals(v => ({ ...v, [f.key]: Number(e.target.value) }))}
-              className="accent-(--accent)"
+              className="accent-accent"
             />
           </label>
         ))}
@@ -401,28 +401,28 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       {tab === "formen" && (
         <>
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-lg border border-(--border) bg-(--surface) px-3 py-1.5 text-sm">
+            <span className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm">
               <strong>u</strong> · {shape.formulaU}
             </span>
-            <span className="rounded-lg border border-(--border) bg-(--surface) px-3 py-1.5 text-sm">
+            <span className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm">
               <strong>A</strong> · {shape.formulaA}
             </span>
           </div>
 
-          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+          <div className="card p-4">
             <Figur shapeKey={shapeKey} vals={vals} />
           </div>
 
-          {rechnungZeigen && <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
+          {rechnungZeigen && <div className="card p-4 flex flex-col gap-2">
             <div className="font-mono text-sm">{shape.stepsU(vals)}</div>
             <div className="font-mono text-sm">{shape.stepsA(vals)}</div>
-            <div className="text-xs text-(--text-muted) mt-1">
+            <div className="text-xs text-muted mt-1">
               Umfang u = {fmt(u)} · Fläche A = {fmt(A)}
             </div>
           </div>}
 
-          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-(--text-muted) mb-2">
+          <div className="card p-4">
+            <div className="text-xs font-bold uppercase tracking-wide text-muted mb-2">
               Eigenschaften
             </div>
             <ul className="list-disc pl-5 text-sm flex flex-col gap-1">
@@ -441,20 +441,20 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
             </p>
           )}
 
-          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+          <div className="card p-4">
             {tab === "umfang"
               ? <Weide a={a} b={b} done={fence} onPlace={place(fence, setFence)} />
               : <Flaechenfeld a={a} b={b} done={tiles} onPlace={place(tiles, setTiles)} />}
           </div>
 
-          <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
+          <div className="card p-4 flex flex-col gap-2">
             {tab === "umfang" ? (
               <>
                 <div className="text-sm">{zaunHinweis}</div>
                 <div className="font-mono text-sm">
                   u = 2 · ({a} + {b}) = {segCount}
                 </div>
-                <div className="text-xs text-(--text-muted)">
+                <div className="text-xs text-muted">
                   Der Umfang ist die Länge des Zauns — einmal rundherum, nicht die Weide selbst.
                 </div>
               </>
@@ -466,7 +466,7 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
                     : `Die Fläche ist ausgelegt: ${cellCount} Einheitsquadrate, also A = ${cellCount}.`}
                 </div>
                 <div className="font-mono text-sm">A = {a} · {b} = {cellCount}</div>
-                <div className="text-xs text-(--text-muted)">
+                <div className="text-xs text-muted">
                   Die Fläche ist das, was drinnen liegt — gezählt in Einheitsquadraten.
                 </div>
               </>
@@ -474,13 +474,13 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
             <div className="flex gap-2 mt-1">
               <button
                 onClick={() => setAll(true)}
-                className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
+                className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent"
               >
                 Alles auslegen
               </button>
               <button
                 onClick={() => setAll(false)}
-                className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
+                className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent"
               >
                 ↺ Zurücksetzen
               </button>

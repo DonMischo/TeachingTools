@@ -26,7 +26,7 @@ export function RequireAccount({
   // Solange /me läuft, ist noch nichts entschieden — sonst blitzt die Sperre auf.
   if (!ready) {
     return (
-      <div className="flex-1 flex items-center justify-center p-6 text-sm text-(--text-muted)">
+      <div className="flex-1 flex items-center justify-center p-6 text-sm text-muted">
         Einen Moment …
       </div>
     );
@@ -41,10 +41,10 @@ export function RequireAccount({
 
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="rounded-2xl border border-(--border) bg-(--surface) px-6 py-8 max-w-md w-full text-center">
+      <div className="card px-6 py-8 max-w-md w-full text-center">
         <div className="text-4xl mb-2">{icon}</div>
         <h1 className="text-xl font-black">{title} — nur mit Beitritts-Code</h1>
-        <p className="text-sm text-(--text-muted) mt-2 leading-relaxed">
+        <p className="text-sm text-muted mt-2 leading-relaxed">
           Ohne Anmeldung geht es nur über eine laufende Sitzung. Deine Lehrkraft zeigt
           dafür einen QR-Code — oder gib den Code hier ein.
         </p>
@@ -57,19 +57,19 @@ export function RequireAccount({
             placeholder="CODE"
             aria-label="Beitritts-Code"
             maxLength={8}
-            className="flex-1 bg-(--bg) border border-(--border) rounded-lg px-3 py-2
+            className="flex-1 bg-page border border-line rounded-lg px-3 py-2
               text-lg font-black text-center tracking-[0.2em]"
           />
           <button
             onClick={go}
             disabled={!code.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40"
+            className="btn-primary px-4 py-2 text-sm"
           >
             Los
           </button>
         </div>
 
-        <p className="text-xs text-(--text-muted) mt-4">
+        <p className="text-xs text-muted mt-4">
           Du hast einen eigenen Zugang? Dann melde dich links unten an.
         </p>
       </div>

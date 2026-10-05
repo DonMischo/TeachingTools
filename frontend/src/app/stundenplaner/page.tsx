@@ -19,18 +19,18 @@ const TEMPLATE_PHASES: Phase[] = [
 function PlanCard({ plan, onDelete }: { plan: LessonPlanOut; onDelete: () => void }) {
   const router = useRouter();
   return (
-    <div className="bg-(--surface) border border-(--border) rounded-xl p-4 flex flex-col gap-2">
+    <div className="bg-surface border border-line rounded-xl p-4 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <div className="font-bold text-sm leading-snug">{plan.title}</div>
         {!plan.is_owner && (
           <span className="text-xs bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full shrink-0">geteilt</span>
         )}
       </div>
-      <div className="text-xs text-(--text-muted) flex flex-col gap-0.5">
+      <div className="text-xs text-muted flex flex-col gap-0.5">
         {plan.fach && <span>📚 {plan.fach}{plan.klasse ? ` · ${plan.klasse}` : ""}</span>}
         {plan.datum && <span>📅 {plan.datum}</span>}
         <span>⏱ {plan.dauer_min} min · {(plan.phasen ?? []).length} Phasen</span>
-        {!plan.is_owner && <span className="text-(--text-muted)">von {plan.owner_name}</span>}
+        {!plan.is_owner && <span className="text-muted">von {plan.owner_name}</span>}
       </div>
       <div className="flex gap-2 mt-auto pt-1">
         <button onClick={() => router.push(`/stundenplaner/${plan.id}`)} className="btn-primary text-xs py-1 px-3 flex-1">
@@ -150,19 +150,19 @@ export default function StundenplanerListPage() {
   }
 
   if (!auth || !isTeacher) {
-    return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte zugänglich.</div>;
+    return <div className="p-8 text-muted">Nur für Lehrkräfte zugänglich.</div>;
   }
 
   return (
-    <div className="max-w-(--seite-breite) mx-auto px-4 py-8 w-full">
-      <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-(--text-muted) hover:text-(--text) transition-colors">
+    <div className="max-w-seite mx-auto px-4 py-8 w-full">
+      <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-muted hover:text-fg transition-colors">
         ← Zurück zu Tools
       </button>
 
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📋 Stundenplaner</h1>
-          <p className="text-sm text-(--text-muted) mt-0.5">Verlaufsplanungen erstellen und mit Kolleg·innen teilen.</p>
+          <p className="text-sm text-muted mt-0.5">Verlaufsplanungen erstellen und mit Kolleg·innen teilen.</p>
         </div>
         {can("stundenplaner", "create") && (
           <div className="flex gap-2 flex-wrap">
@@ -186,7 +186,7 @@ export default function StundenplanerListPage() {
 
       {/* Create form */}
       {showCreate && (
-        <form onSubmit={handleCreate} className="bg-(--surface) border border-(--border) rounded-xl p-5 mb-6 flex flex-col gap-3">
+        <form onSubmit={handleCreate} className="bg-surface border border-line rounded-xl p-5 mb-6 flex flex-col gap-3">
           <div className="font-semibold text-sm">Neue Stundenplanung</div>
           <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titel *" required className="input text-sm py-2" />
           <div className="flex gap-2 flex-wrap">
@@ -204,16 +204,16 @@ export default function StundenplanerListPage() {
 
       {/* Import form */}
       {showImport && (
-        <div className="bg-(--surface) border border-(--border) rounded-xl p-5 mb-6 flex flex-col gap-3">
+        <div className="bg-surface border border-line rounded-xl p-5 mb-6 flex flex-col gap-3">
           <div className="font-semibold text-sm">Aus JSON importieren</div>
-          <p className="text-xs text-(--text-muted)">
+          <p className="text-xs text-muted">
             JSON einfügen oder Datei hochladen. Tipp: Lade die <strong>KI-Vorlage</strong> herunter, lass sie von einer KI ausfüllen und importiere das Ergebnis hier.
             Tool-Links werden beim Import entfernt und können danach im Editor gesetzt werden.
           </p>
           <div className="flex gap-2">
             <button onClick={() => fileRef.current?.click()} className="btn-secondary text-xs py-1.5 px-3">📂 Datei wählen</button>
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handleFileChange} />
-            {importText && <span className="text-xs text-(--text-muted) self-center">{importText.length} Zeichen geladen</span>}
+            {importText && <span className="text-xs text-muted self-center">{importText.length} Zeichen geladen</span>}
           </div>
           <textarea
             value={importText}
@@ -229,17 +229,17 @@ export default function StundenplanerListPage() {
         </div>
       )}
 
-      {loading && <div className="text-(--text-muted) text-sm">Laden…</div>}
+      {loading && <div className="text-muted text-sm">Laden…</div>}
 
       {!loading && own.length === 0 && shared.length === 0 && (
-        <div className="text-center text-(--text-muted) mt-16 text-sm">
+        <div className="text-center text-muted mt-16 text-sm">
           Noch keine Planungen. Erstelle deine erste Stundenplanung!
         </div>
       )}
 
       {own.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-sm font-bold text-(--text-muted) uppercase tracking-wide mb-3">Meine Planungen</h2>
+          <h2 className="text-sm font-bold text-muted uppercase tracking-wide mb-3">Meine Planungen</h2>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {own.map(p => <PlanCard key={p.id} plan={p} onDelete={() => handleDelete(p)} />)}
           </div>
@@ -248,7 +248,7 @@ export default function StundenplanerListPage() {
 
       {shared.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-(--text-muted) uppercase tracking-wide mb-3">Geteilt mit mir</h2>
+          <h2 className="text-sm font-bold text-muted uppercase tracking-wide mb-3">Geteilt mit mir</h2>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {shared.map(p => <PlanCard key={p.id} plan={p} onDelete={() => {}} />)}
           </div>

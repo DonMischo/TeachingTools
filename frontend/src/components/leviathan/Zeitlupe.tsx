@@ -74,7 +74,7 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false, onFerti
   const i = Math.min(pos.current.i, Math.max(0, ts.length - 1));
   const anteil = pos.current.a;
 
-  if (!r) return <p className="text-sm text-(--text-muted)">Nach der ersten Runde lässt sie sich hier in Zeitlupe abspielen.</p>;
+  if (!r) return <p className="text-sm text-muted">Nach der ersten Runde lässt sie sich hier in Zeitlupe abspielen.</p>;
 
   const t = ts[Math.min(i, ts.length - 1)];
   const f = Math.min(1, anteil);
@@ -89,35 +89,35 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false, onFerti
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => gehe(0)} aria-label="Von vorn" className="w-9 h-9 rounded-lg border border-(--border) font-black">⏮</button>
-        <button onClick={() => gehe(i - 1)} disabled={i === 0} aria-label="Voriger Takt" className="w-9 h-9 rounded-lg border border-(--border) font-black disabled:opacity-30">◀</button>
+        <button onClick={() => gehe(0)} aria-label="Von vorn" className="w-9 h-9 rounded-lg border border-line font-black">⏮</button>
+        <button onClick={() => gehe(i - 1)} disabled={i === 0} aria-label="Voriger Takt" className="w-9 h-9 rounded-lg border border-line font-black disabled:opacity-30">◀</button>
         <button onClick={() => {
             // Fertig gezeigter Takt: beim nächsten weitermachen (am Ende von vorn).
             if (!laeuft && anteil >= 1) pos.current = { i: i >= ts.length - 1 ? 0 : i + 1, a: 0 };
             setLaeuft((l) => !l);
           }}
-          className="px-4 h-9 rounded-lg font-black bg-(--accent) text-(--accent-text,#111)">
+          className="btn-primary px-4 h-9">
           {laeuft ? "⏸ Pause" : "▶ Abspielen"}
         </button>
-        <button onClick={() => gehe(i + 1)} disabled={i >= ts.length - 1} aria-label="Nächster Takt" className="w-9 h-9 rounded-lg border border-(--border) font-black disabled:opacity-30">▶</button>
+        <button onClick={() => gehe(i + 1)} disabled={i >= ts.length - 1} aria-label="Nächster Takt" className="w-9 h-9 rounded-lg border border-line font-black disabled:opacity-30">▶</button>
         {onFertig && (
-          <button onClick={onFertig} className="px-3 h-9 rounded-lg text-sm font-bold border border-(--border)">Weiter zur nächsten Runde ⏭</button>
+          <button onClick={onFertig} className="px-3 h-9 rounded-lg text-sm font-bold border border-line">Weiter zur nächsten Runde ⏭</button>
         )}
-        <div className="inline-flex rounded-xl border border-(--border) p-1 ml-auto" role="radiogroup" aria-label="Tempo">
+        <div className="inline-flex rounded-xl border border-line p-1 ml-auto" role="radiogroup" aria-label="Tempo">
           {(Object.keys(TEMPO) as Tempo[]).map((x) => (
             <button key={x} role="radio" aria-checked={tempo === x} onClick={() => onTempo(x)}
-              className={`px-2.5 py-1 rounded-lg text-sm font-bold ${tempo === x ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>{TEMPO[x].name}</button>
+              className={`px-2.5 py-1 rounded-lg text-sm font-bold ${tempo === x ? "bg-accent text-accent-fg" : "text-muted"}`}>{TEMPO[x].name}</button>
           ))}
         </div>
       </div>
 
-      <div className="h-1.5 rounded-full bg-(--surface-hover) overflow-hidden" aria-hidden>
-        <div className="h-full bg-(--accent)" style={{ width: `${((i + f) / ts.length) * 100}%` }} />
+      <div className="h-1.5 rounded-full bg-surface-hover overflow-hidden" aria-hidden>
+        <div className="h-full bg-accent" style={{ width: `${((i + f) / ts.length) * 100}%` }} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="flex flex-col gap-3 min-w-0" aria-live="polite">
-          <div className="text-xs text-(--text-muted)">
+          <div className="text-xs text-muted">
             {STARTJAHR + 2 * (r.runde - 1)} → {STARTJAHR + 2 * r.runde} · {SCHRITT_NAME[t.schritt] ?? t.schritt} · Takt {i + 1} von {ts.length}
           </div>
           <h3 className="text-xl font-black">{t.titel}</h3>
@@ -127,23 +127,23 @@ export default function Zeitlupe({ z, tempo, onTempo, autostart = false, onFerti
             {aenderungen.map(({ g, summe }) => {
               const jetzt = vorher[g] + summe * f;
               return (
-                <li key={g} className="rounded-xl border border-(--border) px-3 py-2">
+                <li key={g} className="rounded-xl border border-line px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold">{BEREICH[g].icon} {BEREICH[g].name}</span>
                     <span className="tabular-nums font-black" style={{ color: gut(g, summe) ? "var(--green)" : "var(--red)" }}>{zahl(summe)}</span>
                   </div>
-                  <div className="relative h-2.5 mt-1 rounded-full bg-(--surface-hover)">
+                  <div className="relative h-2.5 mt-1 rounded-full bg-surface-hover">
                     <div className="absolute top-0 bottom-0 rounded-full"
                       style={{ width: `${Math.max(0, Math.min(100, jetzt))}%`, background: gut(g, summe) ? "var(--green)" : "var(--red)", opacity: 0.8 }} />
-                    <div className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-(--text)" style={{ left: `${Math.max(0, Math.min(100, vorher[g]))}%` }} title="vorher" />
+                    <div className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-fg" style={{ left: `${Math.max(0, Math.min(100, vorher[g]))}%` }} title="vorher" />
                   </div>
-                  <div className="text-xs text-(--text-muted) tabular-nums mt-0.5">{Math.round(vorher[g])} → {Math.round(jetzt)}</div>
+                  <div className="text-xs text-muted tabular-nums mt-0.5">{Math.round(vorher[g])} → {Math.round(jetzt)}</div>
                 </li>
               );
             })}
           </ul>
           {t.beitraege.length > 0 && (
-            <details className="text-xs text-(--text-muted)">
+            <details className="text-xs text-muted">
               <summary className="cursor-pointer">Woher genau?</summary>
               <ul className="mt-1 space-y-1">
                 {t.beitraege.filter((b) => Math.abs(b.wert) >= 0.05).map((b, j) => (

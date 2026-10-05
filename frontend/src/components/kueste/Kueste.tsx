@@ -38,22 +38,22 @@ export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgab
   const festerReiter = wahl(vorgabe, "reiter", ["profil", "draufsicht", "gezeiten", "galerie", "wissen"] as const);
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "profil");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🌊 Küstendynamik</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Wie Wellen, Strömung, Wind und Gezeiten unsere Küsten formen — und wie Menschen sie schützen.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
 
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)}
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-              reiter === r.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
+              reiter === r.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
             {r.icon} {r.label}
           </button>
         ))}
@@ -70,7 +70,7 @@ export default function Kueste({ action, vorgabe }: { action?: ReactNode; vorgab
 
 function Karte({ titel, children }: { titel: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
+    <section className="card p-4 text-sm leading-relaxed flex flex-col gap-2">
       <h3 className="font-black text-base">{titel}</h3>
       {children}
     </section>
@@ -102,7 +102,7 @@ function Wissen() {
       <Karte titel="🏗️ Küstenschutz im Überblick">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead><tr className="text-left text-(--text-muted)"><th className="pr-2">Maßnahme</th><th className="pr-2">schützt vor</th><th>Nachteil</th></tr></thead>
+            <thead><tr className="text-left text-muted"><th className="pr-2">Maßnahme</th><th className="pr-2">schützt vor</th><th>Nachteil</th></tr></thead>
             <tbody className="align-top">
               <tr><td className="pr-2 py-1"><b>Deich</b></td><td className="pr-2">Überflutung bei Sturmflut</td><td>teuer, muss mit dem Meeresspiegel wachsen</td></tr>
               <tr><td className="pr-2 py-1"><b>Sandaufspülung</b></td><td className="pr-2">Strandverlust</td><td>muss regelmäßig wiederholt werden</td></tr>

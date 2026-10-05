@@ -79,23 +79,23 @@ function Rechenweg({ node, x, fmtValue, onClose }: {
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="rounded-2xl border border-(--border) bg-(--surface) p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto"
+        className="card p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto"
       >
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
             <h2 className="font-black text-lg">Woher kommt der Wert?</h2>
-            <p className="text-xs text-(--text-muted)">
+            <p className="text-xs text-muted">
               <span style={{ color: X_COLOR, fontWeight: 800 }}>x</span> wird durch{" "}
               <span style={{ color: X_COLOR, fontWeight: 800 }}>{fmt(x)}</span> ersetzt.
             </p>
           </div>
-          <button onClick={onClose} className="text-sm text-(--text-muted) hover:text-(--text)">✕</button>
+          <button onClick={onClose} className="text-sm text-muted hover:text-fg">✕</button>
         </div>
 
         <ol className="flex flex-col gap-2">
           {steps.map((s, i) => (
             <li key={i} className="flex items-baseline gap-3">
-              <span className="text-[10px] uppercase tracking-wide text-(--text-muted) w-28 shrink-0 text-right">
+              <span className="text-[10px] uppercase tracking-wide text-muted w-28 shrink-0 text-right">
                 {s.label}
               </span>
               <Tex tex={s.tex} className={i === steps.length - 1 ? "text-2xl" : "text-lg"} />
@@ -103,7 +103,7 @@ function Rechenweg({ node, x, fmtValue, onClose }: {
           ))}
         </ol>
 
-        <p className="text-xs text-(--text-muted) mt-4">
+        <p className="text-xs text-muted mt-4">
           Immer von innen nach außen: was in Klammern steht und Punkt-vor-Strich zuerst.
         </p>
       </div>
@@ -120,7 +120,7 @@ function ZoomBtn({ onClick, title, children }: {
       onClick={onClick}
       title={title}
       aria-label={title}
-      className="w-7 h-7 rounded-lg border border-(--border) hover:border-(--accent)
+      className="w-7 h-7 rounded-lg border border-line hover:border-accent
         text-sm leading-none flex items-center justify-center"
     >
       {children}
@@ -369,7 +369,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
           onClick={() => setWegX(r.x)}
           title={`Rechenweg für x = ${fmtX(r.x)}`}
           aria-label={`Rechenweg für x = ${fmtX(r.x)}`}
-          className="text-xs w-5 h-5 rounded-full border border-(--border) hover:border-(--accent) hover:text-(--accent)"
+          className="text-xs w-5 h-5 rounded-full border border-line hover:border-accent hover:text-accent"
         >
           ?
         </button>
@@ -393,11 +393,11 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
   };
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📈 Funktionen</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Term eingeben, Wertetabelle und Graph entstehen mitsammen. Über die Tabelle fahren
             zeigt den Punkt, über den Graphen fahren zeigt das Wertepaar — und »?« zeigt, wie
             der Wert ausgerechnet wird.
@@ -406,7 +406,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         <div className="flex items-center gap-2">
           {action}
           <button onClick={reset}
-            className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
+            className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
             ↺ Zurücksetzen
           </button>
         </div>
@@ -422,13 +422,13 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             readOnly={festerTerm !== undefined}
             spellCheck={false}
             aria-label="Funktionsterm"
-            className="flex-1 min-w-[16rem] bg-(--bg) border border-(--border) rounded-lg px-3 py-2 font-mono text-lg"
+            className="flex-1 min-w-[16rem] bg-page border border-line rounded-lg px-3 py-2 font-mono text-lg"
           />
         </label>
         {/* Der Term, wie er in einem Heft stünde. Die Eingabe bleibt Text —
             getippt wird »x^2«, gesetzt erscheint es hochgestellt. */}
         {parsed.ok && (
-          <div className="rounded-xl bg-(--bg) border border-(--border) px-4 py-3 overflow-x-auto">
+          <div className="rounded-xl bg-page border border-line px-4 py-3 overflow-x-auto">
             <Tex tex={`f(x) = ${toLatex(node!)}`} className="text-2xl" />
           </div>
         )}
@@ -445,8 +445,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
               title={`${t.hint} — nochmal klicken für neue Zahlen`}
               className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
                 tpl === t.key
-                  ? "border-(--accent) bg-(--accent)/10 font-bold"
-                  : "border-(--border) hover:border-(--accent)"
+                  ? "border-accent bg-accent/10 font-bold"
+                  : "border-line hover:border-accent"
               }`}
             >
               {t.label}{tpl === t.key ? " ↻" : ""}
@@ -455,7 +455,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         </div>}
         {formen && festerTerm === undefined && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-(--text-muted) mr-0.5">Form</span>
+            <span className="text-xs text-muted mr-0.5">Form</span>
             {([["nf", "Normalform", formen.nf], ["spf", "Scheitelpunktform", formen.spf]] as const).map(
               ([key, label, term]) => (
                 <button
@@ -464,22 +464,22 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                   title={`f(x) = ${term}`}
                   className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
                     src.trim() === term
-                      ? "border-(--accent) bg-(--accent)/10 font-bold"
-                      : "border-(--border) hover:border-(--accent)"
+                      ? "border-accent bg-accent/10 font-bold"
+                      : "border-line hover:border-accent"
                   }`}
                 >
                   {label}
                 </button>
               ),
             )}
-            <span className="text-xs text-(--text-muted) ml-1">
+            <span className="text-xs text-muted ml-1">
               Scheitelpunkt ({fmt(vertexOf.d)} | {fmt(vertexOf.e)})
             </span>
           </div>
         )}
 
         {/* Auch hier feste Höhe — sonst springt die Seite beim Vorlagenwechsel. */}
-        {festerTerm === undefined && <p className="text-xs text-(--text-muted) min-h-8">
+        {festerTerm === undefined && <p className="text-xs text-muted min-h-8">
           {tpl
             ? <>💡 {TEMPLATES.find(t => t.key === tpl)!.hint} <span className="opacity-70">Nochmal klicken: neue Zahlen.</span></>
             : "Eine Vorlage wählen — jeder weitere Klick auf dieselbe würfelt neue Zahlen."}
@@ -492,7 +492,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         {([["von", from, setFrom], ["bis", to, setTo], ["Schritt", step, setStep]] as const).map(
           ([label, val, set]) => (
             <label key={label} className="flex flex-col gap-1">
-              <span className="text-xs text-(--text-muted)">
+              <span className="text-xs text-muted">
                 {label}{pi ? " · π" : ""}
               </span>
               <input
@@ -503,7 +503,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                   const v = Number(e.target.value);
                   if (Number.isFinite(v)) set(label === "Schritt" ? Math.max(0.05, v) : v);
                 }}
-                className="bg-(--bg) border border-(--border) rounded-lg px-2 py-1.5 text-sm"
+                className="bg-page border border-line rounded-lg px-2 py-1.5 text-sm"
               />
             </label>
           ),
@@ -511,27 +511,27 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         </div>
 
         <label className="flex items-center gap-2 text-sm cursor-pointer pb-1.5">
-          <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} disabled={festerTerm !== undefined} className="accent-(--accent)" />
+          <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} disabled={festerTerm !== undefined} className="accent-accent" />
           in π rechnen
         </label>
 
         {/* Ausschnitt. Beide Achsen zusammen — oder jede für sich, wenn eine
             Kurve flach liegt oder aus dem Bild läuft. */}
         <div className="flex items-center gap-1.5 pb-0.5 flex-wrap">
-          <span className="text-xs text-(--text-muted) mr-0.5">Ansicht</span>
+          <span className="text-xs text-muted mr-0.5">Ansicht</span>
           <ZoomBtn onClick={() => scale(1 / 1.4, 1 / 1.4)} title="Hineinzoomen">＋</ZoomBtn>
           <ZoomBtn onClick={() => scale(1.4, 1.4)} title="Herauszoomen">−</ZoomBtn>
-          <span className="text-xs text-(--text-muted) ml-1.5">x</span>
+          <span className="text-xs text-muted ml-1.5">x</span>
           <ZoomBtn onClick={() => scale(1 / 1.4, 1)} title="x-Achse dehnen">＋</ZoomBtn>
           <ZoomBtn onClick={() => scale(1.4, 1)} title="x-Achse stauchen">−</ZoomBtn>
-          <span className="text-xs text-(--text-muted) ml-1.5">y</span>
+          <span className="text-xs text-muted ml-1.5">y</span>
           <ZoomBtn onClick={() => scale(1, 1 / 1.4)} title="y-Achse dehnen">＋</ZoomBtn>
           <ZoomBtn onClick={() => scale(1, 1.4)} title="y-Achse stauchen">−</ZoomBtn>
           <button
             onClick={() => setZoom(null)}
             disabled={!zoom}
             title="Wieder automatisch einpassen"
-            className="text-xs px-2 py-1 rounded-lg border border-(--border) hover:border-(--accent) disabled:opacity-40 ml-1"
+            className="text-xs px-2 py-1 rounded-lg border border-line hover:border-accent disabled:opacity-40 ml-1"
           >
             Passend
           </button>
@@ -542,12 +542,12 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
           Größe, eine Spalte je Stelle. So liest sie sich wie an der Tafel,
           und bei vielen Stellen wird waagerecht gescrollt statt in die Länge
           gezogen. Die Beschriftungsspalte bleibt dabei stehen. */}
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-3">
+      <div className="card p-3">
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => setTabelleOffen(o => !o)}
             aria-expanded={tabelleOffen}
-            className="text-xs font-bold uppercase tracking-wide text-(--text-muted) hover:text-(--text)"
+            className="text-xs font-bold uppercase tracking-wide text-muted hover:text-fg"
           >
             {tabelleOffen ? "▾" : "▸"} Wertetabelle
           </button>
@@ -555,7 +555,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             <button
               onClick={() => setSchritteOffen(o => !o)}
               aria-expanded={schritteOffen}
-              className="text-xs text-(--text-muted) hover:text-(--text)"
+              className="text-xs text-muted hover:text-fg"
             >
               {schritteOffen ? "▾" : "▸"} Rechenschritte
             </button>
@@ -567,11 +567,11 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             <table className="text-sm border-collapse" style={{ fontVariantNumeric: "tabular-nums" }}>
               <tbody>
                 {TABELLE.filter(z => schritteOffen || (z.key !== "rechnung" && z.key !== "weg")).map(zeile => (
-                  <tr key={zeile.key} className="border-t border-(--border) first:border-t-0">
+                  <tr key={zeile.key} className="border-t border-line first:border-t-0">
                     <th
                       scope="row"
-                      className="sticky left-0 z-10 bg-(--surface) text-left font-bold
-                        pr-3 py-1 whitespace-nowrap text-(--text-muted)"
+                      className="sticky left-0 z-10 bg-surface text-left font-bold
+                        pr-3 py-1 whitespace-nowrap text-muted"
                       style={zeile.key === "x" ? { color: X_COLOR } : undefined}
                     >
                       {zeile.label}
@@ -581,7 +581,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                         key={i}
                         onPointerEnter={() => setHoverRow(i)}
                         onPointerLeave={() => setHoverRow(null)}
-                        className="px-2 py-1 border-l border-(--border) whitespace-nowrap cursor-pointer text-center"
+                        className="px-2 py-1 border-l border-line whitespace-nowrap cursor-pointer text-center"
                         style={hoverRow === i || hoverX === r.x ? { background: "rgba(245,158,11,0.15)" } : undefined}
                       >
                         {zeile.zelle(r)}
@@ -593,13 +593,13 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             </table>
           </div>
         ) : (
-          <p className="text-xs text-(--text-muted) mt-2">
+          <p className="text-xs text-muted mt-2">
             Kein Bereich — »von« muss kleiner als »bis« sein.
           </p>
         )}
 
         {tabelleOffen && rows.some(r => r.y === null) && (
-          <p className="text-xs text-(--text-muted) mt-2">
+          <p className="text-xs text-muted mt-2">
             — heißt: dort ist die Funktion nicht definiert.
           </p>
         )}
@@ -607,7 +607,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
 
       <div>
         {/* Koordinatensystem */}
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-3">
+        <div className="card p-3">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
@@ -695,7 +695,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
               schrumpfte die Seite bei jedem Überfahren der Tabelle. Die
               Koordinaten stehen ohnehin am Punkt selbst, im SVG, wo sie nichts
               umwerfen können. */}
-          <p className="text-xs text-(--text-muted) mt-1">
+          <p className="text-xs text-muted mt-1">
             Über den Graphen oder die Tabelle fahren zeigt den Punkt samt Koordinaten.
             Anklicken zeigt den Rechenweg. Mausrad zoomt, Ziehen verschiebt den Ausschnitt.
           </p>

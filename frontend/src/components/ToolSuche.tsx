@@ -33,7 +33,7 @@ export function ToolSuche({ wert, setzen, treffer, gesamt }: {
   return (
     <div className="flex flex-col gap-1">
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" aria-hidden>🔍</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden>🔍</span>
         <input
           type="search"
           value={wert}
@@ -47,7 +47,7 @@ export function ToolSuche({ wert, setzen, treffer, gesamt }: {
         />
       </div>
       {wert.trim() !== "" && (
-        <p className="text-xs text-(--text-muted)" aria-live="polite">
+        <p className="text-xs text-muted" aria-live="polite">
           {treffer === 0 ? "Nichts gefunden" : `${treffer} von ${gesamt}`}
         </p>
       )}

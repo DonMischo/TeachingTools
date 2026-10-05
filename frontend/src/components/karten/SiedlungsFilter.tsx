@@ -35,14 +35,14 @@ export default function SiedlungsFilter({ ebenen, inhalt, setInhalt }: {
 
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Siedlungen</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-muted">Siedlungen</h3>
       {werte.map((w) => (
         <label key={w.wert} className="flex items-center gap-2 text-xs cursor-pointer">
           <input type="checkbox" checked={an(w.wert)} onChange={() => schalte(w.wert)} />
           {w.text}
         </label>
       ))}
-      <p className="text-[10px] text-(--text-muted)">Kleine Orte erscheinen erst beim Heranzoomen.</p>
+      <p className="text-[10px] text-muted">Kleine Orte erscheinen erst beim Heranzoomen.</p>
     </div>
   );
 }

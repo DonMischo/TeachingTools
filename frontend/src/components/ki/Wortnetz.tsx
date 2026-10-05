@@ -134,7 +134,7 @@ export function WortnetzBuehne({ netz, verlauf, mut, onMut, onWaehlen, wuerfel }
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+      <div className="card overflow-hidden">
         {/* Bei voller Seitenbreite würde das Netz höher als der Bildschirm:
             die Breite ist deshalb an 60 % der Fensterhöhe gebunden. */}
         <svg viewBox="0 0 400 300" className="w-full h-auto block mx-auto" role="img"
@@ -184,13 +184,13 @@ export function WortnetzBuehne({ netz, verlauf, mut, onMut, onWaehlen, wuerfel }
       </div>
 
       {hinweis && (
-        <p className="text-sm rounded-xl px-3 py-2 border border-(--red) text-(--text)">
+        <p className="text-sm rounded-xl px-3 py-2 border border-bad text-fg">
           🚫 {hinweis}
         </p>
       )}
 
       {gekuerzt && (
-        <p className="text-xs text-(--text-muted) leading-relaxed">
+        <p className="text-xs text-muted leading-relaxed">
           🔎 Diese Wortfolge stand so nie im Text — das Netz schaut deshalb gerade nur
           {" "}{antwort.rueckblick === 1 ? "auf die Worthäufigkeit" : "ein Wort"} zurück
           statt {netz.n - 1}. Fachleute nennen das Rückfall (»Backoff«).
@@ -204,22 +204,22 @@ export function WortnetzBuehne({ netz, verlauf, mut, onMut, onWaehlen, wuerfel }
             type="range" min={0} max={5} step={1} value={mut}
             onChange={e => onMut(Number(e.target.value))}
             aria-label="Wie viele Vorschläge"
-            className="w-40 accent-(--accent)"
+            className="w-40 accent-accent"
           />
-          <span className="text-(--text-muted) whitespace-nowrap">
+          <span className="text-muted whitespace-nowrap">
             {anzahlAuswahl(mut)} {anzahlAuswahl(mut) === 1 ? "Vorschlag" : "Vorschläge"}
           </span>
         </label>
         <button
           type="button"
           onClick={() => { setHinweis(null); onWaehlen(maschinenwahl(kands, wuerfel)); }}
-          className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface) text-sm font-bold"
+          className="px-3 py-2 rounded-xl border border-line bg-surface text-sm font-bold"
         >
           🎲 Maschine wählt
         </button>
       </div>
 
-      <p className="text-xs text-(--text-muted) leading-relaxed">
+      <p className="text-xs text-muted leading-relaxed">
         Das Netz schaut nur auf <b>ein einziges Wort</b> zurück — auf »{mitteText}«. Alles davor hat
         es schon vergessen. Ein echtes Sprachmodell hat Tausende Wörter im Blick und kann deshalb
         den Faden halten; hier reicht es für einen Satz, der stimmt, aber nicht für eine Geschichte,

@@ -2,7 +2,7 @@
 /** Bausteine für die Formular-Editoren der Vorlagen. */
 import { useEffect, useState, type ReactNode } from "react";
 
-export const KLEIN_BTN = "text-xs px-2 py-1 rounded-lg border border-(--border) text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors disabled:opacity-30";
+export const KLEIN_BTN = "text-xs px-2 py-1 rounded-lg border border-line text-muted hover:border-accent hover:text-accent transition-colors disabled:opacity-30";
 
 /** Beschriftetes Eingabefeld (ein Element). */
 export function Feld({ label, hint, children, className = "" }: {
@@ -10,9 +10,9 @@ export function Feld({ label, hint, children, className = "" }: {
 }) {
   return (
     <label className={`flex flex-col gap-1 text-sm min-w-0 ${className}`}>
-      <span className="text-xs font-medium text-(--text-muted)">{label}</span>
+      <span className="text-xs font-medium text-muted">{label}</span>
       {children}
-      {hint && <span className="text-xs text-(--text-muted)">{hint}</span>}
+      {hint && <span className="text-xs text-muted">{hint}</span>}
     </label>
   );
 }
@@ -21,8 +21,8 @@ export function Feld({ label, hint, children, className = "" }: {
 export function Gruppe({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5 text-sm">
-      <span className="text-xs font-medium text-(--text-muted)">{label}</span>
-      {hint && <span className="text-xs text-(--text-muted) -mt-1">{hint}</span>}
+      <span className="text-xs font-medium text-muted">{label}</span>
+      {hint && <span className="text-xs text-muted -mt-1">{hint}</span>}
       {children}
     </div>
   );
@@ -111,7 +111,7 @@ export function TextListe({ values, onChange, placeholder, addLabel = "+ hinzuf�
             onMove={d => onChange(move(values, i, d))} onRemove={() => onChange(values.filter((_, j) => j !== i))} />
         </div>
       ))}
-      <button type="button" onClick={() => onChange([...values, ""])} className="text-xs text-(--accent) hover:underline self-start">
+      <button type="button" onClick={() => onChange([...values, ""])} className="text-xs text-accent hover:underline self-start">
         {addLabel}
       </button>
     </div>
@@ -135,13 +135,13 @@ export function AntwortListe({ answers, onChange, mode, name }: {
   }
   return (
     <div className="flex flex-col gap-1.5">
-      {mode === "order" && <p className="text-xs text-(--text-muted)">In der richtigen Reihenfolge eintragen — gemischt wird beim Spielen.</p>}
+      {mode === "order" && <p className="text-xs text-muted">In der richtigen Reihenfolge eintragen — gemischt wird beim Spielen.</p>}
       {mode !== "order" && mode !== "none" && (
-        <p className="text-xs text-(--text-muted)">{mode === "single" ? "Die richtige Antwort anklicken." : "Alle richtigen Antworten ankreuzen."}</p>
+        <p className="text-xs text-muted">{mode === "single" ? "Die richtige Antwort anklicken." : "Alle richtigen Antworten ankreuzen."}</p>
       )}
       {answers.map((a, i) => (
         <div key={i} className="flex gap-2 items-center">
-          {mode === "order" && <span className="text-xs text-(--text-muted) w-5 text-right">{i + 1}.</span>}
+          {mode === "order" && <span className="text-xs text-muted w-5 text-right">{i + 1}.</span>}
           {(mode === "single" || mode === "multi") && (
             <input type={mode === "single" ? "radio" : "checkbox"} name={name} checked={!!a.correct}
               onChange={e => setCorrect(i, e.target.checked)} aria-label={`Antwort ${i + 1} ist richtig`}
@@ -154,7 +154,7 @@ export function AntwortListe({ answers, onChange, mode, name }: {
             onMove={d => onChange(move(answers, i, d))} onRemove={() => onChange(answers.filter((_, j) => j !== i))} />
         </div>
       ))}
-      <button type="button" className="text-xs text-(--accent) hover:underline self-start"
+      <button type="button" className="text-xs text-accent hover:underline self-start"
         onClick={() => onChange([...answers, mode === "none" || mode === "order" ? { text: "" } : { text: "", correct: false }])}>
         + Antwort
       </button>
@@ -167,9 +167,9 @@ export function Karte({ titel, knoepfe, children, offen = false }: {
   titel: ReactNode; knoepfe?: ReactNode; children: ReactNode; offen?: boolean;
 }) {
   return (
-    <details open={offen} className="rounded-xl border border-(--border) bg-(--bg) group">
+    <details open={offen} className="rounded-xl border border-line bg-page group">
       <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none list-none">
-        <span className="text-(--text-muted) text-xs transition-transform group-open:rotate-90">▶</span>
+        <span className="text-muted text-xs transition-transform group-open:rotate-90">▶</span>
         <span className="flex-1 min-w-0 truncate text-sm font-medium">{titel}</span>
         {knoepfe && <span onClick={e => e.preventDefault()}>{knoepfe}</span>}
       </summary>
@@ -221,7 +221,7 @@ export function BildFeld({ value, onChange, upload, urlFor, label = "Bild" }: {
   return (
     <Gruppe label={label}>
       <div className="flex items-center gap-3 flex-wrap">
-        {value && <img src={urlFor(value)} alt="" className="h-20 max-w-40 rounded-lg object-contain border border-(--border) bg-(--surface)" />}
+        {value && <img src={urlFor(value)} alt="" className="h-20 max-w-40 rounded-lg object-contain border border-line bg-surface" />}
         <label className={`${KLEIN_BTN} cursor-pointer ${busy ? "opacity-50 pointer-events-none" : ""}`}>
           {busy ? "Lädt hoch…" : value ? "📷 Anderes Bild" : "📷 Bild hochladen"}
           <input type="file" accept="image/*" className="hidden" onChange={waehlen} aria-label={`${label} hochladen`} />

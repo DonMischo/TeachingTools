@@ -82,17 +82,17 @@ export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest 
     setProg(neu);
   };
 
-  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) bg-(--surface) hover:border-(--accent)";
+  const knopf = "px-3 py-1.5 rounded-lg text-sm font-bold border border-line bg-surface hover:border-accent";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-4 items-start">
       <div className="flex flex-col gap-2 min-w-0">
         <canvas ref={canvas} width={lauf.raster.b * px} height={lauf.raster.h * px}
           data-schritte={lauf.gesamt} data-fertig={lauf.fertig ? "1" : "0"}
-          className="w-full max-w-[640px] max-h-[60vh] object-contain rounded-xl border border-(--border) [image-rendering:pixelated] self-center" />
+          className="w-full max-w-[640px] max-h-[60vh] object-contain rounded-xl border border-line [image-rendering:pixelated] self-center" />
         <div className="flex flex-wrap items-center gap-2 justify-center">
           <button onClick={() => setLaeuft(l => !l)} disabled={lauf.fertig}
-            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
+            className="btn-primary px-3 py-1.5 text-sm">
             {laeuft ? "⏸ anhalten" : "▶ abspielen"}
           </button>
           <button className={knopf} disabled={lauf.fertig} onClick={() => { setLaeuft(false); schritt(prog, lauf); neuZeichnen(); }}>⏭ ein Schritt</button>
@@ -100,24 +100,24 @@ export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest 
           <button className={knopf} onClick={() => { setLaeuft(false); setNeustart(n => n + 1); }}>↺ neu</button>
           <button className={knopf} title="anderer Zufall" onClick={() => { setLaeuft(false); setSeed(s => s + 1); }}>🎲 Zufall {seed}</button>
           <select value={tempo} onChange={e => setTempo(+e.target.value)}
-            className="rounded-lg border border-(--border) bg-(--surface) px-2 py-1.5 text-sm">
+            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm">
             {TEMPI.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <button onClick={() => setZeigeTreffer(z => !z)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${zeigeTreffer ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) text-(--text-muted)"}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${zeigeTreffer ? "bg-accent text-accent-fg border-transparent" : "border-line text-muted"}`}>
             🔍 Treffer zeigen
           </button>
         </div>
-        <p className="text-sm text-center text-(--text-muted)">
-          Schritt <b className="text-(--text)">{lauf.gesamt}</b>
+        <p className="text-sm text-center text-muted">
+          Schritt <b className="text-fg">{lauf.gesamt}</b>
           {" · "}
-          {lauf.fertig ? <b className="text-(--text)">fertig – keine Regel passt mehr</b>
-            : <>Block <b className="text-(--text)">{lauf.block + 1}</b> von {prog.bloecke.length}</>}
+          {lauf.fertig ? <b className="text-fg">fertig – keine Regel passt mehr</b>
+            : <>Block <b className="text-fg">{lauf.block + 1}</b> von {prog.bloecke.length}</>}
           {zeigeTreffer && !laeuft && !lauf.fertig && <> · <span className="text-sky-500 font-bold">{moeglich.length}</span> Stellen passen</>}
           {zeigeTreffer && lauf.letzte.length > 0 && <> · <span className="text-yellow-500 font-bold">gelb</span> = eben ersetzt</>}
         </p>
         {pruefe && (
-          <div className={`rounded-xl border p-3 text-sm ${geloest ? "border-green-500 bg-green-500/10" : "border-(--border) bg-(--surface)"}`}>
+          <div className={`rounded-xl border p-3 text-sm ${geloest ? "border-green-500 bg-green-500/10" : "border-line bg-surface"}`}>
             {zuViele ? <>⚠️ Du benutzt {regelZahl} Regeln – erlaubt sind höchstens {maxRegeln}.</>
               : !lauf.fertig ? <>Lass das Programm bis zum Ende laufen, dann wird geprüft.</>
               : geloest ? <b>✅ Geschafft!</b>
@@ -126,23 +126,23 @@ export default function Werkbank({ vorlage, start, maxRegeln, pruefe, onGeloest 
         )}
       </div>
 
-      <section className="flex flex-col gap-3 rounded-2xl border border-(--border) bg-(--surface) p-3">
+      <section className="card flex flex-col gap-3 p-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-black">Programm</h3>
-          <span className="text-xs text-(--text-muted)">
+          <span className="text-xs text-muted">
             {regelZahl} {regelZahl === 1 ? "Regel" : "Regeln"}{maxRegeln !== undefined && ` (höchstens ${maxRegeln})`}
           </span>
-          <button onClick={() => setTextModus(t => !t)} className="text-xs underline text-(--text-muted)">
+          <button onClick={() => setTextModus(t => !t)} className="text-xs underline text-muted">
             {textModus ? "🎨 als Kästchen" : "⌨️ als Text"}
           </button>
         </div>
         {textModus ? <TextEditor prog={prog} onProg={setProg} /> : (
           <>
             <div className="flex flex-wrap gap-1 items-center" aria-label="Pinsel">
-              <span className="text-xs text-(--text-muted) mr-1">Pinsel:</span>
+              <span className="text-xs text-muted mr-1">Pinsel:</span>
               {PINSEL.map(f => (
                 <button key={f} onClick={() => setPinsel(f)} title={f === JOKER ? "Joker: passt auf alles, lässt alles stehen" : FARBEN[f].name}
-                  className={`w-7 h-7 rounded-md border-2 text-xs font-black ${pinsel === f ? "border-(--accent) scale-110" : "border-(--border)"}`}
+                  className={`w-7 h-7 rounded-md border-2 text-xs font-black ${pinsel === f ? "border-accent scale-110" : "border-line"}`}
                   style={zellStil(f)}>
                   {f === JOKER ? "*" : ""}
                 </button>
@@ -180,9 +180,9 @@ function TextEditor({ prog, onProg }: { prog: Programm; onProg: (p: Programm) =>
           setText(e.target.value);
           try { onProg(programm(e.target.value)); setFehler(null); } catch (err) { setFehler((err as Error).message); }
         }}
-        className="font-mono text-sm rounded-lg border border-(--border) bg-(--bg) p-2" />
+        className="font-mono text-sm rounded-lg border border-line bg-page p-2" />
       {fehler ? <p className="text-xs text-red-500">{fehler}</p> : (
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           Eine Zeile je Block: <code>markov: RBB=GGR, RGG=WWR</code> · Schrittgrenze: <code>eins x12: …</code> · mehrzeilige Muster mit <code>/</code> · <code>*</code> = Joker ·
           gleichrangig in markov: <code>a | b</code> · Richtung: <code>spiegel</code>, <code>fest</code> · Chance: <code>alle p40: …</code> ·
           Weg: <code>pfad: A → U über E = G</code> · Zellautomat: <code>nachbarn: A=D bei 5-8 D</code>.
@@ -197,18 +197,18 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
   block: Block; nr: number; aktiv: boolean; zaehler: number[]; pinsel: string; darfLoeschen: boolean;
   onAendere: (f: (b: Block) => void) => void; onLoeschen: () => void;
 }) {
-  const rahmen = `rounded-xl border-2 p-2 flex flex-col gap-2 ${aktiv ? "border-(--accent)" : "border-(--border)"}`;
+  const rahmen = `rounded-xl border-2 p-2 flex flex-col gap-2 ${aktiv ? "border-accent" : "border-line"}`;
   if (block.art === "pfad" || block.art === "nachbarn") {
     return (
       <div className={rahmen}>
         <div className="flex items-center gap-2 text-sm">
           <b>Block {nr + 1}</b>
-          <span className="text-xs text-(--text-muted)">{block.art === "pfad" ? "🧭 Weg (Breitensuche)" : "🧫 Nachbarn zählen (Zellautomat)"}</span>
-          <span className="text-xs text-(--text-muted) font-mono ml-auto" title="so oft angewandt">{zaehler.reduce((a, b) => a + b, 0)}×</span>
+          <span className="text-xs text-muted">{block.art === "pfad" ? "🧭 Weg (Breitensuche)" : "🧫 Nachbarn zählen (Zellautomat)"}</span>
+          <span className="text-xs text-muted font-mono ml-auto" title="so oft angewandt">{zaehler.reduce((a, b) => a + b, 0)}×</span>
           {darfLoeschen && <button onClick={onLoeschen} className="text-xs" title="Block löschen">🗑</button>}
         </div>
         <code className="text-xs break-all">{blockText(block)}</code>
-        <p className="text-[11px] text-(--text-muted)">Ändern im Text-Modus (⌨️ oben).</p>
+        <p className="text-[11px] text-muted">Ändern im Text-Modus (⌨️ oben).</p>
       </div>
     );
   }
@@ -217,19 +217,19 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
       <div className="flex items-center gap-2 flex-wrap text-sm">
         <b>Block {nr + 1}</b>
         <select value={block.art} onChange={e => onAendere(b => { b.art = e.target.value as Art; })}
-          className="rounded-md border border-(--border) bg-(--bg) px-1 py-0.5 text-xs">
+          className="rounded-md border border-line bg-page px-1 py-0.5 text-xs">
           {ARTEN.map(([a, l]) => <option key={a} value={a}>{l}</option>)}
         </select>
         <select value={block.sym ?? "alle"} title="In welchen Lagen gilt die Regel?"
           onChange={e => onAendere(b => { if (e.target.value === "alle") delete b.sym; else b.sym = e.target.value as Symmetrie; })}
-          className="rounded-md border border-(--border) bg-(--bg) px-1 py-0.5 text-xs">
+          className="rounded-md border border-line bg-page px-1 py-0.5 text-xs">
           {SYMMETRIEN.map(([s, l]) => <option key={s} value={s}>{l}</option>)}
         </select>
-        <label className="text-xs text-(--text-muted) flex items-center gap-1">
+        <label className="text-xs text-muted flex items-center gap-1">
           höchstens
           <input type="number" min={1} value={block.grenze ?? ""} placeholder="∞"
             onChange={e => onAendere(b => { if (e.target.value) b.grenze = Math.max(1, +e.target.value); else delete b.grenze; })}
-            className="w-14 rounded-md border border-(--border) bg-(--bg) px-1 py-0.5" />
+            className="w-14 rounded-md border border-line bg-page px-1 py-0.5" />
           Schritte
         </label>
         {darfLoeschen && <button onClick={onLoeschen} className="ml-auto text-xs" title="Block löschen">🗑</button>}
@@ -249,7 +249,7 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
               <Mini title="flacher" onClick={() => onAendere(b => { groesse(b, ri, 0, -1); })}>↕−</Mini>
             </span>
           </div>
-          <span className="text-xs text-(--text-muted) font-mono" title="so oft angewandt">{zaehler[ri] ?? 0}×</span>
+          <span className="text-xs text-muted font-mono" title="so oft angewandt">{zaehler[ri] ?? 0}×</span>
           <span className="ml-auto flex gap-1">
             {ri > 0 && block.art === "markov" && (
               <Mini title={r.oder ? "gleichrangig mit der Regel davor — antippen für Nachrang" : "Nachrang — antippen: gleichrangig mit der Regel davor"}
@@ -260,10 +260,10 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
             {ri > 0 && <Mini title="nach oben (bei markov: Vorrang)" onClick={() => onAendere(b => { [b.regeln[ri - 1], b.regeln[ri]] = [b.regeln[ri], b.regeln[ri - 1]]; })}>↑</Mini>}
             {block.regeln.length > 1 && <Mini title="Regel löschen" onClick={() => onAendere(b => { b.regeln.splice(ri, 1); })}>🗑</Mini>}
           </span>
-          <code className="w-full min-w-0 break-all text-[11px] text-(--text-muted)">{regelText(r)}</code>
+          <code className="w-full min-w-0 break-all text-[11px] text-muted">{regelText(r)}</code>
         </div>
       ))}
-      <button className="self-start text-xs underline text-(--text-muted)"
+      <button className="self-start text-xs underline text-muted"
         onClick={() => onAendere(b => { b.regeln.push(regel("B=W")); })}>+ Regel</button>
     </div>
   );
@@ -272,7 +272,7 @@ function BlockKarte({ block, nr, aktiv, zaehler, pinsel, darfLoeschen, onAendere
 function Mini({ children, title, onClick }: { children: React.ReactNode; title: string; onClick: () => void }) {
   return (
     <button title={title} aria-label={title} onClick={onClick}
-      className="px-1 py-0.5 rounded-sm border border-(--border) bg-(--bg) hover:border-(--accent)">
+      className="px-1 py-0.5 rounded-sm border border-line bg-page hover:border-accent">
       {children}
     </button>
   );
@@ -281,7 +281,7 @@ function Mini({ children, title, onClick }: { children: React.ReactNode; title: 
 function MusterGitter({ m, onKlick }: { m: Muster; onKlick: (i: number) => void }) {
   const px = m.b > 4 || m.h > 4 ? 14 : 20;
   return (
-    <div className="grid gap-px bg-(--border) p-px rounded-sm" style={{ gridTemplateColumns: `repeat(${m.b}, ${px}px)` }}>
+    <div className="grid gap-px bg-line p-px rounded-sm" style={{ gridTemplateColumns: `repeat(${m.b}, ${px}px)` }}>
       {[...m.z].map((c, i) => (
         <button key={i} onClick={() => onKlick(i)} style={{ ...zellStil(c), width: px, height: px }}
           className="text-[10px] font-black leading-none" aria-label={c === JOKER ? "Joker" : FARBEN[c]?.name}>

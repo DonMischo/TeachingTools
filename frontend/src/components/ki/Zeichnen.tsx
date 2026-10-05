@@ -27,7 +27,7 @@ const KASTEN = FELD / KANTE;
 function Miniatur({ bild, groesse = 44 }: { bild: Bild; groesse?: number }) {
   const k = groesse / KANTE;
   return (
-    <svg width={groesse} height={groesse} className="rounded-lg border border-(--border) shrink-0">
+    <svg width={groesse} height={groesse} className="rounded-lg border border-line shrink-0">
       {bild.map((v, i) => v > 0 && (
         <rect
           key={i}
@@ -77,9 +77,9 @@ export function Zeichnen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
+      <div className="card p-4 flex flex-col gap-3">
         <h2 className="font-black">✏️ Zeichnen &amp; Erkennen</h2>
-        <p className="text-sm text-(--text-muted) leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Male eine Form und sage der Maschine, was es ist. Nach ein paar Beispielen kann sie raten —
           nicht, weil sie weiß, was ein Kreis ist, sondern weil sie Kästchen vergleicht.
         </p>
@@ -87,7 +87,7 @@ export function Zeichnen() {
         <div className="flex flex-col sm:flex-row gap-4 items-start">
           <svg
             width={FELD} height={FELD}
-            className="rounded-xl border border-(--border) bg-(--bg) touch-none shrink-0 text-(--accent)"
+            className="rounded-xl border border-line bg-page touch-none shrink-0 text-accent"
             style={{ maxWidth: "100%" }}
             role="img"
             aria-label="Malfeld, 16 mal 16 Kästchen"
@@ -124,8 +124,8 @@ export function Zeichnen() {
                   type="button"
                   onClick={() => merken(f)}
                   disabled={istLeer(bild)}
-                  className="px-3 py-1.5 rounded-xl border border-(--border) bg-(--surface)
-                    hover:bg-(--surface-hover) text-sm font-bold disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-xl border border-line bg-surface
+                    hover:bg-surface-hover text-sm font-bold disabled:opacity-40"
                 >
                   Das ist ein {f}
                 </button>
@@ -137,15 +137,15 @@ export function Zeichnen() {
                 type="button"
                 onClick={raten}
                 disabled={!bereit || istLeer(bild)}
-                className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text) disabled:opacity-40"
+                className="btn-primary px-4 py-2"
               >
                 🤖 Was ist das?
               </button>
               <button
                 type="button"
                 onClick={() => { setBild(leeresBild()); setUrteil(null); }}
-                className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)
-                  hover:bg-(--surface-hover) text-sm font-bold"
+                className="px-3 py-2 rounded-xl border border-line bg-surface
+                  hover:bg-surface-hover text-sm font-bold"
               >
                 🧽 Feld leeren
               </button>
@@ -153,44 +153,44 @@ export function Zeichnen() {
                 <button
                   type="button"
                   onClick={() => { setBeispiele([]); setUrteil(null); }}
-                  className="px-3 py-2 rounded-xl border border-(--border) bg-(--surface)
-                    hover:bg-(--surface-hover) text-sm font-bold"
+                  className="px-3 py-2 rounded-xl border border-line bg-surface
+                    hover:bg-surface-hover text-sm font-bold"
                 >
                   🗑️ Alles vergessen
                 </button>
               )}
             </div>
 
-            <div className="text-xs text-(--text-muted)">
+            <div className="text-xs text-muted">
               {jeKlasse.map(k => `${k.form}: ${k.anzahl}`).join(" · ")}
               {!bereit && " — mindestens zwei Formen mit je einem Beispiel anlernen."}
             </div>
 
             {urteil && (
-              <div className="p-3 rounded-xl border border-(--accent) bg-(--surface) flex flex-col gap-2">
+              <div className="p-3 rounded-xl border border-accent bg-surface flex flex-col gap-2">
                 <p className="text-sm">
                   Das ist ein <b>{urteil.klasse}</b>
-                  <span className="text-(--text-muted)">
+                  <span className="text-muted">
                     {" "}— {urteil.sicherheit > 0.4 ? "ziemlich sicher" : "aber ziemlich unsicher"}
                     {" "}({Math.round(urteil.sicherheit * 100)} %).
                   </span>
                 </p>
-                <div className="flex items-center gap-2 text-xs text-(--text-muted)">
+                <div className="flex items-center gap-2 text-xs text-muted">
                   <span>weil es dem hier am ähnlichsten sieht:</span>
-                  <span className="text-(--accent)"><Miniatur bild={urteil.naechstes.bild} /></span>
+                  <span className="text-accent"><Miniatur bild={urteil.naechstes.bild} /></span>
                 </div>
               </div>
             )}
 
             {beispiele.length > 0 && (
               <div className="flex flex-col gap-1">
-                <span className="text-xs uppercase tracking-wide text-(--text-muted)">
+                <span className="text-xs uppercase tracking-wide text-muted">
                   Was die Maschine kennt
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {beispiele.map(b => (
-                    <span key={b.id} className="flex flex-col items-center gap-0.5 text-[10px] text-(--text-muted)">
-                      <span className="text-(--accent)"><Miniatur bild={b.bild} groesse={36} /></span>
+                    <span key={b.id} className="flex flex-col items-center gap-0.5 text-[10px] text-muted">
+                      <span className="text-accent"><Miniatur bild={b.bild} groesse={36} /></span>
                       {b.klasse}
                     </span>
                   ))}
@@ -200,7 +200,7 @@ export function Zeichnen() {
           </div>
         </div>
 
-        <p className="text-xs text-(--text-muted) leading-relaxed">
+        <p className="text-xs text-muted leading-relaxed">
           Probiere zum Schluss etwas, das du ihr nie gezeigt hast — einen Buchstaben zum Beispiel.
           Sie wird trotzdem antworten, und zwar bestimmt. »Kenne ich nicht« ist in diesem Verfahren
           nicht vorgesehen; erst die Sicherheitszahl daneben verrät, wie dünn das Eis ist.

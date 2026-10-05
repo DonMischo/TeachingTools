@@ -43,17 +43,17 @@ export default function BingoLibraryPage() {
   }
 
   if (!auth) {
-    return <div className="p-8 text-(--text-muted)">Bitte einloggen.</div>;
+    return <div className="p-8 text-muted">Bitte einloggen.</div>;
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <Link href="/aktivitaeten" className="text-sm text-(--text-muted) hover:text-(--text)">← Aktivitäten</Link>
+          <Link href="/aktivitaeten" className="text-sm text-muted hover:text-fg">← Aktivitäten</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">🎰 Bingo-Bibliothek</h1>
-          <p className="text-(--text-muted) text-sm mt-0.5">
+          <p className="text-muted text-sm mt-0.5">
             Vokabeln, Gleichungen, Daten – als Bingo-Spiel für die Klasse. Von allen Kolleg·innen nutzbar.
           </p>
         </div>
@@ -62,16 +62,16 @@ export default function BingoLibraryPage() {
             <a
               href="/api/bingo/template"
               download="bingo_vorlage.json"
-              className="text-xs px-3 py-1.5 border border-(--border) rounded-lg text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors"
+              className="text-xs px-3 py-1.5 border border-line rounded-lg text-muted hover:border-accent hover:text-accent transition-colors"
             >
               Vorlage
             </a>
-            <label className="text-xs px-3 py-1.5 border border-(--border) rounded-lg text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors cursor-pointer">
+            <label className="text-xs px-3 py-1.5 border border-line rounded-lg text-muted hover:border-accent hover:text-accent transition-colors cursor-pointer">
               Hochladen
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
             </label>
             <button onClick={() => router.push("/aktivitaeten/bingo/new")}
-              className="text-xs px-3 py-1.5 bg-(--accent) text-(--accent-text,#111) font-semibold rounded-lg hover:opacity-90 transition-opacity">
+              className="btn-primary text-xs px-3 py-1.5">
               + Neu erstellen
             </button>
           </div>
@@ -80,13 +80,13 @@ export default function BingoLibraryPage() {
 
       {/* Library */}
       {isLoading ? (
-        <div className="text-(--text-muted) text-sm">Laden…</div>
+        <div className="text-muted text-sm">Laden…</div>
       ) : sets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-40 border border-dashed border-(--border) rounded-2xl gap-3">
-          <p className="text-(--text-muted) text-sm">Noch keine Bingo-Sets.</p>
+        <div className="flex flex-col items-center justify-center h-40 border border-dashed border-line rounded-2xl gap-3">
+          <p className="text-muted text-sm">Noch keine Bingo-Sets.</p>
           {canEdit && can("bingo", "create") && (
             <button onClick={() => router.push("/aktivitaeten/bingo/new")}
-              className="text-sm px-4 py-1.5 border border-(--border) rounded-lg text-(--text) font-semibold hover:bg-(--surface-hover) transition-colors">
+              className="text-sm px-4 py-1.5 border border-line rounded-lg text-fg font-semibold hover:bg-surface-hover transition-colors">
               Erstes Set erstellen
             </button>
           )}
@@ -97,10 +97,10 @@ export default function BingoLibraryPage() {
             <li key={s.id}>
               <Link
                 href={`/aktivitaeten/bingo/${s.id}`}
-                className="block rounded-2xl border border-(--border) bg-(--surface) p-4 hover:border-(--accent) transition-colors"
+                className="card block p-4 hover:border-accent transition-colors"
               >
                 <div className="font-semibold truncate">{s.title}</div>
-                <div className="text-xs text-(--text-muted) flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                <div className="text-xs text-muted flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
                   {s.subject && <span>{s.subject}</span>}
                   <span>{s.grid_size}×{s.grid_cols ?? s.grid_size} · {s.total_pairs} Paare</span>
                   {s.max_points > 0 && <span>{s.max_points} Pkt.</span>}

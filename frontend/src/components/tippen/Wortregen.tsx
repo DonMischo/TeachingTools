@@ -115,9 +115,9 @@ export default function Wortregen({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         {eigeneWoerter ? (
-          <span className="text-xs text-(--text-muted)">
+          <span className="text-xs text-muted">
             es regnen die {eigeneWoerter.length} Wörter aus{" "}
-            <b className="text-(--text)">{quelle ?? "der Sammlung"}</b>
+            <b className="text-fg">{quelle ?? "der Sammlung"}</b>
           </span>
         ) : (
           <>
@@ -126,14 +126,14 @@ export default function Wortregen({
               onChange={e => setBisLektion(Number(e.target.value))}
               aria-label="Tasten bis Lektion"
               disabled={phase === "laeuft"}
-              className="text-sm bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5 disabled:opacity-50"
+              className="text-sm bg-surface border border-line rounded-lg px-3 py-1.5 disabled:opacity-50"
             >
               {LEKTIONEN.map((l, i) => (
                 <option key={l.id} value={i}>Tasten bis Lektion {i + 1}</option>
               ))}
             </select>
-            <span className="text-xs text-(--text-muted)">
-              es regnet nur aus: <b className="text-(--text) font-mono">{erlaubt.trim()}</b>
+            <span className="text-xs text-muted">
+              es regnet nur aus: <b className="text-fg font-mono">{erlaubt.trim()}</b>
             </span>
           </>
         )}
@@ -147,8 +147,8 @@ export default function Wortregen({
       <div
         {...feldProps}
         aria-label="Wortregen — fallende Wörter abtippen"
-        className="relative outline-hidden h-72 sm:h-80 overflow-hidden rounded-2xl border border-(--border)
-          bg-(--surface) focus:border-(--accent) cursor-text"
+        className="relative outline-hidden h-72 sm:h-80 overflow-hidden rounded-2xl border border-line
+          bg-surface focus:border-accent cursor-text"
       >
         {phase === "laeuft" &&
           r.woerter.map(w => (
@@ -166,18 +166,18 @@ export default function Wortregen({
           ))}
 
         {/* Der Boden: hier kostet ein Wort ein Leben. */}
-        <div className="absolute inset-x-0 bottom-0 h-px bg-(--red) opacity-40" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-bad opacity-40" />
 
         {phase === "bereit" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6">
             <div className="text-4xl">🌧️</div>
-            <p className="text-sm text-(--text-muted) max-w-sm">
+            <p className="text-sm text-muted max-w-sm">
               Tippe ein fallendes Wort, bevor es unten ankommt. Ein begonnenes Wort bleibt dran,
               bis es fertig ist. Drei Wörter dürfen durchkommen.
             </p>
             <button
               onClick={starten}
-              className="border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
+              className="border border-accent text-accent rounded-lg px-4 py-2 text-sm font-bold"
             >
               ▶ Los
             </button>
@@ -186,15 +186,15 @@ export default function Wortregen({
 
         {phase === "vorbei" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6
-            bg-(--surface)/90">
+            bg-surface/90">
             <div className="text-lg font-black">Vorbei — {r.punkte} Punkte</div>
-            <div className="text-sm text-(--text-muted)">
+            <div className="text-sm text-muted">
               {r.gefangen} Wörter gefangen, {r.verpasst} durchgelassen,{" "}
               {Math.round(fehlerquote * 100)} % Fehler.
             </div>
             <button
               onClick={starten}
-              className="border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
+              className="border border-accent text-accent rounded-lg px-4 py-2 text-sm font-bold"
             >
               ↺ Nochmal
             </button>

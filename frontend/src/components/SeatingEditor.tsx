@@ -458,12 +458,12 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             <button
               onClick={() => createMut.mutate(defaultRoomName)}
               disabled={createMut.isPending}
-              className="px-5 py-2.5 text-sm font-semibold bg-(--accent) text-white rounded-xl hover:opacity-90 disabled:opacity-50"
+              className="btn-primary px-5 py-2.5 text-sm"
             >
               + {defaultRoomName} anlegen
             </button>
           ) : (
-            <p className="text-sm text-(--text-muted)">Die Klassenleitung muss zuerst einen Klassenraum anlegen.</p>
+            <p className="text-sm text-muted">Die Klassenleitung muss zuerst einen Klassenraum anlegen.</p>
           )}
         </div>
       </div>
@@ -493,21 +493,21 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
       <BackBar label={scopeLabel} isGroup={isGroup} router={router} />
 
       {/* Controls stay put while the canvas scrolls under them. */}
-      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-(--bg) flex flex-col gap-3">
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-page flex flex-col gap-3">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 bg-(--surface) border border-(--border) rounded-2xl p-3">
+      <div className="card flex flex-wrap items-center gap-2 p-3">
         {/* Plan selector */}
         <select
           value={planId ?? ""}
           onChange={e => setPlanId(Number(e.target.value))}
-          className="bg-(--bg) border border-(--border) rounded-lg px-3 py-1.5 text-sm font-semibold"
+          className="bg-page border border-line rounded-lg px-3 py-1.5 text-sm font-semibold"
         >
           {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         {mayEditAdditional && (
           <button
             onClick={() => { const n = prompt("Name des Raums:", "Klassenraum"); if (n !== null) createMut.mutate(n.trim()); }}
-            className="text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)"
+            className="text-sm px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover"
           >+ Raum</button>
         )}
         {planId != null && canEdit && (
@@ -519,23 +519,23 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
         {canEdit ? (
           <>
-            <span className="w-px h-6 bg-(--border) mx-1" />
+            <span className="w-px h-6 bg-line mx-1" />
 
             {/* Room name */}
             <input
               value={name}
               onChange={e => setName(e.target.value)}
-              className="bg-(--bg) border border-(--border) rounded-lg px-3 py-1.5 text-sm w-40"
+              className="bg-page border border-line rounded-lg px-3 py-1.5 text-sm w-40"
               placeholder="Raumname"
             />
 
             {/* Orientation */}
-            <div className="flex rounded-lg border border-(--border) overflow-hidden text-xs">
+            <div className="flex rounded-lg border border-line overflow-hidden text-xs">
               {(["landscape", "portrait"] as const).map(o => (
                 <button
                   key={o}
                   onClick={() => setOrientation(o)}
-                  className={`px-3 py-1.5 font-semibold ${orientation === o ? "bg-(--accent) text-white" : "text-(--text-muted)"}`}
+                  className={`px-3 py-1.5 font-semibold ${orientation === o ? "bg-accent text-white" : "text-muted"}`}
                 >{o === "landscape" ? "Querformat" : "Hochformat"}</button>
               ))}
             </div>
@@ -543,7 +543,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             {/* Snap */}
             <button
               onClick={() => setSnap(s => !s)}
-              className={`text-sm px-3 py-1.5 rounded-lg border ${snap ? "bg-(--accent) text-white border-(--accent)" : "border-(--border) text-(--text-muted)"}`}
+              className={`text-sm px-3 py-1.5 rounded-lg border ${snap ? "bg-accent text-white border-accent" : "border-line text-muted"}`}
             >🧲 Raster {snap ? "an" : "aus"}</button>
 
             {/* Fit all items into the 5 mm print area */}
@@ -557,11 +557,11 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                 };
               }))}
               title="Alle Elemente in den 5-mm-Druckbereich verschieben"
-              className="text-sm px-3 py-1.5 rounded-lg border border-(--border) text-(--text-muted) hover:bg-(--surface-hover)"
+              className="text-sm px-3 py-1.5 rounded-lg border border-line text-muted hover:bg-surface-hover"
             >🖨 Einpassen</button>
           </>
         ) : (
-          <span className="text-xs px-2.5 py-1.5 rounded-lg bg-(--surface-hover) text-(--text-muted)">
+          <span className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-hover text-muted">
             👁 Nur ansehen{isDefaultPlan ? " · Klassenraum (nur Klassenleitung)" : ""}
           </span>
         )}
@@ -570,7 +570,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
         {/* Save state */}
         {canEdit && (
-          <span className="text-xs text-(--text-muted)">
+          <span className="text-xs text-muted">
             {saveState === "saving" ? "Speichern…" : saveState === "error" ? "⚠️ Fehler" : "✓ Gespeichert"}
           </span>
         )}
@@ -578,7 +578,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
           <button
             onClick={printPdf}
             title="Öffnet den Druckdialog — dort „Als PDF speichern“ wählen. Der Dateiname ist Klasse + Datum, der Ausdruck exakt diese Ansicht."
-            className="text-sm px-3 py-1.5 rounded-lg bg-(--accent) text-white font-semibold hover:opacity-90"
+            className="btn-primary text-sm px-3 py-1.5"
           >🖨 Als PDF (A4)</button>
         )}
       </div>
@@ -590,7 +590,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             <button
               key={kind}
               onClick={() => addItem(kind)}
-              className="text-sm px-3 py-2 rounded-xl border border-dashed border-(--border) hover:border-(--accent) hover:text-(--accent) flex items-center gap-2"
+              className="text-sm px-3 py-2 rounded-xl border border-dashed border-line hover:border-accent hover:text-accent flex items-center gap-2"
             >
               <span>{KIND_EMOJI[kind]}</span>{ITEM_SIZES[kind].label}
             </button>
@@ -602,16 +602,16 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={randomAssign}
-            className="text-sm px-4 py-2 rounded-xl bg-(--accent) text-white font-semibold hover:opacity-90"
+            className="btn-primary text-sm px-4 py-2"
           >🎲 Namen zufällig verteilen</button>
           <button
             onClick={emptySeats}
             title="Alle nicht gesperrten Plätze leeren (gesperrte bleiben)"
-            className="text-sm px-4 py-2 rounded-xl border border-(--border) text-(--text-muted) hover:bg-(--surface-hover)"
+            className="text-sm px-4 py-2 rounded-xl border border-line text-muted hover:bg-surface-hover"
           >🧹 Plätze leeren</button>
           {geschlechtNutzbar && (
-            <label className="flex items-center gap-2 text-sm text-(--text-muted)">
-              <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-(--accent) w-4 h-4" />
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" checked={alternate} onChange={e => setAlternate(e.target.checked)} className="accent-accent w-4 h-4" />
               Junge/Mädchen abwechselnd
             </label>
           )}
@@ -627,7 +627,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             onPointerDown={() => setSelectedId(null)}
             onPointerMove={onCanvasPointerMove}
             onPointerUp={onCanvasPointerUp}
-            className="sitzplan-print relative w-full bg-white rounded-xl border border-(--border) overflow-hidden select-none touch-none"
+            className="sitzplan-print relative w-full bg-white rounded-xl border border-line overflow-hidden select-none touch-none"
             style={{
               aspectRatio: `${dims.w} / ${dims.h}`,
               // Keep the whole plan on screen next to the sticky toolbar: cap the
@@ -739,7 +739,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
               {name}
             </div>
           </div>
-          <p className="text-xs text-(--text-muted) mt-2">
+          <p className="text-xs text-muted mt-2">
             {orientation === "landscape" ? "A4 quer" : "A4 hoch"} · Element antippen zum Bearbeiten · ziehen zum Verschieben
           </p>
         </div>
@@ -747,22 +747,22 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
         {/* Inspector — floats along while the canvas scrolls. */}
         <div className="lg:w-72 shrink-0 w-full lg:sticky lg:top-52 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto">
           {!canEdit ? (
-            <div className="bg-(--surface) border border-(--border) rounded-2xl p-4 text-sm text-(--text-muted)">
+            <div className="card p-4 text-sm text-muted">
               👁 Nur-Ansicht. {isDefaultPlan
                 ? "Den Klassenraum bearbeitet nur die Klassenleitung — zusätzliche Räume darfst du anlegen und bearbeiten."
                 : "Du hast keine Bearbeitungsrechte für diesen Raum."}
             </div>
           ) : selected ? (
-            <div className="bg-(--surface) border border-(--border) rounded-2xl p-4 flex flex-col gap-3">
+            <div className="card p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm">{KIND_EMOJI[selected.kind]} {ITEM_SIZES[selected.kind].label}</span>
                 <button onClick={() => removeItem(selected.id)} className="text-red-400 text-sm hover:underline">Löschen</button>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => rotate(selected.id)} className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover)">↻ 45°</button>
+                <button onClick={() => rotate(selected.id)} className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-line hover:bg-surface-hover">↻ 45°</button>
                 <button
                   onClick={() => toggleLock(selected.id)}
-                  className={`flex-1 text-sm px-3 py-1.5 rounded-lg border ${selected.locked ? "bg-(--accent) text-white border-(--accent)" : "border-(--border)"}`}
+                  className={`flex-1 text-sm px-3 py-1.5 rounded-lg border ${selected.locked ? "bg-accent text-white border-accent" : "border-line"}`}
                 >{selected.locked ? "🔒 Gesperrt" : "🔓 Frei"}</button>
               </div>
 
@@ -773,16 +773,16 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                     const set = (v: number) => patchItem(selected.id, { [key]: Math.round(v * 10) / 10 } as Partial<SeatingItem>);
                     return (
                       <div key={key} className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-(--text-muted)">{label}</span>
+                        <span className="text-xs font-semibold text-muted">{label}</span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => set(Math.max(SCALE_MIN, val - SCALE_STEP))}
-                            className="w-7 h-7 rounded-lg border border-(--border) hover:bg-(--surface-hover) text-lg leading-none"
+                            className="w-7 h-7 rounded-lg border border-line hover:bg-surface-hover text-lg leading-none"
                           >−</button>
                           <span className="text-sm tabular-nums w-12 text-center">{Math.round(val * 100)}%</span>
                           <button
                             onClick={() => set(Math.min(SCALE_MAX, val + SCALE_STEP))}
-                            className="w-7 h-7 rounded-lg border border-(--border) hover:bg-(--surface-hover) text-lg leading-none"
+                            className="w-7 h-7 rounded-lg border border-line hover:bg-surface-hover text-lg leading-none"
                           >+</button>
                         </div>
                       </div>
@@ -793,7 +793,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
               {ITEM_SIZES[selected.kind].seats > 0 ? (
                 <div className="flex flex-col gap-2 pt-1">
-                  <p className="text-xs font-semibold text-(--text-muted)">Plätze</p>
+                  <p className="text-xs font-semibold text-muted">Plätze</p>
                   {selected.seats.map((seat, i) => {
                     const value = seat.student_id != null ? String(seat.student_id) : seat.label ? SCHULBEGLEITER : "";
                     const isSb = seat.student_id == null && !!seat.label;
@@ -808,7 +808,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                               else if (v === SCHULBEGLEITER) setSeatOccupant(selected.id, seat.id, { student_id: null, label: seat.label || "Schulbegleiter" });
                               else setSeatOccupant(selected.id, seat.id, { student_id: Number(v), label: null });
                             }}
-                            className="flex-1 bg-(--bg) border border-(--border) rounded-lg px-2 py-1.5 text-sm"
+                            className="flex-1 bg-page border border-line rounded-lg px-2 py-1.5 text-sm"
                           >
                             <option value="">Platz {i + 1} — frei</option>
                             <option value={SCHULBEGLEITER}>🧑‍🏫 Schulbegleiter</option>
@@ -823,7 +823,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                           <button
                             onClick={() => toggleSeatLock(selected.id, seat.id)}
                             title="Platz fixieren — wird beim Zufällig-Verteilen nicht getauscht"
-                            className={`text-sm px-2 py-1.5 rounded-lg border ${seat.locked ? "bg-(--accent) text-white border-(--accent)" : "border-(--border)"}`}
+                            className={`text-sm px-2 py-1.5 rounded-lg border ${seat.locked ? "bg-accent text-white border-accent" : "border-line"}`}
                           >{seat.locked ? "📌" : "📍"}</button>
                         </div>
                         {isSb && (
@@ -831,7 +831,7 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                             value={seat.label ?? ""}
                             onChange={e => setSeatOccupant(selected.id, seat.id, { label: e.target.value || "Schulbegleiter" })}
                             placeholder="Name Schulbegleiter"
-                            className="bg-(--bg) border border-(--border) rounded-lg px-2 py-1 text-xs"
+                            className="bg-page border border-line rounded-lg px-2 py-1 text-xs"
                           />
                         )}
                       </div>
@@ -840,18 +840,18 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
                 </div>
               ) : (
                 <div className="flex flex-col gap-1 pt-1">
-                  <label className="text-xs font-semibold text-(--text-muted)">Beschriftung</label>
+                  <label className="text-xs font-semibold text-muted">Beschriftung</label>
                   <input
                     value={selected.label ?? ""}
                     onChange={e => patchItem(selected.id, { label: e.target.value || null })}
                     placeholder={ITEM_SIZES[selected.kind].label}
-                    className="bg-(--bg) border border-(--border) rounded-lg px-2 py-1.5 text-sm"
+                    className="bg-page border border-line rounded-lg px-2 py-1.5 text-sm"
                   />
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-(--surface) border border-(--border) rounded-2xl p-4 text-sm text-(--text-muted)">
+            <div className="card p-4 text-sm text-muted">
               Kein Element ausgewählt. Aus der Palette oben ein Möbelstück hinzufügen oder ein Element im Plan antippen.
             </div>
           )}
@@ -868,10 +868,10 @@ function BackBar({ label, isGroup, router }: {
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <button onClick={() => router.push("/klassen")} className="self-start text-sm text-(--text-muted) hover:text-(--text)">← Zurück zur Klassenverwaltung</button>
+      <button onClick={() => router.push("/klassen")} className="self-start text-sm text-muted hover:text-fg">← Zurück zur Klassenverwaltung</button>
       <h1 className="text-2xl font-bold">
         🪑 Sitzplan {label.trim() ? `— ${label}` : ""}
-        {isGroup && <span className="ml-2 text-base font-normal text-(--text-muted)">Kurs</span>}
+        {isGroup && <span className="ml-2 text-base font-normal text-muted">Kurs</span>}
       </h1>
     </div>
   );

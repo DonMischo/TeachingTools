@@ -10,7 +10,7 @@ import type { Ort } from "./Demo";
 
 export const Lesetext = forwardRef<HTMLDivElement>(function Lesetext(_props, ref) {
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+    <div className="card p-5">
       {/* Die Überschrift gehört nicht zur Auswahl: sonst passte »alles markieren« nie. */}
       <h3 className="font-black mb-3 select-none">🌌 {TEXT_TITEL}</h3>
       <div ref={ref} data-lesetext className="flex flex-col gap-3 leading-relaxed text-[15px] cursor-text">

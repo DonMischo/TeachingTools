@@ -103,15 +103,15 @@ export function Raten() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="p-4 rounded-2xl border border-(--border) bg-(--surface) flex flex-col gap-3">
+      <div className="card p-4 flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <h2 className="font-black">🎯 Mensch gegen Maschine</h2>
-          <span className="text-xs text-(--text-muted)">
+          <span className="text-xs text-muted">
             Runde {Math.min(stand.runde + (fertig ? 0 : 1), RUNDEN)} von {RUNDEN}
           </span>
         </div>
 
-        <p className="text-sm text-(--text-muted) leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Welches Wort kommt als Nächstes? Du tippst, das Netz tippt — und am Ende zählen wir ab.
           Genau diese Aufgabe löst ein Sprachmodell Milliarden Mal beim Training.
         </p>
@@ -119,17 +119,17 @@ export function Raten() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <span>
             <span aria-hidden>{korpus.icon}</span> <b>{korpus.titel}</b>
-            <span className="text-(--text-muted)"> — {korpus.beschreibung}</span>
+            <span className="text-muted"> — {korpus.beschreibung}</span>
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs text-(--text-muted)">
-          <span>🎲 Seed <b className="font-mono text-(--text)">{seed}</b></span>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <span>🎲 Seed <b className="font-mono text-fg">{seed}</b></span>
           <button
             type="button"
             onClick={() => neu(korpusNr, Math.floor(Math.random() * 1000))}
-            className="px-2 py-0.5 rounded-lg border border-(--border) bg-(--surface)
-              hover:bg-(--surface-hover) font-bold"
+            className="px-2 py-0.5 rounded-lg border border-line bg-surface
+              hover:bg-surface-hover font-bold"
           >
             neue Stelle
           </button>
@@ -138,9 +138,9 @@ export function Raten() {
           </span>
         </div>
 
-        <div className="p-3 rounded-xl border border-(--border) bg-(--bg) text-sm leading-relaxed">
+        <div className="p-3 rounded-xl border border-line bg-page text-sm leading-relaxed">
           {woerter.slice(Math.max(0, pos - 14), pos).join(" ")}{" "}
-          <span className="px-2 py-0.5 rounded-lg bg-(--accent) text-(--accent-text) font-black">
+          <span className="btn-primary px-2 py-0.5">
             {wahl === null ? "???" : richtig}
           </span>
         </div>
@@ -157,9 +157,9 @@ export function Raten() {
                   onClick={() => tippe(wort)}
                   disabled={wahl !== null}
                   className={`px-3 py-1.5 rounded-xl border text-sm font-bold disabled:opacity-90 ${
-                    istRichtig ? "border-(--green,#22c55e) bg-(--green,#22c55e) text-white"
-                      : istFalsch ? "border-(--red,#ef4444) bg-(--red,#ef4444) text-white"
-                        : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
+                    istRichtig ? "border-ok bg-ok text-white"
+                      : istFalsch ? "border-bad bg-bad text-white"
+                        : "border-line bg-surface hover:bg-surface-hover"
                   }`}
                 >
                   {wort}
@@ -179,7 +179,7 @@ export function Raten() {
             <button
               type="button"
               onClick={weiter}
-              className="px-3 py-1.5 rounded-xl font-black bg-(--accent) text-(--accent-text) text-sm"
+              className="btn-primary px-3 py-1.5 text-sm"
             >
               Weiter →
             </button>
@@ -190,7 +190,7 @@ export function Raten() {
           <span>👤 Du: <b>{stand.ich}</b></span>
           <span>🤖 Netz: <b>{stand.maschine}</b></span>
           {stand.runde > 0 && (
-            <span className="text-(--text-muted)">
+            <span className="text-muted">
               von {stand.runde} {stand.runde === 1 ? "Wort" : "Wörtern"}
             </span>
           )}
@@ -209,7 +209,7 @@ export function Raten() {
               <button
                 type="button"
                 onClick={() => neu(korpusNr, Math.floor(Math.random() * 1000))}
-                className="px-3 py-1.5 rounded-xl font-black bg-(--accent) text-(--accent-text) text-sm"
+                className="btn-primary px-3 py-1.5 text-sm"
               >
                 ↺ Noch eine Runde
               </button>
@@ -220,8 +220,8 @@ export function Raten() {
                   onClick={() => neu(i)}
                   className={`px-3 py-1.5 rounded-xl border text-sm font-bold ${
                     i === korpusNr
-                      ? "border-(--accent)"
-                      : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
+                      ? "border-accent"
+                      : "border-line bg-surface hover:bg-surface-hover"
                   }`}
                 >
                   {k.icon} {k.titel}

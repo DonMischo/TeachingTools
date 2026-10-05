@@ -361,8 +361,8 @@ export function TimelineGameBoard({
               onClick={() => interactive && setSelected(p => p === it.id ? null : it.id)}
               className={`px-3 py-1.5 rounded-xl border text-sm font-semibold transition-all text-left max-w-[16rem] ${
                 selected === it.id
-                  ? "border-(--accent) ring-2 ring-(--accent) scale-105"
-                  : "border-(--border) hover:border-(--accent)"
+                  ? "border-accent ring-2 ring-accent scale-105"
+                  : "border-line hover:border-accent"
               }`}>
               {it.label}
             </button>
@@ -370,7 +370,7 @@ export function TimelineGameBoard({
         </div>
       )}
       {interactive && isSort && (
-        <p className="text-xs text-(--text-muted) mt-1.5">
+        <p className="text-xs text-muted mt-1.5">
           {selected
             ? "Tippe auf den Strahl, um zu platzieren."
             : pool.length > 0
@@ -379,7 +379,7 @@ export function TimelineGameBoard({
         </p>
       )}
       {interactive && !isSort && (
-        <p className="text-xs text-(--text-muted) mt-1.5">
+        <p className="text-xs text-muted mt-1.5">
           Tippe alle Einträge an, die an der falschen Stelle sitzen.
         </p>
       )}
@@ -443,8 +443,8 @@ function zoomAround(v: View, factor: number): View {
 function ZoomBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled}
-      className="w-7 h-7 rounded-lg border border-(--border) text-sm
-        hover:border-(--accent) transition-colors disabled:opacity-30">
+      className="w-7 h-7 rounded-lg border border-line text-sm
+        hover:border-accent transition-colors disabled:opacity-30">
       {label}
     </button>
   );

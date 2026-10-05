@@ -117,14 +117,14 @@ export default function JoinPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-6">
       <h1 className="text-3xl font-black">Spiel beitreten</h1>
-      <p className="text-sm text-(--text-muted) -mt-2">
+      <p className="text-sm text-muted -mt-2">
         Gib den Code ein — wir finden das passende Spiel.
       </p>
 
       <input
         autoFocus
         aria-label="Beitritts-Code"
-        className="w-full max-w-xs bg-(--bg) border border-(--border) rounded-lg px-4 py-3
+        className="w-full max-w-xs bg-page border border-line rounded-lg px-4 py-3
           text-center text-2xl font-black tracking-[0.2em] uppercase"
         placeholder="CODE"
         maxLength={8}
@@ -135,7 +135,7 @@ export default function JoinPage() {
       <button
         onClick={resolve}
         disabled={!code.trim() || busy}
-        className="w-full max-w-xs py-3 rounded-xl font-bold bg-(--accent) text-(--accent-text,#111) disabled:opacity-40"
+        className="btn-primary w-full max-w-xs py-3"
       >
         {busy ? "Suche …" : "Beitreten"}
       </button>
@@ -148,19 +148,19 @@ export default function JoinPage() {
 
       {choices.length > 1 && (
         <div className="w-full max-w-xs flex flex-col gap-2">
-          <p className="text-sm text-(--text-muted) text-center">
+          <p className="text-sm text-muted text-center">
             Diesen Code gibt es mehrfach. Welches Spiel ist gemeint?
           </p>
           {choices.map((m) => (
             <button
               key={m.tool}
               onClick={() => go(m)}
-              className="w-full px-4 py-3 rounded-lg border border-(--border) bg-(--surface)
-                text-left font-bold hover:border-(--accent)"
+              className="w-full px-4 py-3 rounded-lg border border-line bg-surface
+                text-left font-bold hover:border-accent"
             >
               {m.label}
               {m.status && BEENDET.has(m.status) && (
-                <span className="ml-2 text-xs font-normal text-(--text-muted)">(beendet)</span>
+                <span className="ml-2 text-xs font-normal text-muted">(beendet)</span>
               )}
             </button>
           ))}

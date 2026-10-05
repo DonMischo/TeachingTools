@@ -134,12 +134,12 @@ export default function BarometerPage() {
   }
 
   if (!isTeacher) {
-    return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
+    return <div className="p-8 text-muted">Nur für Lehrkräfte.</div>;
   }
 
   return (
-    <div className="max-w-(--seite-breite) mx-auto w-full px-6 py-8 flex flex-col gap-6">
-      <button onClick={() => router.push("/tools")} className="self-start text-sm text-(--text-muted) hover:text-(--text) transition-colors">
+    <div className="max-w-seite mx-auto w-full px-6 py-8 flex flex-col gap-6">
+      <button onClick={() => router.push("/tools")} className="self-start text-sm text-muted hover:text-fg transition-colors">
         ← Tools
       </button>
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -147,16 +147,16 @@ export default function BarometerPage() {
         {can("barometer", "host") && (
           <div className="flex gap-2 flex-wrap">
             <button onClick={handleTemplate}
-              className="text-sm border border-(--border) rounded-lg px-3 py-2 hover:border-(--accent)">
+              className="text-sm border border-line rounded-lg px-3 py-2 hover:border-accent">
               📄 Vorlage
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="text-sm border border-(--border) rounded-lg px-3 py-2 hover:border-(--accent) disabled:opacity-40">
+              className="text-sm border border-line rounded-lg px-3 py-2 hover:border-accent disabled:opacity-40">
               {uploading ? "Lade hoch…" : "⬆️ Hochladen"}
             </button>
             <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
             <button onClick={() => showCreate ? resetForm() : setShowCreate(true)}
-              className="shrink-0 text-sm px-5 py-2 bg-(--accent) text-(--accent-text,#111) font-semibold rounded-lg hover:opacity-90 transition-opacity">
+              className="btn-primary shrink-0 text-sm px-5 py-2">
               + Neue Umfrage
             </button>
           </div>
@@ -164,7 +164,7 @@ export default function BarometerPage() {
       </div>
 
       {showCreate && (
-        <div className="bg-(--surface) border border-(--border) rounded-2xl p-5 flex flex-col gap-4">
+        <div className="card p-5 flex flex-col gap-4">
           <div className="font-semibold text-sm">{editingCode ? "Umfrage bearbeiten" : "Neue Umfrage erstellen"}</div>
 
           <input
@@ -176,11 +176,11 @@ export default function BarometerPage() {
 
           <div className="flex gap-2">
             <button type="button" aria-pressed={mode === "live"} onClick={() => setMode("live")}
-              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "live" ? "border-(--accent) bg-(--accent)/10 text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>
+              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "live" ? "border-accent bg-accent/10 text-accent" : "border-line text-muted"}`}>
               Live – Frage für Frage
             </button>
             <button type="button" aria-pressed={mode === "self"} onClick={() => setMode("self")}
-              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "self" ? "border-(--accent) bg-(--accent)/10 text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>
+              className={`flex-1 text-xs rounded-lg px-3 py-2 border transition-colors ${mode === "self" ? "border-accent bg-accent/10 text-accent" : "border-line text-muted"}`}>
               Selbst ausfüllen – alle Fragen auf einer Seite
             </button>
           </div>
@@ -197,11 +197,11 @@ export default function BarometerPage() {
 
           <div className="flex gap-2">
             <button onClick={addQuestion}
-              className="flex-1 text-sm text-(--text-muted) hover:text-(--text) border border-dashed border-(--border) rounded-xl py-2 transition-colors">
+              className="flex-1 text-sm text-muted hover:text-fg border border-dashed border-line rounded-xl py-2 transition-colors">
               + Frage hinzufügen
             </button>
             <button onClick={addBlock}
-              className="flex-1 text-sm text-(--text-muted) hover:text-(--text) border border-dashed border-(--border) rounded-xl py-2 transition-colors">
+              className="flex-1 text-sm text-muted hover:text-fg border border-dashed border-line rounded-xl py-2 transition-colors">
               + Aussagen-Block
             </button>
           </div>
@@ -215,7 +215,7 @@ export default function BarometerPage() {
             <button
               onClick={() => createMut.mutate()}
               disabled={!title.trim() || questionBody().length === 0 || hasInvalidOptions || hasTooManySmileySteps || createMut.isPending}
-              className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40"
+              className="btn-primary text-sm py-1.5 px-4"
             >
               {createMut.isPending ? "…" : editingCode ? "Speichern" : "Starten"}
             </button>
@@ -224,27 +224,27 @@ export default function BarometerPage() {
         </div>
       )}
 
-      {isLoading && <div className="text-(--text-muted) text-sm">Laden…</div>}
+      {isLoading && <div className="text-muted text-sm">Laden…</div>}
 
       {!isLoading && sessions.length === 0 && !showCreate && (
-        <div className="text-center text-(--text-muted) text-sm mt-8">
+        <div className="text-center text-muted text-sm mt-8">
           Noch keine Umfragen. Erstelle deine erste!
         </div>
       )}
 
       <div className="flex flex-col gap-2">
         {sessions.map(s => (
-          <div key={s.id} className="bg-(--surface) border border-(--border) rounded-xl px-4 py-3 flex items-center gap-3">
+          <div key={s.id} className="bg-surface border border-line rounded-xl px-4 py-3 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm flex items-center gap-2">
                 {s.title}
                 {s.shared && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-(--accent)/20 text-(--accent) rounded-full px-2 py-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-accent/20 text-accent rounded-full px-2 py-0.5">
                     Öffentlich
                   </span>
                 )}
               </div>
-              <div className="text-xs text-(--text-muted)">
+              <div className="text-xs text-muted">
                 {s.question_count} Frage{s.question_count !== 1 ? "n" : ""} ·{" "}
                 {s.status === "closed" ? "Abgeschlossen" : "Aktiv"} ·{" "}
                 {new Date(s.created_at).toLocaleDateString("de-DE")} · {s.created_by_name}
@@ -252,11 +252,11 @@ export default function BarometerPage() {
             </div>
             <div className="flex gap-2 shrink-0">
               <button onClick={() => router.push(`/tools/barometer/host/${s.code}`)}
-                className="shrink-0 w-auto rounded-lg bg-(--accent) text-black font-semibold py-1 px-3 text-xs hover:opacity-90 transition-opacity">Öffnen</button>
+                className="btn-primary shrink-0 w-auto py-1 px-3 text-xs">Öffnen</button>
               {(s.created_by === auth?.teacher?.id || auth?.role === "admin") && (
                 <>
                   <button onClick={() => api.barometer.get(s.code).then(loadIntoForm)}
-                    className="shrink-0 w-auto border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent) rounded-lg px-2 py-1 text-xs transition-colors">✏️</button>
+                    className="shrink-0 w-auto border border-line text-muted hover:text-fg hover:border-accent rounded-lg px-2 py-1 text-xs transition-colors">✏️</button>
                   <button onClick={() => deleteMut.mutate(s.code)}
                     className="shrink-0 w-auto text-red-400 hover:text-red-300 border border-red-400/40 rounded-lg px-2 py-1 text-xs transition-colors">🗑</button>
                 </>

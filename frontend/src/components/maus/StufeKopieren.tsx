@@ -166,7 +166,7 @@ export default function StufeKopieren({
         auftrag={fertig
           ? <>Alles kopiert und eingefügt! Zum Schluss holst du dir deinen Führerschein.</>
           : <>Kopiere {wasKopieren(aufgabe)} und füge es rechts in den Merkzettel ein.
-              <span data-zusatz className="text-xs text-(--text-muted) ml-2 tabular-nums">Aufgabe {nr + 1} von {KOPIER_AUFGABEN.length}</span></>}
+              <span data-zusatz className="text-xs text-muted ml-2 tabular-nums">Aufgabe {nr + 1} von {KOPIER_AUFGABEN.length}</span></>}
         punkte={Math.min(nr, KOPIER_AUFGABEN.length) * PUNKTE_KOPIEREN}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -180,8 +180,8 @@ export default function StufeKopieren({
           {schritte.map((s, i) => (
             <li key={s.id} className={
               "rounded-lg px-3 py-1.5 border " +
-              (i < stand ? "border-(--green,#16a34a) text-(--green,#16a34a)"
-                : i === stand ? "border-(--accent) font-bold" : "border-(--border) text-(--text-muted)")
+              (i < stand ? "border-ok text-ok"
+                : i === stand ? "border-accent font-bold" : "border-line text-muted")
             }>
               {i < stand ? "✅" : `${i + 1}.`} {s.text}
             </li>
@@ -192,22 +192,22 @@ export default function StufeKopieren({
       <div className="grid gap-4 md:grid-cols-2">
         <Lesetext ref={feld} />
         <div className="flex flex-col gap-4">
-        <div ref={zwischenRef} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2" data-testid="zwischenspeicher">
+        <div ref={zwischenRef} className="card p-4 flex flex-col gap-2" data-testid="zwischenspeicher">
           <h3 className="font-black select-none">📋 Zwischenspeicher</h3>
           <div
             key={zwischen?.nr ?? 0}
             className={
-              "rounded-lg border border-dashed border-(--border) px-3 py-2 text-sm min-h-10 max-h-24 overflow-auto whitespace-pre-wrap select-none " +
+              "rounded-lg border border-dashed border-line px-3 py-2 text-sm min-h-10 max-h-24 overflow-auto whitespace-pre-wrap select-none " +
               (zwischen ? "maus-aufleuchten" : "")
             }
           >
-            {zwischen ? zwischen.text : <span className="italic text-(--text-muted)">leer — noch nichts kopiert</span>}
+            {zwischen ? zwischen.text : <span className="italic text-muted">leer — noch nichts kopiert</span>}
           </div>
-          <p className="text-xs text-(--text-muted) leading-snug select-none">
+          <p className="text-xs text-muted leading-snug select-none">
             Strg + C legt eine Kopie hinein — die alte fliegt dabei raus. Strg + V holt sie wieder heraus, so oft du willst.
           </p>
         </div>
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-2 flex-1">
+        <div className="card p-5 flex flex-col gap-2 flex-1">
           <h3 className="font-black select-none">📝 Mein Merkzettel</h3>
           <textarea
             ref={zettel}
@@ -215,7 +215,7 @@ export default function StufeKopieren({
             onChange={e => setNotiz(e.target.value)}
             onPaste={e => eingefuegt(e.clipboardData.getData("text/plain"))}
             placeholder="Hier einfügen …"
-            className="flex-1 min-h-48 w-full rounded-xl border border-(--border) bg-(--bg) p-3 text-[15px] leading-relaxed resize-y"
+            className="flex-1 min-h-48 w-full rounded-xl border border-line bg-page p-3 text-[15px] leading-relaxed resize-y"
           />
           <div className="min-h-10 text-sm font-bold" aria-live="polite"
             style={{ color: hinweis?.gut ? "var(--green, #16a34a)" : "var(--text-muted)" }}>

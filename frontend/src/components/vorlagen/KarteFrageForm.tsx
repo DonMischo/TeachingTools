@@ -35,7 +35,7 @@ export function KarteFrageForm({ karte, onChange, mitMindestens = false }: {
     ...(mitMindestens ? { mindestens: karte.mindestens ?? 1 } : {}) });
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-(--border) p-3">
+    <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
       <Feld label="Kartensatz" hint={schnappschuss ? `Stand beim Hochladen: »${karte.titel ?? satzId}«, ${karte.aufgaben!.length} Objekte — neu wählen übernimmt den aktuellen Stand.`
         : "Eigene und fürs Kollegium geteilte Kartensätze (Karten → Kartensatz speichern)."}>
         <select className="input" value={satzId ?? ""} onChange={(e) => e.target.value && waehle(Number(e.target.value))}>

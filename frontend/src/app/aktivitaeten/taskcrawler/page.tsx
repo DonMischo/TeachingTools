@@ -35,33 +35,33 @@ function GeneratorsHintPanel({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-60" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-lg max-w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto bg-(--surface) border border-(--border) rounded-2xl shadow-2xl p-5 flex flex-col gap-3 z-70">
+      <div className="card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-lg max-w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto shadow-2xl p-5 flex flex-col gap-3 z-70">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">🧮 Registrierte Aufgaben-Generatoren</h3>
-          <button onClick={onClose} className="text-(--text-muted) hover:text-(--text) text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-muted hover:text-fg text-lg leading-none">×</button>
         </div>
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           Diese Themen erzeugen auf der Übungsseite automatisch beliebig viele Aufgaben. TaskCrawler-Aufgaben
           selbst werden weiterhin fest im JSON geschrieben — hier siehst du, worauf du in Erklärtexten
           verweisen kannst, und kannst die Liste in einen KI-Prompt kopieren.
         </p>
         <ul className="flex flex-col gap-2">
           {generators.map(g => (
-            <li key={g.id} className="rounded-lg border border-(--border) p-2.5 text-xs">
+            <li key={g.id} className="rounded-lg border border-line p-2.5 text-xs">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono font-semibold">{g.id}</span>
-                <span className="px-1.5 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{g.subject}</span>
+                <span className="px-1.5 py-0.5 rounded-full border border-line text-muted">{g.subject}</span>
                 {g.grades.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                  <span className="px-1.5 py-0.5 rounded-full border border-line text-muted">
                     Kl. {g.grades.length > 1 ? `${g.grades[0]}–${g.grades[g.grades.length - 1]}` : g.grades[0]}
                   </span>
                 )}
-                {g.source === "custom" && <span className="px-1.5 py-0.5 rounded-full border border-(--accent) text-(--accent)">eigener</span>}
+                {g.source === "custom" && <span className="px-1.5 py-0.5 rounded-full border border-accent text-accent">eigener</span>}
               </div>
-              <p className="text-(--text-muted) mt-1">{g.description}</p>
+              <p className="text-muted mt-1">{g.description}</p>
             </li>
           ))}
-          {generators.length === 0 && <p className="text-xs text-(--text-muted)">Keine Generatoren registriert.</p>}
+          {generators.length === 0 && <p className="text-xs text-muted">Keine Generatoren registriert.</p>}
         </ul>
         <button onClick={copy} className="btn-primary text-sm py-1.5 px-4 self-start">
           📋 In AI-Prompt kopieren
@@ -118,30 +118,30 @@ export default function ExitgamePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <Link href="/aktivitaeten" className="text-sm text-(--text-muted) hover:text-(--text)">← Aktivitäten</Link>
+          <Link href="/aktivitaeten" className="text-sm text-muted hover:text-fg">← Aktivitäten</Link>
           <h1 className="text-2xl font-black tracking-tight mt-1">🗝️ TaskCrawler</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Der TaskCrawler — Schüler lösen Aufgaben in ihrem eigenen Tempo.
           </p>
         </div>
         {can("exitgame", "upload") && (
           <div className="flex gap-2">
-            <button onClick={() => setShowGenerators(true)} className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
+            <button onClick={() => setShowGenerators(true)} className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
               🧮 Generatoren
             </button>
             <button onClick={() => handleTemplate()} title="Schlanke Vorlage: alle Bausteine für Folien-TaskCrawler"
-              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
+              className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
               📄 Vorlage
             </button>
             <button onClick={() => handleTemplate(true)} title="Vorlage für die 2.5D-Ansicht: Gebäude, Verlies, Ebene, Stationen, Monster, Werkzeuge"
-              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
+              className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
               🏰 Vorlage interaktiv
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
+              className="btn-primary text-sm py-1.5 px-4">
               {uploading ? "Lade hoch…" : "+ TaskCrawler hochladen"}
             </button>
             <input ref={fileRef} type="file" accept=".json,.zip" className="hidden" onChange={handleUpload} />
@@ -150,23 +150,23 @@ export default function ExitgamePage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-(--text-muted)">Lade…</p>
+        <p className="text-sm text-muted">Lade…</p>
       ) : games.length === 0 ? (
-        <p className="text-sm text-(--text-muted)">Noch keine TaskCrawler — lade einen hoch, um zu starten.</p>
+        <p className="text-sm text-muted">Noch keine TaskCrawler — lade einen hoch, um zu starten.</p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {games.map(g => (
-            <div key={g.id} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
-              <Link href={`/aktivitaeten/taskcrawler/${g.id}`} className="font-semibold hover:text-(--accent) transition-colors">
+            <div key={g.id} className="card p-4 flex flex-col gap-2">
+              <Link href={`/aktivitaeten/taskcrawler/${g.id}`} className="font-semibold hover:text-accent transition-colors">
                 {g.title}
               </Link>
-              {g.description && <p className="text-xs text-(--text-muted)">{g.description}</p>}
+              {g.description && <p className="text-xs text-muted">{g.description}</p>}
               <div className="flex flex-wrap gap-1.5 text-[10px]">
-                <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{g.subject || "—"}</span>
-                {g.grade && <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">Klasse {g.grade}</span>}
-                <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{g.slide_count} Slides</span>
+                <span className="px-2 py-0.5 rounded-full border border-line text-muted">{g.subject || "—"}</span>
+                {g.grade && <span className="px-2 py-0.5 rounded-full border border-line text-muted">Klasse {g.grade}</span>}
+                <span className="px-2 py-0.5 rounded-full border border-line text-muted">{g.slide_count} Slides</span>
                 {g.tags.map(t => (
-                  <span key={t} className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{t}</span>
+                  <span key={t} className="px-2 py-0.5 rounded-full border border-line text-muted">{t}</span>
                 ))}
               </div>
               <div className="flex justify-end mt-1">

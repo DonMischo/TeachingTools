@@ -127,7 +127,7 @@ export default function StufeMarkieren({
         titel="🖍️ Stufe 5 · Markieren"
         auftrag={fertig
           ? <>Alle Markier-Aufgaben geschafft! Weiter geht es mit Kopieren und Einfügen.</>
-          : <>{auftrag.text}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 {auftrag.tipp}</div></>}
+          : <>{auftrag.text}<div data-zusatz className="text-xs text-muted mt-1">💡 {auftrag.tipp}</div></>}
         punkte={Math.min(nr, MARKIER_AUFGABEN.length) * PUNKTE_MARKIEREN}
         onDemo={fertig ? undefined : () => { markiere(null); demo.abspielen(demoSchritteMarkieren(feld.current, aufgabe)); }}
         onWeiter={onWeiter}
@@ -137,18 +137,18 @@ export default function StufeMarkieren({
       </Stufenkopf>
 
       <div className="grid gap-4 md:grid-cols-[1fr_16rem]">
-        <div className={erfolg ? "ring-4 ring-(--green,#16a34a) rounded-2xl transition-shadow" : ""}>
+        <div className={erfolg ? "ring-4 ring-ok rounded-2xl transition-shadow" : ""}>
           <Lesetext ref={feld} />
         </div>
 
-        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 h-fit">
+        <aside className="card p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           {GRUPPEN.map(g => (
             <div key={g.art}>
-              <div className="text-xs font-bold text-(--text-muted) mb-1">{g.titel}</div>
+              <div className="text-xs font-bold text-muted mb-1">{g.titel}</div>
               <ul className="flex flex-col gap-1">
                 {MARKIER_AUFGABEN.map((a, i) => a.art !== g.art ? null : (
-                  <li key={i} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-(--text-muted)" : "")}>
+                  <li key={i} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-muted" : "")}>
                     <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
                     <span className="truncate">{a.art === "wort" ? `»${a.ziel}«` : a.art === "absatz" ? `${a.absatz + 1}. Absatz` : "Alles"}</span>
                   </li>

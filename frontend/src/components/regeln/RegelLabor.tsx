@@ -30,10 +30,10 @@ const REITER: { id: Reiter; icon: string; label: string }[] = [
 ];
 
 const chip = (an: boolean) =>
-  `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`;
+  `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
 const wahl = (an: boolean) =>
-  `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-(--accent) text-(--accent-text,#111) border-transparent" : "border-(--border) text-(--text-muted) hover:text-(--text)"}`;
+  `px-3 py-1.5 rounded-lg text-sm font-bold border ${an ? "bg-accent text-accent-fg border-transparent" : "border-line text-muted hover:text-fg"}`;
 
 /**
  * `vorgabe` (TaskCrawler-Station): `{ reiter: "lehrgang" | "raetsel" | "labor" | "labyrinthe" | "gebaeude" }`
@@ -46,17 +46,17 @@ export default function RegelLabor({ action, vorgabe }: { action?: ReactNode; vo
   const festesRaetsel = vorWahl(vorgabe, "raetsel", RAETSEL.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "lehrgang");
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧬 Regel-Labor</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Ein paar Ersetzungsregeln auf einem Raster — und daraus wachsen Labyrinthe, Muster und Grundrisse.
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-(--border) p-1 bg-(--surface)">
+      {!festerReiter && <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
         {REITER.map(r => (
           <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>
         ))}
@@ -82,12 +82,12 @@ function Lehrgang({ fest }: { fest?: string }) {
           <button key={st.id} onClick={() => setNr(i)} className={wahl(i === nr)}>{st.titel}</button>
         ))}
       </div>}
-      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed flex flex-col gap-2">
+      <section className="card p-4 text-sm leading-relaxed flex flex-col gap-2">
         <h2 className="font-black text-lg">{s.titel}</h2>
         {s.text.map((t, i) => <p key={i}>{t}</p>)}
-        <p className="rounded-lg bg-(--bg) border border-(--border) p-2">🤔 {s.frage}</p>
+        <p className="rounded-lg bg-page border border-line p-2">🤔 {s.frage}</p>
         <div className="flex gap-2">
-          <button onClick={() => setReset(r => r + 1)} className="text-xs underline text-(--text-muted)">Programm dieser Station wiederherstellen</button>
+          <button onClick={() => setReset(r => r + 1)} className="text-xs underline text-muted">Programm dieser Station wiederherstellen</button>
           {!fest && nr < STATIONEN.length - 1 && (
             <button onClick={() => setNr(nr + 1)} className="ml-auto text-xs font-bold underline">weiter zu {STATIONEN[nr + 1].titel} →</button>
           )}
@@ -123,10 +123,10 @@ function Raetsel({ fest }: { fest?: string }) {
           </button>
         ))}
       </div>}
-      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed">
+      <section className="card p-4 text-sm leading-relaxed">
         <h2 className="font-black text-lg">{r.titel}</h2>
         <p>{r.aufgabe}</p>
-        <p className="text-xs text-(--text-muted) mt-1">
+        <p className="text-xs text-muted mt-1">
           Start: {r.start.b}×{r.start.h} Felder {FARBEN[r.start.grund].name.toLowerCase()}
           {r.start.mitte && `, in der Mitte ${FARBEN[r.start.mitte].name.toLowerCase()}`}. Das Programm im Editor ist nur ein Anfang — ändere es.
         </p>
@@ -145,7 +145,7 @@ function Labor() {
   const [vorlage, setVorlage] = useState(STATIONEN[2].programm);
   const [laden, setLaden] = useState(0);
   const start = useMemo<Start>(() => ({ b: groesse, h: groesse, grund, ...(mitte ? { mitte } : {}) }), [groesse, grund, mitte]);
-  const auswahl = "rounded-lg border border-(--border) bg-(--surface) px-2 py-1";
+  const auswahl = "rounded-lg border border-line bg-surface px-2 py-1";
   const farbwahl = (wert: string, setzen: (f: string) => void, leer?: string) => (
     <select value={wert} onChange={e => setzen(e.target.value)} className={auswahl}>
       {leer && <option value="">{leer}</option>}
@@ -154,7 +154,7 @@ function Labor() {
   );
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
+      <div className="card flex flex-wrap items-center gap-3 text-sm p-3">
         <label className="flex items-center gap-1">Feld
           <select value={groesse} onChange={e => setGroesse(+e.target.value)} className={auswahl}>
             {GROESSEN.map(g => <option key={g} value={g}>{g}×{g}</option>)}
@@ -170,7 +170,7 @@ function Labor() {
         </label>
       </div>
       <Werkbank key={laden} vorlage={vorlage} start={start} />
-      <p className="text-xs text-(--text-muted)">
+      <p className="text-xs text-muted">
         Idee nach <a className="underline" href="https://github.com/mxgmn/MarkovJunior" target="_blank" rel="noreferrer">MarkovJunior</a> von Maxim Gumin (MIT-Lizenz) — hier stark vereinfacht nachgebaut.
         Angestoßen von den Clips des Kanals <a className="underline" href="https://www.instagram.com/index.opensource/" target="_blank" rel="noreferrer">index.opensource</a>.
       </p>

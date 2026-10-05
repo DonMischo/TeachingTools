@@ -147,12 +147,12 @@ function CoefStepper({ n, onChange, label }: { n: number; onChange: (n: number) 
     <span className="inline-flex items-center gap-1 mr-1">
       <span className="inline-flex flex-col leading-none">
         <button onClick={() => onChange(n + 1)} aria-label={`Faktor von ${label} größer`}
-          className="text-[11px] leading-none px-1 text-(--text-muted) hover:text-(--accent)">▲</button>
+          className="text-[11px] leading-none px-1 text-muted hover:text-accent">▲</button>
         <button onClick={() => onChange(n - 1)} disabled={n <= 1} aria-label={`Faktor von ${label} kleiner`}
-          className="text-[11px] leading-none px-1 text-(--text-muted) hover:text-(--accent) disabled:opacity-25">▼</button>
+          className="text-[11px] leading-none px-1 text-muted hover:text-accent disabled:opacity-25">▼</button>
       </span>
       <span className={`text-2xl sm:text-3xl font-black tabular-nums ${
-        n > 1 ? "text-(--accent)" : "text-(--text-muted) opacity-50"
+        n > 1 ? "text-accent" : "text-muted opacity-50"
       }`}>
         {n}
       </span>
@@ -173,13 +173,13 @@ function FormulaEditor({
       {parts.map((p, i) => {
         const here = [...path, i];
         const stepper = (
-          <span className="inline-flex items-center rounded-md border border-(--border) overflow-hidden ml-0.5">
+          <span className="inline-flex items-center rounded-md border border-line overflow-hidden ml-0.5">
             <button onClick={() => onIndex(here, p.n - 1)} disabled={p.n <= 1}
-              className="px-1 text-xs leading-none py-0.5 hover:bg-(--surface-hover) disabled:opacity-30"
+              className="px-1 text-xs leading-none py-0.5 hover:bg-surface-hover disabled:opacity-30"
               aria-label="Index kleiner">−</button>
             <span className="px-1 text-sm font-black tabular-nums">{p.n}</span>
             <button onClick={() => onIndex(here, p.n + 1)}
-              className="px-1 text-xs leading-none py-0.5 hover:bg-(--surface-hover)"
+              className="px-1 text-xs leading-none py-0.5 hover:bg-surface-hover"
               aria-label="Index größer">+</button>
           </span>
         );
@@ -220,17 +220,17 @@ function SpeciesCard({
   const ox = showOx ? oxidationStates(s.parts, s.charge) : null;
 
   return (
-    <div className="rounded-xl border border-(--border) bg-(--bg) p-3 flex flex-col gap-2">
+    <div className="rounded-xl border border-line bg-page p-3 flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wider text-(--text-muted)">Faktor</span>
-          <span className="inline-flex items-center rounded-lg border border-(--accent) overflow-hidden">
+          <span className="text-[10px] uppercase tracking-wider text-muted">Faktor</span>
+          <span className="inline-flex items-center rounded-lg border border-accent overflow-hidden">
             <button onClick={() => onCoef(side, i, s.coef - 1)} disabled={s.coef <= 1}
-              className="px-2 py-1 text-sm font-black hover:bg-(--surface-hover) disabled:opacity-30"
+              className="px-2 py-1 text-sm font-black hover:bg-surface-hover disabled:opacity-30"
               aria-label="Faktor kleiner">−</button>
-            <span className="px-2.5 py-1 text-base font-black tabular-nums text-(--accent)">{s.coef}</span>
+            <span className="px-2.5 py-1 text-base font-black tabular-nums text-accent">{s.coef}</span>
             <button onClick={() => onCoef(side, i, s.coef + 1)}
-              className="px-2 py-1 text-sm font-black hover:bg-(--surface-hover)"
+              className="px-2 py-1 text-sm font-black hover:bg-surface-hover"
               aria-label="Faktor größer">+</button>
           </span>
         </span>
@@ -238,35 +238,35 @@ function SpeciesCard({
           {formatParts(s.parts)}
           <span style={{ color: s.charge ? ionColor(s.charge) : undefined }}>{formatCharge(s.charge)}</span>
         </span>
-        <span className="text-[10px] uppercase tracking-wider text-(--text-muted)">Formel</span>
+        <span className="text-[10px] uppercase tracking-wider text-muted">Formel</span>
         <FormulaEditor parts={s.parts} onIndex={(p, n) => onIndex(side, i, p, n)} />
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wider text-(--text-muted)">Ladung</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted">Ladung</span>
           <span className="inline-flex items-center rounded-lg border overflow-hidden"
             style={{ borderColor: s.charge ? ionColor(s.charge) : "var(--border)" }}>
             <button onClick={() => onCharge(side, i, s.charge - 1)} disabled={s.charge <= -6}
-              className="px-2 py-1 text-sm font-black hover:bg-(--surface-hover) disabled:opacity-30"
+              className="px-2 py-1 text-sm font-black hover:bg-surface-hover disabled:opacity-30"
               aria-label="Ladung kleiner">−</button>
             <span className="px-2 py-1 text-sm font-black tabular-nums"
               style={{ color: s.charge ? ionColor(s.charge) : "var(--text-muted)" }}>
               {s.charge === 0 ? "0" : chargeBadge(s.charge)}
             </span>
             <button onClick={() => onCharge(side, i, s.charge + 1)} disabled={s.charge >= 6}
-              className="px-2 py-1 text-sm font-black hover:bg-(--surface-hover) disabled:opacity-30"
+              className="px-2 py-1 text-sm font-black hover:bg-surface-hover disabled:opacity-30"
               aria-label="Ladung größer">+</button>
           </span>
         </span>
-        <span className="text-xs text-(--text-muted) ml-auto tabular-nums">
+        <span className="text-xs text-muted ml-auto tabular-nums">
           {mass === null ? "—" : `M = ${fmtMass(mass)} u`}
         </span>
       </div>
 
       {ox && (
         <div className="flex flex-wrap gap-2 text-xs">
-          <span className="text-(--text-muted)">Oxidationszahlen:</span>
+          <span className="text-muted">Oxidationszahlen:</span>
           {Object.entries(ox).map(([el, v]) => (
             <span key={el} className="font-mono font-bold">
-              {el} <span className={v === null ? "text-(--text-muted)" : "text-(--accent)"}>{oxLabel(v)}</span>
+              {el} <span className={v === null ? "text-muted" : "text-accent"}>{oxLabel(v)}</span>
             </span>
           ))}
         </div>
@@ -274,7 +274,7 @@ function SpeciesCard({
 
       {hint && (
         <div className={`text-xs leading-relaxed rounded-lg px-2.5 py-2 ${
-          hint.level === "warn" ? "bg-(--red)/10 text-(--red)" : "bg-(--surface-hover) text-(--text-muted)"
+          hint.level === "warn" ? "bg-bad/10 text-bad" : "bg-surface-hover text-muted"
         }`}>
           ⚠️ {hint.text}
         </div>
@@ -288,7 +288,7 @@ function ElementInfo({ symbol }: { symbol: string }) {
   const e = element(symbol);
   if (!e)
     return (
-      <div className="text-sm text-(--text-muted)">
+      <div className="text-sm text-muted">
         »{symbol}« steht nicht in meiner Elementliste.
       </div>
     );
@@ -297,22 +297,22 @@ function ElementInfo({ symbol }: { symbol: string }) {
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
       <span className="font-black text-base" style={{ color: e.color }}>{e.symbol}</span>
       <span className="font-bold">{e.name}</span>
-      <span className="text-(--text-muted)">Ordnungszahl {e.z}</span>
-      <span className="text-(--text-muted)">Masse {e.mass.toLocaleString("de-DE")} u</span>
-      <span className="text-(--text-muted)">
+      <span className="text-muted">Ordnungszahl {e.z}</span>
+      <span className="text-muted">Masse {e.mass.toLocaleString("de-DE")} u</span>
+      <span className="text-muted">
         {e.group ? `${e.group}. Hauptgruppe` : "Nebengruppe"}
       </span>
       {e.outer !== null && (
-        <span className="text-(--text-muted)">
+        <span className="text-muted">
           {e.outer} Außenelektron{e.outer === 1 ? "" : "en"}
         </span>
       )}
-      <span className="text-(--text-muted)">
+      <span className="text-muted">
         Bindigkeit {e.valence.join(" oder ")}
       </span>
-      <span className="text-(--text-muted)">{e.metal ? "Metall" : "Nichtmetall"}</span>
+      <span className="text-muted">{e.metal ? "Metall" : "Nichtmetall"}</span>
       {missing !== null && missing > 0 && (
-        <span className="text-(--accent)">
+        <span className="text-accent">
           {missing === 1 ? "fehlt 1 Elektron" : `fehlen ${missing} Elektronen`} {shellGoal(e)}
         </span>
       )}
@@ -383,29 +383,29 @@ export default function ChemieModus({ onMessage, fest }: {
               const r = parseReaction(p.src);
               if (r.ok) update(r.r);
             }}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)">
+            className="px-3 py-1.5 rounded-xl text-sm font-medium border border-line text-muted hover:text-fg hover:border-accent">
             {p.label}
           </button>
         ))}
         {!fest && <button onClick={() => setCustomOpen(o => !o)}
-          className="px-3 py-1.5 rounded-xl text-sm border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--accent)">
+          className="px-3 py-1.5 rounded-xl text-sm border border-line text-muted hover:text-fg hover:border-accent">
           ✏️ Eigene Reaktion
         </button>}
       </div>
 
       {customOpen && (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
+        <div className="card p-4 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2 items-center">
             <input value={customText} onChange={e => setCustomText(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") applyCustom(); }}
               placeholder="z. B. CH4 + O2 -> CO2 + H2O"
-              className="flex-1 min-w-[240px] bg-(--bg) border border-(--border) rounded-lg px-3 py-2 text-base font-mono" />
+              className="flex-1 min-w-[240px] bg-page border border-line rounded-lg px-3 py-2 text-base font-mono" />
             <button onClick={applyCustom}
-              className="px-4 py-2 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111)">
+              className="btn-primary px-4 py-2 text-sm">
               Auf die Waage
             </button>
           </div>
-          <p className="text-xs text-(--text-muted)">
+          <p className="text-xs text-muted">
             Elementsymbole groß schreiben, Indizes als Zahl: <code>Ca(OH)2 + CO2 -&gt; CaCO3 + H2O</code>.
             Ionen bekommen ihre Ladung angehängt: <code>(H)+ + (OH)- -&gt; H2O</code> — auch
             <code>Na+</code>, <code>Cl-</code> oder <code>SO4^2-</code>. Zwischen zwei Stoffen
@@ -416,47 +416,47 @@ export default function ChemieModus({ onMessage, fest }: {
       )}
 
       {unknown.length > 0 && (
-        <div className="gw-banner rounded-xl border border-(--red) bg-(--red)/10 px-4 py-2 text-sm text-(--red)">
+        <div className="gw-banner rounded-xl border border-bad bg-bad/10 px-4 py-2 text-sm text-bad">
           Unbekannte Elementsymbole: {unknown.join(", ")} — Masse und Farbe fehlen dafür.
         </div>
       )}
 
       {done && (
-        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-(--green) bg-(--green)/10 px-5 py-4">
+        <div className="gw-banner relative overflow-hidden rounded-2xl border-2 border-ok bg-ok/10 px-5 py-4">
           <Konfetti seed={atomsL} />
           <div className="relative">
-            <div className="text-xl font-black text-(--green)">⚗️ Ausgeglichen!</div>
-            <div className="text-sm text-(--text-muted) mt-1 font-mono">{formatReaction(reaction)}</div>
-            <div className="text-sm text-(--text-muted) mt-1">
+            <div className="text-xl font-black text-ok">⚗️ Ausgeglichen!</div>
+            <div className="text-sm text-muted mt-1 font-mono">{formatReaction(reaction)}</div>
+            <div className="text-sm text-muted mt-1">
               Links wie rechts {atomsL} Atome und {fmtMass(ml)} u — nichts geht verloren, nichts kommt dazu.
             </div>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-3 sm:p-4">
+      <div className="card p-3 sm:p-4">
         <Balance tilt={tilt} ariaLabel={`Reaktionswaage: ${formatReaction(reaction)}`}
           left={pan(leftPan, reaction.left)} right={pan(rightPan, reaction.right)} />
-        <div className="flex justify-center gap-6 text-xs text-(--text-muted) pt-1">
+        <div className="flex justify-center gap-6 text-xs text-muted pt-1">
           <span>links: {atomsL} Atome · {fmtMass(ml)} u</span>
           <span>rechts: {atomsR} Atome · {fmtMass(mr)} u</span>
         </div>
       </div>
 
       {/* Reaktionsgleichung — hier stehen die Faktoren zum Einstellen */}
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
-        <div className="text-xs uppercase tracking-widest text-(--text-muted) mb-3">
+      <div className="card p-4">
+        <div className="text-xs uppercase tracking-widest text-muted mb-3">
           Reaktionsgleichung — Faktoren hier einstellen
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
           {(["left", "right"] as SideKey[]).map(side => (
             <div key={side} className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
               {side === "right" && (
-                <span className="text-3xl font-black text-(--accent) px-2" aria-label="reagiert zu">→</span>
+                <span className="text-3xl font-black text-accent px-2" aria-label="reagiert zu">→</span>
               )}
               {reaction[side].map((s, i) => (
                 <div key={`${side}-${i}`} className="flex items-center">
-                  {i > 0 && <span className="text-2xl font-black px-2 text-(--text-muted)">+</span>}
+                  {i > 0 && <span className="text-2xl font-black px-2 text-muted">+</span>}
                   <CoefStepper n={s.coef} onChange={n => onCoef(side, i, n)} label={formatParts(s.parts)} />
                   <span className="text-2xl sm:text-3xl font-black">{formatParts(s.parts)}</span>
                 </div>
@@ -464,15 +464,15 @@ export default function ChemieModus({ onMessage, fest }: {
             </div>
           ))}
         </div>
-        <p className="text-xs text-(--text-muted) text-center mt-3">
+        <p className="text-xs text-muted text-center mt-3">
           Der Faktor sagt, wie oft der ganze Stoff dasteht — er verändert nichts am Stoff selbst.
           Die Formel (die Indizes) änderst du unten bei den Stoffen. Eine 1 schreibt man normalerweise nicht mit.
         </p>
       </div>
 
       {/* Elementbilanz */}
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
-        <div className="text-xs uppercase tracking-widest text-(--text-muted) mb-2">
+      <div className="card p-4">
+        <div className="text-xs uppercase tracking-widest text-muted mb-2">
           Elementbilanz — jedes Element muss links so oft vorkommen wie rechts
           {ionen && ", die Ladung auch"}
         </div>
@@ -483,55 +483,55 @@ export default function ChemieModus({ onMessage, fest }: {
               <button key={b.el} onClick={() => setInfo(i => (i === b.el ? null : b.el))}
                 title={`Steckbrief von ${e?.name ?? b.el}`}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-colors ${
-                  b.ok ? "border-(--green) bg-(--green)/10" : "border-(--red) bg-(--red)/10"
-                } ${info === b.el ? "ring-2 ring-(--accent)" : ""}`}>
+                  b.ok ? "border-ok bg-ok/10" : "border-bad bg-bad/10"
+                } ${info === b.el ? "ring-2 ring-accent" : ""}`}>
                 <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] font-black"
                   style={{ background: e?.color ?? "#64748b", color: textOn(e?.color ?? "#64748b") }}>
                   {b.el}
                 </span>
                 <span className="font-mono text-sm tabular-nums">
-                  {b.left} <span className="text-(--text-muted)">:</span> {b.right}
+                  {b.left} <span className="text-muted">:</span> {b.right}
                 </span>
-                <span className={b.ok ? "text-(--green)" : "text-(--red)"}>{b.ok ? "✓" : "✗"}</span>
+                <span className={b.ok ? "text-ok" : "text-bad"}>{b.ok ? "✓" : "✗"}</span>
               </button>
             );
           })}
         </div>
         {ionen && (
           <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 ${
-            charges.ok ? "border-(--green) bg-(--green)/10" : "border-(--red) bg-(--red)/10"
+            charges.ok ? "border-ok bg-ok/10" : "border-bad bg-bad/10"
           }`}>
-            <span className="text-xs uppercase tracking-wider text-(--text-muted)">Ladung</span>
+            <span className="text-xs uppercase tracking-wider text-muted">Ladung</span>
             <span className="font-mono text-sm tabular-nums">
               {charges.left > 0 ? `+${charges.left}` : charges.left}
-              <span className="text-(--text-muted)"> : </span>
+              <span className="text-muted"> : </span>
               {charges.right > 0 ? `+${charges.right}` : charges.right}
             </span>
-            <span className={charges.ok ? "text-(--green)" : "text-(--red)"}>
+            <span className={charges.ok ? "text-ok" : "text-bad"}>
               {charges.ok ? "✓" : "✗"}
             </span>
-            <span className="text-xs text-(--text-muted)">
+            <span className="text-xs text-muted">
               <span style={{ color: ionColor(1) }}>■</span> positiv ·
               <span style={{ color: ionColor(-1) }}> ■</span> negativ
             </span>
           </div>
         )}
         {info && (
-          <div className="mt-3 rounded-xl border border-(--border) bg-(--bg) px-3 py-2">
+          <div className="mt-3 rounded-xl border border-line bg-page px-3 py-2">
             <ElementInfo symbol={info} />
           </div>
         )}
         {!info && (
-          <p className="text-xs text-(--text-muted) mt-2">
+          <p className="text-xs text-muted mt-2">
             Tipp auf ein Element für seinen Steckbrief: Masse, Hauptgruppe, Außenelektronen und Bindigkeit.
           </p>
         )}
       </div>
 
       {/* Stoffe */}
-      <div className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+      <div className="card p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="text-xs uppercase tracking-widest text-(--text-muted)">
+          <div className="text-xs uppercase tracking-widest text-muted">
             Stoffe — hier änderst du die Formeln
           </div>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -542,7 +542,7 @@ export default function ChemieModus({ onMessage, fest }: {
 
         {(["left", "right"] as SideKey[]).map(side => (
           <div key={side} className="flex flex-col gap-2">
-            <div className="text-xs font-bold text-(--text-muted)">
+            <div className="text-xs font-bold text-muted">
               {side === "left" ? "Edukte (links)" : "Produkte (rechts)"}
             </div>
             {reaction[side].map((s, i) => (
@@ -552,7 +552,7 @@ export default function ChemieModus({ onMessage, fest }: {
           </div>
         ))}
 
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           Einen Index zu ändern heißt: ein anderer Stoff. Ausgeglichen wird über die Faktoren —
           die stehen auch oben in der Reaktionsgleichung und meinen dasselbe.
           Der Oktett-Hinweis prüft nur Verbindungen aus zwei Elementen über ihre Bindigkeit

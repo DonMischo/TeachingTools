@@ -146,7 +146,7 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
       )}
 
       {task.variants && (
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           Diese Aufgabe hat {task.variants.length} Varianten — die lassen sich im Expertenmodus bearbeiten.
         </p>
       )}
@@ -159,7 +159,7 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
             Leichtere Ersatzaufgabe anbieten (wenn jemand hängt)
           </label>
           {task.easierAlternative && (
-            <div className="ml-6 pl-3 border-l-2 border-(--border)">
+            <div className="ml-6 pl-3 border-l-2 border-line">
               <AufgabeForm task={task.easierAlternative} name={`${name}-leichter`} katalog={katalog} leichter={false}
                 onChange={easierAlternative => onChange({ ...task, easierAlternative })} />
             </div>
@@ -257,7 +257,7 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder }: {
       )}
 
       {hatAufgaben && tasks.map((t, j) => (
-        <div key={j} className="rounded-lg border border-(--border) p-3 flex flex-col gap-2">
+        <div key={j} className="rounded-lg border border-line p-3 flex flex-col gap-2">
           {tasks.length > 1 && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold flex-1">Teilaufgabe {j + 1}</span>
@@ -269,7 +269,7 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder }: {
         </div>
       ))}
       {slide.type === "task" && (
-        <button type="button" className="text-xs text-(--accent) hover:underline self-start"
+        <button type="button" className="text-xs text-accent hover:underline self-start"
           onClick={() => setTasks([...tasks, neueAufgabe()])}>
           + weitere Teilaufgabe auf dieser Folie
         </button>
@@ -367,18 +367,18 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
 
       <section className="flex flex-col gap-2">
         <h3 className="font-semibold text-sm">Ablauf ({slides.length} Folien)</h3>
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           Eine Tür schließt einen Abschnitt ab. Ihren Code bilden die Codeschnipsel der Aufgaben davor — oder sie stellt eine eigene Frage.
         </p>
         {slides.map((s, i) => {
           const header = i === 0 || slides[i - 1].type === "door"
-            ? <div className="text-xs font-semibold uppercase tracking-wide text-(--text-muted) mt-2">Abschnitt {abschnitt}</div> : null;
+            ? <div className="text-xs font-semibold uppercase tracking-wide text-muted mt-2">Abschnitt {abschnitt}</div> : null;
           if (s.type === "door") abschnitt++;
           return (
             <div key={i} className="flex flex-col gap-2">
               {header}
               <Karte offen={!s.title && !s.text}
-                titel={<>{typ[s.type]} · {s.title || <em className="text-(--text-muted)">ohne Überschrift</em>}</>}
+                titel={<>{typ[s.type]} · {s.title || <em className="text-muted">ohne Überschrift</em>}</>}
                 knoepfe={<ZeilenKnoepfe index={i} count={slides.length} what="Folie"
                   onMove={d => setSlides(move(slides, i, d))}
                   onRemove={() => confirm(`»${s.title || s.id}« löschen?`) && setSlides(
@@ -398,7 +398,7 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
         <div className="flex flex-wrap gap-2">
           {FOLIEN_TYPEN.map(([v, icon, l]) => (
             <button key={v} type="button" onClick={() => addSlide(v)}
-              className="text-sm px-3 py-1.5 rounded-lg border border-(--border) hover:border-(--accent)">
+              className="text-sm px-3 py-1.5 rounded-lg border border-line hover:border-accent">
               + {icon} {l}
             </button>
           ))}

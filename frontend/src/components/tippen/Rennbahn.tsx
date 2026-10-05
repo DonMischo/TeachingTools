@@ -32,7 +32,7 @@ export function Rennbahn({
 }) {
   if (laeufer.length === 0) {
     return (
-      <p className="text-sm text-(--text-muted) text-center py-6">
+      <p className="text-sm text-muted text-center py-6">
         Noch niemand da. Der Code oben führt hierher.
       </p>
     );
@@ -46,13 +46,13 @@ export function Rennbahn({
         const selbst = ich != null && l.id === ich;
         return (
           <li key={l.id} data-laeufer={l.id} className="flex items-center gap-3">
-            <span className="w-6 text-sm tabular-nums text-(--text-muted) text-right">
+            <span className="w-6 text-sm tabular-nums text-muted text-right">
               {fertig ? `${i + 1}.` : ""}
             </span>
-            <span className={"w-28 sm:w-36 truncate text-sm " + (selbst ? "font-black text-(--accent)" : "")}>
+            <span className={"w-28 sm:w-36 truncate text-sm " + (selbst ? "font-black text-accent" : "")}>
               {l.name}
             </span>
-            <div className="flex-1 h-4 rounded-full bg-(--border) overflow-hidden relative">
+            <div className="flex-1 h-4 rounded-full bg-line overflow-hidden relative">
               <div
                 className="h-full transition-[width] duration-200"
                 style={{
@@ -61,7 +61,7 @@ export function Rennbahn({
                 }}
               />
             </div>
-            <span className="w-24 text-xs tabular-nums text-right text-(--text-muted)">
+            <span className="w-24 text-xs tabular-nums text-right text-muted">
               {fertig ? `${tempo(l)} A/min` : `${Math.round(anteil * 100)} %`}
             </span>
             <span

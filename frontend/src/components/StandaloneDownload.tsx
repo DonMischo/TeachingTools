@@ -29,16 +29,16 @@ export function StandaloneDownload({ name, className = "" }: { name: string; cla
   const built = bundle.built_at ? new Date(bundle.built_at).toLocaleDateString("de-DE") : null;
 
   return (
-    <div className={`rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-wrap items-center gap-3 ${className}`}>
+    <div className={`card p-4 flex flex-wrap items-center gap-3 ${className}`}>
       <div className="flex-1 min-w-[220px]">
         <div className="font-bold text-sm">💾 {bundle.label} zum Mitnehmen</div>
-        <p className="text-xs text-(--text-muted) mt-0.5 leading-relaxed">{bundle.note}</p>
+        <p className="text-xs text-muted mt-0.5 leading-relaxed">{bundle.note}</p>
       </div>
       <a
         href={api.standalone.downloadUrl(bundle.name)}
         download
         title={built ? `Stand vom ${built}` : undefined}
-        className="px-4 py-2 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111) hover:opacity-90"
+        className="btn-primary px-4 py-2 text-sm"
       >
         ⬇️ Herunterladen{bundle.size_bytes ? ` (${mb(bundle.size_bytes)} MB)` : ""}
       </a>

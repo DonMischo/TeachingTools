@@ -347,7 +347,7 @@ export function HaeuserDiagram({ haeuser }: { haeuser: HausOut[] }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 text-(--text-muted) border border-dashed border-(--border) rounded-2xl">
+      <div className="flex items-center justify-center h-48 text-muted border border-dashed border-line rounded-2xl">
         Noch keine Häuser angelegt.
       </div>
     );

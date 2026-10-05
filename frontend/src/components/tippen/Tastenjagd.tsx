@@ -81,7 +81,7 @@ export default function Tastenjagd({
           onChange={e => setBisLektion(Number(e.target.value))}
           aria-label="Tasten bis Lektion"
           disabled={laeuft}
-          className="text-sm bg-(--surface) border border-(--border) rounded-lg px-3 py-1.5 disabled:opacity-50"
+          className="text-sm bg-surface border border-line rounded-lg px-3 py-1.5 disabled:opacity-50"
         >
           {LEKTIONEN.map((l, i) => (
             <option key={l.id} value={i}>Tasten bis Lektion {i + 1}</option>
@@ -89,7 +89,7 @@ export default function Tastenjagd({
         </select>
         <div className="flex-1" />
         {laeuft && (
-          <span className="text-xs text-(--text-muted) tabular-nums">
+          <span className="text-xs text-muted tabular-nums">
             Taste {jagd.index + 1} von {jagd.ziele.length}
           </span>
         )}
@@ -99,7 +99,7 @@ export default function Tastenjagd({
         {...feldProps}
         aria-label="Tastenjagd — angezeigte Taste treffen"
         className="relative outline-hidden h-48 sm:h-56 flex items-center justify-center rounded-2xl
-          border border-(--border) bg-(--surface) focus:border-(--accent) cursor-text"
+          border border-line bg-surface focus:border-accent cursor-text"
       >
         {laeuft && (
           <span
@@ -114,13 +114,13 @@ export default function Tastenjagd({
         {jagd.ziele.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 text-center p-6">
             <div className="text-4xl">🎯</div>
-            <p className="text-sm text-(--text-muted) max-w-sm">
+            <p className="text-sm text-muted max-w-sm">
               Ein Zeichen erscheint — triff es so schnell du kannst. {RUNDE} Tasten,
               danach siehst du, welche dich am meisten Zeit kosten.
             </p>
             <button
               onClick={starten}
-              className="border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
+              className="border border-accent text-accent rounded-lg px-4 py-2 text-sm font-bold"
             >
               ▶ Los
             </button>
@@ -129,9 +129,9 @@ export default function Tastenjagd({
 
         {fertig && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center p-6
-            bg-(--surface)/90">
+            bg-surface/90">
             <div className="text-lg font-black">🎯 Runde fertig</div>
-            <div className="text-sm text-(--text-muted)">
+            <div className="text-sm text-muted">
               Im Schnitt {schnitt(jagd)} ms je Taste, {jagd.fehler} Fehlgriffe.
             </div>
             {zaeh.length > 0 && (
@@ -146,7 +146,7 @@ export default function Tastenjagd({
             )}
             <button
               onClick={starten}
-              className="mt-1 border border-(--accent) text-(--accent) rounded-lg px-4 py-2 text-sm font-bold"
+              className="mt-1 border border-accent text-accent rounded-lg px-4 py-2 text-sm font-bold"
             >
               ↺ Nochmal
             </button>

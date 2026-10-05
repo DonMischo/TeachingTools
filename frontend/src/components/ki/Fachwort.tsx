@@ -146,7 +146,7 @@ function Bild({ art }: { art: GlossarBild }) {
   };
 
   return (
-    <svg viewBox="0 0 120 80" className="w-full max-w-[220px] h-auto text-(--accent)" role="img" aria-hidden>
+    <svg viewBox="0 0 120 80" className="w-full max-w-[220px] h-auto text-accent" role="img" aria-hidden>
       {inhalt[art]}
     </svg>
   );
@@ -260,14 +260,14 @@ export function Fachwort({ begriff, wort }: { begriff: string; wort: string }) {
         maxWidth: `calc(100vw - ${2 * RAND}px)`,
         maxHeight: Math.max(140, platz.hoehe),
       }}
-      className="z-50 overflow-y-auto p-3 rounded-xl border border-(--accent)
-        bg-(--surface) shadow-xl flex flex-col gap-1.5 text-left normal-case"
+      className="z-50 overflow-y-auto p-3 rounded-xl border border-accent
+        bg-surface shadow-xl flex flex-col gap-1.5 text-left normal-case"
     >
-      <span className="font-black text-sm text-(--text)">{eintrag.titel}</span>
-      <span className="text-xs leading-relaxed text-(--text)">{eintrag.kurz}</span>
+      <span className="font-black text-sm text-fg">{eintrag.titel}</span>
+      <span className="text-xs leading-relaxed text-fg">{eintrag.kurz}</span>
       {eintrag.bild && <span className="block py-1"><Bild art={eintrag.bild} /></span>}
       {eintrag.lang && (
-        <span className="text-xs leading-relaxed text-(--text-muted)">{eintrag.lang}</span>
+        <span className="text-xs leading-relaxed text-muted">{eintrag.lang}</span>
       )}
     </span>
   );
@@ -285,7 +285,7 @@ export function Fachwort({ begriff, wort }: { begriff: string; wort: string }) {
         onFocus={oeffne}
         aria-expanded={!!platz}
         className="underline decoration-dotted decoration-from-font underline-offset-2
-          font-semibold text-(--text) hover:text-(--accent) cursor-help text-left"
+          font-semibold text-fg hover:text-accent cursor-help text-left"
       >
         {wort}
       </button>

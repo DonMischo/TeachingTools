@@ -36,10 +36,10 @@ export default function Monatsregler({ ebenen, inhalt, setInhalt, partikel, setP
   const setze = (m: number) => setInhalt((v) => ({ ...v, filter: { ...(v.filter ?? {}), ...Object.fromEntries(ids.map((id) => [id, [String(m)]])) } }));
   return (
     <div className="flex flex-col gap-1">
-      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Jahresverlauf</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-muted">Jahresverlauf</h3>
       <div className="flex items-center gap-2">
         <button onClick={() => setLaeuft((x) => !x)} aria-label={laeuft ? "Anhalten" : "Jahr abspielen"}
-          className="w-8 h-8 rounded-lg border border-(--border) font-bold hover:bg-(--surface-hover)">{laeuft ? "⏸" : "▶"}</button>
+          className="w-8 h-8 rounded-lg border border-line font-bold hover:bg-surface-hover">{laeuft ? "⏸" : "▶"}</button>
         <input type="range" min={1} max={12} value={monat} aria-label="Monat" className="flex-1"
           onChange={(e) => { setLaeuft(false); setze(Number(e.target.value)); }} />
         <span className="w-20 text-right font-bold text-xs">{MONATE[monat - 1]}</span>
@@ -49,7 +49,7 @@ export default function Monatsregler({ ebenen, inhalt, setInhalt, partikel, setP
           <input type="checkbox" checked={!!partikel} onChange={() => setPartikel(!partikel)} /> Partikelfluss
         </label>
       )}
-      <p className="text-[10px] text-(--text-muted)">Windgürtel und ITC wandern mit dem Sonnenstand; Monsun und Somalistrom wechseln die Richtung.</p>
+      <p className="text-[10px] text-muted">Windgürtel und ITC wandern mit dem Sonnenstand; Monsun und Somalistrom wechseln die Richtung.</p>
     </div>
   );
 }

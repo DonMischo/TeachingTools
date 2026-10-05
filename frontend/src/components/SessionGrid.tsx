@@ -25,7 +25,7 @@ export type SessionCardItem = {
 const TONE: Record<SessionTone, string> = {
   live: "text-yellow-400",
   waiting: "text-blue-400",
-  done: "text-(--text-muted)",
+  done: "text-muted",
   closed: "text-red-400/80",
 };
 
@@ -37,7 +37,7 @@ export function SessionGrid({
   renderActions?: (item: SessionCardItem) => React.ReactNode;
 }) {
   if (items.length === 0) {
-    return <p className="text-xs text-(--text-muted)">{empty}</p>;
+    return <p className="text-xs text-muted">{empty}</p>;
   }
 
   return (
@@ -45,7 +45,7 @@ export function SessionGrid({
       {items.map((s) => (
         <li
           key={s.code}
-          className="flex flex-col gap-1.5 rounded-lg border border-(--border) bg-(--bg) px-3 py-2"
+          className="flex flex-col gap-1.5 rounded-lg border border-line bg-page px-3 py-2"
         >
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="font-semibold text-sm truncate">{s.title}</span>
@@ -54,7 +54,7 @@ export function SessionGrid({
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap text-xs text-(--text-muted)">
+          <div className="flex items-center gap-2 flex-wrap text-xs text-muted">
             <span className="font-mono tracking-wider">{s.code}</span>
             {s.meta?.map((m) => <span key={m}>{m}</span>)}
           </div>
@@ -83,7 +83,7 @@ export function SessionAction({
   const cls = `px-2 py-0.5 rounded border text-xs transition-colors disabled:opacity-40 ${
     danger
       ? "border-red-400/30 text-red-400/70 hover:text-red-400 hover:bg-red-400/10"
-      : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+      : "border-line text-muted hover:border-muted"
   }`;
   if (href) {
     return <a href={href} download={download} title={title} className={cls}>{children}</a>;

@@ -48,9 +48,9 @@ function JoinInner() {
 
   return (
     <div className="max-w-md mx-auto p-6 mt-10">
-      <div className="rounded-2xl border border-(--border) bg-(--bg) p-6 shadow-lg">
+      <div className="rounded-2xl border border-line bg-page p-6 shadow-lg">
         <h1 className="text-xl font-bold mb-1">Pinnwand beitreten</h1>
-        <p className="text-sm text-(--text-muted) mb-5">Als Gast einer geteilten Fragmente-Sammlung.</p>
+        <p className="text-sm text-muted mb-5">Als Gast einer geteilten Fragmente-Sammlung.</p>
 
         <label className="label">Code</label>
         <input className="input mb-3 font-mono tracking-wider" value={code}
@@ -59,7 +59,7 @@ function JoinInner() {
         {code.trim().length >= 4 && (
           <div className="mb-3 text-sm">
             {isLoading ? (
-              <span className="text-(--text-muted)">Prüfe Code…</span>
+              <span className="text-muted">Prüfe Code…</span>
             ) : open ? (
               <span className="text-green-600">✓ {status?.collection_name} · {status?.permission === "contribute" ? "darf beitragen" : "nur lesen"}</span>
             ) : (
@@ -72,7 +72,7 @@ function JoinInner() {
         <input className="input mb-5" value={name} onChange={e => setName(e.target.value)}
           placeholder="Anzeigename" maxLength={100} onKeyDown={e => { if (e.key === "Enter" && open && name.trim()) join(name); }} />
 
-        <button className="btn-primary disabled:opacity-50"
+        <button className="btn-primary w-full"
           disabled={!open || !name.trim() || joining} onClick={() => join(name)}>
           {joining ? "Trete bei…" : "Beitreten"}
         </button>

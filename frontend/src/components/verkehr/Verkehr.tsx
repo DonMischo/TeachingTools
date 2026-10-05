@@ -333,13 +333,13 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
         Schimpfen erlauben (🤬 → Polizei)
       </label>
       {live.liste.filter((s) => !s.lehrkraft).length === 0 && (
-        <p className="text-(--text-muted)">Noch niemand da. »Zum Mitmachen« zeigt den Code.</p>
+        <p className="text-muted">Noch niemand da. »Zum Mitmachen« zeigt den Code.</p>
       )}
       <ul className="flex flex-col gap-2">
         {[...live.liste].filter((s) => !s.lehrkraft).sort((a, b) => b.punkte - a.punkte).map((s) => (
-          <li key={s.key} className="rounded-lg border border-(--border) px-2 py-1">
+          <li key={s.key} className="rounded-lg border border-line px-2 py-1">
             <div className="flex justify-between font-bold"><span>{s.name}</span><span>⭐ {s.punkte}</span></div>
-            <div className="text-xs text-(--text-muted)">
+            <div className="text-xs text-muted">
               {Object.entries(s.verstoesse).map(([id, n]) => `${KURZ[id as RegelId] ?? id} ×${n}`).join(" · ") || "keine Verstöße"}
             </div>
           </li>
@@ -355,9 +355,9 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
     <div className={ersatzVollbild ? "fixed inset-0 z-50 flex flex-col bg-slate-950" : "flex flex-col gap-3 p-4"}>
       {!gross && (
         <div className="flex flex-wrap items-center gap-3 px-1">
-          <h1 className="text-xl font-black">🚦 <span className="text-amber-500">GTA</span> – Ganztagsaufmerksamkeit im Verkehr <span className="font-bold text-(--text-muted)">· zu Fuß</span></h1>
+          <h1 className="text-xl font-black">🚦 <span className="text-amber-500">GTA</span> – Ganztagsaufmerksamkeit im Verkehr <span className="font-bold text-muted">· zu Fuß</span></h1>
           {zugang && (
-            <span className="text-xs text-(--text-muted)" title="Live-Raum">
+            <span className="text-xs text-muted" title="Live-Raum">
               {live.connected ? `🟢 ${live.liste.length} in der Stadt` : "🟠 verbinde …"}
             </span>
           )}
@@ -554,7 +554,7 @@ export default function Verkehr({ action, zugang = null, speicherSchluessel = "l
         </div>
 
         {seite && (
-          <aside className={`w-72 shrink-0 overflow-y-auto rounded-2xl border border-(--border) bg-(--surface) p-3 shadow-lg ${
+          <aside className={`card w-72 shrink-0 overflow-y-auto p-3 shadow-lg ${
             gross ? "absolute right-3 top-14 bottom-3 z-20 max-h-none w-72 shadow-2xl" : "max-h-[calc(100dvh-7rem)]"} ${touch && !gross ? "hidden lg:block" : ""}`}>
             {seitenleiste}
           </aside>

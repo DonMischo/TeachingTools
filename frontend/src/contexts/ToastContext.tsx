@@ -30,7 +30,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={`pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-200 ${
               t.type === "success" ? "bg-green-600 text-white" :
               t.type === "error"   ? "bg-red-600 text-white" :
-                                     "bg-(--surface) border border-(--border) text-(--text)"
+                                     "bg-surface border border-line text-fg"
             }`}
           >
             {t.message}

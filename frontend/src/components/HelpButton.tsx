@@ -31,7 +31,7 @@ export default function HelpButton({ slug, className = "" }: { slug: string; cla
         aria-label={`Hilfe zu ${help.title}`}
         title={`Hilfe zu ${help.title}`}
         onClick={(e) => { stop(e); setOpen(true); }}
-        className={`text-(--text-muted) hover:text-(--accent) transition-colors ${className}`}
+        className={`text-muted hover:text-accent transition-colors ${className}`}
       >
         <HelpCircle size={18} />
       </button>
@@ -45,16 +45,16 @@ export default function HelpButton({ slug, className = "" }: { slug: string; cla
             role="dialog"
             aria-modal="true"
             aria-label={`Hilfe zu ${help.title}`}
-            className="bg-(--surface) border border-(--border) rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden shadow-2xl text-left"
+            className="card w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden shadow-2xl text-left"
             onClick={stop}
           >
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-(--border) shrink-0">
-              <HelpCircle size={18} className="text-(--accent)" />
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-line shrink-0">
+              <HelpCircle size={18} className="text-accent" />
               <span className="font-black text-base flex-1">{help.title}</span>
               <button
                 type="button"
                 onClick={(e) => { stop(e); setOpen(false); }}
-                className="text-(--text-muted) hover:text-(--text) text-xl leading-none px-1"
+                className="text-muted hover:text-fg text-xl leading-none px-1"
                 aria-label="Schließen"
               >
                 ×
@@ -62,12 +62,12 @@ export default function HelpButton({ slug, className = "" }: { slug: string; cla
             </div>
 
             <div className="px-5 py-4 overflow-y-auto flex flex-col gap-3">
-              <p className="text-sm text-(--text-muted) leading-relaxed">{help.intro}</p>
+              <p className="text-sm text-muted leading-relaxed">{help.intro}</p>
               <div className="flex flex-col gap-3">
                 {help.sections.map((s) => (
                   <div key={s.label}>
                     <div className="text-sm font-semibold">{s.label}</div>
-                    <div className="text-sm text-(--text-muted) leading-relaxed">{s.text}</div>
+                    <div className="text-sm text-muted leading-relaxed">{s.text}</div>
                   </div>
                 ))}
               </div>

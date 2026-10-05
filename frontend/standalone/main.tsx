@@ -52,24 +52,24 @@ function App() {
   const [hell, setHell] = useState(false);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = hell ? "hell" : "dunkel";
+    document.documentElement.dataset.theme = hell ? "ege" : "default";
   }, [hell]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <WaageStyles />
 
-      <header className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-(--border) bg-(--surface)">
+      <header className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-3 border-b border-line bg-surface">
         <span className="font-black tracking-tight mr-2">🔬 Simulationen</span>
-        <div className="inline-flex flex-wrap max-w-full rounded-xl border border-(--border) p-1">
+        <div className="inline-flex flex-wrap max-w-full rounded-xl border border-line p-1">
           {TOOLS.map(t => (
             <button
               key={t.id}
               onClick={() => setActive(t.id)}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
                 active === t.id
-                  ? "bg-(--accent) text-(--accent-text,#111)"
-                  : "text-(--text-muted) hover:text-(--text)"
+                  ? "bg-accent text-accent-fg"
+                  : "text-muted hover:text-fg"
               }`}
             >
               {t.icon} <span className="hidden sm:inline">{t.label}</span>
@@ -80,7 +80,7 @@ function App() {
         <button
           onClick={() => setHell(v => !v)}
           title="Zwischen hell und dunkel wechseln"
-          className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)"
+          className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent"
         >
           {hell ? "🌙 Dunkel" : "☀️ Hell"}
         </button>
@@ -96,7 +96,7 @@ function App() {
         ))}
       </main>
 
-      <footer className="px-4 sm:px-6 py-3 text-xs text-(--text-muted) border-t border-(--border)">
+      <footer className="px-4 sm:px-6 py-3 text-xs text-muted border-t border-line">
         Offline-Fassung der Simulationen aus TT - Teaching Tools — läuft ohne Internet und ohne Anmeldung.
         Nichts wird gespeichert oder verschickt.
       </footer>

@@ -185,11 +185,11 @@ export default function StufeTaskleiste({
 
   const aufgabenTexte = [
     <>Hefte <b>»{APPS[zielAn.current].name}«</b> an die Taskleiste.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Start öffnen, dann Rechtsklick auf die App.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Start öffnen, dann Rechtsklick auf die App.</span></>,
     <>Löse <b>»{APPS[zielLos.current].name}«</b> von der Taskleiste.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Rechtsklick auf das Symbol unten in der Taskleiste.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Rechtsklick auf das Symbol unten in der Taskleiste.</span></>,
     <>Stell die Taskleiste auf <b>»{zielAusr.current === "links" ? "Links" : "Mitte"}«</b>.
-      <span data-zusatz className="block text-xs text-(--text-muted)">Tipp: Einstellungen › Taskleiste › Ausrichtung.</span></>,
+      <span data-zusatz className="block text-xs text-muted">Tipp: Einstellungen › Taskleiste › Ausrichtung.</span></>,
     <>Räum den Desktop auf: <b>Rechtsklick auf eine freie Stelle → Sortieren nach: Name</b>.</>,
   ];
 
@@ -259,7 +259,7 @@ export default function StufeTaskleiste({
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {AUFGABEN.map((a, i) => (
-          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : ""}>
+          <li key={a} className={i === schritt ? "font-bold" : i < schritt ? "text-muted" : ""}>
             {i < schritt ? "✅" : i === schritt ? "👉" : "⬜"} {a}
           </li>
         ))}

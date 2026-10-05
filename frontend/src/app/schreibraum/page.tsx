@@ -93,15 +93,15 @@ export default function SchreibraumListPage() {
 
   if (!auth) {
     return (
-      <div className="p-8 text-(--text-muted)">
+      <div className="p-8 text-muted">
         Bitte anmelden, um den Schreibraum zu nutzen.
       </div>
     );
   }
 
   return (
-    <div className="max-w-(--seite-breite) mx-auto px-4 py-8 w-full">
-      <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-(--text-muted) hover:text-(--text) transition-colors">
+    <div className="max-w-seite mx-auto px-4 py-8 w-full">
+      <button onClick={() => router.push("/tools")} className="mb-3 text-sm text-muted hover:text-fg transition-colors">
         ← Tools
       </button>
       {/* Header */}
@@ -121,7 +121,7 @@ export default function SchreibraumListPage() {
 
       {/* Create form */}
       {showCreate && isTeacher && (
-        <form onSubmit={handleCreate} className="bg-(--surface) border border-(--border) rounded-xl p-5 mb-6 flex flex-col gap-3">
+        <form onSubmit={handleCreate} className="bg-surface border border-line rounded-xl p-5 mb-6 flex flex-col gap-3">
           <div className="font-semibold text-sm">Neuen Raum erstellen</div>
           <input
             value={newTitle}
@@ -136,13 +136,13 @@ export default function SchreibraumListPage() {
             <button
               type="button"
               onClick={() => setShowSettings(v => !v)}
-              className="text-xs text-(--text-muted) hover:text-(--text) flex items-center gap-1"
+              className="text-xs text-muted hover:text-fg flex items-center gap-1"
             >
               {showSettings ? "▾" : "▸"} ⚙ Einstellungen
             </button>
             {showSettings && (
               <div className="mt-2 flex gap-4 flex-wrap">
-                <label className="text-xs text-(--text-muted) flex items-center gap-1">
+                <label className="text-xs text-muted flex items-center gap-1">
                   Modus:{" "}
                   <select
                     value={newMode}
@@ -154,7 +154,7 @@ export default function SchreibraumListPage() {
                     <option value="wortstaffel">Wortstaffel</option>
                   </select>
                 </label>
-                <label className="text-xs text-(--text-muted) flex items-center gap-2">
+                <label className="text-xs text-muted flex items-center gap-2">
                   <input type="checkbox" checked={newPermanent} onChange={(e) => setNewPermanent(e.target.checked)} />
                   Dauerhaft
                 </label>
@@ -193,11 +193,11 @@ export default function SchreibraumListPage() {
         )}
       </div>
 
-      {loading && <div className="text-(--text-muted) text-sm">Laden…</div>}
+      {loading && <div className="text-muted text-sm">Laden…</div>}
       {error && <div className="text-red-400 text-sm mb-4">{error}</div>}
 
       {!loading && filtered.length === 0 && (
-        <div className="text-(--text-muted) text-center mt-12 text-sm">
+        <div className="text-muted text-center mt-12 text-sm">
           {rooms.length === 0
             ? (isTeacher ? "Noch keine Räume. Erstelle deinen ersten Raum!" : "Du hast noch keinen Zugang zu einem Schreibraum.")
             : "Keine Räume gefunden."}
@@ -209,10 +209,10 @@ export default function SchreibraumListPage() {
         {filtered.map((room) => (
           <div
             key={room.id}
-            className="bg-(--surface) border border-(--border) rounded-xl p-4 flex flex-col gap-2"
+            className="bg-surface border border-line rounded-xl p-4 flex flex-col gap-2"
           >
             <div className="font-semibold text-sm leading-snug">{room.title}</div>
-            <div className="text-xs text-(--text-muted) flex flex-col gap-0.5">
+            <div className="text-xs text-muted flex flex-col gap-0.5">
               <span>Code: <b>{room.code}</b></span>
               <span>von {room.creator_name}</span>
               <span>{room.mode === "add-line" ? "Zeile hinzufügen" : "Nächste freie Zeile"}</span>

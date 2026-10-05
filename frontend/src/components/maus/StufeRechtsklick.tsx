@@ -81,7 +81,7 @@ export default function StufeRechtsklick({
         {gewaehlt && avatar && <AvatarDisplay avatarId={avatar} size="lg" />}
       </Stufenkopf>
 
-      <div className="min-h-6 text-center text-sm font-bold text-(--text-muted)" aria-live="polite">
+      <div className="min-h-6 text-center text-sm font-bold text-muted" aria-live="polite">
         {hinweis}
       </div>
 
@@ -103,7 +103,7 @@ export default function StufeRechtsklick({
             }}
             className={
               "aspect-square rounded-2xl flex items-center justify-center text-3xl sm:text-4xl select-none " +
-              (avatar === a.id && gewaehlt ? "ring-4 ring-(--accent) " : "") +
+              (avatar === a.id && gewaehlt ? "ring-4 ring-accent " : "") +
               (wackelt?.id === a.id ? "maus-wackeln" : "")
             }
             style={{ backgroundColor: a.bg }}

@@ -102,7 +102,7 @@ export default function KonvektionsAnsicht() {
       <div className="flex flex-col gap-2">
         <div className="relative">
           <canvas ref={leinwandRef} width={1000} height={400} onPointerDown={klick} onContextMenu={e => e.preventDefault()}
-            className="w-full rounded-2xl border border-(--border) cursor-crosshair touch-none" />
+            className="w-full rounded-2xl border border-line cursor-crosshair touch-none" />
           <div className="absolute left-2 top-2 text-[11px] text-white bg-black/50 rounded-sm px-2 py-0.5 pointer-events-none">Lithosphäre (kalt, oben)</div>
           <div className="absolute left-2 bottom-2 text-[11px] text-white bg-black/50 rounded-sm px-2 py-0.5 pointer-events-none">Kern-Mantel-Grenze (heiß, unten) · 2900 km</div>
         </div>
@@ -113,11 +113,11 @@ export default function KonvektionsAnsicht() {
         </div>
       </div>
       <aside className="flex flex-col gap-3 text-sm">
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 flex flex-col gap-3">
+        <section className="card p-3 flex flex-col gap-3">
           <label className="flex flex-col gap-1">
             <span className="flex justify-between"><b>Zähigkeit des Mantels</b><span>≈ {zehnHoch(Math.log10(eta))} Pa·s</span></span>
             <input type="range" min={2.5} max={7} step={0.1} value={logRa} onChange={e => setLogRa(+e.target.value)} />
-            <span className="flex justify-between text-xs text-(--text-muted)"><span>zäher</span><span>Rayleigh-Zahl {zehnHoch(logRa)}</span><span>flüssiger</span></span>
+            <span className="flex justify-between text-xs text-muted"><span>zäher</span><span>Rayleigh-Zahl {zehnHoch(logRa)}</span><span>flüssiger</span></span>
           </label>
           <label className="flex flex-col gap-1">
             <b>Tempo</b>
@@ -130,7 +130,7 @@ export default function KonvektionsAnsicht() {
             <div className="flex flex-wrap gap-1">
               {([["kern", "der Kern"], ["zerfall", "Radioaktivität"], ["beides", "beides"]] as [Heizung, string][]).map(([id, l]) => (
                 <button key={id} onClick={() => setHeizung(id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold ${heizung === id ? "bg-(--accent) text-(--accent-text,#111)" : "border border-(--border)"}`}>{l}</button>
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold ${heizung === id ? "bg-accent text-accent-fg" : "border border-line"}`}>{l}</button>
               ))}
             </div>
           </div>
@@ -142,16 +142,16 @@ export default function KonvektionsAnsicht() {
             <input type="range" min={0.2} max={0.8} step={0.01} value={deckelMitte} onChange={e => setDeckelMitte(+e.target.value)} />
           )}
           <div className="flex flex-wrap gap-1">
-            <button onClick={() => setFarben(f => f === "gestein" ? "temperatur" : "gestein")} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-(--border)">
+            <button onClick={() => setFarben(f => f === "gestein" ? "temperatur" : "gestein")} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-line">
               Farben: {farben === "gestein" ? "Gestein" : "Temperatur"}
             </button>
-            <button onClick={() => setPfeile(p => !p)} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${pfeile ? "bg-(--accent) text-(--accent-text,#111)" : "border border-(--border)"}`}>➜ Strömungspfeile</button>
-            <button onClick={() => setLaeuft(l => !l)} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-(--border)">{laeuft ? "⏸ Pause" : "▶ weiter"}</button>
-            <button onClick={() => setNeu(n => n + 1)} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-(--border)">↻ neu</button>
+            <button onClick={() => setPfeile(p => !p)} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${pfeile ? "bg-accent text-accent-fg" : "border border-line"}`}>➜ Strömungspfeile</button>
+            <button onClick={() => setLaeuft(l => !l)} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-line">{laeuft ? "⏸ Pause" : "▶ weiter"}</button>
+            <button onClick={() => setNeu(n => n + 1)} className="px-2.5 py-1 rounded-lg text-xs font-bold border border-line">↻ neu</button>
           </div>
-          <p className="text-xs text-(--text-muted)">Ins Bild tippen: heißer Fleck (Plume). Mit Umschalt oder Rechtsklick: kalter Fleck (abtauchende Platte).</p>
+          <p className="text-xs text-muted">Ins Bild tippen: heißer Fleck (Plume). Mit Umschalt oder Rechtsklick: kalter Fleck (abtauchende Platte).</p>
         </section>
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-3 leading-relaxed flex flex-col gap-1">
+        <section className="card p-3 leading-relaxed flex flex-col gap-1">
           <b>Was hier passiert</b>
           <p>Unten heizt der Kern den Mantel, dazu wärmt der Zerfall radioaktiver Stoffe. Warmes Gestein ist leichter und steigt in <b>Säulen (Plumes)</b> auf, kaltes sinkt als <b>Vorhänge</b> ab — obwohl der Mantel fest ist. Es geht nur wenige Zentimeter pro Jahr, so schnell wie Fingernägel wachsen.</p>
           <p>Ist der Mantel zu zäh (Rayleigh-Zahl unter ≈ 660), bleibt es bei reiner Wärmeleitung. Der echte Mantel liegt bei 10⁷–10⁸ und strömt kräftig.</p>
@@ -164,8 +164,8 @@ export default function KonvektionsAnsicht() {
 
 function Wert({ k, v }: { k: string; v: string }) {
   return (
-    <div className="rounded-xl border border-(--border) bg-(--surface) px-3 py-1.5">
-      <div className="text-[11px] text-(--text-muted)">{k}</div>
+    <div className="rounded-xl border border-line bg-surface px-3 py-1.5">
+      <div className="text-[11px] text-muted">{k}</div>
       <div className="font-bold">{v}</div>
     </div>
   );

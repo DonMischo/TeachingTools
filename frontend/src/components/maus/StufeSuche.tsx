@@ -161,7 +161,7 @@ export default function StufeSuche({
         titel="🔍 Teil 3 · Suchen"
         auftrag={fertig
           ? <>Super — du findest jetzt alles über die Suche!</>
-          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>}
+          : <>{AUFGABEN[schritt]}<div data-zusatz className="text-xs text-muted mt-1">💡 Klicke auf die Suche in der Taskleiste oder auf Start.</div></>}
         punkte={wertung({ stufe: "suche", geloest: Math.min(schritt, ANZAHL_AUFGABEN), anzahl: ANZAHL_AUFGABEN, dauerMs: Math.round(performance.now() - start.current), fehler }).punkte}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -214,11 +214,11 @@ export default function StufeSuche({
           ))}
         </WindowsDesktop>
 
-        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 h-fit">
+        <aside className="card p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           <ul className="flex flex-col gap-1.5">
             {AUFGABEN.map((a, i) => (
-              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-(--text-muted)" : "")}>
+              <li key={i} className={"text-sm flex gap-2 " + (i === schritt ? "font-bold" : i < schritt ? "text-muted" : "")}>
                 <span>{i < schritt ? "✅" : i === schritt ? "👉" : "⬜"}</span>
                 <span>{a}</span>
               </li>

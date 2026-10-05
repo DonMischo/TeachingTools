@@ -132,8 +132,8 @@ export default function ZeitstrahlDetailPage() {
     return { visibleEvents: evs, visibleLanes: lanes, focusRange: range };
   }, [set, hiddenLanes, hiddenCategories]);
 
-  if (!auth) return <div className="p-8 text-sm text-(--text-muted)">Bitte einloggen.</div>;
-  if (isLoading) return <div className="p-8 text-sm text-(--text-muted)">Lade…</div>;
+  if (!auth) return <div className="p-8 text-sm text-muted">Bitte einloggen.</div>;
+  if (isLoading) return <div className="p-8 text-sm text-muted">Lade…</div>;
   if (isError || !set) return <div className="p-8 text-sm text-red-400">Zeitstrahl nicht gefunden.</div>;
 
   function toggleLane(laneId: string) {
@@ -153,24 +153,24 @@ export default function ZeitstrahlDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-(--text-muted) hover:text-(--accent)">
+          <Link href="/aktivitaeten/zeitstrahl" className="text-xs text-muted hover:text-accent">
             ← Bibliothek
           </Link>
           <h1 className="text-2xl font-black tracking-tight">📏 {set.title}</h1>
-          {set.description && <p className="text-(--text-muted) text-sm mt-1 max-w-2xl">{set.description}</p>}
+          {set.description && <p className="text-muted text-sm mt-1 max-w-2xl">{set.description}</p>}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Teilen: ein Code je Zeitleiste, damit ein gedruckter QR immer
               dieselbe Zeitleiste oeffnet. */}
           <ToolSessionBar tool="zeitstrahl" title={set.title} refId={set.id} />
-        <div className="flex gap-1 rounded-xl border border-(--border) p-1">
+        <div className="flex gap-1 rounded-xl border border-line p-1">
           {(["ansehen", "ueben", ...(canEdit ? ["bearbeiten"] as Tab[] : [])] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
-                tab === t ? "bg-(--accent) text-white font-semibold" : "hover:bg-(--surface-hover)"
+                tab === t ? "bg-accent text-white font-semibold" : "hover:bg-surface-hover"
               }`}>
               {t === "ansehen" ? "🔍 Ansehen" : t === "ueben" ? "🎯 Üben" : "✏️ Bearbeiten"}
             </button>
@@ -187,7 +187,7 @@ export default function ZeitstrahlDetailPage() {
             return (
               <button key={l.id} onClick={() => toggleLane(l.id)}
                 className={`text-xs px-3 py-1 rounded-full border transition-all ${
-                  hidden ? "opacity-40 border-(--border)" : "border-transparent font-semibold"
+                  hidden ? "opacity-40 border-line" : "border-transparent font-semibold"
                 }`}
                 style={hidden ? {} : { backgroundColor: `${l.color ?? "#64748b"}33`, color: l.color ?? undefined, borderColor: l.color ?? undefined }}>
                 {hidden ? "○" : "●"} {l.label}
@@ -201,24 +201,24 @@ export default function ZeitstrahlDetailPage() {
           "Keine" then one chip is the quick way to isolate a single category. */}
       {categories.length > 1 && tab !== "bearbeiten" && (
         <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-(--text-muted) mr-1">Filter:</span>
+          <span className="text-xs text-muted mr-1">Filter:</span>
           <button onClick={() => setHiddenCategories(new Set())}
-            className="text-xs px-2.5 py-1 rounded-full border border-(--border) hover:border-(--accent) transition-all">
+            className="text-xs px-2.5 py-1 rounded-full border border-line hover:border-accent transition-all">
             Alle
           </button>
           <button onClick={() => setHiddenCategories(new Set(categories.map(([c]) => c)))}
-            className="text-xs px-2.5 py-1 rounded-full border border-(--border) hover:border-(--accent) transition-all">
+            className="text-xs px-2.5 py-1 rounded-full border border-line hover:border-accent transition-all">
             Keine
           </button>
-          <span className="w-px h-4 bg-(--border) mx-1" />
+          <span className="w-px h-4 bg-line mx-1" />
           {categories.map(([cat, n]) => {
             const off = hiddenCategories.has(cat);
             return (
               <button key={cat} onClick={() => toggleCategory(cat)}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
                   off
-                    ? "opacity-40 border-(--border) line-through"
-                    : "bg-(--accent) text-white border-transparent font-semibold"
+                    ? "opacity-40 border-line line-through"
+                    : "bg-accent text-white border-transparent font-semibold"
                 }`}>
                 {cat} <span className="opacity-60">{n}</span>
               </button>
@@ -228,20 +228,20 @@ export default function ZeitstrahlDetailPage() {
       )}
 
       {tab === "ansehen" && (
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+        <section className="card p-4">
           <TimelineCanvas
             axis={set.axis} lanes={visibleLanes} events={visibleEvents}
             onSelect={setSelected} selectedId={selected?.id}
             viewRange={focusRange}
           />
           {selected && (
-            <div className="mt-3 rounded-xl border border-(--border) p-3 text-sm flex flex-col gap-1">
+            <div className="mt-3 rounded-xl border border-line p-3 text-sm flex flex-col gap-1">
               <div>
                 <span className="font-semibold">{selected.label}</span>
-                <span className="text-(--text-muted)"> — {eventDateLabel(selected, set.axis)}</span>
+                <span className="text-muted"> — {eventDateLabel(selected, set.axis)}</span>
               </div>
               {selected.info && (
-                <p className="text-(--text-muted) whitespace-pre-line wrap-break-word">{selected.info}</p>
+                <p className="text-muted whitespace-pre-line wrap-break-word">{selected.info}</p>
               )}
             </div>
           )}
@@ -372,9 +372,9 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
   const solution: TimelineSolution | null = spec && result ? specToSolution(spec) : null;
 
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-4">
+    <section className="card p-4 flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3 text-sm">
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Modus
           <select value={mode} onChange={e => setMode(e.target.value as "sort" | "spot")} className="input text-sm py-1.5">
             <option value="sort">Einsortieren (ziehen)</option>
@@ -382,14 +382,14 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
           </select>
         </label>
         {mode === "sort" && set.axis.kind === "year" && (
-          <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Toleranz
             <select value={tolerance} onChange={e => setTolerance(Number(e.target.value))} className="input text-sm py-1.5">
               {TOLERANCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </label>
         )}
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Einträge
           <select value={count} onChange={e => setCount(Number(e.target.value))} className="input text-sm py-1.5">
             {[3, 4, 5, 6, 8, 10].map(n => <option key={n} value={n}>{n}</option>)}
@@ -400,17 +400,17 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
         </button>
         {isTeacher && (
           <span className="flex gap-2 ml-auto">
-            <button onClick={() => copySpec("caputh")} className="text-xs border border-(--border) rounded-lg px-2.5 py-1.5 hover:border-(--accent)">
+            <button onClick={() => copySpec("caputh")} className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent">
               🏕️ Als Caputh-Frage kopieren
             </button>
-            <button onClick={() => copySpec("exitgame")} className="text-xs border border-(--border) rounded-lg px-2.5 py-1.5 hover:border-(--accent)">
+            <button onClick={() => copySpec("exitgame")} className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent">
               🗝️ Als TaskCrawler-Slide kopieren
             </button>
           </span>
         )}
       </div>
       {pool.length < 2 && (
-        <p className="text-xs text-(--text-muted)">Zu wenige sichtbare Einträge — blende mehr Spuren ein.</p>
+        <p className="text-xs text-muted">Zu wenige sichtbare Einträge — blende mehr Spuren ein.</p>
       )}
 
       {board && spec && (
@@ -425,7 +425,7 @@ function PracticeTab({ set, visibleEvents, isTeacher }: {
           {!result ? (
             <button onClick={check}
               disabled={!timelineAnswerComplete(board, answer)}
-              className="btn-primary text-sm py-1.5 px-5 self-start disabled:opacity-40">
+              className="btn-primary text-sm py-1.5 px-5 self-start">
               Prüfen
             </button>
           ) : (
@@ -505,10 +505,10 @@ function DiffPanel({ diff, onApply, onCancel }: {
 }) {
   const nothing = !diff.added.length && !diff.removed.length && !diff.changed.length;
   return (
-    <div className="rounded-xl border border-(--accent) bg-(--surface-hover) p-3 flex flex-col gap-2 text-sm">
+    <div className="rounded-xl border border-accent bg-surface-hover p-3 flex flex-col gap-2 text-sm">
       <div className="font-semibold">Änderungen aus der hochgeladenen Datei</div>
       {nothing ? (
-        <p className="text-(--text-muted) text-xs">
+        <p className="text-muted text-xs">
           Keine Unterschiede zu den aktuellen Einträgen ({diff.unchanged} unverändert).
         </p>
       ) : (
@@ -517,7 +517,7 @@ function DiffPanel({ diff, onApply, onCancel }: {
             <span className="text-green-500">+{diff.added.length} neu</span>
             <span className="text-red-400">−{diff.removed.length} entfernt</span>
             <span className="text-yellow-500">~{diff.changed.length} geändert</span>
-            <span className="text-(--text-muted)">{diff.unchanged} unverändert</span>
+            <span className="text-muted">{diff.unchanged} unverändert</span>
           </div>
           <div className="max-h-56 overflow-y-auto flex flex-col gap-0.5 text-xs">
             {diff.added.map(e => (
@@ -529,7 +529,7 @@ function DiffPanel({ diff, onApply, onCancel }: {
             {diff.changed.map(c => (
               <div key={`c-${c.after.id}`} className="text-yellow-500">
                 ~ {c.after.label}{" "}
-                <span className="text-(--text-muted)">({c.fields.join(", ")})</span>
+                <span className="text-muted">({c.fields.join(", ")})</span>
               </div>
             ))}
           </div>
@@ -542,11 +542,11 @@ function DiffPanel({ diff, onApply, onCancel }: {
       )}
       <div className="flex gap-2 mt-1">
         <button onClick={onApply} disabled={nothing}
-          className="btn-primary text-xs py-1 px-3 disabled:opacity-40">
+          className="btn-primary text-xs py-1 px-3">
           Übernehmen
         </button>
         <button onClick={onCancel}
-          className="text-xs border border-(--border) rounded-lg px-3 py-1 hover:border-(--accent)">
+          className="text-xs border border-line rounded-lg px-3 py-1 hover:border-accent">
           Verwerfen
         </button>
       </div>
@@ -676,21 +676,21 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
   const num = (v: string) => v.trim() === "" || v === "-" ? null : Number(v.replace(",", "."));
 
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-5">
+    <section className="card p-4 flex flex-col gap-5">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="font-semibold">Bearbeiten</h2>
         <div className="flex gap-2">
-          <button onClick={exportJson} className="text-xs border border-(--border) rounded-lg px-2.5 py-1.5 hover:border-(--accent)">
+          <button onClick={exportJson} className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent">
             ⬇ Als JSON exportieren
           </button>
           <button onClick={() => uploadRef.current?.click()}
-            className="text-xs border border-(--border) rounded-lg px-2.5 py-1.5 hover:border-(--accent)">
+            className="text-xs border border-line rounded-lg px-2.5 py-1.5 hover:border-accent">
             ⬆ JSON hochladen
           </button>
           <input ref={uploadRef} type="file" accept=".json,application/json" className="hidden"
             onChange={handleReupload} />
           <button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}
-            className="btn-primary text-sm py-1.5 px-5 disabled:opacity-40">
+            className="btn-primary text-sm py-1.5 px-5">
             {saveMut.isPending ? "Speichere…" : "Speichern"}
           </button>
         </div>
@@ -702,26 +702,26 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
 
       {/* meta + axis */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Titel
           <input className="input text-sm" value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Beschreibung
           <input className="input text-sm" value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Tags (Komma-getrennt)
           <input className="input text-sm" value={draft.tags} onChange={e => setDraft(d => ({ ...d, tags: e.target.value }))} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Klassenstufen (z.B. 5, 6, 7)
           <input className="input text-sm" value={draft.grades} onChange={e => setDraft(d => ({ ...d, grades: e.target.value }))} />
         </label>
       </div>
 
       <div className="flex flex-wrap gap-3 items-end text-sm">
-        <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+        <label className="flex flex-col gap-1 text-xs text-muted">
           Achse
           <select className="input text-sm py-1.5" value={draft.axis.kind}
             onChange={e => setDraft(d => ({ ...d, axis: { ...d.axis, kind: e.target.value as "year" | "number" } }))}>
@@ -730,7 +730,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
           </select>
         </label>
         {(["min", "max", "step"] as const).map(k => (
-          <label key={k} className="flex flex-col gap-1 text-xs text-(--text-muted)">
+          <label key={k} className="flex flex-col gap-1 text-xs text-muted">
             {k === "min" ? "Von" : k === "max" ? "Bis" : "Schritt (optional)"}
             <input className="input text-sm w-28" defaultValue={draft.axis[k] ?? ""}
               key={`${set.id}-${k}`}
@@ -738,7 +738,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
           </label>
         ))}
         {draft.axis.kind === "number" && (
-          <label className="flex flex-col gap-1 text-xs text-(--text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-muted">
             Einheit
             <input className="input text-sm w-20" value={draft.axis.unit ?? ""}
               onChange={e => setDraft(d => ({ ...d, axis: { ...d.axis, unit: e.target.value || null } }))} />
@@ -750,21 +750,21 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">Spuren</h3>
-          <button onClick={addLane} className="text-xs text-(--accent) hover:underline">+ Spur</button>
+          <button onClick={addLane} className="text-xs text-accent hover:underline">+ Spur</button>
         </div>
         <div className="flex flex-col gap-1.5">
           {draft.lanes.map((l, i) => (
             <div key={l.id} className="flex items-center gap-2 text-sm">
               <input type="color" value={l.color ?? "#60a5fa"}
                 onChange={e => setDraft(d => ({ ...d, lanes: d.lanes.map((x, j) => j === i ? { ...x, color: e.target.value } : x) }))}
-                className="w-7 h-7 rounded-sm cursor-pointer border border-(--border) bg-transparent" />
+                className="w-7 h-7 rounded-sm cursor-pointer border border-line bg-transparent" />
               <input className="input text-sm flex-1" value={l.label}
                 onChange={e => setDraft(d => ({ ...d, lanes: d.lanes.map((x, j) => j === i ? { ...x, label: e.target.value } : x) }))} />
-              <span className="text-[10px] font-mono text-(--text-muted)">{l.id}</span>
+              <span className="text-[10px] font-mono text-muted">{l.id}</span>
               <button onClick={() => removeLane(l.id)} className="text-xs text-red-400 hover:underline">Entfernen</button>
             </div>
           ))}
-          {draft.lanes.length === 0 && <p className="text-xs text-(--text-muted)">Keine Spuren — alle Einträge liegen auf einer Linie.</p>}
+          {draft.lanes.length === 0 && <p className="text-xs text-muted">Keine Spuren — alle Einträge liegen auf einer Linie.</p>}
         </div>
       </div>
 
@@ -772,7 +772,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">Einträge ({draft.events.length})</h3>
-          <button onClick={addEvent} className="text-xs text-(--accent) hover:underline">+ Eintrag</button>
+          <button onClick={addEvent} className="text-xs text-accent hover:underline">+ Eintrag</button>
         </div>
         <datalist id="tl-categories">
           {[...new Set(draft.events.map(e => e.category).filter(Boolean))].map(c => (
@@ -782,7 +782,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-(--text-muted)">
+              <tr className="text-left text-muted">
                 <th className="p-1.5 font-medium">Bezeichnung</th>
                 <th className="p-1.5 font-medium w-28">Wert</th>
                 <th className="p-1.5 font-medium w-28">Ende (Spanne)</th>
@@ -796,7 +796,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
             </thead>
             <tbody>
               {draft.events.map((ev, i) => (
-                <tr key={ev.id} className="border-t border-(--border)">
+                <tr key={ev.id} className="border-t border-line">
                   <td className="p-1">
                     <input className="input text-xs w-full" value={ev.label} onChange={e => patchEvent(i, { label: e.target.value })} />
                   </td>
@@ -839,7 +839,7 @@ function EditTab({ set, onSaved }: { set: TimelineSetDetail; onSaved: () => void
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] text-(--text-muted)">
+        <p className="text-[10px] text-muted">
           Werte: Jahreszahlen als Zahl ({formatValue(-753, { kind: "year", min: -800, max: 0 })} = -753), Dezimalzahlen mit Komma oder Punkt.
           Exaktes Datum: im Format JJJJ-MM-TT (z.B. 1942-01-20) wird das Ereignis auf den genauen Tag positioniert und man kann bis auf
           den Tag heranzoomen; jeder andere Text (z.B. „21. April 753 v. Chr. (Überlieferung)") wird nur als Zusatzinfo angezeigt,

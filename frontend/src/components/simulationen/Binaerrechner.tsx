@@ -47,11 +47,11 @@ export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode;
     setBits(prev => prev.map((b, j) => (j === i ? (b ? 0 : 1) : b)));
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">◈ Binär-Rechner</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Acht Bits zum Umschalten. Jedes Bit hat seinen Stellenwert — zusammen ergeben
             sie jede Zahl von 0 bis 255.
           </p>

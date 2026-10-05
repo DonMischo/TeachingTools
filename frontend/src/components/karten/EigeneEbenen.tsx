@@ -59,7 +59,7 @@ export default function EigeneEbenen({ ebenen, an, schalte, lehrkraft }: {
   if (!ebenen.length && !lehrkraft) return null;
   return (
     <div className="flex flex-col gap-1.5">
-      <h3 className="text-xs font-black uppercase tracking-wide text-(--text-muted)">Eigene Ebenen</h3>
+      <h3 className="text-xs font-black uppercase tracking-wide text-muted">Eigene Ebenen</h3>
       {ebenen.map((e) => (
         <div key={e.id} className="flex flex-col gap-1">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -75,7 +75,7 @@ export default function EigeneEbenen({ ebenen, an, schalte, lehrkraft }: {
               <label className="flex items-center gap-1">
                 Name aus
                 <select value={e.eigen.namensfeld} onChange={(ev) => aendern(e, { namensfeld: ev.target.value })}
-                  className="px-1 py-0.5 rounded-sm border border-(--border) bg-(--bg)">
+                  className="px-1 py-0.5 rounded-sm border border-line bg-page">
                   <option value="">— durchnummeriert —</option>
                   {e.eigen.felder.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
@@ -89,16 +89,16 @@ export default function EigeneEbenen({ ebenen, an, schalte, lehrkraft }: {
       ))}
 
       {lehrkraft && (
-        <div className="flex flex-col gap-1.5 mt-1 p-2 rounded-lg border border-dashed border-(--border)">
+        <div className="flex flex-col gap-1.5 mt-1 p-2 rounded-lg border border-dashed border-line">
           <input ref={datei} type="file" accept=".geojson,.json,.kml,.kmz,.gpx" aria-label="Datei für eigene Ebene"
             className="text-xs" />
           <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="Name der Ebene (optional)"
-            className="px-2 py-1 rounded-lg border border-(--border) bg-(--bg) text-xs" />
+            className="px-2 py-1 rounded-lg border border-line bg-page text-xs" />
           <button onClick={hochladen} disabled={laeuft}
-            className="self-start px-2 py-1 rounded-lg text-xs font-bold border border-(--border) hover:bg-(--surface-hover) disabled:opacity-40">
+            className="self-start px-2 py-1 rounded-lg text-xs font-bold border border-line hover:bg-surface-hover disabled:opacity-40">
             {laeuft ? "⏳ lädt …" : "⬆️ Hochladen"}
           </button>
-          <p className="text-[10px] text-(--text-muted)">GeoJSON, KML/KMZ (z. B. Google My Maps) oder GPX; höchstens 5 MB, Koordinaten in WGS84.</p>
+          <p className="text-[10px] text-muted">GeoJSON, KML/KMZ (z. B. Google My Maps) oder GPX; höchstens 5 MB, Koordinaten in WGS84.</p>
           {meldung && <p className="text-xs">{meldung}</p>}
         </div>
       )}

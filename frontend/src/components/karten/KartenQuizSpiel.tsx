@@ -105,22 +105,22 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
     if (t) void sende(jetzt, t.id);
   };
 
-  if (fehler) return <p className="p-6 text-center text-(--red)">{fehler}</p>;
-  if (!spiel || !stil) return <p className="p-6 text-center text-(--text-muted)">Das Quiz wird geladen …</p>;
+  if (fehler) return <p className="p-6 text-center text-bad">{fehler}</p>;
+  if (!spiel || !stil) return <p className="p-6 text-center text-muted">Das Quiz wird geladen …</p>;
 
   const fertig = offene.length === 0;
   const a = spiel.karte.ausschnitt;
   return (
-    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-seite mx-auto w-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-xl font-black">🗺️ {spiel.titel}</h1>
         <div className="flex items-center gap-3">
           {spiel.einstellungen.ueben !== false && (
-            <div className="flex rounded-lg border border-(--border) overflow-hidden text-sm" role="tablist">
+            <div className="flex rounded-lg border border-line overflow-hidden text-sm" role="tablist">
               {([["quiz", "Quiz"], ["ueben", "🎯 Üben"]] as const).map(([w, t]) => (
                 <button key={w} role="tab" aria-selected={ansicht === w}
                   onClick={() => { setAnsicht(w); setMeldung(null); if (w === "ueben" && !uebung) void naechsteUebung(); }}
-                  className={`px-3 py-1 font-bold ${ansicht === w ? "bg-(--accent) text-(--accent-text,#111)" : ""}`}>{t}</button>
+                  className={`px-3 py-1 font-bold ${ansicht === w ? "bg-accent text-accent-fg" : ""}`}>{t}</button>
               ))}
             </div>
           )}
@@ -129,7 +129,7 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
       </div>
 
       {neuerErfolg && (
-        <button onClick={() => setNeuerErfolg(null)} className="rounded-xl bg-(--accent) text-(--accent-text,#111) px-4 py-2 font-black text-left">
+        <button onClick={() => setNeuerErfolg(null)} className="btn-primary px-4 py-2 text-left">
           🏆 Erfolg freigeschaltet: {neuerErfolg}
         </button>
       )}
@@ -139,8 +139,8 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
           projektion={spiel.karte.projektion ?? "equalearth"}
           onKlick={klick} ziel={a} blick={uebAnsicht?.anker ?? null} />
 
-        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 text-sm">
-          {meldung && <p className={`font-bold ${meldung.gut ? "text-(--green)" : "text-(--red)"}`}>{meldung.text}</p>}
+        <aside className="card p-4 flex flex-col gap-3 text-sm">
+          {meldung && <p className={`font-bold ${meldung.gut ? "text-ok" : "text-bad"}`}>{meldung.text}</p>}
 
           {ansicht === "ueben" ? (
             <UebenPanel uebung={uebung} ergebnis={uebErgebnis} lernen={lernen} eingabe={uebEingabe} setEingabe={setUebEingabe}
@@ -148,10 +148,10 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
           ) : spiel.spiel.modus === "finden" ? (
             fertig ? <p className="font-black">Geschafft! 🎉</p> : jetzt && (
               <div className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-wide text-(--text-muted)">{jetzt.kategorie}</span>
+                <span className="text-xs uppercase tracking-wide text-muted">{jetzt.kategorie}</span>
                 <p className="text-lg font-black">Finde: {jetzt.name}</p>
-                <p className="text-xs text-(--text-muted)">Tippe auf der Karte auf die richtige Stelle.</p>
-                <button className="self-start text-xs underline text-(--text-muted)" onClick={() => setAktuell((i) => i + 1)}>
+                <p className="text-xs text-muted">Tippe auf der Karte auf die richtige Stelle.</p>
+                <button className="self-start text-xs underline text-muted" onClick={() => setAktuell((i) => i + 1)}>
                   überspringen
                 </button>
               </div>
@@ -162,26 +162,26 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
                 const st = stand.antworten[String(auf.nr)];
                 return (
                   <li key={auf.nr} className="flex items-center gap-2">
-                    <span className="w-8 text-right font-black text-(--red)">{auf.marke}</span>
+                    <span className="w-8 text-right font-black text-bad">{auf.marke}</span>
                     {st?.richtig ? (
-                      <span className="flex-1 text-(--green) font-bold">✓ richtig</span>
+                      <span className="flex-1 text-ok font-bold">✓ richtig</span>
                     ) : loesungen[auf.nr] ? (
-                      <span className="flex-1 text-(--text-muted)">{loesungen[auf.nr]}</span>
+                      <span className="flex-1 text-muted">{loesungen[auf.nr]}</span>
                     ) : (
                       <form className="flex-1 flex gap-1" onSubmit={(e) => { e.preventDefault(); if (eingaben[auf.nr]) void sende(auf, eingaben[auf.nr]); }}>
                         {spiel.spiel.wortbank ? (
                           <select value={eingaben[auf.nr] ?? ""} aria-label={`Name für ${auf.marke}`}
                             onChange={(e) => setEingaben((x) => ({ ...x, [auf.nr]: e.target.value }))}
-                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-(--border) bg-(--bg)">
+                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page">
                             <option value="">— wählen —</option>
                             {spiel.spiel.wortbank.map((w) => <option key={w}>{w}</option>)}
                           </select>
                         ) : (
                           <input value={eingaben[auf.nr] ?? ""} placeholder={auf.kategorie} aria-label={`Name für ${auf.marke}`}
                             onChange={(e) => setEingaben((x) => ({ ...x, [auf.nr]: e.target.value }))}
-                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-(--border) bg-(--bg)" />
+                            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page" />
                         )}
-                        <button className="px-2 rounded-lg border border-(--border) font-bold" aria-label={`${auf.marke} prüfen`}>✓</button>
+                        <button className="px-2 rounded-lg border border-line font-bold" aria-label={`${auf.marke} prüfen`}>✓</button>
                       </form>
                     )}
                   </li>
@@ -191,11 +191,11 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
           )}
 
           {spiel.erfolge.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-(--border)">
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-line">
               {spiel.erfolge.map((e) => {
                 const hat = stand.erfolge.includes(e.id);
                 return (
-                  <span key={e.id} title={e.text ? `${e.name}: ${e.text}` : e.name} className={`px-2 py-0.5 rounded-full text-xs border border-(--border) ${hat ? "" : "opacity-40 grayscale"}`}>
+                  <span key={e.id} title={e.text ? `${e.name}: ${e.text}` : e.name} className={`px-2 py-0.5 rounded-full text-xs border border-line ${hat ? "" : "opacity-40 grayscale"}`}>
                     {e.icon} {e.name}
                   </span>
                 );
@@ -213,16 +213,16 @@ export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, send
   uebung: UebenAufgabe | null; ergebnis: UebenAntwortOut | null; lernen: QuizLernen | null;
   eingabe: string; setEingabe: (s: string) => void; senden: (antwort: string) => Promise<void>; weiter: () => Promise<void>;
 }) {
-  if (!uebung) return <p className="text-(--text-muted)">Übung wird geladen …</p>;
+  if (!uebung) return <p className="text-muted">Übung wird geladen …</p>;
   const sicherheit = ergebnis?.sicherheit ?? uebung.sicherheit;
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs uppercase tracking-wide text-(--text-muted)">{uebung.kategorie}</span>
+      <span className="text-xs uppercase tracking-wide text-muted">{uebung.kategorie}</span>
       {uebung.richtung === "benennen"
-        ? <p className="text-lg font-black">Wie heißt das markierte Objekt <span className="text-(--red)">?</span></p>
+        ? <p className="text-lg font-black">Wie heißt das markierte Objekt <span className="text-bad">?</span></p>
         : <p className="text-lg font-black">Finde: {uebung.name}</p>}
       {uebung.richtung === "finden" && !ergebnis && (
-        <p className="text-xs text-(--text-muted)">
+        <p className="text-xs text-muted">
           {uebung.hilfe === "auswahl" ? "Tipp: Es ist eines der umrandeten Objekte." : "Tippe auf der Karte auf die richtige Stelle."}
         </p>
       )}
@@ -230,27 +230,27 @@ export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, send
         <div className="grid grid-cols-2 gap-1.5">
           {uebung.optionen.map((o) => (
             <button key={o} onClick={() => void senden(o)}
-              className="px-2 py-1.5 rounded-lg border border-(--border) hover:bg-(--surface-hover) font-bold text-left">{o}</button>
+              className="px-2 py-1.5 rounded-lg border border-line hover:bg-surface-hover font-bold text-left">{o}</button>
           ))}
         </div>
       ) : (
         <form className="flex gap-1" onSubmit={(e) => { e.preventDefault(); if (eingabe.trim()) void senden(eingabe); }}>
           <input value={eingabe} onChange={(e) => setEingabe(e.target.value)} aria-label="Name" autoFocus placeholder={uebung.kategorie}
-            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-(--border) bg-(--bg)" />
-          <button className="px-2 rounded-lg border border-(--border) font-bold" aria-label="prüfen">✓</button>
+            className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page" />
+          <button className="px-2 rounded-lg border border-line font-bold" aria-label="prüfen">✓</button>
         </form>
       ))}
       {ergebnis && (
         <button onClick={() => void weiter()} autoFocus
-          className="self-start px-3 py-1.5 rounded-lg font-bold bg-(--accent) text-(--accent-text,#111)">Weiter →</button>
+          className="btn-primary self-start px-3 py-1.5">Weiter →</button>
       )}
-      <div className="flex items-center gap-2 text-xs text-(--text-muted)" title="Wie sicher dieses Objekt sitzt (neuere Antworten zählen mehr)">
+      <div className="flex items-center gap-2 text-xs text-muted" title="Wie sicher dieses Objekt sitzt (neuere Antworten zählen mehr)">
         Sicherheit
-        <span className="flex-1 h-1.5 rounded-full bg-(--border) overflow-hidden">
-          <span className="block h-full bg-(--green)" style={{ width: `${Math.round(sicherheit * 100)}%` }} />
+        <span className="flex-1 h-1.5 rounded-full bg-line overflow-hidden">
+          <span className="block h-full bg-ok" style={{ width: `${Math.round(sicherheit * 100)}%` }} />
         </span>
       </div>
-      {lernen && <p className="text-xs text-(--text-muted)">Noch unsicher: {lernen.schwach} · geübt an {lernen.tage} Tag{lernen.tage === 1 ? "" : "en"}</p>}
+      {lernen && <p className="text-xs text-muted">Noch unsicher: {lernen.schwach} · geübt an {lernen.tage} Tag{lernen.tage === 1 ? "" : "en"}</p>}
     </div>
   );
 }

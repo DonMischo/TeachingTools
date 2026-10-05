@@ -30,7 +30,7 @@ function MatchRow({ m, canEdit, onSelectMatch, onDeleteMatch }: {
         isDone && canClick ? "border-gray-600 cursor-pointer hover:border-yellow-600 opacity-80"
         : isDone ? "border-gray-700/60 opacity-80"
         : canClick ? "border-indigo-600 cursor-pointer hover:border-indigo-400 shadow-xs shadow-indigo-900/30"
-        : "border-(--border)"
+        : "border-line"
       }`}
     >
       <span className={`flex-1 text-sm font-medium text-right ${m.winner_id === m.p1?.id ? "text-green-300" : "text-gray-300"}`}>
@@ -163,10 +163,10 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
           const done = gMatches.filter(m => m.winner_id || m.is_draw).length;
           const isCollapsed = collapsed.has(g);
           return (
-            <div key={g} className="border border-(--border) rounded-2xl overflow-hidden">
+            <div key={g} className="border border-line rounded-2xl overflow-hidden">
               {/* Group header */}
               <div
-                className="flex items-center justify-between px-4 py-3 bg-gray-800/60 border-b border-(--border) cursor-pointer select-none"
+                className="flex items-center justify-between px-4 py-3 bg-gray-800/60 border-b border-line cursor-pointer select-none"
                 onClick={() => toggleCollapse(g)}
               >
                 <div className="flex items-center gap-3">
@@ -212,7 +212,7 @@ export default function PairingView({ participants, matches, stats, onSelectMatc
 
                 {/* Mini standings */}
                 {gParticipants.length >= 2 && gMatches.some(m => m.winner_id || m.is_draw) && (
-                  <div className="border-t border-(--border) pt-3">
+                  <div className="border-t border-line pt-3">
                     <p className="text-xs text-gray-600 uppercase tracking-wide mb-2">Zwischenstand</p>
                     <div className="space-y-1">
                       {[...gParticipants].sort((a, b) => {
@@ -385,7 +385,7 @@ function StandingsTable({ participants, showGroup, stats, hasDraw }: {
 }) {
   const sorted = sortByPts(participants, stats);
   return (
-    <div className="border border-(--border) rounded-xl overflow-x-auto">
+    <div className="border border-line rounded-xl overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-gray-800/60 text-gray-400 text-xs">
@@ -402,7 +402,7 @@ function StandingsTable({ participants, showGroup, stats, hasDraw }: {
             <th className="px-3 py-2 text-center font-bold text-white">Pkt</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-(--border)">
+        <tbody className="divide-y divide-line">
           {sorted.map((p, i) => {
             const s = stats[p.id] ?? { w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
             return (
@@ -503,7 +503,7 @@ function GesamtstandTable({ participants, groups, stats, hasDraw }: {
           {canMerge && (
             <button
               onClick={toggleMerged}
-              className={`text-xs px-2 py-1 rounded-lg border transition-colors ${merged ? "border-indigo-500 bg-indigo-900/30 text-indigo-300" : "border-(--border) text-gray-500 hover:border-indigo-500 hover:text-indigo-300"}`}
+              className={`text-xs px-2 py-1 rounded-lg border transition-colors ${merged ? "border-indigo-500 bg-indigo-900/30 text-indigo-300" : "border-line text-gray-500 hover:border-indigo-500 hover:text-indigo-300"}`}
             >
               {merged ? "⊕ Zusammengefasst" : "⊕ Zusammenfassen"}
             </button>

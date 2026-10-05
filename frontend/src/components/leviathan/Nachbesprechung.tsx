@@ -33,7 +33,7 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
             <h2 className="text-2xl font-black">
               {zusammengebrochen ? `💥 ${z.land} ist zusammengebrochen` : `🏁 ${z.land} im Jahr ${STARTJAHR + 2 * z.runde}`}
             </h2>
-            <p className="text-sm text-(--text-muted) mt-1">
+            <p className="text-sm text-muted mt-1">
               {t.icon} {t.name} · Krisenstufe {KRISE_TEXT[z.einst.krise].icon} {KRISE_TEXT[z.einst.krise].name}
               {!z.einst.sichtbar && " (war verdeckt)"}
             </p>
@@ -43,7 +43,7 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
           </div>
           <div className="text-right">
             <div className="text-4xl font-black tabular-nums">{a.punkte}</div>
-            <div className="text-xs text-(--text-muted)">Punkte</div>
+            <div className="text-xs text-muted">Punkte</div>
           </div>
         </div>
         <div className="grid gap-3 mt-4 grid-cols-2 sm:grid-cols-4 text-sm">
@@ -54,15 +54,15 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           {kannWeiter && (
-            <button onClick={onWiederaufbau} className="px-4 py-2 rounded-xl font-black bg-(--accent) text-(--accent-text,#111)">
+            <button onClick={onWiederaufbau} className="btn-primary px-4 py-2">
               🏗️ Wiederaufbau versuchen ({z.einst.runden - z.runde} Runden übrig)
             </button>
           )}
-          <button onClick={onNeu} className="px-4 py-2 rounded-xl font-bold border border-(--border)">Neues Land</button>
-          <button onClick={onDownload} className="px-4 py-2 rounded-xl font-bold border border-(--border)">⬇ Verlauf speichern (JSON)</button>
+          <button onClick={onNeu} className="px-4 py-2 rounded-xl font-bold border border-line">Neues Land</button>
+          <button onClick={onDownload} className="px-4 py-2 rounded-xl font-bold border border-line">⬇ Verlauf speichern (JSON)</button>
         </div>
         {kannWeiter && (
-          <p className="text-xs text-(--text-muted) mt-2">
+          <p className="text-xs text-muted mt-2">
             Im Wiederaufbau hast du deutlich weniger Aktionspunkte. Schaffst du es zurück in den Korridor?
           </p>
         )}
@@ -75,7 +75,7 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
         </Karte>
         <Karte titel="Der Weg deines Leviathans">
           <Verlauf verlauf={z.verlauf} wert={(s) => s.position} min={-55} max={55} hoehe={100} band={[-12, 12]} />
-          <div className="flex justify-between text-[11px] text-(--text-muted)"><span>oben: despotisch · Mitte: Korridor · unten: abwesend</span></div>
+          <div className="flex justify-between text-[11px] text-muted"><span>oben: despotisch · Mitte: Korridor · unten: abwesend</span></div>
           <p className="text-sm mt-2">Am Ende: <b style={{ color: zone.farbe }}>{zone.name}</b>. {zone.text}</p>
           <QuelleLink id="korridor" />
         </Karte>
@@ -87,30 +87,30 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
           <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))]">
             {a.wendepunkt.meldungen.length
               ? a.wendepunkt.meldungen.map((m, i) => <Meldungskarte key={i} m={m} />)
-              : <p className="text-sm text-(--text-muted)">Kein einzelnes Ereignis – das Land ist über seine Rückkopplungen abgerutscht.</p>}
+              : <p className="text-sm text-muted">Kein einzelnes Ereignis – das Land ist über seine Rückkopplungen abgerutscht.</p>}
           </div>
         </Karte>
       )}
 
       <Karte titel="Welche Schleifen haben dein Land bewegt?">
-        <p className="text-sm text-(--text-muted) mb-3">Wähle eine Schleife – im Wirkungsnetz darunter leuchtet ihr Kreislauf auf.</p>
-        {a.schleifen.length === 0 && <p className="text-sm text-(--text-muted)">Keine der Schleifen war lange genug aktiv.</p>}
+        <p className="text-sm text-muted mb-3">Wähle eine Schleife – im Wirkungsnetz darunter leuchtet ihr Kreislauf auf.</p>
+        {a.schleifen.length === 0 && <p className="text-sm text-muted">Keine der Schleifen war lange genug aktiv.</p>}
         <div className="flex flex-col gap-3">
           {a.schleifen.map(({ id, runden }) => {
             const s = schleife(id);
             return (
-              <div key={id} className={`rounded-xl border p-3 ${gezeigt === id ? "bg-(--surface-hover) border-2" : ""}`}
+              <div key={id} className={`rounded-xl border p-3 ${gezeigt === id ? "bg-surface-hover border-2" : ""}`}
                 style={{ borderColor: s.gut ? "var(--green)" : "var(--red)" }}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="font-black">{s.gut ? "✅" : "⚠️"} {s.name} <span className="text-xs text-(--text-muted)">({s.art === "verstaerkend" ? "verstärkend" : "ausgleichend"})</span></div>
-                  <div className="text-xs text-(--text-muted)">{runden} von {z.verlauf.length - 1} Runden aktiv</div>
+                  <div className="font-black">{s.gut ? "✅" : "⚠️"} {s.name} <span className="text-xs text-muted">({s.art === "verstaerkend" ? "verstärkend" : "ausgleichend"})</span></div>
+                  <div className="text-xs text-muted">{runden} von {z.verlauf.length - 1} Runden aktiv</div>
                 </div>
                 <p className="text-sm mt-1">{s.ablauf}</p>
-                <p className="text-xs text-(--text-muted) mt-1">{QUELLEN[s.quelle].befund}</p>
+                <p className="text-xs text-muted mt-1">{QUELLEN[s.quelle].befund}</p>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <QuelleLink id={s.quelle} />
                   <button onClick={() => setGezeigt(id)} aria-pressed={gezeigt === id}
-                    className="text-xs font-bold px-2 py-1 rounded-lg border border-(--border)">🕸️ im Netz zeigen</button>
+                    className="text-xs font-bold px-2 py-1 rounded-lg border border-line">🕸️ im Netz zeigen</button>
                 </div>
               </div>
             );
@@ -125,12 +125,12 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
       <Karte titel="Alle Ereignisse">
         <ul className="text-sm space-y-1">
           {z.meldungen.map((m, i) => (
-            <li key={i}><span className="tabular-nums text-(--text-muted)">{STARTJAHR + 2 * m.runde}</span> {m.icon} <b>{m.titel}</b>{m.folgen ? ` – ${m.folgen}` : ""}</li>
+            <li key={i}><span className="tabular-nums text-muted">{STARTJAHR + 2 * m.runde}</span> {m.icon} <b>{m.titel}</b>{m.folgen ? ` – ${m.folgen}` : ""}</li>
           ))}
         </ul>
       </Karte>
 
-      <p className="text-xs text-(--text-muted)">
+      <p className="text-xs text-muted">
         Die Regeln des Spiels sind vereinfacht: Studien legen Richtung, Verzögerung und grobe Rangfolge der Wirkungen fest,
         nicht die genauen Zahlen. Inspiriert von Frederic Vesters Vernetztem Denken (Ökolopoly, 1980) und von
         Acemoglu &amp; Robinsons »gefesseltem Leviathan«.
@@ -141,8 +141,8 @@ export default function Nachbesprechung({ z, onWiederaufbau, onNeu, onDownload }
 
 function Zahl({ name, wert }: { name: string; wert: string | number }) {
   return (
-    <div className="rounded-xl border border-(--border) p-3">
-      <div className="text-xs text-(--text-muted)">{name}</div>
+    <div className="rounded-xl border border-line p-3">
+      <div className="text-xs text-muted">{name}</div>
       <div className="font-black text-lg tabular-nums">{wert}</div>
     </div>
   );
@@ -150,7 +150,7 @@ function Zahl({ name, wert }: { name: string; wert: string | number }) {
 
 function Achse({ z }: { z: Zustand }) {
   return (
-    <div className="flex justify-between text-[11px] text-(--text-muted) tabular-nums">
+    <div className="flex justify-between text-[11px] text-muted tabular-nums">
       <span>{STARTJAHR}</span><span>{STARTJAHR + 2 * z.runde}</span>
     </div>
   );

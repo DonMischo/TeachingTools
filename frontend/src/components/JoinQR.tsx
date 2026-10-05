@@ -14,7 +14,7 @@ import { QRCodeSVG } from "qrcode.react";
  * QR sie bekommt. `zoomable={false}` ist für den einen Fall gedacht, in dem der
  * QR schon in einem Button steckt (verschachtelte Buttons sind ungültig).
  */
-export function JoinQR({ url, size = 90, className = "rounded-xl border border-(--border)", zoomable = true }: {
+export function JoinQR({ url, size = 90, className = "rounded-xl border border-line", zoomable = true }: {
   url: string | null | undefined;
   size?: number;
   className?: string;
@@ -45,7 +45,7 @@ export function JoinQR({ url, size = 90, className = "rounded-xl border border-(
         title="QR-Code vergrößern"
         aria-label="QR-Code vergrößern"
         className="block cursor-zoom-in leading-none transition-transform hover:scale-105
-          focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-(--accent)"
+          focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
       >
         {qr}
       </button>

@@ -256,12 +256,12 @@ export default function ProfilAnsicht() {
         {ARTEN.map(a => (
           <button key={a.id} onClick={() => neu(a.id)} title={a.ort}
             className={`px-3 py-2 rounded-xl border text-sm font-bold transition-colors ${
-              art === a.id ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)"
-                : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"}`}>
+              art === a.id ? "bg-accent text-accent-fg border-accent"
+                : "border-line bg-surface hover:bg-surface-hover"}`}>
             {a.icon} {a.name}
           </button>
         ))}
-        <span className="self-center text-xs text-(--text-muted)">{ARTEN.find(a => a.id === art)!.ort}</span>
+        <span className="self-center text-xs text-muted">{ARTEN.find(a => a.id === art)!.ort}</span>
       </div>
   );
 
@@ -279,7 +279,7 @@ export default function ProfilAnsicht() {
       {auswahl}
 
       {/* Bühne */}
-      <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-(--border)">
+      <div ref={huelle} className="relative rounded-2xl overflow-hidden border border-line">
         <canvas ref={canvas} onClick={klick} className={`block w-full ${zoom.lupe ? "cursor-none" : "cursor-crosshair"}`} aria-label="Querschnitt durch die Küste" />
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5 text-xs font-bold">
           <span className="px-2 py-1 rounded-lg bg-black/55 text-white">{MONATE[monat]} {jahrVon(p.stunde)}</span>
@@ -302,49 +302,49 @@ export default function ProfilAnsicht() {
           <button className={ZOOM_KNOPF} onClick={() => zoom.setzen(wasserlinie())} title="An die Wasserlinie heranzoomen">🌊 Wasserlinie</button>
         </div>
       </div>
-      <p className="text-xs text-(--text-muted) -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt.</p>
+      <p className="text-xs text-muted -mt-2">🔍 Lupe zeigt vergrößert, was unter dem Zeiger liegt — ein Klick zoomt dorthin. Mausrad zoomt, Ziehen verschiebt.</p>
 
       {/* Bedienung */}
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">
+        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover">
           {laeuft ? "⏸ Pause" : "▶ Weiter"}
         </button>
-        <div className="inline-flex flex-wrap rounded-xl border border-(--border) p-1 bg-(--surface)">
+        <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface">
           {TEMPI.map(t => (
             <button key={t.id} onClick={() => setTempo(t.id)}
-              className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
+              className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
               {t.label}
             </button>
           ))}
         </div>
         <button onClick={() => { sturmflut(profil.current, 0.55); if (tempo === "min") setTempo("std"); }}
-          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">🌊 Sturmflut</button>
+          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover">🌊 Sturmflut</button>
         <button onClick={() => { sturmflut(profil.current, 1); if (tempo === "min") setTempo("std"); }}
-          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-red-500/50 text-red-600 dark:text-red-400 hover:bg-(--surface-hover)">🌪️ Schwere Sturmflut</button>
-        <button onClick={() => neu(art)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">↺ Neu</button>
+          className="px-3 py-1.5 rounded-lg text-sm font-bold border border-red-500/50 text-red-600 dark:text-red-400 hover:bg-surface-hover">🌪️ Schwere Sturmflut</button>
+        <button onClick={() => neu(art)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover">↺ Neu</button>
         <label className="flex items-center gap-1.5 text-sm ml-auto">
           <input type="checkbox" checked={schilderAn} onChange={e => setSchilderAn(e.target.checked)} /> Begriffe
         </label>
         <button onClick={() => setQuiz(quiz ? null : { frage: neueFrage(), richtig: 0, gefragt: 0, rueck: null })}
-          className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${quiz ? "bg-(--accent) text-(--accent-text,#111) border-(--accent)" : "border-(--border) hover:bg-(--surface-hover)"}`}>
+          className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${quiz ? "bg-accent text-accent-fg border-accent" : "border-line hover:bg-surface-hover"}`}>
           ❓ Beschriften-Quiz
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Wetter */}
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <section className="card p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-black">🌦️ Wetter</h3>
-            <div className="inline-flex rounded-lg border border-(--border) p-0.5 text-xs font-bold">
-              <button onClick={() => setModus("hand")} className={`px-2 py-1 rounded-md ${modus === "hand" ? "bg-(--accent) text-(--accent-text,#111)" : ""}`}>von Hand</button>
-              <button onClick={() => { setModus("jahr"); if (tempo === "min" || tempo === "std") setTempo("woche"); }} className={`px-2 py-1 rounded-md ${modus === "jahr" ? "bg-(--accent) text-(--accent-text,#111)" : ""}`}>Jahreslauf</button>
+            <div className="inline-flex rounded-lg border border-line p-0.5 text-xs font-bold">
+              <button onClick={() => setModus("hand")} className={`px-2 py-1 rounded-md ${modus === "hand" ? "bg-accent text-accent-fg" : ""}`}>von Hand</button>
+              <button onClick={() => { setModus("jahr"); if (tempo === "min" || tempo === "std") setTempo("woche"); }} className={`px-2 py-1 rounded-md ${modus === "jahr" ? "bg-accent text-accent-fg" : ""}`}>Jahreslauf</button>
             </div>
           </div>
           {modus === "hand" ? (
             <>
               <label className="text-sm">
-                Wind: <b>{hand.bft} Bft</b> <span className="text-(--text-muted)">({BEAUFORT[hand.bft]})</span>
+                Wind: <b>{hand.bft} Bft</b> <span className="text-muted">({BEAUFORT[hand.bft]})</span>
                 <input type="range" min={0} max={12} value={hand.bft} onChange={e => setHand({ ...hand, bft: Number(e.target.value) })} className="w-full" />
               </label>
               <div className="flex flex-wrap gap-3 text-sm">
@@ -357,53 +357,53 @@ export default function ProfilAnsicht() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-(--text-muted)">
+            <p className="text-sm text-muted">
               Das Wetter wechselt wie im echten Jahr: im Winter mehr Wind, Sturmtiefs und ab und zu eine Sturmflut, im Sommer ruhiger.
-              Gerade: <b className="text-(--text)">{w.bft} Bft {w.auflandig ? "auflandig" : "ablandig"}</b>
+              Gerade: <b className="text-fg">{w.bft} Bft {w.auflandig ? "auflandig" : "ablandig"}</b>
               {w.regen ? ", Regen" : ""}{w.frost ? ", Frost" : ""}.
             </p>
           )}
-          <div className="text-xs text-(--text-muted) grid grid-cols-2 gap-x-3 gap-y-1">
-            <span>Wellen draußen</span><b className="text-(--text)">{zahl(H0)} m</b>
-            <span>Wellen am Ufer</span><b className="text-(--text)">{zahl(wl.amUfer)} m</b>
-            <span>Tide</span><b className="text-(--text)">{vz(tide(p.hub, p.stunde), 2)} m</b>
-            <span>Windstau/Sturmflut</span><b className="text-(--text)">{vz(stau(p, w), 1)} m</b>
+          <div className="text-xs text-muted grid grid-cols-2 gap-x-3 gap-y-1">
+            <span>Wellen draußen</span><b className="text-fg">{zahl(H0)} m</b>
+            <span>Wellen am Ufer</span><b className="text-fg">{zahl(wl.amUfer)} m</b>
+            <span>Tide</span><b className="text-fg">{vz(tide(p.hub, p.stunde), 2)} m</b>
+            <span>Windstau/Sturmflut</span><b className="text-fg">{vz(stau(p, w), 1)} m</b>
           </div>
         </section>
 
         {/* Was passiert gerade? + Zahlen */}
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <section className="card p-4 flex flex-col gap-3">
           <h3 className="font-black">🔎 Was passiert gerade?</h3>
           <p className="text-sm leading-relaxed">{erklaerung}</p>
-          <div className="text-xs text-(--text-muted) grid grid-cols-2 gap-x-3 gap-y-1">
+          <div className="text-xs text-muted grid grid-cols-2 gap-x-3 gap-y-1">
             {art === "flach" && <>
-              <span>Strandbreite</span><b className="text-(--text)">{k.strand} m <span className="font-normal">(Start {start.strand} m)</span></b>
-              <span>Düne</span><b className="text-(--text)">{zahl(k.duene)} m hoch</b>
-              <span>Hochwasserlinie</span><b className="text-(--text)">{vz(start.hochwasserlinie - k.hochwasserlinie, 0)} m</b>
+              <span>Strandbreite</span><b className="text-fg">{k.strand} m <span className="font-normal">(Start {start.strand} m)</span></b>
+              <span>Düne</span><b className="text-fg">{zahl(k.duene)} m hoch</b>
+              <span>Hochwasserlinie</span><b className="text-fg">{vz(start.hochwasserlinie - k.hochwasserlinie, 0)} m</b>
             </>}
             {art === "marsch" && <>
-              <span>Deichkrone</span><b className="text-(--text)">{zahl(k.duene)} m über NHN</b>
-              <span>Binnenböschung</span><b className={p.deichGebrochen ? "text-red-500" : "text-(--text)"}>{p.deichGebrochen ? "gebrochen!" : `${Math.round(Math.min(1, p.deichSchaden) * 100)} % ausgespült`}</b>
+              <span>Deichkrone</span><b className="text-fg">{zahl(k.duene)} m über NHN</b>
+              <span>Binnenböschung</span><b className={p.deichGebrochen ? "text-red-500" : "text-fg"}>{p.deichGebrochen ? "gebrochen!" : `${Math.round(Math.min(1, p.deichSchaden) * 100)} % ausgespült`}</b>
             </>}
-            <span>Von Wellen abgetragen</span><b className="text-(--text)">{Math.round(p.bilanz.abgetragen)} m³/m</b>
-            <span>Vom Längsstrom weg</span><b className="text-(--text)">{Math.round(p.bilanz.weggetragen)} m³/m</b>
-            {art === "flach" && <><span>In die Düne geweht</span><b className="text-(--text)">{Math.round(p.bilanz.angeweht)} m³/m</b></>}
-            {p.bilanz.aufgespuelt > 0 && <><span>Aufgespült</span><b className="text-(--text)">{Math.round(p.bilanz.aufgespuelt)} m³/m</b></>}
-            <span>Kosten (1 km)</span><b className="text-(--text)">{zahl(p.kosten, 2)} Mio. €</b>
-            <span>Schäden</span><b className={p.schaden > 0 ? "text-red-500" : "text-(--text)"}>{zahl(p.schaden, 1)} Mio. €</b>
+            <span>Von Wellen abgetragen</span><b className="text-fg">{Math.round(p.bilanz.abgetragen)} m³/m</b>
+            <span>Vom Längsstrom weg</span><b className="text-fg">{Math.round(p.bilanz.weggetragen)} m³/m</b>
+            {art === "flach" && <><span>In die Düne geweht</span><b className="text-fg">{Math.round(p.bilanz.angeweht)} m³/m</b></>}
+            {p.bilanz.aufgespuelt > 0 && <><span>Aufgespült</span><b className="text-fg">{Math.round(p.bilanz.aufgespuelt)} m³/m</b></>}
+            <span>Kosten (1 km)</span><b className="text-fg">{zahl(p.kosten, 2)} Mio. €</b>
+            <span>Schäden</span><b className={p.schaden > 0 ? "text-red-500" : "text-fg"}>{zahl(p.schaden, 1)} Mio. €</b>
           </div>
-          <p className="text-[11px] text-(--text-muted)">m³/m = Kubikmeter je Meter Küste. Kosten sind grobe Richtwerte.</p>
+          <p className="text-[11px] text-muted">m³/m = Kubikmeter je Meter Küste. Kosten sind grobe Richtwerte.</p>
         </section>
 
         {/* Meldungen */}
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2 max-h-[340px] overflow-y-auto">
+        <section className="card p-4 flex flex-col gap-2 max-h-[340px] overflow-y-auto">
           <h3 className="font-black">📰 Meldungen</h3>
-          {p.meldungen.length === 0 && <p className="text-sm text-(--text-muted)">Noch ist alles ruhig. Dreh den Wind auf oder löse eine Sturmflut aus.</p>}
+          {p.meldungen.length === 0 && <p className="text-sm text-muted">Noch ist alles ruhig. Dreh den Wind auf oder löse eine Sturmflut aus.</p>}
           {[...p.meldungen].reverse().slice(0, 12).map((m, i) => (
             <div key={`${m.stunde}-${i}`} className={`text-sm rounded-lg px-2 py-1 border-l-4 ${
               m.art === "schaden" ? "border-red-500 bg-red-500/10" : m.art === "warnung" ? "border-amber-500 bg-amber-500/10"
                 : m.art === "gut" ? "border-green-500 bg-green-500/10" : "border-sky-500 bg-sky-500/10"}`}>
-              <span className="text-[11px] text-(--text-muted) mr-1">{MONATE[monatVon(m.stunde)].slice(0, 3)} {jahrVon(m.stunde)}</span>
+              <span className="text-[11px] text-muted mr-1">{MONATE[monatVon(m.stunde)].slice(0, 3)} {jahrVon(m.stunde)}</span>
               {m.text}
             </div>
           ))}
@@ -420,7 +420,7 @@ export default function ProfilAnsicht() {
         <div className="flex flex-wrap gap-1.5">
           {zuletzt.current.begriffe.map(b => (
             <button key={b.id} onClick={() => setMarkiert(markiert === b.id ? null : b.id)}
-              className={`px-2 py-0.5 rounded-full text-xs border ${markiert === b.id ? "bg-amber-400 text-black border-amber-500" : "border-(--border) hover:bg-(--surface-hover)"}`}>
+              className={`px-2 py-0.5 rounded-full text-xs border ${markiert === b.id ? "bg-amber-400 text-black border-amber-500" : "border-line hover:bg-surface-hover"}`}>
               {b.name}
             </button>
           ))}
@@ -428,16 +428,16 @@ export default function ProfilAnsicht() {
       )}
 
       {/* Küstenschutz */}
-      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+      <section className="card p-4 flex flex-col gap-3">
         <h3 className="font-black">🏗️ Küstenschutz — was tun wir?</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {massnahmenFuer(art).map(m => (
-            <div key={m.id} className="rounded-xl border border-(--border) p-3 flex flex-col gap-1.5">
+            <div key={m.id} className="rounded-xl border border-line p-3 flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <b>{m.icon} {m.name}</b>
-                <span className="text-xs text-(--text-muted) whitespace-nowrap">≈ {zahl(m.kosten, m.kosten < 1 ? 2 : 0)} Mio. €/km</span>
+                <span className="text-xs text-muted whitespace-nowrap">≈ {zahl(m.kosten, m.kosten < 1 ? 2 : 0)} Mio. €/km</span>
               </div>
-              <p className="text-xs text-(--text-muted)">{m.was}</p>
+              <p className="text-xs text-muted">{m.was}</p>
               {offen === m.id && (
                 <div className="text-xs flex flex-col gap-1">
                   <p><b className="text-green-600 dark:text-green-400">＋</b> {m.plus}</p>
@@ -445,8 +445,8 @@ export default function ProfilAnsicht() {
                 </div>
               )}
               <div className="flex gap-2 mt-1">
-                <button onClick={() => massnahme(m.id)} className="px-3 py-1 rounded-lg text-sm font-bold bg-(--accent) text-(--accent-text,#111)">Bauen</button>
-                <button onClick={() => setOffen(offen === m.id ? null : m.id)} className="px-3 py-1 rounded-lg text-sm border border-(--border) hover:bg-(--surface-hover)">
+                <button onClick={() => massnahme(m.id)} className="btn-primary px-3 py-1 text-sm">Bauen</button>
+                <button onClick={() => setOffen(offen === m.id ? null : m.id)} className="px-3 py-1 rounded-lg text-sm border border-line hover:bg-surface-hover">
                   {offen === m.id ? "weniger" : "Vor- und Nachteile"}
                 </button>
               </div>
@@ -456,14 +456,14 @@ export default function ProfilAnsicht() {
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+        <section className="card p-4">
           <h3 className="font-black mb-2">📍 {BEISPIEL[art].titel}</h3>
           <ul className="text-sm list-disc pl-5 flex flex-col gap-1">
             {BEISPIEL[art].punkte.map(t => <li key={t}>{t}</li>)}
           </ul>
         </section>
         {(
-          <section className="rounded-2xl border border-(--border) bg-(--surface) p-4">
+          <section className="card p-4">
             <h3 className="font-black mb-2">💡 Ausprobieren</h3>
             <ul className="text-sm list-disc pl-5 flex flex-col gap-1">
               {art === "flach" ? <>

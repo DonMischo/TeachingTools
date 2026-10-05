@@ -26,7 +26,7 @@ const QUIZ_TYPE_COLORS: Record<string, string> = {
   test:        "bg-orange-500/15 text-orange-400 border-orange-500/30",
   assignment:  "bg-purple-500/15 text-purple-400 border-purple-500/30",
   competition: "bg-yellow-500/15 text-yellow-500 border-yellow-500/30",
-  custom:      "bg-(--surface-hover) text-(--text-muted) border-(--border)",
+  custom:      "bg-surface-hover text-muted border-line",
 };
 
 const ALL_TYPE_KEYS = ["classic", "tue", "test", "assignment", "competition", "custom"];
@@ -135,30 +135,30 @@ export default function CaputhsPage() {
   const hasFilters = typeFilter || gradeFilter != null || activeTags.size > 0;
 
   if (!auth) {
-    return <div className="p-8 text-(--text-muted)">Bitte einloggen.</div>;
+    return <div className="p-8 text-muted">Bitte einloggen.</div>;
   }
   const isTeacher = auth.role === "teacher" || auth.role === "admin";
 
   return (
-    <div className="p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="p-6 max-w-seite mx-auto w-full">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
-          <Link href="/aktivitaeten" className="text-sm text-(--text-muted) hover:text-(--text)">← Aktivitäten</Link>
+          <Link href="/aktivitaeten" className="text-sm text-muted hover:text-fg">← Aktivitäten</Link>
           <h1 className="text-2xl font-bold mt-1">Caputh-Bibliothek</h1>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           {isTeacher && (
             <Link href="/aktivitaeten/caputh/gruppenauswertung"
-              className="px-3 py-1.5 text-sm border border-(--accent) text-(--accent) rounded-lg hover:bg-(--accent)/10 transition-colors">
+              className="px-3 py-1.5 text-sm border border-accent text-accent rounded-lg hover:bg-accent/10 transition-colors">
               📊 Gruppenauswertung
             </Link>
           )}
           <a href="/api/capuths/template" download="caputh_vorlage.json"
-            className="px-3 py-1.5 text-sm border border-(--border) rounded-lg text-(--text-muted) hover:border-(--text-muted) transition-colors">
+            className="px-3 py-1.5 text-sm border border-line rounded-lg text-muted hover:border-muted transition-colors">
             Vorlage
           </a>
           {auth && can("caputh", "upload") && (
-            <label className="px-3 py-1.5 text-sm bg-(--accent) text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <label className="btn-primary px-3 py-1.5 text-sm cursor-pointer">
               {uploading ? "Hochladen…" : "+ Hochladen"}
               <input ref={fileRef} type="file" accept=".json,.zip" className="hidden"
                 onChange={handleUpload} disabled={uploading} />
@@ -177,14 +177,14 @@ export default function CaputhsPage() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setTypeFilter(null)}
             className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-              !typeFilter ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+              !typeFilter ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
             }`}>
             Alle Typen <span className="opacity-60">{capuths.length}</span>
           </button>
           {ALL_TYPE_KEYS.filter(t => typeCounts[t]).map(t => (
             <button key={t} onClick={() => setTypeFilter(typeFilter === t ? null : t)}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                typeFilter === t ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                typeFilter === t ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
               }`}>
               {QUIZ_TYPE_LABELS[t]} <span className="opacity-60">{typeCounts[t]}</span>
             </button>
@@ -194,17 +194,17 @@ export default function CaputhsPage() {
         {/* Grade filter */}
         {Object.keys(gradeCounts).length > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-(--text-muted) mr-1">Klasse:</span>
+            <span className="text-xs text-muted mr-1">Klasse:</span>
             <button onClick={() => setGradeFilter(null)}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                gradeFilter == null ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                gradeFilter == null ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
               }`}>
               Alle
             </button>
             {GRADES.filter(g => gradeCounts[g]).map(g => (
               <button key={g} onClick={() => setGradeFilter(gradeFilter === g ? null : g)}
                 className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                  gradeFilter === g ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                  gradeFilter === g ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
                 }`}>
                 {g}. Klasse <span className="opacity-60">{gradeCounts[g]}</span>
               </button>
@@ -215,11 +215,11 @@ export default function CaputhsPage() {
         {/* Tag filter */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-(--text-muted) mr-1">Tags:</span>
+            <span className="text-xs text-muted mr-1">Tags:</span>
             {allTags.map(tag => (
               <button key={tag} onClick={() => toggleTag(tag)}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  activeTags.has(tag) ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                  activeTags.has(tag) ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-muted"
                 }`}>
                 {tag}
               </button>
@@ -229,16 +229,16 @@ export default function CaputhsPage() {
 
         {hasFilters && (
           <button onClick={() => { setTypeFilter(null); setGradeFilter(null); setActiveTags(new Set()); }}
-            className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">
+            className="text-xs text-muted hover:text-fg transition-colors">
             × Filter zurücksetzen
           </button>
         )}
       </div>
 
       {isLoading ? (
-        <p className="text-(--text-muted)">Wird geladen…</p>
+        <p className="text-muted">Wird geladen…</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-(--text-muted)">
+        <div className="text-center py-16 text-muted">
           <p className="text-4xl mb-2">📋</p>
           <p>{hasFilters ? "Keine Capuths für diese Filter." : "Noch keine Capuths vorhanden."}</p>
           {!hasFilters && <p className="text-sm mt-1">Lade eine JSON- oder ZIP-Datei hoch.</p>}
@@ -286,12 +286,12 @@ function SessionsSection({ quizId, classes }: { quizId: number; classes: ClassOu
     onError: (e: unknown) => toast((e as Error).message ?? "Fehler", "error"),
   });
 
-  if (isLoading) return <p className="text-xs text-(--text-muted) pt-2">Laden…</p>;
+  if (isLoading) return <p className="text-xs text-muted pt-2">Laden…</p>;
 
   return (
-    <div className="border-t border-(--border) pt-3 mt-3 flex flex-col gap-2">
+    <div className="border-t border-line pt-3 mt-3 flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-(--text-muted) uppercase tracking-wide">Sessions</span>
+        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Sessions</span>
         {sessions.length > 0 && (
           <button
             onClick={() => {
@@ -376,31 +376,31 @@ function QuizCard({
   const typeLabel = QUIZ_TYPE_LABELS[quiz.quiz_type] ?? quiz.quiz_type;
 
   return (
-    <li className="p-4 border border-(--border) bg-(--surface) rounded-xl hover:border-(--text-muted) transition-colors">
+    <li className="p-4 border border-line bg-surface rounded-xl hover:border-muted transition-colors">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
             <p className="font-semibold truncate">{quiz.title}</p>
             <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${typeColor}`}>{typeLabel}</span>
             {quiz.grades.length > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted) shrink-0">
+              <span className="text-xs px-2 py-0.5 rounded-full border border-line text-muted shrink-0">
                 Kl. {quiz.grades.length === 1 ? quiz.grades[0] : `${Math.min(...quiz.grades)}–${Math.max(...quiz.grades)}`}
               </span>
             )}
           </div>
           {quiz.description && (
-            <p className="text-sm text-(--text-muted) truncate">{quiz.description}</p>
+            <p className="text-sm text-muted truncate">{quiz.description}</p>
           )}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <p className="text-xs text-(--text-muted)">
+            <p className="text-xs text-muted">
               {quiz.question_count} Fragen · max. {quiz.max_points} Punkte
             </p>
             {quiz.tags.map(tag => (
               <button key={tag} onClick={() => onTagClick(tag)}
                 className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                   activeTagFilter.has(tag)
-                    ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
-                    : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-line text-muted hover:border-muted"
                 }`}>
                 {tag}
               </button>
@@ -412,15 +412,15 @@ function QuizCard({
             <button onClick={() => setSessionsOpen(v => !v)}
               className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
                 sessionsOpen
-                  ? "border-(--accent) text-(--accent)"
-                  : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                  ? "border-accent text-accent"
+                  : "border-line text-muted hover:border-muted"
               }`}>
               Sessions {sessionsOpen ? "▴" : "▾"}
             </button>
           )}
           {canDelete && (
             <Link href={`/aktivitaeten/caputh/${quiz.id}`}
-              className="px-3 py-1.5 text-sm bg-(--accent) text-white rounded-lg hover:opacity-90 transition-opacity">
+              className="btn-primary px-3 py-1.5 text-sm">
               Starten
             </Link>
           )}

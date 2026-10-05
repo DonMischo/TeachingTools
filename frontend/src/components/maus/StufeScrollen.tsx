@@ -198,7 +198,7 @@ export default function StufeScrollen({
         titel="🖱️ Teil 2 · Scrollen"
         auftrag={fertig
           ? <>Alle Scroll-Aufgaben geschafft! Weiter geht es mit der Tastatur.</>
-          : <>{auftrag.text}<div data-zusatz className="text-xs text-(--text-muted) mt-1">💡 {auftrag.tipp}</div></>}
+          : <>{auftrag.text}<div data-zusatz className="text-xs text-muted mt-1">💡 {auftrag.tipp}</div></>}
         punkte={punkteLaufend}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -214,7 +214,7 @@ export default function StufeScrollen({
               ref={liste}
               onWheel={radAmListe}
               onScroll={scrollAmListe}
-              className={"rounded-2xl border border-(--border) bg-(--surface) overflow-y-auto " + (erfolg ? "ring-4 ring-(--green,#16a34a)" : "")}
+              className={"card overflow-y-auto" + (erfolg ? "ring-4 ring-ok" : "")}
               style={{ height: "55vh" }}
             >
               {ZEILEN.map(e => {
@@ -226,8 +226,8 @@ export default function StufeScrollen({
                     key={e.index}
                     type="button"
                     onClick={() => klickZeile(e)}
-                    className={"w-full flex items-center gap-3 px-4 border-b border-(--border) text-left hover:bg-(--surface-hover) "
-                      + (ziel && hilfe ? "ring-2 ring-inset ring-(--accent)" : "")}
+                    className={"w-full flex items-center gap-3 px-4 border-b border-line text-left hover:bg-surface-hover "
+                      + (ziel && hilfe ? "ring-2 ring-inset ring-accent" : "")}
                     style={{ height: zeilenHoehe, fontSize: hilfe ? "1.1rem" : undefined }}
                   >
                     <AvatarDisplay avatarId={e.tier} size={hilfe ? "md" : "sm"} />
@@ -241,7 +241,7 @@ export default function StufeScrollen({
           {aufgabe === "quer" && !fertig && (
             <div
               ref={streifen}
-              className="rounded-2xl border border-(--border) bg-(--surface) overflow-x-auto"
+              className="card overflow-x-auto"
               style={{ height: "55vh" }}
             >
               <div className="flex h-full items-center gap-3 px-4">
@@ -250,8 +250,8 @@ export default function StufeScrollen({
                     key={e.index}
                     type="button"
                     onClick={() => klickSpalte(e)}
-                    className={"flex flex-col items-center gap-1 shrink-0 rounded-xl px-3 py-2 hover:bg-(--surface-hover) "
-                      + (e.index === ZIEL_QUER && hilfe ? "ring-2 ring-(--accent)" : "")}
+                    className={"flex flex-col items-center gap-1 shrink-0 rounded-xl px-3 py-2 hover:bg-surface-hover "
+                      + (e.index === ZIEL_QUER && hilfe ? "ring-2 ring-accent" : "")}
                     style={{ width: 110 }}
                   >
                     <AvatarDisplay avatarId={e.tier} size="lg" />
@@ -263,11 +263,11 @@ export default function StufeScrollen({
           )}
         </div>
 
-        <aside className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3 h-fit">
+        <aside className="card p-4 flex flex-col gap-3 h-fit">
           <h3 className="font-black">Aufgaben</h3>
           <ul className="flex flex-col gap-1">
             {AUFGABEN.map((a, i) => (
-              <li key={a} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-(--text-muted)" : "")}>
+              <li key={a} className={"text-sm flex gap-2 " + (i === nr ? "font-bold" : i < nr ? "text-muted" : "")}>
                 <span>{i < nr ? "✅" : i === nr ? "👉" : "⬜"}</span>
                 <span>{auftragFuer(a).text.split("»")[1]?.replace("«", "") ?? auftragFuer(a).text}</span>
               </li>

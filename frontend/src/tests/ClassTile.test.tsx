@@ -49,7 +49,7 @@ describe("ClassTile", () => {
       <ClassTile cls={makeClass()} selected={true} onClick={vi.fn()} />
     );
     const button = container.querySelector("button");
-    expect(button?.className).toContain("border-(--border-selected)");
+    expect(button?.className).toContain("border-line-active");
   });
 
   it("does not apply the selected border when not selected", () => {
@@ -57,6 +57,6 @@ describe("ClassTile", () => {
       <ClassTile cls={makeClass()} selected={false} onClick={vi.fn()} />
     );
     const button = container.querySelector("button");
-    expect(button?.className).not.toContain("border-(--border-selected)");
+    expect(button?.className).not.toContain("border-line-active");
   });
 });

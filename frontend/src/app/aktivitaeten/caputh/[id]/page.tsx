@@ -42,20 +42,20 @@ export default function CaputhDetailPage() {
   }
 
   if (auth?.role !== "teacher" && auth?.role !== "admin") {
-    return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
+    return <div className="p-8 text-muted">Nur für Lehrkräfte.</div>;
   }
-  if (isLoading) return <p className="p-6 text-(--text-muted)">Wird geladen…</p>;
+  if (isLoading) return <p className="p-6 text-muted">Wird geladen…</p>;
   if (!quiz) return <p className="p-6 text-red-500">Caputh nicht gefunden.</p>;
 
   return (
-    <div className="p-6 max-w-(--seite-breite) mx-auto w-full">
-      <Link href="/aktivitaeten/caputh" className="text-sm text-(--text-muted) hover:text-(--text)">
+    <div className="p-6 max-w-seite mx-auto w-full">
+      <Link href="/aktivitaeten/caputh" className="text-sm text-muted hover:text-fg">
         ← Caputh-Bibliothek
       </Link>
 
       <h1 className="text-2xl font-bold mb-1 mt-2">{quiz.title}</h1>
-      {quiz.description && <p className="text-(--text-muted) mb-4">{quiz.description}</p>}
-      <p className="text-sm text-(--text-muted) mb-4">
+      {quiz.description && <p className="text-muted mb-4">{quiz.description}</p>}
+      <p className="text-sm text-muted mb-4">
         {quiz.question_count} Fragen · Standard-Zeit {quiz.time_limit_default}s
       </p>
 
@@ -77,8 +77,8 @@ export default function CaputhDetailPage() {
       {/* Question list */}
       <div className="mb-8 space-y-2">
         {quiz.questions.map((q, i) => (
-          <div key={q.id} className="flex items-start gap-3 p-3 border border-(--border) bg-(--surface) rounded-sm">
-            <span className="text-xs font-mono bg-(--bg) px-1.5 py-0.5 rounded-sm mt-0.5 text-(--text-muted)">
+          <div key={q.id} className="flex items-start gap-3 p-3 border border-line bg-surface rounded-sm">
+            <span className="text-xs font-mono bg-page px-1.5 py-0.5 rounded-sm mt-0.5 text-muted">
               {q.type}
             </span>
             <span className="text-sm">{i + 1}. {q.question_text}</span>
@@ -87,13 +87,13 @@ export default function CaputhDetailPage() {
       </div>
 
       {/* Start session */}
-      <div className="border-t border-(--border) pt-6 space-y-4">
+      <div className="border-t border-line pt-6 space-y-4">
         <h2 className="font-semibold">Neue Session</h2>
         <div>
           <label className="label">Klasse oder Kurs/WPF</label>
           <ScopeSelect value={scope} onChange={setScope} />
           {scope?.kind === "group" && (
-            <p className="text-xs text-(--text-muted) mt-1">
+            <p className="text-xs text-muted mt-1">
               Klassenübergreifend: jede beteiligte Klasse bekommt Punkte nach ihrer eigenen
               Trefferquote.
             </p>
@@ -102,7 +102,7 @@ export default function CaputhDetailPage() {
         <label className="flex items-center gap-3 cursor-pointer text-sm">
           <div
             onClick={() => setTeamMode(v => !v)}
-            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${teamMode ? "bg-(--accent)" : "bg-(--border)"}`}
+            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${teamMode ? "bg-accent" : "bg-line"}`}
           >
             <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${teamMode ? "translate-x-4" : "translate-x-0.5"}`} />
           </div>
@@ -112,7 +112,7 @@ export default function CaputhDetailPage() {
         <button
           disabled={!scope || starting}
           onClick={handleStart}
-          className="btn-primary disabled:opacity-40"
+          className="btn-primary w-full"
         >
           {starting ? "Starte…" : "Session erstellen & Raum öffnen"}
         </button>

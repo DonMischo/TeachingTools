@@ -28,7 +28,7 @@ export function ResultChart(props: {
   const chartId = chartOf({ kind: question.kind, chart: chart || question.chart });
 
   if (count === 0) {
-    return <div className="text-sm text-(--text-muted) text-center py-4">Noch keine Antworten</div>;
+    return <div className="text-sm text-muted text-center py-4">Noch keine Antworten</div>;
   }
 
   if (question.kind === "text") {
@@ -53,22 +53,22 @@ export function ResultChart(props: {
       {question.kind === "scale" && (
         <>
           {(question.scale_min_label || question.scale_max_label) && (
-            <div className="flex justify-between text-xs text-(--text-muted)">
+            <div className="flex justify-between text-xs text-muted">
               <span>{question.scale_min_label}</span>
               <span>{question.scale_max_label}</span>
             </div>
           )}
-          <div className="text-xs text-center text-(--text-muted)">
+          <div className="text-xs text-center text-muted">
             {count} Antwort{count !== 1 ? "en" : ""}
             {mean != null && <> · Ø {mean.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</>}
           </div>
         </>
       )}
       {question.kind === "choice" && (
-        <div className="text-xs text-center text-(--text-muted)">{count} Antwort{count !== 1 ? "en" : ""}</div>
+        <div className="text-xs text-center text-muted">{count} Antwort{count !== 1 ? "en" : ""}</div>
       )}
       {question.kind === "multi" && (
-        <div className="text-xs text-center text-(--text-muted)">{count} Befragte · Mehrfachauswahl</div>
+        <div className="text-xs text-center text-muted">{count} Befragte · Mehrfachauswahl</div>
       )}
     </div>
   );
@@ -88,7 +88,7 @@ function NumberChart({ question, chartId, distribution, count }: {
           <StatTile label="Median" value={stats ? `${formatNumber(stats.median)}${unit}` : "–"} />
           <StatTile label="Min – Max" value={stats ? `${formatNumber(stats.min)} – ${formatNumber(stats.max)}${unit}` : "–"} />
         </div>
-        <div className="text-xs text-center text-(--text-muted)">{count} Antwort{count !== 1 ? "en" : ""}</div>
+        <div className="text-xs text-center text-muted">{count} Antwort{count !== 1 ? "en" : ""}</div>
       </div>
     );
   }
@@ -96,15 +96,15 @@ function NumberChart({ question, chartId, distribution, count }: {
   return (
     <div className="flex flex-col gap-2">
       <ColumnChart rows={rows} />
-      <div className="text-xs text-center text-(--text-muted)">{count} Antwort{count !== 1 ? "en" : ""}</div>
+      <div className="text-xs text-center text-muted">{count} Antwort{count !== 1 ? "en" : ""}</div>
     </div>
   );
 }
 
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-(--border) rounded-lg px-3 py-2 flex flex-col items-center">
-      <div className="text-xs text-(--text-muted)">{label}</div>
+    <div className="border border-line rounded-lg px-3 py-2 flex flex-col items-center">
+      <div className="text-xs text-muted">{label}</div>
       <div className="font-semibold text-sm">{value}</div>
     </div>
   );
@@ -155,7 +155,7 @@ function DonutChart({ rows, donut }: { rows: { key: string; label: string; count
           <li key={r.key} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PALETTE[i % PALETTE.length] }} />
             <span className="flex-1 truncate">{r.label}</span>
-            <span className="text-(--text-muted)">{r.count} ({total > 0 ? Math.round((r.count / total) * 100) : 0}%)</span>
+            <span className="text-muted">{r.count} ({total > 0 ? Math.round((r.count / total) * 100) : 0}%)</span>
           </li>
         ))}
       </ul>
@@ -167,7 +167,7 @@ function StackedChart({ rows }: { rows: { key: string; label: string; count: num
   const total = rows.reduce((a, r) => a + r.count, 0);
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex w-full h-6 rounded-full overflow-hidden border border-(--border)">
+      <div className="flex w-full h-6 rounded-full overflow-hidden border border-line">
         {rows.map((r, i) => (
           r.count > 0 && (
             <div key={r.key} title={`${r.label}: ${r.count}`}
@@ -209,12 +209,12 @@ function AreaChartView({ rows }: { rows: { key: string; label: string; count: nu
 
 function TextChart({ chartId, count, texts }: { chartId: string; count: number; texts?: string[] }) {
   if (!texts) {
-    return <div className="text-sm text-(--text-muted) text-center py-2">{count} Antwort{count !== 1 ? "en" : ""}</div>;
+    return <div className="text-sm text-muted text-center py-2">{count} Antwort{count !== 1 ? "en" : ""}</div>;
   }
   if (chartId === "wortwolke") {
     const freqs = wordFrequencies(texts);
     if (freqs.length === 0) {
-      return <div className="text-sm text-(--text-muted) text-center py-2">{count} Antwort{count !== 1 ? "en" : ""}</div>;
+      return <div className="text-sm text-muted text-center py-2">{count} Antwort{count !== 1 ? "en" : ""}</div>;
     }
     const max = Math.max(...freqs.map(f => f.count));
     const min = Math.min(...freqs.map(f => f.count));
@@ -224,7 +224,7 @@ function TextChart({ chartId, count, texts }: { chartId: string; count: number; 
           const scale = max === min ? 1 : (f.count - min) / (max - min);
           const fontSize = 0.8 + scale * 1.4;
           return (
-            <span key={f.word} title={String(f.count)} style={{ fontSize: `${fontSize}rem` }} className="text-(--accent) font-semibold">
+            <span key={f.word} title={String(f.count)} style={{ fontSize: `${fontSize}rem` }} className="text-accent font-semibold">
               {f.word}
             </span>
           );
@@ -237,10 +237,10 @@ function TextChart({ chartId, count, texts }: { chartId: string; count: number; 
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
         {texts.map((t, i) => (
-          <div key={i} className="text-sm border border-(--border) rounded-lg px-3 py-2 bg-(--bg)">{t}</div>
+          <div key={i} className="text-sm border border-line rounded-lg px-3 py-2 bg-page">{t}</div>
         ))}
       </div>
-      <div className="text-xs text-center text-(--text-muted)">{count} Antwort{count !== 1 ? "en" : ""}</div>
+      <div className="text-xs text-center text-muted">{count} Antwort{count !== 1 ? "en" : ""}</div>
     </div>
   );
 }

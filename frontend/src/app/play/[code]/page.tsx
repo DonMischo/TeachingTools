@@ -470,7 +470,7 @@ export default function PlayPage() {
               </h2>
             )}
             <div className="self-center"><QuestionTypeBadge type={q.type} size="sm" /></div>
-            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
+            <div className="bg-page text-fg rounded-2xl p-3">
               <TimelineGameBoard board={board} answer={tlAnswer} onChange={setTlAnswer} disabled={phase.answered} />
             </div>
             {phase.answered ? (
@@ -496,7 +496,7 @@ export default function PlayPage() {
             {q.question_text && (
               <h2 className="text-xl font-bold text-center whitespace-pre-line leading-snug"><MathText text={q.question_text} /></h2>
             )}
-            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
+            <div className="bg-page text-fg rounded-2xl p-3">
               <KartenBrett brett={brett} antwort={kartenAntwort} onChange={setKartenAntwort} disabled={phase.answered} />
             </div>
             {phase.answered ? (
@@ -685,7 +685,7 @@ export default function PlayPage() {
         {/* Kartenfrage: Auflösung mit eigenen Antworten */}
         {q.type === "karte" && q.karte && phase.kartenLoesung && (
           <div className="px-4 pb-4">
-            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
+            <div className="bg-page text-fg rounded-2xl p-3">
               <KartenBrett brett={q.karte} antwort={kartenAntwort} disabled loesung={phase.kartenLoesung} />
             </div>
           </div>
@@ -694,7 +694,7 @@ export default function PlayPage() {
         {/* Timeline reveal: own placements vs. correct positions */}
         {q.type === "timeline" && phase.timelineSolution?.axis && (
           <div className="px-4 pb-4">
-            <div className="bg-(--bg) text-(--text) rounded-2xl p-3">
+            <div className="bg-page text-fg rounded-2xl p-3">
               <TimelineGameBoard
                 board={{
                   mode: phase.timelineSolution.mode,

@@ -72,36 +72,36 @@ export default function ZeitstrahlPage() {
 
   if (!auth) {
     return (
-      <div className="p-8 text-sm text-(--text-muted)">
+      <div className="p-8 text-sm text-muted">
         Bitte einloggen, um die Zeitstrahl-Bibliothek zu sehen.
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📏 Zeitstrahl</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Zeitleisten mit parallelen Spuren, Zahlenstrahlen und Skalen — anzeigen, üben, in Caputh &amp; TaskCrawler einbauen.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {isTeacher && can("zeitstrahl", "create") && (
             <button onClick={() => examplesMut.mutate()} disabled={examplesMut.isPending}
-              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) disabled:opacity-40">
+              className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent disabled:opacity-40">
               🌍 Beispiele laden
             </button>
           )}
           {can("zeitstrahl", "upload") && (
             <>
               <button onClick={handleTemplate}
-                className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent)">
+                className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent">
                 📄 Vorlage
               </button>
               <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40">
+                className="btn-primary text-sm py-1.5 px-4">
                 {uploading ? "Lade hoch…" : "+ Zeitstrahl hochladen"}
               </button>
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
@@ -111,38 +111,38 @@ export default function ZeitstrahlPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-(--text-muted)">Lade…</p>
+        <p className="text-sm text-muted">Lade…</p>
       ) : sets.length === 0 ? (
-        <p className="text-sm text-(--text-muted)">
+        <p className="text-sm text-muted">
           Noch keine Zeitstrahlen — lade die Beispiele oder eine eigene JSON-Datei hoch.
         </p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {sets.map(s => (
-            <div key={s.id} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
-              <Link href={`/aktivitaeten/zeitstrahl/${s.id}`} className="font-semibold hover:text-(--accent) transition-colors">
+            <div key={s.id} className="card p-4 flex flex-col gap-2">
+              <Link href={`/aktivitaeten/zeitstrahl/${s.id}`} className="font-semibold hover:text-accent transition-colors">
                 {s.title}
               </Link>
-              {s.description && <p className="text-xs text-(--text-muted)">{s.description}</p>}
+              {s.description && <p className="text-xs text-muted">{s.description}</p>}
               <div className="flex flex-wrap gap-1.5 text-[10px]">
-                <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                   {s.axis.kind === "year" ? "Zeitleiste" : "Zahlenstrahl"}
                 </span>
-                <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                   {s.event_count} Einträge
                 </span>
                 {s.lane_count > 1 && (
-                  <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                  <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                     {s.lane_count} Spuren
                   </span>
                 )}
                 {s.grades.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                  <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                     Kl. {s.grades.length > 1 ? `${s.grades[0]}–${s.grades[s.grades.length - 1]}` : s.grades[0]}
                   </span>
                 )}
                 {s.tags.map(t => (
-                  <span key={t} className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{t}</span>
+                  <span key={t} className="px-2 py-0.5 rounded-full border border-line text-muted">{t}</span>
                 ))}
               </div>
               <div className="flex justify-end mt-1">

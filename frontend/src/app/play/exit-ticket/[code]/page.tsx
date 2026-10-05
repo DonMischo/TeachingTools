@@ -104,15 +104,15 @@ export default function ExitTicketPlayPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-(--bg)">
-        <div className="text-center text-(--text-muted) text-sm">{error}</div>
+      <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+        <div className="text-center text-muted text-sm">{error}</div>
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-(--text-muted) text-sm bg-(--bg)">
+      <div className="min-h-screen flex items-center justify-center text-muted text-sm bg-page">
         Verbinde…
       </div>
     );
@@ -120,19 +120,19 @@ export default function ExitTicketPlayPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-(--bg)">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-page">
         <div className="text-5xl">✅</div>
         <h2 className="text-xl font-bold">Danke für dein Feedback!</h2>
-        <p className="text-(--text-muted) text-sm">Deine Antwort wurde übermittelt.</p>
+        <p className="text-muted text-sm">Deine Antwort wurde übermittelt.</p>
       </div>
     );
   }
 
   if (session.status === "closed") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 bg-(--bg)">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 bg-page">
         <div className="text-4xl">🔒</div>
-        <p className="text-(--text-muted) text-sm">Dieses Exit Ticket wurde geschlossen.</p>
+        <p className="text-muted text-sm">Dieses Exit Ticket wurde geschlossen.</p>
       </div>
     );
   }
@@ -141,18 +141,18 @@ export default function ExitTicketPlayPage() {
   const canSubmit = !session.rating_enabled || rating !== null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-6 p-6 bg-(--bg)">
+    <div className="min-h-screen flex flex-col items-center gap-6 p-6 bg-page">
       <div className="w-full max-w-md">
         <h1 className="text-xl font-black">{session.title}</h1>
-        <p className="text-(--text-muted) text-xs mt-0.5">Exit Ticket</p>
+        <p className="text-muted text-xs mt-0.5">Exit Ticket</p>
       </div>
 
-      <div className="w-full max-w-md rounded-2xl border border-(--border) bg-(--surface) p-5 flex flex-col gap-5">
+      <div className="card w-full max-w-md p-5 flex flex-col gap-5">
         <p className="text-sm font-semibold leading-snug">{session.question}</p>
 
         {session.rating_enabled && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs text-(--text-muted)">Deine Bewertung</span>
+            <span className="text-xs text-muted">Deine Bewertung</span>
             <div className="flex gap-2">
               {STARS.map(s => (
                 <button
@@ -182,7 +182,7 @@ export default function ExitTicketPlayPage() {
         <button
           onClick={submit}
           disabled={!canSubmit}
-          className="btn-primary"
+          className="btn-primary w-full"
         >
           Abschicken
         </button>

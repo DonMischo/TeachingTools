@@ -59,7 +59,7 @@ export default function StufeZiehen({
           aria-pressed={teil === id}
           className={
             "rounded-lg px-3 py-1.5 border " +
-            (teil === id ? "border-(--accent) text-(--accent) font-bold" : "border-(--border) hover:border-(--accent)")
+            (teil === id ? "border-accent text-accent font-bold" : "border-line hover:border-accent")
           }
         >
           {text} {fertigTeile.has(id) && "✅"}
@@ -233,7 +233,7 @@ function Spur({
         auftrag={fertig
           ? <>Alle vier Wege geschafft! Weiter geht es mit dem Aufräumen.</>
           : <>Ziehe dein Tier mit <b>gedrückter linker Maustaste</b> am Weg entlang bis zum Ziel.
-              <span data-zusatz className="text-xs text-(--text-muted) ml-2">Weg {nr + 1} von {SPUREN.length}: {weg.titel}</span></>}
+              <span data-zusatz className="text-xs text-muted ml-2">Weg {nr + 1} von {SPUREN.length}: {weg.titel}</span></>}
         punkte={summe(punkte)}
         onDemo={fertig ? undefined : vorfuehren}
         onWeiter={onWeiter}
@@ -251,7 +251,7 @@ function Spur({
         <svg
           ref={svg}
           viewBox="0 0 800 400"
-          className="w-full mx-auto rounded-2xl border border-(--border) bg-(--surface) select-none"
+          className="card w-full mx-auto select-none"
           style={{ touchAction: "none", maxWidth: "min(900px, calc((100vh - 400px) * 2))", cursor: zug ? "grabbing" : "default" }}
           onPointerDown={greifen}
           onPointerMove={ziehen}
@@ -422,7 +422,7 @@ function Aufraeumen({
 
       {!fertig && (
         <>
-          <div className="rounded-2xl border border-dashed border-(--border) p-4 flex flex-wrap gap-4 justify-center min-h-32">
+          <div className="rounded-2xl border border-dashed border-line p-4 flex flex-wrap gap-4 justify-center min-h-32">
             {dinge.filter(x => !abgelegt[x.id]).map(ding => {
               const ziehtDas = zug?.id === ding.id;
               const demoDas = demoOrt?.id === ding.id ? demoOrt : null;
@@ -461,7 +461,7 @@ function Aufraeumen({
                 key={z.id}
                 ref={el => { zonenRef.current[z.id] = el; }}
                 data-zone={z.id}
-                className="rounded-2xl border-2 border-(--border) bg-(--surface) p-3 min-h-36 flex flex-col items-center gap-2"
+                className="rounded-2xl border-2 border-line bg-surface p-3 min-h-36 flex flex-col items-center gap-2"
               >
                 <div className="text-3xl">{z.icon}</div>
                 <div className="font-black">{z.label}</div>

@@ -94,14 +94,14 @@ export default function GruppenauswertungPage() {
   const isTue = quizType === "tue";
 
   if (auth?.role !== "teacher" && auth?.role !== "admin") {
-    return <div className="p-8 text-(--text-muted)">Nur für Lehrkräfte.</div>;
+    return <div className="p-8 text-muted">Nur für Lehrkräfte.</div>;
   }
 
   return (
-    <div className="p-6 max-w-(--seite-breite) mx-auto w-full">
-      <button onClick={() => router.push("/aktivitaeten/caputh")} className="text-sm text-(--text-muted) hover:text-(--text) mb-4">← Caputh-Bibliothek</button>
+    <div className="p-6 max-w-seite mx-auto w-full">
+      <button onClick={() => router.push("/aktivitaeten/caputh")} className="text-sm text-muted hover:text-fg mb-4">← Caputh-Bibliothek</button>
       <h1 className="text-2xl font-bold mb-1">Gruppenauswertung</h1>
-      <p className="text-sm text-(--text-muted) mb-6">
+      <p className="text-sm text-muted mb-6">
         Vergibt Hauspunkte basierend auf dem Ø-Score aller Klassen über alle Capuths eines Typs.
         {isTue && " Tägliche Übungen werden bayesianisch normalisiert, um Cherry-Picking zu verhindern."}
       </p>
@@ -113,7 +113,7 @@ export default function GruppenauswertungPage() {
           {QUIZ_TYPES.map(t => (
             <button key={t.key} onClick={() => { setQuizType(t.key); setActiveTags(new Set()); setPreview(null); setCommitted(null); }}
               className={`py-3 px-4 rounded-xl border text-left transition-colors ${
-                quizType === t.key ? `border-current bg-current/10 ${t.color}` : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                quizType === t.key ? `border-current bg-current/10 ${t.color}` : "border-line text-muted hover:border-muted"
               }`}>
               <span className="text-sm font-semibold block">{t.label}</span>
               <span className="text-xs opacity-70">{t.desc}</span>
@@ -125,14 +125,14 @@ export default function GruppenauswertungPage() {
       {/* Tag filter */}
       {availableTags.length > 0 && (
         <div className="mb-5">
-          <label className="label mb-2">Tags filtern <span className="text-(--text-muted) font-normal">(optional — leer = alle)</span></label>
+          <label className="label mb-2">Tags filtern <span className="text-muted font-normal">(optional — leer = alle)</span></label>
           <div className="flex flex-wrap gap-2">
             {availableTags.map(tag => (
               <button key={tag} onClick={() => toggleTag(tag)}
                 className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                   activeTags.has(tag)
-                    ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
-                    : "border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-line text-muted hover:border-muted"
                 }`}>
                 {tag}
               </button>
@@ -147,14 +147,14 @@ export default function GruppenauswertungPage() {
           <label className="label">Mindest-Sessions</label>
           <input type="number" min={1} className="input" value={minSessions}
             onChange={e => { setMinSessions(Number(e.target.value)); setPreview(null); }} />
-          <p className="text-xs text-(--text-muted) mt-1">Klassen mit weniger Sessions werden ausgeschlossen</p>
+          <p className="text-xs text-muted mt-1">Klassen mit weniger Sessions werden ausgeschlossen</p>
         </div>
         {isTue && (
           <div>
             <label className="label">Prior-Stärke (C)</label>
             <input type="number" min={1} max={20} className="input" value={priorStrength}
               onChange={e => { setPriorStrength(Number(e.target.value)); setPreview(null); }} />
-            <p className="text-xs text-(--text-muted) mt-1">Höher = Cherry-Picking schwieriger (Standard: 3)</p>
+            <p className="text-xs text-muted mt-1">Höher = Cherry-Picking schwieriger (Standard: 3)</p>
           </div>
         )}
         <div>
@@ -170,7 +170,7 @@ export default function GruppenauswertungPage() {
       </div>
 
       <button onClick={loadPreview} disabled={loading}
-        className="btn-primary mb-6">
+        className="btn-primary mb-6 w-full">
         {loading ? "Lade Vorschau…" : "Vorschau berechnen"}
       </button>
 
@@ -180,27 +180,27 @@ export default function GruppenauswertungPage() {
       {preview && (
         <div className="space-y-5">
           {preview.entries.length === 0 ? (
-            <p className="text-(--text-muted) text-sm">Keine qualifizierten Klassen für diesen Typ.</p>
+            <p className="text-muted text-sm">Keine qualifizierten Klassen für diesen Typ.</p>
           ) : (
             <>
               <div>
-                <h2 className="text-sm font-bold uppercase tracking-wide text-(--text-muted) mb-2">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">
                   Vorschau — {preview.entries.length} Klassen qualifiziert
                 </h2>
-                <div className="border border-(--border) rounded-xl overflow-x-auto">
+                <div className="border border-line rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-(--surface) text-(--text-muted) text-xs">
+                      <tr className="bg-surface text-muted text-xs">
                         <th className="text-left px-3 py-2">Rang</th>
                         <th className="text-left px-3 py-2">Klasse</th>
                         <th className="px-3 py-2 text-center">Sessions</th>
                         <th className="px-3 py-2 text-center">Ø Raw</th>
                         {isTue && <th className="px-3 py-2 text-center">Ø Adj.</th>}
-                        <th className="px-3 py-2 text-center font-bold text-(--text)">Hauspunkte</th>
+                        <th className="px-3 py-2 text-center font-bold text-fg">Hauspunkte</th>
                         <th className="px-3 py-2 text-center">Ersteller</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-(--border)">
+                    <tbody className="divide-y divide-line">
                       {preview.entries.map((e, i) => {
                         const n = preview.entries.length;
                         const t = n === 1 ? 0 : (e.rank - 1) / (n - 1);
@@ -208,7 +208,7 @@ export default function GruppenauswertungPage() {
                         const topTeacher = Object.entries(e.teacher_counts).sort((a, b) => b[1] - a[1])[0];
                         return (
                           <tr key={e.class_id} className={i === 0 ? "bg-yellow-900/10" : ""}>
-                            <td className="px-3 py-2 text-(--text-muted) text-xs">
+                            <td className="px-3 py-2 text-muted text-xs">
                               {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : e.rank}
                             </td>
                             <td className="px-3 py-2 font-medium">
@@ -217,11 +217,11 @@ export default function GruppenauswertungPage() {
                                 <span className="ml-2 text-xs text-amber-400" title="Mehr als 60% der Sessions von einer Lehrkraft">⚠️</span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-center text-(--text)">{e.sessions}</td>
-                            <td className="px-3 py-2 text-center text-(--text-muted)">{e.raw_avg?.toFixed(2)}</td>
-                            {isTue && <td className="px-3 py-2 text-center text-(--accent) font-semibold">{e.adjusted?.toFixed(2)}</td>}
+                            <td className="px-3 py-2 text-center text-fg">{e.sessions}</td>
+                            <td className="px-3 py-2 text-center text-muted">{e.raw_avg?.toFixed(2)}</td>
+                            {isTue && <td className="px-3 py-2 text-center text-accent font-semibold">{e.adjusted?.toFixed(2)}</td>}
                             <td className="px-3 py-2 text-center font-bold text-yellow-400">{pts}</td>
-                            <td className="px-3 py-2 text-center text-xs text-(--text-muted)">
+                            <td className="px-3 py-2 text-center text-xs text-muted">
                               {topTeacher ? `${topTeacher[0]} (${topTeacher[1]})` : "—"}
                             </td>
                           </tr>
@@ -234,12 +234,12 @@ export default function GruppenauswertungPage() {
 
               {preview.excluded.filter(e => e.sessions > 0).length > 0 && (
                 <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wide text-(--text-muted) mb-2">
+                  <h2 className="text-sm font-bold uppercase tracking-wide text-muted mb-2">
                     Ausgeschlossen (unter Mindestsessions)
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {preview.excluded.filter(e => e.sessions > 0).map(e => (
-                      <span key={e.class_id} className="text-xs px-2 py-1 rounded-lg border border-(--border) text-(--text-muted)">
+                      <span key={e.class_id} className="text-xs px-2 py-1 rounded-lg border border-line text-muted">
                         {e.class_name} ({e.sessions} Sessions)
                       </span>
                     ))}
@@ -255,8 +255,8 @@ export default function GruppenauswertungPage() {
                 </div>
               )}
 
-              <div className="pt-2 border-t border-(--border)">
-                <button onClick={commit} disabled={committing} className="btn-primary">
+              <div className="pt-2 border-t border-line">
+                <button onClick={commit} disabled={committing} className="btn-primary w-full">
                   {committing ? "Vergebe Punkte…" : "✅ Punkte vergeben & abschließen"}
                 </button>
               </div>
@@ -272,7 +272,7 @@ export default function GruppenauswertungPage() {
           <div className="space-y-1">
             {committed.map((e, i) => (
               <div key={e.class_id} className="flex justify-between text-sm">
-                <span className="text-(--text)">{i + 1}. {e.class_name}</span>
+                <span className="text-fg">{i + 1}. {e.class_name}</span>
                 <span className="text-yellow-400 font-bold">+{e.points_awarded} Pkte</span>
               </div>
             ))}

@@ -112,10 +112,10 @@ export default function ToolsPage() {
   }, [ready, CARDS.length, router]);
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 max-w-seite mx-auto w-full">
       <div>
         <h1 className="text-2xl font-black tracking-tight">🔨 Tools</h1>
-        <p className="text-(--text-muted) text-sm mt-1">
+        <p className="text-muted text-sm mt-1">
           Unterrichtstools — direkt im Unterricht einsetzen.
         </p>
       </div>
@@ -127,9 +127,9 @@ export default function ToolsPage() {
           <Link
             key={card.href}
             href={card.href}
-            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-(--border)
-              bg-(--surface) hover:bg-(--surface-hover) transition-all
-              hover:border-(--accent) hover:shadow-lg"
+            className="group relative flex flex-col gap-4 p-6 rounded-2xl border border-line
+              bg-surface hover:bg-surface-hover transition-all
+              hover:border-accent hover:shadow-lg"
           >
             <HelpButton slug={card.slug} className="absolute top-3 right-3" />
             <div className="flex items-center gap-3">
@@ -143,10 +143,10 @@ export default function ToolsPage() {
                 <div className="font-black text-lg" style={{ color: card.color }}>
                   {card.title}
                 </div>
-                <div className="text-xs text-(--text-muted)">→ öffnen</div>
+                <div className="text-xs text-muted">→ öffnen</div>
               </div>
             </div>
-            <p className="text-sm text-(--text-muted) leading-relaxed">
+            <p className="text-sm text-muted leading-relaxed">
               {card.description}
             </p>
           </Link>

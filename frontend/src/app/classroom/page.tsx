@@ -90,17 +90,17 @@ function WidgetShell({
 
   return (
     <div
-      className="absolute rounded-2xl border border-(--border) bg-(--surface) shadow-xl select-none"
+      className="card absolute shadow-xl select-none"
       style={{ left: pos.x, top: pos.y, minWidth: 220 }}
     >
       {/* Drag handle */}
       <div
         onMouseDown={onMouseDown}
-        className="flex items-center gap-2 px-4 py-2 border-b border-(--border) cursor-grab active:cursor-grabbing rounded-t-2xl"
+        className="flex items-center gap-2 px-4 py-2 border-b border-line cursor-grab active:cursor-grabbing rounded-t-2xl"
         style={{ background: "var(--surface-hover)" }}
       >
-        <span className="text-(--text-muted) text-xs select-none">⠿</span>
-        <span className="text-xs font-semibold text-(--text-muted) uppercase tracking-wider">{label}</span>
+        <span className="text-muted text-xs select-none">⠿</span>
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider">{label}</span>
       </div>
       <div className="p-4">
         {children}
@@ -120,10 +120,10 @@ function ClockWidget() {
 
   return (
     <div className="text-center">
-      <div className="text-5xl font-black tabular-nums tracking-tight text-(--text)">
+      <div className="text-5xl font-black tabular-nums tracking-tight text-fg">
         {time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
       </div>
-      <div className="text-xs text-(--text-muted) mt-1">
+      <div className="text-xs text-muted mt-1">
         {time.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
       </div>
     </div>
@@ -232,7 +232,7 @@ function TimerWidget() {
           <input type="number" min={0} max={99}
             className="input w-14 text-center text-sm py-1"
             value={minutes} onChange={e => setMinutes(Math.max(0, parseInt(e.target.value) || 0))} />
-          <span className="text-(--text-muted)">:</span>
+          <span className="text-muted">:</span>
           <input type="number" min={0} max={59}
             className="input w-14 text-center text-sm py-1"
             value={seconds} onChange={e => setSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))} />
@@ -252,7 +252,7 @@ function TimerWidget() {
           <button onClick={pause} className="btn-secondary text-sm py-1 px-4">Pause</button>
         )}
         {(running || remaining != null) && (
-          <button onClick={reset} className="text-sm border border-(--border) rounded-xl px-3 py-1 hover:bg-(--surface-hover)">
+          <button onClick={reset} className="text-sm border border-line rounded-xl px-3 py-1 hover:bg-surface-hover">
             Reset
           </button>
         )}
@@ -315,17 +315,17 @@ function StopwatchWidget() {
         ) : (
           <>
             <button onClick={pause} className="btn-secondary text-sm py-1 px-3">Pause</button>
-            <button onClick={lap} className="text-sm border border-(--border) rounded-xl px-3 py-1 hover:bg-(--surface-hover)">Runde</button>
+            <button onClick={lap} className="text-sm border border-line rounded-xl px-3 py-1 hover:bg-surface-hover">Runde</button>
           </>
         )}
         {(elapsed > 0 && !running) && (
-          <button onClick={reset} className="text-sm border border-(--border) rounded-xl px-3 py-1 hover:bg-(--surface-hover)">Reset</button>
+          <button onClick={reset} className="text-sm border border-line rounded-xl px-3 py-1 hover:bg-surface-hover">Reset</button>
         )}
       </div>
       {laps.length > 0 && (
         <div className="w-full max-h-32 overflow-y-auto flex flex-col gap-0.5 mt-1">
           {laps.map((l, i) => (
-            <div key={i} className="flex justify-between text-xs text-(--text-muted) px-1">
+            <div key={i} className="flex justify-between text-xs text-muted px-1">
               <span>Runde {laps.length - i}</span>
               <span className="font-mono">{fmt(l)}</span>
             </div>
@@ -371,7 +371,7 @@ function WorkModeWidget() {
         {WORK_MODES.map(m => (
           <button key={m.id} onClick={() => select(m.id)} title={m.label}
             className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl transition-colors ${
-              mode === m.id ? "border-(--accent) bg-(--accent)/10" : "border-(--border) hover:border-(--text-muted)"
+              mode === m.id ? "border-accent bg-accent/10" : "border-line hover:border-muted"
             }`}>
             {m.icon}
           </button>
@@ -401,15 +401,15 @@ function NotesWidget() {
     <div className="flex flex-col gap-2 min-w-[260px]">
       <div className="flex gap-1">
         <button onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`w-7 h-7 rounded-sm border text-xs font-bold flex items-center justify-center ${editor.isActive("bold") ? "border-(--accent) text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>B</button>
+          className={`w-7 h-7 rounded-sm border text-xs font-bold flex items-center justify-center ${editor.isActive("bold") ? "border-accent text-accent" : "border-line text-muted"}`}>B</button>
         <button onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`w-7 h-7 rounded-sm border text-xs italic flex items-center justify-center ${editor.isActive("italic") ? "border-(--accent) text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>I</button>
+          className={`w-7 h-7 rounded-sm border text-xs italic flex items-center justify-center ${editor.isActive("italic") ? "border-accent text-accent" : "border-line text-muted"}`}>I</button>
         <button onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`w-7 h-7 rounded-sm border text-xs flex items-center justify-center ${editor.isActive("bulletList") ? "border-(--accent) text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>•</button>
+          className={`w-7 h-7 rounded-sm border text-xs flex items-center justify-center ${editor.isActive("bulletList") ? "border-accent text-accent" : "border-line text-muted"}`}>•</button>
         <button onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`w-7 h-7 rounded-sm border text-xs flex items-center justify-center ${editor.isActive("orderedList") ? "border-(--accent) text-(--accent)" : "border-(--border) text-(--text-muted)"}`}>1.</button>
+          className={`w-7 h-7 rounded-sm border text-xs flex items-center justify-center ${editor.isActive("orderedList") ? "border-accent text-accent" : "border-line text-muted"}`}>1.</button>
       </div>
-      <div className="prose-sm max-w-none text-sm min-h-[100px] max-h-[240px] overflow-y-auto rounded-lg border border-(--border) p-2 bg-(--bg)">
+      <div className="prose-sm max-w-none text-sm min-h-[100px] max-h-[240px] overflow-y-auto rounded-lg border border-line p-2 bg-page">
         <EditorContent editor={editor} />
       </div>
     </div>
@@ -440,12 +440,12 @@ export default function ClassroomPage() {
   }
 
   return (
-    <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-(--bg)">
+    <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden bg-page">
 
       {/* Back button */}
       <button
         onClick={() => router.push("/tools")}
-        className="absolute top-4 left-4 z-50 text-sm text-(--text-muted) hover:text-(--text) transition-colors"
+        className="absolute top-4 left-4 z-50 text-sm text-muted hover:text-fg transition-colors"
       >
         ← Tools
       </button>
@@ -453,34 +453,34 @@ export default function ClassroomPage() {
       {/* Toggle panel button */}
       <button
         onClick={() => setShowPanel(v => !v)}
-        className="absolute top-4 right-4 z-50 rounded-lg border border-(--border) text-(--text) text-xs py-1.5 px-3 hover:bg-(--surface-hover) transition-colors"
+        className="absolute top-4 right-4 z-50 rounded-lg border border-line text-fg text-xs py-1.5 px-3 hover:bg-surface-hover transition-colors"
       >
         ⚙ Widgets
       </button>
 
       {/* Widget selector panel */}
       {showPanel && (
-        <div className="absolute top-12 right-4 z-50 rounded-2xl border border-(--border) bg-(--surface) shadow-xl p-4 flex flex-col gap-2 min-w-[180px]">
-          <div className="text-xs font-semibold text-(--text-muted) uppercase tracking-wider mb-1">Widgets</div>
+        <div className="card absolute top-12 right-4 z-50 shadow-xl p-4 flex flex-col gap-2 min-w-[180px]">
+          <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-1">Widgets</div>
           {WIDGETS.map(w => (
             <label key={w.id} className="flex items-center gap-3 cursor-pointer group">
               <div
                 onClick={() => toggle(w.id)}
-                className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${widgets[w.id].enabled ? "bg-(--accent)" : "bg-(--border)"}`}
+                className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${widgets[w.id].enabled ? "bg-accent" : "bg-line"}`}
               >
                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${widgets[w.id].enabled ? "translate-x-4" : "translate-x-0.5"}`} />
               </div>
               <span className="text-sm">{w.label}</span>
             </label>
           ))}
-          <div className="border-t border-(--border) mt-1 pt-2">
+          <div className="border-t border-line mt-1 pt-2">
             <button
               onClick={() => {
                 const reset = defaultState();
                 setWidgets(reset);
                 saveState(reset);
               }}
-              className="text-xs text-(--text-muted) hover:text-(--text)"
+              className="text-xs text-muted hover:text-fg"
             >
               Positionen zurücksetzen
             </button>
@@ -517,7 +517,7 @@ export default function ClassroomPage() {
 
       {/* Empty state */}
       {WIDGETS.every(w => !widgets[w.id].enabled) && (
-        <div className="absolute inset-0 flex items-center justify-center text-(--text-muted) text-sm">
+        <div className="absolute inset-0 flex items-center justify-center text-muted text-sm">
           Keine Widgets aktiv — über ⚙ Widgets aktivieren.
         </div>
       )}

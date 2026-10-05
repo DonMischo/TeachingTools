@@ -284,23 +284,23 @@ export function Protokoll({ lines, tex = false }: {
   tex?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface) p-4">
-      <div className="text-xs uppercase tracking-widest text-(--text-muted) mb-2">Rechenweg</div>
+    <div className="card p-4">
+      <div className="text-xs uppercase tracking-widest text-muted mb-2">Rechenweg</div>
       <div className={`flex flex-col gap-1 overflow-x-auto ${tex ? "" : "font-mono"}`}>
         {lines.map((l, i) => {
           const last = i === lines.length - 1;
           return (
             <div key={i}
               className={`grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-baseline ${
-                last ? "text-(--text)" : "text-(--text-muted)"
+                last ? "text-fg" : "text-muted"
               }`}
               style={{ fontSize: last ? "1.35rem" : "1rem", fontWeight: last ? 800 : 400 }}>
               <span className="text-right whitespace-nowrap">
                 {tex ? <Tex tex={l.left} /> : l.left}
               </span>
-              <span className={l.rel && l.rel !== "=" ? "text-(--red) font-black" : ""}>{l.rel ?? "="}</span>
+              <span className={l.rel && l.rel !== "=" ? "text-bad font-black" : ""}>{l.rel ?? "="}</span>
               <span className="whitespace-nowrap">{tex ? <Tex tex={l.right} /> : l.right}</span>
-              <span className="text-(--accent) whitespace-nowrap text-sm font-bold">
+              <span className="text-accent whitespace-nowrap text-sm font-bold">
                 {l.op ? `| ${l.op}` : ""}
               </span>
             </div>

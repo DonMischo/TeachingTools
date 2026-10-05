@@ -270,36 +270,36 @@ export default function Draufsicht() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div ref={huelle} className="rounded-2xl overflow-hidden border border-(--border)">
+      <div ref={huelle} className="rounded-2xl overflow-hidden border border-line">
         <canvas ref={canvas} onClick={klick} className="block w-full cursor-crosshair" aria-label="Küste von oben mit Küstenlängsstrom" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">
+        <button onClick={() => setLaeuft(!laeuft)} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover">
           {laeuft ? "⏸ Pause" : "▶ Weiter"}
         </button>
-        <div className="inline-flex rounded-xl border border-(--border) p-1 bg-(--surface)">
+        <div className="inline-flex rounded-xl border border-line p-1 bg-surface">
           {TEMPI.map(t => (
             <button key={t.id} onClick={() => setTempo(t.id)}
-              className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
+              className={`px-2 py-1 rounded-lg text-xs font-bold ${tempo === t.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
               {t.label}
             </button>
           ))}
         </div>
-        <div className="inline-flex rounded-xl border border-(--border) p-1 bg-(--surface)">
+        <div className="inline-flex rounded-xl border border-line p-1 bg-surface">
           {WERKZEUGE.map(t => (
             <button key={t.id} onClick={() => setWerkzeug(t.id)} title={t.hilfe}
-              className={`px-2 py-1 rounded-lg text-xs font-bold ${werkzeug === t.id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted) hover:text-(--text)"}`}>
+              className={`px-2 py-1 rounded-lg text-xs font-bold ${werkzeug === t.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
               {t.label}
             </button>
           ))}
         </div>
-        <button onClick={() => { kueste.current = neueKueste(); setTick(t => t + 1); }} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-(--border) hover:bg-(--surface-hover)">↺ Neu</button>
+        <button onClick={() => { kueste.current = neueKueste(); setTick(t => t + 1); }} className="px-3 py-1.5 rounded-lg text-sm font-bold border border-line hover:bg-surface-hover">↺ Neu</button>
       </div>
-      <p className="text-xs text-(--text-muted) -mt-2">{WERKZEUGE.find(t => t.id === werkzeug)!.hilfe}</p>
+      <p className="text-xs text-muted -mt-2">{WERKZEUGE.find(t => t.id === werkzeug)!.hilfe}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-3">
+        <section className="card p-4 flex flex-col gap-3">
           <h3 className="font-black">🌊 Wellen</h3>
           <label className="text-sm">
             Richtung: <b>{winkel === 0 ? "gerade auf den Strand" : winkel > 0 ? `${winkel}° von links` : `${-winkel}° von rechts`}</b>
@@ -309,25 +309,25 @@ export default function Draufsicht() {
             Höhe: <b>{zahl(hoehe, 1)} m</b>
             <input type="range" min={0.3} max={3} step={0.1} value={hoehe} onChange={e => setHoehe(Number(e.target.value))} className="w-full" />
           </label>
-          <p className="text-xs text-(--text-muted)">An der deutschen Ostseeküste kommt der Wind meist aus West — der Sand wandert deshalb meist nach Osten.</p>
+          <p className="text-xs text-muted">An der deutschen Ostseeküste kommt der Wind meist aus West — der Sand wandert deshalb meist nach Osten.</p>
         </section>
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm grid grid-cols-2 gap-x-3 gap-y-1 content-start">
+        <section className="card p-4 text-sm grid grid-cols-2 gap-x-3 gap-y-1 content-start">
           <h3 className="font-black col-span-2 mb-1">📊 Nach {zahl(jahre, 1)} Jahren</h3>
-          <span className="text-(--text-muted)">Haken</span><b>{zahl(hakenLaenge(k))} m lang</b>
-          <span className="text-(--text-muted)">Sand in den Haken</span><b>{zahl(k.haken / 1000)} Tsd. m³</b>
-          <span className="text-(--text-muted)">Sand vom Kliff</span><b>{zahl(k.geliefert / 1000)} Tsd. m³</b>
-          <span className="text-(--text-muted)">Kliff zurück</span><b>{zahl(rueckgang, 1)} m</b>
-          <span className="text-(--text-muted)">Häuser verloren</span><b className={verloren ? "text-red-500" : ""}>{verloren} von {k.haeuser.length}</b>
-          <span className="text-(--text-muted)">Kosten</span><b>{zahl(k.kosten, 1)} Mio. €</b>
+          <span className="text-muted">Haken</span><b>{zahl(hakenLaenge(k))} m lang</b>
+          <span className="text-muted">Sand in den Haken</span><b>{zahl(k.haken / 1000)} Tsd. m³</b>
+          <span className="text-muted">Sand vom Kliff</span><b>{zahl(k.geliefert / 1000)} Tsd. m³</b>
+          <span className="text-muted">Kliff zurück</span><b>{zahl(rueckgang, 1)} m</b>
+          <span className="text-muted">Häuser verloren</span><b className={verloren ? "text-red-500" : ""}>{verloren} von {k.haeuser.length}</b>
+          <span className="text-muted">Kosten</span><b>{zahl(k.kosten, 1)} Mio. €</b>
         </section>
-        <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm flex flex-col gap-2">
+        <section className="card p-4 text-sm flex flex-col gap-2">
           <h3 className="font-black">📰 Meldungen</h3>
-          {k.meldungen.length === 0 ? <p className="text-(--text-muted)">Noch nichts passiert.</p>
+          {k.meldungen.length === 0 ? <p className="text-muted">Noch nichts passiert.</p>
             : [...k.meldungen].reverse().slice(0, 5).map((m, i) => <p key={i} className="border-l-4 border-red-500 bg-red-500/10 px-2 py-1 rounded-sm">{m}</p>)}
         </section>
       </div>
 
-      <section className="rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm flex flex-col gap-2 leading-relaxed">
+      <section className="card p-4 text-sm flex flex-col gap-2 leading-relaxed">
         <h3 className="font-black">📘 So wandert der Sand</h3>
         <p><b>Strandversetzung:</b> Die Welle läuft schräg den Strand hinauf und nimmt Sandkörner mit. Zurück fließt das Wasser auf dem kürzesten Weg — gerade hinab. So rückt jedes Korn mit jeder Welle ein Stück weiter: im Zickzack an der Küste entlang. Draußen in der Brandung schiebt der <b>Küstenlängsstrom</b> den Sand in dieselbe Richtung.</p>
         <p><b>Haken und Nehrung:</b> Wo die Küste abknickt, läuft der Sand geradeaus weiter ins tiefe Wasser und baut einen Haken, der sich zur Bucht hin krümmt. Wächst er bis zum anderen Ufer, entsteht eine Nehrung und aus der Bucht ein Strandsee. Beispiele: Darßer Ort, der Bug auf Rügen, der Bessin auf Hiddensee.</p>

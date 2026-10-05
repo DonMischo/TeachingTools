@@ -65,10 +65,10 @@ export default function GebaeudeDemo() {
     }
   };
 
-  const auswahl = "rounded-lg border border-(--border) bg-(--surface) px-2 py-1";
+  const auswahl = "rounded-lg border border-line bg-surface px-2 py-1";
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 text-sm rounded-2xl border border-(--border) bg-(--surface) p-3">
+      <div className="card flex flex-wrap items-center gap-3 text-sm p-3">
         <label className="flex items-center gap-1">Stockwerke
           <select value={stockwerke} onChange={e => setStockwerke(+e.target.value)} className={auswahl}>
             {[1, 2, 3, 4, 5].map(n => <option key={n}>{n}</option>)}
@@ -85,18 +85,18 @@ export default function GebaeudeDemo() {
             {(Object.keys(STILE) as Stil[]).map(s => <option key={s} value={s}>{STILE[s].name}</option>)}
           </select>
         </label>
-        <div className="inline-flex rounded-lg border border-(--border) p-0.5" role="group" aria-label="Art">
+        <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Art">
           {([["haus", "🏢 Haus (nach oben)"], ["verlies", "🗝️ Verlies (nach unten)"], ["ebene", "🗺️ Ebene (Türen)"]] as const).map(([v, t]) => (
             <button key={v} onClick={() => { setArt(v); setStil(v === "verlies" ? "verlies" : "klassisch"); setStock(0); }} aria-pressed={art === v}
-              className={`px-2 py-1 rounded-md text-xs font-bold ${art === v ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>
+              className={`px-2 py-1 rounded-md text-xs font-bold ${art === v ? "bg-accent text-accent-fg" : "text-muted"}`}>
               {t}
             </button>
           ))}
         </div>
-        <div className="inline-flex rounded-lg border border-(--border) p-0.5" role="group" aria-label="Ansicht">
+        <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="Ansicht">
           {([["laufen", "🚶 durchlaufen"], ["haus", "🏛️ ganzes Haus"]] as const).map(([a, t]) => (
             <button key={a} onClick={() => setAnsicht(a)} aria-pressed={ansicht === a}
-              className={`px-2 py-1 rounded-md text-xs font-bold ${ansicht === a ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>
+              className={`px-2 py-1 rounded-md text-xs font-bold ${ansicht === a ? "bg-accent text-accent-fg" : "text-muted"}`}>
               {t}
             </button>
           ))}
@@ -104,7 +104,7 @@ export default function GebaeudeDemo() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         <div className="flex flex-col gap-2">
-          <div className="relative h-[75vh] min-h-[480px] rounded-xl border border-(--border) overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
+          <div className="relative h-[75vh] min-h-[480px] rounded-xl border border-line overflow-hidden bg-linear-to-b from-sky-900/30 to-transparent">
             {ansicht === "laufen"
               ? <Gebaeude plan={plan} stock={stock} zustaende={zustaende} zielOffen={zielOffen} objekte={objekte} stil={stil}
                   art={art} waechter={waechter} avatar={avatar} aktiv auftrag={auftrag} onAnkunft={ankunft} />
@@ -113,7 +113,7 @@ export default function GebaeudeDemo() {
           </div>
           <p className="text-sm text-center" data-meldung>{meldung}</p>
         </div>
-        <section className="flex flex-col gap-3 rounded-2xl border border-(--border) bg-(--surface) p-4 text-sm leading-relaxed">
+        <section className="card flex flex-col gap-3 p-4 text-sm leading-relaxed">
           <h3 className="font-black text-lg">{wort} {stock + 1} von {plan.stockwerke.length}</h3>
           <Grundriss plan={plan} stock={stock} besucht={besucht[stock] ?? []} />
           {verlies ? (
@@ -132,22 +132,22 @@ export default function GebaeudeDemo() {
           <div className="flex flex-wrap gap-1">
             {plan.stockwerke[stock].raeume.map((_, k) => (
               <button key={k} onClick={() => setAuftrag(a => ({ ort: { art: "raum", raum: k }, nr: (a?.nr ?? 0) + 1 }))}
-                className={`px-2 py-1 rounded-lg border text-xs font-bold ${besucht[stock]?.[k] ? "border-green-500 text-green-600" : "border-(--border)"}`}>
+                className={`px-2 py-1 rounded-lg border text-xs font-bold ${besucht[stock]?.[k] ? "border-green-500 text-green-600" : "border-line"}`}>
                 {besucht[stock]?.[k] ? "✔" : verlies ? "👾" : "🚪"} Zimmer {k + 1}
               </button>
             ))}
             <button onClick={() => setAuftrag(a => ({ ort: { art: "ziel" }, nr: (a?.nr ?? 0) + 1 }))}
-              className="px-2 py-1 rounded-lg border border-(--border) text-xs font-bold">
+              className="px-2 py-1 rounded-lg border border-line text-xs font-bold">
               {zielOffen[stock] ? (verlies ? "⬇" : art === "ebene" ? "➡" : "⬆") : "🔒"} {stock < plan.stockwerke.length - 1 ? (verlies ? "Treppe hinab" : art === "ebene" ? "Tür" : "Treppe") : "Ausgang"}
             </button>
             {stock > 0 && (
               <button onClick={() => setAuftrag(a => ({ ort: { art: "zurueck" }, nr: (a?.nr ?? 0) + 1 }))}
-                className="px-2 py-1 rounded-lg border border-(--border) text-xs font-bold">
+                className="px-2 py-1 rounded-lg border border-line text-xs font-bold">
                 {verlies ? "⬆ zurück hinauf" : art === "ebene" ? "⬅ zurück durch die Tür" : "⬇ zurück hinunter"}
               </button>
             )}
           </div>
-          <p className="text-xs text-(--text-muted)">Tipp: Die Knöpfe schicken die Figur auf dem kürzesten Weg dorthin (Breitensuche).</p>
+          <p className="text-xs text-muted">Tipp: Die Knöpfe schicken die Figur auf dem kürzesten Weg dorthin (Breitensuche).</p>
         </section>
       </div>
     </div>
@@ -177,7 +177,7 @@ function Grundriss({ plan, stock, besucht }: { plan: Plan; stock: number; besuch
   return (
     <div className="flex flex-col gap-1">
       <canvas ref={ref} width={plan.R * px} height={plan.R * px} className="rounded-lg self-center [image-rendering:pixelated]" />
-      <p className="text-xs text-(--text-muted) text-center">blau Start · orange Zimmer · grün besucht · rot Treppe</p>
+      <p className="text-xs text-muted text-center">blau Start · orange Zimmer · grün besucht · rot Treppe</p>
     </div>
   );
 }

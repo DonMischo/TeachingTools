@@ -73,25 +73,25 @@ function KlassenTab({ isTeacher }: { isTeacher: boolean }) {
       )}
 
       {!showPreview && (
-        <div className="text-sm text-(--text-muted)">
+        <div className="text-sm text-muted">
           Klicke auf "Klassen-Punkte Vorschau" um die normierten Punktzahlen zu sehen.
         </div>
       )}
 
-      {previewLoading && <div className="text-sm text-(--text-muted)">Laden…</div>}
+      {previewLoading && <div className="text-sm text-muted">Laden…</div>}
 
       {showPreview && preview.length === 0 && !previewLoading && (
-        <div className="text-sm text-(--text-muted)">Keine Ergebnisse vorhanden.</div>
+        <div className="text-sm text-muted">Keine Ergebnisse vorhanden.</div>
       )}
 
       {showPreview && preview.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-(--border) bg-(--surface)">
+        <div className="card overflow-x-auto">
           <table className="text-sm w-full">
             <thead>
-              <tr className="border-b border-(--border) text-(--text-muted) text-xs">
+              <tr className="border-b border-line text-muted text-xs">
                 <th className="text-left px-3 py-2">Platz</th>
                 {sortedJahrgaenge.map(([jg]) => (
-                  <th key={String(jg)} className="text-left px-3 py-2 border-l border-(--border)">
+                  <th key={String(jg)} className="text-left px-3 py-2 border-l border-line">
                     Jg. {jg ?? "?"}
                   </th>
                 ))}
@@ -99,17 +99,17 @@ function KlassenTab({ isTeacher }: { isTeacher: boolean }) {
             </thead>
             <tbody>
               {Array.from({ length: maxRows }, (_, i) => (
-                <tr key={i} className="border-b border-(--border)/50">
+                <tr key={i} className="border-b border-line/50">
                   <td className="px-3 py-2 font-bold text-center">{MEDALS[i] ?? i + 1}</td>
                   {sortedJahrgaenge.map(([jg, arr]) => {
                     const entry = arr[i];
                     return (
-                      <td key={String(jg)} className="px-3 py-2 border-l border-(--border)">
+                      <td key={String(jg)} className="px-3 py-2 border-l border-line">
                         {entry ? (
                           <div>
                             <span className="font-semibold">{entry.klasse}</span>
-                            <span className="ml-2 text-(--accent) font-bold">{entry.awarded}</span>
-                            <span className="ml-1 text-xs text-(--text-muted)">Pkt</span>
+                            <span className="ml-2 text-accent font-bold">{entry.awarded}</span>
+                            <span className="ml-1 text-xs text-muted">Pkt</span>
                           </div>
                         ) : null}
                       </td>
@@ -145,12 +145,12 @@ export default function SportfestRankingPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div>
-        <Link href="/tools/sportfest" className="text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-muted hover:text-fg transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">🏆 Gesamtranking</h1>
         {tab === "gesamt" && !isTeacher && (
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Die Schülerwertung sehen nur Lehrkräfte. Die Siegerehrung je Disziplin
             steht unter <Link href="/tools/sportfest/disziplinen" className="underline">Disziplinranking</Link>.
           </p>
@@ -163,8 +163,8 @@ export default function SportfestRankingPage() {
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               tab === t
-                ? "bg-(--accent) text-(--accent-text,#111)"
-                : "border border-(--border) text-(--text-muted) hover:border-(--text-muted)"
+                ? "bg-accent text-accent-fg"
+                : "border border-line text-muted hover:border-muted"
             }`}>
             {t === "gesamt" ? "Schüler/innen" : "Klassen"}
           </button>
@@ -189,16 +189,16 @@ export default function SportfestRankingPage() {
           </div>
 
           {isLoading ? (
-            <div className="text-(--text-muted) text-sm">Laden…</div>
+            <div className="text-muted text-sm">Laden…</div>
           ) : ranking.length === 0 ? (
-            <div className="flex items-center justify-center h-32 border border-dashed border-(--border) rounded-2xl text-(--text-muted)">
+            <div className="flex items-center justify-center h-32 border border-dashed border-line rounded-2xl text-muted">
               Noch keine Ergebnisse vorhanden.
             </div>
           ) : (
-            <div className="rounded-2xl border border-(--border) bg-(--surface) overflow-hidden">
+            <div className="card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-(--border) text-(--text-muted) text-xs">
+                  <tr className="border-b border-line text-muted text-xs">
                     <th className="text-left px-4 py-3 w-12">#</th>
                     <th className="text-left px-4 py-3">Name / Klasse</th>
                     <th className="text-right px-4 py-3">Punkte</th>
@@ -206,15 +206,15 @@ export default function SportfestRankingPage() {
                 </thead>
                 <tbody>
                   {ranking.map((entry) => (
-                    <tr key={entry.rank} className="border-b border-(--border)/50 hover:bg-(--surface-hover)">
+                    <tr key={entry.rank} className="border-b border-line/50 hover:bg-surface-hover">
                       <td className="px-4 py-2.5 text-center font-bold">
                         {MEDALS[entry.rank - 1] ?? entry.rank}
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="font-medium">{entry.name ?? "Schüler/in"}</div>
-                        <div className="text-xs text-(--text-muted)">{entry.klasse}</div>
+                        <div className="text-xs text-muted">{entry.klasse}</div>
                       </td>
-                      <td className="px-4 py-2.5 text-right font-bold text-(--accent)">
+                      <td className="px-4 py-2.5 text-right font-bold text-accent">
                         {entry.total_points}
                       </td>
                     </tr>

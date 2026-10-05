@@ -32,21 +32,21 @@ export default function SportfestSetupPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-xl mx-auto w-full">
       <div>
-        <Link href="/tools/sportfest" className="text-sm text-(--text-muted) hover:text-(--text) transition-colors">← Sportfest</Link>
+        <Link href="/tools/sportfest" className="text-sm text-muted hover:text-fg transition-colors">← Sportfest</Link>
         <h1 className="text-2xl font-black tracking-tight mt-1">⚙️ Sportfest Setup</h1>
-        <p className="text-(--text-muted) text-sm mt-1">Disziplinen aktivieren / deaktivieren</p>
+        <p className="text-muted text-sm mt-1">Disziplinen aktivieren / deaktivieren</p>
       </div>
-      <div className="rounded-2xl border border-(--border) bg-(--surface) divide-y divide-(--border)">
+      <div className="card divide-y divide-line">
         {disciplines.map(disc => (
-          <label key={disc.id} className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-(--surface-hover)">
+          <label key={disc.id} className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-surface-hover">
             <input
               type="checkbox"
               checked={disc.enabled}
               onChange={e => toggleMut.mutate({ id: disc.id, enabled: e.target.checked })}
-              className="w-4 h-4 accent-(--accent)"
+              className="w-4 h-4 accent-accent"
             />
             <span className="font-medium text-sm">{disc.name}</span>
-            <span className={`ml-auto text-xs ${disc.enabled ? "text-green-400" : "text-(--text-muted)"}`}>
+            <span className={`ml-auto text-xs ${disc.enabled ? "text-green-400" : "text-muted"}`}>
               {disc.enabled ? "Aktiv" : "Inaktiv"}
             </span>
           </label>

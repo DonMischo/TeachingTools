@@ -32,10 +32,10 @@ export function FirstRunSetup({ onComplete }: { onComplete: () => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-(--bg)">
-      <div className="w-full max-w-md bg-(--surface) border border-(--border) rounded-2xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-page">
+      <div className="card w-full max-w-md p-8">
         <h1 className="text-2xl font-bold mb-1">Willkommen bei Hauspunkte</h1>
-        <p className="text-(--text-muted) text-sm mb-6">
+        <p className="text-muted text-sm mb-6">
           Erstelle den ersten Admin-Account um loszulegen.
         </p>
 
@@ -57,7 +57,7 @@ export function FirstRunSetup({ onComplete }: { onComplete: () => void }) {
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <button type="submit" disabled={loading} className="btn-primary mt-2">
+          <button type="submit" disabled={loading} className="btn-primary mt-2 w-full">
             {loading ? "Erstelle Account…" : "Admin-Account erstellen"}
           </button>
         </form>

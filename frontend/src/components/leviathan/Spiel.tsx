@@ -75,10 +75,10 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
         <span className="font-black text-lg">{t.icon} {z.land}</span>
         <span className="tabular-nums">Jahr <b>{jahr}</b> · Runde <b>{z.runde + 1}</b> von {z.einst.runden}</span>
         {z.einst.sichtbar && <span>{KRISE_TEXT[z.einst.krise].icon} {KRISE_TEXT[z.einst.krise].name}</span>}
-        {z.regierung.autokrat && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-(--red) text-white">👑 Autokrat an der Macht</span>}
-        {z.regierung.geschlossen && !z.regierung.autokrat && <span className="px-2 py-0.5 rounded-full text-xs font-bold border border-(--border)">Einparteienstaat – keine Wahlen</span>}
-        {z.status === "wiederaufbau" && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-(--accent) text-(--accent-text,#111)">🏗️ Wiederaufbau</span>}
-        {wahlJahr && !z.regierung.geschlossen && <span className="text-xs text-(--text-muted)">🗳️ Nach dieser Runde wird gewählt.</span>}
+        {z.regierung.autokrat && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-bad text-white">👑 Autokrat an der Macht</span>}
+        {z.regierung.geschlossen && !z.regierung.autokrat && <span className="px-2 py-0.5 rounded-full text-xs font-bold border border-line">Einparteienstaat – keine Wahlen</span>}
+        {z.status === "wiederaufbau" && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent text-accent-fg">🏗️ Wiederaufbau</span>}
+        {wahlJahr && !z.regierung.geschlossen && <span className="text-xs text-muted">🗳️ Nach dieser Runde wird gewählt.</span>}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -87,7 +87,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
         </Karte>
         <Karte titel="Lebensqualität" rechts={<span className="text-3xl font-black tabular-nums">{Math.round(z.lq)}</span>}>
           <Verlauf verlauf={z.verlauf} wert={(s) => s.lq} />
-          <p className="text-xs text-(--text-muted) mt-1">
+          <p className="text-xs text-muted mt-1">
             Sammelwert aus Wirtschaft, Gesundheit, Zusammenhalt, Demokratie, wenig Korruption, Vertrauen, Gleichheit, Klima und Bildung (angelehnt an den World Happiness Report).
             Fällt sie zwei Runden lang auf 12 oder darunter, bricht das Land zusammen.
           </p>
@@ -96,7 +96,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <Karte titel="Deine Entscheidungen" rechts={
-          <span className={`font-black tabular-nums ${rest < 0 ? "text-(--red)" : ""}`}>{rest} von {verfuegbar} Aktionspunkten frei</span>}>
+          <span className={`font-black tabular-nums ${rest < 0 ? "text-bad" : ""}`}>{rest} von {verfuegbar} Aktionspunkten frei</span>}>
           <div className="flex flex-col gap-2">
             {HEBEL.map((h) => {
               const gesperrt = (z.gesperrt[h] ?? 0) > 0;
@@ -112,17 +112,17 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
                   </div>
                   <div className="flex items-center gap-1 shrink-0 ml-auto">
                     <button onClick={() => minus(h)} disabled={gesperrt || v[h] === 0} aria-label={`${BEREICH[h].name} weniger`}
-                      className="w-7 h-7 rounded-lg border border-(--border) font-black disabled:opacity-30">−</button>
+                      className="w-7 h-7 rounded-lg border border-line font-black disabled:opacity-30">−</button>
                     <span className="w-6 text-center font-black tabular-nums" aria-label={`${v[h]} Punkte in ${BEREICH[h].name}`}>{v[h]}</span>
                     <button onClick={() => plus(h)} disabled={gesperrt || rest <= 0} aria-label={`${BEREICH[h].name} mehr`}
-                      className="w-7 h-7 rounded-lg border border-(--border) font-black disabled:opacity-30">+</button>
-                    <span className="w-16 text-xs text-(--text-muted) tabular-nums">
+                      className="w-7 h-7 rounded-lg border border-line font-black disabled:opacity-30">+</button>
+                    <span className="w-16 text-xs text-muted tabular-nums">
                       {gesperrt ? `🔒 ${z.gesperrt[h]} R.` : v[h] ? `≈ +${Math.round(wirkung)}` : ""}
                     </span>
                   </div>
-                  <p className="basis-full text-[11px] text-(--text-muted) pl-8 -mt-0.5">
+                  <p className="basis-full text-[11px] text-muted pl-8 -mt-0.5">
                     {v[h]
-                      ? <>netto ≈ <b className="text-(--text)">{wirkung - verfall >= 0 ? "+" : "−"}{Math.abs(Math.round(wirkung - verfall))}</b> (Verfall −{Math.round(verfall)}){sofort.length > 0 && <> · sofort: {sofort.join(", ")}</>}</>
+                      ? <>netto ≈ <b className="text-fg">{wirkung - verfall >= 0 ? "+" : "−"}{Math.abs(Math.round(wirkung - verfall))}</b> (Verfall −{Math.round(verfall)}){sofort.length > 0 && <> · sofort: {sofort.join(", ")}</>}</>
                       : `ohne Punkte: −${Math.round(verfall)} Verfall${SOFORT[h].length ? ` · Punkte wirken auch direkt auf ${SOFORT[h].map((s) => BEREICH[s.nach].name).join(", ")}` : ""}`}
                   </p>
                 </div>
@@ -131,7 +131,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-xl border border-(--border) p-3">
+            <div className="rounded-xl border border-line p-3">
               <div className="font-bold mb-1">Haushalt dieser Runde</div>
               <Posten name="Steuern" x={b.steuern} />
               {b.rohstoff > 0.4 && <Posten name="Rohstoffe" x={b.rohstoff} />}
@@ -141,21 +141,21 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
               {b.zinsen > 0.4 && <Posten name="Zinsen" x={-b.zinsen} />}
               {b.korrektur !== 0 && <Posten name="Ereignisse" x={b.korrektur} />}
               {b.wiederaufbau !== 0 && <Posten name="Wiederaufbau" x={b.wiederaufbau} />}
-              <div className="border-t border-(--border) mt-1 pt-1 flex justify-between font-black"><span>Aktionspunkte</span><span>{b.gesamt}</span></div>
-              <p className="text-xs text-(--text-muted) mt-1">
+              <div className="border-t border-line mt-1 pt-1 flex justify-between font-black"><span>Aktionspunkte</span><span>{b.gesamt}</span></div>
+              <p className="text-xs text-muted mt-1">
                 Jeder Punkt wirkt zu {Math.round(eff * 100)} % – Korruption und ein schwacher Staat fressen mit.
               </p>
             </div>
-            <div className="rounded-xl border border-(--border) p-3">
+            <div className="rounded-xl border border-line p-3">
               <div className="font-bold mb-1">Kredit aufnehmen</div>
               <div className="flex items-center gap-2">
                 <button onClick={() => aendere("kredit", -1)} disabled={v.kredit === 0}
-                  aria-label="Kredit verringern" className="w-7 h-7 rounded-lg border border-(--border) font-black disabled:opacity-30">−</button>
+                  aria-label="Kredit verringern" className="w-7 h-7 rounded-lg border border-line font-black disabled:opacity-30">−</button>
                 <span className="w-6 text-center font-black">{v.kredit}</span>
                 <button onClick={() => aendere("kredit", 1)} disabled={v.kredit >= MAX_KREDIT}
-                  aria-label="Kredit erhöhen" className="w-7 h-7 rounded-lg border border-(--border) font-black disabled:opacity-30">+</button>
+                  aria-label="Kredit erhöhen" className="w-7 h-7 rounded-lg border border-line font-black disabled:opacity-30">+</button>
               </div>
-              <p className="text-xs text-(--text-muted) mt-1">
+              <p className="text-xs text-muted mt-1">
                 Schulden: <b>{z.schulden}</b>. Jeder Kredit kostet ab jetzt Zinsen; ab 18 droht eine Schuldenkrise.
                 Nicht verteilte Punkte tilgen Schulden.
               </p>
@@ -163,7 +163,7 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
           </div>
 
           <button onClick={beenden} disabled={rest < 0}
-            className="mt-4 w-full px-5 py-3 rounded-xl font-black bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
+            className="btn-primary mt-4 w-full px-5 py-3">
             Runde beenden → {jahr + 2}
           </button>
           <label className="mt-2 flex items-center gap-2 text-sm">
@@ -195,19 +195,19 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
 
       <div ref={zusammenhang} className="scroll-mt-4">
       <Karte titel="Wie hängt alles zusammen?" rechts={
-        <div className="inline-flex flex-wrap rounded-xl border border-(--border) p-1" role="tablist">
+        <div className="inline-flex flex-wrap rounded-xl border border-line p-1" role="tablist">
           {([["netz", "🕸️ Wirkungsnetz"], ["zeitlupe", "🎬 Zeitlupe"], ["rechenweg", "🧮 Rechenweg"]] as const).map(([id, t]) => (
             <button key={id} role="tab" aria-selected={ansicht === id} onClick={() => { setAnsicht(id); setAutostart(false); }}
-              className={`px-3 py-1 rounded-lg text-sm font-bold ${ansicht === id ? "bg-(--accent) text-(--accent-text,#111)" : "text-(--text-muted)"}`}>{t}</button>
+              className={`px-3 py-1 rounded-lg text-sm font-bold ${ansicht === id ? "bg-accent text-accent-fg" : "text-muted"}`}>{t}</button>
           ))}
         </div>}>
         {ansicht === "netz" && (
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-(--border) px-3 py-2 text-sm">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line px-3 py-2 text-sm">
               <span>Verteile direkt im Netz: <b>+</b> und <b>−</b> an den eckigen Bereichen.</span>
-              <span className={`font-black tabular-nums ${rest < 0 ? "text-(--red)" : ""}`}>{rest} von {verfuegbar} AP frei</span>
+              <span className={`font-black tabular-nums ${rest < 0 ? "text-bad" : ""}`}>{rest} von {verfuegbar} AP frei</span>
               <button onClick={beenden} disabled={rest < 0}
-                className="ml-auto px-4 py-1.5 rounded-lg font-black bg-(--accent) text-(--accent-text,#111) disabled:opacity-40">
+                className="btn-primary ml-auto px-4 py-1.5">
                 Runde beenden → {jahr + 2}
               </button>
             </div>
@@ -230,16 +230,16 @@ export default function Spiel({ z, onRunde }: { z: Zustand; onRunde: (v: Verteil
       </div>
 
       <Karte titel={letzte.length ? `Nachrichten ${jahr}` : "Nachrichten"}>
-        {letzte.length === 0 && <p className="text-sm text-(--text-muted)">{z.runde === 0 ? "Noch ist alles ruhig. Verteile deine ersten Aktionspunkte." : "Zwei ruhige Jahre."}</p>}
+        {letzte.length === 0 && <p className="text-sm text-muted">{z.runde === 0 ? "Noch ist alles ruhig. Verteile deine ersten Aktionspunkte." : "Zwei ruhige Jahre."}</p>}
         <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))]">
           {letzte.map((m, i) => <Meldungskarte key={i} m={m} />)}
         </div>
         {frueher.length > 0 && (
           <details className="mt-3 text-sm">
-            <summary className="cursor-pointer text-(--text-muted)">Frühere Nachrichten ({frueher.length})</summary>
+            <summary className="cursor-pointer text-muted">Frühere Nachrichten ({frueher.length})</summary>
             <ul className="mt-2 space-y-1">
               {frueher.map((m, i) => (
-                <li key={i}><span className="tabular-nums text-(--text-muted)">{STARTJAHR + 2 * m.runde}</span> {m.icon} <b>{m.titel}</b>{m.folgen ? ` – ${m.folgen}` : ""}</li>
+                <li key={i}><span className="tabular-nums text-muted">{STARTJAHR + 2 * m.runde}</span> {m.icon} <b>{m.titel}</b>{m.folgen ? ` – ${m.folgen}` : ""}</li>
               ))}
             </ul>
           </details>
@@ -277,13 +277,13 @@ function Pyramide({ z }: { z: Zustand }) {
       {zeilen.map((r) => (
         <div key={r.name} className="flex items-center gap-2 my-1">
           <span className="w-24 shrink-0">{r.name}</span>
-          <div className="flex-1 h-3 rounded-full bg-(--surface-hover) overflow-hidden">
-            <div className="h-full bg-(--accent) transition-all duration-500" style={{ width: `${(r.x / g) * 100}%` }} />
+          <div className="flex-1 h-3 rounded-full bg-surface-hover overflow-hidden">
+            <div className="h-full bg-accent transition-all duration-500" style={{ width: `${(r.x / g) * 100}%` }} />
           </div>
           <span className="w-12 text-right tabular-nums">{Math.round((r.x / g) * 100)} %</span>
         </div>
       ))}
-      <p className="text-xs text-(--text-muted) mt-2">
+      <p className="text-xs text-muted mt-2">
         {b.tfr.toLocaleString("de-DE", { maximumFractionDigits: 2 })} Kinder je Frau
         {b.tfr < 2.1 ? " – unter 2,1 schrumpft die Bevölkerung ohne Zuwanderung." : " – die Bevölkerung wächst."}
         {" "}Auf 100 Erwerbstätige kommen {Math.round((b.alt / b.erwerb) * 100)} Ältere.

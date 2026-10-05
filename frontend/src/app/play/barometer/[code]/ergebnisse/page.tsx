@@ -19,7 +19,7 @@ export default function BarometerPublicResultsPage() {
   });
 
   if (isLoading) {
-    return <div className="h-full overflow-y-auto flex items-center justify-center p-6 text-(--text-muted) text-sm">Laden…</div>;
+    return <div className="h-full overflow-y-auto flex items-center justify-center p-6 text-muted text-sm">Laden…</div>;
   }
 
   if (error) {
@@ -28,7 +28,7 @@ export default function BarometerPublicResultsPage() {
       ? "Die Ergebnisse dieser Umfrage sind nicht freigegeben."
       : "Umfrage nicht gefunden.";
     return (
-      <div className="h-full overflow-y-auto flex items-center justify-center p-6 text-(--text-muted) text-sm text-center">
+      <div className="h-full overflow-y-auto flex items-center justify-center p-6 text-muted text-sm text-center">
         {text}
       </div>
     );
@@ -41,14 +41,14 @@ export default function BarometerPublicResultsPage() {
       <div className="max-w-3xl mx-auto p-6 flex flex-col gap-6">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📊 {data.title}</h1>
-          <p className="text-xs text-(--text-muted) mt-1">Ergebnisse · aktualisiert sich automatisch</p>
+          <p className="text-xs text-muted mt-1">Ergebnisse · aktualisiert sich automatisch</p>
         </div>
         <div className="flex flex-col gap-4">
           {slidesOf(data.questions).flatMap(slide => segmentsOf(slide)).map(seg => {
             if (seg.type === "block") {
               const results = Object.fromEntries(seg.questions.map(q => [q.id, { distribution: q.distribution, count: q.count }]));
               return (
-                <div key={seg.block} className="border border-(--border) rounded-2xl p-4 bg-(--surface) flex flex-col gap-2">
+                <div key={seg.block} className="card p-4 flex flex-col gap-2">
                   {seg.questions[0].intro && <div className="font-semibold text-sm">{seg.questions[0].intro}</div>}
                   <BlockChart questions={seg.questions} results={results} chart={seg.questions[0].chart ?? "likert"} />
                 </div>
@@ -56,15 +56,15 @@ export default function BarometerPublicResultsPage() {
             }
             const q = seg.question;
             return (
-              <div key={q.id} className="border border-(--border) rounded-2xl p-4 bg-(--surface) flex flex-col gap-2">
+              <div key={q.id} className="card p-4 flex flex-col gap-2">
                 <div className="font-semibold text-sm">{q.text}</div>
                 {q.kind === "text" ? (
                   <>
-                    <div className="text-sm text-(--text-muted)">{q.count} Antwort{q.count !== 1 ? "en" : ""}</div>
+                    <div className="text-sm text-muted">{q.count} Antwort{q.count !== 1 ? "en" : ""}</div>
                     {q.analysis ? (
                       <AnalysisView analysis={q.analysis} />
                     ) : (
-                      <p className="text-xs text-(--text-muted)">Freitext-Antworten sieht nur die Lehrkraft.</p>
+                      <p className="text-xs text-muted">Freitext-Antworten sieht nur die Lehrkraft.</p>
                     )}
                   </>
                 ) : (

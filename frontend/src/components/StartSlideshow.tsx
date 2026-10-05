@@ -48,10 +48,10 @@ function Screensaver() {
         </div>
       </div>
       <div className="text-7xl font-bold tabular-nums">{time}</div>
-      <div className="text-xl text-(--text-muted) capitalize">{date}</div>
+      <div className="text-xl text-muted capitalize">{date}</div>
       <div className="flex items-center gap-3 text-xl" data-testid="ab-woche">
-        <span className="text-(--text-muted) tabular-nums">KW {kw}</span>
-        <span className="px-4 py-1 rounded-full font-bold bg-(--accent) text-(--accent-text)">
+        <span className="text-muted tabular-nums">KW {kw}</span>
+        <span className="px-4 py-1 rounded-full font-bold bg-accent text-accent-fg">
           {abWoche(kw)}-Woche
         </span>
       </div>
@@ -67,13 +67,13 @@ function EventCard({ event }: { event: SlideshowItem["events"][number] }) {
     : ddmm(event.start_date);
   const timeStr = event.all_day ? "ganztägig" : (event.start_time ?? "").slice(0, 5);
   return (
-    <div className="rounded-lg border border-(--border) bg-(--surface) p-4">
-      <div className="text-sm text-(--text-muted)">{dateStr} · {timeStr}</div>
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <div className="text-sm text-muted">{dateStr} · {timeStr}</div>
       <div className="text-lg font-semibold">{event.title}</div>
       {event.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {event.tags.map((tag) => (
-            <span key={tag} className="text-xs px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{tag}</span>
+            <span key={tag} className="text-xs px-2 py-0.5 rounded-full border border-line text-muted">{tag}</span>
           ))}
         </div>
       )}
@@ -104,7 +104,7 @@ function SlideView({ item, onAdvance, loop }: { item: SlideshowItem; onAdvance: 
     return (
       <div className="flex flex-col gap-3 h-full overflow-y-auto p-6 w-full max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold mb-2">{item.title}</h2>
-        {item.events.length === 0 && <div className="text-(--text-muted)">Keine anstehenden Termine</div>}
+        {item.events.length === 0 && <div className="text-muted">Keine anstehenden Termine</div>}
         {item.events.map((ev, i) => <EventCard key={i} event={ev} />)}
       </div>
     );

@@ -1,0 +1,218 @@
+/* Gemeinsame Stilgrundlage für die App (globals.css) und die Offline-Datei
+   (standalone/styles.css). Farben gibt es nur als Tokens:
+
+     bg-page  bg-surface  bg-surface-hover   Flächen
+     text-fg  text-muted                     Schrift
+     border-line  border-line-active         Rahmen
+     accent / accent-fg                      Akzent und Schrift darauf
+     ok / bad                                richtig / falsch
+     max-w-seite                             Inhaltsbreite aller Seiten
+
+   Die Werte kommen aus dem gewählten Theme ([data-theme=…]) und wechseln mit.
+   Bausteine: .page .card .btn .btn-primary .btn-secondary .btn-danger
+   .chip .chip-on .input .label — Utilities daneben überschreiben sie. */
+
+@theme inline {
+  --color-page: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-line: var(--border);
+  --color-line-active: var(--border-selected);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-text);
+  --color-ok: var(--green);
+  --color-bad: var(--red);
+  --container-seite: var(--seite-breite);
+}
+
+/* Einheitliche Inhaltsbreite aller Seiten (max-w-seite). */
+:root {
+  --seite-breite: 1440px;
+}
+
+/* ── Default (dunkel, gelb) ──────────────────────────────────────────── */
+:root,
+[data-theme="default"] {
+  --bg: #1a1a1a;
+  --surface: #2b2b2b;
+  --surface-hover: #3a3a3a;
+  --border: #505050;
+  --border-selected: #ffeb3b;
+  --text: #f5f5f5;
+  --text-muted: #9ca3af;
+  --accent: #ffeb3b;
+  --accent-text: #111111;
+  --green: #4caf50;
+  --red: #f44336;
+  --logo-filter: none;
+}
+
+/* ── Cyberpunk (Neon-Cyan auf Fast-Schwarz) ──────────────────────────── */
+[data-theme="cyberpunk"] {
+  --bg: #070b14;
+  --surface: #0d1420;
+  --surface-hover: #162030;
+  --border: rgba(0, 255, 255, 0.18);
+  --border-selected: #00ffff;
+  --text: #d0e8ff;
+  --text-muted: #4a7090;
+  --accent: #00ffff;
+  --accent-text: #070b14;
+  --green: #00e040;
+  --red: #ff1050;
+  --logo-filter: drop-shadow(0 0 6px #00ffff88);
+}
+[data-theme="cyberpunk"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0, 0, 0, 0.12) 3px, rgba(0, 0, 0, 0.12) 4px
+  );
+  z-index: 9999;
+}
+[data-theme="cyberpunk"] .btn-primary,
+[data-theme="cyberpunk"] a[class*="bg-accent"] {
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+}
+[data-theme="cyberpunk"] input:focus,
+[data-theme="cyberpunk"] .input:focus {
+  box-shadow: 0 0 0 1px #00ffff, 0 0 8px rgba(0, 255, 255, 0.3);
+}
+
+/* ── Fantasy (Gold auf Tiefviolett) ──────────────────────────────────── */
+[data-theme="fantasy"] {
+  --bg: #120c1c;
+  --surface: #1c1228;
+  --surface-hover: #281838;
+  --border: #503880;
+  --border-selected: #c8a040;
+  --text: #f0e8d0;
+  --text-muted: #907888;
+  --accent: #c8a040;
+  --accent-text: #120c1c;
+  --green: #48844a;
+  --red: #c04040;
+  --logo-filter: drop-shadow(0 0 4px #c8a04088);
+}
+[data-theme="fantasy"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(12, 6, 24, 0.55) 100%);
+  z-index: 9999;
+}
+[data-theme="fantasy"] .btn-primary {
+  box-shadow: 0 2px 8px rgba(200, 160, 64, 0.35);
+}
+
+/* ── EGE (hell; Evangelische Gemeinschaftsschule Erfurt) ─────────────── */
+[data-theme="ege"] {
+  --bg: #f4f0ea;
+  --surface: #ffffff;
+  --surface-hover: #ede8e0;
+  --border: #ccc0a0;
+  --border-selected: #e07820;
+  --text: #1a3060;
+  --text-muted: #5a6880;
+  --accent: #e07820;
+  --accent-text: #ffffff;
+  --green: #6a921a;
+  --red: #c83030;
+  --logo-filter: none;
+}
+
+@layer base {
+  /* Rahmen ohne eigene Farbe nehmen die Theme-Rahmenfarbe (v4: sonst Textfarbe). */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+
+  /* v4 setzt bei Buttons den Standard-Mauszeiger — wir wollen die Hand. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /* Keine automatische Schriftvergrößerung auf Tablets/Handys: sonst springen
+     Textstücke nach jeder Layoutänderung auf eine andere Größe. */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+
+  /* Schmale Scrollbalken in Theme-Farben */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  [data-theme="ege"] * {
+    scrollbar-color: var(--border) var(--surface);
+  }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+}
+
+@layer components {
+  /* Seitenhülle: volle Breite bis max-w-seite, mittig */
+  .page {
+    @apply mx-auto flex w-full max-w-seite flex-col gap-6 p-6;
+  }
+
+  /* Kasten auf der Seite; Innenabstand setzt jede Stelle selbst (p-4 …) */
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  /* .btn allein = neutral; die Varianten bringen die Grundform mit */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn {
+    @apply text-fg hover:bg-surface-hover;
+  }
+  .btn-primary {
+    @apply bg-accent text-accent-fg hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply border-line text-fg hover:bg-surface-hover;
+  }
+  .btn-danger {
+    @apply border-bad text-bad hover:bg-bad hover:text-white;
+  }
+
+  /* Umschalter/Filter: .chip plus .chip-on für den gewählten */
+  .chip {
+    @apply rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted transition-colors hover:border-muted;
+  }
+  .chip-on {
+    @apply border-accent bg-accent/15 text-accent hover:border-accent;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-line bg-page px-3 py-2 text-sm text-fg outline-hidden focus:border-accent;
+  }
+  .label {
+    @apply mb-1 block text-xs text-muted;
+  }
+}

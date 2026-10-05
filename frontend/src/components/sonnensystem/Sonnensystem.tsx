@@ -127,11 +127,11 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
   const himmel = textur("milchstrasse")?.datei;
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🪐 Sonnensystem</h1>
-          <p className="text-(--text-muted) text-sm mt-1 max-w-2xl">
+          <p className="text-muted text-sm mt-1 max-w-2xl">
             Sonne, Planeten und ihre wichtigsten Monde — auf echten Bahnen, maßstabsgetreu verglichen und zum Selberfliegen.
             Mit Bildern von Hubble, Webb, Raumsonden, Rovern und Astronauten.
           </p>
@@ -153,8 +153,8 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
                 onClick={() => setReiter(r.id)}
                 className={`shrink-0 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${
                   reiter === r.id
-                    ? "bg-(--accent) text-(--accent-text,#111)"
-                    : "text-(--text-muted) hover:text-(--text) border border-(--border)"
+                    ? "bg-accent text-accent-fg"
+                    : "text-muted hover:text-fg border border-line"
                 }`}
               >{r.name}</button>
             ))}
@@ -162,7 +162,7 @@ export default function Sonnensystem({ action, speicherSchluessel = "geraet", le
           {vollbildMoeglich && (
             <button
               onClick={umschaltenVollbild}
-              className="shrink-0 px-3 py-2 rounded-xl text-sm border border-(--border) text-(--text-muted) hover:text-(--text)"
+              className="shrink-0 px-3 py-2 rounded-xl text-sm border border-line text-muted hover:text-fg"
               title={vollbild ? "Vollbild verlassen" : "Vollbild"}
             >{vollbild ? "⤡" : "⛶"}</button>
           )}

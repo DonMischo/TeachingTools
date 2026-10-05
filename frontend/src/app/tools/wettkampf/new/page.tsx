@@ -77,7 +77,7 @@ export default function NewWettkampfPage() {
 
   return (
     <div className="p-6 max-w-lg mx-auto w-full">
-      <button onClick={() => router.back()} className="text-sm text-(--text-muted) hover:text-white mb-4">← Zurück</button>
+      <button onClick={() => router.back()} className="text-sm text-muted hover:text-white mb-4">← Zurück</button>
       <h1 className="text-2xl font-bold mb-6">Neuer Wettkampf</h1>
 
       <div className="space-y-5">
@@ -101,10 +101,10 @@ export default function NewWettkampfPage() {
             ] as const).map(([t, label, desc]) => (
               <button key={t} onClick={() => setType(t)}
                 className={`w-full py-3 px-4 rounded-xl border text-left transition-colors ${
-                  type === t ? "border-(--accent) bg-(--accent)/10" : "border-(--border) text-(--text-muted) hover:border-gray-500"
+                  type === t ? "border-accent bg-accent/10" : "border-line text-muted hover:border-gray-500"
                 }`}>
-                <span className={`text-sm font-semibold block ${type === t ? "text-(--accent)" : ""}`}>{label}</span>
-                <span className="text-xs text-(--text-muted)">{desc}</span>
+                <span className={`text-sm font-semibold block ${type === t ? "text-accent" : ""}`}>{label}</span>
+                <span className="text-xs text-muted">{desc}</span>
               </button>
             ))}
           </div>
@@ -116,10 +116,10 @@ export default function NewWettkampfPage() {
             {SCORING_PRESETS.map(p => (
               <button key={p.key} onClick={() => setScoringKey(p.key)}
                 className={`py-2 px-3 rounded-xl border text-left transition-colors ${
-                  scoringKey === p.key ? "border-(--accent) bg-(--accent)/10" : "border-(--border) text-(--text-muted) hover:border-gray-500"
+                  scoringKey === p.key ? "border-accent bg-accent/10" : "border-line text-muted hover:border-gray-500"
                 }`}>
-                <span className={`text-sm font-semibold block ${scoringKey === p.key ? "text-(--accent)" : ""}`}>{p.label}</span>
-                <span className="text-xs text-(--text-muted)">{p.desc}</span>
+                <span className={`text-sm font-semibold block ${scoringKey === p.key ? "text-accent" : ""}`}>{p.label}</span>
+                <span className="text-xs text-muted">{p.desc}</span>
               </button>
             ))}
           </div>
@@ -143,7 +143,7 @@ export default function NewWettkampfPage() {
         </div>
 
         {/* Points & Ranking */}
-        <div className="border border-(--border) rounded-2xl p-4 space-y-4">
+        <div className="border border-line rounded-2xl p-4 space-y-4">
           <p className="text-sm font-bold">🏅 Punkte & Ranking</p>
 
           <div className="grid grid-cols-2 gap-4">
@@ -152,7 +152,7 @@ export default function NewWettkampfPage() {
               <div className="flex gap-1 mt-1 flex-wrap">
                 {[50, 100, 200, 500].map(v => (
                   <button key={v} onClick={() => setMaxPoints(v)}
-                    className={`px-2 py-1 text-xs rounded-lg border transition-colors ${maxPoints === v ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-gray-500"}`}
+                    className={`px-2 py-1 text-xs rounded-lg border transition-colors ${maxPoints === v ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-gray-500"}`}
                   >{v}</button>
                 ))}
                 <input type="number" min={2} className="input w-20 text-sm" value={maxPoints} onChange={e => setMaxPoints(Number(e.target.value))} />
@@ -169,19 +169,19 @@ export default function NewWettkampfPage() {
             <div className="flex gap-1.5 mt-1 flex-wrap">
               {[1, 2, 3, 4, 5, 6, 8, 10].map(v => (
                 <button key={v} onClick={() => setRewardedPlaces(v)}
-                  className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${rewardedPlaces === v ? "border-(--accent) bg-(--accent)/15 text-(--accent)" : "border-(--border) text-(--text-muted) hover:border-gray-500"}`}
+                  className={`w-9 h-9 text-sm font-semibold rounded-xl border transition-colors ${rewardedPlaces === v ? "border-accent bg-accent/15 text-accent" : "border-line text-muted hover:border-gray-500"}`}
                 >{v}</button>
               ))}
             </div>
             {/* Formula preview */}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {computePlacementPoints(rewardedPlaces, maxPoints, trostpreis).map((p, i) => (
-                <div key={i} className={`text-center rounded-lg px-2 py-1 border text-xs ${i === 0 ? "border-yellow-500/40 bg-yellow-500/10" : i === 1 ? "border-gray-400/40" : i === 2 ? "border-amber-600/40" : "border-(--border)"}`}>
+                <div key={i} className={`text-center rounded-lg px-2 py-1 border text-xs ${i === 0 ? "border-yellow-500/40 bg-yellow-500/10" : i === 1 ? "border-gray-400/40" : i === 2 ? "border-amber-600/40" : "border-line"}`}>
                   <div>{["🥇","🥈","🥉"][i] ?? `#${i+1}`}</div>
                   <div className="font-bold">{p}</div>
                 </div>
               ))}
-              <div className="text-center rounded-lg px-2 py-1 border border-(--border) text-xs opacity-50">
+              <div className="text-center rounded-lg px-2 py-1 border border-line text-xs opacity-50">
                 <div>…</div>
                 <div className="font-bold">{trostpreis}</div>
               </div>
@@ -193,9 +193,9 @@ export default function NewWettkampfPage() {
             <div className="flex flex-col gap-1.5 mt-1">
               {RANKING_MODES.map(m => (
                 <button key={m.key} onClick={() => setRankingMode(m.key)}
-                  className={`w-full py-2 px-3 rounded-xl border text-left transition-colors ${rankingMode === m.key ? "border-(--accent) bg-(--accent)/10" : "border-(--border) text-(--text-muted) hover:border-gray-500"}`}>
-                  <span className={`text-sm font-semibold block ${rankingMode === m.key ? "text-(--accent)" : ""}`}>{m.label}</span>
-                  <span className="text-xs text-(--text-muted)">{m.desc}</span>
+                  className={`w-full py-2 px-3 rounded-xl border text-left transition-colors ${rankingMode === m.key ? "border-accent bg-accent/10" : "border-line text-muted hover:border-gray-500"}`}>
+                  <span className={`text-sm font-semibold block ${rankingMode === m.key ? "text-accent" : ""}`}>{m.label}</span>
+                  <span className="text-xs text-muted">{m.desc}</span>
                 </button>
               ))}
             </div>

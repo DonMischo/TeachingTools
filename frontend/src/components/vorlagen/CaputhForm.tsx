@@ -202,7 +202,7 @@ export function CaputhForm({ value, onChange, upload }: { value: CaputhJson; onC
         <h3 className="font-semibold text-sm">Fragen ({questions.length})</h3>
         {questions.map((q, i) => (
           <Karte key={i} offen={questions.length <= 3 || !q.question}
-            titel={<>{i + 1}. <span className="text-(--text-muted) text-xs">{typLabel[q.type]}</span> · {q.question || <em className="text-(--text-muted)">ohne Text</em>}</>}
+            titel={<>{i + 1}. <span className="text-muted text-xs">{typLabel[q.type]}</span> · {q.question || <em className="text-muted">ohne Text</em>}</>}
             knoepfe={<ZeilenKnoepfe index={i} count={questions.length} what="Frage"
               onMove={d => setQ(move(questions, i, d))}
               onRemove={() => confirm(`Frage ${i + 1} löschen?`) && setQ(questions.filter((_, j) => j !== i))} />}>

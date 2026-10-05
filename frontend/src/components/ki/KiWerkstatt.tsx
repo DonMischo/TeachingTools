@@ -64,11 +64,11 @@ export default function KiWerkstatt({ action, zugang, vorgabe }: {
     : eigene ? { ...eigene, name } : undefined;
 
   return (
-    <div className="flex flex-col gap-5 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🤖 KI-Werkstatt</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Vier Reiter zum Anfassen: Wörter würfeln, Bilder aus Rauschen holen, eine Maschine
             anlernen — und zum Schluss die Probe aufs Exempel. Alle zeigen dasselbe: Es wird
             gerechnet, nicht gedacht.
@@ -109,8 +109,8 @@ function Knopf({ an, onClick, children }: { an: boolean; onClick: () => void; ch
       onClick={onClick}
       className={`rounded-xl border px-3.5 py-1.5 text-sm font-bold transition-colors ${
         an
-          ? "border-(--accent) bg-(--accent) text-(--accent-text)"
-          : "border-(--border) bg-(--surface) hover:bg-(--surface-hover)"
+          ? "border-accent bg-accent text-accent-fg"
+          : "border-line bg-surface hover:bg-surface-hover"
       }`}
     >
       {children}

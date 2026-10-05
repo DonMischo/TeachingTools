@@ -243,7 +243,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   const quellen = [...new Map(katalog.ebenen.filter((e) => sichtbar.has(e.id)).map((e) => [e.quelle.name, e.quelle])).values()];
   return (
     <div className="flex flex-col gap-1 w-full">
-    <div className="relative w-full h-[72vh] min-h-[420px] rounded-2xl overflow-hidden border border-(--border)">
+    <div className="relative w-full h-[72vh] min-h-[420px] rounded-2xl overflow-hidden border border-line">
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
       <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />
@@ -251,7 +251,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       {menue && <div className="absolute left-2 top-2 z-10">{menue}</div>}
     </div>
       {/* Quellenangaben unter der Karte (Namensnennung nach Lizenz) */}
-      <p className="text-[11px] leading-snug text-(--text-muted) px-1" aria-label="Quellen">
+      <p className="text-[11px] leading-snug text-muted px-1" aria-label="Quellen">
         Quellen: {quellen.map((q, i) => (
           <span key={q.name}>{i > 0 && " · "}{q.url
             ? <a href={q.url} target="_blank" rel="noreferrer" className="hover:underline">{q.name}</a> : q.name}

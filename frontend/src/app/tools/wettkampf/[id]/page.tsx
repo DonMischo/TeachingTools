@@ -134,7 +134,7 @@ export default function WettkampfDetailPage() {
   const [manualPointsMode, setManualPointsMode] = useState(false);
   const [manualPts, setManualPts] = useState<Record<number, string>>({});
 
-  if (isLoading) return <p className="p-6 text-(--text-muted)">Wird geladen…</p>;
+  if (isLoading) return <p className="p-6 text-muted">Wird geladen…</p>;
   if (!w) return <p className="p-6 text-red-500">Wettkampf nicht gefunden.</p>;
 
   const canEdit = !!auth;
@@ -321,7 +321,7 @@ export default function WettkampfDetailPage() {
   const doneMatches = totalMatches - openMatches.length;
 
   return (
-    <div className="p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="p-6 max-w-seite mx-auto w-full">
       {showAuswertung && finishResult && (
         <AuswertungView
           w={w}
@@ -340,10 +340,10 @@ export default function WettkampfDetailPage() {
       )}
 
       <div className="flex items-start gap-4 mb-6">
-        <button onClick={() => router.back()} className="text-sm text-(--text-muted) hover:text-white mt-1">←</button>
+        <button onClick={() => router.back()} className="text-sm text-muted hover:text-white mt-1">←</button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{w.title}</h1>
-          {w.description && <p className="text-(--text-muted) text-sm mt-1">{w.description}</p>}
+          {w.description && <p className="text-muted text-sm mt-1">{w.description}</p>}
           <div className="flex gap-3 mt-2 text-sm text-gray-500 flex-wrap">
             <span>{w.type === "knockout" ? "K.O.-System" : w.type === "round_robin" ? "Jeder gegen Jeden" : "Paarungsturnier"}</span>
             <span>·</span>
@@ -427,7 +427,7 @@ export default function WettkampfDetailPage() {
             {w.participants.length > 0 && (() => {
               const existingGroups = Array.from(new Set(w.participants.map(p => p.group).filter((g): g is string => !!g))).sort();
               return (
-                <div className="mb-4 border border-(--border) rounded-xl overflow-hidden">
+                <div className="mb-4 border border-line rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-800/40 text-gray-500 text-xs">
@@ -437,7 +437,7 @@ export default function WettkampfDetailPage() {
                         <th className="w-8" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-(--border)">
+                    <tbody className="divide-y divide-line">
                       {w.participants.map(p => (
                         <tr key={p.id}>
                           <td className="px-3 py-2 font-medium">
@@ -472,7 +472,7 @@ export default function WettkampfDetailPage() {
                                   autoFocus
                                   placeholder="Gruppenname…"
                                 />
-                                <button onClick={() => saveGroup(p.id, groupDraft)} className="text-xs px-2 py-0.5 bg-(--accent) text-white rounded-sm">✓</button>
+                                <button onClick={() => saveGroup(p.id, groupDraft)} className="text-xs px-2 py-0.5 bg-accent text-white rounded-sm">✓</button>
                                 <button onClick={() => { setNewGroupInput(null); setEditingGroupFor(null); }} className="text-xs text-gray-500">✕</button>
                               </div>
                             ) : (
@@ -508,7 +508,7 @@ export default function WettkampfDetailPage() {
             })()}
             {/* Auto-Gruppen */}
             {w.participants.length >= 2 && (
-              <div className="mb-4 border border-(--border) rounded-xl overflow-hidden">
+              <div className="mb-4 border border-line rounded-xl overflow-hidden">
                 <button
                   onClick={() => setAutoGroupOpen(v => !v)}
                   className="w-full flex items-center justify-between px-3 py-2 bg-gray-800/40 text-sm text-gray-300 hover:bg-gray-800/60 transition-colors"
@@ -522,20 +522,20 @@ export default function WettkampfDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => applyAutoGroups("grade")}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-(--border) text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
                       >
                         Nach Klassenstufe
                       </button>
                       <button
                         onClick={() => applyAutoGroups("grade_gender")}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-(--border) text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-line text-gray-300 hover:border-indigo-600 hover:text-indigo-300 transition-colors"
                       >
                         Nach Klassenstufe + Geschlecht
                       </button>
                     </div>
 
                     {/* Custom selection */}
-                    <div className="border-t border-(--border) pt-3">
+                    <div className="border-t border-line pt-3">
                       {(() => {
                         const ungrouped = w.participants.filter(p => !p.group);
                         return (
@@ -581,7 +581,7 @@ export default function WettkampfDetailPage() {
                         <button
                           onClick={applyCustomGroup}
                           disabled={!customGroupName.trim() || customGroupSel.size === 0}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-(--accent) text-white font-medium hover:opacity-90 disabled:opacity-40 transition-opacity"
+                          className="btn-primary text-xs px-3 py-1.5"
                         >
                           Zuweisen
                         </button>
@@ -617,8 +617,8 @@ export default function WettkampfDetailPage() {
                           })}
                           className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                             allOn
-                              ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
-                              : "border-(--border) text-gray-500 hover:border-gray-400 hover:text-gray-300"
+                              ? "border-accent bg-accent/15 text-accent"
+                              : "border-line text-gray-500 hover:border-gray-400 hover:text-gray-300"
                           }`}
                         >
                           {LABEL[v]}
@@ -648,8 +648,8 @@ export default function WettkampfDetailPage() {
                               done
                                 ? "border-gray-700 text-gray-600 cursor-not-allowed"
                                 : on
-                                ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
-                                : "border-(--border) text-gray-400 hover:border-gray-500"
+                                ? "border-accent bg-accent/15 text-accent"
+                                : "border-line text-gray-400 hover:border-gray-500"
                             }`}
                           >
                             {done ? "✓ " : ""}{LABEL[v]}
@@ -674,8 +674,8 @@ export default function WettkampfDetailPage() {
                       done
                         ? "border-gray-700 text-gray-600 cursor-not-allowed"
                         : on
-                        ? "border-(--accent) bg-(--accent)/15 text-(--accent)"
-                        : "border-(--border) text-gray-400 hover:border-gray-500"
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-line text-gray-400 hover:border-gray-500"
                     }`}
                   >
                     {done ? "✓ " : ""}👩‍🏫 Lehrerteam
@@ -701,7 +701,7 @@ export default function WettkampfDetailPage() {
             <button
               onClick={addParticipants}
               disabled={addingP || (selected.size === 0 && !newName.trim())}
-              className="text-sm px-3 py-1.5 rounded-lg bg-(--accent) text-white font-medium hover:opacity-90 disabled:opacity-40 transition-opacity"
+              className="btn-primary text-sm px-3 py-1.5"
             >
               {addingP ? "Füge hinzu…" : "Hinzufügen"}
             </button>
@@ -752,7 +752,7 @@ export default function WettkampfDetailPage() {
           })()}
 
           {/* Preview / Generate */}
-          <section className="pt-2 border-t border-(--border)">
+          <section className="pt-2 border-t border-line">
             {!showPreview ? (
               <>
                 {(() => {
@@ -762,7 +762,7 @@ export default function WettkampfDetailPage() {
                       <button
                         onClick={() => setShowPreview(true)}
                         disabled={w.participants.length < 2 || needsConfig}
-                        className="btn-primary disabled:opacity-40"
+                        className="btn-primary w-full"
                       >
                         Vorschau & starten →
                       </button>
@@ -829,7 +829,7 @@ export default function WettkampfDetailPage() {
                       {groups.map(g => {
                         const members = w.participants.filter(p => (p.group ?? "") === g);
                         return (
-                          <div key={g} className="rounded-xl border border-(--border) overflow-hidden">
+                          <div key={g} className="rounded-xl border border-line overflow-hidden">
                             <div className="px-3 py-2 bg-gray-800/60 flex items-center justify-between">
                               <span className="text-sm font-semibold text-gray-200">{g || "Ohne Gruppe"}</span>
                               <span className="text-xs text-gray-500">{members.length} Teams</span>
@@ -894,17 +894,17 @@ export default function WettkampfDetailPage() {
                 {error && <p className="text-sm text-red-400">{error}</p>}
 
                 {/* Confirm */}
-                <div className="flex gap-3 pt-2 border-t border-(--border)">
+                <div className="flex gap-3 pt-2 border-t border-line">
                   <button
                     onClick={generate}
                     disabled={generating}
-                    className="btn-primary"
+                    className="btn-primary w-full"
                   >
                     {generating ? "Starte…" : "✓ Turnier starten"}
                   </button>
                   <button
                     onClick={() => setShowPreview(false)}
-                    className="px-4 py-2 border border-(--border) rounded-xl text-sm text-gray-400 hover:border-gray-500 hover:text-gray-200 transition-colors"
+                    className="px-4 py-2 border border-line rounded-xl text-sm text-gray-400 hover:border-gray-500 hover:text-gray-200 transition-colors"
                   >
                     ← Zurück
                   </button>
@@ -979,7 +979,7 @@ export default function WettkampfDetailPage() {
 
           {/* Finish button */}
           {isActive && canEdit && (
-            <div className="pt-4 border-t border-(--border) space-y-3">
+            <div className="pt-4 border-t border-line space-y-3">
               {w.type === "pairing" ? (
                 manualPointsMode ? (
                   <div className="space-y-3">
@@ -1002,7 +1002,7 @@ export default function WettkampfDetailPage() {
                       ))}
                     </div>
                     <div className="flex gap-3">
-                      <button onClick={() => finish(true)} disabled={finishing} className="btn-primary">
+                      <button onClick={() => finish(true)} disabled={finishing} className="btn-primary w-full">
                         {finishing ? "Verarbeite…" : "Punkte vergeben & abschließen 🏆"}
                       </button>
                       <button onClick={() => setManualPointsMode(false)} className="text-sm text-gray-400 hover:text-white">
@@ -1012,13 +1012,13 @@ export default function WettkampfDetailPage() {
                   </div>
                 ) : (
                   <div className="flex gap-3 flex-wrap">
-                    <button onClick={() => finish(false)} disabled={finishing} className="btn-primary">
+                    <button onClick={() => finish(false)} disabled={finishing} className="btn-primary w-full">
                       {finishing ? "Verarbeite…" : "Abschließen (Punkte nach Siegen) 🏆"}
                     </button>
                     {w.stages.length > 0 || true ? (
                       <button
                         onClick={() => { setManualPointsMode(true); setManualPts({}); }}
-                        className="px-4 py-2 border border-(--border) rounded-lg text-sm text-gray-300 hover:border-gray-500 transition-colors"
+                        className="px-4 py-2 border border-line rounded-lg text-sm text-gray-300 hover:border-gray-500 transition-colors"
                       >
                         Punkte selbst eintragen…
                       </button>
@@ -1026,7 +1026,7 @@ export default function WettkampfDetailPage() {
                   </div>
                 )
               ) : openMatches.length === 0 ? (
-                <button onClick={() => finish(false)} disabled={finishing} className="btn-primary">
+                <button onClick={() => finish(false)} disabled={finishing} className="btn-primary w-full">
                   {finishing ? "Verarbeite…" : "Wettkampf abschließen & Punkte vergeben 🏆"}
                 </button>
               ) : (

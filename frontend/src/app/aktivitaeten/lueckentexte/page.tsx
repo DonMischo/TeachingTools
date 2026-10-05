@@ -61,29 +61,29 @@ export default function LueckentextePage() {
 
   if (!auth) {
     return (
-      <div className="p-8 text-sm text-(--text-muted)">
+      <div className="p-8 text-sm text-muted">
         Bitte einloggen, um die Lückentext-Bibliothek zu sehen.
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-(--seite-breite) mx-auto w-full">
+    <div className="page">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📝 Lückentext</h1>
-          <p className="text-(--text-muted) text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Lückentexte mit Wortbank, Freitext oder Multiple-Choice — anzeigen, üben, in Caputh &amp; TaskCrawler einbauen.
           </p>
         </div>
         {can("lueckentext", "upload") && (
           <div className="flex gap-2 flex-nowrap shrink-0">
             <button onClick={handleTemplate}
-              className="text-sm border border-(--border) rounded-lg px-3 py-1.5 hover:border-(--accent) whitespace-nowrap">
+              className="text-sm border border-line rounded-lg px-3 py-1.5 hover:border-accent whitespace-nowrap">
               📄 Vorlage
             </button>
             <button onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="btn-primary text-sm py-1.5 px-4 disabled:opacity-40 whitespace-nowrap">
+              className="btn-primary text-sm py-1.5 px-4 whitespace-nowrap">
               {uploading ? "Lade hoch…" : "+ Lückentext hochladen"}
             </button>
             <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleUpload} />
@@ -92,38 +92,38 @@ export default function LueckentextePage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-(--text-muted)">Lade…</p>
+        <p className="text-sm text-muted">Lade…</p>
       ) : sets.length === 0 ? (
-        <p className="text-sm text-(--text-muted)">
+        <p className="text-sm text-muted">
           Noch keine Lückentexte — lade eine eigene JSON-Datei hoch.
         </p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3">
           {sets.map(s => (
-            <div key={s.id} className="rounded-2xl border border-(--border) bg-(--surface) p-4 flex flex-col gap-2">
-              <Link href={`/aktivitaeten/lueckentexte/${s.id}`} className="font-semibold hover:text-(--accent) transition-colors">
+            <div key={s.id} className="card p-4 flex flex-col gap-2">
+              <Link href={`/aktivitaeten/lueckentexte/${s.id}`} className="font-semibold hover:text-accent transition-colors">
                 {s.title}
               </Link>
-              {s.description && <p className="text-xs text-(--text-muted)">{s.description}</p>}
+              {s.description && <p className="text-xs text-muted">{s.description}</p>}
               <div className="flex flex-wrap gap-1.5 text-[10px]">
-                <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                   {s.gap_count} Lücken
                 </span>
                 {s.grades.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">
+                  <span className="px-2 py-0.5 rounded-full border border-line text-muted">
                     Kl. {s.grades.length > 1 ? `${s.grades[0]}–${s.grades[s.grades.length - 1]}` : s.grades[0]}
                   </span>
                 )}
                 {s.tags.map(t => (
-                  <span key={t} className="px-2 py-0.5 rounded-full border border-(--border) text-(--text-muted)">{t}</span>
+                  <span key={t} className="px-2 py-0.5 rounded-full border border-line text-muted">{t}</span>
                 ))}
               </div>
               <div className="flex items-center justify-between mt-1 gap-2">
                 <div className="flex gap-3 text-xs">
-                  <a href={`/api/lueckentexte/${s.id}/export.pdf?filled=0`} className="text-(--text-muted) hover:underline">
+                  <a href={`/api/lueckentexte/${s.id}/export.pdf?filled=0`} className="text-muted hover:underline">
                     📄 PDF (leer)
                   </a>
-                  <a href={`/api/lueckentexte/${s.id}/export.pdf?filled=1`} className="text-(--text-muted) hover:underline">
+                  <a href={`/api/lueckentexte/${s.id}/export.pdf?filled=1`} className="text-muted hover:underline">
                     📄 PDF (gefüllt)
                   </a>
                 </div>

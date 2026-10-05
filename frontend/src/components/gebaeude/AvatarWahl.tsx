@@ -60,15 +60,15 @@ export default function AvatarWahl({ avatar, onWahl, startOffen = false }: {
   };
   const tier = TIERE.find(t => t.id === avatar.tier);
   const icon = tier?.emoji ?? KLASSEN.find(k => k.id === avatar.klasse)!.icon;
-  const chip = (an: boolean) => `px-2 py-1 rounded-lg text-xs font-bold border ${an ? "border-(--accent) bg-(--accent) text-(--accent-text,#111)" : "border-(--border) hover:border-(--accent)"}`;
+  const chip = (an: boolean) => `px-2 py-1 rounded-lg text-xs font-bold border ${an ? "border-accent bg-accent text-accent-fg" : "border-line hover:border-accent"}`;
   return (
     <div className="relative">
       <button onClick={() => setOffen(o => !o)} aria-expanded={offen}
-        className="rounded-lg bg-(--surface)/90 border border-(--border) px-2 py-1 text-xs font-bold hover:border-(--accent)">
+        className="rounded-lg bg-surface/90 border border-line px-2 py-1 text-xs font-bold hover:border-accent">
         {icon} Figur
       </button>
       {offen && (
-        <div className="absolute left-0 top-full mt-1 z-20 w-[min(92vw,420px)] rounded-2xl border border-(--border) bg-(--surface) p-3 shadow-2xl flex flex-col gap-2" data-avatar-wahl>
+        <div className="card absolute left-0 top-full mt-1 z-20 w-[min(92vw,420px)] p-3 shadow-2xl flex flex-col gap-2" data-avatar-wahl>
           {startOffen && <p className="text-sm font-bold">Wähle deine Figur</p>}
           <div className="flex gap-1" role="tablist">
             <button role="tab" aria-selected={reiter === "figuren"} onClick={() => setReiter("figuren")} className={chip(reiter === "figuren")}>🧙 Figuren</button>
@@ -97,7 +97,7 @@ export default function AvatarWahl({ avatar, onWahl, startOffen = false }: {
                 <div className="flex gap-1.5" role="group" aria-label="Hautton">
                   {HAUT.map((h, i) => (
                     <button key={h} onClick={() => setze({ haut: i, tier: undefined })} aria-pressed={!avatar.tier && avatar.haut === i} aria-label={`Hautton ${i + 1}`}
-                      className={`w-7 h-7 rounded-full border-2 ${!avatar.tier && avatar.haut === i ? "border-(--accent) scale-110" : "border-(--border)"}`}
+                      className={`w-7 h-7 rounded-full border-2 ${!avatar.tier && avatar.haut === i ? "border-accent scale-110" : "border-line"}`}
                       style={{ background: `#${h.toString(16).padStart(6, "0")}` }} />
                   ))}
                 </div>
@@ -106,14 +106,14 @@ export default function AvatarWahl({ avatar, onWahl, startOffen = false }: {
               <div className="grid grid-cols-5 gap-1 content-start" role="group" aria-label="Tiere">
                 {TIERE.map(t => (
                   <button key={t.id} onClick={() => setze({ tier: t.id })} aria-pressed={avatar.tier === t.id} title={t.name} aria-label={t.name}
-                    className={`w-9 h-9 rounded-lg text-xl border ${avatar.tier === t.id ? "border-(--accent) bg-(--accent)/30" : "border-(--border) hover:border-(--accent)"}`}>
+                    className={`w-9 h-9 rounded-lg text-xl border ${avatar.tier === t.id ? "border-accent bg-accent/30" : "border-line hover:border-accent"}`}>
                     {t.emoji}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <button onClick={() => setOffen(false)} className="btn-primary w-auto! text-xs py-1 px-3 self-start">Fertig</button>
+          <button onClick={() => setOffen(false)} className="btn-primary text-xs py-1 px-3 self-start">Fertig</button>
         </div>
       )}
     </div>
