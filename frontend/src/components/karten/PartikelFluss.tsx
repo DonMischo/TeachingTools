@@ -11,8 +11,9 @@ import { baueFeld, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
 
 /** Je Ebene: Wirkradius des Felds (Grad), Partikelzahl, Tempo (Pixel je Bild) */
 const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; farbe: (warm: number) => string }> = {
-  "welt-stroemungen": { radius: 4, anzahl: 1800, tempo: 0.8, breite: 1.8, farbe: (w) => (w > 0.5 ? "rgba(200,40,20,0.9)" : "rgba(20,70,190,0.9)") },
-  "welt-winde": { radius: 11, anzahl: 1100, tempo: 1.4, breite: 1, farbe: () => "rgba(15,23,42,0.4)" },
+  // Kräftig und mit dunklem Saum: auf hellem und dunklem Meer (Meeresboden) gut zu sehen
+  "welt-stroemungen": { radius: 4, anzahl: 2000, tempo: 0.9, breite: 1.6, farbe: (w) => (w > 0.5 ? "rgb(255,96,48)" : "rgb(40,190,255)") },
+  "welt-winde": { radius: 11, anzahl: 1400, tempo: 1.4, breite: 1.2, farbe: () => "rgba(255,255,255,0.85)" },
 };
 const LEBEN = 90; // Bilder, dann neu geboren
 
@@ -45,7 +46,8 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
       if (s) { p.lon = s[0]; p.lat = s[1]; }
       p.alter = Math.floor(Math.random() * LEBEN);
     };
-    // Daten aus der Kartenquelle (auch mit Gast-Token schon geladen); fehlt sie noch, beim nächsten »idle«
+    // Daten aus der Kartenquelle (auch mit Gast-Token schon geladen); fehlt sie noch, sobald die Quelle meldet.
+    // Nicht auf »idle« warten: das Lauflicht hält die Karte ständig in Bewegung.
     const laden = async () => {
       for (const id of ids) {
         if (felder.some((f) => f.id === id)) continue;
@@ -59,7 +61,10 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
       }
     };
     void laden();
-    karte.on("idle", laden);
+    const quelleDa = (e: { sourceId?: string; isSourceLoaded?: boolean }) => {
+      if (e.sourceId && ids.includes(e.sourceId) && e.isSourceLoaded) void laden();
+    };
+    karte.on("sourcedata", quelleDa);
 
     const schritt = () => {
       if (weg) return;
@@ -67,7 +72,7 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
       if (document.hidden || !felder.length) return;
       // Schweife verblassen lassen
       g.globalCompositeOperation = "destination-in";
-      g.fillStyle = "rgba(0,0,0,0.94)";
+      g.fillStyle = "rgba(0,0,0,0.95)";
       g.fillRect(0, 0, leinwand.width, leinwand.height);
       g.globalCompositeOperation = "source-over";
       const gradJePixel = 360 / (512 * 2 ** karte.getZoom());
@@ -88,15 +93,17 @@ export default function PartikelFluss({ karte, ebenen, monat }: { karte: MapLibr
           pfad.moveTo(a.x, a.y); pfad.lineTo(b.x, b.y);
           p.lon = lon; p.lat = lat;
         }
-        g.lineWidth = breite;
-        for (const [f, pfad] of pfade) { g.strokeStyle = f; g.stroke(pfad); }
+        for (const [f, pfad] of pfade) {
+          g.lineWidth = breite + 1.2; g.strokeStyle = "rgba(15,23,42,0.3)"; g.stroke(pfad);
+          g.lineWidth = breite; g.strokeStyle = f; g.stroke(pfad);
+        }
       }
     };
     bild = requestAnimationFrame(schritt);
     return () => {
       weg = true;
       cancelAnimationFrame(bild);
-      karte.off("move", leeren); karte.off("resize", passend); karte.off("idle", laden);
+      karte.off("move", leeren); karte.off("resize", passend); karte.off("sourcedata", quelleDa);
       leinwand.remove();
     };
   }, [karte, schluessel, monat]);

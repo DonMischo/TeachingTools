@@ -10,6 +10,14 @@ import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katal
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 import PartikelFluss from "./PartikelFluss";
+import { massstab, meterJePixel, zeichneMassstab } from "@/lib/karten/massstab";
+
+/** Unter dieser Zoomstufe (ganze Welt) gilt kein einheitlicher Maßstab — dann keine Leiste */
+const MASSSTAB_AB_ZOOM = 2.5;
+/** Aktuelle Leiste der Karte (Mitte des Ausschnitts) oder null */
+function leisteVon(m: MapLibreMap) {
+  return m.getZoom() < MASSSTAB_AB_ZOOM ? null : massstab(meterJePixel(m.getZoom(), m.getCenter().lat));
+}
 
 export type Treffer = { ebene: string; id: string; name: string; eigenschaften: Record<string, unknown> };
 
@@ -54,6 +62,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   // Angeklickte Strömung bzw. Windgürtel bleibt hervorgehoben (feature-state »aktiv«)
   const hervor = useRef<{ source: string; id: string } | null>(null);
   const ersterStil = useRef(stil);
+  const massstabRef = useRef<HTMLCanvasElement>(null);
   // Wird nach jedem Stilwechsel erst erfüllt, wenn die Karte wieder ruht (alles gezeichnet)
   const gezeichnet = useRef<Promise<void>>(Promise.resolve());
 
@@ -83,7 +92,6 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       });
       m.touchZoomRotate.disableRotation();
       m.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
-      m.addControl(new maplibre.ScaleControl({ unit: "metric" }), "bottom-left");
       m.on("styleimagemissing", (e) => {
         const bild = zeichneSymbol(e.id);
         if (bild && !m!.hasImage(e.id)) m!.addImage(e.id, bild, { pixelRatio: 1 });
@@ -119,6 +127,19 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
             .setLngLat(e.lngLat).setText(t.name + zusatz).addTo(m!);
         }
       });
+      // Maßstabsleiste (schwarz-weiß) bei jeder Bewegung neu zeichnen
+      const leiste = () => {
+        const c = massstabRef.current;
+        if (!c) return;
+        const dpr = window.devicePixelRatio || 1;
+        c.width = 240 * dpr; c.height = 44 * dpr;
+        const g = c.getContext("2d")!;
+        g.clearRect(0, 0, c.width, c.height);
+        const l = leisteVon(m!);
+        if (l) zeichneMassstab(g, l, 12 * dpr, 38 * dpr, dpr);
+      };
+      m.on("move", leiste);
+      m.on("load", leiste);
       m.on("load", () => setBereit(true));
       m.on("moveend", () => {
         const b = m!.getBounds();
@@ -136,7 +157,14 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   useEffect(() => {
     const m = karte.current;
     if (!bereit || !m) return;
-    gezeichnet.current = new Promise((fertig) => m.once("idle", () => fertig()));
+    // Fertig, sobald »idle« kommt — oder alle Kacheln da sind (Lauflicht/Partikel halten die Karte sonst nie still)
+    gezeichnet.current = new Promise((fertig) => {
+      let erledigt = false;
+      const ende = () => { if (!erledigt) { erledigt = true; fertig(); } };
+      m.once("idle", ende);
+      const pruefe = () => { if (erledigt) return; if (m.isStyleLoaded() && m.areTilesLoaded()) ende(); else setTimeout(pruefe, 150); };
+      setTimeout(pruefe, 300);
+    });
     m.setStyle(stil);
     m.triggerRepaint(); // ändert der neue Stil nichts, käme sonst kein »idle«
   }, [stil, bereit]);
@@ -160,7 +188,15 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     if (!bildRef) return;
     bildRef.current = async () => {
       await gezeichnet.current;
-      return karte.current!.getCanvas().toDataURL("image/png");
+      // Kartenbild plus Maßstabsleiste (die Leiste gehört zur Karte, auch auf dem Arbeitsblatt)
+      const m = karte.current!, quelle = m.getCanvas();
+      const bild = document.createElement("canvas");
+      bild.width = quelle.width; bild.height = quelle.height;
+      const g = bild.getContext("2d")!;
+      g.drawImage(quelle, 0, 0);
+      const l = leisteVon(m), s = quelle.width / quelle.clientWidth;
+      if (l) zeichneMassstab(g, l, 18 * s, quelle.height - 14 * s, s);
+      return bild.toDataURL("image/png");
     };
     return () => { bildRef.current = null; };
   }, [bildRef]);
@@ -188,17 +224,25 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     });
   }, [fundort, bereit]);
 
-  const quellen = [...new Map(katalog.ebenen.map((e) => [e.quelle.name, e.quelle])).values()];
+  // Nur Quellen der Ebenen, die gerade gezeichnet werden (Bildquellen heißen »<ebene>-0« …)
+  const sichtbar = new Set(Object.keys(stil.sources).map((k) => k.replace(/-\d+$/, "")));
+  const quellen = [...new Map(katalog.ebenen.filter((e) => sichtbar.has(e.id)).map((e) => [e.quelle.name, e.quelle])).values()];
   return (
+    <div className="flex flex-col gap-1 w-full">
     <div className="relative w-full h-[72vh] min-h-[420px] rounded-2xl overflow-hidden border border-[var(--border)]">
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
+      <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />
       {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} />}
-      <div className="absolute bottom-0 right-0 bg-white/80 text-[10px] text-neutral-700 px-1.5 py-0.5 rounded-tl">
-        {quellen.map((q, i) => (
-          <span key={q.name}>{i > 0 && " · "}<a href={q.url} target="_blank" rel="noreferrer" className="hover:underline">{q.name}</a></span>
+    </div>
+      {/* Quellenangaben unter der Karte (Namensnennung nach Lizenz) */}
+      <p className="text-[11px] leading-snug text-[var(--text-muted)] px-1" aria-label="Quellen">
+        Quellen: {quellen.map((q, i) => (
+          <span key={q.name}>{i > 0 && " · "}{q.url
+            ? <a href={q.url} target="_blank" rel="noreferrer" className="hover:underline">{q.name}</a> : q.name}
+            {q.lizenz && q.lizenz !== "eigene Daten" ? ` (${q.lizenz})` : ""}</span>
         ))}
-      </div>
+      </p>
     </div>
   );
 }
