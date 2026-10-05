@@ -106,6 +106,8 @@ def ebene(ebene_id: str, request: Request, db: Session = Depends(get_db), wer: U
 # ── Kartensätze ──────────────────────────────────────────────────────
 
 MAX_OBJEKTE = 300  # je Ebene
+# Alte Ebenen-ids → neue (Welt-Ausbau: eu-staaten ging in welt-staaten auf)
+UMBENANNT = {"eu-staaten": "welt-staaten"}
 
 
 @lru_cache(maxsize=32)
@@ -150,6 +152,24 @@ class SatzInhalt(BaseModel):
     filter: dict[str, list[str]] = Field(default_factory=dict)
     # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _alte_ids(cls, daten):
+        # Umbenannte Ebenen: alte Sätze und offene Browser-Tabs schicken noch die alte id
+        if not isinstance(daten, dict):
+            return daten
+        neu = lambda e: UMBENANNT.get(e, e)  # noqa: E731
+        daten = dict(daten)
+        if isinstance(daten.get("ebenen"), list):
+            daten["ebenen"] = list(dict.fromkeys(neu(e) for e in daten["ebenen"]))
+        for feld in ("auswahl", "filter"):
+            if isinstance(daten.get(feld), dict):
+                daten[feld] = {neu(k): v for k, v in daten[feld].items()}
+        if isinstance(daten.get("erfolge"), list):
+            daten["erfolge"] = [{**e, "ebenen": [neu(x) for x in e.get("ebenen", [])]} if isinstance(e, dict) else e
+                                for e in daten["erfolge"]]
+        return daten
 
     @model_validator(mode="after")
     def _ids_pruefen(self):

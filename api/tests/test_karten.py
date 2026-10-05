@@ -65,6 +65,13 @@ def test_unbekannte_ebene_oder_objekt_wird_abgelehnt(client, teacher_token):
     assert client.post("/api/karten/saetze", json=raster, headers=h).status_code == 422
 
 
+def test_alte_ebenen_id_wird_beim_speichern_umgeschrieben(client, teacher_token):
+    h = auth(teacher_token)
+    r = client.post("/api/karten/saetze", json=_satz(ebenen=["eu-staaten", "de-fluesse"]), headers=h)
+    assert r.status_code == 201, r.text
+    assert client.get(f"/api/karten/saetze/{r.json()['id']}", headers=h).json()["inhalt"]["ebenen"] == ["welt-staaten", "de-fluesse"]
+
+
 def test_nur_geteilte_saetze_sieht_wer_anders_und_aendern_darf_nur_die_autorin(client, teacher_token, admin_token):
     client.cookies.clear()  # beide Fixtures melden sich an; das Login-Cookie schlüge den Bearer-Header
     privat = client.post("/api/karten/saetze", json=_satz(), headers=auth(teacher_token)).json()["id"]
