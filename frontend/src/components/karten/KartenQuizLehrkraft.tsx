@@ -22,7 +22,7 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
   });
 
   if (!sitzung) return meldung ? <p className="text-sm text-[var(--red)]">{meldung}</p> : null;
-  const e = { modus: "benennen", wortbank: false, max_punkte: 10, ...sitzung.settings } as Record<string, unknown>;
+  const e = { modus: "benennen", wortbank: false, max_punkte: 10, ueben: true, ...sitzung.settings } as Record<string, unknown>;
   const setze = async (aenderung: Record<string, unknown>) => {
     setSitzung(await api.toolSessions.einstellungen(sitzung.code, { ...sitzung.settings, ...aenderung }));
     qc.invalidateQueries({ queryKey: ["karten", "quiz", code] });
@@ -63,6 +63,9 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
             <input type="checkbox" checked={!!e.wortbank} onChange={() => setze({ wortbank: !e.wortbank })} /> Wortbank
           </label>
         )}
+        <label className="flex items-center gap-1.5" title="Lernhelfer: übt einzeln, was noch nicht sitzt — zählt nicht für Punkte">
+          <input type="checkbox" checked={!!e.ueben} onChange={() => setze({ ueben: !e.ueben })} /> 🎯 Üben erlauben
+        </label>
         <label className="flex items-center gap-1.5">
           Hauspunkte bis
           <input type="number" min={0} max={100} value={Number(e.max_punkte)} onChange={(ev) => setze({ max_punkte: Number(ev.target.value) })}
@@ -88,6 +91,15 @@ export default function KartenQuizLehrkraft({ satzId, titel }: { satzId: number;
             {[...ueb.je_aufgabe].filter((a) => a.versucht).sort((x, y) => x.richtig / x.versucht - y.richtig / y.versucht).slice(0, 5).map((a) => (
               <span key={a.nr}>{a.marke && <b className="text-[var(--red)]">{a.marke}</b>} {a.name}: {Math.round((100 * a.richtig) / a.versucht)} % richtig</span>
             ))}
+            {ueb.je_aufgabe.some((a) => a.sicherheit != null) && (
+              <>
+                <span className="text-xs text-[var(--text-muted)] pt-2">Noch unsicher (Lernstand aus Quiz und Üben)</span>
+                {[...ueb.je_aufgabe].filter((a) => a.sicherheit != null && a.sicherheit < 0.5)
+                  .sort((x, y) => (x.sicherheit ?? 0) - (y.sicherheit ?? 0)).slice(0, 5).map((a) => (
+                    <span key={`s${a.nr}`}>{a.name}: Sicherheit {Math.round(100 * (a.sicherheit ?? 0))} %</span>
+                  ))}
+              </>
+            )}
           </div>
         </div>
       )}

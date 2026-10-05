@@ -21,7 +21,15 @@ export type SatzInhalt = {
   erfolge?: KartenErfolg[];
 };
 
-export type KartenErfolg = { id: string; name: string; icon: string; ebenen: string[]; schwelle: number };
+export type ErfolgsArt = "anteil" | "fehlerfrei" | "objekte" | "serie" | "tempo" | "beide" | "aufgeholt" | "dranbleiben" | "komplett";
+
+/** Siehe api/karten_lernen.py (ARTEN): je Art zählen ebenen, schwelle, anzahl, sekunden oder objekte (»ebene:id«). */
+export type KartenErfolg = {
+  id: string; name: string; icon: string; art?: ErfolgsArt; ebenen: string[]; schwelle: number;
+  anzahl?: number; sekunden?: number; objekte?: string[];
+};
+
+const OHNE_EBENEN: ErfolgsArt[] = ["objekte", "serie", "dranbleiben", "komplett", "aufgeholt"];
 
 export type SuchTreffer = {
   ebene: string; ebene_name: string; bereich: string; id: string; name: string; zusatz: string;
@@ -44,10 +52,11 @@ export function schalteObjekt(inhalt: SatzInhalt, ebene: string, id: string): Sa
 /** Leere Auswahlen nicht mitspeichern. */
 export function aufgeraeumt(inhalt: SatzInhalt): SatzInhalt {
   const auswahl = Object.fromEntries(Object.entries(inhalt.auswahl).filter(([, w]) => w.objekte.length));
-  // Erfolge zählen nur Ebenen mit Auswahl — sonst lehnt der Server den Satz ab
+  // Erfolge zählen nur Ebenen/Objekte mit Auswahl — sonst lehnt der Server den Satz ab
+  const gewaehlt = new Set(Object.entries(auswahl).flatMap(([e, w]) => w.objekte.map((o) => `${e}:${o}`)));
   const erfolge = (inhalt.erfolge ?? [])
-    .map((e) => ({ ...e, ebenen: e.ebenen.filter((x) => x in auswahl) }))
-    .filter((e) => e.ebenen.length);
+    .map((e) => ({ ...e, ebenen: e.ebenen.filter((x) => x in auswahl), ...(e.objekte ? { objekte: e.objekte.filter((o) => gewaehlt.has(o)) } : {}) }))
+    .filter((e) => (e.art === "objekte" ? e.objekte?.length : e.ebenen.length || OHNE_EBENEN.includes(e.art ?? "anteil")));
   return { ...inhalt, auswahl, erfolge };
 }
 

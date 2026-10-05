@@ -4,7 +4,7 @@ import type {
 import type { SlideshowEvent, SlideshowItem } from "@/lib/slideshow";
 import type { Ebene as KartenEbene, Katalog as KartenKatalog } from "@/lib/karten/stil";
 import type { KartenExportIn, KartenSatz, KartenSatzIn, KartenSatzKurz, SatzInhalt as SatzInhaltKarten, SuchTreffer } from "@/lib/karten/satz";
-import type { QuizAntwortOut, QuizSpiel, QuizUebersicht } from "@/lib/karten/quiz";
+import type { QuizAntwortOut, QuizSpiel, QuizUebersicht, UebenAntwortOut, UebenAufgabe } from "@/lib/karten/quiz";
 
 export type { SlideshowItem } from "@/lib/slideshow";
 
@@ -1611,6 +1611,11 @@ export const api = {
     quizAntwort: (code: string, nr: number, antwort: string, token?: string | null) =>
       ffetch<QuizAntwortOut>(`karten/quiz/${encodeURIComponent(code)}/antwort`,
         { method: "POST", body: JSON.stringify({ nr, antwort }) }, token ?? undefined),
+    // Lernhelfer: nächste Übung und Antwort (zählt nicht fürs Quiz)
+    uebenNaechste: (code: string, token?: string | null) =>
+      ffetch<UebenAufgabe>(`karten/quiz/${encodeURIComponent(code)}/ueben`, undefined, token ?? undefined),
+    uebenAntwort: (code: string, body: { nr: number; richtung: string; antwort: string }, token?: string | null) =>
+      ffetch<UebenAntwortOut>(`karten/quiz/${encodeURIComponent(code)}/ueben`, { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
     quizUebersicht: (code: string) => apiFetch<QuizUebersicht>(`karten/quiz/${encodeURIComponent(code)}/uebersicht`),
     quizPunkte: (code: string) => apiFetch<{ vergeben: QuizUebersicht["punkte"] }>(`karten/quiz/${encodeURIComponent(code)}/punkte`, { method: "POST" }),
     quizZuruecksetzen: (code: string) => apiFetch<void>(`karten/quiz/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),

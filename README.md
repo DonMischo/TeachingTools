@@ -94,6 +94,17 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Anzeigen, Ereignisse einsortieren, Fehler finden
 - JSON-Import, Vorlage und mitgelieferte Beispiele (u. a. Erdgeschichte, Antike, Entdeckungen der Geowissenschaften)
 
+### 🗺️ Karten
+- Selbst gehostete Karten (MapLibre, Schriften und Daten auf dem eigenen Server): Deutschland, Thüringen, Europa, Welt und Kontinente; politisch, topographisch, stumm, Wirtschaft und physische Geografie (Platten, Plattengrenzen, Wüsten, Köppen-Geiger-Klimazonen)
+- Offene Daten mit Quellenangabe auf der Karte: BKG (dl-de/by-2.0), Natural Earth, Open Power System Data, CORINE, Bird PB2002, Beck et al. 2023 — Übersicht unter Admin → Quellen
+- Alle Siedlungen Deutschlands (Gemeinden und Ortsteile) mit Größenklassen-Filter in der Legende und Ortssuche
+- Kartensätze: Objekte auswählen und nummerieren (1 2 3, a b c, A B C, I II III), mit Namen auf dem Server speichern und teilen; liegen zwei Nummern fast aufeinander (Berlin als Stadt und als Land), rücken sie auseinander
+- Arbeitsblatt als PDF, DOCX, ODT oder LaTeX mit der Karte auf Seite 1, leer oder mit Lösung
+- Eigene Ebenen als GeoJSON, KML, KMZ oder GPX (nur Lehrkräfte); JSON-Vorlage mit `aktiv` je Objekt zum Filtern, auch per KI
+- Kartenquiz per Code/QR: Nummern benennen oder Orte finden, geprüft auf dem Server, Hauspunkte je Klasse; einbettbar in Caputh und TaskCrawler
+- Erfolge je Kartensatz: Anteil richtig, ohne Fehlversuch, bestimmte Objekte, Serie, auf Zeit, benennen *und* finden, Fehler aufgeholt, an mehreren Tagen geübt, alle anderen
+- Lernhelfer »🎯 Üben«: Fuzzy-Regeln aus Trefferverlauf und Pause bestimmen, was als Nächstes kommt; Unsicheres als Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarorte, ähnliche Namen), Sicheres als freie Eingabe. Der Lernstand bleibt über Sitzungen erhalten; die Lehrkraft sieht, was in der Klasse noch wackelt
+
 ### 📚 Übung
 - Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan)
 - Die Schwierigkeit steigt nach drei richtigen und sinkt nach zwei falschen Lösungen
@@ -274,6 +285,7 @@ Das Lehrkraft-Werkzeugset. Standardmäßig nur für Lehrkräfte sichtbar.
 | **Darstellung** | Farbschema · Icon-Stil (Fantasy / Cyberpunk / Emoji) · Hell/Dunkel |
 | **Style Pack** | ZIP mit `logo.svg`, `icons/<name>.svg` und `colors.json` hochladen |
 | **Schuleinstellungen** | Dauer des Gastzugangs · welche Schülerdaten angezeigt werden (z. B. Geschlecht für den Sitzplan) |
+| **Quellen** | Fremde Daten, Bilder, Schriften und Programmbibliotheken mit Lizenz, nach Werkzeug; ⚠ bei ungeklärten Rechten |
 
 ---
 

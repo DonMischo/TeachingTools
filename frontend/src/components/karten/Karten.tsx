@@ -92,7 +92,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
       for (const f of daten[ebene]?.features ?? []) {
         const marke = marken[String(f.properties?.id)];
         const p = marke ? ankerpunkt(f.geometry) : null;
-        if (p) anker.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { marke } });
+        if (p) anker.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { marke, ebene } });
       }
     }
     return wendeSatzAn(grund, katalog, { auswahl: inhalt.auswahl, nummern, anker, bearbeiten: bearbeiten && !druck });
@@ -187,7 +187,7 @@ export default function Karten({ action }: { action?: ReactNode }) {
               <>
                 <AuswahlPanel ebenen={quizEbenen} aktiv={aktiveEbene} setAktiv={setAktiveEbene}
                   inhalt={inhalt} setInhalt={setInhalt} daten={daten} nummern={nummern} />
-                <ErfolgeEditor ebenen={quizEbenen} inhalt={inhalt} setInhalt={setInhalt} />
+                <ErfolgeEditor ebenen={quizEbenen} inhalt={inhalt} setInhalt={setInhalt} daten={daten} nummern={nummern} />
               </>
             ) : (
               <>

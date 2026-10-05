@@ -105,6 +105,23 @@ aktivitaeten:
       - Zeitleisten mit parallelen Spuren und Zahlenstrahlen
       - Anzeigen, einsortieren, Fehler finden
       - JSON-Import, Vorlage, Beispiel-Zeitleisten (u. a. Entdeckungen der Geowissenschaften)
+  - id: karten
+    name: Karten
+    faehigkeiten: {use: [true, true], host: [true, false], create: [true, false], upload: [true, false]}
+    kann:
+      - Selbst gehostete Karten (MapLibre, keine Anfragen nach außen), Equal Earth geplant
+      - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
+      - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
+      - Alle Siedlungen Deutschlands mit Größenklassen-Filter in der Legende, Ortssuche
+      - Kartensätze: Objekte auswählen, nummerieren (1 2 3, a b c, A B C, I II III), auf dem Server speichern und teilen; der volle Datensatz bleibt unverändert
+      - Nummern, die aufeinanderliegen (Berlin als Stadt und Land), rücken auseinander; Landesnamen weichen Stadtnamen aus
+      - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX (Karte auf Seite 1, leer oder mit Lösung)
+      - Eigene Ebenen (GeoJSON, KML, KMZ, GPX) nur für Lehrkräfte
+      - JSON-Vorlage mit »aktiv« je Objekt zum Filtern (auch per KI) und wieder hochladen
+      - Kartenquiz per Code/QR (benennen oder finden), Prüfung auf dem Server, Hauspunkte je Klasse
+      - Erfolge je Kartensatz in neun Arten (Anteil, fehlerfrei, bestimmte Objekte, Serie, auf Zeit, benennen und finden, Fehler aufgeholt, an mehreren Tagen, alle)
+      - Lernhelfer »Üben« – Fuzzy-Regeln wählen, was am wenigsten sitzt; unsicher → Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarn, ähnliche Namen), sicher → freie Eingabe; Lernstand über Sitzungen hinweg
+      - Einbettbar in Caputh und TaskCrawler
   - id: uebung
     name: Übung
     kann:
@@ -467,6 +484,7 @@ admin:
   - {id: darstellung, name: Darstellung, kann: [Farbschema, Icon-Stil Fantasy/Cyberpunk/Emoji, Hell/Dunkel]}
   - {id: style_pack, name: Style Pack, kann: [ZIP mit Logo, Icons und Farben]}
   - {id: schuleinstellungen, name: Schuleinstellungen, kann: [Dauer des Gastzugangs, Anzeige von Schülerdaten]}
+  - {id: quellen, name: Quellen und Lizenzen, kann: [Quellen nach Werkzeug, npm-Lizenzen aus node_modules, ungeklärte Rechte markiert]}
 
 datenschutz_sicherheit:
   - Schülernamen außerhalb von Klassenleitung und Datenverwaltung nur als »Vorname N.«

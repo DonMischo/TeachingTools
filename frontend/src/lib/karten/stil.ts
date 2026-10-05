@@ -18,6 +18,7 @@ import type {
   SourceSpecification,
   StyleSpecification,
 } from "maplibre-gl";
+import { spreizen } from "./nummern";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
@@ -373,7 +374,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     for (const e of mit("laender")) if (art === "politisch") {
       layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 8, 15],
-          "text-max-width": 8, "text-padding": 20 },
+          // Stadtstaaten: der Stadtname steht schon auf dem Punkt — der Landesname weicht aus
+          "text-max-width": 8, "text-padding": 6, "text-variable-anchor": ["center", "top", "bottom", "left", "right"], "text-radial-offset": 1.1 },
         paint: { "text-color": "#57534e", "text-opacity": 0.75 } });
     }
   }
@@ -496,6 +498,15 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
 export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray } | null {
+  if (name.startsWith("marke-")) {
+    // Nummernkreis: weiß mit farbigem Ring (»marke-#e11d48«)
+    const c = document.createElement("canvas");
+    c.width = c.height = 26;
+    const g = c.getContext("2d")!;
+    g.fillStyle = "#ffffff"; g.strokeStyle = name.slice(6); g.lineWidth = 2.2;
+    g.beginPath(); g.arc(13, 13, 11, 0, Math.PI * 2); g.fill(); g.stroke();
+    return { width: 26, height: 26, data: g.getImageData(0, 0, 26, 26).data };
+  }
   const groesse = name === "hauptstadt" ? 18 : name === "landeshauptstadt" ? 14 : name === "stadt" ? 10 : name === "gipfel" ? 12 : 0;
   if (!groesse) return null;
   const c = document.createElement("canvas");
@@ -577,15 +588,25 @@ export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: Sa
 
   const sources = { ...stil.sources };
   if (satz.anker.features.length) {
-    sources["nummern"] = { type: "geojson", data: satz.anker };
+    // Marken nah beieinander (Berlin Stadt + Land) auseinanderrücken; Punkt-Ebenen bleiben stehen
+    const geo = (f: GeoJSON.Feature) => katalog.ebenen.find((x) => x.id === f.properties?.ebene)?.geometrie;
+    const versatz = spreizen(satz.anker.features.map((f) => ({
+      p: (f.geometry as GeoJSON.Point).coordinates, vorrang: geo(f) === "punkt" })));
+    const daten: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: satz.anker.features.map((f, i) => ({
+      ...f, properties: { ...f.properties, versatz: versatz[i], versatzEm: versatz[i].map((v) => v / 14),
+        verschoben: versatz[i][0] !== 0 || versatz[i][1] !== 0 } })) };
+    sources["nummern"] = { type: "geojson", data: daten };
+    const farbe: ExpressionSpecification = ["coalesce", ["get", "farbe"], FARBE.hervor];
     mitHervor.push(
-      { id: "nummern-kreis", type: "circle", source: "nummern",
-        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 9, 12], "circle-color": "#ffffff",
-          "circle-stroke-color": ["coalesce", ["get", "farbe"], FARBE.hervor], "circle-stroke-width": 2 } },
+      // Ausgewichene Marken: kleiner Punkt am eigentlichen Ort
+      { id: "nummern-ort", type: "circle", source: "nummern", filter: ["==", ["get", "verschoben"], true],
+        paint: { "circle-radius": 2.5, "circle-color": farbe } },
       { id: "nummern-text", type: "symbol", source: "nummern",
-        layout: { "text-field": ["get", "marke"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 9, 14],
-          "text-allow-overlap": true, "text-ignore-placement": true },
-        paint: { "text-color": ["coalesce", ["get", "farbe"], FARBE.hervor] } },
+        layout: { "icon-image": ["concat", "marke-", farbe], "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.75, 9, 1],
+          "icon-offset": ["get", "versatz"], "icon-allow-overlap": true,
+          "text-field": ["get", "marke"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 9, 14],
+          "text-offset": ["get", "versatzEm"], "text-allow-overlap": true },
+        paint: { "text-color": farbe } },
     );
   }
   return { ...stil, sources, layers: mitHervor };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ankerpunkt, marke, vergibNummern } from "@/lib/karten/nummern";
+import { ankerpunkt, marke, spreizen, vergibNummern } from "@/lib/karten/nummern";
 import { aufgeraeumt } from "@/lib/karten/satz";
 
 describe("marke", () => {
@@ -69,5 +69,18 @@ describe("aufgeraeumt", () => {
     });
     expect(Object.keys(aus.auswahl)).toEqual(["de-fluesse"]);
     expect(aus.erfolge).toEqual([{ id: "a", name: "A", icon: "🌊", ebenen: ["de-fluesse"], schwelle: 1 }]);
+  });
+});
+
+describe("spreizen", () => {
+  it("rückt nahe Marken auseinander, die Punkt-Ebene bleibt stehen", () => {
+    const v = spreizen([
+      { p: [13.40, 52.52], vorrang: false }, // Land Berlin
+      { p: [13.38, 52.51], vorrang: true }, // Stadt Berlin
+      { p: [11.03, 50.98], vorrang: true }, // Erfurt, weit weg
+    ]);
+    expect(v[1]).toEqual([0, 0]);
+    expect(v[2]).toEqual([0, 0]);
+    expect(Math.hypot(...v[0])).toBeGreaterThan(15);
   });
 });

@@ -100,6 +100,32 @@ function randAbstand(p: Position, poly: Position[][]): number {
 }
 
 /**
+ * Marken, die fast aufeinander liegen (Berlin: Stadt und Land), auseinanderrücken.
+ * Der Versatz ist in Bildschirm-Pixeln, damit er bei jedem Zoom gleich groß wirkt.
+ * Marken von Punkt-Ebenen (vorrang) bleiben auf ihrem Punkt, die anderen weichen
+ * im Kreis aus. `naehe` in Grad (Breite); Länge wird mit cos(Breite) gestaucht.
+ */
+export function spreizen(punkte: { p: Position; vorrang: boolean }[], naehe = 0.35, abstand = 22): [number, number][] {
+  const versatz: [number, number][] = punkte.map(() => [0, 0]);
+  const reihe = punkte.map((_, i) => i).sort((a, b) => Number(punkte[b].vorrang) - Number(punkte[a].vorrang));
+  const kopf: number[] = []; // je Gruppe die Marke, die stehen bleibt
+  const belegt = new Map<number, number>(); // Kopf → wie viele schon ausweichen
+  for (const i of reihe) {
+    const [x, y] = punkte[i].p;
+    const k = kopf.find((j) => {
+      const [kx, ky] = punkte[j].p;
+      return Math.hypot((x - kx) * Math.cos((y * Math.PI) / 180), y - ky) < naehe;
+    });
+    if (k === undefined) { kopf.push(i); continue; }
+    const n = belegt.get(k) ?? 0;
+    belegt.set(k, n + 1);
+    const winkel = (-45 + n * 72) * (Math.PI / 180); // erst rechts oben, dann im Uhrzeigersinn
+    versatz[i] = [Math.round(Math.cos(winkel) * abstand), Math.round(Math.sin(winkel) * abstand)];
+  }
+  return versatz;
+}
+
+/**
  * Ein Punkt für die Marke: Punkte bleiben, wo sie sind. Linien (Flüsse sind
  * MultiLineStrings aus vielen Stücken) bekommen ihren Stützpunkt, der der
  * Mitte am nächsten liegt — er liegt sicher auf dem Fluss. Flächen bekommen

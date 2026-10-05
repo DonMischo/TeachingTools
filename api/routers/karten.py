@@ -132,12 +132,25 @@ class Ausschnitt(BaseModel):
 
 
 class Erfolg(BaseModel):
-    """Erfolg im Kartenquiz: geschafft, wenn der Anteil richtiger Aufgaben der Ebenen ≥ schwelle."""
+    """Erfolg im Kartenquiz; die Arten erklärt api/karten_lernen.py (ARTEN)."""
     id: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9-]+$")
     name: str = Field(min_length=1, max_length=60)
     icon: str = Field(default="🏅", max_length=8)
-    ebenen: list[str] = Field(min_length=1, max_length=20)
+    art: Literal["anteil", "fehlerfrei", "objekte", "serie", "tempo", "beide", "aufgeholt", "dranbleiben", "komplett"] = "anteil"
+    ebenen: list[str] = Field(default_factory=list, max_length=20)
     schwelle: float = Field(default=1.0, ge=0.1, le=1.0)
+    # serie/aufgeholt/dranbleiben: wie viele; tempo: Sekunden; objekte: »ebene:id«
+    anzahl: int | None = Field(default=None, ge=1, le=500)
+    sekunden: int | None = Field(default=None, ge=10, le=3600)
+    objekte: list[str] = Field(default_factory=list, max_length=MAX_OBJEKTE)
+
+    @model_validator(mode="after")
+    def _felder(self):
+        if self.art in ("anteil", "fehlerfrei", "tempo", "beide") and not self.ebenen:
+            raise ValueError(f"Erfolg »{self.name}«: mindestens eine Ebene wählen")
+        if self.art == "objekte" and not self.objekte:
+            raise ValueError(f"Erfolg »{self.name}«: mindestens ein Objekt wählen")
+        return self
 
 
 class SatzInhalt(BaseModel):
@@ -190,10 +203,13 @@ class SatzInhalt(BaseModel):
                 raise ValueError(f"{e}: unbekannte Objekte {sorted(fremd)[:3]}")
         if len({e.id for e in self.erfolge}) != len(self.erfolge):
             raise ValueError("Zwei Erfolge haben dieselbe id")
+        gewaehlt = {f"{e}:{o}" for e, w in self.auswahl.items() for o in w.objekte}
         for erfolg in self.erfolge:
             fremd = set(erfolg.ebenen) - set(self.auswahl)
             if fremd:
                 raise ValueError(f"Erfolg »{erfolg.name}«: Ebene ohne Auswahl {sorted(fremd)}")
+            if set(erfolg.objekte) - gewaehlt:
+                raise ValueError(f"Erfolg »{erfolg.name}«: Objekte, die nicht ausgewählt sind")
         return self
 
 
@@ -438,7 +454,9 @@ VORLAGE_HINWEIS = (
     "Setze »aktiv« auf true bei allen Objekten, die auf der Karte nummeriert und abgefragt werden sollen, "
     "sonst auf false. Ändere »id« nicht; »name« und »info« dienen nur zur Orientierung. "
     "Nummerierung je Ebene: keine | zahl | klein | gross | roemisch. »zeigen«: alle | auswahl. "
-    "Erfolge: je Eintrag die Ebenen und der Anteil richtiger Antworten (schwelle 0.1–1.0)."
+    "Erfolge: »art« anteil (ebenen + schwelle 0.1–1.0) | fehlerfrei (ebenen) | objekte (Liste »ebene:id«) | "
+    "serie (anzahl) | tempo (ebenen + sekunden) | beide (ebenen: benennen und finden) | aufgeholt (anzahl) | "
+    "dranbleiben (anzahl Tage) | komplett (alle anderen)."
 )
 
 

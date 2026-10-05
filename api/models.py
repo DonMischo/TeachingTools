@@ -2422,6 +2422,29 @@ class KartenQuizStand(Base):
     antworten: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
     richtig: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     erfolge: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    # {"beginn": ISO (erste Antwort), "serie": int, "beste_serie": int}
+    verlauf: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class KartenLernstand(Base):
+    """Was jemand mit einem Kartensatz schon kann — über Sitzungen hinweg (api/karten_lernen.py).
+
+    ``objekte``: je »ebene:id« Treffer, Verlauf, Verwechslungen; ``tage``: Tage mit Übung;
+    ``letzte``: zuletzt gestellte Objekte (nicht gleich wiederholen).
+    """
+    __tablename__ = "karten_lernstaende"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    satz_id: Mapped[int] = mapped_column(ForeignKey("karten_saetze.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    objekte: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    tage: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    letzte: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     aktualisiert_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
