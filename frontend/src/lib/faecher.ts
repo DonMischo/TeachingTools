@@ -38,7 +38,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   algo: ["Informatik"],
   regeln: ["Informatik", "Mathematik"],
   wfc: ["Informatik", "Mathematik"],
-  dla: ["Physik", "Chemie", "Mathematik", "Biologie"],
+  dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],
   rechenregeln: ["Mathematik"],
