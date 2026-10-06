@@ -156,6 +156,10 @@ WERKZEUGE = {
             "raetsel?": "bei raetsel: alles|punkte|schach|labyrinth|rundwege",
         },
     },
+    "schichten": {
+        "name": "Schichtenmodell",
+        "config": {"reiter": "reise|weg|pakete|wissen|mission|fehler", "modell?": "osi|tcpip"},
+    },
     "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
     "wfc": {
         "name": "Wellenfunktionskollaps",

@@ -27,6 +27,7 @@ import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Algorithmen from "@/components/algo/Algorithmen";
 import Wachstum from "@/components/dla/Wachstum";
+import Schichtenmodell from "@/components/schichten/Schichtenmodell";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -49,6 +50,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "wfc", icon: "🧩", label: "Wellenfunktionskollaps", node: <Wellenkollaps /> },
   { id: "algo", icon: "🔀", label: "Algorithmen", node: <Algorithmen /> },
   { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
+  { id: "schichten", icon: "📶", label: "Schichtenmodell", node: <Schichtenmodell /> },
 ];
 
 function App() {

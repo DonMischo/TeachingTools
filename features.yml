@@ -287,6 +287,18 @@ simulationen:
       - Mantelströmung, Erdbeben (Graben, Rücken, Benioff-Zone, Kollision), Plattengeschwindigkeiten
       - Phasenkarten mit heutigem Beispiel, Plattengrenzen und Begriffen; Quiz »Welche Phase?«
       - Wissensteil: Tuzo Wilson, Superkontinente, Wilson-Zyklen in Deutschland, Antrieb der Platten, Beweise, Quellen
+  - id: schichten
+    name: Schichtenmodell
+    kann:
+      - Ein Foto reist von Erfurt nach Tokio durch alle Schichten (Idee rick.theengineer, Instagram), OSI oder TCP/IP umschaltbar
+      - 3D-Schichtstapel mit 15 Schritten; echte Bytes für DNS, HTTP, JPEG, TLS 1.3 (ChaCha20-Poly1305), TCP, IPv4, Ethernet (CRC-32), Bits und Signal
+      - Hex-Bild der Kapselung in Schichtfarben, Feld antippen markiert Bytes; Auspacken und Prüfen in Tokio
+      - Eigenes Foto (bleibt im Browser) oder eigener Text
+      - Karte Hop für Hop mit Seekabeln, Laufzeiten, NAT, TTL und neuen MAC-Adressen je Strecke
+      - TCP bei Paketverlust (Fast Retransmit, Timeout) als Ablaufdiagramm
+      - Mission zum Selbermachen — Wort → ASCII → Bits → DNS-Jagd → Felder füllen → Routing mit längstem Präfix
+      - Fehlersuche mit 13 Fällen und Windows-Werkzeugen (ipconfig, ping, nslookup, tracert)
+      - Als TaskCrawler-Werkzeug mit festem Reiter und Modell
   - id: dla
     name: Fraktales Wachstum
     kann:

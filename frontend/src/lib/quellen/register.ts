@@ -59,6 +59,17 @@ export const REGISTER: WerkzeugQuellen[] = [
     literatur: ["Dziewonski, A. M. & Anderson, D. L. (1981): Preliminary Reference Earth Model. Phys. Earth Planet. Inter. 25, 297–356 — Zahlenwerte (Fakten) für Dichte, Druck, Wellengeschwindigkeiten."],
   },
   {
+    slug: "schichten", name: "📶 Schichtenmodell",
+    eintraege: [
+      { quelle: "Reel »Your photo takes one second to reach Tokyo«", urheber: "rick.theengineer", lizenz: "Idee/Anregung, nichts übernommen", url: "https://www.instagram.com/rick.theengineer/", verwendung: "Idee und Geschichte (Lenas Katzenfoto nach Tokio, sieben Schichten, Hop für Hop); Umsetzung, Texte und Grafik eigen" },
+      { quelle: "Natural Earth ne_10m_land", lizenz: "Gemeinfrei (Public Domain)", url: "https://www.naturalearthdata.com/", verwendung: "Küstenlinien der Karte »Weg« (vereinfacht per scripts/schichten-land.mjs)" },
+    ],
+    literatur: [
+      "ISO/IEC 7498-1:1994 — OSI-Referenzmodell.",
+      "RFC 791 (IPv4), RFC 9293 (TCP), RFC 8446 (TLS 1.3), RFC 8439 (ChaCha20-Poly1305), RFC 1035 (DNS), RFC 1071 (Internet-Prüfsumme), RFC 5737 (Dokumentationsadressen); IEEE 802.3 (Ethernet).",
+    ],
+  },
+  {
     slug: "dla", name: "🪸 Fraktales Wachstum",
     eintraege: [
       { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },

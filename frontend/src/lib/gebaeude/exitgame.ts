@@ -44,7 +44,7 @@ const OBJEKT_FUER_SIM: Record<string, Objekt> = {
   rechenregeln: "abakus", abacus: "abakus", binaerrechner: "grossrechner", bildformate: "grafiktablett",
   ki: "kikern", regeln: "computer", maus: "computer", tippen: "computer", uebung: "pult",
   sonnensystem: "teleskop", erdaufbau: "globus", wilson: "globus", kueste: "globus", wfc: "computer",
-  dla: "mikroskop",
+  dla: "mikroskop", schichten: "computer",
 };
 
 /** Reihum je Folienart — damit nicht jedes Zimmer Tafel oder Schreibtisch ist */

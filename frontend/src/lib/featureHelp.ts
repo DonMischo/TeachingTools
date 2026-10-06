@@ -249,6 +249,18 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  schichten: {
+    title: "Schichtenmodell",
+    intro: "Was in der einen Sekunde passiert, in der ein Foto von Erfurt nach Tokio reist: Kapselung durch alle Schichten, Hop für Hop über die Welt, Auspacken beim Empfänger. Alles mit echten Bytes gerechnet. Oben umschaltbar zwischen OSI (7 Schichten) und TCP/IP (4). Idee und Geschichte: rick.theengineer (Instagram).",
+    sections: [
+      { label: "📸 Reise", text: "15 Schritte im 3D-Stapel: bei Lena von Schicht 7 nach 1, unterwegs, in Tokio von 1 nach 7. Zu jedem Schritt die echten Daten: DNS-Frage und HTTP-Anfrage, JPEG-Komprimierung und TLS-Verschlüsselung (ChaCha20-Poly1305), TCP-Segmente, IPv4-Kopf, Ethernet-Rahmen mit CRC-32, Bits und Signal. Im Hex-Bild hat jede Schicht ihre Farbe; über ein Feld fahren markiert seine Bytes. In Tokio wird alles geprüft und das Foto Byte für Byte wieder zusammengesetzt. Eigenes Foto oder eigener Text gehen auch — sie bleiben im Browser." },
+      { label: "🗺️ Weg", text: "Karte Erfurt → Frankfurt → Marseille → Dschibuti → Mumbai → Singapur → Hongkong → Tokio mit Medium, Entfernung und Laufzeit je Strecke. Eine Strecke antippen zeigt, was der Router davor geändert hat: neue MAC-Adressen, TTL, Prüfsummen, beim Heimrouter NAT." },
+      { label: "📦 Pakete", text: "TCP bei Paketverlust als Ablaufdiagramm: Verlust, Fenstergröße und Segmentzahl einstellen, verlorene Stücke werden nach drei gleichen Bestätigungen oder nach Ablauf der Wartezeit neu geschickt." },
+      { label: "🎮 Mission", text: "Selbst machen: ein Wort aus 8 Zeichen in ASCII-Codes und Bits verwandeln, als Resolver per DNS die IP-Adresse suchen (Root → TLD → Domain-Server, immer der IP folgen), Port, Folgenummer, Ziel-IP und Ziel-MAC eintragen, dann als Router mit Routingtabellen (längster Treffer gewinnt) das Paket ans Ziel bringen. Vier Empfänger, Sterne nach Fehlversuchen." },
+      { label: "🔧 Fehlersuche", text: "13 Fälle »Das Foto kommt nicht an« mit Werkzeugen (ipconfig, ping, nslookup, tracert, Test-NetConnection): Ausgaben lesen und die Schicht tippen." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   dla: {
     title: "Fraktales Wachstum",
     intro: "Diffusionsbegrenzte Aggregation (DLA): Ein Teilchen irrt zufällig umher, bis es den Haufen berührt, und bleibt dort hängen. Weil die Spitzen die ankommenden Teilchen zuerst abfangen, wachsen verzweigte Äste mit luftigem Innern — wie Korallen, Kupferbäumchen, Eisblumen oder Lichtenberg-Figuren. Rechnet ganz im Browser; Vorbild ist dlaf von Michael Fogleman (MIT).",

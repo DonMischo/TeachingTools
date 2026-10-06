@@ -173,6 +173,11 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("dla", "🪸 Fraktales Wachstum", "🪸", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Schichtenmodell: ein Foto reist durch OSI/TCP-IP von Erfurt nach Tokio,
+    # dazu Mission (ASCII, DNS, Routing) und Fehlersuche.
+    CatalogTool("schichten", "📶 Schichtenmodell", "📶", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Leviathan – Kunst des Regierens: vernetzte Regierungssimulation (inspiriert
     # von Vesters Vernetztem Denken). Rechnet im Browser; die Lehrkraft legt
     # Krisenstufe, Drehbuch und heikle Ereignisse an der Sitzung fest.

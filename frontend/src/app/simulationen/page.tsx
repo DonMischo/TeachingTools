@@ -118,6 +118,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#0ea5e9",
   },
   {
+    slug: "schichten",
+    href: "/simulationen/schichten",
+    icon: "📶",
+    title: "Schichtenmodell",
+    description: "Ein Katzenfoto reist von Erfurt nach Tokio: durch alle OSI- bzw. TCP/IP-Schichten hinunter, über Router und Seekabel, und wieder hinauf — mit echten Bytes, Prüfsummen und Verschlüsselung. Dazu eine Mission (Wort → ASCII → Bits → DNS → Routing) und Fehlersuche.",
+    color: "#6366f1",
+  },
+  {
     slug: "dla",
     href: "/simulationen/dla",
     icon: "🪸",

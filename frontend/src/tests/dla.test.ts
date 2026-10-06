@@ -7,6 +7,7 @@ function abstandZumElternteil(dla: Dla, i: number): number {
   return Math.hypot(p[i * 3] - p[e * 3], p[i * 3 + 1] - p[e * 3 + 1], p[i * 3 + 2] - p[e * 3 + 2]);
 }
 
+// Die großen Haufen brauchen im vollen Testlauf (parallel) deutlich länger als allein
 describe("DLA", () => {
   it("hängt jedes Teilchen im Abstand 1 an ein früheres", () => {
     const dla = new Dla({ dim: 2, kapazitaet: 2000, haftung: 1, saat: "punkt", zufall: 3 });
@@ -56,7 +57,7 @@ describe("DLA", () => {
     const d = dimension(dla)!;
     expect(d.d).toBeGreaterThan(1.55);
     expect(d.d).toBeLessThan(1.85);
-  });
+  }, 60_000);
 
   it("misst in 3D eine Dimension um 2,5", () => {
     const dla = new Dla({ dim: 3, kapazitaet: 20000, haftung: 1, saat: "punkt", zufall: 1 });
@@ -64,14 +65,14 @@ describe("DLA", () => {
     const d = dimension(dla)!;
     expect(d.d).toBeGreaterThan(2.2);
     expect(d.d).toBeLessThan(2.8);
-  });
+  }, 60_000);
 
   it("wird mit kleiner Haftung dichter", () => {
     const hart = new Dla({ dim: 2, kapazitaet: 10000, haftung: 1, saat: "punkt", zufall: 2 });
     const weich = new Dla({ dim: 2, kapazitaet: 10000, haftung: 0.05, saat: "punkt", zufall: 2 });
     hart.wachse(); weich.wachse();
     expect(weich.rmax).toBeLessThan(hart.rmax);
-  });
+  }, 60_000);
 
   it("wächst in der Zeitlupe ohne Sprünge genauso", () => {
     const dla = new Dla({ dim: 2, kapazitaet: 60, haftung: 1, saat: "punkt", ohneSpruenge: true });
