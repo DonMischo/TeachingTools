@@ -30,6 +30,7 @@
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "@tiptap/y-tiptap": "^3.0.9",
+    "blockly": "^12.5.1",
     "clsx": "^2.1.1",
     "http-proxy": "^1.18.1",
     "jspdf": "^4.2.1",
