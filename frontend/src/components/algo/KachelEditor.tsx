@@ -266,10 +266,12 @@ function Kopf({ b, verb, statisch, g, adresse, i }: { b: Befehl; verb: string; s
 function Abschnitt({ adresse, hut, ...g }: Gemeinsam & { adresse: string; hut: string }) {
   return (
     <div className="rounded-xl border border-line p-3 pb-4 overflow-x-auto" style={{ background: "var(--bg)" }}>
-      <div className="w-fit min-w-full">
-        <div data-ziel={`${adresse}|0|start`} className="w-fit"
+      <div className="w-fit min-w-full pb-6" data-ziel={`${adresse}|${holeListe(g.prog, adresse).length}|ende`}
+        onClick={e => { if (e.target === e.currentTarget && !g.nurLesen) g.setMarke({ liste: adresse, index: holeListe(g.prog, adresse).length - 1 }); }}>
+        <div data-ziel={`${adresse}|0|start`} className="w-fit relative"
           onClick={() => !g.nurLesen && g.setMarke({ liste: adresse, index: -1 })}>
           <Stueck farbe={adresse === "fn" ? BAUSTEIN.rufe.farbe : HUT_FARBE} hut>{hut}</Stueck>
+          {!g.nurLesen && !g.zug && g.marke.liste === adresse && g.marke.index === -1 && <Plus />}
         </div>
         <Liste adresse={adresse} {...g} />
       </div>
@@ -287,9 +289,12 @@ function Schatten({ adresse, index }: { adresse: string; index: number }) {
   );
 }
 
-function Marke({ an }: { an: boolean }) {
-  if (!an) return null;
-  return <div className="h-1.5 my-1 w-40 rounded-full bg-accent" title="Hier kommt der nächste angetippte Baustein hin" />;
+/** Kleine Plakette unter einem Teil: Hier landet der nächste angetippte Baustein. Nimmt keinen Platz weg. */
+function Plus() {
+  return (
+    <span aria-hidden title="Hier kommt der nächste angetippte Baustein hin"
+      className="absolute left-11 -bottom-2.5 z-10 w-5 h-5 rounded-full bg-white border-2 border-accent text-slate-900 text-xs font-black leading-none flex items-center justify-center pointer-events-none shadow">+</span>
+  );
 }
 
 function Liste({ adresse, ...g }: Gemeinsam & { adresse: string }) {
@@ -298,19 +303,18 @@ function Liste({ adresse, ...g }: Gemeinsam & { adresse: string }) {
   const schattenBei = (i: number) => g.ziel?.liste === adresse && g.ziel.index === i;
   return (
     <div className="flex flex-col">
-      <Marke an={markeHier(-1)} />
+      {liste.length > 0 && markeHier(-1) && <div className="relative h-0"><Plus /></div>}
       {liste.map((b, i) => (
         <div key={b.id ?? i}>
           {schattenBei(i) && <Schatten adresse={adresse} index={i} />}
           <Teil b={b} adresse={adresse} i={i} {...g} />
-          <Marke an={markeHier(i)} />
         </div>
       ))}
       {schattenBei(liste.length) && <Schatten adresse={adresse} index={liste.length} />}
-      {/* Fangfläche am Ende: hier rastet ein Teil hinten an */}
-      {!g.nurLesen && (
-        <div data-ziel={`${adresse}|${liste.length}|ende`} className={liste.length ? "h-5" : "h-9 w-40 rounded-md border-2 border-dashed border-line"}
-          onClick={() => g.setMarke({ liste: adresse, index: liste.length - 1 })} />
+      {/* Leere Liste: gestrichelter Platz zum Hineinziehen oder Antippen */}
+      {!g.nurLesen && liste.length === 0 && !schattenBei(0) && (
+        <div data-ziel={`${adresse}|0|ende`} className={`relative h-8 w-40 rounded-md border-2 border-dashed ${markeHier(-1) ? "border-accent" : "border-line"}`}
+          onClick={() => g.setMarke({ liste: adresse, index: -1 })} />
       )}
     </div>
   );
@@ -331,21 +335,25 @@ function Teil({ b, adresse, i, ...g }: Gemeinsam & { b: Befehl; adresse: string;
 
   if (!istBehaelter(b)) {
     return (
-      <div data-ziel={`${adresse}|${i}|teil`} className="w-fit touch-none cursor-grab active:cursor-grabbing" onPointerDown={greifen} data-testid={`kachel-${b.t}`}>
+      <div data-ziel={`${adresse}|${i}|teil`} className="relative w-fit touch-none cursor-grab active:cursor-grabbing" onPointerDown={greifen} data-testid={`kachel-${b.t}`}>
         <Stueck farbe={farbe} glanz={glanz} blass={blass}>
           <Kopf b={b} verb={g.verb} g={g} adresse={adresse} i={i} />{loeschen}
         </Stueck>
+        {gewaehlt && <Plus />}
       </div>
     );
   }
 
   // C-Klammer: Kopf, Fach (eingerückt), ggf. »sonst« + zweites Fach, Fuß
-  const fach = (feld: "k" | "sonst") => (
-    <div className="relative ml-4 py-1.5 pl-0 pr-2" style={{ background: "var(--bg)", minHeight: 30 }}>
-      <span aria-hidden style={{ ...NASE, left: 14, top: 0, background: farbe }} />
-      <Liste adresse={`${adresse}.${i}.${feld}`} {...g} />
-    </div>
-  );
+  const fach = (feld: "k" | "sonst") => {
+    const a = `${adresse}.${i}.${feld}`;
+    return (
+      <div className="relative ml-4 pr-2" style={{ background: "var(--bg)", minHeight: 24 }} data-ziel={`${a}|${holeListe(g.prog, a).length}|ende`}>
+        <span aria-hidden style={{ ...NASE, left: 14, top: 0, background: farbe, zIndex: 0 }} />
+        <Liste adresse={a} {...g} />
+      </div>
+    );
+  };
   return (
     <div className="relative w-fit min-w-56" style={{ filter: glanz ? `drop-shadow(0 0 3px ${glanz}) drop-shadow(0 0 3px ${glanz})` : undefined, opacity: blass ? 0.3 : 1 }}
       data-testid={`kachel-${b.t}`}>
@@ -363,6 +371,7 @@ function Teil({ b, adresse, i, ...g }: Gemeinsam & { b: Befehl; adresse: string;
         <div data-ziel={`${adresse}|${i}|fuss`} className="h-4 touch-none cursor-grab" onPointerDown={greifen} />
       </div>
       <span aria-hidden style={{ ...NASE, left: 14, bottom: -6, background: farbe }} />
+      {gewaehlt && <Plus />}
     </div>
   );
 }
