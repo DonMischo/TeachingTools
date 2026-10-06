@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import type { Niveau } from "../Bausteine";
+import Binaerrechner from "@/components/simulationen/Binaerrechner";
 
 export const WORT_LAENGE = 8;
 export const istAscii = (s: string) => /^[\x20-\x7e]*$/.test(s);
@@ -61,8 +62,14 @@ export function StufeAscii({ wort, niveau, fertig, fehler }: { wort: string; niv
   );
 }
 
-export function StufeBits({ wort, niveau, fertig, fehler }: { wort: string; niveau: Niveau; fertig: () => void; fehler: () => void }) {
+/** Hinweis am Hilfsmittel: was es kostet */
+export const HILFE_PREIS = "Hilfsmittel erlaubt — kostet 100 Punkte und den dritten Stern dieser Stufe.";
+
+export function StufeBits({ wort, niveau, fertig, fehler, onHilfe }: { wort: string; niveau: Niveau; fertig: () => void; fehler: () => void; onHilfe?: () => void }) {
   const hilfe = niveau === "einsteiger";
+  const [rechnerZeile, setRechnerZeile] = useState<number | null>(null);
+  const [rechnerBits, setRechnerBits] = useState<number[]>(() => Array(8).fill(0));
+  const oeffne = (i: number) => { setRechnerZeile(i); onHilfe?.(); };
   const [bits, setBits] = useState<number[][]>(() => Array.from({ length: WORT_LAENGE }, () => Array(8).fill(0)));
   const [geprueft, setGeprueft] = useState(false);
   const wert = (b: number[]) => b.reduce((s, v, k) => s + v * STELLEN[k], 0);
@@ -98,6 +105,10 @@ export function StufeBits({ wort, niveau, fertig, fehler }: { wort: string; nive
                   </td>
                 ))}
                 <td className="pl-2 w-6">{geprueft ? (richtig(i) ? "✅" : "❌") : ""}</td>
+                <td className="pl-1">
+                  <button className={`chip text-xs ${rechnerZeile === i ? "chip-on" : ""}`} title={`Binär-Rechner für »${z}« öffnen. ${HILFE_PREIS}`}
+                    aria-label={`Binär-Rechner für Zeichen ${i + 1}`} onClick={() => oeffne(i)}>🧮</button>
+                </td>
                 {hilfe && (
                   <td className="pl-3 text-xs text-muted whitespace-nowrap">
                     = <b className={wert(bits[i]) === wort.charCodeAt(i) ? "text-ok" : "text-fg"}>{wert(bits[i])}</b>
@@ -110,6 +121,21 @@ export function StufeBits({ wort, niveau, fertig, fehler }: { wort: string; nive
           </tbody>
         </table>
       </div>
+      {rechnerZeile !== null && (
+        <div className="card p-3 flex flex-col gap-2 max-w-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-bold">🧮 Binär-Rechner · Zeichen »{wort[rechnerZeile] === " " ? "␣" : wort[rechnerZeile]}«</h4>
+            <button className="chip text-xs" onClick={() => setRechnerZeile(null)}>✕ schließen</button>
+          </div>
+          <p className="text-xs text-muted">Probiere hier aus, welche Bits zusammen {wort.charCodeAt(rechnerZeile)} ergeben — dann übertrage sie in die Tabelle. {HILFE_PREIS}</p>
+          <Binaerrechner key={rechnerZeile} eingebettet ziel={wort.charCodeAt(rechnerZeile)} zielText={wort[rechnerZeile] === " " ? "Leerzeichen" : wort[rechnerZeile]} onBits={setRechnerBits} />
+          {hilfe && (
+            <button className="btn btn-secondary self-start" onClick={() => { const z = rechnerZeile; setBits(alt => alt.map((r, k) => (k === z ? [...rechnerBits] : r))); setGeprueft(false); }}>
+              ⬇ In Zeile »{wort[rechnerZeile]}« übernehmen
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex gap-2 items-center">
         <button className="btn btn-primary" onClick={() => { setGeprueft(true); if (alle) fertig(); else fehler(); }}>✓ Prüfen</button>
         {geprueft && alle && <span className="text-sm">{WORT_LAENGE * 8} Bit — genau so viele Lichtblitze braucht dein Wort.</span>}

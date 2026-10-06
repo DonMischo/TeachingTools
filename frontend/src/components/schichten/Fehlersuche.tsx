@@ -7,6 +7,8 @@ import { useMemo, useState } from "react";
 import { FAELLE } from "@/lib/schichten/fehler";
 import { SCHICHTEN, schicht, type SchichtNr } from "@/lib/schichten/kapselung";
 import type { Modell, Niveau } from "./Bausteine";
+import { verbucheFehlersuche, type Erfolg } from "@/lib/schichten/wertung";
+import { aendereErfolge } from "./spiel/erfolge";
 
 /** Für Einsteiger: Fälle ohne Routing-Schleifen, Firewalls und Zertifikate */
 const LEICHT = ["wlan-aus", "kabel", "mac-filter", "gateway", "verlust", "sitzung", "zeichen", "dns", "http"];
@@ -34,14 +36,17 @@ export default function Fehlersuche({ modell, niveau = "fortgeschritten" }: { mo
   const richtig = tipp !== null && gruppe(tipp) === gruppe(fall.loesung);
   const fertig = pos >= reihe.length - 1 && tipp !== null;
 
+  const [neuFrei, setNeuFrei] = useState<Erfolg[]>([]);
   const antworten = (nr: SchichtNr) => {
     if (tipp !== null) return;
     setTipp(nr);
+    setNeuFrei(aendereErfolge(alt => verbucheFehlersuche(alt, gruppe(nr) === gruppe(fall.loesung))).neu);
     setPunkte(p => ({ richtig: p.richtig + (gruppe(nr) === gruppe(fall.loesung) ? 1 : 0), versuche: p.versuche + 1 }));
   };
   const weiter = () => {
     setTipp(null);
     setBenutzt([]);
+    setNeuFrei([]);
     if (pos + 1 < reihe.length) setPos(pos + 1);
     else { setPos(0); setSeed(s => s + 1); setPunkte({ richtig: 0, versuche: 0 }); }
   };
@@ -94,6 +99,7 @@ export default function Fehlersuche({ modell, niveau = "fortgeschritten" }: { mo
           <div className={`card p-4 flex flex-col gap-2 border-2 ${richtig ? "border-ok" : "border-bad"}`}>
             <b>{richtig ? "✅ Richtig!" : `❌ Nicht ganz — es ist ${modell === "osi" ? `Schicht ${fall.loesung} (${schicht(fall.loesung).name})` : schicht(fall.loesung).tcpip}.`}</b>
             <p className="text-sm leading-relaxed">{fall.erkl}</p>
+            {neuFrei.map(e => <span key={e.id} className="chip chip-on self-start">🎉 Erfolg: {e.icon} {e.name}</span>)}
             <button className="btn btn-primary self-start" onClick={weiter}>{fertig ? "🔁 Neue Runde" : "Nächster Fall ▶"}</button>
           </div>
         )}

@@ -10,9 +10,12 @@ import {
   ROUTER, VERBINDUNGEN, begruendung, besterEintrag, ipBits, nachbarn, passt, router, zerlege, type Ziel,
 } from "@/lib/schichten/netz";
 import type { Niveau } from "../Bausteine";
+import Binaerrechner from "@/components/simulationen/Binaerrechner";
+import { HILFE_PREIS } from "./Codierung";
 
-export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehler }: { ziel: Ziel; niveau?: Niveau; fertig: () => void; fehler: () => void }) {
+export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehler, onHilfe }: { ziel: Ziel; niveau?: Niveau; fertig: () => void; fehler: () => void; onHilfe?: () => void }) {
   const einfach = niveau === "einsteiger";
+  const [rechner, setRechner] = useState(false);
   const [jetzt, setJetzt] = useState("heim");
   const [weg, setWeg] = useState<string[]>(["heim"]);
   const [ttl, setTtl] = useState(64);
@@ -116,6 +119,16 @@ export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehl
             {lokal && !angekommen && <button className="btn btn-primary w-full mt-2" onClick={() => waehle("lokal")}>📬 Hier direkt zustellen</button>}
           </div>
           {meldung && <div className={`rounded-lg p-3 text-sm ${meldung.ok ? "bg-ok/15" : "bg-bad/15"}`}>{meldung.ok ? "✅ " : "❌ "}{meldung.text}</div>}
+          <button className={`chip self-start ${rechner ? "chip-on" : ""}`} title={HILFE_PREIS}
+            onClick={() => { if (!rechner) onHilfe?.(); setRechner(!rechner); }}>🧮 Binär-Rechner {rechner ? "schließen" : "öffnen"}</button>
+          {rechner && (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-muted">
+                Stell eine Zahl der Zieladresse in Bits dar — z. B. die letzte, {ziel.ip.split(".")[3]}. Bei /25 zählt das erste Bit dieser Zahl mit: 0 = unter 128, 1 = ab 128. {HILFE_PREIS}
+              </p>
+              <Binaerrechner eingebettet ziel={+ziel.ip.split(".")[3]} zielText={`letzte Zahl von ${ziel.ip}`} />
+            </div>
+          )}
           {einfach
             ? <p className="text-xs rounded-lg bg-accent/10 p-2">💡 Nimm von den Zeilen mit ✅ die mit der <b>größten Zahl hinter dem /</b> — sie passt am genauesten. 0.0.0.0/0 passt immer, ist aber der letzte Ausweg.</p>
             : <p className="text-xs text-muted">Grün = Bit stimmt mit dem Ziel überein, rot = anders, grau = zählt nicht. 0.0.0.0/0 ist die Standardroute: Sie passt immer, aber am schwächsten.</p>}

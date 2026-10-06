@@ -294,6 +294,8 @@ simulationen:
       - Drei Niveaus — Einsteiger (ab Kl. 6, einfache Sprache, Umschlag-Bild), Fortgeschritten, Experte (Prüfsummen von Hand, Krypto/RFC-Details)
       - Vom Bild zu den Zahlen — Pixel-Regler, RGB und Hex mit Rechenweg, Rohgröße gegen JPEG, JPEG-Kopf und Quantisierungstabelle
       - Arbeitsauftrag und »Wissen dazu« in jeder Missionsstufe, Hilfen je Niveau
+      - Binär-Rechner als Hilfsmittel in Bits und Routing (mit Zielzahl; kostet 100 Punkte und einen Stern)
+      - Punkte (bis 1000 je Stufe, Niveau-Faktor), Sterne, Punktestand, 12 Erfolge im Browser gespeichert
       - 3D-Schichtstapel mit 15 Schritten; echte Bytes für DNS, HTTP, JPEG, TLS 1.3 (ChaCha20-Poly1305), TCP, IPv4, Ethernet (CRC-32), Bits und Signal
       - Hex-Bild der Kapselung in Schichtfarben, Feld antippen markiert Bytes; Auspacken und Prüfen in Tokio
       - Eigenes Foto (bleibt im Browser) oder eigener Text

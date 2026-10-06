@@ -11,7 +11,7 @@
  * Die Farben stehen absichtlich fest und folgen nicht dem Hell/Dunkel-Wechsel
  * der App: das dunkle Terminal *ist* die Gestaltung.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { zahl, type Vorgabe } from "@/lib/vorgabe";
 
 const POWERS = [128, 64, 32, 16, 8, 4, 2, 1];
@@ -32,8 +32,18 @@ const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 /**
  * `vorgabe` (TaskCrawler-Station): `{ zahl: 0–255 }` stellt die Bits auf diese Zahl
  * (umschaltbar bleiben sie).
+ *
+ * Eingebettet (z. B. als Hilfsmittel im Schichtenmodell): ohne Seitenkopf,
+ * auf Wunsch mit Zielzahl (`ziel`, `zielText`) und Rückmeldung der Bits (`onBits`).
  */
-export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+export default function Binaerrechner({ action, vorgabe, eingebettet = false, ziel, zielText, onBits }: {
+  action?: ReactNode;
+  vorgabe?: Vorgabe;
+  eingebettet?: boolean;
+  ziel?: number;
+  zielText?: string;
+  onBits?: (bits: number[]) => void;
+}) {
   const startzahl = zahl(vorgabe, "zahl");
   const [bits, setBits] = useState<number[]>(() => {
     const n = startzahl === undefined ? 0 : Math.max(0, Math.min(255, Math.round(startzahl)));
@@ -46,9 +56,11 @@ export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode;
   const toggle = (i: number) =>
     setBits(prev => prev.map((b, j) => (j === i ? (b ? 0 : 1) : b)));
 
+  useEffect(() => { onBits?.(bits); }, [bits, onBits]);
+
   return (
-    <div className="page">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className={eingebettet ? "" : "page"}>
+      {!eingebettet && <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">◈ Binär-Rechner</h1>
           <p className="text-muted text-sm mt-1">
@@ -57,7 +69,7 @@ export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode;
           </p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
-      </div>
+      </div>}
 
       <div
         style={{
@@ -78,6 +90,12 @@ export default function Binaerrechner({ action, vorgabe }: { action?: ReactNode;
         }}>
           RAUMSTATION NOVA-7 // DATENANALYSE
         </div>
+
+        {ziel !== undefined && (
+          <div style={{ fontFamily: MONO, fontSize: 13, color: sum === ziel ? C.green : C.white, textAlign: "center", marginBottom: "1rem", letterSpacing: 1 }}>
+            ZIEL = {ziel}{zielText ? ` (${zielText})` : ""} {sum === ziel ? "✓ STIMMT" : sum > ziel ? "· ZU GROSS" : `· FEHLT ${ziel - sum}`}
+          </div>
+        )}
 
         {/* Bits */}
         <div className="flex justify-center gap-2 flex-wrap" style={{ marginBottom: "1.5rem" }}>

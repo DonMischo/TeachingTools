@@ -77,4 +77,36 @@ describe("Schichtenmodell — Anwenden", () => {
     expect(screen.getByText("passt?")).toBeInTheDocument();
     expect(screen.queryByText(/Bits zeigen/)).toBeNull();
   });
+
+  it("Punkte und Sterne: fehlerfreie ASCII-Stufe bringt 1000, Binär-Rechner kostet den dritten Stern", () => {
+    render(<Mission modell="osi" niveau="einsteiger" />);
+    fireEvent.change(screen.getByLabelText("Wort mit 8 Zeichen"), { target: { value: "Katze 42" } });
+    fireEvent.click(screen.getByRole("button", { name: /Los geht/ }));
+    "Katze 42".split("").forEach((z, i) => fireEvent.change(screen.getByLabelText(`Code für Zeichen ${i + 1}`), { target: { value: String(z.charCodeAt(0)) } }));
+    fireEvent.click(screen.getByRole("button", { name: /Prüfen/ }));
+    expect(screen.getByLabelText("Punktestand").textContent).toContain("1.000");
+    expect(screen.getByRole("status").textContent).toContain("+1.000 Punkte ⭐⭐⭐");
+
+    // Bits mit Binär-Rechner: Ziel steht drin, »übernehmen« füllt die Zeile
+    fireEvent.click(screen.getByLabelText("Binär-Rechner für Zeichen 1"));
+    expect(screen.getByText(/ZIEL = 75 \(K\)/)).toBeInTheDocument();
+    for (let i = 0; i < 8; i++) {
+      fireEvent.click(screen.getByLabelText(`Binär-Rechner für Zeichen ${i + 1}`));
+      const c = "Katze 42".charCodeAt(i);
+      [128, 64, 32, 16, 8, 4, 2, 1].forEach((s, k) => { if (c & s) fireEvent.click(screen.getByLabelText(`Bit ${7 - k} mit dem Stellenwert ${s}`)); });
+      fireEvent.click(screen.getByRole("button", { name: /In Zeile/ }));
+    }
+    fireEvent.click(screen.getByRole("button", { name: /Prüfen/ }));
+    expect(screen.getByRole("status").textContent).toContain("+900 Punkte ⭐⭐☆");
+    expect(screen.getByLabelText("Punktestand").textContent).toContain("1.900");
+    // viele Klicks — im vollen, parallelen Testlauf braucht das deutlich länger als allein
+  }, 60_000);
+
+  it("Fehlersuche zählt für den Erfolg »Fehlerjäger«", () => {
+    localStorage.removeItem("hp_schichten_erfolge");
+    render(<Fehlersuche modell="osi" />);
+    fireEvent.click(screen.getByRole("button", { name: /^1 Bitübertragung/ }));
+    const s = JSON.parse(localStorage.getItem("hp_schichten_erfolge") ?? "{}");
+    expect(typeof s.fehlersucheRichtig).toBe("number");
+  });
 });

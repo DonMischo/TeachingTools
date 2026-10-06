@@ -8,7 +8,8 @@ import { signal } from "@/lib/schichten/signal";
 export type Modell = "osi" | "tcpip";
 
 /** Tiefe der Erklärung: von Klasse 6 bis Informatik-Profi */
-export type Niveau = "einsteiger" | "fortgeschritten" | "experte";
+export type { Niveau } from "@/lib/schichten/wertung";
+import type { Niveau } from "@/lib/schichten/wertung";
 export const NIVEAUS: { id: Niveau; icon: string; label: string; text: string }[] = [
   { id: "einsteiger", icon: "🌱", label: "Einsteiger", text: "ab Klasse 6: einfache Sprache, Bilder statt Zahlenkolonnen" },
   { id: "fortgeschritten", icon: "🔧", label: "Fortgeschritten", text: "Klasse 9/10: Kopffelder, Hex-Bild, Adressen" },
