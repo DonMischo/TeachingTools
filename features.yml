@@ -290,7 +290,10 @@ simulationen:
   - id: schichten
     name: Schichtenmodell
     kann:
-      - Ein Foto reist von Erfurt nach Tokio durch alle Schichten (Idee rick.theengineer, Instagram), OSI oder TCP/IP umschaltbar
+      - Ein Foto reist von Erfurt nach Tokio durch alle Schichten (Idee rick.theengineer, Instagram), OSI oder TCP/IP umschaltbar; Lenas App heißt PurrMsg
+      - Drei Niveaus — Einsteiger (ab Kl. 6, einfache Sprache, Umschlag-Bild), Fortgeschritten, Experte (Prüfsummen von Hand, Krypto/RFC-Details)
+      - Vom Bild zu den Zahlen — Pixel-Regler, RGB und Hex mit Rechenweg, Rohgröße gegen JPEG, JPEG-Kopf und Quantisierungstabelle
+      - Arbeitsauftrag und »Wissen dazu« in jeder Missionsstufe, Hilfen je Niveau
       - 3D-Schichtstapel mit 15 Schritten; echte Bytes für DNS, HTTP, JPEG, TLS 1.3 (ChaCha20-Poly1305), TCP, IPv4, Ethernet (CRC-32), Bits und Signal
       - Hex-Bild der Kapselung in Schichtfarben, Feld antippen markiert Bytes; Auspacken und Prüfen in Tokio
       - Eigenes Foto (bleibt im Browser) oder eigener Text

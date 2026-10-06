@@ -5,10 +5,11 @@
  */
 import { useMemo, useState } from "react";
 import { tcpLauf } from "@/lib/schichten/tcp";
+import type { Niveau } from "./Bausteine";
 
 const LINKS = 110, RECHTS = 520, PRO_T = 46;
 
-export default function Pakete() {
+export default function Pakete({ niveau = "fortgeschritten" }: { niveau?: Niveau }) {
   const [verlust, setVerlust] = useState(0.15);
   const [fenster, setFenster] = useState(4);
   const [anzahl, setAnzahl] = useState(16);
@@ -19,6 +20,14 @@ export default function Pakete() {
   const y = (t: number) => 34 + t * PRO_T;
 
   return (
+    <div className="flex flex-col gap-4">
+    {niveau === "einsteiger" && (
+      <p className="text-base max-w-3xl leading-relaxed">
+        Manchmal gehen unterwegs Puzzleteile verloren — eine Leitung ist überfüllt, ein Bit kippt. Kein Problem: Tokio antwortet nach jedem Teil
+        »Ich warte jetzt auf Nr. …«. Sagt Tokio das dreimal hintereinander, weiß Lena: Das Teil fehlt — und schickt es <b>noch einmal</b> (orange).
+        Schieb den Regler »Paketverlust« hoch und schau zu!
+      </p>
+    )}
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
       <div className="rounded-xl bg-[#060a14] overflow-auto max-h-[75vh]">
         <svg viewBox={`0 0 630 ${h}`} className="w-full min-w-[520px]" role="img" aria-label="Ablaufdiagramm TCP">
@@ -81,6 +90,7 @@ export default function Pakete() {
           <p className="mt-1">Vereinfacht: feste Fenstergröße, Bestätigungen gehen nie verloren.</p>
         </div>
       </div>
+    </div>
     </div>
   );
 }

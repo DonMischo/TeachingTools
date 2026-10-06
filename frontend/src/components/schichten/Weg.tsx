@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import land from "@/lib/schichten/land.json";
 import { rahmen, schicht, type Feld, type Reise } from "@/lib/schichten/kapselung";
 import { KNOTEN, LEITUNGEN, MEDIEN, leitungsLaenge, linienzug, verzoegerung } from "@/lib/schichten/route";
-import type { Modell } from "./Bausteine";
+import type { Modell, Niveau } from "./Bausteine";
 
 const B = 1000, H = 560;
 const BOX = { w: -12, o: 150, s: -10, n: 58 };
@@ -32,7 +32,7 @@ const LAGE: Record<string, { dx: number; dy: number; anker: "start" | "middle" |
   Marseille: { dx: -12, dy: 4, anker: "end" },
 };
 
-export default function Weg({ reise }: { reise: Reise; modell: Modell }) {
+export default function Weg({ reise, niveau = "fortgeschritten" }: { reise: Reise; modell: Modell; niveau?: Niveau }) {
   const [wahl, setWahl] = useState(4);
   const pfad = useMemo(() => LEITUNGEN.map((_, i) => linienzug(i).map(([lo, la], k) => `${k ? "L" : "M"}${px(lo).toFixed(1)},${py(la).toFixed(1)}`).join("")), []);
   const ganz = useMemo(() => {
@@ -44,10 +44,17 @@ export default function Weg({ reise }: { reise: Reise; modell: Modell }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {niveau === "einsteiger" ? (
+        <p className="text-base max-w-3xl leading-relaxed">
+          So reist Lenas Foto: erst durch die Luft zum WLAN-Router, dann durchs Telefonkabel, dann als Licht in Glasfaserkabeln — die längste Strecke am Meeresboden.
+          An jedem Punkt steht ein <b>Router</b>, eine Art Postverteiler. Tippe eine Strecke an!
+        </p>
+      ) : (
       <p className="text-sm max-w-3xl">
         Rund {(Math.round(LEITUNGEN.reduce((s, _, i) => s + leitungsLaenge(i), 0) / 1000) * 1000).toLocaleString("de-DE")} km Kabel liegen zwischen Erfurt und Tokio — das meiste davon am Meeresboden.
         Jeder Knoten ist ein Router: Er liest nur die IP-Zieladresse und entscheidet, wohin es weitergeht. Leitung antippen zeigt, was sich am Rahmen ändert.
       </p>
+      )}
       <div className="rounded-xl overflow-hidden bg-[#0b1324]">
         <svg viewBox={`0 0 ${B} ${H}`} className="w-full h-auto max-h-[60vh]" role="img" aria-label="Karte des Weges von Erfurt nach Tokio">
           {LAND.map((d, i) => <path key={i} d={d} fill="#1c2840" stroke="#2c3b5c" strokeWidth={0.6} />)}
@@ -90,13 +97,13 @@ export default function Weg({ reise }: { reise: Reise; modell: Modell }) {
             </tbody>
           </table>
         </div>
-        <Leitungsdetail reise={reise} i={wahl} />
+        <Leitungsdetail reise={reise} i={wahl} einfach={niveau === "einsteiger"} />
       </div>
     </div>
   );
 }
 
-function Leitungsdetail({ reise, i }: { reise: Reise; i: number }) {
+function Leitungsdetail({ reise, i, einfach }: { reise: Reise; i: number; einfach: boolean }) {
   const jetzt = useMemo(() => rahmen(reise, 1, i), [reise, i]);
   const vorher = useMemo(() => (i > 0 ? rahmen(reise, 1, i - 1) : null), [reise, i]);
   const l = LEITUNGEN[i];
@@ -124,7 +131,14 @@ function Leitungsdetail({ reise, i }: { reise: Reise; i: number }) {
         <div className="rounded-lg bg-surface-hover p-2"><div className="font-bold text-base tabular-nums">{ms(v.senden)}</div>alle Bits hinausschicken</div>
         <div className="rounded-lg bg-surface-hover p-2"><div className="font-bold text-base tabular-nums">{ms(v.router)}</div>Router liest und leitet weiter</div>
       </div>
-      {vorher ? (
+      {einfach && vorher ? (
+        <ul className="text-sm space-y-1.5">
+          <li>🚚 <b>Neuer äußerer Umschlag</b>: von {KNOTEN[i].name} ({KNOTEN[i].ort}) an {KNOTEN[i + 1].name} ({KNOTEN[i + 1].ort}).</li>
+          <li>⏳ Die <b>Lebenszeit</b> zählt um eins herunter: jetzt {jetzt.bytes[22]}. Bei 0 würde das Paket weggeworfen — so irrt nichts ewig herum.</li>
+          {i === 1 && <li>🏠 Hier tauscht der Heimrouter Lenas Absender gegen seine eigene Adresse — draußen kennt niemand Lenas Handy.</li>}
+          <li>✉️ Die <b>Adresse in Tokio bleibt gleich</b> — und ins Paket schaut niemand hinein.</li>
+        </ul>
+      ) : vorher ? (
         <>
           <p className="text-sm">
             Was der Router in <b>{KNOTEN[i].ort}</b> am Rahmen von Segment #1 geändert hat (✏️):

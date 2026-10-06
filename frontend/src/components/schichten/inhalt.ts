@@ -4,6 +4,7 @@
  * die Rohgröße sind die unkomprimierten Pixel (3 Byte je Pixel).
  */
 import { text } from "@/lib/schichten/bytes";
+import { maleKatze } from "./katze";
 
 export interface Inhalt {
   bytes: Uint8Array;
@@ -29,33 +30,19 @@ function alsJpeg(c: HTMLCanvasElement, name: string): Promise<Inhalt> {
   });
 }
 
-/** Ein »Foto« einer Katze: Verlauf, Fell-Rauschen, Emoji — genug Details, dass JPEG etwas zu tun hat. */
+/** Ein »Foto« von Lenas Katze: gezeichnet, dazu Kamerarauschen — genug Details, dass JPEG etwas zu tun hat. */
 export function katzenFoto(): Promise<Inhalt> {
   const c = document.createElement("canvas");
   c.width = 1600;
   c.height = 1200;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createLinearGradient(0, 0, 0, c.height);
-  g.addColorStop(0, "#f6d7a7");
-  g.addColorStop(0.6, "#d9a066");
-  g.addColorStop(1, "#7a4e2d");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, c.width, c.height);
-  // Sofa-Streifen und Licht
-  for (let i = 0; i < 14; i++) {
-    ctx.fillStyle = `rgba(120,70,40,${0.06 + (i % 3) * 0.03})`;
-    ctx.fillRect(0, 760 + i * 32, c.width, 14);
-  }
-  ctx.font = "900px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🐈", 800, 650);
+  maleKatze(ctx, c.width, c.height);
   // Fotorauschen wie bei einer Handykamera
   const bild = ctx.getImageData(0, 0, c.width, c.height);
   let s = 12345;
   for (let i = 0; i < bild.data.length; i += 4) {
     s = (s * 1103515245 + 12345) & 0x7fffffff;
-    const r = ((s >> 16) & 31) - 16;
+    const r = ((s >> 16) & 15) - 8;
     bild.data[i] += r; bild.data[i + 1] += r; bild.data[i + 2] += r;
   }
   ctx.putImageData(bild, 0, 0);

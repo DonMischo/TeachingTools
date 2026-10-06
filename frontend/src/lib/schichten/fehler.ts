@@ -54,12 +54,12 @@ const NSLOOKUP_OK = `Server:  fritz.box
 Address:  192.168.178.1
 
 Nicht autorisierende Antwort:
-Name:    tokio.katzenpost.example
+Name:    tokio.purrmsg.example
 Address:  203.0.113.7`;
 
 const PING = "ping 203.0.113.7";
 const PING_GW = "ping 192.168.178.1";
-const NSLOOKUP = "nslookup tokio.katzenpost.example";
+const NSLOOKUP = "nslookup tokio.purrmsg.example";
 const PORT = "Test-NetConnection 203.0.113.7 -Port 443";
 
 const PORT_OK = `ComputerName     : 203.0.113.7
@@ -73,7 +73,7 @@ export const FAELLE: Fall[] = [
   {
     id: "wlan-aus",
     titel: "Funkstille",
-    symptom: "Lena tippt auf Senden — nichts passiert, die App zeigt »Keine Verbindung«. Oben in der Leiste fehlt das WLAN-Symbol.",
+    symptom: "Lena tippt auf Senden — nichts passiert, PurrMsg zeigt »Keine Verbindung«. Oben in der Leiste fehlt das WLAN-Symbol.",
     werkzeuge: [
       { befehl: "ipconfig", ausgabe: IPCONFIG_GETRENNT },
       { befehl: PING_GW, ausgabe: "PING: Fehler bei der Übertragung. Allgemeiner Fehler." },
@@ -132,7 +132,7 @@ export const FAELLE: Fall[] = [
   {
     id: "firewall",
     titel: "Tür zu",
-    symptom: "Im Schulnetz klappt »ping« nach Tokio, aber die Foto-App meldet nach 20 Sekunden »Zeitüberschreitung«.",
+    symptom: "Im Schulnetz klappt »ping« nach Tokio, aber PurrMsg meldet nach 20 Sekunden »Zeitüberschreitung«.",
     werkzeuge: [
       { befehl: PING, ausgabe: PING_TOKIO_OK },
       { befehl: PORT, ausgabe: PORT_OK.replace("True", "False") + "\nWARNUNG: TCP connect to 203.0.113.7:443 failed" },
@@ -155,7 +155,7 @@ export const FAELLE: Fall[] = [
   {
     id: "sitzung",
     titel: "Abgemeldet",
-    symptom: "Lena lässt die App eine Stunde offen, dann tippt sie auf Senden: »Sitzung abgelaufen — bitte erneut anmelden«. Das Netz ist in Ordnung.",
+    symptom: "Lena lässt PurrMsg eine Stunde offen, dann tippt sie auf Senden: »Sitzung abgelaufen — bitte erneut anmelden«. Das Netz ist in Ordnung.",
     werkzeuge: [
       { befehl: PING, ausgabe: PING_TOKIO_OK },
       { befehl: PORT, ausgabe: PORT_OK },
@@ -170,7 +170,7 @@ export const FAELLE: Fall[] = [
     symptom: "Nach einem Akkuwechsel steht auf Lenas altem Tablet der 1. Januar 2009. Keine App bekommt eine sichere Verbindung.",
     werkzeuge: [
       { befehl: PORT, ausgabe: PORT_OK },
-      { befehl: "Browser", ausgabe: "Ihre Verbindung ist nicht privat\nNET::ERR_CERT_DATE_INVALID\nDas Zertifikat von tokio.katzenpost.example ist erst ab 12.03.2026 gültig." },
+      { befehl: "Browser", ausgabe: "Ihre Verbindung ist nicht privat\nNET::ERR_CERT_DATE_INVALID\nDas Zertifikat von tokio.purrmsg.example ist erst ab 12.03.2026 gültig." },
     ],
     loesung: 6,
     erkl: "TCP steht, aber die Verschlüsselung scheitert: Mit falscher Uhrzeit hält das Tablet das Zertifikat für ungültig und baut keinen TLS-Schlüssel auf. Verschlüsseln gehört im OSI-Modell zur Darstellungsschicht (6).",
@@ -201,9 +201,9 @@ export const FAELLE: Fall[] = [
     titel: "Name unbekannt",
     symptom: "»Server nicht gefunden«. Mit der Zahlenadresse 203.0.113.7 kommt man aber durch.",
     werkzeuge: [
-      { befehl: NSLOOKUP, ausgabe: "Server:  fritz.box\nAddress:  192.168.178.1\n\n*** tokio.katzenpost.example wurde von fritz.box nicht gefunden: Non-existent domain" },
+      { befehl: NSLOOKUP, ausgabe: "Server:  fritz.box\nAddress:  192.168.178.1\n\n*** tokio.purrmsg.example wurde von fritz.box nicht gefunden: Non-existent domain" },
       { befehl: PING, ausgabe: PING_TOKIO_OK },
-      { befehl: "ping tokio.katzenpost.example", ausgabe: "Ping-Anforderung konnte Host \"tokio.katzenpost.example\" nicht finden. Überprüfen Sie den Namen, und versuchen Sie es erneut." },
+      { befehl: "ping tokio.purrmsg.example", ausgabe: "Ping-Anforderung konnte Host \"tokio.purrmsg.example\" nicht finden. Überprüfen Sie den Namen, und versuchen Sie es erneut." },
     ],
     loesung: 7,
     erkl: "Die Leitung bis Tokio funktioniert, nur das Nachschlagen des Namens (DNS) scheitert — z. B. ein Tippfehler in der App-Einstellung. DNS ist ein Dienst der Anwendungsschicht (7).",
@@ -218,6 +218,6 @@ export const FAELLE: Fall[] = [
       { befehl: "App-Protokoll", ausgabe: "POST /v2/fotos HTTP/1.1 → HTTP/1.1 404 Not Found\n(der Server kennt nur /v1/fotos)" },
     ],
     loesung: 7,
-    erkl: "Netz, Verbindung und Verschlüsselung stehen. Aber die App fragt nach einer Adresse, die der Server nicht kennt. HTTP-Anfragen und ihre Antworten sind Schicht 7.",
+    erkl: "Netz, Verbindung und Verschlüsselung stehen. Aber PurrMsg fragt nach einer Adresse, die der Server nicht kennt. HTTP-Anfragen und ihre Antworten sind Schicht 7.",
   },
 ];

@@ -9,7 +9,7 @@ import { baueRahmen, schicht, type SchichtNr } from "@/lib/schichten/kapselung";
 import { text } from "@/lib/schichten/bytes";
 import { ADRESSEN, KNOTEN } from "@/lib/schichten/route";
 import { DNS, type Ziel } from "@/lib/schichten/netz";
-import { HexBild, Legende, type Modell } from "../Bausteine";
+import { HexBild, Legende, type Modell, type Niveau } from "../Bausteine";
 
 export const SPIEL_MSS = 4;
 export const SPIEL_ISN = 1000;
@@ -25,15 +25,19 @@ interface Frage {
   merke: string;
 }
 
-function fragen(ziel: Ziel): Frage[] {
+function fragen(ziel: Ziel, niveau: Niveau): Frage[] {
   const zone = DNS.find(d => d.art === "zone" && d.zone === ziel.domain)!;
-  return [
+  const einfach = niveau === "einsteiger";
+  const liste: Frage[] = [
     {
-      id: "port", schicht: 4, frage: "Welcher Ziel-Port? Die Foto-App spricht verschlüsseltes HTTP.",
+      id: "port", schicht: 4,
+      frage: einfach
+        ? "Ein Server ist wie ein großes Haus mit vielen Türen (Ports). Hinter welcher Tür wartet PurrMsg? Tipp: Verschlüsselte Webdienste wohnen hinter Tür 443."
+        : "Welcher Ziel-Port? PurrMsg spricht verschlüsseltes HTTP.",
       optionen: [
-        { wert: "25", label: "25 · E-Mail (SMTP)", warum: "Port 25 nimmt E-Mails entgegen — dort wartet keine Foto-App." },
+        { wert: "25", label: "25 · E-Mail (SMTP)", warum: "Port 25 nimmt E-Mails entgegen — dort wartet kein PurrMsg." },
         { wert: "53", label: "53 · DNS", warum: "Port 53 ist für Namensauflösung, die hast du schon erledigt." },
-        { wert: "80", label: "80 · HTTP", warum: "Port 80 ist unverschlüsseltes HTTP — die App will aber verschlüsseln." },
+        { wert: "80", label: "80 · HTTP", warum: "Port 80 ist unverschlüsseltes HTTP — PurrMsg will aber verschlüsseln." },
         { wert: "443", label: "443 · HTTPS", warum: "" },
       ],
       richtig: "443",
@@ -46,7 +50,10 @@ function fragen(ziel: Ziel): Frage[] {
       merke: "Mit den Folgenummern setzt der Empfänger die Stücke in der richtigen Reihenfolge zusammen und merkt, wenn eins fehlt.",
     },
     {
-      id: "ip", schicht: 3, frage: `Welche Ziel-IP kommt in den IP-Kopf? Das Paket soll zu ${ziel.wer} nach ${ziel.ort}.`,
+      id: "ip", schicht: 3,
+      frage: einfach
+        ? `Welche Adresse kommt auf den Umschlag? Das Paket soll zu ${ziel.wer} nach ${ziel.ort} — denk an die DNS-Jagd!`
+        : `Welche Ziel-IP kommt in den IP-Kopf? Das Paket soll zu ${ziel.wer} nach ${ziel.ort}.`,
       optionen: [
         { wert: ADRESSEN.handy, label: ADRESSEN.handy, warum: "Das ist Lenas eigene Adresse — Absender, nicht Ziel." },
         { wert: "192.168.178.1", label: "192.168.178.1", warum: "Das ist der Heimrouter. Er ist nur die erste Station, nicht das Ziel." },
@@ -57,7 +64,10 @@ function fragen(ziel: Ziel): Frage[] {
       merke: "Die IP-Zieladresse ist die echte Endadresse. Sie bleibt auf dem ganzen Weg gleich — alle Router lesen sie.",
     },
     {
-      id: "mac", schicht: 2, frage: "Welche Ziel-MAC-Adresse kommt in den Rahmen?",
+      id: "mac", schicht: 2,
+      frage: einfach
+        ? "Der äußere Umschlag reist nur bis zur nächsten Station. Wer bekommt ihn zuerst? (Die Geräte-Nummer heißt MAC-Adresse.)"
+        : "Welche Ziel-MAC-Adresse kommt in den Rahmen?",
       optionen: [
         { wert: "server", label: `MAC des Servers in ${ziel.ort}`, warum: `MAC-Adressen gelten nur im eigenen Netz. Die Netzwerkkarte in ${ziel.ort} ist für Lena unerreichbar — sie kennt nicht einmal ihre MAC.` },
         { wert: ROUTER_MAC, label: `${ROUTER_MAC} (Heimrouter)`, warum: "" },
@@ -68,9 +78,21 @@ function fragen(ziel: Ziel): Frage[] {
       merke: "Der Rahmen reist nur bis zum nächsten Gerät. Jeder Router baut einen neuen — mit neuen MAC-Adressen. Die MAC des Routers fragt das Handy per ARP: »Wer hat 192.168.178.1?«",
     },
   ];
+  // Einsteiger: ohne Folgenummer; Experte: dazu die Gesamtlänge im IP-Kopf
+  if (einfach) return liste.filter(f => f.id !== "seq");
+  if (niveau === "experte") {
+    liste.splice(3, 0, {
+      id: "laenge", schicht: 3, frage: `Was steht im Feld »Gesamtlänge« des IP-Kopfs von Segment 1 (in Byte)?`,
+      zahl: { richtig: 20 + 20 + SPIEL_MSS, warum: `Gesamtlänge zählt IP-Kopf (20) + TCP-Kopf (20) + Daten (${SPIEL_MSS}) — ohne Ethernet.` },
+      richtig: String(20 + 20 + SPIEL_MSS),
+      merke: "Die Gesamtlänge umfasst alles ab dem IP-Kopf. Der Ethernet-Rahmen drumherum zählt nicht — der gehört zu Schicht 2.",
+    });
+  }
+  return liste;
 }
 
-export default function Packen({ ziel, wort, ip, modell, fertig, fehler }: {
+export default function Packen({ ziel, wort, ip, modell, niveau = "fortgeschritten", fertig, fehler }: {
+  niveau?: Niveau;
   ziel: Ziel;
   wort: string;
   ip: string;
@@ -78,7 +100,7 @@ export default function Packen({ ziel, wort, ip, modell, fertig, fehler }: {
   fertig: () => void;
   fehler: () => void;
 }) {
-  const liste = useMemo(() => fragen(ziel), [ziel]);
+  const liste = useMemo(() => fragen(ziel, niveau), [ziel, niveau]);
   const [pos, setPos] = useState(0);
   const [eingabe, setEingabe] = useState("");
   const [rueck, setRueck] = useState<{ ok: boolean; text: string } | null>(null);
@@ -134,7 +156,7 @@ export default function Packen({ ziel, wort, ip, modell, fertig, fehler }: {
           ) : (
             <div className="flex gap-2">
               <input className="input w-40 font-mono" inputMode="numeric" value={eingabe} onChange={e => setEingabe(e.target.value.replace(/\D/g, ""))}
-                onKeyDown={e => { if (e.key === "Enter") antworte(eingabe); }} aria-label="Folgenummer" />
+                onKeyDown={e => { if (e.key === "Enter") antworte(eingabe); }} aria-label={f.id === "seq" ? "Folgenummer" : "Zahl"} />
               <button className="btn btn-primary" onClick={() => antworte(eingabe)}>✓ Prüfen</button>
             </div>
           )}

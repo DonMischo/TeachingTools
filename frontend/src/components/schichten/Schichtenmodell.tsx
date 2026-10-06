@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { packe } from "@/lib/schichten/kapselung";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
-import { kb, type Modell } from "./Bausteine";
+import { NIVEAUS, kb, type Modell, type Niveau } from "./Bausteine";
 import { fotoAusDatei, katzenFoto, textInhalt, type Inhalt } from "./inhalt";
 import Reise from "./Reise";
 import Weg from "./Weg";
@@ -32,12 +32,13 @@ type Reiter = (typeof REITER)[number]["id"];
 const chip = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
-/** `vorgabe` (TaskCrawler-Station): { reiter: "reise" | "weg" | "pakete" | "wissen" | "mission" | "fehler", modell?: "osi" | "tcpip" } */
+/** `vorgabe` (TaskCrawler-Station): { reiter: "reise" | "weg" | "pakete" | "wissen" | "mission" | "fehler", modell?: "osi" | "tcpip", niveau?: "einsteiger" | "fortgeschritten" | "experte" } */
 export default function Schichtenmodell({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "reise");
   const [modell, setModell] = useState<Modell>(wahl(vorgabe, "modell", ["osi", "tcpip"] as const) ?? "osi");
   const [inhalt, setInhalt] = useState<Inhalt | null>(null);
+  const [niveau, setNiveau] = useState<Niveau>(wahl(vorgabe, "niveau", NIVEAUS.map(x => x.id)) ?? "einsteiger");
 
   useEffect(() => {
     let aus = false;
@@ -51,7 +52,7 @@ export default function Schichtenmodell({ action, vorgabe }: { action?: ReactNod
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">📶 Schichtenmodell</h1>
-          <p className="text-muted text-sm mt-1">Lena schickt ihrem Bruder in Tokio ein Foto. In der einen Sekunde bis zur Ankunft geht es durch sieben Schichten hinunter, um die halbe Welt und wieder hinauf.</p>
+          <p className="text-muted text-sm mt-1">Lena schickt ihrem Bruder in Tokio mit der App PurrMsg ein Foto. In der einen Sekunde bis zur Ankunft geht es durch sieben Schichten hinunter, um die halbe Welt und wieder hinauf.</p>
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
@@ -64,19 +65,22 @@ export default function Schichtenmodell({ action, vorgabe }: { action?: ReactNod
             {REITER.filter(r => r.ebene === "anwenden").map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}
           </div>
         )}
-        <div className="inline-flex rounded-xl border border-line p-1 bg-surface ml-auto" title="Welches Modell?">
+        <div className="inline-flex flex-wrap rounded-xl border border-line p-1 bg-surface ml-auto" role="group" aria-label="Wie tief?">
+          {NIVEAUS.map(x => <button key={x.id} className={chip(niveau === x.id)} title={x.text} onClick={() => setNiveau(x.id)}>{x.icon} {x.label}</button>)}
+        </div>
+        <div className="inline-flex rounded-xl border border-line p-1 bg-surface" title="Welches Modell?">
           <button className={chip(modell === "osi")} onClick={() => setModell("osi")}>OSI · 7</button>
           <button className={chip(modell === "tcpip")} onClick={() => setModell("tcpip")}>TCP/IP · 4</button>
         </div>
       </div>
 
       {ebene === "kennen" && reiter !== "wissen" && reiter !== "pakete" && <InhaltWahl inhalt={inhalt} setInhalt={setInhalt} />}
-      {reiter === "reise" && (inhalt ? <MitReise inhalt={inhalt}>{r => <Reise reise={r} inhalt={inhalt} modell={modell} zurKarte={() => setReiter("weg")} />}</MitReise> : <Laedt />)}
-      {reiter === "weg" && (inhalt ? <MitReise inhalt={inhalt}>{r => <Weg reise={r} modell={modell} />}</MitReise> : <Laedt />)}
-      {reiter === "pakete" && <Pakete />}
+      {reiter === "reise" && (inhalt ? <MitReise inhalt={inhalt}>{r => <Reise reise={r} inhalt={inhalt} modell={modell} niveau={niveau} zurKarte={() => setReiter("weg")} />}</MitReise> : <Laedt />)}
+      {reiter === "weg" && (inhalt ? <MitReise inhalt={inhalt}>{r => <Weg reise={r} modell={modell} niveau={niveau} />}</MitReise> : <Laedt />)}
+      {reiter === "pakete" && <Pakete niveau={niveau} />}
       {reiter === "wissen" && <Wissen />}
-      {reiter === "mission" && <Mission modell={modell} />}
-      {reiter === "fehler" && <Fehlersuche modell={modell} />}
+      {reiter === "mission" && <Mission modell={modell} niveau={niveau} />}
+      {reiter === "fehler" && <Fehlersuche modell={modell} niveau={niveau} />}
     </div>
   );
 }

@@ -6,11 +6,12 @@
 import { useState } from "react";
 import { text } from "@/lib/schichten/bytes";
 import { ZIELE, type Ziel } from "@/lib/schichten/netz";
-import type { Modell } from "../Bausteine";
+import type { Modell, Niveau } from "../Bausteine";
 import { StufeAscii, StufeBits, WORT_LAENGE, istAscii } from "./Codierung";
 import DnsJagd from "./DnsJagd";
 import Packen, { SPIEL_ISN, SPIEL_MSS } from "./Packen";
 import Routing from "./Routing";
+import AuftragsKasten from "./Auftrag";
 
 const STUFEN = [
   { id: "auftrag", icon: "✉️", label: "Auftrag" },
@@ -24,7 +25,7 @@ const STUFEN = [
 
 const VORSCHLAEGE = ["Hallo :)", "Katze 42", "Sushi!!!", "TT rockt", "Erfurt 1"];
 
-export default function Mission({ modell }: { modell: Modell }) {
+export default function Mission({ modell, niveau = "fortgeschritten" }: { modell: Modell; niveau?: Niveau }) {
   const [stufe, setStufe] = useState(0);
   const [erreicht, setErreicht] = useState(0);
   const [ziel, setZiel] = useState<Ziel>(ZIELE[0]);
@@ -49,10 +50,12 @@ export default function Mission({ modell }: { modell: Modell }) {
         ))}
       </div>
 
+      <AuftragsKasten stufe={STUFEN[stufe].id} niveau={niveau} ziel={ziel} />
+
       {stufe === 0 && (
         <div className="flex flex-col gap-4">
           <p className="text-sm max-w-3xl">
-            Lena will eine Nachricht aus genau <b>{WORT_LAENGE} Zeichen</b> verschicken. Diesmal machst du alles selbst: Zeichen in Zahlen und Bits verwandeln,
+            Lena will mit PurrMsg eine Nachricht aus genau <b>{WORT_LAENGE} Zeichen</b> verschicken. Diesmal machst du alles selbst: Zeichen in Zahlen und Bits verwandeln,
             die Adresse des Empfängers suchen, das Paket packen und Router für Router ans Ziel bringen.
           </p>
           <div className="flex flex-col gap-2">
@@ -79,11 +82,11 @@ export default function Mission({ modell }: { modell: Modell }) {
           <button className="btn btn-primary self-start" disabled={!wortOk} onClick={() => { setErreicht(1); setStufe(1); }}>Los geht's ▶</button>
         </div>
       )}
-      {stufe === 1 && <StufeAscii key={runde} wort={wort} fehler={plusFehler(1)} fertig={() => { geschafft(1)(); setStufe(2); }} />}
-      {stufe === 2 && <StufeBits key={runde} wort={wort} fehler={plusFehler(2)} fertig={geschafft(2)} />}
-      {stufe === 3 && <DnsJagd key={runde + ziel.id} ziel={ziel} fehler={plusFehler(3)} fertig={x => { setIp(x); geschafft(3)(); }} />}
-      {stufe === 4 && ip && <Packen key={runde} ziel={ziel} wort={wort} ip={ip} modell={modell} fehler={plusFehler(4)} fertig={geschafft(4)} />}
-      {stufe === 5 && <Routing key={runde + ziel.id} ziel={ziel} fehler={plusFehler(5)} fertig={geschafft(5)} />}
+      {stufe === 1 && <StufeAscii key={runde + niveau} niveau={niveau} wort={wort} fehler={plusFehler(1)} fertig={() => { geschafft(1)(); setStufe(2); }} />}
+      {stufe === 2 && <StufeBits key={runde} niveau={niveau} wort={wort} fehler={plusFehler(2)} fertig={geschafft(2)} />}
+      {stufe === 3 && <DnsJagd key={runde + ziel.id} niveau={niveau} ziel={ziel} fehler={plusFehler(3)} fertig={x => { setIp(x); geschafft(3)(); }} />}
+      {stufe === 4 && ip && <Packen key={runde + niveau} niveau={niveau} ziel={ziel} wort={wort} ip={ip} modell={modell} fehler={plusFehler(4)} fertig={geschafft(4)} />}
+      {stufe === 5 && <Routing key={runde + ziel.id} niveau={niveau} ziel={ziel} fehler={plusFehler(5)} fertig={geschafft(5)} />}
       {stufe === 6 && <Ankunft wort={wort} ziel={ziel} fehler={fehler} neu={neu} />}
 
       {stufe > 0 && stufe < 6 && erreicht > stufe && (

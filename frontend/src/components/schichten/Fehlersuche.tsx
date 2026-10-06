@@ -6,10 +6,13 @@
 import { useMemo, useState } from "react";
 import { FAELLE } from "@/lib/schichten/fehler";
 import { SCHICHTEN, schicht, type SchichtNr } from "@/lib/schichten/kapselung";
-import type { Modell } from "./Bausteine";
+import type { Modell, Niveau } from "./Bausteine";
 
-function gemischt(seed: number): number[] {
-  const r = FAELLE.map((_, i) => i);
+/** Für Einsteiger: Fälle ohne Routing-Schleifen, Firewalls und Zertifikate */
+const LEICHT = ["wlan-aus", "kabel", "mac-filter", "gateway", "verlust", "sitzung", "zeichen", "dns", "http"];
+
+function gemischt(seed: number, leicht: boolean): number[] {
+  const r = FAELLE.map((_, i) => i).filter(i => !leicht || LEICHT.includes(FAELLE[i].id));
   let s = seed;
   for (let i = r.length - 1; i > 0; i--) {
     s = (s * 1103515245 + 12345) & 0x7fffffff;
@@ -19,9 +22,9 @@ function gemischt(seed: number): number[] {
   return r;
 }
 
-export default function Fehlersuche({ modell }: { modell: Modell }) {
+export default function Fehlersuche({ modell, niveau = "fortgeschritten" }: { modell: Modell; niveau?: Niveau }) {
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e6));
-  const reihe = useMemo(() => gemischt(seed), [seed]);
+  const reihe = useMemo(() => gemischt(seed, niveau === "einsteiger"), [seed, niveau]);
   const [pos, setPos] = useState(0);
   const [benutzt, setBenutzt] = useState<number[]>([]);
   const [tipp, setTipp] = useState<SchichtNr | null>(null);
@@ -29,7 +32,7 @@ export default function Fehlersuche({ modell }: { modell: Modell }) {
   const fall = FAELLE[reihe[pos]];
   const gruppe = (nr: SchichtNr) => (modell === "osi" ? String(nr) : schicht(nr).tcpip);
   const richtig = tipp !== null && gruppe(tipp) === gruppe(fall.loesung);
-  const fertig = pos >= FAELLE.length - 1 && tipp !== null;
+  const fertig = pos >= reihe.length - 1 && tipp !== null;
 
   const antworten = (nr: SchichtNr) => {
     if (tipp !== null) return;
@@ -39,7 +42,7 @@ export default function Fehlersuche({ modell }: { modell: Modell }) {
   const weiter = () => {
     setTipp(null);
     setBenutzt([]);
-    if (pos + 1 < FAELLE.length) setPos(pos + 1);
+    if (pos + 1 < reihe.length) setPos(pos + 1);
     else { setPos(0); setSeed(s => s + 1); setPunkte({ richtig: 0, versuche: 0 }); }
   };
 
@@ -52,7 +55,7 @@ export default function Fehlersuche({ modell }: { modell: Modell }) {
       <div className="flex flex-col gap-4">
         <div className="card p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-lg font-black">🔧 Fall {pos + 1} von {FAELLE.length}: {fall.titel}</h3>
+            <h3 className="text-lg font-black">🔧 Fall {pos + 1} von {reihe.length}: {fall.titel}</h3>
             <span className="text-sm tabular-nums text-muted">{punkte.richtig} / {punkte.versuche} richtig</span>
           </div>
           <p className="leading-relaxed">{fall.symptom}</p>

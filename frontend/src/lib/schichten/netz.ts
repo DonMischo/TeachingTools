@@ -105,8 +105,8 @@ export interface Ziel {
 }
 
 export const ZIELE: Ziel[] = [
-  { id: "tokio", wer: "Lenas Bruder", ort: "Tokio", name: "tokio.katzenpost.example", ip: "203.0.113.7", router: "tyo", domain: "katzenpost.example" },
-  { id: "hongkong", wer: "Lenas Onkel", ort: "Hongkong", name: "hk.katzenpost.example", ip: "203.0.113.200", router: "hkg", domain: "katzenpost.example" },
+  { id: "tokio", wer: "Lenas Bruder", ort: "Tokio", name: "tokio.purrmsg.example", ip: "203.0.113.7", router: "tyo", domain: "purrmsg.example" },
+  { id: "hongkong", wer: "Lenas Onkel", ort: "Hongkong", name: "hk.purrmsg.example", ip: "203.0.113.200", router: "hkg", domain: "purrmsg.example" },
   { id: "newyork", wer: "Lenas Tante", ort: "New York", name: "ny.hundepost.example", ip: "198.51.100.80", router: "ny", domain: "hundepost.example" },
   { id: "singapur", wer: "Lenas Freundin", ort: "Singapur", name: "sg.vogelpost.example", ip: "192.0.2.40", router: "sin", domain: "vogelpost.example" },
 ];
@@ -116,7 +116,7 @@ export interface DnsServer {
   name: string;
   ip: string;
   art: "resolver" | "root" | "tld" | "zone";
-  /** wofür zuständig: "." / "example" / "katzenpost.example" … */
+  /** wofür zuständig: "." / "example" / "purrmsg.example" … */
   zone: string;
   x: number;
   y: number;
@@ -130,7 +130,7 @@ export const DNS: DnsServer[] = [
   { id: "tld-jp", name: "a.dns.jp", ip: "203.119.1.1", art: "tld", zone: "jp", x: 500, y: 130 },
   { id: "tld-ex", name: "a.nic.example", ip: "192.0.2.10", art: "tld", zone: "example", x: 500, y: 230 },
   { id: "tld-com", name: "a.gtld-servers.net", ip: "192.5.6.30", art: "tld", zone: "com", x: 500, y: 330 },
-  { id: "ns-katze", name: "ns1.katzenpost.example", ip: "192.0.2.53", art: "zone", zone: "katzenpost.example", x: 760, y: 90 },
+  { id: "ns-purr", name: "ns1.purrmsg.example", ip: "192.0.2.53", art: "zone", zone: "purrmsg.example", x: 760, y: 90 },
   { id: "ns-hund", name: "ns1.hundepost.example", ip: "198.51.100.53", art: "zone", zone: "hundepost.example", x: 760, y: 210 },
   { id: "ns-vogel", name: "ns1.vogelpost.example", ip: "203.0.113.53", art: "zone", zone: "vogelpost.example", x: 760, y: 330 },
 ];

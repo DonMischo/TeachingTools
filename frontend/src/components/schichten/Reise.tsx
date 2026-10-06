@@ -11,17 +11,22 @@ import {
 } from "@/lib/schichten/kapselung";
 import { ADRESSEN, KNOTEN, LEITUNGEN, MEDIEN, ttlAuf, zeitbedarf } from "@/lib/schichten/route";
 import { PRAEAMBEL, VERFAHREN, bitsVon } from "@/lib/schichten/signal";
-import { FelderTabelle, HexBild, Kasten, Legende, SignalBild, kb, schichtName, type Modell } from "./Bausteine";
+import { FelderTabelle, HexBild, Kasten, Legende, SignalBild, kb, schichtName, type Modell, type Niveau } from "./Bausteine";
+import BildZuZahlen from "./BildZuZahlen";
+import Expertendetails from "./Experte";
+import Schachtel from "./Schachtel";
+import { einfach } from "./einfach";
 import Stapel from "./Stapel";
 import { SCHRITTE, schrittInfo } from "./stapelSzene";
 import type { Inhalt } from "./inhalt";
 
 const zahl = (n: number) => n.toLocaleString("de-DE");
 
-export default function Reise({ reise, inhalt, modell, zurKarte }: {
+export default function Reise({ reise, inhalt, modell, niveau, zurKarte }: {
   reise: ReiseDaten;
   inhalt: Inhalt;
   modell: Modell;
+  niveau: Niveau;
   zurKarte: () => void;
 }) {
   const [schritt, setSchritt] = useState(0);
@@ -74,9 +79,17 @@ export default function Reise({ reise, inhalt, modell, zurKarte }: {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-black" style={{ color: farbe }}>{titel}</h2>
-        {seite === "lena" && <Sender nr={nrSchicht!} reise={reise} inhalt={inhalt} modell={modell} seg={segNr} setSeg={setNr} />}
-        {seite === "unterwegs" && <Unterwegs reise={reise} zurKarte={zurKarte} />}
-        {seite === "tokio" && <Empfaenger nr={nrSchicht!} reise={reise} inhalt={inhalt} modell={modell} seg={segNr} setSeg={setNr} />}
+        {niveau === "einsteiger" ? (
+          <Einsteiger seite={seite} nr={nrSchicht} reise={reise} inhalt={inhalt} modell={modell} zurKarte={zurKarte} />
+        ) : (
+          <>
+            {seite === "lena" && <Sender nr={nrSchicht!} reise={reise} inhalt={inhalt} modell={modell} niveau={niveau} seg={segNr} setSeg={setNr} />}
+            {seite === "unterwegs" && <Unterwegs reise={reise} zurKarte={zurKarte} />}
+            {seite === "tokio" && <Empfaenger nr={nrSchicht!} reise={reise} inhalt={inhalt} modell={modell} seg={segNr} setSeg={setNr} />}
+            <Schachtel tiefste={nrSchicht ?? 1} niveau={niveau} foto={inhalt.art === "jpeg"} segmente={n} seg={segNr} seq={reise.segmente[segNr - 1].seq} />
+            {niveau === "experte" && <Expertendetails seite={seite} nr={nrSchicht} reise={reise} seg={segNr} />}
+          </>
+        )}
       </div>
     </div>
   );
@@ -122,7 +135,7 @@ function KopfAnsicht({ felder, bytes, nr, von, laenge, bereiche, modell }: {
 
 // ── Lena: hinunter ──────────────────────────────────────────────────────────
 
-function Sender({ nr, reise, inhalt, modell, seg, setSeg }: { nr: SchichtNr; reise: ReiseDaten; inhalt: Inhalt; modell: Modell; seg: number; setSeg: (n: number) => void }) {
+function Sender({ nr, reise, inhalt, modell, niveau, seg, setSeg }: { nr: SchichtNr; reise: ReiseDaten; inhalt: Inhalt; modell: Modell; niveau: Niveau; seg: number; setSeg: (n: number) => void }) {
   const f = useMemo(() => rahmen(reise, seg, 0), [reise, seg]);
   const n = reise.segmente.length;
 
@@ -130,7 +143,7 @@ function Sender({ nr, reise, inhalt, modell, seg, setSeg }: { nr: SchichtNr; rei
     return (
       <>
         <Erzaehlt>
-          Lena tippt auf <b>Senden</b>. Die App kennt nur den Namen des Servers: <code>{ADRESSEN.name}</code>. Zuerst fragt sie das
+          Lena tippt in ihrer Nachrichten-App <b>PurrMsg</b> auf <b>Senden</b>. Die App kennt nur den Namen des Servers: <code>{ADRESSEN.name}</code>. Zuerst fragt sie das
           Telefonbuch des Internets (<b>DNS</b>) nach der Nummer, dann schreibt sie eine <b>HTTP</b>-Anfrage: »Nimm dieses {inhalt.art === "jpeg" ? "Foto" : "Text"}«.
         </Erzaehlt>
         <div className="grid gap-4 lg:grid-cols-2">
@@ -159,6 +172,8 @@ function Sender({ nr, reise, inhalt, modell, seg, setSeg }: { nr: SchichtNr; rei
             : <> Der Text wird als <b>UTF-8</b> codiert: {zahl(inhalt.roh)} Zeichen werden zu {zahl(inhalt.bytes.length)} Byte (Umlaute und Emojis brauchen mehrere Byte).</>}
           {" "}Dann wird alles <b>verschlüsselt</b> (TLS 1.3 mit ChaCha20-Poly1305): in Datensätze zu höchstens {zahl(TLS_MAX)} Byte, jeder mit 5 Byte Kopf und 16 Byte Siegel.
         </Erzaehlt>
+        <BildZuZahlen inhalt={inhalt} niveau={niveau} />
+        <h3 className="font-bold mt-2">🔒 Und dann: verschlüsseln</h3>
         <div className="grid gap-4 lg:grid-cols-2">
           <Kasten titel="Vorher: lesbar" farbe={schicht(6).farbe}>
             <HexBild bytes={reise.http} bis={64} bereiche={[{ schicht: 7, name: "HTTP", von: 0, laenge: reise.http.length }]} />
@@ -178,7 +193,7 @@ function Sender({ nr, reise, inhalt, modell, seg, setSeg }: { nr: SchichtNr; rei
     const schritte: [string, string, string][] = [
       ["→", "ClientHello", "»Hallo, ich kann ChaCha20 und AES — hier mein Teil des Schlüssels.«"],
       ["←", "ServerHello", "»Wir nehmen ChaCha20-Poly1305 — hier mein Teil.« Aus beiden Teilen rechnen beide denselben Schlüssel (Diffie-Hellman), ohne ihn je zu verschicken."],
-      ["←", "Zertifikat + Finished", "»Ich bin wirklich tokio.katzenpost.example« — beglaubigt von einer Zertifizierungsstelle."],
+      ["←", "Zertifikat + Finished", "»Ich bin wirklich tokio.purrmsg.example« — beglaubigt von einer Zertifizierungsstelle."],
       ["→", "Finished", "Lena bestätigt. Die Sitzung steht; ab jetzt ist alles verschlüsselt."],
     ];
     return (
@@ -374,7 +389,7 @@ function Empfaenger({ nr, reise, inhalt, modell, seg, setSeg }: { nr: SchichtNr;
 }
 
 /** Schicht 5–7 in Tokio: wirklich auspacken, entschlüsseln, Foto zusammensetzen */
-function TokioOben({ nr, reise, inhalt }: { nr: SchichtNr; reise: ReiseDaten; inhalt: Inhalt; modell: Modell }) {
+function TokioOben({ nr, reise, inhalt, schlicht = false }: { nr: SchichtNr; reise: ReiseDaten; inhalt: Inhalt; modell: Modell; schlicht?: boolean }) {
   const a = useMemo(() => auspacken(reise, alleRahmenInTokio(reise)), [reise]);
   const gleich = !!a.inhalt && a.inhalt.length === reise.inhalt.length && a.inhalt.every((v, i) => v === reise.inhalt[i]);
   const [url, setUrl] = useState<string | null>(null);
@@ -405,6 +420,16 @@ function TokioOben({ nr, reise, inhalt }: { nr: SchichtNr; reise: ReiseDaten; in
       </>
     );
   }
+  if (schlicht) {
+    return (
+      <Kasten titel="Angekommen" farbe={schicht(7).farbe}>
+        {inhalt.art === "jpeg"
+          ? url && <img src={url} alt="Das in Tokio zusammengesetzte Foto" className="rounded-lg max-h-80 object-contain self-start" />
+          : a.inhalt && <p className="text-2xl">{new TextDecoder().decode(a.inhalt)}</p>}
+        <Haken ok={gleich}>Wieder zusammengesetzt aus {zahl(reise.segmente.length)} Puzzleteilen — genau gleich wie bei Lena</Haken>
+      </Kasten>
+    );
+  }
   return (
     <>
       <Erzaehlt>
@@ -426,3 +451,48 @@ function TokioOben({ nr, reise, inhalt }: { nr: SchichtNr; reise: ReiseDaten; in
   );
 }
 
+
+// ── Einsteiger: einfache Sprache, Bilder statt Zahlenkolonnen ───────────────
+
+function Einsteiger({ seite, nr, reise, inhalt, modell, zurKarte }: {
+  seite: "lena" | "unterwegs" | "tokio";
+  nr: SchichtNr | null;
+  reise: ReiseDaten;
+  inhalt: Inhalt;
+  modell: Modell;
+  zurKarte: () => void;
+}) {
+  const e = einfach(seite, nr);
+  return (
+    <>
+      <h3 className="text-lg font-bold">{e.titel}</h3>
+      <p className="text-base leading-relaxed max-w-3xl">{e.text}</p>
+      {seite === "lena" && nr === 6 && <BildZuZahlen inhalt={inhalt} niveau="einsteiger" />}
+      {nr === 1 && <EinfacheBits reise={reise} licht={seite === "tokio"} />}
+      {seite === "tokio" && nr === 7 && <TokioOben nr={7} reise={reise} inhalt={inhalt} modell={modell} schlicht />}
+      {seite === "unterwegs" && <button className="btn btn-primary self-start" onClick={zurKarte}>🗺️ Den Weg auf der Karte ansehen</button>}
+      <Schachtel tiefste={nr ?? 1} niveau="einsteiger" foto={inhalt.art === "jpeg"} segmente={reise.segmente.length} seg={1} seq={reise.segmente[0].seq} />
+      <div className="rounded-lg bg-accent/10 border border-accent/30 p-3 text-sm">💡 <b>Merke:</b> {e.merke}</div>
+    </>
+  );
+}
+
+/** Die ersten zwei Byte als Kästchen: 1 = an, 0 = aus */
+function EinfacheBits({ reise, licht }: { reise: ReiseDaten; licht: boolean }) {
+  const b = rahmen(reise, 1, 0).bytes.subarray(0, 2);
+  const alle = reise.segmente.reduce((s, x) => s + x.nutzlast.length + 66, 0) * 8;
+  return (
+    <div className="card p-4 flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1">
+        {Array.from(b).flatMap((v, i) => Array.from({ length: 8 }, (_, k) => {
+          const bit = (v >> (7 - k)) & 1;
+          return (
+            <span key={`${i}-${k}`} className={`w-8 h-10 rounded-md grid place-items-center font-mono font-bold ${k === 0 && i > 0 ? "ml-3" : ""}`}
+              style={{ background: bit ? (licht ? "#22d3ee" : "#a78bfa") : "transparent", border: "2px solid #64748b", color: bit ? "#0b1324" : "#64748b" }}>{bit}</span>
+          );
+        }))}
+      </div>
+      <p className="text-sm">{licht ? "Licht an = 1, Licht aus = 0." : "Welle so = 1, Welle andersherum = 0."} Das sind nur 16 Bits — für das ganze {reise.inhalt.length > 2000 ? "Foto" : "Paket"} sind es etwa <b>{(alle / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Millionen</b>.</p>
+    </div>
+  );
+}

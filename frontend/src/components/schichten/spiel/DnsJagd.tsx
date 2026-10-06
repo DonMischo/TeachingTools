@@ -6,13 +6,15 @@
  */
 import { useState } from "react";
 import { DNS, frageDns, richtigerDns, type DnsServer, type Ziel } from "@/lib/schichten/netz";
+import type { Niveau } from "../Bausteine";
 
 const FARBE: Record<DnsServer["art"], string> = { resolver: "#94a3b8", root: "#f59e0b", tld: "#ec4899", zone: "#a855f7" };
 const ART: Record<DnsServer["art"], string> = { resolver: "Resolver", root: "Root-Server", tld: "Top-Level-Domain", zone: "Domain-Server" };
 
 interface Eintrag { server: DnsServer; text: string; ok: boolean }
 
-export default function DnsJagd({ ziel, fertig, fehler }: { ziel: Ziel; fertig: (ip: string) => void; fehler: () => void }) {
+export default function DnsJagd({ ziel, niveau = "fortgeschritten", fertig, fehler }: { ziel: Ziel; niveau?: Niveau; fertig: (ip: string) => void; fehler: () => void }) {
+  const [fehlversuche, setFehlversuche] = useState(0);
   const [gefragt, setGefragt] = useState<DnsServer[]>([]);
   const [protokoll, setProtokoll] = useState<Eintrag[]>([]);
   const [ip, setIp] = useState<string | null>(null);
@@ -24,6 +26,7 @@ export default function DnsJagd({ ziel, fertig, fehler }: { ziel: Ziel; fertig: 
     const a = frageDns(s, ziel);
     if (!erlaubt.some(e => e.id === s.id)) {
       fehler();
+      setFehlversuche(n => n + 1);
       setWackel(s.id);
       setTimeout(() => setWackel(null), 500);
       const grund = gefragt.length === 0 && s.art !== "root"
@@ -61,9 +64,12 @@ export default function DnsJagd({ ziel, fertig, fehler }: { ziel: Ziel; fertig: 
             ))}
             {DNS.map(s => {
               const besucht = gefragt.some(g => g.id === s.id) || s.art === "resolver";
+              // Einsteiger: nach einem Fehlversuch leuchtet der richtige nächste Server
+              const tipp = niveau === "einsteiger" && fehlversuche > 0 && !ip && richtigerDns(ziel, gefragt).some(e => e.id === s.id);
               return (
                 <g key={s.id} transform={`translate(${s.x},${s.y})`} className={s.art === "resolver" ? "" : "cursor-pointer"} onClick={() => frage(s)}>
                   <g className={wackel === s.id ? "dns-wackel" : ""}>
+                    {tipp && <rect x={-100} y={-34} width={200} height={68} rx={16} fill="none" stroke="#facc15" strokeWidth={3}><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite" /></rect>}
                     <rect x={-92} y={-26} width={184} height={52} rx={12} fill="#0f172a" stroke={FARBE[s.art]} strokeWidth={besucht ? 3 : 1.5} opacity={besucht ? 1 : 0.85} />
                     <text y={-4} textAnchor="middle" fill="#f8fafc" fontSize={16} fontWeight={800} fontFamily="ui-monospace,monospace">{s.ip}</text>
                     <text y={15} textAnchor="middle" fill="#94a3b8" fontSize={11}>{besucht ? s.name : ART[s.art]}</text>

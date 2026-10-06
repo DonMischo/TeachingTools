@@ -23,7 +23,7 @@ describe("Schichtenmodell — Anwenden", () => {
     render(<Mission modell="osi" />);
     fireEvent.change(screen.getByLabelText("Wort mit 8 Zeichen"), { target: { value: "Grüße!!!" } });
     expect(screen.getByRole("button", { name: /Los geht/ })).toBeDisabled();
-    expect(screen.getByText(/keine Umlaute/)).toBeInTheDocument();
+    expect(screen.getByText(/Nur Zeichen aus der ASCII-Tabelle/)).toBeInTheDocument();
   });
 
   it("Routing: falsche Wahl wird begründet, richtige Wahl zieht weiter", () => {
@@ -54,5 +54,27 @@ describe("Schichtenmodell — Anwenden", () => {
     expect(document.querySelector("pre")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Transport" }));
     expect(screen.getByText(/Richtig|Nicht ganz/)).toBeInTheDocument();
+  });
+
+  it("jede Missionsstufe hat einen Arbeitsauftrag mit Ziel und Wissen", () => {
+    render(<Mission modell="osi" niveau="einsteiger" />);
+    expect(screen.getByText(/Deine Aufgabe/)).toBeInTheDocument();
+    expect(screen.getByText(/Fertig, wenn/)).toBeInTheDocument();
+    expect(screen.getByText(/Warum genau 8 Zeichen/)).toBeInTheDocument();
+  });
+
+  it("Experte: ASCII in Hex", () => {
+    render(<Mission modell="osi" niveau="experte" />);
+    fireEvent.change(screen.getByLabelText("Wort mit 8 Zeichen"), { target: { value: "Katze 42" } });
+    fireEvent.click(screen.getByRole("button", { name: /Los geht/ }));
+    "Katze 42".split("").forEach((z, i) => fireEvent.change(screen.getByLabelText(`Code für Zeichen ${i + 1}`), { target: { value: z.charCodeAt(0).toString(16) } }));
+    fireEvent.click(screen.getByRole("button", { name: /Prüfen/ }));
+    expect(screen.getByLabelText("Bit 128 von Zeichen 1")).toBeInTheDocument();
+  });
+
+  it("Einsteiger: Routingtabelle zeigt, welche Zeilen passen", () => {
+    render(<Routing ziel={ZIELE[0]} niveau="einsteiger" fertig={() => {}} fehler={() => {}} />);
+    expect(screen.getByText("passt?")).toBeInTheDocument();
+    expect(screen.queryByText(/Bits zeigen/)).toBeNull();
   });
 });

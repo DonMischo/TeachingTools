@@ -9,8 +9,10 @@ import { useState } from "react";
 import {
   ROUTER, VERBINDUNGEN, begruendung, besterEintrag, ipBits, nachbarn, passt, router, zerlege, type Ziel,
 } from "@/lib/schichten/netz";
+import type { Niveau } from "../Bausteine";
 
-export default function Routing({ ziel, fertig, fehler }: { ziel: Ziel; fertig: () => void; fehler: () => void }) {
+export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehler }: { ziel: Ziel; niveau?: Niveau; fertig: () => void; fehler: () => void }) {
+  const einfach = niveau === "einsteiger";
   const [jetzt, setJetzt] = useState("heim");
   const [weg, setWeg] = useState<string[]>(["heim"]);
   const [ttl, setTtl] = useState(64);
@@ -81,10 +83,10 @@ export default function Routing({ ziel, fertig, fehler }: { ziel: Ziel; fertig: 
           <div className="card p-3">
             <div className="flex justify-between items-center mb-1">
               <span className="label">Routingtabelle</span>
-              <button className={`chip text-xs ${bitsZeigen ? "chip-on" : ""}`} onClick={() => setBitsZeigen(!bitsZeigen)}>0101 Bits zeigen</button>
+              {niveau === "fortgeschritten" && <button className={`chip text-xs ${bitsZeigen ? "chip-on" : ""}`} onClick={() => setBitsZeigen(!bitsZeigen)}>0101 Bits zeigen</button>}
             </div>
             <table className="w-full text-sm">
-              <thead><tr className="text-xs text-muted text-left"><th>Netz</th><th>weiter an</th></tr></thead>
+              <thead><tr className="text-xs text-muted text-left"><th>Netz</th><th>weiter an</th>{einfach && <th>passt?</th>}</tr></thead>
               <tbody>
                 {r.tabelle.map(e => {
                   const { ip, laenge } = zerlege(e.netz);
@@ -105,6 +107,7 @@ export default function Routing({ ziel, fertig, fehler }: { ziel: Ziel; fertig: 
                         )}
                       </td>
                       <td className="py-1">{e.nach === "lokal" ? "direkt hier" : router(e.nach).name}</td>
+                      {einfach && <td className="py-1">{passt(ziel.ip, e.netz) ? "✅" : "❌"}</td>}
                     </tr>
                   );
                 })}
@@ -113,7 +116,9 @@ export default function Routing({ ziel, fertig, fehler }: { ziel: Ziel; fertig: 
             {lokal && !angekommen && <button className="btn btn-primary w-full mt-2" onClick={() => waehle("lokal")}>📬 Hier direkt zustellen</button>}
           </div>
           {meldung && <div className={`rounded-lg p-3 text-sm ${meldung.ok ? "bg-ok/15" : "bg-bad/15"}`}>{meldung.ok ? "✅ " : "❌ "}{meldung.text}</div>}
-          <p className="text-xs text-muted">Grün = Bit stimmt mit dem Ziel überein, rot = anders, grau = zählt nicht. 0.0.0.0/0 ist die Standardroute: Sie passt immer, aber am schwächsten.</p>
+          {einfach
+            ? <p className="text-xs rounded-lg bg-accent/10 p-2">💡 Nimm von den Zeilen mit ✅ die mit der <b>größten Zahl hinter dem /</b> — sie passt am genauesten. 0.0.0.0/0 passt immer, ist aber der letzte Ausweg.</p>
+            : <p className="text-xs text-muted">Grün = Bit stimmt mit dem Ziel überein, rot = anders, grau = zählt nicht. 0.0.0.0/0 ist die Standardroute: Sie passt immer, aber am schwächsten.</p>}
         </div>
       </div>
     </div>

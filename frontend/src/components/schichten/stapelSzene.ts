@@ -162,6 +162,8 @@ export class StapelSzene {
   }
 
   setzeSchritt(s: number, sofort = false) {
+    // Neuer Schritt: die Kamera führt wieder, auch wenn vorher jemand gedreht hat
+    if (s !== this.schritt) this.nutzerDreht = false;
     this.schritt = s;
     const { seite, schicht } = schrittInfo(s);
     const idx = schicht ? SCHICHTEN.findIndex(x => x.nr === schicht) : SCHICHTEN.length - 1;
@@ -176,7 +178,15 @@ export class StapelSzene {
       });
     }
     if (sofort) this.paket.position.copy(this.ziel);
-    if (!this.nutzerDreht) this.blick.set(x, seite === "unterwegs" ? 1.5 : this.hoehe[idx], 0);
+    // Blick auf die Mitte zwischen aktiver Karte und Stapelmitte; unterwegs auf beide Stapel
+    const mitte = this.hoehe[0] / 2;
+    this.blick.set(x, seite === "unterwegs" ? mitte : (this.hoehe[idx] + mitte) / 2, 0);
+  }
+
+  /** Abstand, aus dem eine Fläche b × h ganz ins Bild passt */
+  private abstand(b: number, h: number): number {
+    const t = Math.tan((this.kamera.fov * Math.PI) / 360);
+    return Math.max(h / 2 / t, b / 2 / (t * this.kamera.aspect)) * 1.12;
   }
 
   /** Foto als Textur auf den Kern */
@@ -224,7 +234,10 @@ export class StapelSzene {
 
     if (!this.nutzerDreht) {
       this.steuerung.target.lerp(this.blick, 1 - Math.exp(-dt * 3));
-      const wunsch = this.blick.clone().add(new THREE.Vector3(seite === "unterwegs" ? 0 : -this.blick.x * 0.15, 5.5, seite === "unterwegs" ? 15 : 10));
+      const unterwegs = seite === "unterwegs";
+      const d = unterwegs ? this.abstand(2 * ABSTAND_X + KARTE_B + 2, this.hoehe[0] + 2.5) : this.abstand(KARTE_B + 4, this.hoehe[0] + 2);
+      const richtung = new THREE.Vector3(unterwegs ? 0 : -Math.sign(this.blick.x) * 0.25, 0.45, 1).normalize();
+      const wunsch = this.blick.clone().addScaledVector(richtung, d);
       this.kamera.position.lerp(wunsch, 1 - Math.exp(-dt * 2));
     }
     this.steuerung.update();

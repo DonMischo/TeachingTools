@@ -93,7 +93,7 @@ describe("Kapselung", () => {
   });
 
   it("baut eine DNS-Anfrage nach RFC 1035", () => {
-    const d = dnsAnfrage("tokio.katzenpost.example");
+    const d = dnsAnfrage("tokio.purrmsg.example");
     expect(hex(d.subarray(0, 12))).toBe("1a 2b 01 00 00 01 00 00 00 00 00 00");
     expect(d[12]).toBe(5);
     expect(new TextDecoder().decode(d.subarray(13, 18))).toBe("tokio");

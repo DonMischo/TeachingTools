@@ -7,6 +7,14 @@ import { signal } from "@/lib/schichten/signal";
 
 export type Modell = "osi" | "tcpip";
 
+/** Tiefe der Erklärung: von Klasse 6 bis Informatik-Profi */
+export type Niveau = "einsteiger" | "fortgeschritten" | "experte";
+export const NIVEAUS: { id: Niveau; icon: string; label: string; text: string }[] = [
+  { id: "einsteiger", icon: "🌱", label: "Einsteiger", text: "ab Klasse 6: einfache Sprache, Bilder statt Zahlenkolonnen" },
+  { id: "fortgeschritten", icon: "🔧", label: "Fortgeschritten", text: "Klasse 9/10: Kopffelder, Hex-Bild, Adressen" },
+  { id: "experte", icon: "🎓", label: "Experte", text: "Oberstufe/Profi: Prüfsummen von Hand, Krypto, RFC-Details" },
+];
+
 export function schichtName(nr: SchichtNr, modell: Modell): string {
   const s = schicht(nr);
   return modell === "osi" ? `Schicht ${nr} · ${s.name}` : `${s.tcpip} (OSI ${nr} ${s.name})`;

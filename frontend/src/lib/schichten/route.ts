@@ -47,7 +47,7 @@ export const KNOTEN: Knoten[] = [
   { name: "Kabelstation", ort: "Mumbai", geraet: "Landestation Indien", lon: 72.82, lat: 18.96, mac: "f4:cc:55:09:e2:31", router: true },
   { name: "Internetknoten", ort: "Singapur", geraet: "Drehkreuz Südostasien", lon: 103.85, lat: 1.29, mac: "f4:cc:55:0a:13:77", router: true },
   { name: "Internetknoten", ort: "Hongkong", geraet: "Drehkreuz Ostasien", lon: 114.17, lat: 22.3, mac: "2c:6b:f5:44:90:5d", router: true },
-  { name: "Server", ort: "Tokio", geraet: "Rechenzentrum der Foto-App", lon: 139.69, lat: 35.68, mac: "0c:c4:7a:8e:21:f3", router: false },
+  { name: "Server", ort: "Tokio", geraet: "Rechenzentrum von PurrMsg", lon: 139.69, lat: 35.68, mac: "0c:c4:7a:8e:21:f3", router: false },
 ];
 
 export const LEITUNGEN: Leitung[] = [
@@ -81,7 +81,7 @@ export const ADRESSEN = {
   handyPort: 52814,
   natPort: 40122,
   serverPort: 443,
-  name: "tokio.katzenpost.example",
+  name: "tokio.purrmsg.example",
 };
 
 const ERDRADIUS = 6371;
