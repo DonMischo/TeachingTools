@@ -63,7 +63,6 @@ export class StapelSzene {
   private paket = new THREE.Group();
   private kern: THREE.Mesh;
   private huellen: THREE.LineSegments[] = [];
-  private bits: THREE.Points;
   private ziel = new THREE.Vector3();
   private blick = new THREE.Vector3();
   private schritt = 0;
@@ -113,13 +112,6 @@ export class StapelSzene {
       this.huellen.push(h);
       this.paket.add(h);
     }
-    const n = 60;
-    const pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { pos[i * 3] = (i - n / 2) * 0.12; }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    this.bits = new THREE.Points(geo, new THREE.PointsMaterial({ color: "#22d3ee", size: 0.09, transparent: true, opacity: 0 }));
-    this.paket.add(this.bits);
     this.szene.add(this.paket);
 
     this.kamera.position.set(-ABSTAND_X, 8, 11);
@@ -224,11 +216,6 @@ export class StapelSzene {
       m.opacity += (soll - m.opacity) * Math.min(1, dt * 6);
       h.visible = m.opacity > 0.02;
     });
-    const bitsSichtbar = tiefste === 1 ? 1 : 0;
-    const bm = this.bits.material as THREE.PointsMaterial;
-    bm.opacity += (bitsSichtbar - bm.opacity) * Math.min(1, dt * 6);
-    this.bits.rotation.y = -this.paket.rotation.y;
-    this.bits.position.y = -0.7 + Math.sin(t * 6) * 0.05;
     const kernSoll = tiefste === 1 ? 0.55 : 1;
     this.kern.scale.setScalar(this.kern.scale.x + (kernSoll - this.kern.scale.x) * Math.min(1, dt * 6));
 
