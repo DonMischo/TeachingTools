@@ -229,6 +229,8 @@ class SatzInhalt(BaseModel):
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
     # Kartennetz: Equal Earth (flächentreu, Standard) oder Mercator
     projektion: Literal["equalearth", "mercator"] = "equalearth"
+    # Kartenfläche im Seitenverhältnis von A4 (füllt beim Export Seite 1)
+    seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 
     @model_validator(mode="before")
     @classmethod
@@ -376,6 +378,7 @@ class ExportIn(BaseModel):
     gruppen: list[ExportGruppe] = Field(max_length=30)
     # MapLibre-Canvas als data:image/png;base64,…
     karte: str = Field(max_length=MAX_BILD * 4 // 3 + 100)
+    seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 
 
 @router.post("/export")
@@ -388,7 +391,7 @@ def export(body: ExportIn, _: Teacher = Depends(get_current_teacher)):
         raise HTTPException(422, "Kartenbild ist kein PNG")
     quelle = " · ".join(dict.fromkeys(e["quelle"]["name"] for e in katalog()["ebenen"]))
     ergebnis = exportiere(body.format, body.titel, body.aufgabe, [g.model_dump() for g in body.gruppen],
-                          body.variante, png, quelle)
+                          body.variante, png, quelle, body.seite)
     if ergebnis is None:
         raise HTTPException(503, "Umwandlung fehlgeschlagen (LibreOffice/pandoc)")
     inhalt, endung = ergebnis

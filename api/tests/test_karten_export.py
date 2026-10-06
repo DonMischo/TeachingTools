@@ -89,3 +89,21 @@ def test_schueler_duerfen_nicht_exportieren(client, db):
     token = create_access_token({"sub": str(s.id), "type": "student"})
     client.cookies.clear()
     assert client.post("/api/karten/export", json=_body(), headers=auth(token)).status_code == 403
+
+
+@pytest.mark.parametrize("seite,breite_cm,quer", [("a4-hoch", 17.0, False), ("a4-quer", 25.7, True)])
+def test_a4_karte_fuellt_die_seitenbreite(client, teacher_token, seite, breite_cm, quer):
+    """pandoc begrenzt Bilder auf ~15 cm — bei A4 wird die Karte auf den Satzspiegel gestreckt."""
+    import re
+    r = client.post("/api/karten/export", json=_body(seite=seite), headers=auth(teacher_token))
+    assert r.status_code == 200
+    xml = _docx_text(r.content)
+    assert ('w:orient="landscape"' in xml) is quer
+    breiten = {int(cx) for cx in re.findall(r'<wp:extent cx="(\d+)"', xml)}
+    assert breiten == {round(breite_cm * 360000)}
+
+
+def test_freies_format_bleibt_wie_bisher(client, teacher_token):
+    xml = _docx_text(client.post("/api/karten/export", json=_body(), headers=auth(teacher_token)).content)
+    assert 'w:orient="landscape"' not in xml
+    assert 'w:w="11906" w:h="16838"' in xml

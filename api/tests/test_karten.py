@@ -165,3 +165,10 @@ def test_namenspunkte_auch_in_equal_earth(client, teacher_token):
     assert r.status_code == 200
     assert len(r.json()["features"]) == len(
         client.get("/api/karten/ebenen/welt-kontinente", headers=auth(teacher_token)).json()["features"])
+
+
+def test_satz_merkt_sich_das_seitenformat(client, teacher_token):
+    h = auth(teacher_token)
+    sid = client.post("/api/karten/saetze", json=_satz(seite="a4-quer"), headers=h).json()["id"]
+    assert client.get(f"/api/karten/saetze/{sid}", headers=h).json()["inhalt"]["seite"] == "a4-quer"
+    assert client.post("/api/karten/saetze", json=_satz(seite="a3"), headers=h).status_code == 422

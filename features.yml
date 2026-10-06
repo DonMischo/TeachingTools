@@ -122,6 +122,7 @@ aktivitaeten:
       - Kartensätze: Objekte auswählen, nummerieren (1 2 3, a b c, A B C, I II III), auf dem Server speichern und teilen; der volle Datensatz bleibt unverändert
       - Nummern, die aufeinanderliegen (Berlin als Stadt und Land), rücken auseinander; Landesnamen weichen Stadtnamen aus
       - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX (Karte auf Seite 1, leer oder mit Lösung)
+      - Seitenformat A4 hoch/quer - Karte im Verhältnis der Seite, füllt Seite 1; Knopf zum Einpassen der Region
       - Eigene Ebenen (GeoJSON, KML, KMZ, GPX) nur für Lehrkräfte
       - JSON-Vorlage mit »aktiv« je Objekt zum Filtern (auch per KI) und wieder hochladen
       - Kartenquiz per Code/QR (benennen oder finden), Prüfung auf dem Server, Hauspunkte je Klasse

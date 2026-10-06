@@ -26,9 +26,9 @@ SEITENUMBRUCH_DOCX = '\n```{=openxml}\n<w:p><w:r><w:br w:type="page"/></w:r></w:
 SCHREIBLINIE = "." * 58  # gepunktete Linie zum Hineinschreiben
 
 
-SEITE_A4 = ('<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
-            '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/>'
-            '</w:sectPr>')
+RAND = '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/>'
+SEITE_A4 = f'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>{RAND}</w:sectPr>'
+SEITE_A4_QUER = f'<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>{RAND}</w:sectPr>'
 
 
 # Serifenlos fürs Arbeitsblatt (Wunsch der Lehrkräfte). Im API-Container ersetzt
@@ -36,9 +36,26 @@ SEITE_A4 = ('<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
 SCHRIFT = '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/>'
 
 
-def _anpassen(docx: Path) -> None:
+# Kartenbreite bei A4 = Satzspiegel (2-cm-Ränder). pandoc begrenzt Bilder auf die Breite seiner
+# Vorlage (~15 cm), darum wird die Größe im DOCX nachgesetzt. Die Karte hat im Browser schon das
+# Verhältnis des freien Platzes (lib/karten/seite.ts: 170 × 200 mm hoch, 257 × 120 mm quer).
+BILDBREITE_CM = {"a4-hoch": 17.0, "a4-quer": 25.7}
+EMU_JE_CM = 360000
+
+
+def _bildgroesse(xml: str, breite_cm: float) -> str:
+    """Alle Bilder (nur Karten) auf die Breite strecken, Seitenverhältnis bleibt."""
+    def setze(m):
+        cx, cy = int(m.group(2)), int(m.group(3))
+        neu = round(breite_cm * EMU_JE_CM)
+        return f'{m.group(1)}cx="{neu}" cy="{round(cy * neu / cx)}"'
+    return re.sub(r'(<(?:wp:extent|a:ext) )cx="(\d+)" cy="(\d+)"', setze, xml)
+
+
+def _anpassen(docx: Path, seite: str = "frei") -> None:
     """pandoc schreibt ein leeres <w:sectPr /> (Word nimmt dann US Letter) und Serifenschrift:
-    A4 mit 2-cm-Rändern und Arial setzen."""
+    A4 (hoch oder quer) mit 2-cm-Rändern und Arial setzen; bei A4-Karten die Kartengröße."""
+    quer = seite == "a4-quer"
     ein = zipfile.ZipFile(io.BytesIO(docx.read_bytes()))
     aus = io.BytesIO()
     with zipfile.ZipFile(aus, "w", zipfile.ZIP_DEFLATED) as z:
@@ -46,7 +63,10 @@ def _anpassen(docx: Path) -> None:
             daten = ein.read(name)
             if name == "word/document.xml":
                 xml = daten.decode("utf-8")
-                daten = re.sub(r"<w:sectPr[^>]*/>|<w:sectPr.*?</w:sectPr>", SEITE_A4, xml, flags=re.S).encode("utf-8")
+                xml = re.sub(r"<w:sectPr[^>]*/>|<w:sectPr.*?</w:sectPr>", SEITE_A4_QUER if quer else SEITE_A4, xml, flags=re.S)
+                if seite in BILDBREITE_CM:
+                    xml = _bildgroesse(xml, BILDBREITE_CM[seite])
+                daten = xml.encode("utf-8")
             elif name == "word/styles.xml":
                 daten = re.sub(r"<w:rFonts[^>]*/>", SCHRIFT, daten.decode("utf-8")).encode("utf-8")
             z.writestr(name, daten)
@@ -82,10 +102,10 @@ def _grid_tabelle(eintraege: list[dict], loesung: bool) -> str:
     return t + "\n"
 
 
-def _docx(md: str, ordner: Path) -> Path:
+def _docx(md: str, ordner: Path, seite: str = "frei") -> Path:
     ziel = ordner / "arbeitsblatt.docx"
     pypandoc.convert_text(md, "docx", format="markdown", outputfile=str(ziel), extra_args=[f"--resource-path={ordner}"])
-    _anpassen(ziel)
+    _anpassen(ziel, seite)
     return ziel
 
 
@@ -111,13 +131,14 @@ def _tex_text(s: str) -> str:
     return "".join(_TEX_ZEICHEN.get(c, c) for c in s)
 
 
-def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: str) -> str:
+def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: str, seite: str = "frei") -> str:
+    hoehe = "0.72" if seite == "frei" else "0.8"  # A4: das Bild hat schon das Verhältnis des freien Platzes
     def seiten(loesung: bool) -> str:
         t = [
             r"\section*{" + _tex_text(titel) + (" -- Lösung" if loesung else "") + "}",
             r"Name: \rule{6cm}{0.4pt}\hfill Klasse: \rule{2cm}{0.4pt}\hfill Datum: \rule{3cm}{0.4pt}\par\bigskip",
             r"\textbf{Aufgabe:} " + _tex_text(aufgabe) + r"\par\medskip",
-            r"\noindent\includegraphics[width=\linewidth,height=0.72\textheight,keepaspectratio]{karte.png}\par",
+            r"\noindent\includegraphics[width=\linewidth,height=" + hoehe + r"\textheight,keepaspectratio]{karte.png}\par",
             r"{\footnotesize\itshape Kartengrundlage: " + _tex_text(quelle) + r"}",
             r"\newpage",
         ]
@@ -143,7 +164,7 @@ def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: s
         r"\usepackage[ngerman]{babel}",
         r"\usepackage[scaled]{helvet}",
         r"\renewcommand{\familydefault}{\sfdefault}",
-        r"\usepackage[margin=2cm]{geometry}",
+        r"\usepackage[margin=2cm" + (",landscape" if seite == "a4-quer" else "") + "]{geometry}",
         r"\usepackage{graphicx}",
         r"\usepackage{tabularx,array}",
         r"\pagestyle{empty}",
@@ -165,12 +186,12 @@ MEDIENTYP = {
 
 
 def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], variante: str,
-               karte_png: bytes, quelle: str) -> tuple[bytes, str] | None:
+               karte_png: bytes, quelle: str, seite: str = "frei") -> tuple[bytes, str] | None:
     """Liefert (Dateiinhalt, Dateiendung) oder None, wenn LibreOffice/pandoc scheitert."""
     if format_ == "tex":
         puffer = io.BytesIO()
         with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as z:
-            z.writestr("arbeitsblatt.tex", _tex(titel, aufgabe, gruppen, variante, quelle))
+            z.writestr("arbeitsblatt.tex", _tex(titel, aufgabe, gruppen, variante, quelle, seite))
             z.writestr("karte.png", karte_png)
         return puffer.getvalue(), "zip"
 
@@ -182,7 +203,7 @@ def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], vari
             teile.append(_markdown(titel, aufgabe, gruppen, False, quelle))
         if variante in ("loesung", "beide"):
             teile.append(_markdown(titel, aufgabe, gruppen, True, quelle))
-        docx = _docx(SEITENUMBRUCH_DOCX.join(teile), ordner)
+        docx = _docx(SEITENUMBRUCH_DOCX.join(teile), ordner, seite)
         if format_ == "docx":
             return docx.read_bytes(), "docx"
         ziel = _soffice(docx, format_)

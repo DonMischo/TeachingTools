@@ -105,7 +105,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Stadtmodelle Berlin, Paris, New York als eigene Regionen: amtliche Bezirke/Ortsteile, kuratiert in Zentrum, Innenstadt und Stadtrand (Paris mit Bürostadt La Défense, New York mit Parks), Bezirks- und Borough-Grenzen
 - Alle Siedlungen Deutschlands (Gemeinden und Ortsteile) mit Größenklassen-Filter in der Legende und Ortssuche
 - Kartensätze: Objekte auswählen und nummerieren (1 2 3, a b c, A B C, I II III), mit Namen auf dem Server speichern und teilen; liegen zwei Nummern fast aufeinander (Berlin als Stadt und als Land), rücken sie auseinander
-- Arbeitsblatt als PDF, DOCX, ODT oder LaTeX mit der Karte auf Seite 1, leer oder mit Lösung
+- Arbeitsblatt als PDF, DOCX, ODT oder LaTeX mit der Karte auf Seite 1, leer oder mit Lösung; Seitenformat »A4 hoch« / »A4 quer« im ☰-Menü gibt der Karte das Verhältnis der Seite, sodass sie Seite 1 füllt (quer auch als Querformat-Blatt); Knopf ⤢ passt die Region wieder ein
 - Eigene Ebenen als GeoJSON, KML, KMZ oder GPX (nur Lehrkräfte); JSON-Vorlage mit `aktiv` je Objekt zum Filtern, auch per KI
 - Kartenquiz per Code/QR: Nummern benennen oder Orte finden, geprüft auf dem Server, Hauspunkte je Klasse; einbettbar in Caputh und TaskCrawler
 - Erfolge je Kartensatz: Anteil richtig, ohne Fehlversuch, bestimmte Objekte, Serie, auf Zeit, benennen *und* finden, Fehler aufgeholt, an mehreren Tagen geübt, alle anderen

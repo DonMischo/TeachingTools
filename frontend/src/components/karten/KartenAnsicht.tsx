@@ -12,6 +12,7 @@ import type { StyleSpecification } from "maplibre-gl";
 import PartikelFluss from "./PartikelFluss";
 import { massstab, zeichneMassstab } from "@/lib/karten/massstab";
 import { abstand, ausschnittVor, ausschnittZurueck, vor, zurueck, type Projektion } from "@/lib/karten/projektion";
+import { verhaeltnisVon, type Seite } from "@/lib/karten/seite";
 
 /** Unter dieser Zoomstufe (ganze Welt) gilt kein einheitlicher Maßstab — dann keine Leiste */
 const MASSSTAB_AB_ZOOM = 2.5;
@@ -36,7 +37,7 @@ const START: [[number, number], [number, number]] = [[5.6, 47.2], [15.3, 55.1]];
 /** Liefert das Kartenbild als PNG-data-URL, sobald der aktuelle Stil fertig gezeichnet ist. */
 export type KartenBild = () => Promise<string>;
 
-export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue }: {
+export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, ziel, onAusschnitt, bildRef, gastToken, fundort, blick, partikel, projektion = "equalearth", menue, seite }: {
   stil: StyleSpecification;
   katalog: Katalog;
   namenZeigen: boolean;
@@ -60,11 +61,14 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   projektion?: Projektion;
   /** Bedienelemente oben links auf der Karte (☰-Menü) */
   menue?: ReactNode;
+  /** A4-Seitenverhältnis der Kartenfläche (lib/karten/seite.ts) */
+  seite?: Seite;
 }) {
   const behaelter = useRef<HTMLDivElement>(null);
   const karte = useRef<MapLibreMap | null>(null);
   const popup = useRef<Popup | null>(null);
   const [bereit, setBereit] = useState(false);
+  const verhaeltnis = verhaeltnisVon(seite);
   // Die Ereignis-Handler hängen einmal an der Karte; die aktuellen Props liest der Handler über Refs
   const aktuell = useRef({ namenZeigen, onKlick, onAusschnitt, gastToken, katalog, projektion });
   aktuell.current = { namenZeigen, onKlick, onAusschnitt, gastToken, katalog, projektion };
@@ -224,11 +228,21 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     return () => { bildRef.current = null; };
   }, [bildRef]);
 
+  // Ausschnitt der Region (oder Deutschland) einpassen: beim Regionswechsel, nach dem Wechsel des
+  // Seitenformats und per Knopf »⤢«, wenn man sich verzoomt hat
+  const einpassen = (dauer = 0) => {
+    const m = karte.current;
+    if (!m) return;
+    m.resize();
+    const z = ziel ? ausschnittVor(ziel, projektion) : null;
+    m.fitBounds(z ? [[z.west, z.sued], [z.ost, z.nord]] : START, { duration: dauer });
+  };
   useEffect(() => {
-    if (!bereit || !ziel) return;
-    const z = ausschnittVor(ziel, projektion);
-    karte.current?.fitBounds([[z.west, z.sued], [z.ost, z.nord]], { duration: 0 });
-  }, [ziel, bereit, projektion]);
+    if (bereit && ziel) einpassen();
+  }, [ziel, bereit, projektion]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (bereit) einpassen();
+  }, [seite]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const m = karte.current;
@@ -256,12 +270,18 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   const quellen = [...new Map(katalog.ebenen.filter((e) => sichtbar.has(e.id)).map((e) => [e.quelle.name, e.quelle])).values()];
   return (
     <div className="flex flex-col gap-1 w-full">
-    <div className="relative w-full h-[72vh] min-h-[420px] rounded-2xl overflow-hidden border border-line">
+    <div className="relative rounded-2xl overflow-hidden border border-line mx-auto w-full"
+      style={verhaeltnis
+        // A4: festes Verhältnis, aber nie höher als das Fenster (dann schmaler)
+        ? { aspectRatio: String(verhaeltnis), maxWidth: `calc(85vh * ${verhaeltnis})` }
+        : { height: "72vh", minHeight: 420 }}>
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
       <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />
       {bereit && karte.current && partikel && <PartikelFluss karte={karte.current} ebenen={partikel.ebenen} monat={partikel.monat} projektion={projektion} />}
       {menue && <div className="absolute left-2 top-2 z-10">{menue}</div>}
+      <button onClick={() => einpassen(400)} title="Ganze Region einpassen" aria-label="Einpassen"
+        className="absolute right-2.5 top-[76px] z-10 w-[29px] h-[29px] rounded bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.1)] text-neutral-800 text-base leading-none hover:bg-neutral-100">⤢</button>
     </div>
       {/* Quellenangaben unter der Karte (Namensnennung nach Lizenz) */}
       <p className="text-[11px] leading-snug text-muted px-1" aria-label="Quellen">

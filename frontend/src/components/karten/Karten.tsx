@@ -185,8 +185,9 @@ export default function Karten({ action }: { action?: ReactNode }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <KartenAnsicht stil={stil} katalog={katalog} namenZeigen={inhalt.beschriftung || bearbeiten} onKlick={klick}
-              projektion={inhalt.projektion ?? "equalearth"}
-              menue={<KartenMenue projektion={inhalt.projektion ?? "equalearth"} setProjektion={(p) => setInhalt((v) => ({ ...v, projektion: p }))} />}
+              projektion={inhalt.projektion ?? "equalearth"} seite={inhalt.seite}
+              menue={<KartenMenue projektion={inhalt.projektion ?? "equalearth"} setProjektion={(p) => setInhalt((v) => ({ ...v, projektion: p }))}
+                seite={inhalt.seite} setSeite={(seite) => setInhalt((v) => ({ ...v, seite }))} />}
               ziel={ziel} onAusschnitt={(a) => { ausschnitt.current = a; }} bildRef={bildRef} fundort={fundort}
               partikel={partikelAn ? { ebenen: inhalt.ebenen, monat: monatVon(inhalt.filter, inhalt.ebenen.find((e) => katalog.ebenen.find((k) => k.id === e)?.monate) ?? "") } : null} />
             <Arbeitsblatt katalog={katalog} inhalt={inhalt} nummern={nummern} daten={daten} titel={satz?.titel ?? "Karte"}

@@ -46,7 +46,7 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
     try {
       const karte = await holeBild();
       const { datei, name } = await api.karten.export({
-        format, variante, titel, aufgabe, karte,
+        format, variante, titel, aufgabe, karte, seite: inhalt.seite ?? "frei",
         gruppen: gruppen.map((e) => {
           const namen = namenVon(e.id);
           return { name: e.name, eintraege: inhalt.auswahl[e.id].objekte.map((id) => ({ marke: nummern[e.id][id], name: namen.get(id) ?? "" })) };
@@ -116,7 +116,7 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen.</p>
+          <p className="text-xs text-muted">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen. Für eine volle Seite im ☰-Menü der Karte »A4 hoch« oder »A4 quer« wählen und den Ausschnitt zurechtrücken.</p>
           {fehler && <p className="text-bad">{fehler}</p>}
         </div>
       )}

@@ -5,6 +5,7 @@
 import type { Kartenart } from "./stil";
 import type { EbenenAuswahl } from "./nummern";
 import type { Projektion } from "./projektion";
+import type { Seite } from "./seite";
 
 export type Ausschnitt = { west: number; sued: number; ost: number; nord: number };
 
@@ -22,6 +23,8 @@ export type SatzInhalt = {
   erfolge?: KartenErfolg[];
   /** Kartennetz (fehlt = Equal Earth) */
   projektion?: Projektion;
+  /** Kartenfläche im A4-Verhältnis (fehlt = wie der Bildschirm) */
+  seite?: Seite;
 };
 
 export type ErfolgsArt = "anteil" | "fehlerfrei" | "objekte" | "serie" | "tempo" | "beide" | "aufgeholt" | "dranbleiben" | "komplett";
@@ -71,4 +74,5 @@ export type KartenExportIn = {
   /** PNG als data-URL (MapLibre-Canvas) */
   karte: string;
   gruppen: { name: string; eintraege: { marke: string; name: string }[] }[];
+  seite?: Seite;
 };
