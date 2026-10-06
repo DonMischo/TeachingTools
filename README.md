@@ -109,7 +109,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Eigene Ebenen als GeoJSON, KML, KMZ oder GPX (nur Lehrkräfte); JSON-Vorlage mit `aktiv` je Objekt zum Filtern, auch per KI
 - Kartenquiz per Code/QR: Nummern benennen oder Orte finden, geprüft auf dem Server, Hauspunkte je Klasse; einbettbar in Caputh und TaskCrawler
 - Erfolge je Kartensatz: Anteil richtig, ohne Fehlversuch, bestimmte Objekte, Serie, auf Zeit, benennen *und* finden, Fehler aufgeholt, an mehreren Tagen geübt, alle anderen
-- Lernhelfer »🎯 Üben«: Fuzzy-Regeln aus Trefferverlauf und Pause bestimmen, was als Nächstes kommt; Unsicheres als Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarorte, ähnliche Namen), Sicheres als freie Eingabe. Der Lernstand bleibt über Sitzungen erhalten; die Lehrkraft sieht, was in der Klasse noch wackelt. Eingeloggte üben geteilte Kartensätze auch ohne Code (»🎯 Kartensätze üben« in der Kartenansicht)
+- Lernhelfer »🎯 Üben«: Fuzzy-Regeln aus Trefferverlauf und Pause bestimmen, was als Nächstes kommt; Unsicheres als Auswahl mit Ablenkern (frühere Verwechslungen, Nachbarorte, ähnliche Namen), Sicheres als freie Eingabe. Der Lernstand bleibt über Sitzungen erhalten; die Lehrkraft sieht, was in der Klasse noch wackelt. Eingeloggte üben geteilte Kartensätze auch ohne Code (»🎯 Kartensätze üben« in der Kartenansicht); »Automatisch weiter« spart den Klick auf »Weiter« (richtig 1 s, falsch 2,5 s Zeit für die Lösung)
 
 ### 📚 Übung
 - Selbstständiges Üben mit generierten Aufgaben (Mathematik Kl. 1–7 nach Thüringer Lehrplan)

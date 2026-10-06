@@ -7,7 +7,7 @@
  * »Üben« (Lernhelfer): eine Aufgabe nach der anderen, was am wenigsten sitzt zuerst;
  * unsicher → Auswahl mit Ablenkern, sicher → freie Eingabe. Zählt nicht für Punkte.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { quizStil, type QuizAufgabe, type QuizLernen, type QuizSpiel, type QuizStand, type UebenAntwortOut, type UebenAufgabe } from "@/lib/karten/quiz";
 import KartenAnsicht, { type Treffer } from "./KartenAnsicht";
@@ -209,12 +209,36 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
 }
 
 /** Seitenleiste im Übungsmodus: Aufgabe, Hilfe (Auswahl) oder freie Eingabe, Sicherheit. */
+const AUTO_KEY = "hp_karten_auto_weiter";
+/** Wartezeit bis zur nächsten Aufgabe: richtig kurz, falsch länger (Lösung ansehen) */
+const AUTO_MS = { richtig: 1000, falsch: 2500 };
+
 export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, senden, weiter, wartet = null }: {
   uebung: UebenAufgabe | null; ergebnis: UebenAntwortOut | null; lernen: QuizLernen | null;
   eingabe: string; setEingabe: (s: string) => void; senden: (antwort: string) => Promise<void>; weiter: () => Promise<void>;
   /** Antwort, die gerade geprüft wird: bleibt markiert, alles andere ist gesperrt */
   wartet?: string | null;
 }) {
+  // »Automatisch weiter«: pro Browser gemerkt
+  const [auto, setAuto] = useState(false);
+  useEffect(() => { try { setAuto(localStorage.getItem(AUTO_KEY) === "1"); } catch { /* ohne Speicher: aus */ } }, []);
+  const schalte = (an: boolean) => {
+    setAuto(an);
+    try { localStorage.setItem(AUTO_KEY, an ? "1" : "0"); } catch { /* egal */ }
+  };
+  // Klick und Zeitablauf zugleich holen sonst zwei Aufgaben (eine würde übersprungen)
+  const laeuft = useRef(false);
+  const los = async () => {
+    if (laeuft.current) return;
+    laeuft.current = true;
+    try { await weiter(); } finally { laeuft.current = false; }
+  };
+  useEffect(() => {
+    if (!auto || !ergebnis) return;
+    const t = setTimeout(() => void los(), ergebnis.richtig ? AUTO_MS.richtig : AUTO_MS.falsch);
+    return () => clearTimeout(t);
+  }, [auto, ergebnis]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!uebung) return <p className="text-muted">Übung wird geladen …</p>;
   const sicherheit = ergebnis?.sicherheit ?? uebung.sicherheit;
   return (
@@ -244,9 +268,13 @@ export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, send
         </form>
       ))}
       {ergebnis && (
-        <button onClick={() => void weiter()} autoFocus
-          className="btn-primary self-start px-3 py-1.5">Weiter →</button>
+        <button onClick={() => void los()} autoFocus
+          className="btn-primary self-start px-3 py-1.5">{auto ? "Gleich weiter … (jetzt →)" : "Weiter →"}</button>
       )}
+      <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+        <input type="checkbox" checked={auto} onChange={(e) => schalte(e.target.checked)} className="accent-accent" />
+        Automatisch weiter (ohne »Weiter« klicken)
+      </label>
       <div className="flex items-center gap-2 text-xs text-muted" title="Wie sicher dieses Objekt sitzt (neuere Antworten zählen mehr)">
         Sicherheit
         <span className="flex-1 h-1.5 rounded-full bg-line overflow-hidden">

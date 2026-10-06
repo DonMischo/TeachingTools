@@ -44,4 +44,23 @@ describe("Karten: Üben ohne Code", () => {
     await screen.findByRole("button", { name: "Gotha" });
     expect(aufrufe.naechste).toBe(2);
   });
+
+  it("geht mit »Automatisch weiter« ohne Klick zur nächsten Aufgabe", async () => {
+    localStorage.removeItem("hp_karten_auto_weiter");
+    aufrufe.naechste = 0;
+    render(<KartenSelbstUeben satzId={7} />);
+    fireEvent.click(await screen.findByLabelText(/Automatisch weiter/));
+    expect(localStorage.getItem("hp_karten_auto_weiter")).toBe("1");
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Erfurt" }));
+      await screen.findByRole("button", { name: /Gleich weiter/ });
+      await vi.advanceTimersByTimeAsync(1100);
+      await screen.findByRole("button", { name: "Gotha" });
+      expect(screen.queryByRole("button", { name: /weiter/i })).toBeNull();
+      expect(aufrufe.naechste).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
