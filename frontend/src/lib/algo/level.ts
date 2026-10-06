@@ -268,12 +268,35 @@ export const LEVEL: Level[] = [
 
   // ── Welt 7: Unterprogramme ──────────────────────────────────────────
   {
-    id: "7-1", welt: 7, titel: "Drei Nischen", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "rufe"],
-    text: "In den Nischen liegen {aPl}. Schreib das Holen einmal ins Unterprogramm und ruf es dreimal auf.",
+    id: "7-1", welt: 7, titel: "Drei Nischen", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "wenn", "rufe"], bedingungen: ["frei_links"],
+    text: "In den Nischen liegen {aPl}. Schreib das Holen einmal ins Unterprogramm. Mit »wenn links frei« prüft es selbst, ob hier eine Nische ist.",
     karten: [{ zeilen: ["##########", "##a#a###a#", "#>.......#", "##########"] }],
-    optimal: 15,
-    loesung: { haupt: [V, RUF, rep(2, V), RUF, rep(4, V), RUF], fn: [LI, V, N, RE, RE, V, LI] },
+    optimal: 11,
+    loesung: { haupt: [rep(7, V, RUF)], fn: [wenn("frei_links", [LI, V, N, RE, RE, V, LI])] },
+    tipp: "Geh den Gang Feld für Feld entlang und ruf jedes Mal das Unterprogramm auf. Das schaut nach links: Nische? Dann hinein, {verb}, zurück.",
     merke: "Ein Unterprogramm ist ein Algorithmus im Algorithmus. Man schreibt ihn einmal und benutzt ihn oft.",
+  },
+  {
+    id: "7-2", welt: 7, titel: "Oben und unten", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "rufe"],
+    text: "Über und unter dem Gang liegen {aPl} — aber nicht in gleichen Abständen. Ein Unterprogramm holt beide, du rufst es an den richtigen Stellen auf.",
+    karten: [{ zeilen: ["#########", "##a##aa##", "#>......#", "##a##aa##", "#########"] }],
+    optimal: 19,
+    loesung: {
+      haupt: [V, RUF, rep(3, V), RUF, V, RUF],
+      fn: [LI, V, N, rep(2, RE), V, V, N, rep(2, RE), V, RE],
+    },
+    tipp: "Das Unterprogramm muss am Ende wieder im Gang stehen und nach rechts schauen — sonst passt der nächste Aufruf nicht.",
+  },
+  {
+    id: "7-3", welt: 7, titel: "Zwei Runden", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "wenn", "rufe"], bedingungen: ["ding"],
+    text: "Lauf je eine Runde um beide Blöcke. An den Ecken liegen manchmal {aPl} — das Unterprogramm schaut an jeder Ecke nach.",
+    karten: [{ zeilen: ["#########", "#a..a..a#", "#.##.##.#", "#.##.##.#", "#^..a..a#", "#########"] }],
+    optimal: 12,
+    loesung: {
+      haupt: [RUF, RE, rep(3, V), LI, RUF],
+      fn: [rep(4, rep(3, V), wenn("ding", [N]), RE)],
+    },
+    tipp: "Eine Runde = viermal: drei Felder vor, nachsehen, rechts drehen. Danach stehst du wieder am Anfang.",
   },
 
   // ── Welt 8: Endgegner ───────────────────────────────────────────────
@@ -291,6 +314,32 @@ export const LEVEL: Level[] = [
     optimal: 11,
     loesung: { haupt: [V, rep(2, W), RUF, V, rep(3, W), RUF], fn: [rep(3, V), N] },
     tipp: "Zähle die Takte: Wann ist der Gang vor dir frei — und bleibt es einen Schritt lang?",
+  },
+  {
+    id: "8-2", welt: 8, titel: "Kristall-Labyrinth", modus: "drehen", bloecke: [...DREHEN, "bis", "wenn"], bedingungen: ["frei", "frei_rechts", "ding", "ziel"],
+    text: "Zwei Labyrinthe, ein Programm: Finde hinaus zu {ziel} und sammle unterwegs alle {aPl} ein.",
+    karten: [
+      { zeilen: ["#########", "#>..#...#", "#.#.#.#.#", "#.#.a.#a#", "#.#####.#", "#....a#Z#", "#########"] },
+      { zeilen: ["#######", "#>#.a.#", "#.#.#.#", "#.a.#Z#", "#######"] },
+    ],
+    optimal: 9,
+    loesung: P(bis("ziel", wenn("ding", [N]), wenn("frei_rechts", [RE, V], [wenn("frei", [V], [LI])]))),
+    tipp: "Nimm die Rechte-Hand-Regel aus Welt 6 und setz vor jeden Schritt ein »wenn hier liegt etwas: {verb}«.",
+  },
+  {
+    id: "8-3", welt: 8, titel: "Datenstrom", modus: "drehen", bloecke: [...DREHEN, "bis", "wenn", "rufe"], bedingungen: ["frei", "ding"],
+    text: "Drei Reihen, {aPl} liegen jedes Mal woanders. Ein Unterprogramm leert eine ganze Reihe — das Hauptprogramm biegt nur noch ab.",
+    karten: [
+      { zeilen: ["#########", "#>.a..a.#", "#######.#", "#..a.a..#", "#.#######", "#.a...aZ#", "#########"] },
+      { zeilen: ["#########", "#>....a.#", "#######.#", "#.a.a...#", "#.#######", "#..a.a.Z#", "#########"] },
+    ],
+    optimal: 15,
+    loesung: {
+      haupt: [RUF, RE, V, V, RE, RUF, LI, V, V, LI, RUF],
+      fn: [{ t: "bis", b: { art: "frei", nicht: true }, k: [V, wenn("ding", [N])] }],
+    },
+    tipp: "Im Unterprogramm: »wiederhole bis vorne nicht frei« — darin ein Schritt vor und nachsehen, ob hier etwas liegt.",
+    merke: "Schleifen, Bedingungen und Unterprogramme zusammen: So sind auch echte Programme gebaut.",
   },
 ];
 
