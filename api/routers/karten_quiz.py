@@ -13,11 +13,14 @@ Lernhelfer (»Üben«, api/karten_lernen.py): stellt einzeln, was noch nicht sit
 mit Ablenkern; zählt nicht für Punkte, füllt aber den Lernstand (je Person und
 Kartensatz, über Sitzungen hinweg). Quiz-Antworten fließen dort ebenfalls ein.
 """
+import copy
 import gzip
 import hashlib
 import json
 import random
 import secrets
+from functools import lru_cache
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -63,14 +66,42 @@ def _geheim(s: ToolSession) -> str:
     return f"{settings.secret_key}:karten:{s.code}"
 
 
-def _sammlung(ebene: str) -> dict:
+def _pfad(ebene: str) -> Path:
     if ebene.startswith(EIGEN_PRAEFIX):
-        pfad = EIGENE / f"{ebene.removeprefix(EIGEN_PRAEFIX)}.geojson"
-    else:
-        pfad = DATEN / "ebenen" / f"{ebene}.geojson"
+        return EIGENE / f"{ebene.removeprefix(EIGEN_PRAEFIX)}.geojson"
+    return DATEN / "ebenen" / f"{ebene}.geojson"
+
+
+def _datei_stand(ebene: str) -> float:
+    pfad = _pfad(ebene)
     if not pfad.is_file():
         raise HTTPException(404, "Ebene fehlt")
-    return json.loads(pfad.read_text(encoding="utf-8"))
+    return pfad.stat().st_mtime
+
+
+@lru_cache(maxsize=32)
+def _geladen(ebene: str, stand: float) -> dict:
+    return json.loads(_pfad(ebene).read_text(encoding="utf-8"))
+
+
+def _sammlung(ebene: str) -> dict:
+    """Ebene als GeoJSON — einmal je Datei und Stand geparst (nicht verändern!)."""
+    return _geladen(ebene, _datei_stand(ebene))
+
+
+@lru_cache(maxsize=32)
+def _ebene_gepackt(ebene: str, stand: float, geheim: str, projektion: str | None) -> bytes:
+    """Entschärfte Ebene (Token statt Namen), fertig gepackt — je Satz/Sitzung und Projektion einmal."""
+    sammlung = engine.entschaerfe_ebene(_geladen(ebene, stand), ebene, geheim)
+    daten = transformiere(sammlung) if projektion == "equalearth" else sammlung
+    return gzip.compress(json.dumps(daten, ensure_ascii=False).encode("utf-8"), compresslevel=6)
+
+
+def _ebene_antwort(ebene: str, geheim: str, projektion: str | None, request: Request) -> Response:
+    daten = _ebene_gepackt(ebene, _datei_stand(ebene), geheim, projektion if projektion == "equalearth" else None)
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        return Response(daten, media_type="application/geo+json", headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
+    return Response(gzip.decompress(daten), media_type="application/geo+json")
 
 
 def _ebenen_namen(db: Session) -> dict[str, str]:
@@ -85,13 +116,24 @@ def _reihenfolge(inhalt: dict) -> list[str]:
 
 
 def aufgaben(db: Session, satz: KartenSatz) -> list[dict]:
+    """Aufgaben eines Satzes. Die Ankerpunkte kosten bei Flächen spürbar Zeit (Bundesländer ~1 s),
+    darum je Satzinhalt, Ebenennamen und Datenstand nur einmal gerechnet."""
+    inhalt = json.dumps(satz.inhalt, sort_keys=True)
+    namen = tuple(sorted(_ebenen_namen(db).items()))
+    staende = tuple((e, _datei_stand(e)) for e in (satz.inhalt or {}).get("auswahl", {}))
+    return copy.deepcopy(_aufgaben(satz.id, inhalt, namen, staende))
+
+
+@lru_cache(maxsize=64)
+def _aufgaben(satz_id: int, inhalt_json: str, namen: tuple, staende: tuple) -> list[dict]:
+    inhalt = json.loads(inhalt_json)
     cache: dict[str, dict] = {}
 
     def features_von(ebene: str) -> dict:
         if ebene not in cache:
             cache[ebene] = {f["properties"]["id"]: f for f in _sammlung(ebene)["features"]}
         return cache[ebene]
-    return engine.aufgaben_aus_satz(satz.inhalt, _reihenfolge(satz.inhalt), features_von, _ebenen_namen(db))
+    return engine.aufgaben_aus_satz(inhalt, _reihenfolge(inhalt), features_von, dict(namen))
 
 
 def _einstellungen(s: ToolSession) -> dict:
@@ -257,12 +299,7 @@ def ebene(code: str, ebene_id: str, request: Request, projektion: str | None = N
     satz = _satz(db, s)
     if ebene_id not in satz.inhalt.get("ebenen", []):
         raise HTTPException(404, "Diese Ebene gehört nicht zum Quiz")
-    sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim(s))
-    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
-    if "gzip" in request.headers.get("accept-encoding", ""):
-        return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
-                        headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
-    return Response(daten, media_type="application/geo+json")
+    return _ebene_antwort(ebene_id, _geheim(s), projektion, request)
 
 
 class AntwortIn(BaseModel):
@@ -470,12 +507,7 @@ def selbst_ebene(satz_id: int, ebene_id: str, request: Request, projektion: str 
     satz, _ = _uebungssatz(db, satz_id, wer)
     if ebene_id not in satz.inhalt.get("ebenen", []):
         raise HTTPException(404, "Diese Ebene gehört nicht zum Kartensatz")
-    sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, _geheim_satz(satz))
-    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
-    if "gzip" in request.headers.get("accept-encoding", ""):
-        return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
-                        headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
-    return Response(daten, media_type="application/geo+json")
+    return _ebene_antwort(ebene_id, _geheim_satz(satz), projektion, request)
 
 
 @router.get("/ueben/{satz_id}/naechste")

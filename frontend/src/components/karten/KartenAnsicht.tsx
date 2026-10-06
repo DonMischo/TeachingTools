@@ -71,6 +71,7 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   // Angeklickte Strömung bzw. Windgürtel bleibt hervorgehoben (feature-state »aktiv«)
   const hervor = useRef<{ source: string; id: string } | null>(null);
   const ersterStil = useRef(stil);
+  const druckbar = useRef(bildRef);
   const massstabRef = useRef<HTMLCanvasElement>(null);
   // Wird nach jedem Stilwechsel erst erfüllt, wenn die Karte wieder ruht (alles gezeichnet)
   const gezeichnet = useRef<Promise<void>>(Promise.resolve());
@@ -92,8 +93,9 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         attributionControl: false,
         dragRotate: false,
         pitchWithRotate: false,
-        // Für den PDF-Druck muss das Bild nach dem Zeichnen lesbar bleiben
-        canvasContextAttributes: { preserveDrawingBuffer: true },
+        // Für den PDF-Druck muss das Bild nach dem Zeichnen lesbar bleiben — kostet bei jedem Bild,
+        // darum nur, wo gedruckt wird
+        canvasContextAttributes: { preserveDrawingBuffer: Boolean(druckbar.current) },
         transformRequest: (url) => {
           const token = aktuell.current.gastToken;
           return token && url.includes("/api/") ? { url, headers: { Authorization: `Bearer ${token}` } } : { url };
@@ -106,9 +108,20 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
         if (bild && !m!.hasImage(e.id)) m!.addImage(e.id, bild, { pixelRatio: 1 });
       });
       const klickbar = () => m!.getLayersOrder().filter(istKlickbar);
+      // Zeiger über Klickbarem: höchstens einmal je Bild prüfen — die Abfrage über großen Flächen
+      // ist teuer und hielt bei jeder Mausbewegung den Hauptthread auf (Klicks kamen verspätet an)
+      let zeiger: { x: number; y: number } | null = null;
       m.on("mousemove", (e) => {
-        const t = m!.queryRenderedFeatures(e.point, { layers: klickbar() });
-        m!.getCanvas().style.cursor = t.length ? "pointer" : "";
+        const frei = zeiger === null;
+        zeiger = e.point;
+        if (!frei) return;
+        requestAnimationFrame(() => {
+          const p = zeiger;
+          zeiger = null;
+          if (!p || !karte.current) return;
+          const t = m!.queryRenderedFeatures([p.x, p.y], { layers: klickbar() });
+          m!.getCanvas().style.cursor = t.length ? "pointer" : "";
+        });
       });
       m.on("click", (e) => {
         // Ein paar Pixel Spielraum: Flüsse sind dünn

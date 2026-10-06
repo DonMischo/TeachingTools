@@ -209,9 +209,11 @@ export default function KartenQuizSpiel({ code, token }: { code: string; token?:
 }
 
 /** Seitenleiste im Übungsmodus: Aufgabe, Hilfe (Auswahl) oder freie Eingabe, Sicherheit. */
-export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, senden, weiter }: {
+export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, senden, weiter, wartet = null }: {
   uebung: UebenAufgabe | null; ergebnis: UebenAntwortOut | null; lernen: QuizLernen | null;
   eingabe: string; setEingabe: (s: string) => void; senden: (antwort: string) => Promise<void>; weiter: () => Promise<void>;
+  /** Antwort, die gerade geprüft wird: bleibt markiert, alles andere ist gesperrt */
+  wartet?: string | null;
 }) {
   if (!uebung) return <p className="text-muted">Übung wird geladen …</p>;
   const sicherheit = ergebnis?.sicherheit ?? uebung.sicherheit;
@@ -229,15 +231,16 @@ export function UebenPanel({ uebung, ergebnis, lernen, eingabe, setEingabe, send
       {uebung.richtung === "benennen" && !ergebnis && (uebung.optionen ? (
         <div className="grid grid-cols-2 gap-1.5">
           {uebung.optionen.map((o) => (
-            <button key={o} onClick={() => void senden(o)}
-              className="px-2 py-1.5 rounded-lg border border-line hover:bg-surface-hover font-bold text-left">{o}</button>
+            <button key={o} onClick={() => void senden(o)} disabled={wartet !== null}
+              className={`px-2 py-1.5 rounded-lg border font-bold text-left hover:bg-surface-hover disabled:cursor-wait ${
+                wartet === o ? "border-accent bg-surface-hover" : "border-line disabled:opacity-60"}`}>{o}</button>
           ))}
         </div>
       ) : (
         <form className="flex gap-1" onSubmit={(e) => { e.preventDefault(); if (eingabe.trim()) void senden(eingabe); }}>
           <input value={eingabe} onChange={(e) => setEingabe(e.target.value)} aria-label="Name" autoFocus placeholder={uebung.kategorie}
             className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-line bg-page" />
-          <button className="px-2 rounded-lg border border-line font-bold" aria-label="prüfen">✓</button>
+          <button className="px-2 rounded-lg border border-line font-bold disabled:opacity-60" aria-label="prüfen" disabled={wartet !== null}>✓</button>
         </form>
       ))}
       {ergebnis && (
