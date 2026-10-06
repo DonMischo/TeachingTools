@@ -10,7 +10,7 @@
  *
  * Aus dem Vorrat neben der Waage lassen sich Teile auf nur eine Schale ziehen
  * (oder aus ihr heraus) — dann kippt die Waage, und die Gleichung stimmt nicht
- * mehr. Gewicht und Feder derselben Art dürfen dabei nebeneinander liegen.
+ * mehr. Plus- und Minus-Teil derselben Art dürfen dabei nebeneinander liegen.
  */
 import { useCallback, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import {
@@ -116,7 +116,7 @@ function layoutSide(side: Side, prefix: string, motiv: MotivId): { units: Unit[]
     }
   }
 
-  // Federn sind an der Schale eingehakt: sie kommen in die unterste Reihe.
+  // Minus-Teile kommen in die unterste Reihe.
   if (motiv !== "kloetze") units.sort((a, b) => Number(!!b.blk?.neg) - Number(!!a.blk?.neg));
 
   const { scale } = bestLayout(units);
@@ -557,7 +557,7 @@ export default function ZahlenModus({ onMessage, fest }: {
             <div className="flex sm:flex-col flex-wrap items-center justify-center gap-2 flex-1">
               {([["x", false], ["n", false], ["x", true], ["n", true]] as const).map(([kind, neg]) => (
                 <div key={`${kind}${neg}`} onPointerDown={e => grab(kind, neg, null, e)} onMouseDown={e => e.preventDefault()}
-                  title={`${neg ? "Feder" : kind === "x" ? motivInfo.x : motivInfo.one} — auf eine Schale ziehen`}
+                  title={`${neg ? (kind === "x" ? motivInfo.minusX : motivInfo.minusOne) : kind === "x" ? motivInfo.x : motivInfo.one} — auf eine Schale ziehen`}
                   className="cursor-grab select-none rounded-lg px-2 py-1.5 hover:bg-page flex items-center justify-center min-w-[56px]"
                   style={{ touchAction: "none" }}>
                   <TeilSvg b={sample(kind, neg, motiv)} motiv={motiv} />
@@ -574,7 +574,7 @@ export default function ZahlenModus({ onMessage, fest }: {
           <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5" style={{ background: "#7c3aed" }} />{motivInfo.x}</span>
           <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5" style={{ background: "#f59e0b" }} />{motivInfo.one}</span>
           <span><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: "#e11d48" }} />
-            {motiv === "kloetze" ? "Minus-Ballon (zieht hoch)" : "Minus-Feder (zieht hoch)"}</span>
+            {motivInfo.minus}</span>
           <span><span className="inline-block w-3 h-3 rounded-sm align-middle mr-1.5 border-2" style={{ borderColor: "#38bdf8" }} />Klammer</span>
         </div>
       </div>
@@ -595,7 +595,7 @@ export default function ZahlenModus({ onMessage, fest }: {
           <div className="flex flex-wrap gap-2">
             {pairs && (
               <button onClick={() => push({ left: simplify(current.left), right: simplify(current.right) }, "Nullpaare weg")}
-                title="Ein Gewicht und eine gleich starke Feder heben sich auf — beide dürfen weg."
+                title="Ein Teil und sein Minus-Gegenstück heben sich auf — beide dürfen weg."
                 className="px-3.5 py-2 rounded-xl text-base font-bold border border-ok text-ok bg-ok/10 transition-all hover:scale-[1.04] active:scale-95">
                 🧹 Nullpaare wegräumen
               </button>
