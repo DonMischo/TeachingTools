@@ -1,6 +1,8 @@
 /* Stilgrundlage für die Offline-Datei: dieselben Tokens und Bausteine wie die App.
    Hell = Theme »ege«, dunkel = »default« (siehe src/styles/theme.css). */
 @import 'tailwindcss' source(none);
+/* Vor den @source-Zeilen: Vite löst @import selbst auf und überspringt jeden,
+   der hinter einer anderen Regel steht — dann fehlten alle Theme-Farben. */
+@import "../src/styles/theme.css";
 @source "../src";
 @source ".";
-@import "../src/styles/theme.css";
