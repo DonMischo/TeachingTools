@@ -19,6 +19,8 @@ import Spielfeld from "./Spielfeld";
 import KachelEditor from "./KachelEditor";
 import Duell from "./Duell";
 import BlocklyEditor from "./BlocklyEditor";
+import FlussEditor from "./FlussEditor";
+import { ausProgramm } from "@/lib/algo/fluss";
 
 
 type EditorArt = "kacheln" | "blockly";
@@ -424,6 +426,12 @@ function ProgrammLevel({ level, thema, editor, onGeloest }: {
         {editor === "kacheln"
           ? <KachelEditor key={editorKey} {...editorProps} />
           : <BlocklyEditor key={`${editorKey}-${geladen}`} {...editorProps} />}
+        {anzahl > 0 && !level.bloecke.includes("rufe") && (
+          <details className="card p-2 text-sm">
+            <summary className="cursor-pointer font-bold">🔀 Mein Programm als Flussdiagramm</summary>
+            <div className="mt-2"><FlussEditor d={ausProgramm(prog)} modus="lesen" /></div>
+          </details>
+        )}
       </div>
     </div>
   );

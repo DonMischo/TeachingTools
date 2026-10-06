@@ -10,12 +10,16 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { wahl as vorWahl, type Vorgabe } from "@/lib/vorgabe";
-import { LEER_STAND, ladeStand, mitLevel, speichereStand, type AlgoStand } from "@/lib/algo/fortschritt";
+import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, type AlgoStand } from "@/lib/algo/fortschritt";
 import CodeAbenteuer from "./CodeAbenteuer";
+import AutomatEinstieg from "./AutomatEinstieg";
+import FlussReiter from "./FlussReiter";
 
-type Reiter = "abenteuer";
+type Reiter = "automat" | "fluss" | "abenteuer";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
+  { id: "automat", icon: "🍬", label: "Automat" },
+  { id: "fluss", icon: "🔀", label: "Flussdiagramm" },
   { id: "abenteuer", icon: "🎮", label: "Code-Abenteuer" },
 ];
 
@@ -31,8 +35,9 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
   onStand?: (s: AlgoStand) => void;
 }) {
   const festerReiter = vorWahl(vorgabe, "reiter", REITER.map(r => r.id));
-  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "abenteuer");
+  const [reiter, setReiter] = useState<Reiter>(festerReiter ?? "automat");
   const [stand, setStand] = useState<AlgoStand>(LEER_STAND);
+  const [flussStart, setFlussStart] = useState<string | null>(null);
   useEffect(() => { setStand(ladeStand(speicherSchluessel)); }, [speicherSchluessel]);
 
   const aendern = useCallback((f: (s: AlgoStand) => AlgoStand) => setStand(f), []);
@@ -63,6 +68,11 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
           ))}
         </div>
       )}
+      {reiter === "automat" && (
+        <AutomatEinstieg erledigt={stand.automat} onGeloest={id => aendern(s => mitErledigt(s, "automat", id))}
+          onFluss={id => { setFlussStart(id); setReiter("fluss"); }} />
+      )}
+      {reiter === "fluss" && <FlussReiter erledigt={stand.fluss} start={flussStart} onGeloest={id => aendern(s => mitErledigt(s, "fluss", id))} />}
       {reiter === "abenteuer" && (
         <CodeAbenteuer stand={stand} onGeloest={(id, sterne, bloecke) => aendern(s => mitLevel(s, id, { sterne, bloecke }))} />
       )}
