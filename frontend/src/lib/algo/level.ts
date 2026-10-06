@@ -277,12 +277,12 @@ export const LEVEL: Level[] = [
     merke: "Ein Unterprogramm ist ein Algorithmus im Algorithmus. Man schreibt ihn einmal und benutzt ihn oft.",
   },
   {
-    id: "7-2", welt: 7, titel: "Oben und unten", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "rufe"],
-    text: "Über und unter dem Gang liegen {aPl} — aber nicht in gleichen Abständen. Ein Unterprogramm holt beide, du rufst es an den richtigen Stellen auf.",
+    id: "7-2", welt: 7, titel: "Oben und unten", modus: "drehen", bloecke: [...DREHEN, "wiederhole", "wenn", "rufe"], bedingungen: ["frei_links"],
+    text: "Über und unter dem Gang liegen {aPl} — aber nicht in gleichen Abständen. Ein Unterprogramm holt beide; mit »wenn links frei« weißt du, wo du es aufrufen musst.",
     karten: [{ zeilen: ["#########", "##a##aa##", "#>......#", "##a##aa##", "#########"] }],
-    optimal: 19,
+    optimal: 16,
     loesung: {
-      haupt: [V, RUF, rep(3, V), RUF, V, RUF],
+      haupt: [rep(5, V, wenn("frei_links", [RUF]))],
       fn: [LI, V, N, rep(2, RE), V, V, N, rep(2, RE), V, RE],
     },
     tipp: "Das Unterprogramm muss am Ende wieder im Gang stehen und nach rechts schauen — sonst passt der nächste Aufruf nicht.",
@@ -316,30 +316,63 @@ export const LEVEL: Level[] = [
     tipp: "Zähle die Takte: Wann ist der Gang vor dir frei — und bleibt es einen Schritt lang?",
   },
   {
-    id: "8-2", welt: 8, titel: "Kristall-Labyrinth", modus: "drehen", bloecke: [...DREHEN, "bis", "wenn"], bedingungen: ["frei", "frei_rechts", "ding", "ziel"],
-    text: "Zwei Labyrinthe, ein Programm: Finde hinaus zu {ziel} und sammle unterwegs alle {aPl} ein.",
+    id: "8-2", welt: 8, titel: "Virenschleuse", modus: "drehen", bloecke: [...DREHEN, "warte", "bis", "wenn"], bedingungen: ["gegner", "ding", "ziel"],
+    text: "Quer über den Gang flitzen {gegnerPl}. Dein Radar meldet »Gegner in der Nähe« — dann lieber kurz warten. Ein Programm für beide Karten, {aPl} unterwegs mitnehmen!",
     karten: [
-      { zeilen: ["#########", "#>..#...#", "#.#.#.#.#", "#.#.a.#a#", "#.#####.#", "#....a#Z#", "#########"] },
-      { zeilen: ["#######", "#>#.a.#", "#.#.#.#", "#.a.#Z#", "#######"] },
+      {
+        zeilen: ["#############", "####.###.####", "####.###.####", "#>...a.....Z#", "####.###.####", "####.###.####", "#############"],
+        gegner: [
+          { weg: [[4, 1], [4, 2], [4, 3], [4, 4], [4, 5]] },
+          { weg: [[8, 5], [8, 4], [8, 3], [8, 2], [8, 1]] },
+        ],
+      },
+      {
+        zeilen: ["#############", "###.##.##.###", "###.##.##.###", "#>...a..a..Z#", "###.##.##.###", "###.##.##.###", "#############"],
+        gegner: [
+          { weg: [[3, 5], [3, 4], [3, 3], [3, 2], [3, 1]] },
+          { weg: [[6, 1], [6, 2], [6, 3], [6, 4], [6, 5]] },
+          { weg: [[9, 5], [9, 4], [9, 3], [9, 2], [9, 1]] },
+        ],
+      },
     ],
-    optimal: 9,
-    loesung: P(bis("ziel", wenn("ding", [N]), wenn("frei_rechts", [RE, V], [wenn("frei", [V], [LI])]))),
-    tipp: "Nimm die Rechte-Hand-Regel aus Welt 6 und setz vor jeden Schritt ein »wenn hier liegt etwas: {verb}«.",
+    optimal: 6,
+    loesung: P(bis("ziel", wenn("ding", [N]), wenn("gegner", [W], [V]))),
+    tipp: "Vor jedem Schritt: Ist ein Gegner in der Nähe? Dann »warte«, sonst »vor«. Das Radar schaut auf das Feld vor dir und die Felder daneben.",
   },
   {
-    id: "8-3", welt: 8, titel: "Datenstrom", modus: "drehen", bloecke: [...DREHEN, "bis", "wenn", "rufe"], bedingungen: ["frei", "ding"],
-    text: "Drei Reihen, {aPl} liegen jedes Mal woanders. Ein Unterprogramm leert eine ganze Reihe — das Hauptprogramm biegt nur noch ab.",
+    id: "8-3", welt: 8, titel: "Datenstrom", modus: "drehen", bloecke: [...DREHEN, "warte", "bis", "wenn", "rufe"], bedingungen: ["frei", "ding", "gegner"],
+    text: "Drei Reihen, {aPl} liegen jedes Mal woanders — und durch einen Schacht saust {gegner} quer durch alle Reihen. Ein Unterprogramm leert eine Reihe und passt auf.",
     karten: [
-      { zeilen: ["#########", "#>.a..a.#", "#######.#", "#..a.a..#", "#.#######", "#.a...aZ#", "#########"] },
-      { zeilen: ["#########", "#>....a.#", "#######.#", "#.a.a...#", "#.#######", "#..a.a.Z#", "#########"] },
+      {
+        zeilen: ["#########", "#>.a..a.#", "####.##.#", "#..a.a..#", "#.##.####", "#.a...aZ#", "#########"],
+        gegner: [{ weg: [[4, 1], [4, 2], [4, 3], [4, 4], [4, 5]] }],
+      },
+      {
+        zeilen: ["#########", "#>....a.#", "####.##.#", "#.a..a..#", "#.##.####", "#..a.a.Z#", "#########"],
+        gegner: [{ weg: [[4, 5], [4, 4], [4, 3], [4, 2], [4, 1]] }],
+      },
+    ],
+    optimal: 17,
+    loesung: {
+      haupt: [RUF, RE, V, V, RE, RUF, LI, V, V, LI, RUF],
+      fn: [{ t: "bis", b: { art: "frei", nicht: true }, k: [wenn("gegner", [W], [V]), wenn("ding", [N])] }],
+    },
+    tipp: "Im Unterprogramm: »wiederhole bis vorne nicht frei« — darin »wenn Gegner in der Nähe: warte, sonst vor« und danach nachsehen, ob hier etwas liegt.",
+  },
+  {
+    id: "8-4", welt: 8, titel: "Die Jagd", modus: "drehen", bloecke: [...DREHEN, "bis", "wenn", "rufe"], bedingungen: ["frei", "ding"],
+    text: "{Gegner} ist dir dicht auf den Fersen und jagt dich durch den Datenstrom! Es ist nur halb so schnell wie du — aber jede Drehung und jedes {verb} kostet einen Takt. Sammle alles ein und erreiche {ziel}.",
+    karten: [
+      { zeilen: ["#########", "#.>a..a.#", "#######.#", "#..a.a..#", "#.#######", "#.a...aZ#", "#########"], jaeger: [{ start: [1, 1], takt: 2 }] },
+      { zeilen: ["#########", "#.>.a.a.#", "#######.#", "#.a.a...#", "#.#######", "#..a.a.Z#", "#########"], jaeger: [{ start: [1, 1], takt: 2 }] },
     ],
     optimal: 15,
     loesung: {
       haupt: [RUF, RE, V, V, RE, RUF, LI, V, V, LI, RUF],
       fn: [{ t: "bis", b: { art: "frei", nicht: true }, k: [V, wenn("ding", [N])] }],
     },
-    tipp: "Im Unterprogramm: »wiederhole bis vorne nicht frei« — darin ein Schritt vor und nachsehen, ob hier etwas liegt.",
-    merke: "Schleifen, Bedingungen und Unterprogramme zusammen: So sind auch echte Programme gebaut.",
+    tipp: "Keine unnötigen Drehungen! Ein Unterprogramm, das eine Reihe bis zur Wand abläuft, ist am schnellsten.",
+    merke: "Schleifen, Bedingungen und Unterprogramme zusammen: So sind auch echte Programme gebaut — und schnelle Programme sind oft die kürzesten.",
   },
 ];
 

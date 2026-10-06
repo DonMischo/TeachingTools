@@ -76,6 +76,12 @@ export default function Spielfeld({
           </g>
         );
       })}
+      {(z.jaeger ?? []).map(([jx, jy], i) => (
+        <g key={`j${i}`} style={{ ...gleiten(jx, jy), pointerEvents: "none" }} data-testid="algo-jaeger">
+          <circle cx={C / 2} cy={C / 2} r={C * 0.42} style={{ fill: "#ef444433", stroke: "#ef4444", strokeWidth: 2, strokeDasharray: "4 3" }} />
+          <Emoji x={0} y={0} z={thema.gegner} groesse={32} />
+        </g>
+      ))}
       {z.scan && <Radar z={z} farbe={f.akzent} />}
       <g style={{ ...gleiten(z.x, z.y), pointerEvents: "none" }} data-testid="algo-figur">
         <g style={{ transform: `translate(${C / 2}px, ${C / 2}px) rotate(${winkel.current.summe}deg)`, transition: `transform ${dauer}ms ease-in-out` }}>

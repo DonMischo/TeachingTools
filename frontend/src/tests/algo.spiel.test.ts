@@ -58,6 +58,24 @@ describe("Vorhersagen", () => {
   });
 });
 
+describe("Jäger", () => {
+  it("holt Trödler ein, aber nicht den schnellen Weg", async () => {
+    const { levelById } = await import("@/lib/algo/level");
+    const l = levelById("8-4")!;
+    const troedeln: Programm = { ...l.loesung, fn: [{ t: "bis", b: { art: "frei", nicht: true }, k: [{ t: "wenn", b: { art: "ding" }, k: [{ t: "nimm" }] }, { t: "rechts" }, { t: "links" }, { t: "vor" }] }] };
+    for (const k of l.karten) {
+      expect(fuehreAus(k, l.loesung).ergebnis.ok).toBe(true);
+      expect(fuehreAus(k, troedeln).ergebnis).toMatchObject({ ok: false, fehler: { art: "gegner" } });
+    }
+  });
+  it("Viren im Gang erwischen, wer nicht aufs Radar hört", async () => {
+    const { levelById } = await import("@/lib/algo/level");
+    const l = levelById("8-2")!;
+    const blind = P({ t: "bis", b: { art: "ziel" }, k: [{ t: "wenn", b: { art: "ding" }, k: [{ t: "nimm" }] }, { t: "vor" }] });
+    for (const k of l.karten) expect(fuehreAus(k, blind).ergebnis.ok).toBe(false);
+  });
+});
+
 describe("Level", () => {
   it("haben eindeutige Ids", () => {
     expect(new Set(LEVEL.map(l => l.id)).size).toBe(LEVEL.length);

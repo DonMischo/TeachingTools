@@ -46,9 +46,13 @@ export interface Gegner {
   kreis?: boolean;
 }
 
+/** Ein Jäger läuft auf dem kürzesten Weg auf die Figur zu — alle `takt` Takte ein Feld. */
+export interface Jaeger { start: [number, number]; takt: number }
+
 export interface Karte {
   zeilen: string[];
   gegner?: Gegner[];
+  jaeger?: Jaeger[];
   /** Ding B darf erst genommen werden, wenn kein Ding A mehr liegt (»Nachtisch zuletzt«). */
   bZuletzt?: boolean;
 }
@@ -64,6 +68,8 @@ export interface Zustand {
   genommen: string[];
   /** je Gegner der Index auf seinem Weg */
   gegner: number[];
+  /** Felder der Jäger */
+  jaeger?: [number, number][];
   /** Id des Bausteins, der diesen Stand erzeugt hat */
   aktiv?: string;
   /** Sensor-Blick (Radar): was geprüft wurde und was der Sensor sah — kein Takt, nur Anzeige */
@@ -94,7 +100,10 @@ export function startVon(karte: Karte): Zustand {
     const zeile = karte.zeilen[y];
     for (let x = 0; x < zeile.length; x++) {
       const r = START_ZEICHEN.indexOf(zeile[x]);
-      if (r >= 0) return { x, y, r: r as Richtung, genommen: [], gegner: (karte.gegner ?? []).map(() => 0) };
+      if (r >= 0) return {
+        x, y, r: r as Richtung, genommen: [], gegner: (karte.gegner ?? []).map(() => 0),
+        ...(karte.jaeger?.length ? { jaeger: karte.jaeger.map(j => [...j.start] as [number, number]) } : {}),
+      };
     }
   }
   throw new Error("Karte ohne Startfeld");
@@ -110,6 +119,7 @@ export class Welt {
   z: Zustand;
   private rueck: boolean[];
   private arbeit = 0;
+  private takte = 0;
   readonly schritte: Zustand[] = [];
   readonly gesamtA: number;
   readonly gesamtB: number;
@@ -142,10 +152,7 @@ export class Welt {
   }
 
   private gegnerAuf(x: number, y: number): boolean {
-    return (this.karte.gegner ?? []).some((g, i) => {
-      const [gx, gy] = gegnerFeld(g, this.z.gegner[i]);
-      return gx === x && gy === y;
-    });
+    return this.gegnerFelder().some(([gx, gy]) => gx === x && gy === y);
   }
 
   /** Alles eingesammelt und (falls es eins gibt) auf dem Ziel. */
@@ -168,7 +175,12 @@ export class Welt {
       case "frei_rechts": w = frei((r + 1) % 4); break;
       case "ding": { const c = this.zeichen(x, y); w = c === "a" || c === "b"; break; }
       case "ziel": w = this.gewonnen(); break;
-      case "gegner": w = this.gegnerAuf(x + DX[r], y + DY[r]); break;
+      case "gegner": {
+        // Nahbereichs-Radar: Gegner auf dem Feld vorne oder direkt daneben
+        const vx = x + DX[r], vy = y + DY[r];
+        w = this.gegnerAuf(vx, vy) || [0, 1, 2, 3].some(d => this.gegnerAuf(vx + DX[d], vy + DY[d]));
+        break;
+      }
     }
     this.schritte.push({ ...kopie(this.z), aktiv: id, scan: { art: b.art, ok: w } });
     return b.nicht ? !w : w;
@@ -228,15 +240,41 @@ export class Welt {
   }
 
   private gegnerFelder(): [number, number][] {
-    return (this.karte.gegner ?? []).map((g, i) => gegnerFeld(g, this.z.gegner[i]));
+    return [...(this.karte.gegner ?? []).map((g, i) => gegnerFeld(g, this.z.gegner[i])), ...(this.z.jaeger ?? [])];
   }
 
   private bewegeGegner() {
+    this.takte++;
     (this.karte.gegner ?? []).forEach((g, i) => {
       const n = naechsterGegnerIndex(g, this.z.gegner[i], this.rueck[i]);
       this.z.gegner = this.z.gegner.map((v, j) => (j === i ? n.i : v));
       this.rueck[i] = n.rueck;
     });
+    if (this.z.jaeger) {
+      this.z.jaeger = this.z.jaeger.map((p, i) => (this.takte % this.karte.jaeger![i].takt === 0 ? this.naechstesFeld(p) : p));
+    }
+  }
+
+  /** Erster Schritt des kürzesten Wegs (Breitensuche) vom Jäger zur Figur; Gefahrenfelder meidet er. */
+  private naechstesFeld([sx, sy]: [number, number]): [number, number] {
+    const ziel = `${this.z.x},${this.z.y}`;
+    const herkunft = new Map<string, string>([[`${sx},${sy}`, ""]]);
+    const schlange: [number, number][] = [[sx, sy]];
+    while (schlange.length) {
+      const [x, y] = schlange.shift()!;
+      if (`${x},${y}` === ziel) break;
+      for (let r = 0; r < 4; r++) {
+        const nx = x + DX[r], ny = y + DY[r], k = `${nx},${ny}`;
+        if (herkunft.has(k) || !this.begehbar(nx, ny) || this.zeichen(nx, ny) === "x") continue;
+        herkunft.set(k, `${x},${y}`);
+        schlange.push([nx, ny]);
+      }
+    }
+    if (!herkunft.has(ziel)) return [sx, sy];
+    let k = ziel;
+    while (herkunft.get(k) !== `${sx},${sy}` && herkunft.get(k)) k = herkunft.get(k)!;
+    const [x, y] = k.split(",").map(Number);
+    return [x, y];
   }
 
   /**
@@ -282,7 +320,7 @@ export class Welt {
 }
 
 function kopie(z: Zustand): Zustand {
-  return { x: z.x, y: z.y, r: z.r, genommen: [...z.genommen], gegner: [...z.gegner] };
+  return { x: z.x, y: z.y, r: z.r, genommen: [...z.genommen], gegner: [...z.gegner], ...(z.jaeger ? { jaeger: z.jaeger.map(p => [...p] as [number, number]) } : {}) };
 }
 
 /**

@@ -8,6 +8,6 @@ export const BEDINGUNG_TEXT: Record<BedingungArt, [string, string]> = {
   frei_rechts: ["rechts frei", "rechts nicht frei"],
   ding: ["hier liegt etwas", "hier liegt nichts"],
   ziel: ["geschafft", "nicht geschafft"],
-  gegner: ["Gegner vorne", "kein Gegner vorne"],
+  gegner: ["Gegner in der Nähe", "kein Gegner in der Nähe"],
 };
 export const bedingungText = (b: Bedingung) => BEDINGUNG_TEXT[b.art][b.nicht ? 1 : 0];
