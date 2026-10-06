@@ -50,6 +50,27 @@ export function verschiebe(p: Programm, adresse: string, index: number, um: -1 |
   return setzeListe(p, adresse, l);
 }
 
+/**
+ * Zieht einen Befehl von einer Stelle an eine andere (auch in andere Listen).
+ * `nach.index` ist die Einfügeposition in der Zielliste, so wie sie vor dem
+ * Herausnehmen aussah. Ein Behälter kann nicht in sich selbst gezogen werden.
+ */
+export function verschiebeNach(p: Programm, von: { liste: string; index: number }, nach: { liste: string; index: number }): Programm {
+  const eigen = `${von.liste}.${von.index}.`;
+  if (nach.liste.startsWith(eigen)) return p;
+  const b = holeListe(p, von.liste)[von.index];
+  if (!b) return p;
+  // Adressen hinter dem herausgenommenen Befehl rücken um eins auf.
+  let ziel = nach.liste, index = nach.index;
+  if (ziel === von.liste) {
+    if (index > von.index) index--;
+  } else if (ziel.startsWith(`${von.liste}.`)) {
+    const rest = ziel.slice(von.liste.length + 1).split(".");
+    if (+rest[0] > von.index) ziel = [von.liste, String(+rest[0] - 1), ...rest.slice(1)].join(".");
+  }
+  return einfuegen(entfernen(p, von.liste, von.index), ziel, index, b);
+}
+
 export function aendere(p: Programm, adresse: string, index: number, patch: Partial<Befehl>): Programm {
   return setzeListe(p, adresse, holeListe(p, adresse).map((b, i) => (i === index ? ({ ...b, ...patch } as Befehl) : b)));
 }

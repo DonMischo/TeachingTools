@@ -1,30 +1,49 @@
 "use client";
 /**
- * Kachel-Editor: Bausteine antippen statt ziehen — für Tablets und den Einstieg.
+ * Baustein-Editor im Puzzle-Look (wie Scratch / code.org): Teile mit Kerbe oben
+ * und Nase unten, die ineinander einrasten; Schleifen und »wenn« als C-Klammer.
  *
- * Eine Einfügemarke (Liste + Position) bestimmt, wohin der nächste Baustein
- * kommt. Wer einen Behälter (wiederhole, wenn …) einfügt, landet mit der Marke
- * gleich in dessen Inhalt; ein Tipp auf »+« hinter dem Behälter führt wieder hinaus.
+ * Zwei Wege, beide gleichwertig:
+ *   ziehen  — aus der Palette ins Programm, im Programm umstellen, in Klammern
+ *             hinein und heraus; zurück auf die Palette (oder daneben) = löschen.
+ *             Ein grauer Schatten zeigt, wo das Teil einrastet.
+ *   tippen  — Teil in der Palette antippen setzt es an der Einfügemarke ein
+ *             (gut für Tablets); ein Tipp auf ein Teil im Programm setzt die Marke dahinter.
+ * Ziehen läuft über Pointer-Events, damit es auch mit dem Finger geht.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PFEIL, type BedingungArt, type Befehl, type BefehlTyp, type Programm, type Richtung } from "@/lib/algo/spiel";
-import { aendere, bedingungText, BEDINGUNG_TEXT, einfuegen, entfernen, holeListe, neuerBefehl, verschiebe } from "@/lib/algo/kacheln";
+import { aendere, bedingungText, BEDINGUNG_TEXT, einfuegen, entfernen, holeListe, neuerBefehl, verschiebeNach } from "@/lib/algo/kacheln";
 
-interface Marke { liste: string; index: number }
+interface Ort { liste: string; index: number }
 
-/** Farbe und Beschriftung je Baustein — dieselben Farben wie im Blockly-Editor. */
+/** Farbe und Beschriftung je Baustein — Scratch-Farben, dieselben wie im Blockly-Editor. */
 export const BAUSTEIN: Record<BefehlTyp, { farbe: string; text: (verb: string) => string }> = {
-  geh: { farbe: "#3b82f6", text: () => "geh" },
-  vor: { farbe: "#3b82f6", text: () => "⬆ vor" },
-  links: { farbe: "#6366f1", text: () => "↺ links drehen" },
-  rechts: { farbe: "#6366f1", text: () => "↻ rechts drehen" },
-  nimm: { farbe: "#16a34a", text: v => `✋ ${v}` },
-  warte: { farbe: "#64748b", text: () => "⏳ warte" },
-  wiederhole: { farbe: "#ea580c", text: () => "🔁 wiederhole" },
-  bis: { farbe: "#ea580c", text: () => "🔁 wiederhole bis" },
-  wenn: { farbe: "#0d9488", text: () => "❓ wenn" },
-  rufe: { farbe: "#9333ea", text: () => "📦 Unterprogramm" },
+  geh: { farbe: "#4C97FF", text: () => "geh" },
+  vor: { farbe: "#4C97FF", text: () => "⬆ vor" },
+  links: { farbe: "#9966FF", text: () => "↺ links drehen" },
+  rechts: { farbe: "#9966FF", text: () => "↻ rechts drehen" },
+  nimm: { farbe: "#59C059", text: v => `✋ ${v}` },
+  warte: { farbe: "#5CB1D6", text: () => "⏳ warte" },
+  wiederhole: { farbe: "#FFAB19", text: () => "🔁 wiederhole" },
+  bis: { farbe: "#FFAB19", text: () => "🔁 wiederhole bis" },
+  wenn: { farbe: "#FF8C1A", text: () => "❓ wenn" },
+  rufe: { farbe: "#FF6680", text: () => "📦 Unterprogramm" },
 };
+const HUT_FARBE = "#FFBF00";
+
+function dunkler(hex: string, f = 0.78): string {
+  const n = parseInt(hex.slice(1), 16);
+  const k = (v: number) => Math.round(v * f).toString(16).padStart(2, "0");
+  return `#${k(n >> 16)}${k((n >> 8) & 255)}${k(n & 255)}`;
+}
+
+// Kerbe oben links (Trapez, 24 px breit, 6 px tief) — die Nase des Teils darüber füllt sie aus.
+const KERBE = "polygon(0 0, 14px 0, 19px 6px, 33px 6px, 38px 0, 100% 0, 100% 100%, 0 100%)";
+const NASE: CSSProperties = { position: "absolute", width: 24, height: 6, clipPath: "polygon(0 0, 100% 0, 79% 100%, 21% 100%)", pointerEvents: "none" };
+const istBehaelter = (b: Befehl) => b.t === "wiederhole" || b.t === "bis" || b.t === "wenn";
+
+type Zug = { neu: Befehl; von?: undefined } | { von: Ort; neu?: undefined };
 
 export default function KachelEditor({
   prog, onChange, erlaubt, bedingungen = [], verb, aktiv, nurLesen = false,
@@ -37,159 +56,313 @@ export default function KachelEditor({
   aktiv?: string;
   nurLesen?: boolean;
 }) {
-  const [marke, setMarke] = useState<Marke>({ liste: "haupt", index: prog.haupt.length - 1 });
+  const [marke, setMarke] = useState<Ort>({ liste: "haupt", index: prog.haupt.length - 1 });
+  const [zug, setZug] = useState<Zug | null>(null);
+  const [ziel, setZiel] = useState<Ort | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const kandidat = useRef<{ zug: Zug; x: number; y: number; tipp: () => void } | null>(null);
+  const zugRef = useRef<Zug | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const progRef = useRef(prog);
+  progRef.current = prog;
   const mitFn = erlaubt.includes("rufe");
 
-  const setze = (b: Befehl) => {
+  const setzeAnMarke = (b: Befehl) => {
     const neu = einfuegen(prog, marke.liste, marke.index + 1, b);
     onChange(neu);
     const i = marke.index + 1;
-    if (b.t === "wiederhole" || b.t === "bis" || b.t === "wenn") setMarke({ liste: `${marke.liste}.${i}.k`, index: -1 });
+    if (istBehaelter(b)) setMarke({ liste: `${marke.liste}.${i}.k`, index: -1 });
     else setMarke({ liste: marke.liste, index: i });
   };
 
-  const palette: { key: string; b: Befehl; text: string; farbe: string }[] = [];
+  /** Wohin würde das Teil unter dem Zeiger einrasten? */
+  const zielBei = (x: number, y: number, z: Zug): Ort | null => {
+    const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-ziel]");
+    if (!el || !editorRef.current?.contains(el)) return null;
+    const [liste, idx, art] = el.dataset.ziel!.split("|");
+    const index = +idx;
+    const r = el.getBoundingClientRect();
+    const oben = y < r.top + r.height / 2;
+    let o: Ort;
+    if (art === "teil") o = { liste, index: oben ? index : index + 1 };
+    else if (art === "kopf") o = oben ? { liste, index } : { liste: `${liste}.${index}.k`, index: 0 };
+    else if (art === "fuss") o = { liste, index: index + 1 };
+    else o = { liste, index };
+    if (z.von && (o.liste.startsWith(`${z.von.liste}.${z.von.index}.`))) return null;
+    return o;
+  };
+
+  useEffect(() => {
+    if (nurLesen) return;
+    const bewege = (e: PointerEvent) => {
+      const k = kandidat.current;
+      if (!k) return;
+      if (!zugRef.current) {
+        if (Math.hypot(e.clientX - k.x, e.clientY - k.y) < 6) return;
+        zugRef.current = k.zug;
+        setZug(k.zug);
+      }
+      e.preventDefault();
+      setPos({ x: e.clientX, y: e.clientY });
+      setZiel(zielBei(e.clientX, e.clientY, zugRef.current));
+    };
+    const los = (e: PointerEvent) => {
+      const k = kandidat.current;
+      kandidat.current = null;
+      if (!k) return;
+      const z = zugRef.current;
+      zugRef.current = null;
+      if (!z) { k.tipp(); return; }
+      const o = zielBei(e.clientX, e.clientY, z);
+      const p = progRef.current;
+      if (o && z.neu) {
+        onChange(einfuegen(p, o.liste, o.index, z.neu));
+        setMarke(istBehaelter(z.neu) ? { liste: `${o.liste}.${o.index}.k`, index: -1 } : { liste: o.liste, index: o.index });
+      } else if (o && z.von) {
+        onChange(verschiebeNach(p, z.von, o));
+      } else if (z.von) {
+        // daneben oder auf die Palette gezogen: weg damit
+        onChange(entfernen(p, z.von.liste, z.von.index));
+        setMarke({ liste: "haupt", index: holeListe(p, "haupt").length - 2 });
+      }
+      setZug(null); setZiel(null); setPos(null);
+    };
+    window.addEventListener("pointermove", bewege, { passive: false });
+    window.addEventListener("pointerup", los);
+    window.addEventListener("pointercancel", los);
+    return () => {
+      window.removeEventListener("pointermove", bewege);
+      window.removeEventListener("pointerup", los);
+      window.removeEventListener("pointercancel", los);
+    };
+    // ohne Abhängigkeiten: bindet bei jedem Rendern die frischen onChange/Marke
+  });
+
+  const greife = (e: React.PointerEvent, z: Zug, tipp: () => void) => {
+    if (nurLesen || e.button > 0) return;
+    e.stopPropagation();
+    kandidat.current = { zug: z, x: e.clientX, y: e.clientY, tipp };
+  };
+
+  const palette: { key: string; b: Befehl }[] = [];
   for (const t of erlaubt) {
-    if (t === "geh") {
-      for (const r of [0, 1, 2, 3] as Richtung[]) palette.push({ key: `geh${r}`, b: { t: "geh", r }, text: PFEIL[r], farbe: BAUSTEIN.geh.farbe });
-    } else {
-      palette.push({ key: t, b: neuerBefehl(t, bedingungen), text: BAUSTEIN[t].text(verb), farbe: BAUSTEIN[t].farbe });
-    }
+    if (t === "geh") for (const r of [0, 1, 2, 3] as Richtung[]) palette.push({ key: `geh${r}`, b: { t: "geh", r } });
+    else palette.push({ key: t, b: neuerBefehl(t, bedingungen) });
   }
 
+  const g: Gemeinsam = { prog, onChange, marke, setMarke, verb, bedingungen, aktiv, nurLesen, zug, ziel, greife };
+  const gezogen = zug ? (zug.neu ?? holeListe(prog, zug.von!.liste)[zug.von!.index]) : null;
+
   return (
-    <div className="flex flex-col gap-3" data-testid="kachel-editor">
+    <div className="flex flex-col gap-3 select-none" data-testid="kachel-editor" ref={editorRef}>
       {!nurLesen && (
-        <div className="flex flex-wrap gap-1.5" aria-label="Bausteine">
+        <div data-palette className={`rounded-xl border p-2 flex flex-wrap gap-x-2 gap-y-3 transition-colors ${zug?.von ? "border-bad bg-bad/10" : "border-line bg-surface"}`} aria-label="Bausteine">
+          {zug?.von && <div className="w-full text-xs text-bad font-bold">🗑 Hierher ziehen zum Löschen</div>}
           {palette.map(p => (
-            <button key={p.key} type="button" onClick={() => setze(p.b)}
-              className="px-3 py-2 rounded-lg text-white text-sm font-bold shadow-sm active:scale-95 transition-transform"
-              style={{ background: p.farbe, minWidth: p.b.t === "geh" ? 44 : undefined, fontSize: p.b.t === "geh" ? 20 : undefined }}>
-              {p.text}
+            <button key={p.key} type="button" className="touch-none text-left" aria-label={`${beschriftung(p.b, verb)} einfügen`}
+              onPointerDown={e => greife(e, { neu: p.b }, () => setzeAnMarke(p.b))}
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setzeAnMarke(p.b); } }}>
+              <Stueck farbe={BAUSTEIN[p.b.t].farbe} klein>
+                <Kopf b={p.b} verb={verb} statisch />
+              </Stueck>
             </button>
           ))}
         </div>
       )}
-      <Abschnitt titel="▶ Programm" adresse="haupt" {...{ prog, onChange, marke, setMarke, verb, bedingungen, aktiv, nurLesen }} />
-      {mitFn && <Abschnitt titel="📦 Unterprogramm" adresse="fn" {...{ prog, onChange, marke, setMarke, verb, bedingungen, aktiv, nurLesen }} />}
+      <Abschnitt adresse="haupt" hut="▶ wenn Start geklickt" {...g} />
+      {mitFn && <Abschnitt adresse="fn" hut="📦 Unterprogramm" {...g} />}
+      {gezogen && pos && (
+        <div className="fixed z-[100] pointer-events-none opacity-90" style={{ left: pos.x - 20, top: pos.y - 16, transform: "rotate(2deg)", filter: "drop-shadow(0 6px 10px rgba(0,0,0,.35))" }}>
+          <Stueck farbe={BAUSTEIN[gezogen.t].farbe}><Kopf b={gezogen} verb={verb} statisch /></Stueck>
+        </div>
+      )}
     </div>
   );
+}
+
+function beschriftung(b: Befehl, verb: string) {
+  return b.t === "geh" ? `geh ${PFEIL[b.r]}` : BAUSTEIN[b.t].text(verb);
 }
 
 interface Gemeinsam {
   prog: Programm;
   onChange: (p: Programm) => void;
-  marke: Marke;
-  setMarke: (m: Marke) => void;
+  marke: Ort;
+  setMarke: (m: Ort) => void;
   verb: string;
   bedingungen: BedingungArt[];
   aktiv?: string;
   nurLesen: boolean;
+  zug: Zug | null;
+  ziel: Ort | null;
+  greife: (e: React.PointerEvent, z: Zug, tipp: () => void) => void;
 }
 
-function Abschnitt({ titel, adresse, ...g }: Gemeinsam & { titel: string; adresse: string }) {
+/** Ein Puzzleteil: Kerbe oben (außer beim Hut), Nase unten. */
+function Stueck({ farbe, children, hut, klein, glanz, blass }: { farbe: string; children: ReactNode; hut?: boolean; klein?: boolean; glanz?: string; blass?: boolean }) {
   return (
-    <div className="rounded-xl border border-line bg-page p-2">
-      <div className="text-xs font-bold text-muted mb-1">{titel}</div>
-      <Liste adresse={adresse} {...g} />
+    <div className="relative" style={{ filter: glanz ? `drop-shadow(0 0 3px ${glanz}) drop-shadow(0 0 3px ${glanz})` : undefined, opacity: blass ? 0.3 : 1 }}>
+      <div className={`text-white font-bold ${klein ? "text-xs" : "text-sm"}`} style={{
+        background: farbe,
+        border: `1px solid ${dunkler(farbe)}`,
+        borderRadius: hut ? "18px 18px 6px 6px" : 6,
+        clipPath: hut ? undefined : KERBE,
+        padding: hut ? "10px 12px 8px" : klein ? "8px 10px 6px" : "10px 12px 8px",
+        minHeight: klein ? 32 : 40,
+        display: "flex", alignItems: "center",
+      }}>
+        {children}
+      </div>
+      <span aria-hidden style={{ ...NASE, left: 14, bottom: -6, background: farbe }} />
     </div>
   );
 }
 
-function Liste({ adresse, ...g }: Gemeinsam & { adresse: string }) {
-  const liste = holeListe(g.prog, adresse);
-  const hier = (i: number) => !g.nurLesen && g.marke.liste === adresse && g.marke.index === i;
+/** Beschriftung und Einstellfelder eines Teils (Zahl, Bedingung, sonst). */
+function Kopf({ b, verb, statisch, g, adresse, i }: { b: Befehl; verb: string; statisch?: boolean; g?: Gemeinsam; adresse?: string; i?: number }) {
+  const feld = "rounded-full bg-white text-slate-900 px-2 py-0.5 text-xs font-bold";
+  const stopp = (e: React.SyntheticEvent) => e.stopPropagation();
+  const bearbeitbar = !statisch && g && !g.nurLesen && adresse !== undefined && i !== undefined;
   return (
-    <div className="flex flex-col gap-1">
-      {!g.nurLesen && liste.length > 0 && <Einfuege an={hier(-1)} onClick={() => g.setMarke({ liste: adresse, index: -1 })} />}
-      {liste.map((b, i) => (
-        <div key={b.id ?? i} className="flex flex-col gap-1">
-          <Kachel b={b} adresse={adresse} i={i} {...g} />
-          {!g.nurLesen && (hier(i) || i === liste.length - 1) && (
-            <Einfuege an={hier(i)} onClick={() => g.setMarke({ liste: adresse, index: i })} />
-          )}
-        </div>
-      ))}
-      {!g.nurLesen && liste.length === 0 && <Einfuege an={hier(-1)} leer onClick={() => g.setMarke({ liste: adresse, index: -1 })} />}
-      {g.nurLesen && liste.length === 0 && <div className="text-xs text-muted px-2">leer</div>}
-    </div>
-  );
-}
-
-function Einfuege({ an, leer, onClick }: { an: boolean; leer?: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={e => { e.stopPropagation(); onClick(); }} aria-label="Einfügemarke hierher"
-      className={`rounded-md border-2 border-dashed text-xs text-left px-2 transition-colors ${an ? "border-accent text-fg py-1" : "border-transparent text-muted hover:border-line py-0"} ${leer ? "py-2 border-line" : ""}`}>
-      {an ? "➕ hier kommt der nächste Baustein hin" : leer ? "➕ hier tippen" : ""}
-    </button>
-  );
-}
-
-function Kachel({ b, adresse, i, ...g }: Gemeinsam & { b: Befehl; adresse: string; i: number }) {
-  const gewaehlt = !g.nurLesen && g.marke.liste === adresse && g.marke.index === i;
-  const leuchtet = g.aktiv && b.id === g.aktiv;
-  const farbe = BAUSTEIN[b.t].farbe;
-  const behaelter = b.t === "wiederhole" || b.t === "bis" || b.t === "wenn";
-  const knopf = "w-6 h-6 rounded bg-black/20 hover:bg-black/40 text-xs";
-  const kopf = (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span>{b.t === "geh" ? <span className="text-xl leading-none">{PFEIL[b.r]}</span> : BAUSTEIN[b.t].text(g.verb)}</span>
-      {b.t === "wiederhole" && (g.nurLesen ? <span>{b.n}×</span> : (
-        <span className="inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
-          <button type="button" className={knopf} aria-label="weniger" onClick={() => g.onChange(aendere(g.prog, adresse, i, { n: Math.max(1, b.n - 1) }))}>−</button>
-          <span className="w-6 text-center tabular-nums">{b.n}</span>
-          <button type="button" className={knopf} aria-label="mehr" onClick={() => g.onChange(aendere(g.prog, adresse, i, { n: Math.min(99, b.n + 1) }))}>+</button>
-          <span>mal</span>
+    <span className="flex items-center gap-1.5 flex-wrap">
+      {b.t === "geh" ? <>geh <span className={`${feld} text-base leading-none`}>{PFEIL[b.r]}</span></> : <span>{BAUSTEIN[b.t].text(verb)}</span>}
+      {b.t === "wiederhole" && (bearbeitbar ? (
+        <span className="inline-flex items-center gap-1" onPointerDown={stopp}>
+          <span className={`${feld} inline-flex items-center gap-1`}>
+            <button type="button" aria-label="weniger" className="px-1" onClick={() => g!.onChange(aendere(g!.prog, adresse!, i!, { n: Math.max(1, b.n - 1) }))}>−</button>
+            <span className="tabular-nums w-5 text-center">{b.n}</span>
+            <button type="button" aria-label="mehr" className="px-1" onClick={() => g!.onChange(aendere(g!.prog, adresse!, i!, { n: Math.min(99, b.n + 1) }))}>+</button>
+          </span> mal
         </span>
-      ))}
-      {(b.t === "bis" || b.t === "wenn") && (g.nurLesen ? <span className="underline">{bedingungText(b.b)}</span> : (
-        <select value={`${b.b.nicht ? "!" : ""}${b.b.art}`} onClick={e => e.stopPropagation()}
+      ) : <><span className={feld}>{b.n}</span> mal</>)}
+      {(b.t === "bis" || b.t === "wenn") && (bearbeitbar ? (
+        <select value={`${b.b.nicht ? "!" : ""}${b.b.art}`} onPointerDown={stopp}
           onChange={e => {
             const v = e.target.value;
-            g.onChange(aendere(g.prog, adresse, i, { b: { art: v.replace("!", "") as BedingungArt, ...(v.startsWith("!") ? { nicht: true } : {}) } }));
+            g!.onChange(aendere(g!.prog, adresse!, i!, { b: { art: v.replace("!", "") as BedingungArt, ...(v.startsWith("!") ? { nicht: true } : {}) } }));
           }}
-          className="rounded bg-white/90 text-slate-900 text-xs px-1 py-0.5">
-          {g.bedingungen.flatMap(a => [
+          className={`${feld} cursor-pointer`} style={{ clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%)", borderRadius: 0, padding: "2px 12px" }}>
+          {g!.bedingungen.flatMap(a => [
             <option key={a} value={a}>{BEDINGUNG_TEXT[a][0]}</option>,
             <option key={`!${a}`} value={`!${a}`}>{BEDINGUNG_TEXT[a][1]}</option>,
           ])}
         </select>
+      ) : (
+        <span className={feld} style={{ clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%)", borderRadius: 0, padding: "2px 12px" }}>
+          {bedingungText(b.b)}
+        </span>
       ))}
-      {b.t === "wenn" && !g.nurLesen && (
-        <label className="inline-flex items-center gap-1 text-xs" onClick={e => e.stopPropagation()}>
+      {b.t === "wenn" && bearbeitbar && (
+        <label className="inline-flex items-center gap-1 text-xs font-normal" onPointerDown={stopp}>
           <input type="checkbox" checked={!!b.sonst}
-            onChange={e => g.onChange(aendere(g.prog, adresse, i, { sonst: e.target.checked ? [] : undefined }))} />
+            onChange={e => g!.onChange(aendere(g!.prog, adresse!, i!, { sonst: e.target.checked ? [] : undefined }))} />
           sonst
         </label>
       )}
-      {gewaehlt && (
-        <span className="ml-auto inline-flex gap-1" onClick={e => e.stopPropagation()}>
-          <button type="button" className={knopf} aria-label="nach oben" onClick={() => { g.onChange(verschiebe(g.prog, adresse, i, -1)); g.setMarke({ liste: adresse, index: Math.max(0, i - 1) }); }}>▲</button>
-          <button type="button" className={knopf} aria-label="nach unten" onClick={() => { g.onChange(verschiebe(g.prog, adresse, i, 1)); g.setMarke({ liste: adresse, index: Math.min(holeListe(g.prog, adresse).length - 1, i + 1) }); }}>▼</button>
-          <button type="button" className={knopf} aria-label="Baustein löschen" onClick={() => { g.onChange(entfernen(g.prog, adresse, i)); g.setMarke({ liste: adresse, index: i - 1 }); }}>✕</button>
-        </span>
+    </span>
+  );
+}
+
+function Abschnitt({ adresse, hut, ...g }: Gemeinsam & { adresse: string; hut: string }) {
+  return (
+    <div className="rounded-xl border border-line p-3 pb-4 overflow-x-auto" style={{ background: "var(--bg)" }}>
+      <div className="w-fit min-w-full">
+        <div data-ziel={`${adresse}|0|start`} className="w-fit"
+          onClick={() => !g.nurLesen && g.setMarke({ liste: adresse, index: -1 })}>
+          <Stueck farbe={adresse === "fn" ? BAUSTEIN.rufe.farbe : HUT_FARBE} hut>{hut}</Stueck>
+        </div>
+        <Liste adresse={adresse} {...g} />
+      </div>
+    </div>
+  );
+}
+
+/** Grauer Schatten an der Stelle, wo das gezogene Teil einrasten würde. */
+function Schatten({ adresse, index }: { adresse: string; index: number }) {
+  return (
+    <div data-ziel={`${adresse}|${index}|platz`} className="relative w-40">
+      <div style={{ height: 36, background: "rgba(127,127,127,.45)", clipPath: KERBE, borderRadius: 6 }} />
+      <span aria-hidden style={{ ...NASE, left: 14, bottom: -6, background: "rgba(127,127,127,.45)" }} />
+    </div>
+  );
+}
+
+function Marke({ an }: { an: boolean }) {
+  if (!an) return null;
+  return <div className="h-1.5 my-1 w-40 rounded-full bg-accent" title="Hier kommt der nächste angetippte Baustein hin" />;
+}
+
+function Liste({ adresse, ...g }: Gemeinsam & { adresse: string }) {
+  const liste = holeListe(g.prog, adresse);
+  const markeHier = (i: number) => !g.nurLesen && !g.zug && g.marke.liste === adresse && g.marke.index === i;
+  const schattenBei = (i: number) => g.ziel?.liste === adresse && g.ziel.index === i;
+  return (
+    <div className="flex flex-col">
+      <Marke an={markeHier(-1)} />
+      {liste.map((b, i) => (
+        <div key={b.id ?? i}>
+          {schattenBei(i) && <Schatten adresse={adresse} index={i} />}
+          <Teil b={b} adresse={adresse} i={i} {...g} />
+          <Marke an={markeHier(i)} />
+        </div>
+      ))}
+      {schattenBei(liste.length) && <Schatten adresse={adresse} index={liste.length} />}
+      {/* Fangfläche am Ende: hier rastet ein Teil hinten an */}
+      {!g.nurLesen && (
+        <div data-ziel={`${adresse}|${liste.length}|ende`} className={liste.length ? "h-5" : "h-9 w-40 rounded-md border-2 border-dashed border-line"}
+          onClick={() => g.setMarke({ liste: adresse, index: liste.length - 1 })} />
       )}
     </div>
   );
+}
+
+function Teil({ b, adresse, i, ...g }: Gemeinsam & { b: Befehl; adresse: string; i: number }) {
+  const farbe = BAUSTEIN[b.t].farbe;
+  const gewaehlt = !g.nurLesen && !g.zug && g.marke.liste === adresse && g.marke.index === i;
+  const leuchtet = g.aktiv && b.id === g.aktiv;
+  const blass = !!g.zug?.von && g.zug.von.liste === adresse && g.zug.von.index === i;
+  const greifen = (e: React.PointerEvent) => g.greife(e, { von: { liste: adresse, index: i } }, () => g.setMarke({ liste: adresse, index: i }));
+  const loeschen = !g.nurLesen && gewaehlt && (
+    <button type="button" aria-label="Baustein löschen" onPointerDown={e => e.stopPropagation()}
+      onClick={() => { g.onChange(entfernen(g.prog, adresse, i)); g.setMarke({ liste: adresse, index: i - 1 }); }}
+      className="ml-2 w-5 h-5 rounded-full bg-black/25 hover:bg-black/45 text-[10px]">✕</button>
+  );
+  const glanz = leuchtet ? "#fde047" : gewaehlt ? "var(--accent)" : undefined;
+
+  if (!istBehaelter(b)) {
+    return (
+      <div data-ziel={`${adresse}|${i}|teil`} className="w-fit touch-none cursor-grab active:cursor-grabbing" onPointerDown={greifen} data-testid={`kachel-${b.t}`}>
+        <Stueck farbe={farbe} glanz={glanz} blass={blass}>
+          <Kopf b={b} verb={g.verb} g={g} adresse={adresse} i={i} />{loeschen}
+        </Stueck>
+      </div>
+    );
+  }
+
+  // C-Klammer: Kopf, Fach (eingerückt), ggf. »sonst« + zweites Fach, Fuß
+  const fach = (feld: "k" | "sonst") => (
+    <div className="relative ml-4 py-1.5 pl-0 pr-2" style={{ background: "var(--bg)", minHeight: 30 }}>
+      <span aria-hidden style={{ ...NASE, left: 14, top: 0, background: farbe }} />
+      <Liste adresse={`${adresse}.${i}.${feld}`} {...g} />
+    </div>
+  );
   return (
-    <div
-      onClick={g.nurLesen ? undefined : e => { e.stopPropagation(); g.setMarke({ liste: adresse, index: i }); }}
-      className={`rounded-lg text-white text-sm font-bold px-2 py-1.5 ${g.nurLesen ? "" : "cursor-pointer"} ${gewaehlt ? "ring-2 ring-accent" : ""} ${leuchtet ? "outline outline-4 outline-yellow-300" : ""}`}
-      style={{ background: farbe }} data-testid={`kachel-${b.t}`}>
-      {kopf}
-      {behaelter && (
-        <div className="mt-1 ml-3 pl-2 border-l-4 border-white/40 rounded bg-black/10 p-1 font-normal">
-          <Liste adresse={`${adresse}.${i}.k`} {...g} />
+    <div className="relative w-fit min-w-56" style={{ filter: glanz ? `drop-shadow(0 0 3px ${glanz}) drop-shadow(0 0 3px ${glanz})` : undefined, opacity: blass ? 0.3 : 1 }}
+      data-testid={`kachel-${b.t}`}>
+      <div className="text-white font-bold text-sm" style={{ background: farbe, border: `1px solid ${dunkler(farbe)}`, borderRadius: 6, clipPath: KERBE }}>
+        <div data-ziel={`${adresse}|${i}|kopf`} className="touch-none cursor-grab px-3 pt-2.5 pb-2 flex items-center" onPointerDown={greifen}>
+          <Kopf b={b} verb={g.verb} g={g} adresse={adresse} i={i} />{loeschen}
         </div>
-      )}
-      {b.t === "wenn" && b.sonst && (
-        <>
-          <div className="mt-1">sonst</div>
-          <div className="mt-1 ml-3 pl-2 border-l-4 border-white/40 rounded bg-black/10 p-1 font-normal">
-            <Liste adresse={`${adresse}.${i}.sonst`} {...g} />
-          </div>
-        </>
-      )}
+        {fach("k")}
+        {b.t === "wenn" && b.sonst && (
+          <>
+            <div className="px-3 py-1.5 touch-none cursor-grab" onPointerDown={greifen}>sonst</div>
+            {fach("sonst")}
+          </>
+        )}
+        <div data-ziel={`${adresse}|${i}|fuss`} className="h-4 touch-none cursor-grab" onPointerDown={greifen} />
+      </div>
+      <span aria-hidden style={{ ...NASE, left: 14, bottom: -6, background: farbe }} />
     </div>
   );
 }
