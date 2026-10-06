@@ -26,6 +26,7 @@ import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
 import Algorithmen from "@/components/algo/Algorithmen";
+import Wachstum from "@/components/dla/Wachstum";
 
 const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "waage", icon: "⚖️", label: "Gleichungswaage", node: <Gleichungswaage /> },
@@ -47,6 +48,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "regeln", icon: "🧬", label: "Regel-Labor", node: <RegelLabor /> },
   { id: "wfc", icon: "🧩", label: "Wellenfunktionskollaps", node: <Wellenkollaps /> },
   { id: "algo", icon: "🔀", label: "Algorithmen", node: <Algorithmen /> },
+  { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
 ];
 
 function App() {

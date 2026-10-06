@@ -169,6 +169,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("wfc", "🧩 Wellenfunktionskollaps", "🧩", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Fraktales Wachstum: diffusionsbegrenzte Aggregation in 2D und 3D.
+    CatalogTool("dla", "🪸 Fraktales Wachstum", "🪸", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Leviathan – Kunst des Regierens: vernetzte Regierungssimulation (inspiriert
     # von Vesters Vernetztem Denken). Rechnet im Browser; die Lehrkraft legt
     # Krisenstufe, Drehbuch und heikle Ereignisse an der Sitzung fest.

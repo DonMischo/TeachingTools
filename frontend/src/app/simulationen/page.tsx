@@ -118,6 +118,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#0ea5e9",
   },
   {
+    slug: "dla",
+    href: "/simulationen/dla",
+    icon: "🪸",
+    title: "Fraktales Wachstum",
+    description: "Wandern, dann haften: Aus zufällig umherirrenden Teilchen wachsen Äste wie bei Korallen, Eisblumen und Blitzen — in 2D und 3D mit bis zu 500 000 Teilchen, Haftwahrscheinlichkeit zum Drehen und fraktaler Dimension live gemessen.",
+    color: "#14b8a6",
+  },
+  {
     slug: "algo",
     href: "/simulationen/algo",
     icon: "🔀",

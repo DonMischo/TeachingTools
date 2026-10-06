@@ -33,6 +33,7 @@ import ErdAufbau from "@/components/erde/ErdAufbau";
 import WilsonZyklus from "@/components/wilson/WilsonZyklus";
 import RegelLabor from "@/components/regeln/RegelLabor";
 import Wellenkollaps from "@/components/wfc/Wellenkollaps";
+import Wachstum from "@/components/dla/Wachstum";
 import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
@@ -53,6 +54,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   wilson: { title: "Wilson-Zyklus", icon: "🌋", node: <WilsonZyklus /> },
   regeln: { title: "Regel-Labor", icon: "🧬", node: <RegelLabor /> },
   wfc: { title: "Wellenfunktionskollaps", icon: "🧩", node: <Wellenkollaps /> },
+  dla: { title: "Fraktales Wachstum", icon: "🪸", node: <Wachstum /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.

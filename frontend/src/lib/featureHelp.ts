@@ -249,6 +249,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  dla: {
+    title: "Fraktales Wachstum",
+    intro: "Diffusionsbegrenzte Aggregation (DLA): Ein Teilchen irrt zufällig umher, bis es den Haufen berührt, und bleibt dort hängen. Weil die Spitzen die ankommenden Teilchen zuerst abfangen, wachsen verzweigte Äste mit luftigem Innern — wie Korallen, Kupferbäumchen, Eisblumen oder Lichtenberg-Figuren. Rechnet ganz im Browser; Vorbild ist dlaf von Michael Fogleman (MIT).",
+    sections: [
+      { label: "🌿 Fläche (2D)", text: "Bis zu 250 000 Teilchen wachsen live in der Ebene. Farbe = Reihenfolge: der Kern blau, die jüngsten Spitzen gold. Darstellung als Äste (jedes Teilchen mit dem verbunden, an dem es hängt) oder als Punkte. »📷 Bild« speichert ein PNG." },
+      { label: "🪸 Raum (3D)", text: "Dieselbe Regel im Raum, bis 500 000 Teilchen als Punktwolke oder Äste. Ziehen dreht, Mausrad zoomt, »🔄 Drehen« schaltet das Kreisen ab. Große Haufen brauchen eine Weile (250 000 etwa eine Minute)." },
+      { label: "🧲 Haftwahrscheinlichkeit", text: "100 % = jedes Teilchen klebt beim ersten Kontakt, die Äste werden fein. Kleinere Werte lassen Teilchen abprallen und tiefer eindringen — der Haufen wird dichter, die Dimension steigt. Der Regler wirkt beim Loslassen und startet neu." },
+      { label: "🌱 Keim", text: "Punkt (ein Korn in der Mitte), Linie (ein Draht — wie Raureif an einem Zweig) oder Kreis (ein Ring, der von außen beschossen wird)." },
+      { label: "📏 Fraktale Dimension", text: "Gezählt wird, wie viele Teilchen in Kreisen mit wachsendem Radius liegen (nur bei Keim »Punkt«). Doppelt-logarithmisch aufgetragen ist die Steigung die Dimension: in 2D etwa 1,7 (doppelter Radius → 3,2-mal so viele Teilchen), in 3D etwa 2,5. Gestrichelt zum Vergleich Linie, Fläche und Körper." },
+      { label: "📘 So geht's", text: "Zeitlupe: Ein einzelner Wanderer mit Spur und Fangkreis, in drei Tempi. Dazu Erklärungen zur Abschirmung durch die Spitzen, zur Dimension und zu Beispielen aus Natur und Technik." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   wfc: {
     title: "Wellenfunktionskollaps",
     intro: "Wave Function Collapse nach Maxim Gumin (github.com/mxgmn/WaveFunctionCollapse, MIT): Jede Zelle ist anfangs alles zugleich. Die Zelle mit der kleinsten Entropie wird zufällig festgelegt, die Nachbarn verlieren, was nicht mehr passt — Schritt für Schritt, bis alles stimmt. Wie beim Sudoku.",

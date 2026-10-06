@@ -156,6 +156,7 @@ WERKZEUGE = {
             "raetsel?": "bei raetsel: alles|punkte|schach|labyrinth|rundwege",
         },
     },
+    "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
     "wfc": {
         "name": "Wellenfunktionskollaps",
         "config": {

@@ -59,6 +59,13 @@ export const REGISTER: WerkzeugQuellen[] = [
     literatur: ["Dziewonski, A. M. & Anderson, D. L. (1981): Preliminary Reference Earth Model. Phys. Earth Planet. Inter. 25, 297–356 — Zahlenwerte (Fakten) für Dichte, Druck, Wellengeschwindigkeiten."],
   },
   {
+    slug: "dla", name: "🪸 Fraktales Wachstum",
+    eintraege: [
+      { quelle: "dlaf (Diffusion-limited aggregation)", urheber: "Michael Fogleman", lizenz: "MIT", url: "https://github.com/fogleman/dlaf", verwendung: "Vorbild für Parameter (Abstand, Anziehung, Mindestschritt, Haftung) und den Sprung im leeren Raum; neu in TypeScript geschrieben, kein Code übernommen" },
+    ],
+    literatur: ["Witten, T. A. & Sander, L. M. (1981): Diffusion-Limited Aggregation, a Kinetic Critical Phenomenon. Phys. Rev. Lett. 47, 1400–1403."],
+  },
+  {
     slug: "wilson", name: "🌋 Wilson-Zyklus",
     eintraege: [],
     literatur: [
