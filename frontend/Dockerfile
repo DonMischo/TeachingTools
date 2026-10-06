@@ -8,7 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-COPY . .
+# Kein COPY . . — docker-compose mountet ./frontend nach /app und überdeckt es
+# ohnehin; kopiert würden sonst u. a. 9 GB Kartenrohdaten (.karten-roh).
 
 EXPOSE 1339
 CMD ["node", "server-wrapper.js"]

@@ -8,3 +8,7 @@ zugangsdaten*
 node_modules/
 .next/
 coverage/
+
+# Große Daten, die der Container über den Bind-Mount sieht
+.karten-roh/
+public/snap/
