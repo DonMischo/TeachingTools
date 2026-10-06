@@ -37,6 +37,7 @@ import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
+import Algorithmen from "@/components/algo/Algorithmen";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
@@ -71,6 +72,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
   // Das Kartenquiz teilt einen Kartensatz und prüft auf dem Server — Code und Gast-Token.
   karten: { title: "Kartenquiz", icon: "🗺️", node: null },
+  // Die Werkstatt meldet ihren Fortschritt an die Klassenübersicht — dafür braucht sie Code und Gast-Token.
+  algo: { title: "Algorithmen-Werkstatt", icon: "🔀", node: null },
 };
 
 /**
@@ -181,6 +184,13 @@ export default function SimulationJoinPage() {
               speicherSchluessel={auth
                 ? `konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
                 : guest.token ? schluesselFuerGast(code, guest.token) : `gast-${code}`} />
+        : session.tool_slug === "algo"
+          ? <Algorithmen
+              // Angemeldete je Konto, Gäste je Namen (wie beim Maus-Führerschein)
+              speicherSchluessel={auth
+                ? `hp_algo_stand_konto-${auth.user_type}-${auth.student?.id ?? auth.teacher?.id ?? 0}`
+                : `hp_algo_stand_gast-${(guest.session?.name ?? code).trim().toLowerCase().replace(/\s+/g, " ")}`}
+              onStand={s => { api.algo.fortschritt({ code, token: guest.token }, s).catch(() => { /* nur für die Übersicht */ }); }} />
         : session.tool_slug === "maus"
           ? <MausFuehrerschein
               zugang={{ code, token: guest.token }}

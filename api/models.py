@@ -2357,6 +2357,35 @@ class LebenStand(Base):
     )
 
 
+class AlgoFortschritt(Base):
+    """Algorithmen-Werkstatt: Fortschritt einer Person in einer Sitzung — eine Zeile
+    je Teilnehmer (Level mit Sternen/Blöcken, Flussdiagramme, Automaten)."""
+    __tablename__ = "algo_fortschritt"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_algo_fortschritt_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_algo_fortschritt_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_algo_fortschritt_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    klasse: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    gast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    # {levelId: {"sterne": 0..3, "bloecke": int}}
+    level: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    fluss: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    automat: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class KartenSatz(Base):
     """Eine gespeicherte Karte der Lehrkraft (Kartentool »karten«).
 

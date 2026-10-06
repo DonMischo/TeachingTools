@@ -150,6 +150,19 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  algo: {
+    title: "Algorithmen-Werkstatt",
+    intro: "Der Einstieg ins Thema Algorithmen für Klasse 5/6 in drei Schritten: erst einen Automaten bedienen (Was ist ein Algorithmus?), dann Abläufe als Flussdiagramm zeichnen, schließlich im Code-Abenteuer eine Figur programmieren — von der Pfeiltaste bis zur Schleife mit Bedingung.",
+    sections: [
+      { label: "🍬 Automat", text: "Vier Automaten (Kaugummi, Pfand, Fahrkarte, Kakao). Die Klasse legt Handlungskarten in eine Reihenfolge; Robo oder das Alien Zorp führen sie wörtlich aus. Unscharfe Karten scheitern als »nicht eindeutig«, unmögliche als »nicht ausführbar«, Endlosschleifen als »nicht endlich«. Automat B ist ein anderes Modell: Wer dort mit »Wirf 20 Cent ein« ankommt, ist »nicht allgemein gültig«. Gelöst ist ein Automat, wenn derselbe Algorithmus an A und B klappt. »Erst selbst aufschreiben« bietet das Notizfeld für die 5-Minuten-Phase vom Arbeitsblatt, »Was macht der Automat?« die Rollenspiel-Frage." },
+      { label: "🔀 Flussdiagramm", text: "Sieben Aufgaben mit steigender Schwierigkeit: Grundfiguren zuordnen, Pfeile setzen, falschen Pfeil finden, Ablauf verfolgen, »Ist das ein Algorithmus?«, dann selbst bauen (Geburtstagsrechnung mit automatischer Prüfung, Lexikon mit Schleife). Dazu neun Beispiele und eine freie Fläche. Kästen per Klick wählen, ziehen zum Verschieben, der blaue Knopf ➜ setzt einen Pfeil. Wer eine Rechnung einträgt (eingabe T, x = 3*T + M, ausgabe r), bekommt einen Ablauf, der wirklich rechnet." },
+      { label: "🎮 Code-Abenteuer", text: "23 Level in acht Welten: Direkt steuern (Pfeiltasten + Enter), Programm vorher planen, Drehen, Schleifen, Bedingungen, Labyrinthe (Rechte-Hand-Regel), Unterprogramme, Endgegner. Dazwischen Vorhersage-Level (Programm lesen, Endfeld anklicken) und Fehlersuche. Sterne gibt es für kurze Programme; mehrere Karten in einem Level zwingen zu allgemeinen Lösungen. Vier Themen ändern nur das Aussehen." },
+      { label: "👆 Kacheln oder 🧩 Blöcke", text: "Zwei Editoren für dasselbe Programm: Kacheln antippen (gut für Tablets; die gestrichelte Marke zeigt, wohin der nächste Baustein kommt) oder Blöcke ziehen wie in Scratch (Blockly). Umschalten behält das Programm. »Mein Programm als Flussdiagramm« zeigt es in der Darstellung des zweiten Reiters." },
+      { label: "⚔️ Duell", text: "Aufgabe 5 vom Pacman-Blatt: Zwei Personen an einem Gerät ziehen abwechselnd Figur (Pfeile + Enter) und Gegner (W A S D, Leertaste). Jeder Zug landet in einer Protokolltabelle." },
+      { label: "👩‍🏫 Klassenübersicht", text: "Nur für die Lehrkraft: alle, die über den Code mitmachen, mit geschafften Automaten, Flussdiagramm-Aufgaben und Sternen je Level." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   rechenregeln: {
     title: "Rechenregeln",
     intro: "Die Rechenregeln der Klassen 5/6 als Bild: Klammern vor Punkt vor Strich am Obstkorb, das Vertauschen am Rechenzug, die Stufenzahlen auf der Stellenwerttafel. Drei Reiter, jeder mit vier Würfelstufen und einem Feld für eigene Terme.",

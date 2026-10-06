@@ -144,6 +144,9 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("leben", "🎸 Rock your Life", "🎸", "simulationen", {
         "use": _cap(True, True),
     }),
+    CatalogTool("algo", "🔀 Algorithmen-Werkstatt", "🔀", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Küstendynamik: Querschnitt mit Erosion und Küstenschutz, Längsstrom
     # in der Draufsicht, Gezeiten — rechnet ganz im Browser.
     CatalogTool("kueste", "🌊 Küstendynamik", "🌊", "simulationen", {

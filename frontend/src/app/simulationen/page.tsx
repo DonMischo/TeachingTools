@@ -118,6 +118,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#0ea5e9",
   },
   {
+    slug: "algo",
+    href: "/simulationen/algo",
+    icon: "🔀",
+    title: "Algorithmen-Werkstatt",
+    description: "Einstieg in Algorithmen (Kl. 5/6): Schritte für Automaten ordnen, die ein Roboter wörtlich ausführt, Flussdiagramme bauen und ablaufen lassen, dann 23 Level Code-Abenteuer mit Kacheln oder Blöcken — Bug-Jagd, Verlies, Mars oder Labyrinthien.",
+    color: "#06b6d4",
+  },
+  {
     slug: "regeln",
     href: "/simulationen/regeln",
     icon: "🧬",

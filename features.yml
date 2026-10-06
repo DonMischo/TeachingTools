@@ -296,6 +296,22 @@ simulationen:
       - Randbedingungen: Zellen oder Rand festlegen, Widerspruch → Neustart mit neuem Zufall, unmögliche Festlegungen gemeldet
       - Reiter Textur: Textur-Synthese nach Harrison (portiert aus github.com/mxgmn/TextureSynthesis, MIT) zum Zuschauen, nahtlos, Proben aus den Gebäude-Oberflächen und Pixel-Vorlagen; erzeugt auch die Fels/Erde/Sand/Eis-Texturen der Gebäude
       - Als TaskCrawler-Werkzeug mit festem Reiter/Satz/Vorlage/Probe
+  - id: algo
+    name: Algorithmen-Werkstatt
+    kann:
+      - "Reiter Automat: vier Automaten (Kaugummi, Pfand, Fahrkarte, Kakao), Handlungskarten ordnen, Robo oder Alien Zorp führen sie wörtlich aus"
+      - "Jede Falle zeigt eine Algorithmus-Eigenschaft: nicht eindeutig, nicht ausführbar, nicht endlich, falsche Reihenfolge; Automat B prüft »allgemein gültig«"
+      - Notizfeld »Erst selbst aufschreiben« und Ordnungsaufgabe »Was macht der Automat?« mit Sprung ins Flussdiagramm
+      - "Reiter Flussdiagramm: Editor mit Start/Ende, Ein-/Ausgabe, Anweisung, Entscheidung; Ziehen, Pfeile, ja/nein; Prüfung inkl. Endlosschleifen"
+      - "Rechnender Ablauf Schritt für Schritt: eingabe T, x = 3*T + M, ausgabe r, Vergleiche in Rauten"
+      - "Sieben Aufgaben: Formen zuordnen, Pfeile setzen, Fehler finden, Ablauf verfolgen, Ist das ein Algorithmus?, Geburtstagsrechnung und Lexikon selbst bauen (automatisch geprüft)"
+      - Neun Beispiele (Automaten, Automat von innen, Geburtstag, Lexikon, Zähneputzen, gerade/ungerade) und freies Zeichnen
+      - "Reiter Code-Abenteuer: 23 Level in acht Welten — Direktsteuerung, Planen, Drehen, Schleifen, Bedingungen, Labyrinthe, Unterprogramme, Endgegner"
+      - Vorhersage-Level (Endfeld anklicken), Fehlersuche mit vorgegebenem Programm, mehrere Karten je Level, Bausteingrenzen, Sterne für kurze Programme
+      - Editor als Kacheln zum Antippen oder als Blockly-Blöcke; Umschalten behält das Programm; Programm als Flussdiagramm ansehen
+      - "Vier Themen: Bug-Jagd (Cyberpunk), Verlies-Abenteuer, Mars-Mission, Labyrinthien (Mampfi)"
+      - Duell zu zweit an einem Gerät mit Zugprotokoll
+      - Klassenübersicht für die Lehrkraft (Automaten, Aufgaben, Sterne je Level), Gäste über den Code
   - id: regeln
     name: Regel-Labor
     kann:

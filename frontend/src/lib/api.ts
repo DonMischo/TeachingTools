@@ -1218,6 +1218,11 @@ export type LebenUebersichtZeile = {
   zusammenfassung: Record<string, unknown>; protokoll_zeilen: number; aktualisiert_am: string;
 };
 
+// Algorithmen-Werkstatt (siehe api/routers/algo.py)
+export type AlgoLevelStand = { sterne: number; bloecke: number };
+export type AlgoFortschrittIn = { level: Record<string, AlgoLevelStand>; fluss: string[]; automat: string[] };
+export type AlgoUebersichtZeile = AlgoFortschrittIn & { name: string; klasse: string | null; gast: boolean; aktualisiert_am: string };
+
 export type WettschreibenTeilnehmer = {
   id: number;
   name: string;
@@ -1652,6 +1657,18 @@ export const api = {
         `leben/sitzung/${encodeURIComponent(code)}/protokoll${name ? `?name=${encodeURIComponent(name)}` : ""}`),
     /** Pfad für den CSV-Download (Cookie-Anmeldung der Lehrkraft). */
     csvPfad: (code: string) => `/api/leben/sitzung/${encodeURIComponent(code)}/protokoll.csv`,
+  },
+
+  // Algorithmen-Werkstatt: Fortschritt je Sitzung, Lehrer-Übersicht (siehe api/routers/algo.py)
+  algo: {
+    fortschritt: (zugang: MausZugang, body: AlgoFortschrittIn) =>
+      apiFetch<{ ok: boolean }>(`algo/sitzung/${encodeURIComponent(zugang.code)}/fortschritt`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: zugang.token ? { Authorization: `Bearer ${zugang.token}` } : undefined,
+      }),
+    uebersicht: (code: string) =>
+      apiFetch<AlgoUebersichtZeile[]>(`algo/sitzung/${encodeURIComponent(code)}/uebersicht`),
   },
 
   // Verkehrssicherheit (siehe api/routers/verkehr.py)

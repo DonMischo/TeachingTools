@@ -14,20 +14,24 @@ import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, type Algo
 import CodeAbenteuer from "./CodeAbenteuer";
 import AutomatEinstieg from "./AutomatEinstieg";
 import FlussReiter from "./FlussReiter";
+import AlgoUebersicht from "./AlgoUebersicht";
 
-type Reiter = "automat" | "fluss" | "abenteuer";
+type Reiter = "automat" | "fluss" | "abenteuer" | "uebersicht";
 
 const REITER: { id: Reiter; icon: string; label: string }[] = [
   { id: "automat", icon: "🍬", label: "Automat" },
   { id: "fluss", icon: "🔀", label: "Flussdiagramm" },
   { id: "abenteuer", icon: "🎮", label: "Code-Abenteuer" },
+  { id: "uebersicht", icon: "👩‍🏫", label: "Klassenübersicht" },
 ];
 
 const chip = (an: boolean) =>
   `px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${an ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`;
 
-export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_algo_stand", onStand }: {
+export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_algo_stand", onStand, verwaltung = false }: {
   action?: ReactNode;
+  /** Lehrkraft auf der Werkzeugseite: zeigt die Klassenübersicht */
+  verwaltung?: boolean;
   vorgabe?: Vorgabe;
   /** localStorage-Schlüssel des Fortschritts (Gäste: je Name) */
   speicherSchluessel?: string;
@@ -61,9 +65,9 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
         </div>
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      {!festerReiter && REITER.length > 1 && (
+      {!festerReiter && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
-          {REITER.map(r => (
+          {REITER.filter(r => r.id !== "uebersicht" || verwaltung).map(r => (
             <button key={r.id} type="button" onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>
           ))}
         </div>
@@ -73,6 +77,7 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
           onFluss={id => { setFlussStart(id); setReiter("fluss"); }} />
       )}
       {reiter === "fluss" && <FlussReiter erledigt={stand.fluss} start={flussStart} onGeloest={id => aendern(s => mitErledigt(s, "fluss", id))} />}
+      {reiter === "uebersicht" && verwaltung && <AlgoUebersicht />}
       {reiter === "abenteuer" && (
         <CodeAbenteuer stand={stand} onGeloest={(id, sterne, bloecke) => aendern(s => mitLevel(s, id, { sterne, bloecke }))} />
       )}

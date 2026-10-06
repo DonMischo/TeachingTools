@@ -88,6 +88,8 @@ from .routers import verkehr as verkehr_router
 app.include_router(verkehr_router.router)
 from .routers import leben as leben_router
 app.include_router(leben_router.router)
+from .routers import algo as algo_router
+app.include_router(algo_router.router)
 from .routers import karten as karten_router
 app.include_router(karten_router.router)
 from .routers import karten_quiz as karten_quiz_router
