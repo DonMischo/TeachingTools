@@ -14,7 +14,7 @@ const EMOJI = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-seri
 function Emoji({ x, y, z, groesse = 30 }: { x: number; y: number; z: string; groesse?: number }) {
   return (
     <text x={x * C + C / 2} y={y * C + C / 2 + 2} textAnchor="middle" dominantBaseline="central"
-      style={{ fontSize: groesse, fontFamily: EMOJI }}>{z}</text>
+      style={{ fontSize: groesse, fontFamily: EMOJI, pointerEvents: "none" }}>{z}</text>
   );
 }
 

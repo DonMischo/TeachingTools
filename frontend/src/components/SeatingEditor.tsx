@@ -43,6 +43,10 @@ const SCHULBEGLEITER = "__sb__";
 
 const SNAP_STEP = 5; // mm
 const PRINT_MARGIN_MM = 5; // safe-area kept clear of the paper edge
+// Screen size of the plan: zoom 1 = real A4 size at 96 dpi.
+const MM_PX = 96 / 25.4;
+const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
+const ZOOM_KEY = "hp_sitzplan_zoom";
 // Font sizes in mm (physical), shared with the PDF export so the on-screen text
 // keeps the same size-to-object ratio as the printout. Rendered on screen as
 // mm × scale; the PDF uses the mm value directly.
@@ -244,6 +248,15 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
   const [items, setItems] = useState<SeatingItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snap, setSnap] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  useEffect(() => {
+    try { const z = Number(localStorage.getItem(ZOOM_KEY)); if (z >= ZOOM_MIN && z <= ZOOM_MAX) setZoom(z); } catch { /* default size */ }
+  }, []);
+  const setZoomGemerkt = (z: number) => {
+    const neu = Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)) * 100) / 100;
+    setZoom(neu);
+    try { localStorage.setItem(ZOOM_KEY, String(neu)); } catch { /* not persisted */ }
+  };
   const [alternate, setAlternate] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const savedRef = useRef<string>("");
@@ -470,6 +483,17 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
     );
   }
 
+  // Bildschirmgröße des Plans: 100 % = echtes A4 (1 mm ≈ 3,78 px). Gemerkt je Gerät.
+  const pxBreite = Math.round(dims.w * MM_PX * zoom);
+  const ziehZoom = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const start = { x: e.clientX, zoom };
+    const bewege = (ev: PointerEvent) => setZoomGemerkt(start.zoom + (ev.clientX - start.x) / (dims.w * MM_PX));
+    const los = () => { window.removeEventListener("pointermove", bewege); window.removeEventListener("pointerup", los); };
+    window.addEventListener("pointermove", bewege);
+    window.addEventListener("pointerup", los);
+  };
+
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-4 min-h-full">
       {/* Print: show ONLY the canvas, filling an exact A4 page in the plan's
@@ -568,6 +592,15 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
         <span className="flex-1" />
 
+        {/* Plan size on screen */}
+        <div className="flex items-center gap-1 text-xs text-muted" title="Größe des Plans auf dem Bildschirm (100 % = echtes A4)">
+          <button onClick={() => setZoomGemerkt(zoom - 0.1)} className="w-7 h-7 rounded-lg border border-line hover:bg-surface-hover" aria-label="Plan kleiner">−</button>
+          <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.05} value={zoom}
+            onChange={e => setZoomGemerkt(+e.target.value)} className="w-24" aria-label="Plangröße" />
+          <button onClick={() => setZoomGemerkt(zoom + 0.1)} className="w-7 h-7 rounded-lg border border-line hover:bg-surface-hover" aria-label="Plan größer">+</button>
+          <button onClick={() => setZoomGemerkt(1)} className="px-1.5 py-1 rounded-lg hover:bg-surface-hover tabular-nums">{Math.round(zoom * 100)} %</button>
+        </div>
+
         {/* Save state */}
         {canEdit && (
           <span className="text-xs text-muted">
@@ -621,7 +654,8 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
 
       <div className="flex flex-col lg:flex-row gap-4 items-start">
         {/* Canvas */}
-        <div className="flex-1 min-w-0 flex flex-col items-center">
+        <div className="flex-1 min-w-0 flex flex-col items-center overflow-auto pb-2">
+          <div className="relative mx-auto shrink-0" style={{ width: pxBreite, maxWidth: "none" }}>
           <div
             ref={canvasRef}
             onPointerDown={() => setSelectedId(null)}
@@ -630,9 +664,6 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             className="sitzplan-print relative w-full bg-white rounded-xl border border-line overflow-hidden select-none touch-none"
             style={{
               aspectRatio: `${dims.w} / ${dims.h}`,
-              // Keep the whole plan on screen next to the sticky toolbar: cap the
-              // height and let the A4 ratio derive the width from it.
-              maxWidth: `calc((100dvh - 21rem) * ${(dims.w / dims.h).toFixed(4)})`,
               containerType: "inline-size",
               backgroundImage: snap
                 ? `linear-gradient(#00000010 1px, transparent 1px), linear-gradient(90deg, #00000010 1px, transparent 1px)`
@@ -738,6 +769,10 @@ export function SeatingEditor({ scope }: { scope: SeatingScope }) {
             >
               {name}
             </div>
+          </div>
+          {/* Griff zum Größerziehen (außerhalb der Leinwand, also nicht im Druck) */}
+          <div onPointerDown={ziehZoom} title="Ziehen, um den Plan größer oder kleiner zu machen"
+            className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-accent border-2 border-page cursor-nwse-resize touch-none print:hidden" />
           </div>
           <p className="text-xs text-muted mt-2">
             {orientation === "landscape" ? "A4 quer" : "A4 hoch"} · Element antippen zum Bearbeiten · ziehen zum Verschieben
