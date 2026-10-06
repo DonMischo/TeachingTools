@@ -4,69 +4,102 @@
  *   bearbeiten — Formen hinzufügen, ziehen, beschriften, Pfeile setzen
  *   verbinden  — nur Pfeile setzen/ändern (Knoten stehen fest)
  *   lesen      — nur ansehen; Klicks auf Knoten/Pfeile gehen an den Aufrufer
- * Pfeile werden rechtwinklig geführt: abwärts gerade, Rücksprünge links außen,
- * Sprünge über andere Kästen rechts außen herum.
+ *
+ * Pfeile werden rechtwinklig in »Flussrichtung« geführt: vorwärts gerade,
+ * Rücksprünge außen links (waagerecht: oben), Sprünge über andere Kästen auf
+ * der anderen Seite. Die waagerechte Ansicht ist nur eine Anzeige: gespeichert
+ * wird immer die senkrechte Lage (`kippe` / `zurueckKippen`).
  */
-import { useId, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
-import { BREITE, TYP_NAME, hoehe, type Diagramm, type Kante, type Knoten, type KnotenTyp } from "@/lib/algo/fluss";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
+import { BREITE, TYP_NAME, hoehe, kippe, zurueckKippen, type Diagramm, type Kante, type Knoten, type KnotenTyp } from "@/lib/algo/fluss";
 
 export type Modus = "bearbeiten" | "verbinden" | "lesen";
 type Punkt = [number, number];
 
 const W = BREITE / 2;
 
-function anker(k: Knoten, seite: "o" | "u" | "l" | "r"): Punkt {
-  const h = hoehe(k) / 2;
-  return seite === "o" ? [k.x, k.y - h] : seite === "u" ? [k.x, k.y + h] : seite === "l" ? [k.x - W, k.y] : [k.x + W, k.y];
+/**
+ * Rechtwinkliger Weg einer Kante. Gerechnet wird in Flusskoordinaten
+ * (a = entlang des Ablaufs, c = quer dazu) und am Ende in x/y übersetzt.
+ * `nr` verteilt mehrere Umwege nebeneinander.
+ */
+export function weg(s: Knoten, t: Knoten, alle: Knoten[], nr: number, quer = false): Punkt[] {
+  const A = (k: Knoten) => (quer ? k.x : k.y), C = (k: Knoten) => (quer ? k.y : k.x);
+  const hA = (k: Knoten) => (quer ? W : hoehe(k) / 2), hC = (k: Knoten) => (quer ? hoehe(k) / 2 : W);
+  const P = (c: number, a: number): Punkt => (quer ? [a, c] : [c, a]);
+  const ank = (k: Knoten, seite: "vor" | "nach" | "links" | "rechts"): Punkt =>
+    seite === "vor" ? P(C(k), A(k) - hA(k)) : seite === "nach" ? P(C(k), A(k) + hA(k)) : seite === "links" ? P(C(k) - hC(k), A(k)) : P(C(k) + hC(k), A(k));
+
+  if (A(t) <= A(s) + 4) {
+    const c0 = Math.min(C(s) - hC(s), C(t) - hC(t)) - 22 - nr * 14;
+    return [ank(s, "links"), P(c0, A(s)), P(c0, A(t)), ank(t, "links")];
+  }
+  if (Math.abs(C(t) - C(s)) < 5) {
+    const dazwischen = alle.some(k => k !== s && k !== t && Math.abs(C(k) - C(s)) < hC(k) && A(k) > A(s) && A(k) < A(t));
+    if (!dazwischen) return [ank(s, "nach"), ank(t, "vor")];
+    const c1 = C(s) + hC(s) + 22 + nr * 14, av = A(t) - hA(t) - 16;
+    return [ank(s, "rechts"), P(c1, A(s)), P(c1, av), P(C(t), av), ank(t, "vor")];
+  }
+  if (C(t) > C(s)) return [ank(s, "rechts"), P(C(t), A(s)), ank(t, "vor")];
+  const av = A(t) - hA(t) - 16;
+  return [ank(s, "nach"), P(C(s), av), P(C(t), av), ank(t, "vor")];
 }
 
-/** Rechtwinkliger Weg einer Kante. `nr` verteilt mehrere Umwege nebeneinander. */
-export function weg(s: Knoten, t: Knoten, alle: Knoten[], nr: number): Punkt[] {
-  const th = hoehe(t) / 2;
-  if (t.y <= s.y + 4) {
-    const x0 = Math.min(s.x, t.x) - W - 22 - nr * 14;
-    return [anker(s, "l"), [x0, s.y], [x0, t.y], anker(t, "l")];
+function mitte(p: Punkt[]): Punkt {
+  const laengen = p.slice(1).map((q, i) => Math.hypot(q[0] - p[i][0], q[1] - p[i][1]));
+  let rest = laengen.reduce((a, b) => a + b, 0) / 2;
+  for (let i = 0; i < laengen.length; i++) {
+    if (rest <= laengen[i]) {
+      const f = laengen[i] ? rest / laengen[i] : 0;
+      return [p[i][0] + (p[i + 1][0] - p[i][0]) * f, p[i][1] + (p[i + 1][1] - p[i][1]) * f];
+    }
+    rest -= laengen[i];
   }
-  if (Math.abs(t.x - s.x) < 5) {
-    const dazwischen = alle.some(k => k !== s && k !== t && Math.abs(k.x - s.x) < W && k.y > s.y && k.y < t.y);
-    if (!dazwischen) return [anker(s, "u"), anker(t, "o")];
-    const x1 = s.x + W + 22 + nr * 14, yv = t.y - th - 16;
-    return [anker(s, "r"), [x1, s.y], [x1, yv], [t.x, yv], anker(t, "o")];
-  }
-  if (t.x > s.x) {
-    const [ax, ay] = anker(s, "r");
-    return [[ax, ay], [t.x, ay], anker(t, "o")];
-  }
-  const yv = t.y - th - 16;
-  const [ux, uy] = anker(s, "u");
-  return [[ux, uy], [ux, yv], [t.x, yv], anker(t, "o")];
+  return p[0];
 }
 
-function zeilen(text: string, max = 20): string[] {
-  const woerter = text.split(/\s+/);
+function zeilen(text: string, max = 20, anzahl = 3): string[] {
   const aus: string[] = [];
   let z = "";
-  for (const w of woerter) {
+  for (const w of text.split(/\s+/)) {
     if ((z + " " + w).trim().length > max && z) { aus.push(z); z = w; } else z = (z + " " + w).trim();
   }
   if (z) aus.push(z);
-  return aus.slice(0, 3);
+  return aus.slice(0, anzahl);
 }
 
-export function Form({ typ, x, y, h, stil, unbekannt }: { typ: KnotenTyp; x: number; y: number; h: number; stil: React.CSSProperties; unbekannt?: boolean }) {
-  if (unbekannt) return <rect x={x - W} y={y - h / 2} width={BREITE} height={h} rx={6} style={{ ...stil, strokeDasharray: "6 4" }} />;
-  if (typ === "start" || typ === "ende") return <rect x={x - W} y={y - h / 2} width={BREITE} height={h} rx={h / 2} style={stil} />;
-  if (typ === "aktion") return <rect x={x - W} y={y - h / 2} width={BREITE} height={h} rx={3} style={stil} />;
-  if (typ === "io") return <polygon points={`${x - W + 14},${y - h / 2} ${x + W},${y - h / 2} ${x + W - 14},${y + h / 2} ${x - W},${y + h / 2}`} style={stil} />;
-  return <polygon points={`${x},${y - h / 2} ${x + W},${y} ${x},${y + h / 2} ${x - W},${y}`} style={stil} />;
+export function Form({ typ, x, y, h, stil, unbekannt, b = BREITE }: { typ: KnotenTyp; x: number; y: number; h: number; stil: CSSProperties; unbekannt?: boolean; b?: number }) {
+  const w = b / 2;
+  if (unbekannt) return <rect x={x - w} y={y - h / 2} width={b} height={h} rx={6} style={{ ...stil, strokeDasharray: "6 4" }} />;
+  if (typ === "start" || typ === "ende") return <rect x={x - w} y={y - h / 2} width={b} height={h} rx={h / 2} style={stil} />;
+  if (typ === "aktion") return <rect x={x - w} y={y - h / 2} width={b} height={h} rx={3} style={stil} />;
+  if (typ === "io") return <polygon points={`${x - w + 14},${y - h / 2} ${x + w},${y - h / 2} ${x + w - 14},${y + h / 2} ${x - w},${y + h / 2}`} style={stil} />;
+  return <polygon points={`${x},${y - h / 2} ${x + w},${y} ${x},${y + h / 2} ${x - w},${y}`} style={stil} />;
 }
 
-const FUELLUNG: Record<KnotenTyp, string> = {
+export const FUELLUNG: Record<KnotenTyp, string> = {
   start: "#fde68a", ende: "#fde68a", aktion: "#bfdbfe", io: "#bbf7d0", entscheidung: "#fecaca",
 };
 
+/** Knopf, der die Form selbst zeigt — der Name steht in der Figur (z. B. »Start« im Oval). */
+export function FormKnopf({ typ, text, onClick, an }: { typ: KnotenTyp; text: string; onClick: () => void; an?: boolean }) {
+  const h = typ === "entscheidung" ? 50 : 36;
+  return (
+    <button type="button" onClick={onClick} title={TYP_NAME[typ]}
+      className={`rounded-lg p-0.5 transition-transform active:scale-95 ${an ? "ring-2 ring-accent" : "hover:bg-surface-hover"}`}>
+      <svg viewBox={`0 0 132 ${h + 4}`} width={132} height={h + 4} aria-hidden>
+        <Form typ={typ} x={66} y={h / 2 + 2} h={h} b={128} stil={{ fill: FUELLUNG[typ], stroke: "#334155", strokeWidth: 2 }} />
+        <text x={66} y={h / 2 + 6} textAnchor="middle" style={{ fontSize: 12, fontWeight: 700, fill: "#0f172a" }}>{text}</text>
+      </svg>
+      <span className="sr-only">{text}</span>
+    </button>
+  );
+}
+
+const RICHTUNG_KEY = "hp_algo_fluss_waagerecht";
+
 export default function FlussEditor({
-  d, onChange, modus, aktiv, formen, markiertKante, markiertKnoten, onKnotenKlick, onKanteKlick,
+  d, onChange, modus, aktiv, formen, markiertKante, markiertKnoten, onKnotenKlick, onKanteKlick, kommentare: kommentareStart = false, pfeilStart = false,
 }: {
   d: Diagramm;
   onChange?: (d: Diagramm) => void;
@@ -79,35 +112,68 @@ export default function FlussEditor({
   markiertKnoten?: string[];
   onKnotenKlick?: (id: string) => void;
   onKanteKlick?: (i: number) => void;
+  /** Erklärungen als Randnotizen zeigen (sonst nur beim Darüberfahren) */
+  kommentare?: boolean;
+  /** Pfeil-Modus von Anfang an eingeschaltet */
+  pfeilStart?: boolean;
 }) {
   const uid = useId().replace(/:/g, "");
   const svg = useRef<SVGSVGElement>(null);
   const [wahl, setWahl] = useState<{ knoten?: string; kante?: number }>({});
   const [verbindeVon, setVerbindeVon] = useState<string | null>(null);
+  const [pfeilModus, setPfeilModus] = useState(pfeilStart);
+  const [ueber, setUeber] = useState<number | null>(null);
+  const [quer, setQuer] = useState(false);
+  const [kommentare, setKommentare] = useState(kommentareStart);
+  useEffect(() => { try { setQuer(localStorage.getItem(RICHTUNG_KEY) === "1"); } catch { /* senkrecht */ } }, []);
   const zug = useRef<{ id: string; dx: number; dy: number; bewegt: boolean } | null>(null);
-  const darfZiehen = modus !== "lesen";
   const darfVerbinden = modus !== "lesen";
+  const darfZiehen = modus !== "lesen" && !pfeilModus;
+  const hatErklaerung = d.knoten.some(k => k.erklaerung);
 
-  const breite = Math.max(640, ...d.knoten.map(k => k.x + W + 90));
-  const hoeheSvg = Math.max(380, ...d.knoten.map(k => k.y + hoehe(k) / 2 + 40));
+  // Angezeigt wird ggf. gekippt; Änderungen gehen in senkrechter Lage hinaus.
+  const anzeige = useMemo(() => (quer ? kippe(d) : d), [d, quer]);
+  const aendere = (neu: Diagramm) => onChange?.(quer ? zurueckKippen(neu) : neu);
 
   const wege = useMemo(() => {
-    const knoten = new Map(d.knoten.map(k => [k.id, k]));
-    // Umwege nach Spannweite verteilen: kurze innen, lange außen
-    const spanne = d.kanten.map((e, i) => ({ i, s: Math.abs((knoten.get(e.nach)?.y ?? 0) - (knoten.get(e.von)?.y ?? 0)) }))
+    const knoten = new Map(anzeige.knoten.map(k => [k.id, k]));
+    const A = (k: Knoten) => (quer ? k.x : k.y);
+    const spanne = anzeige.kanten.map((e, i) => ({ i, s: Math.abs(A(knoten.get(e.nach) ?? anzeige.knoten[0]) - A(knoten.get(e.von) ?? anzeige.knoten[0])) }))
       .sort((a, b) => a.s - b.s);
     const nr = new Map<number, number>();
-    let links = 0, rechts = 0;
+    let rueck = 0, umweg = 0;
     for (const { i } of spanne) {
-      const s = knoten.get(d.kanten[i].von), t = knoten.get(d.kanten[i].nach);
-      if (!s || !t) continue;
-      nr.set(i, t.y <= s.y + 4 ? links++ : rechts++);
+      const s = knoten.get(anzeige.kanten[i].von), t = knoten.get(anzeige.kanten[i].nach);
+      if (s && t) nr.set(i, A(t) <= A(s) + 4 ? rueck++ : umweg++);
     }
-    return d.kanten.map((e, i) => {
+    return anzeige.kanten.map((e, i) => {
       const s = knoten.get(e.von), t = knoten.get(e.nach);
-      return s && t ? weg(s, t, d.knoten, nr.get(i) ?? 0) : null;
+      return s && t ? weg(s, t, anzeige.knoten, nr.get(i) ?? 0, quer) : null;
     });
-  }, [d]);
+  }, [anzeige, quer]);
+
+  // Randnotizen: rechts neben dem Diagramm (waagerecht: darunter), je Knoten mit Erklärung
+  const notizen = useMemo(() => {
+    if (!kommentare) return [];
+    const mitErkl = anzeige.knoten.filter(k => k.erklaerung);
+    if (quer) {
+      const unten = Math.max(...anzeige.knoten.map(k => k.y + hoehe(k) / 2)) + 50;
+      return mitErkl.map(k => ({ k, x: k.x - W, y: unten, b: BREITE + 40, zeilen: zeilen(k.erklaerung!, 30, 7) }));
+    }
+    const rechts = Math.max(...anzeige.knoten.map(k => k.x + W)) + 70;
+    return mitErkl.map(k => ({ k, x: rechts, y: k.y - 30, b: 290, zeilen: zeilen(k.erklaerung!, 44, 5) }));
+  }, [kommentare, anzeige, quer]);
+
+  // Rahmen: alles, was gezeichnet wird, plus Rand — so wird nichts abgeschnitten.
+  const rahmen = useMemo(() => {
+    const xs: number[] = [], ys: number[] = [];
+    for (const k of anzeige.knoten) { xs.push(k.x - W, k.x + W); ys.push(k.y - hoehe(k) / 2, k.y + hoehe(k) / 2); }
+    for (const p of wege) for (const [x, y] of p ?? []) { xs.push(x); ys.push(y); }
+    for (const n of notizen) { xs.push(n.x, n.x + n.b); ys.push(n.y, n.y + 16 + n.zeilen.length * 15); }
+    if (!xs.length) return { x: 0, y: 0, b: 640, h: 380 };
+    const x0 = Math.min(...xs) - 40, y0 = Math.min(...ys) - 30;
+    return { x: x0, y: y0, b: Math.max(640, Math.max(...xs) + 90 - x0), h: Math.max(380, Math.max(...ys) + 60 - y0) };
+  }, [anzeige, wege, notizen]);
 
   const punkt = (e: RPointerEvent): Punkt => {
     const m = svg.current?.getScreenCTM();
@@ -116,63 +182,95 @@ export default function FlussEditor({
     return [p.x, p.y];
   };
 
-  const aendere = (neu: Diagramm) => onChange?.(neu);
+  const verbinde = (vonId: string, nachId: string) => {
+    const von = anzeige.knoten.find(k => k.id === vonId)!;
+    const vorhanden = anzeige.kanten.filter(e => e.von === vonId);
+    let kanten: Kante[];
+    if (von.typ === "entscheidung") {
+      const marke: "ja" | "nein" = vorhanden.some(e => e.marke === "ja") ? "nein" : "ja";
+      kanten = [...anzeige.kanten.filter(e => !(e.von === vonId && e.marke === marke)), { von: vonId, nach: nachId, marke }];
+    } else {
+      // Ein Pfeil je Kasten: der neue ersetzt den alten
+      kanten = [...anzeige.kanten.filter(e => e.von !== vonId), { von: vonId, nach: nachId }];
+    }
+    aendere({ ...anzeige, kanten });
+  };
+
   const knotenKlick = (id: string) => {
-    if (verbindeVon && verbindeVon !== id) {
-      const von = d.knoten.find(k => k.id === verbindeVon)!;
-      const vorhanden = d.kanten.filter(e => e.von === von.id);
-      if (von.typ !== "entscheidung" && vorhanden.length) {
-        // Ein Pfeil je Kasten: der neue ersetzt den alten
-        aendere({ ...d, kanten: [...d.kanten.filter(e => e.von !== von.id), { von: von.id, nach: id }] });
-      } else if (von.typ === "entscheidung") {
-        const marke: "ja" | "nein" = vorhanden.some(e => e.marke === "ja") ? "nein" : "ja";
-        aendere({ ...d, kanten: [...d.kanten.filter(e => !(e.von === von.id && e.marke === marke)), { von: von.id, nach: id, marke }] });
-      } else {
-        aendere({ ...d, kanten: [...d.kanten, { von: von.id, nach: id }] });
-      }
+    const k = anzeige.knoten.find(x => x.id === id)!;
+    if (verbindeVon) {
+      if (verbindeVon !== id) verbinde(verbindeVon, id);
       setVerbindeVon(null);
+      return;
+    }
+    if (pfeilModus && darfVerbinden) {
+      if (k.typ !== "ende") setVerbindeVon(id);
       return;
     }
     setWahl({ knoten: id });
     onKnotenKlick?.(id);
   };
 
-  const gewaehlt = d.knoten.find(k => k.id === wahl.knoten);
-  const kante: Kante | undefined = wahl.kante !== undefined ? d.kanten[wahl.kante] : undefined;
+  const kanteKlick = (i: number) => {
+    if (pfeilModus && darfVerbinden) {
+      aendere({ ...anzeige, kanten: anzeige.kanten.filter((_, j) => j !== i) });
+      setUeber(null);
+      return;
+    }
+    setWahl({ kante: i });
+    onKanteKlick?.(i);
+  };
+
+  const gewaehlt = anzeige.knoten.find(k => k.id === wahl.knoten);
+  const kante: Kante | undefined = wahl.kante !== undefined ? anzeige.kanten[wahl.kante] : undefined;
 
   const neuerKnoten = (typ: KnotenTyp) => {
-    const tiefste = Math.max(-52, ...d.knoten.map(k => k.y));
     const id = `n${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
     const text = typ === "start" ? "Start" : typ === "ende" ? "Ende" : typ === "entscheidung" ? "Frage?" : typ === "io" ? "Ein-/Ausgabe" : "Anweisung";
-    aendere({ ...d, knoten: [...d.knoten, { id, typ, text, x: 110, y: tiefste + 92 }] });
+    // In senkrechter Lage unten anhängen (die Anzeige kippt mit)
+    const tiefste = Math.max(-52, ...d.knoten.map(k => k.y));
+    onChange?.({ ...d, knoten: [...d.knoten, { id, typ, text, x: 110, y: tiefste + 92 }] });
     setWahl({ knoten: id });
   };
 
   const loeschen = () => {
-    if (gewaehlt) aendere({ knoten: d.knoten.filter(k => k.id !== gewaehlt.id), kanten: d.kanten.filter(e => e.von !== gewaehlt.id && e.nach !== gewaehlt.id) });
-    else if (wahl.kante !== undefined) aendere({ ...d, kanten: d.kanten.filter((_, i) => i !== wahl.kante) });
+    if (gewaehlt) aendere({ knoten: anzeige.knoten.filter(k => k.id !== gewaehlt.id), kanten: anzeige.kanten.filter(e => e.von !== gewaehlt.id && e.nach !== gewaehlt.id) });
+    else if (wahl.kante !== undefined) aendere({ ...anzeige, kanten: anzeige.kanten.filter((_, i) => i !== wahl.kante) });
     setWahl({});
   };
 
-  const setzeKnoten = (patch: Partial<Knoten>) => gewaehlt && aendere({ ...d, knoten: d.knoten.map(k => (k.id === gewaehlt.id ? { ...k, ...patch } : k)) });
+  const setzeKnoten = (patch: Partial<Knoten>) =>
+    gewaehlt && aendere({ ...anzeige, knoten: anzeige.knoten.map(k => (k.id === gewaehlt.id ? { ...k, ...patch } : k)) });
+
+  const schalter = (an: boolean) => `text-xs px-2.5 py-1.5 rounded-lg border font-bold ${an ? "bg-accent text-accent-fg border-transparent" : "border-line text-muted hover:text-fg"}`;
 
   return (
     <div className="flex flex-col gap-2">
-      {modus === "bearbeiten" && (
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-muted mr-1">Hinzufügen:</span>
-          {(["start", "aktion", "io", "entscheidung", "ende"] as KnotenTyp[]).map(t => (
-            <button key={t} type="button" onClick={() => neuerKnoten(t)} className="btn-secondary !px-2 !py-1 text-xs inline-flex items-center gap-1">
-              <svg viewBox="0 0 180 80" width={30} height={14} aria-hidden><Form typ={t} x={90} y={40} h={t === "entscheidung" ? 78 : 52} stil={{ fill: FUELLUNG[t], stroke: "#334155", strokeWidth: 5 }} /></svg>
-              {t === "start" ? "Start" : t === "ende" ? "Ende" : TYP_NAME[t]}
+      <div className="flex flex-wrap gap-1.5 items-center">
+        {modus === "bearbeiten" && (["start", "aktion", "io", "entscheidung", "ende"] as KnotenTyp[]).map(t => (
+          <FormKnopf key={t} typ={t} text={t === "start" ? "Start" : t === "ende" ? "Ende" : TYP_NAME[t]} onClick={() => neuerKnoten(t)} />
+        ))}
+        <span className="ml-auto flex flex-wrap gap-1.5">
+          {darfVerbinden && (
+            <button type="button" className={schalter(pfeilModus)} onClick={() => { setPfeilModus(!pfeilModus); setVerbindeVon(null); }}
+              title="Pfeil-Modus: erst Startkasten, dann Zielkasten anklicken; ein Klick auf einen Pfeil löscht ihn">
+              ➜ Pfeil-Modus {pfeilModus ? "an" : "aus"}
             </button>
-          ))}
-        </div>
-      )}
-      {verbindeVon && <p className="text-sm text-accent font-bold">➜ Jetzt den Kasten anklicken, zu dem der Pfeil zeigen soll. (Esc oder Klick ins Leere bricht ab.)</p>}
+          )}
+          {hatErklaerung && <button type="button" className={schalter(kommentare)} onClick={() => setKommentare(!kommentare)}>💬 Notizen</button>}
+          <button type="button" className={schalter(quer)} title="Ablauf von oben nach unten oder von links nach rechts"
+            onClick={() => { const neu = !quer; setQuer(neu); try { localStorage.setItem(RICHTUNG_KEY, neu ? "1" : "0"); } catch { /* egal */ } }}>
+            {quer ? "↔ waagerecht" : "↕ senkrecht"}
+          </button>
+        </span>
+      </div>
+      {verbindeVon
+        ? <p className="text-sm text-accent font-bold">➜ Jetzt den Kasten anklicken, zu dem der Pfeil zeigen soll. (Esc oder Klick ins Leere bricht ab.)</p>
+        : pfeilModus && darfVerbinden && <p className="text-xs text-muted">Pfeil-Modus: Kasten anklicken, dann den Zielkasten. Ein Klick auf einen Pfeil (🗑) löscht ihn. Bei einer Raute wird der erste Pfeil »ja«, der zweite »nein«.</p>}
       <div className="overflow-auto rounded-xl border border-line bg-white" style={{ maxHeight: "70vh" }}
         onKeyDown={e => { if (e.key === "Escape") setVerbindeVon(null); if (e.key === "Delete" && (modus === "bearbeiten" || (modus === "verbinden" && kante))) loeschen(); }} tabIndex={0}>
-        <svg ref={svg} viewBox={`0 0 ${breite} ${hoeheSvg}`} width={breite} height={hoeheSvg} className="block select-none touch-none" data-testid="fluss-flaeche"
+        <svg ref={svg} viewBox={`${rahmen.x} ${rahmen.y} ${rahmen.b} ${rahmen.h}`} width={rahmen.b} height={rahmen.h}
+          className="block select-none touch-none" data-testid="fluss-flaeche"
           onPointerDown={() => { setWahl({}); setVerbindeVon(null); }}
           onPointerMove={e => {
             const z = zug.current;
@@ -180,7 +278,7 @@ export default function FlussEditor({
             const [px, py] = punkt(e);
             const x = Math.round((px - z.dx) / 10) * 10, y = Math.round((py - z.dy) / 10) * 10;
             z.bewegt = true;
-            aendere({ ...d, knoten: d.knoten.map(k => (k.id === z.id ? { ...k, x: Math.max(W + 10, x), y: Math.max(40, y) } : k)) });
+            aendere({ ...anzeige, knoten: anzeige.knoten.map(k => (k.id === z.id ? { ...k, x, y } : k)) });
           }}
           onPointerUp={() => { zug.current = null; }}>
           <defs>
@@ -188,32 +286,56 @@ export default function FlussEditor({
               <path d="M0,0 L10,5 L0,10 z" style={{ fill: "#334155" }} />
             </marker>
           </defs>
-          {wege.map((p, i) => {
-            if (!p) return null;
-            const e = d.kanten[i];
-            const pfad = p.map(([x, y], j) => `${j ? "L" : "M"}${x},${y}`).join(" ");
-            const an = wahl.kante === i || markiertKante?.i === i;
-            const farbe = markiertKante?.i === i ? (markiertKante.ok ? "#16a34a" : "#dc2626") : an ? "#2563eb" : "#334155";
-            const [lx, ly] = p[0], [nx, ny] = p[1];
-            const rx = lx + (nx > lx ? 10 : nx < lx ? -28 : 6), ry = ly + (ny > ly ? 14 : -5);
+          {notizen.map(n => {
+            const k = n.k, h = 16 + n.zeilen.length * 15;
+            const [ax, ay] = quer ? [k.x, k.y + hoehe(k) / 2] : [k.x + W, k.y];
+            const [bx, by] = quer ? [k.x, n.y] : [n.x, n.y + h / 2];
             return (
-              <g key={`e${i}`}>
-                <path d={pfad} style={{ fill: "none", stroke: farbe, strokeWidth: an ? 3 : 2 }} markerEnd={`url(#pf${uid})`} />
-                {e.marke && <text x={rx} y={ry} style={{ fontSize: 12, fontWeight: 700, fill: e.marke === "ja" ? "#15803d" : "#b91c1c" }}>{e.marke}</text>}
-                <path d={pfad} style={{ fill: "none", stroke: "transparent", strokeWidth: 14, cursor: "pointer" }}
-                  onPointerDown={ev => { ev.stopPropagation(); setWahl({ kante: i }); onKanteKlick?.(i); }} />
+              <g key={`n${k.id}`} style={{ pointerEvents: "none" }}>
+                <line x1={ax} y1={ay} x2={bx} y2={by} style={{ stroke: "#ca8a04", strokeWidth: 1.5, strokeDasharray: "4 4" }} />
+                <rect x={n.x} y={n.y} width={n.b} height={h} rx={8} style={{ fill: k.id === aktiv ? "#fde68a" : "#fef9c3", stroke: "#ca8a04", strokeWidth: 1 }} />
+                {n.zeilen.map((z, j) => (
+                  <text key={j} x={n.x + 10} y={n.y + 20 + j * 15} style={{ fontSize: 11.5, fill: "#422006" }}>{z}</text>
+                ))}
               </g>
             );
           })}
-          {d.knoten.map(k => {
+          {wege.map((p, i) => {
+            if (!p) return null;
+            const e = anzeige.kanten[i];
+            const pfad = p.map(([x, y], j) => `${j ? "L" : "M"}${x},${y}`).join(" ");
+            const an = wahl.kante === i || markiertKante?.i === i;
+            const loeschbar = pfeilModus && darfVerbinden && ueber === i;
+            const farbe = markiertKante?.i === i ? (markiertKante.ok ? "#16a34a" : "#dc2626") : loeschbar ? "#dc2626" : an ? "#2563eb" : "#334155";
+            const [lx, ly] = p[0], [nx, ny] = p[1];
+            const rx = lx + (nx > lx ? 10 : nx < lx ? -28 : 6), ry = ly + (ny > ly ? 14 : ny < ly ? -5 : -6);
+            const [mx, my] = mitte(p);
+            return (
+              <g key={`e${i}`}>
+                <path d={pfad} style={{ fill: "none", stroke: farbe, strokeWidth: an || loeschbar ? 3 : 2 }} markerEnd={`url(#pf${uid})`} />
+                {e.marke && <text x={rx} y={ry} style={{ fontSize: 12, fontWeight: 700, fill: e.marke === "ja" ? "#15803d" : "#b91c1c" }}>{e.marke}</text>}
+                <path d={pfad} style={{ fill: "none", stroke: "transparent", strokeWidth: 18, cursor: loeschbar ? "pointer" : "pointer" }}
+                  onPointerEnter={() => setUeber(i)} onPointerLeave={() => setUeber(u => (u === i ? null : u))}
+                  onPointerDown={ev => { ev.stopPropagation(); kanteKlick(i); }} />
+                {loeschbar && (
+                  <g style={{ pointerEvents: "none" }}>
+                    <circle cx={mx} cy={my} r={13} style={{ fill: "#fee2e2", stroke: "#dc2626", strokeWidth: 1.5 }} />
+                    <text x={mx} y={my + 5} textAnchor="middle" style={{ fontSize: 14 }}>🗑</text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+          {anzeige.knoten.map(k => {
             const h = hoehe(k);
             const form = formen ? formen[k.id] : k.typ;
             const markiert = markiertKnoten?.includes(k.id);
+            const quelle = verbindeVon === k.id;
             const stil = {
               fill: form ? FUELLUNG[form] : "#f1f5f9",
-              stroke: k.id === aktiv ? "#f59e0b" : markiert ? "#dc2626" : wahl.knoten === k.id ? "#2563eb" : "#334155",
-              strokeWidth: k.id === aktiv || markiert || wahl.knoten === k.id ? 4 : 2,
-              cursor: darfZiehen || onKnotenKlick ? "pointer" : "default",
+              stroke: k.id === aktiv ? "#f59e0b" : markiert ? "#dc2626" : quelle || wahl.knoten === k.id ? "#2563eb" : "#334155",
+              strokeWidth: k.id === aktiv || markiert || quelle || wahl.knoten === k.id ? 4 : 2,
+              cursor: pfeilModus && darfVerbinden ? "crosshair" : darfZiehen || onKnotenKlick ? "pointer" : "default",
             };
             const z = zeilen(k.text);
             return (
@@ -226,12 +348,16 @@ export default function FlussEditor({
                   }
                 }}
                 onPointerUp={ev => { ev.stopPropagation(); const z = zug.current; zug.current = null; if (!z?.bewegt) knotenKlick(k.id); }}>
+                {k.erklaerung && <title>{k.erklaerung}</title>}
                 <Form typ={form ?? "aktion"} x={k.x} y={k.y} h={h} stil={stil} unbekannt={formen !== undefined && !form} />
                 {z.map((zeile, j) => (
                   <text key={j} x={k.x} y={k.y + (j - (z.length - 1) / 2) * 14 + 4} textAnchor="middle"
                     style={{ fontSize: 12, fill: "#0f172a", pointerEvents: "none" }}>{zeile}</text>
                 ))}
-                {darfVerbinden && wahl.knoten === k.id && k.typ !== "ende" && (
+                {k.erklaerung && !kommentare && (
+                  <text x={k.x + W - 10} y={k.y - h / 2 + 12} textAnchor="middle" style={{ fontSize: 11, pointerEvents: "none" }}>💬</text>
+                )}
+                {darfVerbinden && !pfeilModus && wahl.knoten === k.id && k.typ !== "ende" && (
                   <g onPointerDown={ev => { ev.stopPropagation(); }} onPointerUp={ev => { ev.stopPropagation(); setVerbindeVon(k.id); }} style={{ cursor: "crosshair" }}>
                     <circle cx={k.x + W - 4} cy={k.y + h / 2} r={11} style={{ fill: "#2563eb" }} />
                     <text x={k.x + W - 4} y={k.y + h / 2 + 4} textAnchor="middle" style={{ fontSize: 12, fill: "white", pointerEvents: "none" }}>➜</text>
@@ -242,7 +368,7 @@ export default function FlussEditor({
           })}
         </svg>
       </div>
-      {modus !== "lesen" && (gewaehlt || kante) && (
+      {modus !== "lesen" && !pfeilModus && (gewaehlt || kante) && (
         <div className="card p-3 flex flex-wrap items-end gap-3 text-sm">
           {gewaehlt && modus === "bearbeiten" && (
             <>
@@ -250,13 +376,14 @@ export default function FlussEditor({
                 <span className="label">Text</span>
                 <input className="input" value={gewaehlt.text} onChange={e => setzeKnoten({ text: e.target.value })} />
               </label>
-              <label className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <span className="label">Form</span>
-                <select className="input" value={gewaehlt.typ} onChange={e => setzeKnoten({ typ: e.target.value as KnotenTyp })}>
-                  <option value="start">Start</option><option value="ende">Ende</option>
-                  <option value="aktion">Anweisung</option><option value="io">Ein-/Ausgabe</option><option value="entscheidung">Entscheidung</option>
-                </select>
-              </label>
+                <div className="flex flex-wrap gap-0.5">
+                  {(["start", "ende", "aktion", "io", "entscheidung"] as KnotenTyp[]).map(t => (
+                    <FormKnopf key={t} typ={t} text={t === "start" ? "Start" : t === "ende" ? "Ende" : TYP_NAME[t]} an={gewaehlt.typ === t} onClick={() => setzeKnoten({ typ: t })} />
+                  ))}
+                </div>
+              </div>
               {gewaehlt.typ !== "start" && gewaehlt.typ !== "ende" && (
                 <label className="flex flex-col gap-1 min-w-40">
                   <span className="label">Rechnung (freiwillig)</span>
@@ -269,11 +396,11 @@ export default function FlussEditor({
           {gewaehlt && gewaehlt.typ !== "ende" && (
             <button type="button" className="btn-secondary" onClick={() => setVerbindeVon(gewaehlt.id)}>➜ Pfeil von hier</button>
           )}
-          {kante && d.knoten.find(k => k.id === kante.von)?.typ === "entscheidung" && (
+          {kante && anzeige.knoten.find(k => k.id === kante.von)?.typ === "entscheidung" && (
             <label className="flex flex-col gap-1">
               <span className="label">Pfeil heißt</span>
               <select className="input" value={kante.marke ?? ""}
-                onChange={e => aendere({ ...d, kanten: d.kanten.map((x, i) => (i === wahl.kante ? { ...x, marke: e.target.value as "ja" | "nein" } : x)) })}>
+                onChange={e => aendere({ ...anzeige, kanten: anzeige.kanten.map((x, i) => (i === wahl.kante ? { ...x, marke: e.target.value as "ja" | "nein" } : x)) })}>
                 <option value="ja">ja</option><option value="nein">nein</option>
               </select>
             </label>

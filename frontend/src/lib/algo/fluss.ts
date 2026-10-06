@@ -14,7 +14,8 @@ import type { Bedingung, Befehl, Programm } from "./spiel";
 import { bedingungText } from "./kacheln";
 
 export type KnotenTyp = "start" | "ende" | "aktion" | "io" | "entscheidung";
-export interface Knoten { id: string; typ: KnotenTyp; text: string; x: number; y: number; code?: string }
+/** `erklaerung`: Kommentar für Hover und Randnotiz */
+export interface Knoten { id: string; typ: KnotenTyp; text: string; x: number; y: number; code?: string; erklaerung?: string }
 export interface Kante { von: string; nach: string; marke?: "ja" | "nein" }
 export interface Diagramm { knoten: Knoten[]; kanten: Kante[] }
 
@@ -140,11 +141,21 @@ export function vergleiche(ausdruck: string, w: Werte): boolean {
 // ── Ablauf ──────────────────────────────────────────────────────────────
 
 export type Frage = { art: "zahl"; name: string } | { art: "janein" };
-export interface AblaufStand { bei: string; werte: Werte; ausgaben: string[]; fertig: boolean; schritte: number }
+/** `protokoll`: was in jedem Schritt passiert ist, mit eingesetzten Zahlen */
+export interface AblaufStand { bei: string; werte: Werte; ausgaben: string[]; fertig: boolean; schritte: number; protokoll: string[] }
+
+const zahl = (v: number) => String(Math.round(v * 1000) / 1000).replace(".", ",");
+
+/** Setzt die Werte in eine Rechnung ein: »3*T + M« → »3 · 14 + 10«. */
+export function einsetzen(ausdruck: string, w: Werte): string {
+  return ausdruck
+    .replace(/[A-Za-zÄÖÜäöüß_]\w*/g, n => (n === "mod" ? "mod" : n in w ? zahl(w[n]) : n))
+    .replace(/\*/g, "·").replace(/\s*([+\-·/])\s*/g, " $1 ");
+}
 
 export function startStand(d: Diagramm): AblaufStand {
   const s = d.knoten.find(k => k.typ === "start");
-  return { bei: s?.id ?? "", werte: {}, ausgaben: [], fertig: !s, schritte: 0 };
+  return { bei: s?.id ?? "", werte: {}, ausgaben: [], fertig: !s, schritte: 0, protokoll: [] };
 }
 
 /** Was muss vor dem nächsten Schritt erfragt werden? */
@@ -164,25 +175,36 @@ export function weiter(d: Diagramm, s: AblaufStand, antwort?: number | boolean):
   if (s.schritte > 500) throw new Error("Über 500 Schritte — läuft der Ablauf im Kreis? Dann ist er nicht endlich.");
   const werte = { ...s.werte };
   const ausgaben = [...s.ausgaben];
+  const protokoll = [...s.protokoll];
   const code = k.code?.trim();
   let marke: "ja" | "nein" | undefined;
   if (k.typ === "io" && code) {
     const ein = code.match(/^eingabe\s+(\w+)$/i), aus = code.match(/^ausgabe\s+(.+)$/i);
-    if (ein) werte[ein[1]] = Number(antwort);
-    else if (aus) ausgaben.push(String(Math.round(rechne(aus[1], werte) * 1000) / 1000));
+    if (ein) {
+      werte[ein[1]] = Number(antwort);
+      protokoll.push(`Eingabe: ${ein[1]} = ${zahl(Number(antwort))}`);
+    } else if (aus) {
+      const v = rechne(aus[1], werte);
+      ausgaben.push(String(Math.round(v * 1000) / 1000));
+      protokoll.push(`Ausgabe: ${aus[1].trim()} = ${zahl(v)}`);
+    }
   } else if (k.typ === "io") {
     ausgaben.push(k.text);
+    protokoll.push(k.text);
   } else if (k.typ === "aktion" && code) {
     const m = code.match(/^(\w+)\s*=\s*(.+)$/);
     if (!m) throw new Error(`»${code}« verstehe ich nicht. So geht es: x = 3*T + M`);
     werte[m[1]] = rechne(m[2], werte);
+    const eingesetzt = einsetzen(m[2], s.werte);
+    protokoll.push(`${m[1]} = ${eingesetzt}${eingesetzt.trim() === zahl(werte[m[1]]) ? "" : ` = ${zahl(werte[m[1]])}`}`);
   } else if (k.typ === "entscheidung") {
     marke = (code ? vergleiche(code, werte) : !!antwort) ? "ja" : "nein";
+    protokoll.push(`${k.text} ${code ? `(${einsetzen(code, werte)}) ` : ""}→ ${marke}`);
   }
-  if (k.typ === "ende") return { ...s, werte, ausgaben, fertig: true };
+  if (k.typ === "ende") return { ...s, werte, ausgaben, protokoll, fertig: true };
   const e = d.kanten.find(x => x.von === k.id && (marke ? x.marke === marke : true));
   if (!e) throw new Error(`Von »${k.text}« geht kein passender Pfeil weg.`);
-  return { bei: e.nach, werte, ausgaben, fertig: false, schritte: s.schritte + 1 };
+  return { bei: e.nach, werte, ausgaben, protokoll, fertig: false, schritte: s.schritte + 1 };
 }
 
 /** Läuft automatisch durch (für Tests und Aufgaben mit festen Eingaben). */
@@ -200,20 +222,31 @@ export function laufeDurch(d: Diagramm, eingaben: number[]): { ausgaben: string[
 // ── Aufbau aus einer Struktur (Beispiele, Programme) ────────────────────
 
 export type Struktur =
-  | { typ: "aktion" | "io"; text: string; code?: string }
+  | { typ: "aktion" | "io"; text: string; code?: string; erkl?: string }
   | { typ: "schleife"; frage: string; code?: string; pruefung: "vorher" | "nachher"; weiterBei: "ja" | "nein"; k: Struktur[] }
   | { typ: "wenn"; frage: string; code?: string; ja: Struktur[]; nein?: Struktur[] };
 
 const SPALTE = 230, ZEILE = 92;
+/** Abstände in der waagerechten Ansicht: Schritt nach rechts, Spalte nach unten */
+const QUER_SCHRITT = 230, QUER_SPALTE = 130;
+
+/** Kippt ein senkrecht gezeichnetes Diagramm in die waagerechte Ansicht (Ablauf von links nach rechts). */
+export function kippe(d: Diagramm): Diagramm {
+  return { ...d, knoten: d.knoten.map(k => ({ ...k, x: 110 + ((k.y - 40) * QUER_SCHRITT) / ZEILE, y: 60 + ((k.x - 110) * QUER_SPALTE) / SPALTE })) };
+}
+/** Umkehrung von `kippe`. */
+export function zurueckKippen(d: Diagramm): Diagramm {
+  return { ...d, knoten: d.knoten.map(k => ({ ...k, x: 110 + ((k.y - 60) * SPALTE) / QUER_SPALTE, y: 40 + ((k.x - 110) * ZEILE) / QUER_SCHRITT })) };
+}
 
 /** Ordnet eine Struktur von oben nach unten an. Neben-Zweige rücken eine Spalte nach rechts. */
 export function baue(teile: Struktur[], startText = "Start", endeText = "Ende"): Diagramm {
   const knoten: Knoten[] = [];
   const kanten: Kante[] = [];
   let n = 0, zeile = 0;
-  const neu = (typ: KnotenTyp, text: string, spalte: number, code?: string): string => {
+  const neu = (typ: KnotenTyp, text: string, spalte: number, code?: string, erkl?: string): string => {
     const id = `k${++n}`;
-    knoten.push({ id, typ, text, x: 110 + spalte * SPALTE, y: 40 + zeile++ * ZEILE, ...(code ? { code } : {}) });
+    knoten.push({ id, typ, text, x: 110 + spalte * SPALTE, y: 40 + zeile++ * ZEILE, ...(code ? { code } : {}), ...(erkl ? { erklaerung: erkl } : {}) });
     return id;
   };
   /** offene Ausgänge: Knoten + Marke, die mit dem nächsten Knoten verbunden werden */
@@ -226,7 +259,7 @@ export function baue(teile: Struktur[], startText = "Start", endeText = "Ende"):
   };
   const eins = (t: Struktur, offen: Offen, spalte: number): Offen => {
     if (t.typ !== "schleife" && t.typ !== "wenn") {
-      const id = neu(t.typ, t.text, spalte, t.code);
+      const id = neu(t.typ, t.text, spalte, t.code, t.erkl);
       verbinde(offen, id);
       return [{ von: id }];
     }
@@ -327,11 +360,11 @@ export const BEISPIELE: Beispiel[] = [
     ], nein: [{ typ: "io", text: "Münze zurückgeben" }] },
   ]),
   B("geburtstag", "Geburtstagsrechnung", "Aufgabe A2 vom Arbeitsblatt — dieses Diagramm rechnet wirklich. Probier es mit »Ablauf« aus!", [
-    { typ: "io", text: "Eingabe: Geburtstag T", code: "eingabe T" },
-    { typ: "io", text: "Eingabe: Monat M", code: "eingabe M" },
-    { typ: "aktion", text: "x = 3 · T + M", code: "x = 3*T + M" },
-    { typ: "aktion", text: "r = Rest von x : 7", code: "r = x mod 7" },
-    { typ: "io", text: "Ausgabe: r", code: "ausgabe r" },
+    { typ: "io", text: "Eingabe: Geburtstag T", code: "eingabe T", erkl: "Ein-/Ausgabe (Parallelogramm): Hier wird etwas von außen hereingegeben. T ist der Tag deines Geburtstags, z. B. 14 beim 14. Mai." },
+    { typ: "io", text: "Eingabe: Monat M", code: "eingabe M", erkl: "Zweite Eingabe: M ist die Zahl des aktuellen Monats — Januar = 1, Oktober = 10." },
+    { typ: "aktion", text: "x = 3 · T + M", code: "x = 3*T + M", erkl: "Anweisung (Rechteck): Erst das Dreifache des Tages, dann den Monat dazu. Punkt vor Strich! Bei T = 14 und M = 10: 3 · 14 + 10 = 42 + 10 = 52." },
+    { typ: "aktion", text: "r = Rest von x : 7", code: "r = x mod 7", erkl: "Teile x durch 7 und merke dir nur, was übrig bleibt (den Rest). 52 : 7 = 7 Rest 3, denn 7 · 7 = 49 und 52 − 49 = 3. Der Rest ist immer kleiner als 7." },
+    { typ: "io", text: "Ausgabe: r", code: "ausgabe r", erkl: "Ausgabe (Parallelogramm): Das Ergebnis wird hinausgegeben — hier der Rest r." },
   ]),
   B("lexikon", "Im Lexikon nachschlagen", "Die Hausaufgabe vom Arbeitsblatt: Wie findet man »Stracciatella«?", [
     { typ: "aktion", text: "Lexikon in der Mitte aufschlagen" },
@@ -349,7 +382,7 @@ export const BEISPIELE: Beispiel[] = [
     { typ: "aktion", text: "Mund ausspülen" },
   ]),
   B("teiler", "Gerade oder ungerade?", "Eine Entscheidung mit Rechnung: Bleibt beim Teilen durch 2 ein Rest?", [
-    { typ: "io", text: "Eingabe: Zahl z", code: "eingabe z" },
+    { typ: "io", text: "Eingabe: Zahl z", code: "eingabe z", erkl: "Gib irgendeine ganze Zahl ein." },
     { typ: "wenn", frage: "z mod 2 = 0?", code: "z mod 2 = 0", ja: [{ typ: "io", text: "Ausgabe: gerade" }], nein: [{ typ: "io", text: "Ausgabe: ungerade" }] },
   ]),
 ];
@@ -393,7 +426,7 @@ export const AUFGABEN: FlussAufgabe[] = [
   },
   {
     id: "verfolgen", titel: "4 · Was kommt heraus?", art: "verfolgen", beispiel: "geburtstag", eingaben: [14, 10], antwort: "3",
-    text: "Jemand hat am 14. Geburtstag, und es ist gerade Oktober (Monat 10). Was gibt das Diagramm aus? Rechne selbst und prüfe dann mit »Ablauf«.",
+    text: "Jemand hat am 14. Geburtstag, und es ist gerade Oktober (Monat 10). Was gibt das Diagramm aus? Geh die Kästen von oben nach unten durch — die Notizen rechts erklären jeden Schritt. Rechne selbst und prüfe dann mit »Ablauf«: Dort steht jeder Schritt mit eingesetzten Zahlen.",
   },
   {
     id: "frage", titel: "5 · Ist das ein Algorithmus?", art: "frage", beispiel: "geburtstag",

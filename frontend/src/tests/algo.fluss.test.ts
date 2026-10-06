@@ -33,6 +33,23 @@ describe("Beispiele", () => {
   });
 });
 
+describe("Protokoll und Kippen", () => {
+  it("schreibt Rechnungen mit eingesetzten Zahlen mit", async () => {
+    const { startStand, weiter, brauchtAntwort } = await import("@/lib/algo/fluss");
+    const d = beispiel("geburtstag")!.diagramm;
+    let st = startStand(d);
+    const ein = [14, 10];
+    while (!st.fertig) st = weiter(d, st, brauchtAntwort(d, st)?.art === "zahl" ? ein.shift() : undefined);
+    expect(st.protokoll).toEqual(["Eingabe: T = 14", "Eingabe: M = 10", "x = 3 · 14 + 10 = 52", "r = 52 mod 7 = 3", "Ausgabe: r = 3"]);
+  });
+  it("kippt hin und zurück ohne Verlust", async () => {
+    const { kippe, zurueckKippen } = await import("@/lib/algo/fluss");
+    const d = beispiel("lexikon")!.diagramm;
+    const z = zurueckKippen(kippe(d));
+    z.knoten.forEach((k, i) => { expect(k.x).toBeCloseTo(d.knoten[i].x); expect(k.y).toBeCloseTo(d.knoten[i].y); });
+  });
+});
+
 describe("Prüfung", () => {
   it("findet fehlende Pfeile und Endlosschleifen", () => {
     const d = baue([{ typ: "aktion", text: "A" }]);

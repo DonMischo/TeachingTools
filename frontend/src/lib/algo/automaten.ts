@@ -24,12 +24,18 @@ export interface Handlung {
   setzt?: string[];
   nimmt?: string[];
   fehler?: AutomatFehler;
+  /** nimmt eine Münze dieses Werts (Cent) in die Hand; "preis" = passend zum Automaten */
+  muenze?: number | "preis";
+  /** wirft die Münze in der Hand ein — der Automat prüft ihren Wert gegen seinen Preis */
+  prueftMuenze?: boolean;
 }
 
 export interface Variante {
   id: string;
   name: string;
   text: string;
+  /** Preis in Cent, falls der Automat Münzen prüft */
+  preis?: number;
   ersetze?: Record<string, Partial<Handlung>>;
 }
 
@@ -75,11 +81,15 @@ export const AUTOMATEN: Automat[] = [
     ziel: ["hand"],
     zielFehlt: { hand: "Der Kaugummi ist noch nicht in deiner Hand." },
     handlungen: [
-      { id: "k-muenze", text: "Nimm eine 20-Cent-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 20-Cent-Münze heraus.", setzt: ["muenze"] },
-      { id: "k-preis", text: "Lies den Preis ab und nimm passende Münzen aus dem Portemonnaie.", sagt: "Auf dem Schild steht der Preis — ich nehme genau das passende Geld.", teil: "schild", setzt: ["muenze"] },
+      { id: "k-muenze", text: "Nimm eine 20-Cent-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 20-Cent-Münze heraus.", setzt: ["muenze"], muenze: 20 },
+      { id: "k-m50", text: "Nimm eine 50-Cent-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 50-Cent-Münze heraus.", setzt: ["muenze"], muenze: 50 },
+      { id: "k-m10", text: "Nimm eine 10-Cent-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 10-Cent-Münze heraus.", setzt: ["muenze"], muenze: 10 },
+      { id: "k-m100", text: "Nimm eine 1-Euro-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 1-Euro-Münze heraus.", setzt: ["muenze"], muenze: 100 },
+      { id: "k-m200", text: "Nimm eine 2-Euro-Münze aus dem Portemonnaie.", sagt: "Ich nehme eine 2-Euro-Münze heraus.", setzt: ["muenze"], muenze: 200 },
+      { id: "k-preis", text: "Lies den Preis ab und nimm eine passende Münze aus dem Portemonnaie.", sagt: "Auf dem Schild steht der Preis — ich nehme genau die passende Münze.", teil: "schild", setzt: ["muenze"], muenze: "preis" },
       {
         id: "k-einwerfen", text: "Steck die Münze in den Münzschlitz.", sagt: "Ich stecke die Münze in den Schlitz. Klick!", teil: "schlitz",
-        braucht: ["muenze"], nimmt: ["muenze"], setzt: ["drin"],
+        braucht: ["muenze"], nimmt: ["muenze"], setzt: ["drin"], prueftMuenze: true,
         ohne: { muenze: ausfuehrbar("Ich habe gar keine Münze in der Hand!") },
       },
       {
@@ -103,10 +113,9 @@ export const AUTOMATEN: Automat[] = [
       { id: "k-schuetteln", text: "Schüttle den Automaten kräftig.", sagt: "Ich rüttle am Automaten …", fehler: ausfuehrbar("Der Automat hängt fest an der Wand — so geht das nicht.") },
     ],
     varianten: [
-      { id: "a", name: "Automat A (20 Cent)", text: "Ein Kaugummi kostet 20 Cent." },
+      { id: "a", name: "Automat A (20 Cent)", text: "Ein Kaugummi kostet 20 Cent. Der Schlitz nimmt nur 20-Cent-Münzen.", preis: 20 },
       {
-        id: "b", name: "Automat B (50 Cent)", text: "Ein anderer Automat: Hier kostet ein Kaugummi 50 Cent.",
-        ersetze: { "k-muenze": { fehler: { art: "allgemein", text: "Hier kostet es 50 Cent — mit 20 Cent dreht sich nichts. Der Schritt passt nur zu einem einzigen Automaten." } } },
+        id: "b", name: "Automat B (50 Cent)", text: "Ein anderer Automat: Hier kostet ein Kaugummi 50 Cent, der Schlitz nimmt nur 50-Cent-Münzen.", preis: 50,
       },
     ],
     teile: [
@@ -323,11 +332,24 @@ export function handlungenIn(a: Automat, varianteId: string): Handlung[] {
   return a.handlungen.map(h => (v?.ersetze?.[h.id] ? { ...h, ...v.ersetze[h.id] } : h));
 }
 
+const geld = (c: number) => (c >= 100 ? `${c / 100}-Euro` : `${c}-Cent`);
+
+/** Warum die Münze nicht passt: am anderen Automaten ginge sie (allgemein), sonst gar nicht (ausführbar). */
+function muenzFehler(a: Automat, wert: number, preis: number): AutomatFehler {
+  if (a.varianten.some(v => v.preis === wert)) {
+    return { art: "allgemein", text: `Hier kostet es ${preis} Cent — die ${geld(wert)}-Münze passt nur am anderen Automaten. Der Schritt gilt nicht für jeden Automaten.` };
+  }
+  if (wert < preis) return ausfuehrbar(`Die ${geld(wert)}-Münze ist zu wenig — sie fällt unten wieder heraus.`);
+  return ausfuehrbar(`Die ${geld(wert)}-Münze passt gar nicht in den Schlitz.`);
+}
+
 /** Arbeitet die gewählten Karten wörtlich ab — bis zum ersten Fehler. */
 export function fuehreAutomatAus(a: Automat, varianteId: string, ids: string[]): { schritte: AusfuehrSchritt[]; ok: boolean } {
   const alle = handlungenIn(a, varianteId);
   const schritte: AusfuehrSchritt[] = [];
+  const preis = a.varianten.find(v => v.id === varianteId)?.preis;
   let t: string[] = [];
+  let wert: number | null = null;
   for (const id of ids) {
     const h = alle.find(x => x.id === id);
     if (!h) continue;
@@ -340,6 +362,11 @@ export function fuehreAutomatAus(a: Automat, varianteId: string, ids: string[]):
       schritte.push({ art: "fehler", handlung: h, tatsachen: t, fehler: h.ohne?.[fehlt] ?? ausfuehrbar("Das geht jetzt noch nicht.") });
       return { schritte, ok: false };
     }
+    if (h.prueftMuenze && preis !== undefined && wert !== preis) {
+      schritte.push({ art: "fehler", handlung: h, tatsachen: t, fehler: muenzFehler(a, wert ?? 0, preis) });
+      return { schritte, ok: false };
+    }
+    if (h.muenze !== undefined) wert = h.muenze === "preis" ? (preis ?? 0) : h.muenze;
     t = [...t.filter(x => !(h.nimmt ?? []).includes(x)), ...(h.setzt ?? []).filter(x => !t.includes(x))];
     schritte.push({ art: "ok", handlung: h, tatsachen: t });
   }

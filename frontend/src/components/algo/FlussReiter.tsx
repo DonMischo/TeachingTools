@@ -8,7 +8,7 @@ import {
   AUFGABEN, BEISPIELE, beispiel, brauchtAntwort, pruefeBau, startStand, weiter,
   type AblaufStand, type Diagramm, type FlussAufgabe, type KnotenTyp,
 } from "@/lib/algo/fluss";
-import FlussEditor, { Form } from "./FlussEditor";
+import FlussEditor, { Form, FormKnopf } from "./FlussEditor";
 
 type Auswahl = { art: "aufgabe"; id: string } | { art: "beispiel"; id: string } | { art: "frei" };
 
@@ -125,6 +125,11 @@ function AblaufLeiste({ a, d }: { a: ReturnType<typeof useAblauf>; d: Diagramm }
         <div className="flex flex-wrap gap-1.5">{Object.entries(a.s.werte).map(([n, v]) => <span key={n} className="chip font-mono">{n} = {Math.round(v * 1000) / 1000}</span>)}</div>
       )}
       {a.s && a.s.ausgaben.length > 0 && <div>📤 Ausgabe: <b>{a.s.ausgaben.join(" · ")}</b></div>}
+      {a.s && a.s.protokoll.length > 0 && (
+        <ol className="text-xs font-mono bg-page border border-line rounded-lg p-2 list-decimal pl-6 max-h-40 overflow-auto">
+          {a.s.protokoll.map((z, i) => <li key={i}>{z}</li>)}
+        </ol>
+      )}
     </div>
   );
 }
@@ -228,8 +233,8 @@ function FormenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => voi
         <div className="card p-3 flex flex-wrap items-center gap-2 text-sm">
           <span>Form für »<b>{k.text}</b>«:</span>
           {FORMEN.map(f => (
-            <button key={f.form} type="button" className="btn-secondary !py-1"
-              onClick={() => { setFormen({ ...formen, [k.id]: f.form }); setGeprueft(false); setWahl(null); }}>{f.text}</button>
+            <FormKnopf key={f.form} typ={f.form} text={f.text}
+              onClick={() => { setFormen({ ...formen, [k.id]: f.form }); setGeprueft(false); setWahl(null); }} />
           ))}
         </div>
       )}
@@ -260,8 +265,7 @@ function VerbindenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => 
   };
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-muted">Kasten anklicken → blauer Knopf ➜ → Zielkasten anklicken. Bei der Raute wird der erste Pfeil »ja«, der zweite »nein« (anklicken zum Ändern).</p>
-      <FlussEditor d={d} onChange={x => { setD(x); setErgebnis(null); }} modus="verbinden" />
+      <FlussEditor d={d} onChange={x => { setD(x); setErgebnis(null); }} modus="verbinden" pfeilStart />
       <div className="flex gap-2 items-center flex-wrap">
         <button type="button" className="btn-primary" onClick={pruefen}>Prüfen</button>
         {ergebnis && (ergebnis.falsch || ergebnis.fehlt
@@ -306,7 +310,7 @@ function VerfolgenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => 
         {ok === false && <span className="text-bad">Noch nicht. Lass das Diagramm mit »Ablauf« rechnen und gib dabei {a.eingaben!.join(" und ")} ein.</span>}
       </form>
       <AblaufLeiste a={ablauf} d={d} />
-      <FlussEditor d={d} modus="lesen" aktiv={ablauf.s?.bei} />
+      <FlussEditor d={d} modus="lesen" aktiv={ablauf.s?.bei} kommentare />
     </div>
   );
 }

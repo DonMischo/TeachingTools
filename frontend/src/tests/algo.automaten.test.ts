@@ -9,6 +9,20 @@ const LOESUNG: Record<string, { allgemein: string[]; speziell: [string, string] 
   kakao: { allgemein: ["c-becher", "c-taste", "c-zahlen", "c-warten", "c-nehmen"], speziell: ["c-zahlen", "c-karte"] },
 };
 
+describe("Münzen am Kaugummiautomaten", () => {
+  const a = AUTOMATEN.find(x => x.id === "kaugummi")!;
+  const mit = (m: string) => [m, "k-einwerfen", "k-drehen", "k-klappe", "k-nehmen"];
+  it("50 Cent passt an B, ist an A nicht allgemein gültig", () => {
+    expect(fuehreAutomatAus(a, "b", mit("k-m50")).ok).toBe(true);
+    expect(fuehreAutomatAus(a, "a", mit("k-m50")).schritte.at(-1)).toMatchObject({ fehler: { art: "allgemein" } });
+  });
+  it("Ablenker-Münzen sind nirgends ausführbar", () => {
+    for (const m of ["k-m10", "k-m100", "k-m200"]) for (const v of ["a", "b"]) {
+      expect(fuehreAutomatAus(a, v, mit(m)).schritte.at(-1)).toMatchObject({ fehler: { art: "ausfuehrbar" } });
+    }
+  });
+});
+
 describe("Automaten", () => {
   for (const a of AUTOMATEN) {
     const l = LOESUNG[a.id];
