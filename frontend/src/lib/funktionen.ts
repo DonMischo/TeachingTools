@@ -432,6 +432,77 @@ export function tableRows(n: Node, from: number, to: number, step: number): Row[
   return rows;
 }
 
+// ── Schnittpunkte ────────────────────────────────────────────────────────────
+
+/**
+ * Wo schneiden oder berühren sich zwei Graphen zwischen x0 und x1?
+ *
+ * Abgetastet wird die Differenz a − b. Ein Vorzeichenwechsel wird per
+ * Bisektion eingegrenzt — und nur behalten, wenn die Differenz dort wirklich
+ * nahe 0 ist; sonst war es eine Polstelle (1/x springt von −∞ nach +∞).
+ * Berührpunkte (x² und 2x − 1) wechseln das Vorzeichen nicht: dort hat |a − b|
+ * ein kleines Minimum, das mit dem Goldenen Schnitt nachgeschärft wird.
+ * Liegen fast alle Stützstellen auf 0, sind es dieselben Funktionen — dann
+ * gibt es keine einzelnen Punkte.
+ */
+export function intersections(a: Node, b: Node, x0: number, x1: number, samples = 800): { x: number; y: number }[] {
+  if (!(x1 > x0)) return [];
+  const d = (x: number) => {
+    const ya = evalAt(a, x), yb = evalAt(b, x);
+    return ya === null || yb === null ? null : ya - yb;
+  };
+  const h = (x1 - x0) / samples;
+  const xs: number[] = [], ds: (number | null)[] = [];
+  for (let i = 0; i <= samples; i++) { xs.push(x0 + i * h); ds.push(d(x0 + i * h)); }
+  if (ds.filter(v => v !== null && Math.abs(v) < 1e-12).length > samples / 2) return [];
+
+  const tol = (x: number) => 1e-7 * (1 + Math.abs(evalAt(a, x) ?? 0));
+  const found: number[] = [];
+  const add = (x: number) => {
+    const v = d(x);
+    if (v !== null && Math.abs(v) < tol(x) && !found.some(f => Math.abs(f - x) < h / 2)) found.push(x);
+  };
+
+  for (let i = 0; i < samples; i++) {
+    const da = ds[i], db = ds[i + 1];
+    if (da === null || db === null) continue;
+    if (da === 0) { add(xs[i]); continue; }
+    if (db === 0) continue;                     // kommt im nächsten Schritt als da === 0
+    if (Math.sign(da) !== Math.sign(db)) {
+      let lo = xs[i], hi = xs[i + 1], dlo = da;
+      for (let k = 0; k < 80; k++) {
+        const mid = (lo + hi) / 2, dm = d(mid);
+        if (dm === null) break;
+        if (Math.sign(dm) === Math.sign(dlo)) { lo = mid; dlo = dm; } else hi = mid;
+      }
+      add((lo + hi) / 2);
+    }
+  }
+  if (ds[samples] === 0) add(xs[samples]);
+
+  // Berührpunkte: lokales Minimum von |d| ohne Vorzeichenwechsel.
+  for (let i = 1; i < samples; i++) {
+    const [p, c, n] = [ds[i - 1], ds[i], ds[i + 1]];
+    if (p === null || c === null || n === null || c === 0) continue;
+    if (Math.sign(p) !== Math.sign(c) || Math.sign(c) !== Math.sign(n)) continue;
+    if (!(Math.abs(c) <= Math.abs(p) && Math.abs(c) <= Math.abs(n))) continue;
+    let lo = xs[i - 1], hi = xs[i + 1];
+    const g = (Math.sqrt(5) - 1) / 2;
+    for (let k = 0; k < 100; k++) {
+      const m1 = hi - g * (hi - lo), m2 = lo + g * (hi - lo);
+      if (Math.abs(d(m1) ?? Infinity) < Math.abs(d(m2) ?? Infinity)) hi = m2; else lo = m1;
+    }
+    add((lo + hi) / 2);
+  }
+
+  return found
+    .sort((p, q) => p - q)
+    .map(x => {
+      const r = Math.round(x * 1e9) / 1e9;
+      return { x: r, y: evalAt(a, r) ?? evalAt(a, x)! };
+    });
+}
+
 // ── Graph antasten ───────────────────────────────────────────────────────────
 
 /**

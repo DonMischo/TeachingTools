@@ -176,6 +176,8 @@ simulationen:
       - Formelsatz und Rechenweg je Punkt
       - Normal- und Scheitelpunktform, π-Achsen für Winkelfunktionen
       - Zoom, Achsen einzeln dehnen, Verschieben, Vorlagen würfeln
+      - Mehrere Funktionen (f, g, h …) mit Auswahl für die Wertetabelle, Schnittpunkte markiert
+      - Graph als SVG, PNG oder PDF exportieren
   - id: ki
     name: KI-Werkstatt
     kann:

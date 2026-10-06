@@ -13,12 +13,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { text, zahl, type Vorgabe } from "@/lib/vorgabe";
 import {
-  START, TEMPLATES, axisStep, evalAt, fmt, fmtPi, hasX, parseFunction, piAxisStep,
+  START, TEMPLATES, axisStep, evalAt, fmt, fmtPi, hasX, intersections, parseFunction, piAxisStep,
   fmtPiLatex, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
   substitutedLatex, substitutionSteps, tableRows, toLatex, vertex, vertexForm, xAtPixel,
   zoomViewport, type Instance, type Node, type Row, type Viewport,
 } from "@/lib/funktionen";
 import { Tex } from "@/components/Tex";
+import { exportPdf, exportPng, exportSvg } from "@/lib/svgExport";
 
 /* ── Zeichenfläche ─────────────────────────────────────────────────────────── */
 
@@ -32,11 +33,13 @@ const SAMPLES = 600;                 // Auflösung der Kurve
  * `round` legt die Grenzen auf ganze Zahlen — dann trifft das Einer-Raster die
  * Ränder und man kann Kästchen zählen. Im π-Modus bleibt es krumm.
  */
-function autoY(node: Node, x0: number, x1: number, round: boolean, tight = false): { y0: number; y1: number } {
+function autoY(nodes: Node[], x0: number, x1: number, round: boolean, tight = false): { y0: number; y1: number } {
   const ys: number[] = [];
-  for (let i = 0; i <= 200; i++) {
-    const y = evalAt(node, x0 + ((x1 - x0) * i) / 200);
-    if (y !== null && Math.abs(y) < 1e6) ys.push(y);
+  for (const node of nodes) {
+    for (let i = 0; i <= 200; i++) {
+      const y = evalAt(node, x0 + ((x1 - x0) * i) / 200);
+      if (y !== null && Math.abs(y) < 1e6) ys.push(y);
+    }
   }
   if (!ys.length) return { y0: -5, y1: 5 };
   ys.sort((a, b) => a - b);
@@ -60,6 +63,15 @@ function autoY(node: Node, x0: number, x1: number, round: boolean, tight = false
 
 /** Farbe für die Unbekannte und für jede Zahl, die an ihre Stelle getreten ist. */
 const X_COLOR = "#8b5cf6";
+
+/** Weitere Funktionen neben f — Name und Kurvenfarbe. f bleibt im Akzent. */
+const WEITERE = ["g", "h", "k", "p", "q"];
+const FARBE: Record<string, string> = {
+  f: "var(--accent)", g: "#2563eb", h: "#16a34a", k: "#db2777", p: "#0891b2", q: "#9333ea",
+};
+
+/** Getippter Term, lesbarer gemacht — für Legende und PDF-Titel. */
+const kurz = (src: string) => src.replace(/\^2\b/g, "²").replace(/\^3\b/g, "³").replace(/\*/g, "·");
 
 function Rechenweg({ node, x, fmtValue, onClose }: {
   node: Node; x: number; fmtValue: (v: number) => string; onClose: () => void;
@@ -153,8 +165,12 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
   const [pi, setPi] = useState(anfang.pi);
   const [tpl, setTpl] = useState<string | null>(null);
   const [hoverX, setHoverX] = useState<number | null>(null);   // vom Graphen
+  const [hoverS, setHoverS] = useState<number | null>(null);   // eingerasteter Schnittpunkt
   const [hoverRow, setHoverRow] = useState<number | null>(null); // von der Tabelle
   const [wegX, setWegX] = useState<number | null>(null);
+  // Weitere Funktionen (g, h, …) und welche davon in der Wertetabelle stehen.
+  const [weitere, setWeitere] = useState<{ name: string; src: string }[]>([]);
+  const [inTabelle, setInTabelle] = useState<string[]>(["f"]);
   const [tabelleOffen, setTabelleOffen] = useState(true);
   const [schritteOffen, setSchritteOffen] = useState(true);
   // null = automatisch einpassen. Sobald jemand zoomt, steht hier sein Ausschnitt.
@@ -186,15 +202,30 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     setPi(inst.pi);
     setTpl(key);
     setHoverRow(null);
-    setHoverX(null);
+    setHoverX(null); setHoverS(null);
   }
 
   const parsed = useMemo(() => parseFunction(src), [src]);
   const node = parsed.ok ? parsed.node : null;
 
+  /** Alle Funktionen, f zuerst. `node` ist null, solange der Term nicht stimmt. */
+  const funcs = useMemo(() => [
+    { name: "f", src, parsed, node },
+    ...weitere.map(w => {
+      const r = parseFunction(w.src);
+      return { name: w.name, src: w.src, parsed: r, node: r.ok ? r.node : null };
+    }),
+  ], [src, parsed, node, weitere]);
+  const drawn = funcs.filter((f): f is typeof f & { node: Node } => f.node !== null);
+  const selected = drawn.filter(f => inTabelle.includes(f.name));
+  // Genau eine Funktion in der Tabelle: volle Tabelle mit Punkt und Rechnung.
+  // Mehrere: nur die Werte nebeneinander.
+  const single = selected.length === 1 ? selected[0] : null;
+  const act = single?.node ?? selected[0]?.node ?? node;
+
   const rows: Row[] = useMemo(
-    () => (node ? tableRows(node, from * unit, to * unit, step * unit) : []),
-    [node, from, to, step, unit],
+    () => (act ? tableRows(act, from * unit, to * unit, step * unit) : []),
+    [act, from, to, step, unit],
   );
 
   const baseView: Viewport = useMemo(() => {
@@ -202,8 +233,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     const a = from * unit, b = to * unit;
     const pad = Math.max((b - a) * 0.1, 0.5 * unit);
     const x0 = a - pad, x1 = b + pad;
-    const roh: Viewport = node
-      ? { x0, x1, ...autoY(node, x0, x1, !pi, !pi) }
+    const roh: Viewport = drawn.length
+      ? { x0, x1, ...autoY(drawn.map(f => f.node), x0, x1, !pi, !pi) }
       : { x0, x1, y0: -5, y1: 5 };
     // Ungestreckt sind die Kästchen quadratisch: ein Schritt nach rechts ist
     // so lang wie ein Schritt nach oben. Wer das nicht will, dehnt eine Achse
@@ -213,7 +244,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     // y-Schritt eine 1 — die sind nicht vergleichbar, Quadrate hätten keine
     // Bedeutung.
     return pi ? roh : squareViewport(roh, PLOT_W, PLOT_H);
-  }, [node, from, to, unit, pi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funcs, from, to, unit, pi]);
 
   const view = zoom ?? baseView;
 
@@ -243,9 +275,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
   const sx = (x: number) => M + ((x - view.x0) / (view.x1 - view.x0)) * (W - 2 * M);
   const sy = (y: number) => H - M - ((y - view.y0) / (view.y1 - view.y0)) * (H - 2 * M);
 
-  /** Die Kurve, an Lücken und Polstellen in Teilstücke zerlegt. */
-  const paths = useMemo(() => {
-    if (!node) return [];
+  /** Eine Kurve, an Lücken und Polstellen in Teilstücke zerlegt. */
+  const pathsOf = (node: Node) => {
     const out: string[] = [];
     let cur: string[] = [];
     let prevY: number | null = null;
@@ -264,8 +295,26 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     }
     if (cur.length > 1) out.push(cur.join(" "));
     return out;
+  };
+  const curves = useMemo(
+    () => drawn.map(f => ({ name: f.name, paths: pathsOf(f.node) })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node, view]);
+    [funcs, view],
+  );
+
+  /** Schnittpunkte je Paar, im sichtbaren Ausschnitt, von links nach rechts. */
+  const schnitte = useMemo(() => {
+    const out: { x: number; y: number; a: string; b: string }[] = [];
+    for (let i = 0; i < drawn.length; i++) {
+      for (let j = i + 1; j < drawn.length; j++) {
+        for (const p of intersections(drawn[i].node, drawn[j].node, view.x0, view.x1)) {
+          if (p.y >= view.y0 && p.y <= view.y1) out.push({ ...p, a: drawn[i].name, b: drawn[j].name });
+        }
+      }
+    }
+    return out.sort((p, q) => p.x - q.x);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funcs, view]);
 
   // Einer-Raster, wo es lesbar bleibt — bei π-Achsen Vielfache von π.
   //
@@ -291,12 +340,12 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     drag.current = { x: e.clientX, y: e.clientY, view, moved: false };
     swallowClick.current = false;
     setDragging(true);
-    setHoverX(null);
+    setHoverX(null); setHoverS(null);
   }
 
   function onMove(e: React.PointerEvent<SVGSVGElement>) {
     const svg = svgRef.current;
-    if (!svg || !node) return;
+    if (!svg || !act) return;
     const r = svg.getBoundingClientRect();
     if (!(r.width > 0)) return;                       // noch nicht gelayoutet
 
@@ -314,11 +363,23 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
 
     const px = ((e.clientX - r.left) / r.width) * W;  // Bildschirm → viewBox
     const py = ((e.clientY - r.top) / r.height) * H;
+    // Schnittpunkte zuerst: liegt einer im Einrastabstand, gewinnt er auch
+    // gegen einen näheren Tabellenpunkt — ihn genau zu treffen ist der Zweck.
+    let sBest = SNAP_PX, sHit: number | null = null;
+    schnitte.forEach((p, i) => {
+      const dist = Math.hypot(sx(p.x) - px, sy(p.y) - py);
+      if (dist < sBest) { sBest = dist; sHit = i; }
+    });
+    setHoverS(sHit);
+    if (sHit !== null) { setHoverX(schnitte[sHit].x); return; }
     // Nah an einem Tabellenpunkt rastet der Zeiger dort ein — so trifft man
     // die glatten Werte, statt x = 1,97 zu erwischen.
     let snap: number | null = null;
     let best = SNAP_PX;
-    for (const p of rows) {
+    const punkte = single
+      ? rows
+      : selected.flatMap(f => rows.map(r => ({ x: r.x, y: evalAt(f.node, r.x) })));
+    for (const p of punkte) {
       if (p.y === null) continue;
       const dist = Math.hypot(sx(p.x) - px, sy(p.y) - py);
       if (dist < best) { best = dist; snap = p.x; }
@@ -334,17 +395,19 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
     setDragging(false);
   }
 
-  // Punkt, der hervorgehoben wird: Tabelle hat Vorrang vor dem Graphen.
-  const marked = hoverRow != null && rows[hoverRow]
-    ? rows[hoverRow]
-    : hoverX != null && node
-      ? { x: hoverX, y: evalAt(node, hoverX) }
-      : null;
+  // Stelle, die hervorgehoben wird: Tabelle hat Vorrang vor dem Graphen.
+  // Markiert wird sie auf jeder Funktion, die in der Tabelle steht.
+  const markX = hoverRow != null && rows[hoverRow] ? rows[hoverRow].x : hoverX;
+  const markFuncs = selected.length ? selected : drawn.slice(0, 1);
+  const sMark = hoverRow == null && hoverS != null ? schnitte[hoverS] : undefined;
+  const marks = sMark
+    ? [{ x: sMark.x, y: sMark.y }]
+    : markX == null ? [] : markFuncs.map(f => ({ x: markX, y: evalAt(f.node, markX) }));
 
   /** Die Zeilen der quer gelegten Tabelle: je Größe eine. */
   const TABELLE: { key: string; label: string; zelle: (r: Row) => ReactNode }[] = [
     { key: "x", label: "x", zelle: r => <span className="font-bold" style={{ color: X_COLOR }}>{fmtX(r.x)}</span> },
-    { key: "y", label: "f(x)", zelle: r => (r.y === null ? "—" : fmt(r.y)) },
+    { key: "y", label: `${single?.name ?? "f"}(x)`, zelle: r => (r.y === null ? "—" : fmt(r.y)) },
     {
       key: "punkt", label: "Punkt",
       // Dieselbe Schreibweise wie am Graphen — so ist die Tabellenspalte und
@@ -360,7 +423,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
       key: "rechnung", label: "Rechnung",
       // Der Term mit eingesetztem x, in derselben Farbe wie die x-Zeile:
       // es ist überall dieselbe Zahl.
-      zelle: r => (node ? <Tex tex={substitutedLatex(node, r.x, texX)} /> : null),
+      zelle: r => (act ? <Tex tex={substitutedLatex(act, r.x, texX)} /> : null),
     },
     {
       key: "weg", label: "",
@@ -390,6 +453,49 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
   const reset = () => {
     setSrc(anfang.src); setFrom(anfang.from); setTo(anfang.to);
     setStep(anfang.step); setPi(anfang.pi); setTpl(null); setZoom(null);
+    setWeitere([]); setInTabelle(["f"]);
+  };
+
+  const setTerm = (name: string, term: string) =>
+    name === "f" ? setSrc(term) : setWeitere(ws => ws.map(w => (w.name === name ? { ...w, src: term } : w)));
+
+  /** Vorlage für eine Funktion. Bei f samt Bereich wie bisher; bei g, h … nur
+   *  der Term — der Bereich gehört allen gemeinsam. */
+  const vorlage = (name: string, key: string) => {
+    if (name === "f") return useTemplate(key);
+    const t = TEMPLATES.find(x => x.key === key);
+    if (!t) return;
+    setTerm(name, t.build().src);
+    setTpl(key);
+  };
+
+  const neueFunktion = () => {
+    const name = WEITERE.find(n => !weitere.some(w => w.name === n));
+    if (name) setWeitere(ws => [...ws, { name, src: "" }]);
+  };
+  const entferne = (name: string) => {
+    setWeitere(ws => ws.filter(w => w.name !== name));
+    setInTabelle(t => t.filter(n => n !== name));
+  };
+  const umschalten = (name: string) =>
+    setInTabelle(t => (t.includes(name) ? t.filter(n => n !== name) : [...t, name]));
+
+  // Einzelne Zeilen der Tabelle bei mehreren Funktionen: x und je Funktion die Werte.
+  const mehrfach = selected.length > 1;
+  const exportName = "funktionen";
+  const exportTitel = drawn.map(f => `${f.name}(x) = ${kurz(f.src)}`).join("     ");
+  const [exportLaeuft, setExportLaeuft] = useState(false);
+  const exportiere = async (art: "svg" | "png" | "pdf") => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    setExportLaeuft(true);
+    try {
+      if (art === "svg") exportSvg(svg, exportName);
+      else if (art === "png") await exportPng(svg, exportName);
+      else await exportPdf(svg, exportName, exportTitel);
+    } finally {
+      setExportLaeuft(false);
+    }
   };
 
   return (
@@ -414,45 +520,71 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
 
       {/* Term */}
       <div className="flex flex-col gap-2">
-        <label className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono font-bold text-lg">f(x) =</span>
-          <input
-            value={src}
-            onChange={e => setSrc(e.target.value)}
-            readOnly={festerTerm !== undefined}
-            spellCheck={false}
-            aria-label="Funktionsterm"
-            className="flex-1 min-w-[16rem] bg-page border border-line rounded-lg px-3 py-2 font-mono text-lg"
-          />
-        </label>
-        {/* Der Term, wie er in einem Heft stünde. Die Eingabe bleibt Text —
-            getippt wird »x^2«, gesetzt erscheint es hochgestellt. */}
-        {parsed.ok && (
-          <div className="rounded-xl bg-page border border-line px-4 py-3 overflow-x-auto">
-            <Tex tex={`f(x) = ${toLatex(node!)}`} className="text-2xl" />
+        {/* Eine Zeile je Funktion: Name, Eingabe, Vorlage (und ✕ bei g, h …). */}
+        {funcs.map(f => (
+          <div key={f.name} className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono font-bold text-lg"
+                style={f.name !== "f" || weitere.length ? { color: FARBE[f.name] } : undefined}>
+                {f.name}(x) =
+              </span>
+              <input
+                value={f.src}
+                onChange={e => setTerm(f.name, e.target.value)}
+                readOnly={f.name === "f" && festerTerm !== undefined}
+                spellCheck={false}
+                autoFocus={f.name !== "f" && f.src === ""}
+                placeholder={f.name === "f" ? undefined : "z. B. x^2 - 1"}
+                aria-label={f.name === "f" ? "Funktionsterm" : `Funktionsterm ${f.name}`}
+                className="flex-1 min-w-[16rem] bg-page border border-line rounded-lg px-3 py-2 font-mono text-lg"
+              />
+              {/* Wert bleibt leer: so löst auch dieselbe Vorlage nochmal aus und würfelt neu. */}
+              {festerTerm === undefined && (
+                <select
+                  value=""
+                  onChange={e => vorlage(f.name, e.target.value)}
+                  aria-label={`Vorlage für ${f.name}`}
+                  title="Vorlage einsetzen — dieselbe nochmal wählen würfelt neue Zahlen"
+                  className="bg-page border border-line rounded-lg px-2 py-2.5 text-sm hover:border-accent"
+                >
+                  <option value="" disabled>Vorlage …</option>
+                  {TEMPLATES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                </select>
+              )}
+              {f.name !== "f" ? (
+                <button onClick={() => entferne(f.name)} title={`${f.name} entfernen`} aria-label={`${f.name} entfernen`}
+                  className="text-sm text-muted hover:text-bad px-2">✕</button>
+              ) : weitere.length > 0 && (
+                // Platzhalter in ✕-Breite, damit Feld und Menü mit g, h … bündig stehen
+                <span aria-hidden className="text-sm px-2 invisible">✕</span>
+              )}
+            </div>
+            {f.src.trim() === "" && f.name !== "f" ? null
+              : !f.parsed.ok
+                ? <p className="text-sm text-red-500">{f.parsed.error}</p>
+                : !hasX(f.parsed.node)
+                  ? <p className="text-sm text-amber-500">In dem Term steht kein x — der Graph ist eine waagerechte Linie.</p>
+                  : null}
+          </div>
+        ))}
+        {festerTerm === undefined && weitere.length < WEITERE.length && (
+          <button onClick={neueFunktion} className="self-start text-xs px-2.5 py-1 rounded-lg border border-dashed border-line hover:border-accent">
+            ＋ weitere Funktion ({WEITERE.find(n => !weitere.some(w => w.name === n))}(x))
+          </button>
+        )}
+
+        {/* Die Terme, wie sie in einem Heft stünden — alle nebeneinander. Die
+            Eingabe bleibt Text: getippt wird »x^2«, gesetzt erscheint es hochgestellt. */}
+        {drawn.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {drawn.map(f => (
+              <div key={f.name} className="rounded-xl bg-page border border-line px-4 py-3 overflow-x-auto"
+                style={weitere.length ? { borderColor: FARBE[f.name] } : undefined}>
+                <Tex tex={`${f.name}(x) = ${toLatex(f.node)}`} className="text-2xl" />
+              </div>
+            ))}
           </div>
         )}
-        {!parsed.ok
-          ? <p className="text-sm text-red-500">{parsed.error}</p>
-          : !hasX(node!)
-            ? <p className="text-sm text-amber-500">In dem Term steht kein x — der Graph ist eine waagerechte Linie.</p>
-            : null}
-        {festerTerm === undefined && <div className="flex flex-wrap gap-1.5">
-          {TEMPLATES.map(t => (
-            <button
-              key={t.key}
-              onClick={() => useTemplate(t.key)}
-              title={`${t.hint} — nochmal klicken für neue Zahlen`}
-              className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                tpl === t.key
-                  ? "border-accent bg-accent/10 font-bold"
-                  : "border-line hover:border-accent"
-              }`}
-            >
-              {t.label}{tpl === t.key ? " ↻" : ""}
-            </button>
-          ))}
-        </div>}
         {formen && festerTerm === undefined && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs text-muted mr-0.5">Form</span>
@@ -481,8 +613,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         {/* Auch hier feste Höhe — sonst springt die Seite beim Vorlagenwechsel. */}
         {festerTerm === undefined && <p className="text-xs text-muted min-h-8">
           {tpl
-            ? <>💡 {TEMPLATES.find(t => t.key === tpl)!.hint} <span className="opacity-70">Nochmal klicken: neue Zahlen.</span></>
-            : "Eine Vorlage wählen — jeder weitere Klick auf dieselbe würfelt neue Zahlen."}
+            ? <>💡 {TEMPLATES.find(t => t.key === tpl)!.hint} <span className="opacity-70">Dieselbe Vorlage nochmal wählen: neue Zahlen.</span></>
+            : "Eine Vorlage wählen (Menü neben dem Term) — dieselbe nochmal wählen würfelt neue Zahlen."}
         </p>}
       </div>
 
@@ -551,7 +683,19 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
           >
             {tabelleOffen ? "▾" : "▸"} Wertetabelle
           </button>
-          {tabelleOffen && (
+          {tabelleOffen && funcs.length > 1 && (
+            <div className="flex items-center gap-3 flex-wrap text-sm">
+              <span className="text-xs text-muted">In der Tabelle:</span>
+              {funcs.map(f => (
+                <label key={f.name} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={inTabelle.includes(f.name)} disabled={!f.node}
+                    onChange={() => umschalten(f.name)} className="accent-accent" />
+                  <span className="font-mono font-bold" style={{ color: FARBE[f.name] }}>{f.name}(x)</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {tabelleOffen && !mehrfach && (
             <button
               onClick={() => setSchritteOffen(o => !o)}
               aria-expanded={schritteOffen}
@@ -562,7 +706,39 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
           )}
         </div>
 
-        {!tabelleOffen ? null : rows.length ? (
+        {!tabelleOffen ? null : !selected.length ? (
+          <p className="text-xs text-muted mt-2">Keine Funktion für die Tabelle gewählt.</p>
+        ) : rows.length && mehrfach ? (
+          <div className="overflow-x-auto mt-2">
+            <table className="text-sm border-collapse" style={{ fontVariantNumeric: "tabular-nums" }}>
+              <tbody>
+                {[{ name: "x" }, ...selected].map(z => (
+                  <tr key={z.name} className="border-t border-line first:border-t-0">
+                    <th scope="row" className="sticky left-0 z-10 bg-surface text-left font-bold pr-3 py-1 whitespace-nowrap font-mono"
+                      style={{ color: z.name === "x" ? X_COLOR : FARBE[z.name] }}>
+                      {z.name === "x" ? "x" : `${z.name}(x)`}
+                    </th>
+                    {rows.map((r, i) => {
+                      const y = "node" in z ? evalAt(z.node, r.x) : null;
+                      return (
+                        <td key={i}
+                          onPointerEnter={() => setHoverRow(i)}
+                          onPointerLeave={() => setHoverRow(null)}
+                          className="px-2 py-1 border-l border-line whitespace-nowrap cursor-pointer text-center"
+                          style={hoverRow === i || hoverX === r.x ? { background: "rgba(245,158,11,0.15)" } : undefined}
+                        >
+                          {z.name === "x"
+                            ? <span className="font-bold" style={{ color: X_COLOR }}>{fmtX(r.x)}</span>
+                            : y === null ? "—" : fmt(y)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : rows.length ? (
           <div className="overflow-x-auto mt-2">
             <table className="text-sm border-collapse" style={{ fontVariantNumeric: "tabular-nums" }}>
               <tbody>
@@ -618,9 +794,9 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             onPointerMove={onMove}
             onPointerUp={onUp}
             onPointerCancel={onUp}
-            onPointerLeave={() => { if (!drag.current) setHoverX(null); }}
+            onPointerLeave={() => { if (!drag.current) { setHoverX(null); setHoverS(null); } }}
             role="img"
-            aria-label={`Graph von f(x) = ${src}`}
+            aria-label={`Graph von ${drawn.map(f => `${f.name}(x) = ${f.src}`).join(", ") || `f(x) = ${src}`}`}
           >
             {/* Raster */}
             <g stroke="var(--border)" strokeWidth={1} opacity={0.4}>
@@ -648,20 +824,54 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
               <text x={sx(0) + 5} y={M - 6} fontWeight={700}>y</text>
             </g>
 
-            {/* Kurve */}
-            {paths.map((d, i) => (
-              <path key={i} d={d} fill="none" stroke="var(--accent)" strokeWidth={2.5}
-                strokeLinecap="round" strokeLinejoin="round" />
+            {/* Kurven — am Rand der Zeichenfläche abgeschnitten */}
+            <defs>
+              <clipPath id="funktionen-flaeche"><rect x={M} y={M} width={PLOT_W} height={PLOT_H} /></clipPath>
+            </defs>
+            <g clipPath="url(#funktionen-flaeche)">
+              {curves.map(c => c.paths.map((d, i) => (
+                <path key={`${c.name}${i}`} d={d} fill="none" stroke={FARBE[c.name]} strokeWidth={2.5}
+                  strokeLinecap="round" strokeLinejoin="round" />
+              )))}
+            </g>
+
+            {/* Legende — bei mehreren Kurven, samt Schnittpunkten; so steht alles auch im Export */}
+            {drawn.length > 1 && (() => {
+              const zeilen = [
+                ...drawn.map(f => ({ t: `${f.name}(x) = ${kurz(f.src)}`, c: FARBE[f.name] })),
+                ...schnitte.map((p, i) => ({ t: `S${i + 1}(${fmtX(p.x)} | ${fmt(p.y)})`, c: "var(--text)" })),
+              ];
+              return (
+                <g transform={`translate(${M + 6}, ${M + 6})`} fontSize={12} fontWeight={700}>
+                  <rect width={Math.max(...zeilen.map(z => 16 + 7 * z.t.length))} height={zeilen.length * 16 + 8}
+                    rx={6} fill="var(--surface)" stroke="var(--border)" opacity={0.92} />
+                  {zeilen.map((z, i) => (
+                    <text key={i} x={8} y={17 + i * 16} fill={z.c}>{z.t}</text>
+                  ))}
+                </g>
+              );
+            })()}
+
+            {/* Schnittpunkte */}
+            {schnitte.map((p, i) => (
+              <g key={`s${i}`}>
+                <circle cx={sx(p.x)} cy={sy(p.y)} r={6} fill="var(--surface)" stroke="var(--text)" strokeWidth={2.2} />
+                <circle cx={sx(p.x)} cy={sy(p.y)} r={2} fill="var(--text)" />
+                <text x={sx(p.x) + 8} y={sy(p.y) + 17} fontSize={11.5} fontWeight={800} fill="var(--text)"
+                  stroke="var(--surface)" strokeWidth={3.5} paintOrder="stroke">
+                  S{i + 1}
+                </text>
+              </g>
             ))}
 
             {/* Tabellenpunkte — sie sind die Brücke zur Wertetabelle */}
-            {rows.map((r, i) =>
+            {single && rows.map((r, i) =>
               r.y === null ? null : (
                 <circle
                   key={`p${i}`}
                   cx={sx(r.x)} cy={sy(r.y)}
                   r={hoverRow === i ? 7 : 4}
-                  fill={hoverRow === i ? "#f59e0b" : "var(--accent)"}
+                  fill={hoverRow === i ? "#f59e0b" : FARBE[single.name]}
                   stroke="var(--surface)" strokeWidth={1.5}
                   style={{ cursor: "pointer" }}
                   onPointerEnter={() => setHoverRow(i)}
@@ -672,8 +882,8 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             )}
 
             {/* Fadenkreuz */}
-            {marked && marked.y !== null && (
-              <g>
+            {marks.map(marked => marked.y !== null && (
+              <g key={marked.y}>
                 <line x1={sx(marked.x)} y1={sy(marked.y)} x2={sx(marked.x)} y2={sy(0)}
                   stroke="#f59e0b" strokeWidth={1.2} strokeDasharray="4 3" />
                 <line x1={sx(marked.x)} y1={sy(marked.y)} x2={sx(0)} y2={sy(marked.y)}
@@ -686,7 +896,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                   </text>
                 </g>
               </g>
-            )}
+            ))}
           </svg>
 
           {/* Bewusst unveränderlich. Vorher stand hier abwechselnd der Hinweis
@@ -699,12 +909,34 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             Über den Graphen oder die Tabelle fahren zeigt den Punkt samt Koordinaten.
             Anklicken zeigt den Rechenweg. Mausrad zoomt, Ziehen verschiebt den Ausschnitt.
           </p>
+          {drawn.length > 1 && (
+            <div className="text-sm mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              <span className="font-bold">Schnittpunkte:</span>
+              {schnitte.length ? schnitte.map((p, i) => (
+                <span key={i} style={{ fontVariantNumeric: "tabular-nums" }}>
+                  S{i + 1}({fmtX(p.x)} | {fmt(p.y)}){" "}
+                  <span className="text-muted text-xs">
+                    <span style={{ color: FARBE[p.a] }}>{p.a}</span> ∩ <span style={{ color: FARBE[p.b] }}>{p.b}</span>
+                  </span>
+                </span>
+              )) : <span className="text-muted">keine im sichtbaren Ausschnitt</span>}
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="text-xs text-muted mr-0.5">Exportieren</span>
+            {(["svg", "png", "pdf"] as const).map(art => (
+              <button key={art} onClick={() => exportiere(art)} disabled={exportLaeuft}
+                className="text-xs px-2.5 py-1 rounded-lg border border-line hover:border-accent disabled:opacity-40 uppercase">
+                {art}
+              </button>
+            ))}
+          </div>
         </div>
 
       </div>
 
-      {wegX !== null && node && (
-        <Rechenweg node={node} x={wegX} fmtValue={texX} onClose={() => setWegX(null)} />
+      {wegX !== null && act && (
+        <Rechenweg node={act} x={wegX} fmtValue={texX} onClose={() => setWegX(null)} />
       )}
     </div>
   );

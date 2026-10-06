@@ -10,7 +10,7 @@ import katex from "katex";
 import {
   TEMPLATES, evalAt, fmt, fmtPi, formatNode, hasX, parseFunction, segments,
   UNIT_GRID_MAX, axisStep, niceStep, piAxisStep, substitutionSteps, tableRows,
-  fmtPiLatex, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
+  fmtPiLatex, intersections, normalForm, numLatex, panViewport, pxToUnits, quadraticCoeffs, squareViewport,
   substitutedLatex, substitutedTerm, toLatex,
   vertex, vertexForm, xAtPixel, zoomViewport,
   type Node,
@@ -644,5 +644,43 @@ describe("Rechenweg als Formelsatz", () => {
         expect(gesetzt(st.tex), `${t.label}: ${inst.src}`).not.toContain("katex-error");
       }
     }
+  });
+});
+
+describe("Schnittpunkte", () => {
+  const sp = (a: string, b: string, x0 = -10, x1 = 10) =>
+    intersections(p(a), p(b), x0, x1).map(s => [Math.round(s.x * 1e6) / 1e6, Math.round(s.y * 1e6) / 1e6]);
+
+  it("zwei Geraden schneiden sich einmal", () => {
+    expect(sp("2x + 1", "-x + 4")).toEqual([[1, 3]]);
+  });
+
+  it("Parabel und Gerade: zwei Schnittpunkte, von links nach rechts", () => {
+    expect(sp("x^2", "x + 2")).toEqual([[-1, 1], [2, 4]]);
+  });
+
+  it("Berührpunkt ohne Vorzeichenwechsel wird gefunden", () => {
+    expect(sp("x^2", "2x - 1")).toEqual([[1, 1]]);
+  });
+
+  it("Schnitt genau auf einer Stützstelle zählt nur einmal", () => {
+    expect(sp("x", "-x", -1, 1)).toEqual([[0, 0]]);
+  });
+
+  it("parallele Geraden: kein Schnittpunkt", () => {
+    expect(sp("2x", "2x + 1")).toEqual([]);
+  });
+
+  it("dieselbe Funktion: keine einzelnen Punkte", () => {
+    expect(sp("x^2", "x*x")).toEqual([]);
+  });
+
+  it("Polstelle ist kein Schnittpunkt", () => {
+    // 1/x springt bei 0 von −∞ nach +∞ — der Vorzeichenwechsel dort ist keiner.
+    expect(sp("1/x", "0")).toEqual([]);
+  });
+
+  it("nur im angegebenen Bereich", () => {
+    expect(sp("x^2", "x + 2", 0, 10)).toEqual([[2, 4]]);
   });
 });
