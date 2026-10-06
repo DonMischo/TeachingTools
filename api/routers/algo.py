@@ -23,17 +23,25 @@ MAX_LEVEL_ID = 10
 MAX_FLUSS = 50
 MAX_AUTOMAT = 20
 MAX_TEXT = 40
+MAX_WERTUNG = 50
 
 
 class LevelStand(BaseModel):
     sterne: int = Field(ge=0, le=3)
     bloecke: int = Field(ge=0, le=999)
+    punkte: int = Field(default=0, ge=0, le=2000)
+
+
+class WertungStand(BaseModel):
+    sterne: int = Field(ge=0, le=3)
+    punkte: int = Field(ge=0, le=2000)
 
 
 class FortschrittIn(BaseModel):
     level: dict[str, LevelStand]
     fluss: list[str]
     automat: list[str]
+    wertung: dict[str, WertungStand] = {}
 
 
 class UebersichtZeile(BaseModel):
@@ -43,6 +51,7 @@ class UebersichtZeile(BaseModel):
     level: dict
     fluss: list
     automat: list
+    wertung: dict = {}
     aktualisiert_am: datetime
 
 
@@ -71,7 +80,8 @@ def fortschritt_melden(
             raise HTTPException(403, "Dieses Werkzeug ist für dich nicht freigeschaltet (algo/use).")
     if (len(body.level) > MAX_LEVEL or any(len(k) > MAX_LEVEL_ID for k in body.level)
             or len(body.fluss) > MAX_FLUSS or len(body.automat) > MAX_AUTOMAT
-            or any(len(t) > MAX_TEXT for t in body.fluss + body.automat)):
+            or any(len(t) > MAX_TEXT for t in body.fluss + body.automat)
+            or len(body.wertung) > MAX_WERTUNG or any(len(k) > MAX_TEXT for k in body.wertung)):
         raise HTTPException(400, "Fortschritt zu groß.")
 
     name, klasse, gast = _anzeigename(spieler)
@@ -84,6 +94,7 @@ def fortschritt_melden(
     zeile.level = {k: v.model_dump() for k, v in body.level.items()}
     zeile.fluss = list(body.fluss)
     zeile.automat = list(body.automat)
+    zeile.wertung = {k: v.model_dump() for k, v in body.wertung.items()}
     db.commit()
     return {"ok": True}
 
@@ -97,6 +108,6 @@ def uebersicht(code: str, db: Session = Depends(get_db), teacher: Teacher = Depe
     zeilen.sort(key=lambda z: z.name.lower())
     return [
         UebersichtZeile(name=z.name, klasse=z.klasse, gast=z.gast, level=z.level or {}, fluss=z.fluss or [],
-                        automat=z.automat or [], aktualisiert_am=z.aktualisiert_am)
+                        automat=z.automat or [], wertung=z.wertung or {}, aktualisiert_am=z.aktualisiert_am)
         for z in zeilen
     ]

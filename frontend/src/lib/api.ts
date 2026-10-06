@@ -1219,8 +1219,9 @@ export type LebenUebersichtZeile = {
 };
 
 // Algorithmen-Werkstatt (siehe api/routers/algo.py)
-export type AlgoLevelStand = { sterne: number; bloecke: number };
-export type AlgoFortschrittIn = { level: Record<string, AlgoLevelStand>; fluss: string[]; automat: string[] };
+export type AlgoLevelStand = { sterne: number; bloecke: number; punkte?: number };
+export type AlgoWertung = { sterne: number; punkte: number };
+export type AlgoFortschrittIn = { level: Record<string, AlgoLevelStand>; fluss: string[]; automat: string[]; wertung: Record<string, AlgoWertung> };
 export type AlgoUebersichtZeile = AlgoFortschrittIn & { name: string; klasse: string | null; gast: boolean; aktualisiert_am: string };
 
 export type WettschreibenTeilnehmer = {

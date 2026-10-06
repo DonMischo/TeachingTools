@@ -2381,6 +2381,8 @@ class AlgoFortschritt(Base):
     level: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
     fluss: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     automat: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    # {key: {"sterne": 0..3, "punkte": 0..2000}}
+    wertung: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
     aktualisiert_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

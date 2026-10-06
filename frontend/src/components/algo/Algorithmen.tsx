@@ -10,7 +10,8 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { wahl as vorWahl, type Vorgabe } from "@/lib/vorgabe";
-import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, type AlgoStand } from "@/lib/algo/fortschritt";
+import { LEER_STAND, ladeStand, mitErledigt, mitLevel, speichereStand, summen, type AlgoStand } from "@/lib/algo/fortschritt";
+import { HilfeKontext } from "./Hilfe";
 import CodeAbenteuer from "./CodeAbenteuer";
 import AutomatEinstieg from "./AutomatEinstieg";
 import FlussReiter from "./FlussReiter";
@@ -43,6 +44,9 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
   const [stand, setStand] = useState<AlgoStand>(LEER_STAND);
   const [flussStart, setFlussStart] = useState<string | null>(null);
   useEffect(() => { setStand(ladeStand(speicherSchluessel)); }, [speicherSchluessel]);
+  const [hilfsmodus, setHilfsmodus] = useState(false);
+  useEffect(() => { try { setHilfsmodus(localStorage.getItem("hp_algo_hilfsmodus") === "1"); } catch { /* aus */ } }, []);
+  const gesamt = summen(stand);
 
   const aendern = useCallback((f: (s: AlgoStand) => AlgoStand) => setStand(f), []);
   // Speichern und Melden außerhalb des Updaters (StrictMode ruft ihn doppelt).
@@ -63,7 +67,15 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
             Tu, was du tun musst — aber tu&apos;s richtig! Vom Automaten über das Flussdiagramm bis zum eigenen Programm.
           </p>
         </div>
-        <div className="flex items-center gap-2">{action}</div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="chip" title="Punkte und Sterne aus allen drei Reitern" data-testid="algo-gesamt">🏆 {gesamt.punkte} Punkte · <span className="text-amber-400">★</span> {gesamt.sterne}</span>
+          <button type="button" className={`chip ${hilfsmodus ? "chip-on" : ""}`}
+            title="Hilfsmodus: mehr Zeit, Hinweise kommen früher, »Vorführen« ist immer da"
+            onClick={() => { const n = !hilfsmodus; setHilfsmodus(n); try { localStorage.setItem("hp_algo_hilfsmodus", n ? "1" : "0"); } catch { /* egal */ } }}>
+            🤝 Hilfsmodus {hilfsmodus ? "an" : "aus"}
+          </button>
+          {action}
+        </div>
       </div>
       {!festerReiter && (
         <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface">
@@ -72,15 +84,17 @@ export default function Algorithmen({ action, vorgabe, speicherSchluessel = "hp_
           ))}
         </div>
       )}
+      <HilfeKontext.Provider value={{ hilfsmodus }}>
       {reiter === "automat" && (
-        <AutomatEinstieg erledigt={stand.automat} onGeloest={id => aendern(s => mitErledigt(s, "automat", id))}
+        <AutomatEinstieg erledigt={stand.automat} onGeloest={(id, w) => aendern(s => mitErledigt(s, "automat", id, w))}
           onFluss={id => { setFlussStart(id); setReiter("fluss"); }} />
       )}
-      {reiter === "fluss" && <FlussReiter erledigt={stand.fluss} start={flussStart} onGeloest={id => aendern(s => mitErledigt(s, "fluss", id))} />}
+      {reiter === "fluss" && <FlussReiter erledigt={stand.fluss} start={flussStart} onGeloest={(id, w) => aendern(s => mitErledigt(s, "fluss", id, w))} />}
       {reiter === "uebersicht" && verwaltung && <AlgoUebersicht />}
       {reiter === "abenteuer" && (
-        <CodeAbenteuer stand={stand} onGeloest={(id, sterne, bloecke) => aendern(s => mitLevel(s, id, { sterne, bloecke }))} />
+        <CodeAbenteuer stand={stand} onGeloest={(id, w) => aendern(s => mitLevel(s, id, w))} />
       )}
+      </HilfeKontext.Provider>
     </div>
   );
 }

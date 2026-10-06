@@ -66,6 +66,8 @@ export interface Zustand {
   gegner: number[];
   /** Id des Bausteins, der diesen Stand erzeugt hat */
   aktiv?: string;
+  /** Sensor-Blick (Radar): was geprüft wurde und was der Sensor sah — kein Takt, nur Anzeige */
+  scan?: { art: BedingungArt | "nimm"; ok: boolean };
 }
 
 export type Ergebnis = { ok: true } | { ok: false; fehler: Fehler };
@@ -152,7 +154,7 @@ export class Welt {
     return !this.hatZiel || this.zeichen(this.z.x, this.z.y) === "Z";
   }
 
-  pruefe(b: Bedingung): boolean {
+  pruefe(b: Bedingung, id?: string): boolean {
     this.arbeite();
     const { x, y, r } = this.z;
     const frei = (rr: number) => {
@@ -168,6 +170,7 @@ export class Welt {
       case "ziel": w = this.gewonnen(); break;
       case "gegner": w = this.gegnerAuf(x + DX[r], y + DY[r]); break;
     }
+    this.schritte.push({ ...kopie(this.z), aktiv: id, scan: { art: b.art, ok: w } });
     return b.nicht ? !w : w;
   }
 
@@ -204,7 +207,7 @@ export class Welt {
     } else if (t === "nimm") {
       const c = this.zeichen(z.x, z.y);
       if (c !== "a" && c !== "b") {
-        this.merke(id);
+        this.merke(id, { art: "nimm", ok: false });
         throw new FehlerStopp({ art: "ausfuehrbar", text: "Hier liegt nichts — dieser Schritt ist nicht ausführbar." });
       }
       if (c === "b" && this.karte.bZuletzt && this.restA() > 0) {
@@ -216,7 +219,7 @@ export class Welt {
     const vorher = this.gegnerFelder();
     this.bewegeGegner();
     this.pruefeGegner(vorher, id);
-    this.merke(id);
+    this.merke(id, t === "nimm" ? { art: "nimm", ok: true } : undefined);
     if (this.gewonnen()) throw new GewonnenStopp();
   }
 
@@ -250,8 +253,8 @@ export class Welt {
     }
   }
 
-  private merke(id?: string) {
-    this.schritte.push({ ...kopie(this.z), aktiv: id });
+  private merke(id?: string, scan?: Zustand["scan"]) {
+    this.schritte.push({ ...kopie(this.z), aktiv: id, ...(scan ? { scan } : {}) });
   }
 
   fuehre(liste: Befehl[], prog: Programm, tiefe = 0) {
@@ -266,10 +269,10 @@ export class Welt {
           for (let i = 0; i < b.n; i++) { this.arbeite(); this.fuehre(b.k, prog, tiefe); }
           break;
         case "bis":
-          while (!this.pruefe(b.b)) this.fuehre(b.k, prog, tiefe);
+          while (!this.pruefe(b.b, b.id)) this.fuehre(b.k, prog, tiefe);
           break;
         case "wenn":
-          if (this.pruefe(b.b)) this.fuehre(b.k, prog, tiefe);
+          if (this.pruefe(b.b, b.id)) this.fuehre(b.k, prog, tiefe);
           else if (b.sonst) this.fuehre(b.sonst, prog, tiefe);
           break;
         case "rufe": this.arbeite(); this.fuehre(prog.fn, prog, tiefe + 1); break;
@@ -303,6 +306,16 @@ function unfertig(w: Welt): Fehler {
   const rest = w.gesamtA + w.gesamtB - w.z.genommen.length;
   if (rest > 0) return { art: "unfertig", text: `Das Programm ist zu Ende, aber es fehlt noch ${rest === 1 ? "ein Ding" : `${rest} Dinge`}.` };
   return { art: "unfertig", text: "Das Programm ist zu Ende, aber das Ziel ist noch nicht erreicht." };
+}
+
+/** Wie endet ein Lauf? Für die Vorhersage-Frage »Was passiert am Ende?«. */
+export type Ausgang = "geschafft" | "leer" | "wand" | "unfertig" | "anderes";
+export function ausgangVon(l: Lauf): Ausgang {
+  if (l.ergebnis.ok) return "geschafft";
+  const f = l.ergebnis.fehler;
+  if (f.art === "unfertig") return "unfertig";
+  if (f.art === "ausfuehrbar") return l.schritte.at(-1)?.scan?.art === "nimm" ? "leer" : "wand";
+  return "anderes";
 }
 
 /** Ein einzelner Schritt der Direktsteuerung. Gibt den neuen Lauf-Ausschnitt zurück. */

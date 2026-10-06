@@ -76,6 +76,7 @@ export default function Spielfeld({
           </g>
         );
       })}
+      {z.scan && <Radar z={z} farbe={f.akzent} />}
       <g style={{ ...gleiten(z.x, z.y), pointerEvents: "none" }} data-testid="algo-figur">
         <g style={{ transform: `translate(${C / 2}px, ${C / 2}px) rotate(${winkel.current.summe}deg)`, transition: `transform ${dauer}ms ease-in-out` }}>
           {thema.figur === null ? <Mampfi /> : (
@@ -88,6 +89,51 @@ export default function Spielfeld({
     </svg>
   );
 }
+
+/**
+ * Radar: Beim Einsammeln und bei »hier liegt etwas?« dreht ein Strahl um die Figur,
+ * bei Richtungs-Prüfungen zeigt ein Kegel auf das geprüfte Nachbarfeld —
+ * grün, wenn der Sensor »frei« bzw. »ja« sieht, sonst rot.
+ */
+function Radar({ z, farbe }: { z: Zustand; farbe: string }) {
+  const s = z.scan!;
+  const cx = z.x * C + C / 2, cy = z.y * C + C / 2;
+  const ton = s.ok ? "#22c55e" : "#ef4444";
+  const rundum = s.art === "nimm" || s.art === "ding" || s.art === "ziel";
+  const stil = <style>{`
+    @keyframes algo-radar-dreh { to { transform: rotate(360deg); } }
+    @keyframes algo-radar-puls { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.25); } }
+  `}</style>;
+  if (rundum) {
+    const r = C * 0.95;
+    return (
+      <g style={{ pointerEvents: "none" }} data-testid="algo-radar">
+        {stil}
+        <circle cx={cx} cy={cy} r={r} style={{ fill: `${farbe}14`, stroke: farbe, strokeWidth: 1.5, strokeOpacity: 0.6 }} />
+        <circle cx={cx} cy={cy} r={r * 0.55} style={{ fill: "none", stroke: farbe, strokeWidth: 1, strokeOpacity: 0.4 }} />
+        <g style={{ transformOrigin: `${cx}px ${cy}px`, animation: "algo-radar-dreh .7s linear infinite" }}>
+          <path d={`M${cx},${cy} L${cx},${cy - r} A${r},${r} 0 0,1 ${cx + r * Math.sin(Math.PI / 4)},${cy - r * Math.cos(Math.PI / 4)} Z`}
+            style={{ fill: farbe, fillOpacity: 0.45 }} />
+        </g>
+        <circle cx={cx} cy={cy} r={r} style={{ fill: "none", stroke: ton, strokeWidth: 3, transformOrigin: `${cx}px ${cy}px`, animation: "algo-radar-puls .6s ease-out infinite" }} />
+      </g>
+    );
+  }
+  const r = (z.r + (s.art === "frei_links" ? 3 : s.art === "frei_rechts" ? 1 : 0)) % 4;
+  const tx = (z.x + DX_R[r]) * C, ty = (z.y + DY_R[r]) * C;
+  // Kegel von der Figur zu den beiden fernen Ecken des Nachbarfelds
+  const ecken: [number, number][] = r === 0 ? [[tx, ty], [tx + C, ty]] : r === 1 ? [[tx + C, ty], [tx + C, ty + C]] : r === 2 ? [[tx, ty + C], [tx + C, ty + C]] : [[tx, ty], [tx, ty + C]];
+  return (
+    <g style={{ pointerEvents: "none" }} data-testid="algo-radar">
+      {stil}
+      <polygon points={`${cx},${cy} ${ecken[0][0]},${ecken[0][1]} ${ecken[1][0]},${ecken[1][1]}`}
+        style={{ fill: ton, fillOpacity: 0.28, stroke: ton, strokeWidth: 1.5 }} />
+      <rect x={tx + 3} y={ty + 3} width={C - 6} height={C - 6} rx={6}
+        style={{ fill: "none", stroke: ton, strokeWidth: 3, transformOrigin: `${tx + C / 2}px ${ty + C / 2}px`, animation: "algo-radar-puls .6s ease-out infinite" }} />
+    </g>
+  );
+}
+const DX_R = [0, 1, 0, -1], DY_R = [-1, 0, 1, 0];
 
 /** Eigene Figur für Labyrinthien: ein gelber Kreis mit Mund in Blickrichtung (nach oben = 0°). */
 function Mampfi() {

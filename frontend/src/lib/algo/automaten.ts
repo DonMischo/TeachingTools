@@ -58,6 +58,8 @@ export interface Automat {
   innen: string[];
   /** Id des passenden Beispiels im Flussdiagramm-Reiter */
   fluss: string;
+  /** allgemein gültige Lösung (für Hinweis und Vorführen) */
+  loesung: string[];
 }
 
 export const MERKMAL: Record<AutomatFehlerArt, string> = {
@@ -132,6 +134,7 @@ export const AUTOMATEN: Automat[] = [
       "Sperre den Drehgriff wieder.",
     ],
     fluss: "kaugummi",
+    loesung: ["k-preis", "k-einwerfen", "k-drehen", "k-klappe", "k-nehmen"],
   },
   {
     id: "pfand",
@@ -197,6 +200,7 @@ export const AUTOMATEN: Automat[] = [
       "Wenn »Bon« gedrückt wird: Drucke die Summe auf einen Bon.",
     ],
     fluss: "pfand",
+    loesung: ["p-nehmen", "p-einlegen", "p-wiederhole", "p-fertig", "p-bon"],
   },
   {
     id: "fahrkarte",
@@ -260,6 +264,7 @@ export const AUTOMATEN: Automat[] = [
       "Drucke die Fahrkarte und gib das Wechselgeld aus.",
     ],
     fluss: "fahrkarte",
+    loesung: ["f-waehlen", "f-preis", "f-zahlen", "f-nehmen", "f-entwerten"],
   },
   {
     id: "kakao",
@@ -319,6 +324,7 @@ export const AUTOMATEN: Automat[] = [
       "Zeige »Fertig« an.",
     ],
     fluss: "kakao",
+    loesung: ["c-becher", "c-taste", "c-zahlen", "c-warten", "c-nehmen"],
   },
 ];
 

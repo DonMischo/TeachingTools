@@ -9,6 +9,8 @@ import {
   type AblaufStand, type Diagramm, type FlussAufgabe, type KnotenTyp,
 } from "@/lib/algo/fluss";
 import FlussEditor, { Form, FormKnopf } from "./FlussEditor";
+import { aufgabenWertung, type Wertung } from "@/lib/algo/wertung";
+import { HilfeLeiste, WertungZeile, useMessung } from "./Hilfe";
 
 type Auswahl = { art: "aufgabe"; id: string } | { art: "beispiel"; id: string } | { art: "frei" };
 
@@ -22,7 +24,7 @@ const LEER: Diagramm = {
 
 export default function FlussReiter({ erledigt, onGeloest, start }: {
   erledigt: string[];
-  onGeloest: (aufgabeId: string) => void;
+  onGeloest: (aufgabeId: string, w: Wertung) => void;
   /** Beispiel, das beim Öffnen gezeigt werden soll (aus dem Automaten-Reiter) */
   start?: string | null;
 }) {
@@ -50,7 +52,7 @@ export default function FlussReiter({ erledigt, onGeloest, start }: {
         <Legende />
       </nav>
       <div key={schluessel} className="min-w-0">
-        {wahl.art === "aufgabe" && <AufgabeAnsicht a={AUFGABEN.find(a => a.id === wahl.id)!} onGeloest={() => onGeloest(wahl.id)} geloest={erledigt.includes(wahl.id)} />}
+        {wahl.art === "aufgabe" && <AufgabeAnsicht a={AUFGABEN.find(a => a.id === wahl.id)!} onGeloest={w => onGeloest(wahl.id, w)} geloest={erledigt.includes(wahl.id)} />}
         {wahl.art === "beispiel" && <BeispielAnsicht id={wahl.id} />}
         {wahl.art === "frei" && <Frei />}
       </div>
@@ -202,24 +204,71 @@ const FORMEN: { form: KnotenTyp; text: string }[] = [
 ];
 const gleicheForm = (a: KnotenTyp, b: KnotenTyp) => a === b || ((a === "start" || a === "ende") && (b === "start" || b === "ende"));
 
-function AufgabeAnsicht({ a, onGeloest, geloest }: { a: FlussAufgabe; onGeloest: () => void; geloest: boolean }) {
+const RICHTZEIT: Record<FlussAufgabe["art"], number> = { formen: 90, verbinden: 150, fehler: 60, verfolgen: 120, frage: 45, bauen: 360 };
+
+const TIPP: Record<FlussAufgabe["art"], string> = {
+  formen: "Frag dich bei jedem Kasten: Fängt hier etwas an oder hört es auf? Kommt etwas herein oder geht etwas hinaus? Wird etwas gefragt? Oder wird einfach etwas getan?",
+  verbinden: "Fang beim Start an und folge der Reihenfolge, in der man den Automaten wirklich bedient.",
+  fehler: "Geh das Diagramm mit dem Finger durch — einmal mit vollen Taschen und einmal, wenn keine Flasche mehr übrig ist.",
+  verfolgen: "Rechne Kasten für Kasten. Die gelben Notizen erklären jeden Schritt.",
+  frage: "Denk an die Merkmale: endlich viele Schritte, jeder ausführbar und eindeutig, aus Eingaben wird eine Ausgabe.",
+  bauen: "Fang mit Start und Ende an. Dann die Kästen dazwischen, zuletzt die Pfeile (Pfeil-Modus).",
+};
+
+const HINWEIS: Record<string, string> = {
+  formen: "Fragen mit »?« sind Rauten. »Münze einwerfen« und »Kaugummi fällt ins Fach« sind Ein- bzw. Ausgaben (Parallelogramm). »Rad drehen« ist eine Anweisung (Rechteck).",
+  verbinden: "Start → Becher → Taste → »Bezahlt?«. Bei »nein« geht es zur Karte und von dort zurück zur Raute, bei »ja« weiter zum Warten.",
+  fehler: "Schau dir die beiden Pfeile an, die von der Raute weggehen. Wohin führt der Pfeil, wenn die Tasche leer ist?",
+  verfolgen: "3 · 14 = 42, dazu 10 ergibt 52. Wie oft passt 7 in 52, und was bleibt übrig?",
+  frage: "Mit denselben Zahlen kommt jedes Mal dasselbe heraus — das heißt »eindeutig«, auch wenn andere Leute andere Zahlen haben.",
+  "bauen-geburtstag": "Du brauchst: Start, zwei Eingaben (eingabe T, eingabe M), zwei Anweisungen (x = 3*T + M, r = x mod 7), eine Ausgabe (ausgabe r), Ende.",
+  "bauen-lexikon": "Die Schleife: Eine Raute »Steht das Wort auf der Seite?«. Bei »nein« blätterst du und gehst zurück zur Raute, bei »ja« liest du den Eintrag.",
+};
+
+const VORLAGE_BAU: Record<string, string> = { "bauen-geburtstag": "geburtstag", "bauen-lexikon": "lexikon" };
+
+interface KindProps { a: FlussAufgabe; onGeloest: () => void; fehler: () => void; demo: number }
+
+function AufgabeAnsicht({ a, onGeloest, geloest }: { a: FlussAufgabe; onGeloest: (w: Wertung) => void; geloest: boolean }) {
+  const m = useMessung(RICHTZEIT[a.art]);
+  const [demo, setDemo] = useState(0);
+  const [wertung, setWertung] = useState<Wertung | null>(null);
+  const fertig = () => {
+    if (wertung) return;
+    const w = aufgabenWertung({ ...m, richtzeit: RICHTZEIT[a.art] });
+    setWertung(w);
+    onGeloest(w);
+  };
+  const p: KindProps = { a, onGeloest: fertig, fehler: m.fehler, demo };
   return (
     <div className="flex flex-col gap-3">
-      <section className="card p-4 text-sm flex flex-col gap-1">
+      <section className="card p-4 text-sm flex flex-col gap-2">
         <h2 className="text-lg font-black">{a.titel} {geloest && "✅"}</h2>
         <p>{a.text}</p>
+        <HilfeLeiste m={m} tipp={TIPP[a.art]} hinweis={HINWEIS[a.id]} onVorfuehren={() => setDemo(d => d + 1)} />
+        {wertung && <WertungZeile w={wertung} />}
       </section>
-      {a.art === "formen" && <FormenAufgabe a={a} onGeloest={onGeloest} />}
-      {a.art === "verbinden" && <VerbindenAufgabe a={a} onGeloest={onGeloest} />}
-      {a.art === "fehler" && <FehlerAufgabe a={a} onGeloest={onGeloest} />}
-      {a.art === "verfolgen" && <VerfolgenAufgabe a={a} onGeloest={onGeloest} />}
-      {a.art === "frage" && <FrageAufgabe a={a} onGeloest={onGeloest} />}
-      {a.art === "bauen" && <BauAufgabe a={a} onGeloest={onGeloest} />}
+      {a.art === "formen" && <FormenAufgabe {...p} />}
+      {a.art === "verbinden" && <VerbindenAufgabe {...p} />}
+      {a.art === "fehler" && <FehlerAufgabe {...p} />}
+      {a.art === "verfolgen" && <VerfolgenAufgabe {...p} />}
+      {a.art === "frage" && <FrageAufgabe {...p} />}
+      {a.art === "bauen" && <BauAufgabe {...p} />}
     </div>
   );
 }
 
-function FormenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+/** Führt `schritte` nacheinander aus, sobald `demo` hochzählt. */
+function useVorfuehrung(demo: number, schritte: () => (() => void)[], takt = 550) {
+  useEffect(() => {
+    if (!demo) return;
+    const liste = schritte();
+    const uhren = liste.map((f, i) => setTimeout(f, (i + 1) * takt));
+    return () => uhren.forEach(clearTimeout);
+  }, [demo]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function FormenAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const d = beispiel(a.beispiel!)!.diagramm;
   const [formen, setFormen] = useState<Record<string, KnotenTyp | null>>(() => Object.fromEntries(d.knoten.map(k => [k.id, null])));
   const [wahl, setWahl] = useState<string | null>(null);
@@ -227,6 +276,7 @@ function FormenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => voi
   const falsch = d.knoten.filter(k => formen[k.id] && !gleicheForm(formen[k.id]!, k.typ)).map(k => k.id);
   const fertig = d.knoten.every(k => formen[k.id]);
   const k = d.knoten.find(x => x.id === wahl);
+  useVorfuehrung(demo, () => d.knoten.map(kn => () => setFormen(f => ({ ...f, [kn.id]: kn.typ }))));
   return (
     <div className="flex flex-col gap-3">
       {k && (
@@ -241,7 +291,7 @@ function FormenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => voi
       <FlussEditor d={d} modus="lesen" formen={formen} onKnotenKlick={setWahl} markiertKnoten={geprueft ? falsch : []} />
       <div className="flex gap-2 items-center flex-wrap">
         <button type="button" className="btn-primary" disabled={!fertig}
-          onClick={() => { setGeprueft(true); if (!falsch.length) onGeloest(); }}>Prüfen</button>
+          onClick={() => { setGeprueft(true); if (!falsch.length) onGeloest(); else fehler(); }}>Prüfen</button>
         {geprueft && (falsch.length
           ? <span className="text-sm text-bad">{falsch.length} {falsch.length === 1 ? "Form stimmt" : "Formen stimmen"} noch nicht (rot umrandet).</span>
           : <span className="text-sm text-ok font-bold">Alles richtig! Oval = Start/Ende, Parallelogramm = Ein-/Ausgabe, Rechteck = Anweisung, Raute = Entscheidung.</span>)}
@@ -253,15 +303,17 @@ function FormenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => voi
 
 const kantenSchluessel = (d: Diagramm) => new Set(d.kanten.map(e => `${e.von}>${e.nach}>${e.marke ?? ""}`));
 
-function VerbindenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+function VerbindenAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const loesung = beispiel(a.beispiel!)!.diagramm;
   const [d, setD] = useState<Diagramm>({ ...loesung, kanten: [] });
   const [ergebnis, setErgebnis] = useState<{ falsch: number; fehlt: number } | null>(null);
+  useVorfuehrung(demo, () => [() => setD({ ...loesung, kanten: [] }), ...loesung.kanten.map((_, i) => () => setD({ ...loesung, kanten: loesung.kanten.slice(0, i + 1) }))]);
   const pruefen = () => {
     const soll = kantenSchluessel(loesung), ist = kantenSchluessel(d);
     const falsch = [...ist].filter(x => !soll.has(x)).length, fehlt = [...soll].filter(x => !ist.has(x)).length;
     setErgebnis({ falsch, fehlt });
     if (!falsch && !fehlt) onGeloest();
+    else fehler();
   };
   return (
     <div className="flex flex-col gap-3">
@@ -276,13 +328,16 @@ function VerbindenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => 
   );
 }
 
-function FehlerAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+function FehlerAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const { diagramm, falsch } = useMemo(() => a.kaputt!(beispiel(a.beispiel!)!.diagramm), [a]);
   const [klick, setKlick] = useState<{ i: number; ok: boolean } | null>(null);
+  const [zeige, setZeige] = useState(false);
+  useVorfuehrung(demo, () => [() => setZeige(true), () => setZeige(false), () => setZeige(true)]);
   return (
     <div className="flex flex-col gap-3">
-      <FlussEditor d={diagramm} modus="lesen" markiertKante={klick}
-        onKanteKlick={i => { const ok = i === falsch; setKlick({ i, ok }); if (ok) onGeloest(); }} />
+      <FlussEditor d={diagramm} modus="lesen" markiertKante={klick ?? (zeige ? { i: falsch, ok: false } : null)}
+        onKanteKlick={i => { if (klick?.ok) return; const ok = i === falsch; setKlick({ i, ok }); if (ok) onGeloest(); else fehler(); }} />
+      {zeige && !klick?.ok && <p className="text-sm">🎬 Der rot markierte Pfeil ist falsch — klicke ihn an.</p>}
       {klick && (klick.ok
         ? <p className="text-sm text-ok font-bold">Gefunden! Wenn die Tasche leer ist, muss es weiter zum Bon gehen — sonst steckt man fest. So ein Fehler heißt »Bug«.</p>
         : <p className="text-sm text-bad">Dieser Pfeil stimmt. Geh das Diagramm mit dem Finger durch: Was passiert, wenn keine Flaschen mehr da sind?</p>)}
@@ -290,18 +345,27 @@ function FehlerAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => voi
   );
 }
 
-function VerfolgenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+function VerfolgenAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const d = beispiel(a.beispiel!)!.diagramm;
   const [antwort, setAntwort] = useState("");
   const [ok, setOk] = useState<boolean | null>(null);
   const ablauf = useAblauf(d);
+  const [vorgerechnet, setVorgerechnet] = useState<string[]>([]);
+  // Vorführen: das Protokoll Zeile für Zeile aufdecken
+  useVorfuehrung(demo, () => {
+    let s = startStand(d);
+    const ein = [...a.eingaben!];
+    while (!s.fertig) s = weiter(d, s, brauchtAntwort(d, s)?.art === "zahl" ? ein.shift() : undefined);
+    return [() => setVorgerechnet([]), ...s.protokoll.map((_, i) => () => setVorgerechnet(s.protokoll.slice(0, i + 1)))];
+  }, 900);
   return (
     <div className="flex flex-col gap-3">
       <form className="card p-3 flex items-center gap-2 text-sm flex-wrap" onSubmit={e => {
         e.preventDefault();
+        if (ok) return;
         const r = antwort.trim() === a.antwort;
         setOk(r);
-        if (r) onGeloest();
+        if (r) onGeloest(); else fehler();
       }}>
         <label htmlFor="verfolgen-antwort">Ausgabe:</label>
         <input id="verfolgen-antwort" className="input w-24" inputMode="numeric" value={antwort} onChange={e => { setAntwort(e.target.value); setOk(null); }} />
@@ -309,19 +373,25 @@ function VerfolgenAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => 
         {ok === true && <span className="text-ok font-bold">Richtig: 3 · {a.eingaben![0]} + {a.eingaben![1]} = {3 * a.eingaben![0] + a.eingaben![1]}, und das geteilt durch 7 lässt den Rest {a.antwort}.</span>}
         {ok === false && <span className="text-bad">Noch nicht. Lass das Diagramm mit »Ablauf« rechnen und gib dabei {a.eingaben!.join(" und ")} ein.</span>}
       </form>
+      {vorgerechnet.length > 0 && (
+        <ol className="card p-3 text-sm font-mono list-decimal pl-8">{vorgerechnet.map((z, i) => <li key={i}>{z}</li>)}</ol>
+      )}
       <AblaufLeiste a={ablauf} d={d} />
       <FlussEditor d={d} modus="lesen" aktiv={ablauf.s?.bei} kommentare />
     </div>
   );
 }
 
-function FrageAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+function FrageAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const [wahl, setWahl] = useState<number | null>(null);
+  const [zeige, setZeige] = useState(false);
+  useVorfuehrung(demo, () => [() => setZeige(true)]);
+  const gut = wahl !== null && a.optionen![wahl].richtig;
   return (
     <div className="flex flex-col gap-2">
       {a.optionen!.map((o, i) => (
-        <button key={i} type="button" onClick={() => { setWahl(i); if (o.richtig) onGeloest(); }}
-          className={`card p-3 text-left text-sm ${wahl === i ? (o.richtig ? "border-ok" : "border-bad") : "hover:bg-surface-hover"}`}>
+        <button key={i} type="button" onClick={() => { if (gut) return; setWahl(i); if (o.richtig) onGeloest(); else fehler(); }}
+          className={`card p-3 text-left text-sm ${wahl === i ? (o.richtig ? "border-ok" : "border-bad") : zeige && o.richtig ? "border-dashed border-ok" : "hover:bg-surface-hover"}`}>
           {o.text}
           {wahl === i && <div className={`mt-1 ${o.richtig ? "text-ok" : "text-bad"}`}>{o.warum}</div>}
         </button>
@@ -330,7 +400,7 @@ function FrageAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void
   );
 }
 
-function BauAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }) {
+function BauAufgabe({ a, onGeloest, fehler, demo }: KindProps) {
   const speicher = `hp_algo_fluss_${a.id}`;
   const [d, setD] = useState<Diagramm>(LEER);
   const [geladen, setGeladen] = useState(false);
@@ -344,10 +414,19 @@ function BauAufgabe({ a, onGeloest }: { a: FlussAufgabe; onGeloest: () => void }
     setD(x); setProbleme(null); ablauf.stopp();
     if (geladen) try { localStorage.setItem(speicher, JSON.stringify(x)); } catch { /* egal */ }
   };
+  // Vorführen: das Musterdiagramm Kasten für Kasten aufbauen
+  useVorfuehrung(demo, () => {
+    const ziel = beispiel(VORLAGE_BAU[a.id])?.diagramm;
+    if (!ziel) return [];
+    return ziel.knoten.map((_, i) => () => {
+      const knoten = ziel.knoten.slice(0, i + 1), ids = new Set(knoten.map(k => k.id));
+      aendern({ knoten, kanten: ziel.kanten.filter(e => ids.has(e.von) && ids.has(e.nach)) });
+    });
+  }, 700);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2 items-center flex-wrap">
-        <button type="button" className="btn-primary" onClick={() => { const p = pruefeBau(a, d); setProbleme(p); if (!p.length) onGeloest(); }}>Prüfen</button>
+        <button type="button" className="btn-primary" onClick={() => { const p = pruefeBau(a, d); setProbleme(p); if (!p.length) onGeloest(); else fehler(); }}>Prüfen</button>
         {probleme && !probleme.length && <span className="text-sm text-ok font-bold">🎉 Dein Diagramm erfüllt alle Bedingungen!</span>}
       </div>
       {probleme && probleme.length > 0 && <Pruefliste probleme={probleme} />}

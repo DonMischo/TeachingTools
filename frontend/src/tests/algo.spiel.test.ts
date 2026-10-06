@@ -48,6 +48,16 @@ describe("Interpreter", () => {
   });
 });
 
+describe("Vorhersagen", () => {
+  it("enden nicht alle auf dem Ziel — sonst wären sie zu leicht zu raten", async () => {
+    const { ausgangVon } = await import("@/lib/algo/spiel");
+    const ausgaenge = LEVEL.filter(l => l.vorhersage).map(l => ausgangVon(fuehreAus(l.karten[0], l.vorhersage!)));
+    expect(ausgaenge).toContain("geschafft");
+    expect(ausgaenge).toContain("leer");
+    expect(ausgaenge).toContain("wand");
+  });
+});
+
 describe("Level", () => {
   it("haben eindeutige Ids", () => {
     expect(new Set(LEVEL.map(l => l.id)).size).toBe(LEVEL.length);

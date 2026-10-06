@@ -120,6 +120,14 @@ export const LEVEL: Level[] = [
     optimal: 7, loesung: P(R, W, W, R, R, R, N),
     tipp: "Jeder Schritt — auch »warte« — ist ein Takt. In jedem Takt zieht {gegner} ein Feld weiter.",
   },
+  {
+    id: "2-5", welt: 2, titel: "Kommt es an?", modus: "pfeile", bloecke: PFEILE,
+    text: "Lies das Programm genau. Wo steht {held} am Ende — und was passiert dort?",
+    karten: [{ zeilen: ["#######", "#>....#", "#.###.#", "#....a#", "#######"] }],
+    vorhersage: P(R, R, R, R, U, N),
+    optimal: 7, loesung: P(R, R, R, R, U, U, N),
+    merke: "Ein Programm tut genau das, was dasteht — auch wenn es ein Feld zu früh aufhört.",
+  },
 
   // ── Welt 3: Drehen ──────────────────────────────────────────────────
   {
@@ -148,6 +156,14 @@ export const LEVEL: Level[] = [
     karten: [{ zeilen: ["#######", "#v#...#", "#.#.#.#", "#...#a#", "#######"] }],
     vorlage: P(V, V, RE, V, V, LI, V, V, RE, V, V, RE, V, V, N),
     optimal: 15, loesung: P(V, V, LI, V, V, LI, V, V, RE, V, V, RE, V, V, N),
+  },
+  {
+    id: "3-5", welt: 3, titel: "Falsch abgebogen?", modus: "drehen", bloecke: DREHEN,
+    text: "Lies das Programm. Wo bleibt {held} stehen — und warum?",
+    karten: [{ zeilen: ["######", "#>...#", "#.##.#", "#...a#", "######"] }],
+    vorhersage: P(V, RE, V, V, N),
+    optimal: 7, loesung: P(V, V, V, RE, V, V, N),
+    tipp: "»rechts drehen« heißt: aus Sicht der Figur. Wohin schaut sie danach?",
   },
 
   // ── Welt 4: Schleifen ───────────────────────────────────────────────
@@ -182,6 +198,14 @@ export const LEVEL: Level[] = [
     text: "Auf jeder Stufe liegt etwas. Höchstens 6 Bausteine.",
     karten: [{ zeilen: ["########", "#>a#####", "##.a####", "###.a###", "####.a##", "########"] }],
     maxBloecke: 6, optimal: 6, loesung: P(rep(4, V, N, RE, V, LI)),
+  },
+  {
+    id: "4-6", welt: 4, titel: "Immer daneben", modus: "drehen", bloecke: [...DREHEN, "wiederhole"],
+    text: "Dieses Programm {verb} immer ein Feld daneben. Finde den Fehler!",
+    karten: [{ zeilen: ["###########", "#>a.a.a.a.#", "###########"] }],
+    vorlage: P(rep(4, V, V, N)),
+    maxBloecke: 4, optimal: 4, loesung: P(rep(4, V, N, V)),
+    tipp: "Wo steht die Figur beim ersten »{verb}«? Starte mit »Schritt« und schau genau hin.",
   },
 
   // ── Welt 5: Bedingungen ─────────────────────────────────────────────

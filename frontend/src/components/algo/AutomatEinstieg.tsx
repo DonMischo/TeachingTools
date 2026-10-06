@@ -4,7 +4,9 @@
  * lassen, der alles wörtlich nimmt. Gelöst ist ein Automat, wenn derselbe
  * Algorithmus an beiden Automaten (A und B) klappt — also allgemein gültig ist.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { aufgabenWertung, type Wertung } from "@/lib/algo/wertung";
+import { HilfeLeiste, WertungZeile, useMessung } from "./Hilfe";
 import { AUTOMATEN, MERKMAL, fuehreAutomatAus, gemischt, type AusfuehrSchritt, type Automat } from "@/lib/algo/automaten";
 
 const AUSFUEHRER = [
@@ -14,7 +16,7 @@ const AUSFUEHRER = [
 
 export default function AutomatEinstieg({ erledigt, onGeloest, onFluss }: {
   erledigt: string[];
-  onGeloest: (automatId: string) => void;
+  onGeloest: (automatId: string, w: Wertung) => void;
   onFluss: (beispielId: string) => void;
 }) {
   const [aId, setAId] = useState(AUTOMATEN[0].id);
@@ -29,7 +31,7 @@ export default function AutomatEinstieg({ erledigt, onGeloest, onFluss }: {
           </button>
         ))}
       </div>
-      <AutomatAufgabe key={a.id} a={a} onGeloest={() => onGeloest(a.id)} onFluss={onFluss} />
+      <AutomatAufgabe key={a.id} a={a} onGeloest={w => onGeloest(a.id, w)} onFluss={onFluss} />
       <section className="card p-4 text-sm leading-relaxed border-l-4 border-l-accent">
         <b>📌 Merke:</b> Eine Handlungsvorschrift zur Lösung eines Problems nennt man einen <b>Algorithmus</b>.
         Er besteht aus <b>endlich vielen</b>, <b>ausführbaren</b>, <b>präzise (eindeutig)</b> formulierten <b>Einzelschritten</b>,
@@ -40,7 +42,12 @@ export default function AutomatEinstieg({ erledigt, onGeloest, onFluss }: {
   );
 }
 
-function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: () => void; onFluss: (id: string) => void }) {
+const RICHTZEIT_AUTOMAT = 150;
+
+function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: (w: Wertung) => void; onFluss: (id: string) => void }) {
+  const m = useMessung(RICHTZEIT_AUTOMAT);
+  const [wertung, setWertung] = useState<Wertung | null>(null);
+  const gezaehlt = useRef<object | null>(null);
   const stapel = useMemo(() => gemischt(a.handlungen.map(h => h.id), a.id.length * 7919 + 13), [a]);
   const [plan, setPlan] = useState<string[]>([]);
   const [variante, setVariante] = useState("a");
@@ -60,12 +67,18 @@ function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: () =
   }, [lauf]);
   const fertig = lauf && lauf.i >= lauf.schritte.length - 1;
   useEffect(() => {
-    if (fertig && lauf.ok && !geschafft.includes(variante)) {
-      const neu = [...geschafft, variante];
-      setGeschafft(neu);
-      if (a.varianten.every(v => neu.includes(v.id))) onGeloest();
+    if (!fertig || gezaehlt.current === lauf) return;
+    gezaehlt.current = lauf;
+    if (!lauf.ok) { m.fehler(); return; }
+    if (geschafft.includes(variante)) return;
+    const neu = [...geschafft, variante];
+    setGeschafft(neu);
+    if (a.varianten.every(v => neu.includes(v.id))) {
+      const w = aufgabenWertung({ ...m, richtzeit: RICHTZEIT_AUTOMAT });
+      setWertung(w);
+      onGeloest(w);
     }
-  }, [fertig, lauf, variante, geschafft, a.varianten, onGeloest]);
+  }, [fertig, lauf, variante, geschafft, a.varianten, onGeloest, m]);
 
   const neuerPlan = (p: string[]) => { setPlan(p); setLauf(null); setGeschafft([]); };
   const schritt = lauf?.schritte[lauf.i];
@@ -168,6 +181,11 @@ function AutomatAufgabe({ a, onGeloest, onFluss }: { a: Automat; onGeloest: () =
                   : "Klappt derselbe Algorithmus auch am anderen Automaten?"}
               </div>
             )}
+            {wertung && <WertungZeile w={wertung} />}
+            <HilfeLeiste m={m}
+              tipp="Der Ausführer macht nur genaue Einzelschritte. Verdächtig sind Karten mit »irgendwie«, »hol dir« oder mit einer festen Münze oder einem festen Preis."
+              hinweis={<>Die erste Karte lautet »{textVon(a.loesung[0])}«, die letzte »{textVon(a.loesung.at(-1)!)}«. Insgesamt braucht es {a.loesung.length} Karten.</>}
+              onVorfuehren={() => { neuerPlan(a.loesung); setLauf({ ...fuehreAutomatAus(a, variante, a.loesung), i: 0 }); }} />
             <div className="flex gap-2">
               <button type="button" className="btn-primary" disabled={!plan.length || (!!lauf && !fertig)}
                 onClick={() => setLauf({ ...fuehreAutomatAus(a, variante, plan), i: 0 })}>▶ Ausführen</button>

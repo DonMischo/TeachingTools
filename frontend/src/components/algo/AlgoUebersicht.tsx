@@ -5,7 +5,7 @@
  * Abgefragt wird alle fünf Sekunden wie beim Maus-Führerschein.
  */
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, type AlgoUebersichtZeile } from "@/lib/api";
 import { AUTOMATEN } from "@/lib/algo/automaten";
 import { AUFGABEN } from "@/lib/algo/fluss";
 import { LEVEL, WELTEN } from "@/lib/algo/level";
@@ -17,6 +17,15 @@ function vor(iso: string): string {
   if (s < 60) return "gerade eben";
   const m = Math.round(s / 60);
   return m < 60 ? `vor ${m} Min.` : `vor ${Math.round(m / 60)} Std.`;
+}
+
+const gesamt = (z: AlgoUebersichtZeile) =>
+  Object.values(z.level).reduce((s, l) => s + (l.punkte ?? 0), 0) + Object.values(z.wertung ?? {}).reduce((s, w) => s + w.punkte, 0);
+
+function erledigt(z: AlgoUebersichtZeile, feld: "automat" | "fluss", id: string) {
+  const w = z.wertung?.[`${feld}:${id}`];
+  if (w) return <span className="text-amber-500 text-xs" title={`${w.punkte} Punkte`}>{w.sterne}★</span>;
+  return z[feld].includes(id) ? "✅" : <span className="text-muted">·</span>;
 }
 
 export default function AlgoUebersicht() {
@@ -50,6 +59,7 @@ export default function AlgoUebersicht() {
             <thead className="text-muted border-b border-line text-xs">
               <tr>
                 <th className="px-3 py-2 text-left font-normal">Name</th>
+                <th className="px-2 py-2 text-right font-normal" title="Punkte aus allen Reitern">🏆</th>
                 {AUTOMATEN.map(a => <th key={a.id} className="px-1 py-2 font-normal" title={a.name}>{a.icon}</th>)}
                 <th className="w-2" />
                 {AUFGABEN.map((a, i) => <th key={a.id} className="px-1 py-2 font-normal" title={a.titel}>F{i + 1}</th>)}
@@ -67,14 +77,15 @@ export default function AlgoUebersicht() {
                     {z.klasse && <span className="text-xs text-muted ml-2">{z.klasse}</span>}
                     {z.gast && <span className="text-xs text-muted ml-2">Gast</span>}
                   </td>
-                  {AUTOMATEN.map(a => <td key={a.id} className="px-1 text-center">{z.automat.includes(a.id) ? "✅" : <span className="text-muted">·</span>}</td>)}
+                  <td className="px-2 text-right font-bold tabular-nums">{gesamt(z)}</td>
+                  {AUTOMATEN.map(a => <td key={a.id} className="px-1 text-center">{erledigt(z, "automat", a.id)}</td>)}
                   <td />
-                  {AUFGABEN.map(a => <td key={a.id} className="px-1 text-center">{z.fluss.includes(a.id) ? "✅" : <span className="text-muted">·</span>}</td>)}
+                  {AUFGABEN.map(a => <td key={a.id} className="px-1 text-center">{erledigt(z, "fluss", a.id)}</td>)}
                   {LEVEL.map((l, j) => {
                     const s = z.level[l.id]?.sterne ?? 0;
                     const neueWelt = j === 0 || LEVEL[j - 1].welt !== l.welt;
                     return (
-                      <td key={l.id} title={`${l.id} ${l.titel}`} className={`px-0.5 text-center text-xs ${neueWelt ? "border-l border-line" : ""}`}>
+                      <td key={l.id} title={`${l.id} ${l.titel}${z.level[l.id]?.punkte ? ` — ${z.level[l.id].punkte} Punkte` : ""}`} className={`px-0.5 text-center text-xs ${neueWelt ? "border-l border-line" : ""}`}>
                         {s ? <span className="text-amber-500">{s}★</span> : <span className="text-muted">·</span>}
                       </td>
                     );

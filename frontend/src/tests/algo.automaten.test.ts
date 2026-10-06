@@ -28,6 +28,7 @@ describe("Automaten", () => {
     const l = LOESUNG[a.id];
     it(`${a.id}: allgemeine Lösung klappt an jedem Automaten`, () => {
       for (const v of a.varianten) expect(fuehreAutomatAus(a, v.id, l.allgemein).ok).toBe(true);
+      for (const v of a.varianten) expect(fuehreAutomatAus(a, v.id, a.loesung).ok).toBe(true);
     });
     it(`${a.id}: spezielle Karte klappt an A, ist an B nicht allgemein gültig`, () => {
       const spez = l.allgemein.map(id => (id === l.speziell[0] ? l.speziell[1] : id));

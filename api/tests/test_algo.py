@@ -38,7 +38,7 @@ def test_schueler_meldet_und_zweites_put_aktualisiert(client, db, teacher_token)
     assert r.status_code == 200
     liste = client.get(f"/api/algo/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()
     assert len(liste) == 1
-    assert liste[0]["level"]["L1"] == {"sterne": 3, "bloecke": 5}
+    assert liste[0]["level"]["L1"] == {"sterne": 3, "bloecke": 5, "punkte": 0}
     assert liste[0]["fluss"] == ["f1"] and liste[0]["automat"] == ["a1"]
     assert liste[0]["gast"] is False and liste[0]["klasse"] == "9b"
 
@@ -82,6 +82,27 @@ def test_zu_grosse_nutzlast_wird_abgelehnt(client, teacher_token):
     assert client.put(url, json=_fortschritt(fluss=["f"] * 51), headers=auth(gast)).status_code == 400
     assert client.put(url, json=_fortschritt(automat=["a"] * 21), headers=auth(gast)).status_code == 400
     assert client.put(url, json=_fortschritt(automat=["a" * 41]), headers=auth(gast)).status_code == 400
+
+
+def test_punkte_und_wertung_laufen_durch(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    url = f"/api/algo/sitzung/{code}/fortschritt"
+    body = _fortschritt(level={"L1": {"sterne": 2, "bloecke": 5, "punkte": 120}},
+                        wertung={"duell": {"sterne": 3, "punkte": 450}})
+    assert client.put(url, json=body, headers=auth(teacher_token)).status_code == 200
+    zeile = client.get(f"/api/algo/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()[0]
+    assert zeile["level"]["L1"] == {"sterne": 2, "bloecke": 5, "punkte": 120}
+    assert zeile["wertung"] == {"duell": {"sterne": 3, "punkte": 450}}
+
+
+def test_zu_viele_wertungen_und_ohne_wertung(client, teacher_token):
+    code = _sitzung(client, teacher_token)
+    url = f"/api/algo/sitzung/{code}/fortschritt"
+    viele = {f"w{i}": {"sterne": 1, "punkte": 1} for i in range(51)}
+    assert client.put(url, json=_fortschritt(wertung=viele), headers=auth(teacher_token)).status_code == 400
+    assert client.put(url, json=_fortschritt(), headers=auth(teacher_token)).status_code == 200
+    zeile = client.get(f"/api/algo/sitzung/{code}/uebersicht", headers=auth(teacher_token)).json()[0]
+    assert zeile["wertung"] == {}
 
 
 def test_geschlossene_sitzung_ist_403(client, db, teacher_token):

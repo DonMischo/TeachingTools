@@ -4,16 +4,18 @@
  *
  * Drei Arten von Leveln teilen sich eine Bühne:
  *   direkt      — Pfeiltasten + Enter, jeder Druck wird als Baustein mitgeschrieben
- *   Vorhersage  — Programm lesen, Endfeld anklicken
+ *   Vorhersage  — Programm lesen, Endfeld anklicken und sagen, was dort passiert
  *   Programm    — bauen (Kacheln oder Blockly), dann ablaufen lassen
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LEVEL, WELTEN, type Level } from "@/lib/algo/level";
 import { THEMEN, fuelle, thema as themaVon, type ThemaId } from "@/lib/algo/themen";
 import {
-  bausteine, direktSchritt, fuehreAus, mitIds, sterne as sterneFuer, startVon, Welt,
-  type Befehl, type Ergebnis, type Fehler, type Lauf, type Programm, type Richtung, type Zustand,
+  ausgangVon, bausteine, direktSchritt, fuehreAus, mitIds, PFEIL, startVon, Welt,
+  type Ausgang, type Befehl, type Ergebnis, type Fehler, type Lauf, type Programm, type Richtung, type Zustand,
 } from "@/lib/algo/spiel";
+import { levelWertung, richtzeitLevel, type Wertung } from "@/lib/algo/wertung";
+import { HilfeLeiste, Sterne, useMessung, type Messung } from "./Hilfe";
 import type { AlgoStand } from "@/lib/algo/fortschritt";
 import Spielfeld from "./Spielfeld";
 import KachelEditor from "./KachelEditor";
@@ -21,7 +23,6 @@ import Duell from "./Duell";
 import BlocklyEditor from "./BlocklyEditor";
 import FlussEditor from "./FlussEditor";
 import { ausProgramm } from "@/lib/algo/fluss";
-
 
 type EditorArt = "kacheln" | "blockly";
 const LEER: Programm = { haupt: [], fn: [] };
@@ -42,11 +43,12 @@ export const FEHLER_MARKE: Record<Fehler["art"], string> = {
   unfertig: "nicht fertig",
 };
 
-interface Erfolg { sterne: number; bloecke: number; text: string }
+interface Erfolg { wertung: Wertung; bloecke: number; zeilen: string[] }
+type Fertig = (bloecke: number) => void;
 
 export default function CodeAbenteuer({ stand, onGeloest }: {
   stand: AlgoStand;
-  onGeloest: (id: string, sterne: number, bloecke: number) => void;
+  onGeloest: (id: string, s: { sterne: number; bloecke: number; punkte: number }) => void;
 }) {
   const [themaId, setThemaId] = useState<ThemaId>("cyber");
   const [editor, setEditor] = useState<EditorArt>("kacheln");
@@ -87,7 +89,7 @@ export default function CodeAbenteuer({ stand, onGeloest }: {
       {duell
         ? <Duell thema={thema} />
         : <LevelAnsicht key={`${level.id}`} level={level} thema={thema} editor={editor}
-            onGeloest={(s, b) => onGeloest(level.id, s, b)}
+            onGeloest={s => onGeloest(level.id, s)}
             onWeiter={() => {
               const i = LEVEL.findIndex(l => l.id === level.id);
               if (i < LEVEL.length - 1) setLevelId(LEVEL[i + 1].id);
@@ -105,11 +107,11 @@ function Weltkarte({ stand, aktuell, onWahl, duell, onDuell }: {
         <div key={w.nr} className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-bold text-muted w-44 shrink-0" title={w.idee}>{w.nr}. {w.titel}</span>
           {LEVEL.filter(l => l.welt === w.nr).map(l => {
-            const s = stand.level[l.id]?.sterne ?? 0;
+            const st = stand.level[l.id];
             return (
-              <button key={l.id} type="button" onClick={() => onWahl(l.id)} title={l.titel}
+              <button key={l.id} type="button" onClick={() => onWahl(l.id)} title={`${l.titel}${st?.punkte ? ` — ${st.punkte} Punkte` : ""}`}
                 className={`rounded-lg border px-2 py-1 text-xs font-bold tabular-nums ${l.id === aktuell ? "border-line-active bg-surface-hover" : "border-line hover:bg-surface-hover"}`}>
-                {l.id} <span className="text-amber-400">{"★".repeat(s)}</span><span className="text-muted">{"☆".repeat(3 - s)}</span>
+                {l.id} <Sterne n={st?.sterne ?? 0} />
               </button>
             );
           })}
@@ -126,17 +128,34 @@ function Weltkarte({ stand, aktuell, onWahl, duell, onDuell }: {
   );
 }
 
+const uhr = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
+
 function LevelAnsicht({ level, thema, editor, onGeloest, onWeiter }: {
   level: Level;
   thema: ReturnType<typeof themaVon>;
   editor: EditorArt;
-  onGeloest: (sterne: number, bloecke: number) => void;
+  onGeloest: (s: { sterne: number; bloecke: number; punkte: number }) => void;
   onWeiter: () => void;
 }) {
-  const [erfolg, setErfolg] = useState<Erfolg | null>(null);
-  const [tipp, setTipp] = useState(false);
-  const geloest = useCallback((e: Erfolg) => { setErfolg(e); onGeloest(e.sterne, e.bloecke); }, [onGeloest]);
   const art = level.modus === "direkt" ? "direkt" : level.vorhersage ? "vorhersage" : "programm";
+  const richtzeit = richtzeitLevel(art, level.optimal);
+  const m = useMessung(richtzeit);
+  const [erfolg, setErfolg] = useState<Erfolg | null>(null);
+  const tipp = fuelle(level.tipp ?? WELTEN.find(w => w.nr === level.welt)!.idee, thema);
+
+  const fertig: Fertig = bloecke => {
+    const b = art === "vorhersage" ? level.optimal : bloecke;
+    const w = levelWertung({ ...m, bloecke: b, optimal: level.optimal, richtzeit });
+    const zeilen = [
+      art === "vorhersage" ? null : `${b} ${art === "direkt" ? "Tastendrücke" : "Bausteine"} (Bestzahl ${level.optimal})`,
+      `${m.fehlversuche} Fehlversuch${m.fehlversuche === 1 ? "" : "e"}`,
+      `Zeit ${uhr(m.sekunden)} (Richtzeit ${uhr(richtzeit * (m.hilfsmodus ? 2 : 1))})`,
+      m.vorgefuehrt ? "Vorgeführt: halbe Punkte, höchstens ein Stern" : null,
+    ].filter(Boolean) as string[];
+    setErfolg({ wertung: w, bloecke: b, zeilen });
+    onGeloest({ sterne: w.sterne, bloecke: b, punkte: w.punkte });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <section className="card p-4 flex flex-col gap-1">
@@ -145,23 +164,20 @@ function LevelAnsicht({ level, thema, editor, onGeloest, onWeiter }: {
           <span className="text-xs text-muted">
             {level.karten.length > 1 && `${level.karten.length} Karten · `}
             {level.maxBloecke ? `höchstens ${level.maxBloecke} Bausteine · ` : ""}
-            ★★★ mit {level.optimal} {art === "direkt" ? "Tastendrücken" : art === "vorhersage" ? "— beim ersten Versuch" : "Bausteinen"}
+            ★★★ {art === "vorhersage" ? "beim ersten Versuch" : `mit ${level.optimal} ${art === "direkt" ? "Tastendrücken" : "Bausteinen"} und höchstens einem Fehlversuch`}
           </span>
         </div>
         <p className="text-sm">{fuelle(level.text, thema)}</p>
-        {level.tipp && (tipp
-          ? <p className="text-sm rounded-lg bg-page border border-line p-2">💡 {fuelle(level.tipp, thema)}</p>
-          : <button type="button" onClick={() => setTipp(true)} className="self-start text-xs underline text-muted">💡 Tipp zeigen</button>)}
       </section>
-      {art === "direkt" && <Direkt level={level} thema={thema} onGeloest={geloest} />}
-      {art === "vorhersage" && <Vorhersage level={level} thema={thema} onGeloest={geloest} />}
-      {art === "programm" && <ProgrammLevel level={level} thema={thema} editor={editor} onGeloest={geloest} />}
+      {art === "direkt" && <Direkt level={level} thema={thema} m={m} tipp={tipp} fertig={fertig} />}
+      {art === "vorhersage" && <Vorhersage level={level} thema={thema} m={m} tipp={tipp} fertig={fertig} />}
+      {art === "programm" && <ProgrammLevel level={level} thema={thema} editor={editor} m={m} tipp={tipp} fertig={fertig} />}
       {erfolg && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setErfolg(null)}>
           <div className="card p-6 max-w-md w-full text-center flex flex-col gap-3" onClick={e => e.stopPropagation()} role="dialog" aria-label="Level geschafft">
-            <div className="text-4xl text-amber-400 tracking-widest">{"★".repeat(erfolg.sterne)}<span className="text-muted">{"☆".repeat(3 - erfolg.sterne)}</span></div>
-            <h3 className="text-xl font-black">Geschafft!</h3>
-            <p className="text-sm text-muted">{erfolg.text}</p>
+            <Sterne n={erfolg.wertung.sterne} gross />
+            <h3 className="text-xl font-black">Geschafft! {erfolg.wertung.punkte} Punkte</h3>
+            <ul className="text-sm text-muted">{erfolg.zeilen.map(z => <li key={z}>{z}</li>)}</ul>
             {level.merke && <p className="text-sm rounded-lg bg-page border border-line p-3 text-left">📌 <b>Merke:</b> {fuelle(level.merke, thema)}</p>}
             <div className="flex gap-2 justify-center">
               <button type="button" className="btn-secondary" onClick={() => setErfolg(null)}>Nochmal</button>
@@ -184,31 +200,46 @@ function FehlerZeile({ f }: { f: Fehler }) {
   );
 }
 
+/** Die ersten Bausteine der Musterlösung — als konkreter Hinweis. */
+function Anfang({ level, thema }: { level: Level; thema: ReturnType<typeof themaVon> }) {
+  const k = Math.max(1, Math.ceil(level.loesung.haupt.length / 3));
+  return (
+    <span className="flex flex-col gap-1">
+      <span>So fängt eine gute Lösung an:</span>
+      <KachelEditor prog={{ haupt: mitIds(level.loesung.haupt.slice(0, k)), fn: [] }} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen />
+    </span>
+  );
+}
+
+interface KindProps { level: Level; thema: ReturnType<typeof themaVon>; m: Messung; tipp: string; fertig: Fertig }
+
 // ── Direktsteuerung ─────────────────────────────────────────────────────
 
 const TASTE: Record<string, Richtung> = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 };
 
-function Direkt({ level, thema, onGeloest }: { level: Level; thema: ReturnType<typeof themaVon>; onGeloest: (e: Erfolg) => void }) {
+function Direkt({ level, thema, m, tipp, fertig }: KindProps) {
   const karte = level.karten[0];
   const welt = useRef(new Welt(karte));
   const [z, setZ] = useState<Zustand>(() => startVon(karte));
   const [zuege, setZuege] = useState<Befehl[]>([]);
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
   const huelle = useRef<HTMLDivElement>(null);
+  const demo = useAbspielen();
   const neu = () => { welt.current = new Welt(karte); setZ(startVon(karte)); setZuege([]); setErgebnis(null); };
 
   const zug = useCallback((t: "geh" | "nimm", r?: Richtung) => {
-    if (ergebnis) return;
+    if (ergebnis || demo.lauf) return;
     const e = direktSchritt(welt.current, t, r);
     const w = welt.current;
-    setZ({ ...w.z, genommen: [...w.z.genommen], gegner: [...w.z.gegner] });
+    setZ({ ...w.schritte.at(-1)!, genommen: [...w.z.genommen], gegner: [...w.z.gegner], x: w.z.x, y: w.z.y, r: w.z.r });
     const neueZuege = [...zuege, ...mitIds([t === "geh" ? { t, r: r! } : { t }])];
     setZuege(neueZuege);
     if (e) {
       setErgebnis(e);
-      if (e.ok) onGeloest({ sterne: sterneFuer(neueZuege.length, level.optimal), bloecke: neueZuege.length, text: `${neueZuege.length} Tastendrücke — die Bestzahl ist ${level.optimal}.` });
+      if (e.ok) fertig(neueZuege.length);
+      else m.fehler();
     }
-  }, [ergebnis, zuege, level.optimal, onGeloest]);
+  }, [ergebnis, zuege, fertig, m, demo.lauf]);
 
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
@@ -223,11 +254,15 @@ function Direkt({ level, thema, onGeloest }: { level: Level; thema: ReturnType<t
     return () => window.removeEventListener("keydown", taste);
   }, [zug]);
 
+  // Nach dem Vorführen wieder von vorn
+  useEffect(() => { if (demo.fertig) { demo.zurueck(); neu(); } }, [demo.fertig]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const knopf = "w-12 h-12 rounded-xl bg-surface-hover border border-line text-xl font-black active:scale-95";
+  const anzeige = demo.lauf ? demo.lauf.schritte[demo.i] : z;
   return (
     <div ref={huelle} className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4">
       <div className="flex flex-col gap-2">
-        <Spielfeld karte={karte} z={z} thema={thema} dauer={180} fehler={ergebnis?.ok === false} />
+        <Spielfeld karte={karte} z={anzeige} thema={thema} dauer={demo.lauf ? demo.tempo * 0.8 : 180} fehler={ergebnis?.ok === false} />
         {ergebnis && !ergebnis.ok && <FehlerZeile f={ergebnis.fehler} />}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="grid grid-cols-3 gap-1 w-fit" aria-label="Steuerkreuz">
@@ -242,6 +277,9 @@ function Direkt({ level, thema, onGeloest }: { level: Level; thema: ReturnType<t
             <button type="button" className="btn-secondary mt-2 block" onClick={neu}>⟲ Von vorn</button>
           </div>
         </div>
+        <HilfeLeiste m={m} tipp={tipp}
+          hinweis={<>Die ersten Tasten: <b className="text-lg">{level.loesung.haupt.slice(0, 3).map(b => (b.t === "geh" ? PFEIL[b.r] : "✋")).join(" ")}</b></>}
+          onVorfuehren={() => { neu(); demo.starte([{ lauf: fuehreAus(karte, level.loesung) }]); }} />
       </div>
       <div className="card p-3 flex flex-col gap-2">
         <div className="text-sm font-bold">📝 Mitgeschrieben: {zuege.length} Schritte</div>
@@ -254,36 +292,64 @@ function Direkt({ level, thema, onGeloest }: { level: Level; thema: ReturnType<t
 
 // ── Vorhersage ──────────────────────────────────────────────────────────
 
-function Vorhersage({ level, thema, onGeloest }: { level: Level; thema: ReturnType<typeof themaVon>; onGeloest: (e: Erfolg) => void }) {
+const AUSGAENGE: { id: Ausgang; text: (t: ReturnType<typeof themaVon>) => string }[] = [
+  { id: "geschafft", text: t => `${fuelle("{Held}", t)} schafft alles.` },
+  { id: "leer", text: t => `${fuelle("{Held}", t)} will ${t.verb} — aber da liegt nichts (nicht ausführbar).` },
+  { id: "wand", text: t => `${fuelle("{Held}", t)} läuft gegen eine Wand (nicht ausführbar).` },
+  { id: "unfertig", text: () => "Das Programm hört auf, bevor alles erledigt ist." },
+];
+
+function Vorhersage({ level, thema, m, tipp, fertig }: KindProps) {
   const karte = level.karten[0];
   const prog = useMemo(() => ({ haupt: mitIds(level.vorhersage!.haupt), fn: mitIds(level.vorhersage!.fn) }), [level]);
   const lauf = useMemo(() => fuehreAus(karte, prog), [karte, prog]);
   const ende = lauf.schritte.at(-1)!;
-  const [versuche, setVersuche] = useState(0);
-  const [tipp, setTipp] = useState<{ x: number; y: number; ok: boolean } | null>(null);
+  const richtigerAusgang = ausgangVon(lauf);
+  const [feld, setFeld] = useState<{ x: number; y: number; ok: boolean } | null>(null);
+  const [ausgang, setAusgang] = useState<{ id: Ausgang; ok: boolean } | null>(null);
   const abspiel = useAbspielen();
+  const geloest = feld?.ok && ausgang?.ok;
 
+  const pruefe = (f: typeof feld, a: typeof ausgang) => { if (f?.ok && a?.ok) fertig(level.optimal); };
   const klick = (x: number, y: number) => {
-    if (tipp?.ok) return;
+    if (feld?.ok) return;
     const ok = x === ende.x && y === ende.y;
-    const n = versuche + 1;
-    setVersuche(n);
-    setTipp({ x, y, ok });
-    if (ok) onGeloest({ sterne: n === 1 ? 3 : n === 2 ? 2 : 1, bloecke: n, text: n === 1 ? "Gleich beim ersten Versuch!" : `Nach ${n} Versuchen.` });
+    if (!ok) m.fehler();
+    const f = { x, y, ok };
+    setFeld(f);
+    pruefe(f, ausgang);
+  };
+  const waehle = (id: Ausgang) => {
+    if (ausgang?.ok) return;
+    const ok = id === richtigerAusgang;
+    if (!ok) m.fehler();
+    const a = { id, ok };
+    setAusgang(a);
+    pruefe(feld, a);
   };
 
   const z = abspiel.lauf ? abspiel.lauf.schritte[abspiel.i] : startVon(karte);
   return (
     <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4">
       <div className="flex flex-col gap-2">
-        <Spielfeld karte={karte} z={z} thema={thema} dauer={abspiel.tempo * 0.8} onFeld={abspiel.lauf ? undefined : klick} markiert={abspiel.lauf ? null : tipp} />
-        {tipp && !tipp.ok && <p className="text-sm text-bad">Nicht ganz — geh das Programm Schritt für Schritt mit dem Finger durch.</p>}
-        {tipp?.ok && (
-          <div className="flex gap-2 items-center flex-wrap">
-            <span className="text-sm text-ok font-bold">Richtig!</span>
-            <button type="button" className="btn-secondary" onClick={() => abspiel.starte([{ lauf }])}>▶ Ablauf ansehen</button>
-          </div>
-        )}
+        <Spielfeld karte={karte} z={z} thema={thema} dauer={abspiel.tempo * 0.8} onFeld={abspiel.lauf ? undefined : klick} markiert={abspiel.lauf ? null : feld} />
+        <p className="text-sm">
+          <b>1.</b> Wo steht {fuelle("{held}", thema)} am Ende? Feld anklicken.{" "}
+          {feld && (feld.ok ? <span className="text-ok font-bold">Richtig!</span> : <span className="text-bad">Nicht ganz — geh das Programm mit dem Finger durch.</span>)}
+        </p>
+        <div className="flex flex-col gap-1">
+          <p className="text-sm"><b>2.</b> Und was passiert dort?</p>
+          {AUSGAENGE.map(a => (
+            <button key={a.id} type="button" onClick={() => waehle(a.id)}
+              className={`text-left text-sm rounded-lg border px-3 py-1.5 ${ausgang?.id === a.id ? (ausgang.ok ? "border-ok bg-ok/10" : "border-bad bg-bad/10") : "border-line hover:bg-surface-hover"}`}>
+              {a.text(thema)}
+            </button>
+          ))}
+        </div>
+        {geloest && <button type="button" className="btn-secondary self-start" onClick={() => abspiel.starte([{ lauf }])}>▶ Ablauf ansehen</button>}
+        <HilfeLeiste m={m} tipp={tipp}
+          hinweis="Lege den Finger auf die Figur und gehe jeden Baustein einzeln. Beim letzten Baustein: Liegt auf diesem Feld wirklich etwas? Ist das nächste Feld frei?"
+          onVorfuehren={() => abspiel.starte([{ lauf }])} />
       </div>
       <div className="card p-3 flex flex-col gap-2">
         <div className="text-sm font-bold">📜 Das Programm</div>
@@ -316,7 +382,8 @@ function useAbspielen() {
       setFertig(true);
       return;
     }
-    const t = setTimeout(() => setI(i + 1), tempo);
+    const nurSensor = lauf.schritte[i].scan && lauf.schritte[i].scan!.art !== "nimm";
+    const t = setTimeout(() => setI(i + 1), nurSensor ? tempo * 0.6 : tempo);
     return () => clearTimeout(t);
   }, [laeuft, lauf, i, nr, laeufe.length, tempo]);
 
@@ -337,14 +404,15 @@ function useAbspielen() {
   };
 }
 
-function ProgrammLevel({ level, thema, editor, onGeloest }: {
-  level: Level; thema: ReturnType<typeof themaVon>; editor: EditorArt; onGeloest: (e: Erfolg) => void;
-}) {
+function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { editor: EditorArt }) {
   const speicher = `hp_algo_entwurf_${level.id}`;
   const [prog, setProg] = useState<Programm>(() => level.vorlage ?? LEER);
   const [geladen, setGeladen] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
   const [variante, setVariante] = useState(0);
+  /** läuft gerade die Vorführung der Musterlösung? Dann zählt das Ergebnis nicht. */
+  const [demo, setDemo] = useState<"aus" | "laeuft" | "fertig">("aus");
+  const loesung = useMemo(() => ({ haupt: mitIds(level.loesung.haupt), fn: mitIds(level.loesung.fn) }), [level]);
   const abspiel = useAbspielen();
   const gemeldet = useRef(false);
 
@@ -361,30 +429,31 @@ function ProgrammLevel({ level, thema, editor, onGeloest }: {
     setProg(p);
     if (geladen) try { localStorage.setItem(speicher, JSON.stringify(p)); } catch { /* egal */ }
     if (abspiel.lauf) abspiel.zurueck();
+    if (demo === "laeuft") setDemo("fertig");
   };
 
   const anzahl = bausteine(prog);
   const zuViele = level.maxBloecke !== undefined && anzahl > level.maxBloecke;
   const laeufe = () => level.karten.map(k => ({ lauf: fuehreAus(k, prog) }));
 
-  // Ergebnis melden, sobald das Abspielen fertig ist
+  // Ergebnis melden, sobald das Abspielen fertig ist (die Vorführung zählt nicht)
   const letzter = abspiel.lauf;
   const allesOk = abspiel.fertig && letzter?.ergebnis.ok && abspiel.nr === level.karten.length - 1;
   useEffect(() => {
     if (!abspiel.fertig) { gemeldet.current = false; return; }
-    if (allesOk && !gemeldet.current) {
-      gemeldet.current = true;
-      const s = sterneFuer(anzahl, level.optimal);
-      onGeloest({ sterne: s, bloecke: anzahl, text: `${anzahl} Bausteine — die Bestzahl ist ${level.optimal}.${s < 3 ? " Geht es noch kürzer?" : ""}` });
-    }
-  }, [abspiel.fertig, allesOk, anzahl, level.optimal, onGeloest]);
+    if (gemeldet.current) return;
+    gemeldet.current = true;
+    if (demo === "laeuft") { setDemo("fertig"); return; }
+    if (allesOk) fertig(anzahl);
+    else m.fehler();
+  }, [abspiel.fertig, allesOk, anzahl, fertig, m, demo]);
 
   const karteNr = abspiel.lauf ? abspiel.nr : variante;
   const karte = level.karten[karteNr];
   const z = abspiel.lauf ? abspiel.lauf.schritte[abspiel.i] : startVon(karte);
-  const fehler = abspiel.fertig && letzter && !letzter.ergebnis.ok ? letzter.ergebnis.fehler : null;
+  const fehler = demo !== "laeuft" && abspiel.fertig && letzter && !letzter.ergebnis.ok ? letzter.ergebnis.fehler : null;
 
-  const editorProps = { prog, onChange: aendern, erlaubt: level.bloecke, bedingungen: level.bedingungen, verb: thema.verb, aktiv: abspiel.lauf ? z.aktiv : undefined };
+  const editorProps = { prog, onChange: aendern, erlaubt: level.bloecke, bedingungen: level.bedingungen, verb: thema.verb, aktiv: abspiel.lauf && demo !== "laeuft" ? z.aktiv : undefined };
   return (
     <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4">
       <div className="flex flex-col gap-2">
@@ -405,13 +474,27 @@ function ProgrammLevel({ level, thema, editor, onGeloest }: {
             ? <button type="button" className="btn-secondary" onClick={abspiel.halt}>⏸ Pause</button>
             : abspiel.lauf && !abspiel.fertig
               ? <button type="button" className="btn-primary" onClick={abspiel.weiter}>▶ Weiter</button>
-              : <button type="button" className="btn-primary" disabled={zuViele || anzahl === 0} onClick={() => abspiel.starte(laeufe())}>▶ Start</button>}
+              : <button type="button" className="btn-primary" disabled={zuViele || anzahl === 0} onClick={() => { setDemo(d => (d === "laeuft" ? "fertig" : d)); abspiel.starte(laeufe()); }}>▶ Start</button>}
           <button type="button" className="btn-secondary" disabled={zuViele || anzahl === 0} onClick={() => abspiel.schritt(laeufe)}>⏭ Schritt</button>
           <button type="button" className="btn-secondary" onClick={abspiel.zurueck}>⟲ Zurück</button>
           <label className="text-xs text-muted flex items-center gap-1 ml-auto">🐢
             <input type="range" min={80} max={900} step={20} value={980 - abspiel.tempo} onChange={e => abspiel.setTempo(980 - +e.target.value)} />🐇
           </label>
         </div>
+        <HilfeLeiste m={m} tipp={tipp} hinweis={<Anfang level={level} thema={thema} />}
+          onVorfuehren={() => { setDemo("laeuft"); abspiel.starte(level.karten.map(k => ({ lauf: fuehreAus(k, loesung) }))); }} />
+        {demo !== "aus" && (
+          <div className="card p-3 flex flex-col gap-2 text-sm">
+            <div className="font-bold">🎬 So geht es{demo === "laeuft" ? " — schau zu:" : ":"}</div>
+            <KachelEditor prog={loesung} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen aktiv={demo === "laeuft" ? z.aktiv : undefined} />
+            {demo === "fertig" && (
+              <button type="button" className="btn-secondary self-start"
+                onClick={() => { aendern({ haupt: mitIds(level.loesung.haupt), fn: mitIds(level.loesung.fn) }); setEditorKey(k => k + 1); setDemo("aus"); }}>
+                📋 In meinen Editor übernehmen
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center gap-2 text-sm">
