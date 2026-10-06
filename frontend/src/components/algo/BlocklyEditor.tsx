@@ -11,8 +11,8 @@ import { useEffect, useRef, useState } from "react";
 import type { WorkspaceSvg } from "blockly/core";
 import { PFEIL, type BedingungArt, type BefehlTyp, type Programm } from "@/lib/algo/spiel";
 import { ausJson, zuJson } from "@/lib/algo/blocklyJson";
-import { BEDINGUNG_TEXT } from "@/lib/algo/kacheln";
-import { BAUSTEIN } from "./KachelEditor";
+import { BEDINGUNG_TEXT } from "@/lib/algo/bedingungen";
+import { BAUSTEIN } from "./Bausteine";
 
 type BlocklyModul = typeof import("blockly/core");
 
@@ -155,5 +155,5 @@ export default function BlocklyEditor({
   }, [aktiv]);
 
   if (fehler) return <div className="card p-3 text-sm text-bad">Blockly konnte nicht geladen werden: {fehler}</div>;
-  return <div ref={ort} className="w-full rounded-xl overflow-hidden border border-line" style={{ height: nurLesen ? 260 : 440 }} data-testid="blockly-editor" />;
+  return <div ref={ort} className="w-full rounded-xl overflow-hidden border border-line" style={{ height: nurLesen ? 260 : "min(560px, 70vh)" }} data-testid="blockly-editor" />;
 }

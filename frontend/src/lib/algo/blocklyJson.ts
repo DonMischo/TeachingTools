@@ -54,7 +54,7 @@ function blockVon(b: Befehl): BJ {
 export function zuJson(p: Programm, mitFn: boolean) {
   const start: BJ = { type: "algo_start", x: 20, y: 20, ...(p.haupt.length ? { next: { block: kette(p.haupt)! } } : {}) };
   const bloecke: BJ[] = [start];
-  if (mitFn) bloecke.push({ type: "algo_fn", x: 340, y: 20, ...(p.fn.length ? { next: { block: kette(p.fn)! } } : {}) });
+  if (mitFn) bloecke.push({ type: "algo_fn", x: 480, y: 20, ...(p.fn.length ? { next: { block: kette(p.fn)! } } : {}) });
   return { blocks: { languageVersion: 0, blocks: bloecke } };
 }
 

@@ -5,7 +5,7 @@
  * Drei Arten von Leveln teilen sich eine Bühne:
  *   direkt      — Pfeiltasten + Enter, jeder Druck wird als Baustein mitgeschrieben
  *   Vorhersage  — Programm lesen, Endfeld anklicken und sagen, was dort passiert
- *   Programm    — bauen (Kacheln oder Blockly), dann ablaufen lassen
+ *   Programm    — mit Blockly bauen, dann ablaufen lassen
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LEVEL, WELTEN, type Level } from "@/lib/algo/level";
@@ -18,13 +18,12 @@ import { levelWertung, richtzeitLevel, type Wertung } from "@/lib/algo/wertung";
 import { HilfeLeiste, Sterne, useMessung, type Messung } from "./Hilfe";
 import type { AlgoStand } from "@/lib/algo/fortschritt";
 import Spielfeld from "./Spielfeld";
-import KachelEditor from "./KachelEditor";
+import BausteinAnsicht from "./Bausteine";
 import Duell from "./Duell";
 import BlocklyEditor from "./BlocklyEditor";
 import FlussEditor from "./FlussEditor";
 import { ausProgramm } from "@/lib/algo/fluss";
 
-type EditorArt = "kacheln" | "blockly";
 const LEER: Programm = { haupt: [], fn: [] };
 
 function lies<T extends string>(k: string, erlaubt: readonly T[], vor: T): T {
@@ -51,12 +50,10 @@ export default function CodeAbenteuer({ stand, onGeloest }: {
   onGeloest: (id: string, s: { sterne: number; bloecke: number; punkte: number }) => void;
 }) {
   const [themaId, setThemaId] = useState<ThemaId>("cyber");
-  const [editor, setEditor] = useState<EditorArt>("kacheln");
   const [levelId, setLevelId] = useState<string>(() => LEVEL.find(l => !stand.level[l.id])?.id ?? LEVEL[0].id);
   const [duell, setDuell] = useState(false);
   useEffect(() => {
     setThemaId(lies("hp_algo_thema", THEMEN.map(t => t.id), "cyber"));
-    setEditor(lies("hp_algo_editor", ["kacheln", "blockly"] as const, "kacheln"));
   }, []);
   const thema = themaVon(themaId);
   const level = LEVEL.find(l => l.id === levelId)!;
@@ -71,24 +68,13 @@ export default function CodeAbenteuer({ stand, onGeloest }: {
             <div className="text-xs text-muted">{t.untertitel}</div>
           </button>
         ))}
-        <div className="ml-auto flex flex-col gap-1 justify-center">
-          <span className="text-xs text-muted">Editor</span>
-          <div className="inline-flex rounded-lg border border-line p-0.5 bg-surface">
-            {(["kacheln", "blockly"] as const).map(e => (
-              <button key={e} type="button" onClick={() => { setEditor(e); schreib("hp_algo_editor", e); }}
-                className={`px-3 py-1 rounded-md text-sm font-bold ${editor === e ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
-                {e === "kacheln" ? "👆 Kacheln" : "🧩 Blöcke"}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <Weltkarte stand={stand} aktuell={duell ? "" : levelId} onWahl={id => { setDuell(false); setLevelId(id); }} duell={duell} onDuell={() => setDuell(true)} />
 
       {duell
         ? <Duell thema={thema} />
-        : <LevelAnsicht key={`${level.id}`} level={level} thema={thema} editor={editor}
+        : <LevelAnsicht key={`${level.id}`} level={level} thema={thema}
             onGeloest={s => onGeloest(level.id, s)}
             onWeiter={() => {
               const i = LEVEL.findIndex(l => l.id === level.id);
@@ -130,10 +116,9 @@ function Weltkarte({ stand, aktuell, onWahl, duell, onDuell }: {
 
 const uhr = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s) % 60).padStart(2, "0")}`;
 
-function LevelAnsicht({ level, thema, editor, onGeloest, onWeiter }: {
+function LevelAnsicht({ level, thema, onGeloest, onWeiter }: {
   level: Level;
   thema: ReturnType<typeof themaVon>;
-  editor: EditorArt;
   onGeloest: (s: { sterne: number; bloecke: number; punkte: number }) => void;
   onWeiter: () => void;
 }) {
@@ -171,7 +156,7 @@ function LevelAnsicht({ level, thema, editor, onGeloest, onWeiter }: {
       </section>
       {art === "direkt" && <Direkt level={level} thema={thema} m={m} tipp={tipp} fertig={fertig} />}
       {art === "vorhersage" && <Vorhersage level={level} thema={thema} m={m} tipp={tipp} fertig={fertig} />}
-      {art === "programm" && <ProgrammLevel level={level} thema={thema} editor={editor} m={m} tipp={tipp} fertig={fertig} />}
+      {art === "programm" && <ProgrammLevel level={level} thema={thema} m={m} tipp={tipp} fertig={fertig} />}
       {erfolg && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setErfolg(null)}>
           <div className="card p-6 max-w-md w-full text-center flex flex-col gap-3" onClick={e => e.stopPropagation()} role="dialog" aria-label="Level geschafft">
@@ -206,7 +191,7 @@ function Anfang({ level, thema }: { level: Level; thema: ReturnType<typeof thema
   return (
     <span className="flex flex-col gap-1">
       <span>So fängt eine gute Lösung an:</span>
-      <KachelEditor prog={{ haupt: mitIds(level.loesung.haupt.slice(0, k)), fn: [] }} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen />
+      <BausteinAnsicht prog={{ haupt: mitIds(level.loesung.haupt.slice(0, k)), fn: [] }} verb={thema.verb} />
     </span>
   );
 }
@@ -284,7 +269,7 @@ function Direkt({ level, thema, m, tipp, fertig }: KindProps) {
       <div className="card p-3 flex flex-col gap-2">
         <div className="text-sm font-bold">📝 Mitgeschrieben: {zuege.length} Schritte</div>
         <p className="text-xs text-muted">Jeder Tastendruck ist ein Baustein. Zusammen ergeben sie dein Programm.</p>
-        <KachelEditor prog={{ haupt: zuege, fn: [] }} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen aktiv={zuege.at(-1)?.id} />
+        <BausteinAnsicht prog={{ haupt: zuege, fn: [] }} verb={thema.verb} aktiv={zuege.at(-1)?.id} />
       </div>
     </div>
   );
@@ -353,7 +338,7 @@ function Vorhersage({ level, thema, m, tipp, fertig }: KindProps) {
       </div>
       <div className="card p-3 flex flex-col gap-2">
         <div className="text-sm font-bold">📜 Das Programm</div>
-        <KachelEditor prog={prog} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen aktiv={abspiel.lauf ? z.aktiv : undefined} />
+        <BausteinAnsicht prog={prog} verb={thema.verb} aktiv={abspiel.lauf ? z.aktiv : undefined} />
       </div>
     </div>
   );
@@ -404,7 +389,7 @@ function useAbspielen() {
   };
 }
 
-function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { editor: EditorArt }) {
+function ProgrammLevel({ level, thema, m, tipp, fertig }: KindProps) {
   const speicher = `hp_algo_entwurf_${level.id}`;
   const [prog, setProg] = useState<Programm>(() => level.vorlage ?? LEER);
   const [geladen, setGeladen] = useState(false);
@@ -455,7 +440,8 @@ function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { 
 
   const editorProps = { prog, onChange: aendern, erlaubt: level.bloecke, bedingungen: level.bedingungen, verb: thema.verb, aktiv: abspiel.lauf && demo !== "laeuft" ? z.aktiv : undefined };
   return (
-    <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4">
+    <div className="flex flex-col gap-4">
+    <div className="grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4 items-start">
       <div className="flex flex-col gap-2">
         {level.karten.length > 1 && (
           <div className="flex gap-1">
@@ -468,6 +454,8 @@ function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { 
           </div>
         )}
         <Spielfeld karte={karte} z={z} thema={thema} dauer={abspiel.tempo * 0.8} fehler={!!fehler} />
+      </div>
+      <div className="flex flex-col gap-2 min-w-0">
         {fehler && <FehlerZeile f={fehler} />}
         <div className="flex items-center gap-2 flex-wrap">
           {abspiel.laeuft
@@ -486,7 +474,7 @@ function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { 
         {demo !== "aus" && (
           <div className="card p-3 flex flex-col gap-2 text-sm">
             <div className="font-bold">🎬 So geht es{demo === "laeuft" ? " — schau zu:" : ":"}</div>
-            <KachelEditor prog={loesung} onChange={() => {}} erlaubt={level.bloecke} verb={thema.verb} nurLesen aktiv={demo === "laeuft" ? z.aktiv : undefined} />
+            <BausteinAnsicht prog={loesung} verb={thema.verb} aktiv={demo === "laeuft" ? z.aktiv : undefined} />
             {demo === "fertig" && (
               <button type="button" className="btn-secondary self-start"
                 onClick={() => { aendern({ haupt: mitIds(level.loesung.haupt), fn: mitIds(level.loesung.fn) }); setEditorKey(k => k + 1); setDemo("aus"); }}>
@@ -496,6 +484,7 @@ function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { 
           </div>
         )}
       </div>
+    </div>
       <div className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center gap-2 text-sm">
           <span className={zuViele ? "text-bad font-bold" : "text-muted"}>
@@ -506,9 +495,7 @@ function ProgrammLevel({ level, thema, editor, m, tipp, fertig }: KindProps & { 
             {level.vorlage ? "Vorlage wiederherstellen" : "Alles löschen"}
           </button>
         </div>
-        {editor === "kacheln"
-          ? <KachelEditor key={editorKey} {...editorProps} />
-          : <BlocklyEditor key={`${editorKey}-${geladen}`} {...editorProps} />}
+        <BlocklyEditor key={`${editorKey}-${geladen}`} {...editorProps} />
         {anzahl > 0 && !level.bloecke.includes("rufe") && (
           <details className="card p-2 text-sm">
             <summary className="cursor-pointer font-bold">🔀 Mein Programm als Flussdiagramm</summary>

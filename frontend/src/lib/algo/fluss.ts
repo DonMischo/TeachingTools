@@ -11,7 +11,7 @@
  * Ohne `code` fragt der Ablauf bei Entscheidungen einfach nach »ja« oder »nein«.
  */
 import type { Bedingung, Befehl, Programm } from "./spiel";
-import { bedingungText } from "./kacheln";
+import { bedingungText } from "./bedingungen";
 
 export type KnotenTyp = "start" | "ende" | "aktion" | "io" | "entscheidung";
 /** `erklaerung`: Kommentar für Hover und Randnotiz */
