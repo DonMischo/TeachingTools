@@ -146,3 +146,22 @@ def test_vorlage_import_lehnt_falsche_ids_und_erfolge_ab(client, teacher_token):
     erfolg = {"objekte": {"de-fluesse": {"liste": [{"id": "saale-56", "aktiv": True}]}},
               "erfolge": [{"id": "x", "name": "X", "ebenen": ["de-seen"]}]}
     assert client.post("/api/karten/vorlage/import", json=erfolg, headers=h).status_code == 422
+
+
+def test_flaechennamen_kommen_als_ein_punkt_je_objekt(client, teacher_token):
+    """MapLibre beschriftet Flächen je Teilstück — für Namen gibt es darum einen Punkt je Objekt."""
+    flaechen = client.get("/api/karten/ebenen/welt-staaten", headers=auth(teacher_token)).json()["features"]
+    r = client.get("/api/karten/ebenen/welt-staaten?punkte=1", headers=auth(teacher_token))
+    assert r.status_code == 200
+    punkte = r.json()["features"]
+    assert {f["geometry"]["type"] for f in punkte} == {"Point"}
+    assert sorted(f["properties"]["id"] for f in punkte) == sorted(f["properties"]["id"] for f in flaechen)
+    kanada = next(f for f in punkte if f["properties"]["id"] == "CAN")["geometry"]["coordinates"]
+    assert -141 < kanada[0] < -52 and 42 < kanada[1] < 83
+
+
+def test_namenspunkte_auch_in_equal_earth(client, teacher_token):
+    r = client.get("/api/karten/ebenen/welt-kontinente?punkte=1&projektion=equalearth", headers=auth(teacher_token))
+    assert r.status_code == 200
+    assert len(r.json()["features"]) == len(
+        client.get("/api/karten/ebenen/welt-kontinente", headers=auth(teacher_token)).json()["features"])

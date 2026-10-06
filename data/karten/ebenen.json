@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-05",
+  "stand": "2026-10-06",
   "ebenen": [
     {
       "id": "de-laender",
@@ -357,7 +357,7 @@
         "url": "https://www.naturalearthdata.com/"
       },
       "anzahl": 7,
-      "bytes": 923224
+      "bytes": 894882
     },
     {
       "id": "welt-staedte",

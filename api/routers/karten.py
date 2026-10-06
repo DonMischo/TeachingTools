@@ -48,6 +48,46 @@ def _projiziert(pfad: Path, stand: float) -> bytes:
     return gzip.compress(json.dumps(sammlung, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
 
 
+def _grob(g: dict, hoechstens: int = 60) -> dict:
+    """Umrisse ausdünnen (jeder n-te Punkt) — für die Lage eines Namens reicht das, und die
+    Suche nach dem Ankerpunkt wird bei großen Staaten hundertfach schneller."""
+    def ring(r):
+        schritt = max(1, len(r) // hoechstens)
+        return r[::schritt] + ([r[0]] if schritt > 1 else [])
+    if g["type"] == "Polygon":
+        return {"type": "Polygon", "coordinates": [ring(r) for r in g["coordinates"]]}
+    if g["type"] == "MultiPolygon":
+        return {"type": "MultiPolygon", "coordinates": [[ring(r) for r in poly] for poly in g["coordinates"]]}
+    return g
+
+
+@lru_cache(maxsize=48)
+def _namenspunkte(pfad: Path, stand: float, projektion: str | None) -> bytes:
+    """Ein Beschriftungspunkt je Objekt (Ankerpunkt im größten Teil). MapLibre beschriftet
+    Flächen sonst je Teilstück und Kachel — Kanada oder Russland stünden mehrfach da."""
+    # Auf der Platte gemerkt: die Suche dauert bei den Weltstaaten einige Sekunden
+    ablage = pfad.parent / ".namen" / f"{pfad.stem}-{int(stand)}.json"
+    if ablage.exists():
+        punkte = json.loads(ablage.read_text(encoding="utf-8"))
+        return gzip.compress(json.dumps(transformiere(punkte) if projektion == "equalearth" else punkte,
+                                        ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
+    sammlung = json.loads(pfad.read_text(encoding="utf-8"))
+    punkte = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", **({"id": f["id"]} if "id" in f else {}), "properties": f.get("properties") or {},
+         "geometry": {"type": "Point", "coordinates": p}}
+        for f in sammlung["features"] if f.get("geometry") and (p := ankerpunkt(_grob(f["geometry"])))]}
+    try:
+        ablage.parent.mkdir(exist_ok=True)
+        for alt in ablage.parent.glob(f"{pfad.stem}-*.json"):
+            alt.unlink()
+        ablage.write_text(json.dumps(punkte, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass  # schreibgeschützt: dann eben nur im Speicher
+    if projektion == "equalearth":
+        punkte = transformiere(punkte)
+    return gzip.compress(json.dumps(punkte, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
+
+
 def gepackt(daten: bytes, request: Request, headers: dict) -> Response:
     """Fertig gepackte GeoJSON-Bytes ausliefern (oder entpackt, wenn der Browser kein gzip will)."""
     if "gzip" in request.headers.get("accept-encoding", ""):
@@ -55,9 +95,12 @@ def gepackt(daten: bytes, request: Request, headers: dict) -> Response:
     return Response(gzip.decompress(daten), media_type="application/geo+json", headers=headers)
 
 
-def geojson_antwort(pfad: Path, request: Request, cache: str, projektion: str | None = None) -> Response:
+def geojson_antwort(pfad: Path, request: Request, cache: str, projektion: str | None = None, punkte: bool = False) -> Response:
     """Ebene ausliefern — gepackt, wenn der Browser es kann (de-orte: 9 MB → 1,2 MB);
-    mit projektion=equalearth umgerechnet (api/karten_projektion.py)."""
+    mit projektion=equalearth umgerechnet (api/karten_projektion.py), mit punkte=True
+    nur ein Beschriftungspunkt je Objekt."""
+    if punkte:
+        return gepackt(_namenspunkte(pfad, pfad.stat().st_mtime, projektion), request, {"Cache-Control": cache})
     if projektion == "equalearth":
         return gepackt(_projiziert(pfad, pfad.stat().st_mtime), request, {"Cache-Control": cache})
     if "gzip" in request.headers.get("accept-encoding", ""):
@@ -111,15 +154,15 @@ def ebenen(db: Session = Depends(get_db), wer: Union[Teacher, Student] = Depends
 
 
 @router.get("/ebenen/{ebene_id}")
-def ebene(ebene_id: str, request: Request, projektion: str | None = None, db: Session = Depends(get_db),
+def ebene(ebene_id: str, request: Request, projektion: str | None = None, punkte: bool = False, db: Session = Depends(get_db),
           wer: Union[Teacher, Student] = Depends(get_current_user)):
     if ebene_id.startswith(EIGEN_PRAEFIX):
         e = _eigene_ebene(db, ebene_id, wer)
-        return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache", projektion)
+        return geojson_antwort(EIGENE / f"{e.id}.geojson", request, "no-cache", projektion, punkte)
     eintrag = next((e for e in katalog()["ebenen"] if e["id"] == ebene_id), None)
     if eintrag is None or eintrag["geometrie"] == "raster":
         raise HTTPException(404, "Unbekannte Ebene")
-    return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400", projektion)
+    return geojson_antwort(DATEN / "ebenen" / f"{ebene_id}.geojson", request, "private, max-age=86400", projektion, punkte)
 
 
 # ── Kartensätze ──────────────────────────────────────────────────────

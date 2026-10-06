@@ -122,3 +122,14 @@ def test_meereslinien_laufen_nicht_ueber_land(ebene_id):
                     fehler.append(f["properties"]["id"])
                     break
     assert not fehler, f"über Land: {sorted(set(fehler))}"
+
+
+def test_europa_endet_am_ural():
+    """Natural Earth zählt Russland ganz zu Europa — die Kontinente teilen es am Ural."""
+    def laengen(name):
+        f = next(f for f in _lade("welt-kontinente")["features"] if f["properties"]["name"] == name)
+        g = f["geometry"]
+        teile = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+        return [p[0] for teil in teile for p in teil[0]]
+    assert max(laengen("Europa")) < 70  # Sibirien gehört zu Asien
+    assert min(x for x in laengen("Asien") if x > 0) < 62  # Asien reicht bis an den Ural

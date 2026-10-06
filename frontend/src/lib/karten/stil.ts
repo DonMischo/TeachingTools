@@ -277,6 +277,15 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   const hatRelief = mit("hoehen").length > 0;
   const hatLaender = mit("laender").length > 0;
   for (const e of an) if (e.geometrie !== "raster") sources[e.id] = { type: "geojson", data: quelle(e), promoteId: "id" };
+  // Flächennamen aus einem Punkt je Objekt — sonst beschriftet MapLibre jedes Teilstück
+  // (Inseln, Kachelgrenzen) und Kanada oder Europa stehen mehrfach auf der Weltkarte
+  const namen = (e: Ebene) => {
+    if (e.geometrie !== "flaeche") return e.id;
+    const id = `${e.id}:namen`;
+    const url = quelle(e);
+    sources[id] ??= { type: "geojson", data: `${url}${url.includes("?") ? "&" : "?"}punkte=1`, promoteId: "id" };
+    return id;
+  };
   const schrift = (farbe: string, halo = "#ffffffcc") => ({ "text-color": farbe, "text-halo-color": halo, "text-halo-width": 1.2 });
 
   // Welt-Relief ganz unten
@@ -372,37 +381,37 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   // ── Beschriftungen (später = obenauf) ──
   if (text) {
     for (const e of mit("landschaften")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 7 : 2,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: e.bereich === "de" ? 7 : 2,
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11, "text-max-width": 8,
           ...(e.bereich === "welt" ? { "symbol-sort-key": ["get", "rang"] } : {}) },
         paint: schrift("#5b5b5b", "#ffffffaa") });
     }
     for (const e of mit("meere")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "symbol-sort-key": ["get", "rang"], "text-max-width": 7,
           "text-size": ["match", ["get", "art"], "ozean", 15, "meer", 12.5, 11], "text-letter-spacing": ["match", ["get", "art"], "ozean", 0.25, 0.05] },
         paint: schrift(FARBE.wasserSchrift, "#ffffff88") });
     }
     for (const e of mit("fluesse")) {
       const klein = e.id === "de-fluesse-klein";
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: klein ? 8 : e.bereich === "welt" ? 3 : 5.5,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: klein ? 8 : e.bereich === "welt" ? 3 : 5.5,
         layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
           "text-size": ["match", ["get", "klasse"], 1, 13, 2, 11.5, 10.5], "symbol-spacing": 400, "symbol-sort-key": ["get", "klasse"] },
         paint: schrift(FARBE.wasserSchrift) });
     }
     for (const e of mit("seen")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 7 : 3.5,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: e.bereich === "de" ? 7 : 3.5,
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11 }, paint: schrift(FARBE.wasserSchrift) });
     }
     for (const e of mit("gebirge")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
         layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.kursiv, "text-letter-spacing": 0.15, "text-max-width": 7,
           "text-size": ["interpolate", ["linear"], ["zoom"], 2, 9, 5, 10, 9, 15],
           ...(e.bereich === "welt" ? { "symbol-sort-key": ["get", "rang"] } : {}) },
         paint: schrift(FARBE.gebirgeSchrift, "#ffffffaa") });
     }
     for (const e of mit("staaten")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
         // Neben Deutschland-Ländern nur die Nachbarn beschriften
         ...(hatLaender ? { filter: ["!=", ["get", "id"], "DEU"] as FilterSpecification } : {}),
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-max-width": 7,
@@ -410,12 +419,12 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         paint: { "text-color": hatLaender ? "#8a847c" : "#3f3a35", "text-halo-color": "#ffffffaa", "text-halo-width": 1 } });
     }
     for (const e of mit("kontinente")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
         layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.fett, "text-size": 16, "text-letter-spacing": 0.3 },
         paint: schrift("#44403c") });
     }
     for (const e of mit("laender")) if (art === "politisch") {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 8, 15],
           // Stadtstaaten: der Stadtname steht schon auf dem Punkt — der Landesname weicht aus
           "text-max-width": 8, "text-padding": 6, "text-variable-anchor": ["center", "top", "bottom", "left", "right"], "text-radial-offset": 1.1 },
@@ -427,7 +436,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     const d = e.darstellung!;
     if (text && e.quiz && e.geometrie === "flaeche") {
       // Namen thematischer Flächen (Platten, Wüsten, Kreise) — Kreise erst nah
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: e.bereich === "de" ? 8 : 1.5,
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: e.bereich === "de" ? 8 : 1.5,
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "text-size": 11, "text-max-width": 8,
           ...(e.bereich === "welt" ? { "symbol-sort-key": ["coalesce", ["get", "rang"], 0] } : {}) },
         paint: schrift("#4a3b2a", "#ffffffaa") });
@@ -437,7 +446,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         paint: { "line-color": themaFarbe(d), "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.2, 9, 3] } });
       if (text && e.quiz) {
         // Benannte Linien (Tiefseegräben, Rücken): Name entlang der Linie
-        layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id,
+        layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
           layout: { "symbol-placement": "line", "symbol-spacing": 400, "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
             "text-size": 11, "text-offset": [0, -0.9] },
           paint: { "text-color": themaFarbe(d), "text-halo-color": "#ffffffdd", "text-halo-width": 1.4 } });
@@ -452,7 +461,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         paint: { "circle-radius": r, "circle-color": themaFarbe(d), "circle-opacity": 0.9,
           "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       if (text) {
-        layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, minzoom: 7,
+        layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: 7,
           layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-size": 10.5, "text-anchor": "left",
             "text-offset": [0.9, 0], "text-optional": true },
           paint: schrift("#333333") });
@@ -484,7 +493,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
           "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true, "icon-size": meer ? 1 : 0.8 } },
     );
     if (text) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: e.id, filter: meer ? fliesst : ["all", zeit, gurt],
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), filter: meer ? fliesst : ["all", zeit, gurt],
         layout: { "symbol-placement": "line", "symbol-spacing": 500, "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
           "text-size": 11, "text-offset": [0, -1] },
         paint: { "text-color": farbe, "text-halo-color": "#ffffffdd", "text-halo-width": 1.4 } });
@@ -504,7 +513,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     );
     if (text) {
       layers.push(
-        { id: `${e.id}:name`, type: "symbol", source: e.id, filter: ["!=", ["geometry-type"], "LineString"],
+        { id: `${e.id}:name`, type: "symbol", source: namen(e), filter: ["!=", ["geometry-type"], "LineString"],
           layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": 11.5, "text-anchor": "left", "text-offset": [0.8, 0],
             "text-optional": true },
           paint: schrift(FARBE.eigen) },
@@ -639,8 +648,9 @@ const inListe = (ids: string[]): ExpressionSpecification => ["in", ["get", "id"]
 export function wendeSatzAn(stil: StyleSpecification, katalog: Katalog, satz: SatzAnsicht): StyleSpecification {
   const layers = stil.layers.map((l) => {
     if (!("source" in l) || typeof l.source !== "string") return l;
-    const wahl = satz.auswahl[l.source];
-    const nummern = satz.nummern[l.source];
+    const ebene = ebeneVonStilEbene(l.source); // »x:namen« (Beschriftungspunkte) gehört zu x
+    const wahl = satz.auswahl[ebene];
+    const nummern = satz.nummern[ebene];
     let neu: LayerSpecification = l;
     if (wahl?.zeigen === "auswahl" && !satz.bearbeiten) {
       const nur = inListe(wahl.objekte);

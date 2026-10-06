@@ -366,6 +366,13 @@ const KONTINENT = {
   "Oceania": "Ozeanien", "Antarctica": "Antarktis", "Seven seas (open ocean)": "Ozeanien",
 };
 
+/** Europäisches Russland: westlich von Ural, Uralfluss und Kaspischem Meer, Kaukasus inklusive
+ *  (übliche Schulatlas-Grenze; Nowaja Semlja gehört zu Europa). */
+const URAL = { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [[
+  [19, 40], [19, 82], [69, 82], [69, 70], [66.5, 69], [65, 67.5], [60, 65], [59.5, 58], [58.5, 54], [59, 51.5],
+  [55, 51], [52, 50.5], [51.5, 47], [48, 46.5], [47, 41], [40, 40], [19, 40],
+]] } };
+
 /** Staaten der Welt (deutsche Namen in NAME_DE, MAPCOLOR7 = Färbung ohne gleichfarbige Nachbarn). */
 async function staaten(ne) {
   const fs = await lies(finde(ne, "ne_10m_admin_0_countries.shp"), `-simplify 12% keep-shapes`);
@@ -375,10 +382,18 @@ async function staaten(ne) {
   }));
   schreibe("welt-staaten", { name: "Staaten", gruppe: "politisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE }, welt);
 
-  // Kontinente = Staaten zusammengefasst (genauer als die groben Natural-Earth-Kontinentflächen)
+  // Kontinente = Staaten zusammengefasst (genauer als die groben Natural-Earth-Kontinentflächen).
+  // Natural Earth zählt Russland ganz zu Europa — für die Kontinente am Ural teilen.
+  const russland = welt.filter((f) => f.properties.id === "RUS");
+  const teil = async (befehl) => JSON.parse((await mapshaper.applyCommands(`-i in.json ${befehl} ural.json -o format=geojson out.json`,
+    { "in.json": { type: "FeatureCollection", features: russland }, "ural.json": URAL }))["out.json"].toString()).features;
+  const geteilt = [
+    ...(await teil("-clip")).map((f) => ({ ...f, properties: { ...f.properties, kontinent: "Europa" } })),
+    ...(await teil("-erase")).map((f) => ({ ...f, properties: { ...f.properties, kontinent: "Asien" } })),
+  ];
   const zusammen = await mapshaper.applyCommands(
     "-i in.json -dissolve kontinent -o format=geojson precision=0.0001 out.json",
-    { "in.json": { type: "FeatureCollection", features: welt } },
+    { "in.json": { type: "FeatureCollection", features: [...welt.filter((f) => f.properties.id !== "RUS"), ...geteilt] } },
   );
   schreibe("welt-kontinente", { name: "Kontinente", gruppe: "politisch", bereich: "welt", geometrie: "flaeche", quiz: true, quelle: QUELLE_NE },
     JSON.parse(zusammen["out.json"].toString()).features
