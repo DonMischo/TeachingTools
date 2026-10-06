@@ -536,7 +536,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                 autoFocus={f.name !== "f" && f.src === ""}
                 placeholder={f.name === "f" ? undefined : "z. B. x^2 - 1"}
                 aria-label={f.name === "f" ? "Funktionsterm" : `Funktionsterm ${f.name}`}
-                className="flex-1 min-w-[16rem] bg-page border border-line rounded-lg px-3 py-2 font-mono text-lg"
+                className="flex-1 min-w-48 sm:flex-none sm:w-[24rem] bg-page border border-line rounded-lg px-3 py-2 font-mono text-lg"
               />
               {/* Wert bleibt leer: so löst auch dieselbe Vorlage nochmal aus und würfelt neu. */}
               {festerTerm === undefined && (
@@ -545,7 +545,7 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
                   onChange={e => vorlage(f.name, e.target.value)}
                   aria-label={`Vorlage für ${f.name}`}
                   title="Vorlage einsetzen — dieselbe nochmal wählen würfelt neue Zahlen"
-                  className="bg-page border border-line rounded-lg px-2 py-2.5 text-sm hover:border-accent"
+                  className="sm:ml-auto bg-page border border-line rounded-lg px-2 py-2.5 text-sm hover:border-accent"
                 >
                   <option value="" disabled>Vorlage …</option>
                   {TEMPLATES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -618,58 +618,6 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
         </p>}
       </div>
 
-      {/* Bereich */}
-      <div className="flex items-end gap-4 flex-wrap">
-        <div className="grid grid-cols-3 gap-3 max-w-md">
-        {([["von", from, setFrom], ["bis", to, setTo], ["Schritt", step, setStep]] as const).map(
-          ([label, val, set]) => (
-            <label key={label} className="flex flex-col gap-1">
-              <span className="text-xs text-muted">
-                {label}{pi ? " · π" : ""}
-              </span>
-              <input
-                type="number" value={val} disabled={bereichFest}
-                step={pi ? 0.25 : label === "Schritt" ? 0.5 : 1}
-                min={label === "Schritt" ? 0.05 : undefined}
-                onChange={e => {
-                  const v = Number(e.target.value);
-                  if (Number.isFinite(v)) set(label === "Schritt" ? Math.max(0.05, v) : v);
-                }}
-                className="bg-page border border-line rounded-lg px-2 py-1.5 text-sm"
-              />
-            </label>
-          ),
-        )}
-        </div>
-
-        <label className="flex items-center gap-2 text-sm cursor-pointer pb-1.5">
-          <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} disabled={festerTerm !== undefined} className="accent-accent" />
-          in π rechnen
-        </label>
-
-        {/* Ausschnitt. Beide Achsen zusammen — oder jede für sich, wenn eine
-            Kurve flach liegt oder aus dem Bild läuft. */}
-        <div className="flex items-center gap-1.5 pb-0.5 flex-wrap">
-          <span className="text-xs text-muted mr-0.5">Ansicht</span>
-          <ZoomBtn onClick={() => scale(1 / 1.4, 1 / 1.4)} title="Hineinzoomen">＋</ZoomBtn>
-          <ZoomBtn onClick={() => scale(1.4, 1.4)} title="Herauszoomen">−</ZoomBtn>
-          <span className="text-xs text-muted ml-1.5">x</span>
-          <ZoomBtn onClick={() => scale(1 / 1.4, 1)} title="x-Achse dehnen">＋</ZoomBtn>
-          <ZoomBtn onClick={() => scale(1.4, 1)} title="x-Achse stauchen">−</ZoomBtn>
-          <span className="text-xs text-muted ml-1.5">y</span>
-          <ZoomBtn onClick={() => scale(1, 1 / 1.4)} title="y-Achse dehnen">＋</ZoomBtn>
-          <ZoomBtn onClick={() => scale(1, 1.4)} title="y-Achse stauchen">−</ZoomBtn>
-          <button
-            onClick={() => setZoom(null)}
-            disabled={!zoom}
-            title="Wieder automatisch einpassen"
-            className="text-xs px-2 py-1 rounded-lg border border-line hover:border-accent disabled:opacity-40 ml-1"
-          >
-            Passend
-          </button>
-        </div>
-      </div>
-
       {/* Wertetabelle — quer gelegt und über dem Diagramm: eine Zeile je
           Größe, eine Spalte je Stelle. So liest sie sich wie an der Tafel,
           und bei vielen Stellen wird waagerecht gescrollt statt in die Länge
@@ -705,6 +653,38 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
             </button>
           )}
         </div>
+
+        {/* Intervall: von, bis, Schritt — bestimmt die Stellen der Tabelle. */}
+        {tabelleOffen && (
+          <div className="flex items-end gap-4 flex-wrap mt-2">
+            <div className="grid grid-cols-3 gap-3 max-w-md">
+            {([["von", from, setFrom], ["bis", to, setTo], ["Schritt", step, setStep]] as const).map(
+              ([label, val, set]) => (
+                <label key={label} className="flex flex-col gap-1">
+                  <span className="text-xs text-muted">
+                    {label}{pi ? " · π" : ""}
+                  </span>
+                  <input
+                    type="number" value={val} disabled={bereichFest}
+                    step={pi ? 0.25 : label === "Schritt" ? 0.5 : 1}
+                    min={label === "Schritt" ? 0.05 : undefined}
+                    onChange={e => {
+                      const v = Number(e.target.value);
+                      if (Number.isFinite(v)) set(label === "Schritt" ? Math.max(0.05, v) : v);
+                    }}
+                    className="bg-page border border-line rounded-lg px-2 py-1.5 text-sm"
+                  />
+                </label>
+              ),
+            )}
+            </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer pb-1.5">
+              <input type="checkbox" checked={pi} onChange={e => setPi(e.target.checked)} disabled={festerTerm !== undefined} className="accent-accent" />
+              in π rechnen
+            </label>
+          </div>
+        )}
 
         {!tabelleOffen ? null : !selected.length ? (
           <p className="text-xs text-muted mt-2">Keine Funktion für die Tabelle gewählt.</p>
@@ -784,6 +764,27 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
       <div>
         {/* Koordinatensystem */}
         <div className="card p-3">
+          {/* Ausschnitt. Beide Achsen zusammen — oder jede für sich, wenn eine
+              Kurve flach liegt oder aus dem Bild läuft. */}
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
+            <span className="text-xs text-muted mr-0.5">Ansicht</span>
+            <ZoomBtn onClick={() => scale(1 / 1.4, 1 / 1.4)} title="Hineinzoomen">＋</ZoomBtn>
+            <ZoomBtn onClick={() => scale(1.4, 1.4)} title="Herauszoomen">−</ZoomBtn>
+            <span className="text-xs text-muted ml-1.5">x</span>
+            <ZoomBtn onClick={() => scale(1 / 1.4, 1)} title="x-Achse dehnen">＋</ZoomBtn>
+            <ZoomBtn onClick={() => scale(1.4, 1)} title="x-Achse stauchen">−</ZoomBtn>
+            <span className="text-xs text-muted ml-1.5">y</span>
+            <ZoomBtn onClick={() => scale(1, 1 / 1.4)} title="y-Achse dehnen">＋</ZoomBtn>
+            <ZoomBtn onClick={() => scale(1, 1.4)} title="y-Achse stauchen">−</ZoomBtn>
+            <button
+              onClick={() => setZoom(null)}
+              disabled={!zoom}
+              title="Wieder automatisch einpassen"
+              className="text-xs px-2 py-1 rounded-lg border border-line hover:border-accent disabled:opacity-40 ml-1"
+            >
+              Passend
+            </button>
+          </div>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
