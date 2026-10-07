@@ -277,14 +277,17 @@ function parseValue(v: string): { kind: "x" | "n"; n: number } | null {
   return { kind: isX ? "x" : "n", n };
 }
 
-export default function ZahlenModus({ onMessage, fest }: {
+export default function ZahlenModus({ onMessage, fest, anfang }: {
   onMessage: (m: string) => void;
   /** Feste Gleichung (TaskCrawler-Station): keine Stufen, keine neuen oder eigenen Aufgaben. */
   fest?: string;
+  /** Startgleichung aus dem Link (?gleichung=…): nur der Anfang, danach alles frei. */
+  anfang?: string;
 }) {
   const [level, setLevel] = useState(3);
   const [chain, setChain] = useState<Equation[]>(() => {
-    const r = fest ? parseEquation(fest) : null;
+    const quelle = fest ?? anfang;
+    const r = quelle ? parseEquation(quelle) : null;
     return [r?.ok ? r.eq : START];
   });
   const [ops, setOps] = useState<string[]>([]);

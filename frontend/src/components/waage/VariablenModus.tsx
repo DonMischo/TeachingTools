@@ -211,14 +211,20 @@ const START = PRESETS[0];
 /** Feste Formel (TaskCrawler-Station): gesuchte Größe und Werte vorgegeben, keine anderen Formeln. */
 export interface FesteFormel { formel: string; nach?: string; werte?: Record<string, number> }
 
-export default function VariablenModus({ onMessage, fest }: { onMessage: (m: string) => void; fest?: FesteFormel }) {
+export default function VariablenModus({ onMessage, fest, ausLink }: {
+  onMessage: (m: string) => void;
+  fest?: FesteFormel;
+  /** Startformel aus dem Link (?formel=…): nur der Anfang, danach alles frei. */
+  ausLink?: FesteFormel;
+}) {
   // Die feste Formel gilt nur, wenn sie sich lesen lässt — sonst die übliche Vorlage.
   const [anfang] = useState(() => {
-    const r = fest ? parseFormel(fest.formel) : null;
-    if (fest && r?.ok) {
+    const quelle = fest ?? ausLink;
+    const r = quelle ? parseFormel(quelle.formel) : null;
+    if (quelle && r?.ok) {
       const vs = varsOf(r.eq);
-      const t = fest.nach && vs.includes(fest.nach) ? fest.nach : vs[vs.length - 1];
-      return { eq: r.eq, target: t, values: fest.werte };
+      const t = quelle.nach && vs.includes(quelle.nach) ? quelle.nach : vs[vs.length - 1];
+      return { eq: r.eq, target: t, values: quelle.werte };
     }
     const s = parseFormel(START.formel);
     return { eq: s.ok ? s.eq : { left: [], right: [] }, target: START.target, values: START.values };

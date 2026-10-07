@@ -40,6 +40,8 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   wfc: ["Informatik", "Mathematik"],
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
+  pse: ["Chemie"],
+  strukturformeln: ["Chemie"],
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],
   rechenregeln: ["Mathematik"],

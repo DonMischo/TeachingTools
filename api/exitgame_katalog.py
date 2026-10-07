@@ -161,6 +161,8 @@ WERKZEUGE = {
         "config": {"reiter": "reise|weg|pakete|wissen|mission|fehler", "modell?": "osi|tcpip"},
     },
     "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
+    "pse": {"name": "Periodensystem", "config": {"element?": "Symbol oder Name, z. B. Fe oder Eisen"}},
+    "strukturformeln": {"name": "Strukturformeln", "config": {"name?": "IUPAC-Name, z. B. Ethanol"}},
     "wfc": {
         "name": "Wellenfunktionskollaps",
         "config": {

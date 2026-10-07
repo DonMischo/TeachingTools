@@ -1,0 +1,688 @@
+{
+  "Li": {
+    "datei": "/pse/proben/Li.webp",
+    "titel": "Purified lithium in an ampoule under argon, dark background.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Purified_lithium_in_an_ampoule_under_argon,_dark_background.png",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "AdvancedTinkering"
+  },
+  "Be": {
+    "datei": "/pse/proben/Be.webp",
+    "titel": "Beryllium nuggets 2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Beryllium_nuggets_2.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "B": {
+    "datei": "/pse/proben/B.webp",
+    "titel": "Boron.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Boron.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Jurii"
+  },
+  "C": {
+    "datei": "/pse/proben/C.webp",
+    "titel": "Graphite-and-diamond-with-scale.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Graphite-and-diamond-with-scale.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Robert M. Lavinsky"
+  },
+  "N": {
+    "datei": "/pse/proben/N.webp",
+    "titel": "Fluessiger Stickstoff.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Fluessiger_Stickstoff.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Robin Müller"
+  },
+  "O": {
+    "datei": "/pse/proben/O.webp",
+    "titel": "Liquid oxygen in a beaker 4.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Liquid_oxygen_in_a_beaker_4.jpg",
+    "lizenz": "Public domain",
+    "urheber": "U.S. Air Force/Staff Sgt. Jim Araos"
+  },
+  "F": {
+    "datei": "/pse/proben/F.webp",
+    "titel": "Liquid fluorine tighter crop.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Liquid_fluorine_tighter_crop.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": ".mw-parser-output .plainlist ul{line-height:inherit;list-style:none none;margin:0}.mw-parser-output .plainlist ul li{margin-bottom:0} Liquid_fluorine.jpg: Prof B. G. Mueller derivative work: TCO (talk"
+  },
+  "Ne": {
+    "datei": "/pse/proben/Ne.webp",
+    "titel": "NeTube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:NeTube.jpg",
+    "lizenz": "CC BY-SA 2.5",
+    "urheber": "User:Pslawinski"
+  },
+  "Na": {
+    "datei": "/pse/proben/Na.webp",
+    "titel": "Na (Sodium).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Na_(Sodium).jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Dnn87 at English Wikipedia."
+  },
+  "Mg": {
+    "datei": "/pse/proben/Mg.webp",
+    "titel": "Magnesium crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Magnesium_crystals.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Warut Roonguthai"
+  },
+  "Al": {
+    "datei": "/pse/proben/Al.webp",
+    "titel": "Aluminium-4.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Aluminium-4.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Unknown authorUnknown author"
+  },
+  "Si": {
+    "datei": "/pse/proben/Si.webp",
+    "titel": "SiliconCroda.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:SiliconCroda.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Enricoros at English Wikipedia"
+  },
+  "P": {
+    "datei": "/pse/proben/P.webp",
+    "titel": "Phosphor.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Phosphor.JPG",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Dnn87"
+  },
+  "S": {
+    "datei": "/pse/proben/S.webp",
+    "titel": "Sulfur - El Desierto mine, San Pablo de Napa, Daniel Campos Province, Potosí, Bolivia.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sulfur_-_El_Desierto_mine,_San_Pablo_de_Napa,_Daniel_Campos_Province,_Potos%C3%AD,_Bolivia.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "Ivar Leidus"
+  },
+  "Ar": {
+    "datei": "/pse/proben/Ar.webp",
+    "titel": "ArTube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:ArTube.jpg",
+    "lizenz": "CC BY-SA 2.5",
+    "urheber": "User:Pslawinski"
+  },
+  "K": {
+    "datei": "/pse/proben/K.webp",
+    "titel": "Kalium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kalium.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "BXXXD"
+  },
+  "Ca": {
+    "datei": "/pse/proben/Ca.webp",
+    "titel": "Calcium 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Calcium_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "de:Benutzer:Tomihahndorf"
+  },
+  "Ti": {
+    "datei": "/pse/proben/Ti.webp",
+    "titel": "Titan-crystal bar.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Titan-crystal_bar.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Alchemist-hp (pse-mendelejew.de)"
+  },
+  "V": {
+    "datei": "/pse/proben/V.webp",
+    "titel": "Vanadium 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Vanadium_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Tomihahndorf at German Wikipedia."
+  },
+  "Ni": {
+    "datei": "/pse/proben/Ni.webp",
+    "titel": "Electrolytic nickel.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Electrolytic_nickel.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Jurii"
+  },
+  "Cu": {
+    "datei": "/pse/proben/Cu.webp",
+    "titel": "Cuivre Michigan.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cuivre_Michigan.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "Didier Descouens"
+  },
+  "Ga": {
+    "datei": "/pse/proben/Ga.webp",
+    "titel": "Gallium crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Gallium_crystals.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "en:user:foobar"
+  },
+  "Ge": {
+    "datei": "/pse/proben/Ge.webp",
+    "titel": "Germanium element.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Germanium_element.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "As": {
+    "datei": "/pse/proben/As.webp",
+    "titel": "Arsen 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Arsen_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Tomihahndorf at German Wikipedia."
+  },
+  "Se": {
+    "datei": "/pse/proben/Se.webp",
+    "titel": "Selen 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Selen_1.jpg",
+    "lizenz": "Public domain",
+    "urheber": "de:User:Tomihahndorf"
+  },
+  "Br": {
+    "datei": "/pse/proben/Br.webp",
+    "titel": "Bromine vial in acrylic cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Bromine_vial_in_acrylic_cube.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (pse-mendelejew.de)"
+  },
+  "Kr": {
+    "datei": "/pse/proben/Kr.webp",
+    "titel": "KrTube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:KrTube.jpg",
+    "lizenz": "CC BY-SA 2.5",
+    "urheber": "User:Pslawinski"
+  },
+  "Rb": {
+    "datei": "/pse/proben/Rb.webp",
+    "titel": "RbMetal.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:RbMetal.JPG",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Dnn87"
+  },
+  "Tc": {
+    "datei": "/pse/proben/Tc.webp",
+    "titel": "Technetium-sample.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Technetium-sample.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "MARCO CARDIN"
+  },
+  "Rh": {
+    "datei": "/pse/proben/Rh.webp",
+    "titel": "Rhodium powder pressed melted.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rhodium_powder_pressed_melted.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (talk) www.pse-mendelejew.de derivative work: Purpy Pupple (talk)"
+  },
+  "Pd": {
+    "datei": "/pse/proben/Pd.webp",
+    "titel": "Palladium (46 Pd).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Palladium_(46_Pd).jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Hi-Res Images of Chemical Elements"
+  },
+  "Ag": {
+    "datei": "/pse/proben/Ag.webp",
+    "titel": "Silver crystal.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Silver_crystal.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "In": {
+    "datei": "/pse/proben/In.webp",
+    "titel": "Indium wetting glass.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Indium_wetting_glass.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Schtone"
+  },
+  "Sn": {
+    "datei": "/pse/proben/Sn.webp",
+    "titel": "Cín.PNG",
+    "seite": "https://commons.wikimedia.org/wiki/File:C%C3%ADn.PNG",
+    "lizenz": "Public domain",
+    "urheber": "Ondřej Mangl"
+  },
+  "Sb": {
+    "datei": "/pse/proben/Sb.webp",
+    "titel": "Antimony-2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Antimony-2.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Jurii"
+  },
+  "Te": {
+    "datei": "/pse/proben/Te.webp",
+    "titel": "Tellurium element 2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tellurium_element_2.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "I": {
+    "datei": "/pse/proben/I.webp",
+    "titel": "Sample of iodine.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Sample_of_iodine.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "LHcheM"
+  },
+  "Xe": {
+    "datei": "/pse/proben/Xe.webp",
+    "titel": "XeTube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:XeTube.jpg",
+    "lizenz": "CC BY-SA 2.5",
+    "urheber": "User:Pslawinski"
+  },
+  "Cs": {
+    "datei": "/pse/proben/Cs.webp",
+    "titel": "Cesium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cesium.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Dnn87 Contact email: Dnn87yahoo.dk"
+  },
+  "Ba": {
+    "datei": "/pse/proben/Ba.webp",
+    "titel": "Barium 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Barium_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Tomihahndorf at German Wikipedia."
+  },
+  "La": {
+    "datei": "/pse/proben/La.webp",
+    "titel": "Lanthan 1-cropflipped.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Lanthan_1-cropflipped.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Lanthan_1.jpg: Tomihahndorf derivative work: Materialscientist (talk)"
+  },
+  "Ce": {
+    "datei": "/pse/proben/Ce.webp",
+    "titel": "CE2k2g.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:CE2k2g.jpg",
+    "lizenz": "CC BY-SA 2.0 de",
+    "urheber": "Alchemist-hp (pse-mendelejew.de) Alchemist-hp at de.wikipedia"
+  },
+  "Pr": {
+    "datei": "/pse/proben/Pr.webp",
+    "titel": "Praseodym 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Praseodym_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Tomihahndorf at German Wikipedia."
+  },
+  "Nd": {
+    "datei": "/pse/proben/Nd.webp",
+    "titel": "Neodym 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neodym_1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "The original uploader was Tomihahndorf at German Wikipedia."
+  },
+  "Pm": {
+    "datei": "/pse/proben/Pm.webp",
+    "titel": "Promethium Metal Buttons (cropped).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Promethium_Metal_Buttons_(cropped).png",
+    "lizenz": "Public domain",
+    "urheber": "E. J. Wheelwright"
+  },
+  "Sm": {
+    "datei": "/pse/proben/Sm.webp",
+    "titel": "Samarium 1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Samarium_1.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Tomihahndorf"
+  },
+  "Eu": {
+    "datei": "/pse/proben/Eu.webp",
+    "titel": "Eu-Block.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Eu-Block.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (www.pse-mendelejew.de)"
+  },
+  "Gd": {
+    "datei": "/pse/proben/Gd.webp",
+    "titel": "Gadolinium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Gadolinium.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "unbekannt"
+  },
+  "Tb": {
+    "datei": "/pse/proben/Tb.webp",
+    "titel": "Terbium element.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Terbium_element.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "Dy": {
+    "datei": "/pse/proben/Dy.webp",
+    "titel": "Dysprosium1.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Dysprosium1.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "Ho": {
+    "datei": "/pse/proben/Ho.webp",
+    "titel": "Holmium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Holmium.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Wilco Oelen"
+  },
+  "Er": {
+    "datei": "/pse/proben/Er.webp",
+    "titel": "Erbium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Erbium.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "Tomihahndorf"
+  },
+  "Yb": {
+    "datei": "/pse/proben/Yb.webp",
+    "titel": "Ytterbium element.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ytterbium_element.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "Hf": {
+    "datei": "/pse/proben/Hf.webp",
+    "titel": "Hf-crystal bar.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hf-crystal_bar.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Ir": {
+    "datei": "/pse/proben/Ir.webp",
+    "titel": "Iridium foil.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Iridium_foil.jpg",
+    "lizenz": "CC BY 2.5",
+    "urheber": "Dschwen"
+  },
+  "Pt": {
+    "datei": "/pse/proben/Pt.webp",
+    "titel": "Platinum crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Platinum_crystals.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Periodictableru"
+  },
+  "Au": {
+    "datei": "/pse/proben/Au.webp",
+    "titel": "Gold-crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Gold-crystals.jpg",
+    "lizenz": "CC BY-SA 3.0 de",
+    "urheber": "Alchemist-hp (talk) www.pse-mendelejew.de"
+  },
+  "Hg": {
+    "datei": "/pse/proben/Hg.webp",
+    "titel": "Mercury-element.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Mercury-element.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
+  },
+  "Tl": {
+    "datei": "/pse/proben/Tl.webp",
+    "titel": "Thallium pieces in ampoule.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Thallium_pieces_in_ampoule.jpg",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "W. Oelen"
+  },
+  "Po": {
+    "datei": "/pse/proben/Po.webp",
+    "titel": "2019-11-22 Spark plugs and static eliminators with radioactive polonium at museum display.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:2019-11-22_Spark_plugs_and_static_eliminators_with_radioactive_polonium_at_museum_display.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "Maksym Kozlenko"
+  },
+  "At": {
+    "datei": "/pse/proben/At.webp",
+    "titel": "Glow from a sample of astatine (cropped).jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Glow_from_a_sample_of_astatine_(cropped).jpg",
+    "lizenz": "CC BY 4.0",
+    "urheber": "NuclearAlex"
+  },
+  "Rn": {
+    "datei": "/pse/proben/Rn.webp",
+    "titel": "Radon water apparatus P1120815.JPG",
+    "seite": "https://commons.wikimedia.org/wiki/File:Radon_water_apparatus_P1120815.JPG",
+    "lizenz": "CC BY-SA 3.0",
+    "urheber": "David.Monniaux"
+  },
+  "Ra": {
+    "datei": "/pse/proben/Ra.webp",
+    "titel": "Radium226.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Radium226.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "grenadier"
+  },
+  "Ac": {
+    "datei": "/pse/proben/Ac.webp",
+    "titel": "Actinium sample (31481701837).png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Actinium_sample_(31481701837).png",
+    "lizenz": "CC BY 2.0",
+    "urheber": "Oak Ridge National Laboratory"
+  },
+  "Pa": {
+    "datei": "/pse/proben/Pa.webp",
+    "titel": "Protactinium-233.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Protactinium-233.jpg",
+    "lizenz": "Public domain",
+    "urheber": "ENERGY.GOV"
+  },
+  "U": {
+    "datei": "/pse/proben/U.webp",
+    "titel": "Uranium2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Uranium2.jpg",
+    "lizenz": "Public domain",
+    "urheber": "unbekannt"
+  },
+  "Np": {
+    "datei": "/pse/proben/Np.webp",
+    "titel": "Neptunium2.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Neptunium2.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Los Alamos National Laboratory,"
+  },
+  "Am": {
+    "datei": "/pse/proben/Am.webp",
+    "titel": "Americium microscope.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Americium_microscope.jpg",
+    "lizenz": "CC BY 3.0",
+    "urheber": "Bionerd"
+  },
+  "Cm": {
+    "datei": "/pse/proben/Cm.webp",
+    "titel": "Cm-Fluoreszenz.png",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cm-Fluoreszenz.png",
+    "lizenz": "Public domain",
+    "urheber": "Eschenmoser + Kollegen"
+  },
+  "Bk": {
+    "datei": "/pse/proben/Bk.webp",
+    "titel": "Berkelium metal.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Berkelium_metal.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Oak Ridge National Laboratory, US Department of Energy"
+  },
+  "Cf": {
+    "datei": "/pse/proben/Cf.webp",
+    "titel": "Californium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Californium.jpg",
+    "lizenz": "Public domain",
+    "urheber": "United States Department of Energy (see File:Einsteinium.jpg)"
+  },
+  "Es": {
+    "datei": "/pse/proben/Es.webp",
+    "titel": "Einsteinium.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Einsteinium.jpg",
+    "lizenz": "Public domain",
+    "urheber": "Haire, R. G., US Department of Energy. Touched up by Materialscientist at en.wikipedia."
+  },
+  "H": {
+    "datei": "/pse/proben/H.webp",
+    "titel": "Hydrogen discharge tube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Hydrogen_discharge_tube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Cl": {
+    "datei": "/pse/proben/Cl.webp",
+    "titel": "Chlorine liquid in an ampoule.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Chlorine_liquid_in_an_ampoule.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Sc": {
+    "datei": "/pse/proben/Sc.webp",
+    "titel": "Scandium sublimed dendritic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Scandium_sublimed_dendritic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Cr": {
+    "datei": "/pse/proben/Cr.webp",
+    "titel": "Chromium crystals and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Chromium_crystals_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Mn": {
+    "datei": "/pse/proben/Mn.webp",
+    "titel": "Manganese electrolytic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Manganese_electrolytic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Fe": {
+    "datei": "/pse/proben/Fe.webp",
+    "titel": "Iron electrolytic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Iron_electrolytic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Co": {
+    "datei": "/pse/proben/Co.webp",
+    "titel": "Kobalt electrolytic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Kobalt_electrolytic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Zn": {
+    "datei": "/pse/proben/Zn.webp",
+    "titel": "Zinc fragment sublimed and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Zinc_fragment_sublimed_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Sr": {
+    "datei": "/pse/proben/Sr.webp",
+    "titel": "Strontium destilled crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Strontium_destilled_crystals.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Y": {
+    "datei": "/pse/proben/Y.webp",
+    "titel": "Yttrium sublimed dendritic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Yttrium_sublimed_dendritic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (www.pse-mendelejew.de)"
+  },
+  "Zr": {
+    "datei": "/pse/proben/Zr.webp",
+    "titel": "Zirconium crystal bar and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Zirconium_crystal_bar_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (pse-mendelejew.de)."
+  },
+  "Nb": {
+    "datei": "/pse/proben/Nb.webp",
+    "titel": "Niobium crystals and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Niobium_crystals_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Mo": {
+    "datei": "/pse/proben/Mo.webp",
+    "titel": "Molybdenum crystaline fragment and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Molybdenum_crystaline_fragment_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Ru": {
+    "datei": "/pse/proben/Ru.webp",
+    "titel": "Ruthenium a half bar.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Ruthenium_a_half_bar.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Cd": {
+    "datei": "/pse/proben/Cd.webp",
+    "titel": "Cadmium-crystal bar.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Cadmium-crystal_bar.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Tm": {
+    "datei": "/pse/proben/Tm.webp",
+    "titel": "Thulium sublimed dendritic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Thulium_sublimed_dendritic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Lu": {
+    "datei": "/pse/proben/Lu.webp",
+    "titel": "Lutetium sublimed dendritic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Lutetium_sublimed_dendritic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Ta": {
+    "datei": "/pse/proben/Ta.webp",
+    "titel": "Tantalum single crystal and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Tantalum_single_crystal_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "W": {
+    "datei": "/pse/proben/W.webp",
+    "titel": "Wolfram evaporated crystals and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Wolfram_evaporated_crystals_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Re": {
+    "datei": "/pse/proben/Re.webp",
+    "titel": "Rhenium single crystal bar and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Rhenium_single_crystal_bar_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Os": {
+    "datei": "/pse/proben/Os.webp",
+    "titel": "Osmium crystals.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Osmium_crystals.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Pb": {
+    "datei": "/pse/proben/Pb.webp",
+    "titel": "Lead electrolytic and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Lead_electrolytic_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Bi": {
+    "datei": "/pse/proben/Bi.webp",
+    "titel": "Bismuth crystals and 1cm3 cube.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Bismuth_crystals_and_1cm3_cube.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Th": {
+    "datei": "/pse/proben/Th.webp",
+    "titel": "Thorium sample 0.1g.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Thorium_sample_0.1g.jpg",
+    "lizenz": "FAL",
+    "urheber": "Alchemist-hp (talk) (www.pse-mendelejew.de)"
+  },
+  "Pu": {
+    "datei": "/pse/proben/Pu.webp",
+    "titel": "Plutonium ring.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Plutonium_ring.jpg",
+    "lizenz": "Attribution",
+    "urheber": "Los Alamos National Laboratory"
+  },
+  "He": {
+    "datei": "/pse/proben/He.webp",
+    "titel": "Angeregtes Helium 3.jpg",
+    "seite": "https://commons.wikimedia.org/wiki/File:Angeregtes_Helium_3.jpg",
+    "lizenz": "CC BY-SA 4.0",
+    "urheber": "Alicepublic"
+  }
+}

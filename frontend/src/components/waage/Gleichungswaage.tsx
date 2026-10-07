@@ -29,13 +29,23 @@ type ModeId = (typeof MODES)[number]["id"];
  *   { reaktion: "H2 + O2 -> H2O" }                          → Chemie
  * Dann gibt es keinen Moduswechsel und keine anderen Aufgaben.
  */
-export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+/**
+ * `start` kommt aus dem Link (`?reaktion=…`, etwa aus dem Periodensystem):
+ * es wählt Modus und Aufgabe für den Anfang, sperrt aber nichts — anders als
+ * `vorgabe`.
+ */
+export type Start =
+  | { modus: "zahlen"; gleichung: string }
+  | { modus: "variablen"; formel: string; nach?: string }
+  | { modus: "chemie"; reaktion: string };
+
+export default function Gleichungswaage({ action, vorgabe, start }: { action?: ReactNode; vorgabe?: Vorgabe; start?: Start }) {
   const gleichung = text(vorgabe, "gleichung"), formel = text(vorgabe, "formel"), reaktion = text(vorgabe, "reaktion");
   const fest: ModeId | null = vorgabe
     ? wahl(vorgabe, "modus", ["zahlen", "variablen", "chemie"] as const)
       ?? (reaktion ? "chemie" : formel ? "variablen" : "zahlen")
     : null;
-  const [mode, setMode] = useState<ModeId>(fest ?? "zahlen");
+  const [mode, setMode] = useState<ModeId>(fest ?? start?.modus ?? "zahlen");
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,10 +90,13 @@ export default function Gleichungswaage({ action, vorgabe }: { action?: ReactNod
         </div>
       )}
 
-      {mode === "zahlen" && <ZahlenModus onMessage={setMsg} fest={fest ? gleichung : undefined} />}
+      {mode === "zahlen" && <ZahlenModus onMessage={setMsg} fest={fest ? gleichung : undefined}
+        anfang={start?.modus === "zahlen" ? start.gleichung : undefined} />}
       {mode === "variablen" && <VariablenModus onMessage={setMsg}
-        fest={fest && formel ? { formel, nach: text(vorgabe, "nach"), werte: zahlen(vorgabe, "werte") } : undefined} />}
-      {mode === "chemie" && <ChemieModus onMessage={setMsg} fest={fest ? reaktion : undefined} />}
+        fest={fest && formel ? { formel, nach: text(vorgabe, "nach"), werte: zahlen(vorgabe, "werte") } : undefined}
+        ausLink={start?.modus === "variablen" ? { formel: start.formel, nach: start.nach, werte: {} } : undefined} />}
+      {mode === "chemie" && <ChemieModus onMessage={setMsg} fest={fest ? reaktion : undefined}
+        anfang={start?.modus === "chemie" ? start.reaktion : undefined} />}
     </div>
   );
 }

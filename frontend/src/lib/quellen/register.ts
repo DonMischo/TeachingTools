@@ -43,6 +43,21 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "pse", name: "🧪 Periodensystem",
+    eintraege: [
+      { quelle: "Periodic Table of Elements (PubChem)", urheber: "National Center for Biotechnology Information (NCBI), NLM",
+        lizenz: "gemeinfrei (Werk der US-Regierung)", url: "https://pubchem.ncbi.nlm.nih.gov/periodic-table/",
+        verwendung: "Kenndaten aller 118 Elemente (src/lib/pse/daten.json, geholt mit scripts/fetch-pse.mjs)" },
+    ],
+  },
+  {
+    slug: "strukturformeln", name: "⬡ Strukturformeln",
+    eintraege: [
+      { quelle: "Strukturformelzeichner (strukturformelzeichner.de)", lizenz: "nur als Vorbild angesehen, kein Code übernommen",
+        url: "https://www.strukturformelzeichner.de", verwendung: "Vorbild für Bedienung und Darstellung; Parser, Layout und Zeichnung sind eigener Code" },
+    ],
+  },
+  {
     slug: "snap", name: "🧱 Snap!",
     eintraege: [
       { quelle: "Snap! Build Your Own Blocks", urheber: "Jens Mönig, Bernat Romagosa u. a. (UC Berkeley, SAP)", lizenz: "AGPL-3.0",

@@ -282,6 +282,31 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
     ],
   },
+  pse: {
+    title: "Periodensystem",
+    intro: "Alle 118 Elemente im üblichen Raster. Ein Klick auf ein Feld öffnet den Steckbrief: Foto der Stoffprobe, Kenndaten, kurzer Text — und die typischen Reaktionen, die von dort in die Gleichungswaage führen. Rechnet ganz im Browser; die Fotos liegen im Repo, es geht also nichts nach außen.",
+    sections: [
+      { label: "🧪 Das Raster", text: "18 Spalten, 7 Perioden, Lanthanoide und Actinoide ausgerückt darunter. Elemente einer Spalte haben gleich viele Außenelektronen und verhalten sich darum ähnlich — die römischen Ziffern über den Hauptgruppen zeigen es." },
+      { label: "🎨 Farben", text: "Die Farbe steht für die Kategorie: Alkalimetalle, Erdalkalimetalle, Übergangsmetalle, Lanthanoide, Actinoide, übrige Metalle, Halbmetalle, Nichtmetalle, Halogene, Edelgase. Ein Klick auf eine Kategorie blendet alles andere zurück." },
+      { label: "🔎 Suchen", text: "Das Feld findet über deutschen Namen, Symbol oder Ordnungszahl — »Eisen«, »Fe« und »26« führen zum selben Element." },
+      { label: "📋 Steckbrief", text: "Atommasse, Zustand, Schmelz- und Siedepunkt in °C, Dichte, Elektronegativität, Elektronenkonfiguration, Oxidationszahlen und Jahr der Entdeckung. Die Kenndaten stammen von PubChem (NCBI), die Fotos von Wikimedia Commons — Urheber und Lizenz stehen unter jedem Bild." },
+      { label: "⚖️ Reaktionen", text: "Bei den Schulelementen stehen die typischen Reaktionen dabei, unausgeglichen. Ein Klick öffnet die Gleichungswaage im Chemiemodus mit genau dieser Gleichung; dort bekommt sie Faktoren, bis beide Schalen gleich schwer sind." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
+  strukturformeln: {
+    title: "Strukturformeln",
+    intro: "Den Namen einer organischen Verbindung eintippen, die Strukturformel entsteht beim Tippen. Vorbild ist der Strukturformelzeichner von strukturformelzeichner.de; gerechnet wird ganz im Browser, es geht nichts nach außen.",
+    sections: [
+      { label: "✏️ Namen", text: "Verstanden werden Alkane, Alkene und Alkine (auch mit mehreren Mehrfachbindungen: Buta-1,3-dien), Ringe (Cyclohexan), Halogenalkane, Alkohole, Aldehyde, Ketone, Carbonsäuren, Ester und Amine — dazu Reste als Vorsilben (2,3-Dimethylbutan) und Trivialnamen wie Benzol, Essigsäure, Aceton oder Glycerin. Was nicht geht, sagt eine Meldung statt eines halben Moleküls." },
+      { label: "⬡ Darstellung", text: "Skelettformel: C-Atome sind nur Knicke, beschriftet sind allein die Heteroatome — so zeichnet man es in der Oberstufe. Valenzstrichformel: jedes Atom steht da, jede Bindung als Strich, auch zu den H-Atomen. Dazwischen umschalten zeigt, dass beides dasselbe Molekül meint." },
+      { label: "🔵 H-Atome und Elektronenpaare", text: "»Alle H-Atome anzeigen« schreibt in der Skelettformel auch die H an die C-Atome. »Freie Elektronenpaare« setzt die Punktepaare an Sauerstoff, Stickstoff und die Halogene — die braucht man für Polarität und Reaktionsmechanismen." },
+      { label: "🔄 Drehen und spiegeln", text: "Winkel, waagerecht und senkrecht spiegeln — damit die Formel so liegt wie im Heft oder im Arbeitsblatt." },
+      { label: "📋 Angaben", text: "Unter dem Bild stehen Summenformel (Hill-Schreibweise), molare Masse und die Zahl der C-Atome. Die H-Atome sind gerechnet, nicht gezählt: aus der Bindigkeit jedes Atoms." },
+      { label: "⬇️ Speichern", text: "»Als SVG speichern« legt die Formel als Vektorgrafik ab — zum Einfügen in Arbeitsblätter, ohne dass sie beim Vergrößern unscharf wird. Der Name steht mit im Bild." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet)." },
+    ],
+  },
   wfc: {
     title: "Wellenfunktionskollaps",
     intro: "Wave Function Collapse nach Maxim Gumin (github.com/mxgmn/WaveFunctionCollapse, MIT): Jede Zelle ist anfangs alles zugleich. Die Zelle mit der kleinsten Entropie wird zufällig festgelegt, die Nachbarn verlieren, was nicht mehr passt — Schritt für Schritt, bis alles stimmt. Wie beim Sudoku.",

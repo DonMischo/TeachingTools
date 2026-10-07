@@ -40,6 +40,8 @@ export const SIM_STATIONEN: Record<string, { name: string; icon: string; Kompone
   regeln: { name: "Regel-Labor", icon: "🧬", Komponente: laden(() => import("@/components/regeln/RegelLabor")) },
   wfc: { name: "Wellenfunktionskollaps", icon: "🧩", Komponente: laden(() => import("@/components/wfc/Wellenkollaps")) },
   dla: { name: "Fraktales Wachstum", icon: "🪸", Komponente: laden(() => import("@/components/dla/Wachstum")) },
+  pse: { name: "Periodensystem", icon: "🧪", Komponente: laden(() => import("@/components/pse/Periodensystem")) },
+  strukturformeln: { name: "Strukturformeln", icon: "⬡", Komponente: laden(() => import("@/components/struktur/Strukturformeln")) },
   schichten: { name: "Schichtenmodell", icon: "📶", Komponente: laden(() => import("@/components/schichten/Schichtenmodell")) },
 };
 

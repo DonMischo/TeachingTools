@@ -1,0 +1,121 @@
+/**
+ * Prüft Lage und Bild: Bindungslängen, Winkel und was in welcher
+ * Darstellung gezeichnet wird.
+ */
+import { describe, expect, it } from "vitest";
+import { ausName } from "@/lib/struktur/iupac";
+import { lege } from "@/lib/struktur/layout";
+import { zeichne, STANDARD } from "@/components/struktur/Formelbild";
+
+const mol = (name: string) => {
+  const r = ausName(name);
+  if (!r.ok) throw new Error(`${name}: ${r.fehler}`);
+  return r.m;
+};
+
+/** Winkel ABC in Grad. */
+const winkel = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => {
+  const u = { x: a.x - b.x, y: a.y - b.y }, v = { x: c.x - b.x, y: c.y - b.y };
+  const cos = (u.x * v.x + u.y * v.y) / (Math.hypot(u.x, u.y) * Math.hypot(v.x, v.y));
+  return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
+};
+
+describe("Lage", () => {
+  it("legt jede Bindung gleich lang", () => {
+    for (const name of ["Octan", "Cyclohexan", "2,3-Dimethylbutan", "Essigsäure", "Glycerin"]) {
+      const m = mol(name);
+      const { punkte } = lege(m);
+      for (const b of m.bindungen) {
+        const d = Math.hypot(punkte[b.a].x - punkte[b.b].x, punkte[b.a].y - punkte[b.b].y);
+        expect(d, `${name}: Bindung ${b.a}–${b.b}`).toBeCloseTo(1, 1);
+      }
+    }
+  });
+
+  it("knickt die Kette im Zickzack statt sie gerade zu ziehen", () => {
+    const m = mol("Pentan");
+    const { punkte } = lege(m);
+    // Der Winkel an jedem mittleren C liegt bei 120°, nicht bei 180°.
+    for (let i = 1; i < 4; i++) {
+      expect(winkel(punkte[i - 1], punkte[i], punkte[i + 1])).toBeCloseTo(120, 0);
+    }
+  });
+
+  it("setzt die Reste in die Lücke, nicht auf die Kette", () => {
+    const m = mol("Essigsäure");
+    const { punkte } = lege(m);
+    // An C1 treffen C2, =O und −OH zusammen: jeder Winkel deutlich über 90°.
+    const [c1] = [0];
+    const nachbarn = m.bindungen.flatMap(b => (b.a === c1 ? [b.b] : b.b === c1 ? [b.a] : []));
+    expect(nachbarn).toHaveLength(3);
+    for (let i = 0; i < 3; i++) {
+      for (let j = i + 1; j < 3; j++) {
+        expect(winkel(punkte[nachbarn[i]], punkte[c1], punkte[nachbarn[j]])).toBeGreaterThan(90);
+      }
+    }
+  });
+
+  it("legt den Ring als regelmäßiges Sechseck", () => {
+    const m = mol("Cyclohexan");
+    const { punkte } = lege(m);
+    for (let i = 0; i < 6; i++) {
+      expect(winkel(punkte[(i + 5) % 6], punkte[i], punkte[(i + 1) % 6])).toBeCloseTo(120, 0);
+    }
+  });
+});
+
+describe("Bild", () => {
+  it("beschriftet in der Skelettformel nur die Heteroatome", () => {
+    const bild = zeichne(mol("Ethanol"), STANDARD);
+    expect(bild.texte.map(t => t.text)).toEqual(["OH"]);
+  });
+
+  it("schreibt mit »alle H« auch die C-Atome aus", () => {
+    const bild = zeichne(mol("Ethanol"), { ...STANDARD, alleH: true });
+    expect(bild.texte.map(t => t.text).sort()).toEqual(["CH²", "CH³", "OH"].sort());
+  });
+
+  it("zeichnet in der Valenzstrichformel jedes H einzeln", () => {
+    const bild = zeichne(mol("Methan"), { ...STANDARD, art: "valenz" });
+    expect(bild.texte.filter(t => t.text === "H")).toHaveLength(4);
+    // Vier C–H-Bindungen als Striche.
+    expect(bild.striche).toHaveLength(4);
+  });
+
+  it("zeichnet die Doppelbindung als zwei Striche, die Dreifachbindung als drei", () => {
+    expect(zeichne(mol("Ethen"), STANDARD).striche).toHaveLength(2);
+    expect(zeichne(mol("Ethin"), STANDARD).striche).toHaveLength(3);
+  });
+
+  it("setzt freie Elektronenpaare als Punktepaare", () => {
+    const ohne = zeichne(mol("Ethanol"), STANDARD).punkte.length;
+    const mit = zeichne(mol("Ethanol"), { ...STANDARD, paare: true }).punkte.length;
+    // Sauerstoff hat zwei freie Paare, also vier Punkte mehr.
+    expect(mit - ohne).toBe(4);
+  });
+
+  it("lässt nichts aus dem Bild herausragen", () => {
+    for (const name of ["Methan", "Ethanol", "Cyclohexan", "Essigsäure"]) {
+      for (const art of ["skelett", "valenz"] as const) {
+        const b = zeichne(mol(name), { ...STANDARD, art, paare: true, alleH: true });
+        const xs = [...b.striche.flatMap(s => [s.x1, s.x2]), ...b.texte.map(t => t.x), ...b.punkte.map(p => p.x)];
+        const ys = [...b.striche.flatMap(s => [s.y1, s.y2]), ...b.texte.map(t => t.y), ...b.punkte.map(p => p.y)];
+        expect(Math.min(...xs), `${name}/${art}`).toBeGreaterThanOrEqual(0);
+        expect(Math.min(...ys), `${name}/${art}`).toBeGreaterThanOrEqual(0);
+        expect(Math.max(...xs), `${name}/${art}`).toBeLessThanOrEqual(b.breite);
+        expect(Math.max(...ys), `${name}/${art}`).toBeLessThanOrEqual(b.hoehe);
+      }
+    }
+  });
+
+  it("dreht das Bild, ohne die Bindungslängen zu ändern", () => {
+    const gerade = zeichne(mol("Butan"), STANDARD);
+    const gedreht = zeichne(mol("Butan"), { ...STANDARD, drehung: 90 });
+    const laenge = (b: typeof gerade) =>
+      b.striche.map(s => Math.round(Math.hypot(s.x2 - s.x1, s.y2 - s.y1)));
+    expect(laenge(gedreht)).toEqual(laenge(gerade));
+    // Gedreht ist das Bild hochkant statt quer.
+    expect(gedreht.hoehe).toBeGreaterThan(gedreht.breite);
+    expect(gerade.breite).toBeGreaterThan(gerade.hoehe);
+  });
+});

@@ -317,6 +317,26 @@ simulationen:
       - Fraktale Dimension per Masse-Radius-Methode live im log-log-Diagramm mit Vergleichsgeraden
       - Zeitlupe eines einzelnen Wanderers mit Spur und Fangkreis, Erklärung mit Beispielen aus Natur und Technik
       - Als TaskCrawler-Werkzeug mit festem Reiter
+  - id: pse
+    name: Periodensystem
+    kann:
+      - Alle 118 Elemente im Raster, nach Kategorie eingefärbt, Lanthanoide und Actinoide ausgerückt
+      - Suche über deutschen Namen, Symbol oder Ordnungszahl; Filter je Kategorie
+      - Steckbrief mit Foto der Stoffprobe (Wikimedia Commons, Urheber und Lizenz am Bild)
+      - Kenndaten von PubChem (NCBI, gemeinfrei) - Masse, Zustand, Schmelz-/Siedepunkt in °C, Dichte, Elektronegativität, Konfiguration, Oxidationszahlen, Entdeckung
+      - Kurztext zu Wesen, Vorkommen und Verwendung bei den Schulelementen
+      - Typische Reaktionen unausgeglichen, Klick öffnet die Gleichungswaage im Chemiemodus (?reaktion=…)
+      - Bilder und Daten liegen im Repo (offline, nichts geht nach außen); geholt mit scripts/fetch-pse.mjs
+  - id: strukturformeln
+    name: Strukturformeln
+    kann:
+      - IUPAC-Name eintippen, Strukturformel entsteht beim Tippen (Parser und Layout eigener Code, Vorbild strukturformelzeichner.de)
+      - Alkane, Alkene, Alkine (auch mehrfach), Ringe, Halogenalkane, Alkohole, Aldehyde, Ketone, Carbonsäuren, Ester, Amine
+      - Reste als Vorsilben (2,3-Dimethylbutan) und Trivialnamen (Benzol, Essigsäure, Aceton, Glycerin)
+      - Skelett- oder Valenzstrichformel, alle H-Atome, freie Elektronenpaare
+      - Drehen, spiegeln und als SVG speichern
+      - Summenformel (Hill), molare Masse und Zahl der C-Atome; H-Atome aus der Bindigkeit gerechnet
+      - Als TaskCrawler-Werkzeug mit festem Namen
   - id: wfc
     name: Wellenfunktionskollaps
     kann:

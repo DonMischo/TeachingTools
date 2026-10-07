@@ -322,13 +322,16 @@ function ElementInfo({ symbol }: { symbol: string }) {
 
 const START = CHEM_PRESETS[0];
 
-export default function ChemieModus({ onMessage, fest }: {
+export default function ChemieModus({ onMessage, fest, anfang }: {
   onMessage: (m: string) => void;
   /** Feste Reaktion (TaskCrawler-Station): keine Vorlagen, keine eigenen Reaktionen. */
   fest?: string;
+  /** Startreaktion aus dem Link (?reaktion=…): nur der Anfang, danach alles frei. */
+  anfang?: string;
 }) {
   const [reaction, setReaction] = useState<Reaction>(() => {
-    const f = fest ? parseReaction(fest) : null;
+    const quelle = fest ?? anfang;
+    const f = quelle ? parseReaction(quelle) : null;
     if (f?.ok) return f.r;
     const r = parseReaction(START.src);
     return r.ok ? r.r : { left: [], right: [] };

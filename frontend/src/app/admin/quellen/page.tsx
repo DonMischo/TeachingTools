@@ -35,11 +35,11 @@ export default function QuellenSeite() {
   const router = useRouter();
   useEffect(() => { if (auth !== null && auth.role !== "admin") router.replace("/"); }, [auth, router]);
   const { data: katalog } = useQuery({ queryKey: ["karten", "katalog"], queryFn: api.karten.katalog, enabled: auth?.role === "admin" });
-  const [bilder, setBilder] = useState<{ sonne: Record<string, Bild>; kueste: Record<string, Bild> } | null>(null);
+  const [bilder, setBilder] = useState<{ sonne: Record<string, Bild>; kueste: Record<string, Bild>; pse: Record<string, Bild> } | null>(null);
   useEffect(() => {
     // Groß (Sonnensystem ~2 MB) — erst hier laden
-    Promise.all([import("@/lib/sonnensystem/bilder.json"), import("@/lib/kueste/bilder.json")])
-      .then(([s, k]) => setBilder({ sonne: s.default as Record<string, Bild>, kueste: k.default as Record<string, Bild> }));
+    Promise.all([import("@/lib/sonnensystem/bilder.json"), import("@/lib/kueste/bilder.json"), import("@/lib/pse/bilder.json")])
+      .then(([s, k, p]) => setBilder({ sonne: s.default as Record<string, Bild>, kueste: k.default as Record<string, Bild>, pse: p.default as Record<string, Bild> }));
   }, []);
 
   const werkzeuge = useMemo<(WerkzeugQuellen & { einzeln?: Bild[] })[]>(() => {
@@ -65,6 +65,8 @@ export default function QuellenSeite() {
       Object.assign(finde("sonnensystem", "🪐 Sonnensystem"), { einzeln: s.einzeln }).eintraege.push(...s.eintraege);
       const k = bilderAlsEintraege(bilder.kueste, "Galerie »Echte Küsten«");
       Object.assign(finde("kueste", "🌊 Küstendynamik"), { einzeln: k.einzeln }).eintraege.push(...k.eintraege);
+      const p = bilderAlsEintraege(bilder.pse, "Fotos der Stoffproben im Steckbrief");
+      Object.assign(finde("pse", "🧪 Periodensystem"), { einzeln: p.einzeln }).eintraege.push(...p.eintraege);
     }
     finde("leviathan", "🐋 Leviathan").literatur = Object.values(LEVIATHAN).map((q) => `${q.kurz} — ${q.url}`);
     return liste;

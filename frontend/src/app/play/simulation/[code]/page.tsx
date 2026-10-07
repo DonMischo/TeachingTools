@@ -40,6 +40,8 @@ import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
 import Algorithmen from "@/components/algo/Algorithmen";
+import Periodensystem from "@/components/pse/Periodensystem";
+import Strukturformeln from "@/components/struktur/Strukturformeln";
 
 const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode }> = {
   gleichungswaage: { title: "Gleichungswaage", icon: "⚖️", node: <Gleichungswaage /> },
@@ -57,6 +59,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   wfc: { title: "Wellenfunktionskollaps", icon: "🧩", node: <Wellenkollaps /> },
   dla: { title: "Fraktales Wachstum", icon: "🪸", node: <Wachstum /> },
   schichten: { title: "Schichtenmodell", icon: "📶", node: <Schichtenmodell /> },
+  pse: { title: "Periodensystem", icon: "🧪", node: <Periodensystem /> },
+  strukturformeln: { title: "Strukturformeln", icon: "⬡", node: <Strukturformeln /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },
   // Der Flug merkt sich Erforschtes je Code bzw. Konto — dafür braucht er den Code.

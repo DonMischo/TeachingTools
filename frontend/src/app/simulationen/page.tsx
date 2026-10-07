@@ -134,6 +134,22 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#14b8a6",
   },
   {
+    slug: "pse",
+    href: "/simulationen/pse",
+    icon: "🧪",
+    title: "Periodensystem",
+    description: "Alle 118 Elemente zum Anklicken: Steckbrief mit Foto der Stoffprobe, Kenndaten und Elektronenkonfiguration — dazu die typischen Reaktionen, die mit einem Klick in der Gleichungswaage landen.",
+    color: "#22c55e",
+  },
+  {
+    slug: "strukturformeln",
+    href: "/simulationen/strukturformeln",
+    icon: "⬡",
+    title: "Strukturformeln",
+    description: "IUPAC-Namen eintippen und die Strukturformel entsteht beim Tippen: Skelett- oder Valenzstrichformel, alle H-Atome, freie Elektronenpaare, drehen und spiegeln — dazu Summenformel und molare Masse.",
+    color: "#0ea5e9",
+  },
+  {
     slug: "algo",
     href: "/simulationen/algo",
     icon: "🔀",

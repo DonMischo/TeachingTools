@@ -173,6 +173,15 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("dla", "🪸 Fraktales Wachstum", "🪸", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Periodensystem: Elemente nachschlagen, typische Reaktionen fuehren in die
+    # Gleichungswaage.
+    CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    # Strukturformeln: IUPAC-Name eintippen, Strukturformel sehen.
+    CatalogTool("strukturformeln", "⬡ Strukturformeln", "⬡", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Schichtenmodell: ein Foto reist durch OSI/TCP-IP von Erfurt nach Tokio,
     # dazu Mission (ASCII, DNS, Routing) und Fehlersuche.
     CatalogTool("schichten", "📶 Schichtenmodell", "📶", "simulationen", {

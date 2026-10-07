@@ -9,6 +9,7 @@
     "check-shaders": "node scripts/check-shaders.mjs",
     "build:standalone": "node scripts/build-standalone.mjs",
     "fetch:snap": "node scripts/fetch-snap.mjs",
+    "fetch:pse": "node scripts/fetch-pse.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "karten:worker": "node scripts/copy-maplibre-worker.mjs",

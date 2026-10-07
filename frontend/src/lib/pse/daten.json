@@ -1,0 +1,2136 @@
+[
+ {
+  "z": 1,
+  "symbol": "H",
+  "masse": 1.008,
+  "konfiguration": "1s1",
+  "en": 2.2,
+  "radius": 120,
+  "ionisierung": 13.598,
+  "oxidationszahlen": [
+   1,
+   -1
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 13.81,
+  "siedepunkt": 20.28,
+  "dichte": 0.00008988,
+  "entdeckt": "1766"
+ },
+ {
+  "z": 2,
+  "symbol": "He",
+  "masse": 4.0026,
+  "konfiguration": "1s2",
+  "en": null,
+  "radius": 140,
+  "ionisierung": 24.587,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 0.95,
+  "siedepunkt": 4.22,
+  "dichte": 0.0001785,
+  "entdeckt": "1868"
+ },
+ {
+  "z": 3,
+  "symbol": "Li",
+  "masse": 7,
+  "konfiguration": "[He]2s1",
+  "en": 0.98,
+  "radius": 182,
+  "ionisierung": 5.392,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 453.65,
+  "siedepunkt": 1615,
+  "dichte": 0.534,
+  "entdeckt": "1817"
+ },
+ {
+  "z": 4,
+  "symbol": "Be",
+  "masse": 9.012183,
+  "konfiguration": "[He]2s2",
+  "en": 1.57,
+  "radius": 153,
+  "ionisierung": 9.323,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1560,
+  "siedepunkt": 2744,
+  "dichte": 1.85,
+  "entdeckt": "1798"
+ },
+ {
+  "z": 5,
+  "symbol": "B",
+  "masse": 10.81,
+  "konfiguration": "[He]2s2 2p1",
+  "en": 2.04,
+  "radius": 192,
+  "ionisierung": 8.298,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2348,
+  "siedepunkt": 4273,
+  "dichte": 2.37,
+  "entdeckt": "1808"
+ },
+ {
+  "z": 6,
+  "symbol": "C",
+  "masse": 12.011,
+  "konfiguration": "[He]2s2 2p2",
+  "en": 2.55,
+  "radius": 170,
+  "ionisierung": 11.26,
+  "oxidationszahlen": [
+   4,
+   2,
+   -4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 3823,
+  "siedepunkt": 4098,
+  "dichte": 2.267,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 7,
+  "symbol": "N",
+  "masse": 14.007,
+  "konfiguration": "[He] 2s2 2p3",
+  "en": 3.04,
+  "radius": 155,
+  "ionisierung": 14.534,
+  "oxidationszahlen": [
+   5,
+   4,
+   3,
+   2,
+   1,
+   -1,
+   -2,
+   -3
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 63.15,
+  "siedepunkt": 77.36,
+  "dichte": 0.0012506,
+  "entdeckt": "1772"
+ },
+ {
+  "z": 8,
+  "symbol": "O",
+  "masse": 15.999,
+  "konfiguration": "[He]2s2 2p4",
+  "en": 3.44,
+  "radius": 152,
+  "ionisierung": 13.618,
+  "oxidationszahlen": [
+   -2
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 54.36,
+  "siedepunkt": 90.2,
+  "dichte": 0.001429,
+  "entdeckt": "1774"
+ },
+ {
+  "z": 9,
+  "symbol": "F",
+  "masse": 18.99840316,
+  "konfiguration": "[He]2s2 2p5",
+  "en": 3.98,
+  "radius": 135,
+  "ionisierung": 17.423,
+  "oxidationszahlen": [
+   -1
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 53.53,
+  "siedepunkt": 85.03,
+  "dichte": 0.001696,
+  "entdeckt": "1670"
+ },
+ {
+  "z": 10,
+  "symbol": "Ne",
+  "masse": 20.18,
+  "konfiguration": "[He]2s2 2p6",
+  "en": null,
+  "radius": 154,
+  "ionisierung": 21.565,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 24.56,
+  "siedepunkt": 27.07,
+  "dichte": 0.0008999,
+  "entdeckt": "1898"
+ },
+ {
+  "z": 11,
+  "symbol": "Na",
+  "masse": 22.9897693,
+  "konfiguration": "[Ne]3s1",
+  "en": 0.93,
+  "radius": 227,
+  "ionisierung": 5.139,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 370.95,
+  "siedepunkt": 1156,
+  "dichte": 0.97,
+  "entdeckt": "1807"
+ },
+ {
+  "z": 12,
+  "symbol": "Mg",
+  "masse": 24.305,
+  "konfiguration": "[Ne]3s2",
+  "en": 1.31,
+  "radius": 173,
+  "ionisierung": 7.646,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 923,
+  "siedepunkt": 1363,
+  "dichte": 1.74,
+  "entdeckt": "1808"
+ },
+ {
+  "z": 13,
+  "symbol": "Al",
+  "masse": 26.981538,
+  "konfiguration": "[Ne]3s2 3p1",
+  "en": 1.61,
+  "radius": 184,
+  "ionisierung": 5.986,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 933.437,
+  "siedepunkt": 2792,
+  "dichte": 2.7,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 14,
+  "symbol": "Si",
+  "masse": 28.085,
+  "konfiguration": "[Ne]3s2 3p2",
+  "en": 1.9,
+  "radius": 210,
+  "ionisierung": 8.152,
+  "oxidationszahlen": [
+   4,
+   2,
+   -4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1687,
+  "siedepunkt": 3538,
+  "dichte": 2.3296,
+  "entdeckt": "1854"
+ },
+ {
+  "z": 15,
+  "symbol": "P",
+  "masse": 30.973762,
+  "konfiguration": "[Ne]3s2 3p3",
+  "en": 2.19,
+  "radius": 180,
+  "ionisierung": 10.487,
+  "oxidationszahlen": [
+   5,
+   3,
+   -3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 317.3,
+  "siedepunkt": 553.65,
+  "dichte": 1.82,
+  "entdeckt": "1669"
+ },
+ {
+  "z": 16,
+  "symbol": "S",
+  "masse": 32.07,
+  "konfiguration": "[Ne]3s2 3p4",
+  "en": 2.58,
+  "radius": 180,
+  "ionisierung": 10.36,
+  "oxidationszahlen": [
+   6,
+   4,
+   -2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 388.36,
+  "siedepunkt": 717.75,
+  "dichte": 2.067,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 17,
+  "symbol": "Cl",
+  "masse": 35.45,
+  "konfiguration": "[Ne]3s2 3p5",
+  "en": 3.16,
+  "radius": 175,
+  "ionisierung": 12.968,
+  "oxidationszahlen": [
+   7,
+   5,
+   1,
+   -1
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 171.65,
+  "siedepunkt": 239.11,
+  "dichte": 0.003214,
+  "entdeckt": "1774"
+ },
+ {
+  "z": 18,
+  "symbol": "Ar",
+  "masse": 39.9,
+  "konfiguration": "[Ne]3s2 3p6",
+  "en": null,
+  "radius": 188,
+  "ionisierung": 15.76,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 83.8,
+  "siedepunkt": 87.3,
+  "dichte": 0.0017837,
+  "entdeckt": "1894"
+ },
+ {
+  "z": 19,
+  "symbol": "K",
+  "masse": 39.0983,
+  "konfiguration": "[Ar]4s1",
+  "en": 0.82,
+  "radius": 275,
+  "ionisierung": 4.341,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 336.53,
+  "siedepunkt": 1032,
+  "dichte": 0.89,
+  "entdeckt": "1807"
+ },
+ {
+  "z": 20,
+  "symbol": "Ca",
+  "masse": 40.08,
+  "konfiguration": "[Ar]4s2",
+  "en": 1,
+  "radius": 231,
+  "ionisierung": 6.113,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1115,
+  "siedepunkt": 1757,
+  "dichte": 1.54,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 21,
+  "symbol": "Sc",
+  "masse": 44.95591,
+  "konfiguration": "[Ar]4s2 3d1",
+  "en": 1.36,
+  "radius": 211,
+  "ionisierung": 6.561,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1814,
+  "siedepunkt": 3109,
+  "dichte": 2.99,
+  "entdeckt": "1879"
+ },
+ {
+  "z": 22,
+  "symbol": "Ti",
+  "masse": 47.867,
+  "konfiguration": "[Ar]4s2 3d2",
+  "en": 1.54,
+  "radius": 187,
+  "ionisierung": 6.828,
+  "oxidationszahlen": [
+   4,
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1941,
+  "siedepunkt": 3560,
+  "dichte": 4.5,
+  "entdeckt": "1791"
+ },
+ {
+  "z": 23,
+  "symbol": "V",
+  "masse": 50.9415,
+  "konfiguration": "[Ar]4s2 3d3",
+  "en": 1.63,
+  "radius": 179,
+  "ionisierung": 6.746,
+  "oxidationszahlen": [
+   5,
+   4,
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2183,
+  "siedepunkt": 3680,
+  "dichte": 6,
+  "entdeckt": "1801"
+ },
+ {
+  "z": 24,
+  "symbol": "Cr",
+  "masse": 51.996,
+  "konfiguration": "[Ar]3d5 4s1",
+  "en": 1.66,
+  "radius": 189,
+  "ionisierung": 6.767,
+  "oxidationszahlen": [
+   6,
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2180,
+  "siedepunkt": 2944,
+  "dichte": 7.15,
+  "entdeckt": "1797"
+ },
+ {
+  "z": 25,
+  "symbol": "Mn",
+  "masse": 54.93804,
+  "konfiguration": "[Ar]4s2 3d5",
+  "en": 1.55,
+  "radius": 197,
+  "ionisierung": 7.434,
+  "oxidationszahlen": [
+   7,
+   4,
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1519,
+  "siedepunkt": 2334,
+  "dichte": 7.3,
+  "entdeckt": "1774"
+ },
+ {
+  "z": 26,
+  "symbol": "Fe",
+  "masse": 55.84,
+  "konfiguration": "[Ar]4s2 3d6",
+  "en": 1.83,
+  "radius": 194,
+  "ionisierung": 7.902,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1811,
+  "siedepunkt": 3134,
+  "dichte": 7.874,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 27,
+  "symbol": "Co",
+  "masse": 58.93319,
+  "konfiguration": "[Ar]4s2 3d7",
+  "en": 1.88,
+  "radius": 192,
+  "ionisierung": 7.881,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1768,
+  "siedepunkt": 3200,
+  "dichte": 8.86,
+  "entdeckt": "1735"
+ },
+ {
+  "z": 28,
+  "symbol": "Ni",
+  "masse": 58.693,
+  "konfiguration": "[Ar]4s2 3d8",
+  "en": 1.91,
+  "radius": 163,
+  "ionisierung": 7.64,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1728,
+  "siedepunkt": 3186,
+  "dichte": 8.912,
+  "entdeckt": "1751"
+ },
+ {
+  "z": 29,
+  "symbol": "Cu",
+  "masse": 63.55,
+  "konfiguration": "[Ar]4s1 3d10",
+  "en": 1.9,
+  "radius": 140,
+  "ionisierung": 7.726,
+  "oxidationszahlen": [
+   2,
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1357.77,
+  "siedepunkt": 2835,
+  "dichte": 8.933,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 30,
+  "symbol": "Zn",
+  "masse": 65.4,
+  "konfiguration": "[Ar]4s2 3d10",
+  "en": 1.65,
+  "radius": 139,
+  "ionisierung": 9.394,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 692.68,
+  "siedepunkt": 1180,
+  "dichte": 7.134,
+  "entdeckt": "1746"
+ },
+ {
+  "z": 31,
+  "symbol": "Ga",
+  "masse": 69.723,
+  "konfiguration": "[Ar]4s2 3d10 4p1",
+  "en": 1.81,
+  "radius": 187,
+  "ionisierung": 5.999,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 302.91,
+  "siedepunkt": 2477,
+  "dichte": 5.91,
+  "entdeckt": "1875"
+ },
+ {
+  "z": 32,
+  "symbol": "Ge",
+  "masse": 72.63,
+  "konfiguration": "[Ar]4s2 3d10 4p2",
+  "en": 2.01,
+  "radius": 211,
+  "ionisierung": 7.9,
+  "oxidationszahlen": [
+   4,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1211.4,
+  "siedepunkt": 3106,
+  "dichte": 5.323,
+  "entdeckt": "1886"
+ },
+ {
+  "z": 33,
+  "symbol": "As",
+  "masse": 74.92159,
+  "konfiguration": "[Ar]4s2 3d10 4p3",
+  "en": 2.18,
+  "radius": 185,
+  "ionisierung": 9.815,
+  "oxidationszahlen": [
+   5,
+   3,
+   -3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1090,
+  "siedepunkt": 887,
+  "dichte": 5.776,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 34,
+  "symbol": "Se",
+  "masse": 78.97,
+  "konfiguration": "[Ar]4s2 3d10 4p4",
+  "en": 2.55,
+  "radius": 190,
+  "ionisierung": 9.752,
+  "oxidationszahlen": [
+   6,
+   4,
+   -2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 493.65,
+  "siedepunkt": 958,
+  "dichte": 4.809,
+  "entdeckt": "1817"
+ },
+ {
+  "z": 35,
+  "symbol": "Br",
+  "masse": 79.9,
+  "konfiguration": "[Ar]4s2 3d10 4p5",
+  "en": 2.96,
+  "radius": 183,
+  "ionisierung": 11.814,
+  "oxidationszahlen": [
+   5,
+   1,
+   -1
+  ],
+  "zustand": "flüssig",
+  "schmelzpunkt": 265.95,
+  "siedepunkt": 331.95,
+  "dichte": 3.11,
+  "entdeckt": "1826"
+ },
+ {
+  "z": 36,
+  "symbol": "Kr",
+  "masse": 83.8,
+  "konfiguration": "[Ar]4s2 3d10 4p6",
+  "en": 3,
+  "radius": 202,
+  "ionisierung": 14,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 115.79,
+  "siedepunkt": 119.93,
+  "dichte": 0.003733,
+  "entdeckt": "1898"
+ },
+ {
+  "z": 37,
+  "symbol": "Rb",
+  "masse": 85.468,
+  "konfiguration": "[Kr]5s1",
+  "en": 0.82,
+  "radius": 303,
+  "ionisierung": 4.177,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 312.46,
+  "siedepunkt": 961,
+  "dichte": 1.53,
+  "entdeckt": "1861"
+ },
+ {
+  "z": 38,
+  "symbol": "Sr",
+  "masse": 87.62,
+  "konfiguration": "[Kr]5s2",
+  "en": 0.95,
+  "radius": 249,
+  "ionisierung": 5.695,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1050,
+  "siedepunkt": 1655,
+  "dichte": 2.64,
+  "entdeckt": "1790"
+ },
+ {
+  "z": 39,
+  "symbol": "Y",
+  "masse": 88.90584,
+  "konfiguration": "[Kr]5s2 4d1",
+  "en": 1.22,
+  "radius": 219,
+  "ionisierung": 6.217,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1795,
+  "siedepunkt": 3618,
+  "dichte": 4.47,
+  "entdeckt": "1794"
+ },
+ {
+  "z": 40,
+  "symbol": "Zr",
+  "masse": 91.22,
+  "konfiguration": "[Kr]5s2 4d2",
+  "en": 1.33,
+  "radius": 186,
+  "ionisierung": 6.634,
+  "oxidationszahlen": [
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2128,
+  "siedepunkt": 4682,
+  "dichte": 6.52,
+  "entdeckt": "1789"
+ },
+ {
+  "z": 41,
+  "symbol": "Nb",
+  "masse": 92.90637,
+  "konfiguration": "[Kr]5s1 4d4",
+  "en": 1.6,
+  "radius": 207,
+  "ionisierung": 6.759,
+  "oxidationszahlen": [
+   5,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2750,
+  "siedepunkt": 5017,
+  "dichte": 8.57,
+  "entdeckt": "1801"
+ },
+ {
+  "z": 42,
+  "symbol": "Mo",
+  "masse": 95.95,
+  "konfiguration": "[Kr]5s1 4d5",
+  "en": 2.16,
+  "radius": 209,
+  "ionisierung": 7.092,
+  "oxidationszahlen": [
+   6
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2896,
+  "siedepunkt": 4912,
+  "dichte": 10.2,
+  "entdeckt": "1778"
+ },
+ {
+  "z": 43,
+  "symbol": "Tc",
+  "masse": 96.90636,
+  "konfiguration": "[Kr]5s2 4d5",
+  "en": 1.9,
+  "radius": 209,
+  "ionisierung": 7.28,
+  "oxidationszahlen": [
+   7,
+   6,
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2430,
+  "siedepunkt": 4538,
+  "dichte": 11,
+  "entdeckt": "1937"
+ },
+ {
+  "z": 44,
+  "symbol": "Ru",
+  "masse": 101.1,
+  "konfiguration": "[Kr]5s1 4d7",
+  "en": 2.2,
+  "radius": 207,
+  "ionisierung": 7.361,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2607,
+  "siedepunkt": 4423,
+  "dichte": 12.1,
+  "entdeckt": "1827"
+ },
+ {
+  "z": 45,
+  "symbol": "Rh",
+  "masse": 102.9055,
+  "konfiguration": "[Kr]5s1 4d8",
+  "en": 2.28,
+  "radius": 195,
+  "ionisierung": 7.459,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2237,
+  "siedepunkt": 3968,
+  "dichte": 12.4,
+  "entdeckt": "1803"
+ },
+ {
+  "z": 46,
+  "symbol": "Pd",
+  "masse": 106.42,
+  "konfiguration": "[Kr]4d10",
+  "en": 2.2,
+  "radius": 202,
+  "ionisierung": 8.337,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1828.05,
+  "siedepunkt": 3236,
+  "dichte": 12,
+  "entdeckt": "1803"
+ },
+ {
+  "z": 47,
+  "symbol": "Ag",
+  "masse": 107.868,
+  "konfiguration": "[Kr]5s1 4d10",
+  "en": 1.93,
+  "radius": 172,
+  "ionisierung": 7.576,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1234.93,
+  "siedepunkt": 2435,
+  "dichte": 10.501,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 48,
+  "symbol": "Cd",
+  "masse": 112.41,
+  "konfiguration": "[Kr]5s2 4d10",
+  "en": 1.69,
+  "radius": 158,
+  "ionisierung": 8.994,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 594.22,
+  "siedepunkt": 1040,
+  "dichte": 8.69,
+  "entdeckt": "1817"
+ },
+ {
+  "z": 49,
+  "symbol": "In",
+  "masse": 114.818,
+  "konfiguration": "[Kr]5s2 4d10 5p1",
+  "en": 1.78,
+  "radius": 193,
+  "ionisierung": 5.786,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 429.75,
+  "siedepunkt": 2345,
+  "dichte": 7.31,
+  "entdeckt": "1863"
+ },
+ {
+  "z": 50,
+  "symbol": "Sn",
+  "masse": 118.71,
+  "konfiguration": "[Kr]5s2 4d10 5p2",
+  "en": 1.96,
+  "radius": 217,
+  "ionisierung": 7.344,
+  "oxidationszahlen": [
+   4,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 505.08,
+  "siedepunkt": 2875,
+  "dichte": 7.287,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 51,
+  "symbol": "Sb",
+  "masse": 121.76,
+  "konfiguration": "[Kr]5s2 4d10 5p3",
+  "en": 2.05,
+  "radius": 206,
+  "ionisierung": 8.64,
+  "oxidationszahlen": [
+   5,
+   3,
+   -3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 903.78,
+  "siedepunkt": 1860,
+  "dichte": 6.685,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 52,
+  "symbol": "Te",
+  "masse": 127.6,
+  "konfiguration": "[Kr]5s2 4d10 5p4",
+  "en": 2.1,
+  "radius": 206,
+  "ionisierung": 9.01,
+  "oxidationszahlen": [
+   6,
+   4,
+   -2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 722.66,
+  "siedepunkt": 1261,
+  "dichte": 6.232,
+  "entdeckt": "1782"
+ },
+ {
+  "z": 53,
+  "symbol": "I",
+  "masse": 126.9045,
+  "konfiguration": "[Kr]5s2 4d10 5p5",
+  "en": 2.66,
+  "radius": 198,
+  "ionisierung": 10.451,
+  "oxidationszahlen": [
+   7,
+   5,
+   1,
+   -1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 386.85,
+  "siedepunkt": 457.55,
+  "dichte": 4.93,
+  "entdeckt": "1811"
+ },
+ {
+  "z": 54,
+  "symbol": "Xe",
+  "masse": 131.29,
+  "konfiguration": "[Kr]5s2 4d10 5p6",
+  "en": 2.6,
+  "radius": 216,
+  "ionisierung": 12.13,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 161.36,
+  "siedepunkt": 165.03,
+  "dichte": 0.005887,
+  "entdeckt": "1898"
+ },
+ {
+  "z": 55,
+  "symbol": "Cs",
+  "masse": 132.905452,
+  "konfiguration": "[Xe]6s1",
+  "en": 0.79,
+  "radius": 343,
+  "ionisierung": 3.894,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 301.59,
+  "siedepunkt": 944,
+  "dichte": 1.93,
+  "entdeckt": "1860"
+ },
+ {
+  "z": 56,
+  "symbol": "Ba",
+  "masse": 137.33,
+  "konfiguration": "[Xe]6s2",
+  "en": 0.89,
+  "radius": 268,
+  "ionisierung": 5.212,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1000,
+  "siedepunkt": 2170,
+  "dichte": 3.62,
+  "entdeckt": "1808"
+ },
+ {
+  "z": 57,
+  "symbol": "La",
+  "masse": 138.9055,
+  "konfiguration": "[Xe]6s2 5d1",
+  "en": 1.1,
+  "radius": 240,
+  "ionisierung": 5.577,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1191,
+  "siedepunkt": 3737,
+  "dichte": 6.15,
+  "entdeckt": "1839"
+ },
+ {
+  "z": 58,
+  "symbol": "Ce",
+  "masse": 140.116,
+  "konfiguration": "[Xe]6s2 4f1 5d1",
+  "en": 1.12,
+  "radius": 235,
+  "ionisierung": 5.539,
+  "oxidationszahlen": [
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1071,
+  "siedepunkt": 3697,
+  "dichte": 6.77,
+  "entdeckt": "1803"
+ },
+ {
+  "z": 59,
+  "symbol": "Pr",
+  "masse": 140.90766,
+  "konfiguration": "[Xe]6s2 4f3",
+  "en": 1.13,
+  "radius": 239,
+  "ionisierung": 5.464,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1204,
+  "siedepunkt": 3793,
+  "dichte": 6.77,
+  "entdeckt": "1885"
+ },
+ {
+  "z": 60,
+  "symbol": "Nd",
+  "masse": 144.24,
+  "konfiguration": "[Xe]6s2 4f4",
+  "en": 1.14,
+  "radius": 229,
+  "ionisierung": 5.525,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1294,
+  "siedepunkt": 3347,
+  "dichte": 7.01,
+  "entdeckt": "1885"
+ },
+ {
+  "z": 61,
+  "symbol": "Pm",
+  "masse": 144.91276,
+  "konfiguration": "[Xe]6s2 4f5",
+  "en": null,
+  "radius": 236,
+  "ionisierung": 5.55,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1315,
+  "siedepunkt": 3273,
+  "dichte": 7.26,
+  "entdeckt": "1945"
+ },
+ {
+  "z": 62,
+  "symbol": "Sm",
+  "masse": 150.4,
+  "konfiguration": "[Xe]6s2 4f6",
+  "en": 1.17,
+  "radius": 229,
+  "ionisierung": 5.644,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1347,
+  "siedepunkt": 2067,
+  "dichte": 7.52,
+  "entdeckt": "1879"
+ },
+ {
+  "z": 63,
+  "symbol": "Eu",
+  "masse": 151.964,
+  "konfiguration": "[Xe]6s2 4f7",
+  "en": null,
+  "radius": 233,
+  "ionisierung": 5.67,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1095,
+  "siedepunkt": 1802,
+  "dichte": 5.24,
+  "entdeckt": "1901"
+ },
+ {
+  "z": 64,
+  "symbol": "Gd",
+  "masse": 157.25,
+  "konfiguration": "[Xe]6s2 4f7 5d1",
+  "en": 1.2,
+  "radius": 237,
+  "ionisierung": 6.15,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1586,
+  "siedepunkt": 3546,
+  "dichte": 7.9,
+  "entdeckt": "1880"
+ },
+ {
+  "z": 65,
+  "symbol": "Tb",
+  "masse": 158.92535,
+  "konfiguration": "[Xe]6s2 4f9",
+  "en": null,
+  "radius": 221,
+  "ionisierung": 5.864,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1629,
+  "siedepunkt": 3503,
+  "dichte": 8.23,
+  "entdeckt": "1843"
+ },
+ {
+  "z": 66,
+  "symbol": "Dy",
+  "masse": 162.5,
+  "konfiguration": "[Xe]6s2 4f10",
+  "en": 1.22,
+  "radius": 229,
+  "ionisierung": 5.939,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1685,
+  "siedepunkt": 2840,
+  "dichte": 8.55,
+  "entdeckt": "1886"
+ },
+ {
+  "z": 67,
+  "symbol": "Ho",
+  "masse": 164.93033,
+  "konfiguration": "[Xe]6s2 4f11",
+  "en": 1.23,
+  "radius": 216,
+  "ionisierung": 6.022,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1747,
+  "siedepunkt": 2973,
+  "dichte": 8.8,
+  "entdeckt": "1878"
+ },
+ {
+  "z": 68,
+  "symbol": "Er",
+  "masse": 167.26,
+  "konfiguration": "[Xe]6s2 4f12",
+  "en": 1.24,
+  "radius": 235,
+  "ionisierung": 6.108,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1802,
+  "siedepunkt": 3141,
+  "dichte": 9.07,
+  "entdeckt": "1843"
+ },
+ {
+  "z": 69,
+  "symbol": "Tm",
+  "masse": 168.93422,
+  "konfiguration": "[Xe]6s2 4f13",
+  "en": 1.25,
+  "radius": 227,
+  "ionisierung": 6.184,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1818,
+  "siedepunkt": 2223,
+  "dichte": 9.32,
+  "entdeckt": "1879"
+ },
+ {
+  "z": 70,
+  "symbol": "Yb",
+  "masse": 173.05,
+  "konfiguration": "[Xe]6s2 4f14",
+  "en": null,
+  "radius": 242,
+  "ionisierung": 6.254,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1092,
+  "siedepunkt": 1469,
+  "dichte": 6.9,
+  "entdeckt": "1878"
+ },
+ {
+  "z": 71,
+  "symbol": "Lu",
+  "masse": 174.9667,
+  "konfiguration": "[Xe]6s2 4f14 5d1",
+  "en": 1.27,
+  "radius": 221,
+  "ionisierung": 5.426,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1936,
+  "siedepunkt": 3675,
+  "dichte": 9.84,
+  "entdeckt": "1907"
+ },
+ {
+  "z": 72,
+  "symbol": "Hf",
+  "masse": 178.49,
+  "konfiguration": "[Xe]6s2 4f14 5d2",
+  "en": 1.3,
+  "radius": 212,
+  "ionisierung": 6.825,
+  "oxidationszahlen": [
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2506,
+  "siedepunkt": 4876,
+  "dichte": 13.3,
+  "entdeckt": "1923"
+ },
+ {
+  "z": 73,
+  "symbol": "Ta",
+  "masse": 180.9479,
+  "konfiguration": "[Xe]6s2 4f14 5d3",
+  "en": 1.5,
+  "radius": 217,
+  "ionisierung": 7.89,
+  "oxidationszahlen": [
+   5
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 3290,
+  "siedepunkt": 5731,
+  "dichte": 16.4,
+  "entdeckt": "1802"
+ },
+ {
+  "z": 74,
+  "symbol": "W",
+  "masse": 183.84,
+  "konfiguration": "[Xe]6s2 4f14 5d4",
+  "en": 2.36,
+  "radius": 210,
+  "ionisierung": 7.98,
+  "oxidationszahlen": [
+   6
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 3695,
+  "siedepunkt": 5828,
+  "dichte": 19.3,
+  "entdeckt": "1783"
+ },
+ {
+  "z": 75,
+  "symbol": "Re",
+  "masse": 186.207,
+  "konfiguration": "[Xe]6s2 4f14 5d5",
+  "en": 1.9,
+  "radius": 217,
+  "ionisierung": 7.88,
+  "oxidationszahlen": [
+   7,
+   6,
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 3459,
+  "siedepunkt": 5869,
+  "dichte": 20.8,
+  "entdeckt": "1925"
+ },
+ {
+  "z": 76,
+  "symbol": "Os",
+  "masse": 190.2,
+  "konfiguration": "[Xe]6s2 4f14 5d6",
+  "en": 2.2,
+  "radius": 216,
+  "ionisierung": 8.7,
+  "oxidationszahlen": [
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 3306,
+  "siedepunkt": 5285,
+  "dichte": 22.57,
+  "entdeckt": "1803"
+ },
+ {
+  "z": 77,
+  "symbol": "Ir",
+  "masse": 192.22,
+  "konfiguration": "[Xe]6s2 4f14 5d7",
+  "en": 2.2,
+  "radius": 202,
+  "ionisierung": 9.1,
+  "oxidationszahlen": [
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2719,
+  "siedepunkt": 4701,
+  "dichte": 22.42,
+  "entdeckt": "1803"
+ },
+ {
+  "z": 78,
+  "symbol": "Pt",
+  "masse": 195.08,
+  "konfiguration": "[Xe]6s1 4f14 5d9",
+  "en": 2.28,
+  "radius": 209,
+  "ionisierung": 9,
+  "oxidationszahlen": [
+   4,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2041.55,
+  "siedepunkt": 4098,
+  "dichte": 21.46,
+  "entdeckt": "1735"
+ },
+ {
+  "z": 79,
+  "symbol": "Au",
+  "masse": 196.96657,
+  "konfiguration": "[Xe]6s1 4f14 5d10",
+  "en": 2.54,
+  "radius": 166,
+  "ionisierung": 9.226,
+  "oxidationszahlen": [
+   3,
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1337.33,
+  "siedepunkt": 3129,
+  "dichte": 19.282,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 80,
+  "symbol": "Hg",
+  "masse": 200.59,
+  "konfiguration": "[Xe]6s2 4f14 5d10",
+  "en": 2,
+  "radius": 209,
+  "ionisierung": 10.438,
+  "oxidationszahlen": [
+   2,
+   1
+  ],
+  "zustand": "flüssig",
+  "schmelzpunkt": 234.32,
+  "siedepunkt": 629.88,
+  "dichte": 13.5336,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 81,
+  "symbol": "Tl",
+  "masse": 204.383,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p1",
+  "en": 1.62,
+  "radius": 196,
+  "ionisierung": 6.108,
+  "oxidationszahlen": [
+   3,
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 577,
+  "siedepunkt": 1746,
+  "dichte": 11.8,
+  "entdeckt": "1861"
+ },
+ {
+  "z": 82,
+  "symbol": "Pb",
+  "masse": 207,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p2",
+  "en": 2.33,
+  "radius": 202,
+  "ionisierung": 7.417,
+  "oxidationszahlen": [
+   4,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 600.61,
+  "siedepunkt": 2022,
+  "dichte": 11.342,
+  "entdeckt": "Altertum"
+ },
+ {
+  "z": 83,
+  "symbol": "Bi",
+  "masse": 208.9804,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p3",
+  "en": 2.02,
+  "radius": 207,
+  "ionisierung": 7.289,
+  "oxidationszahlen": [
+   5,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 544.55,
+  "siedepunkt": 1837,
+  "dichte": 9.807,
+  "entdeckt": "1753"
+ },
+ {
+  "z": 84,
+  "symbol": "Po",
+  "masse": 208.98243,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p4",
+  "en": 2,
+  "radius": 197,
+  "ionisierung": 8.417,
+  "oxidationszahlen": [
+   4,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 527,
+  "siedepunkt": 1235,
+  "dichte": 9.32,
+  "entdeckt": "1898"
+ },
+ {
+  "z": 85,
+  "symbol": "At",
+  "masse": 209.98715,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p5",
+  "en": 2.2,
+  "radius": 202,
+  "ionisierung": 9.5,
+  "oxidationszahlen": [
+   7,
+   5,
+   3,
+   1,
+   -1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 575,
+  "siedepunkt": null,
+  "dichte": 7,
+  "entdeckt": "1940"
+ },
+ {
+  "z": 86,
+  "symbol": "Rn",
+  "masse": 222.01758,
+  "konfiguration": "[Xe]6s2 4f14 5d10 6p6",
+  "en": null,
+  "radius": 220,
+  "ionisierung": 10.745,
+  "oxidationszahlen": [
+   0
+  ],
+  "zustand": "gasförmig",
+  "schmelzpunkt": 202,
+  "siedepunkt": 211.45,
+  "dichte": 0.00973,
+  "entdeckt": "1900"
+ },
+ {
+  "z": 87,
+  "symbol": "Fr",
+  "masse": 223.01973,
+  "konfiguration": "[Rn]7s1",
+  "en": 0.7,
+  "radius": 348,
+  "ionisierung": 3.9,
+  "oxidationszahlen": [
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 300,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1939"
+ },
+ {
+  "z": 88,
+  "symbol": "Ra",
+  "masse": 226.02541,
+  "konfiguration": "[Rn]7s2",
+  "en": 0.9,
+  "radius": 283,
+  "ionisierung": 5.279,
+  "oxidationszahlen": [
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 973,
+  "siedepunkt": 1413,
+  "dichte": 5,
+  "entdeckt": "1898"
+ },
+ {
+  "z": 89,
+  "symbol": "Ac",
+  "masse": 227.02775,
+  "konfiguration": "[Rn]7s2 6d1",
+  "en": 1.1,
+  "radius": 260,
+  "ionisierung": 5.17,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1324,
+  "siedepunkt": 3471,
+  "dichte": 10.07,
+  "entdeckt": "1899"
+ },
+ {
+  "z": 90,
+  "symbol": "Th",
+  "masse": 232.038,
+  "konfiguration": "[Rn]7s2 6d2",
+  "en": 1.3,
+  "radius": 237,
+  "ionisierung": 6.08,
+  "oxidationszahlen": [
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 2023,
+  "siedepunkt": 5061,
+  "dichte": 11.72,
+  "entdeckt": "1828"
+ },
+ {
+  "z": 91,
+  "symbol": "Pa",
+  "masse": 231.03588,
+  "konfiguration": "[Rn]7s2 5f2 6d1",
+  "en": 1.5,
+  "radius": 243,
+  "ionisierung": 5.89,
+  "oxidationszahlen": [
+   5,
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1845,
+  "siedepunkt": null,
+  "dichte": 15.37,
+  "entdeckt": "1913"
+ },
+ {
+  "z": 92,
+  "symbol": "U",
+  "masse": 238.0289,
+  "konfiguration": "[Rn]7s2 5f3 6d1",
+  "en": 1.38,
+  "radius": 240,
+  "ionisierung": 6.194,
+  "oxidationszahlen": [
+   6,
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1408,
+  "siedepunkt": 4404,
+  "dichte": 18.95,
+  "entdeckt": "1789"
+ },
+ {
+  "z": 93,
+  "symbol": "Np",
+  "masse": 237.048172,
+  "konfiguration": "[Rn]7s2 5f4 6d1",
+  "en": 1.36,
+  "radius": 221,
+  "ionisierung": 6.266,
+  "oxidationszahlen": [
+   6,
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 917,
+  "siedepunkt": 4175,
+  "dichte": 20.25,
+  "entdeckt": "1940"
+ },
+ {
+  "z": 94,
+  "symbol": "Pu",
+  "masse": 244.0642,
+  "konfiguration": "[Rn]7s2 5f6",
+  "en": 1.28,
+  "radius": 243,
+  "ionisierung": 6.06,
+  "oxidationszahlen": [
+   6,
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 913,
+  "siedepunkt": 3501,
+  "dichte": 19.84,
+  "entdeckt": "1940"
+ },
+ {
+  "z": 95,
+  "symbol": "Am",
+  "masse": 243.06138,
+  "konfiguration": "[Rn]7s2 5f7",
+  "en": 1.3,
+  "radius": 244,
+  "ionisierung": 5.993,
+  "oxidationszahlen": [
+   6,
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1449,
+  "siedepunkt": 2284,
+  "dichte": 13.69,
+  "entdeckt": "1944"
+ },
+ {
+  "z": 96,
+  "symbol": "Cm",
+  "masse": 247.07035,
+  "konfiguration": "[Rn]7s2 5f7 6d1",
+  "en": 1.3,
+  "radius": 245,
+  "ionisierung": 6.02,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1618,
+  "siedepunkt": 3400,
+  "dichte": 13.51,
+  "entdeckt": "1944"
+ },
+ {
+  "z": 97,
+  "symbol": "Bk",
+  "masse": 247.07031,
+  "konfiguration": "[Rn]7s2 5f9",
+  "en": 1.3,
+  "radius": 244,
+  "ionisierung": 6.23,
+  "oxidationszahlen": [
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1323,
+  "siedepunkt": null,
+  "dichte": 14,
+  "entdeckt": "1949"
+ },
+ {
+  "z": 98,
+  "symbol": "Cf",
+  "masse": 251.07959,
+  "konfiguration": "[Rn]7s2 5f10",
+  "en": 1.3,
+  "radius": 245,
+  "ionisierung": 6.3,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1173,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1950"
+ },
+ {
+  "z": 99,
+  "symbol": "Es",
+  "masse": 252.083,
+  "konfiguration": "[Rn]7s2 5f11",
+  "en": 1.3,
+  "radius": 245,
+  "ionisierung": 6.42,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1133,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1952"
+ },
+ {
+  "z": 100,
+  "symbol": "Fm",
+  "masse": 257.09511,
+  "konfiguration": "[Rn] 5f12 7s2",
+  "en": 1.3,
+  "radius": null,
+  "ionisierung": 6.5,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1800,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1952"
+ },
+ {
+  "z": 101,
+  "symbol": "Md",
+  "masse": 258.09843,
+  "konfiguration": "[Rn]7s2 5f13",
+  "en": 1.3,
+  "radius": null,
+  "ionisierung": 6.58,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1100,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1955"
+ },
+ {
+  "z": 102,
+  "symbol": "No",
+  "masse": 259.101,
+  "konfiguration": "[Rn]7s2 5f14",
+  "en": 1.3,
+  "radius": null,
+  "ionisierung": 6.65,
+  "oxidationszahlen": [
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1100,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1957"
+ },
+ {
+  "z": 103,
+  "symbol": "Lr",
+  "masse": 266.12,
+  "konfiguration": "[Rn]7s2 5f14 6d1",
+  "en": 1.3,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": 1900,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1961"
+ },
+ {
+  "z": 104,
+  "symbol": "Rf",
+  "masse": 267.122,
+  "konfiguration": "[Rn]7s2 5f14 6d2",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   4
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1964"
+ },
+ {
+  "z": 105,
+  "symbol": "Db",
+  "masse": 268.126,
+  "konfiguration": "[Rn]7s2 5f14 6d3",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1967"
+ },
+ {
+  "z": 106,
+  "symbol": "Sg",
+  "masse": 269.128,
+  "konfiguration": "[Rn]7s2 5f14 6d4",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   6,
+   5,
+   4,
+   3,
+   0
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1974"
+ },
+ {
+  "z": 107,
+  "symbol": "Bh",
+  "masse": 270.133,
+  "konfiguration": "[Rn]7s2 5f14 6d5",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   7,
+   5,
+   4,
+   3
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1976"
+ },
+ {
+  "z": 108,
+  "symbol": "Hs",
+  "masse": 269.1336,
+  "konfiguration": "[Rn]7s2 5f14 6d6",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   8,
+   6,
+   5,
+   4,
+   3,
+   2
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1984"
+ },
+ {
+  "z": 109,
+  "symbol": "Mt",
+  "masse": 277.154,
+  "konfiguration": "[Rn]7s2 5f14 6d7 (calculated)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   9,
+   8,
+   6,
+   4,
+   3,
+   1
+  ],
+  "zustand": "fest",
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1982"
+ },
+ {
+  "z": 110,
+  "symbol": "Ds",
+  "masse": 282.166,
+  "konfiguration": "[Rn]7s2 5f14 6d8 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   8,
+   6,
+   4,
+   2,
+   0
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1994"
+ },
+ {
+  "z": 111,
+  "symbol": "Rg",
+  "masse": 282.169,
+  "konfiguration": "[Rn]7s2 5f14 6d9 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   5,
+   3,
+   1,
+   -1
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1994"
+ },
+ {
+  "z": 112,
+  "symbol": "Cn",
+  "masse": 286.179,
+  "konfiguration": "[Rn]7s2 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   2,
+   1,
+   0
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1996"
+ },
+ {
+  "z": 113,
+  "symbol": "Nh",
+  "masse": 286.182,
+  "konfiguration": "[Rn]5f14 6d10 7s2 7p1 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "2004"
+ },
+ {
+  "z": 114,
+  "symbol": "Fl",
+  "masse": 290.192,
+  "konfiguration": "[Rn]7s2 7p2 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   6,
+   4,
+   2,
+   1,
+   0
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "1998"
+ },
+ {
+  "z": 115,
+  "symbol": "Mc",
+  "masse": 290.196,
+  "konfiguration": "[Rn]7s2 7p3 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   3,
+   1
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "2003"
+ },
+ {
+  "z": 116,
+  "symbol": "Lv",
+  "masse": 293.205,
+  "konfiguration": "[Rn]7s2 7p4 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   4,
+   2,
+   -2
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "2000"
+ },
+ {
+  "z": 117,
+  "symbol": "Ts",
+  "masse": 294.211,
+  "konfiguration": "[Rn]7s2 7p5 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   5,
+   3,
+   1,
+   -1
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "2010"
+ },
+ {
+  "z": 118,
+  "symbol": "Og",
+  "masse": 295.216,
+  "konfiguration": "[Rn]7s2 7p6 5f14 6d10 (predicted)",
+  "en": null,
+  "radius": null,
+  "ionisierung": null,
+  "oxidationszahlen": [
+   6,
+   4,
+   2,
+   1,
+   0,
+   -1
+  ],
+  "zustand": null,
+  "schmelzpunkt": null,
+  "siedepunkt": null,
+  "dichte": null,
+  "entdeckt": "2006"
+ }
+]
