@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import Periodensystem from "@/components/pse/Periodensystem";
+import Periodensystem, { feldBreite, rasterBreite } from "@/components/pse/Periodensystem";
 import { HAUPTGRUPPEN, PSE, pseElement, pseNummer, suche } from "@/lib/pse/elemente";
 import { masseText } from "@/lib/pse/rallye";
 
@@ -175,5 +175,29 @@ describe("PSE-Rallye", () => {
     starte();
     fireEvent.click(screen.getByTitle(/^Eisen —/));
     expect(screen.queryByRole("heading", { name: "Eisen" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Größe des Rasters", () => {
+  it("passt sich so ein, dass nichts über die Breite hinausragt", () => {
+    for (const platz of [700, 820, 966, 1024, 1280, 1440, 1860]) {
+      const feld = feldBreite(platz, 1);
+      expect(rasterBreite(feld), `${platz} px`).toBeLessThanOrEqual(platz);
+      // Und es soll die Breite auch ausnutzen, nicht nur knapp hineinpassen.
+      expect(rasterBreite(feld)).toBeGreaterThan(platz - 30);
+    }
+  });
+
+  it("macht die Felder beim Zoomen größer und beim Verkleinern kleiner", () => {
+    const eins = feldBreite(1200, 1);
+    expect(feldBreite(1200, 2)).toBeGreaterThan(eins);
+    expect(feldBreite(1200, 0.5)).toBeLessThan(eins);
+    // Zweifacher Zoom heißt rund doppelt so breite Felder.
+    expect(feldBreite(1200, 2) / eins).toBeCloseTo(2, 1);
+  });
+
+  it("bleibt auch auf schmalen Geräten lesbar statt winzig", () => {
+    expect(feldBreite(320, 1)).toBeGreaterThanOrEqual(26);
+    expect(feldBreite(0, 1)).toBeGreaterThanOrEqual(26);
   });
 });

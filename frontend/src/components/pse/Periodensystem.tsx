@@ -19,7 +19,7 @@ import { elementeIm } from "@/lib/pse/rallye";
 const SPALTEN = 18;
 const ZEILEN = 10;
 /** Breite der Spalte mit den Periodennummern und Abstand zwischen den Feldern. */
-const LABEL = 26;
+const LABEL = 34; // breit genug für das Wort »Gruppe«
 const LUECKE = 4;
 
 /**
@@ -29,6 +29,23 @@ const LUECKE = 4;
 const HAUPTGRUPPE_ROEMISCH: Record<number, string> = {
   1: "I", 2: "II", 13: "III", 14: "IV", 15: "V", 16: "VI", 17: "VII", 18: "VIII",
 };
+
+/**
+ * Kantenlänge eines Feldes aus der verfügbaren Breite.
+ *
+ * Abgezogen werden die Beschriftungsspalte und die 18 Lücken zwischen den 19
+ * Spalten; danach wird **abgerundet**. Aufgerundet wäre das Raster ein paar
+ * Pixel breiter als der Platz — und genau dann erschiene der Rollbalken, den
+ * es nicht geben soll.
+ */
+export function feldBreite(platz: number, zoom: number): number {
+  const frei = Math.max(platz, 360) - LABEL - SPALTEN * LUECKE;
+  return Math.max(26, Math.floor((frei / SPALTEN) * zoom));
+}
+
+/** Die Gesamtbreite, die das Raster damit einnimmt. */
+export const rasterBreite = (feld: number): number =>
+  LABEL + SPALTEN * feld + SPALTEN * LUECKE;
 
 /** Zahl fürs Feld: deutsche Schreibweise, ohne überflüssige Nullen. */
 const zahl = (n: number, stellen: number): string =>
@@ -68,7 +85,8 @@ const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, feld, onWahl }: 
   const symbol = Math.max(10, feld * 0.34);
   const nameGross = feld * 0.12;
   // Unter dieser Größe wird der Name zu Matsch — dann lieber weglassen.
-  const zeigeName = feld >= 46;
+  // Der Name steht ohnehin im Steckbrief und im Tooltip.
+  const zeigeName = feld >= 56;
   return (
     <button
       onClick={() => onWahl(e)}
@@ -189,11 +207,7 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     beobachter.observe(el);
     return () => beobachter.disconnect();
   }, []);
-  // Spaltenbreite aus dem Platz: 18 Felder, die Beschriftungsspalte und die Lücken ab.
-  const feld = Math.max(
-    26,
-    Math.round(((Math.max(platz, 360) - LABEL - (SPALTEN + 1) * LUECKE) / SPALTEN) * zoom),
-  );
+  const feld = feldBreite(platz, zoom);
 
   const klick = useCallback((e: PseElement) => {
     if (modus === "rallye") rallye.antworte(e.z);
