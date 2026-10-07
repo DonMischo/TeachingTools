@@ -2,16 +2,16 @@
 /**
  * 2D-Wachstum auf einer Zeichenfläche. Gezeichnet wird nur, was neu angewachsen
  * ist; erst wenn der Haufen an den Rand stößt, wird herausgezoomt und alles neu
- * gezeichnet. Farbe = Reihenfolge des Anwachsens (Kern blau, Spitzen gold).
+ * gezeichnet. Farbe = Reihenfolge des Anwachsens, Verlauf wählbar.
  */
-import { useEffect, useRef, useState } from "react";
-import { farbe, type Dla } from "@/lib/dla/kern";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { farbe, type Dla, type Farbkarte } from "@/lib/dla/kern";
 import Steuerung from "./Steuerung";
 import { useWachstum, type Einstellung } from "./useWachstum";
 
 const STUFEN = 48;
-const PALETTE = Array.from({ length: STUFEN }, (_, i) => {
-  const [r, g, b] = farbe(i / (STUFEN - 1));
+const palette = (karte: Farbkarte) => Array.from({ length: STUFEN }, (_, i) => {
+  const [r, g, b] = farbe(i / (STUFEN - 1), karte);
   return `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
 });
 export const HINTERGRUND = "#060a14";
@@ -29,12 +29,13 @@ export function speichereBild(canvas: HTMLCanvasElement | null, name: string) {
   });
 }
 
-export default function Flaeche() {
+export default function Flaeche({ karte, setKarte }: { karte: Farbkarte; setKarte: (k: Farbkarte) => void }) {
   const [e, setE] = useState<Einstellung>({ anzahl: 50_000, haftung: 1, saat: "punkt" });
   const [lauf, setLauf] = useState(0);
   const [modus, setModus] = useState<Modus>("aeste");
   const canvas = useRef<HTMLCanvasElement>(null);
-  const zustand = useRef({ radius: 0, gezeichnet: 0, breite: 0, modus: "aeste" as Modus });
+  const zustand = useRef({ radius: 0, gezeichnet: 0, breite: 0, modus: "aeste" as Modus, karte });
+  const PALETTE = useMemo(() => palette(karte), [karte]);
 
   useEffect(() => {
     const c = canvas.current;
@@ -59,10 +60,12 @@ export default function Flaeche() {
     const ctx = c?.getContext("2d");
     if (!c || !ctx) return;
     const z = zustand.current;
-    if (neu || z.modus !== modus || dla.rmax > z.radius * 0.92) {
+    // Anderer Verlauf oder andere Darstellung → alles neu zeichnen
+    if (neu || z.modus !== modus || z.karte !== karte || dla.rmax > z.radius * 0.92) {
       z.radius = Math.max(dla.rmax * 1.35, 25);
       z.gezeichnet = 0;
       z.modus = modus;
+      z.karte = karte;
       ctx.fillStyle = HINTERGRUND;
       ctx.fillRect(0, 0, c.width, c.height);
     }
@@ -105,7 +108,7 @@ export default function Flaeche() {
         <canvas ref={canvas} className="w-full max-w-[min(100%,78vh)] mx-auto aspect-square rounded-xl" style={{ background: HINTERGRUND }}
           aria-label="Wachsender Haufen in der Ebene" />
       </div>
-      <Steuerung dim={2} e={e} setE={setE} neu={() => setLauf(l => l + 1)} laeuft={laeuft} setLaeuft={setLaeuft} stand={stand}
+      <Steuerung dim={2} karte={karte} setKarte={setKarte} e={e} setE={setE} neu={() => setLauf(l => l + 1)} laeuft={laeuft} setLaeuft={setLaeuft} stand={stand}
         extra={
           <div className="flex flex-wrap items-center gap-1">
             <button className={`chip ${modus === "aeste" ? "chip-on" : ""}`} onClick={() => setModus("aeste")}>🌿 Äste</button>

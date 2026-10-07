@@ -1,13 +1,13 @@
 "use client";
 /** 3D-Wachstum als drehbare Punktwolke (three.js). */
 import { useEffect, useRef, useState } from "react";
-import type { Dla } from "@/lib/dla/kern";
+import type { Dla, Farbkarte } from "@/lib/dla/kern";
 import Steuerung from "./Steuerung";
 import { speichereBild } from "./Flaeche";
 import { RaumSzene, type Modus } from "./raumSzene";
 import { useWachstum, type Einstellung } from "./useWachstum";
 
-export default function Raum() {
+export default function Raum({ karte, setKarte }: { karte: Farbkarte; setKarte: (k: Farbkarte) => void }) {
   const [e, setE] = useState<Einstellung>({ anzahl: 50_000, haftung: 1, saat: "punkt" });
   const [lauf, setLauf] = useState(0);
   const [modus, setModus] = useState<Modus>("punkte");
@@ -27,6 +27,7 @@ export default function Raum() {
   }, []);
 
   useEffect(() => { szene.current?.setzeModus(modus); }, [modus]);
+  useEffect(() => { szene.current?.setzeKarte(karte); }, [karte]);
   useEffect(() => { if (szene.current) szene.current.drehen = drehen; }, [drehen]);
 
   const zeichne = (dla: Dla, neu: boolean) => {
@@ -45,7 +46,7 @@ export default function Raum() {
         {fehler && <p className="text-sm text-bad">Dieses Gerät kann kein WebGL — die 3D-Ansicht geht hier leider nicht.</p>}
         <p className="text-xs text-muted">Ziehen dreht, Mausrad zoomt, Rechtsklick verschiebt.</p>
       </div>
-      <Steuerung dim={3} e={e} setE={setE} neu={() => setLauf(l => l + 1)} laeuft={laeuft} setLaeuft={setLaeuft} stand={stand}
+      <Steuerung dim={3} karte={karte} setKarte={setKarte} e={e} setE={setE} neu={() => setLauf(l => l + 1)} laeuft={laeuft} setLaeuft={setLaeuft} stand={stand}
         extra={
           <div className="flex flex-wrap items-center gap-1">
             <button className={`chip ${modus === "punkte" ? "chip-on" : ""}`} onClick={() => setModus("punkte")}>⠿ Punkte</button>

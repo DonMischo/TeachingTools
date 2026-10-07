@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import type { Saat } from "@/lib/dla/kern";
+import { FARBKARTEN, FARBKARTEN_IDS, verlaufCss, type Farbkarte, type Saat } from "@/lib/dla/kern";
 import Dimensionsbild from "./Dimensionsbild";
 import type { Einstellung, Stand } from "./useWachstum";
 
@@ -17,7 +17,7 @@ const SAATEN: { id: Saat; label: string; text: string }[] = [
 
 const zahl = (n: number) => n.toLocaleString("de-DE");
 
-export default function Steuerung({ dim, e, setE, neu, laeuft, setLaeuft, stand, extra }: {
+export default function Steuerung({ dim, e, setE, neu, laeuft, setLaeuft, stand, extra, karte, setKarte }: {
   dim: 2 | 3;
   e: Einstellung;
   setE: (e: Einstellung) => void;
@@ -26,6 +26,8 @@ export default function Steuerung({ dim, e, setE, neu, laeuft, setLaeuft, stand,
   setLaeuft: (b: boolean) => void;
   stand: Stand;
   extra?: ReactNode;
+  karte: Farbkarte;
+  setKarte: (k: Farbkarte) => void;
 }) {
   // Der Regler wirkt erst beim Loslassen — sonst startet jede Zwischenstellung neu
   const [haftung, setHaftung] = useState(e.haftung);
@@ -61,6 +63,20 @@ export default function Steuerung({ dim, e, setE, neu, laeuft, setLaeuft, stand,
               <button key={s.id} title={s.text} onClick={() => setE({ ...e, saat: s.id })} className={`chip ${e.saat === s.id ? "chip-on" : ""}`}>{s.label}</button>
             ))}
           </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="label">Farbverlauf: {FARBKARTEN[karte].label}</span>
+          <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Farbverlauf">
+            {FARBKARTEN_IDS.map(k => (
+              <button key={k} type="button" role="radio" aria-checked={karte === k} title={FARBKARTEN[k].label}
+                onClick={() => setKarte(k)}
+                className={`flex flex-col gap-0.5 rounded-lg border-2 p-1 text-[11px] ${karte === k ? "border-accent" : "border-line hover:border-line-active"}`}>
+                <span className="h-3 w-full rounded" style={{ background: verlaufCss(k) }} />
+                <span className="truncate">{FARBKARTEN[k].label}</span>
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-muted">Vom Kern (links) zu den jüngsten Spitzen (rechts).</span>
         </div>
         {extra}
       </div>

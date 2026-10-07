@@ -5,7 +5,7 @@
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { farbe, type Dla } from "@/lib/dla/kern";
+import { farbe, type Dla, type Farbkarte } from "@/lib/dla/kern";
 
 export type Modus = "punkte" | "aeste";
 
@@ -38,6 +38,7 @@ export class RaumSzene {
   private folgen = true;
   private textur = rundePunkte();
   private modus: Modus = "punkte";
+  private karte: Farbkarte = "ozean";
 
   constructor(private halter: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -75,6 +76,20 @@ export class RaumSzene {
     this.modus = m;
     if (this.punkte) this.punkte.visible = m === "punkte";
     if (this.aeste) this.aeste.visible = m === "aeste";
+  }
+
+  /** Anderer Farbverlauf: schon gezeichnete Teilchen umfärben. */
+  setzeKarte(k: Farbkarte) {
+    this.karte = k;
+    const dla = this.dla;
+    if (!dla || !this.farben) return;
+    const f = this.farben.array as Float32Array;
+    for (let i = 0; i < this.gezeichnet; i++) {
+      const [r, g, b] = farbe(i / dla.kapazitaet, k);
+      f[i * 3] = r; f[i * 3 + 1] = g; f[i * 3 + 2] = b;
+    }
+    this.farben.addUpdateRange(0, this.gezeichnet * 3);
+    this.farben.needsUpdate = true;
   }
 
   private aufraeumen() {
@@ -125,7 +140,7 @@ export class RaumSzene {
       if (bis > von) {
         const f = this.farben.array as Float32Array, ix = this.index.array as Uint32Array;
         for (let i = von; i < bis; i++) {
-          const [r, g, b] = farbe(i / dla.kapazitaet);
+          const [r, g, b] = farbe(i / dla.kapazitaet, this.karte);
           f[i * 3] = r; f[i * 3 + 1] = g; f[i * 3 + 2] = b;
           const e = dla.eltern[i];
           ix[i * 2] = e < 0 ? i : e;

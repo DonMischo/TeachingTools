@@ -91,3 +91,21 @@ describe.skip("DLA Tempo", () => {
     }
   });
 });
+
+describe("Farbverläufe", () => {
+  it("jeder Verlauf liefert gültige Farben, Anfang und Ende wie angegeben", async () => {
+    const { FARBKARTEN, FARBKARTEN_IDS, farbe } = await import("@/lib/dla/kern");
+    const hex = (c: number[]) => "#" + c.map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join("");
+    for (const k of FARBKARTEN_IDS) {
+      const st = FARBKARTEN[k].stopps;
+      expect(hex(farbe(0, k)), k).toBe(st[0][1]);
+      expect(hex(farbe(1, k)), k).toBe(st[st.length - 1][1]);
+      for (let t = 0; t <= 1; t += 0.05) for (const v of farbe(t, k)) expect(v >= 0 && v <= 1, `${k} ${t}`).toBe(true);
+    }
+  });
+
+  it("ohne Angabe bleibt es beim bisherigen Ozean-Verlauf", async () => {
+    const { farbe } = await import("@/lib/dla/kern");
+    expect(farbe(0.5)).toEqual(farbe(0.5, "ozean"));
+  });
+});

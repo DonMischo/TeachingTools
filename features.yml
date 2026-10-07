@@ -313,6 +313,7 @@ simulationen:
       - Diffusionsbegrenzte Aggregation (Vorbild dlaf von Michael Fogleman, MIT) live im Browser, Farbe nach Reihenfolge des Anwachsens
       - Fläche (2D) bis 250 000 Teilchen als Äste oder Punkte, Raum (3D) bis 500 000 als drehbare Punktwolke
       - Haftwahrscheinlichkeit, Keim Punkt/Linie/Kreis, PNG-Export
+      - Neun Farbverläufe (Ozean, Viridis, Magma, Feuer, Eis, Koralle, Wald, Regenbogen, Weiß), umschaltbar ohne Neuwachsen
       - Fraktale Dimension per Masse-Radius-Methode live im log-log-Diagramm mit Vergleichsgeraden
       - Zeitlupe eines einzelnen Wanderers mit Spur und Fangkreis, Erklärung mit Beispielen aus Natur und Technik
       - Als TaskCrawler-Werkzeug mit festem Reiter

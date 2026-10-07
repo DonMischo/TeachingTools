@@ -352,23 +352,49 @@ export function dimension(dla: Dla): Dimension | null {
 
 // ── Farben ──────────────────────────────────────────────────────────────────
 
-/** Verlauf vom Kern (tiefblau) über Türkis zu den Spitzen (gold). */
-const VERLAUF: [number, number, number, number][] = [
-  [0, 0.12, 0.25, 0.75],
-  [0.3, 0.1, 0.55, 0.9],
-  [0.55, 0.2, 0.75, 0.75],
-  [0.8, 0.75, 0.72, 0.45],
-  [1, 0.98, 0.84, 0.55],
-];
+type Stopp = [t: number, farbe: string];
 
-export function farbe(t: number): [number, number, number] {
+/**
+ * Farbverläufe über die Reihenfolge des Anwachsens: t = 0 ist der Kern,
+ * t = 1 sind die letzten Spitzen. Der dunkle Anfang ist überall etwas
+ * aufgehellt, damit der Kern auf dem fast schwarzen Hintergrund sichtbar bleibt.
+ */
+export const FARBKARTEN = {
+  ozean: { label: "Ozean", stopps: [[0, "#1f3fbf"], [0.3, "#1a8ce6"], [0.55, "#33bfbf"], [0.8, "#bfb873"], [1, "#fad68c"]] },
+  viridis: { label: "Viridis", stopps: [[0, "#482878"], [0.25, "#3e4a89"], [0.5, "#21918c"], [0.75, "#5ec962"], [1, "#fde725"]] },
+  magma: { label: "Magma", stopps: [[0, "#3b0f70"], [0.25, "#8c2981"], [0.5, "#de4968"], [0.75, "#fe9f6d"], [1, "#fcfdbf"]] },
+  feuer: { label: "Feuer", stopps: [[0, "#7f1d1d"], [0.3, "#c2410c"], [0.6, "#f97316"], [0.85, "#fbbf24"], [1, "#fff7cc"]] },
+  eis: { label: "Eis", stopps: [[0, "#1e3a8a"], [0.35, "#2563eb"], [0.65, "#7dd3fc"], [0.9, "#e0f2fe"], [1, "#ffffff"]] },
+  koralle: { label: "Koralle", stopps: [[0, "#5b21b6"], [0.3, "#be185d"], [0.6, "#fb7185"], [0.85, "#fdba74"], [1, "#fef3c7"]] },
+  wald: { label: "Wald", stopps: [[0, "#14532d"], [0.3, "#15803d"], [0.6, "#65a30d"], [0.85, "#bef264"], [1, "#fef9c3"]] },
+  regenbogen: { label: "Regenbogen", stopps: [[0, "#ef4444"], [0.2, "#f97316"], [0.4, "#facc15"], [0.6, "#22c55e"], [0.8, "#3b82f6"], [1, "#a855f7"]] },
+  weiss: { label: "Weiß", stopps: [[0, "#e5e7eb"], [1, "#e5e7eb"]] },
+} satisfies Record<string, { label: string; stopps: Stopp[] }>;
+
+export type Farbkarte = keyof typeof FARBKARTEN;
+export const FARBKARTEN_IDS = Object.keys(FARBKARTEN) as Farbkarte[];
+
+const rgb = (hex: string): [number, number, number] =>
+  [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
+const VERLAEUFE = Object.fromEntries(
+  FARBKARTEN_IDS.map(k => [k, (FARBKARTEN[k].stopps as Stopp[]).map(([t, h]) => [t, ...rgb(h)] as [number, number, number, number])]),
+) as Record<Farbkarte, [number, number, number, number][]>;
+
+/** Farbe (0…1 je Kanal) an der Stelle t des Verlaufs. */
+export function farbe(t: number, karte: Farbkarte = "ozean"): [number, number, number] {
+  const v = VERLAEUFE[karte] ?? VERLAEUFE.ozean;
   const x = Math.min(1, Math.max(0, t));
-  for (let i = 1; i < VERLAUF.length; i++) {
-    if (x <= VERLAUF[i][0]) {
-      const a = VERLAUF[i - 1], b = VERLAUF[i];
-      const f = (x - a[0]) / (b[0] - a[0]);
+  for (let i = 1; i < v.length; i++) {
+    if (x <= v[i][0]) {
+      const a = v[i - 1], b = v[i];
+      const f = (x - a[0]) / (b[0] - a[0] || 1);
       return [a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
     }
   }
-  return [VERLAUF[4][1], VERLAUF[4][2], VERLAUF[4][3]];
+  const z = v[v.length - 1];
+  return [z[1], z[2], z[3]];
 }
+
+/** CSS-Verlauf für die Vorschau im Auswahlknopf. */
+export const verlaufCss = (karte: Farbkarte) =>
+  `linear-gradient(90deg, ${(FARBKARTEN[karte].stopps as Stopp[]).map(([t, h]) => `${h} ${Math.round(t * 100)}%`).join(", ")})`;

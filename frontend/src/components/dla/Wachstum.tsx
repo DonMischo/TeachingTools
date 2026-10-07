@@ -10,6 +10,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { wahl, type Vorgabe } from "@/lib/vorgabe";
+import type { Farbkarte } from "@/lib/dla/kern";
 import Flaeche from "./Flaeche";
 import Raum from "./Raum";
 import Erklaerung from "./Erklaerung";
@@ -28,6 +29,8 @@ const chip = (an: boolean) =>
 export default function Wachstum({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "flaeche");
+  // Ein Verlauf für Fläche und Raum
+  const [karte, setKarte] = useState<Farbkarte>("ozean");
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -44,8 +47,8 @@ export default function Wachstum({ action, vorgabe }: { action?: ReactNode; vorg
           {REITER.map(r => <button key={r.id} onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.icon} {r.label}</button>)}
         </div>
       )}
-      {reiter === "flaeche" && <Flaeche />}
-      {reiter === "raum" && <Raum />}
+      {reiter === "flaeche" && <Flaeche karte={karte} setKarte={setKarte} />}
+      {reiter === "raum" && <Raum karte={karte} setKarte={setKarte} />}
       {reiter === "erklaerung" && <Erklaerung />}
     </div>
   );
