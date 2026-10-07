@@ -372,7 +372,7 @@ function Edelstein({ x, y }: { x: number; y: number }) {
   );
 }
 
-export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHoehe = "calc(100dvh - 17rem)" }: {
+export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHoehe = "calc(100vh - 18rem)" }: {
   level: Level; aufgabe: Aufgabe; zustand: Zustand; effekt: Effekt | null; demo?: boolean;
   /** Höchstens so hoch (CSS) — die Breite folgt dem Seitenverhältnis, damit alles auf den Schirm passt. */
   maxHoehe?: string;

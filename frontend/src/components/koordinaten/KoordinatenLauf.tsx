@@ -204,7 +204,7 @@ function InfoAnsicht({ info, onZurueck, weiter }: { info: Info; onZurueck: () =>
         <div className="relative flex flex-col gap-3">
           {demo.lauf && <DemoLeiste lauf={demo.lauf} stopp={demo.stopp} />}
           <Spielfeld level={info.beispiel} aufgabe={feld.aufgabe} zustand={feld.zustand} effekt={feld.effekt} demo
-            maxHoehe="calc(100dvh - 10rem)" />
+            maxHoehe="calc(100vh - 10rem)" />
           {info.beispiel.art === "spiegeln" && (
             <p className="text-xs text-muted">Violett: Original und Spiegelachse.</p>
           )}
