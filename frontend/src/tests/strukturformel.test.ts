@@ -196,3 +196,60 @@ function schneidet(s: { x1: number; y1: number; x2: number; y2: number },
   }
   return false;
 }
+
+describe("Schulform: alles gerade", () => {
+  /** Verzweigte Fälle, bei denen Abzweigungen um Platz konkurrieren. */
+  const ENG = [
+    "2,3-Dimethylbutan", "2,2-Dimethylpropan", "3,4-Diethyl-5,5-Dimethyloctan",
+    "2-Methylpropan", "3-Ethylpentan", "Propan-1,2,3-triol", "Butan-2-on",
+    // Ein Kettenatom mit zwei Resten zwingt den Nachbarn auf dieselbe Seite —
+    // dort stiessen die H-Atome vorher aneinander.
+    "2,3,3-Trimethylpentan", "2,3,3-Trimethylbutan", "2,2,3,3-Tetramethylbutan",
+    "2,3,4-Trimethylpentan",
+  ];
+
+  it("stellt jedes H-Atom gerade neben sein Atom, nie schräg", () => {
+    for (const name of ENG) {
+      const b = zeichne(mol(name), { ...STANDARD, art: "gerade" });
+      for (const s of b.striche) {
+        const dx = Math.abs(s.x2 - s.x1), dy = Math.abs(s.y2 - s.y1);
+        expect(Math.min(dx, dy), `${name}: schräger Strich`).toBeLessThan(0.5);
+      }
+    }
+  });
+
+  it("hält auch in den engen Fällen die Beschriftungen auseinander", () => {
+    for (const name of ENG) {
+      const b = zeichne(mol(name), { ...STANDARD, art: "gerade" });
+      for (let i = 0; i < b.texte.length; i++) {
+        for (let j = i + 1; j < b.texte.length; j++) {
+          const d = Math.hypot(b.texte[i].x - b.texte[j].x, b.texte[i].y - b.texte[j].y);
+          expect(d, `${name}: »${b.texte[i].text}« und »${b.texte[j].text}« zu dicht`).toBeGreaterThan(18);
+        }
+      }
+    }
+  });
+
+  it("lässt auch in den engen Fällen keinen Strich durch einen Buchstaben laufen", () => {
+    for (const name of ENG) {
+      const b = zeichne(mol(name), { ...STANDARD, art: "gerade" });
+      for (const t of b.texte) {
+        const hb = t.text.length * (t.klein ? 4.6 : 5.6) + 1;
+        const hh = (t.klein ? 15 : 18) * 0.42;
+        for (const s of b.striche) {
+          expect(schneidet(s, t.x, t.y, hb, hh), `${name}: Strich kreuzt »${t.text}«`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("setzt Abzweigungen benachbarter Kettenatome auf verschiedene Seiten", () => {
+    const m = mol("2,3-Dimethylbutan");
+    const { punkte } = legeGerade(m);
+    const zweige = m.atome
+      .map((a, i) => ({ a, i }))
+      .filter(x => x.a.kette === undefined)
+      .map(x => Math.sign(punkte[x.i].y - punkte[0].y));
+    expect(zweige.sort()).toEqual([-1, 1]);
+  });
+});

@@ -39,6 +39,10 @@ const GITTER: Punkt[] = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: -
  * ein zweites Mal vergeben, deshalb kann sich nichts überdecken. Ein Rest
  * wächst in die Richtung weiter, in die er begonnen hat: der zweite
  * Kohlenstoff einer Ethylgruppe steht also über dem ersten, nicht daneben.
+ *
+ * Abzweigungen an benachbarten Kettenatomen gehen auf **verschiedene Seiten**.
+ * Stünden beide oben (2,3-Dimethylbutan), müssten sich ihre H-Atome den
+ * schmalen Platz dazwischen teilen — einer würde schief ausweichen.
  */
 export function legeGerade(m: Molekuel): Lage {
   if (m.ring.length >= 3) return lege(m); // Ringe bleiben Vielecke
@@ -50,7 +54,26 @@ export function legeGerade(m: Molekuel): Lage {
   /** Womit das Atom gesetzt wurde — Reste wachsen so geradeaus weiter. */
   const herkunft: (Punkt | null)[] = m.atome.map(() => null);
 
-  hauptkette(m).forEach((i, k) => setze(i, { x: k, y: 0 }));
+  const kette = hauptkette(m);
+  kette.forEach((i, k) => setze(i, { x: k, y: 0 }));
+
+  // Erst die Abzweigungen der Kette, abwechselnd oben und unten. Die zweite
+  // an demselben Kettenatom geht auf die Gegenseite, die nächste Kette
+  // entlang beginnt wieder gegenüber der vorigen.
+  let letzteSeite = 1;
+  for (const i of kette) {
+    const zweige = nachbarn(m, i).filter(n => !p[n]);
+    if (!zweige.length) continue;
+    let seite = -letzteSeite;
+    letzteSeite = seite;
+    for (const z of zweige) {
+      const ziel = { x: p[i]!.x, y: p[i]!.y + seite };
+      if (belegt.has(schluessel(ziel))) continue; // bleibt für die Runden unten
+      setze(z, ziel);
+      herkunft[z] = { x: 0, y: seite };
+      seite = -seite;
+    }
+  }
 
   for (let runde = 0; runde < m.atome.length; runde++) {
     let offen = false;

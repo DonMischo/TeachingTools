@@ -34,7 +34,7 @@ export const STANDARD: Optionen = {
 };
 
 /** Bindungslänge in Pixeln. Die Schulform braucht Platz für die H an jedem C. */
-const LAENGE: Record<Darstellung, number> = { gerade: 62, winkel: 52, skelett: 46 };
+const LAENGE: Record<Darstellung, number> = { gerade: 70, winkel: 52, skelett: 46 };
 const RAND = 30;
 const SCHRIFT = 18;
 const SCHRIFT_KLEIN = 15;
@@ -170,7 +170,9 @@ export function zeichne(m: Molekuel, opt: Optionen) {
 
   // 3. Wasserstoff als eigenes Atom am Strich (nicht in der Skelettformel).
   if (alleAtome) {
-    const hAbstand = L * 0.58;
+    // Etwas kürzer als eine Bindung — das H gehört sichtbar zu seinem Atom.
+    // Wird es eng, zieht freieRichtung den Strich von sich aus weiter ein.
+    const hAbstand = L * 0.54;
     // Jedes schon gesetzte Symbol zählt — sonst stellen zwei Gruppen ihre
     // H-Atome in dieselbe Lücke zwischen sich.
     const besetzt: { x: number; y: number }[] = m.atome.map((_, i) => pts[i]);
@@ -181,7 +183,8 @@ export function zeichne(m: Molekuel, opt: Optionen) {
       const belegt = m.bindungen.flatMap(b => (b.a === i ? [pts[b.b]] : b.b === i ? [pts[b.a]] : []));
       const hKasten = kastenFuer("H", true);
       for (let k = 0; k < h; k++) {
-        const ziel = freieRichtung(p, belegt, hAbstand, opt.art === "gerade", besetzt);
+        const ziel = freieRichtung(p, belegt, hAbstand, opt.art === "gerade", besetzt,
+          d => eng(m, pts, i, p, d, L) ? L * 0.33 : hAbstand);
         belegt.push(ziel);
         besetzt.push(ziel);
         const dx = ziel.x - p.x, dy = ziel.y - p.y;
@@ -246,6 +249,24 @@ export function zeichne(m: Molekuel, opt: Optionen) {
 }
 
 /**
+ * Steht in dieser Richtung eine Bindungslänge weiter ein fremdes Atom?
+ *
+ * Dann teilen sich zwei Gruppen den Platz dazwischen — etwa zwei Reste, die
+ * nebeneinander an der Kette hängen. Beide erkennen das gleichermaßen und
+ * ziehen ihre H-Atome darum gleich weit ein, statt dass eines ausweicht.
+ */
+function eng(
+  m: Molekuel, pts: { x: number; y: number }[], i: number,
+  p: { x: number; y: number }, d: { x: number; y: number }, L: number,
+): boolean {
+  const ziel = { x: p.x + d.x * L, y: p.y + d.y * L };
+  return pts.some((q, j) =>
+    j !== i
+    && !m.bindungen.some(b => (b.a === i && b.b === j) || (b.a === j && b.b === i))
+    && Math.hypot(q.x - ziel.x, q.y - ziel.y) < L * 0.3);
+}
+
+/**
  * Die Richtung um `p` mit dem größten Winkelabstand zu allem Belegten.
  *
  * In der Schulform werden zuerst die vier geraden Richtungen geprüft und nur
@@ -255,6 +276,8 @@ export function zeichne(m: Molekuel, opt: Optionen) {
 function freieRichtung(
   p: { x: number; y: number }, belegt: { x: number; y: number }[], r: number, gerade: boolean,
   meiden: { x: number; y: number }[],
+  /** Wie weit das Symbol in dieser Richtung weg darf — knapper, wo es eng ist. */
+  weite?: (d: { x: number; y: number }) => number,
 ) {
   const winkel = belegt.map(q => Math.atan2(q.y - p.y, q.x - p.x));
   const abstand = (w: number) =>
@@ -268,10 +291,23 @@ function freieRichtung(
   const MINDEST = 21;
 
   if (gerade) {
-    // Erst oben, unten, rechts, links; dann die Diagonalen als Rückfallebene.
-    const reihe = [-90, 90, 0, 180, -45, 45, -135, 135].map(g => (g * Math.PI) / 180);
-    const frei = reihe.find(w => abstand(w) > Math.PI / 4 - 0.01 && naehe(punkt(w)) >= MINDEST);
-    if (frei !== undefined) return punkt(frei);
+    // Nur oben, unten, rechts, links — in der Schulform steht nichts schief.
+    // Das geht immer auf: ein Atom hat höchstens vier Bindungen und das
+    // Gitter vier gerade Richtungen, also bleibt für jedes H eine frei.
+    const reihe = [-90, 90, 0, 180].map(g => (g * Math.PI) / 180);
+    const frei = reihe.filter(w => abstand(w) > Math.PI / 4 - 0.01);
+    const kandidaten = frei.length ? frei : reihe;
+    const w = kandidaten.reduce((a, b) => (naehe(punkt(b)) > naehe(punkt(a)) ? b : a));
+    // Wird es trotzdem eng, den Strich einziehen: zwei H, die sich gegenüber
+    // stehen, rücken dadurch auseinander statt schief auszuweichen.
+    const voll = weite ? weite({ x: Math.cos(w), y: Math.sin(w) }) : r;
+    let kurz = voll;
+    while (kurz > voll * 0.6) {
+      const q = { x: p.x + kurz * Math.cos(w), y: p.y + kurz * Math.sin(w) };
+      if (naehe(q) >= MINDEST) return q;
+      kurz -= voll * 0.08;
+    }
+    return { x: p.x + kurz * Math.cos(w), y: p.y + kurz * Math.sin(w) };
   }
   // Sonst: die Richtung mit dem größten Winkelabstand, die niemandem zu nah kommt.
   let beste = punkt(0), weit = -1;
