@@ -61,6 +61,19 @@ describe("Maus-Führerschein: Bildschirmfoto-Logik", () => {
     expect(istBildschirmgroesse(3840, 1080)).toBe(true);
   });
 
+  it("erkennt weitere übliche Auflösungen (Tablets, Surface, alte 4:3-Schirme)", () => {
+    for (const [w, h] of [[1024, 768], [1280, 960], [1600, 1200], [2736, 1824], [2496, 1664], [1920, 1280], [3456, 2160]]) {
+      expect(istBildschirmgroesse(w, h), `${w}×${h}`).toBe(true);
+    }
+  });
+
+  it("erkennt eine nicht gelistete Auflösung am Seitenverhältnis", () => {
+    expect(istBildschirmgroesse(1792, 1008)).toBe(true);   // 16:9
+    expect(istBildschirmgroesse(1728, 1080)).toBe(true);   // 16:10
+    expect(istBildschirmgroesse(1792, 1012)).toBe(false);  // knapp daneben
+    expect(istBildschirmgroesse(800, 450)).toBe(false);    // 16:9, aber zu klein für einen Bildschirm
+  });
+
   it("lehnt einen typischen Ausschnitt ab", () => {
     expect(istBildschirmgroesse(412, 300)).toBe(false);
   });
