@@ -10,9 +10,10 @@
  * unausgeglichen in den Schalen und wollen Faktoren bekommen. So hängen
  * Nachschlagen und Rechnen zusammen.
  */
-import { celsius, HAUPTGRUPPEN, hauptgruppenName, KATEGORIEN, type PseElement } from "@/lib/pse/elemente";
+import { celsius, HAUPTGRUPPEN, hauptgruppenName, KATEGORIEN, konfigurationHoch, type PseElement } from "@/lib/pse/elemente";
 import { probe } from "@/lib/pse/bilder";
 import { reaktionenZu, waageLink } from "@/lib/pse/reaktionen";
+import { formatReaction, parseReaction } from "@/lib/chemie";
 import { textZu } from "@/lib/pse/texte";
 
 /**
@@ -31,6 +32,16 @@ function Zeile({ k, v }: { k: string; v: string }) {
       <dd className="font-medium text-right tabular-nums">{v}</dd>
     </div>
   );
+}
+
+/**
+ * Die Reaktion zum Hinsehen — mit tiefgestellten Indizes und hochgestellten
+ * Ladungen, gesetzt vom selben Formatierer wie in der Gleichungswaage.
+ * Lässt sie sich nicht lesen, steht sie eben wie geschrieben da.
+ */
+function gesetzt(src: string): string {
+  const r = parseReaction(src);
+  return r.ok ? formatReaction(r.r) : src.replace("->", "→");
 }
 
 export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchliessen: () => void }) {
@@ -98,7 +109,7 @@ export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchli
           ? wert(e.dichte === null ? null : e.dichte * 1000, "g/l", 4)
           : wert(e.dichte, "g/cm³", 2)} />
         <Zeile k="Elektronegativität" v={e.en === null ? "—" : String(e.en).replace(".", ",")} />
-        <Zeile k="Elektronenkonfiguration" v={e.konfiguration} />
+        <Zeile k="Elektronenkonfiguration" v={konfigurationHoch(e.konfiguration)} />
         <Zeile k="Oxidationszahlen" v={e.oxidationszahlen.length ? e.oxidationszahlen.map(n => (n > 0 ? `+${n}` : String(n).replace("-", "−"))).join(", ") : "—"} />
         <Zeile k="Entdeckt" v={e.entdeckt || "—"} />
       </dl>
@@ -119,7 +130,7 @@ export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchli
                 <span className="text-sm font-medium">{r.label}</span>
                 <span className="text-xs text-muted group-hover:text-accent">⚖️ ausgleichen</span>
               </div>
-              <div className="text-xs text-muted font-mono mt-0.5">{r.src.replace("->", "→")}</div>
+              <div className="text-xs text-muted mt-0.5">{gesetzt(r.src)}</div>
               {r.hinweis && <div className="text-xs text-muted mt-1">{r.hinweis}</div>}
             </a>
           ))}

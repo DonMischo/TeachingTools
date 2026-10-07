@@ -7,8 +7,8 @@
  * Stoffprobe, Kenndaten und den typischen Reaktionen. Jede Reaktion führt mit
  * einem Klick in die Gleichungswaage, wo sie ausgeglichen wird.
  */
-import { useMemo, useState, type ReactNode } from "react";
-import { KATEGORIEN, PSE, pseElement, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
+import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { dichteKachel, KATEGORIEN, PSE, pseElement, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
 // »text« heisst hier schon das Suchfeld — deshalb unter anderem Namen.
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Steckbrief from "./Steckbrief";
@@ -19,39 +19,109 @@ import { elementeIm } from "@/lib/pse/rallye";
 const SPALTEN = 18;
 const ZEILEN = 10;
 
-/** Die Hauptgruppen stehen über dem Raster, die Perioden daneben. */
-const GRUPPEN_KOPF = ["I", "II", "", "", "", "", "", "", "", "", "", "", "III", "IV", "V", "VI", "VII", "VIII"];
+/**
+ * Über dem Raster stehen die Gruppennummern (1–18 nach IUPAC), darunter die
+ * römische Nummer der Hauptgruppe — so steht es auch im Tafelwerk.
+ */
+const HAUPTGRUPPE_ROEMISCH: Record<number, string> = {
+  1: "I", 2: "II", 13: "III", 14: "IV", 15: "V", 16: "VI", 17: "VII", 18: "VIII",
+};
 
-function Kachel({ e, aktiv, gedimmt, marke, onClick }: {
+/** Zahl fürs Feld: deutsche Schreibweise, ohne überflüssige Nullen. */
+const zahl = (n: number, stellen: number): string =>
+  n.toLocaleString("de-DE", { maximumFractionDigits: stellen });
+
+/**
+ * Die Farbe des Symbols sagt den Aggregatzustand bei Zimmertemperatur —
+ * wie im Tafelwerk: fest schwarz, flüssig blau, gasförmig rot.
+ */
+const ZUSTAND_FARBE: Record<string, string> = {
+  fest: "var(--text)",
+  "flüssig": "#2563eb",
+  "gasförmig": "#dc2626",
+};
+
+/**
+ * Ein Feld des Rasters.
+ *
+ * Memoisiert, weil 118 Felder nebeneinander stehen: ohne das zeichnet ein
+ * einziger Klick das ganze Periodensystem neu. `onWahl` muss darum stabil
+ * bleiben — deshalb bekommt es das Element übergeben, statt es einzuschließen.
+ */
+const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, onWahl }: {
   e: PseElement; aktiv: boolean; gedimmt: boolean;
   /** Rückmeldung der Rallye: richtig, falsch oder die gezeigte Lösung. */
   marke?: "richtig" | "falsch" | "loesung";
-  onClick: () => void;
+  onWahl: (e: PseElement) => void;
 }) {
   const farbe = marke === "richtig" || marke === "loesung" ? "var(--good)"
     : marke === "falsch" ? "var(--bad)"
       : KATEGORIEN[e.kategorie].farbe;
+  const d = dichteKachel(e);
   return (
     <button
-      onClick={onClick}
-      style={{ gridColumn: e.spalte, gridRow: e.zeile,
+      onClick={() => onWahl(e)}
+      style={{ gridColumn: e.spalte + 1, gridRow: e.zeile,
         background: marke ? `color-mix(in srgb, ${farbe} 35%, transparent)` : `${farbe}${gedimmt ? "18" : "33"}`,
         borderColor: aktiv || marke ? farbe : `${farbe}66` }}
       title={`${e.name} — ${KATEGORIEN[e.kategorie].label}`}
-      className={`rounded-md border-2 px-0.5 py-1 text-center leading-none transition-opacity hover:brightness-110 ${
+      className={`rounded-md border-2 px-1 pt-0.5 pb-1 leading-none transition-opacity hover:brightness-110 flex flex-col ${
         gedimmt ? "opacity-40" : ""} ${aktiv ? "ring-2 ring-accent" : ""}`}
     >
-      <div className="text-[8px] text-muted tabular-nums">{e.z}</div>
-      <div className="text-[13px] sm:text-base font-black">{e.symbol}</div>
-      <div className="hidden sm:block text-[8px] text-muted truncate">{e.name}</div>
+      {/* Kopfzeile: Ordnungszahl links, relative Atommasse rechts */}
+      <div className="flex justify-between items-start text-[7px] text-muted tabular-nums w-full">
+        <span>{e.z}</span>
+        <span>{e.masse === null ? "" : zahl(e.masse, e.masse < 10 ? 3 : 2)}</span>
+      </div>
+      {/* Symbol, farbig nach Aggregatzustand; radioaktive unterstrichen */}
+      <div className={`text-[15px] font-black text-center ${radioaktiv(e) ? "underline decoration-2 underline-offset-2" : ""}`}
+        style={{ color: ZUSTAND_FARBE[e.zustand ?? ""] ?? "var(--text-muted)" }}>
+        {e.symbol}
+      </div>
+      <div className="text-[6.5px] text-muted text-center truncate w-full">{e.name}</div>
+      {/* Fußzeile: Elektronegativität links, Dichte rechts */}
+      <div className="flex justify-between items-end text-[7px] text-muted tabular-nums w-full mt-auto">
+        <span>{e.en === null ? "—" : zahl(e.en, 2)}</span>
+        <span className={d?.gas ? "text-[#dc2626]" : ""}>{d ? zahl(d.wert, d.wert < 10 ? 2 : 1) : "?"}</span>
+      </div>
     </button>
+  );
+});
+
+/** Erklärt, was in einer Kachel wo steht — einmal als Beispielfeld. */
+function Legende() {
+  const paar = (links: string, rechts: string) => (
+    <div className="flex justify-between gap-6 text-[10px] text-muted">
+      <span>{links}</span><span>{rechts}</span>
+    </div>
+  );
+  return (
+    <div className="card p-3 flex items-center gap-4 flex-wrap">
+      <div className="rounded-md border-2 px-1 pt-0.5 pb-1 leading-none flex flex-col w-[76px]"
+        style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <div className="flex justify-between text-[7px] text-muted tabular-nums"><span>17</span><span>35,45</span></div>
+        <div className="text-[15px] font-black text-center" style={{ color: ZUSTAND_FARBE["gasförmig"] }}>Cl</div>
+        <div className="text-[6.5px] text-muted text-center">Chlor</div>
+        <div className="flex justify-between text-[7px] text-muted tabular-nums"><span>3,16</span><span>3,21</span></div>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {paar("Ordnungszahl", "rel. Atommasse")}
+        {paar("Elektronegativität", "Dichte")}
+      </div>
+      <div className="text-[10px] text-muted leading-relaxed">
+        Symbol: <span style={{ color: ZUSTAND_FARBE.fest }}>fest</span>,{" "}
+        <span style={{ color: ZUSTAND_FARBE["flüssig"] }}>flüssig</span>,{" "}
+        <span style={{ color: ZUSTAND_FARBE["gasförmig"] }}>gasförmig</span> ·{" "}
+        <span className="underline decoration-2 underline-offset-2">unterstrichen</span> = radioaktiv
+        <br />
+        Dichte in g/cm³, bei <span className="text-[#dc2626]">Gasen</span> in g/l · Fläche = Kategorie
+        <br />
+        Zeilen = Perioden (Zahl links), Spalten = Gruppen (Zahl oben, römisch bei den Hauptgruppen)
+      </div>
+    </div>
   );
 }
 
-/**
- * `vorgabe` (TaskCrawler-Station) schlaegt ein Element auf:
- *   { element: "Fe" }  oder  { element: "Eisen" }
- */
 export default function Periodensystem({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
   const [modus, setModus] = useState<"nachschlagen" | "rallye">("nachschlagen");
   const rallye = useRallye();
@@ -83,10 +153,10 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     return undefined;
   };
 
-  const klick = (e: PseElement) => {
+  const klick = useCallback((e: PseElement) => {
     if (modus === "rallye") rallye.antworte(e.z);
     else setGewaehlt(e);
-  };
+  }, [modus, rallye.antworte]);
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
@@ -136,45 +206,59 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
         )}
       </div>}
 
-      <div className="flex flex-col xl:flex-row gap-5 items-start">
-        <div className="w-full xl:flex-1 overflow-x-auto">
-          <div className="min-w-[700px]">
-            {/* Kopfzeile mit den Hauptgruppen */}
-            <div className="grid gap-0.5 sm:gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${SPALTEN}, minmax(0, 1fr))` }}>
-              {GRUPPEN_KOPF.map((g, i) => (
-                <div key={i} className="text-center text-[10px] font-bold text-muted">{g}</div>
+      {/* Das Raster braucht nun echte Breite. Der Steckbrief rückt erst daneben,
+          wenn beides nebeneinander passt — sonst steht er darunter. */}
+      <div className="flex flex-col 2xl:flex-row gap-5 items-start">
+        <div className="w-full 2xl:flex-1 overflow-x-auto">
+          {/* Links eine schmale Spalte für die Periodennummern, dann die 18 Gruppen. */}
+          <div className="min-w-[1060px]">
+            <div className="grid gap-0.5 sm:gap-1 mb-1"
+              style={{ gridTemplateColumns: `1.6rem repeat(${SPALTEN}, minmax(0, 1fr))` }}>
+              <div className="text-[9px] text-muted self-end text-right pr-1">Gruppe</div>
+              {Array.from({ length: SPALTEN }, (_, i) => (
+                <div key={i} className="text-center leading-tight">
+                  <div className="text-[10px] font-bold text-muted">{i + 1}</div>
+                  <div className="text-[9px] text-muted">{HAUPTGRUPPE_ROEMISCH[i + 1] ?? ""}</div>
+                </div>
               ))}
             </div>
             <div
               className="grid gap-0.5 sm:gap-1"
               style={{
-                gridTemplateColumns: `repeat(${SPALTEN}, minmax(0, 1fr))`,
+                gridTemplateColumns: `1.6rem repeat(${SPALTEN}, minmax(0, 1fr))`,
                 gridTemplateRows: `repeat(${ZEILEN}, auto)`,
               }}
             >
+              {/* Periodennummern am linken Rand */}
+              {Array.from({ length: 7 }, (_, i) => (
+                <div key={`p${i}`} style={{ gridColumn: 1, gridRow: i + 1 }}
+                  className="text-[11px] font-bold text-muted self-center text-right pr-1">
+                  {i + 1}
+                </div>
+              ))}
               {PSE.map(e => (
                 <Kachel key={e.z} e={e} aktiv={modus === "nachschlagen" && gewaehlt?.z === e.z}
-                  gedimmt={gedimmt(e)} marke={markeFuer(e)} onClick={() => klick(e)} />
+                  gedimmt={gedimmt(e)} marke={markeFuer(e)} onWahl={klick} />
               ))}
               {/* Dort, wo der f-Block herausgenommen ist, steht sein Bereich */}
               {([[6, "57–71"], [7, "89–103"]] as const).map(([zeile, text]) => (
-                <div key={zeile} style={{ gridColumn: 3, gridRow: zeile }}
+                <div key={zeile} style={{ gridColumn: 4, gridRow: zeile }}
                   className="rounded-md border-2 border-dashed border-line flex items-center justify-center text-[9px] text-muted tabular-nums">
                   {text}
                 </div>
               ))}
-              {/* Die Lücke zwischen Haupt- und f-Block sichtbar lassen */}
-              <div style={{ gridColumn: "1 / 3", gridRow: 9 }} className="text-[10px] text-muted self-center text-right pr-2">
+              <div style={{ gridColumn: "1 / 4", gridRow: 9 }} className="text-[10px] text-muted self-center text-right pr-2">
                 Lanthanoide
               </div>
-              <div style={{ gridColumn: "1 / 3", gridRow: 10 }} className="text-[10px] text-muted self-center text-right pr-2">
+              <div style={{ gridColumn: "1 / 4", gridRow: 10 }} className="text-[10px] text-muted self-center text-right pr-2">
                 Actinoide
               </div>
             </div>
+            <div className="mt-3"><Legende /></div>
           </div>
         </div>
 
-        <div className="w-full xl:w-[380px] shrink-0">
+        <div className="w-full 2xl:w-[380px] shrink-0">
           {modus === "rallye"
             ? <RallyePanel r={rallye} />
             : gewaehlt

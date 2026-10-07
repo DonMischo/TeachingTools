@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { ausName } from "@/lib/struktur/iupac";
-import { molareMasse, summenformel } from "@/lib/struktur/molekuel";
+import { formelTief, molareMasse, summenformel } from "@/lib/struktur/molekuel";
 
 const formel = (name: string): string => {
   const r = ausName(name);
@@ -109,6 +109,22 @@ describe("Molare Masse", () => {
     const r = ausName("Ethanol");
     if (!r.ok) throw new Error(r.fehler);
     expect(molareMasse(r.m)).toBeCloseTo(46.07, 1);
+  });
+});
+
+describe("Formel zum Hinsehen", () => {
+  it("setzt die Zahlen tief", () => {
+    expect(formelTief("C2H6O")).toBe("C₂H₆O");
+    expect(formelTief("C12H26")).toBe("C₁₂H₂₆");
+    // Ohne Zahl bleibt alles, wie es ist.
+    expect(formelTief("CH4O")).toBe("CH₄O");
+    expect(formelTief("H2O")).toBe("H₂O");
+  });
+
+  it("lässt die Summenformel selbst mit normalen Ziffern — die ist zum Rechnen", () => {
+    const r = ausName("Ethanol");
+    if (!r.ok) throw new Error(r.fehler);
+    expect(summenformel(r.m)).toBe("C2H6O");
   });
 });
 

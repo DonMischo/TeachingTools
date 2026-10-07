@@ -6,6 +6,8 @@
  * aus der Bindigkeit gerechnet — so wie man es in der Skelettformel auch
  * nicht hinschreibt.
  */
+import { sub } from "@/lib/chemie";
+
 
 export type Atom = {
   /** Elementsymbol: C, O, N, Cl … */
@@ -70,6 +72,9 @@ export const nachbarn = (m: Molekuel, i: number): number[] =>
 /**
  * Summenformel in der Hill-Schreibweise: erst C, dann H, der Rest alphabetisch.
  * Die Wasserstoffatome kommen aus der Rechnung, nicht aus dem Graphen.
+ *
+ * Die Zahlen bleiben hier normal — zum Vergleichen und Prüfen. Fürs Anzeigen
+ * setzt `formelTief` sie tief.
  */
 export function summenformel(m: Molekuel): string {
   const zahl: Record<string, number> = {};
@@ -82,6 +87,14 @@ export function summenformel(m: Molekuel): string {
   const rest = Object.keys(zahl).filter(e => e !== "C" && e !== "H").sort();
   return teil("C") + teil("H") + rest.map(teil).join("");
 }
+
+/**
+ * Dieselbe Formel zum Hinsehen: C2H6O wird zu C₂H₆O. Chemische Formeln
+ * schreibt man mit tiefgestellten Zahlen, sonst liest sich C2H6O wie eine
+ * Rechnung.
+ */
+export const formelTief = (formel: string): string =>
+  formel.replace(/\d/g, d => sub(Number(d)));
 
 /** Molare Masse in g/mol — mit den Atommassen der Schulbuchtabelle. */
 const MASSE: Record<string, number> = {

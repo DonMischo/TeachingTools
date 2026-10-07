@@ -7,7 +7,7 @@
  * Periode 6/7 hinterlässt.
  */
 import { describe, expect, it } from "vitest";
-import { celsius, KATEGORIEN, PSE, pseElement, suche } from "@/lib/pse/elemente";
+import { celsius, HAUPTGRUPPEN, hauptgruppenName, KATEGORIEN, konfigurationHoch, PSE, pseElement, suche } from "@/lib/pse/elemente";
 import { ALLE_PROBEN } from "@/lib/pse/bilder";
 import { reaktionenZu, waageLink } from "@/lib/pse/reaktionen";
 import { parseReaction } from "@/lib/chemie";
@@ -81,6 +81,42 @@ describe("Kenndaten", () => {
       expect(suche(q)[0].symbol).toBe("Fe");
     }
     expect(suche("")).toEqual([]);
+  });
+});
+
+describe("Schreibweisen", () => {
+  it("setzt die Elektronenkonfiguration hoch", () => {
+    expect(konfigurationHoch("1s1")).toBe("1s¹");
+    expect(konfigurationHoch("[Ar]4s2 3d6")).toBe("[Ar]4s² 3d⁶");
+    expect(konfigurationHoch("[Xe]6s2 4f14 5d1")).toBe("[Xe]6s² 4f¹⁴ 5d¹");
+    // Die Zahl vor dem Buchstaben ist die Schale und bleibt unten.
+    expect(konfigurationHoch("[Rn]7s2 7p6")).toBe("[Rn]7s² 7p⁶");
+  });
+
+  it("kann jede Konfiguration des Periodensystems setzen", () => {
+    for (const e of PSE) {
+      const hoch = konfigurationHoch(e.konfiguration);
+      // Nach einem Orbitalbuchstaben darf keine normale Ziffer mehr stehen.
+      expect(/[spdf]\d/.test(hoch), `${e.symbol}: ${hoch}`).toBe(false);
+    }
+  });
+});
+
+describe("Hauptgruppen", () => {
+  it("nennt die acht Gruppen beim Namen", () => {
+    expect(hauptgruppenName(pseElement("Na")!)).toBe("Alkalimetalle");
+    expect(hauptgruppenName(pseElement("Ca")!)).toBe("Erdalkalimetalle");
+    expect(hauptgruppenName(pseElement("C")!)).toBe("Kohlenstoffgruppe");
+    expect(hauptgruppenName(pseElement("O")!)).toBe("Chalkogene");
+    expect(hauptgruppenName(pseElement("Cl")!)).toBe("Halogene");
+    expect(hauptgruppenName(pseElement("Ar")!)).toBe("Edelgase");
+    expect(Object.keys(HAUPTGRUPPEN)).toHaveLength(8);
+  });
+
+  it("macht Wasserstoff nicht zum Alkalimetall und gibt Nebengruppen keinen Namen", () => {
+    expect(hauptgruppenName(pseElement("H")!)).toBeNull();
+    expect(hauptgruppenName(pseElement("Fe")!)).toBeNull();
+    expect(hauptgruppenName(pseElement("U")!)).toBeNull();
   });
 });
 

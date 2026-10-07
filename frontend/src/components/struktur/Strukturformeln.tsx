@@ -8,7 +8,7 @@
  */
 import { lazy, Suspense, useMemo, useRef, useState, type ReactNode } from "react";
 import { ausName } from "@/lib/struktur/iupac";
-import { molareMasse, summenformel } from "@/lib/struktur/molekuel";
+import { formelTief, molareMasse, summenformel } from "@/lib/struktur/molekuel";
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Formelbild, { STANDARD, type Optionen } from "./Formelbild";
 
@@ -113,7 +113,7 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
               )}
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mt-3 border-t border-line pt-3">
                 <span><span className="text-muted">Summenformel: </span>
-                  <strong>{summenformel(ergebnis.m)}</strong></span>
+                  <strong>{formelTief(summenformel(ergebnis.m))}</strong></span>
                 <span><span className="text-muted">molare Masse: </span>
                   {molareMasse(ergebnis.m).toFixed(2).replace(".", ",")} g/mol</span>
                 <span><span className="text-muted">C-Atome: </span>

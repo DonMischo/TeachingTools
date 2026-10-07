@@ -11,6 +11,7 @@
  * Nachschlagen.
  */
 import daten from "./daten.json";
+import { sup } from "@/lib/chemie";
 
 export type Kategorie =
   | "alkali" | "erdalkali" | "uebergang" | "lanthanoid" | "actinoid"
@@ -167,6 +168,14 @@ const NACH_Z = new Map(PSE.map(e => [e.z, e]));
 export const pseElement = (symbol: string): PseElement | undefined => NACH_SYMBOL.get(symbol);
 export const pseNummer = (z: number): PseElement | undefined => NACH_Z.get(z);
 
+/**
+ * Die Elektronenkonfiguration zum Hinsehen: »[Ar]4s2 3d6« wird zu
+ * »[Ar]4s² 3d⁶«. Die Zahl hinter dem Buchstaben sagt, wie viele Elektronen
+ * im Orbital sitzen — sie gehört hoch, nicht in die Zeile.
+ */
+export const konfigurationHoch = (k: string): string =>
+  k.replace(/([spdf])(\d+)/g, (_, buchstabe, zahl: string) => buchstabe + sup(Number(zahl)));
+
 /** Kelvin → °C, auf eine Stelle gerundet. */
 export const celsius = (k: number | null): number | null =>
   k === null ? null : Math.round((k - 273.15) * 10) / 10;
@@ -175,6 +184,26 @@ export const celsius = (k: number | null): number | null =>
 export function aussenelektronen(e: PseElement): number | null {
   if (e.hauptgruppe === null) return null;
   return e.hauptgruppe;
+}
+
+/**
+ * Radioaktiv: kein einziges stabiles Isotop. Das sind Technetium und
+ * Promethium — die beiden Lücken zwischen stabilen Nachbarn — und alles ab
+ * Polonium.
+ */
+export const radioaktiv = (e: PseElement): boolean =>
+  e.z === 43 || e.z === 61 || e.z >= 84;
+
+/**
+ * Dichte für die Kachel. PubChem gibt alles in g/cm³; bei Gasen sind das
+ * winzige Zahlen, deshalb dort mal 1000 als g/l (= kg/m³), so wie im
+ * Tafelwerk.
+ */
+export function dichteKachel(e: PseElement): { wert: number; gas: boolean } | null {
+  if (e.dichte === null) return null;
+  return e.zustand === "gasförmig"
+    ? { wert: e.dichte * 1000, gas: true }
+    : { wert: e.dichte, gas: false };
 }
 
 /** Sucht über Symbol, deutschen Namen und Ordnungszahl. */

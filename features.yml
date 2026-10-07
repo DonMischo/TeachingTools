@@ -330,6 +330,9 @@ simulationen:
     name: Periodensystem
     kann:
       - Alle 118 Elemente im Raster, nach Kategorie eingefärbt, Lanthanoide und Actinoide ausgerückt
+      - Feldaufbau wie im Tafelwerk: Ordnungszahl oben links, Atommasse oben rechts, Symbol mittig, Name, Elektronegativität und Dichte unten
+      - Symbolfarbe = Aggregatzustand (fest/flüssig/gasförmig), unterstrichen = radioaktiv; Perioden- und Gruppennummern am Rand, Legende unter dem Raster
+      - Formeln korrekt gesetzt: Summenformeln und Reaktionen mit tiefgestellten Indizes, Elektronenkonfiguration mit Hochzahlen
       - Suche über deutschen Namen, Symbol oder Ordnungszahl; Filter je Kategorie
       - Steckbrief mit Foto der Stoffprobe (Wikimedia Commons, Urheber und Lizenz am Bild)
       - Kenndaten von PubChem (NCBI, gemeinfrei) - Masse, Zustand, Schmelz-/Siedepunkt in °C, Dichte, Elektronegativität, Konfiguration, Oxidationszahlen, Entdeckung

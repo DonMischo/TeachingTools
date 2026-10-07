@@ -300,7 +300,7 @@ export function formatParts(parts: Part[]): string {
 }
 
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-const sup = (n: number): string => String(n).split("").map(d => SUP[Number(d)] ?? d).join("");
+export const sup = (n: number): string => String(n).split("").map(d => SUP[Number(d)] ?? d).join("");
 
 /** Die Ladung als Hochstellung: ⁺, ²⁻ … — leer bei neutralen Teilchen. */
 export function formatCharge(charge: number): string {

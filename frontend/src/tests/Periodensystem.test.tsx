@@ -53,7 +53,8 @@ describe("Periodensystem", () => {
     expect(link).toHaveAttribute("href",
       "/simulationen/gleichungswaage?reaktion=Na%20%2B%20H2O%20-%3E%20NaOH%20%2B%20H2");
     // Die Gleichung steht unausgeglichen da — sie soll ja ausgeglichen werden.
-    expect(within(link).getByText("Na + H2O → NaOH + H2")).toBeInTheDocument();
+    // Indizes stehen tief, wie in der Gleichungswaage.
+    expect(within(link).getByText("Na + H₂O → NaOH + H₂")).toBeInTheDocument();
   });
 
   it("blendet beim Suchen alles andere zurück", () => {
@@ -99,9 +100,12 @@ describe("PSE-Rallye", () => {
     fireEvent.click(screen.getByRole("button", { name: "Runde starten" }));
   };
 
+  /** Das Feld der Rallye — die Kacheln daneben tragen eigene Zeichen. */
+  const tafel = () => screen.getByRole("heading", { name: /PSE-Rallye/ }).closest(".card") as HTMLElement;
+
   /** Liest aus der gestellten Frage, welches Element gemeint ist. */
   const gesuchtesFeld = (): HTMLElement => {
-    const frage = screen.getByText(/\?$|^Finde |^Klick ein/).textContent!;
+    const frage = within(tafel()).getByText(/\?$|^Finde |^Klick ein/).textContent!;
     let treffer: ReturnType<typeof pseElement>;
     let m: RegExpExecArray | null;
     if ((m = /Ordnungszahl (\d+)/.exec(frage))) treffer = pseNummer(Number(m[1]));
@@ -154,6 +158,8 @@ describe("PSE-Rallye", () => {
     expect(screen.getByText(/2\/10/)).toBeInTheDocument();
   });
 
+  // Dieser eine Test spielt zehn Aufgaben durch und zeichnet dabei das Raster
+  // immer wieder — unter Last reichen die üblichen 15 s nicht.
   it("schließt die Runde mit Sternen und Erfolgen ab", () => {
     starte();
     for (let i = 0; i < 10; i++) {
@@ -163,7 +169,7 @@ describe("PSE-Rallye", () => {
     expect(screen.getByText(/von 30 Punkten/)).toBeInTheDocument();
     expect(screen.getByText("Neue Erfolge")).toBeInTheDocument();
     expect(screen.getByText(/Erste Rallye/)).toBeInTheDocument();
-  });
+  }, 40_000);
 
   it("lässt im Rallye-Modus keinen Steckbrief aufgehen", () => {
     starte();
