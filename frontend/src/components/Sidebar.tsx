@@ -22,6 +22,7 @@ const NAV_MAIN: { tab: string; label: string; href: string }[] = [
   { tab: "klassen",        label: "Klassenverwaltung", href: "/klassen" },
   { tab: "kalender",       label: "Kalender",          href: "/kalender" },
   { tab: "fragmente",      label: "Fragmente",         href: "/fragmente" },
+  { tab: "erfolge",        label: "Erfolge",           href: "/erfolge" },
 ];
 
 const QUICK = [5, 10, 25, 50, 100];

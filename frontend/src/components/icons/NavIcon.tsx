@@ -5,8 +5,16 @@ import { useTheme } from "@/contexts/ThemeContext";
 export type NavKey =
   | "home" | "caputh" | "sportundspiele" | "haeuser" | "klassen"
   | "schreibraum" | "barometer" | "auction" | "bingo" | "exit-ticket" | "classroom"
-  | "tools" | "aktivitaeten" | "simulationen" | "kalender" | "fragmente"
+  | "tools" | "aktivitaeten" | "simulationen" | "kalender" | "fragmente" | "erfolge"
   | "admin" | "punkte" | "user" | "login";
+
+const ERFOLGE_GLYPH = (
+  <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+    <path d="M6 2h8l-2.2 5H8.2L6 2z" fill="currentColor" fillOpacity=".25" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+    <circle cx="10" cy="12.5" r="4.6" fill="currentColor" fillOpacity=".15" stroke="currentColor" strokeWidth="1.3"/>
+    <path d="M10 10.1l.85 1.75 1.9.28-1.37 1.34.32 1.9L10 14.47l-1.7.9.32-1.9L7.25 12.13l1.9-.28L10 10.1z" fill="currentColor"/>
+  </svg>
+);
 
 const FRAGMENTE_GLYPH = (
   <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
@@ -325,6 +333,7 @@ const FANTASY: Record<NavKey, React.ReactElement> = {
     </svg>
   ),
   fragmente: FRAGMENTE_GLYPH,
+  erfolge: ERFOLGE_GLYPH,
 };
 
 /* ── Cyberpunk SVG icons (angular, circuit feel) ────────────────────────── */
@@ -457,6 +466,7 @@ const CYBER: Record<NavKey, React.ReactElement> = {
     <circle cx="12.2" cy="10.5" r=".9" opacity=".4"/>
   </svg>,
   fragmente: FRAGMENTE_GLYPH,
+  erfolge: ERFOLGE_GLYPH,
 };
 
 /* ── Emoji fallback set ─────────────────────────────────────────────────── */
@@ -477,6 +487,7 @@ const EMOJI: Record<NavKey, string> = {
   simulationen:   "🔬",
   kalender:       "📅",
   fragmente:      "🗂️",
+  erfolge:        "🏅",
   admin:          "🧙",
   punkte:         "⭐",
   user:           "👤",

@@ -318,6 +318,14 @@ simulationen:
       - Fraktale Dimension per Masse-Radius-Methode live im log-log-Diagramm mit Vergleichsgeraden
       - Zeitlupe eines einzelnen Wanderers mit Spur und Fangkreis, Erklärung mit Beispielen aus Natur und Technik
       - Als TaskCrawler-Werkzeug mit festem Reiter
+  - id: erfolge
+    name: Erfolge (Übersicht)
+    kann:
+      - Alle Erfolge aller Werkzeuge auf einer Seite (/erfolge), nach Werkzeug und Bereich geordnet
+      - Fortschrittsbalken je Erfolg und Gesamtzahl; aufklappbar je Werkzeug
+      - Sammelt die vorhandenen Erfolge ein (Sonnensystem, Schichtenmodell, Verkehr, Periodensystem)
+      - Leitet Erfolge aus dem gespeicherten Fortschritt ab, wo ein Werkzeug keine führt (Algorithmen-Werkstatt, Koordinaten-Lauf, Regel-Labor)
+      - Liest nur, schreibt nie; fasst Stände mehrerer Profile eines Geräts zusammen (je Erfolg der beste Wert)
   - id: pse
     name: Periodensystem
     kann:

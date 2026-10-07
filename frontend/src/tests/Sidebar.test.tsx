@@ -68,6 +68,13 @@ describe("Sidebar — navigation", () => {
     expect(screen.getByTitle("Tools")).toBeInTheDocument();
   });
 
+  it("führt die Erfolge als eigenen Eintrag", async () => {
+    alsLehrkraft();
+    await act(async () => { renderSidebar(); });
+    await waitFor(() => expect(screen.getByTitle("Erfolge")).toBeInTheDocument());
+    expect(screen.getByTitle("Erfolge").closest("a")).toHaveAttribute("href", "/erfolge");
+  });
+
   it("hides admin link when not logged in as admin", async () => {
     alsLehrkraft();
     await act(async () => { renderSidebar(); });
