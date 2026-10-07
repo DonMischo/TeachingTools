@@ -114,6 +114,20 @@ def test_blatt_ist_immer_hochkant_und_die_karte_fuellt_seite_1(client, teacher_t
     assert breite > 15  # füllt die Seite statt pandocs 15-cm-Vorgabe
 
 
+def test_querformat_karte_zeigt_sueden_nach_links():
+    """Gedreht wird im Uhrzeigersinn: der Nordrand der Karte liegt danach rechts."""
+    from PIL import Image
+    from api.karten_export import hochkant
+    bild = Image.new("RGB", (40, 30), "white")
+    bild.paste((255, 0, 0), (0, 0, 40, 5))  # roter Nordrand
+    puffer = io.BytesIO()
+    bild.save(puffer, "PNG")
+    with Image.open(io.BytesIO(hochkant(puffer.getvalue()))) as gedreht:
+        assert gedreht.size == (30, 40)
+        assert gedreht.getpixel((29, 20)) == (255, 0, 0)
+        assert gedreht.getpixel((0, 20)) == (255, 255, 255)
+
+
 @pytest.mark.parametrize("w,h,gedreht", [(100, 79, True), (79, 100, False), (50, 50, False)])
 def test_querformat_karte_wird_gedreht(client, teacher_token, w, h, gedreht):
     """Nur echtes Querformat wird gedreht — dann ist das Bild im DOCX hochkant."""

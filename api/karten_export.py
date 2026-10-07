@@ -1,8 +1,8 @@
 """Kartentool: Arbeitsblatt-Export als PDF, DOCX, ODT oder LaTeX.
 
 Seite 1 (immer hochkant): Titel, Name/Klasse/Datum, Aufgabe (»Finde und benenne …«), die
-Karte — so groß, wie der freie Platz hergibt. Eine Querformat-Karte wird um 90° gegen den
-Uhrzeigersinn gedreht (Norden nach links), der Text bleibt aufrecht.
+Karte — so groß, wie der freie Platz hergibt. Eine Querformat-Karte wird um 90° im
+Uhrzeigersinn gedreht (Süden nach links), der Text bleibt aufrecht.
 Danach je nummerierter Ebene eine Tabelle, zweispaltig: jedes Thema beginnt in einer eigenen
 Spalte — außer zwei passen zusammen in eine Spalte, ohne umzubrechen, oder das Thema ist ohnehin
 länger als eine Spalte. Leer zum Ausfüllen oder
@@ -87,7 +87,7 @@ def _png_groesse(png: bytes) -> tuple[int, int]:
 
 
 def hochkant(png: bytes) -> bytes:
-    """Querformat-Karte um 90° gegen den Uhrzeigersinn drehen: Man dreht das Blatt nach rechts
+    """Querformat-Karte um 90° im Uhrzeigersinn drehen (Süden nach links): Man dreht das Blatt nach links
     und liest sie quer — so füllt sie die hochkante Seite statt nur ihre obere Hälfte."""
     w, h = _png_groesse(png)
     if w <= h:
@@ -95,7 +95,7 @@ def hochkant(png: bytes) -> bytes:
     from PIL import Image
     with Image.open(io.BytesIO(png)) as bild:
         aus = io.BytesIO()
-        bild.transpose(Image.Transpose.ROTATE_90).save(aus, "PNG")
+        bild.transpose(Image.Transpose.ROTATE_270).save(aus, "PNG")
     return aus.getvalue()
 
 
