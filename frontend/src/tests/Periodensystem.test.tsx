@@ -2,9 +2,11 @@
  * Prüft das gerenderte Periodensystem: Raster, Suche, Steckbrief und der
  * Weg in die Gleichungswaage.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import Periodensystem from "@/components/pse/Periodensystem";
+import { HAUPTGRUPPEN, PSE, pseElement, pseNummer, suche } from "@/lib/pse/elemente";
+import { masseText } from "@/lib/pse/rallye";
 
 /** Klickt die Kachel an — die Kacheln tragen ihren Namen im title. */
 const oeffne = (name: string) => {
@@ -72,5 +74,100 @@ describe("Periodensystem", () => {
     oeffne("Dubnium");
     expect(screen.getByRole("heading", { name: "Dubnium" })).toBeInTheDocument();
     expect(screen.queryByText("Typische Reaktionen")).not.toBeInTheDocument();
+  });
+});
+
+describe("PSE-Rallye", () => {
+  // Der Stand der Rallye liegt im Browser — ohne Aufräumen trüge ein
+  // vorheriger Lauf seine Erfolge in den nächsten hinein.
+  beforeEach(() => {
+    localStorage.removeItem("hp_pse_rallye");
+    // Die Aufgaben werden gezogen. Mit festem Zufall stellt die Rallye in
+    // jedem Lauf dieselben Fragen — sonst scheitert der Test irgendwann an
+    // einer Frage, die er nur selten zu sehen bekommt.
+    let z = 20261007;
+    vi.spyOn(Math, "random").mockImplementation(() => {
+      z = (z * 1664525 + 1013904223) >>> 0;
+      return z / 4294967296;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const starte = () => {
+    render(<Periodensystem />);
+    fireEvent.click(screen.getByRole("button", { name: /PSE-Rallye/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Runde starten" }));
+  };
+
+  /** Liest aus der gestellten Frage, welches Element gemeint ist. */
+  const gesuchtesFeld = (): HTMLElement => {
+    const frage = screen.getByText(/\?$|^Finde |^Klick ein/).textContent!;
+    let treffer: ReturnType<typeof pseElement>;
+    let m: RegExpExecArray | null;
+    if ((m = /Ordnungszahl (\d+)/.exec(frage))) treffer = pseNummer(Number(m[1]));
+    else if ((m = /Symbol (\S+)\?/.exec(frage))) treffer = pseElement(m[1]);
+    else if ((m = /^Finde (.+)\./.exec(frage))) treffer = suche(m[1])[0];
+    else if ((m = /Atommasse (\S+) u/.exec(frage))) {
+      treffer = PSE.find(e => masseText(e) === m![1]);
+    } else {
+      // Gruppenfragen: irgendein Element, das passt.
+      const g = /Gruppe der (\S+) an/.exec(frage);
+      const p = /der (\d+)\. Periode und in der (\S+)\. Hauptgruppe/.exec(frage);
+      treffer = g
+        ? PSE.find(e => e.hauptgruppe !== null && e.z !== 1 && HAUPTGRUPPEN[e.hauptgruppe].name === g[1])
+        : PSE.find(e => e.periode === Number(p![1]) && e.hauptgruppe !== null
+          && HAUPTGRUPPEN[e.hauptgruppe].roemisch === p![2]);
+    }
+    return screen.getByTitle(new RegExp(`^${treffer!.name} —`));
+  };
+
+  it("stellt eine Frage und nimmt die richtige Kachel an", () => {
+    starte();
+    fireEvent.click(gesuchtesFeld());
+    expect(screen.getByText(/^Richtig\.$/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Weiter" })).toBeInTheDocument();
+  });
+
+  it("weist eine falsche Kachel zurück und kostet Punkte", () => {
+    starte();
+    const richtig = gesuchtesFeld();
+    const falsch = screen.getAllByTitle(/—/).find(k => k !== richtig)!;
+    fireEvent.click(falsch);
+    expect(screen.getByText(/passt nicht/)).toBeInTheDocument();
+    expect(screen.getByText(/1 Fehlversuch/)).toBeInTheDocument();
+    // Danach geht die richtige Antwort weiterhin.
+    fireEvent.click(gesuchtesFeld());
+    expect(screen.getByText(/^Richtig\.$/)).toBeInTheDocument();
+  });
+
+  it("zeigt auf Wunsch die Lösung samt Erklärung", () => {
+    starte();
+    fireEvent.click(screen.getByRole("button", { name: "Lösung zeigen" }));
+    expect(screen.getByText("Die Lösung:")).toBeInTheDocument();
+  });
+
+  it("zählt die Aufgaben einer Runde", () => {
+    starte();
+    expect(screen.getByText(/1\/10/)).toBeInTheDocument();
+    fireEvent.click(gesuchtesFeld());
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    expect(screen.getByText(/2\/10/)).toBeInTheDocument();
+  });
+
+  it("schließt die Runde mit Sternen und Erfolgen ab", () => {
+    starte();
+    for (let i = 0; i < 10; i++) {
+      fireEvent.click(gesuchtesFeld());
+      fireEvent.click(screen.getByRole("button", { name: i < 9 ? "Weiter" : "Runde abschließen" }));
+    }
+    expect(screen.getByText(/von 30 Punkten/)).toBeInTheDocument();
+    expect(screen.getByText("Neue Erfolge")).toBeInTheDocument();
+    expect(screen.getByText(/Erste Rallye/)).toBeInTheDocument();
+  });
+
+  it("lässt im Rallye-Modus keinen Steckbrief aufgehen", () => {
+    starte();
+    fireEvent.click(screen.getByTitle(/^Eisen —/));
+    expect(screen.queryByRole("heading", { name: "Eisen" })).not.toBeInTheDocument();
   });
 });

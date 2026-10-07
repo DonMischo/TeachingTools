@@ -10,7 +10,7 @@
  * unausgeglichen in den Schalen und wollen Faktoren bekommen. So hängen
  * Nachschlagen und Rechnen zusammen.
  */
-import { celsius, KATEGORIEN, type PseElement } from "@/lib/pse/elemente";
+import { celsius, HAUPTGRUPPEN, hauptgruppenName, KATEGORIEN, type PseElement } from "@/lib/pse/elemente";
 import { probe } from "@/lib/pse/bilder";
 import { reaktionenZu, waageLink } from "@/lib/pse/reaktionen";
 import { textZu } from "@/lib/pse/texte";
@@ -38,6 +38,7 @@ export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchli
   const bild = probe(e.symbol);
   const text = textZu(e.symbol);
   const reaktionen = reaktionenZu(e.symbol);
+  const gruppe = hauptgruppenName(e);
 
   return (
     <div className="card p-5 flex flex-col gap-4">
@@ -53,8 +54,15 @@ export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchli
           <h2 className="text-lg font-black leading-tight">{e.name}</h2>
           <p className="text-xs text-muted">{kat.label}</p>
           <p className="text-xs text-muted mt-0.5">
-            {e.periode}. Periode{e.hauptgruppe ? `, ${e.hauptgruppe}. Hauptgruppe` : ""}
+            {e.periode}. Periode
+            {e.hauptgruppe ? `, ${HAUPTGRUPPEN[e.hauptgruppe].roemisch}. Hauptgruppe` : ""}
           </p>
+          {gruppe && (
+            <p className="text-xs mt-0.5" title={HAUPTGRUPPEN[e.hauptgruppe!].kurz}>
+              <strong>{gruppe}</strong>
+              <span className="text-muted"> — {HAUPTGRUPPEN[e.hauptgruppe!].kurz}</span>
+            </p>
+          )}
         </div>
         <button onClick={onSchliessen} className="text-muted hover:text-fg text-lg leading-none" aria-label="Steckbrief schließen">×</button>
       </div>

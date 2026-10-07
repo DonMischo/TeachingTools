@@ -327,6 +327,9 @@ simulationen:
       - Kenndaten von PubChem (NCBI, gemeinfrei) - Masse, Zustand, Schmelz-/Siedepunkt in °C, Dichte, Elektronegativität, Konfiguration, Oxidationszahlen, Entdeckung
       - Kurztext zu Wesen, Vorkommen und Verwendung bei den Schulelementen
       - Typische Reaktionen unausgeglichen, Klick öffnet die Gleichungswaage im Chemiemodus (?reaktion=…)
+      - Hauptgruppennamen (Alkalimetalle, Erdalkalimetalle, Borgruppe, Kohlenstoffgruppe, Stickstoffgruppe, Chalkogene, Halogene, Edelgase) im Steckbrief
+      - PSE-Rallye: sechs Fragearten (Ordnungszahl, Atommasse, Name, Symbol, Hauptgruppe, Periode×Hauptgruppe), Antwort per Klick ins Raster, drei Bereiche
+      - Punkte (3/2/1 je nach Versuch), bis zu drei Sterne je Runde, 19 Erfolge in vier Gruppen; Stand im Browser (ohne Konto spielbar)
       - Bilder und Daten liegen im Repo (offline, nichts geht nach außen); geholt mit scripts/fetch-pse.mjs
   - id: strukturformeln
     name: Strukturformeln

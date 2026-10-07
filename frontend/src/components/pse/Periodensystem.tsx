@@ -12,6 +12,9 @@ import { KATEGORIEN, PSE, pseElement, suche, type Kategorie, type PseElement } f
 // »text« heisst hier schon das Suchfeld — deshalb unter anderem Namen.
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Steckbrief from "./Steckbrief";
+import RallyePanel from "./RallyePanel";
+import { useRallye } from "./useRallye";
+import { elementeIm } from "@/lib/pse/rallye";
 
 const SPALTEN = 18;
 const ZEILEN = 10;
@@ -19,14 +22,21 @@ const ZEILEN = 10;
 /** Die Hauptgruppen stehen über dem Raster, die Perioden daneben. */
 const GRUPPEN_KOPF = ["I", "II", "", "", "", "", "", "", "", "", "", "", "III", "IV", "V", "VI", "VII", "VIII"];
 
-function Kachel({ e, aktiv, gedimmt, onClick }: {
-  e: PseElement; aktiv: boolean; gedimmt: boolean; onClick: () => void;
+function Kachel({ e, aktiv, gedimmt, marke, onClick }: {
+  e: PseElement; aktiv: boolean; gedimmt: boolean;
+  /** Rückmeldung der Rallye: richtig, falsch oder die gezeigte Lösung. */
+  marke?: "richtig" | "falsch" | "loesung";
+  onClick: () => void;
 }) {
-  const farbe = KATEGORIEN[e.kategorie].farbe;
+  const farbe = marke === "richtig" || marke === "loesung" ? "var(--good)"
+    : marke === "falsch" ? "var(--bad)"
+      : KATEGORIEN[e.kategorie].farbe;
   return (
     <button
       onClick={onClick}
-      style={{ gridColumn: e.spalte, gridRow: e.zeile, background: `${farbe}${gedimmt ? "18" : "33"}`, borderColor: aktiv ? farbe : `${farbe}66` }}
+      style={{ gridColumn: e.spalte, gridRow: e.zeile,
+        background: marke ? `color-mix(in srgb, ${farbe} 35%, transparent)` : `${farbe}${gedimmt ? "18" : "33"}`,
+        borderColor: aktiv || marke ? farbe : `${farbe}66` }}
       title={`${e.name} — ${KATEGORIEN[e.kategorie].label}`}
       className={`rounded-md border-2 px-0.5 py-1 text-center leading-none transition-opacity hover:brightness-110 ${
         gedimmt ? "opacity-40" : ""} ${aktiv ? "ring-2 ring-accent" : ""}`}
@@ -43,6 +53,8 @@ function Kachel({ e, aktiv, gedimmt, onClick }: {
  *   { element: "Fe" }  oder  { element: "Eisen" }
  */
 export default function Periodensystem({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+  const [modus, setModus] = useState<"nachschlagen" | "rallye">("nachschlagen");
+  const rallye = useRallye();
   const [gewaehlt, setGewaehlt] = useState<PseElement | null>(() => {
     const wunsch = vorgabeText(vorgabe, "element");
     return wunsch ? pseElement(wunsch) ?? suche(wunsch)[0] ?? null : null;
@@ -52,8 +64,29 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
 
   const treffer = useMemo(() => new Set(text.trim() ? suche(text).map(e => e.z) : []), [text]);
 
-  const gedimmt = (e: PseElement): boolean =>
-    (filter !== null && e.kategorie !== filter) || (treffer.size > 0 && !treffer.has(e.z));
+  const gedimmt = (e: PseElement): boolean => {
+    // In der Rallye wird nicht gefiltert, aber alles außerhalb des gewählten
+    // Bereichs tritt zurück — dort gibt es nichts zu suchen.
+    if (modus === "rallye") return !imBereich.has(e.z);
+    return (filter !== null && e.kategorie !== filter) || (treffer.size > 0 && !treffer.has(e.z));
+  };
+
+  const imBereich = useMemo(
+    () => new Set(elementeIm(rallye.bereich).map(e => e.z)), [rallye.bereich]);
+
+  /** Welche Kachel die Rallye gerade hervorhebt. */
+  const markeFuer = (e: PseElement): "richtig" | "falsch" | "loesung" | undefined => {
+    if (modus !== "rallye" || !rallye.aufgabe) return undefined;
+    if (rallye.rueckmeldung?.z === e.z) return rallye.rueckmeldung.richtig ? "richtig" : "falsch";
+    // Nach dem Aufgeben die Lösung zeigen.
+    if (rallye.geloest && !rallye.rueckmeldung?.richtig && rallye.aufgabe.loesung.includes(e.z)) return "loesung";
+    return undefined;
+  };
+
+  const klick = (e: PseElement) => {
+    if (modus === "rallye") rallye.antworte(e.z);
+    else setGewaehlt(e);
+  };
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
@@ -68,7 +101,17 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
         {action}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
+        {([["nachschlagen", "🔎 Nachschlagen"], ["rallye", "🎯 PSE-Rallye"]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setModus(id)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+              modus === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {modus === "nachschlagen" && <div className="flex flex-wrap items-center gap-2">
         <input
           value={text}
           onChange={e => setText(e.target.value)}
@@ -91,7 +134,7 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
             zurücksetzen
           </button>
         )}
-      </div>
+      </div>}
 
       <div className="flex flex-col xl:flex-row gap-5 items-start">
         <div className="w-full xl:flex-1 overflow-x-auto">
@@ -110,8 +153,8 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
               }}
             >
               {PSE.map(e => (
-                <Kachel key={e.z} e={e} aktiv={gewaehlt?.z === e.z} gedimmt={gedimmt(e)}
-                  onClick={() => setGewaehlt(e)} />
+                <Kachel key={e.z} e={e} aktiv={modus === "nachschlagen" && gewaehlt?.z === e.z}
+                  gedimmt={gedimmt(e)} marke={markeFuer(e)} onClick={() => klick(e)} />
               ))}
               {/* Dort, wo der f-Block herausgenommen ist, steht sein Bereich */}
               {([[6, "57–71"], [7, "89–103"]] as const).map(([zeile, text]) => (
@@ -132,12 +175,14 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
         </div>
 
         <div className="w-full xl:w-[380px] shrink-0">
-          {gewaehlt
-            ? <Steckbrief e={gewaehlt} onSchliessen={() => setGewaehlt(null)} />
-            : <div className="card p-5 text-sm text-muted">
-                Noch kein Element gewählt. Klick auf ein Feld im Raster — der Steckbrief zeigt dann
-                Foto, Kenndaten und typische Reaktionen.
-              </div>}
+          {modus === "rallye"
+            ? <RallyePanel r={rallye} />
+            : gewaehlt
+              ? <Steckbrief e={gewaehlt} onSchliessen={() => setGewaehlt(null)} />
+              : <div className="card p-5 text-sm text-muted">
+                  Noch kein Element gewählt. Klick auf ein Feld im Raster — der Steckbrief zeigt dann
+                  Foto, Kenndaten und typische Reaktionen.
+                </div>}
         </div>
       </div>
     </div>

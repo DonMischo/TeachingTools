@@ -122,6 +122,32 @@ function platzVon(z: number): { spalte: number; zeile: number; periode: number }
   return { spalte: i + 1 - versatz, zeile: periode, periode };
 }
 
+/**
+ * Die Namen der Hauptgruppen. Elemente einer Gruppe haben gleich viele
+ * Außenelektronen und verhalten sich darum ähnlich — die Namen fassen
+ * zusammen, was sie verbindet.
+ */
+export const HAUPTGRUPPEN: Record<number, { name: string; roemisch: string; kurz: string }> = {
+  1: { name: "Alkalimetalle", roemisch: "I", kurz: "weich, reagieren heftig mit Wasser" },
+  2: { name: "Erdalkalimetalle", roemisch: "II", kurz: "härter als die Alkalimetalle, zwei Außenelektronen" },
+  3: { name: "Borgruppe", roemisch: "III", kurz: "Erdmetalle, dazu das Halbmetall Bor" },
+  4: { name: "Kohlenstoffgruppe", roemisch: "IV", kurz: "vier Außenelektronen — die Gruppe des Lebens und der Chips" },
+  5: { name: "Stickstoffgruppe", roemisch: "V", kurz: "auch Pnictogene genannt" },
+  6: { name: "Chalkogene", roemisch: "VI", kurz: "Erzbildner, mit Sauerstoff und Schwefel" },
+  7: { name: "Halogene", roemisch: "VII", kurz: "Salzbildner — ihnen fehlt ein Elektron zum Oktett" },
+  8: { name: "Edelgase", roemisch: "VIII", kurz: "volle Außenschale, reagieren fast nie" },
+};
+
+/**
+ * Der Gruppenname eines Elements — mit zwei Ausnahmen: Wasserstoff steht
+ * zwar in der ersten Spalte, ist aber kein Alkalimetall, und Helium steht
+ * bei den Edelgasen, obwohl es nur zwei Außenelektronen hat.
+ */
+export function hauptgruppenName(e: PseElement): string | null {
+  if (e.z === 1) return null;
+  return e.hauptgruppe === null ? null : HAUPTGRUPPEN[e.hauptgruppe].name;
+}
+
 /** Hauptgruppe 1–8; Nebengruppen und f-Block haben keine. */
 const hauptgruppeVon = (spalte: number, kat: Kategorie): number | null =>
   kat === "lanthanoid" || kat === "actinoid" ? null
