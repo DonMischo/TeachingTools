@@ -49,8 +49,8 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     slug: "funktionen",
     href: "/simulationen/funktionen",
     icon: "📈",
-    title: "Funktionen",
-    description: "f(x) eingeben — von der Geraden bis Sinus. Wertetabelle und Graph hängen zusammen: Zeile antippen zeigt den Punkt, und »?« zeigt, wie der Wert entsteht.",
+    title: "Funktionen und Koordinatensystem",
+    description: "f(x) eingeben — von der Geraden bis Sinus, Wertetabelle und Graph hängen zusammen. Dazu der Koordinaten-Lauf: Punkte, Figuren, Spiegelbilder und Geraden im Jump'n'Run setzen.",
     color: "#22c55e",
   },
   {

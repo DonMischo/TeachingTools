@@ -120,7 +120,7 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("binaerrechner", "◈ Binär-Rechner", "◈", "simulationen", {
         "use": _cap(True, True),
     }),
-    CatalogTool("funktionen", "📈 Funktionen", "📈", "simulationen", {
+    CatalogTool("funktionen", "📈 Funktionen und Koordinatensystem", "📈", "simulationen", {
         "use": _cap(True, True),
     }),
     # Ein Werkzeug mit zwei Reitern (Sprachmodell + Bilder): beide erklaeren

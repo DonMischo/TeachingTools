@@ -147,7 +147,11 @@ function ZoomBtn({ onClick, title, children }: {
  * Der Term steht dann fest (keine Vorlagen, kein Umschalten der Form);
  * Bereich und Ansicht bleiben einstellbar, sofern nicht vorgegeben.
  */
-export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
+export default function Funktionen({ action, vorgabe, kopf = true }: {
+  action?: ReactNode; vorgabe?: Vorgabe;
+  /** false: Überschrift steht schon im umgebenden Werkzeug (Reiter) */
+  kopf?: boolean;
+}) {
   const festerTerm = text(vorgabe, "term");
   const anfang = {
     src: festerTerm ?? START.src,
@@ -500,15 +504,15 @@ export default function Funktionen({ action, vorgabe }: { action?: ReactNode; vo
 
   return (
     <div className="flex flex-col gap-5 p-6 max-w-seite mx-auto w-full">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
+      <div className={`flex items-start gap-3 flex-wrap ${kopf ? "justify-between" : "justify-end"}`}>
+        {kopf && <div>
           <h1 className="text-2xl font-black tracking-tight">📈 Funktionen</h1>
           <p className="text-muted text-sm mt-1">
             Term eingeben, Wertetabelle und Graph entstehen mitsammen. Über die Tabelle fahren
             zeigt den Punkt, über den Graphen fahren zeigt das Wertepaar — und »?« zeigt, wie
             der Wert ausgerechnet wird.
           </p>
-        </div>
+        </div>}
         <div className="flex items-center gap-2">
           {action}
           <button onClick={reset}

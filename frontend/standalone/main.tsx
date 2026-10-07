@@ -15,7 +15,7 @@ import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
-import Funktionen from "@/components/simulationen/Funktionen";
+import FunktionenWerkzeug from "@/components/simulationen/FunktionenWerkzeug";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
@@ -35,7 +35,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "bildformate", icon: "🖼️", label: "Bildformate", node: <Bildformate /> },
   { id: "vierecke", icon: "📐", label: "Vierecke", node: <Vierecke /> },
   { id: "binaer", icon: "◈", label: "Binär-Rechner", node: <Binaerrechner /> },
-  { id: "funktionen", icon: "📈", label: "Funktionen", node: <Funktionen /> },
+  { id: "funktionen", icon: "📈", label: "Funktionen und Koordinatensystem", node: <FunktionenWerkzeug /> },
   { id: "rechenregeln", icon: "🍎", label: "Rechenregeln", node: <Rechenregeln /> },
   // Ohne Sitzung: der Vergleich mit der Klasse bleibt aus, alles andere rechnet im Browser.
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },

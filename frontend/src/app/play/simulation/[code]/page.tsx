@@ -20,7 +20,7 @@ import Abakus from "@/components/simulationen/Abakus";
 import Bildformate from "@/components/simulationen/Bildformate";
 import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
-import Funktionen from "@/components/simulationen/Funktionen";
+import FunktionenWerkzeug from "@/components/simulationen/FunktionenWerkzeug";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
@@ -47,7 +47,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   bildformate: { title: "Bildformate", icon: "🖼️", node: <Bildformate /> },
   vierecke: { title: "Vierecke", icon: "📐", node: <Vierecke /> },
   binaerrechner: { title: "Binär-Rechner", icon: "◈", node: <Binaerrechner /> },
-  funktionen: { title: "Funktionen", icon: "📈", node: <Funktionen /> },
+  funktionen: { title: "Funktionen und Koordinatensystem", icon: "📈", node: <FunktionenWerkzeug /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },

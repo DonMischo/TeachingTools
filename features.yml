@@ -171,7 +171,7 @@ simulationen:
     kann:
       - Acht Bits mit Stellenwerten, Werte von 0 bis 255 mit Rechenweg
   - id: funktionen
-    name: Funktionen
+    name: Funktionen und Koordinatensystem
     kann:
       - Term, Wertetabelle und Graph miteinander verbunden
       - Formelsatz und Rechenweg je Punkt
@@ -179,6 +179,9 @@ simulationen:
       - Zoom, Achsen einzeln dehnen, Verschieben, Vorlagen würfeln
       - Mehrere Funktionen (f, g, h …) mit Auswahl für die Wertetabelle, Schnittpunkte markiert
       - Graph als SVG, PNG oder PDF exportieren
+      - "Koordinaten-Lauf: Punkte im Jump'n'Run setzen (erst laufen, dann springen), 5 Welten mit 23 Leveln"
+      - Figuren, Achsen- und Punktsymmetrie, Steigungsdreiecke, y = mx + n
+      - Infohappen mit Vorführen, Vorführen je Level, Hinweise zu typischen Fehlern, Sterne
   - id: ki
     name: KI-Werkstatt
     kann:
