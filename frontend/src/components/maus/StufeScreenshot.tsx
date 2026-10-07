@@ -20,11 +20,14 @@ import { Tastatur } from "@/components/tippen/Tastatur";
 import { Stufenkopf } from "./Stufenkopf";
 import { DemoBuehne, mitte, useDemo, type DemoSchritt } from "./Demo";
 import { useMausKontext } from "./MausKontext";
-import { Taste } from "./Taste";
+import { Taste, codeFuer } from "./Taste";
 
 type Vorschau = { url: string; breite: number; hoehe: number };
 
 const ANZAHL = 3;
+
+/** Alle Tasten für Schritt 3: Ausschnitt, speichern, kopieren, einfügen. */
+const TASTEN_3 = ["⊞", "Umschalt", "S", "Strg", "C", "V"];
 
 const SCHRITT_3_TEXT = "Speichern und in IrfanView öffnen: Ausschnitt, »Markup und Freigabe«, speichern, mit IrfanView öffnen, dort Strg + C — hier Strg + V.";
 
@@ -276,6 +279,19 @@ export default function StufeScreenshot({
               <li>In IrfanView <Taste>Strg</Taste> + <Taste>C</Taste> drücken (kopieren) …</li>
               <li>… und hier ins Feld klicken und <Taste>Strg</Taste> + <Taste>V</Taste> drücken.</li>
             </ol>
+          )}
+          {nr === 2 && (
+            <div className="rounded-2xl border border-line bg-surface p-3 flex flex-col gap-2" data-testid="tasten-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold mr-1">Diese Tasten brauchst du:</span>
+                {TASTEN_3.map(t => <Taste key={t} gross>{t}</Taste>)}
+              </div>
+              <Tastatur
+                gedrueckt={new Set()}
+                zeigeFinger={false}
+                markiert={new Set(TASTEN_3.map(codeFuer).filter((c): c is string => !!c))}
+              />
+            </div>
           )}
         </div>
       </div>
