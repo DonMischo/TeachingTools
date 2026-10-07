@@ -331,7 +331,8 @@ simulationen:
     kann:
       - Alle 118 Elemente im Raster, nach Kategorie eingefärbt, Lanthanoide und Actinoide ausgerückt
       - Feldaufbau wie im Tafelwerk: Ordnungszahl oben links, Atommasse oben rechts, Symbol mittig, Name, Elektronegativität und Dichte unten
-      - Symbolfarbe = Aggregatzustand (fest/flüssig/gasförmig), unterstrichen = radioaktiv; Perioden- und Gruppennummern am Rand, Legende unter dem Raster
+      - Symbolfarbe = Aggregatzustand (fest/flüssig/gasförmig), * = radioaktiv; Perioden- und Gruppennummern am Rand, Legende unter dem Raster
+      - Quadratische Felder, passen sich der Breite an (kein Rollbalken), Zoom 0,5–3× für die Projektion
       - Formeln korrekt gesetzt: Summenformeln und Reaktionen mit tiefgestellten Indizes, Elektronenkonfiguration mit Hochzahlen
       - Suche über deutschen Namen, Symbol oder Ordnungszahl; Filter je Kategorie
       - Steckbrief mit Foto der Stoffprobe (Wikimedia Commons, Urheber und Lizenz am Bild)

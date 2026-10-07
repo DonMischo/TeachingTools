@@ -7,7 +7,7 @@
  * Stoffprobe, Kenndaten und den typischen Reaktionen. Jede Reaktion führt mit
  * einem Klick in die Gleichungswaage, wo sie ausgeglichen wird.
  */
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { dichteKachel, KATEGORIEN, PSE, pseElement, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
 // »text« heisst hier schon das Suchfeld — deshalb unter anderem Namen.
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
@@ -18,6 +18,9 @@ import { elementeIm } from "@/lib/pse/rallye";
 
 const SPALTEN = 18;
 const ZEILEN = 10;
+/** Breite der Spalte mit den Periodennummern und Abstand zwischen den Feldern. */
+const LABEL = 26;
+const LUECKE = 4;
 
 /**
  * Über dem Raster stehen die Gruppennummern (1–18 nach IUPAC), darunter die
@@ -48,39 +51,54 @@ const ZUSTAND_FARBE: Record<string, string> = {
  * einziger Klick das ganze Periodensystem neu. `onWahl` muss darum stabil
  * bleiben — deshalb bekommt es das Element übergeben, statt es einzuschließen.
  */
-const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, onWahl }: {
+const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, feld, onWahl }: {
   e: PseElement; aktiv: boolean; gedimmt: boolean;
   /** Rückmeldung der Rallye: richtig, falsch oder die gezeigte Lösung. */
   marke?: "richtig" | "falsch" | "loesung";
+  /** Kantenlänge des quadratischen Feldes in Pixeln — davon hängt die Schrift ab. */
+  feld: number;
   onWahl: (e: PseElement) => void;
 }) {
   const farbe = marke === "richtig" || marke === "loesung" ? "var(--good)"
     : marke === "falsch" ? "var(--bad)"
       : KATEGORIEN[e.kategorie].farbe;
   const d = dichteKachel(e);
+  // Die Schrift wächst mit dem Feld, sonst stimmt beim Zoomen das Verhältnis nicht.
+  const ecke = Math.max(5, Math.min(11, feld * 0.145));
+  const symbol = Math.max(10, feld * 0.34);
+  const nameGross = feld * 0.12;
+  // Unter dieser Größe wird der Name zu Matsch — dann lieber weglassen.
+  const zeigeName = feld >= 46;
   return (
     <button
       onClick={() => onWahl(e)}
       style={{ gridColumn: e.spalte + 1, gridRow: e.zeile,
         background: marke ? `color-mix(in srgb, ${farbe} 35%, transparent)` : `${farbe}${gedimmt ? "18" : "33"}`,
         borderColor: aktiv || marke ? farbe : `${farbe}66` }}
-      title={`${e.name} — ${KATEGORIEN[e.kategorie].label}`}
-      className={`rounded-md border-2 px-1 pt-0.5 pb-1 leading-none transition-opacity hover:brightness-110 flex flex-col ${
+      title={`${e.name} — ${KATEGORIEN[e.kategorie].label}${radioaktiv(e) ? " · radioaktiv" : ""}`}
+      className={`rounded-md border-2 px-1 py-0.5 leading-none overflow-hidden transition-opacity hover:brightness-110 flex flex-col ${
         gedimmt ? "opacity-40" : ""} ${aktiv ? "ring-2 ring-accent" : ""}`}
     >
       {/* Kopfzeile: Ordnungszahl links, relative Atommasse rechts */}
-      <div className="flex justify-between items-start text-[7px] text-muted tabular-nums w-full">
+      <div className="flex justify-between items-start text-muted tabular-nums w-full"
+        style={{ fontSize: ecke }}>
         <span>{e.z}</span>
         <span>{e.masse === null ? "" : zahl(e.masse, e.masse < 10 ? 3 : 2)}</span>
       </div>
-      {/* Symbol, farbig nach Aggregatzustand; radioaktive unterstrichen */}
-      <div className={`text-[15px] font-black text-center ${radioaktiv(e) ? "underline decoration-2 underline-offset-2" : ""}`}
-        style={{ color: ZUSTAND_FARBE[e.zustand ?? ""] ?? "var(--text-muted)" }}>
+      {/* Symbol, farbig nach Aggregatzustand; ein Stern markiert die radioaktiven */}
+      <div className="font-black text-center flex-1 flex items-center justify-center"
+        style={{ fontSize: symbol, color: ZUSTAND_FARBE[e.zustand ?? ""] ?? "var(--text-muted)" }}>
         {e.symbol}
+        {radioaktiv(e) && <span style={{ fontSize: symbol * 0.6 }} aria-hidden>*</span>}
       </div>
-      <div className="text-[6.5px] text-muted text-center truncate w-full">{e.name}</div>
+      {zeigeName && (
+        <div className="text-muted text-center truncate w-full" style={{ fontSize: nameGross }}>
+          {e.name}
+        </div>
+      )}
       {/* Fußzeile: Elektronegativität links, Dichte rechts */}
-      <div className="flex justify-between items-end text-[7px] text-muted tabular-nums w-full mt-auto">
+      <div className="flex justify-between items-end text-muted tabular-nums w-full"
+        style={{ fontSize: ecke }}>
         <span>{e.en === null ? "—" : zahl(e.en, 2)}</span>
         <span className={d?.gas ? "text-[#dc2626]" : ""}>{d ? zahl(d.wert, d.wert < 10 ? 2 : 1) : "?"}</span>
       </div>
@@ -112,7 +130,7 @@ function Legende() {
         Symbol: <span style={{ color: ZUSTAND_FARBE.fest }}>fest</span>,{" "}
         <span style={{ color: ZUSTAND_FARBE["flüssig"] }}>flüssig</span>,{" "}
         <span style={{ color: ZUSTAND_FARBE["gasförmig"] }}>gasförmig</span> ·{" "}
-        <span className="underline decoration-2 underline-offset-2">unterstrichen</span> = radioaktiv
+<strong>*</strong> = radioaktiv
         <br />
         Dichte in g/cm³, bei <span className="text-[#dc2626]">Gasen</span> in g/l · Fläche = Kategorie
         <br />
@@ -153,13 +171,39 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     return undefined;
   };
 
+  // Das Raster füllt die Breite, die da ist — gezoomt wird von dort aus.
+  const rahmen = useRef<HTMLDivElement>(null);
+  const [platz, setPlatz] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  useEffect(() => {
+    const el = rahmen.current;
+    if (!el) return;
+    const messen = () => setPlatz(el.clientWidth);
+    messen();
+    // Ohne ResizeObserver (ältere Browser, Testumgebung) reicht das Fenster.
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", messen);
+      return () => window.removeEventListener("resize", messen);
+    }
+    const beobachter = new ResizeObserver(messen);
+    beobachter.observe(el);
+    return () => beobachter.disconnect();
+  }, []);
+  // Spaltenbreite aus dem Platz: 18 Felder, die Beschriftungsspalte und die Lücken ab.
+  const feld = Math.max(
+    26,
+    Math.round(((Math.max(platz, 360) - LABEL - (SPALTEN + 1) * LUECKE) / SPALTEN) * zoom),
+  );
+
   const klick = useCallback((e: PseElement) => {
     if (modus === "rallye") rallye.antworte(e.z);
     else setGewaehlt(e);
   }, [modus, rallye.antworte]);
 
+  // Breiter als die üblichen 1440 px der übrigen Seiten: ein Periodensystem
+  // mit 18 Spalten und lesbaren Feldern braucht den Platz.
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-seite mx-auto w-full">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[1900px] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-black tracking-tight">🧪 Periodensystem</h1>
@@ -209,11 +253,28 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
       {/* Das Raster braucht nun echte Breite. Der Steckbrief rückt erst daneben,
           wenn beides nebeneinander passt — sonst steht er darunter. */}
       <div className="flex flex-col 2xl:flex-row gap-5 items-start">
-        <div className="w-full 2xl:flex-1 overflow-x-auto">
-          {/* Links eine schmale Spalte für die Periodennummern, dann die 18 Gruppen. */}
-          <div className="min-w-[1060px]">
-            <div className="grid gap-0.5 sm:gap-1 mb-1"
-              style={{ gridTemplateColumns: `1.6rem repeat(${SPALTEN}, minmax(0, 1fr))` }}>
+        <div className="w-full 2xl:flex-1 min-w-0">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-xs text-muted mr-1">Größe</span>
+            <button onClick={() => setZoom(z => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))}
+              className="w-7 h-7 rounded-lg border border-line text-muted hover:text-fg" aria-label="kleiner">−</button>
+            <button onClick={() => setZoom(z => Math.min(3, Math.round((z + 0.1) * 10) / 10))}
+              className="w-7 h-7 rounded-lg border border-line text-muted hover:text-fg" aria-label="größer">+</button>
+            <input type="range" min={0.5} max={3} step={0.1} value={zoom} aria-label="Größe des Rasters"
+              onChange={e => setZoom(Number(e.target.value))} className="w-32 accent-accent ml-1" />
+            {zoom !== 1 && (
+              <button onClick={() => setZoom(1)}
+                className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">
+                einpassen
+              </button>
+            )}
+          </div>
+          {/* Links eine schmale Spalte für die Periodennummern, dann die 18 Gruppen.
+              Bei »einpassen« füllt das Raster die Breite genau — ohne Rollbalken. */}
+          <div ref={rahmen} className={zoom > 1 ? "overflow-x-auto" : ""}>
+          <div style={{ width: "fit-content" }}>
+            <div className="grid mb-1"
+              style={{ gap: LUECKE, gridTemplateColumns: `${LABEL}px repeat(${SPALTEN}, ${feld}px)` }}>
               <div className="text-[9px] text-muted self-end text-right pr-1">Gruppe</div>
               {Array.from({ length: SPALTEN }, (_, i) => (
                 <div key={i} className="text-center leading-tight">
@@ -223,10 +284,11 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
               ))}
             </div>
             <div
-              className="grid gap-0.5 sm:gap-1"
+              className="grid"
               style={{
-                gridTemplateColumns: `1.6rem repeat(${SPALTEN}, minmax(0, 1fr))`,
-                gridTemplateRows: `repeat(${ZEILEN}, auto)`,
+                gap: LUECKE,
+                gridTemplateColumns: `${LABEL}px repeat(${SPALTEN}, ${feld}px)`,
+                gridTemplateRows: `repeat(${ZEILEN}, ${feld}px)`,
               }}
             >
               {/* Periodennummern am linken Rand */}
@@ -238,7 +300,7 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
               ))}
               {PSE.map(e => (
                 <Kachel key={e.z} e={e} aktiv={modus === "nachschlagen" && gewaehlt?.z === e.z}
-                  gedimmt={gedimmt(e)} marke={markeFuer(e)} onWahl={klick} />
+                  gedimmt={gedimmt(e)} marke={markeFuer(e)} feld={feld} onWahl={klick} />
               ))}
               {/* Dort, wo der f-Block herausgenommen ist, steht sein Bereich */}
               {([[6, "57–71"], [7, "89–103"]] as const).map(([zeile, text]) => (
@@ -254,8 +316,9 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
                 Actinoide
               </div>
             </div>
-            <div className="mt-3"><Legende /></div>
+            </div>
           </div>
+          <div className="mt-3"><Legende /></div>
         </div>
 
         <div className="w-full 2xl:w-[380px] shrink-0">
