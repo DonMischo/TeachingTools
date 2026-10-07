@@ -6,11 +6,14 @@
  * der Code hier ist eigener, die Idee dieselbe: Name rein, Bild raus, mit
  * den Schaltern, die der Unterricht braucht.
  */
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, useRef, useState, type ReactNode } from "react";
 import { ausName } from "@/lib/struktur/iupac";
 import { molareMasse, summenformel } from "@/lib/struktur/molekuel";
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Formelbild, { STANDARD, type Optionen } from "./Formelbild";
+
+// three.js ist groß — das Modell wird erst geladen, wenn jemand auf 3D schaltet.
+const Raumbild = lazy(() => import("./Raumbild"));
 
 /** Beispiele nach Stoffgruppe — der Weg durch die Organik der Mittelstufe. */
 const BEISPIELE: { gruppe: string; namen: string[] }[] = [
@@ -89,19 +92,25 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
           aria-label="Name der Verbindung"
           className="px-3 py-2 rounded-xl border border-line bg-surface text-sm font-medium flex-1 min-w-[260px]"
         />
-        <button onClick={herunterladen} disabled={!ergebnis.ok}
+        {opt.art !== "raum" && <button onClick={herunterladen} disabled={!ergebnis.ok}
           className="px-3 py-2 rounded-xl border border-line text-sm text-muted hover:text-fg hover:border-accent disabled:opacity-40">
           ⬇️ Als SVG speichern
-        </button>
+        </button>}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         <div className="card p-4 w-full lg:flex-1 min-w-0">
           {ergebnis.ok ? (
             <>
-              <div ref={bildRef}>
-                <Formelbild m={ergebnis.m} opt={opt} titel={ergebnis.name} />
-              </div>
+              {opt.art === "raum" ? (
+                <Suspense fallback={<div className="h-[420px] grid place-items-center text-sm text-muted">Modell wird geladen …</div>}>
+                  <Raumbild m={ergebnis.m} titel={ergebnis.name} />
+                </Suspense>
+              ) : (
+                <div ref={bildRef}>
+                  <Formelbild m={ergebnis.m} opt={opt} titel={ergebnis.name} />
+                </div>
+              )}
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mt-3 border-t border-line pt-3">
                 <span><span className="text-muted">Summenformel: </span>
                   <strong>{summenformel(ergebnis.m)}</strong></span>
@@ -124,6 +133,7 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
                 ["gerade", "Valenzstrich gerade", "Hauptkette waagerecht, Abzweigungen senkrecht — die Schulform."],
                 ["winkel", "Valenzstrich mit Winkeln", "Dieselbe Formel mit den echten Bindungswinkeln von 120°."],
                 ["skelett", "Skelettformel", "C-Atome sind nur Knicke; beschriftet sind die anderen Atome."],
+                ["raum", "Kugel-Stab-Modell (3D)", "Das Molekül zum Drehen — mit den echten Bindungswinkeln im Raum."],
               ] as const).map(([id, label, hinweis]) => (
                 <button key={id} onClick={() => setOpt(o => ({ ...o, art: id }))}
                   className={`text-left px-3 py-1.5 rounded-lg border text-xs ${
@@ -138,12 +148,14 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
                 Alle H-Atome anzeigen
               </Haken>
             )}
-            <Haken an={opt.paare} setzen={b => setOpt(o => ({ ...o, paare: b }))}>
-              Freie Elektronenpaare anzeigen
-            </Haken>
+            {opt.art !== "raum" && (
+              <Haken an={opt.paare} setzen={b => setOpt(o => ({ ...o, paare: b }))}>
+                Freie Elektronenpaare anzeigen
+              </Haken>
+            )}
           </div>
 
-          <div className="card p-4 flex flex-col gap-3">
+          {opt.art !== "raum" && <div className="card p-4 flex flex-col gap-3">
             <h2 className="text-sm font-bold">Drehen und spiegeln</h2>
             <label className="text-sm flex items-center gap-2">
               <span className="text-muted">Winkel</span>
@@ -166,7 +178,7 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
                 zurücksetzen
               </button>
             </div>
-          </div>
+          </div>}
 
           {!fest && (
             <div className="card p-4 flex flex-col gap-3">

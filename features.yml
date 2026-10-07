@@ -334,7 +334,8 @@ simulationen:
       - IUPAC-Name eintippen, Strukturformel entsteht beim Tippen (Parser und Layout eigener Code, Vorbild strukturformelzeichner.de)
       - Alkane, Alkene, Alkine (auch mehrfach), Ringe, Halogenalkane, Alkohole, Aldehyde, Ketone, Carbonsäuren, Ester, Amine
       - Reste als Vorsilben (2,3-Dimethylbutan) und Trivialnamen (Benzol, Essigsäure, Aceton, Glycerin)
-      - Drei Darstellungen: Valenzstrich gerade (Schulform, Hauptkette waagerecht, Abzweigungen senkrecht), Valenzstrich mit 120°-Winkeln, Skelettformel
+      - Vier Darstellungen: Valenzstrich gerade (Schulform, Hauptkette waagerecht, Abzweigungen senkrecht), Valenzstrich mit 120°-Winkeln, Skelettformel, Kugel-Stab-Modell in 3D
+      - 3D-Modell zum Drehen und Zoomen (three.js, lazy): Winkel nach VSEPR (Tetraeder 109,5°, Dreieck 120°, Gerade 180°), Benzol flach, Cyclohexan gewellt, PNG-Export
       - Alle H-Atome, freie Elektronenpaare; Striche enden am Schriftkasten, keine Linie laeuft durch einen Buchstaben
       - Drehen, spiegeln und als SVG speichern
       - Summenformel (Hill), molare Masse und Zahl der C-Atome; H-Atome aus der Bindigkeit gerechnet

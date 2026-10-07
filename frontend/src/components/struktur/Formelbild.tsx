@@ -18,7 +18,7 @@ import { useMemo } from "react";
 import { hZahl, paare, type Molekuel } from "@/lib/struktur/molekuel";
 import { lege, legeGerade } from "@/lib/struktur/layout";
 
-export type Darstellung = "gerade" | "winkel" | "skelett";
+export type Darstellung = "gerade" | "winkel" | "skelett" | "raum";
 
 export type Optionen = {
   art: Darstellung;
@@ -34,7 +34,8 @@ export const STANDARD: Optionen = {
 };
 
 /** Bindungslänge in Pixeln. Die Schulform braucht Platz für die H an jedem C. */
-const LAENGE: Record<Darstellung, number> = { gerade: 70, winkel: 52, skelett: 46 };
+// »raum« zeichnet Formelbild nicht — der Eintrag hält nur den Typ vollständig.
+const LAENGE: Record<Darstellung, number> = { gerade: 70, winkel: 52, skelett: 46, raum: 70 };
 const RAND = 30;
 const SCHRIFT = 18;
 const SCHRIFT_KLEIN = 15;
