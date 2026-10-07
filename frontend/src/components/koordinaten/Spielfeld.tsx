@@ -25,51 +25,101 @@ const FARBE = {
 
 export type Effekt = { id: number; ereignis: Ereignis; landung: P };
 
-type Sprung = { t0: number; dauer: number; von: P; apex: number; landung: P; tauchen: boolean };
+/* ── Bewegung ──────────────────────────────────────────────────────────────── */
+
+/** Ein Stück eines Sprungs: Dauer und Ort über u ∈ [0, 1]. */
+type Abschnitt = { ms: number; ort: (u: number) => { x: number; y: number; neigung: number }; bremst?: boolean };
+type Sprung = { t0: number; abschnitte: Abschnitt[]; dauer: number; taucht: boolean };
 type Blase = { x: number; y: number; t0: number; r: number };
 type Spritzer = { x: number; t0: number };
+type Rauch = { x: number; y: number; t0: number };
 
-const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
-const easeIn = (t: number) => t * t;
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 
 /**
- * Höhe während eines Sprungs. Abtauchen ist eine eigene Bewegung: kurzer
- * Hüpfer vom Floß, langsames Sinken mit Schaukeln, kurz schweben, auftauchen.
+ * Der Weg von y0 nach y1, an der Wasseroberfläche geteilt:
+ *  - Luft, aufwärts: Wurfparabel — schnell los, zum Scheitel hin immer langsamer.
+ *    Höhere Sprünge dauern länger (Steigzeit wächst mit der Wurzel der Höhe).
+ *  - Luft, abwärts: fallen, kurz vor dem Ziel bremst der Raketenrucksack.
+ *  - Wasser: gemächlich, sanft an- und abschwellend, mit Schaukeln.
  */
-function sprungOrt(s: Sprung, t: number): { p: P; neigung: number } {
-  if (!s.tauchen) {
-    if (t < 0.45) return { p: { x: s.von.x, y: s.von.y + (s.apex - s.von.y) * easeOut(t / 0.45) }, neigung: 0 };
-    if (t < 0.55) return { p: { x: s.von.x, y: s.apex }, neigung: 0 };
-    return { p: { x: s.landung.x, y: s.apex + (s.landung.y - s.apex) * easeIn((t - 0.55) / 0.45) }, neigung: 0 };
+function wege(x: number, y0: number, y1: number): Abschnitt[] {
+  if (y0 === y1) return [];
+  if (y0 < 0 !== y1 < 0 && y0 !== 0 && y1 !== 0) return [...wege(x, y0, 0), ...wege(x, 0, y1)];
+  const d = Math.abs(y1 - y0);
+  if (Math.min(y0, y1) < 0) {
+    const ab = y1 < y0;
+    const wellen = Math.max(1, d / 1.5);
+    return [{
+      // Langsam, aber tiefe Tauchgänge nicht endlos: Dauer wächst mit der Wurzel der Tiefe.
+      ms: 1000 + 650 * Math.sqrt(d),
+      ort: u => ({
+        x: x + 0.07 * Math.sin(u * Math.PI * 2 * wellen),
+        y: y0 + (y1 - y0) * easeInOut(u),
+        neigung: (ab ? 9 : -6) * Math.sin(u * Math.PI * 2 * wellen),
+      }),
+    }];
   }
-  const schaukel = (u: number) => Math.sin(u * Math.PI * 4);
-  const hop = s.von.y >= 0 ? 0.6 : 0;          // vom Floß springt man erst hoch
-  if (t < 0.14) return { p: { x: s.von.x, y: s.von.y + hop * Math.sin((t / 0.14) * Math.PI / 2) }, neigung: 0 };
-  if (t < 0.52) {
-    const u = (t - 0.14) / 0.38;
-    const y = s.von.y + hop + (s.apex - s.von.y - hop) * easeInOut(u);
-    return { p: { x: s.von.x + 0.06 * schaukel(u), y }, neigung: 10 * schaukel(u) };
+  if (y1 > y0) {
+    return [{ ms: 300 * Math.sqrt(d) + 140, ort: u => ({ x, y: y0 + d * (1 - (1 - u) * (1 - u)), neigung: 0 }) }];
   }
-  if (t < 0.64) {
-    const u = (t - 0.52) / 0.12;
-    return { p: { x: s.von.x, y: s.apex + 0.05 * Math.sin(u * Math.PI * 2) }, neigung: 0 };
-  }
-  const u = (t - 0.64) / 0.36;
-  return { p: { x: s.landung.x + 0.05 * schaukel(u), y: s.apex + (s.landung.y - s.apex) * easeInOut(u) }, neigung: -6 * schaukel(u) };
+  // Fallen bis 70 % der Zeit, dann Bremsschub
+  const s = (u: number) => (u < 0.7 ? 0.85 * (u / 0.7) ** 2 : 0.85 + 0.15 * (1 - (1 - (u - 0.7) / 0.3) ** 2));
+  return [
+    { ms: (240 * Math.sqrt(d) + 110) * 0.7, ort: u => ({ x, y: y0 - d * s(u * 0.7), neigung: 0 }) },
+    { ms: (240 * Math.sqrt(d) + 110) * 0.3, ort: u => ({ x, y: y0 - d * s(0.7 + u * 0.3), neigung: 0 }), bremst: true },
+  ];
 }
 
-/** Wo die Figur gerade zu sehen ist — läuft dem Zustand hinterher. Dazu Blasen und Spritzer. */
+function baueSprung(von: P, apex: number, landung: P, t0: number): Sprung {
+  const x = von.x;
+  const taucht = apex < von.y && apex < 0;
+  const abschnitte: Abschnitt[] = [];
+  // Vom Floß (oder Boden) erst ein Hüpfer, dann hinein.
+  if (taucht && von.y === 0) {
+    abschnitte.push({ ms: 380, ort: u => ({ x, y: 0.55 * Math.sin(u * Math.PI), neigung: 0 }) });
+  }
+  abschnitte.push(...wege(x, von.y, apex));
+  // Am Ziel kurz innehalten: unter Wasser schweben, in der Luft auf dem Feuerstrahl stehen.
+  if (apex === von.y) {
+    abschnitte.push({ ms: 320, ort: u => ({ x, y: apex + (apex < 0 ? 0.15 : 0.4) * Math.sin(u * Math.PI), neigung: 0 }) });
+  } else {
+    abschnitte.push({
+      ms: apex < 0 ? 650 : 160,
+      ort: u => ({ x, y: apex + (apex < 0 ? 0.06 : 0.03) * Math.sin(u * Math.PI * 2), neigung: 0 }),
+    });
+  }
+  abschnitte.push(...wege(landung.x, apex, landung.y));
+  return { t0, abschnitte, taucht, dauer: abschnitte.reduce((s, a) => s + a.ms, 0) };
+}
+
+function sprungOrt(s: Sprung, jetzt: number): { p: P; neigung: number; bremst: boolean } | null {
+  let t = jetzt - s.t0;
+  for (const a of s.abschnitte) {
+    if (t < a.ms) {
+      const o = a.ort(t / a.ms);
+      return { p: { x: o.x, y: o.y }, neigung: o.neigung, bremst: !!a.bremst };
+    }
+    t -= a.ms;
+  }
+  return null;
+}
+
+/** Wo die Figur gerade zu sehen ist — läuft dem Zustand hinterher. Dazu Blasen, Spritzer und Rauch. */
 function useAnzeige(held: P, effekt: Effekt | null) {
   const pos = useRef<P>({ ...held });
   const blick = useRef(1);
   const laeuft = useRef(false);
   const steigt = useRef(0);
   const neigung = useRef(0);
+  const schwimm = useRef(0);
+  const bremst = useRef(false);
   const sprung = useRef<Sprung | null>(null);
   const blasen = useRef<Blase[]>([]);
   const spritzer = useRef<Spritzer[]>([]);
+  const rauch = useRef<Rauch[]>([]);
   const letzteBlase = useRef(0);
+  const letzterRauch = useRef(0);
   const zuletzt = useRef<number | null>(null);
   const ziel = useRef(held);
   ziel.current = held;
@@ -79,13 +129,7 @@ function useAnzeige(held: P, effekt: Effekt | null) {
   useEffect(() => {
     if (!effekt || effekt.ereignis.art === "nichts" || effekt.id === zuletzt.current) return;
     zuletzt.current = effekt.id;
-    const { von, p } = effekt.ereignis;
-    const h = Math.abs(p.y - von.y);
-    const tauchen = p.y < von.y && p.y < 0;
-    sprung.current = {
-      t0: performance.now(), von, apex: p.y, landung: effekt.landung, tauchen,
-      dauer: tauchen ? 900 + 180 * h : 320 + 70 * Math.max(h, 1),
-    };
+    sprung.current = baueSprung(effekt.ereignis.von, effekt.ereignis.p.y, effekt.landung, performance.now());
   }, [effekt]);
 
   useEffect(() => {
@@ -96,37 +140,46 @@ function useAnzeige(held: P, effekt: Effekt | null) {
       vorher = jetzt;
       const alt = pos.current;
       const s = sprung.current;
-      if (s) {
-        const t = (jetzt - s.t0) / s.dauer;
-        if (t >= 1) { sprung.current = null; pos.current = { ...s.landung }; neigung.current = 0; }
-        else { const o = sprungOrt(s, t); pos.current = o.p; neigung.current = o.neigung; }
+      const o = s ? sprungOrt(s, jetzt) : null;
+      if (s && !o) sprung.current = null;
+      if (o) {
+        pos.current = o.p; neigung.current = o.neigung; bremst.current = o.bremst;
         laeuft.current = false;
       } else {
         const z = ziel.current, p = pos.current;
         const dx = z.x - p.x, dy = z.y - p.y;
-        // Unter Wasser geht es gemächlicher voran.
-        const schritt = (p.y < -0.04 ? 5 : 9) * dt;
+        // Unter Wasser geht es gemächlich voran.
+        const schritt = (p.y < -0.04 ? 3.2 : 9) * dt;
         laeuft.current = Math.abs(dx) > 0.01;
         if (Math.abs(dx) > 0.01) blick.current = dx > 0 ? 1 : -1;
         pos.current = {
           x: Math.abs(dx) <= schritt ? z.x : p.x + Math.sign(dx) * schritt,
           y: Math.abs(dy) <= schritt * 1.5 ? z.y : p.y + Math.sign(dy) * schritt * 1.5,
         };
-        neigung.current = 0;
+        neigung.current = 0; bremst.current = false;
       }
       const neu = pos.current;
       steigt.current = dt > 0 ? (neu.y - alt.y) / dt : 0;
+      // Wer unter Wasser seitwärts schwimmt, legt sich flach.
+      const soll = neu.y < -0.3 && laeuft.current ? 65 : 0;
+      schwimm.current += Math.sign(soll - schwimm.current) * Math.min(Math.abs(soll - schwimm.current), 260 * dt);
       // Durch die Wasseroberfläche → es spritzt.
       if ((alt.y >= -0.05) !== (neu.y >= -0.05)) spritzer.current.push({ x: neu.x, t0: jetzt });
       spritzer.current = spritzer.current.filter(sp => jetzt - sp.t0 < 700);
-      // Unter Wasser steigen Blasen aus dem Helm.
-      if (neu.y < -0.3 && jetzt - letzteBlase.current > 170) {
+      // Unter Wasser steigen Blasen aus dem Atemregler.
+      if (neu.y < -0.3 && jetzt - letzteBlase.current > 230) {
         letzteBlase.current = jetzt;
-        blasen.current.push({ x: neu.x + 0.15 * blick.current, y: neu.y + 1.15, t0: jetzt, r: 1.5 + Math.random() * 2.5 });
+        blasen.current.push({ x: neu.x + 0.25 * blick.current, y: neu.y + 0.9, t0: jetzt, r: 1.5 + Math.random() * 2.5 });
       }
       blasen.current = blasen.current
-        .map(bl => ({ ...bl, y: bl.y + 1.6 * dt }))
-        .filter(bl => bl.y < -0.05 && jetzt - bl.t0 < 5000);
+        .map(bl => ({ ...bl, y: bl.y + 1.3 * dt }))
+        .filter(bl => bl.y < -0.05 && jetzt - bl.t0 < 6000);
+      // Der Raketenrucksack qualmt, solange er schiebt.
+      if (neu.y > 0.1 && (steigt.current > 0.4 || bremst.current) && jetzt - letzterRauch.current > 60) {
+        letzterRauch.current = jetzt;
+        rauch.current.push({ x: neu.x - 0.3 * blick.current, y: neu.y + 0.2, t0: jetzt });
+      }
+      rauch.current = rauch.current.filter(r => jetzt - r.t0 < 800);
       tick(n => (n + 1) % 1e6);
       id = requestAnimationFrame(lauf);
     };
@@ -134,97 +187,152 @@ function useAnzeige(held: P, effekt: Effekt | null) {
     return () => cancelAnimationFrame(id);
   }, [hatRaf]);
 
-  if (!hatRaf) return { pos: held, blick: 1, laeuft: false, steigt: 0, neigung: 0, taucht: false, blasen: [] as Blase[], spritzer: [] as Spritzer[] };
+  if (!hatRaf) {
+    return { pos: held, blick: 1, laeuft: false, steigt: 0, neigung: 0, schwimm: 0, bremst: false, taucht: false,
+      blasen: [] as Blase[], spritzer: [] as Spritzer[], rauch: [] as Rauch[] };
+  }
   return {
     pos: pos.current, blick: blick.current, laeuft: laeuft.current, steigt: steigt.current,
-    neigung: neigung.current, taucht: !!sprung.current?.tauchen, blasen: blasen.current, spritzer: spritzer.current,
+    neigung: neigung.current, schwimm: schwimm.current, bremst: bremst.current, taucht: !!sprung.current?.taucht,
+    blasen: blasen.current, spritzer: spritzer.current, rauch: rauch.current,
   };
 }
 
+/* ── Figur ─────────────────────────────────────────────────────────────────── */
+
 type Modus = "land" | "luft" | "wasser";
 
-/** Kopf mit Helm (an Land und in der Luft). */
-function Kopf() {
+/** Gerätetaucher: Haube, Maske, Atemregler, Flasche, Tarierweste, lange Flossen. */
+function Taucher({ jetzt, aktiv }: { jetzt: number; aktiv: boolean }) {
+  const k = Math.sin(jetzt / (aktiv ? 150 : 380));     // Flossenschlag
+  const zug = Math.sin(jetzt / 420);
   return (
     <g>
-      <rect x={-7} y={-45} width={14} height={13} rx={4} fill="#f2c79a" />
-      <rect x={2} y={-41} width={3} height={3} fill="#111" />
-      <path d="M -9 -42 Q -9 -54 1 -54 Q 10 -54 10 -44 L 10 -42 Z" fill="#facc15" stroke="#a16207" strokeWidth={1} />
-      <rect x={-1} y={-54} width={3} height={12} fill="#dc2626" />
+      {/* Flasche mit Ventil */}
+      <rect x={-18} y={-41} width={9} height={26} rx={4.5} fill="#e5e7eb" stroke="#6b7280" strokeWidth={1} />
+      <rect x={-18} y={-33} width={9} height={4} fill="#facc15" />
+      <rect x={-15.5} y={-45} width={4} height={5} rx={1} fill="#374151" />
+      {/* Schlauch zum Atemregler */}
+      <path d="M -13 -45 C -12 -52, 4 -52, 8 -37" fill="none" stroke="#111827" strokeWidth={2.2} />
+      {/* Beine im Neoprenanzug, lange Flossen */}
+      <g transform={`rotate(${14 * k} -4 -15)`}>
+        <rect x={-7} y={-17} width={6} height={14} rx={2} fill="#111827" />
+        <path d="M -8 -4 L -2 -4 L 14 -1 L 16 3 L -8 1 Z" fill="#0891b2" stroke="#155e75" strokeWidth={0.8} />
+      </g>
+      <g transform={`rotate(${-14 * k} 4 -15)`}>
+        <rect x={1} y={-17} width={6} height={14} rx={2} fill="#0b1220" />
+        <rect x={1} y={-14} width={6} height={2} fill="#22d3ee" />
+        <path d="M 0 -4 L 6 -4 L 22 -1 L 24 3 L 0 1 Z" fill="#06b6d4" stroke="#155e75" strokeWidth={0.8} />
+        <path d="M 8 -2.5 L 20 0.5 M 8 0 L 20 2" stroke="#a5f3fc" strokeWidth={0.7} />
+      </g>
+      {/* Anzug, Tarierweste, Bleigurt */}
+      <rect x={-8} y={-34} width={16} height={19} rx={4} fill="#111827" />
+      <path d="M -8 -30 L -8 -19 L 8 -19 L 8 -30 Q 0 -33 -8 -30 Z" fill="#374151" />
+      <rect x={-2} y={-29} width={4} height={2.5} rx={0.8} fill="#facc15" />
+      <rect x={-2} y={-24} width={4} height={2.5} rx={0.8} fill="#facc15" />
+      <rect x={-8} y={-18} width={16} height={3} fill="#1f2937" />
+      <rect x={-4} y={-18.5} width={3} height={4} fill="#9ca3af" />
+      <rect x={2} y={-18.5} width={3} height={4} fill="#9ca3af" />
+      <rect x={6} y={-33} width={2} height={14} fill="#22d3ee" />
+      {/* Arm mit Handschuh, langsame Züge */}
+      <g transform={`rotate(${-35 + 45 * zug} 5 -31)`}>
+        <rect x={3} y={-32} width={5} height={13} rx={2} fill="#111827" />
+        <circle cx={5.5} cy={-19} r={2.8} fill="#374151" />
+      </g>
+      {/* Kopf: Neoprenhaube, Maske mit Band, Atemregler */}
+      <rect x={-8} y={-49} width={16} height={17} rx={7} fill="#111827" />
+      <path d="M -8 -43 L 2 -43" stroke="#facc15" strokeWidth={2} />
+      <rect x={1} y={-46} width={10} height={8} rx={3} fill="#bae6fd" stroke="#0f172a" strokeWidth={1.8} />
+      <rect x={3} y={-45} width={3} height={2.5} rx={1} fill="#e0f2fe" opacity={0.9} />
+      <circle cx={7} cy={-41.5} r={1.4} fill="#111" />
+      <rect x={1} y={-38.5} width={8} height={5} rx={2} fill="#f2c79a" />
+      <rect x={6} y={-37} width={5} height={4} rx={1.5} fill="#4b5563" />
+      <circle cx={11.5} cy={-35} r={1.6} fill="#9ca3af" />
     </g>
   );
 }
 
-/**
- * Die Figur, Füße bei (0|0), Blick nach rechts. Eigenbau:
- * an Land mit Helm, in der Luft mit Raketenrucksack, im Wasser im Taucheranzug.
- */
-function Figur({ modus, laeuft, steigt }: { modus: Modus; laeuft: boolean; steigt: number }) {
-  const jetzt = typeof performance !== "undefined" ? performance.now() : 0;
-  const takt = laeuft ? Math.floor(jetzt / 90) % 2 : 0;
-
-  if (modus === "wasser") {
-    // Flossen schlagen immer, schneller beim Schwimmen; die Arme machen Brustzüge.
-    const k = Math.sin(jetzt / (laeuft || Math.abs(steigt) > 0.3 ? 90 : 220));
-    const zug = Math.sin(jetzt / 260);
-    return (
-      <g>
-        {/* Pressluftflasche und Schlauch */}
-        <rect x={-15} y={-36} width={7} height={20} rx={3.5} fill="#facc15" stroke="#a16207" strokeWidth={1} />
-        <path d="M -12 -36 Q -14 -46 -6 -46" fill="none" stroke="#111827" strokeWidth={2} />
-        {/* Beine mit Flossen */}
-        <g transform={`rotate(${12 * k} -3 -14)`}>
-          <rect x={-7} y={-16} width={6} height={13} fill="#1f2937" />
-          <path d="M -8 -3 L 6 -4 L 9 1 L -8 1 Z" fill="#0ea5e9" />
-        </g>
-        <g transform={`rotate(${-12 * k} 4 -14)`}>
-          <rect x={1} y={-16} width={6} height={13} fill="#111827" />
-          <path d="M 0 -3 L 14 -4 L 17 1 L 0 1 Z" fill="#0284c7" />
-        </g>
-        {/* Anzug und Arm */}
-        <rect x={-8} y={-33} width={16} height={18} rx={4} fill="#f97316" />
-        <rect x={-8} y={-26} width={16} height={3} fill="#111827" />
-        <rect x={3} y={-31} width={5} height={13} rx={2} fill="#111827"
-          transform={`rotate(${-40 + 50 * zug} 5 -30)`} />
-        {/* Taucherhelm mit Sichtfenster */}
-        <circle cx={0} cy={-43} r={11} fill="#b45309" stroke="#78350f" strokeWidth={1.5} />
-        <circle cx={3} cy={-43} r={6.5} fill="#bae6fd" stroke="#78350f" strokeWidth={1.5} />
-        <rect x={4} y={-45} width={2.5} height={2.5} fill="#111" />
-        <circle cx={-8} cy={-43} r={1.5} fill="#78350f" />
-      </g>
-    );
-  }
-
-  const inLuft = modus === "luft";
-  const bein = inLuft ? 3 : laeuft ? (takt ? 5 : -5) : 0;
-  // Flamme: lang beim Steigen, kurz beim Sinken, flackernd.
-  const flacker = 0.75 + 0.25 * Math.sin(jetzt / 35) + 0.15 * Math.sin(jetzt / 13);
-  const flamme = (steigt > 0.3 ? 16 : steigt < -0.3 ? 5 : 9) * flacker;
+/** Pilot mit Lederkappe, Fliegerbrille, Schal und Doppel-Raketenrucksack. */
+function Pilot({ jetzt, flamme }: { jetzt: number; flamme: number }) {
+  const flattern = Math.sin(jetzt / 70);
+  const flacker = 0.8 + 0.2 * Math.sin(jetzt / 31) + 0.12 * Math.sin(jetzt / 11);
+  const L = flamme * flacker;
+  const duese = (cx: number) => (
+    <g key={cx}>
+      <path d={`M ${cx - 3} -13 Q ${cx} ${-13 + 2.2 * L} ${cx + 3} -13 Z`} fill="#f97316" />
+      <path d={`M ${cx - 2} -13 Q ${cx} ${-13 + 1.5 * L} ${cx + 2} -13 Z`} fill="#fde047" />
+      <path d={`M ${cx - 1} -13 Q ${cx} ${-13 + 0.7 * L} ${cx + 1} -13 Z`} fill="#ffffff" />
+    </g>
+  );
   return (
     <g>
-      {inLuft && (
-        <g>
-          {/* Raketenrucksack auf dem Rücken */}
-          <path d={`M -15 -18 Q -12.5 ${-18 + 2 * flamme} -10 -18 Z`} fill="#f97316" />
-          <path d={`M -14 -18 Q -12.5 ${-18 + 1.2 * flamme} -11 -18 Z`} fill="#fde047" />
-          <rect x={-16} y={-36} width={8} height={18} rx={2} fill="#9ca3af" stroke="#4b5563" strokeWidth={1} />
-          <rect x={-16} y={-30} width={8} height={3} fill="#dc2626" />
-          <rect x={-15} y={-19} width={5} height={3} fill="#4b5563" />
-        </g>
-      )}
-      {/* Beine */}
+      {/* Schal weht nach hinten */}
+      <path d={`M -4 -33 Q -14 ${-36 + 3 * flattern} -24 ${-32 + 5 * flattern} L -23 ${-28 + 5 * flattern} Q -14 ${-31 + 3 * flattern} -4 -30 Z`}
+        fill="#dc2626" />
+      {/* Doppel-Raketenrucksack */}
+      {duese(-18)}{duese(-11)}
+      <rect x={-21} y={-39} width={7} height={22} rx={3.5} fill="#6b7280" stroke="#374151" strokeWidth={1} />
+      <rect x={-15} y={-39} width={7} height={22} rx={3.5} fill="#d1d5db" stroke="#4b5563" strokeWidth={1} />
+      <path d="M -21 -36 Q -17.5 -42 -14 -36 Z M -15 -36 Q -11.5 -42 -8 -36 Z" fill="#dc2626" />
+      <path d="M -21 -17 L -15 -17 L -16 -13 L -20 -13 Z M -14 -17 L -8 -17 L -9 -13 L -13 -13 Z" fill="#374151" />
+      <rect x={-21} y={-29} width={13} height={2.5} fill="#f59e0b" />
+      {/* Beine hängen leicht angewinkelt */}
+      <rect x={-6} y={-16} width={6} height={12} fill="#1d4ed8" transform="rotate(8 -3 -16)" />
+      <rect x={2} y={-16} width={6} height={12} fill="#1e40af" transform="rotate(-6 5 -16)" />
+      <rect x={-8} y={-5} width={9} height={4} rx={1.5} fill="#78350f" />
+      <rect x={2} y={-5} width={9} height={4} rx={1.5} fill="#78350f" />
+      {/* Fliegerjacke mit Gurt */}
+      <rect x={-8} y={-33} width={16} height={18} rx={3} fill="#92400e" />
+      <rect x={-8} y={-19} width={16} height={3} fill="#78350f" />
+      <path d="M -8 -32 L 7 -20" stroke="#1f2937" strokeWidth={3} />
+      <rect x={-1.5} y={-27.5} width={4} height={4} rx={1} fill="#d1d5db" />
+      {/* Arm nach vorn oben */}
+      <rect x={3} y={-44} width={5} height={14} rx={2} fill="#92400e" />
+      <circle cx={5.5} cy={-44} r={2.8} fill="#f2c79a" />
+      {/* Kopf: Lederkappe mit Ohrenklappe, Fliegerbrille */}
+      <rect x={-7} y={-46} width={14} height={13} rx={4} fill="#f2c79a" />
+      <path d="M -9 -40 Q -9 -53 1 -53 Q 10 -53 9 -43 L -9 -43 Z" fill="#7c4a1e" />
+      <rect x={-8} y={-43} width={5} height={9} rx={2} fill="#7c4a1e" />
+      <path d="M -9 -43 L 9 -43" stroke="#3f2a14" strokeWidth={2.5} />
+      <circle cx={5} cy={-42} r={3.8} fill="#7dd3fc" stroke="#b8860b" strokeWidth={1.8} />
+      <circle cx={4} cy={-43} r={1.1} fill="#ffffff" />
+      <path d="M -1 -36 Q 2 -34 5 -36" stroke="#7c2d12" strokeWidth={1} fill="none" />
+    </g>
+  );
+}
+
+/** An Land: Helm, Fliegerbrille hochgeschoben. */
+function Laeufer({ jetzt, laeuft }: { jetzt: number; laeuft: boolean }) {
+  const takt = laeuft ? Math.floor(jetzt / 90) % 2 : 0;
+  const bein = laeuft ? (takt ? 5 : -5) : 0;
+  return (
+    <g>
       <rect x={-7 + (bein > 0 ? -bein / 2 : 0)} y={-16} width={6} height={13} fill="#1d4ed8" />
       <rect x={2 + (bein < 0 ? bein / 2 : 0)} y={-16} width={6} height={13} fill="#1e40af" />
       <rect x={-9 + (bein > 0 ? -bein : 0)} y={-4} width={9} height={4} rx={1.5} fill="#dc2626" />
       <rect x={1 + (bein < 0 ? bein : 0)} y={-4} width={9} height={4} rx={1.5} fill="#dc2626" />
-      {/* Körper mit Gurt, Arm in der Luft nach oben gestreckt */}
       <rect x={-8} y={-32} width={16} height={17} rx={3} fill="#16a34a" />
       <rect x={-6} y={-24} width={12} height={3} fill="#facc15" />
-      {inLuft && <rect x={-8} y={-32} width={3} height={14} fill="#4b5563" />}
-      <rect x={inLuft ? 4 : 3} y={inLuft ? -42 : -30} width={5} height={13} rx={2} fill="#f2c79a" />
-      <Kopf />
+      <rect x={3} y={-30} width={5} height={13} rx={2} fill="#f2c79a" />
+      <rect x={-7} y={-45} width={14} height={13} rx={4} fill="#f2c79a" />
+      <rect x={2} y={-41} width={3} height={3} fill="#111" />
+      <path d="M -9 -42 Q -9 -54 1 -54 Q 10 -54 10 -44 L 10 -42 Z" fill="#facc15" stroke="#a16207" strokeWidth={1} />
+      <rect x={-1} y={-54} width={3} height={12} fill="#dc2626" />
+      <circle cx={5} cy={-49} r={2.6} fill="#7dd3fc" stroke="#b8860b" strokeWidth={1.2} />
     </g>
   );
+}
+
+/** Die Figur, Füße bei (0|0), Blick nach rechts. */
+function Figur({ modus, laeuft, steigt, bremst }: { modus: Modus; laeuft: boolean; steigt: number; bremst: boolean }) {
+  const jetzt = typeof performance !== "undefined" ? performance.now() : 0;
+  if (modus === "wasser") return <Taucher jetzt={jetzt} aktiv={laeuft || Math.abs(steigt) > 0.2} />;
+  if (modus === "luft") {
+    // Lang beim schnellen Steigen, kürzer zum Scheitel hin, Bremsschub vor der Landung.
+    const flamme = bremst ? 13 : steigt > 0.2 ? Math.min(14, 4 + 1.6 * steigt) : steigt < -0.2 ? 2.5 : 5;
+    return <Pilot jetzt={jetzt} flamme={flamme} />;
+  }
+  return <Laeufer jetzt={jetzt} laeuft={laeuft} />;
 }
 
 /** Floß aus zwei Stämmen, schaukelt auf der Wasseroberfläche. */
@@ -275,7 +383,7 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHo
   const vx0 = sx(b.x0 - 1.2), vx1 = sx(b.x1 + 1);
   const vy0 = sy(b.y1 + 1.8), vy1 = sy(b.y0 - 1);
   const breite = vx1 - vx0, hoehe = vy1 - vy0;
-  const { pos, blick, laeuft, steigt, neigung, taucht, blasen, spritzer } = useAnzeige(zustand.held, effekt);
+  const { pos, blick, laeuft, steigt, neigung, schwimm, bremst, taucht, blasen, spritzer, rauch } = useAnzeige(zustand.held, effekt);
 
   const basisP = basis(aufgabe, zustand);
   const xs = Array.from({ length: b.x1 - b.x0 + 1 }, (_, i) => b.x0 + i);
@@ -476,10 +584,15 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHo
           <circle key={`b${bl.t0}-${i}`} cx={sx(bl.x) + 3 * Math.sin((jetzt - bl.t0) / 180)} cy={sy(bl.y)} r={bl.r}
             fill="#e0f2fe" fillOpacity={0.25} stroke="#e0f2fe" strokeWidth={1} />
         ))}
+        {rauch.map(r => {
+          const k = (jetzt - r.t0) / 800;
+          return <circle key={`r${r.t0}`} cx={sx(r.x)} cy={sy(r.y - 0.4 * k)} r={3 + 7 * k} fill="#e5e7eb" fillOpacity={0.55 * (1 - k)} />;
+        })}
         {floss && <Floss x={sx(pos.x)} />}
-        <g transform={`translate(${sx(pos.x)} ${sy(pos.y)}) rotate(${neigung}) scale(${blick} 1)`} data-testid="figur"
-          data-modus={modus} opacity={demo ? 0.95 : 1}>
-          <Figur modus={modus} laeuft={laeuft} steigt={steigt} />
+        {/* Schwimmlage dreht um die Körpermitte, Schaukeln um die Füße */}
+        <g transform={`translate(${sx(pos.x)} ${sy(pos.y)}) rotate(${neigung}) rotate(${schwimm * blick} 0 -25) scale(${blick} 1)`}
+          data-testid="figur" data-modus={modus} opacity={demo ? 0.95 : 1}>
+          <Figur modus={modus} laeuft={laeuft} steigt={steigt} bremst={bremst} />
         </g>
         {spritzer.map(sp => <Spritzen key={`s${sp.t0}`} x={sx(sp.x)} alter={jetzt - sp.t0} />)}
 
