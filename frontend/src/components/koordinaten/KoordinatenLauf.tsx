@@ -146,11 +146,13 @@ function useTastatur(tu: (a: Aktion) => void, aus: boolean) {
 
 function DemoLeiste({ lauf, stopp }: { lauf: Lauf; stopp: () => void }) {
   return (
-    <div className="flex items-center gap-3 flex-wrap rounded-xl border-2 border-accent bg-surface px-4 py-3" data-testid="vorfuehrung">
-      <span className="text-xs text-muted tabular-nums shrink-0">Schritt {lauf.nr + 1} von {lauf.von}</span>
-      <span className="font-black flex-1 min-w-[12rem]">{lauf.text}</span>
-      <button type="button" onClick={stopp} className="text-sm rounded-lg px-3 py-1.5 border border-line hover:border-accent">
-        ⏹ Vorführung beenden
+    // Liegt über dem oberen Rand des Feldes, statt es nach unten zu schieben.
+    <div className="absolute inset-x-2 top-2 z-10 flex items-center gap-x-3 gap-y-1 flex-wrap rounded-xl border-2 border-accent bg-surface/95 shadow-xl px-3 py-2"
+      data-testid="vorfuehrung">
+      <span className="text-xs text-muted tabular-nums shrink-0">{lauf.nr + 1}/{lauf.von}</span>
+      <span className="font-black flex-1 min-w-[10rem] text-sm sm:text-base">{lauf.text}</span>
+      <button type="button" onClick={stopp} className="text-xs rounded-lg px-2 py-1 border border-line hover:border-accent">
+        ⏹ Beenden
       </button>
     </div>
   );
@@ -199,9 +201,10 @@ function InfoAnsicht({ info, onZurueck, weiter }: { info: Info; onZurueck: () =>
             {weiter && <button type="button" className="btn-secondary" onClick={() => { demo.stopp(); weiter.los(); }}>{weiter.label} →</button>}
           </div>
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="relative flex flex-col gap-3">
           {demo.lauf && <DemoLeiste lauf={demo.lauf} stopp={demo.stopp} />}
-          <Spielfeld level={info.beispiel} aufgabe={feld.aufgabe} zustand={feld.zustand} effekt={feld.effekt} demo />
+          <Spielfeld level={info.beispiel} aufgabe={feld.aufgabe} zustand={feld.zustand} effekt={feld.effekt} demo
+            maxHoehe="calc(100dvh - 10rem)" />
           {info.beispiel.art === "spiegeln" && (
             <p className="text-xs text-muted">Violett: Original und Spiegelachse.</p>
           )}
@@ -276,7 +279,13 @@ function LevelAnsicht({ level, stand, onErgebnis, onKarte, onNaechstes, onInfo }
   const [geschafft, setGeschafft] = useState<number | null>(null);
   const flaeche = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setMeldung(null); setGeschafft(null); flaeche.current?.focus({ preventScroll: true }); }, [level]);
+  const kopfRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setMeldung(null); setGeschafft(null);
+    // Level oben an den Bildschirmrand: dann passt das Feld samt Knöpfen darunter.
+    kopfRef.current?.scrollIntoView?.({ block: "start" });
+    flaeche.current?.focus({ preventScroll: true });
+  }, [level]);
 
   const spielerTu = useCallback((a: Aktion) => {
     const e = feld.tu(a);
@@ -309,15 +318,15 @@ function LevelAnsicht({ level, stand, onErgebnis, onKarte, onNaechstes, onInfo }
   const bisher = stand[level.id];
 
   return (
-    <div className="flex flex-col gap-4" data-testid="level">
+    <div ref={kopfRef} className="flex flex-col gap-3 scroll-mt-2" data-testid="level">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <button type="button" onClick={() => { demo.stopp(); onKarte(); }} className="text-sm text-muted hover:text-fg">← Weltkarte</button>
-          <h2 className="text-xl font-black mt-1">
+          <h2 className="text-xl font-black">
             {WELTEN.find(w => w.nr === level.welt)?.icon} {level.titel}
             {bisher ? <span className="ml-2"><Sterne n={bisher} /></span> : null}
           </h2>
-          <p className="text-sm text-muted mt-1 max-w-2xl">{level.text}</p>
+          <p className="text-sm text-muted max-w-2xl">{level.text}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button type="button" className="chip" onClick={vorfuehren} disabled={demo.aktiv || geschafft !== null}>▶ Vorführen</button>
@@ -331,9 +340,9 @@ function LevelAnsicht({ level, stand, onErgebnis, onKarte, onNaechstes, onInfo }
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] items-start">
         <div ref={flaeche} tabIndex={0} onKeyDown={tasten} aria-label="Spielfläche — Pfeiltasten laufen und Sprunghöhe, Leertaste springt"
-          className="relative flex flex-col gap-3 outline-none rounded-xl focus-visible:ring-2 focus-visible:ring-accent">
-          {demo.lauf && <DemoLeiste lauf={demo.lauf} stopp={demo.stopp} />}
+          className="relative flex flex-col gap-2 outline-none rounded-xl focus-visible:ring-2 focus-visible:ring-accent">
           <div className="relative" onPointerDown={() => flaeche.current?.focus({ preventScroll: true })}>
+            {demo.lauf && <DemoLeiste lauf={demo.lauf} stopp={demo.stopp} />}
             <Spielfeld level={level} aufgabe={feld.aufgabe} zustand={zustand} effekt={feld.effekt} demo={demo.aktiv} />
             {geschafft !== null && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
@@ -353,14 +362,14 @@ function LevelAnsicht({ level, stand, onErgebnis, onKarte, onNaechstes, onInfo }
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between gap-3 flex-wrap text-sm">
+          <div className="flex items-center justify-between gap-x-3 flex-wrap text-sm">
             <span className="tabular-nums font-bold" data-testid="anzeige">
               {relativ ? "auf Höhe " + fmt(zustand.held.y) + " · " : ""}x = {fmt(zustand.held.x)} · Sprung {zustand.sprung >= 0 ? "↑" : "↓"} {Math.abs(zustand.sprung)}
             </span>
+            <span className="text-xs text-muted hidden md:inline">Tastatur: ← → laufen · ↑ ↓ Sprunghöhe · Leertaste springen</span>
             <span className="text-muted">Fehlsprünge: {zustand.fehler}</span>
           </div>
           <Steuerung tu={spielerTu} taste={demo.lauf?.taste ?? null} aus={demo.aktiv || geschafft !== null} />
-          <p className="text-xs text-muted text-center">Tastatur: ← → laufen · ↑ ↓ Sprunghöhe · Leertaste springen</p>
         </div>
         <div className="flex flex-col gap-3">
           <Auftrag level={level} aufgabe={feld.aufgabe} zustand={zustand} />

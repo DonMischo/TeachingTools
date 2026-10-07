@@ -125,8 +125,10 @@ function Edelstein({ x, y }: { x: number; y: number }) {
   );
 }
 
-export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false }: {
+export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHoehe = "calc(100dvh - 17rem)" }: {
   level: Level; aufgabe: Aufgabe; zustand: Zustand; effekt: Effekt | null; demo?: boolean;
+  /** Höchstens so hoch (CSS) — die Breite folgt dem Seitenverhältnis, damit alles auf den Schirm passt. */
+  maxHoehe?: string;
 }) {
   const { bereich: b } = level;
   const sx = (x: number) => x * U;
@@ -165,7 +167,8 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false }: {
   const unterWasser = pos.y < -0.2;
 
   return (
-    <svg viewBox={`${vx0} ${vy0} ${breite} ${hoehe}`} className="w-full h-auto rounded-xl select-none touch-none"
+    <div className="mx-auto" style={{ width: `min(100%, calc(${maxHoehe} * ${(breite / hoehe).toFixed(4)}))`, minWidth: "min(100%, 16rem)" }}>
+    <svg viewBox={`${vx0} ${vy0} ${breite} ${hoehe}`} className="block w-full h-auto rounded-xl select-none touch-none"
       role="img" aria-label="Koordinatensystem mit Spielfigur" data-testid="koordinaten-feld">
       <defs>
         <linearGradient id="kl-himmel" x1="0" y1="0" x2="0" y2="1">
@@ -345,6 +348,7 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false }: {
         return i < 0 ? "fertig" : `nächstes Ziel ${aufgabe.ziele[i].name}`;
       })()}</desc>
     </svg>
+    </div>
   );
 }
 
