@@ -36,7 +36,7 @@ export const TASTATUR_AUFGABEN: Aufgabe[] = [
     start: "",
     art: "input",
     caret: "ende",
-    tastenHinweis: ["Umschalt ⇧"],
+    tastenHinweis: ["Umschalt ⇧", "H"],
     // Umschalt + H, u, n, d.
     noetigeAnschlaege: 5,
   },
