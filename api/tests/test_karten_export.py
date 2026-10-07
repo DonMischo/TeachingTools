@@ -134,6 +134,16 @@ def test_lange_aufgabe_macht_die_karte_kleiner():
     assert lang < kurz
 
 
+def test_lange_quellenliste_bleibt_auf_der_kartenseite():
+    """Die Quellen stehen unter der Karte — viele Quellen machen die Karte niedriger."""
+    import base64 as b64
+    from api.karten_export import kartengroesse
+    png = b64.b64decode(_png(79, 100).split(",")[1])
+    _, kurz = kartengroesse(png, "Finde die Orte.", "BKG")
+    _, lang = kartengroesse(png, "Finde die Orte.", "© GeoBasis-DE / BKG (2026) · Natural Earth · " * 15)
+    assert lang < kurz
+
+
 def _thema(n: int) -> dict:
     return {"name": f"Thema {n}", "eintraege": [{"marke": str(i), "name": f"Ort {i}"} for i in range(n)]}
 

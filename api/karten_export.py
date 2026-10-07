@@ -74,6 +74,11 @@ KARTENFLAECHE_CM = (17.6, 22.3)
 AUFGABE_ZEILEN = 2
 ZEICHEN_JE_ZEILE = 85
 ZEILE_CM = 0.7
+# Ebenso die Quellenzeile (6 pt kursiv): gerechnet für eine Zeile, jede weitere kostet Platz —
+# die Quellen müssen auf der Kartenseite bleiben.
+QUELLE_ZEILEN = 1
+QUELLE_ZEICHEN_JE_ZEILE = 150
+QUELLE_ZEILE_CM = 0.3
 EMU_JE_CM = 360000
 
 
@@ -94,12 +99,15 @@ def hochkant(png: bytes) -> bytes:
     return aus.getvalue()
 
 
-def kartengroesse(png: bytes, aufgabe: str = "") -> tuple[float, float]:
+def kartengroesse(png: bytes, aufgabe: str = "", quelle: str = "") -> tuple[float, float]:
     """(Breite, Höhe) der Karte auf Seite 1 in cm — eingepasst in den freien Platz.
-    Eine lange Aufgabe macht die Karte kleiner, statt sie auf Seite 2 zu schieben."""
+    Lange Aufgaben und Quellenlisten machen die Karte kleiner, statt etwas auf Seite 2 zu schieben."""
     w, h = _png_groesse(png)
     zeilen = math.ceil((len(aufgabe) + 10) / ZEICHEN_JE_ZEILE)
-    fb, fh = KARTENFLAECHE_CM[0], KARTENFLAECHE_CM[1] - ZEILE_CM * max(0, zeilen - AUFGABE_ZEILEN)
+    q_zeilen = math.ceil((len(quelle) + 18) / QUELLE_ZEICHEN_JE_ZEILE)
+    fb = KARTENFLAECHE_CM[0]
+    fh = (KARTENFLAECHE_CM[1] - ZEILE_CM * max(0, zeilen - AUFGABE_ZEILEN)
+          - QUELLE_ZEILE_CM * max(0, q_zeilen - QUELLE_ZEILEN))
     f = min(fb / w, fh / h)
     return w * f, h * f
 
@@ -136,11 +144,11 @@ def spaltenplan(gruppen: list[dict], loesung: bool) -> list[bool]:
     return plan
 
 
-def _anpassen(docx: Path, png: bytes = b"", schrift: str = "Arial", aufgabe: str = "") -> None:
+def _anpassen(docx: Path, png: bytes = b"", schrift: str = "Arial", aufgabe: str = "", quelle: str = "") -> None:
     """pandoc schreibt ein leeres <w:sectPr /> (Word nimmt dann US Letter) und Serifenschrift:
     Seite 1 je Teil als eigener Abschnitt (einspaltig, Karte), die Tabellen zweispaltig;
     alles A4 hochkant; Kartengröße aus dem freien Platz; serifenlose Schrift."""
-    breite, hoehe = kartengroesse(png, aufgabe)
+    breite, hoehe = kartengroesse(png, aufgabe, quelle)
     ein = zipfile.ZipFile(io.BytesIO(docx.read_bytes()))
     aus = io.BytesIO()
     with zipfile.ZipFile(aus, "w", zipfile.ZIP_DEFLATED) as z:
@@ -202,10 +210,10 @@ def _grid_tabelle(eintraege: list[dict], loesung: bool) -> str:
     return t + "\n"
 
 
-def _docx(md: str, ordner: Path, schrift: str = "Arial", aufgabe: str = "") -> Path:
+def _docx(md: str, ordner: Path, schrift: str = "Arial", aufgabe: str = "", quelle: str = "") -> Path:
     ziel = ordner / "arbeitsblatt.docx"
     pypandoc.convert_text(md, "docx", format="markdown", outputfile=str(ziel), extra_args=[f"--resource-path={ordner}"])
-    _anpassen(ziel, (ordner / "karte.png").read_bytes(), schrift, aufgabe)
+    _anpassen(ziel, (ordner / "karte.png").read_bytes(), schrift, aufgabe, quelle)
     return ziel
 
 
@@ -310,7 +318,7 @@ def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], vari
             teile.append(_markdown(titel, aufgabe, gruppen, True, quelle))
         # Atkinson Hyperlegible nur im PDF — dort ist sie eingebettet; DOCX/ODT bleiben bei Arial
         schrift = "Atkinson Hyperlegible" if format_ == "pdf" else "Arial"
-        docx = _docx(_platzhalter(ENDE_TABELLEN).join(teile), ordner, schrift, aufgabe)
+        docx = _docx(_platzhalter(ENDE_TABELLEN).join(teile), ordner, schrift, aufgabe, quelle)
         if format_ == "docx":
             return docx.read_bytes(), "docx"
         ziel = _soffice(docx, format_)
