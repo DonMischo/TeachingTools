@@ -25,17 +25,51 @@ const FARBE = {
 
 export type Effekt = { id: number; ereignis: Ereignis; landung: P };
 
-type Sprung = { t0: number; dauer: number; von: P; apex: number; landung: P };
+type Sprung = { t0: number; dauer: number; von: P; apex: number; landung: P; tauchen: boolean };
+type Blase = { x: number; y: number; t0: number; r: number };
+type Spritzer = { x: number; t0: number };
 
 const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
 const easeIn = (t: number) => t * t;
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
 
-/** Wo die Figur gerade zu sehen ist — läuft dem Zustand hinterher. */
+/**
+ * Höhe während eines Sprungs. Abtauchen ist eine eigene Bewegung: kurzer
+ * Hüpfer vom Floß, langsames Sinken mit Schaukeln, kurz schweben, auftauchen.
+ */
+function sprungOrt(s: Sprung, t: number): { p: P; neigung: number } {
+  if (!s.tauchen) {
+    if (t < 0.45) return { p: { x: s.von.x, y: s.von.y + (s.apex - s.von.y) * easeOut(t / 0.45) }, neigung: 0 };
+    if (t < 0.55) return { p: { x: s.von.x, y: s.apex }, neigung: 0 };
+    return { p: { x: s.landung.x, y: s.apex + (s.landung.y - s.apex) * easeIn((t - 0.55) / 0.45) }, neigung: 0 };
+  }
+  const schaukel = (u: number) => Math.sin(u * Math.PI * 4);
+  const hop = s.von.y >= 0 ? 0.6 : 0;          // vom Floß springt man erst hoch
+  if (t < 0.14) return { p: { x: s.von.x, y: s.von.y + hop * Math.sin((t / 0.14) * Math.PI / 2) }, neigung: 0 };
+  if (t < 0.52) {
+    const u = (t - 0.14) / 0.38;
+    const y = s.von.y + hop + (s.apex - s.von.y - hop) * easeInOut(u);
+    return { p: { x: s.von.x + 0.06 * schaukel(u), y }, neigung: 10 * schaukel(u) };
+  }
+  if (t < 0.64) {
+    const u = (t - 0.52) / 0.12;
+    return { p: { x: s.von.x, y: s.apex + 0.05 * Math.sin(u * Math.PI * 2) }, neigung: 0 };
+  }
+  const u = (t - 0.64) / 0.36;
+  return { p: { x: s.landung.x + 0.05 * schaukel(u), y: s.apex + (s.landung.y - s.apex) * easeInOut(u) }, neigung: -6 * schaukel(u) };
+}
+
+/** Wo die Figur gerade zu sehen ist — läuft dem Zustand hinterher. Dazu Blasen und Spritzer. */
 function useAnzeige(held: P, effekt: Effekt | null) {
   const pos = useRef<P>({ ...held });
   const blick = useRef(1);
   const laeuft = useRef(false);
+  const steigt = useRef(0);
+  const neigung = useRef(0);
   const sprung = useRef<Sprung | null>(null);
+  const blasen = useRef<Blase[]>([]);
+  const spritzer = useRef<Spritzer[]>([]);
+  const letzteBlase = useRef(0);
   const zuletzt = useRef<number | null>(null);
   const ziel = useRef(held);
   ziel.current = held;
@@ -47,7 +81,11 @@ function useAnzeige(held: P, effekt: Effekt | null) {
     zuletzt.current = effekt.id;
     const { von, p } = effekt.ereignis;
     const h = Math.abs(p.y - von.y);
-    sprung.current = { t0: performance.now(), dauer: 320 + 70 * Math.max(h, 1), von, apex: p.y, landung: effekt.landung };
+    const tauchen = p.y < von.y && p.y < 0;
+    sprung.current = {
+      t0: performance.now(), von, apex: p.y, landung: effekt.landung, tauchen,
+      dauer: tauchen ? 900 + 180 * h : 320 + 70 * Math.max(h, 1),
+    };
   }, [effekt]);
 
   useEffect(() => {
@@ -56,25 +94,39 @@ function useAnzeige(held: P, effekt: Effekt | null) {
     const lauf = (jetzt: number) => {
       const dt = Math.min(0.05, (jetzt - vorher) / 1000);
       vorher = jetzt;
+      const alt = pos.current;
       const s = sprung.current;
       if (s) {
         const t = (jetzt - s.t0) / s.dauer;
-        if (t >= 1) { sprung.current = null; pos.current = { ...s.landung }; }
-        else if (t < 0.45) pos.current = { x: s.von.x, y: s.von.y + (s.apex - s.von.y) * easeOut(t / 0.45) };
-        else if (t < 0.55) pos.current = { x: s.von.x, y: s.apex };
-        else pos.current = { x: s.landung.x, y: s.apex + (s.landung.y - s.apex) * easeIn((t - 0.55) / 0.45) };
+        if (t >= 1) { sprung.current = null; pos.current = { ...s.landung }; neigung.current = 0; }
+        else { const o = sprungOrt(s, t); pos.current = o.p; neigung.current = o.neigung; }
         laeuft.current = false;
       } else {
         const z = ziel.current, p = pos.current;
         const dx = z.x - p.x, dy = z.y - p.y;
-        const schritt = 9 * dt;
+        // Unter Wasser geht es gemächlicher voran.
+        const schritt = (p.y < -0.04 ? 5 : 9) * dt;
         laeuft.current = Math.abs(dx) > 0.01;
         if (Math.abs(dx) > 0.01) blick.current = dx > 0 ? 1 : -1;
         pos.current = {
           x: Math.abs(dx) <= schritt ? z.x : p.x + Math.sign(dx) * schritt,
           y: Math.abs(dy) <= schritt * 1.5 ? z.y : p.y + Math.sign(dy) * schritt * 1.5,
         };
+        neigung.current = 0;
       }
+      const neu = pos.current;
+      steigt.current = dt > 0 ? (neu.y - alt.y) / dt : 0;
+      // Durch die Wasseroberfläche → es spritzt.
+      if ((alt.y >= -0.05) !== (neu.y >= -0.05)) spritzer.current.push({ x: neu.x, t0: jetzt });
+      spritzer.current = spritzer.current.filter(sp => jetzt - sp.t0 < 700);
+      // Unter Wasser steigen Blasen aus dem Helm.
+      if (neu.y < -0.3 && jetzt - letzteBlase.current > 170) {
+        letzteBlase.current = jetzt;
+        blasen.current.push({ x: neu.x + 0.15 * blick.current, y: neu.y + 1.15, t0: jetzt, r: 1.5 + Math.random() * 2.5 });
+      }
+      blasen.current = blasen.current
+        .map(bl => ({ ...bl, y: bl.y + 1.6 * dt }))
+        .filter(bl => bl.y < -0.05 && jetzt - bl.t0 < 5000);
       tick(n => (n + 1) % 1e6);
       id = requestAnimationFrame(lauf);
     };
@@ -82,36 +134,123 @@ function useAnzeige(held: P, effekt: Effekt | null) {
     return () => cancelAnimationFrame(id);
   }, [hatRaf]);
 
-  if (!hatRaf) return { pos: held, blick: 1, laeuft: false, springt: false };
-  return { pos: pos.current, blick: blick.current, laeuft: laeuft.current, springt: sprung.current !== null };
+  if (!hatRaf) return { pos: held, blick: 1, laeuft: false, steigt: 0, neigung: 0, taucht: false, blasen: [] as Blase[], spritzer: [] as Spritzer[] };
+  return {
+    pos: pos.current, blick: blick.current, laeuft: laeuft.current, steigt: steigt.current,
+    neigung: neigung.current, taucht: !!sprung.current?.tauchen, blasen: blasen.current, spritzer: spritzer.current,
+  };
 }
 
-/** Die Figur, Füße bei (0|0), Blick nach rechts. Eigenbau mit Helm. */
-function Figur({ laeuft, springt, unterWasser }: { laeuft: boolean; springt: boolean; unterWasser: boolean }) {
-  const takt = laeuft ? Math.floor(performance.now() / 90) % 2 : 0;
-  const bein = springt ? 4 : laeuft ? (takt ? 5 : -5) : 0;
+type Modus = "land" | "luft" | "wasser";
+
+/** Kopf mit Helm (an Land und in der Luft). */
+function Kopf() {
   return (
     <g>
+      <rect x={-7} y={-45} width={14} height={13} rx={4} fill="#f2c79a" />
+      <rect x={2} y={-41} width={3} height={3} fill="#111" />
+      <path d="M -9 -42 Q -9 -54 1 -54 Q 10 -54 10 -44 L 10 -42 Z" fill="#facc15" stroke="#a16207" strokeWidth={1} />
+      <rect x={-1} y={-54} width={3} height={12} fill="#dc2626" />
+    </g>
+  );
+}
+
+/**
+ * Die Figur, Füße bei (0|0), Blick nach rechts. Eigenbau:
+ * an Land mit Helm, in der Luft mit Raketenrucksack, im Wasser im Taucheranzug.
+ */
+function Figur({ modus, laeuft, steigt }: { modus: Modus; laeuft: boolean; steigt: number }) {
+  const jetzt = typeof performance !== "undefined" ? performance.now() : 0;
+  const takt = laeuft ? Math.floor(jetzt / 90) % 2 : 0;
+
+  if (modus === "wasser") {
+    // Flossen schlagen immer, schneller beim Schwimmen; die Arme machen Brustzüge.
+    const k = Math.sin(jetzt / (laeuft || Math.abs(steigt) > 0.3 ? 90 : 220));
+    const zug = Math.sin(jetzt / 260);
+    return (
+      <g>
+        {/* Pressluftflasche und Schlauch */}
+        <rect x={-15} y={-36} width={7} height={20} rx={3.5} fill="#facc15" stroke="#a16207" strokeWidth={1} />
+        <path d="M -12 -36 Q -14 -46 -6 -46" fill="none" stroke="#111827" strokeWidth={2} />
+        {/* Beine mit Flossen */}
+        <g transform={`rotate(${12 * k} -3 -14)`}>
+          <rect x={-7} y={-16} width={6} height={13} fill="#1f2937" />
+          <path d="M -8 -3 L 6 -4 L 9 1 L -8 1 Z" fill="#0ea5e9" />
+        </g>
+        <g transform={`rotate(${-12 * k} 4 -14)`}>
+          <rect x={1} y={-16} width={6} height={13} fill="#111827" />
+          <path d="M 0 -3 L 14 -4 L 17 1 L 0 1 Z" fill="#0284c7" />
+        </g>
+        {/* Anzug und Arm */}
+        <rect x={-8} y={-33} width={16} height={18} rx={4} fill="#f97316" />
+        <rect x={-8} y={-26} width={16} height={3} fill="#111827" />
+        <rect x={3} y={-31} width={5} height={13} rx={2} fill="#111827"
+          transform={`rotate(${-40 + 50 * zug} 5 -30)`} />
+        {/* Taucherhelm mit Sichtfenster */}
+        <circle cx={0} cy={-43} r={11} fill="#b45309" stroke="#78350f" strokeWidth={1.5} />
+        <circle cx={3} cy={-43} r={6.5} fill="#bae6fd" stroke="#78350f" strokeWidth={1.5} />
+        <rect x={4} y={-45} width={2.5} height={2.5} fill="#111" />
+        <circle cx={-8} cy={-43} r={1.5} fill="#78350f" />
+      </g>
+    );
+  }
+
+  const inLuft = modus === "luft";
+  const bein = inLuft ? 3 : laeuft ? (takt ? 5 : -5) : 0;
+  // Flamme: lang beim Steigen, kurz beim Sinken, flackernd.
+  const flacker = 0.75 + 0.25 * Math.sin(jetzt / 35) + 0.15 * Math.sin(jetzt / 13);
+  const flamme = (steigt > 0.3 ? 16 : steigt < -0.3 ? 5 : 9) * flacker;
+  return (
+    <g>
+      {inLuft && (
+        <g>
+          {/* Raketenrucksack auf dem Rücken */}
+          <path d={`M -15 -18 Q -12.5 ${-18 + 2 * flamme} -10 -18 Z`} fill="#f97316" />
+          <path d={`M -14 -18 Q -12.5 ${-18 + 1.2 * flamme} -11 -18 Z`} fill="#fde047" />
+          <rect x={-16} y={-36} width={8} height={18} rx={2} fill="#9ca3af" stroke="#4b5563" strokeWidth={1} />
+          <rect x={-16} y={-30} width={8} height={3} fill="#dc2626" />
+          <rect x={-15} y={-19} width={5} height={3} fill="#4b5563" />
+        </g>
+      )}
       {/* Beine */}
       <rect x={-7 + (bein > 0 ? -bein / 2 : 0)} y={-16} width={6} height={13} fill="#1d4ed8" />
       <rect x={2 + (bein < 0 ? bein / 2 : 0)} y={-16} width={6} height={13} fill="#1e40af" />
       <rect x={-9 + (bein > 0 ? -bein : 0)} y={-4} width={9} height={4} rx={1.5} fill="#dc2626" />
       <rect x={1 + (bein < 0 ? bein : 0)} y={-4} width={9} height={4} rx={1.5} fill="#dc2626" />
-      {/* Körper und Arm */}
+      {/* Körper mit Gurt, Arm in der Luft nach oben gestreckt */}
       <rect x={-8} y={-32} width={16} height={17} rx={3} fill="#16a34a" />
       <rect x={-6} y={-24} width={12} height={3} fill="#facc15" />
-      <rect x={springt ? 4 : 3} y={springt ? -40 : -30} width={5} height={springt ? 12 : 13} rx={2} fill="#f2c79a" />
-      {/* Kopf mit Helm */}
-      <rect x={-7} y={-45} width={14} height={13} rx={4} fill="#f2c79a" />
-      <rect x={2} y={-41} width={3} height={3} fill="#111" />
-      <path d="M -9 -42 Q -9 -54 1 -54 Q 10 -54 10 -44 L 10 -42 Z" fill="#facc15" stroke="#a16207" strokeWidth={1} />
-      <rect x={-1} y={-54} width={3} height={12} fill="#dc2626" />
-      {unterWasser && (
-        <g fill="none" stroke="#e0f2fe" strokeWidth={1.2}>
-          <circle cx={12} cy={-50} r={2.5} />
-          <circle cx={16} cy={-58} r={1.8} />
-        </g>
-      )}
+      {inLuft && <rect x={-8} y={-32} width={3} height={14} fill="#4b5563" />}
+      <rect x={inLuft ? 4 : 3} y={inLuft ? -42 : -30} width={5} height={13} rx={2} fill="#f2c79a" />
+      <Kopf />
+    </g>
+  );
+}
+
+/** Floß aus zwei Stämmen, schaukelt auf der Wasseroberfläche. */
+function Floss({ x }: { x: number }) {
+  const jetzt = typeof performance !== "undefined" ? performance.now() : 0;
+  const bob = 1.2 * Math.sin(jetzt / 400);
+  return (
+    <g transform={`translate(${x} ${bob}) rotate(${1.5 * Math.sin(jetzt / 530)})`} data-testid="floss">
+      {/* zwei Stämme längs, mit Seil gebunden */}
+      <rect x={-22} y={0} width={44} height={5} rx={2.5} fill="#a16207" stroke="#713f12" strokeWidth={1} />
+      <rect x={-20} y={4.5} width={40} height={5} rx={2.5} fill="#92400e" stroke="#713f12" strokeWidth={1} />
+      <path d="M -14 -0.5 v 10 M 14 -0.5 v 10" stroke="#fde68a" strokeWidth={1.5} />
+      <circle cx={-22} cy={2.5} r={2} fill="#ca8a04" />
+      <circle cx={-20} cy={7} r={2} fill="#ca8a04" />
+    </g>
+  );
+}
+
+function Spritzen({ x, alter }: { x: number; alter: number }) {
+  const k = alter / 700;
+  return (
+    <g opacity={1 - k}>
+      <ellipse cx={x} cy={2} rx={6 + 22 * k} ry={2 + 4 * k} fill="none" stroke="#e0f2fe" strokeWidth={2} />
+      {[-16, -9, -3, 4, 10, 17].map((d, i) => (
+        <circle key={i} cx={x + d * (0.4 + 1.2 * k)} cy={-(22 + (i % 3) * 6) * k + 60 * k * k} r={2.2} fill="#e0f2fe" />
+      ))}
     </g>
   );
 }
@@ -136,7 +275,7 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHo
   const vx0 = sx(b.x0 - 1.2), vx1 = sx(b.x1 + 1);
   const vy0 = sy(b.y1 + 1.8), vy1 = sy(b.y0 - 1);
   const breite = vx1 - vx0, hoehe = vy1 - vy0;
-  const { pos, blick, laeuft, springt } = useAnzeige(zustand.held, effekt);
+  const { pos, blick, laeuft, steigt, neigung, taucht, blasen, spritzer } = useAnzeige(zustand.held, effekt);
 
   const basisP = basis(aufgabe, zustand);
   const xs = Array.from({ length: b.x1 - b.x0 + 1 }, (_, i) => b.x0 + i);
@@ -164,7 +303,11 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHo
   }
 
   const fehlsprung = effekt?.ereignis.art === "daneben" ? { id: effekt.id, p: effekt.ereignis.p } : null;
-  const unterWasser = pos.y < -0.2;
+  // Der Hüpfer vom Floß vor dem Abtauchen ist ein Sprung, kein Raketenflug.
+  const modus: Modus = pos.y < -0.04 ? "wasser" : pos.y > 0.04 && !taucht ? "luft" : "land";
+  // Das Floß gibt es, wo Wasser ist und auf der x-Achse gelaufen wird.
+  const floss = b.y0 < 0 && zustand.held.y === 0;
+  const jetzt = typeof performance !== "undefined" ? performance.now() : 0;
 
   return (
     <div className="mx-auto" style={{ width: `min(100%, calc(${maxHoehe} * ${(breite / hoehe).toFixed(4)}))`, minWidth: "min(100%, 16rem)" }}>
@@ -328,11 +471,17 @@ export function Spielfeld({ level, aufgabe, zustand, effekt, demo = false, maxHo
           </g>
         )}
 
-        {/* Figur */}
-        <g transform={`translate(${sx(pos.x)} ${sy(pos.y)}) scale(${blick} 1)`} data-testid="figur"
-          opacity={demo ? 0.95 : 1}>
-          <Figur laeuft={laeuft} springt={springt} unterWasser={unterWasser} />
+        {/* Luftblasen, Floß, Spritzer, Figur */}
+        {blasen.map((bl, i) => (
+          <circle key={`b${bl.t0}-${i}`} cx={sx(bl.x) + 3 * Math.sin((jetzt - bl.t0) / 180)} cy={sy(bl.y)} r={bl.r}
+            fill="#e0f2fe" fillOpacity={0.25} stroke="#e0f2fe" strokeWidth={1} />
+        ))}
+        {floss && <Floss x={sx(pos.x)} />}
+        <g transform={`translate(${sx(pos.x)} ${sy(pos.y)}) rotate(${neigung}) scale(${blick} 1)`} data-testid="figur"
+          data-modus={modus} opacity={demo ? 0.95 : 1}>
+          <Figur modus={modus} laeuft={laeuft} steigt={steigt} />
         </g>
+        {spritzer.map(sp => <Spritzen key={`s${sp.t0}`} x={sx(sp.x)} alter={jetzt - sp.t0} />)}
 
         {/* Gerade beschriften */}
         {gerade && level.art === "gerade" && (
