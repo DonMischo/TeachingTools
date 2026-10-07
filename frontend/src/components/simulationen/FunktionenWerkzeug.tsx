@@ -25,6 +25,8 @@ export default function FunktionenWerkzeug({ action, vorgabe, speicherSchluessel
 }) {
   const fest = wahl(vorgabe, "reiter", REITER.map(r => r.id));
   const [reiter, setReiter] = useState<Reiter>(fest ?? "graphen");
+  // Ein Klick auf den Reiter »Koordinaten-Lauf« führt immer zur Weltkarte.
+  const [zurKarte, setZurKarte] = useState(0);
 
   return (
     <div className="flex flex-col w-full">
@@ -37,14 +39,14 @@ export default function FunktionenWerkzeug({ action, vorgabe, speicherSchluessel
           <div className="inline-flex flex-wrap self-start rounded-xl border border-line p-1 bg-surface" role="tablist">
             {REITER.map(r => (
               <button key={r.id} type="button" role="tab" aria-selected={reiter === r.id}
-                onClick={() => setReiter(r.id)} className={chip(reiter === r.id)}>{r.label}</button>
+                onClick={() => { setReiter(r.id); if (r.id === "lauf") setZurKarte(n => n + 1); }} className={chip(reiter === r.id)}>{r.label}</button>
             ))}
           </div>
         )}
       </div>
       {reiter === "graphen"
         ? <Funktionen kopf={false} vorgabe={vorgabe} />
-        : <div className="p-6 max-w-seite mx-auto w-full"><KoordinatenLauf speicherSchluessel={speicherSchluessel} /></div>}
+        : <div className="p-6 max-w-seite mx-auto w-full"><KoordinatenLauf speicherSchluessel={speicherSchluessel} zurKarte={zurKarte} /></div>}
     </div>
   );
 }

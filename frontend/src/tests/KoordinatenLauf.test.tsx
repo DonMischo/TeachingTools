@@ -77,4 +77,16 @@ describe("Funktionen und Koordinatensystem", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Koordinaten-Lauf/ }));
     expect(screen.getByText(/Welt 1: Erst laufen, dann springen/)).toBeInTheDocument();
   });
+
+  it("Klick auf den Reiter Koordinaten-Lauf führt aus dem Level zurück zur Weltkarte", () => {
+    render(<FunktionenWerkzeug />);
+    fireEvent.click(screen.getByRole("tab", { name: /Koordinaten-Lauf/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Edelsteine sammeln/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Zum Level/ }));
+    expect(screen.getByTestId("level")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Weltkarte/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /Koordinaten-Lauf/ }));
+    expect(screen.queryByTestId("level")).not.toBeInTheDocument();
+    expect(screen.getByText(/Welt 1: Erst laufen, dann springen/)).toBeInTheDocument();
+  });
 });

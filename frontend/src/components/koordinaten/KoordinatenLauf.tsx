@@ -180,7 +180,7 @@ export function infoVorfuehrung(info: Info): DemoSchritt[] {
   return out;
 }
 
-function InfoAnsicht({ info, onZurueck, weiter }: { info: Info; onZurueck: () => void; weiter?: { label: string; los: () => void } }) {
+function InfoAnsicht({ info, weiter }: { info: Info; weiter?: { label: string; los: () => void } }) {
   const feld = useFeld(info.beispiel);
   const demo = useVorfuehrung();
   const vorfuehren = () => {
@@ -189,9 +189,6 @@ function InfoAnsicht({ info, onZurueck, weiter }: { info: Info; onZurueck: () =>
   };
   return (
     <div className="flex flex-col gap-4" data-testid="infohappen">
-      <div className="flex items-center gap-2 flex-wrap">
-        <button type="button" onClick={() => { demo.stopp(); onZurueck(); }} className="text-sm text-muted hover:text-fg">← Weltkarte</button>
-      </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
         <div className="card p-5 flex flex-col gap-3">
           <h2 className="text-xl font-black">{info.icon} {info.titel}</h2>
@@ -321,7 +318,6 @@ function LevelAnsicht({ level, stand, onErgebnis, onKarte, onNaechstes, onInfo }
     <div ref={kopfRef} className="flex flex-col gap-3 scroll-mt-2" data-testid="level">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <button type="button" onClick={() => { demo.stopp(); onKarte(); }} className="text-sm text-muted hover:text-fg">← Weltkarte</button>
           <h2 className="text-xl font-black">
             {WELTEN.find(w => w.nr === level.welt)?.icon} {level.titel}
             {bisher ? <span className="ml-2"><Sterne n={bisher} /></span> : null}
@@ -426,9 +422,14 @@ function Weltkarte({ stand, onLevel, onInfo }: { stand: Stand; onLevel: (id: str
 
 type Ansicht = { art: "karte" } | { art: "level"; id: string } | { art: "info"; id: string; zurueck?: string };
 
-export default function KoordinatenLauf({ speicherSchluessel = "hp_koordinaten_stand" }: { speicherSchluessel?: string }) {
+export default function KoordinatenLauf({ speicherSchluessel = "hp_koordinaten_stand", zurKarte = 0 }: {
+  speicherSchluessel?: string;
+  /** Jede Erhöhung führt zurück zur Weltkarte — der Reiter »Koordinaten-Lauf« zählt sie hoch. */
+  zurKarte?: number;
+}) {
   const [stand, setStand] = useState<Stand>({});
   const [ansicht, setAnsicht] = useState<Ansicht>({ art: "karte" });
+  useEffect(() => { setAnsicht({ art: "karte" }); }, [zurKarte]);
   useEffect(() => { setStand(ladeStand(speicherSchluessel)); }, [speicherSchluessel]);
 
   // Gespeichert wird im Ereignis selbst, nicht per Effekt — sonst überschreibt
@@ -461,7 +462,7 @@ export default function KoordinatenLauf({ speicherSchluessel = "hp_koordinaten_s
     const info = infoNach(ansicht.id)!;
     const ziel = ansicht.zurueck ?? LEVEL.find(l => l.info.includes(info.id))?.id;
     inhalt = (
-      <InfoAnsicht key={info.id} info={info} onZurueck={() => setAnsicht({ art: "karte" })}
+      <InfoAnsicht key={info.id} info={info}
         weiter={ziel ? { label: ansicht.zurueck ? "Zum Level" : "Zum ersten Level", los: () => { setAnsicht({ art: "level", id: ziel }); oben(); } } : undefined} />
     );
   } else {
