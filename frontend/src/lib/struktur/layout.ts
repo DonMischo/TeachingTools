@@ -1,10 +1,16 @@
 /**
- * Koordinaten fürs Zeichnen.
+ * Koordinaten fürs Zeichnen — in zwei Anordnungen:
  *
- * Die Hauptkette liegt im Zickzack (109°-Winkel, wie im Schulbuch), Ringe
- * als regelmäßiges Vieleck. Alles andere hängt sich daran: jeder Rest zeigt
- * von seinem Kettenatom weg, abwechselnd nach außen, damit sich nichts
- * überdeckt.
+ *   `legeGerade`  die Schulform: die Hauptkette liegt waagerecht auf einer
+ *                 Linie, Abzweigungen gehen senkrecht nach oben oder unten.
+ *                 Alle Atome sitzen auf einem Gitter, deshalb kann sich
+ *                 nichts überdecken.
+ *   `lege`        die Winkelform: Zickzack mit 120°, wie die Bindungen
+ *                 wirklich stehen. Zeigt die Geometrie, wird aber schnell
+ *                 unübersichtlich.
+ *
+ * Ringe liegen in beiden Fällen als regelmäßiges Vieleck — ein Sechsring
+ * lässt sich nicht auf eine Linie legen.
  *
  * Gerechnet wird in »Bindungslängen«; die Größe in Pixeln entscheidet erst
  * das Bauteil.
@@ -17,6 +23,68 @@ export type Lage = { punkte: Punkt[]; breite: number; hoehe: number };
 /** Zickzack: 30° nach oben, 30° nach unten — der Winkel an jedem C ist 120°. */
 const DX = Math.cos(Math.PI / 6);
 const DY = Math.sin(Math.PI / 6);
+
+/** Die Atome der Hauptkette, nach ihrer Nummer. */
+const hauptkette = (m: Molekuel): number[] =>
+  m.atome.map((a, i) => ({ a, i })).filter(x => x.a.kette !== undefined)
+    .sort((x, y) => x.a.kette! - y.a.kette!).map(x => x.i);
+
+/** Vier Richtungen auf dem Gitter: oben, unten, rechts, links. */
+const GITTER: Punkt[] = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: -1, y: 0 }];
+
+/**
+ * Schulform: Hauptkette waagerecht, Abzweigungen senkrecht.
+ *
+ * Jedes Atom bekommt einen eigenen Gitterplatz — ein belegter Platz wird nie
+ * ein zweites Mal vergeben, deshalb kann sich nichts überdecken. Ein Rest
+ * wächst in die Richtung weiter, in die er begonnen hat: der zweite
+ * Kohlenstoff einer Ethylgruppe steht also über dem ersten, nicht daneben.
+ */
+export function legeGerade(m: Molekuel): Lage {
+  if (m.ring.length >= 3) return lege(m); // Ringe bleiben Vielecke
+
+  const p: (Punkt | null)[] = m.atome.map(() => null);
+  const belegt = new Set<string>();
+  const schluessel = (q: Punkt) => `${Math.round(q.x)},${Math.round(q.y)}`;
+  const setze = (i: number, q: Punkt) => { p[i] = q; belegt.add(schluessel(q)); };
+  /** Womit das Atom gesetzt wurde — Reste wachsen so geradeaus weiter. */
+  const herkunft: (Punkt | null)[] = m.atome.map(() => null);
+
+  hauptkette(m).forEach((i, k) => setze(i, { x: k, y: 0 }));
+
+  for (let runde = 0; runde < m.atome.length; runde++) {
+    let offen = false;
+    for (let i = 0; i < m.atome.length; i++) {
+      if (p[i]) continue;
+      const anker = nachbarn(m, i).find(n => p[n]);
+      if (anker === undefined) { offen = true; continue; }
+      const a = p[anker]!;
+      // Erst weiter in der bisherigen Richtung, dann nach oben, unten, zur Seite.
+      const weiter = herkunft[anker];
+      const richtungen = weiter ? [weiter, ...GITTER] : GITTER;
+      const frei = richtungen.find(d => !belegt.has(schluessel({ x: a.x + d.x, y: a.y + d.y })));
+      // Alles dicht? Dann weiter draußen weitersuchen, statt aufeinanderzusetzen.
+      const d = frei ?? GITTER.map(g => ({ x: g.x * 2, y: g.y * 2 }))
+        .find(g => !belegt.has(schluessel({ x: a.x + g.x, y: a.y + g.y }))) ?? GITTER[0];
+      setze(i, { x: a.x + d.x, y: a.y + d.y });
+      herkunft[i] = { x: Math.sign(d.x), y: Math.sign(d.y) };
+    }
+    if (!offen) break;
+  }
+
+  return rahme(p.map(q => q ?? { x: 0, y: 0 }));
+}
+
+/** Verschiebt alles in den positiven Bereich und misst die Ausdehnung. */
+function rahme(punkte: Punkt[]): Lage {
+  const xs = punkte.map(q => q.x), ys = punkte.map(q => q.y);
+  const minX = Math.min(...xs), minY = Math.min(...ys);
+  return {
+    punkte: punkte.map(q => ({ x: q.x - minX, y: q.y - minY })),
+    breite: Math.max(...xs) - minX,
+    hoehe: Math.max(...ys) - minY,
+  };
+}
 
 export function lege(m: Molekuel): Lage {
   const p: (Punkt | null)[] = m.atome.map(() => null);
@@ -32,9 +100,7 @@ export function lege(m: Molekuel): Lage {
     });
   } else {
     // Offene Kette im Zickzack.
-    const kette = m.atome.map((a, i) => ({ a, i })).filter(x => x.a.kette !== undefined)
-      .sort((x, y) => x.a.kette! - y.a.kette!);
-    kette.forEach(({ i }, k) => { p[i] = { x: k * DX, y: k % 2 ? DY : 0 }; });
+    hauptkette(m).forEach((i, k) => { p[i] = { x: k * DX, y: k % 2 ? DY : 0 }; });
   }
 
   // Alles Übrige hängt an einem schon gelegten Atom. Mehrfach durchgehen,
@@ -50,15 +116,7 @@ export function lege(m: Molekuel): Lage {
     if (!offen) break;
   }
   // Was jetzt noch fehlt, hängt an nichts — kommt nicht vor, schadet aber auch nicht.
-  const punkte = p.map(x => x ?? { x: 0, y: 0 });
-
-  const xs = punkte.map(q => q.x), ys = punkte.map(q => q.y);
-  const minX = Math.min(...xs), minY = Math.min(...ys);
-  return {
-    punkte: punkte.map(q => ({ x: q.x - minX, y: q.y - minY })),
-    breite: Math.max(...xs) - minX,
-    hoehe: Math.max(...ys) - minY,
-  };
+  return rahme(p.map(x => x ?? { x: 0, y: 0 }));
 }
 
 /**

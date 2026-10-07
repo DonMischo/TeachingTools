@@ -6,6 +6,10 @@ import { describe, expect, it } from "vitest";
 import { ausName } from "@/lib/struktur/iupac";
 import { lege } from "@/lib/struktur/layout";
 import { zeichne, STANDARD } from "@/components/struktur/Formelbild";
+import { legeGerade } from "@/lib/struktur/layout";
+
+/** Die Skelettformel war früher der Standard — viele Prüfungen meinen sie. */
+const SKELETT = { ...STANDARD, art: "skelett" } as const;
 
 const mol = (name: string) => {
   const r = ausName(name);
@@ -66,37 +70,37 @@ describe("Lage", () => {
 
 describe("Bild", () => {
   it("beschriftet in der Skelettformel nur die Heteroatome", () => {
-    const bild = zeichne(mol("Ethanol"), STANDARD);
+    const bild = zeichne(mol("Ethanol"), SKELETT);
     expect(bild.texte.map(t => t.text)).toEqual(["OH"]);
   });
 
   it("schreibt mit »alle H« auch die C-Atome aus", () => {
-    const bild = zeichne(mol("Ethanol"), { ...STANDARD, alleH: true });
+    const bild = zeichne(mol("Ethanol"), { ...SKELETT, alleH: true });
     expect(bild.texte.map(t => t.text).sort()).toEqual(["CH²", "CH³", "OH"].sort());
   });
 
   it("zeichnet in der Valenzstrichformel jedes H einzeln", () => {
-    const bild = zeichne(mol("Methan"), { ...STANDARD, art: "valenz" });
+    const bild = zeichne(mol("Methan"), { ...STANDARD, art: "gerade" });
     expect(bild.texte.filter(t => t.text === "H")).toHaveLength(4);
     // Vier C–H-Bindungen als Striche.
     expect(bild.striche).toHaveLength(4);
   });
 
   it("zeichnet die Doppelbindung als zwei Striche, die Dreifachbindung als drei", () => {
-    expect(zeichne(mol("Ethen"), STANDARD).striche).toHaveLength(2);
-    expect(zeichne(mol("Ethin"), STANDARD).striche).toHaveLength(3);
+    expect(zeichne(mol("Ethen"), SKELETT).striche).toHaveLength(2);
+    expect(zeichne(mol("Ethin"), SKELETT).striche).toHaveLength(3);
   });
 
   it("setzt freie Elektronenpaare als Punktepaare", () => {
-    const ohne = zeichne(mol("Ethanol"), STANDARD).punkte.length;
-    const mit = zeichne(mol("Ethanol"), { ...STANDARD, paare: true }).punkte.length;
+    const ohne = zeichne(mol("Ethanol"), SKELETT).punkte.length;
+    const mit = zeichne(mol("Ethanol"), { ...SKELETT, paare: true }).punkte.length;
     // Sauerstoff hat zwei freie Paare, also vier Punkte mehr.
     expect(mit - ohne).toBe(4);
   });
 
   it("lässt nichts aus dem Bild herausragen", () => {
     for (const name of ["Methan", "Ethanol", "Cyclohexan", "Essigsäure"]) {
-      for (const art of ["skelett", "valenz"] as const) {
+      for (const art of ["skelett", "gerade", "winkel"] as const) {
         const b = zeichne(mol(name), { ...STANDARD, art, paare: true, alleH: true });
         const xs = [...b.striche.flatMap(s => [s.x1, s.x2]), ...b.texte.map(t => t.x), ...b.punkte.map(p => p.x)];
         const ys = [...b.striche.flatMap(s => [s.y1, s.y2]), ...b.texte.map(t => t.y), ...b.punkte.map(p => p.y)];
@@ -109,8 +113,8 @@ describe("Bild", () => {
   });
 
   it("dreht das Bild, ohne die Bindungslängen zu ändern", () => {
-    const gerade = zeichne(mol("Butan"), STANDARD);
-    const gedreht = zeichne(mol("Butan"), { ...STANDARD, drehung: 90 });
+    const gerade = zeichne(mol("Butan"), SKELETT);
+    const gedreht = zeichne(mol("Butan"), { ...SKELETT, drehung: 90 });
     const laenge = (b: typeof gerade) =>
       b.striche.map(s => Math.round(Math.hypot(s.x2 - s.x1, s.y2 - s.y1)));
     expect(laenge(gedreht)).toEqual(laenge(gerade));
@@ -119,3 +123,76 @@ describe("Bild", () => {
     expect(gerade.breite).toBeGreaterThan(gerade.hoehe);
   });
 });
+
+describe("Schulform (gerade)", () => {
+  const BEISPIELE = ["Butan", "2,3-Dimethylbutan", "3-Ethylpentan", "Ethanol", "Essigsäure", "Propan-2-on", "Glycerin", "2-Chlorpropan"];
+
+  it("legt die Hauptkette auf eine Linie", () => {
+    for (const name of BEISPIELE) {
+      const m = mol(name);
+      const { punkte } = legeGerade(m);
+      const kette = m.atome.map((a, i) => ({ a, i })).filter(x => x.a.kette !== undefined);
+      const hoehen = new Set(kette.map(({ i }) => Math.round(punkte[i].y * 100)));
+      expect(hoehen.size, `${name}: Kette auf ${hoehen.size} Höhen`).toBe(1);
+    }
+  });
+
+  it("zieht jede Bindung waagerecht oder senkrecht", () => {
+    for (const name of BEISPIELE) {
+      const m = mol(name);
+      const { punkte } = legeGerade(m);
+      for (const b of m.bindungen) {
+        const dx = Math.abs(punkte[b.a].x - punkte[b.b].x);
+        const dy = Math.abs(punkte[b.a].y - punkte[b.b].y);
+        expect(Math.min(dx, dy), `${name}: Bindung ${b.a}–${b.b} liegt schräg`).toBeCloseTo(0, 5);
+      }
+    }
+  });
+
+  it("gibt keinen Gitterplatz zweimal aus", () => {
+    for (const name of BEISPIELE) {
+      const { punkte } = legeGerade(mol(name));
+      const plaetze = punkte.map(p => `${Math.round(p.x)},${Math.round(p.y)}`);
+      expect(new Set(plaetze).size, `${name}: Atome liegen aufeinander`).toBe(plaetze.length);
+    }
+  });
+
+  it("lässt keinen Strich durch einen Buchstaben laufen", () => {
+    for (const name of BEISPIELE) {
+      const b = zeichne(mol(name), { ...STANDARD, art: "gerade" });
+      for (const t of b.texte) {
+        // Schriftkasten grob abschätzen — etwas kleiner als beim Zeichnen,
+        // damit die Prüfung nicht an der Luft daneben scheitert.
+        const hb = t.text.length * (t.klein ? 4.6 : 5.6) + 1;
+        const hh = (t.klein ? 15 : 18) * 0.42;
+        for (const s of b.striche) {
+          const treffer = schneidet(s, t.x, t.y, hb, hh);
+          expect(treffer, `${name}: Strich kreuzt »${t.text}«`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("hält die Beschriftungen auseinander", () => {
+    for (const name of BEISPIELE) {
+      const b = zeichne(mol(name), { ...STANDARD, art: "gerade" });
+      for (let i = 0; i < b.texte.length; i++) {
+        for (let j = i + 1; j < b.texte.length; j++) {
+          const d = Math.hypot(b.texte[i].x - b.texte[j].x, b.texte[i].y - b.texte[j].y);
+          expect(d, `${name}: »${b.texte[i].text}« und »${b.texte[j].text}« zu dicht`).toBeGreaterThan(18);
+        }
+      }
+    }
+  });
+});
+
+/** Kreuzt die Strecke das Rechteck um (cx, cy)? Abgetastet, das reicht hier. */
+function schneidet(s: { x1: number; y1: number; x2: number; y2: number },
+  cx: number, cy: number, hb: number, hh: number): boolean {
+  for (let k = 0; k <= 40; k++) {
+    const x = s.x1 + ((s.x2 - s.x1) * k) / 40;
+    const y = s.y1 + ((s.y2 - s.y1) * k) / 40;
+    if (Math.abs(x - cx) < hb && Math.abs(y - cy) < hh) return true;
+  }
+  return false;
+}

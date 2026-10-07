@@ -74,7 +74,7 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
           <h1 className="text-2xl font-black tracking-tight">⬡ Strukturformeln</h1>
           <p className="text-muted text-sm mt-1 max-w-2xl">
             Schreib den Namen einer organischen Verbindung — die Strukturformel entsteht beim Tippen.
-            Die Kette liegt im Zickzack, weil die Bindungen am Kohlenstoff einen Winkel von 109° bilden.
+            Die Hauptkette liegt waagerecht, Abzweigungen stehen senkrecht darüber oder darunter.
           </p>
         </div>
         {action}
@@ -119,12 +119,17 @@ export default function Strukturformeln({ action, vorgabe }: { action?: ReactNod
         <div className="w-full lg:w-[300px] shrink-0 flex flex-col gap-4">
           <div className="card p-4 flex flex-col gap-3">
             <h2 className="text-sm font-bold">Darstellung</h2>
-            <div className="inline-flex rounded-xl border border-line p-1 bg-surface self-start">
-              {([["skelett", "Skelettformel"], ["valenz", "Valenzstrichformel"]] as const).map(([id, label]) => (
+            <div className="flex flex-col gap-1">
+              {([
+                ["gerade", "Valenzstrich gerade", "Hauptkette waagerecht, Abzweigungen senkrecht — die Schulform."],
+                ["winkel", "Valenzstrich mit Winkeln", "Dieselbe Formel mit den echten Bindungswinkeln von 120°."],
+                ["skelett", "Skelettformel", "C-Atome sind nur Knicke; beschriftet sind die anderen Atome."],
+              ] as const).map(([id, label, hinweis]) => (
                 <button key={id} onClick={() => setOpt(o => ({ ...o, art: id }))}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                    opt.art === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
-                  {label}
+                  className={`text-left px-3 py-1.5 rounded-lg border text-xs ${
+                    opt.art === id ? "border-accent bg-accent/10" : "border-line hover:border-accent"}`}>
+                  <div className={`font-bold ${opt.art === id ? "text-fg" : "text-muted"}`}>{label}</div>
+                  <div className="text-muted mt-0.5">{hinweis}</div>
                 </button>
               ))}
             </div>
