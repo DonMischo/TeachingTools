@@ -114,6 +114,17 @@ def test_blatt_ist_immer_hochkant_und_die_karte_fuellt_seite_1(client, teacher_t
     assert breite > 15  # füllt die Seite statt pandocs 15-cm-Vorgabe
 
 
+@pytest.mark.parametrize("w,h,gedreht", [(100, 79, True), (79, 100, False), (50, 50, False)])
+def test_querformat_karte_wird_gedreht(client, teacher_token, w, h, gedreht):
+    """Nur echtes Querformat wird gedreht — dann ist das Bild im DOCX hochkant."""
+    from PIL import Image
+    r = client.post("/api/karten/export", json=_body(karte=_png(w, h)), headers=auth(teacher_token))
+    archiv = zipfile.ZipFile(io.BytesIO(r.content))
+    bild = next(n for n in archiv.namelist() if n.startswith("word/media/"))
+    with Image.open(io.BytesIO(archiv.read(bild))) as b:
+        assert b.size == ((h, w) if gedreht else (w, h))
+
+
 def test_lange_aufgabe_macht_die_karte_kleiner():
     import base64 as b64
     from api.karten_export import kartengroesse

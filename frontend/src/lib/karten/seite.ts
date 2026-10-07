@@ -2,7 +2,7 @@
  * Seitenformat der Kartenfläche: »frei« = so hoch wie der Bildschirm erlaubt; bei A4 hat die
  * Karte genau das Verhältnis des freien Platzes auf Seite 1 des Arbeitsblatts (unter Titel,
  * Name/Klasse und Aufgabe), damit sie im Export die Seite füllt. Das Blatt ist immer hochkant:
- * »A4 quer« ist dieselbe Fläche, um 90° gedreht (lib/karten/drehen.ts dreht das Bild beim Export).
+ * »A4 quer« ist dieselbe Fläche, um 90° gedreht (der Server dreht Querformat-Karten beim Export).
  * Maße: KARTENFLAECHE_CM in api/karten_export.py.
  */
 export type Seite = "frei" | "a4-hoch" | "a4-quer";

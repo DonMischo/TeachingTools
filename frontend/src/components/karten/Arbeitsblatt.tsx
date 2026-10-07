@@ -9,7 +9,6 @@ import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import type { Katalog } from "@/lib/karten/stil";
 import type { SatzInhalt } from "@/lib/karten/satz";
-import { hochkant } from "@/lib/karten/drehen";
 
 const FORMATE = [
   { id: "pdf", name: "PDF" },
@@ -45,8 +44,7 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
     setLaeuft(format);
     setFehler("");
     try {
-      // Das Blatt ist hochkant: eine Querformat-Karte kommt gedreht darauf
-      const karte = await hochkant(await holeBild());
+      const karte = await holeBild();
       const { datei, name } = await api.karten.export({
         format, variante, titel, aufgabe, karte, seite: inhalt.seite ?? "frei",
         gruppen: gruppen.map((e) => {

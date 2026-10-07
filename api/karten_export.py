@@ -1,8 +1,8 @@
 """Kartentool: Arbeitsblatt-Export als PDF, DOCX, ODT oder LaTeX.
 
 Seite 1 (immer hochkant): Titel, Name/Klasse/Datum, Aufgabe (»Finde und benenne …«), die
-Karte — so groß, wie der freie Platz hergibt. Eine Querformat-Karte dreht schon der Browser
-um 90° (lib/karten/drehen.ts), der Text bleibt aufrecht.
+Karte — so groß, wie der freie Platz hergibt. Eine Querformat-Karte wird um 90° gegen den
+Uhrzeigersinn gedreht (Norden nach links), der Text bleibt aufrecht.
 Danach je nummerierter Ebene eine Tabelle, zweispaltig: jedes Thema beginnt in einer eigenen
 Spalte — außer zwei passen zusammen in eine Spalte, ohne umzubrechen, oder das Thema ist ohnehin
 länger als eine Spalte. Leer zum Ausfüllen oder
@@ -79,6 +79,19 @@ EMU_JE_CM = 360000
 
 def _png_groesse(png: bytes) -> tuple[int, int]:
     return int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+
+
+def hochkant(png: bytes) -> bytes:
+    """Querformat-Karte um 90° gegen den Uhrzeigersinn drehen: Man dreht das Blatt nach rechts
+    und liest sie quer — so füllt sie die hochkante Seite statt nur ihre obere Hälfte."""
+    w, h = _png_groesse(png)
+    if w <= h:
+        return png
+    from PIL import Image
+    with Image.open(io.BytesIO(png)) as bild:
+        aus = io.BytesIO()
+        bild.transpose(Image.Transpose.ROTATE_90).save(aus, "PNG")
+    return aus.getvalue()
 
 
 def kartengroesse(png: bytes, aufgabe: str = "") -> tuple[float, float]:
@@ -279,6 +292,7 @@ def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], vari
                karte_png: bytes, quelle: str, seite: str = "frei") -> tuple[bytes, str] | None:
     """Liefert (Dateiinhalt, Dateiendung) oder None, wenn LibreOffice/pandoc scheitert.
     `seite` bestimmt nur den Ausschnitt im Browser; das Blatt ist immer A4 hochkant."""
+    karte_png = hochkant(karte_png)
     if format_ == "tex":
         puffer = io.BytesIO()
         with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as z:
