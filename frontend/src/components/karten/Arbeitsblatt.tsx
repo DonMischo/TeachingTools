@@ -9,6 +9,7 @@ import type { FeatureCollection } from "geojson";
 import { api } from "@/lib/api";
 import type { Katalog } from "@/lib/karten/stil";
 import type { SatzInhalt } from "@/lib/karten/satz";
+import { hochkant } from "@/lib/karten/drehen";
 
 const FORMATE = [
   { id: "pdf", name: "PDF" },
@@ -44,7 +45,8 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
     setLaeuft(format);
     setFehler("");
     try {
-      const karte = await holeBild();
+      // Das Blatt ist hochkant: eine Querformat-Karte kommt gedreht darauf
+      const karte = await hochkant(await holeBild());
       const { datei, name } = await api.karten.export({
         format, variante, titel, aufgabe, karte, seite: inhalt.seite ?? "frei",
         gruppen: gruppen.map((e) => {
@@ -116,7 +118,7 @@ export default function Arbeitsblatt({ katalog, inhalt, nummern, daten, titel, h
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen. Für eine volle Seite im ☰-Menü der Karte »A4 hoch« oder »A4 quer« wählen und den Ausschnitt zurechtrücken.</p>
+          <p className="text-xs text-muted">Die Karte kommt so aufs Blatt, wie sie gerade zu sehen ist — nur mit Nummern, ohne Namen. Das Blatt ist immer hochkant; eine Karte im Querformat wird um 90° gedreht und füllt so die Seite. Für eine volle Seite im ☰-Menü der Karte »A4 hoch« oder »A4 quer« wählen und den Ausschnitt zurechtrücken.</p>
           {fehler && <p className="text-bad">{fehler}</p>}
         </div>
       )}

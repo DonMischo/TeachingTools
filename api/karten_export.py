@@ -1,9 +1,12 @@
 """Kartentool: Arbeitsblatt-Export als PDF, DOCX, ODT oder LaTeX.
 
-Seite 1: Titel, Name/Klasse/Datum, Aufgabe (»Finde und benenne …«), die Karte — so groß,
-wie der freie Platz hergibt; bei »frei« im Hoch- oder Querformat, je nachdem was größer wird.
-Danach: je nummerierter Ebene eine Tabelle, zweispaltig — leer zum Ausfüllen oder mit Lösung.
-Variante »beide« hängt die Lösung als eigene Seiten an.
+Seite 1 (immer hochkant): Titel, Name/Klasse/Datum, Aufgabe (»Finde und benenne …«), die
+Karte — so groß, wie der freie Platz hergibt. Eine Querformat-Karte dreht schon der Browser
+um 90° (lib/karten/drehen.ts), der Text bleibt aufrecht.
+Danach je nummerierter Ebene eine Tabelle, zweispaltig: jedes Thema beginnt in einer eigenen
+Spalte — außer zwei passen zusammen in eine Spalte, ohne umzubrechen, oder das Thema ist ohnehin
+länger als eine Spalte. Leer zum Ausfüllen oder
+mit Lösung; Variante »beide« hängt die Lösung als eigene Seiten an.
 
 Schrift: im PDF Atkinson Hyperlegible (im API-Image installiert, siehe Dockerfile), in
 DOCX/ODT Arial — die Dateien öffnen Lehrkräfte auf Rechnern ohne Atkinson.
@@ -42,18 +45,19 @@ def _platzhalter(marke: str) -> str:
 
 RAND = '<w:pgMar w:top="850" w:right="850" w:bottom="850" w:left="850" w:header="425" w:footer="425" w:gutter="0"/>'
 HOCH = '<w:pgSz w:w="11906" w:h="16838"/>'
-QUER = '<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>'
 ZWEISPALTIG = '<w:cols w:num="2" w:space="567"/>'
 EINSPALTIG = '<w:cols w:space="567"/>'
+KLEIN = '<w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/>'
+# Spaltenumbruch in einem 1-Punkt-Absatz, damit oben in der neuen Spalte keine Leerzeile steht
+SPALTENUMBRUCH = f'\n```{{=openxml}}\n<w:p><w:pPr>{KLEIN}</w:pPr><w:r><w:br w:type="column"/></w:r></w:p>\n```\n'
 
 
-def _sect(quer: bool, spalten: int) -> str:
-    return f'<w:sectPr>{QUER if quer else HOCH}{RAND}{ZWEISPALTIG if spalten == 2 else EINSPALTIG}</w:sectPr>'
+def _sect(spalten: int) -> str:
+    return f'<w:sectPr>{HOCH}{RAND}{ZWEISPALTIG if spalten == 2 else EINSPALTIG}</w:sectPr>'
 
 
-def _umbruch(quer: bool, spalten: int) -> str:
-    return ('<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/>'
-            f'<w:rPr><w:sz w:val="2"/></w:rPr>{_sect(quer, spalten)}</w:pPr></w:p>')
+def _umbruch(spalten: int) -> str:
+    return f'<w:p><w:pPr>{KLEIN}<w:rPr><w:sz w:val="2"/></w:rPr>{_sect(spalten)}</w:pPr></w:p>'
 
 
 # Serifenlos fürs Arbeitsblatt (Wunsch der Lehrkräfte)
@@ -61,14 +65,14 @@ def _schrift(name: str) -> str:
     return f'<w:rFonts w:ascii="{name}" w:hAnsi="{name}" w:eastAsia="{name}" w:cs="{name}"/>'
 
 
-# Freier Platz für die Karte auf Seite 1 (cm): A4 minus 1,5-cm-Ränder, minus Titel, Name/Klasse,
-# zwei Zeilen Aufgabe und kleine Quellenzeile; 4 mm schmaler, weil LibreOffice den Bildabsatz
-# leicht einrückt. lib/karten/seite.ts nimmt dieselben Verhältnisse.
-KARTENFLAECHE_CM = {"hoch": (17.6, 22.3), "quer": (26.3, 13.9)}
+# Freier Platz für die Karte auf Seite 1 (cm): A4 hochkant minus 1,5-cm-Ränder, minus Titel,
+# Name/Klasse, zwei Zeilen Aufgabe und kleine Quellenzeile; 4 mm schmaler, weil LibreOffice den
+# Bildabsatz leicht einrückt. lib/karten/seite.ts nimmt dasselbe Verhältnis.
+KARTENFLAECHE_CM = (17.6, 22.3)
 # Für so viele Aufgabenzeilen ist die Höhe gerechnet; jede weitere kostet die Karte Platz.
-# Zeichen je Zeile grob für 12 pt bei 18 bzw. 26,7 cm Satzbreite.
-AUFGABE_ZEILEN = {"hoch": 2, "quer": 1}
-ZEICHEN_JE_ZEILE = {"hoch": 85, "quer": 125}
+# Zeichen je Zeile grob für 12 pt bei 18 cm Satzbreite.
+AUFGABE_ZEILEN = 2
+ZEICHEN_JE_ZEILE = 85
 ZEILE_CM = 0.7
 EMU_JE_CM = 360000
 
@@ -77,35 +81,53 @@ def _png_groesse(png: bytes) -> tuple[int, int]:
     return int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
 
 
-def _einpassen(w: int, h: int, flaeche: tuple[float, float]) -> tuple[float, float]:
-    f = min(flaeche[0] / w, flaeche[1] / h)
+def kartengroesse(png: bytes, aufgabe: str = "") -> tuple[float, float]:
+    """(Breite, Höhe) der Karte auf Seite 1 in cm — eingepasst in den freien Platz.
+    Eine lange Aufgabe macht die Karte kleiner, statt sie auf Seite 2 zu schieben."""
+    w, h = _png_groesse(png)
+    zeilen = math.ceil((len(aufgabe) + 10) / ZEICHEN_JE_ZEILE)
+    fb, fh = KARTENFLAECHE_CM[0], KARTENFLAECHE_CM[1] - ZEILE_CM * max(0, zeilen - AUFGABE_ZEILEN)
+    f = min(fb / w, fh / h)
     return w * f, h * f
 
 
-def _flaeche(format_: str, aufgabe: str) -> tuple[float, float]:
-    """Freier Platz für die Karte; eine lange Aufgabe schiebt die Karte nicht auf Seite 2."""
-    b, h = KARTENFLAECHE_CM[format_]
-    zeilen = math.ceil((len(aufgabe) + 10) / ZEICHEN_JE_ZEILE[format_])
-    return b, h - ZEILE_CM * max(0, zeilen - AUFGABE_ZEILEN[format_])
+# Höhen für die Spaltenplanung (cm), an LibreOffice-Ausgaben in Atkinson Hyperlegible abgelesen
+SPALTE_CM = 25.0
+THEMA_CM = 1.3  # Überschrift des Themas
+KOPF_CM = 1.0  # Kopfzeile »Nr. | Name«
+TABELLENZEILE_CM = 1.02
+FOLGEZEILE_CM = 0.55  # jede weitere Zeile eines langen Namens
+NAME_ZEICHEN = 28  # so viel passt in die Namensspalte einer halben Seite
 
 
-def kartenseite(seite: str, png: bytes, aufgabe: str = "") -> tuple[bool, float, float]:
-    """(quer?, Breite cm, Höhe cm) der Karte auf Seite 1. »frei«: das Format, in dem sie größer wird.
-    Nur Seite 1 dreht sich ins Querformat — die Tabellenseiten bleiben hochkant."""
-    w, h = _png_groesse(png)
-    if seite in ("a4-hoch", "a4-quer"):
-        quer = seite == "a4-quer"
-        return (quer, *_einpassen(w, h, _flaeche("quer" if quer else "hoch", aufgabe)))
-    hb, hh = _einpassen(w, h, _flaeche("hoch", aufgabe))
-    qb, qh = _einpassen(w, h, _flaeche("quer", aufgabe))
-    return (True, qb, qh) if qb * qh > hb * hh else (False, hb, hh)
+def _themenhoehe(g: dict, loesung: bool) -> float:
+    zeilen = sum(max(1, math.ceil(len(e["name"]) / NAME_ZEICHEN)) if loesung else 1 for e in g["eintraege"])
+    return THEMA_CM + KOPF_CM + TABELLENZEILE_CM * len(g["eintraege"]) + FOLGEZEILE_CM * (zeilen - len(g["eintraege"]))
 
 
-def _anpassen(docx: Path, seite: str = "frei", png: bytes = b"", schrift: str = "Arial", aufgabe: str = "") -> None:
+def spaltenplan(gruppen: list[dict], loesung: bool) -> list[bool]:
+    """Je Thema: beginnt es mit einem Spaltenumbruch? Jedes Thema kommt in eine eigene Spalte,
+    es sei denn, es passt noch ganz in die Spalte, in der das vorige endet. Ein Thema, das ohnehin
+    länger als eine Spalte ist, fängt ohne Umbruch an und läuft weiter — sonst bliebe sein Rest
+    allein auf einer fast leeren Seite."""
+    plan, belegt = [], 0.0
+    for i, g in enumerate(gruppen):
+        h = _themenhoehe(g, loesung)
+        umbruch = i > 0 and belegt > 0 and belegt + h > SPALTE_CM and h <= SPALTE_CM
+        if umbruch:
+            belegt = 0.0
+        belegt += h
+        while belegt > SPALTE_CM:  # zu lang für eine Spalte: es läuft in die nächste weiter
+            belegt -= SPALTE_CM
+        plan.append(umbruch)
+    return plan
+
+
+def _anpassen(docx: Path, png: bytes = b"", schrift: str = "Arial", aufgabe: str = "") -> None:
     """pandoc schreibt ein leeres <w:sectPr /> (Word nimmt dann US Letter) und Serifenschrift:
-    Seite 1 je Teil als eigener Abschnitt (Karte, hoch oder quer), die Tabellen zweispaltig im
-    Hochformat; Kartengröße aus dem freien Platz; serifenlose Schrift."""
-    quer, breite, hoehe = kartenseite(seite, png, aufgabe)
+    Seite 1 je Teil als eigener Abschnitt (einspaltig, Karte), die Tabellen zweispaltig;
+    alles A4 hochkant; Kartengröße aus dem freien Platz; serifenlose Schrift."""
+    breite, hoehe = kartengroesse(png, aufgabe)
     ein = zipfile.ZipFile(io.BytesIO(docx.read_bytes()))
     aus = io.BytesIO()
     with zipfile.ZipFile(aus, "w", zipfile.ZIP_DEFLATED) as z:
@@ -113,9 +135,9 @@ def _anpassen(docx: Path, seite: str = "frei", png: bytes = b"", schrift: str = 
             daten = ein.read(name)
             if name == "word/document.xml":
                 xml = daten.decode("utf-8")
-                xml = re.sub(r"<w:sectPr[^>]*/>|<w:sectPr.*?</w:sectPr>", _sect(False, 2), xml, flags=re.S)
-                xml = re.sub(rf"<w:p>(?:(?!<w:p>).)*?{ENDE_KARTE}.*?</w:p>", _umbruch(quer, 1), xml, flags=re.S)
-                xml = re.sub(rf"<w:p>(?:(?!<w:p>).)*?{ENDE_TABELLEN}.*?</w:p>", _umbruch(False, 2), xml, flags=re.S)
+                xml = re.sub(r"<w:sectPr[^>]*/>|<w:sectPr.*?</w:sectPr>", _sect(2), xml, flags=re.S)
+                xml = re.sub(rf"<w:p>(?:(?!<w:p>).)*?{ENDE_KARTE}.*?</w:p>", _umbruch(1), xml, flags=re.S)
+                xml = re.sub(rf"<w:p>(?:(?!<w:p>).)*?{ENDE_TABELLEN}.*?</w:p>", _umbruch(2), xml, flags=re.S)
                 cx, cy = round(breite * EMU_JE_CM), round(hoehe * EMU_JE_CM)
                 xml = re.sub(r'(<(?:wp:extent|a:ext) )cx="\d+" cy="\d+"', rf'\1cx="{cx}" cy="{cy}"', xml)
                 daten = xml.encode("utf-8")
@@ -147,7 +169,9 @@ def _markdown(titel: str, aufgabe: str, gruppen: list[dict], loesung: bool, quel
     # Quellen klein, damit die Karte den Platz bekommt
     kopf += ('\n```{=openxml}\n<w:p><w:pPr><w:spacing w:before="40" w:after="0"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="12"/></w:rPr>'
              f'<w:t xml:space="preserve">Kartengrundlage: {_xml_text(quelle)}</w:t></w:r></w:p>\n```\n')
-    tabellen = "".join(f"\n## {_md_text(g['name'])}\n\n" + _grid_tabelle(g["eintraege"], loesung) for g in gruppen)
+    tabellen = "".join(
+        (SPALTENUMBRUCH if umbruch else "") + f"\n## {_md_text(g['name'])}\n\n" + _grid_tabelle(g["eintraege"], loesung)
+        for g, umbruch in zip(gruppen, spaltenplan(gruppen, loesung)))
     return kopf + _platzhalter(ENDE_KARTE) + tabellen
 
 
@@ -165,10 +189,10 @@ def _grid_tabelle(eintraege: list[dict], loesung: bool) -> str:
     return t + "\n"
 
 
-def _docx(md: str, ordner: Path, seite: str = "frei", schrift: str = "Arial", aufgabe: str = "") -> Path:
+def _docx(md: str, ordner: Path, schrift: str = "Arial", aufgabe: str = "") -> Path:
     ziel = ordner / "arbeitsblatt.docx"
     pypandoc.convert_text(md, "docx", format="markdown", outputfile=str(ziel), extra_args=[f"--resource-path={ordner}"])
-    _anpassen(ziel, seite, (ordner / "karte.png").read_bytes(), schrift, aufgabe)
+    _anpassen(ziel, (ordner / "karte.png").read_bytes(), schrift, aufgabe)
     return ziel
 
 
@@ -194,8 +218,7 @@ def _tex_text(s: str) -> str:
     return "".join(_TEX_ZEICHEN.get(c, c) for c in s)
 
 
-def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: str, seite: str = "frei",
-         quer: bool = False) -> str:
+def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: str) -> str:
     def seiten(loesung: bool) -> str:
         t = [
             r"\section*{" + _tex_text(titel) + (" -- Lösung" if loesung else "") + "}",
@@ -206,7 +229,9 @@ def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: s
             r"\newpage",
             r"\begin{multicols}{2}",
         ]
-        for g in gruppen:
+        for g, umbruch in zip(gruppen, spaltenplan(gruppen, loesung)):
+            if umbruch:
+                t.append(r"\columnbreak")
             t.append(r"\subsection*{" + _tex_text(g["name"]) + "}")
             t.append(r"\begin{tabularx}{\linewidth}{|>{\bfseries}p{1.4cm}|X|}\hline")
             t.append(r"Nr. & Name \\ \hline")
@@ -229,7 +254,7 @@ def _tex(titel: str, aufgabe: str, gruppen: list[dict], variante: str, quelle: s
         r"\usepackage[ngerman]{babel}",
         r"\usepackage[scaled]{helvet}",
         r"\renewcommand{\familydefault}{\sfdefault}",
-        r"\usepackage[margin=1.5cm" + (",landscape" if quer else "") + "]{geometry}",
+        r"\usepackage[margin=1.5cm]{geometry}",
         r"\usepackage{graphicx}",
         r"\usepackage{tabularx,array,multicol}",
         r"\pagestyle{empty}",
@@ -252,11 +277,12 @@ MEDIENTYP = {
 
 def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], variante: str,
                karte_png: bytes, quelle: str, seite: str = "frei") -> tuple[bytes, str] | None:
-    """Liefert (Dateiinhalt, Dateiendung) oder None, wenn LibreOffice/pandoc scheitert."""
+    """Liefert (Dateiinhalt, Dateiendung) oder None, wenn LibreOffice/pandoc scheitert.
+    `seite` bestimmt nur den Ausschnitt im Browser; das Blatt ist immer A4 hochkant."""
     if format_ == "tex":
         puffer = io.BytesIO()
         with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as z:
-            z.writestr("arbeitsblatt.tex", _tex(titel, aufgabe, gruppen, variante, quelle, seite, kartenseite(seite, karte_png, aufgabe)[0]))
+            z.writestr("arbeitsblatt.tex", _tex(titel, aufgabe, gruppen, variante, quelle))
             z.writestr("karte.png", karte_png)
         return puffer.getvalue(), "zip"
 
@@ -270,7 +296,7 @@ def exportiere(format_: str, titel: str, aufgabe: str, gruppen: list[dict], vari
             teile.append(_markdown(titel, aufgabe, gruppen, True, quelle))
         # Atkinson Hyperlegible nur im PDF — dort ist sie eingebettet; DOCX/ODT bleiben bei Arial
         schrift = "Atkinson Hyperlegible" if format_ == "pdf" else "Arial"
-        docx = _docx(_platzhalter(ENDE_TABELLEN).join(teile), ordner, seite, schrift, aufgabe)
+        docx = _docx(_platzhalter(ENDE_TABELLEN).join(teile), ordner, schrift, aufgabe)
         if format_ == "docx":
             return docx.read_bytes(), "docx"
         ziel = _soffice(docx, format_)

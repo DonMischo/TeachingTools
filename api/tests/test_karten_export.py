@@ -97,36 +97,54 @@ def _abschnitte(xml: str) -> list[str]:
     return re.findall(r"<w:sectPr>.*?</w:sectPr>", xml, flags=re.S)
 
 
-@pytest.mark.parametrize("seite,w,h,breite_cm,quer", [("a4-hoch", 79, 100, 17.6, False), ("a4-quer", 189, 100, 26.3, True)])
-def test_a4_karte_fuellt_seite_1_und_nur_die_dreht_sich(client, teacher_token, seite, w, h, breite_cm, quer):
-    """pandoc begrenzt Bilder auf ~15 cm — die Karte wird auf den freien Platz von Seite 1 gesetzt.
-    Querformat gilt nur für Seite 1; die Tabellenseiten bleiben hochkant und zweispaltig."""
+@pytest.mark.parametrize("seite,w,h", [("a4-hoch", 79, 100), ("frei", 100, 79), ("a4-quer", 100, 79)])
+def test_blatt_ist_immer_hochkant_und_die_karte_fuellt_seite_1(client, teacher_token, seite, w, h):
+    """Querformat-Karten dreht der Browser vorher (lib/karten/drehen.ts) — das Blatt bleibt hochkant.
+    Seite 1 einspaltig mit der Karte, danach zweispaltige Tabellen."""
     import re
     r = client.post("/api/karten/export", json=_body(seite=seite, karte=_png(w, h), variante="aufgabe"), headers=auth(teacher_token))
     assert r.status_code == 200
     xml = _docx_text(r.content)
+    assert "landscape" not in xml
     karte, tabellen = _abschnitte(xml)
-    assert ('w:orient="landscape"' in karte) is quer
-    assert 'w:orient="landscape"' not in tabellen and 'w:cols w:num="2"' in tabellen
+    assert 'w:num="2"' not in karte and 'w:cols w:num="2"' in tabellen
     breiten = {int(cx) for cx in re.findall(r'<wp:extent cx="(\d+)"', xml)}
-    assert len(breiten) == 1 and abs(breiten.pop() - breite_cm * 360000) < 0.05 * 360000
-
-
-@pytest.mark.parametrize("w,h,quer", [(300, 200, True), (200, 300, False)])
-def test_freies_format_dreht_seite_1_nach_der_karte(client, teacher_token, w, h, quer):
-    xml = _docx_text(client.post("/api/karten/export", json=_body(karte=_png(w, h), variante="aufgabe"), headers=auth(teacher_token)).content)
-    karte, tabellen = _abschnitte(xml)
-    assert ('w:orient="landscape"' in karte) is quer
-    assert 'w:orient="landscape"' not in tabellen
+    assert len(breiten) == 1
+    breite = breiten.pop() / 360000
+    assert breite > 15  # füllt die Seite statt pandocs 15-cm-Vorgabe
 
 
 def test_lange_aufgabe_macht_die_karte_kleiner():
     import base64 as b64
-    from api.karten_export import kartenseite
+    from api.karten_export import kartengroesse
     png = b64.b64decode(_png(79, 100).split(",")[1])
-    _, _, kurz = kartenseite("a4-hoch", png, "Finde die Orte.")
-    _, _, lang = kartenseite("a4-hoch", png, "Finde die Orte. " * 30)
+    _, kurz = kartengroesse(png, "Finde die Orte.")
+    _, lang = kartengroesse(png, "Finde die Orte. " * 30)
     assert lang < kurz
+
+
+def _thema(n: int) -> dict:
+    return {"name": f"Thema {n}", "eintraege": [{"marke": str(i), "name": f"Ort {i}"} for i in range(n)]}
+
+
+@pytest.mark.parametrize("groessen,plan", [
+    ([16, 20], [False, True]),        # zusammen zu lang: jedes Thema in eigene Spalte
+    ([16, 26], [False, False]),       # 26 ist länger als eine Spalte: läuft ohne Umbruch weiter
+    ([6, 8], [False, False]),         # passen zusammen in eine Spalte
+    ([6, 8, 9], [False, False, True]),
+    ([30, 4], [False, False]),        # 30 läuft über; 4 passt noch in den Rest der Folgespalte
+    ([30, 20], [False, True]),
+])
+def test_spaltenplan_ein_thema_je_spalte_ausser_es_passt_dazu(groessen, plan):
+    from api.karten_export import spaltenplan
+    assert spaltenplan([_thema(n) for n in groessen], False) == plan
+
+
+def test_spaltenumbruch_steht_im_docx(client, teacher_token):
+    gruppen = [{"name": "Länder", "eintraege": [{"marke": str(i), "name": f"Land {i}"} for i in range(16)]},
+               {"name": "Städte", "eintraege": [{"marke": chr(97 + i), "name": f"Stadt {i}"} for i in range(20)]}]
+    r = client.post("/api/karten/export", json=_body(gruppen=gruppen, variante="aufgabe"), headers=auth(teacher_token))
+    assert _docx_text(r.content).count('w:type="column"') == 1
 
 
 def test_pdf_in_atkinson_hyperlegible(client, teacher_token):

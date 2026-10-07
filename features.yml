@@ -121,7 +121,7 @@ aktivitaeten:
       - Meeresströmungen und Windsysteme (ITC, Druckgürtel, Monsun) animiert, einzeln anklickbar, Jahresverlauf per Monatsregler, Partikelfluss
       - Kartensätze: Objekte auswählen, nummerieren (1 2 3, a b c, A B C, I II III), auf dem Server speichern und teilen; der volle Datensatz bleibt unverändert
       - Nummern, die aufeinanderliegen (Berlin als Stadt und Land), rücken auseinander; Landesnamen weichen Stadtnamen aus
-      - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX (Karte füllt Seite 1, nur diese bei Bedarf quer; Tabellen zweispaltig; leer oder mit Lösung; PDF in Atkinson Hyperlegible)
+      - Arbeitsblatt als PDF, DOCX, ODT oder LaTeX (Karte füllt Seite 1, Querformat-Karten gedreht auf hochkantem Blatt; Tabellen zweispaltig, ein Thema je Spalte; leer oder mit Lösung; PDF in Atkinson Hyperlegible)
       - Seitenformat A4 hoch/quer - Karte im Verhältnis der Seite, füllt Seite 1; Knopf zum Einpassen der Region
       - Eigene Ebenen (GeoJSON, KML, KMZ, GPX) nur für Lehrkräfte
       - JSON-Vorlage mit »aktiv« je Objekt zum Filtern (auch per KI) und wieder hochladen
