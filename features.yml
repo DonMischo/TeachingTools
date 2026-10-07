@@ -301,7 +301,7 @@ simulationen:
       - Eigenes Foto (bleibt im Browser) oder eigener Text
       - Karte Hop für Hop mit Seekabeln, Laufzeiten, NAT, TTL und neuen MAC-Adressen je Strecke
       - TCP bei Paketverlust (Fast Retransmit, Timeout) als Ablaufdiagramm
-      - Mission zum Selbermachen — Wort → ASCII → Bits → DNS-Jagd → Felder füllen → Routing mit längstem Präfix
+      - Mission zum Selbermachen — Wort → ASCII → Bits → DNS-Jagd → Felder füllen → Routing mit längstem Präfix (23 Router, acht Empfänger, Köder in den Tabellen)
       - Fehlersuche mit 13 Fällen und Windows-Werkzeugen (ipconfig, ping, nslookup, tracert)
       - Als TaskCrawler-Werkzeug mit festem Reiter und Modell
   - id: dla

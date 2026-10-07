@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ZIELE } from "@/lib/schichten/netz";
 import {
   LEER, ausSpeicher, missionWertung, stufenWertung, verbucheFehlersuche, verbucheMission, type MissionErgebnis,
 } from "@/lib/schichten/wertung";
@@ -37,12 +38,13 @@ describe("Erfolge", () => {
     expect(verbucheMission(LEER, e).neu.map(x => x.id)).not.toContain("kopfrechner");
   });
 
-  it("Um die Welt nach vier verschiedenen Zielen, Netzmeister ab 10 000 Punkten", () => {
+  it("Um die Welt erst mit allen Zielen, Netzmeister ab 10 000 Punkten", () => {
     let s = LEER;
-    for (const z of ["tokio", "tokio", "hongkong", "newyork"]) s = verbucheMission(s, perfekt(z)).stand;
+    const alle = ZIELE.map(z => z.id);
+    for (const z of ["tokio", "tokio", ...alle.slice(1, -1)]) s = verbucheMission(s, perfekt(z)).stand;
     expect(s.freigeschaltet).not.toContain("welt");
     expect(s.freigeschaltet).toContain("netzmeister");
-    expect(verbucheMission(s, perfekt("singapur")).neu.map(x => x.id)).toContain("welt");
+    expect(verbucheMission(s, perfekt(alle.at(-1))).neu.map(x => x.id)).toContain("welt");
   });
 
   it("Fehlerjäger nach fünf richtigen Fällen", () => {

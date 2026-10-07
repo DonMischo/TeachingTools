@@ -114,6 +114,7 @@ function auftrag(stufe: StufeId, niveau: Niveau, ziel: Ziel): Auftrag {
                 <li><b>/24</b>: die ersten 24 Bit müssen gleich sein — das sind die ersten <b>drei</b> Zahlen. 203.0.113.7 passt zu 203.0.113.0/24.</li>
                 <li><b>/8</b>: nur die erste Zahl muss gleich sein. 203.0.113.7 passt zu 203.0.0.0/8.</li>
                 <li><b>/25</b>: die ersten drei Zahlen und dazu, ob die vierte unter oder ab 128 liegt.</li>
+                <li><b>/26</b>: die ersten drei Zahlen und das Viertel der vierten: 0–63, 64–127, 128–191 oder 192–255. 203.0.113.80 liegt im zweiten Viertel → passt zu 203.0.113.64/26.</li>
                 <li><b>/0</b>: passt immer — die Standardroute, der letzte Ausweg.</li>
               </ul>
             ),
@@ -129,7 +130,7 @@ function auftrag(stufe: StufeId, niveau: Niveau, ziel: Ziel): Auftrag {
           "Sieh dir deine Sterne an — je weniger Fehlversuche, desto mehr.",
           <>Probier eine <b>neue Mission</b> mit einem anderen Ziel: Der Weg durchs Netz ist dann ein anderer.</>,
         ],
-        fertig: "du alle vier Empfänger einmal erreicht hast.",
+        fertig: "du alle acht Empfänger einmal erreicht hast.",
         wissen: [
           { titel: "Rückwärts durch die Schichten", inhalt: "Beim Empfänger nimmt jede Schicht genau ihren eigenen Umschlag ab: Rahmen (2), Paket (3), Segment (4) — dann setzt TCP die Stücke nach Folgenummer zusammen, und die App liest den Text." },
         ],

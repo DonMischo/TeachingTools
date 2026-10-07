@@ -17,21 +17,33 @@ export interface Router {
   tabelle: { netz: string; nach: string }[];
 }
 
+// Schematische Weltkarte (1000 × 560). Ziele: 203.0.113.0/26 Tokio, .64/26 Seoul, .128/25 Hongkong;
+// 198.51.100.0/25 New York, .128/25 Los Angeles; 192.0.2.0/25 Singapur, .128/26 Sydney, .192/26 São Paulo.
+// Viele Tabellen haben einen gröberen »Köder«-Eintrag in die falsche Richtung — erst der längste Treffer stimmt.
 export const ROUTER: Router[] = [
-  { id: "heim", name: "Heimrouter Erfurt", x: 120, y: 330, tabelle: [{ netz: "192.168.178.0/24", nach: "lokal" }, { netz: "0.0.0.0/0", nach: "erf" }] },
-  { id: "erf", name: "Anbieter Erfurt", x: 215, y: 255, tabelle: [{ netz: "0.0.0.0/0", nach: "fra" }, { netz: "198.51.100.0/24", nach: "ams" }] },
-  { id: "fra", name: "Frankfurt", x: 300, y: 185, tabelle: [{ netz: "0.0.0.0/0", nach: "ams" }, { netz: "203.0.0.0/8", nach: "msk" }, { netz: "203.0.113.0/24", nach: "mrs" }, { netz: "192.0.2.0/24", nach: "mrs" }] },
-  { id: "ams", name: "Amsterdam", x: 250, y: 95, tabelle: [{ netz: "0.0.0.0/0", nach: "lon" }, { netz: "203.0.0.0/8", nach: "fra" }, { netz: "192.0.2.0/24", nach: "fra" }] },
-  { id: "lon", name: "London", x: 140, y: 70, tabelle: [{ netz: "198.51.100.0/24", nach: "ny" }, { netz: "0.0.0.0/0", nach: "ams" }] },
-  { id: "ny", name: "New York", x: 40, y: 150, tabelle: [{ netz: "198.51.100.0/24", nach: "lokal" }, { netz: "0.0.0.0/0", nach: "lon" }] },
-  { id: "msk", name: "Moskau", x: 470, y: 80, tabelle: [{ netz: "203.0.113.0/24", nach: "pek" }, { netz: "0.0.0.0/0", nach: "fra" }] },
-  { id: "mrs", name: "Marseille", x: 320, y: 320, tabelle: [{ netz: "0.0.0.0/0", nach: "fra" }, { netz: "192.0.2.0/24", nach: "dji" }, { netz: "203.0.113.0/24", nach: "dji" }] },
-  { id: "dji", name: "Dschibuti", x: 470, y: 400, tabelle: [{ netz: "0.0.0.0/0", nach: "mrs" }, { netz: "192.0.2.0/24", nach: "mum" }, { netz: "203.0.113.0/24", nach: "mum" }] },
-  { id: "mum", name: "Mumbai", x: 610, y: 340, tabelle: [{ netz: "0.0.0.0/0", nach: "dji" }, { netz: "192.0.2.0/24", nach: "sin" }, { netz: "203.0.0.0/8", nach: "sin" }] },
-  { id: "sin", name: "Singapur", x: 770, y: 430, tabelle: [{ netz: "192.0.2.0/24", nach: "lokal" }, { netz: "203.0.113.0/24", nach: "hkg" }, { netz: "203.0.113.0/25", nach: "tyo" }, { netz: "0.0.0.0/0", nach: "mum" }] },
-  { id: "hkg", name: "Hongkong", x: 830, y: 280, tabelle: [{ netz: "203.0.113.128/25", nach: "lokal" }, { netz: "203.0.113.0/25", nach: "tyo" }, { netz: "0.0.0.0/0", nach: "sin" }] },
-  { id: "pek", name: "Peking", x: 790, y: 140, tabelle: [{ netz: "203.0.113.0/25", nach: "tyo" }, { netz: "203.0.113.128/25", nach: "hkg" }, { netz: "0.0.0.0/0", nach: "msk" }] },
-  { id: "tyo", name: "Tokio", x: 950, y: 190, tabelle: [{ netz: "203.0.113.0/25", nach: "lokal" }, { netz: "0.0.0.0/0", nach: "sin" }] },
+  { id: "heim", name: "Heimrouter Erfurt", x: 470, y: 320, tabelle: [{ netz: "192.168.178.0/24", nach: "lokal" }, { netz: "0.0.0.0/0", nach: "erf" }] },
+  { id: "erf", name: "Anbieter Erfurt", x: 485, y: 215, tabelle: [{ netz: "0.0.0.0/0", nach: "fra" }, { netz: "198.51.100.0/24", nach: "ams" }] },
+  { id: "fra", name: "Frankfurt", x: 430, y: 160, tabelle: [{ netz: "0.0.0.0/0", nach: "ams" }, { netz: "203.0.0.0/8", nach: "msk" }, { netz: "203.0.113.0/24", nach: "ist" }, { netz: "203.0.113.64/26", nach: "msk" }, { netz: "192.0.2.0/24", nach: "ist" }, { netz: "192.0.2.192/26", nach: "par" }] },
+  { id: "ams", name: "Amsterdam", x: 420, y: 70, tabelle: [{ netz: "0.0.0.0/0", nach: "lon" }, { netz: "198.0.0.0/8", nach: "fra" }, { netz: "198.51.100.0/24", nach: "lon" }, { netz: "203.0.0.0/8", nach: "fra" }, { netz: "203.0.113.64/26", nach: "msk" }, { netz: "192.0.2.0/24", nach: "fra" }] },
+  { id: "lon", name: "London", x: 320, y: 85, tabelle: [{ netz: "198.51.100.0/24", nach: "ny" }, { netz: "192.0.2.192/26", nach: "par" }, { netz: "0.0.0.0/0", nach: "ams" }] },
+  { id: "par", name: "Paris", x: 335, y: 175, tabelle: [{ netz: "192.0.2.0/24", nach: "mrs" }, { netz: "192.0.2.192/26", nach: "sao" }, { netz: "198.51.100.0/24", nach: "lon" }, { netz: "0.0.0.0/0", nach: "fra" }] },
+  { id: "mrs", name: "Marseille", x: 380, y: 270, tabelle: [{ netz: "0.0.0.0/0", nach: "fra" }, { netz: "192.0.2.0/24", nach: "cai" }, { netz: "203.0.113.0/24", nach: "cai" }, { netz: "192.0.2.192/26", nach: "par" }] },
+  { id: "ny", name: "New York", x: 150, y: 140, tabelle: [{ netz: "198.51.100.0/25", nach: "lokal" }, { netz: "198.51.100.128/25", nach: "lax" }, { netz: "192.0.2.192/26", nach: "sao" }, { netz: "0.0.0.0/0", nach: "lon" }] },
+  { id: "lax", name: "Los Angeles", x: 45, y: 235, tabelle: [{ netz: "198.51.100.128/25", nach: "lokal" }, { netz: "203.0.113.0/24", nach: "tyo" }, { netz: "192.0.2.128/26", nach: "syd" }, { netz: "0.0.0.0/0", nach: "ny" }] },
+  { id: "sao", name: "São Paulo", x: 230, y: 470, tabelle: [{ netz: "192.0.2.192/26", nach: "lokal" }, { netz: "198.51.100.0/24", nach: "ny" }, { netz: "0.0.0.0/0", nach: "par" }] },
+  { id: "msk", name: "Moskau", x: 590, y: 70, tabelle: [{ netz: "203.0.113.0/24", nach: "fra" }, { netz: "203.0.113.64/26", nach: "pek" }, { netz: "0.0.0.0/0", nach: "fra" }] },
+  { id: "ist", name: "Istanbul", x: 560, y: 200, tabelle: [{ netz: "203.0.0.0/8", nach: "cai" }, { netz: "203.0.113.0/24", nach: "dxb" }, { netz: "192.0.2.0/24", nach: "dxb" }, { netz: "0.0.0.0/0", nach: "fra" }] },
+  { id: "cai", name: "Kairo", x: 560, y: 300, tabelle: [{ netz: "203.0.0.0/8", nach: "dji" }, { netz: "203.0.113.0/24", nach: "ist" }, { netz: "192.0.2.0/24", nach: "dji" }, { netz: "0.0.0.0/0", nach: "mrs" }] },
+  { id: "dji", name: "Dschibuti", x: 610, y: 390, tabelle: [{ netz: "192.0.2.0/24", nach: "mum" }, { netz: "203.0.113.0/24", nach: "mum" }, { netz: "192.0.2.192/26", nach: "jnb" }, { netz: "0.0.0.0/0", nach: "cai" }] },
+  { id: "jnb", name: "Johannesburg", x: 560, y: 510, tabelle: [{ netz: "192.0.2.192/26", nach: "sao" }, { netz: "0.0.0.0/0", nach: "dji" }] },
+  { id: "dxb", name: "Dubai", x: 680, y: 270, tabelle: [{ netz: "192.0.0.0/8", nach: "ist" }, { netz: "192.0.2.0/24", nach: "mum" }, { netz: "203.0.113.0/24", nach: "mum" }, { netz: "0.0.0.0/0", nach: "ist" }] },
+  { id: "mum", name: "Mumbai", x: 720, y: 350, tabelle: [{ netz: "192.0.2.0/24", nach: "sin" }, { netz: "203.0.0.0/8", nach: "sin" }, { netz: "192.0.2.192/26", nach: "dji" }, { netz: "0.0.0.0/0", nach: "dxb" }] },
+  { id: "sin", name: "Singapur", x: 820, y: 440, tabelle: [{ netz: "192.0.2.0/25", nach: "lokal" }, { netz: "192.0.2.128/26", nach: "syd" }, { netz: "203.0.113.0/24", nach: "hkg" }, { netz: "203.0.113.0/26", nach: "tyo" }, { netz: "0.0.0.0/0", nach: "mum" }] },
+  { id: "hkg", name: "Hongkong", x: 860, y: 300, tabelle: [{ netz: "203.0.113.128/25", nach: "lokal" }, { netz: "203.0.113.0/26", nach: "tyo" }, { netz: "203.0.113.64/26", nach: "sel" }, { netz: "203.0.113.0/24", nach: "pek" }, { netz: "0.0.0.0/0", nach: "sin" }] },
+  { id: "pek", name: "Peking", x: 830, y: 150, tabelle: [{ netz: "203.0.113.0/24", nach: "hkg" }, { netz: "203.0.113.64/26", nach: "sel" }, { netz: "203.0.113.0/26", nach: "tyo" }, { netz: "0.0.0.0/0", nach: "msk" }] },
+  { id: "sel", name: "Seoul", x: 920, y: 135, tabelle: [{ netz: "203.0.113.64/26", nach: "lokal" }, { netz: "203.0.113.0/26", nach: "tyo" }, { netz: "203.0.113.128/25", nach: "hkg" }, { netz: "0.0.0.0/0", nach: "pek" }] },
+  { id: "tyo", name: "Tokio", x: 965, y: 235, tabelle: [{ netz: "203.0.113.0/26", nach: "lokal" }, { netz: "203.0.113.64/26", nach: "sel" }, { netz: "198.51.100.0/24", nach: "lax" }, { netz: "0.0.0.0/0", nach: "sin" }] },
+  { id: "syd", name: "Sydney", x: 950, y: 505, tabelle: [{ netz: "192.0.2.128/26", nach: "lokal" }, { netz: "198.51.100.0/24", nach: "lax" }, { netz: "0.0.0.0/0", nach: "sin" }] },
 ];
 
 export const router = (id: string) => ROUTER.find(r => r.id === id)!;
@@ -106,9 +118,13 @@ export interface Ziel {
 
 export const ZIELE: Ziel[] = [
   { id: "tokio", wer: "Lenas Bruder", ort: "Tokio", name: "tokio.purrmsg.example", ip: "203.0.113.7", router: "tyo", domain: "purrmsg.example" },
+  { id: "seoul", wer: "Lenas Cousine", ort: "Seoul", name: "seoul.purrmsg.example", ip: "203.0.113.80", router: "sel", domain: "purrmsg.example" },
   { id: "hongkong", wer: "Lenas Onkel", ort: "Hongkong", name: "hk.purrmsg.example", ip: "203.0.113.200", router: "hkg", domain: "purrmsg.example" },
   { id: "newyork", wer: "Lenas Tante", ort: "New York", name: "ny.hundepost.example", ip: "198.51.100.80", router: "ny", domain: "hundepost.example" },
+  { id: "losangeles", wer: "Lenas Opa", ort: "Los Angeles", name: "la.hundepost.example", ip: "198.51.100.200", router: "lax", domain: "hundepost.example" },
   { id: "singapur", wer: "Lenas Freundin", ort: "Singapur", name: "sg.vogelpost.example", ip: "192.0.2.40", router: "sin", domain: "vogelpost.example" },
+  { id: "sydney", wer: "Lenas Brieffreundin", ort: "Sydney", name: "syd.vogelpost.example", ip: "192.0.2.150", router: "syd", domain: "vogelpost.example" },
+  { id: "saopaulo", wer: "Lenas Austauschpartner", ort: "São Paulo", name: "sp.vogelpost.example", ip: "192.0.2.200", router: "sao", domain: "vogelpost.example" },
 ];
 
 export interface DnsServer {

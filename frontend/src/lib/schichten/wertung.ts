@@ -7,6 +7,8 @@
  * Sterne: 3 ohne Fehlversuch und ohne Hilfsmittel, 2 bis zwei Fehlversuche, sonst 1.
  * Das Niveau zählt mit: Fortgeschritten × 1,2, Experte × 1,5.
  */
+import { ZIELE } from "./netz";
+
 export type Niveau = "einsteiger" | "fortgeschritten" | "experte";
 
 export const GEWERTET = ["ascii", "bits", "dns", "packen", "routing"] as const;
@@ -71,7 +73,7 @@ export const ERFOLGE: Erfolg[] = [
   { id: "navi", icon: "🧭", name: "Navi", text: "Routing ohne einen Umweg.", geschafft: (_, e) => fehlerfrei(e, "routing") },
   { id: "fehlerfrei", icon: "🎯", name: "Fehlerfrei", text: "Eine ganze Mission ohne Fehlversuch.", geschafft: (_, e) => !!e && GEWERTET.every(k => e.fehler[k] === 0) },
   { id: "sterne", icon: "🌟", name: "Sternenhimmel", text: "Alle 15 Sterne in einer Mission.", geschafft: (_, e) => !!e && missionWertung(e).sterne === 15 },
-  { id: "welt", icon: "🌏", name: "Um die Welt", text: "Alle vier Empfänger erreicht.", geschafft: s => s.ziele.length >= 4 },
+  { id: "welt", icon: "🌏", name: "Um die Welt", text: `Alle ${ZIELE.length} Empfänger erreicht.`, geschafft: s => ZIELE.every(z => s.ziele.includes(z.id)) },
   { id: "experte", icon: "🎓", name: "Expertenprüfung", text: "Eine Mission auf dem Niveau Experte.", geschafft: (_, e) => e?.niveau === "experte" },
   { id: "fehlerjaeger", icon: "🔧", name: "Fehlerjäger", text: "5 Fälle in der Fehlersuche richtig erkannt.", geschafft: s => s.fehlersucheRichtig >= 5 },
   { id: "netzmeister", icon: "🏆", name: "Netzmeister", text: "10 000 Punkte insgesamt gesammelt.", geschafft: s => s.punkte >= 10_000 },

@@ -13,6 +13,10 @@ import type { Niveau } from "../Bausteine";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import { HILFE_PREIS } from "./Codierung";
 
+const KONTINENTE: [string, number, number][] = [
+  ["AMERIKA", 140, 330], ["EUROPA", 420, 30], ["AFRIKA", 470, 440], ["ASIEN", 760, 60], ["OZEANIEN", 880, 545],
+];
+
 export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehler, onHilfe }: { ziel: Ziel; niveau?: Niveau; fertig: () => void; fehler: () => void; onHilfe?: () => void }) {
   const einfach = niveau === "einsteiger";
   const [rechner, setRechner] = useState(false);
@@ -56,12 +60,30 @@ export default function Routing({ ziel, niveau = "fortgeschritten", fertig, fehl
       </p>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
         <div className="rounded-xl bg-[#060a14] overflow-hidden">
-          <svg viewBox="0 0 1000 480" className="w-full h-auto" role="img" aria-label="Router zum Anklicken">
+          <svg viewBox="0 0 1000 560" className="w-full h-auto" role="img" aria-label="Router zum Anklicken">
             <style>{`@keyframes r-puls{0%,100%{opacity:.35}50%{opacity:.9}} .r-puls{animation:r-puls 1.4s ease-in-out infinite}`}</style>
+            {KONTINENTE.map(([t, x, y]) => (
+              <text key={t} x={x} y={y} textAnchor="middle" fill="#1e293b" fontSize={22} fontWeight={900} style={{ letterSpacing: "0.3em" }}>{t}</text>
+            ))}
             {VERBINDUNGEN.map(([a, b]) => {
               const A = router(a), B = router(b);
               const aktiv = (a === jetzt || b === jetzt) && !angekommen;
-              return <line key={a + b} x1={A.x} y1={A.y} x2={B.x} y2={B.y} stroke={imWeg(a, b) ? "#22d3ee" : aktiv ? "#64748b" : "#1e293b"} strokeWidth={imWeg(a, b) ? 4 : 2} />;
+              const farbe = imWeg(a, b) ? "#22d3ee" : aktiv ? "#64748b" : "#1e293b";
+              const breite = imWeg(a, b) ? 4 : 2;
+              // Über den Pazifik: links und rechts aus der Karte hinaus statt quer über alles
+              if (Math.abs(A.x - B.x) > 700) {
+                const [l, r] = A.x < B.x ? [A, B] : [B, A];
+                const ym = (l.y + r.y) / 2;
+                return (
+                  <g key={a + b}>
+                    <line x1={l.x} y1={l.y} x2={0} y2={ym} stroke={farbe} strokeWidth={breite} strokeDasharray="7 5" />
+                    <line x1={r.x} y1={r.y} x2={1000} y2={ym} stroke={farbe} strokeWidth={breite} strokeDasharray="7 5" />
+                    <text x={6} y={ym - 6} fill="#475569" fontSize={10}>⇠ Pazifik</text>
+                    <text x={994} y={ym - 6} textAnchor="end" fill="#475569" fontSize={10}>Pazifik ⇢</text>
+                  </g>
+                );
+              }
+              return <line key={a + b} x1={A.x} y1={A.y} x2={B.x} y2={B.y} stroke={farbe} strokeWidth={breite} />;
             })}
             {ROUTER.map(x => {
               const istJetzt = x.id === jetzt;

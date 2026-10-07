@@ -28,8 +28,22 @@ describe("Spielnetz: Routing", () => {
     }
   });
 
+  it("jeder Weg hat mindestens eine Falle: ein gröberer Treffer zeigt woandershin", () => {
+    for (const z of ZIELE) {
+      let jetzt = "heim", fallen = 0;
+      while (true) {
+        const r = router(jetzt);
+        const e = besterEintrag(r, z.ip)!;
+        if (r.tabelle.some(x => x !== e && x.nach !== e.nach && passt(z.ip, x.netz))) fallen++;
+        if (e.nach === "lokal") break;
+        jetzt = e.nach;
+      }
+      expect(fallen, z.ort).toBeGreaterThanOrEqual(2);
+    }
+  });
+
   it("verlangt unterwegs den längsten Treffer (Präfix schlägt Standardroute)", () => {
-    expect(besterEintrag(router("fra"), "203.0.113.7")!.nach).toBe("mrs");
+    expect(besterEintrag(router("fra"), "203.0.113.7")!.nach).toBe("ist");
     expect(besterEintrag(router("sin"), "203.0.113.7")!.nach).toBe("tyo");
     expect(besterEintrag(router("sin"), "203.0.113.200")!.nach).toBe("hkg");
     expect(begruendung(router("fra"), "203.0.113.7", "msk")).toContain("genauer");
