@@ -7,13 +7,20 @@ signed, session-scoped, short-lived guest token — wie lange es gilt, stellt ei
 Admin schulweit ein (``school_settings.guest_token_minutes``). That token is the
 ONLY thing that lets a guest reach the player endpoints of that one session (see
 ``auth.player_identity`` / ``ws_auth.ws_guest``); it is never a site-wide login.
+
+Das Opt-in ist befristet: es beginnt, wenn die Lehrkraft es einschaltet, und
+laeuft nach derselben Fensterlaenge von selbst ab (:func:`_gastfenster`). Vorher
+blieb es stehen, bis jemand es abschaltete — an Sitzungen, die seit Tagen
+liefen, kam damit noch jeder hinein, der den Code kannte.
 """
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth import create_guest_token, get_current_teacher, guest_token_minutes
+from ..auth import create_guest_token, get_current_teacher, guest_minutes_left, guest_token_minutes
 from ..models import Teacher
 from ..join_codes import BY_KEY
 
@@ -43,6 +50,9 @@ class GuestStatusOut(BaseModel):
     # Wie oft der Gastzugang neu gestartet wurde. Jeder Neustart entwertet die
     # bis dahin ausgegebenen Gast-Token.
     guest_epoch: int = 0
+    # Restlaufzeit des Gastfensters in Minuten. Die Hostansicht zaehlt damit
+    # herunter und legt den Schalter selbst um, wenn es abgelaufen ist.
+    guest_minutes_left: int = 0
 
 
 class GuestAllowIn(BaseModel):
@@ -66,9 +76,42 @@ def _resolve_session(tool: str, code: str, db: Session):
     return session
 
 
+def _gastfenster(session, db: Session) -> tuple[int, int]:
+    """(Fensterlaenge, Restminuten) dieser Sitzung — und schliesst ein
+    abgelaufenes Fenster gleich.
+
+    Das Abschalten passiert hier, beim Lesen, statt in einem Hintergrundjob:
+    danach sagt ``allow_guests`` in der Datenbank die Wahrheit, also sehen auch
+    die Hostansicht, die Sitzungslisten und der Schreibraum-Zugang das
+    geschlossene Fenster, ohne jede einzeln rechnen zu muessen.
+    """
+    minutes = guest_token_minutes(db)
+    if not session.allow_guests:
+        return minutes, 0
+    left = guest_minutes_left(session, minutes)
+    if left <= 0:
+        session.allow_guests = False
+        db.commit()
+    return minutes, left
+
+
+def _status(session, db: Session) -> GuestStatusOut:
+    minutes, left = _gastfenster(session, db)
+    return GuestStatusOut(
+        allow_guests=session.allow_guests,
+        guest_epoch=getattr(session, "guest_epoch", 0) or 0,
+        guest_minutes=minutes,
+        guest_minutes_left=left,
+    )
+
+
 @router.post("/join", response_model=GuestJoinOut)
 def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     session = _resolve_session(body.tool, body.code, db)
+    # Holt sich zugleich das Fenster: ist es abgelaufen, steht `allow_guests`
+    # danach auf False und der Beitritt scheitert hier — mit demselben 403 wie
+    # ohne Opt-in, denn nach Ablauf *ist* der Gastzugang nicht mehr frei.
+    minutes, left = _gastfenster(session, db)
     if not session.allow_guests:
         raise HTTPException(403, "Gäste sind für diese Sitzung nicht freigeschaltet")
     # Geschlossen heisst geschlossen — der Code bleibt gueltig, damit die
@@ -81,7 +124,9 @@ def guest_join(body: GuestJoinIn, db: Session = Depends(get_db)):
     if not name:
         raise HTTPException(422, "Bitte einen Namen angeben")
 
-    minutes = guest_token_minutes(db)
+    # Nie laenger als das Fenster noch laeuft: sonst haette ein Beitritt in der
+    # letzten Minute wieder eine ganze Fensterlaenge vor sich.
+    minutes = min(minutes, left)
     return GuestJoinOut(
         token=create_guest_token(
             body.code, name, getattr(session, "guest_epoch", 0) or 0, minutes
@@ -96,11 +141,7 @@ def guest_status(tool: str, code: str, db: Session = Depends(get_db)):
     """Whether this session accepts guests. Public — the join screen and the host
     toggle both read it; it reveals nothing sensitive beyond the opt-in flag."""
     session = _resolve_session(tool, code, db)
-    return GuestStatusOut(
-        allow_guests=session.allow_guests,
-        guest_epoch=session.guest_epoch,
-        guest_minutes=guest_token_minutes(db),
-    )
+    return _status(session, db)
 
 
 @router.patch("/allow", response_model=GuestStatusOut)
@@ -112,12 +153,12 @@ def set_guest_allowed(
     """Teacher opt-in toggle for guest access on one session."""
     session = _resolve_session(body.tool, body.code, db)
     session.allow_guests = body.allow
+    # Einschalten startet das Fenster neu — auch wenn es schon an war und
+    # abgelaufen ist, denn genau dann legt die Lehrkraft den Schalter wieder um.
+    if body.allow and hasattr(type(session), "guests_opened_at"):
+        session.guests_opened_at = datetime.now(timezone.utc)
     db.commit()
-    return GuestStatusOut(
-        allow_guests=body.allow,
-        guest_epoch=session.guest_epoch,
-        guest_minutes=guest_token_minutes(db),
-    )
+    return _status(session, db)
 
 
 @router.post("/restart", response_model=GuestStatusOut)
@@ -141,10 +182,10 @@ def restart_guest_access(
     if owner != teacher.id and teacher.role != "admin":
         raise HTTPException(403, "Das ist nicht deine Sitzung")
     session.guest_epoch = (session.guest_epoch or 0) + 1
+    # Der naechste Kurs faengt bei voller Zeit an — der Neustart ist genau fuer
+    # ihn gedacht.
+    if hasattr(type(session), "guests_opened_at"):
+        session.guests_opened_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(session)
-    return GuestStatusOut(
-        allow_guests=session.allow_guests,
-        guest_epoch=session.guest_epoch,
-        guest_minutes=guest_token_minutes(db),
-    )
+    return _status(session, db)

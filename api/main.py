@@ -308,6 +308,21 @@ def _run_migrations(db_engine):
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guest_epoch INTEGER NOT NULL DEFAULT 0",
+        # Der Gastzugang schliesst von selbst, wenn das eingestellte Fenster
+        # abgelaufen ist — ohne das stand er an Sitzungen, die seit Tagen offen
+        # sind, weiter jedem offen, der den Code kennt. Ohne DEFAULT anlegen:
+        # Altbestaende bleiben NULL und gelten damit als abgelaufen, die
+        # Lehrkraft schaltet sie bewusst neu frei.
+        "ALTER TABLE quiz_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE bingo_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE exit_ticket_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE wettschreiben_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
+        "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS guests_opened_at TIMESTAMPTZ",
         "ALTER TABLE tool_sessions ADD COLUMN IF NOT EXISTS settings JSON NOT NULL DEFAULT '{}'",
         # Caputh-Sitzungen bekommen ein Anlagedatum fuer die Schuljahres-
         # bereinigung. Ohne DEFAULT anlegen, damit Postgres die Altbestaende

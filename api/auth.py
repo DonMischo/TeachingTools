@@ -1,6 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from math import ceil
 from typing import Optional, Union
 import bcrypt as _bcrypt
 import jwt
@@ -57,6 +58,32 @@ def guest_token_minutes(db: Session | None = None) -> int:
     row = db.get(SchoolSettings, 1)
     minutes = getattr(row, "guest_token_minutes", None)
     return minutes or settings.guest_token_expire_minutes
+
+
+def guest_minutes_left(session, minutes: int) -> int:
+    """Wie viele Minuten das Gastfenster dieser Sitzung noch laeuft; 0 heisst zu.
+
+    Das Fenster beginnt, wenn die Lehrkraft »Gaeste erlauben« einschaltet oder
+    den Gastzugang neu startet (``guests_opened_at``), und ist so lang wie die
+    Schuleinstellung. Vorher blieb das Opt-in stehen, bis jemand es abschaltete
+    — an einer Sitzung, die seit Tagen offen war, kam damit noch jeder hinein,
+    der den Code kannte.
+
+    ``guests_opened_at`` leer heisst Altbestand von vor dieser Spalte: zu, die
+    Lehrkraft schaltet bewusst neu frei. Werkzeuge ohne die Spalte behalten ihr
+    unbefristetes Opt-in — Pinnwaende tragen absichtlich einen dauerhaften
+    Gastcode und haben eigene Endpunkte.
+    """
+    if not hasattr(type(session), "guests_opened_at"):
+        return minutes
+    opened = session.guests_opened_at
+    if opened is None:
+        return 0
+    # SQLite (Tests) gibt naive Zeitstempel zurueck, Postgres bewusste.
+    if opened.tzinfo is None:
+        opened = opened.replace(tzinfo=timezone.utc)
+    left = minutes - (datetime.now(timezone.utc) - opened).total_seconds() / 60
+    return max(ceil(left), 0)
 
 
 def create_guest_token(code: str, name: str, epoch: int = 0, minutes: int | None = None) -> str:

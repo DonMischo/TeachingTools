@@ -107,7 +107,9 @@ def test_guest_join_works_after_opt_in(client, teacher_token):
 
     # Der Beitritts-Screen sieht die Freigabe ohne Login.
     assert client.get("/api/guest/status", params={"tool": "simulation", "code": code}).json() == {
-        "allow_guests": True, "guest_epoch": 0, "guest_minutes": 90
+        "allow_guests": True, "guest_epoch": 0, "guest_minutes": 90,
+        # Frisch freigeschaltet: das Gastfenster laeuft die volle Zeit.
+        "guest_minutes_left": 90,
     }
     assert client.get(f"/api/tool-sessions/{code}").json()["allow_guests"] is True
 

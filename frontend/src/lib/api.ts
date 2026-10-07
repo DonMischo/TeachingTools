@@ -174,6 +174,10 @@ export type GuestStatus = {
   /** Wie oft der Gastzugang neu gestartet wurde — jeder Neustart entwertet die
    *  bis dahin ausgegebenen Gast-Token. */
   guest_epoch: number;
+  /** Restlaufzeit des Gastfensters in Minuten; 0 heißt zu. Das Fenster beginnt
+   *  mit dem Einschalten und läuft von selbst ab — eine Sitzung, die seit Tagen
+   *  offen steht, lässt dann niemanden mehr herein. */
+  guest_minutes_left: number;
 };
 
 /** Für wen eine Spielsitzung läuft. Genau eines der beiden Felder ist gesetzt. */

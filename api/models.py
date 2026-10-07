@@ -229,6 +229,12 @@ class QuizSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     quiz: Mapped["Quiz"] = relationship(back_populates="sessions")
     class_: Mapped["Class | None"] = relationship()
@@ -546,6 +552,12 @@ class SchreibraumRoom(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -735,6 +747,12 @@ class BarometerSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
     # "live" (teacher shows one question at a time) | "self" (students see all questions at once)
     mode: Mapped[str] = mapped_column(String(10), nullable=False, server_default="live", default="live")
     results_public: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sql_expr.false(), default=False)
@@ -851,6 +869,12 @@ class AuctionSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     creator: Mapped["Teacher"] = relationship()
     set: Mapped["AuctionSet"] = relationship(back_populates="sessions")
@@ -951,6 +975,12 @@ class BingoSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     creator: Mapped["Teacher"] = relationship()
     group: Mapped["StudentGroup | None"] = relationship()
@@ -1026,6 +1056,12 @@ class ExitTicketSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     creator: Mapped["Teacher"] = relationship()
     responses: Mapped[list["ExitTicketResponse"]] = relationship(
@@ -1410,6 +1446,12 @@ class ExitGameSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     exitgame: Mapped["ExitGame"] = relationship(back_populates="sessions")
     class_: Mapped["Class | None"] = relationship()
@@ -1615,6 +1657,12 @@ class LueckentextSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
 
     lueckentext: Mapped["LueckentextSet"] = relationship()
     teacher: Mapped["Teacher"] = relationship()
@@ -1992,6 +2040,12 @@ class ToolSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
     # Einstellungen der Lehrkraft, die das Werkzeug selbst auslegt (Leviathan:
     # Krisenstufe, Rundenzahl, Drehbuch, abgeschaltete Ereignisse).
     settings: Mapped[dict] = mapped_column(JSON, nullable=False, server_default="{}", default=dict)
@@ -2156,6 +2210,12 @@ class WettschreibenSession(Base):
     # Sekunden gerundet, ein Zeitvergleich koennte einen Neustart und einen
     # Beitritt in derselben Sekunde nicht auseinanderhalten.
     guest_epoch: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0", default=0)
+    # Wann das Gastfenster zuletzt gestartet wurde — »Gaeste erlauben« an oder
+    # neu starten. Danach schliesst es von selbst (siehe
+    # api.auth.guest_minutes_left); NULL heisst Altbestand und gilt als zu.
+    guests_opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
     created_by: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
