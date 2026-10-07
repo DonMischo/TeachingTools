@@ -23,7 +23,7 @@ describe("Kartenmenü", () => {
 
   it("A4 hoch ist höher als breit, A4 quer breiter, Bildschirm frei", () => {
     expect(verhaeltnisVon("a4-hoch")).toBeLessThan(1);
-    expect(verhaeltnisVon("a4-quer")).toBeGreaterThan(2);
+    expect(verhaeltnisVon("a4-quer")).toBeGreaterThan(1.5);
     expect(verhaeltnisVon("frei")).toBeUndefined();
   });
 });

@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends pandoc libreoffice && rm -rf /var/lib/apt/lists/*
 
+# Atkinson Hyperlegible (SIL OFL, Braille Institute) für die PDF-Arbeitsblätter — sonst
+# ersetzt LibreOffice fehlende Schriften im schlanken Image durch DejaVu Serif.
+COPY fonts/ /usr/local/share/fonts/atkinson/
+RUN fc-cache -f
+
 WORKDIR /workspace
 
 COPY requirements.txt .

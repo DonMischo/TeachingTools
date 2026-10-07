@@ -27,6 +27,9 @@ export const REGISTER: WerkzeugQuellen[] = [
         lizenz: "SIL Open Font License 1.1", url: "https://openfontlicense.org", verwendung: "Beschriftungen der Karte (public/karten/schriften)" },
       { quelle: "MapLibre GL JS (Worker-Kopie)", urheber: "MapLibre-Beiträger", lizenz: "BSD-3-Clause",
         url: "https://github.com/maplibre/maplibre-gl-js", verwendung: "public/karten/maplibre — Lizenzkopf in der Datei" },
+      { quelle: "Atkinson Hyperlegible (Regular, Bold, Italic, Bold Italic)", urheber: "Braille Institute of America",
+        lizenz: "SIL Open Font License 1.1", url: "https://github.com/google/fonts/tree/main/ofl/atkinsonhyperlegible",
+        verwendung: "Schrift der PDF-Arbeitsblätter (api/fonts, im API-Image installiert; OFL.txt liegt dabei)" },
     ],
   },
   {
