@@ -1,7 +1,7 @@
 // Partikelfluss: Feld aus Linien — Richtung, Reichweite, Monat, warm/kalt.
 import { describe, expect, it } from "vitest";
 import type { Feature } from "geojson";
-import { baueFeld, startpunkt, wind } from "@/lib/karten/partikel";
+import { baueFeld, klasseBei, startpunkt, wind } from "@/lib/karten/partikel";
 
 const linie = (coordinates: number[][], properties: Record<string, unknown>): Feature =>
   ({ type: "Feature", geometry: { type: "LineString", coordinates }, properties });
@@ -25,5 +25,17 @@ describe("Partikelfeld", () => {
     ];
     expect(baueFeld(fs, "7", 4).aktiv.length).toBe(0);
     expect(baueFeld(fs, "1", 4).aktiv.length).toBeGreaterThan(0);
+  });
+
+  it("merkt sich je Zelle den überwiegenden Windgürtel", () => {
+    const fs = [
+      linie([[-40, 15], [-20, 15]], { art: "passat", monate: "alle" }),
+      linie([[-40, 45], [-20, 45]], { art: "westwind", monate: "alle" }),
+    ];
+    const feld = baueFeld(fs, "7", 6, ["passat", "westwind", "polarost"]);
+    expect(klasseBei(feld, -30, 15)).toBe(1);
+    expect(klasseBei(feld, -30, 45)).toBe(2);
+    expect(klasseBei(feld, -30, 75)).toBe(0); // dort weht nichts
+    expect(baueFeld(fs, "7", 6).klasse.every((k) => k === 0)).toBe(true); // ohne Arten: keine Gürtel
   });
 });

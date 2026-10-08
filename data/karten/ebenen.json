@@ -1313,17 +1313,17 @@
           {
             "wert": "passat",
             "text": "Passat",
-            "farbe": "#e07b00"
+            "farbe": "#d99a00"
           },
           {
             "wert": "westwind",
             "text": "Westwinde",
-            "farbe": "#2f855a"
+            "farbe": "#7c3aed"
           },
           {
             "wert": "polarost",
             "text": "Polare Ostwinde",
-            "farbe": "#6b46c1"
+            "farbe": "#2563eb"
           },
           {
             "wert": "monsun",

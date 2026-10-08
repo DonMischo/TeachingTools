@@ -1176,9 +1176,11 @@ async function zirkulation() {
   schreibe("welt-winde", { name: "Windsysteme und ITC", gruppe: "topographisch", bereich: "welt", geometrie: "linie", quiz: true,
     quelle: QUELLE_ZIRKULATION, monate: true,
     darstellung: { feld: "art", art: "kategorie", werte: [
-      { wert: "passat", text: "Passat", farbe: "#e07b00" },
-      { wert: "westwind", text: "Westwinde", farbe: "#2f855a" },
-      { wert: "polarost", text: "Polare Ostwinde", farbe: "#6b46c1" },
+      // Gürtel wie in den bekannten Windkarten: Passat gold, Westwinde violett, polare Ostwinde blau
+      // (PartikelFluss.tsx nimmt dieselben Farbtöne, heller)
+      { wert: "passat", text: "Passat", farbe: "#d99a00" },
+      { wert: "westwind", text: "Westwinde", farbe: "#7c3aed" },
+      { wert: "polarost", text: "Polare Ostwinde", farbe: "#2563eb" },
       { wert: "monsun", text: "Monsun", farbe: "#0e9f9a" },
       { wert: "itc", text: "ITC (Innertropische Konvergenzzone)", farbe: "#b91c1c" },
       { wert: "hoch", text: "Hochdruckgürtel", farbe: "#92400e" },

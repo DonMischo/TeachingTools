@@ -5,8 +5,11 @@
  */
 import type { Feature, Geometry, Position } from "geojson";
 
-/** Feld auf 1°-Gitter: Zelle (x, y) = Länge −180 + x, Breite 90 − y. u = Ost, v = Nord, je 0–1. */
-export type Feld = { u: Float32Array; v: Float32Array; warm: Float32Array; staerke: Float32Array; aktiv: number[] };
+/**
+ * Feld auf 1°-Gitter: Zelle (x, y) = Länge −180 + x, Breite 90 − y. u = Ost, v = Nord, je 0–1.
+ * klasse: welche der übergebenen Arten (Windgürtel) in der Zelle überwiegt, 1-basiert (0 = keine).
+ */
+export type Feld = { u: Float32Array; v: Float32Array; warm: Float32Array; staerke: Float32Array; klasse: Uint8Array; aktiv: number[] };
 
 const B = 360, H = 180;
 const GURT = ["itc", "hoch", "tief"];
@@ -23,12 +26,13 @@ function linien(g: Geometry): Position[][] {
  * Baut das Feld: Stützpunkte alle ½° entlang der Linien (Richtung = Linienrichtung),
  * jeder wirkt im Umkreis `radius` (Grad) mit Gewicht (1 − d/r)², gemittelt je Zelle.
  */
-export function baueFeld(features: Feature[], monat: string, radius: number): Feld {
+export function baueFeld(features: Feature[], monat: string, radius: number, klassen: string[] = []): Feld {
   const u = new Float32Array(B * H), v = new Float32Array(B * H), warm = new Float32Array(B * H), gewicht = new Float32Array(B * H);
+  const K = klassen.length, jeKlasse = new Float32Array(B * H * K);
   for (const f of features) {
     const p = f.properties ?? {};
     if (GURT.includes(p.art) || !zuMonat(p.monate, monat) || !f.geometry) continue;
-    const istWarm = p.art === "warm" ? 1 : 0;
+    const istWarm = p.art === "warm" ? 1 : 0, ki = klassen.indexOf(p.art);
     for (const l of linien(f.geometry)) for (let i = 1; i < l.length; i++) {
       const [x0, y0] = l[i - 1], [x1, y1] = l[i];
       const k = Math.cos((((y0 + y1) / 2) * Math.PI) / 180);
@@ -47,11 +51,12 @@ export function baueFeld(features: Feature[], monat: string, radius: number): Fe
           if (d >= radius) continue;
           const w = (1 - d / radius) ** 2, z = y * B + x;
           u[z] += (w * ost) / laenge; v[z] += (w * nord) / laenge; warm[z] += w * istWarm; gewicht[z] += w;
+          if (ki >= 0) jeKlasse[z * K + ki] += w;
         }
       }
     }
   }
-  const staerke = new Float32Array(B * H), aktiv: number[] = [];
+  const staerke = new Float32Array(B * H), klasse = new Uint8Array(B * H), aktiv: number[] = [];
   for (let z = 0; z < B * H; z++) {
     const w = gewicht[z];
     if (!w) continue;
@@ -60,8 +65,9 @@ export function baueFeld(features: Feature[], monat: string, radius: number): Fe
     staerke[z] = Math.min(1, w);
     u[z] = (u[z] / betrag) * staerke[z]; v[z] = (v[z] / betrag) * staerke[z]; warm[z] /= w;
     if (staerke[z] > 0.15) aktiv.push(z);
+    for (let k = 0, best = 0; k < K; k++) if (jeKlasse[z * K + k] > best) { best = jeKlasse[z * K + k]; klasse[z] = k + 1; }
   }
-  return { u, v, warm, staerke, aktiv };
+  return { u, v, warm, staerke, klasse, aktiv };
 }
 
 /** Geschwindigkeit an einer Stelle (bilinear zwischen den Zellmitten). */
@@ -75,6 +81,12 @@ export function wind(feld: Feld, lon: number, lat: number): [number, number, num
     u += feld.u[z] * w; v += feld.v[z] * w; warm += feld.warm[z] * w;
   }
   return [u, v, warm];
+}
+
+/** Überwiegende Art (1-basiert, 0 = keine) in der Zelle an dieser Stelle. */
+export function klasseBei(feld: Feld, lon: number, lat: number): number {
+  const x = Math.min(B - 1, Math.max(0, Math.floor(lon + 180))), y = Math.min(H - 1, Math.max(0, Math.floor(90 - lat)));
+  return feld.klasse[y * B + x];
 }
 
 /** Zufälliger Startpunkt in einer Zelle, in der etwas fließt. */

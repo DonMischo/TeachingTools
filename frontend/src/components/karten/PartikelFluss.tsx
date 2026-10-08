@@ -1,22 +1,31 @@
 "use client";
 /**
  * Partikelfluss über der Karte: Punkte mit Schweif treiben im Feld aus
- * lib/karten/partikel.ts — Meeresströmungen rot/blau (warm/kalt), Wind dunkel.
+ * lib/karten/partikel.ts — Meeresströmungen rot/blau (warm/kalt), Wind als leuchtende Stromfäden
+ * in der Farbe seines Gürtels (Passat gold, Westwinde violett, polare Ostwinde blau).
  * Eine Canvas-Ebene über MapLibre; beim Verschieben/Zoomen fangen die Schweife neu an.
  */
 import { useEffect } from "react";
 import type { Feature, FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import { baueFeld, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
+import { baueFeld, klasseBei, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
 import { abstand, echt, vor, zurueck, type Projektion } from "@/lib/karten/projektion";
 
 /** Je Ebene: Wirkradius des Felds (Grad), Partikelzahl, Tempo (Pixel je Bild) */
-const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; leben: number; farbe: (warm: number) => string }> = {
+const ART: Record<string, {
+  radius: number; anzahl: number; tempo: number; breite: number; leben: number; farbe: (warm: number) => string;
+  /** Farbe je Art (Windgürtel): Teilchen nehmen die Farbe des Gürtels, in dem sie gerade treiben */
+  klassen?: Record<string, string>;
+  /** Leuchtend: breiter, durchsichtiger Schein unter dem Faden, Überlagerungen addieren sich */
+  glanz?: boolean;
+}> = {
   // Kräftig und mit dunklem Saum: auf hellem und dunklem Meer (Meeresboden) gut zu sehen
   // Dünne Stromfäden mit langem Schweif, eng an der Strömung; hell getönt: warm orange, kalt eisblau
   "welt-stroemungen": { radius: 2.5, anzahl: 3200, tempo: 0.7, breite: 1.3, leben: 180,
     farbe: (w) => (w > 0.5 ? "rgba(255,160,100,0.95)" : "rgba(110,200,255,0.95)") },
-  "welt-winde": { radius: 11, anzahl: 1400, tempo: 1.4, breite: 1.2, leben: 90, farbe: () => "rgba(255,255,255,0.85)" },
+  // Viele feine, lange Fäden; Farben wie die Legende (fetch-karten.mjs, welt-winde), nur heller
+  "welt-winde": { radius: 11, anzahl: 3200, tempo: 1.1, breite: 1, leben: 150, farbe: () => "rgba(255,255,255,0.85)", glanz: true,
+    klassen: { passat: "rgba(251,191,36,0.95)", westwind: "rgba(167,139,250,0.95)", polarost: "rgba(96,165,250,0.95)", monsun: "rgba(45,212,191,0.95)" } },
 };
 
 type Partikel = { lon: number; lat: number; alter: number };
@@ -43,6 +52,8 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
     const ids = schluessel.split(",");
     const leinwand = document.createElement("canvas");
     Object.assign(leinwand.style, { position: "absolute", left: "0", top: "0", pointerEvents: "none" });
+    // Leuchtende Fäden (Wind) dürfen längere Schweife ziehen (dunkler Grund: Ebene »schleier« in stil.ts)
+    const verblassen = ids.some((id) => ART[id].glanz) ? 0.985 : 0.97;
     karte.getCanvasContainer().appendChild(leinwand);
     const g = leinwand.getContext("2d")!;
     const passend = () => {
@@ -56,7 +67,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
     karte.on("move", leeren);
     karte.on("resize", passend);
 
-    const felder: { id: string; feld: Feld; teile: Partikel[] }[] = [];
+    const felder: { id: string; feld: Feld; teile: Partikel[]; farben: string[] }[] = [];
     const neu = (feld: Feld, p: Partikel, leben: number) => {
       const s = startpunkt(feld);
       if (s) { p.lon = s[0]; p.lat = s[1]; }
@@ -72,9 +83,11 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
         const daten = (await quelle.getData().catch(() => null)) as FeatureCollection | null;
         if (!daten?.features || weg) continue;
         // Die Quelle liegt im Kartennetz vor — das Feld rechnet in echten Längen und Breiten
-        const feld = baueFeld(!echt(projektion) ? daten.features.map((f) => linienZurueck(f, projektion)) : daten.features, monat, ART[id].radius);
+        const klassen = ART[id].klassen ?? {};
+        const feld = baueFeld(!echt(projektion) ? daten.features.map((f) => linienZurueck(f, projektion)) : daten.features, monat, ART[id].radius,
+          Object.keys(klassen));
         const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p, ART[id].leben); return p; });
-        felder.push({ id, feld, teile });
+        felder.push({ id, feld, teile, farben: Object.values(klassen) });
       }
     };
     void laden();
@@ -90,15 +103,15 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
       // Schweife verblassen lassen
       g.globalCompositeOperation = "destination-in";
       // Langsam verblassende Schweife (Stromfäden)
-      g.fillStyle = "rgba(0,0,0,0.97)";
+      g.fillStyle = `rgba(0,0,0,${verblassen})`;
       g.fillRect(0, 0, leinwand.width, leinwand.height);
       g.globalCompositeOperation = "source-over";
       const gradJePixel = 360 / (512 * 2 ** karte.getZoom());
       // Globus: Teilchen auf der Rückseite weiterwandern lassen, aber nicht zeichnen
       const mitte = karte.getCenter(), m: [number, number] = [mitte.lng, mitte.lat];
       const hinten = (lon: number, lat: number) => projektion === "globus" && abstand(m, [lon, lat]) > VIERTELKREIS;
-      for (const { id, feld, teile } of felder) {
-        const { tempo, farbe, breite, leben } = ART[id];
+      for (const { id, feld, teile, farben } of felder) {
+        const { tempo, farbe, breite, leben, glanz } = ART[id];
         // Ein Pfad je Farbe statt ein Strich je Partikel
         const pfade = new Map<string, Path2D>();
         for (const p of teile) {
@@ -109,11 +122,21 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
           if (lon < -180 || lon > 180 || lat < -85 || lat > 85) { neu(feld, p, leben); continue; }
           if (hinten(p.lon, p.lat)) { p.lon = lon; p.lat = lat; continue; }
           const a = karte.project(vor([p.lon, p.lat], projektion)), b = karte.project(vor([lon, lat], projektion));
-          const f = farbe(warm);
+          const f = farben[klasseBei(feld, p.lon, p.lat) - 1] ?? farbe(warm);
           let pfad = pfade.get(f);
           if (!pfad) pfade.set(f, (pfad = new Path2D()));
           pfad.moveTo(a.x, a.y); pfad.lineTo(b.x, b.y);
           p.lon = lon; p.lat = lat;
+        }
+        if (glanz) {
+          // Schein und Faden addieren sich: wo viele Fäden laufen, leuchtet es heller
+          g.globalCompositeOperation = "lighter";
+          for (const [f, pfad] of pfade) {
+            g.lineWidth = breite * 4; g.globalAlpha = 0.14; g.strokeStyle = f; g.stroke(pfad);
+            g.lineWidth = breite; g.globalAlpha = 1; g.stroke(pfad);
+          }
+          g.globalCompositeOperation = "source-over";
+          continue;
         }
         for (const [f, pfad] of pfade) {
           g.lineWidth = breite + 1; g.strokeStyle = "rgba(15,23,42,0.28)"; g.stroke(pfad);

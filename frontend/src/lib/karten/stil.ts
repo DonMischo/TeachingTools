@@ -480,6 +480,12 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     const aktiv: ExpressionSpecification = ["boolean", ["feature-state", "aktiv"], false];
     const dicke = (a: number, b: number): ExpressionSpecification =>
       ["interpolate", ["linear"], ["zoom"], 1, ["case", aktiv, a * 2, a], 5, ["case", aktiv, b * 2, b]];
+    // Wind mit Partikeln: dunkler Schleier über der Grundkarte — die Fäden leuchten (PartikelFluss.tsx);
+    // ITC als leuchtendes Band (weich gezeichnet, unter allen Linien)
+    if (!meer && auswahl.partikel) layers.push({ id: `${e.id}:schleier`, type: "background", paint: { "background-color": "#080c1e", "background-opacity": 0.5 } });
+    if (!meer) layers.push({ id: `${e.id}:itc-band`, type: "line", source: e.id, filter: ["all", zeit, ["==", ["get", "art"], "itc"]], layout: linie,
+      paint: { "line-color": "#f87171", "line-opacity": 0.45, "line-width": ["interpolate", ["linear"], ["zoom"], 1, 18, 5, 56],
+        "line-blur": ["interpolate", ["linear"], ["zoom"], 1, 12, 5, 40] } });
     layers.push(
       { id: `${e.id}:linie`, type: "line", source: e.id, filter: fliesst, layout: linie,
         paint: { "line-color": farbe, "line-opacity": auswahl.partikel ? 0.3 : 0.85, "line-width": meer ? dicke(2.6, 5) : dicke(1.6, 2.6) } },
