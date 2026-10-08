@@ -19,7 +19,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
-import { echt, erdUmriss, vor, type Projektion } from "./projektion";
+import { echt, erdUmriss, KACHEL_KUERZEL, vor, type Projektion } from "./projektion";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
@@ -251,15 +251,15 @@ export const istLauflicht = (id: string) => id.endsWith(":fluss");
 export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
-/** Rasterkacheln gibt es je Kartennetz: Equal Earth liegt unter »<ebene>-ee« */
-const kachelnFuer = (url: string, id: string, p: Projektion) => (!echt(p) ? url.replace(`/karten/${id}/`, `/karten/${id}-ee/`) : url);
+/** Rasterkacheln gibt es je Kartennetz: Equal Earth liegt unter »<ebene>-ee«, Robinson unter »<ebene>-robinson« … */
+const kachelnFuer = (url: string, id: string, p: Projektion) => (!echt(p) ? url.replace(`/karten/${id}/`, `/karten/${id}-${KACHEL_KUERZEL[p]}/`) : url);
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelleRoh: Quelle = quelleAusApi): StyleSpecification {
   const projektion = auswahl.projektion ?? "equalearth";
   // Vektordaten rechnet der Server um (api/karten_projektion.py)
   const quelle: Quelle = (e) => {
     const url = quelleRoh(e);
-    return !echt(projektion) ? `${url}${url.includes("?") ? "&" : "?"}projektion=equalearth` : url;
+    return !echt(projektion) ? `${url}${url.includes("?") ? "&" : "?"}projektion=${projektion}` : url;
   };
   const rolle = (e: Ebene): Rolle | undefined =>
     ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
@@ -268,8 +268,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   const sources: Record<string, SourceSpecification> = {};
   const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": !echt(projektion) ? FARBE.weltraum : FARBE.meer } }];
   if (!echt(projektion)) {
-    // Equal Earth ist ein Oval: Meer nur innerhalb des Erdumrisses
-    sources["erde"] = { type: "geojson", data: { type: "FeatureCollection", features: [erdUmriss()] } };
+    // Equal Earth, Robinson und Winkel-Tripel sind keine Rechtecke: Meer nur innerhalb des Erdumrisses
+    sources["erde"] = { type: "geojson", data: { type: "FeatureCollection", features: [erdUmriss(projektion)] } };
     layers.push({ id: "erde", type: "fill", source: "erde", paint: { "fill-color": FARBE.meer } },
       { id: "erde-rand", type: "line", source: "erde", paint: { "line-color": "#8aa9c2", "line-width": 1 } });
   }

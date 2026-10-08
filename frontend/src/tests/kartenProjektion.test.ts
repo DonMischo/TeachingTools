@@ -40,6 +40,22 @@ describe("Kartennetz", () => {
     expect(me.layers.some((l) => l.id === "erde")).toBe(false);
   });
 
+  it("Robinson und Winkel-Tripel: gleiche Zahlen wie PROJ auf dem Server, hin und zurück", () => {
+    // api/tests/test_karten_projektion.py rechnet dieselben Punkte mit pyproj
+    const r = vor([10, 60], "robinson"), w = vor([10, 60], "winkeltripel");
+    expect(r[0]).toBeCloseTo(7.986, 3); expect(r[1]).toBeCloseTo(55.5308, 3);
+    expect(w[0]).toBeCloseTo(7.5824, 3); expect(w[1]).toBeCloseTo(58.9312, 3);
+    for (const netz of ["robinson", "winkeltripel"] as const) {
+      expect(vor([180, 0], netz)[0]).toBeCloseTo(180, 6);
+      for (const p of [[0, 0], [10.5, 51.2], [-74, 40.7], [151, -33.9], [179, 80], [-179, -85]] as [number, number][]) {
+        const q = zurueck(vor(p, netz), netz)!;
+        expect(q[0]).toBeCloseTo(p[0], 5);
+        expect(q[1]).toBeCloseTo(p[1], 5);
+      }
+      expect(zurueck([179, 66], netz)).toBeNull(); // rechts oben neben dem Umriss
+    }
+  });
+
   it("Globus: echte Koordinaten, Mercator-Kacheln, MapLibre-Kugel", () => {
     expect(vor([13.4, 52.5], "globus")).toEqual([13.4, 52.5]);
     expect(zurueck([13.4, 52.5], "globus")).toEqual([13.4, 52.5]);

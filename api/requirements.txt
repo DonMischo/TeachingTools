@@ -18,6 +18,8 @@ pycrdt>=0.10.0
 pypandoc>=1.13
 # Arbeitsblatt-Export: Querformat-Karten auf dem hochkanten Blatt drehen
 Pillow>=11,<12
+# Kartennetze Robinson und Winkel-Tripel (PROJ, MIT-artige Lizenz) — siehe api/karten_projektion.py
+pyproj>=3.6
 # Zwei-Faktor (TOTP) — siehe api/totp.py
 pyotp>=2.9
 qrcode>=7.4

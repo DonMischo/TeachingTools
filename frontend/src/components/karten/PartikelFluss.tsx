@@ -24,10 +24,10 @@ type Partikel = { lon: number; lat: number; alter: number };
 /** Etwas weniger als ein Viertel des Erdumfangs (m): dahinter liegt die Rückseite des Globus */
 const VIERTELKREIS = 0.95 * (Math.PI / 2) * 6371008.8;
 
-/** Linien aus Kartenkoordinaten (Equal Earth) zurück in echte Längen/Breiten */
-function linienZurueck(f: Feature): Feature {
+/** Linien aus Kartenkoordinaten (Equal Earth, Robinson …) zurück in echte Längen/Breiten */
+function linienZurueck(f: Feature, p: Projektion): Feature {
   const g = f.geometry;
-  const z = (l: number[][]) => l.map((q) => zurueck(q) ?? q);
+  const z = (l: number[][]) => l.map((q) => zurueck(q, p) ?? q);
   if (g?.type === "LineString") return { ...f, geometry: { ...g, coordinates: z(g.coordinates) } };
   if (g?.type === "MultiLineString") return { ...f, geometry: { ...g, coordinates: g.coordinates.map(z) } };
   return f;
@@ -72,7 +72,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
         const daten = (await quelle.getData().catch(() => null)) as FeatureCollection | null;
         if (!daten?.features || weg) continue;
         // Die Quelle liegt im Kartennetz vor — das Feld rechnet in echten Längen und Breiten
-        const feld = baueFeld(!echt(projektion) ? daten.features.map(linienZurueck) : daten.features, monat, ART[id].radius);
+        const feld = baueFeld(!echt(projektion) ? daten.features.map((f) => linienZurueck(f, projektion)) : daten.features, monat, ART[id].radius);
         const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p, ART[id].leben); return p; });
         felder.push({ id, feld, teile });
       }

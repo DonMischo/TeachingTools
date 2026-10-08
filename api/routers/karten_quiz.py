@@ -36,7 +36,7 @@ from ..auth import get_current_teacher, get_current_user, get_player
 from ..config import settings
 from ..database import get_db
 from ..display_names import short_name
-from ..karten_projektion import transformiere
+from ..karten_projektion import SCHEIN, transformiere
 from ..models import Class, KartenBrett, KartenEbeneEigen, KartenLernstand, KartenQuizStand, KartenSatz, Student, Teacher, ToolSession, Transaction
 from .karten import DATEN, EIGEN_PRAEFIX, EIGENE, katalog
 
@@ -93,12 +93,12 @@ def _sammlung(ebene: str) -> dict:
 def _ebene_gepackt(ebene: str, stand: float, geheim: str, projektion: str | None) -> bytes:
     """Entschärfte Ebene (Token statt Namen), fertig gepackt — je Satz/Sitzung und Projektion einmal."""
     sammlung = engine.entschaerfe_ebene(_geladen(ebene, stand), ebene, geheim)
-    daten = transformiere(sammlung) if projektion == "equalearth" else sammlung
+    daten = transformiere(sammlung, projektion) if projektion in SCHEIN else sammlung
     return gzip.compress(json.dumps(daten, ensure_ascii=False).encode("utf-8"), compresslevel=6)
 
 
 def _ebene_antwort(ebene: str, geheim: str, projektion: str | None, request: Request) -> Response:
-    daten = _ebene_gepackt(ebene, _datei_stand(ebene), geheim, projektion if projektion == "equalearth" else None)
+    daten = _ebene_gepackt(ebene, _datei_stand(ebene), geheim, projektion if projektion in SCHEIN else None)
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(daten, media_type="application/geo+json", headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
     return Response(gzip.decompress(daten), media_type="application/geo+json")
@@ -662,7 +662,7 @@ def brett_ebene(schluessel: str, ebene_id: str, request: Request, projektion: st
     if brett is None or ebene_id not in brett.ebenen:
         raise HTTPException(404, "Ebene nicht gefunden")
     sammlung = engine.entschaerfe_ebene(_sammlung(ebene_id), ebene_id, brett.geheim)
-    daten = json.dumps(transformiere(sammlung) if projektion == "equalearth" else sammlung, ensure_ascii=False).encode("utf-8")
+    daten = json.dumps(transformiere(sammlung, projektion) if projektion in SCHEIN else sammlung, ensure_ascii=False).encode("utf-8")
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(gzip.compress(daten, compresslevel=6), media_type="application/geo+json",
                         headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding", "Cache-Control": "public, max-age=3600"})

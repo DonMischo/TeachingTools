@@ -95,7 +95,7 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - JSON-Import, Vorlage und mitgelieferte Beispiele (u. a. Erdgeschichte, Antike, Entdeckungen der Geowissenschaften)
 
 ### 🗺️ Karten
-- Kartennetz Equal Earth (flächentreu, Standard), Mercator oder Globus (Kugel zum Drehen, MapLibre-Globus), umschaltbar im ☰-Menü der Karte und je Kartensatz gespeichert; Maßstab als schwarz-weiße Leiste in der Karte (auch im Arbeitsblatt), Quellen mit Lizenz darunter
+- Kartennetz Equal Earth (flächentreu, Standard), Robinson, Winkel-Tripel, Mercator oder Globus (Kugel zum Drehen, MapLibre-Globus), umschaltbar im ☰-Menü der Karte und je Kartensatz gespeichert; Maßstab als schwarz-weiße Leiste in der Karte (auch im Arbeitsblatt), Quellen mit Lizenz darunter
 - Selbst gehostete Karten (MapLibre, Schriften und Daten auf dem eigenen Server): Deutschland, Thüringen, Europa, Welt und Kontinente; politisch, topographisch, stumm, Wirtschaft und physische Geografie (Platten, Plattengrenzen, Wüsten, Köppen-Geiger-Klimazonen)
 - Meeresboden: Tiefenstufen von 0 bis über 10 000 m mit Schummerung (Natural Earth), dazu 13 Tiefseegräben mit größter Tiefe und 5 mittelozeanische Rücken als anklickbare, quizfähige Linien
 - Meeresströmungen (warm/kalt) und Windsysteme mit ITC, Druckgürteln und Monsun als animierte Linien mit Fließrichtung; jede Strömung und jeder Gürtel anklickbar (Erklärung, Hervorhebung, quizfähig); Monatsregler mit ▶ spielt das Jahr ab — ITC und Gürtel wandern, Monsun und Somalistrom kehren um; Partikelfluss wie bei earth.nullschool (Strömungen rot/blau, Wind fein) aus einem Feld, das aus den Linien berechnet wird

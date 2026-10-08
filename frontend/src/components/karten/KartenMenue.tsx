@@ -1,6 +1,6 @@
 "use client";
 /**
- * ☰-Menü oben links auf der Karte: Kartennetz (Equal Earth / Mercator / Globus) und Seitenformat.
+ * ☰-Menü oben links auf der Karte: Kartennetz (projektion.ts: PROJEKTIONEN) und Seitenformat.
  */
 import { useState } from "react";
 import { PROJEKTIONEN, type Projektion } from "@/lib/karten/projektion";

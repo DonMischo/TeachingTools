@@ -32,7 +32,8 @@ import proj4 from "proj4";
 import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
-import { eeZurueck } from "./karten-daten/projektion.mjs";
+// Node lädt die TypeScript-Datei direkt (Typen werden übersprungen): eine Rechnung für Browser und Kacheln
+import { KACHEL_KUERZEL, zurueck } from "../src/lib/karten/projektion.ts";
 import { BERLIN, NEW_YORK, PARIS, ZONEN_LEGENDE } from "./karten-daten/staedte.mjs";
 import { INDUSTRIE, INDUSTRIE_LEGENDE, LANDWIRTSCHAFT, LANDWIRTSCHAFT_LEGENDE, RAEUME, RAEUME_LEGENDE } from "./karten-daten/usa.mjs";
 
@@ -689,20 +690,22 @@ async function stadtmodelle() {
     boroughs.map((f) => feature(f.geometry, { id: `boro-${slug(f.properties.boroname)}`, name: BORO_DE[f.properties.boroname] ?? f.properties.boroname, art: "borough" })));
 }
 
-// ── Rasterkacheln (Mercator und Equal Earth) ─────────────────────────
+// ── Rasterkacheln (Mercator, Equal Earth, Robinson, Winkel-Tripel) ─────────────────────────
 
 /**
- * Schreibt XYZ-Kacheln z0–5 nach `ziel` (Mercator) und `ziel-ee` (Equal Earth).
+ * Schreibt XYZ-Kacheln z0–5 nach `ziel` (Mercator) und `ziel-<kürzel>` je weiterem Netz
+ * (ee = Equal Earth, robinson, winkeltripel; KACHEL_KUERZEL in src/lib/karten/projektion.ts).
  * `pixel(lon, lat)` liefert [r, g, b] in echten Koordinaten oder null (durchsichtig).
- * Equal Earth: jede Kachelposition ist eine Schein-Länge/Breite (siehe
+ * Andere Netze: jede Kachelposition ist eine Schein-Länge/Breite (siehe
  * api/karten_projektion.py) und wird zurückgerechnet; außerhalb der Erde bleibt sie leer.
  * `deckend`: Mercator ohne Alphakanal (Relief deckt die ganze Welt).
  */
 async function kachelSaetze(ziel, endung, pixel, deckend = false) {
   const MAXZ = 5, T = 256;
   let bytes = 0, anzahl = 0;
-  for (const ee of [false, true]) {
-    const ordner = ee ? `${ziel}-ee` : ziel;
+  for (const netz of [null, ...Object.keys(KACHEL_KUERZEL)]) {
+    const ee = netz !== null;
+    const ordner = ee ? `${ziel}-${KACHEL_KUERZEL[netz]}` : ziel;
     rmSync(ordner, { recursive: true, force: true });
     for (let z = 0; z <= MAXZ; z++) {
       const n = 2 ** z;
@@ -714,7 +717,7 @@ async function kachelSaetze(ziel, endung, pixel, deckend = false) {
           const fy = (Math.atan(Math.sinh(my)) * 180) / Math.PI;
           for (let x = 0; x < T; x++) {
             const fx = ((tx * T + x + 0.5) / (n * T)) * 360 - 180;
-            const q = ee ? eeZurueck(fx, fy) : [fx, fy];
+            const q = ee ? zurueck([fx, fy], netz) : [fx, fy];
             if (!q) continue;
             const c = pixel(q[0], q[1]);
             if (!c) continue;

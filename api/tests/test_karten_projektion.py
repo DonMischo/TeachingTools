@@ -30,3 +30,25 @@ def test_ebene_in_equal_earth(client, teacher_token):
     b = b if isinstance(b[0], (int, float)) else b[0]
     assert b == [round(v, 5) for v in p.vor(*a)]
     assert neu["features"][0]["properties"] == roh["features"][0]["properties"]
+
+
+def test_robinson_und_winkel_tripel_ueber_proj():
+    # Bei ±180° am Äquator liegt der Kartenrand, wie bei Equal Earth
+    for netz in ("robinson", "winkeltripel"):
+        assert math.isclose(p.vor(180, 0, netz)[0], 180)
+    # Pollinie: Robinson gut halb so lang wie der Äquator, Winkel-Tripel knapp 0,4
+    assert 95 < p.vor(180, 90, "robinson")[0] < 97
+    assert 69 < p.vor(180, 90, "winkeltripel")[0] < 71
+    # gleiche Zahlen wie frontend/src/tests/kartenProjektion.test.ts
+    assert [round(v, 4) for v in p.vor(10, 60, "robinson")] == [7.9860, 55.5308]
+    assert [round(v, 4) for v in p.vor(10, 60, "winkeltripel")] == [7.5824, 58.9312]
+
+
+def test_ebene_in_robinson(client, teacher_token):
+    r = client.get("/api/karten/ebenen/de-laender?projektion=robinson", headers=auth(teacher_token))
+    roh = client.get("/api/karten/ebenen/de-laender", headers=auth(teacher_token)).json()
+    a = roh["features"][0]["geometry"]["coordinates"][0][0]
+    b = r.json()["features"][0]["geometry"]["coordinates"][0][0]
+    a = a if isinstance(a[0], (int, float)) else a[0]
+    b = b if isinstance(b[0], (int, float)) else b[0]
+    assert b == [round(v, 5) for v in p.vor(*a, "robinson")]

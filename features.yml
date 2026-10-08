@@ -111,7 +111,7 @@ aktivitaeten:
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, false], upload: [true, false]}
     kann:
       - Selbst gehostete Karten (MapLibre, keine Anfragen nach außen)
-      - Kartennetz Equal Earth (Standard), Mercator oder Globus im ☰-Menü, je Kartensatz gespeichert; schwarz-weiße Maßstabsleiste, Quellen unter der Karte
+      - Kartennetz Equal Earth (Standard), Robinson, Winkel-Tripel (beide über PROJ), Mercator oder Globus im ☰-Menü, je Kartensatz gespeichert; schwarz-weiße Maßstabsleiste, Quellen unter der Karte
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
       - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr

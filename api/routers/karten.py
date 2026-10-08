@@ -27,7 +27,7 @@ from ..database import get_db
 from ..karten_quiz import ankerpunkt, normalisiere
 from ..karten_eigene import MAX_BYTES, UploadFehler, geometrie_von, lies_upload, mit_namen
 from ..karten_export import MEDIENTYP, exportiere
-from ..karten_projektion import transformiere
+from ..karten_projektion import SCHEIN, transformiere
 from ..models import KartenEbeneEigen, KartenSatz, Student, Teacher
 
 router = APIRouter(prefix="/api/karten", tags=["karten"])
@@ -42,9 +42,9 @@ def _gzip(pfad: Path, stand: float) -> bytes:
 
 
 @lru_cache(maxsize=48)
-def _projiziert(pfad: Path, stand: float) -> bytes:
-    """Ebene in Equal Earth (Schein-Koordinaten für MapLibre), gepackt — je Datei und Stand einmal."""
-    sammlung = transformiere(json.loads(pfad.read_text(encoding="utf-8")))
+def _projiziert(pfad: Path, stand: float, projektion: str) -> bytes:
+    """Ebene im Kartennetz (Schein-Koordinaten für MapLibre), gepackt — je Datei, Stand und Netz einmal."""
+    sammlung = transformiere(json.loads(pfad.read_text(encoding="utf-8")), projektion)
     return gzip.compress(json.dumps(sammlung, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
 
 
@@ -69,7 +69,7 @@ def _namenspunkte(pfad: Path, stand: float, projektion: str | None) -> bytes:
     ablage = pfad.parent / ".namen" / f"{pfad.stem}-{int(stand)}.json"
     if ablage.exists():
         punkte = json.loads(ablage.read_text(encoding="utf-8"))
-        return gzip.compress(json.dumps(transformiere(punkte) if projektion == "equalearth" else punkte,
+        return gzip.compress(json.dumps(transformiere(punkte, projektion) if projektion in SCHEIN else punkte,
                                         ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
     sammlung = json.loads(pfad.read_text(encoding="utf-8"))
     punkte = {"type": "FeatureCollection", "features": [
@@ -83,8 +83,8 @@ def _namenspunkte(pfad: Path, stand: float, projektion: str | None) -> bytes:
         ablage.write_text(json.dumps(punkte, ensure_ascii=False), encoding="utf-8")
     except OSError:
         pass  # schreibgeschützt: dann eben nur im Speicher
-    if projektion == "equalearth":
-        punkte = transformiere(punkte)
+    if projektion in SCHEIN:
+        punkte = transformiere(punkte, projektion)
     return gzip.compress(json.dumps(punkte, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=6)
 
 
@@ -97,12 +97,12 @@ def gepackt(daten: bytes, request: Request, headers: dict) -> Response:
 
 def geojson_antwort(pfad: Path, request: Request, cache: str, projektion: str | None = None, punkte: bool = False) -> Response:
     """Ebene ausliefern — gepackt, wenn der Browser es kann (de-orte: 9 MB → 1,2 MB);
-    mit projektion=equalearth umgerechnet (api/karten_projektion.py), mit punkte=True
+    mit projektion=equalearth/robinson/winkeltripel umgerechnet (api/karten_projektion.py), mit punkte=True
     nur ein Beschriftungspunkt je Objekt."""
     if punkte:
         return gepackt(_namenspunkte(pfad, pfad.stat().st_mtime, projektion), request, {"Cache-Control": cache})
-    if projektion == "equalearth":
-        return gepackt(_projiziert(pfad, pfad.stat().st_mtime), request, {"Cache-Control": cache})
+    if projektion in SCHEIN:
+        return gepackt(_projiziert(pfad, pfad.stat().st_mtime, projektion), request, {"Cache-Control": cache})
     if "gzip" in request.headers.get("accept-encoding", ""):
         return Response(_gzip(pfad, pfad.stat().st_mtime), media_type="application/geo+json",
                         headers={"Content-Encoding": "gzip", "Cache-Control": cache, "Vary": "Accept-Encoding"})
@@ -227,8 +227,8 @@ class SatzInhalt(BaseModel):
     filter: dict[str, list[str]] = Field(default_factory=dict)
     # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
-    # Kartennetz: Equal Earth (flächentreu, Standard), Mercator oder Globus (beide echte Koordinaten)
-    projektion: Literal["equalearth", "mercator", "globus"] = "equalearth"
+    # Kartennetz: Equal Earth (flächentreu, Standard), Mercator, Globus, Robinson oder Winkel-Tripel
+    projektion: Literal["equalearth", "mercator", "globus", "robinson", "winkeltripel"] = "equalearth"
     # Kartenfläche im Seitenverhältnis von A4 (füllt beim Export Seite 1)
     seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 
