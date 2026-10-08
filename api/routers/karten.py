@@ -227,8 +227,8 @@ class SatzInhalt(BaseModel):
     filter: dict[str, list[str]] = Field(default_factory=dict)
     # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
-    # Kartennetz: Equal Earth (flächentreu, Standard) oder Mercator
-    projektion: Literal["equalearth", "mercator"] = "equalearth"
+    # Kartennetz: Equal Earth (flächentreu, Standard), Mercator oder Globus (beide echte Koordinaten)
+    projektion: Literal["equalearth", "mercator", "globus"] = "equalearth"
     # Kartenfläche im Seitenverhältnis von A4 (füllt beim Export Seite 1)
     seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 

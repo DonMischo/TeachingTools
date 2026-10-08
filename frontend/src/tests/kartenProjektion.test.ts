@@ -39,4 +39,18 @@ describe("Kartennetz", () => {
     expect((me.sources["welt-staaten"] as { data: string }).data).toBe("/api/karten/ebenen/welt-staaten");
     expect(me.layers.some((l) => l.id === "erde")).toBe(false);
   });
+
+  it("Globus: echte Koordinaten, Mercator-Kacheln, MapLibre-Kugel", () => {
+    expect(vor([13.4, 52.5], "globus")).toEqual([13.4, 52.5]);
+    expect(zurueck([13.4, 52.5], "globus")).toEqual([13.4, 52.5]);
+    const ebenen: Ebene[] = [
+      { id: "welt-hoehen", name: "Relief", gruppe: "topographisch", bereich: "welt", geometrie: "raster", quiz: false, bytes: 0,
+        kachelUrl: "/karten/welt-hoehen/{z}/{x}/{y}.webp", quelle: { name: "NE", lizenz: "", url: "" } },
+    ];
+    const gl = baueStil({ stand: "", ebenen }, { ebenen: ["welt-hoehen"], beschriftung: false, projektion: "globus" }, "topographisch");
+    expect(gl.projection).toEqual({ type: "globe" });
+    expect((gl.sources["welt-hoehen"] as { tiles: string[] }).tiles[0]).toBe("/karten/welt-hoehen/{z}/{x}/{y}.webp");
+    expect(gl.layers.some((l) => l.id === "erde")).toBe(false);
+    expect(baueStil({ stand: "", ebenen }, { ebenen: [], beschriftung: false }, "topographisch").projection).toBeUndefined();
+  });
 });

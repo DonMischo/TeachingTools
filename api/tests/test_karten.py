@@ -172,3 +172,10 @@ def test_satz_merkt_sich_das_seitenformat(client, teacher_token):
     sid = client.post("/api/karten/saetze", json=_satz(seite="a4-quer"), headers=h).json()["id"]
     assert client.get(f"/api/karten/saetze/{sid}", headers=h).json()["inhalt"]["seite"] == "a4-quer"
     assert client.post("/api/karten/saetze", json=_satz(seite="a3"), headers=h).status_code == 422
+
+
+def test_satz_merkt_sich_das_kartennetz(client, teacher_token):
+    h = auth(teacher_token)
+    sid = client.post("/api/karten/saetze", json=_satz(projektion="globus"), headers=h).json()["id"]
+    assert client.get(f"/api/karten/saetze/{sid}", headers=h).json()["inhalt"]["projektion"] == "globus"
+    assert client.post("/api/karten/saetze", json=_satz(projektion="peters"), headers=h).status_code == 422

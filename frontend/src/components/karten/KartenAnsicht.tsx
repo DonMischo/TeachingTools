@@ -235,6 +235,13 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
     if (!m) return;
     m.resize();
     const z = ziel ? ausschnittVor(ziel, projektion) : null;
+    // Globus: Weltausschnitte passen nicht als Rechteck auf die Kugel — die Kugel füllt dann die Höhe
+    if (projektion === "globus" && z && z.ost - z.west > 90) {
+      const radius = 0.45 * m.getContainer().clientHeight;
+      m.easeTo({ center: [(z.west + z.ost) / 2, Math.max(-50, Math.min(50, (z.sued + z.nord) / 2))],
+        zoom: Math.log2((radius * 2 * Math.PI) / 512), duration: dauer });
+      return;
+    }
     m.fitBounds(z ? [[z.west, z.sued], [z.ost, z.nord]] : START, { duration: dauer });
   };
   useEffect(() => {
@@ -271,10 +278,13 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
   return (
     <div className="flex flex-col gap-1 w-full">
     <div className="relative rounded-2xl overflow-hidden border border-line mx-auto w-full"
-      style={verhaeltnis
+      style={{
         // A4: festes Verhältnis, aber nie höher als das Fenster (dann schmaler)
+        ...(verhaeltnis
         ? { aspectRatio: String(verhaeltnis), maxWidth: `calc(85vh * ${verhaeltnis})` }
-        : { height: "72vh", minHeight: 420 }}>
+        : { height: "72vh", minHeight: 420 }),
+        // Globus: dunkler Weltraum um die Kugel
+        ...(projektion === "globus" && { background: "radial-gradient(circle, #1e293b, #020617)" }) }}>
       {/* Kein absolute/inset: maplibre-gl.css setzt .maplibregl-map auf position: relative */}
       <div ref={behaelter} className="w-full h-full" data-karte />
       <canvas ref={massstabRef} aria-label="Maßstab" className="absolute left-1.5 bottom-1.5 pointer-events-none" style={{ width: 240, height: 44 }} />

@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import type { Feature, FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { baueFeld, startpunkt, wind, type Feld } from "@/lib/karten/partikel";
-import { vor, zurueck, type Projektion } from "@/lib/karten/projektion";
+import { abstand, echt, vor, zurueck, type Projektion } from "@/lib/karten/projektion";
 
 /** Je Ebene: Wirkradius des Felds (Grad), Partikelzahl, Tempo (Pixel je Bild) */
 const ART: Record<string, { radius: number; anzahl: number; tempo: number; breite: number; leben: number; farbe: (warm: number) => string }> = {
@@ -20,6 +20,9 @@ const ART: Record<string, { radius: number; anzahl: number; tempo: number; breit
 };
 
 type Partikel = { lon: number; lat: number; alter: number };
+
+/** Etwas weniger als ein Viertel des Erdumfangs (m): dahinter liegt die Rückseite des Globus */
+const VIERTELKREIS = 0.95 * (Math.PI / 2) * 6371008.8;
 
 /** Linien aus Kartenkoordinaten (Equal Earth) zurück in echte Längen/Breiten */
 function linienZurueck(f: Feature): Feature {
@@ -69,7 +72,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
         const daten = (await quelle.getData().catch(() => null)) as FeatureCollection | null;
         if (!daten?.features || weg) continue;
         // Die Quelle liegt im Kartennetz vor — das Feld rechnet in echten Längen und Breiten
-        const feld = baueFeld(projektion === "equalearth" ? daten.features.map(linienZurueck) : daten.features, monat, ART[id].radius);
+        const feld = baueFeld(!echt(projektion) ? daten.features.map(linienZurueck) : daten.features, monat, ART[id].radius);
         const teile = Array.from({ length: ART[id].anzahl }, () => { const p = { lon: 0, lat: 0, alter: 0 }; neu(feld, p, ART[id].leben); return p; });
         felder.push({ id, feld, teile });
       }
@@ -91,6 +94,9 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
       g.fillRect(0, 0, leinwand.width, leinwand.height);
       g.globalCompositeOperation = "source-over";
       const gradJePixel = 360 / (512 * 2 ** karte.getZoom());
+      // Globus: Teilchen auf der Rückseite weiterwandern lassen, aber nicht zeichnen
+      const mitte = karte.getCenter(), m: [number, number] = [mitte.lng, mitte.lat];
+      const hinten = (lon: number, lat: number) => projektion === "globus" && abstand(m, [lon, lat]) > VIERTELKREIS;
       for (const { id, feld, teile } of felder) {
         const { tempo, farbe, breite, leben } = ART[id];
         // Ein Pfad je Farbe statt ein Strich je Partikel
@@ -101,6 +107,7 @@ export default function PartikelFluss({ karte, ebenen, monat, projektion = "equa
           const k = Math.max(0.2, Math.cos((p.lat * Math.PI) / 180));
           const lon = p.lon + (u * tempo * gradJePixel) / k, lat = p.lat + v * tempo * gradJePixel;
           if (lon < -180 || lon > 180 || lat < -85 || lat > 85) { neu(feld, p, leben); continue; }
+          if (hinten(p.lon, p.lat)) { p.lon = lon; p.lat = lat; continue; }
           const a = karte.project(vor([p.lon, p.lat], projektion)), b = karte.project(vor([lon, lat], projektion));
           const f = farbe(warm);
           let pfad = pfade.get(f);

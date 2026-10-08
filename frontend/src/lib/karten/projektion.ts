@@ -1,7 +1,7 @@
 /**
- * Kartennetz: Equal Earth (flächentreu, Standard) oder Mercator.
+ * Kartennetz: Equal Earth (flächentreu, Standard), Mercator oder Globus.
  *
- * MapLibre kann nur Web-Mercator. Für Equal Earth rechnet der Server die
+ * MapLibre kann Web-Mercator und den Globus selbst (echte Längen/Breiten). Für Equal Earth rechnet der Server die
  * Ebenen um (api/karten_projektion.py, ?projektion=equalearth) und liefert
  * »Schein-Längen/Breiten«, die MapLibre als Equal-Earth-Bild zeichnet. Hier
  * steht dieselbe Rechnung für alles, was der Browser selbst platziert
@@ -10,11 +10,15 @@
  */
 import type { Ausschnitt } from "./satz";
 
-export type Projektion = "equalearth" | "mercator";
+export type Projektion = "equalearth" | "mercator" | "globus";
 export const PROJEKTIONEN: { id: Projektion; name: string; text: string }[] = [
   { id: "equalearth", name: "Equal Earth", text: "flächentreu — Länder in richtiger Größe" },
   { id: "mercator", name: "Mercator", text: "winkeltreu — Polgebiete stark vergrößert" },
+  { id: "globus", name: "Globus", text: "die Erde als Kugel — ohne Verzerrung, zum Drehen" },
 ];
+
+/** Kartennetze, die MapLibre selbst zeichnet: echte Koordinaten, Mercator-Kacheln, nichts umgerechnet */
+export const echt = (p: Projektion = "equalearth") => p === "mercator" || p === "globus";
 
 const A1 = 1.340264, A2 = -0.081106, A3 = 0.000893, A4 = 0.003796, M = Math.sqrt(3) / 2;
 const XMAX = Math.PI / (M * A1);
@@ -22,7 +26,7 @@ const GRAD = Math.PI / 180;
 
 /** Echte [Länge, Breite] → Kartenkoordinaten (bei Mercator unverändert). */
 export function vor([lon, lat]: [number, number] | number[], p: Projektion = "equalearth"): [number, number] {
-  if (p === "mercator") return [lon, lat];
+  if (echt(p)) return [lon, lat];
   const t = Math.asin(M * Math.sin(Math.max(-90, Math.min(90, lat)) * GRAD));
   const t2 = t * t, t6 = t2 * t2 * t2;
   const x = (lon * GRAD * Math.cos(t)) / (M * (A1 + 3 * A2 * t2 + t6 * (7 * A3 + 9 * A4 * t2)));
@@ -32,7 +36,7 @@ export function vor([lon, lat]: [number, number] | number[], p: Projektion = "eq
 
 /** Kartenkoordinaten → echte [Länge, Breite]; null außerhalb der Erde (Equal Earth). */
 export function zurueck([fx, fy]: [number, number] | number[], p: Projektion = "equalearth"): [number, number] | null {
-  if (p === "mercator") return [fx, fy];
+  if (echt(p)) return [fx, fy];
   const x = (fx / 180) * XMAX, y = (Math.asinh(Math.tan(fy * GRAD)) * XMAX) / Math.PI;
   let t = y;
   for (let i = 0; i < 12; i++) {
@@ -51,7 +55,7 @@ export function zurueck([fx, fy]: [number, number] | number[], p: Projektion = "
 
 /** Rechteck in echten Koordinaten → umschließendes Rechteck auf der Karte (Kanten abgetastet). */
 export function ausschnittVor(a: Ausschnitt, p: Projektion): Ausschnitt {
-  if (p === "mercator") return a;
+  if (echt(p)) return a;
   const punkte: [number, number][] = [];
   for (let i = 0; i <= 16; i++) {
     const lon = a.west + ((a.ost - a.west) * i) / 16, lat = a.sued + ((a.nord - a.sued) * i) / 16;
@@ -62,7 +66,7 @@ export function ausschnittVor(a: Ausschnitt, p: Projektion): Ausschnitt {
 
 /** Sichtbares Rechteck der Karte → umschließendes Rechteck in echten Koordinaten. */
 export function ausschnittZurueck(a: Ausschnitt, p: Projektion): Ausschnitt {
-  if (p === "mercator") return a;
+  if (echt(p)) return a;
   const punkte: [number, number][] = [];
   for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
     const q = zurueck([a.west + ((a.ost - a.west) * i) / 16, a.sued + ((a.nord - a.sued) * j) / 16], p);

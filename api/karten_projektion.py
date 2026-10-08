@@ -14,7 +14,7 @@ A1, A2, A3, A4 = 1.340264, -0.081106, 0.000893, 0.003796
 M = math.sqrt(3) / 2
 XMAX = math.pi / (M * A1)  # x am Äquator bei ±180°
 
-PROJEKTIONEN = ("equalearth", "mercator")
+PROJEKTIONEN = ("equalearth", "mercator", "globus")
 
 
 def vor(lon: float, lat: float) -> tuple[float, float]:

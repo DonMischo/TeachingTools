@@ -19,7 +19,7 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
-import { erdUmriss, vor, type Projektion } from "./projektion";
+import { echt, erdUmriss, vor, type Projektion } from "./projektion";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
@@ -252,22 +252,22 @@ export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
 /** Rasterkacheln gibt es je Kartennetz: Equal Earth liegt unter »<ebene>-ee« */
-const kachelnFuer = (url: string, id: string, p: Projektion) => (p === "equalearth" ? url.replace(`/karten/${id}/`, `/karten/${id}-ee/`) : url);
+const kachelnFuer = (url: string, id: string, p: Projektion) => (!echt(p) ? url.replace(`/karten/${id}/`, `/karten/${id}-ee/`) : url);
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelleRoh: Quelle = quelleAusApi): StyleSpecification {
   const projektion = auswahl.projektion ?? "equalearth";
   // Vektordaten rechnet der Server um (api/karten_projektion.py)
   const quelle: Quelle = (e) => {
     const url = quelleRoh(e);
-    return projektion === "equalearth" ? `${url}${url.includes("?") ? "&" : "?"}projektion=equalearth` : url;
+    return !echt(projektion) ? `${url}${url.includes("?") ? "&" : "?"}projektion=equalearth` : url;
   };
   const rolle = (e: Ebene): Rolle | undefined =>
     ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
   const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
-  const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": projektion === "equalearth" ? FARBE.weltraum : FARBE.meer } }];
-  if (projektion === "equalearth") {
+  const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": !echt(projektion) ? FARBE.weltraum : FARBE.meer } }];
+  if (!echt(projektion)) {
     // Equal Earth ist ein Oval: Meer nur innerhalb des Erdumrisses
     sources["erde"] = { type: "geojson", data: { type: "FeatureCollection", features: [erdUmriss()] } };
     layers.push({ id: "erde", type: "fill", source: "erde", paint: { "fill-color": FARBE.meer } },
@@ -581,9 +581,14 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   return {
     version: 8,
     glyphs: "/karten/schriften/{fontstack}/{range}.pbf",
+    // Globus: MapLibre zeichnet die Kugel selbst, mit leichtem Lufthauch am Rand
+    ...(projektion === "globus" && {
+      projection: { type: "globe" },
+      sky: { "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 7, 0] },
+    }),
     sources,
     layers,
-  };
+  } as StyleSpecification;
 }
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
