@@ -1,8 +1,10 @@
 /**
  * Kinderatlas (Kartennetz »Robinson Crusoe«): Robinson-Netz, bunte Länder, dazu Tiere und
- * Pflanzen dort, wo sie zu Hause sind — als runde Bildchen (Emoji der Systemschrift, auf den
- * Schul-PCs Segoe UI Emoji) mit Namen. Was gezeigt wird, wählt man im ☰-Menü.
+ * Pflanzen dort, wo sie zu Hause sind — als Kacheln wie die Avatar-Tiere (AvatarPicker, auch im
+ * Maus-Führerschein): Emoji auf farbigem, abgerundetem Feld. Tiere, die es als Avatar gibt,
+ * sehen genau so aus wie dort. Was gezeigt wird, wählt man im ☰-Menü.
  */
+import { AVATARS } from "@/components/AvatarPicker";
 import { vor, type Projektion } from "./projektion";
 
 export type KinderWahl = "tiere" | "pflanzen";
@@ -19,8 +21,8 @@ export const KINDER_EINTRAEGE: Eintrag[] = [
   { name: "Eisbär", bild: "🐻‍❄️", art: "tiere", lon: -75, lat: 74, rang: 1 },
   { name: "Pinguin", bild: "🐧", art: "tiere", lon: 0, lat: -74, rang: 1 },
   { name: "Robbe", bild: "🦭", art: "tiere", lon: -50, lat: -70 },
-  { name: "Wal", bild: "🐋", art: "tiere", lon: -150, lat: 20, rang: 1 },
-  { name: "Wal", bild: "🐋", art: "tiere", lon: 80, lat: -50 },
+  { name: "Wal", bild: "🐳", art: "tiere", lon: -150, lat: 20, rang: 1 },
+  { name: "Wal", bild: "🐳", art: "tiere", lon: 80, lat: -50 },
   { name: "Delfin", bild: "🐬", art: "tiere", lon: -32, lat: 30, rang: 1 },
   { name: "Hai", bild: "🦈", art: "tiere", lon: 75, lat: -15, rang: 1 },
   { name: "Krake", bild: "🐙", art: "tiere", lon: 165, lat: -30 },
@@ -35,7 +37,7 @@ export const KINDER_EINTRAEGE: Eintrag[] = [
   { name: "Dromedar", bild: "🐪", art: "tiere", lon: 5, lat: 24, rang: 1 },
   // Asien
   { name: "Panda", bild: "🐼", art: "tiere", lon: 103, lat: 31, rang: 1 },
-  { name: "Tiger", bild: "🐅", art: "tiere", lon: 79, lat: 21, rang: 1 },
+  { name: "Tiger", bild: "🐯", art: "tiere", lon: 79, lat: 21, rang: 1 },
   { name: "Orang-Utan", bild: "🦧", art: "tiere", lon: 114, lat: 1 },
   { name: "Trampeltier", bild: "🐫", art: "tiere", lon: 105, lat: 44 },
   { name: "Wolf", bild: "🐺", art: "tiere", lon: 95, lat: 63, rang: 1 },
@@ -89,28 +91,38 @@ export const KINDER_EINTRAEGE: Eintrag[] = [
   { name: "Kokosnuss", bild: "🥥", art: "pflanzen", lon: -150, lat: -17 },
 ];
 
+/** Kachelfarbe: die des Avatars mit demselben Emoji, sonst ein freundlicher Ton je Art */
+const AVATAR_FARBE = new Map<string, string>(AVATARS.map((a) => [a.emoji, a.bg]));
+const FARBE_SONST: Record<KinderWahl, string[]> = {
+  tiere: ["#FFB703", "#F4A261", "#E9C46A", "#FFADAD", "#BDE0FE", "#CDB4DB", "#A8DADC"],
+  pflanzen: ["#95D5B2", "#B5EAD7", "#80B918", "#FFE770", "#FFDDE1", "#06D6A0"],
+};
+export function kachelFarbe(e: Eintrag, i: number): string {
+  return AVATAR_FARBE.get(e.bild) ?? FARBE_SONST[e.art][i % FARBE_SONST[e.art].length];
+}
+
 /** Punkte für die Karte, schon im Kartennetz (Robinson) */
 export function kinderPunkte(wahl: KinderWahl[], p: Projektion): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: KINDER_EINTRAEGE.filter((e) => wahl.includes(e.art)).map((e) => ({
-      type: "Feature", geometry: { type: "Point", coordinates: vor([e.lon, e.lat], p) },
-      properties: { name: e.name, art: e.art, bild: `kind:${e.art}:${e.bild}`, rang: e.rang ?? 2 },
-    })),
+    features: KINDER_EINTRAEGE.flatMap((e, i) => (wahl.includes(e.art) ? [{
+      type: "Feature" as const, geometry: { type: "Point" as const, coordinates: vor([e.lon, e.lat], p) },
+      properties: { name: e.name, art: e.art, bild: `kind:${kachelFarbe(e, i)}:${e.bild}`, rang: e.rang ?? 2 },
+    }] : [])),
   };
 }
 
-/** Bildchen: runder weißer Aufkleber mit farbigem Rand (Tiere orange, Pflanzen grün), Emoji darauf */
+/** Bildchen: abgerundete Kachel in der Avatar-Farbe mit weißem Rand, Emoji darauf */
 export function zeichneKind(name: string): { width: number; height: number; data: Uint8ClampedArray; pixelRatio: number } | null {
-  const [, art, ...rest] = name.split(":");
+  const [, farbe, ...rest] = name.split(":");
   const bild = rest.join(":");
   const s = 64, c = document.createElement("canvas");
   c.width = c.height = s;
   const g = c.getContext("2d");
   if (!g || !bild) return null;
-  g.fillStyle = "#ffffff"; g.strokeStyle = art === "tiere" ? "#ff8a3d" : "#3fbf5f"; g.lineWidth = 4;
-  g.beginPath(); g.arc(s / 2, s / 2, s / 2 - 3, 0, Math.PI * 2); g.fill(); g.stroke();
-  g.font = `${s * 0.62}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  g.fillStyle = farbe; g.strokeStyle = "#ffffff"; g.lineWidth = 4;
+  g.beginPath(); g.roundRect(3, 3, s - 6, s - 6, 16); g.fill(); g.stroke();
+  g.font = `${s * 0.6}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
   g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText(bild, s / 2, s / 2 + s * 0.04);
   return { width: s, height: s, data: g.getImageData(0, 0, s, s).data, pixelRatio: 2 };

@@ -300,13 +300,15 @@ export default function Klickspiel({
                 onClick={e => klick(e, id)}
                 onDoubleClick={() => doppelklick(id)}
                 className={
-                  "aspect-square rounded-2xl flex items-center justify-center select-none cursor-pointer " +
+                  // @container: das Tier richtet sich nach der Kachel (cqi), nicht nach dem Fenster —
+                  // mit vw wurde es auf niedrigen Bildschirmen größer als die Kachel (Raster folgt der Höhe)
+                  "@container aspect-square rounded-2xl flex items-center justify-center select-none cursor-pointer " +
                   (istZiel ? "maus-blinken ring-4 ring-accent " : "") +
                   (wackelt?.id === id ? "maus-wackeln" : "")
                 }
-                style={{ backgroundColor: a.bg, fontSize: `min(${48 / spalten}vw, ${300 / spalten}px)` }}
+                style={{ backgroundColor: a.bg }}
               >
-                <span className="pointer-events-none">{a.emoji}</span>
+                <span className="pointer-events-none leading-none" style={{ fontSize: "50cqi" }}>{a.emoji}</span>
               </button>
             );
           })}
