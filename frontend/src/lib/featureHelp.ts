@@ -457,8 +457,9 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
   },
   gleichungswaage: {
     title: "Gleichungswaage",
-    intro: "Äquivalenzumformungen zum Anschauen — in drei Modi: Zahlen, Variablen und Chemie. Was auf der einen Seite passiert, muss auch auf der anderen passieren, sonst kippt die Waage.",
+    intro: "Äquivalenzumformungen zum Anschauen — in vier Modi: Rechnen, Zahlen, Variablen und Chemie. Was auf der einen Seite passiert, muss auch auf der anderen passieren, sonst kippt die Waage.",
     sections: [
+      { label: "🍎 Rechnen", text: "Für die Grundschule: Äpfel, Birnen, Sterne, Autos … in die Schalen legen. Jede Schale nimmt eine Zahl oder eine Rechnung (3 + 5, 7 − 2); weggenommene Dinge sind durchgestrichen. Im Drehpunkt steht das Zeichen: =, wenn die Waage gerade ist, sonst < oder > — das Krokodilmaul öffnet sich zur schwereren Seite. »Gerade machen«: rechts so viele hinlegen, bis die Waage ausgeglichen ist. »Welches Zeichen?«: die Waage wird festgehalten, erst raten, dann kippt sie." },
       { label: "➖ Minus und Brüche", text: "Sieben Stufen zum Würfeln. Das Minus ist keine Ausnahme mehr: es überwiegt in den unteren Stufen, und Stufe 5 stellt es vor das x (»12 − 2x = 4«, auch mit x auf der rechten Seite). Stufe 6 setzt einen Bruch vor das x (»1/2x + 3 = 7«, Lösung ganz), Stufe 7 liefert ein gebrochenes Ergebnis (»4x = 10«). Ein halber Klotz liegt dann als halber Klotz in der Schale." },
       { label: "🔢 Zahlen", text: "Lineare Gleichungen mit x. Violette x-Kisten sind die Unbekannte, goldene 1er sind Zahlen, rote Ballons sind Minus-Werte — sie ziehen nach oben statt zu drücken. Vier Stufen zum Würfeln, »Eigene Gleichung« nimmt jede lineare Gleichung." },
       { label: "✋ Von Hand legen", text: "Neben der Waage liegt ein Vorrat: x, 1 und die Minus-Federn. Zieh ein Teil auf nur eine Schale — dann kippt die Waage, und im Rechenweg steht ≠ statt =. So sieht man, warum man auf beiden Seiten dasselbe tun muss. Teile lassen sich auch aus der Schale zurückziehen oder auf die andere Seite legen. Gewicht und Feder derselben Art dürfen dabei nebeneinander liegen; »🧹 Nullpaare wegräumen« nimmt sie paarweise weg." },

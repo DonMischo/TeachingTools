@@ -186,13 +186,15 @@ function Pan({ cx, tilt, content }: { cx: number; tilt: number; content: PanCont
 }
 
 export function Balance({
-  tilt, left, right, ariaLabel, defs,
+  tilt, left, right, ariaLabel, defs, zeichen,
 }: {
   tilt: number;
   left: PanContent;
   right: PanContent;
   ariaLabel: string;
   defs?: ReactNode;
+  /** Vergleichszeichen im Drehpunkt (<, =, >, ?) — nur der Rechnen-Modus nutzt es. */
+  zeichen?: string;
 }) {
   return (
     // Höhe ≤ 60vh über die Breite (nicht max-h): ZahlenModus rechnet Ablagen mit dem Rahmen des svg
@@ -233,8 +235,21 @@ export function Balance({
         <Pan cx={PIVOT.x + ARM} tilt={tilt} content={right} />
       </g>
 
-      <circle cx={PIVOT.x} cy={PIVOT.y} r={19} fill="var(--surface)" stroke="#38bdf8" strokeWidth={3} />
-      <circle cx={PIVOT.x} cy={PIVOT.y} r={6} fill="#38bdf8" />
+      {zeichen ? (
+        <g>
+          <circle cx={PIVOT.x} cy={PIVOT.y} r={36} fill="var(--surface)" stroke="#38bdf8" strokeWidth={4} />
+          <text key={zeichen} x={PIVOT.x} y={PIVOT.y + 2} textAnchor="middle" dominantBaseline="central"
+            fontSize={52} fontWeight={900} fill={zeichen === "=" ? "#22c55e" : zeichen === "?" ? "var(--text-muted)" : "#38bdf8"}
+            className="gw-in">
+            {zeichen}
+          </text>
+        </g>
+      ) : (
+        <>
+          <circle cx={PIVOT.x} cy={PIVOT.y} r={19} fill="var(--surface)" stroke="#38bdf8" strokeWidth={3} />
+          <circle cx={PIVOT.x} cy={PIVOT.y} r={6} fill="#38bdf8" />
+        </>
+      )}
     </svg>
   );
 }

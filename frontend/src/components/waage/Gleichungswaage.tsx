@@ -1,6 +1,7 @@
 "use client";
 /**
- * Gleichungswaage — drei Modi auf derselben Waage:
+ * Gleichungswaage — vier Modi auf derselben Waage:
+ *   🍎 Rechnen    Grundschule: Dinge zusammenlegen, wegnehmen, vergleichen (<, =, >)
  *   🔢 Zahlen     lineare Gleichungen mit einem x, Klammern als Kisten
  *   🔤 Variablen  beliebige Formeln nach einer Größe umstellen
  *   ⚗️ Chemie     Reaktionsgleichungen ausgleichen, Atom für Atom
@@ -12,9 +13,11 @@ import { WaageStyles } from "./Balance";
 import ZahlenModus from "./ZahlenModus";
 import VariablenModus from "./VariablenModus";
 import ChemieModus from "./ChemieModus";
+import RechnenModus from "./RechnenModus";
 import { text, wahl, zahlen, type Vorgabe } from "@/lib/vorgabe";
 
 const MODES = [
+  { id: "rechnen", icon: "🍎", label: "Rechnen", sub: "Dinge zusammenlegen, wegnehmen und vergleichen — in der Mitte steht <, = oder >." },
   { id: "zahlen", icon: "🔢", label: "Zahlen", sub: "Gleichungen mit x — dazu die Klammerregel." },
   { id: "variablen", icon: "🔤", label: "Variablen", sub: "Formeln nach einer Größe umstellen — jede Größe hat ihre Farbe." },
   { id: "chemie", icon: "⚗️", label: "Chemie", sub: "Reaktionsgleichungen ausgleichen — jedes Atom liegt einzeln in der Schale." },
@@ -90,6 +93,7 @@ export default function Gleichungswaage({ action, vorgabe, start }: { action?: R
         </div>
       )}
 
+      {mode === "rechnen" && <RechnenModus />}
       {mode === "zahlen" && <ZahlenModus onMessage={setMsg} fest={fest ? gleichung : undefined}
         anfang={start?.modus === "zahlen" ? start.gleichung : undefined} />}
       {mode === "variablen" && <VariablenModus onMessage={setMsg}

@@ -128,7 +128,7 @@ Jede Simulation trägt Fächer (auch mehrere, z. B. Geografie und Physik); die �
 
 | Simulation | Was sie kann |
 |------------|--------------|
-| ⚖️ **Gleichungswaage** | Äquivalenzumformungen an einer Waage in drei Modi: Zahlen (sieben Stufen, Klammern, Brüche, Teile von Hand auf nur eine Seite ziehen, Motive wie Streichhölzer/Schachteln oder Gummibärchen/Tüten, Minus als beschädigtes Gegenstück: abgebrannt, angebissen, zerbrochen, schwarz), Variablen (Formeln wie F = m·a umstellen) und Chemie (Reaktionsgleichungen ausgleichen, Ionen, Kernteilchen, Oxidationszahlen, Oktett-Hinweis). Rechenweg wie im Heft, LaTeX-Eingabe. |
+| ⚖️ **Gleichungswaage** | Äquivalenzumformungen an einer Waage in vier Modi: Rechnen (Grundschule: 3 Äpfel + 5 Äpfel = 8 Äpfel, Dinge zum Auswählen, im Drehpunkt steht <, = oder >; frei legen, gerade machen oder das Zeichen raten, während die Waage festgehalten wird), Zahlen (sieben Stufen, Klammern, Brüche, Teile von Hand auf nur eine Seite ziehen, Motive wie Streichhölzer/Schachteln oder Gummibärchen/Tüten, Minus als beschädigtes Gegenstück: abgebrannt, angebissen, zerbrochen, schwarz), Variablen (Formeln wie F = m·a umstellen) und Chemie (Reaktionsgleichungen ausgleichen, Ionen, Kernteilchen, Oxidationszahlen, Oktett-Hinweis). Rechenweg wie im Heft, LaTeX-Eingabe. |
 | 🧮 **Abakus** | Rechenrahmen zum Schieben, Modus »Alle gleich« oder »Stellenwert«. |
 | 🖼️ **Bildformate** | PBM, PGM und PPM zum Anfassen: Zahlen tippen, Bild sehen, ins Bild klicken schreibt zurück. |
 | 📐 **Vierecke** | Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften, dazu Umfang (Zaun bauen) und Fläche (mit Einheitsquadraten auslegen; bei Parallelogramm, Trapez, Raute und Drachen die Herleitung der Formel als Trickfilm mit Tempo-Regler). |
