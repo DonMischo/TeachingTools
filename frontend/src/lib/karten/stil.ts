@@ -20,6 +20,7 @@ import type {
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
 import { echt, erdUmriss, KACHEL_KUERZEL, vor, type Projektion } from "./projektion";
+import { signaturAusdruck, zeichneSignatur } from "./signaturen";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
 export type Bereich = "de" | "welt";
@@ -329,6 +330,11 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
       { id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: { "fill-color": themaFarbe(e.darstellung!), "fill-opacity": 0.8 } },
       { id: `${e.id}:rand`, type: "line", source: e.id, paint: { "line-color": "#ffffff", "line-width": 0.4, "line-opacity": 0.6 } },
     );
+    // Atlas-Zeichen (Fabrik, Traube, Apfel …) in der Fläche — nur so viele, wie ohne Überdecken passen
+    const zeichen = signaturAusdruck(e.id, e.darstellung!);
+    if (zeichen) layers.push({ id: `${e.id}:zeichen`, type: "symbol", source: namen(e), minzoom: 7,
+      layout: { "icon-image": zeichen as ExpressionSpecification, "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.65, 10, 0.9],
+        "icon-padding": 14 } });
   }
 
   for (const e of [...mit("wasserflaeche"), ...mit("seen")]) {
@@ -452,7 +458,16 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
           paint: { "text-color": themaFarbe(d), "text-halo-color": "#ffffffdd", "text-halo-width": 1.4 } });
       }
     }
-    if (e.geometrie === "punkt") {
+    const zeichen = e.geometrie === "punkt" ? signaturAusdruck(e.id, d) : null;
+    if (zeichen) {
+      // Atlas-Zeichen statt Kreis (lib/karten/signaturen.ts); Größe nach Leistung wie sonst der Kreis
+      const groesse: ExpressionSpecification = d.groesse
+        ? ["interpolate", ["linear"], ["sqrt", ["max", 0, ["to-number", ["get", d.groesse.feld], 0]]], 0, 0.5, Math.sqrt(d.groesse.max), 1.4]
+        : ["interpolate", ["linear"], ["zoom"], 4, 0.7, 8, 1];
+      layers.push({ id: `${e.id}:punkt`, type: "symbol", source: e.id,
+        layout: { "icon-image": zeichen as ExpressionSpecification, "icon-size": groesse, "icon-allow-overlap": true, "icon-ignore-placement": true,
+          ...(d.groesse ? { "symbol-sort-key": ["-", 0, ["to-number", ["get", d.groesse.feld], 0]] as ExpressionSpecification } : {}) } });
+    } else if (e.geometrie === "punkt") {
       const r: ExpressionSpecification | number = d.groesse
         ? ["interpolate", ["linear"], ["sqrt", ["max", 0, ["to-number", ["get", d.groesse.feld], 0]]], 0, 2.5, Math.sqrt(d.groesse.max), 14]
         : 5;
@@ -460,6 +475,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         ...(d.groesse ? { layout: { "circle-sort-key": ["-", 0, ["to-number", ["get", d.groesse.feld], 0]] } } : {}),
         paint: { "circle-radius": r, "circle-color": themaFarbe(d), "circle-opacity": 0.9,
           "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
+    }
+    if (e.geometrie === "punkt") {
       if (text) {
         layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: 7,
           layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-size": 10.5, "text-anchor": "left",
@@ -598,7 +615,11 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 }
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
-export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray } | null {
+export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray; pixelRatio?: number } | null {
+  if (name.startsWith("sig:")) {
+    const bild = zeichneSignatur(name);
+    return bild && { ...bild, pixelRatio: 2 };
+  }
   if (name.startsWith("pfeil-")) {
     // Pfeilspitze nach rechts (= Linienrichtung), Farbe aus dem Namen
     const c = document.createElement("canvas");

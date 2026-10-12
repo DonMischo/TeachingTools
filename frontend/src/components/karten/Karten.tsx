@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import HelpButton from "@/components/HelpButton";
 import { auswahlFuer, baueStil, GRUPPEN, KARTENARTEN, monatVon, region, REGIONEN, wendeSatzAn, type Ebene, type Kartenart } from "@/lib/karten/stil";
 import { ankerpunkt, vergibNummern } from "@/lib/karten/nummern";
+import { signaturUrl } from "@/lib/karten/signaturen";
 import { schalteObjekt, type Ausschnitt, type KartenSatz, type SatzInhalt, type SuchTreffer } from "@/lib/karten/satz";
 import KartenAnsicht, { type KartenBild, type Treffer } from "./KartenAnsicht";
 import SatzLeiste from "./SatzLeiste";
@@ -251,17 +252,21 @@ function EbenenGruppe({ titel, ebenen, an, schalte }: { titel: string; ebenen: E
 function Themenlegende({ ebene }: { ebene: Ebene }) {
   const d = ebene.darstellung!;
   const stufen = d.art === "stufen";
+  // Atlas-Zeichen (Kraftwerk, Bergbau, Flughafen …) statt Farbfeld, wo es eines gibt
+  const zeichen = useMemo(() => d.werte.map((w) => signaturUrl(ebene.id, w.wert, w.farbe)), [ebene.id, d]);
   return (
     <div className="flex flex-col gap-1">
       <h3 className="text-xs font-black uppercase tracking-wide text-muted">{ebene.name}{d.einheit ? ` (${d.einheit})` : ""}</h3>
       {d.werte.map((w, i) => (
         <div key={String(w.wert)} className="flex items-center gap-2 text-xs">
-          <span className={`w-6 h-3.5 border border-black/20 ${ebene.geometrie === "punkt" ? "rounded-full w-3.5" : "rounded-xs"}`}
-            style={{ background: w.farbe }} />
+          {zeichen[i]
+            ? <img src={zeichen[i]!} alt="" className="w-[18px] h-[18px]" />
+            : <span className={`w-6 h-3.5 border border-black/20 ${ebene.geometrie === "punkt" ? "rounded-full w-3.5" : "rounded-xs"}`}
+              style={{ background: w.farbe }} />}
           {stufen && !w.text ? `${i === 0 ? "unter" : "ab"} ${Number(i === 0 ? d.werte[1]?.wert : w.wert).toLocaleString("de-DE")}` : w.text}
         </div>
       ))}
-      {d.groesse && <p className="text-[10px] text-muted">Kreisgröße nach {d.groesse.feld === "leistung" ? "Leistung (MW)" : d.groesse.feld}</p>}
+      {d.groesse && <p className="text-[10px] text-muted">{zeichen.some(Boolean) ? "Zeichengröße" : "Kreisgröße"} nach {d.groesse.feld === "leistung" ? "Leistung (MW)" : d.groesse.feld}</p>}
     </div>
   );
 }

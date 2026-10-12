@@ -107,9 +107,11 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       });
       m.touchZoomRotate.disableRotation();
       m.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
-      m.on("styleimagemissing", (e) => {
-        const bild = zeichneSymbol(e.id);
-        if (bild && !m!.hasImage(e.id)) m!.addImage(e.id, bild, { pixelRatio: 1 });
+      // Symbole erst bei Bedarf zeichnen — seit MapLibre 6 nur noch über den Resolver
+      // (ein »styleimagemissing«-Listener kann das Bild nicht mehr nachliefern)
+      m.setMissingStyleImageResolver((id) => {
+        const bild = zeichneSymbol(id);
+        if (bild && !m!.hasImage(id)) m!.addImage(id, bild, { pixelRatio: bild.pixelRatio ?? 1 });
       });
       const klickbar = () => m!.getLayersOrder().filter(istKlickbar);
       // Zeiger über Klickbarem: höchstens einmal je Bild prüfen — die Abfrage über großen Flächen
