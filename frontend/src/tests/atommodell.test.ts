@@ -255,6 +255,27 @@ describe("Bindungslabor", () => {
       const b = baue(v.symbole);
       expect(b.atome, v.label).toHaveLength(v.symbole.length);
       expect(b.gesetzt, v.label).toBe(v.label);
+      expect(b.name, v.label).not.toBeNull();
+    }
+  });
+
+  it("lässt bei jeder Vorlage außer den Bor-artigen alle Oktetts aufgehen", () => {
+    for (const v of VORLAGEN) {
+      const b = baue(v.symbole);
+      // Bor und Aluminium haben nur drei Außenelektronen — bei ihnen ist das
+      // Sextett der Punkt der Sache, bei allen anderen muss es aufgehen.
+      const mangel = v.symbole.some(sy => sy === "B" || sy === "Al");
+      expect(b.atome.every(a => a.erfuellt), `${v.label}: ${b.atome.map(a => `${a.e.symbol} ${a.huelle}`).join(", ")}`)
+        .toBe(!mangel);
+    }
+  });
+
+  it("verteilt in jeder Vorlage genau so viele Bindungen, wie die Atome wollen", () => {
+    for (const v of VORLAGEN) {
+      const b = baue(v.symbole);
+      for (const a of b.atome) {
+        expect(a.gebunden, `${v.label}: ${a.e.symbol}`).toBeLessThanOrEqual(a.bindigkeit);
+      }
     }
   });
 });

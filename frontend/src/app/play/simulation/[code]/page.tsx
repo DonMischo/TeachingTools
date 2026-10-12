@@ -60,6 +60,7 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   dla: { title: "Fraktales Wachstum", icon: "🪸", node: <Wachstum /> },
   schichten: { title: "Schichtenmodell", icon: "📶", node: <Schichtenmodell /> },
   pse: { title: "Periodensystem", icon: "🧪", node: <Periodensystem /> },
+  atommodelle: { title: "Atommodelle", icon: "⚛️", node: <Periodensystem nur="modelle" /> },
   strukturformeln: { title: "Strukturformeln", icon: "⬡", node: <Strukturformeln /> },
   // Der Führerschein trägt in die Bestenliste ein — dafür braucht er Code und Gast-Token.
   maus: { title: "Maus-Führerschein", icon: "🐭", node: null },

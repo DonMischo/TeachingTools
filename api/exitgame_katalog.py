@@ -162,6 +162,7 @@ WERKZEUGE = {
     },
     "dla": {"name": "Fraktales Wachstum", "config": {"reiter": "flaeche|raum|erklaerung"}},
     "pse": {"name": "Periodensystem", "config": {"element?": "Symbol oder Name, z. B. Fe oder Eisen"}},
+    "atommodelle": {"name": "Atommodelle", "config": {"element?": "Symbol oder Name, z. B. B oder Bor"}},
     "strukturformeln": {"name": "Strukturformeln", "config": {"name?": "IUPAC-Name, z. B. Ethanol"}},
     "wfc": {
         "name": "Wellenfunktionskollaps",

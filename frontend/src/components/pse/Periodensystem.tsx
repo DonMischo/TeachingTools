@@ -8,10 +8,11 @@
  * einem Klick in die Gleichungswaage, wo sie ausgeglichen wird.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { dichteKachel, KATEGORIEN, PSE, pseElement, pseNummer, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
+import { KATEGORIEN, PSE, pseElement, pseNummer, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
 // »text« heisst hier schon das Suchfeld — deshalb unter anderem Namen.
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Steckbrief from "./Steckbrief";
+import { Feldinhalt, ZUSTAND_FARBE } from "./Feld";
 import RallyePanel from "./RallyePanel";
 import Atommodelle from "./Atommodelle";
 import { useRallye } from "./useRallye";
@@ -51,20 +52,6 @@ export function feldBreite(platz: number, zoom: number): number {
 export const rasterBreite = (feld: number): number =>
   LABEL + SPALTEN * feld + SPALTEN * LUECKE;
 
-/** Zahl fürs Feld: deutsche Schreibweise, ohne überflüssige Nullen. */
-const zahl = (n: number, stellen: number): string =>
-  n.toLocaleString("de-DE", { maximumFractionDigits: stellen });
-
-/**
- * Die Farbe des Symbols sagt den Aggregatzustand bei Zimmertemperatur —
- * wie im Tafelwerk: fest schwarz, flüssig blau, gasförmig rot.
- */
-const ZUSTAND_FARBE: Record<string, string> = {
-  fest: "var(--text)",
-  "flüssig": "#2563eb",
-  "gasförmig": "#dc2626",
-};
-
 /**
  * Ein Feld des Rasters.
  *
@@ -80,17 +67,9 @@ const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, feld, onWahl }: 
   feld: number;
   onWahl: (e: PseElement) => void;
 }) {
-  const farbe = marke === "richtig" || marke === "loesung" ? "var(--good)"
-    : marke === "falsch" ? "var(--bad)"
+  const farbe = marke === "richtig" || marke === "loesung" ? "var(--green)"
+    : marke === "falsch" ? "var(--red)"
       : KATEGORIEN[e.kategorie].farbe;
-  const d = dichteKachel(e);
-  // Die Schrift wächst mit dem Feld, sonst stimmt beim Zoomen das Verhältnis nicht.
-  const ecke = Math.max(5, Math.min(11, feld * 0.145));
-  const symbol = Math.max(10, feld * 0.34);
-  const nameGross = feld * 0.12;
-  // Unter dieser Größe wird der Name zu Matsch — dann lieber weglassen.
-  // Der Name steht ohnehin im Steckbrief und im Tooltip.
-  const zeigeName = feld >= 56;
   return (
     <button
       onClick={() => onWahl(e)}
@@ -101,32 +80,13 @@ const Kachel = memo(function Kachel({ e, aktiv, gedimmt, marke, feld, onWahl }: 
       className={`rounded-md border-2 px-1 py-0.5 leading-none overflow-hidden transition-opacity hover:brightness-110 flex flex-col ${
         gedimmt ? "opacity-40" : ""} ${aktiv ? "ring-2 ring-accent" : ""}`}
     >
-      {/* Kopfzeile: Ordnungszahl links, relative Atommasse rechts */}
-      <div className="flex justify-between items-start text-muted tabular-nums w-full"
-        style={{ fontSize: ecke }}>
-        <span>{e.z}</span>
-        <span>{e.masse === null ? "" : zahl(e.masse, e.masse < 10 ? 3 : 2)}</span>
-      </div>
-      {/* Symbol, farbig nach Aggregatzustand; ein Stern markiert die radioaktiven */}
-      <div className="font-black text-center flex-1 flex items-center justify-center"
-        style={{ fontSize: symbol, color: ZUSTAND_FARBE[e.zustand ?? ""] ?? "var(--text-muted)" }}>
-        {e.symbol}
-        {radioaktiv(e) && <span style={{ fontSize: symbol * 0.6 }} aria-hidden>*</span>}
-      </div>
-      {zeigeName && (
-        <div className="text-muted text-center truncate w-full" style={{ fontSize: nameGross }}>
-          {e.name}
-        </div>
-      )}
-      {/* Fußzeile: Elektronegativität links, Dichte rechts */}
-      <div className="flex justify-between items-end text-muted tabular-nums w-full"
-        style={{ fontSize: ecke }}>
-        <span>{e.en === null ? "—" : zahl(e.en, 2)}</span>
-        <span className={d?.gas ? "text-[#dc2626]" : ""}>{d ? zahl(d.wert, d.wert < 10 ? 2 : 1) : "?"}</span>
-      </div>
+      <Feldinhalt e={e} feld={feld} />
     </button>
   );
 });
+
+/** Kantenlänge des Beispielfeldes in der Legende. */
+const BEISPIEL = 76;
 
 /** Erklärt, was in einer Kachel wo steht — einmal als Beispielfeld. */
 function Legende() {
@@ -137,12 +97,9 @@ function Legende() {
   );
   return (
     <div className="card p-3 flex items-center gap-4 flex-wrap">
-      <div className="rounded-md border-2 px-1 pt-0.5 pb-1 leading-none flex flex-col w-[76px]"
-        style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-        <div className="flex justify-between text-[7px] text-muted tabular-nums"><span>17</span><span>35,45</span></div>
-        <div className="text-[15px] font-black text-center" style={{ color: ZUSTAND_FARBE["gasförmig"] }}>Cl</div>
-        <div className="text-[6.5px] text-muted text-center">Chlor</div>
-        <div className="flex justify-between text-[7px] text-muted tabular-nums"><span>3,16</span><span>3,21</span></div>
+      <div className="rounded-md border-2 px-1 py-0.5 leading-none flex flex-col shrink-0"
+        style={{ background: "var(--surface)", borderColor: "var(--border)", width: BEISPIEL, height: BEISPIEL }}>
+        <Feldinhalt e={pseElement("Cl")!} feld={BEISPIEL} />
       </div>
       <div className="flex flex-col gap-0.5">
         {paar("Ordnungszahl", "rel. Atommasse")}
@@ -162,8 +119,16 @@ function Legende() {
   );
 }
 
-export default function Periodensystem({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
-  const [modus, setModus] = useState<Modus>("nachschlagen");
+export default function Periodensystem({ action, vorgabe, nur }: {
+  action?: ReactNode; vorgabe?: Vorgabe;
+  /**
+   * Auf einen Reiter festgelegt. Die Simulation »Atommodelle« ist dasselbe
+   * Raster, nur dass es dort allein zum Auswählen des Elements dient — die
+   * Reiterleiste fällt dann weg.
+   */
+  nur?: Modus;
+}) {
+  const [modus, setModus] = useState<Modus>(nur ?? "nachschlagen");
   const rallye = useRallye();
   const [gewaehlt, setGewaehlt] = useState<PseElement | null>(() => {
     const wunsch = vorgabeText(vorgabe, "element");
@@ -230,16 +195,19 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-[1900px] mx-auto w-full">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">🧪 Periodensystem</h1>
+          <h1 className="text-2xl font-black tracking-tight">
+            {nur === "modelle" ? "⚛️ Atommodelle" : "🧪 Periodensystem"}
+          </h1>
           <p className="text-muted text-sm mt-1 max-w-2xl">
-            Alle 118 Elemente, geordnet nach der Ordnungszahl. Elemente einer Spalte verhalten sich
-            ähnlich — sie haben gleich viele Außenelektronen. Klick auf ein Feld für den Steckbrief.
+            {nur === "modelle"
+              ? "Wie stellt man sich ein Atom vor? Fünf Modelle, eines nach dem anderen — jedes erklärt mehr als das vorige. Klick ein Element im Raster an; im Bindungslabor rechts entstehen daraus Verbindungen."
+              : "Alle 118 Elemente, geordnet nach der Ordnungszahl. Elemente einer Spalte verhalten sich ähnlich — sie haben gleich viele Außenelektronen. Klick auf ein Feld für den Steckbrief."}
           </p>
         </div>
         {action}
       </div>
 
-      <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
+      {!nur && <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
         {([["nachschlagen", "🔎 Nachschlagen"], ["modelle", "⚛️ Atommodelle"], ["rallye", "🎯 PSE-Rallye"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setModus(id)}
             className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
@@ -247,7 +215,7 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
             {label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {modus === "nachschlagen" && <div className="flex flex-wrap items-center gap-2">
         <input

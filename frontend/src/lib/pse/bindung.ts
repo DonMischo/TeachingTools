@@ -66,11 +66,13 @@ const NAMEN: Record<string, string> = {
   BF3: "Bortrifluorid", BCl3: "Bortrichlorid", BH3: "Boran", BBr3: "Bortribromid",
   BN: "Bornitrid", AlCl3: "Aluminiumchlorid",
   H2: "Wasserstoff", O2: "Sauerstoff", N2: "Stickstoff", F2: "Fluor", Cl2: "Chlor",
-  HCl: "Chlorwasserstoff", HF: "Fluorwasserstoff",
+  Br2: "Brom", HCl: "Chlorwasserstoff", HF: "Fluorwasserstoff",
   H2O: "Wasser", H2S: "Schwefelwasserstoff", NH3: "Ammoniak", PH3: "Phosphan",
-  CH4: "Methan", CCl4: "Tetrachlormethan", CF4: "Tetrafluormethan",
+  CH4: "Methan", SiH4: "Silan", CCl4: "Tetrachlormethan", CF4: "Tetrafluormethan",
+  CH3Cl: "Chlormethan", CHCl3: "Trichlormethan (Chloroform)",
+  CH2O: "Methanal (Formaldehyd)", CS2: "Schwefelkohlenstoff",
   CO2: "Kohlenstoffdioxid", CO: "Kohlenstoffmonoxid", SiO2: "Siliciumdioxid",
-  PCl3: "Phosphortrichlorid", SO2: "Schwefeldioxid",
+  NF3: "Stickstofftrifluorid", PCl3: "Phosphortrichlorid", SO2: "Schwefeldioxid",
 };
 
 /**
@@ -151,7 +153,9 @@ export function baue(symbole: string[]): Verbindung {
   if (atome.length === 1) {
     orte = [{ x: 0, y: 0 }];
   } else if (atome.length === 2) {
-    orte = [{ x: -1, y: 0 }, { x: 1, y: 0 }];
+    // Eine halbe Einheit je Seite: der Abstand zwischen zwei gebundenen Kernen
+    // ist überall gleich, egal ob mit oder ohne Zentralatom.
+    orte = [{ x: -0.5, y: 0 }, { x: 0.5, y: 0 }];
     const grad = Math.min(bindigkeit(atome[0]), bindigkeit(atome[1]), 3);
     if (grad > 0) bindungen.push({ a: 0, b: 1, grad });
   } else {
@@ -215,21 +219,74 @@ export function baue(symbole: string[]): Verbindung {
   };
 }
 
-/** Zum Anklicken: Verbindungen, die im Unterricht vorkommen. Bor zuerst. */
-export const VORLAGEN: { label: string; symbole: string[] }[] = [
-  { label: "BF₃", symbole: ["B", "F", "F", "F"] },
-  { label: "BCl₃", symbole: ["B", "Cl", "Cl", "Cl"] },
-  { label: "BH₃", symbole: ["B", "H", "H", "H"] },
-  { label: "H₂", symbole: ["H", "H"] },
-  { label: "HCl", symbole: ["H", "Cl"] },
-  { label: "H₂O", symbole: ["O", "H", "H"] },
-  { label: "NH₃", symbole: ["N", "H", "H", "H"] },
-  { label: "CH₄", symbole: ["C", "H", "H", "H", "H"] },
-  { label: "CO₂", symbole: ["C", "O", "O"] },
-  { label: "O₂", symbole: ["O", "O"] },
-  { label: "N₂", symbole: ["N", "N"] },
-  { label: "CCl₄", symbole: ["C", "Cl", "Cl", "Cl", "Cl"] },
+/**
+ * Die Richtungen, in die die freien Elektronenpaare eines Atoms zeigen: acht
+ * Plätze rings herum, davon die, die am weitesten von allen Bindungen weg
+ * sind. So drängeln sich freie Paare und Bindungen nicht auf derselben Seite.
+ */
+export function freiePlaetze(richtungen: number[], anzahl: number): number[] {
+  const slots = Array.from({ length: 8 }, (_, i) => (i / 8) * 2 * Math.PI);
+  // Abstand zur nächsten Bindung, über den kürzeren Weg um den Kreis gemessen.
+  const abstand = (w: number) =>
+    richtungen.length === 0 ? 1
+      : Math.min(...richtungen.map(b => Math.abs(Math.atan2(Math.sin(w - b), Math.cos(w - b)))));
+  return slots.sort((x, y) => abstand(y) - abstand(x)).slice(0, anzahl);
+}
+
+/**
+ * Die Richtungen der Bindungen je Atom, aus den Plätzen gerechnet — das
+ * Gegenstück zu `freiePlaetze`.
+ */
+export function bindungsrichtungen(v: Verbindung): number[][] {
+  return v.atome.map((a, i) =>
+    v.bindungen.filter(b => b.a === i || b.b === i).map(b => {
+      const anderer = b.a === i ? b.b : b.a;
+      return Math.atan2(v.atome[anderer].y - a.y, v.atome[anderer].x - a.x);
+    }));
+}
+
+/**
+ * Zum Anklicken: Verbindungen, die im Unterricht vorkommen, in drei Gruppen.
+ * Bor steht vorn — daran hängen die Beispiele dieses Reiters.
+ *
+ * Aufgenommen ist nur, was sich als einzelnes Molekül mit einem Zentralatom
+ * zeichnen lässt. Salze (NaCl) fehlen deshalb: die halten keine gemeinsamen
+ * Elektronenpaare, sondern Ionen zusammen — ein anderes Modell.
+ */
+export const VORLAGEN: { label: string; gruppe: string; symbole: string[] }[] = [
+  { gruppe: "Bor und Nachbarn", label: "BF₃", symbole: ["B", "F", "F", "F"] },
+  { gruppe: "Bor und Nachbarn", label: "BCl₃", symbole: ["B", "Cl", "Cl", "Cl"] },
+  { gruppe: "Bor und Nachbarn", label: "BBr₃", symbole: ["B", "Br", "Br", "Br"] },
+  { gruppe: "Bor und Nachbarn", label: "BH₃", symbole: ["B", "H", "H", "H"] },
+  { gruppe: "Bor und Nachbarn", label: "AlCl₃", symbole: ["Al", "Cl", "Cl", "Cl"] },
+
+  { gruppe: "Elemente", label: "H₂", symbole: ["H", "H"] },
+  { gruppe: "Elemente", label: "O₂", symbole: ["O", "O"] },
+  { gruppe: "Elemente", label: "N₂", symbole: ["N", "N"] },
+  { gruppe: "Elemente", label: "F₂", symbole: ["F", "F"] },
+  { gruppe: "Elemente", label: "Cl₂", symbole: ["Cl", "Cl"] },
+  { gruppe: "Elemente", label: "Br₂", symbole: ["Br", "Br"] },
+
+  { gruppe: "Moleküle", label: "HCl", symbole: ["H", "Cl"] },
+  { gruppe: "Moleküle", label: "HF", symbole: ["H", "F"] },
+  { gruppe: "Moleküle", label: "H₂O", symbole: ["O", "H", "H"] },
+  { gruppe: "Moleküle", label: "H₂S", symbole: ["S", "H", "H"] },
+  { gruppe: "Moleküle", label: "NH₃", symbole: ["N", "H", "H", "H"] },
+  { gruppe: "Moleküle", label: "PH₃", symbole: ["P", "H", "H", "H"] },
+  { gruppe: "Moleküle", label: "NF₃", symbole: ["N", "F", "F", "F"] },
+  { gruppe: "Moleküle", label: "CH₄", symbole: ["C", "H", "H", "H", "H"] },
+  { gruppe: "Moleküle", label: "SiH₄", symbole: ["Si", "H", "H", "H", "H"] },
+  { gruppe: "Moleküle", label: "CH₃Cl", symbole: ["C", "H", "H", "H", "Cl"] },
+  { gruppe: "Moleküle", label: "CHCl₃", symbole: ["C", "H", "Cl", "Cl", "Cl"] },
+  { gruppe: "Moleküle", label: "CCl₄", symbole: ["C", "Cl", "Cl", "Cl", "Cl"] },
+  { gruppe: "Moleküle", label: "CF₄", symbole: ["C", "F", "F", "F", "F"] },
+  { gruppe: "Moleküle", label: "CH₂O", symbole: ["C", "O", "H", "H"] },
+  { gruppe: "Moleküle", label: "CO₂", symbole: ["C", "O", "O"] },
+  { gruppe: "Moleküle", label: "CS₂", symbole: ["C", "S", "S"] },
 ];
+
+/** Die Gruppen in ihrer Reihenfolge, ohne Wiederholung. */
+export const VORLAGENGRUPPEN = [...new Set(VORLAGEN.map(v => v.gruppe))];
 
 /** Die Atome, aus denen im Labor gebaut wird — die Schulelemente der ersten drei Perioden. */
 export const BAUSTEINE = ["H", "B", "C", "N", "O", "F", "Cl", "Br", "S", "P", "Si", "Al", "He", "Ne"];

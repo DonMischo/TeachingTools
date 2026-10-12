@@ -58,6 +58,14 @@ export const REGISTER: WerkzeugQuellen[] = [
     ],
   },
   {
+    slug: "atommodelle", name: "⚛️ Atommodelle",
+    eintraege: [
+      { quelle: "Periodic Table of Elements (PubChem)", urheber: "National Center for Biotechnology Information (NCBI), NLM",
+        lizenz: "gemeinfrei (Werk der US-Regierung)", url: "https://pubchem.ncbi.nlm.nih.gov/periodic-table/",
+        verwendung: "Elektronenkonfiguration und Atommassen (src/lib/pse/daten.json) — daraus Schalen, Orbitale und Neutronenzahl" },
+    ],
+  },
+  {
     slug: "strukturformeln", name: "⬡ Strukturformeln",
     eintraege: [
       { quelle: "Strukturformelzeichner (strukturformelzeichner.de)", lizenz: "nur als Vorbild angesehen, kein Code übernommen",

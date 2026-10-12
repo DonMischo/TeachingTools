@@ -41,6 +41,7 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   dla: ["Physik", "Chemie", "Mathematik", "Biologie", "Informatik"],
   schichten: ["Informatik"],
   pse: ["Chemie"],
+  atommodelle: ["Chemie", "Physik"],
   strukturformeln: ["Chemie"],
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],

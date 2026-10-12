@@ -14,10 +14,11 @@ import { useState } from "react";
 import {
   aussen, bindigkeit, MODELLE, neutronen, orbitale, schalen, type ModellId,
 } from "@/lib/pse/atommodell";
-import { baue, BAUSTEINE, MAX_ATOME, VORLAGEN } from "@/lib/pse/bindung";
+import { baue, BAUSTEINE, MAX_ATOME, VORLAGEN, VORLAGENGRUPPEN } from "@/lib/pse/bindung";
 import { pseElement, type PseElement } from "@/lib/pse/elemente";
 import Atombild from "./Atombild";
 import Bindungsbild from "./Bindungsbild";
+import Lewisbild from "./Lewisbild";
 
 /** Bor ist der rote Faden dieses Reiters — darum steht es vorn. */
 const SCHNELL = ["B", "H", "He", "C", "N", "O", "Na", "Cl", "Fe"];
@@ -150,27 +151,39 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
           </div>
 
           <p className="text-xs text-muted">
-            Das geteilte Paar pendelt zwischen den Schalen — es gehört beiden Atomen und zählt bei
-            beiden mit. Darum stehen unter den Atomen mehr Elektronen, als zusammen vorhanden sind.
+            Jedes Atom hat seine Farbe, und jedes seiner Elektronen trägt sie. Ein bindendes Paar
+            besteht aus je einem Elektron beider Partner — beide laufen um <em>beide</em> Kerne.
+            Darum zählt dasselbe Elektron bei zwei Atomen mit, und darum stehen unter den Atomen
+            zusammen mehr Elektronen, als überhaupt da sind.
           </p>
+
+          {/* Dieselbe Verbindung als Kurzschrift fürs Heft. */}
+          <div className="rounded-xl border border-line p-2">
+            <div className="text-[11px] text-muted mb-1">
+              Valenzstrichformel — ein Strich ist ein Elektronenpaar
+            </div>
+            <Lewisbild v={v} />
+          </div>
 
           {v.hinweise.map(h => (
             <p key={h} className={`text-xs rounded-lg px-3 py-2 ${
               h.startsWith("Alle Atome") ? "bg-ok/10" : "bg-accent/10"}`}>{h}</p>
           ))}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted">Vorlagen</span>
-            <div className="flex flex-wrap gap-1">
-              {VORLAGEN.map(x => (
-                <button key={x.label} onClick={() => setTeile(x.symbole)}
-                  className={`px-2 py-0.5 rounded-lg border text-xs ${
-                    v.gesetzt === x.label ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
-                  {x.label}
-                </button>
-              ))}
+          {VORLAGENGRUPPEN.map(gruppe => (
+            <div key={gruppe} className="flex flex-col gap-1">
+              <span className="text-xs text-muted">{gruppe}</span>
+              <div className="flex flex-wrap gap-1">
+                {VORLAGEN.filter(x => x.gruppe === gruppe).map(x => (
+                  <button key={x.label} onClick={() => setTeile(x.symbole)}
+                    className={`px-2 py-0.5 rounded-lg border text-xs ${
+                      v.gesetzt === x.label ? "border-accent bg-accent/15 font-bold" : "border-line text-muted hover:text-fg"}`}>
+                    {x.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted">

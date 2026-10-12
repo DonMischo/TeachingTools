@@ -15,6 +15,10 @@ import { probe } from "@/lib/pse/bilder";
 import { reaktionenZu, waageLink } from "@/lib/pse/reaktionen";
 import { formatReaction, parseReaction } from "@/lib/chemie";
 import { textZu } from "@/lib/pse/texte";
+import { Feldinhalt } from "./Feld";
+
+/** Kantenlänge des Feldes im Kopf des Steckbriefs. */
+const FELD = 76;
 
 /**
  * Zahl mit Einheit, oder »—« wenn PubChem nichts weiß (etwa bei Element 118).
@@ -58,12 +62,12 @@ export default function Steckbrief({ e, onSchliessen, onAtommodell }: {
   return (
     <div className="card p-5 flex flex-col gap-4">
       <div className="flex items-start gap-3">
+        {/* Dasselbe quadratische Feld wie im Raster — hier nur zum Ansehen. */}
         <div
-          style={{ background: `${kat.farbe}33`, borderColor: kat.farbe }}
-          className="rounded-xl border-2 px-3 py-2 text-center shrink-0"
+          style={{ background: `${kat.farbe}33`, borderColor: kat.farbe, width: FELD, height: FELD }}
+          className="rounded-md border-2 px-1 py-0.5 leading-none flex flex-col shrink-0"
         >
-          <div className="text-[10px] text-muted tabular-nums">{e.z}</div>
-          <div className="text-2xl font-black leading-none">{e.symbol}</div>
+          <Feldinhalt e={e} feld={FELD} />
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-black leading-tight">{e.name}</h2>

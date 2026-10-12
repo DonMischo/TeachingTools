@@ -142,6 +142,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#22c55e",
   },
   {
+    slug: "atommodelle",
+    href: "/simulationen/atommodelle",
+    icon: "⚛️",
+    title: "Atommodelle",
+    description: "Wie stellt man sich ein Atom vor? Fünf Modelle nacheinander — vom Teilchenmodell bis zu den Orbitalen, jedes erklärt mehr als das vorige. Dazu das Bindungslabor: bis zu acht Atome zusammenstecken und zusehen, wie die gemeinsamen Elektronen um beide Kerne laufen.",
+    color: "#8b5cf6",
+  },
+  {
     slug: "strukturformeln",
     href: "/simulationen/strukturformeln",
     icon: "⬡",

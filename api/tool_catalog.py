@@ -178,6 +178,10 @@ CATALOG: list[CatalogTool] = [
     CatalogTool("pse", "🧪 Periodensystem", "🧪", "simulationen", {
         "use": _cap(True, True),
     }),
+    # Atommodelle: vom Teilchen- zum Orbitalmodell, dazu das Bindungslabor.
+    CatalogTool("atommodelle", "⚛️ Atommodelle", "⚛️", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Strukturformeln: IUPAC-Name eintippen, Strukturformel sehen.
     CatalogTool("strukturformeln", "⬡ Strukturformeln", "⬡", "simulationen", {
         "use": _cap(True, True),

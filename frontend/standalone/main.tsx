@@ -53,6 +53,7 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "algo", icon: "🔀", label: "Algorithmen", node: <Algorithmen /> },
   { id: "dla", icon: "🪸", label: "Fraktales Wachstum", node: <Wachstum /> },
   { id: "pse", icon: "🧪", label: "Periodensystem", node: <Periodensystem /> },
+  { id: "atommodelle", icon: "⚛️", label: "Atommodelle", node: <Periodensystem nur="modelle" /> },
   { id: "strukturformeln", icon: "⬡", label: "Strukturformeln", node: <Strukturformeln /> },
   { id: "schichten", icon: "📶", label: "Schichtenmodell", node: <Schichtenmodell /> },
 ];
