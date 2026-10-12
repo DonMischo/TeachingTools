@@ -11,8 +11,9 @@
  *   »Fläche«  — die Flächenaufgabe des GeoTools: Einheitsquadrate auslegen.
  *
  * Beide Aufgaben gibt es nur für Quadrat und Rechteck — nur die zerfallen
- * lückenlos in Einheitsquadrate. Bei den anderen Formen bleibt es beim
- * Formen-Blatt, und die Aufgabe sagt das auch.
+ * lückenlos in Einheitsquadrate. Bei den anderen Formen zeigt das Blatt
+ * »Fläche« stattdessen die Herleitung der Formel als Trickfilm; das Blatt
+ * »Umfang« rechnet am Rechteck weiter und sagt das auch.
  *
  * Gelegt wird durch Antippen; mit gedrückter Maus/Finger auch im Streichen.
  * Auf dem Smartboard ist das zuverlässiger als Ziehen und Ablegen.
@@ -23,6 +24,7 @@ import {
   SHAPES, SHAPE_ORDER, bounds, defaults, fmt,
   type ShapeKey, type Vals,
 } from "@/lib/vierecke";
+import Herleitung from "@/components/simulationen/Herleitung";
 
 type Tab = "formen" | "umfang" | "flaeche";
 
@@ -363,12 +365,12 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
       {!festeForm && <div className="flex flex-wrap gap-2">
         {SHAPE_ORDER.map(k => {
           const s = SHAPES[k];
-          const dimmed = tab !== "formen" && !s.gridable;
+          const dimmed = tab === "umfang" && !s.gridable;
           return (
             <button
               key={k}
               onClick={() => pickShape(k)}
-              title={dimmed ? `${s.title}: nur auf dem Blatt »Formen«` : s.title}
+              title={dimmed ? `${s.title}: Zaun legen geht nur bei Quadrat und Rechteck` : s.title}
               className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                 shapeKey === k
                   ? "border-accent bg-accent/10 font-bold"
@@ -432,12 +434,18 @@ export default function Vierecke({ action, vorgabe }: { action?: ReactNode; vorg
         </>
       )}
 
-      {tab !== "formen" && (
+      {tab === "flaeche" && !shape.gridable && (
+        <div className="card p-4">
+          <Herleitung shapeKey={shapeKey} vals={vals} />
+        </div>
+      )}
+
+      {(tab === "umfang" || (tab === "flaeche" && shape.gridable)) && (
         <>
           {!shape.gridable && (
             <p className="text-sm rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-              Auslegen geht nur beim Quadrat und beim Rechteck — nur die zerfallen lückenlos in
-              Einheitsquadrate. Gerechnet wird hier deshalb am Rechteck {a} × {b}.
+              Den Zaun Feld für Feld legen geht nur beim Quadrat und beim Rechteck. Gerechnet wird
+              hier deshalb am Rechteck {a} × {b}.
             </p>
           )}
 

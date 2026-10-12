@@ -169,6 +169,7 @@ simulationen:
     kann:
       - Sechs Vierecke mit Formeln, Rechenweg und Eigenschaften
       - Umfang (Zaun bauen) und Fläche (Einheitsquadrate auslegen)
+      - Herleitung der Flächenformel als Trickfilm für Parallelogramm, Trapez, Raute und Drachen (Tempo-Regler, Schritte, Zeitleiste)
   - id: binaerrechner
     name: Binär-Rechner
     kann:
