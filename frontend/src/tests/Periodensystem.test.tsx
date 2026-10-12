@@ -78,7 +78,10 @@ describe("Periodensystem", () => {
   });
 });
 
-describe("PSE-Rallye", () => {
+// Jede Aufgabe zeichnet das Raster mit seinen 118 Kacheln neu. Allein läuft
+// das in Sekunden, unter der Last der ganzen Suite reichen die üblichen 15 s
+// aber nicht — darum hier mehr Zeit für den ganzen Block.
+describe("PSE-Rallye", { timeout: 40_000 }, () => {
   // Der Stand der Rallye liegt im Browser — ohne Aufräumen trüge ein
   // vorheriger Lauf seine Erfolge in den nächsten hinein.
   beforeEach(() => {
@@ -158,8 +161,7 @@ describe("PSE-Rallye", () => {
     expect(screen.getByText(/2\/10/)).toBeInTheDocument();
   });
 
-  // Dieser eine Test spielt zehn Aufgaben durch und zeichnet dabei das Raster
-  // immer wieder — unter Last reichen die üblichen 15 s nicht.
+  // Dieser Test spielt zehn Aufgaben am Stück durch.
   it("schließt die Runde mit Sternen und Erfolgen ab", () => {
     starte();
     for (let i = 0; i < 10; i++) {
@@ -169,12 +171,96 @@ describe("PSE-Rallye", () => {
     expect(screen.getByText(/von 30 Punkten/)).toBeInTheDocument();
     expect(screen.getByText("Neue Erfolge")).toBeInTheDocument();
     expect(screen.getByText(/Erste Rallye/)).toBeInTheDocument();
-  }, 40_000);
+  });
 
   it("lässt im Rallye-Modus keinen Steckbrief aufgehen", () => {
     starte();
     fireEvent.click(screen.getByTitle(/^Eisen —/));
     expect(screen.queryByRole("heading", { name: "Eisen" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Atommodelle", { timeout: 40_000 }, () => {
+  /** Öffnet den Reiter; ohne Wahl steht Bor da. */
+  const reiter = () => {
+    render(<Periodensystem />);
+    fireEvent.click(screen.getByRole("button", { name: /Atommodelle/ }));
+  };
+
+  it("zeigt ohne Wahl Bor im Schalenmodell", () => {
+    reiter();
+    expect(screen.getByRole("heading", { name: /Bor — Schalenmodell/ })).toBeInTheDocument();
+    // 2 innen, 3 außen. »3e⁻« steht zweimal da: an der Schale im Bild und
+    // in der Tabelle darunter.
+    expect(screen.getByText("2·3")).toBeInTheDocument();
+    expect(screen.getAllByText("3e⁻").length).toBeGreaterThan(0);
+  });
+
+  it("nennt bei jedem Modell Urheber, Leistung und Lücke", () => {
+    reiter();
+    for (const [knopf, wer] of [
+      ["Teilchenmodell", "John Dalton"], ["Kern-Hülle-Modell", "Ernest Rutherford"],
+      ["Energiestufenmodell", "Bohr und Sommerfeld"], ["Orbitalmodell", "Erwin Schrödinger"],
+    ]) {
+      fireEvent.click(screen.getByRole("button", { name: new RegExp(knopf) }));
+      expect(screen.getByText(new RegExp(wer))).toBeInTheDocument();
+      expect(screen.getByText(/Erklärt:/)).toBeInTheDocument();
+      expect(screen.getByText(/Hört auf bei:/)).toBeInTheDocument();
+    }
+  });
+
+  it("erklärt bei Bor den Elektronenmangel", () => {
+    reiter();
+    expect(screen.getByText("Warum Bor?")).toBeInTheDocument();
+    expect(screen.getByText(/sechs statt acht/)).toBeInTheDocument();
+  });
+
+  it("wechselt das Element über das Raster", () => {
+    reiter();
+    fireEvent.click(screen.getByTitle(/^Kohlenstoff —/));
+    expect(screen.getByRole("heading", { name: /Kohlenstoff — Schalenmodell/ })).toBeInTheDocument();
+    expect(screen.getByText("2·4")).toBeInTheDocument();
+    // Der Bor-Kasten gehört nur zu Bor.
+    expect(screen.queryByText("Warum Bor?")).not.toBeInTheDocument();
+  });
+
+  it("baut im Bindungslabor BF₃ und zeigt das Sextett", () => {
+    reiter();
+    fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
+    expect(screen.getByRole("heading", { name: /BF₃/ })).toBeInTheDocument();
+    expect(screen.getByText(/Bortrifluorid/)).toBeInTheDocument();
+    expect(screen.getByText(/3 Bindungen/)).toBeInTheDocument();
+    expect(screen.getByText(/Elektronenmangel/)).toBeInTheDocument();
+  });
+
+  it("nimmt Atome dazu und wieder weg", () => {
+    reiter();
+    fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
+    fireEvent.click(screen.getByRole("button", { name: "H₂O" }));
+    expect(screen.getByRole("heading", { name: /H₂O/ })).toBeInTheDocument();
+    expect(screen.getByText(/Edelgaskonfiguration/)).toBeInTheDocument();
+    // Ein Wasserstoff weg: übrig bleibt ein Rest aus O und H.
+    fireEvent.click(screen.getAllByRole("button", { name: "H ×" })[0]);
+    expect(screen.getByRole("heading", { name: /^HO/ })).toBeInTheDocument();
+  });
+
+  it("lässt höchstens acht Atome zu", () => {
+    reiter();
+    fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
+    const dazu = screen.getByRole("button", { name: "+H" });
+    for (let i = 0; i < 8; i++) if (!(dazu as HTMLButtonElement).disabled) fireEvent.click(dazu);
+    expect(screen.getByText("Atome dazunehmen (8/8)")).toBeInTheDocument();
+    expect(dazu).toBeDisabled();
+  });
+
+  it("führt aus dem Steckbrief in die Modelle", () => {
+    render(<Periodensystem />);
+    fireEvent.click(screen.getByTitle(/^Eisen —/));
+    // Der Knopf im Steckbrief, nicht der Reiter oben — beide heißen gleich.
+    fireEvent.click(screen.getByRole("button", { name: /Eisen als Kugel/ }));
+    expect(screen.getByRole("heading", { name: /Eisen — Schalenmodell/ })).toBeInTheDocument();
+    // 2, 8, 14, 2 — die angefangene vierte Schale.
+    expect(screen.getByText("2·8·14·2")).toBeInTheDocument();
   });
 });
 

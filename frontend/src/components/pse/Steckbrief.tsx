@@ -44,7 +44,11 @@ function gesetzt(src: string): string {
   return r.ok ? formatReaction(r.r) : src.replace("->", "→");
 }
 
-export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchliessen: () => void }) {
+export default function Steckbrief({ e, onSchliessen, onAtommodell }: {
+  e: PseElement; onSchliessen: () => void;
+  /** Führt in den Reiter »Atommodelle« — mit diesem Element. */
+  onAtommodell?: () => void;
+}) {
   const kat = KATEGORIEN[e.kategorie];
   const bild = probe(e.symbol);
   const text = textZu(e.symbol);
@@ -96,6 +100,16 @@ export default function Steckbrief({ e, onSchliessen }: { e: PseElement; onSchli
           {text.verwendung && <p><span className="text-muted">Verwendung: </span>{text.verwendung}</p>}
           {text.merk && <p className="rounded-lg bg-accent/10 px-3 py-2">💡 {text.merk}</p>}
         </div>
+      )}
+
+      {onAtommodell && (
+        <button onClick={onAtommodell}
+          className="rounded-xl border border-line px-3 py-2 text-left hover:border-accent group">
+          <span className="text-sm font-medium">⚛️ Atommodelle</span>
+          <span className="block text-xs text-muted mt-0.5">
+            {e.name} als Kugel, Kern mit Hülle, Schalen und Orbitale — animiert
+          </span>
+        </button>
       )}
 
       <dl className="text-sm">

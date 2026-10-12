@@ -344,6 +344,12 @@ simulationen:
       - PSE-Rallye: sechs Fragearten (Ordnungszahl, Atommasse, Name, Symbol, Hauptgruppe, Periode×Hauptgruppe), Antwort per Klick ins Raster, drei Bereiche
       - Punkte (3/2/1 je nach Versuch), bis zu drei Sterne je Runde, 19 Erfolge in vier Gruppen; Stand im Browser (ohne Konto spielbar)
       - Bilder und Daten liegen im Repo (offline, nichts geht nach außen); geholt mit scripts/fetch-pse.mjs
+      - "Atommodelle: fünf Modelle in der Reihenfolge des Unterrichts — Teilchenmodell (Dalton), Kern-Hülle (Rutherford), Schalen (Bohr), Energiestufen (Bohr/Sommerfeld), Orbitale (Schrödinger); je Modell, was es erklärt und wo es aufhört"
+      - Animierte Bilder (drehende Schalen, zitternder Kern, atmende Orbitale) per CSS, anhaltbar und mit Rücksicht auf »Bewegung reduzieren«
+      - Bor im Mittelpunkt: drei Außenelektronen, Elektronensextett statt Oktett, daher die Gier nach einem fremden Elektronenpaar
+      - "Bindungslabor: bis zu acht Atome zusammenstecken; geteilte Elektronenpaare pendeln zwischen den Schalen, je Atom steht die Elektronenbilanz mit Oktett-Prüfung dabei"
+      - Zwölf Vorlagen (BF₃ bis CCl₄), Doppel- und Dreifachbindungen aus der übrigen Bindigkeit, Klartext-Hinweis, wenn eine Kombination nicht aufgeht
+      - Elektronenkonfiguration aus den gemessenen PubChem-Daten, also mit den Ausnahmen (Chrom 3d⁵ 4s¹)
   - id: strukturformeln
     name: Strukturformeln
     kann:

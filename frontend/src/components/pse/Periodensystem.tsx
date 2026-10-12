@@ -8,13 +8,17 @@
  * einem Klick in die Gleichungswaage, wo sie ausgeglichen wird.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { dichteKachel, KATEGORIEN, PSE, pseElement, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
+import { dichteKachel, KATEGORIEN, PSE, pseElement, pseNummer, radioaktiv, suche, type Kategorie, type PseElement } from "@/lib/pse/elemente";
 // »text« heisst hier schon das Suchfeld — deshalb unter anderem Namen.
 import { text as vorgabeText, type Vorgabe } from "@/lib/vorgabe";
 import Steckbrief from "./Steckbrief";
 import RallyePanel from "./RallyePanel";
+import Atommodelle from "./Atommodelle";
 import { useRallye } from "./useRallye";
 import { elementeIm } from "@/lib/pse/rallye";
+
+/** Die drei Reiter: nachschlagen, Modelle bauen, Rallye spielen. */
+type Modus = "nachschlagen" | "modelle" | "rallye";
 
 const SPALTEN = 18;
 const ZEILEN = 10;
@@ -159,7 +163,7 @@ function Legende() {
 }
 
 export default function Periodensystem({ action, vorgabe }: { action?: ReactNode; vorgabe?: Vorgabe }) {
-  const [modus, setModus] = useState<"nachschlagen" | "rallye">("nachschlagen");
+  const [modus, setModus] = useState<Modus>("nachschlagen");
   const rallye = useRallye();
   const [gewaehlt, setGewaehlt] = useState<PseElement | null>(() => {
     const wunsch = vorgabeText(vorgabe, "element");
@@ -174,6 +178,8 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     // In der Rallye wird nicht gefiltert, aber alles außerhalb des gewählten
     // Bereichs tritt zurück — dort gibt es nichts zu suchen.
     if (modus === "rallye") return !imBereich.has(e.z);
+    // Im Modellreiter steht jedes Element zur Wahl.
+    if (modus === "modelle") return false;
     return (filter !== null && e.kategorie !== filter) || (treffer.size > 0 && !treffer.has(e.z));
   };
 
@@ -214,6 +220,10 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
     else setGewaehlt(e);
   }, [modus, rallye.antworte]);
 
+  // Im Reiter »Atommodelle« ist immer ein Element gezeigt; ohne Wahl Bor,
+  // denn an Bor hängen die Beispiele.
+  const modellElement = modus === "modelle" ? gewaehlt ?? pseNummer(5)! : null;
+
   // Breiter als die üblichen 1440 px der übrigen Seiten: ein Periodensystem
   // mit 18 Spalten und lesbaren Feldern braucht den Platz.
   return (
@@ -230,7 +240,7 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
       </div>
 
       <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
-        {([["nachschlagen", "🔎 Nachschlagen"], ["rallye", "🎯 PSE-Rallye"]] as const).map(([id, label]) => (
+        {([["nachschlagen", "🔎 Nachschlagen"], ["modelle", "⚛️ Atommodelle"], ["rallye", "🎯 PSE-Rallye"]] as const).map(([id, label]) => (
           <button key={id} onClick={() => setModus(id)}
             className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
               modus === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
@@ -313,7 +323,8 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
                 </div>
               ))}
               {PSE.map(e => (
-                <Kachel key={e.z} e={e} aktiv={modus === "nachschlagen" && gewaehlt?.z === e.z}
+                <Kachel key={e.z} e={e}
+                  aktiv={modellElement ? modellElement.z === e.z : modus === "nachschlagen" && gewaehlt?.z === e.z}
                   gedimmt={gedimmt(e)} marke={markeFuer(e)} feld={feld} onWahl={klick} />
               ))}
               {/* Dort, wo der f-Block herausgenommen ist, steht sein Bereich */}
@@ -335,11 +346,14 @@ export default function Periodensystem({ action, vorgabe }: { action?: ReactNode
           <div className="mt-3"><Legende /></div>
         </div>
 
-        <div className="w-full 2xl:w-[380px] shrink-0">
-          {modus === "rallye"
+        <div className={`w-full shrink-0 ${modus === "modelle" ? "2xl:w-[500px]" : "2xl:w-[380px]"}`}>
+          {modus === "modelle" && modellElement
+            ? <Atommodelle e={modellElement} onWahl={setGewaehlt} />
+            : modus === "rallye"
             ? <RallyePanel r={rallye} />
             : gewaehlt
-              ? <Steckbrief e={gewaehlt} onSchliessen={() => setGewaehlt(null)} />
+              ? <Steckbrief e={gewaehlt} onSchliessen={() => setGewaehlt(null)}
+                  onAtommodell={() => setModus("modelle")} />
               : <div className="card p-5 text-sm text-muted">
                   Noch kein Element gewählt. Klick auf ein Feld im Raster — der Steckbrief zeigt dann
                   Foto, Kenndaten und typische Reaktionen.
