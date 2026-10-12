@@ -14,20 +14,26 @@
 import proj4 from "proj4";
 import type { Ausschnitt } from "./satz";
 
-export type Projektion = "equalearth" | "mercator" | "globus" | "robinson" | "winkeltripel";
+export type Projektion = "equalearth" | "mercator" | "globus" | "robinson" | "winkeltripel" | "kinder";
 export const PROJEKTIONEN: { id: Projektion; name: string; text: string }[] = [
   { id: "equalearth", name: "Equal Earth", text: "flächentreu — Länder in richtiger Größe" },
   { id: "robinson", name: "Robinson", text: "Kompromiss — der Klassiker im Schulatlas" },
   { id: "winkeltripel", name: "Winkel-Tripel", text: "Kompromiss — geringste Gesamtverzerrung" },
   { id: "mercator", name: "Mercator", text: "winkeltreu — Polgebiete stark vergrößert" },
   { id: "globus", name: "Globus", text: "die Erde als Kugel — ohne Verzerrung, zum Drehen" },
+  { id: "kinder", name: "Robinson Crusoe", text: "Kinderatlas — bunt, mit Tieren und Pflanzen (Robinson-Netz)" },
 ];
+
+/** Netz, in dem gerechnet wird: der Kinderatlas ist Robinson (gleiche Daten und Kacheln vom Server) */
+export const rechenNetz = (p: Projektion): Projektion => (p === "kinder" ? "robinson" : p);
 
 /** Kartennetze, die MapLibre selbst zeichnet: echte Koordinaten, Mercator-Kacheln, nichts umgerechnet */
 export const echt = (p: Projektion = "equalearth") => p === "mercator" || p === "globus";
 
 /** Kürzel der Rasterkacheln je Netz mit Schein-Koordinaten: »/karten/<ebene>-<kürzel>/« */
 export const KACHEL_KUERZEL: Partial<Record<Projektion, string>> = { equalearth: "ee", robinson: "robinson", winkeltripel: "winkeltripel" };
+/** Kachelsätze, die es wirklich gibt (der Kinderatlas nimmt die Robinson-Kacheln) */
+export const KACHEL_NETZE: Projektion[] = ["equalearth", "robinson", "winkeltripel"];
 
 const GRAD = Math.PI / 180;
 
@@ -95,7 +101,7 @@ const winkel: Netz = {
   },
 };
 
-const NETZE: Partial<Record<Projektion, Netz>> = { equalearth: equalEarth, robinson, winkeltripel: winkel };
+const NETZE: Partial<Record<Projektion, Netz>> = { equalearth: equalEarth, robinson, winkeltripel: winkel, kinder: robinson };
 /** x am Äquator bei ±180° — dort liegt der Kartenrand (Schein-Länge ±180) */
 const XMAX = Object.fromEntries(Object.entries(NETZE).map(([p, n]) => [p, n.vor(Math.PI, 0)[0]])) as Record<string, number>;
 

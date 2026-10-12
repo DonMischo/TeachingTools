@@ -227,8 +227,10 @@ class SatzInhalt(BaseModel):
     filter: dict[str, list[str]] = Field(default_factory=dict)
     # Erfolge im Kartenquiz; leer = je Ebene einer (»alles richtig«)
     erfolge: list[Erfolg] = Field(default_factory=list, max_length=30)
-    # Kartennetz: Equal Earth (flächentreu, Standard), Mercator, Globus, Robinson oder Winkel-Tripel
-    projektion: Literal["equalearth", "mercator", "globus", "robinson", "winkeltripel"] = "equalearth"
+    # Kartennetz: Equal Earth (flächentreu, Standard), Mercator, Globus, Robinson, Winkel-Tripel oder Kinderatlas
+    projektion: Literal["equalearth", "mercator", "globus", "robinson", "winkeltripel", "kinder"] = "equalearth"
+    # Kinderatlas (projektion »kinder«, Robinson-Netz): Tiere und/oder Pflanzen auf der Karte
+    kinderatlas: list[Literal["tiere", "pflanzen"]] = Field(default_factory=lambda: ["tiere", "pflanzen"], max_length=2)
     # Kartenfläche im Seitenverhältnis von A4 (füllt beim Export Seite 1)
     seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 

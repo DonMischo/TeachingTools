@@ -6,6 +6,7 @@ import type { Kartenart } from "./stil";
 import type { EbenenAuswahl } from "./nummern";
 import type { Projektion } from "./projektion";
 import type { Seite } from "./seite";
+import type { KinderWahl } from "./kinderatlas";
 
 export type Ausschnitt = { west: number; sued: number; ost: number; nord: number };
 
@@ -25,6 +26,8 @@ export type SatzInhalt = {
   projektion?: Projektion;
   /** Kartenfläche im A4-Verhältnis (fehlt = wie der Bildschirm) */
   seite?: Seite;
+  /** Kinderatlas (Netz »kinder«): Tiere und/oder Pflanzen (fehlt = beides) */
+  kinderatlas?: KinderWahl[];
 };
 
 export type ErfolgsArt = "anteil" | "fehlerfrei" | "objekte" | "serie" | "tempo" | "beide" | "aufgeholt" | "dranbleiben" | "komplett";

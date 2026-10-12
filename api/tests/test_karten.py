@@ -179,3 +179,11 @@ def test_satz_merkt_sich_das_kartennetz(client, teacher_token):
     sid = client.post("/api/karten/saetze", json=_satz(projektion="globus"), headers=h).json()["id"]
     assert client.get(f"/api/karten/saetze/{sid}", headers=h).json()["inhalt"]["projektion"] == "globus"
     assert client.post("/api/karten/saetze", json=_satz(projektion="peters"), headers=h).status_code == 422
+
+
+def test_satz_kinderatlas(client, teacher_token):
+    h = auth(teacher_token)
+    sid = client.post("/api/karten/saetze", json=_satz(projektion="kinder", kinderatlas=["tiere"]), headers=h).json()["id"]
+    inhalt = client.get(f"/api/karten/saetze/{sid}", headers=h).json()["inhalt"]
+    assert inhalt["projektion"] == "kinder" and inhalt["kinderatlas"] == ["tiere"]
+    assert client.post("/api/karten/saetze", json=_satz(kinderatlas=["drachen"]), headers=h).status_code == 422

@@ -19,7 +19,8 @@ import type {
   StyleSpecification,
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
-import { echt, erdUmriss, KACHEL_KUERZEL, vor, type Projektion } from "./projektion";
+import { echt, erdUmriss, KACHEL_KUERZEL, rechenNetz, vor, type Projektion } from "./projektion";
+import { kinderPunkte, zeichneKind, type KinderWahl } from "./kinderatlas";
 import { signaturAusdruck, zeichneSignatur } from "./signaturen";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
@@ -91,6 +92,8 @@ export type Auswahl = {
   projektion?: Projektion;
   /** Partikelfluss läuft: Strömungslinien treten zurück (blass, ohne Lauflicht) */
   partikel?: boolean;
+  /** Kinderatlas (Netz »kinder«): Tiere und/oder Pflanzen zeigen (fehlt = beides) */
+  kinderatlas?: KinderWahl[];
 };
 
 /** Welche Filterwerte einer Ebene gerade gezeigt werden. */
@@ -193,6 +196,11 @@ const KONTINENT_FARBE: Record<string, string> = {
 };
 const kontinentFarbe = ["match", ["get", "id"], ...Object.entries(KONTINENT_FARBE).flat(), "#eeeeee"] as unknown as ExpressionSpecification;
 
+/** Kinderatlas: kräftige, freundliche Farben (gleiche Verteilung wie STAAT_FARBE), helles Meer */
+const KIND = { meer: "#8fd6f7", weltraum: "#fff6df", rand: "#ffffff", erdrand: "#4fb3e8" };
+const KIND_STAAT = ["#ffd166", "#9be27a", "#ff9fb4", "#8ec9ff", "#ffb36b", "#c9a7ff", "#7fe3cf"];
+const kindStaatFarbe = ["match", ["get", "farbe"], ...KIND_STAAT.flatMap((f, i) => [i + 1, f]), "#ffe9a8"] as unknown as ExpressionSpecification;
+
 /** Farbe einer Themenebene: Kategorie per match, Stufen per step. */
 export function themaFarbe(d: Darstellung): ExpressionSpecification {
   if (d.art === "stufen") {
@@ -253,26 +261,29 @@ export const ebeneVonStilEbene = (id: string) => id.split(":")[0];
 export const istKlickbar = (id: string) => KLICK_TEILE.has(id.split(":")[1] ?? "");
 
 /** Rasterkacheln gibt es je Kartennetz: Equal Earth liegt unter »<ebene>-ee«, Robinson unter »<ebene>-robinson« … */
-const kachelnFuer = (url: string, id: string, p: Projektion) => (!echt(p) ? url.replace(`/karten/${id}/`, `/karten/${id}-${KACHEL_KUERZEL[p]}/`) : url);
+const kachelnFuer = (url: string, id: string, p: Projektion) =>
+  (!echt(p) ? url.replace(`/karten/${id}/`, `/karten/${id}-${KACHEL_KUERZEL[rechenNetz(p)]}/`) : url);
 
 export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, quelleRoh: Quelle = quelleAusApi): StyleSpecification {
   const projektion = auswahl.projektion ?? "equalearth";
   // Vektordaten rechnet der Server um (api/karten_projektion.py)
   const quelle: Quelle = (e) => {
     const url = quelleRoh(e);
-    return !echt(projektion) ? `${url}${url.includes("?") ? "&" : "?"}projektion=${projektion}` : url;
+    return !echt(projektion) ? `${url}${url.includes("?") ? "&" : "?"}projektion=${rechenNetz(projektion)}` : url;
   };
   const rolle = (e: Ebene): Rolle | undefined =>
     ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
   const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
-  const layers: LayerSpecification[] = [{ id: "meer", type: "background", paint: { "background-color": !echt(projektion) ? FARBE.weltraum : FARBE.meer } }];
+  const kinder = projektion === "kinder";
+  const layers: LayerSpecification[] = [{ id: "meer", type: "background",
+    paint: { "background-color": kinder ? KIND.weltraum : !echt(projektion) ? FARBE.weltraum : FARBE.meer } }];
   if (!echt(projektion)) {
     // Equal Earth, Robinson und Winkel-Tripel sind keine Rechtecke: Meer nur innerhalb des Erdumrisses
     sources["erde"] = { type: "geojson", data: { type: "FeatureCollection", features: [erdUmriss(projektion)] } };
-    layers.push({ id: "erde", type: "fill", source: "erde", paint: { "fill-color": FARBE.meer } },
-      { id: "erde-rand", type: "line", source: "erde", paint: { "line-color": "#8aa9c2", "line-width": 1 } });
+    layers.push({ id: "erde", type: "fill", source: "erde", paint: { "fill-color": kinder ? KIND.meer : FARBE.meer } },
+      { id: "erde-rand", type: "line", source: "erde", paint: { "line-color": kinder ? KIND.erdrand : "#8aa9c2", "line-width": kinder ? 3 : 1 } });
   }
   const text = auswahl.beschriftung;
   const hatRelief = mit("hoehen").length > 0;
@@ -298,7 +309,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   for (const e of mit("staaten")) {
     layers.push({ id: `${e.id}:flaeche`, type: "fill", source: e.id, paint: {
       // Politische Weltkarte: bunt; um Deutschland: neutral; über Relief: durchsichtig
-      "fill-color": art === "politisch" && !hatLaender ? staatFarbe : FARBE.ausland,
+      // Kinderatlas: immer bunt; politische Weltkarte: bunt; um Deutschland: neutral; über Relief: durchsichtig
+      "fill-color": kinder && !hatLaender ? kindStaatFarbe : art === "politisch" && !hatLaender ? staatFarbe : FARBE.ausland,
       "fill-opacity": hatRelief ? 0 : 1,
     } });
   }
@@ -374,7 +386,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   for (const e of mit("staaten")) {
     layers.push({ id: `${e.id}:rand`, type: "line", source: e.id,
-      paint: { "line-color": hatLaender ? FARBE.auslandRand : FARBE.grenze, "line-width": ["interpolate", ["linear"], ["zoom"], 1, 0.4, 5, 0.9, 9, 1.6] } });
+      paint: { "line-color": kinder ? KIND.rand : hatLaender ? FARBE.auslandRand : FARBE.grenze,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 1, kinder ? 0.8 : 0.4, 5, kinder ? 1.6 : 0.9, 9, kinder ? 2.4 : 1.6] } });
   }
   for (const e of mit("kontinente")) {
     layers.push({ id: `${e.id}:rand`, type: "line", source: e.id, paint: { "line-color": "#57534e", "line-width": 1.6 } });
@@ -601,6 +614,17 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     });
   }
 
+  // Kinderatlas: Tiere und Pflanzen obenauf (Bilder zeichnet kinderatlas.ts), wichtige zuerst
+  if (kinder) {
+    sources["kinder"] = { type: "geojson", data: kinderPunkte(auswahl.kinderatlas ?? ["tiere", "pflanzen"], projektion) };
+    layers.push({ id: "kinder:bild", type: "symbol", source: "kinder",
+      layout: { "icon-image": ["get", "bild"], "icon-size": ["interpolate", ["linear"], ["zoom"], 1, 0.95, 4, 1.3], "icon-padding": 2,
+        "symbol-sort-key": ["get", "rang"],
+        ...(text ? { "text-field": ["get", "name"], "text-font": SCHRIFT.fett, "text-size": 11, "text-anchor": "top", "text-offset": [0, 1.2],
+          "text-optional": true } : {}) },
+      paint: { "text-color": ["match", ["get", "art"], "tiere", "#c2410c", "#15803d"], "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+  }
+
   return {
     version: 8,
     glyphs: "/karten/schriften/{fontstack}/{range}.pbf",
@@ -616,6 +640,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
 /** Kleine Symbole, die MapLibre beim ersten Bedarf anfordert (kein Sprite-Server nötig). */
 export function zeichneSymbol(name: string): { width: number; height: number; data: Uint8ClampedArray; pixelRatio?: number } | null {
+  if (name.startsWith("kind:")) return zeichneKind(name);
   if (name.startsWith("sig:")) {
     const bild = zeichneSignatur(name);
     return bild && { ...bild, pixelRatio: 2 };

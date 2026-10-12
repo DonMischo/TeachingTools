@@ -18,7 +18,8 @@ A1, A2, A3, A4 = 1.340264, -0.081106, 0.000893, 0.003796
 M = math.sqrt(3) / 2
 XMAX = math.pi / (M * A1)  # x am Äquator bei ±180°
 
-PROJEKTIONEN = ("equalearth", "mercator", "globus", "robinson", "winkeltripel")
+# »kinder« (Kinderatlas) rechnet der Browser als Robinson und fragt die Ebenen so an
+PROJEKTIONEN = ("equalearth", "mercator", "globus", "robinson", "winkeltripel", "kinder")
 # Netze mit Schein-Koordinaten (alles andere zeichnet MapLibre selbst)
 SCHEIN = ("equalearth", "robinson", "winkeltripel")
 

@@ -33,7 +33,7 @@ import sharp from "sharp";
 import { stroemungsObjekte, windObjekte } from "./karten-daten/zirkulation.mjs";
 import { formenObjekte } from "./karten-daten/meeresboden.mjs";
 // Node lädt die TypeScript-Datei direkt (Typen werden übersprungen): eine Rechnung für Browser und Kacheln
-import { KACHEL_KUERZEL, zurueck } from "../src/lib/karten/projektion.ts";
+import { KACHEL_KUERZEL, KACHEL_NETZE, zurueck } from "../src/lib/karten/projektion.ts";
 import { BERLIN, NEW_YORK, PARIS, ZONEN_LEGENDE } from "./karten-daten/staedte.mjs";
 import { INDUSTRIE, INDUSTRIE_LEGENDE, LANDWIRTSCHAFT, LANDWIRTSCHAFT_LEGENDE, RAEUME, RAEUME_LEGENDE } from "./karten-daten/usa.mjs";
 
@@ -703,7 +703,7 @@ async function stadtmodelle() {
 async function kachelSaetze(ziel, endung, pixel, deckend = false) {
   const MAXZ = 5, T = 256;
   let bytes = 0, anzahl = 0;
-  for (const netz of [null, ...Object.keys(KACHEL_KUERZEL)]) {
+  for (const netz of [null, ...KACHEL_NETZE]) {
     const ee = netz !== null;
     const ordner = ee ? `${ziel}-${KACHEL_KUERZEL[netz]}` : ziel;
     rmSync(ordner, { recursive: true, force: true });

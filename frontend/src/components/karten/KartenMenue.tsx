@@ -5,12 +5,16 @@
 import { useState } from "react";
 import { PROJEKTIONEN, type Projektion } from "@/lib/karten/projektion";
 import { SEITEN, type Seite } from "@/lib/karten/seite";
+import { KINDER_WAHL, type KinderWahl } from "@/lib/karten/kinderatlas";
 
-export default function KartenMenue({ projektion, setProjektion, seite, setSeite }: {
+export default function KartenMenue({ projektion, setProjektion, seite, setSeite, kinderatlas, setKinderatlas }: {
   projektion: Projektion; setProjektion: (p: Projektion) => void;
   /** Ohne setSeite (Quiz, Üben) kein Seitenformat im Menü */
   seite?: Seite; setSeite?: (s: Seite) => void;
+  /** Kinderatlas: was auf der Karte steht (fehlt = beides) */
+  kinderatlas?: KinderWahl[]; setKinderatlas?: (w: KinderWahl[]) => void;
 }) {
+  const wahl = kinderatlas ?? ["tiere", "pflanzen"];
   const [offen, setOffen] = useState(false);
   return (
     <div className="flex flex-col items-start gap-1">
@@ -27,6 +31,18 @@ export default function KartenMenue({ projektion, setProjektion, seite, setSeite
             </label>
           ))}
           </div>
+          {projektion === "kinder" && setKinderatlas && (
+            <div role="group" aria-label="Kinderatlas" className="flex flex-col gap-1 pt-2 mt-1 border-t border-black/10">
+              <span className="text-[10px] font-black uppercase tracking-wide text-neutral-500">Auf der Karte</span>
+              {KINDER_WAHL.map((k) => (
+                <label key={k.id} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={wahl.includes(k.id)}
+                    onChange={(e) => setKinderatlas(e.target.checked ? [...wahl, k.id] : wahl.filter((x) => x !== k.id))} />
+                  {k.name}
+                </label>
+              ))}
+            </div>
+          )}
           {setSeite && (
             <div role="radiogroup" aria-label="Seitenformat" className="flex flex-col gap-1 pt-2 mt-1 border-t border-black/10">
               <span className="text-[10px] font-black uppercase tracking-wide text-neutral-500">Seitenformat (Export)</span>
