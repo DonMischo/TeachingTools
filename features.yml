@@ -103,6 +103,9 @@ aktivitaeten:
       - Auswertung je Person (Lesetempo, geraten, Kombos, gewählte Ablenker), CSV, Hauspunkte als Klassenmittel (bis 100 je Person)
       - "Neun Spielarten auf denselben Daten, von der Lehrkraft freigegeben, von Schülern gewählt: Normal, Kartenspiel (Deck bauen, Ablenker im Deck werden berichtet), Bosskampf mit Skins (Drache, Rap-Battle, Prinzessin, Einhorn), Jump'n'Run (Schlüssel und Türen), Turmverteidigung, Detektiv, Alchemie, Brückenbau, Gerichtssaal (falsche Behauptungen »claims« widerlegen)"
       - Pixelgrafik mit Themes (Wald, Ninja, Verlies, Antike, Weltraum) aus freien Kachelsätzen (CC0), Sammelphase je Spiel überspringbar, Bühnen passen aufs Handy
+      - "Drachenkampf: Sammelkarte als Verlies aus den Markov-Regeln des Regel-Labors (wie der TaskCrawler-Grundriss), Figur läuft per Pfeiltasten oder Klick, Truhen öffnen, Mini-Monster im animierten Klicker-Kampf; jeder Kampf beginnt im Pokémon-Stil (Blitz, Wischblende, Textbox), bei reduzierter Bewegung ohne Intro"
+      - "Jump'n'Run: jede Etappe bei jedem Besuch eine neue Karte in sechs Stilen (Treppe, Tal, Türme, Inseln, Höhle, Zickzack), Abgründe, bewegliche Plattformen, Gegner zum Draufspringen, Edelsteine an schwierigen Stellen; Schlüssel und Türen immer sicher erreichbar"
+      - Edelsteine gespeichert (bester Wert je Etappe), Bestenliste je Sitzung im Spiel, auf der Karte und am Ende; eigene Spalte in der Übersicht und im CSV, zählt nicht zur Wertung
       - Startstufe je Schüler, Stufe laufender Spieler änderbar; DDA-Kalibrierung je Klasse als Vorschlag aus Lesetempo und Antwortzeiten (nur Summen, bestätigen oder zurücksetzen)
       - Als Boss-Folie im TaskCrawler (Zwischen- und Endboss), Sieg gibt den Codeschnipsel frei; Beispiele in beiden Vorlagen
   - id: lueckentext
