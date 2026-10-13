@@ -42,6 +42,17 @@ const BEWEGUNG = `
 }
 `;
 
+/**
+ * Eine Zahl zwischen 0 und 1, die für dieselben beiden Nummern immer gleich
+ * ausfällt. Damit bekommt jedes Elektronenpaar sein eigenes Tempo, ohne dass
+ * sich die Bewegung bei jedem Neuzeichnen ändert — `Math.random` würde die
+ * Paare bei jedem Klick neu losschicken.
+ */
+const streu = (a: number, b: number): number => {
+  const x = Math.sin((a + 1) * 12.9898 + (b + 1) * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+
 /** Ein Elektron in der Farbe des Atoms, von dem es kommt. */
 const Elektron = ({ x, y, farbe }: { x: number; y: number; farbe: string }) => (
   <circle cx={x} cy={y} r={5} fill={farbe} stroke="var(--surface)" strokeWidth={1.4} />
@@ -89,22 +100,22 @@ function Atom({ a, cx, cy, farbe, richtungen, nummer, statisch }: {
       <circle cx={cx} cy={cy} r={15} fill="var(--surface)" stroke="#f87171" strokeWidth={1.2} />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
         className="font-black" fontSize={16} fill="var(--text)">{a.e.symbol}</text>
-      {/* Die freien Paare kreisen auf der Außenschale weiter — im ruhenden
-          Bild bleiben sie auf ihrem Platz. */}
-      <g className={statisch ? undefined : "bd-schale"}
-        style={statisch ? undefined : { transformOrigin: `${cx}px ${cy}px`,
-          animationDuration: `${15 + nummer * 3}s`,
-          animationDirection: nummer % 2 ? "reverse" : "normal" }}>
-        {plaetze.map((w, i) => (
-          <g key={i}>
-            {[-1, 1].map(seite => (
-              <Elektron key={seite} farbe={farbe}
-                x={cx + Math.cos(w) * R - Math.sin(w) * seite * 6}
-                y={cy + Math.sin(w) * R + Math.cos(w) * seite * 6} />
-            ))}
-          </g>
-        ))}
-      </g>
+      {/* Die freien Paare kreisen auf der Außenschale weiter — jedes in
+          seinem eigenen Tempo und seiner eigenen Richtung, aber immer als
+          Paar: die zwei Elektronen eines Paares sitzen in derselben Gruppe
+          und bleiben darum beieinander. Im ruhenden Bild stehen sie still. */}
+      {plaetze.map((w, i) => (
+        <g key={i} className={statisch ? undefined : "bd-schale"}
+          style={statisch ? undefined : { transformOrigin: `${cx}px ${cy}px`,
+            animationDuration: `${(11 + streu(nummer, i) * 13).toFixed(1)}s`,
+            animationDirection: streu(nummer, i + 40) > 0.5 ? "reverse" : "normal" }}>
+          {[-1, 1].map(seite => (
+            <Elektron key={seite} farbe={farbe}
+              x={cx + Math.cos(w) * R - Math.sin(w) * seite * 6}
+              y={cy + Math.sin(w) * R + Math.cos(w) * seite * 6} />
+          ))}
+        </g>
+      ))}
       {/* Bilanz: wie viele Elektronen liegen um dieses Atom */}
       <text x={cx} y={cy + R + 17} textAnchor="middle" fontSize={11} className="font-bold tabular-nums"
         fill={a.erfuellt ? "var(--green)" : "var(--red)"}>
