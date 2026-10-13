@@ -7,7 +7,7 @@
 import { Suspense, useState } from "react";
 import { useChallengeLauf, sitzungsQuelle, type ChallengeLauf, type ChallengeQuelle } from "@/lib/challenge/useChallengeLauf";
 import type { ChallengeAntwort } from "@/lib/api";
-import { themeVon } from "@/lib/challenge/themes";
+import { themeVon, bodenKachel } from "@/lib/challenge/themes";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { MODI } from "./modi";
 import { Kachelfeld, Sprite } from "./pixel/Sprite";
@@ -111,7 +111,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
           {bg && (
             <div className="relative overflow-hidden rounded-lg" style={{ background: theme.farben.boden }}>
               <Kachelfeld src={bg.src} tile={bg.tile} cols={bg.cols} scale={2}
-                karte={[Array.from({ length: 24 }, (_, i) => bg.muster.boden[i % bg.muster.boden.length])]} />
+                karte={[0, 1].map((y) => Array.from({ length: 24 }, (_, i) => bodenKachel(bg.muster.boden, i, y)))} />
               <Sprite src={theme.spieler.src} frame={theme.spieler.stehen} scale={2} className="absolute left-4 bottom-1" />
             </div>
           )}

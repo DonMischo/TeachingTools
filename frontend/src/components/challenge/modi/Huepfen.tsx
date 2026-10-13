@@ -9,6 +9,7 @@ import {
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
+import { bodenKachel } from "@/lib/challenge/themes";
 
 const SK = 3, KACHEL = 16 * SK; // Bildschirm-Pixel je Kachel
 
@@ -133,7 +134,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   };
 
   const tile = theme.hintergrund;
-  const boden = (i: number) => tile ? { x: (tile.muster.boden[i % tile.muster.boden.length] % tile.cols) * tile.tile, y: Math.floor(tile.muster.boden[i % tile.muster.boden.length] / tile.cols) * tile.tile, w: tile.tile, h: tile.tile } : null;
+  const boden = (i: number) => tile ? { x: (bodenKachel(tile.muster.boden, i, 0) % tile.cols) * tile.tile, y: Math.floor(bodenKachel(tile.muster.boden, i, 0) / tile.cols) * tile.tile, w: tile.tile, h: tile.tile } : null;
   const himmel = theme.farben.himmel === "transparent" ? "linear-gradient(#bfe6ff, #eaf7ff)" : theme.farben.himmel;
   const anim = useMemo(() => ({ frames: richtung > 0 ? sp.laufen.rechts : sp.laufen.links, fps: 8 }), [richtung, sp]);
 

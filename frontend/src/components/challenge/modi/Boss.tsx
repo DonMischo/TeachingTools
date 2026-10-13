@@ -106,7 +106,7 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
           {offene.length === 0 && <p className="card p-3 font-bold text-good">{sk.sieg}</p>}
           {aktiv && (
             <div className="card p-3 flex flex-col gap-2">
-              <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))} leer={`Lege Fakten für die ${sk.kontern} hierher.`} />
+              <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))} leer="Lege hier die Fakten ab, mit denen du kontern willst." />
               <div className="flex flex-wrap gap-2">
                 <button className="btn-primary" disabled={!ablage.length || sende} onClick={kontern}>{sk.kontern}</button>
                 {offene.length > 1 && <button className="btn-secondary" onClick={() => { setIdx(idx + 1); setAblage([]); setTipp(false); setAntwort(null); }}>Anderer {sk.angriff}</button>}

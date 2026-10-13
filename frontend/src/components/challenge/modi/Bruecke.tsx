@@ -19,6 +19,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [ablage, setAblage] = useState<string[]>([]);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
   const [anim, setAnim] = useState<"ok" | "bruch" | null>(null);
+  const [bruchBei, setBruchBei] = useState<string | null>(null);
   const [sende, setSende] = useState(false);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
     try {
       const r = await lauf.antworte(challenge.id, ablage, false);
       setAnim(r.komplett ? "ok" : "bruch");
+      setBruchBei(r.komplett ? null : challenge.id);
       setAktiv(null); setAblage([]);
       setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
     } catch {
@@ -94,6 +96,7 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
       {Kopf}
       <Treffermeldung antwort={antwort} />
 
+      <style>{`@keyframes ch-brett-faellt{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(90px) rotate(35deg);opacity:0}}`}</style>
       <div className="relative rounded-lg overflow-hidden p-3 flex items-end gap-1" style={{ background: theme.farben.himmel, minHeight: 140 }}>
         <div className="flex flex-col items-center" style={{ transition: "transform 1s", transform: anim === "ok" ? "translateX(24px)" : "none" }}>
           <Sprite src={theme.spieler.src} frame={theme.spieler.stehen} scale={3} />
@@ -105,7 +108,12 @@ export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
             onDrop={(e) => { e.preventDefault(); if (c.id !== aktiv) waehle(c.id); legeAuf(e.dataTransfer.getData("text/plain")); }}
             className={`card p-2 text-left flex-1 min-w-24 self-start ${c.id === aktiv ? "border-accent" : ""}`}>
             <Inhalt x={c} />
-            <span className={`block mt-2 h-3 border-b-4 border-dashed ${anim === "bruch" ? "border-bad" : "border-line"}`} />
+            <span className={`relative block mt-2 h-3 border-b-4 border-dashed ${anim === "bruch" && bruchBei === c.id ? "border-bad" : "border-line"}`}>
+              {/* Das falsche Brett bricht und fällt in die Schlucht */}
+              {anim === "bruch" && bruchBei === c.id && (
+                <span aria-hidden style={{ background: "#8b5a2b" }} className="absolute left-1/4 top-1 h-2 w-1/2 rounded-sm motion-safe:animate-[ch-brett-faellt_1s_ease-in_forwards]" />
+              )}
+            </span>
           </button>
         ))}
       </div>

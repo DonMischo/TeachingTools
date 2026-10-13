@@ -5,6 +5,8 @@ import type { ChallengeFakt } from "@/lib/api";
 import type { ThemeDef } from "@/lib/challenge/themes";
 import { Kachelfeld } from "@/components/challenge/pixel/Sprite";
 import { Inhalt } from "../teile";
+import { bodenKachel } from "@/lib/challenge/themes";
+import { Passend } from "@/components/challenge/pixel/Passend";
 
 export const wenigerBewegung = () =>
   typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -17,14 +19,16 @@ const ZEILEN = 8;
 export function Buehne({ bg, farbe, wand, children, label }: { bg: Hg; farbe: string; wand?: boolean; children?: ReactNode; label: string }) {
   const karte = bg
     ? Array.from({ length: ZEILEN }, (_, y) => Array.from({ length: SPALTEN }, (_, x) =>
-        wand && y < 2 ? bg.muster.wand[0] : bg.muster.boden[(x + y) % bg.muster.boden.length]))
+        wand && y < 2 ? bg.muster.wand[0] : bodenKachel(bg.muster.boden, x, y)))
     : null;
   return (
-    <div className="overflow-x-auto rounded-lg" role="group" aria-label={label}>
+    <div className="rounded-lg" role="group" aria-label={label}>
+      <Passend breite={SPALTEN * 32} hoehe={ZEILEN * 32}>
       <div className="relative mx-auto overflow-hidden" style={{ width: SPALTEN * 32, height: ZEILEN * 32, background: farbe }}>
         {bg && karte && <Kachelfeld src={bg.src} tile={bg.tile} cols={bg.cols} scale={2} karte={karte} />}
         {children}
       </div>
+      </Passend>
     </div>
   );
 }

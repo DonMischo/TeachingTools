@@ -5,6 +5,8 @@ import type { ChallengeFakt } from "@/lib/api";
 import type { ThemeDef } from "@/lib/challenge/themes";
 import { Kachelfeld, Sprite } from "@/components/challenge/pixel/Sprite";
 import { Inhalt } from "../teile";
+import { bodenKachel } from "@/lib/challenge/themes";
+import { Passend } from "@/components/challenge/pixel/Passend";
 
 const OBJ = "/challenge/pixel/gfx/objects.png";
 const BUSCH = { x: 128, y: 192, w: 32, h: 32 };
@@ -30,12 +32,12 @@ export default function Garten({ fakten, theme, gefunden, setGefunden, weiter }:
   };
   const h = theme.hintergrund;
   const zeilen = Math.ceil(fakten.length / SPALTEN) + 1;
-  const karte = Array.from({ length: zeilen }, (_, y) => Array.from({ length: SPALTEN + 1 }, (_, x) => (h ? h.muster.boden[(x + y) % h.muster.boden.length] : 0)));
+  const karte = Array.from({ length: zeilen }, (_, y) => Array.from({ length: SPALTEN + 1 }, (_, x) => (h ? bodenKachel(h.muster.boden, x, y) : 0)));
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-muted">Im Garten wachsen die Zutaten: Büsche anklicken zum Pflücken. Gepflückt: {gefunden.length}/{fakten.length}</p>
-      <div className="overflow-x-auto">
+      <Passend breite={(SPALTEN + 1) * T} hoehe={zeilen * T}>
         <div className="relative rounded-lg overflow-hidden" style={{ width: (SPALTEN + 1) * T, height: zeilen * T, background: h ? undefined : theme.farben.boden === "transparent" ? "#4aa55a" : theme.farben.boden }}>
           {h && <Kachelfeld src={h.src} tile={h.tile} cols={h.cols} karte={karte} scale={T / h.tile} />}
           {fakten.map((f, i) => {
@@ -49,7 +51,7 @@ export default function Garten({ fakten, theme, gefunden, setGefunden, weiter }:
             );
           })}
         </div>
-      </div>
+      </Passend>
       {zeige && (
         <div className="card p-3 flex flex-col gap-2" role="status">
           <strong>Gepflückt!</strong>

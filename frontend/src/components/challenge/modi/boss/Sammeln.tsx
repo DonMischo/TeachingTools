@@ -5,6 +5,8 @@ import type { ChallengeFakt } from "@/lib/api";
 import type { ThemeDef } from "@/lib/challenge/themes";
 import { Kachelfeld, Sprite } from "@/components/challenge/pixel/Sprite";
 import { Inhalt } from "../teile";
+import { bodenKachel } from "@/lib/challenge/themes";
+import { Passend } from "@/components/challenge/pixel/Passend";
 
 const OBJ = "/challenge/pixel/gfx/objects.png";
 const TRUHE = { x: 148, y: 0, w: 22, h: 16 };
@@ -52,12 +54,12 @@ export default function Sammeln({ fakten, theme, gefunden, setGefunden, weiter }
 
   const h = theme.hintergrund;
   const karte = Array.from({ length: H }, (_, y) => Array.from({ length: B }, (_, x) =>
-    h ? ((x + y * 3) % 7 === 0 && (x === 0 || y === 0 || x === B - 1 || y === H - 1) ? h.muster.deko[0] : h.muster.boden[(x + y) % h.muster.boden.length]) : 0));
+    h ? ((x + y * 3) % 7 === 0 && (x === 0 || y === 0 || x === B - 1 || y === H - 1) ? h.muster.deko[0] : bodenKachel(h.muster.boden, x, y)) : 0));
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-muted">Sammle Fakten: Truhen anklicken, Mini-Monster {KLICKS}× anklicken. Gefunden: {gefunden.length}/{fakten.length}</p>
-      <div className="overflow-x-auto">
+      <Passend breite={B * T} hoehe={H * T}>
         <div className="relative rounded-lg overflow-hidden" style={{ width: B * T, height: H * T, background: h ? undefined : theme.farben.boden === "transparent" ? "#35a541" : theme.farben.boden }}>
           {h && <Kachelfeld src={h.src} tile={h.tile} cols={h.cols} karte={karte} scale={T / h.tile} />}
           {objekte.map((o) => {
@@ -77,7 +79,7 @@ export default function Sammeln({ fakten, theme, gefunden, setGefunden, weiter }
             );
           })}
         </div>
-      </div>
+      </Passend>
       {zeige.length > 0 && (
         <div className="card p-3 flex flex-col gap-2" role="status">
           <strong>Gefunden!</strong>

@@ -129,6 +129,11 @@ def vorlage(_: Teacher = Depends(get_current_teacher)):
             {"id": "c4", "text": "Wie lautet das Hebelgesetz?", "solve": {"any": ["f1"]}},
             {"id": "c5", "text": "Was spart Kraft?", "solve": {"any": ["f2"]}},
         ],
+        # Nur für den Gerichtssaal: falsche Behauptungen, widerlegt durch echte Fakten
+        "claims": [
+            {"id": "k1", "text": "Ein Hebel erzeugt Energie aus dem Nichts.", "refutedBy": ["f1"], "feedback": "Was an Kraft gespart wird, kostet Weg."},
+            {"id": "k2", "text": "Ein kurzer Kraftarm spart Kraft.", "refutedBy": ["f2"]},
+        ],
         "levels": {
             "1": {"facts": [{"id": "f1", "text": "Kraft mal Kraftarm ist gleich Last mal Lastarm"}],
                   "challenges": [{"id": "c6", "text": "Welcher Hebel ist eine Wippe? (leicht)", "solve": {"any": ["f3"]}}],

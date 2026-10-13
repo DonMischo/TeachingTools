@@ -8,5 +8,5 @@ export const SPIELARTEN: { id: string; name: string; icon: string; text: string 
   { id: "detektiv", name: "Detektiv", icon: "🔍", text: "Tatort durchsuchen, Beweise an die Aussagen der Pinnwand heften." },
   { id: "alchemie", name: "Alchemie", icon: "⚗️", text: "Zutaten im Garten pflücken und nach Rezept brauen." },
   { id: "bruecke", name: "Brückenbau", icon: "🌉", text: "Mit richtigen Antworten eine Brücke bauen." },
-  { id: "gericht", name: "Gerichtssaal", icon: "⚖️", text: "Behauptungen widerlegen. Braucht Behauptungen (claims) im Satz." },
+  { id: "gericht", name: "Gerichtssaal", icon: "⚖️", text: "Falsche Behauptungen eines Zeugen mit Beweisen widerlegen." },
 ];

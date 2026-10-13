@@ -47,3 +47,10 @@ export const THEMES: Record<string, ThemeDef> = {
 };
 
 export const themeVon = (id?: string | null): ThemeDef => THEMES[id ?? ""] ?? THEMES.klassisch;
+
+/** Bodenkachel an (x|y): meist die erste, verstreut die übrigen — ein festes Muster, aber kein Schachbrett. */
+export function bodenKachel(boden: number[], x: number, y: number): number {
+  if (boden.length < 2) return boden[0] ?? 0;
+  const h = Math.abs(Math.imul(x * 73856093 ^ y * 19349663, 2654435761)) % 7;
+  return h === 0 ? boden[1 + ((x + y) % (boden.length - 1))] : boden[0];
+}
