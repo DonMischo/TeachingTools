@@ -5,6 +5,7 @@ import Boss from "@/components/challenge/modi/Boss";
 import { SKINS } from "@/components/challenge/modi/boss/figuren";
 import { THEMES } from "@/lib/challenge/themes";
 import { baueBossKarte, bossSeed } from "@/lib/challenge/bossKarte";
+import { EP_SIEG, anzahlMonster, epBalken, levelVon } from "@/lib/challenge/bossKarte";
 import { begehbar, weg } from "@/lib/gebaeude/plan";
 
 const LANG = { timeout: 15000 };
@@ -17,9 +18,9 @@ const brett = (o: Record<string, unknown> = {}) => ({
 });
 const antwort = (o = {}) => ({ qualitaet: 1, treffer: true, komplett: true, kombo: false, schaden: 20, falsch_gewaehlt: 0, leben: 3,
   zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 1, ...o });
-const mkLauf = (r = antwort()) => ({ waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r) });
-const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster") =>
-  render(<Boss brett={b as never} theme={THEMES.klassisch} skin={skin} lauf={lauf as never} zurKarte={vi.fn()} />);
+const mkLauf = (r = antwort()) => ({ spielwert: vi.fn(), waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(r) });
+const zeige = (b: unknown, lauf: ReturnType<typeof mkLauf>, skin = "monster", zurKarte = vi.fn()) =>
+  render(<Boss brett={b as never} theme={THEMES.klassisch} skin={skin} lauf={lauf as never} zurKarte={zurKarte} />);
 
 beforeEach(() => {
   window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as never;
@@ -42,6 +43,7 @@ describe("Boss", () => {
     expect(screen.getByText("Fakt Gamma")).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Weiter" }));
     await u.click(screen.getByRole("button", { name: "Zum Kampf" }));
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
     expect(screen.getByRole("button", { name: /Fakt Gamma/ })).toBeInTheDocument();
   }, 40000);
 
@@ -78,6 +80,7 @@ describe("Boss", () => {
     await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
     expect(screen.getByText("Frage Eins")).toBeInTheDocument();
     expect(screen.queryByText("Frage Zwei")).not.toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
     await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
     await u.click(screen.getByRole("button", { name: /Fakt Beta/ }));
     await u.click(screen.getByRole("button", { name: "Kontern" }));
@@ -129,4 +132,81 @@ describe("Skins", () => {
       for (const c of new Set(f.bild.join("").replace(/\./g, ""))) expect(f.palette[c], `${f.name}: ${c}`).toBeDefined();
     }
   });
+});
+
+describe("Kampfmenü", () => {
+  const arena = async (b = brett(), lauf = mkLauf(), zurKarte = vi.fn(), skin = "monster") => {
+    const u = userEvent.setup();
+    zeige(b, lauf, skin, zurKarte);
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    return u;
+  };
+  it("hat vier Felder und navigiert mit den Pfeiltasten wie im Game Boy", async () => {
+    const u = await arena(brett({ challenges: [ch("c1", "Frage Eins"), ch("c3", "Frage Drei")] }));
+    const namen = ["Kontern", "Tasche", "Wechseln", "Flucht"].map((n) => screen.getByRole("button", { name: n }));
+    expect(document.activeElement).toBe(namen[0]);
+    await u.keyboard("{ArrowRight}"); expect(document.activeElement).toBe(namen[1]);
+    await u.keyboard("{ArrowDown}"); expect(document.activeElement).toBe(namen[3]);
+    await u.keyboard("{ArrowLeft}"); expect(document.activeElement).toBe(namen[2]);
+    await u.keyboard("{ArrowUp}"); expect(document.activeElement).toBe(namen[0]);
+  });
+  it("Flucht geht zur Karte", async () => {
+    const zurKarte = vi.fn();
+    const u = await arena(brett(), mkLauf(), zurKarte);
+    await u.click(screen.getByRole("button", { name: "Flucht" }));
+    expect(zurKarte).toHaveBeenCalled();
+  });
+  it("Wechseln nimmt den anderen Angriff (nur mit mehreren offenen)", async () => {
+    const b = brett({ challenges: [ch("c1", "Frage Eins"), ch("c3", "Frage Drei")] });
+    const u = await arena(b);
+    await u.click(screen.getByRole("button", { name: "Wechseln" }));
+    expect(screen.getByText("Frage Drei")).toBeInTheDocument();
+  });
+  it("Wechseln ist mit nur einem offenen Angriff gesperrt", async () => {
+    await arena();
+    expect(screen.getByRole("button", { name: "Wechseln" })).toBeDisabled();
+  });
+  it("Tasche: Tipp und Wissen nachlesen", async () => {
+    const b = brett({ challenges: [{ ...ch("c1", "Frage Eins"), tip: "Denk an Hebel" }], fakten: [{ ...fakt("f1", "Fakt Alpha"), info: { text: "Mehr zu Alpha" } }] });
+    const u = await arena(b);
+    await u.click(screen.getByRole("button", { name: "Tasche" }));
+    expect(screen.getByText(/Mehr zu Alpha/)).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "💡 Tipp benutzen" }));
+    expect(screen.getByText(/Denk an Hebel/)).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Zurück" }));
+    expect(screen.getByRole("button", { name: "Kontern" })).toBeInTheDocument();
+  });
+  it("zeigt einen Gegnerzug und wechselt zum Menü zurück, wenn der Kontern vorbei ist", async () => {
+    const lauf = mkLauf();
+    const u = await arena(brett(), lauf);
+    expect(screen.getByText(/^Der Drache /)).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
+    await u.click(screen.getByRole("button", { name: /Fakt Alpha/ }));
+    await u.click(screen.getByRole("button", { name: "Kontern" }));
+    expect(await screen.findByRole("group", { name: "Was tust du?" })).toBeInTheDocument();
+  });
+});
+
+describe("Held-EP", () => {
+  it("Level aus EP", () => {
+    expect(levelVon(0)).toBe(1);
+    expect(levelVon(9)).toBe(1);
+    expect(levelVon(10)).toBe(2);
+    expect(levelVon(30)).toBe(3);
+    expect(epBalken(15)).toEqual({ level: 2, wert: 5, max: 20 });
+    expect(levelVon(EP_SIEG)).toBe(2); // schon der erste Sieg steigt auf
+    expect(anzahlMonster(1)).toBe(0);
+    expect(anzahlMonster(3)).toBe(1);
+  });
+  it("Sieg im Klicker-Kampf: EP, Aufstieg und Spielwert »boss«", async () => {
+    const u = userEvent.setup();
+    const lauf = mkLauf();
+    zeige(brett(), lauf);
+    await u.click(screen.getByRole("button", { name: "Mini-Monster herausfordern" }));
+    const schlag = await screen.findByRole("button", { name: "Angreifen" }, LANG);
+    for (let i = 0; i < 5; i++) await u.click(schlag);
+    expect(screen.getByText(`Du erhältst ${EP_SIEG} EP!`)).toBeInTheDocument();
+    expect(screen.getByText(/steigt auf Level 2 auf/)).toBeInTheDocument();
+    expect(lauf.spielwert).toHaveBeenCalledWith("boss", 1, EP_SIEG, EP_SIEG);
+  }, 40000);
 });

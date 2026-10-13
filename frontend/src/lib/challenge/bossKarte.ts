@@ -9,6 +9,16 @@ import { markovKarte } from "./markovKarte";
 export type BossObjekt = { id: number; art: "truhe" | "monster"; x: number; y: number; faktIdx: number[] };
 export type BossKarte = { R: number; st: Stockwerk; start: Punkt; objekte: BossObjekt[] };
 
+/** Erfahrung aus den Klicker-Kämpfen: rein kosmetisch, ändert nie die Wissenswertung. */
+export const EP_SIEG = 12;
+/** EP, ab denen Level l beginnt (1: 0, 2: 10, 3: 30, 4: 60 …). */
+export const epFuerLevel = (l: number) => (5 * l * (l - 1));
+export const levelVon = (ep: number) => { let l = 1; while (ep >= epFuerLevel(l + 1)) l++; return l; };
+/** Fortschritt im aktuellen Level für den EP-Balken. */
+export const epBalken = (ep: number) => { const l = levelVon(ep), a = epFuerLevel(l); return { level: l, wert: ep - a, max: epFuerLevel(l + 1) - a }; };
+/** Anzahl Mini-Monster (= mögliche Kämpfe) der Sammelkarte. */
+export const anzahlMonster = (anzahlFakten: number) => Math.floor(Math.max(1, Math.ceil(anzahlFakten / 2)) / 2);
+
 /** Gleiche Etappe und gleiche Faktenzahl = gleiche Karte (bleibt nach Antworten stabil). */
 export const bossSeed = (etappe: number, anzahlFakten: number) => etappe * 1000 + anzahlFakten;
 

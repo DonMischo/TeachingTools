@@ -6,8 +6,8 @@ import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import {
-  GEGNER_BONUS, STIL_NAMEN, baueLevel, bewegerFlaeche, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, naheSchluessel, naheTuer,
-  schritt, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
+  GEGNER_BONUS, VX, STIL_NAMEN, baueLevel, bewegerFlaeche, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, nahePogo, naheSchluessel, naheTuer,
+  schritt, sterne, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
@@ -24,6 +24,10 @@ const PAL = { y: "#f5c518", b: "#5b3a1a", d: "#8b5a2b" };
 const PAL_EDEL = { c: "#35c9e8", w: "#e8fbff", d: "#1a8fb0" };
 const PAL_EDEL_SCHWER = { c: "#f5a623", w: "#fff3c4", d: "#c46a00" };
 const PAL_SCHLEIM = { g: "#7ac943", w: "#ffffff", k: "#222222" };
+
+const POGO = [".rrrr...", ".rrrr...", "..gg....", "..gg....", "..gg....", "..gg....", ".gggg...", "..ss....", "..ss....", ".kkkk..."];
+const PAL_POGO = { r: "#d33a2c", g: "#aab4c0", s: "#6e7a88", k: "#333333" };
+const reduziertBew = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
 const lesbar = (f: ChallengeFakt) => f.info?.text;
 
@@ -43,6 +47,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [liste, setListe] = useState(false);
   const [plings, setPlings] = useState<{ id: number; x: number; y: number }[]>([]);
   const [erledigtG, setErledigtG] = useState<number[]>([]);
+  const [pogo, setPogo] = useState(false);
+  const [cp, setCp] = useState(0);
+  const [staub, setStaub] = useState<{ id: number; x: number; y: number }[]>([]);
   const [richtung, setRichtung] = useState<1 | -1>(1);
   const [skipDa, setSkipDa] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
 
@@ -63,6 +70,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   // Edelsteine melden: höchstens alle 2 s, sofort an der Tür und beim Verlassen
   const letzteMeldung = useRef(0);
   const gemeldet = useRef(-1);
+  const timer = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const nachher = (f: () => void, ms: number) => { timer.current.push(setTimeout(f, ms)); };
+  const kamX = useRef<number | null>(null);
   const meldeRef = useRef<(sofort: boolean) => void>(() => {});
   meldeRef.current = (sofort) => {
     const n = edelRef.current.size;
@@ -80,6 +90,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const figH = sp.stehen.h * SK;
   const edelMax = edelsteineGesamt(level);
 
+  useEffect(() => () => timer.current.forEach(clearTimeout), []);
   useEffect(() => { const t = setInterval(() => meldeRef.current(false), 2000); return () => { clearInterval(t); meldeRef.current(true); }; }, []);
   useEffect(() => { if (!skipDa) { const t = setTimeout(() => setSkipDa(true), 20000); return () => clearTimeout(t); } }, [skipDa]);
 
@@ -92,7 +103,13 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const pling = (x: number, y: number) => {
     const id = Date.now() + Math.random();
     setPlings((p) => [...p, { id, x, y }]);
-    setTimeout(() => setPlings((p) => p.filter((q) => q.id !== id)), 700);
+    nachher(() => setPlings((p) => p.filter((q) => q.id !== id)), 700);
+  };
+  const staubAn = (x: number, y: number) => {
+    if (reduziertBew()) return;
+    const id = Date.now() + Math.random();
+    setStaub((p) => [...p.slice(-3), { id, x, y }]);
+    nachher(() => setStaub((p) => p.filter((q) => q.id !== id)), 450);
   };
   const oeffneTuer = (id: string | null) => {
     tuerRef.current = id;
@@ -118,7 +135,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
 
   // Spielschleife
   useEffect(() => {
-    let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1;
+    let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1, landungen = 0, cpAlt = 0;
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
       if (document.hidden || tuerRef.current || listeRef.current) { letzte = 0; return; }
@@ -137,6 +154,9 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
           s = zumKontrollpunkt(s, level); // zurück zur Fahne, ohne Folgen
         }
       }
+      if (level.pogo && !s.pogo && nahePogo(s, level.pogo)) { s = { ...s, pogo: true }; setPogo(true); }
+      if (s.landung !== landungen) { landungen = s.landung; staubAn(s.x, s.y); }
+      if (s.cp !== cpAlt) { cpAlt = s.cp; setCp(s.cp); }
       spieler.current = s;
       for (const g of level.edelsteine) {
         if (!edelRef.current.has(g.id) && naheEdelstein(s, g)) { edelRef.current.add(g.id); setEdel(edelRef.current.size); pling(g.x, g.y); }
@@ -160,7 +180,11 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
       const id = d >= 0 ? brett.challenges[d].id : null;
       if (id !== imTuer.current) { imTuer.current = id; if (id) oeffneTuer(id); }
       const breite = bildRef.current?.clientWidth ?? 600;
-      const kam = Math.max(0, Math.min(level.breite * KACHEL - breite, s.x * KACHEL - breite / 2));
+      // Kamera schaut in Laufrichtung voraus und gleitet nach
+      const voraus = (s.vx / VX) * 70;
+      const ziel = Math.max(0, Math.min(level.breite * KACHEL - breite, s.x * KACHEL - breite / 2 + voraus));
+      kamX.current = kamX.current === null || reduziertBew() ? ziel : kamX.current + (ziel - kamX.current) * Math.min(1, dt * 6);
+      const kam = kamX.current;
       if (weltRef.current) weltRef.current.style.transform = `translateX(${-kam}px)`;
       if (wolkenRef.current) wolkenRef.current.style.transform = `translateX(${-kam * 0.35}px)`;
       if (figurRef.current) figurRef.current.style.transform = `translate(${s.x * KACHEL - sp.stehen.w * SK / 2}px, ${s.y * KACHEL - figH}px)`;
@@ -205,13 +229,14 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span><span className="text-muted">Karte: {STIL_NAMEN[level.stil]}</span></div>
+        <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span><span className="text-muted">Karte: {STIL_NAMEN[level.stil]}</span>{pogo && <span className="font-bold" title="Pogo-Stab: Sprung gedrückt halten">🪀 Pogo</span>}</div>
         <div className="flex gap-2">
           {skipDa && <button className="btn-secondary" onClick={() => brett.fakten.forEach((f) => sammle(f.id, false))}>Alles einsammeln</button>}
           {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => { listeRef.current = !liste; setListe(!liste); }}>🏆 Bestenliste</button>}
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
+      <style>{`@keyframes hpstaub{from{opacity:.9;transform:scale(.4)}to{opacity:0;transform:scale(2) translateY(-4px)}}@media (prefers-reduced-motion: reduce){[style*="hpstaub"]{animation:none!important;opacity:0}}`}</style>
       <Treffermeldung antwort={antwort} />
       {liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} /></div>}
 
@@ -228,7 +253,11 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
                 return f && tile ? <Sprite key={c} src={tile.src} frame={f} scale={SK} />
                   : <span key={c} className="inline-block" style={{ width: KACHEL, height: KACHEL / 2, background: theme.farben.boden === "transparent" ? "#8b5a2b" : theme.farben.boden, borderTop: "4px solid #4c8a2b" }} />;
               })}
-              {p.cp && <span className="absolute -top-8 left-1 text-2xl" aria-hidden>🚩</span>}
+              {p.cp && (
+                <span className="absolute left-2 -top-9 w-1 h-9 bg-[#6b4a2b] overflow-hidden" aria-hidden data-fahne={i <= cp ? "oben" : "unten"}>
+                  <span className="absolute left-1 w-5 h-4 rounded-r-sm" style={{ background: i <= cp ? "#e63946" : "#9aa0a6", top: 0, transform: `translateY(${i <= cp ? 0 : 20}px)`, transition: reduziertBew() ? "none" : "transform .7s ease-out, background .7s" }} />
+                </span>
+              )}
             </div>
           ))}
           {level.leisten.map((p, i) => (
@@ -244,6 +273,13 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
             <div key={`e${g.id}`} className="absolute" style={{ left: g.x * KACHEL - 12, top: g.y * KACHEL - 12 }}>
               <PixelMatrix bild={EDEL} palette={g.schwer ? PAL_EDEL_SCHWER : PAL_EDEL} scale={3} label="Edelstein" />
             </div>
+          ))}
+          {level.pogo && !pogo && (
+            <div className="absolute animate-bounce" style={{ left: level.pogo.x * KACHEL - 12, top: level.pogo.y * KACHEL - 24 }}><PixelMatrix bild={POGO} palette={PAL_POGO} scale={3} label="Pogo-Stab" /></div>
+          )}
+          {staub.map((q) => (
+            <span key={q.id} className="absolute pointer-events-none rounded-full" aria-hidden
+              style={{ left: q.x * KACHEL - 12, top: q.y * KACHEL - 8, width: 24, height: 8, background: "rgba(255,255,255,.7)", animation: "hpstaub .45s ease-out forwards" }} />
           ))}
           {plings.map((p) => (
             <span key={p.id} className="absolute animate-ping pointer-events-none" style={{ left: p.x * KACHEL - 12, top: p.y * KACHEL - 16 }} aria-hidden>✨</span>
@@ -286,7 +322,10 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
 
       {challenge && (
         <div className="card p-3 flex flex-col gap-2 border-accent" role="dialog" aria-label="Tür">
-          <div><b>Tür:</b> <Inhalt x={challenge} /> <span className="text-muted">· 💎 {edel}/{edelMax}</span></div>
+          <div><b>Tür:</b> <Inhalt x={challenge} /> </div>
+          <div className="text-sm" aria-label="Etappenbilanz">
+            <b>Bilanz:</b> 💎 {edel}/{edelMax} · {"★".repeat(sterne(edel, edelMax))}{"☆".repeat(3 - sterne(edel, edelMax))} <span className="text-muted">({sterne(edel, edelMax)} von 3 Sternen)</span>
+          </div>
           <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))} leer="Lege Schlüssel auf das Schloss." />
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" disabled={!ablage.length || sende} onClick={aufschliessen}>Aufschließen</button>

@@ -23,8 +23,8 @@ const TRUHE_AUF = { x: 181, y: 0, w: 20, h: 16 };
 const LOG = "/challenge/pixel/gfx/log.png";
 const MONSTER = { x: 0, y: 64, w: 32, h: 32 };
 
-export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter }: {
-  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void;
+export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, weiter, ep = 0, onEp }: {
+  fakten: ChallengeFakt[]; theme: ThemeDef; seed: number; gefunden: string[]; setGefunden(f: (g: string[]) => string[]): void; weiter(): void; ep?: number; onEp?(): void;
 }) {
   const karte = useMemo(() => baueBossKarte(seed, fakten.length), [seed, fakten.length]);
   const { objekte } = karte;
@@ -68,8 +68,8 @@ export default function Sammeln({ fakten, theme, seed, gefunden, setGefunden, we
 
   return (
     <div className="flex flex-col gap-2">
-      {kampf && <Kampf theme={theme} fakten={faktenVon(kampf)}
-        onSieg={() => { setFertig((f) => [...f, kampf.id]); nimm(faktenVon(kampf)); }} onEnde={() => setKampf(null)} />}
+      {kampf && <Kampf theme={theme} fakten={faktenVon(kampf)} ep={ep}
+        onSieg={() => { setFertig((f) => [...f, kampf.id]); nimm(faktenVon(kampf)); onEp?.(); }} onEnde={() => setKampf(null)} />}
       <div hidden={!!kampf} className="flex flex-col gap-2">
         <p className="text-muted">Erkunde das Verlies: Pfeiltasten/WASD, die Knöpfe oder ein Ziel anklicken. Truhen öffnen sich beim Betreten, gegen Mini-Monster kämpfst du per Klick. Gefunden: {gefunden.length}/{fakten.length}</p>
         <Erkunden karte={erkundKarte} theme={theme} objekte={dinge} onBetreten={betreten} pausiert={blockiert} label="Verlies" />

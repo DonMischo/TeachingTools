@@ -4,6 +4,13 @@ export const VX = 6;       // Laufgeschwindigkeit
 export const G = 42;       // Schwerkraft
 export const VJ = 16;      // Absprunggeschwindigkeit -> Scheitel ca. 3,05 Kacheln
 export const COYOTE = 0.1; // Sprung noch kurz nach dem Kantenschritt
+export const PUFFER = 0.12; // zu früh gedrückter Sprung zählt noch beim Aufsetzen
+export const VJ_KURZ = 9;   // Loslassen im Aufstieg kappt die Geschwindigkeit hierauf (kurzer Hüpfer)
+export const VJ_POGO = 20;  // Pogo-Stab: Scheitel ca. 4,8 Kacheln
+export const BESCHL = 55;       // Beschleunigung am Boden
+export const BESCHL_LUFT = 38;  // in der Luft
+export const REIBUNG = 45;      // Abbremsen am Boden ohne Eingabe
+export const REIBUNG_LUFT = 8;
 export const MAX_ANSTIEG = 2;
 export const MAX_LUECKE = 2;
 export const HOEHE = 10;
@@ -13,7 +20,7 @@ const BEWEGER_AB = 1000; // Index-Offset für bewegte Plattformen in Spieler.auf
 export type Plattform = { x: number; y: number; w: number; cp: boolean };
 export type Schluessel = { faktIndex: number; x: number; y: number };
 /** Edelstein: (x, y) = Mittelpunkt; schwer = liegt auf einer kniffligen Stelle. */
-export type Edelstein = { id: number; x: number; y: number; schwer: boolean };
+export type Edelstein = { id: number; x: number; y: number; schwer: boolean; pogo?: boolean };
 /** Bewegte Plattform: Mitte (cx, cy) schwingt um (ax, ay) mit Periode per Sekunden. Nur Extra, nie auf dem sicheren Weg. */
 export type Beweger = { cx: number; cy: number; ax: number; ay: number; w: number; per: number; ph: number };
 /** Gegner patrouilliert auf plattformen[plat] zwischen a und b (Tempo v Kacheln/s). */
@@ -28,6 +35,8 @@ export type Level = {
   beweger: Beweger[];
   gegner: Gegner[];
   edelsteine: Edelstein[];
+  /** Pogo-Stab (wie bei Keen): höherer Sprung, holt Edelsteine, die sonst unerreichbar sind. null = keiner in diesem Level. */
+  pogo: { x: number; y: number } | null;
 };
 
 function rng(seed: number) {
@@ -153,7 +162,16 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed
     if (gegnerPlat.has(i)) gegner.push({ id: gegner.length, plat: i, a: p.x + 0.7, b: p.x + p.w - 0.7, v: 1.2 + 0.3 * Math.min(etappe, 5) + r() * 0.4, ph: r() });
   }
   if (!edelsteine.length) gem(plattformen[1].x + plattformen[1].w / 2, plattformen[1].y - 0.7, false);
-  return { stil, breite: ende.x + ende.w + 3, hoehe: HOEHE, plattformen, schluessel, tueren, leisten, beweger, gegner, edelsteine };
+  // Pogo-Stab auf der zweiten Plattform; Hochsprung-Edelsteine nur über tiefen Plattformen (sonst ragen sie aus dem Bild)
+  let pogo: Level["pogo"] = null;
+  const hoch = plattformen.map((p, i) => ({ p, i })).filter(({ p, i }) => i >= 2 && i < plattformen.length - 1 && p.y >= 7.5 && !moverPlat.has(i));
+  if (hoch.length) {
+    pogo = { x: plattformen[1].x + 0.9, y: plattformen[1].y - 0.7 };
+    for (const { p } of ziehe(Math.min(1 + etappe, 4), hoch.map((_, k) => k)).map((k) => hoch[k])) {
+      edelsteine.push({ id: edelsteine.length, x: p.x + p.w / 2, y: p.y - 6, schwer: true, pogo: true });
+    }
+  }
+  return { stil, breite: ende.x + ende.w + 3, hoehe: HOEHE, plattformen, schluessel, tueren, leisten, beweger, gegner, edelsteine, pogo };
 }
 
 /** Höchstzahl der Edelsteine (inkl. Gegner-Prämien) für den Zähler. */
@@ -175,18 +193,23 @@ export function kettePasst(l: Level): boolean {
   });
 }
 
-export type Spieler = { x: number; y: number; vy: number; auf: number; coyote: number; richtung: 1 | -1; cp: number; t: number };
+export type Spieler = {
+  x: number; y: number; vy: number; auf: number; coyote: number; richtung: 1 | -1; cp: number; t: number;
+  vx: number; puffer: number; sprungVorher: boolean; pogo: boolean;
+  /** Zählt Landungen mit Tempo hoch (Landestaub). */
+  landung: number;
+};
 export type Eingabe = { links: boolean; rechts: boolean; sprung: boolean };
 
 export function startSpieler(l: Level): Spieler {
   const p = l.plattformen[0];
-  return { x: p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0 };
+  return { x: p.x + 1, y: p.y, vy: 0, auf: 0, coyote: 0, richtung: 1, cp: 0, t: 0, vx: 0, puffer: 0, sprungVorher: false, pogo: false, landung: 0 };
 }
 
 /** Zurück zum letzten Kontrollpunkt, ohne Folgen. */
 export function zumKontrollpunkt(s: Spieler, l: Level): Spieler {
   const p = l.plattformen[s.cp];
-  return { ...s, x: p.x + Math.min(1, p.w / 2), y: p.y, vy: 0, auf: s.cp, coyote: 0 };
+  return { ...s, x: p.x + Math.min(1, p.w / 2), y: p.y, vy: 0, vx: 0, puffer: 0, auf: s.cp, coyote: 0 };
 }
 
 const stehtAuf = (p: Plattform, x: number) => x >= p.x - 0.2 && x <= p.x + p.w + 0.2;
@@ -200,20 +223,30 @@ function flaeche(l: Level, i: number, t: number): Plattform {
 export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level): Spieler {
   const dir = (e.rechts ? 1 : 0) - (e.links ? 1 : 0);
   const t1 = s.t + dt;
-  const n: Spieler = { ...s, t: t1, richtung: dir ? (dir as 1 | -1) : s.richtung };
-  n.x = Math.min(l.breite - 0.25, Math.max(0.25, s.x + dir * VX * dt));
+  const n: Spieler = { ...s, t: t1, richtung: dir ? (dir as 1 | -1) : s.richtung, sprungVorher: e.sprung };
+  // Beschleunigung und Reibung statt Sofortgeschwindigkeit
+  const boden = s.auf >= 0;
+  const ziel = dir * VX;
+  const a = (dir ? (boden ? BESCHL : BESCHL_LUFT) : (boden ? REIBUNG : REIBUNG_LUFT)) * dt;
+  n.vx = s.vx + Math.max(-a, Math.min(a, ziel - s.vx));
+  n.x = Math.min(l.breite - 0.25, Math.max(0.25, s.x + n.vx * dt));
+  if (n.x !== s.x + n.vx * dt) n.vx = 0;
   if (s.auf >= BEWEGER_AB) { // mitfahren
     const m = l.beweger[s.auf - BEWEGER_AB];
     n.x += bewegerFlaeche(m, t1).x - bewegerFlaeche(m, s.t).x;
   }
-  if (e.sprung && (s.auf >= 0 || s.coyote > 0)) {
-    n.vy = -VJ; n.auf = -1; n.coyote = 0;
+  // Sprungpuffer: frisch gedrückt merkt sich der Sprung; mit Pogo-Stab springt gehaltenes Springen immer wieder
+  n.puffer = e.sprung && !s.sprungVorher ? PUFFER : Math.max(0, s.puffer - dt);
+  const will = n.puffer > 0 || (s.pogo && e.sprung);
+  if (will && (s.auf >= 0 || s.coyote > 0)) {
+    n.vy = -(s.pogo ? VJ_POGO : VJ); n.auf = -1; n.coyote = 0; n.puffer = 0;
   } else if (s.auf >= 0) {
     const p = flaeche(l, s.auf, t1);
     if (stehtAuf(p, n.x)) { n.y = p.y; n.vy = 0; return n; }
     n.auf = -1; n.coyote = COYOTE; n.vy = 0;
   } else {
     n.coyote = Math.max(0, s.coyote - dt);
+    if (!e.sprung && s.vy < -VJ_KURZ) n.vy = -VJ_KURZ; // variable Sprunghöhe: kurz tippen = kleiner Sprung
   }
   n.vy = n.vy + G * dt;
   n.y = s.y + n.vy * dt;
@@ -224,6 +257,7 @@ export function schritt(s: Spieler, e: Eingabe, dt: number, l: Level): Spieler {
       const p = flaeche(l, i, t1);
       const vorher = i >= BEWEGER_AB ? flaeche(l, i, s.t).y : p.y;
       if (stehtAuf(p, n.x) && s.y <= vorher + 0.15 && n.y >= p.y) {
+        if (n.vy > 7) n.landung = s.landung + 1;
         n.y = p.y; n.vy = 0; n.auf = i; n.coyote = 0;
         if (p.cp && i < l.plattformen.length) n.cp = i;
         break;
@@ -250,3 +284,8 @@ export function figurBilder<F>(laufen: { links: F[]; rechts: F[] }, richtung: 1 
   const frames = richtung > 0 ? laufen.rechts : laufen.links;
   return laeuft ? { frame: frames[0], frames } : { frame: frames[0] };
 }
+
+export const nahePogo = (s: Spieler, p: { x: number; y: number }) => Math.abs(s.x - p.x) < 0.7 && s.y - p.y < 0.9 && s.y - p.y > -1.5;
+
+/** Sterne für die Etappenbilanz (reine Spielwertung). */
+export const sterne = (n: number, max: number) => (max <= 0 ? 0 : n >= max * 0.9 ? 3 : n >= max * 0.6 ? 2 : n >= max * 0.25 ? 1 : 0);

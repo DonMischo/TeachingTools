@@ -4,11 +4,11 @@ import { STILE, baueLevel, edelsteineGesamt, kettePasst, schritt, startSpieler, 
 // Probe wie in level.test.ts: vom rechten Rand der Plattform i springen und auf i+1 landen
 function probe(voll: Level, i: number): number {
   const l: Level = { ...voll, leisten: [], beweger: [] };
-  const p = l.plattformen[i];
+  const p = l.plattformen[i], n = l.plattformen[i + 1], nx = n.x;
   let s: Spieler = { ...startSpieler(l), x: p.x + p.w, y: p.y, auf: i, cp: 0 };
   s = schritt(s, { links: false, rechts: true, sprung: true }, 1 / 60, l);
   for (let t = 0; t < 3; t += 1 / 60) {
-    s = schritt(s, { links: false, rechts: t < 0.45, sprung: false }, 1 / 60, l);
+    s = schritt(s, { links: s.x > nx + n.w - 0.6, rechts: s.x < nx + 0.5, sprung: t < 0.45 }, 1 / 60, l);
     if (s.auf >= 0 && s.auf !== i) return s.auf;
   }
   return -1;

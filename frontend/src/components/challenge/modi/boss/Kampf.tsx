@@ -6,13 +6,15 @@ import type { ThemeDef } from "@/lib/challenge/themes";
 import { Sprite, type Frame } from "@/components/challenge/pixel/Sprite";
 import { Inhalt } from "../teile";
 import { Szene, type Anim, type Zahl } from "./Szene";
+import { EP_SIEG, epBalken, levelVon } from "@/lib/challenge/bossKarte";
 
 const LOG = "/challenge/pixel/gfx/log.png";
 const IDLE: Frame[] = Array.from({ length: 4 }, (_, i) => ({ x: i * 32, y: 64, w: 32, h: 32 }));
 const LAUF = { frames: IDLE, fps: 4 };
 export const SCHLAEGE = 5;
 
-export default function Kampf({ theme, fakten, onSieg, onEnde }: { theme: ThemeDef; fakten: ChallengeFakt[]; onSieg(): void; onEnde(): void }) {
+export default function Kampf({ theme, fakten, ep = 0, onSieg, onEnde }: { theme: ThemeDef; fakten: ChallengeFakt[]; ep?: number; onSieg(): void; onEnde(): void }) {
+  const ep0 = useRef(ep);
   const [hp, setHp] = useState(SCHLAEGE);
   const [n, setN] = useState(0);
   const [held, setHeld] = useState<Anim>(null);
@@ -48,6 +50,8 @@ export default function Kampf({ theme, fakten, onSieg, onEnde }: { theme: ThemeD
     return () => window.removeEventListener("keydown", f);
   }, []);
 
+  const aufstieg = levelVon(ep0.current + EP_SIEG) > levelVon(ep0.current);
+  const bal = epBalken(ep);
   const sp = theme.spieler;
   const rf = sp.laufen.rechts[0];
   const text = sieg ? "Der Holzklotz ist besiegt!" : n === 0 ? "Was tust du?" : `Du triffst den Holzklotz! Noch ${hp} von ${SCHLAEGE}.`;
@@ -58,11 +62,13 @@ export default function Kampf({ theme, fakten, onSieg, onEnde }: { theme: ThemeD
     <Szene introText="Ein wilder Holzklotz erscheint!" himmel={himmel} boden={boden}
       held={<Sprite src={sp.src} frame={rf} scale={rf.h >= 32 ? 4 : 7} label="Held" />}
       gegner={<Sprite src={LOG} frame={IDLE[0]} animation={LAUF} scale={3.5} label="Holzklotz" />}
-      heldName="Held" gegnerName="Holzklotz" hp={hp} hpMax={SCHLAEGE}
+      heldName={`Held Lv. ${bal.level}`} heldEp={{ wert: bal.wert, max: bal.max }} gegnerName="Holzklotz" hp={hp} hpMax={SCHLAEGE}
       heldAnim={held} gegnerAnim={gegner} zahlen={zahlen} onGegnerClick={angreifen}>
       <p className="font-bold">{text}</p>
       {sieg ? (
         <>
+          <p className="font-bold">Du erhältst {EP_SIEG} EP!</p>
+          {aufstieg && <p className="font-bold text-good" role="status">♪ Ta-ta-ta-taaa! Der Held steigt auf Level {levelVon(ep0.current + EP_SIEG)} auf!</p>}
           <p className="text-good font-bold">Er lässt {fakten.length > 1 ? "Fakten" : "einen Fakt"} fallen!</p>
           {fakten.map((f) => (
             <div key={f.id}><Inhalt x={f} />{f.info && <p className="text-muted text-sm">{f.info.text}</p>}</div>

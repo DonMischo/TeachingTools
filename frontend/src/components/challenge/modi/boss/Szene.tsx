@@ -38,25 +38,25 @@ function Tippe({ text }: { text: string }) {
   return <span aria-hidden>{text.slice(0, n)}</span>;
 }
 
-function Box({ name, hp, max, label, klasse, stil }: { name: string; hp: number; max: number; label?: string; klasse?: string; stil: CSSProperties }) {
+function Box({ name, hp, max, label, klasse, stil, kuerzel = "KP", farbe }: { name: string; hp: number; max: number; label?: string; klasse?: string; stil: CSSProperties; kuerzel?: string; farbe?: string }) {
   const p = max ? Math.max(0, Math.min(1, hp / max)) : 0;
   return (
     <div className={`absolute bg-surface border-2 border-line rounded-lg px-2 py-1 w-[200px] shadow ${klasse ?? ""}`} style={stil}>
       <div className="text-sm font-bold">{name}</div>
       <div className="flex items-center gap-1">
-        <span className="text-xs font-bold text-muted">KP</span>
+        <span className="text-xs font-bold text-muted">{kuerzel}</span>
         <div role={label ? "progressbar" : undefined} aria-label={label} aria-valuemin={label ? 0 : undefined} aria-valuemax={label ? max : undefined} aria-valuenow={label ? hp : undefined}
           aria-hidden={label ? undefined : true} className="h-3 flex-1 rounded bg-black/30 overflow-hidden border border-line">
-          <div className="h-full transition-[width] duration-300" style={{ width: `${p * 100}%`, background: p > 0.5 ? "#4ade80" : p > 0.2 ? "#facc15" : "#ef4444" }} />
+          <div className="h-full transition-[width] duration-300" style={{ width: `${p * 100}%`, background: farbe ?? (p > 0.5 ? "#4ade80" : p > 0.2 ? "#facc15" : "#ef4444") }} />
         </div>
       </div>
     </div>
   );
 }
 
-export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, children }: {
+export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, boden, introText, heldAnim, gegnerAnim, zahlen = [], onGegnerClick, heldEp, children }: {
   held: ReactNode; gegner: ReactNode; heldName: string; gegnerName: string; hp: number; hpMax: number;
-  himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; children: ReactNode;
+  himmel?: string; boden?: string; introText?: string; heldAnim?: Anim; gegnerAnim?: Anim; zahlen?: Zahl[]; onGegnerClick?(): void; /** EP-Balken des Helden (statt voller KP). */ heldEp?: { wert: number; max: number }; children: ReactNode;
 }) {
   // 0 Blitz · 1 Streifen · 2 Figuren und Boxen gleiten ein, Text tippt · 3 fertig
   const [stufe, setStufe] = useState(() => (introText && !reduziert() ? 0 : 3));
@@ -91,7 +91,7 @@ export function Szene({ held, gegner, heldName, gegnerName, hp, hpMax, himmel, b
               style={{ right: 100 + (z.id % 3) * 24, top: 40 + (z.id % 2) * 16, color: "#ff3b30", textShadow: "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff" }}>−{z.wert}</span>
           ))}
           {sichtbar && <Box name={gegnerName} hp={hp} max={hpMax} label="Lebensbalken des Gegners" klasse={ein("l")} stil={{ left: 12, top: 12 }} />}
-          {sichtbar && <Box name={heldName} hp={1} max={1} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}
+          {sichtbar && <Box name={heldName} hp={heldEp?.wert ?? 1} max={heldEp?.max ?? 1} kuerzel={heldEp ? "EP" : "KP"} farbe={heldEp ? "#60a5fa" : undefined} label={heldEp ? "Erfahrung des Helden" : undefined} klasse={ein("r")} stil={{ right: 12, bottom: 12 }} />}
           {stufe === 0 && <div className="bs-blink absolute inset-0 bg-white pointer-events-none" />}
           {(stufe === 1 || stufe === 2) && (
             <div className="absolute inset-0 flex flex-col pointer-events-none" aria-hidden>
