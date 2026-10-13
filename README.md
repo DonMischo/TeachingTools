@@ -45,7 +45,7 @@ Eine maschinenlesbare Fassung der Feature-Liste steht in [features.yml](features
 - Punkte-Log je Klasse; Admins können Einträge löschen
 - Klassen-Spitznamen setzen
 
-**Punkte aus Aktivitäten:** Caputh, Bingo und TaskCrawler vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
+**Punkte aus Aktivitäten:** Caputh, Bingo, TaskCrawler und Challenge vergeben Punkte nach Ergebnis. Läuft eine Sitzung für einen Kurs oder eine WPF-Gruppe, wird jede beteiligte Klasse einzeln nach ihrer eigenen Quote bewertet.
 
 ---
 
@@ -84,6 +84,8 @@ Alle Aktivitäten können Schüler nutzen. Hosten dürfen standardmäßig nur Le
 - Aufgaben aus den Aufgaben-Generatoren, eingebettete Lückentexte und Zeitstrahlen
 - Import als `.json`/`.zip`, Vorlage mit Beispiel für jeden Baustein; nachträglich per Formular bearbeitbar, Bilder direkt hochladen (JSON nur im Expertenmodus)
 
+### ⚔️ Challenge
+- Leistungsüberprüfung als Minispiel: Schüler:innen ordnen Fakten (Karten) per Klick oder Ziehen den passenden Challenges zu, auch als Kombo aus mehreren Fakten; Ablenker und falsch gelegte Fakten schwächen den Treffer, drei Fehlversuche schicken zurück zur Karte zum Nachlesen; ein Satzformat (`challenge.json`, als .zip mit `assets/`) für alle Spielarten, vier Stufen mit eigenen Texten und Fragen, Stufe passt sich per Fuzzy-Logik an; Prüfung und Wertung auf dem Server (jede Antwort zählt, Wiederholungen heben die Güte), Auswertung je Person mit CSV, Hauspunkte als Klassenmittel
 ### 🧩 Lückentext
 - Lücken mit Wortbank, Freitext oder Multiple Choice; Ziehlücken (gestrichelte Pille) und Schreiblücken (Linie) sind auf einen Blick zu unterscheiden
 - Live-Runde mit Rangliste, Einzelübung oder Korrekturmodus

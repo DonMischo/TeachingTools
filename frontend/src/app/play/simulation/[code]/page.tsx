@@ -41,6 +41,7 @@ import Tippen from "@/components/tippen/Tippen";
 import MausFuehrerschein, { schluesselFuerGast, schluesselFuerGastName } from "@/components/maus/MausFuehrerschein";
 import { SharedTimeline } from "@/components/timeline/SharedTimeline";
 import KartenQuizSpiel from "@/components/karten/KartenQuizSpiel";
+import ChallengeSpiel from "@/components/challenge/ChallengeSpiel";
 import Algorithmen from "@/components/algo/Algorithmen";
 import Periodensystem from "@/components/pse/Periodensystem";
 import Strukturformeln from "@/components/struktur/Strukturformeln";
@@ -85,6 +86,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   zeitstrahl: { title: "Zeitstrahl", icon: "📏", node: null },
   // Das Kartenquiz teilt einen Kartensatz und prüft auf dem Server — Code und Gast-Token.
   karten: { title: "Kartenquiz", icon: "🗺️", node: null },
+  // Die Challenge teilt einen Satz und wertet auf dem Server — Code und Gast-Token.
+  challenge: { title: "Challenge", icon: "⚔️", node: null },
   // Die Werkstatt meldet ihren Fortschritt an die Klassenübersicht — dafür braucht sie Code und Gast-Token.
   algo: { title: "Algorithmen-Werkstatt", icon: "🔀", node: null },
 };
@@ -167,6 +170,8 @@ export default function SimulationJoinPage() {
     ? <SharedTimeline code={code} guestToken={guest.token} />
     : session.tool_slug === "karten"
       ? <KartenQuizSpiel code={code} token={auth ? null : guest.token} />
+    : session.tool_slug === "challenge"
+      ? <ChallengeSpiel code={code} token={auth ? null : guest.token} />
     : session.tool_slug === "uebung"
       ? <Uebung zugang={guest.token ? { code, token: guest.token } : undefined} />
       : session.tool_slug === "ki"

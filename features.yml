@@ -91,6 +91,17 @@ aktivitaeten:
       - "17 Stile (Klassisch, Beton, Glas & Neon, Gartenpalast, Verlies, Burg, Holzhütte, Eispalast, Wüstentempel, Raumstation, Lavahöhle, Steinzeithöhle, Antiker Tempel, Mittelalter, Gotik, Viktorianisch, Retro), wahlweise je Abschnitt ein eigener (\"gebaeude\": {\"stile\": […]}), z. B. Zeitreise der Medien von der Steinzeit bis heute; Oberflächen je Stil als gemalte Muster (Fels, Mauerwerk, Dielen, Parkett, Marmor, Fachwerk, Tapete, Teppich, Metall, Eis …), Höhlen organisch aus Felsbrocken mit Tropfsteinen, Verzierungen (Säulen, Turmspitzen, Zinnen, Eiskristalle); Lavahöhle mit glühenden Rissen (leuchten auch im dunklen Verlies); legt das Spiel Ansicht/Stil fest, gibt es keine Auswahl — sonst wählen die Schüler"
       - Stationen anklicken; 13 Objekte in den Zimmern (Computer, Kuckucksuhr, Globus, Tresor …), automatisch passend oder per "station"
       - "Werkzeug-Stationen: eine Aufgabe öffnet eine Simulation mit fester Vorgabe (\"sim\": {tool, config}) — Gleichungswaage, Funktionen, Vierecke, Rechenregeln mit genau einer Aufgabe, alle übrigen auf einen Reiter festgelegt; Antwort wird weiter serverseitig geprüft"
+  - id: challenge
+    name: Challenge
+    faehigkeiten: {use: [true, true], host: [true, false], upload: [true, true]}
+    kann:
+      - "Leistungsüberprüfung als Minispiel: Fakten per Klick oder Ziehen der passenden Challenge zuordnen, kein Multiple Choice"
+      - Ein Satzformat für alle Spielarten (facts, challenges, decoys, Etappen), Import als .json/.zip mit Bildern, Vorlage, Bearbeiten per Formular oder JSON
+      - Kombos (mehrere Fakten zusammen), falsche Fakten schwächen den Treffer (Malus), drei Fehlversuche führen zurück zur Karte mit Wissen zum Nachlesen
+      - Vier Stufen mit eigenen Texten und Fragen je Stufe (levels), Stufe wechselt per Fuzzy-Anpassung; Tipps nur auf Stufe 1
+      - "Wertung: jede Antwort zählt, Wiederholungen heben die Güte, 100 % nur ohne Fehler im ersten Anlauf; Spiel- und Wissenswertung getrennt"
+      - Auswertung je Person (Lesetempo, geraten, Kombos, gewählte Ablenker), CSV, Hauspunkte als Klassenmittel (bis 100 je Person)
+      - "Spielarten: bisher der Normal-Modus; Kartenspiel, Jump'n'Run, Bosskampf u. a. folgen"
   - id: lueckentext
     name: Lückentext
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}

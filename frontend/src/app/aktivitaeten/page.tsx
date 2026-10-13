@@ -31,6 +31,14 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#16a34a",
   },
   {
+    slug: "challenge",
+    href: "/aktivitaeten/challenge",
+    icon: "⚔️",
+    title: "Challenge",
+    description: "Leistungsüberprüfung als Minispiel: Fakten den passenden Aufgaben zuordnen, Kombos, Stufen",
+    color: "#e11d48",
+  },
+  {
     slug: "lueckentext",
     href: "/aktivitaeten/lueckentexte",
     icon: "🧩",

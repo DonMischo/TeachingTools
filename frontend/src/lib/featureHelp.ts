@@ -41,6 +41,16 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "🤖 KI-Nutzung", text: "Im Generatoren-Panel »In AI-Prompt kopieren« nutzen, den Text einer externen KI geben und das Ergebnis als Aufgaben einbauen. (Keine KI direkt in der App.)" },
     ],
   },
+  challenge: {
+    title: "Challenge",
+    intro: "Leistungsüberprüfung als Minispiel: Die Schüler legen Fakten auf die passenden Challenges, du siehst Stufe, Güte und Ergebnis live.",
+    sections: [
+      { label: "▶️ Starten", text: "Einen Satz hochladen, öffnen und »📱 Zum Mitmachen« zeigen — Schüler und Gäste spielen über den Code. Die Startstufe (1–4) stellst du in der Sitzung ein; danach passt sie sich je Spieler an." },
+      { label: "⬆️ Satz anlegen", text: "»+ Challenge hochladen« akzeptiert .json oder .zip (mit Bildern in assets/). Ein Satz hat Fakten (auch Ablenker), Challenges mit Lösung (»alle nötig« = Kombo, »eine genügt«) und Etappen. »Vorlage« lädt ein Beispiel; Bearbeiten geht im Formular, Anpassungen je Stufe (levels) im Expertenmodus." },
+      { label: "📊 Wertung", text: "Jede Antwort zählt, Wiederholungen heben die Güte; 100 % gibt es nur ohne Fehler im ersten Anlauf. Wer drei Leben verliert, liest auf der Karte nach." },
+      { label: "🏠 Hauspunkte", text: "Je Klasse der Mittelwert der Ergebnisse (einmal je Runde), dazu CSV-Export und »Zurücksetzen« für eine neue Runde." },
+    ],
+  },
   lueckentext: {
     title: "Lückentext",
     intro: "Lückentexte mit Wortbank, Freitext und Multiple Choice — mit Live-Rangliste.",

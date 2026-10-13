@@ -490,6 +490,36 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 /** Ein Bild für einen Vorlagen-Editor hochladen; `path` kommt ins Inhalts-JSON. */
 export type AssetOut = { path: string; url: string };
+
+// ── Challenge (api/routers/challenge.py) ──────────────────────────────────────
+export type ChallengeSatzInfo = { id: number; title: string; subject: string | null; fakten: number; challenges: number; created_at: string; warnungen?: string[] };
+export type ChallengeFaktInfo = { text: string; source?: { label?: string; url?: string } };
+export type ChallengeFakt = { id: string; text: string; image: string | null; formula: string | null; info: ChallengeFaktInfo | null };
+export type ChallengeAufgabe = { id: string; text: string; image: string | null; formula: string | null; strength: number; erledigt: boolean; tip?: string | null };
+export type ChallengeBrett = {
+  stufe: number; etappe: number; leben: number; fertig: boolean;
+  etappen: { nr: number; titel: string; erledigt: boolean }[];
+  challenges: ChallengeAufgabe[]; fakten: ChallengeFakt[];
+};
+export type ChallengeInfo = {
+  title: string; subject: string | null;
+  settings: { spiele: string[]; theme: string; startstufe: number };
+  stand: { stufe: number; etappe: number; leben: number; fragen: number; ergebnis: number; fertig: boolean } | null;
+};
+export type ChallengeAntwortIn = { challenge_id: string; fakt_ids: string[]; lese_ms: number; wahl_ms: number; tipp: boolean };
+export type ChallengeAntwort = {
+  qualitaet: number; treffer: boolean; komplett: boolean; kombo: boolean; schaden: number; falsch_gewaehlt: number;
+  leben: number; zurueck_zur_karte: boolean; etappe_geschafft: boolean; fertig: boolean; stufe: number; feedback?: string | null;
+};
+export type ChallengeTeilnehmer = {
+  name: string; klasse: string; stufe_start: number; stufe: number; guete: number; ergebnis: number; punkte: number;
+  fragen: number; erstversuch_richtig: number; kombos: number; ablenker_gewaehlt: string[];
+  lesetempo_median: number | null; geraten: number; fertig: boolean;
+};
+export type ChallengeUebersicht = { teilnehmer: ChallengeTeilnehmer[]; punkte: { class_id: number; klasse: string; teilnehmer: number; punkte: number }[] };
+export type ChallengeStatistikZeile = {
+  class_id: number; klasse: string; stufe: number; teilnehmer: number; lesetempo_median: number | null; anteil_geraten: number;
+};
 function uploadAsset(path: string, file: File): Promise<AssetOut> {
   const fd = new FormData();
   fd.append("file", file);
@@ -1585,6 +1615,41 @@ export const api = {
     /** Prüfung melden — Schülerkonten bekommen beim ersten Bestehen Hauspunkte. */
     pruefung: (body: MausPruefungIn) =>
       apiFetch<MausPruefungOut>("maus/pruefung", { method: "POST", body: JSON.stringify(body) }),
+  },
+
+  // Challenge: Leistungsüberprüfung als Minispiel; Spieler mit Konto oder Gast-Token
+  challenge: {
+    list: () => apiFetch<ChallengeSatzInfo[]>("challenge/sets"),
+    template: () => apiFetch<Record<string, unknown>>("challenge/template"),
+    upload: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return fetch("/api/challenge/upload", { method: "POST", credentials: "include", body: fd })
+        .then(async (r) => {
+          if (!r.ok) throw new Error(JSON.stringify(await r.json().catch(() => ({}))));
+          return r.json() as Promise<ChallengeSatzInfo>;
+        });
+    },
+    get: (id: number) => apiFetch<Record<string, unknown>>(`challenge/sets/${id}`),
+    update: (id: number, data: unknown) =>
+      apiFetch<ChallengeSatzInfo>(`challenge/sets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    remove: (id: number) => apiFetch<void>(`challenge/sets/${id}`, { method: "DELETE" }),
+    uploadAsset: (id: number, file: File) => uploadAsset(`challenge/sets/${id}/assets`, file),
+    exportUrl: (id: number) => `/api/challenge/sets/${id}/export`,
+    info: (code: string, token?: string | null) =>
+      ffetch<ChallengeInfo>(`challenge/${encodeURIComponent(code)}`, undefined, token ?? undefined),
+    start: (code: string, token?: string | null) =>
+      ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/start`, { method: "POST" }, token ?? undefined),
+    antwort: (code: string, body: ChallengeAntwortIn, token?: string | null) =>
+      ffetch<ChallengeAntwort>(`challenge/${encodeURIComponent(code)}/antwort`,
+        { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
+    uebersicht: (code: string) => apiFetch<ChallengeUebersicht>(`challenge/${encodeURIComponent(code)}/uebersicht`),
+    csvPfad: (code: string) => `/api/challenge/${encodeURIComponent(code)}/export.csv`,
+    punkte: (code: string) =>
+      apiFetch<{ vergeben: ChallengeUebersicht["punkte"] }>(`challenge/${encodeURIComponent(code)}/punkte`, { method: "POST" }),
+    zuruecksetzen: (code: string) => apiFetch<void>(`challenge/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),
+    statistik: (classId?: number) =>
+      apiFetch<ChallengeStatistikZeile[]>(`challenge/statistik${classId != null ? `?class_id=${classId}` : ""}`),
   },
 
   // Kartentool: Ebenen-Katalog (die GeoJSONs lädt MapLibre selbst, siehe lib/karten/stil.ts)
