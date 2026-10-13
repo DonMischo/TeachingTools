@@ -10,16 +10,36 @@
  */
 import { useState, type ReactNode } from "react";
 import {
-  KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, schritt, umrechnen, ungefaehr, zahl,
+  HOCH, KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, schritt, umrechnen, ungefaehr, zahl,
   type Kategorie,
 } from "@/lib/groessen";
 
 const MAL = "#f97316";
 const DURCH = "#3b82f6";
 
+/**
+ * Warum die Längenzahl stimmt: »1 m = 100 cm« bzw. für Ar und Hektar
+ * »100 m = 10 · 10 m« (1 ha = (100 m)², 1 a = (10 m)²).
+ */
+function seitenSatz(k: Kategorie, i: number, j: number, basis: number): string {
+  const [gross, klein] = i < j ? [k.einheiten[i], k.einheiten[j]] : [k.einheiten[j], k.einheiten[i]];
+  const s = klein.seite!;
+  return s.startsWith("1 ") ? `${gross.seite} = ${zahl(basis)} ${s.slice(2)}` : `${gross.seite} = ${zahl(basis)} · ${s}`;
+}
+
 /* ─────────────────────────────────────────────────────── Leiter ── */
 
-function Leiter({ k, gewaehlt, waehle }: { k: Kategorie; gewaehlt: number | null; waehle: (i: number | null) => void }) {
+/** »· 100« oder, mit Längenzahl, »· 10²« — wo es keine Länge gibt, bleibt es bei der Zahl. */
+function schild(k: Kategorie, i: number, j: number, alsLaenge: boolean): string {
+  const l = alsLaenge ? laengenSchritt(k, i, j) : null;
+  if (l) return `${l.op} ${zahl(l.basis)}${HOCH[l.hoch]}`;
+  const s = schritt(k, i, j);
+  return `${s.op} ${zahl(s.zahl)}`;
+}
+
+function Leiter({ k, gewaehlt, waehle, alsLaenge }: {
+  k: Kategorie; gewaehlt: number | null; waehle: (i: number | null) => void; alsLaenge: boolean;
+}) {
   const n = k.einheiten.length;
   const dx = 150, W = Math.max(520, dx * n), bw = 84, bh = 48;
   // Die Beschriftung sitzt im Scheitel eines Bogens — halb so hoch wie sein Kontrollpunkt.
@@ -53,15 +73,15 @@ function Leiter({ k, gewaehlt, waehle }: { k: Kategorie; gewaehlt: number | null
   const boegen = [];
   if (gewaehlt === null) {
     for (let i = 0; i < n - 1; i++) {
-      boegen.push(bogen(i, i + 1, true, 46, `· ${zahl(k.schritte[i])}`, MAL, `m${i}`));
-      boegen.push(bogen(i + 1, i, false, 46, `: ${zahl(k.schritte[i])}`, DURCH, `d${i}`));
+      boegen.push(bogen(i, i + 1, true, 46, schild(k, i, i + 1, alsLaenge), MAL, `m${i}`));
+      boegen.push(bogen(i + 1, i, false, 46, schild(k, i + 1, i, alsLaenge), DURCH, `d${i}`));
     }
   } else {
     for (let j = 0; j < n; j++) {
       if (j === gewaehlt) continue;
       const s = schritt(k, gewaehlt, j);
       const weit = Math.abs(j - gewaehlt);
-      boegen.push(bogen(gewaehlt, j, s.op === "·", hoch(weit), `${s.op} ${zahl(s.zahl)}`, s.op === "·" ? MAL : DURCH, `g${j}`));
+      boegen.push(bogen(gewaehlt, j, s.op === "·", hoch(weit), schild(k, gewaehlt, j, alsLaenge), s.op === "·" ? MAL : DURCH, `g${j}`));
     }
   }
 
@@ -152,6 +172,8 @@ export default function Umrechnen() {
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [eingabe, setEingabe] = useState("1");
   const [von, setVon] = useState(1);
+  // Fläche/Volumen: Umrechnungszahl als Längenzahl hoch 2 bzw. 3 zeigen?
+  const [alsLaenge, setAlsLaenge] = useState(false);
 
   function waehleKat(id: string) {
     setKatId(id);
@@ -185,7 +207,28 @@ export default function Umrechnen() {
             {gewaehlt === null ? "Tipp auf eine Einheit — dann siehst du alle Wege von ihr aus." : "Nochmal tippen zeigt wieder die Nachbarschritte."}
           </div>
         </div>
-        <Leiter k={k} gewaehlt={gewaehlt} waehle={waehle} />
+        {k.hoch && (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-xl border border-line p-1 bg-surface" role="group" aria-label="Schreibweise der Umrechnungszahl">
+              <button onClick={() => setAlsLaenge(false)}
+                className={`px-3 py-1 rounded-lg text-sm font-bold ${!alsLaenge ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
+                {k.hoch === 2 ? "· 100" : "· 1 000"} — normal
+              </button>
+              <button onClick={() => setAlsLaenge(true)}
+                className={`px-3 py-1 rounded-lg text-sm font-bold ${alsLaenge ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
+                {k.hoch === 2 ? "· 10²" : "· 10³"} — Länge {k.hoch === 2 ? "zum Quadrat" : "hoch drei (Kubik)"}
+              </button>
+            </div>
+            {alsLaenge && (
+              <span className="text-xs text-muted">
+                {k.hoch === 2
+                  ? "m → cm ist · 100, also m² → cm² · 100² — die Länge wird zweimal umgerechnet: in der Breite und in der Höhe."
+                  : "m → cm ist · 100, also m³ → cm³ · 100³ — Länge, Breite und Höhe werden je einmal umgerechnet. hl, dl und cl sind keine Längen hoch drei; dort bleibt die normale Zahl."}
+              </span>
+            )}
+          </div>
+        )}
+        <Leiter k={k} gewaehlt={gewaehlt} waehle={waehle} alsLaenge={alsLaenge} />
         {k.hinweis && <p className="text-sm rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">⚠️ {k.hinweis}</p>}
       </div>
 
@@ -208,6 +251,7 @@ export default function Umrechnen() {
               const s = schritt(k, von, j);
               const r = umrechnen(k, v, von, j);
               const komma = kommaStellen(s.zahl);
+              const lz = laengenSchritt(k, von, j);
               return (
                 <div key={e.id} className="contents">
                   <span className="text-right font-mono text-lg font-bold whitespace-nowrap">
@@ -218,6 +262,12 @@ export default function Umrechnen() {
                   </span>
                   <span className="text-sm text-muted self-center">
                     <span style={{ color: s.op === "·" ? MAL : DURCH }} className="font-bold">{s.op} {zahl(s.zahl)}</span>
+                    {alsLaenge && lz && (
+                      <>
+                        {" "}= <span style={{ color: s.op === "·" ? MAL : DURCH }} className="font-bold">{lz.op} {zahl(lz.basis)}{HOCH[lz.hoch]}</span>
+                        {` — denn ${seitenSatz(k, von, j, lz.basis)}`}
+                      </>
+                    )}
                     {komma !== null && ` — Komma ${komma} ${komma === 1 ? "Stelle" : "Stellen"} nach ${s.op === "·" ? "rechts" : "links"}`}
                     {r.bruch && !r.exakt && ` — genau ${zahl(r.bruch[0])}/${zahl(r.bruch[1])} ${e.zeichen}`}
                   </span>

@@ -2,7 +2,7 @@
  * Einheitenleitern und Umrechnung — wie auf dem Merkblatt Klasse 5.
  */
 import { describe, it, expect } from "vitest";
-import { KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, schritt, umrechnen, zahl } from "@/lib/groessen";
+import { KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, laengenSchritt, schritt, umrechnen, zahl } from "@/lib/groessen";
 
 const idx = (kat: string, id: string) => kategorie(kat).einheiten.findIndex(e => e.id === id);
 
@@ -71,5 +71,27 @@ describe("Hilfen", () => {
     expect(bestEinheit(L, 1.4)).toEqual({ i: idx("laenge", "m"), wert: 1.4 });
     expect(L.einheiten[bestEinheit(L, 42195).i].id).toBe("km");
     expect(L.einheiten[bestEinheit(L, 0.005).i].id).toBe("mm");
+  });
+});
+
+describe("Umrechnungszahl als Länge hoch 2 bzw. 3", () => {
+  it("m² → cm² ist · 100², m³ → cm³ (ml) ist · 100³", () => {
+    expect(laengenSchritt(kategorie("flaeche"), idx("flaeche", "m2"), idx("flaeche", "cm2"))).toEqual({ op: "·", basis: 100, hoch: 2 });
+    expect(laengenSchritt(kategorie("volumen"), idx("volumen", "m3"), idx("volumen", "ml"))).toEqual({ op: "·", basis: 100, hoch: 3 });
+  });
+
+  it("Ar und Hektar sind Quadrate: ha → a ist · 10², km² → ha ist · 10²", () => {
+    expect(laengenSchritt(kategorie("flaeche"), idx("flaeche", "ha"), idx("flaeche", "a"))).toEqual({ op: "·", basis: 10, hoch: 2 });
+    expect(laengenSchritt(kategorie("flaeche"), idx("flaeche", "km2"), idx("flaeche", "ha"))).toEqual({ op: "·", basis: 10, hoch: 2 });
+  });
+
+  it("zur größeren Einheit geteilt: l → m³ ist : 10³", () => {
+    expect(laengenSchritt(kategorie("volumen"), idx("volumen", "l"), idx("volumen", "m3"))).toEqual({ op: ":", basis: 10, hoch: 3 });
+  });
+
+  it("hl, dl, cl haben keine Länge dahinter — und Länge selbst hat keine Hochzahl", () => {
+    expect(laengenSchritt(kategorie("volumen"), idx("volumen", "l"), idx("volumen", "dl"))).toBeNull();
+    expect(laengenSchritt(kategorie("volumen"), idx("volumen", "m3"), idx("volumen", "hl"))).toBeNull();
+    expect(laengenSchritt(kategorie("laenge"), idx("laenge", "m"), idx("laenge", "cm"))).toBeNull();
   });
 });

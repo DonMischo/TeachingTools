@@ -17,6 +17,8 @@ export type Einheit = {
   auch?: string;
   /** So viel ist ungefähr 1 dieser Einheit. */
   eins: string;
+  /** Fläche/Volumen: die Länge, deren Quadrat bzw. Würfel die Einheit ist (1 a = (10 m)²). */
+  seite?: string;
 };
 
 export type Beispiel = { emoji: string; text: string; /** in der Basiseinheit */ wert: number };
@@ -34,6 +36,8 @@ export type Kategorie = {
   basis: number;
   beispiele: Beispiel[];
   hinweis?: string;
+  /** 2 bei Flächen, 3 bei Volumen: die Umrechnungszahl ist eine Längenzahl hoch 2 bzw. 3. */
+  hoch?: 2 | 3;
 };
 
 export const KATEGORIEN: Kategorie[] = [
@@ -66,15 +70,16 @@ export const KATEGORIEN: Kategorie[] = [
   {
     id: "flaeche", name: "Fläche", icon: "🟩", farbe: "#22c55e",
     einheiten: [
-      { id: "km2", zeichen: "km²", name: "Quadratkilometer", eins: "etwa 140 Fußballfelder" },
-      { id: "ha", zeichen: "ha", name: "Hektar", eins: "100 m × 100 m — etwa 1,4 Fußballfelder" },
-      { id: "a", zeichen: "a", name: "Ar", eins: "10 m × 10 m — etwa 1,5 Klassenzimmer" },
-      { id: "m2", zeichen: "m²", name: "Quadratmeter", eins: "eine große Tischplatte" },
-      { id: "dm2", zeichen: "dm²", name: "Quadratdezimeter", eins: "etwa eine Handfläche" },
-      { id: "cm2", zeichen: "cm²", name: "Quadratzentimeter", eins: "etwa ein Fingernagel" },
-      { id: "mm2", zeichen: "mm²", name: "Quadratmillimeter", eins: "etwa ein Stecknadelkopf" },
+      { id: "km2", zeichen: "km²", name: "Quadratkilometer", seite: "1 km", eins: "etwa 140 Fußballfelder" },
+      { id: "ha", zeichen: "ha", name: "Hektar", seite: "100 m", eins: "100 m × 100 m — etwa 1,4 Fußballfelder" },
+      { id: "a", zeichen: "a", name: "Ar", seite: "10 m", eins: "10 m × 10 m — etwa 1,5 Klassenzimmer" },
+      { id: "m2", zeichen: "m²", name: "Quadratmeter", seite: "1 m", eins: "eine große Tischplatte" },
+      { id: "dm2", zeichen: "dm²", name: "Quadratdezimeter", seite: "1 dm", eins: "etwa eine Handfläche" },
+      { id: "cm2", zeichen: "cm²", name: "Quadratzentimeter", seite: "1 cm", eins: "etwa ein Fingernagel" },
+      { id: "mm2", zeichen: "mm²", name: "Quadratmillimeter", seite: "1 mm", eins: "etwa ein Stecknadelkopf" },
     ],
     schritte: [100, 100, 100, 100, 100, 100],
+    hoch: 2,
     basis: 3,
     beispiele: [
       { emoji: "📌", text: "Stecknadelkopf", wert: 0.000001 },
@@ -92,15 +97,16 @@ export const KATEGORIEN: Kategorie[] = [
   {
     id: "volumen", name: "Volumen", icon: "🧊", farbe: "#06b6d4",
     einheiten: [
-      { id: "m3", zeichen: "m³", name: "Kubikmeter", eins: "ein Würfel mit 1 m Kante — etwa 7 volle Badewannen" },
+      { id: "m3", zeichen: "m³", name: "Kubikmeter", seite: "1 m", eins: "ein Würfel mit 1 m Kante — etwa 7 volle Badewannen" },
       { id: "hl", zeichen: "hl", name: "Hektoliter", eins: "etwa zwei Drittel einer vollen Badewanne" },
-      { id: "l", zeichen: "l", name: "Liter", auch: "dm³", eins: "eine Milchtüte" },
+      { id: "l", zeichen: "l", name: "Liter", auch: "dm³", seite: "1 dm", eins: "eine Milchtüte" },
       { id: "dl", zeichen: "dl", name: "Deziliter", eins: "eine halbe Tasse" },
       { id: "cl", zeichen: "cl", name: "Zentiliter", eins: "zwei Teelöffel" },
-      { id: "ml", zeichen: "ml", name: "Milliliter", auch: "cm³", eins: "etwa 20 Tropfen" },
-      { id: "mm3", zeichen: "mm³", name: "Kubikmillimeter", eins: "ein winziges Sandkorn" },
+      { id: "ml", zeichen: "ml", name: "Milliliter", auch: "cm³", seite: "1 cm", eins: "etwa 20 Tropfen" },
+      { id: "mm3", zeichen: "mm³", name: "Kubikmillimeter", seite: "1 mm", eins: "ein winziges Sandkorn" },
     ],
     schritte: [10, 100, 10, 10, 10, 1000],
+    hoch: 3,
     basis: 2,
     beispiele: [
       { emoji: "💧", text: "Tropfen", wert: 0.00005 },
@@ -215,6 +221,24 @@ export function schritt(k: Kategorie, i: number, j: number): { op: "·" | ":"; z
   let f = 1;
   for (let x = Math.min(i, j); x < Math.max(i, j); x++) f *= k.schritte[x];
   return { op: i <= j ? "·" : ":", zahl: f };
+}
+
+export const HOCH = { 2: "²", 3: "³" } as const;
+
+/**
+ * Dieselbe Umrechnung als Längenzahl hoch 2 bzw. 3: m² → cm² ist · 100²,
+ * m³ → cm³ ist · 100³. `null`, wo keine Länge dahintersteht (hl, dl, cl:
+ * 1 l = 10 dl, aber 10 ist keine ganze Zahl hoch 3) oder die Größe keine
+ * Fläche/kein Volumen ist.
+ */
+export function laengenSchritt(k: Kategorie, i: number, j: number): { op: "·" | ":"; basis: number; hoch: 2 | 3 } | null {
+  if (!k.hoch || i === j) return null;
+  const { op, zahl } = schritt(k, i, j);
+  const basis = Math.round(zahl ** (1 / k.hoch));
+  if (basis ** k.hoch !== zahl) return null;
+  // Nur, wenn beide Einheiten eine Seitenlänge haben — sonst wäre es Zufall.
+  if (!k.einheiten[i].seite || !k.einheiten[j].seite) return null;
+  return { op, basis, hoch: k.hoch };
 }
 
 /** Faktor von Einheit i nach Einheit j: Wert in j = Wert in i · faktor. */

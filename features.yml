@@ -491,6 +491,7 @@ simulationen:
     kann:
       - Einheitenleitern für Länge, Fläche, Volumen (mit Liter), Gewicht, Zeit, Euro und US-Dollar wie auf dem Merkblatt
       - Tipp auf eine Einheit zeigt alle Umrechnungen von ihr aus
+      - Fläche und Volumen wahlweise mit Längenzahl hoch 2 bzw. 3 (m² → cm² · 100², m³ → cm³ · 100³)
       - Umrechner mit »Komma wandert« und Bruch bei der Zeit
       - Alltagsbeispiele auf einer logarithmischen Achse
       - Länge · Fläche · Volumen — Strecke, Quadrat, Würfel füllen sich; Umrechnungszahl hoch 1, 2, 3
