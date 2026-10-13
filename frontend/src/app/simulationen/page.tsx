@@ -190,6 +190,22 @@ const ALL_CARDS: { slug: string; href: string; icon: string; title: string; desc
     color: "#ef4444",
   },
   {
+    slug: "groessen",
+    href: "/simulationen/groessen",
+    icon: "🪜",
+    title: "Größen & Einheiten",
+    description: "Länge, Fläche, Volumen, Gewicht, Zeit, Euro und Dollar umrechnen — Einheitenleiter wie auf dem Merkblatt, ein Tipp auf eine Einheit zeigt alle Wege. Dazu Alltagsbeispiele (wie lang ist 1 km?) und warum aus · 10 bei Flächen · 100 und bei Körpern · 1 000 wird.",
+    color: "#0ea5e9",
+  },
+  {
+    slug: "rechenzeichen",
+    href: "/simulationen/rechenzeichen",
+    icon: "➗",
+    title: "Rechenzeichen",
+    description: "Was heißen + − · : ² ³ √ < > ≤ ≥ — und ∫ und f′? Äpfel dazulegen und wegnehmen, Reihen legen, auf Teller verteilen, Quadrate und Würfel aus Kästchen, der Zahlenstrahl, Streifen unter der Kurve und die Tangente.",
+    color: "#f43f5e",
+  },
+  {
     slug: "rechenregeln",
     href: "/simulationen/rechenregeln",
     icon: "🍎",

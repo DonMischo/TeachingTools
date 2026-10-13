@@ -8,7 +8,7 @@
  * wandert«) und die Größenleiter: Dinge aus dem Alltag auf einer
  * logarithmischen Achse, damit man ein Gefühl für die Einheiten bekommt.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   KATEGORIEN, bestEinheit, faktor, kategorie, kommaStellen, schritt, umrechnen, ungefaehr, zahl,
   type Kategorie,
@@ -28,21 +28,25 @@ function Leiter({ k, gewaehlt, waehle }: { k: Kategorie; gewaehlt: number | null
   const x = (i: number) => W / 2 + (i - (n - 1) / 2) * dx;
 
   // Ein Bogen von Kasten i zu Kasten j; oben (mal) oder unten (geteilt).
-  const bogen = (i: number, j: number, oben: boolean, hoehe: number, label: string, farbe: string, key: string, blass = false) => {
+  // Beschriftungen kommen in eine zweite Ebene, sonst überdeckt der nächste Bogen sie.
+  const schilder: ReactNode[] = [];
+  const bogen = (i: number, j: number, oben: boolean, hoehe: number, label: string, farbe: string, key: string) => {
     const y = oben ? cy - bh / 2 : cy + bh / 2;
     const x1 = x(i) + (j > i ? 12 : -12), x2 = x(j) + (j > i ? -12 : 12);
     const cyB = oben ? y - hoehe : y + hoehe;
     const mx = (x1 + x2) / 2;
-    return (
-      <g key={key} opacity={blass ? 0.55 : 1}>
-        <path d={`M ${x1} ${y} Q ${mx} ${cyB} ${x2} ${y}`} fill="none" stroke={farbe} strokeWidth={2.5}
-          markerEnd={`url(#pfeil-${farbe === MAL ? "mal" : "durch"})`} />
+    schilder.push(
+      <g key={key}>
         <rect x={mx - label.length * 5.2 - 6} y={(y + cyB) / 2 - 12} width={label.length * 10.4 + 12} height={24} rx={6}
           fill="var(--surface)" />
         <text x={mx} y={(y + cyB) / 2} textAnchor="middle" dominantBaseline="central" fontSize={17} fontWeight={800} fill={farbe}>
           {label}
         </text>
-      </g>
+      </g>,
+    );
+    return (
+      <path key={key} d={`M ${x1} ${y} Q ${mx} ${cyB} ${x2} ${y}`} fill="none" stroke={farbe} strokeWidth={2.5}
+        markerEnd={`url(#pfeil-${farbe === MAL ? "mal" : "durch"})`} />
     );
   };
 
@@ -72,6 +76,7 @@ function Leiter({ k, gewaehlt, waehle }: { k: Kategorie; gewaehlt: number | null
         ))}
       </defs>
       {boegen}
+      {schilder}
       {k.einheiten.map((e, i) => {
         const an = gewaehlt === i;
         return (

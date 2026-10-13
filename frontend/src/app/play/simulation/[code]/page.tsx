@@ -22,6 +22,8 @@ import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import FunktionenWerkzeug from "@/components/simulationen/FunktionenWerkzeug";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
+import Groessen from "@/components/groessen/Groessen";
+import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import Uebung from "@/components/simulationen/Uebung";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import Sonnensystem from "@/components/sonnensystem/Sonnensystem";
@@ -51,6 +53,8 @@ const TOOLS: Record<string, { title: string; icon: string; node: React.ReactNode
   binaerrechner: { title: "Binär-Rechner", icon: "◈", node: <Binaerrechner /> },
   funktionen: { title: "Funktionen und Koordinatensystem", icon: "📈", node: <FunktionenWerkzeug /> },
   rechenregeln: { title: "Rechenregeln", icon: "🍎", node: <Rechenregeln /> },
+  groessen: { title: "Größen & Einheiten", icon: "🪜", node: <Groessen /> },
+  rechenzeichen: { title: "Rechenzeichen", icon: "➗", node: <Rechenzeichen /> },
   tippen: { title: "Tippen", icon: "⌨️", node: <Tippen /> },
   kueste: { title: "Küstendynamik", icon: "🌊", node: <Kueste /> },
   erdaufbau: { title: "Aufbau der Erde", icon: "🌍", node: <ErdAufbau /> },

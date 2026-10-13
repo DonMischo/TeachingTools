@@ -46,6 +46,8 @@ export const STANDARD_FAECHER: Record<string, string[]> = {
   verkehr: ["Verkehrserziehung"],
   abacus: ["Mathematik"],
   rechenregeln: ["Mathematik"],
+  groessen: ["Mathematik", "Physik"],
+  rechenzeichen: ["Mathematik"],
   tippen: ["Informatik"],
   maus: ["Informatik"],
 };

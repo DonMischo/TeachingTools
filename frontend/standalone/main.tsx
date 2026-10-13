@@ -17,6 +17,8 @@ import Vierecke from "@/components/simulationen/Vierecke";
 import Binaerrechner from "@/components/simulationen/Binaerrechner";
 import FunktionenWerkzeug from "@/components/simulationen/FunktionenWerkzeug";
 import Rechenregeln from "@/components/simulationen/Rechenregeln";
+import Groessen from "@/components/groessen/Groessen";
+import Rechenzeichen from "@/components/rechenzeichen/Rechenzeichen";
 import KiWerkstatt from "@/components/ki/KiWerkstatt";
 import RockYourLife from "@/components/leben/RockYourLife";
 import Leviathan from "@/components/leviathan/Leviathan";
@@ -39,6 +41,8 @@ const TOOLS: { id: string; icon: string; label: string; node: ReactNode }[] = [
   { id: "binaer", icon: "◈", label: "Binär-Rechner", node: <Binaerrechner /> },
   { id: "funktionen", icon: "📈", label: "Funktionen und Koordinatensystem", node: <FunktionenWerkzeug /> },
   { id: "rechenregeln", icon: "🍎", label: "Rechenregeln", node: <Rechenregeln /> },
+  { id: "groessen", icon: "🪜", label: "Größen & Einheiten", node: <Groessen /> },
+  { id: "rechenzeichen", icon: "➗", label: "Rechenzeichen", node: <Rechenzeichen /> },
   // Ohne Sitzung: der Vergleich mit der Klasse bleibt aus, alles andere rechnet im Browser.
   { id: "ki", icon: "🤖", label: "KI-Werkstatt", node: <KiWerkstatt /> },
   // Ohne Sitzung keine Lehrer-Übersicht; Spielstand im Browser bzw. als JSON-Datei.

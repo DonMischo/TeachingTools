@@ -485,6 +485,23 @@ simulationen:
       - Vorführen, Vorlesen, 1 bis 3 Sterne je Stufe, Hilfsmodus
       - Prüfung je Teil mit 5 Hauspunkten beim ersten Bestehen, Urkunde als Bild und PDF
       - Klassenübersicht und Bestenlisten
+  - id: groessen
+    name: Größen & Einheiten
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - Einheitenleitern für Länge, Fläche, Volumen (mit Liter), Gewicht, Zeit, Euro und US-Dollar wie auf dem Merkblatt
+      - Tipp auf eine Einheit zeigt alle Umrechnungen von ihr aus
+      - Umrechner mit »Komma wandert« und Bruch bei der Zeit
+      - Alltagsbeispiele auf einer logarithmischen Achse
+      - Länge · Fläche · Volumen — Strecke, Quadrat, Würfel füllen sich; Umrechnungszahl hoch 1, 2, 3
+  - id: rechenzeichen
+    name: Rechenzeichen
+    faehigkeiten: {use: [true, true]}
+    kann:
+      - "+ − · : mit Äpfeln, Reihen und Tellern (Rest)"
+      - ² ³ √ als Quadrat, Würfel und Suche nach der Quadratseite
+      - < > ≤ ≥ an Säulen und Zahlenstrahl
+      - ∫ als Streifensumme und f′ als Tangentensteigung mit Sekante
   - id: rechenregeln
     name: Rechenregeln
     kann:

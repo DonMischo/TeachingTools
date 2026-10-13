@@ -101,6 +101,12 @@ CATALOG: list[CatalogTool] = [
     # Maus-Führerschein rechnet im Browser: kein Hosten, kein Erstellen — die
     # Sitzung ist nur der Beitritts-Code (siehe routers/tool_sessions.py).
     CatalogTool("maus", "🐭 Maus-Führerschein", "🐭", "simulationen", {"use": _cap(True, True)}),
+    CatalogTool("groessen", "🪜 Größen & Einheiten", "🪜", "simulationen", {
+        "use": _cap(True, True),
+    }),
+    CatalogTool("rechenzeichen", "➗ Rechenzeichen", "➗", "simulationen", {
+        "use": _cap(True, True),
+    }),
     # Rechenregeln: eigenes Tempo, eigener QR, kein Host.
     CatalogTool("rechenregeln", "🍎 Rechenregeln", "🍎", "simulationen", {
         "use": _cap(True, True),

@@ -171,6 +171,28 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },
+  groessen: {
+    title: "Größen & Einheiten",
+    intro: "Umrechnen nach dem Merkblatt der Klasse 5: Länge, Fläche, Volumen (mit Liter), Gewicht, Zeit, Euro und US-Dollar.",
+    sections: [
+      { label: "🔁 Einheitenleiter", text: "Die Einheiten stehen von groß nach klein. Oben die orangen Bögen: zur kleineren Einheit wird malgenommen; unten die blauen: zur größeren wird geteilt. Ein Tipp auf eine Einheit zeigt statt der Nachbarschritte alle Umrechnungen von ihr aus (1 m → · 1 000 mm, : 1 000 km …), nochmal tippen schaltet zurück." },
+      { label: "🧮 Umrechner", text: "Zahl eintippen (Komma erlaubt), Einheit wählen — darunter steht der Wert in allen anderen Einheiten, mit Rechenzeichen und »Komma wandert n Stellen«. Bei der Zeit, die nicht dezimal ist, steht der genaue Bruch dabei (1 min = 1/60 h)." },
+      { label: "🐜 Wie viel ist das?", text: "Alltagsdinge auf einer Achse in Zehnerschritten: Bakterium bis Erde, Stecknadelkopf bis Deutschland, Tropfen bis Schwimmbecken, Mücke bis Blauwal, Lidschlag bis Jahr, Münzen und Scheine. Antippen schickt den Wert in den Umrechner. Zu jeder Einheit steht, was ungefähr 1 davon ist." },
+      { label: "📐 Länge · Fläche · Volumen", text: "Strecke, Quadrat und Würfel nebeneinander, für m → dm, dm → cm oder cm → mm: 10 Stücke, 10 · 10 = 100 Kästchen, 10 · 10 · 10 = 1 000 Würfelchen. Der Regler (oder ▶) füllt alle drei gleichzeitig — Stück, Reihe, Schicht. Die Tabelle zeigt für die ganze Leiter: die Umrechnungszahl bekommt die Hochzahl der Einheit." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
+  rechenzeichen: {
+    title: "Rechenzeichen",
+    intro: "Zu jedem Rechenzeichen ein Bild zum Anfassen — von + bis zur Ableitung.",
+    sections: [
+      { label: "➕ + − · :", text: "Plus legt zwei Häufchen Äpfel zusammen, Minus streicht welche durch, Mal legt gleiche Reihen (»Drehen« zeigt a · b = b · a), Geteilt verteilt reihum auf Teller — mit Rest, wenn es nicht aufgeht. ▶ verteilt Apfel für Apfel." },
+      { label: "² ³ √", text: "n² ist ein Quadrat aus n Reihen mit je n Kästchen, n³ ein Würfel aus n Schichten zu je n · n Würfelchen (▶ füllt Reihe für Reihe bzw. Schicht für Schicht). Die Wurzel fragt rückwärts: welche Seite hat ein Quadrat mit so vielen Kästchen? Geht es nicht auf, liegen die übrigen Kästchen orange daneben, und das echte Quadrat ist gestrichelt." },
+      { label: "< > ≤ ≥", text: "Zwei Zahlen als Säulen und auf dem Zahlenstrahl, das Zeichen dazwischen öffnet sich zur größeren. Bei ≤ und ≥ markiert der Zahlenstrahl alle passenden Zahlen; voller Kreis = die Grenze gehört dazu, offener Kreis = nicht." },
+      { label: "∫ f′", text: "Integral: die Fläche unter dem Graphen als Summe von n Streifen — mit wachsendem n läuft die Streifensumme auf den genauen Wert zu. Ableitung: die Tangente an der Stelle x mit Steigungsdreieck, dazu die Sekante, die bei kleinem h zur Tangente wird; auf Wunsch zeichnet sich der Graph von f′ mit." },
+      { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
+    ],
+  },
   rechenregeln: {
     title: "Rechenregeln",
     intro: "Die Rechenregeln der Klassen 5/6 als Bild: Klammern vor Punkt vor Strich am Obstkorb, das Vertauschen am Rechenzug, die Stufenzahlen auf der Stellenwerttafel. Drei Reiter, jeder mit vier Würfelstufen und einem Feld für eigene Terme.",
@@ -454,7 +476,7 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "📐 Formen", text: "Quadrat, Rechteck, Parallelogramm, Trapez, Raute und Drachen. Die Schieberegler ändern die Maße, darunter steht der Rechenweg mit eingesetzten Zahlen und die Eigenschaften der Form. Höhe und Diagonalen sind gestrichelt eingezeichnet, wo die Formel sie braucht." },
       { label: "🚧 Umfang", text: "Die Weide wird Feld für Feld eingezäunt: der Umfang ist die Länge des Zauns, einmal rundherum. Antippen setzt ein Zaunfeld, mit gedrücktem Finger lässt sich streichen. Steht der Zaun, kommen die Schafe raus." },
-      { label: "🧱 Fläche", text: "Die Fläche wird mit Einheitsquadraten ausgelegt — gezählt wird, was drinnen liegt. Beide Aufgaben gibt es nur für Quadrat und Rechteck: nur die zerfallen lückenlos in Einheitsquadrate." },
+      { label: "🧱 Fläche", text: "Die Fläche wird mit Einheitsquadraten ausgelegt — gezählt wird, was drinnen liegt. Auslegen geht nur bei Quadrat und Rechteck: nur die zerfallen lückenlos in Einheitsquadrate. Bei Parallelogramm, Trapez, Raute und Drachen zeigt das Blatt stattdessen die Herleitung der Formel als Trickfilm — mit den eingestellten Maßen, Schritt für Schritt, mit Tempo-Regler und Zeitleiste." },
       { label: "📱 Mitmachen", text: "»Zum Mitmachen« zeigt einen Beitritts-Code samt QR fürs Schülergerät; mit »Gäste erlauben« geht es auch ohne Konto (befristet, Länge stellt der Admin ein)." },
     ],
   },

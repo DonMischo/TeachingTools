@@ -255,7 +255,9 @@ export function zahl(x: number, stellen = 12): string {
   if (!Number.isFinite(x)) return "–";
   const r = Number(x.toPrecision(stellen));
   const neg = r < 0;
-  let [ganz, nach = ""] = Math.abs(r).toFixed(15).split(".");
+  // So viele Nachkommastellen, wie die gültigen Stellen hergeben — mehr wäre Rechenrauschen.
+  const nk = r === 0 ? 0 : Math.max(0, Math.min(20, stellen - Math.floor(Math.log10(Math.abs(r))) - 1));
+  let [ganz, nach = ""] = Math.abs(r).toFixed(nk).split(".");
   nach = nach.replace(/0+$/, "");
   ganz = ganz.replace(/\B(?=(\d{3})+(?!\d))/g, NNBSP);
   return (neg ? "−" : "") + ganz + (nach ? "," + nach : "");

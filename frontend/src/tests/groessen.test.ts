@@ -55,6 +55,8 @@ describe("zahl", () => {
     expect(zahl(0.25)).toBe("0,25");
     expect(zahl(1e-9)).toBe("0,000000001");
     expect(zahl(0.1 + 0.2)).toBe("0,3");
+    expect(zahl(42.2)).toBe("42,2");
+    expect(zahl(42195 / 1000)).toBe("42,195");
   });
 });
 
