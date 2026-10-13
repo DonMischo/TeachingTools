@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import ChallengeSpiel from "@/components/challenge/ChallengeSpiel";
 
 const brett = (extra = {}) => ({
-  stufe: 2, etappe: 1, leben: 3, fertig: false,
+  stufe: 2, etappe: 1, leben: 3, fertig: false, spiel: "normal", deck: null,
   etappen: [{ nr: 1, titel: "Der Hebel", erledigt: false }],
   challenges: [{ id: "c1", text: "Was ist eine Wippe?", image: null, formula: null, strength: 1, erledigt: false }],
   fakten: [
@@ -22,7 +22,7 @@ const m = vi.hoisted(() => ({ info: vi.fn(), start: vi.fn(), antwort: vi.fn() })
 vi.mock("@/lib/api", () => ({ api: { challenge: m } }));
 
 beforeEach(() => {
-  m.info.mockReset().mockResolvedValue({ title: "Hebel", subject: null, settings: {}, stand: { ergebnis: 0.8, fertig: false } });
+  m.info.mockReset().mockResolvedValue({ title: "Hebel", subject: null, settings: { spiele: ["normal"], theme: "klassisch", startstufe: 2 }, stand: { ergebnis: 0.8, fertig: false } });
   m.start.mockReset().mockResolvedValue(brett());
   m.antwort.mockReset().mockResolvedValue(antwort());
 });
@@ -31,7 +31,7 @@ async function zumKampf() {
   const u = userEvent.setup();
   render(<ChallengeSpiel code="ABC" />);
   await u.click(await screen.findByRole("button", { name: "Los" }));
-  await u.click(screen.getByText("Was ist eine Wippe?"));
+  await u.click(await screen.findByText("Was ist eine Wippe?"));
   await u.click(screen.getByText("Zweiseitiger Hebel"));
   return u;
 }
@@ -54,6 +54,22 @@ describe("ChallengeSpiel", () => {
     await u.click(screen.getByRole("button", { name: "Angreifen" }));
     expect(await screen.findByText(/Drei Fehlversuche/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Los" })).toBeTruthy();
+  });
+
+  it("zeigt die Spielauswahl nur bei mehreren Spielarten und startet mit der Wahl", async () => {
+    m.info.mockResolvedValue({ title: "Hebel", subject: null, settings: { spiele: ["normal", "karten"], theme: "wald", startstufe: 2 }, stand: null });
+    const u = userEvent.setup();
+    render(<ChallengeSpiel code="ABC" />);
+    await u.click(await screen.findByRole("button", { name: /Kartenspiel/ }));
+    await waitFor(() => expect(m.start).toHaveBeenCalledWith("ABC", undefined, "karten"));
+    expect(await screen.findByRole("button", { name: "Los" })).toBeTruthy();
+  });
+
+  it("zeigt keine Spielauswahl bei einer Spielart", async () => {
+    render(<ChallengeSpiel code="ABC" />);
+    await screen.findByRole("button", { name: "Los" });
+    expect(screen.queryByRole("button", { name: "Spielart" })).toBeNull();
+    expect(m.start).toHaveBeenCalledWith("ABC", undefined, undefined);
   });
 
   it("zeigt am Ende das Ergebnis", async () => {

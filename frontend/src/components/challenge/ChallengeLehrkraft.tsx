@@ -5,8 +5,93 @@
  */
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ToolSessionOut } from "@/lib/api";
+import { api, type ChallengeKalibrierungWerte, type ToolSessionOut } from "@/lib/api";
 import { ToolSessionBar } from "@/components/ToolSessionBar";
+import { SPIELARTEN } from "@/lib/challenge/spielarten";
+import { THEMES } from "@/lib/challenge/themes";
+
+const SKINS = [["monster", "Monster"], ["rap", "Rapper"], ["prinzessin", "Prinzessin"], ["einhorn", "Einhorn"]];
+
+function KlassenSelect({ value, onChange }: { value: number | null; onChange: (id: number | null) => void }) {
+  const { data: klassen = [] } = useQuery({ queryKey: ["classes"], queryFn: () => api.classes.list() });
+  return (
+    <select className="input w-48" aria-label="Klasse" value={value ?? ""} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}>
+      <option value="">Klasse wählen…</option>
+      {klassen.map((k) => <option key={k.id} value={k.id}>{k.display_name}</option>)}
+    </select>
+  );
+}
+
+function Startstufen({ code }: { code: string }) {
+  const [klasse, setKlasse] = useState<number | null>(null);
+  const qc = useQueryClient();
+  const key = ["challenge", "schueler", code, klasse];
+  const { data: schueler = [] } = useQuery({ queryKey: key, queryFn: () => api.challenge.schueler(code, klasse!), enabled: klasse != null });
+  const setze = async (id: number, wert: string) => {
+    await api.challenge.stufen(code, { [id]: wert ? Number(wert) : null });
+    qc.invalidateQueries({ queryKey: key });
+  };
+  return (
+    <details className="card p-3">
+      <summary className="cursor-pointer font-bold">Startstufen je Schüler·in</summary>
+      <div className="flex flex-col gap-2 mt-2">
+        <KlassenSelect value={klasse} onChange={setKlasse} />
+        {schueler.length > 0 && (
+          <table className="w-full max-w-md">
+            <tbody>
+              {schueler.map((s) => (
+                <tr key={s.id} className="border-t border-line">
+                  <td>{s.name}</td>
+                  <td>
+                    <select className="input w-24" aria-label={`Startstufe ${s.name}`} value={s.startstufe ?? ""} onChange={(e) => setze(s.id, e.target.value)}>
+                      <option value="">–</option>
+                      {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="text-xs text-muted">– = Standard der Sitzung. Gilt beim nächsten Start der Person.</p>
+      </div>
+    </details>
+  );
+}
+
+function Kalibrierung() {
+  const [klasse, setKlasse] = useState<number | null>(null);
+  const qc = useQueryClient();
+  const key = ["challenge", "kalibrierung", klasse];
+  const { data } = useQuery({ queryKey: key, queryFn: () => api.challenge.kalibrierung(klasse!), enabled: klasse != null });
+  const neu = () => qc.invalidateQueries({ queryKey: key });
+  const uebernehmen = async (w: ChallengeKalibrierungWerte) => { await api.challenge.kalibrierungSetzen(klasse!, w); neu(); };
+  const zeile = (w: ChallengeKalibrierungWerte) =>
+    `${[1, 2, 3, 4].map((n) => `Stufe ${n}: ${w.lese_wpm[String(n)] ?? "–"} W/min`).join(" · ")} · Antwortzeit schnell ${w.antwortzeit.schnell} s, langsam ${w.antwortzeit.langsam} s`;
+  return (
+    <details className="card p-3">
+      <summary className="cursor-pointer font-bold">Kalibrierung der Anpassung</summary>
+      <div className="flex flex-col gap-2 mt-2">
+        <KlassenSelect value={klasse} onChange={setKlasse} />
+        {data && (
+          <>
+            <p>Aktuell: {zeile(data.aktuell)}</p>
+            <p>Vorschlag: {zeile(data.vorschlag)}</p>
+            <p className="text-xs text-muted">
+              Stichprobe: {[1, 2, 3, 4].map((n) => `Stufe ${n}: ${data.stichprobe[String(n)] ?? 0}`).join(" · ")}
+              {!data.genug && " – noch zu wenig Daten für einen Vorschlag"}
+            </p>
+            <div className="flex gap-2">
+              <button className="btn-primary" disabled={!data.genug} onClick={() => uebernehmen(data.vorschlag)}>Vorschlag übernehmen</button>
+              <button className="btn-secondary" onClick={async () => { await api.challenge.kalibrierungLoeschen(klasse!); neu(); }}>Zurücksetzen</button>
+            </div>
+          </>
+        )}
+        <p className="text-xs text-muted">Nur Summen der Klasse, keine Einzelprofile.</p>
+      </div>
+    </details>
+  );
+}
 
 export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; titel: string }) {
   const qc = useQueryClient();
@@ -44,6 +129,18 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
     qc.invalidateQueries({ queryKey: ["challenge", "uebersicht", code] });
     setMeldung("Neue Runde gestartet.");
   };
+  const speichere = async (patch: Record<string, unknown>) => {
+    setSitzung(await api.toolSessions.einstellungen(sitzung.code, { ...sitzung.settings, ...patch }));
+  };
+  const spiele = (sitzung.settings?.spiele as string[] | undefined) ?? ["normal"];
+  const schalte = (id: string) => {
+    const neu = spiele.includes(id) ? spiele.filter((x) => x !== id) : [...spiele, id];
+    if (neu.length) speichere({ spiele: neu });
+  };
+  const stufeAendern = async (standId: number, stufe: number) => {
+    await api.challenge.standStufe(sitzung.code, standId, stufe);
+    qc.invalidateQueries({ queryKey: ["challenge", "uebersicht", code] });
+  };
   const prozent = (x: number) => `${Math.round(100 * x)} %`;
 
   return (
@@ -59,6 +156,28 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
         </select>
         <span className="text-xs text-muted">(die Stufe passt sich danach je Spieler an)</span>
       </label>
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Spielarten">
+        Spielarten
+        {SPIELARTEN.map((s) => (
+          <button key={s.id} type="button" title={s.text} aria-pressed={spiele.includes(s.id)} onClick={() => schalte(s.id)}
+            className={`chip ${spiele.includes(s.id) ? "chip-on" : ""}`}>{s.icon} {s.name}</button>
+        ))}
+      </div>
+      {spiele.includes("gericht") && <p className="text-xs text-muted">Gerichtssaal braucht Behauptungen (claims) im Satz; ohne sie ist er nicht wählbar.</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-1.5">Theme
+          <select className="input w-40" value={String(sitzung.settings?.theme ?? "klassisch")} onChange={(e) => speichere({ theme: e.target.value })}>
+            {Object.entries(THEMES).map(([id, t]) => <option key={id} value={id}>{t.name}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5">Boss-Aussehen
+          <select className="input w-40" value={String(sitzung.settings?.skin ?? "monster")} onChange={(e) => speichere({ skin: e.target.value })}>
+            {SKINS.map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+          </select>
+        </label>
+      </div>
+      <Startstufen code={sitzung.code} />
+      <Kalibrierung />
 
       {ueb && (
         <div className="overflow-x-auto">
@@ -66,18 +185,21 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
             <thead>
               <tr className="text-left text-xs text-muted">
                 <th>Name</th><th>Klasse</th><th>Stufe</th><th>Güte</th><th>Ergebnis</th><th>Punkte</th><th>Fragen</th>
-                <th>Erstversuch richtig</th><th>Kombos</th><th>Ablenker gewählt</th><th>Lesetempo (W/min)</th><th>geraten</th><th>fertig</th>
+                <th>Erstversuch richtig</th><th>Kombos</th><th>Ablenker gewählt</th><th>Deck-Ablenker</th><th>Lesetempo (W/min)</th><th>geraten</th><th>fertig</th>
               </tr>
             </thead>
             <tbody>
               {ueb.teilnehmer.map((t, i) => (
                 <tr key={i} className="border-t border-line">
-                  <td>{t.name}</td><td>{t.klasse}</td><td>{t.stufe_start}→{t.stufe}</td><td>{prozent(t.guete)}</td>
+                  <td>{t.name}</td><td>{t.klasse}</td><td>{t.stufe_start}→{t.stufe}{t.stand_id != null && (
+                    <select className="input w-14 ml-1" aria-label={`Stufe ${t.name}`} value={t.stufe} onChange={(e) => stufeAendern(t.stand_id!, Number(e.target.value))}>
+                      {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>)}</td><td>{prozent(t.guete)}</td>
                   <td>{prozent(t.ergebnis)}</td><td>{t.punkte}</td><td>{t.fragen}</td><td>{t.erstversuch_richtig}</td><td>{t.kombos}</td>
-                  <td>{t.ablenker_gewaehlt.join(", ")}</td><td>{t.lesetempo_median ?? "—"}</td><td>{t.geraten}</td><td>{t.fertig ? "✓" : ""}</td>
+                  <td>{t.ablenker_gewaehlt.join(", ")}</td><td>{(t.deck_ablenker ?? []).join(", ")}</td><td>{t.lesetempo_median ?? "—"}</td><td>{t.geraten}</td><td>{t.fertig ? "✓" : ""}</td>
                 </tr>
               ))}
-              {!ueb.teilnehmer.length && <tr><td colSpan={13} className="text-muted">Noch niemand dabei.</td></tr>}
+              {!ueb.teilnehmer.length && <tr><td colSpan={14} className="text-muted">Noch niemand dabei.</td></tr>}
             </tbody>
           </table>
         </div>

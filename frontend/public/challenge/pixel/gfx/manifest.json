@@ -1,0 +1,30 @@
+{
+  "pack": "gfx",
+  "title": "Zelda-like tilesets and sprites",
+  "author": "ArMM1998",
+  "license": "CC0",
+  "source": "https://opengameart.org/content/zelda-like-tilesets-and-sprites",
+  "tileSize": 16,
+  "tilesets": {
+    "gfx/Overworld": { "image": "Overworld.png", "columns": 40, "rows": 36 },
+    "gfx/cave": { "image": "cave.png", "columns": 40, "rows": 25 },
+    "gfx/Inner": { "image": "Inner.png", "columns": 40, "rows": 25 },
+    "gfx/objects": { "image": "objects.png", "columns": 33, "rows": 20 }
+  },
+  "sprites": {
+    "gfx/character": {
+      "image": "character.png",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "columns": 17,
+      "walkRows": { "down": 0, "left": 1, "up": 2, "right": 3 },
+      "framesPerWalk": 4
+    },
+    "gfx/npc-test": {
+      "image": "NPC_test.png",
+      "frameWidth": 16,
+      "frameHeight": 32,
+      "columns": 4
+    }
+  }
+}

@@ -500,10 +500,11 @@ export type ChallengeBrett = {
   stufe: number; etappe: number; leben: number; fertig: boolean;
   etappen: { nr: number; titel: string; erledigt: boolean }[];
   challenges: ChallengeAufgabe[]; fakten: ChallengeFakt[];
+  spiel: string; deck: string[] | null;
 };
 export type ChallengeInfo = {
   title: string; subject: string | null;
-  settings: { spiele: string[]; theme: string; startstufe: number };
+  settings: { spiele: string[]; theme: string; skin?: string; startstufe: number };
   stand: { stufe: number; etappe: number; leben: number; fragen: number; ergebnis: number; fertig: boolean } | null;
 };
 export type ChallengeAntwortIn = { challenge_id: string; fakt_ids: string[]; lese_ms: number; wahl_ms: number; tipp: boolean };
@@ -515,6 +516,12 @@ export type ChallengeTeilnehmer = {
   name: string; klasse: string; stufe_start: number; stufe: number; guete: number; ergebnis: number; punkte: number;
   fragen: number; erstversuch_richtig: number; kombos: number; ablenker_gewaehlt: string[];
   lesetempo_median: number | null; geraten: number; fertig: boolean;
+  deck_ablenker: string[]; stand_id: number | null; student_id: number | null;
+};
+export type ChallengeSchueler = { id: number; name: string; startstufe: number | null; stand_id: number | null; stufe: number | null };
+export type ChallengeKalibrierungWerte = { lese_wpm: Record<string, number>; antwortzeit: { schnell: number; langsam: number } };
+export type ChallengeKalibrierung = {
+  aktuell: ChallengeKalibrierungWerte; vorschlag: ChallengeKalibrierungWerte; stichprobe: Record<string, number>; genug: boolean;
 };
 export type ChallengeUebersicht = { teilnehmer: ChallengeTeilnehmer[]; punkte: { class_id: number; klasse: string; teilnehmer: number; punkte: number }[] };
 export type ChallengeStatistikZeile = {
@@ -1638,8 +1645,12 @@ export const api = {
     exportUrl: (id: number) => `/api/challenge/sets/${id}/export`,
     info: (code: string, token?: string | null) =>
       ffetch<ChallengeInfo>(`challenge/${encodeURIComponent(code)}`, undefined, token ?? undefined),
-    start: (code: string, token?: string | null) =>
-      ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/start`, { method: "POST" }, token ?? undefined),
+    start: (code: string, token?: string | null, spiel?: string) =>
+      ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/start`,
+        { method: "POST", ...(spiel ? { body: JSON.stringify({ spiel }) } : {}) }, token ?? undefined),
+    deck: (code: string, faktIds: string[], token?: string | null) =>
+      ffetch<ChallengeBrett>(`challenge/${encodeURIComponent(code)}/deck`,
+        { method: "POST", body: JSON.stringify({ fakt_ids: faktIds }) }, token ?? undefined),
     antwort: (code: string, body: ChallengeAntwortIn, token?: string | null) =>
       ffetch<ChallengeAntwort>(`challenge/${encodeURIComponent(code)}/antwort`,
         { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
@@ -1648,6 +1659,16 @@ export const api = {
     punkte: (code: string) =>
       apiFetch<{ vergeben: ChallengeUebersicht["punkte"] }>(`challenge/${encodeURIComponent(code)}/punkte`, { method: "POST" }),
     zuruecksetzen: (code: string) => apiFetch<void>(`challenge/${encodeURIComponent(code)}/staende`, { method: "DELETE" }),
+    stufen: (code: string, startstufen: Record<string, number | null>) =>
+      apiFetch<unknown>(`challenge/${encodeURIComponent(code)}/stufen`, { method: "PUT", body: JSON.stringify({ startstufen }) }),
+    standStufe: (code: string, standId: number, stufe: number) =>
+      apiFetch<unknown>(`challenge/${encodeURIComponent(code)}/staende/${standId}/stufe`, { method: "PUT", body: JSON.stringify({ stufe }) }),
+    schueler: (code: string, classId: number) =>
+      apiFetch<ChallengeSchueler[]>(`challenge/${encodeURIComponent(code)}/schueler?class_id=${classId}`),
+    kalibrierung: (classId: number) => apiFetch<ChallengeKalibrierung>(`challenge/kalibrierung?class_id=${classId}`),
+    kalibrierungSetzen: (classId: number, werte: ChallengeKalibrierungWerte) =>
+      apiFetch<unknown>("challenge/kalibrierung", { method: "PUT", body: JSON.stringify({ class_id: classId, werte }) }),
+    kalibrierungLoeschen: (classId: number) => apiFetch<void>(`challenge/kalibrierung/${classId}`, { method: "DELETE" }),
     statistik: (classId?: number) =>
       apiFetch<ChallengeStatistikZeile[]>(`challenge/statistik${classId != null ? `?class_id=${classId}` : ""}`),
   },

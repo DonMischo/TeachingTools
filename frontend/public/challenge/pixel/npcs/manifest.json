@@ -1,0 +1,11 @@
+{
+  "pack": "npcs",
+  "title": "16x16 Fantasy RPG Characters (NPC pack)",
+  "author": "Superdark",
+  "license": "Free for commercial use",
+  "source": "https://superdark.itch.io/16x16-free-npc-pack",
+  "frameSize": 32,
+  "note": "figure occupies ~10x18 px centered-bottom inside each 32x32 frame",
+  "characters": ["alchemist", "mage", "merchant", "king", "townsfolk_f", "townsfolk_m"],
+  "frames": ["idle_1", "idle_2", "idle_3", "idle_4", "walk_1", "walk_2", "walk_3", "walk_4"]
+}
