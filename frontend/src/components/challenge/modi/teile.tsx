@@ -21,7 +21,7 @@ export function FaktKarte({ fakt, onClick, disabled }: { fakt: ChallengeFakt; on
   return (
     <button draggable={!disabled} disabled={disabled}
       onDragStart={(e) => e.dataTransfer.setData("text/plain", fakt.id)}
-      onClick={onClick} className="card p-2 text-left disabled:opacity-60">
+      onClick={onClick} className="card p-2 text-left disabled:opacity-85">
       <Inhalt x={fakt} />
     </button>
   );

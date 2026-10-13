@@ -194,6 +194,15 @@
   .btn-primary {
     @apply bg-accent text-accent-fg hover:opacity-90;
   }
+  /* Challenge-Bühne mit Theme-Farbe (z. B. Weltraum: heller Text auf dunklem Himmel):
+     Karten, Eingaben und Nebenknöpfe behalten ihre eigenen, lesbaren Farben. */
+  .ch-buehne :is(.card, .input, .chip) {
+    color: var(--color-fg);
+  }
+  .ch-buehne .btn-secondary {
+    background-color: var(--color-surface);
+  }
+
   .btn-secondary {
     @apply border-line text-fg hover:bg-surface-hover;
   }
