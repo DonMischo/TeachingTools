@@ -226,12 +226,12 @@ def test_start_setzt_fort_statt_neu_anzulegen(client, db, teacher_token, klass):
 
 
 def test_info_ohne_startstufen(client, db, teacher_token, klass):
-    code = _sitzung(client, teacher_token, startstufen={"1": 3}, theme="dunkel")
+    code = _sitzung(client, teacher_token, startstufen={"1": 3}, theme="wald")
     r = client.get(f"/api/challenge/{code}", headers=_h(client, _tok(_schueler(db, klass))))
     assert r.status_code == 200
     body = r.json()
     assert body["title"] == "Hebelgesetz" and body["subject"] == "Physik"
-    assert "startstufen" not in body["settings"] and body["settings"]["theme"] == "dunkel"
+    assert "startstufen" not in body["settings"] and body["settings"]["theme"] == "wald"
     assert body["stand"] is None
 
 

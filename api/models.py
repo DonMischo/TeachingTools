@@ -2572,6 +2572,22 @@ class ChallengeStand(Base):
     )
 
 
+class ChallengeKalibrierung(Base):
+    """Von der Lehrkraft bestätigte DDA-Werte einer Klasse (api/challenge_engine.py, ``vorschlag``).
+
+    ``werte``: {"lese_wpm": {"1": int, …}, "antwortzeit": {"schnell": float, "langsam": float}};
+    ``vorher``: die Werte davor (None = Standard). Keine Zeile = Standardwerte.
+    """
+    __tablename__ = "challenge_kalibrierungen"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, unique=True)
+    werte: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    vorher: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    bestaetigt_von: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True)
+    bestaetigt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class KartenLernstand(Base):
     """Was jemand mit einem Kartensatz schon kann — über Sitzungen hinweg (api/karten_lernen.py).
 

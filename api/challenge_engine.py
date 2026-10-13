@@ -4,10 +4,13 @@ Reine Funktionen, keine Datenbank. Der Router (api/routers/challenge.py) ruft si
 die Lösungen verlassen den Server nie.
 """
 import copy
+import statistics
 
 from . import dda
 
 STUFEN = (1, 2, 3, 4)
+SPIELE = ("normal", "karten", "boss", "huepfen", "turm", "detektiv", "alchemie", "bruecke", "gericht")
+THEMES = ("klassisch", "wald", "ninja", "verlies", "antike", "weltraum")
 STUFE_PARAMS = {  # Systemvorgaben je Stufe (4 = schwerste); ablenker None = alle
     1: {"ablenker": 1, "tipps": True, "lese_wpm": 80},
     2: {"ablenker": 2, "tipps": False, "lese_wpm": 110},
@@ -19,6 +22,12 @@ MALUS = 0.5
 MIN_CHALLENGES_JE_ETAPPE = 5
 STUFE_MIN_SNAPSHOTS = 3
 GERATEN_ANTEIL = 0.3
+VORSCHLAG_MIN_STICHPROBE = 30
+VORSCHLAG_GRENZE = 0.2
+STANDARD_KALIBRIERUNG = {  # antwortzeit nach dda.DEFAULT_RULESET: fast endet bei 15 s, slow beginnt bei 40 s
+    "lese_wpm": {str(s): p["lese_wpm"] for s, p in STUFE_PARAMS.items()},
+    "antwortzeit": {"schnell": 15.0, "langsam": 40.0},
+}
 
 
 # ── Prüfung ──────────────────────────────────────────────────────────
@@ -81,6 +90,8 @@ def _pruefe_aufgeloest(satz: dict, assets: set[str] | None) -> tuple[list[str], 
             fehler.append(f"Challenge »{c['id']}«: »strength« muss 1 bis 3 sein.")
         if "stage" in c and not (_ist_int(c["stage"]) and c["stage"] >= 1):
             fehler.append(f"Challenge »{c['id']}«: »stage« muss eine ganze Zahl ab 1 sein.")
+    if "claims" in satz:
+        fehler += _pruefe_claims(satz, fakt_ids, echte, {c["id"] for c in challenges})
     if not fehler:
         je_etappe: dict[int, int] = {}
         for c in challenges:
@@ -93,6 +104,24 @@ def _pruefe_aufgeloest(satz: dict, assets: set[str] | None) -> tuple[list[str], 
             if e.get("image") and e["image"] not in assets:
                 warnungen.append(f"»{e['id']}«: Bild »{e['image']}« fehlt in den Assets.")
     return fehler, warnungen
+
+
+def _pruefe_claims(satz: dict, fakt_ids: set[str], echte: set[str], challenge_ids: set[str]) -> list[str]:
+    """Behauptungen für den Gerichtssaal: wie Challenges, aber mit ``refutedBy`` statt ``solve``."""
+    fehler: list[str] = []
+    for c in _eintraege(satz, "claims", "Behauptung", fehler):
+        if c["id"] in fakt_ids | challenge_ids:
+            fehler.append(f"Behauptung »{c['id']}«: id ist schon Fakt oder Challenge (ids müssen verschieden sein).")
+        widerlegt = c.get("refutedBy")
+        if not isinstance(widerlegt, list) or not widerlegt:
+            fehler.append(f"Behauptung »{c['id']}«: »refutedBy« darf nicht leer sein.")
+        else:
+            fehler += [f"Behauptung »{c['id']}«: »{i}« ist kein Fakt (oder ein Ablenker)." for i in widerlegt if i not in echte]
+        if "strength" in c and not (_ist_int(c["strength"]) and 1 <= c["strength"] <= 3):
+            fehler.append(f"Behauptung »{c['id']}«: »strength« muss 1 bis 3 sein.")
+        if "stage" in c and not (_ist_int(c["stage"]) and c["stage"] >= 1):
+            fehler.append(f"Behauptung »{c['id']}«: »stage« muss eine ganze Zahl ab 1 sein.")
+    return fehler
 
 
 def _pruefe_stufen(daten: dict) -> list[str]:
@@ -153,6 +182,12 @@ def satz_fuer_stufe(daten: dict, stufe: int) -> dict:
     return satz
 
 
+def claims_als_challenges(daten: dict) -> list[dict]:
+    """Gerichtssaal: jede Behauptung ist eine Challenge, die durch einen der ``refutedBy``-Fakten gelöst wird."""
+    return [{"id": c["id"], "text": c["text"], "solve": {"any": list(c["refutedBy"])},
+             **{k: c[k] for k in ("stage", "strength", "feedback") if k in c}} for c in daten.get("claims") or []]
+
+
 def etappen(satz: dict) -> list[int]:
     return sorted({c.get("stage", 1) for c in satz.get("challenges", [])})
 
@@ -199,15 +234,34 @@ def lesetempo(woerter: int, lese_ms: int) -> float | None:
     return woerter / (lese_ms / 60000) if lese_ms > 0 else None
 
 
-def geraten(woerter: int, lese_ms: int, stufe: int) -> bool:
+def _wpm(stufe: int, kalibrierung: dict | None) -> float:
+    return ((kalibrierung or {}).get("lese_wpm") or {}).get(str(stufe)) or STUFE_PARAMS[stufe]["lese_wpm"]
+
+
+def geraten(woerter: int, lese_ms: int, stufe: int, kalibrierung: dict | None = None) -> bool:
     """Gelesen in weniger als 30 % der erwarteten Zeit."""
-    erwartet_ms = woerter / STUFE_PARAMS[stufe]["lese_wpm"] * 60000
+    erwartet_ms = woerter / _wpm(stufe, kalibrierung) * 60000
     return lese_ms < GERATEN_ANTEIL * erwartet_ms
 
 
 # ── Dynamische Stufe (DDA) ───────────────────────────────────────────
 
-def neue_stufe(stufe: int, verlauf: list[dict]) -> int:
+def _regelwerk(kalibrierung: dict | None) -> dict:
+    """Standard-Regelwerk; mit Kalibrierung verschieben sich nur die Grenzen der Antwortzeit."""
+    zeit = (kalibrierung or {}).get("antwortzeit")
+    if not zeit:
+        return dda.DEFAULT_RULESET
+    regeln = copy.deepcopy(dda.DEFAULT_RULESET)
+    schnell, langsam = zeit["schnell"], zeit["langsam"]
+    grenzen = {"fast": [0, 0, schnell], "medium": [schnell * 0.67, (schnell + langsam) / 2, langsam * 1.25],
+               "slow": [langsam, 60, 60]}
+    eingang = next(i for i in regeln["inputs"] if i["id"] == "response_time")
+    for mf in eingang["membershipFunctions"]:
+        mf["params"] = [min(60, max(0, p)) for p in grenzen[mf["name"]]]
+    return regeln
+
+
+def neue_stufe(stufe: int, verlauf: list[dict], kalibrierung: dict | None = None) -> int:
     """Höchstens ein Schritt Richtung Ziel; erst nach drei Antworten auf der aktuellen Stufe."""
     seit_wechsel = 0
     for s in reversed(verlauf):
@@ -216,6 +270,37 @@ def neue_stufe(stufe: int, verlauf: list[dict]) -> int:
         seit_wechsel += 1
     if seit_wechsel < STUFE_MIN_SNAPSHOTS:
         return stufe
-    geruest = dda.infer(dda.DEFAULT_RULESET, dda.current_metrics(verlauf))["scaffolding_level"]
+    geruest = dda.infer(_regelwerk(kalibrierung), dda.current_metrics(verlauf))["scaffolding_level"]
     ziel = 4 if geruest < 25 else 3 if geruest < 50 else 2 if geruest < 75 else 1
     return max(1, min(4, stufe + (ziel > stufe) - (ziel < stufe)))
+
+
+# ── Kalibrierung (Vorschlag, die Lehrkraft bestätigt) ────────────────
+
+def _begrenzt(neu: float, alt: float) -> float:
+    return min(alt * (1 + VORSCHLAG_GRENZE), max(alt * (1 - VORSCHLAG_GRENZE), neu))
+
+
+def vorschlag(fragen_je_stufe: dict[int, list[dict]], aktuell: dict) -> dict:
+    """Neue Werte aus den bisherigen Antworten: Median-Lesetempo je Stufe, p25/p75 der Wahlzeit;
+    je Wert höchstens ±20 % gegenüber ``aktuell``, erst ab 30 Antworten."""
+    alt = {"lese_wpm": {**STANDARD_KALIBRIERUNG["lese_wpm"], **(aktuell.get("lese_wpm") or {})},
+           "antwortzeit": {**STANDARD_KALIBRIERUNG["antwortzeit"], **(aktuell.get("antwortzeit") or {})}}
+    werte = copy.deepcopy(alt)
+    stichprobe = {}
+    for stufe in STUFEN:
+        fragen = [f for f in fragen_je_stufe.get(stufe, []) if not geraten(f["woerter"], f["lese_ms"], stufe, alt)]
+        tempos = [t for t in (lesetempo(f["woerter"], f["lese_ms"]) for f in fragen) if t is not None]
+        stichprobe[stufe] = len(tempos)
+        if len(tempos) >= VORSCHLAG_MIN_STICHPROBE:
+            werte["lese_wpm"][str(stufe)] = round(_begrenzt(statistics.median(tempos), alt["lese_wpm"][str(stufe)]))
+    zeiten = [f["wahl_ms"] / 1000 for fragen in fragen_je_stufe.values() for f in fragen]
+    zeit_genug = len(zeiten) >= VORSCHLAG_MIN_STICHPROBE
+    if zeit_genug:
+        p25, _, p75 = statistics.quantiles(zeiten, n=4)
+        schnell = round(_begrenzt(p25, alt["antwortzeit"]["schnell"]), 1)
+        langsam = round(_begrenzt(p75, alt["antwortzeit"]["langsam"]), 1)
+        if 0 < schnell < langsam <= 60:
+            werte["antwortzeit"] = {"schnell": schnell, "langsam": langsam}
+    return {"werte": werte, "stichprobe": stichprobe,
+            "genug": zeit_genug or any(n >= VORSCHLAG_MIN_STICHPROBE for n in stichprobe.values())}

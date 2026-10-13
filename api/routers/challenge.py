@@ -5,13 +5,13 @@ Der Server prüft und wertet (api/challenge_engine.py); ``solve``, ``decoy`` und
 verlassen ihn nur als Ergebnis einer Antwort, nie im Brett.
 
 Einstellungen der Sitzung (ToolSession.settings):
-  spiele list (Phase 1: ["normal"]), theme str, startstufe int (Standard 2),
+  spiele list (challenge_engine.SPIELE), theme str (THEMES), skin str (Boss-Aussehen), startstufe int (Standard 2),
   startstufen {student_id: stufe}, punkte_vergeben (Zeitstempel, verhindert doppelte Buchung)
 """
+import copy
 import csv
 import io
 import json
-import random
 import statistics
 import zipfile
 from datetime import datetime, timezone
@@ -23,12 +23,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from .. import challenge_engine as eng
-from .. import dda
+from .. import challenge_lauf as lauf_logik
 from ..auth import get_current_teacher, get_current_user, get_player
 from ..authorship import author_fields, can_modify, is_student, scope_to_student_pool
 from ..availability import require_capability
 from ..database import get_db
-from ..models import ChallengeSet, ChallengeStand, Class, Student, Teacher, ToolSession, Transaction
+from ..display_names import short_name
+from ..models import ChallengeKalibrierung, ChallengeSet, ChallengeStand, Class, Student, Teacher, ToolSession, Transaction
 from ..upload_utils import ALLOWED_EXTENSIONS, save_image
 from .karten_quiz import _anzeigename, _wer
 
@@ -37,6 +38,7 @@ router = APIRouter(prefix="/api/challenge", tags=["challenge"])
 CHALLENGE_DATA_ROOT = Path(__file__).parent.parent.parent / "data" / "challenges"
 
 STANDARD_STARTSTUFE = 2
+SKINS = ("monster", "rap", "prinzessin", "einhorn")
 
 
 # ── Sätze: Laden und Prüfen ──────────────────────────────────────────
@@ -228,10 +230,17 @@ def _stufe(wert) -> int:
     return wert if wert in eng.STUFEN else STANDARD_STARTSTUFE
 
 
-def _einstellungen(s: ToolSession) -> dict:
+def _spiele(s: ToolSession, daten: dict) -> list[str]:
+    """Erlaubte Spielarten; der Gerichtssaal nur für Sätze mit Behauptungen."""
+    liste = (s.settings or {}).get("spiele")
+    spiele = [x for x in liste if x in eng.SPIELE] if isinstance(liste, list) else []
+    return [x for x in spiele if x != "gericht" or daten.get("claims")] or ["normal"]
+
+
+def _einstellungen(s: ToolSession, daten: dict) -> dict:
     e = s.settings or {}
-    return {"spiele": e["spiele"] if isinstance(e.get("spiele"), list) else ["normal"],
-            "theme": e["theme"] if isinstance(e.get("theme"), str) else "",
+    return {"spiele": _spiele(s, daten), "theme": e["theme"] if e.get("theme") in eng.THEMES else "klassisch",
+            "skin": e["skin"] if e.get("skin") in SKINS else "monster",
             "startstufe": _stufe(e.get("startstufe", STANDARD_STARTSTUFE))}
 
 
@@ -239,73 +248,49 @@ def _startstufe(s: ToolSession, spieler) -> int:
     startstufen = (s.settings or {}).get("startstufen")
     if isinstance(spieler, Student) and isinstance(startstufen, dict) and str(spieler.id) in startstufen:
         return _stufe(startstufen[str(spieler.id)])
-    return _einstellungen(s)["startstufe"]
+    return _stufe((s.settings or {}).get("startstufe", STANDARD_STARTSTUFE))
 
 
 def _stand(db: Session, s: ToolSession, spieler) -> ChallengeStand | None:
     return db.query(ChallengeStand).filter_by(session_id=s.id, **_wer(spieler)).first()
 
 
-def _neuer_stand(db: Session, s: ToolSession, spieler, daten: dict) -> ChallengeStand:
-    stufe = _startstufe(s, spieler)
-    erste = eng.etappen(eng.satz_fuer_stufe(daten, stufe))[0]
-    st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe=stufe, stufe_start=stufe,
-                        seed=random.getrandbits(31), zustand={"etappe": erste, "leben": eng.LEBEN, "erledigt": []},
-                        fragen=[], verlauf=[], class_id=spieler.class_id if isinstance(spieler, Student) else None,
-                        **_wer(spieler))
+def _lauf(st: ChallengeStand) -> dict:
+    """Stand-Spalten als Lauf-dict (api/challenge_lauf.py); ``spiel`` liegt im ``zustand``."""
+    z = copy.deepcopy(st.zustand)
+    return {"stufe": st.stufe, "stufe_start": st.stufe_start, "seed": st.seed, "spiel": z.pop("spiel", "normal"),
+            "zustand": z, "fragen": copy.deepcopy(st.fragen), "verlauf": copy.deepcopy(st.verlauf),
+            "fertig": st.fertig_am is not None}
+
+
+def _speichern(st: ChallengeStand, lauf: dict) -> None:
+    st.stufe, st.fragen, st.verlauf = lauf["stufe"], lauf["fragen"], lauf["verlauf"]
+    st.zustand = {**lauf["zustand"], "spiel": lauf["spiel"]}
+    if lauf["fertig"] and st.fertig_am is None:
+        st.fertig_am = datetime.now(timezone.utc)
+
+
+def _neuer_stand(db: Session, s: ToolSession, spieler, daten: dict, spiel: str) -> ChallengeStand:
+    lauf = lauf_logik.neuer_lauf(daten, _startstufe(s, spieler), spiel)
+    st = ChallengeStand(session_id=s.id, name=_anzeigename(spieler)[:100], stufe=lauf["stufe"], stufe_start=lauf["stufe"],
+                        seed=lauf["seed"], zustand={**lauf["zustand"], "spiel": spiel}, fragen=[], verlauf=[],
+                        class_id=spieler.class_id if isinstance(spieler, Student) else None, **_wer(spieler))
     db.add(st)
     db.flush()
     return st
 
 
-def _etappe(satz: dict, st: ChallengeStand) -> int:
-    """Aktuelle Etappe: ab dem gemerkten Stand die erste mit offenen Challenges (nach einem Stufenwechsel
-    kann sich der Satz geändert haben), sonst die letzte."""
-    erledigt = set(st.zustand["erledigt"])
-    nummern = eng.etappen(satz)
-    for nr in nummern:
-        if nr >= st.zustand["etappe"] and any(c["id"] not in erledigt for c in satz["challenges"] if c.get("stage", 1) == nr):
-            return nr
-    return nummern[-1]
+def _bild(set_id: int):
+    return lambda name: f"/uploads/challenges/{set_id}/assets/{name}"
 
 
-def _bild(set_id: int, name: str | None) -> str | None:
-    return f"/uploads/challenges/{set_id}/assets/{name}" if name else None
+def _fehler(e: lauf_logik.LaufFehler) -> HTTPException:
+    return HTTPException(e.status, e.text)
 
 
-def _brett(g: ChallengeSet, st: ChallengeStand) -> dict:
-    satz = eng.satz_fuer_stufe(g.data, st.stufe)
-    etappe = _etappe(satz, st)
-    erledigt = set(st.zustand["erledigt"])
-    params = eng.STUFE_PARAMS[st.stufe]
-    titel = {s.get("id"): s.get("title") for s in satz.get("stages", []) if isinstance(s, dict)}
-    # Ablenker: eine feste Auswahl je Spieler (seed), damit sie beim Neuladen gleich bleibt
-    ablenker = [f for f in satz["facts"] if f.get("decoy")]
-    if params["ablenker"] is not None:
-        ablenker = random.Random(st.seed).sample(ablenker, min(params["ablenker"], len(ablenker)))
-    fakten = [f for f in satz["facts"] if not f.get("decoy")] + ablenker
-    aufgaben = [c for c in satz["challenges"] if c.get("stage", 1) == etappe]
-    rng = random.Random(st.seed + etappe)
-    rng.shuffle(fakten)
-    rng.shuffle(aufgaben)
-
-    def challenge_out(c: dict) -> dict:
-        aus = {"id": c["id"], "text": c["text"], "image": _bild(g.id, c.get("image")), "formula": c.get("formula"),
-               "strength": c.get("strength", 1), "erledigt": c["id"] in erledigt}
-        if params["tipps"]:
-            aus["tip"] = c.get("tip")
-        return aus
-
-    return {
-        "stufe": st.stufe, "etappe": etappe, "leben": st.zustand["leben"],
-        "etappen": [{"nr": nr, "titel": titel.get(nr) or f"Etappe {nr}",
-                     "erledigt": all(c["id"] in erledigt for c in satz["challenges"] if c.get("stage", 1) == nr)}
-                    for nr in eng.etappen(satz)],
-        "challenges": [challenge_out(c) for c in aufgaben],
-        "fakten": [{"id": f["id"], "text": f["text"], "image": _bild(g.id, f.get("image")), "formula": f.get("formula"),
-                    "info": f.get("info")} for f in fakten],
-        "fertig": st.fertig_am is not None,
-    }
+def _kalibrierung(db: Session, class_id: int | None) -> dict | None:
+    zeile = db.query(ChallengeKalibrierung).filter_by(class_id=class_id).first() if class_id is not None else None
+    return zeile.werte if zeile else None
 
 
 # ── Spieler ──────────────────────────────────────────────────────────
@@ -328,8 +313,60 @@ def statistik(class_id: int | None = None, db: Session = Depends(get_db), lehrkr
         tempos = [t for t in (eng.lesetempo(f["woerter"], f["lese_ms"]) for f in fragen) if t is not None]
         zeilen.append({"class_id": cid, "klasse": klassen.get(cid, str(cid)), "stufe": stufe, "teilnehmer": len(staende),
                        "lesetempo_median": round(statistics.median(tempos), 1) if tempos else None,
-                       "anteil_geraten": round(sum(_geraten(f) for f in fragen) / len(fragen), 3) if fragen else 0})
+                       "anteil_geraten": round(sum(_geraten(f, _kalibrierung(db, cid)) for f in fragen) / len(fragen), 3) if fragen else 0})
     return zeilen
+
+
+def _werte_pruefen(werte) -> dict:
+    """422 bei allem, was nicht dem Format von STANDARD_KALIBRIERUNG entspricht."""
+    try:
+        wpm = {str(s): werte["lese_wpm"][str(s)] for s in eng.STUFEN}
+        zeit = {k: float(werte["antwortzeit"][k]) for k in ("schnell", "langsam")}
+        ok = (all(isinstance(v, int) and not isinstance(v, bool) and v > 0 for v in wpm.values())
+              and 0 < zeit["schnell"] < zeit["langsam"] <= 60)
+    except (KeyError, TypeError, ValueError):
+        ok = False
+    if not ok:
+        raise HTTPException(422, "Ungültige Kalibrierung")
+    return {"lese_wpm": wpm, "antwortzeit": zeit}
+
+
+@router.get("/kalibrierung")
+def kalibrierung_lesen(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+    """Aktuelle Werte der Klasse und ein Vorschlag aus allen ihren Antworten (nur Summen, nichts wird gespeichert)."""
+    aktuell = _kalibrierung(db, class_id) or eng.STANDARD_KALIBRIERUNG
+    je_stufe: dict[int, list[dict]] = {}
+    for st in db.query(ChallengeStand).filter_by(class_id=class_id).all():
+        for f in st.fragen:
+            je_stufe.setdefault(f["stufe"], []).append(f)
+    v = eng.vorschlag(je_stufe, aktuell)
+    return {"aktuell": aktuell, "vorschlag": v["werte"], "stichprobe": v["stichprobe"], "genug": v["genug"]}
+
+
+class KalibrierungIn(BaseModel):
+    class_id: int
+    werte: dict
+
+
+@router.put("/kalibrierung")
+def kalibrierung_speichern(body: KalibrierungIn, db: Session = Depends(get_db), lehrkraft: Teacher = Depends(get_current_teacher)):
+    werte = _werte_pruefen(body.werte)
+    if db.get(Class, body.class_id) is None:
+        raise HTTPException(404, "Klasse nicht gefunden")
+    zeile = db.query(ChallengeKalibrierung).filter_by(class_id=body.class_id).first()
+    if zeile is None:
+        zeile = ChallengeKalibrierung(class_id=body.class_id)
+        db.add(zeile)
+    zeile.vorher, zeile.werte = zeile.werte or None, werte
+    zeile.bestaetigt_von, zeile.bestaetigt_am = lehrkraft.id, datetime.now(timezone.utc)
+    db.commit()
+    return {"class_id": body.class_id, "werte": werte}
+
+
+@router.delete("/kalibrierung/{class_id}", status_code=204)
+def kalibrierung_zuruecksetzen(class_id: int, db: Session = Depends(get_db), _: Teacher = Depends(get_current_teacher)):
+    db.query(ChallengeKalibrierung).filter_by(class_id=class_id).delete()
+    db.commit()
 
 
 @router.get("/{code}")
@@ -337,19 +374,58 @@ def info(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
     s = _offene_sitzung(db, code)
     satz = _satz(db, s)
     st = _stand(db, s, spieler)
-    return {"title": satz.title, "subject": satz.subject, "settings": _einstellungen(s),
-            "stand": None if st is None else {"stufe": st.stufe, "etappe": st.zustand["etappe"], "leben": st.zustand["leben"],
+    return {"title": satz.title, "subject": satz.subject, "settings": _einstellungen(s, satz.data),
+            "stand": None if st is None else {"stufe": st.stufe, "spiel": st.zustand.get("spiel", "normal"), "etappe": st.zustand["etappe"], "leben": st.zustand["leben"],
                                               "fragen": len(st.fragen), "ergebnis": st.ergebnis, "fertig": st.fertig_am is not None}}
 
 
+class StartIn(BaseModel):
+    spiel: str | None = Field(default=None, max_length=30)
+
+
 @router.post("/{code}/start")
-def start(code: str, db: Session = Depends(get_db), spieler=Depends(get_player)):
-    """Stand anlegen oder fortsetzen; zurück kommt das Brett der aktuellen Etappe."""
+def start(code: str, body: StartIn | None = None, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Stand anlegen oder fortsetzen (optional mit anderer Spielart); zurück kommt das Brett der aktuellen Etappe."""
     s = _offene_sitzung(db, code)
     g = _satz(db, s)
-    st = _stand(db, s, spieler) or _neuer_stand(db, s, spieler, g.data)
+    wunsch = body.spiel if body else None
+    erlaubt = _spiele(s, g.data)
+    if wunsch == "gericht" and not g.data.get("claims"):
+        raise HTTPException(400, "Dieser Satz hat keine Behauptungen für den Gerichtssaal")
+    st = _stand(db, s, spieler)
+    if st is None:
+        st = _neuer_stand(db, s, spieler, g.data, wunsch if wunsch in erlaubt else erlaubt[0])
+    elif wunsch in erlaubt:
+        lauf = _lauf(st)
+        try:
+            lauf_logik.spiel_wechseln(g.data, lauf, wunsch)
+        except lauf_logik.LaufFehler as e:
+            raise _fehler(e)
+        _speichern(st, lauf)
     db.commit()
-    return _brett(g, st)
+    return lauf_logik.brett(g.data, _lauf(st), _bild(g.id))
+
+
+class DeckIn(BaseModel):
+    fakt_ids: list[str] = Field(max_length=100)
+
+
+@router.post("/{code}/deck")
+def deck(code: str, body: DeckIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Kartenspiel: Deck der aktuellen Etappe festlegen; zurück kommt das Brett."""
+    s = _offene_sitzung(db, code)
+    g = _satz(db, s)
+    st = _stand(db, s, spieler)
+    if st is None:
+        raise HTTPException(409, "Erst starten")
+    lauf = _lauf(st)
+    try:
+        lauf_logik.deck_setzen(g.data, lauf, body.fakt_ids)
+    except lauf_logik.LaufFehler as e:
+        raise _fehler(e)
+    _speichern(st, lauf)
+    db.commit()
+    return lauf_logik.brett(g.data, lauf, _bild(g.id))
 
 
 class AntwortIn(BaseModel):
@@ -367,57 +443,16 @@ def antwort(code: str, body: AntwortIn, db: Session = Depends(get_db), spieler=D
     st = _stand(db, s, spieler)
     if st is None:
         raise HTTPException(409, "Erst starten")
-    if st.fertig_am is not None:
-        raise HTTPException(409, "Schon fertig")
-    satz = eng.satz_fuer_stufe(daten, st.stufe)
-    challenge = next((c for c in satz["challenges"] if c["id"] == body.challenge_id), None)
-    if challenge is None:
-        raise HTTPException(404, "Challenge nicht gefunden")
-    etappe = _etappe(satz, st)
-    z = {**st.zustand, "erledigt": list(st.zustand["erledigt"])}
-    if challenge.get("stage", 1) != etappe or challenge["id"] in z["erledigt"]:
-        raise HTTPException(409, "Diese Challenge ist gerade nicht dran")
-
-    wertung = eng.bewerte(challenge, body.fakt_ids)
-    fakten = {f["id"]: f for f in satz["facts"]}
-    woerter = eng.woerter(challenge["text"]) + sum(eng.woerter(fakten[i]["text"]) for i in set(body.fakt_ids) if i in fakten)
-    frage = {"c": challenge["id"], "f": body.fakt_ids, "q": wertung["qualitaet"], "komplett": wertung["komplett"],
-             "kombo": wertung["kombo"], "schaden": wertung["schaden"], "stufe": st.stufe, "lese_ms": body.lese_ms,
-             "wahl_ms": body.wahl_ms, "woerter": woerter, "tipp": body.tipp, "t": datetime.now(timezone.utc).isoformat()}
-    wiederholungen = sum(1 for f in st.fragen if f["c"] == challenge["id"])
-    snapshot = {**dda.snapshot_from_task_metrics(wertung["komplett"], body.wahl_ms / 1000, 0 if wertung["komplett"] else 1,
-                                                 int(body.tipp), wiederholungen), "stufe": st.stufe}
-
-    zurueck = etappe_geschafft = False
-    if wertung["komplett"]:
-        z["erledigt"].append(challenge["id"])
-    if not wertung["treffer"]:
-        z["leben"] -= 1
-        if z["leben"] <= 0:
-            zurueck, z["leben"] = True, eng.LEBEN
-    if all(c["id"] in z["erledigt"] for c in satz["challenges"] if c.get("stage", 1) == etappe):
-        etappe_geschafft = True
-        z["leben"] = eng.LEBEN
-        weitere = [nr for nr in eng.etappen(satz) if nr > etappe]
-        if weitere:
-            z["etappe"] = weitere[0]
-        else:
-            st.fertig_am = datetime.now(timezone.utc)
-
-    st.fragen = [*st.fragen, frage]
-    st.verlauf = [*st.verlauf, snapshot][-dda.HISTORY_LIMIT:]
-    st.zustand = z
-    st.stufe = eng.neue_stufe(st.stufe, st.verlauf)
-    st.guete = round(eng.guete(st.fragen), 4)
-    st.ergebnis = eng.ergebnis(st.fragen, len(eng.satz_fuer_stufe(daten, st.stufe)["challenges"]))
+    lauf = _lauf(st)
+    try:
+        aus = lauf_logik.antworte(daten, lauf, body.challenge_id, body.fakt_ids, body.lese_ms, body.wahl_ms, body.tipp,
+                                  _kalibrierung(db, st.class_id))
+    except lauf_logik.LaufFehler as e:
+        raise _fehler(e)
+    _speichern(st, lauf)
+    w = lauf_logik.wertung(daten, lauf)
+    st.guete, st.ergebnis = w["guete"], w["ergebnis"]
     db.commit()
-
-    aus = {"qualitaet": wertung["qualitaet"], "treffer": wertung["treffer"], "komplett": wertung["komplett"],
-           "kombo": wertung["kombo"], "schaden": wertung["schaden"], "falsch_gewaehlt": len(wertung["falsch"]),
-           "leben": z["leben"], "zurueck_zur_karte": zurueck, "etappe_geschafft": etappe_geschafft,
-           "fertig": st.fertig_am is not None, "stufe": st.stufe}
-    if wertung["komplett"]:
-        aus["feedback"] = challenge.get("feedback")
     return aus
 
 
@@ -430,23 +465,24 @@ def _eigene_sitzung(db: Session, code: str, lehrkraft: Teacher) -> ToolSession:
     return s
 
 
-def _geraten(f: dict) -> bool:
-    return eng.geraten(f["woerter"], f["lese_ms"], f["stufe"])
+def _geraten(f: dict, kalibrierung: dict | None = None) -> bool:
+    return eng.geraten(f["woerter"], f["lese_ms"], f["stufe"], kalibrierung)
 
 
-def _teilnehmer(st: ChallengeStand, klasse: str, ablenker: dict[str, str]) -> dict:
+def _teilnehmer(st: ChallengeStand, klasse: str, ablenker: dict[str, str], kalibrierung: dict | None) -> dict:
     erste = {}
     for f in st.fragen:
         erste.setdefault(f["c"], f["komplett"])
     tempos = [t for t in (eng.lesetempo(f["woerter"], f["lese_ms"]) for f in st.fragen) if t is not None]
     gewaehlt = [ablenker[i] for f in st.fragen for i in f["f"] if i in ablenker]
-    return {"name": st.name, "klasse": klasse, "stufe_start": st.stufe_start, "stufe": st.stufe,
+    deck_ablenker = [ablenker[i] for i in st.zustand.get("deck_ablenker", []) if i in ablenker]
+    return {"stand_id": st.id, "student_id": st.student_id, "name": st.name, "klasse": klasse, "stufe_start": st.stufe_start, "stufe": st.stufe,
             "guete": round(st.guete, 4), "ergebnis": round(st.ergebnis, 4), "punkte": round(st.ergebnis * 100),
             "fragen": len(st.fragen), "erstversuch_richtig": sum(erste.values()),
             "kombos": sum(1 for f in st.fragen if f["kombo"]),
-            "ablenker_gewaehlt": list(dict.fromkeys(gewaehlt)),
+            "ablenker_gewaehlt": list(dict.fromkeys(gewaehlt)), "deck_ablenker": deck_ablenker,
             "lesetempo_median": round(statistics.median(tempos), 1) if tempos else None,
-            "geraten": sum(_geraten(f) for f in st.fragen), "fertig": st.fertig_am is not None}
+            "geraten": sum(_geraten(f, kalibrierung) for f in st.fragen), "fertig": st.fertig_am is not None}
 
 
 def _teilnehmerliste(db: Session, s: ToolSession) -> list[dict]:
@@ -454,8 +490,8 @@ def _teilnehmerliste(db: Session, s: ToolSession) -> list[dict]:
     ablenker = {f["id"]: f["text"] for f in daten.get("facts", []) if f.get("decoy")}
     klassen = {c.id: c.code for c in db.query(Class).all()}
     staende = db.query(ChallengeStand).filter_by(session_id=s.id).order_by(ChallengeStand.name).all()
-    return [_teilnehmer(st, klassen.get(st.class_id, "Gast" if st.guest_id else "Lehrkraft" if st.teacher_id else ""), ablenker)
-            for st in staende]
+    return [_teilnehmer(st, klassen.get(st.class_id, "Gast" if st.guest_id else "Lehrkraft" if st.teacher_id else ""),
+                        ablenker, _kalibrierung(db, st.class_id)) for st in staende]
 
 
 def vorschau_punkte(db: Session, s: ToolSession) -> list[dict]:
@@ -482,10 +518,10 @@ def export_csv(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = De
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";")
     spalten = ["name", "klasse", "stufe_start", "stufe", "guete", "ergebnis", "punkte", "fragen", "erstversuch_richtig",
-               "kombos", "ablenker_gewaehlt", "lesetempo_median", "geraten", "fertig"]
+               "kombos", "ablenker_gewaehlt", "deck_ablenker", "lesetempo_median", "geraten", "fertig"]
     schreiber.writerow(spalten)
     for z in zeilen:
-        schreiber.writerow([" | ".join(z[k]) if k == "ablenker_gewaehlt" else z[k] for k in spalten])
+        schreiber.writerow([" | ".join(z[k]) if k in ("ablenker_gewaehlt", "deck_ablenker") else z[k] for k in spalten])
     return Response(puffer.getvalue().encode("utf-8-sig"), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="challenge_{s.code}.csv"'})
 
@@ -513,3 +549,50 @@ def zuruecksetzen(code: str, db: Session = Depends(get_db), lehrkraft: Teacher =
     db.query(ChallengeStand).filter_by(session_id=s.id).delete()
     s.settings = {k: v for k, v in (s.settings or {}).items() if k != "punkte_vergeben"}
     db.commit()
+
+
+class StufenIn(BaseModel):
+    startstufen: dict[str, int | None]
+
+
+@router.put("/{code}/stufen")
+def startstufen_setzen(code: str, body: StufenIn, db: Session = Depends(get_db), lehrkraft: Teacher = Depends(get_current_teacher)):
+    """Startstufe je Schüler:in (null entfernt den Eintrag); gilt für Stände, die noch nicht angelegt sind."""
+    s = _eigene_sitzung(db, code, lehrkraft)
+    if any(v is not None and v not in eng.STUFEN for v in body.startstufen.values()):
+        raise HTTPException(422, "Stufen gehen von 1 bis 4")
+    stufen = {**((s.settings or {}).get("startstufen") or {}), **body.startstufen}
+    stufen = {k: v for k, v in stufen.items() if v is not None}
+    s.settings = {**(s.settings or {}), "startstufen": stufen}
+    db.commit()
+    return {"startstufen": stufen}
+
+
+class StandStufeIn(BaseModel):
+    stufe: int = Field(ge=1, le=4)
+
+
+@router.put("/{code}/staende/{stand_id}/stufe")
+def stand_stufe(code: str, stand_id: int, body: StandStufeIn, db: Session = Depends(get_db),
+                lehrkraft: Teacher = Depends(get_current_teacher)):
+    """Aktuelle Stufe eines laufenden Stands setzen; der Verlauf bleibt."""
+    s = _eigene_sitzung(db, code, lehrkraft)
+    st = db.query(ChallengeStand).filter_by(id=stand_id, session_id=s.id).first()
+    if st is None:
+        raise HTTPException(404, "Stand nicht gefunden")
+    st.stufe = body.stufe
+    db.commit()
+    return {"stand_id": st.id, "stufe": st.stufe}
+
+
+@router.get("/{code}/schueler")
+def schueler(code: str, class_id: int, db: Session = Depends(get_db), lehrkraft: Teacher = Depends(get_current_teacher)):
+    """Schüler:innen der Klasse mit Startstufe und Stand, damit die Lehrkraft vor dem Start Stufen setzen kann."""
+    s = _eigene_sitzung(db, code, lehrkraft)
+    startstufen = (s.settings or {}).get("startstufen") or {}
+    staende = {st.student_id: st for st in db.query(ChallengeStand).filter(
+        ChallengeStand.session_id == s.id, ChallengeStand.student_id.isnot(None)).all()}
+    kinder = db.query(Student).filter_by(class_id=class_id, active=True).order_by(Student.nachname, Student.vorname).all()
+    return [{"id": k.id, "name": short_name(k), "startstufe": startstufen.get(str(k.id)),
+             "stand_id": staende[k.id].id if k.id in staende else None,
+             "stufe": staende[k.id].stufe if k.id in staende else None} for k in kinder]
