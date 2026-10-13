@@ -14,11 +14,12 @@ import { useState } from "react";
 import {
   aussen, bindigkeit, MODELLE, neutronen, orbitale, schalen, type ModellId,
 } from "@/lib/pse/atommodell";
-import { baue, BAUSTEINE, MAX_ATOME, VORLAGEN, VORLAGENGRUPPEN } from "@/lib/pse/bindung";
+import { baue, BAUSTEINE, MAX_ATOME, uebertrage, VORLAGEN, VORLAGENGRUPPEN } from "@/lib/pse/bindung";
 import { pseElement, type PseElement } from "@/lib/pse/elemente";
 import Atombild from "./Atombild";
 import Bindungsbild from "./Bindungsbild";
 import Lewisbild from "./Lewisbild";
+import Ionenbild, { IonenFormel } from "./Ionenbild";
 
 /** Bor ist der rote Faden dieses Reiters — darum steht es vorn. */
 const SCHNELL = ["B", "H", "He", "C", "N", "O", "Na", "Cl", "Fe"];
@@ -34,21 +35,22 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
   const [blick, setBlick] = useState<"atom" | "bindung">("atom");
   const [modell, setModell] = useState<ModellId>("schalen");
   const [laufen, setLaufen] = useState(true);
-  // Im Bindungslabor lässt sich zwischen dem laufenden und dem ruhenden Bild
-  // wählen: ruhend liegen die gemeinsamen Paare zwischen den Atomen, so wie
-  // man sie an die Tafel zeichnet.
-  const [statisch, setStatisch] = useState(false);
+  // Drei Ansichten derselben Verbindung: die gemeinsamen Paare laufend oder
+  // ruhend — und die Übertragung, bei der einer seine Außenelektronen ganz
+  // abgibt und Ionen übrig bleiben.
+  const [ansicht, setAnsicht] = useState<"bewegt" | "statisch" | "ionen">("bewegt");
   const [teile, setTeile] = useState<string[]>(["B", "F", "F", "F"]);
 
   const m = MODELLE.find(x => x.id === modell)!;
   const sch = schalen(orbitale(e));
   const v = baue(teile);
+  const u = uebertrage(teile);
 
   return (
     <div className="card p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-base font-black">⚛️ Atommodelle</h2>
-        {!(blick === "bindung" && statisch) && (
+        {!(blick === "bindung" && ansicht !== "bewegt") && (
           <button onClick={() => setLaufen(l => !l)}
             className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">
             {laufen ? "⏸ anhalten" : "▶ weiter"}
@@ -146,47 +148,58 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
       ) : (
         <>
           <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
-            {([[false, "🔄 bewegt"], [true, "▦ statisch"]] as const).map(([id, label]) => (
-              <button key={label} onClick={() => setStatisch(id)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  statisch === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
-                {label}
-              </button>
-            ))}
+            {([["bewegt", "🔄 bewegt"], ["statisch", "▦ statisch"], ["ionen", "⇄ Übertragung"]] as const)
+              .map(([id, label]) => (
+                <button key={id} onClick={() => setAnsicht(id)} title={
+                  id === "ionen"
+                    ? "Einer gibt seine Außenelektronen ganz ab — übrig bleiben Ionen"
+                    : "Die Atome teilen sich Elektronenpaare"}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                    ansicht === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
+                  {label}
+                </button>
+              ))}
           </div>
 
           <div className="rounded-xl bg-black/10 dark:bg-white/5 p-2">
-            <Bindungsbild v={v} laufen={laufen} statisch={statisch} />
+            {ansicht === "ionen"
+              ? <Ionenbild ionen={u.ionen} />
+              : <Bindungsbild v={v} laufen={laufen} statisch={ansicht === "statisch"} />}
           </div>
 
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="text-sm font-bold">
               {v.gesetzt || "—"}{v.name ? <span className="text-muted font-normal"> · {v.name}</span> : null}
             </h3>
-            <span className="text-xs text-muted">{v.bindungen.length} Bindung{v.bindungen.length === 1 ? "" : "en"}</span>
+            <span className="text-xs text-muted">
+              {ansicht === "ionen"
+                ? u.ionen.length ? `${u.ionen.length} Ionen` : "keine Übertragung"
+                : `${v.bindungen.length} Bindung${v.bindungen.length === 1 ? "" : "en"}`}
+            </span>
           </div>
 
           <p className="text-xs text-muted">
-            Jedes Atom hat seine Farbe, und jedes seiner Elektronen trägt sie. Ein bindendes Paar
-            besteht aus je einem Elektron beider Partner.{" "}
-            {statisch
-              ? "Im ruhenden Bild liegt das Paar zwischen den beiden Kernen — so zeichnet man es ins Heft."
-              : "Im laufenden Bild ziehen beide um beide Kerne: ist das eine hier, ist das andere drüben."}{" "}
-            Darum zählt dasselbe Elektron bei zwei Atomen mit, und darum stehen unter den Atomen
-            zusammen mehr Elektronen, als überhaupt da sind.
+            Jedes Atom hat seine Farbe, und jedes seiner Elektronen trägt sie.{" "}
+            {ansicht === "ionen"
+              ? "Hier gibt der unedlere Partner seine Außenelektronen ganz ab; sie sitzen danach in seiner Farbe auf der Schale des anderen. Übrig bleiben Ionen, die einander wegen ihrer Ladung anziehen — gemeinsame Paare gibt es keine."
+              : ansicht === "statisch"
+                ? "Ein bindendes Paar besteht aus je einem Elektron beider Partner und liegt zwischen den beiden Kernen — so zeichnet man es ins Heft. Darum zählt dasselbe Elektron bei zwei Atomen mit."
+                : "Ein bindendes Paar besteht aus je einem Elektron beider Partner, und beide ziehen um beide Kerne: ist das eine hier, ist das andere drüben. Darum zählt dasselbe Elektron bei zwei Atomen mit, und darum stehen unter den Atomen zusammen mehr Elektronen, als überhaupt da sind."}
           </p>
 
           {/* Dieselbe Verbindung als Kurzschrift fürs Heft. */}
           <div className="rounded-xl border border-line p-2">
             <div className="text-[11px] text-muted mb-1">
-              Valenzstrichformel — ein Strich ist ein Elektronenpaar
+              {ansicht === "ionen"
+                ? "Ionenschreibweise — volle Außenschale in Klammern, Ladung oben rechts"
+                : "Valenzstrichformel — ein Strich ist ein Elektronenpaar"}
             </div>
-            <Lewisbild v={v} />
+            {ansicht === "ionen" ? <IonenFormel ionen={u.ionen} /> : <Lewisbild v={v} />}
           </div>
 
-          {v.hinweise.map(h => (
+          {(ansicht === "ionen" ? u.hinweise : v.hinweise).map(h => (
             <p key={h} className={`text-xs rounded-lg px-3 py-2 ${
-              h.startsWith("Alle Atome") ? "bg-ok/10" : "bg-accent/10"}`}>{h}</p>
+              h.startsWith("Alle Atome") || h.startsWith("Jedes Ion") ? "bg-ok/10" : "bg-accent/10"}`}>{h}</p>
           ))}
 
           {VORLAGENGRUPPEN.map(gruppe => (

@@ -237,16 +237,32 @@ describe("Atommodelle", { timeout: 40_000 }, () => {
     reiter();
     fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
     // Im laufenden Bild ziehen die Elektronen um beide Kerne.
-    expect(screen.getByText(/ziehen beide um beide Kerne/)).toBeInTheDocument();
+    expect(screen.getByText(/beide ziehen um beide Kerne/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /anhalten/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /statisch/ }));
-    expect(screen.getByText(/liegt das Paar zwischen den beiden Kernen/)).toBeInTheDocument();
+    expect(screen.getByText(/liegt zwischen den beiden Kernen/)).toBeInTheDocument();
     // Im ruhenden Bild gibt es nichts anzuhalten.
     expect(screen.queryByRole("button", { name: /anhalten|weiter/ })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /bewegt/ }));
     expect(screen.getByRole("button", { name: /anhalten/ })).toBeInTheDocument();
+  });
+
+  it("zeigt in der Übertragung Ionen mit Ladung statt gemeinsamer Paare", () => {
+    reiter();
+    fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
+    fireEvent.click(screen.getByRole("button", { name: /Übertragung/ }));
+    // Vier Teilchen: ein Bor-Ion und drei Fluorid-Ionen.
+    expect(screen.getByText("4 Ionen")).toBeInTheDocument();
+    // Und der ehrliche Satz dazu: Bor bekommt dabei ein Duett, kein Oktett.
+    expect(screen.getByText(/Bor gibt 3 Elektronen ab und hat danach 2/)).toBeInTheDocument();
+    expect(screen.getByText(/Jedes Ion hat jetzt eine volle Außenschale/)).toBeInTheDocument();
+    expect(screen.getByText(/Ionenschreibweise/)).toBeInTheDocument();
+
+    // Zurück zu den gemeinsamen Paaren: dort steht wieder der Elektronenmangel.
+    fireEvent.click(screen.getByRole("button", { name: /bewegt/ }));
+    expect(screen.getByText(/Elektronenmangel/)).toBeInTheDocument();
   });
 
   it("nimmt Atome dazu und wieder weg", () => {

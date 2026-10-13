@@ -15,19 +15,12 @@
  * Bewegt wird mit CSS: die freien Paare drehen sich als Gruppe um ihren Kern,
  * die bindenden laufen per `offset-path` den Weg um beide Atome ab.
  */
-import { freiePlaetze, type BindungsAtom, type Verbindung } from "@/lib/pse/bindung";
+import { atomfarbe, freiePlaetze, type BindungsAtom, type Verbindung } from "@/lib/pse/bindung";
 
 /** Radius der Außenschale. Der Kernabstand liegt darunter, damit sich die Schalen überlappen. */
 const R = 48;
 /** Abstand zweier gebundener Kerne. Kleiner als 2·R — sonst überlappen sich die Schalen nicht. */
 const L = 88;
-
-/**
- * Jedes Atom bekommt eine Farbe, damit man seine Elektronen wiedererkennt,
- * wenn sie beim Nachbarn vorbeikommen. Die Kategorienfarben taugen dafür
- * nicht: Kohlenstoff, Stickstoff und Sauerstoff wären alle gleich grün.
- */
-const FARBE = ["#fbbf24", "#60a5fa", "#4ade80", "#f472b6", "#a78bfa", "#fb923c", "#22d3ee", "#e879f9"];
 
 const BEWEGUNG = `
 @keyframes bd-kreisen { from { offset-distance: 0%; } to { offset-distance: 100%; } }
@@ -186,14 +179,14 @@ export default function Bindungsbild({ v, laufen = true, statisch = false }: {
                 return (
                   <g key={k}>
                     {[b.a, b.b].map((wer, seite) => statisch ? (
-                      <Elektron key={wer} farbe={FARBE[wer % FARBE.length]}
+                      <Elektron key={wer} farbe={atomfarbe(wer)}
                         x={mx + nx * quer + ux * (seite ? 6 : -6)}
                         y={my + ny * quer + uy * (seite ? 6 : -6)} />
                     ) : (
                       <g key={wer} className="bd-bindend"
                         style={{ offsetPath: `path("${weg}")`, animationDuration: `${dauer}s`,
                           animationDelay: `${-(seite * dauer / 2 + k * dauer * 0.08).toFixed(2)}s` }}>
-                        <Elektron x={0} y={0} farbe={FARBE[wer % FARBE.length]} />
+                        <Elektron x={0} y={0} farbe={atomfarbe(wer)} />
                       </g>
                     ))}
                   </g>
@@ -204,7 +197,7 @@ export default function Bindungsbild({ v, laufen = true, statisch = false }: {
         })}
         {v.atome.map((a, i) => (
           <Atom key={i} a={a} cx={orte[i].x} cy={orte[i].y} nummer={i} statisch={statisch}
-            farbe={FARBE[i % FARBE.length]} richtungen={richtungen[i]} />
+            farbe={atomfarbe(i)} richtungen={richtungen[i]} />
         ))}
       </g>
     </svg>

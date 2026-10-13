@@ -7,7 +7,7 @@ import {
   aussen, bindigkeit, energiestufen, kaestchen, madelung, MODELLE, neutronen, orbitale,
   orbitalName, plaetze, schalen,
 } from "@/lib/pse/atommodell";
-import { baue, summenformel, VORLAGEN } from "@/lib/pse/bindung";
+import { baue, bindungsrichtungen, freiePlaetze, summenformel, uebertrage, VORLAGEN } from "@/lib/pse/bindung";
 import { pseElement, pseNummer } from "@/lib/pse/elemente";
 
 const el = (symbol: string) => pseElement(symbol)!;
@@ -158,6 +158,124 @@ describe("Summenformel", () => {
     [["C", "O", "O"], "CO2"],
     [["H", "H"], "H2"],
   ])("%j → %s", (symbole, soll) => expect(summenformel(symbole)).toBe(soll));
+});
+
+describe("Elektronenübertragung", () => {
+  it("lässt Bor seine drei Elektronen an die drei Fluore abgeben", () => {
+    const u = uebertrage(["B", "F", "F", "F"]);
+    expect(u.geht).toBe(true);
+    const bor = u.ionen.find(i => i.e.symbol === "B")!;
+    expect(bor.ladung).toBe(3);
+    // Nach der Abgabe bleibt die K-Schale: zwei Elektronen, wie beim Helium.
+    expect(bor.schalen).toEqual([2]);
+    expect(bor.aussen).toBe(2);
+    expect(bor.voll).toBe(true);
+    for (const f of u.ionen.filter(i => i.e.symbol === "F")) {
+      expect(f.ladung).toBe(-1);
+      expect(f.schalen).toEqual([2, 8]);
+      expect(f.voll).toBe(true);
+    }
+    // Jedes Fluorid hat genau ein Elektron, und zwar vom Bor.
+    const f = u.ionen.find(i => i.e.symbol === "F")!;
+    expect(f.bekommt).toEqual([{ von: u.ionen.findIndex(i => i.e.symbol === "B"), zahl: 1 }]);
+  });
+
+  it("sagt klar, dass Bor dabei ein Duett bekommt und kein Oktett", () => {
+    const text = uebertrage(["B", "F", "F", "F"]).hinweise.join(" ");
+    expect(text).toMatch(/Bor gibt 3 Elektronen ab/);
+    expect(text).toMatch(/2 auf der äußersten Schale/);
+    expect(text).toMatch(/Heliums/);
+  });
+
+  it("macht aus Natrium und Chlor Na⁺ und Cl⁻", () => {
+    const u = uebertrage(["Na", "Cl"]);
+    expect(u.geht).toBe(true);
+    expect(u.ionen.map(i => [i.e.symbol, i.ladung])).toEqual([["Na", 1], ["Cl", -1]]);
+    expect(u.ionen[0].schalen).toEqual([2, 8]);
+    expect(u.ionen[1].schalen).toEqual([2, 8, 8]);
+    expect(u.ionen.every(i => i.voll)).toBe(true);
+    expect(u.hinweise.join(" ")).toMatch(/volle Außenschale/);
+  });
+
+  it("lässt vom Wasserstoff einen nackten Kern übrig", () => {
+    const u = uebertrage(["O", "H", "H"]);
+    const h = u.ionen.find(i => i.e.symbol === "H")!;
+    expect(h.ladung).toBe(1);
+    expect(h.schalen).toEqual([]);
+    expect(u.ionen.find(i => i.e.symbol === "O")!.ladung).toBe(-2);
+    expect(u.hinweise.join(" ")).toMatch(/nackter Kern/);
+  });
+
+  it("überträgt zwischen gleichen Atomen nichts", () => {
+    const u = uebertrage(["O", "O"]);
+    expect(u.ionen).toHaveLength(0);
+    expect(u.hinweise.join(" ")).toMatch(/teilen sich die Elektronen/);
+  });
+
+  it("gleicht die Ladungen immer aus, wenn die Bilanz aufgeht", () => {
+    for (const symbole of [["B", "F", "F", "F"], ["Na", "Cl"], ["O", "H", "H"],
+      ["C", "H", "H", "H", "H"], ["C", "O", "O"], ["Al", "Cl", "Cl", "Cl"]]) {
+      const u = uebertrage(symbole);
+      expect(u.geht, symbole.join("")).toBe(true);
+      expect(u.ionen.reduce((s, i) => s + i.ladung, 0), symbole.join("")).toBe(0);
+    }
+  });
+
+  it("merkt, wenn die Bilanz nicht aufgeht", () => {
+    // Ein Bor und ein Fluor: drei abgegebene Elektronen, nur eines gebraucht.
+    const u = uebertrage(["B", "F"]);
+    expect(u.geht).toBe(false);
+    expect(u.hinweise.join(" ")).toMatch(/Bilanz geht nicht auf/);
+  });
+});
+
+describe("Freie Elektronenpaare", () => {
+  /** Die Bindungsrichtungen des gebauten Moleküls, Atom für Atom. */
+  const richtungenVon = (symbole: string[]) => bindungsrichtungen(baue(symbole));
+
+  it("legt die zwei Paare des Wassers symmetrisch über den Sauerstoff", () => {
+    const v = baue(["O", "H", "H"]);
+    const o = v.zentrum!;
+    const p = freiePlaetze(richtungenVon(["O", "H", "H"])[o], 2);
+    expect(p).toHaveLength(2);
+    // Die beiden H hängen unten (y positiv), die freien Paare zeigen nach oben.
+    expect(Math.sin(p[0])).toBeLessThan(0);
+    expect(Math.sin(p[1])).toBeLessThan(0);
+    // Und sie stehen symmetrisch: die seitlichen Anteile heben sich auf.
+    expect(Math.cos(p[0]) + Math.cos(p[1])).toBeCloseTo(0, 5);
+  });
+
+  it("verteilt die drei Paare des Fluors gleichmäßig um seine eine Bindung", () => {
+    const p = freiePlaetze([0], 3).map(w => (w * 180) / Math.PI);
+    expect(p.map(Math.round)).toEqual([90, 180, 270]);
+  });
+
+  it("hält die Paare von den Bindungen weg", () => {
+    // Drei Bindungen wie beim Bortrifluorid, ein freies Paar: es muss in eine
+    // der Lücken, nicht auf eine Bindung.
+    const bindungen = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3];
+    for (const w of freiePlaetze(bindungen, 1)) {
+      const naechste = Math.min(...bindungen.map(b =>
+        Math.abs(Math.atan2(Math.sin(w - b), Math.cos(w - b)))));
+      expect(naechste).toBeGreaterThan(0.5);
+    }
+  });
+
+  it("verteilt ohne Bindung rundherum und gibt ohne Paare nichts zurück", () => {
+    expect(freiePlaetze([], 4)).toHaveLength(4);
+    expect(freiePlaetze([], 0)).toHaveLength(0);
+    expect(freiePlaetze([1.2], 0)).toHaveLength(0);
+  });
+
+  it("gibt jedem Atom jeder Vorlage so viele Plätze, wie es Paare hat", () => {
+    for (const v of VORLAGEN) {
+      const b = baue(v.symbole);
+      const r = bindungsrichtungen(b);
+      b.atome.forEach((a, i) => {
+        expect(freiePlaetze(r[i], a.einsam), `${v.label}: ${a.e.symbol}`).toHaveLength(a.einsam);
+      });
+    }
+  });
 });
 
 describe("Bindungslabor", () => {

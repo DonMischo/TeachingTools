@@ -15,7 +15,7 @@
  * das ist das Bild aus dem Heft, nicht die Geometrie. Die gibt es im
  * Strukturformelzeichner in 3D.
  */
-import { bindigkeit, schalen, orbitale } from "./atommodell";
+import { bindigkeit, madelung, orbitale, schalen } from "./atommodell";
 import { pseElement, type PseElement } from "./elemente";
 import { sub } from "@/lib/chemie";
 
@@ -100,6 +100,16 @@ export function summenformel(symbole: string[]): string {
 /** Die Formel zum Hinsehen: aus »BF3« wird »BF₃«. */
 export const formelGesetzt = (formel: string): string =>
   formel.replace(/\d+/g, z => sub(Number(z)));
+
+/**
+ * Jedes Atom bekommt eine Farbe, damit man seine Elektronen wiedererkennt —
+ * auch dann noch, wenn sie beim Nachbarn sitzen. Die Kategorienfarben taugen
+ * dafür nicht: Kohlenstoff, Stickstoff und Sauerstoff waeren alle gleich grün.
+ */
+export const ATOMFARBE = ["#fbbf24", "#60a5fa", "#4ade80", "#f472b6", "#a78bfa", "#fb923c", "#22d3ee", "#e879f9"];
+
+/** Die Farbe des Atoms an dieser Stelle. */
+export const atomfarbe = (i: number): string => ATOMFARBE[i % ATOMFARBE.length];
 
 /** Höchstens so viele Atome lassen sich zusammenstecken. */
 export const MAX_ATOME = 8;
@@ -220,17 +230,143 @@ export function baue(symbole: string[]): Verbindung {
 }
 
 /**
- * Die Richtungen, in die die freien Elektronenpaare eines Atoms zeigen: acht
- * Plätze rings herum, davon die, die am weitesten von allen Bindungen weg
- * sind. So drängeln sich freie Paare und Bindungen nicht auf derselben Seite.
+ * Ein Ion, nachdem die Elektronen übertragen wurden.
+ */
+export type Ion = {
+  e: PseElement;
+  /** +3 beim Bor, −1 beim Fluorid. */
+  ladung: number;
+  /** Elektronen je Schale nach der Übertragung. */
+  schalen: number[];
+  /** Elektronen auf der äußersten besetzten Schale (0 beim nackten H⁺). */
+  aussen: number;
+  /** Edelgaskonfiguration erreicht? */
+  voll: boolean;
+  x: number;
+  y: number;
+  /** Von welchem Atom kommen wie viele Elektronen hierher. */
+  bekommt: { von: number; zahl: number }[];
+};
+
+export type Uebertragung = {
+  ionen: Ion[];
+  formel: string;
+  gesetzt: string;
+  name: string | null;
+  /** Geht die Bilanz auf — gibt einer genau so viele ab, wie die anderen brauchen? */
+  geht: boolean;
+  hinweise: string[];
+};
+
+/**
+ * Die Verbindung als Elektronenübertragung: der unedlere Partner gibt seine
+ * Außenelektronen ganz ab, der andere nimmt sie auf, bis seine Schale voll
+ * ist. Übrig bleiben Ionen mit Ladung.
+ *
+ * Das ist das Bild der Ionenbindung. Es passt dort, wo die Elektronegativität
+ * weit auseinanderliegt (Kochsalz), und es ist bei Molekülen wie Wasser oder
+ * Methan nur ein Gedankenspiel — dort teilen sich die Atome die Elektronen
+ * wirklich. Welches Bild gemeint ist, entscheidet nicht die Rechnung, sondern
+ * der Unterricht; darum stehen beide nebeneinander zur Wahl.
+ *
+ * Achtung bei den Zahlen: wer abgibt, landet auf der Schale darunter. Bor gibt
+ * drei Elektronen ab und hat danach die zwei der K-Schale — die Konfiguration
+ * des Heliums, also ein volles Duett, **kein** Oktett. Acht Außenelektronen
+ * bekommt Bor auf keinem Weg allein; dafür braucht es ein fremdes
+ * Elektronenpaar dazu (BF₄⁻, F₃B–NH₃).
+ */
+export function uebertrage(symbole: string[]): Uebertragung {
+  const v = baue(symbole);
+  const leer: Uebertragung = { ionen: [], formel: v.formel, gesetzt: v.gesetzt, name: v.name, geht: false, hinweise: [] };
+  if (v.atome.length === 0) return leer;
+
+  const en = v.atome.map(a => a.e.en ?? 0);
+  const kleinste = Math.min(...en);
+  const groesste = Math.max(...en);
+  const hinweise: string[] = [];
+  if (kleinste === groesste) {
+    return { ...leer, hinweise: ["Zwischen gleichen Partnern wird nichts übertragen — keiner zieht stärker. Sie teilen sich die Elektronen."] };
+  }
+
+  // Wer die kleinste Elektronegativität hat, gibt ab; alle anderen nehmen auf.
+  const gibt = v.atome.map((a, i) => (en[i] === kleinste ? a.valenz : 0));
+  const nimmt = v.atome.map((a, i) => (en[i] === kleinste ? 0 : (a.e.z <= 2 ? 2 : 8) - a.valenz));
+  const abgegeben = gibt.reduce((x, y) => x + y, 0);
+  const gebraucht = nimmt.reduce((x, y) => x + y, 0);
+  const geht = abgegeben === gebraucht;
+
+  // Die abgegebenen Elektronen der Reihe nach verteilen.
+  const bekommt: { von: number; zahl: number }[][] = v.atome.map(() => []);
+  const uebrig = [...gibt];
+  const offen = [...nimmt];
+  for (let j = 0; j < v.atome.length; j++) {
+    for (let i = 0; i < v.atome.length && offen[j] > 0; i++) {
+      const zahl = Math.min(uebrig[i], offen[j]);
+      if (zahl > 0) { bekommt[j].push({ von: i, zahl }); uebrig[i] -= zahl; offen[j] -= zahl; }
+    }
+  }
+
+  const ionen: Ion[] = v.atome.map((a, i) => {
+    const ladung = gibt[i] - (nimmt[i] - offen[i]);
+    const sch = schalen(madelung(a.e.z - ladung));
+    const aussen = sch[sch.length - 1] ?? 0;
+    return {
+      e: a.e, ladung, schalen: sch, aussen,
+      voll: aussen === 8 || (sch.length === 1 && aussen === 2) || sch.length === 0,
+      x: a.x, y: a.y, bekommt: bekommt[i],
+    };
+  });
+
+  if (!geht) {
+    hinweise.push(`Die Bilanz geht nicht auf: abgegeben werden ${abgegeben} Elektronen, gebraucht ${gebraucht}. In dieser Zusammenstellung entsteht so kein Salz.`);
+  }
+  const abgeber = ionen.filter(i => i.ladung > 0);
+  for (const a of abgeber) {
+    hinweise.push(a.schalen.length === 0
+      ? `${a.e.name} gibt sein Elektron ab und bleibt als nackter Kern zurück — ${a.e.symbol}⁺ hat gar keine Hülle mehr.`
+      : `${a.e.name} gibt ${a.ladung} Elektron${a.ladung === 1 ? "" : "en"} ab und hat danach ${a.aussen} auf der äußersten Schale — die Konfiguration des ${a.schalen.length === 1 ? "Heliums" : "nächstkleineren Edelgases"}.`);
+  }
+  if (geht && ionen.every(i => i.voll)) {
+    hinweise.push("Jedes Ion hat jetzt eine volle Außenschale. Zusammengehalten werden sie durch die Anziehung der Ladungen, nicht durch gemeinsame Paare.");
+  }
+
+  return { ionen, formel: v.formel, gesetzt: v.gesetzt, name: v.name, geht, hinweise };
+}
+
+/**
+ * Wohin die freien Elektronenpaare eines Atoms zeigen.
+ *
+ * Sie füllen die Lücken zwischen den Bindungen, und zwar gleichmäßig: jedes
+ * Paar kommt in die Lücke, in der danach am meisten Platz je Paar bleibt, und
+ * innerhalb einer Lücke stehen die Paare in gleichen Abständen. So liegen die
+ * zwei freien Paare des Wassers symmetrisch über dem Sauerstoff, und die drei
+ * des Fluors verteilen sich gleichmäßig um die eine Bindung herum.
+ *
+ * (Feste Plätze im 45°-Raster taugen dafür nicht: der Winkel des Wassers ist
+ * 104°, da fällt jede Rasterwahl schief aus.)
  */
 export function freiePlaetze(richtungen: number[], anzahl: number): number[] {
-  const slots = Array.from({ length: 8 }, (_, i) => (i / 8) * 2 * Math.PI);
-  // Abstand zur nächsten Bindung, über den kürzeren Weg um den Kreis gemessen.
-  const abstand = (w: number) =>
-    richtungen.length === 0 ? 1
-      : Math.min(...richtungen.map(b => Math.abs(Math.atan2(Math.sin(w - b), Math.cos(w - b)))));
-  return slots.sort((x, y) => abstand(y) - abstand(x)).slice(0, anzahl);
+  if (anzahl <= 0) return [];
+  // Ohne Bindung verteilen sie sich gleichmäßig im ganzen Kreis.
+  if (richtungen.length === 0) {
+    return Array.from({ length: anzahl }, (_, i) => -Math.PI / 2 + (i / anzahl) * 2 * Math.PI);
+  }
+  const sortiert = [...richtungen].sort((a, b) => a - b);
+  const luecken = sortiert.map((w, i) => ({
+    start: w,
+    weite: (i + 1 < sortiert.length ? sortiert[i + 1] : sortiert[0] + 2 * Math.PI) - w,
+    zahl: 0,
+  }));
+  for (let i = 0; i < anzahl; i++) {
+    let best = luecken[0];
+    for (const l of luecken) if (l.weite / (l.zahl + 1) > best.weite / (best.zahl + 1)) best = l;
+    best.zahl++;
+  }
+  const aus: number[] = [];
+  for (const l of luecken) {
+    for (let k = 0; k < l.zahl; k++) aus.push(l.start + (l.weite * (k + 1)) / (l.zahl + 1));
+  }
+  return aus;
 }
 
 /**
