@@ -5,14 +5,24 @@
  * Geprüft und gewertet wird auf dem Server (api/routers/challenge.py); die Stufe bleibt verborgen.
  */
 import { Suspense, useState } from "react";
-import { useChallengeLauf, type ChallengeLauf } from "@/lib/challenge/useChallengeLauf";
+import { useChallengeLauf, sitzungsQuelle, type ChallengeLauf, type ChallengeQuelle } from "@/lib/challenge/useChallengeLauf";
+import type { ChallengeAntwort } from "@/lib/api";
 import { themeVon } from "@/lib/challenge/themes";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { MODI } from "./modi";
 import { Kachelfeld, Sprite } from "./pixel/Sprite";
 
-export default function ChallengeSpiel({ code, token }: { code: string; token?: string | null }) {
-  const lauf = useChallengeLauf(code, token);
+type Props = {
+  code?: string; token?: string | null;
+  /** Eigene Quelle (Boss-Folie im TaskCrawler); ohne sie läuft die Sitzung `code`. */
+  quelle?: ChallengeQuelle;
+  onAntwort?: (r: ChallengeAntwort) => void;
+  /** Nur in der Einbettung: »Weiter« am Ende. */
+  onFertig?: () => void;
+};
+
+export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, onFertig }: Props) {
+  const lauf = useChallengeLauf(quelle ?? sitzungsQuelle(code, token));
   const { info, brett } = lauf;
   const [ansicht, setAnsicht] = useState<"karte" | "kampf" | "ende">("karte");
   const [hinweis, setHinweis] = useState("");
@@ -59,6 +69,7 @@ export default function ChallengeSpiel({ code, token }: { code: string; token?: 
     ...lauf,
     antworte: async (...a) => {
       const r = await lauf.antworte(...a);
+      onAntwort?.(r);
       if (r.fertig) setAnsicht("ende");
       else if (r.zurueck_zur_karte) { setHinweis("Drei Fehlversuche – lies noch einmal nach."); setAnsicht("karte"); }
       else if (r.etappe_geschafft) { setHinweis("🎉 Etappe geschafft!"); setAnsicht("karte"); }
@@ -71,8 +82,17 @@ export default function ChallengeSpiel({ code, token }: { code: string; token?: 
       <div className="p-6 flex justify-center">
         <div className="card px-6 py-8 max-w-md text-center">
           <div className="text-4xl mb-2">🏆</div>
-          <h1 className="text-xl font-black">Geschafft!</h1>
-          <p className="text-2xl font-black mt-2">{Math.round(100 * (info.stand?.ergebnis ?? 0))} %</p>
+          {quelle ? (
+            <>
+              <h1 className="text-xl font-black">Boss besiegt!</h1>
+              {onFertig && <button className="btn-primary mt-4" onClick={onFertig}>Weiter</button>}
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-black">Geschafft!</h1>
+              <p className="text-2xl font-black mt-2">{Math.round(100 * (info.stand?.ergebnis ?? 0))} %</p>
+            </>
+          )}
         </div>
       </div>
     );

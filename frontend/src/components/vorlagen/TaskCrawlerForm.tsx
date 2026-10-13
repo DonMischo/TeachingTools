@@ -6,6 +6,9 @@ import { AntwortListe, BildFeld, Feld, Gruppe, Karte, ListenFeld, TextListe, Zei
 import { LEERES_ZEITSTRAHL_SPIEL, ZeitstrahlSpielForm } from "./ZeitstrahlSpielForm";
 import { KarteFrageForm, LEERE_KARTE } from "./KarteFrageForm";
 import { mediaUrl } from "@/components/exitgame/FolienTeile";
+import { ChallengeForm, type ChallengeJson } from "./ChallengeForm";
+import { SPIELARTEN } from "@/lib/challenge/spielarten";
+import { THEMES } from "@/lib/challenge/themes";
 
 /** Bild hochladen (landet in data/exitgames/{id}/assets) und Vorschau-Adresse. */
 type Bilder = { upload: (file: File) => Promise<{ path: string }>; url: (src: string) => string };
@@ -17,7 +20,10 @@ const FOLIEN_TYPEN: [ExitGameSlide["type"], string, string][] = [
   ["example", "💡", "Beispiel"],
   ["task", "✏️", "Aufgabe"],
   ["door", "🚪", "Tür (Abschnittsende)"],
+  ["boss", "⚔️", "Boss (Challenge)"],
 ];
+
+const BOSS_SKINS: [string, string][] = [["monster", "Monster"], ["rap", "Rapper"], ["prinzessin", "Prinzessin"], ["einhorn", "Einhorn"]];
 
 const AUFGABEN_ARTEN: [ExitGameTask["kind"], string][] = [
   ["single", "Eine richtige Antwort"],
@@ -170,8 +176,61 @@ function AufgabeForm({ task, onChange, katalog, name, leichter = true }: {
   );
 }
 
-function FolieForm({ slide, slides, onChange, katalog, name, bilder }: {
-  slide: ExitGameSlide; slides: ExitGameSlide[]; onChange: (s: ExitGameSlide) => void; katalog?: Katalog; name: string; bilder?: Bilder;
+/** Boss-Folie: Spielart, Aussehen und der Challenge-Satz (liegt in slide.challenge, die Überschrift in slide.title). */
+function BossForm({ slide, onChange, exitgameId }: { slide: ExitGameSlide; onChange: (s: ExitGameSlide) => void; exitgameId?: number }) {
+  const spiel = slide.spiel ?? "boss";
+  const spiele = slide.spiele ?? [spiel];
+  const waehle = (id: string) => {
+    const neu = spiele.includes(id) ? spiele.filter(x => x !== id) : [...spiele, id];
+    if (neu.length) onChange({ ...slide, spiele: neu.length > 1 ? neu : undefined, spiel: neu.includes(spiel) ? spiel : neu[0] });
+  };
+  const { title: _t, ...satz } = { title: slide.title || "Boss", ...slide.challenge } as ChallengeJson;
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Feld label="Spielart zu Beginn">
+          <select className="input" value={spiel} onChange={e => onChange({ ...slide, spiel: e.target.value, spiele: spiele.includes(e.target.value) ? slide.spiele : [...spiele, e.target.value] })}>
+            {SPIELARTEN.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
+          </select>
+        </Feld>
+        <Feld label="Erlaubte Spielarten" hint="zum Wechseln">
+          <div className="flex flex-wrap gap-1">
+            {SPIELARTEN.map(s => (
+              <button key={s.id} type="button" aria-pressed={spiele.includes(s.id)} onClick={() => waehle(s.id)}
+                className={`chip ${spiele.includes(s.id) ? "chip-on" : ""}`}>{s.icon} {s.name}</button>
+            ))}
+          </div>
+        </Feld>
+        <Feld label="Boss-Aussehen">
+          <select className="input" value={slide.skin ?? "monster"} onChange={e => onChange({ ...slide, skin: e.target.value })}>
+            {BOSS_SKINS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Feld>
+        <Feld label="Theme">
+          <select className="input" value={slide.theme ?? "klassisch"} onChange={e => onChange({ ...slide, theme: e.target.value })}>
+            {Object.entries(THEMES).map(([v, t]) => <option key={v} value={v}>{t.name}</option>)}
+          </select>
+        </Feld>
+        <Feld label="Startstufe">
+          <select className="input" value={slide.startstufe ?? 2} onChange={e => onChange({ ...slide, startstufe: Number(e.target.value) })}>
+            {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </Feld>
+        <Feld label="Codeschnipsel" hint="für die Tür; leer = keiner">
+          <input className="input font-mono" value={slide.codeFragment ?? ""}
+            onChange={e => onChange({ ...slide, codeFragment: e.target.value || undefined })} />
+        </Feld>
+      </div>
+      <ChallengeForm value={satz as ChallengeJson} satzId={exitgameId ?? 0}
+        upload={file => exitgameId === undefined ? Promise.reject(new Error("Erst speichern")) : api.exitgame.uploadAsset(exitgameId, file)}
+        urlFor={exitgameId === undefined ? undefined : p => mediaUrl(p, exitgameId)}
+        onChange={v => { const { title: _x, ...rest } = v; onChange({ ...slide, challenge: rest }); }} />
+    </>
+  );
+}
+
+function FolieForm({ slide, slides, onChange, katalog, name, bilder, exitgameId }: {
+  slide: ExitGameSlide; slides: ExitGameSlide[]; onChange: (s: ExitGameSlide) => void; katalog?: Katalog; name: string; bilder?: Bilder; exitgameId?: number;
 }) {
   const hatAufgaben = slide.type === "task" || slide.type === "door";
   const tasks = slide.tasks ?? (slide.task ? [slide.task] : []);
@@ -194,6 +253,10 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder }: {
               const type = e.target.value as ExitGameSlide["type"];
               const next = { ...slide, type };
               if (type === "task" && !slide.task && !slide.tasks) next.task = neueAufgabe();
+              if (type === "boss") {
+                delete next.task; delete next.tasks; delete next.hints; delete next.onFailReview;
+                next.challenge = slide.challenge ?? { facts: [], challenges: [] };
+              }
               // Erklärung/Beispiel haben keine Aufgaben.
               if (type === "explanation" || type === "example") {
                 delete next.task; delete next.tasks; delete next.hints; delete next.onFailReview;
@@ -247,6 +310,8 @@ function FolieForm({ slide, slides, onChange, katalog, name, bilder }: {
           </Feld>
         )}
       </div>
+
+      {slide.type === "boss" && <BossForm slide={slide} onChange={onChange} exitgameId={exitgameId} />}
 
       {slide.type === "door" && (
         <label className="flex items-center gap-2 text-sm">
@@ -323,6 +388,7 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
   function addSlide(type: ExitGameSlide["type"]) {
     const s: ExitGameSlide = { id: eindeutigeId(type === "door" ? "tuer" : type === "task" ? "aufgabe" : "folie", slides.map(x => x.id)), type, title: "", text: "" };
     if (type === "task") s.task = neueAufgabe();
+    if (type === "boss") s.challenge = { facts: [], challenges: [] };
     setSlides([...slides, s]);
   }
 
@@ -384,7 +450,7 @@ export function TaskCrawlerForm({ value, onChange, exitgameId }: { value: Data; 
                   onRemove={() => confirm(`»${s.title || s.id}« löschen?`) && setSlides(
                     slides.filter((_, j) => j !== i)
                       .map(x => x.onFailReview ? { ...x, onFailReview: x.onFailReview.filter(id => id !== s.id) } : x))} />}>
-                <FolieForm slide={s} slides={slides} katalog={katalog} name={`folie-${i}`} bilder={bilder}
+                <FolieForm slide={s} slides={slides} katalog={katalog} name={`folie-${i}`} bilder={bilder} exitgameId={exitgameId}
                   onChange={ns => setSlides(slides.map((x, j) => {
                     if (j === i) return ns;
                     // Kennung umbenannt: Verweise mitziehen.

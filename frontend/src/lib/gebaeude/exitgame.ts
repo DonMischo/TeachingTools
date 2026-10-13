@@ -67,6 +67,7 @@ export function stationsObjekt(slide: ExitGameSlide, verlies = false): Objekt {
   if (sim && OBJEKT_FUER_SIM[sim]) return OBJEKT_FUER_SIM[sim];
   if (tasks.some(t => t.kind === "timeline")) return "kalender";
   const reihum = (liste: Objekt[]) => liste[seedAus(slide.id) % liste.length];
+  if (slide.type === "boss") return "boss";
   if (slide.type === "explanation") return reihum(ABWECHSLUNG.explanation);
   if (slide.type === "example") return reihum(ABWECHSLUNG.example);
   if (verlies) return "monster";

@@ -866,7 +866,7 @@ export type ExitGameTask = {
 export type ExitGameSim = { tool: string; config?: Record<string, unknown> };
 export type ExitGameSlide = {
   id: string;
-  type: "explanation" | "example" | "task" | "door";
+  type: "explanation" | "example" | "task" | "door" | "boss";
   title?: string;
   text?: string;
   media?: ExitGameMedia;
@@ -881,6 +881,15 @@ export type ExitGameSlide = {
   station?: string;
   // Merksatz fürs Ergebnissicherungs-PDF; der Server schickt ihn erst mit /finish.
   ergebnissicherung?: string;
+  // type "boss": Spielerdaten (der Challenge-Satz selbst bleibt auf dem Server); in der Vorlage steht `challenge`
+  bossFragment?: boolean;
+  spiel?: string;
+  spiele?: string[];
+  skin?: string;
+  theme?: string;
+  startstufe?: number;
+  challenge?: Record<string, unknown>;
+  codeFragment?: string;
 };
 
 export type ExitGameAbschluss = {
@@ -2470,6 +2479,18 @@ export const api = {
           `exitgame-attempts/${attemptId}/events`,
           { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ slide_id, action, payload }) },
         ),
+      boss: {
+        start: (attemptId: number, slideId: string, spiel?: string) =>
+          apiFetch<ChallengeBrett>(`exitgame-attempts/${attemptId}/boss/${encodeURIComponent(slideId)}/start`,
+            { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ spiel: spiel ?? null }) }),
+        antwort: (attemptId: number, slideId: string, body: ChallengeAntwortIn) =>
+          apiFetch<ChallengeAntwort & { attempt: ExitGameAttemptSummary; code_fragments: ExitGameFragment[] }>(
+            `exitgame-attempts/${attemptId}/boss/${encodeURIComponent(slideId)}/antwort`,
+            { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify(body) }),
+        deck: (attemptId: number, slideId: string, faktIds: string[]) =>
+          apiFetch<ChallengeBrett>(`exitgame-attempts/${attemptId}/boss/${encodeURIComponent(slideId)}/deck`,
+            { method: "POST", headers: guestAuthHeaders(), body: JSON.stringify({ fakt_ids: faktIds }) }),
+      },
       finish: (attemptId: number) =>
         apiFetch<ExitGameAbschluss>(
           `exitgame-attempts/${attemptId}/finish`, { method: "POST", headers: guestAuthHeaders() },

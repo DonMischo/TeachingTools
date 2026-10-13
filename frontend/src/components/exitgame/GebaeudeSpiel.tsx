@@ -18,6 +18,7 @@ import { bauePlan } from "@/lib/gebaeude/plan";
 import Gebaeude, { type GebaeudeArt, type Ort } from "@/components/gebaeude/Gebaeude";
 import type { RaumZustand, Stil } from "@/components/gebaeude/szene";
 import { MediaView, TaskArea, levelOf } from "./FolienTeile";
+import BossArea from "./BossArea";
 
 interface Props {
   code: string;
@@ -69,7 +70,7 @@ export default function GebaeudeSpiel({
     const s = slides[t];
     const mitSchnipsel = teile[i].raeume.some(k => {
       const f = slides[k];
-      return !!f.task?.codeFragment || !!f.tasks?.some(a => a.codeFragment);
+      return !!f.task?.codeFragment || !!f.tasks?.some(a => a.codeFragment) || !!f.bossFragment;
     });
     const nichts = !(s.tasks?.length || s.task) && !mitSchnipsel;
     return nichts || geloest.includes(s.id);
@@ -92,7 +93,7 @@ export default function GebaeudeSpiel({
 
   const zustand = (idx: number): RaumZustand => {
     const s = slides[idx];
-    if (s.type === "task") return geloest.includes(s.id) ? "geloest" : "offen";
+    if (s.type === "task" || s.type === "boss") return geloest.includes(s.id) ? "geloest" : "offen";
     return gelesen.has(s.id) ? "gelesen" : "info";
   };
   const zustaende = teile.map(t => t.raeume.map(zustand));
@@ -100,7 +101,7 @@ export default function GebaeudeSpiel({
   const zeige = (idx: number) => {
     setOffen(idx);
     const s = slides[idx];
-    if (s.type !== "task" && s.type !== "door") setGelesen(g => new Set(g).add(s.id));
+    if (s.type !== "task" && s.type !== "door" && s.type !== "boss") setGelesen(g => new Set(g).add(s.id));
     api.exitgame.attempts.postEvent(attempt.id, s.id, "view", { slide_index: idx });
   };
 
@@ -156,7 +157,7 @@ export default function GebaeudeSpiel({
                     {s.type === "door" ? `${verlies ? "👹" : "🚪"} ${W.tuer}` : (() => {
                       // Das Objekt im Zimmer spricht: das Telefon klingelt, das Radio sendet …
                       const st = OBJEKT_STIMME[objekte[stock][teile[stock].raeume.indexOf(offen)]];
-                      return st ? `${st.icon} ${s.type === "task" ? st.aufgabe : st.info} …` : s.type === "task" ? "✏️ Aufgabe" : "📖 Erklärung";
+                      return st ? `${st.icon} ${s.type === "task" || s.type === "boss" ? st.aufgabe : st.info} …` : s.type === "boss" ? "⚔️ Boss" : s.type === "task" ? "✏️ Aufgabe" : "📖 Erklärung";
                     })()}
                   </span>
                   <button onClick={() => setOffen(null)} className="text-sm px-2 rounded-sm hover:bg-surface-hover" aria-label="Zimmer verlassen">✕</button>
@@ -164,6 +165,9 @@ export default function GebaeudeSpiel({
                 {s.title && <h2 className="font-semibold">{s.title}</h2>}
                 {s.text && <MathText text={s.text} blockEquations className="text-sm whitespace-pre-line" />}
                 {s.media && <MediaView media={s.media} exitgameId={exitgameId} />}
+                {s.type === "boss" && (
+                  <BossArea slide={s} attemptId={attempt.id} onSlideSolved={onSlideSolved} onFertig={() => setOffen(null)} />
+                )}
                 {(s.type === "task" || s.type === "door") && (
                   <TaskArea key={s.id} slide={s} attemptId={attempt.id} solvedSlideIds={geloest}
                     variantChoices={variantChoices} level={levelOf(adaptation)} fragments={fragments}
@@ -177,7 +181,7 @@ export default function GebaeudeSpiel({
                     </button>
                   ) : (
                     <button onClick={() => setOffen(null)} className="btn-primary text-sm py-1.5 px-4">
-                      {s.type === "task" && !geloest.includes(s.id) ? "Später lösen" : "Zurück in den Flur"}
+                      {(s.type === "task" || s.type === "boss") && !geloest.includes(s.id) ? "Später lösen" : "Zurück in den Flur"}
                     </button>
                   )}
                   {zurTuer && s.type !== "door" && abschnitt.tuer !== null && (

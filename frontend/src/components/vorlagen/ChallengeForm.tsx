@@ -21,13 +21,15 @@ export type ChallengeJson = {
 const modus = (c: Aufgabe): "all" | "any" => (c.solve.all ? "all" : "any");
 const loesungsIds = (c: Aufgabe) => c.solve.all ?? c.solve.any ?? [];
 
-export function ChallengeForm({ value, onChange, upload, satzId }: {
+export function ChallengeForm({ value, onChange, upload, satzId, urlFor: urlVon }: {
   value: ChallengeJson; onChange: (v: ChallengeJson) => void; upload: (file: File) => Promise<AssetOut>; satzId: number;
+  /** Vorschau-Adresse eines Bildes, wenn die Bilder nicht beim Satz liegen (Boss-Folie im TaskCrawler). */
+  urlFor?: (p: string) => string;
 }) {
   const etappen = value.stages ?? [];
   const fakten = value.facts ?? [];
   const aufgaben = value.challenges ?? [];
-  const urlFor = (p: string) => `/uploads/challenges/${satzId}/assets/${p}`;
+  const urlFor = urlVon ?? ((p: string) => `/uploads/challenges/${satzId}/assets/${p}`);
   const setFakt = (i: number, f: Fakt) => onChange({ ...value, facts: fakten.map((x, j) => (j === i ? f : x)) });
   const setAufgabe = (i: number, c: Aufgabe) => onChange({ ...value, challenges: aufgaben.map((x, j) => (j === i ? c : x)) });
   const loesungsChips = fakten.filter(f => !f.decoy);

@@ -9,6 +9,7 @@ import { GuestExpired } from "@/components/GuestExpired";
 import { PlayerIdentityForm } from "@/components/PlayerIdentityForm";
 import { MathText } from "@/components/MathText";
 import { CompletionCard, MediaView, TaskArea, levelOf, styleVars } from "@/components/exitgame/FolienTeile";
+import BossArea from "@/components/exitgame/BossArea";
 import { STANDARD_AVATAR, TIERE, gespeicherterAvatar, speichereAvatar } from "@/components/gebaeude/avatar";
 import GebaeudeSpiel from "@/components/exitgame/GebaeudeSpiel";
 import { STILE, type Stil } from "@/components/gebaeude/szene";
@@ -235,13 +236,15 @@ export default function ExitgamePlayPage() {
 
       <section className="card p-5 flex flex-col gap-3">
         <div className="text-xs text-muted">
-          {slide.type === "explanation" ? "📖 Erklärung" : slide.type === "example" ? "💡 Beispiel" : slide.type === "task" ? "✏️ Aufgabe" : "🚪 Tür"}
+          {slide.type === "explanation" ? "📖 Erklärung" : slide.type === "example" ? "💡 Beispiel" : slide.type === "task" ? "✏️ Aufgabe" : slide.type === "boss" ? "⚔️ Boss" : "🚪 Tür"}
         </div>
         {slide.title && <h2 className="font-semibold">{slide.title}</h2>}
         {slide.text && <MathText text={slide.text} blockEquations className="text-sm whitespace-pre-line" />}
         {slide.media && <MediaView media={slide.media} exitgameId={start.exitgame_id} />}
 
-        {isTaskSlide ? (
+        {slide.type === "boss" ? (
+          <BossArea slide={slide} attemptId={start.attempt.id} onSlideSolved={slideSolved} onFertig={advance} />
+        ) : isTaskSlide ? (
           <TaskArea key={slide.id} slide={slide} attemptId={start.attempt.id} solvedSlideIds={solvedSlideIds}
             variantChoices={start.variant_choices ?? {}}
             level={levelOf(adaptation)} fragments={fragments}
