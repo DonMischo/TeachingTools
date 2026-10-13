@@ -72,8 +72,9 @@ export function wegUmBeide(ax: number, ay: number, bx: number, by: number): stri
 }
 
 /** Ein Atom mit Kern, Schalen und seinen freien Elektronenpaaren. */
-function Atom({ a, cx, cy, farbe, richtungen, nummer }: {
-  a: BindungsAtom; cx: number; cy: number; farbe: string; richtungen: number[]; nummer: number;
+function Atom({ a, cx, cy, farbe, richtungen, nummer, statisch }: {
+  a: BindungsAtom; cx: number; cy: number; farbe: string; richtungen: number[];
+  nummer: number; statisch: boolean;
 }) {
   const n = a.schalen.length;
   const plaetze = freiePlaetze(richtungen, a.einsam);
@@ -88,9 +89,11 @@ function Atom({ a, cx, cy, farbe, richtungen, nummer }: {
       <circle cx={cx} cy={cy} r={15} fill="var(--surface)" stroke="#f87171" strokeWidth={1.2} />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
         className="font-black" fontSize={16} fill="var(--text)">{a.e.symbol}</text>
-      {/* Die freien Paare kreisen auf der Außenschale weiter. */}
-      <g className="bd-schale"
-        style={{ transformOrigin: `${cx}px ${cy}px`, animationDuration: `${15 + nummer * 3}s`,
+      {/* Die freien Paare kreisen auf der Außenschale weiter — im ruhenden
+          Bild bleiben sie auf ihrem Platz. */}
+      <g className={statisch ? undefined : "bd-schale"}
+        style={statisch ? undefined : { transformOrigin: `${cx}px ${cy}px`,
+          animationDuration: `${15 + nummer * 3}s`,
           animationDirection: nummer % 2 ? "reverse" : "normal" }}>
         {plaetze.map((w, i) => (
           <g key={i}>
@@ -111,7 +114,15 @@ function Atom({ a, cx, cy, farbe, richtungen, nummer }: {
   );
 }
 
-export default function Bindungsbild({ v, laufen = true }: { v: Verbindung; laufen?: boolean }) {
+export default function Bindungsbild({ v, laufen = true, statisch = false }: {
+  v: Verbindung; laufen?: boolean;
+  /**
+   * Das ruhende Bild: die gemeinsamen Elektronenpaare liegen zwischen den
+   * beiden Atomen, so wie sie im Heft gezeichnet werden. Zum Abzeichnen und
+   * zum Zeigen an der Tafel ist das oft das brauchbarere.
+   */
+  statisch?: boolean;
+}) {
   if (v.atome.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-sm text-muted">
@@ -142,33 +153,46 @@ export default function Bindungsbild({ v, laufen = true }: { v: Verbindung; lauf
           const p = orte[b.a], q = orte[b.b];
           const weg = wegUmBeide(p.x, p.y, q.x, q.y);
           const dauer = 7 + i * 0.6;
+          // Mitte der Bindung, Richtung und Querrichtung — für das ruhende Bild.
+          const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
+          const laenge = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+          const ux = (q.x - p.x) / laenge, uy = (q.y - p.y) / laenge;
+          const nx = -uy, ny = ux;
           return (
             <g key={i}>
               {/* Der Bereich, in dem sich die Schalen überlappen */}
-              <ellipse className="bd-ueberlapp"
-                cx={(p.x + q.x) / 2} cy={(p.y + q.y) / 2}
-                rx={Math.hypot(q.x - p.x, q.y - p.y) / 2 + 6} ry={26}
-                fill="var(--accent)"
-                transform={`rotate(${(Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI} ${(p.x + q.x) / 2} ${(p.y + q.y) / 2})`} />
-              {/* Je geteiltem Paar ein Elektron von jedem Partner — auf demselben
-                  Weg, aber eine halbe Runde auseinander: ist das eine hier, ist
-                  das andere drüben. */}
-              {Array.from({ length: b.grad }, (_, k) => (
-                <g key={k}>
-                  {[b.a, b.b].map((wer, seite) => (
-                    <g key={wer} className="bd-bindend"
-                      style={{ offsetPath: `path("${weg}")`, animationDuration: `${dauer}s`,
-                        animationDelay: `${-(seite * dauer / 2 + k * dauer * 0.08).toFixed(2)}s` }}>
-                      <Elektron x={0} y={0} farbe={FARBE[wer % FARBE.length]} />
-                    </g>
-                  ))}
-                </g>
-              ))}
+              <ellipse className={statisch ? undefined : "bd-ueberlapp"}
+                opacity={statisch ? 0.16 : undefined}
+                cx={mx} cy={my} rx={laenge / 2 + 6} ry={26} fill="var(--accent)"
+                transform={`rotate(${(Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI} ${mx} ${my})`} />
+              {/* Je geteiltem Paar ein Elektron von jedem Partner. Im laufenden
+                  Bild auf demselben Weg, aber eine halbe Runde auseinander:
+                  ist das eine hier, ist das andere drüben. Im ruhenden Bild
+                  liegt das Paar zwischen den Kernen — jedes Elektron auf der
+                  Seite des Atoms, von dem es kommt. */}
+              {Array.from({ length: b.grad }, (_, k) => {
+                const quer = (k - (b.grad - 1) / 2) * 16;
+                return (
+                  <g key={k}>
+                    {[b.a, b.b].map((wer, seite) => statisch ? (
+                      <Elektron key={wer} farbe={FARBE[wer % FARBE.length]}
+                        x={mx + nx * quer + ux * (seite ? 6 : -6)}
+                        y={my + ny * quer + uy * (seite ? 6 : -6)} />
+                    ) : (
+                      <g key={wer} className="bd-bindend"
+                        style={{ offsetPath: `path("${weg}")`, animationDuration: `${dauer}s`,
+                          animationDelay: `${-(seite * dauer / 2 + k * dauer * 0.08).toFixed(2)}s` }}>
+                        <Elektron x={0} y={0} farbe={FARBE[wer % FARBE.length]} />
+                      </g>
+                    ))}
+                  </g>
+                );
+              })}
             </g>
           );
         })}
         {v.atome.map((a, i) => (
-          <Atom key={i} a={a} cx={orte[i].x} cy={orte[i].y} nummer={i}
+          <Atom key={i} a={a} cx={orte[i].x} cy={orte[i].y} nummer={i} statisch={statisch}
             farbe={FARBE[i % FARBE.length]} richtungen={richtungen[i]} />
         ))}
       </g>

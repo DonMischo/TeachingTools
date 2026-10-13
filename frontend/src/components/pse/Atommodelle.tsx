@@ -34,6 +34,10 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
   const [blick, setBlick] = useState<"atom" | "bindung">("atom");
   const [modell, setModell] = useState<ModellId>("schalen");
   const [laufen, setLaufen] = useState(true);
+  // Im Bindungslabor lässt sich zwischen dem laufenden und dem ruhenden Bild
+  // wählen: ruhend liegen die gemeinsamen Paare zwischen den Atomen, so wie
+  // man sie an die Tafel zeichnet.
+  const [statisch, setStatisch] = useState(false);
   const [teile, setTeile] = useState<string[]>(["B", "F", "F", "F"]);
 
   const m = MODELLE.find(x => x.id === modell)!;
@@ -44,10 +48,12 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
     <div className="card p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-base font-black">⚛️ Atommodelle</h2>
-        <button onClick={() => setLaufen(l => !l)}
-          className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">
-          {laufen ? "⏸ anhalten" : "▶ weiter"}
-        </button>
+        {!(blick === "bindung" && statisch) && (
+          <button onClick={() => setLaufen(l => !l)}
+            className="px-2 py-1 rounded-lg border border-line text-xs text-muted hover:text-fg">
+            {laufen ? "⏸ anhalten" : "▶ weiter"}
+          </button>
+        )}
       </div>
 
       <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
@@ -139,8 +145,18 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
         </>
       ) : (
         <>
+          <div className="inline-flex self-start rounded-xl border border-line p-1 bg-surface">
+            {([[false, "🔄 bewegt"], [true, "▦ statisch"]] as const).map(([id, label]) => (
+              <button key={label} onClick={() => setStatisch(id)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  statisch === id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-xl bg-black/10 dark:bg-white/5 p-2">
-            <Bindungsbild v={v} laufen={laufen} />
+            <Bindungsbild v={v} laufen={laufen} statisch={statisch} />
           </div>
 
           <div className="flex items-baseline justify-between gap-2">
@@ -152,7 +168,10 @@ export default function Atommodelle({ e, onWahl }: { e: PseElement; onWahl: (e: 
 
           <p className="text-xs text-muted">
             Jedes Atom hat seine Farbe, und jedes seiner Elektronen trägt sie. Ein bindendes Paar
-            besteht aus je einem Elektron beider Partner — beide laufen um <em>beide</em> Kerne.
+            besteht aus je einem Elektron beider Partner.{" "}
+            {statisch
+              ? "Im ruhenden Bild liegt das Paar zwischen den beiden Kernen — so zeichnet man es ins Heft."
+              : "Im laufenden Bild ziehen beide um beide Kerne: ist das eine hier, ist das andere drüben."}{" "}
             Darum zählt dasselbe Elektron bei zwei Atomen mit, und darum stehen unter den Atomen
             zusammen mehr Elektronen, als überhaupt da sind.
           </p>

@@ -233,6 +233,22 @@ describe("Atommodelle", { timeout: 40_000 }, () => {
     expect(screen.getByText(/Elektronenmangel/)).toBeInTheDocument();
   });
 
+  it("zeigt im ruhenden Bild die Paare zwischen den Atomen statt laufender Elektronen", () => {
+    reiter();
+    fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));
+    // Im laufenden Bild ziehen die Elektronen um beide Kerne.
+    expect(screen.getByText(/ziehen beide um beide Kerne/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /anhalten/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /statisch/ }));
+    expect(screen.getByText(/liegt das Paar zwischen den beiden Kernen/)).toBeInTheDocument();
+    // Im ruhenden Bild gibt es nichts anzuhalten.
+    expect(screen.queryByRole("button", { name: /anhalten|weiter/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /bewegt/ }));
+    expect(screen.getByRole("button", { name: /anhalten/ })).toBeInTheDocument();
+  });
+
   it("nimmt Atome dazu und wieder weg", () => {
     reiter();
     fireEvent.click(screen.getByRole("button", { name: "Verbindungen" }));

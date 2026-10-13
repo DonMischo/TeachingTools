@@ -353,6 +353,20 @@ simulationen:
       - "Bindungslabor: bis zu acht Atome zusammenstecken; geteilte Elektronenpaare pendeln zwischen den Schalen, je Atom steht die Elektronenbilanz mit Oktett-Prüfung dabei"
       - Zwölf Vorlagen (BF₃ bis CCl₄), Doppel- und Dreifachbindungen aus der übrigen Bindigkeit, Klartext-Hinweis, wenn eine Kombination nicht aufgeht
       - Elektronenkonfiguration aus den gemessenen PubChem-Daten, also mit den Ausnahmen (Chrom 3d⁵ 4s¹)
+      - Elemente überall im gleichen quadratischen Feld (Raster, Legende, Steckbrief) aus einer Quelle gezeichnet
+      - Reiter »Atommodelle« auch hier; dieselbe Ansicht gibt es als eigene Simulation
+  - id: atommodelle
+    name: Atommodelle
+    kann:
+      - "Eigene Simulation (/simulationen/atommodelle): dasselbe Raster, aber nur zum Auswählen des Elements — ohne Reiterleiste"
+      - "Fünf Modelle nacheinander: Teilchen (Dalton), Kern-Hülle (Rutherford), Schalen (Bohr), Energiestufen (Bohr/Sommerfeld), Orbitale (Schrödinger); je Modell, was es erklärt und wo es aufhört"
+      - Animiert per CSS (drehende Schalen, zitternder Kern, atmende Orbitale), anhaltbar, mit Rücksicht auf »Bewegung reduzieren«
+      - Bor im Mittelpunkt: dreibindig, Elektronensextett statt Oktett, daher die Gier nach einem fremden Elektronenpaar
+      - "Bindungslabor: bis zu acht Atome; jedes Atom hat seine Farbe, ein bindendes Paar besteht aus je einem Elektron beider Partner"
+      - "Zwei Ansichten: bewegt (die gemeinsamen Elektronen laufen um beide Kerne, eine halbe Runde versetzt) und statisch (das Paar liegt zwischen den Kernen, wie im Heft)"
+      - Valenzstrichformel derselben Verbindung darunter; rotes Ausrufezeichen, wo das Oktett nicht aufgeht
+      - 27 Vorlagen in drei Gruppen (Bor und Nachbarn, Elemente, Moleküle); Salze fehlen bewusst — die halten keine gemeinsamen Elektronenpaare
+      - Elektronenbilanz je Atom mit Oktett- bzw. Duettprüfung; Klartext-Hinweis, wenn eine Kombination nicht aufgeht
   - id: strukturformeln
     name: Strukturformeln
     kann:
