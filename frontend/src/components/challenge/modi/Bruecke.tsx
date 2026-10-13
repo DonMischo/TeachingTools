@@ -1,137 +1,135 @@
 "use client";
-/** Brückenbau: Bretter (Fakten) am Ufer aufsammeln, dann je Lücke Bretter legen und bauen. */
+/**
+ * Brückenbau (nach Poly Bridge / Bridge Constructor): Bretter (Fakten) im Wald-Labyrinth suchen, dann je Lücke
+ * Bretter legen und »Testfahrt« (= antworte). Der Karren fährt: hält / biegt sich / bricht (Fallschirm, kommt zurück).
+ */
 import { useEffect, useState } from "react";
 import type { ChallengeAntwort } from "@/lib/api";
 import type { ModusProps } from "./typen";
+import Bestenliste from "../Bestenliste";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
-import { PixelMatrix } from "../pixel/Matrix";
-import { Sprite } from "../pixel/Sprite";
-
-const BRETT = ["..........", "bbbbbbbbbb", "bddbbddbbb", "dddddddddd", ".........."];
-const PAL = { b: "#c28a4a", d: "#8a5a2b" };
-const reduziert = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+import Holz from "./bruecke/Holz";
+import Schlucht, { type Fahrt } from "./bruecke/Schlucht";
+import { ausgang, sterne } from "@/lib/challenge/brueckeSpiel";
 
 export default function Bruecke({ brett, theme, lauf, zurKarte }: ModusProps) {
+  const seed = brett.etappe * 131 + brett.fakten.length * 7 + 3;
   const [gesammelt, setGesammelt] = useState<string[]>([]);
-  const [gefunden, setGefunden] = useState<string | null>(null);
-  const [alleDa, setAlleDa] = useState(false);
-  const [aktiv, setAktiv] = useState<string | null>(null);
-  const [ablage, setAblage] = useState<string[]>([]);
+  const [bau, setBau] = useState(false);
+  const [luecken] = useState(() => brett.challenges.filter((c) => !c.erledigt));
+  const [fertig, setFertig] = useState<string[]>([]);
+  const [ablagen, setAblagen] = useState<Record<string, string[]>>({});
+  const [sel, setSel] = useState<number | null>(null);
+  const [fahrt, setFahrt] = useState<Fahrt | null>(null);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
-  const [anim, setAnim] = useState<"ok" | "bruch" | null>(null);
-  const [bruchBei, setBruchBei] = useState<string | null>(null);
   const [sende, setSende] = useState(false);
-
-  useEffect(() => {
-    if (reduziert()) { setAlleDa(true); return; }
-    const t = setTimeout(() => setAlleDa(true), 20000);
-    return () => clearTimeout(t);
-  }, []);
+  const [verschwendet, setVerschwendet] = useState(0);
+  const [liste, setListe] = useState(false);
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
-  const sammeln = gesammelt.length < brett.fakten.length;
-  const challenge = brett.challenges.find((c) => c.id === aktiv && !c.erledigt);
-  const offene = brett.challenges.filter((c) => !c.erledigt);
+  const offeneIdx = luecken.map((c, i) => i).filter((i) => !fertig.includes(luecken[i].id));
+  const idx = sel !== null && offeneIdx.includes(sel) ? sel : (offeneIdx[0] ?? Math.max(0, luecken.length - 1));
+  const c = luecken[idx];
+  const ablage = c ? (ablagen[c.id] ?? []) : [];
+  const setAblage = (a: string[]) => c && setAblagen((m) => ({ ...m, [c.id]: a }));
 
-  const sammle = (id: string) => { setGesammelt((g) => (g.includes(id) ? g : [...g, id])); setGefunden(id); };
-  const alles = () => { setGesammelt(brett.fakten.map((f) => f.id)); setGefunden(null); };
-  const waehle = (c: string) => { setAktiv(c); setAblage([]); setAntwort(null); setAnim(null); lauf.waehle(c); };
-  const legeAuf = (id: string) => {
-    if (!challenge || ablage.includes(id) || !gesammelt.includes(id) || !fakten.has(id)) return;
-    lauf.gelegt();
-    setAblage([...ablage, id]);
-  };
+  const aktivId = bau && !fertig.includes(c?.id ?? "") ? c?.id : undefined;
+  useEffect(() => { if (aktivId) lauf.waehle(aktivId); }, [aktivId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const bauen = async () => {
-    if (!challenge || !ablage.length || sende) return;
-    setSende(true);
-    try {
-      const r = await lauf.antworte(challenge.id, ablage, false);
-      setAnim(r.komplett ? "ok" : "bruch");
-      setBruchBei(r.komplett ? null : challenge.id);
-      setAktiv(null); setAblage([]);
-      setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
-    } catch {
-      setAktiv(null); setAblage([]);
-    } finally {
-      setSende(false);
-    }
-  };
-
-  const Kopf = (
-    <div className="flex items-center justify-between">
+  const kopf = (
+    <div className="flex items-center justify-between gap-2 flex-wrap">
       <Herzen leben={brett.leben} />
-      <button className="btn-secondary" onClick={zurKarte}>Karte</button>
+      {bau && <span aria-label="Sterne" className="text-lg">{"★".repeat(sterne(verschwendet))}<span className="opacity-30">{"★".repeat(3 - sterne(verschwendet))}</span></span>}
+      <div className="flex gap-2">
+        {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>}
+        <button className="btn-secondary" onClick={zurKarte}>Karte</button>
+      </div>
     </div>
   );
+  const bestenliste = liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} spiel="bruecke" /></div>;
 
-  if (sammeln) {
-    const gf = gefunden ? fakten.get(gefunden) : null;
+  if (!bau) {
     return (
       <>
-        {Kopf}
-        <h2 className="font-bold">Sammle Bretter am Ufer: {gesammelt.length} von {brett.fakten.length}</h2>
-        <div className="flex flex-wrap gap-3 rounded-lg p-3" style={{ background: theme.farben.boden }}>
-          {brett.fakten.map((f) => (
-            <button key={f.id} aria-label="Brett aufsammeln" disabled={gesammelt.includes(f.id)} onClick={() => sammle(f.id)}
-              className="disabled:opacity-20 focus-visible:outline outline-2 outline-offset-2">
-              <PixelMatrix bild={BRETT} palette={PAL} scale={6} />
-            </button>
-          ))}
-        </div>
-        {gf && (
-          <p className="card p-3" role="status">
-            <b>Gefunden:</b> <Inhalt x={gf} />
-            {gf.info && <span className="block text-muted mt-1">{gf.info.text}</span>}
-          </p>
-        )}
-        {alleDa && <button className="btn-secondary self-start" onClick={alles}>Alles einsammeln</button>}
+        {kopf}{bestenliste}
+        <h2 className="font-bold">Holz sammeln</h2>
+        <Holz fakten={brett.fakten} theme={theme} seed={seed} gefunden={gesammelt}
+          setGefunden={(f) => setGesammelt(f)} weiter={() => setBau(true)} />
       </>
     );
   }
 
+  const waehle = (i: number) => { setSel(i); setAntwort(null); };
+  const lege = (id: string) => {
+    if (!c || ablage.includes(id) || !gesammelt.includes(id) || !fakten.has(id)) return;
+    if (!ablage.length) lauf.gelegt();
+    setAblage([...ablage, id]);
+  };
+
+  const testfahrt = async () => {
+    if (!c || !ablage.length || sende || fahrt) return;
+    setSende(true);
+    try {
+      const r = await lauf.antworte(c.id, ablage, false);
+      const art = ausgang(r);
+      const verlust = art === "bricht" ? verschwendet + ablage.length : verschwendet;
+      setAntwort(r);
+      setFahrt({ idx, art, bretter: ablage.length });
+      if (r.komplett) {
+        setFertig((f) => [...f, c.id]);
+        if (fertig.length + 1 >= luecken.length || r.etappe_geschafft || r.fertig) void lauf.spielwert?.("bruecke", brett.etappe, sterne(verlust), 3);
+      }
+      setVerschwendet(verlust);
+    } catch {
+      setAblage([]);
+    } finally {
+      setSende(false);
+    }
+  };
+  const fahrtEnde = () => {
+    if (fahrt?.art === "bricht" && c) setAblage([]); // gebrochene Bretter sind weg; die Fakten bleiben im Inventar
+    if (fahrt?.art === "haelt") setSel(null);
+    setFahrt(null);
+  };
+
   const inventar = brett.fakten.filter((f) => gesammelt.includes(f.id) && !ablage.includes(f.id));
+  const alleFertig = luecken.length > 0 && fertig.length >= luecken.length;
+  const schlucht = luecken.map((l) => ({ id: l.id, bretter: (fahrt && luecken[fahrt.idx]?.id === l.id) ? fahrt.bretter : (ablagen[l.id]?.length ?? 0), fertig: fertig.includes(l.id) }));
+
   return (
     <>
-      {Kopf}
+      {kopf}{bestenliste}
       <Treffermeldung antwort={antwort} />
+      {alleFertig && <p className="card p-3 font-bold text-good" role="status">Alle Brücken stehen! {"★".repeat(sterne(verschwendet))}</p>}
+      <Schlucht luecken={schlucht} aktiv={idx} fahrt={fahrt} onEnde={fahrtEnde} />
 
-      <style>{`@keyframes ch-brett-faellt{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(90px) rotate(35deg);opacity:0}}`}</style>
-      <div className="relative rounded-lg overflow-hidden p-3 flex items-end gap-1" style={{ background: theme.farben.himmel, minHeight: 140 }}>
-        <div className="flex flex-col items-center" style={{ transition: "transform 1s", transform: anim === "ok" ? "translateX(24px)" : "none" }}>
-          <Sprite src={theme.spieler.src} frame={theme.spieler.stehen} scale={3} />
-          <div className="h-3 w-16" style={{ background: theme.farben.boden }} />
+      {luecken.length > 1 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Lücken">
+          {luecken.map((l, i) => (
+            <button key={l.id} className="btn-secondary" aria-pressed={i === idx && !fertig.includes(l.id)} disabled={fertig.includes(l.id) || !!fahrt} onClick={() => waehle(i)}>
+              {fertig.includes(l.id) ? "✔ " : ""}Lücke {i + 1}
+            </button>
+          ))}
         </div>
-        {offene.map((c) => (
-          <button key={c.id} onClick={() => waehle(c.id)} aria-pressed={c.id === aktiv}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); if (c.id !== aktiv) waehle(c.id); legeAuf(e.dataTransfer.getData("text/plain")); }}
-            className={`card p-2 text-left flex-1 min-w-24 self-start ${c.id === aktiv ? "border-accent" : ""}`}>
-            <Inhalt x={c} />
-            <span className={`relative block mt-2 h-3 border-b-4 border-dashed ${anim === "bruch" && bruchBei === c.id ? "border-bad" : "border-line"}`}>
-              {/* Das falsche Brett bricht und fällt in die Schlucht */}
-              {anim === "bruch" && bruchBei === c.id && (
-                <span aria-hidden style={{ background: "#8b5a2b" }} className="absolute left-1/4 top-1 h-2 w-1/2 rounded-sm motion-safe:animate-[ch-brett-faellt_1s_ease-in_forwards]" />
-              )}
-            </span>
-          </button>
-        ))}
-      </div>
+      )}
 
-      {challenge && (
-        <div className="card p-3 flex flex-col gap-2">
-          <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))}
+      {c && !alleFertig && (
+        <div className="card p-3 flex flex-col gap-2" aria-label="Lücke bauen">
+          <div className="font-bold"><Inhalt x={c} /></div>
+          <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={lege} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))}
             leer="Lege Bretter in die Lücke." />
           <div className="flex flex-wrap gap-2">
-            <button className="btn-primary" disabled={!ablage.length || sende} onClick={bauen}>Bauen</button>
-            {challenge.tip && <span className="text-muted self-center">💡 {challenge.tip}</span>}
+            <button className="btn-primary" disabled={!ablage.length || sende || !!fahrt} onClick={testfahrt}>Testfahrt</button>
+            {c.tip && <span className="text-muted self-center">💡 {c.tip}</span>}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
-        {inventar.map((f) => <FaktKarte key={f.id} fakt={f} disabled={!challenge} onClick={() => legeAuf(f.id)} />)}
-      </div>
+      {!alleFertig && (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,180px),1fr))] gap-2">
+          {inventar.map((f) => <FaktKarte key={f.id} fakt={f} disabled={!c || !!fahrt} onClick={() => lege(f.id)} />)}
+        </div>
+      )}
     </>
   );
 }
