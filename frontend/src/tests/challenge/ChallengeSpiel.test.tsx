@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { configure, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ChallengeSpiel from "@/components/challenge/ChallengeSpiel";
+
+// Die Spielarten werden per lazy() nachgeladen; unter Last braucht das mehr als die üblichen 1 s.
+configure({ asyncUtilTimeout: 5000 });
 
 const brett = (extra = {}) => ({
   stufe: 2, etappe: 1, leben: 3, fertig: false, spiel: "normal", deck: null,

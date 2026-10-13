@@ -52,25 +52,25 @@ const BESTIE_P = { k: "#3b1a14", o: "#e0703a", r: "#c4291c", y: "#fff27a", w: "#
 
 export type Skin = {
   titel: string; held: Figur; boss: Figur;
-  angriff: string; kontern: string; sieg: string;
+  angriff: string; kontern: string; sieg: string; intro: string;
 };
 
 export const SKINS: Record<string, Skin> = {
   monster: {
-    titel: "Drachenkampf", angriff: "Angriff", kontern: "Kontern", sieg: "Der Drache ist besiegt!",
+    titel: "Drachenkampf", angriff: "Angriff", kontern: "Kontern", sieg: "Der Drache ist besiegt!", intro: "Der Drache fordert dich heraus!",
     held: { bild: HELD, palette: HELD_P, name: "Held" }, boss: { bild: DRACHE, palette: DRACHE_P, name: "Drache" },
   },
   rap: {
-    titel: "Rap-Battle", angriff: "Diss", kontern: "Konter-Line", sieg: "Mic drop – du hast das Battle gewonnen!",
+    titel: "Rap-Battle", angriff: "Diss", kontern: "Konter-Line", sieg: "Mic drop – du hast das Battle gewonnen!", intro: "Battle! Der Gegner greift zum Mikro!",
     held: { bild: RAPPER, palette: { k: "#15151f", c: "#2f6fe0", s: "#d9a273", m: "#7a2f2f", y: "#ffd84a", p: "#444a66", w: "#cfd6e0" }, name: "Rapper" },
     boss: { bild: RAPPER, palette: { k: "#15151f", c: "#d8352a", s: "#8a5a3a", m: "#3a1a1a", y: "#e8e8e8", p: "#2b2b2b", w: "#cfd6e0" }, name: "Gegner-Rapper" },
   },
   prinzessin: {
-    titel: "Prinzessin gegen Monster", angriff: "Angriff", kontern: "Kontern", sieg: "Das Monster ist besiegt!",
+    titel: "Prinzessin gegen Monster", angriff: "Angriff", kontern: "Kontern", sieg: "Das Monster ist besiegt!", intro: "Ein wildes Monster versperrt der Prinzessin den Weg!",
     held: { bild: PRINZESSIN, palette: PRINZESSIN_P, name: "Prinzessin" }, boss: { bild: MONSTER, palette: MONSTER_P, name: "Monster" },
   },
   einhorn: {
-    titel: "Einhorn gegen Bestie", angriff: "Angriff", kontern: "Kontern", sieg: "Die Bestie ist besiegt!",
+    titel: "Einhorn gegen Bestie", angriff: "Angriff", kontern: "Kontern", sieg: "Die Bestie ist besiegt!", intro: "Eine wilde Bestie stellt sich dem Einhorn entgegen!",
     held: { bild: EINHORN, palette: EINHORN_P, name: "Einhorn" }, boss: { bild: BESTIE, palette: BESTIE_P, name: "Bestie" },
   },
 };

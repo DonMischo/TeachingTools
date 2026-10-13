@@ -7,11 +7,8 @@ import type { ModusProps } from "./typen";
 import { Ablage, FaktKarte, Herzen, Inhalt, Treffermeldung } from "./teile";
 import { skinVon } from "./boss/figuren";
 import Sammeln from "./boss/Sammeln";
-
-const CSS = `@keyframes bosswackel{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
-@keyframes bossblitz{0%{opacity:.9}100%{opacity:0}}
-.boss-wackel{animation:bosswackel .5s}.boss-blitz{animation:bossblitz .6s forwards}
-@media (prefers-reduced-motion: reduce){.boss-wackel,.boss-blitz{animation:none!important}}`;
+import { Szene, type Anim, type Zahl } from "./boss/Szene";
+import { bossSeed } from "@/lib/challenge/bossKarte";
 
 export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps) {
   const sk = skinVon(skin);
@@ -21,7 +18,9 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
   const [ablage, setAblage] = useState<string[]>([]);
   const [tipp, setTipp] = useState(false);
   const [antwort, setAntwort] = useState<ChallengeAntwort | null>(null);
-  const [anim, setAnim] = useState<{ art: "treffer" | "daneben" | "teil"; n: number } | null>(null);
+  const [heldAnim, setHeldAnim] = useState<Anim>(null);
+  const [gegnerAnim, setGegnerAnim] = useState<Anim>(null);
+  const [zahlen, setZahlen] = useState<Zahl[]>([]);
   const [schaden, setSchaden] = useState(0);
   const [sende, setSende] = useState(false);
 
@@ -36,10 +35,10 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
   useEffect(() => { if (phase === "arena" && aktiv) lauf.waehle(aktiv.id); }, [phase, aktiv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!anim) return;
-    const t = setTimeout(() => setAnim(null), 900);
+    if (!zahlen.length) return;
+    const t = setTimeout(() => setZahlen([]), 900);
     return () => clearTimeout(t);
-  }, [anim]);
+  }, [zahlen]);
 
   const legeAuf = (id: string) => {
     if (!aktiv || ablage.includes(id) || !fakten.has(id)) return;
@@ -52,10 +51,14 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
     try {
       const r = await lauf.antworte(aktiv.id, ablage, tipp);
       setSchaden((s) => s + r.schaden);
-      setAnim({ art: r.komplett ? "treffer" : r.treffer ? "teil" : "daneben", n: Date.now() });
+      const n = Date.now();
+      if (r.treffer) {
+        setHeldAnim({ art: "lunge", n }); setGegnerAnim({ art: "treffer", n });
+        if (r.schaden > 0) setZahlen([{ id: n, wert: r.schaden }]);
+      } else setGegnerAnim({ art: "wackel", n });
       setAntwort(r.etappe_geschafft || r.zurueck_zur_karte || r.fertig ? null : r);
     } catch {
-      setAnim({ art: "daneben", n: Date.now() }); // z. B. 409: das Brett ist schon neu geladen
+      setGegnerAnim({ art: "wackel", n: Date.now() }); // z. B. 409: das Brett ist schon neu geladen
     } finally {
       setAblage([]); setTipp(false); setSende(false);
     }
@@ -66,7 +69,6 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
 
   return (
     <>
-      <style>{CSS}</style>
       <div className="flex items-center justify-between">
         <Herzen leben={brett.leben} />
         <strong>{sk.titel}</strong>
@@ -74,36 +76,23 @@ export default function Boss({ brett, theme, skin, lauf, zurKarte }: ModusProps)
       </div>
 
       {phase === "sammeln" ? (
-        <Sammeln fakten={brett.fakten} theme={theme} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")} />
+        <Sammeln fakten={brett.fakten} theme={theme} seed={bossSeed(brett.etappe, brett.fakten.length)} gefunden={gefunden} setGefunden={setGefunden} weiter={() => setPhase("arena")} />
       ) : (
         <>
           <Treffermeldung antwort={antwort} />
-          <div className="relative rounded-lg overflow-hidden p-3 flex flex-col gap-3" style={{ background: bg, color: theme.farben.text === "inherit" ? undefined : theme.farben.text }}>
-            {anim?.art === "treffer" && <div key={anim.n} className="boss-blitz absolute inset-0 bg-white pointer-events-none" />}
-            {aktiv && (
-              <div className="card p-3 self-end max-w-[90%]" aria-live="polite">
+          <Szene introText={sk.intro} himmel={bg} boden={boden === "#6b7a5a" ? undefined : boden}
+            held={<PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} label={sk.held.name} />}
+            gegner={<div style={{ transform: "scaleX(-1)" }}><PixelMatrix bild={sk.boss.bild} palette={sk.boss.palette} scale={7} label={sk.boss.name} /></div>}
+            heldName={sk.held.name} gegnerName={sk.boss.name} hp={hp} hpMax={max}
+            heldAnim={heldAnim} gegnerAnim={offene.length === 0 ? { art: "weg", n: -1 } : gegnerAnim} zahlen={zahlen}>
+            {aktiv ? (
+              <div aria-live="polite">
                 <strong className="text-sm">{sk.angriff} ({"⚔️".repeat(Math.min(5, aktiv.strength))}):</strong>
                 <div><Inhalt x={aktiv} /></div>
               </div>
-            )}
-            <div className="flex items-end justify-between gap-2">
-              <div role="img" aria-label={sk.held.name}><PixelMatrix bild={sk.held.bild} palette={sk.held.palette} scale={6} /></div>
-              <div className="flex flex-col items-center gap-1">
-                <div role="progressbar" aria-label="Lebensbalken des Gegners" aria-valuemin={0} aria-valuemax={max} aria-valuenow={hp}
-                  className="w-32 h-3 rounded bg-black/30 overflow-hidden">
-                  <div className="h-full bg-bad" style={{ width: `${max ? (hp / max) * 100 : 0}%` }} />
-                </div>
-                <div key={anim?.art === "daneben" ? anim.n : "b"} className={anim?.art === "daneben" ? "boss-wackel" : ""}>
-                  <div style={{ transform: "scaleX(-1)" }} role="img" aria-label={sk.boss.name}>
-                    <PixelMatrix bild={sk.boss.bild} palette={sk.boss.palette} scale={7} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="h-3 -mx-3 -mb-3" style={{ background: boden }} />
-          </div>
+            ) : <p className="font-bold text-good">{sk.sieg}</p>}
+          </Szene>
 
-          {offene.length === 0 && <p className="card p-3 font-bold text-good">{sk.sieg}</p>}
           {aktiv && (
             <div className="card p-3 flex flex-col gap-2">
               <Ablage karten={ablage.map((id) => fakten.get(id)!)} onLege={legeAuf} onNimm={(id) => setAblage(ablage.filter((x) => x !== id))} leer="Lege hier die Fakten ab, mit denen du kontern willst." />
