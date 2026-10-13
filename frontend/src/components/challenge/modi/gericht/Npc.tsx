@@ -1,13 +1,13 @@
 "use client";
 /** Pixel-Figur aus den NPC-Einzelbildern (idle_1..4), 32×32 px je Bild. */
 import { useEffect, useState } from "react";
-import { wenigerBewegung } from "../turm/Buehne";
+import { wenigerBewegung } from "./hilfen";
 
 export default function Npc({ name, scale = 4, label, className }: { name: string; scale?: number; label: string; className?: string }) {
   const [i, setI] = useState(1);
   useEffect(() => {
     if (wenigerBewegung()) return;
-    const t = setInterval(() => setI((n) => (n % 4) + 1), 250);
+    const t = setInterval(() => { if (!document.hidden) setI((n) => (n % 4) + 1); }, 250);
     return () => clearInterval(t);
   }, []);
   return (

@@ -21,7 +21,7 @@ const antwort = (extra = {}) => ({
   leben: 2, zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 2, ...extra,
 });
 const baue = (a = antwort()) => {
-  const lauf = { waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(a), deckSetzen: vi.fn(), spielWechseln: vi.fn() };
+  const lauf = { waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(a), deckSetzen: vi.fn(), spielWechseln: vi.fn(), spielwert: vi.fn(), hatBestenliste: false };
   const ui = render(<Modus brett={brett as never} theme={themeVon("wald")} skin="monster" lauf={lauf as never} zurKarte={() => {}} />);
   return { lauf, ui, u: userEvent.setup() };
 }
@@ -51,5 +51,33 @@ describe("Gericht", () => {
     await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
     expect(screen.getByText(/Offene Aufgabe/)).toBeTruthy();
     expect(screen.queryByText("Schon erledigt")).toBeNull();
+  });
+
+  it("Nachhaken zeigt einen Zusatzsatz", async () => {
+    const { u } = baue();
+    await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
+    expect(screen.queryByText(/^Zeuge:/)).toBeNull();
+    await u.click(screen.getByRole("button", { name: "Nachhaken!" }));
+    expect(screen.getByText(/^Zeuge:/)).toBeTruthy();
+  });
+
+  it("Einspruch zeigt den Comic-Schriftzug und den Zusammenbruch", async () => {
+    const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
+    await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
+    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: "Einspruch!" }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByText("Der Zeuge bricht unter dem Beweis zusammen!")).toBeTruthy();
+  });
+
+  it("zählt als Spielwert nur Aussagen, die ohne abgelehnten Einspruch fallen", async () => {
+    const { lauf, u, ui } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
+    await u.click(screen.getByRole("button", { name: "Zur Verhandlung" }));
+    await u.click(screen.getByRole("button", { name: "Nachhaken!" }));
+    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: "Einspruch!" }));
+    await screen.findByRole("alert");
+    ui.unmount();
+    expect(lauf.spielwert).toHaveBeenLastCalledWith("gericht", 1, 1, 2);
   });
 });

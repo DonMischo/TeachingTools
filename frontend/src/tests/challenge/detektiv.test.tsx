@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { themeVon } from "@/lib/challenge/themes";
 import Modus from "@/components/challenge/modi/Detektiv";
+
+beforeEach(() => {
+  window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as never;
+});
 
 const brett = {
   stufe: 2, etappe: 1, leben: 3, fertig: false, spiel: "detektiv", deck: null,
@@ -21,24 +25,23 @@ const antwort = (extra = {}) => ({
   leben: 2, zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 2, ...extra,
 });
 const baue = (a = antwort()) => {
-  const lauf = { waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(a), deckSetzen: vi.fn(), spielWechseln: vi.fn() };
+  const lauf = { waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(a), deckSetzen: vi.fn(), spielWechseln: vi.fn(), spielwert: vi.fn(), hatBestenliste: false };
   const ui = render(<Modus brett={brett as never} theme={themeVon("wald")} skin="monster" lauf={lauf as never} zurKarte={() => {}} />);
   return { lauf, ui, u: userEvent.setup() };
-}
+};
 
 async function sammle(u: ReturnType<typeof userEvent.setup>) {
-  for (const b of screen.getAllByRole("button", { name: /durchsuchen/ })) await u.click(b);
-  expect(screen.getByText("Gefunden:")).toBeTruthy();
-  await u.click(screen.getByRole("button", { name: "Weiter" }));
+  await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+  await u.click(screen.getByRole("button", { name: "Zum Verhör" }));
 }
 
 describe("Detektiv", () => {
-  it("sammelt, legt Fakten auf die Challenge und wertet", async () => {
+  it("sammelt, legt Beweise auf die Aussage und wertet", async () => {
     const { lauf, u } = baue();
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
     await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
-    await u.click(screen.getByRole("button", { name: "Beweisen" }));
+    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
     expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false);
     expect(await screen.findByText("Daneben")).toBeTruthy();
   });
@@ -48,7 +51,7 @@ describe("Detektiv", () => {
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
     await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
-    await u.click(screen.getByRole("button", { name: "Beweisen" }));
+    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
     await waitFor(() => expect(screen.getByText(/Treffer!/)).toBeTruthy());
   });
 
@@ -57,5 +60,28 @@ describe("Detektiv", () => {
     await sammle(u);
     await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
     expect(screen.queryByText("Schon erledigt")).toBeNull();
+  });
+
+  it("Fundstelle anklicken: Figur läuft hin, Hinweis landet im Notizbuch", async () => {
+    const { u } = baue();
+    await u.click(screen.getByRole("button", { name: "Fundstelle 1 untersuchen" }));
+    await screen.findByText(/Hinweis gefunden!/, undefined, { timeout: 12000 });
+    expect(screen.getByText(/Hinweise im Notizbuch: 1\/2/)).toBeTruthy();
+  }, 15000);
+
+  it("meldet den Spielwert beim Abbau", async () => {
+    const { lauf, u, ui } = baue();
+    await u.click(screen.getByRole("button", { name: "Alles einsammeln" }));
+    ui.unmount();
+    expect(lauf.spielwert).toHaveBeenCalledWith("detektiv", 1, 2, 2);
+  });
+
+  it("hängt gelöste Aussagen an die Pinnwand", async () => {
+    const { u } = baue(antwort({ treffer: true, komplett: true, schaden: 10 }));
+    await sammle(u);
+    await u.click(screen.getByRole("button", { name: /Offene Aufgabe/ }));
+    await u.click(screen.getByRole("button", { name: /Zweiseitiger Hebel/ }));
+    await u.click(screen.getByRole("button", { name: "Beweis vorlegen" }));
+    expect(await screen.findByRole("group", { name: "Pinnwand" })).toBeTruthy();
   });
 });
