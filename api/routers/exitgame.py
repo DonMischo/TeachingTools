@@ -33,6 +33,7 @@ Flow:
   5. Teacher GETs /api/exitgame-sessions/{code}/report  → per-student results
      Teacher GETs /api/exitgame-attempts/{id}/log       → detailed per-student log
 """
+import copy
 import io
 import json
 import random
@@ -46,12 +47,15 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from .. import challenge_engine as challenge_eng
+from .. import challenge_lauf
 from .. import dda as dda_engine
 from .. import exitgame_katalog as katalog
 from .. import scoping
 from .. import timeline_engine
 from .. import karten_quiz as karten_engine
 from .karten_quiz import karten_aufloesen
+from .challenge import AntwortIn as BossAntwortIn, SKINS as BOSS_SKINS
 from ..task_generators import check_input_answer
 from ..database import get_db
 from ..models import ExitGame, ExitGameSession, ExitGameAttempt, ExitGameEvent, Teacher, Student, Class
@@ -84,6 +88,26 @@ DDA_HISTORY_LIMIT = 50
 DDA_RECENT_WINDOW = 10
 
 mgr = RoomManager()
+
+# Challenge-Satz der Boss-Folien in den Vorlagen (Format: siehe Anleitung, Abschnitt BOSS)
+VORLAGE_BOSS_SATZ = {
+    "facts": [
+        {"id": "f1", "text": "Kraft mal Kraftarm gleich Last mal Lastarm"},
+        {"id": "f2", "text": "Ein langer Kraftarm spart Kraft"},
+        {"id": "f3", "text": "Die Wippe ist ein zweiseitiger Hebel"},
+        {"id": "f4", "text": "Die Schubkarre ist ein einseitiger Hebel"},
+        {"id": "x1", "text": "Schwere Körper fallen schneller", "decoy": True},
+        {"id": "x2", "text": "Ein Hebel erzeugt Energie", "decoy": True},
+    ],
+    "challenges": [
+        {"id": "c1", "text": "Warum hebt eine lange Brechstange den Stein?", "solve": {"all": ["f1", "f2"]},
+         "strength": 2, "feedback": "Der lange Kraftarm macht die Kraft größer."},
+        {"id": "c2", "text": "Welcher Hebel ist eine Wippe?", "solve": {"any": ["f3"]}},
+        {"id": "c3", "text": "Welcher Hebel ist eine Schubkarre?", "solve": {"any": ["f4"]}},
+        {"id": "c4", "text": "Wie lautet das Hebelgesetz?", "solve": {"any": ["f1"]}},
+        {"id": "c5", "text": "Was spart beim Hebeln Kraft?", "solve": {"any": ["f2"]}},
+    ],
+}
 
 
 def _identity_for_attempt(
@@ -142,6 +166,9 @@ def _participant_class(attempt: ExitGameAttempt) -> str:
 # ---------------------------------------------------------------------------
 
 def _iter_tasks(slide: dict) -> list[dict]:
+    if slide.get("type") == "boss":
+        # Ein Boss ist eine Pseudo-Aufgabe: so greifen Fragmente, Tür und »gelöst« unverändert
+        return [{"kind": "boss", **({"codeFragment": slide["codeFragment"]} if slide.get("codeFragment") else {})}]
     if "tasks" in slide:
         return slide["tasks"] or []
     if "task" in slide and slide["task"] is not None:
@@ -192,6 +219,34 @@ def _task_errors(task: dict, where: str) -> list[str]:
     if easier:
         errors.extend(_task_errors(easier, f"{where}.easierAlternative"))
     return errors
+
+
+def _boss_errors(slide: dict, where: str) -> list[str]:
+    fehler: list[str] = []
+    challenge = slide.get("challenge")
+    if not isinstance(challenge, dict):
+        return [f"{where}: ein Boss braucht 'challenge' (ein Challenge-Satz)"]
+    f, _ = challenge_eng.pruefe_satz({"title": slide.get("title") or "Boss", **challenge})
+    fehler += [f"Folie »{slide.get('id')}«: {m}" for m in f]
+    spiel = slide.get("spiel", "boss")
+    spiele = slide.get("spiele")
+    if spiel not in challenge_eng.SPIELE:
+        fehler.append(f"{where}: spiel '{spiel}' gibt es nicht (erlaubt: {', '.join(challenge_eng.SPIELE)})")
+    if spiele is not None and (not isinstance(spiele, list) or not set(spiele) <= set(challenge_eng.SPIELE)):
+        fehler.append(f"{where}: spiele muss eine Liste aus {', '.join(challenge_eng.SPIELE)} sein")
+    elif "gericht" in [spiel, *(spiele or [])] and not challenge.get("claims"):
+        fehler.append(f"{where}: das Spiel 'gericht' braucht 'claims' im Challenge-Satz")
+    if slide.get("skin") is not None and slide["skin"] not in BOSS_SKINS:
+        fehler.append(f"{where}: skin '{slide['skin']}' gibt es nicht (erlaubt: {', '.join(BOSS_SKINS)})")
+    if slide.get("theme") is not None and slide["theme"] not in challenge_eng.THEMES:
+        fehler.append(f"{where}: theme '{slide['theme']}' gibt es nicht (erlaubt: {', '.join(challenge_eng.THEMES)})")
+    stufe = slide.get("startstufe")
+    if stufe is not None and (type(stufe) is not int or not 1 <= stufe <= 4):
+        fehler.append(f"{where}: startstufe muss 1 bis 4 sein")
+    frag = slide.get("codeFragment")
+    if frag is not None and (not isinstance(frag, str) or not frag.strip()):
+        fehler.append(f"{where}: codeFragment muss ein nicht-leerer Text sein")
+    return fehler
 
 
 def _validate_dda(dda: dict) -> list[str]:
@@ -258,7 +313,7 @@ def _validate_exitgame(data: dict) -> list[str]:
             seen_ids.add(sid)
 
         stype = slide.get("type")
-        if stype not in ("explanation", "example", "task", "door"):
+        if stype not in ("explanation", "example", "task", "door", "boss"):
             errors.append(f"{where}: unbekannter type '{stype}'")
             continue
 
@@ -274,6 +329,9 @@ def _validate_exitgame(data: dict) -> list[str]:
         if station is not None and station not in STATION_OBJECTS:
             errors.append(f"{where}: 'station' '{station}' gibt es nicht (erlaubt: {', '.join(sorted(STATION_OBJECTS))})")
 
+        if stype == "boss":
+            errors.extend(_boss_errors(slide, where))
+            continue
         for j, task in enumerate(_iter_tasks(slide)):
             errors.extend(_task_errors(task, f"{where}.tasks[{j}]"))
 
@@ -347,6 +405,13 @@ def _data_for_player(data: dict) -> dict:
         if not isinstance(slide, dict):
             continue
         s = {k: v for k, v in slide.items() if k != "ergebnissicherung"}
+        if s.get("type") == "boss":
+            spiel = s.get("spiel", "boss")
+            s = {k: v for k, v in s.items() if k not in ("challenge", "codeFragment")}
+            s.update(bossFragment=bool(slide.get("codeFragment")), spiel=spiel, spiele=slide.get("spiele") or [spiel],
+                     skin=slide.get("skin", "monster"), theme=slide.get("theme", "klassisch"))
+            slides.append(s)
+            continue
         if isinstance(s.get("task"), dict):
             s["task"] = _task_for_player(s["task"])
         if isinstance(s.get("tasks"), list):
@@ -407,7 +472,7 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "('task' für eine Aufgabe, 'tasks' für mehrere auf einer Slide — dann müssen alle stimmen). "
             "'door': Abschluss eines Abschnitts — schwerere Transferaufgabe und/oder Codeschloss; "
             "'onFailReview' verlinkt nach 2 Fehlversuchen zurück auf frühere Slides. Slide-IDs eindeutig, "
-            "Aufbau: erklären -> zeigen -> üben -> Tür. Schüler dürfen eine Aufgabe mit »Später lösen« offen "
+            "Aufbau: erklären -> zeigen -> üben -> Tür. 'boss': Kampf-Folie aus einem Challenge-Satz (siehe BOSS). Schüler dürfen eine Aufgabe mit »Später lösen« offen "
             "lassen — was fehlt, fällt spätestens an der Tür auf. "
             "--- TÜRCODE --- Jede Aufgabe kann ein 'codeFragment' vergeben (z.B. \"HE\"), das der Schüler beim "
             "richtigen Lösen einsammelt. Der Code einer Tür ist die Aneinanderreihung der Fragmente des "
@@ -463,6 +528,16 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
             "einzelne Symbole, Dezimalkomma als $3{,}14$. "
             "--- 2.5D --- Gebäude, Verlies, Ebene, Stationen und Werkzeuge (Simulationen) stehen in der "
             "»Vorlage interaktiv«. "
+            "--- BOSS --- Eine Folie 'type': 'boss' hat 'challenge' (Pflicht), optional 'spiel' (Standard 'boss'), "
+            "'spiele' (Liste, aus der der Schüler wählt), 'skin' (monster, rap, prinzessin, einhorn), 'theme' "
+            "(klassisch, wald, ninja, verlies, antike, weltraum), 'startstufe' (1-4, Standard 2), 'codeFragment' und "
+            "'station'. Spielarten: normal, karten, boss, huepfen, turm, detektiv, alchemie, bruecke, gericht "
+            "('gericht' nur mit 'claims'). 'challenge' ist ein Satz aus 'facts' (Wissensbausteine, 'decoy': true = "
+            "Ablenker), 'challenges' (Aufgaben mit 'solve': {'all': [fakt-ids]} oder {'any': [...]}, 'strength', "
+            "'stage' = Etappe, 'feedback'), optional 'stages', 'levels' (Anpassungen je Stufe) und 'claims' "
+            "(Behauptungen mit 'refutedBy' für den Gerichtssaal). Plane mindestens 5 Challenges je Etappe, "
+            "einen Kombo (solve 'all') und 2 Ablenker. Der Boss ist besiegt, wenn alle Challenges gelöst sind; "
+            "dann gilt sein codeFragment als eingesammelt. "
             "--- UPLOAD --- .json, oder .zip mit taskcrawler.json und einem Ordner assets/ für eigene Bilder. "
             "--- REGELN --- Keine Lösung in Fragen, Antworten oder Bildern verraten. Jede task-Slide braucht "
             "eine Aufgabe, jede Tür eine Aufgabe ODER Codeschnipsel davor (ein Feld 'code' an der Tür gibt es "
@@ -601,8 +676,14 @@ def download_template(_: Teacher = Depends(get_current_teacher)):
                                         "value": 1969, "exact_date": "1969-07-20"}]}},
              "hints": ["1961 wurde die Mauer gebaut — nicht geöffnet."]},
 
+            # boss: Kampf aus einem Challenge-Satz; sein codeFragment gehört zum Türcode
+            {"id": "boss", "type": "boss", "title": "Der Hebel-Drache",
+             "text": "Besiege den Drachen mit deinem Wissen!",
+             "challenge": VORLAGE_BOSS_SATZ, "spiel": "boss", "skin": "monster", "theme": "verlies",
+             "startstufe": 2, "codeFragment": "DR"},
+
             # door: Transferaufgabe + Codeschloss aus den Schnipseln davor
-            # (HE + BE + L) + easierAlternative + onFailReview
+            # (HE + BE + L + DR) + easierAlternative + onFailReview
             {"id": "tuer", "type": "door", "title": "Die Tür",
              "text": "Löse die letzte Aufgabe und gib die eingesammelten Codeschnipsel ein.",
              "task": {"kind": "single",
@@ -803,14 +884,14 @@ def download_template_interaktiv(teacher: Teacher = Depends(get_current_teacher)
                       "sim": {"tool": "vierecke", "config": {"form": "trapez", "masse": {"a": 8, "c": 4, "h": 3}}},
                       "accept": ["18"]},
              "hints": ["$A = \\frac{a + c}{2} \\cdot h$"]},
-            {"id": "zwischenboss", "type": "task", "title": "Der Zwischenboss",
+            {"id": "zwischenboss", "type": "boss", "title": "Der Zwischenboss",
              "station": "boss",
-             "text": "Ein kleiner Boss stellt eine knifflige Frage.",
-             "task": {"kind": "multi", "codeFragment": "TZ",
-                      "question": "Welche Gleichungen haben die Lösung $x = 4$?",
-                      "answers": [{"text": "$2x = 8$", "correct": True}, {"text": "$x + 3 = 7$", "correct": True},
-                                  {"text": "$x - 4 = 4$", "correct": False}, {"text": "$4x = 1$", "correct": False}]},
-             "hints": ["Setze $x = 4$ ein und prüfe."]},
+             "text": "Ein kleiner Boss fordert dein Wissen heraus.",
+             "challenge": VORLAGE_BOSS_SATZ, "spiel": "boss", "skin": "monster", "codeFragment": "TZ"},
+            {"id": "endkampf", "type": "boss", "title": "Der Kampf vor dem Endboss",
+             "text": "Such dir eine Spielart aus und besiege die Wächterin.",
+             "challenge": VORLAGE_BOSS_SATZ, "spiel": "boss", "spiele": ["boss", "karten", "huepfen"],
+             "skin": "prinzessin", "theme": "verlies", "codeFragment": "EK"},
             {"id": "endboss", "type": "door", "title": "Der Endboss",
              "text": "Der Endboss bewacht den Ausgang. Nur der richtige Code lässt dich vorbei."},
         ],
@@ -1281,6 +1362,8 @@ async def post_event(
     elif body.action == "answer":
         task_index = body.payload.get("task_index", 0)
         variant = body.payload.get("variant", "normal")
+        if slide.get("type") == "boss":
+            raise HTTPException(400, "Ein Boss wird über /boss/... gespielt")
         tasks = _iter_tasks(slide)
         if task_index >= len(tasks):
             raise HTTPException(400, "Ungültiger task_index")
@@ -1371,6 +1454,123 @@ async def post_event(
     return out
 
 
+# ---------------------------------------------------------------------------
+# Boss-Folien: ein Challenge-Lauf je Folie (challenge_lauf), gespeichert im Attempt
+# ---------------------------------------------------------------------------
+
+def _boss_kontext(attempt_id: int, slide_id: str, request: Request, credentials, db: Session):
+    attempt = db.get(ExitGameAttempt, attempt_id)
+    if not attempt:
+        raise HTTPException(404, "Attempt nicht gefunden")
+    current = _identity_for_attempt(attempt, request, credentials, db)
+    if current is None or not _attempt_belongs_to(attempt, current):
+        raise HTTPException(404, "Attempt nicht gefunden")
+    if attempt.status != "in_progress":
+        raise HTTPException(409, "Dieser Versuch ist bereits abgeschlossen")
+    if attempt.session.status != "open":
+        raise HTTPException(403, "Diese Sitzung ist geschlossen")
+    data = attempt.session.exitgame.data
+    slide = _find_slide(data, slide_id)
+    if not slide or slide.get("type") != "boss":
+        raise HTTPException(404, "Boss-Folie nicht gefunden")
+    return attempt, data, slide
+
+
+def _boss_lauf(attempt: ExitGameAttempt, slide: dict) -> dict:
+    lauf = (attempt.boss_laeufe or {}).get(slide["id"])
+    if lauf is None:
+        raise HTTPException(409, "Der Boss-Kampf wurde noch nicht gestartet")
+    return copy.deepcopy(lauf)
+
+
+def _boss_speichern(attempt: ExitGameAttempt, slide: dict, lauf: dict) -> None:
+    attempt.boss_laeufe = {**(attempt.boss_laeufe or {}), slide["id"]: lauf}
+
+
+def _boss_brett(attempt: ExitGameAttempt, slide: dict, lauf: dict) -> dict:
+    return challenge_lauf.brett(slide["challenge"], lauf,
+                                lambda name: f"/uploads/exitgames/{attempt.session.exitgame_id}/assets/{name}")
+
+
+class BossStartIn(BaseModel):
+    spiel: str | None = None
+
+
+class BossDeckIn(BaseModel):
+    fakt_ids: list[str]
+
+
+@router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/start")
+def boss_start(
+    attempt_id: int, slide_id: str, body: BossStartIn, request: Request,
+    db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+):
+    attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
+    standard = slide.get("spiel", "boss")
+    spiele = slide.get("spiele") or [standard]
+    lauf = (attempt.boss_laeufe or {}).get(slide_id)
+    lauf = copy.deepcopy(lauf) if lauf else None
+    wahl = body.spiel if body.spiel in spiele else (lauf["spiel"] if lauf else standard)
+    try:
+        if lauf is None:
+            lauf = challenge_lauf.neuer_lauf(slide["challenge"], slide.get("startstufe", 2), wahl)
+        else:
+            challenge_lauf.spiel_wechseln(slide["challenge"], lauf, wahl)
+    except challenge_lauf.LaufFehler as e:
+        raise HTTPException(e.status, e.text)
+    _boss_speichern(attempt, slide, lauf)
+    db.commit()
+    return {**_boss_brett(attempt, slide, lauf), "skin": slide.get("skin", "monster"),
+            "theme": slide.get("theme", "klassisch"), "spiele": spiele}
+
+
+@router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/deck")
+def boss_deck(
+    attempt_id: int, slide_id: str, body: BossDeckIn, request: Request,
+    db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+):
+    attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
+    lauf = _boss_lauf(attempt, slide)
+    try:
+        challenge_lauf.deck_setzen(slide["challenge"], lauf, body.fakt_ids)
+    except challenge_lauf.LaufFehler as e:
+        raise HTTPException(e.status, e.text)
+    _boss_speichern(attempt, slide, lauf)
+    db.commit()
+    return _boss_brett(attempt, slide, lauf)
+
+
+@router.post("/api/exitgame-attempts/{attempt_id}/boss/{slide_id}/antwort")
+async def boss_antwort(
+    attempt_id: int, slide_id: str, body: BossAntwortIn, request: Request,
+    db: Session = Depends(get_db), credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+):
+    attempt, data, slide = _boss_kontext(attempt_id, slide_id, request, credentials, db)
+    lauf = _boss_lauf(attempt, slide)
+    try:
+        aus = challenge_lauf.antworte(slide["challenge"], lauf, body.challenge_id, body.fakt_ids,
+                                      body.lese_ms, body.wahl_ms, body.tipp)
+    except challenge_lauf.LaufFehler as e:
+        raise HTTPException(e.status, e.text)
+    _boss_speichern(attempt, slide, lauf)
+    db.add(ExitGameEvent(attempt_id=attempt_id, slide_id=slide_id, event_type="boss_answer", payload={
+        "challenge_id": body.challenge_id, "qualitaet": aus["qualitaet"], "komplett": aus["komplett"]}))
+    if not aus["treffer"]:
+        attempt.errors_total += 1
+    event_type = "boss_answer"
+    if aus["fertig"]:
+        event_type = "success"
+        db.add(ExitGameEvent(attempt_id=attempt_id, slide_id=slide_id, event_type="success", payload={
+            "task_index": 0, "boss": challenge_lauf.wertung(slide["challenge"], lauf)}))
+        db.flush()
+        if _slide_solved(db, attempt, slide, data) and slide_id not in attempt.solved_slide_ids:
+            attempt.solved_slide_ids = [*attempt.solved_slide_ids, slide_id]
+    db.commit()
+    db.refresh(attempt)
+    await _broadcast_progress(attempt.session.join_code, attempt, len(data["slides"]), event_type)
+    return {**aus, "attempt": _attempt_summary(attempt), "code_fragments": _fragment_state(db, attempt_id, data)}
+
+
 def _ergebnissicherung(data: dict) -> list[dict]:
     """Die Merksätze des Spiels in Folienreihenfolge, je Abschnitt (bis zur
     Tür) gruppiert: [{abschnitt, titel, eintraege: [{titel, text}]}]."""
@@ -1426,6 +1626,13 @@ async def finish_attempt(
 # Results: report + detailed per-student log
 # ---------------------------------------------------------------------------
 
+def _boss_ergebnis(a: ExitGameAttempt, data: dict) -> float | None:
+    """Mittelwert der Ergebnisse aller Boss-Läufe des Versuchs; None ohne Boss-Lauf."""
+    werte = [challenge_lauf.wertung(sl["challenge"], a.boss_laeufe[sl["id"]])["ergebnis"]
+             for sl in data["slides"] if sl.get("type") == "boss" and sl["id"] in (a.boss_laeufe or {})]
+    return round(sum(werte) / len(werte), 4) if werte else None
+
+
 @router.get("/api/exitgame-sessions/{code}/report")
 def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_db), current: Teacher = Depends(get_current_teacher)):
     s = db.query(ExitGameSession).filter_by(join_code=code).first()
@@ -1447,16 +1654,18 @@ def get_session_report(code: str, fmt: str = "json", db: Session = Depends(get_d
             "errors_total": a.errors_total, "hints_total": a.hints_total,
             "easier_taken_total": a.easier_taken_total,
             "elapsed_seconds": _attempt_summary(a)["elapsed_seconds"],
+            "boss_ergebnis": _boss_ergebnis(a, s.exitgame.data),
         })
 
     if fmt == "csv":
         import csv as csv_mod
         buf = io.StringIO()
         writer = csv_mod.writer(buf)
-        writer.writerow(["Name", "Klasse", "Status", "Gelöst", "Gesamt", "Fehler", "Hinweise", "Erleichterte Aufgaben", "Dauer (s)"])
+        writer.writerow(["Name", "Klasse", "Status", "Gelöst", "Gesamt", "Fehler", "Hinweise", "Erleichterte Aufgaben", "Dauer (s)", "Boss-Ergebnis"])
         for r in rows:
             writer.writerow([r["student_name"], r["student_class"], r["status"], r["slides_solved"], r["slides_total"],
-                              r["errors_total"], r["hints_total"], r["easier_taken_total"], r["elapsed_seconds"]])
+                              r["errors_total"], r["hints_total"], r["easier_taken_total"], r["elapsed_seconds"],
+                              "" if r["boss_ergebnis"] is None else r["boss_ergebnis"]])
         from fastapi.responses import StreamingResponse
         return StreamingResponse(
             iter([buf.getvalue().encode("utf-8-sig")]), media_type="text/csv",

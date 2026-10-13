@@ -249,6 +249,7 @@ def _run_migrations(db_engine):
         "ALTER TABLE barometer_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE auction_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE exitgame_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE exitgame_attempts ADD COLUMN IF NOT EXISTS boss_laeufe JSON NOT NULL DEFAULT '{}'",
         "ALTER TABLE lueckentext_sessions ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE schreibraum_rooms ADD COLUMN IF NOT EXISTS allow_guests BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE schreibraum_participants ADD COLUMN IF NOT EXISTS guest_id VARCHAR(36)",

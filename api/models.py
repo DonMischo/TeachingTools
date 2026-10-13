@@ -1491,6 +1491,8 @@ class ExitGameAttempt(Base):
     errors_total: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     hints_total: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     easier_taken_total: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    # TaskCrawler-Boss-Folien: {slide_id: Challenge-Lauf} (challenge_lauf)
+    boss_laeufe: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
