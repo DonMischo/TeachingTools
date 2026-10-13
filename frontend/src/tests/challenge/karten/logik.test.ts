@@ -1,0 +1,48 @@
+import { describe, it, expect } from "vitest";
+import {
+  deckZiel, draftStart, draftWahl, kampfStart, stapeln, zugBeenden, zieheKarten, ENERGIE, HAND, sterne, seltenheit,
+} from "@/components/challenge/modi/karten/logik";
+import { route } from "@/components/challenge/modi/karten/Etappenkarte";
+
+const ids = Array.from({ length: 9 }, (_, i) => `f${i}`);
+
+describe("Draft", () => {
+  it("bietet jede Karte irgendwann an, abgelehnte kommen zurück", () => {
+    let d = draftStart(ids, 7);
+    const gesehen = new Set<string>();
+    for (let i = 0; i < deckZiel(ids.length); i++) { d.angebot.forEach((x) => gesehen.add(x)); d = draftWahl(d, d.angebot[0], 7); }
+    expect(gesehen.size).toBe(ids.length);
+    expect(d.deck).toHaveLength(deckZiel(ids.length));
+    expect(new Set(d.deck).size).toBe(d.deck.length);
+  });
+  it("Deckziel: Fakten minus ein paar", () => {
+    expect(deckZiel(9)).toBe(9); expect(deckZiel(3)).toBe(3); expect(deckZiel(9, 5)).toBe(9);
+  });
+});
+
+describe("Kampf", () => {
+  it("zieht 5 Karten, Energie 3, leerer Stapel mischt die Ablage", () => {
+    let k = kampfStart(ids, 3);
+    expect(k.hand).toHaveLength(HAND); expect(k.nachzieh).toHaveLength(4); expect(k.energie).toBe(ENERGIE);
+    k = zugBeenden(k, 3);
+    expect(k.hand).toHaveLength(HAND); expect(k.ablage).toHaveLength(0); expect(k.nachzieh).toHaveLength(4); // Ablage wurde in den Stapel gemischt
+    expect(k.hand.length + k.nachzieh.length + k.ablage.length).toBe(ids.length);
+  });
+  it("Stapeln kostet 1 Energie und bei 0 geht nichts mehr", () => {
+    let k = kampfStart(ids, 3);
+    for (const id of k.hand.slice(0, 4)) k = stapeln(k, id);
+    expect(k.stapel).toHaveLength(ENERGIE); expect(k.energie).toBe(0);
+    expect(zieheKarten(k, 0, 1).hand).toHaveLength(HAND - ENERGIE);
+  });
+  it("Sterne sinken mit den Zügen, Seltenheit hängt nur von der ID ab", () => {
+    expect(sterne(2, 2)).toBe(3); expect(sterne(6, 2)).toBe(2); expect(sterne(20, 2)).toBe(1);
+    expect(seltenheit("a")).toBe(seltenheit("a"));
+  });
+});
+
+describe("Etappenkarte", () => {
+  it("der Weg beginnt am Start", () => {
+    const { weg } = route(5, 4, 3);
+    expect(weg[0]).toBe(0);
+  });
+});

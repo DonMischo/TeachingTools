@@ -17,26 +17,43 @@ const brett = (extra = {}) => ({
   ...extra,
 });
 const antw = (e = {}) => ({ qualitaet: 0, treffer: false, komplett: false, kombo: false, schaden: 0, falsch_gewaehlt: 1, leben: 2, zurueck_zur_karte: false, etappe_geschafft: false, fertig: false, stufe: 2, ...e });
-const mk = () => ({ waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(antw()), deckSetzen: vi.fn().mockResolvedValue(undefined) });
+const mk = () => ({ waehle: vi.fn(), gelegt: vi.fn(), antworte: vi.fn().mockResolvedValue(antw()), deckSetzen: vi.fn().mockResolvedValue(undefined), spielwert: vi.fn().mockResolvedValue(null), hatBestenliste: false });
 const zeige = (b: any, lauf: any) =>
   render(<Karten brett={b} theme={THEMES.klassisch} skin="monster" lauf={lauf} zurKarte={() => {}} />);
 
 describe("Karten", () => {
-  it("baut das Deck und setzt es", async () => {
+  it("draftet: Booster aufdecken, wählen, Fertig setzt das Deck", async () => {
     const lauf = mk(); const u = userEvent.setup();
     zeige(brett({ deck: null }), lauf);
-    await u.click(screen.getByText("Fakt eins"));
-    await u.click(screen.getByRole("button", { name: "Deck fertig" }));
-    expect(lauf.deckSetzen).toHaveBeenCalledWith(["f1"]);
+    await u.click(screen.getAllByRole("button", { name: "Karte aufdecken" })[0]);
+    // beide Karten (Booster hat nur 2 Fakten) sichtbar
+    const wahl = screen.getByText("Fakt eins");
+    await u.click(wahl);
+    expect(lauf.deckSetzen).not.toHaveBeenCalled(); // Ziel = 2 Karten, erst eine gewählt
+    await u.click(screen.getByRole("button", { name: "Fertig" }));
+    expect(lauf.deckSetzen).toHaveBeenCalledTimes(1);
+    expect(lauf.deckSetzen.mock.calls[0][0]).toEqual(["f1"]);
   });
-  it("spielt gestapelte Karten aus und zeigt Daneben", async () => {
+  it("zieht die Hand, kostet Energie und spielt gestapelte Karten aus (Daneben)", async () => {
     const lauf = mk(); const u = userEvent.setup();
     zeige(brett(), lauf);
     expect(screen.queryByText("Frage zwei")).toBeNull();
+    expect(screen.getByText(/Stapel: 0/)).toBeTruthy(); // beide Karten in der Hand
     await u.click(screen.getByText("Frage eins"));
     await u.click(screen.getByText("Fakt eins"));
+    expect(screen.getByLabelText("Energie 2 von 3")).toBeTruthy();
     await u.click(screen.getByRole("button", { name: "Ausspielen" }));
     await waitFor(() => expect(lauf.antworte).toHaveBeenCalledWith("c1", ["f1"], false));
     expect(await screen.findByText("Daneben")).toBeTruthy();
+    expect(lauf.spielwert).toHaveBeenCalledWith("karten", 1, expect.any(Number), 3);
+  });
+  it("Zug beenden: Hand auf die Ablage, neue Hand, Energie voll", async () => {
+    const lauf = mk(); const u = userEvent.setup();
+    zeige(brett(), lauf);
+    await u.click(screen.getByText("Frage eins"));
+    await u.click(screen.getByText("Fakt eins"));
+    await u.click(screen.getByRole("button", { name: "Zug beenden" }));
+    expect(screen.getByLabelText("Energie 3 von 3")).toBeTruthy();
+    expect(screen.getByText(/Zug 2/)).toBeTruthy();
   });
 });
