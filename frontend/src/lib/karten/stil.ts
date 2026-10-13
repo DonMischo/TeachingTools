@@ -20,7 +20,7 @@ import type {
 } from "maplibre-gl";
 import { spreizen } from "./nummern";
 import { echt, erdUmriss, KACHEL_KUERZEL, rechenNetz, vor, type Projektion } from "./projektion";
-import { kinderPunkte, zeichneKind, type KinderWahl } from "./kinderatlas";
+import { kinderPunkte, zeichneKind, type KinderStil, type KinderWahl } from "./kinderatlas";
 import { signaturAusdruck, zeichneSignatur } from "./signaturen";
 
 export type Geometrie = "flaeche" | "linie" | "punkt" | "raster" | "gemischt";
@@ -94,6 +94,8 @@ export type Auswahl = {
   partikel?: boolean;
   /** Kinderatlas (Netz »kinder«): Tiere und/oder Pflanzen zeigen (fehlt = beides) */
   kinderatlas?: KinderWahl[];
+  /** Kinderatlas: Illustrationen (Standard) oder niedliche Kacheln */
+  kinderstil?: KinderStil;
 };
 
 /** Welche Filterwerte einer Ebene gerade gezeigt werden. */
@@ -199,6 +201,7 @@ const kontinentFarbe = ["match", ["get", "id"], ...Object.entries(KONTINENT_FARB
 /** Kinderatlas: kräftige, freundliche Farben (gleiche Verteilung wie STAAT_FARBE), helles Meer */
 const KIND = { meer: "#8fd6f7", weltraum: "#fff6df", rand: "#ffffff", erdrand: "#4fb3e8" };
 const KIND_STAAT = ["#ffd166", "#9be27a", "#ff9fb4", "#8ec9ff", "#ffb36b", "#c9a7ff", "#7fe3cf"];
+const KIND_OHNE: Rolle[] = ["hoehen", "gebirge", "landschaften", "gipfel"];
 const kindStaatFarbe = ["match", ["get", "farbe"], ...KIND_STAAT.flatMap((f, i) => [i + 1, f]), "#ffe9a8"] as unknown as ExpressionSpecification;
 
 /** Farbe einer Themenebene: Kategorie per match, Stufen per step. */
@@ -273,10 +276,11 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   };
   const rolle = (e: Ebene): Rolle | undefined =>
     ROLLE[e.id] ?? (e.monate ? "zirkulation" : e.darstellung ? "thema" : e.bereich === "eigen" ? "eigen" : undefined);
-  const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e));
+  // Kinderatlas: wenig Einzelheiten — Relief, Gebirge, Landschaften und Gipfel fallen weg
+  const kinder = projektion === "kinder";
+  const an = katalog.ebenen.filter((e) => auswahl.ebenen.includes(e.id) && rolle(e) && !(kinder && KIND_OHNE.includes(rolle(e)!)));
   const mit = (r: Rolle) => an.filter((e) => rolle(e) === r);
   const sources: Record<string, SourceSpecification> = {};
-  const kinder = projektion === "kinder";
   const layers: LayerSpecification[] = [{ id: "meer", type: "background",
     paint: { "background-color": kinder ? KIND.weltraum : !echt(projektion) ? FARBE.weltraum : FARBE.meer } }];
   if (!echt(projektion)) {
@@ -363,7 +367,10 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   for (const e of mit("fluesse")) {
     // Kleine Flüsse erst beim Heranzoomen: Deutschland-Bäche ab 7, Welt-Nebenflüsse ab 3,5
     const klein = e.id === "de-fluesse-klein";
-    if (klein) {
+    if (kinder) {
+      if (!klein) layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, filter: ["==", ["get", "klasse"], 1], layout: linie,
+        paint: { "line-color": FARBE.fluss, "line-width": breite(1.4) } });
+    } else if (klein) {
       layers.push({ id: `${e.id}:linie`, type: "line", source: e.id, minzoom: 7, layout: linie, paint: { "line-color": FARBE.fluss, "line-width": breite(1) } });
     } else {
       layers.push(
@@ -407,11 +414,12 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     }
     for (const e of mit("meere")) {
       layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
+        ...(kinder ? { filter: ["==", ["get", "art"], "ozean"] as FilterSpecification } : {}),
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv, "symbol-sort-key": ["get", "rang"], "text-max-width": 7,
           "text-size": ["match", ["get", "art"], "ozean", 15, "meer", 12.5, 11], "text-letter-spacing": ["match", ["get", "art"], "ozean", 0.25, 0.05] },
         paint: schrift(FARBE.wasserSchrift, "#ffffff88") });
     }
-    for (const e of mit("fluesse")) {
+    for (const e of mit("fluesse")) if (!kinder) {
       const klein = e.id === "de-fluesse-klein";
       layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), minzoom: klein ? 8 : e.bereich === "welt" ? 3 : 5.5,
         layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": SCHRIFT.kursiv,
@@ -430,7 +438,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
         paint: schrift(FARBE.gebirgeSchrift, "#ffffffaa") });
     }
     for (const e of mit("staaten")) {
-      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
+      layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e), ...(kinder ? { minzoom: 3 } : {}),
         // Neben Deutschland-Ländern nur die Nachbarn beschriften
         ...(hatLaender ? { filter: ["!=", ["get", "id"], "DEU"] as FilterSpecification } : {}),
         layout: { "text-field": ["get", "name"], "text-font": SCHRIFT.normal, "text-max-width": 7,
@@ -439,8 +447,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
     }
     for (const e of mit("kontinente")) {
       layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
-        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.fett, "text-size": 16, "text-letter-spacing": 0.3 },
-        paint: schrift("#44403c") });
+        layout: { "text-field": ["upcase", ["get", "name"]], "text-font": SCHRIFT.fett, "text-size": kinder ? 20 : 16, "text-letter-spacing": 0.3 },
+        paint: kinder ? { "text-color": "#1e3a8a", "text-halo-color": "#ffffff", "text-halo-width": 3 } : schrift("#44403c") });
     }
     for (const e of mit("laender")) if (art === "politisch") {
       layers.push({ id: `${e.id}:name`, type: "symbol", source: namen(e),
@@ -580,7 +588,8 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
   }
   for (const e of mit("staedte")) {
     // Um Deutschland (Länder sichtbar) von der Welt nur die Hauptstädte der Nachbarn
-    const alle = e.id === "welt-staedte" && hatLaender
+    const alle = kinder ? [{ raenge: ["hauptstadt"], minzoom: 3 }]
+      : e.id === "welt-staedte" && hatLaender
       ? [{ raenge: ["hauptstadt"], minzoom: 0 }]
       : STADT_STUFEN[e.id] ?? [{ raenge: [], minzoom: 0 }];
     // Größenklassen-Filter aus der Legende: abgewählte Klassen fallen weg
@@ -616,7 +625,7 @@ export function baueStil(katalog: Katalog, auswahl: Auswahl, art: Kartenart, que
 
   // Kinderatlas: Tiere und Pflanzen obenauf (Bilder zeichnet kinderatlas.ts), wichtige zuerst
   if (kinder) {
-    sources["kinder"] = { type: "geojson", data: kinderPunkte(auswahl.kinderatlas ?? ["tiere", "pflanzen"], projektion) };
+    sources["kinder"] = { type: "geojson", data: kinderPunkte(auswahl.kinderatlas ?? ["tiere", "pflanzen"], projektion, auswahl.kinderstil) };
     layers.push({ id: "kinder:bild", type: "symbol", source: "kinder",
       layout: { "icon-image": ["get", "bild"], "icon-size": ["interpolate", ["linear"], ["zoom"], 1, 0.95, 4, 1.3], "icon-padding": 2,
         "symbol-sort-key": ["get", "rang"],

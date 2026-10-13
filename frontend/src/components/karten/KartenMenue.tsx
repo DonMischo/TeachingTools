@@ -5,14 +5,15 @@
 import { useState } from "react";
 import { PROJEKTIONEN, type Projektion } from "@/lib/karten/projektion";
 import { SEITEN, type Seite } from "@/lib/karten/seite";
-import { KINDER_WAHL, type KinderWahl } from "@/lib/karten/kinderatlas";
+import { KINDER_STILE, KINDER_WAHL, type KinderStil, type KinderWahl } from "@/lib/karten/kinderatlas";
 
-export default function KartenMenue({ projektion, setProjektion, seite, setSeite, kinderatlas, setKinderatlas }: {
+export default function KartenMenue({ projektion, setProjektion, seite, setSeite, kinderatlas, setKinderatlas, kinderstil, setKinderstil }: {
   projektion: Projektion; setProjektion: (p: Projektion) => void;
   /** Ohne setSeite (Quiz, Üben) kein Seitenformat im Menü */
   seite?: Seite; setSeite?: (s: Seite) => void;
   /** Kinderatlas: was auf der Karte steht (fehlt = beides) */
   kinderatlas?: KinderWahl[]; setKinderatlas?: (w: KinderWahl[]) => void;
+  kinderstil?: KinderStil; setKinderstil?: (s: KinderStil) => void;
 }) {
   const wahl = kinderatlas ?? ["tiere", "pflanzen"];
   const [offen, setOffen] = useState(false);
@@ -41,6 +42,16 @@ export default function KartenMenue({ projektion, setProjektion, seite, setSeite
                   {k.name}
                 </label>
               ))}
+              {setKinderstil && (
+                <div role="radiogroup" aria-label="Bildstil" className="flex gap-3 pt-1">
+                  {KINDER_STILE.map((st) => (
+                    <label key={st.id} className="flex items-center gap-1 cursor-pointer text-xs">
+                      <input type="radio" name="kinderstil" checked={(kinderstil ?? "illustriert") === st.id} onChange={() => setKinderstil(st.id)} />
+                      {st.name}
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {setSeite && (

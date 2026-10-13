@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ebeneVonStilEbene, istKlickbar, istLauflicht, zeichneSymbol, type Katalog } from "@/lib/karten/stil";
+import { ladeKindBild } from "@/lib/karten/kinderatlas";
 import type { Ausschnitt } from "@/lib/karten/satz";
 import type { StyleSpecification } from "maplibre-gl";
 import PartikelFluss from "./PartikelFluss";
@@ -109,7 +110,13 @@ export default function KartenAnsicht({ stil, katalog, namenZeigen, onKlick, zie
       m.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
       // Symbole erst bei Bedarf zeichnen — seit MapLibre 6 nur noch über den Resolver
       // (ein »styleimagemissing«-Listener kann das Bild nicht mehr nachliefern)
-      m.setMissingStyleImageResolver((id) => {
+      m.setMissingStyleImageResolver(async (id) => {
+        // Kinderatlas-Illustrationen kommen als SVG-Datei (lädt asynchron)
+        if (id.startsWith("kindbild:")) {
+          const bild = await ladeKindBild(id);
+          if (bild && !m!.hasImage(id)) m!.addImage(id, bild, { pixelRatio: bild.pixelRatio });
+          return;
+        }
         const bild = zeichneSymbol(id);
         if (bild && !m!.hasImage(id)) m!.addImage(id, bild, { pixelRatio: bild.pixelRatio ?? 1 });
       });

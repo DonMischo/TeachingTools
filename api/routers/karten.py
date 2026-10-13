@@ -231,6 +231,8 @@ class SatzInhalt(BaseModel):
     projektion: Literal["equalearth", "mercator", "globus", "robinson", "winkeltripel", "kinder"] = "equalearth"
     # Kinderatlas (projektion »kinder«, Robinson-Netz): Tiere und/oder Pflanzen auf der Karte
     kinderatlas: list[Literal["tiere", "pflanzen"]] = Field(default_factory=lambda: ["tiere", "pflanzen"], max_length=2)
+    # Kinderatlas-Bilder: Illustrationen (Openclipart) oder niedliche Avatar-Kacheln
+    kinderstil: Literal["illustriert", "niedlich"] = "illustriert"
     # Kartenfläche im Seitenverhältnis von A4 (füllt beim Export Seite 1)
     seite: Literal["frei", "a4-hoch", "a4-quer"] = "frei"
 

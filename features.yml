@@ -112,7 +112,7 @@ aktivitaeten:
     kann:
       - Selbst gehostete Karten (MapLibre, keine Anfragen nach außen)
       - Kartennetz Equal Earth (Standard), Robinson, Winkel-Tripel (beide über PROJ), Mercator oder Globus im ☰-Menü, je Kartensatz gespeichert; schwarz-weiße Maßstabsleiste, Quellen unter der Karte
-      - Kinderatlas »Robinson Crusoe« - bunte Länder, Tiere und Pflanzen nach Wahl (Robinson-Netz)
+      - Kinderatlas »Robinson Crusoe« - bunte Länder, wenig Einzelheiten, Tiere und Pflanzen nach Wahl als Illustration (Openclipart) oder Avatar-Kachel (Robinson-Netz)
       - Regionen Deutschland, Thüringen, Europa, Welt, Kontinente; Kartenarten politisch, topographisch, stumm, Wirtschaft, Physisch
       - Ebenen aus offenen Daten (BKG, Natural Earth, OPSD, CORINE, Bird PB2002, Köppen-Geiger) mit Quellenangabe auf der Karte
       - Europa genauer - BIP pro Kopf und Bevölkerungsdichte je NUTS-2-Region, EU/Eurozone/EFTA, Kraftwerke, Verkehr

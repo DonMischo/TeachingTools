@@ -18,11 +18,16 @@ describe("Kinderatlas", () => {
     expect(vor([10, 60], "kinder")).toEqual(vor([10, 60], "robinson"));
     const st = baueStil({ stand: "", ebenen }, { ebenen: ["welt-staaten", "welt-hoehen"], beschriftung: true, projektion: "kinder" }, "topographisch");
     expect((st.sources["welt-staaten"] as { data: string }).data).toBe("/api/karten/ebenen/welt-staaten?projektion=robinson");
-    expect((st.sources["welt-hoehen"] as { tiles: string[] }).tiles[0]).toBe("/karten/welt-hoehen-robinson/{z}/{x}/{y}.webp");
+
     // auch auf der topographischen Karte bunte Länder
     const flaeche = st.layers.find((l) => l.id === "welt-staaten:flaeche") as { paint: Record<string, unknown> };
     expect(JSON.stringify(flaeche.paint["fill-color"])).toContain("#ffd166");
     expect(st.layers.at(-1)!.id).toBe("kinder:bild");
+  });
+
+  it("lässt im Kinderatlas Relief, Gebirge und kleine Flüsse weg", () => {
+    const st = baueStil({ stand: "", ebenen }, { ebenen: ["welt-staaten", "welt-hoehen"], beschriftung: true, projektion: "kinder" }, "topographisch");
+    expect(st.layers.some((l) => l.id === "welt-hoehen:raster")).toBe(false);
   });
 
   it("zeigt nur, was gewählt ist", () => {
@@ -30,6 +35,10 @@ describe("Kinderatlas", () => {
     expect(tiere.length).toBe(KINDER_EINTRAEGE.filter((e) => e.art === "tiere").length);
     expect(tiere.every((f) => f.properties!.art === "tiere")).toBe(true);
     expect(kinderPunkte([], "kinder").features).toHaveLength(0);
+    // Bildstil: Illustration (SVG-Datei) oder niedliche Kachel
+    const loewe = (stil?: "illustriert" | "niedlich") => kinderPunkte(["tiere"], "kinder", stil).features.find((f) => f.properties!.name === "Löwe")!;
+    expect(String(loewe().properties!.bild)).toMatch(/^kindbild:loewe:#/);
+    expect(String(loewe("niedlich").properties!.bild)).toMatch(/^kind:#/);
     // andere Netze: kein Kinderatlas
     const st = baueStil({ stand: "", ebenen }, { ebenen: ["welt-staaten"], beschriftung: true, projektion: "robinson" }, "politisch");
     expect(st.sources["kinder"]).toBeUndefined();
