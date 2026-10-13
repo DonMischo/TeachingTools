@@ -94,6 +94,8 @@ from .routers import karten as karten_router
 app.include_router(karten_router.router)
 from .routers import karten_quiz as karten_quiz_router
 app.include_router(karten_quiz_router.router)
+from .routers import challenge as challenge_router
+app.include_router(challenge_router.router)
 
 from .routers import slideshow as slideshow_router
 app.include_router(slideshow_router.router)
@@ -132,6 +134,10 @@ app.mount("/uploads/style-pack", StaticFiles(directory=str(STYLE_PACK_DIR)), nam
 EXITGAME_ASSETS_DIR = Path(__file__).parent.parent / "data" / "exitgames"
 EXITGAME_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/exitgames", StaticFiles(directory=str(EXITGAME_ASSETS_DIR)), name="exitgame_assets")
+
+CHALLENGE_ASSETS_DIR = Path(__file__).parent.parent / "data" / "challenges"
+CHALLENGE_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads/challenges", StaticFiles(directory=str(CHALLENGE_ASSETS_DIR)), name="challenge_assets")
 
 app.mount("/uploads/slideshow", StaticFiles(directory=str(slideshow_router.SLIDESHOW_DIR)), name="slideshow_assets")
 

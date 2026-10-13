@@ -74,6 +74,11 @@ CATALOG: list[CatalogTool] = [
         "host": _cap(True, False),
         "upload": _cap(True, True),
     }),
+    CatalogTool("challenge", "⚔️ Challenge", "⚔️", "aktivitaeten", {
+        "use": _cap(True, True),
+        "host": _cap(True, False),
+        "upload": _cap(True, True),
+    }),
     CatalogTool("lueckentext", "🧩 Lückentext", "🧩", "aktivitaeten", {
         "use": _cap(True, True),
         "host": _cap(True, False),

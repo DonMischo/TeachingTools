@@ -2520,6 +2520,58 @@ class KartenQuizStand(Base):
     )
 
 
+class ChallengeSet(Base):
+    """Ein Satz aus Fakten und Challenges (Werkzeug »challenge«), als ein JSON-Dokument in ``data``.
+    title/subject sind Kopien für die Bibliothek. Autor wie bei ExitGame: genau eines von created_by / created_by_student."""
+    __tablename__ = "challenge_sets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    asset_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=True)
+    created_by_student: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ChallengeStand(Base):
+    """Spielstand eines Teilnehmers in einer Challenge-Sitzung (ToolSession »challenge«).
+
+    Teilnehmer ist Schüler, Lehrkraft oder Gast (wie KartenQuizStand). ``zustand``:
+    {"etappe": int, "leben": int, "erledigt": [Challenge-ids]}; ``fragen``: alle Antworten in
+    Reihenfolge; ``verlauf``: DDA-Snapshots (api/dda.py) mit Feld »stufe«.
+    """
+    __tablename__ = "challenge_staende"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_id", name="uq_challenge_stand_student"),
+        UniqueConstraint("session_id", "teacher_id", name="uq_challenge_stand_teacher"),
+        UniqueConstraint("session_id", "guest_id", name="uq_challenge_stand_guest"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tool_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+    teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"), nullable=True)
+    guest_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, default="")
+    class_id: Mapped[int | None] = mapped_column(ForeignKey("classes.id", ondelete="SET NULL"), nullable=True)
+    stufe: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    stufe_start: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    seed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    zustand: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict, server_default="{}")
+    fragen: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    verlauf: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
+    guete: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, server_default="0")
+    ergebnis: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, server_default="0")
+    fertig_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class KartenLernstand(Base):
     """Was jemand mit einem Kartensatz schon kann — über Sitzungen hinweg (api/karten_lernen.py).
 

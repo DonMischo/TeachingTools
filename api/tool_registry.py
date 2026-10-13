@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from .models import (
     Teacher, Class, Quiz, BingoSet, AuctionSet,
     BarometerSession, ExitTicketSession, SchreibraumRoom, SchreibraumAccess, ExitGame,
-    TimelineSet,
+    TimelineSet, ChallengeSet,
 )
 
 
@@ -245,6 +245,21 @@ def _zeitstrahl_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse
     )
 
 
+# ── challenge ─────────────────────────────────────────────────────────────────
+
+def _challenge_refs(db: Session, teacher: Teacher) -> list[dict]:
+    sets = db.query(ChallengeSet).order_by(ChallengeSet.created_at.desc()).all()
+    return [{"ref_id": str(s.id), "label": s.title} for s in sets]
+
+
+def _challenge_launch(db: Session, teacher: Teacher, ref_id: str | None, klasse: str | None) -> LaunchResult:
+    set_id = _parse_content_id(ref_id)
+    if not db.get(ChallengeSet, set_id):
+        raise HTTPException(404, "Challenge nicht gefunden")
+    # Die Sitzung (Code/QR) legt die Lehrkraft auf der Challenge-Seite an.
+    return LaunchResult(host_url=f"/aktivitaeten/challenge/{set_id}", join_url=None, code=None)
+
+
 # ── classroom ─────────────────────────────────────────────────────────────────
 
 def _classroom_refs(db: Session, teacher: Teacher) -> list[dict]:
@@ -290,6 +305,7 @@ REGISTRY: dict[str, ToolDescriptor] = {
         ToolDescriptor("schreibraum", "📝 Schreibraum", True, True, _schreibraum_refs, _schreibraum_launch),
         ToolDescriptor("exitgame", "🗝️ TaskCrawler", True, True, _exitgame_refs, _exitgame_launch),
         ToolDescriptor("zeitstrahl", "📏 Zeitstrahl", True, False, _zeitstrahl_refs, _zeitstrahl_launch),
+        ToolDescriptor("challenge", "⚔️ Challenge", True, False, _challenge_refs, _challenge_launch),
         ToolDescriptor("classroom", "🖥️ Classroom", False, False, _classroom_refs, _classroom_launch),
         ToolDescriptor("bildformate", "🖼️ Bildformate", False, False, _bildformate_refs, _bildformate_launch),
         ToolDescriptor("gleichungswaage", "⚖️ Gleichungswaage", False, False, _gleichungswaage_refs, _gleichungswaage_launch),

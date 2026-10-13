@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth import get_current_teacher, get_player
-from ..models import KartenSatz, SimBeitrag, Student, Teacher, TimelineSet, ToolSession
+from ..models import ChallengeSet, KartenSatz, SimBeitrag, Student, Teacher, TimelineSet, ToolSession
 from ..utils import gen_code
 from .. import availability, tool_catalog
 
@@ -25,12 +25,12 @@ router = APIRouter(prefix="/api/tool-sessions", tags=["tool-sessions"])
 SESSION_TOOLS = ("abacus", "gleichungswaage", "bildformate", "tippen", "zeitstrahl",
                  "vierecke", "binaerrechner", "funktionen", "rechenregeln", "groessen", "rechenzeichen", "uebung",
                  "ki", "maus", "sonnensystem", "verkehr", "leben", "kueste",
-                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten", "algo", "dla", "schichten", "pse", "atommodelle", "strukturformeln")
+                 "erdaufbau", "wilson", "regeln", "wfc", "leviathan", "karten", "algo", "dla", "schichten", "pse", "atommodelle", "strukturformeln", "challenge")
 
 # Werkzeuge, die einen konkreten Inhalt teilen statt nur sich selbst. Der
 # Zeitstrahl ist eine Bibliothek: geteilt wird immer *eine* Zeitleiste, also
 # gehoert ihre Id zur Sitzung — und je Zeitleiste gibt es einen eigenen Code.
-REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz}
+REF_TOOLS = {"zeitstrahl": TimelineSet, "karten": KartenSatz, "challenge": ChallengeSet}
 
 
 class ToolSessionOut(BaseModel):
@@ -172,7 +172,8 @@ def session_content(code: str, db: Session = Depends(get_db), _player=Depends(ge
         raise HTTPException(403, "Diese Sitzung ist geschlossen")
 
     model = REF_TOOLS.get(session.tool_slug)
-    if model is None or session.ref_id is None:
+    # Ein Challenge-Satz enthält die Lösungen; Spieler bekommen nur das Brett (api/routers/challenge.py).
+    if model is None or session.ref_id is None or session.tool_slug == "challenge":
         raise HTTPException(404, "Diese Sitzung teilt keinen Inhalt")
     row = db.get(model, session.ref_id)
     if row is None:
