@@ -101,7 +101,10 @@ aktivitaeten:
       - Vier Stufen mit eigenen Texten und Fragen je Stufe (levels), Stufe wechselt per Fuzzy-Anpassung; Tipps nur auf Stufe 1
       - "Wertung: jede Antwort zählt, Wiederholungen heben die Güte, 100 % nur ohne Fehler im ersten Anlauf; Spiel- und Wissenswertung getrennt"
       - Auswertung je Person (Lesetempo, geraten, Kombos, gewählte Ablenker), CSV, Hauspunkte als Klassenmittel (bis 100 je Person)
-      - "Spielarten: bisher der Normal-Modus; Kartenspiel, Jump'n'Run, Bosskampf u. a. folgen"
+      - "Neun Spielarten auf denselben Daten, von der Lehrkraft freigegeben, von Schülern gewählt: Normal, Kartenspiel (Deck bauen, Ablenker im Deck werden berichtet), Bosskampf mit Skins (Drache, Rap-Battle, Prinzessin, Einhorn), Jump'n'Run (Schlüssel und Türen), Turmverteidigung, Detektiv, Alchemie, Brückenbau, Gerichtssaal (falsche Behauptungen »claims« widerlegen)"
+      - Pixelgrafik mit Themes (Wald, Ninja, Verlies, Antike, Weltraum) aus freien Kachelsätzen (CC0), Sammelphase je Spiel überspringbar, Bühnen passen aufs Handy
+      - Startstufe je Schüler, Stufe laufender Spieler änderbar; DDA-Kalibrierung je Klasse als Vorschlag aus Lesetempo und Antwortzeiten (nur Summen, bestätigen oder zurücksetzen)
+      - Als Boss-Folie im TaskCrawler (Zwischen- und Endboss), Sieg gibt den Codeschnipsel frei; Beispiele in beiden Vorlagen
   - id: lueckentext
     name: Lückentext
     faehigkeiten: {use: [true, true], host: [true, false], create: [true, true], upload: [true, true]}

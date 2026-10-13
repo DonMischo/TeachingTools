@@ -47,8 +47,11 @@ export const FEATURE_HELP: Record<string, FeatureHelp> = {
     sections: [
       { label: "▶️ Starten", text: "Einen Satz hochladen, öffnen und »📱 Zum Mitmachen« zeigen — Schüler und Gäste spielen über den Code. Die Startstufe (1–4) stellst du in der Sitzung ein; danach passt sie sich je Spieler an." },
       { label: "⬆️ Satz anlegen", text: "»+ Challenge hochladen« akzeptiert .json oder .zip (mit Bildern in assets/). Ein Satz hat Fakten (auch Ablenker), Challenges mit Lösung (»alle nötig« = Kombo, »eine genügt«) und Etappen. »Vorlage« lädt ein Beispiel; Bearbeiten geht im Formular, Anpassungen je Stufe (levels) im Expertenmodus." },
+      { label: "🎮 Spielarten", text: "Du gibst frei, was gespielt werden darf; die Schüler wählen: Normal, Kartenspiel (Deck aus Fakten), Bosskampf (Drache, Rap-Battle, Prinzessin oder Einhorn), Jump'n'Run, Turmverteidigung, Detektiv, Alchemie, Brückenbau und Gerichtssaal (braucht Behauptungen »claims«). Dazu ein Theme (Wald, Ninja, Verlies, Antike, Weltraum). Alle nutzen denselben Satz." },
+      { label: "🎚️ Stufen", text: "Startstufe für alle oder je Schüler (Klasse wählen); laufende Stufen änderst du in der Übersicht. Unter »Kalibrierung« schlägt das Programm aus den Lesezeiten der Klasse neue Werte vor — nur Summen, du bestätigst oder setzt zurück." },
       { label: "📊 Wertung", text: "Jede Antwort zählt, Wiederholungen heben die Güte; 100 % gibt es nur ohne Fehler im ersten Anlauf. Wer drei Leben verliert, liest auf der Karte nach." },
       { label: "🏠 Hauspunkte", text: "Je Klasse der Mittelwert der Ergebnisse (einmal je Runde), dazu CSV-Export und »Zurücksetzen« für eine neue Runde." },
+      { label: "🗝️ Im TaskCrawler", text: "Eine Folie vom Typ »⚔️ Boss (Challenge)« spielt einen Satz als Zwischen- oder Endboss; gewonnen gibt sie ihren Codeschnipsel für die nächste Tür frei. Beide TaskCrawler-Vorlagen enthalten Beispiele." },
     ],
   },
   lueckentext: {
