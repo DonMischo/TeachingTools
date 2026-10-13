@@ -517,7 +517,11 @@ export type ChallengeTeilnehmer = {
   fragen: number; erstversuch_richtig: number; kombos: number; ablenker_gewaehlt: string[];
   lesetempo_median: number | null; geraten: number; fertig: boolean;
   deck_ablenker: string[]; stand_id: number | null; student_id: number | null;
+  /** Summe der Hüpfen-Edelsteine; null ohne Wert. Zählt nicht in Güte/Ergebnis/Punkte. */
+  edelsteine?: number | null;
 };
+export type ChallengeSpielwertIn = { spiel: string; etappe: number; edelsteine: number; max: number };
+export type ChallengeBestenlisteZeile = { platz: number; name: string; edelsteine: number; max: number; ich: boolean };
 export type ChallengeSchueler = { id: number; name: string; startstufe: number | null; stand_id: number | null; stufe: number | null };
 export type ChallengeKalibrierungWerte = { lese_wpm: Record<string, number>; antwortzeit: { schnell: number; langsam: number } };
 export type ChallengeKalibrierung = {
@@ -1663,6 +1667,12 @@ export const api = {
     antwort: (code: string, body: ChallengeAntwortIn, token?: string | null) =>
       ffetch<ChallengeAntwort>(`challenge/${encodeURIComponent(code)}/antwort`,
         { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
+    spielwert: (code: string, body: ChallengeSpielwertIn, token?: string | null) =>
+      ffetch<{ gesamt: number; max: number }>(`challenge/${encodeURIComponent(code)}/spielwert`,
+        { method: "POST", body: JSON.stringify(body) }, token ?? undefined),
+    bestenliste: (code: string, spiel: string, token?: string | null) =>
+      ffetch<ChallengeBestenlisteZeile[]>(`challenge/${encodeURIComponent(code)}/bestenliste?spiel=${encodeURIComponent(spiel)}`,
+        undefined, token ?? undefined),
     uebersicht: (code: string) => apiFetch<ChallengeUebersicht>(`challenge/${encodeURIComponent(code)}/uebersicht`),
     csvPfad: (code: string) => `/api/challenge/${encodeURIComponent(code)}/export.csv`,
     punkte: (code: string) =>

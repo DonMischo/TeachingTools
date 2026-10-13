@@ -1,7 +1,10 @@
 "use client";
 /** Lauf-Zustand der Challenge: info, Brett (wird nach jeder Antwort neu geholt) und Zeitmessung (Lesezeit, Wahlzeit). */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, type ChallengeAntwort, type ChallengeAntwortIn, type ChallengeBrett, type ChallengeInfo } from "@/lib/api";
+import {
+  api, type ChallengeAntwort, type ChallengeAntwortIn, type ChallengeBestenlisteZeile, type ChallengeBrett, type ChallengeInfo,
+  type ChallengeSpielwertIn,
+} from "@/lib/api";
 
 /** Woher der Lauf seine Daten holt: Sitzung (Code) oder eine Boss-Folie im TaskCrawler. */
 export type ChallengeQuelle = {
@@ -13,6 +16,9 @@ export type ChallengeQuelle = {
   start(spiel?: string): Promise<ChallengeBrett>;
   antwort(body: ChallengeAntwortIn): Promise<ChallengeAntwort>;
   deck(ids: string[]): Promise<ChallengeBrett>;
+  /** Nur Sitzungen: Minispiel-Wert (Edelsteine) melden und Bestenliste holen; die Boss-Folie hat keine. */
+  spielwert?(body: ChallengeSpielwertIn): Promise<{ gesamt: number; max: number }>;
+  bestenliste?(spiel: string): Promise<ChallengeBestenlisteZeile[]>;
 };
 
 export const sitzungsQuelle = (code: string, token?: string | null): ChallengeQuelle => ({
@@ -21,6 +27,8 @@ export const sitzungsQuelle = (code: string, token?: string | null): ChallengeQu
   start: (spiel) => api.challenge.start(code, token, spiel),
   antwort: (body) => api.challenge.antwort(code, body, token),
   deck: (ids) => api.challenge.deck(code, ids, token),
+  spielwert: (body) => api.challenge.spielwert(code, body, token),
+  bestenliste: (spiel) => api.challenge.bestenliste(code, spiel, token),
 });
 
 export function useChallengeLauf(q: ChallengeQuelle | string, token?: string | null) {
@@ -91,6 +99,21 @@ export function useChallengeLauf(q: ChallengeQuelle | string, token?: string | n
     try { await holeBrett(spiel); return true; } catch { return false; }
   }, [holeBrett]);
 
-  return { info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, spielWechseln };
+  const [meineEdelsteine, setMeineEdelsteine] = useState<{ gesamt: number; max: number } | null>(null);
+  /** Meldet die Edelsteine einer Etappe; still, wenn die Quelle keine Bestenliste kennt oder der Server ablehnt. */
+  const spielwert = useCallback(async (spiel: string, etappe: number, edelsteine: number, max: number) => {
+    try {
+      const r = (await qRef.current.spielwert?.({ spiel, etappe, edelsteine, max })) ?? null;
+      if (r) setMeineEdelsteine(r);
+      return r;
+    } catch { return null; }
+  }, []);
+  const bestenliste = useCallback(async (spiel: string): Promise<ChallengeBestenlisteZeile[]> => {
+    try { return (await qRef.current.bestenliste?.(spiel)) ?? []; } catch { return []; }
+  }, []);
+  /** Ob die Quelle Spielwerte und Bestenliste kann. */
+  const hatBestenliste = !!quelle.bestenliste;
+
+  return { info, brett, laden, fehler, waehle, gelegt, antworte, deckSetzen, spielWechseln, spielwert, bestenliste, hatBestenliste, meineEdelsteine };
 }
 export type ChallengeLauf = ReturnType<typeof useChallengeLauf>;

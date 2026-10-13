@@ -19,6 +19,7 @@ export type Beweger = { cx: number; cy: number; ax: number; ay: number; w: numbe
 /** Gegner patrouilliert auf plattformen[plat] zwischen a und b (Tempo v Kacheln/s). */
 export type Gegner = { id: number; plat: number; a: number; b: number; v: number; ph: number };
 export type Level = {
+  stil: Stil;
   breite: number; hoehe: number; plattformen: Plattform[]; schluessel: Schluessel[];
   /** Türplätze auf der letzten Plattform (Mitte, Boden); Platz i gehört zur i-ten Challenge. */
   tueren: { x: number; y: number }[];
@@ -40,22 +41,48 @@ function rng(seed: number) {
   };
 }
 
-/** Level je Etappe aus Seed (Etappe + Fakten-Anzahl); Schlüssel und Türen liegen auf der festen, erreichbaren Kette. */
-export function baueLevel(etappe: number, nFakten: number, nTueren: number): Level {
-  const r = rng(etappe * 1000 + nFakten * 7 + 13);
+export type Stil = "treppe" | "tal" | "tuerme" | "inseln" | "hoehle" | "zickzack";
+export const STILE: Stil[] = ["treppe", "tal", "tuerme", "inseln", "hoehle", "zickzack"];
+export const STIL_NAMEN: Record<Stil, string> = { treppe: "Treppe", tal: "Tal", tuerme: "Türme", inseln: "Inseln", hoehle: "Höhle", zickzack: "Zickzack" };
+type Muster = "streu" | "bogen" | "spur" | "versteckt";
+// Breite [min,max], Lücke [min,max], Gem-Muster, Zusatz-Beweger je Etappe
+const STIL: Record<Stil, { w: [number, number]; g: [number, number]; muster: Muster; beweger: number; leisten: number }> = {
+  treppe: { w: [3, 5], g: [1, 2], muster: "spur", beweger: 0, leisten: 1 },
+  tal: { w: [3, 6], g: [1, 2], muster: "bogen", beweger: 0, leisten: 1 },
+  tuerme: { w: [2, 3], g: [1, 2], muster: "versteckt", beweger: 0, leisten: 2 },
+  inseln: { w: [2, 4], g: [1, 2], muster: "bogen", beweger: 2, leisten: 0.5 },
+  hoehle: { w: [5, 8], g: [1, 2], muster: "spur", beweger: 0, leisten: 0 },
+  zickzack: { w: [3, 4], g: [1, 2], muster: "streu", beweger: 0, leisten: 1 },
+};
+
+/** Level aus Etappe, Zufallswert und Stil (aus dem Seed, wenn nicht angegeben); Schlüssel und Türen liegen auf der festen, erreichbaren Kette. */
+export function baueLevel(etappe: number, nFakten: number, nTueren: number, seed = 1, stilWahl?: Stil): Level {
+  const r = rng(Math.imul(seed >>> 0, 0x9e3779b1) ^ (etappe * 1000 + 13));
+  const stil: Stil = stilWahl ?? STILE[Math.floor(r() * STILE.length)];
+  const S = STIL[stil];
   const ri = (a: number, b: number) => a + Math.floor(r() * (b - a + 1));
-  const plattformen: Plattform[] = [{ x: 0, y: 8, w: 5, cp: true }];
+  const [lo, hi] = stil === "hoehle" ? [6, 8] : [4, 8];
+  const klemme = (y: number) => Math.min(hi, Math.max(lo, y));
+  const gMax = S.g[1], gMin = Math.min(gMax, S.g[0] + (etappe >= 3 ? 1 : 0));
+  const luecke = () => ri(gMin, gMax);
   const mitte = Math.max(nFakten, 3) + 2 + Math.min(etappe, 6) * 2;
+  const startY = stil === "tal" ? lo : 8;
+  const plattformen: Plattform[] = [{ x: 0, y: startY, w: 5, cp: true }];
   for (let i = 0; i < mitte; i++) {
     const v = plattformen[plattformen.length - 1];
-    let y = v.y + ri(-MAX_ANSTIEG, 2);
-    y = Math.min(8, Math.max(4, y));
-    plattformen.push({ x: v.x + v.w + ri(1, MAX_LUECKE), y, w: ri(3, 5), cp: (i + 1) % 4 === 0 });
+    let y: number;
+    switch (stil) {
+      case "treppe": { const h = v.y - ri(1, 2); y = h < lo ? hi : h; break; }
+      case "tal": y = klemme(Math.max(v.y - 2, Math.min(v.y + 2, Math.round(6 - 2 * Math.cos((2 * Math.PI * (i + 1)) / mitte))))); break;
+      case "tuerme": y = v.y - 2 >= lo ? v.y - 2 : hi; break;
+      case "zickzack": y = klemme(i % 2 === 0 ? v.y - ri(1, 2) : v.y + ri(1, 2)); break;
+      default: y = klemme(v.y + ri(-1, 1));
+    }
+    plattformen.push({ x: v.x + v.w + luecke(), y, w: ri(S.w[0], S.w[1]), cp: (i + 1) % 4 === 0 });
   }
   const v = plattformen[plattformen.length - 1];
   const wEnde = Math.max(5, nTueren * 2 + 2);
-  const y = Math.min(8, Math.max(4, v.y + ri(-1, 1)));
-  const ende: Plattform = { x: v.x + v.w + ri(1, MAX_LUECKE), y, w: wEnde, cp: true };
+  const ende: Plattform = { x: v.x + v.w + luecke(), y: klemme(v.y + ri(-1, 1)), w: wEnde, cp: true };
   plattformen.push(ende);
 
   // Schlüssel gleichmäßig über die Kette verteilt
@@ -75,40 +102,58 @@ export function baueLevel(etappe: number, nFakten: number, nTueren: number): Lev
   const leisten: Plattform[] = [];
   const beweger: Beweger[] = [];
   const gegner: Gegner[] = [];
-  const leistenChance = Math.min(0.25 + 0.1 * etappe, 0.7);
+  const muster: Muster = r() < 0.35 ? (["streu", "bogen", "spur", "versteckt"] as Muster[])[ri(0, 3)] : S.muster;
+  const leistenChance = Math.min((0.25 + 0.1 * etappe) * S.leisten, 0.85);
   const rest = Array.from({ length: mitte - 1 }, (_, i) => i + 2);
   const ziehe = (k: number, pool: number[]) => {
     const out: number[] = [];
     for (let j = 0; j < k && pool.length; j++) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
     return out;
   };
-  const moverPlat = new Set(ziehe(Math.min(1 + etappe, 5), [...rest]));
-  const gegnerPool = rest.filter((i) => !keyPlat.has(i) && !plattformen[i].cp && plattformen[i].w >= 4 && !moverPlat.has(i));
+  const moverPlat = new Set(ziehe(Math.min(1 + etappe + S.beweger, 7), [...rest]));
+  const gegnerPool = rest.filter((i) => !keyPlat.has(i) && !plattformen[i].cp && plattformen[i].w >= 3 && !moverPlat.has(i));
   const gegnerPlat = new Set(ziehe(Math.min(etappe, 6), gegnerPool));
   for (let i = 1; i < plattformen.length - 1; i++) {
     const p = plattformen[i], n = plattformen[i + 1];
-    const luecke = n.x - (p.x + p.w);
-    if (r() < 0.7) gem(p.x + p.w / 2 + (keyPlat.has(i) ? 1 : 0), p.y - 0.7, false);
-    if (r() < 0.6) gem(p.x + p.w + luecke / 2, Math.min(p.y, n.y) - 2.4, true); // über der Grube
-    if (i < plattformen.length - 2 && r() < leistenChance && !moverPlat.has(i)) {
+    const l = n.x - (p.x + p.w);
+    const gx = p.x + p.w + l / 2, gy = Math.min(p.y, n.y);
+    const mitteX = p.x + p.w / 2 + (keyPlat.has(i) ? 1 : 0);
+    if (muster === "spur") {
+      for (let k = 0; k < Math.min(3, p.w - 1); k++) if (r() < 0.8) gem(p.x + 0.8 + k * 1.1, p.y - 0.7, false);
+    } else if (muster === "bogen") {
+      if (r() < 0.5) gem(mitteX, p.y - 0.7, false);
+      if (r() < 0.8) { gem(gx - 0.9, gy - 1.2, false); gem(gx, gy - 2.4, true); gem(gx + 0.9, gy - 1.2, false); }
+    } else if (muster === "versteckt") {
+      if (r() < 0.4) gem(mitteX, p.y - 0.7, false);
+    } else {
+      if (r() < 0.7) gem(mitteX, p.y - 0.7, false);
+      if (r() < 0.6) gem(gx, gy - 2.4, true);
+    }
+    const mitLeiste = i < plattformen.length - 2 && !moverPlat.has(i) && r() < leistenChance;
+    if (mitLeiste || (muster === "versteckt" && i % 2 === 0 && i < plattformen.length - 2 && !moverPlat.has(i))) {
       const ly = Math.max(2, p.y - 2);
       leisten.push({ x: p.x + 0.5, y: ly, w: 2, cp: false });
       gem(p.x + 1.5, ly - 0.7, true);
+      if (stil === "tuerme" && ly - 2 >= 2) { // zweite Leiste darüber
+        leisten.push({ x: p.x + 0.5, y: ly - 2, w: 2, cp: false });
+        gem(p.x + 1.5, ly - 2.7, true);
+      }
     }
     if (moverPlat.has(i)) {
-      if (p.y >= 7 && i % 2 === 0) {
-        const m: Beweger = { cx: p.x + p.w / 2, cy: p.y - 3, ax: 0, ay: 1.2, w: 2, per: 4.5, ph: r() };
+      if (stil === "tuerme" || (p.y >= 7 && i % 2 === 0)) {
+        const m: Beweger = { cx: stil === "tuerme" ? gx : p.x + p.w / 2, cy: stil === "tuerme" ? Math.max(3, gy - 1.5) : p.y - 3, ax: 0, ay: stil === "tuerme" ? 1.8 : 1.2, w: 2, per: 4.5, ph: r() };
         beweger.push(m);
         gem(m.cx, Math.max(0.9, m.cy - m.ay - 2.2), true);
       } else {
-        const m: Beweger = { cx: p.x + p.w + luecke / 2, cy: Math.max(2.5, Math.min(p.y, n.y) - 2), ax: 1.2, ay: 0, w: 2, per: 5, ph: r() };
+        const m: Beweger = { cx: gx, cy: Math.max(2.5, gy - 2), ax: stil === "inseln" ? 1.6 : 1.2, ay: 0, w: 2, per: 4 + r() * 2, ph: r() };
         beweger.push(m);
         gem(m.cx, m.cy - 2.2, true);
       }
     }
-    if (gegnerPlat.has(i)) gegner.push({ id: gegner.length, plat: i, a: p.x + 0.7, b: p.x + p.w - 0.7, v: 1.2 + 0.3 * Math.min(etappe, 5), ph: r() });
+    if (gegnerPlat.has(i)) gegner.push({ id: gegner.length, plat: i, a: p.x + 0.7, b: p.x + p.w - 0.7, v: 1.2 + 0.3 * Math.min(etappe, 5) + r() * 0.4, ph: r() });
   }
-  return { breite: ende.x + ende.w + 3, hoehe: HOEHE, plattformen, schluessel, tueren, leisten, beweger, gegner, edelsteine };
+  if (!edelsteine.length) gem(plattformen[1].x + plattformen[1].w / 2, plattformen[1].y - 0.7, false);
+  return { stil, breite: ende.x + ende.w + 3, hoehe: HOEHE, plattformen, schluessel, tueren, leisten, beweger, gegner, edelsteine };
 }
 
 /** Höchstzahl der Edelsteine (inkl. Gegner-Prämien) für den Zähler. */

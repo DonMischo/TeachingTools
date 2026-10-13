@@ -1,11 +1,12 @@
 "use client";
 /** Hüpfen: Jump'n'Run im Seitenlauf. Schlüssel (= Fakten) einsammeln, an einer Tür aufschließen (= antworten). */
 import { useEffect, useMemo, useRef, useState } from "react";
+import Bestenliste from "@/components/challenge/Bestenliste";
 import type { ChallengeAntwort, ChallengeFakt } from "@/lib/api";
 import { Sprite } from "@/components/challenge/pixel/Sprite";
 import { PixelMatrix } from "@/components/challenge/pixel/Matrix";
 import {
-  GEGNER_BONUS, baueLevel, bewegerFlaeche, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, naheSchluessel, naheTuer,
+  GEGNER_BONUS, STIL_NAMEN, baueLevel, bewegerFlaeche, edelsteineGesamt, figurBilder, gegnerBegegnung, gegnerX, naheEdelstein, naheSchluessel, naheTuer,
   schritt, startSpieler, zumKontrollpunkt, type Eingabe, type Spieler,
 } from "@/lib/challenge/huepfen";
 import type { ModusProps } from "./typen";
@@ -27,7 +28,9 @@ const PAL_SCHLEIM = { g: "#7ac943", w: "#ffffff", k: "#222222" };
 const lesbar = (f: ChallengeFakt) => f.info?.text;
 
 export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
-  const level = useMemo(() => baueLevel(brett.etappe, brett.fakten.length, brett.challenges.length), [brett.etappe, brett.fakten.length, brett.challenges.length]);
+  // Neue Karte bei jedem Besuch: der Zufallswert gilt, solange die Komponente steht (eine Tür zu öffnen mischt nicht neu)
+  const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
+  const level = useMemo(() => baueLevel(brett.etappe, brett.fakten.length, brett.challenges.length, seed), [brett.etappe, brett.fakten.length, brett.challenges.length, seed]);
   const [gesammelt, setGesammelt] = useState<string[]>([]);
   const [fund, setFund] = useState<ChallengeFakt | null>(null);
   const [tuer, setTuer] = useState<string | null>(null);
@@ -37,6 +40,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const [sende, setSende] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
   const [edel, setEdel] = useState(0);
+  const [liste, setListe] = useState(false);
   const [plings, setPlings] = useState<{ id: number; x: number; y: number }[]>([]);
   const [erledigtG, setErledigtG] = useState<number[]>([]);
   const [richtung, setRichtung] = useState<1 | -1>(1);
@@ -55,6 +59,19 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const bildRef = useRef<HTMLDivElement>(null);
   const weltRef = useRef<HTMLDivElement>(null);
   const figurRef = useRef<HTMLDivElement>(null);
+  const listeRef = useRef(false);
+  // Edelsteine melden: höchstens alle 2 s, sofort an der Tür und beim Verlassen
+  const letzteMeldung = useRef(0);
+  const gemeldet = useRef(-1);
+  const meldeRef = useRef<(sofort: boolean) => void>(() => {});
+  meldeRef.current = (sofort) => {
+    const n = edelRef.current.size;
+    if (n === gemeldet.current || n === 0) return;
+    const jetzt = Date.now();
+    if (!sofort && jetzt - letzteMeldung.current < 2000) return;
+    letzteMeldung.current = jetzt; gemeldet.current = n;
+    void lauf.spielwert?.("huepfen", brett.etappe, n, Math.max(n, edelsteineGesamt(level)));
+  };
 
   const fakten = new Map(brett.fakten.map((f) => [f.id, f]));
   const offene = brett.challenges.filter((c) => !c.erledigt);
@@ -63,6 +80,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const figH = sp.stehen.h * SK;
   const edelMax = edelsteineGesamt(level);
 
+  useEffect(() => { const t = setInterval(() => meldeRef.current(false), 2000); return () => { clearInterval(t); meldeRef.current(true); }; }, []);
   useEffect(() => { if (!skipDa) { const t = setTimeout(() => setSkipDa(true), 20000); return () => clearTimeout(t); } }, [skipDa]);
 
   const sammle = (id: string, zeige = true) => {
@@ -79,7 +97,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   const oeffneTuer = (id: string | null) => {
     tuerRef.current = id;
     setTuer(id); setAblage([]); setTipp(false);
-    if (id) { setAntwort(null); lauf.waehle(id); }
+    if (id) { setAntwort(null); lauf.waehle(id); meldeRef.current(true); }
   };
 
   // Eingabe: Tastatur
@@ -103,7 +121,7 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
     let raf = 0, letzte = 0, anim = false, dir: 1 | -1 = 1;
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
-      if (document.hidden || tuerRef.current) { letzte = 0; return; }
+      if (document.hidden || tuerRef.current || listeRef.current) { letzte = 0; return; }
       const dt = letzte ? Math.min(0.05, (t - letzte) / 1000) : 0;
       letzte = t;
       let s = schritt(spieler.current, eingabe.current, dt, level);
@@ -187,13 +205,15 @@ export default function Huepfen({ brett, theme, lauf, zurKarte }: ModusProps) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span></div>
+        <div className="flex items-center gap-3"><Herzen leben={brett.leben} /><span className="font-bold" aria-label="Edelsteine">💎 {edel}/{edelMax}</span><span className="text-muted">Karte: {STIL_NAMEN[level.stil]}</span></div>
         <div className="flex gap-2">
           {skipDa && <button className="btn-secondary" onClick={() => brett.fakten.forEach((f) => sammle(f.id, false))}>Alles einsammeln</button>}
+          {lauf.hatBestenliste && <button className="btn-secondary" aria-expanded={liste} onClick={() => { listeRef.current = !liste; setListe(!liste); }}>🏆 Bestenliste</button>}
           <button className="btn-secondary" onClick={zurKarte}>Karte</button>
         </div>
       </div>
       <Treffermeldung antwort={antwort} />
+      {liste && <div className="card p-3" role="dialog" aria-label="Bestenliste"><Bestenliste laden={lauf.bestenliste} /></div>}
 
       <div ref={bildRef} className="relative overflow-hidden rounded-lg border-2 border-line" style={{ height: level.hoehe * KACHEL, background: himmel }}
         role="group" aria-label="Spielfeld: mit Pfeiltasten oder A und D laufen, mit Leertaste springen">

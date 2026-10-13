@@ -185,7 +185,7 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
             <thead>
               <tr className="text-left text-xs text-muted">
                 <th>Name</th><th>Klasse</th><th>Stufe</th><th>Güte</th><th>Ergebnis</th><th>Punkte</th><th>Fragen</th>
-                <th>Erstversuch richtig</th><th>Kombos</th><th>Ablenker gewählt</th><th>Deck-Ablenker</th><th>Lesetempo (W/min)</th><th>geraten</th><th>fertig</th>
+                <th>Erstversuch richtig</th><th>Kombos</th><th>Ablenker gewählt</th><th>Deck-Ablenker</th><th>Lesetempo (W/min)</th><th>geraten</th><th>fertig</th><th>💎</th>
               </tr>
             </thead>
             <tbody>
@@ -196,10 +196,10 @@ export default function ChallengeLehrkraft({ satzId, titel }: { satzId: number; 
                       {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>)}</td><td>{prozent(t.guete)}</td>
                   <td>{prozent(t.ergebnis)}</td><td>{t.punkte}</td><td>{t.fragen}</td><td>{t.erstversuch_richtig}</td><td>{t.kombos}</td>
-                  <td>{t.ablenker_gewaehlt.join(", ")}</td><td>{(t.deck_ablenker ?? []).join(", ")}</td><td>{t.lesetempo_median ?? "—"}</td><td>{t.geraten}</td><td>{t.fertig ? "✓" : ""}</td>
+                  <td>{t.ablenker_gewaehlt.join(", ")}</td><td>{(t.deck_ablenker ?? []).join(", ")}</td><td>{t.lesetempo_median ?? "—"}</td><td>{t.geraten}</td><td>{t.fertig ? "✓" : ""}</td><td>{t.edelsteine ?? "—"}</td>
                 </tr>
               ))}
-              {!ueb.teilnehmer.length && <tr><td colSpan={14} className="text-muted">Noch niemand dabei.</td></tr>}
+              {!ueb.teilnehmer.length && <tr><td colSpan={15} className="text-muted">Noch niemand dabei.</td></tr>}
             </tbody>
           </table>
         </div>

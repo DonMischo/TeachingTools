@@ -461,6 +461,63 @@ def antwort(code: str, body: AntwortIn, db: Session = Depends(get_db), spieler=D
     return aus
 
 
+class SpielwertIn(BaseModel):
+    spiel: str = Field(max_length=30)
+    etappe: int = Field(ge=1, le=1000)
+    edelsteine: int = Field(ge=0)
+    max: int = Field(ge=1, le=500)
+
+
+def _summe_spielwerte(zustand: dict, spiel: str) -> tuple[int, int]:
+    werte = (zustand.get("spielwerte") or {}).get(spiel) or {}
+    return sum(w["edelsteine"] for w in werte.values()), sum(w["max"] for w in werte.values())
+
+
+@router.post("/{code}/spielwert")
+def spielwert(code: str, body: SpielwertIn, db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Edelsteine eines Minispiels (z. B. Hüpfen) je Etappe fürs Brett der Bestenliste.
+
+    Vom Client gemeldet und nur plausibilisiert (edelsteine <= max, max <= 500): ein Spielstand ohne Wettbewerbswert,
+    wie die Bestenliste der Schreibübung (api/routers/bestenliste.py). Beeinflusst weder Güte noch Ergebnis noch
+    Hauspunkte; pro Etappe zählt der beste gemeldete Wert."""
+    if body.spiel not in eng.SPIELE:
+        raise HTTPException(422, "Unbekannte Spielart")
+    if body.edelsteine > body.max:
+        raise HTTPException(422, "Mehr Edelsteine als möglich")
+    s = _offene_sitzung(db, code)
+    st = _stand(db, s, spieler)
+    if st is None:
+        raise HTTPException(409, "Erst starten")
+    z = copy.deepcopy(st.zustand)
+    je_spiel = z.setdefault("spielwerte", {}).setdefault(body.spiel, {})
+    alt = je_spiel.get(str(body.etappe))
+    if alt is None or body.edelsteine > alt["edelsteine"]:
+        je_spiel[str(body.etappe)] = {"edelsteine": body.edelsteine, "max": body.max,
+                                      "am": datetime.now(timezone.utc).isoformat()}
+        st.zustand = z  # neues dict, damit SQLAlchemy die Änderung bemerkt
+        db.commit()
+    gesamt, maximal = _summe_spielwerte(st.zustand, body.spiel)
+    return {"gesamt": gesamt, "max": maximal}
+
+
+@router.get("/{code}/bestenliste")
+def bestenliste(code: str, spiel: str = "huepfen", db: Session = Depends(get_db), spieler=Depends(get_player)):
+    """Top 20 nach Edelsteinen; nur Stände mit einem Wert für diese Spielart (Namen wie im Stand, Gäste mit Gastname)."""
+    s = _sitzung(db, code)
+    ich = _wer(spieler)
+    zeilen = []
+    for st in db.query(ChallengeStand).filter_by(session_id=s.id).all():
+        werte = (st.zustand.get("spielwerte") or {}).get(spiel)
+        if not werte:
+            continue
+        gesamt, maximal = _summe_spielwerte(st.zustand, spiel)
+        spaet = max((w.get("am") or "" for w in werte.values()), default="")
+        zeilen.append((gesamt, spaet, {"name": st.name, "edelsteine": gesamt, "max": maximal,
+                                       "ich": all(getattr(st, k) == v for k, v in ich.items())}))
+    zeilen.sort(key=lambda z: (-z[0], z[1]))
+    return [{"platz": i + 1, **z[2]} for i, z in enumerate(zeilen[:20])]
+
+
 # ── Auswertung (Lehrkraft) ───────────────────────────────────────────
 
 def _eigene_sitzung(db: Session, code: str, lehrkraft: Teacher) -> ToolSession:
@@ -487,7 +544,8 @@ def _teilnehmer(st: ChallengeStand, klasse: str, ablenker: dict[str, str], kalib
             "kombos": sum(1 for f in st.fragen if f["kombo"]),
             "ablenker_gewaehlt": list(dict.fromkeys(gewaehlt)), "deck_ablenker": deck_ablenker,
             "lesetempo_median": round(statistics.median(tempos), 1) if tempos else None,
-            "geraten": sum(_geraten(f, kalibrierung) for f in st.fragen), "fertig": st.fertig_am is not None}
+            "geraten": sum(_geraten(f, kalibrierung) for f in st.fragen), "fertig": st.fertig_am is not None,
+            "edelsteine": _summe_spielwerte(st.zustand, "huepfen")[0] if (st.zustand.get("spielwerte") or {}).get("huepfen") else None}
 
 
 def _teilnehmerliste(db: Session, s: ToolSession) -> list[dict]:
@@ -523,10 +581,10 @@ def export_csv(code: str, db: Session = Depends(get_db), lehrkraft: Teacher = De
     puffer = io.StringIO()
     schreiber = csv.writer(puffer, delimiter=";")
     spalten = ["name", "klasse", "stufe_start", "stufe", "guete", "ergebnis", "punkte", "fragen", "erstversuch_richtig",
-               "kombos", "ablenker_gewaehlt", "deck_ablenker", "lesetempo_median", "geraten", "fertig"]
+               "kombos", "ablenker_gewaehlt", "deck_ablenker", "lesetempo_median", "geraten", "fertig", "edelsteine"]
     schreiber.writerow(spalten)
     for z in zeilen:
-        schreiber.writerow([" | ".join(z[k]) if k in ("ablenker_gewaehlt", "deck_ablenker") else z[k] for k in spalten])
+        schreiber.writerow([" | ".join(z[k]) if k in ("ablenker_gewaehlt", "deck_ablenker") else ("" if z[k] is None else z[k]) for k in spalten])
     return Response(puffer.getvalue().encode("utf-8-sig"), media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="challenge_{s.code}.csv"'})
 

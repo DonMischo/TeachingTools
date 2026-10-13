@@ -11,6 +11,7 @@ import { themeVon, bodenKachel } from "@/lib/challenge/themes";
 import { SPIELARTEN } from "@/lib/challenge/spielarten";
 import { MODI } from "./modi";
 import { Kachelfeld, Sprite } from "./pixel/Sprite";
+import Bestenliste from "./Bestenliste";
 
 type Props = {
   code?: string; token?: string | null;
@@ -28,6 +29,7 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
   const [hinweis, setHinweis] = useState("");
   const [waehlen, setWaehlen] = useState(false);
   const [wechselFehler, setWechselFehler] = useState("");
+  const [liste, setListe] = useState(false);
 
   if (lauf.fehler) return <p className="p-6 text-center text-bad">{lauf.fehler}</p>;
   if (lauf.laden || !info) return <p className="p-6 text-center text-muted">Lade…</p>;
@@ -64,6 +66,16 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
     );
   }
 
+  const mitListe = lauf.hatBestenliste && info.settings.spiele.includes("huepfen");
+  const listeKnopf = mitListe && (
+    <>
+      <button className="btn-secondary" aria-expanded={liste} onClick={() => setListe(!liste)}>🏆 Bestenliste</button>
+    </>
+  );
+  const listePanel = mitListe && liste && (
+    <div className="card p-3 text-left"><Bestenliste laden={lauf.bestenliste} /></div>
+  );
+
   // Der Rahmen schaltet nach besonderen Ergebnissen selbst um
   const rahmenLauf: ChallengeLauf = {
     ...lauf,
@@ -91,6 +103,9 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
             <>
               <h1 className="text-xl font-black">Geschafft!</h1>
               <p className="text-2xl font-black mt-2">{Math.round(100 * (info.stand?.ergebnis ?? 0))} %</p>
+              {mitListe && lauf.meineEdelsteine && <p className="mt-2 font-bold">💎 {lauf.meineEdelsteine.gesamt}/{lauf.meineEdelsteine.max}</p>}
+              {listeKnopf && <div className="mt-3">{listeKnopf}</div>}
+              {listePanel && <div className="mt-3">{listePanel}</div>}
             </>
           )}
         </div>
@@ -125,7 +140,9 @@ export default function ChallengeSpiel({ code = "", token, quelle, onAntwort, on
           <div className="flex flex-wrap gap-2">
             <button className="btn-primary" onClick={() => { setHinweis(""); setAnsicht("kampf"); }}>Los</button>
             {erlaubt.length > 1 && <button className="btn-secondary" onClick={() => setWaehlen(true)}>Spielart</button>}
+            {listeKnopf}
           </div>
+          {listePanel}
           {nachlesen.length > 0 && (
             <details className="card p-3">
               <summary className="cursor-pointer font-bold">Wissen nachlesen</summary>
